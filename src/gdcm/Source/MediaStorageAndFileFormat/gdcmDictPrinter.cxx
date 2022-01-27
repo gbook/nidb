@@ -327,7 +327,7 @@ static const OWNER_VERSION OwnerVersionTable[] ={
 {"Viewing Protocol",""},
 {"http://www.gemedicalsystems.com/it_solutions/rad_pacs/","GEM"},
 
-// Manualy added:
+// Manually added:
 { "GEMS_Ultrasound_ImageGroup_001", "GEM" },
 { "GEMS_Ultrasound_MovieGroup_001", "GEM" },
 { "SIEMENS MED OCS SITE NAME ", "SSPI" },
@@ -474,7 +474,7 @@ void DictPrinter::PrintDataElement2(std::ostream& os, const DataSet &ds, const D
       os <<  "vr=\"" << pvr << "\" vm=\"" << vm << "\" ";
     if( de.GetTag().IsPrivate() )
       {
-      os << "name=\"?\" owner=\"" << owner
+      os << R"(name="?" owner=")" << owner
         << /*"\"  version=\"" << version << */ "\"/>\n";
       }
     }

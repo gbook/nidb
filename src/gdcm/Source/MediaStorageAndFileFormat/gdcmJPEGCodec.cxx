@@ -92,7 +92,7 @@ void JPEGCodec::SetPixelFormat(PixelFormat const &pt)
 
   // We have the choice to decide to use Bits Stored or Bits Allocated, however in the case of
   // such an image as: gdcmData/MR16BitsAllocated_8BitsStored.dcm we are required to use
-  // bits allocated to deal with the logic to decide withe the encoder
+  // bits allocated to deal with the logic to decide with the encoder
   SetBitSample( pt.GetBitsAllocated() );
   //SetBitSample( pt.GetBitsStored() );
 }
@@ -101,7 +101,6 @@ void JPEGCodec::SetupJPEGBitCodec(int bit)
 {
   BitSample = bit;
   delete Internal; Internal = nullptr;
-  assert( Internal == nullptr );
   // what should I do with those single bit images ?
   if ( BitSample <= 8 )
     {
@@ -122,9 +121,6 @@ void JPEGCodec::SetupJPEGBitCodec(int bit)
     {
     // gdcmNonImageData/RT/RTDOSE.dcm
     gdcmWarningMacro( "Cannot instantiate JPEG codec for bit sample: " << bit );
-    // Clearly make sure Internal will not be used
-    delete Internal;
-    Internal = nullptr;
     }
 }
 
@@ -278,7 +274,7 @@ bool JPEGCodec::GetHeaderInfo( std::istream & is, TransferSyntax &ts )
       SetupJPEGBitCodec( Internal->BitSample );
       if( Internal && Internal->GetHeaderInfo(is, ts) )
         {
-        // Foward everything back to meta jpeg codec:
+        // Forward everything back to meta jpeg codec:
         this->SetLossyFlag( Internal->GetLossyFlag() );
         this->SetDimensions( Internal->GetDimensions() );
         this->SetPhotometricInterpretation( Internal->GetPhotometricInterpretation() );
@@ -297,7 +293,7 @@ bool JPEGCodec::GetHeaderInfo( std::istream & is, TransferSyntax &ts )
     return false;
     }
   // else
-  // Foward everything back to meta jpeg codec:
+  // Forward everything back to meta jpeg codec:
   this->SetLossyFlag( Internal->GetLossyFlag() );
   this->SetDimensions( Internal->GetDimensions() );
   this->SetPhotometricInterpretation( Internal->GetPhotometricInterpretation() );

@@ -28,7 +28,7 @@ namespace gdcm_ns
  * formedness check only, and to some extent catch known error (non
  * well-formed document).
  *
- * Detailled description here
+ * Detailed description here
  *
  * A DataSet DOES NOT contains group 0x0002 (see FileMetaInformation)
  *
@@ -120,6 +120,12 @@ private:
   TransferSyntax GuessTransferSyntax();
   std::istream *Stream;
   std::ifstream *Ifstream;
+
+  // prevent copy/move to avoid 2 ifstream leak
+  Reader(const Reader &) = delete;
+  Reader &operator=(const Reader &) = delete;
+  Reader(const Reader &&) = delete;
+  Reader &operator=(const Reader &&) = delete;
 };
 
 /**

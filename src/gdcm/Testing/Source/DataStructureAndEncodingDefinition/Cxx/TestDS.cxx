@@ -130,7 +130,7 @@ static bool checkerror(double d, std::string s)
   //larger than pow(10., eo), because the 'pow' result will be 0 in vs2010
   if (log10(error) > eo)
   {
-    std::cout << "ERROR: Absoulte Error is too large (error = " << error << ", should be < " << pow(10., eo) << ")" << std::endl;
+    std::cout << "ERROR: Absolute Error is too large (error = " << error << ", should be < " << pow(10., eo) << ")" << std::endl;
     return true;
   }
   //    else if (error != 0.0) std::cout << "OK (error = " << error << ", is < " << pow(10, eo) << ")" << std::endl;
@@ -191,8 +191,8 @@ static bool singleTestDS(double d, int sz, bool se = false)
 #define TEST(x, y, z) { \
   std::cout << "  Testing:   " << #x << std::endl; \
   err_count += singleTestDS(x, y, z); \
-  test_count++; }
-
+  test_count++; }   \
+  GDCM_NOOP_STATEMENT
 
 /*
  * Test to make sure that double precision ieee 'double' is ok for DICOM VR = 'DS'

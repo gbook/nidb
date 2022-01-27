@@ -151,7 +151,7 @@ bool JPEGLSCodec::CanCode(TransferSyntax const &ts) const
 #endif
 }
 
-bool JPEGLSCodec::DecodeByStreamsCommon(char *buffer, size_t totalLen, std::vector<unsigned char> &rgbyteOut)
+bool JPEGLSCodec::DecodeByStreamsCommon(const char *buffer, size_t totalLen, std::vector<unsigned char> &rgbyteOut)
 {
   using namespace charls;
   const unsigned char* pbyteCompressed = (const unsigned char*)buffer;
@@ -190,7 +190,7 @@ bool JPEGLSCodec::Decode(DataElement const &in, DataElement &out)
     {
     const SequenceOfFragments *sf = in.GetSequenceOfFragments();
     if (!sf) return false;
-    size_t totalLen = sf->ComputeByteLength();
+    unsigned long totalLen = sf->ComputeByteLength();
     char *buffer = new char[totalLen];
     sf->GetBuffer(buffer, totalLen);
 
@@ -286,7 +286,7 @@ bool JPEGLSCodec::CodeFrameIntoBuffer(char * outdata, size_t outlen, size_t & co
   JlsParameters params = {};
   /*
   The fields in JlsCustomParameters do not control lossy/lossless. They
-  provide the possiblity to tune the JPEG-LS internals for better compression
+  provide the possibility to tune the JPEG-LS internals for better compression
   ratios. Expect a lot of work and testing to achieve small improvements.
 
   Lossy/lossless is controlled by the field allowedlossyerror. If you put in
@@ -294,7 +294,7 @@ bool JPEGLSCodec::CodeFrameIntoBuffer(char * outdata, size_t outlen, size_t & co
   value of 3 is often suggested as a default.
 
   The nice part about JPEG-LS encoding is that in lossy encoding, there is a
-  guarenteed maximum error for each pixel. So a pixel that has value 12,
+  guaranteed maximum error for each pixel. So a pixel that has value 12,
   encoded with a maximum lossy error of 3, may be decoded as a value between 9
   and 15, but never anything else. In medical imaging this could be a useful
   guarantee.
@@ -461,7 +461,7 @@ bool JPEGLSCodec::DecodeExtent(
 
     if( outv.size() != dimensions[0] * dimensions[1] * bytesPerPixel )
     {
-       gdcmDebugMacro( "Inconsistant buffer size. Giving up" );
+       gdcmDebugMacro( "Inconsistent buffer size. Giving up" );
        return false;
     }
 
@@ -523,7 +523,7 @@ bool JPEGLSCodec::DecodeExtent(
 
       if( outv.size() != dimensions[0] * dimensions[1] * bytesPerPixel )
       {
-         gdcmDebugMacro( "Inconsistant buffer size. Giving up" );
+         gdcmDebugMacro( "Inconsistent buffer size. Giving up" );
          return false;
       }
 

@@ -99,8 +99,9 @@ bool FindStudyRootQuery::ValidateQuery(bool inStrict) const
   const DataSet & ds = GetQueryDataSet();
   if (ds.Size() == 0)
     {
-    if (inStrict)
+    if (inStrict) {
       gdcmWarningMacro( "Empty DataSet in ValidateQuery" );
+    }
     return false;
     }
 
@@ -232,7 +233,7 @@ bool FindStudyRootQuery::ValidateQuery(bool inStrict) const
     if( thePresentTagCount != hiertags.size() )
       {
       assert( !hiertags.empty() );
-      gdcmWarningMacro( "Missing Key found (within the hierachical search ones): " << hiertags[0] );
+      gdcmWarningMacro( "Missing Key found (within the hierarchical search ones): " << hiertags[0] );
       gdcmDebugMacro( "Current DataSet is: " << ds );
       theReturn = false;
       }

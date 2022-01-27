@@ -88,8 +88,9 @@ bool MoveStudyRootQuery::ValidateQuery(bool inStrict) const
   const DataSet &ds = GetQueryDataSet();
   if (ds.Size() == 0)
     {
-    if (inStrict)
+    if (inStrict) {
       gdcmWarningMacro( "Empty DataSet in ValidateQuery" );
+    }
     return false;
     }
 
@@ -220,7 +221,7 @@ bool MoveStudyRootQuery::ValidateQuery(bool inStrict) const
       }
     if( thePresentTagCount != hiertags.size() )
       {
-      gdcmWarningMacro( "Missing Key found (within the hierachical search ones)" );
+      gdcmWarningMacro( "Missing Key found (within the hierarchical search ones)" );
       theReturn = false;
       }
     }

@@ -93,7 +93,7 @@ bool ULConnectionManager::EstablishConnection(const std::string& inAETitle,
   // if one push_pack
   //  (1, Secondary)
   //  (1, Verification)
-  // Then the last one is prefered (DCMTK 3.5.5)
+  // Then the last one is preferred (DCMTK 3.5.5)
 
   // The following only works for C-STORE / C-ECHO
   // however it does not make much sense to add a lot of abstract syntax
@@ -278,7 +278,7 @@ bool ULConnectionManager::EstablishConnectionMove(const std::string& inAETitle,
   // if one push_pack
   //  (1, Secondary)
   //  (1, Verification)
-  // Then the last one is prefered (DCMTK 3.5.5)
+  // Then the last one is preferred (DCMTK 3.5.5)
 
   // The following only works for C-STORE / C-ECHO
   // however it does not make much sense to add a lot of abstract syntax
@@ -907,7 +907,12 @@ EStateID ULConnectionManager::RunEventLoop(ULEvent& currentEvent, ULConnection* 
       //this gathering of the state is for scus that have just sent out a request
       theState = inWhichConnection->GetState();
     }
-    std::istream &is = *inWhichConnection->GetProtocol();
+    std::istream * tempProtocolStream =  inWhichConnection->GetProtocol();
+    if(tempProtocolStream == nullptr)
+    {
+      throw Exception("ProtocolStream as nullptr is invalid");
+    }
+    std::istream &is = *tempProtocolStream;
     //std::ostream &os = *inWhichConnection->GetProtocol();
 
     BasePDU* theFirstPDU = nullptr;// the first pdu read in during this event loop,
@@ -1175,10 +1180,9 @@ EStateID ULConnectionManager::RunEventLoop(ULEvent& currentEvent, ULConnection* 
               receivingData = true; //to continue the loop to process the release
               break;
             case eAABORTPDUReceivedOpen:
-              {
               raisedEvent = eEventDoesNotExist;
               theState = eStaDoesNotExist;
-              } // explicitly declare fall-through for some picky compiler
+              /* fall through */
             case eAABORTRequest:
               waitingForEvent = false;
               inWhichConnection->StopProtocol();

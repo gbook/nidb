@@ -35,9 +35,9 @@ class DICOMDIRGeneratorInternal
 public:
   DICOMDIRGeneratorInternal():F(new File) {}
   SmartPointer<File> F;
-  typedef Directory::FilenamesType  FilenamesType;
+  using FilenamesType = Directory::FilenamesType;
   FilenamesType fns;
-  typedef Directory::FilenameType  FilenameType;
+  using FilenameType = Directory::FilenameType;
   FilenameType rootdir;
   Scanner scanner;
   std::vector<uint32_t> OffsetTable;
@@ -1009,7 +1009,7 @@ the File-set.
   SequenceOfItems::SizeType n = sqi->GetNumberOfItems();
   const Item &item = sqi->GetItem( n ); // last item
   VL sub = item.GetLength<ExplicitDataElement>();
-  // Let's substract item length as well as the item sequence delimiter end (tag + vl => 8)
+  // Let's subtract item length as well as the item sequence delimiter end (tag + vl => 8)
   offsetofthelastdirectoryrecordoftherootdirectoryentity.SetValue( fmi_len + fmi_len_offset2 - sub - 8 );
 
   ds.Replace( offsetofthelastdirectoryrecordoftherootdirectoryentity.GetAsDataElement() );

@@ -187,7 +187,7 @@ bool IPPSorter::Sort(std::vector<std::string> const & filenames)
   // each slice, calculate the distance along the slice normal using the IPP
   // tag ("dist" is initialized to zero before reading the first slice) :
   //typedef std::multimap<double, const char*> SortedFilenames;
-  typedef std::map<double, const char*> SortedFilenames;
+  using SortedFilenames = std::map<double, const char *>;
   SortedFilenames sorted;
 {
   std::vector<std::string>::const_iterator it1 = filenames.begin();
@@ -206,8 +206,9 @@ bool IPPSorter::Sort(std::vector<std::string> const & filenames)
           const char *value2 =  scanner.GetValue(filename, tiop);
           if( !dc2.SetFromString( value2 ) )
             {
-            if( value2 )
-              gdcmWarningMacro( filename << " cant read IOP: " << value2 );
+            if( value2 ) {
+              gdcmWarningMacro( filename << " cannot read IOP: " << value2 );
+            }
             return false;
             }
           double cd = dc2.CrossDot( dc );
@@ -215,7 +216,7 @@ bool IPPSorter::Sort(std::vector<std::string> const & filenames)
           if( fabs(1 - cd) > DirCosTolerance )
             {
             gdcmWarningMacro( filename << " Problem with DirCosTolerance: " );
-            // Cant print cd since 0.9999 is printed as 1... may confuse user
+            // Cannot print cd since 0.9999 is printed as 1... may confuse user
             return false;
             }
           //dc2.Normalize();
@@ -228,7 +229,7 @@ bool IPPSorter::Sort(std::vector<std::string> const & filenames)
         ipp.Read( ss );
         double dist = 0;
         for (int i = 0; i < 3; ++i) dist += normal[i]*ipp[i];
-        // FIXME: This test is weak, since implicitely we are doing a != on floating point value
+        // FIXME: This test is weak, since implicitly we are doing a != on floating point value
         if( sorted.find(dist) != sorted.end() )
           {
             if( this->DropDuplicatePositions )
@@ -310,7 +311,7 @@ bool IPPSorter::Sort(std::vector<std::string> const & filenames)
     }
 }
 
-  // return true: means sorting succeed, it does not mean spacing computation succeded !
+  // return true: means sorting succeed, it does not mean spacing computation succeeded !
   return true;
 }
 

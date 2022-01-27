@@ -26,7 +26,7 @@
 
 namespace {
 using namespace gdcm;
-typedef struct
+using DICT_ENTRY = struct
 {
   uint16_t group;
   uint16_t element;
@@ -35,7 +35,7 @@ typedef struct
   const char *name;
   const char *keyword;
   bool ret;
-} DICT_ENTRY;
+};
 
 static const DICT_ENTRY DICOMV3DataDict [] = {
   {0x0000,0x0000,VR::UL,VM::VM1,"Command Group Length","CommandGroupLength",false },
@@ -13868,7 +13868,7 @@ static const DICT_ENTRY DICOMV3DataDict [] = {
 
  // FIXME: need a dummy element
   {0xffff,0xffff,VR::INVALID,VM::VM0,"","",true }, // dummy
-  {0xffff,0xffff,VR::INVALID,VM::VM0,nullptr,nullptr,true } // Gard
+  {0xffff,0xffff,VR::INVALID,VM::VM0,nullptr,nullptr,true } // Guard
 };
 } // end anonymous namespace
 

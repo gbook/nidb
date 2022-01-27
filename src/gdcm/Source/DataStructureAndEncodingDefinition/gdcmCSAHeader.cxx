@@ -776,7 +776,7 @@ Series shadow data (0029,xx20)
 54 - 'MrEvaProtocol' VM 1, VR UN, SyngoDT 0, NoOfItems 0, Data
 *
 *
-WARNING: I think this is context dependant so 0029,1010 and 0029,1110 are not supposed to mean the same thing, eg:
+WARNING: I think this is context dependent so 0029,1010 and 0029,1110 are not supposed to mean the same thing, eg:
 (CSA image data)
 
 (0029,0010)siemens csa header
@@ -961,13 +961,13 @@ bool CSAHeader::LoadFromDataElement(DataElement const &de)
   if( v2 == t1.GetElement() )
     {
     //std::cout << "Image shadow data (0029,xx10)\n\n";
-    DataElementTag = t1;;
+    DataElementTag = t1;
     }
   //else if( de.GetTag().GetPrivateCreator() == t2 )
   else if( v2 == t2.GetElement() )
     {
     //std::cout << "Series shadow data (0029,xx20)\n\n";
-    DataElementTag = t2;;
+    DataElementTag = t2;
     }
   else
     {

@@ -81,9 +81,9 @@ public:
   }
   // Implementation of Print is common to all Mode (ASCII/Binary)
   // TODO: Can we print a \ when in ASCII...well I don't think so
-  // it would mean we used a bad VM then, right ?
+  // it would mean we used a bad VM then, right?
   void Print(std::ostream &_os) const {
-    _os << Internal[0]; // VM is at least garantee to be one
+    _os << Internal[0]; // VM is at least guarantee to be one
     for(int i=1; i<VMToLength<TVM>::Length; ++i)
       _os << "," << Internal[i];
     }
@@ -514,7 +514,7 @@ public:
 };
 
 // For particular case for ASCII string
-// WARNING: This template explicitly instanciates a particular
+// WARNING: This template explicitly instantiates a particular
 // EncodingImplementation THEREFORE it is required to be declared after the
 // EncodingImplementation is needs (doh!)
 #if 0
@@ -546,7 +546,7 @@ public:
   }
   // Implementation of Print is common to all Mode (ASCII/Binary)
   void Print(std::ostream &_os) const {
-    _os << Internal[0]; // VM is at least garantee to be one
+    _os << Internal[0]; // VM is at least guarantee to be one
     for(int i=1; i<VMToLength<TVM>::Length; ++i)
       _os << "," << Internal[i];
     }
@@ -697,7 +697,7 @@ public:
   void Print(std::ostream &_os) const {
     assert( Length );
     assert( Internal );
-    _os << Internal[0]; // VM is at least garantee to be one
+    _os << Internal[0]; // VM is at least guarantee to be one
     const unsigned long length = GetLength() < 25 ? GetLength() : 25;
     for(unsigned long i=1; i<length; ++i)
       _os << "," << Internal[i];
@@ -837,6 +837,16 @@ public:
   typedef Element<TVR, VM::VM3_n> Parent;
   void SetLength(int len) {
     if( len % 3 ) return;
+    Parent::SetLength(len);
+  }
+};
+template<long long TVR>
+class Element<TVR, VM::VM3_4> : public Element<TVR, VM::VM1_n>
+{
+public:
+  typedef Element<TVR, VM::VM1_n> Parent;
+  void SetLength(int len) {
+    if( len != 3 && len != 4 ) return;
     Parent::SetLength(len);
   }
 };
