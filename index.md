@@ -10,6 +10,9 @@ NiDB Usage
 - <a href="administration.html">Administration</a><br>
 - <a href="user-manual.html">Users Manual</a><br>
 
+Building
+- <a href="build.html">Build</a>
+
 <br>
 
 <hr>
