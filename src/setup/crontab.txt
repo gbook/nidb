@@ -12,4 +12,4 @@
 * * * * * cd /nidb/bin; ./nidb backup > /dev/null 2>&1
 
 # NiDB cleanup
-@hourly find /nidb/bin/logs/*.log -mtime +4 -exec rm {} \;
+@hourly find /nidb/logs/*.log -mtime +4 -exec rm {} \;

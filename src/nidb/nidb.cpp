@@ -577,25 +577,34 @@ void nidb::InsertAnalysisEvent(qint64 analysisid, int pipelineid, int pipelineve
 /* ---------------------------------------------------------- */
 /* this function does not work in Windows                     */
 /* ---------------------------------------------------------- */
-QString nidb::SystemCommand(QString s, bool detail, bool truncate, bool progress) {
+QString nidb::SystemCommand(QString s, bool detail, bool truncate, bool bufferOutput) {
 
     double starttime = QDateTime::currentMSecsSinceEpoch();
     QString ret;
     QString output;
     QProcess process;
 
+    //WriteLog("Checkpoint A");
+
     process.setProcessChannelMode(QProcess::MergedChannels);
     process.start("sh", QStringList() << "-c" << s);
 
+    //WriteLog("Checkpoint B");
+
     /* Get the output */
     if (process.waitForStarted(-1)) {
+        QString buffer;
+        //WriteLog("Checkpoint B.1");
         while(process.waitForReadyRead(-1)) {
-            QString buffer = process.readAll();
+            //WriteLog("Checkpoint B.2");
+            buffer = process.readAll();
             output += buffer;
-            if (progress)
+            if (!bufferOutput)
                 WriteLog(buffer,0,false);
+            //WriteLog("Checkpoint B.3");
         }
     }
+    //WriteLog("Checkpoint C");
     process.waitForFinished();
 
     double elapsedtime = (QDateTime::currentMSecsSinceEpoch() - starttime + 0.000001)/1000.0; /* add tiny decimal to avoid a divide by zero */
@@ -603,6 +612,8 @@ QString nidb::SystemCommand(QString s, bool detail, bool truncate, bool progress
     output = output.trimmed();
     output.replace("’", "'");
     output.replace("‘", "'");
+
+    //WriteLog("Checkpoint D");
 
     if (truncate)
         if (output.size() > 20000)

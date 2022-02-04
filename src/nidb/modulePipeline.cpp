@@ -378,10 +378,6 @@ int modulePipeline::Run() {
                         analysispath = QString("%1/%2/%3/%4").arg(p.pipelineRootDir).arg(s.UID()).arg(s.studyNum()).arg(p.name);
                     n->WriteLog("analysispath is [" + analysispath + "]");
 
-                    /* this file will record any events during setup */
-                    QString setupLogFile = analysispath + "/pipeline/analysisSetup.log";
-                    n->WriteLog("Should have created this analysis setup log [" + setupLogFile + "]");
-
                     /* get the nearest study for this subject that has the dependency */
                     int studyNumNearest(0);
                     q2.prepare("select analysis_id, study_num from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.subject_id = :subjectid and a.pipeline_id = :pipelinedep and a.analysis_status = 'complete' and (a.analysis_isbad <> 1 or a.analysis_isbad is null) order by abs(datediff(b.study_datetime, :studydatetime)) limit 1");
@@ -518,18 +514,22 @@ int modulePipeline::Run() {
 
                                 /* copy any parent pipelines */
                                 QString systemstring;
-                                if (p.depLinkType == "hardlink") systemstring = "cp -aulL "; /* L added to allow copying of softlinks */
+                                //if (p.depLinkType == "hardlink") systemstring = "cp -aulL "; /* L added to allow copying of softlinks */
+                                //else if (p.depLinkType == "softlink") systemstring = "cp -aus ";
+                                //else if (p.depLinkType == "regularcopy") systemstring = "cp -au ";
+                                if (p.depLinkType == "hardlink") systemstring = "rsync -aH "; /* try rsync to overcome cp bug on CentOS8 Stream */
                                 else if (p.depLinkType == "softlink") systemstring = "cp -aus ";
                                 else if (p.depLinkType == "regularcopy") systemstring = "cp -au ";
                                 if (p.depDir == "subdir") {
-                                    setuplog << n->WriteLog("Parent pipeline will be copied to a subdir");
                                     systemstring += deppath + " " + analysispath + "/";
+                                    setuplog << n->WriteLog("Parent pipeline will be copied to a subdir [" + systemstring + "]");
                                 }
                                 else {
-                                    setuplog << n->WriteLog("Parent pipeline will be copied to the root dir");
                                     systemstring += deppath + "/* " + analysispath + "/";
+                                    setuplog << n->WriteLog("Parent pipeline will be copied to the root dir [" + systemstring + "] ");
                                 }
                                 setuplog << n->WriteLog(n->SystemCommand(systemstring));
+                                //setuplog << n->WriteLog(n->SystemCommand(systemstring, true, false, false));
 
                                 n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysismessage", "Parent pipeline copied by running [" + systemstring + "]");
                                 n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysisdependencyid", QString("%1").arg(dependencyanalysisid));
@@ -545,8 +545,12 @@ int modulePipeline::Run() {
                                 n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysismessage", "This pipeline does not depend on other pipelines");
                             }
 
+                            /* this file will record any events during setup */
+                            QString setupLogFile = analysispath + "/pipeline/analysisSetup.log";
+
                             /* now safe to write out the setuplog */
                             n->AppendCustomLog(setupLogFile, setuplog.join("\n"));
+                            n->WriteLog("Should have created this analysis setup log [" + setupLogFile + "]");
 
                             /* however, if the setupLogFile does not exist, something is not writeable, and that is not good */
                             if (!QFile::exists(setupLogFile)) {
@@ -741,19 +745,19 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
 
         /* check if the step is enabled */
         if (!enabled) {
-            dlog << QString("   Not enabled. Skipping").arg(i);
+            dlog << QString("   Step [%1] not enabled. Skipping").arg(i);
             RecordDataDownload(datadownloadid, analysisid, modality, 0, 0, -1, "", i, "Step not enabled, skipping step");
             continue;
         }
 
         /* check if the step is optional */
         if (optional) {
-            dlog << QString("   Optional. Skipping").arg(i);
+            dlog << QString("   Step [%1] optional. Skipping").arg(i);
             RecordDataDownload(datadownloadid, analysisid, modality, 0, 0, -1, "", i, "Step is optional, skipping step");
             continue;
         }
 
-        dlog << QString("   Checking if the following data exist:   protocol [%2]  modality [%3]  imagetype [%4]  enabled [%5]  type [%6]  level [%7]  assoctype [%8]  optional [%9]  numboldreps [%10]").arg(i).arg(protocol).arg(modality).arg(imagetype).arg(enabled).arg(type).arg(level).arg(assoctype).arg(optional).arg(numboldreps);
+        dlog << QString("   Step [%1] Checking if the following data exist:   protocol [%2]  modality [%3]  imagetype [%4]  enabled [%5]  type [%6]  level [%7]  assoctype [%8]  optional [%9]  numboldreps [%10]").arg(i).arg(protocol).arg(modality).arg(imagetype).arg(enabled).arg(type).arg(level).arg(assoctype).arg(optional).arg(numboldreps);
 
         /* make sure the requested modality table exists */
         q.prepare(QString("show tables like '%1_series'").arg(modality.toLower()));
@@ -2110,13 +2114,13 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
             /* NO groupids */
             q.prepare("select study_id from studies where study_id not in (select study_id from analysis where pipeline_id = :pipelineid) and study_id in (" + studyidlist + ") and (study_datetime < date_sub(now(), interval 6 hour)) order by study_datetime desc");
             q.bindValue(":pipelineid", pipelineid);
-            n->WriteLog(QString("Within GetStudyToDoList() analysis HAS dependency [%1]. NO groupids [%2]. Studies that have completed the dependency [%3]").arg(depend).arg(groupids).arg(studyliststr));
+            n->WriteLog(QString("Within GetStudyToDoList() analysis HAS dependency ID[%1]. NO groupids ID[%2]. Studies that have completed the dependency [%3]").arg(depend).arg(groupids).arg(list.size()));
         }
         else {
             /* with groupids */
             q.prepare("select a.study_id from studies a left join group_data b on a.study_id = b.data_id where a.study_id not in (select study_id from analysis where pipeline_id = :pipelineid) and a.study_id in (" + studyidlist + ") and (a.study_datetime < date_sub(now(), interval 6 hour)) and b.group_id in (" + groupids + ") order by a.study_datetime desc");
             q.bindValue(":pipelineid", pipelineid);
-            n->WriteLog(QString("Within GetStudyToDoList() analysis HAS dependency [%1]. HAS groupids [%2]. Studies that have completed the dependency [%3]").arg(depend).arg(groupids).arg(studyliststr));
+            n->WriteLog(QString("Within GetStudyToDoList() analysis HAS dependency ID[%1]. HAS groupids ID[%2]. Studies that have completed the dependency count[%3]").arg(depend).arg(groupids).arg(list.size()));
         }
     }
     else {
