@@ -34,16 +34,28 @@ h6:before {
 </style>
 
 # Building NiDB
+The following OS configurations have been tested to build nidb successfully with Qt 6.2
+- RHEL9 compatible
+  - CentOS 9 Stream
+- RHEL8 compatible
+  - Rocky Linux 8.5
+
+Other OS configurations may work if building with Qt 5.15
+
 ## Prepare Build Environment
 Install development tools on **CentOS 9 Stream**
 ```
 yum group install 'Development Tools'
 yum install cmake rpmdevtools rpm-build
 ```
-Install development tools on **CentOS 8 Stream / CentOS 8**
+Install development tools on **Rocky Linux 8.5**
 ```
 yum group install 'Development Tools'
-yum install cmake3 rpmdevtools rpm-build
+yum install cmake3
+yum install rpmdevtools
+yum install xcb*
+yum install libxcb*
+yum install gcc-toolset-10
 ```
 Install development tools on **CentOS 7**
 ```
@@ -61,6 +73,24 @@ yum install cmake3 rpmdevtools rpm-build
 
 ## Build rpm Package
 ### CentOS 9 Stream
+The first time building NiDB on this machine, perform the following
+```
+cd ~
+rpmdev-setuptree
+wget https://github.com/gbook/nidb/archive/master.zip
+unzip master.zip
+mv nidb-master/* rpmbuild/SOURCES/
+cp rpmbuild/SOURCES/src/setup/nidb.el9.spec rpmbuild/SPECS/
+cd rpmbuild/SPECS
+QA_RPATHS=$((0x0002|0x0010)) rpmbuild -bb nidb.el8.spec
+```
+All subsequent builds on this machine can be done with the following
+```
+cd ~/nidb
+./rpmbuild9.sh
+```
+
+### Rocky Linux 8.5
 The first time building NiDB on this machine, perform the following
 ```
 cd ~
