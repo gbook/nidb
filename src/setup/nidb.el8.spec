@@ -8,7 +8,7 @@ URL:            http://github.com/gbook/nidb
 #Source0:        
 
 BuildArch:	x86_64
-# 'cmake3' is required by CentOS 8, 'cmake' is required by centOS 8 Stream. Make sure the right one is used depending on your build OS
+# 'cmake3' is required by CentOS 8, 'cmake' is required by CentOS 8 Stream. Make sure the right one is used depending on your build OS
 BuildRequires:  gcc, cmake, make
 Requires:       php, php-mysqlnd, php-gd, php-cli, php-process, php-pear, php-mbstring, php-fpm, php-json, php-opcache, mariadb, mariadb-common, mariadb-server, mariadb-server-utils, mariadb-connector-c-devel, mariadb-connector-c, mariadb-connector-c-config, mariadb-backup, httpd, ImageMagick, perl-Image-ExifTool, openssl
 
@@ -43,15 +43,15 @@ cp -f %{_builddir}/bin/gdcm/bin/libgdcmCommon.so.3.0 %{buildroot}/usr/lib/ # cop
 cp -f %{_builddir}/bin/gdcm/bin/libgdcmDICT.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
 cp -f %{_builddir}/bin/gdcm/bin/libgdcmDSED.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
 cp -f %{_builddir}/bin/gdcm/bin/libgdcmexpat.so.2.0 %{buildroot}/usr/lib/ # copy GDCM libs
-cp -f %{_builddir}/bin/gdcm/bin/l6bgdcmIOD.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
-cp -f %{_builddir}/bin/gdcm/bin/l6bgdcmjpeg8.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
-cp -f %{_builddir}/bin/gdcm/bin/l6bgdcmjpeg12.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
+cp -f %{_builddir}/bin/gdcm/bin/libgdcmIOD.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
+cp -f %{_builddir}/bin/gdcm/bin/libgdcmjpeg8.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
+cp -f %{_builddir}/bin/gdcm/bin/libgdcmjpeg12.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
 cp -f %{_builddir}/bin/gdcm/bin/libgdcmjpeg16.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
 cp -f %{_builddir}/bin/gdcm/bin/libgdcmMEXD.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
 cp -f %{_builddir}/bin/gdcm/bin/libsocketxx.so.1.2 %{buildroot}/usr/lib/ # copy GDCM libs
-cp -f ~/Qt/6.2.3/gcc_64/lib/libQt5Core.so.6 %{buildroot}/usr/lib/ # copy Qt libs
-cp -f ~/Qt/6.2.3/gcc_64/lib/libQt5Network.so.6 %{buildroot}/usr/lib/ # copy Qt libs
-cp -f ~/Qt/6.2.3/gcc_64/lib/libQt5Sql.so.6 %{buildroot}/usr/lib/ # copy Qt libs
+cp -f ~/Qt/6.2.3/gcc_64/lib/libQt6Core.so.6 %{buildroot}/usr/lib/ # copy Qt libs
+cp -f ~/Qt/6.2.3/gcc_64/lib/libQt6Network.so.6 %{buildroot}/usr/lib/ # copy Qt libs
+cp -f ~/Qt/6.2.3/gcc_64/lib/libQt6Sql.so.6 %{buildroot}/usr/lib/ # copy Qt libs
 cp -f ~/Qt/6.2.3/gcc_64/lib/libicudata.so.56 %{buildroot}/usr/lib/ # copy Qt libs
 cp -f ~/Qt/6.2.3/gcc_64/lib/libicui18n.so.56 %{buildroot}/usr/lib/ # copy Qt libs
 cp -f ~/Qt/6.2.3/gcc_64/lib/libicuuc.so.56 %{buildroot}/usr/lib/ # copy Qt libs
