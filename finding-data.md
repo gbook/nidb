@@ -92,7 +92,11 @@ Following are some destinations where the searched data can be exported:
  ## Public Downloads
 This is another option in the "Transfer and Export" section to transfer "searched data" and to make it as public downloadable. There are options to describe briefly about the dataset, setting up a passowrd for secure tranmitability and making the public download updateable to the users having rights on the data. One can select "Required Registration" option to restrict the dowload to NiDB users only. An expiration date for the download can be set to 7, 30 and 90 days. One should select "No Expiration" if the public data should be available for longer than 90 days or for indefinite period.
 
-<div align="center"><img src=https://user-images.githubusercontent.com/24811295/153424638-6c973e31-c32d-406d-91b8-dcbc1326b3ed.png width="80%"></div>
+<div align="center"><img src=https://user-images.githubusercontent.com/24811295/153459944-187a7c6b-2988-4584-a9bd-f71ab9dc6fe0.png width="80%"></div>
+
+The "public Download" will be created after pressing the "Transfer" button at the end of search page. The public downloads can be accessed via Data --> Public Download menue. The following is a a page with Public download information:
+
+<div align="center"><img src=https://user-images.githubusercontent.com/24811295/153461845-983a82f0-7e7b-4790-b017-49c432b81ba8.png width="80%"></div>
 
 
 
