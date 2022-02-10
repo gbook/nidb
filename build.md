@@ -76,13 +76,11 @@ yum install cmake3 rpmdevtools rpm-build
 The first time building NiDB on this machine, perform the following
 ```
 cd ~
-rpmdev-setuptree
 wget https://github.com/gbook/nidb/archive/master.zip
 unzip master.zip
-mv nidb-master/* rpmbuild/SOURCES/
-cp rpmbuild/SOURCES/src/setup/nidb.el9.spec rpmbuild/SPECS/
-cd rpmbuild/SPECS
-QA_RPATHS=$((0x0002|0x0010)) rpmbuild -bb nidb.el8.spec
+mv nidb-master nidb
+cd nidb
+./rpmbuild9.sh
 ```
 All subsequent builds on this machine can be done with the following
 ```
@@ -94,16 +92,14 @@ cd ~/nidb
 The first time building NiDB on this machine, perform the following
 ```
 cd ~
-rpmdev-setuptree
 wget https://github.com/gbook/nidb/archive/master.zip
 unzip master.zip
-mv nidb-master/* rpmbuild/SOURCES/
-cp rpmbuild/SOURCES/src/setup/nidb.el8.spec rpmbuild/SPECS/
-cd rpmbuild/SPECS
-QA_RPATHS=$((0x0002|0x0010)) rpmbuild -bb nidb.el8.spec
+mv nidb-master nidb
+cd nidb
+./rpmbuild8.sh
 ```
 All subsequent builds on this machine can be done with the following
 ```
 cd ~/nidb
-./rpmbuild9.sh
+./rpmbuild8.sh
 ```
