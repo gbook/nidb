@@ -40,9 +40,9 @@
     - <a href="finding-data.html#export-to-remote-nidb-site">Export to Remote NiDB Site</a>
     - <a href="finding-data.html#export-via-web-download">Export via Web Download</a>
     - <a href="finding-data.html#export-to-ndar-rdocdbnda">Export to NDAR/RDoCdb/NDA</a>
+    - <a href="finding-data.html#public-download>Public Download</a>
   - <a href="finding-data.html#export-status">Export Status</a>
   - <a href="finding-data.md#analysis-builder">Analysis Builder</a>
-  - Public Downloads
   - Request a Dataset
 - <a href="pipelines.html">Pipelines</a>
   - Creating a Pipeline
