@@ -89,6 +89,13 @@ Following are some destinations where the searched data can be exported:
   NiDB has a unique ability to download the data that is required to submit to NDAR/RDoC/NDA. It automatically prepares the data according to the NDAR submission requirnments. Also one can download the data inforamation in terms of .csv that is required to submit NDAR data. The following the the two options to download the data accordigly. 
   <div align="center"><img src=https://user-images.githubusercontent.com/24811295/146388142-7a8f8c02-a6a9-4d36-a74e-efbcd337fa3b.png width="80%"></div>
 
+ ## Public Downloads
+This is another option in the "Transfer and Export" section to transfer "searched data" and to make it as public downloadable. There are options to describe briefly about the dataset, setting up a passowrd for secure tranmitability and making the public download updateable to the users having rights on the data. One can select "Required Registration" option to restrict the dowload to NiDB users only. An expiration date for the download can be set to 7, 30 and 90 days. One should select "No Expiration" if the public data should be available for longer than 90 days or for indefinite period.
+
+<div align="center"><img src=https://user-images.githubusercontent.com/24811295/153424638-6c973e31-c32d-406d-91b8-dcbc1326b3ed.png width="80%"></div>
+
+
+
  ## Export status
  After starting the transfer by clicking the transfer button at the end of the search, a transfer request will be send to NiDB. The status of a request can be seen via Search-->Export Status page as shown below. The status of 30 most recent serches will be shown by default. All the previoius searches can be seen by clicking on the "Show all" button on the left corner of the screen as shown below.
  
@@ -118,5 +125,5 @@ After selecting the project from the drop down menu "Select Project", click "Use
 <!-- /wp:image -->
 
 
-- Public Downloads
+
 - Request a Dataset
