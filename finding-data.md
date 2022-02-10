@@ -98,6 +98,14 @@ The "public Download" will be created after pressing the "Transfer" button at th
 
 <div align="center"><img src=https://user-images.githubusercontent.com/24811295/153461845-983a82f0-7e7b-4790-b017-49c432b81ba8.png width="80%"></div>
 
+## Request a Dataset
+To request a dataset from NiDB-based database, select data --> Request a Dataset. The following page will appear. 
+<div align="center"><img src=https://user-images.githubusercontent.com/24811295/153469796-8e6069af-6b64-4deb-a9d4-79af536bc249.png width="80%"></div>
+
+click "New Dataset Request" button, and fill the following form to request a dataset from the NiDB-databse.
+
+<div align="center"><img src=https://user-images.githubusercontent.com/24811295/153470699-c8c34e01-cbf7-4316-9d9a-d339c01304ab.png width="80%"></div>
+
 
 
  ## Export status
