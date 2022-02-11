@@ -8,25 +8,18 @@ To start the import data process
 You can import data into a particular NiDB project. To import data into a NiDb project, follow the steps below:
 * Go to the project main page as shown below by selecting a project from the project list.
 
-<!-- wp:image {"id":270,"sizeSlug":"large","linkDestination":"none"} -->
-<figure class="wp-block-image size-large"><img src="http://neuroinfodb.org/wp-content/uploads/2021/09/ProjectScreen-1024x478.png" alt="" class="wp-image-270"/></figure>
-<!-- /wp:image -->
+<div align="center"><img src="http://neuroinfodb.org/wp-content/uploads/2021/09/ProjectScreen-1024x478.png" width="80%"></div>
 
 * Click on to "RedCap to NiDB Transfer" link encircle in red-oval as above. This will take you to the following page:
-<!-- wp:image {"id":271,"sizeSlug":"large","linkDestination":"none"} -->
-<figure class="wp-block-image size-large"><img src="http://neuroinfodb.org/wp-content/uploads/2021/09/RedCap2NiDBConnectScreen-1024x498.png" alt="" class="wp-image-271"/></figure>
-<!-- /wp:image -->
+
+<div align="center"><img src="http://neuroinfodb.org/wp-content/uploads/2021/09/RedCap2NiDBConnectScreen-1024x498.png" width="80%"></div>
 
 * Fill the information you gathered at the Pre-import steps and press update button.
 * Click "Show Project Info" button to established RedCap to NiDB connection. If information providedis correct then you will land to the following screen
 
-<!-- wp:image {"id":300,"sizeSlug":"full","linkDestination":"none"} -->
-<figure class="wp-block-image size-full"><img src="http://neuroinfodb.org/wp-content/uploads/2021/11/RedCap2NiDBConnEstablished-1024x332-1.png" alt="" class="wp-image-300"/></figure>
-<!-- /wp:image -->
+<div align="center"><img src="http://neuroinfodb.org/wp-content/uploads/2021/11/RedCap2NiDBConnEstablished-1024x332-1.png" width="80%"></div>
 
-<!-- wp:image {"id":272,"sizeSlug":"large","linkDestination":"none"} -->
-<figure class="wp-block-image size-large"><img src="http://neuroinfodb.org/wp-content/uploads/2021/09/RedCap2NiDBConnEstablished-1024x332.png" alt="" class="wp-image-272"/></figure>
-<!-- /wp:image -->
+<div align="center"><img src="http://neuroinfodb.org/wp-content/uploads/2021/09/RedCap2NiDBConnEstablished-1024x332.png" width="80%"></div>
 
 It will show lists of RedCap arms, events, and instruments related to the project that you connected. Please check the contents to make sure that the connected project is correct. In case the information is not correct then update the correct RedCap server and RedCap token information above. If the information is correct then:
 
@@ -44,9 +37,7 @@ Mapping the data structures in the RedCap to NiDB is the most important step bef
 * If required an extra field item can be added later.
 * Mapping structure need to define only once. If mapping structure is already define, go to the next step to transfer the data.
 
-<!-- wp:image {"id":266,"sizeSlug":"large","linkDestination":"none"} -->
-<figure class="wp-block-image size-large"><img src="http://neuroinfodb.org/wp-content/uploads/2021/09/Mapping-1-1024x441.png" alt="" class="wp-image-266"/></figure>
-<!-- /wp:image -->
+<div align="center"><img src="http://neuroinfodb.org/wp-content/uploads/2021/09/Mapping-1-1024x441.png" width="80%"></div>
 
 ## Transfer
 
@@ -54,5 +45,5 @@ Once the mapping data structure is defined for all the RedCap forms, start impor
 
 Note: The mapping step is required only once. However any defined mapping structure can be update accordingly. The data transfer can be performed anytime it is required.
 
-![image](https://user-images.githubusercontent.com/24811295/142661201-65df6319-cf6d-4a1c-9007-d5b51e794d18.png)
+<div align="center"><img src=https://user-images.githubusercontent.com/24811295/142661201-65df6319-cf6d-4a1c-9007-d5b51e794d18.png width="80%"></div>
 
