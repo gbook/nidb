@@ -29,7 +29,7 @@ After adding the required set of protocols, a list of protocols will be shown as
 
 <div align="center"><img src=https://user-images.githubusercontent.com/24811295/154162653-484e7016-2ea7-4422-8e6a-c991b6463780.png  width="80%"></div>
 
-To define a protocol, click on the name of a protocol in the above list. For example if we click on EEG-Rest, the following page will appear with the existing list of EEG-series being already used in various projects. You can pick any of those to add to your own protocol group. A group name can be assigned by using the "Protocol group name" box at the end of the page as shown.
+To define a protocol, click on the name of a protocol in the above list. For example if we click on EEG-Rest, the following page will appear with the existing list of EEG-series being already used in various projects. You can pick any of those to add to your own protocol group. A group name can be assigned by using the "Protocol group name" box at the end of the page as shown. After clicking the "Add" button the selected series in the the group will be added to teh group and will be shown on the right.
 
-<div align="center"><img src=https://user-images.githubusercontent.com/24811295/154166152-055bd34c-824b-4cd9-a71d-245b8edb2be4.png  width="80%"></div>
+<div align="center"><img src=https://user-images.githubusercontent.com/24811295/154166600-05780538-b187-4da1-8a46-5022ed3b6779.png width="80%"></div>
 
