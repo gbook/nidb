@@ -295,9 +295,10 @@
 		if ($studydaynum == "") $studydaynum = "null"; else $studydaynum = "'$studydaynum'";
 		if ($studyheight == "") $studyheight = "null"; else $studyheight = "'$studyheight'";
 		if ($studyweight == "") $studyweight = "null"; else $studyweight = "'$studyweight'";
+		if ($studyageatscan == "") $studyageatscan = "null"; else $studyageatscan = "'$studyageatscan'";
 		
 		/* update the user */
-		$sqlstring = "update studies set study_experimenter = '$studyexperimenter', study_alternateid = '$studyaltid', study_modality = '$modality', study_datetime = '$studydatetime', study_ageatscan = '$studyageatscan', study_height = $studyheight, study_weight = $studyweight, study_type = '$studytype', study_daynum = $studydaynum, study_timepoint = $studytimepoint, study_operator = '$studyoperator', study_performingphysician = '$studyphysician', study_site = '$studysite', study_notes = '$studynotes', study_doradread = '$studydoradread', study_radreaddate = $studyradreaddate, study_radreadfindings = '$studyradreadfindings', study_etsnellenchart = $studyetsnellchart, study_etvergence = '$studyetvergence', study_ettracking = '$studyettracking', study_snpchip = '$studysnpchp', study_status = 'complete' where study_id = $studyid";
+		$sqlstring = "update studies set study_experimenter = '$studyexperimenter', study_alternateid = '$studyaltid', study_modality = '$modality', study_datetime = '$studydatetime', study_ageatscan = $studyageatscan, study_height = $studyheight, study_weight = $studyweight, study_type = '$studytype', study_daynum = $studydaynum, study_timepoint = $studytimepoint, study_operator = '$studyoperator', study_performingphysician = '$studyphysician', study_site = '$studysite', study_notes = '$studynotes', study_doradread = '$studydoradread', study_radreaddate = $studyradreaddate, study_radreadfindings = '$studyradreadfindings', study_etsnellenchart = $studyetsnellchart, study_etvergence = '$studyetvergence', study_ettracking = '$studyettracking', study_snpchip = '$studysnpchp', study_status = 'complete' where study_id = $studyid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		Notice("Study Updated");
@@ -1518,6 +1519,14 @@
 							</td>
 						</tr>
 					<? } ?>
+						<tr>
+							<td class="right aligned"><b>Day</td>
+							<td class="right marked orange"><?=$study_daynum?></td>
+						</tr>
+						<tr>
+							<td class="right aligned"><b>Timepoint</td>
+							<td class="right marked orange"><?=$study_timepoint?></td>
+						</tr>
 						<tr>
 							<td class="right aligned"><b>Age at scan</td>
 							<td><?=number_format($study_ageatscan,1)?> y</td>
@@ -2763,9 +2772,14 @@
 				<input type="hidden" name="modality" value="<?=strtoupper($modality)?>">
 				<!--<input type="hidden" name="id" value="<?=$id?>">-->
 				<tr>
-					<td><input type="text" name="series_num" size="3" maxlength="10" value="<?=($max_seriesnum + 1)?>" required></td>
 					<td>
+						<div class="ui input">
+							<input type="text" name="series_num" size="3" maxlength="10" value="<?=($max_seriesnum + 1)?>" required>
+						</div>
+					</td>
+					<td><div class="ui input">
 						<input type="text" name="protocol" list="protocols" required>
+						</div>
 						<datalist id="protocols">
 						<?
 							$sqlstring = "select * from modality_protocol where modality = '$modality'";
@@ -2779,8 +2793,8 @@
 						?>
 						</datalist>
 					</td>
-					<td title="Time should be formatted as a 24-hour clock"><input type="text" name="series_datetime" value="<?=date('Y-m-d H:i:s')?>" required></td>
-					<td><input type="text" name="notes"></td>
+					<td title="Time should be formatted as a 24-hour clock"><div class="ui input"><input type="text" name="series_datetime" value="<?=date('Y-m-d H:i:s')?>" required></td>
+					<td><div class="ui input"><input type="text" name="notes"></div></td>
 					<td colspan="5">
 						<button type="submit" class="ui button" value="Create" onClick="document.serieslist.action.value='addseries'; document.serieslist.action.submit()"><i class="arrow alternate circle left icon"></i> Create series</button>
 					</td>

@@ -2691,6 +2691,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 						<div class="title">Running</div>
 						<div class="description">Checked in <?=$pipeline_lastcheck?></div>
 						<?=$pipeline_statusmessage?>
+						<a href="pipelines.php?action=reset&id=<?=$id?>" class="ui orange basic small button">reset</a>
 					</div>
 				</div>
 				<div class="disabled step">

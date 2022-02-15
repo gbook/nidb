@@ -95,6 +95,10 @@
 		//case 'saveprotocolmapping':
 		//	SaveProtocolMapping($id);
 		//	break;
+		case 'dismissnewstudies':
+			DismissNewStudies($id);
+			DisplayProject($id);
+			break;
 		case 'updatebidsmapping':
 			UpdateBIDSMapping($id, $modalities, $oldnames, $newnames);
 			EditBIDSMapping($id);
@@ -110,7 +114,7 @@
 			EditNDAMapping($id);
 			break;
 		case 'displayprojectinfo':
-			DisplayProjectInfo($id);
+			DisplayProject($id);
 			break;
 		case 'editsubjects':
 			DisplayEditSubjectsTable($id);
@@ -181,7 +185,7 @@
 				DisplayProjectList();
 			}
 			else {
-				DisplayProjectInfo($id);
+				DisplayProject($id);
 			}
 			break;
 	}
@@ -310,6 +314,19 @@
 		else {
 			Notice("No studies selected");
 		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DismissNewStudies ------------------ */
+	/* -------------------------------------------- */
+	function DismissNewStudies($id) {
+		/* prepare the fields for SQL */
+		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
+		
+		$sqlstring = "update user_project set lastview_cleardate = now() where user_id in (select user_id from users where username = '" . $GLOBALS['username'] . "') and project_id = $id";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		Notice("New studies dismissed");
 	}
 	
 	
@@ -2434,9 +2451,9 @@
 
 	
 	/* -------------------------------------------- */
-	/* ------- DisplayProjectInfo ----------------- */
+	/* ------- DisplayProject --------------------- */
 	/* -------------------------------------------- */
-	function DisplayProjectInfo($id) {
+	function DisplayProject($id) {
 		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 
 		/* update the mostrecent table */
@@ -2452,6 +2469,16 @@
 		$sharing = $row['project_sharing'];
 		$startdate = $row['project_startdate'];
 		$enddate = $row['project_enddate'];
+
+		/* get user_project info */
+		$sqlstringA = "select * from user_project where user_id in (select user_id from users where username = '" . $GLOBALS['username'] . "') and project_id = $id";
+		$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+		$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+		$viewdata = $rowA['view_data'];
+		$viewphi = $rowA['view_phi'];
+		$lastview = $rowA['lastview_cleardate'];
+		if (($lastview == "") || ($lastview == "null"))
+			$lastview = "0000-00-00 00:00:00";
 	
 		/* get studies associated with this project */
 		$sqlstring = "select a.*, c.*, d.*,(datediff(a.study_datetime, d.birthdate)/365.25) 'age' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on b.project_id = c.project_id left join subjects d on d.subject_id = b.subject_id where c.project_id = $id order by d.uid asc, a.study_modality asc";
@@ -2489,7 +2516,65 @@
 		/* get list of site IDs */
 		$siteids = array_unique($siteids);
 		
+		/* get list of studies created since project.lastview */
+		$sqlstring = "select *, year(c.birthdate) 'dobyear' from studies a left join enrollment b on a.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.project_id = $id and a.lastupdate > '$lastview'";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$numnewstudies = mysqli_num_rows($result);
+		if ($numnewstudies > 0) {
 		?>
+		<div class="ui container">
+			<div class="ui yellow segment">
+				<div class="ui grid">
+					<div class="twelve wide column">
+						<h2 class="ui header"><?=$numnewstudies?> new studies
+							<div class="ui sub header">Studies created or updated since <?=$lastview?></div>
+						</h2>
+					</div>
+					<div class="four wide right aligned column">
+						<a href="projects.php?action=dismissnewstudies&id=<?=$id?>" class="ui button"><i class="times icon"></i> Dismiss</a>
+					</div>
+				</div>
+				<div class="ui accordion">
+					<div class="title">
+						<i class="dropdown icon"></i> View Studies
+					</div>
+					<div class="content">
+						<div class="ui relaxed divided list">
+						<?
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+							$studyid = $row['study_id'];
+							$subjectid = $row['subject_id'];
+							$uid = $row['uid'];
+							$studynum = $row['study_num'];
+							//$age = $row['study_ageatscan'];
+							$studydate = $row['study_datetime'];
+							$gender = $row['gender'];
+							
+							$dobyear = $row['dobyear'];
+							$age = date("Y") - $dobyear;
+							
+							?>
+							<div class="item">
+								<div class="content">
+									<a class="ui large yellow image label" href="studies.php?studyid=<?=$studyid?>">
+										<i class="external alternate icon"></i>
+										<?=$uid?>
+										<div class="detail"><?=$studynum?></div>
+									</a>
+									<div class="description"><?=$gender?> <?=$age?>Y - <?=$studydate?></div>
+								</div>
+							</div>
+							<?
+						}
+						?>
+						</div>
+				</div>
+			</div>
+		</div>
+		<br>
+		
+		<? } ?>
+		
 		<div class="ui container">
 			<div class="ui grid">
 				<div class="ui seven wide column">
@@ -2716,7 +2801,6 @@
 		<!--View <a href="projects.php?action=viewinstancesummary&id=<?=$_SESSION['instanceid']?>">instance summary</a>
 		<br><br>-->
 		<div class="ui container">
-			<a href="projects.php?action=editbidsmapping&id=null">Edit Global BIDS Protocol Mapping</a><br>
 			
 			<p id="msg" style="color: #0A0; text-align: center;">&nbsp;</p>
 			

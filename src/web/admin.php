@@ -92,7 +92,8 @@
 						<div class="header">Update available</div>
 						Current version [v<?=GetNiDBVersion();?>]<br>
 						Latest version [v<?=$latestnidb;?>]<br>
-						<a href="setup.php" class="ui basic button"><i class="wrench icon"></i> Setup/Upgrade</a>
+						<br>
+						To upgrade, install .rpm from <a href="http://github.com/gbook/nidb"><i class="github icon"></i> github</a>, then return here to <a href="setup.php" class="ui basic button"><i class="wrench icon"></i> Setup/Upgrade</a>
 					</div>
 				</div>
 			</div>
@@ -105,7 +106,8 @@
 					<div class="content">
 						<div class="header">NiDB is up to date</div>
 						Current NiDB version <b>v<?=GetNiDBVersion();?></b><br>
-						<a href="setup.php" class="ui basic button"><i class="wrench icon"></i> Setup/Upgrade</a>
+						<br>
+						If you've just installed the .rpm, click here to <a href="setup.php" class="ui basic button"><i class="wrench icon"></i> Setup/Upgrade</a>
 					</div>
 				</div>
 			</div>
@@ -113,9 +115,13 @@
 			<?
 		}
 		?>
+		<br>
 		<div class="ui text container grid">
 			<div class="ui eight wide column">
-				<div class="ui header">Front end</div>
+				<div class="ui header">
+					Front end
+					<div class="sub header">User facing options</div>
+				</div>
 
 				<a href="adminusers.php" class="ui big basic fluid button"><i class="black users icon"></i> Users</a>
 				<a href="adminprojects.php" class="ui big basic fluid button"><i class="black clipboard list icon"></i> Projects</a>
@@ -126,12 +132,16 @@
 				<a href="adminmodalities.php" class="ui big basic fluid button"><i class="black list alternate icon"></i> Modalities</a>
 				<a href="adminsites.php" class="ui big basic fluid button"><i class="black list alternate icon"></i> Sites</a>
 				<a href="admininstances.php" class="ui big basic fluid button"><i class="black list alternate icon"></i> Instances</a>
+				<a href="projects.php?action=editbidsmapping&id=null" class="ui basic fluid button"><i class="map signs icon"></i> Edit Global BIDS Protocol Mapping</a>
 			</div>
 			<div class="ui eight wide column">
-				<a href="system.php" class="ui big button"><i class="cog icon"></i> System settings...</a>
+				<div class="ui header">
+					Back end
+					<div class="sub header">System Administration</div>
+				</div>
 
-				<div class="ui header">Back end</div>
-
+				<a href="system.php" class="ui big fluid button"><i class="cog icon"></i> System settings...</a>
+				<br>
 				<a href="status.php" class="ui big basic fluid button"><i class="black info circle icon"></i> System status</a>
 				<a href="adminmodules.php" class="ui big basic fluid button"><i class="black list alternate icon"></i> Modules</a>
 				<a href="adminqc.php" class="ui big basic fluid button"><i class="black list alternate icon"></i> QC Modules</a>
@@ -139,6 +149,7 @@
 				<a href="adminemail.php" class="ui big basic fluid button"><i class="black envelope icon"></i> Mass email</a>
 				<a href="stats.php" class="ui big basic fluid button"><i class="black thermometer half icon"></i> System Usage</a>
 				<a href="backup.php" class="ui big basic fluid button"><i class="black archive icon"></i> Backup</a>
+				<a href="adminerrorlogs.php" class="ui big basic fluid button"><i class="bug icon"></i> View Error Logs</a>
 			</div>
 		</div>
 		<br><br>
