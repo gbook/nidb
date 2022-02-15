@@ -20,6 +20,7 @@ After clicking "Add" button, a new project will be added to the project list and
 
 <div align="center"><img src=https://user-images.githubusercontent.com/24811295/154159860-50dc0c2e-f7b3-4f0d-91d1-62ce667a0c51.png width="80%"></div>
 
+## Project Setup
 To setup the project for collecting data click the name of the project on the above page and the following page can be used to add the right set of protocols.
 
 <div align="center"><img src=https://user-images.githubusercontent.com/24811295/154161565-d6bd03bc-b0d1-4f21-9757-b0b202a62b7a.png width="80%"></div>
