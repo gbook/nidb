@@ -1,2 +1,16 @@
+<a href="index.html">Home</a>
+
 # Projects
-NiDB is muti-project database. Multiple projects can be defined to manage data under their heading. Each project can have different attributes according to the needs of a specific project.
+NiDB is muti-project database. Data from multiple projects can be managed in one database instance. Each project can have different attributes according to the needs of the project.
+
+## Creating a Project
+A user with admin rights can create, and manage a project in NiDB. A user with Admin rights will have an extra menue option "Admin". To create a new project in NiDB, click "Admin" from the main menue and then click "Projects" as shown in the figure below.
+
+<div align="center"><img src=https://user-images.githubusercontent.com/24811295/153896038-9f2f374b-eaba-4333-890c-62af47ece2cd.png width="80%"></div>
+
+The following page with the option "Create Project" will appear. This page also contains a list of all the current projects. To create a new project click on the "Create Project" button on the left corner of the screen as shown in the figure below.
+
+<div align="center"><img src=https://user-images.githubusercontent.com/24811295/153897601-4cef74fd-f0a7-40ac-9e8f-a7f9a2fbdbb1.png width="80%"></div>
+
+
+
