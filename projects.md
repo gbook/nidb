@@ -25,6 +25,11 @@ To setup the project for collecting data click the name of the project on the ab
 
 <div align="center"><img src=https://user-images.githubusercontent.com/24811295/154161565-d6bd03bc-b0d1-4f21-9757-b0b202a62b7a.png width="80%"></div>
 
-After adding the required set of protocols, a list of protocols wiil shown as follow. A protocol can be deleted by clicking the "selete" button in front of an added protocol as shown in the figure below.
+After adding the required set of protocols, a list of protocols will be shown as follow. A protocol can be deleted by clicking the "delete" button in front of an added protocol as shown in the figure below.
 
 <div align="center"><img src=https://user-images.githubusercontent.com/24811295/154162653-484e7016-2ea7-4422-8e6a-c991b6463780.png  width="80%"></div>
+
+To define a protocol, click on the name of a protocol in the above list. For example if we click on EEG-Rest, the following page will appear with the existing list of EEG-series being already used in various projects. You can pick any of those to add to your own protocol group. A group name can be assigned by using the "Protocol group name" box at the end of the page as shown.
+
+<div align="center"><img src=https://user-images.githubusercontent.com/24811295/154166152-055bd34c-824b-4cd9-a71d-245b8edb2be4.png  width="80%"></div>
+
