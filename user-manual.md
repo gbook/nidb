@@ -46,6 +46,8 @@
   - <a href="finding-data.md#analysis-builder">Analysis Builder</a>
 - <a href="projects.html">Projects</a>
    - <a href="projects.html#creating-a-project">Creating a Project</a>
+   - <a href="projects.html#project-setup">Project Setup</a>
+   - <a href="projects.html#working-with-a-project">Working With a Project</a>
 
 - <a href="pipelines.html">Pipelines</a>
   - Creating a Pipeline
