@@ -1,18 +1,18 @@
 <a href="index.html">Home</a>
 
 # Projects
-NiDB is muti-project database. Data from multiple projects can be managed in one database instance. Each project can have different attributes according to the needs of the project.
+NiDB is a multi-project database. Data from multiple projects can be managed in one database instance. Each project can have different attributes according to the needs of the project.
 
 ## Creating a Project
-A user with admin rights can create, and manage a project in NiDB. A user with Admin rights will have an extra menue option "Admin". To create a new project in NiDB, click "Admin" from the main menue and then click "Projects" as shown in the figure below.
+A user with admin rights can create, and manage a project in NiDB. A user with Admin rights will have an extra menu option "Admin". To create a new project in NiDB, click "Admin" from the main menu and then click "Projects" as shown in the figure below.
 
 <div align="center"><img src=https://user-images.githubusercontent.com/24811295/153896038-9f2f374b-eaba-4333-890c-62af47ece2cd.png width="80%"></div>
 
-The following page with the option "Create Project" will appear. This page also contains a list of all the current projects. To create a new project click on the "Create Project" button on the left corner of the screen as shown in the figure below.
+The following page with the option "Create Project" will appear. This page also contains a list of all the current projects. To create a new project, click on the "Create Project" button on the left corner of the screen as shown in the figure below.
 
 <div align="center"><img src=https://user-images.githubusercontent.com/24811295/153897601-4cef74fd-f0a7-40ac-9e8f-a7f9a2fbdbb1.png width="80%"></div>
 
-on the next page, fill the following form related to the new project. Name the new project, fill the project number. Select the option "Use Custom IDs" if project need to use its own ID system. Select the Principal Investigator (PI) and project administrator (PA) from the existibg NiDB users. The PI and PA can be the samw subject. Mention the start and end date if they are known. Also there is an option if you want to copy an exisiting setting from one of your projects. 
+On the next page, fill the following form related to the new project. Name the new project, fill the project number. Select the option "Use Custom IDs" if project need to use its own ID system. Select the Principal Investigator (PI) and project administrator (PA) from the existing NiDB users. The PI and PA can be the same subject. Mention the start and end date if they are known. Also there is an option if you want to copy an existing setting from one of your projects. 
 
 <div align="center"><img src=https://user-images.githubusercontent.com/24811295/154157184-0ba2665d-b014-44ce-b231-dfdd27b77d40.png width="80%"></div>
 
@@ -29,12 +29,12 @@ After adding the required set of protocols, a list of protocols will be shown as
 
 <div align="center"><img src=https://user-images.githubusercontent.com/24811295/154162653-484e7016-2ea7-4422-8e6a-c991b6463780.png  width="80%"></div>
 
-To define a protocol, click on the name of a protocol in the above list. For example if we click on EEG-Rest, the following page will appear with the existing list of EEG-series being already used in various projects. You can pick any of those to add to your own protocol group. A group name can be assigned by using the "Protocol group name" box at the end of the page as shown. After clicking the "Add" button the selected series in the the group will be added to teh group and will be shown on the right.
+To define a protocol, click on the name of a protocol in the above list. For example if we click on EEG-Rest, the following page will appear with the existing list of EEG-series being already used in various projects. You can pick any of those to add to your own protocol group. A group name can be assigned by using the "Protocol group name" box at the end of the page as shown. After clicking the "Add" button the selected series in the group will be added to the group and will be shown on the right.
 
 <div align="center"><img src=https://user-images.githubusercontent.com/24811295/154166600-05780538-b187-4da1-8a46-5022ed3b6779.png width="80%"></div>
 
 ## Working With a Project
-After setting up project accordingly. The project can be accessed by users having its rights. A user can access a project via "Projects" menue from the main menue. A list of existing projects will be displayed. TO search a soecific project, type the name of a project and the list will reduced to the projects containing the search phrase.
+After setting up project accordingly, the project can be accessed by users having its rights. A user can access a project via "Projects" menu from the main menu. A list of existing projects will be displayed. TO search a specific project, type the name of a project and the list will reduced to the projects containing the search phrase.
 
 <div align="center"><img src=https://user-images.githubusercontent.com/24811295/154300643-1715e992-a15e-4866-a960-2da70145fdd5.png width="80%"></div>
 
@@ -42,16 +42,21 @@ Click the name of the project from the list as shown above. A project specific p
 
 <div align="center"><img src=https://user-images.githubusercontent.com/24811295/154303152-bc2e05b8-221d-4ad9-bf74-39da7f5061d1.png width="80%"></div>
 
-A project page consits of some information regarding the project in a table on the left consists of number of subjects, number of studies and parameters to connect remotely.
+A project page consists of some information regarding the project in a table on the left consists of number of subjects, number of studies and parameters to connect remotely.
 
 <div align="center"><img src=https://user-images.githubusercontent.com/24811295/154312329-c577b42f-e730-4570-8244-fd0a8beadfa1.png width="50%"></div>
 
-In the middle is "Data Views" for subjects, studies, checklist for subjects and an option to QC the MR scans. 
+In the middle of a project page is "Data Views" for subjects, studies, checklist for subjects and an option to QC the MR scans. 
 
 <div align="center"><img src=https://user-images.githubusercontent.com/24811295/154312043-37a49276-1cb4-41ac-8732-a19c55b38ee9.png width="30%"></div>
 
+On the right side of the project page are links to the project related tools and their settings. This section is named as "Project tools & settings". This section includes:
+- Data Dictionary
+- Analysis Builder
+- Study Templates
+- BIDS Protocol Mapping
+- NDA Mapping
+- Behavioral Minipipelines
+- Recap-> NiDB Transfer
 
-
-
-
-
+<div align="center"><img src=https://user-images.githubusercontent.com/24811295/154322429-89cf8a4c-661b-4076-b8ba-b242c09f5099.png width="25%"></div>
