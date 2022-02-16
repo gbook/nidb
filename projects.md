@@ -60,3 +60,6 @@ On the right side of the project page are links to the project related tools and
 - Recap-> NiDB Transfer
 
 <div align="center"><img src=https://user-images.githubusercontent.com/24811295/154322429-89cf8a4c-661b-4076-b8ba-b242c09f5099.png width="25%"></div>
+
+The projects main-menu also has a sub-menu to navigate through various project related tools. The sub-menu includes links to Data Dictionary, Assessments, Subjects, Studies, Checklist, MR Scan QC, Behavioral pipeline and Templates. Also "Project List" can navigate back to the list of all the projects in the current database instance.
+
