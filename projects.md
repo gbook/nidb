@@ -44,9 +44,14 @@ Click the name of the project from the list as shown above. A project specific p
 
 A project page consits of some information regarding the project in a table on the left consists of number of subjects, number of studies and parameters to connect remotely.
 
-<div align="center"><img src=https://user-images.githubusercontent.com/24811295/154307308-ff4dde29-96bf-4077-bb37-628a300fbbb3.png width="80%"></div>
+<div align="center"><img src=https://user-images.githubusercontent.com/24811295/154312329-c577b42f-e730-4570-8244-fd0a8beadfa1.png width="50%"></div>
 
-In the middle 
+In the middle is "Data Views" for subjects, studies, checklist for subjects and an option to QC the MR scans. 
+
+<div align="center"><img src=https://user-images.githubusercontent.com/24811295/154312043-37a49276-1cb4-41ac-8732-a19c55b38ee9.png width="30%"></div>
+
+
+
 
 
 
