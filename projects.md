@@ -33,3 +33,20 @@ To define a protocol, click on the name of a protocol in the above list. For exa
 
 <div align="center"><img src=https://user-images.githubusercontent.com/24811295/154166600-05780538-b187-4da1-8a46-5022ed3b6779.png width="80%"></div>
 
+## Working With a Project
+After setting up project accordingly. The project can be accessed by users having its rights. A user can access a project via "Projects" menue from the main menue. A list of existing projects will be displayed. TO search a soecific project, type the name of a project and the list will reduced to the projects containing the search phrase.
+
+<div align="center"><img src=https://user-images.githubusercontent.com/24811295/154300643-1715e992-a15e-4866-a960-2da70145fdd5.png width="80%"></div>
+
+Click the name of the project from the list as shown above. A project specific page will appear as seen below.
+
+<div align="center"><img src=https://user-images.githubusercontent.com/24811295/154303152-bc2e05b8-221d-4ad9-bf74-39da7f5061d1.png width="80%"></div>
+
+A project page consits of some information regarding the project in a table on the left consists of number of subjects, number of studies and parameters to connect remotely.
+
+<div align="center"><img src=https://user-images.githubusercontent.com/24811295/154307308-ff4dde29-96bf-4077-bb37-628a300fbbb3.png width="80%"></div>
+
+In the middle 
+
+
+
