@@ -40,6 +40,11 @@ Mapping the data structures in the RedCap to NiDB is the most important step bef
 * Mapping structure need to define only once. If mapping structure is already define, go to the next step to transfer the data.
 
 <div align="center"><img src="http://neuroinfodb.org/wp-content/uploads/2021/09/Mapping-1-1024x441.png" width="80%"></div>
+Above steps are key steps to map the redcap data structure to NiDB. However the following sections will discuss mspping different types of data structures in more detail.
+
+### Mapping Measures
+### Mapping Vitals
+### Mapping Drug / Dose
 
 ## Transfer
 
