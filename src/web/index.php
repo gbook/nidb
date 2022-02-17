@@ -246,13 +246,45 @@
 			?>
 		</div>
 		<div class="column">
+			<h2 class="ui header">
+				<div class="header">
+					<i class="yellow star icon"></i> Favorite Projects
+				</div>
+			</h2>
+			<div class="ui relaxed divided list">
+			<?
+				/* get user_project info */
+				$sqlstring = "select * from user_project a left join projects b on a.project_id = b.project_id where a.user_id in (select user_id from users where username = '" . $GLOBALS['username'] . "') and a.favorite = 1";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+					$projectid = $row['project_id'];
+					$projectname = $row['project_name'];
+					
+					$sqlstringA = "select count(*) 'numsubjects' from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = $projectid and a.isactive = 1";
+					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+					$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+					$numsubjects = $rowA['numsubjects'];
+					?>
+					<div class="item">
+						<div class="content">
+							<a href="projects.php?id=<?=$projectid?>" style="font-size: 150%;"><?=$projectname?></a>
+							<div class="description">
+							<?=$numsubjects?> subjects
+							</div>
+						</div>
+					</div>
+					<?
+				}
+			?>
+			</div>
 
-			<div class="ui segment">
-			<h1 class="ui header">Recently Viewed...</h1>
+			<br><br>
+			<!--<div class="ui segment">-->
+			<!--<h2 class="ui header">Recently Viewed...</h2>-->
 			
 			<div class="ui header">
 				<div class="content">
-					Projects
+					Recent projects
 				</div>
 			</div>
 			<table class="ui grey selectable very compact table">
@@ -281,7 +313,7 @@
 
 			<div class="ui header">
 				<div class="content">
-					Subjects
+					Recently subjects
 				</div>
 			</div>
 
@@ -317,7 +349,7 @@
 			
 			<div class="ui header">
 				<div class="content">
-					Studies
+					Recent studies
 				</div>
 			</div>
 
@@ -358,7 +390,7 @@
 				}
 				?>
 			</table>
-			</div>
+		<!--</div>-->
 		</div>
 	</div>
 
