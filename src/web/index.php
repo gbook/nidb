@@ -248,7 +248,7 @@
 		<div class="column">
 
 			<div class="ui segment">
-			<h1 class="ui header">Recent...</h1>
+			<h1 class="ui header">Recently Viewed...</h1>
 			
 			<div class="ui header">
 				<div class="content">

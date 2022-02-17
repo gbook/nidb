@@ -4436,16 +4436,49 @@
 						document.getElementById("label_shortid").classList.add('red');
 						document.getElementById("label_shortstudyid").classList.remove('red');
 						document.getElementById("label_altuid").classList.remove('red');
+						document.getElementById("label_visittype").classList.remove('red');
+						document.getElementById("label_daynum").classList.remove('red');
+						document.getElementById("label_timepoint").classList.remove('red');
 					}
 					else if (dirformat == "shortstudyid") {
 						document.getElementById("label_shortid").classList.remove('red');
 						document.getElementById("label_shortstudyid").classList.add('red');
 						document.getElementById("label_altuid").classList.remove('red');
+						document.getElementById("label_visittype").classList.remove('red');
+						document.getElementById("label_daynum").classList.remove('red');
+						document.getElementById("label_timepoint").classList.remove('red');
 					}
 					else if (dirformat == "altuid") {
 						document.getElementById("label_shortid").classList.remove('red');
 						document.getElementById("label_shortstudyid").classList.remove('red');
 						document.getElementById("label_altuid").classList.add('red');
+						document.getElementById("label_visittype").classList.remove('red');
+						document.getElementById("label_daynum").classList.remove('red');
+						document.getElementById("label_timepoint").classList.remove('red');
+					}
+					else if (dirformat == "visittype") {
+						document.getElementById("label_shortid").classList.remove('red');
+						document.getElementById("label_shortstudyid").classList.remove('red');
+						document.getElementById("label_altuid").classList.remove('red');
+						document.getElementById("label_visittype").classList.add('red');
+						document.getElementById("label_daynum").classList.remove('red');
+						document.getElementById("label_timepoint").classList.remove('red');
+					}
+					else if (dirformat == "daynum") {
+						document.getElementById("label_shortid").classList.remove('red');
+						document.getElementById("label_shortstudyid").classList.remove('red');
+						document.getElementById("label_altuid").classList.remove('red');
+						document.getElementById("label_visittype").classList.remove('red');
+						document.getElementById("label_daynum").classList.add('red');
+						document.getElementById("label_timepoint").classList.remove('red');
+					}
+					else if (dirformat == "timepoint") {
+						document.getElementById("label_shortid").classList.remove('red');
+						document.getElementById("label_shortstudyid").classList.remove('red');
+						document.getElementById("label_altuid").classList.remove('red');
+						document.getElementById("label_visittype").classList.remove('red');
+						document.getElementById("label_daynum").classList.remove('red');
+						document.getElementById("label_timepoint").classList.add('red');
 					}
 				}
 
@@ -5031,6 +5064,48 @@
 									<div class="thirteen wide column">
 										<div class="ui left pointing label" id="label_altuid">
 											<tt>23505/1<br>23505/2</tt>
+										</div>
+									</div>
+
+									<div class="three wide column">
+										<div class="field">
+											<div class="ui radio checkbox" onChange="HighlightStudyDir()">
+												<input type="radio" name="dirformat" id="dirformat_visittype" value="visittype">
+												<label>Visit type</label>
+											</div>
+										</div>
+									</div>
+									<div class="thirteen wide column">
+										<div class="ui left pointing label" id="label_visittype">
+											<tt>S1234ABC/visit1</tt>
+										</div>
+									</div>
+
+									<div class="three wide column">
+										<div class="field">
+											<div class="ui radio checkbox" onChange="HighlightStudyDir()">
+												<input type="radio" name="dirformat" id="dirformat_daynum" value="daynum">
+												<label>Day number</label>
+											</div>
+										</div>
+									</div>
+									<div class="thirteen wide column">
+										<div class="ui left pointing label" id="label_daynum">
+											<tt>S1234ABC/day1</tt>
+										</div>
+									</div>
+									
+									<div class="three wide column">
+										<div class="field">
+											<div class="ui radio checkbox" onChange="HighlightStudyDir()">
+												<input type="radio" name="dirformat" id="dirformat_timepoint" value="timepoint">
+												<label>Timepoint</label>
+											</div>
+										</div>
+									</div>
+									<div class="thirteen wide column">
+										<div class="ui left pointing label" id="label_timepoint">
+											<tt>S1234ABC/time1</tt>
 										</div>
 									</div>
 

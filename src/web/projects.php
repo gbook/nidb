@@ -2628,6 +2628,63 @@
 					<? } ?>
 				</div>
 			</div>
+			
+			<?
+				/* get all subjects, and their enrollment info, associated with the project */
+				$sqlstring = "select * from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = $id and a.isactive = 1 order by a.uid";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$numsubjects = mysqli_num_rows($result);
+			?>
+			<div class="ui header">
+				<?=$numsubjects?> subjects
+			</div>
+			
+			<table class="ui very compact celled grey table">
+				<thead>
+					<th>UID</th>
+					<th>Alt IDs</th>
+					<th>GUID</th>
+					<th>Birthdate</th>
+					<th>Sex</th>
+					<th>Enroll group</th>
+				</thead>
+			<?
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$subjectid = $row['subject_id'];
+				$uid = $row['uid'];
+				$guid = $row['guid'];
+				$gender = $row['gender'];
+				$birthdate = $row['birthdate'];
+				$enrollsubgroup = $row['enroll_subgroup'];
+				
+				$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' order by isprimary desc";
+				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+					$isprimary = $rowA['isprimary'];
+					$altid = $rowA['altuid'];
+					if ($isprimary) {
+						$altids[] = "*" . $altid;
+					}
+					else {
+						$altids[] = $altid;
+					}
+				}
+				$altuidlist = implode2(", ",$altids);
+				$altids = array();
+				
+				?>
+				<tr>
+					<td style="font-weight: bold; font-size:12pt"><tt><?=$uid?></tt></td>
+					<td><?=$altuidlist?></td>
+					<td><?=$guid?></td>
+					<td><?=$birthdate?></td>
+					<td><?=$gender?></td>
+					<td><?=$enrollsubgroup?></td>
+				</tr>
+				<?
+			}
+			?>
+			</table>
 		</div>
 		<?
 	}

@@ -249,8 +249,10 @@ bool moduleExport::GetExportSeriesList(int exportid) {
                     QString seriesaltdesc = q2.value("series_altdesc").toString();
                     QString projectname = q2.value("project_name").toString();
                     QString studyaltid = q2.value("study_alternateid").toString();
-                    QString studytype = q2.value("study_type").toString();
                     QString datatype = q2.value("data_type").toString();
+                    QString studytype = q2.value("study_type").toString();
+                    int studydaynum = q2.value("study_daynum").toInt();
+                    int studytimepoint = q2.value("study_timepoint").toInt();
                     if (datatype == "") /* If the modality is MR, the datatype will have a value (dicom, nifti, parrec), otherwise we will set the datatype to the modality */
                         datatype = modality;
                     int numfiles = q2.value("numfiles").toInt();
@@ -278,6 +280,8 @@ bool moduleExport::GetExportSeriesList(int exportid) {
                     s[uid][studynum][seriesnum]["projectname"] = projectname;
                     s[uid][studynum][seriesnum]["studyaltid"] = studyaltid;
                     s[uid][studynum][seriesnum]["studytype"] = studytype;
+                    s[uid][studynum][seriesnum]["studydaynum"] = QString("%1").arg(studydaynum);
+                    s[uid][studynum][seriesnum]["studytimepoint"] = QString("%1").arg(studytimepoint);
                     s[uid][studynum][seriesnum]["datatype"] = datatype;
                     s[uid][studynum][seriesnum]["datadir"] = datadir;
                     s[uid][studynum][seriesnum]["behdir"] = behdir;
@@ -399,7 +403,9 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                     //QString altuids = s[uid][studynum][seriesnum]["altuids"];
                     //QString projectname = s[uid][studynum][seriesnum]["projectname"];
                     int studyid = s[uid][studynum][seriesnum]["studyid"].toInt();
-                    //QString studytype = s[uid][studynum][seriesnum]["studytype"];
+                    QString studytype = s[uid][studynum][seriesnum]["studytype"];
+                    int studydaynum = s[uid][studynum][seriesnum]["studydaynum"].toInt();
+                    int studytimepoint = s[uid][studynum][seriesnum]["studytimepoint"].toInt();
                     //QString studyaltid = s[uid][studynum][seriesnum]["studyaltid"];
                     QString modality = s[uid][studynum][seriesnum]["modality"];
                     //int seriessize = s[uid][studynum][seriesnum]["seriessize"].toInt();
@@ -427,6 +433,12 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                             subjectdir = uid;
                         else
                             subjectdir = primaryaltuid;
+                    else if (dirformat == "visittype")
+                        subjectdir = QString("%1/%2").arg(uid).arg(studytype);
+                    else if (dirformat == "daynum")
+                        subjectdir = QString("%1/day%2").arg(uid).arg(studydaynum);
+                    else if (dirformat == "timepoint")
+                        subjectdir = QString("%1/time%2").arg(uid).arg(studytimepoint);
                     else
                         subjectdir = QString("%1%2").arg(uid).arg(studynum);
 
