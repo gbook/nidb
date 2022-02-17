@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jan 20, 2022 at 08:34 PM
+-- Generation Time: Feb 17, 2022 at 04:12 PM
 -- Server version: 10.3.28-MariaDB
 -- PHP Version: 7.2.24
 
@@ -3198,6 +3198,8 @@ CREATE TABLE `user_project` (
   `view_phi` tinyint(1) NOT NULL DEFAULT 0,
   `write_data` tinyint(1) NOT NULL DEFAULT 0,
   `write_phi` tinyint(1) NOT NULL DEFAULT 0,
+  `lastview_cleardate` datetime DEFAULT NULL COMMENT 'Last time the user viewed this project',
+  `favorite` tinyint(1) DEFAULT 0,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 

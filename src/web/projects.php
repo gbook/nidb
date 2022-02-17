@@ -180,6 +180,14 @@
 		case 'assessmentinfo':
 			DisplayFormList($id);
 			break;
+		case 'setfavorite':
+			SetFavorite($id);
+			DisplayProject($id);
+			break;
+		case 'unsetfavorite':
+			UnsetFavorite($id);
+			DisplayProject($id);
+			break;
 		default:
 			if ($id == '') {
 				DisplayProjectList();
@@ -327,6 +335,30 @@
 		$sqlstring = "update user_project set lastview_cleardate = now() where user_id in (select user_id from users where username = '" . $GLOBALS['username'] . "') and project_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		Notice("New studies dismissed");
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- SetFavorite ------------------------ */
+	/* -------------------------------------------- */
+	function SetFavorite($id) {
+		/* prepare the fields for SQL */
+		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
+		
+		$sqlstring = "update user_project set favorite = 1 where user_id in (select user_id from users where username = '" . $GLOBALS['username'] . "') and project_id = $id";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- UnsetFavorite ---------------------- */
+	/* -------------------------------------------- */
+	function UnsetFavorite($id) {
+		/* prepare the fields for SQL */
+		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
+		
+		$sqlstring = "update user_project set favorite = 0 where user_id in (select user_id from users where username = '" . $GLOBALS['username'] . "') and project_id = $id";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}
 	
 	
@@ -2479,6 +2511,7 @@
 		$lastview = $rowA['lastview_cleardate'];
 		if (($lastview == "") || ($lastview == "null"))
 			$lastview = "0000-00-00 00:00:00";
+		$favorite = $rowA['favorite'];
 	
 		/* get studies associated with this project */
 		$sqlstring = "select a.*, c.*, d.*,(datediff(a.study_datetime, d.birthdate)/365.25) 'age' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on b.project_id = c.project_id left join subjects d on d.subject_id = b.subject_id where c.project_id = $id order by d.uid asc, a.study_modality asc";
@@ -2516,105 +2549,98 @@
 		/* get list of site IDs */
 		$siteids = array_unique($siteids);
 		
-		/* get list of studies created since project.lastview */
-		$sqlstring = "select *, year(c.birthdate) 'dobyear' from studies a left join enrollment b on a.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.project_id = $id and a.lastupdate > '$lastview'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$numnewstudies = mysqli_num_rows($result);
-		if ($numnewstudies > 0) {
 		?>
 		<div class="ui container">
-			<div class="ui yellow segment">
-				<div class="ui grid">
-					<div class="twelve wide column">
-						<h2 class="ui header"><?=$numnewstudies?> new studies
-							<div class="ui sub header">Studies created or updated since <?=$lastview?></div>
-						</h2>
-					</div>
-					<div class="four wide right aligned column">
-						<a href="projects.php?action=dismissnewstudies&id=<?=$id?>" class="ui button"><i class="times icon"></i> Dismiss</a>
-					</div>
+			<div class="ui two column grid">
+				<div class="column">
+					<h2 class="ui header">
+						<?=$name?>
+						<div class="sub header"><?=count($uids)?> subjects &nbsp; &nbsp; <?=$numstudies?> studies</div>
+					</h2>
 				</div>
-				<div class="ui accordion">
-					<div class="title">
-						<i class="dropdown icon"></i> View Studies
-					</div>
-					<div class="content">
-						<div class="ui relaxed divided list">
-						<?
-						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-							$studyid = $row['study_id'];
-							$subjectid = $row['subject_id'];
-							$uid = $row['uid'];
-							$studynum = $row['study_num'];
-							//$age = $row['study_ageatscan'];
-							$studydate = $row['study_datetime'];
-							$gender = $row['gender'];
-							
-							$dobyear = $row['dobyear'];
-							$age = date("Y") - $dobyear;
-							
-							?>
-							<div class="item">
-								<div class="content">
-									<a class="ui large yellow image label" href="studies.php?studyid=<?=$studyid?>">
-										<i class="external alternate icon"></i>
-										<?=$uid?>
-										<div class="detail"><?=$studynum?></div>
-									</a>
-									<div class="description"><?=$gender?> <?=$age?>Y - <?=$studydate?></div>
-								</div>
-							</div>
-							<?
-						}
-						?>
-						</div>
+				<div class="right aligned column">
+					<? if ($favorite) { ?>
+					<a href="projects.php?action=unsetfavorite&id=<?=$id?>"><i class="large yellow star icon" title="Click to remove this project from your favorites"></i></a>
+					<? } else { ?>
+					<a href="projects.php?action=setfavorite&id=<?=$id?>"><i class="large grey star outline icon" title="Click to add this project to your favorites"></i></a><br>
+					<? } ?>
 				</div>
 			</div>
-		</div>
-		<br>
-		
-		<? } ?>
-		
-		<div class="ui container">
 			<div class="ui grid">
-				<div class="ui seven wide column">
-					<h2 class="ui top attached inverted header"><?=$name?></h2>
-					<table class="ui basic bottom attached compact celled table">
-						<tbody>
-							<tr>
-								<td class="right aligned"><h4 class="ui header">Subjects</h4></td>
-								<td><?=count($uids)?></td>
-							</tr>
-							<tr>
-								<td class="right aligned"><h4 class="ui header">Studies</h4></td>
-								<td><?=$numstudies?></td>
-							</tr>
-							<tr>
-								<td class="right aligned"><h4 class="ui header">Remote connection params</h4></td>
-								<td>
-									Project ID: <?=$id?><br>
-									Instance ID: <?=$instanceid?><br>
-									Site IDs: <?=implode2(",",$siteids)?><br>
-								</td>
-							</tr>
-						</tbody>
-					</table>
-				</div>
-				<div class="ui one wide column">
-				</div>
-				<div class="ui three wide column">
-					<h2 class="ui header">Data Views</h2>
-					<br>
-					<a class="ui fluid vertical big primary button" href="projects.php?action=editsubjects&id=<?=$id?>"><i class="users icon"></i> Subjects</a><br>
-					<a class="ui fluid vertical big primary button" href="projects.php?action=displaystudies&id=<?=$id?>"><i class="sitemap icon"></i> Studies</a><br>
-					<a class="ui fluid vertical big primary button" href="projectchecklist.php?projectid=<?=$id?>"><i class="clipboard list icon"></i> Checklist</a><br>
-					<a class="ui fluid vertical big primary button" href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>"><i class="clipboard list icon"></i> MR scan QC</a>
-				</div>
-				<div class="ui one wide column">
+				<div class="ui eight wide column">
+					<?
+					/* get list of studies created since project.lastview */
+					$sqlstring = "select *, year(c.birthdate) 'dobyear' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.project_id = $id and a.lastupdate > '$lastview'";
+					//PrintSQL($sqlstring);
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					$numnewstudies = mysqli_num_rows($result);
+					if ($numnewstudies > 0) {
+						
+						$lastview = date("F j, Y g:ia",strtotime($lastview));
+						
+					?>
+						<div class="ui segment">
+							<div class="ui two column grid">
+								<div class="column">
+									<h3 class="ui header"><?=$numnewstudies?> new studies
+										<div class="sub header">Since <?=$lastview?></div>
+									</h3>
+								</div>
+								<div class="right aligned column">
+									<a href="projects.php?action=dismissnewstudies&id=<?=$id?>" class="ui button"><i class="times icon"></i> Dismiss</a>
+								</div>
+							</div>
+							<div class="ui accordion">
+								<div class="title">
+									<i class="dropdown icon"></i> View Studies
+								</div>
+								<div class="content">
+									<div class="ui relaxed divided list">
+									<?
+									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+										$studyid = $row['study_id'];
+										$subjectid = $row['subject_id'];
+										$uid = $row['uid'];
+										$studynum = $row['study_num'];
+										//$age = $row['study_ageatscan'];
+										$studydate = $row['study_datetime'];
+										$gender = $row['gender'];
+										
+										$dobyear = $row['dobyear'];
+										$age = date("Y") - $dobyear;
+										
+										?>
+										<div class="item">
+											<div class="content">
+												<a class="ui large yellow image label" href="studies.php?studyid=<?=$studyid?>">
+													<i class="external alternate icon"></i>
+													<?=$uid?>
+													<div class="detail"><?=$studynum?></div>
+												</a>
+												<div class="description"><?=$gender?> <?=$age?>Y - <?=$studydate?></div>
+											</div>
+										</div>
+										<?
+									}
+									?>
+									</div>
+								</div>
+							</div>
+						</div>
+					<? } ?>				
 				</div>
 				<div class="ui four wide column">
-					<h2 class="ui header">Project tools & settings</h2>
-					<br>
+					<h3 class="ui header"><i class="binoculars icon"></i> Data Views</h3>
+					<div class="ui blue inverted big vertical fluid menu">
+						<a class="item" href="projects.php?action=editsubjects&id=<?=$id?>"><i class="users icon"></i> Subjects</a>
+						<a class="item" href="projects.php?action=displaystudies&id=<?=$id?>"><i class="sitemap icon"></i> Studies</a>
+						<a class="item" href="projectchecklist.php?projectid=<?=$id?>"><i class="clipboard list icon"></i> Checklist</a>
+						<a class="item" href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>"><i class="clipboard list icon"></i> MR scan QC</a>
+					</div>
+				</div>
+				<div class="ui four wide column">
+					<h3 class="ui header"><i class="tools icon"></i> Tools & Settings</h3>
+					<!--<br>
 					<i class="database icon"></i><a href="datadictionary.php?projectid=<?=$id?>"> Data Dictionary</a><br><br>
 					<i class="list alternate outline icon"></i><a href="analysisbuilder.php?action=viewanalysissummary&projectid=<?=$id?>"> Analysis Builder</a><br><br>
 					<i class="clone outline icon"></i><a href="templates.php?action=displaystudytemplatelist&projectid=<?=$id?>"> Study Templates</a><br><br>
@@ -2626,6 +2652,55 @@
 					<? if ($GLOBALS['isadmin']) { ?>
 					<br><i class="sync red icon"></i><a href="projects.php?action=resetqa&id=<?=$id?>" style="color: #FF552A; font-weight:normal">Reset MRI QA</a><br>
 					<? } ?>
+					-->
+					
+					<div class="ui vertical fluid menu">
+						<a class="item" href="datadictionary.php?projectid=<?=$id?>">
+							Data dictionary
+							<i class="right floating database icon"></i>
+						</a>
+						<a class="item" href="analysisbuilder.php?action=viewanalysissummary&projectid=<?=$id?>">
+							Analysis builder
+							<i class="list alternate outline icon"></i>
+						</a>
+						<a class="item" href="templates.php?action=displaystudytemplatelist&projectid=<?=$id?>">
+							Study templates
+							<i class="clone outline icon"></i>
+						</a>
+						<a class="item" href="projects.php?action=editbidsmapping&id=<?=$id?>">
+							BIDS protocol mapping
+							<i class="tasks icon"></i>
+						</a>
+						<a class="item" href="projects.php?action=editndamapping&id=<?=$id?>">
+							NDA mapping
+							<i class="tasks icon"></i>
+						</a>
+						<a class="item" href="minipipeline.php?projectid=<?=$id?>">
+							Behavior mini-pipelines
+							<i class="cogs icon"></i>
+						</a>
+						<a class="item" href="redcapimport.php?action=importsettings&projectid=<?=$id?>">
+							Redcap settings
+							<i class="red redhat icon"></i>
+						</a>
+						<a class="item" href="redcaptonidb.php?action=default&projectid=<?=$id?>">
+							Redcap to NiDB transfer
+							<i class="red redhat icon"></i>
+						</a>
+						<? if ($GLOBALS['isadmin']) { ?>
+						<a class="item" href="projects.php?action=resetqa&id=<?=$id?>">
+							Reset MRI QA
+							<i class="red sync icon"></i>
+						</a>
+						<? } ?>
+						<div class="item">Remote connection params<br>
+							Project ID: <?=$id?><br>
+							Instance ID: <?=$instanceid?><br>
+							Site IDs: <?=implode2(",",$siteids)?><br>
+						</div>
+						
+					</div>
+					
 				</div>
 			</div>
 			
@@ -2647,6 +2722,7 @@
 					<th>Birthdate</th>
 					<th>Sex</th>
 					<th>Enroll group</th>
+					<th>Status</th>
 				</thead>
 			<?
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -2656,6 +2732,7 @@
 				$gender = $row['gender'];
 				$birthdate = $row['birthdate'];
 				$enrollsubgroup = $row['enroll_subgroup'];
+				$enrollstatus = $row['enroll_status'];
 				
 				$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' order by isprimary desc";
 				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
@@ -2674,12 +2751,13 @@
 				
 				?>
 				<tr>
-					<td style="font-weight: bold; font-size:12pt"><tt><?=$uid?></tt></td>
+					<td><a class="ui very compact large blue button" href="subjects.php?id=<?=$subjectid?>"><i class="small external alternate icon"></i> <tt><?=$uid?></tt></a></td>
 					<td><?=$altuidlist?></td>
 					<td><?=$guid?></td>
 					<td><?=$birthdate?></td>
 					<td><?=$gender?></td>
 					<td><?=$enrollsubgroup?></td>
+					<td><?=$enrollstatus?></td>
 				</tr>
 				<?
 			}
