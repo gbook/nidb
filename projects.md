@@ -65,5 +65,11 @@ It also possess the parameters required to connect this project remotely.
 
 <div align="center"><img src=https://user-images.githubusercontent.com/24811295/155005253-83266b98-f05b-4d39-8731-2c39a6dcc68b.png width="25%"></div>
 
+The last section of a project page consists of a list of subjects registtered, with its alternate Ids, GUID, DOB, Sex, and status as shown below:
+
+<div align="center"><img src=https://user-images.githubusercontent.com/24811295/155011486-ce33311f-e3c2-40f0-855e-3a064b2307a3.png width="80%"></div>
+
+
+
 The projects main-menu also has a sub-menu to navigate through various project related tools. The sub-menu includes links to Data Dictionary, Assessments, Subjects, Studies, Checklist, MR Scan QC, Behavioral pipeline and Templates. Also "Project List" can navigate back to the list of all the projects in the current database instance.
 
