@@ -40,17 +40,18 @@ After setting up project accordingly, the project can be accessed by users havin
 
 Click the name of the project from the list as shown above. A project specific page will appear as seen below.
 
-<div align="center"><img src=https://user-images.githubusercontent.com/24811295/154303152-bc2e05b8-221d-4ad9-bf74-39da7f5061d1.png width="80%"></div>
+<div align="center"><img src=https://user-images.githubusercontent.com/24811295/154773657-6225f1e8-9a2b-4a8a-9e53-185bba020d25.png width="80%"></div>
 
-A project page consists of some information regarding the project in a table on the left consists of number of subjects, number of studies and parameters to connect remotely.
+A project page consists of some information regarding the current project. Under the project name there is total number of subjects and studies. Undeneath that is a message box consists of number of studies. One can dismiss this message box by clicking "dismiss" button or view all the studies inside the message box. 
 
 <div align="center"><img src=https://user-images.githubusercontent.com/24811295/154312329-c577b42f-e730-4570-8244-fd0a8beadfa1.png width="50%"></div>
 
 In the middle of a project page is "Data Views" for subjects, studies, checklist for subjects and an option to QC the MR scans. 
 
-<div align="center"><img src=https://user-images.githubusercontent.com/24811295/154312043-37a49276-1cb4-41ac-8732-a19c55b38ee9.png width="30%"></div>
+<div align="center"><img src=https://user-images.githubusercontent.com/24811295/155004114-15ac4229-09a7-436e-bdd1-7d4f953cd3dc.png width="30%"></div>
 
-On the right side of the project page are links to the project related tools and their settings. This section is named as "Project tools & settings". This section includes:
+On the right side of the project page is a star that can be selected to make this project "favorite" that will show this project on the main page of NiDB to access it easily from there. Also there are links to the project related tools and their settings. This section is named as "Project tools & settings". This section includes:
+
 - Data Dictionary
 - Analysis Builder
 - Study Templates
@@ -58,8 +59,11 @@ On the right side of the project page are links to the project related tools and
 - NDA Mapping
 - Behavioral Minipipelines
 - Recap-> NiDB Transfer
+- Reset MRI QA 
 
-<div align="center"><img src=https://user-images.githubusercontent.com/24811295/154322429-89cf8a4c-661b-4076-b8ba-b242c09f5099.png width="25%"></div>
+It also possess the parameters required to connect this project remotely. 
+
+<div align="center"><img src=https://user-images.githubusercontent.com/24811295/155005253-83266b98-f05b-4d39-8731-2c39a6dcc68b.png width="25%"></div>
 
 The projects main-menu also has a sub-menu to navigate through various project related tools. The sub-menu includes links to Data Dictionary, Assessments, Subjects, Studies, Checklist, MR Scan QC, Behavioral pipeline and Templates. Also "Project List" can navigate back to the list of all the projects in the current database instance.
 
