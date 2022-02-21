@@ -50,6 +50,14 @@ In the middle of a project page is "Data Views" for subjects, studies, checklist
 
 <div align="center"><img src=https://user-images.githubusercontent.com/24811295/155004114-15ac4229-09a7-436e-bdd1-7d4f953cd3dc.png width="30%"></div>
 
+To update information regarding the subjects in the current project, click on the "Subjects" button in the data view, a page will appear where the information can be updated for  all the subjects and can be saved at once by clicking "Save" button at the end.
+
+<div align="center"><img src=https://user-images.githubusercontent.com/24811295/155018127-f55d837c-02cd-4f17-b5c4-fb8c81fde42c.png width="100%"></div>
+
+By clicking the "Studies button from "Data Views" section, following page will appear.
+<div align="center"><img src=https://user-images.githubusercontent.com/24811295/155020201-ce11cf60-0b50-4c57-8276-04ddc9b122a6.png width="100%"></div>
+
+
 On the right side of the project page is a star that can be selected to make this project "favorite" that will show this project on the main page of NiDB to access it easily from there. Also there are links to the project related tools and their settings. This section is named as "Project tools & settings". This section includes:
 
 - Data Dictionary
