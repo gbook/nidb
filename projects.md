@@ -44,7 +44,7 @@ Click the name of the project from the list as shown above. A project specific p
 
 A project page consists of some information regarding the current project. Under the project name there is total number of subjects and studies. Undeneath that is a message box consists of number of studies. One can dismiss this message box by clicking "dismiss" button or view all the studies inside the message box. 
 
-<div align="center"><img src=https://user-images.githubusercontent.com/24811295/154312329-c577b42f-e730-4570-8244-fd0a8beadfa1.png width="50%"></div>
+<div align="center"><img src=https://user-images.githubusercontent.com/24811295/155009550-45c4937e-001f-49f7-b93b-021ffffdf5d2.png width="50%"></div>
 
 In the middle of a project page is "Data Views" for subjects, studies, checklist for subjects and an option to QC the MR scans. 
 
