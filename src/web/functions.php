@@ -1002,7 +1002,8 @@
 						$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
 						
 						/* delete the qa directory */
-						list($path, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid,'mr');
+						//list($path, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid,'mr');
+						list($path, $seriespath, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid,'mr');
 						
 						//$qapath = "$path/qa";
 						if (($uid == "") || ($studynum == "") || ($studyid == "") || ($subjectid == "")) {
@@ -1012,7 +1013,8 @@
 							/* check if the path is valid */
 							if (file_exists($qapath)) {
 								$systemstring = "rm -rv $qapath";
-								`$systemstring`;
+								PrintVariable($systemstring);
+								//`$systemstring`;
 							}
 							else {
 								echo "[$qapath] does not exist<br>";

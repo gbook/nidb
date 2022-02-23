@@ -366,26 +366,42 @@ bool moduleMRIQA::QA(int seriesid) {
     }
 
     /* run fsl_motion_outliers for FD */
-    systemstring = QString("fsl_motion_outliers -i %1 -o %2/outliers-fd.txt  -s %2/fd.txt --fd -p %2/fd.png").arg(filepath4d).arg(qapath);
+    systemstring = QString(fsl + "fsl_motion_outliers -i %1 -o %2/outliers-fd.txt  -s %2/fd.txt --fd -p %2/fd.png").arg(filepath4d).arg(qapath);
     msgs << n->WriteLog(n->SystemCommand(systemstring));
     QStringList fd = n->ReadTextFileIntoArray(qapath + "/fd.txt");
     QList<double> fdDouble = n->SplitStringArrayToDouble(fd);
     std::sort(fdDouble.begin(), fdDouble.end());
-    //double fdMin = fdDouble[1];
-    double fdMean = n->Mean(fdDouble);
-    double fdMax = fdDouble.last();
-    double fdStdev = n->StdDev(fdDouble);
+    double fdMean(0.0);
+    double fdMax(0.0);
+    double fdStdev(0.0);
+    if (fdDouble.size() > 0) {
+        //double fdMin = fdDouble[1];
+        fdMean = n->Mean(fdDouble);
+        fdMax = fdDouble.last();
+        fdStdev = n->StdDev(fdDouble);
+    }
+    else {
+        msgs << n->WriteLog("fdDouble is empty");
+    }
 
     /* run fsl_motion_outliers for FD */
-    systemstring = QString("fsl_motion_outliers -i %1 -o %2/outliers-dvars.txt  -s %2/dvars.txt --fd -p %2/dvars.png").arg(filepath4d).arg(qapath);
+    systemstring = QString(fsl + "fsl_motion_outliers -i %1 -o %2/outliers-dvars.txt  -s %2/dvars.txt --fd -p %2/dvars.png").arg(filepath4d).arg(qapath);
     msgs << n->WriteLog(n->SystemCommand(systemstring));
     QStringList dvars = n->ReadTextFileIntoArray(qapath + "/fd.txt");
     QList<double> dvarsDouble = n->SplitStringArrayToDouble(dvars);
     std::sort(dvarsDouble.begin(), dvarsDouble.end());
-    //double dvarsMin = dvarsDouble[1];
-    double dvarsMean = n->Mean(dvarsDouble);
-    double dvarsMax = dvarsDouble.last();
-    double dvarsStdev = n->StdDev(dvarsDouble);
+    double dvarsMean(0.0);
+    double dvarsMax(0.0);
+    double dvarsStdev(0.0);
+    if (dvarsDouble.size() > 0) {
+        //double dvarsMin = dvarsDouble[1];
+        dvarsMean = n->Mean(dvarsDouble);
+        dvarsMax = dvarsDouble.last();
+        dvarsStdev = n->StdDev(dvarsDouble);
+    }
+    else {
+        msgs << n->WriteLog("dvarsDouble is empty");
+    }
 
     /* delete the 4D file and temp directory */
     if (!n->RemoveDir(tmpdir, m))

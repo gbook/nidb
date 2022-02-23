@@ -586,26 +586,42 @@ QString nidb::SystemCommand(QString s, bool detail, bool truncate, bool bufferOu
 
     //WriteLog("Checkpoint A");
 
+    //process.setProcessChannelMode(QProcess::MergedChannels);
+    //process.start("sh", QStringList() << "-c" << s);
+
+    /* original */
     process.setProcessChannelMode(QProcess::MergedChannels);
     process.start("sh", QStringList() << "-c" << s);
+
+    /* Get the output */
+    if (process.waitForStarted(-1)) {
+        while(process.waitForReadyRead(-1)) {
+            output += process.readAll();
+        }
+    }
+    process.waitForFinished();
 
     //WriteLog("Checkpoint B");
 
     /* Get the output */
-    if (process.waitForStarted(-1)) {
-        QString buffer;
+    //if (process.waitForStarted(-1)) {
+        //QString buffer;
         //WriteLog("Checkpoint B.1");
-        while(process.waitForReadyRead(-1)) {
+        //while(process.waitForReadyRead(-1)) {
             //WriteLog("Checkpoint B.2");
-            buffer = process.readAll();
-            output += buffer;
-            if (!bufferOutput)
-                WriteLog(buffer,0,false);
+            //output += QString(process.readAll());
+            //output += buffer;
+            //if (!bufferOutput)
+            //    WriteLog(buffer,0,false);
             //WriteLog("Checkpoint B.3");
-        }
-    }
+        //}
+    //}
     //WriteLog("Checkpoint C");
-    process.waitForFinished();
+    //process.waitForFinished();
+    //output += QString(process.readAllStandardOutput());
+    //output += QString(process.readAllStandardError());
+
+    //WriteLog("Output: [" + output + "]");
 
     double elapsedtime = (QDateTime::currentMSecsSinceEpoch() - starttime + 0.000001)/1000.0; /* add tiny decimal to avoid a divide by zero */
 
