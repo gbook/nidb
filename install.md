@@ -42,7 +42,7 @@ h6:before {
 
 **Hardware** - There are no minimum specifications. If the hardware can run CentOS 8, then it should be able to run NiDB.
 
-**RHEL8/Rocky8/CentOS 8** - NiDB runs only on RHEL compatible OSes.
+**RHEL8/Rocky8/CentOS 8** - NiDB runs only on RHEL 8 compatible OSes.
 
 **FSL** - Download FSL from https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation and follow the installation instructions. After installation, note the location of FSL, usually `/usr/local/fsl`.
 
