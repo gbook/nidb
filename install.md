@@ -65,11 +65,11 @@ Download the latest .rpm package from http://github.com/gbook/nidb
 > sudo yum --nogpgcheck localinstall nidb-xxxx.xx.xx-1.el8.x86_64.rpm
 ```
 
-Secure the MariaDB installation by running mysql_secure_installation and using the following responses. The MariaDB root password is already set, just press enter for the first question.
+Secure the MariaDB installation by running mysql_secure_installation and using the following responses. The MariaDB root password is already set to `password`.
 ```
 > sudo mysql_secure_installation
   
-  Enter current password for root (enter for none):
+  Enter current password for root (enter for none): password
   Change the root password? [Y/n] n
   Remove anonymous users? [Y/n] Y
   Disallow root login remotely? [Y/n] Y
