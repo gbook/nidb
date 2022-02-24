@@ -48,31 +48,33 @@ h6:before {
 
 Alternatively, try these commands to install FSL.
 ```
-wget https://fsl.fmrib.ox.ac.uk/fsldownloads/fslinstaller.py # this may work
-sudo yum install python2
-sudo python2 fslinstaller.py
+> wget https://fsl.fmrib.ox.ac.uk/fsldownloads/fslinstaller.py # this may work
+> sudo yum install python2
+> sudo python2 fslinstaller.py
 ```
 
 **firejail** - firejail is used to run user-defined scripts in a sandboxed environment. Install firejail from https://firejail.wordpress.com/
 ```
-sudo rpm -i firejail-x.y.z.rpm
+> sudo rpm -i firejail-x.y.z.rpm
 ```
 
 ### Install NiDB
 Download the latest .rpm package from http://github.com/gbook/nidb
 ```
-sudo yum install epel-release
-sudo yum --nogpgcheck localinstall nidb-xxxx.xx.xx-1.el8.x86_64.rpm
+> sudo yum install epel-release
+> sudo yum --nogpgcheck localinstall nidb-xxxx.xx.xx-1.el8.x86_64.rpm
 ```
 
-Secure the MariaDB installation by running `sudo mysql_secure_installation` and using the following responses. MariaDB root password is already set, just press <enter> for the first question.
+Secure the MariaDB installation by running mysql_secure_installation and using the following responses. The MariaDB root password is already set, just press enter for the first question.
 ```
-Enter current password for root (enter for none):
-Change the root password? [Y/n] n
-Remove anonymous users? [Y/n] Y
-Disallow root login remotely? [Y/n] Y
-Remove test database and access to it? [Y/n] Y
-Reload privilege tables now? [Y/n] Y
+> sudo mysql_secure_installation
+  
+  Enter current password for root (enter for none):
+  Change the root password? [Y/n] n
+  Remove anonymous users? [Y/n] Y
+  Disallow root login remotely? [Y/n] Y
+  Remove test database and access to it? [Y/n] Y
+  Reload privilege tables now? [Y/n] Y
 ```
 **Finish Setup** - Use firefox to view http://localhost/setup.php . Follow instructions on the page to configure the server
   * The setup page must be acessed from localhost -or- the config file must be manually edited to include the IP address of the computer you are using the access setup.php.
