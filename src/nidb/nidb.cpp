@@ -582,7 +582,7 @@ QString nidb::SystemCommand(QString s, bool detail, bool truncate, bool bufferOu
     double starttime = QDateTime::currentMSecsSinceEpoch();
     QString ret;
     QString output;
-    QProcess process;
+    QProcess *process = new QProcess();
 
     //WriteLog("Checkpoint A");
 
@@ -590,16 +590,16 @@ QString nidb::SystemCommand(QString s, bool detail, bool truncate, bool bufferOu
     //process.start("sh", QStringList() << "-c" << s);
 
     /* original */
-    process.setProcessChannelMode(QProcess::MergedChannels);
-    process.start("sh", QStringList() << "-c" << s);
+    process->setProcessChannelMode(QProcess::MergedChannels);
+    process->start("sh", QStringList() << "-c" << s);
 
     /* Get the output */
-    if (process.waitForStarted(-1)) {
-        while(process.waitForReadyRead(-1)) {
-            output += process.readAll();
+    if (process->waitForStarted()) {
+        while(process->waitForReadyRead()) {
+            output += process->readAll();
         }
     }
-    process.waitForFinished();
+    process->waitForFinished();
 
     //WriteLog("Checkpoint B");
 
@@ -622,6 +622,8 @@ QString nidb::SystemCommand(QString s, bool detail, bool truncate, bool bufferOu
     //output += QString(process.readAllStandardError());
 
     //WriteLog("Output: [" + output + "]");
+
+    delete process;
 
     double elapsedtime = (QDateTime::currentMSecsSinceEpoch() - starttime + 0.000001)/1000.0; /* add tiny decimal to avoid a divide by zero */
 
@@ -2068,7 +2070,7 @@ void nidb::GetFileType(QString f, QString &fileType, QString &fileModality, QStr
     else {
         WriteLog("[" + f + "] is not a DICOM file");
         /* check if EEG, and Polhemus */
-        if ((f.toLower().endsWith(".cnt")) || (f.toLower().endsWith(".dat")) || (f.toLower().endsWith(".3dd")) || (f.toLower().endsWith(".eeg"))) {
+        if ((f.endsWith(".cnt", Qt::CaseInsensitive)) || (f.endsWith(".dat", Qt::CaseInsensitive)) || (f.endsWith(".3dd", Qt::CaseInsensitive)) || (f.endsWith(".eeg", Qt::CaseInsensitive))) {
             WriteLog("Found an EEG file [" + f + "]");
             fileType = "EEG";
             fileModality = "EEG";
@@ -2077,7 +2079,7 @@ void nidb::GetFileType(QString f, QString &fileType, QString &fileModality, QStr
             filePatientID = parts[0];
         }
         /* check if ET */
-        else if (f.toLower().endsWith(".edf")) {
+        else if (f.endsWith(".edf", Qt::CaseInsensitive)) {
             WriteLog("Found an ET file [" + f + "]");
             fileType = "ET";
             fileModality = "ET";
@@ -2086,7 +2088,7 @@ void nidb::GetFileType(QString f, QString &fileType, QString &fileModality, QStr
             filePatientID = parts[0];
         }
         /* check if MR (Non-DICOM) analyze or nifti */
-        else if ((f.toLower().endsWith(".nii")) || (f.toLower().endsWith(".nii.gz")) || (f.toLower().endsWith(".hdr")) || (f.toLower().endsWith(".img"))) {
+        else if ((f.endsWith(".nii", Qt::CaseInsensitive)) || (f.endsWith(".nii.gz", Qt::CaseInsensitive)) || (f.endsWith(".hdr", Qt::CaseInsensitive)) || (f.endsWith(".img", Qt::CaseInsensitive))) {
             WriteLog("Found an analyze or Nifti image [" + f + "]");
             fileType = "NIFTI";
             fileModality = "NIFTI";
@@ -2115,7 +2117,7 @@ void nidb::GetFileType(QString f, QString &fileType, QString &fileModality, QStr
                       QStringList parts = line.split(":",Qt::SkipEmptyParts);
                       fileProtocol = parts[1].trimmed();
                   }
-                  if (line.toUpper().contains("MRSERIES")) {
+                  if (line.contains("MRSERIES", Qt::CaseInsensitive)) {
                       fileModality = "MR";
                   }
                }
