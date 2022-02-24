@@ -79,9 +79,9 @@ Reload privilege tables now? [Y/n] Y
   * Edit `/nidb/nidb.cfg` and add your IP address (comma separated list) to the `[setupips]` config variable. It should look something like `[setupips] 127.0.0.1, 192.168.0.1` depending on the IP(s)
 
 ### Optional Software
-phpMyAdmin is not required to use NiDB, but is extremely useful to maintain the SQL database that NiDB relies on.
+**phpMyAdmin** is not required to use NiDB, but is extremely useful to maintain the SQL database that NiDB relies on.
 1. Download latest version of phpMyAdmin from http://phpmyadmin.net/
-2. Unzip the contents of .zip file into /var/www/html/phpMyAdmin
+2. Unzip the contents of .zip file into `/var/www/html/phpMyAdmin`
 3. Visit http://localhost/phpMyAdmin
 
 ### Changing Passwords
