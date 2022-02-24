@@ -54,8 +54,13 @@ To update information regarding the subjects in the current project, click on th
 
 <div align="center"><img src=https://user-images.githubusercontent.com/24811295/155018127-f55d837c-02cd-4f17-b5c4-fb8c81fde42c.png width="100%"></div>
 
-By clicking the "Studies button from "Data Views" section, following page will appear.
+By clicking the "Studies" button from "Data Views" section, following page will appear. The studies can be selected to perform various operations like adding enrollment tags, moving studies to another project. Rearchive studies and subjects and obliterate studies and subjects.
+
 <div align="center"><img src=https://user-images.githubusercontent.com/24811295/155020201-ce11cf60-0b50-4c57-8276-04ddc9b122a6.png width="100%"></div>
+
+Checklist provides a brief summary on the subjects, studies and their status as shown below.
+
+<div align="center"><img src=https://user-images.githubusercontent.com/24811295/155039537-8b9f50f7-223f-4759-a8c1-a3dfbeba72d1.png width="80%"></div>
 
 
 On the right side of the project page is a star that can be selected to make this project "favorite" that will show this project on the main page of NiDB to access it easily from there. Also there are links to the project related tools and their settings. This section is named as "Project tools & settings". This section includes:
