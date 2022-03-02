@@ -598,9 +598,10 @@ QString nidb::SystemCommand(QString s, bool detail, bool truncate, bool bufferOu
 			WriteLog(buffer,0,false);
 	}
 	/* check if it finished */
-	if (!process->waitForFinished()) {
-        output = "QProcess failed to finish, with error [" + process->errorString() + "]";
-	}
+	process->waitForFinished();
+	//if (!process->waitForFinished()) {
+	//    output = "QProcess failed to finish, with error [" + process->errorString() + "]";
+	//}
 
     delete process;
 
