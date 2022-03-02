@@ -295,9 +295,10 @@
 		if ($studydaynum == "") $studydaynum = "null"; else $studydaynum = "'$studydaynum'";
 		if ($studyheight == "") $studyheight = "null"; else $studyheight = "'$studyheight'";
 		if ($studyweight == "") $studyweight = "null"; else $studyweight = "'$studyweight'";
+		if ($studyageatscan == "") $studyageatscan = "null"; else $studyageatscan = "'$studyageatscan'";
 		
 		/* update the user */
-		$sqlstring = "update studies set study_experimenter = '$studyexperimenter', study_alternateid = '$studyaltid', study_modality = '$modality', study_datetime = '$studydatetime', study_ageatscan = '$studyageatscan', study_height = $studyheight, study_weight = $studyweight, study_type = '$studytype', study_daynum = $studydaynum, study_timepoint = $studytimepoint, study_operator = '$studyoperator', study_performingphysician = '$studyphysician', study_site = '$studysite', study_notes = '$studynotes', study_doradread = '$studydoradread', study_radreaddate = $studyradreaddate, study_radreadfindings = '$studyradreadfindings', study_etsnellenchart = $studyetsnellchart, study_etvergence = '$studyetvergence', study_ettracking = '$studyettracking', study_snpchip = '$studysnpchp', study_status = 'complete' where study_id = $studyid";
+		$sqlstring = "update studies set study_experimenter = '$studyexperimenter', study_alternateid = '$studyaltid', study_modality = '$modality', study_datetime = '$studydatetime', study_ageatscan = $studyageatscan, study_height = $studyheight, study_weight = $studyweight, study_type = '$studytype', study_daynum = $studydaynum, study_timepoint = $studytimepoint, study_operator = '$studyoperator', study_performingphysician = '$studyphysician', study_site = '$studysite', study_notes = '$studynotes', study_doradread = '$studydoradread', study_radreaddate = $studyradreaddate, study_radreadfindings = '$studyradreadfindings', study_etsnellenchart = $studyetsnellchart, study_etvergence = '$studyetvergence', study_ettracking = '$studyettracking', study_snpchip = '$studysnpchp', study_status = 'complete' where study_id = $studyid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		Notice("Study Updated");
@@ -1379,12 +1380,12 @@
 			$study_heightft = "$ft1' $in\"";
 		}
 		else {
-			Error("Error", "Invalid study ID. Unable to display this study");
+			Error("Invalid study ID. Unable to display this study");
 			return;
 		}
 		
 		if (($subjectid == 0) || ($subjectid == "")) {
-			Error("Error", "Invalid subject ID. Unable to display this study because the subject could not be found");
+			Error("Invalid subject ID. Unable to display this study because the subject could not be found");
 			return;
 		}
 
@@ -1421,7 +1422,7 @@
 		}
 		
 		/* update the mostrecent table */
-		UpdateMostRecent($userid, '', $studyid);
+		UpdateMostRecent('', $studyid, '');
 
 		?>
 		
@@ -1442,7 +1443,7 @@
 				<i class="right angle icon divider"></i>
 				<a href="subjects.php?id=<?=$subjectid?>" class="section"><?=$uid?></a>
 				<i class="right angle icon divider"></i>
-				<a class="active section" href="studies.php?id=<?=$studyid?>">Study <?=$study_num?></a>
+				<a href="studies.php?id=<?=$studyid?>" class="active section">Study <?=$study_num?></a>
 			</div>
 			<? DisplayPermissions($perms); ?>
 		</div>
@@ -1518,6 +1519,14 @@
 							</td>
 						</tr>
 					<? } ?>
+						<tr>
+							<td class="right aligned"><b>Day</td>
+							<td class="right marked orange"><?=$study_daynum?></td>
+						</tr>
+						<tr>
+							<td class="right aligned"><b>Timepoint</td>
+							<td class="right marked orange"><?=$study_timepoint?></td>
+						</tr>
 						<tr>
 							<td class="right aligned"><b>Age at scan</td>
 							<td><?=number_format($study_ageatscan,1)?> y</td>
@@ -2167,15 +2176,7 @@
 								<td><?=$series_num?><span id="series<?=$series_num?>"></td>
 								<td><span id="uploader<?=$mrseries_id?>"></span></td>
 								<td title="<b>Series Description</b> <?=$series_desc?><br><b>Protocol</b> <?=$protocol?><br><b>Sequence Description</b> <?=$sequence?><br><b>TE</b> <?=$series_te?>ms<br><b>Magnet</b> <?=$series_fieldstrength?>T<br><b>Flip angle</b> <?=$series_flip?>&deg;<br><b>Image type</b> <?=$image_type?><br><b>Image comment</b> <?=$image_comments?><br><b>Phase encoding</b> <?=$phase?>">
-									<?
-									if ($data_type == "dicom") {
-										?><a href="series.php?action=scanparams&file=<?=$dcmfile?>"><?=$series_desc?></a><?
-									}
-									elseif ($data_type == "parrec") {
-										?><a href="series.php?action=scanparams&file=<?=$parfile?>"><?=$series_desc?></a><?
-										echo $series_desc;
-									}
-									?>&nbsp;<span id="thumbnail<?=$series_num?>"></span>
+									<a href="series.php?action=scanparams&seriesid=<?=$mrseries_id?>&modality=mr"><?=$series_desc?></a>&nbsp;<span id="thumbnail<?=$series_num?>"></span>
 									<? //if (($bold_reps < 2) && ($GLOBALS['cfg']['allowrawdicomexport'])) { ?>
 									<!--&nbsp;<a href="viewimage.php?modality=mr&type=dicom&seriesid=<?=$mrseries_id?>"><i class="cube icon"></i></a>-->
 									<? //} ?>
@@ -2191,19 +2192,19 @@
 									<? if ($hasratings) { $image = "red"; } else { $image = "grey"; } ?>
 									<a href="JavaScript:newPopup('ratings.php?id=<?=$mrseries_id?>&type=series&modality=mr');"><i class="<?=$image?> comment dots icon" title="View ratings"></i></a>
 								</td>
-								<td class="seriesrow" align="right" style="padding:0px">
-									<table cellspacing="0" cellpadding="1" height="100%" width="100%" class="movementsubtable" style="border-radius:0px">
+								<td class="seriesrow" align="right" style="padding:0px;margin:0px;">
+									<table cellspacing="0" cellpadding="1" height="100%" width="100%" class="movementsubtable">
 										<tr><td title="Total X displacement" class="mainval" style="background-color: <?=$maxxcolor?>;"><?=$rangex;?></td></tr>
 										<tr><td title="Total X velocity" class="subval" style="background-color: <?=$maxxcolor2?>;"><?=$rangex2;?></td></tr>
 									</table>
 								</td>
-								<td class="seriesrow" align="right" style="padding:0px;margin:0px;height:100%">
-									<table cellspacing="0" cellpadding="0" height="100%" width="100%" class="movementsubtable">
-										<tr><td title="Total Y displacement" class="mainval" style="background-color: <?=$maxycolor?>;height:100%"><?=$rangey;?></td></tr>
-										<tr><td title="Total Y velocity" class="subval" style="background-color: <?=$maxycolor2?>;height:100%"><?=$rangey2;?></td></tr>
+								<td class="seriesrow" align="right" style="padding:0px;margin:0px;">
+									<table cellspacing="0" cellpadding="1" height="100%" width="100%" class="movementsubtable">
+										<tr><td title="Total Y displacement" class="mainval" style="background-color: <?=$maxycolor?>;"><?=$rangey;?></td></tr>
+										<tr><td title="Total Y velocity" class="subval" style="background-color: <?=$maxycolor2?>;"><?=$rangey2;?></td></tr>
 									</table>
 								</td>
-								<td class="seriesrow" align="right" style="padding:0px">
+								<td class="seriesrow" align="right" style="padding:0px; margin:0px;">
 									<table cellspacing="0" cellpadding="1" height="100%" width="100%" class="movementsubtable">
 										<tr><td title="Total Z displacement" class="mainval" style="background-color: <?=$maxzcolor?>;"><?=$rangez;?></td></tr>
 										<tr><td title="Total Z velocity" class="subval" style="background-color: <?=$maxzcolor2?>;"><?=$rangez2;?></td></tr>
@@ -2771,9 +2772,14 @@
 				<input type="hidden" name="modality" value="<?=strtoupper($modality)?>">
 				<!--<input type="hidden" name="id" value="<?=$id?>">-->
 				<tr>
-					<td><input type="text" name="series_num" size="3" maxlength="10" value="<?=($max_seriesnum + 1)?>" required></td>
 					<td>
+						<div class="ui input">
+							<input type="text" name="series_num" size="3" maxlength="10" value="<?=($max_seriesnum + 1)?>" required>
+						</div>
+					</td>
+					<td><div class="ui input">
 						<input type="text" name="protocol" list="protocols" required>
+						</div>
 						<datalist id="protocols">
 						<?
 							$sqlstring = "select * from modality_protocol where modality = '$modality'";
@@ -2787,8 +2793,8 @@
 						?>
 						</datalist>
 					</td>
-					<td title="Time should be formatted as a 24-hour clock"><input type="text" name="series_datetime" value="<?=date('Y-m-d H:i:s')?>" required></td>
-					<td><input type="text" name="notes"></td>
+					<td title="Time should be formatted as a 24-hour clock"><div class="ui input"><input type="text" name="series_datetime" value="<?=date('Y-m-d H:i:s')?>" required></td>
+					<td><div class="ui input"><input type="text" name="notes"></div></td>
 					<td colspan="5">
 						<button type="submit" class="ui button" value="Create" onClick="document.serieslist.action.value='addseries'; document.serieslist.action.submit()"><i class="arrow alternate circle left icon"></i> Create series</button>
 					</td>
