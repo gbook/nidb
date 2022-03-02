@@ -981,7 +981,10 @@
 		else {
 			$seriesids = array(mysqli_real_escape_string($GLOBALS['linki'], $seriesids));
 		}
-
+		
+		$errormsgs = array();
+		$noticemsgs = array();
+		
 		foreach ($seriesids as $seriesid) {
 			if ((is_numeric($seriesid)) && ($seriesid != "")) {
 				/* delete from the mr_qa table */
@@ -1007,30 +1010,47 @@
 						
 						//$qapath = "$path/qa";
 						if (($uid == "") || ($studynum == "") || ($studyid == "") || ($subjectid == "")) {
-							echo "Could not delete QA data. One of the following is blank uid[$uid] studynum[$studynum] studyid[$studyid] subjectid[$subjectid]<br>";
+							$errormsgs[] = "Could not delete QA data. One of the following is blank uid[$uid] studynum[$studynum] studyid[$studyid] subjectid[$subjectid]";
 						}
 						else {
 							/* check if the path is valid */
 							if (file_exists($qapath)) {
 								$systemstring = "rm -rv $qapath";
-								PrintVariable($systemstring);
-								//`$systemstring`;
+								$noticemsgs[] = "Deleted <code>$qapath</code>";
 							}
 							else {
-								echo "[$qapath] does not exist<br>";
+								$noticemsgs[] = "<code>$qapath</code> does not exist";
 							}
 						}
 						
-						?><div align="center"><span class="message">QC deleted [<?=$qcmoduleseriesid?>]</span></div><br><br><?
+						$noticemsgs[] = "QC deleted for seriesID [$qcmoduleseriesid]";
 					}
 					else {
-						echo "qcmoduleseries_id was blank<br>";
+						$errormsgs[] = "qcmoduleseries_id was blank";
 					}
 				}
 			}
 			else {
-				?><div align="center"><span class="message">Invalid MR series</span></div><br><br><?
+				$errormsgs[] = "Invalid MR series ID";
 			}
+		}
+
+		if (count($errormsgs) > 0) {
+			$errormsg = "<ul>";
+			foreach ($errormsgs as $m) {
+				$errormsg .= "<li>" . $m;
+			}
+			$errormsg .= "</ul>";
+			Error($errormsg);
+		}
+		
+		if (count($noticemsgs) > 0) {
+			$noticemsg = "<ul>";
+			foreach ($noticemsgs as $m) {
+				$noticemsg .= "<li>" . $m;
+			}
+			$noticemsg .= "</ul>";
+			Notice($noticemsg);
 		}
 	}
 
@@ -2601,9 +2621,25 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	function Error($msg, $close=true) {
 		?>
 		<div class="ui text container">
-			<div class="ui message red">
+			<div class="ui warning message">
 				<? if ($close) { ?><i class="close icon"></i> <? } ?>
 				<div class="header">Error</div>
+				<p><?=$msg?></p>
+			</div>
+		</div>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- Warning ---------------------------- */
+	/* -------------------------------------------- */
+	function Warning($msg) {
+		?>
+		<div class="ui text container">
+			<div class="ui orange message">
+				<i class="close icon"></i>
+				<div class="header">Warning</div>
 				<p><?=$msg?></p>
 			</div>
 		</div>
@@ -2617,7 +2653,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	function Notice($msg) {
 		?>
 		<div class="ui text container">
-			<div class="ui message yellow">
+			<div class="ui info message">
 				<i class="close icon"></i>
 				<div class="header">Notice</div>
 				<p><?=$msg?></p>

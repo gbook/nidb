@@ -1156,7 +1156,7 @@
 				<i class="right angle icon divider"></i>
 				<a href="subjects.php?id=<?=$subjectid?>" class="section"><?=$uid?></a>
 				<i class="right angle icon divider"></i>
-				<div class="active section">Study <?=$study_num?></div>
+				<a href="studies.php?id=<?=$studyid?>" class="active section">Study <?=$study_num?></a>
 			</div>
 			<? DisplayPermissions($perms); ?>
 		</div>
