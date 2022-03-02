@@ -584,22 +584,32 @@ QString nidb::SystemCommand(QString s, bool detail, bool truncate, bool bufferOu
     QString output;
     QProcess *process = new QProcess();
 
+    /* testing QProcess documentation synchronous example */
+    process->start("sh", QStringList() << "-c" << s);
+    if (!process->waitForStarted())
+        output = "QProcess failed to start, with error [" + process->errorString() + "]";
+    if (!process->waitForFinished())
+        output = "QProcess failed to finish, with error [" + process->errorString() + "]";
+
+    output = QString(process->readAll());
+    delete process;
+
     //WriteLog("Checkpoint A");
 
     //process.setProcessChannelMode(QProcess::MergedChannels);
     //process.start("sh", QStringList() << "-c" << s);
 
     /* original */
-    process->setProcessChannelMode(QProcess::MergedChannels);
-    process->start("sh", QStringList() << "-c" << s);
+    //process->setProcessChannelMode(QProcess::MergedChannels);
+    //process->start("/bin/sh", QStringList() << "-c" << s);
 
     /* Get the output */
-    if (process->waitForStarted()) {
-        while(process->waitForReadyRead()) {
-            output += process->readAll();
-        }
-    }
-    process->waitForFinished();
+    //if (process->waitForStarted()) {
+    //    while(process->waitForReadyRead()) {
+    //        output += process->readAll();
+    //    }
+    //}
+    //process->waitForFinished();
 
     //WriteLog("Checkpoint B");
 

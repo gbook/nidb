@@ -3050,25 +3050,25 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 			</tr>
 			<tr>
 				<td class="right aligned tt">mysqlhost</td>
-				<td><input type="text" name="mysqlhost" value="<?=$GLOBALS['cfg']['mysqlhost']?>" size="100"></td>
+				<td><input type="text" name="mysqlhost" value="<?=($GLOBALS['cfg']['mysqlhost'] == "") ? $GLOBALS['cfg']['mysqlhost'] : "localhost"; ?>" size="100"></td>
 				<td class="center aligned"><? if ($dbconnect) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 				<td>Database hostname (should be <code>localhost</code> or <code>127.0.0.1</code> unless the database is running on a different server than the website)</td>
 			</tr>
 			<tr>
 				<td class="right aligned tt">mysqluser</td>
-				<td><input type="text" name="mysqluser" value="<?=$GLOBALS['cfg']['mysqluser']?>"></td>
+				<td><input type="text" name="mysqluser" value="<?=($GLOBALS['cfg']['mysqluser'] == "") ? $GLOBALS['cfg']['mysqluser'] : "nidb"; ?>"></td>
 				<td class="center aligned"><? if ($dbconnect) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 				<td>Database username</td>
 			</tr>
 			<tr>
 				<td class="right aligned tt">mysqlpassword</td>
-				<td><input type="password" name="mysqlpassword" value="<?=$GLOBALS['cfg']['mysqlpassword']?>"></td>
+				<td><input type="password" name="mysqlpassword" value="<?=($GLOBALS['cfg']['mysqlpassword'] == "") ? $GLOBALS['cfg']['mysqlpassword'] : "password"; ?>"></td>
 				<td class="center aligned"><? if ($dbconnect) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 				<td>Database password</td>
 			</tr>
 			<tr>
 				<td class="right aligned tt">mysqldatabase</td>
-				<td><input type="text" name="mysqldatabase" value="<?=$GLOBALS['cfg']['mysqldatabase']?>"></td>
+				<td><input type="text" name="mysqldatabase" value="<?=($GLOBALS['cfg']['mysqldatabase'] == "") ? $GLOBALS['cfg']['mysqlpassword'] : "nidb"; ?>"></td>
 				<td class="center aligned"><? if ($dbconnect) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 				<td>Database (default is <tt>nidb</tt>)</td>
 			</tr>
@@ -3945,6 +3945,10 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 [webdownloaddir] = $webdownloaddir
 ";
 
+		if (($GLOBALS['cfg']['cfgpath'] == null) || ($GLOBALS['cfg']['cfgpath'] == "")) {
+			$GLOBALS['cfg']['cfgpath'] = "/nidb/nidb.cfg";
+		}
+		
 		$ret = file_put_contents($GLOBALS['cfg']['cfgpath'], $str);
 		if (($ret === false) || ($ret === false) || ($ret == 0)) {
 			?><div class="staticmessage">Problem writing [<?=$GLOBALS['cfg']['cfgpath']?>]. Is the file writeable to the [<?=system("whoami"); ?>] account?</div><?
