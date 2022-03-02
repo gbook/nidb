@@ -371,7 +371,7 @@ int moduleMiniPipeline::CopyAllSeriesData(QString modality, int seriesid, QStrin
         msg += n->SystemCommand(systemstring, true, false);
     }
 
-    int c;
+	qint64 c;
     qint64 b;
     n->GetDirSizeAndFileCount(destination,c,b);
 

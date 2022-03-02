@@ -254,7 +254,7 @@ int nidb::ModuleGetNumThreads() {
 /* ---------------------------------------------------------- */
 /* --------- ModuleGetNumLockFiles -------------------------- */
 /* ---------------------------------------------------------- */
-int nidb::ModuleGetNumLockFiles() {
+qint64 nidb::ModuleGetNumLockFiles() {
     QDir dir;
     dir.setPath(cfg["lockdir"]);
 
@@ -263,7 +263,7 @@ int nidb::ModuleGetNumLockFiles() {
     filters << lockfileprefix;
 
     QStringList files = dir.entryList(filters);
-    int numlocks = files.size();
+	qint64 numlocks = files.size();
 
     Print(QString("Found [%1] lockfiles for module [%2]").arg(numlocks).arg(module));
     WriteLog(QString("ModuleGetNumLockFiles() found [%1] lockfiles for module [%2]").arg(numlocks).arg(module));
@@ -579,69 +579,36 @@ void nidb::InsertAnalysisEvent(qint64 analysisid, int pipelineid, int pipelineve
 /* ---------------------------------------------------------- */
 QString nidb::SystemCommand(QString s, bool detail, bool truncate, bool bufferOutput) {
 
-    double starttime = QDateTime::currentMSecsSinceEpoch();
+	double starttime = double(QDateTime::currentMSecsSinceEpoch());
     QString ret;
     QString output;
-    QProcess *process = new QProcess();
+	QString buffer;
+	QProcess *process = new QProcess();
 
-    /* testing QProcess documentation synchronous example */
+	/* start QProcess and check if it started */
     process->start("sh", QStringList() << "-c" << s);
-    if (!process->waitForStarted())
+	if (!process->waitForStarted()) {
         output = "QProcess failed to start, with error [" + process->errorString() + "]";
-    if (!process->waitForFinished())
+	}
+	/* collect the output */
+	while(process->waitForReadyRead(-1)) {
+		buffer = QString(process->readAll());
+		output += buffer;
+		if (!bufferOutput)
+			WriteLog(buffer,0,false);
+	}
+	/* check if it finished */
+	if (!process->waitForFinished()) {
         output = "QProcess failed to finish, with error [" + process->errorString() + "]";
-
-    output = QString(process->readAll());
-    delete process;
-
-    //WriteLog("Checkpoint A");
-
-    //process.setProcessChannelMode(QProcess::MergedChannels);
-    //process.start("sh", QStringList() << "-c" << s);
-
-    /* original */
-    //process->setProcessChannelMode(QProcess::MergedChannels);
-    //process->start("/bin/sh", QStringList() << "-c" << s);
-
-    /* Get the output */
-    //if (process->waitForStarted()) {
-    //    while(process->waitForReadyRead()) {
-    //        output += process->readAll();
-    //    }
-    //}
-    //process->waitForFinished();
-
-    //WriteLog("Checkpoint B");
-
-    /* Get the output */
-    //if (process.waitForStarted(-1)) {
-        //QString buffer;
-        //WriteLog("Checkpoint B.1");
-        //while(process.waitForReadyRead(-1)) {
-            //WriteLog("Checkpoint B.2");
-            //output += QString(process.readAll());
-            //output += buffer;
-            //if (!bufferOutput)
-            //    WriteLog(buffer,0,false);
-            //WriteLog("Checkpoint B.3");
-        //}
-    //}
-    //WriteLog("Checkpoint C");
-    //process.waitForFinished();
-    //output += QString(process.readAllStandardOutput());
-    //output += QString(process.readAllStandardError());
-
-    //WriteLog("Output: [" + output + "]");
+	}
 
     delete process;
 
-    double elapsedtime = (QDateTime::currentMSecsSinceEpoch() - starttime + 0.000001)/1000.0; /* add tiny decimal to avoid a divide by zero */
+	double elapsedtime = (double(QDateTime::currentMSecsSinceEpoch()) - starttime + 0.000001)/1000.0; /* add tiny decimal to avoid a divide by zero */
 
     output = output.trimmed();
     output.replace("’", "'");
     output.replace("‘", "'");
-
-    //WriteLog("Checkpoint D");
 
     if (truncate)
         if (output.size() > 20000)
@@ -663,7 +630,7 @@ QString nidb::SystemCommand(QString s, bool detail, bool truncate, bool bufferOu
 /* ---------------------------------------------------------- */
 bool nidb::SandboxedSystemCommand(QString s, QString dir, QString &output, QString timeout, bool detail, bool truncate) {
 
-    double starttime = QDateTime::currentMSecsSinceEpoch();
+	double starttime = double(QDateTime::currentMSecsSinceEpoch());
     bool ret = true;
     QString outStr;
     QProcess process;
@@ -705,7 +672,7 @@ bool nidb::SandboxedSystemCommand(QString s, QString dir, QString &output, QStri
         ret = false;
     }
     else {
-        elapsedtime = (QDateTime::currentMSecsSinceEpoch() - starttime + 0.000001)/1000.0; /* add tiny decimal to avoid a divide by zero */
+		elapsedtime = (double(QDateTime::currentMSecsSinceEpoch()) - starttime + 0.000001)/1000.0; /* add tiny decimal to avoid a divide by zero */
 
         outStr = outStr.trimmed();
         outStr.replace("’", "'");
@@ -719,7 +686,7 @@ bool nidb::SandboxedSystemCommand(QString s, QString dir, QString &output, QStri
 
     /* format the final output */
     if (detail)
-        output = QString("Executed command [%1], Output [%2], elapsed time [%3 sec]").arg(command).arg(outStr).arg(elapsedtime, 0, 'f', 3);
+		output = QString("Executed command [%1], Output [%2], elapsed time [%3 sec]").arg(command).arg(outStr).arg(elapsedtime, 0, 'f', 3);
     else
         output = outStr;
 
@@ -981,7 +948,7 @@ QStringList nidb::FindAllDirs(QString dir, QString pattern, bool recursive, bool
 /* ---------------------------------------------------------- */
 /* --------- GetDirSizeAndFileCount ------------------------- */
 /* ---------------------------------------------------------- */
-void nidb::GetDirSizeAndFileCount(QString dir, int &c, qint64 &b, bool recurse) {
+void nidb::GetDirSizeAndFileCount(QString dir, qint64 &c, qint64 &b, bool recurse) {
     c = 0;
     b = 0;
 
@@ -1995,7 +1962,7 @@ bool nidb::ParseCSV(QString csv, indexedHash &table, QStringList &columns, QStri
             m << QString("Last column was blank, removing").arg(cols.size());
         }
 
-        int numcols = cols.size();
+		qint64 numcols = cols.size();
 
         int row = 0;
         foreach (QString line, lines) {
@@ -2452,7 +2419,7 @@ bool nidb::GetImageFileTags(QString f, QHash<QString, QString> &tags) {
                     if (line.startsWith("sSliceArray.asSlice[0].dInPlaneRot") && (line.size() < 70)) {
                         /* make sure the line does not contain any non-printable ASCII control characters */
                         if (!line.contains(QRegularExpression(QStringLiteral("[\\x00-\\x1F]")))) {
-                            int idx = line.indexOf(".dInPlaneRot");
+							qint64 idx = line.indexOf(".dInPlaneRot");
                             line = line.mid(idx,23);
                             QStringList vals = line.split(QRegularExpression("\\s+"));
                             if (vals.size() > 0)
@@ -2529,7 +2496,7 @@ bool nidb::GetImageFileTags(QString f, QHash<QString, QString> &tags) {
                         QStringList parts = line.split(":",Qt::SkipEmptyParts);
                         tags["ProtocolName"] = parts[1].trimmed();
                     }
-                    if (line.toUpper().contains("MRSERIES")) {
+					if (line.contains("MRSERIES", Qt::CaseInsensitive)) {
                         tags["Modality"] = "MR";
                     }
                 }
@@ -2628,7 +2595,7 @@ double nidb::GetPatientAge(QString PatientAgeStr, QString StudyDate, QString Pat
         studydate.fromString(StudyDate);
         dob.fromString(PatientBirthDate);
 
-        PatientAge = dob.daysTo(studydate)/365.25;
+		PatientAge = double(dob.daysTo(studydate))/365.25;
     }
 
     return PatientAge;
@@ -2725,7 +2692,7 @@ double nidb::Mean(QList<double> a) {
     foreach( double n, a )
         sum += n;
 
-    return sum/a.size();
+	return sum/double(a.size());
 }
 
 
@@ -2742,7 +2709,7 @@ double nidb::Variance(QList<double> a) {
     foreach (double d, a)
         temp += (d-mean)*(d-mean);
 
-    return temp/(a.size()-1);
+	return temp/(double(a.size()-1));
 }
 
 

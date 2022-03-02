@@ -346,7 +346,7 @@ bool moduleFileIO::DeleteAnalysis(qint64 analysisid, QString &msg) {
     bool okToDeleteDBEntries = false;
 
     if (QDir(a.analysispath).exists()) {
-        int c;
+		qint64 c;
         qint64 b;
         n->GetDirSizeAndFileCount(a.analysispath, c, b, true);
 

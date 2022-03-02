@@ -154,7 +154,7 @@ bool moduleUpload::ParseUploads() {
             }
 
             /* get information about the uploaded data from the uploadstagingdir (before unzipping any zip files) */
-            int c;
+			qint64 c;
             qint64 b;
             //n->GetDirSizeAndFileCount(uploadstagingpath, c, b, true);
             //io->AppendUploadLog(__FUNCTION__, QString("(BEFORE UNZIPPING) Upload directory [%1] contains [%2] files, and is [%3] bytes in size.").arg(uploadstagingpath).arg(c).arg(b));

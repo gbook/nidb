@@ -653,7 +653,7 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
 
     /* get the size of the dicom files and update the DB */
     qint64 dirsize = 0;
-    int nfiles;
+	qint64 nfiles;
     n->GetDirSizeAndFileCount(outdir, nfiles, dirsize);
     AppendUploadLog(__FUNCTION__ , QString("Archive directory [%1] is [%2] bytes in size and contains [%3] files").arg(outdir).arg(dirsize).arg(nfiles));
 
@@ -711,7 +711,7 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
                 AppendUploadLog(__FUNCTION__ , n->SystemCommand(systemstring));
 
                 qint64 behdirsize(0);
-                int behnumfiles(0);
+				qint64 behnumfiles(0);
                 n->GetDirSizeAndFileCount(outdir, behnumfiles, behdirsize);
                 QString sqlstring = QString("update %1_series set beh_size = :behdirsize, numfiles_beh = :behnumfiles where %1series_id = :seriesRowID").arg(dbModality.toLower());
                 QSqlQuery q3;
@@ -1301,7 +1301,7 @@ bool archiveIO::InsertParRec(int importid, QString file) {
 
     /* get the size of the dicom files and update the DB */
     qint64 dirsize(0);
-    int nfiles(0);
+	qint64 nfiles(0);
     n->GetDirSizeAndFileCount(outdir, nfiles, dirsize);
 
     /* update the database with the correct number of files/BOLD reps */
@@ -1635,7 +1635,7 @@ bool archiveIO::InsertEEG(int importid, QString file) {
 
     /* get the size of the files and update the DB */
     qint64 dirsize(0);
-    int nfiles(0);
+	qint64 nfiles(0);
     n->GetDirSizeAndFileCount(outdir, nfiles, dirsize);
     q2.prepare(QString("update %1_series set series_size = :dirsize where %1series_id = :seriesRowID").arg(Modality.toLower()));
     q2.bindValue(":dirsize", dirsize);

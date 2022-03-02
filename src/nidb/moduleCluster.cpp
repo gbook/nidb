@@ -299,7 +299,7 @@ bool moduleCluster::UpdateAnalysis(QString analysisid, QString &m) {
 	}
 
     m = "Getting directory size for [" + a.analysispath + "]";
-	int c;
+	qint64 c;
 	qint64 b;
 	n->GetDirSizeAndFileCount(a.analysispath, c, b, true);
 

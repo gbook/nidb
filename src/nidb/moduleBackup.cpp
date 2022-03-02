@@ -214,7 +214,7 @@ qint64 moduleBackup::MoveToBackupStaging() {
     qint64 backupStagingSize = 0;
 
     /* get size of backup staging directory */
-    int c;
+	qint64 c;
     n->GetDirSizeAndFileCount(backupStagingDir, c, backupStagingSize, true);
 
     /* loop through files in backup dir, older than 24 hrs, then

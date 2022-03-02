@@ -174,7 +174,7 @@ bool moduleMRIQA::QA(int seriesid) {
     msgs << n->WriteLog("Done attempting to convert files... now trying to copy out the first valid Nifti file");
     QDir::setCurrent(tmpdir);
 
-    int c(0);
+	qint64 c(0);
     qint64 b(0);
     n->GetDirSizeAndFileCount(tmpdir, c, b);
     if ((c == 0) | (b == 0)) {
@@ -441,7 +441,7 @@ bool moduleMRIQA::QA(int seriesid) {
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
 
     qint64 dirsize = 0;
-    int nfiles;
+	qint64 nfiles;
     n->GetDirSizeAndFileCount(indir, nfiles, dirsize);
 
     /* update the mr_series table with the image dimensions */
