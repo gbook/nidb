@@ -1286,7 +1286,7 @@ bool moduleExport::WriteNDARHeader(QString file, QString modality, QStringList &
         modality = modality.toLower();
 
         QTextStream fs(&f);
-        if (modality.toLower() == "mr") {
+		if (modality == "mr") {
             fs << "image,3\n";
             fs << "subjectkey,src_subject_id,interview_date,interview_age,gender,comments_misc,image_file,image_thumbnail_file,image_description,image_file_format,image_modality,scanner_manufacturer_pd,scanner_type_pd,scanner_software_versions_pd,magnetic_field_strength,mri_repetition_time_pd,mri_echo_time_pd,flip_angle,acquisition_matrix,mri_field_of_view_pd,patient_position,photomet_interpret,receive_coil,transmit_coil,transformation_performed,transformation_type,image_history,image_num_dimensions,image_extent1,image_extent2,image_extent3,image_extent4,extent4_type,image_extent5,extent5_type,image_unit1,image_unit2,image_unit3,image_unit4,image_unit5,image_resolution1,image_resolution2,image_resolution3,image_resolution4,image_resolution5,image_slice_thickness,image_orientation,qc_outcome,qc_description,qc_fail_quest_reason,decay_correction,frame_end_times,frame_end_unit,frame_start_times,frame_start_unit,pet_isotope,pet_tracer,time_diff_inject_to_image,time_diff_units,scan_type,scan_object,data_file2,data_file2_type,experiment_description,experiment_id,pulse_seq,slice_acquisition,software_preproc,study,week,slice_timing,bvek_bval_files\n";
         }
@@ -1298,6 +1298,11 @@ bool moduleExport::WriteNDARHeader(QString file, QString modality, QStringList &
             fs << "et_subject_experiment,1\n";
             fs << "subjectkey,src_subject_id,interview_date,interview_age,gender,phenotype,experiment_id,comments_misc,experiment_validity,experiment_notes,experiment_terminated,expcond_validity,expcond_notes,data_file1,data_file1_type,data_file2,data_file2_type,data_file3,data_file3_type,data_file4,data_file4_type\n";
         }
+		if (modality == "gsr") {
+			fs << "eda,1\n";
+			//fs << "subjectkey,src_subject_id,interview_date,interview_age,gender,phenotype,experiment_id,comments_misc,experiment_validity,experiment_notes,experiment_terminated,expcond_validity,expcond_notes,data_file1,data_file1_type,data_file2,data_file2_type,data_file3,data_file3_type,data_file4,data_file4_type\n";
+			fs << "subjectkey,src_subject_id,interview_date,interview_age,sex,scl,nscr,ncttsk,overall_movement,desc_worklength,data_file1,site,timept,eseniteration,esentimehr,esentimemin,esentotmins,esenminmicros,esenmaxmicros,esenminmaxdiff,esensampletime,esensamplemicros,esenbase,esenintvstart,esenintvmax,esenintvmaxtp,esenintvend,esenscr,esenrise,esenhab1,esenhab2,data_file2,data_file2_type,data_file1_type,mpdat\n";
+		}
 
         f.close();
 
@@ -1533,7 +1538,12 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
                 QTextStream(&str) << guid << "," << uid << "," << studydatetime << "," << (int)round(ageatscan) << "," << gender << ",Unknown," << expid << "," << seriesprotocol << ",,\"" << seriesnotes << "\",,,," << imagefile << ",Eyetracking,,,,,,\n";
                 fs << str;
             }
-            else {
+			else if (modality == "GSR") {
+				QString str;
+				QTextStream(&str) << guid << "," << uid << "," << studydatetime << "," << (int)round(ageatscan) << "," << gender << ",,," << seriesprotocol << ",,," << imagefile << ",,,,,,,,,,,,,,,,,,,,,,,,\n";
+				fs << str;
+			}
+			else {
                 log << "WriteNDARSeries() " + n->WriteLog("Unknown modality [" + modality + "]. Nothing to written to file [" + file + "].");
             }
 

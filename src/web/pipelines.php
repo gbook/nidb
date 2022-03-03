@@ -619,35 +619,38 @@
 		   ...BUT there is no need to change the column definitions in this code to reflect future table changes */
 		
 		$history = "";
+		$error = false;
 		
-		$sqlstring = "start transaction";
-		//PrintSQL("$sqlstring");
-		echo "<li><b>Starting transaction</b> [$sqlstring]\n";
-		$history .= "1) Starting transaction [$sqlstring]\n";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		mysqli_autocommit($GLOBALS['linki'], false);
+		/* start transaction */
+		echo "<li><b>Starting transaction</b>\n";
+		$history .= "1) Starting transaction\n";
+		mysqli_begin_transaction($GLOBALS['linki']);
 
 		/* ------ copy the pipeline definition ------ */
 		/* create a temp table, which automatically creates the columns */
 		$sqlstring = "create temporary table tmp_pipeline$id select * from pipelines where pipeline_id = $id";
-		//PrintSQL("$sqlstring");
 		echo "<li>Creating temp table from existing pipeline table spec [$sqlstring]\n";
 		$history .= "2) Creating temp table from existing pipeline table spec [$sqlstring]\n";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if ($result['error'] == 1) $error = true;
 		
 		/* for DEBUG, display the original table */
 		$sqlstring = "select * from pipelines where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if (is_array($result) && $result['error'] == 1) $error = true;
 		$history .= "Original TABLE [pipelines]\n" . PrintSQLTable($result,"","","",true) . "\n\n";
 
 		/* for DEBUG, display the copied temp table */
 		$sqlstring = "select * from tmp_pipeline$id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if (is_array($result) && $result['error'] == 1) $error = true;
 		$history .= "Temp TABLE [tmp_pipeline$id]\n" . PrintSQLTable($result,"","","",true) . "\n\n";
 		
 		/* get the new pipeline id */
 		$sqlstring = "select (max(pipeline_id)+1) 'newid' from pipelines";
-		//PrintSQL("$sqlstring");
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if (is_array($result) && $result['error'] == 1) $error = true;
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$newid = $row['newid'];
 		echo "<li>Getting new pipeline ID [$newid] [$sqlstring]\n";
@@ -657,12 +660,13 @@
 		   so delete everything from the pipeline_steps table with the new ID */
 		$sqlstring = "delete from pipeline_steps where pipeline_id = $newid";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if (is_array($result) && $result['error'] == 1) $error = true;
 		echo "<li>Deleting from pipeline_steps table [$sqlstring]\n";
 		$history .= "3.1) Deleting from pipeline_steps table [$sqlstring]\n";
 
 		$sqlstring = "select pipeline_version from pipelines where pipeline_id = $id";
-		//PrintSQL("$sqlstring");
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if (is_array($result) && $result['error'] == 1) $error = true;
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$version = $row['pipeline_version'];
 		echo "<li>Getting pipeline version [$version] [$sqlstring]\n";
@@ -672,119 +676,149 @@
 		$sqlstring = "update tmp_pipeline$id set pipeline_id = $newid, pipeline_name = '$newname', pipeline_version = 1, pipeline_createdate = now(), pipeline_status = 'stopped', pipeline_statusmessage = '', pipeline_laststart = null, pipeline_lastfinish = null, pipeline_enabled = 0, pipeline_admin = (select user_id from users where username = '" . $_SESSION['username'] . "')";
 		echo "<li>Making changes to new pipeline in temp table [$sqlstring]\n";
 		$history .= "5) Making changes to new pipeline in temp table [$sqlstring]\n";
-		//PrintSQL("$sqlstring");
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if (is_array($result) && $result['error'] == 1) $error = true;
 		
 		/* insert the changed row into the pipeline table */
 		$sqlstring = "insert into pipelines select * from tmp_pipeline$id";
-		//PrintSQL("$sqlstring");
 		echo "<li>Getting new pipeline ID [$sqlstring]\n";
 		$history .= "6) Getting new pipeline ID [$sqlstring]\n";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if (is_array($result) && $result['error'] == 1) $error = true;
 		
 		/* delete the tmp table */
 		$sqlstring = "drop table tmp_pipeline$id";
-		//PrintSQL("$sqlstring");
 		echo "<li>Deleting temp table [$sqlstring]\n";
 		$history .= "7) Deleting temp table [$sqlstring]\n";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if (is_array($result) && $result['error'] == 1) $error = true;
 		
 		/* ------ copy the data specification ------ */
 		/* create a temp table, which automatically creates the columns */
 		$sqlstring = "create temporary table tmp_dataspec$id (select * from pipeline_data_def where pipeline_id = $id and pipeline_version = $version)";
-		//PrintSQL("$sqlstring");
 		echo "<li>Create temp table from existing pipeline_data_def spec [$sqlstring]\n";
 		$history .= "8) Create temp table from existing pipeline_data_def spec [$sqlstring]\n";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if (is_array($result) && $result['error'] == 1) $error = true;
+
+		//$sqlstring = "alter table tmp_dataspec$id drop primary key";
+		//echo "<li>Remove pipelinedatadef_id from temp table pipeline_data_def [$sqlstring]\n";
+		//$history .= "8.1) Remove pipelinedatadef_id from temp table pipeline_data_def [$sqlstring]\n";
+		//$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		//if (is_array($result) && $result['error'] == 1) $error = true;
+
+		$sqlstring = "alter table tmp_dataspec$id modify pipelinedatadef_id int(11)";
+		echo "<li>Remove pipelinedatadef_id not null [$sqlstring]\n";
+		$history .= "8.2) Remove pipelinedatadef_id not null [$sqlstring]\n";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if (is_array($result) && $result['error'] == 1) $error = true;
 		
 		/* for DEBUG, display the original table */
 		$sqlstring = "select * from pipeline_data_def where pipeline_id = $id and pipeline_version = $version";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if (is_array($result) && $result['error'] == 1) $error = true;
 		$history .= "Original TABLE [pipeline_data_def] \n" . PrintSQLTable($result,"","","",true) . "\n\n";
 
 		/* for DEBUG, display the copied temp table */
 		$sqlstring = "select * from tmp_dataspec$id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if (is_array($result) && $result['error'] == 1) $error = true;
 		$history .= "Temp TABLE [tmp_dataspec$id] \n" . PrintSQLTable($result,"","","",true) . "\n\n";
 		
 		/* make any changes to the new pipeline before inserting */
 		$sqlstring = "update tmp_dataspec$id set pipeline_id = $newid, pipeline_version = 1, pipelinedatadef_id = null";
-		//PrintSQL("$sqlstring");
 		echo "<li>Make changes to temp table [$sqlstring]\n";
 		$history .= "9) Make changes to temp table [$sqlstring]\n";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if (is_array($result) && $result['error'] == 1) $error = true;
 		
 		/* insert the changed rows into the pipeline_data_def table */
 		$sqlstring = "insert into pipeline_data_def select * from tmp_dataspec$id";
-		//PrintSQL("$sqlstring");
 		echo "<li>Insert temp table rows into pipeline_data_def [$sqlstring]\n";
 		$history .= "10) Insert temp table rows into pipeline_data_def [$sqlstring]\n";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if (is_array($result) && $result['error'] == 1) $error = true;
 		
 		/* delete the tmp table */
 		$sqlstring = "drop table tmp_dataspec$id";
-		//PrintSQL("$sqlstring");
 		echo "<li>Drop temp table [$sqlstring]\n";
 		$history .= "11) Drop temp table [$sqlstring]\n";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if (is_array($result) && $result['error'] == 1) $error = true;
 		
 		/* ------ copy the pipeline steps specification ------ */
 		/* create a temp table, which automatically creates the columns */
 		$sqlstring = "create temporary table tmp_steps$id (select * from pipeline_steps where pipeline_id = $id and pipeline_version = $version)";
-		//PrintSQL("$sqlstring");
 		echo "<li>Create temp table from pipeline_steps spec [$sqlstring]\n";
 		$history .= "12) Create temp table from pipeline_steps spec [$sqlstring]\n";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if (is_array($result) && $result['error'] == 1) $error = true;
 
 		/* for DEBUG, display the original table */
 		$sqlstring = "select * from pipeline_steps where pipeline_id = $id and pipeline_version = $version";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if (is_array($result) && $result['error'] == 1) $error = true;
 		$history .= "Original TABLE [pipeline_steps] \n" . PrintSQLTable($result,"","","",true) . "\n\n";
 
 		/* for DEBUG, display the copied temp table */
 		$sqlstring = "select * from tmp_steps$id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if (is_array($result) && $result['error'] == 1) $error = true;
 		$history .= "Temp TABLE [tmp_steps$id] \n" . PrintSQLTable($result,"","","",true) . "\n\n";
+
+		$sqlstring = "alter table tmp_steps$id modify pipelinestep_id int(11)";
+		echo "<li>Remove pipelinestep_id not null [$sqlstring]\n";
+		$history .= "8.2) Remove pipelinestep_id not null [$sqlstring]\n";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if (is_array($result) && $result['error'] == 1) $error = true;
 		
 		/* make any changes to the new pipeline before inserting */
-		$sqlstring = "update tmp_steps$id set pipeline_id = $newid, pipeline_version = 1, pipelinestep_id = ''";
-		//PrintSQL("$sqlstring");
+		$sqlstring = "update tmp_steps$id set pipeline_id = $newid, pipeline_version = 1, pipelinestep_id = null";
 		echo "<li>Make changes to temp table [$sqlstring]\n";
 		$history .= "13) Make changes to temp table [$sqlstring]\n";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if (is_array($result) && $result['error'] == 1) $error = true;
 		
 		/* insert the changed rows into the pipeline_data_def table */
 		$sqlstring = "insert into pipeline_steps select * from tmp_steps$id";
-		//PrintSQL("$sqlstring");
 		echo "<li>Insert temp rows into pipeline_steps table [$sqlstring]\n";
 		$history .= "14) Insert temp rows into pipeline_steps table [$sqlstring]\n";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if (is_array($result) && $result['error'] == 1) $error = true;
 		
 		/* delete the tmp table */
 		$sqlstring = "drop table tmp_steps$id";
-		//PrintSQL("$sqlstring");
 		echo "<li>Drop temp table [$sqlstring]\n";
 		$history .= "15) Drop temp table [$sqlstring]\n";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if (is_array($result) && $result['error'] == 1) $error = true;
 		
 		/* copy any dependencies */
 		$sqlstring = "select * from pipeline_dependencies where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if (is_array($result) && $result['error'] == 1) $error = true;
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$parentid = $row['parent_id'];
 			$sqlstringA = "insert ignore into pipeline_dependencies (pipeline_id, parent_id) values ($newid,'$parentid')";
 			echo "<li>Copy dependency [$sqlstringA]\n";
 			$history .= "16) Copy dependency [$sqlstringA]\n";
-			//PrintSQL($sqlstring);
 			$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
 		}
 		
 		/* ------ all done ------ */
-		$sqlstring = "commit";
-		//PrintSQL("$sqlstring");
-		echo "<li><b>Commit the transaction</b> [$sqlstring]\n";
-		$history .= "17) Commit the transaction [$sqlstring]\n";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if ($error) {
+			echo "<li><b>Encountered error. Rollback transaction</b>\n";
+			$history .= "17) Rollback transaction\n";
+			mysqli_rollback($GLOBALS['linki']);
+		}
+		else {
+			echo "<li><b>Commit the transaction</b>\n";
+			$history .= "17) Commit the transaction\n";
+			mysqli_commit($GLOBALS['linki']);
+		}
+
+		mysqli_autocommit($GLOBALS['linki'], true);
+
 		?>
 		</ol>
 		<?
@@ -2046,7 +2080,7 @@
 							</div>
 						</td>
 						<td>
-							<input type="text" name="dd_order[<?=$neworder?>]" size="2" maxlength="3">
+							<input type="text" name="dd_order[<?=$neworder?>]" value="<?=$neworder?>" size="2" maxlength="3">
 						</td>
 						<td>
 							<input type="text" name="dd_protocol[<?=$neworder?>]" size="50" title='Enter exact protocol name(s). Use quotes if entering a protocol with spaces or entering more than one protocol: "Task1" "Task 2" "Etc". Use multiple protocol names ONLY if you do not expect the protocols to occur in the same study'>
