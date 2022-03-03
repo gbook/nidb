@@ -36,7 +36,7 @@ h6:before {
 # Building NiDB
 The following OS configurations have been tested to build nidb successfully with Qt 6.2
 - RHEL9 compatible
-  - <strike>CentOS 9 Stream</strike> (NOPE. Don't use CentOS Stream. There are some significant bugs with Qt running on CentOS Stream)
+  - <strike>CentOS 9 Stream</strike>(NOPE. Don't use CentOS Stream. There are some significant bugs with Qt running on CentOS Stream)
 - RHEL8 compatible
   - Rocky Linux 8.5
 
@@ -71,7 +71,9 @@ yum install cmake3 rpmdevtools rpm-build
    - The Qt Maintenance Tool will start. An account is required to download Qt open source
    - On the components screen, select the checkbox for **Qt 6.2.3 &rarr; Desktop gcc 64-bit**
 
-## Build rpm Package
+## Building NiDB
+Once the build environment is setup, the builds can be done by script. The `build.sh` script will build onlty the nidb executable, this is useful when testing. The `rpmbuildX.sh` scripts will build the rpm, this is useful when creating releases.
+
 ### CentOS 9 Stream
 The first time building NiDB on this machine, perform the following
 ```
@@ -80,12 +82,14 @@ wget https://github.com/gbook/nidb/archive/master.zip
 unzip master.zip
 mv nidb-master nidb
 cd nidb
-./rpmbuild9.sh
+./build.sh      # build only the NiDB executable
+./rpmbuild9.sh  # build the nidb .rpm
 ```
 All subsequent builds on this machine can be done with the following
 ```
 cd ~/nidb
-./rpmbuild9.sh
+./build.sh      # build only the NiDB executable
+./rpmbuild9.sh  # build the nidb .rpm
 ```
 
 ### Rocky Linux 8.5
@@ -96,12 +100,14 @@ wget https://github.com/gbook/nidb/archive/master.zip
 unzip master.zip
 mv nidb-master nidb
 cd nidb
-./rpmbuild8.sh
+./build.sh      # build only the NiDB executable
+./rpmbuild8.sh  # build the nidb .rpm
 ```
 All subsequent builds on this machine can be done with the following
 ```
 cd ~/nidb
-./rpmbuild8.sh
+./build.sh      # build only the NiDB executable
+./rpmbuild8.sh  # build the nidb .rpm
 ```
 
 ## Contributing to the NiDB Project
