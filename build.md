@@ -36,7 +36,7 @@ h6:before {
 # Building NiDB
 The following OS configurations have been tested to build nidb successfully with Qt 6.2
 - RHEL9 compatible
-  - CentOS 9 Stream
+  - <strike>CentOS 9 Stream</strike> (NOPE. Don't use CentOS Stream. There are some significant bugs with Qt running on CentOS Stream)
 - RHEL8 compatible
   - Rocky Linux 8.5
 
@@ -69,7 +69,7 @@ yum install cmake3 rpmdevtools rpm-build
    - Make the installer executable `chmod 777 qt-unified-linux-x64-x.x.x-online.run`
    - Run `./qt-unified-linux-x64-x.x.x-online.run`
    - The Qt Maintenance Tool will start. An account is required to download Qt open source
-   - On the components screen, select the checkbox for Qt 6.2.3 &rarr; Desktop gcc 64-bit
+   - On the components screen, select the checkbox for **Qt 6.2.3 &rarr; Desktop gcc 64-bit**
 
 ## Build rpm Package
 ### CentOS 9 Stream
@@ -102,4 +102,29 @@ All subsequent builds on this machine can be done with the following
 ```
 cd ~/nidb
 ./rpmbuild8.sh
+```
+
+## Contributing to the NiDB Project
+### Setting up a development server
+A development server can be a full server, a VM, or any instance of one of the supported Linux operating systems. Once you've been granted access to the nidb project on github, you'll need to add your SSH key (github.com --> click your username --> Settings --> SSH and GPG keys). Then you can clone the current source code.
+
+### Cloning a new repository with SSH
+```
+cd ~
+git clone git@github.com:gbook/nidb.git nidb
+```
+This will create a git repository called nidb in your home directory.
+
+### Committing changes
+```
+cd ~/nidb
+git commit -am "Comments about the changes"
+git push origin master
+```
+
+### Updating your repository
+To keep your local copy of the repository up to date, you'll need to pull any changes from github.
+```
+cd ~/nidb
+git pull origin master
 ```
