@@ -1375,6 +1375,25 @@
 		<? } ?>
 		
 		<!-- -------------------- Settings tab -------------------- -->
+
+		<script>
+			function CheckHostnameStatus() {
+				var xhttp = new XMLHttpRequest();
+				xhttp.onreadystatechange = function() {
+					if (this.readyState == 4 && this.status == 200) {
+						if (this.responseText == "1") {
+							document.getElementById("hostup").innerHTML = "<i class='ui green check circle icon'></i>";
+						}
+						else {
+							document.getElementById("hostup").innerHTML = "<i class='ui red exclamation circle icon'></i> Submit host is not accessible";
+						}
+					}
+				};
+				var hostname = document.getElementById("pipelinesubmithost").value;
+				xhttp.open("GET", "ajaxapi.php?action=checkhost&hostname=" + hostname, true);
+				xhttp.send();
+			}
+		</script>
 		
 		<div class="ui bottom attached <?=$tab_twoactive?> tab segment" data-tab="second">
 			<div class="ui right close rail">
@@ -1526,7 +1545,9 @@
 						</tr>
 						<tr>
 							<td class="label" valign="top">Submit hostname</td>
-							<td valign="top"><input type="text" name="pipelinesubmithost" <?=$disabled?> value="<?=$submithost?>"></td>
+							<td valign="top">
+								<input type="text" name="pipelinesubmithost" id="pipelinesubmithost" <?=$disabled?> value="<?=$submithost?>" onChange="CheckHostnameStatus()" onLoad="CheckHostnameStatus()"><div id="hostup"></div>
+							</td>
 						</tr>
 						<tr>
 							<td class="label" valign="top">Max wall time</td>

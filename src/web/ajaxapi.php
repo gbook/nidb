@@ -37,6 +37,7 @@
 	$total = GetVariable("total");
 	$jobid = GetVariable("jobid");
 	$uid = GetVariable("uid");
+	$hostname = GetVariable("hostname");
 	
 	$s['pipelineid'] = GetVariable("pipelineid");
 	$s['dependency'] = GetVariable("dependency");
@@ -72,6 +73,9 @@
 		case 'remoteexportstatus':
 			RemoteExportStatus($connectionid, $transactionid, $detail, $total);
 			break;
+		case 'checkhost':
+			CheckHostStatus($hostname);
+			break;
 	}
 	
 
@@ -104,6 +108,22 @@
 		echo json_encode($a, JSON_FORCE_OBJECT);
 	}
 
+
+	/* -------------------------------------------- */
+	/* ------- CheckHostStatus -------------------- */
+	/* -------------------------------------------- */
+	function CheckHostStatus($hostname) {
+		
+		$hostname = trim($hostname);
+		$hostname = preg_replace("/[^A-Za-z0-9 ]/", '', $hostname);
+
+		exec("ping -c 1 '$hostname'", $output, $result);
+		
+		if ($result == 0)
+			echo "1";
+		else
+			echo "0";
+	}
 	
 	/* -------------------------------------------- */
 	/* ------- ValidatePath ----------------------- */
