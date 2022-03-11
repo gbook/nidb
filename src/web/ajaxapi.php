@@ -76,6 +76,9 @@
 		case 'checkhost':
 			CheckHostStatus($hostname);
 			break;
+		case 'checksgehost':
+			CheckSGESubmitStatus($hostname);
+			break;
 	}
 	
 
@@ -124,6 +127,28 @@
 		else
 			echo "0";
 	}
+
+
+	/* -------------------------------------------- */
+	/* ------- CheckSGESubmitStatus --------------- */
+	/* -------------------------------------------- */
+	function CheckSGESubmitStatus($hostname) {
+		
+		$hostname = trim($hostname);
+		$hostname = preg_replace("/[^A-Za-z0-9 ]/", '', $hostname);
+
+		exec("ssh '$hostname' which qsub", $output, $result);
+		
+		if ($result == 0) {
+			echo "1";
+			print_r($output);
+		}
+		else {
+			echo "0";
+			print_r($output);
+		}
+	}
+
 	
 	/* -------------------------------------------- */
 	/* ------- ValidatePath ----------------------- */
