@@ -1471,20 +1471,36 @@
 						<input type="hidden" name="id" value="<?=$id?>">
 						<input type="hidden" name="returntab" value="settings">
 						<tr>
-							<td class="label" valign="top">Title</td>
+							<td class="label" valign="top" align="right">Name</td>
 							<td valign="top">
-								<input type="text" name="pipelinetitle" required value="<?=$title?>" maxlength="50" size="60" onKeyPress="return AlphaNumeric(event)" <? if ($type == "edit") { echo "readonly style='background-color: #EEE; border: 1px solid gray; color: #888'"; } ?>>
+								<div class="ui input">
+									<input type="text" name="pipelinetitle" required value="<?=$title?>" maxlength="50" size="60" onKeyPress="return AlphaNumeric(event)" <? if ($type == "edit") { echo "readonly style='background-color: #EEE;"; } ?>>
+								</div>
 							</td>
 						</tr>
 						<tr>
-							<td class="label" valign="top">Description</td>
-							<td valign="top"><input type="text" <?=$disabled?> name="pipelinedesc" value="<?=$desc?>" size="60"></td>
+							<td class="label" valign="top" align="right">Description</td>
+							<td valign="top">
+								<div class="ui input">
+									<input type="text" <?=$disabled?> name="pipelinedesc" value="<?=$desc?>" size="60">
+								</div>
+							</td>
 						</tr>
 						<tr>
-							<td class="label" valign="top">Stats level</td>
+							<td class="label" valign="top" align="right">Stats level</td>
 							<td valign="top">
-								<input type="radio" name="level" id="level1" value="1" <?=$disabled?> <? if ($level == 1) echo "checked"; ?>>First <span class="tiny">subject level</span><br>
-								<input type="radio" name="level" id="level2" value="2" <?=$disabled?> <? if ($level == 2) echo "checked"; ?>>Second <span class="tiny">group level</span><br>
+								<div class="field">
+									<div class="ui radio checkbox">
+										<input type="radio" name="level" id="level1" value="1" <?=$disabled?> <? if ($level == 1) echo "checked"; ?>>
+										<label>First <span class="tiny">subject level</span></label>
+									</div>
+								</div>
+								<div class="field">
+									<div class="ui radio checkbox">
+										<input type="radio" name="level" id="level2" value="2" <?=$disabled?> <? if ($level == 2) echo "checked"; ?>>
+										<label>Second <span class="tiny">group level</span></label>
+									</div>
+								</div>
 							</td>
 						</tr>
 						<tr>

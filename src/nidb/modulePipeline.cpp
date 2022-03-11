@@ -514,12 +514,12 @@ int modulePipeline::Run() {
 
                                 /* copy any parent pipelines */
                                 QString systemstring;
-                                //if (p.depLinkType == "hardlink") systemstring = "cp -aulL "; /* L added to allow copying of softlinks */
-                                //else if (p.depLinkType == "softlink") systemstring = "cp -aus ";
-                                //else if (p.depLinkType == "regularcopy") systemstring = "cp -au ";
-                                if (p.depLinkType == "hardlink") systemstring = "rsync -aH "; /* try rsync to overcome cp bug on CentOS8 Stream */
+                                if (p.depLinkType == "hardlink") systemstring = "cp -aulL "; /* L added to allow copying of softlinks */
                                 else if (p.depLinkType == "softlink") systemstring = "cp -aus ";
                                 else if (p.depLinkType == "regularcopy") systemstring = "cp -au ";
+                                //if (p.depLinkType == "hardlink") systemstring = "rsync -aH "; /* try rsync to overcome cp bug on CentOS8 Stream */
+                                //else if (p.depLinkType == "softlink") systemstring = "cp -aus ";
+                                //else if (p.depLinkType == "regularcopy") systemstring = "cp -au ";
                                 if (p.depDir == "subdir") {
                                     systemstring += deppath + " " + analysispath + "/";
                                     setuplog << n->WriteLog("Parent pipeline will be copied to a subdir [" + systemstring + "]");
@@ -1218,7 +1218,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
 
                     dlog << QString("   Done copying imaging data from [%1] to [%2]").arg(indir).arg(newanalysispath);
 
-					qint64 c;
+                    qint64 c;
                     qint64 b;
                     n->GetDirSizeAndFileCount(newanalysispath, c, b, true);
                     dlog << n->WriteLog(QString("   Imaging data output directory [%1] now contains [%2] files, and is [%3] bytes in size.").arg(newanalysispath).arg(c).arg(b));
@@ -1249,7 +1249,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
 
                     dlog << QString("   Done copying converted imaging data from [%1] via [%2] to [%3]").arg(indir).arg(tmpdir).arg(newanalysispath);
 
-					qint64 c;
+                    qint64 c;
                     qint64 b;
                     n->GetDirSizeAndFileCount(newanalysispath, c, b, true);
                     dlog << n->WriteLog(QString("   Imaging output directory [%1] now contains [%2] files, and is [%3] bytes in size.").arg(newanalysispath).arg(c).arg(b));
@@ -1275,7 +1275,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                     n->SystemCommand("chmod -Rf 777 " + behoutdir, true, true);
                     dlog << QString("   Done copying behavioral data from [%1] to [%2]").arg(behindir).arg(behoutdir);
 
-					qint64 c;
+                    qint64 c;
                     qint64 b;
                     n->GetDirSizeAndFileCount(behoutdir, c, b, true);
                     dlog << n->WriteLog(QString("   Behavioral output directory now contains [%1] files, and is [%2] bytes in size.").arg(c).arg(b));
