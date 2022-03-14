@@ -94,6 +94,7 @@ public:
 	QString GetBehPath(QString behformat, QString analysispath, QString location, QString behdir, int newseriesnum);
 	bool UpdateAnalysisStatus(qint64 analysisid, QString status, QString statusmsg, int jobid, int numseries, QString datalog, QString datatable, bool currentStartDate, bool currentEndDate, int supplementFlag, int rerunFlag);
 	qint64 RecordDataDownload(qint64 id, qint64 analysisid, QString modality, int checked, int found, int seriesid, QString downloadpath, int step, QString msg);
+	void InsertPipelineEvent(int pipelineid, int version, QString event, QString message);
 
 private:
 	nidb *n;

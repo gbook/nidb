@@ -231,7 +231,7 @@
 		$pipelinequeue = preg_replace('/\s+/', '', trim($pipelinequeue));
 		
 		/* update the pipeline */
-		$sqlstring = "update pipelines set pipeline_name = '$pipelinetitle', pipeline_desc = '$pipelinedesc', pipeline_group = '$pipelinegroup', pipeline_numproc = $pipelinenumproc, pipeline_submithost = '$pipelinesubmithost', pipeline_maxwalltime = '$pipelinemaxwalltime', pipeline_submitdelay = '$pipelinesubmitdelay', pipeline_datacopymethod = '$pipelinedatacopymethod', pipeline_queue = '$pipelinequeue', pipeline_clustertype = '$pipelineclustertype', pipeline_clusteruser = '$pipelineclusteruser', pipeline_removedata = '$pipelineremovedata', pipeline_directory = '$pipelinedirectory', pipeline_dirstructure = '$pipelinedirstructure', pipeline_usetmpdir = '$pipelineusetmpdir', pipeline_tmpdir = '$pipelinetmpdir', pipeline_notes = '$pipelinenotes', pipeline_level = $level, pipeline_ishidden = '$ishidden' where pipeline_id = $id";
+		$sqlstring = "update pipelines set pipeline_name = '$pipelinetitle', pipeline_desc = '$pipelinedesc', pipeline_group = '$pipelinegroup', pipeline_numproc = $pipelinenumproc, pipeline_submithost = '$pipelinesubmithost', pipeline_maxwalltime = '$pipelinemaxwalltime', pipeline_submitdelay = '$pipelinesubmitdelay', pipeline_datacopymethod = '$pipelinedatacopymethod', pipeline_queue = '$pipelinequeue', pipeline_clustertype = '$pipelineclustertype', pipeline_clusteruser = '$pipelineclusteruser', pipeline_removedata = '$pipelineremovedata', pipeline_directory = '$pipelinedirectory', pipeline_dirstructure = '$pipelinedirstructure', pipeline_usetmpdir = '$pipelineusetmpdir', pipeline_tmpdir = '$pipelinetmpdir', pipeline_notes = '$pipelinenotes', pipeline_ishidden = '$ishidden' where pipeline_id = $id";
 		//PrintVariable($sqlstring);
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 
@@ -954,6 +954,9 @@
 			$outputbids = $row['pipeline_outputbids'];
 			$isenabled = $row['pipeline_enabled'];
 			
+			if ($submithost == "") { $submithost = $GLOBALS['cfg']['clustersubmithost']; }
+			if ($clustertype == "") { $clustertype = "sge"; }
+			
 			if ((strtolower($owner) == strtolower($GLOBALS['username'])) || ($GLOBALS['issiteadmin'])) {
 				$readonly = false;
 			}
@@ -973,6 +976,9 @@
 			$level = 1;
 			$directory = "";
 			$readonly = false;
+			
+			$submithost = $GLOBALS['cfg']['clustersubmithost'];
+			$clustertype = "sge";
 		}
 		
 		if ($readonly) {
@@ -1102,7 +1108,6 @@
 					<td><h3 class="ui header">View</h3</td>
 					<td valign="top" style="padding-bottom: 10pt">
 						<a href="analysis.php?action=viewanalyses&id=<?=$id?>" class="ui large green button">Analyses</a>
-						<br><br>
 						<a href="analysis.php?action=viewfailedanalyses&id=<?=$id?>" title="View all imaging studies which did not meet the data criteria, and therefore the pipeline did not attempt to run the analysis" class="ui basic button">Ignored studies<br>
 						<a href="pipelines.php?action=viewversion&id=<?=$id?>" class="ui basic button">Pipeline versions</a>
 					</td>
@@ -1110,143 +1115,144 @@
 				<tr>
 					<td><h3 class="ui header">Analysis statistics</h3></td>
 					<td valign="top" style="padding-bottom: 10pt">
-					<?
-						/* gather statistics about the analyses */
-						$sqlstring = "select sum(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete'";
-						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-						$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-						$totaltime = $row['cluster_time'];
-						$totaltime = number_format(($totaltime/60/60),2);
-						
-						$sqlstring = "select sum(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'cluster_timesuccess' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete' and analysis_iscomplete = 1";
-						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-						$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-						$totaltimesuccess = $row['cluster_timesuccess'];
-						$totaltimesuccess = number_format(($totaltimesuccess/60/60),2);
-						
-						$sqlstring = "select count(*) 'numcomplete' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete'";
-						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-						$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-						$numcomplete = $row['numcomplete'];
+						<div class="ui segment">
+							<?
+								/* gather statistics about the analyses */
+								$sqlstring = "select sum(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete'";
+								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+								$totaltime = $row['cluster_time'];
+								$totaltime = number_format(($totaltime/60/60),2);
+								
+								$sqlstring = "select sum(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'cluster_timesuccess' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete' and analysis_iscomplete = 1";
+								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+								$totaltimesuccess = $row['cluster_timesuccess'];
+								$totaltimesuccess = number_format(($totaltimesuccess/60/60),2);
+								
+								$sqlstring = "select count(*) 'numcomplete' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete'";
+								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+								$numcomplete = $row['numcomplete'];
 
-						$sqlstring = "select count(*) 'numcompletesuccess' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete' and analysis_iscomplete = 1";
-						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-						$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-						$numcompletesuccess = $row['numcompletesuccess'];
-						
-						$sqlstring = "select count(*) 'numprocessing' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'processing'";
-						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-						$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-						$numprocessing = $row['numprocessing'];
-						
-						$sqlstring = "select count(*) 'numpending' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'pending'";
-						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-						$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-						$numpending = $row['numpending'];
-						
-						/* get mean processing times */
-						$sqlstring = "select analysis_id, timestampdiff(second, analysis_startdate, analysis_enddate) 'analysis_time', timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status <> ''";
-						//PrintSQL($sqlstring);
-						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-							//$analysis_id = $row['analysis_id'];
-							$analysistimes[] = $row['analysis_time'];
-							$clustertimes[] = $row['cluster_time'];
-						}
-						if (count($clustertimes) == 0) {
-							$clustertimes[] = 0;
-						}
-						if (count($analysistimes) == 0) {
-							$analysistimes[] = 0;
-						}
-						
-						?>
-						<div class="ui mini statistics">
-							<div class="ui tiny statistic">
-								<div class="value"><?=$numcomplete?></div>
-								<div class="label">Completed</div>
-							</div>
-							<div class="ui tiny statistic">
-								<div class="value"><?=$numcompletesuccess?></div>
-								<div class="label">Completed<br>Successfuly</div>
-							</div>
-							<div class="ui tiny statistic">
-								<div class="value"><?=$numprocessing?></div>
-								<div class="label">Processing</div>
-							</div>
-							<div class="ui tiny statistic">
-								<div class="value"><?=$numpending?></div>
-								<div class="label">Pending</div>
-							</div>
-							<div class="ui tiny statistic">
-								<div class="value"><?=$totaltime?> hr</div>
-								<div class="label">Total CPU Time</div>
-							</div>
-						</div>
-						<br><br>
-
-						<!--
-						<tr>
-							<td style="font-weight: bold; font-size: 9pt; text-align: right">Finished processing<br><span style="font-weight: normal">Total CPU time</span></td>
-							<td style="font-size: 9pt"><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numcomplete?></a><br><?=$totaltime?> hours</td>
-						</tr>
-						<tr>
-							<td style="font-weight: bold; font-size: 9pt; text-align: right">Completed successfuly<br><span style="font-weight: normal">Total CPU time</span></td>
-							<td style="font-size: 9pt"><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numcompletesuccess?></a><br><?=$totaltimesuccess?> hours</td>
-						</tr>
-						<tr>
-							<td style="font-weight: bold; font-size: 9pt; text-align: right">Currently processing</td>
-							<td style="font-size: 9pt"><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numprocessing?></a></td>
-						</tr>
-						<tr>
-							<td style="font-weight: bold; font-size: 9pt; text-align: right">Pending<br><span class="tiny">analyses yet to be submitted</span></td>
-							<td style="font-size: 9pt"><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numpending?></a></td>
-						</tr>
-						</tr>
-							<td style="font-weight: bold; font-size: 9pt; text-align: right">Setup Time</td>
-							<td style="font-size: 9pt"><?=number_format(min($analysistimes),1)?> - <?=number_format(max($analysistimes),1)?> seconds
-							<br>Mean: <?=number_format(mean($analysistimes),1)?> seconds</td>
-						</tr>
-						<tr>
-							<td style="font-weight: bold; font-size: 9pt; text-align: right">Cluster Time</td>
-							<td style="font-size: 9pt"><?=number_format(min($clustertimes)/60/60,2)?> - <?=number_format(max($clustertimes)/60/60,2)?> hours
-							<br>Mean: <?=number_format(mean($clustertimes)/60/60,2)?> hours</td>
-						</tr>-->
-						<div class="ui accordion">
-							<div class="title">
-								<i class="dropdown icon"></i>
-								Computing Performance
-							</div>
-							<div class="content">
-								<table class="ui very compact very small celled table">
-									<thead>
-										<th colspan="3">Computing performance<br><span class="tiny">Successful analyses only</span></th>
-									</thead>
-									<tr>
-										<td><b>Hostname</b></td>
-										<td><b>Avg CPU</b></td>
-										<td><b>Count</b></td>
-									</tr>
-								<?
-									$sqlstring = "select avg(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'avgcpu', hostname, count(hostname) 'count' FROM (select analysis_clusterstartdate, analysis_clusterenddate, trim(Replace(Replace(Replace(analysis_hostname,'\t',''),'\n',''),'\r','')) 'hostname' from `analysis` WHERE pipeline_id = $id and (analysis_iscomplete = 1 or analysis_status = 'complete')) hostnames group by hostname order by hostname";
-									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-										$cpuhrs = number_format(($row['avgcpu']/60/60),2);
-										$count = $row['count'];
-										$hostname = $row['hostname'];
-										?>
-										<tr>
-											<td><?=$hostname?></td>
-											<td><?=$cpuhrs?> hrs</td>
-											<td><?=$count?></td>
-										</tr>
-										<?
-									}
+								$sqlstring = "select count(*) 'numcompletesuccess' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete' and analysis_iscomplete = 1";
+								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+								$numcompletesuccess = $row['numcompletesuccess'];
+								
+								$sqlstring = "select count(*) 'numprocessing' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'processing'";
+								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+								$numprocessing = $row['numprocessing'];
+								
+								$sqlstring = "select count(*) 'numpending' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'pending'";
+								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+								$numpending = $row['numpending'];
+								
+								/* get mean processing times */
+								$sqlstring = "select analysis_id, timestampdiff(second, analysis_startdate, analysis_enddate) 'analysis_time', timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status <> ''";
+								//PrintSQL($sqlstring);
+								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+									//$analysis_id = $row['analysis_id'];
+									$analysistimes[] = $row['analysis_time'];
+									$clustertimes[] = $row['cluster_time'];
+								}
+								if (count($clustertimes) == 0) {
+									$clustertimes[] = 0;
+								}
+								if (count($analysistimes) == 0) {
+									$analysistimes[] = 0;
+								}
+								
 								?>
-								</table>
-							</div>
-						</div>
+								<div class="ui statistics">
+									<div class="ui tiny statistic">
+										<div class="value"><?=$numcomplete?></div>
+										<div class="label">Completed</div>
+									</div>
+									<div class="ui tiny statistic">
+										<div class="value"><?=$numcompletesuccess?></div>
+										<div class="label">Completed<br>Successfuly</div>
+									</div>
+									<div class="ui tiny statistic">
+										<div class="value"><?=$numprocessing?></div>
+										<div class="label">Processing</div>
+									</div>
+									<div class="ui tiny statistic">
+										<div class="value"><?=$numpending?></div>
+										<div class="label">Pending</div>
+									</div>
+									<div class="ui mini grey statistic">
+										<div class="value"><?=$totaltime?> hr</div>
+										<div class="label">Total CPU Time</div>
+									</div>
+								</div>
+								<br><br>
 
+								<!--
+								<tr>
+									<td style="font-weight: bold; font-size: 9pt; text-align: right">Finished processing<br><span style="font-weight: normal">Total CPU time</span></td>
+									<td style="font-size: 9pt"><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numcomplete?></a><br><?=$totaltime?> hours</td>
+								</tr>
+								<tr>
+									<td style="font-weight: bold; font-size: 9pt; text-align: right">Completed successfuly<br><span style="font-weight: normal">Total CPU time</span></td>
+									<td style="font-size: 9pt"><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numcompletesuccess?></a><br><?=$totaltimesuccess?> hours</td>
+								</tr>
+								<tr>
+									<td style="font-weight: bold; font-size: 9pt; text-align: right">Currently processing</td>
+									<td style="font-size: 9pt"><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numprocessing?></a></td>
+								</tr>
+								<tr>
+									<td style="font-weight: bold; font-size: 9pt; text-align: right">Pending<br><span class="tiny">analyses yet to be submitted</span></td>
+									<td style="font-size: 9pt"><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numpending?></a></td>
+								</tr>
+								</tr>
+									<td style="font-weight: bold; font-size: 9pt; text-align: right">Setup Time</td>
+									<td style="font-size: 9pt"><?=number_format(min($analysistimes),1)?> - <?=number_format(max($analysistimes),1)?> seconds
+									<br>Mean: <?=number_format(mean($analysistimes),1)?> seconds</td>
+								</tr>
+								<tr>
+									<td style="font-weight: bold; font-size: 9pt; text-align: right">Cluster Time</td>
+									<td style="font-size: 9pt"><?=number_format(min($clustertimes)/60/60,2)?> - <?=number_format(max($clustertimes)/60/60,2)?> hours
+									<br>Mean: <?=number_format(mean($clustertimes)/60/60,2)?> hours</td>
+								</tr>-->
+								<div class="ui accordion">
+									<div class="title">
+										<i class="dropdown icon"></i>
+										Computing Performance
+									</div>
+									<div class="content">
+										<table class="ui very compact very small celled table">
+											<thead>
+												<th colspan="3">Computing performance<br><span class="tiny">Successful analyses only</span></th>
+											</thead>
+											<tr>
+												<td><b>Hostname</b></td>
+												<td><b>Avg CPU</b></td>
+												<td><b>Count</b></td>
+											</tr>
+										<?
+											$sqlstring = "select avg(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'avgcpu', hostname, count(hostname) 'count' FROM (select analysis_clusterstartdate, analysis_clusterenddate, trim(Replace(Replace(Replace(analysis_hostname,'\t',''),'\n',''),'\r','')) 'hostname' from `analysis` WHERE pipeline_id = $id and (analysis_iscomplete = 1 or analysis_status = 'complete')) hostnames group by hostname order by hostname";
+											$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+											while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+												$cpuhrs = number_format(($row['avgcpu']/60/60),2);
+												$count = $row['count'];
+												$hostname = $row['hostname'];
+												?>
+												<tr>
+													<td><?=$hostname?></td>
+													<td><?=$cpuhrs?> hrs</td>
+													<td><?=$count?></td>
+												</tr>
+												<?
+											}
+										?>
+										</table>
+									</div>
+								</div>
+						</div>
 					</td>
 				</tr>
 				<tr>
@@ -1377,20 +1383,28 @@
 		<!-- -------------------- Settings tab -------------------- -->
 
 		<script>
+			$(document).ready(function() {
+				CheckHostnameStatus();
+			});
+		
 			function CheckHostnameStatus() {
 				var xhttp = new XMLHttpRequest();
 				xhttp.onreadystatechange = function() {
 					if (this.readyState == 4 && this.status == 200) {
-						if (this.responseText == "1") {
-							document.getElementById("hostup").innerHTML = "<i class='ui green check circle icon'></i>";
+						var retCode = this.responseText.charAt(0);
+						if (retCode == "1") {
+							document.getElementById("hostup").innerHTML = "<div class='ui left pointing basic label'><i class='ui green check circle icon'></i> Valid submit host</div>";
+							document.getElementById("pipelinesubmithostinput").classList.remove('error');
 						}
 						else {
-							document.getElementById("hostup").innerHTML = "<i class='ui red exclamation circle icon'></i> Submit host is not accessible";
+							errMsg = this.responseText;
+							document.getElementById("hostup").innerHTML = "<div class='ui left pointing red label'><i class='ui exclamation circle icon'></i> Submit host is not accessible [" + errMsg + "]</div>";
+							//document.getElementById("pipelinesubmithostinput").classList.add('error');
 						}
 					}
 				};
 				var hostname = document.getElementById("pipelinesubmithost").value;
-				xhttp.open("GET", "ajaxapi.php?action=checkhost&hostname=" + hostname, true);
+				xhttp.open("GET", "ajaxapi.php?action=checksgehost&hostname=" + hostname, true);
 				xhttp.send();
 			}
 		</script>
@@ -1465,7 +1479,7 @@
 			</div>
 			<!--<div class="ui two column relaxed grid">
 				<div class="column">-->
-					<table class="entrytable" style="border:0px">
+					<table class="entrytable" width="100%">
 						<form method="post" action="pipelines.php">
 						<input type="hidden" name="action" value="<?=$formaction?>">
 						<input type="hidden" name="id" value="<?=$id?>">
@@ -1504,22 +1518,34 @@
 							</td>
 						</tr>
 						<tr>
-							<td class="label" valign="top">Directory</td>
+							<td class="label" valign="top" align="right">Directory</td>
 							<td valign="top">
-								<input type="text" name="pipelinedirectory" <?=$disabled?> value="<?=$directory?>" maxlength="255" size="60" <? if ($type == "edit") { echo "readonly style='background-color: #EEE; border: 1px solid gray; color: #888'"; } ?> >
+								<div class="ui input">
+									<input type="text" name="pipelinedirectory" <?=$disabled?> value="<?=$directory?>" maxlength="255" size="60" <? if ($type == "edit") { echo "readonly style='background-color: #EEE;"; } ?> >
+								</div>
 							</td>
 						</tr>
 						<tr>
-							<td class="label" valign="top">Directory structure</td>
+							<td class="label" valign="top" align="right">Directory structure</td>
 							<td valign="top">
-								<input type="radio" name="pipelinedirstructure" id="level1" value="a" <?=$disabled?> <? if (($dirstructure == 'a') || ($dirstructure == '')) echo "checked"; ?>><?=$GLOBALS['cfg']['analysisdir']?> <tt style="font-size: 10pt">/S1234ABC/1/ThisPipeline</tt><br>
-								<input type="radio" name="pipelinedirstructure" id="level1" value="b" <?=$disabled?> <? if ($dirstructure == 'b') echo "checked"; ?>><?=$GLOBALS['cfg']['analysisdirb']?> <tt style="font-size: 10pt">/ThisPipeline/S1234ABC/1</tt>
+								<div class="field">
+									<div class="ui radio checkbox">
+										<input type="radio" name="pipelinedirstructure" id="level1" value="a" <?=$disabled?> <? if (($dirstructure == 'a') || ($dirstructure == '')) echo "checked"; ?>><label><?=$GLOBALS['cfg']['analysisdir']?> <code>/S1234ABC/1/ThisPipeline</code></label>
+									</div>
+								</div>
+								<div class="field">
+									<div class="ui radio checkbox" style="padding: 5px 1px">
+										<input type="radio" name="pipelinedirstructure" id="level1" value="b" <?=$disabled?> <? if ($dirstructure == 'b') echo "checked"; ?>><label><?=$GLOBALS['cfg']['analysisdirb']?> <code>/ThisPipeline/S1234ABC/1</code></label>
+									</div>
+								</div>
 							</td>
 						</tr>
 						<tr>
-							<td class="label" valign="top">Pipeline group</td>
+							<td class="label" valign="top" align="right">Pipeline group</td>
 							<td valign="top">
-								<input type="text" name="pipelinegroup" list="grouplist" <?=$disabled?> value="<?=$pipelinegroup?>" maxlength="255" size="60">
+								<div class="ui input">
+									<input type="text" name="pipelinegroup" list="grouplist" <?=$disabled?> value="<?=$pipelinegroup?>" maxlength="255" size="60">
+								</div>
 							</td>
 							<datalist id="grouplist">
 								<?
@@ -1533,58 +1559,111 @@
 							</datalist>
 						</tr>
 						<tr>
-							<td class="label" valign="top">Notes</td>
-							<td valign="top"><textarea name="pipelinenotes" <?=$disabled?> rows="8" cols="60"><?=$pipelinenotes?></textarea></td>
+							<td class="label" valign="top" align="right">Notes</td>
+							<td valign="top">
+								<div class="ui input">
+									<textarea name="pipelinenotes" <?=$disabled?> rows="8" cols="60"><?=$pipelinenotes?></textarea>
+								</div>
+							</td>
 						</tr>
 						<tr>
-							<td class="label" valign="top">Data transfer method</td>
+							<td class="label" valign="top" align="right">Data transfer method</td>
 							<td valign="top">
-								<input type="radio" name="pipelinedatacopymethod" id="datacopymethod1" value="nfs" <?=$disabled?> <? if (($datacopymethod == "nfs") || ($datacopymethod == "")) echo "checked"; ?>>NFS <span class="tiny">default</span><br>
-								<input type="radio" name="pipelinedatacopymethod" id="datacopymethod2" value="scp" <?=$disabled?> <? if ($datacopymethod == "scp") echo "checked"; ?>>scp <span class="tiny">requires passwordless ssh</span><br>
+								<div class="field">
+									<div class="ui radio checkbox">
+										<input type="radio" name="pipelinedatacopymethod" id="datacopymethod1" value="nfs" <?=$disabled?> <? if (($datacopymethod == "nfs") || ($datacopymethod == "")) echo "checked"; ?>>
+										<label>NFS <span class="tiny">default</span></label>
+									</div>
+								</div>
+								<div class="field">
+									<div class="ui radio checkbox">
+										<input type="radio" name="pipelinedatacopymethod" id="datacopymethod2" value="scp" <?=$disabled?> <? if ($datacopymethod == "scp") echo "checked"; ?>>
+										<label>scp <span class="tiny">requires passwordless ssh</span></label>
+									</div>
+								</div>
 							</td>
 						</tr>
 						<tr class="level1">
-							<td class="label" valign="top">Concurrent processes</td>
-							<td valign="top"><input type="number" name="pipelinenumproc" <?=$disabled?> value="<?=$numproc?>" min="1" max="350"></td>
+							<td class="label" valign="top" align="right">Concurrent processes</td>
+							<td valign="top">
+								<div class="ui input">
+									<input type="number" name="pipelinenumproc" <?=$disabled?> value="<?=$numproc?>" min="1" max="350">
+								</div>
+							</td>
 						</tr>
 						<tr>
 							<datalist id="clustertypelist">
 								<option value="sge">
 								<option value="slurm">
 							</datalist>
-							<td class="label" valign="top">Cluster type</td>
-							<td valign="top"><input type="text" name="pipelineclustertype" list="clustertypelist" <?=$disabled?> value="<?=$clustertype?>"></td>
-						</tr>
-						<tr>
-							<td class="label" valign="top">Cluster user</td>
-							<td valign="top"><input type="text" name="pipelineclusteruser" <?=$disabled?> value="<?=$clusteruser?>"></td>
-						</tr>
-						<tr>
-							<td class="label" valign="top">Submit hostname</td>
+							<td class="label" valign="top" align="right">Cluster type</td>
 							<td valign="top">
-								<input type="text" name="pipelinesubmithost" id="pipelinesubmithost" <?=$disabled?> value="<?=$submithost?>" onChange="CheckHostnameStatus()" onLoad="CheckHostnameStatus()"><div id="hostup"></div>
+								<div class="ui input">
+									<input type="text" name="pipelineclustertype" list="clustertypelist" <?=$disabled?> value="<?=$clustertype?>">
+								</div>
 							</td>
 						</tr>
 						<tr>
-							<td class="label" valign="top">Max wall time</td>
-							<td valign="top"><input type="text" name="pipelinemaxwalltime" <?=$disabled?> value="<?=$maxwalltime?>" size="5" maxlength="7"> <span class="tiny">time in minutes (24 hours = 1440 minutes)</span></td>
+							<td class="label" valign="top" align="right">Cluster user</td>
+							<td valign="top">
+								<div class="ui input">
+									<input type="text" name="pipelineclusteruser" <?=$disabled?> value="<?=$clusteruser?>">
+								</div>
+							</td>
 						</tr>
 						<tr>
-							<td class="label" valign="top">Submit delay</td>
-							<td valign="top"><input type="text" name="pipelinesubmitdelay" <?=$disabled?> value="<?=$submitdelay?>" size="5" maxlength="7"> <span class="tiny">time in hours</span></td>
+							<td class="label" valign="top" align="right">Submit hostname</td>
+							<td valign="top">
+								<div class="ui error input" id="pipelinesubmithostinput">
+									<input type="text" name="pipelinesubmithost" id="pipelinesubmithost" <?=$disabled?> value="<?=$submithost?>" onChange="CheckHostnameStatus()" onLoad="CheckHostnameStatus()">
+									<div id="hostup"></div>
+								</div>
+							</td>
 						</tr>
 						<tr>
-							<td class="label" valign="top">Queue name</td>
-							<td valign="top"><input type="text" name="pipelinequeue" <?=$disabled?> value="<?=$queue?>" required> <span class="tiny">Comma separated list</span></td>
+							<td class="label" valign="top" align="right">Max wall time</td>
+							<td valign="top">
+								<div class="ui right labeled input">
+									<input type="text" name="pipelinemaxwalltime" <?=$disabled?> value="<?=$maxwalltime?>" size="5" maxlength="7">
+									<div class="ui basic label">mins</div>
+								</div>
+							</td>
 						</tr>
 						<tr>
-							<td class="label" valign="top">Use temporary directory</td>
-							<td valign="top"><input type="checkbox" name="pipelineusetmpdir" <?=$disabled?> value="1" <? if ($usetmpdir == "1") { echo "checked"; } ?>> <input type="text" name="pipelinetmpdir" <?=$disabled?> value="<?=$tmpdir?>" size="56"><br>
-							<span class="tiny">Usually <tt>/tmp</tt>. Check with your sysadmin</span></td>
+							<td class="label" valign="top" align="right">Submit delay</td>
+							<td valign="top">
+								<div class="ui right labeled input">
+									<input type="text" name="pipelinesubmitdelay" <?=$disabled?> value="<?=$submitdelay?>" size="5" maxlength="7">
+									<div class="ui basic label">hrs</div>
+								</div>
+							</td>
 						</tr>
 						<tr>
-							<td class="label" valign="top">Hidden?</td>
-							<td valign="top" title="<b>Hidden</b><br><br>Useful to hide a pipeline from the main pipeline list. The pipeline still exists, but it won't show up"><input type="checkbox" name="pipelineishidden" value="1" <? if ($ishidden) { echo "checked"; } ?>></td>
+							<td class="label" valign="top" align="right">Queue(s)<br><span class="tiny">Comma separated list</span></td>
+							<td valign="top">
+								<div class="ui input">
+									<input type="text" name="pipelinequeue" <?=$disabled?> value="<?=$queue?>" required>
+								</div>
+							</td>
+						</tr>
+						<tr>
+							<td class="label" valign="top" align="right">Use temporary directory<br><span class="tiny">Usually <tt>/tmp</tt>. Check with your sysadmin</span></td>
+							<td valign="top">
+								<div class="ui checkbox">
+									<input type="checkbox" name="pipelineusetmpdir" <?=$disabled?> value="1" <? if ($usetmpdir == "1") { echo "checked"; } ?>>
+								</div>
+								<div class="ui input">
+									<input type="text" name="pipelinetmpdir" <?=$disabled?> value="<?=$tmpdir?>" size="60" placeholder="/path/to/tmp/dir">
+								</div>
+							</td>
+						</tr>
+						<tr>
+							<td class="label" valign="top" align="right">Hidden?</td>
+							<td valign="top" title="<b>Hidden</b><br><br>Useful to hide a pipeline from the main pipeline list. The pipeline still exists, but it won't show up">
+								<div class="ui checkbox">
+									<input type="checkbox" name="pipelineishidden" value="1" <? if ($ishidden) { echo "checked"; } ?>>
+								</div>
+							</td>
 						</tr>
 						
 						<tr>

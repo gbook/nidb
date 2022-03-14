@@ -2224,3 +2224,18 @@ qint64 modulePipeline::RecordDataDownload(qint64 id, qint64 analysisid, QString 
     }
 
 }
+
+
+/* ---------------------------------------------------------- */
+/* --------- InsertPipelineEvent ---------------------------- */
+/* ---------------------------------------------------------- */
+void InsertPipelineEvent(int pipelineid, int version, QString event, QString message) {
+	QSqlQuery q;
+
+	/* do an insert */
+	q.prepare("insert into pipeline_history (pipeline_id, pipeline_version, event, message) values (:pipelineid, :version, :event, :msg)");
+	q.bindValue(":pipelineid", pipelineid);
+	q.bindValue(":version", version);
+	q.bindValue(":event", event);
+	q.bindValue(":msg", message);
+}

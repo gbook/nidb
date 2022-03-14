@@ -182,7 +182,7 @@ table.graydisplaytable { padding: 0px; border: 1px solid #bdbdbd; border-spacing
 
 /* update/delete/added messages */
 .staticmessage { text-align: center; color: white; background-color: darkred; border: 1px solid #700; padding: 4px 15px; margin: 10px; border-radius: 6px; }
-.error { text-align: center; color: white; background-color: darkred; border:1px solid black; border-radius: 5px; padding: 4px 15px; margin: 10px; }
+/*.error { text-align: center; color: white; background-color: darkred; border:1px solid black; border-radius: 5px; padding: 4px 15px; margin: 10px; }*/
 
 /* search result tables */
 .searchresultstudy { border-spacing: 0px; padding: 2px; border-top: solid 2px gray; background-color: beige; }
@@ -286,8 +286,8 @@ summary:hover, summary:focus { border: 1px solid #EEE; }
 
 .invalid { background-color: #ffe3e0; border: 1px solid darkred; border-radius: 3px; padding: 1px 5px; }
 
-legend.error { font-weight: bold; padding: 2px 8px; background-color: #ce0000; color: #fff; border: 2px solid darkred; font-size: 12pt; border-radius: 8px; text-align: left; }
-fieldset.error { background-color: #ffe3e0; border: 2px solid darkred; border-radius: 8px; text-align: left; width: 80%; color: #000; padding: 6px; }
+/*legend.error { font-weight: bold; padding: 2px 8px; background-color: #ce0000; color: #fff; border: 2px solid darkred; font-size: 12pt; border-radius: 8px; text-align: left; }
+fieldset.error { background-color: #ffe3e0; border: 2px solid darkred; border-radius: 8px; text-align: left; width: 80%; color: #000; padding: 6px; }*/
 
 legend.notice { font-weight: bold; padding: 2px 8px; background-color: #00ce00; color: #fff; border: 2px solid darkgreen; font-size: 12pt; border-radius: 8px; text-align: left; }
 fieldset.notice { background-color: #e3ffe0; border: 2px solid darkgreen; border-radius: 8px; text-align: left; width: 80%; color: #000; }
