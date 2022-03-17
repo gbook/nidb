@@ -108,37 +108,41 @@ function getprojectinfo($projectid)
 		
 		?>
 
-		<span style="font-size: larger; font-weight: bold">RedCap ====> NiDB Transfer </span><br><br>
+	<div class="ui four column centered container">
 		<form action="redcaptonidb.php" method="post">
-		<input type="hidden" name="action" value="updatercconnect">
+		<input type="hidden" name="action" value="updateconnection">
 		<input type="hidden" name="projectid" value="<?=$projectid?>">
-		<table>
-			<tr>			
-                                <td>Project Name: </td>
-                                <td> <b> <?=$projectname?> </td>
-                        </tr>
-			<tr></tr> <tr></tr>
-							
-			<tr>
-				<td>RedCap Server: </td>
-				<td><input type="url" name="redcapurl" value="<?=$redcapurl?>" size=75 required></td>
-			</tr>
-			<tr></tr> <tr></tr>
+		
+		<h2 class="ui top attached inverted header" align="center"> Redcap ===> NiDB Transfer </h2>
+		<br> 
 
-			<tr>
-				<td>RedCap Token: </td>
-				<td><input type="text" name="redcaptoken" value="<?=$redcaptoken?>" size=75 required></td>
-			</tr>
-			<tr></tr> <tr></tr>
+			
+		<div class="four row column">
+                        <div class="ui labeled input">
+                          <div class="ui  label">
+                            *Redcap Server
+                          </div>
+                          <input type="text"  name="redcapurl" value="<?=$redcapurl?>"  size="50" required>
+                        </div>
 
-			<tr>
-				<td colspan="2" align="right"><input type="submit" value="Update" ></td>
-			</tr>
-		</table>
+                        <br>
+                         <div class="ui labeled input">
+                          <div class="ui  label">
+                            *Redcap Token  
+                          </div>
+                                <input type="text" name="redcaptoken" value="<?=$redcaptoken?>" size="50" required>
+                        </div>
+
+		</div>
+
+			<button class="ui primary right floated button" type="submit">
+                          <i class="linkify icon"></i>
+                          Update Connection Settings
+		       </button>
 		</form>
-
-	<br>
-	<button onclick="window.location.href='redcaptonidb.php?action=showrcinfo&projectid=<?=$projectid?>'">Show Project Info</button> 
+	</div>
+	<br><br>
+	<div onclick="window.location.href='redcaptonidb.php?action=showrcinfo&projectid=<?=$projectid?>'" class="ui bottom attached button">Show Project Info</div> 
 
 <?}
 
@@ -169,46 +173,50 @@ function Showprojectinfo($projectid)
 {
 	$Ar_m=getrcarms($projectid);
 
-	$Event_s=getrcEvents($projectid);
+	$Event_s=getrcevents($projectid);
                         
 	list($In_Name,$In_Label)=getrcinstruments($projectid);
 
-?>	<table>
+?>
 
-		<tr>
-			<td> <b> Arm: </td>
-			<td> <?echo $Ar_m[0]?></td>
-		</tr>
-		
-		<br><br>
-                <tr>
-                        <td> <b> Events: </td>
-                        <td> <?for($Ev=0;$Ev < count($Event_s);$Ev++){ echo $Event_s[$Ev];echo ","; }?></td>
-                </tr>	
+	<table class="ui celled padded definition table">
+	  <thead>
+	    <tr><th></th>
+	    <th> Project Information</th>
+	  </tr></thead>
+	  <tbody>
+	    <tr>
+              <td>Arms</td>
+              <td> <?echo $Ar_m[0]?></td>
+            </tr>
+	    <tr>
+	      <td>Events</td>
+	      <td><?for($Ev=0;$Ev < count($Event_s);$Ev++){ echo $Event_s[$Ev];echo ","; }?></td>
+	    </tr>
+	    <tr>
+	      <td>Instruments</td>
+	      <td><?for($In=0;$In < count($In_Name); $In++){if(($In+1)%8==0){  echo $In_Name[$In];echo ","."<br>"; }else {echo $In_Name[$In];echo ",";}}?></td>
+	    </tr>
+	</tbody></table>
 
-		<br><br>
-                <tr>
-                        <td> <b> Instruments: </td>
-                        <td> <?for($In=0;$In < count($In_Name); $In++){ 
-				echo $In_Name[$In];echo ",";
-				 }?>
-			</td>
-                </tr>
-	
-	</table>
+
+
 
 	<br>
-	<button onclick="window.location.href='redcaptonidb.php?action=default&projectid=<?=$projectid?>'">Hide Project Info</button>
+	
+	<div onclick="window.location.href='redcaptonidb.php?action=default&projectid=<?=$projectid?>'" class="ui bottom attached button">Hide Project Info</div>
 	<br><br>
-	<b> To establish mapping to NiDB click "Map The Project      " <b> 
+
+
+	<b> Establish mapping to NiDB click "Map This Project" ==========> <b> 
 	<br><br>
 
-	<style>
-                .button { border: none; background-color: #4CAF50; color: white; padding: 15px 32px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 4px 2px; cursor: pointer;}
 
-        </style>
+	<button class="ui primary right floated button" onclick="window.location.href='redcapmaping.php?action=default&projectid=<?=$projectid?>'">
+          <i class="map icon"></i>
+            Map This Project
+        </button>
 
-        <button class="button" onclick="window.location.href='redcapmaping.php?action=default&projectid=<?=$projectid?>'" style="float:left">Map The Project</button>
 
 <?
 

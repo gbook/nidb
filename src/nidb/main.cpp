@@ -186,7 +186,7 @@ int main(int argc, char *argv[])
 
             /* check if this module should be running now or not */
             if (n->ModuleCheckIfActive()) {
-                int numlock = n->ModuleGetNumLockFiles();
+				qint64 numlock = n->ModuleGetNumLockFiles();
                 if (numlock < n->ModuleGetNumThreads()) {
                     if (n->ModuleCreateLockFile()) {
 

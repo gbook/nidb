@@ -106,31 +106,32 @@
 		<form action="redcapimport.php" method="post">
 		<input type="hidden" name="action" value="updateconnection">
 		<input type="hidden" name="projectid" value="<?=$projectid?>">
-
+		
+		<br><br>
 		<h2 class="ui top attached inverted header" align="center"> Setup Redcap Connection </h2>
-
+		<br> 
 
 			
 		<div class="four row column">
-                        <div class="ui big labeled input">
-                          <div class="ui big label">
+                        <div class="ui labeled input">
+                          <div class="ui  label">
                             *Redcap Server
                           </div>
                           <input type="text"  name="redcapurl" value="<?=$redcapurl?>"  size="50" required>
                         </div>
 
                         <br>
-                         <div class="ui big labeled input">
-                          <div class="ui big label">
+                         <div class="ui labeled input">
+                          <div class="ui  label">
                             *Redcap Token  
                           </div>
                                 <input type="text" name="redcaptoken" value="<?=$redcaptoken?>" size="50" required>
                         </div>
 
 		</div>
-			<br><br>
+			<br>
 
-			<button class="big ui primary right floated button" type="submit">
+			<button class="ui primary right floated button" type="submit">
                           <i class="linkify icon"></i>
                           Update Connection Settings
 		       </button>
