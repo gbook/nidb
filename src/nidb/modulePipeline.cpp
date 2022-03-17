@@ -60,6 +60,7 @@ int modulePipeline::Run() {
     bool jobsWereSubmitted = false;
     int totalSubmitted = 0;
     QSqlQuery q;
+    QString m; /* for creating messages for logging */
 
     /* update the start time */
     SetPipelineProcessStatus("started",0,0);
@@ -77,15 +78,20 @@ int modulePipeline::Run() {
     /* get the list of pipelines to be run */
     while (q.next()) {
         n->ModuleRunningCheckIn();
+        bool debug(false);
 
         int pipelineid = q.value("pipeline_id").toInt();
 
+        /* check if the pipeline is valid */
         pipeline p(pipelineid, n);
         if (!p.isValid) {
-            n->WriteLog("Pipeline was not valid [in Run()]: [" + p.msg + "]");
+            m = n->WriteLog("Error starting pipeline. Pipeline was not valid [" + p.msg + "]");
+            InsertPipelineEvent(pipelineid, -1, "pipeline_started", m);
             continue;
         }
+        debug = p.debug;
 
+        /* get analysis directory root */
         QString analysisdir;
         if (p.dirStructure == "b")
             analysisdir = n->cfg["analysisdirb"];
@@ -102,31 +108,30 @@ int modulePipeline::Run() {
         q2.bindValue(":pid", pipelineid);
         n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
 
+        /* check if the pipeline's queue is valid */
         if (p.queue == "") {
-            n->WriteLog("No queue specified");
-            SetPipelineStatusMessage(pipelineid, "No queue specified");
-            SetPipelineStopped(pipelineid);
+            m = n->WriteLog("No queue specified");
+            InsertPipelineEvent(pipelineid, -1, "error_noqueue", m);
+            SetPipelineStopped(pipelineid, m);
+            continue;
+        }
+        /* check if the submit host is valid */
+        if (p.submitHost == "") {
+            m = n->WriteLog("No submit host specified");
+            InsertPipelineEvent(pipelineid, -1, "error_nosubmithost", m);
+            SetPipelineStopped(pipelineid, m);
             continue;
         }
 
         /* check if the pipeline is running, if so, go on to the next one */
-        QString status;
-        q2.prepare("select pipeline_status from pipelines where pipeline_id = :pid");
-        q2.bindValue(":pid", pipelineid);
-        n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
-        if (q2.size() > 0) {
-            q2.first();
-            status = q2.value("pipeline_status").toString();
-        }
+        QString status = GetPipelineStatus(pipelineid);
         if (status == "running") {
-            // another process has started running this pipeline, so go on to the next one
             n->WriteLog("This pipeline is already running");
             continue;
         }
 
         /* update the pipeline status */
-        SetPipelineStatusMessage(pipelineid, "Submitting jobs");
-        SetPipelineRunning(pipelineid);
+        SetPipelineRunning(pipelineid, "Submitting jobs");
 
         /* get the data steps */
         QList<dataDefinitionStep> dataSteps;
@@ -136,34 +141,33 @@ int modulePipeline::Run() {
 
                 /* if there is no data definition and no dependency */
                 if ((dataSteps.size() < 1) && (p.parentDependencyIDs.size() < 1)) {
-                    n->WriteLog(QString("Pipeline [%1 - %2] has no data definition. Skipping.").arg(p.name).arg(pipelineid));
-
-                    /* update the statuses, and stop the modules */
-                    SetPipelineStatusMessage(pipelineid, "Pipeline has no data definition. Skipping");
-                    SetPipelineStopped(pipelineid);
+                    m = n->WriteLog("Pipeline has no data items. Skipping pipeline.");
+                    InsertPipelineEvent(pipelineid, -1, "error_nodatasteps", m);
+                    SetPipelineStopped(pipelineid, m);
                     continue;
                 }
+                else
+                    InsertPipelineEvent(pipelineid, -1, "getdatasteps", QString("Retreived [%1] pipeline data items").arg(dataSteps.size()));
             }
         }
 
         /* get the pipeline steps (the script) */
         QList<pipelineStep> steps = GetPipelineSteps(pipelineid, p.version);
         if (steps.size() < 1) {
-            n->WriteLog(QString("Pipeline [%1 - %2] has no steps. Skipping.").arg(p.name).arg(pipelineid));
-
-            /* update the statuses and stop the modules */
-            SetPipelineStatusMessage(pipelineid, "Pipeline has no steps. Skipping");
-            SetPipelineStopped(pipelineid);
+            m = n->WriteLog("Pipeline has no script commands. Skipping pipeline.");
+            InsertPipelineEvent(pipelineid, -1, "error_nopipelinesteps", m);
+            SetPipelineStopped(pipelineid, m);
             continue;
         }
+        else
+            InsertPipelineEvent(pipelineid, -1, "getpipelinesteps", QString("Retreived [%1] pipeline script commands").arg(steps.size()));
 
         /* ------------------------------ level 0 ----------------------------- */
         if (p.level == 0) {
             /* check if this module should be running now or not */
             if (!n->ModuleCheckIfActive()) {
                 n->WriteLog("Module disabled. Exiting");
-                SetPipelineStatusMessage(pipelineid, "Pipeline module disabled while running. Stopping.");
-                SetPipelineStopped(pipelineid);
+                SetPipelineStopped(pipelineid, "Pipeline module disabled while running. Stopping.");
                 SetPipelineProcessStatus("complete",0,0);
                 return 1;
             }
@@ -174,9 +178,8 @@ int modulePipeline::Run() {
             q2.bindValue(":pid", pipelineid);
             n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
             if (q2.size() > 0) {
-                n->WriteLog("An analysis already exists for this one-shot level pipeline, exiting");
-                SetPipelineStatusMessage(pipelineid, "An analysis already exists for this one-shot pipeline. Skipping");
-                SetPipelineStopped(pipelineid);
+                m = n->WriteLog("An analysis already exists for this one-shot level pipeline, exiting");
+                SetPipelineStopped(pipelineid, m);
                 continue;
             }
 
@@ -286,16 +289,14 @@ int modulePipeline::Run() {
 
                     /* check if this pipeline is enabled */
                     if (!IsPipelineEnabled(pipelineid)) {
-                        SetPipelineStatusMessage(pipelineid, "Pipeline disabled while running. Stopping at next iteration.");
-                        SetPipelineStopped(pipelineid);
+                        SetPipelineStopped(pipelineid, "Pipeline disabled while running. Stopping at next iteration.");
                         break;
                     }
 
                     /* check if this module is still enabled */
                     if (!n->ModuleCheckIfActive()) {
                         n->WriteLog("Module disabled. Exiting");
-                        SetPipelineStatusMessage(pipelineid, "Pipeline module disabled while running. Stopping.");
-                        SetPipelineStopped(pipelineid);
+                        SetPipelineStopped(pipelineid, "Pipeline module disabled while running. Stopping.");
                         SetPipelineProcessStatus("complete",0,0);
                         return 1;
                     }
@@ -305,8 +306,9 @@ int modulePipeline::Run() {
                         break;
 
                     if (filled == 1) {
-                        SetPipelineStatusMessage(pipelineid, "Process quota reached. Waiting 1 minute to resubmit");
-                        n->WriteLog("Concurrent analysis quota reached, waiting 15 seconds");
+                        m = n->WriteLog("Concurrent analysis quota reached, waiting 15 seconds");
+                        SetPipelineStatusMessage(pipelineid, m);
+                        InsertPipelineEvent(pipelineid, -1, "maxjobs_reached", m);
                         n->ModuleRunningCheckIn();
                         QThread::sleep(15); /* sleep for 15 seconds */
                     }
@@ -316,8 +318,7 @@ int modulePipeline::Run() {
                 } while (filled == 1);
 
                 if (!IsPipelineEnabled(pipelineid)) {
-                    SetPipelineStatusMessage(pipelineid, "Pipeline disabled while running. Stopping at this iteration.");
-                    SetPipelineStopped(pipelineid);
+                    SetPipelineStopped(pipelineid, "Pipeline disabled while running. Stopping at this iteration.");
                     break;
                 }
 
@@ -463,8 +464,7 @@ int modulePipeline::Run() {
                                 }
                                 else {
                                     setuplog << n->WriteLog(QString("Parent pipeline [%1] does not exist!").arg(pipelinedep));
-                                    SetPipelineStatusMessage(pipelineid, QString("Parent pipeline [%1] does not exist!").arg(pipelinedep));
-                                    SetPipelineStopped(pipelineid);
+                                    SetPipelineStopped(pipelineid, QString("Parent pipeline [%1] does not exist!").arg(pipelinedep));
                                     continue;
                                 }
                                 n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysismessage", "This pipeline is dependent on [" + dependencyname + "]");
@@ -607,9 +607,8 @@ int modulePipeline::Run() {
 
                         /* check if this module should be running now or not */
                         if (!n->ModuleCheckIfActive()) {
-                            n->WriteLog("Module disabled. Exiting");
-                            SetPipelineStatusMessage(pipelineid, "Pipeline module disabled while running. Stopping.");
-                            SetPipelineStopped(pipelineid);
+                            m = n->WriteLog("Pipeline module disabled while running. Exiting");
+                            SetPipelineStopped(pipelineid, m);
                             SetPipelineProcessStatus("complete",0,0);
                             return 1;
                         }
@@ -647,8 +646,7 @@ int modulePipeline::Run() {
 
                 /* check if this pipeline is still enabled */
                 if (!IsPipelineEnabled(pipelineid)) {
-                    SetPipelineStatusMessage(pipelineid, "Pipeline disabled while running. Normal stop.");
-                    SetPipelineStopped(pipelineid);
+                    SetPipelineStopped(pipelineid, "Pipeline disabled while running. Normal stop.");
                     break;
                 }
             }
@@ -664,8 +662,8 @@ int modulePipeline::Run() {
         }
 
         n->WriteLog(QString("Done with pipeline [%1] - [%2]").arg(pipelineid).arg(p.name));
-        SetPipelineStatusMessage(pipelineid, "Finished submitting jobs");
-        SetPipelineStopped(pipelineid);
+        //SetPipelineStatusMessage(pipelineid, "Finished submitting jobs");
+        SetPipelineStopped(pipelineid, "Finished submitting jobs");
     }
 
     SetPipelineProcessStatus("complete",0,0);
@@ -1547,11 +1545,11 @@ bool modulePipeline::IsPipelineEnabled(int pid) {
 /* ---------------------------------------------------------- */
 /* --------- SetPipelineStopped ----------------------------- */
 /* ---------------------------------------------------------- */
-void modulePipeline::SetPipelineStopped(int pid) {
-
+void modulePipeline::SetPipelineStopped(int pid, QString msg) {
     QSqlQuery q;
-    q.prepare("update pipelines set pipeline_status = 'stopped', pipeline_lastfinish = now() where pipeline_id = :pid");
+    q.prepare("update pipelines set pipeline_status = 'stopped', pipeline_statusmessage = :msg, pipeline_lastfinish = now() where pipeline_id = :pid");
     q.bindValue(":pid", pid);
+    q.bindValue(":msg", msg);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 }
 
@@ -1571,11 +1569,12 @@ void modulePipeline::SetPipelineDisabled(int pid) {
 /* ---------------------------------------------------------- */
 /* --------- SetPipelineRunning ----------------------------- */
 /* ---------------------------------------------------------- */
-void modulePipeline::SetPipelineRunning(int pid) {
+void modulePipeline::SetPipelineRunning(int pid, QString msg) {
 
     QSqlQuery q;
-    q.prepare("update pipelines set pipeline_status = 'running', pipeline_laststart = now() where pipeline_id = :pid");
+    q.prepare("update pipelines set pipeline_status = 'running', pipeline_statusmessage = :msg, pipeline_laststart = now() where pipeline_id = :pid");
     q.bindValue(":pid", pid);
+    q.bindValue(":msg", msg);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 }
 
@@ -1592,6 +1591,22 @@ void modulePipeline::SetPipelineStatusMessage(int pid, QString msg) {
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 }
 
+
+/* ---------------------------------------------------------- */
+/* --------- GetPipelineStatus ------------------------------ */
+/* ---------------------------------------------------------- */
+QString modulePipeline::GetPipelineStatus(int pipelineid) {
+    QString status;
+    QSqlQuery q;
+    q.prepare("select pipeline_status from pipelines where pipeline_id = :pid");
+    q.bindValue(":pid", pipelineid);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.size() > 0) {
+        q.first();
+        status = q.value("pipeline_status").toString();
+    }
+    return status;
+}
 
 /* ---------------------------------------------------------- */
 /* --------- SetPipelineProcessStatus ----------------------- */
@@ -2045,6 +2060,9 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
     int numSupplement(0);
     QList<int> list;
 
+    pipeline p(pipelineid, n);
+    bool debug = p.debug;
+
     /* step 1 - get only the studies that need to have their results rerun */
     int addedStudies = 0;
     q.prepare("select study_id from studies where study_id in (select study_id from analysis where pipeline_id = :pipelineid and analysis_rerunresults = 1 and analysis_status = 'complete' and (analysis_isbad <> 1 or analysis_isbad is null)) order by study_datetime desc");
@@ -2100,7 +2118,7 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
         if (studyidlist == "")
             studyidlist = "-1";
 
-        if (n->cfg["debug"].toInt()) {
+        if ((n->cfg["debug"].toInt()) || (debug)) {
             if (groupids != "") {
                 QStringList gids = groupids.split(",");
                 foreach (QString gid, gids) {
@@ -2160,8 +2178,13 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
             numInitial++;
         }
     }
+    QString m;
+    if (debug)
+        m = "";
+    else
+        m = n->WriteLog(QString("Found [%1] total studies that met criteria: [%2] initial match  [%3] rerun  [%4] supplement").arg(list.size()).arg(numInitial).arg(numRerun).arg(numSupplement));
 
-    n->WriteLog(QString("Found [%1] total studies that met criteria: [%2] initial match  [%3] rerun  [%4] supplement").arg(list.size()).arg(numInitial).arg(numRerun).arg(numSupplement));
+    InsertPipelineEvent(pipelineid, -1, "getstudylist", m);
 
     return list;
 }
@@ -2229,13 +2252,44 @@ qint64 modulePipeline::RecordDataDownload(qint64 id, qint64 analysisid, QString 
 /* ---------------------------------------------------------- */
 /* --------- InsertPipelineEvent ---------------------------- */
 /* ---------------------------------------------------------- */
-void InsertPipelineEvent(int pipelineid, int version, QString event, QString message) {
-	QSqlQuery q;
+void modulePipeline::InsertPipelineEvent(int pipelineid, qint64 analysisid, QString event, QString message) {
 
-	/* do an insert */
-	q.prepare("insert into pipeline_history (pipeline_id, pipeline_version, event, message) values (:pipelineid, :version, :event, :msg)");
-	q.bindValue(":pipelineid", pipelineid);
-	q.bindValue(":version", version);
-	q.bindValue(":event", event);
-	q.bindValue(":msg", message);
+    /* possible events:
+     *
+        pipeline_started
+        error_noqueue
+        error_nosubmithost
+        getdatasteps
+        getpipelinesteps
+        getstudylist
+        maxjobs_reached
+        analysis_exists
+        analysis_runsupplement
+        analysis_rerunresults
+        analysis_checkdependency
+        analysis_getdata
+        analysis_createdir
+        analysis_oktosubmit
+        analysis_copyparent
+        analysis_errorcreatepath
+        submit_analysis
+        error_submitanalysis
+        pipeline_disabled
+        pipeline_finished
+    */
+
+    QSqlQuery q;
+    pipeline p(pipelineid, n);
+
+    /* do an insert */
+    q.prepare("insert into pipeline_history (pipeline_id, pipeline_version, analysis_id, event, message) values (:pipelineid, :version, :analysid, :event, :msg)");
+    q.bindValue(":pipelineid", pipelineid);
+    q.bindValue(":version", p.version);
+    if (analysisid < 0)
+        q.bindValue(":analysisid", QVariant(QVariant::Int));
+    else
+        q.bindValue(":analysisid", analysisid);
+
+    q.bindValue(":event", event);
+    q.bindValue(":msg", message);
 }

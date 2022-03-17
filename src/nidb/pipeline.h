@@ -28,62 +28,63 @@
 class pipeline
 {
 public:
-	pipeline();
-	pipeline(int id, nidb *a);
-	nidb *n;
+    pipeline();
+    pipeline(int id, nidb *a);
+    nidb *n;
 
-	/* object variables */
-	QString msg;
-	bool isValid = true;
+    /* object variables */
+    QString msg;
+    bool isValid = true;
 
-	/* pipeline variables */
-	QString name;
-	QString desc;
-	int ownerID;
-	QDateTime createDate;
-	int level;
-	QString group;
-	QString directory;
-	QString dirStructure;
-	QString pipelineRootDir;
-	bool useTmpDir;
-	QString tmpDir;
-	QList<int> parentDependencyIDs;
-	QString depLevel;
-	QString depDir;
-	QString depLinkType;
-	QList<int> groupIDs;
-	QString groupType;
-	bool groupBySubject;
-	int dynamicGroupID;
-	QString status;
-	QString statusMessage;
-	QDateTime lastStart;
-	QDateTime lastFinish;
-	QDateTime lastCheck;
-	QStringList completeFiles;
-	int numConcurrentAnalysis;
-	QString queue;
-	QString submitHost;
-	QString clusterType;
-	QString clusterUser;
-	int maxWallTime;
-	int submitDelay;
-	QString dataCopyMethod;
-	QString notes;
-	bool useProfile;
-	bool removeData;
-	QString resultScript;
-	bool enabled;
-	bool testing;
-	bool isPrivate;
-	bool isHidden;
-	int version;
+    /* pipeline variables */
+    QString name;
+    QString desc;
+    int ownerID;
+    QDateTime createDate;
+    int level;
+    QString group;
+    QString directory;
+    QString dirStructure;
+    QString pipelineRootDir;
+    bool useTmpDir;
+    QString tmpDir;
+    QList<int> parentDependencyIDs;
+    QString depLevel;
+    QString depDir;
+    QString depLinkType;
+    QList<int> groupIDs;
+    QString groupType;
+    bool groupBySubject;
+    int dynamicGroupID;
+    QString status;
+    QString statusMessage;
+    QDateTime lastStart;
+    QDateTime lastFinish;
+    QDateTime lastCheck;
+    QStringList completeFiles;
+    int numConcurrentAnalysis;
+    QString queue;
+    QString submitHost;
+    QString clusterType;
+    QString clusterUser;
+    int maxWallTime;
+    int submitDelay;
+    QString dataCopyMethod;
+    QString notes;
+    bool useProfile;
+    bool removeData;
+    QString resultScript;
+    bool enabled;
+    bool testing;
+    bool isPrivate;
+    bool isHidden;
+    bool debug;
+    int version;
 
 private:
-	void LoadPipelineInfo();
+    void LoadPipelineInfo();
 
-	int pipelineid;
+    int pipelineid;
 };
 
 #endif // PIPELINE_H
