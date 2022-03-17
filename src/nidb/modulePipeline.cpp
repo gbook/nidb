@@ -87,8 +87,12 @@ int modulePipeline::Run() {
         if (!p.isValid) {
             m = n->WriteLog("Error starting pipeline. Pipeline was not valid [" + p.msg + "]");
             InsertPipelineEvent(pipelineid, -1, "pipeline_started", m);
-            continue;
+			InsertPipelineEvent(pipelineid, -1, "pipeline_finished", "Pipeline stopped prematurely due to error");
+			continue;
         }
+		else {
+			InsertPipelineEvent(pipelineid, -1, "pipeline_started", QString("Pipeline %1 started").arg(p.name));
+		}
         debug = p.debug;
 
         /* get analysis directory root */
@@ -112,14 +116,16 @@ int modulePipeline::Run() {
         if (p.queue == "") {
             m = n->WriteLog("No queue specified");
             InsertPipelineEvent(pipelineid, -1, "error_noqueue", m);
-            SetPipelineStopped(pipelineid, m);
+			InsertPipelineEvent(pipelineid, -1, "pipeline_finished", "Pipeline stopped prematurely due to error");
+			SetPipelineStopped(pipelineid, m);
             continue;
         }
         /* check if the submit host is valid */
         if (p.submitHost == "") {
             m = n->WriteLog("No submit host specified");
             InsertPipelineEvent(pipelineid, -1, "error_nosubmithost", m);
-            SetPipelineStopped(pipelineid, m);
+			InsertPipelineEvent(pipelineid, -1, "pipeline_finished", "Pipeline stopped prematurely due to error");
+			SetPipelineStopped(pipelineid, m);
             continue;
         }
 
@@ -143,7 +149,8 @@ int modulePipeline::Run() {
                 if ((dataSteps.size() < 1) && (p.parentDependencyIDs.size() < 1)) {
                     m = n->WriteLog("Pipeline has no data items. Skipping pipeline.");
                     InsertPipelineEvent(pipelineid, -1, "error_nodatasteps", m);
-                    SetPipelineStopped(pipelineid, m);
+					InsertPipelineEvent(pipelineid, -1, "pipeline_finished", "Pipeline stopped prematurely due to error");
+					SetPipelineStopped(pipelineid, m);
                     continue;
                 }
                 else
@@ -156,7 +163,8 @@ int modulePipeline::Run() {
         if (steps.size() < 1) {
             m = n->WriteLog("Pipeline has no script commands. Skipping pipeline.");
             InsertPipelineEvent(pipelineid, -1, "error_nopipelinesteps", m);
-            SetPipelineStopped(pipelineid, m);
+			InsertPipelineEvent(pipelineid, -1, "pipeline_finished", "Pipeline stopped prematurely due to error");
+			SetPipelineStopped(pipelineid, m);
             continue;
         }
         else
@@ -517,7 +525,7 @@ int modulePipeline::Run() {
                                 if (p.depLinkType == "hardlink") systemstring = "cp -aulL "; /* L added to allow copying of softlinks */
                                 else if (p.depLinkType == "softlink") systemstring = "cp -aus ";
                                 else if (p.depLinkType == "regularcopy") systemstring = "cp -au ";
-                                //if (p.depLinkType == "hardlink") systemstring = "rsync -aH "; /* try rsync to overcome cp bug on CentOS8 Stream */
+								//if (p.depLinkType == "hardlink") systemstring = "rsync -aH "; /* try rsync to overcome cp bug in CentOS8 Stream (update, rsync doesn't create hardlinks with -H) */
                                 //else if (p.depLinkType == "softlink") systemstring = "cp -aus ";
                                 //else if (p.depLinkType == "regularcopy") systemstring = "cp -au ";
                                 if (p.depDir == "subdir") {
@@ -2282,7 +2290,7 @@ void modulePipeline::InsertPipelineEvent(int pipelineid, qint64 analysisid, QStr
     pipeline p(pipelineid, n);
 
     /* do an insert */
-    q.prepare("insert into pipeline_history (pipeline_id, pipeline_version, analysis_id, event, message) values (:pipelineid, :version, :analysid, :event, :msg)");
+	q.prepare("insert into pipeline_history (pipeline_id, pipeline_version, analysis_id, pipeline_event, event_message) values (:pipelineid, :version, :analysid, :event, :msg)");
     q.bindValue(":pipelineid", pipelineid);
     q.bindValue(":version", p.version);
     if (analysisid < 0)
@@ -2292,4 +2300,5 @@ void modulePipeline::InsertPipelineEvent(int pipelineid, qint64 analysisid, QStr
 
     q.bindValue(":event", event);
     q.bindValue(":msg", message);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 }
