@@ -1,9 +1,9 @@
 -- phpMyAdmin SQL Dump
--- version 5.0.2
+-- version 5.1.3
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Mar 14, 2022 at 06:40 PM
+-- Generation Time: Mar 17, 2022 at 01:50 PM
 -- Server version: 10.3.28-MariaDB
 -- PHP Version: 7.2.24
 
@@ -1997,6 +1997,7 @@ CREATE TABLE `pipelines` (
   `pipeline_resultsscript` mediumtext DEFAULT NULL,
   `pipeline_enabled` tinyint(1) DEFAULT 0,
   `pipeline_testing` tinyint(1) DEFAULT NULL,
+  `pipeline_debug` tinyint(1) DEFAULT NULL,
   `pipeline_isprivate` tinyint(1) DEFAULT NULL,
   `pipeline_ishidden` tinyint(1) DEFAULT NULL,
   `pipeline_version` int(11) DEFAULT 1,
@@ -2111,13 +2112,12 @@ CREATE TABLE `pipeline_groups` (
 --
 
 CREATE TABLE `pipeline_history` (
-  `analysis_id` bigint(20) NOT NULL,
+  `pipelinehistory_id` bigint(20) NOT NULL,
   `pipeline_id` int(11) NOT NULL,
   `pipeline_version` int(11) NOT NULL,
-  `study_id` int(11) NOT NULL,
-  `analysis_event` varchar(100) NOT NULL,
-  `analysis_datetime` timestamp NULL DEFAULT NULL,
-  `analysis_hostname` varchar(100) NOT NULL,
+  `analysis_id` bigint(11) NOT NULL,
+  `pipeline_event` enum('pipeline_started','error_noqueue','error_nosubmithost','getdatasteps','getpipelinesteps','getstudylist','maxjobs_reached','analysis_exists','analysis_runsupplement','analysis_rerunresults','analysis_checkdependency','analysis_getdata','analysis_createdir','analysis_oktosubmit','analysis_copyparent','analysis_errorcreatepath','submit_analysis','error_submitanalysis','pipeline_disabled','pipeline_finished','error_nodatasteps','error_nopipelinesteps') NOT NULL,
+  `event_datetime` timestamp NOT NULL DEFAULT current_timestamp(),
   `event_message` mediumtext NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 
@@ -4019,7 +4019,7 @@ ALTER TABLE `pipeline_groups`
 -- Indexes for table `pipeline_history`
 --
 ALTER TABLE `pipeline_history`
-  ADD PRIMARY KEY (`analysis_id`);
+  ADD PRIMARY KEY (`pipelinehistory_id`);
 
 --
 -- Indexes for table `pipeline_options`
@@ -5013,7 +5013,7 @@ ALTER TABLE `pipeline_groups`
 -- AUTO_INCREMENT for table `pipeline_history`
 --
 ALTER TABLE `pipeline_history`
-  MODIFY `analysis_id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `pipelinehistory_id` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `pipeline_options`
