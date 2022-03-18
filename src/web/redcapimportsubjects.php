@@ -303,9 +303,10 @@ function getrcsubjectinfo($projectid,$redcapfields,$redcapurl,$redcaptoken,$redc
 
 <table class="ui very basic collapsing celled table" align="right">
 <tbody>
-        <tr class="green"><td class="center aligned">Ready to Import</td></tr>
+	<tr class="green"><td class="center aligned">Ready to import</td></tr>
+	<tr class="olive"><td class="center aligned">Found in an other project</td></tr>
         <tr class="blue"><td  class="center aligned">Processing</td></tr>
-        <tr class="grey"><td  class="center aligned">Already Exist in NiDB</td></tr>
+        <tr class="grey"><td  class="center aligned">Found in the current project</td></tr>
 
 </tbody>
 </table>
@@ -333,8 +334,26 @@ function getrcsubjectinfo($projectid,$redcapfields,$redcapurl,$redcaptoken,$redc
 	
 
 	$flg=checksubjects($info[$redcapfields[1]],$info[$redcapfields[2]],$info[$redcapfields[3]]);
-      if ($flg[0]!="") {
-	      $clr='grey';}
+
+	unset($projid);
+
+	if ($flg[0]!="") {
+
+		$clr='olive';
+		
+		 // Getting subjectID based on name and birthdata
+                $sqlstring = "SELECT project_id FROM `enrollment` where subject_id='$flg[0]'";
+                $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+                while($row = mysqli_fetch_array($result, MYSQLI_ASSOC)){;
+		$projid[] = $row['project_id'];}
+//		echo $flg[0]."<br>";
+//		var_dump($projid);
+		for ($Pro=0; $Pro < count($projid); $Pro++) {
+			if ($projid[$Pro]==$projectid){
+				$clr='grey'; }
+		}
+
+	}
       elseif ($flg[1]!=""){
       	      $clr='blue';}	      
            else {
@@ -344,12 +363,14 @@ function getrcsubjectinfo($projectid,$redcapfields,$redcapurl,$redcaptoken,$redc
     <tr class="<?=$clr?>">
       <td class="ui collapsing">
         <div class="ui toggle checkbox">
-	   <? if ($flg[0]!="") {
-		?> <input type="checkbox" name="addsub[]" value="<?=$info[$redcapfields[0]]?>"> <label></label><?}
+	   <? if ($flg[0]!="" and $clr=='olive') {
+		   ?> <input type="checkbox" name="addsub[]" value="<?=$info[$redcapfields[0]]?>"> <label></label><?}
+	       elseif ($flg[0]!="" and $clr=='grey') {
+	           ?> <input type="checkbox"  name="addsub[]"  value="<?=$info[$redcapfields[0]]?>" disabled> <label></label><?}
 	      elseif ($flg[1]!="") {
-                ?> <input type="checkbox"  name="addsub[]"  value="<?=$info[$redcapfields[0]]?>" disabled> <label></label><?}
+              	  ?> <input type="checkbox"  name="addsub[]"  value="<?=$info[$redcapfields[0]]?>" disabled> <label></label><?}
               else {
-                ?> <input type="checkbox"  name="addsub[]"  value="<?=$info[$redcapfields[0]]?>" checked> <label></label><?}
+               	 ?> <input type="checkbox"  name="addsub[]"  value="<?=$info[$redcapfields[0]]?>" checked> <label></label><?}
         ?>
         </div>
       </td>
@@ -379,7 +400,6 @@ function getrcsubjectinfo($projectid,$redcapfields,$redcapurl,$redcaptoken,$redc
 
 	
 	?>
-	
 
 	
       <td><?=$valfield?>
@@ -523,7 +543,6 @@ function getrcsubjectinfo($projectid,$redcapfields,$redcapurl,$redcaptoken,$redc
 
 
 	                $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-
 
 		}
 

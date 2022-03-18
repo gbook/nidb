@@ -38,6 +38,7 @@
 	$timestart = microtime(true);
 
 	require "functions.php";
+	require "pipeline_functions.php";
 	require "includes_php.php";
 	require "includes_html.php";
 	require "menu.php";
@@ -432,6 +433,7 @@
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$pipeline_name = $row['pipeline_name'];
+		$pipeline_desc = $row['pipeline_desc'];
 		$pipeline_level = $row['pipeline_level'];
 		$pipeline_version = $row['pipeline_version'];
 		$pipeline_status = $row['pipeline_status'];
@@ -441,7 +443,7 @@
 		$pipeline_lastcheck = $row['pipeline_lastcheck'];
 		$isenabled = $row['pipeline_enabled'];
 
-		DisplayPipelineStatus($pipeline_name, $isenabled, $id, "analysis", $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck);
+		DisplayPipelineStatus($pipeline_name, $pipeline_desc, $isenabled, $id, "analysis", $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck);
 		
 		/* prep the pagination */
 		if ($numperpage == "") { $numperpage = 500; }

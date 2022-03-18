@@ -2683,10 +2683,14 @@
 							Redcap settings
 							<i class="red redhat icon"></i>
 						</a>
-						<a class="item" href="redcaptonidb.php?action=default&projectid=<?=$id?>">
-							Redcap to NiDB transfer
+						<a class="item" href="redcapimportsubjects.php?action=default&projectid=<?=$id?>">
+							Redcap Subject Import
 							<i class="red redhat icon"></i>
 						</a>
+						<a class="item" href="redcaptonidb.php?action=default&projectid=<?=$id?>">
+                                                        Redcap to NiDB transfer
+                                                        <i class="red redhat icon"></i>
+                                                </a>
 						<? if ($GLOBALS['isadmin']) { ?>
 						<a class="item" href="projects.php?action=resetqa&id=<?=$id?>">
 							Reset MRI QA

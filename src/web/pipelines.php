@@ -38,6 +38,7 @@
 	$timestart = microtime(true);
 
 	require "functions.php";
+	require "pipeline_functions.php";
 	require "includes_php.php";
 	require "includes_html.php";
 	require "menu.php";
@@ -178,6 +179,28 @@
 			break;
 		case 'enable':
 			EnablePipeline($id);
+			if ($returnpage == "home") {
+				DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewuserid);
+			}
+			else {
+				DisplayPipelineForm("edit", $id, $returntab);
+			}
+			break;
+		case 'disabledebug':
+			DisablePipelineDebug($id);
+			if ($returnpage == "home") {
+				DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewuserid);
+			}
+			elseif ($returnpage == "analysis") {
+				/* redirect to analysis page */
+				DisplayPipelineForm("edit", $id, $returntab);
+			}
+			else {
+				DisplayPipelineForm("edit", $id, $returntab);
+			}
+			break;
+		case 'enabledebug':
+			EnablePipelineDebug($id);
 			if ($returnpage == "home") {
 				DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewuserid);
 			}
@@ -953,6 +976,7 @@
 			$groupbysubject = $row['pipeline_groupbysubject'];
 			$outputbids = $row['pipeline_outputbids'];
 			$isenabled = $row['pipeline_enabled'];
+			$isdebug = $row['pipeline_debug'];
 			
 			if ($submithost == "") { $submithost = $GLOBALS['cfg']['clustersubmithost']; }
 			if ($clustertype == "") { $clustertype = "sge"; }
@@ -997,6 +1021,9 @@
 	
 		<script type="text/javascript">
 			$(document).ready(function() {
+				
+				$('#pageloading').hide();
+				
 				/* default action */
 				<? if($level == 1) { ?>
 				$('.level0').hide();
@@ -1060,10 +1087,15 @@
 					return false;
 			}
 		</script>
+		<div class="ui text container">
+			<div class="ui small yellow message" align="center" id="pageloading" style="margin-bottom:15px">
+				<em data-emoji=":chipmunk:" class="loading"></em> Loading...
+			</div>
+		</div>
 	
 		<?
 			if ($type != "add") {
-				DisplayPipelineStatus($title, $isenabled, $id, "pipelines", $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck);
+				DisplayPipelineStatus($title, $desc, $isenabled, $isdebug, $id, "pipelines", $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck);
 			}
 			
 			if ($type == "add") {
@@ -1383,6 +1415,7 @@
 		<!-- -------------------- Settings tab -------------------- -->
 
 		<script>
+			/* check if the submit host is up (and qsub is accessible via passwordless ssh) */
 			$(document).ready(function() {
 				CheckHostnameStatus();
 			});
