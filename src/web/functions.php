@@ -3725,6 +3725,46 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 			}
 		}
 		
+		/* fill in missing values with defaults */
+		if ($modulefileiothreads == "") { $modulefileiothreads = 1; }
+		if ($moduleexportthreads == "") { $moduleexportthreads = 2; }
+		if ($moduleimportthreads == "") { $moduleimportthreads = 1; }
+		if ($modulemriqathreads == "") { $modulemriqathreads = 4; }
+		if ($modulepipelinethreads == "") { $modulepipelinethreads = 4; }
+		if ($moduleimportuploadedthreads == "") { $moduleimportuploadedthreads = 1; }
+		if ($moduleqcthreads == "") { $moduleqcthreads = 2; }
+		if ($moduleuploadthreads == "") { $moduleuploadthreads = 1; }
+		if ($modulebackupthreads == "") { $modulebackupthreads = 1; }
+		if ($moduleminipipelinethreads == "") { $moduleminipipelinethreads = 4; }
+		
+		if ($analysisdir == "") { $analysisdir = "/nidb/data/pipeline"; }
+		if ($analysisdirb == "") { $analysisdirb = "/nidb/data/pipelineb"; }
+		if ($clusteranalysisdir == "") { $clusteranalysisdir = "/nidb/data/pipeline"; }
+		if ($clusteranalysisdirb == "") { $clusteranalysisdirb = "/nidb/data/pipelineb"; }
+		if ($groupanalysisdir == "") { $groupanalysisdir = "/nidb/data/pipelinegroup"; }
+		if ($archivedir == "") { $archivedir = "/nidb/data/archive"; }
+		if ($backupdir == "") { $backupdir = "/nidb/data/backup"; }
+		if ($deleteddir == "") { $deleteddir = "/nidb/data/deleted"; }
+		if ($downloaddir == "") { $downloaddir = "/nidb/data/download"; }
+		if ($ftpdir == "") { $ftpdir = "/nidb/data/ftp"; }
+		if ($importdir == "") { $importdir = "/nidb/data/import"; }
+		if ($incomingdir == "") { $incomingdir = "/nidb/data/dicomincoming"; }
+		if ($incoming2dir == "") { $incoming2dir = "/nidb/data/dicomincoming2"; }
+		if ($lockdir == "") { $lockdir = "/nidb/lock"; }
+		if ($logdir == "") { $logdir = "/nidb/logs"; }
+		if ($mountdir == "") { $mountdir = "/mount"; }
+		if ($packageimportdir == "") { $packageimportdir = "/nidb/data/packageimport"; }
+		if ($qcmoduledir == "") { $qcmoduledir = "/nidb/qcmodules"; }
+		if ($problemdir == "") { $problemdir = "/nidb/data/problem"; }
+		if ($nidbdir == "") { $nidbdir = "/nidb"; }
+		if ($tmpdir == "") { $tmpdir = "/nidb/data/tmp"; }
+		if ($uploaddir == "") { $uploaddir = "/nidb/data/upload"; }
+		if ($uploadeddir == "") { $uploadeddir = "/nidb/data/uploaded"; }
+		if ($uploadstagingdir == "") { $uploadstagingdir = "/nidb/data/uploadstaging"; }
+		if ($webdir == "") { $webdir = "/var/www/html"; }
+		if ($webdownloaddir == "") { $webdownloaddir = "/var/www/html/download"; }
+		
+		
 		$year = date("Y");
 		
 		$str = "# NiDB configuration file
@@ -3775,11 +3815,11 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 [moduleimportthreads] = $moduleimportthreads
 [modulemriqathreads] = $modulemriqathreads
 [modulepipelinethreads] = $modulepipelinethreads
-[moduleminipipelinethreads] = $moduleminipipelinethreads
 [moduleimportuploadedthreads] = $moduleimportuploadedthreads
 [moduleqcthreads] = $moduleqcthreads
 [moduleuploadthreads] = $moduleuploadthreads
 [modulebackupthreads] = $modulebackupthreads
+[moduleminipipelinethreads] = $moduleminipipelinethreads
 
 # ----- E-mail -----
 # emaillib options (case-sensitive): Net-SMTP-TLS (default), Email-Send-SMTP-Gmail
