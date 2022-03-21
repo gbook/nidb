@@ -442,8 +442,9 @@
 		$pipeline_lastfinish = $row['pipeline_lastfinish'];
 		$pipeline_lastcheck = $row['pipeline_lastcheck'];
 		$isenabled = $row['pipeline_enabled'];
+		$isdebug = $row['pipeline_debug'];
 
-		DisplayPipelineStatus($pipeline_name, $pipeline_desc, $isenabled, $id, "analysis", $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck);
+		DisplayPipelineStatus($pipeline_name, $pipeline_desc, $isenabled, $isdebug, $id, "analysis", $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck);
 		
 		/* prep the pagination */
 		if ($numperpage == "") { $numperpage = 500; }
@@ -1030,6 +1031,7 @@
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$pipeline_name = $row['pipeline_name'];
+		$desc = $row['pipeline_desc'];
 		$pipeline_level = $row['pipeline_level'];
 		$pipeline_status = $row['pipeline_status'];
 		$pipeline_statusmessage = $row['pipeline_statusmessage'];
@@ -1037,6 +1039,7 @@
 		$pipeline_lastfinish = $row['pipeline_lastfinish'];
 		$pipeline_lastcheck = $row['pipeline_lastcheck'];
 		$isenabled = $row['pipeline_enabled'];
+		$isdebug = $row['pipeline_debug'];
 	
 		//$urllist['Analysis'] = "analysis.php";
 		//$urllist['Pipelines'] = "pipelines.php";
@@ -1044,7 +1047,7 @@
 		//$urllist["Analysis List"] = "analysis.php?action=viewanalyses&id=$id";
 		//NavigationBar("Ignored studies for $pipeline_name", $urllist);
 		
-		DisplayPipelineStatus($title, $isenabled, $id, "analysis", $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck);
+		DisplayPipelineStatus($title, $desc, $isenabled, $isdebug, $id, "analysis", $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck);
 		
 		/* prep the pagination */
 		if ($numperpage == "") { $numperpage = 1000; }
