@@ -65,6 +65,9 @@ int modulePipeline::Run() {
     /* update the start time */
     SetPipelineProcessStatus("started",0,0);
 
+	/* clear old pipeline_history entries */
+	ClearPipelineHistory();
+
     /* get list of pipelines that are not currently running, sorted by the longest since last run
        we're only going to run 1 pipeline per instance of this module */
     q.prepare("select pipeline_id from pipelines where pipeline_status <> 'running' and (pipeline_enabled = 1 or pipeline_testing = 1) order by pipeline_laststart asc");
@@ -82,16 +85,17 @@ int modulePipeline::Run() {
 
         int pipelineid = q.value("pipeline_id").toInt();
 
+		qint64 runnum = 0;
         /* check if the pipeline is valid */
         pipeline p(pipelineid, n);
         if (!p.isValid) {
             m = n->WriteLog("Error starting pipeline. Pipeline was not valid [" + p.msg + "]");
-            InsertPipelineEvent(pipelineid, -1, "pipeline_started", m);
-			InsertPipelineEvent(pipelineid, -1, "pipeline_finished", "Pipeline stopped prematurely due to error");
+			InsertPipelineEvent(pipelineid, runnum, -1, "pipeline_started", m);
+			InsertPipelineEvent(pipelineid, runnum, -1, "pipeline_finished", "Pipeline stopped prematurely due to error");
 			continue;
         }
 		else {
-			InsertPipelineEvent(pipelineid, -1, "pipeline_started", QString("Pipeline %1 started").arg(p.name));
+			InsertPipelineEvent(pipelineid, runnum, -1, "pipeline_started", QString("Pipeline %1 started").arg(p.name));
 		}
         debug = p.debug;
 
@@ -115,16 +119,16 @@ int modulePipeline::Run() {
         /* check if the pipeline's queue is valid */
         if (p.queue == "") {
             m = n->WriteLog("No queue specified");
-            InsertPipelineEvent(pipelineid, -1, "error_noqueue", m);
-			InsertPipelineEvent(pipelineid, -1, "pipeline_finished", "Pipeline stopped prematurely due to error");
+			InsertPipelineEvent(pipelineid, runnum, -1, "error_noqueue", m);
+			InsertPipelineEvent(pipelineid, runnum, -1, "pipeline_finished", "Pipeline stopped prematurely due to error");
 			SetPipelineStopped(pipelineid, m);
             continue;
         }
         /* check if the submit host is valid */
         if (p.submitHost == "") {
             m = n->WriteLog("No submit host specified");
-            InsertPipelineEvent(pipelineid, -1, "error_nosubmithost", m);
-			InsertPipelineEvent(pipelineid, -1, "pipeline_finished", "Pipeline stopped prematurely due to error");
+			InsertPipelineEvent(pipelineid, runnum, -1, "error_nosubmithost", m);
+			InsertPipelineEvent(pipelineid, runnum, -1, "pipeline_finished", "Pipeline stopped prematurely due to error");
 			SetPipelineStopped(pipelineid, m);
             continue;
         }
@@ -148,13 +152,13 @@ int modulePipeline::Run() {
                 /* if there is no data definition and no dependency */
                 if ((dataSteps.size() < 1) && (p.parentDependencyIDs.size() < 1)) {
                     m = n->WriteLog("Pipeline has no data items. Skipping pipeline.");
-                    InsertPipelineEvent(pipelineid, -1, "error_nodatasteps", m);
-					InsertPipelineEvent(pipelineid, -1, "pipeline_finished", "Pipeline stopped prematurely due to error");
+					InsertPipelineEvent(pipelineid, runnum, -1, "error_nodatasteps", m);
+					InsertPipelineEvent(pipelineid, runnum, -1, "pipeline_finished", "Pipeline stopped prematurely due to error");
 					SetPipelineStopped(pipelineid, m);
                     continue;
                 }
                 else
-                    InsertPipelineEvent(pipelineid, -1, "getdatasteps", QString("Retreived [%1] pipeline data items").arg(dataSteps.size()));
+					InsertPipelineEvent(pipelineid, runnum, -1, "getdatasteps", QString("Retreived [%1] pipeline data items").arg(dataSteps.size()));
             }
         }
 
@@ -162,13 +166,13 @@ int modulePipeline::Run() {
         QList<pipelineStep> steps = GetPipelineSteps(pipelineid, p.version);
         if (steps.size() < 1) {
             m = n->WriteLog("Pipeline has no script commands. Skipping pipeline.");
-            InsertPipelineEvent(pipelineid, -1, "error_nopipelinesteps", m);
-			InsertPipelineEvent(pipelineid, -1, "pipeline_finished", "Pipeline stopped prematurely due to error");
+			InsertPipelineEvent(pipelineid, runnum, -1, "error_nopipelinesteps", m);
+			InsertPipelineEvent(pipelineid, runnum, -1, "pipeline_finished", "Pipeline stopped prematurely due to error");
 			SetPipelineStopped(pipelineid, m);
             continue;
         }
         else
-            InsertPipelineEvent(pipelineid, -1, "getpipelinesteps", QString("Retreived [%1] pipeline script commands").arg(steps.size()));
+			InsertPipelineEvent(pipelineid, runnum, -1, "getpipelinesteps", QString("Retreived [%1] pipeline script commands").arg(steps.size()));
 
         /* ------------------------------ level 0 ----------------------------- */
         if (p.level == 0) {
@@ -267,7 +271,7 @@ int modulePipeline::Run() {
             modality = dataSteps[0].modality;
 
             /* get the list of studies which meet the criteria for being processed through the pipeline */
-            QList<int> studyids = GetStudyToDoList(pipelineid, modality, pipelinedep, n->JoinIntArray(p.groupIDs, ","));
+			QList<int> studyids = GetStudyToDoList(pipelineid, modality, pipelinedep, n->JoinIntArray(p.groupIDs, ","), runnum);
 
             int i = 0;
             int numsubmitted = 0;
@@ -316,7 +320,7 @@ int modulePipeline::Run() {
                     if (filled == 1) {
                         m = n->WriteLog("Concurrent analysis quota reached, waiting 15 seconds");
                         SetPipelineStatusMessage(pipelineid, m);
-                        InsertPipelineEvent(pipelineid, -1, "maxjobs_reached", m);
+                        InsertPipelineEvent(pipelineid, runnum, -1, "maxjobs_reached", m);
                         n->ModuleRunningCheckIn();
                         QThread::sleep(15); /* sleep for 15 seconds */
                     }
@@ -2059,7 +2063,7 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clusterty
 /* ---------------------------------------------------------- */
 /* --------- GetStudyToDoList ------------------------------- */
 /* ---------------------------------------------------------- */
-QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, int depend, QString groupids) {
+QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, int depend, QString groupids, qint64 &runnum) {
 
     QSqlQuery q;
 
@@ -2192,7 +2196,7 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
     else
         m = n->WriteLog(QString("Found [%1] total studies that met criteria: [%2] initial match  [%3] rerun  [%4] supplement").arg(list.size()).arg(numInitial).arg(numRerun).arg(numSupplement));
 
-    InsertPipelineEvent(pipelineid, -1, "getstudylist", m);
+	InsertPipelineEvent(pipelineid, runnum, -1, "getstudylist", m);
 
     return list;
 }
@@ -2260,7 +2264,7 @@ qint64 modulePipeline::RecordDataDownload(qint64 id, qint64 analysisid, QString 
 /* ---------------------------------------------------------- */
 /* --------- InsertPipelineEvent ---------------------------- */
 /* ---------------------------------------------------------- */
-void modulePipeline::InsertPipelineEvent(int pipelineid, qint64 analysisid, QString event, QString message) {
+void modulePipeline::InsertPipelineEvent(int pipelineid, qint64 &runnum, qint64 analysisid, QString event, QString message) {
 
     /* possible events:
      *
@@ -2289,9 +2293,23 @@ void modulePipeline::InsertPipelineEvent(int pipelineid, qint64 analysisid, QStr
     QSqlQuery q;
     pipeline p(pipelineid, n);
 
+	if (event == "pipeline_started") {
+		q.prepare("select max(run_num) 'max' from pipeline_history where pipeline_id = :pipelineid");
+		q.bindValue(":pipelineid", pipelineid);
+		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+		if (q.size() > 0) {
+			q.first();
+			runnum = q.value("max").toInt() + 1;
+		}
+		else {
+			runnum = 0;
+		}
+	}
+
     /* do an insert */
-	q.prepare("insert into pipeline_history (pipeline_id, pipeline_version, analysis_id, pipeline_event, event_message) values (:pipelineid, :version, :analysid, :event, :msg)");
-    q.bindValue(":pipelineid", pipelineid);
+	q.prepare("insert into pipeline_history (run_num, pipeline_id, pipeline_version, analysis_id, pipeline_event, event_message) values (:runnum, :pipelineid, :version, :analysid, :event, :msg)");
+	q.bindValue(":runnum", runnum);
+	q.bindValue(":pipelineid", pipelineid);
     q.bindValue(":version", p.version);
     if (analysisid < 0)
         q.bindValue(":analysisid", QVariant(QVariant::Int));
@@ -2301,4 +2319,18 @@ void modulePipeline::InsertPipelineEvent(int pipelineid, qint64 analysisid, QStr
     q.bindValue(":event", event);
     q.bindValue(":msg", message);
 	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- ClearPipelineHistory --------------------------- */
+/* ---------------------------------------------------------- */
+void modulePipeline::ClearPipelineHistory() {
+	QSqlQuery q;
+
+	/* delete pipeline_history events older than 2 days */
+	q.prepare("delete from pipeline_history where event_datetime < date_add(now(), interval -2 day)");
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+
+	n->WriteLog(QString("Deleted %1 rows older than two days").arg(q.numRowsAffected()));
 }

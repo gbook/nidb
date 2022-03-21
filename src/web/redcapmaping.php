@@ -184,7 +184,6 @@
 	<?
 		// This section separated two methods of mapping
 			
-
 	?>
 		
 		<?list($In_Name,$In_Label)=getrcinstruments($projectid);?>
