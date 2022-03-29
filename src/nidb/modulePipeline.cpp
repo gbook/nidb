@@ -65,8 +65,8 @@ int modulePipeline::Run() {
     /* update the start time */
     SetPipelineProcessStatus("started",0,0);
 
-	/* clear old pipeline_history entries */
-	ClearPipelineHistory();
+    /* clear old pipeline_history entries */
+    ClearPipelineHistory();
 
     /* get list of pipelines that are not currently running, sorted by the longest since last run
        we're only going to run 1 pipeline per instance of this module */
@@ -85,18 +85,18 @@ int modulePipeline::Run() {
 
         int pipelineid = q.value("pipeline_id").toInt();
 
-		qint64 runnum = 0;
+        qint64 runnum = 0;
         /* check if the pipeline is valid */
         pipeline p(pipelineid, n);
         if (!p.isValid) {
             m = n->WriteLog("Error starting pipeline. Pipeline was not valid [" + p.msg + "]");
-			InsertPipelineEvent(pipelineid, runnum, -1, "pipeline_started", m);
-			InsertPipelineEvent(pipelineid, runnum, -1, "pipeline_finished", "Pipeline stopped prematurely due to error");
-			continue;
+            InsertPipelineEvent(pipelineid, runnum, -1, "pipeline_started", m);
+            InsertPipelineEvent(pipelineid, runnum, -1, "pipeline_finished", "Pipeline stopped prematurely due to error");
+            continue;
         }
-		else {
-			InsertPipelineEvent(pipelineid, runnum, -1, "pipeline_started", QString("Pipeline %1 started").arg(p.name));
-		}
+        else {
+            InsertPipelineEvent(pipelineid, runnum, -1, "pipeline_started", QString("Pipeline %1 started").arg(p.name));
+        }
         debug = p.debug;
 
         /* get analysis directory root */
@@ -119,17 +119,17 @@ int modulePipeline::Run() {
         /* check if the pipeline's queue is valid */
         if (p.queue == "") {
             m = n->WriteLog("No queue specified");
-			InsertPipelineEvent(pipelineid, runnum, -1, "error_noqueue", m);
-			InsertPipelineEvent(pipelineid, runnum, -1, "pipeline_finished", "Pipeline stopped prematurely due to error");
-			SetPipelineStopped(pipelineid, m);
+            InsertPipelineEvent(pipelineid, runnum, -1, "error_noqueue", m);
+            InsertPipelineEvent(pipelineid, runnum, -1, "pipeline_finished", "Pipeline stopped prematurely due to error");
+            SetPipelineStopped(pipelineid, m);
             continue;
         }
         /* check if the submit host is valid */
         if (p.submitHost == "") {
             m = n->WriteLog("No submit host specified");
-			InsertPipelineEvent(pipelineid, runnum, -1, "error_nosubmithost", m);
-			InsertPipelineEvent(pipelineid, runnum, -1, "pipeline_finished", "Pipeline stopped prematurely due to error");
-			SetPipelineStopped(pipelineid, m);
+            InsertPipelineEvent(pipelineid, runnum, -1, "error_nosubmithost", m);
+            InsertPipelineEvent(pipelineid, runnum, -1, "pipeline_finished", "Pipeline stopped prematurely due to error");
+            SetPipelineStopped(pipelineid, m);
             continue;
         }
 
@@ -152,13 +152,13 @@ int modulePipeline::Run() {
                 /* if there is no data definition and no dependency */
                 if ((dataSteps.size() < 1) && (p.parentDependencyIDs.size() < 1)) {
                     m = n->WriteLog("Pipeline has no data items. Skipping pipeline.");
-					InsertPipelineEvent(pipelineid, runnum, -1, "error_nodatasteps", m);
-					InsertPipelineEvent(pipelineid, runnum, -1, "pipeline_finished", "Pipeline stopped prematurely due to error");
-					SetPipelineStopped(pipelineid, m);
+                    InsertPipelineEvent(pipelineid, runnum, -1, "error_nodatasteps", m);
+                    InsertPipelineEvent(pipelineid, runnum, -1, "pipeline_finished", "Pipeline stopped prematurely due to error");
+                    SetPipelineStopped(pipelineid, m);
                     continue;
                 }
                 else
-					InsertPipelineEvent(pipelineid, runnum, -1, "getdatasteps", QString("Retreived [%1] pipeline data items").arg(dataSteps.size()));
+                    InsertPipelineEvent(pipelineid, runnum, -1, "getdatasteps", QString("Retreived [%1] pipeline data items").arg(dataSteps.size()));
             }
         }
 
@@ -166,13 +166,13 @@ int modulePipeline::Run() {
         QList<pipelineStep> steps = GetPipelineSteps(pipelineid, p.version);
         if (steps.size() < 1) {
             m = n->WriteLog("Pipeline has no script commands. Skipping pipeline.");
-			InsertPipelineEvent(pipelineid, runnum, -1, "error_nopipelinesteps", m);
-			InsertPipelineEvent(pipelineid, runnum, -1, "pipeline_finished", "Pipeline stopped prematurely due to error");
-			SetPipelineStopped(pipelineid, m);
+            InsertPipelineEvent(pipelineid, runnum, -1, "error_nopipelinesteps", m);
+            InsertPipelineEvent(pipelineid, runnum, -1, "pipeline_finished", "Pipeline stopped prematurely due to error");
+            SetPipelineStopped(pipelineid, m);
             continue;
         }
         else
-			InsertPipelineEvent(pipelineid, runnum, -1, "getpipelinesteps", QString("Retreived [%1] pipeline script commands").arg(steps.size()));
+            InsertPipelineEvent(pipelineid, runnum, -1, "getpipelinesteps", QString("Retreived [%1] pipeline script commands").arg(steps.size()));
 
         /* ------------------------------ level 0 ----------------------------- */
         if (p.level == 0) {
@@ -271,7 +271,7 @@ int modulePipeline::Run() {
             modality = dataSteps[0].modality;
 
             /* get the list of studies which meet the criteria for being processed through the pipeline */
-			QList<int> studyids = GetStudyToDoList(pipelineid, modality, pipelinedep, n->JoinIntArray(p.groupIDs, ","), runnum);
+            QList<int> studyids = GetStudyToDoList(pipelineid, modality, pipelinedep, n->JoinIntArray(p.groupIDs, ","), runnum);
 
             int i = 0;
             int numsubmitted = 0;
@@ -529,7 +529,7 @@ int modulePipeline::Run() {
                                 if (p.depLinkType == "hardlink") systemstring = "cp -aulL "; /* L added to allow copying of softlinks */
                                 else if (p.depLinkType == "softlink") systemstring = "cp -aus ";
                                 else if (p.depLinkType == "regularcopy") systemstring = "cp -au ";
-								//if (p.depLinkType == "hardlink") systemstring = "rsync -aH "; /* try rsync to overcome cp bug in CentOS8 Stream (update, rsync doesn't create hardlinks with -H) */
+                                //if (p.depLinkType == "hardlink") systemstring = "rsync -aH "; /* try rsync to overcome cp bug in CentOS8 Stream (update, rsync doesn't create hardlinks with -H) */
                                 //else if (p.depLinkType == "softlink") systemstring = "cp -aus ";
                                 //else if (p.depLinkType == "regularcopy") systemstring = "cp -au ";
                                 if (p.depDir == "subdir") {
@@ -2071,6 +2071,10 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
     int numRerun(0);
     int numSupplement(0);
     QList<int> list;
+    QStringList rerunStudyList;
+    QStringList supplementStudyList;
+    QStringList normalStudyList;
+    QString m;
 
     pipeline p(pipelineid, n);
     bool debug = p.debug;
@@ -2085,8 +2089,11 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
             int studyid = q.value("study_id").toInt();
             n->WriteLog(QString("Found study (results rerun) [%1]").arg(studyid));
             list.append(studyid);
+            rerunStudyList << QString("%1%2").arg(q.value("uid").toString()).arg(q.value("study_num").toString());
             addedStudies++;
         }
+        if (debug)
+            InsertPipelineEvent(pipelineid, runnum, -1, "getstudylist", QString("Found %1 studies to have results rerun [" + rerunStudyList.join(", ") + "]").arg(rerunStudyList.size()));
     }
     numRerun = addedStudies;
 
@@ -2100,10 +2107,12 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
             int studyid = q.value("study_id").toInt();
             n->WriteLog(QString("Found study (results rerun) [%1]").arg(studyid));
             list.append(studyid);
+            supplementStudyList << QString("%1%2").arg(q.value("uid").toString()).arg(q.value("study_num").toString());
             addedStudies++;
         }
+        if (debug)
+            InsertPipelineEvent(pipelineid, runnum, -1, "getstudylist", QString("Found %1 studies to have supplement scripts run [" + supplementStudyList.join(", ") + "]").arg(supplementStudyList.size()));
     }
-    //n->WriteLog(QString("Found [%1] additional studies marked for supplement run.").arg(addedStudies));
     numSupplement = addedStudies;
 
     /* step 3 - get list of studies which do not have an entry in the analysis table for this pipeline */
@@ -2113,7 +2122,7 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
 
         /* step 3a) get list of studies that have completed the dependency */
         QList<int> list;
-        QStringList studylist;
+        //QStringList studylist;
         QSqlQuery q2;
         q2.prepare("select a.study_id, c.uid, a.study_num from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.subject_id in (select a.subject_id from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id where c.study_id in (select study_id from analysis where pipeline_id = :depend and analysis_status = 'complete' and (analysis_isbad <> 1 or analysis_isbad is null)) and (a.isactive = 1 or a.isactive is null))");
         q2.bindValue(":depend", depend);
@@ -2121,11 +2130,12 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
         if (q2.size() > 0) {
             while (q2.next()) {
                 list.append(q2.value("study_id").toInt());
-                studylist << QString("%1%2").arg(q2.value("uid").toString()).arg(q2.value("study_num").toString());
+                //studylist << QString("%1%2").arg(q2.value("uid").toString()).arg(q2.value("study_num").toString());
+                normalStudyList << QString("%1%2").arg(q2.value("uid").toString()).arg(q2.value("study_num").toString());
             }
         }
         QString studyidlist = n->JoinIntArray(list, ", ");
-        QString studyliststr = studylist.join(", ");
+        //QString studyliststr = studylist.join(", ");
 
         if (studyidlist == "")
             studyidlist = "-1";
@@ -2144,13 +2154,15 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
             /* NO groupids */
             q.prepare("select study_id from studies where study_id not in (select study_id from analysis where pipeline_id = :pipelineid) and study_id in (" + studyidlist + ") and (study_datetime < date_sub(now(), interval 6 hour)) order by study_datetime desc");
             q.bindValue(":pipelineid", pipelineid);
-            n->WriteLog(QString("Within GetStudyToDoList() analysis HAS dependency ID[%1]. NO groupids ID[%2]. Studies that have completed the dependency [%3]").arg(depend).arg(groupids).arg(list.size()));
+            m = n->WriteLog(QString("Pipeline has a dependency [%1] and NO groups. Found %2 studies that have completed the dependency").arg(depend).arg(list.size()));
+            InsertPipelineEvent(pipelineid, runnum, -1, "getstudylist", m);
         }
         else {
             /* with groupids */
             q.prepare("select a.study_id from studies a left join group_data b on a.study_id = b.data_id where a.study_id not in (select study_id from analysis where pipeline_id = :pipelineid) and a.study_id in (" + studyidlist + ") and (a.study_datetime < date_sub(now(), interval 6 hour)) and b.group_id in (" + groupids + ") order by a.study_datetime desc");
             q.bindValue(":pipelineid", pipelineid);
-            n->WriteLog(QString("Within GetStudyToDoList() analysis HAS dependency ID[%1]. HAS groupids ID[%2]. Studies that have completed the dependency count[%3]").arg(depend).arg(groupids).arg(list.size()));
+            m = n->WriteLog(QString("Pipeline HAS a dependency [%1] and group(s) [%2]. Found %3 studies that have completed the dependency and are within the group(s)").arg(depend).arg(groupids).arg(list.size()));
+            InsertPipelineEvent(pipelineid, runnum, -1, "getstudylist", m);
         }
     }
     else {
@@ -2160,17 +2172,20 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
             q.prepare("select a.study_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id not in (select study_id from analysis where pipeline_id = :pipelineid) and (a.study_datetime < date_sub(now(), interval 6 hour)) and a.study_modality = :modality and c.isactive = 1 order by a.study_datetime desc");
             q.bindValue(":pipelineid", pipelineid);
             q.bindValue(":modality", modality);
-            n->WriteLog(QString("Within GetStudyToDoList() analysis NO dependency [%1]. NO groupids [%2]").arg(depend).arg(groupids));
+            m = n->WriteLog("Pipeline has NO dependency and NO groups");
+            InsertPipelineEvent(pipelineid, runnum, -1, "getstudylist", m);
         }
         else {
             /* WITH groupids */
             q.prepare("SELECT a.study_id FROM studies a left join group_data b on a.study_id = b.data_id left join enrollment c on a.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id WHERE a.study_id NOT IN (SELECT study_id FROM analysis WHERE pipeline_id = :pipelineid) AND ( a.study_datetime < DATE_SUB( NOW( ) , INTERVAL 6 hour )) AND a.study_modality = :modality and b.group_id in (" + groupids + ") and d.isactive = 1 ORDER BY a.study_datetime DESC");
             q.bindValue(":pipelineid", pipelineid);
             q.bindValue(":modality", modality);
-            n->WriteLog(QString("Within GetStudyToDoList() analysis NO dependency [%1]. HAS groupids [%2]").arg(depend).arg(groupids));
+            m = n->WriteLog(QString("Pipeline has NO dependency and HAS groups [%1]").arg(groupids));
+            InsertPipelineEvent(pipelineid, runnum, -1, "getstudylist", m);
         }
     }
 
+    /* run the query from the previous section to get the study details */
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.size() > 0) {
         while (q.next()) {
@@ -2182,21 +2197,20 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
             n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
             if (q2.size() > 0) {
                 q2.first();
-                QString uidstudynum;
-                uidstudynum = QString("%1%2").arg(q2.value("uid").toString()).arg(q2.value("study_num").toInt());
+                //QString uidstudynum;
+                //uidstudynum = QString("%1%2").arg(q2.value("uid").toString()).arg(q2.value("study_num").toInt());
+                normalStudyList << QString("%1%2").arg(q2.value("uid").toString()).arg(q2.value("study_num").toString());
             }
             list.append(studyid);
 
             numInitial++;
         }
     }
-    QString m;
     if (debug)
-        m = "";
-    else
-        m = n->WriteLog(QString("Found [%1] total studies that met criteria: [%2] initial match  [%3] rerun  [%4] supplement").arg(list.size()).arg(numInitial).arg(numRerun).arg(numSupplement));
+        InsertPipelineEvent(pipelineid, runnum, -1, "getstudylist", QString("Found %1 unprocessed studies that meet criteria [" + normalStudyList.join(", ") + "]").arg(normalStudyList.size()));
 
-	InsertPipelineEvent(pipelineid, runnum, -1, "getstudylist", m);
+    m = n->WriteLog(QString("Found [%1] total studies that met criteria: [%2] initial match  [%3] rerun  [%4] supplement").arg(list.size()).arg(numInitial).arg(numRerun).arg(numSupplement));
+    InsertPipelineEvent(pipelineid, runnum, -1, "getstudylist", m);
 
     return list;
 }
@@ -2293,23 +2307,23 @@ void modulePipeline::InsertPipelineEvent(int pipelineid, qint64 &runnum, qint64 
     QSqlQuery q;
     pipeline p(pipelineid, n);
 
-	if (event == "pipeline_started") {
-		q.prepare("select max(run_num) 'max' from pipeline_history where pipeline_id = :pipelineid");
-		q.bindValue(":pipelineid", pipelineid);
-		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-		if (q.size() > 0) {
-			q.first();
-			runnum = q.value("max").toInt() + 1;
-		}
-		else {
-			runnum = 0;
-		}
-	}
+    if (event == "pipeline_started") {
+        q.prepare("select max(run_num) 'max' from pipeline_history where pipeline_id = :pipelineid");
+        q.bindValue(":pipelineid", pipelineid);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        if (q.size() > 0) {
+            q.first();
+            runnum = q.value("max").toInt() + 1;
+        }
+        else {
+            runnum = 0;
+        }
+    }
 
     /* do an insert */
-	q.prepare("insert into pipeline_history (run_num, pipeline_id, pipeline_version, analysis_id, pipeline_event, event_message) values (:runnum, :pipelineid, :version, :analysid, :event, :msg)");
-	q.bindValue(":runnum", runnum);
-	q.bindValue(":pipelineid", pipelineid);
+    q.prepare("insert into pipeline_history (run_num, pipeline_id, pipeline_version, analysis_id, pipeline_event, event_message) values (:runnum, :pipelineid, :version, :analysid, :event, :msg)");
+    q.bindValue(":runnum", runnum);
+    q.bindValue(":pipelineid", pipelineid);
     q.bindValue(":version", p.version);
     if (analysisid < 0)
         q.bindValue(":analysisid", QVariant(QVariant::Int));
@@ -2318,7 +2332,7 @@ void modulePipeline::InsertPipelineEvent(int pipelineid, qint64 &runnum, qint64 
 
     q.bindValue(":event", event);
     q.bindValue(":msg", message);
-	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 }
 
 
@@ -2326,11 +2340,11 @@ void modulePipeline::InsertPipelineEvent(int pipelineid, qint64 &runnum, qint64 
 /* --------- ClearPipelineHistory --------------------------- */
 /* ---------------------------------------------------------- */
 void modulePipeline::ClearPipelineHistory() {
-	QSqlQuery q;
+    QSqlQuery q;
 
-	/* delete pipeline_history events older than 2 days */
-	q.prepare("delete from pipeline_history where event_datetime < date_add(now(), interval -2 day)");
-	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    /* delete all pipeline_history events older than 2 days */
+    q.prepare("delete from pipeline_history where event_datetime < date_add(now(), interval -2 day)");
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
-	n->WriteLog(QString("Deleted %1 rows older than two days").arg(q.numRowsAffected()));
+    n->WriteLog(QString("Deleted %1 rows older than two days").arg(q.numRowsAffected()));
 }
