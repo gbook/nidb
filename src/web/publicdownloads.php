@@ -138,7 +138,11 @@
 				<td style="font-size:9pt" align="right"><?=HumanReadableFilesize($unzipsize)?></td>
 				<td><?=$createdby?></td>
 				<td style="font-size:8pt"><tt><?=$password?></tt></td>
-				<td><input type="text" size="80" value="<?=$GLOBALS['cfg']['siteurl'] . "/pd.php?k=$key"?>"></td>
+				<td>
+					<div class="ui input">
+						<input type="text" size="80" value="<?=$GLOBALS['cfg']['siteurl'] . "/pd.php?k=$key"?>">
+					</div>
+				</td>
 			</tr>
 			<? 
 				}

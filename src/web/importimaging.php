@@ -731,7 +731,14 @@
 			
 			?>
 			<div class="ui container">
-				<a class="ui primary button" href="importimaging.php"><i class="arrow alternate circle left icon"></i> Back</a>
+				<div class="ui two column grid">
+					<div class="column">
+						<a class="ui primary button" href="importimaging.php"><i class="arrow alternate circle left icon"></i> Back</a>
+					</div>
+					<div class="right aligned column">
+						<a class="ui primary button" href="importimaging.php?action=displayimport&uploadid<?=$uploadid?>"><i class="refresh icon"></i> Refresh</a>
+					</div>
+				</div>
 				<br><br>
 				<h3 class="ui top attached inverted header">Upload Details</h3>
 				<table class="ui attached celled table">
@@ -880,7 +887,7 @@
 			<form method="post" action="importimaging.php">
 			<input type="hidden" name="action" value="queueforarchive">
 			<input type="hidden" name="uploadid" value="<?=$uploadid?>">
-			Select series for archiving. (All series are selected by default) &nbsp; &nbsp; <input type="submit" value="Archive">
+			Select series for archiving. (All series are selected by default) &nbsp; &nbsp; <input type="submit" class="ui primary button" value="Archive">
 			<? } ?>
 			
 			<?

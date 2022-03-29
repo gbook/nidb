@@ -162,23 +162,25 @@
 		$redcaptoken = $row['redcap_token'];
 		
 ?>		
-		<span style="font-size: larger; font-weight: bold">RedCap ====> NiDB Transfer (Mapping)</span><br><br>
-		<table>
+
+
+		<h2 class="ui top attached inverted header" align="center"> Redcap ===> NiDB Transfer (Mapping) </h2>
+		<table class="ui collapsing green large centered table" align="center">
                         <tr>
-                                <td>Project Name: </td>
+                                <td class="grey">Project Name</td>
                                 <td> <b> <?=$projectname?> </td>
                         </tr>
                         <tr></tr> <tr></tr>
 
                         <tr>
-                                <td>RedCap Server: </td>
+                                <td class="grey">RedCap Server</td>
                                 <td> <b><?=$redcapurl?> </td>
                         </tr>
                         <tr></tr> <tr></tr>
 
                         <tr>
 
-                </table>
+		</table>
 
 
 	<?
@@ -188,21 +190,39 @@
 		
 		<?list($In_Name,$In_Label)=getrcinstruments($projectid);?>
 
-		<h2> RedCap to NiDB form/variable mapping  </h2>
+		<h3 class="ui top attached inverted header"> RedCap to NiDB form / variable mapping  </h3>
 
-		<form action="redcapmaping.php" >
-		<input type="hidden" name="action" value="displaymapping">
-                <input type="hidden" name="projectid" value="<?=$projectid?>">
+	<form  class="ui form" action="redcapmaping.php" >
+	<input type="hidden" name="action" value="displaymapping">
+        <input type="hidden" name="projectid" value="<?=$projectid?>">
 	
-		 <label for="redcapform">Choose a Redcap Form:</label>
-		  <select name="inst" id="inst">
-		    <?for($In=0;$In < count($In_Name); $In++){ ?>
-			<option value=<?=$In_Name[$In]?>> <?=$In_Name[$In]?> </option> 
-		    <?}?>
-		 </select>
-		 <input type="submit" value="Submit">		
+		<div class="ui form">
+		  <div class="field">
+		      <label>Select a Redcap Form:</label>
+		      <div class="ui selection dropdown">
+		          <input type="hidden" name="inst">
+		          <i class="dropdown icon"></i>
+		          <div class="default text">Redcap Forms</div>
+		          <div class="menu">
+			     <?for($In=0;$In < count($In_Name); $In++){ ?>
+	                        <div class="item" data-value=<?=$In_Name[$In]?>> <?=$In_Name[$In]?> </div>
+	                    <?}?>
+		          </div>
+		      </div>
+		  </div>
+		</div>
 
-		</form>
+	 <br><br>
+
+                 <button class="fluid ui button" type="submit">
+                   <i class="buffer icon"></i>
+                     Redcap Fields Mapping
+                  </button>
+
+        </form>
+
+
+
 
 	<br>
 
@@ -239,9 +259,8 @@
                 <input type="hidden" name="projectid" value="<?=$projectid?>">
 		<input type="hidden" name="inst" value="<?=$inst?>">
                 
-                <span>Map the variable in the RedCap system to the NiDB variable type</span>
-                <br>
-                <table class="graydisplaytable">
+                <h4 class="ui top attached inverted header"> Map the variable in the RedCap system to the NiDB variable type<h4>
+                <table class="ui graydisplaytable">
                         <thead>
                                 <tr>
                                         <th style="text-align: center; border-right: 1px solid #bdbdbd" colspan="4">RedCap</th>

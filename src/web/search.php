@@ -6353,7 +6353,7 @@
 			$bidsflagstr = "null";
 
 		$sqlstring = "insert into exports (username, ip, download_imaging, download_beh, download_qc, destinationtype, filetype, do_gzip, do_preserveseries, anonymization_level, dirformat, beh_format, beh_dirrootname, beh_dirseriesname, nfsdir, remoteftp_username, remoteftp_password, remoteftp_server, remoteftp_port, remoteftp_path, remoteftp_log, remotenidb_connectionid, publicdownloadid, bidsreadme, bids_flags, submitdate, status) values ('$username', '$ip', $downloadimaging, $downloadbeh, $downloadqc, '$destinationtype', '$filetype', $gzip, $preserveseries, $anonymize, '$dirformat', '$behformat', '$behdirnameroot','$behdirnameseries', '$nfsdir', '$remoteftpusername', '$remoteftppassword', '$remoteftpserver', $remoteftpport, '$remoteftppath', '$remoteftplog', $remoteconnid, $publicDownloadRowID, '$bidsreadme', $bidsflagstr, now(), 'submitted')";
-		PrintSQL($sqlstring);
+		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$exportRowID = mysqli_insert_id($GLOBALS['linki']);
 		
@@ -6367,27 +6367,34 @@
 		$numseries = count($seriesids);
 		
 		?>
-		<div style="text-align: center">
-		Your data export with <?=$numseries?> series has been submitted<br>
-		Check data transfer <a href="requeststatus.php">status</a>
-		</div>
-		<?
-		if (($destinationtype == "localftp") || ($destinationtype == "export")) {
-			?>
-			Your data has been queued for FTP transfer<br><br>
-			<div align="center">
-			<table><tr><td style="border: solid yellow 1pt; background-color:lightyellow">
-			Use the following information to login to the FTP server and transfer your data:<br>
-			<pre>
-		Server/Host: <?=$GLOBALS['cfg']['localftphostname'];?>
-		Login: <?=$GLOBALS['cfg']['localftpusername'];?>
-		Password: <?=$GLOBALS['cfg']['localftppassword'];?>
-		Port: 21
-			</pre>
-			</td></tr></table></div>
+		<div class="ui text container">
+			<div class="ui message">
+				<div class="header">
+					Your data export, with <?=$numseries?> series, has been submitted
+				</div>
+				<br>
+				<a href="requeststatus.php" class="ui primary button"><i class="external alternate icon"></i> View export status</a>
+			</div>
 			<?
-		}
-		echo "<br><br>";
+			if (($destinationtype == "localftp") || ($destinationtype == "export")) {
+				?>
+				Your data has been queued for FTP transfer<br><br>
+				<div align="center">
+				<table><tr><td style="border: solid yellow 1pt; background-color:lightyellow">
+				Use the following information to login to the FTP server and transfer your data:<br>
+				<pre>
+			Server/Host: <?=$GLOBALS['cfg']['localftphostname'];?>
+			Login: <?=$GLOBALS['cfg']['localftpusername'];?>
+			Password: <?=$GLOBALS['cfg']['localftppassword'];?>
+			Port: 21
+				</pre>
+				</td></tr></table></div>
+				<?
+			}
+		?>
+		</div>
+		<br><br>
+		<?
 	}
 	
 	

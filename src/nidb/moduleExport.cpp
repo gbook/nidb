@@ -522,7 +522,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                                     // output the correct file type
                                     if ((modality != "mr") || (filetype == "dicom") || ((datatype != "dicom") && (datatype != "parrec"))) {
                                         // use rsync instead of cp because of the number of files limit
-                                        QString systemstring = QString("rsync %1/* %2/").arg(indir).arg(outdir);
+										QString systemstring = QString("rsync -v %1/* %2/").arg(indir).arg(outdir);
                                         n->WriteLog(n->SystemCommand(systemstring));
                                         msgs << "Copying raw data from [" + indir + "] to [" + outdir + "]";
                                     }
@@ -568,7 +568,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                                             if (!n->ConvertDicom(filetype, indir, tmpdir, gzip, uid, QString("%1").arg(studynum), QString("%1").arg(seriesnum), datatype, numfilesconv, numfilesrenamed, m2))
                                                 msgs << "Error converting files [" + m2 + "]";
                                             n->WriteLog("About to copy files from " + tmpdir + " to " + outdir);
-                                            QString systemstring = "rsync " + tmpdir + "/* " + outdir + "/";
+											QString systemstring = "rsync -v " + tmpdir + "/* " + outdir + "/";
                                             n->WriteLog(n->SystemCommand(systemstring));
                                             n->WriteLog("Done copying files...");
                                             QString m3;
@@ -746,7 +746,10 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                 QStringList lines = filecontents.split("\n");
                 QString lastline = lines.last().trimmed();
                 n->WriteLog(QString("Last line of [%1] %2").arg(systemstring).arg(lastline));
-                QStringList parts = lastline.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts); /* split on whitespace */
+				QStringList parts = lastline.trimmed().split(QRegularExpression("\\s+"), Qt::SkipEmptyParts); /* split on whitespace */
+				n->WriteLog(QString("parts.size() [%1]").arg(parts.size()));
+				if (parts.size() >= 2)
+				n->WriteLog(QString("parts: [%1] [%2]").arg(parts[0]).arg(parts[1]));
                 int unzippedsize(0);
                 int zippedsize(0);
                 if (parts.size() >= 2) {
@@ -755,7 +758,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                 }
 
                 QSqlQuery q2;
-                q2.prepare("update public_downloads set pd_createdate = now(), pd_expiredate = date_add(now(), interval :expiredays day), pd_zippedsize = :zippedsize, pd_unzippedsize = :unzippedsize, pd_filename = :filename, pd_filecontents = :filecontents, pd_key = upper(sha1(now())), pd_status = 'preparing' where pd_id = :publicdownloadid");
+				q2.prepare("update public_downloads set pd_createdate = now(), pd_expiredate = date_add(now(), interval :expiredays day), pd_zippedsize = :zippedsize, pd_unzippedsize = :unzippedsize, pd_filename = :filename, pd_filecontents = :filecontents, pd_key = upper(sha1(now())), pd_status = 'complete' where pd_id = :publicdownloadid");
                 q2.bindValue(":expiredays",expiredays);
                 q2.bindValue(":zippedsize",zippedsize);
                 q2.bindValue(":unzippedsize",unzippedsize);
