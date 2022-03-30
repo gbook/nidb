@@ -512,9 +512,8 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 
                     /* export the imaging data */
                     if (downloadimaging) {
-                        n->WriteLog("Downloading imaging data");
                         if (numfiles > 0) {
-                            n->WriteLog(QString("Series contains [%1] files").arg(numfiles));
+                            n->WriteLog(QString("Downloading imaging data. Series contains [%1] files").arg(numfiles));
                             if (datadirexists) {
                                 n->WriteLog("Series data directory [" + indir + "] exists");
                                 if (!datadirempty) {
@@ -522,7 +521,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                                     // output the correct file type
                                     if ((modality != "mr") || (filetype == "dicom") || ((datatype != "dicom") && (datatype != "parrec"))) {
                                         // use rsync instead of cp because of the number of files limit
-                                        QString systemstring = QString("rsync -v %1/* %2/").arg(indir).arg(outdir);
+                                        QString systemstring = QString("rsync %1/* %2/").arg(indir).arg(outdir);
                                         n->WriteLog(n->SystemCommand(systemstring));
                                         msgs << "Copying raw data from [" + indir + "] to [" + outdir + "]";
                                     }
@@ -568,7 +567,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                                             if (!n->ConvertDicom(filetype, indir, tmpdir, gzip, uid, QString("%1").arg(studynum), QString("%1").arg(seriesnum), datatype, numfilesconv, numfilesrenamed, m2))
                                                 msgs << "Error converting files [" + m2 + "]";
                                             n->WriteLog("About to copy files from " + tmpdir + " to " + outdir);
-                                            QString systemstring = "rsync -v " + tmpdir + "/* " + outdir + "/";
+                                            QString systemstring = "rsync " + tmpdir + "/* " + outdir + "/";
                                             n->WriteLog(n->SystemCommand(systemstring));
                                             n->WriteLog("Done copying files...");
                                             QString m3;
@@ -691,8 +690,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                 systemstring = "zip -1rv " + zipfile + " .";
             n->WriteLog("Beginning zipping...");
             n->WriteLog(n->SystemCommand(systemstring, true));
-            n->WriteLog("Finished zipping...");
-            n->WriteLog("Changing directory to [" + pwd + "]");
+            n->WriteLog("Finished zipping... Changing directory back to [" + pwd + "]");
             QDir::setCurrent(pwd);
         }
         else {
@@ -739,7 +737,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                 else
                     systemstring = "zip -1rq " + zipfile + " .";
                 n->WriteLog(n->SystemCommand(systemstring, true));
-                n->WriteLog("Changing directory to [" + pwd + "]");
+                //n->WriteLog("Changing directory to [" + pwd + "]");
                 QDir::setCurrent(pwd);
                 systemstring = "unzip -vl " + zipfile;
                 QString filecontents = n->SystemCommand(systemstring, false);

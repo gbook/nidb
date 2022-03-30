@@ -2287,7 +2287,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
                 q2.bindValue(":id", seriesid);
                 q2.bindValue(":status", seriesstatus);
                 q2.bindValue(":modality", modality);
-                n->WriteLog(n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__));
+                n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
 
             }
             j++;

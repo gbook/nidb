@@ -1180,7 +1180,7 @@ bool nidb::BatchRenameFiles(QString dir, QString seriesnum, QString studynum, QS
             f.setFileName(fname);
             QFileInfo fi(f);
             QString newName = fi.path() + "/" + QString("%1_%2_%3_%4%5").arg(uid).arg(studynum).arg(seriesnum).arg(i,5,10,QChar('0')).arg(ext.replace("*",""));
-            WriteLog( fname + " --> " + newName);
+            //WriteLog( fname + " --> " + newName);
             if (f.rename(newName))
                 numfilesrenamed++;
             else
@@ -2636,7 +2636,7 @@ bool nidb::SetExportSeriesStatus(int exportseriesid, QString status, QString msg
             q.prepare("update exportseries set status = :status where exportseries_id = :id");
             q.bindValue(":id", exportseriesid);
             q.bindValue(":status", status);
-            WriteLog(SQLQuery(q, __FUNCTION__, __FILE__, __LINE__));
+            SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         }
         else {
             QSqlQuery q;
@@ -2644,7 +2644,7 @@ bool nidb::SetExportSeriesStatus(int exportseriesid, QString status, QString msg
             q.bindValue(":id", exportseriesid);
             q.bindValue(":msg", msg);
             q.bindValue(":status", status);
-            WriteLog(SQLQuery(q, __FUNCTION__, __FILE__, __LINE__));
+            SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         }
         return true;
     }
