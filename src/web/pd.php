@@ -1,4 +1,6 @@
 <?
+	header('Content-Type: text/html; charset=utf-8');
+
  // ------------------------------------------------------------------------------
  // NiDB pd.php
  // Copyright (C) 2004 - 2021
@@ -27,53 +29,55 @@
 	$nologin = true;
  	require "functions.php";
 	require "includes_php.php";
+	require "includes_html.php";
 	
 ?>
 
 <html>
 	<head>
+		<meta charset="utf-8"/>
 		<link rel="icon" type="image/png" href="images/squirrel.png">
 		<title>NiDB Data Download</title>
 	</head>
 
 <body>
 <link rel="stylesheet" type="text/css" href="style.css">
-<div style="text-align: left; background-color: #eee; border-bottom: 2px solid #666; padding: 20px;">
-	<table width="100%">
-		<tr>
-			<td>
-				<span style="font-weight:bold; font-size:18pt; color: #35486D">NeuroInformatics Database public downloads</span>
-				<br><br>
-				<? if ($_SESSION['username'] == "") { ?>
-				<a href="signup.php">Create</a> an account | <a href="login.php">Sign in</a>
-				<? } else {?>
-				<span style="font-size:9pt">You are logged into NiDB as <?=$_SESSION['username'];?><br>
-				Go to your <a href="index.php">home</a> page
-				<? } ?>
-			</td>
-			<td align="right">
-				<a href="downloads.php">Back to downloads</a>
-			</td>
-		</tr>
-	</table>
-</div>
-<div style="margin:20px">
+<br><br>
+<div class="ui container">
+	<div class="ui segment">
+		<div class="ui two column grid">
+			<div class="column">
+				<div class="ui header">
+					<em data-emoji=":chipmunk:" class="medium"></em>
+					<div class="content">
+						<h2>NiDB Download</h2>
+						<div class="sub header">
+						<? if ($_SESSION['username'] == "") { ?>
+							<a href="signup.php">Create</a> an account or <a href="login.php">Sign in</a>
+						<? } else {?>
+							You are logged into NiDB as <?=$_SESSION['username'];?><br>
+							Go to your <a href="index.php">home</a> page
+						<? } ?>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="right aligned column">
+				<a href="downloads.php" class="ui basic button">View Public Downloads</a>
+			</div>
+		</div>
+	</div>
 <?
 	/* ----- setup variables ----- */
 	$k = GetVariable("k");
 	$p = GetVariable("p");
 	$a = GetVariable("a");
 
-	//print_r($_SESSION);
-	
 	if (($a == "") && ($k == "")) {
 		DisplayInvalidLink();
 		exit(0);
 	}
 	
-	/* database connection */
-	//$linki = mysqli_connect($GLOBALS['cfg']['mysqlhost'], $GLOBALS['cfg']['mysqluser'], $GLOBALS['cfg']['mysqlpassword'], $GLOBALS['cfg']['mysqldatabase']) or die ("Could not connect. Error [" . mysqli_error() . "]  File [" . __FILE__ . "] Line [ " . __LINE__ . "]");
-
 	/* validate the key and redirect as necessary */
 	if ($a != "") {
 		
@@ -86,13 +90,7 @@
 	/* ------- DisplayInvalidLink ----------------- */
 	/* -------------------------------------------- */
 	function DisplayInvalidLink() {
-		?>
-		<div align="center">
-		<br><br>
-		<b>Invalid Link</b><br>
-		The link you are trying to access is not valid. Please contact the person who sent you the link
-		</div>
-		<?
+		Error("This link is invalid or expired. Please contact the person who sent you the link.");
 	}
 
 	
@@ -109,7 +107,6 @@
 		
 		/* check if the key exists in the users_pending table */
 		$sqlstring = "select * from public_downloads where pd_key = '$k'";
-		//echo "$sqlstring<br>";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		if (mysqli_num_rows($result) > 0) {
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
@@ -136,48 +133,74 @@
 		`$systemstring`;
 
 		?>
-		<b><?=$desc?></b><br>
-		<span class="tiny"><b>Created</b> <?=$createdate?><br>
-		<b>Total size</b> <?=HumanReadableFilesize($unzipsize)?><br>
-		<b>Downloads</b> <?=number_format($numdownloads, 0)?>
-		</span>
-		<br><br>
-		<? if ($createdate != $expiredate) { ?>
-		Download valid through <b><?=$expiredate?></b>
-		<br><br>
-		<? } ?>
-		Release notes:
-		<details>
-		<summary style="font-size:9pt">View</summary>
-		<div style="border: solid 1px gray; background-color: #eee; margin:10px; padding:8px">
+		<div class="ui segment">
+			<div class="ui two column grid">
+				<div class="column">
+					<h1 class="ui header"><?=$desc?></h1>
+					<b>Created</b> <?=$createdate?><br>
+					<b>Total size</b> <?=HumanReadableFilesize($unzipsize)?><br>
+					<b>Views</b> <?=number_format($numdownloads, 0)?>
+					<br><br>
+					<? if ($createdate != $expiredate) { ?>
+					<b>Download expires</b> <?=$expiredate?>
+					<? } ?>
+				</div>
+				<div class="middle aligned center aligned column">
+					<?
+					if (($registerrequired) && ($_SESSION['validlogin'] != true)) {
+						?>
+						The creator of this download requires users to create an account with NiDB before downloading. Click this <a href="signup.php">link</a> to register, or ask the NiDB system admin to create an account.
+						<br>
+						<div class="ui labeled button">
+							<a href="" class="ui big grey button"><i class="cloud download alternate icon"></i>Download</a>
+							<div class="ui left pointing grey basic label">
+								<?=HumanReadableFilesize($zipsize)?>
+							</div>
+						</div>
+						<?
+					}
+					else {
+						?>
+						<div class="ui labeled button">
+							<a href="download/<?="$newlink.zip";?>" class="ui big orange button"><i class="cloud download alternate icon"></i>Download</a>
+							<div class="ui left pointing basic label">
+								<?=HumanReadableFilesize($zipsize)?>
+							</div>
+						</div>
+						<?
+						/* increment the numdownload for this download... i know, its not really accurate, but it'll be a ballpark figure. Chances are if they're coming to this page, they're only here to click this download link */
+						$sqlstring = "update public_downloads set pd_numdownloads = pd_numdownloads + 1 where pd_id = $id";
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					}
+					?>
+				</div>
+			</div>
+			<div class="ui accordion">
+				<div class="title">
+					<i class="dropdown icon"></i>
+					Release notes
+				</div>
+				<div class="content">
+					<div class="ui segment" style="border: solid 1px gray; background-color: #eee; margin:10px; padding:8px">
 <tt><?=$releasenotes?></tt>
+					</div>
+				</div>
+			</div>
+
+			<div class="ui accordion">
+				<div class="title">
+					<i class="dropdown icon"></i>
+					Download contents
+				</div>
+				<div class="content">
+					<div class="ui segment" style="border: solid 1px gray; background-color: #eee; margin:10px; padding:8px">
+<pre><?=$filecontents?></pre>
+					</div>
+				</div>
+			</div>
+			
 		</div>
-		</details>
-		<br>
-		Download contents:
-		<details>
-		<summary style="font-size:9pt">View</summary>
-		<pre style="border: solid 1px gray; background-color: #eee; margin:10px; padding:8px">
-<?=$filecontents?>
-		</pre>
-		</details>
-		<br>
-		<br>
-		<br>
 		<?
-		if (($registerrequired) && ($_SESSION['validlogin'] != true)) {
-			?>
-			The creator of this download has requested that you register with NiDB before downloading. Click this <a href="signup.php">link</a> to register. Then you can proceed to the download page.
-			<?
-		}
-		else {
-			?>
-			<div align="center"><a href="download/<?="$newlink.zip";?>" style="border: 2px orange solid; background-color: #fccd8f; padding: 15px 30px 25px 30px; border-radius:10px; color: #CA5900; font-weight: bold">Download</a><br><span style="font-size: 8pt"><?=HumanReadableFilesize($zipsize)?></span></div>
-			<?
-			/* increment the numdownload for this download... i know, its not really accurate, but it'll be a ballpark figure. Chances are if they're coming to this page, they're only here to click this download link */
-			$sqlstring = "update public_downloads set pd_numdownloads = pd_numdownloads + 1 where pd_id = $id";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		}
 		return 1;
 	}
 ?>

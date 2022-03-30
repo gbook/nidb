@@ -269,8 +269,6 @@
 				/* Get the text field */
 				var copyText = document.getElementById(id);
 
-				//alert(copyText.value);
-				
 				/* Select the text field */
 				copyText.select();
 				copyText.setSelectionRange(0, 99999); /* For mobile devices */
@@ -279,7 +277,7 @@
 				navigator.clipboard.writeText(copyText.value);
 
 				/* Alert the copied text */
-				alert("Copied the text: " + copyText.value);
+				alert("Text copied!");
 			}
 		</script>
 		<div class="ui container">

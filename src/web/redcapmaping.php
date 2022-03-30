@@ -66,17 +66,17 @@
 {
 		case 'displaymapping':
 			projectinfo($projectid);
-			DisplayRedCapSettings($projectid,$inst);
+			DisplayRedCapSettings($projectid,$inst,$nidbdatatype);
 			break;
 		case 'updatemapping':
                         UpdateMapping($projectid, $redcapevent, $inst, $redcapfields, $redcapfieldtype, $nidbdatatype, $nidbvariablename, $nidbinstrumentname);
                         projectinfo($projectid);
-                        DisplayRedCapSettings($projectid,$inst);
+                        DisplayRedCapSettings($projectid,$inst,$nidbdatatype);
 			break;
                 case 'deletemapping':
                         DeleteMapping($mappingid);
 			projectinfo($projectid);
-                        DisplayRedCapSettings($projectid,$inst);
+                        DisplayRedCapSettings($projectid,$inst,$nidbdatatype);
                         break;
 
 		case 'transferdata':
@@ -210,6 +210,18 @@
 		          </div>
 		      </div>
 		  </div>
+
+		 <div class="field">
+                      <label>Select the type of NiDB data</label>
+                      <div class="ui selection dropdown">
+                          <input type="hidden" name="nidbdatatype">
+                          <i class="dropdown icon"></i>
+                          <div class="default text">NiDB Type</div>
+			  <div class="menu">
+                                <div class="item" data-value="m" selected>Measure (Forms containing various cognitive measures)</div>
+                                <div class="item" data-value="v">Vital (Like:BP,HR, ...)</div>
+                                <div class="item" data-value="d">Drug/dose (Dose Time and date information)</div>
+                          </div>
 		</div>
 
 	 <br><br>
@@ -232,7 +244,7 @@
 	 /* -------------------------------------------- */
         /* ------- DisplayRedCapSettings -------------- */
         /* -------------------------------------------- */
-        function DisplayRedCapSettings($projectid,$inst) {
+        function DisplayRedCapSettings($projectid,$inst,$nidbdatatype) {
 		
 		        
                 if ((trim($projectid) == "") || ($projectid < 0)) {
@@ -258,6 +270,7 @@
                 <input type="hidden" name="action" value="updatemapping">
                 <input type="hidden" name="projectid" value="<?=$projectid?>">
 		<input type="hidden" name="inst" value="<?=$inst?>">
+		<input type="hidden" name="nidbdatatype" value="<?=$nidbdatatype?>">
                 
                 <h4 class="ui top attached inverted header"> Map the variable in the RedCap system to the NiDB variable type<h4>
                 <table class="ui graydisplaytable">
@@ -307,15 +320,12 @@
 					
 
 
-                                        <td style="border-right: 1px solid #bdbdbd"></td>
-                                        <td>
-                                                <select name="nidbdatatype" required>
-                                                        <option value="">(select type)
-                                                        <option value="m" selected>Measure
-                                                        <option value="v">Vital
-                                                        <option value="d">Drug/dose
-                                                </select>
-                                        </td>
+					<td style="border-right: 1px solid #bdbdbd"></td>
+
+					<?if ($nidbdatatype=='m'){?><td> <input type="text" disabled value="Measure"</td>
+					<?}elseif ($nidbdatatype=='v'){?><td><input type="text" disabled value="Vital"</td>
+					<?}elseif ($nidbdatatype=='d'){?><td><input type="text" disabled value="Drug /Dose"</td><?}?>
+
                                         <td><input type="text" name="nidbvariablename" id="nidbvariablename"></td>
                                         <td><input type="text" name="nidbinstrumentname" value=<?=$inst?>></td>
                                         <td title="Save mapping"><input type="submit" value="Add"> </td>

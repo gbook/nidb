@@ -89,6 +89,22 @@
 	/* -------------------------------------------- */
 	function DisplayDownloadList() {
 	?>
+	<script>
+		function CopyToClipboard(id) {
+			/* Get the text field */
+			var copyText = document.getElementById(id);
+
+			/* Select the text field */
+			copyText.select();
+			copyText.setSelectionRange(0, 99999); /* For mobile devices */
+
+			/* Copy the text inside the text field */
+			navigator.clipboard.writeText(copyText.value);
+
+			/* Alert the copied text */
+			alert("Link copied!");
+		}
+	</script>
 
 	<table class="ui small celled selectable grey compact table">
 		<thead>
@@ -139,8 +155,9 @@
 				<td><?=$createdby?></td>
 				<td style="font-size:8pt"><tt><?=$password?></tt></td>
 				<td>
-					<div class="ui input">
-						<input type="text" size="80" value="<?=$GLOBALS['cfg']['siteurl'] . "/pd.php?k=$key"?>">
+					<div class="ui action input">
+						<input type="text" size="80" id="linktext" value="<?=$GLOBALS['cfg']['siteurl'] . "/pd.php?k=$key"?>">
+						<button class="ui button" onClick="CopyToClipboard('linktext')" title="Copy only works when HTTPS is enabled :("><i class="copy icon"></i> Copy</button>
 					</div>
 				</td>
 			</tr>
