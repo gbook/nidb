@@ -2243,10 +2243,10 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
                             if (!n->ConvertDicom("bids", datadir, tmpdir, 1, subjectdir, sessiondir, seriesdir, datatype, numfilesconv, numfilesrenamed, m))
                                 msgs << "Error converting files [" + m + "]";
 
-                            n->WriteLog("About to copy files from " + tmpdir + " to " + seriesoutdir);
+                            //n->WriteLog("About to copy files from " + tmpdir + " to " + seriesoutdir);
                             QString systemstring = "rsync " + tmpdir + "/* " + seriesoutdir + "/";
                             n->WriteLog(n->SystemCommand(systemstring));
-                            n->WriteLog("Done copying files...");
+                            //n->WriteLog("Done copying files...");
                             n->RemoveDir(tmpdir,m);
                         }
                         else {
@@ -2457,10 +2457,10 @@ bool archiveIO::WriteSquirrel(QList<qint64> seriesids, QStringList modalities, Q
                             if (!n->ConvertDicom("nifti4d", datadir, tmpdir, 1, subjectdir, sessiondir, seriesdir, datatype, numfilesconv, numfilesrenamed, m))
                                 msgs << "Error converting files [" + m + "]";
 
-                            n->WriteLog("About to copy files from " + tmpdir + " to " + seriesoutdir);
+                            //n->WriteLog("About to copy files from " + tmpdir + " to " + seriesoutdir);
                             QString systemstring = "rsync " + tmpdir + "/* " + seriesoutdir + "/";
                             n->WriteLog(n->SystemCommand(systemstring));
-                            n->WriteLog("Done copying files...");
+                            //n->WriteLog("Done copying files...");
                             n->RemoveDir(tmpdir,m);
                         }
                         else {

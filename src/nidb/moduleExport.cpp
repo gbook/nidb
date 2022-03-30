@@ -566,10 +566,10 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                                             int numfilesconv(0), numfilesrenamed(0);
                                             if (!n->ConvertDicom(filetype, indir, tmpdir, gzip, uid, QString("%1").arg(studynum), QString("%1").arg(seriesnum), datatype, numfilesconv, numfilesrenamed, m2))
                                                 msgs << "Error converting files [" + m2 + "]";
-                                            n->WriteLog("About to copy files from " + tmpdir + " to " + outdir);
+                                            //n->WriteLog("About to copy files from " + tmpdir + " to " + outdir);
                                             QString systemstring = "rsync " + tmpdir + "/* " + outdir + "/";
                                             n->WriteLog(n->SystemCommand(systemstring));
-                                            n->WriteLog("Done copying files...");
+                                            //n->WriteLog("Done copying files...");
                                             QString m3;
                                             if (!n->RemoveDir(tmpdir, m3))
                                                 msgs << "Error [" + m3 + "] while removing path [" + tmpdir + "]";
