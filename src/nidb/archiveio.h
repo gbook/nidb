@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB archiveio.h
-  Copyright (C) 2004 - 2021
+  Copyright (C) 2004 - 2022
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -44,9 +44,9 @@ public:
     bool GetStudy(QString studyMatchCriteria, int existingStudyID, int enrollmentRowID, QString StudyDateTime, QString Modality, QString StudyInstanceUID, int &studyRowID);
     bool CreateStudy(int subjectRowID, int enrollmentRowID, QString StudyDateTime, QString studyUID, QString Modality, QString PatientID, double PatientAge, double PatientSize, double PatientWeight, QString StudyDescription, QString OperatorsName, QString PerformingPhysiciansName, QString StationName, QString InstitutionName, QString InstitutionAddress, int &studyRowID, int &studyNum);
 
-    bool WriteBIDS(QList<int> seriesids, QStringList modalities, QString odir, QString bidsreadme, QString bidsflags, QString &msg);
-    bool WriteSquirrel(QList<int> seriesids, QStringList modalities, QString odir, QString &msg);
-    bool GetSeriesListDetails(QList <int> seriesids, QStringList modalities, subjectStudySeriesContainer &s);
+    bool WriteBIDS(QList<qint64> seriesids, QStringList modalities, QString odir, QString bidsreadme, QString bidsflags, QString &msg);
+    bool WriteSquirrel(QList<qint64> seriesids, QStringList modalities, QString odir, QString &msg);
+    bool GetSeriesListDetails(QList <qint64> seriesids, QStringList modalities, subjectStudySeriesContainer &s);
 
     /* archive helper functions */
     QString GetCostCenter(QString studydesc);

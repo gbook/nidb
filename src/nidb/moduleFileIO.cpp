@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB moduleFileIO.cpp
-  Copyright (C) 2004 - 2021
+  Copyright (C) 2004 - 2022
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -346,8 +346,8 @@ bool moduleFileIO::DeleteAnalysis(qint64 analysisid, QString &msg) {
     bool okToDeleteDBEntries = false;
 
     if (QDir(a.analysispath).exists()) {
-		qint64 c;
-        qint64 b;
+        quint64 c;
+        quint64 b;
         n->GetDirSizeAndFileCount(a.analysispath, c, b, true);
 
         n->WriteLog(QString("Going to remove [%1] files and directories from [%2]").arg(c).arg(a.analysispath));

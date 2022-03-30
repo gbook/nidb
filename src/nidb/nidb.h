@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB nidb.h
-  Copyright (C) 2004 - 2021
+  Copyright (C) 2004 - 2022
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -59,7 +59,7 @@ public:
     QString GetBuildString();
 
     /* module housekeeping functions */
-	qint64 ModuleGetNumLockFiles();
+    qint64 ModuleGetNumLockFiles();
     bool ModuleCreateLockFile();
     bool ModuleCreateLogFile();
     bool ModuleClearLockFiles();
@@ -123,7 +123,7 @@ public:
     bool MoveAllFiles(QString indir, QString pattern, QString outdir, QString &msg);
     bool RenameFile(QString filepathorig, QString filepathnew, bool force=true);
     bool MoveFile(QString f, QString dir, QString &m);
-	void GetDirSizeAndFileCount(QString dir, qint64 &c, qint64 &b, bool recurse=false);
+    void GetDirSizeAndFileCount(QString dir, quint64 &c, quint64 &b, bool recurse=false);
     //void GetDirectoryListing(QString dir, QStringList &files, QList<int> &sizes, bool recurse=false);
     QByteArray GetFileChecksum(const QString &fileName, QCryptographicHash::Algorithm hashAlgorithm);
     bool chmod(QString f, QString perm);

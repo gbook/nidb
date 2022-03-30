@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB moduleUpload.cpp
-  Copyright (C) 2004 - 2021
+  Copyright (C) 2004 - 2022
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -154,8 +154,8 @@ bool moduleUpload::ParseUploads() {
             }
 
             /* get information about the uploaded data from the uploadstagingdir (before unzipping any zip files) */
-			qint64 c;
-            qint64 b;
+            quint64 c;
+            quint64 b;
             //n->GetDirSizeAndFileCount(uploadstagingpath, c, b, true);
             //io->AppendUploadLog(__FUNCTION__, QString("(BEFORE UNZIPPING) Upload directory [%1] contains [%2] files, and is [%3] bytes in size.").arg(uploadstagingpath).arg(c).arg(b));
 

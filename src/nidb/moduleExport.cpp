@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB moduleExport.cpp
-  Copyright (C) 2004 - 2021
+  Copyright (C) 2004 - 2022
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -747,14 +747,11 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                 QString lastline = lines.last().trimmed();
                 n->WriteLog(QString("Last line of [%1] %2").arg(systemstring).arg(lastline));
                 QStringList parts = lastline.trimmed().split(QRegularExpression("\\s+"), Qt::SkipEmptyParts); /* split on whitespace */
-                //n->WriteLog(QString("parts.size() [%1]").arg(parts.size()));
-                //if (parts.size() >= 2)
-                //    n->WriteLog(QString("parts: [%1] [%2]").arg(parts[0]).arg(parts[1]));
-                int unzippedsize(0);
-                int zippedsize(0);
+                qint64 unzippedsize(0);
+                qint64 zippedsize(0);
                 if (parts.size() >= 2) {
-                    unzippedsize = parts[0].toLong();
-                    zippedsize = parts[1].toLong();
+                    unzippedsize = parts[0].toLongLong();
+                    zippedsize = parts[1].toLongLong();
                 }
 
                 QSqlQuery q2;
@@ -838,13 +835,13 @@ bool moduleExport::ExportNDAR(int exportid, bool csvonly, QString &exportstatus,
             for(QMap<int, QMap<QString, QString>>::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
                 int seriesnum = c.key();
 
-                int exportseriesid = s[uid][studynum][seriesnum]["exportseriesid"].toInt();
+                qint64 exportseriesid = s[uid][studynum][seriesnum]["exportseriesid"].toLongLong();
                 n->SetExportSeriesStatus(exportseriesid, "processing");
 
                 QString seriesstatus = "complete";
                 QString statusmessage;
 
-                int seriesid = s[uid][studynum][seriesnum]["seriesid"].toInt();
+                qint64 seriesid = s[uid][studynum][seriesnum]["seriesid"].toLongLong();
                 //QString primaryaltuid = s[uid][studynum][seriesnum]["primaryaltuid"];
                 //QString altuids = s[uid][studynum][seriesnum]["altuids"];
                 //QString projectname = s[uid][studynum][seriesnum]["projectname"];
@@ -948,7 +945,7 @@ bool moduleExport::ExportBIDS(int exportid, QString bidsreadme, QString bidsflag
 
     /* get list of seriesids/modalities */
     QStringList modalities;
-    QList<int> seriesids;
+    QList<qint64> seriesids;
     QSqlQuery q;
     q.prepare("select * from exportseries where export_id = :exportid");
     q.bindValue(":exportid",exportid);
@@ -956,7 +953,7 @@ bool moduleExport::ExportBIDS(int exportid, QString bidsreadme, QString bidsflag
     if (q.size() > 0) {
         n->WriteLog(QString("Found [%1] rows for exportID [%2]").arg(q.size()).arg(exportid));
         while (q.next()) {
-            seriesids.append(q.value("series_id").toInt());
+            seriesids.append(q.value("series_id").toLongLong());
             modalities.append(q.value("modality").toString().toLower());
             //n->WriteLog(QString("Appended series [%1], modality [%2]").arg(seriesids.last()).arg(modalities.last()));
         }
@@ -1004,7 +1001,7 @@ bool moduleExport::ExportSquirrel(int exportid, QString &exportstatus, QString &
 
     /* get list of seriesids/modalities */
     QStringList modalities;
-    QList<int> seriesids;
+    QList<qint64> seriesids;
     QSqlQuery q;
     q.prepare("select * from exportseries where export_id = :exportid");
     q.bindValue(":exportid",exportid);
@@ -1012,7 +1009,7 @@ bool moduleExport::ExportSquirrel(int exportid, QString &exportstatus, QString &
     if (q.size() > 0) {
         n->WriteLog(QString("Found [%1] rows for exportID [%2]").arg(q.size()).arg(exportid));
         while (q.next()) {
-            seriesids.append(q.value("series_id").toInt());
+            seriesids.append(q.value("series_id").toLongLong());
             modalities.append(q.value("modality").toString().toLower());
             //n->WriteLog(QString("Appended series [%1], modality [%2]").arg(seriesids.last()).arg(modalities.last()));
         }
@@ -1095,7 +1092,7 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
             for(QMap<int, QMap<QString, QString>>::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
                 int seriesnum = c.key();
 
-                int exportseriesid = s[uid][studynum][seriesnum]["exportseriesid"].toInt();
+                qint64 exportseriesid = s[uid][studynum][seriesnum]["exportseriesid"].toLongLong();
                 n->SetExportSeriesStatus(exportseriesid, "processing");
 
                 QString seriesstatus = "complete";
@@ -1331,8 +1328,8 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
 
     if (q.size() > 0) {
         while (q.next()) {
-            int subjectid = q.value("subject_id").toInt();
-            int enrollmentid = q.value("enrollment_id").toInt();
+            qint64 subjectid = q.value("subject_id").toLongLong();
+            qint64 enrollmentid = q.value("enrollment_id").toLongLong();
             QString guid = q.value("guid").toString().trimmed();
             //QString seriesdatetime = q.value("series_datetime").toString().trimmed();
             double seriestr = q.value("series_tr").toDouble();

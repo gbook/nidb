@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB moduleMiniPipeline.cpp
-  Copyright (C) 2004 - 2021
+  Copyright (C) 2004 - 2022
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -371,8 +371,8 @@ int moduleMiniPipeline::CopyAllSeriesData(QString modality, int seriesid, QStrin
         msg += n->SystemCommand(systemstring, true, false);
     }
 
-	qint64 c;
-    qint64 b;
+    quint64 c;
+    quint64 b;
     n->GetDirSizeAndFileCount(destination,c,b);
 
     numFilesCopied = c;

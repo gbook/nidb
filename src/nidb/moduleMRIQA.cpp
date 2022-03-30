@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB moduleMRIQA.cpp
-  Copyright (C) 2004 - 2021
+  Copyright (C) 2004 - 2022
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -61,7 +61,7 @@ int moduleMRIQA::Run() {
         while (q.next()) {
             n->WriteLog(QString("***** Working on MR QA [%1] of [%2] *****").arg(numProcessed).arg(numToDo));
             n->ModuleRunningCheckIn();
-            int mrseriesid = q.value("mrseries_id").toInt();
+            quint64 mrseriesid = q.value("mrseries_id").toULongLong();
             QA(mrseriesid);
 
             /* only process 10 series before exiting the script. Since the script always starts with the newest when it first runs,
@@ -109,7 +109,7 @@ bool moduleMRIQA::QA(int seriesid) {
     int isderived = s.isderived;
     QString uid = s.uid;
     QString datatype = s.datatype;
-    int mrqaid(0);
+    quint64 mrqaid(0);
 
     QString indir = s.datapath;
     n->WriteLog("======================== Working on ["+indir+"] ========================");
@@ -130,7 +130,7 @@ bool moduleMRIQA::QA(int seriesid) {
         q2.prepare("insert into mr_qa (mrseries_id) values (:seriesid)");
         q2.bindValue(":seriesid",seriesid);
         n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
-        mrqaid = q2.lastInsertId().toInt();
+        mrqaid = q2.lastInsertId().toULongLong();
     }
 
     msgs << n->WriteLog("Setting current directory to ["+indir+"]");
@@ -174,8 +174,8 @@ bool moduleMRIQA::QA(int seriesid) {
     msgs << n->WriteLog("Done attempting to convert files... now trying to copy out the first valid Nifti file");
     QDir::setCurrent(tmpdir);
 
-	qint64 c(0);
-    qint64 b(0);
+    quint64 c(0);
+    quint64 b(0);
     n->GetDirSizeAndFileCount(tmpdir, c, b);
     if ((c == 0) | (b == 0)) {
         msgs << n->WriteLog(QString("No files found in ["+tmpdir+"] after copying or converting. dircount [%1] dirsize [%2]").arg(c).arg(b));
@@ -440,8 +440,8 @@ bool moduleMRIQA::QA(int seriesid) {
     q.bindValue(":mrqaid",mrqaid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
 
-    qint64 dirsize = 0;
-	qint64 nfiles;
+    quint64 dirsize = 0;
+    quint64 nfiles;
     n->GetDirSizeAndFileCount(indir, nfiles, dirsize);
 
     /* update the mr_series table with the image dimensions */

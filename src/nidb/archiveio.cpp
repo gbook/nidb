@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB archiveio.h
-  Copyright (C) 2004 - 2021
+  Copyright (C) 2004 - 2022
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -652,8 +652,8 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
     AppendUploadLog(__FUNCTION__ , QString(logmsg + "]  Done renaming [%1] new files").arg(filecnt));
 
     /* get the size of the dicom files and update the DB */
-    qint64 dirsize = 0;
-	qint64 nfiles;
+    quint64 dirsize = 0;
+    quint64 nfiles;
     n->GetDirSizeAndFileCount(outdir, nfiles, dirsize);
     AppendUploadLog(__FUNCTION__ , QString("Archive directory [%1] is [%2] bytes in size and contains [%3] files").arg(outdir).arg(dirsize).arg(nfiles));
 
@@ -710,8 +710,8 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
                 QString systemstring = "mv -v " + inbehdir + "/* " + outbehdir + "/";
                 AppendUploadLog(__FUNCTION__ , n->SystemCommand(systemstring));
 
-                qint64 behdirsize(0);
-				qint64 behnumfiles(0);
+                quint64 behdirsize(0);
+                quint64 behnumfiles(0);
                 n->GetDirSizeAndFileCount(outdir, behnumfiles, behdirsize);
                 QString sqlstring = QString("update %1_series set beh_size = :behdirsize, numfiles_beh = :behnumfiles where %1series_id = :seriesRowID").arg(dbModality.toLower());
                 QSqlQuery q3;
@@ -1300,8 +1300,8 @@ bool archiveIO::InsertParRec(int importid, QString file) {
     n->MoveFile(recfile, outdir, m);
 
     /* get the size of the dicom files and update the DB */
-    qint64 dirsize(0);
-	qint64 nfiles(0);
+    quint64 dirsize(0);
+    quint64 nfiles(0);
     n->GetDirSizeAndFileCount(outdir, nfiles, dirsize);
 
     /* update the database with the correct number of files/BOLD reps */
@@ -1634,8 +1634,8 @@ bool archiveIO::InsertEEG(int importid, QString file) {
         n->WriteLog(QString("Unable to move [%1] to [%2], with error [%3]").arg(file).arg(outdir).arg(m));
 
     /* get the size of the files and update the DB */
-    qint64 dirsize(0);
-	qint64 nfiles(0);
+    quint64 dirsize(0);
+    quint64 nfiles(0);
     n->GetDirSizeAndFileCount(outdir, nfiles, dirsize);
     q2.prepare(QString("update %1_series set series_size = :dirsize where %1series_id = :seriesRowID").arg(Modality.toLower()));
     q2.bindValue(":dirsize", dirsize);
@@ -2092,7 +2092,7 @@ void archiveIO::AppendUploadLog(QString func, QString m) {
 /* ---------------------------------------------------------- */
 /* --------- WriteBIDS ------------------------------------- */
 /* ---------------------------------------------------------- */
-bool archiveIO::WriteBIDS(QList<int> seriesids, QStringList modalities, QString odir, QString bidsreadme, QString bidsflags, QString &msg) {
+bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QString odir, QString bidsreadme, QString bidsflags, QString &msg) {
     n->WriteLog("Entering WriteBIDS()...");
 
     QString exportstatus = "complete";
@@ -2307,7 +2307,7 @@ bool archiveIO::WriteBIDS(QList<int> seriesids, QStringList modalities, QString 
 /* ---------------------------------------------------------- */
 /* --------- WriteSquirrel ------------------------------------- */
 /* ---------------------------------------------------------- */
-bool archiveIO::WriteSquirrel(QList<int> seriesids, QStringList modalities, QString odir, QString &msg) {
+bool archiveIO::WriteSquirrel(QList<qint64> seriesids, QStringList modalities, QString odir, QString &msg) {
     n->WriteLog("Entering WriteSquirrel()...");
 
     QString exportstatus = "complete";
@@ -2522,7 +2522,7 @@ bool archiveIO::WriteSquirrel(QList<int> seriesids, QStringList modalities, QStr
 /* --------- GetSeriesListDetails --------------------------- */
 /* ---------------------------------------------------------- */
 /* create a multilevel hash s[uid][study][series]['attribute'] to store the series */
-bool archiveIO::GetSeriesListDetails(QList <int> seriesids, QStringList modalities, subjectStudySeriesContainer &s) {
+bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modalities, subjectStudySeriesContainer &s) {
 
     QSqlQuery q;
     for (int i=0; i<seriesids.size(); i++) {
@@ -2538,7 +2538,7 @@ bool archiveIO::GetSeriesListDetails(QList <int> seriesids, QStringList modaliti
                 n->WriteLog(QString("%1() Found [%2] rows").arg(__FUNCTION__).arg(q.size()));
             while (q.next()) {
                 QString uid = q.value("uid").toString();
-                int subjectid = q.value("subject_id").toInt();
+                qint64 subjectid = q.value("subject_id").toLongLong();
                 QString subjectsex = q.value("gender").toString();
                 QString subjectdob = q.value("birthdate").toString();
                 int studynum = q.value("study_num").toInt();
@@ -2557,7 +2557,7 @@ bool archiveIO::GetSeriesListDetails(QList <int> seriesids, QStringList modaliti
                 QString datatype = q.value("data_type").toString();
                 if (datatype == "") /* If the modality is MR, the datatype will have a value (dicom, nifti, parrec), otherwise we will set the datatype to the modality */
                     datatype = modality;
-                int numfiles = q.value("numfiles").toInt();
+                qint64 numfiles = q.value("numfiles").toLongLong();
                 if (modality != "mr")
                     numfiles = q.value("series_numfiles").toInt();
                 int numfilesbeh = q.value("numfiles_beh").toInt();

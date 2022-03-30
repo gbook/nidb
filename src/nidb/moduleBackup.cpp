@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB moduleBackup.cpp
-  Copyright (C) 2004 - 2021
+  Copyright (C) 2004 - 2022
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -32,7 +32,7 @@
 moduleBackup::moduleBackup(nidb *a)
 {
     n = a;
-    backupTapeSize = n->cfg["backupsize"].toLong() * 1000000000; /* convert GB to bytes */
+    backupTapeSize = n->cfg["backupsize"].toULongLong() * 1000000000; /* convert GB to bytes */
     backupDir = n->cfg["backupdir"];
     backupStagingDir = n->cfg["backupstagingdir"];
     backupDevice = n->cfg["backupdevice"];
@@ -129,7 +129,7 @@ int moduleBackup::Run() {
 
     /* ----- step 3 ----- move to backup staging */
     n->WriteLog("Step 3 - Moving data to backup staging");
-    qint64 backupStageSize = MoveToBackupStaging();
+    quint64 backupStageSize = MoveToBackupStaging();
     n->WriteLog(QString("After moving, [%1] size is [%2] bytes").arg(backupStagingDir).arg(backupStageSize));
 
     n->ModuleRunningCheckIn();
@@ -211,10 +211,9 @@ int moduleBackup::Run() {
 /* ---------------------------------------------------------- */
 qint64 moduleBackup::MoveToBackupStaging() {
 
-    qint64 backupStagingSize = 0;
-
     /* get size of backup staging directory */
-	qint64 c;
+    quint64 c;
+    quint64 backupStagingSize = 0;
     n->GetDirSizeAndFileCount(backupStagingDir, c, backupStagingSize, true);
 
     /* loop through files in backup dir, older than 24 hrs, then
