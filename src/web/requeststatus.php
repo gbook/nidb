@@ -291,8 +291,9 @@
 					<div class="header"><?=date("D M j, Y h:ia",strtotime($submitdate))?></div>
 					<div class="meta">
 						<?=$deststr?> &nbsp; &nbsp; <?=$numseries?> series &nbsp; &nbsp; <?=HumanReadableFilesize($totalbytes)?>
+						<p>Requested by <?=$username?></p>
 						<? if ($numahead > 0) {
-							echo "<br>$numahead exports queued ahead of this export<br>";
+							echo "<p>$numahead exports queued ahead of this export</p>";
 						} ?>
 					</div>
 					<div class="description">
