@@ -156,8 +156,8 @@
 				<td style="font-size:8pt"><tt><?=$password?></tt></td>
 				<td>
 					<div class="ui action input">
-						<input type="text" size="80" id="linktext" value="<?=$GLOBALS['cfg']['siteurl'] . "/pd.php?k=$key"?>">
-						<button class="ui button" onClick="CopyToClipboard('linktext')" title="Copy only works when HTTPS is enabled :("><i class="copy icon"></i> Copy</button>
+						<input type="text" size="80" id="linktext<?=$id?>" value="<?=$GLOBALS['cfg']['siteurl'] . "/pd.php?k=$key"?>">
+						<button class="ui button" onClick="CopyToClipboard('linktext<?=$id?>')" title="Copy only works when HTTPS is enabled :("><i class="copy icon"></i> Copy</button>
 					</div>
 				</td>
 			</tr>
