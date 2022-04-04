@@ -108,18 +108,48 @@
 	$c['modulepipelinethreads'] = GetVariable("modulepipelinethreads");
 	$c['moduleimportuploadedthreads'] = GetVariable("moduleimportuploadedthreads");
 	$c['moduleqcthreads'] = GetVariable("moduleqcthreads");
+	$c['moduleuploadthreads'] = GetVariable("moduleuploadthreads");
+	$c['modulebackupthreads'] = GetVariable("modulebackupthreads");
+	$c['moduleminipipelinethreads'] = GetVariable("moduleminipipelinethreads");
 	
-	//$c['emaillib'] = GetVariable("emaillib");
+	$c['emaillib'] = GetVariable("emaillib");
 	$c['emailusername'] = GetVariable("emailusername");
 	$c['emailpassword'] = GetVariable("emailpassword");
 	$c['emailserver'] = GetVariable("emailserver");
 	$c['emailport'] = GetVariable("emailport");
 	$c['emailfrom'] = GetVariable("emailfrom");
+	
 	$c['adminemail'] = GetVariable("adminemail");
-	
 	$c['siteurl'] = GetVariable("siteurl");
+	$c['version'] = GetVariable("version");
+	$c['sitename'] = GetVariable("sitename");
+	$c['sitenamedev'] = GetVariable("sitenamedev");
+	$c['sitecolor'] = GetVariable("sitecolor");
+	$c['ispublic'] = GetVariable("ispublic");
+	$c['sitetype'] = GetVariable("sitetype");
+	$c['allowphi'] = GetVariable("allowphi");
+	$c['uploadsizelimit'] = GetVariable("uploadsizelimit");
+	$c['displayrecentstudies'] = GetVariable("displayrecentstudies");
+	$c['displayrecentstudydays'] = GetVariable("displayrecentstudydays");
+
+	$c['enableremoteconn'] = GetVariable("enableremoteconn");
+	$c['enablecalendar'] = GetVariable("enablecalendar");
+	$c['enablepipelines'] = GetVariable("enablepipelines");
+	$c['enabledatamenu'] = GetVariable("enabledatamenu");
+	$c['enablerdoc'] = GetVariable("enablerdoc");
+	$c['enablepublicdownloads'] = GetVariable("enablepublicdownloads");
+	$c['enablewebexport'] = GetVariable("enablewebexport");
+
+	$c['setupips'] = GetVariable("setupips");
 	
-	$c['fslbinpath'] = GetVariable("fslbinpath");
+	$c['enablecsa'] = GetVariable("enablecsa");
+	$c['importchunksize'] = GetVariable("importchunksize");
+	$c['numretry'] = GetVariable("numretry");
+	$c['enablenfs'] = GetVariable("enablenfs");
+	$c['enableftp'] = GetVariable("enableftp");
+	$c['allowrawdicomexport'] = GetVariable("allowrawdicomexport");
+
+	$c['fsldir'] = GetVariable("fsldir");
 	
 	$c['usecluster'] = GetVariable("usecluster");
 	$c['queuename'] = GetVariable("queuename");
@@ -129,25 +159,6 @@
 	$c['clusteruser'] = GetVariable("clusteruser");
 	$c['clusternidbpath'] = GetVariable("clusternidbpath");
 
-	$c['version'] = GetVariable("version");
-	$c['sitename'] = GetVariable("sitename");
-	$c['sitenamedev'] = GetVariable("sitenamedev");
-	$c['sitecolor'] = GetVariable("sitecolor");
-	$c['ispublic'] = GetVariable("ispublic");
-	$c['sitetype'] = GetVariable("sitetype");
-	$c['allowphi'] = GetVariable("allowphi");
-	$c['allowrawdicomexport'] = GetVariable("allowrawdicomexport");
-	$c['enableremoteconn'] = GetVariable("enableremoteconn");
-	$c['enablecalendar'] = GetVariable("enablecalendar");
-	$c['uploadsizelimit'] = GetVariable("uploadsizelimit");
-	$c['displayrecentstudies'] = GetVariable("displayrecentstudies");
-	$c['displayrecentstudydays'] = GetVariable("displayrecentstudydays");
-
-	$c['importchunksize'] = GetVariable("importchunksize");
-	$c['numretry'] = GetVariable("numretry");
-	$c['enablenfs'] = GetVariable("enablenfs");
-	$c['enableftp'] = GetVariable("enableftp");
-
 	$c['enablecas'] = GetVariable("enablecas");
 	$c['casserver'] = GetVariable("casserver");
 	$c['casport'] = GetVariable("casport");
@@ -156,31 +167,35 @@
 	$c['localftphostname'] = GetVariable("localftphostname");
 	$c['localftpusername'] = GetVariable("localftpusername");
 	$c['localftppassword'] = GetVariable("localftppassword");
-	
-	$c['analysisdir'] = GetVariable("analysisdir");
-	$c['analysisdirb'] = GetVariable("analysisdirb");
-	$c['clusteranalysisdir'] = GetVariable("clusteranalysisdir");
-	$c['clusteranalysisdirb'] = GetVariable("clusteranalysisdirb");
-	$c['groupanalysisdir'] = GetVariable("groupanalysisdir");
+
+	$c['nidbdir'] = GetVariable("nidbdir");
+	$c['webdir'] = GetVariable("webdir");
+	$c['lockdir'] = GetVariable("lockdir");
+	$c['logdir'] = GetVariable("logdir");
+	$c['mountdir'] = GetVariable("mountdir");
+	$c['qcmoduledir'] = GetVariable("qcmoduledir");
+
 	$c['archivedir'] = GetVariable("archivedir");
 	$c['backupdir'] = GetVariable("backupdir");
 	$c['ftpdir'] = GetVariable("ftpdir");
 	$c['importdir'] = GetVariable("importdir");
 	$c['incomingdir'] = GetVariable("incomingdir");
 	$c['incoming2dir'] = GetVariable("incoming2dir");
-	$c['lockdir'] = GetVariable("lockdir");
-	$c['logdir'] = GetVariable("logdir");
-	$c['mountdir'] = GetVariable("mountdir");
 	$c['packageimportdir'] = GetVariable("packageimportdir");
-	$c['qcmoduledir'] = GetVariable("qcmoduledir");
 	$c['problemdir'] = GetVariable("problemdir");
-	$c['nidbdir'] = GetVariable("nidbdir");
-	$c['webdir'] = GetVariable("webdir");
 	$c['webdownloaddir'] = GetVariable("webdownloaddir");
 	$c['downloaddir'] = GetVariable("downloaddir");
 	$c['uploadeddir'] = GetVariable("uploadeddir");
+	$c['uploadstagingdir'] = GetVariable("uploadstagingdir");
 	$c['tmpdir'] = GetVariable("tmpdir");
 	$c['deleteddir'] = GetVariable("deleteddir");
+	
+	$c['analysisdir'] = GetVariable("analysisdir");
+	$c['analysisdirb'] = GetVariable("analysisdirb");
+	$c['clusteranalysisdir'] = GetVariable("clusteranalysisdir");
+	$c['clusteranalysisdirb'] = GetVariable("clusteranalysisdirb");
+	$c['groupanalysisdir'] = GetVariable("groupanalysisdir");
+
 	$noconfig = GetVariable("noconfig");
 	$systemmessage = GetVariable("systemmessage");
 	$messageid = GetVariable("messageid");

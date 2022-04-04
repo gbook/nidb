@@ -84,8 +84,11 @@
 	/* ------- ShowList ---------------------------------- */
 	/* --------------------------------------------------- */
 	function ShowList($viewall) {
-		?>
-		<a href="filesio.php?viewall=<?=1?>">Show all file I/O</a>
+		if ($viewall) {
+			?><a href="filesio.php?viewall=0" class="ui basic button">Show most recent</a>
+		<? } else { ?>
+			<a href="filesio.php?viewall=1" class="ui basic button">Show all</a>
+		<? } ?>
 		<br><br>
 		<SCRIPT LANGUAGE="Javascript">
 			function decision(message, url){
@@ -94,17 +97,14 @@
 		</SCRIPT>
 		<table class="ui very compact celled grey table">
 			<thead>
-				<th align="left">I/O Id</th>
+				<!--<th align="left">I/O Id</th>-->
 				<th align="left">Requested By</th>
-				<th align="left">Request Time</th>
+				<th align="left">Request date</th>
 				<th align="left">Operation</th>
-				<th align="left">Type</th>
 				<th align="left">Status</th>
-				<th align="left">Time Left</th>
 				<th align="left">Message</th>
-				<? if ($iostatus!='complete'){ ?>
+				<th align="left">Complete date</th>
 				<th align="center">Action</th>
-				<?}?>
 			</thead>
 		<?	
 		
@@ -115,10 +115,21 @@
 
 		if ($GLOBALS['issiteadmin']) {
 			if ($viewall) {
-				$sqlstring = "SELECT `fileiorequest_id`, `fileio_operation`,`data_type`,`request_status`, `request_message`, `username`,`requestdate` FROM `fileio_requests` order by fileiorequest_id desc limit 100"; }
-			else {
-				$sqlstring = "SELECT `fileiorequest_id`, `fileio_operation`,`data_type`,`request_status`, `request_message`, `username`,`requestdate` FROM `fileio_requests`  order by fileiorequest_id desc"; }
+				$sqlstring = "SELECT `fileiorequest_id`, `fileio_operation`,`data_type`,`request_status`, `request_message`, `username`,`requestdate` FROM `fileio_requests` order by fileiorequest_id desc limit 1000";
 			}
+			else {
+				$sqlstring = "SELECT `fileiorequest_id`, `fileio_operation`,`data_type`,`request_status`, `request_message`, `username`,`requestdate` FROM `fileio_requests` order by fileiorequest_id desc limit 100";
+			}
+		}
+		else {
+			if ($viewall) {
+				$sqlstring = "SELECT `fileiorequest_id`, `fileio_operation`,`data_type`,`request_status`, `request_message`, `username`,`requestdate` FROM `fileio_requests` where username = '" . $GLOBALS['username'] . "' order by fileiorequest_id desc limit 1000";
+			}
+			else {
+				$sqlstring = "SELECT `fileiorequest_id`, `fileio_operation`,`data_type`,`request_status`, `request_message`, `username`,`requestdate` FROM `fileio_requests` where username = '" . $GLOBALS['username'] . "' order by fileiorequest_id desc limit 100";
+			}
+		}
+			
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$fileioid = $row['fileiorequest_id'];
@@ -128,15 +139,18 @@
 				$iotype = $row['data_type'];
 				$iostatus = $row['request_status'];
 				$iomessage = $row['request_message'];
+				
+				if ($iostatus == "error") { $color = "red"; }
+				elseif ($iostatus == "complete") { $color = "green"; }
+				else { $color = ""; }
 			?>                        
 
 			<tr>
-				<td><?=$fileioid?></td>
+				<!--<td><?=$fileioid?></td>-->
 				<td><?=$rquser?></td>
 				<td><?=$rtime?></td>
-				<td><?=$iooperation?></td>
-				<td><?=$iotype?></td>
-				<td><?=$iostatus?></td>
+				<td><?=ucfirst($iooperation)?> <?=$iotype?></td>
+				<td class="ui <?=$color?> cell"><?=$iostatus?></td>
 				<td><?=$iomessage?></td>
 				<?
 				$now = strtotime($rtime);
@@ -156,12 +170,12 @@
 				<td><?=$endDate?></td>
 				<? if ($iostatus=='pending'){ ?>
 				<td align="center" class="cancel">
-					<a class="ui red button" href="filesio.php?action=cancelfileio&fileioid=<?=$fileioid?>" onclick="return confirm('Are you sure?')">Cancel Operation</a>
+					<a class="ui small compact red button" href="filesio.php?action=cancelfileio&fileioid=<?=$fileioid?>" onclick="return confirm('Are you sure?')">Cancel Operation</a>
 				</td>
 				<? }?>
 				<? if ($iostatus=='error' || $iostatus=='cancelled'){ ?>
 				<td>
-					<a class="ui red button" href="filesio.php?action=deletefileio&fileioid=<?=$fileioid?>" onclick="return confirm('Are you sure?')">Remove</a>
+					<a class="ui small compact red button" href="filesio.php?action=deletefileio&fileioid=<?=$fileioid?>" onclick="return confirm('Are you sure?')">Remove</a>
 				</td>
 				<? } ?>
 

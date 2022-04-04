@@ -80,6 +80,7 @@
     $c['moduleqcthreads'] = GetVariable("moduleqcthreads");
     $c['moduleuploadthreads'] = GetVariable("moduleuploadthreads");
     $c['modulebackupthreads'] = GetVariable("modulebackupthreads");
+    $c['moduleminipipelinethreads'] = GetVariable("moduleminipipelinethreads");
 	
     $c['emaillib'] = GetVariable("emaillib");
     $c['emailusername'] = GetVariable("emailusername");
@@ -182,27 +183,27 @@
 	switch ($action) {
 		case 'updateconfig':
 			WriteConfig($c);
-			DisplayConfig();
 			DisplaySettings("settings");
+			DisplayConfig();
 			break;
 		case 'testemail':
 			TestEmail();
-			DisplayConfig();
 			DisplaySettings("settings");
+			DisplayConfig();
 			break;
 		case 'setsystemmessage':
 			SetSystemMessage($systemmessage);
-			DisplayConfig();
 			DisplaySettings("settings");
+			DisplayConfig();
 			break;
 		case 'deletesystemmessage':
 			DeleteSystemMessage($messageid);
-			DisplayConfig();
 			DisplaySettings("settings");
+			DisplayConfig();
 			break;
 		default:
-			DisplayConfig();
 			DisplaySettings("settings");
+			DisplayConfig();
 	}
 	
 	
@@ -252,36 +253,38 @@
 
 		?>
 		
-		<div class="ui top attached grey inverted segment">
-			<h2>System status messages</h2>
+		<div class="ui container">
+
+			<div class="ui fluid styled accordion">
+				<div class="title">
+					<i class="dropdown icon"></i> System Status Message
+				</div>
+				<div class="content">
+					Current messages:
+					<?
+						$sqlstring = "select * from system_messages where message_status = 'active'";
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						if (mysqli_num_rows($result) > 0) {
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+								$messageid = $row['message_id'];
+								$messagedate = $row['message_date'];
+								$message = $row['message'];
+								?><br><?=$messagedate?> - <b><?=$message?></b> <a class="ui red button" href="system.php?action=deletesystemmessage&messageid=<?=$messageid?>" onclick="return confirm('Are you sure you want to delete the message?')">Delete</a><br><?
+							}
+						}
+						else {
+							echo " None";
+						}
+					?>
+				<br><br>
+				<form method="post" action="system.php">
+				<input type="hidden" name="action" value="setsystemmessage">
+				<textarea name="systemmessage" style="width: 500px; height: 70px"></textarea><br>
+				<input type="submit" value="Set message" class="ui primary button">
+				</form>
+			</div>
 		</div>
-		<div class="ui bottom attached segment">
-			Current messages:
 		<?
-			$sqlstring = "select * from system_messages where message_status = 'active'";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			if (mysqli_num_rows($result) > 0) {
-				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-					$messageid = $row['message_id'];
-					$messagedate = $row['message_date'];
-					$message = $row['message'];
-					?><br><?=$messagedate?> - <b><?=$message?></b> <a class="ui red button" href="system.php?action=deletesystemmessage&messageid=<?=$messageid?>" onclick="return confirm('Are you sure you want to delete the message?')">Delete</a><br><?
-				}
-			}
-			else {
-				echo " None";
-			}
-		?>
-			<br><br>
-			<form method="post" action="system.php">
-			<input type="hidden" name="action" value="setsystemmessage">
-			<textarea name="systemmessage" style="width: 500px; height: 70px"></textarea><br>
-			<input type="submit" value="Set message" class="ui primary button">
-			</form>
-		</div>
-		
-		<br><br>
-	<?
 	}
 ?>
 
