@@ -2321,16 +2321,17 @@ void modulePipeline::InsertPipelineEvent(int pipelineid, qint64 &runnum, qint64 
     }
 
     /* do an insert */
-    q.prepare("insert into pipeline_history (run_num, pipeline_id, pipeline_version, analysis_id, pipeline_event, event_message) values (:runnum, :pipelineid, :version, :analysid, :event, :msg)");
-    q.bindValue(":runnum", runnum);
-    q.bindValue(":pipelineid", pipelineid);
-    q.bindValue(":version", p.version);
-    if (analysisid < 0)
-        q.bindValue(":analysisid", QVariant(QVariant::Int));
-    else
-        q.bindValue(":analysisid", analysisid);
-
-    q.bindValue(":event", event);
+	if (analysisid > 0) {
+		q.prepare("insert into pipeline_history (run_num, pipeline_id, pipeline_version, analysis_id, pipeline_event, event_message) values (:runnum, :pipelineid, :version, :analysid, :event, :msg)");
+		q.bindValue(":analysisid", analysisid);
+	}
+	else {
+		q.prepare("insert into pipeline_history (run_num, pipeline_id, pipeline_version, pipeline_event, event_message) values (:runnum, :pipelineid, :version, :event, :msg)");
+	}
+	q.bindValue(":runnum", runnum);
+	q.bindValue(":pipelineid", pipelineid);
+	q.bindValue(":version", p.version);
+	q.bindValue(":event", event);
     q.bindValue(":msg", message);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 }
