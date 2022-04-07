@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Apr 05, 2022 at 05:37 PM
+-- Generation Time: Apr 07, 2022 at 04:59 PM
 -- Server version: 10.3.28-MariaDB
 -- PHP Version: 7.2.24
 
@@ -1115,6 +1115,7 @@ CREATE TABLE `family_members` (
 
 CREATE TABLE `fileio_requests` (
   `fileiorequest_id` int(11) NOT NULL,
+  `group_id` bigint(20) DEFAULT 0,
   `fileio_operation` enum('copy','delete','move','detach','anonymize','createlinks','rearchive','rearchivesubject','rearchiveidonly','rearchivesubjectidonly','rechecksuccess','merge') NOT NULL,
   `data_type` enum('pipeline','analysis','subject','study','series','groupanalysis') NOT NULL,
   `data_id` int(11) DEFAULT NULL,
@@ -1556,7 +1557,7 @@ CREATE TABLE `minipipeline_jobs` (
   `mp_modality` varchar(50) DEFAULT NULL,
   `mp_seriesid` int(11) DEFAULT NULL,
   `mp_status` enum('','pending','running','error','complete') DEFAULT '',
-  `mp_log` longtext NOT NULL DEFAULT '',
+  `mp_log` longtext DEFAULT NULL,
   `mp_numinserts` int(11) DEFAULT NULL,
   `mp_queuedate` datetime DEFAULT NULL,
   `mp_startdate` datetime DEFAULT NULL,
@@ -2875,6 +2876,8 @@ CREATE TABLE `subjects` (
 
 CREATE TABLE `subjectsimport_pending` (
   `temp_sid` int(11) NOT NULL,
+  `status` enum('pending','processing','complete','error','') NOT NULL DEFAULT '',
+  `import_msg` longtext DEFAULT NULL,
   `redcapid` varchar(10) DEFAULT NULL,
   `altuid` varchar(245) DEFAULT NULL,
   `project_id` int(11) DEFAULT NULL,
@@ -5363,6 +5366,12 @@ ALTER TABLE `users`
 --
 ALTER TABLE `users_pending`
   MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `user_favorites`
+--
+ALTER TABLE `user_favorites`
+  MODIFY `favorite_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `user_instance`
