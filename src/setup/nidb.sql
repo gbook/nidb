@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Apr 07, 2022 at 04:59 PM
+-- Generation Time: Apr 08, 2022 at 06:01 PM
 -- Server version: 10.3.28-MariaDB
 -- PHP Version: 7.2.24
 
@@ -2259,7 +2259,8 @@ CREATE TABLE `projects` (
   `project_status` varchar(15) DEFAULT NULL,
   `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `redcap_token` varchar(255) DEFAULT NULL,
-  `redcap_server` varchar(255) DEFAULT NULL
+  `redcap_server` varchar(255) DEFAULT NULL,
+  `xnat_hostname` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='System can have multiple projects. There must be 1 project a' ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
