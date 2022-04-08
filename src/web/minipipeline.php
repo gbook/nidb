@@ -419,7 +419,7 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 					<div class="content">
 						<p>A mini-pipeline is meant to be a small script that extracts values from behavioral data files. Because it not meant to process images, the execution time of the mini-pipeline is limited to 5 minutes. It also does not have access to the cluster or any shared network resources.</p>
 						<p>One script is identified as the entry point into the mini-pipeline. This script must accept as input through the command line a list of all of the files in the data or beh directory. The filenames will be sorted alphabetically. This is the script that will be called, and it can call any of the other scripts/files that are part of the mini-pipeline.
-						<p>All scripts and behavioral files are copied to a temporary directory for the mini-pipeline to run. The output of the mini-pipeline must be in the following format, output to the console</p>
+						<p>All scripts and behavioral files are copied to a temporary directory for the mini-pipeline to run. The output of the mini-pipeline must be in the following format, written to a file named <code>output.csv</code></p>
 						<div style="border: 1px dashed #777; padding-left: 15px">
 						<tt><pre>Type, VariableName, StartDate, EndDate, Duration, Value, Units, Notes, Instrument
 measure, EyeContact, 2012-10-22, , 3000, 34.9, , "Sneezed at minute 3", ADOS

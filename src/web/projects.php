@@ -73,6 +73,7 @@
 	
 	$rdoc_label = GetVariable("rdoc_label");
 	$itemprotocol = GetVariable("itemprotocol");
+	$xnathost = GetVariable("xnathost");
 
 	/* determine action */
 	switch ($action) {
@@ -92,9 +93,13 @@
 		case 'viewbidsdatatypes':
 			ViewBIDSDatatypes($id);
 			break;
-		//case 'saveprotocolmapping':
-		//	SaveProtocolMapping($id);
-		//	break;
+		case 'editxnat':
+			EditXNAT($id);
+			break;
+		case 'savexnat':
+			SaveXNAT($id, $xnathost);
+			DisplayProject($id);
+			break;
 		case 'dismissnewstudies':
 			DismissNewStudies($id);
 			DisplayProject($id);
@@ -335,6 +340,49 @@
 		$sqlstring = "update user_project set lastview_cleardate = now() where user_id in (select user_id from users where username = '" . $GLOBALS['username'] . "') and project_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		Notice("New studies dismissed");
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- EditXNAT --------------------------- */
+	/* -------------------------------------------- */
+	function EditXNAT($id) {
+		/* prepare the fields for SQL */
+		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
+		
+		$sqlstring = "select xnat_hostname from projects where project_id = $id";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$xnathost = $row['xnat_hostname'];
+		
+		?>
+		<div class="ui text container">
+			<form method="post" action="projects.php" class="ui form">
+				<input type="hidden" name="action" value="savexnat">
+				<input type="hidden" name="id" value="<?=$id?>">
+				<div class="field">
+					<label>XNAT hostname</label>
+					<input type="text" name="xnathost" value="<?=$xnathost?>" placeholder="Full hostname, ex. http://hostname...">
+				</div>
+				<input type="submit" class="ui button" value="Save">
+			</form>
+		</div>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- SaveXNAT --------------------------- */
+	/* -------------------------------------------- */
+	function SaveXNAT($id, $xnathost) {
+		/* prepare the fields for SQL */
+		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
+		$xnathost = mysqli_real_escape_string($GLOBALS['linki'], $xnathost);
+		
+		$sqlstring = "update projects set xnat_hostname = '$xnathost' where project_id = $id";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		
+		Notice("XNAT hostname '$xnathost' saved");
 	}
 
 
@@ -2639,63 +2687,68 @@
 					</div>
 				</div>
 				<div class="ui four wide column">
-					<h3 class="ui header"><i class="tools icon"></i> Tools & Settings</h3>
-					<!--<br>
-					<i class="database icon"></i><a href="datadictionary.php?projectid=<?=$id?>"> Data Dictionary</a><br><br>
-					<i class="list alternate outline icon"></i><a href="analysisbuilder.php?action=viewanalysissummary&projectid=<?=$id?>"> Analysis Builder</a><br><br>
-					<i class="clone outline icon"></i><a href="templates.php?action=displaystudytemplatelist&projectid=<?=$id?>"> Study Templates</a><br><br>
-					<i class="tasks icon"></i><a href="projects.php?action=editbidsmapping&id=<?=$id?>"> BIDS Protocol Mapping</a><br><br>
-					<i class="tasks icon"></i><a href="projects.php?action=editndamapping&id=<?=$id?>"> NDA Mapping</a><br><br>
-					<i class="cogs icon"></i><a href="minipipeline.php?projectid=<?=$id?>"> Behavioral mini-pipelines</a><br><br>
-					<i class="red redhat icon"></i><a href="redcapimport.php?action=importsettings&projectid=<?=$id?>"> Redcap settings</a><br><br>
-					<i class="red redhat icon"></i><a href="redcaptonidb.php?action=default&projectid=<?=$id?>"> Redcap <i class="right arrow icon"></i> NiDB Transfer</a><br><br>
-					<? if ($GLOBALS['isadmin']) { ?>
-					<br><i class="sync red icon"></i><a href="projects.php?action=resetqa&id=<?=$id?>" style="color: #FF552A; font-weight:normal">Reset MRI QA</a><br>
-					<? } ?>
-					-->
-					
-					<div class="ui vertical fluid menu">
-						<a class="item" href="datadictionary.php?projectid=<?=$id?>">
-							Data dictionary
-							<i class="right floating database icon"></i>
-						</a>
-						<a class="item" href="analysisbuilder.php?action=viewanalysissummary&projectid=<?=$id?>">
-							Analysis builder
-							<i class="list alternate outline icon"></i>
-						</a>
-						<a class="item" href="templates.php?action=displaystudytemplatelist&projectid=<?=$id?>">
-							Study templates
-							<i class="clone outline icon"></i>
-						</a>
-						<a class="item" href="projects.php?action=editbidsmapping&id=<?=$id?>">
-							BIDS protocol mapping
-							<i class="tasks icon"></i>
-						</a>
-						<a class="item" href="projects.php?action=editndamapping&id=<?=$id?>">
-							NDA mapping
-							<i class="tasks icon"></i>
-						</a>
-						<a class="item" href="minipipeline.php?projectid=<?=$id?>">
-							Behavior mini-pipelines
-							<i class="cogs icon"></i>
-						</a>
-						<a class="item" href="redcapimport.php?action=importsettings&projectid=<?=$id?>">
-							Redcap settings
-							<i class="red redhat icon"></i>
-						</a>
-						<a class="item" href="redcapimportsubjects.php?action=default&projectid=<?=$id?>">
-							Redcap Subject Import
-							<i class="red redhat icon"></i>
-						</a>
-						<a class="item" href="redcaptonidb.php?action=default&projectid=<?=$id?>">
-                                                        Redcap to NiDB transfer
-                                                        <i class="red redhat icon"></i>
-                                                </a>
+					<div class="ui large vertical fluid menu">
+						<div class="item">
+							<div class="header">Tools</div>
+							<div class="menu">
+								<a class="item" href="datadictionary.php?projectid=<?=$id?>">
+									Data dictionary
+									<i class="right floating database icon"></i>
+								</a>
+								<a class="item" href="analysisbuilder.php?action=viewanalysissummary&projectid=<?=$id?>">
+									Analysis builder
+									<i class="list alternate outline icon"></i>
+								</a>
+								<a class="item" href="templates.php?action=displaystudytemplatelist&projectid=<?=$id?>">
+									Study templates
+									<i class="clone outline icon"></i>
+								</a>
+								<a class="item" href="minipipeline.php?projectid=<?=$id?>">
+									Mini-pipelines
+									<i class="cogs icon"></i>
+								</a>
+							</div>
+						</div>
+						
+						<div class="item">
+							<div class="header">Data Transfer</div>
+							<div class="menu">
+								<a class="item" href="redcapimport.php?action=importsettings&projectid=<?=$id?>">
+									Global Redcap settings
+									<i class="red redhat icon"></i>
+								</a>
+								<a class="item" href="redcapimportsubjects.php?action=default&projectid=<?=$id?>">
+									Redcap Subject Import
+									<i class="red redhat icon"></i>
+								</a>
+								<a class="item" href="redcaptonidb.php?action=default&projectid=<?=$id?>">
+									Import from Redcap
+									<i class="red redhat icon"></i>
+								</a>
+								<a class="item" href="projects.php?action=editxnat&id=<?=$id?>">
+									Export to XNAT
+									<i class="times circle outline icon"></i>
+								</a>
+								<a class="item" href="projects.php?action=editbidsmapping&id=<?=$id?>">
+									BIDS protocol mapping
+									<i class="tasks icon"></i>
+								</a>
+								<a class="item" href="projects.php?action=editndamapping&id=<?=$id?>">
+									NDA mapping
+									<i class="tasks icon"></i>
+								</a>
+							</div>
+						</div>
 						<? if ($GLOBALS['isadmin']) { ?>
-						<a class="item" href="projects.php?action=resetqa&id=<?=$id?>">
-							Reset MRI QA
-							<i class="red sync icon"></i>
-						</a>
+						<div class="item">
+							<div class="header">Admin</div>
+							<div class="menu">
+								<a class="item" href="projects.php?action=resetqa&id=<?=$id?>">
+									Reset MRI QA
+									<i class="red sync icon"></i>
+								</a>
+							</div>
+						</div>
 						<? } ?>
 						<div class="item">Remote connection params<br>
 							Project ID: <?=$id?><br>

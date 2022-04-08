@@ -101,11 +101,11 @@
 					</div>
 				</div>
 			</div>
-			<div class="ui attached segment">
+			<div class="ui vertically fitted attached segment">
 				<div class="ui accordion">
 					<div class="title">
 						<i class="dropdown icon"></i>
-						Pipeline history (previous 2 days)
+						Pipeline history (last 100 logs)
 					</div>
 					<div class="content">
 						<table class="ui very compact table">
@@ -117,7 +117,7 @@
 								<th>Message</th>
 							</thead>
 						<?
-							$sqlstring = "select * from pipeline_history where pipeline_id = $id and event_datetime > date_add(now(), interval -1 hour) order by run_num desc, event_datetime asc";
+							$sqlstring = "select * from pipeline_history where pipeline_id = $id order by run_num desc, event_datetime asc limit 100";
 							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$version = $row['pipeline_version'];

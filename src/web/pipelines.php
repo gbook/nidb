@@ -885,10 +885,13 @@
 		/* disable this pipeline */
 		DisablePipeline($id);
 		
+		$sqlstring = "select max(group_id) 'maxgroupid' from fileio_requests";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$groupid = $row['maxgroupid'] + 1;
+		
 		/* insert a row in the fileio_requests table */
-		$sqlstring = "insert into fileio_requests (fileio_operation,data_type,data_id,username,requestdate) values ('delete','pipeline',$id,'" . $GLOBALS['username'] . "',now())";
-		//$sqlstring = "delete from pipelines where pipeline_id = $id";
-		//PrintSQL($sqlstring);
+		$sqlstring = "insert into fileio_requests (fileio_operation, group_id, data_type,data_id,username,requestdate) values ('delete', $groupid,'pipeline',$id,'" . $GLOBALS['username'] . "',now())";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
 		$sqlstring = "update pipelines set pipeline_statusmessage = 'Queued for deletion' where pipeline_id = $id";

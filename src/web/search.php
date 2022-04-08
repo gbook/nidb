@@ -39,7 +39,6 @@
 	require "includes_php.php";
 	require "includes_html.php";
 	require "menu.php";
-	//require 'kashi.php';
 
 	//PrintVariable($_POST);
 	//PrintVariable($_SESSION);
@@ -239,12 +238,6 @@
 		
 	?>
 	<style>
-		.sidelabel { font-weight: bold; font-size: 14pt; border-bottom: solid 1px #888; padding: 15px; text-align: right; vertical-align: top; }
-		.toplabel { color: white; font-weight: bold; font-size: 14pt; padding-top: 5px; padding-bottom: 5px; text-align: center; background-color: #444; }
-		.fieldcell { border-bottom: 1pt solid #888; padding: 8px; vertical-align: top; }
-		.tiny { font-size: 8pt; color: gray; }
-		.fieldhover { white-space: nowrap; }
-		.fieldhover:hover { font-weight: bold; }
 		.fieldlabel { color: #444; text-align: right; vertical-align: top; }
 		.importantfield { background-color: lightyellow; }
 		input.hasdata { font-weight: bold; box-shadow: 0px 0px 0px 2px #3B5998; }
@@ -4852,6 +4845,11 @@
 									<span id="pathcheckresult"></span>
 									<br>
 									<div class="ui radio checkbox" onChange="CheckDestination()">
+										<input type="radio" name="destination" id="radio_xnat" value="xnat">
+										<label>XNAT</label>
+									</div>
+									<br>
+									<div class="ui radio checkbox" onChange="CheckDestination()">
 										<input type="radio" name="destination" id="radio_remoteftp" value="remoteftp">
 										<label>Remote FTP site</label>
 									</div>
@@ -4948,23 +4946,6 @@
 									<input type="radio" name="filetype" id="filetype_dicom" value="dicom">
 									<label>DICOM</label>
 								</div>
-								<br>
-								<div class="ui radio checkbox">
-									<input type="radio" name="filetype" id="filetype_bids" value="bids">
-									<label>BIDS</label>
-								</div>
-								<br>
-								<div class="bids">
-									<div class="field">
-										README
-										<textarea name="bidsreadme" class="bids"></textarea>
-									</div>
-									<br>
-									<div class="field">BIDS options
-										<input type="checkbox" name="bidsflag_useuid">UID instead of sub-0001<br>
-										<input type="checkbox" name="bidsflag_usestudyid">StudyNum instead of ses-0001
-									</div>
-								</div>
 								<div class="dicom" style="padding-left: 15px;">
 									<? if ($GLOBALS['cfg']['allowrawdicomexport']) { ?>
 									<input type="radio" name="anonymize" value="0">No DICOM anonymization<br>
@@ -4972,7 +4953,6 @@
 									<input type="radio" name="anonymize" value="1" checked>Anonymize DICOM - <i>light</i><br>
 									<input type="radio" name="anonymize" value="2">Anonymize DICOM - <i>complete</i><br>
 
-									<input type="checkbox" name="gzip" value="1">Gzip files
 
 									<details>
 										<summary><b>Anonymization Notes</b><br><span class="tiny">click to expand</span></summary>
@@ -5010,6 +4990,29 @@
 										</ul>
 										</span>
 									</details>
+								</div>
+								
+								<br>
+								<div class="ui checkbox">
+									<input type="checkbox" name="gzip" value="1">
+									<label>Gzip files</label>
+								</div>
+								<br>
+								<div class="ui radio checkbox">
+									<input type="radio" name="filetype" id="filetype_bids" value="bids">
+									<label>BIDS</label>
+								</div>
+								<br>
+								<div class="bids">
+									<div class="field">
+										README
+										<textarea name="bidsreadme" class="bids"></textarea>
+									</div>
+									<br>
+									<div class="field">BIDS options
+										<input type="checkbox" name="bidsflag_useuid">UID instead of sub-0001<br>
+										<input type="checkbox" name="bidsflag_usestudyid">StudyNum instead of ses-0001
+									</div>
 								</div>
 							</div>
 							<? } ?>

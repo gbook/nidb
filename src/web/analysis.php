@@ -169,13 +169,15 @@
 	/* -------------------------------------------- */
 	function DeleteAnalyses($id, $analysisids) {
 
-
 		if (!ValidID($id,'Pipeline ID')) { return; }
 	
-		echo "id: $id; ";
-
 		/*disable this pipeline */
 		DisablePipeline($id);
+
+		$sqlstring = "select max(group_id) 'maxgroupid' from fileio_requests";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$groupid = $row['maxgroupid'] + 1;
 		
 		foreach ($analysisids as $analysisid) {
 			
@@ -198,7 +200,7 @@
 				$analysislevel = 'groupanalysis';
 			}
 			
-			$sqlstring = "insert into fileio_requests (fileio_operation,data_type,data_id,username,requestdate) values ('delete','$analysislevel',$analysisid,'" . $GLOBALS['username'] . "', now())";
+			$sqlstring = "insert into fileio_requests (fileio_operation, group_id,data_type,data_id,username,requestdate) values ('delete', $groupid,'$analysislevel',$analysisid,'" . $GLOBALS['username'] . "', now())";
 			//PrintSQL($sqlstring);
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			
@@ -220,11 +222,16 @@
 	
 		$destination = mysqli_real_escape_string($GLOBALS['linki'], $destination);
 		
+		$sqlstring = "select max(group_id) 'maxgroupid' from fileio_requests";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$groupid = $row['maxgroupid'] + 1;
+		
 		foreach ($analysisids as $analysisid) {
 		
 			if (!ValidID($analysisid,'Analysis ID')) { return; }
 			
-			$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, data_destination, username, requestdate) values ('copy', 'analysis', $analysisid, '$destination', '" . $GLOBALS['username'] . "', now())";
+			$sqlstring = "insert into fileio_requests (fileio_operation, group_id, data_type, data_id, data_destination, username, requestdate) values ('copy', $groupid, 'analysis', $analysisid, '$destination', '" . $GLOBALS['username'] . "', now())";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			
 			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> queued for copy to <?=$destination?></span><br><?
@@ -240,11 +247,16 @@
 	
 		$destination = mysqli_real_escape_string($GLOBALS['linki'], $destination);
 		
+		$sqlstring = "select max(group_id) 'maxgroupid' from fileio_requests";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$groupid = $row['maxgroupid'] + 1;
+		
 		foreach ($analysisids as $analysisid) {
 		
 			if (!ValidID($analysisid,'Analysis ID')) { return; }
 			
-			$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, data_destination, username, requestdate) values ('createlinks', 'analysis', $analysisid, '$destination', '" . $GLOBALS['username'] . "', now())";
+			$sqlstring = "insert into fileio_requests (fileio_operation, group_id, data_type, data_id, data_destination, username, requestdate) values ('createlinks', $groupid, 'analysis', $analysisid, '$destination', '" . $GLOBALS['username'] . "', now())";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			
 			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> queued for link creation in <?=$destination?></span><br><?
@@ -367,11 +379,16 @@
 	/* -------------------------------------------- */
 	function RecheckSuccess($analysisids) {
 		
+		$sqlstring = "select max(group_id) 'maxgroupid' from fileio_requests";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$groupid = $row['maxgroupid'] + 1;
+		
 		foreach ($analysisids as $analysisid) {
 		
 			if (!ValidID($analysisid,'Analysis ID')) { return; }
 			
-			$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, username, requestdate) values ('rechecksuccess', 'analysis', $analysisid, '" . $GLOBALS['username'] . "', now())";
+			$sqlstring = "insert into fileio_requests (fileio_operation, group_id, data_type, data_id, username, requestdate) values ('rechecksuccess', $groupid, 'analysis', $analysisid, '" . $GLOBALS['username'] . "', now())";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			
 			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> to be rechecked for successful file(s)</span><br><?
