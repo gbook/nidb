@@ -2,7 +2,8 @@
 ![Image](http://neuroinfodb.org/wp-content/uploads/2021/05/NIDB_logo-300x115.png)
 
 Installation & Upgrade
-- [Install](#new-installation)<br>
+- [Quick Install](#new-installation)<br>
+- <a href="install.html">Detailed Install</a><br>
 - [Quick Upgrade](#upgrade-existing-installation)<br>
 - <a href="upgrade.html">Detailed Upgrade</a><br>
 
