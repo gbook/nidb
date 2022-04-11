@@ -54,3 +54,13 @@ Note: The mapping step is required only once. However any defined mapping struct
 
 <div align="center"><img src=https://user-images.githubusercontent.com/24811295/142661201-65df6319-cf6d-4a1c-9007-d5b51e794d18.png width="80%"></div>
 
+<hr>
+
+### Importing Subjects from Redcap
+
+Apart from data, NiDB also provides an option to import subjects from redcap. The details can be find in the following link.
+
+<a href="importing-data.html#importing-subjects-from-redcap">Importing Subjects from Redcap</a>
+
+<hr>
+
