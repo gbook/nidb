@@ -77,29 +77,50 @@ Secure the MariaDB installation by running mysql_secure_installation and using t
   Reload privilege tables now? [Y/n] Y
 ```
 ### Finish Setup
-Use firefox to view http://localhost/setup.php . Follow instructions on the page to configure the server
-  * The setup page must be acessed from localhost -or- the config file must be manually edited to include the IP address of the computer you are using the access setup.php.
-  * Edit `/nidb/nidb.cfg` and add your IP address (comma separated list) to the `[setupips]` config variable. It should look something like `[setupips] 127.0.0.1, 192.168.0.1` depending on the IP(s)
-  * If you encounter this error when viewing the setup page, follow the directions above
+Use firefox to view http://localhost/setup.php (or http://servername/setup.php). Follow the instructions on the webpage to configure the server.
+
+If you encounter this error when viewing the setup page...
+
 <div align="center"><img src="https://user-images.githubusercontent.com/8302215/162640328-0c29622f-ef1a-4ad3-a20d-cc3d0d3e35b1.png" width="60%"></div>
 
-Setup has 4 parts: Backup, System check, Satabase, NiDB settings. The first screen will look like the following
+... follow this instruction to fix it
+  * The setup page must be acessed from localhost -or- the config file must be manually edited to include the IP address of the computer you are using the access setup.php. Add your IP address by editing `/nidb/nidb.cfg` and add your IP address (comma separated list) to the `[setupips]` config variable. It should look something like `[setupips] 127.0.0.1, 192.168.0.1` depending on the IP(s)
+
+**The first screen will ask you to backup the SQL database**
+
 <div align="center"><img src="https://user-images.githubusercontent.com/8302215/162640572-c1d6ff3f-20d9-4caa-9a95-8602a220c91e.png" width="60%"></div>
-Copy the backup command and run that on the command line. It should generate a file that contains a backup of the database. This is required even for new installations because you should become familiar with, and get int the habit of, backing up the SQL database. After you've backed up the database using mysqldump, refresh the setup page and it should allow you to continue with the setup.
+
+Copy the `mysqldump` command and run that on the command line. It should create a .sql file that contains a backup of the database. This is required even for new installations because you should become familiar with, and get int the habit of, backing up the SQL database. After you've backed up the database using `mysqldump`, refresh the setup page and it should allow you to continue with the setup.
+
 <div align="center"><img src="https://user-images.githubusercontent.com/8302215/162640676-6ea51f70-8fa5-4de3-ae0e-378f7a975c5f.png" width="60%"></div>
-Click Next to continue.
+
+Click **Next** to continue, and the following page will show the status of Linux packages required by NiDB.
+
 <div align="center"><img src="https://user-images.githubusercontent.com/8302215/162640726-9654b0dd-36bb-4eee-b103-a9e5c4224399.png" width="60%"></div>
-If there are any missing packages or if a version needs to be updated, it will show here. Install the package and refresh the page. Click Next to contine.
+
+If there are any missing packages or if a version needs to be updated, it will show here. Install the package and refresh the page. Click **Next** to contine, and the following page will show the SQL schema upgrade information.
+
 <div align="center"><img src="https://user-images.githubusercontent.com/8302215/162640778-a5cf1971-7030-44d6-9381-508aa021b76e.png" width="60%"></div>
-This page will show the SQL schema upgrade information. Enter the MariaDB root password, which should be 'password' if this is the first installation. The next page will upgrade the database schema, using the .sql file listed at the bottom. As NiDB collects more data, the tables can get very large and tables over 100 million rows are possible. This will take cause the setup webpage to time out, so there is an option to skip tables that have more than x rows. This should really only be done if a specific table is preventing an upgrade and you are familiar with how to manually update the schema. There's also an option to test the upgrade without actually changing the table structure. Click Next to continue.
+
+Enter the MariaDB root password, which should be 'password' if this is the first installation. The SQL schema will be upgraded using the .sql file listed at the bottom. As your instance of NiDB collects more data, the tables can get very large and tables over 100 million rows are possible. This will cause the setup webpage to time out, so there is an option to skip tables that have more than x rows. This should really only be done if a specific table is preventing the schema upgrade because it so large and you are familiar with how to manually update the schema. The debug option is available to test the upgrade without actually changing the table structure. Click **Next** to continue, and the following page will perform the actual schema upgrade.
+
 <div align="center"><img src="https://user-images.githubusercontent.com/8302215/162641016-ce2bde85-f818-472d-b48a-e66329ca9cba.png" width="60%"></div>
-If any errors occur during upgrade, they will be displayed at the bottom of the page. You can attempt to fix these, or preferably seek help on the NiDB github support page! Click the red box to dismiss it.
+
+If any errors occur during upgrade, they will be displayed at the bottom of the page. You can attempt to fix these, or preferably seek help on the NiDB github support page! Click the red box to dismiss any error messages. Click **Next** to go to the next page which will show the configuration variables.
+
 <div align="center"><img src="https://user-images.githubusercontent.com/8302215/162641071-6d7c71da-c4ad-4d9f-9265-a7d075d59521.png" width="60%"></div>
-The next page shows the configuration variables. Here you can edit variables, paths, name of the instance, email configuration, enable features.
+
+On this page you can edit variables, paths, name of the instance, email configuration, enable features.
+
 <div align="center"><img src="https://user-images.githubusercontent.com/8302215/162641160-ce57d223-941f-43ba-8c35-d08837998d49.png" width="60%"></div>
-Click Write Config to continue.
+
+Click **Write Config** to continue.
+
 <div align="center"><img src="https://user-images.githubusercontent.com/8302215/162641179-b36025a1-4923-42a3-a83c-d77f90f00180.png" width="60%"></div>
-The locations of the written config file(s) are noted on this page. Setup should now be complete and you can visit the home page.
+
+The locations of the written config file(s) are noted on this page. `nidb-cluster.cfg` is meant to be placed on cluster nodes, to allow nidb pipelines running on the cluster to communicate with the main nidb instance and perform checkins and storing of pipeline results.
+
+Setup should now be complete and you can visit the home page.
 
 ### Optional Software
 **phpMyAdmin** is not required to use NiDB, but is extremely useful to maintain the SQL database that NiDB relies on.
