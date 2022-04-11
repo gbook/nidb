@@ -163,14 +163,17 @@
 		$msg = "";
 		
 		/* check for invalid paths before checking the drive to see if they exist */
-		if (strpos($p, "..") !== false) {
-			$msg = "Contains relative directory (..)";
+		if ((strpos($p, "..") !== false) || (strpos($p, ".") !== false)) {
+			$msg = "Contains relative directory (.. or .)";
 		}
 		else if (strpos($p, '\\') !== false) {
 			$msg = "Contains backslash";
 		}
 		else if ($p == "/") {
-			$msg = "Path is the root dir (/)";
+			$msg = "Cannot be the root dir";
+		}
+		else if (substr($p,0,1) != "/") {
+			$msg = "Must begin with slash";
 		}
 		else if ($p == "") {
 			$msg = "Pathname is blank";
@@ -190,8 +193,8 @@
 		else {
 			$msg = "Path does not exist";
 		}
-		if ($exists && $writeable) { $color = "green"; } else { $color = "red"; }
-		echo " <span style='color: $color'>$msg</span>";
+		if ($exists && $writeable) { $icon = "green check circle"; } else { $icon = "red exclamation circle"; }
+		echo " <div class='ui left pointing label'><i class='$icon icon'></i> $msg</div>";
 	}
 
 

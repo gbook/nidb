@@ -4577,16 +4577,16 @@
 						$('.remotenidb').hide();
 					}
 					
-					/* BIDS */
-					if (dest == 'bids') {
-						$('.bids').show("highlight",{},1000);
+					/* XNAT */
+					if (dest == 'xnat') {
+						$('.xnat').show("highlight",{},1000);
 						$('.export').hide();
 						$('.dirstructure').hide();
 						$('.format').hide();
 						$('.datatoexport').hide();
 					}
 					else {
-						$('.bids').hide();
+						$('.xnat').hide();
 					}
 					
 					/* public download */
@@ -4595,6 +4595,26 @@
 					}
 					else {
 						$('.publicdownload').hide();
+					}
+
+					var filetype = $("[name='filetype']:checked").val();
+					//var filetype = $('#filetype:checked').val();
+					console.log(filetype);
+
+					if (filetype == 'dicom') {
+						$('.dicom').show();
+						$('.bids').hide();
+						//$('.dirstructure').show();
+					}
+					else if (filetype == 'bids') {
+						$('.bids').show();
+						$('.dicom').hide();
+						//$('.dirstructure').hide();
+					}
+					else {
+						$('.dicom').hide();
+						$('.bids').hide();
+						//$('.dirstructure').show();
 					}
 					
 					//if ($('#downloadbeh:checked').val() == '1') {
@@ -4712,7 +4732,7 @@
 					<div class="ui horizontal left aligned divider header">Destination</div>
 					<div class="ui grid">
 						<div class="two wide column">&nbsp;</div>
-						<div class="seven wide column">
+						<div class="four wide column">
 							<h4 class="ui header">This server</h4>
 							<div class="ui vertically fitted basic segment">
 								<? if ($GLOBALS['cfg']['enablewebexport']) { ?>
@@ -4815,7 +4835,7 @@
 							</div>
 							
 						</div>
-						<div class="seven wide column">
+						<div class="ten wide column">
 							<h4 class="ui header">Remote server</h4>
 							<div class="ui vertically fitted basic segment">
 								<?
@@ -4840,9 +4860,8 @@
 										<label>Linux NFS Mount</label>
 									</div>
 									<div class="ui fluid input">
-										<input type="text" id="nfsdir" name="nfsdir" onKeyUp="CheckNFSPath()" placeholder="NFS path...">
+										<input type="text" id="nfsdir" name="nfsdir" onKeyUp="CheckNFSPath()" placeholder="NFS path..."><span id="pathcheckresult"></span>
 									</div>
-									<span id="pathcheckresult"></span>
 									<br>
 									<div class="ui radio checkbox" onChange="CheckDestination()">
 										<input type="radio" name="destination" id="radio_xnat" value="xnat">
@@ -4900,22 +4919,22 @@
 
 							<div class="ui basic vertically fitted segment datatoexport" id="sectiondatatype">
 								<div class="ui checkbox" style="padding: 3px">
-									<input type="checkbox" name="downloadimaging" id="downloadimaging" value="1" checked>
+									<input type="checkbox" name="downloadimaging" id="downloadimaging" value="1" checked onChange="CheckDestination()">
 									<label>Imaging</label>
 								</div>
 								<br>
 								<div class="ui checkbox" style="padding: 3px">
-									<input type="checkbox" name="downloadbeh" id="downloadbeh" value="1" checked>
+									<input type="checkbox" name="downloadbeh" id="downloadbeh" value="1" checked onChange="CheckDestination()">
 									<label>Behavioral</label>
 								</div>
 								<br>
 								<div class="ui checkbox" style="padding: 3px">
-									<input type="checkbox" name="downloadqc" id="downloadqc" value="1">
+									<input type="checkbox" name="downloadqc" id="downloadqc" value="1" onChange="CheckDestination()">
 									<label>QC <i class="small blue question circle outline icon" title="Includes all QC metrics computed on the data"></i></label>
 								</div>
 								<br>
 								<div class="ui checkbox" style="padding: 3px">
-									<input type="checkbox" name="downloadqc" id="downloaddemo" value="1">
+									<input type="checkbox" name="downloadqc" id="downloaddemo" value="1" onChange="CheckDestination()">
 									<label>Demographics <i class="small blue question circle outline icon" title="Includes age at scan, sex, and other demographics. This is places in a demographics.txt file in the root of the download directory"></i></label>
 								</div>
 							</div>
@@ -4933,86 +4952,104 @@
 								<!--<span class="tiny">Conversion to other formats only available if native data in DICOM format</span><br>-->
 
 								<div class="ui radio checkbox">
-									<input type="radio" name="filetype" id="filetype_nifti3d" value="nifti3d" checked>
+									<input type="radio" name="filetype" id="filetype_nifti3d" value="nifti3d" checked onChange="CheckDestination()">
 									<label>Nifti 3D</label>
 								</div>
 								<br>
 								<div class="ui radio checkbox">
-									<input type="radio" name="filetype" id="filetype_nifti4d" value="nifti4d">
+									<input type="radio" name="filetype" id="filetype_nifti4d" value="nifti4d" onChange="CheckDestination()">
 									<label>Nifti 4D</label>
 								</div>
 								<br>
+								<div class="ui checkbox">
+									<input type="checkbox" name="gzip" value="1" onChange="CheckDestination()">
+									<label>Gzip 3D or 4D Nifti</label>
+								</div>
+								<br>
+								<br>
 								<div class="ui radio checkbox">
-									<input type="radio" name="filetype" id="filetype_dicom" value="dicom">
+									<input type="radio" name="filetype" id="filetype_dicom" value="dicom" onChange="CheckDestination()">
 									<label>DICOM</label>
 								</div>
 								<div class="dicom" style="padding-left: 15px;">
-									<? if ($GLOBALS['cfg']['allowrawdicomexport']) { ?>
-									<input type="radio" name="anonymize" value="0">No DICOM anonymization<br>
-									<? } ?>
-									<input type="radio" name="anonymize" value="1" checked>Anonymize DICOM - <i>light</i><br>
-									<input type="radio" name="anonymize" value="2">Anonymize DICOM - <i>complete</i><br>
+									<div class="ui two column grid">
+										<div class="ui column">
+											<? if ($GLOBALS['cfg']['allowrawdicomexport']) { ?>
+											<div class="ui radio checkbox">
+												<input type="radio" name="anonymize" value="0" onChange="CheckDestination()">
+												<label>No DICOM anonymization</label>
+											</div>
+											<br>
+											<? } ?>
+											<div class="ui radio checkbox">
+												<input type="radio" name="anonymize" value="1" checked onChange="CheckDestination()">
+												<label>Anonymize DICOM - <i>light</i></label>
+											</div>
+											<br>
+											<div class="ui radio checkbox">
+												<input type="radio" name="anonymize" value="2" onChange="CheckDestination()">
+												<label>Anonymize DICOM - <i>complete</i></label>
+											</div>
+										</div>
 
-
-									<details>
-										<summary><b>Anonymization Notes</b><br><span class="tiny">click to expand</span></summary>
-										<span class="sublabel">
-										<ul>
-										<? if ($GLOBALS['cfg']['allowrawdicomexport']) { ?>
-										<li>No DICOM anonymization - not recommended
-										<? } ?>
-										<li>DICOM anonymization <u>light</u> removes:
-											<ul>
-												<li style="white-space: nowrap">(0008,0090) ReferringPhysiciansName
-												<li style="white-space: nowrap">(0008,1050) PerformingPhysiciansName
-												<li style="white-space: nowrap">(0008,1070) OperatorsName
-												<li style="white-space: nowrap">(0010,0010) PatientName
-												<li style="white-space: nowrap">(0010,0030) PatientBirthDate
-											</ul>
-										<li>DICOM anonymization <u>complete</u> removes all of the above and the following:
-											<ul>
-												<li style="white-space: nowrap">(0008,0080) InstitutionName
-												<li style="white-space: nowrap">(0008,0081) InstitutionAddress
-												<li style="white-space: nowrap">(0008,1010) StationName
-												<li style="white-space: nowrap">(0008,1030) StudyDescription
-												<li style="white-space: nowrap">(0008,0020) StudyDate
-												<li style="white-space: nowrap">(0008,0021) SeriesDate
-												<li style="white-space: nowrap">(0008,0022) AcquisitionDate
-												<li style="white-space: nowrap">(0008,0023) ContentDate
-												<li style="white-space: nowrap">(0008,0030) StudyTime
-												<li style="white-space: nowrap">(0008,0031) SeriesTime
-												<li style="white-space: nowrap">(0008,0032) AcquisitionTime
-												<li style="white-space: nowrap">(0008,0033) ContentTime
-												<li style="white-space: nowrap">(0010,0020) PatientID
-												<li style="white-space: nowrap">(0010,1030) PatientWeight
-											</ul>
-										</span>
-										</ul>
-										</span>
-									</details>
+										<div class="ui column">
+											<div class="ui styled accordion">
+												<div class="title">
+													<i class="dropdown icon"></i>
+													Anonymization Notes
+												</div>
+												<div class="content">
+													<ul>
+													<? if ($GLOBALS['cfg']['allowrawdicomexport']) { ?>
+													<li>No DICOM anonymization - not recommended
+													<? } ?>
+													<li>DICOM anonymization <u>partial</u> removes:
+														<ul>
+															<li style="white-space: nowrap"><code>0008,0090</code> ReferringPhysiciansName
+															<li style="white-space: nowrap"><code>0008,1050</code> PerformingPhysiciansName
+															<li style="white-space: nowrap"><code>0008,1070</code> OperatorsName
+															<li style="white-space: nowrap"><code>0010,0010</code> PatientName
+															<li style="white-space: nowrap"><code>0010,0030</code> PatientBirthDate
+														</ul>
+													<li>DICOM anonymization <u>complete</u> removes all of the above and the following:
+														<ul>
+															<li style="white-space: nowrap"><code>0008,0080</code> InstitutionName
+															<li style="white-space: nowrap"><code>0008,0081</code> InstitutionAddress
+															<li style="white-space: nowrap"><code>0008,1010</code> StationName
+															<li style="white-space: nowrap"><code>0008,1030</code> StudyDescription
+															<li style="white-space: nowrap"><code>0008,0020</code> StudyDate
+															<li style="white-space: nowrap"><code>0008,0021</code> SeriesDate
+															<li style="white-space: nowrap"><code>0008,0022</code> AcquisitionDate
+															<li style="white-space: nowrap"><code>0008,0023</code> ContentDate
+															<li style="white-space: nowrap"><code>0008,0030</code> StudyTime
+															<li style="white-space: nowrap"><code>0008,0031</code> SeriesTime
+															<li style="white-space: nowrap"><code>0008,0032</code> AcquisitionTime
+															<li style="white-space: nowrap"><code>0008,0033</code> ContentTime
+															<li style="white-space: nowrap"><code>0010,0020</code> PatientID
+															<li style="white-space: nowrap"><code>0010,1030</code> PatientWeight
+														</ul>
+													</span>
+													</ul>
+												</div>
+											</div>
+										</div>
+									</div>
 								</div>
 								
 								<br>
-								<div class="ui checkbox">
-									<input type="checkbox" name="gzip" value="1">
-									<label>Gzip files</label>
-								</div>
-								<br>
 								<div class="ui radio checkbox">
-									<input type="radio" name="filetype" id="filetype_bids" value="bids">
+									<input type="radio" name="filetype" id="filetype_bids" value="bids" onChange="CheckDestination()">
 									<label>BIDS</label>
 								</div>
 								<br>
-								<div class="bids">
+								<div class="ui segment bids">
 									<div class="field">
-										README
-										<textarea name="bidsreadme" class="bids"></textarea>
-									</div>
-									<br>
-									<div class="field">BIDS options
+										<b>BIDS options</b><br>
 										<input type="checkbox" name="bidsflag_useuid">UID instead of sub-0001<br>
 										<input type="checkbox" name="bidsflag_usestudyid">StudyNum instead of ses-0001
 									</div>
+									README
+									<textarea name="bidsreadme" class="bids" placeholder="BIDS README file..." cols="40" rows="3"></textarea>
 								</div>
 							</div>
 							<? } ?>
@@ -5022,7 +5059,7 @@
 					<div class="ui horizontal left aligned divider header">Directory Structure</div>
 					<div class="ui grid">
 						<div class="two wide column">&nbsp;</div>
-						<div class="fourteen wide column">
+						<div class="fourteen wide column dirstructure">
 
 							<div class="ui segment">
 								<span class="ui blue text"><b>Study Directory Format</b></span>
