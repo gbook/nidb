@@ -3,6 +3,7 @@
 - <a href="importing-data.html">Importing Data</a>
   - <a href="importing-data.html#data-heirarchy">Data Heirarchy</a>
   - <a href="importing-data.html#create-subject">Create Subject</a>
+  - <a href="importing-data.html#importing-subjects-from-redcap">Importing Subjects from Redcap</a>
   - <a href="importing-data.html#enroll-in-project">Enroll in Project</a>
   - <a href="importing-data.html#create-imaging-study">Create Imaging Study</a>
   - <a href="importing-data.html#create-single-seriesupload-data">Create Single Series/Upload data</a>
