@@ -339,7 +339,7 @@
 							</div>
 							<div class="right aligned column">
 								<?
-									if ($destinationtype == "web") {
+									if (($destinationtype == "web") || ($destinationtype == "xnat")) {
 										if ((round($totals['complete']/$total)*100 == 100) || (($totals['submitted'] == 0) && ($totals['processing'] == 0))) {
 											$zipfile = $_SERVER['DOCUMENT_ROOT'] . "/download/NIDB-$exportid.zip";
 											if (file_exists($zipfile)) {
