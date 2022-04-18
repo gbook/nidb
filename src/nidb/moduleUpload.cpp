@@ -644,10 +644,10 @@ bool moduleUpload::UpdateParsedUploads(QMap<QString, QMap<QString, QMap<QString,
                     q3.bindValue(":protocol", tags["ProtocolName"]);
                     q3.bindValue(":date", tags["SeriesDateTime"]);
                     q3.bindValue(":NumberOfFiles", numfiles);
-                    if (tags["RepetitionTime"] == "") q3.bindValue(":tr", QVariant(QVariant::Double)); else q3.bindValue(":tr", tags["RepetitionTime"]);
-                    if (tags["EchoTime"] == "") q3.bindValue(":te", QVariant(QVariant::Double)); else q3.bindValue(":te", tags["EchoTime"]);
-                    if (tags["SpacingBetweenSlices"] == "") q3.bindValue(":slicespacing", QVariant(QVariant::Double)); else q3.bindValue(":slicespacing", tags["SpacingBetweenSlices"]);
-                    if (tags["SliceThickness"] == "") q3.bindValue(":slicethickness", QVariant(QVariant::Double)); else q3.bindValue(":slicethickness", tags["SliceThickness"]);
+					if (tags["RepetitionTime"] == "") q3.bindValue(":tr", QVariant(QMetaType::fromType<double>())); else q3.bindValue(":tr", tags["RepetitionTime"]);
+					if (tags["EchoTime"] == "") q3.bindValue(":te", QVariant(QMetaType::fromType<double>())); else q3.bindValue(":te", tags["EchoTime"]);
+					if (tags["SpacingBetweenSlices"] == "") q3.bindValue(":slicespacing", QVariant(QMetaType::fromType<double>())); else q3.bindValue(":slicespacing", tags["SpacingBetweenSlices"]);
+					if (tags["SliceThickness"] == "") q3.bindValue(":slicethickness", QVariant(QMetaType::fromType<double>())); else q3.bindValue(":slicethickness", tags["SliceThickness"]);
                     q3.bindValue(":rows", tags["Rows"]);
                     q3.bindValue(":cols", tags["Columns"]);
                     q3.bindValue(":seriesinstanceuid", tags["SeriesInstanceUID"]);
@@ -662,10 +662,10 @@ bool moduleUpload::UpdateParsedUploads(QMap<QString, QMap<QString, QMap<QString,
                     q3.bindValue(":protocol", tags["ProtocolName"]);
                     q3.bindValue(":num", tags["SeriesNumber"]);
                     q3.bindValue(":NumberOfFiles", numfiles);
-                    if (tags["RepetitionTime"] == "") q3.bindValue(":tr", QVariant(QVariant::Double)); else q3.bindValue(":tr", tags["RepetitionTime"]);
-                    if (tags["EchoTime"] == "") q3.bindValue(":te", QVariant(QVariant::Double)); else q3.bindValue(":te", tags["EchoTime"]);
-                    if (tags["SpacingBetweenSlices"] == "") q3.bindValue(":slicespacing", QVariant(QVariant::Double)); else q3.bindValue(":slicespacing", tags["SpacingBetweenSlices"]);
-                    if (tags["SliceThickness"] == "") q3.bindValue(":slicethickness", QVariant(QVariant::Double)); else q3.bindValue(":slicethickness", tags["SliceThickness"]);
+					if (tags["RepetitionTime"] == "") q3.bindValue(":tr", QVariant(QMetaType::fromType<double>())); else q3.bindValue(":tr", tags["RepetitionTime"]);
+					if (tags["EchoTime"] == "") q3.bindValue(":te", QVariant(QMetaType::fromType<double>())); else q3.bindValue(":te", tags["EchoTime"]);
+					if (tags["SpacingBetweenSlices"] == "") q3.bindValue(":slicespacing", QVariant(QMetaType::fromType<double>())); else q3.bindValue(":slicespacing", tags["SpacingBetweenSlices"]);
+					if (tags["SliceThickness"] == "") q3.bindValue(":slicethickness", QVariant(QMetaType::fromType<double>())); else q3.bindValue(":slicethickness", tags["SliceThickness"]);
                     q3.bindValue(":rows", tags["Rows"]);
                     q3.bindValue(":cols", tags["Columns"]);
                     q3.bindValue(":seriesinstanceuid", tags["SeriesInstanceUID"]);
@@ -681,10 +681,10 @@ bool moduleUpload::UpdateParsedUploads(QMap<QString, QMap<QString, QMap<QString,
                     q3.bindValue(":date", tags["SeriesDateTime"]);
                     q3.bindValue(":num", tags["SeriesNumber"]);
                     q3.bindValue(":NumberOfFiles", numfiles);
-                    if (tags["RepetitionTime"] == "") q3.bindValue(":tr", QVariant(QVariant::Double)); else q3.bindValue(":tr", tags["RepetitionTime"]);
-                    if (tags["EchoTime"] == "") q3.bindValue(":te", QVariant(QVariant::Double)); else q3.bindValue(":te", tags["EchoTime"]);
-                    if (tags["SpacingBetweenSlices"] == "") q3.bindValue(":slicespacing", QVariant(QVariant::Double)); else q3.bindValue(":slicespacing", tags["SpacingBetweenSlices"]);
-                    if (tags["SliceThickness"] == "") q3.bindValue(":slicethickness", QVariant(QVariant::Double)); else q3.bindValue(":slicethickness", tags["SliceThickness"]);
+					if (tags["RepetitionTime"] == "") q3.bindValue(":tr", QVariant(QMetaType::fromType<double>())); else q3.bindValue(":tr", tags["RepetitionTime"]);
+					if (tags["EchoTime"] == "") q3.bindValue(":te", QVariant(QMetaType::fromType<double>())); else q3.bindValue(":te", tags["EchoTime"]);
+					if (tags["SpacingBetweenSlices"] == "") q3.bindValue(":slicespacing", QVariant(QMetaType::fromType<double>())); else q3.bindValue(":slicespacing", tags["SpacingBetweenSlices"]);
+					if (tags["SliceThickness"] == "") q3.bindValue(":slicethickness", QVariant(QMetaType::fromType<double>())); else q3.bindValue(":slicethickness", tags["SliceThickness"]);
                     q3.bindValue(":rows", tags["Rows"]);
                     q3.bindValue(":cols", tags["Columns"]);
                     q3.bindValue(":files", filesNoPrefix.join(","));
@@ -818,8 +818,9 @@ void moduleUpload::SetUploadStatus(int uploadid, QString status, double percent)
 
     q.prepare("update uploads set upload_status = :status, upload_statuspercent = :pct where upload_id = :uploadid");
     q.bindValue(":status", status);
-    if (percent < 0.0) q.bindValue(":pct", QVariant(QVariant::Double)); else q.bindValue(":pct", percent);
-    q.bindValue(":uploadid", uploadid);
+	//if (percent < 0.0) q.bindValue(":pct", QVariant(QVariant::Double)); else q.bindValue(":pct", percent);
+	if (percent < 0.0) q.bindValue(":pct", QVariant(QMetaType::fromType<double>())); else q.bindValue(":pct", percent);
+	q.bindValue(":uploadid", uploadid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
 }
 

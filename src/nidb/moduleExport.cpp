@@ -834,7 +834,7 @@ bool moduleExport::ExportXNAT(int exportid, QString &exportstatus, QString &msg)
                 QString primaryaltuid = s[uid][studynum][seriesnum]["primaryaltuid"];
                 //QString altuids = s[uid][studynum][seriesnum]["altuids"];
                 QString studydatetime = s[uid][studynum][seriesnum]["studydatetime"];
-                int studyid = s[uid][studynum][seriesnum]["studyid"].toInt();
+				//int studyid = s[uid][studynum][seriesnum]["studyid"].toInt();
                 QString studytype = s[uid][studynum][seriesnum]["studytype"];
                 QString equipment = s[uid][studynum][seriesnum]["equipment"];
                 //int studydaynum = s[uid][studynum][seriesnum]["studydaynum"].toInt();
@@ -868,41 +868,6 @@ bool moduleExport::ExportXNAT(int exportid, QString &exportstatus, QString &msg)
                 seriesdir = QString("%1_%2").arg(equipment).arg(studydatetime);
 
                 /* format the subject/study part of the output directory path */
-                //QString subjectdir;
-                //if (dirformat == "shortid")
-                //	subjectdir = QString("%1%2").arg(uid).arg(studynum);
-                //else if (dirformat == "shortstudyid")
-                //	subjectdir = QString("%1/%2").arg(uid).arg(studynum);
-                //else if (dirformat == "altuid")
-                //	if (primaryaltuid == "")
-                //		subjectdir = uid;
-                //	else
-                //		subjectdir = primaryaltuid;
-                //else if (dirformat == "visittype")
-                //	subjectdir = QString("%1/%2").arg(uid).arg(studytype);
-                //else if (dirformat == "daynum")
-                //	subjectdir = QString("%1/day%2").arg(uid).arg(studydaynum);
-                //else if (dirformat == "timepoint")
-                //	subjectdir = QString("%1/time%2").arg(uid).arg(studytimepoint);
-                //else
-                //	subjectdir = QString("%1%2").arg(uid).arg(studynum);
-
-                /* format the series number part of the output path */
-                //switch (preserveseries) {
-                //case 0:
-                //		if (laststudyid != studyid)
-                //			newseriesnum = "1";
-                //		else
-                //			newseriesnum = QString("%1").arg(newseriesnum.toInt() + 1);
-                //	break;
-                //case 1:
-                //		newseriesnum = QString("%1").arg(seriesnum);
-                //	break;
-                //case 2:
-                //	QString seriesdir = seriesdesc;
-                //	seriesdir.replace(QRegularExpression("[^a-zA-Z0-9_-]"),"_");
-                //	newseriesnum = QString("%1_%2").arg(seriesnum).arg(seriesdir);
-                //}
 
                 /* format the base directory structure of the output path */
                 //n->WriteLog(QString("Series number [%1] --> [%2]").arg(seriesnum).arg(newseriesnum));
@@ -937,49 +902,38 @@ bool moduleExport::ExportXNAT(int exportid, QString &exportstatus, QString &msg)
                 n->WriteLog(QString("rootoutdir [%2], outdir [%3]").arg(rootoutdir).arg(outdir));
 
                 /* export the imaging data */
-                //if (downloadimaging) {
-                    if (numfiles > 0) {
-                        n->WriteLog(QString("Downloading imaging data. Series contains [%1] files").arg(numfiles));
-                        if (datadirexists) {
-                            n->WriteLog("Series data directory [" + indir + "] exists");
-                            if (!datadirempty) {
-                                n->WriteLog("Data directory is not empty");
-                                /* we're only outputting DICOM data for XNAT */
-                                // use rsync instead of cp because of the number of files limit
-                                QString systemstring = QString("rsync -v %1/* %2/").arg(indir).arg(outdir);
-                                n->WriteLog(n->SystemCommand(systemstring));
-                                msgs << "Copying raw data from [" + indir + "] to [" + outdir + "]";
-                            }
-                            else {
-                                seriesstatus = "error";
-                                exportstatus = "error";
-                                n->WriteLog("ERROR [" + indir + "] is empty");
-                                msgs << "Directory [" + indir + "] is empty";
-                                statusmessage = "Directory [" + indir + "] is empty. Data missing from disk";
-                            }
-                        }
-                        else {
-                            seriesstatus = "error";
-                            exportstatus = "error";
-                            n->WriteLog("ERROR indir [" + indir + "] does not exist");
-                            msgs << "Directory [" + indir + "] does not exist";
-                            statusmessage = "Directory [" + indir + "] does not exist. Data missing from disk";
-                        }
-                    }
-                    else {
-                        n->WriteLog("numfiles is 0");
-                        msgs << "Series contains 0 files";
-                    }
-                //}
-                //else {
-                //	n->WriteLog("Imaging data not selected for download");
-                //}
-
-                /* give full permissions to the files that were downloaded */
-                //if (exporttype == "nfs") {
-                //	QString systemstring = "chmod -Rf 777 " + rootoutdir;
-                //	n->WriteLog(n->SystemCommand(systemstring, true));
-                //}
+				if (numfiles > 0) {
+					n->WriteLog(QString("Downloading imaging data. Series contains [%1] files").arg(numfiles));
+					if (datadirexists) {
+						n->WriteLog("Series data directory [" + indir + "] exists");
+						if (!datadirempty) {
+							n->WriteLog("Data directory is not empty");
+							/* we're only outputting DICOM data for XNAT */
+							// use rsync instead of cp because of the number of files limit
+							QString systemstring = QString("rsync -v %1/* %2/").arg(indir).arg(outdir);
+							n->WriteLog(n->SystemCommand(systemstring));
+							msgs << "Copying raw data from [" + indir + "] to [" + outdir + "]";
+						}
+						else {
+							seriesstatus = "error";
+							exportstatus = "error";
+							n->WriteLog("ERROR [" + indir + "] is empty");
+							msgs << "Directory [" + indir + "] is empty";
+							statusmessage = "Directory [" + indir + "] is empty. Data missing from disk";
+						}
+					}
+					else {
+						seriesstatus = "error";
+						exportstatus = "error";
+						n->WriteLog("ERROR indir [" + indir + "] does not exist");
+						msgs << "Directory [" + indir + "] does not exist";
+						statusmessage = "Directory [" + indir + "] does not exist. Data missing from disk";
+					}
+				}
+				else {
+					n->WriteLog("numfiles is 0");
+					msgs << "Series contains 0 files";
+				}
 
                 /* always anonymize the DICOM data */
                 n->AnonymizeDir(outdir,2,"Anonymous","Anonymous");
@@ -992,6 +946,13 @@ bool moduleExport::ExportXNAT(int exportid, QString &exportstatus, QString &msg)
             }
         }
     }
+
+	/* extra steps to upload XNAT data */
+
+	/* write bash file to contain the following
+	 * main command: xnat-upload
+	 * sub-commands: upload-raw
+	 * /
 
     /* extra steps for web download... of XNAT formatted file */
     QString zipfile = QString("%1/NIDB-%2.zip").arg(n->cfg["webdownloaddir"]).arg(exportid);

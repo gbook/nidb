@@ -2232,13 +2232,13 @@ qint64 modulePipeline::RecordDataDownload(qint64 id, qint64 analysisid, QString 
         q.prepare("insert into pipeline_data (analysis_id, pd_modality, pd_checked, pd_found, pd_seriesid, pd_downloadpath, pd_step, pd_msg) values (:analysisid, :modality, :checked, :found, :seriesid, :downloadpath, :step, :msg)");
         q.bindValue(":analysisid",analysisid);
 
-        if (modality == "") q.bindValue(":modality", QVariant(QVariant::String)); else q.bindValue(":modality", analysisid);
-        if (checked == -1) q.bindValue(":checked", QVariant(QVariant::Bool)); else q.bindValue(":checked", checked);
-        if (found == -1) q.bindValue(":found", QVariant(QVariant::Bool)); else q.bindValue(":found", found);
-        if (seriesid == -1) q.bindValue(":seriesid", QVariant(QVariant::Int)); else q.bindValue(":seriesid", seriesid);
-        if (downloadpath == "") q.bindValue(":downloadpath", QVariant(QVariant::String)); else q.bindValue(":downloadpath", downloadpath);
-        if (step == -1) q.bindValue(":step", QVariant(QVariant::Int)); else q.bindValue(":step", step);
-        if (msg.toInt() == -1) q.bindValue(":msg", QVariant(QVariant::String)); else q.bindValue(":msg", msg);
+		if (modality == "") q.bindValue(":modality", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":modality", analysisid);
+		if (checked == -1) q.bindValue(":checked", QVariant(QMetaType::fromType<bool>())); else q.bindValue(":checked", checked);
+		if (found == -1) q.bindValue(":found", QVariant(QMetaType::fromType<bool>())); else q.bindValue(":found", found);
+		if (seriesid == -1) q.bindValue(":seriesid", QVariant(QMetaType::fromType<int>())); else q.bindValue(":seriesid", seriesid);
+		if (downloadpath == "") q.bindValue(":downloadpath", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":downloadpath", downloadpath);
+		if (step == -1) q.bindValue(":step", QVariant(QMetaType::fromType<int>())); else q.bindValue(":step", step);
+		if (msg.toInt() == -1) q.bindValue(":msg", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":msg", msg);
 
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         return q.lastInsertId().toInt();

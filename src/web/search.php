@@ -4376,6 +4376,7 @@
 					$('.remoteftp').hide();
 					$('.remotenidb').hide();
 					$('.bids').hide();
+					$('.squirrel').hide();
 					$('.publicdownload').hide();
 					<? if ($s_resultoutput != 'subject') { ?>
 					$('.export').hide();
@@ -4604,16 +4605,24 @@
 					if (filetype == 'dicom') {
 						$('.dicom').show();
 						$('.bids').hide();
+						$('.squirrel').hide();
 						//$('.dirstructure').show();
 					}
 					else if (filetype == 'bids') {
 						$('.bids').show();
 						$('.dicom').hide();
+						$('.squirrel').hide();
 						//$('.dirstructure').hide();
+					}
+					else if (filetype == 'squirrel') {
+						$('.squirrel').show();
+						$('.bids').hide();
+						$('.dicom').hide();
 					}
 					else {
 						$('.dicom').hide();
 						$('.bids').hide();
+						$('.squirrel').hide();
 						//$('.dirstructure').show();
 					}
 					
@@ -4927,15 +4936,25 @@
 									<input type="checkbox" name="downloadbeh" id="downloadbeh" value="1" checked onChange="CheckDestination()">
 									<label>Behavioral</label>
 								</div>
-								<br>
+								<!--<br>
 								<div class="ui checkbox" style="padding: 3px">
 									<input type="checkbox" name="downloadqc" id="downloadqc" value="1" onChange="CheckDestination()">
 									<label>QC <i class="small blue question circle outline icon" title="Includes all QC metrics computed on the data"></i></label>
 								</div>
 								<br>
 								<div class="ui checkbox" style="padding: 3px">
-									<input type="checkbox" name="downloadqc" id="downloaddemo" value="1" onChange="CheckDestination()">
+									<input type="checkbox" name="downloaddemo" id="downloaddemo" value="1" onChange="CheckDestination()">
 									<label>Demographics <i class="small blue question circle outline icon" title="Includes age at scan, sex, and other demographics. This is places in a demographics.txt file in the root of the download directory"></i></label>
+								</div>-->
+								<br>
+								<div class="ui checkbox" style="padding: 3px">
+									<input type="checkbox" name="downloadresults" id="downloadresults" value="1" onChange="CheckDestination()">
+									<label>Analysis Results <i class="small blue question circle outline icon" title="Any results from automated pipeline analysis"></i></label>
+								</div>
+								<br>
+								<div class="ui checkbox" style="padding: 3px">
+									<input type="checkbox" name="downloadvars" id="downloadvars" value="1" onChange="CheckDestination()">
+									<label>Variables <i class="small blue question circle outline icon" title="All variables associated with the subject, including drugs, vitals, measures, and variables obtained from mini-pipelines"></i></label>
 								</div>
 							</div>
 
@@ -4949,8 +4968,8 @@
 							<? if (strtolower($s_studymodality) == "mr") { ?>
 							<div class="ui basic vertically fitted segment format" id="sectionformat">
 
-								<!--<span class="tiny">Conversion to other formats only available if native data in DICOM format</span><br>-->
-
+								<span class="tiny">Nifti conversion only available if native data in DICOM format</span>
+								<br>
 								<div class="ui radio checkbox">
 									<input type="radio" name="filetype" id="filetype_nifti3d" value="nifti3d" checked onChange="CheckDestination()">
 									<label>Nifti 3D</label>
@@ -4961,15 +4980,15 @@
 									<label>Nifti 4D</label>
 								</div>
 								<br>
-								<div class="ui checkbox">
+								<div class="ui checkbox" style="padding-left: 15px">
 									<input type="checkbox" name="gzip" value="1" onChange="CheckDestination()">
-									<label>Gzip 3D or 4D Nifti</label>
+									<label>Gzip nifti</label>
 								</div>
 								<br>
 								<br>
 								<div class="ui radio checkbox">
 									<input type="radio" name="filetype" id="filetype_dicom" value="dicom" onChange="CheckDestination()">
-									<label>DICOM</label>
+									<label>DICOM <span class="tiny">or raw data if non-DICOM</span></label>
 								</div>
 								<div class="dicom" style="padding-left: 15px;">
 									<div class="ui two column grid">
@@ -5043,13 +5062,55 @@
 								</div>
 								<br>
 								<div class="ui segment bids">
+									<h4 class="ui dividing header">BIDS options</h4>
 									<div class="field">
-										<b>BIDS options</b><br>
-										<input type="checkbox" name="bidsflag_useuid">UID instead of sub-0001<br>
-										<input type="checkbox" name="bidsflag_usestudyid">StudyNum instead of ses-0001
+										<div class="ui checkbox">
+											<input type="checkbox" name="bidsflag_useuid">
+											<label>UID instead of sub-0001</label>
+										</div>
+										<br>
+										<div class="ui checkbox">
+											<input type="checkbox" name="bidsflag_usestudyid">
+											<label>StudyNum instead of ses-0001</label>
+										</div>
 									</div>
-									README
-									<textarea name="bidsreadme" class="bids" placeholder="BIDS README file..." cols="40" rows="3"></textarea>
+									<div class="field">
+										<label>Readme</label>
+										<textarea name="bidsreadme" class="bids" placeholder="BIDS README file..." cols="40" rows="3"></textarea>
+									</div>
+								</div>
+								<div class="ui radio checkbox">
+									<input type="radio" name="filetype" id="filetype_squirrel" value="squirrel" onChange="CheckDestination()">
+									<label>Squirrel</label>
+								</div>
+								<br>
+								<div class="ui segment squirrel">
+									<h4 class="ui dividing header">Squirrel options</h4>
+									<div class="field">
+										<div class="ui radio checkbox">
+											<input type="radio" name="squirrelflag_metadata" value="subject">
+											<label>Metadata from subject</label>
+										</div>
+										<br>
+										<div class="ui radio checkbox">
+											<input type="radio" name="squirrelflag_metadata" value="enrollment">
+											<label>Metadata from enrollment</label>
+										</div>
+									</div>
+									<div class="field">
+										<div class="ui checkbox">
+											<input type="checkbox" name="squirrelflag_anonymize" checked>
+											<label>Anonymize</label>
+										</div>
+									</div>
+									<div class="field">
+										<label>Title</label>
+										<input type="text" name="squirreltitle" placeholder="Squirrel package name...">
+									</div>
+									<div class="field">
+										<label>Description</label>
+										<textarea name="squirreldesc" placeholder="Squirrel package description..." cols="40" rows="3"></textarea>
+									</div>
 								</div>
 							</div>
 							<? } ?>

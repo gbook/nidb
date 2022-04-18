@@ -234,10 +234,10 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
     }
 
     /* gather series information */
-    int boldreps(1);
-    int numfiles(1);
+	qint64 boldreps(1);
+	qint64 numfiles(1);
     numfiles = files.size();
-    int zsize(1);
+	qint64 zsize(1);
     QString mrtype = "structural";
 
     /* check if its an EPI sequence, but not a perfusion sequence */
@@ -292,8 +292,8 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
             q3.bindValue(":InPlanePhaseEncodingDirection", InPlanePhaseEncodingDirection);
 
             //QVariant nullDouble = QMetaType::Double;
-            if (PhaseEncodeAngle == "") q3.bindValue(":PhaseEncodeAngle", QVariant::Double); /* for null values */
-            else q3.bindValue(":PhaseEncodeAngle", PhaseEncodeAngle);
+			if (PhaseEncodeAngle == "") q3.bindValue(":PhaseEncodeAngle", QVariant::Double); /* for null values */
+			else q3.bindValue(":PhaseEncodeAngle", PhaseEncodeAngle);
 
             if (PhaseEncodingDirectionPositive == "") q3.bindValue(":PhaseEncodingDirectionPositive", QVariant::Int); /* for null values */
             else q3.bindValue(":PhaseEncodingDirectionPositive", PhaseEncodingDirectionPositive);
@@ -365,10 +365,10 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
             q3.bindValue(":FlipAngle", FlipAngle);
             q3.bindValue(":InPlanePhaseEncodingDirection", InPlanePhaseEncodingDirection);
 
-            if (PhaseEncodeAngle == "") q3.bindValue(":PhaseEncodeAngle", QVariant(QVariant::Double)); /* for null values */
+			if (PhaseEncodeAngle == "") q3.bindValue(":PhaseEncodeAngle", QVariant(QMetaType::fromType<double>())); /* for null values */
             else q3.bindValue(":PhaseEncodeAngle", PhaseEncodeAngle);
 
-            if (PhaseEncodingDirectionPositive == "") q3.bindValue(":PhaseEncodingDirectionPositive", QVariant(QVariant::Int)); /* for null values */
+			if (PhaseEncodingDirectionPositive == "") q3.bindValue(":PhaseEncodingDirectionPositive", QVariant(QMetaType::fromType<double>())); /* for null values */
             else q3.bindValue(":PhaseEncodingDirectionPositive", PhaseEncodingDirectionPositive);
 
             q3.bindValue(":pixelX", pixelX);
@@ -552,7 +552,7 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
     /* check if there are .dcm files already in the archive (outdir) */
     AppendUploadLog(__FUNCTION__ , "Checking for existing files in outdir [" + outdir + "]");
     QStringList existingdcms = n->FindAllFiles(outdir, "*.dcm");
-    int numexistingdcms = existingdcms.size();
+	qint64 numexistingdcms = existingdcms.size();
 
     /* rename **** EXISTING **** files in the output directory */
     if (numexistingdcms > 0) {
@@ -663,7 +663,7 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
         else {
             mrtype = "epi";
             /* get the bold reps and attempt to get the z size */
-            boldreps = nfiles;
+			boldreps = static_cast<qint64>(nfiles);
 
             /* this method works ... sometimes */
             //if ((mat1 > 0) && (mat4 > 0))
@@ -1678,8 +1678,8 @@ QString archiveIO::GetCostCenter(QString studydesc) {
         cc = "888888";
     else if ( (studydesc.contains("(")) && (studydesc.contains(")")) ) /* if it contains an opening and closing parentheses */
     {
-        int idx1 = studydesc.indexOf("(");
-        int idx2 = studydesc.lastIndexOf(")");
+		qint64 idx1 = studydesc.indexOf("(");
+		qint64 idx2 = studydesc.lastIndexOf(")");
         cc = studydesc.mid(idx1+1, idx2-idx1-1);
     }
     else {
@@ -2526,7 +2526,7 @@ bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modal
 
     QSqlQuery q;
     for (int i=0; i<seriesids.size(); i++) {
-        int seriesid = seriesids[i];
+		qint64 seriesid = seriesids[i];
         QString modality = modalities[i];
 
         q.prepare(QString("select a.*, b.*, c.enrollment_id, d.project_name, d.project_id, e.uid, e.gender, e.birthdate, e.subject_id from %1_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id left join subjects e on e.subject_id = c.subject_id where a.%1series_id = :seriesid order by uid, study_num, series_num").arg(modality));
