@@ -45,9 +45,12 @@ public:
     int enrollmentRowID() { return _enrollmentid; }
     int projectRowID() { return _projectid; }
     QString UID() { return _uid; }
-    int studyNum() { return _studynum; }
+	QString desc() { return _desc; }
+	int studyNum() { return _studynum; }
     QString type() { return _studytype; }
-    QString path() { return _studypath; }
+	QString daynum() { return _daynum; }
+	QString timepoint() { return _timepoint; }
+	QString path() { return _studypath; }
     bool pathExists() { return _studyPathExists; }
     QDateTime dateTime() { return _studydatetime; }
     QString modality() { return _modality; }
@@ -62,8 +65,11 @@ private:
     int _studyid = -1;
     int _studynum = -1;
     QString _uid = "";
-    QString _studytype = "";
-    int _subjectid = -1;
+	QString _desc = "";
+	QString _studytype = "";
+	QString _daynum = "";
+	QString _timepoint = "";
+	int _subjectid = -1;
     QString _studypath = "";
     bool _studyPathExists = false;
     int _enrollmentid = -1;

@@ -125,13 +125,16 @@ void study::LoadStudyInfo() {
         _isValid = true;
         _studyid = q.value("study_id").toInt();
         _uid = q.value("uid").toString().trimmed();
-        _studynum = q.value("study_num").toInt();
+		_desc = q.value("desc").toString().trimmed();
+		_studynum = q.value("study_num").toInt();
         _projectid = q.value("project_id").toInt();
         _subjectid = q.value("subject_id").toInt();
         _enrollmentid = q.value("enrollment_id").toInt();
         _studydatetime = q.value("study_datetime").toDateTime();
         _modality = q.value("study_modality").toString().trimmed();
         _studytype = q.value("study_type").toString().trimmed();
+		_daynum = q.value("study_daynum").toString().trimmed();
+		_timepoint = q.value("study_timepoint").toString().trimmed();
 
         /* check to see if anything isn't valid or is blank */
         if ((n->cfg["archivedir"] == "") || (n->cfg["archivedir"] == "/")) { msgs << "cfg->archivedir was invalid"; _isValid = false; }

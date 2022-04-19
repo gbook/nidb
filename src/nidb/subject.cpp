@@ -158,7 +158,7 @@ void subject::LoadSubjectInfo() {
     else {
         /* get the path to the analysisroot */
         QSqlQuery q;
-        q.prepare("select uid from subjects where subject_id = :subjectid");
+		q.prepare("select * from subjects where subject_id = :subjectid");
         q.bindValue(":subjectid", _subjectid);
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         if (q.size() < 1) {
@@ -168,6 +168,11 @@ void subject::LoadSubjectInfo() {
         else {
             q.first();
             _uid = q.value("uid").toString().trimmed();
+			_dob = q.value("birthdate").toDate();
+			_sex = q.value("gender").toString().trimmed();
+			_ethnicity1 = q.value("ethnicity1").toString().trimmed();
+			_ethnicity2 = q.value("ethnicity2").toString().trimmed();
+			_handedness = q.value("handedness").toString().trimmed();
 
             /* check to see if anything isn't valid or is blank */
             if ((n->cfg["archivedir"] == "") || (n->cfg["archivedir"] == "/")) { msgs << "cfg->archivedir was invalid"; _isValid = false; }

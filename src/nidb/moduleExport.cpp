@@ -1238,7 +1238,7 @@ bool moduleExport::ExportSquirrel(int exportid, QString &exportstatus, QString &
         }
 
         n->WriteLog(QString("Calling WriteSquirrel(%1, %2, ...)").arg(seriesids.size()).arg(modalities.size()));
-        if (io->WriteSquirrel(seriesids, modalities, rootoutdir, m))
+		if (io->WriteSquirrel("Squirrel dataset", "Long description", seriesids, modalities, rootoutdir, m))
             n->WriteLog("WriteSquirrel() returned true");
         else
             n->WriteLog("WriteSquirrel() returned false");

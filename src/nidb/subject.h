@@ -41,6 +41,11 @@ public:
     int subjectRowID() { return _subjectid; }
     QString UID() { return _uid; }
     QStringList altUIDs() { return _altuids; }
+	QDate dob() { return _dob; }
+	QString sex() { return _sex; }
+	QString ethnicity1() { return _ethnicity1; }
+	QString ethnicity2() { return _ethnicity2; }
+	QString handedness() { return _handedness; }
     QString path() { return _subjectpath; }
     bool dataPathExists() { return _dataPathExists; }
     bool valid() { return _isValid; }
@@ -52,6 +57,11 @@ private:
     int _subjectid = -1;
     QString _uid = "";
     QStringList _altuids;
+	QDate _dob = QDate(0,0,0);
+	QString _sex = "U";
+	QString _ethnicity1 = "";
+	QString _ethnicity2 = "";
+	QString _handedness = "U";
     QString _subjectpath = "";
     bool _dataPathExists = false;
     bool _isValid = false;

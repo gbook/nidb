@@ -2307,7 +2307,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 /* ---------------------------------------------------------- */
 /* --------- WriteSquirrel ------------------------------------- */
 /* ---------------------------------------------------------- */
-bool archiveIO::WriteSquirrel(QList<qint64> seriesids, QStringList modalities, QString odir, QString &msg) {
+bool archiveIO::WriteSquirrel(QString name, QString desc, QList<qint64> seriesids, QStringList modalities, QString odir, QString &msg) {
     n->WriteLog("Entering WriteSquirrel()...");
 
     QString exportstatus = "complete";
@@ -2333,20 +2333,19 @@ bool archiveIO::WriteSquirrel(QList<qint64> seriesids, QStringList modalities, Q
         return false;
     }
 
-    /* create dataset description */
+	/* create JSON object */
     QJsonObject root;
-    //root["BIDSVersion"] = bidsver;
-    root["License"] = "This dataset was written by the Neuroinformatics Database. Licensing should be included with this dataset";
+	root["format"] = "squirrel";
     root["Date"] = n->CreateLogDate();
-    //root["README"] = bidsreadme;
-    QByteArray j = QJsonDocument(root).toJson();
-    QFile fout("dataset_description.json");
-    fout.open(QIODevice::WriteOnly);
-    fout.write(j);
 
-    /* write the participants.csv file */
-    QString pfile = outdir + "/participants.tsv";
-    if (!n->WriteTextFile(pfile, "participant_id\tAge\tGender\n", false)) n->WriteLog("Error writing " + pfile);
+	QJsonObject pkgInfo;
+	pkgInfo["name"] = name;
+	pkgInfo["description"] = desc;
+	pkgInfo["datetime"] = n->CreateLogDate();
+
+	root["package"] = pkgInfo;
+
+	QJsonArray JSONsubjects;
 
     int i = 1; /* the subject counter */
     /* iterate through the UIDs */
@@ -2354,12 +2353,24 @@ bool archiveIO::WriteSquirrel(QList<qint64> seriesids, QStringList modalities, Q
         QString uid = a.key();
         int j = 1; /* the session (study) counter */
 
+		int subjectid = s[uid][0][0]["subjectid"].toInt();
+		subject subj(subjectid, n);
+
         n->WriteLog("Working on [" + uid + "]");
         QString subjectSex = s[uid][0][0]["subjectsex"];
         double subjectAge = s[uid][0][0]["subjectage"].toDouble();
 
-        /* write subject to participants file */
-        if (!n->WriteTextFile(pfile, QString("sub-%1\t%2\t%3\n").arg(i, 3, 10, QChar('0')).arg(subjectAge).arg(subjectSex), true)) n->WriteLog("Error writing " + pfile);
+		/* add all of the subject information to the JSON objects */
+		QJsonObject subjInfo;
+		subjInfo["ID"] = uid;
+		subjInfo["alternateIDs"] = QJsonArray::fromStringList(subj.altUIDs());
+		subjInfo["dateOfBirth"] = subj.dob().toString();
+		subjInfo["sex"] = subj.sex();
+		subjInfo["gender"] = subj.sex();
+		subjInfo["ethnicity1"] = subj.ethnicity1();
+		subjInfo["ethnicity2"] = subj.ethnicity2();
+
+		QJsonArray JSONstudies;
 
         /* iterate through the studynums */
         for(QMap<int, QMap<int, QMap<QString, QString>>>::iterator b = s[uid].begin(); b != s[uid].end(); ++b) {
@@ -2370,6 +2381,21 @@ bool archiveIO::WriteSquirrel(QList<qint64> seriesids, QStringList modalities, Q
 
             n->WriteLog(QString("Working on [" + uid + "] and study [%1]").arg(studynum));
 
+			int studyid = s[uid][studynum][0]["studyid"].toInt();
+			study stdy(studyid, n);
+
+			/* add all the study information to the JSON objects */
+			QJsonObject studyInfo;
+			studyInfo["studyNumber"] = studynum;
+			studyInfo["studyDateTime"] = stdy.dateTime().toString();
+			studyInfo["ageAtStudy"] = subjectAge;
+			studyInfo["modality"] = stdy.modality();
+			studyInfo["description"] = stdy.desc();
+			studyInfo["visit"] = stdy.type();
+			studyInfo["dayNumber"] = stdy.daynum();
+			studyInfo["timePoint"] = stdy.timepoint();
+
+			QJsonArray JSONseries;
             /* iterate through the seriesnums */
             for(QMap<int, QMap<QString, QString>>::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
                 int seriesnum = c.key();
@@ -2379,6 +2405,10 @@ bool archiveIO::WriteSquirrel(QList<qint64> seriesids, QStringList modalities, Q
                     continue;
 
                 n->WriteLog(QString("Working on [" + uid + "] and study [%1] and series [%2]").arg(studynum).arg(seriesnum));
+
+				/* add all the series information to the JSON objects */
+				QJsonObject seriesInfo;
+				seriesInfo["number"] = seriesnum;
 
                 //int exportseriesid = s[uid][studynum][seriesnum]["exportseriesid"].toInt();
                 //SetExportSeriesStatus(exportseriesid, "processing");
@@ -2503,14 +2533,28 @@ bool archiveIO::WriteSquirrel(QList<qint64> seriesids, QStringList modalities, Q
                 q2.bindValue(":modality", modality);
                 n->WriteLog(n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__));
 
-            }
+				/* add series to array of JSON series objects */
+				JSONseries.append(seriesInfo);
+			}
             j++;
-        }
-        i++;
-    }
 
-    /* write the readme file */
-    //if (!n->WriteTextFile(outdir + "/README", bidsreadme, false)) n->WriteLog("Error writing README file [" + outdir + "/README]");
+			/* Add list of studies to the current subject, then append the study to the study list */
+			studyInfo["series"] = JSONseries;
+			JSONstudies.append(studyInfo);
+		}
+        i++;
+
+		/* Add list of studies to the current subject, then append the subject to the subject list */
+		subjInfo["studies"] = JSONstudies;
+		JSONsubjects.append(subjInfo);
+	}
+	/* add list of subjects to the root JSON object */
+	root["subjects"] = JSONsubjects;
+
+	QByteArray j = QJsonDocument(root).toJson();
+	QFile fout("squirrel.json");
+	fout.open(QIODevice::WriteOnly);
+	fout.write(j);
 
     msg = msgs.join("\n");
     n->WriteLog("Leaving WriteSquirrel()...");

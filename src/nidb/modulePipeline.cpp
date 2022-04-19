@@ -393,7 +393,7 @@ int modulePipeline::Run() {
 
                     /* get the nearest study for this subject that has the dependency */
                     int studyNumNearest(0);
-                    q2.prepare("select analysis_id, study_num from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.subject_id = :subjectid and a.pipeline_id = :pipelinedep and a.analysis_status = 'complete' and (a.analysis_isbad <> 1 or a.analysis_isbad is null) order by abs(datediff(b.study_datetime, :studydatetime)) limit 1");
+					q2.prepare("select analysis_id, study_num from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.subject_id = :subjectid and a.pipeline_id = :pipelinedep and a.analysis_status = 'complete' and (a.analysis_isbad <> 1 or a.analysis_isbad is null) order by abs(timestampdiff(minute, b.study_datetime, :studydatetime)) limit 1");
                     q2.bindValue(":subjectid", s.subjectRowID());
                     q2.bindValue(":pipelinedep", pipelinedep);
                     q2.bindValue(":studydatetime", s.dateTime().toString("yyyy-MM-dd hh:mm:ss"));
