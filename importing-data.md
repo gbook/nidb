@@ -34,7 +34,7 @@ The subject will now be assigned a UID, but will not be enrolled in any projects
 <hr>
 
 ## Importing Subjects from Recap
-For a specific project, subjects can be imported from redcap using an option on the project page as shown below:
+For a project, subjects can be imported from redcap using an option on the project page as shown below:
 
 <div align="center"><img src="https://user-images.githubusercontent.com/24811295/162758283-7b44fd0e-993b-41b8-8889-4a4c9fc40eab.png" width="50%"></div>
 
