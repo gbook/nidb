@@ -147,6 +147,10 @@
     $requestvars['bidsreadme'] = GetVariable("bidsreadme");
     $requestvars['bidsflag_useuid'] = GetVariable("bidsflag_useuid");
     $requestvars['bidsflag_usestudyid'] = GetVariable("bidsflag_usestudyid");
+    $requestvars['squirrelflag_metadata'] = GetVariable("squirrelflag_metadata");
+    $requestvars['squirrelflag_anonymize'] = GetVariable("squirrelflag_anonymize");
+    $requestvars['squirreltitle'] = GetVariable("squirreltitle");
+    $requestvars['squirreldesc'] = GetVariable("squirreldesc");
 
 	$numpostvars = count($_POST);
 	$maxnumvars = ini_get('max_input_vars');

@@ -369,6 +369,11 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
         ExportBIDS(exportid, bidsreadme, bidsflags, tmpexportdir, exportstatus, log);
         msgs << log;
     }
+    else if (filetype == "squirrel") {
+        QString log;
+        ExportSquirrel(exportid, exportstatus, tmpexportdir, log);
+        msgs << log;
+    }
     else {
         if (!GetExportSeriesList(exportid)) {
             msg = "Unable to get a series list";
@@ -834,7 +839,7 @@ bool moduleExport::ExportXNAT(int exportid, QString &exportstatus, QString &msg)
                 QString primaryaltuid = s[uid][studynum][seriesnum]["primaryaltuid"];
                 //QString altuids = s[uid][studynum][seriesnum]["altuids"];
                 QString studydatetime = s[uid][studynum][seriesnum]["studydatetime"];
-				//int studyid = s[uid][studynum][seriesnum]["studyid"].toInt();
+                //int studyid = s[uid][studynum][seriesnum]["studyid"].toInt();
                 QString studytype = s[uid][studynum][seriesnum]["studytype"];
                 QString equipment = s[uid][studynum][seriesnum]["equipment"];
                 //int studydaynum = s[uid][studynum][seriesnum]["studydaynum"].toInt();
@@ -902,38 +907,38 @@ bool moduleExport::ExportXNAT(int exportid, QString &exportstatus, QString &msg)
                 n->WriteLog(QString("rootoutdir [%2], outdir [%3]").arg(rootoutdir).arg(outdir));
 
                 /* export the imaging data */
-				if (numfiles > 0) {
-					n->WriteLog(QString("Downloading imaging data. Series contains [%1] files").arg(numfiles));
-					if (datadirexists) {
-						n->WriteLog("Series data directory [" + indir + "] exists");
-						if (!datadirempty) {
-							n->WriteLog("Data directory is not empty");
-							/* we're only outputting DICOM data for XNAT */
-							// use rsync instead of cp because of the number of files limit
-							QString systemstring = QString("rsync -v %1/* %2/").arg(indir).arg(outdir);
-							n->WriteLog(n->SystemCommand(systemstring));
-							msgs << "Copying raw data from [" + indir + "] to [" + outdir + "]";
-						}
-						else {
-							seriesstatus = "error";
-							exportstatus = "error";
-							n->WriteLog("ERROR [" + indir + "] is empty");
-							msgs << "Directory [" + indir + "] is empty";
-							statusmessage = "Directory [" + indir + "] is empty. Data missing from disk";
-						}
-					}
-					else {
-						seriesstatus = "error";
-						exportstatus = "error";
-						n->WriteLog("ERROR indir [" + indir + "] does not exist");
-						msgs << "Directory [" + indir + "] does not exist";
-						statusmessage = "Directory [" + indir + "] does not exist. Data missing from disk";
-					}
-				}
-				else {
-					n->WriteLog("numfiles is 0");
-					msgs << "Series contains 0 files";
-				}
+                if (numfiles > 0) {
+                    n->WriteLog(QString("Downloading imaging data. Series contains [%1] files").arg(numfiles));
+                    if (datadirexists) {
+                        n->WriteLog("Series data directory [" + indir + "] exists");
+                        if (!datadirempty) {
+                            n->WriteLog("Data directory is not empty");
+                            /* we're only outputting DICOM data for XNAT */
+                            // use rsync instead of cp because of the number of files limit
+                            QString systemstring = QString("rsync -v %1/* %2/").arg(indir).arg(outdir);
+                            n->WriteLog(n->SystemCommand(systemstring));
+                            msgs << "Copying raw data from [" + indir + "] to [" + outdir + "]";
+                        }
+                        else {
+                            seriesstatus = "error";
+                            exportstatus = "error";
+                            n->WriteLog("ERROR [" + indir + "] is empty");
+                            msgs << "Directory [" + indir + "] is empty";
+                            statusmessage = "Directory [" + indir + "] is empty. Data missing from disk";
+                        }
+                    }
+                    else {
+                        seriesstatus = "error";
+                        exportstatus = "error";
+                        n->WriteLog("ERROR indir [" + indir + "] does not exist");
+                        msgs << "Directory [" + indir + "] does not exist";
+                        statusmessage = "Directory [" + indir + "] does not exist. Data missing from disk";
+                    }
+                }
+                else {
+                    n->WriteLog("numfiles is 0");
+                    msgs << "Series contains 0 files";
+                }
 
                 /* always anonymize the DICOM data */
                 n->AnonymizeDir(outdir,2,"Anonymous","Anonymous");
@@ -947,12 +952,12 @@ bool moduleExport::ExportXNAT(int exportid, QString &exportstatus, QString &msg)
         }
     }
 
-	/* extra steps to upload XNAT data */
+    /* extra steps to upload XNAT data */
 
-	/* write bash file to contain the following
-	 * main command: xnat-upload
-	 * sub-commands: upload-raw
-	 * /
+    /* write bash file to contain the following
+     * main command: xnat-upload
+     * sub-commands: upload-raw
+     * /
 
     /* extra steps for web download... of XNAT formatted file */
     QString zipfile = QString("%1/NIDB-%2.zip").arg(n->cfg["webdownloaddir"]).arg(exportid);
@@ -1224,7 +1229,7 @@ bool moduleExport::ExportSquirrel(int exportid, QString &exportstatus, QString &
         }
         n->WriteLog( QString("seriesids contains [%1] items    modalities contains [%2] items").arg(seriesids.size()).arg(modalities.size()) );
 
-        QString rootoutdir = n->cfg["ftpdir"] + "/NiDB-BIDS-" + n->CreateLogDate();
+        QString rootoutdir = n->cfg["ftpdir"] + "/NiDB-Squirrel-" + n->CreateLogDate();
         outdir = rootoutdir;
 
         QString m;
@@ -1238,7 +1243,7 @@ bool moduleExport::ExportSquirrel(int exportid, QString &exportstatus, QString &
         }
 
         n->WriteLog(QString("Calling WriteSquirrel(%1, %2, ...)").arg(seriesids.size()).arg(modalities.size()));
-		if (io->WriteSquirrel("Squirrel dataset", "Long description", seriesids, modalities, rootoutdir, m))
+        if (io->WriteSquirrel("Squirrel dataset", "Long description", seriesids, modalities, rootoutdir, m))
             n->WriteLog("WriteSquirrel() returned true");
         else
             n->WriteLog("WriteSquirrel() returned false");

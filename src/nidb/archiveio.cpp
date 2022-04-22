@@ -234,10 +234,10 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
     }
 
     /* gather series information */
-	qint64 boldreps(1);
-	qint64 numfiles(1);
+    qint64 boldreps(1);
+    qint64 numfiles(1);
     numfiles = files.size();
-	qint64 zsize(1);
+    qint64 zsize(1);
     QString mrtype = "structural";
 
     /* check if its an EPI sequence, but not a perfusion sequence */
@@ -292,8 +292,8 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
             q3.bindValue(":InPlanePhaseEncodingDirection", InPlanePhaseEncodingDirection);
 
             //QVariant nullDouble = QMetaType::Double;
-			if (PhaseEncodeAngle == "") q3.bindValue(":PhaseEncodeAngle", QVariant::Double); /* for null values */
-			else q3.bindValue(":PhaseEncodeAngle", PhaseEncodeAngle);
+            if (PhaseEncodeAngle == "") q3.bindValue(":PhaseEncodeAngle", QVariant::Double); /* for null values */
+            else q3.bindValue(":PhaseEncodeAngle", PhaseEncodeAngle);
 
             if (PhaseEncodingDirectionPositive == "") q3.bindValue(":PhaseEncodingDirectionPositive", QVariant::Int); /* for null values */
             else q3.bindValue(":PhaseEncodingDirectionPositive", PhaseEncodingDirectionPositive);
@@ -365,10 +365,10 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
             q3.bindValue(":FlipAngle", FlipAngle);
             q3.bindValue(":InPlanePhaseEncodingDirection", InPlanePhaseEncodingDirection);
 
-			if (PhaseEncodeAngle == "") q3.bindValue(":PhaseEncodeAngle", QVariant(QMetaType::fromType<double>())); /* for null values */
+            if (PhaseEncodeAngle == "") q3.bindValue(":PhaseEncodeAngle", QVariant(QMetaType::fromType<double>())); /* for null values */
             else q3.bindValue(":PhaseEncodeAngle", PhaseEncodeAngle);
 
-			if (PhaseEncodingDirectionPositive == "") q3.bindValue(":PhaseEncodingDirectionPositive", QVariant(QMetaType::fromType<double>())); /* for null values */
+            if (PhaseEncodingDirectionPositive == "") q3.bindValue(":PhaseEncodingDirectionPositive", QVariant(QMetaType::fromType<double>())); /* for null values */
             else q3.bindValue(":PhaseEncodingDirectionPositive", PhaseEncodingDirectionPositive);
 
             q3.bindValue(":pixelX", pixelX);
@@ -552,7 +552,7 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
     /* check if there are .dcm files already in the archive (outdir) */
     AppendUploadLog(__FUNCTION__ , "Checking for existing files in outdir [" + outdir + "]");
     QStringList existingdcms = n->FindAllFiles(outdir, "*.dcm");
-	qint64 numexistingdcms = existingdcms.size();
+    qint64 numexistingdcms = existingdcms.size();
 
     /* rename **** EXISTING **** files in the output directory */
     if (numexistingdcms > 0) {
@@ -663,7 +663,7 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
         else {
             mrtype = "epi";
             /* get the bold reps and attempt to get the z size */
-			boldreps = static_cast<qint64>(nfiles);
+            boldreps = static_cast<qint64>(nfiles);
 
             /* this method works ... sometimes */
             //if ((mat1 > 0) && (mat4 > 0))
@@ -1678,8 +1678,8 @@ QString archiveIO::GetCostCenter(QString studydesc) {
         cc = "888888";
     else if ( (studydesc.contains("(")) && (studydesc.contains(")")) ) /* if it contains an opening and closing parentheses */
     {
-		qint64 idx1 = studydesc.indexOf("(");
-		qint64 idx2 = studydesc.lastIndexOf(")");
+        qint64 idx1 = studydesc.indexOf("(");
+        qint64 idx2 = studydesc.lastIndexOf(")");
         cc = studydesc.mid(idx1+1, idx2-idx1-1);
     }
     else {
@@ -2305,7 +2305,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 
 
 /* ---------------------------------------------------------- */
-/* --------- WriteSquirrel ------------------------------------- */
+/* --------- WriteSquirrel ---------------------------------- */
 /* ---------------------------------------------------------- */
 bool archiveIO::WriteSquirrel(QString name, QString desc, QList<qint64> seriesids, QStringList modalities, QString odir, QString &msg) {
     n->WriteLog("Entering WriteSquirrel()...");
@@ -2333,19 +2333,19 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QList<qint64> seriesid
         return false;
     }
 
-	/* create JSON object */
+    /* create JSON object */
     QJsonObject root;
-	root["format"] = "squirrel";
+    root["format"] = "squirrel";
     root["Date"] = n->CreateLogDate();
 
-	QJsonObject pkgInfo;
-	pkgInfo["name"] = name;
-	pkgInfo["description"] = desc;
-	pkgInfo["datetime"] = n->CreateLogDate();
+    QJsonObject pkgInfo;
+    pkgInfo["name"] = name;
+    pkgInfo["description"] = desc;
+    pkgInfo["datetime"] = n->CreateLogDate();
 
-	root["package"] = pkgInfo;
+    root["package"] = pkgInfo;
 
-	QJsonArray JSONsubjects;
+    QJsonArray JSONsubjects;
 
     int i = 1; /* the subject counter */
     /* iterate through the UIDs */
@@ -2353,24 +2353,24 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QList<qint64> seriesid
         QString uid = a.key();
         int j = 1; /* the session (study) counter */
 
-		int subjectid = s[uid][0][0]["subjectid"].toInt();
-		subject subj(subjectid, n);
+        int subjectid = s[uid][0][0]["subjectid"].toInt();
+        subject subj(subjectid, n);
 
         n->WriteLog("Working on [" + uid + "]");
         QString subjectSex = s[uid][0][0]["subjectsex"];
         double subjectAge = s[uid][0][0]["subjectage"].toDouble();
 
-		/* add all of the subject information to the JSON objects */
-		QJsonObject subjInfo;
-		subjInfo["ID"] = uid;
-		subjInfo["alternateIDs"] = QJsonArray::fromStringList(subj.altUIDs());
-		subjInfo["dateOfBirth"] = subj.dob().toString();
-		subjInfo["sex"] = subj.sex();
-		subjInfo["gender"] = subj.sex();
-		subjInfo["ethnicity1"] = subj.ethnicity1();
-		subjInfo["ethnicity2"] = subj.ethnicity2();
+        /* add all of the subject information to the JSON objects */
+        QJsonObject subjInfo;
+        subjInfo["ID"] = uid;
+        subjInfo["alternateIDs"] = QJsonArray::fromStringList(subj.altUIDs());
+        subjInfo["dateOfBirth"] = subj.dob().toString();
+        subjInfo["sex"] = subj.sex();
+        subjInfo["gender"] = subj.sex();
+        subjInfo["ethnicity1"] = subj.ethnicity1();
+        subjInfo["ethnicity2"] = subj.ethnicity2();
 
-		QJsonArray JSONstudies;
+        QJsonArray JSONstudies;
 
         /* iterate through the studynums */
         for(QMap<int, QMap<int, QMap<QString, QString>>>::iterator b = s[uid].begin(); b != s[uid].end(); ++b) {
@@ -2381,21 +2381,21 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QList<qint64> seriesid
 
             n->WriteLog(QString("Working on [" + uid + "] and study [%1]").arg(studynum));
 
-			int studyid = s[uid][studynum][0]["studyid"].toInt();
-			study stdy(studyid, n);
+            int studyid = s[uid][studynum][0]["studyid"].toInt();
+            study stdy(studyid, n);
 
-			/* add all the study information to the JSON objects */
-			QJsonObject studyInfo;
-			studyInfo["studyNumber"] = studynum;
-			studyInfo["studyDateTime"] = stdy.dateTime().toString();
-			studyInfo["ageAtStudy"] = subjectAge;
-			studyInfo["modality"] = stdy.modality();
-			studyInfo["description"] = stdy.desc();
-			studyInfo["visit"] = stdy.type();
-			studyInfo["dayNumber"] = stdy.daynum();
-			studyInfo["timePoint"] = stdy.timepoint();
+            /* add all the study information to the JSON objects */
+            QJsonObject studyInfo;
+            studyInfo["studyNumber"] = studynum;
+            studyInfo["studyDateTime"] = stdy.dateTime().toString();
+            studyInfo["ageAtStudy"] = subjectAge;
+            studyInfo["modality"] = stdy.modality();
+            studyInfo["description"] = stdy.desc();
+            studyInfo["visit"] = stdy.type();
+            studyInfo["dayNumber"] = stdy.daynum();
+            studyInfo["timePoint"] = stdy.timepoint();
 
-			QJsonArray JSONseries;
+            QJsonArray JSONseries;
             /* iterate through the seriesnums */
             for(QMap<int, QMap<QString, QString>>::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
                 int seriesnum = c.key();
@@ -2406,9 +2406,9 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QList<qint64> seriesid
 
                 n->WriteLog(QString("Working on [" + uid + "] and study [%1] and series [%2]").arg(studynum).arg(seriesnum));
 
-				/* add all the series information to the JSON objects */
-				QJsonObject seriesInfo;
-				seriesInfo["number"] = seriesnum;
+                /* add all the series information to the JSON objects */
+                QJsonObject seriesInfo;
+                seriesInfo["number"] = seriesnum;
 
                 //int exportseriesid = s[uid][studynum][seriesnum]["exportseriesid"].toInt();
                 //SetExportSeriesStatus(exportseriesid, "processing");
@@ -2533,28 +2533,28 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QList<qint64> seriesid
                 q2.bindValue(":modality", modality);
                 n->WriteLog(n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__));
 
-				/* add series to array of JSON series objects */
-				JSONseries.append(seriesInfo);
-			}
+                /* add series to array of JSON series objects */
+                JSONseries.append(seriesInfo);
+            }
             j++;
 
-			/* Add list of studies to the current subject, then append the study to the study list */
-			studyInfo["series"] = JSONseries;
-			JSONstudies.append(studyInfo);
-		}
+            /* Add list of studies to the current subject, then append the study to the study list */
+            studyInfo["series"] = JSONseries;
+            JSONstudies.append(studyInfo);
+        }
         i++;
 
-		/* Add list of studies to the current subject, then append the subject to the subject list */
-		subjInfo["studies"] = JSONstudies;
-		JSONsubjects.append(subjInfo);
-	}
-	/* add list of subjects to the root JSON object */
-	root["subjects"] = JSONsubjects;
+        /* Add list of studies to the current subject, then append the subject to the subject list */
+        subjInfo["studies"] = JSONstudies;
+        JSONsubjects.append(subjInfo);
+    }
+    /* add list of subjects to the root JSON object */
+    root["subjects"] = JSONsubjects;
 
-	QByteArray j = QJsonDocument(root).toJson();
-	QFile fout("squirrel.json");
-	fout.open(QIODevice::WriteOnly);
-	fout.write(j);
+    QByteArray j = QJsonDocument(root).toJson();
+    QFile fout("squirrel.json");
+    fout.open(QIODevice::WriteOnly);
+    fout.write(j);
 
     msg = msgs.join("\n");
     n->WriteLog("Leaving WriteSquirrel()...");
@@ -2570,7 +2570,7 @@ bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modal
 
     QSqlQuery q;
     for (int i=0; i<seriesids.size(); i++) {
-		qint64 seriesid = seriesids[i];
+        qint64 seriesid = seriesids[i];
         QString modality = modalities[i];
 
         q.prepare(QString("select a.*, b.*, c.enrollment_id, d.project_name, d.project_id, e.uid, e.gender, e.birthdate, e.subject_id from %1_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id left join subjects e on e.subject_id = c.subject_id where a.%1series_id = :seriesid order by uid, study_num, series_num").arg(modality));
