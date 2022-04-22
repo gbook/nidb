@@ -113,10 +113,7 @@ int moduleExport::Run() {
             QString log;
 
             if (exporttype == "web") {
-                //if (filetype == "bids")
-
-                //else
-                    found = ExportLocal(exportid, exporttype, "", 0, downloadimaging, downloadbeh, downloadqc, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, status, log);
+				found = ExportLocal(exportid, exporttype, "", 0, downloadimaging, downloadbeh, downloadqc, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, status, log);
             }
             else if (exporttype == "publicdownload") {
                 found = ExportLocal(exportid, exporttype, "", publicdownloadid, downloadimaging, downloadbeh, downloadqc, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, status, log);

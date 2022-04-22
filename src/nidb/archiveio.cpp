@@ -2336,22 +2336,24 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QList<qint64> seriesid
     /* create JSON object */
     QJsonObject root;
     root["format"] = "squirrel";
-    root["Date"] = n->CreateLogDate();
+	root["squirrelVersion"] = "1.0";
 
     QJsonObject pkgInfo;
     pkgInfo["name"] = name;
     pkgInfo["description"] = desc;
-    pkgInfo["datetime"] = n->CreateLogDate();
+	pkgInfo["datetime"] = n->CreateCurrentDateTime(2);
+	pkgInfo["NiDBversion"] = n->GetVersion();
 
     root["package"] = pkgInfo;
 
     QJsonArray JSONsubjects;
 
-    int i = 1; /* the subject counter */
+	int subjectCounter = 1; /* the subject counter */
+
     /* iterate through the UIDs */
     for(QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>>::iterator a = s.begin(); a != s.end(); ++a) {
         QString uid = a.key();
-        int j = 1; /* the session (study) counter */
+		int studyCounter = 1; /* the session (study) counter */
 
         int subjectid = s[uid][0][0]["subjectid"].toInt();
         subject subj(subjectid, n);
@@ -2396,19 +2398,19 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QList<qint64> seriesid
             studyInfo["timePoint"] = stdy.timepoint();
 
             QJsonArray JSONseries;
+
+			int seriesCounter = 1;
             /* iterate through the seriesnums */
             for(QMap<int, QMap<QString, QString>>::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
                 int seriesnum = c.key();
+
+				QJsonObject seriesInfo;
 
                 /* skip the series that contained only a placeholder for the subject/study info */
                 if (seriesnum == 0)
                     continue;
 
                 n->WriteLog(QString("Working on [" + uid + "] and study [%1] and series [%2]").arg(studynum).arg(seriesnum));
-
-                /* add all the series information to the JSON objects */
-                QJsonObject seriesInfo;
-                seriesInfo["number"] = seriesnum;
 
                 //int exportseriesid = s[uid][studynum][seriesnum]["exportseriesid"].toInt();
                 //SetExportSeriesStatus(exportseriesid, "processing");
@@ -2518,13 +2520,23 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QList<qint64> seriesid
                     n->WriteLog(n->SystemCommand(systemstring, true));
                     systemstring = "chmod -Rf 777 " + seriesoutdir;
                     n->WriteLog(n->SystemCommand(systemstring, true));
-                }
+
+					/* get file count and size */
+					quint64 c, b;
+					n->GetDirSizeAndFileCount(seriesoutdir, c, b, true);
+					/* add beh object to JSON series */
+					QJsonObject behInfo;
+					behInfo["path"] = QString("%2/%3/%4/beh").arg(subjectdir).arg(sessiondir).arg(seriesdir);
+					behInfo["numfiles"] = QString::number(c);
+					behInfo["size"] = QString::number(b);
+
+					seriesInfo["beh"] = behInfo;
+				}
 
                 n->WriteLog(QString("Checkpoint A [%1, %2, %3]").arg(seriesid).arg(seriesstatus).arg(statusmessage));
 
                 n->SetExportSeriesStatus(seriesid,seriesstatus,statusmessage);
                 msgs << QString("Series [%1%2-%3 (%4)] complete").arg(uid).arg(studynum).arg(seriesnum).arg(seriesdesc);
-                //SetExportSeriesStatus(exportseriesid, seriesstatus);
 
                 QSqlQuery q2;
                 q2.prepare("update exportseries set status = :status where series_id = :id and modality = :modality");
@@ -2533,16 +2545,28 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QList<qint64> seriesid
                 q2.bindValue(":modality", modality);
                 n->WriteLog(n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__));
 
+				/* get file count and size */
+				quint64 fCount, fBytes;
+				n->GetDirSizeAndFileCount(seriesoutdir, fCount, fBytes);
+
+				/* add all the series information to the JSON objects */
+				seriesInfo["number"] = seriesnum;
+				seriesInfo["path"] = QString("%2/%3/%4").arg(subjectdir).arg(sessiondir).arg(seriesdir);
+				seriesInfo["numfiles"] = QString::number(fCount);
+				seriesInfo["size"] = QString::number(fBytes);
+
                 /* add series to array of JSON series objects */
                 JSONseries.append(seriesInfo);
+
+				seriesCounter++;
             }
-            j++;
+			studyCounter++;
 
             /* Add list of studies to the current subject, then append the study to the study list */
             studyInfo["series"] = JSONseries;
             JSONstudies.append(studyInfo);
         }
-        i++;
+		subjectCounter++;
 
         /* Add list of studies to the current subject, then append the subject to the subject list */
         subjInfo["studies"] = JSONstudies;
@@ -2551,8 +2575,8 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QList<qint64> seriesid
     /* add list of subjects to the root JSON object */
     root["subjects"] = JSONsubjects;
 
-    QByteArray j = QJsonDocument(root).toJson();
-    QFile fout("squirrel.json");
+	QByteArray j = QJsonDocument(root).toJson();
+	QFile fout(QString("%1/squirrel.json").arg(outdir));
     fout.open(QIODevice::WriteOnly);
     fout.write(j);
 

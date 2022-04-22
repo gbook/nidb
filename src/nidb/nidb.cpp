@@ -54,6 +54,14 @@ QString nidb::GetBuildString() {
 
 
 /* ---------------------------------------------------------- */
+/* --------- GetVersion ------------------------------------- */
+/* ---------------------------------------------------------- */
+QString nidb::GetVersion() {
+	return QString("version%1.%2.%3").arg(VERSION_MAJ).arg(VERSION_MIN).arg(BUILD_NUM);
+}
+
+
+/* ---------------------------------------------------------- */
 /* --------- Print ------------------------------------------ */
 /* ---------------------------------------------------------- */
 void nidb::Print(QString s, bool n, bool pad) {
@@ -374,7 +382,7 @@ void nidb::ModuleRemoveLogFile(bool keepLog) {
 
 
 /* ---------------------------------------------------------- */
-/* --------- CreateCurrentDate ------------------------------ */
+/* --------- CreateCurrentDateTime -------------------------- */
 /* ---------------------------------------------------------- */
 QString nidb::CreateCurrentDateTime(int format) {
     QString date;
@@ -960,7 +968,7 @@ void nidb::GetDirSizeAndFileCount(QString dir, quint64 &c, quint64 &b, bool recu
         while (it.hasNext()) {
             it.next();
             c++;
-            b += it.fileInfo().size();
+			b += it.fileInfo().size();
         }
     }
     else {

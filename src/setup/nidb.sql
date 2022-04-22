@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Apr 08, 2022 at 06:01 PM
+-- Generation Time: Apr 22, 2022 at 07:10 PM
 -- Server version: 10.3.28-MariaDB
 -- PHP Version: 7.2.24
 
@@ -1052,6 +1052,9 @@ CREATE TABLE `exports` (
   `publicdownloadid` int(11) DEFAULT NULL,
   `bidsreadme` longtext DEFAULT NULL,
   `bids_flags` set('BIDS_USEUID','BIDS_USESTUDYID') DEFAULT NULL,
+  `squirrel_flags` enum('SQUIRREL_ANONYMIZE','SQUIRREL_METAFROMSUBJECT','SQUIRREL_METAFROMENROLLMENT','SQUIRREL_INCSTUDYNUM','SQUIRREL_INCSERIESNUM') DEFAULT NULL,
+  `squirrel_title` varchar(255) DEFAULT NULL,
+  `squirrel_desc` text DEFAULT NULL,
   `submitdate` datetime DEFAULT NULL,
   `startdate` datetime DEFAULT NULL,
   `completedate` datetime DEFAULT NULL,

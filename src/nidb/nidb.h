@@ -57,6 +57,7 @@ public:
     bool LoadConfig();
     bool DatabaseConnect(bool cluster=false);
     QString GetBuildString();
+	QString GetVersion();
 
     /* module housekeeping functions */
     qint64 ModuleGetNumLockFiles();
