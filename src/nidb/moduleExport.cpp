@@ -86,6 +86,9 @@ int moduleExport::Run() {
             int publicdownloadid = q.value("publicdownloadid").toInt();
             QString bidsreadme = q.value("bidsreadme").toString().trimmed();
             QString bidsflags = q.value("bids_flags").toString().trimmed();
+			QString squirrelflags = q.value("squirrel_flags").toString().trimmed();
+			QString squirreltitle = q.value("squirrel_title").toString().trimmed();
+			QString squirreldesc = q.value("squirrel_desc").toString().trimmed();
 
             /* remove a trailing slash if it exists */
             if (nfsdir.right(1) == "/")
@@ -113,16 +116,16 @@ int moduleExport::Run() {
             QString log;
 
             if (exporttype == "web") {
-				found = ExportLocal(exportid, exporttype, "", 0, downloadimaging, downloadbeh, downloadqc, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, status, log);
+				found = ExportLocal(exportid, exporttype, "", 0, downloadimaging, downloadbeh, downloadqc, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
             }
             else if (exporttype == "publicdownload") {
-                found = ExportLocal(exportid, exporttype, "", publicdownloadid, downloadimaging, downloadbeh, downloadqc, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, status, log);
+				found = ExportLocal(exportid, exporttype, "", publicdownloadid, downloadimaging, downloadbeh, downloadqc, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
             }
             else if (exporttype == "nfs") {
-                found = ExportLocal(exportid, exporttype, nfsdir, 0, downloadimaging, downloadbeh, downloadqc, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, status, log);
+				found = ExportLocal(exportid, exporttype, nfsdir, 0, downloadimaging, downloadbeh, downloadqc, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
             }
             else if (exporttype == "localftp") {
-                found = ExportLocal(exportid, exporttype, nfsdir, 0, downloadimaging, downloadbeh, downloadqc, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, status, log);
+				found = ExportLocal(exportid, exporttype, nfsdir, 0, downloadimaging, downloadbeh, downloadqc, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
             }
             else if (exporttype == "export") {
                 //found = ExportNiDB(exportid);
@@ -356,7 +359,7 @@ bool moduleExport::GetExportSeriesList(int exportid) {
 /* ---------------------------------------------------------- */
 /* --------- ExportLocal ------------------------------------ */
 /* ---------------------------------------------------------- */
-bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir, int publicdownloadid, bool downloadimaging, bool downloadbeh, bool downloadqc, QString filetype, QString dirformat, int preserveseries, bool gzip, int anonlevel, QString behformat, QString behdirrootname, QString behdirseriesname, QString bidsreadme, QString bidsflags, QString &exportstatus, QString &msg) {
+bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir, int publicdownloadid, bool downloadimaging, bool downloadbeh, bool downloadqc, QString filetype, QString dirformat, int preserveseries, bool gzip, int anonlevel, QString behformat, QString behdirrootname, QString behdirseriesname, QString bidsreadme, QString bidsflags, QString squirreltitle, QString squirreldesc, QString squirrelflags, QString &exportstatus, QString &msg) {
 
     QStringList msgs;
     QString tmpexportdir;
@@ -368,7 +371,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
     }
     else if (filetype == "squirrel") {
         QString log;
-        ExportSquirrel(exportid, exportstatus, tmpexportdir, log);
+		ExportSquirrel(exportid, squirreltitle, squirreldesc, squirrelflags, exportstatus, tmpexportdir, log);
         msgs << log;
     }
     else {
@@ -1205,7 +1208,7 @@ bool moduleExport::ExportBIDS(int exportid, QString bidsreadme, QString bidsflag
 /* ---------------------------------------------------------- */
 /* --------- ExportSquirrel --------------------------------- */
 /* ---------------------------------------------------------- */
-bool moduleExport::ExportSquirrel(int exportid, QString &exportstatus, QString &outdir, QString &msg) {
+bool moduleExport::ExportSquirrel(int exportid, QString squirreltitle, QString squirreldesc, QString squirrelflags, QString &exportstatus, QString &outdir, QString &msg) {
     n->WriteLog("Entering ExportSquirrel()...");
 
     exportstatus = "complete";
@@ -1240,7 +1243,7 @@ bool moduleExport::ExportSquirrel(int exportid, QString &exportstatus, QString &
         }
 
         n->WriteLog(QString("Calling WriteSquirrel(%1, %2, ...)").arg(seriesids.size()).arg(modalities.size()));
-        if (io->WriteSquirrel("Squirrel dataset", "Long description", seriesids, modalities, rootoutdir, m))
+		if (io->WriteSquirrel(squirreltitle, squirreldesc, squirrelflags, seriesids, modalities, rootoutdir, m))
             n->WriteLog("WriteSquirrel() returned true");
         else
             n->WriteLog("WriteSquirrel() returned false");

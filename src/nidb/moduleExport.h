@@ -44,12 +44,12 @@ public:
 
     bool GetExportSeriesList(int exportid);
 
-    bool ExportLocal(int exportid, QString exporttype, QString nfsdir, int publicdownloadid, bool downloadimaging, bool downloadbeh, bool downloadqc, QString filetype, QString dirformat, int preserveseries, bool gzip, int anonymize, QString behformat, QString behdirrootname, QString behdirseriesname, QString bidsreadme, QString bidsflags, QString &status, QString &msg);
+	bool ExportLocal(int exportid, QString exporttype, QString nfsdir, int publicdownloadid, bool downloadimaging, bool downloadbeh, bool downloadqc, QString filetype, QString dirformat, int preserveseries, bool gzip, int anonymize, QString behformat, QString behdirrootname, QString behdirseriesname, QString bidsreadme, QString bidsflags, QString squirreltitle, QString squirreldesc, QString squirrelflags, QString &status, QString &msg);
     bool ExportNDAR(int exportid, bool csvonly, QString &exportstatus, QString &msg);
     bool ExportBIDS(int exportid, QString bidsreadme, QString bidsflags, QString &outdir, QString &exportstatus, QString &msg);
     bool ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, QString &exportstatus, QString &msg);
     bool ExportToRemoteFTP(int exportid, QString remoteftpusername, QString remoteftppassword, QString remoteftpserver, int remoteftpport, QString remoteftppath, QString &exportstatus, QString &msg);
-    bool ExportSquirrel(int exportid, QString &exportstatus, QString &outdir, QString &msg);
+	bool ExportSquirrel(int exportid, QString squirreltitle, QString squirreldesc, QString squirrelflags, QString &exportstatus, QString &outdir, QString &msg);
 	bool ExportXNAT(int exportid, QString &exportstatus, QString &msg);
 
     bool WriteNDARHeader(QString headerfile, QString modality, QStringList &log);

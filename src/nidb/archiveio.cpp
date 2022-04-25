@@ -2307,13 +2307,13 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 /* ---------------------------------------------------------- */
 /* --------- WriteSquirrel ---------------------------------- */
 /* ---------------------------------------------------------- */
-bool archiveIO::WriteSquirrel(QString name, QString desc, QList<qint64> seriesids, QStringList modalities, QString odir, QString &msg) {
+bool archiveIO::WriteSquirrel(QString name, QString desc, QString squirrelflags, QList<qint64> seriesids, QStringList modalities, QString odir, QString &msg) {
     n->WriteLog("Entering WriteSquirrel()...");
 
     QString exportstatus = "complete";
     subjectStudySeriesContainer s;
 
-    //QStringList flags = bidsflags.split(",");
+	QStringList flags = squirrelflags.split(",");
 
     QStringList msgs;
     if (!GetSeriesListDetails(seriesids, modalities, s)) {
@@ -2359,7 +2359,7 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QList<qint64> seriesid
         subject subj(subjectid, n);
 
         n->WriteLog("Working on [" + uid + "]");
-        QString subjectSex = s[uid][0][0]["subjectsex"];
+		//QString subjectSex = s[uid][0][0]["subjectsex"];
         double subjectAge = s[uid][0][0]["subjectage"].toDouble();
 
         /* add all of the subject information to the JSON objects */

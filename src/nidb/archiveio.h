@@ -45,7 +45,7 @@ public:
     bool CreateStudy(int subjectRowID, int enrollmentRowID, QString StudyDateTime, QString studyUID, QString Modality, QString PatientID, double PatientAge, double PatientSize, double PatientWeight, QString StudyDescription, QString OperatorsName, QString PerformingPhysiciansName, QString StationName, QString InstitutionName, QString InstitutionAddress, int &studyRowID, int &studyNum);
 
     bool WriteBIDS(QList<qint64> seriesids, QStringList modalities, QString odir, QString bidsreadme, QString bidsflags, QString &msg);
-	bool WriteSquirrel(QString name, QString desc, QList<qint64> seriesids, QStringList modalities, QString odir, QString &msg);
+	bool WriteSquirrel(QString name, QString desc, QString squirrelflags, QList<qint64> seriesids, QStringList modalities, QString odir, QString &msg);
     bool GetSeriesListDetails(QList <qint64> seriesids, QStringList modalities, subjectStudySeriesContainer &s);
 
     /* archive helper functions */
