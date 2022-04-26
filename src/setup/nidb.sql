@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Apr 22, 2022 at 07:10 PM
+-- Generation Time: Apr 26, 2022 at 02:44 PM
 -- Server version: 10.3.28-MariaDB
 -- PHP Version: 7.2.24
 
@@ -2995,7 +2995,7 @@ CREATE TABLE `task_series` (
   `taskseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
   `series_num` int(11) NOT NULL,
-  `series_desc` varchar(255) NOT NULL,
+  `series_desc` varchar(255) DEFAULT NULL,
   `series_datetime` datetime NOT NULL,
   `series_protocol` varchar(255) NOT NULL,
   `series_numfiles` int(11) NOT NULL COMMENT 'total number of files',
