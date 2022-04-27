@@ -2313,7 +2313,7 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QString squirrelflags,
     QString exportstatus = "complete";
     subjectStudySeriesContainer s;
 
-	QStringList flags = squirrelflags.split(",");
+    QStringList flags = squirrelflags.split(",");
 
     QStringList msgs;
     if (!GetSeriesListDetails(seriesids, modalities, s)) {
@@ -2336,30 +2336,30 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QString squirrelflags,
     /* create JSON object */
     QJsonObject root;
     root["format"] = "squirrel";
-	root["squirrelVersion"] = "1.0";
+    root["squirrelVersion"] = "1.0";
 
     QJsonObject pkgInfo;
     pkgInfo["name"] = name;
     pkgInfo["description"] = desc;
-	pkgInfo["datetime"] = n->CreateCurrentDateTime(2);
-	pkgInfo["NiDBversion"] = n->GetVersion();
+    pkgInfo["datetime"] = n->CreateCurrentDateTime(2);
+    pkgInfo["NiDBversion"] = n->GetVersion();
 
     root["package"] = pkgInfo;
 
     QJsonArray JSONsubjects;
 
-	int subjectCounter = 1; /* the subject counter */
+    int subjectCounter = 1; /* the subject counter */
 
     /* iterate through the UIDs */
     for(QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>>::iterator a = s.begin(); a != s.end(); ++a) {
         QString uid = a.key();
-		int studyCounter = 1; /* the session (study) counter */
+        int studyCounter = 1; /* the session (study) counter */
 
         int subjectid = s[uid][0][0]["subjectid"].toInt();
         subject subj(subjectid, n);
 
         n->WriteLog("Working on [" + uid + "]");
-		//QString subjectSex = s[uid][0][0]["subjectsex"];
+        //QString subjectSex = s[uid][0][0]["subjectsex"];
         double subjectAge = s[uid][0][0]["subjectage"].toDouble();
 
         /* add all of the subject information to the JSON objects */
@@ -2399,12 +2399,12 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QString squirrelflags,
 
             QJsonArray JSONseries;
 
-			int seriesCounter = 1;
+            int seriesCounter = 1;
             /* iterate through the seriesnums */
             for(QMap<int, QMap<QString, QString>>::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
                 int seriesnum = c.key();
 
-				QJsonObject seriesInfo;
+                QJsonObject seriesInfo;
 
                 /* skip the series that contained only a placeholder for the subject/study info */
                 if (seriesnum == 0)
@@ -2443,26 +2443,25 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QString squirrelflags,
 
                 /* create the subject identifier */
                 QString subjectdir;
-                //if (flags.contains("BIDS_USEUID",Qt::CaseInsensitive))
+                if (flags.contains("SQUIRREL_INCSUBJECTNUM",Qt::CaseInsensitive))
+                    subjectdir = QString("sub-%1").arg(subjectCounter, 4, 10, QChar('0'));
+                else
                     subjectdir = uid;
-                //else
-                //    subjectdir = QString("sub-%1").arg(i, 4, 10, QChar('0'));
 
                 /* create the session (study) identifier */
                 QString sessiondir;
-                //if (flags.contains("BIDS_USESTUDYID",Qt::CaseInsensitive))
+                if (flags.contains("SQUIRREL_INCSTUDYNUM",Qt::CaseInsensitive))
+                    sessiondir = QString("ses-%1").arg(studyCounter, 4, 10, QChar('0'));
+                else
                     sessiondir = QString("%1").arg(studynum);
-                //else
-                //    sessiondir = QString("ses-%1").arg(j, 4, 10, QChar('0'));
 
                 /* determine the datatype (what BIDS calls the 'modality') */
                 QString seriesdir;
-                if (seriesaltdesc == "") {
-                    seriesdir = seriesdesc;
-                }
-                else {
-                    seriesdir = seriesaltdesc;
-                }
+                if (flags.contains("SQUIRREL_INCSTUDYNUM",Qt::CaseInsensitive))
+                    seriesdir = QString("%1").arg(seriesCounter, 4, 10, QChar('0'));
+                else
+                    seriesdir = QString("%1").arg(seriesnum);
+
                 /* remove any non-alphanumeric characters */
                 seriesdir.replace(QRegularExpression("[^a-zA-Z0-9_-]"),"_");
 
@@ -2500,17 +2499,13 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QString squirrelflags,
                         }
                     }
                     else {
-                        seriesstatus = "error";
-                        exportstatus = "error";
-                        n->WriteLog("ERROR [" + datadir + "] is empty");
-                        msgs << "Directory [" + datadir + "] is empty";
+                        seriesstatus = exportstatus = "error";
+                        msgs << n->WriteLog("ERROR. Directory [" + datadir + "] is empty");
                     }
                 }
                 else {
-                    seriesstatus = "error";
-                    exportstatus = "error";
-                    n->WriteLog("ERROR datadir [" + datadir + "] does not exist");
-                    msgs << "Directory [" + datadir + "] does not exist";
+                    seriesstatus = exportstatus = "error";
+                    msgs << n->WriteLog("ERROR datadir [" + datadir + "] does not exist");
                 }
 
                 /* copy the beh data */
@@ -2521,17 +2516,17 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QString squirrelflags,
                     systemstring = "chmod -Rf 777 " + seriesoutdir;
                     n->WriteLog(n->SystemCommand(systemstring, true));
 
-					/* get file count and size */
-					quint64 c, b;
-					n->GetDirSizeAndFileCount(seriesoutdir, c, b, true);
-					/* add beh object to JSON series */
-					QJsonObject behInfo;
-					behInfo["path"] = QString("%2/%3/%4/beh").arg(subjectdir).arg(sessiondir).arg(seriesdir);
-					behInfo["numfiles"] = QString::number(c);
-					behInfo["size"] = QString::number(b);
+                    /* get file count and size */
+                    quint64 c, b;
+                    n->GetDirSizeAndFileCount(seriesoutdir, c, b, true);
+                    /* add beh object to JSON series */
+                    QJsonObject behInfo;
+                    behInfo["path"] = QString("%2/%3/%4/beh").arg(subjectdir).arg(sessiondir).arg(seriesdir);
+                    behInfo["numfiles"] = QString::number(c);
+                    behInfo["size"] = QString::number(b);
 
-					seriesInfo["beh"] = behInfo;
-				}
+                    seriesInfo["beh"] = behInfo;
+                }
 
                 n->WriteLog(QString("Checkpoint A [%1, %2, %3]").arg(seriesid).arg(seriesstatus).arg(statusmessage));
 
@@ -2545,28 +2540,28 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QString squirrelflags,
                 q2.bindValue(":modality", modality);
                 n->WriteLog(n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__));
 
-				/* get file count and size */
-				quint64 fCount, fBytes;
-				n->GetDirSizeAndFileCount(seriesoutdir, fCount, fBytes);
+                /* get file count and size */
+                quint64 fCount, fBytes;
+                n->GetDirSizeAndFileCount(seriesoutdir, fCount, fBytes);
 
-				/* add all the series information to the JSON objects */
-				seriesInfo["number"] = seriesnum;
-				seriesInfo["path"] = QString("%2/%3/%4").arg(subjectdir).arg(sessiondir).arg(seriesdir);
-				seriesInfo["numfiles"] = QString::number(fCount);
-				seriesInfo["size"] = QString::number(fBytes);
+                /* add all the series information to the JSON objects */
+                seriesInfo["number"] = seriesnum;
+                seriesInfo["path"] = QString("%2/%3/%4").arg(subjectdir).arg(sessiondir).arg(seriesdir);
+                seriesInfo["numfiles"] = QString::number(fCount);
+                seriesInfo["size"] = QString::number(fBytes);
 
                 /* add series to array of JSON series objects */
                 JSONseries.append(seriesInfo);
 
-				seriesCounter++;
+                seriesCounter++;
             }
-			studyCounter++;
+            studyCounter++;
 
             /* Add list of studies to the current subject, then append the study to the study list */
             studyInfo["series"] = JSONseries;
             JSONstudies.append(studyInfo);
         }
-		subjectCounter++;
+        subjectCounter++;
 
         /* Add list of studies to the current subject, then append the subject to the subject list */
         subjInfo["studies"] = JSONstudies;
@@ -2575,8 +2570,8 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QString squirrelflags,
     /* add list of subjects to the root JSON object */
     root["subjects"] = JSONsubjects;
 
-	QByteArray j = QJsonDocument(root).toJson();
-	QFile fout(QString("%1/squirrel.json").arg(outdir));
+    QByteArray j = QJsonDocument(root).toJson();
+    QFile fout(QString("%1/squirrel.json").arg(outdir));
     fout.open(QIODevice::WriteOnly);
     fout.write(j);
 
