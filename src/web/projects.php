@@ -2687,7 +2687,7 @@
 					</div>
 				</div>
 				<div class="ui four wide column">
-					<div class="ui large vertical fluid menu">
+					<div class="ui huge vertical fluid menu">
 						<div class="item">
 							<div class="header">Tools</div>
 							<div class="menu">
@@ -2706,6 +2706,10 @@
 								<a class="item" href="minipipeline.php?projectid=<?=$id?>">
 									Mini-pipelines
 									<i class="cogs icon"></i>
+								</a>
+								<a class="item" href="experiment.php?projectid=<?=$id?>">
+									Experiments
+									<i class="clipboard icon"></i>
 								</a>
 							</div>
 						</div>

@@ -48,7 +48,7 @@
 		/* subjects */
 		?><a href="subjects.php" class="<? if ($page=="subjects.php" || $page=="groups.php" || $page == "series") { echo "active"; } ?> item">Subjects</a><?
 		/* projects */
-		?><a href="projects.php" class="<? if ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="studies.php" || $page=="measures.php" || $page=="minipipeline.php" || $page=="templates.php") { echo "active"; } ?> item">Projects</a><?
+		?><a href="projects.php" class="<? if ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="studies.php" || $page=="measures.php" || $page=="minipipeline.php" || $page=="templates.php" || $page == "experiment.php") { echo "active"; } ?> item">Projects</a><?
 		/* pipelines */
 		if ($GLOBALS['cfg']['enablepipelines']) {
 			?><a href="pipelines.php" class="<? if ($page=="pipelines.php" || $page=="analysis.php") { echo "active"; } ?> item">Pipelines</a><?
@@ -122,6 +122,7 @@
 			$seriesid = GetVariable("seriesid");
 			$modality = GetVariable("modality");
 			$enrollmentid = GetVariable("enrollmentid");
+			$experimentid = GetVariable("experimentid");
 			
 			if ($studyid == "") {
 				$studyid = GetVariable("studyid");
@@ -152,9 +153,9 @@
 		}
 		
 		/* projects sub-menu */
-		elseif ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="projectassessments.php" || $page=="studies.php" || $page=="minipipeline.php" || $page=="templates.php" || $page=="datadictionary.php") {
+		elseif ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="projectassessments.php" || $page=="studies.php" || $page=="minipipeline.php" || $page=="templates.php" || $page=="datadictionary.php" || $page == "experiment.php") {
 			
-			if ($page=="projectchecklist.php" || $page=="projectassessments.php" || $page=="minipipeline.php" || $page=="templates.php" || $page=="datadictionary.php") {
+			if ($page=="projectchecklist.php" || $page=="projectassessments.php" || $page=="minipipeline.php" || $page=="templates.php" || $page=="datadictionary.php" || $page == "experiment.php") {
 				$projectid = GetVariable("projectid");
 			}
 			else {
@@ -171,7 +172,6 @@
 				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 				$name = $row['project_name'];
 				
-				?><a href="projects.php" class="<?  ?> item">Project List</a> <?
 				?><a href="projects.php?action=displayprojectinfo&id=<?=$projectid?>" class="<? if (($page == "projects.php") && ($action == "" || $action == "displayprojectinfo")) { echo "active"; } ?> item"><?=$name?></b><?
 				?><a href="datadictionary.php?projectid=<?=$projectid?>" class="<? if ($page=="datadictionary.php"){ echo "active"; } ?> item">Data Dictionary</a><?
 				?><a href="projectassessments.php?projectid=<?=$projectid?>" class="<? if ($page=="projectassessments.php"){ echo "active"; } ?> item">Assessments</a><?
@@ -181,6 +181,7 @@
 				?><a href="mrqcchecklist.php?action=viewqcparams&id=<?=$projectid?>" class="<? if ($page=="mrqcchecklist.php"){ echo "active"; } ?> item">MR Scan QC</a><?
 				?><a href="minipipeline.php?projectid=<?=$projectid?>" class="<? if ($page=="minipipeline.php"){ echo "active"; } ?> item">Behavioral pipelines</a><?
 				?><a href="templates.php?projectid=<?=$projectid?>" class="<? if ($page=="templates.php"){ echo "active"; } ?> item">Templates</a><?
+				?><a href="experiment.php?projectid=<?=$projectid?>" class="<? if ($page=="experiment.php"){ echo "active"; } ?> item">Experiments</a><?
 			}
 		}
 		

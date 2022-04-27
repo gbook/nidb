@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Apr 27, 2022 at 02:30 PM
+-- Generation Time: Apr 27, 2022 at 08:06 PM
 -- Server version: 10.3.28-MariaDB
 -- PHP Version: 7.2.24
 
@@ -1011,6 +1011,39 @@ CREATE TABLE `et_series` (
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `series_duration` bigint(20) DEFAULT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `experiments`
+--
+
+CREATE TABLE `experiments` (
+  `experiment_id` int(11) NOT NULL,
+  `project_id` int(11) NOT NULL DEFAULT 0,
+  `exp_name` varchar(255) NOT NULL,
+  `exp_version` int(11) NOT NULL DEFAULT 0,
+  `exp_desc` text DEFAULT NULL,
+  `exp_createdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `exp_modifydate` timestamp NOT NULL DEFAULT current_timestamp(),
+  `exp_creator` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `experiment_files`
+--
+
+CREATE TABLE `experiment_files` (
+  `experimentfile_id` int(11) NOT NULL,
+  `experiment_id` int(11) NOT NULL,
+  `file_name` varchar(255) NOT NULL,
+  `file_createdate` timestamp NULL DEFAULT NULL,
+  `file_modifydate` timestamp NOT NULL DEFAULT current_timestamp(),
+  `file_size` bigint(20) NOT NULL DEFAULT 0,
+  `file` longblob NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -2227,15 +2260,15 @@ CREATE TABLE `pipeline_version` (
 CREATE TABLE `ppi_series` (
   `ppiseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
-  `series_num` int(11) DEFAULT NULL,
-  `series_desc` varchar(255) DEFAULT NULL,
-  `series_datetime` datetime DEFAULT NULL,
-  `series_protocol` varchar(255) DEFAULT NULL,
-  `series_numfiles` int(11) DEFAULT 0 COMMENT 'total number of files',
-  `series_size` double DEFAULT 0 COMMENT 'size of all the files',
-  `series_notes` varchar(255) DEFAULT NULL,
-  `series_createdby` varchar(50) DEFAULT NULL,
-  `ishidden` tinyint(1) DEFAULT NULL,
+  `series_num` int(11) NOT NULL,
+  `series_desc` varchar(255) NOT NULL,
+  `series_datetime` datetime NOT NULL,
+  `series_protocol` varchar(255) NOT NULL,
+  `series_numfiles` int(11) NOT NULL COMMENT 'total number of files',
+  `series_size` double NOT NULL COMMENT 'size of all the files',
+  `series_notes` varchar(255) NOT NULL,
+  `series_createdby` varchar(50) NOT NULL,
+  `ishidden` tinyint(1) NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `series_duration` bigint(20) DEFAULT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8;
@@ -2394,15 +2427,15 @@ CREATE TABLE `protocol_mapping` (
 CREATE TABLE `pr_series` (
   `prseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
-  `series_num` int(11) DEFAULT NULL,
-  `series_desc` varchar(255) DEFAULT NULL,
-  `series_datetime` datetime DEFAULT NULL,
-  `series_protocol` varchar(255) DEFAULT NULL,
-  `series_numfiles` int(11) DEFAULT 0 COMMENT 'total number of files',
-  `series_size` double DEFAULT 0 COMMENT 'size of all the files',
-  `series_notes` longtext DEFAULT NULL,
-  `series_createdby` varchar(50) DEFAULT NULL,
-  `ishidden` tinyint(1) DEFAULT NULL,
+  `series_num` int(11) NOT NULL,
+  `series_desc` varchar(255) NOT NULL,
+  `series_datetime` datetime NOT NULL,
+  `series_protocol` varchar(255) NOT NULL,
+  `series_numfiles` int(11) NOT NULL COMMENT 'total number of files',
+  `series_size` double NOT NULL COMMENT 'size of all the files',
+  `series_notes` longtext NOT NULL,
+  `series_createdby` varchar(50) NOT NULL,
+  `ishidden` tinyint(1) NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `series_duration` bigint(20) DEFAULT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8;
@@ -2735,15 +2768,15 @@ CREATE TABLE `snp_alleles` (
 CREATE TABLE `snp_series` (
   `snpseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
-  `series_num` int(11) DEFAULT NULL,
-  `series_desc` varchar(255) DEFAULT NULL,
-  `series_protocol` varchar(255) DEFAULT NULL,
-  `series_datetime` datetime DEFAULT NULL,
-  `series_numfiles` int(11) DEFAULT 0 COMMENT 'total number of files',
-  `series_size` double DEFAULT 0 COMMENT 'size of all the files',
-  `series_notes` mediumtext DEFAULT NULL,
-  `series_createdby` varchar(50) DEFAULT NULL,
-  `ishidden` tinyint(1) DEFAULT NULL,
+  `series_num` int(11) NOT NULL,
+  `series_desc` varchar(255) NOT NULL,
+  `series_protocol` varchar(255) NOT NULL,
+  `series_datetime` datetime NOT NULL,
+  `series_numfiles` int(11) NOT NULL COMMENT 'total number of files',
+  `series_size` double NOT NULL COMMENT 'size of all the files',
+  `series_notes` mediumtext NOT NULL,
+  `series_createdby` varchar(50) NOT NULL,
+  `ishidden` tinyint(1) NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=Aria DEFAULT CHARSET=utf8;
 
@@ -2756,15 +2789,15 @@ CREATE TABLE `snp_series` (
 CREATE TABLE `sr_series` (
   `srseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
-  `series_num` int(11) DEFAULT NULL,
-  `series_desc` varchar(255) DEFAULT NULL,
-  `series_datetime` datetime DEFAULT NULL,
-  `series_protocol` varchar(255) DEFAULT NULL,
-  `numfiles` int(11) DEFAULT 0 COMMENT 'total number of files',
-  `series_size` double DEFAULT 0 COMMENT 'size of all the files',
-  `series_notes` mediumtext DEFAULT NULL,
-  `series_createdby` varchar(50) DEFAULT NULL,
-  `ishidden` tinyint(1) DEFAULT NULL,
+  `series_num` int(11) NOT NULL,
+  `series_desc` varchar(255) NOT NULL,
+  `series_datetime` datetime NOT NULL,
+  `series_protocol` varchar(255) NOT NULL,
+  `numfiles` int(11) NOT NULL COMMENT 'total number of files',
+  `series_size` double NOT NULL COMMENT 'size of all the files',
+  `series_notes` mediumtext NOT NULL,
+  `series_createdby` varchar(50) NOT NULL,
+  `ishidden` tinyint(1) NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `series_duration` bigint(20) DEFAULT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8;
@@ -2926,14 +2959,14 @@ CREATE TABLE `subject_relation` (
 CREATE TABLE `surgery_series` (
   `surgeryseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
-  `series_num` int(11) DEFAULT NULL,
-  `series_desc` varchar(255) DEFAULT NULL,
-  `series_datetime` datetime DEFAULT NULL,
-  `series_protocol` varchar(255) DEFAULT NULL,
-  `series_numfiles` int(11) DEFAULT 0 COMMENT 'total number of files',
-  `series_size` double DEFAULT 0 COMMENT 'size of all the files',
-  `series_notes` mediumtext DEFAULT NULL,
-  `series_createdby` varchar(50) DEFAULT NULL,
+  `series_num` int(11) NOT NULL,
+  `series_desc` varchar(255) NOT NULL,
+  `series_datetime` datetime NOT NULL,
+  `series_protocol` varchar(255) NOT NULL,
+  `series_numfiles` int(11) NOT NULL COMMENT 'total number of files',
+  `series_size` double NOT NULL COMMENT 'size of all the files',
+  `series_notes` mediumtext NOT NULL,
+  `series_createdby` varchar(50) NOT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `series_duration` bigint(20) DEFAULT NULL
@@ -2994,16 +3027,16 @@ CREATE TABLE `tags` (
 CREATE TABLE `task_series` (
   `taskseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
-  `series_num` int(11) DEFAULT NULL,
+  `series_num` int(11) NOT NULL,
   `series_desc` varchar(255) DEFAULT NULL,
-  `series_datetime` datetime DEFAULT NULL,
-  `series_protocol` varchar(255) DEFAULT NULL,
-  `series_numfiles` int(11) DEFAULT 0 COMMENT 'total number of files',
-  `series_size` double DEFAULT 0 COMMENT 'size of all the files',
-  `series_notes` varchar(255) DEFAULT NULL,
-  `series_createdby` varchar(50) DEFAULT NULL,
+  `series_datetime` datetime NOT NULL,
+  `series_protocol` varchar(255) NOT NULL,
+  `series_numfiles` int(11) NOT NULL COMMENT 'total number of files',
+  `series_size` double NOT NULL COMMENT 'size of all the files',
+  `series_notes` varchar(255) NOT NULL,
+  `series_createdby` varchar(50) NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp(),
-  `ishidden` tinyint(1) DEFAULT NULL,
+  `ishidden` tinyint(1) NOT NULL,
   `series_duration` bigint(20) DEFAULT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8;
 
@@ -3272,18 +3305,18 @@ CREATE TABLE `us_series` (
 
 CREATE TABLE `video_series` (
   `videoseries_id` int(11) NOT NULL,
-  `study_id` int(11) DEFAULT NULL,
-  `series_num` int(11) DEFAULT NULL,
+  `study_id` int(11) NOT NULL,
+  `series_num` int(11) NOT NULL,
   `series_desc` varchar(255) DEFAULT NULL,
-  `series_protocol` varchar(255) DEFAULT NULL,
-  `series_datetime` datetime DEFAULT NULL,
-  `series_size` double DEFAULT 0,
-  `series_notes` varchar(255) DEFAULT NULL,
-  `series_numfiles` int(11) DEFAULT 0,
+  `series_protocol` varchar(255) NOT NULL,
+  `series_datetime` datetime NOT NULL,
+  `series_size` double NOT NULL DEFAULT 0,
+  `series_notes` varchar(255) NOT NULL,
+  `series_numfiles` int(11) NOT NULL DEFAULT 0,
   `video_desc` mediumtext DEFAULT NULL,
-  `video_cputime` double DEFAULT 0,
-  `series_createdby` varchar(50) DEFAULT NULL,
-  `ishidden` tinyint(1) DEFAULT 0,
+  `video_cputime` double NOT NULL DEFAULT 0,
+  `series_createdby` varchar(50) NOT NULL,
+  `ishidden` tinyint(1) NOT NULL DEFAULT 0,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `series_duration` bigint(20) DEFAULT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8;
@@ -3704,6 +3737,18 @@ ALTER TABLE `et_series`
   ADD KEY `fk_eeg_series_studies1` (`study_id`),
   ADD KEY `ishidden` (`ishidden`),
   ADD KEY `series_altdesc` (`series_altdesc`);
+
+--
+-- Indexes for table `experiments`
+--
+ALTER TABLE `experiments`
+  ADD PRIMARY KEY (`experiment_id`);
+
+--
+-- Indexes for table `experiment_files`
+--
+ALTER TABLE `experiment_files`
+  ADD PRIMARY KEY (`experimentfile_id`);
 
 --
 -- Indexes for table `exports`
@@ -4401,7 +4446,6 @@ ALTER TABLE `uploads`
 ALTER TABLE `upload_logs`
   ADD PRIMARY KEY (`uploadlog_id`),
   ADD KEY `upload_id` (`upload_id`,`log_date`);
-ALTER TABLE `upload_logs` drop index `log_msg`;
 
 --
 -- Indexes for table `upload_series`
@@ -4782,6 +4826,18 @@ ALTER TABLE `error_log`
 --
 ALTER TABLE `et_series`
   MODIFY `etseries_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `experiments`
+--
+ALTER TABLE `experiments`
+  MODIFY `experiment_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `experiment_files`
+--
+ALTER TABLE `experiment_files`
+  MODIFY `experimentfile_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `exports`

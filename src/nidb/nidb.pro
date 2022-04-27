@@ -112,9 +112,9 @@ win32: {
 	-lsocketxx
 
     # Location of SMTP Library
-	SMTPBIN = J:/bin/smtp-win
+	SMTPBIN = ../../bin/smtp-win
     LIBS += -L$$SMTPBIN/release -lSMTPEmail
-	INCLUDEPATH += J:/src/smtp
+	INCLUDEPATH += ../smtp
     DEPENDPATH += $$SMTPBIN
     *msvc* { # visual studio spec filter
 	QMAKE_CXXFLAGS += -MP

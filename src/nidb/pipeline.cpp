@@ -112,11 +112,13 @@ void pipeline::LoadPipelineInfo() {
 
     if (dirStructure == "b")
         pipelineRootDir = n->cfg["analysisdirb"];
-    else
+	else {
         pipelineRootDir = n->cfg["analysisdir"];
+	}
 
     /* remove any whitespace from the queue... SGE hates whitespace */
-    queue.replace(QRegularExpression("\\s+"),"");
+	static const QRegularExpression re("\\s+");
+	queue.replace(re,"");
 
     isValid = true;
     msg = "Loaded pipeline details";

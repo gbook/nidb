@@ -1557,7 +1557,7 @@
 											<div class="ui top attached blue segment">
 												<div class="ui two column grid">
 													<div class="column">
-														<h3 class="header">Imaging Studies</h3>
+														<h3 class="header"><i class="file image icon"></i> Imaging Studies</h3>
 													</div>
 													<div class="right aligned column">
 														<? if (!$enrolled) { ?>
@@ -1760,7 +1760,7 @@
 											<div class="ui top attached blue segment">
 												<div class="ui two column grid">
 													<div class="column">
-														<h3 class="header">Assessments</h3>
+														<h3 class="header"><i class="clipboard outline icon"></i> Assessments</h3>
 													</div>
 													<div class="right aligned column">
 														<? if (!$enrolled) { ?>
@@ -1868,7 +1868,7 @@
 											<div class="ui top attached blue segment">
 												<div class="ui two column grid">
 													<div class="column">
-														<h3 class="header">Phenotypic measures</h3>
+														<h3 class="header"><i class="clipboard list icon"></i> Phenotypic measures</h3>
 													</div>
 													<div class="right aligned column">
 														<a class="ui basic button" href="measures.php?enrollmentid=<?=$enrollmentid?>"><i class="edit icon"></i> Edit measures</a>
@@ -1898,7 +1898,7 @@
 											<div class="ui top attached blue segment">
 												<div class="ui two column grid">
 													<div class="column">
-														<h3 class="header">Drugs</h3>
+														<h3 class="header"><i class="pills icon"></i> Drugs</h3>
 													</div>
 													<div class="right aligned column">
 														<a class="ui basic button" href="drugs.php?enrollmentid=<?=$enrollmentid?>"><i class="edit icon"></i> Edit drugs</a>
@@ -1965,7 +1965,7 @@
 											<div class="ui top attached blue segment">
 												<div class="ui two column grid">
 													<div class="column">
-														<h3 class="header">Vitals</h3>
+														<h3 class="header"><i class="stethoscope icon"></i> Vitals</h3>
 													</div>
 													<div class="right aligned column">
 														<a class="ui basic button" href="vitals.php?enrollmentid=<?=$enrollmentid?>"><i class="edit icon"></i> Edit vitals</a>
