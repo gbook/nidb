@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Apr 27, 2022 at 08:06 PM
+-- Generation Time: Apr 28, 2022 at 05:08 PM
 -- Server version: 10.3.28-MariaDB
 -- PHP Version: 7.2.24
 
@@ -1044,6 +1044,20 @@ CREATE TABLE `experiment_files` (
   `file_size` bigint(20) NOT NULL DEFAULT 0,
   `file` longblob NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `experiment_mapping`
+--
+
+CREATE TABLE `experiment_mapping` (
+  `protocolmapping_id` int(11) NOT NULL,
+  `project_id` int(11) DEFAULT NULL COMMENT 'if project_id is null, then this alt name applies to all projects',
+  `protocolname` varchar(255) NOT NULL,
+  `experiment_id` int(11) NOT NULL,
+  `modality` varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='this table maps long protocol name(s) to short names';
 
 -- --------------------------------------------------------
 
@@ -3751,6 +3765,13 @@ ALTER TABLE `experiment_files`
   ADD PRIMARY KEY (`experimentfile_id`);
 
 --
+-- Indexes for table `experiment_mapping`
+--
+ALTER TABLE `experiment_mapping`
+  ADD PRIMARY KEY (`protocolmapping_id`),
+  ADD KEY `project_id` (`project_id`,`protocolname`,`experiment_id`,`modality`);
+
+--
 -- Indexes for table `exports`
 --
 ALTER TABLE `exports`
@@ -4838,6 +4859,12 @@ ALTER TABLE `experiments`
 --
 ALTER TABLE `experiment_files`
   MODIFY `experimentfile_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `experiment_mapping`
+--
+ALTER TABLE `experiment_mapping`
+  MODIFY `protocolmapping_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `exports`

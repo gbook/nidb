@@ -107,6 +107,11 @@
 	$requestvars['downloadimaging'] = GetVariable("downloadimaging");
 	$requestvars['downloadbeh'] = GetVariable("downloadbeh");
 	$requestvars['downloadqc'] = GetVariable("downloadqc");
+	$requestvars['downloadexperiments'] = GetVariable("downloadexperiments");
+	$requestvars['downloadresults'] = GetVariable("downloadresults");
+	$requestvars['downloadpipelines'] = GetVariable("downloadpipelines");
+	$requestvars['downloadvariables'] = GetVariable("downloadvariables");
+	$requestvars['downloadminipipelines'] = GetVariable("downloadminipipelines");
 	$requestvars['destination'] = GetVariable("destination");
 	$requestvars['modality'] = GetVariable("modality");
 	$requestvars['dirformat'] = GetVariable("dirformat");
@@ -4604,7 +4609,7 @@
 
 					var filetype = $("[name='filetype']:checked").val();
 					//var filetype = $('#filetype:checked').val();
-					console.log(filetype);
+					//console.log(filetype);
 
 					if (filetype == 'dicom') {
 						$('.dicom').show();
@@ -4616,12 +4621,13 @@
 						$('.bids').show();
 						$('.dicom').hide();
 						$('.squirrel').hide();
-						//$('.dirstructure').hide();
+						$('.dirstructure').hide();
 					}
 					else if (filetype == 'squirrel') {
 						$('.squirrel').show();
 						$('.bids').hide();
 						$('.dicom').hide();
+						$('.dirstructure').hide();
 					}
 					else {
 						$('.dicom').hide();
@@ -4630,11 +4636,15 @@
 						//$('.dirstructure').show();
 					}
 					
-					//if ($('#downloadbeh:checked').val() == '1') {
+					if ($('#downloadbeh:checked').val() == '1') {
 					//	/* hide all ... */
 					//	$('#sectionformat').hide();
 					//	$('#sectiondirstructure').hide();
-					//	$('.beh').hide();
+						$('.beh').show();
+					}
+					else {
+						$('.beh').hide();
+					}
 					//	/* ... then show the appropriate sections */
 					//	if ($('#downloadimaging:checked').val() == '1') {
 					//		$('#sectionformat').show();
@@ -4751,14 +4761,14 @@
 								<? if ($GLOBALS['cfg']['enablewebexport']) { ?>
 								<div class="ui radio checkbox" onChange="CheckDestination()">
 									<input type="radio" name="destination" id="radio_web" value="web">
-									<label>Web <span class="tiny">http download</span></label>
+									<label title="Export can be downloaded from this website">Web</label>
 								</div>
 								<br>
 								<? } ?>
 								<? if (($GLOBALS['isadmin']) && ($GLOBALS['cfg']['enablepublicdownloads'])) { ?>
 								<div class="ui radio checkbox" onChange="CheckDestination()">
 									<input type="radio" name="destination" id="radio_publicdownload" value="publicdownload">
-									<label>Public Download</label>
+									<label title="Export can be downloaded by anyone, through the public downloads section">Public Download</label>
 								</div>
 								<br>
 								<div class="ui segment publicdownload">
@@ -4873,12 +4883,12 @@
 										<label>Linux NFS Mount</label>
 									</div>
 									<div class="ui fluid input">
-										<input type="text" id="nfsdir" name="nfsdir" onKeyUp="CheckNFSPath()" placeholder="NFS path..."><span id="pathcheckresult"></span>
+										<input type="text" id="nfsdir" name="nfsdir" onKeyUp="CheckNFSPath()" placeholder="NFS path..." onFocus="document.getElementById('radio_nfs').checked=true"><span id="pathcheckresult"></span>
 									</div>
 									<br>
 									<div class="ui radio checkbox" onChange="CheckDestination()">
 										<input type="radio" name="destination" id="radio_xnat" value="xnat">
-										<label>XNAT</label>
+										<label>Remote XNAT</label>
 									</div>
 									<br>
 									<div class="ui radio checkbox" onChange="CheckDestination()">
@@ -4952,13 +4962,28 @@
 								</div>-->
 								<br>
 								<div class="ui checkbox" style="padding: 3px">
-									<input type="checkbox" name="downloadresults" id="downloadresults" value="1" onChange="CheckDestination()">
-									<label>Analysis Results <i class="small blue question circle outline icon" title="Any results from automated pipeline analysis"></i></label>
+									<input type="checkbox" name="downloadexperiments" id="downloadexperiments" value="1" onChange="CheckDestination()">
+									<label>Experiments</label>
 								</div>
 								<br>
 								<div class="ui checkbox" style="padding: 3px">
-									<input type="checkbox" name="downloadvars" id="downloadvars" value="1" onChange="CheckDestination()">
-									<label>Variables <i class="small blue question circle outline icon" title="All variables associated with the subject, including drugs, vitals, measures, and variables obtained from mini-pipelines"></i></label>
+									<input type="checkbox" name="downloadresults" id="downloadresults" value="1" onChange="CheckDestination()">
+									<label>Analysis Results</label>
+								</div>
+								<br>
+								<div class="ui checkbox" style="padding: 3px">
+									<input type="checkbox" name="downloadpipelines" id="downloadpipelines" value="1" onChange="CheckDestination()">
+									<label>Pipelines</label>
+								</div>
+								<br>
+								<div class="ui checkbox" style="padding: 3px">
+									<input type="checkbox" name="downloadvariables" id="downloadvariables" value="1" onChange="CheckDestination()">
+									<label>Variables</label>
+								</div>
+								<br>
+								<div class="ui checkbox" style="padding: 3px">
+									<input type="checkbox" name="downloadminipipelines" id="downloadminipipelines" value="1" onChange="CheckDestination()">
+									<label>Mini-Pipelines</label>
 								</div>
 							</div>
 
@@ -4972,7 +4997,7 @@
 							<? if (strtolower($s_studymodality) == "mr") { ?>
 							<div class="ui basic vertically fitted segment format" id="sectionformat">
 
-								<span class="tiny">Nifti conversion only available if native data in DICOM format</span>
+								<span class="tiny">Nifti conversion only available if native data in DICOM or par/rec format</span>
 								<br>
 								<div class="ui radio checkbox">
 									<input type="radio" name="filetype" id="filetype_nifti3d" value="nifti3d" checked onChange="CheckDestination()">
@@ -4992,7 +5017,7 @@
 								<br>
 								<div class="ui radio checkbox">
 									<input type="radio" name="filetype" id="filetype_dicom" value="dicom" onChange="CheckDestination()">
-									<label>DICOM <span class="tiny">or raw data if non-DICOM</span></label>
+									<label>DICOM <span class="tiny">or original format if non-DICOM</span></label>
 								</div>
 								<div class="dicom" style="padding-left: 15px;">
 									<div class="ui two column grid">
@@ -5088,7 +5113,7 @@
 									<label>Squirrel</label>
 								</div>
 								<br>
-								<div class="ui segment squirrel">
+								<div class="ui grey segment squirrel">
 									<h4 class="ui dividing header">Squirrel options</h4>
 									<div class="field">
 										<div class="ui radio checkbox">
@@ -5277,9 +5302,8 @@
 								</div>
 							</div>
 							
-							<div class="ui segment">
+							<div class="ui segment beh">
 								<? if ($s_studymodality == "mr") { ?>
-								<span class="beh">
 									<span class="ui blue text"><b>Behavioral Data</b></span>
 									<br><br>
 									<div class="field">
@@ -5316,14 +5340,13 @@
 									<div class="field">
 										<div class="ui radio checkbox" onChange="HighlightBehDir()">
 											<input type="radio" name="behformat" value="behseriesdir" checked>
-											<label>Place in root directory</label>
+											<label>Place in series root directory</label>
 										</div>
 										<input type="text" name="behdirnameseries" value="beh" style="width: 90px; padding: 2px; vertical-align: middle">
 										<div class="ui red left pointing label" id="label_behseriesdir">
 											<tt>S1234ABC/2/beh/file.log</tt>
 										</div>
 									</div>
-								</span>
 								<? } ?>
 							</div>
 						</div>
@@ -5333,390 +5356,6 @@
 					</div>
 				</div>
 			</div>
-			
-
-<!--			
-			<h1> ----- OLD ----- </h1>
-			
-			<table style="border: 2px solid #444; border-radius: 8px" cellpadding="0" cellspacing="0" width="100%">
-				<tr>
-					<td>
-						<div style="background-color: #444; color: white; font-weight: bold; padding: 8px">Transfer/Export Data</div>
-						<br><br>
-					</td>
-				</tr>
-				<tr>
-					<td class="section">
-						<table class="subdownload" width="100%">
-							<tr>
-								<td class="label" valign="top">
-									Destination
-								</td>
-								<td class="main">
-									<table>
-										<tr>
-											<td valign="top" align="right"><b>This</b> server</td>
-											<td valign="top">
-												<? if ($GLOBALS['cfg']['enablewebexport']) { ?>
-												<input type="radio" name="destination" id="radio_web" value="web" <? if ($GLOBALS['cfg']['ispublic']) { echo "checked"; } ?>>Web (http download)<br>
-												<? } ?>
-												<? if (($GLOBALS['isadmin']) && ($GLOBALS['cfg']['enablepublicdownloads'])) { ?>
-												<input type="radio" name="destination" id="radio_publicdownload" value="publicdownload">Public Download
-												<table class="publicdownload" style="margin-left:40px; border:1px solid #aaa; border-radius: 3px">
-													<tr>
-														<td align="right" valign="top" width="30%" style="font-size:10pt">Download short description</td>
-														<td><input type="text" name="publicdownloaddesc" maxlength="255"><span class="tiny">Max 255 chars</span></td>
-													</tr>
-													<tr>
-														<td align="right" valign="top" width="30%" style="font-size:10pt">Release&nbsp;notes</td>
-														<td><textarea name="publicdownloadreleasenotes"></textarea></td>
-													</tr>
-													<tr>
-														<td align="right" valign="top" width="30%" style="font-size:10pt">Password <img src="images/help.gif" title="Set a password for the download link, otherwise anyone with the link can download the data. Leave blank for no password"></td>
-														<td><input type="password" name="publicdownloadpassword"></td>
-													</tr>
-													<tr>
-														<td align="right" valign="top" width="30%" style="font-size:10pt">Share download within this system<img src="images/help.gif" title="This option allows other users (users within this system, not public users) to modify or delete this public download"></td>
-														<td><input type="checkbox" name="publicdownloadshareinternal" value="1"></td>
-													</tr>
-													<tr>
-														<td align="right" valign="top" width="30%" style="font-size:10pt">Require registration<img src="images/help.gif" title="If selected, anyone downloading the files must create an account on NiDB before downloading the file. Useful to keep track of who downloads this download"></td>
-														<td><input type="checkbox" name="publicdownloadregisterrequired" value="1" checked></td>
-													</tr>
-													<tr>
-														<td align="right" valign="top" width="30%" style="font-size:10pt">Expiration Date<img src="images/help.gif" title="Time after creating the download when it will be deleted from the system and become unavailable for download"></td>
-														<td>
-															<input type="radio" name="publicdownloadexpire" value="7" checked>7 days<br>
-															<input type="radio" name="publicdownloadexpire" value="30">30 days<br>
-															<input type="radio" name="publicdownloadexpire" value="90">90 days<br>
-															<input type="radio" name="publicdownloadexpire" value="0">No expiration<br>
-														</td>
-													</tr>
-												</table>
-												<br>
-												<?
-												}
-												if ($s_resultoutput != 'subject') {
-													if (!$GLOBALS['cfg']['ispublic']) {
-														?><input type="radio" name="destination" id="radio_localftp" value="localftp" <? if ($GLOBALS['isguest']) { echo "checked"; } ?>>Local FTP/SCP<br><?
-													}
-
-													if ($GLOBALS['cfg']['enablerdoc']) {
-														?>
-														<input type="radio" name="destination" id="radio_ndar" value="ndar">NDAR/RDoC submission<br>
-														<input type="radio" name="destination" id="radio_ndarcsv" value="ndarcsv">NDAR/RDoC submission (.csv only)<br>
-														<?
-													}
-												}
-												?>
-												<br>
-											</td>
-										</tr>
-										<tr>
-											<td valign="top" align="right"><b>External</b> server</td>
-											<td valign="top">
-											<?
-											if ($s_resultoutput != 'subject') {
-												?>
-												<script>
-													function CheckNFSPath() {
-														var xhttp = new XMLHttpRequest();
-														xhttp.onreadystatechange = function() {
-															if (this.readyState == 4 && this.status == 200) {
-																document.getElementById("pathcheckresult").innerHTML = this.responseText;
-															}
-														};
-														var nfsdir = document.getElementById("nfsdir").value;
-														//alert(nfsdir);
-														xhttp.open("GET", "ajaxapi.php?action=validatepath&nfspath=" + nfsdir, true);
-														xhttp.send();
-													}
-												</script>
-												<input type="radio" name="destination" id="radio_nfs" value="nfs" checked>Linux NFS Mount <input type="text" id="nfsdir" name="nfsdir" size="50" onKeyUp="CheckNFSPath()"> <span id="pathcheckresult"></span>
-												<br>
-												<input type="radio" name="destination" id="radio_remoteftp" value="remoteftp">Remote FTP site
-												<table class="remoteftp" style="margin-left:40px; border:1px solid gray">
-													<tr><td align="right" width="30%" style="font-size:10pt">Remote FTP Server</td><td><input type="text" name="remoteftpserver"></td></tr>
-													<tr><td align="right" width="30%" style="font-size:10pt">Remote Directory</td><td><input type="text" name="remoteftppath"></td></tr>
-													<tr><td align="right" width="30%" style="font-size:10pt">Username</td><td><input type="text" name="remoteftpusername"></td></tr>
-													<tr><td align="right" width="30%" style="font-size:10pt">Password</td><td><input type="text" name="remoteftppassword"></td></tr>
-													<tr><td align="right" width="30%" style="font-size:10pt">Port number</td><td><input type="text" name="remoteftpport" value="21" size="5"></td></tr>
-												</table>
-												<br>
-												<? if ($GLOBALS['cfg']['enableremoteconn']) { ?>
-												<input type="radio" name="destination" id="radio_remotenidb" value="remotenidb">Remote NiDB site
-												<select name="remoteconnid" class="remotenidb">
-													<option value="">(Select connection)</option>
-													<?
-														$sqlstring = "select * from remote_connections where user_id = (select user_id from users where username = '" . $GLOBALS['username'] . "') order by conn_name";
-														$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-														while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-															$connid = $row['remoteconn_id'];
-															$connname = $row['conn_name'];
-															$remoteserver = $row['remote_server'];
-															$remoteusername = $row['remote_username'];
-															$remotepassword = $row['remote_password'];
-															$remoteinstanceid = $row['remote_instanceid'];
-															$remoteprojectid = $row['remote_projectid'];
-															$remotesiteid = $row['remote_siteid'];
-															?>
-															<option value="<?=$connid?>"><?=$connname?> - [<?=$remoteusername?>@<?=$remoteserver?> Project: <?=$remoteprojectid?>]
-															<?
-														}
-													?>
-												</select>
-												<?
-												}
-											}
-											?>
-											</td>
-										</tr>
-									</table>
-								</td>
-								<td class="notes">
-									<details>
-										<summary align="center"><b>Notes</b><br><span class="tiny">click to expand</span></summary>
-										<span class="sublabel">
-										<ul>
-										<li>example NFS directory <tt>/prod1/allegra/fmri/go1</tt>
-										<li>NFS destination directory MUST be read/write
-										<li>No spaces or trailing slash in NFS directory names
-										<li>NiDB FTP data accessible for 7 days
-										<li><span class="sublabel" style="color: darkred">You cannot send DICOM data directly to a remote site, you must send it to a local server and ensure all PHI is removed before sending it outside of this network</span>
-										</ul>
-										</span>
-									</details>
-								</td>
-							</tr>
-						</table>
-					</td>
-				</tr>
-				<tr class="datatoexport" id="sectiondatatype">
-					<td class="section">
-						<table class="subdownload" width="100%">
-							<tr>
-								<td class="label" valign="top">
-									Data
-								</td>
-								<td class="main">
-									<input type="checkbox" name="downloadimaging" id="downloadimaging" value="1" checked>Imaging<br>
-									<input type="checkbox" name="downloadbeh" id="downloadbeh" value="1" checked>Behavioral<br>
-									<span title="Includes all QC metrics computed on the data"><input type="checkbox" name="downloadqc" id="downloadqc" value="1">QC</span>
-									<br>
-									<span title="Includes age at scan, sex, and other demographics. This is places in a demographics.txt file in the root of the download directory"><input type="checkbox" name="downloadqc" id="downloadqc" value="1">Demographics</span>
-								</td>
-							</tr>
-						</table>
-					</td>
-				</tr>
-				<tr class="export" id="sectionexport">
-					<td class="section">
-						<table class="subdownload" width="100%">
-							<tr>
-								<td class="label" valign="top">
-									Export
-								</td>
-								<td class="main">
-									<b>Things to export</b>
-									<br><br>
-									<input type="checkbox" name="subjectphenotype" value="1" checked>Subject phenotypic data<br>
-									<input type="checkbox" name="subjectforms" value="1" checked>Subject forms data<br>
-									<input type="checkbox" name="studydata" value="1" checked>Study data <span class="tiny"><b>Only</b> for the studies selected</span><br>
-									<input type="checkbox" name="seriesdata" value="1" checked>Series data <span class="tiny"><b>Only</b> for the series selected</span><br>
-									<input type="checkbox" name="allsubject" value="1"><b>Everything</b> associated with the selected subjects <span class="tiny">Includes all data associated with subject, regardless of project or modality</span><br>
-								</td>
-							</tr>
-						</table>
-					</td>
-				</tr>
-				<? if (strtolower($s_studymodality) == "mr") { ?>
-				<tr class="format" id="sectionformat">
-					<td class="section">
-						<table class="subdownload" width="100%">
-							<tr>
-								<td class="label" valign="top">
-									Format
-								</td>
-								<td class="main">
-									<table cellpadding="5">
-										<tr>
-											<td valign="top">
-												<span class="tiny">Conversion to other formats only available if native data in DICOM format</span><br>
-												<input type="radio" name="filetype" id="filetype" value="nifti3d" checked>Nifti 3D<br>
-												<input type="radio" name="filetype" id="filetype" value="nifti4d">Nifti 4D<br>
-												<input type="radio" name="filetype" id="filetype" value="dicom">DICOM<br>
-												<input type="radio" name="filetype" id="filetype" value="bids">BIDS<br>
-												<table class="bids">
-													<tr>
-														<td valign="top">README</td>
-														<td><textarea name="bidsreadme" class="bids"></textarea></td>
-													</tr>
-													<tr>
-														<td>BIDS options</td>
-														<td>
-															<input type="checkbox" name="bidsflag_useuid">UID instead of sub-0001<br>
-															<input type="checkbox" name="bidsflag_usestudyid">StudyNum instead of ses-0001
-														</td>
-													</tr>
-												</table>
-												
-												<div class="dicom" style="padding-left: 15px;">
-												<? if ($GLOBALS['cfg']['allowrawdicomexport']) { ?>
-												<input type="radio" name="anonymize" value="0">No DICOM anonymization<br>
-												<? } ?>
-												<input type="radio" name="anonymize" value="1" checked>Anonymize DICOM - <i>light</i><br>
-												<input type="radio" name="anonymize" value="2">Anonymize DICOM - <i>complete</i><br>
-												</div>
-											</td>
-										</tr>
-										<tr>
-											<td valign="top">
-												<input type="checkbox" name="gzip" value="1">Gzip files
-											</td>
-										</tr>
-									</table>
-								</td>
-								<td class="notes">
-									<details>
-										<summary><b>Anonymization Notes</b><br><span class="tiny">click to expand</span></summary>
-										<span class="sublabel">
-										<ul>
-										<? if ($GLOBALS['cfg']['allowrawdicomexport']) { ?>
-										<li>No DICOM anonymization - not recommended
-										<? } ?>
-										<li>DICOM anonymization <u>light</u> removes:
-											<ul>
-												<li style="white-space: nowrap">(0008,0090) ReferringPhysiciansName
-												<li style="white-space: nowrap">(0008,1050) PerformingPhysiciansName
-												<li style="white-space: nowrap">(0008,1070) OperatorsName
-												<li style="white-space: nowrap">(0010,0010) PatientName
-												<li style="white-space: nowrap">(0010,0030) PatientBirthDate
-											</ul>
-										<li>DICOM anonymization <u>complete</u> removes all of the above and the following:
-											<ul>
-												<li style="white-space: nowrap">(0008,0080) InstitutionName
-												<li style="white-space: nowrap">(0008,0081) InstitutionAddress
-												<li style="white-space: nowrap">(0008,1010) StationName
-												<li style="white-space: nowrap">(0008,1030) StudyDescription
-												<li style="white-space: nowrap">(0008,0020) StudyDate
-												<li style="white-space: nowrap">(0008,0021) SeriesDate
-												<li style="white-space: nowrap">(0008,0022) AcquisitionDate
-												<li style="white-space: nowrap">(0008,0023) ContentDate
-												<li style="white-space: nowrap">(0008,0030) StudyTime
-												<li style="white-space: nowrap">(0008,0031) SeriesTime
-												<li style="white-space: nowrap">(0008,0032) AcquisitionTime
-												<li style="white-space: nowrap">(0008,0033) ContentTime
-												<li style="white-space: nowrap">(0010,0020) PatientID
-												<li style="white-space: nowrap">(0010,1030) PatientWeight
-											</ul>
-										</span>
-										</ul>
-										</span>
-									</details>
-								</td>
-							</tr>
-						</table>
-					</td>
-				</tr>
-				<? } ?>
-				<tr class="dirstructure" id="sectiondirstructure">
-					<td class="section">
-						<table class="subdownload" width="100%">
-							<tr>
-								<td class="label" valign="top">
-									Directory<br>Structure
-								</td>
-								<td class="main">
-									<table cellpadding="5">
-										<tr>
-											<td valign="top">
-												<b>Directory Format</b>
-												<table cellspacing="0" cellpadding="0">
-													<tr>
-														<td><input type="radio" name="dirformat" value="shortid" checked>Study ID</td>
-														<td style="color:#333"><tt>S1234ABC1</tt></td>
-													</tr>
-													<tr>
-														<td><input type="radio" name="dirformat" value="shortstudyid" checked>UID w/subdir</td>
-														<td style="color:#333"><tt>S1234ABC/1</tt></td>
-													</tr>
-													<tr>
-														<td style="padding-right: 6px"><input type="radio" name="dirformat" value="altuid">Primary alternate subject ID<br><span class="tiny">With incremental study numbers</span></td>
-														<td style="color:#333"><tt>23505/1<br>23505/2</tt></td>
-													</tr>
-													<? if ($s_resultoutput == 'long') { ?>
-													<tr>
-														<td valign="top"><input type="radio" name="dirformat" value="longitudinal">Longitudinal</td>
-														<td style="color:#333"><tt>S1234ABC<br>&nbsp;&nbsp;&nbsp;&#8627;&nbsp;time1<br>&nbsp;&nbsp;&nbsp;&#8627;&nbsp;time2</tt></td>
-													</tr>
-													<? } ?>
-												</table>
-
-												<br>
-												<b>Series Directories</b><br>
-												<table>
-													<tr>
-														<td><input type="radio" name="preserveseries" value="1" checked>Preserve series number</td>
-														<td style="color:#333"><tt>8 9 10 &rarr; 8 9 10</tt></td>
-													</tr>
-													<tr>
-														<td><input type="radio" name="preserveseries" value="0">Renumber series</td>
-														<td style="color:#333"><tt>8 9 10 &rarr; 1 2 3</tt></td>
-													</tr>
-													<tr>
-														<td><input type="radio" name="preserveseries" value="2">Use protocol name</td>
-														<td style="color:#333"><tt>1 &nbsp;2 &nbsp;3 &nbsp;&rarr; &nbsp;Localizer &nbsp;Resting &nbsp;Task_A</tt><br><span class="tiny">Characters other than numbers and letters are replaced with underscores</span></td>
-													</tr>
-													<tr>
-														<td><input type="radio" name="preserveseries" value="3">ABIDE format</td>
-														<td style="color:#333"><tt>1 &nbsp;2 &nbsp;3 &nbsp;&rarr; &nbsp;anat_1 &nbsp;anat_2 &nbsp;anat_3</tt></td>
-													</tr>
-												</table>
-												
-												<? if ($s_studymodality == "mr") { ?>
-
-												<br>
-												<span class="beh">
-												<b>Behavioral Data</b><br>
-												<table cellspacing="0" cellpadding="0">
-													<tr class="beh">
-														<td><input type="radio" name="behformat" value="behroot">Place in in root</td>
-														<td style="color:#333"><tt>S1234ABC/file.log</tt></td>
-													</tr>
-													<tr class="beh">
-														<td><input type="radio" name="behformat" value="behrootdir" checked>Place in <input type="text" name="behdirnameroot" value="beh" size="6"> directory in root</td>
-														<td style="color:#333"><tt>S1234ABC/beh/file.log</tt></td>
-													</tr>
-													<tr class="beh">
-														<td><input type="radio" name="behformat" value="behseries">Place in series directories</td>
-														<td style="color:#333"><tt>S1234ABC/2/file.log</tt></td>
-													</tr>
-													<tr class="beh">
-														<td><input type="radio" name="behformat" value="behseriesdir">Place in <input type="text" name="behdirnameseries" value="beh" size="6"> directory in series &nbsp;</td>
-														<td style="color:#333"><tt>S1234ABC/2/beh/file.log</tt></td>
-													</tr>
-												</table>
-												</span>
-												<? } ?>
-											</td>
-										</tr>
-									</table>
-								</td>
-							</tr>
-						</table>
-					</td>
-				</tr>
-				<tr>
-					<td style="background-color: white; border-radius:5px; padding: 8px" align="left">
-						<br><br>
-						<input class="ui primary button" type="submit" name="download" value="Transfer" onclick="document.subjectlist.action='search.php';document.subjectlist.action.value='submit'" style="margin-left: 300px"><br>
-						<br><br>
-					</td>
-				</tr>
-			</table>
-			</form>
-			</div>
-			-->
 		<?
 	}
 	
@@ -6393,6 +6032,11 @@
 		$downloadimaging = ($r['downloadimaging'] == 1) ? 1 : 0;
 		$downloadbeh = ($r['downloadbeh'] == 1) ? 1 : 0;
 		$downloadqc = ($r['downloadqc'] == 1) ? 1 : 0;
+		$downloadexperiments = ($r['downloadexperiments'] == 1) ? 1 : 0;
+		$downloadresults = ($r['downloadresults'] == 1) ? 1 : 0;
+		$downloadpipelines = ($r['downloadpipelines'] == 1) ? 1 : 0;
+		$downloadvariables = ($r['downloadvariables'] == 1) ? 1 : 0;
+		$downloadminipipelines = ($r['downloadminipipelines'] == 1) ? 1 : 0;
 
 		//echo "$downloadbeh";
 		
@@ -6467,6 +6111,21 @@
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			$publicDownloadRowID = mysqli_insert_id($GLOBALS['linki']);
 		}
+		
+		$downloadflags = array();
+		if ($downloadimaging) $downloadflags[] = "DOWNLOAD_IMAGING";
+		if ($downloadbeh) $downloadflags[] = "DOWNLOAD_BEH";
+		if ($downloadqc) $downloadflags[] = "DOWNLOAD_QC";
+		if ($downloadexperiments) $downloadflags[] = "DOWNLOAD_EXPERIMENTS";
+		if ($downloadresults) $downloadflags[] = "DOWNLOAD_ANALYSIS";
+		if ($downloadpipelines) $downloadflags[] = "DOWNLOAD_PIPELINES";
+		if ($downloadvariables) $downloadflags[] = "DOWNLOAD_VARIABLES";
+		if ($downloadminipipelines) $downloadflags[] = "DOWNLOAD_MINIPIPELINES";
+		if (count($downloadflags) > 0)
+			$downloadflagstr = "('" . implode2(",",$downloadflags) . "')";
+		else
+			$downloadflagstr = "null";
+		
 		$bidsflags = array();
 		if ($bidsflaguseuid) $bidsflags[] = "BIDS_USEUID";
 		if ($bidsflagusestudyid) $bidsflags[] = "BIDS_USESTUDYID";
@@ -6494,7 +6153,7 @@
 		$squirreltitle = mysqli_real_escape_string($GLOBALS['linki'], $r['squirreltitle']);
 		$squirreldesc = mysqli_real_escape_string($GLOBALS['linki'], $r['squirreldesc']);
 
-		$sqlstring = "insert into exports (username, ip, download_imaging, download_beh, download_qc, destinationtype, filetype, do_gzip, do_preserveseries, anonymization_level, dirformat, beh_format, beh_dirrootname, beh_dirseriesname, nfsdir, remoteftp_username, remoteftp_password, remoteftp_server, remoteftp_port, remoteftp_path, remoteftp_log, remotenidb_connectionid, publicdownloadid, bidsreadme, bids_flags, squirrel_flags, squirrel_title, squirrel_desc, submitdate, status) values ('$username', '$ip', $downloadimaging, $downloadbeh, $downloadqc, '$destinationtype', '$filetype', $gzip, $preserveseries, $anonymize, '$dirformat', '$behformat', '$behdirnameroot','$behdirnameseries', '$nfsdir', '$remoteftpusername', '$remoteftppassword', '$remoteftpserver', $remoteftpport, '$remoteftppath', '$remoteftplog', $remoteconnid, $publicDownloadRowID, '$bidsreadme', $bidsflagstr, $squirrelflagstr, '$squirreltitle', '$squirreldesc', now(), 'submitted')";
+		$sqlstring = "insert into exports (username, ip, download_imaging, download_beh, download_qc, download_flags, destinationtype, filetype, do_gzip, do_preserveseries, anonymization_level, dirformat, beh_format, beh_dirrootname, beh_dirseriesname, nfsdir, remoteftp_username, remoteftp_password, remoteftp_server, remoteftp_port, remoteftp_path, remoteftp_log, remotenidb_connectionid, publicdownloadid, bidsreadme, bids_flags, squirrel_flags, squirrel_title, squirrel_desc, submitdate, status) values ('$username', '$ip', $downloadimaging, $downloadbeh, $downloadqc, $downloadflagstr, '$destinationtype', '$filetype', $gzip, $preserveseries, $anonymize, '$dirformat', '$behformat', '$behdirnameroot','$behdirnameseries', '$nfsdir', '$remoteftpusername', '$remoteftppassword', '$remoteftpserver', $remoteftpport, '$remoteftppath', '$remoteftplog', $remoteconnid, $publicDownloadRowID, '$bidsreadme', $bidsflagstr, $squirrelflagstr, '$squirreltitle', '$squirreldesc', now(), 'submitted')";
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$exportRowID = mysqli_insert_id($GLOBALS['linki']);

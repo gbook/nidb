@@ -118,6 +118,13 @@
 		case 'editndamapping':
 			EditNDAMapping($id);
 			break;
+		case 'updateexperimentmapping':
+			UpdateExperimentMapping($id, $modalities, $protocolnames, $experimentids);
+			EditExperimentMapping($id);
+			break;
+		case 'editexperimentmapping':
+			EditExperimentMapping($id);
+			break;
 		case 'displayprojectinfo':
 			DisplayProject($id);
 			break;
@@ -2529,6 +2536,152 @@
 		}
 	}
 
+
+	/* -------------------------------------------- */
+	/* ------- EditExperimentMapping -------------- */
+	/* -------------------------------------------- */
+	function EditExperimentMapping($projectid) {
+		$projectid = mysqli_real_escape_string($GLOBALS['linki'], trim($projectid));
+		
+		if (($projectid == "null") || ($projectid == null) || ($projectid == "")) {
+			$projectid = 'null';
+		}
+			
+		/* get all studies, and all series, associated with this project */
+		if ($projectid == "null")
+			$sqlstring = "select study_id, study_modality from studies where study_modality = 'mr'";
+		else
+			$sqlstring = "select study_id, study_modality from projects a left join enrollment b on a.project_id = b.project_id left join studies c on b.enrollment_id = c.enrollment_id where a.project_id = $projectid";
+		
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$studyid = $row['study_id'];
+			$modality = strtolower($row['study_modality']);
+			
+			if (IsNiDBModality($modality)) {
+				if (($modality != "") && ($studyid != "")) {
+					$sqlstringA = "select * from $modality" . "_series where study_id = '$studyid' order by series_desc";
+					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+					while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+						if ($rowA['series_desc'] != "") {
+							$seriesdesc = $rowA['series_desc'];
+						}
+						elseif ($rowA['series_protocol'] != "") {
+							$seriesdesc = $rowA['series_protocol'];
+						}
+						if ($seriesdesc != "") {
+							$seriesdescs[$modality][$seriesdesc]++;
+						}
+					}
+				}
+			}
+		}
+
+		/* get list of NDA experimentid mappings for this project */
+		if ($projectid == "null")
+			$sqlstring = "select * from experiment_mapping where project_id is null";
+		else
+			$sqlstring = "select * from experiment_mapping where project_id = $projectid";
+
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$mapping[$row['modality']][$row['protocolname']] = $row['experiment_id'];
+		}
+		?>
+		<br><br>
+		<div class="ui text container grid">
+		<form action="projects.php" method="post">
+		<input type="hidden" name="action" value="updateexperimentmapping">
+		<input type="hidden" name="id" value="<?=$projectid?>">
+		<b>Experiment mapping</b>
+		<br>
+		This mapping associates <a href="experiment.php?projectid=<?=$projectid?>">experiments</a> with protocol names.
+		<br><br>
+		<table class="ui small celled selectable grey compact table">
+			<thead>
+				<th>Modality</th>
+				<th>Protocol name</th>
+				<th>Experiment</th>
+			</thead>
+		<?
+		
+		/* get list of experiments for this project */
+		$sqlstring = "select * from experiments where project_id = $projectid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$experiments[$row['experiment_id']] = $row['exp_name'];
+		}
+		
+		$i=0;
+		foreach ($seriesdescs as $modality => $serieslist) {
+			array_multisort(array_keys($serieslist), SORT_NATURAL| SORT_FLAG_CASE, $serieslist);
+			foreach ($serieslist as $series => $count) {
+
+				$experiment_id = "";
+				$experiment_id = $mapping[$modality][$series];
+		
+				?>
+				<tr>
+					<td><?=strtoupper($modality)?></td>
+					<td><tt><?=$series?></tt></td>
+					<td>
+						<input type="hidden" name="modalities[<?=$i?>]" value="<?=strtolower($modality)?>"><input type="hidden" name="protocolname[<?=$i?>]" value="<?=$series?>">
+						<!--<input type="text" name="experimentid[<?=$i?>]" value="<?=$experiment_id?>">-->
+						<select class="ui selection dropdown" name="experimentid[<?=$i?>]">
+							<option value="">Select experiment...</option>
+						<?
+							foreach ($experiments as $expid => $name) {
+								if ($expid == $experiment_id) { $selected = "selected"; } else { $selected = ""; }
+								echo "<option value='$expid' $selected>$name</option>";
+							}
+						?>
+						</select>
+					</td>
+				</tr>
+				<?
+				$i++;
+			}
+		}
+		?>
+			<tr>
+				<td colspan="3">
+				<div class="column" align="right">
+					<button class="ui button" onClick="window.location.href='projects.php?id=<?=$projectid?>'; return false;">Cancel</button>
+					<input class="ui primary button" type="submit" id="submit" value="Update">
+				</div>
+				</td>
+			</tr>
+		</table>
+
+		<?
+	}
+
+	
+	/* -------------------------------------------- */
+	/* ------- UpdateExperimentMapping ------------ */
+	/* -------------------------------------------- */
+	function UpdateExperimentMapping($projectid, $modalities, $protocolnames, $experimentids) {
+		$projectid = mysqli_real_escape_string($GLOBALS['linki'], trim(strtolower($projectid)));
+		
+		if (isInteger($projectid) || $projectid == "" || $projectid == "null") { }
+		else {
+			Error("Invalid project ID [$projectid]");
+			return;
+		}
+		
+		foreach ($modalities as $i => $modality) {
+			$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
+			$protocolname = mysqli_real_escape_string($GLOBALS['linki'], $protocolnames[$i]);
+			$experimentid = mysqli_real_escape_string($GLOBALS['linki'], $experimentids[$i]);
+			if (($modality != "") && ($protocolname != "") && ($experimentid != "") && (is_numeric($experimentid)) && ($experimentid > 0)) {
+				
+				$sqlstring = "insert ignore into experiment_mapping (project_id, protocolname, modality, experiment_id) values ($projectid, '$protocolname', '$modality', '$experimentid')";
+				//PrintSQL($sqlstring);
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			}
+		}
+	}
+
 	
 	/* -------------------------------------------- */
 	/* ------- DisplayProject --------------------- */
@@ -2733,12 +2886,21 @@
 									Export to XNAT
 									<i class="times circle outline icon"></i>
 								</a>
+							</div>
+						</div>
+						<div class="item">
+							<div class="header">Mapping</div>
+							<div class="menu">
 								<a class="item" href="projects.php?action=editbidsmapping&id=<?=$id?>">
 									BIDS protocol mapping
 									<i class="tasks icon"></i>
 								</a>
 								<a class="item" href="projects.php?action=editndamapping&id=<?=$id?>">
 									NDA mapping
+									<i class="tasks icon"></i>
+								</a>
+								<a class="item" href="projects.php?action=editexperimentmapping&id=<?=$id?>">
+									Experiment mapping
 									<i class="tasks icon"></i>
 								</a>
 							</div>

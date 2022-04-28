@@ -2092,14 +2092,14 @@ void archiveIO::AppendUploadLog(QString func, QString m) {
 /* ---------------------------------------------------------- */
 /* --------- WriteBIDS ------------------------------------- */
 /* ---------------------------------------------------------- */
-bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QString odir, QString bidsreadme, QString bidsflags, QString &msg) {
+bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QString odir, QString bidsreadme, QStringList bidsflags, QString &msg) {
     n->WriteLog("Entering WriteBIDS()...");
 
     QString exportstatus = "complete";
     QString bidsver = "1.4.1";
     subjectStudySeriesContainer s;
 
-    QStringList flags = bidsflags.split(",");
+	//QStringList flags = bidsflags.split(",");
 
     QStringList msgs;
     if (!GetSeriesListDetails(seriesids, modalities, s)) {
@@ -2197,14 +2197,14 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 
                 /* create the subject identifier */
                 QString subjectdir;
-                if (flags.contains("BIDS_USEUID",Qt::CaseInsensitive))
+				if (bidsflags.contains("BIDS_USEUID",Qt::CaseInsensitive))
                     subjectdir = uid;
                 else
                     subjectdir = QString("sub-%1").arg(i, 4, 10, QChar('0'));
 
                 /* create the session (study) identifier */
                 QString sessiondir;
-                if (flags.contains("BIDS_USESTUDYID",Qt::CaseInsensitive))
+				if (bidsflags.contains("BIDS_USESTUDYID",Qt::CaseInsensitive))
                     sessiondir = QString("%1").arg(studynum);
                 else
                     sessiondir = QString("ses-%1").arg(j, 4, 10, QChar('0'));
@@ -2307,13 +2307,13 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 /* ---------------------------------------------------------- */
 /* --------- WriteSquirrel ---------------------------------- */
 /* ---------------------------------------------------------- */
-bool archiveIO::WriteSquirrel(QString name, QString desc, QString squirrelflags, QList<qint64> seriesids, QStringList modalities, QString odir, QString &msg) {
+bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadflags, QStringList squirrelflags, QList<qint64> seriesids, QStringList modalities, QString odir, QString &msg) {
     n->WriteLog("Entering WriteSquirrel()...");
 
     QString exportstatus = "complete";
     subjectStudySeriesContainer s;
 
-    QStringList flags = squirrelflags.split(",");
+	//QStringList flags = squirrelflags.split(",");
 
     QStringList msgs;
     if (!GetSeriesListDetails(seriesids, modalities, s)) {
@@ -2372,7 +2372,11 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QString squirrelflags,
         subjInfo["ethnicity1"] = subj.ethnicity1();
         subjInfo["ethnicity2"] = subj.ethnicity2();
 
-        QJsonArray JSONstudies;
+		/* export variables (subject level, and only variables from enrollments associated with the studies) */
+		if (downloadflags.contains("DOWNLOAD_VARIABLES", Qt::CaseInsensitive)) {
+		}
+
+		QJsonArray JSONstudies;
 
         /* iterate through the studynums */
         for(QMap<int, QMap<int, QMap<QString, QString>>>::iterator b = s[uid].begin(); b != s[uid].end(); ++b) {
@@ -2396,6 +2400,14 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QString squirrelflags,
             studyInfo["visit"] = stdy.type();
             studyInfo["dayNumber"] = stdy.daynum();
             studyInfo["timePoint"] = stdy.timepoint();
+
+			/* export analyses (study level) */
+			if (downloadflags.contains("DOWNLOAD_ANALYSIS", Qt::CaseInsensitive)) {
+			}
+
+			/* export pipelines (study level) */
+			if (downloadflags.contains("DOWNLOAD_PIPELINES", Qt::CaseInsensitive)) {
+			}
 
             QJsonArray JSONseries;
 
@@ -2441,23 +2453,23 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QString squirrelflags,
                 //bool behdirempty = s[uid][studynum][seriesnum]["behdirempty"].toInt();
                 //bool qcdirempty = s[uid][studynum][seriesnum]["qcdirempty"].toInt();
 
-                /* create the subject identifier */
+				/* create the subject dir */
                 QString subjectdir;
-                if (flags.contains("SQUIRREL_INCSUBJECTNUM",Qt::CaseInsensitive))
+				if (squirrelflags.contains("SQUIRREL_INCSUBJECTNUM",Qt::CaseInsensitive))
                     subjectdir = QString("sub-%1").arg(subjectCounter, 4, 10, QChar('0'));
                 else
                     subjectdir = uid;
 
                 /* create the session (study) identifier */
                 QString sessiondir;
-                if (flags.contains("SQUIRREL_INCSTUDYNUM",Qt::CaseInsensitive))
+				if (squirrelflags.contains("SQUIRREL_INCSTUDYNUM",Qt::CaseInsensitive))
                     sessiondir = QString("ses-%1").arg(studyCounter, 4, 10, QChar('0'));
                 else
                     sessiondir = QString("%1").arg(studynum);
 
-                /* determine the datatype (what BIDS calls the 'modality') */
+				/* create the series dir */
                 QString seriesdir;
-                if (flags.contains("SQUIRREL_INCSTUDYNUM",Qt::CaseInsensitive))
+				if (squirrelflags.contains("SQUIRREL_INCSERIESNUM",Qt::CaseInsensitive))
                     seriesdir = QString("%1").arg(seriesCounter, 4, 10, QChar('0'));
                 else
                     seriesdir = QString("%1").arg(seriesnum);
@@ -2508,27 +2520,35 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QString squirrelflags,
                     msgs << n->WriteLog("ERROR datadir [" + datadir + "] does not exist");
                 }
 
-                /* copy the beh data */
-                if (behdirexists) {
-                    QString systemstring;
-                    systemstring = "cp -R " + behindir + "/* " + seriesoutdir;
-                    n->WriteLog(n->SystemCommand(systemstring, true));
-                    systemstring = "chmod -Rf 777 " + seriesoutdir;
-                    n->WriteLog(n->SystemCommand(systemstring, true));
+				/* export the beh data */
+				if (downloadflags.contains("DOWNLOAD_BEH", Qt::CaseInsensitive)) {
+					if (behdirexists) {
+						QString systemstring;
+						systemstring = "cp -R " + behindir + "/* " + seriesoutdir;
+						n->WriteLog(n->SystemCommand(systemstring, true));
+						systemstring = "chmod -Rf 777 " + seriesoutdir;
+						n->WriteLog(n->SystemCommand(systemstring, true));
 
-                    /* get file count and size */
-                    quint64 c, b;
-                    n->GetDirSizeAndFileCount(seriesoutdir, c, b, true);
-                    /* add beh object to JSON series */
-                    QJsonObject behInfo;
-                    behInfo["path"] = QString("%2/%3/%4/beh").arg(subjectdir).arg(sessiondir).arg(seriesdir);
-                    behInfo["numfiles"] = QString::number(c);
-                    behInfo["size"] = QString::number(b);
+						/* get file count and size */
+						quint64 c, b;
+						n->GetDirSizeAndFileCount(seriesoutdir, c, b, true);
+						/* add beh object to JSON series */
+						QJsonObject behInfo;
+						behInfo["path"] = QString("%2/%3/%4/beh").arg(subjectdir).arg(sessiondir).arg(seriesdir);
+						behInfo["numfiles"] = QString::number(c);
+						behInfo["size"] = QString::number(b);
 
-                    seriesInfo["beh"] = behInfo;
-                }
+						seriesInfo["beh"] = behInfo;
+					}
+				}
 
-                n->WriteLog(QString("Checkpoint A [%1, %2, %3]").arg(seriesid).arg(seriesstatus).arg(statusmessage));
+				/* export mini-pipelines */
+				if (downloadflags.contains("DOWNLOAD_MINIPIPELINES", Qt::CaseInsensitive)) {
+				}
+
+				/* export experiments */
+				if (downloadflags.contains("DOWNLOAD_EXPERIMENTS", Qt::CaseInsensitive)) {
+				}
 
                 n->SetExportSeriesStatus(seriesid,seriesstatus,statusmessage);
                 msgs << QString("Series [%1%2-%3 (%4)] complete").arg(uid).arg(studynum).arg(seriesnum).arg(seriesdesc);
