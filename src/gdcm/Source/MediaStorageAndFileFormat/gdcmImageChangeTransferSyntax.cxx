@@ -66,7 +66,8 @@ void UpdatePhotometricInterpretation( Bitmap const &input, Bitmap &output )
     output.SetPhotometricInterpretation( PhotometricInterpretation::RGB );
     }
   // when decompressing loss jpeg, need to revert to proper photo inter in uncompressed TS:
-  if( input.GetPhotometricInterpretation() == PhotometricInterpretation::YBR_FULL_422 )
+  if( input.GetPhotometricInterpretation() == PhotometricInterpretation::YBR_FULL_422 
+   || input.GetPhotometricInterpretation() == PhotometricInterpretation::YBR_PARTIAL_422 )
     {
     output.SetPhotometricInterpretation( PhotometricInterpretation::YBR_FULL );
     }
@@ -277,10 +278,11 @@ bool ImageChangeTransferSyntax::TryJPEGLSCodec(const DataElement &pixelde, Bitma
     UpdatePhotometricInterpretation( input, output );
     if( input.GetPixelFormat().GetSamplesPerPixel() == 3 )
     {
-      if( input.GetPlanarConfiguration() == 0 )
+      if( input.GetPlanarConfiguration() == 1 )
       {
-        // http://dicom.nema.org/medical/dicom/current/output/chtml/part05/sect_8.2.3.html#table_8.2.3-1
-        output.SetPlanarConfiguration(1);
+        // CP-1843
+        // https://dicom.nema.org/medical/dicom/current/output/chtml/part05/sect_8.2.3.html#para_d1e96f41-db25-4a4b-9009-9fd3796e5b43
+        output.SetPlanarConfiguration(0);
       }
     }
 

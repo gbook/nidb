@@ -133,7 +133,7 @@ fill_input_buffer (j_decompress_ptr cinfo)
   assert(gcount < INT_MAX);
   nbytes = (size_t)gcount;
 
-  if (nbytes <= 0) {
+  if (gcount <= 0) {
     if (src->start_of_file)  /* Treat empty input file as fatal error */
       ERREXIT(cinfo, JERR_INPUT_EMPTY);
     WARNMS(cinfo, JWRN_JPEG_EOF);
@@ -272,7 +272,7 @@ typedef struct my_error_mgr* my_error_ptr;
 class JPEGInternals
 {
 public:
-  JPEGInternals():cinfo(),jerr(),StateSuspension(0),SampBuffer(nullptr) {}
+  JPEGInternals():cinfo(),cinfo_comp(),jerr(),StateSuspension(0),SampBuffer(nullptr) {}
   jpeg_decompress_struct cinfo;
   jpeg_compress_struct cinfo_comp;
   my_error_mgr jerr;
@@ -477,9 +477,9 @@ bool JPEGBITSCodec::GetHeaderInfo(std::istream &is, TransferSyntax &ts)
     else if( cinfo.jpeg_color_space == JCS_YCCK )
       {
       assert( cinfo.num_components == 4 );
-      PI = PhotometricInterpretation::YBR_FULL_422; // 4th plane ??
+      gdcmWarningMacro( "JCS_YCCK is not handled. Setting to CMYK for now." );
+      PI = PhotometricInterpretation::CMYK; // non-sense...oh well
       this->PF.SetSamplesPerPixel( 4 );
-      assert( 0 ); //TODO
       }
     else
       {
@@ -835,6 +835,7 @@ bool JPEGBITSCodec::DecodeByStreams(std::istream &is, std::ostream &os)
       break;
     case JCS_YCbCr:
       if( GetPhotometricInterpretation() != PhotometricInterpretation::YBR_FULL &&
+          GetPhotometricInterpretation() != PhotometricInterpretation::YBR_PARTIAL_422 &&
           GetPhotometricInterpretation() != PhotometricInterpretation::YBR_FULL_422 )
         {
         // DermaColorLossLess.dcm (lossless)
@@ -856,6 +857,7 @@ bool JPEGBITSCodec::DecodeByStreams(std::istream &is, std::ostream &os)
         //cinfo.out_color_space = JCS_UNKNOWN;
         }
       if( GetPhotometricInterpretation() == PhotometricInterpretation::YBR_FULL
+      || GetPhotometricInterpretation() == PhotometricInterpretation::YBR_PARTIAL_422
       || GetPhotometricInterpretation() == PhotometricInterpretation::YBR_FULL_422 )
         {
         cinfo.jpeg_color_space = JCS_UNKNOWN;
