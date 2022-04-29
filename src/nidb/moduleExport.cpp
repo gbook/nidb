@@ -271,7 +271,8 @@ bool moduleExport::GetExportSeriesList(int exportid) {
                     s[uid][studynum][seriesnum]["seriesid"] = QString("%1").arg(seriesid);
                     s[uid][studynum][seriesnum]["subjectid"] = QString("%1").arg(subjectid);
                     s[uid][studynum][seriesnum]["studyid"] = QString("%1").arg(studyid);
-                    s[uid][studynum][seriesnum]["studydatetime"] = studydatetime;
+					s[uid][studynum][seriesnum]["enrollmentid"] = QString("%1").arg(studyid);
+					s[uid][studynum][seriesnum]["studydatetime"] = studydatetime;
                     s[uid][studynum][seriesnum]["modality"] = modality;
                     s[uid][studynum][seriesnum]["seriessize"] = QString("%1").arg(seriessize);
                     s[uid][studynum][seriesnum]["seriesnotes"] = seriesnotes;

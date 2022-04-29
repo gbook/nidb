@@ -2372,11 +2372,8 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
         subjInfo["ethnicity1"] = subj.ethnicity1();
         subjInfo["ethnicity2"] = subj.ethnicity2();
 
-		/* export variables (subject level, and only variables from enrollments associated with the studies) */
-		if (downloadflags.contains("DOWNLOAD_VARIABLES", Qt::CaseInsensitive)) {
-		}
-
 		QJsonArray JSONstudies;
+		QList<int> enrollmentIDs;
 
         /* iterate through the studynums */
         for(QMap<int, QMap<int, QMap<QString, QString>>>::iterator b = s[uid].begin(); b != s[uid].end(); ++b) {
@@ -2431,7 +2428,8 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
                 QString statusmessage;
 
                 int seriesid = s[uid][studynum][seriesnum]["seriesid"].toInt();
-                //int subjectid = s[uid][studynum][seriesnum]["subjectid"].toInt();
+				int enrollmentid = s[uid][studynum][seriesnum]["enrollmentid"].toInt();
+				//int subjectid = s[uid][studynum][seriesnum]["subjectid"].toInt();
                 //QString primaryaltuid = s[uid][studynum][seriesnum]["primaryaltuid"];
                 //QString altuids = s[uid][studynum][seriesnum]["altuids"];
                 //QString projectname = s[uid][studynum][seriesnum]["projectname"];
@@ -2453,6 +2451,7 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
                 //bool behdirempty = s[uid][studynum][seriesnum]["behdirempty"].toInt();
                 //bool qcdirempty = s[uid][studynum][seriesnum]["qcdirempty"].toInt();
 
+				enrollmentIDs.append(enrollmentid);
 				/* create the subject dir */
                 QString subjectdir;
 				if (squirrelflags.contains("SQUIRREL_INCSUBJECTNUM",Qt::CaseInsensitive))
@@ -2582,6 +2581,74 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
             JSONstudies.append(studyInfo);
         }
         subjectCounter++;
+
+		/* export variables (only variables from enrollments associated with the studies) */
+		if (downloadflags.contains("DOWNLOAD_VARIABLES", Qt::CaseInsensitive)) {
+			/* get list of variables for the list of enrollmentids */
+			if (enrollmentIDs.size() > 0) {
+
+				QString enrollmentIDstr = n->JoinIntArray(enrollmentIDs, ",");
+
+				/* get measures */
+				QSqlQuery q2;
+				q2.prepare("select * from measures a left join measureinstruments b on a.instrumentname_id = b.measureinstrumentname_id left join measurenames c on a.measurename_id = c.measurename_id where a.enrollment_id in (" + enrollmentIDstr + ")");
+				n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+				if (q2.size() > 0) {
+					QJsonArray JSONmeasures;
+					while (q2.next()) {
+						QJsonObject JSONmeas;
+						QChar measuretype = q2.value("measure_type").toChar();
+						if (measuretype == 's') { JSONmeas["value"] = q2.value("measure_valuestring").toString(); }
+						else { JSONmeas["value"] = q2.value("measure_valuenum").toString(); }
+						JSONmeas["notes"] = q2.value("measure_notes").toString();
+						JSONmeas["measureName"] = q2.value("measure_name").toString();
+						JSONmeas["instrumentName"] = q2.value("instrument_name").toString();
+						JSONmeas["rater"] = q2.value("measure_rater").toString();
+						JSONmeas["dateStart"] = q2.value("measure_startdate").toString();
+						JSONmeas["dateEnd"] = q2.value("measure_enddate").toString();
+						JSONmeas["duration"] = q2.value("measure_duration").toString();
+						JSONmeas["dateRecordEntry"] = q2.value("measure_entrydate").toString();
+						JSONmeas["dateRecordCreate"] = q2.value("measure_createdate").toString();
+						JSONmeas["dateRecordModify"] = q2.value("measure_modifydate").toString();
+
+						JSONmeasures.append(JSONmeas);
+					}
+					subjInfo["measures"] = JSONmeasures;
+				}
+
+				/* get drugs */
+				q2.prepare("select * from drugs a left join drugnames b on a.drugname_id = b.drugname_id where a.enrollment_id in (" + enrollmentIDstr + ")");
+				n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+				if (q2.size() > 0) {
+					QJsonArray JSONdrugs;
+					while (q2.next()) {
+						QJsonObject JSONdrug;
+						JSONdrug["drugName"] = q2.value("drug_name").toString();
+						JSONdrug["drugType"] = q2.value("drug_type").toString();
+						JSONdrug["dateStart"] = q2.value("drug_startdate").toString();
+						JSONdrug["dateEnd"] = q2.value("drug_enddate").toString();
+						JSONdrug["doseAmount"] = q2.value("drug_doseamount").toString();
+						JSONdrug["doseFreq"] = q2.value("drug_dosefrequency").toString();
+						JSONdrug["doseRoute"] = q2.value("drug_route").toString();
+						JSONdrug["doseKey"] = q2.value("drug_dosekey").toString();
+						JSONdrug["doseUnit"] = q2.value("drug_doseunit").toString();
+						JSONdrug["freqModifier"] = q2.value("drug_frequencymodifier").toString();
+						JSONdrug["freqValue"] = q2.value("drug_frequencyvalue").toString();
+						JSONdrug["freqUnit"] = q2.value("drug_frequencyunit").toString();
+						JSONdrug["rater"] = q2.value("measure_rater").toString();
+						JSONdrug["notes"] = q2.value("measure_notes").toString();
+						JSONdrug["dateRecordEntry"] = q2.value("measure_entrydate").toString();
+						JSONdrug["dateRecordCreate"] = q2.value("measure_createdate").toString();
+						JSONdrug["dateRecordModify"] = q2.value("measure_modifydate").toString();
+
+						JSONdrugs.append(JSONdrug);
+					}
+					subjInfo["drugs"] = JSONdrugs;
+				}
+
+				/* get vitals */
+			}
+		}
 
         /* Add list of studies to the current subject, then append the subject to the subject list */
         subjInfo["studies"] = JSONstudies;
