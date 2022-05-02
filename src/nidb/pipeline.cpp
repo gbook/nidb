@@ -123,3 +123,168 @@ void pipeline::LoadPipelineInfo() {
     isValid = true;
     msg = "Loaded pipeline details";
 }
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetJSONObject ---------------------------------- */
+/* ---------------------------------------------------------- */
+QJsonObject pipeline::GetJSONObject() {
+	QJsonObject json;
+
+	json["name"] = name;
+	json["desc"] = desc;
+	json["createDate"] = createDate.toString();
+	json["level"] = level;
+	json["group"] = group;
+	json["directory"] = directory;
+	json["dirStructure"] = dirStructure;
+	//QString pipelineRootDir;
+	json["useTmpDir"] = useTmpDir;
+	json["tmpDir"] = tmpDir;
+
+	//QList<int> parentDependencyIDs;
+
+	json["depLevel"] = depLevel;
+	json["depDir"] = depDir;
+	json["depLinkType"] = depLinkType;
+	//QList<int> groupIDs;
+	json["groupType"] = groupType;
+	//bool groupBySubject;
+	//int dynamicGroupID;
+	//QString status;
+	//QString statusMessage;
+	//QDateTime lastStart;
+	//QDateTime lastFinish;
+	//QDateTime lastCheck;
+	json["completeFiles"] = QJsonArray::fromStringList(completeFiles);
+	json["numConcurrentAnalysis"] = numConcurrentAnalysis;
+	json["queue"] = queue;
+	json["submitHost"] = submitHost;
+	json["clusterType"] = clusterType;
+	json["clusterUser"] = clusterUser;
+	json["maxWallTime"] = maxWallTime;
+	json["submitDelay"] = submitDelay;
+	json["dataCopyMethod"] = dataCopyMethod;
+	json["notes"] = notes;
+	json["useProfile"] = useProfile;
+	//bool removeData;
+	json["resultScript"] = resultScript;
+	//bool enabled;
+	//bool testing;
+	//bool isPrivate;
+	//bool isHidden;
+	//bool debug;
+	json["version"] = version;
+
+
+	AppendJSONParents(json, parentDependencyIDs);
+	AppendJSONDataSpec(json);
+	AppendJSONScripts(json);
+
+	return json;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- AppendJSONParents ------------------------------ */
+/* ---------------------------------------------------------- */
+void pipeline::AppendJSONParents(QJsonObject &obj, QList<int> parentIDs) {
+
+	if (parentIDs.size() > 0) {
+		QJsonArray JSONparents;
+		for (int i=0; i< parentIDs.size(); i++) {
+			pipeline p(parentIDs[i], n);
+			JSONparents.append(p.GetJSONObject());
+		}
+		obj["parents"] = JSONparents;
+	}
+
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- AppendJSONDataSpec ----------------------------- */
+/* ---------------------------------------------------------- */
+void pipeline::AppendJSONDataSpec(QJsonObject &obj) {
+
+	QSqlQuery q;
+	q.prepare("select * from pipeline_data_def where pipeline_id = :pipelineid and pipeline_version = :version order by pdd_order + 0");
+	q.bindValue(":pipelineid",pipelineid);
+	q.bindValue(":version", version);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+	if (q.size() > 0) {
+		QJsonArray JSONdata;
+		while (q.next()) {
+			QJsonObject JSONline;
+			JSONline["order"] = q.value("pdd_order").toInt();
+			JSONline["primaryProtocol"] = q.value("pdd_isprimaryprotocol").toBool();
+			JSONline["seriesCriteria"] = q.value("pdd_seriescriteria").toString();
+			JSONline["protocol"] = q.value("pdd_protocol").toString();
+			JSONline["modality"] = q.value("pdd_modality").toString();
+			JSONline["dataFormat"] = q.value("pdd_dataformat").toString();
+			JSONline["imageType"] = q.value("pdd_imagetype").toString();
+			JSONline["gzip"] = q.value("pdd_gzip").toBool();
+			JSONline["location"] = q.value("pdd_location").toString();
+			JSONline["useSeries"] = q.value("pdd_useseries").toBool();
+			JSONline["preserveSeries"] = q.value("pdd_preserveseries").toBool();
+			JSONline["usePhaseDir"] = q.value("pdd_usephasedir").toBool();
+			JSONline["behFormat"] = q.value("pdd_behformat").toString();
+			JSONline["behDir"] = q.value("pdd_behdir").toString();
+			JSONline["numBOLDreps"] = q.value("pdd_numboldreps").toInt();
+			JSONline["enabled"] = q.value("pdd_enabled").toBool();
+			JSONline["associatonType"] = q.value("pdd_assoctype").toString();
+			JSONline["optional"] = q.value("pdd_optional").toBool();
+			JSONline["level"] = q.value("pdd_level").toString();
+			JSONline["numImagesCriteria"] = q.value("pdd_numimagescriteria").toInt();
+			JSONdata.append(JSONline);
+		}
+		obj["dataSpec"] = JSONdata;
+	}
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- AppendJSONScripts ------------------------------ */
+/* ---------------------------------------------------------- */
+void pipeline::AppendJSONScripts(QJsonObject &obj) {
+
+	QSqlQuery q;
+
+	q.prepare("select * from pipeline_steps where pipeline_id = :pipelineid and pipeline_version = :version and ps_supplement <> 1 order by ps_order + 0");
+	q.bindValue(":pipelineid",pipelineid);
+	q.bindValue(":version", version);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+	if (q.size() > 0) {
+		QJsonArray JSONdata;
+		while (q.next()) {
+			QJsonObject JSONline;
+			JSONline["order"] = q.value("ps_order").toInt();
+			JSONline["desc"] = q.value("ps_description").toString();
+			JSONline["command"] = q.value("ps_command").toString();
+			JSONline["workingdir"] = q.value("ps_workingdir").toString();
+			JSONline["enabled"] = q.value("ps_enabled").toBool();
+			JSONline["logged"] = q.value("ps_logged").toBool();
+			JSONdata.append(JSONline);
+		}
+		obj["primaryScript"] = JSONdata;
+	}
+
+	q.prepare("select * from pipeline_steps where pipeline_id = :pipelineid and pipeline_version = :version and ps_supplement = 1 order by ps_order + 0");
+	q.bindValue(":pipelineid",pipelineid);
+	q.bindValue(":version", version);
+	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+	if (q.size() > 0) {
+		QJsonArray JSONdata;
+		while (q.next()) {
+			QJsonObject JSONline;
+			JSONline["order"] = q.value("ps_order").toInt();
+			JSONline["desc"] = q.value("ps_description").toString();
+			JSONline["command"] = q.value("ps_command").toString();
+			JSONline["workingdir"] = q.value("ps_workingdir").toString();
+			JSONline["enabled"] = q.value("ps_enabled").toBool();
+			JSONline["logged"] = q.value("ps_logged").toBool();
+			JSONdata.append(JSONline);
+		}
+		obj["supplementScript"] = JSONdata;
+	}
+}

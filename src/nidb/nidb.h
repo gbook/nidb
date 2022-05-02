@@ -46,6 +46,8 @@
 typedef QHash <int, QHash<QString, QString>> indexedHash;
 typedef QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>> subjectStudySeriesContainer;
 
+static const QRegularExpression REwhiteSpace("\\s*");
+
 class nidb
 {
 public:

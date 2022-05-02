@@ -292,10 +292,10 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
             q3.bindValue(":InPlanePhaseEncodingDirection", InPlanePhaseEncodingDirection);
 
             //QVariant nullDouble = QMetaType::Double;
-            if (PhaseEncodeAngle == "") q3.bindValue(":PhaseEncodeAngle", QVariant::Double); /* for null values */
+			if (PhaseEncodeAngle == "") q3.bindValue(":PhaseEncodeAngle", QVariant(QMetaType::fromType<double>())); /* for null values */
             else q3.bindValue(":PhaseEncodeAngle", PhaseEncodeAngle);
 
-            if (PhaseEncodingDirectionPositive == "") q3.bindValue(":PhaseEncodingDirectionPositive", QVariant::Int); /* for null values */
+			if (PhaseEncodingDirectionPositive == "") q3.bindValue(":PhaseEncodingDirectionPositive", QVariant(QMetaType::fromType<int>())); /* for null values */
             else q3.bindValue(":PhaseEncodingDirectionPositive", PhaseEncodingDirectionPositive);
 
             q3.bindValue(":pixelX", pixelX);
@@ -699,9 +699,9 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
 
     /* if a beh directory exists for this series from an import, move it to the final series directory */
     QString inbehdir = QString("%1/%2/beh").arg(n->cfg["incomingdir"]).arg(importid);
-    QString outbehdir = QString("%1/%2/%3/%4/beh").arg(n->cfg["archivedir"]).arg(subjectUID).arg(studynum).arg(SeriesNumber);
+	QString outbehdir = QString("%1/%2/%3/%4/beh").arg(n->cfg["archivedir"]).arg(subjectUID).arg(studynum).arg(SeriesNumber);
 
-    if (importid > 0) {
+	if (importid > 0) {
         AppendUploadLog(__FUNCTION__ , "Checking for behavioral data in [" + inbehdir + "]");
         QDir bd(inbehdir);
         if (bd.exists()) {
@@ -905,7 +905,7 @@ bool archiveIO::InsertParRec(int importid, QString file) {
                 QStringList p = line.split(":");
                 if (p.size() > 1) {
                     QString resolution = p[1].trimmed();
-                    QStringList p2 = resolution.split(QRegularExpression("\\s+"));
+					QStringList p2 = resolution.split(REwhiteSpace);
                     if (p.size() > 1) {
                         Columns = p2[0].trimmed().toInt();
                         Rows = p2[1].trimmed().toInt();
@@ -1631,7 +1631,7 @@ bool archiveIO::InsertEEG(int importid, QString file) {
     /* move the files into the outdir */
     AppendUploadLog(__FUNCTION__, "Moving ["+file+"] -> ["+outdir+"]");
     if (!n->MoveFile(file, outdir, m))
-        n->WriteLog(QString("Unable to move [%1] to [%2], with error [%3]").arg(file).arg(outdir).arg(m));
+		n->WriteLog(QString("Unable to move [%1] to [%2], with error [%3]").arg(file, outdir, m));
 
     /* get the size of the files and update the DB */
     quint64 dirsize(0);
@@ -2404,6 +2404,7 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
 
 			/* export pipelines (study level) */
 			if (downloadflags.contains("DOWNLOAD_PIPELINES", Qt::CaseInsensitive)) {
+				/* get list of pipelines for this study */
 			}
 
             QJsonArray JSONseries;
@@ -2584,70 +2585,8 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
 
 		/* export variables (only variables from enrollments associated with the studies) */
 		if (downloadflags.contains("DOWNLOAD_VARIABLES", Qt::CaseInsensitive)) {
-			/* get list of variables for the list of enrollmentids */
-			if (enrollmentIDs.size() > 0) {
-
-				QString enrollmentIDstr = n->JoinIntArray(enrollmentIDs, ",");
-
-				/* get measures */
-				QSqlQuery q2;
-				q2.prepare("select * from measures a left join measureinstruments b on a.instrumentname_id = b.measureinstrumentname_id left join measurenames c on a.measurename_id = c.measurename_id where a.enrollment_id in (" + enrollmentIDstr + ")");
-				n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
-				if (q2.size() > 0) {
-					QJsonArray JSONmeasures;
-					while (q2.next()) {
-						QJsonObject JSONmeas;
-						QChar measuretype = q2.value("measure_type").toChar();
-						if (measuretype == 's') { JSONmeas["value"] = q2.value("measure_valuestring").toString(); }
-						else { JSONmeas["value"] = q2.value("measure_valuenum").toString(); }
-						JSONmeas["notes"] = q2.value("measure_notes").toString();
-						JSONmeas["measureName"] = q2.value("measure_name").toString();
-						JSONmeas["instrumentName"] = q2.value("instrument_name").toString();
-						JSONmeas["rater"] = q2.value("measure_rater").toString();
-						JSONmeas["dateStart"] = q2.value("measure_startdate").toString();
-						JSONmeas["dateEnd"] = q2.value("measure_enddate").toString();
-						JSONmeas["duration"] = q2.value("measure_duration").toString();
-						JSONmeas["dateRecordEntry"] = q2.value("measure_entrydate").toString();
-						JSONmeas["dateRecordCreate"] = q2.value("measure_createdate").toString();
-						JSONmeas["dateRecordModify"] = q2.value("measure_modifydate").toString();
-
-						JSONmeasures.append(JSONmeas);
-					}
-					subjInfo["measures"] = JSONmeasures;
-				}
-
-				/* get drugs */
-				q2.prepare("select * from drugs a left join drugnames b on a.drugname_id = b.drugname_id where a.enrollment_id in (" + enrollmentIDstr + ")");
-				n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
-				if (q2.size() > 0) {
-					QJsonArray JSONdrugs;
-					while (q2.next()) {
-						QJsonObject JSONdrug;
-						JSONdrug["drugName"] = q2.value("drug_name").toString();
-						JSONdrug["drugType"] = q2.value("drug_type").toString();
-						JSONdrug["dateStart"] = q2.value("drug_startdate").toString();
-						JSONdrug["dateEnd"] = q2.value("drug_enddate").toString();
-						JSONdrug["doseAmount"] = q2.value("drug_doseamount").toString();
-						JSONdrug["doseFreq"] = q2.value("drug_dosefrequency").toString();
-						JSONdrug["doseRoute"] = q2.value("drug_route").toString();
-						JSONdrug["doseKey"] = q2.value("drug_dosekey").toString();
-						JSONdrug["doseUnit"] = q2.value("drug_doseunit").toString();
-						JSONdrug["freqModifier"] = q2.value("drug_frequencymodifier").toString();
-						JSONdrug["freqValue"] = q2.value("drug_frequencyvalue").toString();
-						JSONdrug["freqUnit"] = q2.value("drug_frequencyunit").toString();
-						JSONdrug["rater"] = q2.value("measure_rater").toString();
-						JSONdrug["notes"] = q2.value("measure_notes").toString();
-						JSONdrug["dateRecordEntry"] = q2.value("measure_entrydate").toString();
-						JSONdrug["dateRecordCreate"] = q2.value("measure_createdate").toString();
-						JSONdrug["dateRecordModify"] = q2.value("measure_modifydate").toString();
-
-						JSONdrugs.append(JSONdrug);
-					}
-					subjInfo["drugs"] = JSONdrugs;
-				}
-
-				/* get vitals */
-			}
+			AppendJSONMeasures(subjInfo, enrollmentIDs);
+			AppendJSONDrugs(subjInfo, enrollmentIDs);
 		}
 
         /* Add list of studies to the current subject, then append the subject to the subject list */
@@ -2815,4 +2754,92 @@ bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modal
         }
     }
     return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- AppendJSONMeasures ----------------------------- */
+/* ---------------------------------------------------------- */
+bool archiveIO::AppendJSONMeasures(QJsonObject &jsonObj, QList <int> enrollmentIDs) {
+	/* get list of variables for the list of enrollmentids */
+	if (enrollmentIDs.size() > 0) {
+
+		QString enrollmentIDstr = n->JoinIntArray(enrollmentIDs, ",");
+
+		/* get measures */
+		QSqlQuery q2;
+		q2.prepare("select * from measures a left join measureinstruments b on a.instrumentname_id = b.measureinstrumentname_id left join measurenames c on a.measurename_id = c.measurename_id where a.enrollment_id in (" + enrollmentIDstr + ")");
+		n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+		if (q2.size() > 0) {
+			QJsonArray JSONmeasures;
+			while (q2.next()) {
+				QJsonObject JSONmeas;
+				QChar measuretype = q2.value("measure_type").toChar();
+				if (measuretype == 's') { JSONmeas["value"] = q2.value("measure_valuestring").toString(); }
+				else { JSONmeas["value"] = q2.value("measure_valuenum").toString(); }
+				JSONmeas["notes"] = q2.value("measure_notes").toString();
+				JSONmeas["measureName"] = q2.value("measure_name").toString();
+				JSONmeas["instrumentName"] = q2.value("instrument_name").toString();
+				JSONmeas["rater"] = q2.value("measure_rater").toString();
+				JSONmeas["dateStart"] = q2.value("measure_startdate").toString();
+				JSONmeas["dateEnd"] = q2.value("measure_enddate").toString();
+				JSONmeas["duration"] = q2.value("measure_duration").toString();
+				JSONmeas["dateRecordEntry"] = q2.value("measure_entrydate").toString();
+				JSONmeas["dateRecordCreate"] = q2.value("measure_createdate").toString();
+				JSONmeas["dateRecordModify"] = q2.value("measure_modifydate").toString();
+
+				JSONmeasures.append(JSONmeas);
+			}
+			jsonObj["measures"] = JSONmeasures;
+			return true;
+		}
+	}
+	return false;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- AppendJSONDrugs -------------------------------- */
+/* ---------------------------------------------------------- */
+bool archiveIO::AppendJSONDrugs(QJsonObject &jsonObj, QList <int> enrollmentIDs) {
+
+	/* get list of variables for the list of enrollmentids */
+	if (enrollmentIDs.size() > 0) {
+
+		QString enrollmentIDstr = n->JoinIntArray(enrollmentIDs, ",");
+
+		/* get drugs */
+		QSqlQuery q2;
+		q2.prepare("select * from drugs a left join drugnames b on a.drugname_id = b.drugname_id where a.enrollment_id in (" + enrollmentIDstr + ")");
+		n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+		if (q2.size() > 0) {
+			QJsonArray JSONdrugs;
+			while (q2.next()) {
+				QJsonObject JSONdrug;
+				JSONdrug["drugName"] = q2.value("drug_name").toString();
+				JSONdrug["drugType"] = q2.value("drug_type").toString();
+				JSONdrug["dateStart"] = q2.value("drug_startdate").toString();
+				JSONdrug["dateEnd"] = q2.value("drug_enddate").toString();
+				JSONdrug["doseAmount"] = q2.value("drug_doseamount").toString();
+				JSONdrug["doseFreq"] = q2.value("drug_dosefrequency").toString();
+				JSONdrug["doseRoute"] = q2.value("drug_route").toString();
+				JSONdrug["doseKey"] = q2.value("drug_dosekey").toString();
+				JSONdrug["doseUnit"] = q2.value("drug_doseunit").toString();
+				JSONdrug["freqModifier"] = q2.value("drug_frequencymodifier").toString();
+				JSONdrug["freqValue"] = q2.value("drug_frequencyvalue").toString();
+				JSONdrug["freqUnit"] = q2.value("drug_frequencyunit").toString();
+				JSONdrug["rater"] = q2.value("measure_rater").toString();
+				JSONdrug["notes"] = q2.value("measure_notes").toString();
+				JSONdrug["dateRecordEntry"] = q2.value("measure_entrydate").toString();
+				JSONdrug["dateRecordCreate"] = q2.value("measure_createdate").toString();
+				JSONdrug["dateRecordModify"] = q2.value("measure_modifydate").toString();
+
+				JSONdrugs.append(JSONdrug);
+			}
+			jsonObj["drugs"] = JSONdrugs;
+			return true;
+		}
+	}
+
+	return false;
 }

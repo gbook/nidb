@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
     QCoreApplication a(argc, argv);
 
     /* this whole section reads the command line parameters */
-    a.setApplicationVersion(QString("%1.%2.%3").arg(VERSION_MAJ).arg(VERSION_MIN).arg(BUILD_NUM));
+	a.setApplicationVersion(QString("%1.%2.%3").arg(VERSION_MAJ).arg(VERSION_MIN).arg(BUILD_NUM));
     a.setApplicationName("Neuroinformatics Database (NiDB)");
 
     /* setup the command line parser */

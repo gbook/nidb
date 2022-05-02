@@ -81,8 +81,13 @@ public:
     bool debug;
     int version;
 
+	QJsonObject GetJSONObject();
+
 private:
     void LoadPipelineInfo();
+	void AppendJSONParents(QJsonObject &obj, QList<int> parentIDs);
+	void AppendJSONDataSpec(QJsonObject &obj);
+	void AppendJSONScripts(QJsonObject &obj);
 
     int pipelineid;
 };

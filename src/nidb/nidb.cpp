@@ -1005,13 +1005,13 @@ QString nidb::UnzipDirectory(QString dir, bool recurse) {
                 maxdepth = "-maxdepth 0";
 
             QStringList cmds;
-            cmds << QString("cd %1; find . %2 -name '*.tar.gz' -exec tar -zxf {} \\;").arg(dir).arg(maxdepth);
-            cmds << QString("cd %1; find . %2 -name '*.gz' -exec gunzip {} \\;").arg(dir).arg(maxdepth);
-            cmds << QString("cd %1; find . %2 -name '*.z' -exec gunzip {} \\;").arg(dir).arg(maxdepth);
-            cmds << QString("cd %1; find . %2 -iname '*.zip' -exec sh -c 'unzip -o -q -d \"${0%.*}\" \"$0\" && rm -v {}' '{}' ';'").arg(dir).arg(maxdepth);
-            cmds << QString("cd %1; find . %2 -name '*.tar.bz2' -exec tar -xjf {} \\;").arg(dir).arg(maxdepth);
-            cmds << QString("cd %1; find . %2 -name '*.bz2' -exec bunzip {} \\;").arg(dir).arg(maxdepth);
-            cmds << QString("cd %1; find . %2 -name '*.tar' -exec tar -xf {} \\;").arg(dir).arg(maxdepth);
+			cmds << QString("cd %1; find . %2 -name '*.tar.gz' -exec tar -zxf {} \\;").arg(dir).arg(maxdepth);
+			cmds << QString("cd %1; find . %2 -name '*.gz' -exec gunzip {} \\;").arg(dir).arg(maxdepth);
+			cmds << QString("cd %1; find . %2 -name '*.z' -exec gunzip {} \\;").arg(dir).arg(maxdepth);
+			cmds << QString("cd %1; find . %2 -iname '*.zip' -exec sh -c 'unzip -o -q -d \"${0%.*}\" \"$0\" && rm -v {}' '{}' ';'").arg(dir).arg(maxdepth);
+			cmds << QString("cd %1; find . %2 -name '*.tar.bz2' -exec tar -xjf {} \\;").arg(dir).arg(maxdepth);
+			cmds << QString("cd %1; find . %2 -name '*.bz2' -exec bunzip {} \\;").arg(dir).arg(maxdepth);
+			cmds << QString("cd %1; find . %2 -name '*.tar' -exec tar -xf {} \\;").arg(dir).arg(maxdepth);
 
             foreach (QString cmd, cmds) {
                 QString output;
@@ -1763,7 +1763,8 @@ bool nidb::SubmitClusterJob(QString f, QString submithost, QString qsub, QString
 bool nidb::GetSQLComparison(QString c, QString &comp, int &num) {
 
     /* remove whitespace */
-    c.remove(QRegularExpression("\\s*"));
+//	static const QRegularExpression whiteSpaceRE("\\s*");
+	c.remove(REwhiteSpace);
 
     /* check if there is anything to format */
     if (c == "")
@@ -2430,7 +2431,7 @@ bool nidb::GetImageFileTags(QString f, QHash<QString, QString> &tags) {
                         if (!line.contains(QRegularExpression(QStringLiteral("[\\x00-\\x1F]")))) {
                             qint64 idx = line.indexOf(".dInPlaneRot");
                             line = line.mid(idx,23);
-                            QStringList vals = line.split(QRegularExpression("\\s+"));
+							QStringList vals = line.split(REwhiteSpace);
                             if (vals.size() > 0)
                                 tags["PhaseEncodeAngle"] = vals.last().trimmed();
                             break;
@@ -2593,9 +2594,9 @@ double nidb::GetPatientAge(QString PatientAgeStr, QString StudyDate, QString Pat
 
     /* check if the patient age contains any characters */
     if (PatientAgeStr.contains('Y')) PatientAge = PatientAgeStr.replace("Y","").toDouble();
-    if (PatientAgeStr.contains('M')) PatientAge = PatientAgeStr.replace("Y","").toDouble()/12.0;
-    if (PatientAgeStr.contains('W')) PatientAge = PatientAgeStr.replace("Y","").toDouble()/52.0;
-    if (PatientAgeStr.contains('D')) PatientAge = PatientAgeStr.replace("Y","").toDouble()/365.25;
+	if (PatientAgeStr.contains('M')) PatientAge = PatientAgeStr.replace("M","").toDouble()/12.0;
+	if (PatientAgeStr.contains('W')) PatientAge = PatientAgeStr.replace("W","").toDouble()/52.0;
+	if (PatientAgeStr.contains('D')) PatientAge = PatientAgeStr.replace("D","").toDouble()/365.25;
 
     /* fix patient age */
     if (PatientAge < 0.001) {

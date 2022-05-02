@@ -165,3 +165,13 @@ void analysis::PrintAnalysisInfo() {
 
 	n->WriteLog(output);
 }
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetJSONObject ---------------------------------- */
+/* ---------------------------------------------------------- */
+QJsonObject analysis::GetJSONObject() {
+	QJsonObject json;
+
+	return json;
+}

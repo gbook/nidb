@@ -56,6 +56,9 @@ public:
 	bool runSupplement = false;
 	QString msg;
 
+	/* export functions */
+	QJsonObject GetJSONObject();
+
 private:
 	void LoadAnalysisInfo();
 	bool useClusterPaths;

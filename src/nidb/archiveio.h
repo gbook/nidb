@@ -57,6 +57,9 @@ public:
     bool GetProject(int destProjectID, QString StudyDescription, int &projectRowID);
     bool GetEnrollment(int subjectRowID, int projectRowID, int &enrollmentRowID);
 
+	bool AppendJSONMeasures(QJsonObject &jsonObj, QList <int> enrollmentIDs);
+	bool AppendJSONDrugs(QJsonObject &jsonObj, QList <int> enrollmentIDs);
+
     /* class helper functions */
     void SetUploadID(int u);
     void AppendUploadLog(QString func, QString m);
