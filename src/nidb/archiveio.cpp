@@ -2313,8 +2313,6 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
     QString exportstatus = "complete";
     subjectStudySeriesContainer s;
 
-	//QStringList flags = squirrelflags.split(",");
-
     QStringList msgs;
     if (!GetSeriesListDetails(seriesids, modalities, s)) {
         msg = "Unable to get a series list";
@@ -2349,6 +2347,9 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
     QJsonArray JSONsubjects;
 
     int subjectCounter = 1; /* the subject counter */
+	QList<int> pipelineIDs;
+	QList<int> experimentIDs;
+	QList<int> minipipelineIDs;
 
     /* iterate through the UIDs */
     for(QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>>::iterator a = s.begin(); a != s.end(); ++a) {
@@ -2404,7 +2405,18 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
 
 			/* export pipelines (study level) */
 			if (downloadflags.contains("DOWNLOAD_PIPELINES", Qt::CaseInsensitive)) {
-				/* get list of pipelines for this study */
+				QSqlQuery q2;
+				q2.prepare("select pipeline_id from pipelines a left join analysis b on (a.pipeline_id = b.pipeline_id and a.pipeline_version = b.pipeline_version) where b.study_id = :studyid");
+				q2.bindValue(":studyid", studyid);
+				n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+				if (q2.size() > 0) {
+					while (q2.next()) {
+						int pipelineid = q2.value("pipeline_id").toInt();
+						if (!pipelineIDs.contains(pipelineid)) {
+							pipelineIDs.append(pipelineid);
+						}
+					}
+				}
 			}
 
             QJsonArray JSONseries;
