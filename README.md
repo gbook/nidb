@@ -4,7 +4,7 @@
 The Neuroinformatics Database (NiDB) is designed to store, retrieve, analyze, and share neuroimaging data. Modalities include MR, EEG, ET, video, genetics, assessment data, and any binary data. Subject demographics, family relationships, and data imported from RedCap can be stored and queried in the database.
 
 ### Features
-* .rpm based installation for CentOS 8 and CentOS 8 Stream
+* .rpm based installation for CentOS 8, RHEL 8, Rocky Linux 8 (not for CentOS Stream)
 * Store any neuroimaging data, including MR, CT, EEG, ET, Video, Task, GSR, Consent, MEG, TMS, and more
 * Store any assessment data (paper-based tasks)
 * Store clinical trial information (manage data across multiple days & dose times, etc)
@@ -16,6 +16,7 @@ The Neuroinformatics Database (NiDB) is designed to store, retrieve, analyze, an
 * "Mini-pipeline" module to process behavioral data files (extract timings)
 * All stored data is searchable. Combine results from pipelines, QC output, behavioral data, and more in one searchable
 * Export data to NFS, FTP, Web download, NDA (NIMH Data Archive format), or export to a remote NiDB server
+* Export to squirrel format
 * Project level checklists for imaging data
 * Automated motion correction and other QC for MRI data
 * Calendar for scheduling equipment and rooms
