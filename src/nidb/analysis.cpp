@@ -69,6 +69,9 @@ analysis::analysis(int pipelineid, int studyid, nidb *a, bool c)
 /* ---------------------------------------------------------- */
 void analysis::LoadAnalysisInfo() {
 
+	isValid = true;
+	exists = true;
+
 	if (analysisid < 0) {
 		msg = "Invalid analysis ID";
 		isValid = false;
@@ -95,6 +98,19 @@ void analysis::LoadAnalysisInfo() {
 	studyid = q.value("study_id").toInt();
 	studyDateTime = q.value("study_datetime").toString();
 	jobid = q.value("analysis_qsubid").toInt();
+	status = q.value("analysis_status").toString();
+	statusmessage = q.value("analysis_statusmessage").toString();
+	notes = q.value("analysis_notes").toString();
+	isComplete = q.value("analysis_iscomplete").toInt();
+	isBad = q.value("analysis_isbad").toInt();
+	numSeries = q.value("analysis_numseries").toInt();
+	hostname = q.value("analysis_hostname").toString();
+	diskSize = q.value("analysis_disksize").toLongLong();
+	startDate = q.value("analysis_startdate").toString();
+	clusterStartDate = q.value("analysis_clusterstartdate").toString();
+	clusterEndDate = q.value("analysis_clusterenddate").toString();
+	endDate = q.value("analysis_enddate").toString();
+
 	pipelinename = q.value("pipeline_name").toString().trimmed();
 	pipelinelevel = q.value("pipeline_level").toInt();
 	pipelinedirectory = q.value("pipeline_directory").toString().trimmed();
@@ -105,10 +121,10 @@ void analysis::LoadAnalysisInfo() {
 	runSupplement = q.value("analysis_runsupplement").toBool();
 
 	/* check to see if anything isn't valid or is blank */
-	if (n->cfg["analysisdir"] == "") { n->WriteLog("(analysis object) Something was wrong, cfg->analysisdir was not initialized"); msg = "cfg->analysisdir was not initialized"; isValid = false; }
-	if (uid == "") { n->WriteLog("(analysis object) Something was wrong, uid was blank"); msg = "uid was not initialized"; isValid = false; }
-	if (studynum == 0) { n->WriteLog("(analysis object) Something was wrong, studynum was blank"); msg = "studynum was not initialized"; isValid = false; }
-	if (pipelinename == "") { n->WriteLog("(analysis object) Something was wrong, pipelinename was blank"); msg = "pipelinename was not initialized"; isValid = false; }
+	if (n->cfg["analysisdir"] == "") { msg = "cfg->analysisdir was not initialized"; isValid = false; }
+	if (uid == "") { msg = "uid was not initialized"; isValid = false; }
+	if (studynum == 0) { msg = "studynum was not initialized"; isValid = false; }
+	if (pipelinename == "") { msg = "pipelinename was not initialized"; isValid = false; }
 
 	if (pipelinelevel == 2) {
 		analysispath = QString("%1/%2/%3/%4").arg(n->cfg["groupanalysisdir"]).arg(uid).arg(studynum).arg(pipelinename);
@@ -131,8 +147,6 @@ void analysis::LoadAnalysisInfo() {
 		isValid = false;
 	}
 
-	isValid = true;
-	exists = true;
 	msg = "Loaded analysis info";
 }
 
@@ -172,6 +186,21 @@ void analysis::PrintAnalysisInfo() {
 /* ---------------------------------------------------------- */
 QJsonObject analysis::GetJSONObject() {
 	QJsonObject json;
+
+	json["pipelineName"] = pipelinename;
+	json["pipelineVersion"] = pipelineversion;
+	json["status"] = status;
+	json["statusmessage"] = statusmessage;
+	json["notes"] = notes;
+	json["isComplete"] = isComplete;
+	json["isBad"] = isBad;
+	json["numSeries"] = numSeries;
+	json["hostname"] = hostname;
+	json["diskSize"] = static_cast<double>(diskSize);
+	json["startDate"] = startDate;
+	json["clusterStartDate"] = clusterStartDate;
+	json["clusterEndDate"] = clusterEndDate;
+	json["endDate"] = endDate;
 
 	return json;
 }

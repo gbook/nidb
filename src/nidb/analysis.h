@@ -43,6 +43,19 @@ public:
 	QString uid;
 	int subjectid = -1;
 
+	QString status;
+	QString statusmessage;
+	QString notes;
+	bool isComplete;
+	bool isBad;
+	int numSeries;
+	QString hostname;
+	qint64 diskSize;
+	QString startDate;
+	QString clusterStartDate;
+	QString clusterEndDate;
+	QString endDate;
+
 	QString pipelinename;
 	int pipelineversion = -1;
 	int pipelineid = -1;

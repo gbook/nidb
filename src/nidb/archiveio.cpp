@@ -23,6 +23,8 @@
 #include "archiveio.h"
 #include "subject.h"
 #include "study.h"
+#include "analysis.h"
+#include "pipeline.h"
 
 /* ---------------------------------------------------------- */
 /* --------- archiveIO -------------------------------------- */
@@ -2401,12 +2403,25 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
 
 			/* export analyses (study level) */
 			if (downloadflags.contains("DOWNLOAD_ANALYSIS", Qt::CaseInsensitive)) {
+				QSqlQuery q2;
+				q2.prepare("select * from analysis where study_id = :studyid");
+				q2.bindValue(":studyid", studyid);
+				n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+				if (q2.size() > 0) {
+					QJsonArray JSONanalyses;
+					while (q2.next()) {
+						analysis a(q2.value("analysis_id").toInt(), n);
+						if (a.isValid)
+							JSONanalyses.append(a.GetJSONObject());
+					}
+					studyInfo["analysis"] = JSONanalyses;
+				}
 			}
 
-			/* export pipelines (study level) */
+			/* export pipelines (get list of pipelines) */
 			if (downloadflags.contains("DOWNLOAD_PIPELINES", Qt::CaseInsensitive)) {
 				QSqlQuery q2;
-				q2.prepare("select pipeline_id from pipelines a left join analysis b on (a.pipeline_id = b.pipeline_id and a.pipeline_version = b.pipeline_version) where b.study_id = :studyid");
+				q2.prepare("select a.pipeline_id from pipelines a left join analysis b on (a.pipeline_id = b.pipeline_id and a.pipeline_version = b.pipeline_version) where b.study_id = :studyid");
 				q2.bindValue(":studyid", studyid);
 				n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
 				if (q2.size() > 0) {
@@ -2489,7 +2504,7 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
                 /* remove any non-alphanumeric characters */
                 seriesdir.replace(QRegularExpression("[^a-zA-Z0-9_-]"),"_");
 
-                QString seriesoutdir = QString("%1/%2/%3/%4").arg(outdir).arg(subjectdir).arg(sessiondir).arg(seriesdir);
+				QString seriesoutdir = QString("%1/data/%2/%3/%4").arg(outdir).arg(subjectdir).arg(sessiondir).arg(seriesdir);
 
                 QString m;
                 if (n->MakePath(seriesoutdir, m)) {
@@ -2605,6 +2620,19 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
         subjInfo["studies"] = JSONstudies;
         JSONsubjects.append(subjInfo);
     }
+
+	/* add pipelines to the JSON object */
+	if (downloadflags.contains("DOWNLOAD_PIPELINES", Qt::CaseInsensitive)) {
+		if (pipelineIDs.size() > 0) {
+			QJsonArray JSONpipelines;
+			for (int i=0; i<pipelineIDs.size(); i++) {
+				pipeline p(pipelineIDs[i], n);
+				JSONpipelines.append(p.GetJSONObject());
+			}
+			root["pipelines"] = JSONpipelines;
+		}
+	}
+
     /* add list of subjects to the root JSON object */
     root["subjects"] = JSONsubjects;
 
@@ -2780,7 +2808,7 @@ bool archiveIO::AppendJSONMeasures(QJsonObject &jsonObj, QList <int> enrollmentI
 
 		/* get measures */
 		QSqlQuery q2;
-		q2.prepare("select * from measures a left join measureinstruments b on a.instrumentname_id = b.measureinstrumentname_id left join measurenames c on a.measurename_id = c.measurename_id where a.enrollment_id in (" + enrollmentIDstr + ")");
+		q2.prepare("select * from measures a left join measureinstruments b on a.instrumentname_id = b.measureinstrument_id left join measurenames c on a.measurename_id = c.measurename_id where a.enrollment_id in (" + enrollmentIDstr + ")");
 		n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
 		if (q2.size() > 0) {
 			QJsonArray JSONmeasures;
