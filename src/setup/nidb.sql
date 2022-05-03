@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Apr 28, 2022 at 05:08 PM
+-- Generation Time: May 03, 2022 at 04:45 PM
 -- Server version: 10.3.28-MariaDB
 -- PHP Version: 7.2.24
 
@@ -1072,6 +1072,7 @@ CREATE TABLE `exports` (
   `download_imaging` tinyint(1) DEFAULT NULL,
   `download_beh` tinyint(1) DEFAULT NULL,
   `download_qc` tinyint(1) DEFAULT NULL,
+  `download_flags` set('DOWNLOAD_IMAGING','DOWNLOAD_BEH','DOWNLOAD_QC','DOWNLOAD_EXPERIMENTS','DOWNLOAD_ANALYSIS','DOWNLOAD_PIPELINES','DOWNLOAD_VARIABLES','DOWNLOAD_MINIPIPELINES') DEFAULT NULL,
   `destinationtype` varchar(20) DEFAULT NULL COMMENT 'nfs, localftp, remoteftp',
   `filetype` varchar(20) DEFAULT NULL,
   `do_gzip` tinyint(1) DEFAULT NULL,
@@ -1099,7 +1100,7 @@ CREATE TABLE `exports` (
   `publicdownloadid` int(11) DEFAULT NULL,
   `bidsreadme` longtext DEFAULT NULL,
   `bids_flags` set('BIDS_USEUID','BIDS_USESTUDYID') DEFAULT NULL,
-  `squirrel_flags` enum('SQUIRREL_ANONYMIZE','SQUIRREL_METAFROMSUBJECT','SQUIRREL_METAFROMENROLLMENT','SQUIRREL_INCSTUDYNUM','SQUIRREL_INCSERIESNUM') DEFAULT NULL,
+  `squirrel_flags` set('SQUIRREL_ANONYMIZE','SQUIRREL_METAFROMSUBJECT','SQUIRREL_METAFROMENROLLMENT','SQUIRREL_INCSTUDYNUM','SQUIRREL_INCSERIESNUM') DEFAULT NULL,
   `squirrel_title` varchar(255) DEFAULT NULL,
   `squirrel_desc` text DEFAULT NULL,
   `submitdate` datetime DEFAULT NULL,
