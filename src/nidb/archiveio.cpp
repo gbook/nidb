@@ -25,6 +25,7 @@
 #include "study.h"
 #include "analysis.h"
 #include "pipeline.h"
+#include "experiment.h"
 
 /* ---------------------------------------------------------- */
 /* --------- archiveIO -------------------------------------- */
@@ -83,6 +84,8 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
         AppendUploadLog(__FUNCTION__ , QString("File [%1] does not exist - check B!").arg(files[0]));
         return 0;
     }
+
+	perf.Start();
 
     int subjectRowID(-1);
     QString subjectUID;
@@ -747,6 +750,8 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
     systemstring = QString("rsync -az %1/* %2").arg(outdir).arg(backdir);
     AppendUploadLog(__FUNCTION__ , n->SystemCommand(systemstring));
     AppendUploadLog(__FUNCTION__ , "Finished copying to the backup directory");
+
+	perf.End();
 
     return 1;
 }
@@ -2388,7 +2393,7 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
             n->WriteLog(QString("Working on [" + uid + "] and study [%1]").arg(studynum));
 
             int studyid = s[uid][studynum][0]["studyid"].toInt();
-            study stdy(studyid, n);
+			study stdy(studyid, n);
 
             /* add all the study information to the JSON objects */
             QJsonObject studyInfo;
@@ -2404,7 +2409,7 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
             /* export analyses (study level) */
             if (downloadflags.contains("DOWNLOAD_ANALYSIS", Qt::CaseInsensitive)) {
                 QSqlQuery q2;
-                q2.prepare("select * from analysis where study_id = :studyid");
+				q2.prepare("select * from analysis where study_id = :studyid and analysis_status = 'complete'");
                 q2.bindValue(":studyid", studyid);
                 n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
                 if (q2.size() > 0) {
@@ -2423,10 +2428,11 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
                 QSqlQuery q2;
                 q2.prepare("select a.pipeline_id from pipelines a left join analysis b on (a.pipeline_id = b.pipeline_id and a.pipeline_version = b.pipeline_version) where b.study_id = :studyid and b.analysis_status = 'complete'");
                 q2.bindValue(":studyid", studyid);
-                n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+				n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__,true);
                 if (q2.size() > 0) {
                     while (q2.next()) {
                         int pipelineid = q2.value("pipeline_id").toInt();
+						n->WriteLog(QString("Found pipeline with ID [%1]").arg(pipelineid));
                         if (!pipelineIDs.contains(pipelineid)) {
                             pipelineIDs.append(pipelineid);
                         }
@@ -2573,19 +2579,31 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
                 if (downloadflags.contains("DOWNLOAD_MINIPIPELINES", Qt::CaseInsensitive)) {
                 }
 
-                /* export experiments */
+				/* append experimentIDs */
                 if (downloadflags.contains("DOWNLOAD_EXPERIMENTS", Qt::CaseInsensitive)) {
-                }
+					QSqlQuery q2;
+					q2.prepare(QString("SELECT %1series_id, experiment_id FROM %1_series a left join experiment_mapping b on a.series_desc = b.protocolname where %1series_id = :seriesid and b.experiment_id is not null").arg(modality.toLower()));
+					q2.bindValue(":seriesid", seriesid);
+					n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+					if (q2.size() > 0) {
+						while (q2.next()) {
+							int experimentid = q2.value("experiment_id").toInt();
+							if (!experimentIDs.contains(experimentid)) {
+								experimentIDs.append(experimentid);
+							}
+						}
+					}
+				}
 
                 n->SetExportSeriesStatus(seriesid,seriesstatus,statusmessage);
                 msgs << QString("Series [%1%2-%3 (%4)] complete").arg(uid).arg(studynum).arg(seriesnum).arg(seriesdesc);
 
-                QSqlQuery q2;
-                q2.prepare("update exportseries set status = :status where series_id = :id and modality = :modality");
-                q2.bindValue(":id", seriesid);
-                q2.bindValue(":status", seriesstatus);
-                q2.bindValue(":modality", modality);
-                n->WriteLog(n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__));
+				QSqlQuery q2;
+				q2.prepare("update exportseries set status = :status where series_id = :id and modality = :modality");
+				q2.bindValue(":id", seriesid);
+				q2.bindValue(":status", seriesstatus);
+				q2.bindValue(":modality", modality);
+				n->WriteLog(n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__));
 
                 /* get file count and size */
                 quint64 fCount, fBytes;
@@ -2593,7 +2611,7 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
 
                 /* add all the series information to the JSON objects */
                 seriesInfo["number"] = seriesnum;
-                seriesInfo["path"] = QString("%2/%3/%4").arg(subjectdir).arg(sessiondir).arg(seriesdir);
+				seriesInfo["path"] = QString("%1/%2/%3").arg(subjectdir).arg(sessiondir).arg(seriesdir);
                 seriesInfo["numfiles"] = QString::number(fCount);
                 seriesInfo["size"] = QString::number(fBytes);
 
@@ -2624,14 +2642,28 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
     /* add pipelines to the JSON object */
     if (downloadflags.contains("DOWNLOAD_PIPELINES", Qt::CaseInsensitive)) {
         if (pipelineIDs.size() > 0) {
-            QJsonArray JSONpipelines;
+			QString dir(QString("%1/pipelines").arg(outdir));
+			QJsonArray JSONpipelines;
             for (int i=0; i<pipelineIDs.size(); i++) {
                 pipeline p(pipelineIDs[i], n);
-                JSONpipelines.append(p.GetJSONObject());
+				JSONpipelines.append(p.GetJSONObject(dir));
             }
             root["pipelines"] = JSONpipelines;
         }
     }
+
+	/* add experiments to the JSON object */
+	if (downloadflags.contains("DOWNLOAD_EXPERIMENTS", Qt::CaseInsensitive)) {
+		if (experimentIDs.size() > 0) {
+			QString dir(QString("%1/experiments").arg(outdir));
+			QJsonArray JSONexperiments;
+			for (int i=0; i<experimentIDs.size(); i++) {
+				experiment e(experimentIDs[i], n);
+				JSONexperiments.append(e.GetJSONObject(dir));
+			}
+			root["experiments"] = JSONexperiments;
+		}
+	}
 
     /* add list of subjects to the root JSON object */
     root["subjects"] = JSONsubjects;
@@ -2712,9 +2744,10 @@ bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modal
                 QString qcdir = QString("%1/%2/%3/%4/qa").arg(n->cfg["archivedir"]).arg(uid).arg(studynum).arg(seriesnum);
 
                 //s[uid][studynum][seriesnum]["exportseriesid"] = QString("%1").arg(exportseriesid);
-                s[uid][studynum][seriesnum]["seriesid"] = QString("%1").arg(seriesid);
+				s[uid][0][0]["subjectid"] = uid;
+				s[uid][studynum][0]["studyid"] = QString("%1").arg(studyid);
+				s[uid][studynum][seriesnum]["seriesid"] = QString("%1").arg(seriesid);
                 s[uid][studynum][seriesnum]["subjectid"] = QString("%1").arg(subjectid);
-                s[uid][studynum][seriesnum]["studyid"] = QString("%1").arg(studyid);
                 s[uid][studynum][seriesnum]["projectid"] = QString("%1").arg(projectid);
                 s[uid][studynum][seriesnum]["subjectsex"] = subjectsex;
                 s[uid][studynum][seriesnum]["subjectage"] = QString("%1").arg(subjectAge);

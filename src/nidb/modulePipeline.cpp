@@ -81,7 +81,7 @@ int modulePipeline::Run() {
     /* get the list of pipelines to be run */
     while (q.next()) {
         n->ModuleRunningCheckIn();
-        bool debug(false);
+		//bool debug(false);
 
         int pipelineid = q.value("pipeline_id").toInt();
 
@@ -97,7 +97,7 @@ int modulePipeline::Run() {
         else {
             InsertPipelineEvent(pipelineid, runnum, -1, "pipeline_started", QString("Pipeline %1 started").arg(p.name));
         }
-        debug = p.debug;
+		//debug = p.debug;
 
         /* get analysis directory root */
         QString analysisdir;

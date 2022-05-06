@@ -428,12 +428,11 @@ QString nidb::CreateLogDate() {
 QString nidb::SQLQuery(QSqlQuery &q, QString function, QString file, int line, bool d, bool batch) {
 
     /* get the SQL string that will be run */
-    QString sql = q.executedQuery();
-    //QMapIterator<QString, QVariant> it(q.boundValues());
-    //while (it.hasNext()) {
-    //    it.next();
-    //    sql.replace(it.key(),it.value().toString());
-    //}
+	QString sql = q.executedQuery();
+	QVariantList list = q.boundValues();
+	for (int i=0; i < list.size(); ++i) {
+		sql += QString(" [" + list.at(i).toString() + "]");
+	}
 
     /* debugging */
     if (cfg["debug"].toInt() || d) {

@@ -166,24 +166,31 @@ QJsonObject pipeline::GetJSONObject(QString path) {
     jsonLarge["version"] = version;
 
     AppendJSONParents(jsonLarge, parentDependencyIDs, path);
-    AppendJSONDataSpec(jsonLarge, path);
-    AppendJSONScripts(jsonLarge, path);
+	AppendJSONDataSpec(jsonLarge);
+	AppendJSONScripts(jsonLarge);
 
     if (path == "") {
         /* return full JSON object */
-        /* append all pipeline info */
         return jsonLarge;
     }
     else {
-        /* return small JSON object */
-
         /* write all pipeline info to path */
-        QByteArray j = QJsonDocument(jsonLarge).toJson();
-        QFile fout(QString("%1/pipelines/%2/pipeline.json").arg(path).arg(name));
-        fout.open(QIODevice::WriteOnly);
-        fout.write(j);
+		QString m;
+		QString pipelinepath = QString("%1/%2").arg(path).arg(name);
+		if (!n->MakePath(pipelinepath, m))
+		//	n->WriteLog("Created path [" + pipelinepath + "]");
+		//else
+			n->WriteLog("Error creating path [" + pipelinepath + "] because of [" + m + "]");
 
-        return jsonSmall;
+        QByteArray j = QJsonDocument(jsonLarge).toJson();
+		QFile fout(QString("%1/%2/pipeline.json").arg(path).arg(name));
+		if (fout.open(QIODevice::WriteOnly))
+			fout.write(j);
+		else
+			n->WriteLog("Error writing file [" + QString("%1/%2/pipeline.json").arg(path).arg(name) + "]");
+
+		/* return small JSON object */
+		return jsonSmall;
     }
 }
 

@@ -86,8 +86,8 @@ public:
 private:
     void LoadPipelineInfo();
     void AppendJSONParents(QJsonObject &obj, QList<int> parentIDs, QString path);
-    void AppendJSONDataSpec(QJsonObject &obj, QString path);
-    void AppendJSONScripts(QJsonObject &obj, QString path);
+	void AppendJSONDataSpec(QJsonObject &obj);
+	void AppendJSONScripts(QJsonObject &obj);
 
     int pipelineid;
 };

@@ -20,6 +20,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
     analysis.cpp \
     archiveio.cpp \
+    experiment.cpp \
     main.cpp \
     minipipeline.cpp \
     moduleBackup.cpp \
@@ -58,6 +59,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 HEADERS += \
     analysis.h \
     archiveio.h \
+    experiment.h \
     minipipeline.h \
     moduleBackup.h \
     moduleCluster.h \
