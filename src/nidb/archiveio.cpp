@@ -294,10 +294,10 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
             q3.bindValue(":InPlanePhaseEncodingDirection", InPlanePhaseEncodingDirection);
 
             //QVariant nullDouble = QMetaType::Double;
-			if (PhaseEncodeAngle == "") q3.bindValue(":PhaseEncodeAngle", QVariant(QMetaType::fromType<double>())); /* for null values */
+            if (PhaseEncodeAngle == "") q3.bindValue(":PhaseEncodeAngle", QVariant(QMetaType::fromType<double>())); /* for null values */
             else q3.bindValue(":PhaseEncodeAngle", PhaseEncodeAngle);
 
-			if (PhaseEncodingDirectionPositive == "") q3.bindValue(":PhaseEncodingDirectionPositive", QVariant(QMetaType::fromType<int>())); /* for null values */
+            if (PhaseEncodingDirectionPositive == "") q3.bindValue(":PhaseEncodingDirectionPositive", QVariant(QMetaType::fromType<int>())); /* for null values */
             else q3.bindValue(":PhaseEncodingDirectionPositive", PhaseEncodingDirectionPositive);
 
             q3.bindValue(":pixelX", pixelX);
@@ -701,9 +701,9 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
 
     /* if a beh directory exists for this series from an import, move it to the final series directory */
     QString inbehdir = QString("%1/%2/beh").arg(n->cfg["incomingdir"]).arg(importid);
-	QString outbehdir = QString("%1/%2/%3/%4/beh").arg(n->cfg["archivedir"]).arg(subjectUID).arg(studynum).arg(SeriesNumber);
+    QString outbehdir = QString("%1/%2/%3/%4/beh").arg(n->cfg["archivedir"]).arg(subjectUID).arg(studynum).arg(SeriesNumber);
 
-	if (importid > 0) {
+    if (importid > 0) {
         AppendUploadLog(__FUNCTION__ , "Checking for behavioral data in [" + inbehdir + "]");
         QDir bd(inbehdir);
         if (bd.exists()) {
@@ -907,7 +907,7 @@ bool archiveIO::InsertParRec(int importid, QString file) {
                 QStringList p = line.split(":");
                 if (p.size() > 1) {
                     QString resolution = p[1].trimmed();
-					QStringList p2 = resolution.split(REwhiteSpace);
+                    QStringList p2 = resolution.split(REwhiteSpace);
                     if (p.size() > 1) {
                         Columns = p2[0].trimmed().toInt();
                         Rows = p2[1].trimmed().toInt();
@@ -1633,7 +1633,7 @@ bool archiveIO::InsertEEG(int importid, QString file) {
     /* move the files into the outdir */
     AppendUploadLog(__FUNCTION__, "Moving ["+file+"] -> ["+outdir+"]");
     if (!n->MoveFile(file, outdir, m))
-		n->WriteLog(QString("Unable to move [%1] to [%2], with error [%3]").arg(file, outdir, m));
+        n->WriteLog(QString("Unable to move [%1] to [%2], with error [%3]").arg(file, outdir, m));
 
     /* get the size of the files and update the DB */
     quint64 dirsize(0);
@@ -2101,7 +2101,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
     QString bidsver = "1.4.1";
     subjectStudySeriesContainer s;
 
-	//QStringList flags = bidsflags.split(",");
+    //QStringList flags = bidsflags.split(",");
 
     QStringList msgs;
     if (!GetSeriesListDetails(seriesids, modalities, s)) {
@@ -2199,14 +2199,14 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 
                 /* create the subject identifier */
                 QString subjectdir;
-				if (bidsflags.contains("BIDS_USEUID",Qt::CaseInsensitive))
+                if (bidsflags.contains("BIDS_USEUID",Qt::CaseInsensitive))
                     subjectdir = uid;
                 else
                     subjectdir = QString("sub-%1").arg(i, 4, 10, QChar('0'));
 
                 /* create the session (study) identifier */
                 QString sessiondir;
-				if (bidsflags.contains("BIDS_USESTUDYID",Qt::CaseInsensitive))
+                if (bidsflags.contains("BIDS_USESTUDYID",Qt::CaseInsensitive))
                     sessiondir = QString("%1").arg(studynum);
                 else
                     sessiondir = QString("ses-%1").arg(j, 4, 10, QChar('0'));
@@ -2349,9 +2349,9 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
     QJsonArray JSONsubjects;
 
     int subjectCounter = 1; /* the subject counter */
-	QList<int> pipelineIDs;
-	QList<int> experimentIDs;
-	QList<int> minipipelineIDs;
+    QList<int> pipelineIDs;
+    QList<int> experimentIDs;
+    QList<int> minipipelineIDs;
 
     /* iterate through the UIDs */
     for(QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>>::iterator a = s.begin(); a != s.end(); ++a) {
@@ -2375,8 +2375,8 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
         subjInfo["ethnicity1"] = subj.ethnicity1();
         subjInfo["ethnicity2"] = subj.ethnicity2();
 
-		QJsonArray JSONstudies;
-		QList<int> enrollmentIDs;
+        QJsonArray JSONstudies;
+        QList<int> enrollmentIDs;
 
         /* iterate through the studynums */
         for(QMap<int, QMap<int, QMap<QString, QString>>>::iterator b = s[uid].begin(); b != s[uid].end(); ++b) {
@@ -2401,38 +2401,38 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
             studyInfo["dayNumber"] = stdy.daynum();
             studyInfo["timePoint"] = stdy.timepoint();
 
-			/* export analyses (study level) */
-			if (downloadflags.contains("DOWNLOAD_ANALYSIS", Qt::CaseInsensitive)) {
-				QSqlQuery q2;
-				q2.prepare("select * from analysis where study_id = :studyid");
-				q2.bindValue(":studyid", studyid);
-				n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
-				if (q2.size() > 0) {
-					QJsonArray JSONanalyses;
-					while (q2.next()) {
-						analysis a(q2.value("analysis_id").toInt(), n);
-						if (a.isValid)
-							JSONanalyses.append(a.GetJSONObject());
-					}
-					studyInfo["analysis"] = JSONanalyses;
-				}
-			}
+            /* export analyses (study level) */
+            if (downloadflags.contains("DOWNLOAD_ANALYSIS", Qt::CaseInsensitive)) {
+                QSqlQuery q2;
+                q2.prepare("select * from analysis where study_id = :studyid");
+                q2.bindValue(":studyid", studyid);
+                n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+                if (q2.size() > 0) {
+                    QJsonArray JSONanalyses;
+                    while (q2.next()) {
+                        analysis a(q2.value("analysis_id").toInt(), n);
+                        if (a.isValid)
+                            JSONanalyses.append(a.GetJSONObject());
+                    }
+                    studyInfo["analysis"] = JSONanalyses;
+                }
+            }
 
-			/* export pipelines (get list of pipelines) */
-			if (downloadflags.contains("DOWNLOAD_PIPELINES", Qt::CaseInsensitive)) {
-				QSqlQuery q2;
-				q2.prepare("select a.pipeline_id from pipelines a left join analysis b on (a.pipeline_id = b.pipeline_id and a.pipeline_version = b.pipeline_version) where b.study_id = :studyid");
-				q2.bindValue(":studyid", studyid);
-				n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
-				if (q2.size() > 0) {
-					while (q2.next()) {
-						int pipelineid = q2.value("pipeline_id").toInt();
-						if (!pipelineIDs.contains(pipelineid)) {
-							pipelineIDs.append(pipelineid);
-						}
-					}
-				}
-			}
+            /* export pipelines (get list of pipelines) */
+            if (downloadflags.contains("DOWNLOAD_PIPELINES", Qt::CaseInsensitive)) {
+                QSqlQuery q2;
+                q2.prepare("select a.pipeline_id from pipelines a left join analysis b on (a.pipeline_id = b.pipeline_id and a.pipeline_version = b.pipeline_version) where b.study_id = :studyid and b.analysis_status = 'complete'");
+                q2.bindValue(":studyid", studyid);
+                n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+                if (q2.size() > 0) {
+                    while (q2.next()) {
+                        int pipelineid = q2.value("pipeline_id").toInt();
+                        if (!pipelineIDs.contains(pipelineid)) {
+                            pipelineIDs.append(pipelineid);
+                        }
+                    }
+                }
+            }
 
             QJsonArray JSONseries;
 
@@ -2456,8 +2456,8 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
                 QString statusmessage;
 
                 int seriesid = s[uid][studynum][seriesnum]["seriesid"].toInt();
-				int enrollmentid = s[uid][studynum][seriesnum]["enrollmentid"].toInt();
-				//int subjectid = s[uid][studynum][seriesnum]["subjectid"].toInt();
+                int enrollmentid = s[uid][studynum][seriesnum]["enrollmentid"].toInt();
+                //int subjectid = s[uid][studynum][seriesnum]["subjectid"].toInt();
                 //QString primaryaltuid = s[uid][studynum][seriesnum]["primaryaltuid"];
                 //QString altuids = s[uid][studynum][seriesnum]["altuids"];
                 //QString projectname = s[uid][studynum][seriesnum]["projectname"];
@@ -2479,24 +2479,24 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
                 //bool behdirempty = s[uid][studynum][seriesnum]["behdirempty"].toInt();
                 //bool qcdirempty = s[uid][studynum][seriesnum]["qcdirempty"].toInt();
 
-				enrollmentIDs.append(enrollmentid);
-				/* create the subject dir */
+                enrollmentIDs.append(enrollmentid);
+                /* create the subject dir */
                 QString subjectdir;
-				if (squirrelflags.contains("SQUIRREL_INCSUBJECTNUM",Qt::CaseInsensitive))
+                if (squirrelflags.contains("SQUIRREL_INCSUBJECTNUM",Qt::CaseInsensitive))
                     subjectdir = QString("sub-%1").arg(subjectCounter, 4, 10, QChar('0'));
                 else
                     subjectdir = uid;
 
                 /* create the session (study) identifier */
                 QString sessiondir;
-				if (squirrelflags.contains("SQUIRREL_INCSTUDYNUM",Qt::CaseInsensitive))
+                if (squirrelflags.contains("SQUIRREL_INCSTUDYNUM",Qt::CaseInsensitive))
                     sessiondir = QString("ses-%1").arg(studyCounter, 4, 10, QChar('0'));
                 else
                     sessiondir = QString("%1").arg(studynum);
 
-				/* create the series dir */
+                /* create the series dir */
                 QString seriesdir;
-				if (squirrelflags.contains("SQUIRREL_INCSERIESNUM",Qt::CaseInsensitive))
+                if (squirrelflags.contains("SQUIRREL_INCSERIESNUM",Qt::CaseInsensitive))
                     seriesdir = QString("%1").arg(seriesCounter, 4, 10, QChar('0'));
                 else
                     seriesdir = QString("%1").arg(seriesnum);
@@ -2504,7 +2504,7 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
                 /* remove any non-alphanumeric characters */
                 seriesdir.replace(QRegularExpression("[^a-zA-Z0-9_-]"),"_");
 
-				QString seriesoutdir = QString("%1/data/%2/%3/%4").arg(outdir).arg(subjectdir).arg(sessiondir).arg(seriesdir);
+                QString seriesoutdir = QString("%1/data/%2/%3/%4").arg(outdir).arg(subjectdir).arg(sessiondir).arg(seriesdir);
 
                 QString m;
                 if (n->MakePath(seriesoutdir, m)) {
@@ -2547,35 +2547,35 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
                     msgs << n->WriteLog("ERROR datadir [" + datadir + "] does not exist");
                 }
 
-				/* export the beh data */
-				if (downloadflags.contains("DOWNLOAD_BEH", Qt::CaseInsensitive)) {
-					if (behdirexists) {
-						QString systemstring;
-						systemstring = "cp -R " + behindir + "/* " + seriesoutdir;
-						n->WriteLog(n->SystemCommand(systemstring, true));
-						systemstring = "chmod -Rf 777 " + seriesoutdir;
-						n->WriteLog(n->SystemCommand(systemstring, true));
+                /* export the beh data */
+                if (downloadflags.contains("DOWNLOAD_BEH", Qt::CaseInsensitive)) {
+                    if (behdirexists) {
+                        QString systemstring;
+                        systemstring = "cp -R " + behindir + "/* " + seriesoutdir;
+                        n->WriteLog(n->SystemCommand(systemstring, true));
+                        systemstring = "chmod -Rf 777 " + seriesoutdir;
+                        n->WriteLog(n->SystemCommand(systemstring, true));
 
-						/* get file count and size */
-						quint64 c, b;
-						n->GetDirSizeAndFileCount(seriesoutdir, c, b, true);
-						/* add beh object to JSON series */
-						QJsonObject behInfo;
-						behInfo["path"] = QString("%2/%3/%4/beh").arg(subjectdir).arg(sessiondir).arg(seriesdir);
-						behInfo["numfiles"] = QString::number(c);
-						behInfo["size"] = QString::number(b);
+                        /* get file count and size */
+                        quint64 c, b;
+                        n->GetDirSizeAndFileCount(seriesoutdir, c, b, true);
+                        /* add beh object to JSON series */
+                        QJsonObject behInfo;
+                        behInfo["path"] = QString("%2/%3/%4/beh").arg(subjectdir).arg(sessiondir).arg(seriesdir);
+                        behInfo["numfiles"] = QString::number(c);
+                        behInfo["size"] = QString::number(b);
 
-						seriesInfo["beh"] = behInfo;
-					}
-				}
+                        seriesInfo["beh"] = behInfo;
+                    }
+                }
 
-				/* export mini-pipelines */
-				if (downloadflags.contains("DOWNLOAD_MINIPIPELINES", Qt::CaseInsensitive)) {
-				}
+                /* export mini-pipelines */
+                if (downloadflags.contains("DOWNLOAD_MINIPIPELINES", Qt::CaseInsensitive)) {
+                }
 
-				/* export experiments */
-				if (downloadflags.contains("DOWNLOAD_EXPERIMENTS", Qt::CaseInsensitive)) {
-				}
+                /* export experiments */
+                if (downloadflags.contains("DOWNLOAD_EXPERIMENTS", Qt::CaseInsensitive)) {
+                }
 
                 n->SetExportSeriesStatus(seriesid,seriesstatus,statusmessage);
                 msgs << QString("Series [%1%2-%3 (%4)] complete").arg(uid).arg(studynum).arg(seriesnum).arg(seriesdesc);
@@ -2610,28 +2610,28 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
         }
         subjectCounter++;
 
-		/* export variables (only variables from enrollments associated with the studies) */
-		if (downloadflags.contains("DOWNLOAD_VARIABLES", Qt::CaseInsensitive)) {
-			AppendJSONMeasures(subjInfo, enrollmentIDs);
-			AppendJSONDrugs(subjInfo, enrollmentIDs);
-		}
+        /* export variables (only variables from enrollments associated with the studies) */
+        if (downloadflags.contains("DOWNLOAD_VARIABLES", Qt::CaseInsensitive)) {
+            AppendJSONMeasures(subjInfo, enrollmentIDs);
+            AppendJSONDrugs(subjInfo, enrollmentIDs);
+        }
 
         /* Add list of studies to the current subject, then append the subject to the subject list */
         subjInfo["studies"] = JSONstudies;
         JSONsubjects.append(subjInfo);
     }
 
-	/* add pipelines to the JSON object */
-	if (downloadflags.contains("DOWNLOAD_PIPELINES", Qt::CaseInsensitive)) {
-		if (pipelineIDs.size() > 0) {
-			QJsonArray JSONpipelines;
-			for (int i=0; i<pipelineIDs.size(); i++) {
-				pipeline p(pipelineIDs[i], n);
-				JSONpipelines.append(p.GetJSONObject());
-			}
-			root["pipelines"] = JSONpipelines;
-		}
-	}
+    /* add pipelines to the JSON object */
+    if (downloadflags.contains("DOWNLOAD_PIPELINES", Qt::CaseInsensitive)) {
+        if (pipelineIDs.size() > 0) {
+            QJsonArray JSONpipelines;
+            for (int i=0; i<pipelineIDs.size(); i++) {
+                pipeline p(pipelineIDs[i], n);
+                JSONpipelines.append(p.GetJSONObject());
+            }
+            root["pipelines"] = JSONpipelines;
+        }
+    }
 
     /* add list of subjects to the root JSON object */
     root["subjects"] = JSONsubjects;
@@ -2801,40 +2801,40 @@ bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modal
 /* --------- AppendJSONMeasures ----------------------------- */
 /* ---------------------------------------------------------- */
 bool archiveIO::AppendJSONMeasures(QJsonObject &jsonObj, QList <int> enrollmentIDs) {
-	/* get list of variables for the list of enrollmentids */
-	if (enrollmentIDs.size() > 0) {
+    /* get list of variables for the list of enrollmentids */
+    if (enrollmentIDs.size() > 0) {
 
-		QString enrollmentIDstr = n->JoinIntArray(enrollmentIDs, ",");
+        QString enrollmentIDstr = n->JoinIntArray(enrollmentIDs, ",");
 
-		/* get measures */
-		QSqlQuery q2;
-		q2.prepare("select * from measures a left join measureinstruments b on a.instrumentname_id = b.measureinstrument_id left join measurenames c on a.measurename_id = c.measurename_id where a.enrollment_id in (" + enrollmentIDstr + ")");
-		n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
-		if (q2.size() > 0) {
-			QJsonArray JSONmeasures;
-			while (q2.next()) {
-				QJsonObject JSONmeas;
-				QChar measuretype = q2.value("measure_type").toChar();
-				if (measuretype == 's') { JSONmeas["value"] = q2.value("measure_valuestring").toString(); }
-				else { JSONmeas["value"] = q2.value("measure_valuenum").toString(); }
-				JSONmeas["notes"] = q2.value("measure_notes").toString();
-				JSONmeas["measureName"] = q2.value("measure_name").toString();
-				JSONmeas["instrumentName"] = q2.value("instrument_name").toString();
-				JSONmeas["rater"] = q2.value("measure_rater").toString();
-				JSONmeas["dateStart"] = q2.value("measure_startdate").toString();
-				JSONmeas["dateEnd"] = q2.value("measure_enddate").toString();
-				JSONmeas["duration"] = q2.value("measure_duration").toString();
-				JSONmeas["dateRecordEntry"] = q2.value("measure_entrydate").toString();
-				JSONmeas["dateRecordCreate"] = q2.value("measure_createdate").toString();
-				JSONmeas["dateRecordModify"] = q2.value("measure_modifydate").toString();
+        /* get measures */
+        QSqlQuery q2;
+        q2.prepare("select * from measures a left join measureinstruments b on a.instrumentname_id = b.measureinstrument_id left join measurenames c on a.measurename_id = c.measurename_id where a.enrollment_id in (" + enrollmentIDstr + ")");
+        n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+        if (q2.size() > 0) {
+            QJsonArray JSONmeasures;
+            while (q2.next()) {
+                QJsonObject JSONmeas;
+                QChar measuretype = q2.value("measure_type").toChar();
+                if (measuretype == 's') { JSONmeas["value"] = q2.value("measure_valuestring").toString(); }
+                else { JSONmeas["value"] = q2.value("measure_valuenum").toString(); }
+                JSONmeas["notes"] = q2.value("measure_notes").toString();
+                JSONmeas["measureName"] = q2.value("measure_name").toString();
+                JSONmeas["instrumentName"] = q2.value("instrument_name").toString();
+                JSONmeas["rater"] = q2.value("measure_rater").toString();
+                JSONmeas["dateStart"] = q2.value("measure_startdate").toString();
+                JSONmeas["dateEnd"] = q2.value("measure_enddate").toString();
+                JSONmeas["duration"] = q2.value("measure_duration").toString();
+                JSONmeas["dateRecordEntry"] = q2.value("measure_entrydate").toString();
+                JSONmeas["dateRecordCreate"] = q2.value("measure_createdate").toString();
+                JSONmeas["dateRecordModify"] = q2.value("measure_modifydate").toString();
 
-				JSONmeasures.append(JSONmeas);
-			}
-			jsonObj["measures"] = JSONmeasures;
-			return true;
-		}
-	}
-	return false;
+                JSONmeasures.append(JSONmeas);
+            }
+            jsonObj["measures"] = JSONmeasures;
+            return true;
+        }
+    }
+    return false;
 }
 
 
@@ -2843,43 +2843,43 @@ bool archiveIO::AppendJSONMeasures(QJsonObject &jsonObj, QList <int> enrollmentI
 /* ---------------------------------------------------------- */
 bool archiveIO::AppendJSONDrugs(QJsonObject &jsonObj, QList <int> enrollmentIDs) {
 
-	/* get list of variables for the list of enrollmentids */
-	if (enrollmentIDs.size() > 0) {
+    /* get list of variables for the list of enrollmentids */
+    if (enrollmentIDs.size() > 0) {
 
-		QString enrollmentIDstr = n->JoinIntArray(enrollmentIDs, ",");
+        QString enrollmentIDstr = n->JoinIntArray(enrollmentIDs, ",");
 
-		/* get drugs */
-		QSqlQuery q2;
-		q2.prepare("select * from drugs a left join drugnames b on a.drugname_id = b.drugname_id where a.enrollment_id in (" + enrollmentIDstr + ")");
-		n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
-		if (q2.size() > 0) {
-			QJsonArray JSONdrugs;
-			while (q2.next()) {
-				QJsonObject JSONdrug;
-				JSONdrug["drugName"] = q2.value("drug_name").toString();
-				JSONdrug["drugType"] = q2.value("drug_type").toString();
-				JSONdrug["dateStart"] = q2.value("drug_startdate").toString();
-				JSONdrug["dateEnd"] = q2.value("drug_enddate").toString();
-				JSONdrug["doseAmount"] = q2.value("drug_doseamount").toString();
-				JSONdrug["doseFreq"] = q2.value("drug_dosefrequency").toString();
-				JSONdrug["doseRoute"] = q2.value("drug_route").toString();
-				JSONdrug["doseKey"] = q2.value("drug_dosekey").toString();
-				JSONdrug["doseUnit"] = q2.value("drug_doseunit").toString();
-				JSONdrug["freqModifier"] = q2.value("drug_frequencymodifier").toString();
-				JSONdrug["freqValue"] = q2.value("drug_frequencyvalue").toString();
-				JSONdrug["freqUnit"] = q2.value("drug_frequencyunit").toString();
-				JSONdrug["rater"] = q2.value("measure_rater").toString();
-				JSONdrug["notes"] = q2.value("measure_notes").toString();
-				JSONdrug["dateRecordEntry"] = q2.value("measure_entrydate").toString();
-				JSONdrug["dateRecordCreate"] = q2.value("measure_createdate").toString();
-				JSONdrug["dateRecordModify"] = q2.value("measure_modifydate").toString();
+        /* get drugs */
+        QSqlQuery q2;
+        q2.prepare("select * from drugs a left join drugnames b on a.drugname_id = b.drugname_id where a.enrollment_id in (" + enrollmentIDstr + ")");
+        n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+        if (q2.size() > 0) {
+            QJsonArray JSONdrugs;
+            while (q2.next()) {
+                QJsonObject JSONdrug;
+                JSONdrug["drugName"] = q2.value("drug_name").toString();
+                JSONdrug["drugType"] = q2.value("drug_type").toString();
+                JSONdrug["dateStart"] = q2.value("drug_startdate").toString();
+                JSONdrug["dateEnd"] = q2.value("drug_enddate").toString();
+                JSONdrug["doseAmount"] = q2.value("drug_doseamount").toString();
+                JSONdrug["doseFreq"] = q2.value("drug_dosefrequency").toString();
+                JSONdrug["doseRoute"] = q2.value("drug_route").toString();
+                JSONdrug["doseKey"] = q2.value("drug_dosekey").toString();
+                JSONdrug["doseUnit"] = q2.value("drug_doseunit").toString();
+                JSONdrug["freqModifier"] = q2.value("drug_frequencymodifier").toString();
+                JSONdrug["freqValue"] = q2.value("drug_frequencyvalue").toString();
+                JSONdrug["freqUnit"] = q2.value("drug_frequencyunit").toString();
+                JSONdrug["rater"] = q2.value("measure_rater").toString();
+                JSONdrug["notes"] = q2.value("measure_notes").toString();
+                JSONdrug["dateRecordEntry"] = q2.value("measure_entrydate").toString();
+                JSONdrug["dateRecordCreate"] = q2.value("measure_createdate").toString();
+                JSONdrug["dateRecordModify"] = q2.value("measure_modifydate").toString();
 
-				JSONdrugs.append(JSONdrug);
-			}
-			jsonObj["drugs"] = JSONdrugs;
-			return true;
-		}
-	}
+                JSONdrugs.append(JSONdrug);
+            }
+            jsonObj["drugs"] = JSONdrugs;
+            return true;
+        }
+    }
 
-	return false;
+    return false;
 }

@@ -112,13 +112,13 @@ void pipeline::LoadPipelineInfo() {
 
     if (dirStructure == "b")
         pipelineRootDir = n->cfg["analysisdirb"];
-	else {
+    else {
         pipelineRootDir = n->cfg["analysisdir"];
-	}
+    }
 
     /* remove any whitespace from the queue... SGE hates whitespace */
-	static const QRegularExpression re("\\s+");
-	queue.replace(re,"");
+    static const QRegularExpression re("\\s+");
+    queue.replace(re,"");
 
     isValid = true;
     msg = "Loaded pipeline details";
@@ -128,76 +128,79 @@ void pipeline::LoadPipelineInfo() {
 /* ---------------------------------------------------------- */
 /* --------- GetJSONObject ---------------------------------- */
 /* ---------------------------------------------------------- */
-QJsonObject pipeline::GetJSONObject() {
-	QJsonObject json;
+/* if path is specified, write the full JSON object to that
+ * path and return a small JSON object */
+QJsonObject pipeline::GetJSONObject(QString path) {
+    QJsonObject json, jsonSmall, jsonLarge;
 
-	json["name"] = name;
-	json["desc"] = desc;
-	json["createDate"] = createDate.toString();
-	json["level"] = level;
-	json["group"] = group;
-	json["directory"] = directory;
-	json["dirStructure"] = dirStructure;
-	//QString pipelineRootDir;
-	json["useTmpDir"] = useTmpDir;
-	json["tmpDir"] = tmpDir;
+    jsonSmall["name"] = name;
+    jsonSmall["desc"] = desc;
+    jsonSmall["createDate"] = createDate.toString();
+    jsonSmall["level"] = level;
 
-	//QList<int> parentDependencyIDs;
+    jsonLarge["name"] = name;
+    jsonLarge["desc"] = desc;
+    jsonLarge["createDate"] = createDate.toString();
+    jsonLarge["level"] = level;
+    jsonLarge["group"] = group;
+    jsonLarge["directory"] = directory;
+    jsonLarge["dirStructure"] = dirStructure;
+    jsonLarge["useTmpDir"] = useTmpDir;
+    jsonLarge["tmpDir"] = tmpDir;
+    jsonLarge["depLevel"] = depLevel;
+    jsonLarge["depDir"] = depDir;
+    jsonLarge["depLinkType"] = depLinkType;
+    jsonLarge["groupType"] = groupType;
+    jsonLarge["completeFiles"] = QJsonArray::fromStringList(completeFiles);
+    jsonLarge["numConcurrentAnalysis"] = numConcurrentAnalysis;
+    jsonLarge["queue"] = queue;
+    jsonLarge["submitHost"] = submitHost;
+    jsonLarge["clusterType"] = clusterType;
+    jsonLarge["clusterUser"] = clusterUser;
+    jsonLarge["maxWallTime"] = maxWallTime;
+    jsonLarge["submitDelay"] = submitDelay;
+    jsonLarge["dataCopyMethod"] = dataCopyMethod;
+    jsonLarge["notes"] = notes;
+    jsonLarge["useProfile"] = useProfile;
+    jsonLarge["resultScript"] = resultScript;
+    jsonLarge["version"] = version;
 
-	json["depLevel"] = depLevel;
-	json["depDir"] = depDir;
-	json["depLinkType"] = depLinkType;
-	//QList<int> groupIDs;
-	json["groupType"] = groupType;
-	//bool groupBySubject;
-	//int dynamicGroupID;
-	//QString status;
-	//QString statusMessage;
-	//QDateTime lastStart;
-	//QDateTime lastFinish;
-	//QDateTime lastCheck;
-	json["completeFiles"] = QJsonArray::fromStringList(completeFiles);
-	json["numConcurrentAnalysis"] = numConcurrentAnalysis;
-	json["queue"] = queue;
-	json["submitHost"] = submitHost;
-	json["clusterType"] = clusterType;
-	json["clusterUser"] = clusterUser;
-	json["maxWallTime"] = maxWallTime;
-	json["submitDelay"] = submitDelay;
-	json["dataCopyMethod"] = dataCopyMethod;
-	json["notes"] = notes;
-	json["useProfile"] = useProfile;
-	//bool removeData;
-	json["resultScript"] = resultScript;
-	//bool enabled;
-	//bool testing;
-	//bool isPrivate;
-	//bool isHidden;
-	//bool debug;
-	json["version"] = version;
+    AppendJSONParents(jsonLarge, parentDependencyIDs, path);
+    AppendJSONDataSpec(jsonLarge, path);
+    AppendJSONScripts(jsonLarge, path);
 
+    if (path == "") {
+        /* return full JSON object */
+        /* append all pipeline info */
+        return jsonLarge;
+    }
+    else {
+        /* return small JSON object */
 
-	AppendJSONParents(json, parentDependencyIDs);
-	AppendJSONDataSpec(json);
-	AppendJSONScripts(json);
+        /* write all pipeline info to path */
+        QByteArray j = QJsonDocument(jsonLarge).toJson();
+        QFile fout(QString("%1/pipelines/%2/pipeline.json").arg(path).arg(name));
+        fout.open(QIODevice::WriteOnly);
+        fout.write(j);
 
-	return json;
+        return jsonSmall;
+    }
 }
 
 
 /* ---------------------------------------------------------- */
 /* --------- AppendJSONParents ------------------------------ */
 /* ---------------------------------------------------------- */
-void pipeline::AppendJSONParents(QJsonObject &obj, QList<int> parentIDs) {
+void pipeline::AppendJSONParents(QJsonObject &obj, QList<int> parentIDs, QString path) {
 
-	if (parentIDs.size() > 0) {
-		QJsonArray JSONparents;
-		for (int i=0; i< parentIDs.size(); i++) {
-			pipeline p(parentIDs[i], n);
-			JSONparents.append(p.GetJSONObject());
-		}
-		obj["parents"] = JSONparents;
-	}
+    if (parentIDs.size() > 0) {
+        QJsonArray JSONparents;
+        for (int i=0; i< parentIDs.size(); i++) {
+            pipeline p(parentIDs[i], n);
+            JSONparents.append(p.GetJSONObject(path));
+        }
+        obj["parents"] = JSONparents;
+    }
 
 }
 
@@ -207,39 +210,39 @@ void pipeline::AppendJSONParents(QJsonObject &obj, QList<int> parentIDs) {
 /* ---------------------------------------------------------- */
 void pipeline::AppendJSONDataSpec(QJsonObject &obj) {
 
-	QSqlQuery q;
-	q.prepare("select * from pipeline_data_def where pipeline_id = :pipelineid and pipeline_version = :version order by pdd_order + 0");
-	q.bindValue(":pipelineid",pipelineid);
-	q.bindValue(":version", version);
-	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-	if (q.size() > 0) {
-		QJsonArray JSONdata;
-		while (q.next()) {
-			QJsonObject JSONline;
-			JSONline["order"] = q.value("pdd_order").toInt();
-			JSONline["primaryProtocol"] = q.value("pdd_isprimaryprotocol").toBool();
-			JSONline["seriesCriteria"] = q.value("pdd_seriescriteria").toString();
-			JSONline["protocol"] = q.value("pdd_protocol").toString();
-			JSONline["modality"] = q.value("pdd_modality").toString();
-			JSONline["dataFormat"] = q.value("pdd_dataformat").toString();
-			JSONline["imageType"] = q.value("pdd_imagetype").toString();
-			JSONline["gzip"] = q.value("pdd_gzip").toBool();
-			JSONline["location"] = q.value("pdd_location").toString();
-			JSONline["useSeries"] = q.value("pdd_useseries").toBool();
-			JSONline["preserveSeries"] = q.value("pdd_preserveseries").toBool();
-			JSONline["usePhaseDir"] = q.value("pdd_usephasedir").toBool();
-			JSONline["behFormat"] = q.value("pdd_behformat").toString();
-			JSONline["behDir"] = q.value("pdd_behdir").toString();
-			JSONline["numBOLDreps"] = q.value("pdd_numboldreps").toInt();
-			JSONline["enabled"] = q.value("pdd_enabled").toBool();
-			JSONline["associatonType"] = q.value("pdd_assoctype").toString();
-			JSONline["optional"] = q.value("pdd_optional").toBool();
-			JSONline["level"] = q.value("pdd_level").toString();
-			JSONline["numImagesCriteria"] = q.value("pdd_numimagescriteria").toInt();
-			JSONdata.append(JSONline);
-		}
-		obj["dataSpec"] = JSONdata;
-	}
+    QSqlQuery q;
+    q.prepare("select * from pipeline_data_def where pipeline_id = :pipelineid and pipeline_version = :version order by pdd_order + 0");
+    q.bindValue(":pipelineid",pipelineid);
+    q.bindValue(":version", version);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.size() > 0) {
+        QJsonArray JSONdata;
+        while (q.next()) {
+            QJsonObject JSONline;
+            JSONline["order"] = q.value("pdd_order").toInt();
+            JSONline["primaryProtocol"] = q.value("pdd_isprimaryprotocol").toBool();
+            JSONline["seriesCriteria"] = q.value("pdd_seriescriteria").toString();
+            JSONline["protocol"] = q.value("pdd_protocol").toString();
+            JSONline["modality"] = q.value("pdd_modality").toString();
+            JSONline["dataFormat"] = q.value("pdd_dataformat").toString();
+            JSONline["imageType"] = q.value("pdd_imagetype").toString();
+            JSONline["gzip"] = q.value("pdd_gzip").toBool();
+            JSONline["location"] = q.value("pdd_location").toString();
+            JSONline["useSeries"] = q.value("pdd_useseries").toBool();
+            JSONline["preserveSeries"] = q.value("pdd_preserveseries").toBool();
+            JSONline["usePhaseDir"] = q.value("pdd_usephasedir").toBool();
+            JSONline["behFormat"] = q.value("pdd_behformat").toString();
+            JSONline["behDir"] = q.value("pdd_behdir").toString();
+            JSONline["numBOLDreps"] = q.value("pdd_numboldreps").toInt();
+            JSONline["enabled"] = q.value("pdd_enabled").toBool();
+            JSONline["associatonType"] = q.value("pdd_assoctype").toString();
+            JSONline["optional"] = q.value("pdd_optional").toBool();
+            JSONline["level"] = q.value("pdd_level").toString();
+            JSONline["numImagesCriteria"] = q.value("pdd_numimagescriteria").toInt();
+            JSONdata.append(JSONline);
+        }
+        obj["dataSpec"] = JSONdata;
+    }
 }
 
 
@@ -248,43 +251,43 @@ void pipeline::AppendJSONDataSpec(QJsonObject &obj) {
 /* ---------------------------------------------------------- */
 void pipeline::AppendJSONScripts(QJsonObject &obj) {
 
-	QSqlQuery q;
+    QSqlQuery q;
 
-	q.prepare("select * from pipeline_steps where pipeline_id = :pipelineid and pipeline_version = :version and ps_supplement <> 1 order by ps_order + 0");
-	q.bindValue(":pipelineid",pipelineid);
-	q.bindValue(":version", version);
-	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-	if (q.size() > 0) {
-		QJsonArray JSONdata;
-		while (q.next()) {
-			QJsonObject JSONline;
-			JSONline["order"] = q.value("ps_order").toInt();
-			JSONline["desc"] = q.value("ps_description").toString();
-			JSONline["command"] = q.value("ps_command").toString();
-			JSONline["workingdir"] = q.value("ps_workingdir").toString();
-			JSONline["enabled"] = q.value("ps_enabled").toBool();
-			JSONline["logged"] = q.value("ps_logged").toBool();
-			JSONdata.append(JSONline);
-		}
-		obj["primaryScript"] = JSONdata;
-	}
+    q.prepare("select * from pipeline_steps where pipeline_id = :pipelineid and pipeline_version = :version and ps_supplement <> 1 order by ps_order + 0");
+    q.bindValue(":pipelineid",pipelineid);
+    q.bindValue(":version", version);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.size() > 0) {
+        QJsonArray JSONdata;
+        while (q.next()) {
+            QJsonObject JSONline;
+            JSONline["order"] = q.value("ps_order").toInt();
+            JSONline["desc"] = q.value("ps_description").toString();
+            JSONline["command"] = q.value("ps_command").toString();
+            JSONline["workingdir"] = q.value("ps_workingdir").toString();
+            JSONline["enabled"] = q.value("ps_enabled").toBool();
+            JSONline["logged"] = q.value("ps_logged").toBool();
+            JSONdata.append(JSONline);
+        }
+        obj["primaryScript"] = JSONdata;
+    }
 
-	q.prepare("select * from pipeline_steps where pipeline_id = :pipelineid and pipeline_version = :version and ps_supplement = 1 order by ps_order + 0");
-	q.bindValue(":pipelineid",pipelineid);
-	q.bindValue(":version", version);
-	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-	if (q.size() > 0) {
-		QJsonArray JSONdata;
-		while (q.next()) {
-			QJsonObject JSONline;
-			JSONline["order"] = q.value("ps_order").toInt();
-			JSONline["desc"] = q.value("ps_description").toString();
-			JSONline["command"] = q.value("ps_command").toString();
-			JSONline["workingdir"] = q.value("ps_workingdir").toString();
-			JSONline["enabled"] = q.value("ps_enabled").toBool();
-			JSONline["logged"] = q.value("ps_logged").toBool();
-			JSONdata.append(JSONline);
-		}
-		obj["supplementScript"] = JSONdata;
-	}
+    q.prepare("select * from pipeline_steps where pipeline_id = :pipelineid and pipeline_version = :version and ps_supplement = 1 order by ps_order + 0");
+    q.bindValue(":pipelineid",pipelineid);
+    q.bindValue(":version", version);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.size() > 0) {
+        QJsonArray JSONdata;
+        while (q.next()) {
+            QJsonObject JSONline;
+            JSONline["order"] = q.value("ps_order").toInt();
+            JSONline["desc"] = q.value("ps_description").toString();
+            JSONline["command"] = q.value("ps_command").toString();
+            JSONline["workingdir"] = q.value("ps_workingdir").toString();
+            JSONline["enabled"] = q.value("ps_enabled").toBool();
+            JSONline["logged"] = q.value("ps_logged").toBool();
+            JSONdata.append(JSONline);
+        }
+        obj["supplementScript"] = JSONdata;
+    }
 }
