@@ -152,7 +152,7 @@ bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
 	int seriesnum = s.seriesnum;
 	int studynum = s.studynum;
 	QString uid = s.uid;
-	QString datatype = s.datatype;
+	//QString datatype = s.datatype;
 
 	n->WriteLog(QString("-------------- Running %1 on %2 series %3 --------------").arg(moduleid).arg(modality).arg(seriesid));
 

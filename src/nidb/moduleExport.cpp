@@ -86,8 +86,8 @@ int moduleExport::Run() {
             int remotenidbconnid = q.value("remotenidb_connectionid").toInt();
             int publicdownloadid = q.value("publicdownloadid").toInt();
             QString bidsreadme = q.value("bidsreadme").toString().trimmed();
-			QStringList bidsflags = q.value("bids_flags").toString().trimmed().split(",");;
-			QStringList squirrelflags = q.value("squirrel_flags").toString().trimmed().split(",");;
+			QStringList bidsflags = q.value("bids_flags").toString().trimmed().split(",");
+			QStringList squirrelflags = q.value("squirrel_flags").toString().trimmed().split(",");
             QString squirreltitle = q.value("squirrel_title").toString().trimmed();
             QString squirreldesc = q.value("squirrel_desc").toString().trimmed();
 
@@ -464,7 +464,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                         break;
                     case 2:
                         QString seriesdir = seriesdesc;
-                        seriesdir.replace(QRegularExpression("[^a-zA-Z0-9_-]"),"_");
+						seriesdir.replace(REnonAlphaNum, "_");
                         newseriesnum = QString("%1_%2").arg(seriesnum).arg(seriesdir);
                     }
 
@@ -762,7 +762,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                 QStringList lines = filecontents.split("\n");
                 QString lastline = lines.last().trimmed();
                 n->WriteLog(QString("Last line of [%1] %2").arg(systemstring).arg(lastline));
-                QStringList parts = lastline.trimmed().split(QRegularExpression("\\s+"), Qt::SkipEmptyParts); /* split on whitespace */
+				QStringList parts = lastline.trimmed().split(REwhiteSpace, Qt::SkipEmptyParts); /* split on whitespace */
                 qint64 unzippedsize(0);
                 qint64 zippedsize(0);
                 if (parts.size() >= 2) {
@@ -825,7 +825,7 @@ bool moduleExport::ExportXNAT(int exportid, QString &exportstatus, QString &msg)
 
     exportstatus = "complete";
     //int laststudyid = 0;
-    QString newseriesnum = "1";
+	//QString newseriesnum = "1";
 
     /* iterate through the UIDs */
     for(QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>>::iterator a = s.begin(); a != s.end(); ++a) {
@@ -851,7 +851,7 @@ bool moduleExport::ExportXNAT(int exportid, QString &exportstatus, QString &msg)
                 //QString altuids = s[uid][studynum][seriesnum]["altuids"];
                 QString studydatetime = s[uid][studynum][seriesnum]["studydatetime"];
                 //int studyid = s[uid][studynum][seriesnum]["studyid"].toInt();
-                QString studytype = s[uid][studynum][seriesnum]["studytype"];
+				//QString studytype = s[uid][studynum][seriesnum]["studytype"];
                 QString equipment = s[uid][studynum][seriesnum]["equipment"];
                 //int studydaynum = s[uid][studynum][seriesnum]["studydaynum"].toInt();
                 int studytimepoint = s[uid][studynum][seriesnum]["studytimepoint"].toInt();
@@ -859,10 +859,10 @@ bool moduleExport::ExportXNAT(int exportid, QString &exportstatus, QString &msg)
                 QString modality = s[uid][studynum][seriesnum]["modality"];
                 //int seriessize = s[uid][studynum][seriesnum]["seriessize"].toInt();
                 QString seriesdesc = s[uid][studynum][seriesnum]["seriesdesc"];
-                QString datatype = s[uid][studynum][seriesnum]["datatype"];
+				//QString datatype = s[uid][studynum][seriesnum]["datatype"];
                 QString indir = s[uid][studynum][seriesnum]["datadir"];
-                QString behindir = s[uid][studynum][seriesnum]["behdir"];
-                QString qcindir = s[uid][studynum][seriesnum]["qcdir"];
+				//QString behindir = s[uid][studynum][seriesnum]["behdir"];
+				//QString qcindir = s[uid][studynum][seriesnum]["qcdir"];
                 int numfiles = s[uid][studynum][seriesnum]["numfiles"].toInt();
                 bool datadirexists = s[uid][studynum][seriesnum]["datadirexists"].toInt();
                 //bool behdirexists = s[uid][studynum][seriesnum]["behdirexists"].toInt();
@@ -1297,7 +1297,7 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
     q.bindValue(":exportid",exportid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
-    QString tmpexportdir = n->cfg["tmpdir"] + "/" + n->GenerateRandomString(20);
+	//QString tmpexportdir = n->cfg["tmpdir"] + "/" + n->GenerateRandomString(20);
 
     QStringList msgs;
     if (!GetExportSeriesList(exportid)) {
@@ -1380,7 +1380,7 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
 
                             /* get the list of DICOM files */
                             QStringList dcmfiles = n->FindAllFiles(tmpdir, "*");
-                            int numdcms = dcmfiles.size();
+							qint64 numdcms = dcmfiles.size();
                             n->WriteLog(QString("Found [%1] dcmfiles").arg(numdcms));
 
                             if (numdcms < 1)
@@ -1388,8 +1388,8 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
 
                             /* get the list of beh files */
                             QStringList behfiles;
-                            if (behdirexists && !behdirempty)
-                                QStringList behfiles = n->FindAllFiles(behindir, "*");
+							//if (behdirexists && !behdirempty)
+							//    QStringList behfiles = n->FindAllFiles(behindir, "*");
 
                             /* build the cURL string to send the actual data */
                             systemstring = QString("curl -gs -F 'action=UploadDICOM' -F 'u=%1' -F 'p=%2' -F 'transactionid=%3' -F 'instanceid=%4' -F 'projectid=%5' -F 'siteid=%6' -F 'dataformat=%7' -F 'modality=%8' -F 'seriesnotes=%9' -F 'altuids=%10' -F 'seriesnum=%11' ").arg(conn.username).arg(conn.password).arg(transactionid).arg(conn.instanceid).arg(conn.projectid).arg(conn.siteid).arg(datatype).arg(modality).arg(seriesnotes).arg(altuids).arg(seriesnum);
@@ -1430,7 +1430,7 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
                             systemstring += conn.server + "/api.php";
                             QString results = n->SystemCommand(systemstring, false);
                             n->WriteLog("Ran [" + systemstring + "] output (" + results + ")");
-                            double elapsedtime = QDateTime::currentMSecsSinceEpoch() - starttime + 0.0000001; // to avoid a divide by zero!
+							double elapsedtime = static_cast<double>(QDateTime::currentMSecsSinceEpoch()) - starttime + 0.0000001; // to avoid a divide by zero!
                             double MBps = zipsize/elapsedtime/1000.0;
                             QString speedmsg = QString("%1 bytes transferred in %2s - Speed: %3 MB/s").arg(zipsize).arg(elapsedtime*1000.0).arg(QString::number(MBps, 'g', 2));
                             n->WriteLog(speedmsg);
@@ -1542,7 +1542,7 @@ bool moduleExport::WriteNDARHeader(QString file, QString modality, QStringList &
 /* ---------------------------------------------------------- */
 /* --------- WriteNDARSeries -------------------------------- */
 /* ---------------------------------------------------------- */
-bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behfile, QString behdesc, int seriesid, QString modality, QString indir, QStringList &log) {
+bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behfile, QString behdesc, qint64 seriesid, QString modality, QString indir, QStringList &log) {
 
     /* get the information on the subject and series */
     QSqlQuery q;
@@ -1705,7 +1705,7 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
                     FOV = QString("%1mm x %2mm").arg((AcqParts[0].toDouble() * seriesspacingx * PercentPhaseFieldOfView.toDouble())/100.0).arg((AcqParts[3].toDouble() * seriesspacingy * PercentPhaseFieldOfView.toDouble())/100.0);
 
                 QString str;
-                QTextStream(&str) << guid << "," << srcsubjectid << "," << studydatetime << "," << (int)round(ageatscan) << "," << gender << "," << imagetype << "," << imagefile << ",," << seriesdesc << "," << datatype << "," << modality << "," << Manufacturer << "," << ManufacturersModelName << "," << SoftwareVersion << "," << seriesfieldstrength << "," << seriestr << "," << serieste << "," << seriesflip << "," << AcquisitionMatrix << "," << FOV << "," << PatientPosition << "," << PhotometricInterpretation << ",," << TransmitCoilName << ",No,,," << numdim << "," << imgcols << "," << imgrows << "," << imgslices << "," << boldreps << ",timeseries,,,Millimeters,Millimeters,Millimeters,Milliseconds,," << seriesspacingx << "," << seriesspacingy << "," << seriesspacingz << "," << seriestr << ",," << seriesspacingz << ",Axial,,,,,,,,,,,,," << scantype << ",Live," << behfile << "," << behdesc << "," << ProtocolName << ",," << seriessequence << ",1,,,0,Yes,Yes\n";
+				QTextStream(&str) << guid << "," << srcsubjectid << "," << studydatetime << "," << static_cast<int>(round(ageatscan)) << "," << gender << "," << imagetype << "," << imagefile << ",," << seriesdesc << "," << datatype << "," << modality << "," << Manufacturer << "," << ManufacturersModelName << "," << SoftwareVersion << "," << seriesfieldstrength << "," << seriestr << "," << serieste << "," << seriesflip << "," << AcquisitionMatrix << "," << FOV << "," << PatientPosition << "," << PhotometricInterpretation << ",," << TransmitCoilName << ",No,,," << numdim << "," << imgcols << "," << imgrows << "," << imgslices << "," << boldreps << ",timeseries,,,Millimeters,Millimeters,Millimeters,Milliseconds,," << seriesspacingx << "," << seriesspacingy << "," << seriesspacingz << "," << seriestr << ",," << seriesspacingz << ",Axial,,,,,,,,,,,,," << scantype << ",Live," << behfile << "," << behdesc << "," << ProtocolName << ",," << seriessequence << ",1,,,0,Yes,Yes\n";
 
                 fs << str;
             }
@@ -1753,18 +1753,18 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
                 }
 
                 QString str;
-                QTextStream(&str) << guid << "," << uid << "," << studydatetime << "," << (int)round(ageatscan) << "," << gender << "," << seriesprotocol << ",,," << expid <<",\"" << seriesnotes << "\",,,,," << imagefile << ",,,,,,,,,\n";
+				QTextStream(&str) << guid << "," << uid << "," << studydatetime << "," << static_cast<int>(round(ageatscan)) << "," << gender << "," << seriesprotocol << ",,," << expid <<",\"" << seriesnotes << "\",,,,," << imagefile << ",,,,,,,,,\n";
                 fs << str;
             }
             else if (modality == "ET") {
                 int expid = 0;
                 QString str;
-                QTextStream(&str) << guid << "," << uid << "," << studydatetime << "," << (int)round(ageatscan) << "," << gender << ",Unknown," << expid << "," << seriesprotocol << ",,\"" << seriesnotes << "\",,,," << imagefile << ",Eyetracking,,,,,,\n";
+				QTextStream(&str) << guid << "," << uid << "," << studydatetime << "," << static_cast<int>(round(ageatscan)) << "," << gender << ",Unknown," << expid << "," << seriesprotocol << ",,\"" << seriesnotes << "\",,,," << imagefile << ",Eyetracking,,,,,,\n";
                 fs << str;
             }
             else if (modality == "GSR") {
                 QString str;
-                QTextStream(&str) << guid << "," << uid << "," << studydatetime << "," << (int)round(ageatscan) << "," << gender << ",,," << seriesprotocol << ",,," << imagefile << ",,,,,,,,,,,,,,,,,,,,,,,,\n";
+				QTextStream(&str) << guid << "," << uid << "," << studydatetime << "," << static_cast<int>(round(ageatscan)) << "," << gender << ",,," << seriesprotocol << ",,," << imagefile << ",,,,,,,,,,,,,,,,,,,,,,,,\n";
                 fs << str;
             }
             else {

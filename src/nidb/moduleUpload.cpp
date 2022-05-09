@@ -48,7 +48,7 @@ moduleUpload::~moduleUpload()
 int moduleUpload::Run() {
     n->WriteLog("Entering the upload module");
 
-    QSqlQuery q;
+	//QSqlQuery q;
     bool ret(false);
 
     /* parse any uploads */
@@ -154,8 +154,8 @@ bool moduleUpload::ParseUploads() {
             }
 
             /* get information about the uploaded data from the uploadstagingdir (before unzipping any zip files) */
-            quint64 c;
-            quint64 b;
+			qint64 c;
+			qint64 b;
             //n->GetDirSizeAndFileCount(uploadstagingpath, c, b, true);
             //io->AppendUploadLog(__FUNCTION__, QString("(BEFORE UNZIPPING) Upload directory [%1] contains [%2] files, and is [%3] bytes in size.").arg(uploadstagingpath).arg(c).arg(b));
 
@@ -238,7 +238,7 @@ bool moduleUpload::ParseUploads() {
                 tfiles++;
 
                 if (i >= 5000) {
-                    double pct = ((double)tfiles/(double)c) * 100.0;
+					double pct = (static_cast<double>(tfiles)/static_cast<double>(c)) * 100.0;
                     SetUploadStatus(upload_id, "parsing", pct);
 
                     /* check if this module should be running */
@@ -262,7 +262,7 @@ bool moduleUpload::ParseUploads() {
                 }
             }
 
-            double pct = ((double)tfiles/(double)c) * 100.0;
+			double pct = (static_cast<double>(tfiles)/static_cast<double>(c)) * 100.0;
             SetUploadStatus(upload_id, "parsing", pct);
 
             /* check if this module should be running */
@@ -451,7 +451,7 @@ bool moduleUpload::UpdateParsedUploads(QMap<QString, QMap<QString, QMap<QString,
                 int seriesid(0);
 
                 QStringList files = fs[subject][study][series];
-                int numfiles = files.size();
+				qint64 numfiles = files.size();
                 //io->AppendUploadLog(__FUNCTION__, QString("numfiles [%1]   numfiles [%2]").arg(files.size()).arg(numfiles));
 
                 if (upload_seriescriteria == "seriesnum") {
@@ -727,7 +727,7 @@ bool moduleUpload::ArchiveParsedUploads() {
             int upload_id = q.value("upload_id").toInt();
             io->SetUploadID(upload_id);
 
-            QString upload_status = q.value("upload_status").toString();
+			//QString upload_status = q.value("upload_status").toString();
             int upload_destprojectid = q.value("upload_destprojectid").toInt();
             QString upload_patientid = q.value("upload_patientid").toString();
             QString upload_stagingpath = q.value("upload_stagingpath").toString();
@@ -780,7 +780,7 @@ bool moduleUpload::ArchiveParsedUploads() {
                     io->ArchiveDICOMSeries(-1, matchingsubjectid, matchingstudyid, matchingseriesid, upload_subjectcriteria, upload_studycriteria, upload_seriescriteria, upload_destprojectid, upload_patientid, -1, "", "Uploaded to NiDB", uploadseries_filelist, perf);
 
                     i++;
-                    double pct = (double)i/(double)numSeries * 100.0;
+					double pct = static_cast<double>(i)/static_cast<double>(numSeries) * 100.0;
                     SetUploadStatus(upload_id, "archiving", pct);
                 }
 

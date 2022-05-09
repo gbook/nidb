@@ -657,8 +657,8 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
     AppendUploadLog(__FUNCTION__ , QString(logmsg + "]  Done renaming [%1] new files").arg(filecnt));
 
     /* get the size of the dicom files and update the DB */
-    quint64 dirsize = 0;
-    quint64 nfiles;
+	qint64 dirsize = 0;
+	qint64 nfiles;
     n->GetDirSizeAndFileCount(outdir, nfiles, dirsize);
     AppendUploadLog(__FUNCTION__ , QString("Archive directory [%1] is [%2] bytes in size and contains [%3] files").arg(outdir).arg(dirsize).arg(nfiles));
 
@@ -715,8 +715,8 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
                 QString systemstring = "mv -v " + inbehdir + "/* " + outbehdir + "/";
                 AppendUploadLog(__FUNCTION__ , n->SystemCommand(systemstring));
 
-                quint64 behdirsize(0);
-                quint64 behnumfiles(0);
+				qint64 behdirsize(0);
+				qint64 behnumfiles(0);
                 n->GetDirSizeAndFileCount(outdir, behnumfiles, behdirsize);
                 QString sqlstring = QString("update %1_series set beh_size = :behdirsize, numfiles_beh = :behnumfiles where %1series_id = :seriesRowID").arg(dbModality.toLower());
                 QSqlQuery q3;
@@ -926,7 +926,7 @@ bool archiveIO::InsertParRec(int importid, QString file) {
             }
             /* get the first line of the image list... it should contain the flip angle */
             if (!line.startsWith(".") && !line.startsWith("#") && (line != "")) {
-                QStringList p = line.split(QRegularExpression("\\s+"));
+				QStringList p = line.split(REwhiteSpace);
 
                 if (p.size() > 9) pixelX = p[9].trimmed().toInt(); /* 10 - xsize */
                 if (p.size() > 10) pixelY = p[10].trimmed().toInt(); /* 11 - ysize */
@@ -1307,8 +1307,8 @@ bool archiveIO::InsertParRec(int importid, QString file) {
     n->MoveFile(recfile, outdir, m);
 
     /* get the size of the dicom files and update the DB */
-    quint64 dirsize(0);
-    quint64 nfiles(0);
+	qint64 dirsize(0);
+	qint64 nfiles(0);
     n->GetDirSizeAndFileCount(outdir, nfiles, dirsize);
 
     /* update the database with the correct number of files/BOLD reps */
@@ -1637,12 +1637,13 @@ bool archiveIO::InsertEEG(int importid, QString file) {
 
     /* move the files into the outdir */
     AppendUploadLog(__FUNCTION__, "Moving ["+file+"] -> ["+outdir+"]");
-    if (!n->MoveFile(file, outdir, m))
+	if (!n->MoveFile(file, outdir, m)) {
         n->WriteLog(QString("Unable to move [%1] to [%2], with error [%3]").arg(file, outdir, m));
+	}
 
     /* get the size of the files and update the DB */
-    quint64 dirsize(0);
-    quint64 nfiles(0);
+	qint64 dirsize(0);
+	qint64 nfiles(0);
     n->GetDirSizeAndFileCount(outdir, nfiles, dirsize);
     q2.prepare(QString("update %1_series set series_size = :dirsize where %1series_id = :seriesRowID").arg(Modality.toLower()));
     q2.bindValue(":dirsize", dirsize);
@@ -2225,7 +2226,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
                     seriesdir = seriesaltdesc;
                 }
                 /* remove any non-alphanumeric characters */
-                seriesdir.replace(QRegularExpression("[^a-zA-Z0-9_-]"),"_");
+				seriesdir.replace(REnonAlphaNum,"_");
 
                 QString seriesoutdir = QString("%1/%2/%3/%4").arg(outdir).arg(subjectdir).arg(sessiondir).arg(seriesdir);
 
@@ -2340,16 +2341,16 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
 
     /* create JSON object */
     QJsonObject root;
-    root["format"] = "squirrel";
-    root["squirrelVersion"] = "1.0";
 
     QJsonObject pkgInfo;
     pkgInfo["name"] = name;
     pkgInfo["description"] = desc;
     pkgInfo["datetime"] = n->CreateCurrentDateTime(2);
     pkgInfo["NiDBversion"] = n->GetVersion();
+	pkgInfo["format"] = "squirrel";
+	pkgInfo["version"] = "1.0";
 
-    root["package"] = pkgInfo;
+	root["_package"] = pkgInfo;
 
     QJsonArray JSONsubjects;
 
@@ -2473,7 +2474,7 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
                 QString modality = s[uid][studynum][seriesnum]["modality"];
                 //double seriessize = s[uid][studynum][seriesnum]["seriessize"].toDouble();
                 QString seriesdesc = s[uid][studynum][seriesnum]["seriesdesc"];
-                QString seriesaltdesc = s[uid][studynum][seriesnum]["seriesaltdesc"].trimmed();
+				//QString seriesaltdesc = s[uid][studynum][seriesnum]["seriesaltdesc"].trimmed();
                 QString datatype = s[uid][studynum][seriesnum]["datatype"];
                 QString datadir = s[uid][studynum][seriesnum]["datadir"];
                 QString behindir = s[uid][studynum][seriesnum]["behdir"];
@@ -2489,14 +2490,14 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
                 /* create the subject dir */
                 QString subjectdir;
                 if (squirrelflags.contains("SQUIRREL_INCSUBJECTNUM",Qt::CaseInsensitive))
-                    subjectdir = QString("sub-%1").arg(subjectCounter, 4, 10, QChar('0'));
+					subjectdir = QString("%1").arg(subjectCounter, 4, 10, QChar('0'));
                 else
                     subjectdir = uid;
 
                 /* create the session (study) identifier */
                 QString sessiondir;
                 if (squirrelflags.contains("SQUIRREL_INCSTUDYNUM",Qt::CaseInsensitive))
-                    sessiondir = QString("ses-%1").arg(studyCounter, 4, 10, QChar('0'));
+					sessiondir = QString("%1").arg(studyCounter, 4, 10, QChar('0'));
                 else
                     sessiondir = QString("%1").arg(studynum);
 
@@ -2508,7 +2509,7 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
                     seriesdir = QString("%1").arg(seriesnum);
 
                 /* remove any non-alphanumeric characters */
-                seriesdir.replace(QRegularExpression("[^a-zA-Z0-9_-]"),"_");
+				seriesdir.replace(REnonAlphaNum, "_");
 
                 QString seriesoutdir = QString("%1/data/%2/%3/%4").arg(outdir).arg(subjectdir).arg(sessiondir).arg(seriesdir);
 
@@ -2563,7 +2564,7 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
                         n->WriteLog(n->SystemCommand(systemstring, true));
 
                         /* get file count and size */
-                        quint64 c, b;
+						qint64 c, b;
                         n->GetDirSizeAndFileCount(seriesoutdir, c, b, true);
                         /* add beh object to JSON series */
                         QJsonObject behInfo;
@@ -2575,9 +2576,21 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
                     }
                 }
 
-                /* export mini-pipelines */
+				/* append minipipelinesIDs */
                 if (downloadflags.contains("DOWNLOAD_MINIPIPELINES", Qt::CaseInsensitive)) {
-                }
+					QSqlQuery q2;
+					q2.prepare(QString("SELECT %1series_id, minipipeline_id FROM %1_series a left join minipipeline_jobs b on a.%1series_id = b.mp_seriesid where %1series_id = :seriesid and b.mp_modality = '%1'").arg(modality.toLower()));
+					q2.bindValue(":seriesid", seriesid);
+					n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+					if (q2.size() > 0) {
+						while (q2.next()) {
+							int minipipelineid = q2.value("minipipeline_id").toInt();
+							if (!minipipelineIDs.contains(minipipelineid)) {
+								minipipelineIDs.append(minipipelineid);
+							}
+						}
+					}
+				}
 
 				/* append experimentIDs */
                 if (downloadflags.contains("DOWNLOAD_EXPERIMENTS", Qt::CaseInsensitive)) {
@@ -2606,7 +2619,7 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
 				n->WriteLog(n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__));
 
                 /* get file count and size */
-                quint64 fCount, fBytes;
+				qint64 fCount, fBytes;
                 n->GetDirSizeAndFileCount(seriesoutdir, fCount, fBytes);
 
                 /* add all the series information to the JSON objects */
@@ -2662,6 +2675,19 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
 				JSONexperiments.append(e.GetJSONObject(dir));
 			}
 			root["experiments"] = JSONexperiments;
+		}
+	}
+
+	/* add pipelines to the JSON object */
+	if (downloadflags.contains("DOWNLOAD_MINIPIPELINES", Qt::CaseInsensitive)) {
+		if (minipipelineIDs.size() > 0) {
+			QString dir(QString("%1/minipipelines").arg(outdir));
+			QJsonArray JSONminipipelines;
+			for (int i=0; i<minipipelineIDs.size(); i++) {
+				pipeline p(minipipelineIDs[i], n);
+				JSONminipipelines.append(p.GetJSONObject(dir));
+			}
+			root["minipipelines"] = JSONminipipelines;
 		}
 	}
 

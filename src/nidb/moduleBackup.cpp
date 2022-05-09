@@ -32,7 +32,7 @@
 moduleBackup::moduleBackup(nidb *a)
 {
     n = a;
-    backupTapeSize = n->cfg["backupsize"].toULongLong() * 1000000000; /* convert GB to bytes */
+	backupTapeSize = n->cfg["backupsize"].toLongLong() * 1000000000; /* convert GB to bytes */
     backupDir = n->cfg["backupdir"];
     backupStagingDir = n->cfg["backupstagingdir"];
     backupDevice = n->cfg["backupdevice"];
@@ -129,7 +129,7 @@ int moduleBackup::Run() {
 
     /* ----- step 3 ----- move to backup staging */
     n->WriteLog("Step 3 - Moving data to backup staging");
-    quint64 backupStageSize = MoveToBackupStaging();
+	qint64 backupStageSize = MoveToBackupStaging();
     n->WriteLog(QString("After moving, [%1] size is [%2] bytes").arg(backupStagingDir).arg(backupStageSize));
 
     n->ModuleRunningCheckIn();
@@ -212,8 +212,8 @@ int moduleBackup::Run() {
 qint64 moduleBackup::MoveToBackupStaging() {
 
     /* get size of backup staging directory */
-    quint64 c;
-    quint64 backupStagingSize = 0;
+	qint64 c;
+	qint64 backupStagingSize = 0;
     n->GetDirSizeAndFileCount(backupStagingDir, c, backupStagingSize, true);
 
     /* loop through files in backup dir, older than 24 hrs, then

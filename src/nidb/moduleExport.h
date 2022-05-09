@@ -53,7 +53,7 @@ public:
 	bool ExportXNAT(int exportid, QString &exportstatus, QString &msg);
 
     bool WriteNDARHeader(QString headerfile, QString modality, QStringList &log);
-    bool WriteNDARSeries(QString file, QString imagefile, QString behfile, QString behdesc, int seriesid, QString modality, QString indir, QStringList &log);
+	bool WriteNDARSeries(QString file, QString imagefile, QString behfile, QString behdesc, qint64 seriesid, QString modality, QString indir, QStringList &log);
 
     int StartRemoteNiDBTransaction(QString remotenidbserver, QString remotenidbusername, QString remotenidbpassword);
     void EndRemoteNiDBTransaction(int tid, QString remotenidbserver, QString remotenidbusername, QString remotenidbpassword);

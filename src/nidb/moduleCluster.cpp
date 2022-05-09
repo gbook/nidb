@@ -299,8 +299,8 @@ bool moduleCluster::UpdateAnalysis(QString analysisid, QString &m) {
     }
 
     m = "Getting directory size for [" + a.analysispath + "]";
-    quint64 c;
-    quint64 b;
+	qint64 c;
+	qint64 b;
     n->GetDirSizeAndFileCount(a.analysispath, c, b, true);
 
     q.prepare("update analysis set analysis_disksize = :disksize, analysis_numfiles = :numfiles where analysis_id = :analysisid");

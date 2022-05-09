@@ -93,7 +93,7 @@ int moduleMiniPipeline::Run() {
             n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
             numJobsRun++;
-            QStringList logs;
+			//QStringList logs;
             int enrollmentID = -1;
             int numInserts = 0;
 
@@ -133,7 +133,7 @@ int moduleMiniPipeline::Run() {
 
                         /* (3) copy in all of the behavioral data */
                         QString m;
-                        int c = CopyAllSeriesData(modality, seriesid, tmpdir, m);
+						qint64 c = CopyAllSeriesData(modality, seriesid, tmpdir, m);
                         if (c > 0)
                             AppendMiniPipelineLog(n->WriteLog(QString("Copied [%1] files to [%2]").arg(c).arg(tmpdir)), mpjobid);
                         else
@@ -194,7 +194,7 @@ int moduleMiniPipeline::Run() {
                                     else csvEndDate = csv[i]["enddate"];
                                     QString csvDuration = csv[i]["duration"];
                                     QString csvValue = csv[i]["value"];
-                                    QString csvUnits = csv[i]["units"];
+									//QString csvUnits = csv[i]["units"];
                                     QString csvNotes = csv[i]["notes"];
                                     QString csvInstrument = csv[i]["instrument"];
 
@@ -340,8 +340,8 @@ QList<int> moduleMiniPipeline::GetMPJobList() {
 * @param createDestDir true to create the destination directory if it doesn't exist
 * @param rwPerms copy the data with read-write permissions
 **************************************************************/
-int moduleMiniPipeline::CopyAllSeriesData(QString modality, int seriesid, QString destination, QString &msg, bool createDestDir, bool rwPerms) {
-    int numFilesCopied = 0;
+qint64 moduleMiniPipeline::CopyAllSeriesData(QString modality, qint64 seriesid, QString destination, QString &msg, bool createDestDir, bool rwPerms) {
+	qint64 numFilesCopied = 0;
     msg = "";
 
     series s(seriesid, modality, n); /* get the series info */
@@ -371,8 +371,8 @@ int moduleMiniPipeline::CopyAllSeriesData(QString modality, int seriesid, QStrin
         msg += n->SystemCommand(systemstring, true, false);
     }
 
-    quint64 c;
-    quint64 b;
+	qint64 c;
+	qint64 b;
     n->GetDirSizeAndFileCount(destination,c,b);
 
     numFilesCopied = c;
@@ -384,7 +384,7 @@ int moduleMiniPipeline::CopyAllSeriesData(QString modality, int seriesid, QStrin
 /* ---------------------------------------------------------- */
 /* --------- InsertMeasure ---------------------------------- */
 /* ---------------------------------------------------------- */
-bool moduleMiniPipeline::InsertMeasure(int enrollmentid, int studyid, int seriesid, QString measureName, QString value, QString instrument, QDateTime startDate, QDateTime endDate, int duration, QString rater, int &numInserts, QString &msg) {
+bool moduleMiniPipeline::InsertMeasure(qint64 enrollmentid, qint64 studyid, qint64 seriesid, QString measureName, QString value, QString instrument, QDateTime startDate, QDateTime endDate, int duration, QString rater, int &numInserts, QString &msg) {
 
     QSqlQuery q;
     numInserts = 0;
@@ -449,7 +449,7 @@ bool moduleMiniPipeline::InsertMeasure(int enrollmentid, int studyid, int series
 /* ---------------------------------------------------------- */
 /* --------- InsertVital ------------------------------------ */
 /* ---------------------------------------------------------- */
-int moduleMiniPipeline::InsertVital(int enrollmentID, QString vitalName, QString value, QString notes, QString vitalType, QDateTime vitalStartDate, QDateTime vitalEndDate, int duration) {
+int moduleMiniPipeline::InsertVital(qint64 enrollmentID, QString vitalName, QString value, QString notes, QString vitalType, QDateTime vitalStartDate, QDateTime vitalEndDate, int duration) {
 
     QSqlQuery q;
 
@@ -489,7 +489,7 @@ int moduleMiniPipeline::InsertVital(int enrollmentID, QString vitalName, QString
 /* ---------------------------------------------------------- */
 /* --------- InsertDrug ------------------------------------- */
 /* ---------------------------------------------------------- */
-int moduleMiniPipeline::InsertDrug(int enrollmentID, QDateTime startDate, QDateTime endDate, QString doseAmount, QString doseFreq, QString route, QString drugName, QString drugType, QString doseUnit, QString doseFreqModifier, double doseFreqValue, QString doseFreqUnit) {
+int moduleMiniPipeline::InsertDrug(qint64 enrollmentID, QDateTime startDate, QDateTime endDate, QString doseAmount, QString doseFreq, QString route, QString drugName, QString drugType, QString doseUnit, QString doseFreqModifier, double doseFreqValue, QString doseFreqUnit) {
 
     doseFreq = "";
 

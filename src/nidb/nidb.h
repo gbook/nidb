@@ -47,6 +47,7 @@ typedef QHash <int, QHash<QString, QString>> indexedHash;
 typedef QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>> subjectStudySeriesContainer;
 
 static const QRegularExpression REwhiteSpace("\\s*");
+static const QRegularExpression REnonAlphaNum("[^a-zA-Z0-9_-]");
 
 class nidb
 {
@@ -81,7 +82,7 @@ public:
 
     /* generic nidb functions */
     QString CreateUID(QString prefix, int numletters=3);
-    QString GetPrimaryAlternateUID(int subjectid, int enrollmentid);
+	QString GetPrimaryAlternateUID(qint64 subjectid, qint64 enrollmentid);
     QString GetGroupListing(int groupid);
 
     /* generic functions */
@@ -126,7 +127,7 @@ public:
     bool MoveAllFiles(QString indir, QString pattern, QString outdir, QString &msg);
     bool RenameFile(QString filepathorig, QString filepathnew, bool force=true);
     bool MoveFile(QString f, QString dir, QString &m);
-    void GetDirSizeAndFileCount(QString dir, quint64 &c, quint64 &b, bool recurse=false);
+	void GetDirSizeAndFileCount(QString dir, qint64 &c, qint64 &b, bool recurse=false);
     //void GetDirectoryListing(QString dir, QStringList &files, QList<int> &sizes, bool recurse=false);
     QByteArray GetFileChecksum(const QString &fileName, QCryptographicHash::Algorithm hashAlgorithm);
     bool chmod(QString f, QString perm);
@@ -147,7 +148,7 @@ public:
     double GetPatientAge(QString PatientAgeStr, QString StudyDate, QString PatientBirthDate);
 
     /* other */
-    bool SetExportSeriesStatus(int exportseriesid, QString status, QString msg = "");
+	bool SetExportSeriesStatus(qint64 exportseriesid, QString status, QString msg = "");
 
 private:
     void FatalError(QString err);

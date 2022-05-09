@@ -61,7 +61,7 @@ int moduleMRIQA::Run() {
         while (q.next()) {
             n->WriteLog(QString("***** Working on MR QA [%1] of [%2] *****").arg(numProcessed).arg(numToDo));
             n->ModuleRunningCheckIn();
-            quint64 mrseriesid = q.value("mrseries_id").toULongLong();
+			qint64 mrseriesid = q.value("mrseries_id").toLongLong();
             QA(mrseriesid);
 
             /* only process 10 series before exiting the script. Since the script always starts with the newest when it first runs,
@@ -93,7 +93,7 @@ int moduleMRIQA::Run() {
 /* ---------------------------------------------------------- */
 /* --------- QA --------------------------------------------- */
 /* ---------------------------------------------------------- */
-bool moduleMRIQA::QA(int seriesid) {
+bool moduleMRIQA::QA(qint64 seriesid) {
 
     QStringList msgs;
 
@@ -174,8 +174,8 @@ bool moduleMRIQA::QA(int seriesid) {
     msgs << n->WriteLog("Done attempting to convert files... now trying to copy out the first valid Nifti file");
     QDir::setCurrent(tmpdir);
 
-    quint64 c(0);
-    quint64 b(0);
+	qint64 c(0);
+	qint64 b(0);
     n->GetDirSizeAndFileCount(tmpdir, c, b);
     if ((c == 0) | (b == 0)) {
         msgs << n->WriteLog(QString("No files found in ["+tmpdir+"] after copying or converting. dircount [%1] dirsize [%2]").arg(c).arg(b));
@@ -440,8 +440,8 @@ bool moduleMRIQA::QA(int seriesid) {
     q.bindValue(":mrqaid",mrqaid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
 
-    quint64 dirsize = 0;
-    quint64 nfiles;
+	qint64 dirsize = 0;
+	qint64 nfiles;
     n->GetDirSizeAndFileCount(indir, nfiles, dirsize);
 
     /* update the mr_series table with the image dimensions */
@@ -536,7 +536,7 @@ bool moduleMRIQA::GetMovementStats(QString f, double &maxrx, double &maxry, doub
             if (line.size() == 0)
                 continue;
 
-            QStringList p = line.split(QRegularExpression("\\s+"));
+			QStringList p = line.split(REwhiteSpace);
             if (p.size() == 6) {
                 rotx.append(p[0].toDouble());
                 roty.append(p[1].toDouble());

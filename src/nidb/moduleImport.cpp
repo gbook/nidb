@@ -227,7 +227,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
 
     /* ----- parse all files in /incoming ----- */
     QStringList files = n->FindAllFiles(dir, "*");
-    int numfiles = files.size();
+	qint64 numfiles = files.size();
     n->WriteLog(QString("Found [%1] files in [%2]").arg(numfiles).arg(dir));
     int processedFileCount(0);
     foreach (QString file, files) {
@@ -287,14 +287,14 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
         /* make sure this file still exists... another instance of the program may have altered it */
         if (QFile::exists(file)) {
 
-            QString dir = QFileInfo(file).path();
-            QString fname = QFileInfo(file).fileName();
-            QString ext = QFileInfo(file).completeSuffix().toLower();
+			//QString dir = QFileInfo(file).path();
+			//QString fname = QFileInfo(file).fileName();
+			QString ext = QFileInfo(file).completeSuffix().toLower();
             if (ext == "par") {
                 n->WriteLog("Filetype is .par");
 
                 QString m;
-                QString report;
+				//QString report;
 
                 if (!io->InsertParRec(importid, file)) {
                     n->WriteLog(QString("InsertParRec(%1, %2) failed: [%3]").arg(file).arg(importid).arg(m));
@@ -322,7 +322,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
             else if ((ext == "cnt") || (ext == "3dd") || (ext == "dat") || (ext == "edf") || (importModality == "eeg") || (importDatatype == "eeg") || (importModality == "et") || (ext == "et") ) {
                 n->WriteLog("Filetype is an EEG or ET file");
 
-                QString report;
+				//QString report;
                 QString m;
 
                 if (!io->InsertEEG(importid, file)) {

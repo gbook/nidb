@@ -29,8 +29,8 @@ QString performanceMetric::End() {
     end = QDateTime().currentDateTime();
 
     elapsedTime = start.secsTo(end);
-    double n = (double)numBytesRead + 0.0000001;
-    double t = (double)elapsedTime + 0.0000001;
+	double n = static_cast<double>(numBytesRead) + 0.0000001;
+	double t = static_cast<double>(elapsedTime) + 0.0000001;
     double bytesReadPerSec = n/t;
 
     QString str = QString("Performance metrics\nElapsed time: %1s").arg(elapsedTime);

@@ -956,7 +956,7 @@ QStringList nidb::FindAllDirs(QString dir, QString pattern, bool recursive, bool
 /* ---------------------------------------------------------- */
 /* --------- GetDirSizeAndFileCount ------------------------- */
 /* ---------------------------------------------------------- */
-void nidb::GetDirSizeAndFileCount(QString dir, quint64 &c, quint64 &b, bool recurse) {
+void nidb::GetDirSizeAndFileCount(QString dir, qint64 &c, qint64 &b, bool recurse) {
     c = 0;
     b = 0;
 
@@ -1203,7 +1203,7 @@ bool nidb::BatchRenameFiles(QString dir, QString seriesnum, QString studynum, QS
 /* ---------------------------------------------------------- */
 /* --------- GetPrimaryAlternateUID ------------------------- */
 /* ---------------------------------------------------------- */
-QString nidb::GetPrimaryAlternateUID(int subjectid, int enrollmentid) {
+QString nidb::GetPrimaryAlternateUID(qint64 subjectid, qint64 enrollmentid) {
 
     if ((subjectid < 1) || (enrollmentid < 1))
         return "";
@@ -1285,7 +1285,7 @@ QString nidb::CreateUID(QString prefix, int numletters) {
 /* --------- RemoveNonAlphaNumericChars --------------------- */
 /* ---------------------------------------------------------- */
 QString nidb::RemoveNonAlphaNumericChars(QString s) {
-    return s.remove(QRegularExpression("[^a-zA-Z\\d\\s]"));
+	return s.remove(REnonAlphaNum);
 }
 
 
@@ -2462,7 +2462,7 @@ bool nidb::GetImageFileTags(QString f, QHash<QString, QString> &tags) {
         WriteLog(QString("File [%1] is not a DICOM file").arg(f));
 
         /* check if EEG, and Polhemus */
-        if ((f.endsWith(".cnt", Qt::CaseInsensitive)) || (f.endsWith(".dat"), Qt::CaseInsensitive) || (f.endsWith(".3dd"), Qt::CaseInsensitive) || (f.endsWith(".eeg", Qt::CaseInsensitive))) {
+		if ((f.endsWith(".cnt", Qt::CaseInsensitive)) || (f.endsWith(".dat", Qt::CaseInsensitive)) || (f.endsWith(".3dd", Qt::CaseInsensitive)) || (f.endsWith(".eeg", Qt::CaseInsensitive))) {
             tags["FileType"] = "EEG";
             tags["Modality"] = "EEG";
             QFileInfo fn = QFileInfo(f);
@@ -2529,7 +2529,7 @@ bool nidb::GetImageFileTags(QString f, QHash<QString, QString> &tags) {
 
     tags["StudyDateTime"] = tags["StudyDate"] + " " + tags["StudyTime"];
     tags["SeriesDateTime"] = tags["SeriesDate"] + " " + tags["SeriesTime"];
-    QStringList pix = tags["PixelSpacing"].split("\\");
+	//QStringList pix = tags["PixelSpacing"].split("\\");
     //int pixelX(0);
     //int pixelY(0);
     //if (pix.size() == 2) {
@@ -2636,7 +2636,7 @@ bool nidb::WriteTextFile(QString filepath, QString str, bool append) {
 /* ---------------------------------------------------------- */
 /* --------- SetExportSeriesStatus -------------------------- */
 /* ---------------------------------------------------------- */
-bool nidb::SetExportSeriesStatus(int exportseriesid, QString status, QString msg) {
+bool nidb::SetExportSeriesStatus(qint64 exportseriesid, QString status, QString msg) {
 
     if (((status == "pending") || (status == "deleting") || (status == "complete") || (status == "error") || (status == "processing") || (status == "cancelled") || (status == "canceled")) && (exportseriesid > 0)) {
         if (msg.trimmed() == "") {

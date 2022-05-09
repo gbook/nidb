@@ -30,7 +30,7 @@ class series
 {
 public:
 	series();
-	series(int id, QString m, nidb *a);
+	series(qint64 id, QString m, nidb *a);
 	nidb *n;
 
 	void PrintSeriesInfo();
@@ -41,7 +41,7 @@ public:
 	int seriesnum;
 	int subjectid;
 	int studyid;
-	int seriesid;
+	qint64 seriesid;
 	QString seriespath;
 	QString datapath;
 	QString behpath;

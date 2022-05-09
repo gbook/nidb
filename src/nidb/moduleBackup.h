@@ -39,7 +39,7 @@ public:
 
 private:
     nidb *n;
-    quint64 backupTapeSize;
+	qint64 backupTapeSize;
     QString backupDir;
     QString backupStagingDir;
     QString backupServer;

@@ -40,7 +40,7 @@ int moduleImportUploaded::Run() {
 			//int projectid = q.value("import_projectid").toInt();
 			int anonymize = q.value("import_anonymize").toInt();
 			QString datatype = q.value("import_datatype").toString().trimmed();
-			QString modality = q.value("import_modality").toString().trimmed();
+			//QString modality = q.value("import_modality").toString().trimmed();
 			//int fileisseries = q.value("import_fileisseries").toInt();
 			QString importstatus = q.value("import_status").toString().trimmed();
 
@@ -214,7 +214,7 @@ bool moduleImportUploaded::PrepareAndMoveDICOM(QString filepath, QString outdir,
 	}
 	/* if the filename exists in the outgoing directory, prepend some junk to it, since the filename is unimportant
 	   some directories have all their files named IM0001.dcm ..... so, inevitably, something will get overwrtten, which is bad */
-	QString filename = QFileInfo(filepath).fileName();
+	//QString filename = QFileInfo(filepath).fileName();
 	QString newfilename = QFileInfo(filepath).baseName() + n->GenerateRandomString(15) + "." + QFileInfo(filepath).completeSuffix();
 
 	QString systemstring = QString("touch %1; mv %1 %2/%3").arg(filepath).arg(outdir).arg(newfilename);

@@ -66,7 +66,7 @@ int moduleFileIO::Run() {
             QString modality = q.value("modality").toString().trimmed();
             QString data_destination = q.value("data_destination").toString().trimmed();
             int rearchiveprojectid = q.value("rearchiveprojectid").toInt();
-            QString dicomtags = q.value("anonymize_fields").toString().trimmed();
+			//QString dicomtags = q.value("anonymize_fields").toString().trimmed();
             QString username = q.value("username").toString().trimmed();
             QString merge_ids = q.value("merge_ids").toString().trimmed();
             QString merge_method = q.value("merge_method").toString().trimmed();
@@ -346,8 +346,8 @@ bool moduleFileIO::DeleteAnalysis(qint64 analysisid, QString &msg) {
     bool okToDeleteDBEntries = false;
 
     if (QDir(a.analysispath).exists()) {
-        quint64 c;
-        quint64 b;
+		qint64 c;
+		qint64 b;
         n->GetDirSizeAndFileCount(a.analysispath, c, b, true);
 
         n->WriteLog(QString("Going to remove [%1] files and directories from [%2]").arg(c).arg(a.analysispath));
