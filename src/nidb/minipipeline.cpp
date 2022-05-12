@@ -129,3 +129,44 @@ bool minipipeline::WriteScripts(QString dir, QString &m) {
 
     return true;
 }
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetJSONObject ---------------------------------- */
+/* ---------------------------------------------------------- */
+/* if path is specified, write the full JSON object to that
+ * path and return a small JSON object */
+QJsonObject minipipeline::GetJSONObject(QString path) {
+	QJsonObject json, jsonSmall, jsonLarge;
+
+	jsonSmall["name"] = name;
+
+	jsonLarge["name"] = name;
+	jsonLarge["createDate"] = createDate.toString();
+	jsonLarge["modifyDate"] = createDate.toString();
+	jsonLarge["version"] = version;
+	jsonLarge["entrypoint"] = entrypoint;
+	//jsonLarge["creator"] = creator;
+
+	if (path == "") {
+		/* return full JSON object */
+		return jsonLarge;
+	}
+	else {
+		/* write all minipipeline info to path */
+		QString m;
+		QString minipipelinepath = QString("%1/%2").arg(path).arg(name);
+		if (!n->MakePath(minipipelinepath, m))
+			n->WriteLog("Error creating path [" + minipipelinepath + "] because of [" + m + "]");
+
+		QByteArray j = QJsonDocument(jsonLarge).toJson();
+		QFile fout(QString("%1/%2/minipipeline.json").arg(path).arg(name));
+		if (fout.open(QIODevice::WriteOnly))
+			fout.write(j);
+		else
+			n->WriteLog("Error writing file [" + QString("%1/%2/minipipeline.json").arg(path).arg(name) + "]");
+
+		/* return small JSON object */
+		return jsonSmall;
+	}
+}

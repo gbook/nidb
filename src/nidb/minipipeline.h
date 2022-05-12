@@ -59,6 +59,8 @@ public:
 	QList<miniPipelineScript> scripts;
 	QString entrypoint;
 
+	QJsonObject GetJSONObject(QString path);
+
 private:
 	void LoadMiniPipelineInfo();
 

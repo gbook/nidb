@@ -25,6 +25,7 @@
 #include "study.h"
 #include "analysis.h"
 #include "pipeline.h"
+#include "minipipeline.h"
 #include "experiment.h"
 
 /* ---------------------------------------------------------- */
@@ -2684,7 +2685,7 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
 			QString dir(QString("%1/minipipelines").arg(outdir));
 			QJsonArray JSONminipipelines;
 			for (int i=0; i<minipipelineIDs.size(); i++) {
-				pipeline p(minipipelineIDs[i], n);
+				minipipeline p(minipipelineIDs[i], n);
 				JSONminipipelines.append(p.GetJSONObject(dir));
 			}
 			root["minipipelines"] = JSONminipipelines;
