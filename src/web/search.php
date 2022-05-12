@@ -307,7 +307,7 @@
 			<div class="ui grey secondary inverted top attached segment">
 				<div class="ui three column grid">
 					<div class="left aligned column">
-						<button class="ui yellow large button" onClick="window.location.href='search.php'; return false;"><i class="search plus icon"></i> New Search</button>
+						<a href="search.php" class="ui yellow large button"><i class="search plus icon"></i> New Search</a>
 					</div>
 					<div class="column">
 						<? if ($action == "search") { ?>

@@ -64,7 +64,6 @@
 		
 		$_SESSION['instanceid'] = $id;
 		$_SESSION['instancename'] = $instancename;
-		//echo "Switched instance to $id";
 	}
 	
 	$q = mysqli_stmt_init($GLOBALS['linki']);
@@ -105,44 +104,10 @@
 			$row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC);
 			$totalseries += $row2['count'];
 			$totalsize += $row2['size'];
-			//$seriescounts[$modality] = number_format($row2['count']);
-			//$seriessize[$modality] = HumanReadableFilesize($row2['size']);
-
-			//$sqlstring2 = "select sum(b.series_size) 'totalbytes' from data_requests a left join $modality" . "_series b on a.req_seriesid = b.$modality" . "series_id";
-			//$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);
-			//$row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC);
-			//$seriesreqsize[$modality] = HumanReadableFilesize($row2['totalbytes']);
-			//$totalreqbytes += $row2['totalbytes'];
 		}
 	}
 	
 ?>
-<!--
-	<style>
-		@import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;800&display=swap');
-		
-		.nidb1 {
-			font-family: 'M PLUS Rounded 1c', sans-serif;
-			font-weight: 800;
-			color: #35486D;
-		}
-		.nidb2 {
-			font-weight: 400;
-			font-size: 75%;
-			color: #4A6498;
-		}
-		.nidb3 {
-			font-size: 40%;
-			font-family: times new roman;
-			color: #555;
-		}
-	</style>
-	
-	<div class="ui segment" style="font-size: xx-large">
-		<span class="nidb1">Ni</span><span class="nidb2">DB</span><br>
-		<span class="nidb3">Neuroinformatics Database</span>
-	</div>
--->
 	<div class="ui two column grid">
 		<div class="column">
 			<div class="ui two column grid">
@@ -279,8 +244,6 @@
 			</div>
 
 			<br><br>
-			<!--<div class="ui segment">-->
-			<!--<h2 class="ui header">Recently Viewed...</h2>-->
 			
 			<div class="ui header">
 				<div class="content">
@@ -302,7 +265,7 @@
 						$projectname = $row['project_name'];
 						?>
 						<tr>
-							<td><a href="subjects.php?id=<?=$projectid?>"><b><?=$projectname?></b></a></td>
+							<td><a href="projects.php?id=<?=$projectid?>"><b><?=$projectname?></b></a></td>
 							<td><?=$date?></td>
 						</tr>
 						<?
@@ -390,7 +353,6 @@
 				}
 				?>
 			</table>
-		<!--</div>-->
 		</div>
 	</div>
 
