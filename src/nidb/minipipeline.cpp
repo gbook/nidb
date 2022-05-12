@@ -137,7 +137,7 @@ bool minipipeline::WriteScripts(QString dir, QString &m) {
 /* if path is specified, write the full JSON object to that
  * path and return a small JSON object */
 QJsonObject minipipeline::GetJSONObject(QString path) {
-	QJsonObject json, jsonSmall, jsonLarge;
+	QJsonObject jsonSmall, jsonLarge;
 
 	jsonSmall["name"] = name;
 
