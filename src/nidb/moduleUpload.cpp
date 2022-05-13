@@ -48,7 +48,7 @@ moduleUpload::~moduleUpload()
 int moduleUpload::Run() {
     n->WriteLog("Entering the upload module");
 
-	//QSqlQuery q;
+    //QSqlQuery q;
     bool ret(false);
 
     /* parse any uploads */
@@ -100,7 +100,7 @@ bool moduleUpload::ParseUploads() {
 
             /* create temporary directory in uploadstagingdir */
             QString m;
-            if (!n->MakePath(uploadstagingpath, m)) {
+            if (!MakePath(uploadstagingpath, m)) {
                 io->AppendUploadLog(__FUNCTION__, "Error creating directory [" + uploadstagingpath + "]  with message [" + m + "]");
                 ret = 1;
 
@@ -140,12 +140,12 @@ bool moduleUpload::ParseUploads() {
             /* copy in files from uploadtmp or nfs to the uploadstagingdir */
             io->AppendUploadLog(__FUNCTION__, QString("Beginning copy of data from original path [%1] to upload staging path [%2]").arg(upload_datapath).arg(uploadstagingpath));
             QString systemstring = QString("rsync -a %1/ %2/").arg(upload_datapath).arg(uploadstagingpath);
-            io->AppendUploadLog(__FUNCTION__, n->SystemCommand(systemstring, true, true));
+            io->AppendUploadLog(__FUNCTION__, SystemCommand(systemstring, true, true));
 
             /* remove the uploadtmp directory, if it was uploaded from the web */
             if (upload_source == "web") {
                 QString m;
-                if (n->RemoveDir(upload_datapath, m)) {
+                if (RemoveDir(upload_datapath, m)) {
                     io->AppendUploadLog(__FUNCTION__, "Removed upload_tmp directory [" + upload_datapath + "]");
                 }
                 else {
@@ -154,20 +154,20 @@ bool moduleUpload::ParseUploads() {
             }
 
             /* get information about the uploaded data from the uploadstagingdir (before unzipping any zip files) */
-			qint64 c;
-			qint64 b;
+            qint64 c;
+            qint64 b;
             //n->GetDirSizeAndFileCount(uploadstagingpath, c, b, true);
             //io->AppendUploadLog(__FUNCTION__, QString("(BEFORE UNZIPPING) Upload directory [%1] contains [%2] files, and is [%3] bytes in size.").arg(uploadstagingpath).arg(c).arg(b));
 
             /* unzip any files in the uploadstagingdir */
             io->AppendUploadLog(__FUNCTION__, "Unzipping files located in [" + uploadstagingpath + "]");
-            QString unzipOutput = n->UnzipDirectory(uploadstagingpath, true);
+            QString unzipOutput = UnzipDirectory(uploadstagingpath, true);
             io->AppendUploadLog(__FUNCTION__, "Unzip output" + unzipOutput);
 
             /* get information about the uploaded data from the uploadstagingdir (after unzipping any zip files) */
             c = 0;
             b = 0;
-            n->GetDirSizeAndFileCount(uploadstagingpath, c, b, true);
+            GetDirSizeAndFileCount(uploadstagingpath, c, b, true);
             io->AppendUploadLog(__FUNCTION__, QString("AFTER 3 passes of UNZIPPING, upload directory [%1] now contains [%2] files, and is [%3] bytes in size.").arg(uploadstagingpath).arg(c).arg(b));
 
             /* get list of all files, and iterate through all of the files */
@@ -178,13 +178,16 @@ bool moduleUpload::ParseUploads() {
             int unreadableFiles(0);
             /* create a multilevel hash [subject][study][series][files] */
             QMap<QString, QMap<QString, QMap<QString, QStringList> > > fs;
-            QStringList files = n->FindAllFiles(uploadstagingpath, "*", true);
+            QStringList files = FindAllFiles(uploadstagingpath, "*", true);
             foreach (QString f, files) {
                 QString subject, study, series;
 
                 /* get the file info */
                 QHash<QString, QString> tags;
-                if (n->GetImageFileTags(f, tags)) {
+                QString m;
+                bool csa = false;
+                if (n->cfg["enablecsa"] == "1") csa = true;
+                if (img->GetImageFileTags(f, n->cfg["nidbdir"], csa, tags, m)) {
                     if ((tags["Modality"].toLower() == upload_modality.toLower()) || (upload_modality.toLower() == "auto")) {
 
                         /* subject matching criteria */
@@ -238,7 +241,7 @@ bool moduleUpload::ParseUploads() {
                 tfiles++;
 
                 if (i >= 5000) {
-					double pct = (static_cast<double>(tfiles)/static_cast<double>(c)) * 100.0;
+                    double pct = (static_cast<double>(tfiles)/static_cast<double>(c)) * 100.0;
                     SetUploadStatus(upload_id, "parsing", pct);
 
                     /* check if this module should be running */
@@ -262,7 +265,7 @@ bool moduleUpload::ParseUploads() {
                 }
             }
 
-			double pct = (static_cast<double>(tfiles)/static_cast<double>(c)) * 100.0;
+            double pct = (static_cast<double>(tfiles)/static_cast<double>(c)) * 100.0;
             SetUploadStatus(upload_id, "parsing", pct);
 
             /* check if this module should be running */
@@ -451,7 +454,7 @@ bool moduleUpload::UpdateParsedUploads(QMap<QString, QMap<QString, QMap<QString,
                 int seriesid(0);
 
                 QStringList files = fs[subject][study][series];
-				qint64 numfiles = files.size();
+                qint64 numfiles = files.size();
                 //io->AppendUploadLog(__FUNCTION__, QString("numfiles [%1]   numfiles [%2]").arg(files.size()).arg(numfiles));
 
                 if (upload_seriescriteria == "seriesnum") {
@@ -582,7 +585,10 @@ bool moduleUpload::UpdateParsedUploads(QMap<QString, QMap<QString, QMap<QString,
 
                 /* if subject and study are unreadable, put those files into the appropriate bin */
                 QHash<QString, QString> tags;
-                n->GetImageFileTags(files[0], tags);
+                QString m;
+                bool csa = false;
+                if (n->cfg["enablecsa"] == "1") csa = true;
+                img->GetImageFileTags(files[0], n->cfg["nidbdir"], csa, tags, m);
 
                 QSqlQuery q3;
 
@@ -644,10 +650,10 @@ bool moduleUpload::UpdateParsedUploads(QMap<QString, QMap<QString, QMap<QString,
                     q3.bindValue(":protocol", tags["ProtocolName"]);
                     q3.bindValue(":date", tags["SeriesDateTime"]);
                     q3.bindValue(":NumberOfFiles", numfiles);
-					if (tags["RepetitionTime"] == "") q3.bindValue(":tr", QVariant(QMetaType::fromType<double>())); else q3.bindValue(":tr", tags["RepetitionTime"]);
-					if (tags["EchoTime"] == "") q3.bindValue(":te", QVariant(QMetaType::fromType<double>())); else q3.bindValue(":te", tags["EchoTime"]);
-					if (tags["SpacingBetweenSlices"] == "") q3.bindValue(":slicespacing", QVariant(QMetaType::fromType<double>())); else q3.bindValue(":slicespacing", tags["SpacingBetweenSlices"]);
-					if (tags["SliceThickness"] == "") q3.bindValue(":slicethickness", QVariant(QMetaType::fromType<double>())); else q3.bindValue(":slicethickness", tags["SliceThickness"]);
+                    if (tags["RepetitionTime"] == "") q3.bindValue(":tr", QVariant(QMetaType::fromType<double>())); else q3.bindValue(":tr", tags["RepetitionTime"]);
+                    if (tags["EchoTime"] == "") q3.bindValue(":te", QVariant(QMetaType::fromType<double>())); else q3.bindValue(":te", tags["EchoTime"]);
+                    if (tags["SpacingBetweenSlices"] == "") q3.bindValue(":slicespacing", QVariant(QMetaType::fromType<double>())); else q3.bindValue(":slicespacing", tags["SpacingBetweenSlices"]);
+                    if (tags["SliceThickness"] == "") q3.bindValue(":slicethickness", QVariant(QMetaType::fromType<double>())); else q3.bindValue(":slicethickness", tags["SliceThickness"]);
                     q3.bindValue(":rows", tags["Rows"]);
                     q3.bindValue(":cols", tags["Columns"]);
                     q3.bindValue(":seriesinstanceuid", tags["SeriesInstanceUID"]);
@@ -662,10 +668,10 @@ bool moduleUpload::UpdateParsedUploads(QMap<QString, QMap<QString, QMap<QString,
                     q3.bindValue(":protocol", tags["ProtocolName"]);
                     q3.bindValue(":num", tags["SeriesNumber"]);
                     q3.bindValue(":NumberOfFiles", numfiles);
-					if (tags["RepetitionTime"] == "") q3.bindValue(":tr", QVariant(QMetaType::fromType<double>())); else q3.bindValue(":tr", tags["RepetitionTime"]);
-					if (tags["EchoTime"] == "") q3.bindValue(":te", QVariant(QMetaType::fromType<double>())); else q3.bindValue(":te", tags["EchoTime"]);
-					if (tags["SpacingBetweenSlices"] == "") q3.bindValue(":slicespacing", QVariant(QMetaType::fromType<double>())); else q3.bindValue(":slicespacing", tags["SpacingBetweenSlices"]);
-					if (tags["SliceThickness"] == "") q3.bindValue(":slicethickness", QVariant(QMetaType::fromType<double>())); else q3.bindValue(":slicethickness", tags["SliceThickness"]);
+                    if (tags["RepetitionTime"] == "") q3.bindValue(":tr", QVariant(QMetaType::fromType<double>())); else q3.bindValue(":tr", tags["RepetitionTime"]);
+                    if (tags["EchoTime"] == "") q3.bindValue(":te", QVariant(QMetaType::fromType<double>())); else q3.bindValue(":te", tags["EchoTime"]);
+                    if (tags["SpacingBetweenSlices"] == "") q3.bindValue(":slicespacing", QVariant(QMetaType::fromType<double>())); else q3.bindValue(":slicespacing", tags["SpacingBetweenSlices"]);
+                    if (tags["SliceThickness"] == "") q3.bindValue(":slicethickness", QVariant(QMetaType::fromType<double>())); else q3.bindValue(":slicethickness", tags["SliceThickness"]);
                     q3.bindValue(":rows", tags["Rows"]);
                     q3.bindValue(":cols", tags["Columns"]);
                     q3.bindValue(":seriesinstanceuid", tags["SeriesInstanceUID"]);
@@ -681,10 +687,10 @@ bool moduleUpload::UpdateParsedUploads(QMap<QString, QMap<QString, QMap<QString,
                     q3.bindValue(":date", tags["SeriesDateTime"]);
                     q3.bindValue(":num", tags["SeriesNumber"]);
                     q3.bindValue(":NumberOfFiles", numfiles);
-					if (tags["RepetitionTime"] == "") q3.bindValue(":tr", QVariant(QMetaType::fromType<double>())); else q3.bindValue(":tr", tags["RepetitionTime"]);
-					if (tags["EchoTime"] == "") q3.bindValue(":te", QVariant(QMetaType::fromType<double>())); else q3.bindValue(":te", tags["EchoTime"]);
-					if (tags["SpacingBetweenSlices"] == "") q3.bindValue(":slicespacing", QVariant(QMetaType::fromType<double>())); else q3.bindValue(":slicespacing", tags["SpacingBetweenSlices"]);
-					if (tags["SliceThickness"] == "") q3.bindValue(":slicethickness", QVariant(QMetaType::fromType<double>())); else q3.bindValue(":slicethickness", tags["SliceThickness"]);
+                    if (tags["RepetitionTime"] == "") q3.bindValue(":tr", QVariant(QMetaType::fromType<double>())); else q3.bindValue(":tr", tags["RepetitionTime"]);
+                    if (tags["EchoTime"] == "") q3.bindValue(":te", QVariant(QMetaType::fromType<double>())); else q3.bindValue(":te", tags["EchoTime"]);
+                    if (tags["SpacingBetweenSlices"] == "") q3.bindValue(":slicespacing", QVariant(QMetaType::fromType<double>())); else q3.bindValue(":slicespacing", tags["SpacingBetweenSlices"]);
+                    if (tags["SliceThickness"] == "") q3.bindValue(":slicethickness", QVariant(QMetaType::fromType<double>())); else q3.bindValue(":slicethickness", tags["SliceThickness"]);
                     q3.bindValue(":rows", tags["Rows"]);
                     q3.bindValue(":cols", tags["Columns"]);
                     q3.bindValue(":files", filesNoPrefix.join(","));
@@ -727,7 +733,7 @@ bool moduleUpload::ArchiveParsedUploads() {
             int upload_id = q.value("upload_id").toInt();
             io->SetUploadID(upload_id);
 
-			//QString upload_status = q.value("upload_status").toString();
+            //QString upload_status = q.value("upload_status").toString();
             int upload_destprojectid = q.value("upload_destprojectid").toInt();
             QString upload_patientid = q.value("upload_patientid").toString();
             QString upload_stagingpath = q.value("upload_stagingpath").toString();
@@ -780,7 +786,7 @@ bool moduleUpload::ArchiveParsedUploads() {
                     io->ArchiveDICOMSeries(-1, matchingsubjectid, matchingstudyid, matchingseriesid, upload_subjectcriteria, upload_studycriteria, upload_seriescriteria, upload_destprojectid, upload_patientid, -1, "", "Uploaded to NiDB", uploadseries_filelist, perf);
 
                     i++;
-					double pct = static_cast<double>(i)/static_cast<double>(numSeries) * 100.0;
+                    double pct = static_cast<double>(i)/static_cast<double>(numSeries) * 100.0;
                     SetUploadStatus(upload_id, "archiving", pct);
                 }
 
@@ -798,7 +804,7 @@ bool moduleUpload::ArchiveParsedUploads() {
                 SetUploadStatus(upload_id, "archivecomplete", 100.0);
                 /* delete all of the source data and mark status as 'archivecomplete' */
                 QString m;
-                if (n->RemoveDir(upload_stagingpath, m))
+                if (RemoveDir(upload_stagingpath, m))
                     io->AppendUploadLog(__FUNCTION__, QString("Removed upload staging directory [%1]").arg(upload_stagingpath));
                 else
                     io->AppendUploadLog(__FUNCTION__, QString("Error: No series found for upload [%1]").arg(upload_id));
@@ -818,9 +824,9 @@ void moduleUpload::SetUploadStatus(int uploadid, QString status, double percent)
 
     q.prepare("update uploads set upload_status = :status, upload_statuspercent = :pct where upload_id = :uploadid");
     q.bindValue(":status", status);
-	//if (percent < 0.0) q.bindValue(":pct", QVariant(QVariant::Double)); else q.bindValue(":pct", percent);
-	if (percent < 0.0) q.bindValue(":pct", QVariant(QMetaType::fromType<double>())); else q.bindValue(":pct", percent);
-	q.bindValue(":uploadid", uploadid);
+    //if (percent < 0.0) q.bindValue(":pct", QVariant(QVariant::Double)); else q.bindValue(":pct", percent);
+    if (percent < 0.0) q.bindValue(":pct", QVariant(QMetaType::fromType<double>())); else q.bindValue(":pct", percent);
+    q.bindValue(":uploadid", uploadid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
 }
 

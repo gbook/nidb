@@ -23,7 +23,6 @@
 #define MODULEBACKUP_H
 #include "nidb.h"
 
-
 class moduleBackup
 {
 public:
@@ -39,7 +38,8 @@ public:
 
 private:
     nidb *n;
-	qint64 backupTapeSize;
+
+    qint64 backupTapeSize;
     QString backupDir;
     QString backupStagingDir;
     QString backupServer;

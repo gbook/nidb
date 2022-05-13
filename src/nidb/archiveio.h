@@ -23,6 +23,7 @@
 #ifndef ARCHIVEIO_H
 #define ARCHIVEIO_H
 #include "nidb.h"
+#include "imageio.h"
 #include "performanceMetric.h"
 
 class archiveIO
@@ -44,8 +45,8 @@ public:
     bool GetStudy(QString studyMatchCriteria, int existingStudyID, int enrollmentRowID, QString StudyDateTime, QString Modality, QString StudyInstanceUID, int &studyRowID);
     bool CreateStudy(int subjectRowID, int enrollmentRowID, QString StudyDateTime, QString studyUID, QString Modality, QString PatientID, double PatientAge, double PatientSize, double PatientWeight, QString StudyDescription, QString OperatorsName, QString PerformingPhysiciansName, QString StationName, QString InstitutionName, QString InstitutionAddress, int &studyRowID, int &studyNum);
 
-	bool WriteBIDS(QList<qint64> seriesids, QStringList modalities, QString odir, QString bidsreadme, QStringList bidsflags, QString &msg);
-	bool WriteSquirrel(QString name, QString desc, QStringList downloadflags, QStringList squirrelflags, QList<qint64> seriesids, QStringList modalities, QString odir, QString &msg);
+    bool WriteBIDS(QList<qint64> seriesids, QStringList modalities, QString odir, QString bidsreadme, QStringList bidsflags, QString &msg);
+    bool WriteSquirrel(QString name, QString desc, QStringList downloadflags, QStringList squirrelflags, QList<qint64> seriesids, QStringList modalities, QString odir, QString &msg);
     bool GetSeriesListDetails(QList <qint64> seriesids, QStringList modalities, subjectStudySeriesContainer &s);
 
     /* archive helper functions */
@@ -57,15 +58,16 @@ public:
     bool GetProject(int destProjectID, QString StudyDescription, int &projectRowID);
     bool GetEnrollment(int subjectRowID, int projectRowID, int &enrollmentRowID);
 
-	bool AppendJSONMeasures(QJsonObject &jsonObj, QList <int> enrollmentIDs);
-	bool AppendJSONDrugs(QJsonObject &jsonObj, QList <int> enrollmentIDs);
+    bool AppendJSONMeasures(QJsonObject &jsonObj, QList <int> enrollmentIDs);
+    bool AppendJSONDrugs(QJsonObject &jsonObj, QList <int> enrollmentIDs);
 
     /* class helper functions */
-    void SetUploadID(int u);
+    void SetUploadID(int upid);
     void AppendUploadLog(QString func, QString m);
 
 private:
     nidb *n;
+    imageIO *img;
 
     int uploadid;
 };

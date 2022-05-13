@@ -37,17 +37,12 @@
 #include <QMetaType>
 #include <QVariant>
 #include "SmtpMime"
-#include "gdcmReader.h"
-#include "gdcmWriter.h"
-#include "gdcmAttribute.h"
-#include "gdcmStringFilter.h"
-#include "gdcmAnonymizer.h"
+#include "utils.h"
 
-typedef QHash <int, QHash<QString, QString>> indexedHash;
 typedef QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>> subjectStudySeriesContainer;
 
-static const QRegularExpression REwhiteSpace("\\s*");
-static const QRegularExpression REnonAlphaNum("[^a-zA-Z0-9_-]");
+//static const QRegularExpression REwhiteSpace("\\s*");
+//static const QRegularExpression REnonAlphaNum("[^a-zA-Z0-9_-]");
 
 class nidb
 {
@@ -60,7 +55,7 @@ public:
     bool LoadConfig();
     bool DatabaseConnect(bool cluster=false);
     QString GetBuildString();
-	QString GetVersion();
+    QString GetVersion();
 
     /* module housekeeping functions */
     qint64 ModuleGetNumLockFiles();
@@ -79,76 +74,20 @@ public:
     /* logging */
     void InsertAnalysisEvent(qint64 analysisid, int pipelineid, int pipelineversion, int studyid, QString event, QString message);
     void InsertSubjectChangeLog(QString username, QString uid, QString newuid, QString changetype, QString log);
+    bool SetExportSeriesStatus(qint64 exportseriesid, QString status, QString msg = "");
 
     /* generic nidb functions */
     QString CreateUID(QString prefix, int numletters=3);
-	QString GetPrimaryAlternateUID(qint64 subjectid, qint64 enrollmentid);
+    QString GetPrimaryAlternateUID(qint64 subjectid, qint64 enrollmentid);
     QString GetGroupListing(int groupid);
-
-    /* generic functions */
-    void Print(QString s, bool n=true, bool pad=false);
-    QString CreateCurrentDateTime(int format=1);
-    QString CreateLogDate();
+    bool isValidNiDBModality(QString m);
+    bool BatchRenameFiles(QString dir, QString seriesnum, QString studynum, QString uid, int &numfilesrenamed, QString &msg);
+    double GetPatientAge(QString PatientAgeStr, QString StudyDate, QString PatientBirthDate);
     QString SQLQuery(QSqlQuery &q, QString function, QString file, int line, bool d=false, bool batch=false);
     QString WriteLog(QString msg, int wrap=0, bool timeStamp=true);
-    void AppendCustomLog(QString f, QString msg);
-    QString SystemCommand(QString s, bool detail=true, bool truncate=false, bool bufferOutput=true);
-    bool SandboxedSystemCommand(QString s, QString dir, QString &output, QString timeout="00:05:00", bool detail=true, bool truncate=false);
-    QString GenerateRandomString(int n);
-    void SortQStringListNaturally(QStringList &s);
     bool SendEmail(QString to, QString subject, QString body);
-    QString RemoveNonAlphaNumericChars(QString s);
-    QString ParseDate(QString s);
-    QString ParseTime(QString s);
-    QString JoinIntArray(QList<int> a, QString glue);
-    QList<int> SplitStringArrayToInt(QStringList a);
-    QList<double> SplitStringArrayToDouble(QStringList a);
-    QList<int> SplitStringToIntArray(QString a);
-    bool SubmitClusterJob(QString f, QString submithost, QString qsub, QString user, QString queue, QString &msg, int &jobid, QString &result);
     bool GetSQLComparison(QString c, QString &comp, int &num);
-    QStringList ShellWords(QString s);
-    bool IsInt(QString s);
-    bool IsDouble(QString s);
-    bool IsNumber(QString s);
-    QString WrapText(QString s, int col);
-    bool ParseCSV(QString csv, indexedHash &table, QStringList &columns, QString &msg);
-
-    /* math */
-    double Mean(QList<double> a);
-    double Variance(QList<double> a);
-    double StdDev(QList<double> a);
-
-    /* file and directory operations */
-    bool MakePath(QString p, QString &msg, bool perm777=true);
-    bool RemoveDir(QString p, QString &msg);
-    QStringList FindAllFiles(QString dir, QString pattern, bool recursive=false);
-    QStringList FindAllDirs(QString dir, QString pattern, bool recursive=false, bool includepath=false);
-    bool FindFirstFile(QString dir, QString pattern, QString &f, QString &msg, bool recursive=false);
-    bool MoveAllFiles(QString indir, QString pattern, QString outdir, QString &msg);
-    bool RenameFile(QString filepathorig, QString filepathnew, bool force=true);
-    bool MoveFile(QString f, QString dir, QString &m);
-	void GetDirSizeAndFileCount(QString dir, qint64 &c, qint64 &b, bool recurse=false);
-    //void GetDirectoryListing(QString dir, QStringList &files, QList<int> &sizes, bool recurse=false);
-    QByteArray GetFileChecksum(const QString &fileName, QCryptographicHash::Algorithm hashAlgorithm);
-    bool chmod(QString f, QString perm);
-    QString UnzipDirectory(QString dir, bool recurse=false);
-    bool WriteTextFile(QString filepath, QString str, bool append=true);
-    QStringList ReadTextFileIntoArray(QString filepath, bool ignoreEmptyLines=true);
-
-    /* DICOM functions */
-    bool ConvertDicom(QString filetype, QString indir, QString outdir, bool gzip, QString uid, QString studynum, QString seriesnum, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg);
-    bool BatchRenameFiles(QString dir, QString seriesnum, QString studynum, QString uid, int &numfilesrenamed, QString &msg);
-    bool IsDICOMFile(QString f);
-    bool AnonymizeDir(QString dir, int anonlevel, QString randstr1, QString randstr2);
-    bool AnonymizeDicomFile(gdcm::Anonymizer &anon, QString infile, QString outfile, std::vector<gdcm::Tag> const &empty_tags, std::vector<gdcm::Tag> const &remove_tags, std::vector< std::pair<gdcm::Tag, std::string> > const & replace_tags);
-    bool isValidNiDBModality(QString m);
-    QString GetDicomModality(QString f);
-    void GetFileType(QString f, QString &fileType, QString &fileModality, QString &filePatientID, QString &fileProtocol);
-    bool GetImageFileTags(QString f, QHash<QString, QString> &tags);
-    double GetPatientAge(QString PatientAgeStr, QString StudyDate, QString PatientBirthDate);
-
-    /* other */
-	bool SetExportSeriesStatus(qint64 exportseriesid, QString status, QString msg = "");
+    bool SubmitClusterJob(QString f, QString submithost, QString qsub, QString user, QString queue, QString &msg, int &jobid, QString &result);
 
 private:
     void FatalError(QString err);

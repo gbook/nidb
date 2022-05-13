@@ -81,7 +81,7 @@ int modulePipeline::Run() {
     /* get the list of pipelines to be run */
     while (q.next()) {
         n->ModuleRunningCheckIn();
-		//bool debug(false);
+        //bool debug(false);
 
         int pipelineid = q.value("pipeline_id").toInt();
 
@@ -97,7 +97,7 @@ int modulePipeline::Run() {
         else {
             InsertPipelineEvent(pipelineid, runnum, -1, "pipeline_started", QString("Pipeline %1 started").arg(p.name));
         }
-		//debug = p.debug;
+        //debug = p.debug;
 
         /* get analysis directory root */
         QString analysisdir;
@@ -199,7 +199,7 @@ int modulePipeline::Run() {
             QString analysispath = QString("%1/%3").arg(p.pipelineRootDir).arg(p.name);
             n->WriteLog("Creating path [" + analysispath + "/pipeline]");
             QString m;
-            if (!n->MakePath(analysispath + "/pipeline", m)) {
+            if (!MakePath(analysispath + "/pipeline", m)) {
                 n->WriteLog("Error: unable to create directory [" + analysispath + "/pipeline] - A");
                 //UpdateAnalysisStatus(analysisid, "error", "Unable to create directory [" + analysispath + "/pipeline]", 0, -1, "", "", false, true, -1, -1);
                 continue;
@@ -209,7 +209,7 @@ int modulePipeline::Run() {
 
             /* this file will record any events during setup */
             QString setupLogFile = "/mount" + analysispath + "/pipeline/analysisSetup.log";
-            n->AppendCustomLog(setupLogFile, "Beginning recording");
+            AppendCustomLog(setupLogFile, "Beginning recording");
             n->WriteLog("Should have created this analysis setup log [" + setupLogFile + "]");
 
             /* insert a temporary row, to be updated later, in the analysis table as a placeholder
@@ -230,7 +230,7 @@ int modulePipeline::Run() {
                 continue;
             }
 
-            n->SystemCommand("chmod -Rf 777 " + analysispath, true, true);
+            SystemCommand("chmod -Rf 777 " + analysispath, true, true);
 
             /* submit the cluster job file */
             QString qm, qresult;
@@ -271,7 +271,7 @@ int modulePipeline::Run() {
             modality = dataSteps[0].modality;
 
             /* get the list of studies which meet the criteria for being processed through the pipeline */
-            QList<int> studyids = GetStudyToDoList(pipelineid, modality, pipelinedep, n->JoinIntArray(p.groupIDs, ","), runnum);
+            QList<int> studyids = GetStudyToDoList(pipelineid, modality, pipelinedep, JoinIntArray(p.groupIDs, ","), runnum);
 
             int i = 0;
             int numsubmitted = 0;
@@ -393,7 +393,7 @@ int modulePipeline::Run() {
 
                     /* get the nearest study for this subject that has the dependency */
                     int studyNumNearest(0);
-					q2.prepare("select analysis_id, study_num from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.subject_id = :subjectid and a.pipeline_id = :pipelinedep and a.analysis_status = 'complete' and (a.analysis_isbad <> 1 or a.analysis_isbad is null) order by abs(timestampdiff(minute, b.study_datetime, :studydatetime)) limit 1");
+                    q2.prepare("select analysis_id, study_num from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.subject_id = :subjectid and a.pipeline_id = :pipelinedep and a.analysis_status = 'complete' and (a.analysis_isbad <> 1 or a.analysis_isbad is null) order by abs(timestampdiff(minute, b.study_datetime, :studydatetime)) limit 1");
                     q2.bindValue(":subjectid", s.subjectRowID());
                     q2.bindValue(":pipelinedep", pipelinedep);
                     q2.bindValue(":studydatetime", s.dateTime().toString("yyyy-MM-dd hh:mm:ss"));
@@ -487,7 +487,7 @@ int modulePipeline::Run() {
 
                             //QString analysispath = p.pipelineRootDir + "/" + p.name;
                             QString m;
-                            if (!n->MakePath(analysispath + "/pipeline", m)) {
+                            if (!MakePath(analysispath + "/pipeline", m)) {
                                 n->WriteLog("Error: unable to create directory [" + analysispath + "/pipeline] - B");
                                 n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysiserror", "Unable to create directory [" + analysispath + "/pipeline]");
                                 UpdateAnalysisStatus(analysisRowID, "error", "Unable to create directory [" + analysispath + "/pipeline]", 0, -1, "", "", false, true, -1, -1);
@@ -496,7 +496,7 @@ int modulePipeline::Run() {
                             else
                                 n->WriteLog("Created directory [" + analysispath + "/pipeline] - B");
 
-                            n->WriteLog(n->SystemCommand("chmod -Rf 777 " + analysispath + "/pipeline", true, true));
+                            n->WriteLog(SystemCommand("chmod -Rf 777 " + analysispath + "/pipeline", true, true));
                             if (pipelinedep != -1) {
                                 if (p.depLevel == "subject") {
                                     if (p.dirStructure == "b")
@@ -540,17 +540,17 @@ int modulePipeline::Run() {
                                     systemstring += deppath + "/* " + analysispath + "/";
                                     setuplog << n->WriteLog("Parent pipeline will be copied to the root dir [" + systemstring + "] ");
                                 }
-                                setuplog << n->WriteLog(n->SystemCommand(systemstring));
-                                //setuplog << n->WriteLog(n->SystemCommand(systemstring, true, false, false));
+                                setuplog << n->WriteLog(SystemCommand(systemstring));
+                                //setuplog << n->WriteLog(SystemCommand(systemstring, true, false, false));
 
                                 n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysismessage", "Parent pipeline copied by running [" + systemstring + "]");
                                 n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysisdependencyid", QString("%1").arg(dependencyanalysisid));
 
                                 /* delete any log files and SGE files that came with the dependency */
-                                setuplog << n->WriteLog(n->SystemCommand(QString("rm --preserve-root %1/pipeline/* %1/origfiles.log %1/sge.job").arg(analysispath)));
+                                setuplog << n->WriteLog(SystemCommand(QString("rm --preserve-root %1/pipeline/* %1/origfiles.log %1/sge.job").arg(analysispath)));
 
                                 /* make sure the whole tree is writeable */
-                                setuplog << n->WriteLog(n->SystemCommand("chmod -Rf 777 " + analysispath, true, true));
+                                setuplog << n->WriteLog(SystemCommand("chmod -Rf 777 " + analysispath, true, true));
                             }
                             else {
                                 setuplog << n->WriteLog("This pipeline is not dependent on another pipeline");
@@ -561,7 +561,7 @@ int modulePipeline::Run() {
                             QString setupLogFile = analysispath + "/pipeline/analysisSetup.log";
 
                             /* now safe to write out the setuplog */
-                            n->AppendCustomLog(setupLogFile, setuplog.join("\n"));
+                            AppendCustomLog(setupLogFile, setuplog.join("\n"));
                             n->WriteLog("Should have created this analysis setup log [" + setupLogFile + "]");
 
                             /* however, if the setupLogFile does not exist, something is not writeable, and that is not good */
@@ -594,7 +594,7 @@ int modulePipeline::Run() {
                             continue;
                         }
 
-                        n->SystemCommand("chmod -Rf 777 " + analysispath, true, true);
+                        SystemCommand("chmod -Rf 777 " + analysispath, true, true);
 
                         /* submit the cluster job file */
                         QString qm, qresult;
@@ -782,7 +782,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
         /* seperate any protocols that have multiples */
         QString protocols;
         if (protocol.contains("\"")) {
-            QStringList prots = n->ShellWords(protocol);
+            QStringList prots = ShellWords(protocol);
             protocols = "'" + prots.join("','") + "'";
         }
         else
@@ -927,7 +927,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
     /* go through list of data search criteria again to do the actual copying */
     for (int i = 0; i < datadef.size(); i++) {
         QString criteria = datadef[i].criteria;
-		//QString type = datadef[i].type;
+        //QString type = datadef[i].type;
         QString assoctype = datadef[i].assoctype;
         QString protocol = datadef[i].protocol;
         QString modality = datadef[i].modality.toLower();
@@ -951,7 +951,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
         /* seperate any protocols that have multiples */
         QString protocols;
         if (protocol.contains("\"")) {
-            QStringList prots = n->ShellWords(protocol);
+            QStringList prots = ShellWords(protocol);
             protocols = "'" + prots.join("','") + "'";
         }
         else
@@ -1121,7 +1121,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
             dlog << n->WriteLog(QString("   Found [%1] matching subject-level series").arg(q.size()));
             /* in theory, data for this analysis exists for this study, so lets now create the analysis directory */
             QString m;
-            if (!n->MakePath(analysispath + "/pipeline", m)) {
+            if (!MakePath(analysispath + "/pipeline", m)) {
                 dlog << n->WriteLog("   Error: unable to create directory [" + analysispath + "/pipeline] - C");
                 UpdateAnalysisStatus(analysisid, "error", "Unable to create directory [" + analysispath + "/pipeline]", -1, -1, "", "", false, true, 0, 0);
                 continue;
@@ -1208,14 +1208,14 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                 }
 
                 QString m;
-                if (!n->MakePath(newanalysispath, m)) {
+                if (!MakePath(newanalysispath, m)) {
                     dlog << n->WriteLog("   Error: unable to create directory [" + newanalysispath + "] message [" + m + "]");
                     UpdateAnalysisStatus(analysisid, "error", "Unable to create directory [" + newanalysispath + "]", 0, -1, "", "", false, true, -1, -1);
                 }
                 else
                     dlog << n->WriteLog("   Created imaging data output directory [" + newanalysispath + "]");
 
-                n->SystemCommand("chmod -Rf 777 " + newanalysispath, true, true);
+                SystemCommand("chmod -Rf 777 " + newanalysispath, true, true);
 
                 /* output the correct file type */
                 if ((dataformat == "dicom") || ((datatype != "dicom") && (datatype != "parrec"))) {
@@ -1224,19 +1224,19 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                         systemstring = QString("scp %1/* %2\\@%3:%4").arg(indir).arg(n->cfg["clusteruser"]).arg(p.submitHost).arg(newanalysispath);
                     else
                         systemstring = QString("cp -v %1/* %2").arg(indir).arg(newanalysispath);
-                    n->WriteLog(n->SystemCommand(systemstring, true, true));
+                    n->WriteLog(SystemCommand(systemstring, true, true));
 
                     dlog << QString("   Done copying imaging data from [%1] to [%2]").arg(indir).arg(newanalysispath);
 
-					qint64 c;
-					qint64 b;
-                    n->GetDirSizeAndFileCount(newanalysispath, c, b, true);
+                    qint64 c;
+                    qint64 b;
+                    GetDirSizeAndFileCount(newanalysispath, c, b, true);
                     dlog << n->WriteLog(QString("   Imaging data output directory [%1] now contains [%2] files, and is [%3] bytes in size.").arg(newanalysispath).arg(c).arg(b));
                 }
                 else {
-                    QString tmpdir = n->cfg["tmpdir"] + "/" + n->GenerateRandomString(10);
+                    QString tmpdir = n->cfg["tmpdir"] + "/" + GenerateRandomString(10);
                     QString m;
-                    if (!n->MakePath(tmpdir, m)) {
+                    if (!MakePath(tmpdir, m)) {
                         dlog << n->WriteLog("   Error: unable to create temp directory [" + tmpdir + "] message [" + m + "] for DICOM conversion");
                         UpdateAnalysisStatus(analysisid, "error", "Unable to create directory [" + newanalysispath + "]", 0, -1, "", "", false, true, -1, -1);
                     }
@@ -1244,24 +1244,24 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                         dlog << n->WriteLog("   Created temp directory [" + tmpdir + "] for DICOM conversion");
                     int numfilesconv(0);
                     int numfilesrenamed(0);
-                    n->ConvertDicom(dataformat, indir, tmpdir, gzip, uid, QString("%1").arg(localstudynum), QString("%1").arg(seriesnum), datatype, numfilesconv, numfilesrenamed, m);
+                    img->ConvertDicom(dataformat, indir, tmpdir, n->cfg["nidbdir"], gzip, uid, QString("%1").arg(localstudynum), QString("%1").arg(seriesnum), datatype, numfilesconv, numfilesrenamed, m);
 
                     QString systemstring;
                     if (p.dataCopyMethod == "scp")
                         systemstring = QString("scp %1/* %2\\@%3:%4").arg(tmpdir).arg(n->cfg["clusteruser"]).arg(p.submitHost).arg(newanalysispath);
                     else
                         systemstring = QString("cp -v %1/* %2").arg(tmpdir).arg(newanalysispath);
-                    n->WriteLog(n->SystemCommand(systemstring, true, true));
+                    n->WriteLog(SystemCommand(systemstring, true, true));
 
                     dlog << n->WriteLog("   Removing temp directory ["+tmpdir+"]");
-                    if (!n->RemoveDir(tmpdir,m))
+                    if (!RemoveDir(tmpdir,m))
                         dlog << n->WriteLog("   Error: unable to remove temp directory [" + tmpdir + "] error [" + m + "]");
 
                     dlog << QString("   Done copying converted imaging data from [%1] via [%2] to [%3]").arg(indir).arg(tmpdir).arg(newanalysispath);
 
-					qint64 c;
-					qint64 b;
-                    n->GetDirSizeAndFileCount(newanalysispath, c, b, true);
+                    qint64 c;
+                    qint64 b;
+                    GetDirSizeAndFileCount(newanalysispath, c, b, true);
                     dlog << n->WriteLog(QString("   Imaging output directory [%1] now contains [%2] files, and is [%3] bytes in size.").arg(newanalysispath).arg(c).arg(b));
                 }
 
@@ -1273,26 +1273,26 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                 if (behformat != "behnone") {
                     dlog << "   Copying behavioral data";
                     QString m;
-                    if (!n->MakePath(behoutdir, m)) {
+                    if (!MakePath(behoutdir, m)) {
                         dlog << n->WriteLog("   Error: unable to create behavioral output directory [" + behoutdir + "] message [" + m + "] - F");
                         UpdateAnalysisStatus(analysisid, "error", "Unable to create directory [" + newanalysispath + "]", 0, -1, "", "", false, true, -1, -1);
                     }
                     else
                         dlog << n->WriteLog("   Created behavioral output directory [" + behoutdir + "] - F");
                     QString systemstring = "cp -Rv " + behindir + "/* " + behoutdir;
-                    n->WriteLog(n->SystemCommand(systemstring, true, true));
+                    n->WriteLog(SystemCommand(systemstring, true, true));
 
-                    n->SystemCommand("chmod -Rf 777 " + behoutdir, true, true);
+                    SystemCommand("chmod -Rf 777 " + behoutdir, true, true);
                     dlog << QString("   Done copying behavioral data from [%1] to [%2]").arg(behindir).arg(behoutdir);
 
-					qint64 c;
-					qint64 b;
-                    n->GetDirSizeAndFileCount(behoutdir, c, b, true);
+                    qint64 c;
+                    qint64 b;
+                    GetDirSizeAndFileCount(behoutdir, c, b, true);
                     dlog << n->WriteLog(QString("   Behavioral output directory now contains [%1] files, and is [%2] bytes in size.").arg(c).arg(b));
                 }
 
                 /* give full read/write permissions to everyone */
-                n->SystemCommand("chmod -Rf 777 " + newanalysispath, true, true);
+                SystemCommand("chmod -Rf 777 " + newanalysispath, true, true);
 
                 dlog << n->WriteLog("   Done writing data to [" + newanalysispath + "]");
             }
@@ -1795,7 +1795,7 @@ QString modulePipeline::FormatCommand(int pipelineid, QString clusteranalysispat
         QString file = match.captured(0);
         QString ext = match.captured(1);
         QString searchpattern = QString("%2*.%3").arg(clusteranalysispath).arg(file).arg(ext);
-        QStringList files = n->FindAllFiles(clusteranalysispath, searchpattern);
+        QStringList files = FindAllFiles(clusteranalysispath, searchpattern);
         QString replacement = files[0];
         replacement.replace(clusteranalysispath, analysispath, Qt::CaseInsensitive);
         command.replace(regex, replacement);
@@ -2134,7 +2134,7 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
                 normalStudyList << QString("%1%2").arg(q2.value("uid").toString()).arg(q2.value("study_num").toString());
             }
         }
-        QString studyidlist = n->JoinIntArray(list, ", ");
+        QString studyidlist = JoinIntArray(list, ", ");
         //QString studyliststr = studylist.join(", ");
 
         if (studyidlist == "")
@@ -2232,13 +2232,13 @@ qint64 modulePipeline::RecordDataDownload(qint64 id, qint64 analysisid, QString 
         q.prepare("insert into pipeline_data (analysis_id, pd_modality, pd_checked, pd_found, pd_seriesid, pd_downloadpath, pd_step, pd_msg) values (:analysisid, :modality, :checked, :found, :seriesid, :downloadpath, :step, :msg)");
         q.bindValue(":analysisid",analysisid);
 
-		if (modality == "") q.bindValue(":modality", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":modality", analysisid);
-		if (checked == -1) q.bindValue(":checked", QVariant(QMetaType::fromType<bool>())); else q.bindValue(":checked", checked);
-		if (found == -1) q.bindValue(":found", QVariant(QMetaType::fromType<bool>())); else q.bindValue(":found", found);
-		if (seriesid == -1) q.bindValue(":seriesid", QVariant(QMetaType::fromType<int>())); else q.bindValue(":seriesid", seriesid);
-		if (downloadpath == "") q.bindValue(":downloadpath", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":downloadpath", downloadpath);
-		if (step == -1) q.bindValue(":step", QVariant(QMetaType::fromType<int>())); else q.bindValue(":step", step);
-		if (msg.toInt() == -1) q.bindValue(":msg", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":msg", msg);
+        if (modality == "") q.bindValue(":modality", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":modality", analysisid);
+        if (checked == -1) q.bindValue(":checked", QVariant(QMetaType::fromType<bool>())); else q.bindValue(":checked", checked);
+        if (found == -1) q.bindValue(":found", QVariant(QMetaType::fromType<bool>())); else q.bindValue(":found", found);
+        if (seriesid == -1) q.bindValue(":seriesid", QVariant(QMetaType::fromType<int>())); else q.bindValue(":seriesid", seriesid);
+        if (downloadpath == "") q.bindValue(":downloadpath", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":downloadpath", downloadpath);
+        if (step == -1) q.bindValue(":step", QVariant(QMetaType::fromType<int>())); else q.bindValue(":step", step);
+        if (msg.toInt() == -1) q.bindValue(":msg", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":msg", msg);
 
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         return q.lastInsertId().toInt();
@@ -2321,17 +2321,17 @@ void modulePipeline::InsertPipelineEvent(int pipelineid, qint64 &runnum, qint64 
     }
 
     /* do an insert */
-	if (analysisid > 0) {
-		q.prepare("insert into pipeline_history (run_num, pipeline_id, pipeline_version, analysis_id, pipeline_event, event_message) values (:runnum, :pipelineid, :version, :analysid, :event, :msg)");
-		q.bindValue(":analysisid", analysisid);
-	}
-	else {
-		q.prepare("insert into pipeline_history (run_num, pipeline_id, pipeline_version, pipeline_event, event_message) values (:runnum, :pipelineid, :version, :event, :msg)");
-	}
-	q.bindValue(":runnum", runnum);
-	q.bindValue(":pipelineid", pipelineid);
-	q.bindValue(":version", p.version);
-	q.bindValue(":event", event);
+    if (analysisid > 0) {
+        q.prepare("insert into pipeline_history (run_num, pipeline_id, pipeline_version, analysis_id, pipeline_event, event_message) values (:runnum, :pipelineid, :version, :analysid, :event, :msg)");
+        q.bindValue(":analysisid", analysisid);
+    }
+    else {
+        q.prepare("insert into pipeline_history (run_num, pipeline_id, pipeline_version, pipeline_event, event_message) values (:runnum, :pipelineid, :version, :event, :msg)");
+    }
+    q.bindValue(":runnum", runnum);
+    q.bindValue(":pipelineid", pipelineid);
+    q.bindValue(":version", p.version);
+    q.bindValue(":event", event);
     q.bindValue(":msg", message);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 }

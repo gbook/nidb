@@ -23,6 +23,7 @@
 #include <QCoreApplication>
 #include <QDebug>
 #include "nidb.h"
+#include "utils.h"
 #include "moduleFileIO.h"
 #include "moduleExport.h"
 #include "moduleManager.h"
@@ -46,7 +47,7 @@ int main(int argc, char *argv[])
     QCoreApplication a(argc, argv);
 
     /* this whole section reads the command line parameters */
-	a.setApplicationVersion(QString("%1.%2.%3").arg(VERSION_MAJ).arg(VERSION_MIN).arg(BUILD_NUM));
+    a.setApplicationVersion(QString("%1.%2.%3").arg(VERSION_MAJ).arg(VERSION_MIN).arg(BUILD_NUM));
     a.setApplicationName("Neuroinformatics Database (NiDB)");
 
     /* setup the command line parser */
@@ -179,14 +180,14 @@ int main(int argc, char *argv[])
                     printf("------------------------- DEBUG MODE ------------------------\n");
 
             if (!quiet)
-                n->Print(QString(n->GetBuildString()));
+                Print(QString(n->GetBuildString()));
 
             if (reset)
                 n->ModuleClearLockFiles();
 
             /* check if this module should be running now or not */
             if (n->ModuleCheckIfActive()) {
-				qint64 numlock = n->ModuleGetNumLockFiles();
+                qint64 numlock = n->ModuleGetNumLockFiles();
                 if (numlock < n->ModuleGetNumThreads()) {
                     if (n->ModuleCreateLockFile()) {
 
@@ -252,7 +253,7 @@ int main(int argc, char *argv[])
                             delete m;
                         }
                         else
-                            n->Print("Unrecognized module [" + module + "]");
+                            Print("Unrecognized module [" + module + "]");
 
                         /* always keep the logfile in debug mode */
                         if ((n->cfg["debug"].toInt()) || (keepLog))
@@ -268,13 +269,13 @@ int main(int argc, char *argv[])
                     n->ModuleDeleteLockFile();
                 }
                 else
-                    n->Print(QString("Too many instances [%1] of this module [%2] running already").arg(numlock).arg(module));
+                    Print(QString("Too many instances [%1] of this module [%2] running already").arg(numlock).arg(module));
             }
             else
-                n->Print("This module [" + module + "] is disabled or does not exist");
+                Print("This module [" + module + "] is disabled or does not exist");
         }
         else
-            n->Print("Unable to connect to database");
+            Print("Unable to connect to database");
 
         if (!quiet) {
             printf("-------------------------------------------------------------\n");

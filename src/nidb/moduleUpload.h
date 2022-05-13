@@ -24,7 +24,7 @@
 #define MODULEUPLOAD_H
 #include "nidb.h"
 #include "archiveio.h"
-
+#include "imageio.h"
 
 class moduleUpload
 {
@@ -44,6 +44,7 @@ public:
 private:
     nidb *n;
     archiveIO *io;
+    imageIO *img;
 };
 
 #endif // MODULEUPLOAD_H
