@@ -54,7 +54,7 @@ bool moduleCluster::PipelineCheckin(QString analysisid, QString status, QString 
     qint64 id;
 
     /* check if the analysis ID is valid */
-    if (n->IsInt(analysisid)) {
+    if (IsInt(analysisid)) {
         id = analysisid.toInt();
         q.prepare("select * from analysis where analysis_id = :analysisid");
         q.bindValue(":analysisid",id);
@@ -142,7 +142,7 @@ bool moduleCluster::ResultInsert(QString paramAnalysisID, QString paramResultTex
     qint64 id;
 
     /* check if the analysis ID is valid */
-    if (n->IsInt(paramAnalysisID)) {
+    if (IsInt(paramAnalysisID)) {
         id = paramAnalysisID.toInt();
         q.prepare("select * from analysis where analysis_id = :analysisid");
         q.bindValue(":analysisid",id);
@@ -183,7 +183,7 @@ bool moduleCluster::ResultInsert(QString paramAnalysisID, QString paramResultTex
         return false;
     }
     if (paramResultNumber != "") {
-        if (!n->IsNumber(paramResultNumber)) {
+        if (!IsNumber(paramResultNumber)) {
              m = QString("Number specified is not an integer or floating point value [%1]").arg(paramResultNumber);
              return false;
         }
@@ -236,7 +236,7 @@ bool moduleCluster::ResultInsert(QString paramAnalysisID, QString paramResultTex
         q.bindValue(":analysisid", paramAnalysisID.toInt());
         q.bindValue(":resultnameid", resultnameid);
         q.bindValue(":resultunitid", resultunitid);
-        if (n->IsInt(paramResultNumber))
+        if (IsInt(paramResultNumber))
             q.bindValue(":value", static_cast<double>(paramResultNumber.toInt())); /* type casting... I know. But the user could have passed an int for a value, and the database only accepts double */
         else
             q.bindValue(":value", paramResultNumber.toDouble());
@@ -276,7 +276,7 @@ bool moduleCluster::UpdateAnalysis(QString analysisid, QString &m) {
     qint64 id;
 
     /* check if the analysis ID is valid */
-    if (n->IsInt(analysisid)) {
+    if (IsInt(analysisid)) {
         id = analysisid.toInt();
         q.prepare("select * from analysis where analysis_id = :analysisid");
         q.bindValue(":analysisid",id);
@@ -299,9 +299,9 @@ bool moduleCluster::UpdateAnalysis(QString analysisid, QString &m) {
     }
 
     m = "Getting directory size for [" + a.analysispath + "]";
-	qint64 c;
-	qint64 b;
-    n->GetDirSizeAndFileCount(a.analysispath, c, b, true);
+    qint64 c;
+    qint64 b;
+    GetDirSizeAndFileCount(a.analysispath, c, b, true);
 
     q.prepare("update analysis set analysis_disksize = :disksize, analysis_numfiles = :numfiles where analysis_id = :analysisid");
     q.bindValue(":disksize", b);
@@ -324,7 +324,7 @@ bool moduleCluster::CheckCompleteAnalysis(QString analysisid, QString &m) {
     qint64 id;
 
     /* check if the analysis ID is valid */
-    if (n->IsInt(analysisid)) {
+    if (IsInt(analysisid)) {
         id = analysisid.toInt();
         q.prepare("select * from analysis where analysis_id = :analysisid");
         q.bindValue(":analysisid",id);
@@ -355,18 +355,18 @@ bool moduleCluster::CheckCompleteAnalysis(QString analysisid, QString &m) {
     QString completefiles = q.value("pipeline_completefiles").toString().trimmed();
     QStringList filelist = completefiles.split(',');
 
-    n->Print("Checking if analysis should be marked successful, based on the successful file list");
+    Print("Checking if analysis should be marked successful, based on the successful file list");
     int iscomplete = 1;
     for(int i=0; i<filelist.size(); i++) {
         QString filepath = a.analysispath + "/" + filelist[i];
         QFile f(filepath);
         if (!f.exists()) {
-            n->Print("[" + filepath + "] exists");
+            Print("[" + filepath + "] exists");
             iscomplete = 0;
             break;
         }
         else {
-            n->Print("[" + filepath + "] does not exist");
+            Print("[" + filepath + "] does not exist");
         }
     }
 

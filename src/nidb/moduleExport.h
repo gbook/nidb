@@ -24,6 +24,7 @@
 #define MODULEEXPORT_H
 #include "nidb.h"
 #include "archiveio.h"
+#include "imageio.h"
 #include "remotenidbconnection.h"
 #include "gdcmReader.h"
 #include "gdcmWriter.h"
@@ -44,16 +45,16 @@ public:
 
     bool GetExportSeriesList(int exportid);
 
-	bool ExportLocal(int exportid, QString exporttype, QString nfsdir, int publicdownloadid, QStringList downloadflags, QString filetype, QString dirformat, int preserveseries, bool gzip, int anonymize, QString behformat, QString behdirrootname, QString behdirseriesname, QString bidsreadme, QStringList bidsflags, QString squirreltitle, QString squirreldesc, QStringList squirrelflags, QString &status, QString &msg);
+    bool ExportLocal(int exportid, QString exporttype, QString nfsdir, int publicdownloadid, QStringList downloadflags, QString filetype, QString dirformat, int preserveseries, bool gzip, int anonymize, QString behformat, QString behdirrootname, QString behdirseriesname, QString bidsreadme, QStringList bidsflags, QString squirreltitle, QString squirreldesc, QStringList squirrelflags, QString &status, QString &msg);
     bool ExportNDAR(int exportid, bool csvonly, QString &exportstatus, QString &msg);
-	bool ExportBIDS(int exportid, QString bidsreadme, QStringList bidsflags, QString &outdir, QString &exportstatus, QString &msg);
+    bool ExportBIDS(int exportid, QString bidsreadme, QStringList bidsflags, QString &outdir, QString &exportstatus, QString &msg);
     bool ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, QString &exportstatus, QString &msg);
     bool ExportToRemoteFTP(int exportid, QString remoteftpusername, QString remoteftppassword, QString remoteftpserver, int remoteftpport, QString remoteftppath, QString &exportstatus, QString &msg);
-	bool ExportSquirrel(int exportid, QString squirreltitle, QString squirreldesc, QStringList downloadflags, QStringList squirrelflags, QString &exportstatus, QString &outdir, QString &msg);
-	bool ExportXNAT(int exportid, QString &exportstatus, QString &msg);
+    bool ExportSquirrel(int exportid, QString squirreltitle, QString squirreldesc, QStringList downloadflags, QStringList squirrelflags, QString &exportstatus, QString &outdir, QString &msg);
+    bool ExportXNAT(int exportid, QString &exportstatus, QString &msg);
 
     bool WriteNDARHeader(QString headerfile, QString modality, QStringList &log);
-	bool WriteNDARSeries(QString file, QString imagefile, QString behfile, QString behdesc, qint64 seriesid, QString modality, QString indir, QStringList &log);
+    bool WriteNDARSeries(QString file, QString imagefile, QString behfile, QString behdesc, qint64 seriesid, QString modality, QString indir, QStringList &log);
 
     int StartRemoteNiDBTransaction(QString remotenidbserver, QString remotenidbusername, QString remotenidbpassword);
     void EndRemoteNiDBTransaction(int tid, QString remotenidbserver, QString remotenidbusername, QString remotenidbpassword);
@@ -64,6 +65,7 @@ public:
 private:
     nidb *n;
     archiveIO *io;
+    imageIO *img;
 };
 
 #endif // MODULEEXPORT_H

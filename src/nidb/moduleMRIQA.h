@@ -28,20 +28,20 @@
 class moduleMRIQA
 {
 public:
-	moduleMRIQA();
-	moduleMRIQA(nidb *n);
-	~moduleMRIQA();
+    moduleMRIQA();
+    moduleMRIQA(nidb *n);
+    ~moduleMRIQA();
 
-	int Run();
-	bool QA(qint64 seriesid);
-	bool GetQAStats(QString f, double &pvsnr, double &iosnr, QString &msg);
-	bool GetMovementStats(QString f, double &maxrx, double &maxry, double &maxrz, double &maxtx, double &maxty, double &maxtz, double &maxax, double &maxay, double &maxaz, double &minrx, double &minry, double &minrz, double &mintx, double &minty, double &mintz, double &minax, double &minay, double &minaz, QString &msg);
-	void GetMinMax(QVector<double> a, double &min, double &max);
-	QVector<double> Derivative(QVector<double> a);
-	void WriteQALog(QString dir, QString log);
+    int Run();
+    bool QA(qint64 seriesid);
+    bool GetQAStats(QString f, double &pvsnr, double &iosnr, QString &msg);
+    bool GetMovementStats(QString f, double &maxrx, double &maxry, double &maxrz, double &maxtx, double &maxty, double &maxtz, double &maxax, double &maxay, double &maxaz, double &minrx, double &minry, double &minrz, double &mintx, double &minty, double &mintz, double &minax, double &minay, double &minaz, QString &msg);
+    void GetMinMax(QVector<double> a, double &min, double &max);
+    QVector<double> Derivative(QVector<double> a);
+    void WriteQALog(QString dir, QString log);
 
 private:
-	nidb *n;
+    nidb *n;
 };
 
 #endif // MODULEMRIQA_H

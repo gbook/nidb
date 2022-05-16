@@ -21,6 +21,7 @@ SOURCES += \
     analysis.cpp \
     archiveio.cpp \
     experiment.cpp \
+    imageio.cpp \
     main.cpp \
     minipipeline.cpp \
     moduleBackup.cpp \
@@ -41,7 +42,8 @@ SOURCES += \
     remotenidbconnection.cpp \
     series.cpp \
     study.cpp \
-    subject.cpp
+    subject.cpp \
+    utils.cpp
 
 #unix: {
 #    BUILDNO = $$system(./build.sh)
@@ -60,6 +62,7 @@ HEADERS += \
     analysis.h \
     archiveio.h \
     experiment.h \
+    imageio.h \
     minipipeline.h \
     moduleBackup.h \
     moduleCluster.h \
@@ -79,7 +82,8 @@ HEADERS += \
     remotenidbconnection.h \
     series.h \
     study.h \
-    subject.h
+    subject.h \
+    utils.h
 
 
 # gdcm

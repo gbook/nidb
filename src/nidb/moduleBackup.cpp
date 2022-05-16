@@ -32,7 +32,7 @@
 moduleBackup::moduleBackup(nidb *a)
 {
     n = a;
-	backupTapeSize = n->cfg["backupsize"].toLongLong() * 1000000000; /* convert GB to bytes */
+    backupTapeSize = n->cfg["backupsize"].toLongLong() * 1000000000; /* convert GB to bytes */
     backupDir = n->cfg["backupdir"];
     backupStagingDir = n->cfg["backupstagingdir"];
     backupDevice = n->cfg["backupdevice"];
@@ -129,7 +129,7 @@ int moduleBackup::Run() {
 
     /* ----- step 3 ----- move to backup staging */
     n->WriteLog("Step 3 - Moving data to backup staging");
-	qint64 backupStageSize = MoveToBackupStaging();
+    qint64 backupStageSize = MoveToBackupStaging();
     n->WriteLog(QString("After moving, [%1] size is [%2] bytes").arg(backupStagingDir).arg(backupStageSize));
 
     n->ModuleRunningCheckIn();
@@ -212,9 +212,9 @@ int moduleBackup::Run() {
 qint64 moduleBackup::MoveToBackupStaging() {
 
     /* get size of backup staging directory */
-	qint64 c;
-	qint64 backupStagingSize = 0;
-    n->GetDirSizeAndFileCount(backupStagingDir, c, backupStagingSize, true);
+    qint64 c;
+    qint64 backupStagingSize = 0;
+    GetDirSizeAndFileCount(backupStagingDir, c, backupStagingSize, true);
 
     /* loop through files in backup dir, older than 24 hrs, then
        move files one by one from backup to backupstaging dirs */
@@ -240,11 +240,11 @@ qint64 moduleBackup::MoveToBackupStaging() {
         //n->WriteLog(QString("Moving file [%1] to directory [%2]").arg(fpath).arg(destDir));
 
         QString m;
-        if (!n->MakePath(destDir,m))
+        if (!MakePath(destDir,m))
             n->WriteLog(QString("Unable to create path [%1]. Error message [%2]").arg(destDir).arg(m));
         else {
             QString m;
-            if (n->MoveFile(fpath, destDir, m)) {
+            if (MoveFile(fpath, destDir, m)) {
                 filesMoved++;
                 bytesMoved += size;
             }
@@ -276,7 +276,7 @@ bool moduleBackup::BackupDatabase(QString &m) {
         n->WriteLog(QString("Database backup [%1] does not exist. Backing up database.").arg(file));
 
         QString systemstring = QString("mysqldump --single-transaction --compact -u%1 -p%2 %3 > %4/NiDB-backup-%5.sql").arg(n->cfg["mysqluser"]).arg(n->cfg["mysqlpassword"]).arg(n->cfg["mysqldatabase"]).arg(n->cfg["backupdir"]).arg(date);
-        m = n->SystemCommand(systemstring);
+        m = SystemCommand(systemstring);
         return true;
     }
     else
@@ -322,7 +322,7 @@ bool moduleBackup::WriteTape(int tapeNum, char tapeLetter, int backupid) {
             systemstring = QString("mt -f %1 load").arg(backupDevice);
         else
             systemstring = QString("ssh %1 \"mt -f %2 load\"").arg(backupServer).arg(backupDevice);
-        output = n->SystemCommand(systemstring);
+        output = SystemCommand(systemstring);
         n->WriteLog(output);
         if ((output.contains("fail",Qt::CaseInsensitive)) || (output.contains("error",Qt::CaseInsensitive))) {
             errorMsgs << "[" + systemstring + "]" + output;
@@ -340,7 +340,7 @@ bool moduleBackup::WriteTape(int tapeNum, char tapeLetter, int backupid) {
             systemstring = QString("cd %1; tar -cW --checkpoint=1000000 --totals -f %2 *").arg(backupStagingDir).arg(backupDevice);
         else
             systemstring = QString("ssh %1 \"cd %2; tar -cW --checkpoint=1000000 --totals -f %3 *\"").arg(backupServer).arg(backupStagingDir).arg(backupDevice);
-        output = n->SystemCommand(systemstring, false, false, true);
+        output = SystemCommand(systemstring, false, false, true);
         n->WriteLog(output);
         if ((output.contains("fail",Qt::CaseInsensitive)) || (output.contains("error",Qt::CaseInsensitive))) {
             errorMsgs << "Error running [" + systemstring + "]. Skipping entire output because it might be huge. Here's the last 10000 bytes [" + output.right(10000) + "]";
@@ -359,7 +359,7 @@ bool moduleBackup::WriteTape(int tapeNum, char tapeLetter, int backupid) {
             systemstring = QString("tar -tf %1").arg(backupDevice);
         else
             systemstring = QString("ssh %1 \"tar -tf %2\"").arg(backupServer).arg(backupDevice);
-        tapeListing = n->SystemCommand(systemstring,false);
+        tapeListing = SystemCommand(systemstring,false);
     }
     else
         n->WriteLog("Not running [tar -tf] because there is an error");
@@ -371,7 +371,7 @@ bool moduleBackup::WriteTape(int tapeNum, char tapeLetter, int backupid) {
             systemstring = QString("mt -f %1 rewind").arg(backupDevice);
         else
             systemstring = QString("ssh %1 \"mt -f %2 rewind\"").arg(backupServer).arg(backupDevice);
-        output = n->SystemCommand(systemstring);
+        output = SystemCommand(systemstring);
         n->WriteLog(output);
         if ((output.contains("fail",Qt::CaseInsensitive)) || (output.contains("error",Qt::CaseInsensitive))) {
             errorMsgs << "[" + systemstring + "]" + output;
@@ -389,7 +389,7 @@ bool moduleBackup::WriteTape(int tapeNum, char tapeLetter, int backupid) {
             systemstring = QString("mt -f %1 offline").arg(backupDevice);
         else
             systemstring = QString("ssh %1 \"mt -f %2 offline\"").arg(backupServer).arg(backupDevice);
-        output = n->SystemCommand(systemstring);
+        output = SystemCommand(systemstring);
         n->WriteLog(output);
         if ((output.contains("fail",Qt::CaseInsensitive)) || (output.contains("error",Qt::CaseInsensitive))) {
             errorMsgs << "[" + systemstring + "]" + output;

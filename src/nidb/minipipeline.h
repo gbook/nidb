@@ -25,46 +25,46 @@
 #include "nidb.h"
 
 struct miniPipelineScript {
-	int id;
-	QString filename;
-	int version;
-	bool isExec;
-	bool isEntryPoint;
-	QByteArray file;
-	qint64 filesize;
-	QString parameterList;
-	QDateTime mDate;
-	QDateTime cDate;
+    int id;
+    QString filename;
+    int version;
+    bool isExec;
+    bool isEntryPoint;
+    QByteArray file;
+    qint64 filesize;
+    QString parameterList;
+    QDateTime mDate;
+    QDateTime cDate;
 };
 
 class minipipeline
 {
 public:
-	minipipeline();
-	minipipeline(int id, nidb *a);
-	nidb *n;
+    minipipeline();
+    minipipeline(int id, nidb *a);
+    nidb *n;
 
-	bool WriteScripts(QString dir, QString &m);
+    bool WriteScripts(QString dir, QString &m);
 
-	/* object variables */
-	QString msg;
-	bool isValid = true;
+    /* object variables */
+    QString msg;
+    bool isValid = true;
 
-	/* minipipeline variables */
-	QString name;
-	int version;
-	QDateTime createDate;
-	QDateTime modifyDate;
+    /* minipipeline variables */
+    QString name;
+    int version;
+    QDateTime createDate;
+    QDateTime modifyDate;
 
-	QList<miniPipelineScript> scripts;
-	QString entrypoint;
+    QList<miniPipelineScript> scripts;
+    QString entrypoint;
 
-	QJsonObject GetJSONObject(QString path);
+    QJsonObject GetJSONObject(QString path);
 
 private:
-	void LoadMiniPipelineInfo();
+    void LoadMiniPipelineInfo();
 
-	int minipipelineid;
+    int minipipelineid;
 };
 
 #endif // MINIPIPELINE_H

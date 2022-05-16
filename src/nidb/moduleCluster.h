@@ -23,21 +23,20 @@
 #define MODULECLUSTER_H
 #include "nidb.h"
 
-
 class moduleCluster
 {
 public:
-	moduleCluster();
-	moduleCluster(nidb *n);
-	~moduleCluster();
+    moduleCluster();
+    moduleCluster(nidb *n);
+    ~moduleCluster();
 
-	bool PipelineCheckin(QString analysisid, QString status, QString message, QString command, QString &m);
-	bool ResultInsert(QString paramAnalysisID, QString paramResultText, QString paramResultNumber, QString paramResultFile, QString paramResultImage, QString paramResultDesc, QString paramResultUnit, QString &m);
-	bool UpdateAnalysis(QString analysisid, QString &m);
-	bool CheckCompleteAnalysis(QString analysisid, QString &m);
+    bool PipelineCheckin(QString analysisid, QString status, QString message, QString command, QString &m);
+    bool ResultInsert(QString paramAnalysisID, QString paramResultText, QString paramResultNumber, QString paramResultFile, QString paramResultImage, QString paramResultDesc, QString paramResultUnit, QString &m);
+    bool UpdateAnalysis(QString analysisid, QString &m);
+    bool CheckCompleteAnalysis(QString analysisid, QString &m);
 
 private:
-	nidb *n;
+    nidb *n;
 };
 
 #endif // MODULECLUSTER_H

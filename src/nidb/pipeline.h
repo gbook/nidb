@@ -24,7 +24,6 @@
 #define PIPELINE_H
 #include "nidb.h"
 
-
 class pipeline
 {
 public:
@@ -86,8 +85,8 @@ public:
 private:
     void LoadPipelineInfo();
     void AppendJSONParents(QJsonObject &obj, QList<int> parentIDs, QString path);
-	void AppendJSONDataSpec(QJsonObject &obj);
-	void AppendJSONScripts(QJsonObject &obj);
+    void AppendJSONDataSpec(QJsonObject &obj);
+    void AppendJSONScripts(QJsonObject &obj);
 
     int pipelineid;
 };

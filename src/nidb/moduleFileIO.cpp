@@ -66,7 +66,7 @@ int moduleFileIO::Run() {
             QString modality = q.value("modality").toString().trimmed();
             QString data_destination = q.value("data_destination").toString().trimmed();
             int rearchiveprojectid = q.value("rearchiveprojectid").toInt();
-			//QString dicomtags = q.value("anonymize_fields").toString().trimmed();
+            //QString dicomtags = q.value("anonymize_fields").toString().trimmed();
             QString username = q.value("username").toString().trimmed();
             QString merge_ids = q.value("merge_ids").toString().trimmed();
             QString merge_method = q.value("merge_method").toString().trimmed();
@@ -280,9 +280,9 @@ bool moduleFileIO::CreateLinks(qint64 analysisid, QString destination, QString &
         return false;
     }
 
-    if (n->MakePath(destination, msg)) {
+    if (MakePath(destination, msg)) {
         QString systemstring = QString("cd %1; ln -s %2 %3%4; chmod 777 %5%6").arg(destination).arg(a.analysispath).arg(a.uid).arg(a.studynum).arg(a.uid).arg(a.studynum);
-        n->WriteLog(n->SystemCommand(systemstring));
+        n->WriteLog(SystemCommand(systemstring));
         n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysiscreatelink", "Analysis links created");
         return true;
     }
@@ -309,10 +309,10 @@ bool moduleFileIO::CopyAnalysis(qint64 analysisid, QString destination, QString 
     if (!a.isValid) { msg = "analysis was not valid: [" + a.msg + "]"; return false; }
 
     destination = QString("%1/%2%3").arg(destination).arg(a.uid).arg(a.studynum);
-    if (n->MakePath(destination, msg)) {
+    if (MakePath(destination, msg)) {
         QString systemstring = QString("rsync -az %1/* %2").arg(a.analysispath).arg(destination);
         n->WriteLog(QString("About to run the following command[" + systemstring + "]"));
-        n->WriteLog(n->SystemCommand(systemstring));
+        n->WriteLog(SystemCommand(systemstring));
         n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysiscopy", "Analysis copied");
         return true;
     }
@@ -335,7 +335,7 @@ bool moduleFileIO::DeleteAnalysis(qint64 analysisid, QString &msg) {
     /* attempt to kill the SGE job, if its running */
     if (a.jobid > 0) {
         QString systemstring = QString("/sge/sge-root/bin/lx24-amd64/./qdelete %1").arg(a.jobid);
-        n->WriteLog(n->SystemCommand(systemstring, true));
+        n->WriteLog(SystemCommand(systemstring, true));
     }
     else {
         n->WriteLog(QString("SGE job id [%1] is not valid. Not attempting to kill the job").arg(a.jobid));
@@ -346,12 +346,12 @@ bool moduleFileIO::DeleteAnalysis(qint64 analysisid, QString &msg) {
     bool okToDeleteDBEntries = false;
 
     if (QDir(a.analysispath).exists()) {
-		qint64 c;
-		qint64 b;
-        n->GetDirSizeAndFileCount(a.analysispath, c, b, true);
+        qint64 c;
+        qint64 b;
+        GetDirSizeAndFileCount(a.analysispath, c, b, true);
 
         n->WriteLog(QString("Going to remove [%1] files and directories from [%2]").arg(c).arg(a.analysispath));
-        if (n->RemoveDir(a.analysispath, msg)) {
+        if (RemoveDir(a.analysispath, msg)) {
             /* QDir.remove worked */
             n->WriteLog("Analysispath removed");
             okToDeleteDBEntries = true;
@@ -359,7 +359,7 @@ bool moduleFileIO::DeleteAnalysis(qint64 analysisid, QString &msg) {
         else {
             QString systemstring = QString("sudo rm -rfv %1").arg(a.analysispath);
             n->WriteLog("Not all files deleted. Deleting remaining files using sudo.");
-            n->WriteLog(n->SystemCommand(systemstring));
+            n->WriteLog(SystemCommand(systemstring));
 
             QDir d(a.analysispath);
             if (d.exists()) {
@@ -450,7 +450,7 @@ bool moduleFileIO::DeleteSubject(int subjectid, QString username, QString &msg) 
     subject s(subjectid, n); /* get the subject info */
     if (!s.valid()) { msg = "Subject was not valid: [" + s.msg() + "]"; return false; }
 
-    QString newpath = QString("%1/%2-%3").arg(n->cfg["deleteddir"]).arg(s.UID()).arg(n->GenerateRandomString(10));
+    QString newpath = QString("%1/%2-%3").arg(n->cfg["deleteddir"]).arg(s.UID()).arg(GenerateRandomString(10));
     QDir d;
 
     if (s.path() != "") {
@@ -549,7 +549,7 @@ bool moduleFileIO::DeleteStudy(int studyid, QString &msg) {
     if (!s.valid()) { msg = "Study was not valid: [" + s.msg() + "]"; return false; }
     QString modality = s.modality().toLower();
 
-    QString newpath = QString("%1/%2-%3-%4").arg(n->cfg["deleteddir"]).arg(s.UID()).arg(s.studyNum()).arg(n->GenerateRandomString(10));
+    QString newpath = QString("%1/%2-%3-%4").arg(n->cfg["deleteddir"]).arg(s.UID()).arg(s.studyNum()).arg(GenerateRandomString(10));
     QDir d;
     if(d.rename(s.path(), newpath)) {
         n->WriteLog(QString("Moved [%1] to [%2]").arg(s.path()).arg(newpath));
@@ -585,7 +585,7 @@ bool moduleFileIO::DeleteSeries(int seriesid, QString modality, QString &msg) {
     series s(seriesid, modality, n); /* get the series info */
     if (!s.isValid) { msg = "Series was not valid: [" + s.msg + "]"; return false; }
 
-    QString newpath = QString("%1/%2-%3-%4-%5").arg(n->cfg["deleteddir"]).arg(s.uid).arg(s.studynum).arg(s.seriesnum).arg(n->GenerateRandomString(10));
+    QString newpath = QString("%1/%2-%3-%4-%5").arg(n->cfg["deleteddir"]).arg(s.uid).arg(s.studynum).arg(s.seriesnum).arg(GenerateRandomString(10));
     QDir d;
     if(d.rename(s.seriespath, newpath)) {
         n->WriteLog(QString("Moved [%1] to [%2]").arg(s.seriespath).arg(newpath));
@@ -648,7 +648,7 @@ bool moduleFileIO::RearchiveStudy(int studyid, bool matchidonly, QString &msg) {
 
     /* move all DICOMs to the incomingdir */
     QString m;
-    if (!n->MoveAllFiles(s.path(),"*.dcm",outpath, m)) {
+    if (!MoveAllFiles(s.path(),"*.dcm",outpath, m)) {
         msgs << n->WriteLog(QString("Error moving DICOM files from archivedir to incomingdir [%1]").arg(m));
     }
     else {
@@ -656,7 +656,7 @@ bool moduleFileIO::RearchiveStudy(int studyid, bool matchidonly, QString &msg) {
     }
 
     /* move the old study to the deleted directory */
-    QString newpath = QString("%1/%2-%3-%4").arg(n->cfg["deleteddir"]).arg(s.UID()).arg(s.studyNum()).arg(n->GenerateRandomString(10));
+    QString newpath = QString("%1/%2-%3-%4").arg(n->cfg["deleteddir"]).arg(s.UID()).arg(s.studyNum()).arg(GenerateRandomString(10));
     QDir d2;
     if(d2.rename(s.path(), newpath)) {
         n->WriteLog(QString("Moved [%1] to [%2]").arg(s.path()).arg(newpath));
@@ -729,7 +729,7 @@ bool moduleFileIO::RearchiveSubject(int subjectid, bool matchidonly, int project
 
     /* move all DICOMs to the incomingdir */
     QString m;
-    if (!n->MoveAllFiles(s.path(),"*.dcm",outpath, m)) {
+    if (!MoveAllFiles(s.path(),"*.dcm",outpath, m)) {
         msgs << QString("Error moving DICOM files from archivedir to incomingdir [%1]").arg(m);
     }
     else {
@@ -737,7 +737,7 @@ bool moduleFileIO::RearchiveSubject(int subjectid, bool matchidonly, int project
     }
 
     /* move the remains of the subject directory to the deleted directory */
-    QString newpath = QString("%1/%2-%3").arg(n->cfg["deleteddir"]).arg(s.UID()).arg(n->GenerateRandomString(10));
+    QString newpath = QString("%1/%2-%3").arg(n->cfg["deleteddir"]).arg(s.UID()).arg(GenerateRandomString(10));
     QDir d2;
     if(d2.rename(s.path(), newpath)) {
         msgs << n->WriteLog(QString("Moved [%1] to [%2]").arg(s.path()).arg(newpath));
@@ -882,7 +882,7 @@ bool moduleFileIO::MoveStudyToSubject(int studyid, QString newuid, int newsubjec
     QString newpath = QString("%1/%2").arg(newsubject->path()).arg(newstudynum);
     if (!newsubject->dataPathExists()) {
         QString m;
-        if (!n->MakePath(newsubject->path(), m)) {
+        if (!MakePath(newsubject->path(), m)) {
             n->WriteLog("Subject directory [" + newsubject->path() + "] did not exist on disk. Tried to create the directory path, but failed with error [" + m + "]");
         }
     }
@@ -895,7 +895,7 @@ bool moduleFileIO::MoveStudyToSubject(int studyid, QString newuid, int newsubjec
 
     n->WriteLog("Moving data within archive directory");
     QString systemstring = QString("rsync -rtu %1/* %2").arg(oldpath).arg(newpath);
-    msgs << n->WriteLog(n->SystemCommand(systemstring));
+    msgs << n->WriteLog(SystemCommand(systemstring));
 
     msg = msgs.join(" | ");
     q.prepare("insert into changelog (affected_projectid1, affected_projectid2, affected_subjectid1, affected_subjectid2, affected_enrollmentid1, affected_enrollmentid2, affected_studyid1, affected_studyid2, change_datetime, change_event, change_desc) values (:oldprojectid, :oldprojectid, :oldsubjectid, :newsubjectid, :oldenrollmentid, :newenrollmentid, :studyid, :studyid, now(), 'MoveStudyToSubject', :msg)");
@@ -1012,12 +1012,12 @@ bool moduleFileIO::MergeStudies(int studyid, QString mergeIDs, QString mergeMeth
     /* get list of all studyids */
     QList<int> allStudyIDs;
     allStudyIDs.append(studyid);
-    allStudyIDs.append(n->SplitStringToIntArray(mergeIDs));
+    allStudyIDs.append(SplitStringToIntArray(mergeIDs));
 
     int destStudyID = studyid;
     /* merge by SERIES datetime */
     if (mergeMethod == "sortbyseriesdate") {
-        QString mergeIDList = n->JoinIntArray(allStudyIDs, ",");
+        QString mergeIDList = JoinIntArray(allStudyIDs, ",");
 
         int newSeriesNum = 1;
         int tmpSeriesNum = 100000;
@@ -1078,7 +1078,7 @@ bool moduleFileIO::MergeStudies(int studyid, QString mergeIDs, QString mergeMeth
 
             /* delete the, now, extraneous studies */
             QList<int> deleteStudyIDs;
-            deleteStudyIDs.append(n->SplitStringToIntArray(mergeIDs));
+            deleteStudyIDs.append(SplitStringToIntArray(mergeIDs));
             foreach (int delStudyID, deleteStudyIDs) {
                 QString m;
                 if (!DeleteStudy(delStudyID, m))
@@ -1087,7 +1087,7 @@ bool moduleFileIO::MergeStudies(int studyid, QString mergeIDs, QString mergeMeth
         }
     }
     else if (mergeMethod == "sortbyseriesnum") {
-        QString mergeIDList = n->JoinIntArray(allStudyIDs, ",");
+        QString mergeIDList = JoinIntArray(allStudyIDs, ",");
 
         int newSeriesNum = 0;
         /* get list of all series sorted by series date */
@@ -1144,7 +1144,7 @@ bool moduleFileIO::MergeStudies(int studyid, QString mergeIDs, QString mergeMeth
 
             /* delete the, now, extraneous studies */
             QList<int> deleteStudyIDs;
-            deleteStudyIDs.append(n->SplitStringToIntArray(mergeIDs));
+            deleteStudyIDs.append(SplitStringToIntArray(mergeIDs));
             foreach (int delStudyID, deleteStudyIDs) {
                 QString m;
                 if (!DeleteStudy(delStudyID, m))

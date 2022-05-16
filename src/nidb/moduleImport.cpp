@@ -63,7 +63,7 @@ int moduleImport::Run() {
      * if there's a sub directory, the directory name is a rowID from the import table,
      * which contains additional information about the files being imported, such as project and site
     */
-    QStringList dirs = n->FindAllDirs(n->cfg["incomingdir"],"",false, false);
+    QStringList dirs = FindAllDirs(n->cfg["incomingdir"],"",false, false);
     n->WriteLog(QString("Found [%1] directories in [%2]").arg(dirs.size()).arg(n->cfg["incomingdir"]));
     n->WriteLog("Directories found: " + dirs.join("|"));
     foreach (QString dir, dirs) {
@@ -73,7 +73,7 @@ int moduleImport::Run() {
             /* check if the directrory is empty */
             if (QDir(fulldir).entryInfoList(QDir::NoDotAndDotDot|QDir::AllEntries).count() == 0) {
                 QString m;
-                if (n->RemoveDir(fulldir, m))
+                if (RemoveDir(fulldir, m))
                     n->WriteLog("Removed directory [" + fulldir + "]");
                 else
                     n->WriteLog("Error removing directory [" + fulldir + "] [" + m + "]");
@@ -226,8 +226,8 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
     bool okToDeleteDir = true;
 
     /* ----- parse all files in /incoming ----- */
-    QStringList files = n->FindAllFiles(dir, "*");
-	qint64 numfiles = files.size();
+    QStringList files = FindAllFiles(dir, "*");
+    qint64 numfiles = files.size();
     n->WriteLog(QString("Found [%1] files in [%2]").arg(numfiles).arg(dir));
     int processedFileCount(0);
     foreach (QString file, files) {
@@ -241,9 +241,9 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
             if (fsize < 1) {
                 n->WriteLog(QString("File [%1] - size [%2] is 0 bytes!").arg(file).arg(fsize));
                 SetImportStatus(importid, "error", "File has size of 0 bytes", QString("File [" + file + "] is empty"), true);
-				QString m;
-				if (!n->MoveFile(file, n->cfg["problemdir"], m))
-					n->WriteLog(QString("Unable to move [%1] to [%2], with error [%3]").arg(file).arg(n->cfg["problemdir"]).arg(m));
+                QString m;
+                if (!MoveFile(file, n->cfg["problemdir"], m))
+                    n->WriteLog(QString("Unable to move [%1] to [%2], with error [%3]").arg(file).arg(n->cfg["problemdir"]).arg(m));
                 continue;
             }
         }
@@ -287,14 +287,14 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
         /* make sure this file still exists... another instance of the program may have altered it */
         if (QFile::exists(file)) {
 
-			//QString dir = QFileInfo(file).path();
-			//QString fname = QFileInfo(file).fileName();
-			QString ext = QFileInfo(file).completeSuffix().toLower();
+            //QString dir = QFileInfo(file).path();
+            //QString fname = QFileInfo(file).fileName();
+            QString ext = QFileInfo(file).completeSuffix().toLower();
             if (ext == "par") {
                 n->WriteLog("Filetype is .par");
 
                 QString m;
-				//QString report;
+                //QString report;
 
                 if (!io->InsertParRec(importid, file)) {
                     n->WriteLog(QString("InsertParRec(%1, %2) failed: [%3]").arg(file).arg(importid).arg(m));
@@ -306,9 +306,9 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
                     q.bindValue(":msg",m);
                     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
-					QString m;
-					if (!n->MoveFile(file, n->cfg["problemdir"], m))
-						n->WriteLog(QString("Unable to move [%1] to [%2]").arg(file).arg(n->cfg["problemdir"]).arg(m));
+                    QString m;
+                    if (!MoveFile(file, n->cfg["problemdir"], m))
+                        n->WriteLog(QString("Unable to move [%1] to [%2]").arg(file).arg(n->cfg["problemdir"]).arg(m));
 
                     SetImportStatus(importid, "error", "Problem inserting PAR/REC: " + m, archivereport, true);
                 }
@@ -322,7 +322,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
             else if ((ext == "cnt") || (ext == "3dd") || (ext == "dat") || (ext == "edf") || (importModality == "eeg") || (importDatatype == "eeg") || (importModality == "et") || (ext == "et") ) {
                 n->WriteLog("Filetype is an EEG or ET file");
 
-				//QString report;
+                //QString report;
                 QString m;
 
                 if (!io->InsertEEG(importid, file)) {
@@ -334,8 +334,8 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
                     q.bindValue(":id", importid);
                     q.bindValue(":msg", m + " - moving to problem directory");
                     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-					if (!n->MoveFile(file, n->cfg["problemdir"], m))
-						n->WriteLog(QString("Unable to move [%1] to [%2], with error [%3]").arg(file).arg(n->cfg["problemdir"]).arg(m));
+                    if (!MoveFile(file, n->cfg["problemdir"], m))
+                        n->WriteLog(QString("Unable to move [%1] to [%2], with error [%3]").arg(file).arg(n->cfg["problemdir"]).arg(m));
 
                     SetImportStatus(importid, "error", "Problem inserting " + importDatatype.toUpper() + " - subject ID did not exist", archivereport, true);
                 }
@@ -350,7 +350,10 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
                 //QString filetype;
                 i++;
 
-                if (n->GetImageFileTags(file, tags)) {
+                QString m;
+                bool csa = false;
+                if (n->cfg["enablecsa"] == "1") csa = true;
+                if (img->GetImageFileTags(file,n->cfg["nidbdir"], csa, tags, m)) {
                     dcmseries[tags["SeriesInstanceUID"]].append(file);
                 }
                 else {
@@ -365,9 +368,9 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
                     q.bindValue(":id", importid);
                     q.bindValue(":msg", m);
                     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-					QString m2;
-					if (!n->MoveFile(file, n->cfg["problemdir"], m2))
-						n->WriteLog(QString("Unable to move [%1] to [%2], with error [%3]").arg(file).arg(n->cfg["problemdir"]).arg(m2));
+                    QString m2;
+                    if (!MoveFile(file, n->cfg["problemdir"], m2))
+                        n->WriteLog(QString("Unable to move [%1] to [%2], with error [%3]").arg(file).arg(n->cfg["problemdir"]).arg(m2));
 
                     /* change the import status to reflect the error */
                     if (importid > 0)
@@ -420,7 +423,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
             /* delete the uploaded directory */
             n->WriteLog("Attempting to remove [" + dir + "]");
             QString m;
-            if (!n->RemoveDir(dir, m))
+            if (!RemoveDir(dir, m))
                 n->WriteLog("Unable to delete directory [" + dir + "] because of error [" + m + "]");
         }
         SetImportStatus(importid, "archived", importDatatype.toUpper() + " successfully archived", archivereport, true);

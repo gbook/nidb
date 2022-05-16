@@ -93,7 +93,7 @@ int moduleMiniPipeline::Run() {
             n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
             numJobsRun++;
-			//QStringList logs;
+            //QStringList logs;
             int enrollmentID = -1;
             int numInserts = 0;
 
@@ -124,8 +124,8 @@ int moduleMiniPipeline::Run() {
 
                 /* (1) create a temp space */
                 QString m;
-                QString tmpdir = "/tmp/" + n->GenerateRandomString(10);
-                if (!n->MakePath(tmpdir, m))
+                QString tmpdir = "/tmp/" + GenerateRandomString(10);
+                if (!MakePath(tmpdir, m))
                     AppendMiniPipelineLog(n->WriteLog("Error creating directory [" + tmpdir + "] error message [" + m + "]"), mpjobid);
                 else {
                     /* (2) write the script files */
@@ -133,7 +133,7 @@ int moduleMiniPipeline::Run() {
 
                         /* (3) copy in all of the behavioral data */
                         QString m;
-						qint64 c = CopyAllSeriesData(modality, seriesid, tmpdir, m);
+                        qint64 c = CopyAllSeriesData(modality, seriesid, tmpdir, m);
                         if (c > 0)
                             AppendMiniPipelineLog(n->WriteLog(QString("Copied [%1] files to [%2]").arg(c).arg(tmpdir)), mpjobid);
                         else
@@ -142,7 +142,7 @@ int moduleMiniPipeline::Run() {
                         /* (4) execute the script (sandboxed to the tmp directory), and limit execution time to 5 minutes */
                         QString systemstring = mp.entrypoint;
                         QString output = "";
-                        n->SandboxedSystemCommand(systemstring, tmpdir, output, "00:05:00", true, false);
+                        SandboxedSystemCommand(systemstring, tmpdir, output, "00:05:00", true, false);
                         AppendMiniPipelineLog(n->WriteLog(output), mpjobid);
 
                         /* (5) parse the output */
@@ -161,7 +161,7 @@ int moduleMiniPipeline::Run() {
 
                             indexedHash csv;
                             QStringList cols;
-                            if (n->ParseCSV(csvText, csv, cols, m)) {
+                            if (ParseCSV(csvText, csv, cols, m)) {
                                 AppendMiniPipelineLog("\nParsed .csv file. Message(s) from parser [" + m + "]", mpjobid);
                                 if (!cols.contains("type"))
                                     AppendMiniPipelineLog("\nError - csv header did not contain the [type] column header. This column is required", mpjobid);
@@ -194,7 +194,7 @@ int moduleMiniPipeline::Run() {
                                     else csvEndDate = csv[i]["enddate"];
                                     QString csvDuration = csv[i]["duration"];
                                     QString csvValue = csv[i]["value"];
-									//QString csvUnits = csv[i]["units"];
+                                    //QString csvUnits = csv[i]["units"];
                                     QString csvNotes = csv[i]["notes"];
                                     QString csvInstrument = csv[i]["instrument"];
 
@@ -217,7 +217,7 @@ int moduleMiniPipeline::Run() {
                                             else
                                                 startDate = QDateTime::fromString(sdparts[0],"yyyy-MM-dd");
                                         else {
-                                            sdparts[1] = n->ParseTime(sdparts[1]); /* attempt to fix the time if its different than expected */
+                                            sdparts[1] = ParseTime(sdparts[1]); /* attempt to fix the time if its different than expected */
                                             if (sdparts[1].size() == 5)
                                                 startDate = QDateTime::fromString(sdparts[0] + " " + sdparts[1],"yyyy-MM-dd hh:mm");
                                             else
@@ -280,7 +280,7 @@ int moduleMiniPipeline::Run() {
                         AppendMiniPipelineLog(n->WriteLog("Error. Unable to write scripts to [" + tmpdir + "] error message [" + m + "]"), mpjobid);
 
                     /* (6) cleanup */
-                    if (!n->RemoveDir(tmpdir, m))
+                    if (!RemoveDir(tmpdir, m))
                         AppendMiniPipelineLog(n->WriteLog("Error deleting directory [" + tmpdir + "] error message [" + m + "]"), mpjobid);
                     else
                         AppendMiniPipelineLog(n->WriteLog("Deleted temp directory [" + tmpdir + "]"), mpjobid);
@@ -341,7 +341,7 @@ QList<int> moduleMiniPipeline::GetMPJobList() {
 * @param rwPerms copy the data with read-write permissions
 **************************************************************/
 qint64 moduleMiniPipeline::CopyAllSeriesData(QString modality, qint64 seriesid, QString destination, QString &msg, bool createDestDir, bool rwPerms) {
-	qint64 numFilesCopied = 0;
+    qint64 numFilesCopied = 0;
     msg = "";
 
     series s(seriesid, modality, n); /* get the series info */
@@ -352,7 +352,7 @@ qint64 moduleMiniPipeline::CopyAllSeriesData(QString modality, qint64 seriesid, 
 
     QString m;
     if (createDestDir)
-        if (!n->MakePath(destination,m)) {
+        if (!MakePath(destination,m)) {
             msg = "Unable to create output path [" + destination + "] because of error [" + m + "]";
             return 0;
         }
@@ -364,16 +364,16 @@ qint64 moduleMiniPipeline::CopyAllSeriesData(QString modality, qint64 seriesid, 
     else
         systemstring = "cp -uvf " + s.datapath + "/* " + destination + "/";
 
-    msg += n->SystemCommand(systemstring, true, false);
+    msg += SystemCommand(systemstring, true, false);
 
     if (rwPerms) {
         systemstring = "chmod -R 777 " + destination;
-        msg += n->SystemCommand(systemstring, true, false);
+        msg += SystemCommand(systemstring, true, false);
     }
 
-	qint64 c;
-	qint64 b;
-    n->GetDirSizeAndFileCount(destination,c,b);
+    qint64 c;
+    qint64 b;
+    GetDirSizeAndFileCount(destination,c,b);
 
     numFilesCopied = c;
 
@@ -536,7 +536,7 @@ int moduleMiniPipeline::InsertDrug(qint64 enrollmentID, QDateTime startDate, QDa
 void moduleMiniPipeline::AppendMiniPipelineLog(QString log, int jobid) {
     QSqlQuery q;
 
-    log = "[" + n->CreateCurrentDateTime() + "] " + log + "\n";
+    log = "[" + CreateCurrentDateTime() + "] " + log + "\n";
 
     q.prepare("update minipipeline_jobs set mp_log = concat(mp_log, :log) where minipipelinejob_id = :jobid");
     q.bindValue(":jobid", jobid);

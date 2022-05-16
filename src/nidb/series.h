@@ -25,38 +25,37 @@
 #include <QString>
 #include "nidb.h"
 
-
 class series
 {
 public:
-	series();
-	series(qint64 id, QString m, nidb *a);
-	nidb *n;
+    series();
+    series(qint64 id, QString m, nidb *a);
+    nidb *n;
 
-	void PrintSeriesInfo();
+    void PrintSeriesInfo();
 
-	QString modality;
-	QString uid;
-	int studynum;
-	int seriesnum;
-	int subjectid;
-	int studyid;
-	qint64 seriesid;
-	QString seriespath;
-	QString datapath;
-	QString behpath;
-	QString datatype;
-	int enrollmentid;
-	int projectid;
-	bool isderived;
+    QString modality;
+    QString uid;
+    int studynum;
+    int seriesnum;
+    int subjectid;
+    int studyid;
+    qint64 seriesid;
+    QString seriespath;
+    QString datapath;
+    QString behpath;
+    QString datatype;
+    int enrollmentid;
+    int projectid;
+    bool isderived;
 
-	bool isValid = true;
-	QString msg;
+    bool isValid = true;
+    QString msg;
 
     bool ChangeSeriesPath(int studyid, int newSeriesNum);
 
 private:
-	void LoadSeriesInfo();
+    void LoadSeriesInfo();
 };
 
 #endif // SERIES_H

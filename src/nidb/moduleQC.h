@@ -28,16 +28,16 @@
 class moduleQC
 {
 public:
-	moduleQC();
-	moduleQC(nidb *n);
-	~moduleQC();
+    moduleQC();
+    moduleQC(nidb *n);
+    ~moduleQC();
 
-	int Run();
-	bool QC(int moduleid, int seriesid, QString modality);
-	QString CreateSGEJobFile(QString modulename, int qcmoduleseriesid, QString qcpath);
+    int Run();
+    bool QC(int moduleid, int seriesid, QString modality);
+    QString CreateSGEJobFile(QString modulename, int qcmoduleseriesid, QString qcpath);
 
 private:
-	nidb *n;
+    nidb *n;
 };
 
 #endif // MODULEQC_H

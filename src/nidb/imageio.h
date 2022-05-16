@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------------------
-  NIDB moduleImport.h
+  NIDB imageio.h
   Copyright (C) 2004 - 2022
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
@@ -20,50 +20,38 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
   ------------------------------------------------------------------------------ */
 
-#ifndef MODULEIMPORT_H
-#define MODULEIMPORT_H
+#ifndef IMAGEIO_H
+#define IMAGEIO_H
+
 #include "nidb.h"
-#include "archiveio.h"
-#include "imageio.h"
+
+#include <QFile>
+#include <QString>
+#include <QDir>
 #include "gdcmReader.h"
 #include "gdcmWriter.h"
 #include "gdcmAttribute.h"
 #include "gdcmStringFilter.h"
 #include "gdcmAnonymizer.h"
-#include "series.h"
 
-/*struct performanceMetrics {
-    int numSeries;
-    int numFiles;
-    QDateTime startTime;
-    QDateTime endTime;
-    qint64 numBytesRead;
-    qint64 numBytesArchived;
-};*/
 
-class moduleImport
+class imageIO
 {
 public:
-    moduleImport();
-    moduleImport(nidb *n);
-    ~moduleImport();
+    imageIO();
+    imageIO(nidb *n);
+    ~imageIO();
 
-    int Run();
-    int ParseDirectory(QString dir, int importid);
-    QString GetImportStatus(int importid);
-    bool SetImportStatus(int importid, QString status, QString msg, QString report, bool enddate);
-    void PrintPerformance();
+    /* DICOM & image functions */
+    bool ConvertDicom(QString filetype, QString indir, QString outdir, QString nidbdir, bool gzip, QString uid, QString studynum, QString seriesnum, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg);
+    bool IsDICOMFile(QString f);
+    bool AnonymizeDir(QString dir, int anonlevel, QString randstr1, QString randstr2, QString &msg);
+    bool AnonymizeDicomFile(gdcm::Anonymizer &anon, QString infile, QString outfile, std::vector<gdcm::Tag> const &empty_tags, std::vector<gdcm::Tag> const &remove_tags, std::vector< std::pair<gdcm::Tag, std::string> > const & replace_tags, QString &msg);
+    QString GetDicomModality(QString f);
+    void GetFileType(QString f, QString &fileType, QString &fileModality, QString &filePatientID, QString &fileProtocol);
+    bool GetImageFileTags(QString f, QString nidbdir, bool enablecsa, QHash<QString, QString> &tags, QString &msg);
 
-private:
     nidb *n;
-    archiveIO *io;
-    imageIO *img;
-
-    /* create a multilevel hash, for archiving data without a SeriesInstanceUID tag: dcms[institute][equip][modality][patient][dob][sex][date][series][files] */
-    //QMap<QString, QMap<QString, QMap<QString, QMap<QString, QMap<QString, QMap<QString, QMap<QString, QMap<QString, QMap<QString, QStringList>>>>>>>>> dcms;
-
-    /* create a regular associated hash for dicoms with a SeriesInstanceUID tag */
-    QMap<QString, QStringList> dcmseries;
 };
 
-#endif // MODULEIMPORT_H
+#endif // IMAGEIO_H

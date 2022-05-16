@@ -65,11 +65,11 @@ int moduleExport::Run() {
             int exportid = q.value("export_id").toInt();
             //QString username = q.value("username").toString().trimmed();
             QString exporttype = q.value("destinationtype").toString().trimmed();
-			//bool downloadimaging = q.value("download_imaging").toBool();
-			//bool downloadbeh = q.value("download_beh").toBool();
-			//bool downloadqc = q.value("download_qc").toBool();
-			QStringList downloadflags = q.value("download_flags").toString().trimmed().split(",");
-			QString nfsdir = q.value("nfsdir").toString().trimmed();
+            //bool downloadimaging = q.value("download_imaging").toBool();
+            //bool downloadbeh = q.value("download_beh").toBool();
+            //bool downloadqc = q.value("download_qc").toBool();
+            QStringList downloadflags = q.value("download_flags").toString().trimmed().split(",");
+            QString nfsdir = q.value("nfsdir").toString().trimmed();
             QString filetype = q.value("filetype").toString().trimmed();
             QString dirformat = q.value("dirformat").toString().trimmed();
             int preserveseries = q.value("do_preserveseries").toInt();
@@ -86,8 +86,8 @@ int moduleExport::Run() {
             int remotenidbconnid = q.value("remotenidb_connectionid").toInt();
             int publicdownloadid = q.value("publicdownloadid").toInt();
             QString bidsreadme = q.value("bidsreadme").toString().trimmed();
-			QStringList bidsflags = q.value("bids_flags").toString().trimmed().split(",");
-			QStringList squirrelflags = q.value("squirrel_flags").toString().trimmed().split(",");
+            QStringList bidsflags = q.value("bids_flags").toString().trimmed().split(",");
+            QStringList squirrelflags = q.value("squirrel_flags").toString().trimmed().split(",");
             QString squirreltitle = q.value("squirrel_title").toString().trimmed();
             QString squirreldesc = q.value("squirrel_desc").toString().trimmed();
 
@@ -117,16 +117,16 @@ int moduleExport::Run() {
             QString log;
 
             if (exporttype == "web") {
-				found = ExportLocal(exportid, exporttype, "", 0, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
+                found = ExportLocal(exportid, exporttype, "", 0, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
             }
             else if (exporttype == "publicdownload") {
-				found = ExportLocal(exportid, exporttype, "", publicdownloadid, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
+                found = ExportLocal(exportid, exporttype, "", publicdownloadid, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
             }
             else if (exporttype == "nfs") {
-				found = ExportLocal(exportid, exporttype, nfsdir, 0, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
+                found = ExportLocal(exportid, exporttype, nfsdir, 0, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
             }
             else if (exporttype == "localftp") {
-				found = ExportLocal(exportid, exporttype, nfsdir, 0, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
+                found = ExportLocal(exportid, exporttype, nfsdir, 0, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
             }
             else if (exporttype == "export") {
                 //found = ExportNiDB(exportid);
@@ -271,8 +271,8 @@ bool moduleExport::GetExportSeriesList(int exportid) {
                     s[uid][studynum][seriesnum]["seriesid"] = QString("%1").arg(seriesid);
                     s[uid][studynum][seriesnum]["subjectid"] = QString("%1").arg(subjectid);
                     s[uid][studynum][seriesnum]["studyid"] = QString("%1").arg(studyid);
-					s[uid][studynum][seriesnum]["enrollmentid"] = QString("%1").arg(studyid);
-					s[uid][studynum][seriesnum]["studydatetime"] = studydatetime;
+                    s[uid][studynum][seriesnum]["enrollmentid"] = QString("%1").arg(studyid);
+                    s[uid][studynum][seriesnum]["studydatetime"] = studydatetime;
                     s[uid][studynum][seriesnum]["modality"] = modality;
                     s[uid][studynum][seriesnum]["seriessize"] = QString("%1").arg(seriessize);
                     s[uid][studynum][seriesnum]["seriesnotes"] = seriesnotes;
@@ -373,7 +373,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
     }
     else if (filetype == "squirrel") {
         QString log;
-		ExportSquirrel(exportid, squirreltitle, squirreldesc, downloadflags, squirrelflags, exportstatus, tmpexportdir, log);
+        ExportSquirrel(exportid, squirreltitle, squirreldesc, downloadflags, squirrelflags, exportstatus, tmpexportdir, log);
         msgs << log;
     }
     else {
@@ -382,7 +382,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
             return false;
         }
 
-        tmpexportdir = n->cfg["tmpdir"] + "/" + n->GenerateRandomString(20);
+        tmpexportdir = n->cfg["tmpdir"] + "/" + GenerateRandomString(20);
 
         exportstatus = "complete";
         int laststudyid = 0;
@@ -464,7 +464,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                         break;
                     case 2:
                         QString seriesdir = seriesdesc;
-						seriesdir.replace(REnonAlphaNum, "_");
+                        seriesdir.replace(REnonAlphaNum, "_");
                         newseriesnum = QString("%1_%2").arg(seriesnum).arg(seriesdir);
                     }
 
@@ -491,7 +491,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                         foreach (QString part, dirparts) {
                             dirpath = dirpath + "/" + part;
                             QString systemstring = "chmod -f 777 " + dirpath;
-                            n->WriteLog(n->SystemCommand(systemstring, false));
+                            n->WriteLog(SystemCommand(systemstring, false));
                         }
                     }
                     else {
@@ -520,7 +520,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                     n->WriteLog(QString("Export type is '%1'. rootoutdir [%2], outdir [%3], qcoutdir [%4], behoutdir [%5]").arg(exporttype).arg(rootoutdir).arg(outdir).arg(qcoutdir).arg(behoutdir));
 
                     /* export the imaging data */
-					if (downloadflags.contains("DOWNLOAD_IMAGING",Qt::CaseInsensitive)) {
+                    if (downloadflags.contains("DOWNLOAD_IMAGING",Qt::CaseInsensitive)) {
                         if (numfiles > 0) {
                             n->WriteLog(QString("Downloading imaging data. Series contains [%1] files").arg(numfiles));
                             if (datadirexists) {
@@ -531,13 +531,13 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                                     if ((modality != "mr") || (filetype == "dicom") || ((datatype != "dicom") && (datatype != "parrec"))) {
                                         // use rsync instead of cp because of the number of files limit
                                         QString systemstring = QString("rsync %1/* %2/").arg(indir).arg(outdir);
-                                        n->WriteLog(n->SystemCommand(systemstring));
+                                        n->WriteLog(SystemCommand(systemstring));
                                         msgs << "Copying raw data from [" + indir + "] to [" + outdir + "]";
                                     }
                                     else if (filetype == "qc") {
                                         /* copy only the qc data */
                                         QString systemstring = QString("cp -R %1/qa %2").arg(indir).arg(qcoutdir);
-                                        n->WriteLog(n->SystemCommand(systemstring));
+                                        n->WriteLog(SystemCommand(systemstring));
                                         msgs << "Copying QC data from [" + indir + "/qa] to [" + qcoutdir + "]";
 
                                         /* write the series info to a text file */
@@ -567,20 +567,20 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                                         }
                                     }
                                     else {
-                                        QString tmpdir = n->cfg["tmpdir"] + "/" + n->GenerateRandomString(10);
+                                        QString tmpdir = n->cfg["tmpdir"] + "/" + GenerateRandomString(10);
                                         QString m1;
-                                        if (n->MakePath(tmpdir, m1)) {
+                                        if (MakePath(tmpdir, m1)) {
                                             msgs << "Created tmpdir [" + tmpdir + "]";
                                             QString m2;
                                             int numfilesconv(0), numfilesrenamed(0);
-                                            if (!n->ConvertDicom(filetype, indir, tmpdir, gzip, uid, QString("%1").arg(studynum), QString("%1").arg(seriesnum), datatype, numfilesconv, numfilesrenamed, m2))
+                                            if (!img->ConvertDicom(filetype, indir, tmpdir, n->cfg["nidbdir"], gzip, uid, QString("%1").arg(studynum), QString("%1").arg(seriesnum), datatype, numfilesconv, numfilesrenamed, m2))
                                                 msgs << "Error converting files [" + m2 + "]";
                                             //n->WriteLog("About to copy files from " + tmpdir + " to " + outdir);
                                             QString systemstring = "rsync " + tmpdir + "/* " + outdir + "/";
-                                            n->WriteLog(n->SystemCommand(systemstring));
+                                            n->WriteLog(SystemCommand(systemstring));
                                             //n->WriteLog("Done copying files...");
                                             QString m3;
-                                            if (!n->RemoveDir(tmpdir, m3))
+                                            if (!RemoveDir(tmpdir, m3))
                                                 msgs << "Error [" + m3 + "] while removing path [" + tmpdir + "]";
                                             msgs << "Converted DICOM/parrec data into " + filetype + " using tmpdir [" + tmpdir + "]. Final directory [" + outdir + "]";
                                         }
@@ -614,14 +614,14 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                     }
 
                     /* export the beh data */
-					if (downloadflags.contains("DOWNLOAD_BEH",Qt::CaseInsensitive)) {
-						if (behdirexists) {
+                    if (downloadflags.contains("DOWNLOAD_BEH",Qt::CaseInsensitive)) {
+                        if (behdirexists) {
                             QString m;
-                            if (n->MakePath(behoutdir, m)) {
+                            if (MakePath(behoutdir, m)) {
                                 QString systemstring = "cp -R " + behindir + "/* " + behoutdir;
-                                n->WriteLog(n->SystemCommand(systemstring, true));
+                                n->WriteLog(SystemCommand(systemstring, true));
                                 systemstring = "chmod -Rf 777 " + behoutdir;
-                                n->WriteLog(n->SystemCommand(systemstring, true));
+                                n->WriteLog(SystemCommand(systemstring, true));
                                 msgs << "Copying behavioral data from [" + behindir + "] to [" + behoutdir + "]";
                             }
                             else
@@ -638,14 +638,14 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                     }
 
                     /* copy the QC data */
-					if (downloadflags.contains("DOWNLOAD_QC",Qt::CaseInsensitive)) {
+                    if (downloadflags.contains("DOWNLOAD_QC",Qt::CaseInsensitive)) {
                         if (qcdirexists) {
                             QString m;
-                            if (n->MakePath(qcoutdir, m)) {
+                            if (MakePath(qcoutdir, m)) {
                                 QString systemstring = "cp -R " + qcindir + "/* " + qcoutdir;
-                                n->WriteLog(n->SystemCommand(systemstring, true));
+                                n->WriteLog(SystemCommand(systemstring, true));
                                 systemstring = "chmod -Rf 777 " + qcoutdir;
-                                n->WriteLog(n->SystemCommand(systemstring, true));
+                                n->WriteLog(SystemCommand(systemstring, true));
                                 msgs << "Copying QC data from [" + qcindir + "] to [" + qcoutdir + "]";
                             }
                             else
@@ -663,11 +663,12 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                     /* give full permissions to the files that were downloaded */
                     if (exporttype == "nfs") {
                         QString systemstring = "chmod -Rf 777 " + rootoutdir;
-                        n->WriteLog(n->SystemCommand(systemstring, true));
+                        n->WriteLog(SystemCommand(systemstring, true));
                     }
 
+                    QString m;
                     if (filetype == "dicom")
-                        n->AnonymizeDir(outdir,anonlevel,"Anonymous","Anonymous");
+                        img->AnonymizeDir(outdir,anonlevel,"Anonymous","Anonymous",m);
 
                     n->SetExportSeriesStatus(exportseriesid,seriesstatus,statusmessage);
                     msgs << QString("Series [%1%2-%3 (%4)] complete").arg(uid).arg(studynum).arg(seriesnum).arg(seriesdesc);
@@ -703,7 +704,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
             else
                 systemstring = "cd " + outdir + "; zip -1rv " + zipfile + " .";
             n->WriteLog("Beginning zipping...");
-            n->WriteLog(n->SystemCommand(systemstring, true));
+            n->WriteLog(SystemCommand(systemstring, true));
             n->WriteLog("Finished zipping... Changing directory back to [" + pwd + "]");
             QDir::setCurrent(pwd);
         }
@@ -719,7 +720,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
             if (d.exists(tmpexportdir)) {
                 n->WriteLog("Temporary export dir [" + tmpexportdir + "] exists and will be deleted");
                 QString m;
-                if (!n->RemoveDir(tmpexportdir, m))
+                if (!RemoveDir(tmpexportdir, m))
                     msgs << "Error [" + m + "] removing directory [" + tmpexportdir + "]";
             }
         }
@@ -754,15 +755,15 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                     systemstring = "zip -1grq " + zipfile + " .";
                 else
                     systemstring = "zip -1rq " + zipfile + " .";
-                n->WriteLog(n->SystemCommand(systemstring, true));
+                n->WriteLog(SystemCommand(systemstring, true));
                 //n->WriteLog("Changing directory to [" + pwd + "]");
                 QDir::setCurrent(pwd);
                 systemstring = "unzip -vl " + zipfile;
-                QString filecontents = n->SystemCommand(systemstring, false);
+                QString filecontents = SystemCommand(systemstring, false);
                 QStringList lines = filecontents.split("\n");
                 QString lastline = lines.last().trimmed();
                 n->WriteLog(QString("Last line of [%1] %2").arg(systemstring).arg(lastline));
-				QStringList parts = lastline.trimmed().split(REwhiteSpace, Qt::SkipEmptyParts); /* split on whitespace */
+                QStringList parts = lastline.trimmed().split(REwhiteSpace, Qt::SkipEmptyParts); /* split on whitespace */
                 qint64 unzippedsize(0);
                 qint64 zippedsize(0);
                 if (parts.size() >= 2) {
@@ -821,11 +822,11 @@ bool moduleExport::ExportXNAT(int exportid, QString &exportstatus, QString &msg)
         return false;
     }
 
-    tmpexportdir = n->cfg["tmpdir"] + "/" + n->GenerateRandomString(20);
+    tmpexportdir = n->cfg["tmpdir"] + "/" + GenerateRandomString(20);
 
     exportstatus = "complete";
     //int laststudyid = 0;
-	//QString newseriesnum = "1";
+    //QString newseriesnum = "1";
 
     /* iterate through the UIDs */
     for(QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>>::iterator a = s.begin(); a != s.end(); ++a) {
@@ -851,7 +852,7 @@ bool moduleExport::ExportXNAT(int exportid, QString &exportstatus, QString &msg)
                 //QString altuids = s[uid][studynum][seriesnum]["altuids"];
                 QString studydatetime = s[uid][studynum][seriesnum]["studydatetime"];
                 //int studyid = s[uid][studynum][seriesnum]["studyid"].toInt();
-				//QString studytype = s[uid][studynum][seriesnum]["studytype"];
+                //QString studytype = s[uid][studynum][seriesnum]["studytype"];
                 QString equipment = s[uid][studynum][seriesnum]["equipment"];
                 //int studydaynum = s[uid][studynum][seriesnum]["studydaynum"].toInt();
                 int studytimepoint = s[uid][studynum][seriesnum]["studytimepoint"].toInt();
@@ -859,10 +860,10 @@ bool moduleExport::ExportXNAT(int exportid, QString &exportstatus, QString &msg)
                 QString modality = s[uid][studynum][seriesnum]["modality"];
                 //int seriessize = s[uid][studynum][seriesnum]["seriessize"].toInt();
                 QString seriesdesc = s[uid][studynum][seriesnum]["seriesdesc"];
-				//QString datatype = s[uid][studynum][seriesnum]["datatype"];
+                //QString datatype = s[uid][studynum][seriesnum]["datatype"];
                 QString indir = s[uid][studynum][seriesnum]["datadir"];
-				//QString behindir = s[uid][studynum][seriesnum]["behdir"];
-				//QString qcindir = s[uid][studynum][seriesnum]["qcdir"];
+                //QString behindir = s[uid][studynum][seriesnum]["behdir"];
+                //QString qcindir = s[uid][studynum][seriesnum]["qcdir"];
                 int numfiles = s[uid][studynum][seriesnum]["numfiles"].toInt();
                 bool datadirexists = s[uid][studynum][seriesnum]["datadirexists"].toInt();
                 //bool behdirexists = s[uid][studynum][seriesnum]["behdirexists"].toInt();
@@ -901,7 +902,7 @@ bool moduleExport::ExportXNAT(int exportid, QString &exportstatus, QString &msg)
                     foreach (QString part, dirparts) {
                         dirpath = dirpath + "/" + part;
                         QString systemstring = "chmod -f 777 " + dirpath;
-                        n->WriteLog(n->SystemCommand(systemstring, false));
+                        n->WriteLog(SystemCommand(systemstring, false));
                     }
                 }
                 else {
@@ -927,7 +928,7 @@ bool moduleExport::ExportXNAT(int exportid, QString &exportstatus, QString &msg)
                             /* we're only outputting DICOM data for XNAT */
                             // use rsync instead of cp because of the number of files limit
                             QString systemstring = QString("rsync -v %1/* %2/").arg(indir).arg(outdir);
-                            n->WriteLog(n->SystemCommand(systemstring));
+                            n->WriteLog(SystemCommand(systemstring));
                             msgs << "Copying raw data from [" + indir + "] to [" + outdir + "]";
                         }
                         else {
@@ -951,8 +952,9 @@ bool moduleExport::ExportXNAT(int exportid, QString &exportstatus, QString &msg)
                     msgs << "Series contains 0 files";
                 }
 
+                QString m;
                 /* always anonymize the DICOM data */
-                n->AnonymizeDir(outdir,2,"Anonymous","Anonymous");
+                img->AnonymizeDir(outdir,2,"Anonymous","Anonymous",m);
 
                 n->SetExportSeriesStatus(exportseriesid,seriesstatus,statusmessage);
                 msgs << QString("Series [%1%2-%3 (%4)] complete").arg(uid).arg(studynum).arg(seriesnum).arg(seriesdesc);
@@ -987,7 +989,7 @@ bool moduleExport::ExportXNAT(int exportid, QString &exportstatus, QString &msg)
         else
             systemstring = "zip -1rv " + zipfile + " .";
         n->WriteLog("Beginning zipping...");
-        n->WriteLog(n->SystemCommand(systemstring, true));
+        n->WriteLog(SystemCommand(systemstring, true));
         n->WriteLog("Finished zipping... Changing directory back to [" + pwd + "]");
         QDir::setCurrent(pwd);
     }
@@ -999,7 +1001,7 @@ bool moduleExport::ExportXNAT(int exportid, QString &exportstatus, QString &msg)
     if (d.exists(tmpexportdir)) {
         n->WriteLog("Temporary export dir [" + tmpexportdir + "] exists and will be deleted");
         QString m;
-        if (!n->RemoveDir(tmpexportdir, m))
+        if (!RemoveDir(tmpexportdir, m))
             msgs << "Error [" + m + "] removing directory [" + tmpexportdir + "]";
     }
     QFile file;
@@ -1030,14 +1032,14 @@ bool moduleExport::ExportNDAR(int exportid, bool csvonly, QString &exportstatus,
         return false;
     }
 
-    QString rootoutdir = n->cfg["ftpdir"] + "/NiDB-NDAR-" + n->CreateLogDate();
+    QString rootoutdir = n->cfg["ftpdir"] + "/NiDB-NDAR-" + CreateLogDate();
     QString headerfile = rootoutdir + "/ndar.csv";
 
     msgs << "ExportNDAR() rootoutdir [" + rootoutdir + "]";
     msgs << "ExportNDAR() .csv header file [" + headerfile + "]";
 
     QString m;
-    if (n->MakePath(rootoutdir, m)) {
+    if (MakePath(rootoutdir, m)) {
         msgs << "ExportNDAR() " + n->WriteLog("Created rootoutdir [" + rootoutdir + "]");
     }
     else {
@@ -1093,43 +1095,43 @@ bool moduleExport::ExportNDAR(int exportid, bool csvonly, QString &exportstatus,
                     msgs << logs;
 
                     if (!csvonly && validData) {
-                        QString tmpdir = n->cfg["tmpdir"] + "/" + n->GenerateRandomString(10);
+                        QString tmpdir = n->cfg["tmpdir"] + "/" + GenerateRandomString(10);
                         m = "";
-                        if (n->MakePath(tmpdir, m)) {
+                        if (MakePath(tmpdir, m)) {
                             QString systemstring;
                             if ((modality == "mr") && (datatype == "dicom")) {
                                 systemstring = "find " + indir + " -iname '*.dcm' -exec cp {} " + tmpdir + " \\;";
-                                msgs << "ExportNDAR() " + n->WriteLog(n->SystemCommand(systemstring, true));
-                                n->AnonymizeDir(tmpdir,2,"","");
+                                msgs << "ExportNDAR() " + n->WriteLog(SystemCommand(systemstring, true));
+                                img->AnonymizeDir(tmpdir,2,"","",m);
                             }
                             else if ((modality == "mr") && (datatype == "parrec")) {
                                 systemstring = "find " + indir + " -iname '*.par' -exec cp {} " + tmpdir + " \\;";
-                                msgs << "ExportNDAR() " + n->WriteLog(n->SystemCommand(systemstring, true));
+                                msgs << "ExportNDAR() " + n->WriteLog(SystemCommand(systemstring, true));
                                 systemstring = "find " + indir + " -iname '*.rec' -exec cp {} " + tmpdir + " \\;";
-                                msgs << "ExportNDAR() " + n->WriteLog(n->SystemCommand(systemstring, true));
+                                msgs << "ExportNDAR() " + n->WriteLog(SystemCommand(systemstring, true));
                             }
                             else {
                                 systemstring = "rsync " + indir + "/* " + tmpdir + "/";
-                                msgs << "ExportNDAR() " + n->WriteLog(n->SystemCommand(systemstring, true));
+                                msgs << "ExportNDAR() " + n->WriteLog(SystemCommand(systemstring, true));
                             }
 
                             /* zip the data to the output directory */
                             QString zipfile = QString("%1/%2-%3-%4.zip").arg(rootoutdir).arg(uid).arg(studynum).arg(seriesnum);
                             systemstring = "zip -vjrq1 " + zipfile + " " + tmpdir;
-                            msgs << "ExportNDAR() " + n->WriteLog(n->SystemCommand(systemstring, true));
+                            msgs << "ExportNDAR() " + n->WriteLog(SystemCommand(systemstring, true));
                             msgs << "ExportNDAR() " + n->WriteLog("Done zipping image files...");
 
                             /* create a behavioral data zip file if there is beh data */
                             if (numfilesbeh > 0) {
                                 behzipfile = QString("%1-%2-%3-beh.zip").arg(uid).arg(studynum).arg(seriesnum);
                                 systemstring = QString("zip -vjrq1 %1/%2 %3").arg(rootoutdir).arg(behzipfile).arg(behindir);
-                                msgs << "ExportNDAR() " + n->WriteLog(n->SystemCommand(systemstring, true));
+                                msgs << "ExportNDAR() " + n->WriteLog(SystemCommand(systemstring, true));
                                 msgs << "ExportNDAR() " + n->WriteLog("Done zipping beh files...");
 
                                 behdesc = "Behavioral/design data file";
                             }
                             if (modality == "mr") {
-                                if (!n->RemoveDir(tmpdir,m))
+                                if (!RemoveDir(tmpdir,m))
                                     msgs << "ExportNDAR() Unable to remove tmpdir [" + tmpdir + "] because [" + m + "]";
                             }
                         }
@@ -1181,13 +1183,13 @@ bool moduleExport::ExportBIDS(int exportid, QString bidsreadme, QStringList bids
             modalities.append(q.value("modality").toString().toLower());
             //n->WriteLog(QString("Appended series [%1], modality [%2]").arg(seriesids.last()).arg(modalities.last()));
         }
-		//n->WriteLog( QString("seriesids contains [%1] items    modalities contains [%2] items").arg(seriesids.size()).arg(modalities.size()) );
+        //n->WriteLog( QString("seriesids contains [%1] items    modalities contains [%2] items").arg(seriesids.size()).arg(modalities.size()) );
 
-        QString rootoutdir = n->cfg["ftpdir"] + "/NiDB-BIDS-" + n->CreateLogDate();
+        QString rootoutdir = n->cfg["ftpdir"] + "/NiDB-BIDS-" + CreateLogDate();
         outdir = rootoutdir;
 
         QString m;
-        if (n->MakePath(rootoutdir, m)) {
+        if (MakePath(rootoutdir, m)) {
             n->WriteLog("Created rootoutdir (A) [" + rootoutdir + "]");
         }
         else {
@@ -1237,13 +1239,13 @@ bool moduleExport::ExportSquirrel(int exportid, QString squirreltitle, QString s
             modalities.append(q.value("modality").toString().toLower());
             //n->WriteLog(QString("Appended series [%1], modality [%2]").arg(seriesids.last()).arg(modalities.last()));
         }
-		//n->WriteLog( QString("seriesids contains [%1] items    modalities contains [%2] items").arg(seriesids.size()).arg(modalities.size()) );
+        //n->WriteLog( QString("seriesids contains [%1] items    modalities contains [%2] items").arg(seriesids.size()).arg(modalities.size()) );
 
-        QString rootoutdir = n->cfg["ftpdir"] + "/NiDB-Squirrel-" + n->CreateLogDate();
+        QString rootoutdir = n->cfg["ftpdir"] + "/NiDB-Squirrel-" + CreateLogDate();
         outdir = rootoutdir;
 
         QString m;
-        if (n->MakePath(rootoutdir, m)) {
+        if (MakePath(rootoutdir, m)) {
             n->WriteLog("Created rootoutdir (A) [" + rootoutdir + "]");
         }
         else {
@@ -1253,7 +1255,7 @@ bool moduleExport::ExportSquirrel(int exportid, QString squirreltitle, QString s
         }
 
         n->WriteLog(QString("Calling WriteSquirrel(%1, %2, ...)").arg(seriesids.size()).arg(modalities.size()));
-		if (io->WriteSquirrel(squirreltitle, squirreldesc, downloadflags, squirrelflags, seriesids, modalities, rootoutdir, m))
+        if (io->WriteSquirrel(squirreltitle, squirreldesc, downloadflags, squirrelflags, seriesids, modalities, rootoutdir, m))
             n->WriteLog("WriteSquirrel() returned true");
         else
             n->WriteLog("WriteSquirrel() returned false");
@@ -1278,7 +1280,7 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
 
     /* check to see if the remote server is reachable ... */
     QString systemstring = "curl -sSf " + conn.server;
-    QString serverResponse = n->SystemCommand(systemstring, false);
+    QString serverResponse = SystemCommand(systemstring, false);
     if ((serverResponse == "") || (serverResponse.contains("Could not resolve host",Qt::CaseInsensitive))) {
         msg = n->WriteLog("ERROR: Unable to access remote NiDB server [" + conn.server + "]. Received error [" + serverResponse + "]");
         return false;
@@ -1297,7 +1299,7 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
     q.bindValue(":exportid",exportid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
-	//QString tmpexportdir = n->cfg["tmpdir"] + "/" + n->GenerateRandomString(20);
+    //QString tmpexportdir = n->cfg["tmpdir"] + "/" + n->GenerateRandomString(20);
 
     QStringList msgs;
     if (!GetExportSeriesList(exportid)) {
@@ -1365,22 +1367,22 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
                         while ((error == 1) && (numfails < numretry)) {
                             QString indir = QString("%1/%2/%3/%4/%5").arg(n->cfg["archivedir"]).arg(uid).arg(studynum).arg(seriesnum).arg(datatype);
                             QString behindir = QString("%1/%2/%3/%4/beh").arg(n->cfg["archivedir"]).arg(uid).arg(studynum).arg(seriesnum);
-                            QString tmpdir = n->cfg["tmpdir"] + "/" + n->GenerateRandomString(10);
-                            QString tmpzip = n->cfg["tmpdir"] + "/" + n->GenerateRandomString(12) + ".tar.gz";
-                            QString tmpzipdir = n->cfg["tmpdir"] + "/" + n->GenerateRandomString(12);
+                            QString tmpdir = n->cfg["tmpdir"] + "/" + GenerateRandomString(10);
+                            QString tmpzip = n->cfg["tmpdir"] + "/" + GenerateRandomString(12) + ".tar.gz";
+                            QString tmpzipdir = n->cfg["tmpdir"] + "/" + GenerateRandomString(12);
                             QString m;
-                            if (!n->MakePath(tmpdir, m)) { msgs << "ERROR in creating tmpdir [" + tmpdir + "]"; continue; }
-                            if (!n->MakePath(tmpzipdir + "/beh", m)) { msgs << "ERROR in creating tmpzipdir/beh [" + tmpzipdir + "/beh]"; continue; }
+                            if (!MakePath(tmpdir, m)) { msgs << "ERROR in creating tmpdir [" + tmpdir + "]"; continue; }
+                            if (!MakePath(tmpzipdir + "/beh", m)) { msgs << "ERROR in creating tmpzipdir/beh [" + tmpzipdir + "/beh]"; continue; }
 
                             /* copy all the files from the data directory into a tmp directory */
                             systemstring = "rsync " + indir + "/* " + tmpdir + "/";
-                            n->WriteLog(n->SystemCommand(systemstring));
+                            n->WriteLog(SystemCommand(systemstring));
                             if (datatype == "dicom")
-                                n->AnonymizeDir(tmpdir,4,"Anonymous","0000-00-00");
+                                img->AnonymizeDir(tmpdir,4,"Anonymous","0000-00-00",m);
 
                             /* get the list of DICOM files */
-                            QStringList dcmfiles = n->FindAllFiles(tmpdir, "*");
-							qint64 numdcms = dcmfiles.size();
+                            QStringList dcmfiles = FindAllFiles(tmpdir, "*");
+                            qint64 numdcms = dcmfiles.size();
                             n->WriteLog(QString("Found [%1] dcmfiles").arg(numdcms));
 
                             if (numdcms < 1)
@@ -1388,8 +1390,8 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
 
                             /* get the list of beh files */
                             QStringList behfiles;
-							//if (behdirexists && !behdirempty)
-							//    QStringList behfiles = n->FindAllFiles(behindir, "*");
+                            //if (behdirexists && !behdirempty)
+                            //    QStringList behfiles = n->FindAllFiles(behindir, "*");
 
                             /* build the cURL string to send the actual data */
                             systemstring = QString("curl -gs -F 'action=UploadDICOM' -F 'u=%1' -F 'p=%2' -F 'transactionid=%3' -F 'instanceid=%4' -F 'projectid=%5' -F 'siteid=%6' -F 'dataformat=%7' -F 'modality=%8' -F 'seriesnotes=%9' -F 'altuids=%10' -F 'seriesnum=%11' ").arg(conn.username).arg(conn.password).arg(transactionid).arg(conn.instanceid).arg(conn.projectid).arg(conn.siteid).arg(datatype).arg(modality).arg(seriesnotes).arg(altuids).arg(seriesnum);
@@ -1397,7 +1399,7 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
                             foreach (QString f, dcmfiles) {
                                 c++;
                                 QString systemstringA = QString("cp -v '%1' %2/").arg(f).arg(tmpzipdir);
-                                QString output = n->SystemCommand(systemstringA);
+                                QString output = SystemCommand(systemstringA);
                                 if ((output == "") || output.contains("error", Qt::CaseInsensitive))
                                     n->WriteLog(output);
                             }
@@ -1407,7 +1409,7 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
                                 foreach(QString f, behfiles) {
                                     c++;
                                     QString systemstringA = QString("cp '%1/%2' %3/beh/").arg(behindir).arg(f).arg(tmpzipdir);
-                                    QString res = n->SystemCommand(systemstringA, false);
+                                    QString res = SystemCommand(systemstringA, false);
                                     if (res != "") {
                                         n->WriteLog(systemstringA + " (" + res + ")");
                                     }
@@ -1416,7 +1418,7 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
 
                             /* send the zip and send file */
                             QString systemstringB = QString("GZIP=-1; tar -czf %2 --warning=no-timestamp -C %1 .; chmod -v 777 %2").arg(tmpzipdir).arg(tmpzip);
-                            n->WriteLog(n->SystemCommand(systemstringB));
+                            n->WriteLog(SystemCommand(systemstringB));
 
                             /* get size before sending */
                             QFile zf(tmpzip);
@@ -1424,13 +1426,13 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
                             double starttime = double(QDateTime::currentMSecsSinceEpoch());
 
                             /* get file MD5 before sending */
-                            QString zipmd5 = n->GetFileChecksum(tmpzip, QCryptographicHash::Md5).toHex();
+                            QString zipmd5 = GetFileChecksum(tmpzip, QCryptographicHash::Md5).toHex();
 
                             systemstring += "-F 'files[]=@" + tmpzip + "' ";
                             systemstring += conn.server + "/api.php";
-                            QString results = n->SystemCommand(systemstring, false);
+                            QString results = SystemCommand(systemstring, false);
                             n->WriteLog("Ran [" + systemstring + "] output (" + results + ")");
-							double elapsedtime = static_cast<double>(QDateTime::currentMSecsSinceEpoch()) - starttime + 0.0000001; // to avoid a divide by zero!
+                            double elapsedtime = static_cast<double>(QDateTime::currentMSecsSinceEpoch()) - starttime + 0.0000001; // to avoid a divide by zero!
                             double MBps = zipsize/elapsedtime/1000.0;
                             QString speedmsg = QString("%1 bytes transferred in %2s - Speed: %3 MB/s").arg(zipsize).arg(elapsedtime*1000.0).arg(QString::number(MBps, 'g', 2));
                             n->WriteLog(speedmsg);
@@ -1642,7 +1644,7 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
                     /* get some DICOM specific tags from the first file in the series */
                     QString dcmfile;
                     QString m;
-                    if (!n->FindFirstFile(indir, "*.dcm",dcmfile,m)) {
+                    if (!FindFirstFile(indir, "*.dcm",dcmfile,m)) {
                         log << "WriteNDARSeries() " + n->WriteLog("Unable to find any DICOM files in [" + indir + "]");
                         return false;
                     }
@@ -1705,7 +1707,7 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
                     FOV = QString("%1mm x %2mm").arg((AcqParts[0].toDouble() * seriesspacingx * PercentPhaseFieldOfView.toDouble())/100.0).arg((AcqParts[3].toDouble() * seriesspacingy * PercentPhaseFieldOfView.toDouble())/100.0);
 
                 QString str;
-				QTextStream(&str) << guid << "," << srcsubjectid << "," << studydatetime << "," << static_cast<int>(round(ageatscan)) << "," << gender << "," << imagetype << "," << imagefile << ",," << seriesdesc << "," << datatype << "," << modality << "," << Manufacturer << "," << ManufacturersModelName << "," << SoftwareVersion << "," << seriesfieldstrength << "," << seriestr << "," << serieste << "," << seriesflip << "," << AcquisitionMatrix << "," << FOV << "," << PatientPosition << "," << PhotometricInterpretation << ",," << TransmitCoilName << ",No,,," << numdim << "," << imgcols << "," << imgrows << "," << imgslices << "," << boldreps << ",timeseries,,,Millimeters,Millimeters,Millimeters,Milliseconds,," << seriesspacingx << "," << seriesspacingy << "," << seriesspacingz << "," << seriestr << ",," << seriesspacingz << ",Axial,,,,,,,,,,,,," << scantype << ",Live," << behfile << "," << behdesc << "," << ProtocolName << ",," << seriessequence << ",1,,,0,Yes,Yes\n";
+                QTextStream(&str) << guid << "," << srcsubjectid << "," << studydatetime << "," << static_cast<int>(round(ageatscan)) << "," << gender << "," << imagetype << "," << imagefile << ",," << seriesdesc << "," << datatype << "," << modality << "," << Manufacturer << "," << ManufacturersModelName << "," << SoftwareVersion << "," << seriesfieldstrength << "," << seriestr << "," << serieste << "," << seriesflip << "," << AcquisitionMatrix << "," << FOV << "," << PatientPosition << "," << PhotometricInterpretation << ",," << TransmitCoilName << ",No,,," << numdim << "," << imgcols << "," << imgrows << "," << imgslices << "," << boldreps << ",timeseries,,,Millimeters,Millimeters,Millimeters,Milliseconds,," << seriesspacingx << "," << seriesspacingy << "," << seriesspacingz << "," << seriestr << ",," << seriesspacingz << ",Axial,,,,,,,,,,,,," << scantype << ",Live," << behfile << "," << behdesc << "," << ProtocolName << ",," << seriessequence << ",1,,,0,Yes,Yes\n";
 
                 fs << str;
             }
@@ -1753,18 +1755,18 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
                 }
 
                 QString str;
-				QTextStream(&str) << guid << "," << uid << "," << studydatetime << "," << static_cast<int>(round(ageatscan)) << "," << gender << "," << seriesprotocol << ",,," << expid <<",\"" << seriesnotes << "\",,,,," << imagefile << ",,,,,,,,,\n";
+                QTextStream(&str) << guid << "," << uid << "," << studydatetime << "," << static_cast<int>(round(ageatscan)) << "," << gender << "," << seriesprotocol << ",,," << expid <<",\"" << seriesnotes << "\",,,,," << imagefile << ",,,,,,,,,\n";
                 fs << str;
             }
             else if (modality == "ET") {
                 int expid = 0;
                 QString str;
-				QTextStream(&str) << guid << "," << uid << "," << studydatetime << "," << static_cast<int>(round(ageatscan)) << "," << gender << ",Unknown," << expid << "," << seriesprotocol << ",,\"" << seriesnotes << "\",,,," << imagefile << ",Eyetracking,,,,,,\n";
+                QTextStream(&str) << guid << "," << uid << "," << studydatetime << "," << static_cast<int>(round(ageatscan)) << "," << gender << ",Unknown," << expid << "," << seriesprotocol << ",,\"" << seriesnotes << "\",,,," << imagefile << ",Eyetracking,,,,,,\n";
                 fs << str;
             }
             else if (modality == "GSR") {
                 QString str;
-				QTextStream(&str) << guid << "," << uid << "," << studydatetime << "," << static_cast<int>(round(ageatscan)) << "," << gender << ",,," << seriesprotocol << ",,," << imagefile << ",,,,,,,,,,,,,,,,,,,,,,,,\n";
+                QTextStream(&str) << guid << "," << uid << "," << studydatetime << "," << static_cast<int>(round(ageatscan)) << "," << gender << ",,," << seriesprotocol << ",,," << imagefile << ",,,,,,,,,,,,,,,,,,,,,,,,\n";
                 fs << str;
             }
             else {
@@ -1790,7 +1792,7 @@ int moduleExport::StartRemoteNiDBTransaction(QString remotenidbserver, QString r
     int ret = -1;
     /* build a cURL string to start the transaction */
     QString systemstring = QString("curl -gs -F 'action=startTransaction' -F 'u=%1' -F 'p=%2' %3/api.php").arg(remotenidbusername).arg(remotenidbpassword).arg(remotenidbserver);
-    QString str = n->SystemCommand(systemstring, false).simplified();
+    QString str = SystemCommand(systemstring, false).simplified();
 
     bool ok;
     int t = str.toLong(&ok);
@@ -1810,5 +1812,5 @@ void moduleExport::EndRemoteNiDBTransaction(int tid, QString remotenidbserver, Q
 
     /* build a cURL string to end the transaction */
     QString systemstring = QString ("curl -gs -F 'action=endTransaction' -F 'u=%1' -F 'p=%2' -F 'transactionid=%3' %4/api.php").arg(remotenidbusername).arg(remotenidbpassword).arg(tid).arg(remotenidbserver);
-    n->WriteLog(n->SystemCommand(systemstring));
+    n->WriteLog(SystemCommand(systemstring));
 }

@@ -24,22 +24,24 @@
 #define MODULEIMPORTUPLOADED_H
 
 #include "nidb.h"
+#include "imageio.h"
 #include "gdcmAnonymizer.h"
 
 class moduleImportUploaded
 {
 public:
-	moduleImportUploaded();
-	moduleImportUploaded(nidb *n);
-	~moduleImportUploaded();
+    moduleImportUploaded();
+    moduleImportUploaded(nidb *n);
+    ~moduleImportUploaded();
 
-	int Run();
-	bool PrepareAndMoveDICOM(QString file, QString outdir, bool anonymize);
-	bool PrepareAndMovePARREC(QString file, QString outdir);
-	bool SetImportRequestStatus(int importid, QString status, QString msg = "");
+    int Run();
+    bool PrepareAndMoveDICOM(QString file, QString outdir, bool anonymize);
+    bool PrepareAndMovePARREC(QString file, QString outdir);
+    bool SetImportRequestStatus(int importid, QString status, QString msg = "");
 
 private:
-	nidb *n;
+    nidb *n;
+    imageIO *img;
 };
 
 #endif // MODULEIMPORTUPLOADED_H

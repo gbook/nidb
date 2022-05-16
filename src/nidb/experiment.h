@@ -25,43 +25,43 @@
 #include "nidb.h"
 
 struct experimentFile {
-	int id;
-	QString filename;
-	int version;
-	QByteArray file;
-	qint64 filesize;
-	QDateTime mDate;
-	QDateTime cDate;
+    int id;
+    QString filename;
+    int version;
+    QByteArray file;
+    qint64 filesize;
+    QDateTime mDate;
+    QDateTime cDate;
 };
 
 class experiment
 {
 public:
-	experiment();
-	experiment(int id, nidb *a);
-	nidb *n;
+    experiment();
+    experiment(int id, nidb *a);
+    nidb *n;
 
-	bool WriteFiles(QString dir, QString &m);
+    bool WriteFiles(QString dir, QString &m);
 
-	/* object variables */
-	QString msg;
-	bool isValid = true;
+    /* object variables */
+    QString msg;
+    bool isValid = true;
 
-	/* experiment variables */
-	QString name;
-	int version;
-	QDateTime createDate;
-	QDateTime modifyDate;
-	QString desc;
-	QString creator;
+    /* experiment variables */
+    QString name;
+    int version;
+    QDateTime createDate;
+    QDateTime modifyDate;
+    QString desc;
+    QString creator;
 
-	QList<experimentFile> files;
+    QList<experimentFile> files;
 
-	QJsonObject GetJSONObject(QString path);
+    QJsonObject GetJSONObject(QString path);
 private:
-	void LoadExperimentInfo();
+    void LoadExperimentInfo();
 
-	int experimentid;
+    int experimentid;
 };
 
 #endif // EXPERIMENT_H
