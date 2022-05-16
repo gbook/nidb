@@ -23,10 +23,6 @@
 #ifndef NIDB_H
 #define NIDB_H
 
-#define VERSION_MAJ "2022"
-#define VERSION_MIN "5"
-#define BUILD_NUM "805"
-
 #include <QFile>
 #include <QString>
 #include <QHash>
@@ -36,14 +32,17 @@
 #include <QDirIterator>
 #include <QMetaType>
 #include <QVariant>
+#include "version.h"
 #include "SmtpMime"
 #include "utils.h"
 
 typedef QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>> subjectStudySeriesContainer;
 
-//static const QRegularExpression REwhiteSpace("\\s*");
-//static const QRegularExpression REnonAlphaNum("[^a-zA-Z0-9_-]");
-
+/**
+ * @brief The nidb class
+ *
+ * The nidb class is the root class for creating, running, and managing nidb modules
+ */
 class nidb
 {
 public:

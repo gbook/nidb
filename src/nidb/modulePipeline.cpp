@@ -1244,7 +1244,8 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                         dlog << n->WriteLog("   Created temp directory [" + tmpdir + "] for DICOM conversion");
                     int numfilesconv(0);
                     int numfilesrenamed(0);
-                    img->ConvertDicom(dataformat, indir, tmpdir, n->cfg["nidbdir"], gzip, uid, QString("%1").arg(localstudynum), QString("%1").arg(seriesnum), datatype, numfilesconv, numfilesrenamed, m);
+					QString binpath = n->cfg["nidbdir"] + "/bin";
+					img->ConvertDicom(dataformat, indir, tmpdir, binpath, gzip, uid, QString("%1").arg(localstudynum), QString("%1").arg(seriesnum), datatype, numfilesconv, numfilesrenamed, m);
 
                     QString systemstring;
                     if (p.dataCopyMethod == "scp")

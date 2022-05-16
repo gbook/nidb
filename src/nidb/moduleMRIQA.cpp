@@ -29,6 +29,9 @@
 moduleMRIQA::moduleMRIQA(nidb *a)
 {
     n = a;
+
+	if (n->cfg["debug"] == "1")
+		debug = true;
 }
 
 
@@ -156,7 +159,7 @@ bool moduleMRIQA::QA(qint64 seriesid) {
 
     if ((isderived) || (datatype == "nifti")) {
         QString systemstring = QString("cp -v %1/%2/%3/%4/nifti/* %5").arg(n->cfg["archivedir"]).arg(uid).arg(studynum).arg(seriesnum).arg(tmpdir);
-        msgs << n->WriteLog(SystemCommand(systemstring));
+		msgs << n->WriteLog(SystemCommand(systemstring, debug));
     }
     else {
         QString systemstring;
@@ -167,7 +170,7 @@ bool moduleMRIQA::QA(qint64 seriesid) {
         else
             systemstring = QString("pwd; %1/bin/./dcm2niix -g y -o '%2' %3").arg(n->cfg["nidbdir"]).arg(tmpdir).arg(indir);
 
-        msgs << n->WriteLog(SystemCommand(systemstring));
+		msgs << n->WriteLog(SystemCommand(systemstring, debug));
     }
     QString systemstring;
 
@@ -186,9 +189,9 @@ bool moduleMRIQA::QA(qint64 seriesid) {
         msgs << n->WriteLog(QString("Found files in ["+tmpdir+"] after copying or converting. dircount [%1] dirsize [%2]").arg(c).arg(b));
 
     systemstring = "find . -name '*.nii.gz' | head -1 | xargs -i cp -v {} 4D.nii.gz";
-    msgs << n->WriteLog(SystemCommand(systemstring));
+	msgs << n->WriteLog(SystemCommand(systemstring, debug));
     systemstring = "find . -name '*.nii' | head -1 | xargs -i cp -v {} 4D.nii";
-    msgs << n->WriteLog(SystemCommand(systemstring));
+	msgs << n->WriteLog(SystemCommand(systemstring, debug));
 
     /* check if any 4D file was created */
     QString filepath4d;
@@ -205,25 +208,25 @@ bool moduleMRIQA::QA(qint64 seriesid) {
     n->WriteLog("Starting the nii_qa script. Will return to logging after the script is finished");
     /* create a 4D file to pass to the SNR program and run the SNR program on it */
     systemstring = QString(fsl + "%1/bin/./nii_qa.sh -i " + filepath4d + " -o %2/qa.txt -v 2 -t %3").arg(n->cfg["nidbdir"]).arg(qapath).arg(tmpdir);
-    msgs << n->WriteLog(SystemCommand(systemstring));
+	msgs << n->WriteLog(SystemCommand(systemstring, debug));
 
     /* move the realignment file(s) from the tmp to the archive directory */
     systemstring = QString("mv -v %1/*.par %2/").arg(tmpdir).arg(qapath);
-    msgs << n->WriteLog(SystemCommand(systemstring));
+	msgs << n->WriteLog(SystemCommand(systemstring, debug));
 
     /* rename the realignment file to something meaningful */
     systemstring = QString("mv -v %1/*.par %1/MotionCorrection.txt").arg(qapath);
-    msgs << n->WriteLog(SystemCommand(systemstring));
+	msgs << n->WriteLog(SystemCommand(systemstring, debug));
 
     /* move and rename the mean,sigma,variance volumes from the tmp to the archive directory */
     systemstring = QString("mv -v %1/*mcvol_meanvol.nii.gz %2/Tmean.nii.gz").arg(tmpdir).arg(qapath);
-    msgs << n->WriteLog(SystemCommand(systemstring));
+	msgs << n->WriteLog(SystemCommand(systemstring, debug));
     systemstring = QString("mv -v %1/*mcvol_sigma.nii.gz %2/Tsigma.nii.gz").arg(tmpdir).arg(qapath);
-    msgs << n->WriteLog(SystemCommand(systemstring));
+	msgs << n->WriteLog(SystemCommand(systemstring, debug));
     systemstring = QString("mv -v %1/*mcvol_variance.nii.gz %2/Tvariance.nii.gz").arg(tmpdir).arg(qapath);
-    msgs << n->WriteLog(SystemCommand(systemstring));
+	msgs << n->WriteLog(SystemCommand(systemstring, debug));
     systemstring = QString("mv -v %1/*mcvol.nii.gz %1/mc4D.nii.gz").arg(tmpdir);
-    msgs << n->WriteLog(SystemCommand(systemstring));
+	msgs << n->WriteLog(SystemCommand(systemstring, debug));
 
     /* create thumbnails (try 4 different ways before giving up) */
     QString thumbfile = s.seriespath + "/thumb.png";
@@ -249,58 +252,58 @@ bool moduleMRIQA::QA(qint64 seriesid) {
     if (filepath4d != "") {
         QString s;
         s = QString(fsl + "fslval %1 dim0").arg(filepath4d);
-        n->WriteLog(SystemCommand(s));
+		//n->WriteLog(SystemCommand(s));
         dimN = SystemCommand(s, false).trimmed().toInt();
 
         s = QString(fsl + "fslval %1 dim1").arg(filepath4d);
-        n->WriteLog(SystemCommand(s));
+		//n->WriteLog(SystemCommand(s));
         dimX = SystemCommand(s, false).trimmed().toInt();
 
         s = QString(fsl + "fslval %1 dim2").arg(filepath4d);
-        n->WriteLog(SystemCommand(s));
+		//n->WriteLog(SystemCommand(s));
         dimY = SystemCommand(s, false).trimmed().toInt();
 
         s = QString(fsl + "fslval %1 dim3").arg(filepath4d);
-        n->WriteLog(SystemCommand(s));
+		//n->WriteLog(SystemCommand(s));
         dimZ = SystemCommand(s, false).trimmed().toInt();
 
         s = QString(fsl + "fslval %1 dim4").arg(filepath4d);
-        n->WriteLog(SystemCommand(s));
+		//n->WriteLog(SystemCommand(s));
         dimT = SystemCommand(s, false).trimmed().toInt();
 
         s = QString(fsl + "fslval %1").arg(filepath4d);
-        n->WriteLog(SystemCommand(s + " pixdim1"));
+		//n->WriteLog(SystemCommand(s + " pixdim1"));
         voxX = SystemCommand(s + " pixdim1", false).trimmed().toDouble();
-        n->WriteLog(SystemCommand(s + " pixdim2"));
+		//n->WriteLog(SystemCommand(s + " pixdim2"));
         voxY = SystemCommand(s + " pixdim2", false).trimmed().toDouble();
-        n->WriteLog(SystemCommand(s + " pixdim3"));
+		//n->WriteLog(SystemCommand(s + " pixdim3"));
         voxZ = SystemCommand(s + " pixdim3", false).trimmed().toDouble();
     }
 
     /* get min/max intensity in the mean/variance/stdev volumes and create thumbnails of the mean, sigma, and varaiance images */
     if (QFile::exists(qapath + "/Tmean.nii.gz")) {
         systemstring = QString(fsl + "fslstats %1/Tmean.nii.gz -R > %1/minMaxMean.txt").arg(qapath);
-        msgs << n->WriteLog(SystemCommand(systemstring));
+		msgs << n->WriteLog(SystemCommand(systemstring, debug));
         systemstring = QString(fsl + "slicer %1/Tmean.nii.gz -a %1/Tmean.png").arg(qapath);
-        msgs << n->WriteLog(SystemCommand(systemstring));
+		msgs << n->WriteLog(SystemCommand(systemstring, debug));
     }
     else
         msgs << n->WriteLog(qapath + "/Tmean.nii.gz does not exist");
 
     if (QFile::exists(qapath + "/Tsigma.nii.gz")) {
         systemstring = QString(fsl + "fslstats %1/Tsigma.nii.gz -R > %1/minMaxSigma.txt").arg(qapath);
-        msgs << n->WriteLog(SystemCommand(systemstring));
+		msgs << n->WriteLog(SystemCommand(systemstring, debug));
         systemstring = QString(fsl + "slicer %1/Tsigma.nii.gz -a %1/Tsigma.png").arg(qapath);
-        msgs << n->WriteLog(SystemCommand(systemstring));
+		msgs << n->WriteLog(SystemCommand(systemstring, debug));
     }
     else
         msgs << n->WriteLog(qapath + "/Tsigma.nii.gz does not exist");
 
     if (QFile::exists(qapath + "/Tvariance.nii.gz")) {
         systemstring = QString(fsl + "fslstats %1/Tvariance.nii.gz -R > %1/minMaxVariance.txt").arg(qapath);
-        msgs << n->WriteLog(SystemCommand(systemstring));
+		msgs << n->WriteLog(SystemCommand(systemstring, debug));
         systemstring = QString(fsl + "slicer %1/Tvariance.nii.gz -a %1/Tvariance.png").arg(qapath);
-        msgs << n->WriteLog(SystemCommand(systemstring));
+		msgs << n->WriteLog(SystemCommand(systemstring, debug));
     }
     else
         msgs << n->WriteLog(qapath + "/Tvariance.nii.gz does not exist");
@@ -308,17 +311,17 @@ bool moduleMRIQA::QA(qint64 seriesid) {
     if (QFile::exists(tmpdir + "/mc4D.nii.gz")) {
         /* get mean/stdev in intensity over time */
         systemstring = QString(fsl + "fslstats -t %1/mc4D -m > %2/meanIntensityOverTime.txt").arg(tmpdir).arg(qapath);
-        msgs << n->WriteLog(SystemCommand(systemstring));
+		msgs << n->WriteLog(SystemCommand(systemstring, debug));
         systemstring = QString(fsl + "fslstats -t %1/mc4D -s > %2/stdevIntensityOverTime.txt").arg(tmpdir).arg(qapath);
-        msgs << n->WriteLog(SystemCommand(systemstring));
+		msgs << n->WriteLog(SystemCommand(systemstring, debug));
         systemstring = QString(fsl + "fslstats -t %1/mc4D -e > %2/entropyOverTime.txt").arg(tmpdir).arg(qapath);
-        msgs << n->WriteLog(SystemCommand(systemstring));
+		msgs << n->WriteLog(SystemCommand(systemstring, debug));
         systemstring = QString(fsl + "fslstats -t %1/mc4D -c > %2/centerOfGravityOverTimeMM.txt").arg(tmpdir).arg(qapath);
-        msgs << n->WriteLog(SystemCommand(systemstring));
+		msgs << n->WriteLog(SystemCommand(systemstring, debug));
         systemstring = QString(fsl + "fslstats -t %1/mc4D -C > %2/centerOfGravityOverTimeVox.txt").arg(tmpdir).arg(qapath);
-        msgs << n->WriteLog(SystemCommand(systemstring));
+		msgs << n->WriteLog(SystemCommand(systemstring, debug));
         systemstring = QString(fsl + "fslstats -t %1/mc4D -h 100 > %2/histogramOverTime.txt").arg(tmpdir).arg(qapath);
-        msgs << n->WriteLog(SystemCommand(systemstring));
+		msgs << n->WriteLog(SystemCommand(systemstring, debug));
     }
     else
         msgs << n->WriteLog(tmpdir + "/mc4D.nii.gz does not exist");
@@ -339,8 +342,11 @@ bool moduleMRIQA::QA(qint64 seriesid) {
     if (!QFile::exists(thumbfile)) {
         msgs << n->WriteLog(thumbfile + " still does not exist, attempting to create it from Tmean.png");
         systemstring = "cp -v " + qapath + "/Tmean.png " + thumbfile;
-        msgs << n->WriteLog(SystemCommand(systemstring));
+		msgs << n->WriteLog(SystemCommand(systemstring, debug));
     }
+	else {
+		n->WriteLog("Thumbnail [" + thumbfile + "] alreadys exists");
+	}
     /* and if there is yet still no thumbnail, generate one the old fashioned way, with convert */
     if (!QFile::exists(thumbfile)) {
         msgs << n->WriteLog(thumbfile + " still does not exist, attempting to create it using ImageMagick");
@@ -352,22 +358,25 @@ bool moduleMRIQA::QA(qint64 seriesid) {
         QStringList dcms = FindAllFiles(s.datapath, "*.dcm");
         QString dcmfile = dcms[int(dcms.size()/2)];
         systemstring = "convert -normalize " + dcmfile + " " + thumbfile;
-        msgs << n->WriteLog(SystemCommand(systemstring));
-    }
+		msgs << n->WriteLog(SystemCommand(systemstring, debug));
+	}
+	else {
+		n->WriteLog("Thumbnail [" + thumbfile + "] alreadys exists");
+	}
 
     /* run the motion detection program (for 3D volumes only) */
     double motion_rsq(0.0);
     if (dimT == 1) {
         systemstring = "python " + n->cfg["nidbdir"] + "/bin/StructuralMRIQA.py " + s.seriespath;
         msgs << n->WriteLog("Running structural motion calculation");
-        QString rsq = SystemCommand(systemstring, false);
+		QString rsq = SystemCommand(systemstring, debug);
         if (rsq == "")
             motion_rsq = 0.0;
     }
 
     /* run fsl_motion_outliers for FD */
     systemstring = QString(fsl + "fsl_motion_outliers -i %1 -o %2/outliers-fd.txt  -s %2/fd.txt --fd -p %2/fd.png").arg(filepath4d).arg(qapath);
-    msgs << n->WriteLog(SystemCommand(systemstring));
+	msgs << n->WriteLog(SystemCommand(systemstring, debug));
     QStringList fd = ReadTextFileIntoArray(qapath + "/fd.txt");
     QList<double> fdDouble = SplitStringArrayToDouble(fd);
     std::sort(fdDouble.begin(), fdDouble.end());
@@ -386,7 +395,7 @@ bool moduleMRIQA::QA(qint64 seriesid) {
 
     /* run fsl_motion_outliers for FD */
     systemstring = QString(fsl + "fsl_motion_outliers -i %1 -o %2/outliers-dvars.txt  -s %2/dvars.txt --fd -p %2/dvars.png").arg(filepath4d).arg(qapath);
-    msgs << n->WriteLog(SystemCommand(systemstring));
+	msgs << n->WriteLog(SystemCommand(systemstring, debug));
     QStringList dvars = ReadTextFileIntoArray(qapath + "/fd.txt");
     QList<double> dvarsDouble = SplitStringArrayToDouble(dvars);
     std::sort(dvarsDouble.begin(), dvarsDouble.end());
@@ -404,8 +413,9 @@ bool moduleMRIQA::QA(qint64 seriesid) {
     }
 
     /* delete the 4D file and temp directory */
-    if (!RemoveDir(tmpdir, m))
-        msgs << n->WriteLog("Unable to remove directory ["+tmpdir+"] because of error ["+m+"]");
+	if (!debug)
+		if (!RemoveDir(tmpdir, m))
+			msgs << n->WriteLog("Unable to remove directory ["+tmpdir+"] because of error ["+m+"]");
 
     /* insert this row into the DB */
     q.prepare("update mr_qa set mrseries_id = :seriesid, io_snr = :iosnr, pv_snr = :pvsnr, move_minx = :mintx, move_miny = :minty, move_minz = :mintz, move_maxx = :maxtx, move_maxy = :maxty, move_maxz = :maxtz, acc_minx = :minax, acc_miny = :minay, acc_minz = :minaz, acc_maxx = :maxax, acc_maxy = :maxay, acc_maxz = :maxaz, rot_minp = :minrx, rot_minr = :minry, rot_miny = :minrz, rot_maxp = :maxrx, rot_maxr = :maxry, rot_maxy = :maxrz, motion_rsq = :motion_rsq, fd_max = :fdmax, fd_mean = :fdmean, fd_sd = :fdstdev, dvars_max = :dvarsmax, dvars_mean = :dvarsmean, dvars_stdev = :dvarsstdev, cputime = 0.0 where mrqa_id = :mrqaid");
@@ -536,7 +546,7 @@ bool moduleMRIQA::GetMovementStats(QString f, double &maxrx, double &maxry, doub
             if (line.size() == 0)
                 continue;
 
-            QStringList p = line.split(REwhiteSpace);
+			QStringList p = line.split(QRegularExpression("\\s+"));
             if (p.size() == 6) {
                 rotx.append(p[0].toDouble());
                 roty.append(p[1].toDouble());
@@ -548,7 +558,10 @@ bool moduleMRIQA::GetMovementStats(QString f, double &maxrx, double &maxry, doub
         }
         df.close();
     }
-
+	else {
+		msgs << n->WriteLog("Unable to open realignment file [" + f + "]  error [" + df.errorString() + "]");
+	}
+	msgs << n->WriteLog("Calculating min/max values for rotation/translation");
     /* min and max for the rotation and translation */
     GetMinMax(rotx, minrx, maxrx);
     GetMinMax(roty, minry, maxry);
@@ -557,20 +570,23 @@ bool moduleMRIQA::GetMovementStats(QString f, double &maxrx, double &maxry, doub
     GetMinMax(tray, minty, maxty);
     GetMinMax(traz, mintz, maxtz);
 
-    /* get the speed (acc) from the translation */
+	msgs << n->WriteLog("Calculating derivatives for translation");
+	/* get the speed (acc) from the translation */
     QVector<double> accx, accy, accz;
     accx = Derivative(trax);
     accy = Derivative(tray);
     accz = Derivative(traz);
 
-    GetMinMax(accx, minax, maxax);
+	msgs << n->WriteLog("Calculating min/max values for derivative");
+	GetMinMax(accx, minax, maxax);
     GetMinMax(accy, minay, maxay);
     GetMinMax(accz, minaz, maxaz);
 
     QString accfile = f;
     accfile.replace("MotionCorrection","MotionCorrection2");
 
-    QFile af(accfile);
+	msgs << n->WriteLog("Opening file [" + accfile + "]");
+	QFile af(accfile);
     if (af.open(QIODevice::WriteOnly | QIODevice::Text)) {
         QTextStream fs(&af);
         for (int i=0; i<accx.size();i++)
@@ -585,15 +601,18 @@ bool moduleMRIQA::GetMovementStats(QString f, double &maxrx, double &maxry, doub
             fs << QString("%1").arg(accz[i]);
         fs << Qt::endl;
 
+		msgs << n->WriteLog("Finished writing to file [" + accfile + "]");
         af.close();
     }
     else {
-        msg = msgs.join("\n");
+		msgs << n->WriteLog("Unable to open file [" + accfile + "] for writing. Error [" + af.errorString() + "]");
+		msg = msgs.join("\n");
         return false;
     }
 
     msg = msgs.join("\n");
-    return true;
+	n->WriteLog("Finished GetMovementStats()");
+	return true;
 }
 
 
@@ -601,9 +620,13 @@ bool moduleMRIQA::GetMovementStats(QString f, double &maxrx, double &maxry, doub
 /* --------- GetMinMax -------------------------------------- */
 /* ---------------------------------------------------------- */
 void moduleMRIQA::GetMinMax(QVector<double> a, double &min, double &max) {
-    min = *std::min_element(a.begin(), a.end());
-    max = *std::max_element(a.begin(), a.end());
-//	n->WriteLog(QString("Found min [%1] and max [%2]").arg(min).arg(max));
+	if (a.size() > 0) {
+		min = *std::min_element(a.begin(), a.end());
+		max = *std::max_element(a.begin(), a.end());
+	}
+	else {
+		n->WriteLog(QString("Attempting to get min/max on vector of size [%1]").arg(a.size()));
+	}
 }
 
 
@@ -613,8 +636,13 @@ void moduleMRIQA::GetMinMax(QVector<double> a, double &min, double &max) {
 QVector<double> moduleMRIQA::Derivative(QVector<double> a) {
     QVector<double> r;
 
-    for (int i=0; i<a.size();i++)
-        r.append(a[i]-a[i-1]);
+	if (a.size() > 0) {
+		for (int i=0; i<a.size();i++)
+			r.append(a[i]-a[i-1]);
+	}
+	else {
+		n->WriteLog(QString("Attempting to get derivative on vector of size [%1]").arg(a.size()));
+	}
 
     return r;
 }

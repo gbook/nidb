@@ -83,7 +83,8 @@ HEADERS += \
     series.h \
     study.h \
     subject.h \
-    utils.h
+    utils.h \
+    version.h
 
 
 # gdcm

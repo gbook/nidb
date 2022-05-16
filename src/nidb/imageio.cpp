@@ -26,6 +26,9 @@
 /* ---------------------------------------------------------- */
 /* --------- imageIO ---------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * imageIO constructor
+*/
 imageIO::imageIO()
 {
 
@@ -34,6 +37,9 @@ imageIO::imageIO()
 /* ---------------------------------------------------------- */
 /* --------- imageIO ---------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * imageIO constructor
+*/
 imageIO::imageIO(nidb *a)
 {
     n = a;
@@ -43,6 +49,9 @@ imageIO::imageIO(nidb *a)
 /* ---------------------------------------------------------- */
 /* --------- ~imageIO --------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * imageIO destructor
+*/
 imageIO::~imageIO()
 {
 
@@ -52,7 +61,7 @@ imageIO::~imageIO()
 /* ---------------------------------------------------------- */
 /* --------- ConvertDicom ----------------------------------- */
 /* ---------------------------------------------------------- */
-bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QString nidbdir, bool gzip, QString uid, QString studynum, QString seriesnum, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg) {
+bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QString bindir, bool gzip, QString uid, QString studynum, QString seriesnum, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg) {
 
     QStringList msgs;
 
@@ -75,13 +84,13 @@ bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QStr
     QString systemstring;
     QDir::setCurrent(indir);
     if (filetype == "nifti4dme")
-        systemstring = QString("%1/bin/./dcm2niixme %2 -o '%3' %4").arg(nidbdir).arg(gzipstr).arg(outdir).arg(indir);
+		systemstring = QString("%1/./dcm2niixme %2 -o '%3' %4").arg(bindir).arg(gzipstr).arg(outdir).arg(indir);
     else if (filetype == "nifti4d")
-        systemstring = QString("%1/bin/./dcm2niix -1 -b n %2 -o '%3' %4%5").arg(nidbdir).arg(gzipstr).arg(outdir).arg(indir).arg(fileext);
+		systemstring = QString("%1/./dcm2niix -1 -b n %2 -o '%3' %4%5").arg(bindir).arg(gzipstr).arg(outdir).arg(indir).arg(fileext);
     else if (filetype == "nifti3d")
-        systemstring = QString("%1/bin/./dcm2niix -1 -b n -z 3 -o '%2' %3%4").arg(nidbdir).arg(outdir).arg(indir).arg(fileext);
+		systemstring = QString("%1/./dcm2niix -1 -b n -z 3 -o '%2' %3%4").arg(bindir).arg(outdir).arg(indir).arg(fileext);
     else if (filetype == "bids")
-        systemstring = QString("%1/bin/./dcm2niix -1 -b y -z y -o '%2' %3%4").arg(nidbdir).arg(outdir).arg(indir).arg(fileext);
+		systemstring = QString("%1/./dcm2niix -1 -b y -z y -o '%2' %3%4").arg(bindir).arg(outdir).arg(indir).arg(fileext);
     else
         return false;
 
@@ -326,7 +335,7 @@ QString imageIO::GetDicomModality(QString f)
 /* ---------------------------------------------------------- */
 /* --------- GetImageFileTags ------------------------------- */
 /* ---------------------------------------------------------- */
-bool imageIO::GetImageFileTags(QString f, QString nidbdir, bool enablecsa, QHash<QString, QString> &tags, QString &msg) {
+bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<QString, QString> &tags, QString &msg) {
 
     /* check if the file exists and has read permissions */
     QFileInfo fi(f);
@@ -614,7 +623,7 @@ bool imageIO::GetImageFileTags(QString f, QString nidbdir, bool enablecsa, QHash
                         if (!line.contains(QRegularExpression(QStringLiteral("[\\x00-\\x1F]")))) {
                             qint64 idx = line.indexOf(".dInPlaneRot");
                             line = line.mid(idx,23);
-                            QStringList vals = line.split(REwhiteSpace);
+							QStringList vals = line.split(QRegularExpression("\\s+"));
                             if (vals.size() > 0)
                                 tags["PhaseEncodeAngle"] = vals.last().trimmed();
                             break;
@@ -626,7 +635,7 @@ bool imageIO::GetImageFileTags(QString f, QString nidbdir, bool enablecsa, QHash
             }
 
             /* get the other part of the CSA header, the PhaseEncodingDirectionPositive value */
-            QString systemstring = QString("%1/bin/./gdcmdump -C %2 | grep PhaseEncodingDirectionPositive").arg(nidbdir).arg(f);
+			QString systemstring = QString("%1/./gdcmdump -C %2 | grep PhaseEncodingDirectionPositive").arg(bindir).arg(f);
             QString csaheader = SystemCommand(systemstring, false);
             QStringList parts = csaheader.split(",");
             QString val;

@@ -464,7 +464,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                         break;
                     case 2:
                         QString seriesdir = seriesdesc;
-                        seriesdir.replace(REnonAlphaNum, "_");
+						seriesdir.replace(QRegularExpression("[^a-zA-Z0-9_-]"), "_");
                         newseriesnum = QString("%1_%2").arg(seriesnum).arg(seriesdir);
                     }
 
@@ -573,7 +573,8 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                                             msgs << "Created tmpdir [" + tmpdir + "]";
                                             QString m2;
                                             int numfilesconv(0), numfilesrenamed(0);
-                                            if (!img->ConvertDicom(filetype, indir, tmpdir, n->cfg["nidbdir"], gzip, uid, QString("%1").arg(studynum), QString("%1").arg(seriesnum), datatype, numfilesconv, numfilesrenamed, m2))
+											QString binpath = n->cfg["nidbdir"] + "/bin";
+											if (!img->ConvertDicom(filetype, indir, tmpdir, binpath, gzip, uid, QString("%1").arg(studynum), QString("%1").arg(seriesnum), datatype, numfilesconv, numfilesrenamed, m2))
                                                 msgs << "Error converting files [" + m2 + "]";
                                             //n->WriteLog("About to copy files from " + tmpdir + " to " + outdir);
                                             QString systemstring = "rsync " + tmpdir + "/* " + outdir + "/";
@@ -763,7 +764,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                 QStringList lines = filecontents.split("\n");
                 QString lastline = lines.last().trimmed();
                 n->WriteLog(QString("Last line of [%1] %2").arg(systemstring).arg(lastline));
-                QStringList parts = lastline.trimmed().split(REwhiteSpace, Qt::SkipEmptyParts); /* split on whitespace */
+				QStringList parts = lastline.trimmed().split(QRegularExpression("\\s+"), Qt::SkipEmptyParts); /* split on whitespace */
                 qint64 unzippedsize(0);
                 qint64 zippedsize(0);
                 if (parts.size() >= 2) {

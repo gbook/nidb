@@ -42,6 +42,7 @@ public:
 
 private:
     nidb *n;
+	bool debug = false;
 };
 
 #endif // MODULEMRIQA_H

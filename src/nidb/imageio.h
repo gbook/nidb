@@ -34,7 +34,11 @@
 #include "gdcmStringFilter.h"
 #include "gdcmAnonymizer.h"
 
-
+/**
+ * @brief The imageIO class
+ *
+ * imageIO class provides functions to read image headers such as DICOM, PAR/REC, and other formats
+ */
 class imageIO
 {
 public:
@@ -43,13 +47,13 @@ public:
     ~imageIO();
 
     /* DICOM & image functions */
-    bool ConvertDicom(QString filetype, QString indir, QString outdir, QString nidbdir, bool gzip, QString uid, QString studynum, QString seriesnum, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg);
+	bool ConvertDicom(QString filetype, QString indir, QString outdir, QString bindir, bool gzip, QString uid, QString studynum, QString seriesnum, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg);
     bool IsDICOMFile(QString f);
     bool AnonymizeDir(QString dir, int anonlevel, QString randstr1, QString randstr2, QString &msg);
     bool AnonymizeDicomFile(gdcm::Anonymizer &anon, QString infile, QString outfile, std::vector<gdcm::Tag> const &empty_tags, std::vector<gdcm::Tag> const &remove_tags, std::vector< std::pair<gdcm::Tag, std::string> > const & replace_tags, QString &msg);
     QString GetDicomModality(QString f);
     void GetFileType(QString f, QString &fileType, QString &fileModality, QString &filePatientID, QString &fileProtocol);
-    bool GetImageFileTags(QString f, QString nidbdir, bool enablecsa, QHash<QString, QString> &tags, QString &msg);
+	bool GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<QString, QString> &tags, QString &msg);
 
     nidb *n;
 };

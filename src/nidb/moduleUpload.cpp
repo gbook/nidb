@@ -187,7 +187,8 @@ bool moduleUpload::ParseUploads() {
                 QString m;
                 bool csa = false;
                 if (n->cfg["enablecsa"] == "1") csa = true;
-                if (img->GetImageFileTags(f, n->cfg["nidbdir"], csa, tags, m)) {
+				QString binpath = n->cfg["nidbdir"] + "/bin";
+				if (img->GetImageFileTags(f, binpath, csa, tags, m)) {
                     if ((tags["Modality"].toLower() == upload_modality.toLower()) || (upload_modality.toLower() == "auto")) {
 
                         /* subject matching criteria */
@@ -588,7 +589,8 @@ bool moduleUpload::UpdateParsedUploads(QMap<QString, QMap<QString, QMap<QString,
                 QString m;
                 bool csa = false;
                 if (n->cfg["enablecsa"] == "1") csa = true;
-                img->GetImageFileTags(files[0], n->cfg["nidbdir"], csa, tags, m);
+				QString binpath = n->cfg["nidbdir"] + "/bin";
+				img->GetImageFileTags(files[0], binpath, csa, tags, m);
 
                 QSqlQuery q3;
 

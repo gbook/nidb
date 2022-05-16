@@ -111,7 +111,8 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
     QString m;
     bool csa = false;
     if (n->cfg["enablecsa"] == "1") csa = true;
-    if (img->GetImageFileTags(f, n->cfg["nidbdir"], csa, tags, m)) {
+	QString binpath = n->cfg["nidbdir"] + "/bin";
+	if (img->GetImageFileTags(f, binpath, csa, tags, m)) {
         if (!QFile::exists(f)) {
             AppendUploadLog(__FUNCTION__ , QString("File [%1] does not exist - check D!").arg(f));
             return 0;
@@ -592,7 +593,8 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
             QString m;
             bool csa = false;
             if (n->cfg["enablecsa"] == "1") csa = true;
-            if (!img->GetImageFileTags(file, n->cfg["nidbdir"], csa, tags, m))
+			QString binpath = n->cfg["nidbdir"] + "/bin";
+			if (!img->GetImageFileTags(file, binpath, csa, tags, m))
                 continue;
 
             int SliceNumber = tags["AcquisitionNumber"].toInt();
@@ -630,7 +632,8 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
         QString m;
         bool csa = false;
         if (n->cfg["enablecsa"] == "1") csa = true;
-        if (!img->GetImageFileTags(file, n->cfg["nidbdir"], csa, tags, m)) {
+		QString binpath = n->cfg["nidbdir"] + "/bin";
+		if (!img->GetImageFileTags(file, binpath, csa, tags, m)) {
             logmsg += "?";
             continue;
         }
@@ -923,7 +926,7 @@ bool archiveIO::InsertParRec(int importid, QString file) {
                 QStringList p = line.split(":");
                 if (p.size() > 1) {
                     QString resolution = p[1].trimmed();
-                    QStringList p2 = resolution.split(REwhiteSpace);
+					QStringList p2 = resolution.split(QRegularExpression("\\s+"));
                     if (p.size() > 1) {
                         Columns = p2[0].trimmed().toInt();
                         Rows = p2[1].trimmed().toInt();
@@ -937,7 +940,7 @@ bool archiveIO::InsertParRec(int importid, QString file) {
             }
             /* get the first line of the image list... it should contain the flip angle */
             if (!line.startsWith(".") && !line.startsWith("#") && (line != "")) {
-                QStringList p = line.split(REwhiteSpace);
+				QStringList p = line.split(QRegularExpression("\\s+"));
 
                 if (p.size() > 9) pixelX = p[9].trimmed().toInt(); /* 10 - xsize */
                 if (p.size() > 10) pixelY = p[10].trimmed().toInt(); /* 11 - ysize */
@@ -2237,7 +2240,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
                     seriesdir = seriesaltdesc;
                 }
                 /* remove any non-alphanumeric characters */
-                seriesdir.replace(REnonAlphaNum,"_");
+				seriesdir.replace(QRegularExpression("[^a-zA-Z0-9_-]"), "_");
 
                 QString seriesoutdir = QString("%1/%2/%3/%4").arg(outdir).arg(subjectdir).arg(sessiondir).arg(seriesdir);
 
@@ -2259,7 +2262,8 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
                         if (MakePath(tmpdir, m)) {
 
                             int numfilesconv(0), numfilesrenamed(0);
-                            if (!img->ConvertDicom("bids", datadir, tmpdir, n->cfg["nidbdir"], 1, subjectdir, sessiondir, seriesdir, datatype, numfilesconv, numfilesrenamed, m))
+							QString binpath = n->cfg["nidbdir"] + "/bin";
+							if (!img->ConvertDicom("bids", datadir, tmpdir, binpath, 1, subjectdir, sessiondir, seriesdir, datatype, numfilesconv, numfilesrenamed, m))
                                 msgs << "Error converting files [" + m + "]";
 
                             //n->WriteLog("About to copy files from " + tmpdir + " to " + seriesoutdir);
@@ -2520,7 +2524,7 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
                     seriesdir = QString("%1").arg(seriesnum);
 
                 /* remove any non-alphanumeric characters */
-                seriesdir.replace(REnonAlphaNum, "_");
+				seriesdir.replace(QRegularExpression("[^a-zA-Z0-9_-]"), "_");
 
                 QString seriesoutdir = QString("%1/data/%2/%3/%4").arg(outdir).arg(subjectdir).arg(sessiondir).arg(seriesdir);
 
@@ -2542,7 +2546,8 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
                         if (MakePath(tmpdir, m)) {
 
                             int numfilesconv(0), numfilesrenamed(0);
-                            if (!img->ConvertDicom("nifti4d", datadir, tmpdir, n->cfg["nidbdir"], 1, subjectdir, sessiondir, seriesdir, datatype, numfilesconv, numfilesrenamed, m))
+							QString binpath = n->cfg["nidbdir"] + "/bin";
+							if (!img->ConvertDicom("nifti4d", datadir, tmpdir, binpath, 1, subjectdir, sessiondir, seriesdir, datatype, numfilesconv, numfilesrenamed, m))
                                 msgs << "Error converting files [" + m + "]";
 
                             //n->WriteLog("About to copy files from " + tmpdir + " to " + seriesoutdir);

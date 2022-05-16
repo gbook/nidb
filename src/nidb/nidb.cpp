@@ -791,7 +791,7 @@ bool nidb::GetSQLComparison(QString c, QString &comp, int &num) {
 
     /* remove whitespace */
 //	static const QRegularExpression whiteSpaceRE("\\s*");
-    c.remove(REwhiteSpace);
+	c.remove(QRegularExpression("\\s+"));
 
     /* check if there is anything to format */
     if (c == "")
