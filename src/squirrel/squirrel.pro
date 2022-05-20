@@ -7,10 +7,20 @@ CONFIG -= app_bundle
 # In order to do so, uncomment the following line.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-INCLUDEPATH += $$PWD/../nidb
+#INCLUDEPATH += $$PWD/../nidb
 
 SOURCES += \
+	../nidb/imageio.cpp \
+	../nidb/utils.cpp \
+	analysis.cpp \
+	convert.cpp \
+	experiment.cpp \
 	main.cpp \
+	pipeline.cpp \
+	series.cpp \
+	squirrel.cpp \
+	study.cpp \
+	subject.cpp \
 	validate.cpp
 
 # Default rules for deployment.
@@ -22,6 +32,14 @@ HEADERS += \
 	../nidb/imageio.h \
 	../nidb/utils.h \
 	../nidb/version.h \
+	analysis.h \
+	convert.h \
+	experiment.h \
+	pipeline.h \
+	series.h \
+	squirrel.h \
+	study.h \
+	subject.h \
 	validate.h
 
 

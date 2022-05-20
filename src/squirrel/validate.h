@@ -33,7 +33,7 @@ class validate
 public:
     validate();
 
-    bool LoadSquirrel(QString path);
+	bool LoadSquirrel(QString path, QString &m);
 };
 
 #endif // VALIDATE_H
