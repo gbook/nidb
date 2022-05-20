@@ -34,17 +34,6 @@ imageIO::imageIO()
 
 }
 
-/* ---------------------------------------------------------- */
-/* --------- imageIO ---------------------------------------- */
-/* ---------------------------------------------------------- */
-/**
- * imageIO constructor
-*/
-imageIO::imageIO(nidb *a)
-{
-    n = a;
-}
-
 
 /* ---------------------------------------------------------- */
 /* --------- ~imageIO --------------------------------------- */
@@ -84,13 +73,13 @@ bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QStr
     QString systemstring;
     QDir::setCurrent(indir);
     if (filetype == "nifti4dme")
-		systemstring = QString("%1/./dcm2niixme %2 -o '%3' %4").arg(bindir).arg(gzipstr).arg(outdir).arg(indir);
+        systemstring = QString("%1/./dcm2niixme %2 -o '%3' %4").arg(bindir).arg(gzipstr).arg(outdir).arg(indir);
     else if (filetype == "nifti4d")
-		systemstring = QString("%1/./dcm2niix -1 -b n %2 -o '%3' %4%5").arg(bindir).arg(gzipstr).arg(outdir).arg(indir).arg(fileext);
+        systemstring = QString("%1/./dcm2niix -1 -b n %2 -o '%3' %4%5").arg(bindir).arg(gzipstr).arg(outdir).arg(indir).arg(fileext);
     else if (filetype == "nifti3d")
-		systemstring = QString("%1/./dcm2niix -1 -b n -z 3 -o '%2' %3%4").arg(bindir).arg(outdir).arg(indir).arg(fileext);
+        systemstring = QString("%1/./dcm2niix -1 -b n -z 3 -o '%2' %3%4").arg(bindir).arg(outdir).arg(indir).arg(fileext);
     else if (filetype == "bids")
-		systemstring = QString("%1/./dcm2niix -1 -b y -z y -o '%2' %3%4").arg(bindir).arg(outdir).arg(indir).arg(fileext);
+        systemstring = QString("%1/./dcm2niix -1 -b y -z y -o '%2' %3%4").arg(bindir).arg(outdir).arg(indir).arg(fileext);
     else
         return false;
 
@@ -122,7 +111,7 @@ bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QStr
 
     /* rename the files into something meaningful */
     m = "";
-    if (!n->BatchRenameFiles(outdir, seriesnum, studynum, uid, numfilesrenamed, m))
+    if (!BatchRenameFiles(outdir, seriesnum, studynum, uid, numfilesrenamed, m))
         msgs << "Error renaming output files [" + m + "]";
 
     /* change back to original directory before leaving */
@@ -623,7 +612,7 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
                         if (!line.contains(QRegularExpression(QStringLiteral("[\\x00-\\x1F]")))) {
                             qint64 idx = line.indexOf(".dInPlaneRot");
                             line = line.mid(idx,23);
-							QStringList vals = line.split(QRegularExpression("\\s+"));
+                            QStringList vals = line.split(QRegularExpression("\\s+"));
                             if (vals.size() > 0)
                                 tags["PhaseEncodeAngle"] = vals.last().trimmed();
                             break;
@@ -635,7 +624,7 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
             }
 
             /* get the other part of the CSA header, the PhaseEncodingDirectionPositive value */
-			QString systemstring = QString("%1/./gdcmdump -C %2 | grep PhaseEncodingDirectionPositive").arg(bindir).arg(f);
+            QString systemstring = QString("%1/./gdcmdump -C %2 | grep PhaseEncodingDirectionPositive").arg(bindir).arg(f);
             QString csaheader = SystemCommand(systemstring, false);
             QStringList parts = csaheader.split(",");
             QString val;
@@ -750,7 +739,7 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
     QString PatientBirthDate = ParseDate(tags["PatientBirthDate"]);
 
     /* get patient age */
-    tags["PatientAge"] = QString("%1").arg(n->GetPatientAge(tags["PatientAge"], StudyDate, PatientBirthDate));
+    tags["PatientAge"] = QString("%1").arg(GetPatientAge(tags["PatientAge"], StudyDate, PatientBirthDate));
 
     /* remove any non-printable ASCII control characters */
     tags["PatientName"].replace(QRegularExpression(QStringLiteral("[\\x00-\\x1F]")),"").replace("\\xFFFD","");

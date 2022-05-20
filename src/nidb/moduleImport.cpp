@@ -232,9 +232,11 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
     int processedFileCount(0);
     foreach (QString file, files) {
 
+        //n->WriteLog("Checkpoint A");
         perf.numFilesRead++;
         /* check if the file exists. par/rec files may be moved from previous steps, so check if they still exist */
         if (QFile::exists(file)) {
+            //n->WriteLog("Checkpoint B");
             /* check the file size */
             qint64 fsize = QFileInfo(file).size();
             perf.numBytesRead += fsize;
@@ -248,9 +250,11 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
             }
         }
         else {
+            //n->WriteLog("Checkpoint C");
             n->WriteLog("File [" + file + "] no longer exists. That's ok if it's a .rec file");
             continue;
         }
+        //n->WriteLog("Checkpoint D");
 
         /* check if the file has been modified in the past 1 minutes (-60 seconds)
          * if so, the file may still be being copied, so skip it */
@@ -261,6 +265,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
             okToDeleteDir = false;
             continue;
         }
+        //n->WriteLog("Checkpoint E");
 
         /* display how many files have been checked so far, and start archiving them if we've reached the chunk size */
         processedFileCount++;
@@ -275,9 +280,11 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
                 return 1;
             }
         }
+        //n->WriteLog("Checkpoint F");
         int chunksize(5000);
         if (n->cfg["importchunksize"].toInt() > 0)
             chunksize = n->cfg["importchunksize"].toInt();
+        //n->WriteLog("Checkpoint G");
 
         if (processedFileCount >= chunksize) {
             n->WriteLog(QString("Checked [%1] files, going to archive them now").arg(processedFileCount));
@@ -286,6 +293,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
 
         /* make sure this file still exists... another instance of the program may have altered it */
         if (QFile::exists(file)) {
+            //n->WriteLog("Checkpoint H");
 
             //QString dir = QFileInfo(file).path();
             //QString fname = QFileInfo(file).fileName();
@@ -345,6 +353,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
                 i++;
             }
             else {
+                n->WriteLog("Checkpoint I");
                 /* check if this is a DICOM file */
                 QHash<QString, QString> tags;
                 //QString filetype;
@@ -353,8 +362,8 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
                 QString m;
                 bool csa = false;
                 if (n->cfg["enablecsa"] == "1") csa = true;
-				QString binpath = n->cfg["nidbdir"] + "/bin";
-				if (img->GetImageFileTags(file, binpath, csa, tags, m)) {
+                QString binpath = n->cfg["nidbdir"] + "/bin";
+                if (img->GetImageFileTags(file, binpath, csa, tags, m)) {
                     dcmseries[tags["SeriesInstanceUID"]].append(file);
                 }
                 else {

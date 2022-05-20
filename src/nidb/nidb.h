@@ -80,8 +80,8 @@ public:
     QString GetPrimaryAlternateUID(qint64 subjectid, qint64 enrollmentid);
     QString GetGroupListing(int groupid);
     bool isValidNiDBModality(QString m);
-    bool BatchRenameFiles(QString dir, QString seriesnum, QString studynum, QString uid, int &numfilesrenamed, QString &msg);
-    double GetPatientAge(QString PatientAgeStr, QString StudyDate, QString PatientBirthDate);
+    //bool BatchRenameFiles(QString dir, QString seriesnum, QString studynum, QString uid, int &numfilesrenamed, QString &msg);
+    //double GetPatientAge(QString PatientAgeStr, QString StudyDate, QString PatientBirthDate);
     QString SQLQuery(QSqlQuery &q, QString function, QString file, int line, bool d=false, bool batch=false);
     QString WriteLog(QString msg, int wrap=0, bool timeStamp=true);
     bool SendEmail(QString to, QString subject, QString body);

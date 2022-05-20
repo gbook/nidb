@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------------------
-  NIDB main.cpp
+  Squirrel main.cpp
   Copyright (C) 2004 - 2022
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
@@ -24,6 +24,7 @@
 #include <QCommandLineParser>
 #include <iostream>
 #include "version.h"
+#include "validate.h"
 
 int main(int argc, char *argv[])
 {
@@ -43,44 +44,54 @@ int main(int argc, char *argv[])
     p.addPositionalArgument("tool", "Available tools:  dicom2squirrel  validate");
 
     /* command line flag options */
-	QCommandLineOption optDebug(QStringList() << "debug", "Enable debugging");
+    QCommandLineOption optDebug(QStringList() << "debug", "Enable debugging");
     QCommandLineOption optQuiet(QStringList() << "q" << "quiet", "Dont print headers and checks");
     p.addOption(optDebug);
     p.addOption(optQuiet);
 
     /* command line options that take values */
-	QCommandLineOption optDicomDir(QStringList() << "d" << "dicomdir", "Path to directory containing DICOM files", "dicomdir");
-	QCommandLineOption optOutputFile(QStringList() << "o" << "out", "Output squirrel file", "out");
-	QCommandLineOption optInputFile(QStringList() << "i" << "in", "Input squirrel file", "in");
-	p.addOption(optDicomDir);
-	p.addOption(optOutputFile);
-	p.addOption(optInputFile);
+    QCommandLineOption optDicomDir(QStringList() << "d" << "dicomdir", "Path to directory containing DICOM files", "dicomdir");
+    QCommandLineOption optOutputFile(QStringList() << "o" << "out", "Output squirrel file", "out");
+    QCommandLineOption optInputFile(QStringList() << "i" << "in", "Input squirrel file", "in");
+    p.addOption(optDicomDir);
+    p.addOption(optOutputFile);
+    p.addOption(optInputFile);
 
     /* Process the actual command line arguments given by the user */
     p.process(a);
 
-	QString tool;
+    QString tool;
     bool debug, quiet;
 
     const QStringList args = p.positionalArguments();
     if (args.size() > 0)
-		tool = args.at(0).trimmed();
+        tool = args.at(0).trimmed();
 
     debug = p.isSet(optDebug);
     quiet = p.isSet(optQuiet);
-	QString paramDicomDir = p.value(optDicomDir).trimmed();
-	QString paramOutputFile = p.value(optOutputFile).trimmed();
-	QString paramInputFile = p.value(optInputFile).trimmed();
+    QString paramDicomDir = p.value(optDicomDir).trimmed();
+    QString paramOutputFile = p.value(optOutputFile).trimmed();
+    QString paramInputFile = p.value(optInputFile).trimmed();
 
     QStringList tools = { "dicom2squirrel", "validate" };
 
     /* now check the command line parameters passed in, to see if they are calling a valid module */
-	if (!tools.contains(tool)) {
-		if (tool != "")
-			std::cout << QString("Error: unrecognized option [%1]\n").arg(tool).toStdString().c_str();
+    if (!tools.contains(tool)) {
+        if (tool != "")
+            std::cout << QString("Error: unrecognized option [%1]\n").arg(tool).toStdString().c_str();
 
         std::cout << p.helpText().toStdString().c_str();
         return 0;
+    }
+
+    if (tool == "validate") {
+        /* create validate object */
+        validate *v = new validate();
+
+        delete v;
+    }
+    else if (tool == "dicom2squirrel") {
+
     }
 
     return a.exec();

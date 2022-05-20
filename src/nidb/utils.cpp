@@ -518,7 +518,7 @@ QByteArray GetFileChecksum(const QString &fileName, QCryptographicHash::Algorith
 /* --------- RemoveNonAlphaNumericChars --------------------- */
 /* ---------------------------------------------------------- */
 QString RemoveNonAlphaNumericChars(QString s) {
-	return s.remove(QRegularExpression("[^a-zA-Z0-9_-]"));
+    return s.remove(QRegularExpression("[^a-zA-Z0-9_-]"));
 }
 
 
@@ -985,4 +985,67 @@ double StdDev(QList<double> a) {
         return 0.0;
 
     return sqrt(Variance(a));
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- BatchRenameFiles ------------------------------- */
+/* ---------------------------------------------------------- */
+bool BatchRenameFiles(QString dir, QString seriesnum, QString studynum, QString uid, int &numfilesrenamed, QString &msg) {
+
+    QDir d;
+    if (!d.exists(dir)) {
+        msg = "directory [" + dir + "] does not exist";
+        return false;
+    }
+
+    numfilesrenamed = 0;
+    QStringList exts;
+    exts << "*.img" << "*.hdr" << "*.nii" << "*.nii.gz" << "*.json" << "*.bvec" << "*.bval";
+    /* loop through all the extensions we want to rename/renumber */
+    foreach (QString ext, exts) {
+        int i = 1;
+        QFile f;
+        QDirIterator it(dir, QStringList() << ext, QDir::Files);
+        while (it.hasNext()) {
+            QString fname = it.next();
+            f.setFileName(fname);
+            QFileInfo fi(f);
+            QString newName = fi.path() + "/" + QString("%1_%2_%3_%4%5").arg(uid).arg(studynum).arg(seriesnum).arg(i,5,10,QChar('0')).arg(ext.replace("*",""));
+            //WriteLog( fname + " --> " + newName);
+            if (f.rename(newName))
+                numfilesrenamed++;
+            else
+                msg += QString("\nError renaming file [" + fname + "] to [" + newName + "]");
+            i++;
+        }
+    }
+
+    return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetPatientAge ---------------------------------- */
+/* ---------------------------------------------------------- */
+double GetPatientAge(QString PatientAgeStr, QString StudyDate, QString PatientBirthDate) {
+    double PatientAge(0.0);
+
+    /* check if the patient age contains any characters */
+    if (PatientAgeStr.contains('Y')) PatientAge = PatientAgeStr.replace("Y","").toDouble();
+    if (PatientAgeStr.contains('M')) PatientAge = PatientAgeStr.replace("M","").toDouble()/12.0;
+    if (PatientAgeStr.contains('W')) PatientAge = PatientAgeStr.replace("W","").toDouble()/52.0;
+    if (PatientAgeStr.contains('D')) PatientAge = PatientAgeStr.replace("D","").toDouble()/365.25;
+
+    /* fix patient age */
+    if (PatientAge < 0.001) {
+        QDate studydate;
+        QDate dob;
+        studydate.fromString(StudyDate);
+        dob.fromString(PatientBirthDate);
+
+        PatientAge = double(dob.daysTo(studydate))/365.25;
+    }
+
+    return PatientAge;
 }

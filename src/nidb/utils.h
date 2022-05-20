@@ -65,6 +65,8 @@ bool IsNumber(QString s);
 QString WrapText(QString s, int col);
 bool ParseCSV(QString csv, indexedHash &table, QStringList &columns, QString &msg);
 
+double GetPatientAge(QString PatientAgeStr, QString StudyDate, QString PatientBirthDate);
+
 /* math */
 double Mean(QList<double> a);
 double Variance(QList<double> a);
@@ -86,5 +88,6 @@ bool chmod(QString f, QString perm);
 QString UnzipDirectory(QString dir, bool recurse=false);
 bool WriteTextFile(QString filepath, QString str, bool append=true);
 QStringList ReadTextFileIntoArray(QString filepath, bool ignoreEmptyLines=true);
+bool BatchRenameFiles(QString dir, QString seriesnum, QString studynum, QString uid, int &numfilesrenamed, QString &msg);
 
 #endif // UTILS_H
