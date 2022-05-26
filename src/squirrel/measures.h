@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------------------
-  Squirrel experiment.h
+  Squirrel measures.h
   Copyright (C) 2004 - 2022
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
@@ -20,23 +20,28 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
   ------------------------------------------------------------------------------ */
 
-#ifndef EXPERIMENT_H
-#define EXPERIMENT_H
+#ifndef MEASURES_H
+#define MEASURES_H
 #include <QString>
+#include <QDateTime>
 
 /**
- * @brief The experiment class
+ * @brief The measures class
  */
-class experiment
+class measures
 {
 public:
-	experiment();
+	measures();
 
-	QString experimentName; /*!< experiment name (required) */
-	qint64 numFiles; /*!< number of experiment files (required) */
-	qint64 size; /*!< total size in bytes of the experiment files (required) */
-	QString path; /*!< path to the experiment files, relative to the package root (required) */
+	QString measureName; /*!< measure name (required) */
+	QDateTime startDate; /*!< start date of the measurement (required) */
+	QDateTime endDate; /*!< end date of the measurement */
+	QString instrumentName; /*!< name of the instrument (test, assessment, etc) from which this measure came */
+	QString rater; /*!< name or username of the person who rated the measure */
+	QString notes; /*!< notes about the measure */
+	QString value; /*!< value, in string or number stored as a string */
+	QString description; /*!< extended measurement description */
 
 };
 
-#endif // EXPERIMENT_H
+#endif // MEASURES_H

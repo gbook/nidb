@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------------------
-  Squirrel experiment.h
+  Squirrel measures.cpp
   Copyright (C) 2004 - 2022
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
@@ -20,23 +20,9 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
   ------------------------------------------------------------------------------ */
 
-#ifndef EXPERIMENT_H
-#define EXPERIMENT_H
-#include <QString>
+#include "measures.h"
 
-/**
- * @brief The experiment class
- */
-class experiment
+measures::measures()
 {
-public:
-	experiment();
 
-	QString experimentName; /*!< experiment name (required) */
-	qint64 numFiles; /*!< number of experiment files (required) */
-	qint64 size; /*!< total size in bytes of the experiment files (required) */
-	QString path; /*!< path to the experiment files, relative to the package root (required) */
-
-};
-
-#endif // EXPERIMENT_H
+}

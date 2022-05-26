@@ -23,7 +23,7 @@
 #include <QCoreApplication>
 #include <QCommandLineParser>
 #include <iostream>
-#include "version.h"
+#include "../nidb/version.h"
 #include "validate.h"
 
 int main(int argc, char *argv[])

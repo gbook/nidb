@@ -38,8 +38,6 @@ class series
 public:
 	series();
 
-	bool appendSeries(series s);
-
 	/* subject info */
 	QString seriesNum; /*!< Series number. must be unique to the study */
 	QString description; /*!< Description of the series */

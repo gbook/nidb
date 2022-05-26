@@ -49,7 +49,7 @@ public:
 	QString modality; /*!< study modality */
 
 	QString dirpath; /*!< Relative path to the subject data */
-	QList<study> studies; /*!< List of studies attached to this subject */
+	QList<series> seriesList; /*!< List of series attached to this study */
 };
 
 #endif // STUDY_H

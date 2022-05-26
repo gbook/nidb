@@ -14,8 +14,10 @@ SOURCES += \
 	../nidb/utils.cpp \
 	analysis.cpp \
 	convert.cpp \
+	drugs.cpp \
 	experiment.cpp \
 	main.cpp \
+	measures.cpp \
 	pipeline.cpp \
 	series.cpp \
 	squirrel.cpp \
@@ -34,7 +36,9 @@ HEADERS += \
 	../nidb/version.h \
 	analysis.h \
 	convert.h \
+	drugs.h \
 	experiment.h \
+	measures.h \
 	pipeline.h \
 	series.h \
 	squirrel.h \

@@ -23,12 +23,31 @@
 
 #ifndef ANALYSIS_H
 #define ANALYSIS_H
+#include <QString>
+#include <QDateTime>
 
-
+/**
+ * @brief The analysis class
+ */
 class analysis
 {
 public:
 	analysis();
+
+	QString pipelineName; /*!< name of the pipeline */
+	int pipelineVersion; /*!< pipeline version */
+	QDateTime clusterStartDate; /*!< datetime the analysis started running on the cluster */
+	QDateTime clusterEndDate; /*!< datetime the analysis finished running on the cluster */
+	QDateTime startDate; /*!< datetime the analysis was started, includes the setup time */
+	QDateTime endDate; /*!< datetime the analysis ended */
+	qint64 setupTime; /*!< total time (wall time) to setup the analysis, most time will be spent copying data into the analysis directories */
+	qint64 runTime; /*!< total run time (wall time) of the analysis after analysis was submitted to the cluster */
+	int numSeries; /*!< number of series downloaded into the analysis */
+	bool successful; /*!< true if the analysis completed successfully */
+	qint64 size; /*!< disk size in bytes of the analysis */
+	QString hostname; /*!< hostname on which the analysis was run */
+	QString status; /*!< status of the analysis. eg running, complete, pending */
+	QString lastMessage; /*!< if the analysis had a status message, the last would be stored here */
 };
 
 #endif // ANALYSIS_H

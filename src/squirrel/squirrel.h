@@ -24,12 +24,9 @@
 #define SQUIRREL_H
 
 #include <QString>
+#include <QDate>
+#include <QDateTime>
 #include "subject.h"
-#include "study.h"
-#include "series.h"
-#include "pipeline.h"
-#include "analysis.h"
-#include "experiment.h"
 
 /**
  * @brief The squirrel class
@@ -47,8 +44,8 @@ public:
 	void PrintPackageInfo();
 
 	bool addSubjects(QList<subject> subjects);
-	bool addStudies();
-	bool addSeries();
+
+	bool removeSubject(QString UID);
 };
 
 #endif // SQUIRREL_H

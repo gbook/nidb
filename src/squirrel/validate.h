@@ -28,6 +28,9 @@
 #include <QFile>
 #include "../nidb/utils.h"
 
+/**
+ * @brief The validate class
+ */
 class validate
 {
 public:
