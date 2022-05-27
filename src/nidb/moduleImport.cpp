@@ -353,7 +353,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
                 i++;
             }
             else {
-                n->WriteLog("Checkpoint I");
+                //n->WriteLog("Checkpoint I");
                 /* check if this is a DICOM file */
                 QHash<QString, QString> tags;
                 //QString filetype;
