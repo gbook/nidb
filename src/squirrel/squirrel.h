@@ -36,16 +36,16 @@
 class squirrel
 {
 public:
-	squirrel();
+    squirrel();
 
-	bool read(QString filename);
-	bool write(QString path);
-	bool validate();
-	void PrintPackageInfo();
+    bool read(QString filename);
+    bool write(QString path);
+    bool validate();
+    void printPackageInfo();
 
-	bool addSubjects(QList<subject> subjects);
+    bool addSubjects(QList<subject> subjects);
 
-	bool removeSubject(QString UID);
+    bool removeSubject(QString UID);
 };
 
 #endif // SQUIRREL_H

@@ -30,8 +30,7 @@
 class convert
 {
 public:
-	convert();
-
+    convert();
 
 };
 

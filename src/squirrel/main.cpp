@@ -25,13 +25,14 @@
 #include <iostream>
 #include "../nidb/version.h"
 #include "validate.h"
+#include "dicom.h"
 
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
     /* this whole section reads the command line parameters */
-    a.setApplicationVersion(QString("%1.%2").arg(VERSION_MAJ).arg(VERSION_MIN));
+    a.setApplicationVersion(QString("%1.%2").arg(SQUIRREL_VERSION_MAJ).arg(SQUIRREL_VERSION_MIN));
     a.setApplicationName("Squirrel");
 
     /* setup the command line parser */
@@ -84,15 +85,52 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    if (tool == "validate") {
-        /* create validate object */
-        validate *v = new validate();
+    Print("+----------------------------------------------------+");
+    Print(QString("|  Squirrel utils version %1.%2\n|\n|  Build date [%3 %4]\n|  C++ [%5]\n|  Qt compiled [%6]\n|  Qt runtime [%7]\n|  Build system [%8]" ).arg(SQUIRREL_VERSION_MAJ).arg(SQUIRREL_VERSION_MIN).arg(__DATE__).arg(__TIME__).arg(__cplusplus).arg(QT_VERSION_STR).arg(qVersion()).arg(QSysInfo::buildAbi()));
 
-        delete v;
+    QString bindir = QDir::currentPath();
+    Print(QString("|\n|  Current working directory is %1").arg(bindir));
+    Print("+----------------------------------------------------+\n");
+
+    if (tool == "validate") {
+        if (paramInputFile.trimmed() == "") {
+            Print("*** Input file blank ***");
+        }
+        else if (!QFile::exists(paramInputFile)) {
+            Print(QString("*** Input file [%1] does not exist ***").arg(paramInputFile));
+        }
+        else {
+            /* create validate object */
+            validate *v = new validate();
+            QString m;
+            if (v->LoadSquirrel(paramInputFile, m)) {
+                Print("Successfully loaded squirrel file");
+            }
+            else {
+                Print(QString("*** Unable to load squirrel file [%1] ***").arg(m));
+            }
+
+            delete v;
+        }
     }
     else if (tool == "dicom2squirrel") {
+        /* 1) load DICOM directory into subject/study/series objects
+         * based on PatientID (subject) StudyUID (study) SeriesUID (series)
+         *
+         * 2) write squirrel using the loaded information
+         */
+        dicom *dcm = new dicom();
+
+        delete dcm;
+    }
+    else if (tool == "bids2squirrel") {
+
+    }
+    else if (tool == "squirrel2bids") {
 
     }
 
-    return a.exec();
+    Print("\n\nExiting squirrel utils");
+    a.exit();
+    return 0;
 }

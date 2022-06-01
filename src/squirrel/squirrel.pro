@@ -2,6 +2,7 @@ QT -= gui
 
 CONFIG += c++17 console
 CONFIG -= app_bundle
+CONFIG += silent
 
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -14,6 +15,7 @@ SOURCES += \
 	../nidb/utils.cpp \
 	analysis.cpp \
 	convert.cpp \
+	dicom.cpp \
 	drugs.cpp \
 	experiment.cpp \
 	main.cpp \
@@ -36,6 +38,7 @@ HEADERS += \
 	../nidb/version.h \
 	analysis.h \
 	convert.h \
+	dicom.h \
 	drugs.h \
 	experiment.h \
 	measures.h \

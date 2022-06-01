@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------------------
-  Squirrel validate.h
+  Squirrel dicom.h
   Copyright (C) 2004 - 2022
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
@@ -21,22 +21,22 @@
   ------------------------------------------------------------------------------ */
 
 
-#ifndef VALIDATE_H
-#define VALIDATE_H
+#ifndef DICOM_H
+#define DICOM_H
 
-#include <QString>
-#include <QFile>
 #include "../nidb/utils.h"
+#include "../nidb/imageio.h"
 
-/**
- * @brief The validate class
- */
-class validate
+class dicom
 {
 public:
-    validate();
+    dicom();
 
-    bool LoadSquirrel(QString file, QString &m);
+    bool ReadDirectory(QString dir, QString binpath, qint64 &numFiles, QString &m);
+
+private:
+    QMap<QString, QStringList> dcmseries;
+
 };
 
-#endif // VALIDATE_H
+#endif // DICOM_H
