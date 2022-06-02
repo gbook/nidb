@@ -35,21 +35,22 @@
 class subject
 {
 public:
-	subject();
+    subject();
 
-	bool appendStudy(study s);
+    bool addStudy(study s);
+    void PrintSubject();
 
-	/* subject info */
-	QString UID; /*!< Unique identifier. must be unique within the squirrel package */
-	QStringList altUIDs; /*!< List of alternate subject IDs */
-	QChar sex; /*!< Sex at birth (biological sex) */
-	QChar gender; /*!< Gender identity */
-	QDate birthdate; /*!< Date of birth. Not required, but can be useful to calculate age during studies. Can also contain only year, or only year and month */
-	QString ethnicity1; /*!< Ethnicity: hispanic, non-hispanic */
-	QString ethnicity2; /*!< Race: americanindian, asian, black, hispanic, islander, white */
+    /* subject info */
+    QString ID; /*!< Unique identifier. must be unique within the squirrel package */
+    QStringList altUIDs; /*!< List of alternate subject IDs */
+    QChar sex; /*!< Sex at birth (biological sex) */
+    QChar gender; /*!< Gender identity */
+    QDate birthdate; /*!< Date of birth. Not required, but can be useful to calculate age during studies. Can also contain only year, or only year and month */
+    QString ethnicity1; /*!< Ethnicity: hispanic, non-hispanic */
+    QString ethnicity2; /*!< Race: americanindian, asian, black, hispanic, islander, white */
 
-	QString dirpath; /*!< Relative path to the subject data */
-	QList<study> studies; /*!< List of studies attached to this subject */
+    QString dirpath; /*!< Relative path to the subject data */
+    QList<study> studyList; /*!< List of studies attached to this subject */
 };
 
 #endif // SUBJECT_H

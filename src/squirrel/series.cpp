@@ -26,3 +26,39 @@ series::series()
 {
 
 }
+
+
+/* ------------------------------------------------------------ */
+/* ----- AddExperiment ---------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief series::AddExperiment
+ * @param s
+ * @return
+ */
+bool series::AddExperiment(experiment e) {
+
+    /* check size of the study list before and after adding */
+    qint64 size = experimentList.size();
+
+    /* check if this study already exists, by UID */
+
+    /* if it doesn't exist, append it */
+    experimentList.append(e);
+
+    if (experimentList.size() > size)
+        return true;
+    else
+        return false;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- PrintSeries ------------------------------------------ */
+/* ------------------------------------------------------------ */
+/**
+ * @brief series::PrintSeries
+ */
+void series::PrintSeries() {
+
+}

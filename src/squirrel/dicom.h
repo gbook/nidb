@@ -26,16 +26,22 @@
 
 #include "../nidb/utils.h"
 #include "../nidb/imageio.h"
+#include "squirrel.h"
 
 class dicom
 {
 public:
     dicom();
 
-    bool ReadDirectory(QString dir, QString binpath, qint64 &numFiles, QString &m);
+    bool ReadDirectory(QString dir, QString binpath, QString &m);
+
+    qint64 NumFiles() { return numFiles; }
+
+    squirrel *sqrl;
 
 private:
-    QMap<QString, QStringList> dcmseries;
+    qint64 numFiles;
+    QMap<QString, QMap<QString, QMap<QString, QStringList> > > dcms;
 
 };
 

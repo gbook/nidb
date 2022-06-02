@@ -36,19 +36,23 @@
 class series
 {
 public:
-	series();
+    series();
+    void PrintSeries();
+    bool AddExperiment(experiment e);
 
-	/* subject info */
-	QString seriesNum; /*!< Series number. must be unique to the study */
-	QString description; /*!< Description of the series */
-	QString protocol; /*!< Protocol (may differ from description) */
-	qint64 numFiles; /*!< Number of files associated with the series */
-	qint64 size; /*!< total size in bytes of the series */
+    /* subject info */
+    QString seriesUID; /*!< SeriesInstanceUID */
+    QString seriesNum; /*!< Series number. must be unique to the study */
+    QString description; /*!< Description of the series */
+    QString protocol; /*!< Protocol (may differ from description) */
+    qint64 numFiles; /*!< Number of files associated with the series */
+    qint64 size; /*!< total size in bytes of the series */
+    QHash<QString, QString> params; /*!< Hash containing experimental parameters. eg MR params */
+    QStringList files; /*!< file list */
 
-	QString dirpath; /*!< Relative path to the subject data */
-	QHash<QString, QString> params; /*!< Hash containing experimental parameters. eg MR params */
-	QList<experiment> experiments; /*!< List of experiments attached to this series */
-
+private:
+    QString dirpath; /*!< Relative path to the subject data */
+    QList<experiment> experimentList; /*!< List of experiments attached to this series */
 };
 
 #endif // SERIES_H

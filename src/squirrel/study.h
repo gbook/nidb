@@ -35,21 +35,26 @@
 class study
 {
 public:
-	study();
+    study();
 
-	bool appendSeries(series s);
+    bool addSeries(series s);
+    void PrintStudy();
 
-	/* subject info */
-	QString studyNum; /*!< Unique study number. Must be unique within the subject */
-	QString description; /*!< Description of the imaging study */
-	QString visitType; /*!< Description of the visit, eg. pre, post */
-	QString dayNum; /*!< Day number for repeated studies or clinical trials. eg. 6 for 'day 6' */
-	QString timePoint; /*!< Ordinal time point for repeated studies. eg. 3 for the 3rd consecutive imaging study */
-	QDateTime dateTime; /*!< start datetime of the study */
-	QString modality; /*!< study modality */
+    /* study info */
+    QString studyUID; /*!< StudyInstanceUID */
+    int studyNum; /*!< Unique study number. Must be unique within the subject */
+    QString description; /*!< Description of the imaging study */
+    QString visitType; /*!< Description of the visit, eg. pre, post */
+    QString dayNum; /*!< Day number for repeated studies or clinical trials. eg. 6 for 'day 6' */
+    QString timePoint; /*!< Ordinal time point for repeated studies. eg. 3 for the 3rd consecutive imaging study */
+    QDateTime dateTime; /*!< start datetime of the study */
+    QString modality; /*!< study modality */
+    double weight; /*!< weight in kg */
+    double height; /*!< height in meters */
 
-	QString dirpath; /*!< Relative path to the subject data */
-	QList<series> seriesList; /*!< List of series attached to this study */
+private:
+    QString dirpath; /*!< Relative path to the subject data */
+    QList<series> seriesList; /*!< List of series attached to this study */
 };
 
 #endif // STUDY_H

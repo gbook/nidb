@@ -27,6 +27,7 @@
 #include <QDate>
 #include <QDateTime>
 #include "subject.h"
+#include "../nidb/version.h"
 
 /**
  * @brief The squirrel class
@@ -41,11 +42,22 @@ public:
     bool read(QString filename);
     bool write(QString path);
     bool validate();
-    void printPackageInfo();
+    void print();
+    void PrintPackage();
 
-    bool addSubjects(QList<subject> subjects);
+    bool addSubject(subject subj);
+    bool removeSubject(QString ID);
 
-    bool removeSubject(QString UID);
+    /* data */
+    QDateTime datetime;
+    QString description;
+    QString name;
+    QString version;
+    QString format;
+
+private:
+    QList<subject> subjectList; /*!< List of subjects within this package */
+
 };
 
 #endif // SQUIRREL_H

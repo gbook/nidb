@@ -21,8 +21,62 @@
   ------------------------------------------------------------------------------ */
 
 #include "subject.h"
+#include "../nidb/utils.h"
 
-subject::subject()
-{
 
+/* ------------------------------------------------------------ */
+/* ----- subject ---------------------------------------------- */
+/* ------------------------------------------------------------ */
+subject::subject() {
+    //ID;
+    //altUIDs;
+    sex = 'U';
+    gender = 'U';
+    birthdate = QDate::fromString("0000-00-00", "YYYY-MM-dd");
+    //ethnicity1;
+    //ethnicity2;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- addStudy --------------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief subject::addStudy
+ * @param s
+ * @return
+ */
+bool subject::addStudy(study s) {
+
+    /* check size of the study list before and after adding */
+    qint64 size = studyList.size();
+
+    /* check if this study already exists, by UID */
+
+    /* if it doesn't exist, append it */
+    studyList.append(s);
+
+    if (studyList.size() > size)
+        return true;
+    else
+        return false;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- PrintSubject ----------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief subject::PrintSubject
+ */
+void subject::PrintSubject() {
+
+    Print("---- SUBJECT ----------");
+    Print(QString("     ID: %1").arg(ID));
+    Print(QString("     AltIDs: %1").arg(altUIDs.join(",")));
+    Print(QString("     Sex: %1").arg(sex));
+    Print(QString("     Gender: %1").arg(gender));
+    Print(QString("     DOB: %1").arg(birthdate.toString()));
+    Print(QString("     Ethnicity1: %1").arg(ethnicity1));
+    Print(QString("     Ethnicity2: %1").arg(ethnicity2));
 }
