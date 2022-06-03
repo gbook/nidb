@@ -52,8 +52,8 @@ int main(int argc, char *argv[])
 
     /* command line options that take values */
     QCommandLineOption optDicomDir(QStringList() << "d" << "dicomdir", "Path to directory containing DICOM files", "dicomdir");
-    QCommandLineOption optOutputFile(QStringList() << "o" << "out", "Output squirrel file", "out");
-    QCommandLineOption optInputFile(QStringList() << "i" << "in", "Input squirrel file", "in");
+	QCommandLineOption optOutputFile(QStringList() << "o" << "out", "Output file", "out");
+	QCommandLineOption optInputFile(QStringList() << "i" << "in", "Input file", "in");
     p.addOption(optDicomDir);
     p.addOption(optOutputFile);
     p.addOption(optInputFile);
@@ -85,13 +85,14 @@ int main(int argc, char *argv[])
         return 0;
     }
 
+	QString bindir = QDir::currentPath();
+
     Print("+----------------------------------------------------+");
     Print(QString("|  Squirrel utils version %1.%2\n|\n|  Build date [%3 %4]\n|  C++ [%5]\n|  Qt compiled [%6]\n|  Qt runtime [%7]\n|  Build system [%8]" ).arg(SQUIRREL_VERSION_MAJ).arg(SQUIRREL_VERSION_MIN).arg(__DATE__).arg(__TIME__).arg(__cplusplus).arg(QT_VERSION_STR).arg(qVersion()).arg(QSysInfo::buildAbi()));
-
-    QString bindir = QDir::currentPath();
     Print(QString("|\n|  Current working directory is %1").arg(bindir));
     Print("+----------------------------------------------------+\n");
 
+	/* ----- check the tool to run ----- */
     if (tool == "validate") {
         if (paramInputFile.trimmed() == "") {
             Print("*** Input file blank ***");
@@ -120,6 +121,8 @@ int main(int argc, char *argv[])
          * 2) write squirrel using the loaded information
          */
         dicom *dcm = new dicom();
+		QString m;
+		dcm->ReadDirectory(paramDicomDir, bindir, m);
 
         delete dcm;
     }

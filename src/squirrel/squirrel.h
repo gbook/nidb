@@ -43,9 +43,8 @@ public:
     bool write(QString path);
     bool validate();
     void print();
-    void PrintPackage();
 
-    bool addSubject(subject subj);
+	bool addSubject(subject subj);
     bool removeSubject(QString ID);
 
     /* data */
@@ -56,7 +55,8 @@ public:
     QString format;
 
 private:
-    QList<subject> subjectList; /*!< List of subjects within this package */
+	void PrintPackage();
+	QList<subject> subjectList; /*!< List of subjects within this package */
 
 };
 

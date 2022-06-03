@@ -62,6 +62,31 @@ bool read(QString filename) {
  * @return
  */
 bool write(QString path) {
+
+	/* create JSON package info */
+	//PrintPackage();
+
+	/* iterate through subjects */
+	//for (int i=0; i < subjectList.size(); i++) {
+
+	//	subject sub = subjectList[i];
+	//	sub.PrintSubject();
+
+	    /* iterate through studies */
+	//	for (int j=0; j < sub.studyList.size(); j++) {
+
+	//		study stud = sub.studyList[j];
+	//		stud.PrintStudy();
+
+	        /* iterate through series */
+	//		for (int k=0; k < stud.seriesList.size(); k++) {
+
+	//			series ser = stud.seriesList[k];
+	//			ser.PrintSeries();
+	//		}
+	//	}
+	//}
+
     return true;
 }
 
@@ -88,14 +113,27 @@ bool validate() {
 void squirrel::print() {
 
     /* print package info */
-
+	PrintPackage();
 
     /* iterate through subjects */
     for (int i=0; i < subjectList.size(); i++) {
 
+		subject sub = subjectList[i];
+		sub.PrintSubject();
+
         /* iterate through studies */
+		for (int j=0; j < sub.studyList.size(); j++) {
+
+			study stud = sub.studyList[j];
+			stud.PrintStudy();
 
             /* iterate through series */
+			for (int k=0; k < stud.seriesList.size(); k++) {
+
+				series ser = stud.seriesList[k];
+				ser.PrintSeries();
+			}
+		}
     }
 }
 
@@ -109,11 +147,14 @@ void squirrel::print() {
  * @return true if added, false if not added
  */
 bool squirrel::addSubject(subject subj) {
+	//Print("Checkpoint 1");
 
     /* check size of the subject list before and after adding */
     qint64 size = subjectList.size();
+	//Print("Checkpoint 2");
 
-    subjectList.append(subj);
+	subjectList.append(subj);
+	//Print("Checkpoint 3");
 
     if (subjectList.size() > size)
         return true;
@@ -133,7 +174,7 @@ bool squirrel::addSubject(subject subj) {
 bool squirrel::removeSubject(QString ID) {
 
     for(int i=0; i < subjectList.count(); ++i) {
-        if (subjectList[i].ID == ID) {
+		if (subjectList[i].ID == ID) {
             subjectList.remove(i);
             return true;
         }

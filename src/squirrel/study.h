@@ -37,7 +37,7 @@ class study
 public:
     study();
 
-    bool addSeries(series s);
+	bool addSeries(series s);
     void PrintStudy();
 
     /* study info */
@@ -51,10 +51,10 @@ public:
     QString modality; /*!< study modality */
     double weight; /*!< weight in kg */
     double height; /*!< height in meters */
+	QList<series> seriesList; /*!< List of series attached to this study */
 
 private:
     QString dirpath; /*!< Relative path to the subject data */
-    QList<series> seriesList; /*!< List of series attached to this study */
 };
 
 #endif // STUDY_H

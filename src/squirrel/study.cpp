@@ -66,15 +66,15 @@ bool study::addSeries(series s) {
  */
 void study::PrintStudy() {
 
-    Print("---- STUDY ----------");
-    Print(QString("     StudyUID: %1").arg(studyUID));
-    Print(QString("     StudyNum: %1").arg(studyNum));
-    Print(QString("     Description: %1").arg(description));
-    Print(QString("     VisitType: %1").arg(visitType));
-    Print(QString("     DayNum: %1").arg(dayNum));
-    Print(QString("     TimePoint: %1").arg(timePoint));
-    Print(QString("     Date: %1").arg(dateTime.toString()));
-    Print(QString("     Modality: %1").arg(modality));
-    Print(QString("     Weight: %1 kg").arg(weight));
-    Print(QString("     Height: %1 m").arg(height));
+	Print("------ STUDY ----------");
+	Print(QString("       StudyUID: %1").arg(studyUID));
+	Print(QString("       StudyNum: %1").arg(studyNum));
+	Print(QString("       Description: %1").arg(description));
+	Print(QString("       VisitType: %1").arg(visitType));
+	Print(QString("       DayNum: %1").arg(dayNum));
+	Print(QString("       TimePoint: %1").arg(timePoint));
+	Print(QString("       Date: %1").arg(dateTime.toString()));
+	Print(QString("       Modality: %1").arg(modality));
+	Print(QString("       Weight: %1 kg").arg(weight));
+	Print(QString("       Height: %1 m").arg(height));
 }

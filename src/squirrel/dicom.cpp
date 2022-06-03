@@ -28,7 +28,7 @@
 /* ---------------------------------------------------------------------------- */
 dicom::dicom()
 {
-
+	sqrl = new squirrel();
 }
 
 
@@ -49,7 +49,7 @@ bool dicom::ReadDirectory(QString dir, QString binpath, QString &msg) {
     /* check if the directory exists */
     QDir d(dir);
     if (!d.exists()) {
-        msg = "directory does not exist";
+		Print(QString("Directory [%1] does not exist").arg(dir));
         return false;
     }
 
@@ -58,6 +58,7 @@ bool dicom::ReadDirectory(QString dir, QString binpath, QString &msg) {
     /* find all files in the directory. DICOM files can have any extension, not just .dcm
      * so we need to check if all files to see if they are readable by gdcm */
     qint64 processedFileCount(0);
+	qint64 foundFileCount(0);
     QString m;
     QStringList files = FindAllFiles(dir, "*", true);
     numFiles = files.size();
@@ -71,62 +72,85 @@ bool dicom::ReadDirectory(QString dir, QString binpath, QString &msg) {
 
         QHash<QString, QString> tags;
         if (img->GetImageFileTags(f, binpath, false, tags, m)) {
-            //dcmseries[tags["SeriesInstanceUID"]].append(file);
-            dcms[tags["PatientID"]][tags["StudyInstanceUID"]][tags["SeriesInstanceUID"]].append(f);
+			if (tags["FileType"] == "DICOM") {
+				foundFileCount++;
+				dcms[tags["PatientID"]][tags["StudyInstanceUID"]][tags["SeriesInstanceUID"]].append(f);
+			}
         }
     }
-    Print(QString("Found %1 series").arg(dcms.size()));
+	Print(QString("Found %1 subjects in %2 files").arg(dcms.size()).arg(foundFileCount));
 
-    /* ---------- iterate through the subjects ---------- */
-    for(QMap<QString, QMap<QString, QMap<QString, QStringList> > >::iterator a = dcms.begin(); a != dcms.end(); ++a) {
-        QString subjectID = a.key();
+	if (foundFileCount > 0) {
+		/* ---------- iterate through the subjects ---------- */
+		for(QMap<QString, QMap<QString, QMap<QString, QStringList> > >::iterator a = dcms.begin(); a != dcms.end(); ++a) {
+			QString subjectID = a.key();
 
-        /* create a subject */
-        subject currSubject;
-        /* ---------- iterate through the studies ---------- */
-        for(QMap<QString, QMap<QString, QStringList> >::iterator b = dcms[subjectID].begin(); b != dcms[subjectID].end(); ++b) {
-            QString studyID = b.key();
+			/* create a subject */
+			subject currSubject;
+			/* ---------- iterate through the studies ---------- */
+			for(QMap<QString, QMap<QString, QStringList> >::iterator b = dcms[subjectID].begin(); b != dcms[subjectID].end(); ++b) {
+				QString studyID = b.key();
 
-            study currStudy;
-            /* ---------- iterate through the series ---------- */
-            for(QMap<QString, QStringList>::iterator c = dcms[subjectID][studyID].begin(); c != dcms[subjectID][studyID].end(); ++c) {
-                QString seriesID = c.key();
-                QStringList files = dcms[subjectID][studyID][seriesID];
-                qint64 numfiles = files.size();
+				/* create a study */
+				study currStudy;
+				/* ---------- iterate through the series ---------- */
+				for(QMap<QString, QStringList>::iterator c = dcms[subjectID][studyID].begin(); c != dcms[subjectID][studyID].end(); ++c) {
+					QString seriesID = c.key();
+					//Print(QString("Series [%1]").arg(c.key()));
+					QStringList files = dcms[subjectID][studyID][seriesID];
+					qint64 numfiles = files.size();
 
-                QHash<QString, QString> tags;
-                QString m;
-                img->GetImageFileTags(files[0], binpath, true, tags, m);
+					QHash<QString, QString> tags;
+					QString m;
+					img->GetImageFileTags(files[0], binpath, true, tags, m);
 
-                /* setup the series object */
-                series currSeries;
-                currSeries.description = tags["SeriesDescription"];
-                currSeries.numFiles = numfiles;
-                currSeries.params = tags;
-                currSeries.seriesUID = tags["SeriesInstanceUID"];
-                currSeries.files = files;
+					/* setup the series object */
+					series currSeries;
 
-                /* setup/update the study object */
-                currStudy.dateTime = QDateTime::fromString(tags["StudyDateTime"], "YYYY-MM-dd HH:mm:ss");
-                currStudy.description = tags["StudyDescription"];
-                currStudy.modality = tags["Modality"];
-                currStudy.studyUID = tags["StudyInstanceUID"];
-                currStudy.height = tags["PatientSize"].toDouble();
-                currStudy.weight = tags["PatientWeight"].toDouble();
+					currSeries.description = tags["SeriesDescription"];
+					currSeries.protocol = tags["Protocol"];
+					currSeries.numFiles = numfiles;
+					currSeries.params = tags;
+					currSeries.seriesUID = tags["SeriesInstanceUID"];
+					currSeries.files = files;
 
-                /* setup/update the subject object */
-                currSubject.birthdate = QDate::fromString(tags["PatientBirthDate"], "YYYY-MM-dd");
-                currSubject.gender = tags["PatientSex"][0];
-                currSubject.ID = tags["PatientID"];
-                currSubject.sex = tags["PatientSex"][0];
+					qint64 totalSize(0);
+					foreach (QString f, files) {
+						QFileInfo fi(f);
+						totalSize += fi.size();
+					}
+					currSeries.size = totalSize;
 
-                currStudy.addSeries(currSeries);
-            }
-            currSubject.addStudy(currStudy);
-        }
-        /* add subject to list */
-        sqrl->addSubject(currSubject);
-    }
+					/* setup/update the study object */
+					currStudy.dateTime = QDateTime::fromString(tags["StudyDateTime"], "yyyy-MM-dd HH:mm:ss");
+					currStudy.description = tags["StudyDescription"];
+					currStudy.modality = tags["Modality"];
+					currStudy.studyUID = tags["StudyInstanceUID"];
+					currStudy.height = tags["PatientSize"].toDouble();
+					currStudy.weight = tags["PatientWeight"].toDouble();
+
+					/* setup/update the subject object */
+					currSubject.birthdate = QDate::fromString(tags["PatientBirthDate"], "yyyy-MM-dd");
+					currSubject.gender = tags["PatientSex"][0];
+					currSubject.ID = tags["PatientID"];
+					currSubject.sex = tags["PatientSex"][0];
+
+					currStudy.addSeries(currSeries);
+
+				}
+				//Print("Checkpoint D");
+				currSubject.addStudy(currStudy);
+				//Print("Checkpoint E");
+			}
+			//Print("Checkpoint F");
+			/* add subject to list */
+			sqrl->addSubject(currSubject);
+			//Print("Checkpoint G");
+			//delete currSubject;
+		}
+
+		sqrl->print();
+	}
 
     delete img;
 

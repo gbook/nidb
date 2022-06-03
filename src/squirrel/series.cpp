@@ -21,10 +21,12 @@
   ------------------------------------------------------------------------------ */
 
 #include "series.h"
+#include "../nidb/utils.h"
 
 series::series()
 {
-
+	numFiles = 0;
+	size = 0;
 }
 
 
@@ -36,7 +38,7 @@ series::series()
  * @param s
  * @return
  */
-bool series::AddExperiment(experiment e) {
+bool series::AddExperiment(experiment *e) {
 
     /* check size of the study list before and after adding */
     qint64 size = experimentList.size();
@@ -60,5 +62,11 @@ bool series::AddExperiment(experiment e) {
  * @brief series::PrintSeries
  */
 void series::PrintSeries() {
-
+	Print("-------- SERIES ----------");
+	Print(QString("         SeriesUID: %1").arg(seriesUID));
+	Print(QString("         SeriesNum: %1").arg(seriesNum));
+	Print(QString("         Description: %1").arg(description));
+	Print(QString("         Protocol: %1").arg(protocol));
+	Print(QString("         NumFiles: %1").arg(numFiles));
+	Print(QString("         Size: %1").arg(size));
 }

@@ -37,7 +37,7 @@ class subject
 public:
     subject();
 
-    bool addStudy(study s);
+	bool addStudy(study s);
     void PrintSubject();
 
     /* subject info */
@@ -50,7 +50,7 @@ public:
     QString ethnicity2; /*!< Race: americanindian, asian, black, hispanic, islander, white */
 
     QString dirpath; /*!< Relative path to the subject data */
-    QList<study> studyList; /*!< List of studies attached to this subject */
+	QList<study> studyList; /*!< List of studies attached to this subject */
 };
 
 #endif // SUBJECT_H
