@@ -25,44 +25,60 @@
 #define PIPELINE_H
 #include <QString>
 #include <QDateTime>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QJsonDocument>
 
 /**
  * @brief The dataStep struct
+ *
+ * This is primarily used by NiDB for inter-instance pipeline sharing but can also be used
+ * for other sharing contexts
  */
 struct dataStep {
 	QString associationType; /*!< study or subject (required) */
 	QString behDir; /*!< if behFormat writes data to a sub-directory, this is the name of that sub-doirectory */
 	QString behFormat; /*!< nobeh, behroot, behseries, behseriesdir */
 	QString dataFormat; /*!< native, dicom, nifti3d, nift4d, analyze3d, analyze4d, bids */
-	bool enabled; /*!< whether this step is enabled */
-	bool gzip; /*!< whether Nifti data should be zipped (.nii.gz) */
 	QString imageType; /*!< comma separated list of image types, often derived from the DICOM ImageType tag (0008:0008) */
 	QString datalevel; /*!< nearestintime, samestudy */
 	QString location; /*!< directory relative to {analysisroot}, where this data will be written */
 	QString modality; /*!< modality of the data to search for */
 	QString numBOLDreps; /*!< if seriesCriteria is 'usecriteria', then this is the number of bold reps to search for, ie '<=450' */
 	QString numImagesCriteria; /*!< note sure */
-	bool optional; /*!< if the step is optional */
 	int order; /*!< order of this step */
-	bool preserveSeries; /*!< whether to preserve the series number, if writing series directories. Otherwise the series directories are generated sequentially starting at 1 */
-	bool primaryProtocol; /*!< true if this is the primary protocol. this determines if this study will be used as the parent for child pipelines */
 	QString protocol; /*!< protocol name(s) to search for */
 	QString seriesCriteria; /*!< criteria for downloading data from a study, if more than one series matches the protocol: all, first, last, largest, smallest, usecriteria */
-	bool usePhaseDir; /*!< whether to place data into a sub-directory based on the phase-encoding direction */
-	bool useSeries; /*!< true to write each series to an individually numbered directory, otherwise write it to the directory specified in 'location' */
+
+	struct flag {
+		bool enabled; /*!< whether this step is enabled */
+		bool optional; /*!< if the step is optional */
+		bool gzip; /*!< whether Nifti data should be zipped (.nii.gz) */
+		bool preserveSeries; /*!< whether to preserve the series number, if writing series directories. Otherwise the series directories are generated sequentially starting at 1 */
+		bool primaryProtocol; /*!< true if this is the primary protocol. this determines if this study will be used as the parent for child pipelines */
+		bool usePhaseDir; /*!< whether to place data into a sub-directory based on the phase-encoding direction */
+		bool useSeries; /*!< true to write each series to an individually numbered directory, otherwise write it to the directory specified in 'location' */
+	} flags;
 };
 
 
 /**
  * @brief The pipelineStep struct
+ *
+ * This is primarily used by NiDB for inter-instance pipeline sharing but can also be used
+ * for other sharing contexts
  */
 struct pipelineStep {
 	QString command; /*!< the bash command */
 	QString description; /*!< description of the command (#comment) */
-	bool enabled; /*!< if the step is enabled */
-	bool logged; /*!< if the step should be logged. use {NOLOG} in the description/comment to prevent logging */
 	int order; /*!< the order of the step */
 	QString workingDir; /*!< unused */
+
+	struct flag {
+		bool enabled; /*!< if the step is enabled */
+		bool logged; /*!< if the step should be logged. use {NOLOG} in the description/comment to prevent logging */
+		bool checkin; /*!< if the step should be checked in. use {NOCHECKIN} in the description/comment to prevent check-in */
+	} flags;
 };
 
 
@@ -70,40 +86,61 @@ struct pipelineStep {
  * @brief The pipeline class
  *
  * pipelines contain 3 sections: pipeline info, dataspec, steps (the script)
+ *
+ * [NiDB] fields are used when sharing pipelines between NiDB instances.
+ * These are optional in the squirrel format spec, but the fields
+ * can be useful when sharing pipelines in other contexts
  */
 class pipeline
 {
 public:
 	pipeline();
+	QJsonObject GetJSONObject(QString path);
 
+	/* pipeline information (required fields) */
 	QString pipelineName; /*!< pipeline name (required) */
-	QString clusterType; /*!< compute cluster engine (sge, slurm) */
-	QString completeFiles; /*!< list of files that must exists to indicate the analysis was complete */
+	QString description; /*!< longer description */
 	QDateTime createDate; /*!< date the pipeline was created */
-	QString dataCopyMethod; /*!<  */
-	QString depDir; /*!<  */
+	int version; /*!< pipeline version (required) */
+	QString level; /*!< 1 (subject), or 2 (group) */
+
+	/* pipeline options */
+	QStringList parentPipelines; /*!< list of pipelines on which this pipeline depends */
+	QString completeFiles; /*!< list of files that must exists to indicate the analysis was complete */
+	QString dataCopyMethod; /*!< cp, hardlink, softlink  */
+	QString depDir; /*!< dependency directory */
 	QString depLevel; /*!<  */
 	QString depLinkType; /*!<  */
-	QString description; /*!< longer description */
 	QString dirStructure; /*!<  */
-	QString directory; /*!<  */
-	QString group; /*!< NiDB group on which the pipeline will be run */
-	QString groupType; /*!< subject, study */
-	QString level; /*!< 1 (subject), or 2 (group) */
-	QString maxWallTime; /*!< maximum allowed clock (wall) time the analysis is allowed to run */
+	QString directory; /*!< [NiDB] directory where this pipeline will live if not using the default pipeline directory */
+	QString group; /*!< [NiDB] group on which the pipeline will be run */
+	QString groupType; /*!< [NiDB] subject, study */
 	QString notes; /*!< freeform area for notes */
-	int numConcurrentAnalyses; /*!< max number of concurrent analyses allowed to run */
 	QString resultScript; /*!< path to a script to run to get a results at the end */
-	int submitDelay; /*!< time in hours after the study datetime to delay before running this analysis */
-	QString submitHost; /*!< hostname of the sge/slurm submit node */
 	QString tmpDir; /*!< name of temp dir, if one is to be used */
-	bool useProfile; /*!< whether to use the profile command to see CPU and memory usage history for each analysis */
-	bool useTmpDir; /*!< whether to use a temp directory or not */
-	int version; /*!< pipeline version (required) */
+	struct flag {
+		bool useProfile; /*!< whether to use the profile command to see CPU and memory usage history for each analysis */
+		bool useTmpDir; /*!< whether to use a temp directory or not */
+	} flags;
 
+	/* cluster information */
+	QString clusterType; /*!< [NiDB] compute cluster engine (sge, slurm) */
+	QString clusterUser; /*!< [NiDB] compute cluster user */
+	QString clusterQueue; /*!< [NiDB] compute cluster queue */
+	QString clusterSubmitHost; /*!< [NiDB] hostname of the sge/slurm submit node */
+	int numConcurrentAnalyses; /*!< [NiDB] max number of concurrent analyses allowed to run */
+	QString maxWallTime; /*!< [NiDB] maximum allowed clock (wall) time the analysis is allowed to run */
+	int submitDelay; /*!< [NiDB] time in hours after the study datetime to delay before running this analysis */
+
+	/* data */
 	QList<dataStep> data;
+
+	/* scripts (required) */
 	QList<pipelineStep> primaryScript;
 	QList<pipelineStep> secondaryScript;
+
+private:
+	bool WriteFormattedScripts(QString path);
 
 };
 

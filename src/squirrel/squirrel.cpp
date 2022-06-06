@@ -43,11 +43,11 @@ squirrel::squirrel()
 /* ----- read ------------------------------------------------- */
 /* ------------------------------------------------------------ */
 /**
- * @brief read
+ * @brief squirrel::read
  * @param filename
  * @return
  */
-bool read(QString filename) {
+bool squirrel::read(QString filename) {
 
     return true;
 }
@@ -57,35 +57,35 @@ bool read(QString filename) {
 /* ----- write ------------------------------------------------ */
 /* ------------------------------------------------------------ */
 /**
- * @brief write
+ * @brief squirrel::write
  * @param path
  * @return
  */
-bool write(QString path) {
+bool squirrel::write(QString path) {
 
 	/* create JSON package info */
 	//PrintPackage();
 
 	/* iterate through subjects */
-	//for (int i=0; i < subjectList.size(); i++) {
+	for (int i=0; i < subjectList.size(); i++) {
 
-	//	subject sub = subjectList[i];
-	//	sub.PrintSubject();
+		subject sub = subjectList[i];
+		sub.PrintSubject();
 
-	    /* iterate through studies */
+		/* iterate through studies */
 	//	for (int j=0; j < sub.studyList.size(); j++) {
 
 	//		study stud = sub.studyList[j];
 	//		stud.PrintStudy();
 
-	        /* iterate through series */
+		    /* iterate through series */
 	//		for (int k=0; k < stud.seriesList.size(); k++) {
 
 	//			series ser = stud.seriesList[k];
 	//			ser.PrintSeries();
 	//		}
 	//	}
-	//}
+	}
 
     return true;
 }
@@ -95,10 +95,10 @@ bool write(QString path) {
 /* ----- validate --------------------------------------------- */
 /* ------------------------------------------------------------ */
 /**
- * @brief validate
+ * @brief squirrel::validate
  * @return
  */
-bool validate() {
+bool squirrel::validate() {
 
     return true;
 }
