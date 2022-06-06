@@ -78,3 +78,32 @@ void study::PrintStudy() {
 	Print(QString("       Weight: %1 kg").arg(weight));
 	Print(QString("       Height: %1 m").arg(height));
 }
+
+
+/* ------------------------------------------------------------ */
+/* ----- ToJSON ----------------------------------------------- */
+/* ------------------------------------------------------------ */
+QJsonObject study::ToJSON() {
+	QJsonObject json;
+
+	json["number"] = studyNum;
+	json["studyDateTime"] = dateTime.toString();
+	json["ageAtStudy"] = ageAtStudy;
+	json["modality"] = modality;
+	json["description"] = description;
+	json["dayNumber"] = dayNum;
+	json["timePoint"] = timePoint;
+	json["equipment"] = equipment;
+	json["height"] = height;
+	json["weight"] = weight;
+
+	QJsonArray JSONseries;
+	for (int i=0; i<seriesList.size(); i++) {
+		JSONseries.append(seriesList[i].ToJSON());
+	}
+	json["numSeries"] = JSONseries.size();
+
+	json["studies"] = JSONseries;
+
+	return json;
+}

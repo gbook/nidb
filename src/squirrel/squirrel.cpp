@@ -65,26 +65,29 @@ bool squirrel::write(QString path) {
 
 	/* create JSON package info */
 	//PrintPackage();
+	/* create JSON object */
+	QJsonObject root;
+
+	QJsonObject pkgInfo;
+	pkgInfo["name"] = name;
+	pkgInfo["description"] = description;
+	pkgInfo["datetime"] = CreateCurrentDateTime(2);
+	pkgInfo["format"] = format;
+	pkgInfo["version"] = version;
+
+	root["_package"] = pkgInfo;
+
+	QJsonArray JSONsubjects;
 
 	/* iterate through subjects */
 	for (int i=0; i < subjectList.size(); i++) {
 
 		subject sub = subjectList[i];
-		sub.PrintSubject();
+		QJsonObject subjInfo = sub.ToJSON();
 
-		/* iterate through studies */
-	//	for (int j=0; j < sub.studyList.size(); j++) {
-
-	//		study stud = sub.studyList[j];
-	//		stud.PrintStudy();
-
-		    /* iterate through series */
-	//		for (int k=0; k < stud.seriesList.size(); k++) {
-
-	//			series ser = stud.seriesList[k];
-	//			ser.PrintSeries();
-	//		}
-	//	}
+		/* Add list of studies to the current subject, then append the subject to the subject list */
+		subjInfo["studies"] = JSONsubjects;
+		JSONsubjects.append(subjInfo);
 	}
 
     return true;

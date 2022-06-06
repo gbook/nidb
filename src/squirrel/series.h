@@ -26,6 +26,8 @@
 #include <QString>
 #include <QHash>
 #include <QList>
+#include <QJsonObject>
+#include <QJsonArray>
 #include "experiment.h"
 
 /**
@@ -39,11 +41,13 @@ public:
     series();
     void PrintSeries();
 	bool AddExperiment(experiment *e);
+	QJsonObject ToJSON();
 
     /* subject info */
     QString seriesUID; /*!< SeriesInstanceUID */
     QString seriesNum; /*!< Series number. must be unique to the study */
-    QString description; /*!< Description of the series */
+	QDateTime dateTime; /*!< Series datetime */
+	QString description; /*!< Description of the series */
     QString protocol; /*!< Protocol (may differ from description) */
     qint64 numFiles; /*!< Number of files associated with the series */
 	qint64 size; /*!< total size in bytes of the series */

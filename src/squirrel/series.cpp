@@ -70,3 +70,27 @@ void series::PrintSeries() {
 	Print(QString("         NumFiles: %1").arg(numFiles));
 	Print(QString("         Size: %1").arg(size));
 }
+
+
+/* ------------------------------------------------------------ */
+/* ----- ToJSON ----------------------------------------------- */
+/* ------------------------------------------------------------ */
+QJsonObject series::ToJSON() {
+	QJsonObject json;
+
+	json["number"] = seriesNum;
+	json["seriesDateTime"] = dateTime.toString();
+	json["description"] = description;
+	json["protocol"] = protocol;
+	json["numFiles"] = numFiles;
+	json["size"] = size;
+
+	QJsonArray JSONexperiments;
+	for (int i=0; i<experimentList.size(); i++) {
+		//QString expName = experimentList[i].experimentName;
+		//JSONexperiments.append();
+	}
+	json["Experiments"] = JSONexperiments;
+
+	return json;
+}

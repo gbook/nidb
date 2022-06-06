@@ -25,6 +25,8 @@
 
 #include <QString>
 #include <QDateTime>
+#include <QJsonObject>
+#include <QJsonArray>
 #include "series.h"
 
 /**
@@ -39,6 +41,7 @@ public:
 
 	bool addSeries(series s);
     void PrintStudy();
+	QJsonObject ToJSON();
 
     /* study info */
     QString studyUID; /*!< StudyInstanceUID */
@@ -49,6 +52,8 @@ public:
     QString timePoint; /*!< Ordinal time point for repeated studies. eg. 3 for the 3rd consecutive imaging study */
     QDateTime dateTime; /*!< start datetime of the study */
     QString modality; /*!< study modality */
+	QString equipment;
+	double ageAtStudy;
     double weight; /*!< weight in kg */
     double height; /*!< height in meters */
 	QList<series> seriesList; /*!< List of series attached to this study */

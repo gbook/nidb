@@ -96,7 +96,7 @@ bool dicom::ReadDirectory(QString dir, QString binpath, QString &msg) {
 				/* ---------- iterate through the series ---------- */
 				for(QMap<QString, QStringList>::iterator c = dcms[subjectID][studyID].begin(); c != dcms[subjectID][studyID].end(); ++c) {
 					QString seriesID = c.key();
-					//Print(QString("Series [%1]").arg(c.key()));
+
 					QStringList files = dcms[subjectID][studyID][seriesID];
 					qint64 numfiles = files.size();
 
@@ -138,15 +138,10 @@ bool dicom::ReadDirectory(QString dir, QString binpath, QString &msg) {
 					currStudy.addSeries(currSeries);
 
 				}
-				//Print("Checkpoint D");
 				currSubject.addStudy(currStudy);
-				//Print("Checkpoint E");
 			}
-			//Print("Checkpoint F");
 			/* add subject to list */
 			sqrl->addSubject(currSubject);
-			//Print("Checkpoint G");
-			//delete currSubject;
 		}
 
 		sqrl->print();

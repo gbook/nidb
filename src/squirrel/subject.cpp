@@ -74,9 +74,37 @@ void subject::PrintSubject() {
     Print("---- SUBJECT ----------");
     Print(QString("     ID: %1").arg(ID));
     Print(QString("     AltIDs: %1").arg(altUIDs.join(",")));
-    Print(QString("     Sex: %1").arg(sex));
+	Print(QString("     GUID: %1").arg(GUID));
+	Print(QString("     Sex: %1").arg(sex));
     Print(QString("     Gender: %1").arg(gender));
     Print(QString("     DOB: %1").arg(birthdate.toString()));
     Print(QString("     Ethnicity1: %1").arg(ethnicity1));
     Print(QString("     Ethnicity2: %1").arg(ethnicity2));
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- ToJSON ----------------------------------------------- */
+/* ------------------------------------------------------------ */
+QJsonObject subject::ToJSON() {
+	QJsonObject json;
+
+	json["ID"] = ID;
+	json["alternateIDs"] = QJsonArray::fromStringList(altUIDs);
+	json["GUID"] = GUID;
+	json["dateOfBirth"] = birthdate.toString();
+	json["sex"] = sex;
+	json["gender"] = gender;
+	json["ethnicity1"] = ethnicity1;
+	json["ethnicity2"] = ethnicity2;
+
+	QJsonArray JSONstudies;
+	for (int i=0; i<studyList.size(); i++) {
+		JSONstudies.append(studyList[i].ToJSON());
+	}
+	json["numStudies"] = JSONstudies.size();
+
+	json["studies"] = JSONstudies;
+
+	return json;
 }

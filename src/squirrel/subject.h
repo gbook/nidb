@@ -25,6 +25,8 @@
 
 #include <QString>
 #include <QDate>
+#include <QJsonObject>
+#include <QJsonArray>
 #include "study.h"
 
 /**
@@ -39,12 +41,14 @@ public:
 
 	bool addStudy(study s);
     void PrintSubject();
+	QJsonObject ToJSON();
 
     /* subject info */
-    QString ID; /*!< Unique identifier. must be unique within the squirrel package */
+	QString ID; /*!< Unique identifier. Must be unique within the squirrel package */
     QStringList altUIDs; /*!< List of alternate subject IDs */
-    QChar sex; /*!< Sex at birth (biological sex) */
-    QChar gender; /*!< Gender identity */
+	QString GUID;  /*!< globally unique identifier, from NIMH's NDA */
+	QString sex; /*!< Sex at birth (biological sex) */
+	QString gender; /*!< Gender identity */
     QDate birthdate; /*!< Date of birth. Not required, but can be useful to calculate age during studies. Can also contain only year, or only year and month */
     QString ethnicity1; /*!< Ethnicity: hispanic, non-hispanic */
     QString ethnicity2; /*!< Race: americanindian, asian, black, hispanic, islander, white */
