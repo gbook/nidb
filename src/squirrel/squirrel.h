@@ -27,6 +27,10 @@
 #include <QDate>
 #include <QDateTime>
 #include "subject.h"
+#include "experiment.h"
+#include "pipeline.h"
+#include "measure.h"
+#include "drug.h"
 #include "../nidb/version.h"
 
 /**
@@ -44,7 +48,7 @@ public:
     bool validate();
     void print();
 
-	bool addSubject(subject subj);
+    bool addSubject(subject subj);
     bool removeSubject(QString ID);
 
     /* data */
@@ -55,8 +59,14 @@ public:
     QString format;
 
 private:
-	void PrintPackage();
-	QList<subject> subjectList; /*!< List of subjects within this package */
+    void PrintPackage();
+    bool MakeTempDir();
+    bool DeleteTempDir();
+    QString workingDir;
+
+    QList<subject> subjectList; /*!< List of subjects within this package */
+    QList<pipeline> pipelineList; /*!< List of pipelines within this package */
+    QList<experiment> experimentList; /*!< List of experiments within this package */
 
 };
 

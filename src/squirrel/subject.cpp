@@ -28,13 +28,9 @@
 /* ----- subject ---------------------------------------------- */
 /* ------------------------------------------------------------ */
 subject::subject() {
-    //ID;
-    //altUIDs;
     sex = 'U';
     gender = 'U';
     birthdate = QDate::fromString("0000-00-00", "YYYY-MM-dd");
-    //ethnicity1;
-    //ethnicity2;
 }
 
 
@@ -44,7 +40,7 @@ subject::subject() {
 /**
  * @brief subject::addStudy
  * @param s
- * @return
+ * @return true if added, false otherwise
  */
 bool subject::addStudy(study s) {
 
@@ -52,9 +48,14 @@ bool subject::addStudy(study s) {
     qint64 size = studyList.size();
 
     /* check if this study already exists, by UID */
+    bool exists = false;
+    for (int i=0; i<studyList.size(); i++)
+        if (studyList[i].studyUID == s.studyUID)
+            exists = true;
 
     /* if it doesn't exist, append it */
-    studyList.append(s);
+    if (!exists)
+        studyList.append(s);
 
     if (studyList.size() > size)
         return true;
@@ -74,8 +75,8 @@ void subject::PrintSubject() {
     Print("---- SUBJECT ----------");
     Print(QString("     ID: %1").arg(ID));
     Print(QString("     AltIDs: %1").arg(altUIDs.join(",")));
-	Print(QString("     GUID: %1").arg(GUID));
-	Print(QString("     Sex: %1").arg(sex));
+    Print(QString("     GUID: %1").arg(GUID));
+    Print(QString("     Sex: %1").arg(sex));
     Print(QString("     Gender: %1").arg(gender));
     Print(QString("     DOB: %1").arg(birthdate.toString()));
     Print(QString("     Ethnicity1: %1").arg(ethnicity1));
@@ -87,24 +88,43 @@ void subject::PrintSubject() {
 /* ----- ToJSON ----------------------------------------------- */
 /* ------------------------------------------------------------ */
 QJsonObject subject::ToJSON() {
-	QJsonObject json;
+    QJsonObject json;
 
-	json["ID"] = ID;
-	json["alternateIDs"] = QJsonArray::fromStringList(altUIDs);
-	json["GUID"] = GUID;
-	json["dateOfBirth"] = birthdate.toString();
-	json["sex"] = sex;
-	json["gender"] = gender;
-	json["ethnicity1"] = ethnicity1;
-	json["ethnicity2"] = ethnicity2;
+    json["ID"] = ID;
+    json["alternateIDs"] = QJsonArray::fromStringList(altUIDs);
+    json["GUID"] = GUID;
+    json["dateOfBirth"] = birthdate.toString();
+    json["sex"] = sex;
+    json["gender"] = gender;
+    json["ethnicity1"] = ethnicity1;
+    json["ethnicity2"] = ethnicity2;
 
-	QJsonArray JSONstudies;
-	for (int i=0; i<studyList.size(); i++) {
-		JSONstudies.append(studyList[i].ToJSON());
-	}
-	json["numStudies"] = JSONstudies.size();
+    QJsonArray JSONstudies;
+    for (int i=0; i<studyList.size(); i++) {
+        JSONstudies.append(studyList[i].ToJSON());
+    }
+    json["numStudies"] = JSONstudies.size();
 
-	json["studies"] = JSONstudies;
+    json["studies"] = JSONstudies;
 
-	return json;
+    /* add measures */
+    if (measureList.size() > 0) {
+        QJsonArray JSONmeasures;
+        for (int i=0; i < measureList.size(); i++) {
+            JSONmeasures.append(measureList[i].ToJSON());
+        }
+        json["measures"] = JSONmeasures;
+    }
+
+    /* add drugs */
+    if (drugList.size() > 0) {
+        QJsonArray JSONdrugs;
+        for (int i=0; i < drugList.size(); i++) {
+            JSONdrugs.append(drugList[i].ToJSON());
+        }
+        json["drugs"] = JSONdrugs;
+    }
+
+
+    return json;
 }

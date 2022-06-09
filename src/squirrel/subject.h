@@ -28,6 +28,8 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include "study.h"
+#include "measure.h"
+#include "drug.h"
 
 /**
  * @brief The subject class
@@ -39,22 +41,28 @@ class subject
 public:
     subject();
 
-	bool addStudy(study s);
+    bool addStudy(study s);
     void PrintSubject();
-	QJsonObject ToJSON();
+    QJsonObject ToJSON();
 
     /* subject info */
-	QString ID; /*!< Unique identifier. Must be unique within the squirrel package */
+    QString ID; /*!< Unique identifier. Must be unique within the squirrel package */
     QStringList altUIDs; /*!< List of alternate subject IDs */
-	QString GUID;  /*!< globally unique identifier, from NIMH's NDA */
-	QString sex; /*!< Sex at birth (biological sex) */
-	QString gender; /*!< Gender identity */
+    QString GUID;  /*!< globally unique identifier, from NIMH's NDA */
+    QString sex; /*!< Sex at birth (biological sex) */
+    QString gender; /*!< Gender identity */
     QDate birthdate; /*!< Date of birth. Not required, but can be useful to calculate age during studies. Can also contain only year, or only year and month */
     QString ethnicity1; /*!< Ethnicity: hispanic, non-hispanic */
     QString ethnicity2; /*!< Race: americanindian, asian, black, hispanic, islander, white */
 
     QString dirpath; /*!< Relative path to the subject data */
-	QList<study> studyList; /*!< List of studies attached to this subject */
+    QList<study> studyList; /*!< List of studies attached to this subject */
+    QList<measure> measureList; /*!< List of measures (variables) attached to this subject */
+    QList<drug> drugList; /*!< List of drugs attached to this subject */
+
+private:
+    QString virtualPath; /*!< path within the squirrel package, no leading slash */
+
 };
 
 #endif // SUBJECT_H

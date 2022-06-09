@@ -28,7 +28,6 @@
 #include <QList>
 #include <QJsonObject>
 #include <QJsonArray>
-#include "experiment.h"
 
 /**
  * @brief The series class
@@ -40,23 +39,24 @@ class series
 public:
     series();
     void PrintSeries();
-	bool AddExperiment(experiment *e);
-	QJsonObject ToJSON();
+    //bool AddExperiment(experiment *e);
+    QJsonObject ToJSON();
 
     /* subject info */
     QString seriesUID; /*!< SeriesInstanceUID */
     QString seriesNum; /*!< Series number. must be unique to the study */
-	QDateTime dateTime; /*!< Series datetime */
-	QString description; /*!< Description of the series */
+    QDateTime dateTime; /*!< Series datetime */
+    QString description; /*!< Description of the series */
     QString protocol; /*!< Protocol (may differ from description) */
     qint64 numFiles; /*!< Number of files associated with the series */
-	qint64 size; /*!< total size in bytes of the series */
+    qint64 size; /*!< total size in bytes of the series */
     QHash<QString, QString> params; /*!< Hash containing experimental parameters. eg MR params */
     QStringList files; /*!< file list */
 
+    QStringList experimentList; /*!< List of experiments attached to this series */
+
 private:
-    QString dirpath; /*!< Relative path to the subject data */
-	QList<experiment*> experimentList; /*!< List of experiments attached to this series */
+    QString virtualPath; /*!< path within the squirrel package, no leading slash */
 };
 
 #endif // SERIES_H

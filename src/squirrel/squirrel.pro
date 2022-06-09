@@ -16,10 +16,10 @@ SOURCES += \
 	analysis.cpp \
 	convert.cpp \
 	dicom.cpp \
-	drugs.cpp \
+	drug.cpp \
 	experiment.cpp \
 	main.cpp \
-	measures.cpp \
+	measure.cpp \
 	pipeline.cpp \
 	series.cpp \
 	squirrel.cpp \
@@ -39,9 +39,9 @@ HEADERS += \
 	analysis.h \
 	convert.h \
 	dicom.h \
-	drugs.h \
+	drug.h \
 	experiment.h \
-	measures.h \
+	measure.h \
 	pipeline.h \
 	series.h \
 	squirrel.h \

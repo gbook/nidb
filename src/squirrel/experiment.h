@@ -23,6 +23,8 @@
 #ifndef EXPERIMENT_H
 #define EXPERIMENT_H
 #include <QString>
+#include <QJsonObject>
+#include <QJsonArray>
 
 /**
  * @brief The experiment class
@@ -30,12 +32,13 @@
 class experiment
 {
 public:
-	experiment();
+    experiment();
+    QJsonObject ToJSON();
 
-	QString experimentName; /*!< experiment name (required) */
-	qint64 numFiles; /*!< number of experiment files (required) */
-	qint64 size; /*!< total size in bytes of the experiment files (required) */
-	QString path; /*!< path to the experiment files, relative to the package root (required) */
+    QString experimentName; /*!< experiment name (required) */
+    qint64 numFiles; /*!< number of experiment files (required) */
+    qint64 size; /*!< total size in bytes of the experiment files (required) */
+    QString path; /*!< path to the experiment files, relative to the package root (required) */
 
 };
 

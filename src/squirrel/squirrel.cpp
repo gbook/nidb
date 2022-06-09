@@ -63,32 +63,47 @@ bool squirrel::read(QString filename) {
  */
 bool squirrel::write(QString path) {
 
-	/* create JSON package info */
-	//PrintPackage();
-	/* create JSON object */
-	QJsonObject root;
+    /* create JSON package info */
+    //PrintPackage();
+    /* create JSON object */
+    QJsonObject root;
 
-	QJsonObject pkgInfo;
-	pkgInfo["name"] = name;
-	pkgInfo["description"] = description;
-	pkgInfo["datetime"] = CreateCurrentDateTime(2);
-	pkgInfo["format"] = format;
-	pkgInfo["version"] = version;
+    QJsonObject pkgInfo;
+    pkgInfo["name"] = name;
+    pkgInfo["description"] = description;
+    pkgInfo["datetime"] = CreateCurrentDateTime(2);
+    pkgInfo["format"] = format;
+    pkgInfo["version"] = version;
 
-	root["_package"] = pkgInfo;
+    root["_package"] = pkgInfo;
 
-	QJsonArray JSONsubjects;
+    QJsonArray JSONsubjects;
 
-	/* iterate through subjects */
-	for (int i=0; i < subjectList.size(); i++) {
+    /* add subjects */
+    for (int i=0; i < subjectList.size(); i++) {
+        QJsonObject subjInfo = subjectList[i].ToJSON();
+        subjInfo["studies"] = JSONsubjects;
+        JSONsubjects.append(subjInfo);
+    }
+    root["subjects"] = JSONsubjects;
 
-		subject sub = subjectList[i];
-		QJsonObject subjInfo = sub.ToJSON();
+    /* add pipelines */
+    if (pipelineList.size() > 0) {
+        QJsonArray JSONpipelines;
+        for (int i=0; i < pipelineList.size(); i++) {
+            JSONpipelines.append(pipelineList[i].ToJSON(path));
+        }
+        root["pipelines"] = JSONpipelines;
+    }
 
-		/* Add list of studies to the current subject, then append the subject to the subject list */
-		subjInfo["studies"] = JSONsubjects;
-		JSONsubjects.append(subjInfo);
-	}
+    /* add experiments */
+    if (experimentList.size() > 0) {
+        QJsonArray JSONexperiments;
+        for (int i=0; i < experimentList.size(); i++) {
+            JSONexperiments.append(experimentList[i].ToJSON());
+        }
+        root["experiments"] = JSONexperiments;
+    }
 
     return true;
 }
@@ -116,27 +131,27 @@ bool squirrel::validate() {
 void squirrel::print() {
 
     /* print package info */
-	PrintPackage();
+    PrintPackage();
 
     /* iterate through subjects */
     for (int i=0; i < subjectList.size(); i++) {
 
-		subject sub = subjectList[i];
-		sub.PrintSubject();
+        subject sub = subjectList[i];
+        sub.PrintSubject();
 
         /* iterate through studies */
-		for (int j=0; j < sub.studyList.size(); j++) {
+        for (int j=0; j < sub.studyList.size(); j++) {
 
-			study stud = sub.studyList[j];
-			stud.PrintStudy();
+            study stud = sub.studyList[j];
+            stud.PrintStudy();
 
             /* iterate through series */
-			for (int k=0; k < stud.seriesList.size(); k++) {
+            for (int k=0; k < stud.seriesList.size(); k++) {
 
-				series ser = stud.seriesList[k];
-				ser.PrintSeries();
-			}
-		}
+                series ser = stud.seriesList[k];
+                ser.PrintSeries();
+            }
+        }
     }
 }
 
@@ -150,14 +165,14 @@ void squirrel::print() {
  * @return true if added, false if not added
  */
 bool squirrel::addSubject(subject subj) {
-	//Print("Checkpoint 1");
+    //Print("Checkpoint 1");
 
     /* check size of the subject list before and after adding */
     qint64 size = subjectList.size();
-	//Print("Checkpoint 2");
+    //Print("Checkpoint 2");
 
-	subjectList.append(subj);
-	//Print("Checkpoint 3");
+    subjectList.append(subj);
+    //Print("Checkpoint 3");
 
     if (subjectList.size() > size)
         return true;
@@ -177,7 +192,7 @@ bool squirrel::addSubject(subject subj) {
 bool squirrel::removeSubject(QString ID) {
 
     for(int i=0; i < subjectList.count(); ++i) {
-		if (subjectList[i].ID == ID) {
+        if (subjectList[i].ID == ID) {
             subjectList.remove(i);
             return true;
         }

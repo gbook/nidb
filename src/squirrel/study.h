@@ -39,9 +39,9 @@ class study
 public:
     study();
 
-	bool addSeries(series s);
+    bool addSeries(series s);
     void PrintStudy();
-	QJsonObject ToJSON();
+    QJsonObject ToJSON();
 
     /* study info */
     QString studyUID; /*!< StudyInstanceUID */
@@ -52,14 +52,14 @@ public:
     QString timePoint; /*!< Ordinal time point for repeated studies. eg. 3 for the 3rd consecutive imaging study */
     QDateTime dateTime; /*!< start datetime of the study */
     QString modality; /*!< study modality */
-	QString equipment;
-	double ageAtStudy;
+    QString equipment;
+    double ageAtStudy;
     double weight; /*!< weight in kg */
     double height; /*!< height in meters */
-	QList<series> seriesList; /*!< List of series attached to this study */
+    QList<series> seriesList; /*!< List of series attached to this study */
 
 private:
-    QString dirpath; /*!< Relative path to the subject data */
+    QString virtualPath; /*!< path within the squirrel package, no leading slash */
 };
 
 #endif // STUDY_H

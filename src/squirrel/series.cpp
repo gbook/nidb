@@ -25,34 +25,34 @@
 
 series::series()
 {
-	numFiles = 0;
-	size = 0;
+    numFiles = 0;
+    size = 0;
 }
 
 
 /* ------------------------------------------------------------ */
 /* ----- AddExperiment ---------------------------------------- */
 /* ------------------------------------------------------------ */
-/**
- * @brief series::AddExperiment
- * @param s
- * @return
- */
-bool series::AddExperiment(experiment *e) {
+// /**
+// * @brief series::AddExperiment
+// * @param s
+// * @return
+// */
+//bool series::AddExperiment(experiment *e) {
 
     /* check size of the study list before and after adding */
-    qint64 size = experimentList.size();
+//    qint64 size = experimentList.size();
 
     /* check if this study already exists, by UID */
 
-    /* if it doesn't exist, append it */
-    experimentList.append(e);
+//    /* if it doesn't exist, append it */
+//    experimentList.append(e);
 
-    if (experimentList.size() > size)
-        return true;
-    else
-        return false;
-}
+//    if (experimentList.size() > size)
+//        return true;
+//    else
+//        return false;
+//}
 
 
 /* ------------------------------------------------------------ */
@@ -62,13 +62,13 @@ bool series::AddExperiment(experiment *e) {
  * @brief series::PrintSeries
  */
 void series::PrintSeries() {
-	Print("-------- SERIES ----------");
-	Print(QString("         SeriesUID: %1").arg(seriesUID));
-	Print(QString("         SeriesNum: %1").arg(seriesNum));
-	Print(QString("         Description: %1").arg(description));
-	Print(QString("         Protocol: %1").arg(protocol));
-	Print(QString("         NumFiles: %1").arg(numFiles));
-	Print(QString("         Size: %1").arg(size));
+    Print("-------- SERIES ----------");
+    Print(QString("         SeriesUID: %1").arg(seriesUID));
+    Print(QString("         SeriesNum: %1").arg(seriesNum));
+    Print(QString("         Description: %1").arg(description));
+    Print(QString("         Protocol: %1").arg(protocol));
+    Print(QString("         NumFiles: %1").arg(numFiles));
+    Print(QString("         Size: %1").arg(size));
 }
 
 
@@ -76,21 +76,21 @@ void series::PrintSeries() {
 /* ----- ToJSON ----------------------------------------------- */
 /* ------------------------------------------------------------ */
 QJsonObject series::ToJSON() {
-	QJsonObject json;
+    QJsonObject json;
 
-	json["number"] = seriesNum;
-	json["seriesDateTime"] = dateTime.toString();
-	json["description"] = description;
-	json["protocol"] = protocol;
-	json["numFiles"] = numFiles;
-	json["size"] = size;
+    json["number"] = seriesNum;
+    json["seriesDateTime"] = dateTime.toString();
+    json["description"] = description;
+    json["protocol"] = protocol;
+    json["numFiles"] = numFiles;
+    json["size"] = size;
 
-	QJsonArray JSONexperiments;
-	for (int i=0; i<experimentList.size(); i++) {
-		//QString expName = experimentList[i].experimentName;
-		//JSONexperiments.append();
-	}
-	json["Experiments"] = JSONexperiments;
+    QJsonArray JSONexperiments;
+    for (int i=0; i<experimentList.size(); i++) {
+        //QString expName = experimentList[i].experimentName;
+        //JSONexperiments.append();
+    }
+    json["Experiments"] = JSONexperiments;
 
-	return json;
+    return json;
 }
