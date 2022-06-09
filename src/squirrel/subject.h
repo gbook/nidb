@@ -43,7 +43,7 @@ public:
 
     bool addStudy(study s);
     void PrintSubject();
-    QJsonObject ToJSON();
+	QJsonObject ToJSON(QString path);
 
     /* subject info */
     QString ID; /*!< Unique identifier. Must be unique within the squirrel package */
@@ -60,9 +60,7 @@ public:
     QList<measure> measureList; /*!< List of measures (variables) attached to this subject */
     QList<drug> drugList; /*!< List of drugs attached to this subject */
 
-private:
-    QString virtualPath; /*!< path within the squirrel package, no leading slash */
-
+	QString virtualPath; /*!< path within the squirrel package, no leading slash */
 };
 
 #endif // SUBJECT_H

@@ -87,7 +87,7 @@ QJsonObject study::ToJSON() {
 	QJsonObject json;
 
 	json["number"] = studyNum;
-	json["studyDateTime"] = dateTime.toString();
+	json["studyDateTime"] = dateTime.toString("yyyy-MM-dd HH:mm:ss");
 	json["ageAtStudy"] = ageAtStudy;
 	json["modality"] = modality;
 	json["description"] = description;
@@ -96,14 +96,14 @@ QJsonObject study::ToJSON() {
 	json["equipment"] = equipment;
 	json["height"] = height;
 	json["weight"] = weight;
+	json["path"] = virtualPath;
 
 	QJsonArray JSONseries;
 	for (int i=0; i<seriesList.size(); i++) {
 		JSONseries.append(seriesList[i].ToJSON());
 	}
 	json["numSeries"] = JSONseries.size();
-
-	json["studies"] = JSONseries;
+	json["series"] = JSONseries;
 
 	return json;
 }

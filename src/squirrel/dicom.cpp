@@ -28,7 +28,6 @@
 /* ---------------------------------------------------------------------------- */
 dicom::dicom()
 {
-	sqrl = new squirrel();
 }
 
 
@@ -42,7 +41,8 @@ dicom::dicom()
  * @param m
  * @return
  */
-bool dicom::ReadDirectory(QString dir, QString binpath, QString &msg) {
+//bool dicom::ReadDirectory(QString dir, QString binpath, QString &msg) {
+bool dicom::LoadToSquirrel(QString dir, QString binpath, squirrel *sqrl, QString &msg) {
 
     numFiles = 0;
 
@@ -61,7 +61,7 @@ bool dicom::ReadDirectory(QString dir, QString binpath, QString &msg) {
 	qint64 foundFileCount(0);
     QString m;
     QStringList files = FindAllFiles(dir, "*", true);
-    numFiles = files.size();
+	//numFiles = files.size();
     foreach (QString f, files) {
         processedFileCount++;
 
@@ -109,6 +109,8 @@ bool dicom::ReadDirectory(QString dir, QString binpath, QString &msg) {
 
 					currSeries.description = tags["SeriesDescription"];
 					currSeries.protocol = tags["Protocol"];
+					currSeries.seriesNum = tags["SeriesNumber"];
+					currSeries.dateTime = QDateTime::fromString(tags["SeriesDateTime"], "yyyy-MM-dd HH:mm:ss");
 					currSeries.numFiles = numfiles;
 					currSeries.params = tags;
 					currSeries.seriesUID = tags["SeriesInstanceUID"];

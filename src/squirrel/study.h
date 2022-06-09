@@ -58,8 +58,7 @@ public:
     double height; /*!< height in meters */
     QList<series> seriesList; /*!< List of series attached to this study */
 
-private:
-    QString virtualPath; /*!< path within the squirrel package, no leading slash */
+	QString virtualPath; /*!< path within the squirrel package, no leading slash */
 };
 
 #endif // STUDY_H

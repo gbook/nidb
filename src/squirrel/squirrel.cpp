@@ -61,11 +61,83 @@ bool squirrel::read(QString filename) {
  * @param path
  * @return
  */
-bool squirrel::write(QString path) {
+bool squirrel::write(QString path, QString dataFormat, QString dirFormat) {
 
-    /* create JSON package info */
-    //PrintPackage();
-    /* create JSON object */
+	if (dirFormat == "")
+		dirFormat = "orig";
+
+	/* create temp directory */
+	MakeTempDir();
+
+	/* ----- 1) write data. And set the relative paths in the objects ----- */
+	/* iterate through subjects */
+	for (int i=0; i < subjectList.size(); i++) {
+
+		subject sub = subjectList[i];
+
+		QString subjDir;
+		if (dirFormat == "orig")
+			subjDir = sub.ID;
+		else
+			subjDir = QString("%1").arg(i);
+
+		subjDir.replace(QRegularExpression("[^a-zA-Z0-9 _-]", QRegularExpression::CaseInsensitiveOption), "");
+		QString vPath = QString("data/%1").arg(subjDir);
+		subjectList[i].virtualPath = vPath;
+
+		/* iterate through studies */
+		for (int j=0; j < sub.studyList.size(); j++) {
+
+			study stud = sub.studyList[j];
+
+			QString studyDir;
+			if (dirFormat == "orig")
+				studyDir = QString("%1").arg(stud.studyNum);
+			else
+				studyDir = QString("%1").arg(j);
+
+			studyDir.replace(QRegularExpression("[^a-zA-Z0-9 _-]", QRegularExpression::CaseInsensitiveOption), "");
+			QString vPath = QString("data/%1/%2").arg(subjDir).arg(studyDir);
+			subjectList[i].studyList[j].virtualPath = vPath;
+
+			/* iterate through series */
+			for (int k=0; k < stud.seriesList.size(); k++) {
+
+				series ser = stud.seriesList[k];
+
+				QString seriesDir;
+				if (dirFormat == "orig")
+					seriesDir = ser.seriesNum;
+				else
+					seriesDir = QString("%1").arg(k);
+
+				seriesDir.replace(QRegularExpression("[^a-zA-Z0-9 _-]", QRegularExpression::CaseInsensitiveOption), "");
+				QString vPath = QString("data/%1/%2/%3").arg(subjDir).arg(studyDir).arg(seriesDir);
+				subjectList[i].studyList[j].seriesList[k].virtualPath = vPath;
+
+				QString m;
+				QString seriesPath = QString("%1/%2").arg(workingDir).arg(subjectList[i].studyList[j].seriesList[k].virtualPath);
+				MakePath(seriesPath,m);
+
+				/* copy all of the series files to the temp directory */
+				foreach (QString f, ser.files) {
+					QString systemstring = QString("cp -uv %1 %2/%3").arg(f).arg(workingDir).arg(subjectList[i].studyList[j].seriesList[k].virtualPath);
+					Print(SystemCommand(systemstring));
+				}
+
+				/* write the series .json file, containing the dicom header params */
+				QJsonObject params;
+				params = ser.ParamsToJSON();
+				QByteArray j = QJsonDocument(params).toJson();
+				QFile fout(QString("%1/params.json").arg(seriesPath));
+				fout.open(QIODevice::WriteOnly);
+				fout.write(j);
+			}
+		}
+	}
+
+	/* ----- 2) write .json file ----- */
+	/* create JSON object */
     QJsonObject root;
 
     QJsonObject pkgInfo;
@@ -81,19 +153,19 @@ bool squirrel::write(QString path) {
 
     /* add subjects */
     for (int i=0; i < subjectList.size(); i++) {
-        QJsonObject subjInfo = subjectList[i].ToJSON();
-        subjInfo["studies"] = JSONsubjects;
-        JSONsubjects.append(subjInfo);
+		JSONsubjects.append(subjectList[i].ToJSON(workingDir));
     }
-    root["subjects"] = JSONsubjects;
+	root["numSubjects"] = JSONsubjects.size();
+	root["subjects"] = JSONsubjects;
 
     /* add pipelines */
     if (pipelineList.size() > 0) {
         QJsonArray JSONpipelines;
         for (int i=0; i < pipelineList.size(); i++) {
-            JSONpipelines.append(pipelineList[i].ToJSON(path));
+			JSONpipelines.append(pipelineList[i].ToJSON(workingDir));
         }
-        root["pipelines"] = JSONpipelines;
+		root["numPipelines"] = JSONpipelines.size();
+		root["pipelines"] = JSONpipelines;
     }
 
     /* add experiments */
@@ -102,8 +174,15 @@ bool squirrel::write(QString path) {
         for (int i=0; i < experimentList.size(); i++) {
             JSONexperiments.append(experimentList[i].ToJSON());
         }
-        root["experiments"] = JSONexperiments;
+		root["numExperiments"] = JSONexperiments.size();
+		root["experiments"] = JSONexperiments;
     }
+
+	/* write the final .json file */
+	QByteArray j = QJsonDocument(root).toJson();
+	QFile fout(QString("%1/squirrel.json").arg(workingDir));
+	fout.open(QIODevice::WriteOnly);
+	fout.write(j);
 
     return true;
 }
@@ -205,7 +284,7 @@ bool squirrel::removeSubject(QString ID) {
 /* ----- PrintPackage ----------------------------------------- */
 /* ------------------------------------------------------------ */
 /**
- * @brief PrintPackage
+ * @brief squirrel::PrintPackage
  */
 void squirrel::PrintPackage() {
 
@@ -216,4 +295,37 @@ void squirrel::PrintPackage() {
     Print(QString("   Version: %1").arg(version));
     Print(QString("   Format: %1").arg(format));
 
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- MakeTempDir ------------------------------------------ */
+/* ------------------------------------------------------------ */
+/**
+ * @brief squirrel::MakeTempDir
+ * @return
+ */
+bool squirrel::MakeTempDir() {
+	workingDir = QString("/tmp/%1").arg(GenerateRandomString(20));
+	QString m;
+	if (MakePath(workingDir, m))
+		return true;
+	else
+		return false;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- DeleteTempDir ---------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief squirrel::DeleteTempDir
+ * @return
+ */
+bool squirrel::DeleteTempDir() {
+	QString m;
+	if (RemoveDir(workingDir, m))
+		return true;
+	else
+		return false;
 }

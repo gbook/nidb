@@ -79,18 +79,33 @@ QJsonObject series::ToJSON() {
     QJsonObject json;
 
     json["number"] = seriesNum;
-    json["seriesDateTime"] = dateTime.toString();
+	json["seriesDateTime"] = dateTime.toString("yyyy-MM-dd HH:mm:ss");
     json["description"] = description;
     json["protocol"] = protocol;
     json["numFiles"] = numFiles;
     json["size"] = size;
+	json["path"] = virtualPath;
 
     QJsonArray JSONexperiments;
     for (int i=0; i<experimentList.size(); i++) {
-        //QString expName = experimentList[i].experimentName;
-        //JSONexperiments.append();
+		JSONexperiments.append(experimentList[i]);
     }
-    json["Experiments"] = JSONexperiments;
+	if (JSONexperiments.size() > 0)
+		json["Experiments"] = JSONexperiments;
 
     return json;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- ParamsToJSON ----------------------------------------- */
+/* ------------------------------------------------------------ */
+QJsonObject series::ParamsToJSON() {
+	QJsonObject json;
+
+	for(QHash<QString, QString>::iterator a = params.begin(); a != params.end(); ++a) {
+		json[a.key()] = a.value();
+	}
+
+	return json;
 }

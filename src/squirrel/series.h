@@ -39,8 +39,8 @@ class series
 public:
     series();
     void PrintSeries();
-    //bool AddExperiment(experiment *e);
     QJsonObject ToJSON();
+	QJsonObject ParamsToJSON();
 
     /* subject info */
     QString seriesUID; /*!< SeriesInstanceUID */
@@ -55,7 +55,6 @@ public:
 
     QStringList experimentList; /*!< List of experiments attached to this series */
 
-private:
     QString virtualPath; /*!< path within the squirrel package, no leading slash */
 };
 

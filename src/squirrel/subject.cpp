@@ -87,24 +87,24 @@ void subject::PrintSubject() {
 /* ------------------------------------------------------------ */
 /* ----- ToJSON ----------------------------------------------- */
 /* ------------------------------------------------------------ */
-QJsonObject subject::ToJSON() {
+QJsonObject subject::ToJSON(QString path) {
     QJsonObject json;
 
     json["ID"] = ID;
     json["alternateIDs"] = QJsonArray::fromStringList(altUIDs);
     json["GUID"] = GUID;
-    json["dateOfBirth"] = birthdate.toString();
+	json["dateOfBirth"] = birthdate.toString("yyyy-MM-dd");
     json["sex"] = sex;
     json["gender"] = gender;
     json["ethnicity1"] = ethnicity1;
     json["ethnicity2"] = ethnicity2;
+	json["path"] = virtualPath;
 
     QJsonArray JSONstudies;
     for (int i=0; i<studyList.size(); i++) {
         JSONstudies.append(studyList[i].ToJSON());
     }
     json["numStudies"] = JSONstudies.size();
-
     json["studies"] = JSONstudies;
 
     /* add measures */
@@ -113,7 +113,8 @@ QJsonObject subject::ToJSON() {
         for (int i=0; i < measureList.size(); i++) {
             JSONmeasures.append(measureList[i].ToJSON());
         }
-        json["measures"] = JSONmeasures;
+		json["numMeasures"] = JSONmeasures.size();
+		json["measures"] = JSONmeasures;
     }
 
     /* add drugs */
@@ -122,9 +123,9 @@ QJsonObject subject::ToJSON() {
         for (int i=0; i < drugList.size(); i++) {
             JSONdrugs.append(drugList[i].ToJSON());
         }
-        json["drugs"] = JSONdrugs;
+		json["numDrugs"] = JSONdrugs.size();
+		json["drugs"] = JSONdrugs;
     }
-
 
     return json;
 }

@@ -26,6 +26,7 @@
 #include "../nidb/version.h"
 #include "validate.h"
 #include "dicom.h"
+#include "squirrel.h"
 
 int main(int argc, char *argv[])
 {
@@ -42,21 +43,25 @@ int main(int argc, char *argv[])
     p.setOptionsAfterPositionalArgumentsMode(QCommandLineParser::ParseAsOptions);
     p.addHelpOption();
     p.addVersionOption();
-    p.addPositionalArgument("tool", "Available tools:  dicom2squirrel  validate");
+	p.addPositionalArgument("tool", "Available tools:  validate  dicom2squirrel  bids2squirrel  squirrel2bids");
 
     /* command line flag options */
     QCommandLineOption optDebug(QStringList() << "debug", "Enable debugging");
     QCommandLineOption optQuiet(QStringList() << "q" << "quiet", "Dont print headers and checks");
-    p.addOption(optDebug);
+	p.addOption(optDebug);
     p.addOption(optQuiet);
 
     /* command line options that take values */
     QCommandLineOption optDicomDir(QStringList() << "d" << "dicomdir", "Path to directory containing DICOM files", "dicomdir");
 	QCommandLineOption optOutputFile(QStringList() << "o" << "out", "Output file", "out");
 	QCommandLineOption optInputFile(QStringList() << "i" << "in", "Input file", "in");
-    p.addOption(optDicomDir);
+	QCommandLineOption optOutputDataFormat(QStringList() << "output-data-format", "Output data format, if converted from DICOM:\n  anon - Anonymized DICOM\n  nifti4d - Nifti 4D\n  nifti4dgz - Nifti 4D gz (default)\n  nifti3d - Nifti 3D\n  nifti3dgz - Nifti 3D gz", "outputdataformat");
+	QCommandLineOption optOutputDirFormat(QStringList() << "output-dir-format", "Output directory structure\n  seq - Sequentially numbered\n  orig - Original ID (default)", "outputdirformat");
+	p.addOption(optDicomDir);
     p.addOption(optOutputFile);
     p.addOption(optInputFile);
+	p.addOption(optOutputDataFormat);
+	p.addOption(optOutputDirFormat);
 
     /* Process the actual command line arguments given by the user */
     p.process(a);
@@ -73,8 +78,10 @@ int main(int argc, char *argv[])
     QString paramDicomDir = p.value(optDicomDir).trimmed();
     QString paramOutputFile = p.value(optOutputFile).trimmed();
     QString paramInputFile = p.value(optInputFile).trimmed();
+	QString paramOutputDataFormat = p.value(optOutputDataFormat).trimmed();
+	QString paramOutputDirFormat = p.value(optOutputDirFormat).trimmed();
 
-    QStringList tools = { "dicom2squirrel", "validate" };
+	QStringList tools = { "dicom2squirrel", "validate", "bids2squirrel", "squirrel2bids" };
 
     /* now check the command line parameters passed in, to see if they are calling a valid module */
     if (!tools.contains(tool)) {
@@ -92,7 +99,7 @@ int main(int argc, char *argv[])
     Print(QString("|\n|  Current working directory is %1").arg(bindir));
     Print("+----------------------------------------------------+\n");
 
-	/* ----- check the tool to run ----- */
+	/* ---------- Run the validate tool ---------- */
     if (tool == "validate") {
         if (paramInputFile.trimmed() == "") {
             Print("*** Input file blank ***");
@@ -114,22 +121,37 @@ int main(int argc, char *argv[])
             delete v;
         }
     }
-    else if (tool == "dicom2squirrel") {
-        /* 1) load DICOM directory into subject/study/series objects
-         * based on PatientID (subject) StudyUID (study) SeriesUID (series)
-         *
-         * 2) write squirrel using the loaded information
-         */
-        dicom *dcm = new dicom();
-		QString m;
-		dcm->ReadDirectory(paramDicomDir, bindir, m);
+	/* ---------- Run the dicom2squirrel tool ---------- */
+	else if (tool == "dicom2squirrel") {
 
-        delete dcm;
-    }
-    else if (tool == "bids2squirrel") {
+		/* check if the outfile's parent directory exists */
+		QFileInfo outinfo(paramOutputFile);
+		QDir outdir = outinfo.absolutePath();
+		if (!outdir.exists()) {
+			Print(QString("Output directory [%1] does not exist").arg(outdir.absolutePath()));
+		}
+		else {
+			dicom *dcm = new dicom();
+			squirrel *sqrl = new squirrel();
+
+			/* 1) load the DICOM data to a squirrel object */
+			QString m;
+			dcm->LoadToSquirrel(paramDicomDir, bindir, sqrl, m);
+
+			/* 2) write the squirrel file */
+			sqrl->write(paramOutputFile, paramOutputDataFormat, paramOutputDirFormat);
+
+			delete dcm;
+			delete sqrl;
+		}
 
     }
-    else if (tool == "squirrel2bids") {
+	/* ---------- Run the bids2squirrel tool ---------- */
+	else if (tool == "bids2squirrel") {
+
+    }
+	/* ---------- Run the squirrel2bids tool ---------- */
+	else if (tool == "squirrel2bids") {
 
     }
 

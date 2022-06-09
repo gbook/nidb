@@ -1049,3 +1049,40 @@ double GetPatientAge(QString PatientAgeStr, QString StudyDate, QString PatientBi
 
     return PatientAge;
 }
+
+
+/* ---------------------------------------------------------- */
+/* --------- DirectoryExists -------------------------------- */
+/* ---------------------------------------------------------- */
+bool DirectoryExists(QString dir) {
+	QFile d(dir);
+	if (d.exists())
+		return true;
+	else
+		return false;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- FileExists ------------------------------------- */
+/* ---------------------------------------------------------- */
+bool FileExists(QString f) {
+	QFile file(f);
+	if (file.exists())
+		return true;
+	else
+		return false;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- FileDirectoryExists ---------------------------- */
+/* ---------------------------------------------------------- */
+bool FileDirectoryExists(QString f) {
+	QFileInfo info(f);
+	QDir d(info.absoluteDir());
+	if (d.exists())
+		return true;
+	else
+		return false;
+}

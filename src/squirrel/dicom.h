@@ -33,11 +33,11 @@ class dicom
 public:
     dicom();
 
-    bool ReadDirectory(QString dir, QString binpath, QString &m);
+	bool LoadToSquirrel(QString dir, QString binpath, squirrel *sqrl, QString &msg);
 
     qint64 NumFiles() { return numFiles; }
 
-    squirrel *sqrl;
+	//squirrel *sqrl;
 
 private:
     qint64 numFiles;
