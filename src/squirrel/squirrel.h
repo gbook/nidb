@@ -43,20 +43,20 @@ class squirrel
 public:
     squirrel();
 
-    bool read(QString filename);
-	bool write(QString path, QString dataFormat, QString dirFormat);
+	bool read(QString filename);
+	bool write(QString outpath, QString dataFormat, QString dirFormat);
     bool validate();
     void print();
 
     bool addSubject(subject subj);
     bool removeSubject(QString ID);
 
-    /* data */
-    QDateTime datetime;
-    QString description;
-    QString name;
-    QString version;
-    QString format;
+	/* package data */
+	QDateTime datetime; /*!< datetime the package was created */
+	QString description; /*!< detailed description of the package */
+	QString name; /*!< name of the package */
+	QString version; /*!< squirrel version */
+	QString format; /*!< package format, most likely 'squirrel' */
 
 private:
     void PrintPackage();

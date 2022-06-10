@@ -43,9 +43,9 @@ squirrel::squirrel()
 /* ----- read ------------------------------------------------- */
 /* ------------------------------------------------------------ */
 /**
- * @brief squirrel::read
- * @param filename
- * @return
+ * @brief squirrel::read Reads a squirrel package
+ * @param filename Full filepath of the package to read
+ * @return true if package was successfully read, false otherwise
  */
 bool squirrel::read(QString filename) {
 
@@ -57,14 +57,26 @@ bool squirrel::read(QString filename) {
 /* ----- write ------------------------------------------------ */
 /* ------------------------------------------------------------ */
 /**
- * @brief squirrel::write
- * @param path
- * @return
+ * @brief squirrel::write Writes a squirrel package using stored information
+ * @param outpath full path to the output squirrel .zip file
+ * @param dataFormat if converting from DICOM, write the data in the specified format
+ *                   - 'orig' - Perform no conversion of DICOM images (not recommended as it retains PHI)
+ *                   - 'anon' - Anonymize the DICOM files (light anonymization: remove PHI, but not ID or dates)
+ *                   - 'nifti4d' - Nifti 4D
+ *                   - 'nifti4dgz' - Nifti 4D gzip [default]
+ *                   - 'nidti3d' - Nifti 3D
+ *                   - 'nifti3dgz' - Nifti 3D gzip
+ * @param dirFormat directory structure of the subject data
+ *                  - 'orig' - Use the subjectID for subject directory names, studyNum for study directories, and seriesNum for series directories
+ *                  - 'seq' - Use sequentially generated numbers for subject, study, series directories. These will be arbitrary
+ * @return true if package was successfully written, false otherwise
  */
-bool squirrel::write(QString path, QString dataFormat, QString dirFormat) {
+bool squirrel::write(QString outpath, QString dataFormat, QString dirFormat) {
 
 	if (dirFormat == "")
 		dirFormat = "orig";
+	if (dataFormat == "")
+		dataFormat == "nifti4dgz";
 
 	/* create temp directory */
 	MakeTempDir();
@@ -184,6 +196,31 @@ bool squirrel::write(QString path, QString dataFormat, QString dirFormat) {
 	fout.open(QIODevice::WriteOnly);
 	fout.write(j);
 
+	/* zip the temp directory into the output file */
+	QString zipfile = outpath;
+	if (!zipfile.endsWith(".zip"))
+		zipfile += ".zip";
+
+	QString systemstring = "cd " + workingDir + "; zip -1rv " + zipfile + " .";
+	Print("Beginning zipping package...");
+	Print(SystemCommand(systemstring, true));
+	Print("Finished zipping package...");
+
+	if (FileExists(zipfile)) {
+		Print("Created .zip file [" + zipfile + "]");
+
+		/* delete the tmp dir, if it exists */
+		if (DirectoryExists(workingDir)) {
+			Print("Temporary export dir [" + workingDir + "] exists and will be deleted");
+			QString m;
+			if (!RemoveDir(workingDir, m))
+				Print("Error [" + m + "] removing directory [" + workingDir + "]");
+		}
+	}
+	else {
+		Print("Error creating zip file [" + zipfile + "]");
+	}
+
     return true;
 }
 
@@ -193,7 +230,7 @@ bool squirrel::write(QString path, QString dataFormat, QString dirFormat) {
 /* ------------------------------------------------------------ */
 /**
  * @brief squirrel::validate
- * @return
+ * @return true if valid squirrel file, false otherwise
  */
 bool squirrel::validate() {
 
