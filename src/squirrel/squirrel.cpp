@@ -47,9 +47,46 @@ squirrel::squirrel()
  * @param filename Full filepath of the package to read
  * @return true if package was successfully read, false otherwise
  */
-bool squirrel::read(QString filename) {
+bool squirrel::read(QString filepath, bool validateOnly) {
 
-	Print("Reading " + filename);
+    if (validateOnly)
+        Print("Validating " + filepath);
+    else
+        Print("Reading " + filepath);
+
+    /* check if file exists */
+    if (!FileExists(filepath)) {
+        Print("File " + filepath + " does not exist");
+        return false;
+    }
+
+    /* get listing of the zip the file, check if the squirrel.json exists in the root */
+    QString systemstring;
+    systemstring = "unzip -l " + filepath;
+    QString output = SystemCommand(systemstring, false);
+    if (!output.contains("squirrel.json")) {
+        Print("File " + filepath + " does not appear to be a squirrel package");
+        return false;
+    }
+
+    /* create a working directory */
+    MakeTempDir();
+
+    /* unzip the .zip to the working dir */
+    systemstring = QString("unzip " + filepath + " -d " + workingDir);
+    Print(SystemCommand(systemstring, false));
+
+    /* perform all checks */
+
+    /* delete the tmp dir, if it exists */
+    if (validateOnly) {
+        if (DirectoryExists(workingDir)) {
+            Print("Temporary export dir [" + workingDir + "] exists and will be deleted");
+            QString m;
+            if (!RemoveDir(workingDir, m))
+                Print("Error [" + m + "] removing directory [" + workingDir + "]");
+        }
+    }
 
     return true;
 }
@@ -75,83 +112,83 @@ bool squirrel::read(QString filename) {
  */
 bool squirrel::write(QString outpath, QString dataFormat, QString dirFormat, bool debug) {
 
-	if (dirFormat == "")
-		dirFormat = "orig";
-	if (dataFormat == "")
-		dataFormat = "nifti4dgz";
+    if (dirFormat == "")
+        dirFormat = "orig";
+    if (dataFormat == "")
+        dataFormat = "nifti4dgz";
 
-	/* create temp directory */
-	MakeTempDir();
+    /* create temp directory */
+    MakeTempDir();
 
-	/* ----- 1) write data. And set the relative paths in the objects ----- */
-	/* iterate through subjects */
-	for (int i=0; i < subjectList.size(); i++) {
+    /* ----- 1) write data. And set the relative paths in the objects ----- */
+    /* iterate through subjects */
+    for (int i=0; i < subjectList.size(); i++) {
 
-		subject sub = subjectList[i];
+        subject sub = subjectList[i];
 
-		QString subjDir;
-		if (dirFormat == "orig")
-			subjDir = sub.ID;
-		else
-			subjDir = QString("%1").arg(i);
+        QString subjDir;
+        if (dirFormat == "orig")
+            subjDir = sub.ID;
+        else
+            subjDir = QString("%1").arg(i);
 
-		subjDir.replace(QRegularExpression("[^a-zA-Z0-9 _-]", QRegularExpression::CaseInsensitiveOption), "");
-		QString vPath = QString("data/%1").arg(subjDir);
-		subjectList[i].virtualPath = vPath;
+        subjDir.replace(QRegularExpression("[^a-zA-Z0-9 _-]", QRegularExpression::CaseInsensitiveOption), "");
+        QString vPath = QString("data/%1").arg(subjDir);
+        subjectList[i].virtualPath = vPath;
 
-		/* iterate through studies */
-		for (int j=0; j < sub.studyList.size(); j++) {
+        /* iterate through studies */
+        for (int j=0; j < sub.studyList.size(); j++) {
 
-			study stud = sub.studyList[j];
+            study stud = sub.studyList[j];
 
-			QString studyDir;
-			if (dirFormat == "orig")
-				studyDir = QString("%1").arg(stud.studyNum);
-			else
-				studyDir = QString("%1").arg(j);
+            QString studyDir;
+            if (dirFormat == "orig")
+                studyDir = QString("%1").arg(stud.studyNum);
+            else
+                studyDir = QString("%1").arg(j);
 
-			studyDir.replace(QRegularExpression("[^a-zA-Z0-9 _-]", QRegularExpression::CaseInsensitiveOption), "");
-			QString vPath = QString("data/%1/%2").arg(subjDir).arg(studyDir);
-			subjectList[i].studyList[j].virtualPath = vPath;
+            studyDir.replace(QRegularExpression("[^a-zA-Z0-9 _-]", QRegularExpression::CaseInsensitiveOption), "");
+            QString vPath = QString("data/%1/%2").arg(subjDir).arg(studyDir);
+            subjectList[i].studyList[j].virtualPath = vPath;
 
-			/* iterate through series */
-			for (int k=0; k < stud.seriesList.size(); k++) {
+            /* iterate through series */
+            for (int k=0; k < stud.seriesList.size(); k++) {
 
-				series ser = stud.seriesList[k];
+                series ser = stud.seriesList[k];
 
-				QString seriesDir;
-				if (dirFormat == "orig")
-					seriesDir = ser.seriesNum;
-				else
-					seriesDir = QString("%1").arg(k);
+                QString seriesDir;
+                if (dirFormat == "orig")
+                    seriesDir = ser.seriesNum;
+                else
+                    seriesDir = QString("%1").arg(k);
 
-				seriesDir.replace(QRegularExpression("[^a-zA-Z0-9 _-]", QRegularExpression::CaseInsensitiveOption), "");
-				QString vPath = QString("data/%1/%2/%3").arg(subjDir).arg(studyDir).arg(seriesDir);
-				subjectList[i].studyList[j].seriesList[k].virtualPath = vPath;
+                seriesDir.replace(QRegularExpression("[^a-zA-Z0-9 _-]", QRegularExpression::CaseInsensitiveOption), "");
+                QString vPath = QString("data/%1/%2/%3").arg(subjDir).arg(studyDir).arg(seriesDir);
+                subjectList[i].studyList[j].seriesList[k].virtualPath = vPath;
 
-				QString m;
-				QString seriesPath = QString("%1/%2").arg(workingDir).arg(subjectList[i].studyList[j].seriesList[k].virtualPath);
-				MakePath(seriesPath,m);
+                QString m;
+                QString seriesPath = QString("%1/%2").arg(workingDir).arg(subjectList[i].studyList[j].seriesList[k].virtualPath);
+                MakePath(seriesPath,m);
 
-				/* copy all of the series files to the temp directory */
-				foreach (QString f, ser.files) {
-					QString systemstring = QString("cp -uv %1 %2/%3").arg(f).arg(workingDir).arg(subjectList[i].studyList[j].seriesList[k].virtualPath);
-					SystemCommand(systemstring);
-				}
+                /* copy all of the series files to the temp directory */
+                foreach (QString f, ser.files) {
+                    QString systemstring = QString("cp -uv %1 %2/%3").arg(f).arg(workingDir).arg(subjectList[i].studyList[j].seriesList[k].virtualPath);
+                    SystemCommand(systemstring);
+                }
 
-				/* write the series .json file, containing the dicom header params */
-				QJsonObject params;
-				params = ser.ParamsToJSON();
-				QByteArray j = QJsonDocument(params).toJson();
-				QFile fout(QString("%1/params.json").arg(seriesPath));
-				fout.open(QIODevice::WriteOnly);
-				fout.write(j);
-			}
-		}
-	}
+                /* write the series .json file, containing the dicom header params */
+                QJsonObject params;
+                params = ser.ParamsToJSON();
+                QByteArray j = QJsonDocument(params).toJson();
+                QFile fout(QString("%1/params.json").arg(seriesPath));
+                fout.open(QIODevice::WriteOnly);
+                fout.write(j);
+            }
+        }
+    }
 
-	/* ----- 2) write .json file ----- */
-	/* create JSON object */
+    /* ----- 2) write .json file ----- */
+    /* create JSON object */
     QJsonObject root;
 
     QJsonObject pkgInfo;
@@ -167,19 +204,19 @@ bool squirrel::write(QString outpath, QString dataFormat, QString dirFormat, boo
 
     /* add subjects */
     for (int i=0; i < subjectList.size(); i++) {
-		JSONsubjects.append(subjectList[i].ToJSON());
+        JSONsubjects.append(subjectList[i].ToJSON());
     }
-	root["numSubjects"] = JSONsubjects.size();
-	root["subjects"] = JSONsubjects;
+    root["numSubjects"] = JSONsubjects.size();
+    root["subjects"] = JSONsubjects;
 
     /* add pipelines */
     if (pipelineList.size() > 0) {
         QJsonArray JSONpipelines;
         for (int i=0; i < pipelineList.size(); i++) {
-			JSONpipelines.append(pipelineList[i].ToJSON(workingDir));
+            JSONpipelines.append(pipelineList[i].ToJSON(workingDir));
         }
-		root["numPipelines"] = JSONpipelines.size();
-		root["pipelines"] = JSONpipelines;
+        root["numPipelines"] = JSONpipelines.size();
+        root["pipelines"] = JSONpipelines;
     }
 
     /* add experiments */
@@ -188,45 +225,45 @@ bool squirrel::write(QString outpath, QString dataFormat, QString dirFormat, boo
         for (int i=0; i < experimentList.size(); i++) {
             JSONexperiments.append(experimentList[i].ToJSON());
         }
-		root["numExperiments"] = JSONexperiments.size();
-		root["experiments"] = JSONexperiments;
+        root["numExperiments"] = JSONexperiments.size();
+        root["experiments"] = JSONexperiments;
     }
 
-	/* write the final .json file */
-	QByteArray j = QJsonDocument(root).toJson();
-	QFile fout(QString("%1/squirrel.json").arg(workingDir));
-	fout.open(QIODevice::WriteOnly);
-	fout.write(j);
-	fout.close();
+    /* write the final .json file */
+    QByteArray j = QJsonDocument(root).toJson();
+    QFile fout(QString("%1/squirrel.json").arg(workingDir));
+    fout.open(QIODevice::WriteOnly);
+    fout.write(j);
+    fout.close();
 
-	/* zip the temp directory into the output file */
-	QString zipfile = outpath;
-	if (!zipfile.endsWith(".zip"))
-		zipfile += ".zip";
+    /* zip the temp directory into the output file */
+    QString zipfile = outpath;
+    if (!zipfile.endsWith(".zip"))
+        zipfile += ".zip";
 
-	QString systemstring = "cd " + workingDir + "; zip -1rv " + zipfile + " .";
-	Print("Beginning zipping package...");
-	if (debug)
-		Print(SystemCommand(systemstring));
-	else
-		SystemCommand(systemstring, false);
+    QString systemstring = "cd " + workingDir + "; zip -1rv " + zipfile + " .";
+    Print("Beginning zipping package...");
+    if (debug)
+        Print(SystemCommand(systemstring));
+    else
+        SystemCommand(systemstring, false);
 
-	Print("Finished zipping package...");
+    Print("Finished zipping package...");
 
-	if (FileExists(zipfile)) {
-		Print("Created .zip file [" + zipfile + "]");
+    if (FileExists(zipfile)) {
+        Print("Created .zip file [" + zipfile + "]");
 
-		/* delete the tmp dir, if it exists */
-		if (DirectoryExists(workingDir)) {
-			Print("Temporary export dir [" + workingDir + "] exists and will be deleted");
-			QString m;
-			if (!RemoveDir(workingDir, m))
-				Print("Error [" + m + "] removing directory [" + workingDir + "]");
-		}
-	}
-	else {
-		Print("Error creating zip file [" + zipfile + "]");
-	}
+        /* delete the tmp dir, if it exists */
+        if (DirectoryExists(workingDir)) {
+            Print("Temporary export dir [" + workingDir + "] exists and will be deleted");
+            QString m;
+            if (!RemoveDir(workingDir, m))
+                Print("Error [" + m + "] removing directory [" + workingDir + "]");
+        }
+    }
+    else {
+        Print("Error creating zip file [" + zipfile + "]");
+    }
 
     return true;
 }
@@ -350,12 +387,12 @@ void squirrel::PrintPackage() {
  * @return
  */
 bool squirrel::MakeTempDir() {
-	workingDir = QString("/tmp/%1").arg(GenerateRandomString(20));
-	QString m;
-	if (MakePath(workingDir, m))
-		return true;
-	else
-		return false;
+    workingDir = QString("/tmp/%1").arg(GenerateRandomString(20));
+    QString m;
+    if (MakePath(workingDir, m))
+        return true;
+    else
+        return false;
 }
 
 
@@ -367,9 +404,9 @@ bool squirrel::MakeTempDir() {
  * @return
  */
 bool squirrel::DeleteTempDir() {
-	QString m;
-	if (RemoveDir(workingDir, m))
-		return true;
-	else
-		return false;
+    QString m;
+    if (RemoveDir(workingDir, m))
+        return true;
+    else
+        return false;
 }
