@@ -43,7 +43,7 @@ public:
 
     bool addStudy(study s);
     void PrintSubject();
-	QJsonObject ToJSON(QString path);
+	QJsonObject ToJSON();
 
     /* subject info */
     QString ID; /*!< Unique identifier. Must be unique within the squirrel package */

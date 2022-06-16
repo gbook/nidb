@@ -46,18 +46,18 @@ int main(int argc, char *argv[])
 	p.addPositionalArgument("tool", "Available tools:  validate  dicom2squirrel  bids2squirrel  squirrel2bids");
 
     /* command line flag options */
-    QCommandLineOption optDebug(QStringList() << "debug", "Enable debugging");
+	QCommandLineOption optDebug(QStringList() << "d" << "debug", "Enable debugging");
     QCommandLineOption optQuiet(QStringList() << "q" << "quiet", "Dont print headers and checks");
 	p.addOption(optDebug);
     p.addOption(optQuiet);
 
     /* command line options that take values */
-    QCommandLineOption optDicomDir(QStringList() << "d" << "dicomdir", "Path to directory containing DICOM files", "dicomdir");
+	//QCommandLineOption optDicomDir(QStringList() << "d" << "dicomdir", "Path to directory containing DICOM files", "dicomdir");
 	QCommandLineOption optOutputFile(QStringList() << "o" << "out", "Output file", "out");
-	QCommandLineOption optInputFile(QStringList() << "i" << "in", "Input file", "in");
+	QCommandLineOption optInputFile(QStringList() << "i" << "in", "Input file/directory", "in");
 	QCommandLineOption optOutputDataFormat(QStringList() << "output-data-format", "Output data format, if converted from DICOM:\n  anon - Anonymized DICOM\n  nifti4d - Nifti 4D\n  nifti4dgz - Nifti 4D gz (default)\n  nifti3d - Nifti 3D\n  nifti3dgz - Nifti 3D gz", "outputdataformat");
 	QCommandLineOption optOutputDirFormat(QStringList() << "output-dir-format", "Output directory structure\n  seq - Sequentially numbered\n  orig - Original ID (default)", "outputdirformat");
-	p.addOption(optDicomDir);
+	//p.addOption(optDicomDir);
     p.addOption(optOutputFile);
     p.addOption(optInputFile);
 	p.addOption(optOutputDataFormat);
@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
 
     debug = p.isSet(optDebug);
     quiet = p.isSet(optQuiet);
-    QString paramDicomDir = p.value(optDicomDir).trimmed();
+	//QString paramDicomDir = p.value(optDicomDir).trimmed();
     QString paramOutputFile = p.value(optOutputFile).trimmed();
     QString paramInputFile = p.value(optInputFile).trimmed();
 	QString paramOutputDataFormat = p.value(optOutputDataFormat).trimmed();
@@ -94,10 +94,12 @@ int main(int argc, char *argv[])
 
 	QString bindir = QDir::currentPath();
 
-    Print("+----------------------------------------------------+");
-    Print(QString("|  Squirrel utils version %1.%2\n|\n|  Build date [%3 %4]\n|  C++ [%5]\n|  Qt compiled [%6]\n|  Qt runtime [%7]\n|  Build system [%8]" ).arg(SQUIRREL_VERSION_MAJ).arg(SQUIRREL_VERSION_MIN).arg(__DATE__).arg(__TIME__).arg(__cplusplus).arg(QT_VERSION_STR).arg(qVersion()).arg(QSysInfo::buildAbi()));
-    Print(QString("|\n|  Current working directory is %1").arg(bindir));
-    Print("+----------------------------------------------------+\n");
+	if (!quiet) {
+		Print("+----------------------------------------------------+");
+		Print(QString("|  Squirrel utils version %1.%2\n|\n|  Build date [%3 %4]\n|  C++ [%5]\n|  Qt compiled [%6]\n|  Qt runtime [%7]\n|  Build system [%8]" ).arg(SQUIRREL_VERSION_MAJ).arg(SQUIRREL_VERSION_MIN).arg(__DATE__).arg(__TIME__).arg(__cplusplus).arg(QT_VERSION_STR).arg(qVersion()).arg(QSysInfo::buildAbi()));
+		Print(QString("|\n|  Current working directory is %1").arg(bindir));
+		Print("+----------------------------------------------------+\n");
+	}
 
 	/* ---------- Run the validate tool ---------- */
     if (tool == "validate") {
@@ -136,10 +138,10 @@ int main(int argc, char *argv[])
 
 			/* 1) load the DICOM data to a squirrel object */
 			QString m;
-			dcm->LoadToSquirrel(paramDicomDir, bindir, sqrl, m);
+			dcm->LoadToSquirrel(paramInputFile, bindir, sqrl, m);
 
 			/* 2) write the squirrel file */
-			sqrl->write(paramOutputFile, paramOutputDataFormat, paramOutputDirFormat);
+			sqrl->write(paramOutputFile, paramOutputDataFormat, paramOutputDirFormat, debug);
 
 			delete dcm;
 			delete sqrl;

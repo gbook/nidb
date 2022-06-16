@@ -49,6 +49,8 @@ squirrel::squirrel()
  */
 bool squirrel::read(QString filename) {
 
+	Print("Reading " + filename);
+
     return true;
 }
 
@@ -71,12 +73,12 @@ bool squirrel::read(QString filename) {
  *                  - 'seq' - Use sequentially generated numbers for subject, study, series directories. These will be arbitrary
  * @return true if package was successfully written, false otherwise
  */
-bool squirrel::write(QString outpath, QString dataFormat, QString dirFormat) {
+bool squirrel::write(QString outpath, QString dataFormat, QString dirFormat, bool debug) {
 
 	if (dirFormat == "")
 		dirFormat = "orig";
 	if (dataFormat == "")
-		dataFormat == "nifti4dgz";
+		dataFormat = "nifti4dgz";
 
 	/* create temp directory */
 	MakeTempDir();
@@ -134,7 +136,7 @@ bool squirrel::write(QString outpath, QString dataFormat, QString dirFormat) {
 				/* copy all of the series files to the temp directory */
 				foreach (QString f, ser.files) {
 					QString systemstring = QString("cp -uv %1 %2/%3").arg(f).arg(workingDir).arg(subjectList[i].studyList[j].seriesList[k].virtualPath);
-					Print(SystemCommand(systemstring));
+					SystemCommand(systemstring);
 				}
 
 				/* write the series .json file, containing the dicom header params */
@@ -165,7 +167,7 @@ bool squirrel::write(QString outpath, QString dataFormat, QString dirFormat) {
 
     /* add subjects */
     for (int i=0; i < subjectList.size(); i++) {
-		JSONsubjects.append(subjectList[i].ToJSON(workingDir));
+		JSONsubjects.append(subjectList[i].ToJSON());
     }
 	root["numSubjects"] = JSONsubjects.size();
 	root["subjects"] = JSONsubjects;
@@ -195,6 +197,7 @@ bool squirrel::write(QString outpath, QString dataFormat, QString dirFormat) {
 	QFile fout(QString("%1/squirrel.json").arg(workingDir));
 	fout.open(QIODevice::WriteOnly);
 	fout.write(j);
+	fout.close();
 
 	/* zip the temp directory into the output file */
 	QString zipfile = outpath;
@@ -203,7 +206,11 @@ bool squirrel::write(QString outpath, QString dataFormat, QString dirFormat) {
 
 	QString systemstring = "cd " + workingDir + "; zip -1rv " + zipfile + " .";
 	Print("Beginning zipping package...");
-	Print(SystemCommand(systemstring, true));
+	if (debug)
+		Print(SystemCommand(systemstring));
+	else
+		SystemCommand(systemstring, false);
+
 	Print("Finished zipping package...");
 
 	if (FileExists(zipfile)) {

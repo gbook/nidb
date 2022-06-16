@@ -44,7 +44,7 @@ public:
     squirrel();
 
 	bool read(QString filename);
-	bool write(QString outpath, QString dataFormat, QString dirFormat);
+	bool write(QString outpath, QString dataFormat, QString dirFormat, bool debug=false);
     bool validate();
     void print();
 

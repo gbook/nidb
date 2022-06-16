@@ -45,6 +45,7 @@ dicom::dicom()
 bool dicom::LoadToSquirrel(QString dir, QString binpath, squirrel *sqrl, QString &msg) {
 
     numFiles = 0;
+	msg += "";
 
     /* check if the directory exists */
     QDir d(dir);

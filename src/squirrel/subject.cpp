@@ -87,7 +87,7 @@ void subject::PrintSubject() {
 /* ------------------------------------------------------------ */
 /* ----- ToJSON ----------------------------------------------- */
 /* ------------------------------------------------------------ */
-QJsonObject subject::ToJSON(QString path) {
+QJsonObject subject::ToJSON() {
     QJsonObject json;
 
     json["ID"] = ID;
