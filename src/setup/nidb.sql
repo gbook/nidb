@@ -1,10 +1,10 @@
 -- phpMyAdmin SQL Dump
--- version 5.1.2
+-- version 5.2.0
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: May 03, 2022 at 04:45 PM
--- Server version: 10.3.28-MariaDB
+-- Generation Time: Jun 21, 2022 at 02:36 PM
+-- Server version: 10.3.32-MariaDB
 -- PHP Version: 7.2.24
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -672,7 +672,7 @@ CREATE TABLE `cr_series` (
   `series_datetime` datetime DEFAULT NULL,
   `series_protocol` varchar(255) DEFAULT NULL,
   `series_numfiles` int(11) DEFAULT 0 COMMENT 'total number of files',
-  `series_size` double DEFAULT NULL COMMENT 'size of all the files',
+  `series_size` double DEFAULT 0 COMMENT 'size of all the files',
   `series_notes` longtext DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `series_status` varchar(50) DEFAULT NULL,
@@ -2165,13 +2165,13 @@ CREATE TABLE `pipeline_groups` (
 
 CREATE TABLE `pipeline_history` (
   `pipelinehistory_id` bigint(20) NOT NULL,
-  `run_num` bigint(20) NOT NULL,
+  `run_num` bigint(20) DEFAULT NULL,
   `pipeline_id` int(11) NOT NULL,
-  `pipeline_version` int(11) NOT NULL,
-  `analysis_id` bigint(11) NOT NULL,
-  `pipeline_event` enum('pipeline_started','error_noqueue','error_nosubmithost','getdatasteps','getpipelinesteps','getstudylist','maxjobs_reached','analysis_exists','analysis_runsupplement','analysis_rerunresults','analysis_checkdependency','analysis_getdata','analysis_createdir','analysis_oktosubmit','analysis_copyparent','analysis_errorcreatepath','submit_analysis','error_submitanalysis','pipeline_disabled','pipeline_finished','error_nodatasteps','error_nopipelinesteps') NOT NULL,
+  `pipeline_version` int(11) DEFAULT NULL,
+  `analysis_id` bigint(11) DEFAULT NULL,
+  `pipeline_event` enum('pipeline_started','error_noqueue','error_nosubmithost','getdatasteps','getpipelinesteps','getstudylist','maxjobs_reached','analysis_exists','analysis_runsupplement','analysis_rerunresults','analysis_checkdependency','analysis_getdata','analysis_createdir','analysis_oktosubmit','analysis_copyparent','analysis_errorcreatepath','submit_analysis','error_submitanalysis','pipeline_disabled','pipeline_finished','error_nodatasteps','error_nopipelinesteps') DEFAULT NULL,
   `event_datetime` timestamp NOT NULL DEFAULT current_timestamp(),
-  `event_message` longtext NOT NULL
+  `event_message` longtext DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
@@ -2275,15 +2275,15 @@ CREATE TABLE `pipeline_version` (
 CREATE TABLE `ppi_series` (
   `ppiseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
-  `series_num` int(11) NOT NULL,
-  `series_desc` varchar(255) NOT NULL,
-  `series_datetime` datetime NOT NULL,
-  `series_protocol` varchar(255) NOT NULL,
-  `series_numfiles` int(11) NOT NULL COMMENT 'total number of files',
-  `series_size` double NOT NULL COMMENT 'size of all the files',
-  `series_notes` varchar(255) NOT NULL,
-  `series_createdby` varchar(50) NOT NULL,
-  `ishidden` tinyint(1) NOT NULL,
+  `series_num` int(11) DEFAULT NULL,
+  `series_desc` varchar(255) DEFAULT NULL,
+  `series_datetime` datetime DEFAULT NULL,
+  `series_protocol` varchar(255) DEFAULT NULL,
+  `series_numfiles` int(11) NOT NULL DEFAULT 0 COMMENT 'total number of files',
+  `series_size` double NOT NULL DEFAULT 0 COMMENT 'size of all the files',
+  `series_notes` varchar(255) DEFAULT NULL,
+  `series_createdby` varchar(50) DEFAULT NULL,
+  `ishidden` tinyint(1) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `series_duration` bigint(20) DEFAULT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8;
@@ -2442,15 +2442,15 @@ CREATE TABLE `protocol_mapping` (
 CREATE TABLE `pr_series` (
   `prseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
-  `series_num` int(11) NOT NULL,
-  `series_desc` varchar(255) NOT NULL,
-  `series_datetime` datetime NOT NULL,
-  `series_protocol` varchar(255) NOT NULL,
-  `series_numfiles` int(11) NOT NULL COMMENT 'total number of files',
-  `series_size` double NOT NULL COMMENT 'size of all the files',
-  `series_notes` longtext NOT NULL,
-  `series_createdby` varchar(50) NOT NULL,
-  `ishidden` tinyint(1) NOT NULL,
+  `series_num` int(11) DEFAULT NULL,
+  `series_desc` varchar(255) DEFAULT NULL,
+  `series_datetime` datetime DEFAULT NULL,
+  `series_protocol` varchar(255) DEFAULT NULL,
+  `series_numfiles` int(11) NOT NULL DEFAULT 0 COMMENT 'total number of files',
+  `series_size` double NOT NULL DEFAULT 0 COMMENT 'size of all the files',
+  `series_notes` longtext DEFAULT NULL,
+  `series_createdby` varchar(50) DEFAULT NULL,
+  `ishidden` tinyint(1) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `series_duration` bigint(20) DEFAULT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8;
@@ -2783,15 +2783,15 @@ CREATE TABLE `snp_alleles` (
 CREATE TABLE `snp_series` (
   `snpseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
-  `series_num` int(11) NOT NULL,
-  `series_desc` varchar(255) NOT NULL,
-  `series_protocol` varchar(255) NOT NULL,
-  `series_datetime` datetime NOT NULL,
-  `series_numfiles` int(11) NOT NULL COMMENT 'total number of files',
-  `series_size` double NOT NULL COMMENT 'size of all the files',
-  `series_notes` mediumtext NOT NULL,
-  `series_createdby` varchar(50) NOT NULL,
-  `ishidden` tinyint(1) NOT NULL,
+  `series_num` int(11) DEFAULT NULL,
+  `series_desc` varchar(255) DEFAULT NULL,
+  `series_protocol` varchar(255) DEFAULT NULL,
+  `series_datetime` datetime DEFAULT NULL,
+  `series_numfiles` int(11) NOT NULL DEFAULT 0 COMMENT 'total number of files',
+  `series_size` double NOT NULL DEFAULT 0 COMMENT 'size of all the files',
+  `series_notes` mediumtext DEFAULT NULL,
+  `series_createdby` varchar(50) DEFAULT NULL,
+  `ishidden` tinyint(1) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=Aria DEFAULT CHARSET=utf8;
 
@@ -2804,15 +2804,15 @@ CREATE TABLE `snp_series` (
 CREATE TABLE `sr_series` (
   `srseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
-  `series_num` int(11) NOT NULL,
-  `series_desc` varchar(255) NOT NULL,
-  `series_datetime` datetime NOT NULL,
-  `series_protocol` varchar(255) NOT NULL,
-  `numfiles` int(11) NOT NULL COMMENT 'total number of files',
-  `series_size` double NOT NULL COMMENT 'size of all the files',
-  `series_notes` mediumtext NOT NULL,
-  `series_createdby` varchar(50) NOT NULL,
-  `ishidden` tinyint(1) NOT NULL,
+  `series_num` int(11) DEFAULT NULL,
+  `series_desc` varchar(255) DEFAULT NULL,
+  `series_datetime` datetime DEFAULT NULL,
+  `series_protocol` varchar(255) DEFAULT NULL,
+  `numfiles` int(11) NOT NULL DEFAULT 0 COMMENT 'total number of files',
+  `series_size` double NOT NULL DEFAULT 0 COMMENT 'size of all the files',
+  `series_notes` mediumtext DEFAULT NULL,
+  `series_createdby` varchar(50) DEFAULT NULL,
+  `ishidden` tinyint(1) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `series_duration` bigint(20) DEFAULT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8;
@@ -2974,14 +2974,14 @@ CREATE TABLE `subject_relation` (
 CREATE TABLE `surgery_series` (
   `surgeryseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
-  `series_num` int(11) NOT NULL,
-  `series_desc` varchar(255) NOT NULL,
-  `series_datetime` datetime NOT NULL,
-  `series_protocol` varchar(255) NOT NULL,
-  `series_numfiles` int(11) NOT NULL COMMENT 'total number of files',
-  `series_size` double NOT NULL COMMENT 'size of all the files',
-  `series_notes` mediumtext NOT NULL,
-  `series_createdby` varchar(50) NOT NULL,
+  `series_num` int(11) DEFAULT NULL,
+  `series_desc` varchar(255) DEFAULT NULL,
+  `series_datetime` datetime DEFAULT NULL,
+  `series_protocol` varchar(255) DEFAULT NULL,
+  `series_numfiles` int(11) NOT NULL DEFAULT 0 COMMENT 'total number of files',
+  `series_size` double NOT NULL DEFAULT 0 COMMENT 'size of all the files',
+  `series_notes` mediumtext DEFAULT NULL,
+  `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `series_duration` bigint(20) DEFAULT NULL
@@ -3044,14 +3044,14 @@ CREATE TABLE `task_series` (
   `study_id` int(11) DEFAULT NULL,
   `series_num` int(11) NOT NULL,
   `series_desc` varchar(255) DEFAULT NULL,
-  `series_datetime` datetime NOT NULL,
-  `series_protocol` varchar(255) NOT NULL,
-  `series_numfiles` int(11) NOT NULL COMMENT 'total number of files',
-  `series_size` double NOT NULL COMMENT 'size of all the files',
-  `series_notes` varchar(255) NOT NULL,
-  `series_createdby` varchar(50) NOT NULL,
+  `series_datetime` datetime DEFAULT NULL,
+  `series_protocol` varchar(255) DEFAULT NULL,
+  `series_numfiles` int(11) NOT NULL DEFAULT 0 COMMENT 'total number of files',
+  `series_size` double NOT NULL DEFAULT 0 COMMENT 'size of all the files',
+  `series_notes` varchar(255) DEFAULT NULL,
+  `series_createdby` varchar(50) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp(),
-  `ishidden` tinyint(1) NOT NULL,
+  `ishidden` tinyint(1) DEFAULT NULL,
   `series_duration` bigint(20) DEFAULT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8;
 
@@ -3323,14 +3323,14 @@ CREATE TABLE `video_series` (
   `study_id` int(11) NOT NULL,
   `series_num` int(11) NOT NULL,
   `series_desc` varchar(255) DEFAULT NULL,
-  `series_protocol` varchar(255) NOT NULL,
-  `series_datetime` datetime NOT NULL,
+  `series_protocol` varchar(255) DEFAULT NULL,
+  `series_datetime` datetime DEFAULT NULL,
   `series_size` double NOT NULL DEFAULT 0,
   `series_notes` varchar(255) NOT NULL,
   `series_numfiles` int(11) NOT NULL DEFAULT 0,
   `video_desc` mediumtext DEFAULT NULL,
   `video_cputime` double NOT NULL DEFAULT 0,
-  `series_createdby` varchar(50) NOT NULL,
+  `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) NOT NULL DEFAULT 0,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `series_duration` bigint(20) DEFAULT NULL
