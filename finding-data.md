@@ -104,28 +104,28 @@ For this purpose a section named "Transfer & Export Data" will appear at the end
 
 Following are some destinations where the searched data can be exported:
 
-  ### Export to NFS
-  To export the data to a NFS location, you can select the "Linux NFS Mount" option and type the NFS path where you want to download the data.
+### Export to NFS
+To export the data to a NFS location, you can select the "Linux NFS Mount" option and type the NFS path where you want to download the data.
   <div align="center"><img src="https://user-images.githubusercontent.com/24811295/146384128-f6216f12-1cb1-44ed-b2cf-59feb3137e78.png" width="80%"></div>
   
- ### Export to Remote FTP Site
-  To export the data to a remote FTP location, you can select the "Remote FTP Site" option and type the FTP information where you want to download the data.
+### Export to Remote FTP Site
+To export the data to a remote FTP location, you can select the "Remote FTP Site" option and type the FTP information where you want to download the data.
   <div align="center"><img src="https://user-images.githubusercontent.com/24811295/146385080-19df7d53-20c9-43e9-957c-ba9733bfaf4d.png" width="80%"></div>
   
- ### Export to Remote NiDB Site
-  To export the data to a remote NiDB site, you can select the "Remote NiDB Site" option and select the NiDB site from a drop down menue where you want to download the data.
+### Export to Remote NiDB Site
+To export the data to a remote NiDB site, you can select the "Remote NiDB Site" option and select the NiDB site from a drop down menue where you want to download the data.
  <div align="center"><img src="https://user-images.githubusercontent.com/24811295/146385394-22b524db-b3b3-462f-a69e-ce111adf2d82.png" width="80%"></div>
  
- ### Export via Web Download
-  You can select the data to be downloased to the local http location. you can select "Web http download" option for this purpose as shown below.
+### Export via Web Download
+You can select the data to be downloased to the local http location. you can select "Web http download" option for this purpose as shown below.
   <div align="center"><img src="https://user-images.githubusercontent.com/24811295/146386455-eeba0c02-6f96-46de-aa41-822a3d94f740.png" width="80%"></div>
   
- ### Export to NDAR/ RDoCdb/NDA
-  NiDB has a unique ability to download the data that is required to submit to NDAR/RDoC/NDA. It automatically prepares the data according to the NDAR submission requirnments. Also one can download the data inforamation in terms of .csv that is required to submit NDAR data. The following the the two options to download the data accordigly. 
+### Export to NDAR/ RDoCdb/NDA
+NiDB has a unique ability to download the data that is required to submit to NDAR/RDoC/NDA. It automatically prepares the data according to the NDAR submission requirnments. Also one can download the data inforamation in terms of .csv that is required to submit NDAR data. The following the the two options to download the data accordigly. 
   <div align="center"><img src="https://user-images.githubusercontent.com/24811295/146388142-7a8f8c02-a6a9-4d36-a74e-efbcd337fa3b.png" width="80%"></div>
 
- ### Export status
- After starting the transfer by clicking the transfer button at the end of the search, a transfer request will be send to NiDB. The status of a request can be seen via Search-->Export Status page as shown below. The status of 30 most recent serches will be shown by default. All the previoius searches can be seen by clicking on the "Show all" button on the left corner of the screen as shown below.
+### Export status
+After starting the transfer by clicking the transfer button at the end of the search, a transfer request will be send to NiDB. The status of a request can be seen via Search-->Export Status page as shown below. The status of 30 most recent serches will be shown by default. All the previoius searches can be seen by clicking on the "Show all" button on the left corner of the screen as shown below.
  
 <div align="center"><img src="https://user-images.githubusercontent.com/24811295/145592630-d61eeeb0-308d-4811-8f2c-0ad7c546522d.png" width="80%"></div>
 
@@ -146,8 +146,6 @@ To request a dataset from NiDB-based database, select data --> Request a Dataset
 click "Submit a New Dataset Request" button, and fill the following form to request a dataset from the NiDB-databse.
 
 <div align="center"><img src="https://user-images.githubusercontent.com/24811295/153470699-c8c34e01-cbf7-4316-9d9a-d339c01304ab.png" width="80%"></div>
-
-
  
 ## Analysis Builder
 Analysis builder is a report generating tool that can be used to generate various types of reports using the stored data in NiDB. This report generating tool builds on the base of various types of data variables that is being stored in the NiDB. This is different than the search tool where you can search different types of data and download it. In this tool you can search the variables those are generated and stored / imported in the NiDB (Example: You can query the variables generated from a task using MRI / EEG data, but not the actual EEG and MRI data).
