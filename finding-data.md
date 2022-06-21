@@ -4,8 +4,8 @@
 
 ## Search
 
- ### Finding Imaging Data
- The search page helps to find the imaging data. The following are the parts of the search page that can be used to define and refine the search.
+### Finding Imaging Data
+The search page helps to find the imaging data. The following are the parts of the search page that can be used to define and refine the search.
 
 #### Subject
 
