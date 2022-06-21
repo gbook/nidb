@@ -43,12 +43,7 @@ The following OS configurations have been tested to build nidb successfully with
 Other OS configurations may work if building with Qt 5.15
 
 ## Prepare Build Environment
-Install development tools on **CentOS 9 Stream**
-```
-yum group install 'Development Tools'
-yum install cmake rpmdevtools rpm-build
-```
-Install development tools on **Rocky Linux 8.5**
+Install development tools on **Rocky Linux 8.5** (Recommended)
 ```
 yum group install 'Development Tools'
 yum install cmake3
@@ -57,12 +52,20 @@ yum install xcb*
 yum install libxcb*
 yum install gcc-toolset-10
 ```
+
 Install development tools on **CentOS 7**
 ```
 yum install epel-release
 yum group install 'Development Tools'
 yum install cmake3 rpmdevtools rpm-build
 ```
+
+<strike>Install development tools on **CentOS 9 Stream**
+```
+yum group install 'Development Tools'
+yum install cmake rpmdevtools rpm-build
+```
+</strike>
 
 ## Install Qt 6.2.3
    - Download Qt open-source from https://www.qt.io/download-open-source
