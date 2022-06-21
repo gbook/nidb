@@ -33,6 +33,8 @@ h6:before {
 }
 </style>
 
+<a href="index.html">Home</a>
+
 # Building NiDB
 The following OS configurations have been tested to build nidb successfully with Qt 6.2
 - RHEL9 compatible
