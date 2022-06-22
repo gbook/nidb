@@ -145,5 +145,5 @@ git pull origin master
 ### Build freezes
 This may happen if the build machine does not have enough RAM or processors. More likely this is happening inside of a VM in which the VM does not have enough RAM or processors allocated.
 
-## Build fails with "QMAKE_CXX.COMPILER_MACROS not defined"
+### Build fails with "QMAKE_CXX.COMPILER_MACROS not defined"
 Unclear why this happens, but it appears to be a corrupt Qt installation. First check if you can build the project using Qt Creator. If the build fails in Qt Creator, then there is most likely an issue with the Qt installation. Try completely uninstalling Qt, and then reinstalling it.
