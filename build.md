@@ -36,7 +36,7 @@ h6:before {
 <a href="index.html">Home</a>
 
 # Building NiDB
-The following OS configurations have been tested to build nidb successfully with Qt 6.2
+The following OS configurations have been tested to build nidb successfully with Qt 6.3
 - RHEL9 compatible
   - <strike>CentOS 9 Stream</strike>(NOPE. Don't use CentOS Stream. There are some significant bugs with Qt running on CentOS Stream)
 - RHEL8 compatible
@@ -69,12 +69,12 @@ yum install cmake rpmdevtools rpm-build
 ```
 </strike>
 
-## Install Qt 6.2.3
+## Install Qt 6.3.1
    - Download Qt open-source from https://www.qt.io/download-open-source
    - Make the installer executable `chmod 777 qt-unified-linux-x64-x.x.x-online.run`
    - Run `./qt-unified-linux-x64-x.x.x-online.run`
    - The Qt Maintenance Tool will start. An account is required to download Qt open source
-   - On the components screen, select the checkbox for **Qt 6.2.3 &rarr; Desktop gcc 64-bit**
+   - On the components screen, select the checkbox for **Qt 6.3.1 &rarr; Desktop gcc 64-bit**
 
 ## Building NiDB
 Once the build environment is setup, the builds can be done by script. The `build.sh` script will build onlty the nidb executable, this is useful when testing. The `rpmbuildX.sh` scripts will build the rpm, this is useful when creating releases.
