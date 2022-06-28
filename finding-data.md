@@ -63,7 +63,7 @@ The next section is enrollment where a search can be restricted based on project
 #### Study
 In this part search parameters / variables in a project / study can be defined to refine the search. A search can be restricted based on, study Ids, Alternative study IDs, range of study date, modality (MRI,EEG, etc.), Institution (In case of multiple institutions), equipment, Physician name, Operator name, visit type, and study group
 
-<div align="center"><img src="https://user-images.githubusercontent.com/24811295/145579800-50d85d4c-b5e3-4ee3-9e9d-0ea4ac157a68.png width="80%"></div>
+<div align="center"><img src="https://user-images.githubusercontent.com/24811295/145579800-50d85d4c-b5e3-4ee3-9e9d-0ea4ac157a68.png" width="80%"></div>
 
 #### Series
 A more specific search based on protocol, MR sequence, image type. MR TR value, series number (if a specific series of images is needed) and series group can be defined. 
@@ -130,7 +130,7 @@ After starting the transfer by clicking the transfer button at the end of the se
 <div align="center"><img src="https://user-images.githubusercontent.com/24811295/145592630-d61eeeb0-308d-4811-8f2c-0ad7c546522d.png" width="80%"></div>
 
 
- ## Public Downloads
+## Public Downloads
 This is another option in the "Transfer and Export" section to transfer "searched data" and to make it as public downloadable. There are options to describe briefly about the dataset, setting up a passowrd for secure tranmitability and making the public download updateable to the users having rights on the data. One can select "Required Registration" option to restrict the dowload to NiDB users only. An expiration date for the download can be set to 7, 30 and 90 days. One should select "No Expiration" if the public data should be available for longer than 90 days or for indefinite period.
 
 <div align="center"><img src="https://user-images.githubusercontent.com/24811295/153459944-187a7c6b-2988-4584-a9bd-f71ab9dc6fe0.png" width="80%"></div>
@@ -156,7 +156,7 @@ Analysis builder can be reached via "ado2/analysisbuilder.php" or you can go to 
 <!-- /wp:image -->
 
 
-### Usage 
+### Usage
 Analysis builder is designed to create reports based on various types of parameters from different types of measures. It has been categorized in the various types of measures like MR, EEG, ET, etc. as shown below.
 
 <!-- wp:image {"id":287,"sizeSlug":"full","linkDestination":"none"} -->
