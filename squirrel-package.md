@@ -23,6 +23,7 @@ graph LR;
 Information about the package. The first letter is an underscore, so the package details appear at the top of the JSON file to make it more readable.
 
 ## JSON variables
+
 |Variable|Type|Description|Example|Required?|
 |---:|---|---|---|---|
 |`format`|string|Defines the package format|Squirrel|Yes|
