@@ -56,8 +56,7 @@ The JSON specification includes several data types, but squirrel uses some deriv
 |---|---|---|---|
 |`string`|Regular string|&quot;My string of text&quot;|
 |`number`|Any JSON acceptable number|3.14159 or 1000000|
-|`datetime`|Datetime is formatted as `YYYY-MM-DD HH:MI:SS` …where all numbers are zero-padded and use a 24-hour clock. Datetime is stored as a JSON string datatype|
-“2022-12-03 15:34:56”|
+|`datetime`|Datetime is formatted as `YYYY-MM-DD HH:MI:SS`, where all numbers are zero-padded and use a 24-hour clock. Datetime is stored as a JSON string datatype|“2022-12-03 15:34:56”|
 |`date`|Date is formatted as YYYY-MM-DD|“1990-01-05”|
 |`char`|A single character|F|
 |`bool`|`true` or `false`|`true`|
@@ -73,7 +72,7 @@ The JSON file `squirrel.json` is stored in the root directory. A directory calle
 A squirrel package becomes a package once the entire directory structure is combined into a zip file. The compression level does not matter, as long as the file is a .zip archive. Once created, this package can be distributed to other instances of NiDB, squirrel readers, or simply unzipped and manually extracted. Packages can be created manually or exported using NiDB or squirrel converters.
 
 # Package Specification
-
+Links to package section details
 - <a href="squirrel-package.html">`_package`</a>
   - <a href="squirrel-data.html">`data`</a>
     - <a href="squirrel-subjects.html">`subjects`</a>
