@@ -74,4 +74,19 @@ A squirrel package becomes a package once the entire directory structure is comb
 
 # Package Specification
 
+- _package
+  - data
+    - subjects
+      - studies
+        - series
+          - params
+        - analysis
+      - measures
+      - drugs
+  - pipelines
+    - dataSpec
+    - primaryScript
+    - secondaryScript
+  - experiments
+
 # Modalities
