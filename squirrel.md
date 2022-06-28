@@ -74,19 +74,19 @@ A squirrel package becomes a package once the entire directory structure is comb
 
 # Package Specification
 
-- _package
-  - data
-    - subjects
-      - studies
-        - series
-          - params
-        - analysis
-      - measures
-      - drugs
-  - pipelines
-    - dataSpec
-    - primaryScript
-    - secondaryScript
-  - experiments
+- <a href="squirrel-package.html">`_package`</a>
+  - <a href="squirrel-data.html">`data`</a>
+    - <a href="squirrel-subjects.html">`subjects`</a>
+      - <a href="squirrel-studies.html">`studies`</a>
+        - <a href="squirrel-series.html">`series`</a>
+          - <a href="squirrel-params.html">`params`</a>
+        - <a href="squirrel-analysis.html">`analysis`</a>
+      - <a href="squirrel-measures.html">`measures`</a>
+      - <a href="squirrel-drugs.html">`drugs`</a>
+  - <a href="squirrel-pipelines.html">`pipelines`</a>
+    - <a href="squirrel-dataspec.html">`dataSpec`</a>
+    - <a href="squirrel-primaryscript.html">`primaryScript`</a>
+    - <a href="squirrel-secondaryscript.html">`secondaryScript`</a>
+  - <a href="squirrel-experiments.html">`experiments`</a>
 
 # Modalities
