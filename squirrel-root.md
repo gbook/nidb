@@ -2,7 +2,6 @@
 
 ```mermaid
 graph LR;
-    _package(_package)
     _package-->data;
     _package-->pipelines;
     _package-->experiments;
@@ -16,7 +15,6 @@ graph LR;
     pipelines-->dataSpec;
     pipelines-->primaryScript;
     pipelines-->secondaryScript;
-    style _package fill:#8c1212,color:#fff,stroke:#444
 ```
 
 ## Description
