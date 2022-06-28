@@ -20,7 +20,7 @@ graph LR;
 ```
 
 ## Description
-Meta-data about the squirrel package is stored in the root of the .json document.
+Information about the package. The first letter is an underscore, so the package details appear at the top of the JSON file to make it more readable.
 
 ## JSON variables
 |Variable|Type|Description|Example|Required?|
