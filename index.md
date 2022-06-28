@@ -14,6 +14,9 @@ NiDB Usage
 Building
 - <a href="build.html">Build</a>
 
+Squirrel format
+- <a href="squirrel.html">Specification</a>
+
 <br>
 
 <hr>
