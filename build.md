@@ -38,12 +38,12 @@ h6:before {
 # Building NiDB
 The following OS configurations have been tested to build nidb with Qt 6.3
 
-- :green_circle: Compatible
+- 🟢 Compatible
   - Rocky Linux 8.6
   - CentOS 8
   - CentOS 7
 
-- :red_circle: Incompatible
+- 🔴 Incompatible
   - CentOS Stream 8
 
 Other OS configurations may work to build nidb, but extensive testing is needed as some OS have fundamental incompatibilities with Qt such as CentOS Stream.
