@@ -2,7 +2,7 @@
 
 The admin modules can be accessed by clicking on the Admin menu item. Your account must have administration permissions to see this menu.
 
-![](<../../.gitbook/assets/image (1).png>)
+![](<../../.gitbook/assets/image (1) (1).png>)
 
 ### Data (Front-end) Administration
 

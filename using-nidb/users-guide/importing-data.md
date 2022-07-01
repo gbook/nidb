@@ -1,12 +1,8 @@
 # Importing data
 
-## Importing Data
+### Data Hierarchy
 
-***
-
-### Data Heirarchy
-
-Data within NiDB is stored in a heirarchy.
+Data within NiDB is stored in a hierarchy.
 
 | Level      | Project                  | →                   | Enrollment | →               | Subject         | → | Study | → | Series |
 | ---------- | ------------------------ | ------------------- | ---------- | --------------- | --------------- | - | ----- | - | ------ |
