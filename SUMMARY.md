@@ -14,12 +14,21 @@
 
 ## Using NiDB
 
-* [User's Guide](using-nidb/users-guide.md)
-* [Administration](using-nidb/administration.md)
+* [User's Guide](using-nidb/users-guide/README.md)
+  * [Importing data](using-nidb/users-guide/importing-data.md)
+  * [Managing data](using-nidb/users-guide/managing-data.md)
+  * [Finding & exporting data](using-nidb/users-guide/finding-and-exporting-data.md)
+  * [Managing projects](using-nidb/users-guide/managing-projects.md)
+  * [Pipelines & analysis](using-nidb/users-guide/pipelines-and-analysis.md)
+  * [Calendar](using-nidb/users-guide/calendar.md)
+* [Administration](using-nidb/administration/README.md)
+  * [Front end (user facing)](using-nidb/administration/front-end-user-facing.md)
+  * [Back end](using-nidb/administration/back-end.md)
 
-## Contributing
+## Contribute
 
-* [Building NiDB](contributing/building-nidb.md)
+* [Squirrel format](contribute/squirrel-format.md)
+* [Building NiDB](contribute/building-nidb.md)
 
 ## Help!
 

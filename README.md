@@ -26,12 +26,12 @@ Guides
 
 Learn the fundamentals of MyProduct to get a deeper understanding of our main features:
 
-{% content-ref url="using-nidb/users-guide.md" %}
-[users-guide.md](using-nidb/users-guide.md)
+{% content-ref url="using-nidb/users-guide/" %}
+[users-guide](using-nidb/users-guide/)
 {% endcontent-ref %}
 
-{% content-ref url="using-nidb/administration.md" %}
-[administration.md](using-nidb/administration.md)
+{% content-ref url="using-nidb/administration/" %}
+[administration](using-nidb/administration/)
 {% endcontent-ref %}
 
 {% content-ref url="broken-reference" %}
