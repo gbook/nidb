@@ -1,7 +1,6 @@
 # Table of contents
 
 * [NeuroInformatics Database](README.md)
-  * [Building NiDB](neuroinformatics-database/building-nidb.md)
 
 ## Getting Started
 
@@ -33,6 +32,11 @@
   * [Example package](contribute/squirrel-data-sharing-format/example-package.md)
 * [Building NiDB](contribute/building-nidb.md)
 
+## Tutorials
+
+* [Import DICOM data](tutorials/import-dicom-data.md)
+
 ## Help!
 
-* [Github Discussions](help/github-discussions.md)
+* [Github Issues](https://github.com/gbook/nidb/issues)
+* [Github Discussions](https://github.com/gbook/nidb/discussions)

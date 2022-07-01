@@ -4,7 +4,7 @@ description: NiDB
 
 # NeuroInformatics Database
 
-Guides
+### Getting Started
 
 {% content-ref url="getting-started/installation/" %}
 [installation](getting-started/installation/)
@@ -14,17 +14,7 @@ Guides
 [upgrade](getting-started/upgrade/)
 {% endcontent-ref %}
 
-{% content-ref url="broken-reference" %}
-[Broken link](broken-reference)
-{% endcontent-ref %}
-
-{% hint style="info" %}
-**Good to know:** your product docs aren't just a reference of all your features! use them to encourage folks to perform certain actions and discover the value in your product.
-{% endhint %}
-
-### Fundamentals: Dive a little deeper
-
-Learn the fundamentals of MyProduct to get a deeper understanding of our main features:
+### Using NiDB
 
 {% content-ref url="using-nidb/users-guide/" %}
 [users-guide](using-nidb/users-guide/)
@@ -34,14 +24,12 @@ Learn the fundamentals of MyProduct to get a deeper understanding of our main fe
 [administration](using-nidb/administration/)
 {% endcontent-ref %}
 
-{% content-ref url="broken-reference" %}
-[Broken link](broken-reference)
+### Advanced
+
+{% content-ref url="contribute/building-nidb.md" %}
+[building-nidb.md](contribute/building-nidb.md)
 {% endcontent-ref %}
 
-{% content-ref url="broken-reference" %}
-[Broken link](broken-reference)
+{% content-ref url="contribute/squirrel-data-sharing-format/" %}
+[squirrel-data-sharing-format](contribute/squirrel-data-sharing-format/)
 {% endcontent-ref %}
-
-{% hint style="info" %}
-**Good to know:** Splitting your product into fundamental concepts, objects, or areas can be a great way to let readers deep dive into the concepts that matter most to them. Combine guides with this approach to 'fundamentals' and you're well on your way to great documentation!
-{% endhint %}
