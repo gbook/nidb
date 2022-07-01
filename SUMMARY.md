@@ -27,7 +27,10 @@
 
 ## Contribute
 
-* [Squirrel format](contribute/squirrel-format.md)
+* [Squirrel data sharing format](contribute/squirrel-data-sharing-format/README.md)
+  * [Specification](contribute/squirrel-data-sharing-format/specification.md)
+  * [Modalities](contribute/squirrel-data-sharing-format/modalities.md)
+  * [Example package](contribute/squirrel-data-sharing-format/example-package.md)
 * [Building NiDB](contribute/building-nidb.md)
 
 ## Help!
