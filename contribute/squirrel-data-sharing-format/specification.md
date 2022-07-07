@@ -1,7 +1,5 @@
 # Specification
 
-
-
 ## Overview
 
 A squirrel contains a JSON file with meta-data about all of the data in the package, and a directory structure to store files. While many data items are optional, a squirrel package must contain a JSON file and a data directory.
@@ -30,19 +28,6 @@ A squirrel package becomes a package once the entire directory structure is comb
 
 ## Package Specification
 
-Links to package section details
+Hierarchy
 
-* `_package`
-  * `data`
-    * `subjects`
-      * `studies`
-        * `series`
-          * `params`
-        * `analysis`
-      * `measures`
-      * `drugs`
-  * `pipelines`
-    * `dataSpec`
-    * `primaryScript`
-    * `secondaryScript`
-  * `experiments`
+![](https://mermaid.ink/img/pako:eNptkU1uwyAQha8SzaqVkgs4Ulftrqt6i1RN4cWhNRgNINWKcvdCGxxVNquZ9z3mBy6kJwPqaBAO593r21H5XTnvgfUXD3howeN\_\_XB4Mpz4uFKDDRitR1wjfAeIdfCpwVqigJg\_PqEXtaWVpGwsNoADxyxbxEgeFvnvei1UOt\_dv0kdloXd2syexznaBpaVbkv3AXoDhbIby9xrsSFt8Ag9eXN30J4cxLE15fkv1a8oneGgqCuhwYnzmBQpfy3WHEprvBibJqHuxGPEnjinqZ-9pi5JRjM9Wy6\_6W6u6w\_81aN5)

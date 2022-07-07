@@ -4,15 +4,15 @@ description: Tutorial on how to import DICOM data into NiDB
 
 # Import DICOM data
 
-## Choose an Import Method
+## Step 1 - Choose an Import Method
 
 There are two main methods to import DICOM data into NiDB
 
-**Global Import** - used by the DICOM receiver. All files go into the same directory to be archived completely unattended. Filenames must be unique. Preferable if you have a large batch of disorganized DICOM data
+**(a) Global Import** - used by the DICOM receiver. All files go into the same directory to be archived completely unattended. Filenames must be unique. Preferable if you have a large batch of disorganized DICOM data
 
-**Individual Import** - import a single zip file or directory. The import can contain subdirectories. This will parse and display the contents of the import and wait until you select which series to archive before any data will be imported. Preferable if you have smaller batches of data, or data that must be parsed differently than the default global method
+**(b) Individual Import** - import a single zip file or directory. The import can contain subdirectories. This will parse and display the contents of the import and wait until you select which series to archive before any data will be imported. Preferable if you have smaller batches of data, or data that must be parsed differently than the default global method
 
-### Global Import
+### Step 2 - (a) Global Import
 
 #### Overview
 
@@ -110,7 +110,7 @@ The global import method will group files by the method specified above. If one 
 
 To troubleshoot these issues, try using the individual import method described below. This allows you to select different matching criteria and preview the data found before archiving it.
 
-### Individual Import
+### Step 2 - (b) Individual Import
 
 This tutorial is based on the Importing data section of the User's guide, but the content on the current page is more detailed. See link to the user's guide:
 

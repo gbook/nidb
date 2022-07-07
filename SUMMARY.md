@@ -11,6 +11,10 @@
 * [Upgrade](getting-started/upgrade/README.md)
   * [Migrate Existing Installation](getting-started/upgrade/migrate-existing-installation.md)
 
+***
+
+* [Data Storage Hierarchy](data-storage-hierarchy.md)
+
 ## Using NiDB
 
 * [User's Guide](using-nidb/users-guide/README.md)
