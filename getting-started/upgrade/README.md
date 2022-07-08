@@ -10,9 +10,9 @@ description: Detailed upgrade instructions
 
 Get the most recent .rpm from github. The latest version may be different than the example below. You can also download the latest release .rpm from https://github.com/gbook/nidb/releases/latest
 
-```
-> wget https://github.com/gbook/nidb/releases/download/v2021.10.699/nidb-2021.10.699-1.el8.x86_64.rpm
-> sudo yum localinstall --nogpgcheck nidb-2021.10.699-1.el8.x86_64.rpm
+```bash
+wget https://github.com/gbook/nidb/releases/download/v2021.10.699/nidb-2021.10.699-1.el8.x86_64.rpm
+sudo yum localinstall --nogpgcheck nidb-2021.10.699-1.el8.x86_64.rpm
 
 Last metadata expiration check: 0:28:21 ago on Thu 14 Oct 2021 10:01:28 AM EDT.
 Dependencies resolved.
@@ -32,7 +32,7 @@ Is this ok [y/N]:
 
 ### Complete setup on Website
 
-Visit http://localhost/setup.php and follow the pages.
+Visit [http://localhost/setup.php](http://localhost/setup.php) and follow the pages.
 
 **Entry page** - Turning off access to the website and disabling all modules can help prevent errors during the upgrade. Always remember to backup the database! Click **Next** to continue.
 

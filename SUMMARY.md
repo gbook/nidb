@@ -39,6 +39,7 @@
 ## Tutorials
 
 * [Import DICOM data](tutorials/import-dicom-data.md)
+* [Adding Users to Projects](tutorials/adding-users-to-projects.md)
 
 ## Help!
 

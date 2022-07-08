@@ -18,7 +18,7 @@
 2. `yum --nogpgcheck localinstall nidb-xxxx.xx.xx-1.el8.x86_64.rpm`
 3. Secure the MariaDB installation by running `sudo mysql_secure_installation` and using the following responses
 
-```
+```bash
     Enter current password for root (enter for none):
     Change the root password? [Y/n] n
     Remove anonymous users? [Y/n] Y
