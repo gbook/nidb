@@ -4,18 +4,20 @@ An array of imaging studies, with information about each study. An imaging study
 
 Valid squirrel **modalities** are derived from the DICOM standard and from NiDB modalities. Modality can be any string, but some squirrel readers may not correctly interpret the modality or may convert it to “other” or “unknown”. See full list of modalities.
 
-| _**Variable**_  | **Type**   | **Description**                                                                                             | **Example**         | **Required?** |
-| --------------- | ---------- | ----------------------------------------------------------------------------------------------------------- | ------------------- | ------------- |
-| _number_        | number     | Study number. May be sequential or correspond to NiDB assigned study number                                 | 5                   | Yes           |
-| _studyDateTime_ | datetime   | Date of the study                                                                                           | 2022-04-23 16:23:44 | Yes           |
-| _ageAtStudy_    | number     | Subject’s age at the time of the study                                                                      | 34.1                | Yes           |
-| _modality_      | string     | Defines the type of data. See table of supported modalities                                                 | MR                  | Yes           |
-| _description_   | string     | Study description                                                                                           | fMRI of Volunteers  | Yes           |
-| _dayNumber_     | number     | For repeated studies and clinical trials, this indicates the day number of this study in relation to time 0 | 40                  |               |
-| _timePoint_     | number     | Similar to day number, but timePoint should be an ordinal number                                            | 3                   |               |
-| _equipment_     | string     | Equipment name, on which the imaging session was collected                                                  | MRI-3T-Basement     |               |
-| _numSeries_     | number     | The number of series for this study                                                                         | 3                   |               |
-| _series_        | JSON array |                                                                                                             |                     |               |
+<mark style="color:red;">\*required</mark>
+
+|        _**Variable**_ | **Type**   | **Description**                                                                                             | **Example**         |
+| --------------------: | ---------- | ----------------------------------------------------------------------------------------------------------- | ------------------- |
+|        _\***number**_ | number     | Study number. May be sequential or correspond to NiDB assigned study number                                 | 5                   |
+| _\***studyDateTime**_ | datetime   | Date of the study                                                                                           | 2022-04-23 16:23:44 |
+|    _\***ageAtStudy**_ | number     | Subject’s age at the time of the study                                                                      | 34.1                |
+|      _\***modality**_ | string     | Defines the type of data. See table of supported modalities                                                 | MR                  |
+|   _\***description**_ | string     | Study description                                                                                           | fMRI of Volunteers  |
+|           _dayNumber_ | number     | For repeated studies and clinical trials, this indicates the day number of this study in relation to time 0 | 40                  |
+|           _timePoint_ | number     | Similar to day number, but timePoint should be an ordinal number                                            | 3                   |
+|           _equipment_ | string     | Equipment name, on which the imaging session was collected                                                  | MRI-3T-Basement     |
+|           _numSeries_ | number     | The number of series for this study                                                                         | 3                   |
+|              _series_ | JSON array |                                                                                                             |                     |
 
 ### Directory structure
 

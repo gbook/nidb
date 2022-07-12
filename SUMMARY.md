@@ -28,10 +28,15 @@
   * [Front end (user facing)](using-nidb/administration/front-end-user-facing.md)
   * [Back end](using-nidb/administration/back-end.md)
 
+## Tutorials
+
+* [Import DICOM data](tutorials/import-dicom-data.md)
+* [Adding Users to Projects](tutorials/adding-users-to-projects.md)
+
 ## Contribute
 
 * [Squirrel data sharing format](contribute/squirrel-data-sharing-format/README.md)
-  * [Specification v1.0](contribute/squirrel-data-sharing-format/specification-v1.0/README.md)
+  * [Specification v1.0](contribute/squirrel-data-sharing-format/specification.md)
     * [Package root](contribute/squirrel-data-sharing-format/specification-v1.0/package-root.md)
     * [\_package](contribute/squirrel-data-sharing-format/specification-v1.0/\_package.md)
     * [data](contribute/squirrel-data-sharing-format/specification-v1.0/data/README.md)
@@ -42,15 +47,12 @@
           * [analysis](contribute/squirrel-data-sharing-format/specification-v1.0/data/subjects/studies/analysis.md)
         * [measures](contribute/squirrel-data-sharing-format/specification-v1.0/data/subjects/measures.md)
         * [drugs](contribute/squirrel-data-sharing-format/specification-v1.0/data/subjects/drugs.md)
-    * [pipelines](contribute/squirrel-data-sharing-format/specification-v1.0/pipelines.md)
+    * [pipelines](contribute/squirrel-data-sharing-format/specification-v1.0/pipelines/README.md)
+      * [dataSpec](contribute/squirrel-data-sharing-format/specification-v1.0/pipelines/dataspec.md)
+    * [experiments](contribute/squirrel-data-sharing-format/specification-v1.0/experiments.md)
   * [Modalities](contribute/squirrel-data-sharing-format/modalities.md)
   * [Example package](contribute/squirrel-data-sharing-format/example-package.md)
 * [Building NiDB](contribute/building-nidb.md)
-
-## Tutorials
-
-* [Import DICOM data](tutorials/import-dicom-data.md)
-* [Adding Users to Projects](tutorials/adding-users-to-projects.md)
 
 ## Help!
 

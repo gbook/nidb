@@ -4,9 +4,9 @@ All DICOM tags are acceptable parameters. See this list for available DICOM tags
 
 ### JSON variables
 
-| _**Variable**_ | **Description**                                       | **Example** | **Required?** |
-| -------------- | ----------------------------------------------------- | ----------- | ------------- |
-| _{Tags}_       | A unique key, sometimes derived from the DICOM header | T1w         |               |
+| _**Variable**_ | **Description**                                       | **Example** |
+| -------------- | ----------------------------------------------------- | ----------- |
+| _{Tags}_       | A unique key, sometimes derived from the DICOM header | T1w         |
 
 ### Directory structure
 

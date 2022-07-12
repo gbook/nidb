@@ -4,14 +4,16 @@ An array of series. Basic series information is stored in the main squirrel.json
 
 ### JSON variables
 
-| _**Variable**_   | **Type**   | **Description**                                                                                         | **Example**         | **Required?** |
-| ---------------- | ---------- | ------------------------------------------------------------------------------------------------------- | ------------------- | ------------- |
-| _number_         | number     | Series number. May be sequential, correspond to NiDB assigned series number, or taken from DICOM header | 2                   | Yes           |
-| _seriesDateTime_ | date       | Date of the series, usually taken from the DICOM header                                                 | 2022-04-23 16:23:44 | Yes           |
-| _experimentName_ | string     | Links to the _experiments_ section of the squirrel package                                              | MyExperiment        |               |
-| _size_           | number     | Size of the data, in bytes                                                                              | 523851              | Yes           |
-| _params_         | JSON file  | _/data/subjectID/studyNum/seriesNum/params.json_                                                        |                     |               |
-| _analysis_       | JSONobject |  __                                                                                                     |                     |               |
+<mark style="color:red;">\* required</mark>
+
+|         _**Variable**_ | **Type**   | **Description**                                                                                         | **Example**         |
+| ---------------------: | ---------- | ------------------------------------------------------------------------------------------------------- | ------------------- |
+|         _\***number**_ | number     | Series number. May be sequential, correspond to NiDB assigned series number, or taken from DICOM header | 2                   |
+| _\***seriesDateTime**_ | date       | Date of the series, usually taken from the DICOM header                                                 | 2022-04-23 16:23:44 |
+|       _experimentName_ | string     | Links to the _experiments_ section of the squirrel package                                              | MyExperiment        |
+|           _\***size**_ | number     | Size of the data, in bytes                                                                              | 523851              |
+|               _params_ | JSON file  | _/data/subjectID/studyNum/seriesNum/params.json_                                                        |                     |
+|             _analysis_ | JSONobject |  __                                                                                                     |                     |
 
 ### Directory structure
 
