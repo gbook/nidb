@@ -1,5 +1,7 @@
 # \_package
 
+[![](https://mermaid.ink/img/pako:eNptUT1rwzAU\_CvmZWnBhgzuokKnduvUrIbyap1tNZIs9EFjQv575cY2lETT6e7ePU46UztKkKDesxuK94\_GFvl8Om6P3ONhBY9V9SI58vN\_PbNOOWhlEW4lnBy8MrAxXLU5IfMhfX2jjevEep2VmKTCHcGAQ\_L3FOlTv9HX8TkoL8YtzZb1FNQm\_LnmEuzZrOzWaOl8cGi3pEljq1h0Smux6zo87fdliH48Quzqul5w9aNkHETtTlSSgTesZH7q85zVUBxg0JDIUKLjpGNDjb1ka3J5Ld6kiqMn0bEOKIlTHA-TbUlEn7CaXhXnnzOL6\_ILthab4A)](https://mermaid.live/edit#pako:eNptUT1rwzAU\_CvmZWnBhgzuokKnduvUrIbyap1tNZIs9EFjQv575cY2lETT6e7ePU46UztKkKDesxuK94\_GFvl8Om6P3ONhBY9V9SI58vN\_PbNOOWhlEW4lnBy8MrAxXLU5IfMhfX2jjevEep2VmKTCHcGAQ\_L3FOlTv9HX8TkoL8YtzZb1FNQm\_LnmEuzZrOzWaOl8cGi3pEljq1h0Smux6zo87fdliH48Quzqul5w9aNkHETtTlSSgTesZH7q85zVUBxg0JDIUKLjpGNDjb1ka3J5Ld6kiqMn0bEOKIlTHA-TbUlEn7CaXhXnnzOL6\_ILthab4A)
+
 Information about the package. The first letter is an underscore, so the package details appear at the top of the JSON file to make it more readable.
 
 ### JSON variables

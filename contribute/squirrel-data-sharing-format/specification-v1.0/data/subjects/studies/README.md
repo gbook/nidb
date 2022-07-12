@@ -1,5 +1,7 @@
 # studies
 
+[![](https://mermaid.ink/img/pako:eNptkTFvwyAQhf-KRZZWsqUM7kKlTu3WqVktVVfzbNMARnCosaL89-LG9tCEBXjfuwcHZ9GOCkKKPpAfivePxhV5fHpqj9Sjql4UMT3fqF57GO0QbxFOHkFbOI5XNidkPaavb7S8VqzbmXBSGneABcUU7hEVUr\_J1\_KHZX6cE\_MN8I9nmRyZKeoN\_LnmbiiQXdWttaX5g0e7JU0Ga17RaWPkruvwtN-XkcN4hNzVdb2sqx-teJC1P4lSWARLWuWHPs9RjeABFo2QeanQUTLciMZdsjX5fCrelOYxCNmRiSgFJR4Pk2uF5JCwml415X-zi-vyC6\_Hm4w)](https://mermaid.live/edit#pako:eNptkTFvwyAQhf-KRZZWsqUM7kKlTu3WqVktVVfzbNMARnCosaL89-LG9tCEBXjfuwcHZ9GOCkKKPpAfivePxhV5fHpqj9Sjql4UMT3fqF57GO0QbxFOHkFbOI5XNidkPaavb7S8VqzbmXBSGneABcUU7hEVUr\_J1\_KHZX6cE\_MN8I9nmRyZKeoN\_LnmbiiQXdWttaX5g0e7JU0Ga17RaWPkruvwtN-XkcN4hNzVdb2sqx-teJC1P4lSWARLWuWHPs9RjeABFo2QeanQUTLciMZdsjX5fCrelOYxCNmRiSgFJR4Pk2uF5JCwml415X-zi-vyC6\_Hm4w)
+
 An array of imaging studies, with information about each study. An imaging study (or imaging session) is defined as a set of related series collected on a piece of equipment during a time period. An example is a research participant receiving an MRI exam. The participant goes into the scanner, has several MR images collected, and comes out. The time spent in the scanner and all of the data collected from it is considered to be a study.
 
 Valid squirrel **modalities** are derived from the DICOM standard and from NiDB modalities. Modality can be any string, but some squirrel readers may not correctly interpret the modality or may convert it to “other” or “unknown”. See full list of modalities.

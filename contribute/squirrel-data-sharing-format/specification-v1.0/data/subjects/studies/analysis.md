@@ -1,5 +1,7 @@
 # analysis
 
+[![](https://mermaid.ink/img/pako:eNptUT1vwyAQ\_SvWZWklW8rgLlTq1G6ZmtVSdDVnmwYwgkOJFeW\_FzfGi8P0eF-ngxu0oyQQ0Ht0Q3H4bmyRzslhe8aequpDIuP7hnXKkVaWwlaiqyOvDFkOD21uSHyIP7\_Uck7k66xwlIqeCIYwRP9MkT72K\_2Iz0VpMG1ptKinoMJLBq\_Z8u-f10GPJgfX3Zbtj47atXPSVOSaolNai13X0dt-Xwb245nErq7rBVcXJXkQtbtCCYa8QSXTU9\_mrgZ4IEMNiAQldRg1N9DYe7JGl8bSl1Q8ehAd6kAlYOTxONkWBPtI2fSpMP2cWVz3P-\_HnFI)](https://mermaid.live/edit#pako:eNptUT1vwyAQ\_SvWZWklW8rgLlTq1G6ZmtVSdDVnmwYwgkOJFeW\_FzfGi8P0eF-ngxu0oyQQ0Ht0Q3H4bmyRzslhe8aequpDIuP7hnXKkVaWwlaiqyOvDFkOD21uSHyIP7\_Uck7k66xwlIqeCIYwRP9MkT72K\_2Iz0VpMG1ptKinoMJLBq\_Z8u-f10GPJgfX3Zbtj47atXPSVOSaolNai13X0dt-Xwb245nErq7rBVcXJXkQtbtCCYa8QSXTU9\_mrgZ4IEMNiAQldRg1N9DYe7JGl8bSl1Q8ehAd6kAlYOTxONkWBPtI2fSpMP2cWVz3P-\_HnFI)
+
 Analysis results, run on an imaging study level. Can contain files, directories, and variables.
 
 ### JSON variables

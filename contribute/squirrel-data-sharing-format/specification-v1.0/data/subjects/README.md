@@ -2,6 +2,8 @@
 
 An array of subjects, with information about each subject
 
+[![](https://mermaid.ink/img/pako:eNptUbFuwyAU\_BWLLK1kSxnchUqd2i1Ts1qqXs3ZpgGM4KEmivLvxY3toS7TcXfv3ntwFe2oIKToA\_mhOLw3rsjnw1N7oh5V9aKI6XnDeu1htEPcSjh7BG3hON61KSHzMX1-oeWlYrk-LOBx8nBSGn8tWbCgmMJ\_igqpX-l7-RSUR8CWJkfmEvUq\_LqmdSiQXdh1t3n7o0e7Jl0M1u5Fp42Ru67D035fRg7jCXJX1\_WMq2-teJC1P4tSWARLWuWnvk5ZjeABFo2QGSp0lAw3onG3bE0-t8Wb0jwGITsyEaWgxOPx4lohOSQspldN-efs7Lr9ABBBnFA)](https://mermaid.live/edit#pako:eNptUbFuwyAU\_BWLLK1kSxnchUqd2i1Ts1qqXs3ZpgGM4KEmivLvxY3toS7TcXfv3ntwFe2oIKToA\_mhOLw3rsjnw1N7oh5V9aKI6XnDeu1htEPcSjh7BG3hON61KSHzMX1-oeWlYrk-LOBx8nBSGn8tWbCgmMJ\_igqpX-l7-RSUR8CWJkfmEvUq\_LqmdSiQXdh1t3n7o0e7Jl0M1u5Fp42Ru67D035fRg7jCXJX1\_WMq2-teJC1P4tSWARLWuWnvk5ZjeABFo2QGSp0lAw3onG3bE0-t8Wb0jwGITsyEaWgxOPx4lohOSQspldN-efs7Lr9ABBBnFA)
+
 ### JSON variables
 
 | _**Variable**_ | **Type**   | **Description (acceptable values)**                                                                                   | **Example**          | **Required?** |
