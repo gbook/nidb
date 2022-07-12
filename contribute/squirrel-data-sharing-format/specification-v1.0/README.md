@@ -1,4 +1,8 @@
-# Specification
+---
+description: Format specification for v1.0
+---
+
+# Specification v1.0
 
 ## Overview
 

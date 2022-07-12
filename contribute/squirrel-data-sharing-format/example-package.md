@@ -1,6 +1,6 @@
 # Example package
 
-**Package contents**
+**Package contents (file and directory structure)**
 
 ```
 /
