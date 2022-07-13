@@ -3683,8 +3683,9 @@
 	/* -------------------------------------------- */
 	/* ------- DisplaySearchResultsLongitudinal --- */
 	/* -------------------------------------------- */
-	function DisplaySearchResultsLongitudinal(&$result) {
-		//PrintSQLTable(&$result);
+	function DisplaySearchResultsLongitudinal($result) {
+		//PrintSQLTable($result);
+		mysqli_data_seek($result, 0);
 		
 		$modality = '';
 		/* gather scans into longitudinal format */
@@ -3735,7 +3736,7 @@
 			td.tdhover:hover { background-color: yellow; }
 		</style>
 		<br>
-		Of <span class="darkblue"><?=count($subjects)?> subjects</span>, <span class="darkblue"><?=count($studies)?> studies</span>, <span class="darkblue"><?=count($series)?> series</span>, longitudinal series were found in <span class="darkblue"><?=count($subjects2)?> subjects</span>, <span class="darkblue"><?=count($studies2)?> studies</span>, <span class="darkblue"><?=count($series2)?> series</span><br><br>
+		Longitudinal series were found in <span class="darkblue"><?=count($subjects2)?> subjects</span>, <span class="darkblue"><?=count($studies2)?> studies</span>, <span class="darkblue"><?=count($series2)?> series</span><br><br>
 		<?
 
 		$csv1 = "uid, protocol";
