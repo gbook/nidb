@@ -1,8 +1,8 @@
 # series
 
-[![](https://mermaid.ink/img/pako:eNptkT9vwyAQxb-KdVlayZYyuAuVOrVbpmZFqq7mbNMARnCosaJ89-L6z-KwAO\_37p0ObtAMikBAF9D3xelTuiKvL4\_NBTuqqjeFjK871WtPRjuKe0RXT0FbchxnNiVkPabvH2p4rVivE-GkND0AljCm8IiokLpNnsunoNyY9jI6NGPUG\_h3Pc3b8zQMBrQr3SZbZj97arbE0dBSXrTaGHFoW3o5HsvIYbiQONR1vZyrX624F7W\_QgmWgkWt8jPfpiQJ3JMlCSIfFbWYDEuQ7p6tyeem9KE0DwFEiyZSCZh4OI-uAcEh0Wp615h\_zS6u-x8\_4pqg)](https://mermaid.live/edit#pako:eNptkT9vwyAQxb-KdVlayZYyuAuVOrVbpmZFqq7mbNMARnCosaJ89-L6z-KwAO\_37p0ObtAMikBAF9D3xelTuiKvL4\_NBTuqqjeFjK871WtPRjuKe0RXT0FbchxnNiVkPabvH2p4rVivE-GkND0AljCm8IiokLpNnsunoNyY9jI6NGPUG\_h3Pc3b8zQMBrQr3SZbZj97arbE0dBSXrTaGHFoW3o5HsvIYbiQONR1vZyrX624F7W\_QgmWgkWt8jPfpiQJ3JMlCSIfFbWYDEuQ7p6tyeem9KE0DwFEiyZSCZh4OI-uAcEh0Wp615h\_zS6u-x8\_4pqg)
-
 An array of series. Basic series information is stored in the main `squirrel.json` file. Extended information including series parameters such as DICOM tags are stored in a `params.json` file in the series directory.
+
+![JSON object hierarchy](https://mermaid.ink/img/pako:eNptks1qwzAQhF\_FKBcFbMjBvajQU3sppYXmaihba-2okWyhH5oQ8u5duZZT0vigHXk-7Yi1T6wdJTLBegd2V7y8N0NBjxvHwJ-3b6-TWlfVg4QAPC3r-wtC7z8stHvokWdx5VtlUasBPV\_UFYEHi04ZHILnf3SmUiZRPn5-YUtIFtnP-8SEKBUlzfUGYRB8dIRkcYORLvaeT-vi\_jZMEXS9lDCV\_zYMoI9eeZ7FgkwH0jzAgaFhTCW7y2jmQW8ttjyLS8pR49yo6JTWYtV1eLfZlD64cY9iVdf1rKtvJcNO1PbASmbQGVCSPvIpdWpY2KHBhgmSEjuIOjSsGc6ERkup-CRVGB0THWiPJYMYxu1xaJkILmKGHhXQP2Nm6vwDpfHG2Q)
 
 ### JSON variables
 
