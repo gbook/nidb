@@ -99,35 +99,8 @@ Click **Write Config** to continue.
 
 ![](https://user-images.githubusercontent.com/8302215/162641179-b36025a1-4923-42a3-a83c-d77f90f00180.png)
 
-The locations of the written config file(s) are noted on this page. `nidb-cluster.cfg` is meant to be placed on cluster nodes, to allow nidb pipelines running on the cluster to communicate with the main nidb instance and perform checkins and storing of pipeline results.
+The locations of the written config file(s) are noted on this page. `nidb-cluster.cfg` is meant to be placed on cluster nodes, to allow nidb pipelines running on the cluster to communicate with the main nidb instance and perform check-ins and storing of pipeline results.
 
 Setup should now be complete and you can visit the home page.
-
-## Changing Passwords
-
-The default usernames and passwords are as follows, change them using the method listed.&#x20;
-
-{% hint style="info" %}
-Changed MariaDB passwords must also be updated in the config file (Edit `/nidb/nidb.cfg` or use **Admin** --> **Settings**)
-{% endhint %}
-
-|         Username | Default password | How to change password                                                                                                                                                                                                                                                                                             |
-| ---------------: | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-|   (Linux) `nidb` | `password`       | <p>(as root) <code>passwd nidb</code><br>(as nidb) <code>passwd</code></p>                                                                                                                                                                                                                                         |
-| (MariaDB) `root` | `password`       | Login to http://localhost/phpMyAdmin using the root MySQL account and password. Go to the **User Accounts** menu option. Then click **Edit privileges** for the root account that has a `‘%’` as the hostname. Then click **Change password** button at the top of the page. Enter a new password and click **Go** |
-| (MariaDB) `nidb` | `password`       | See above                                                                                                                                                                                                                                                                                                          |
-|   (NiDB) `admin` | `password`       | When logged in as `admin`, go to **My Account**. Enter a new password in the password field(s). Click **Save** to change the password.                                                                                                                                                                             |
-
-***
-
-## Upgrade Existing Installation
-
-Quick upgrade instructions below. See detailed upgrade instructions for a more in-depth explanation of the upgrade.
-
-1. Download latest NiDB release.
-2. `yum --nogpgcheck localinstall nidb-xxxx.xx.xx-1.el8.x86_64.rpm`
-3. Make sure your IP address is set in the `[setupips]` variable in the config file. This can be done manually by editing `/nidb/nidb.cfg` or by going to **Admin** → **Settings**
-4. Go to http://localhost/setup.php (Or within NiDB, go to **Admin** → **Setup/upgrade**)
-5. Follow the instructions on the webpages to complete the upgrade
 
 ***

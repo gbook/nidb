@@ -8,7 +8,7 @@ description: Detailed upgrade instructions
 
 ### Install NiDB .rpm
 
-Get the most recent .rpm from github. The latest version may be different than the example below. You can also download the latest release .rpm from [https://github.com/gbook/nidb/releases/latest](https://github.com/gbook/nidb/releases/latest)
+Get the most recent .rpm from github. The latest version may be different than the example below. You can also download the latest release .rpm from https://github.com/gbook/nidb/releases/latest
 
 ```bash
 wget https://github.com/gbook/nidb/releases/download/v2021.10.699/nidb-2021.10.699-1.el8.x86_64.rpm
@@ -79,10 +79,10 @@ All finished! Click **Done** to complete the upgrade.
 
 The database schema upgrade may not display a SQL error if it occurs, but the errors are stored in the `error_log` table in the database. Find the latest error(s) and the description will help diagnose the issue.
 
-### Row length errors
+#### Row length errors
 
 In phpMyAdmin, select the table in question. Under the **operations** tab, check the table type. If it is `Innodb`, change this to `Aria`, and click **Go**.
 
-### Primary key errors
+#### Primary key errors
 
 If the primary key error references a TEXT column, in other words if a TEXT column has a primary key, then delete the key for that column. This can be done in phpMyAdmin.

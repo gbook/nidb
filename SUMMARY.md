@@ -9,6 +9,7 @@
   * [How to change passwords](getting-started/installation/how-to-change-passwords.md)
   * [Optional software](getting-started/installation/optional-software.md)
 * [Upgrade](getting-started/upgrade/README.md)
+  * [Quick Upgrade](getting-started/upgrade/quick-upgrade.md)
   * [Migrate Existing Installation](getting-started/upgrade/migrate-existing-installation.md)
 
 ***
@@ -32,6 +33,7 @@
 
 * [Import DICOM data](tutorials/import-dicom-data.md)
 * [Adding Users to Projects](tutorials/adding-users-to-projects.md)
+* [Editing the config file](tutorials/editing-the-config-file.md)
 
 ## Contribute
 
