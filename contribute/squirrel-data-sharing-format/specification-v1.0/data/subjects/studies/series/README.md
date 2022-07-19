@@ -1,21 +1,19 @@
 # series
 
-An array of series. Basic series information is stored in the main `squirrel.json` file. Extended information including series parameters such as DICOM tags are stored in a `params.json` file in the series directory.
-
-![JSON object hierarchy](https://mermaid.ink/img/pako:eNptks1qwzAQhF\_FKBcFbMjBvajQU3sppYXmaihba-2okWyhH5oQ8u5duZZT0vigHXk-7Yi1T6wdJTLBegd2V7y8N0NBjxvHwJ-3b6-TWlfVg4QAPC3r-wtC7z8stHvokWdx5VtlUasBPV\_UFYEHi04ZHILnf3SmUiZRPn5-YUtIFtnP-8SEKBUlzfUGYRB8dIRkcYORLvaeT-vi\_jZMEXS9lDCV\_zYMoI9eeZ7FgkwH0jzAgaFhTCW7y2jmQW8ttjyLS8pR49yo6JTWYtV1eLfZlD64cY9iVdf1rKtvJcNO1PbASmbQGVCSPvIpdWpY2KHBhgmSEjuIOjSsGc6ERkup-CRVGB0THWiPJYMYxu1xaJkILmKGHhXQP2Nm6vwDpfHG2Q)
+An array of series. Basic series information is stored in the main squirrel.json file. Extended information including series parameters such as DICOM tags are stored in a params.json file in the series directory.
 
 ### JSON variables
 
 <mark style="color:red;">\* required</mark>
 
-|         _**Variable**_ | **Type**   | **Description**                                                                                         |
-| ---------------------: | ---------- | ------------------------------------------------------------------------------------------------------- |
-|         _\***number**_ | number     | Series number. May be sequential, correspond to NiDB assigned series number, or taken from DICOM header |
-| _\***seriesDateTime**_ | date       | Date of the series, usually taken from the DICOM header                                                 |
-|       _experimentName_ | string     | Links to the _experiments_ section of the squirrel package                                              |
-|           _\***size**_ | number     | Size of the data, in bytes                                                                              |
-|               _params_ | JSON file  | _/data/subjectID/studyNum/seriesNum/params.json_                                                        |
-|             _analysis_ | JSONobject |  __                                                                                                     |
+|         _**Variable**_ | **Type**   | **Description**                                                                                         | **Example**         |
+| ---------------------: | ---------- | ------------------------------------------------------------------------------------------------------- | ------------------- |
+|         _\***number**_ | number     | Series number. May be sequential, correspond to NiDB assigned series number, or taken from DICOM header | 2                   |
+| _\***seriesDateTime**_ | date       | Date of the series, usually taken from the DICOM header                                                 | 2022-04-23 16:23:44 |
+|       _experimentName_ | string     | Links to the _experiments_ section of the squirrel package                                              | MyExperiment        |
+|           _\***size**_ | number     | Size of the data, in bytes                                                                              | 523851              |
+|               _params_ | JSON file  | _/data/subjectID/studyNum/seriesNum/params.json_                                                        |                     |
+|             _analysis_ | JSONobject | \_\_                                                                                                    |                     |
 
 ### Directory structure
 

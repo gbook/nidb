@@ -1,28 +1,20 @@
----
-description: JSON array
----
-
 # subjects
 
-This object is an **array** of subjects, with information about each subject.
-
-![JSON object hierarchy](https://mermaid.ink/img/pako:eNptkj1rwzAQhv-KURYFbMjgLip0apdSWmhWQ7laZ0eNZAt90ISQ\_96TazkljQfdY99jveLsE2tHiUyw3oHdFS\_vzVDQ5cYx8Oft2-tE66p6kBCAp2V9f1Ho-YeFdg898gxXfassajWg5wtdGXiw6JTBIXj-h7OVMsny8fMLW1Iy5H6-T06IUlHSXG8YBsFHR0qGG450sfd8Wpfu74Ypgo6XEqbyvw0D6KNXnmdYlOmFNA9wYGgYU8ndZTTzoLcWW57hknLUuBy06JTWYtV1eLfZlD64cY9iVdf1zNW3kmEnantgJTPoDChJn\_mU9mpY2KHBhglCiR1EHRrWDGdSo6VcfJIqjI6JDrTHkkEM4\_Y4tEwEFzFLjwrorzGzdf4BTHnHsQ)
+An array of subjects, with information about each subject
 
 ### JSON variables
 
-<mark style="color:red;">\*required</mark>
-
-| _**Variable**_ | **Type**   | **Description (acceptable values)**                                                                                   |
-| -------------: | ---------- | --------------------------------------------------------------------------------------------------------------------- |
-|         _\*ID_ | string     | Unique ID of this subject. It must be unique within the package, ie no other subjects in the package have the same ID |
-| _alternateIDs_ | JSON array | List of alternate IDs                                                                                                 |
-|  _dateOfBirth_ | date       | Subject’s date of birth                                                                                               |
-|        _\*sex_ | char       | Sex at birth (F,M,O,U)                                                                                                |
-|       _gender_ | char       | Self-identified gender                                                                                                |
-|   _ethnicity1_ | string     | Usually Hispanic/non-hispanic                                                                                         |
-|   _ethnicity2_ | string     | NIH defined race                                                                                                      |
-|   _numStudies_ | number     | The number of imaging studies for this subject                                                                        |
-|      _studies_ | JSON array |                                                                                                                       |
+| _**Variable**_ | **Type**   | **Description (acceptable values)**                                                                                   | **Example**          | **Required?** |
+| -------------- | ---------- | --------------------------------------------------------------------------------------------------------------------- | -------------------- | ------------- |
+| _ID_           | string     | Unique ID of this subject. It must be unique within the package, ie no other subjects in the package have the same ID | S1234ABC             | Yes           |
+| _alternateIDs_ | JSON array | List of alternate IDs                                                                                                 | “altuid1”, “altuid2” |               |
+| _dateOfBirth_  | date       | Subject’s date of birth                                                                                               | 1990-01-01           |               |
+| _sex_          | char       | Sex at birth (F,M,O,U)                                                                                                | M                    | Yes           |
+| _gender_       | char       | Self-identified gender                                                                                                | F                    |               |
+| _ethnicity1_   | string     | Usually Hispanic/non-hispanic                                                                                         | Hispanic             |               |
+| _ethnicity2_   | string     | NIH defined race                                                                                                      | Caucasian            |               |
+| _numStudies_   | number     | The number of imaging studies for this subject                                                                        | 3                    |               |
+| _studies_      | JSON array |                                                                                                                       |                      |               |
 
 ### Directory structure
 

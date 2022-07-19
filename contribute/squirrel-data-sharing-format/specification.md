@@ -10,26 +10,17 @@ A squirrel contains a JSON file with meta-data about all of the data in the pack
 
 **JSON File**
 
-JSON is JavaScript object notation, and many tutorials are available for how to read and write JSON files. Within the squirrel format, keys are camel-case; for example dayNumber or dateOfBirth, where each word in the key is capitalized except the first word. The JSON file should be manually editable. JSON resources:
+JSON is javascript object notation, and many tutorials are available for how to read and write JSON files. Keys are camel-case, for example dayNumber or dateOfBirth, where each word in the key is capitalized except the first word. The JSON file should be manually editable. JSON resources:
 
-* JSON tutorial - [https://www.w3schools.com/js/js\_json\_intro.asp](https://www.w3schools.com/js/js\_json\_intro.asp)
-* Wiki - [https://en.wikipedia.org/wiki/JSON](https://en.wikipedia.org/wiki/JSON)
-* JSON specification - [https://www.json.org/json-en.html](https://www.json.org/json-en.html)
+* Tutorial - https://www.w3schools.com/js/js\_json\_intro.asp
+* Wiki - https://en.wikipedia.org/wiki/JSON
+* Specification - https://www.json.org/json-en.html
 
 **Squirrel data types**
 
 The JSON specification includes several data types, but squirrel uses some derivative data types: string, number, date, datetime, char. Date, datetime, and char are stored as the JSON string datatype and should be enclosed in double quotes.
 
-|    **Type** | **Notes**                                                                                                                                             | **Example**           |
-| ----------: | ----------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
-|      string | Regular string                                                                                                                                        | “My string of text”   |
-|      number | Any JSON acceptable number                                                                                                                            | 3.14159 or 1000000    |
-|    datetime | Datetime is formatted as `YYYY-MM-DD HH:MI:SS`where all numbers are zero-padded and use a 24-hour clock. Datetime is stored as a JSON string datatype | “2022-12-03 15:34:56” |
-|        date | Date is formatted as `YYYY-MM-DD`                                                                                                                     | “1990-01-05”          |
-|        char | A single character                                                                                                                                    | F                     |
-|        bool | true or false                                                                                                                                         | true                  |
-|  JSON array | Item is a JSON array of any data type                                                                                                                 |                       |
-| JSON object | Item is a JSON object                                                                                                                                 |                       |
+|Type|Notes|Example| |---|---|---|---| |`string`|Regular string|"My string of text"| |`number`|Any JSON acceptable number|3.14159 or 1000000| |`datetime`|Datetime is formatted as `YYYY-MM-DD HH:MI:SS`, where all numbers are zero-padded and use a 24-hour clock. Datetime is stored as a JSON string datatype|“2022-12-03 15:34:56”| |`date`|Date is formatted as YYYY-MM-DD|“1990-01-05”| |`char`|A single character|F| |`bool`|`true` or `false`|`true`| |JSON array|Item is a JSON array of any data type|| |JSON object|Item is a JSON object||
 
 **Directory Structure**
 
@@ -41,4 +32,6 @@ A squirrel package becomes a package once the entire directory structure is comb
 
 ## Package Specification
 
-![](https://mermaid.ink/img/pako:eNptkctqAzEMRX8laOVA8gNTyKrdlNJCZmsoqq1M3I4f-AEJIf9eeTqeljReSNe-R5aRL6C8JuhgiBiOq5e9dCte0fssnvu310mtt9udxoyihvXDL8Ln7wHVFw4kmrjxgwk0GkdJLOqGoFOgaCy5nMQf3ajak6lUPj5JMdJE89u-Mrlow53mfIewhKlERpq4w-hYhiSmuLg\_F9YW\_LzaYUr\_bXQ4npNJookFmQrqPDCi5WFMqbnLaOZB94GUaKJCsAFL0aLR\_FWXWiQhH8mShI6lpgOWMUuQ7spoCVxLT9pkH6E74JhoA1iy789OQZdjoQY9GuSftzN1\_QYK8bNv)
+Hierarchy
+
+![](https://mermaid.ink/img/pako:eNptkU1uwyAQha8SzaqVkgs4Ulftrqt6i1RN4cWhNRgNINWKcvdCGxxVNquZ9z3mBy6kJwPqaBAO593r21H5XTnvgfUXD3howeN\_\_XB4Mpz4uFKDDRitR1wjfAeIdfCpwVqigJg\_PqEXtaWVpGwsNoADxyxbxEgeFvnvei1UOt\_dv0kdloXd2syexznaBpaVbkv3AXoDhbIby9xrsSFt8Ag9eXN30J4cxLE15fkv1a8oneGgqCuhwYnzmBQpfy3WHEprvBibJqHuxGPEnjinqZ-9pi5JRjM9Wy6\_6W6u6w\_81aN5)
