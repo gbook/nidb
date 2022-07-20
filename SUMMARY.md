@@ -9,6 +9,7 @@
   * [How to change passwords](getting-started/installation/how-to-change-passwords.md)
   * [Optional software](getting-started/installation/optional-software.md)
 * [Upgrade](getting-started/upgrade/README.md)
+  * [Quick Upgrade](getting-started/upgrade/quick-upgrade.md)
   * [Migrate Existing Installation](getting-started/upgrade/migrate-existing-installation.md)
 
 ***
@@ -31,8 +32,8 @@
 ## Tutorials
 
 * [Import DICOM data](tutorials/import-dicom-data.md)
-* [Importing Data from a Redcap Project](tutorials/importing-data-from-a-redcap-project.md)
 * [Adding Users to Projects](tutorials/adding-users-to-projects.md)
+* [Editing the config file](tutorials/editing-the-config-file.md)
 
 ## Contribute
 
@@ -50,6 +51,7 @@
         * [drugs](contribute/squirrel-data-sharing-format/specification-v1.0/data/subjects/drugs.md)
     * [pipelines](contribute/squirrel-data-sharing-format/specification-v1.0/pipelines/README.md)
       * [dataSpec](contribute/squirrel-data-sharing-format/specification-v1.0/pipelines/dataspec.md)
+      * [Pipeline scripts](contribute/squirrel-data-sharing-format/specification-v1.0/pipelines/pipeline-scripts.md)
     * [experiments](contribute/squirrel-data-sharing-format/specification-v1.0/experiments.md)
   * [Modalities](contribute/squirrel-data-sharing-format/modalities.md)
   * [Example package](contribute/squirrel-data-sharing-format/example-package.md)

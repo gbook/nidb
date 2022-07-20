@@ -113,7 +113,7 @@ For DICOM derived series, most information will be displayed on the main study p
 
 #### Editing series information
 
-Series information can only be edited for non-DICOM derived series. To edit the series information (protocol, datetime, notes) click the series number, edit the information, and click **Update**. To upload new files to the series, drag and drop them onto the **Upload** button. To manage the existing files, click the **Manage \_n**\_\*\* files\*\* button. This will display a list of the files associated with this series. Clicking the file name will download the file. Editing the filename in the Rename column will allow you to rename the file (press enter to finalize the rename). Delete the file by clicking the trash icon. Download the entire series as a .zip file by clicking the **Download** button.
+Series information can only be edited for non-DICOM derived series. To edit the series information (protocol, datetime, notes) click the series number, edit the information, and click **Update**. To upload new files to the series, drag and drop them onto the **Upload** button. To manage the existing files, click the **Manage **_**n**_** files** button. This will display a list of the files associated with this series. Clicking the file name will download the file. Editing the filename in the Rename column will allow you to rename the file (press enter to finalize the rename). Delete the file by clicking the trash icon. Download the entire series as a .zip file by clicking the **Download** button.
 
 ![](https://user-images.githubusercontent.com/8302215/147882288-cc8f47be-57fd-46cc-bc37-190a327aab7e.png)
 
