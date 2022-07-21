@@ -4,7 +4,7 @@ description: Tutorial on how to import DICOM data into NiDB
 
 # Import DICOM data
 
-## Step 1 - Choose an Import Method
+## Step 1 - Choose an Import Method - Update
 
 There are two main methods to import DICOM data into NiDB
 
