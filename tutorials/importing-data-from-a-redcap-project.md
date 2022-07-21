@@ -1,3 +1,7 @@
+---
+description: Tutorial on how to import data from a Redcap project into NiDB project
+---
+
 # Importing Data from a Redcap Project
 
 ## Step1
@@ -17,8 +21,6 @@ Use 'Projects' menu in NiDB to get to the desired project's main page. From Data
 
 * Enter the Redcap server address and API token information and press "Update Connection Settings" button on the right as shown below.
 * Press "Show Project info" button to check the connection is establish. The information from connected redcap project will be appeared as shown in the figure below.
-
-![](<../.gitbook/assets/image (1) (3).png>)
 
 ## Step 4
 
