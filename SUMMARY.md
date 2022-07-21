@@ -29,12 +29,9 @@
   * [Front end (user facing)](using-nidb/administration/front-end-user-facing.md)
   * [Back end](using-nidb/administration/back-end.md)
 
-***
-
-* [Importing From Redcap](importing-from-redcap.md)
-
 ## Tutorials
 
+* [Importing Data from a Redcap Project](tutorials/importing-data-from-a-redcap-project.md)
 * [Import DICOM data](tutorials/import-dicom-data.md)
 * [Adding Users to Projects](tutorials/adding-users-to-projects.md)
 * [Editing the config file](tutorials/editing-the-config-file.md)

@@ -18,7 +18,7 @@ If you are an admin, you can click the **Manage** link on the second row of the 
 
 On the Day, Week, or Month views, click the `+` button to add an appointment. Fill out the information, and click **Add**. Appointments can regular, or can be an **all day event** or **time request**, the latter special types do not block overlapping appointments from being created. For example, if a regular appointment is scheduled from 2:00pm-3:00pm, another appointment could not be scheduled from 2:30-3:30pm. But both appointments can be created if either one is a time request or all day event.
 
-![Add appointment form](../../.gitbook/assets/image.png)
+![Add appointment form](<../../.gitbook/assets/image (1).png>)
 
 #### Issues
 
