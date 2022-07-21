@@ -29,6 +29,10 @@
   * [Front end (user facing)](using-nidb/administration/front-end-user-facing.md)
   * [Back end](using-nidb/administration/back-end.md)
 
+***
+
+* [Importing From Redcap](importing-from-redcap.md)
+
 ## Tutorials
 
 * [Import DICOM data](tutorials/import-dicom-data.md)
@@ -38,7 +42,7 @@
 ## Contribute
 
 * [Squirrel data sharing format](contribute/squirrel-data-sharing-format/README.md)
-  * [Specification v1.0](contribute/squirrel-data-sharing-format/specification-v1.0/README.md)
+  * [Specification v1.0](contribute/squirrel-data-sharing-format/specification.md)
     * [Package root](contribute/squirrel-data-sharing-format/specification-v1.0/package-root.md)
     * [\_package](contribute/squirrel-data-sharing-format/specification-v1.0/\_package.md)
     * [data](contribute/squirrel-data-sharing-format/specification-v1.0/data/README.md)
