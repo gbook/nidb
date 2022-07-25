@@ -43,10 +43,10 @@ public:
 	QJsonObject ParamsToJSON();
 
     /* subject info */
-    QString seriesUID; /*!< SeriesInstanceUID */
-    QString seriesNum; /*!< Series number. must be unique to the study */
-    QDateTime dateTime; /*!< Series datetime */
-    QString description; /*!< Description of the series */
+	QString number; /*!< Series number. must be unique to the study */
+	QDateTime dateTime; /*!< Series datetime */
+	QString seriesUID; /*!< SeriesInstanceUID */
+	QString description; /*!< Description of the series */
     QString protocol; /*!< Protocol (may differ from description) */
     qint64 numFiles; /*!< Number of files associated with the series */
     qint64 size; /*!< total size in bytes of the series */

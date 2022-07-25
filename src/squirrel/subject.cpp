@@ -30,7 +30,7 @@
 subject::subject() {
     sex = 'U';
     gender = 'U';
-    birthdate = QDate::fromString("0000-00-00", "YYYY-MM-dd");
+	dateOfBirth = QDate::fromString("0000-00-00", "YYYY-MM-dd");
 }
 
 
@@ -74,11 +74,11 @@ void subject::PrintSubject() {
 
     Print("---- SUBJECT ----------");
     Print(QString("     ID: %1").arg(ID));
-    Print(QString("     AltIDs: %1").arg(altUIDs.join(",")));
+	Print(QString("     AlternateIDs: %1").arg(alternateIDs.join(",")));
     Print(QString("     GUID: %1").arg(GUID));
     Print(QString("     Sex: %1").arg(sex));
     Print(QString("     Gender: %1").arg(gender));
-    Print(QString("     DOB: %1").arg(birthdate.toString()));
+	Print(QString("     dateOfBirth: %1").arg(dateOfBirth.toString()));
     Print(QString("     Ethnicity1: %1").arg(ethnicity1));
     Print(QString("     Ethnicity2: %1").arg(ethnicity2));
 }
@@ -91,9 +91,9 @@ QJsonObject subject::ToJSON() {
     QJsonObject json;
 
     json["ID"] = ID;
-    json["alternateIDs"] = QJsonArray::fromStringList(altUIDs);
+	json["alternateIDs"] = QJsonArray::fromStringList(alternateIDs);
     json["GUID"] = GUID;
-	json["dateOfBirth"] = birthdate.toString("yyyy-MM-dd");
+	json["dateOfBirth"] = dateOfBirth.toString("yyyy-MM-dd");
     json["sex"] = sex;
     json["gender"] = gender;
     json["ethnicity1"] = ethnicity1;

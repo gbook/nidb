@@ -27,3 +27,30 @@ analysis::analysis()
 {
 
 }
+
+
+/* ------------------------------------------------------------ */
+/* ----- ToJSON ----------------------------------------------- */
+/* ------------------------------------------------------------ */
+QJsonObject analysis::ToJSON() {
+	QJsonObject json;
+
+	json["pipelineName"] = pipelineName;
+	json["pipelineVersion"] = pipelineVersion;
+	json["clusterStartDate"] = clusterStartDate.toString("yyyy-MM-dd HH:mm:ss");
+	json["clusterEndDate"] = clusterEndDate.toString("yyyy-MM-dd HH:mm:ss");
+	json["pipelineVersion"] = pipelineVersion;
+	json["startDate"] = startDate.toString("yyyy-MM-dd HH:mm:ss");
+	json["endDate"] = endDate.toString("yyyy-MM-dd HH:mm:ss");
+	json["setupTime"] = setupTime;
+	json["runTime"] = runTime;
+	json["numSeries"] = numSeries;
+	json["successful"] = successful;
+	json["size"] = size;
+	json["hostname"] = hostname;
+	json["status"] = status;
+	json["lastMessage"] = lastMessage;
+	json["virtualPath"] = virtualPath;
+
+	return json;
+}

@@ -28,7 +28,7 @@
 /* ------------------------------------------------------------ */
 study::study()
 {
-    studyNum = 1;
+	number = 1;
     dateTime = QDateTime::currentDateTime();
     modality = "UNKNOWN";
     weight = 0.0;
@@ -67,16 +67,19 @@ bool study::addSeries(series s) {
 void study::PrintStudy() {
 
 	Print("------ STUDY ----------");
-	Print(QString("       StudyUID: %1").arg(studyUID));
-	Print(QString("       StudyNum: %1").arg(studyNum));
-	Print(QString("       Description: %1").arg(description));
-	Print(QString("       VisitType: %1").arg(visitType));
-	Print(QString("       DayNum: %1").arg(dayNum));
-	Print(QString("       TimePoint: %1").arg(timePoint));
-	Print(QString("       Date: %1").arg(dateTime.toString()));
-	Print(QString("       Modality: %1").arg(modality));
-	Print(QString("       Weight: %1 kg").arg(weight));
+	Print(QString("       number: %1").arg(number));
+	Print(QString("       dateTime: %1").arg(dateTime.toString()));
+	Print(QString("       ageAtStudy: %1").arg(ageAtStudy));
 	Print(QString("       Height: %1 m").arg(height));
+	Print(QString("       Weight: %1 kg").arg(weight));
+	Print(QString("       Modality: %1").arg(modality));
+	Print(QString("       Description: %1").arg(description));
+	Print(QString("       StudyUID: %1").arg(studyUID));
+	Print(QString("       VisitType: %1").arg(visitType));
+	Print(QString("       DayNumber: %1").arg(dayNumber));
+	Print(QString("       TimePoint: %1").arg(timePoint));
+	Print(QString("       Equipment: %1").arg(equipment));
+	Print(QString("       Path: %1").arg(virtualPath));
 }
 
 
@@ -86,16 +89,18 @@ void study::PrintStudy() {
 QJsonObject study::ToJSON() {
 	QJsonObject json;
 
-	json["number"] = studyNum;
-	json["studyDateTime"] = dateTime.toString("yyyy-MM-dd HH:mm:ss");
+	json["number"] = number;
+	json["dateTime"] = dateTime.toString("yyyy-MM-dd HH:mm:ss");
 	json["ageAtStudy"] = ageAtStudy;
-	json["modality"] = modality;
-	json["description"] = description;
-	json["dayNumber"] = dayNum;
-	json["timePoint"] = timePoint;
-	json["equipment"] = equipment;
 	json["height"] = height;
 	json["weight"] = weight;
+	json["modality"] = modality;
+	json["description"] = description;
+	json["studyUID"] = studyUID;
+	json["visitType"] = visitType;
+	json["dayNumber"] = dayNumber;
+	json["timePoint"] = timePoint;
+	json["equipment"] = equipment;
 	json["path"] = virtualPath;
 
 	QJsonArray JSONseries;

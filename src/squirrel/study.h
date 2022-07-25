@@ -44,18 +44,19 @@ public:
     QJsonObject ToJSON();
 
     /* study info */
+	int number; /*!< Unique study number. Must be unique within the subject */
+	QDateTime dateTime; /*!< start datetime of the study */
+	double ageAtStudy;
+	double height; /*!< height in meters */
+	double weight; /*!< weight in kg */
+	QString modality; /*!< study modality */
+	QString description; /*!< Description of the imaging study */
     QString studyUID; /*!< StudyInstanceUID */
-    int studyNum; /*!< Unique study number. Must be unique within the subject */
-    QString description; /*!< Description of the imaging study */
-    QString visitType; /*!< Description of the visit, eg. pre, post */
-    QString dayNum; /*!< Day number for repeated studies or clinical trials. eg. 6 for 'day 6' */
-    QString timePoint; /*!< Ordinal time point for repeated studies. eg. 3 for the 3rd consecutive imaging study */
-    QDateTime dateTime; /*!< start datetime of the study */
-    QString modality; /*!< study modality */
-    QString equipment;
-    double ageAtStudy;
-    double weight; /*!< weight in kg */
-    double height; /*!< height in meters */
+	QString visitType; /*!< Description of the visit, eg. pre, post */
+	QString dayNumber; /*!< Day number for repeated studies or clinical trials. eg. 6 for 'day 6' */
+	QString timePoint; /*!< Ordinal time point for repeated studies. eg. 3 for the 3rd consecutive imaging study */
+	QString equipment;
+
     QList<series> seriesList; /*!< List of series attached to this study */
 
 	QString virtualPath; /*!< path within the squirrel package, no leading slash */

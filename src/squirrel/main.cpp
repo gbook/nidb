@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
                 Print(QString("*** Invalid squirrel file [%1] ***").arg(m));
             }
 
-            delete v;
+			//delete v;
         }
     }
     /* ---------- Run the dicom2squirrel tool ---------- */

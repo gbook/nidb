@@ -34,5 +34,22 @@ drug::drug()
 QJsonObject drug::ToJSON() {
     QJsonObject json;
 
+	json["drugName"] = drugName;
+	json["dateStart"] = dateStart.toString("yyyy-MM-dd HH:mm:ss");
+	json["dateEnd"] = dateEnd.toString("yyyy-MM-dd HH:mm:ss");
+	json["doseAmount"] = doseAmount;
+	json["doseFrequency"] = doseFrequency;
+	json["route"] = route;
+	json["type"] = type;
+	json["doseKey"] = doseKey;
+	json["doseUnit"] = doseUnit;
+	json["frequencyModifier"] = frequencyModifier;
+	json["frequencyValue"] = frequencyValue;
+	json["frequencyUnit"] = frequencyUnit;
+	json["description"] = description;
+	json["rater"] = rater;
+	json["notes"] = notes;
+	json["dateEntry"] = dateEntry.toString("yyyy-MM-dd HH:mm:ss");
+
     return json;
 }

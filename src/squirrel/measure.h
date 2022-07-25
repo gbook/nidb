@@ -37,8 +37,8 @@ public:
     QJsonObject ToJSON();
 
     QString measureName; /*!< measure name (required) */
-    QDateTime startDate; /*!< start date of the measurement (required) */
-    QDateTime endDate; /*!< end date of the measurement */
+	QDateTime dateStart; /*!< start date of the measurement (required) */
+	QDateTime dateEnd; /*!< end date of the measurement */
     QString instrumentName; /*!< name of the instrument (test, assessment, etc) from which this measure came */
     QString rater; /*!< name or username of the person who rated the measure */
     QString notes; /*!< notes about the measure */

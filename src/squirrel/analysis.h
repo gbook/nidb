@@ -25,6 +25,7 @@
 #define ANALYSIS_H
 #include <QString>
 #include <QDateTime>
+#include <QJsonObject>
 
 /**
  * @brief The analysis class
@@ -33,6 +34,7 @@ class analysis
 {
 public:
     analysis();
+	QJsonObject ToJSON();
 
     QString pipelineName; /*!< name of the pipeline */
     int pipelineVersion; /*!< pipeline version */

@@ -143,7 +143,7 @@ bool squirrel::write(QString outpath, QString dataFormat, QString dirFormat, boo
 
             QString studyDir;
             if (dirFormat == "orig")
-                studyDir = QString("%1").arg(stud.studyNum);
+				studyDir = QString("%1").arg(stud.number);
             else
                 studyDir = QString("%1").arg(j);
 
@@ -158,7 +158,7 @@ bool squirrel::write(QString outpath, QString dataFormat, QString dirFormat, boo
 
                 QString seriesDir;
                 if (dirFormat == "orig")
-                    seriesDir = ser.seriesNum;
+					seriesDir = ser.number;
                 else
                     seriesDir = QString("%1").arg(k);
 

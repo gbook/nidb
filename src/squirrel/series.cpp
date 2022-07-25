@@ -64,7 +64,7 @@ series::series()
 void series::PrintSeries() {
     Print("-------- SERIES ----------");
     Print(QString("         SeriesUID: %1").arg(seriesUID));
-    Print(QString("         SeriesNum: %1").arg(seriesNum));
+	Print(QString("         SeriesNum: %1").arg(number));
     Print(QString("         Description: %1").arg(description));
     Print(QString("         Protocol: %1").arg(protocol));
     Print(QString("         NumFiles: %1").arg(numFiles));
@@ -78,7 +78,7 @@ void series::PrintSeries() {
 QJsonObject series::ToJSON() {
     QJsonObject json;
 
-    json["number"] = seriesNum;
+	json["number"] = number;
 	json["seriesDateTime"] = dateTime.toString("yyyy-MM-dd HH:mm:ss");
     json["description"] = description;
     json["protocol"] = protocol;

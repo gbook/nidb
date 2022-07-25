@@ -34,5 +34,14 @@ measure::measure()
 QJsonObject measure::ToJSON() {
     QJsonObject json;
 
+	json["measureName"] = measureName;
+	json["dateStart"] = dateStart.toString("yyyy-MM-dd HH:mm:ss");
+	json["dateEnd"] = dateEnd.toString("yyyy-MM-dd HH:mm:ss");
+	json["instrumentName"] = instrumentName;
+	json["rater"] = rater;
+	json["notes"] = notes;
+	json["value"] = value;
+	json["description"] = description;
+
     return json;
 }

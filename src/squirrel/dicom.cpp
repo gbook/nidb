@@ -110,7 +110,7 @@ bool dicom::LoadToSquirrel(QString dir, QString binpath, squirrel *sqrl, QString
 
 					currSeries.description = tags["SeriesDescription"];
 					currSeries.protocol = tags["Protocol"];
-					currSeries.seriesNum = tags["SeriesNumber"];
+					currSeries.number = tags["SeriesNumber"];
 					currSeries.dateTime = QDateTime::fromString(tags["SeriesDateTime"], "yyyy-MM-dd HH:mm:ss");
 					currSeries.numFiles = numfiles;
 					currSeries.params = tags;
@@ -133,7 +133,7 @@ bool dicom::LoadToSquirrel(QString dir, QString binpath, squirrel *sqrl, QString
 					currStudy.weight = tags["PatientWeight"].toDouble();
 
 					/* setup/update the subject object */
-					currSubject.birthdate = QDate::fromString(tags["PatientBirthDate"], "yyyy-MM-dd");
+					currSubject.dateOfBirth = QDate::fromString(tags["PatientBirthDate"], "yyyy-MM-dd");
 					currSubject.gender = tags["PatientSex"][0];
 					currSubject.ID = tags["PatientID"];
 					currSubject.sex = tags["PatientSex"][0];
