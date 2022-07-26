@@ -732,11 +732,11 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
         QString protocol = datadef[i].protocol;
         QString modality = datadef[i].modality.toLower();
         QString imagetype = datadef[i].imagetype;
-        bool enabled = datadef[i].enabled;
+		bool enabled = datadef[i].flags.enabled;
         QString type = datadef[i].type;
         QString level = datadef[i].level;
         QString assoctype = datadef[i].assoctype;
-        bool optional = datadef[i].optional;
+		bool optional = datadef[i].flags.optional;
         QString numboldreps = datadef[i].numboldreps;
 
         /* its not efficient to do an insert and then a series of updates. But it doesn't need to be very efficient, and it's much easier to program */
@@ -933,14 +933,14 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
         QString modality = datadef[i].modality.toLower();
         QString dataformat = datadef[i].dataformat;
         QString imagetype = datadef[i].imagetype;
-        bool gzip = datadef[i].gzip;
+		bool gzip = datadef[i].flags.gzip;
         QString location = datadef[i].location;
-        bool useseries = datadef[i].useseries;
-        bool preserveseries = datadef[i].preserveseries;
-        bool usephasedir = datadef[i].usephasedir;
+		bool useseries = datadef[i].flags.useSeries;
+		bool preserveseries = datadef[i].flags.preserveSeries;
+		bool usephasedir = datadef[i].flags.usePhaseDir;
         QString behformat = datadef[i].behformat;
         QString behdir = datadef[i].behdir;
-        bool enabled = datadef[i].enabled;
+		bool enabled = datadef[i].flags.enabled;
         //bool optional = datadef[i].optional;
         QString level = datadef[i].level;
         QString numboldreps = datadef[i].numboldreps;
@@ -1732,15 +1732,15 @@ QList<dataDefinitionStep> modulePipeline::GetPipelineDataDef(int pipelineid, int
             rec.modality = q.value("pdd_modality").toString().trimmed();
             rec.dataformat = q.value("pdd_dataformat").toString().trimmed();
             rec.imagetype = q.value("pdd_imagetype").toString().trimmed();
-            rec.gzip = q.value("pdd_gzip").toBool();
+			rec.flags.gzip = q.value("pdd_gzip").toBool();
             rec.location = q.value("pdd_location").toString().trimmed();
-            rec.useseries = q.value("pdd_useseries").toBool();
-            rec.preserveseries = q.value("pdd_preserveseries").toBool();
-            rec.usephasedir = q.value("pdd_usephasedir").toBool();
+			rec.flags.useSeries = q.value("pdd_useseries").toBool();
+			rec.flags.preserveSeries = q.value("pdd_preserveseries").toBool();
+			rec.flags.usePhaseDir = q.value("pdd_usephasedir").toBool();
             rec.behformat = q.value("pdd_behformat").toString().trimmed();
             rec.behdir = q.value("pdd_behdir").toString().trimmed();
-            rec.enabled = q.value("pdd_enabled").toBool();
-            rec.optional = q.value("pdd_optional").toBool();
+			rec.flags.enabled = q.value("pdd_enabled").toBool();
+			rec.flags.optional = q.value("pdd_optional").toBool();
             rec.numboldreps = q.value("pdd_numboldreps").toString().trimmed();
             rec.level = q.value("pdd_level").toString().trimmed();
             rec.datadownloadid = -1;

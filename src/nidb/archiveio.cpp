@@ -2354,20 +2354,26 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
         return false;
     }
 
+	squirrel sqrl;
+	sqrl.name = name;
+	sqrl.description = desc;
+	//sqrl.datetime = CreateCurrentDateTime(2);
+	sqrl.NiDBversion = n->GetVersion();
+
     /* create JSON object */
-    QJsonObject root;
+	//QJsonObject root;
 
-    QJsonObject pkgInfo;
-    pkgInfo["name"] = name;
-    pkgInfo["description"] = desc;
-    pkgInfo["datetime"] = CreateCurrentDateTime(2);
-    pkgInfo["NiDBversion"] = n->GetVersion();
-    pkgInfo["format"] = "squirrel";
-    pkgInfo["version"] = "1.0";
+	//QJsonObject pkgInfo;
+	//pkgInfo["name"] = name;
+	//pkgInfo["description"] = desc;
+	//pkgInfo["datetime"] = CreateCurrentDateTime(2);
+	//pkgInfo["NiDBversion"] = n->GetVersion();
+	//pkgInfo["format"] = "squirrel";
+	//pkgInfo["version"] = "1.0";
 
-    root["_package"] = pkgInfo;
+	//root["_package"] = pkgInfo;
 
-    QJsonArray JSONsubjects;
+	//QJsonArray JSONsubjects;
 
     int subjectCounter = 1; /* the subject counter */
     QList<int> pipelineIDs;
@@ -2383,20 +2389,30 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
         subject subj(subjectid, n);
 
         n->WriteLog("Working on [" + uid + "]");
-        //QString subjectSex = s[uid][0][0]["subjectsex"];
+
+		//QString subjectSex = s[uid][0][0]["subjectsex"];
         double subjectAge = s[uid][0][0]["subjectage"].toDouble();
 
-        /* add all of the subject information to the JSON objects */
-        QJsonObject subjInfo;
-        subjInfo["ID"] = uid;
-        subjInfo["alternateIDs"] = QJsonArray::fromStringList(subj.altUIDs());
-        subjInfo["dateOfBirth"] = subj.dob().toString();
-        subjInfo["sex"] = subj.sex();
-        subjInfo["gender"] = subj.sex();
-        subjInfo["ethnicity1"] = subj.ethnicity1();
-        subjInfo["ethnicity2"] = subj.ethnicity2();
+		squirrelSubject sqrlSubject = subj.GetSquirrelObject();
+		//sqrlSubject.ID = uid;
+		//sqrlSubject.alternateIDs = subj.altUIDs();
+		//sqrlSubject.dateOfBirth = subj.dob();
+		//sqrlSubject.sex = subj.sex();
+		//sqrlSubject.gender = subj.sex();
+		//sqrlSubject.ethnicity1 = subj.ethnicity1();
+		//sqrlSubject.ethnicity2 = subj.ethnicity2();
 
-        QJsonArray JSONstudies;
+		/* add all of the subject information to the JSON objects */
+		//QJsonObject subjInfo;
+		//subjInfo["ID"] = uid;
+		//subjInfo["alternateIDs"] = QJsonArray::fromStringList(subj.altUIDs());
+		//subjInfo["dateOfBirth"] = subj.dob().toString();
+		//subjInfo["sex"] = subj.sex();
+		//subjInfo["gender"] = subj.sex();
+		//subjInfo["ethnicity1"] = subj.ethnicity1();
+		//subjInfo["ethnicity2"] = subj.ethnicity2();
+
+		//QJsonArray JSONstudies;
         QList<int> enrollmentIDs;
 
         /* iterate through the studynums */
@@ -2411,16 +2427,29 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
             int studyid = s[uid][studynum][0]["studyid"].toInt();
             study stdy(studyid, n);
 
+			squirrelStudy sqrlStudy = stdy.GetSquirrelObject();
+			sqrlStudy.ageAtStudy = subjectAge;
+			//sqrlStudy.dateTime = stdy.dateTime();
+			//sqrlStudy.dayNumber = stdy.daynum();
+			//sqrlStudy.description = stdy.desc();
+			//sqrlStudy.visitType = stdy.type();
+			//sqrlStudy.equipment;
+			//sqrlStudy.height;
+			//sqrlStudy.weight;
+			//sqrlStudy.modality = stdy.modality();
+			//sqrlStudy.number = studynum;
+			//sqrlStudy.timePoint = stdy.timepoint();
+
             /* add all the study information to the JSON objects */
-            QJsonObject studyInfo;
-            studyInfo["studyNumber"] = studynum;
-            studyInfo["studyDateTime"] = stdy.dateTime().toString();
-            studyInfo["ageAtStudy"] = subjectAge;
-            studyInfo["modality"] = stdy.modality();
-            studyInfo["description"] = stdy.desc();
-            studyInfo["visit"] = stdy.type();
-            studyInfo["dayNumber"] = stdy.daynum();
-            studyInfo["timePoint"] = stdy.timepoint();
+			//QJsonObject studyInfo;
+			//studyInfo["studyNumber"] = studynum;
+			//studyInfo["studyDateTime"] = stdy.dateTime().toString();
+			//studyInfo["ageAtStudy"] = subjectAge;
+			//studyInfo["modality"] = stdy.modality();
+			//studyInfo["description"] = stdy.desc();
+			//studyInfo["visit"] = stdy.type();
+			//studyInfo["dayNumber"] = stdy.daynum();
+			//studyInfo["timePoint"] = stdy.timepoint();
 
             /* export analyses (study level) */
             if (downloadflags.contains("DOWNLOAD_ANALYSIS", Qt::CaseInsensitive)) {
@@ -2429,13 +2458,15 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
                 q2.bindValue(":studyid", studyid);
                 n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
                 if (q2.size() > 0) {
-                    QJsonArray JSONanalyses;
+					//QJsonArray JSONanalyses;
                     while (q2.next()) {
                         analysis a(q2.value("analysis_id").toInt(), n);
-                        if (a.isValid)
-                            JSONanalyses.append(a.GetJSONObject());
+						if (a.isValid) {
+							squirrelAnalysis sqrlAnalysis = a.GetSquirrelObject();;
+
+							sqrlStudy.addAnalysis(sqrlAnalysis);
+						}
                     }
-                    studyInfo["analysis"] = JSONanalyses;
                 }
             }
 
@@ -2571,7 +2602,7 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
                 }
 
                 /* export the beh data */
-                if (downloadflags.contains("DOWNLOAD_BEH", Qt::CaseInsensitive)) {
+				if (downloadflags.contains("DOWNLOAD_BEH", Qt::CaseInsensitive)) {
                     if (behdirexists) {
                         QString systemstring;
                         systemstring = "cp -R " + behindir + "/* " + seriesoutdir;
@@ -2652,8 +2683,10 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
             studyCounter++;
 
             /* Add list of studies to the current subject, then append the study to the study list */
-            studyInfo["series"] = JSONseries;
-            JSONstudies.append(studyInfo);
+			//studyInfo["series"] = JSONseries;
+			//JSONstudies.append(studyInfo);
+
+			sqrlSubject.addStudy(sqrlStudy);
         }
         subjectCounter++;
 

@@ -87,13 +87,13 @@ bool dicom::LoadToSquirrel(QString dir, QString binpath, squirrel *sqrl, QString
 			QString subjectID = a.key();
 
 			/* create a subject */
-			subject currSubject;
+			squirrelSubject currSubject;
 			/* ---------- iterate through the studies ---------- */
 			for(QMap<QString, QMap<QString, QStringList> >::iterator b = dcms[subjectID].begin(); b != dcms[subjectID].end(); ++b) {
 				QString studyID = b.key();
 
 				/* create a study */
-				study currStudy;
+				squirrelStudy currStudy;
 				/* ---------- iterate through the series ---------- */
 				for(QMap<QString, QStringList>::iterator c = dcms[subjectID][studyID].begin(); c != dcms[subjectID][studyID].end(); ++c) {
 					QString seriesID = c.key();
@@ -106,7 +106,7 @@ bool dicom::LoadToSquirrel(QString dir, QString binpath, squirrel *sqrl, QString
 					img->GetImageFileTags(files[0], binpath, true, tags, m);
 
 					/* setup the series object */
-					series currSeries;
+					squirrelSeries currSeries;
 
 					currSeries.description = tags["SeriesDescription"];
 					currSeries.protocol = tags["Protocol"];

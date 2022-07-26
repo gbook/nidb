@@ -135,6 +135,9 @@ void study::LoadStudyInfo() {
         _studytype = q.value("study_type").toString().trimmed();
 		_daynum = q.value("study_daynum").toString().trimmed();
 		_timepoint = q.value("study_timepoint").toString().trimmed();
+		_equipment = q.value("study_site").toString().trimmed();
+		_height = q.value("study_height").toDouble();
+		_weight = q.value("study_weight").toDouble();
 
         /* check to see if anything isn't valid or is blank */
         if ((n->cfg["archivedir"] == "") || (n->cfg["archivedir"] == "/")) { msgs << "cfg->archivedir was invalid"; _isValid = false; }
@@ -184,4 +187,25 @@ void study::PrintStudyInfo() {
     output += QString("   studydatetime: [%1]\n").arg(_studydatetime.toString("yyyy-MM-dd HH:mm:ss"));
 
     n->WriteLog(output);
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetSquirrelObject ------------------------------ */
+/* ---------------------------------------------------------- */
+squirrelStudy study::GetSquirrelObject() {
+	squirrelStudy sqrl;
+
+	sqrl.dateTime = _studydatetime;
+	sqrl.dayNumber = _daynum;
+	sqrl.description = _desc;
+	sqrl.equipment = _equipment;
+	sqrl.height = _height;
+	sqrl.modality = _modality;
+	sqrl.number = _studynum;
+	sqrl.timePoint = _timepoint;
+	sqrl.visitType = _studytype;
+	sqrl.weight = _weight;
+
+	return sqrl;
 }

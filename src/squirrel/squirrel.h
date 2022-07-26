@@ -26,11 +26,11 @@
 #include <QString>
 #include <QDate>
 #include <QDateTime>
-#include "subject.h"
-#include "experiment.h"
-#include "pipeline.h"
-#include "measure.h"
-#include "drug.h"
+#include "squirrelSubject.h"
+#include "squirrelExperiment.h"
+#include "squirrelPipeline.h"
+#include "squirrelMeasure.h"
+#include "squirrelDrug.h"
 #include "../nidb/version.h"
 
 /**
@@ -48,15 +48,16 @@ public:
     bool validate();
     void print();
 
-    bool addSubject(subject subj);
+    bool addSubject(squirrelSubject subj);
     bool removeSubject(QString ID);
 
     /* package data */
     QDateTime datetime; /*!< datetime the package was created */
     QString description; /*!< detailed description of the package */
     QString name; /*!< name of the package */
+	QString NiDBversion; /*!< NiDB version that wrote this package */
     QString version; /*!< squirrel version */
-    QString format; /*!< package format, most likely 'squirrel' */
+	QString format; /*!< package format, most likely 'squirrel' */
 
 private:
     void PrintPackage();
@@ -64,9 +65,9 @@ private:
     bool DeleteTempDir();
     QString workingDir;
 
-    QList<subject> subjectList; /*!< List of subjects within this package */
-    QList<pipeline> pipelineList; /*!< List of pipelines within this package */
-    QList<experiment> experimentList; /*!< List of experiments within this package */
+    QList<squirrelSubject> subjectList; /*!< List of subjects within this package */
+    QList<squirrelPipeline> pipelineList; /*!< List of pipelines within this package */
+    QList<squirrelExperiment> experimentList; /*!< List of experiments within this package */
 
 };
 

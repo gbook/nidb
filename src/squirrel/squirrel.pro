@@ -13,18 +13,18 @@ CONFIG += silent
 SOURCES += \
 	../nidb/imageio.cpp \
 	../nidb/utils.cpp \
-	analysis.cpp \
 	convert.cpp \
 	dicom.cpp \
-	drug.cpp \
-	experiment.cpp \
 	main.cpp \
-	measure.cpp \
-	pipeline.cpp \
-	series.cpp \
 	squirrel.cpp \
-	study.cpp \
-	subject.cpp \
+	squirrelAnalysis.cpp \
+	squirrelDrug.cpp \
+	squirrelExperiment.cpp \
+	squirrelMeasure.cpp \
+	squirrelPipeline.cpp \
+	squirrelSeries.cpp \
+	squirrelStudy.cpp \
+	squirrelSubject.cpp \
 	validate.cpp
 
 # Default rules for deployment.
@@ -36,17 +36,17 @@ HEADERS += \
 	../nidb/imageio.h \
 	../nidb/utils.h \
 	../nidb/version.h \
-	analysis.h \
 	convert.h \
 	dicom.h \
-	drug.h \
-	experiment.h \
-	measure.h \
-	pipeline.h \
-	series.h \
 	squirrel.h \
-	study.h \
-	subject.h \
+	squirrelAnalysis.h \
+	squirrelDrug.h \
+	squirrelExperiment.h \
+	squirrelMeasure.h \
+	squirrelPipeline.h \
+	squirrelSeries.h \
+	squirrelStudy.h \
+	squirrelSubject.h \
 	validate.h
 
 

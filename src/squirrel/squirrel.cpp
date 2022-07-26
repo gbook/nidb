@@ -124,7 +124,7 @@ bool squirrel::write(QString outpath, QString dataFormat, QString dirFormat, boo
     /* iterate through subjects */
     for (int i=0; i < subjectList.size(); i++) {
 
-        subject sub = subjectList[i];
+        squirrelSubject sub = subjectList[i];
 
         QString subjDir;
         if (dirFormat == "orig")
@@ -139,7 +139,7 @@ bool squirrel::write(QString outpath, QString dataFormat, QString dirFormat, boo
         /* iterate through studies */
         for (int j=0; j < sub.studyList.size(); j++) {
 
-            study stud = sub.studyList[j];
+            squirrelStudy stud = sub.studyList[j];
 
             QString studyDir;
             if (dirFormat == "orig")
@@ -154,7 +154,7 @@ bool squirrel::write(QString outpath, QString dataFormat, QString dirFormat, boo
             /* iterate through series */
             for (int k=0; k < stud.seriesList.size(); k++) {
 
-                series ser = stud.seriesList[k];
+                squirrelSeries ser = stud.seriesList[k];
 
                 QString seriesDir;
                 if (dirFormat == "orig")
@@ -296,19 +296,19 @@ void squirrel::print() {
     /* iterate through subjects */
     for (int i=0; i < subjectList.size(); i++) {
 
-        subject sub = subjectList[i];
+        squirrelSubject sub = subjectList[i];
         sub.PrintSubject();
 
         /* iterate through studies */
         for (int j=0; j < sub.studyList.size(); j++) {
 
-            study stud = sub.studyList[j];
+            squirrelStudy stud = sub.studyList[j];
             stud.PrintStudy();
 
             /* iterate through series */
             for (int k=0; k < stud.seriesList.size(); k++) {
 
-                series ser = stud.seriesList[k];
+                squirrelSeries ser = stud.seriesList[k];
                 ser.PrintSeries();
             }
         }
@@ -324,15 +324,12 @@ void squirrel::print() {
  * @param subj
  * @return true if added, false if not added
  */
-bool squirrel::addSubject(subject subj) {
-    //Print("Checkpoint 1");
+bool squirrel::addSubject(squirrelSubject subj) {
 
     /* check size of the subject list before and after adding */
     qint64 size = subjectList.size();
-    //Print("Checkpoint 2");
 
     subjectList.append(subj);
-    //Print("Checkpoint 3");
 
     if (subjectList.size() > size)
         return true;

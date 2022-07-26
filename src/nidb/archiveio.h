@@ -25,6 +25,7 @@
 #include "nidb.h"
 #include "imageio.h"
 #include "performanceMetric.h"
+#include "squirrel.h"
 
 class archiveIO
 {

@@ -24,6 +24,7 @@
 #define ANALYSIS_H
 #include <QString>
 #include "nidb.h"
+#include "squirrelAnalysis.h"
 
 class analysis
 {
@@ -33,6 +34,7 @@ public:
 	nidb *n;
 
 	void PrintAnalysisInfo();
+	squirrelAnalysis GetSquirrelObject();
 
 	QString analysispath;
 	qint64 analysisid = -1;
@@ -51,10 +53,10 @@ public:
 	int numSeries;
 	QString hostname;
 	qint64 diskSize;
-	QString startDate;
-	QString clusterStartDate;
-	QString clusterEndDate;
-	QString endDate;
+	QDateTime startDate;
+	QDateTime clusterStartDate;
+	QDateTime clusterEndDate;
+	QDateTime endDate;
 
 	QString pipelinename;
 	int pipelineversion = -1;

@@ -24,6 +24,7 @@
 #define STUDY_H
 #include <QString>
 #include "nidb.h"
+#include "squirrelStudy.h"
 
 enum criteria {rowid, uidstudynum, studydatetimemodality, studyuid};
 
@@ -39,6 +40,7 @@ public:
     nidb *n;
 
     void PrintStudyInfo();
+	squirrelStudy GetSquirrelObject();
 
     int studyRowID() { return _studyid; }
     int subjectRowID() { return _subjectid; }
@@ -55,6 +57,9 @@ public:
     QDateTime dateTime() { return _studydatetime; }
     QString modality() { return _modality; }
     QString msg() { return _msg; }
+	QString equipment() { return _equipment; }
+	double height() { return _height; }
+	double weight() { return _weight; }
 
     bool valid() { return _isValid; }
 
@@ -66,6 +71,9 @@ private:
     int _studynum = -1;
     QString _uid = "";
 	QString _desc = "";
+	QString _equipment = "";
+	double _height = 0.0;
+	double _weight = 0.0;
 	QString _studytype = "";
 	QString _daynum = "";
 	QString _timepoint = "";

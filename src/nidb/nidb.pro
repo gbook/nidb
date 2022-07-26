@@ -86,6 +86,7 @@ HEADERS += \
     utils.h \
     version.h
 
+INCLUDEPATH += ../squirrel
 
 # gdcm
 win32: {

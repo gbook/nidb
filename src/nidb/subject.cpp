@@ -209,3 +209,22 @@ void subject::PrintSubjectInfo() {
 
     n->WriteLog(output);
 }
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetSquirrelObject ------------------------------ */
+/* ---------------------------------------------------------- */
+squirrelSubject subject::GetSquirrelObject() {
+	squirrelSubject sqrl;
+
+	sqrl.alternateIDs = _altuids;
+	sqrl.dateOfBirth = _dob;
+	sqrl.ethnicity1 = _ethnicity1;
+	sqrl.ethnicity2 = _ethnicity2;
+	sqrl.gender = _sex;
+	sqrl.sex = _sex;
+	sqrl.GUID = _guid;
+	sqrl.ID = _uid;
+
+	return sqrl;
+}

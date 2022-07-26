@@ -106,10 +106,10 @@ void analysis::LoadAnalysisInfo() {
 	numSeries = q.value("analysis_numseries").toInt();
 	hostname = q.value("analysis_hostname").toString();
 	diskSize = q.value("analysis_disksize").toLongLong();
-	startDate = q.value("analysis_startdate").toString();
-	clusterStartDate = q.value("analysis_clusterstartdate").toString();
-	clusterEndDate = q.value("analysis_clusterenddate").toString();
-	endDate = q.value("analysis_enddate").toString();
+	startDate = q.value("analysis_startdate").toDateTime();
+	clusterStartDate = q.value("analysis_clusterstartdate").toDateTime();
+	clusterEndDate = q.value("analysis_clusterenddate").toDateTime();
+	endDate = q.value("analysis_enddate").toDateTime();
 
 	pipelinename = q.value("pipeline_name").toString().trimmed();
 	pipelinelevel = q.value("pipeline_level").toInt();
@@ -197,10 +197,35 @@ QJsonObject analysis::GetJSONObject() {
 	json["numSeries"] = numSeries;
 	json["hostname"] = hostname;
 	json["diskSize"] = static_cast<double>(diskSize);
-	json["startDate"] = startDate;
-	json["clusterStartDate"] = clusterStartDate;
-	json["clusterEndDate"] = clusterEndDate;
-	json["endDate"] = endDate;
+	json["startDate"] = startDate.toString();
+	json["clusterStartDate"] = clusterStartDate.toString();
+	json["clusterEndDate"] = clusterEndDate.toString();
+	json["endDate"] = endDate.toString();
 
 	return json;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetSquirrelObject ------------------------------ */
+/* ---------------------------------------------------------- */
+squirrelAnalysis analysis::GetSquirrelObject() {
+	squirrelAnalysis s;
+
+	s.clusterEndDate = clusterEndDate;
+	s.clusterStartDate = clusterStartDate;
+	s.endDate = endDate;
+	s.hostname = hostname;
+	s.lastMessage = statusmessage;
+	s.numSeries = numSeries;
+	s.pipelineName = pipelinename;
+	s.pipelineVersion = pipelineversion;
+	s.runTime;
+	s.setupTime;
+	s.size = diskSize;
+	s.startDate = startDate;
+	s.status = status;
+	s.successful = isComplete;
+
+	return s;
 }

@@ -366,11 +366,13 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
     QStringList msgs;
     QString tmpexportdir;
 
+	/* check if it's a special type of export first */
     if (filetype == "bids") {
         QString log;
         ExportBIDS(exportid, bidsreadme, bidsflags, tmpexportdir, exportstatus, log);
         msgs << log;
     }
+	/* squirrel */
     else if (filetype == "squirrel") {
         QString log;
         ExportSquirrel(exportid, squirreltitle, squirreldesc, downloadflags, squirrelflags, exportstatus, tmpexportdir, log);

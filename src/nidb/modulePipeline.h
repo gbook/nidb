@@ -52,18 +52,27 @@ struct dataDefinitionStep {
     QString modality;
     QString dataformat;
     QString imagetype;
-    bool gzip;
+	//bool gzip;
     QString location;
-    bool useseries;
-    bool preserveseries;
-    bool usephasedir;
+	//bool useseries;
+	//bool preserveseries;
+	//bool usephasedir;
     QString behformat;
     QString behdir;
-    bool enabled;
-    bool optional;
+	//bool enabled;
+	//bool optional;
     QString numboldreps; /* this is stored as a comparison */
     QString level;
     qint64 datadownloadid;
+	struct flag {
+		bool enabled; /*!< whether this step is enabled */
+		bool optional; /*!< if the step is optional */
+		bool gzip; /*!< whether Nifti data should be zipped (.nii.gz) */
+		bool preserveSeries; /*!< whether to preserve the series number, if writing series directories. Otherwise the series directories are generated sequentially starting at 1 */
+		bool primaryProtocol; /*!< true if this is the primary protocol. this determines if this study will be used as the parent for child pipelines */
+		bool usePhaseDir; /*!< whether to place data into a sub-directory based on the phase-encoding direction */
+		bool useSeries; /*!< true to write each series to an individually numbered directory, otherwise write it to the directory specified in 'location' */
+	} flags;
 };
 
 class modulePipeline
