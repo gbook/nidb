@@ -24,6 +24,7 @@
 #define SERIES_H
 #include <QString>
 #include "nidb.h"
+#include "squirrelSeries.h"
 
 class series
 {
@@ -33,11 +34,15 @@ public:
     nidb *n;
 
     void PrintSeriesInfo();
+	squirrelSeries GetSquirrelObject();
 
     QString modality;
     QString uid;
     int studynum;
     int seriesnum;
+	QString desc;
+	QString protocol;
+	QDateTime datetime;
     int subjectid;
     int studyid;
     qint64 seriesid;

@@ -26,6 +26,13 @@
 #include "imageio.h"
 #include "performanceMetric.h"
 #include "squirrel.h"
+#include "series.h"
+#include "subject.h"
+#include "study.h"
+#include "analysis.h"
+#include "pipeline.h"
+#include "minipipeline.h"
+#include "experiment.h"
 
 class archiveIO
 {

@@ -63,7 +63,10 @@ void series::LoadSeriesInfo() {
             uid = q.value("uid").toString().trimmed();
             studynum = q.value("study_num").toInt();
             seriesnum = q.value("series_num").toInt();
-            subjectid = q.value("subject_id").toInt();
+			desc = q.value("series_desc").toString().trimmed();
+			protocol = q.value("series_protocol").toString().trimmed();
+			datetime = q.value("series_datetime").toDateTime();
+			subjectid = q.value("subject_id").toInt();
             studyid = q.value("study_id").toInt();
             projectid = q.value("project_id").toInt();
             enrollmentid = q.value("enrollment_id").toInt();
@@ -136,4 +139,23 @@ bool series::ChangeSeriesPath(int studyid, int newSeriesNum) {
         return true;
     else
         return false;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetSquirrelObject ------------------------------ */
+/* ---------------------------------------------------------- */
+squirrelSeries series::GetSquirrelObject() {
+	squirrelSeries sqrl;
+
+	sqrl.dateTime = datetime;
+	sqrl.description = desc;
+	sqrl.number = QString("%1").arg(seriesnum);
+	sqrl.protocol = protocol;
+	//sqrl.experimentList;
+	//sqrl.files;
+	//sqrl.numFiles = ;
+	//sqrl.size = ;
+
+	return sqrl;
 }

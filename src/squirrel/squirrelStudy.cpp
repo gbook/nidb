@@ -71,7 +71,7 @@ bool squirrelStudy::addAnalysis(squirrelAnalysis a) {
 	/* check size of the series list before and after adding */
 	qint64 size = analysisList.size();
 
-	analysisList.append(s);
+	analysisList.append(a);
 
 	if (analysisList.size() > size)
 		return true;

@@ -22,12 +22,6 @@
 
 #include "archiveio.h"
 #include "imageio.h"
-#include "subject.h"
-#include "study.h"
-#include "analysis.h"
-#include "pipeline.h"
-#include "minipipeline.h"
-#include "experiment.h"
 
 /* ---------------------------------------------------------- */
 /* --------- archiveIO -------------------------------------- */
@@ -2410,7 +2404,7 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
                         analysis a(q2.value("analysis_id").toInt(), n);
                         if (a.isValid) {
                             /* create and add each squirrelAnalysis object */
-                            squirrelAnalysis sqrlAnalysis = a.GetSquirrelObject();;
+							squirrelAnalysis sqrlAnalysis = a.GetSquirrelObject();
                             sqrlStudy.addAnalysis(sqrlAnalysis);
                         }
                     }
@@ -2441,7 +2435,7 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
             for(QMap<int, QMap<QString, QString>>::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
                 int seriesnum = c.key();
 
-                QJsonObject seriesInfo;
+				//QJsonObject seriesInfo;
 
                 /* skip the series that contained only a placeholder for the subject/study info */
                 if (seriesnum == 0)
@@ -2478,6 +2472,9 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
                 bool datadirempty = s[uid][studynum][seriesnum]["datadirempty"].toInt();
                 //bool behdirempty = s[uid][studynum][seriesnum]["behdirempty"].toInt();
                 //bool qcdirempty = s[uid][studynum][seriesnum]["qcdirempty"].toInt();
+
+				series sers(seriesid, modality, n);
+				squirrelSeries sqrlSeries = sers.GetSquirrelObject();
 
                 enrollmentIDs.append(enrollmentid);
                 /* create the subject dir */
@@ -2566,7 +2563,7 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
                         behInfo["numfiles"] = QString::number(c);
                         behInfo["size"] = QString::number(b);
 
-                        seriesInfo["beh"] = behInfo;
+						//seriesInfo["beh"] = behInfo;
                     }
                 }
 
@@ -2619,13 +2616,20 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
                 /* create squirrelSeries object and add it to squirrelStudy object */
 
                 /* add all the series information to the JSON objects */
-                seriesInfo["number"] = seriesnum;
-                seriesInfo["path"] = QString("%1/%2/%3").arg(subjectdir).arg(sessiondir).arg(seriesdir);
-                seriesInfo["numfiles"] = QString::number(fCount);
-                seriesInfo["size"] = QString::number(fBytes);
+				//seriesInfo["number"] = seriesnum;
+				//seriesInfo["path"] = QString("%1/%2/%3").arg(subjectdir).arg(sessiondir).arg(seriesdir);
+				//seriesInfo["numfiles"] = QString::number(fCount);
+				//seriesInfo["size"] = QString::number(fBytes);
+
+				//sqrlSeries.virtualPath = QString("%1/%2/%3").arg(subjectdir).arg(sessiondir).arg(seriesdir);
+				sqrlSeries.numFiles = fCount;
+				sqrlSeries.size = fBytes;
 
                 /* add series to array of JSON series objects */
-                JSONseries.append(seriesInfo);
+				//JSONseries.append(seriesInfo);
+
+				/* add the completed squirrelSeries to the squirrelStudy object */
+				sqrlStudy.addSeries(sqrlSeries);
 
                 seriesCounter++;
             }
@@ -2642,8 +2646,9 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
 
         /* export variables (only variables from enrollments associated with the studies) */
         if (downloadflags.contains("DOWNLOAD_VARIABLES", Qt::CaseInsensitive)) {
-            AppendJSONMeasures(subjInfo, enrollmentIDs);
-            AppendJSONDrugs(subjInfo, enrollmentIDs);
+			/* TODO - create measure and drug objects */
+			//AppendJSONMeasures(subjInfo, enrollmentIDs);
+			//AppendJSONDrugs(subjInfo, enrollmentIDs);
         }
 
         /* Add list of studies to the current subject, then append the subject to the subject list */
@@ -2666,7 +2671,10 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
                 pipeline p(pipelineIDs[i], n);
                 JSONpipelines.append(p.GetJSONObject(dir));
             }
-            root["pipelines"] = JSONpipelines;
+
+			/* TODO - add pipelines to the squirrel object */
+
+			//root["pipelines"] = JSONpipelines;
         }
     }
 
@@ -2679,7 +2687,10 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
                 experiment e(experimentIDs[i], n);
                 JSONexperiments.append(e.GetJSONObject(dir));
             }
-            root["experiments"] = JSONexperiments;
+
+			/* TODO - add experiments to the squirrel object */
+
+			//root["experiments"] = JSONexperiments;
         }
     }
 
@@ -2692,17 +2703,21 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
                 minipipeline p(minipipelineIDs[i], n);
                 JSONminipipelines.append(p.GetJSONObject(dir));
             }
-            root["minipipelines"] = JSONminipipelines;
+
+			/* TODO - add minipipelines to the squirrel object */
+
+			//root["minipipelines"] = JSONminipipelines;
         }
     }
 
     /* add list of subjects to the root JSON object */
-    root["subjects"] = JSONsubjects;
+	//root["subjects"] = JSONsubjects;
 
-    QByteArray j = QJsonDocument(root).toJson();
-    QFile fout(QString("%1/squirrel.json").arg(outdir));
-    fout.open(QIODevice::WriteOnly);
-    fout.write(j);
+	//QByteArray j = QJsonDocument(root).toJson();
+	//QFile fout(QString("%1/squirrel.json").arg(outdir));
+	//fout.open(QIODevice::WriteOnly);
+	//fout.write(j);
+	sqrl.write(outdir, "orig", "orig");
 
     msg = msgs.join("\n");
     n->WriteLog("Leaving WriteSquirrel()...");
