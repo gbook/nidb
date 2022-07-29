@@ -50,6 +50,8 @@ if [ ! -d "$BUILDDIR/smtp" ]; then
 
 	echo -e "\nsmtp module not built. Building smtp module now\n"
 
+	echo $QMAKEBIN -o $BUILDDIR/smtp/Makefile $SRCDIR/smtp/SMTPEmail.pro -spec linux-g++
+	
 	$QMAKEBIN -o $BUILDDIR/smtp/Makefile $SRCDIR/smtp/SMTPEmail.pro -spec linux-g++
 	cd $BUILDDIR/smtp
 	make -j 16

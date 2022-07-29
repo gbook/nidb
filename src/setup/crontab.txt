@@ -13,3 +13,4 @@
 
 # NiDB cleanup
 @hourly find /nidb/logs/*.log -mtime +4 -exec rm {} \;
+@hourly find /nidb/data/tmp/* -mtime +7 -exec rm {} \;
