@@ -31,7 +31,7 @@
 
 ## Tutorials
 
-* [Reporting Using Analysis Builder](tutorials/reporting-using-analysis-builder.md)
+* [Analysis Builder](tutorials/analysis-builder.md)
 * [Importing Data from a Redcap Project](tutorials/importing-data-from-a-redcap-project.md)
 * [Import DICOM data](tutorials/import-dicom-data.md)
 * [Adding Users to Projects](tutorials/adding-users-to-projects.md)

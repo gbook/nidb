@@ -8,7 +8,7 @@ description: Calendar for appointments, scheduling of equipment time, etc
 
 If the calendar is enabled in your NiDB installation, a link on the top menu will be available. The default view is the current week. Click Day, Week, or Month to change view. Click arrows to go forward or backward in the calendar. Click the dropdown list of calendars to change the current calendar. Information about what you are viewing will be displayed at the top of each page.
 
-![](<../../.gitbook/assets/image (2) (1).png>)
+![](<../../.gitbook/assets/image (2).png>)
 
 ### Managing the Calendars
 
