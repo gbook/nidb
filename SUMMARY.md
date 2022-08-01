@@ -31,15 +31,16 @@
 
 ## Tutorials
 
+* [Reporting Using Analysis Builder](tutorials/reporting-using-analysis-builder.md)
+* [Importing Data from a Redcap Project](tutorials/importing-data-from-a-redcap-project.md)
 * [Import DICOM data](tutorials/import-dicom-data.md)
 * [Adding Users to Projects](tutorials/adding-users-to-projects.md)
 * [Editing the config file](tutorials/editing-the-config-file.md)
-* [Importing Data from a Redcap Project](tutorials/importing-data-from-a-redcap-project.md)
 
 ## Contribute
 
 * [Squirrel data sharing format](contribute/squirrel-data-sharing-format/README.md)
-  * [Specification v1.0](contribute/squirrel-data-sharing-format/specification-v1.0/README.md)
+  * [Specification v1.0](contribute/squirrel-data-sharing-format/specification.md)
     * [Package root](contribute/squirrel-data-sharing-format/specification-v1.0/package-root.md)
     * [\_package](contribute/squirrel-data-sharing-format/specification-v1.0/\_package.md)
     * [data](contribute/squirrel-data-sharing-format/specification-v1.0/data/README.md)
