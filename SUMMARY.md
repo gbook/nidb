@@ -31,6 +31,7 @@
 
 ## Tutorials
 
+* [Importing Subjects from Redcap](tutorials/importing-subjects-from-redcap.md)
 * [Analysis Builder](tutorials/analysis-builder.md)
 * [Importing Data from a Redcap Project](tutorials/importing-data-from-a-redcap-project.md)
 * [Import DICOM data](tutorials/import-dicom-data.md)
