@@ -1,0 +1,212 @@
+\hypertarget{classsquirrel}{}\doxysection{squirrel Class Reference}
+\label{classsquirrel}\index{squirrel@{squirrel}}
+
+
+The squirrel class.  
+
+
+
+
+{\ttfamily \#include $<$squirrel.\+h$>$}
+
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{classsquirrel_ac71c9c4344f567f6c2ba9e52eeb9ef73}{squirrel}} ()
+\begin{DoxyCompactList}\small\item\em \mbox{\hyperlink{classsquirrel_ac71c9c4344f567f6c2ba9e52eeb9ef73}{squirrel\+::squirrel}} \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{classsquirrel_aa89ba26bbfda40897e3260f3702fc560}{read}} (Q\+String filename)
+\begin{DoxyCompactList}\small\item\em \mbox{\hyperlink{classsquirrel_aa89ba26bbfda40897e3260f3702fc560}{squirrel\+::read}} Reads a squirrel package \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{classsquirrel_a06a843ec6c78b502c465918587fc96e4}{write}} (Q\+String outpath, Q\+String data\+Format, Q\+String dir\+Format)
+\begin{DoxyCompactList}\small\item\em \mbox{\hyperlink{classsquirrel_a06a843ec6c78b502c465918587fc96e4}{squirrel\+::write}} Writes a squirrel package using stored information \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{classsquirrel_aa7266f3125db5891b8bd89d3b013b2cf}{validate}} ()
+\begin{DoxyCompactList}\small\item\em \mbox{\hyperlink{classsquirrel_aa7266f3125db5891b8bd89d3b013b2cf}{squirrel\+::validate}} \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{classsquirrel_a81b622c03adf2c29b917e22f8e5de7a1}{print}} ()
+\begin{DoxyCompactList}\small\item\em print \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{classsquirrel_a3952a0814341f1f7348b412dfda4e80c}{add\+Subject}} (\mbox{\hyperlink{classsubject}{subject}} subj)
+\begin{DoxyCompactList}\small\item\em \mbox{\hyperlink{classsquirrel_a3952a0814341f1f7348b412dfda4e80c}{squirrel\+::add\+Subject}} \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{classsquirrel_af9adb0a099e2b28048136672000db260}{remove\+Subject}} (Q\+String ID)
+\begin{DoxyCompactList}\small\item\em \mbox{\hyperlink{classsquirrel_af9adb0a099e2b28048136672000db260}{squirrel\+::remove\+Subject}} \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+Q\+Date\+Time \mbox{\hyperlink{classsquirrel_a0dccc48ec15f40ecea917c7fa8068119}{datetime}}
+\item 
+Q\+String \mbox{\hyperlink{classsquirrel_a28c47650b1693f8b34ea3e3af326d612}{description}}
+\item 
+Q\+String \mbox{\hyperlink{classsquirrel_a54d225147aa8b50339b74efacd39475f}{name}}
+\item 
+Q\+String \mbox{\hyperlink{classsquirrel_a9665f1474b79bf96e2bd73ffb7363204}{version}}
+\item 
+Q\+String \mbox{\hyperlink{classsquirrel_a03ae2dac98a0aed9cfb1f36be02f4c0e}{format}}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+The squirrel class. 
+
+provides a complete class to read, write, and validate squirrel files 
+
+\doxysubsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classsquirrel_ac71c9c4344f567f6c2ba9e52eeb9ef73}\label{classsquirrel_ac71c9c4344f567f6c2ba9e52eeb9ef73}} 
+\index{squirrel@{squirrel}!squirrel@{squirrel}}
+\index{squirrel@{squirrel}!squirrel@{squirrel}}
+\doxysubsubsection{\texorpdfstring{squirrel()}{squirrel()}}
+{\footnotesize\ttfamily squirrel\+::squirrel (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+\mbox{\hyperlink{classsquirrel_ac71c9c4344f567f6c2ba9e52eeb9ef73}{squirrel\+::squirrel}} 
+
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{classsquirrel_a3952a0814341f1f7348b412dfda4e80c}\label{classsquirrel_a3952a0814341f1f7348b412dfda4e80c}} 
+\index{squirrel@{squirrel}!addSubject@{addSubject}}
+\index{addSubject@{addSubject}!squirrel@{squirrel}}
+\doxysubsubsection{\texorpdfstring{addSubject()}{addSubject()}}
+{\footnotesize\ttfamily bool squirrel\+::add\+Subject (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{classsubject}{subject}}}]{subj }\end{DoxyParamCaption})}
+
+
+
+\mbox{\hyperlink{classsquirrel_a3952a0814341f1f7348b412dfda4e80c}{squirrel\+::add\+Subject}} 
+
+
+\begin{DoxyParams}{Parameters}
+{\em subj} & \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+true if added, false if not added 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classsquirrel_a81b622c03adf2c29b917e22f8e5de7a1}\label{classsquirrel_a81b622c03adf2c29b917e22f8e5de7a1}} 
+\index{squirrel@{squirrel}!print@{print}}
+\index{print@{print}!squirrel@{squirrel}}
+\doxysubsubsection{\texorpdfstring{print()}{print()}}
+{\footnotesize\ttfamily void squirrel\+::print (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+print 
+
+\mbox{\Hypertarget{classsquirrel_aa89ba26bbfda40897e3260f3702fc560}\label{classsquirrel_aa89ba26bbfda40897e3260f3702fc560}} 
+\index{squirrel@{squirrel}!read@{read}}
+\index{read@{read}!squirrel@{squirrel}}
+\doxysubsubsection{\texorpdfstring{read()}{read()}}
+{\footnotesize\ttfamily bool squirrel\+::read (\begin{DoxyParamCaption}\item[{Q\+String}]{filename }\end{DoxyParamCaption})}
+
+
+
+\mbox{\hyperlink{classsquirrel_aa89ba26bbfda40897e3260f3702fc560}{squirrel\+::read}} Reads a squirrel package 
+
+
+\begin{DoxyParams}{Parameters}
+{\em filename} & Full filepath of the package to read \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+true if package was successfully read, false otherwise 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classsquirrel_af9adb0a099e2b28048136672000db260}\label{classsquirrel_af9adb0a099e2b28048136672000db260}} 
+\index{squirrel@{squirrel}!removeSubject@{removeSubject}}
+\index{removeSubject@{removeSubject}!squirrel@{squirrel}}
+\doxysubsubsection{\texorpdfstring{removeSubject()}{removeSubject()}}
+{\footnotesize\ttfamily bool squirrel\+::remove\+Subject (\begin{DoxyParamCaption}\item[{Q\+String}]{ID }\end{DoxyParamCaption})}
+
+
+
+\mbox{\hyperlink{classsquirrel_af9adb0a099e2b28048136672000db260}{squirrel\+::remove\+Subject}} 
+
+
+\begin{DoxyParams}{Parameters}
+{\em ID} & \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+true if subject found and removed, false is subject not found 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classsquirrel_aa7266f3125db5891b8bd89d3b013b2cf}\label{classsquirrel_aa7266f3125db5891b8bd89d3b013b2cf}} 
+\index{squirrel@{squirrel}!validate@{validate}}
+\index{validate@{validate}!squirrel@{squirrel}}
+\doxysubsubsection{\texorpdfstring{validate()}{validate()}}
+{\footnotesize\ttfamily bool squirrel\+::validate (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+\mbox{\hyperlink{classsquirrel_aa7266f3125db5891b8bd89d3b013b2cf}{squirrel\+::validate}} 
+
+\begin{DoxyReturn}{Returns}
+true if valid squirrel file, false otherwise 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classsquirrel_a06a843ec6c78b502c465918587fc96e4}\label{classsquirrel_a06a843ec6c78b502c465918587fc96e4}} 
+\index{squirrel@{squirrel}!write@{write}}
+\index{write@{write}!squirrel@{squirrel}}
+\doxysubsubsection{\texorpdfstring{write()}{write()}}
+{\footnotesize\ttfamily bool squirrel\+::write (\begin{DoxyParamCaption}\item[{Q\+String}]{outpath,  }\item[{Q\+String}]{data\+Format,  }\item[{Q\+String}]{dir\+Format }\end{DoxyParamCaption})}
+
+
+
+\mbox{\hyperlink{classsquirrel_a06a843ec6c78b502c465918587fc96e4}{squirrel\+::write}} Writes a squirrel package using stored information 
+
+
+\begin{DoxyParams}{Parameters}
+{\em outpath} & full path to the output squirrel .zip file \\
+\hline
+{\em data\+Format} & if converting from D\+I\+C\+OM, write the data in the specified format
+\begin{DoxyItemize}
+\item \textquotesingle{}orig\textquotesingle{} -\/ Perform no conversion of D\+I\+C\+OM images (not recommended as it retains P\+HI)
+\item \textquotesingle{}anon\textquotesingle{} -\/ Anonymize the D\+I\+C\+OM files (light anonymization\+: remove P\+HI, but not ID or dates)
+\item \textquotesingle{}nifti4d\textquotesingle{} -\/ Nifti 4D
+\item \textquotesingle{}nifti4dgz\textquotesingle{} -\/ Nifti 4D gzip \mbox{[}default\mbox{]}
+\item \textquotesingle{}nidti3d\textquotesingle{} -\/ Nifti 3D
+\item \textquotesingle{}nifti3dgz\textquotesingle{} -\/ Nifti 3D gzip 
+\end{DoxyItemize}\\
+\hline
+{\em dir\+Format} & directory structure of the subject data
+\begin{DoxyItemize}
+\item \textquotesingle{}orig\textquotesingle{} -\/ Use the subject\+ID for subject directory names, study\+Num for study directories, and series\+Num for series directories
+\item \textquotesingle{}seq\textquotesingle{} -\/ Use sequentially generated numbers for subject, study, series directories. These will be arbitrary 
+\end{DoxyItemize}\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+true if package was successfully written, false otherwise 
+\end{DoxyReturn}
+
+
+\doxysubsection{Member Data Documentation}
+\mbox{\Hypertarget{classsquirrel_a0dccc48ec15f40ecea917c7fa8068119}\label{classsquirrel_a0dccc48ec15f40ecea917c7fa8068119}} 
+\index{squirrel@{squirrel}!datetime@{datetime}}
+\index{datetime@{datetime}!squirrel@{squirrel}}
+\doxysubsubsection{\texorpdfstring{datetime}{datetime}}
+{\footnotesize\ttfamily Q\+Date\+Time squirrel\+::datetime}
+
+datetime the package was created \mbox{\Hypertarget{classsquirrel_a28c47650b1693f8b34ea3e3af326d612}\label{classsquirrel_a28c47650b1693f8b34ea3e3af326d612}} 
+\index{squirrel@{squirrel}!description@{description}}
+\index{description@{description}!squirrel@{squirrel}}
+\doxysubsubsection{\texorpdfstring{description}{description}}
+{\footnotesize\ttfamily Q\+String squirrel\+::description}
+
+detailed description of the package \mbox{\Hypertarget{classsquirrel_a03ae2dac98a0aed9cfb1f36be02f4c0e}\label{classsquirrel_a03ae2dac98a0aed9cfb1f36be02f4c0e}} 
+\index{squirrel@{squirrel}!format@{format}}
+\index{format@{format}!squirrel@{squirrel}}
+\doxysubsubsection{\texorpdfstring{format}{format}}
+{\footnotesize\ttfamily Q\+String squirrel\+::format}
+
+package format, most likely \textquotesingle{}squirrel\textquotesingle{} \mbox{\Hypertarget{classsquirrel_a54d225147aa8b50339b74efacd39475f}\label{classsquirrel_a54d225147aa8b50339b74efacd39475f}} 
+\index{squirrel@{squirrel}!name@{name}}
+\index{name@{name}!squirrel@{squirrel}}
+\doxysubsubsection{\texorpdfstring{name}{name}}
+{\footnotesize\ttfamily Q\+String squirrel\+::name}
+
+name of the package \mbox{\Hypertarget{classsquirrel_a9665f1474b79bf96e2bd73ffb7363204}\label{classsquirrel_a9665f1474b79bf96e2bd73ffb7363204}} 
+\index{squirrel@{squirrel}!version@{version}}
+\index{version@{version}!squirrel@{squirrel}}
+\doxysubsubsection{\texorpdfstring{version}{version}}
+{\footnotesize\ttfamily Q\+String squirrel\+::version}
+
+squirrel version 
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{squirrel_8h}{squirrel.\+h}}\item 
+\mbox{\hyperlink{squirrel_8cpp}{squirrel.\+cpp}}\end{DoxyCompactItemize}

@@ -1,0 +1,293 @@
+\hypertarget{classpipeline}{}\doxysection{pipeline Class Reference}
+\label{classpipeline}\index{pipeline@{pipeline}}
+
+
+The pipeline class.  
+
+
+
+
+{\ttfamily \#include $<$pipeline.\+h$>$}
+
+\doxysubsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+struct \mbox{\hyperlink{structpipeline_1_1flag}{flag}}
+\end{DoxyCompactItemize}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{classpipeline_a637b5f76b9b8b591d589f74d24fbcca7}{pipeline}} ()
+\item 
+Q\+Json\+Object \mbox{\hyperlink{classpipeline_a339de68e772e0d734c3db5189baaf574}{To\+J\+S\+ON}} (Q\+String path)
+\end{DoxyCompactItemize}
+\doxysubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+Q\+String \mbox{\hyperlink{classpipeline_a7235e776941858cf9a1348dec9a5b18e}{pipeline\+Name}}
+\item 
+Q\+String \mbox{\hyperlink{classpipeline_a27c71597ddb8753584f4224eca2689a1}{description}}
+\item 
+Q\+Date\+Time \mbox{\hyperlink{classpipeline_a646d218241cffb05fcf6692c8c71eb43}{create\+Date}}
+\item 
+int \mbox{\hyperlink{classpipeline_a363e6a918c4a858bf88be1f15691c8d3}{version}}
+\item 
+Q\+String \mbox{\hyperlink{classpipeline_ab64d0f8fb8427805ae33c64304e0b56e}{level}}
+\item 
+Q\+String\+List \mbox{\hyperlink{classpipeline_a7b2a997535bda9dab6edcd9c9e93b4ad}{parent\+Pipelines}}
+\item 
+Q\+String \mbox{\hyperlink{classpipeline_ab5792612f41014e4d3bb6e45e6c772f0}{complete\+Files}}
+\item 
+Q\+String \mbox{\hyperlink{classpipeline_a12e3e912f7c8eab0411fbabb3a3ca04c}{data\+Copy\+Method}}
+\item 
+Q\+String \mbox{\hyperlink{classpipeline_aaa3ab39020d3a16f1bc4c01d985375c4}{dep\+Dir}}
+\item 
+Q\+String \mbox{\hyperlink{classpipeline_af4048a3bd8fe3c7c3f2531d9f8af903b}{dep\+Level}}
+\item 
+Q\+String \mbox{\hyperlink{classpipeline_a30c27b3f6ea3db4c175015d85ad5d703}{dep\+Link\+Type}}
+\item 
+Q\+String \mbox{\hyperlink{classpipeline_a91810afe67c51294ff8fdfff6b756a0c}{dir\+Structure}}
+\item 
+Q\+String \mbox{\hyperlink{classpipeline_a9630249dcb839e1b83eff9418f229d72}{directory}}
+\item 
+Q\+String \mbox{\hyperlink{classpipeline_a79c9011aa98194e123bce59a71b10c0c}{group}}
+\item 
+Q\+String \mbox{\hyperlink{classpipeline_a9cbec92af45c527e879b8104eb1c6e5e}{group\+Type}}
+\item 
+Q\+String \mbox{\hyperlink{classpipeline_a259a4b0ce909887c5b8b24ee3ee284fa}{notes}}
+\item 
+Q\+String \mbox{\hyperlink{classpipeline_a5c1f9cd6b6bda972b9826371fefa7147}{result\+Script}}
+\item 
+Q\+String \mbox{\hyperlink{classpipeline_accbe79cdd5deeb25b495ec5e458bbaa3}{tmp\+Dir}}
+\item 
+struct \mbox{\hyperlink{structpipeline_1_1flag}{pipeline\+::flag}} \mbox{\hyperlink{classpipeline_ac983c941a5e67b002af2a160d3bf1315}{flags}}
+\item 
+Q\+String \mbox{\hyperlink{classpipeline_adf93332f75aaf9efdd6879dc1657a7ff}{cluster\+Type}}
+\item 
+Q\+String \mbox{\hyperlink{classpipeline_a8197802b3d2db35e04eb69fb417e9e7a}{cluster\+User}}
+\item 
+Q\+String \mbox{\hyperlink{classpipeline_a134dfea2ff2ff68dad185428b301c77b}{cluster\+Queue}}
+\item 
+Q\+String \mbox{\hyperlink{classpipeline_a573b3b070673f6274f77c03ae81c8087}{cluster\+Submit\+Host}}
+\item 
+int \mbox{\hyperlink{classpipeline_a067be2c6b44b06df87dcde031da8a04c}{num\+Concurrent\+Analyses}}
+\item 
+Q\+String \mbox{\hyperlink{classpipeline_a9ebc7efe4140dfb49a07862d34e9e73b}{max\+Wall\+Time}}
+\item 
+int \mbox{\hyperlink{classpipeline_a547af7c151d398b56e0bff8ed5eb867b}{submit\+Delay}}
+\item 
+Q\+List$<$ \mbox{\hyperlink{structdata_step}{data\+Step}} $>$ \mbox{\hyperlink{classpipeline_a4404e15af52dcb584a16fe03ee23a2d9}{data}}
+\item 
+Q\+List$<$ \mbox{\hyperlink{structpipeline_step}{pipeline\+Step}} $>$ \mbox{\hyperlink{classpipeline_a0d4b380a4e81673d6e88ed48b5e14632}{primary\+Script}}
+\item 
+Q\+List$<$ \mbox{\hyperlink{structpipeline_step}{pipeline\+Step}} $>$ \mbox{\hyperlink{classpipeline_a9105f9d0ca8bb50ece2ae3d381c32dba}{secondary\+Script}}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+The pipeline class. 
+
+pipelines contain 3 sections\+: pipeline info, dataspec, steps (the script)
+
+\mbox{[}Ni\+DB\mbox{]} fields are used when sharing pipelines between Ni\+DB instances. These are optional in the squirrel format spec, but the fields can be useful when sharing pipelines in other contexts 
+
+\doxysubsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classpipeline_a637b5f76b9b8b591d589f74d24fbcca7}\label{classpipeline_a637b5f76b9b8b591d589f74d24fbcca7}} 
+\index{pipeline@{pipeline}!pipeline@{pipeline}}
+\index{pipeline@{pipeline}!pipeline@{pipeline}}
+\doxysubsubsection{\texorpdfstring{pipeline()}{pipeline()}}
+{\footnotesize\ttfamily pipeline\+::pipeline (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{classpipeline_a339de68e772e0d734c3db5189baaf574}\label{classpipeline_a339de68e772e0d734c3db5189baaf574}} 
+\index{pipeline@{pipeline}!ToJSON@{ToJSON}}
+\index{ToJSON@{ToJSON}!pipeline@{pipeline}}
+\doxysubsubsection{\texorpdfstring{ToJSON()}{ToJSON()}}
+{\footnotesize\ttfamily Q\+Json\+Object pipeline\+::\+To\+J\+S\+ON (\begin{DoxyParamCaption}\item[{Q\+String}]{path }\end{DoxyParamCaption})}
+
+
+
+\doxysubsection{Member Data Documentation}
+\mbox{\Hypertarget{classpipeline_a134dfea2ff2ff68dad185428b301c77b}\label{classpipeline_a134dfea2ff2ff68dad185428b301c77b}} 
+\index{pipeline@{pipeline}!clusterQueue@{clusterQueue}}
+\index{clusterQueue@{clusterQueue}!pipeline@{pipeline}}
+\doxysubsubsection{\texorpdfstring{clusterQueue}{clusterQueue}}
+{\footnotesize\ttfamily Q\+String pipeline\+::cluster\+Queue}
+
+\mbox{[}Ni\+DB\mbox{]} compute cluster queue \mbox{\Hypertarget{classpipeline_a573b3b070673f6274f77c03ae81c8087}\label{classpipeline_a573b3b070673f6274f77c03ae81c8087}} 
+\index{pipeline@{pipeline}!clusterSubmitHost@{clusterSubmitHost}}
+\index{clusterSubmitHost@{clusterSubmitHost}!pipeline@{pipeline}}
+\doxysubsubsection{\texorpdfstring{clusterSubmitHost}{clusterSubmitHost}}
+{\footnotesize\ttfamily Q\+String pipeline\+::cluster\+Submit\+Host}
+
+\mbox{[}Ni\+DB\mbox{]} hostname of the sge/slurm submit node \mbox{\Hypertarget{classpipeline_adf93332f75aaf9efdd6879dc1657a7ff}\label{classpipeline_adf93332f75aaf9efdd6879dc1657a7ff}} 
+\index{pipeline@{pipeline}!clusterType@{clusterType}}
+\index{clusterType@{clusterType}!pipeline@{pipeline}}
+\doxysubsubsection{\texorpdfstring{clusterType}{clusterType}}
+{\footnotesize\ttfamily Q\+String pipeline\+::cluster\+Type}
+
+\mbox{[}Ni\+DB\mbox{]} compute cluster engine (sge, slurm) \mbox{\Hypertarget{classpipeline_a8197802b3d2db35e04eb69fb417e9e7a}\label{classpipeline_a8197802b3d2db35e04eb69fb417e9e7a}} 
+\index{pipeline@{pipeline}!clusterUser@{clusterUser}}
+\index{clusterUser@{clusterUser}!pipeline@{pipeline}}
+\doxysubsubsection{\texorpdfstring{clusterUser}{clusterUser}}
+{\footnotesize\ttfamily Q\+String pipeline\+::cluster\+User}
+
+\mbox{[}Ni\+DB\mbox{]} compute cluster user \mbox{\Hypertarget{classpipeline_ab5792612f41014e4d3bb6e45e6c772f0}\label{classpipeline_ab5792612f41014e4d3bb6e45e6c772f0}} 
+\index{pipeline@{pipeline}!completeFiles@{completeFiles}}
+\index{completeFiles@{completeFiles}!pipeline@{pipeline}}
+\doxysubsubsection{\texorpdfstring{completeFiles}{completeFiles}}
+{\footnotesize\ttfamily Q\+String pipeline\+::complete\+Files}
+
+list of files that must exists to indicate the analysis was complete \mbox{\Hypertarget{classpipeline_a646d218241cffb05fcf6692c8c71eb43}\label{classpipeline_a646d218241cffb05fcf6692c8c71eb43}} 
+\index{pipeline@{pipeline}!createDate@{createDate}}
+\index{createDate@{createDate}!pipeline@{pipeline}}
+\doxysubsubsection{\texorpdfstring{createDate}{createDate}}
+{\footnotesize\ttfamily Q\+Date\+Time pipeline\+::create\+Date}
+
+date the pipeline was created \mbox{\Hypertarget{classpipeline_a4404e15af52dcb584a16fe03ee23a2d9}\label{classpipeline_a4404e15af52dcb584a16fe03ee23a2d9}} 
+\index{pipeline@{pipeline}!data@{data}}
+\index{data@{data}!pipeline@{pipeline}}
+\doxysubsubsection{\texorpdfstring{data}{data}}
+{\footnotesize\ttfamily Q\+List$<$\mbox{\hyperlink{structdata_step}{data\+Step}}$>$ pipeline\+::data}
+
+\mbox{\Hypertarget{classpipeline_a12e3e912f7c8eab0411fbabb3a3ca04c}\label{classpipeline_a12e3e912f7c8eab0411fbabb3a3ca04c}} 
+\index{pipeline@{pipeline}!dataCopyMethod@{dataCopyMethod}}
+\index{dataCopyMethod@{dataCopyMethod}!pipeline@{pipeline}}
+\doxysubsubsection{\texorpdfstring{dataCopyMethod}{dataCopyMethod}}
+{\footnotesize\ttfamily Q\+String pipeline\+::data\+Copy\+Method}
+
+cp, hardlink, softlink ~\newline
+ \mbox{\Hypertarget{classpipeline_aaa3ab39020d3a16f1bc4c01d985375c4}\label{classpipeline_aaa3ab39020d3a16f1bc4c01d985375c4}} 
+\index{pipeline@{pipeline}!depDir@{depDir}}
+\index{depDir@{depDir}!pipeline@{pipeline}}
+\doxysubsubsection{\texorpdfstring{depDir}{depDir}}
+{\footnotesize\ttfamily Q\+String pipeline\+::dep\+Dir}
+
+dependency directory \mbox{\Hypertarget{classpipeline_af4048a3bd8fe3c7c3f2531d9f8af903b}\label{classpipeline_af4048a3bd8fe3c7c3f2531d9f8af903b}} 
+\index{pipeline@{pipeline}!depLevel@{depLevel}}
+\index{depLevel@{depLevel}!pipeline@{pipeline}}
+\doxysubsubsection{\texorpdfstring{depLevel}{depLevel}}
+{\footnotesize\ttfamily Q\+String pipeline\+::dep\+Level}
+
+\mbox{\Hypertarget{classpipeline_a30c27b3f6ea3db4c175015d85ad5d703}\label{classpipeline_a30c27b3f6ea3db4c175015d85ad5d703}} 
+\index{pipeline@{pipeline}!depLinkType@{depLinkType}}
+\index{depLinkType@{depLinkType}!pipeline@{pipeline}}
+\doxysubsubsection{\texorpdfstring{depLinkType}{depLinkType}}
+{\footnotesize\ttfamily Q\+String pipeline\+::dep\+Link\+Type}
+
+\mbox{\Hypertarget{classpipeline_a27c71597ddb8753584f4224eca2689a1}\label{classpipeline_a27c71597ddb8753584f4224eca2689a1}} 
+\index{pipeline@{pipeline}!description@{description}}
+\index{description@{description}!pipeline@{pipeline}}
+\doxysubsubsection{\texorpdfstring{description}{description}}
+{\footnotesize\ttfamily Q\+String pipeline\+::description}
+
+longer description \mbox{\Hypertarget{classpipeline_a9630249dcb839e1b83eff9418f229d72}\label{classpipeline_a9630249dcb839e1b83eff9418f229d72}} 
+\index{pipeline@{pipeline}!directory@{directory}}
+\index{directory@{directory}!pipeline@{pipeline}}
+\doxysubsubsection{\texorpdfstring{directory}{directory}}
+{\footnotesize\ttfamily Q\+String pipeline\+::directory}
+
+\mbox{[}Ni\+DB\mbox{]} directory where this pipeline will live if not using the default pipeline directory \mbox{\Hypertarget{classpipeline_a91810afe67c51294ff8fdfff6b756a0c}\label{classpipeline_a91810afe67c51294ff8fdfff6b756a0c}} 
+\index{pipeline@{pipeline}!dirStructure@{dirStructure}}
+\index{dirStructure@{dirStructure}!pipeline@{pipeline}}
+\doxysubsubsection{\texorpdfstring{dirStructure}{dirStructure}}
+{\footnotesize\ttfamily Q\+String pipeline\+::dir\+Structure}
+
+\mbox{\Hypertarget{classpipeline_ac983c941a5e67b002af2a160d3bf1315}\label{classpipeline_ac983c941a5e67b002af2a160d3bf1315}} 
+\index{pipeline@{pipeline}!flags@{flags}}
+\index{flags@{flags}!pipeline@{pipeline}}
+\doxysubsubsection{\texorpdfstring{flags}{flags}}
+{\footnotesize\ttfamily struct \mbox{\hyperlink{structpipeline_1_1flag}{pipeline\+::flag}}  pipeline\+::flags}
+
+\mbox{\Hypertarget{classpipeline_a79c9011aa98194e123bce59a71b10c0c}\label{classpipeline_a79c9011aa98194e123bce59a71b10c0c}} 
+\index{pipeline@{pipeline}!group@{group}}
+\index{group@{group}!pipeline@{pipeline}}
+\doxysubsubsection{\texorpdfstring{group}{group}}
+{\footnotesize\ttfamily Q\+String pipeline\+::group}
+
+\mbox{[}Ni\+DB\mbox{]} group on which the pipeline will be run \mbox{\Hypertarget{classpipeline_a9cbec92af45c527e879b8104eb1c6e5e}\label{classpipeline_a9cbec92af45c527e879b8104eb1c6e5e}} 
+\index{pipeline@{pipeline}!groupType@{groupType}}
+\index{groupType@{groupType}!pipeline@{pipeline}}
+\doxysubsubsection{\texorpdfstring{groupType}{groupType}}
+{\footnotesize\ttfamily Q\+String pipeline\+::group\+Type}
+
+\mbox{[}Ni\+DB\mbox{]} subject, study \mbox{\Hypertarget{classpipeline_ab64d0f8fb8427805ae33c64304e0b56e}\label{classpipeline_ab64d0f8fb8427805ae33c64304e0b56e}} 
+\index{pipeline@{pipeline}!level@{level}}
+\index{level@{level}!pipeline@{pipeline}}
+\doxysubsubsection{\texorpdfstring{level}{level}}
+{\footnotesize\ttfamily Q\+String pipeline\+::level}
+
+1 (subject), or 2 (group) \mbox{\Hypertarget{classpipeline_a9ebc7efe4140dfb49a07862d34e9e73b}\label{classpipeline_a9ebc7efe4140dfb49a07862d34e9e73b}} 
+\index{pipeline@{pipeline}!maxWallTime@{maxWallTime}}
+\index{maxWallTime@{maxWallTime}!pipeline@{pipeline}}
+\doxysubsubsection{\texorpdfstring{maxWallTime}{maxWallTime}}
+{\footnotesize\ttfamily Q\+String pipeline\+::max\+Wall\+Time}
+
+\mbox{[}Ni\+DB\mbox{]} maximum allowed clock (wall) time the analysis is allowed to run \mbox{\Hypertarget{classpipeline_a259a4b0ce909887c5b8b24ee3ee284fa}\label{classpipeline_a259a4b0ce909887c5b8b24ee3ee284fa}} 
+\index{pipeline@{pipeline}!notes@{notes}}
+\index{notes@{notes}!pipeline@{pipeline}}
+\doxysubsubsection{\texorpdfstring{notes}{notes}}
+{\footnotesize\ttfamily Q\+String pipeline\+::notes}
+
+freeform area for notes \mbox{\Hypertarget{classpipeline_a067be2c6b44b06df87dcde031da8a04c}\label{classpipeline_a067be2c6b44b06df87dcde031da8a04c}} 
+\index{pipeline@{pipeline}!numConcurrentAnalyses@{numConcurrentAnalyses}}
+\index{numConcurrentAnalyses@{numConcurrentAnalyses}!pipeline@{pipeline}}
+\doxysubsubsection{\texorpdfstring{numConcurrentAnalyses}{numConcurrentAnalyses}}
+{\footnotesize\ttfamily int pipeline\+::num\+Concurrent\+Analyses}
+
+\mbox{[}Ni\+DB\mbox{]} max number of concurrent analyses allowed to run \mbox{\Hypertarget{classpipeline_a7b2a997535bda9dab6edcd9c9e93b4ad}\label{classpipeline_a7b2a997535bda9dab6edcd9c9e93b4ad}} 
+\index{pipeline@{pipeline}!parentPipelines@{parentPipelines}}
+\index{parentPipelines@{parentPipelines}!pipeline@{pipeline}}
+\doxysubsubsection{\texorpdfstring{parentPipelines}{parentPipelines}}
+{\footnotesize\ttfamily Q\+String\+List pipeline\+::parent\+Pipelines}
+
+list of pipelines on which this pipeline depends \mbox{\Hypertarget{classpipeline_a7235e776941858cf9a1348dec9a5b18e}\label{classpipeline_a7235e776941858cf9a1348dec9a5b18e}} 
+\index{pipeline@{pipeline}!pipelineName@{pipelineName}}
+\index{pipelineName@{pipelineName}!pipeline@{pipeline}}
+\doxysubsubsection{\texorpdfstring{pipelineName}{pipelineName}}
+{\footnotesize\ttfamily Q\+String pipeline\+::pipeline\+Name}
+
+pipeline name (required) \mbox{\Hypertarget{classpipeline_a0d4b380a4e81673d6e88ed48b5e14632}\label{classpipeline_a0d4b380a4e81673d6e88ed48b5e14632}} 
+\index{pipeline@{pipeline}!primaryScript@{primaryScript}}
+\index{primaryScript@{primaryScript}!pipeline@{pipeline}}
+\doxysubsubsection{\texorpdfstring{primaryScript}{primaryScript}}
+{\footnotesize\ttfamily Q\+List$<$\mbox{\hyperlink{structpipeline_step}{pipeline\+Step}}$>$ pipeline\+::primary\+Script}
+
+\mbox{\Hypertarget{classpipeline_a5c1f9cd6b6bda972b9826371fefa7147}\label{classpipeline_a5c1f9cd6b6bda972b9826371fefa7147}} 
+\index{pipeline@{pipeline}!resultScript@{resultScript}}
+\index{resultScript@{resultScript}!pipeline@{pipeline}}
+\doxysubsubsection{\texorpdfstring{resultScript}{resultScript}}
+{\footnotesize\ttfamily Q\+String pipeline\+::result\+Script}
+
+path to a script to run to get a results at the end \mbox{\Hypertarget{classpipeline_a9105f9d0ca8bb50ece2ae3d381c32dba}\label{classpipeline_a9105f9d0ca8bb50ece2ae3d381c32dba}} 
+\index{pipeline@{pipeline}!secondaryScript@{secondaryScript}}
+\index{secondaryScript@{secondaryScript}!pipeline@{pipeline}}
+\doxysubsubsection{\texorpdfstring{secondaryScript}{secondaryScript}}
+{\footnotesize\ttfamily Q\+List$<$\mbox{\hyperlink{structpipeline_step}{pipeline\+Step}}$>$ pipeline\+::secondary\+Script}
+
+\mbox{\Hypertarget{classpipeline_a547af7c151d398b56e0bff8ed5eb867b}\label{classpipeline_a547af7c151d398b56e0bff8ed5eb867b}} 
+\index{pipeline@{pipeline}!submitDelay@{submitDelay}}
+\index{submitDelay@{submitDelay}!pipeline@{pipeline}}
+\doxysubsubsection{\texorpdfstring{submitDelay}{submitDelay}}
+{\footnotesize\ttfamily int pipeline\+::submit\+Delay}
+
+\mbox{[}Ni\+DB\mbox{]} time in hours after the study datetime to delay before running this analysis \mbox{\Hypertarget{classpipeline_accbe79cdd5deeb25b495ec5e458bbaa3}\label{classpipeline_accbe79cdd5deeb25b495ec5e458bbaa3}} 
+\index{pipeline@{pipeline}!tmpDir@{tmpDir}}
+\index{tmpDir@{tmpDir}!pipeline@{pipeline}}
+\doxysubsubsection{\texorpdfstring{tmpDir}{tmpDir}}
+{\footnotesize\ttfamily Q\+String pipeline\+::tmp\+Dir}
+
+name of temp dir, if one is to be used \mbox{\Hypertarget{classpipeline_a363e6a918c4a858bf88be1f15691c8d3}\label{classpipeline_a363e6a918c4a858bf88be1f15691c8d3}} 
+\index{pipeline@{pipeline}!version@{version}}
+\index{version@{version}!pipeline@{pipeline}}
+\doxysubsubsection{\texorpdfstring{version}{version}}
+{\footnotesize\ttfamily int pipeline\+::version}
+
+pipeline version (required) 
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{pipeline_8h}{pipeline.\+h}}\item 
+\mbox{\hyperlink{pipeline_8cpp}{pipeline.\+cpp}}\end{DoxyCompactItemize}

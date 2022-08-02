@@ -1,0 +1,144 @@
+\hypertarget{structdata_step}{}\doxysection{data\+Step Struct Reference}
+\label{structdata_step}\index{dataStep@{dataStep}}
+
+
+The \mbox{\hyperlink{structdata_step}{data\+Step}} struct.  
+
+
+
+
+{\ttfamily \#include $<$pipeline.\+h$>$}
+
+\doxysubsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+struct \mbox{\hyperlink{structdata_step_1_1flag}{flag}}
+\end{DoxyCompactItemize}
+\doxysubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+Q\+String \mbox{\hyperlink{structdata_step_aded19e6ffa33e0d9e54c4613ae1d4c1c}{association\+Type}}
+\item 
+Q\+String \mbox{\hyperlink{structdata_step_ad14ffcfe78f421c0131046ea890fb138}{beh\+Dir}}
+\item 
+Q\+String \mbox{\hyperlink{structdata_step_ae764875383e71ad7744ef18fce5a5728}{beh\+Format}}
+\item 
+Q\+String \mbox{\hyperlink{structdata_step_a9c9a1504d3087a2832e9a7f5e40f4c89}{data\+Format}}
+\item 
+Q\+String \mbox{\hyperlink{structdata_step_aafa9ab064bfbde749f54d18bafc9acff}{image\+Type}}
+\item 
+Q\+String \mbox{\hyperlink{structdata_step_ac6052edc2e2acd955808a85ba1eb6d70}{datalevel}}
+\item 
+Q\+String \mbox{\hyperlink{structdata_step_a8ac1d71b8887008edb200078130da9a2}{location}}
+\item 
+Q\+String \mbox{\hyperlink{structdata_step_a8ed9372abb08922aaaf2a5eef6d5542e}{modality}}
+\item 
+Q\+String \mbox{\hyperlink{structdata_step_acece1ac1e2b601362f00fc02eb60b37f}{num\+B\+O\+L\+Dreps}}
+\item 
+Q\+String \mbox{\hyperlink{structdata_step_a2eec6f4c2c9f3cc31446f8cbb35fa61e}{num\+Images\+Criteria}}
+\item 
+int \mbox{\hyperlink{structdata_step_a6bdffcf61f0d9b0d608cf4c36ff6cbb2}{order}}
+\item 
+Q\+String \mbox{\hyperlink{structdata_step_acb992ebf00e81399529a440260b0cde4}{protocol}}
+\item 
+Q\+String \mbox{\hyperlink{structdata_step_ae882ecffb3844d134114e00fad5ab261}{series\+Criteria}}
+\item 
+struct \mbox{\hyperlink{structdata_step_1_1flag}{data\+Step\+::flag}} \mbox{\hyperlink{structdata_step_a6c351267eccf2f987cd7e295f1f78992}{flags}}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+The \mbox{\hyperlink{structdata_step}{data\+Step}} struct. 
+
+This is primarily used by Ni\+DB for inter-\/instance pipeline sharing but can also be used for other sharing contexts 
+
+\doxysubsection{Member Data Documentation}
+\mbox{\Hypertarget{structdata_step_aded19e6ffa33e0d9e54c4613ae1d4c1c}\label{structdata_step_aded19e6ffa33e0d9e54c4613ae1d4c1c}} 
+\index{dataStep@{dataStep}!associationType@{associationType}}
+\index{associationType@{associationType}!dataStep@{dataStep}}
+\doxysubsubsection{\texorpdfstring{associationType}{associationType}}
+{\footnotesize\ttfamily Q\+String data\+Step\+::association\+Type}
+
+study or subject (required) \mbox{\Hypertarget{structdata_step_ad14ffcfe78f421c0131046ea890fb138}\label{structdata_step_ad14ffcfe78f421c0131046ea890fb138}} 
+\index{dataStep@{dataStep}!behDir@{behDir}}
+\index{behDir@{behDir}!dataStep@{dataStep}}
+\doxysubsubsection{\texorpdfstring{behDir}{behDir}}
+{\footnotesize\ttfamily Q\+String data\+Step\+::beh\+Dir}
+
+if beh\+Format writes data to a sub-\/directory, this is the name of that sub-\/doirectory \mbox{\Hypertarget{structdata_step_ae764875383e71ad7744ef18fce5a5728}\label{structdata_step_ae764875383e71ad7744ef18fce5a5728}} 
+\index{dataStep@{dataStep}!behFormat@{behFormat}}
+\index{behFormat@{behFormat}!dataStep@{dataStep}}
+\doxysubsubsection{\texorpdfstring{behFormat}{behFormat}}
+{\footnotesize\ttfamily Q\+String data\+Step\+::beh\+Format}
+
+nobeh, behroot, behseries, behseriesdir \mbox{\Hypertarget{structdata_step_a9c9a1504d3087a2832e9a7f5e40f4c89}\label{structdata_step_a9c9a1504d3087a2832e9a7f5e40f4c89}} 
+\index{dataStep@{dataStep}!dataFormat@{dataFormat}}
+\index{dataFormat@{dataFormat}!dataStep@{dataStep}}
+\doxysubsubsection{\texorpdfstring{dataFormat}{dataFormat}}
+{\footnotesize\ttfamily Q\+String data\+Step\+::data\+Format}
+
+native, dicom, nifti3d, nift4d, analyze3d, analyze4d, bids \mbox{\Hypertarget{structdata_step_ac6052edc2e2acd955808a85ba1eb6d70}\label{structdata_step_ac6052edc2e2acd955808a85ba1eb6d70}} 
+\index{dataStep@{dataStep}!datalevel@{datalevel}}
+\index{datalevel@{datalevel}!dataStep@{dataStep}}
+\doxysubsubsection{\texorpdfstring{datalevel}{datalevel}}
+{\footnotesize\ttfamily Q\+String data\+Step\+::datalevel}
+
+nearestintime, samestudy \mbox{\Hypertarget{structdata_step_a6c351267eccf2f987cd7e295f1f78992}\label{structdata_step_a6c351267eccf2f987cd7e295f1f78992}} 
+\index{dataStep@{dataStep}!flags@{flags}}
+\index{flags@{flags}!dataStep@{dataStep}}
+\doxysubsubsection{\texorpdfstring{flags}{flags}}
+{\footnotesize\ttfamily struct \mbox{\hyperlink{structdata_step_1_1flag}{data\+Step\+::flag}}  data\+Step\+::flags}
+
+\mbox{\Hypertarget{structdata_step_aafa9ab064bfbde749f54d18bafc9acff}\label{structdata_step_aafa9ab064bfbde749f54d18bafc9acff}} 
+\index{dataStep@{dataStep}!imageType@{imageType}}
+\index{imageType@{imageType}!dataStep@{dataStep}}
+\doxysubsubsection{\texorpdfstring{imageType}{imageType}}
+{\footnotesize\ttfamily Q\+String data\+Step\+::image\+Type}
+
+comma separated list of image types, often derived from the D\+I\+C\+OM Image\+Type tag (0008\+:0008) \mbox{\Hypertarget{structdata_step_a8ac1d71b8887008edb200078130da9a2}\label{structdata_step_a8ac1d71b8887008edb200078130da9a2}} 
+\index{dataStep@{dataStep}!location@{location}}
+\index{location@{location}!dataStep@{dataStep}}
+\doxysubsubsection{\texorpdfstring{location}{location}}
+{\footnotesize\ttfamily Q\+String data\+Step\+::location}
+
+directory relative to \{analysisroot\}, where this data will be written \mbox{\Hypertarget{structdata_step_a8ed9372abb08922aaaf2a5eef6d5542e}\label{structdata_step_a8ed9372abb08922aaaf2a5eef6d5542e}} 
+\index{dataStep@{dataStep}!modality@{modality}}
+\index{modality@{modality}!dataStep@{dataStep}}
+\doxysubsubsection{\texorpdfstring{modality}{modality}}
+{\footnotesize\ttfamily Q\+String data\+Step\+::modality}
+
+modality of the data to search for \mbox{\Hypertarget{structdata_step_acece1ac1e2b601362f00fc02eb60b37f}\label{structdata_step_acece1ac1e2b601362f00fc02eb60b37f}} 
+\index{dataStep@{dataStep}!numBOLDreps@{numBOLDreps}}
+\index{numBOLDreps@{numBOLDreps}!dataStep@{dataStep}}
+\doxysubsubsection{\texorpdfstring{numBOLDreps}{numBOLDreps}}
+{\footnotesize\ttfamily Q\+String data\+Step\+::num\+B\+O\+L\+Dreps}
+
+if series\+Criteria is \textquotesingle{}usecriteria\textquotesingle{}, then this is the number of bold reps to search for, ie \textquotesingle{}$<$=450\textquotesingle{} \mbox{\Hypertarget{structdata_step_a2eec6f4c2c9f3cc31446f8cbb35fa61e}\label{structdata_step_a2eec6f4c2c9f3cc31446f8cbb35fa61e}} 
+\index{dataStep@{dataStep}!numImagesCriteria@{numImagesCriteria}}
+\index{numImagesCriteria@{numImagesCriteria}!dataStep@{dataStep}}
+\doxysubsubsection{\texorpdfstring{numImagesCriteria}{numImagesCriteria}}
+{\footnotesize\ttfamily Q\+String data\+Step\+::num\+Images\+Criteria}
+
+note sure \mbox{\Hypertarget{structdata_step_a6bdffcf61f0d9b0d608cf4c36ff6cbb2}\label{structdata_step_a6bdffcf61f0d9b0d608cf4c36ff6cbb2}} 
+\index{dataStep@{dataStep}!order@{order}}
+\index{order@{order}!dataStep@{dataStep}}
+\doxysubsubsection{\texorpdfstring{order}{order}}
+{\footnotesize\ttfamily int data\+Step\+::order}
+
+order of this step \mbox{\Hypertarget{structdata_step_acb992ebf00e81399529a440260b0cde4}\label{structdata_step_acb992ebf00e81399529a440260b0cde4}} 
+\index{dataStep@{dataStep}!protocol@{protocol}}
+\index{protocol@{protocol}!dataStep@{dataStep}}
+\doxysubsubsection{\texorpdfstring{protocol}{protocol}}
+{\footnotesize\ttfamily Q\+String data\+Step\+::protocol}
+
+protocol name(s) to search for \mbox{\Hypertarget{structdata_step_ae882ecffb3844d134114e00fad5ab261}\label{structdata_step_ae882ecffb3844d134114e00fad5ab261}} 
+\index{dataStep@{dataStep}!seriesCriteria@{seriesCriteria}}
+\index{seriesCriteria@{seriesCriteria}!dataStep@{dataStep}}
+\doxysubsubsection{\texorpdfstring{seriesCriteria}{seriesCriteria}}
+{\footnotesize\ttfamily Q\+String data\+Step\+::series\+Criteria}
+
+criteria for downloading data from a study, if more than one series matches the protocol\+: all, first, last, largest, smallest, usecriteria 
+
+The documentation for this struct was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{pipeline_8h}{pipeline.\+h}}\end{DoxyCompactItemize}

@@ -1,0 +1,152 @@
+\hypertarget{classanalysis}{}\doxysection{analysis Class Reference}
+\label{classanalysis}\index{analysis@{analysis}}
+
+
+The analysis class.  
+
+
+
+
+{\ttfamily \#include $<$analysis.\+h$>$}
+
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{classanalysis_a1391073bb18c75cdad4132e90992fcd3}{analysis}} ()
+\end{DoxyCompactItemize}
+\doxysubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+Q\+String \mbox{\hyperlink{classanalysis_a727d29d997bdd921c1b5c71cd986f035}{pipeline\+Name}}
+\item 
+int \mbox{\hyperlink{classanalysis_ac7647110f6d87c1104deb9c58510e4f7}{pipeline\+Version}}
+\item 
+Q\+Date\+Time \mbox{\hyperlink{classanalysis_a0a9856ae7774265ac73e640b224429f0}{cluster\+Start\+Date}}
+\item 
+Q\+Date\+Time \mbox{\hyperlink{classanalysis_a0adf737ef0475e334e84c337627c9411}{cluster\+End\+Date}}
+\item 
+Q\+Date\+Time \mbox{\hyperlink{classanalysis_ae5dac9e5995f7983f1080d650875ddcb}{start\+Date}}
+\item 
+Q\+Date\+Time \mbox{\hyperlink{classanalysis_ac9e846cdccad920f8c2fa4e1f5736015}{end\+Date}}
+\item 
+qint64 \mbox{\hyperlink{classanalysis_a059bfa8f0802fa6cfab9b9e73a5e1e5a}{setup\+Time}}
+\item 
+qint64 \mbox{\hyperlink{classanalysis_a2559d5faffd4908be45be23052ffb8aa}{run\+Time}}
+\item 
+int \mbox{\hyperlink{classanalysis_a78714a45c6ead8dbe0b3de1a8e752a0e}{num\+Series}}
+\item 
+bool \mbox{\hyperlink{classanalysis_a558d50b12521d942684dd2f6879a7c90}{successful}}
+\item 
+qint64 \mbox{\hyperlink{classanalysis_a16c6e397989638b3bc59cc8a425862f4}{size}}
+\item 
+Q\+String \mbox{\hyperlink{classanalysis_a4cdfabf461471e895fc84ae4d7839686}{hostname}}
+\item 
+Q\+String \mbox{\hyperlink{classanalysis_aa3b5023e4f588367c44795b9299d65f1}{status}}
+\item 
+Q\+String \mbox{\hyperlink{classanalysis_aa8eaabdbb19e52ad7e4fe320e9e7ea05}{last\+Message}}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+The analysis class. 
+
+\doxysubsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classanalysis_a1391073bb18c75cdad4132e90992fcd3}\label{classanalysis_a1391073bb18c75cdad4132e90992fcd3}} 
+\index{analysis@{analysis}!analysis@{analysis}}
+\index{analysis@{analysis}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{analysis()}{analysis()}}
+{\footnotesize\ttfamily analysis\+::analysis (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+\doxysubsection{Member Data Documentation}
+\mbox{\Hypertarget{classanalysis_a0adf737ef0475e334e84c337627c9411}\label{classanalysis_a0adf737ef0475e334e84c337627c9411}} 
+\index{analysis@{analysis}!clusterEndDate@{clusterEndDate}}
+\index{clusterEndDate@{clusterEndDate}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{clusterEndDate}{clusterEndDate}}
+{\footnotesize\ttfamily Q\+Date\+Time analysis\+::cluster\+End\+Date}
+
+datetime the analysis finished running on the cluster \mbox{\Hypertarget{classanalysis_a0a9856ae7774265ac73e640b224429f0}\label{classanalysis_a0a9856ae7774265ac73e640b224429f0}} 
+\index{analysis@{analysis}!clusterStartDate@{clusterStartDate}}
+\index{clusterStartDate@{clusterStartDate}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{clusterStartDate}{clusterStartDate}}
+{\footnotesize\ttfamily Q\+Date\+Time analysis\+::cluster\+Start\+Date}
+
+datetime the analysis started running on the cluster \mbox{\Hypertarget{classanalysis_ac9e846cdccad920f8c2fa4e1f5736015}\label{classanalysis_ac9e846cdccad920f8c2fa4e1f5736015}} 
+\index{analysis@{analysis}!endDate@{endDate}}
+\index{endDate@{endDate}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{endDate}{endDate}}
+{\footnotesize\ttfamily Q\+Date\+Time analysis\+::end\+Date}
+
+datetime the analysis ended \mbox{\Hypertarget{classanalysis_a4cdfabf461471e895fc84ae4d7839686}\label{classanalysis_a4cdfabf461471e895fc84ae4d7839686}} 
+\index{analysis@{analysis}!hostname@{hostname}}
+\index{hostname@{hostname}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{hostname}{hostname}}
+{\footnotesize\ttfamily Q\+String analysis\+::hostname}
+
+hostname on which the analysis was run \mbox{\Hypertarget{classanalysis_aa8eaabdbb19e52ad7e4fe320e9e7ea05}\label{classanalysis_aa8eaabdbb19e52ad7e4fe320e9e7ea05}} 
+\index{analysis@{analysis}!lastMessage@{lastMessage}}
+\index{lastMessage@{lastMessage}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{lastMessage}{lastMessage}}
+{\footnotesize\ttfamily Q\+String analysis\+::last\+Message}
+
+if the analysis had a status message, the last would be stored here \mbox{\Hypertarget{classanalysis_a78714a45c6ead8dbe0b3de1a8e752a0e}\label{classanalysis_a78714a45c6ead8dbe0b3de1a8e752a0e}} 
+\index{analysis@{analysis}!numSeries@{numSeries}}
+\index{numSeries@{numSeries}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{numSeries}{numSeries}}
+{\footnotesize\ttfamily int analysis\+::num\+Series}
+
+number of series downloaded into the analysis \mbox{\Hypertarget{classanalysis_a727d29d997bdd921c1b5c71cd986f035}\label{classanalysis_a727d29d997bdd921c1b5c71cd986f035}} 
+\index{analysis@{analysis}!pipelineName@{pipelineName}}
+\index{pipelineName@{pipelineName}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{pipelineName}{pipelineName}}
+{\footnotesize\ttfamily Q\+String analysis\+::pipeline\+Name}
+
+name of the pipeline \mbox{\Hypertarget{classanalysis_ac7647110f6d87c1104deb9c58510e4f7}\label{classanalysis_ac7647110f6d87c1104deb9c58510e4f7}} 
+\index{analysis@{analysis}!pipelineVersion@{pipelineVersion}}
+\index{pipelineVersion@{pipelineVersion}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{pipelineVersion}{pipelineVersion}}
+{\footnotesize\ttfamily int analysis\+::pipeline\+Version}
+
+pipeline version \mbox{\Hypertarget{classanalysis_a2559d5faffd4908be45be23052ffb8aa}\label{classanalysis_a2559d5faffd4908be45be23052ffb8aa}} 
+\index{analysis@{analysis}!runTime@{runTime}}
+\index{runTime@{runTime}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{runTime}{runTime}}
+{\footnotesize\ttfamily qint64 analysis\+::run\+Time}
+
+total run time (wall time) of the analysis after analysis was submitted to the cluster \mbox{\Hypertarget{classanalysis_a059bfa8f0802fa6cfab9b9e73a5e1e5a}\label{classanalysis_a059bfa8f0802fa6cfab9b9e73a5e1e5a}} 
+\index{analysis@{analysis}!setupTime@{setupTime}}
+\index{setupTime@{setupTime}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{setupTime}{setupTime}}
+{\footnotesize\ttfamily qint64 analysis\+::setup\+Time}
+
+total time (wall time) to setup the analysis, most time will be spent copying data into the analysis directories \mbox{\Hypertarget{classanalysis_a16c6e397989638b3bc59cc8a425862f4}\label{classanalysis_a16c6e397989638b3bc59cc8a425862f4}} 
+\index{analysis@{analysis}!size@{size}}
+\index{size@{size}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{size}{size}}
+{\footnotesize\ttfamily qint64 analysis\+::size}
+
+disk size in bytes of the analysis \mbox{\Hypertarget{classanalysis_ae5dac9e5995f7983f1080d650875ddcb}\label{classanalysis_ae5dac9e5995f7983f1080d650875ddcb}} 
+\index{analysis@{analysis}!startDate@{startDate}}
+\index{startDate@{startDate}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{startDate}{startDate}}
+{\footnotesize\ttfamily Q\+Date\+Time analysis\+::start\+Date}
+
+datetime the analysis was started, includes the setup time \mbox{\Hypertarget{classanalysis_aa3b5023e4f588367c44795b9299d65f1}\label{classanalysis_aa3b5023e4f588367c44795b9299d65f1}} 
+\index{analysis@{analysis}!status@{status}}
+\index{status@{status}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{status}{status}}
+{\footnotesize\ttfamily Q\+String analysis\+::status}
+
+status of the analysis. eg running, complete, pending \mbox{\Hypertarget{classanalysis_a558d50b12521d942684dd2f6879a7c90}\label{classanalysis_a558d50b12521d942684dd2f6879a7c90}} 
+\index{analysis@{analysis}!successful@{successful}}
+\index{successful@{successful}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{successful}{successful}}
+{\footnotesize\ttfamily bool analysis\+::successful}
+
+true if the analysis completed successfully 
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{analysis_8h}{analysis.\+h}}\item 
+\mbox{\hyperlink{analysis_8cpp}{analysis.\+cpp}}\end{DoxyCompactItemize}

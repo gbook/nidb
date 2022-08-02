@@ -6,6 +6,8 @@ CONFIG += silent
 
 TARGET = squirrel
 TEMPLATE = lib
+DEFINES += SQUIRREL_BUILD
+win32:CONFIG += dll
 
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -14,8 +16,8 @@ TEMPLATE = lib
 #INCLUDEPATH += $$PWD/../nidb
 
 SOURCES += \
-	../nidb/imageio.cpp \
-	../nidb/utils.cpp \
+	imageio.cpp \
+	utils.cpp \
 	convert.cpp \
 	dicom.cpp \
 	main.cpp \
@@ -31,14 +33,14 @@ SOURCES += \
 	validate.cpp
 
 # Default rules for deployment.
-qnx: target.path = /tmp/$${TARGET}/bin
-else: unix:!android: target.path = /opt/$${TARGET}/bin
-!isEmpty(target.path): INSTALLS += target
+#qnx: target.path = /tmp/$${TARGET}/bin
+#else: unix:!android: target.path = /opt/$${TARGET}/bin
+#!isEmpty(target.path): INSTALLS += target
 
 HEADERS += \
-	../nidb/imageio.h \
-	../nidb/utils.h \
-	../nidb/version.h \
+	imageio.h \
+	utils.h \
+	version.h \
 	convert.h \
 	dicom.h \
 	squirrel.h \

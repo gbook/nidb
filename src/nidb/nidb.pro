@@ -86,8 +86,6 @@ HEADERS += \
     utils.h \
     version.h
 
-INCLUDEPATH += ../squirrel
-
 # gdcm
 win32: {
     GDCMBIN = C:/gdcmbin
@@ -136,7 +134,7 @@ unix: {
     INCLUDEPATH += $$SMTPBIN
     DEPENDPATH += $$SMTPBIN
 
-    # Location of SMTP Library and header
+    # Location of squirrel Library and header
 	INCLUDEPATH += ../squirrel
 	SQUIRRELBIN = ../../bin/squirrel
 	LIBS += -L$$SQUIRRELBIN/ -lsquirrel
