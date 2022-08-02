@@ -119,3 +119,26 @@ This may happen if the build machine does not have enough RAM or processors. Mor
 #### Build fails with "QMAKE\_CXX.COMPILER\_MACROS not defined"
 
 Unclear why this happens, but it appears to be a corrupt Qt installation. First check if you can build the project using Qt Creator. If the build fails in Qt Creator, then there is most likely an issue with the Qt installation. Try completely uninstalling Qt, and then reinstalling it.
+
+#### Library error when running nidb executable
+
+If you get an error similar to the following, you'll need to install the missing library
+
+```
+./nidb: error while loading shared libraries: libsquirrel.so.1: cannot open shared object file: No such file or directory./nidb: error while loading shared libraries: libsquirrel.so.1: cannot open shared object file: No such file or directory
+```
+
+You can check which libraries are missing by running `ldd` on the `nidb` executable
+
+```
+[nidb@ado2dev bin]$ ldd nidb
+        linux-vdso.so.1 (0x00007ffd07fe4000)
+        libSMTPEmail.so.1 => /lib/libSMTPEmail.so.1 (0x00007fdb4e2b0000)
+        libsquirrel.so.1 => not found
+        libgdcmMSFF.so.3.0 => /lib/libgdcmMSFF.so.3.0 (0x00007fdb4dd88000)
+        libgdcmCommon.so.3.0 => /lib/libgdcmCommon.so.3.0 (0x00007fdb4db60000)
+        libgdcmDICT.so.3.0 => /lib/libgdcmDICT.so.3.0 (0x00007fdb4d688000)
+        libgdcmDSED.so.3.0 => /lib/libgdcmDSED.so.3.0 (0x00007fdb4d348000)
+```
+
+Copy the missing library file(s) to `/lib` as root. Then run `ldconfig` to register any new libraries.
