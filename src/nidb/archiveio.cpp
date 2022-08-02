@@ -2622,6 +2622,8 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
 				//seriesInfo["size"] = QString::number(fBytes);
 
 				//sqrlSeries.virtualPath = QString("%1/%2/%3").arg(subjectdir).arg(sessiondir).arg(seriesdir);
+				/* get full paths to the files */
+				sqrlSeries.files = FindAllFiles(datadir, "*");
 				sqrlSeries.numFiles = fCount;
 				sqrlSeries.size = fBytes;
 
