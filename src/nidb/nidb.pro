@@ -125,6 +125,15 @@ win32: {
     *msvc* { # visual studio spec filter
 	QMAKE_CXXFLAGS += -MP
     }
+
+    # Location of squirrel Library
+	SQUIRRELBIN = ../../bin/squirrel-win
+	LIBS += -L$$SQUIRRELBIN/release -lsquirrel
+	INCLUDEPATH += ../squirrel
+	DEPENDPATH += $$SQUIRRELBIN
+	*msvc* { # visual studio spec filter
+	QMAKE_CXXFLAGS += -MP
+	}
 }
 unix: {
     # Location of SMTP Library and header

@@ -53,7 +53,7 @@ public:
     QHash<QString, QString> params; /*!< Hash containing experimental parameters. eg MR params */
     QStringList files; /*!< file list */
 
-    QStringList experimentList; /*!< List of experiments attached to this series */
+	QStringList experimentList; /*!< List of experiment names attached to this series */
 
     QString virtualPath; /*!< path within the squirrel package, no leading slash */
 };

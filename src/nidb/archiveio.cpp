@@ -2399,7 +2399,6 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
                 q2.bindValue(":studyid", studyid);
                 n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
                 if (q2.size() > 0) {
-                    //QJsonArray JSONanalyses;
                     while (q2.next()) {
                         analysis a(q2.value("analysis_id").toInt(), n);
                         if (a.isValid) {

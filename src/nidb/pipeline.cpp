@@ -298,3 +298,73 @@ void pipeline::AppendJSONScripts(QJsonObject &obj) {
         obj["supplementScript"] = JSONdata;
     }
 }
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetParentList ---------------------------------- */
+/* ---------------------------------------------------------- */
+QStringList pipeline::GetParentList() {
+
+	QStringList l;
+
+	if (parentIDs.size() > 0) {
+		for (int i=0; i< parentIDs.size(); i++) {
+			pipeline p(parentIDs[i], n);
+			l.append(p.name);
+		}
+	}
+	return l;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetSquirrelObject ------------------------------ */
+/* ---------------------------------------------------------- */
+squirrelPipeline pipeline::GetSquirrelObject() {
+	squirrelPipeline s;
+
+	s.clusterEndDate = clusterEndDate;
+
+	s.pipelineName = name;
+	s.description = desc;
+	s.createDate = createDate;
+	s.version = version;
+	s.level = level;
+
+	/* pipeline options */
+	s.parentPipelines = GetParentList();
+	s.completeFiles = completeFiles;
+	s.dataCopyMethod; /*!< cp, hardlink, softlink  */
+	s.depDir; /*!< dependency directory */
+	s.depLevel; /*!<  */
+	s.depLinkType; /*!<  */
+	s.dirStructure; /*!<  */
+	s.directory; /*!< [NiDB] directory where this pipeline will live if not using the default pipeline directory */
+	s.group; /*!< [NiDB] group on which the pipeline will be run */
+	s.groupType; /*!< [NiDB] subject, study */
+	s.notes; /*!< freeform area for notes */
+	s.resultScript; /*!< path to a script to run to get a results at the end */
+	s.tmpDir; /*!< name of temp dir, if one is to be used */
+	s.flag.useProfile = useProfile;
+	s.flag.useTmpDir = useTmpDir;
+
+	/* cluster information */
+	QString clusterType; /*!< [NiDB] compute cluster engine (sge, slurm) */
+	QString clusterUser; /*!< [NiDB] compute cluster user */
+	QString clusterQueue; /*!< [NiDB] compute cluster queue */
+	QString clusterSubmitHost; /*!< [NiDB] hostname of the sge/slurm submit node */
+	int numConcurrentAnalyses; /*!< [NiDB] max number of concurrent analyses allowed to run */
+	QString maxWallTime; /*!< [NiDB] maximum allowed clock (wall) time the analysis is allowed to run */
+	int submitDelay; /*!< [NiDB] time in hours after the study datetime to delay before running this analysis */
+
+	/* data */
+	QList<dataStep> data;
+
+	/* scripts (required) */
+	//QList<pipelineStep> primaryScript;
+	//QList<pipelineStep> secondaryScript;
+	QString primaryScript;
+	QString secondaryScript;
+
+	return s;
+}

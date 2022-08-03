@@ -23,6 +23,7 @@
 #ifndef PIPELINE_H
 #define PIPELINE_H
 #include "nidb.h"
+#include "squirrelPipeline.h"
 
 class pipeline
 {
@@ -81,12 +82,14 @@ public:
     int version;
 
     QJsonObject GetJSONObject(QString path);
+	squirrelPipeline GetSquirrelObject();
 
 private:
     void LoadPipelineInfo();
     void AppendJSONParents(QJsonObject &obj, QList<int> parentIDs, QString path);
     void AppendJSONDataSpec(QJsonObject &obj);
     void AppendJSONScripts(QJsonObject &obj);
+	QStringList GetParentList();
 
     int pipelineid;
 };

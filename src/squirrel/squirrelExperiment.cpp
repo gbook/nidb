@@ -34,5 +34,9 @@ squirrelExperiment::squirrelExperiment()
 QJsonObject squirrelExperiment::ToJSON() {
     QJsonObject json;
 
+	json["experimentName"] = experimentName;
+	json["numFiles"] = numFiles;
+	json["size"] = size;
+
     return json;
 }
