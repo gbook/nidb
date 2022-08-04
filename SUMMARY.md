@@ -35,6 +35,7 @@
 * [Adding Users to Projects](tutorials/adding-users-to-projects.md)
 * [Editing the config file](tutorials/editing-the-config-file.md)
 * [Importing Data from a Redcap Project](tutorials/importing-data-from-a-redcap-project.md)
+* [Importing Subjects from Redcap](tutorials/importing-subjects-from-redcap.md)
 
 ## Contribute
 
