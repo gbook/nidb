@@ -16,7 +16,7 @@ Analysis builder is a report generating tool on the data stored in NiDB. A repor
 
 Analysis builder is designed to create reports based on various variables that can be selected from different types of measures, and modalities. These includes modalities like MR, EEG, Biological Measurements etc. as shown in the main screen of Analysis builder above.
 
-#### Steps
+#### Steps to generate a simple report
 
 1. To generate a report, select a project from the drop-down menu on the top of the main screen.
 2. Select the variables for any one or combination of modalities and measures.

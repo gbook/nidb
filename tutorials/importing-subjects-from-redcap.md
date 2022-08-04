@@ -7,6 +7,9 @@ description: Tutorial on how to import subjects form Redcap
 ### Steps
 
 * For a project, subjects can be imported from redcap using an option on the project page as shown below:
+
+![](../.gitbook/assets/image.png)
+
 * Fill the following form requiring information for API connection to redcap and required redcap field names. After providing the required fields click "Subjects Information" button.
 
 ![](https://user-images.githubusercontent.com/24811295/162760300-c173bb79-18ae-466e-9a7e-a23f79e176c1.png)
@@ -22,7 +25,7 @@ There can be four types of subjects in the list. Those are:
 3. Processing: these are already in the process of being imported and cannot be selected to import.
 4. Already exist in the project: these already exist in the current project and cannot be duplicated.
 
-After selecting the required subjects to import, click "Import Selected Subjects" to start the import process.
+After selecting the required subjects  to import, click "Import Selected Subjects" to start the import process.
 
 ### Enroll in Project
 

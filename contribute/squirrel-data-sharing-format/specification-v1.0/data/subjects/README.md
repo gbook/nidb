@@ -16,14 +16,12 @@ This object is an **array** of subjects, with information about each subject.
 | -------------: | ---------- | --------------------------------------------------------------------------------------------------------------------- |
 |         _\*ID_ | string     | Unique ID of this subject. It must be unique within the package, ie no other subjects in the package have the same ID |
 | _alternateIDs_ | JSON array | List of alternate IDs                                                                                                 |
-|         _GUID_ | string     | Globally unique identifier, from NDA                                                                                  |
 |  _dateOfBirth_ | date       | Subject’s date of birth                                                                                               |
 |        _\*sex_ | char       | Sex at birth (F,M,O,U)                                                                                                |
 |       _gender_ | char       | Self-identified gender                                                                                                |
 |   _ethnicity1_ | string     | Usually Hispanic/non-hispanic                                                                                         |
 |   _ethnicity2_ | string     | NIH defined race                                                                                                      |
 |   _numStudies_ | number     | The number of imaging studies for this subject                                                                        |
-|           path | string     | relative path to the data within the package                                                                          |
 |      _studies_ | JSON array |                                                                                                                       |
 
 ### Directory structure
