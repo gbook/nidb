@@ -1,8 +1,6 @@
 # Importing Data from a Redcap Project
 
-## Importing Data from a Redcap Project
-
-### Step1
+### Step 1
 
 Gather the following information from Redcap administrator for API connection .
 
@@ -13,14 +11,20 @@ Gather the following information from Redcap administrator for API connection .
 
 Use 'Projects' menu in NiDB to get to the desired project's main page. From Data Transfer section of the links on the right, click "Import from Redcap" link.
 
-### Step3
+![](<../.gitbook/assets/image (1).png>)
+
+### Step 3
 
 * Enter the Redcap server address and API token information and press "Update Connection Settings" button on the right as shown below.
 * Press "Show Project info" button to check the connection is establish. The information from connected redcap project will be appeared as shown in the figure below.
 
+![](<../.gitbook/assets/image (2).png>)
+
 ### Step 4
 
 Next step to import the data correctly from redcap into NiDB is mapping each variable / field from redcap to NiDB. To start mapping Click on the "Map This Project" button at the end of screen as shown in the above figure. A new page will appear as shown below.
+
+![](<../.gitbook/assets/image (8).png>)
 
 Each Redcap form is required to map separately. Pick a Redcap "Form" from the drop-down list shown above.
 
@@ -33,6 +37,8 @@ Select a type of data that redcap form contains. NiDB handles this in three type
 After choosing the Redcap "Form" and its type of data in NiDB, Click on the "Redcap Field Mapping" button as shown in the figure above.
 
 A new section to map the variables from Redcap to NiDB will appear as shown in the figure below.
+
+![](<../.gitbook/assets/image (4).png>)
 
 A variable mapping table has two sides: Recap and NiDB.
 
