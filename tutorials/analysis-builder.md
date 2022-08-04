@@ -24,6 +24,6 @@ Analysis builder is designed to create reports based on various variables that c
    * [ ] What should be displayed for a blank value, and missing values
    * [ ] inclusion of, event duration, time, date, subject's height, weight and date of birth
 5. Select the report format, showing it on the screen or saving it as csv file.
-6. Hit the "Update Summary" button to generate the final report as shown below.
+6. Hit the "Update Summary" button to generate the final report as shown on the right section of the screen below.
 
 ![](<../.gitbook/assets/image (6).png>)
