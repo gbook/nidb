@@ -58,7 +58,11 @@ To update information regarding the subjects in the current project, click on th
 
 ![](https://user-images.githubusercontent.com/24811295/155018127-f55d837c-02cd-4f17-b5c4-fb8c81fde42c.png)
 
-By clicking the "Studies" button from "Data Views" section, following page will appear. The studies can be selected to perform various operations like adding enrollment tags, moving studies to another project. Rearchive studies and subjects and obliterate studies and subjects.
+By clicking the **Studies** button from **Data Views** section, following page will appear. The studies can be selected to perform various operations like adding enrollment tags, moving studies to another project.
+
+{% hint style="info" %}
+If you are an NiDB system admin, you may see the Powerful Tools box at the bottom of the page. This allows you to perform maintenance on the data in batches. Select the studies, and then click one of the options. **This is a powerful tool, so use with caution!**
+{% endhint %}
 
 ![](https://user-images.githubusercontent.com/24811295/155020201-ce11cf60-0b50-4c57-8276-04ddc9b122a6.png)
 

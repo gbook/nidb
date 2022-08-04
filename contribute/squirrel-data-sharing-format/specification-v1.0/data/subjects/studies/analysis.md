@@ -28,4 +28,5 @@ Analysis results, run on an imaging study level. Can contain files, directories,
 |                  _size_ | number   | Size in bytes of the analysis                                            |
 |              _hostname_ | string   | If run on a cluster, the hostname of the node on which the analysis run  |
 |                _status_ | string   | Status, should always be ‘complete’                                      |
+|                    path | string   | Relative path to the data within the package                             |
 |         _statusMessage_ | string   | Last running status message                                              |
