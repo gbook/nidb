@@ -4,6 +4,8 @@ description: Tutorial on how to import subjects form Redcap
 
 # Importing Subjects from Redcap
 
+NiDB supports to import subjects from an existing Redcap database. This is especially a very helpful option when a large number of subjects required to be created in NiDB, and information on these subjects is available in Redcap. This option can be used for any existing NiDB project, or a newly created project as a part of new or extended study. This option can save a lot of time and effort making the process efficient and accurate.&#x20;
+
 ### Steps
 
 * For a project, subjects can be imported from redcap using an option on the project page as shown below:
