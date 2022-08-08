@@ -35,6 +35,7 @@ class squirrelMeasure
 public:
 	squirrelMeasure();
     QJsonObject ToJSON();
+	void PrintMeasure();
 
     QString measureName; /*!< measure name (required) */
 	QDateTime dateStart; /*!< start date of the measurement (required) */

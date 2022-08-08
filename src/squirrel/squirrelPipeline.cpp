@@ -150,3 +150,46 @@ QJsonObject squirrelPipeline::ToJSON(QString path) {
 //    }
 //}
 
+
+/* ------------------------------------------------------------ */
+/* ----- PrintPipeline ---------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief squirrelPipeline::PrintPipeline
+ */
+void squirrelPipeline::PrintPipeline() {
+
+	Print("-- PIPELINE ----------");
+
+	Print(QString("       PipelineName: %1").arg(pipelineName));
+	Print(QString("       PipelineName: %1").arg(description));
+	Print(QString("       PipelineName: %1").arg(createDate.toString()));
+	Print(QString("       PipelineName: %1").arg(version));
+	Print(QString("       PipelineName: %1").arg(level));
+
+	Print(QString("       PipelineName: %1").arg(parentPipelines.join(",")));
+	Print(QString("       PipelineName: %1").arg(completeFiles));
+
+	Print(QString("       PipelineName: %1").arg(dataCopyMethod));
+	Print(QString("       PipelineName: %1").arg(directory));
+	Print(QString("       PipelineName: %1").arg(dirStructure));
+	Print(QString("       PipelineName: %1").arg(depLevel));
+	Print(QString("       PipelineName: %1").arg(depDir));
+	Print(QString("       PipelineName: %1").arg(depLinkType));
+	Print(QString("       PipelineName: %1").arg(group));
+	Print(QString("       PipelineName: %1").arg(groupType));
+	Print(QString("       PipelineName: %1").arg(notes));
+	Print(QString("       PipelineName: %1").arg(resultScript));
+	Print(QString("       PipelineName: %1").arg(tmpDir));
+	Print(QString("       PipelineName: %1").arg(flags.useTmpDir));
+	Print(QString("       PipelineName: %1").arg(flags.useProfile));
+
+	Print(QString("       PipelineName: %1").arg(clusterType));
+	Print(QString("       PipelineName: %1").arg(clusterUser));
+	Print(QString("       PipelineName: %1").arg(clusterQueue));
+	Print(QString("       PipelineName: %1").arg(clusterSubmitHost));
+	Print(QString("       PipelineName: %1").arg(maxWallTime));
+	Print(QString("       PipelineName: %1").arg(submitDelay));
+	Print(QString("       PipelineName: %1").arg(numConcurrentAnalyses));
+
+}

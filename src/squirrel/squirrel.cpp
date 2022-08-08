@@ -311,8 +311,29 @@ void squirrel::print() {
                 squirrelSeries ser = stud.seriesList[k];
                 ser.PrintSeries();
             }
-        }
-    }
+
+			/* iterate through analyses */
+			for (int k=0; k < stud.analysisList.size(); k++) {
+
+				squirrelAnalysis an = stud.analysisList[k];
+				an.PrintAnalysis();
+			}
+		}
+
+		/* iterate through measures */
+		for (int j=0; j < sub.measureList.size(); j++) {
+
+			squirrelMeasure meas = sub.measureList[j];
+			meas.PrintMeasure();
+		}
+
+		/* iterate through drugs */
+		for (int j=0; j < sub.drugList.size(); j++) {
+
+			squirrelDrug drug = sub.drugList[j];
+			drug.PrintDrug();
+		}
+	}
 }
 
 

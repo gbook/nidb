@@ -22,6 +22,7 @@
 
 
 #include "squirrelAnalysis.h"
+#include "utils.h"
 
 squirrelAnalysis::squirrelAnalysis()
 {
@@ -39,7 +40,6 @@ QJsonObject squirrelAnalysis::ToJSON() {
 	json["pipelineVersion"] = pipelineVersion;
 	json["clusterStartDate"] = clusterStartDate.toString("yyyy-MM-dd HH:mm:ss");
 	json["clusterEndDate"] = clusterEndDate.toString("yyyy-MM-dd HH:mm:ss");
-	json["pipelineVersion"] = pipelineVersion;
 	json["startDate"] = startDate.toString("yyyy-MM-dd HH:mm:ss");
 	json["endDate"] = endDate.toString("yyyy-MM-dd HH:mm:ss");
 	json["setupTime"] = setupTime;
@@ -53,4 +53,32 @@ QJsonObject squirrelAnalysis::ToJSON() {
 	json["virtualPath"] = virtualPath;
 
 	return json;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- PrintAnalysis ---------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief squirrelAnalysis::PrintAnalysis
+ */
+void squirrelAnalysis::PrintAnalysis() {
+
+	Print("-- ANALYSIS----------");
+	Print(QString("       PipelineName: %1").arg(pipelineName));
+	Print(QString("       PipelineVersion: %1").arg(pipelineVersion));
+	Print(QString("       ClusterStartDate: %1").arg(clusterStartDate.toString("yyyy-MM-dd HH:mm:ss")));
+	Print(QString("       ClusterEndDate: %1").arg(clusterEndDate.toString("yyyy-MM-dd HH:mm:ss")));
+	Print(QString("       StartDate: %1").arg(startDate.toString("yyyy-MM-dd HH:mm:ss")));
+	Print(QString("       EndDate: %1").arg(endDate.toString("yyyy-MM-dd HH:mm:ss")));
+	Print(QString("       SetupTime: %1").arg(setupTime));
+	Print(QString("       RunTime: %1").arg(runTime));
+	Print(QString("       NumSeries: %1").arg(numSeries));
+	Print(QString("       Successful: %1").arg(successful));
+	Print(QString("       Size: %1").arg(size));
+	Print(QString("       Hostname: %1").arg(hostname));
+	Print(QString("       Status: %1").arg(status));
+	Print(QString("       LastMessage: %1").arg(lastMessage));
+	Print(QString("       VirtualPath: %1").arg(virtualPath));
+
 }

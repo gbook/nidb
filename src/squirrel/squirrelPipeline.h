@@ -96,6 +96,7 @@ class squirrelPipeline
 public:
 	squirrelPipeline();
     QJsonObject ToJSON(QString path);
+	void PrintPipeline();
 
     /* pipeline information (required fields) */
     QString pipelineName; /*!< pipeline name (required) */

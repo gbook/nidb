@@ -2353,13 +2353,15 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
     sqrl.name = name;
     sqrl.description = desc;
     sqrl.NiDBversion = n->GetVersion();
+	sqrl.dirFormat = "orig";
+	sqrl.dataFormat = "orig";
 
     int subjectCounter = 1; /* the subject counter */
     QList<int> pipelineIDs;
     QList<int> experimentIDs;
     QList<int> minipipelineIDs;
 
-    /* iterate through the UIDs */
+	/* iterate through the subjects (array key is UIDs) */
     for(QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>>::iterator a = s.begin(); a != s.end(); ++a) {
         QString uid = a.key();
         int studyCounter = 1; /* the session (study) counter */
@@ -2376,7 +2378,7 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
 
         QList<int> enrollmentIDs;
 
-        /* iterate through the studynums */
+		/* iterate through the studies (array key is studynum) */
         for(QMap<int, QMap<int, QMap<QString, QString>>>::iterator b = s[uid].begin(); b != s[uid].end(); ++b) {
             int studynum = b.key();
 
@@ -2427,10 +2429,10 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
                 }
             }
 
-            QJsonArray JSONseries;
+			//QJsonArray JSONseries;
 
             int seriesCounter = 1;
-            /* iterate through the seriesnums */
+			/* iterate through the series (array key is seriesnum) */
             for(QMap<int, QMap<QString, QString>>::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
                 int seriesnum = c.key();
 
@@ -2476,42 +2478,42 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
 				squirrelSeries sqrlSeries = sers.GetSquirrelObject();
 
                 enrollmentIDs.append(enrollmentid);
-                /* create the subject dir */
-                QString subjectdir;
-                if (squirrelflags.contains("SQUIRREL_INCSUBJECTNUM",Qt::CaseInsensitive))
-                    subjectdir = QString("%1").arg(subjectCounter, 4, 10, QChar('0'));
-                else
-                    subjectdir = uid;
+//                /* create the subject dir */
+//                QString subjectdir;
+//                if (squirrelflags.contains("SQUIRREL_INCSUBJECTNUM",Qt::CaseInsensitive))
+//                    subjectdir = QString("%1").arg(subjectCounter, 4, 10, QChar('0'));
+//                else
+//                    subjectdir = uid;
 
-                /* create the session (study) identifier */
-                QString sessiondir;
-                if (squirrelflags.contains("SQUIRREL_INCSTUDYNUM",Qt::CaseInsensitive))
-                    sessiondir = QString("%1").arg(studyCounter, 4, 10, QChar('0'));
-                else
-                    sessiondir = QString("%1").arg(studynum);
+//                /* create the session (study) identifier */
+//                QString sessiondir;
+//                if (squirrelflags.contains("SQUIRREL_INCSTUDYNUM",Qt::CaseInsensitive))
+//                    sessiondir = QString("%1").arg(studyCounter, 4, 10, QChar('0'));
+//                else
+//                    sessiondir = QString("%1").arg(studynum);
 
-                /* create the series dir */
-                QString seriesdir;
-                if (squirrelflags.contains("SQUIRREL_INCSERIESNUM",Qt::CaseInsensitive))
-                    seriesdir = QString("%1").arg(seriesCounter, 4, 10, QChar('0'));
-                else
-                    seriesdir = QString("%1").arg(seriesnum);
+//                /* create the series dir */
+//                QString seriesdir;
+//                if (squirrelflags.contains("SQUIRREL_INCSERIESNUM",Qt::CaseInsensitive))
+//                    seriesdir = QString("%1").arg(seriesCounter, 4, 10, QChar('0'));
+//                else
+//                    seriesdir = QString("%1").arg(seriesnum);
 
-                /* remove any non-alphanumeric characters */
-                seriesdir.replace(QRegularExpression("[^a-zA-Z0-9_-]"), "_");
+//                /* remove any non-alphanumeric characters */
+//                seriesdir.replace(QRegularExpression("[^a-zA-Z0-9_-]"), "_");
 
-                QString seriesoutdir = QString("%1/data/%2/%3/%4").arg(outdir).arg(subjectdir).arg(sessiondir).arg(seriesdir);
+//                QString seriesoutdir = QString("%1/data/%2/%3/%4").arg(outdir).arg(subjectdir).arg(sessiondir).arg(seriesdir);
 
-                QString m;
-                if (MakePath(seriesoutdir, m)) {
-                    n->WriteLog("Created seriesoutdir [" + seriesoutdir + "]");
-                }
-                else {
-                    exportstatus = "error";
-                    n->WriteLog("ERROR [" + m + "] unable to create seriesoutdir [" + seriesoutdir + "]");
-                    msg = "Unable to create output directory [" + seriesoutdir + "]";
-                    return false;
-                }
+//                QString m;
+//                if (MakePath(seriesoutdir, m)) {
+//                    n->WriteLog("Created seriesoutdir [" + seriesoutdir + "]");
+//                }
+//                else {
+//                    exportstatus = "error";
+//                    n->WriteLog("ERROR [" + m + "] unable to create seriesoutdir [" + seriesoutdir + "]");
+//                    msg = "Unable to create output directory [" + seriesoutdir + "]";
+//                    return false;
+//                }
 
                 if (datadirexists) {
                     if (!datadirempty) {

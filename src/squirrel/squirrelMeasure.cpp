@@ -21,6 +21,7 @@
   ------------------------------------------------------------------------------ */
 
 #include "squirrelMeasure.h"
+#include "utils.h"
 
 squirrelMeasure::squirrelMeasure()
 {
@@ -44,4 +45,25 @@ QJsonObject squirrelMeasure::ToJSON() {
 	json["description"] = description;
 
     return json;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- PrintMeasure ----------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief squirrelMeasure::PrintMeasure
+ */
+void squirrelMeasure::PrintMeasure() {
+
+	Print("-- MEASURE ----------");
+	Print(QString("   Name: %1").arg(measureName));
+	Print(QString("   DateStart: %1").arg(dateStart.toString()));
+	Print(QString("   DateEnd: %1").arg(dateEnd.toString()));
+	Print(QString("   InstrumentName: %1").arg(instrumentName));
+	Print(QString("   Rater: %1").arg(rater));
+	Print(QString("   Notes: %1").arg(notes));
+	Print(QString("   Value: %1").arg(value));
+	Print(QString("   Description: %1").arg(description));
+
 }

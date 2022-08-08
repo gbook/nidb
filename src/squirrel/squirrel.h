@@ -30,6 +30,7 @@
 #include "squirrelExperiment.h"
 #include "squirrelPipeline.h"
 #include "squirrelMeasure.h"
+#include "squirrelMiniPipeline.h"
 #include "squirrelDrug.h"
 #include "../nidb/version.h"
 
@@ -58,6 +59,8 @@ public:
 	QString NiDBversion; /*!< NiDB version that wrote this package */
     QString version; /*!< squirrel version */
 	QString format; /*!< package format, most likely 'squirrel' */
+	QString dirFormat; /*!< orig, seq */
+	QString dataFormat; /*!< orig, anon, anonfull, nift3d, nifti3dgz, nifti4d, nifti4dgz */
 
 private:
     void PrintPackage();

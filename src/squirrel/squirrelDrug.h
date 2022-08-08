@@ -37,6 +37,7 @@ class squirrelDrug
 public:
 	squirrelDrug();
     QJsonObject ToJSON();
+	void PrintDrug();
 
     QString drugName; /*!< drug name (required) */
     QDateTime dateStart; /*!< drug start date (required) */

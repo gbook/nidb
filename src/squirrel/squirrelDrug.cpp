@@ -21,6 +21,7 @@
   ------------------------------------------------------------------------------ */
 
 #include "squirrelDrug.h"
+#include "utils.h"
 
 squirrelDrug::squirrelDrug()
 {
@@ -52,4 +53,33 @@ QJsonObject squirrelDrug::ToJSON() {
 	json["dateEntry"] = dateEntry.toString("yyyy-MM-dd HH:mm:ss");
 
     return json;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- PrintDrug -------------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief squirrelDrug::PrintDrug
+ */
+void squirrelDrug::PrintDrug() {
+
+	Print("-- DRUG----------");
+	Print(QString("       DrugName: %1").arg(drugName));
+	Print(QString("       DateStart: %1").arg(dateStart.toString("yyyy-MM-dd HH:mm:ss")));
+	Print(QString("       DateEnd: %1").arg(dateEnd.toString("yyyy-MM-dd HH:mm:ss")));
+	Print(QString("       DoseAmount: %1").arg(doseAmount));
+	Print(QString("       DoseFrequency: %1").arg(doseFrequency));
+	Print(QString("       Route: %1").arg(route));
+	Print(QString("       Type: %1").arg(type));
+	Print(QString("       DoseKey: %1").arg(doseKey));
+	Print(QString("       DoseUnit: %1").arg(doseUnit));
+	Print(QString("       FrequencyModifier: %1").arg(frequencyModifier));
+	Print(QString("       FrequencyValue: %1").arg(frequencyValue));
+	Print(QString("       FrequencyUnit: %1").arg(frequencyUnit));
+	Print(QString("       Description: %1").arg(description));
+	Print(QString("       Rater: %1").arg(rater));
+	Print(QString("       Notes: %1").arg(notes));
+	Print(QString("       DateEntry: %1").arg(dateEntry.toString("yyyy-MM-dd HH:mm:ss")));
+
 }

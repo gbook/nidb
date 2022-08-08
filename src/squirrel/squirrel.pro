@@ -17,6 +17,7 @@ win32:CONFIG += dll
 
 SOURCES += \
 	imageio.cpp \
+	squirrelMiniPipeline.cpp \
 	utils.cpp \
 	convert.cpp \
 	dicom.cpp \
@@ -39,6 +40,7 @@ SOURCES += \
 
 HEADERS += \
 	imageio.h \
+	squirrelMiniPipeline.h \
 	utils.h \
 	version.h \
 	convert.h \
