@@ -27,8 +27,8 @@
 
 ## Specifications
 
-* [Data Storage Hierarchy](specifications/data-storage-hierarchy.md)
-* [Anonymization](specifications/anonymization.md)
+* [Data Storage Hierarchy](data-storage-hierarchy.md)
+* [DICOM Anonymization](specifications/dicom-anonymization.md)
 
 ## Tutorials
 

@@ -2,7 +2,7 @@
 description: DICOM Anonymization Levels
 ---
 
-# Anonymization
+# DICOM Anonymization
 
 DICOM files store lots of protected health information (PHI) and personally identifiable information (PII) by default. This is great for radiologists, but bad for researchers. Any PHI/PII left in your DICOM files when sharing them with collaborators could be a big issue for you. Your IRB might shut down your project, shoot you into space, who knows. Make sure your data is anonymized, and anonymized in the way that your IRB wants.
 

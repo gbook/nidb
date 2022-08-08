@@ -31,9 +31,9 @@ This object contains information about the package. The first letter is an under
 
 ### dataFormat
 
-* `orig` - Original, raw data format. If the original format was DICOM, the output format should be DICOM.
-* `anon` - If original format is DICOM, write anonymized DICOM, removing most PHI, except dates
-* `anonfull` - If original format is DICOM, the files will be fully anonymized, by removing dates, times, locations in addition to PHI
+* `orig` - Original, raw data format. If the original format was DICOM, the output format should be DICOM. See [DICOM anonymization levels](../../../specifications/dicom-anonymization.md) for details.
+* `anon` - If original format is DICOM, write anonymized DICOM, removing most PHI, except dates. See [DICOM anonymization levels](../../../specifications/dicom-anonymization.md) for details.
+* `anonfull` - If original format is DICOM, the files will be fully anonymized, by removing dates, times, locations in addition to PHI. See [DICOM anonymization levels](../../../specifications/dicom-anonymization.md) for details.
 * `nifti3d` - Nifti 3D format
   * Example `file001.nii`, `file002.nii`, `file003.nii`
 * `nifti3dgz` - gzipped Nifti 3D format

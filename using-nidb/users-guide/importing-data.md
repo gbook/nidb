@@ -10,7 +10,7 @@ Data within NiDB is stored in a hierarchy:
 * Each study has **series**
 * Each series has **files**
 
-See diagrams and examples of the hierarchy [here](../../specifications/data-storage-hierarchy.md).
+See diagrams and examples of the hierarchy [here](../../data-storage-hierarchy.md).
 
 ### Create Subject
 
