@@ -12,10 +12,6 @@
   * [Quick Upgrade](getting-started/upgrade/quick-upgrade.md)
   * [Migrate Existing Installation](getting-started/upgrade/migrate-existing-installation.md)
 
-***
-
-* [Data Storage Hierarchy](data-storage-hierarchy.md)
-
 ## Using NiDB
 
 * [User's Guide](using-nidb/users-guide/README.md)
@@ -28,6 +24,11 @@
 * [Administration](using-nidb/administration/README.md)
   * [Front end (user facing)](using-nidb/administration/front-end-user-facing.md)
   * [Back end](using-nidb/administration/back-end.md)
+
+## Specifications
+
+* [Data Storage Hierarchy](specifications/data-storage-hierarchy.md)
+* [Anonymization](specifications/anonymization.md)
 
 ## Tutorials
 

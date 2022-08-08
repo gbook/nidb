@@ -12,15 +12,36 @@ This object contains information about the package. The first letter is an under
 
 <mark style="color:red;">\*required</mark>
 
-| _**Variable**_ | **Type**   | **Description**                          |
-| -------------: | ---------- | ---------------------------------------- |
-|     _\*format_ | string     | Defines the package format               |
-|    _\*version_ | string     | squirrel format version                  |
-|  _NiDBVersion_ | string     | The NiDB version which wrote the package |
-|       _\*name_ | string     | Short name of the package                |
-|  _description_ | string     | Longer description of the package        |
-|       _\*date_ | datetime   | Date the package was created             |
-|     _subjects_ | JSON array |                                          |
+| _**Variable**_ | **Type**   | **Description**                                              |
+| -------------: | ---------- | ------------------------------------------------------------ |
+|     _\*format_ | string     | Defines the package format                                   |
+|    _\*version_ | string     | squirrel format version                                      |
+|  _NiDBVersion_ | string     | The NiDB version which wrote the package                     |
+|       _\*name_ | string     | Short name of the package                                    |
+|  _description_ | string     | Longer description of the package                            |
+|       _\*date_ | datetime   | Date the package was created                                 |
+|     _subjects_ | JSON array |                                                              |
+|      dirFormat | string     | orig, seq                                                    |
+|     dataFormat | string     | orig, anon, anonfull, nifti3d, nifti3dgz, nifti4d, nifti4dgz |
+
+### dirFormat
+
+* `orig` - Original subject, study, series directory structure format. Example `S1234ABC/1/1`
+* `seq` - Sequential. Zero-padded sequential numbers. Example `1/1/1`
+
+### dataFormat
+
+* `orig` - Original, raw data format. If the original format was DICOM, the output format should be DICOM.
+* `anon` - If original format is DICOM, write anonymized DICOM, removing most PHI, except dates
+* `anonfull` - If original format is DICOM, the files will be fully anonymized, by removing dates, times, locations in addition to PHI
+* `nifti3d` - Nifti 3D format
+  * Example `file001.nii`, `file002.nii`, `file003.nii`
+* `nifti3dgz` - gzipped Nifti 3D format
+  * Example `file001.nii.gz`, `file002.nii.gz`, `file003.nii.gz`
+* `nifti4d` - Nifti 4D format
+  * Example `file.nii`
+* `nifti4dgz` - gzipped Nifti 4D format
+  * Example `file.nii.gz`
 
 ### Directory structure
 
