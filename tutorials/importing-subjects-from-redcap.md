@@ -20,12 +20,12 @@ Following are the steps to import subjects from a Redcap project.
   * **Redcap Event**: The name of the redcap event that stores the subject's information.
 * &#x20;Provide the following redcap field names.
   * **Record ID** (Required): Actual Redcap field name for Redcap record id.
-  * **Alternate ID** (Optional): Any alternate subject id, if any:
-  * **First Name** (Required): Field name containing the first name information in Redcap. This is not the actual first name of any subject.
+  * **Alternate ID** (Optional): Name of the redcap field holding subject id other than record id, if any:
+  * **First Name** (Required): Redcap field name containing the first name information. This is not the actual first name of a subject.
   * **Last Name** (Required):  Field name containing the last name information in Redcap. This is not the actual last name of a subject.
   * **Birthdate** (Required): Redcap field name storing the date of birth information for the subjects.
-  * **Sex** (Required): Redcap field name that stores the sex of the subjects. For this field, the codes used to represent the sex information needs to define. The codes for male (**M**), female(**F**) should be defined. Code for Other (**O**) and undefined (**U**) can also be acquired as per need. A suggestive coding scheme **1** for male (**M**), **2** for female (**F**), **3** for other (**O**) and **4** for undefined (**U**) is also shown for the help.&#x20;
-* &#x20;After providing the required fields click **Subjects Information** button.
+  * **Sex** (Required): Redcap field name that stores the sex of the subjects. For this field, codes stored in Redcap representing the subject's sex should be provided here. The codes for male (**M**), and female(**F**) are required. Codes for Other (**O**) and undefined (**U**) can also be defined if used in the Redcap project. A suggestive coding scheme **1** for male (**M**), **2** for female (**F**), **3** for other (**O**) and **4** for undefined (**U**) is also displayed for help.&#x20;
+* &#x20;After providing the required information regarding the Redcap fields click **Subjects Information** button.
 
 ![](https://user-images.githubusercontent.com/24811295/162760300-c173bb79-18ae-466e-9a7e-a23f79e176c1.png)
 
