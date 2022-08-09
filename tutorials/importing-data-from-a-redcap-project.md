@@ -38,7 +38,7 @@ After choosing the Redcap **Form** and its type of data in NiDB, Click on the **
 
 A new section to map the variables from Redcap to NiDB will appear as shown in the figure below.
 
-![](<../.gitbook/assets/image (4).png>)
+![](<../.gitbook/assets/image (4) (2).png>)
 
 A variable mapping table has two sides: Recap and NiDB.
 
