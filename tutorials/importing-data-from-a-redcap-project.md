@@ -1,11 +1,19 @@
+---
+description: Tutorial on how to import data form a Redcap project to NiDB project
+---
+
 # Importing Data from a Redcap Project
+
+Redcap is a widely used web-based data management tool to manage clinical research data. NiDB provides an interface to import data from a Redcap project  to a NiDB project. This is a very useful option in various scenarios like: migration of a project from Redcap to NiDB, OR managing data for some modalities in Redcap and rest in NiDB then merging the data in NiDB using this option.&#x20;
+
+The following are the steps to import data from Redcap.
 
 ### Step 1
 
 Gather the following API information from Redcap administrator to connect with the Redcap project.
 
-* Redcap Server
-* Redcap API Token
+* **Redcap Server**
+* **Redcap API Token**
 
 ### Step 2
 
