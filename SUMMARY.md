@@ -39,6 +39,7 @@
 * [Analysis Builder](tutorials/analysis-builder.md)
 * [Importing Subjects from Redcap](tutorials/importing-subjects-from-redcap.md)
 * [Working with subject IDs](tutorials/working-with-subject-ids.md)
+* [Troublshooting Missing Data](tutorials/troublshooting-missing-data.md)
 
 ## Contribute
 
