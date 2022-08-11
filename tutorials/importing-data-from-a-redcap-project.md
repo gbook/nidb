@@ -75,9 +75,9 @@ This side has four columns. Following is the explanation of each column on Redca
 
 ![](<../.gitbook/assets/image (10).png>)
 
-In case of repeating measures like blood pressure, heart rate, blood glucose level, some cognitive measure etc. please choose **Vitals** in the **step 5** and define the field type for **time** as **time0**, **time1**, **time2**, ... and **value** as **value0**, **value1**, **value2**, ... as shown in the figure above.
+In case of repeating measures like blood pressure, heart rate, blood glucose level, some cognitive measure etc. please choose **Vitals** in the **step 5** and define the field type for **time** as **time0**, **time1**, **time2**, ... and **value** as **value0**, **value1**, **value2**, ... as depicted in the figure above.
 
-Defining the correct type of field is very important for the importing data into NiDB. Especially time and date are very important to define correctly to create the valid reports based on the information imported into NiDB.
+Defining the correct type of field is very important for the importing data into NiDB. Especially value, time and date are very important to define correctly to create the valid reports based on the information imported into NiDB.
 
 **NiDB Variable Side**
 
