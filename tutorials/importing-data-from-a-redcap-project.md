@@ -66,15 +66,18 @@ This side has four columns. Following is the explanation of each column on Redca
 * **Event**: A Redcap project can have multiple events. All the events will be listed in this column. Any number of events can be chosen from the list that is needed to map. In our example we chose only one event because the Redcap form selected to map contain only data for that event.
 * **Form**: Name of the Redcap form selected in the last step will be displayed here.
 * **Field**: A drop-down list will list all the fields related to the selected Redcap form. Choose one field at a time to map.
-*   **Field Type**: There can be following five types of field:
+* **Field Type**: There can be following five types of field:
+  * **date**: Fields defined as date in Redcap.
+  * **time**: Fields defined as time in Redcap
+  * **notes**: Field that stores information regarding the collected data entry
+  * **rater**: Field that contains the name of the rater
+  * **value**: Fields containing the data value other than date, time, notes, and rater.
 
-    * **date**: Fields defined as date in Redcap.
-    * **time**: Fields defined as time in Redcap
-    * **notes**: Field that stores information regarding the collected data entry
-    * **rater**: Field that contains the name of the rater
-    * **value**: Fields containing the data value other than date, time, notes, and rater.
+![](<../.gitbook/assets/image (10).png>)
 
-    Defining the correct type of field is very important for the importing data into NiDB. Especially time and date are very important to define correctly to create the valid reports based on the information imported into NiDB.
+In case of repeating measures like blood pressure, heart rate, blood glucose level, some cognitive measure etc. please choose **Vitals** in the **step 5** and define the field type for **time** as **time0**, **time1**, **time2**, ... and **value** as **value0**, **value1**, **value2**, ... as shown in the figure above.
+
+Defining the correct type of field is very important for the importing data into NiDB. Especially time and date are very important to define correctly to create the valid reports based on the information imported into NiDB.
 
 **NiDB Variable Side**
 
