@@ -26,7 +26,7 @@
 
 #include <QString>
 #include <QFile>
-#include "../nidb/utils.h"
+#include "utils.h"
 
 /**
  * @brief The validate class

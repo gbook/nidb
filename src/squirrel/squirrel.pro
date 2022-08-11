@@ -16,7 +16,7 @@ win32:CONFIG += dll
 #INCLUDEPATH += $$PWD/../nidb
 
 SOURCES += \
-	imageio.cpp \
+	squirrelImageIO.cpp \
 	squirrelMiniPipeline.cpp \
 	utils.cpp \
 	convert.cpp \
@@ -39,10 +39,10 @@ SOURCES += \
 #!isEmpty(target.path): INSTALLS += target
 
 HEADERS += \
-	imageio.h \
+	squirrelImageIO.h \
 	squirrelMiniPipeline.h \
+	squirrelVersion.h \
 	utils.h \
-	version.h \
 	convert.h \
 	dicom.h \
 	squirrel.h \

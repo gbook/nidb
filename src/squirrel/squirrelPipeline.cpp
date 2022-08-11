@@ -23,7 +23,7 @@
 #include "squirrelPipeline.h"
 #include <QFile>
 #include <QTextStream>
-#include "../nidb/utils.h"
+#include "utils.h"
 
 
 /* ---------------------------------------------------------- */
@@ -74,8 +74,8 @@ QJsonObject squirrelPipeline::ToJSON(QString path) {
     json["submitDelay"] = submitDelay;
     json["numConcurrentAnalyses"] = numConcurrentAnalyses;
 
-//	AppendJSONParents(json, parentDependencyIDs, path);
-//	AppendJSONDataSpec(json);
+	//AppendJSONParents(json, parentDependencyIDs, path);
+	//AppendJSONDataSpec(json);
 //	AppendJSONScripts(json);
 
     /* write all pipeline info to path */

@@ -54,7 +54,7 @@ bool dicom::LoadToSquirrel(QString dir, QString binpath, squirrel *sqrl, QString
         return false;
     }
 
-    imageIO *img = new imageIO();
+    squirrelImageIO *img = new squirrelImageIO();
 
     /* find all files in the directory. DICOM files can have any extension, not just .dcm
      * so we need to check if all files to see if they are readable by gdcm */

@@ -24,8 +24,8 @@
 #ifndef DICOM_H
 #define DICOM_H
 
-#include "../nidb/utils.h"
-#include "../nidb/imageio.h"
+#include "utils.h"
+#include "squirrelImageIO.h"
 #include "squirrel.h"
 
 class dicom

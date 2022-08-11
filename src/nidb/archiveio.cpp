@@ -2478,42 +2478,42 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
 				squirrelSeries sqrlSeries = sers.GetSquirrelObject();
 
                 enrollmentIDs.append(enrollmentid);
-//                /* create the subject dir */
-//                QString subjectdir;
-//                if (squirrelflags.contains("SQUIRREL_INCSUBJECTNUM",Qt::CaseInsensitive))
-//                    subjectdir = QString("%1").arg(subjectCounter, 4, 10, QChar('0'));
-//                else
-//                    subjectdir = uid;
+				/* create the subject dir */
+				QString subjectdir;
+				if (squirrelflags.contains("SQUIRREL_INCSUBJECTNUM",Qt::CaseInsensitive))
+					subjectdir = QString("%1").arg(subjectCounter, 4, 10, QChar('0'));
+				else
+					subjectdir = uid;
 
-//                /* create the session (study) identifier */
-//                QString sessiondir;
-//                if (squirrelflags.contains("SQUIRREL_INCSTUDYNUM",Qt::CaseInsensitive))
-//                    sessiondir = QString("%1").arg(studyCounter, 4, 10, QChar('0'));
-//                else
-//                    sessiondir = QString("%1").arg(studynum);
+				/* create the session (study) identifier */
+				QString sessiondir;
+				if (squirrelflags.contains("SQUIRREL_INCSTUDYNUM",Qt::CaseInsensitive))
+					sessiondir = QString("%1").arg(studyCounter, 4, 10, QChar('0'));
+				else
+					sessiondir = QString("%1").arg(studynum);
 
-//                /* create the series dir */
-//                QString seriesdir;
-//                if (squirrelflags.contains("SQUIRREL_INCSERIESNUM",Qt::CaseInsensitive))
-//                    seriesdir = QString("%1").arg(seriesCounter, 4, 10, QChar('0'));
-//                else
-//                    seriesdir = QString("%1").arg(seriesnum);
+				/* create the series dir */
+				QString seriesdir;
+				if (squirrelflags.contains("SQUIRREL_INCSERIESNUM",Qt::CaseInsensitive))
+					seriesdir = QString("%1").arg(seriesCounter, 4, 10, QChar('0'));
+				else
+					seriesdir = QString("%1").arg(seriesnum);
 
-//                /* remove any non-alphanumeric characters */
-//                seriesdir.replace(QRegularExpression("[^a-zA-Z0-9_-]"), "_");
+				/* remove any non-alphanumeric characters */
+				seriesdir.replace(QRegularExpression("[^a-zA-Z0-9_-]"), "_");
 
-//                QString seriesoutdir = QString("%1/data/%2/%3/%4").arg(outdir).arg(subjectdir).arg(sessiondir).arg(seriesdir);
+				QString seriesoutdir = QString("%1/data/%2/%3/%4").arg(outdir).arg(subjectdir).arg(sessiondir).arg(seriesdir);
 
-//                QString m;
-//                if (MakePath(seriesoutdir, m)) {
-//                    n->WriteLog("Created seriesoutdir [" + seriesoutdir + "]");
-//                }
-//                else {
-//                    exportstatus = "error";
-//                    n->WriteLog("ERROR [" + m + "] unable to create seriesoutdir [" + seriesoutdir + "]");
-//                    msg = "Unable to create output directory [" + seriesoutdir + "]";
-//                    return false;
-//                }
+				QString m;
+				if (MakePath(seriesoutdir, m)) {
+					n->WriteLog("Created seriesoutdir [" + seriesoutdir + "]");
+				}
+				else {
+					exportstatus = "error";
+					n->WriteLog("ERROR [" + m + "] unable to create seriesoutdir [" + seriesoutdir + "]");
+					msg = "Unable to create output directory [" + seriesoutdir + "]";
+					return false;
+				}
 
                 if (datadirexists) {
                     if (!datadirempty) {

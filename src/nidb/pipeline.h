@@ -48,7 +48,7 @@ public:
     QString pipelineRootDir;
     bool useTmpDir;
     QString tmpDir;
-    QList<int> parentDependencyIDs;
+	QList<int> parentIDs;
     QString depLevel;
     QString depDir;
     QString depLinkType;
@@ -89,6 +89,8 @@ private:
     void AppendJSONParents(QJsonObject &obj, QList<int> parentIDs, QString path);
     void AppendJSONDataSpec(QJsonObject &obj);
     void AppendJSONScripts(QJsonObject &obj);
+	QString GetPrimaryScript();
+	QString GetSecondaryScript();
 	QStringList GetParentList();
 
     int pipelineid;

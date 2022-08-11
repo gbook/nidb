@@ -5,7 +5,4 @@
 #define VERSION_MIN "6"
 #define BUILD_NUM "847"
 
-#define SQUIRREL_VERSION_MAJ "1"
-#define SQUIRREL_VERSION_MIN "0"
-
 #endif // VERSION_H

@@ -23,7 +23,7 @@
 #include <QCoreApplication>
 #include <QCommandLineParser>
 #include <iostream>
-#include "../nidb/version.h"
+#include "squirrelVersion.h"
 #include "validate.h"
 #include "dicom.h"
 #include "squirrel.h"

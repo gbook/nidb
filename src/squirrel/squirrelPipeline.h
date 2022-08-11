@@ -130,11 +130,11 @@ public:
     QString clusterQueue; /*!< [NiDB] compute cluster queue */
     QString clusterSubmitHost; /*!< [NiDB] hostname of the sge/slurm submit node */
     int numConcurrentAnalyses; /*!< [NiDB] max number of concurrent analyses allowed to run */
-    QString maxWallTime; /*!< [NiDB] maximum allowed clock (wall) time the analysis is allowed to run */
+	int maxWallTime; /*!< [NiDB] maximum allowed clock (wall) time the analysis is allowed to run (seconds) */
     int submitDelay; /*!< [NiDB] time in hours after the study datetime to delay before running this analysis */
 
     /* data */
-    QList<dataStep> data;
+	QList<dataStep> dataSteps;
 
     /* scripts (required) */
 	//QList<pipelineStep> primaryScript;

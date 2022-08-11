@@ -21,7 +21,7 @@
   ------------------------------------------------------------------------------ */
 
 #include "squirrelSeries.h"
-#include "../nidb/utils.h"
+#include "utils.h"
 
 squirrelSeries::squirrelSeries()
 {

@@ -146,11 +146,11 @@ int modulePipeline::Run() {
         /* get the data steps */
         QList<dataDefinitionStep> dataSteps;
         if (p.level != 0) {
-            if ((p.level == 1) || ((p.level == 2) && (p.parentDependencyIDs.size() < 1))) {
+			if ((p.level == 1) || ((p.level == 2) && (p.parentIDs.size() < 1))) {
                 dataSteps = GetPipelineDataDef(pipelineid, p.version);
 
                 /* if there is no data definition and no dependency */
-                if ((dataSteps.size() < 1) && (p.parentDependencyIDs.size() < 1)) {
+				if ((dataSteps.size() < 1) && (p.parentIDs.size() < 1)) {
                     m = n->WriteLog("Pipeline has no data items. Skipping pipeline.");
                     InsertPipelineEvent(pipelineid, runnum, -1, "error_nodatasteps", m);
                     InsertPipelineEvent(pipelineid, runnum, -1, "pipeline_finished", "Pipeline stopped prematurely due to error");
@@ -264,8 +264,8 @@ int modulePipeline::Run() {
             //for(int i=0; i<p.parentDependencyIDs.size(); i++) {
 
             int pipelinedep = -1;
-            if (p.parentDependencyIDs.size() > 0)
-                pipelinedep = p.parentDependencyIDs[0];
+			if (p.parentIDs.size() > 0)
+				pipelinedep = p.parentIDs[0];
 
             QString modality;
             modality = dataSteps[0].modality;

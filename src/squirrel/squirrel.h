@@ -32,7 +32,7 @@
 #include "squirrelMeasure.h"
 #include "squirrelMiniPipeline.h"
 #include "squirrelDrug.h"
-#include "../nidb/version.h"
+#include "squirrelVersion.h"
 
 /**
  * @brief The squirrel class
