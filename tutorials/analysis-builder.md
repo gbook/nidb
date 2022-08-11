@@ -1,14 +1,18 @@
 ---
-description: Tutorial on how to build reports using Analysis Builder
+description: Tutorial on how to create reports using Analysis Builder
 ---
 
 # Analysis Builder
 
 ### Reports in Analysis Builder
 
-Analysis builder is a report generating tool in NiDB. In Analysis builder, a report can be build based on various types of data, variables, pipelines etc. This tool is different than the search tool where you can search data and download it. In this tool you can search the variables those are generated and stored / imported in the NiDB (Example: You can query the variables generated from a task using MRI / EEG data). Analysis builder can be invoked from a project's main page by selecting the option **Analysis Builder** on the right from **Tools** section. Following is the main interface of the **Analysis Builder**
+Analysis builder is a report generating tool in NiDB. In Analysis builder, a report can be build using variables extracted from various types of imaging data, pipelines and cognitive measures. This tool is different than the search tool where you can search stored data and download it. In this tool you can search the variables those are generated and stored or imported in the NiDB (Example: You can query the variables generated from a task using MRI / EEG data OR variables imported from Redcap). Analysis builder can be invoked from a project's main page by selecting the option **Analysis Builder** on the right from **Tools** section. Following is the main interface of the **Analysis Builder**
 
 ![](<../.gitbook/assets/image (2).png>)
+
+Above interface for Analysis Builder is very self explanatory. The main parts consists of selecting a project from the dropdown list, selecting the desired variables, drugs / dose information, choosing the various report parameters like grouping, value replacing a blank entry, and finally the output format of the report.&#x20;
+
+In the next section the steps to create two reports are listed to show how various option can be employed to create a desired report.&#x20;
 
 ### Building Reports
 
