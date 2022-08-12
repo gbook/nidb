@@ -35,6 +35,7 @@
 * [Import DICOM data](tutorials/import-dicom-data.md)
 * [Adding Users to Projects](tutorials/adding-users-to-projects.md)
 * [Editing the config file](tutorials/editing-the-config-file.md)
+* [Page 1](tutorials/page-1.md)
 * [Importing Data from a Redcap Project](tutorials/importing-data-from-a-redcap-project.md)
 * [Analysis Builder](tutorials/analysis-builder.md)
 * [Importing Subjects from Redcap](tutorials/importing-subjects-from-redcap.md)
