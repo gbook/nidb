@@ -38,9 +38,9 @@ Following are the steps to create a simple report where data is not grouped and 
 
 ![](<../.gitbook/assets/image (6) (2).png>)
 
-### Repeated Measure Report
+### Repeated Measures Report
 
-This is a report that involve the variables which are repetitive in nature. Also and we want the variables to display with respect to the drug administered. **Analysis Builder** will automatically creates variables that holds the time since dose information, details below!&#x20;
+This is a report that involve the variables which are repetitive in nature. Also we want the variables to display with respect to the drug administered time. **Analysis Builder** will automatically create variables that holds the time since dose information.&#x20;
 
 For this type of report, usually time repeated measure are reported, but other measures may be added if desired.
 
@@ -50,8 +50,8 @@ For this type of report, usually time repeated measure are reported, but other m
 
 1. Select a project from the dropdown list of projects on the top of **Analysis Builder** interface.
 2. Choose the variables to display in this report. As mentioned above this is a repetitive measures report, so the variables that are repetitive in nature; collected multiple times in a day and on multiple days are selected. These include measure from **MRI** and **biological** data. Also these variables are collected before or after administration of drug.
-3. To include the **drug / dose** information on this report, provide the drug related variable as shown in the above figure in green rectangle. Different drug dose was administrated on three different days, and all three days were selected.
-4. &#x20;The time since dose variables can be calculated and be displayed if the option **Include Time Since Dose** is selected as shown above. All three dose day variables are also selected. The time will be displayed in minutes as per above selection.
+3. To include the **drug / dose** information on this report, select the drug related variable as shown in the above figure in green rectangle. Different drug dose was administrated on three different days, and all three days were selected.
+4. &#x20;The time since dose variables shall be calculated and displayed if the option **Include Time Since Dose** is selected as shown above. All three dose day variables are also selected. The time will be displayed in minutes as per above selection.
 5. To group the data based on drug days, check the **Group by Event Date** checkbox from **Grouping Option**.&#x20;
 6. After choosing the output parameters, hit the **Update Summary** button that generates a report as shown in the figure below.&#x20;
 
