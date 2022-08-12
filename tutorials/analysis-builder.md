@@ -40,7 +40,7 @@ Following are the steps to create a simple report where data is not grouped and 
 
 ### Repeated Measure Report
 
-This is a report that involve the variables which are repetitive in nature. Also and we want the variables to display with respect to the drug administered. **Analysis builder** will automatically creates variables that holds the time since dose information, details below!&#x20;
+This is a report that involve the variables which are repetitive in nature. Also and we want the variables to display with respect to the drug administered. **Analysis Builder** will automatically creates variables that holds the time since dose information, details below!&#x20;
 
 For this type of report, usually time repeated measure are reported, but other measures may be added if desired.
 
