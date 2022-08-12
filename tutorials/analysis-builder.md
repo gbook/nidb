@@ -38,15 +38,19 @@ Following are the steps to create a simple report where data is not grouped and 
 
 ![](<../.gitbook/assets/image (6) (2).png>)
 
-### Dose-based Report
+### Repetitive Measure Report
 
-This is a report that involve the variables based on dose / drug information and we want the variables to display with the time since dose. For this type of report, usually daily repeated measure are the one that needed to be displayed.
+This is a report that involve the variables based on their repetitive nature. Also and we want the variables to display with respect to the dose administrator. Analysis builder will automatically creates a variable that holds the time since dose information. For this type of report, usually time repeated measure are the one that needed to be displayed.
 
 ![](<../.gitbook/assets/image (4).png>)
 
-### Steps - Dose-based Report
+### Steps - Repetitive Measure Report
 
-1. L1
-2. L2
+1. Select a project from the dropdown list of projects on the top of **Analysis Builder** interface.
+2. Choose the variables to display in this report. As mentioned above this is a repetitive measures report, I chose  the variables that are repetitive in nature, collected multiple times in a day and on multiple days. Also these variables are collected before or after administration of drug.
+3. To include the **drug / dose** information on this report, provide the drug related variable as shown in the above figure in green rectangle.  Dose in this case was administrated on three different days, and all three days were selected.
+4. &#x20;The time since dose variables can be calculated and be displayed if the option Include **Time Since Dose** is selected as shown above. All three dose day variables are also selected as shown in the figure above. Also the time will be displayed in minutes as per above selection
+5. To group the data based on drug days, check the **Group by Event Date** checkbox from **Grouping Option**.&#x20;
+6. After choosing the output parameters, hit the **Update Summery** button that generates a report as shown in the figure below.&#x20;
 
 ![](../.gitbook/assets/image.png)
