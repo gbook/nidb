@@ -38,6 +38,7 @@
 * [Importing from Redcap](tutorials/importing-from-redcap/README.md)
   * [Importing Data from a Redcap Project](tutorials/importing-from-redcap/importing-data-from-a-redcap-project.md)
   * [Importing Subjects from Redcap](tutorials/importing-from-redcap/importing-subjects-from-redcap.md)
+  * [Reports based on data imported from Redcap](tutorials/importing-from-redcap/reports-based-on-data-imported-from-redcap.md)
 * [Analysis Builder](tutorials/analysis-builder.md)
 * [Working with subject IDs](tutorials/working-with-subject-ids.md)
 * [Troublshooting Missing Data](tutorials/troublshooting-missing-data.md)
