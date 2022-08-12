@@ -29,7 +29,7 @@ Then press **Show Project Info** button to establish the API connection with the
 
 In case of getting an error, please recheck the **Redcap Server** and **Redcap API Token** information provided above and hit the **Show Project Info** button again. If problem persists, please contact to the the Redcap administrator.
 
-![](<../.gitbook/assets/image (2) (2).png>)
+![](<../.gitbook/assets/image (2) (2) (1).png>)
 
 ### Step 4
 
