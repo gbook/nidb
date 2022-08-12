@@ -6,7 +6,7 @@ description: Tutorial on how to create reports using Analysis Builder
 
 ### Reports in Analysis Builder
 
-Analysis builder is a report generating tool in NiDB. In Analysis builder, a report can be build using variables extracted from various types of imaging data, pipelines and biological or cognitive measures. This tool works different than the search tool where you can search stored data (Imaging or Other) and download it. In this tool you can search the variables those are generated and stored or imported in the NiDB (Example: You can query the variables generated from a task using MRI / EEG data OR variables imported from **Redcap**). Analysis builder can be invoked from a project's main page by selecting the option **Analysis Builder** on the right from **Tools** section. Following is the main interface of the **Analysis Builder**
+Analysis builder is a report generating tool in NiDB. In Analysis builder, a report can be build using variables extracted from various types of imaging data, pipelines and biological or cognitive measures. This tool works different than the search tool where you can search stored data (Imaging or Other) and download it. In this tool you can search the variables those are generated and stored or imported in the NiDB (For example: You can query the variables generated from a task using MRI / EEG data OR variables imported from **Redcap**). Analysis builder can be invoked from a project's main page by selecting the option **Analysis Builder** on the right from **Tools** section. Following is the main interface of the **Analysis Builder**
 
 ![](<../.gitbook/assets/image (2) (2).png>)
 
