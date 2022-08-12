@@ -12,7 +12,7 @@ Following are the steps to import subjects from a Redcap project.
 
 Subjects can be imported from redcap into a NiDB project. Click **Redcap Subject Impor**t from **Data Transfer** section on the main page of the project as shown below:
 
-![](<../.gitbook/assets/image (4) (1).png>)
+![](<../../.gitbook/assets/image (4) (1).png>)
 
 ### Step 2
 
@@ -33,7 +33,7 @@ Provide the following redcap field names.
 * **Birthdate** (Required): Redcap field name storing the date of birth information for the subjects.
 * **Sex** (Required): Redcap field name that stores the sex of the subjects. For this field, codes stored in Redcap representing the subject's sex should be provided here. The codes for male (**M**), and female(**F**) are required. Codes for Other (**O**) and undefined (**U**) can also be defined if used in the Redcap project. A suggestive coding scheme **1** for male (**M**), **2** for female (**F**), **3** for other (**O**) and **4** for undefined (**U**) is also displayed for help.&#x20;
 
-![](<../.gitbook/assets/image (3).png>)
+![](<../../.gitbook/assets/image (3).png>)
 
 ### Step 4
 
