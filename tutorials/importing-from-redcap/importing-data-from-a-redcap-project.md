@@ -79,8 +79,6 @@ In case of repeating measures like blood pressure, heart rate, blood glucose lev
 
 Defining the correct type of field is very important for the importing data into NiDB. Especially value, time and date are very important to define correctly to create the valid reports based on the information imported into NiDB.
 
-In the above example the data from a project where the  variables are collected on the _**screening day**_ has been used. These variables includes _**cudit**_, _**cudit1**, **cudit\_2**, ... as shown in the figure above. A tutorial on how to create a report based on this imported data is available_ [_here_](reports-based-on-data-imported-from-redcap.md)_._
-
 **NiDB Variable Side**
 
 The NiDB variable side contains three columns. These columns will automatically filled with the same **Variable** and **Instrument / Form** names based on the Redcap side. However, one can change these names. These are the names of variables and Redcap forms that will be stored in NiDB for mapping these items for all the later imports.
