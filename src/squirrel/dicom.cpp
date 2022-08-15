@@ -115,7 +115,7 @@ bool dicom::LoadToSquirrel(QString dir, QString binpath, squirrel *sqrl, QString
 					currSeries.numFiles = numfiles;
 					currSeries.params = tags;
 					currSeries.seriesUID = tags["SeriesInstanceUID"];
-					currSeries.files = files;
+					currSeries.stagedFiles = files;
 
 					qint64 totalSize(0);
 					foreach (QString f, files) {

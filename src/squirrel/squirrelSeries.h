@@ -51,11 +51,13 @@ public:
     qint64 numFiles; /*!< Number of files associated with the series */
     qint64 size; /*!< total size in bytes of the series */
     QHash<QString, QString> params; /*!< Hash containing experimental parameters. eg MR params */
-    QStringList files; /*!< file list */
+	QStringList stagedFiles; /*!< staged file list: list of raw files in their own directories before the package is zipped up */
 
 	QStringList experimentList; /*!< List of experiment names attached to this series */
 
     QString virtualPath; /*!< path within the squirrel package, no leading slash */
+
+	//QString stagingPath; /*!< absolute path to the staging area for this series. This is also used if reading a DICOM directory */
 };
 
 #endif // SQUIRRELSERIES_H

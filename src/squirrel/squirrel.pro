@@ -5,7 +5,7 @@ CONFIG -= app_bundle
 CONFIG += silent
 
 TARGET = squirrel
-TEMPLATE = lib
+#TEMPLATE = lib
 DEFINES += SQUIRREL_BUILD
 win32:CONFIG += dll
 

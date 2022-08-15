@@ -21,6 +21,7 @@
   ------------------------------------------------------------------------------ */
 
 #include "squirrel.h"
+#include "squirrelImageIO.h"
 #include "utils.h"
 
 /* ------------------------------------------------------------ */
@@ -100,7 +101,8 @@ bool squirrel::read(QString filepath, bool validateOnly) {
  * @param outpath full path to the output squirrel .zip file
  * @param dataFormat if converting from DICOM, write the data in the specified format
  *                   - 'orig' - Perform no conversion of DICOM images (not recommended as it retains PHI)
- *                   - 'anon' - Anonymize the DICOM files (light anonymization: remove PHI, but not ID or dates)
+ *                   - 'anon' - Anonymize DICOM files (light anonymization: remove PHI, but not ID or dates)
+ *                   - 'fullanon' - Anonymize DICOM files (full anonymization)
  *                   - 'nifti4d' - Nifti 4D
  *                   - 'nifti4dgz' - Nifti 4D gzip [default]
  *                   - 'nidti3d' - Nifti 3D
@@ -167,14 +169,34 @@ bool squirrel::write(QString outpath, QString dataFormat, QString dirFormat, boo
                 subjectList[i].studyList[j].seriesList[k].virtualPath = vPath;
 
                 QString m;
-                QString seriesPath = QString("%1/%2").arg(workingDir).arg(subjectList[i].studyList[j].seriesList[k].virtualPath);
+				QString seriesPath = QString("%1/%2").arg(workingDir).arg(subjectList[i].studyList[j].seriesList[k].virtualPath);
                 MakePath(seriesPath,m);
 
-                /* copy all of the series files to the temp directory */
-                foreach (QString f, ser.files) {
-                    QString systemstring = QString("cp -uv %1 %2/%3").arg(f).arg(workingDir).arg(subjectList[i].studyList[j].seriesList[k].virtualPath);
-                    SystemCommand(systemstring);
-                }
+				/* orig vs other formats */
+				if (dataFormat == "orig") {
+					/* copy all of the series files to the temp directory */
+					foreach (QString f, ser.stagedFiles) {
+						QString systemstring = QString("cp -uv %1 %2/%3").arg(f).arg(workingDir).arg(subjectList[i].studyList[j].seriesList[k].virtualPath);
+						SystemCommand(systemstring);
+					}
+				}
+				else if (dataFormat = "anon") {
+					/* create temp directory */
+
+					/* copy all files to temp directory */
+					squirrelImageIO io;
+					io.AnonymizeDir();
+				}
+				else if (dataFormat = "fullanon") {
+				}
+				else if (dataFormat = "nifti4d") {
+				}
+				else if (dataFormat = "nifti4dgz") {
+				}
+				else if (dataFormat = "nifti3d") {
+				}
+				else if (dataFormat = "nifti3dgz") {
+				}
 
                 /* write the series .json file, containing the dicom header params */
                 QJsonObject params;
@@ -405,12 +427,16 @@ void squirrel::PrintPackage() {
  * @return
  */
 bool squirrel::MakeTempDir() {
-    workingDir = QString("/tmp/%1").arg(GenerateRandomString(20));
-    QString m;
-    if (MakePath(workingDir, m))
-        return true;
-    else
-        return false;
+	if (workingDir == "") {
+		workingDir = QString("/tmp/%1").arg(GenerateRandomString(20));
+		QString m;
+		if (MakePath(workingDir, m))
+			return true;
+		else
+			return false;
+	}
+	else
+		return true;
 }
 
 
