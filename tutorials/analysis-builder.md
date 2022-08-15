@@ -44,7 +44,7 @@ This is a report that involve the variables which are repetitive in nature. Also
 
 For this type of report, usually time repeated measure are reported, but other measures may be added if desired.
 
-![](<../.gitbook/assets/image (3).png>)
+![](<../.gitbook/assets/image (3) (5).png>)
 
 ### Steps - Repeated Measure Report
 

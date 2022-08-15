@@ -19,7 +19,7 @@ Gather the following API information from Redcap administrator to connect with t
 
 Use **Projects** menu in NiDB to get to the project's main page. From **Data Transfer** section on the right side of the project's main page, click **Import from Redcap** link.
 
-![](<../../.gitbook/assets/image (1).png>)
+![](<../../.gitbook/assets/image (1) (2).png>)
 
 ### Step 3
 
@@ -73,11 +73,13 @@ This side has four columns. Following is the explanation of each column on Redca
   * **rater**: Field that contains the name of the rater
   * **value**: Fields containing the data value other than date, time, notes, and rater.
 
-![](<../../.gitbook/assets/image (10).png>)
+![](<../../.gitbook/assets/image (10) (1).png>)
 
 In case of repeating measures like blood pressure, heart rate, blood glucose level, some cognitive measure etc. please choose **Vitals** in the **step 5** and define the field type for **time** as **time0**, **time1**, **time2**, ... and **value** as **value0**, **value1**, **value2**, ... as depicted in the figure above.
 
 Defining the correct type of field is very important for the importing data into NiDB. Especially value, time and date are very important to define correctly to create the valid reports based on the information imported into NiDB.
+
+In the above example the data from a project where the  variables are collected on the _**screening day**_ has been used. These variables includes _**cudit**_, _**cudit1**, **cudit\_2**, ... as shown in the figure above. A tutorial on how to create a report based on this imported data is available_ [_here_](reports-based-on-data-imported-from-redcap.md)_._
 
 **NiDB Variable Side**
 
