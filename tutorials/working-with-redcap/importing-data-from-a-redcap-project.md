@@ -1,23 +1,23 @@
 ---
-description: Tutorial on how to import data form a Redcap project to NiDB project
+description: Tutorial on how to import data form a Redcap project to a NiDB project
 ---
 
 # Importing Data from a Redcap Project
 
-Redcap is a widely used web-based data management tool to manage clinical research data. NiDB provides an interface to import data from a Redcap project to a NiDB project. This is a very useful option in various scenarios like: migration of a project from Redcap to NiDB, OR managing data for some modalities in Redcap and rest in NiDB then merging the data in NiDB using this option.&#x20;
+Redcap is a widely used web-based data management tool to manage clinical research data. NiDB provides an interface to import data from a Redcap project to a NiDB project. This is a very useful option in various scenarios like: migration of a project from Redcap to NiDB, OR managing data for some modalities in Redcap and rest in NiDB then merging the data in NiDB.&#x20;
 
 The following are the steps to import data from Redcap.
 
 ### Step 1
 
-Gather the following API information from Redcap administrator to connect with the Redcap project.
+Gather the following API information from **Redcap administrator** to connect with the Redcap project.
 
-* **Redcap Server**
+* **Redcap Server**&#x20;
 * **Redcap API Token**
 
 ### Step 2
 
-Use **Projects** menu in NiDB to get to the project's main page. From **Data Transfer** section on the right side of the project's main page, click **Import from Redcap** link.
+Use **Projects** menu in NiDB to get to the desired project's main page. From **Data Transfer** section on the right side of the project's main page, click **Import from Redcap** link.
 
 ![](<../../.gitbook/assets/image (1) (2).png>)
 
@@ -27,13 +27,13 @@ Enter the Redcap server address and API token information and press **Update Con
 
 Then press **Show Project Info** button to establish the API connection with the Redcap server. If the connection is successful, the information from connected redcap project will be appeared as shown in the figure below.
 
-In case of getting an error, please recheck the **Redcap Server** and **Redcap API Token** information provided above and hit the **Show Project Info** button again. If problem persists, please contact to the the Redcap administrator.
+In case of an error, please recheck the **Redcap Server** and **Redcap API Token** information provided above and hit the **Show Project Info** button again. If problem persists, please contact to the the Redcap administrator.
 
 ![](<../../.gitbook/assets/image (2) (2) (1).png>)
 
 ### Step 4
 
-Next step to import the data from Redcap into NiDB is mapping each form and variable / field for redcap and NiDB.  The correct mapping is crucial to accurately import the data.
+Next step to import the data from Redcap into NiDB is mapping each form and variable / field for Redcap and NiDB project.  The correct mapping is crucial to accurately import the data.
 
 To start mapping Click on the **Map This Project** button at the end of screen on the right as shown in the above figure. A new page will appear as shown below.
 
@@ -41,12 +41,12 @@ To start mapping Click on the **Map This Project** button at the end of screen o
 
 ### Step 5
 
-Each Redcap form hosting the data to import is required to map separately. Pick a Redcap **Form** from the drop-down list shown above.
+Each Redcap form (Required to be imported) is required to map separately. Pick a Redcap form **** from the **Select a Redcap Form** drop-down list as shown above.
 
 Select an appropriate type of data for the selected Redcap form. In NiDB, Redcap data is defined as the following three types:
 
-* **Measures**: Redcap forms that store measures like cognitive and other measures are defined as **Measures i**n NiDB
-* **Vitals**: Redcap forms that contains information like hearth rate, blood pressure, blood test results are stored as this form of data. Also any tests that need to be done multiple times in a day will be recorded as this type.
+* **Measures**: Redcap forms that store measures like cognitive and other measures are defined as **Measures** in NiDB
+* **Vitals**: Redcap forms that contains information like hearth rate, blood pressure, blood test results are stored as this form of data. Also daily repeated measures should be recorded as this type.
 * **Drug / Dose**: Redcap forms that store information regarding administration of drugs, will be stored as this type in NiDB.
 
 After choosing the Redcap **Form** and its type of data in NiDB, Click on the **Redcap Field Mapping** button as shown in the figure above.

@@ -1,6 +1,10 @@
-# Importing from Redcap
+---
+description: Tutorials regarding Redcap
+---
 
-Followings are three sections about Importing data, subjects from Redcap and creating reports using the data that is imported from Redcap.
+# Working with Redcap
+
+Followings are three sections about Importing data and subjects from Redcap and creating reports using the data that is imported from Redcap.
 
 * [Importing Data from a Redcap Project](importing-data-from-a-redcap-project.md)
 * [Importing Subjects from Redcap](importing-subjects-from-redcap.md)
