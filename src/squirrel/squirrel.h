@@ -56,16 +56,15 @@ public:
     QDateTime datetime; /*!< datetime the package was created */
     QString description; /*!< detailed description of the package */
     QString name; /*!< name of the package */
-	QString NiDBversion; /*!< NiDB version that wrote this package */
+    QString NiDBversion; /*!< NiDB version that wrote this package */
     QString version; /*!< squirrel version */
-	QString format; /*!< package format, most likely 'squirrel' */
-	QString dirFormat; /*!< orig, seq */
-	QString dataFormat; /*!< orig, anon, anonfull, nift3d, nifti3dgz, nifti4d, nifti4dgz */
+    QString format; /*!< package format, most likely 'squirrel' */
+    QString dirFormat; /*!< orig, seq */
+    QString dataFormat; /*!< orig, anon, anonfull, nift3d, nifti3dgz, nifti4d, nifti4dgz */
 
 private:
     void PrintPackage();
-    bool MakeTempDir();
-    bool DeleteTempDir();
+    bool MakeTempDir(QString &dir);
     QString workingDir;
 
     QList<squirrelSubject> subjectList; /*!< List of subjects within this package */

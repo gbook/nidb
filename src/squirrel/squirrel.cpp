@@ -71,7 +71,7 @@ bool squirrel::read(QString filepath, bool validateOnly) {
     }
 
     /* create a working directory */
-    MakeTempDir();
+    MakeTempDir(workingDir);
 
     /* unzip the .zip to the working dir */
     systemstring = QString("unzip " + filepath + " -d " + workingDir);
@@ -120,7 +120,7 @@ bool squirrel::write(QString outpath, QString dataFormat, QString dirFormat, boo
         dataFormat = "nifti4dgz";
 
     /* create temp directory */
-    MakeTempDir();
+    MakeTempDir(workingDir);
 
     /* ----- 1) write data. And set the relative paths in the objects ----- */
     /* iterate through subjects */
@@ -145,7 +145,7 @@ bool squirrel::write(QString outpath, QString dataFormat, QString dirFormat, boo
 
             QString studyDir;
             if (dirFormat == "orig")
-				studyDir = QString("%1").arg(stud.number);
+                studyDir = QString("%1").arg(stud.number);
             else
                 studyDir = QString("%1").arg(j);
 
@@ -160,7 +160,7 @@ bool squirrel::write(QString outpath, QString dataFormat, QString dirFormat, boo
 
                 QString seriesDir;
                 if (dirFormat == "orig")
-					seriesDir = ser.number;
+                    seriesDir = ser.number;
                 else
                     seriesDir = QString("%1").arg(k);
 
@@ -169,34 +169,81 @@ bool squirrel::write(QString outpath, QString dataFormat, QString dirFormat, boo
                 subjectList[i].studyList[j].seriesList[k].virtualPath = vPath;
 
                 QString m;
-				QString seriesPath = QString("%1/%2").arg(workingDir).arg(subjectList[i].studyList[j].seriesList[k].virtualPath);
+                QString seriesPath = QString("%1/%2").arg(workingDir).arg(subjectList[i].studyList[j].seriesList[k].virtualPath);
                 MakePath(seriesPath,m);
 
-				/* orig vs other formats */
-				if (dataFormat == "orig") {
-					/* copy all of the series files to the temp directory */
-					foreach (QString f, ser.stagedFiles) {
-						QString systemstring = QString("cp -uv %1 %2/%3").arg(f).arg(workingDir).arg(subjectList[i].studyList[j].seriesList[k].virtualPath);
-						SystemCommand(systemstring);
-					}
-				}
-				else if (dataFormat = "anon") {
-					/* create temp directory */
+                /* orig vs other formats */
+                if (dataFormat == "orig") {
+                    /* copy all of the series files to the temp directory */
+                    foreach (QString f, ser.stagedFiles) {
+                        QString systemstring = QString("cp -uv %1 %2/%3").arg(f).arg(workingDir).arg(subjectList[i].studyList[j].seriesList[k].virtualPath);
+                        SystemCommand(systemstring);
+                    }
+                }
+                else if ((dataFormat == "anon") || (dataFormat == "anonfull")) {
+                    /* create temp directory */
+                    QString td;
+                    MakeTempDir(td);
 
-					/* copy all files to temp directory */
-					squirrelImageIO io;
-					io.AnonymizeDir();
-				}
-				else if (dataFormat = "fullanon") {
-				}
-				else if (dataFormat = "nifti4d") {
-				}
-				else if (dataFormat = "nifti4dgz") {
-				}
-				else if (dataFormat = "nifti3d") {
-				}
-				else if (dataFormat = "nifti3dgz") {
-				}
+                    /* copy all files to temp directory */
+                    QString systemstring;
+                    foreach (QString f, ser.stagedFiles) {
+                        systemstring = QString("cp -uv %1 %2").arg(f).arg(td);
+                        SystemCommand(systemstring);
+                    }
+
+                    /* anonymize the directory */
+                    squirrelImageIO io;
+                    QString m;
+                    if (dataFormat == "anon")
+                        io.AnonymizeDir(td,1,"Anonymized","Anonymized",m);
+                    else
+                        io.AnonymizeDir(td,2,"Anonymized","Anonymized",m);
+
+                    /* move the anonymized files to the staging area */
+                    systemstring = QString("mv %1/* %2/%3/").arg(td).arg(workingDir).arg(subjectList[i].studyList[j].seriesList[k].virtualPath);
+                    SystemCommand(systemstring);
+
+                    /* delete temp directory */
+                    QString m2;
+                    RemoveDir(td, m2);
+                }
+                else if (dataFormat == "nifti4d") {
+                    int numConv(0), numRename(0);
+
+                    /* get path of first file to be converted */
+                    QFileInfo f(ser.stagedFiles[0]);
+                    QString origSeriesPath = f.absoluteDir().absolutePath();
+                    squirrelImageIO io;
+                    io.ConvertDicom("nifti4d", origSeriesPath, workingDir, ".", false, "", "", "", "dicom" ,numConv ,numRename ,m);
+                }
+                else if (dataFormat == "nifti4dgz") {
+                    int numConv(0), numRename(0);
+
+                    /* get path of first file to be converted */
+                    QFileInfo f(ser.stagedFiles[0]);
+                    QString origSeriesPath = f.absoluteDir().absolutePath();
+                    squirrelImageIO io;
+                    io.ConvertDicom("nifti4d", origSeriesPath, workingDir, ".", true, "", "", "", "dicom" ,numConv ,numRename ,m);
+                }
+                else if (dataFormat == "nifti3d") {
+                    int numConv(0), numRename(0);
+
+                    /* get path of first file to be converted */
+                    QFileInfo f(ser.stagedFiles[0]);
+                    QString origSeriesPath = f.absoluteDir().absolutePath();
+                    squirrelImageIO io;
+                    io.ConvertDicom("nifti3d", origSeriesPath, workingDir, ".", false, "", "", "", "dicom" ,numConv ,numRename ,m);
+                }
+                else if (dataFormat == "nifti3dgz") {
+                    int numConv(0), numRename(0);
+
+                    /* get path of first file to be converted */
+                    QFileInfo f(ser.stagedFiles[0]);
+                    QString origSeriesPath = f.absoluteDir().absolutePath();
+                    squirrelImageIO io;
+                    io.ConvertDicom("nifti3d", origSeriesPath, workingDir, ".", true, "", "", "", "dicom" ,numConv ,numRename ,m);
+                }
 
                 /* write the series .json file, containing the dicom header params */
                 QJsonObject params;
@@ -334,28 +381,28 @@ void squirrel::print() {
                 ser.PrintSeries();
             }
 
-			/* iterate through analyses */
-			for (int k=0; k < stud.analysisList.size(); k++) {
+            /* iterate through analyses */
+            for (int k=0; k < stud.analysisList.size(); k++) {
 
-				squirrelAnalysis an = stud.analysisList[k];
-				an.PrintAnalysis();
-			}
-		}
+                squirrelAnalysis an = stud.analysisList[k];
+                an.PrintAnalysis();
+            }
+        }
 
-		/* iterate through measures */
-		for (int j=0; j < sub.measureList.size(); j++) {
+        /* iterate through measures */
+        for (int j=0; j < sub.measureList.size(); j++) {
 
-			squirrelMeasure meas = sub.measureList[j];
-			meas.PrintMeasure();
-		}
+            squirrelMeasure meas = sub.measureList[j];
+            meas.PrintMeasure();
+        }
 
-		/* iterate through drugs */
-		for (int j=0; j < sub.drugList.size(); j++) {
+        /* iterate through drugs */
+        for (int j=0; j < sub.drugList.size(); j++) {
 
-			squirrelDrug drug = sub.drugList[j];
-			drug.PrintDrug();
-		}
-	}
+            squirrelDrug drug = sub.drugList[j];
+            drug.PrintDrug();
+        }
+    }
 }
 
 
@@ -424,33 +471,17 @@ void squirrel::PrintPackage() {
 /* ------------------------------------------------------------ */
 /**
  * @brief squirrel::MakeTempDir
- * @return
+ * @return true if created/exists, false otherwise
  */
-bool squirrel::MakeTempDir() {
-	if (workingDir == "") {
-		workingDir = QString("/tmp/%1").arg(GenerateRandomString(20));
-		QString m;
-		if (MakePath(workingDir, m))
-			return true;
-		else
-			return false;
-	}
-	else
-		return true;
-}
-
-
-/* ------------------------------------------------------------ */
-/* ----- DeleteTempDir ---------------------------------------- */
-/* ------------------------------------------------------------ */
-/**
- * @brief squirrel::DeleteTempDir
- * @return
- */
-bool squirrel::DeleteTempDir() {
+bool squirrel::MakeTempDir(QString &dir) {
+    QString d = QString("/tmp/%1").arg(GenerateRandomString(20));
     QString m;
-    if (RemoveDir(workingDir, m))
+    if (MakePath(d, m)) {
+        dir = d;
         return true;
-    else
+    }
+    else {
+        dir = "";
         return false;
+    }
 }
