@@ -21,6 +21,6 @@ The following are the steps to create a report based on data imported form redca
 5. The report similar to the one shown in the figure below will be displayed.
 6. Select the output format as .csv if the data is needed to store in a csv file format.
 
-![](<../../.gitbook/assets/image (4).png>)
+![](<../../.gitbook/assets/image (10).png>)
 
 A complex report with more parameters involve can also be created. An Example of such report is available in the tutorial about **Analysis Builder**.
