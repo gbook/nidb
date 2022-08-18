@@ -2552,20 +2552,23 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
                 /* export the beh data */
                 if (downloadflags.contains("DOWNLOAD_BEH", Qt::CaseInsensitive)) {
                     if (behdirexists) {
-                        QString systemstring;
-                        systemstring = "cp -R " + behindir + "/* " + seriesoutdir;
-                        n->WriteLog(SystemCommand(systemstring, true));
-                        systemstring = "chmod -Rf 777 " + seriesoutdir;
-                        n->WriteLog(SystemCommand(systemstring, true));
+						/* all we need to do here is tell the squirrel object what the raw files are */
+						sqrlSeries.stagedBehFiles = FindAllFiles(behindir, "*", true);
+
+						//QString systemstring;
+						//systemstring = "cp -R " + behindir + "/* " + seriesoutdir;
+						//n->WriteLog(SystemCommand(systemstring, true));
+						//systemstring = "chmod -Rf 777 " + seriesoutdir;
+						//n->WriteLog(SystemCommand(systemstring, true));
 
                         /* get file count and size */
-                        qint64 c, b;
-                        GetDirSizeAndFileCount(seriesoutdir, c, b, true);
+						//qint64 c, b;
+						//GetDirSizeAndFileCount(seriesoutdir, c, b, true);
                         /* add beh object to JSON series */
-                        QJsonObject behInfo;
-                        behInfo["path"] = QString("%2/%3/%4/beh").arg(subjectdir).arg(sessiondir).arg(seriesdir);
-                        behInfo["numfiles"] = QString::number(c);
-                        behInfo["size"] = QString::number(b);
+						//QJsonObject behInfo;
+						//behInfo["path"] = QString("%2/%3/%4/beh").arg(subjectdir).arg(sessiondir).arg(seriesdir);
+						//behInfo["numfiles"] = QString::number(c);
+						//behInfo["size"] = QString::number(b);
 
                         //seriesInfo["beh"] = behInfo;
                     }
@@ -2613,9 +2616,11 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
                 q2.bindValue(":modality", modality);
                 n->WriteLog(n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__));
 
+				n->WriteLog("Checkpoint A");
+
                 /* get file count and size */
-                qint64 fCount, fBytes;
-                GetDirSizeAndFileCount(seriesoutdir, fCount, fBytes);
+				//qint64 fCount, fBytes;
+				//GetDirSizeAndFileCount(seriesoutdir, fCount, fBytes);
 
                 /* create squirrelSeries object and add it to squirrelStudy object */
 
@@ -2627,15 +2632,21 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
 
                 //sqrlSeries.virtualPath = QString("%1/%2/%3").arg(subjectdir).arg(sessiondir).arg(seriesdir);
                 /* get full paths to the files */
-                sqrlSeries.stagedFiles = FindAllFiles(datadir, "*");
-                sqrlSeries.numFiles = fCount;
-                sqrlSeries.size = fBytes;
+				//sqrlSeries.stagedFiles = FindAllFiles(datadir, "*");
+				//sqrlSeries.numFiles = fCount;
+				//sqrlSeries.size = fBytes;
 
                 /* add series to array of JSON series objects */
                 //JSONseries.append(seriesInfo);
+				n->WriteLog("Checkpoint B");
+				Print("Checkpoint B");
+				sqrlStudy.PrintStudy();
 
-                /* add the completed squirrelSeries to the squirrelStudy object */
+				/* add the completed squirrelSeries to the squirrelStudy object */
                 sqrlStudy.addSeries(sqrlSeries);
+
+				Print("Checkpoint C");
+				n->WriteLog("Checkpoint C");
 
                 seriesCounter++;
             }
@@ -2644,11 +2655,15 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
             /* Add list of studies to the current subject, then append the study to the study list */
             //studyInfo["series"] = JSONseries;
             //JSONstudies.append(studyInfo);
+			n->WriteLog("Checkpoint D");
 
             /* add this completed squirrelStudy to the squirrelSubject */
             sqrlSubject.addStudy(sqrlStudy);
+			n->WriteLog("Checkpoint E");
+
         }
         subjectCounter++;
+		n->WriteLog("Checkpoint F");
 
         /* export variables (only variables from enrollments associated with the studies) */
         if (downloadflags.contains("DOWNLOAD_VARIABLES", Qt::CaseInsensitive)) {

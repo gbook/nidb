@@ -22,6 +22,7 @@
 
 #include "squirrelStudy.h"
 #include "utils.h"
+#include <iostream>
 
 /* ------------------------------------------------------------ */
 /* ----- study ------------------------------------------------ */
@@ -45,11 +46,17 @@ squirrelStudy::squirrelStudy()
  * @return true if series was added, false if not added
  */
 bool squirrelStudy::addSeries(squirrelSeries s) {
+	std::cout << "Checkpoint 0" << std::endl;
+
+	Print("Checkpoint 0");
 
     /* check size of the series list before and after adding */
-    qint64 size = seriesList.size();
+	qint64 size(0);
+	size = seriesList.size();
 
+	Print("Checkpoint 1");
     seriesList.append(s);
+	Print("Checkpoint 2");
 
     if (seriesList.size() > size)
         return true;

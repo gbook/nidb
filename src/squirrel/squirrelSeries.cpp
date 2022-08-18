@@ -25,8 +25,21 @@
 
 squirrelSeries::squirrelSeries()
 {
-    numFiles = 0;
-    size = 0;
+	number = 0;
+	dateTime = QDateTime::currentDateTime();
+	seriesUID = "Uninitialized";
+	description = "Uninitialized";
+	protocol = "Uninitialized";
+	numFiles = 0;
+	size = 0;
+	numBehFiles = 0;
+	behSize = 0;
+	//QHash<QString, QString> params; /*!< Hash containing experimental parameters. eg MR params */
+	//QStringList stagedFiles; /*!< staged file list: list of raw files in their own directories before the package is zipped up */
+	//QStringList stagedBehFiles; /*!< staged beh file list: list of raw files in their own directories before the package is zipped up */
+	//QStringList experimentList; /*!< List of experiment names attached to this series */
+	virtualPath = "";
+
 }
 
 
@@ -69,6 +82,8 @@ void squirrelSeries::PrintSeries() {
     Print(QString("         Protocol: %1").arg(protocol));
     Print(QString("         NumFiles: %1").arg(numFiles));
     Print(QString("         Size: %1").arg(size));
+	Print(QString("         NumBehFiles: %1").arg(numBehFiles));
+	Print(QString("         BehSize: %1").arg(behSize));
 }
 
 
@@ -84,6 +99,8 @@ QJsonObject squirrelSeries::ToJSON() {
     json["protocol"] = protocol;
     json["numFiles"] = numFiles;
     json["size"] = size;
+	json["numBehFiles"] = numBehFiles;
+	json["behSize"] = behSize;
 	json["path"] = virtualPath;
 
     QJsonArray JSONexperiments;
