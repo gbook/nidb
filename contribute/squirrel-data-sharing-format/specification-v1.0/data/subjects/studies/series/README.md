@@ -17,7 +17,9 @@ An array of series. Basic series information is stored in the main `squirrel.jso
 |       _protocol_ | string     | Protocol name                                                                                           |
 | _experimentName_ | string     | Links to the _experiments_ section of the squirrel package                                              |
 |     _\***size**_ | number     | Size of the data, in bytes                                                                              |
-|         numFiles | number     | Total number of files                                                                                   |
+|         numFiles | number     | Total number of files (including files in subdirs)                                                      |
+|          behSize | number     | Size of beh data, in bytes                                                                              |
+|      numBehFiles | number     | Total number of beh files (including files in subdirs)                                                  |
 |         _params_ | JSON file  | _/data/subjectID/studyNum/seriesNum/params.json_                                                        |
 |       _analysis_ | JSONobject |  __                                                                                                     |
 
@@ -26,3 +28,7 @@ An array of series. Basic series information is stored in the main `squirrel.jso
 Files associated with this section are stored in the following directory. `subjectID`, `studyNum`, `seriesNum` are the actual subject ID, study number, and series number. For example `/data/S1234ABC/1/1`.
 
 > `/data/subjectID/studyNum/seriesNum`
+
+Behavioral data is stored in
+
+> `/data/subjectID/studyNum/seriesNum/beh`
