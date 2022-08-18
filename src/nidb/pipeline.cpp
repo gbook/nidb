@@ -68,7 +68,7 @@ void pipeline::LoadPipelineInfo() {
     useTmpDir = q.value("pipeline_usetmpdir").toBool();
     tmpDir = q.value("pipeline_tmpdir").toString().trimmed();
     foreach (QString did, q.value("pipeline_dependency").toString().trimmed().split(",", Qt::SkipEmptyParts)) {
-		parentIDs.append(did.toInt());
+        parentIDs.append(did.toInt());
     }
 
     depLevel = q.value("pipeline_dependencylevel").toString().trimmed();
@@ -165,7 +165,7 @@ QJsonObject pipeline::GetJSONObject(QString path) {
     jsonLarge["resultScript"] = resultScript;
     jsonLarge["version"] = version;
 
-	AppendJSONParents(jsonLarge, parentIDs, path);
+    AppendJSONParents(jsonLarge, parentIDs, path);
     AppendJSONDataSpec(jsonLarge);
     AppendJSONScripts(jsonLarge);
 
@@ -240,7 +240,7 @@ void pipeline::AppendJSONDataSpec(QJsonObject &obj) {
             JSONline["usePhaseDir"] = q.value("pdd_usephasedir").toBool();
             JSONline["behFormat"] = q.value("pdd_behformat").toString();
             JSONline["behDir"] = q.value("pdd_behdir").toString();
-			JSONline["numBOLDreps"] = q.value("pdd_numboldreps").toString();
+            JSONline["numBOLDreps"] = q.value("pdd_numboldreps").toString();
             JSONline["enabled"] = q.value("pdd_enabled").toBool();
             JSONline["associatonType"] = q.value("pdd_assoctype").toString();
             JSONline["optional"] = q.value("pdd_optional").toBool();
@@ -305,15 +305,15 @@ void pipeline::AppendJSONScripts(QJsonObject &obj) {
 /* ---------------------------------------------------------- */
 QStringList pipeline::GetParentList() {
 
-	QStringList l;
+    QStringList l;
 
-	if (parentIDs.size() > 0) {
-		for (int i=0; i< parentIDs.size(); i++) {
-			pipeline p(parentIDs[i], n);
-			l.append(p.name);
-		}
-	}
-	return l;
+    if (parentIDs.size() > 0) {
+        for (int i=0; i< parentIDs.size(); i++) {
+            pipeline p(parentIDs[i], n);
+            l.append(p.name);
+        }
+    }
+    return l;
 }
 
 
@@ -321,78 +321,96 @@ QStringList pipeline::GetParentList() {
 /* --------- GetSquirrelObject ------------------------------ */
 /* ---------------------------------------------------------- */
 squirrelPipeline pipeline::GetSquirrelObject() {
-	squirrelPipeline s;
+    squirrelPipeline s;
 
-	s.pipelineName = name;
-	s.description = desc;
-	s.createDate = createDate;
-	s.version = version;
-	s.level = QString("%1").arg(level);
+    s.pipelineName = name;
+    s.description = desc;
+    s.createDate = createDate;
+    s.version = version;
+    s.level = QString("%1").arg(level);
 
-	/* pipeline options */
-	s.parentPipelines = GetParentList();
-	s.completeFiles = completeFiles.join(",");
-	s.dataCopyMethod; /*!< cp, hardlink, softlink  */
-	s.depDir; /*!< dependency directory */
-	s.depLevel; /*!<  */
-	s.depLinkType; /*!<  */
-	s.dirStructure; /*!<  */
-	s.directory; /*!< [NiDB] directory where this pipeline will live if not using the default pipeline directory */
-	s.group; /*!< [NiDB] group on which the pipeline will be run */
-	s.groupType; /*!< [NiDB] subject, study */
-	s.notes; /*!< freeform area for notes */
-	s.resultScript; /*!< path to a script to run to get a results at the end */
-	s.tmpDir; /*!< name of temp dir, if one is to be used */
-	s.flags.useProfile = useProfile;
-	s.flags.useTmpDir = useTmpDir;
+    /* pipeline options */
+    s.parentPipelines = GetParentList();
+    s.completeFiles = completeFiles.join(",");
+    s.dataCopyMethod; /*!< cp, hardlink, softlink  */
+    s.depDir; /*!< dependency directory */
+    s.depLevel; /*!<  */
+    s.depLinkType; /*!<  */
+    s.dirStructure; /*!<  */
+    s.directory; /*!< [NiDB] directory where this pipeline will live if not using the default pipeline directory */
+    s.group; /*!< [NiDB] group on which the pipeline will be run */
+    s.groupType; /*!< [NiDB] subject, study */
+    s.notes; /*!< freeform area for notes */
+    s.resultScript; /*!< path to a script to run to get a results at the end */
+    s.tmpDir; /*!< name of temp dir, if one is to be used */
+    s.flags.useProfile = useProfile;
+    s.flags.useTmpDir = useTmpDir;
 
-	/* cluster information */
-	s.clusterType = clusterType; /*!< [NiDB] compute cluster engine (sge, slurm) */
-	s.clusterUser = clusterUser; /*!< [NiDB] compute cluster user */
-	//s.clusterQueue = clusterQueue; /*!< [NiDB] compute cluster queue */
-	//s.clusterSubmitHost = clusterSubmitHost; /*!< [NiDB] hostname of the sge/slurm submit node */
-	s.numConcurrentAnalyses = numConcurrentAnalysis; /*!< [NiDB] max number of concurrent analyses allowed to run */
-	s.maxWallTime = maxWallTime; /*!< [NiDB] maximum allowed clock (wall) time the analysis is allowed to run */
-	s.submitDelay = submitDelay; /*!< [NiDB] time in hours after the study datetime to delay before running this analysis */
+    /* cluster information */
+    s.clusterType = clusterType; /*!< [NiDB] compute cluster engine (sge, slurm) */
+    s.clusterUser = clusterUser; /*!< [NiDB] compute cluster user */
+    //s.clusterQueue = clusterQueue; /*!< [NiDB] compute cluster queue */
+    //s.clusterSubmitHost = clusterSubmitHost; /*!< [NiDB] hostname of the sge/slurm submit node */
+    s.numConcurrentAnalyses = numConcurrentAnalysis; /*!< [NiDB] max number of concurrent analyses allowed to run */
+    s.maxWallTime = maxWallTime; /*!< [NiDB] maximum allowed clock (wall) time the analysis is allowed to run */
+    s.submitDelay = submitDelay; /*!< [NiDB] time in hours after the study datetime to delay before running this analysis */
 
-	/* dataSteps */
-	QSqlQuery q;
-	q.prepare("select * from pipeline_data_def where pipeline_id = :pipelineid and pipeline_version = :version order by pdd_order + 0");
-	q.bindValue(":pipelineid",pipelineid);
-	q.bindValue(":version", version);
-	n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-	if (q.size() > 0) {
-		QJsonArray JSONdata;
-		while (q.next()) {
-			dataStep d;
-			d.order = q.value("pdd_order").toInt();
-			d.flags.primaryProtocol = q.value("pdd_isprimaryprotocol").toBool();
-			d.seriesCriteria = q.value("pdd_seriescriteria").toString();
-			d.protocol = q.value("pdd_protocol").toString();
-			d.modality = q.value("pdd_modality").toString();
-			d.dataFormat = q.value("pdd_dataformat").toString();
-			d.imageType = q.value("pdd_imagetype").toString();
-			d.flags.gzip = q.value("pdd_gzip").toBool();
-			d.location = q.value("pdd_location").toString();
-			d.flags.useSeries = q.value("pdd_useseries").toBool();
-			d.flags.preserveSeries = q.value("pdd_preserveseries").toBool();
-			d.flags.usePhaseDir = q.value("pdd_usephasedir").toBool();
-			d.behFormat = q.value("pdd_behformat").toString();
-			d.behDir = q.value("pdd_behdir").toString();
-			d.numBOLDreps = q.value("pdd_numboldreps").toString();
-			d.flags.enabled = q.value("pdd_enabled").toBool();
-			d.associationType = q.value("pdd_assoctype").toString();
-			d.flags.optional = q.value("pdd_optional").toBool();
-			//d. = q.value("pdd_level").toString();
-			d.numImagesCriteria = q.value("pdd_numimagescriteria").toString();
+    /* dataSteps */
+    QSqlQuery q;
+    q.prepare("select * from pipeline_data_def where pipeline_id = :pipelineid and pipeline_version = :version order by pdd_order + 0");
+    q.bindValue(":pipelineid",pipelineid);
+    q.bindValue(":version", version);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.size() > 0) {
+        QJsonArray JSONdata;
+        while (q.next()) {
+            dataStep d;
+            d.order = q.value("pdd_order").toInt();
+            d.flags.primaryProtocol = q.value("pdd_isprimaryprotocol").toBool();
+            d.seriesCriteria = q.value("pdd_seriescriteria").toString();
+            d.protocol = q.value("pdd_protocol").toString();
+            d.modality = q.value("pdd_modality").toString();
+            d.dataFormat = q.value("pdd_dataformat").toString();
+            d.imageType = q.value("pdd_imagetype").toString();
+            d.flags.gzip = q.value("pdd_gzip").toBool();
+            d.location = q.value("pdd_location").toString();
+            d.flags.useSeries = q.value("pdd_useseries").toBool();
+            d.flags.preserveSeries = q.value("pdd_preserveseries").toBool();
+            d.flags.usePhaseDir = q.value("pdd_usephasedir").toBool();
+            d.behFormat = q.value("pdd_behformat").toString();
+            d.behDir = q.value("pdd_behdir").toString();
+            d.numBOLDreps = q.value("pdd_numboldreps").toString();
+            d.flags.enabled = q.value("pdd_enabled").toBool();
+            d.associationType = q.value("pdd_assoctype").toString();
+            d.flags.optional = q.value("pdd_optional").toBool();
+            //d. = q.value("pdd_level").toString();
+            d.numImagesCriteria = q.value("pdd_numimagescriteria").toString();
 
-			s.dataSteps.append(d);
-		}
-	}
+            s.dataSteps.append(d);
+        }
+    }
 
-	/* scripts (required) */
-	s.primaryScript = GetPrimaryScript();
-	s.secondaryScript = GetSecondaryScript();
+    /* scripts (required) */
+    s.primaryScript = GetPrimaryScript();
+    s.secondaryScript = GetSecondaryScript();
 
-	return s;
+    return s;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetPrimaryScript ------------------------------- */
+/* ---------------------------------------------------------- */
+QString pipeline::GetPrimaryScript() {
+    QString script;
+    return script;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetSecondaryScript ----------------------------- */
+/* ---------------------------------------------------------- */
+QString pipeline::GetSecondaryScript() {
+    QString script;
+    return script;
 }

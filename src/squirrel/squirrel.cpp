@@ -208,41 +208,21 @@ bool squirrel::write(QString outpath, QString dataFormat, QString dirFormat, boo
                     QString m2;
                     RemoveDir(td, m2);
                 }
-                else if (dataFormat == "nifti4d") {
+                else if (dataFormat.contains("nifti")) {
                     int numConv(0), numRename(0);
+                    QString format = dataFormat.left(5);
+                    bool gzip;
+                    if (dataFormat.contains("gz"))
+                        gzip = true;
+                    else
+                        gzip = false;
 
                     /* get path of first file to be converted */
                     QFileInfo f(ser.stagedFiles[0]);
                     QString origSeriesPath = f.absoluteDir().absolutePath();
                     squirrelImageIO io;
-                    io.ConvertDicom("nifti4d", origSeriesPath, workingDir, ".", false, "", "", "", "dicom" ,numConv ,numRename ,m);
-                }
-                else if (dataFormat == "nifti4dgz") {
-                    int numConv(0), numRename(0);
+                    io.ConvertDicom(format, origSeriesPath, workingDir, QDir::currentPath(), gzip, "", "", "", "dicom" ,numConv ,numRename ,m);
 
-                    /* get path of first file to be converted */
-                    QFileInfo f(ser.stagedFiles[0]);
-                    QString origSeriesPath = f.absoluteDir().absolutePath();
-                    squirrelImageIO io;
-                    io.ConvertDicom("nifti4d", origSeriesPath, workingDir, ".", true, "", "", "", "dicom" ,numConv ,numRename ,m);
-                }
-                else if (dataFormat == "nifti3d") {
-                    int numConv(0), numRename(0);
-
-                    /* get path of first file to be converted */
-                    QFileInfo f(ser.stagedFiles[0]);
-                    QString origSeriesPath = f.absoluteDir().absolutePath();
-                    squirrelImageIO io;
-                    io.ConvertDicom("nifti3d", origSeriesPath, workingDir, ".", false, "", "", "", "dicom" ,numConv ,numRename ,m);
-                }
-                else if (dataFormat == "nifti3dgz") {
-                    int numConv(0), numRename(0);
-
-                    /* get path of first file to be converted */
-                    QFileInfo f(ser.stagedFiles[0]);
-                    QString origSeriesPath = f.absoluteDir().absolutePath();
-                    squirrelImageIO io;
-                    io.ConvertDicom("nifti3d", origSeriesPath, workingDir, ".", true, "", "", "", "dicom" ,numConv ,numRename ,m);
                 }
 
                 /* write the series .json file, containing the dicom header params */

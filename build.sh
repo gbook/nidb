@@ -64,9 +64,9 @@ if [ ! -d "$BUILDDIR/squirrel" ]; then
 
 	echo -e "\nsquirrel module not built. Building squirrel module now\n"
 
-	echo $QMAKEBIN -o $BUILDDIR/squirrel/Makefile $SRCDIR/squirrel/squirrel.pro -spec linux-g++
+	echo $QMAKEBIN -o $BUILDDIR/squirrel/Makefile $SRCDIR/squirrel/squirrellib.pro -spec linux-g++
 	
-	$QMAKEBIN -o $BUILDDIR/squirrel/Makefile $SRCDIR/squirrel/squirrel.pro -spec linux-g++
+	$QMAKEBIN -o $BUILDDIR/squirrel/Makefile $SRCDIR/squirrel/squirrellib.pro -spec linux-g++
 	cd $BUILDDIR/squirrel
 	make -j 16
 else
