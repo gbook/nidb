@@ -46,7 +46,7 @@ squirrelStudy::squirrelStudy()
  * @return true if series was added, false if not added
  */
 bool squirrelStudy::addSeries(squirrelSeries s) {
-	std::cout << "Checkpoint 0" << std::endl;
+	std::cout << "Checkpoint 0a" << std::endl;
 
 	Print("Checkpoint 0");
 
