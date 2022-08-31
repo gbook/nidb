@@ -71,7 +71,7 @@
 		case 'updatemapping':
                         UpdateMapping($projectid, $redcapevent, $inst, $redcapfields, $redcapfieldtype, $nidbdatatype, $nidbvariablename, $nidbinstrumentname);
                         projectinfo($projectid);
-                        DisplayRedCapSettings($projectid,$inst,$nidbdatatype);
+                       DisplayRedCapSettings($projectid,$inst,$nidbdatatype);
 			break;
                 case 'deletemapping':
                         DeleteMapping($mappingid);
@@ -106,7 +106,8 @@
 
                 $sqlstring = "start transaction";
                 $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		print_r($redcapevent);
+//		print_r($redcapevent);
+//		print_r($redcapfields);
 		
 		foreach ($_POST['redcapevent'] as $Event) {                
 
@@ -115,7 +116,7 @@
                 $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
                 $sqlstring = "commit";
-                $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
 		}
                 
@@ -304,14 +305,11 @@
 					<? $V_names=getrcvariables($projectid,$inst,$redcapevent);?>
 
 					<td>
-                                                <select name="redcapfields" required  onchange="document.getElementById('nidbvariablename').value=this.options[this.selectedIndex].text;">
-                                                   <?for($Fi=0;$Fi < count($V_names); $Fi++){ 
-						      if ($Fi==0){?>
-						        <option value=<?=$V_names[$Fi]?> selected> <?=$V_names[$Fi]?> </option>	 <?}
-						else {?>
+                                                <select name="redcapfields[]" multiple required  onchange="document.getElementById('nidbvariablename').value=this.options[this.selectedIndex].text;">
+						   <?for($Fi=0;$Fi < count($V_names); $Fi++){?> 
                                                        <option value=<?=$V_names[$Fi]?>> <?=$V_names[$Fi]?> </option>
 						   
-                                                   <?}}?>
+                                                   <?}?>
                                                 </select>
                                         </td>
 
@@ -487,7 +485,7 @@
 				
 				 case 'v': 
 
-				// Getting number of accurances in a day
+				// Getting number of accurances in a day (NEED TO UPDATE HERE)
 					$sqlstringtime = "SELECT COUNT(DISTINCT(redcap_fieldtype)) as Num_times FROM redcap_import_mapping WHERE redcap_event = '$redcapevent' and  redcap_form = '$inst' and project_id = '$projectid' and redcap_fieldtype LIKE  'value%' ";
 	                         	$resulttime = MySQLiQuery($sqlstringtime, __FILE__, __LINE__);
 				 	$rowtime = mysqli_fetch_array($resulttime, MYSQLI_ASSOC);

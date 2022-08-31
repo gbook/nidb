@@ -2324,7 +2324,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 /* ---------------------------------------------------------- */
 /* --------- WriteSquirrel ---------------------------------- */
 /* ---------------------------------------------------------- */
-bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadflags, QStringList squirrelflags, QList<qint64> seriesids, QStringList modalities, QString odir, QString &msg) {
+bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStringList downloadflags, QStringList squirrelflags, QList<qint64> seriesids, QStringList modalities, QString odir, QString &msg) {
     n->WriteLog("Entering WriteSquirrel()...");
 
     QString exportstatus = "complete";
@@ -2366,8 +2366,7 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
         QString uid = a.key();
         int studyCounter = 1; /* the session (study) counter */
 
-		//int subjectid = s[uid][0][0]["subjectid"].toInt();
-		subject subj(uid, "", n);
+		subject subj(uid, "", n); /* get the subject object by UID */
 		subj.PrintSubjectInfo();
 
         n->WriteLog("Working on [" + uid + "]");
@@ -2431,23 +2430,16 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
                 }
             }
 
-            //QJsonArray JSONseries;
-
             int seriesCounter = 1;
             /* iterate through the series (array key is seriesnum) */
             for(QMap<int, QMap<QString, QString>>::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
                 int seriesnum = c.key();
 
-                //QJsonObject seriesInfo;
-
-                /* skip the series that contained only a placeholder for the subject/study info */
+				/* skip the series that contained only a placeholder for the subject/study info */
                 if (seriesnum == 0)
                     continue;
 
                 n->WriteLog(QString("Working on [" + uid + "] and study [%1] and series [%2]").arg(studynum).arg(seriesnum));
-
-                //int exportseriesid = s[uid][studynum][seriesnum]["exportseriesid"].toInt();
-                //SetExportSeriesStatus(exportseriesid, "processing");
 
                 QString seriesstatus = "complete";
                 QString statusmessage;
@@ -2480,66 +2472,11 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
                 squirrelSeries sqrlSeries = sers.GetSquirrelObject();
 
                 enrollmentIDs.append(enrollmentid);
-                /* create the subject dir */
-                //QString subjectdir;
-                //if (squirrelflags.contains("SQUIRREL_INCSUBJECTNUM",Qt::CaseInsensitive))
-                //    subjectdir = QString("%1").arg(subjectCounter, 4, 10, QChar('0'));
-                //else
-                //    subjectdir = uid;
-
-                /* create the session (study) identifier */
-                //QString sessiondir;
-                //if (squirrelflags.contains("SQUIRREL_INCSTUDYNUM",Qt::CaseInsensitive))
-                //    sessiondir = QString("%1").arg(studyCounter, 4, 10, QChar('0'));
-                //else
-                //    sessiondir = QString("%1").arg(studynum);
-
-                /* create the series dir */
-                //QString seriesdir;
-                //if (squirrelflags.contains("SQUIRREL_INCSERIESNUM",Qt::CaseInsensitive))
-                //    seriesdir = QString("%1").arg(seriesCounter, 4, 10, QChar('0'));
-                //else
-                //    seriesdir = QString("%1").arg(seriesnum);
-
-                /* remove any non-alphanumeric characters */
-                //seriesdir.replace(QRegularExpression("[^a-zA-Z0-9_-]"), "_");
-
-                //QString seriesoutdir = QString("%1/data/%2/%3/%4").arg(outdir).arg(subjectdir).arg(sessiondir).arg(seriesdir);
-
-                //QString m;
-                //if (MakePath(seriesoutdir, m)) {
-                //    n->WriteLog("Created seriesoutdir [" + seriesoutdir + "]");
-                //}
-                //else {
-                //    exportstatus = "error";
-                //    n->WriteLog("ERROR [" + m + "] unable to create seriesoutdir [" + seriesoutdir + "]");
-                //    msg = "Unable to create output directory [" + seriesoutdir + "]";
-                //    return false;
-                //}
 
                 if (datadirexists) {
                     if (!datadirempty) {
-                        /* all we need to do here is tell the squirrel object what the raw files are */
+						/* all we need to do here is tell the squirrel object where the raw data files are */
                         sqrlSeries.stagedFiles = FindAllFiles(datadir, "*", true);
-
-                        //QString tmpdir = n->cfg["tmpdir"] + "/" + GenerateRandomString(10);
-                        //QString m;
-                        //if (MakePath(tmpdir, m)) {
-
-                        //    int numfilesconv(0), numfilesrenamed(0);
-                        //    QString binpath = n->cfg["nidbdir"] + "/bin";
-                        //    if (!img->ConvertDicom("nifti4d", datadir, tmpdir, binpath, 1, subjectdir, sessiondir, seriesdir, datatype, numfilesconv, numfilesrenamed, m))
-                        //        msgs << "Error converting files [" + m + "]";
-
-                        //    //n->WriteLog("About to copy files from " + tmpdir + " to " + seriesoutdir);
-                        //    QString systemstring = "rsync " + tmpdir + "/* " + seriesoutdir + "/";
-                        //    n->WriteLog(SystemCommand(systemstring));
-                        //    //n->WriteLog("Done copying files...");
-                        //    RemoveDir(tmpdir,m);
-                        //}
-                        //else {
-                        //    n->WriteLog("Unable to create directory");
-                        //}
                     }
                     else {
                         seriesstatus = exportstatus = "error";
@@ -2554,25 +2491,8 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
                 /* export the beh data */
                 if (downloadflags.contains("DOWNLOAD_BEH", Qt::CaseInsensitive)) {
                     if (behdirexists) {
-						/* all we need to do here is tell the squirrel object what the raw files are */
+						/* all we need to do here is tell the squirrel object where the raw beh files are */
 						sqrlSeries.stagedBehFiles = FindAllFiles(behindir, "*", true);
-
-						//QString systemstring;
-						//systemstring = "cp -R " + behindir + "/* " + seriesoutdir;
-						//n->WriteLog(SystemCommand(systemstring, true));
-						//systemstring = "chmod -Rf 777 " + seriesoutdir;
-						//n->WriteLog(SystemCommand(systemstring, true));
-
-                        /* get file count and size */
-						//qint64 c, b;
-						//GetDirSizeAndFileCount(seriesoutdir, c, b, true);
-                        /* add beh object to JSON series */
-						//QJsonObject behInfo;
-						//behInfo["path"] = QString("%2/%3/%4/beh").arg(subjectdir).arg(sessiondir).arg(seriesdir);
-						//behInfo["numfiles"] = QString::number(c);
-						//behInfo["size"] = QString::number(b);
-
-                        //seriesInfo["beh"] = behInfo;
                     }
                 }
 
@@ -2618,54 +2538,17 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
                 q2.bindValue(":modality", modality);
                 n->WriteLog(n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__));
 
-				//n->WriteLog("Checkpoint A");
-
-                /* get file count and size */
-				//qint64 fCount, fBytes;
-				//GetDirSizeAndFileCount(seriesoutdir, fCount, fBytes);
-
-                /* create squirrelSeries object and add it to squirrelStudy object */
-
-                /* add all the series information to the JSON objects */
-                //seriesInfo["number"] = seriesnum;
-                //seriesInfo["path"] = QString("%1/%2/%3").arg(subjectdir).arg(sessiondir).arg(seriesdir);
-                //seriesInfo["numfiles"] = QString::number(fCount);
-                //seriesInfo["size"] = QString::number(fBytes);
-
-                //sqrlSeries.virtualPath = QString("%1/%2/%3").arg(subjectdir).arg(sessiondir).arg(seriesdir);
-                /* get full paths to the files */
-				//sqrlSeries.stagedFiles = FindAllFiles(datadir, "*");
-				//sqrlSeries.numFiles = fCount;
-				//sqrlSeries.size = fBytes;
-
-                /* add series to array of JSON series objects */
-                //JSONseries.append(seriesInfo);
-				//n->WriteLog("Checkpoint B");
-				//Print("Checkpoint B");
-				sqrlStudy.PrintStudy();
-
 				/* add the completed squirrelSeries to the squirrelStudy object */
                 sqrlStudy.addSeries(sqrlSeries);
-
-				//Print("Checkpoint C");
-				//n->WriteLog("Checkpoint C");
 
                 seriesCounter++;
             }
             studyCounter++;
 
-            /* Add list of studies to the current subject, then append the study to the study list */
-            //studyInfo["series"] = JSONseries;
-            //JSONstudies.append(studyInfo);
-			//n->WriteLog("Checkpoint D");
-
             /* add this completed squirrelStudy to the squirrelSubject */
             sqrlSubject.addStudy(sqrlStudy);
-			//n->WriteLog("Checkpoint E");
-
         }
         subjectCounter++;
-		//n->WriteLog("Checkpoint F");
 
         /* export variables (only variables from enrollments associated with the studies) */
         if (downloadflags.contains("DOWNLOAD_VARIABLES", Qt::CaseInsensitive)) {
@@ -2733,14 +2616,8 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
         }
     }
 
-    /* add list of subjects to the root JSON object */
-    //root["subjects"] = JSONsubjects;
-
-    //QByteArray j = QJsonDocument(root).toJson();
-    //QFile fout(QString("%1/squirrel.json").arg(outdir));
-    //fout.open(QIODevice::WriteOnly);
-    //fout.write(j);
-    sqrl.write(outdir, "orig", "orig");
+	/* the squirrel object should be complete, so write it out */
+	sqrl.write(outdir, "orig", "orig");
 
     msg = msgs.join("\n");
     n->WriteLog("Leaving WriteSquirrel()...");

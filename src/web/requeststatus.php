@@ -57,11 +57,11 @@
 			break;
 		case 'cancelexport':
 			CancelExport($exportid);
-			ShowList($viewall);
+			ShowItemList($viewall);
 			break;
 		case 'retryerrors':
 			RetryErrors($exportid);
-			ShowList($viewall);
+			ShowItemList($viewall);
 			break;
 		case 'viewexport':
 			ViewExport($exportid, $page);
@@ -339,15 +339,27 @@
 							</div>
 							<div class="right aligned column">
 								<?
-									if (($destinationtype == "web") || ($destinationtype == "xnat")) {
+									if (($destinationtype == "web") || ($destinationtype == "xnat") || ($destinationtype == "squirrel")) {
 										if ((round($totals['complete']/$total)*100 == 100) || (($totals['submitted'] == 0) && ($totals['processing'] == 0))) {
 											$zipfile = $_SERVER['DOCUMENT_ROOT'] . "/download/NIDB-$exportid.zip";
 											if (file_exists($zipfile)) {
 												$output = shell_exec("du -sb $zipfile");
 												list($filesize, $fname) = preg_split('/\s+/', $output);
+												$zipfilename = "NIDB-$exportid.zip";
 											}
 											else {
-												$filesize = 0;
+												$squirreldate = date("Ymdhis",strtotime($submitdate));
+												echo "Zip filename $squirreldate<br>";
+												$zipfile = $_SERVER['DOCUMENT_ROOT'] . "/download/NIDB-Squirrel-$squirreldate.zip";
+												if (file_exists($zipfile)) {
+													$output = shell_exec("du -sb $zipfile");
+													list($filesize, $fname) = preg_split('/\s+/', $output);
+													$zipfilename = "NIDB-Squirrel-$squirreldate.zip";
+													echo $zipfilename;
+												}
+												else {
+													$filesize = 0;
+												}
 											}
 											
 											if ($filesize == 0) {
@@ -356,7 +368,7 @@
 											else {
 												?>
 													<div class="ui labeled button">
-														<a class="ui blue button" href="download/<?="NIDB-$exportid.zip"?>" title="Download zip file"><i class="download icon"></i> Download</a>
+														<a class="ui blue button" href="download/<?=$zipfilename?>" title="Download zip file"><i class="download icon"></i> Download</a>
 														<div class="ui basic label" style="font-weight: normal; font-size: smaller"><?=HumanReadableFilesize($filesize)?></div>
 													</div>
 												<?
