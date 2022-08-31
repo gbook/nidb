@@ -2293,7 +2293,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
                     n->WriteLog(SystemCommand(systemstring, true));
                 }
 
-                n->WriteLog(QString("Checkpoint A [%1, %2, %3]").arg(seriesid).arg(seriesstatus).arg(statusmessage));
+				//n->WriteLog(QString("Checkpoint A [%1, %2, %3]").arg(seriesid).arg(seriesstatus).arg(statusmessage));
 
                 n->SetExportSeriesStatus(seriesid,seriesstatus,statusmessage);
                 msgs << QString("Series [%1%2-%3 (%4)] complete").arg(uid).arg(studynum).arg(seriesnum).arg(seriesdesc);
@@ -2366,8 +2366,9 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
         QString uid = a.key();
         int studyCounter = 1; /* the session (study) counter */
 
-        int subjectid = s[uid][0][0]["subjectid"].toInt();
-        subject subj(subjectid, n);
+		//int subjectid = s[uid][0][0]["subjectid"].toInt();
+		subject subj(uid, "", n);
+		subj.PrintSubjectInfo();
 
         n->WriteLog("Working on [" + uid + "]");
 
@@ -2375,6 +2376,7 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
 
         /* create the squirrelSubject object */
         squirrelSubject sqrlSubject = subj.GetSquirrelObject();
+		sqrlSubject.PrintSubject();
 
         QList<int> enrollmentIDs;
 
@@ -2616,7 +2618,7 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
                 q2.bindValue(":modality", modality);
                 n->WriteLog(n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__));
 
-				n->WriteLog("Checkpoint A");
+				//n->WriteLog("Checkpoint A");
 
                 /* get file count and size */
 				//qint64 fCount, fBytes;
@@ -2638,15 +2640,15 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
 
                 /* add series to array of JSON series objects */
                 //JSONseries.append(seriesInfo);
-				n->WriteLog("Checkpoint B");
-				Print("Checkpoint B");
+				//n->WriteLog("Checkpoint B");
+				//Print("Checkpoint B");
 				sqrlStudy.PrintStudy();
 
 				/* add the completed squirrelSeries to the squirrelStudy object */
                 sqrlStudy.addSeries(sqrlSeries);
 
-				Print("Checkpoint C");
-				n->WriteLog("Checkpoint C");
+				//Print("Checkpoint C");
+				//n->WriteLog("Checkpoint C");
 
                 seriesCounter++;
             }
@@ -2655,15 +2657,15 @@ bool archiveIO::WriteSquirrel(QString name, QString desc, QStringList downloadfl
             /* Add list of studies to the current subject, then append the study to the study list */
             //studyInfo["series"] = JSONseries;
             //JSONstudies.append(studyInfo);
-			n->WriteLog("Checkpoint D");
+			//n->WriteLog("Checkpoint D");
 
             /* add this completed squirrelStudy to the squirrelSubject */
             sqrlSubject.addStudy(sqrlStudy);
-			n->WriteLog("Checkpoint E");
+			//n->WriteLog("Checkpoint E");
 
         }
         subjectCounter++;
-		n->WriteLog("Checkpoint F");
+		//n->WriteLog("Checkpoint F");
 
         /* export variables (only variables from enrollments associated with the studies) */
         if (downloadflags.contains("DOWNLOAD_VARIABLES", Qt::CaseInsensitive)) {
