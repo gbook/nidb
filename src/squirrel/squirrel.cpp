@@ -107,16 +107,26 @@ bool squirrel::read(QString filepath, bool validateOnly) {
  *                   - 'nifti4dgz' - Nifti 4D gzip [default]
  *                   - 'nidti3d' - Nifti 3D
  *                   - 'nifti3dgz' - Nifti 3D gzip
- * @param dirFormat directory structure of the subject data
- *                  - 'orig' - Use the subjectID for subject directory names, studyNum for study directories, and seriesNum for series directories
- *                  - 'seq' - Use sequentially generated numbers for subject, study, series directories. These will be arbitrary
+ * @param subjectDirFormat directory structure of the subject data
+ *                  - 'orig' - Use the subjectID for subject directories
+ *                  - 'seq' - Use sequentially generated numbers for subject directories
+ * @param studyDirFormat directory structure of the subject data
+ *                  - 'orig' - Use the studyNum for study directories
+ *                  - 'seq' - Use sequentially generated numbers for study directories
+ * @param seriesDirFormat directory structure of the subject data
+ *                  - 'orig' - Use the seriesNum for series directories
+ *                  - 'seq' - Use sequentially generated numbers for series directories
  * @return true if package was successfully written, false otherwise
  */
-bool squirrel::write(QString outpath, QString dataFormat, QString dirFormat, bool debug) {
+bool squirrel::write(QString outpath, QString dataFormat, QString subjectDirFormat, QString studyDirFormat, QString seriesDirFormat, bool debug) {
 
-    if (dirFormat == "")
-        dirFormat = "orig";
-    if (dataFormat == "")
+	if (subjectDirFormat == "")
+		subjectDirFormat = "orig";
+	if (studyDirFormat == "")
+		studyDirFormat = "orig";
+	if (seriesDirFormat == "")
+		seriesDirFormat = "orig";
+	if (dataFormat == "")
         dataFormat = "nifti4dgz";
 
     /* create temp directory */

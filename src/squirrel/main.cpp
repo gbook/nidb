@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
             dcm->LoadToSquirrel(paramInputFile, bindir, sqrl, m);
 
             /* 2) write the squirrel file */
-            sqrl->write(paramOutputFile, paramOutputDataFormat, paramOutputDirFormat, debug);
+			sqrl->write(paramOutputFile, paramOutputDataFormat, paramOutputDirFormat, paramOutputDirFormat, paramOutputDirFormat, debug);
 
             delete dcm;
             delete sqrl;

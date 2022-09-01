@@ -2325,7 +2325,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 /* --------- WriteSquirrel ---------------------------------- */
 /* ---------------------------------------------------------- */
 bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStringList downloadflags, QStringList squirrelflags, QList<qint64> seriesids, QStringList modalities, QString odir, QString &msg) {
-    n->WriteLog("Entering WriteSquirrel()...");
+	n->WriteLog(QString("Entering WriteSquirrel(%1)...").arg(exportid));
 
     QString exportstatus = "complete";
     subjectStudySeriesContainer s;
@@ -2340,7 +2340,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     QString outdir = odir;
     QString m;
     if (MakePath(outdir, m)) {
-        n->WriteLog("Created outdir [" + outdir + "]");
+		n->WriteLog("Created outdir [" + outdir + "]");
     }
     else {
         exportstatus = "error";
@@ -2479,8 +2479,8 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                         sqrlSeries.stagedFiles = FindAllFiles(datadir, "*", true);
                     }
                     else {
-                        seriesstatus = exportstatus = "error";
-                        msgs << n->WriteLog("ERROR. Directory [" + datadir + "] is empty");
+						seriesstatus = exportstatus = "error";
+						msgs << n->WriteLog("ERROR. Directory [" + datadir + "] is empty");
                     }
                 }
                 else {
@@ -2556,17 +2556,12 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
             //AppendJSONMeasures(subjInfo, enrollmentIDs);
             //AppendJSONDrugs(subjInfo, enrollmentIDs);
         }
-
-        /* Add list of studies to the current subject, then append the subject to the subject list */
-        //subjInfo["studies"] = JSONstudies;
-        //JSONsubjects.append(subjInfo);
-
         /* add the completed squirrelSubject to the squirrel object */
         sqrl.addSubject(sqrlSubject);
     }
 
-    /* while iterating through the list of series, a list of pipelines, mini-pipelines and experiments
-     * were created. Pipelines, mini-pipelines, and experiments are added to the squirrel object directly */
+	/* while iterating through the list of series, a list of pipelines, mini-pipelines and experiments
+	 * were created. Now add the the pipelines, mini-pipelines, and experiments to the squirrel object */
 
     /* add pipelines to the JSON object */
     if (downloadflags.contains("DOWNLOAD_PIPELINES", Qt::CaseInsensitive)) {
@@ -2617,7 +2612,14 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     }
 
 	/* the squirrel object should be complete, so write it out */
-	sqrl.write(outdir, "orig", "orig");
+	QString dataFormat = "anon";
+	QString studyDirFormat = "orig";
+	QString seriesDirFormat = "orig";
+
+	if (squirrelflags.contains("SQUIRREL_INCSTUDYNUM")) studyDirFormat = "seq";
+	if (squirrelflags.contains("SQUIRREL_INCSERIESNUM")) studyDirFormat = "seq";
+
+	sqrl.write(outdir, dataFormat, "orig", studyDirFormat, seriesDirFormat);
 
     msg = msgs.join("\n");
     n->WriteLog("Leaving WriteSquirrel()...");

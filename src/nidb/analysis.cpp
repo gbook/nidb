@@ -220,8 +220,8 @@ squirrelAnalysis analysis::GetSquirrelObject() {
 	s.numSeries = numSeries;
 	s.pipelineName = pipelinename;
 	s.pipelineVersion = pipelineversion;
-	s.runTime;
-	s.setupTime;
+	//s.runTime;
+	//s.setupTime;
 	s.size = diskSize;
 	s.startDate = startDate;
 	s.status = status;
