@@ -50,8 +50,11 @@ public:
     QString protocol; /*!< Protocol (may differ from description) */
     qint64 numFiles; /*!< Number of files associated with the series */
     qint64 size; /*!< total size in bytes of the series */
-    QHash<QString, QString> params; /*!< Hash containing experimental parameters. eg MR params */
+	qint64 numBehFiles; /*!< Number of files associated with the behavioral data */
+	qint64 behSize; /*!< total size in bytes of the beh data */
+	QHash<QString, QString> params; /*!< Hash containing experimental parameters. eg MR params */
 	QStringList stagedFiles; /*!< staged file list: list of raw files in their own directories before the package is zipped up */
+	QStringList stagedBehFiles; /*!< staged beh file list: list of raw files in their own directories before the package is zipped up */
 
 	QStringList experimentList; /*!< List of experiment names attached to this series */
 
