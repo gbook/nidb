@@ -50,7 +50,7 @@ bool squirrelSubject::addStudy(squirrelStudy s) {
     /* check if this study already exists, by UID */
     bool exists = false;
     for (int i=0; i<studyList.size(); i++)
-        if (studyList[i].studyUID == s.studyUID)
+		if (studyList.at(i).studyUID == s.studyUID)
             exists = true;
 
     /* if it doesn't exist, append it */

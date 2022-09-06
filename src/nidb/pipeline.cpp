@@ -332,17 +332,17 @@ squirrelPipeline pipeline::GetSquirrelObject() {
     /* pipeline options */
     s.parentPipelines = GetParentList();
     s.completeFiles = completeFiles.join(",");
-    s.dataCopyMethod; /*!< cp, hardlink, softlink  */
-    s.depDir; /*!< dependency directory */
-    s.depLevel; /*!<  */
-    s.depLinkType; /*!<  */
-    s.dirStructure; /*!<  */
-    s.directory; /*!< [NiDB] directory where this pipeline will live if not using the default pipeline directory */
-    s.group; /*!< [NiDB] group on which the pipeline will be run */
-    s.groupType; /*!< [NiDB] subject, study */
-    s.notes; /*!< freeform area for notes */
-    s.resultScript; /*!< path to a script to run to get a results at the end */
-    s.tmpDir; /*!< name of temp dir, if one is to be used */
+	//s.dataCopyMethod; /*!< cp, hardlink, softlink  */
+	//s.depDir; /*!< dependency directory */
+	//s.depLevel; /*!<  */
+	//s.depLinkType; /*!<  */
+	//s.dirStructure; /*!<  */
+	//s.directory; /*!< [NiDB] directory where this pipeline will live if not using the default pipeline directory */
+	//s.group; /*!< [NiDB] group on which the pipeline will be run */
+	//s.groupType; /*!< [NiDB] subject, study */
+	//s.notes; /*!< freeform area for notes */
+	//s.resultScript; /*!< path to a script to run to get a results at the end */
+	//s.tmpDir; /*!< name of temp dir, if one is to be used */
     s.flags.useProfile = useProfile;
     s.flags.useTmpDir = useTmpDir;
 

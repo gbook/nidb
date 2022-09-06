@@ -23,6 +23,7 @@
 #include "squirrelStudy.h"
 #include "utils.h"
 #include <iostream>
+#include <exception>
 
 /* ------------------------------------------------------------ */
 /* ----- study ------------------------------------------------ */
@@ -38,6 +39,34 @@ squirrelStudy::squirrelStudy()
 
 
 /* ------------------------------------------------------------ */
+/* ----- squirrelStudy ---------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief squirrelStudy::squirrelStudy
+ * @param s
+ * Copy constructor
+ */
+squirrelStudy::squirrelStudy(const squirrelStudy& s)
+{
+	ageAtStudy = s.ageAtStudy;
+	analysisList = s.analysisList;
+	dateTime = s.dateTime;
+	dayNumber = s.dayNumber;
+	description = s.description;
+	equipment = s.equipment;
+	height = s.height;
+	modality = s.modality;
+	number = s.number;
+	seriesList = s.seriesList;
+	studyUID = s.studyUID;
+	timePoint = s.timePoint;
+	virtualPath = s.virtualPath;
+	visitType = s.visitType;
+	weight = s.weight;
+}
+
+
+/* ------------------------------------------------------------ */
 /* ----- addSeries -------------------------------------------- */
 /* ------------------------------------------------------------ */
 /**
@@ -46,17 +75,13 @@ squirrelStudy::squirrelStudy()
  * @return true if series was added, false if not added
  */
 bool squirrelStudy::addSeries(squirrelSeries s) {
-	std::cout << "Checkpoint 0a" << std::endl;
-
-	Print("Checkpoint 0");
-
-    /* check size of the series list before and after adding */
+	/* check size of the series list before and after adding */
 	qint64 size(0);
 	size = seriesList.size();
 
-	Print("Checkpoint 1");
-    seriesList.append(s);
-	Print("Checkpoint 2");
+	/* create a copy of the object before appending */
+	squirrelSeries *s2 = new squirrelSeries(s);
+	seriesList.append(*s2);
 
     if (seriesList.size() > size)
         return true;

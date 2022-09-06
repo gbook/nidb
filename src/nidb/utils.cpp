@@ -100,8 +100,8 @@ QString SystemCommand(QString s, bool detail, bool truncate, bool bufferOutput) 
     while(process->waitForReadyRead(-1)) {
         buffer = QString(process->readAll());
         output += buffer;
-        //if (!bufferOutput)
-        //    WriteLog(buffer,0,false);
+		//if (!bufferOutput)
+		//	n->WriteLog(buffer,0,false);
     }
     /* check if it finished */
     process->waitForFinished();

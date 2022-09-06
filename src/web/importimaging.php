@@ -736,7 +736,7 @@
 						<a class="ui primary button" href="importimaging.php"><i class="arrow alternate circle left icon"></i> Back</a>
 					</div>
 					<div class="right aligned column">
-						<a class="ui primary button" href="importimaging.php?action=displayimport&uploadid<?=$uploadid?>"><i class="refresh icon"></i> Refresh</a>
+						<a class="ui primary button" href="importimaging.php?action=displayimport&uploadid=<?=$uploadid?>"><i class="refresh icon"></i> Refresh</a>
 					</div>
 				</div>
 				<br><br>

@@ -39,6 +39,7 @@ class squirrelStudy
 {
 public:
 	squirrelStudy();
+	squirrelStudy(const squirrelStudy& s);
 
 	bool addSeries(squirrelSeries s);
 	bool addAnalysis(squirrelAnalysis a);
