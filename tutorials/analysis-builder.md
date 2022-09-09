@@ -55,6 +55,6 @@ For this type of report, usually time repeated measure are reported, but other m
 5. To group the data based on drug days, check the **Group by Event Date** checkbox from **Grouping Option**.&#x20;
 6. After choosing the output parameters, hit the **Update Summary** button that generates a report as shown in the figure below.&#x20;
 
-![](../.gitbook/assets/image.png)
+![](<../.gitbook/assets/image (2).png>)
 
 There are many reports that can be generated using **Analysis Builder** based on the data stored in a project. More exploration on the **Analysis Builder** with different options is recommended.&#x20;

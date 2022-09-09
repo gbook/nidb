@@ -9,12 +9,12 @@ description: How to build NiDB and contribute to its development
 The following OS configurations have been tested to build nidb with Qt 6.3
 
 * <mark style="color:green;">Compatible</mark>
-  * Rocky Linux 8.6
+  * Rocky Linux 8.5
   * CentOS 8
   * CentOS 7
 
 {% hint style="danger" %}
-**CentOS Stream 8 is incompatible with NiDB.** There are kernel bugs which do not work correctly with Qt's QProcess library. This can lead to inconsistencies when running shell commands through NiDB.
+**NiDB cannot be built on CentOS Stream 8 or Rocky Linux 8.6.** There are kernel bugs which do not work correctly with Qt's QProcess library. This can lead to inconsistencies when running shell commands through NiDB, and qmake build errors.
 {% endhint %}
 
 Other OS configurations may work to build nidb, but extensive testing is needed.
@@ -118,7 +118,7 @@ This may happen if the build machine does not have enough RAM or processors. Mor
 
 #### Build fails with "QMAKE\_CXX.COMPILER\_MACROS not defined"
 
-Unclear why this happens, but it appears to be a corrupt Qt installation. First check if you can build the project using Qt Creator. If the build fails in Qt Creator, then there is most likely an issue with the Qt installation. Try completely uninstalling Qt, and then reinstalling it.
+This error happens because of a kernel bug in Rocky Linux 8.6 and any qmake built with Qt 6.3. Downgrade or use a lower version kernel until this kernel bug is fixed.
 
 #### Library error when running nidb executable
 
