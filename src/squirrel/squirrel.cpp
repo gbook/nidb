@@ -120,13 +120,13 @@ bool squirrel::read(QString filepath, bool validateOnly) {
  */
 bool squirrel::write(QString outpath, QString dataFormat, QString subjectDirFormat, QString studyDirFormat, QString seriesDirFormat, bool debug) {
 
-	if (subjectDirFormat == "")
-		subjectDirFormat = "orig";
-	if (studyDirFormat == "")
-		studyDirFormat = "orig";
-	if (seriesDirFormat == "")
-		seriesDirFormat = "orig";
-	if (dataFormat == "")
+    if (subjectDirFormat == "")
+        subjectDirFormat = "orig";
+    if (studyDirFormat == "")
+        studyDirFormat = "orig";
+    if (seriesDirFormat == "")
+        seriesDirFormat = "orig";
+    if (dataFormat == "")
         dataFormat = "nifti4dgz";
 
     /* create temp directory */
@@ -412,6 +412,50 @@ bool squirrel::addSubject(squirrelSubject subj) {
     subjectList.append(subj);
 
     if (subjectList.size() > size)
+        return true;
+    else
+        return false;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- addPipeline ------------------------------------------ */
+/* ------------------------------------------------------------ */
+/**
+ * @brief squirrel::addPipeline
+ * @param pipe
+ * @return true if added, false if not added
+ */
+bool squirrel::addPipeline(squirrelPipeline pipe) {
+
+    /* check size of the pipeline list before and after adding */
+    qint64 size = pipelineList.size();
+
+    pipelineList.append(pipe);
+
+    if (pipelineList.size() > size)
+        return true;
+    else
+        return false;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- addExperiment ---------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief squirrel::addExperiment
+ * @param exp
+ * @return true if added, false if not added
+ */
+bool squirrel::addExperiment(squirrelExperiment exp) {
+
+    /* check size of the pipeline list before and after adding */
+    qint64 size = experimentList.size();
+
+    experimentList.append(exp);
+
+    if (experimentList.size() > size)
         return true;
     else
         return false;

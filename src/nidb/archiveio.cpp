@@ -2293,7 +2293,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
                     n->WriteLog(SystemCommand(systemstring, true));
                 }
 
-				//n->WriteLog(QString("Checkpoint A [%1, %2, %3]").arg(seriesid).arg(seriesstatus).arg(statusmessage));
+                //n->WriteLog(QString("Checkpoint A [%1, %2, %3]").arg(seriesid).arg(seriesstatus).arg(statusmessage));
 
                 n->SetExportSeriesStatus(seriesid,seriesstatus,statusmessage);
                 msgs << QString("Series [%1%2-%3 (%4)] complete").arg(uid).arg(studynum).arg(seriesnum).arg(seriesdesc);
@@ -2325,7 +2325,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 /* --------- WriteSquirrel ---------------------------------- */
 /* ---------------------------------------------------------- */
 bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStringList downloadflags, QStringList squirrelflags, QList<qint64> seriesids, QStringList modalities, QString odir, QString &msg) {
-	n->WriteLog(QString("Entering WriteSquirrel(%1)...").arg(exportid));
+    n->WriteLog(QString("Entering WriteSquirrel(%1)...").arg(exportid));
 
     QString exportstatus = "complete";
     subjectStudySeriesContainer s;
@@ -2340,7 +2340,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     QString outdir = odir;
     QString m;
     if (MakePath(outdir, m)) {
-		n->WriteLog("Created outdir [" + outdir + "]");
+        n->WriteLog("Created outdir [" + outdir + "]");
     }
     else {
         exportstatus = "error";
@@ -2366,8 +2366,8 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
         QString uid = a.key();
         int studyCounter = 1; /* the session (study) counter */
 
-		subject subj(uid, "", n); /* get the subject object by UID */
-		subj.PrintSubjectInfo();
+        subject subj(uid, "", n); /* get the subject object by UID */
+        subj.PrintSubjectInfo();
 
         n->WriteLog("Working on [" + uid + "]");
 
@@ -2375,7 +2375,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
 
         /* create the squirrelSubject object */
         squirrelSubject sqrlSubject = subj.GetSquirrelObject();
-		sqrlSubject.PrintSubject();
+        sqrlSubject.PrintSubject();
 
         QList<int> enrollmentIDs;
 
@@ -2435,7 +2435,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
             for(QMap<int, QMap<QString, QString>>::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
                 int seriesnum = c.key();
 
-				/* skip the series that contained only a placeholder for the subject/study info */
+                /* skip the series that contained only a placeholder for the subject/study info */
                 if (seriesnum == 0)
                     continue;
 
@@ -2475,12 +2475,12 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
 
                 if (datadirexists) {
                     if (!datadirempty) {
-						/* all we need to do here is tell the squirrel object where the raw data files are */
+                        /* all we need to do here is tell the squirrel object where the raw data files are */
                         sqrlSeries.stagedFiles = FindAllFiles(datadir, "*", true);
                     }
                     else {
-						seriesstatus = exportstatus = "error";
-						msgs << n->WriteLog("ERROR. Directory [" + datadir + "] is empty");
+                        seriesstatus = exportstatus = "error";
+                        msgs << n->WriteLog("ERROR. Directory [" + datadir + "] is empty");
                     }
                 }
                 else {
@@ -2491,8 +2491,8 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                 /* export the beh data */
                 if (downloadflags.contains("DOWNLOAD_BEH", Qt::CaseInsensitive)) {
                     if (behdirexists) {
-						/* all we need to do here is tell the squirrel object where the raw beh files are */
-						sqrlSeries.stagedBehFiles = FindAllFiles(behindir, "*", true);
+                        /* all we need to do here is tell the squirrel object where the raw beh files are */
+                        sqrlSeries.stagedBehFiles = FindAllFiles(behindir, "*", true);
                     }
                 }
 
@@ -2538,7 +2538,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                 q2.bindValue(":modality", modality);
                 n->WriteLog(n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__));
 
-				/* add the completed squirrelSeries to the squirrelStudy object */
+                /* add the completed squirrelSeries to the squirrelStudy object */
                 sqrlStudy.addSeries(sqrlSeries);
 
                 seriesCounter++;
@@ -2560,22 +2560,20 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
         sqrl.addSubject(sqrlSubject);
     }
 
-	/* while iterating through the list of series, a list of pipelines, mini-pipelines and experiments
-	 * were created. Now add the the pipelines, mini-pipelines, and experiments to the squirrel object */
+    /* while iterating through the list of series, a list of pipelines, mini-pipelines and experiments
+     * were created. Now add the the pipelines, mini-pipelines, and experiments to the squirrel object */
 
     /* add pipelines to the JSON object */
     if (downloadflags.contains("DOWNLOAD_PIPELINES", Qt::CaseInsensitive)) {
         if (pipelineIDs.size() > 0) {
             QString dir(QString("%1/pipelines").arg(outdir));
-            QJsonArray JSONpipelines;
+            //QJsonArray JSONpipelines;
             for (int i=0; i<pipelineIDs.size(); i++) {
+                /* create and add each squirrelPipeline object */
                 pipeline p(pipelineIDs[i], n);
-                JSONpipelines.append(p.GetJSONObject(dir));
+                squirrelPipeline sqrlPipeline = p.GetSquirrelObject();
+                sqrl.addPipeline(sqrlPipeline);
             }
-
-            /* TODO - add pipelines to the squirrel object */
-
-            //root["pipelines"] = JSONpipelines;
         }
     }
 
@@ -2583,15 +2581,13 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     if (downloadflags.contains("DOWNLOAD_EXPERIMENTS", Qt::CaseInsensitive)) {
         if (experimentIDs.size() > 0) {
             QString dir(QString("%1/experiments").arg(outdir));
-            QJsonArray JSONexperiments;
+            //QJsonArray JSONexperiments;
             for (int i=0; i<experimentIDs.size(); i++) {
+                /* create and add each squirrelPipeline object */
                 experiment e(experimentIDs[i], n);
-                JSONexperiments.append(e.GetJSONObject(dir));
+                squirrelExperiment sqrlExperiment = e.GetSquirrelObject();
+                sqrl.addExperiment(sqrlExperiment);
             }
-
-            /* TODO - add experiments to the squirrel object */
-
-            //root["experiments"] = JSONexperiments;
         }
     }
 
@@ -2611,15 +2607,15 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
         }
     }
 
-	/* the squirrel object should be complete, so write it out */
-	QString dataFormat = "anon";
-	QString studyDirFormat = "orig";
-	QString seriesDirFormat = "orig";
+    /* the squirrel object should be complete, so write it out */
+    QString dataFormat = "anon";
+    QString studyDirFormat = "orig";
+    QString seriesDirFormat = "orig";
 
-	if (squirrelflags.contains("SQUIRREL_INCSTUDYNUM")) studyDirFormat = "seq";
-	if (squirrelflags.contains("SQUIRREL_INCSERIESNUM")) studyDirFormat = "seq";
+    if (squirrelflags.contains("SQUIRREL_INCSTUDYNUM")) studyDirFormat = "seq";
+    if (squirrelflags.contains("SQUIRREL_INCSERIESNUM")) seriesDirFormat = "seq";
 
-	sqrl.write(outdir, dataFormat, "orig", studyDirFormat, seriesDirFormat);
+    sqrl.write(outdir, dataFormat, "orig", studyDirFormat, seriesDirFormat);
 
     msg = msgs.join("\n");
     n->WriteLog("Leaving WriteSquirrel()...");

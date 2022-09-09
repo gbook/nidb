@@ -165,3 +165,16 @@ QJsonObject experiment::GetJSONObject(QString path) {
         return jsonSmall;
     }
 }
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetSquirrelObject ------------------------------ */
+/* ---------------------------------------------------------- */
+squirrelExperiment experiment::GetSquirrelObject() {
+    squirrelExperiment s;
+
+    s.experimentName = name;
+    s.numFiles = files.size();
+
+    return s;
+}

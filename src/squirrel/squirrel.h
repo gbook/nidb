@@ -45,11 +45,13 @@ public:
     squirrel();
 
     bool read(QString filename, bool validateOnly=false);
-	bool write(QString outpath, QString dataFormat, QString subjectDirFormat, QString studyDirFormat, QString seriesDirFormat, bool debug=false);
+    bool write(QString outpath, QString dataFormat, QString subjectDirFormat, QString studyDirFormat, QString seriesDirFormat, bool debug=false);
     bool validate();
     void print();
 
     bool addSubject(squirrelSubject subj);
+    bool addPipeline(squirrelPipeline pipe);
+    bool addExperiment(squirrelExperiment exp);
     bool removeSubject(QString ID);
 
     /* package data */

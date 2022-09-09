@@ -23,6 +23,7 @@
 #ifndef EXPERIMENT_H
 #define EXPERIMENT_H
 #include "nidb.h"
+#include "squirrelExperiment.h"
 
 struct experimentFile {
     int id;
@@ -58,6 +59,7 @@ public:
     QList<experimentFile> files;
 
     QJsonObject GetJSONObject(QString path);
+    squirrelExperiment GetSquirrelObject();
 private:
     void LoadExperimentInfo();
 
