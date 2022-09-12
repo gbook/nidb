@@ -65,6 +65,66 @@ bool squirrelSubject::addStudy(squirrelStudy s) {
 
 
 /* ------------------------------------------------------------ */
+/* ----- addMeasure ------------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief subject::addMeasure
+ * @param s
+ * @return true if added, false otherwise
+ */
+bool squirrelSubject::addMeasure(squirrelMeasure m) {
+
+	/* check size of the measure list before and after adding */
+	qint64 size = measureList.size();
+
+	/* check if this measure already exists, by UID */
+	bool exists = false;
+	//for (int i=0; i<studyList.size(); i++)
+	//	if (studyList.at(i).studyUID == s.studyUID)
+	//        exists = true;
+
+	/* if it doesn't exist, append it */
+	if (!exists)
+		measureList.append(m);
+
+	if (measureList.size() > size)
+		return true;
+	else
+		return false;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- addDrug ---------------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief subject::addDrug
+ * @param s
+ * @return true if added, false otherwise
+ */
+bool squirrelSubject::addDrug(squirrelDrug m) {
+
+	/* check size of the drug list before and after adding */
+	qint64 size = drugList.size();
+
+	/* check if this drug already exists, by UID */
+	bool exists = false;
+	//for (int i=0; i<studyList.size(); i++)
+	//	if (studyList.at(i).studyUID == s.studyUID)
+	//        exists = true;
+
+	/* if it doesn't exist, append it */
+	if (!exists)
+		drugList.append(m);
+
+	if (drugList.size() > size)
+		return true;
+	else
+		return false;
+}
+
+
+/* ------------------------------------------------------------ */
 /* ----- PrintSubject ----------------------------------------- */
 /* ------------------------------------------------------------ */
 /**

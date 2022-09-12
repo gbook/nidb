@@ -42,7 +42,9 @@ public:
 	squirrelSubject();
 
 	bool addStudy(squirrelStudy s);
-    void PrintSubject();
+	bool addMeasure(squirrelMeasure m);
+	bool addDrug(squirrelDrug d);
+	void PrintSubject();
 	QJsonObject ToJSON();
 
     /* subject info */

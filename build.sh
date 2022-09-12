@@ -2,7 +2,7 @@
 
 # global build variables
 if [ -z "$1" ]; then
-	QMAKEBIN=~/Qt/6.3.1/gcc_64/bin/qmake
+	QMAKEBIN=~/Qt/6.3.2/gcc_64/bin/qmake
 else
 	QMAKEBIN=$1
 fi
@@ -60,18 +60,19 @@ else
 fi
 
 # ----- build squirrel library -----
-if [ ! -d "$BUILDDIR/squirrel" ]; then
+#if [ ! -d "$BUILDDIR/squirrel" ]; then
 
-	echo -e "\nsquirrel module not built. Building squirrel module now\n"
+#	echo -e "\nsquirrel module not built. Building squirrel module now\n"
+	echo -e "\nBuilding squirrel library\n"
 
 	echo $QMAKEBIN -o $BUILDDIR/squirrel/Makefile $SRCDIR/squirrel/squirrellib.pro -spec linux-g++
 	
 	$QMAKEBIN -o $BUILDDIR/squirrel/Makefile $SRCDIR/squirrel/squirrellib.pro -spec linux-g++
 	cd $BUILDDIR/squirrel
 	make -j 16
-else
-	echo -e "\nsquirrel already built in $BUILDDIR/squirrel\n"
-fi
+#else
+#	echo -e "\nsquirrel already built in $BUILDDIR/squirrel\n"
+#fi
 
 # ----- build NiDB core -----
 echo -e "\nBuilding NiDB core\n"

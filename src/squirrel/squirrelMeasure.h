@@ -45,7 +45,10 @@ public:
     QString notes; /*!< notes about the measure */
     QString value; /*!< value, in string or number stored as a string */
     QString description; /*!< extended measurement description */
-
+	double duration; /*!< duration of the measure, in seconds */
+	QDateTime dateRecordEntry; /*!< date the record was entered (by a user, which may have occurred in a different database) */
+	QDateTime dateRecordCreate; /*!< date the record was created (in this database) */
+	QDateTime dateRecordModify; /*!< date the record was modified (in this database) */
 };
 
 #endif // SQUIRRELMEASURE_H

@@ -2366,7 +2366,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
         QString uid = a.key();
         int studyCounter = 1; /* the session (study) counter */
 
-        subject subj(uid, "", n); /* get the subject object by UID */
+		subject subj(uid, "", n); /* get the subject object by UID */
         subj.PrintSubjectInfo();
 
         n->WriteLog("Working on [" + uid + "]");
@@ -2552,9 +2552,66 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
 
         /* export variables (only variables from enrollments associated with the studies) */
         if (downloadflags.contains("DOWNLOAD_VARIABLES", Qt::CaseInsensitive)) {
-            /* TODO - create measure and drug objects */
-            //AppendJSONMeasures(subjInfo, enrollmentIDs);
-            //AppendJSONDrugs(subjInfo, enrollmentIDs);
+
+			if (enrollmentIDs.size() > 0) {
+				QString enrollmentIDstr = JoinIntArray(enrollmentIDs, ",");
+
+				/* get measures */
+				QSqlQuery q2;
+				q2.prepare("select * from measures a left join measureinstruments b on a.instrumentname_id = b.measureinstrument_id left join measurenames c on a.measurename_id = c.measurename_id where a.enrollment_id in (" + enrollmentIDstr + ")");
+				n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+				if (q2.size() > 0) {
+					while (q2.next()) {
+						squirrelMeasure sqrlMeasure;
+						sqrlMeasure.dateEnd = q2.value("measure_enddate").toDateTime();
+						sqrlMeasure.dateStart = q2.value("measure_startdate").toDateTime();
+						sqrlMeasure.instrumentName = q2.value("instrument_name").toString();
+						sqrlMeasure.measureName = q2.value("measure_name").toString();
+						sqrlMeasure.notes = q2.value("measure_notes").toString();
+						sqrlMeasure.rater = q2.value("measure_rater").toString();
+
+						QChar measuretype = q2.value("measure_type").toChar();
+						if (measuretype == 's') { sqrlMeasure.value = q2.value("measure_valuestring").toString(); }
+						else { sqrlMeasure.value = q2.value("measure_valuenum").toString(); }
+
+						sqrlMeasure.duration = q2.value("measure_duration").toDouble();
+						sqrlMeasure.dateRecordEntry = q2.value("measure_entrydate").toDateTime();
+						sqrlMeasure.dateRecordCreate = q2.value("measure_createdate").toDateTime();
+						sqrlMeasure.dateRecordModify = q2.value("measure_modifydate").toDateTime();
+
+						sqrlSubject.addMeasure(sqrlMeasure);
+					}
+				}
+
+				/* get drugs */
+				q2.prepare("select * from drugs a left join drugnames b on a.drugname_id = b.drugname_id where a.enrollment_id in (" + enrollmentIDstr + ")");
+				n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+				if (q2.size() > 0) {
+					QJsonArray JSONdrugs;
+					while (q2.next()) {
+						squirrelDrug sqrlDrug;
+						sqrlDrug.drugName = q2.value("drug_name").toString();
+						sqrlDrug.type = q2.value("drug_type").toString();
+						sqrlDrug.dateStart = q2.value("drug_startdate").toDateTime();
+						sqrlDrug.dateEnd = q2.value("drug_enddate").toDateTime();
+						sqrlDrug.doseAmount = q2.value("drug_doseamount").toDouble();
+						sqrlDrug.doseFrequency = q2.value("drug_dosefrequency").toString();
+						sqrlDrug.route = q2.value("drug_route").toString();
+						sqrlDrug.doseKey = q2.value("drug_dosekey").toString();
+						sqrlDrug.doseUnit = q2.value("drug_doseunit").toString();
+						sqrlDrug.frequencyModifier = q2.value("drug_frequencymodifier").toString();
+						sqrlDrug.frequencyValue = q2.value("drug_frequencyvalue").toDouble();
+						sqrlDrug.frequencyUnit = q2.value("drug_frequencyunit").toString();
+						sqrlDrug.rater = q2.value("measure_rater").toString();
+						sqrlDrug.notes = q2.value("measure_notes").toString();
+						sqrlDrug.dateRecordEntry = q2.value("measure_entrydate").toDateTime();
+						sqrlDrug.dateRecordCreate = q2.value("measure_createdate").toDateTime();
+						sqrlDrug.dateRecordModify = q2.value("measure_modifydate").toDateTime();
+
+						sqrlSubject.addDrug(sqrlDrug);
+					}
+				}
+			}
         }
         /* add the completed squirrelSubject to the squirrel object */
         sqrl.addSubject(sqrlSubject);
@@ -2566,7 +2623,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     /* add pipelines to the JSON object */
     if (downloadflags.contains("DOWNLOAD_PIPELINES", Qt::CaseInsensitive)) {
         if (pipelineIDs.size() > 0) {
-            QString dir(QString("%1/pipelines").arg(outdir));
+			//QString dir(QString("%1/pipelines").arg(outdir));
             //QJsonArray JSONpipelines;
             for (int i=0; i<pipelineIDs.size(); i++) {
                 /* create and add each squirrelPipeline object */
@@ -2580,7 +2637,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     /* add experiments to the JSON object */
     if (downloadflags.contains("DOWNLOAD_EXPERIMENTS", Qt::CaseInsensitive)) {
         if (experimentIDs.size() > 0) {
-            QString dir(QString("%1/experiments").arg(outdir));
+			//QString dir(QString("%1/experiments").arg(outdir));
             //QJsonArray JSONexperiments;
             for (int i=0; i<experimentIDs.size(); i++) {
                 /* create and add each squirrelPipeline object */

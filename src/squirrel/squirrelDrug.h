@@ -55,6 +55,9 @@ public:
     QString rater; /*!< rater/experimenter/prescriber */
     QString notes; /*!< freeform field for notes */
     QDateTime dateEntry; /*!< date of the data entry */
+	QDateTime dateRecordEntry;
+	QDateTime dateRecordCreate;
+	QDateTime dateRecordModify;
 
 };
 
