@@ -32,6 +32,7 @@
 
 ## Tutorials
 
+* [Pipelines](tutorials/pipelines.md)
 * [Import DICOM data](tutorials/import-dicom-data.md)
 * [Adding Users to Projects](tutorials/adding-users-to-projects.md)
 * [Editing the config file](tutorials/editing-the-config-file.md)
