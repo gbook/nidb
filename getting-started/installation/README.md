@@ -4,13 +4,17 @@ description: Detailed installation instructions
 
 # Installation
 
-## Pre-requisities
+## Prerequisites
 
 **Hardware** - There are no minimum specifications. If the hardware can run Linux, then it should be able to run NiDB.
 
-**RHEL8/Rocky8/CentOS 8** - NiDB runs only on RHEL 8 compatible OSes. NiDB does not run on Fedora or CentOS Stream.
+**RHEL8.5/Rocky8.5/CentOS 8** - NiDB runs only on RHEL 8 compatible OSes. NiDB does not run on Fedora or CentOS Stream.
 
-**FSL** - Download FSL from https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation and follow the installation instructions. After installation, note the location of FSL, usually `/usr/local/fsl`.
+{% hint style="danger" %}
+NiDB will not run correctly on Fedora, CentOS Stream 8, or RHEL/Rocky 8.6. **There is a kernel bug in Rocky 8.6 and RHEL 8.6 that prevents NiDB from running correctly.** If you have already updated to this version, you can downgrade the kernel or boot into the previous kernel. Kernel `4.18.0-348.12.2.el8_5.x86_64` is known to work correctly.
+{% endhint %}
+
+**FSL** - Download FSL from [https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation) and follow the installation instructions. After installation, note the location of FSL, usually `/usr/local/fsl`.
 
 Alternatively, try these commands to install FSL.
 
