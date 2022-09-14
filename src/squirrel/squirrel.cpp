@@ -170,7 +170,7 @@ bool squirrel::write(QString outpath, QString dataFormat, QString subjectDirForm
 
                 QString seriesDir;
                 if (dirFormat == "orig")
-                    seriesDir = ser.number;
+                    seriesDir = QString("%1").arg(ser.number);
                 else
                     seriesDir = QString("%1").arg(k);
 
@@ -186,7 +186,7 @@ bool squirrel::write(QString outpath, QString dataFormat, QString subjectDirForm
                 if (dataFormat == "orig") {
                     /* copy all of the series files to the temp directory */
                     foreach (QString f, ser.stagedFiles) {
-                        QString systemstring = QString("cp -uv %1 %2/%3").arg(f).arg(workingDir).arg(subjectList[i].studyList[j].seriesList[k].virtualPath);
+                        QString systemstring = QString("cp -uv %1 %2").arg(f).arg(seriesPath);
                         SystemCommand(systemstring);
                     }
                 }
@@ -211,7 +211,7 @@ bool squirrel::write(QString outpath, QString dataFormat, QString subjectDirForm
                         io.AnonymizeDir(td,2,"Anonymized","Anonymized",m);
 
                     /* move the anonymized files to the staging area */
-                    systemstring = QString("mv %1/* %2/%3/").arg(td).arg(workingDir).arg(subjectList[i].studyList[j].seriesList[k].virtualPath);
+                    systemstring = QString("mv %1/* %2/").arg(td).arg(seriesPath);
                     SystemCommand(systemstring);
 
                     /* delete temp directory */
@@ -232,8 +232,13 @@ bool squirrel::write(QString outpath, QString dataFormat, QString subjectDirForm
                     QString origSeriesPath = f.absoluteDir().absolutePath();
                     squirrelImageIO io;
                     io.ConvertDicom(format, origSeriesPath, workingDir, QDir::currentPath(), gzip, "", "", "", "dicom" ,numConv ,numRename ,m);
-
                 }
+
+                /* get the number of files and size of the series */
+                qint64 c(0), b(0);
+                GetDirSizeAndFileCount(seriesPath, c, b, false);
+                ser.numFiles = c;
+                ser.size = b;
 
                 /* write the series .json file, containing the dicom header params */
                 QJsonObject params;

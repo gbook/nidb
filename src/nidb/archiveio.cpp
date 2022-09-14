@@ -2655,11 +2655,11 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     /* add mini-pipelines to the JSON object */
     if (downloadflags.contains("DOWNLOAD_MINIPIPELINES", Qt::CaseInsensitive)) {
         if (minipipelineIDs.size() > 0) {
-            QString dir(QString("%1/minipipelines").arg(outdir));
-            QJsonArray JSONminipipelines;
+            //QString dir(QString("%1/minipipelines").arg(outdir));
+            //QJsonArray JSONminipipelines;
             for (int i=0; i<minipipelineIDs.size(); i++) {
                 minipipeline p(minipipelineIDs[i], n);
-                JSONminipipelines.append(p.GetJSONObject(dir));
+                //JSONminipipelines.append(p.GetJSONObject(dir));
             }
 
             /* TODO - add minipipelines to the squirrel object */

@@ -38,32 +38,32 @@
 class squirrelStudy
 {
 public:
-	squirrelStudy();
-	squirrelStudy(const squirrelStudy& s);
+    squirrelStudy();
+    squirrelStudy(const squirrelStudy& s);
 
-	bool addSeries(squirrelSeries s);
-	bool addAnalysis(squirrelAnalysis a);
-	void PrintStudy();
+    bool addSeries(squirrelSeries s);
+    bool addAnalysis(squirrelAnalysis a);
+    void PrintStudy();
     QJsonObject ToJSON();
 
     /* study info */
-	int number; /*!< Unique study number. Must be unique within the subject */
-	QDateTime dateTime; /*!< start datetime of the study */
-	double ageAtStudy;
-	double height; /*!< height in meters */
-	double weight; /*!< weight in kg */
-	QString modality; /*!< study modality */
-	QString description; /*!< Description of the imaging study */
+    int number; /*!< Unique study number. Must be unique within the subject */
+    QDateTime dateTime; /*!< start datetime of the study */
+    double ageAtStudy;
+    double height; /*!< height in meters */
+    double weight; /*!< weight in kg */
+    QString modality; /*!< study modality */
+    QString description; /*!< Description of the imaging study */
     QString studyUID; /*!< StudyInstanceUID */
-	QString visitType; /*!< Description of the visit, eg. pre, post */
-	QString dayNumber; /*!< Day number for repeated studies or clinical trials. eg. 6 for 'day 6' */
-	QString timePoint; /*!< Ordinal time point for repeated studies. eg. 3 for the 3rd consecutive imaging study */
-	QString equipment;
+    QString visitType; /*!< Description of the visit, eg. pre, post */
+    QString dayNumber; /*!< Day number for repeated studies or clinical trials. eg. 6 for 'day 6' */
+    QString timePoint; /*!< Ordinal time point for repeated studies. eg. 3 for the 3rd consecutive imaging study */
+    QString equipment;
 
-	QList<squirrelSeries> seriesList; /*!< List of series attached to this study */
-	QList<squirrelAnalysis> analysisList; /*!< List of analyses attached to this study */
+    QList<squirrelSeries> seriesList; /*!< List of series attached to this study */
+    QList<squirrelAnalysis> analysisList; /*!< List of analyses attached to this study */
 
-	QString virtualPath; /*!< path within the squirrel package, no leading slash */
+    QString virtualPath; /*!< path within the squirrel package, no leading slash */
 };
 
 #endif // SQUIRRELSTUDY_H
