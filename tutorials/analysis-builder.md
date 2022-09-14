@@ -8,7 +8,7 @@ description: Tutorial on how to create reports using Analysis Builder
 
 Analysis builder is a report generating tool in NiDB. In Analysis builder, a report can be build using variables extracted from various types of imaging data, pipelines and biological or cognitive measures. This tool works different than the search tool where you can search stored data (Imaging or Other) and download it. In this tool you can search the variables those are generated and stored or imported in the NiDB (For example: You can query the variables generated from a task using MRI / EEG data OR variables imported from **Redcap**). Analysis builder can be invoked from a project's main page by selecting the option **Analysis Builder** on the right from **Tools** section. Following is the main interface of the **Analysis Builder**
 
-![](<../.gitbook/assets/image (2) (2).png>)
+![](<../.gitbook/assets/image (2) (2) (2).png>)
 
 The interface for **Analysis Builder** is self explanatory. The main sections consists of selecting a project from the dropdown list, selecting the desired variables, drugs / dose information, choosing the various report parameters like grouping, value replacing a blank or missing entry, and finally the output format of the report.&#x20;
 
@@ -55,6 +55,6 @@ For this type of report, usually time repeated measure are reported, but other m
 5. To group the data based on drug days, check the **Group by Event Date** checkbox from **Grouping Option**.&#x20;
 6. After choosing the output parameters, hit the **Update Summary** button that generates a report as shown in the figure below.&#x20;
 
-![](<../.gitbook/assets/image (2).png>)
+![](<../.gitbook/assets/image (2) (2).png>)
 
 There are many reports that can be generated using **Analysis Builder** based on the data stored in a project. More exploration on the **Analysis Builder** with different options is recommended.&#x20;

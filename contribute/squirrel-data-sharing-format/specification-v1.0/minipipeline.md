@@ -6,7 +6,7 @@ description: JSON array
 
 Mini-pipelines are simple pipelines for tasks such as extracting response times from behavioral files. They are meant to be simple and run on the NiDB server rather than being submitted to a cluster. They have very basic and not computationally intensive.
 
-<figure><img src="../../../.gitbook/assets/image.png" alt=""><figcaption><p>JSON object hierarchy</p></figcaption></figure>
+<figure><img src="../../../.gitbook/assets/image (2).png" alt=""><figcaption><p>JSON object hierarchy</p></figcaption></figure>
 
 ### JSON variables
 

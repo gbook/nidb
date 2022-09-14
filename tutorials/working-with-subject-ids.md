@@ -23,7 +23,7 @@ The simplest way to find a subject by any ID is to use the ID mapper. Go to **Da
 
 The next page will show any matching subjects.
 
-![4 of 6 IDs were found!](<../.gitbook/assets/image (7).png>)
+![4 of 6 IDs were found!](<../.gitbook/assets/image (7) (1).png>)
 
 The first column **Foreign ID** is the ID you searched for. If that ID is found anywhere in the system, there will be details about it in the **Local** columns to the right.
 

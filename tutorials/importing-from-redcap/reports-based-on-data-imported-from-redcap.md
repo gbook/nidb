@@ -10,7 +10,7 @@ Data that we imported from a Redcap project into a NiDB project can be used to c
 
 The following are the steps to create a report based on data imported form redcap.
 
-![](<../../.gitbook/assets/image (1).png>)
+![](<../../.gitbook/assets/image (1) (3).png>)
 
 ### Steps
 
