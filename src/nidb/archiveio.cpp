@@ -2481,6 +2481,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                         QString m;
                         QString bindir = QString("%1/bin").arg(n->cfg["nidbdir"]);
                         img->GetImageFileTags(sqrlSeries.stagedFiles[0], bindir, true, tags, m);
+                        sqrlSeries.params = tags;
                     }
                     else {
                         seriesstatus = exportstatus = "error";

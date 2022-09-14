@@ -237,8 +237,8 @@ bool squirrel::write(QString outpath, QString dataFormat, QString subjectDirForm
                 /* get the number of files and size of the series */
                 qint64 c(0), b(0);
                 GetDirSizeAndFileCount(seriesPath, c, b, false);
-                ser.numFiles = c;
-                ser.size = b;
+                stud.seriesList[k].numFiles = c;
+                stud.seriesList[k].size = b;
 
                 /* write the series .json file, containing the dicom header params */
                 QJsonObject params;
