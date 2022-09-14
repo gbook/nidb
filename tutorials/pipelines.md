@@ -20,11 +20,29 @@ This configuration starts off with a single imaging study, and a single pipeline
 
 <figure><img src="../.gitbook/assets/image (12).png" alt=""><figcaption><p>Simple pipeline example</p></figcaption></figure>
 
+Here's a sample pipeline specification for the above scenario
+
+**Pipeline: Data & Scripts - Options**\
+****Pipeline dependency --> Criteria: study
+
+**Pipeline: Data & Scripts - Data:**\
+****T1 --> Output --> Data Source: Study
+
 ### Single study, multiple pipeline
 
 This configuration gets data from a single imaging study, but passed it through one or more pipelines. An example is an fMRI task that requires structural processing as in the HCP pipeline: the fMRI stats require output from a freesurfer pipeline.
 
 <figure><img src="../.gitbook/assets/image (13).png" alt=""><figcaption></figcaption></figure>
+
+**Pipeline A: Data & Scripts - Options**\
+****Pipeline dependency --> Criteria: study
+
+**Pipeline A: Data & Scripts - Data**\
+****Output --> Data Source: Study
+
+**Pipeline B: Data & Scripts - Options**\
+****Pipeline dependency --> dependency: pipeline A\
+Pipeline dependency --> Criteria: study
 
 ### Multiple study, single pipeline
 
