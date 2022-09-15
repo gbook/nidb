@@ -239,8 +239,8 @@ bool squirrel::write(QString outpath, QString dataFormat, QString subjectDirForm
                 Print(QString("Squirrel: running GetDirSizeAndFileCount() on [%1]").arg(seriesPath));
                 GetDirSizeAndFileCount(seriesPath, c, b, false);
                 Print(QString("Squirrel: GetDirSizeAndFileCount() found  [%1] files   [%2] bytes").arg(c).arg(b));
-                stud.seriesList[k].numFiles = c;
-                stud.seriesList[k].size = b;
+                subjectList[i].studyList[j].seriesList[k].numFiles = c;
+                subjectList[i].studyList[j].seriesList[k].size = b;
 
                 /* write the series .json file, containing the dicom header params */
                 QJsonObject params;
