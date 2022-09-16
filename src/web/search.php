@@ -4395,6 +4395,7 @@
 					<?} ?>
 					$('.dicom').hide();
 
+					/*
 					$('input[name=filetype]').click(function() {
 						if ($('#filetype:checked').val() == 'dicom') {
 							$('.dicom').show();
@@ -4406,12 +4407,17 @@
 							$('.dicom').hide();
 							$('.dirstructure').hide();
 						}
+						else if ($('#filetype:checked').val() == 'squirrel') {
+							$('.bids').hide();
+							$('.dicom').hide();
+							$('.dirstructure').hide();
+						}
 						else {
 							$('.dicom').hide();
 							$('.bids').hide();
 							$('.dirstructure').show();
 						}
-					});
+					}); */
 					
 					/* types of information to download */
 					$('input[name=downloadimaging]').click(function() {
@@ -4608,10 +4614,8 @@
 						$('.publicdownload').hide();
 					}
 
+					/* check the filetype */
 					var filetype = $("[name='filetype']:checked").val();
-					//var filetype = $('#filetype:checked').val();
-					//console.log(filetype);
-
 					if (filetype == 'dicom') {
 						$('.dicom').show();
 						$('.bids').hide();
@@ -4638,25 +4642,11 @@
 					}
 					
 					if ($('#downloadbeh:checked').val() == '1') {
-					//	/* hide all ... */
-					//	$('#sectionformat').hide();
-					//	$('#sectiondirstructure').hide();
 						$('.beh').show();
 					}
 					else {
 						$('.beh').hide();
 					}
-					//	/* ... then show the appropriate sections */
-					//	if ($('#downloadimaging:checked').val() == '1') {
-					//		$('#sectionformat').show();
-					//		$('#sectiondirstructure').show();
-					//	}
-					//	if ($('#downloadbeh:checked').val() == '1') {
-					//		$('.beh').show();
-					//		$('#sectiondirstructure').show();
-					//	}
-					//});
-					
 				}
 			</script>
 			
@@ -4943,12 +4933,12 @@
 
 							<div class="ui basic vertically fitted segment datatoexport" id="sectiondatatype">
 								<div class="ui checkbox" style="padding: 3px">
-									<input type="checkbox" name="downloadimaging" id="downloadimaging" value="1" checked onChange="CheckDestination()">
+									<input type="checkbox" name="downloadimaging" id="downloadimaging" value="1" checked>
 									<label>Imaging</label>
 								</div>
 								<br>
 								<div class="ui checkbox" style="padding: 3px">
-									<input type="checkbox" name="downloadbeh" id="downloadbeh" value="1" checked onChange="CheckDestination()">
+									<input type="checkbox" name="downloadbeh" id="downloadbeh" value="1" checked>
 									<label>Behavioral</label>
 								</div>
 								<!--<br>
@@ -4963,27 +4953,27 @@
 								</div>-->
 								<br>
 								<div class="ui checkbox" style="padding: 3px">
-									<input type="checkbox" name="downloadexperiments" id="downloadexperiments" value="1" onChange="CheckDestination()">
+									<input type="checkbox" name="downloadexperiments" id="downloadexperiments" value="1">
 									<label>Experiments</label>
 								</div>
 								<br>
 								<div class="ui checkbox" style="padding: 3px">
-									<input type="checkbox" name="downloadresults" id="downloadresults" value="1" onChange="CheckDestination()">
+									<input type="checkbox" name="downloadresults" id="downloadresults" value="1">
 									<label>Analysis Results</label>
 								</div>
 								<br>
 								<div class="ui checkbox" style="padding: 3px">
-									<input type="checkbox" name="downloadpipelines" id="downloadpipelines" value="1" onChange="CheckDestination()">
+									<input type="checkbox" name="downloadpipelines" id="downloadpipelines" value="1">
 									<label>Pipelines</label>
 								</div>
 								<br>
 								<div class="ui checkbox" style="padding: 3px">
-									<input type="checkbox" name="downloadvariables" id="downloadvariables" value="1" onChange="CheckDestination()">
+									<input type="checkbox" name="downloadvariables" id="downloadvariables" value="1">
 									<label>Variables</label>
 								</div>
 								<br>
 								<div class="ui checkbox" style="padding: 3px">
-									<input type="checkbox" name="downloadminipipelines" id="downloadminipipelines" value="1" onChange="CheckDestination()">
+									<input type="checkbox" name="downloadminipipelines" id="downloadminipipelines" value="1">
 									<label>Mini-Pipelines</label>
 								</div>
 							</div>
@@ -5115,43 +5105,52 @@
 								</div>
 								<br>
 								<div class="ui grey segment squirrel">
-									<h4 class="ui dividing header">Squirrel options</h4>
-									<div class="field">
-										<div class="ui radio checkbox">
-											<input type="radio" name="squirrelflag_metadata" value="subject" checked>
-											<label>Metadata from subject</label>
+									<h4 class="ui blue dividing header">Squirrel options</h4>
+									<div class="ui two column grid">
+										<div class="column">
+											<div class="field">
+												<label>Data Format</label>
+												<select name="squirrel_dataformat" id="squirrel_dataformat" class="ui dropdown">
+													<option value="anonymize">Anonymize DICOM
+													<option value="anonymizefull">Anonymize-Full DICOM
+													<option value="nifti4dgz">Nifti4D.gz
+													<option value="nifti4d">Nifti4D
+													<option value="nifti3dgz">Nifti3D.gz
+													<option value="nifti3d">Nifti3D
+												</select>
+											</div>
+											<div class="grouped fields">
+												<label>Options</label>
+												<div class="field">
+													<div class="ui checkbox">
+														<input type="checkbox" name="squirrelflag_incsubject" value="1">
+														<label>Increment subject IDs</label>
+													</div>
+												</div>
+												<div class="field">
+													<div class="ui checkbox">
+														<input type="checkbox" name="squirrelflag_incstudy" value="1">
+														<label>Increment study numbers</label>
+													</div>
+												</div>
+												<div class="field">
+													<div class="ui checkbox">
+														<input type="checkbox" name="squirrelflag_incseries" value="1">
+														<label>Increment series numbers</label>
+													</div>
+												</div>
+											</div>
 										</div>
-										<br>
-										<div class="ui radio checkbox">
-											<input type="radio" name="squirrelflag_metadata" value="enrollment">
-											<label>Metadata from enrollment</label>
+										<div class="column">
+											<div class="field">
+												<label>Title</label>
+												<input type="text" name="squirreltitle" placeholder="Squirrel package name...">
+											</div>
+											<div class="field">
+												<label>Description</label>
+												<textarea name="squirreldesc" placeholder="Squirrel package description..." cols="40" rows="3"></textarea>
+											</div>
 										</div>
-									</div>
-									<div class="field">
-										<div class="ui checkbox">
-											<input type="checkbox" name="squirrelflag_anonymize" value="1" checked>
-											<label>Anonymize</label>
-										</div>
-									</div>
-									<div class="field">
-										<div class="ui checkbox">
-											<input type="checkbox" name="squirrelflag_incstudy" value="1">
-											<label>Use incremental study numbers</label>
-										</div>
-									</div>
-									<div class="field">
-										<div class="ui checkbox">
-											<input type="checkbox" name="squirrelflag_incseries" value="1">
-											<label>Use incremental series numbers</label>
-										</div>
-									</div>
-									<div class="field">
-										<label>Title</label>
-										<input type="text" name="squirreltitle" placeholder="Squirrel package name...">
-									</div>
-									<div class="field">
-										<label>Description</label>
-										<textarea name="squirreldesc" placeholder="Squirrel package description..." cols="40" rows="3"></textarea>
 									</div>
 								</div>
 							</div>
@@ -6006,8 +6005,9 @@
 		$bidsreadme = mysqli_real_escape_string($GLOBALS['linki'], $r['bidsreadme']);
 		$bidsflaguseuid = mysqli_real_escape_string($GLOBALS['linki'], $r['bidsflag_useuid']);
 		$bidsflagusestudyid = mysqli_real_escape_string($GLOBALS['linki'], $r['bidsflag_usestudyid']);
-		$squirrelflag_metadata = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_metadata']);
-		$squirrelflag_anonymize = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_anonymize']);
+		//$squirrelformat = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrel_dataformat']);
+		//$squirrelflag_anonymize = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_anonymize']);
+		$squirrelflag_incsubject = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_incsubject']);
 		$squirrelflag_incstudy = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_incstudy']);
 		$squirrelflag_incseries = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_incseries']);
 		$squirreltitle = mysqli_real_escape_string($GLOBALS['linki'], $r['squirreltitle']);
@@ -6135,14 +6135,18 @@
 		else
 			$bidsflagstr = "null";
 
-		$squirrelflagmetadata = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_metadata']);
-		$squirrelflaganonymize = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_anonymize']);
+		$squirrelflagdataformat = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_dataformat']);
+		$squirrelflagincsubject = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_incsubject']);
 		$squirrelflagincstudy = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_incstudy']);
 		$squirrelflagincseries = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_incseries']);
 
 		$squirrelflags = array();
-		if ($squirrelflagmetadata == "subject") $squirrelflags[] = "SQUIRREL_METAFROMSUBJECT";
-		if ($squirrelflagmetadata == "enrollment") $squirrelflags[] = "SQUIRREL_METAFROMENROLLMENT";
+		if ($squirrelflagdataformat == "anonymize") $squirrelflags[] = "SQUIRREL_FORMAT_ANAONYMIZE";
+		if ($squirrelflagdataformat == "anonymizefull") $squirrelflags[] = "SQUIRREL_FORMAT_ANAONYMIZEFULL";
+		if ($squirrelflagdataformat == "nifti4d") $squirrelflags[] = "SQUIRREL_FORMAT_NIFT4D";
+		if ($squirrelflagdataformat == "nifti4dgz") $squirrelflags[] = "SQUIRREL_FORMAT_NIFTI4DGZ";
+		if ($squirrelflagdataformat == "nifti3d") $squirrelflags[] = "SQUIRREL_FORMAT_NIFTI3D";
+		if ($squirrelflagdataformat == "nifti3dgz") $squirrelflags[] = "SQUIRREL_FORMAT_NIFTI3DGZ";
 		if ($squirrelflaganonymize) $squirrelflags[] = "SQUIRREL_ANONYMIZE";
 		if ($squirrelflagincstudy) $squirrelflags[] = "SQUIRREL_INCSTUDYNUM";
 		if ($squirrelflagincseries) $squirrelflags[] = "SQUIRREL_INCSERIESNUM";
