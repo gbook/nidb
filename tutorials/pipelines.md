@@ -50,8 +50,38 @@ This configuration takes data from multiple studies and passes it through a sing
 
 <figure><img src="../.gitbook/assets/image (11).png" alt=""><figcaption><p>In this example, Study1 is the study of record.</p></figcaption></figure>
 
+In this example, Study1 is the 'study of record'. All analyses, statuses, and results are associated with Study1. Here's the pipeline settings to use in this example.
+
+**Pipeline A - "Preprocessing1"**\
+**Data & Scripts** tab:\
+****Options --> Pipeline dependency --> Criteria: study\
+Data (fMRI) --> Output --> Data Source: Study\
+Data (T1) --> Output --> Data Source: Subject\
+Data (T1) --> Output --> Subject linkage: Nearest in time
+
+**Pipeline B - "Stats1"**\
+**Data & Scripts** tab:\
+****Options --> Pipeline dependency --> dependency: pipeline A\
+Options --> Pipeline dependency --> Criteria: study
+
 ### Multiple study, multiple pipeline
 
 This configuration takes data from multiple studies and uses multiple pipelines to analyze the data. This can come in multiple ways. Below are some examples of complex pipelines.
 
 <figure><img src="../.gitbook/assets/image.png" alt=""><figcaption><p>An HCP example</p></figcaption></figure>
+
+In this example, the pipeline settings are the same as above. The only difference is that each analysis (each study) will pull fMRI from the study, and the T1 from 'somewhere'. For the studies that have a T1, it will come from there. For studies that don't have a T1, the T1 will come from the study nearest in time.
+
+Here's the pipeline settings to use in this example.
+
+**Pipeline A - "Preprocessing1"**\
+**Data & Scripts** tab:\
+****Options --> Pipeline dependency --> Criteria: study\
+Data (fMRI) --> Output --> Data Source: Study\
+Data (T1) --> Output --> Data Source: Subject\
+Data (T1) --> Output --> Subject linkage: Nearest in time
+
+**Pipeline B - "Stats1"**\
+**Data & Scripts** tab:\
+****Options --> Pipeline dependency --> dependency: pipeline A\
+Options --> Pipeline dependency --> Criteria: study
