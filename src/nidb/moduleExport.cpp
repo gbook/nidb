@@ -90,6 +90,7 @@ int moduleExport::Run() {
             QStringList squirrelflags = q.value("squirrel_flags").toString().trimmed().split(",");
             QString squirreltitle = q.value("squirrel_title").toString().trimmed();
             QString squirreldesc = q.value("squirrel_desc").toString().trimmed();
+            n->WriteLog(QString("SQUIRREL flags [%1]").arg(q.value("squirrel_flags").toString()));
 
             /* remove a trailing slash if it exists */
             if (nfsdir.right(1) == "/")
@@ -366,13 +367,13 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
     QStringList msgs;
     QString tmpexportdir;
 
-	/* check if it's a special type of export first */
+    /* check if it's a special type of export first */
     if (filetype == "bids") {
         QString log;
         ExportBIDS(exportid, bidsreadme, bidsflags, tmpexportdir, exportstatus, log);
         msgs << log;
     }
-	/* squirrel */
+    /* squirrel */
     else if (filetype == "squirrel") {
         QString log;
         ExportSquirrel(exportid, squirreltitle, squirreldesc, downloadflags, squirrelflags, exportstatus, tmpexportdir, log);
@@ -466,7 +467,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                         break;
                     case 2:
                         QString seriesdir = seriesdesc;
-						seriesdir.replace(QRegularExpression("[^a-zA-Z0-9_-]"), "_");
+                        seriesdir.replace(QRegularExpression("[^a-zA-Z0-9_-]"), "_");
                         newseriesnum = QString("%1_%2").arg(seriesnum).arg(seriesdir);
                     }
 
@@ -575,8 +576,8 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                                             msgs << "Created tmpdir [" + tmpdir + "]";
                                             QString m2;
                                             int numfilesconv(0), numfilesrenamed(0);
-											QString binpath = n->cfg["nidbdir"] + "/bin";
-											if (!img->ConvertDicom(filetype, indir, tmpdir, binpath, gzip, uid, QString("%1").arg(studynum), QString("%1").arg(seriesnum), datatype, numfilesconv, numfilesrenamed, m2))
+                                            QString binpath = n->cfg["nidbdir"] + "/bin";
+                                            if (!img->ConvertDicom(filetype, indir, tmpdir, binpath, gzip, uid, QString("%1").arg(studynum), QString("%1").arg(seriesnum), datatype, numfilesconv, numfilesrenamed, m2))
                                                 msgs << "Error converting files [" + m2 + "]";
                                             //n->WriteLog("About to copy files from " + tmpdir + " to " + outdir);
                                             QString systemstring = "rsync " + tmpdir + "/* " + outdir + "/";
@@ -685,64 +686,64 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 
     /* extra steps for web download */
     if (exporttype == "web") {
-		if (filetype == "squirrel") {
-			/* move the created .zip file to the web download directory */
-			QString zipfile = QString("%1/NiDB-Squirrel-%2.zip").arg(n->cfg["ftpdir"]).arg(exportid);
-			QString m;
-			if (MoveFile(zipfile, n->cfg["webdownloaddir"], m)) {
-				n->WriteLog(QString("Success moving [%1] to [%2]").arg(zipfile).arg(n->cfg["webdownloaddir"]));
-			}
-			else {
-				n->WriteLog(QString("Error moving [%1] to [%2]. Message [%3]").arg(zipfile).arg(n->cfg["webdownloaddir"]).arg(m));
-			}
-		}
-		else {
-			QString zipfile = QString("%1/NIDB-%2.zip").arg(n->cfg["webdownloaddir"]).arg(exportid);
-			QString outdir;
-			n->WriteLog("Final zip file will be [" + zipfile + "]");
-			n->WriteLog("tmpexportdir: [" + tmpexportdir + "]");
-			outdir = tmpexportdir;
+        if (filetype == "squirrel") {
+            /* move the created .zip file to the web download directory */
+            QString zipfile = QString("%1/NiDB-Squirrel-%2.zip").arg(n->cfg["ftpdir"]).arg(exportid);
+            QString m;
+            if (MoveFile(zipfile, n->cfg["webdownloaddir"], m)) {
+                n->WriteLog(QString("Success moving [%1] to [%2]").arg(zipfile).arg(n->cfg["webdownloaddir"]));
+            }
+            else {
+                n->WriteLog(QString("Error moving [%1] to [%2]. Message [%3]").arg(zipfile).arg(n->cfg["webdownloaddir"]).arg(m));
+            }
+        }
+        else {
+            QString zipfile = QString("%1/NIDB-%2.zip").arg(n->cfg["webdownloaddir"]).arg(exportid);
+            QString outdir;
+            n->WriteLog("Final zip file will be [" + zipfile + "]");
+            n->WriteLog("tmpexportdir: [" + tmpexportdir + "]");
+            outdir = tmpexportdir;
 
-			QDir d;
-			if (d.exists(outdir)) {
-				QString pwd = QDir::currentPath();
-				n->WriteLog("Current directory is [" + pwd + "], changing directory to [" + outdir + "]");
+            QDir d;
+            if (d.exists(outdir)) {
+                QString pwd = QDir::currentPath();
+                n->WriteLog("Current directory is [" + pwd + "], changing directory to [" + outdir + "]");
 
-				QString systemstring;
-				QDir::setCurrent(outdir);
+                QString systemstring;
+                QDir::setCurrent(outdir);
 
-				pwd = QDir::currentPath();
-				n->WriteLog("Current directory is... [" + pwd + "]");
+                pwd = QDir::currentPath();
+                n->WriteLog("Current directory is... [" + pwd + "]");
 
-				if (QFile::exists(zipfile))
-					systemstring = "cd " + outdir + "; zip -1grv " + zipfile + " .";
-				else
-					systemstring = "cd " + outdir + "; zip -1rv " + zipfile + " .";
-				n->WriteLog("Beginning zipping...");
-				n->WriteLog(SystemCommand(systemstring, true));
-				n->WriteLog("Finished zipping... Changing directory back to [" + pwd + "]");
-				QDir::setCurrent(pwd);
-			}
-			else {
-				n->WriteLog("outdir [" + outdir + "] does not exist");
-			}
+                if (QFile::exists(zipfile))
+                    systemstring = "cd " + outdir + "; zip -1grv " + zipfile + " .";
+                else
+                    systemstring = "cd " + outdir + "; zip -1rv " + zipfile + " .";
+                n->WriteLog("Beginning zipping...");
+                n->WriteLog(SystemCommand(systemstring, true));
+                n->WriteLog("Finished zipping... Changing directory back to [" + pwd + "]");
+                QDir::setCurrent(pwd);
+            }
+            else {
+                n->WriteLog("outdir [" + outdir + "] does not exist");
+            }
 
-			QFile file;
-			if (file.exists(zipfile)) {
-				msgs << "Created .zip file [" + zipfile + "]";
+            QFile file;
+            if (file.exists(zipfile)) {
+                msgs << "Created .zip file [" + zipfile + "]";
 
-				/* delete the tmp dir, if it exists */
-				if (d.exists(tmpexportdir)) {
-					n->WriteLog("Temporary export dir [" + tmpexportdir + "] exists and will be deleted");
-					QString m;
-					if (!RemoveDir(tmpexportdir, m))
-						msgs << "Error [" + m + "] removing directory [" + tmpexportdir + "]";
-				}
-			}
-			else {
-				msgs << "ERROR. Unable to create [" + zipfile + "]. ";
-			}
-		}
+                /* delete the tmp dir, if it exists */
+                if (d.exists(tmpexportdir)) {
+                    n->WriteLog("Temporary export dir [" + tmpexportdir + "] exists and will be deleted");
+                    QString m;
+                    if (!RemoveDir(tmpexportdir, m))
+                        msgs << "Error [" + m + "] removing directory [" + tmpexportdir + "]";
+                }
+            }
+            else {
+                msgs << "ERROR. Unable to create [" + zipfile + "]. ";
+            }
+        }
     }
 
     /* extra steps for publicdownload */
@@ -778,7 +779,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                 QStringList lines = filecontents.split("\n");
                 QString lastline = lines.last().trimmed();
                 n->WriteLog(QString("Last line of [%1] %2").arg(systemstring).arg(lastline));
-				QStringList parts = lastline.trimmed().split(QRegularExpression("\\s+"), Qt::SkipEmptyParts); /* split on whitespace */
+                QStringList parts = lastline.trimmed().split(QRegularExpression("\\s+"), Qt::SkipEmptyParts); /* split on whitespace */
                 qint64 unzippedsize(0);
                 qint64 zippedsize(0);
                 if (parts.size() >= 2) {
@@ -1256,7 +1257,7 @@ bool moduleExport::ExportSquirrel(int exportid, QString squirreltitle, QString s
         }
         //n->WriteLog( QString("seriesids contains [%1] items    modalities contains [%2] items").arg(seriesids.size()).arg(modalities.size()) );
 
-		QString rootoutdir = QString("%1/NiDB-Squirrel-%2").arg(n->cfg["ftpdir"]).arg(exportid);
+        QString rootoutdir = QString("%1/NiDB-Squirrel-%2").arg(n->cfg["ftpdir"]).arg(exportid);
         outdir = rootoutdir;
 
         QString m;
@@ -1270,12 +1271,12 @@ bool moduleExport::ExportSquirrel(int exportid, QString squirreltitle, QString s
         }
 
         n->WriteLog(QString("Calling WriteSquirrel(%1, %2, ...)").arg(seriesids.size()).arg(modalities.size()));
-		if (io->WriteSquirrel(exportid, squirreltitle, squirreldesc, downloadflags, squirrelflags, seriesids, modalities, rootoutdir, m))
+        if (io->WriteSquirrel(exportid, squirreltitle, squirreldesc, downloadflags, squirrelflags, seriesids, modalities, rootoutdir, m))
             n->WriteLog("WriteSquirrel() returned true");
         else
             n->WriteLog("WriteSquirrel() returned false");
 
-		/* move the .zip file to the download directory if a web download */
+        /* move the .zip file to the download directory if a web download */
     }
     else {
         n->WriteLog("No series found");

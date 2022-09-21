@@ -56,9 +56,9 @@ bool squirrelImageIO::ConvertDicom(QString filetype, QString indir, QString outd
 
     QString pwd = QDir::currentPath();
 
-    QString gzipstr;
-    if (gzip) gzipstr = "-z y";
-    else gzipstr = "-z n";
+    //QString gzipstr;
+    //if (gzip) gzipstr = "-z y";
+    //else gzipstr = "-z n";
 
     numfilesconv = 0; /* need to fix this to be correct at some point */
 
@@ -72,21 +72,24 @@ bool squirrelImageIO::ConvertDicom(QString filetype, QString indir, QString outd
     /* do the conversion */
     QString systemstring;
     QDir::setCurrent(indir);
-    if (filetype == "nifti4dme")
-        systemstring = QString("%1/./dcm2niixme %2 -o '%3' %4").arg(bindir).arg(gzipstr).arg(outdir).arg(indir);
-    else if (filetype == "nifti4d")
-        systemstring = QString("%1/./dcm2niix -1 -b n %2 -o '%3' %4%5").arg(bindir).arg(gzipstr).arg(outdir).arg(indir).arg(fileext);
+    if (filetype == "nifti4d")
+        systemstring = QString("%1/./dcm2niix -1 -b n -o '%2' %3%4").arg(bindir).arg(outdir).arg(indir).arg(fileext);
+    else if (filetype == "nifti4dgz")
+        systemstring = QString("%1/./dcm2niix -1 -b n -z y -o '%2' %3%4").arg(bindir).arg(outdir).arg(indir).arg(fileext);
     else if (filetype == "nifti3d")
         systemstring = QString("%1/./dcm2niix -1 -b n -z 3 -o '%2' %3%4").arg(bindir).arg(outdir).arg(indir).arg(fileext);
-    else if (filetype == "bids")
-        systemstring = QString("%1/./dcm2niix -1 -b y -z y -o '%2' %3%4").arg(bindir).arg(outdir).arg(indir).arg(fileext);
-    else
+    else if (filetype == "nifti3dgz")
+        systemstring = QString("%1/./dcm2niix -1 -b n -z 3 -o '%2' %3%4").arg(bindir).arg(outdir).arg(indir).arg(fileext);
+    else {
+        msg = msgs.join("\n");
         return false;
+    }
 
     /* create the output directory */
     QString m;
     if (!MakePath(outdir, m)) {
         msgs << "Unable to create path [" + outdir + "] because of error [" + m + "]";
+        msg = msgs.join("\n");
         return false;
     }
 
@@ -100,6 +103,7 @@ bool squirrelImageIO::ConvertDicom(QString filetype, QString indir, QString outd
         msgs << SystemCommand(systemstring, true, true);
     }
     else {
+        msg = msgs.join("\n");
         return false;
     }
 

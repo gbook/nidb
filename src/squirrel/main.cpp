@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
                 Print(QString("*** Invalid squirrel file [%1] ***").arg(m));
             }
 
-			//delete v;
+            //delete v;
         }
     }
     /* ---------- Run the dicom2squirrel tool ---------- */
@@ -132,13 +132,18 @@ int main(int argc, char *argv[])
         else {
             dicom *dcm = new dicom();
             squirrel *sqrl = new squirrel();
+            sqrl->dataFormat = paramOutputDataFormat;
+            sqrl->subjectDirFormat = paramOutputDirFormat;
+            sqrl->studyDirFormat = paramOutputDirFormat;
+            sqrl->seriesDirFormat = paramOutputDirFormat;
 
             /* 1) load the DICOM data to a squirrel object */
             QString m;
             dcm->LoadToSquirrel(paramInputFile, bindir, sqrl, m);
 
             /* 2) write the squirrel file */
-			sqrl->write(paramOutputFile, paramOutputDataFormat, paramOutputDirFormat, paramOutputDirFormat, paramOutputDirFormat, debug);
+            QString m2;
+            sqrl->write(paramOutputFile, m2, debug);
 
             delete dcm;
             delete sqrl;

@@ -2348,13 +2348,40 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
         return false;
     }
 
-    /* create squirrel object */
+    /* create squirrel object with default settings... */
     squirrel sqrl;
     sqrl.name = name;
     sqrl.description = desc;
     sqrl.NiDBversion = n->GetVersion();
-    sqrl.dirFormat = "orig";
     sqrl.dataFormat = "orig";
+    sqrl.subjectDirFormat = "orig";
+    sqrl.studyDirFormat = "orig";
+    sqrl.seriesDirFormat = "orig";
+
+    /* ... and set the squirrel options based on the flags passed in
+        SQUIRREL_FORMAT_ANONYMIZE
+        SQUIRREL_FORMAT_ANONYMIZEFULL
+        SQUIRREL_FORMAT_NIFTI4D
+        SQUIRREL_FORMAT_NIFTI4DGZ
+        SQUIRREL_FORMAT_NIFTI3D
+        SQUIRREL_FORMAT_NIFTI3DGZ
+
+        SQUIRREL_INCSUBJECTNUM
+        SQUIRREL_INCSTUDYNUM
+        SQUIRREL_INCSERIESNUM
+    */
+    n->WriteLog(QString("Squirrel flags [%1]").arg(squirrelflags.join(",")));
+
+    if (squirrelflags.contains("SQUIRREL_FORMAT_ANONYMIZE")) sqrl.dataFormat = "anon";
+    if (squirrelflags.contains("SQUIRREL_FORMAT_ANONYMIZEFULL")) sqrl.dataFormat = "anonfull";
+    if (squirrelflags.contains("SQUIRREL_FORMAT_NIFTI4D")) sqrl.dataFormat = "nifti4d";
+    if (squirrelflags.contains("SQUIRREL_FORMAT_NIFTI4DGZ")) sqrl.dataFormat = "nifti4dgz";
+    if (squirrelflags.contains("SQUIRREL_FORMAT_NIFTI3D")) sqrl.dataFormat = "nifti3d";
+    if (squirrelflags.contains("SQUIRREL_FORMAT_NIFTI3DGZ")) sqrl.dataFormat = "nifti3d";
+
+    if (squirrelflags.contains("SQUIRREL_INCSUBJECTNUM")) sqrl.subjectDirFormat = "seq";
+    if (squirrelflags.contains("SQUIRREL_INCSTUDYNUM")) sqrl.studyDirFormat = "seq";
+    if (squirrelflags.contains("SQUIRREL_INCSERIESNUM")) sqrl.seriesDirFormat = "seq";
 
     int subjectCounter = 1; /* the subject counter */
     QList<int> pipelineIDs;
@@ -2670,14 +2697,9 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     }
 
     /* the squirrel object should be complete, so write it out */
-    QString dataFormat = "anon";
-    QString studyDirFormat = "orig";
-    QString seriesDirFormat = "orig";
-
-    if (squirrelflags.contains("SQUIRREL_INCSTUDYNUM")) studyDirFormat = "seq";
-    if (squirrelflags.contains("SQUIRREL_INCSERIESNUM")) seriesDirFormat = "seq";
-
-    sqrl.write(outdir, dataFormat, "orig", studyDirFormat, seriesDirFormat);
+    QString m2;
+    sqrl.write(outdir,m2);
+    n->WriteLog("squirrel.write returned [" + m2 + "]");
 
     msg = msgs.join("\n");
     n->WriteLog("Leaving WriteSquirrel()...");

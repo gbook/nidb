@@ -45,7 +45,7 @@ public:
     squirrel();
 
     bool read(QString filename, bool validateOnly=false);
-    bool write(QString outpath, QString dataFormat, QString subjectDirFormat, QString studyDirFormat, QString seriesDirFormat, bool debug=false);
+    bool write(QString outpath, QString &m, bool debug=false);
     bool validate();
     void print();
 
@@ -61,13 +61,16 @@ public:
     QString NiDBversion; /*!< NiDB version that wrote this package */
     QString version; /*!< squirrel version */
     QString format; /*!< package format, most likely 'squirrel' */
-    QString dirFormat; /*!< orig, seq */
+    QString subjectDirFormat; /*!< orig, seq */
+    QString studyDirFormat; /*!< orig, seq */
+    QString seriesDirFormat; /*!< orig, seq */
     QString dataFormat; /*!< orig, anon, anonfull, nift3d, nifti3dgz, nifti4d, nifti4dgz */
 
 private:
     void PrintPackage();
     bool MakeTempDir(QString &dir);
     QString workingDir;
+    QStringList msgs; /* squirrel messages, to be passed back upon writing (or reading) through the squirrel library */
 
     QList<squirrelSubject> subjectList; /*!< List of subjects within this package */
     QList<squirrelPipeline> pipelineList; /*!< List of pipelines within this package */
