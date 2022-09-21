@@ -152,8 +152,10 @@
     $requestvars['bidsreadme'] = GetVariable("bidsreadme");
     $requestvars['bidsflag_useuid'] = GetVariable("bidsflag_useuid");
     $requestvars['bidsflag_usestudyid'] = GetVariable("bidsflag_usestudyid");
-    $requestvars['squirrelflag_metadata'] = GetVariable("squirrelflag_metadata");
-    $requestvars['squirrelflag_anonymize'] = GetVariable("squirrelflag_anonymize");
+    $requestvars['squirrelflag_dataformat'] = GetVariable("squirrelflag_dataformat");
+    $requestvars['squirrelflag_incsubject'] = GetVariable("squirrelflag_incsubject");
+    $requestvars['squirrelflag_incstudy'] = GetVariable("squirrelflag_incstudy");
+    $requestvars['squirrelflag_incseries'] = GetVariable("squirrelflag_incseries");
     $requestvars['squirreltitle'] = GetVariable("squirreltitle");
     $requestvars['squirreldesc'] = GetVariable("squirreldesc");
 
@@ -5110,9 +5112,9 @@
 										<div class="column">
 											<div class="field">
 												<label>Data Format</label>
-												<select name="squirrel_dataformat" id="squirrel_dataformat" class="ui dropdown">
-													<option value="anonymize">Anonymize DICOM
-													<option value="anonymizefull">Anonymize-Full DICOM
+												<select name="squirrelflag_dataformat" id="squirrelflag_dataformat" class="ui dropdown">
+													<option value="anon">Anonymize DICOM
+													<option value="anonfull">Anonymize-Full DICOM
 													<option value="nifti4dgz">Nifti4D.gz
 													<option value="nifti4d">Nifti4D
 													<option value="nifti3dgz">Nifti3D.gz
@@ -5975,7 +5977,7 @@
 	/* ------- ProcessRequest --------------------- */
 	/* -------------------------------------------- */
 	function ProcessRequest($r, $username) {
-		//PrintVariable($r);
+		PrintVariable($r);
 		
 		$ip = getenv('REMOTE_ADDR');
 		$modality = $r['modality'];
@@ -6007,9 +6009,10 @@
 		$bidsflagusestudyid = mysqli_real_escape_string($GLOBALS['linki'], $r['bidsflag_usestudyid']);
 		//$squirrelformat = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrel_dataformat']);
 		//$squirrelflag_anonymize = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_anonymize']);
-		$squirrelflag_incsubject = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_incsubject']);
-		$squirrelflag_incstudy = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_incstudy']);
-		$squirrelflag_incseries = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_incseries']);
+		$squirrelflagdataformat = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_dataformat']);
+		$squirrelflagincsubject = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_incsubject']);
+		$squirrelflagincstudy = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_incstudy']);
+		$squirrelflagincseries = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_incseries']);
 		$squirreltitle = mysqli_real_escape_string($GLOBALS['linki'], $r['squirreltitle']);
 		$squirreldesc = mysqli_real_escape_string($GLOBALS['linki'], $r['squirreldesc']);
 		if ($r['preserveseries'] == '') { $preserveseries = 0; } else { $preserveseries = $r['preserveseries']; }
@@ -6135,19 +6138,19 @@
 		else
 			$bidsflagstr = "null";
 
-		$squirrelflagdataformat = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_dataformat']);
-		$squirrelflagincsubject = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_incsubject']);
-		$squirrelflagincstudy = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_incstudy']);
-		$squirrelflagincseries = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_incseries']);
+		//$squirrelflagdataformat = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_dataformat']);
+		//$squirrelflagincsubject = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_incsubject']);
+		//$squirrelflagincstudy = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_incstudy']);
+		//$squirrelflagincseries = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_incseries']);
 
 		$squirrelflags = array();
-		if ($squirrelflagdataformat == "anonymize") $squirrelflags[] = "SQUIRREL_FORMAT_ANAONYMIZE";
-		if ($squirrelflagdataformat == "anonymizefull") $squirrelflags[] = "SQUIRREL_FORMAT_ANAONYMIZEFULL";
+		if ($squirrelflagdataformat == "anon") $squirrelflags[] = "SQUIRREL_FORMAT_ANONYMIZE";
+		if ($squirrelflagdataformat == "anonfull") $squirrelflags[] = "SQUIRREL_FORMAT_ANONYMIZEFULL";
 		if ($squirrelflagdataformat == "nifti4d") $squirrelflags[] = "SQUIRREL_FORMAT_NIFT4D";
 		if ($squirrelflagdataformat == "nifti4dgz") $squirrelflags[] = "SQUIRREL_FORMAT_NIFTI4DGZ";
 		if ($squirrelflagdataformat == "nifti3d") $squirrelflags[] = "SQUIRREL_FORMAT_NIFTI3D";
 		if ($squirrelflagdataformat == "nifti3dgz") $squirrelflags[] = "SQUIRREL_FORMAT_NIFTI3DGZ";
-		if ($squirrelflaganonymize) $squirrelflags[] = "SQUIRREL_ANONYMIZE";
+		if ($squirrelflagincsubject) $squirrelflags[] = "SQUIRREL_INCSUBJECTNUM";
 		if ($squirrelflagincstudy) $squirrelflags[] = "SQUIRREL_INCSTUDYNUM";
 		if ($squirrelflagincseries) $squirrelflags[] = "SQUIRREL_INCSERIESNUM";
 		if (count($squirrelflags) > 0)
@@ -6159,7 +6162,7 @@
 		$squirreldesc = mysqli_real_escape_string($GLOBALS['linki'], $r['squirreldesc']);
 
 		$sqlstring = "insert into exports (username, ip, download_imaging, download_beh, download_qc, download_flags, destinationtype, filetype, do_gzip, do_preserveseries, anonymization_level, dirformat, beh_format, beh_dirrootname, beh_dirseriesname, nfsdir, remoteftp_username, remoteftp_password, remoteftp_server, remoteftp_port, remoteftp_path, remoteftp_log, remotenidb_connectionid, publicdownloadid, bidsreadme, bids_flags, squirrel_flags, squirrel_title, squirrel_desc, submitdate, status) values ('$username', '$ip', $downloadimaging, $downloadbeh, $downloadqc, $downloadflagstr, '$destinationtype', '$filetype', $gzip, $preserveseries, $anonymize, '$dirformat', '$behformat', '$behdirnameroot','$behdirnameseries', '$nfsdir', '$remoteftpusername', '$remoteftppassword', '$remoteftpserver', $remoteftpport, '$remoteftppath', '$remoteftplog', $remoteconnid, $publicDownloadRowID, '$bidsreadme', $bidsflagstr, $squirrelflagstr, '$squirreltitle', '$squirreldesc', now(), 'submitted')";
-		//PrintSQL($sqlstring);
+		PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$exportRowID = mysqli_insert_id($GLOBALS['linki']);
 		
