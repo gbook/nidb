@@ -232,7 +232,7 @@ bool squirrel::write(QString outpath, QString &m, bool debug) {
                     QString origSeriesPath = f.absoluteDir().absolutePath();
                     squirrelImageIO io;
                     QString m3;
-                    io.ConvertDicom(dataFormat, origSeriesPath, workingDir, QDir::currentPath(), gzip, "", "", "", "dicom", numConv, numRename, m3);
+                    io.ConvertDicom(dataFormat, origSeriesPath, seriesPath, QDir::currentPath(), gzip, "", "", "", "dicom", numConv, numRename, m3);
                     msgs << QString("ConvertDicom() returned [%1]").arg(m3);
                 }
                 else

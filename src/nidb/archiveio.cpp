@@ -2508,6 +2508,45 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                         QString m;
                         QString bindir = QString("%1/bin").arg(n->cfg["nidbdir"]);
                         img->GetImageFileTags(sqrlSeries.stagedFiles[0], bindir, true, tags, m);
+                        /* anonymize the PHI tags */
+                        tags.remove("AcquisitionDate");
+                        tags.remove("AcquisitionTime");
+                        tags.remove("CommentsOnThePerformedProcedureSte");
+                        tags.remove("ContentDate");
+                        tags.remove("ContentTime");
+                        tags.remove("Filename");
+                        tags.remove("FrameOfReferenceUID");
+                        tags.remove("InstanceCreationDate");
+                        tags.remove("InstanceCreationTime");
+                        tags.remove("InstitutionAddress");
+                        tags.remove("InstitutionName");
+                        tags.remove("InstitutionalDepartmentName");
+                        tags.remove("OperatorsName");
+                        tags.remove("ParentDirectory");
+                        tags.remove("PatientAge");
+                        tags.remove("PatientBirthDate");
+                        tags.remove("PatientID");
+                        tags.remove("PatientName");
+                        tags.remove("PatientSex");
+                        tags.remove("PatientSize");
+                        tags.remove("PatientWeight");
+                        tags.remove("PerformedProcedureStepStartDate");
+                        tags.remove("PerformedProcedureStepStartTime");
+                        tags.remove("PerformingPhysicianName");
+                        tags.remove("RequestedProcedureDescription");
+                        tags.remove("RequestingPhysician");
+                        tags.remove("SeriesDate");
+                        tags.remove("SeriesDateTime");
+                        tags.remove("SeriesInstanceUID");
+                        tags.remove("SeriesTime");
+                        tags.remove("StationName");
+                        tags.remove("StudyDate");
+                        tags.remove("StudyDateTime");
+                        tags.remove("StudyInstanceUID");
+                        tags.remove("StudyTime");
+                        tags.remove("TimeOfAcquisition");
+                        tags.remove("UniqueSeriesString");
+
                         sqrlSeries.params = tags;
                     }
                     else {
