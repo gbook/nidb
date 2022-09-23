@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Sep 16, 2022 at 06:19 PM
+-- Generation Time: Sep 23, 2022 at 08:13 PM
 -- Server version: 10.3.28-MariaDB
 -- PHP Version: 7.2.24
 
@@ -2458,10 +2458,45 @@ CREATE TABLE `pr_series` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `public_datasets`
+--
+
+CREATE TABLE `public_datasets` (
+  `publicdataset_id` bigint(20) NOT NULL,
+  `publicdataset_name` varchar(255) DEFAULT NULL,
+  `publicdataset_startdate` datetime DEFAULT NULL,
+  `publicdataset_enddate` datetime DEFAULT NULL,
+  `publicdataset_flags` enum('REQUIRES_REGISTRATION','REQUIRES_APPROVAL','') DEFAULT NULL,
+  `publicdataset_createdate` datetime NOT NULL DEFAULT current_timestamp(),
+  `publicdataset_createdby` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `public_downloads`
 --
 
 CREATE TABLE `public_downloads` (
+  `publicdownload_id` bigint(20) NOT NULL,
+  `dataset_id` bigint(20) DEFAULT NULL,
+  `download_name` varchar(255) DEFAULT NULL,
+  `download_desc` text DEFAULT NULL,
+  `download_zipsize` bigint(20) NOT NULL DEFAULT 0 COMMENT 'size in bytes',
+  `download_unzipsize` bigint(20) NOT NULL DEFAULT 0 COMMENT 'size in bytes',
+  `download_numfiles` bigint(20) NOT NULL DEFAULT 0,
+  `download_filelist` text DEFAULT NULL,
+  `download_packageformat` varchar(255) DEFAULT NULL,
+  `download_imageformat` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `public_downloads2`
+--
+
+CREATE TABLE `public_downloads2` (
   `pd_id` int(11) NOT NULL,
   `pd_createdate` datetime DEFAULT NULL,
   `pd_expiredate` datetime DEFAULT NULL,
@@ -4238,9 +4273,21 @@ ALTER TABLE `pr_series`
   ADD KEY `ishidden` (`ishidden`);
 
 --
+-- Indexes for table `public_datasets`
+--
+ALTER TABLE `public_datasets`
+  ADD PRIMARY KEY (`publicdataset_id`);
+
+--
 -- Indexes for table `public_downloads`
 --
 ALTER TABLE `public_downloads`
+  ADD PRIMARY KEY (`publicdownload_id`);
+
+--
+-- Indexes for table `public_downloads2`
+--
+ALTER TABLE `public_downloads2`
   ADD PRIMARY KEY (`pd_id`);
 
 --
@@ -4296,8 +4343,7 @@ ALTER TABLE `redcap_import_fields`
 -- Indexes for table `redcap_import_mapping`
 --
 ALTER TABLE `redcap_import_mapping`
-  ADD PRIMARY KEY (`formmap_id`),
-  ADD UNIQUE KEY `project_id` (`project_id`,`redcap_event`,`redcap_form`,`redcap_fields`(255)) USING BTREE;
+  ADD PRIMARY KEY (`formmap_id`);
 
 --
 -- Indexes for table `remote_connections`
@@ -5247,9 +5293,21 @@ ALTER TABLE `pr_series`
   MODIFY `prseries_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `public_datasets`
+--
+ALTER TABLE `public_datasets`
+  MODIFY `publicdataset_id` bigint(20) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `public_downloads`
 --
 ALTER TABLE `public_downloads`
+  MODIFY `publicdownload_id` bigint(20) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `public_downloads2`
+--
+ALTER TABLE `public_downloads2`
   MODIFY `pd_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
