@@ -3583,10 +3583,22 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 							<td>Directory within the webdir that will link to the physical download directory. Sometimes the downloads can be HUGE, and the default <code>/var/www/html</code> directory may be on a small partition. This directory should point to the real [downloaddir] on a filesystem with enough space to store the large downloads.</td>
 						</tr>
 						<tr>
+							<td class="right aligned tt">publicwebdir</td>
+							<td><input type="text" name="publicwebdir" value="<?=$GLOBALS['cfg']['publicwebdir']?>"></td>
+							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['publicwebdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
+							<td>Directory within the [webdir] that will link to the physical public download directory. Sometimes the downloads can be HUGE, and the default <code>/var/www/html</code> directory may be on a small partition. This directory should be a link pointing to the real [downloaddir] on a filesystem with enough space to store the large downloads.</td>
+						</tr>
+						<tr>
 							<td class="right aligned tt">downloaddir</td>
 							<td><input type="text" name="downloaddir" value="<?=$GLOBALS['cfg']['downloaddir']?>"></td>
 							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['downloaddir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Directory which stores downloads available from the website</td>
+						</tr>
+						<tr>
+							<td class="right aligned tt">publicdownloaddir</td>
+							<td><input type="text" name="publicdownloaddir" value="<?=$GLOBALS['cfg']['publicdownloaddir']?>"></td>
+							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['publicdownloaddir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
+							<td>Directory which stores public downloads. This directory is not automatically cleaned by cron. Downloads in this directory are expected to be available permanently.</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">uploaddir</td>
@@ -3744,24 +3756,26 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		
 		if ($analysisdir == "") { $analysisdir = "/nidb/data/pipeline"; }
 		if ($analysisdirb == "") { $analysisdirb = "/nidb/data/pipelineb"; }
-		if ($clusteranalysisdir == "") { $clusteranalysisdir = "/nidb/data/pipeline"; }
-		if ($clusteranalysisdirb == "") { $clusteranalysisdirb = "/nidb/data/pipelineb"; }
-		if ($groupanalysisdir == "") { $groupanalysisdir = "/nidb/data/pipelinegroup"; }
 		if ($archivedir == "") { $archivedir = "/nidb/data/archive"; }
 		if ($backupdir == "") { $backupdir = "/nidb/data/backup"; }
+		if ($clusteranalysisdir == "") { $clusteranalysisdir = "/nidb/data/pipeline"; }
+		if ($clusteranalysisdirb == "") { $clusteranalysisdirb = "/nidb/data/pipelineb"; }
 		if ($deleteddir == "") { $deleteddir = "/nidb/data/deleted"; }
 		if ($downloaddir == "") { $downloaddir = "/nidb/data/download"; }
 		if ($ftpdir == "") { $ftpdir = "/nidb/data/ftp"; }
+		if ($groupanalysisdir == "") { $groupanalysisdir = "/nidb/data/pipelinegroup"; }
 		if ($importdir == "") { $importdir = "/nidb/data/import"; }
-		if ($incomingdir == "") { $incomingdir = "/nidb/data/dicomincoming"; }
 		if ($incoming2dir == "") { $incoming2dir = "/nidb/data/dicomincoming2"; }
+		if ($incomingdir == "") { $incomingdir = "/nidb/data/dicomincoming"; }
 		if ($lockdir == "") { $lockdir = "/nidb/lock"; }
 		if ($logdir == "") { $logdir = "/nidb/logs"; }
 		if ($mountdir == "") { $mountdir = "/mount"; }
-		if ($packageimportdir == "") { $packageimportdir = "/nidb/data/packageimport"; }
-		if ($qcmoduledir == "") { $qcmoduledir = "/nidb/qcmodules"; }
-		if ($problemdir == "") { $problemdir = "/nidb/data/problem"; }
 		if ($nidbdir == "") { $nidbdir = "/nidb"; }
+		if ($packageimportdir == "") { $packageimportdir = "/nidb/data/packageimport"; }
+		if ($problemdir == "") { $problemdir = "/nidb/data/problem"; }
+		if ($publicdownloaddir == "") { $publicdownloaddir = "/nidb/data/publicdownload"; }
+		if ($publicwebdir == "") { $publicwebdir = "/var/www/html/pub"; }
+		if ($qcmoduledir == "") { $qcmoduledir = "/nidb/qcmodules"; }
 		if ($tmpdir == "") { $tmpdir = "/nidb/data/tmp"; }
 		if ($uploaddir == "") { $uploaddir = "/nidb/data/upload"; }
 		if ($uploadeddir == "") { $uploadeddir = "/nidb/data/uploaded"; }
@@ -3913,15 +3927,17 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 [ftpdir] = $ftpdir
 [groupanalysisdir] = $groupanalysisdir
 [importdir] = $importdir
-[incomingdir] = $incomingdir
 [incoming2dir] = $incoming2dir
+[incomingdir] = $incomingdir
 [lockdir] = $lockdir
 [logdir] = $logdir
 [mountdir] = $mountdir
 [nidbdir] = $nidbdir
 [packageimportdir] = $packageimportdir
-[qcmoduledir] = $qcmoduledir
 [problemdir] = $problemdir
+[publicwebdir] = $publicwebdir
+[publicdownloaddir] = $publicdownloaddir
+[qcmoduledir] = $qcmoduledir
 [tmpdir] = $tmpdir
 [uploaddir] = $uploaddir
 [uploadeddir] = $uploadeddir
