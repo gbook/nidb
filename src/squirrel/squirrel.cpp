@@ -139,7 +139,7 @@ bool squirrel::write(QString outpath, QString &m, bool debug) {
         if (subjectDirFormat == "orig")
             subjDir = sub.ID;
         else
-            subjDir = QString("%1").arg(i);
+            subjDir = QString("%1").arg(i+1); /* start the numbering at 1 instead of 0 */
 
         subjDir.replace(QRegularExpression("[^a-zA-Z0-9 _-]", QRegularExpression::CaseInsensitiveOption), "");
         QString vPath = QString("data/%1").arg(subjDir);
@@ -154,7 +154,7 @@ bool squirrel::write(QString outpath, QString &m, bool debug) {
             if (studyDirFormat == "orig")
                 studyDir = QString("%1").arg(stud.number);
             else
-                studyDir = QString("%1").arg(j);
+                studyDir = QString("%1").arg(j+1); /* start the numbering at 1 instead of 0 */
 
             studyDir.replace(QRegularExpression("[^a-zA-Z0-9 _-]", QRegularExpression::CaseInsensitiveOption), "");
             QString vPath = QString("data/%1/%2").arg(subjDir).arg(studyDir);
@@ -169,7 +169,7 @@ bool squirrel::write(QString outpath, QString &m, bool debug) {
                 if (seriesDirFormat == "orig")
                     seriesDir = QString("%1").arg(ser.number);
                 else
-                    seriesDir = QString("%1").arg(k);
+                    seriesDir = QString("%1").arg(k+1); /* start the numbering at 1 instead of 0 */
 
                 seriesDir.replace(QRegularExpression("[^a-zA-Z0-9 _-]", QRegularExpression::CaseInsensitiveOption), "");
                 QString vPath = QString("data/%1/%2/%3").arg(subjDir).arg(studyDir).arg(seriesDir);
@@ -220,7 +220,7 @@ bool squirrel::write(QString outpath, QString &m, bool debug) {
                 else if (dataFormat.contains("nifti")) {
                     msgs << QString("Squirrel: dataformat nifti [%1]").arg(dataFormat);
                     int numConv(0), numRename(0);
-                    QString format = dataFormat.left(5);
+                    //QString format = dataFormat.left(5);
                     bool gzip;
                     if (dataFormat.contains("gz"))
                         gzip = true;
@@ -232,7 +232,7 @@ bool squirrel::write(QString outpath, QString &m, bool debug) {
                     QString origSeriesPath = f.absoluteDir().absolutePath();
                     squirrelImageIO io;
                     QString m3;
-                    io.ConvertDicom(dataFormat, origSeriesPath, seriesPath, QDir::currentPath(), gzip, "", "", "", "dicom", numConv, numRename, m3);
+                    io.ConvertDicom(dataFormat, origSeriesPath, seriesPath, QDir::currentPath(), gzip, subjDir, studyDir, seriesDir, "dicom", numConv, numRename, m3);
                     msgs << QString("ConvertDicom() returned [%1]").arg(m3);
                 }
                 else

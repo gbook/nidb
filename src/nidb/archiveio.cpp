@@ -2508,7 +2508,8 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                         QString m;
                         QString bindir = QString("%1/bin").arg(n->cfg["nidbdir"]);
                         img->GetImageFileTags(sqrlSeries.stagedFiles[0], bindir, true, tags, m);
-                        /* anonymize the PHI tags */
+
+                        /* remove tags that might contain PHI */
                         tags.remove("AcquisitionDate");
                         tags.remove("AcquisitionTime");
                         tags.remove("CommentsOnThePerformedProcedureSte");

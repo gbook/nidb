@@ -1,10 +1,10 @@
 -- phpMyAdmin SQL Dump
--- version 5.1.2
+-- version 5.2.0
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Sep 23, 2022 at 08:13 PM
--- Server version: 10.3.28-MariaDB
+-- Generation Time: Sep 28, 2022 at 04:43 PM
+-- Server version: 10.3.32-MariaDB
 -- PHP Version: 7.2.24
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -2464,9 +2464,10 @@ CREATE TABLE `pr_series` (
 CREATE TABLE `public_datasets` (
   `publicdataset_id` bigint(20) NOT NULL,
   `publicdataset_name` varchar(255) DEFAULT NULL,
+  `publicdataset_desc` text DEFAULT NULL,
   `publicdataset_startdate` datetime DEFAULT NULL,
   `publicdataset_enddate` datetime DEFAULT NULL,
-  `publicdataset_flags` enum('REQUIRES_REGISTRATION','REQUIRES_APPROVAL','') DEFAULT NULL,
+  `publicdataset_flags` set('REQUIRES_REGISTRATION','REQUIRES_APPROVAL','') DEFAULT NULL,
   `publicdataset_createdate` datetime NOT NULL DEFAULT current_timestamp(),
   `publicdataset_createdby` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -2478,6 +2479,24 @@ CREATE TABLE `public_datasets` (
 --
 
 CREATE TABLE `public_downloads` (
+  `pd_id` int(11) NOT NULL,
+  `pd_createdate` datetime DEFAULT NULL,
+  `pd_expiredate` datetime DEFAULT NULL,
+  `pd_expiredays` int(11) DEFAULT NULL,
+  `pd_createdby` varchar(50) NOT NULL COMMENT 'userid of the owner',
+  `pd_zippedsize` double DEFAULT 0,
+  `pd_unzippedsize` double DEFAULT 0,
+  `pd_filename` varchar(255) DEFAULT NULL,
+  `pd_desc` varchar(255) DEFAULT NULL,
+  `pd_notes` longtext DEFAULT NULL,
+  `pd_filecontents` longtext DEFAULT NULL,
+  `pd_shareinternal` tinyint(1) DEFAULT NULL,
+  `pd_ispublic` tinyint(1) DEFAULT NULL,
+  `pd_registerrequired` tinyint(1) DEFAULT NULL,
+  `pd_password` varchar(255) DEFAULT NULL,
+  `pd_status` varchar(50) DEFAULT NULL,
+  `pd_key` varchar(255) DEFAULT NULL,
+  `pd_numdownloads` bigint(20) NOT NULL DEFAULT 0,
   `publicdownload_id` bigint(20) NOT NULL,
   `dataset_id` bigint(20) DEFAULT NULL,
   `download_name` varchar(255) DEFAULT NULL,
@@ -2488,7 +2507,7 @@ CREATE TABLE `public_downloads` (
   `download_filelist` text DEFAULT NULL,
   `download_packageformat` varchar(255) DEFAULT NULL,
   `download_imageformat` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -4282,7 +4301,7 @@ ALTER TABLE `public_datasets`
 -- Indexes for table `public_downloads`
 --
 ALTER TABLE `public_downloads`
-  ADD PRIMARY KEY (`publicdownload_id`);
+  ADD PRIMARY KEY (`pd_id`);
 
 --
 -- Indexes for table `public_downloads2`
@@ -4343,7 +4362,8 @@ ALTER TABLE `redcap_import_fields`
 -- Indexes for table `redcap_import_mapping`
 --
 ALTER TABLE `redcap_import_mapping`
-  ADD PRIMARY KEY (`formmap_id`);
+  ADD PRIMARY KEY (`formmap_id`),
+  ADD UNIQUE KEY `project_id` (`project_id`,`redcap_event`,`redcap_form`,`redcap_fields`(255)) USING BTREE;
 
 --
 -- Indexes for table `remote_connections`
@@ -5302,7 +5322,7 @@ ALTER TABLE `public_datasets`
 -- AUTO_INCREMENT for table `public_downloads`
 --
 ALTER TABLE `public_downloads`
-  MODIFY `publicdownload_id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `pd_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `public_downloads2`
