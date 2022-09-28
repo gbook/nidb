@@ -146,6 +146,8 @@
 	/* ------- DisplayDatasetForm ----------------- */
 	/* -------------------------------------------- */
 	function DisplayDatasetForm($id) {
+
+		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 		
 		$formtitle = "Create New Dataset";
 		$formaction = "add";
@@ -154,6 +156,8 @@
 		if ($id != "") {
 			$sqlstring = "select * from public_datasets where publicdataset_id = $id";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			
 			$name = $row['publicdataset_name'];
 			$desc = $row['publicdataset_desc'];
 			$startdate = $row['publicdataset_startdate'];
@@ -161,6 +165,9 @@
 			$flags = explode(",", $row['publicdataset_flags']);
 			$createdate = $row['publicdataset_createdate'];
 			$createdby = $row['publicdataset_createdby'];
+
+			if (in_array("REQUIRES_REGISTRATION", $flags)) { $requiresregistration = "checked"; }
+			if (in_array("REQUIRES_APPROVAL", $flags)) { $requiresapproval = "checked"; }
 			
 			$formtitle = "Editing $name";
 			$formaction = "edit";
@@ -188,19 +195,19 @@
 			<div class="field">
 				<label>Description</label>
 				<div class="field">
-					<input type="text" name="desc" value="<?=$desc?>">
+					<textarea name="desc"><?=$desc?>"</textarea>
 				</div>
 			</div>
 
 			<div class="two fields">
 				<div class="field">
-					<label>Start date</label>
+					<label>Start date <span class="tiny">(Date dataset is available)</span></label>
 					<div class="field">
 						<input type="text" name="startdate" value="<?=$startdate?>">
 					</div>
 				</div>
 				<div class="field">
-					<label>End date</label>
+					<label>End date <span class="tiny">(Date the dataset will become unavailable)</span></label>
 					<div class="field">
 						<input type="text" name="enddate" value="<?=$enddate?>">
 					</div>
@@ -211,14 +218,14 @@
 				<label>Options</label>
 				<div class="field">
 					<div class="ui checkbox">
-						<input type="checkbox" name="flag_registration" value="1" <?=$requireregistration?>>
+						<input type="checkbox" name="flag_registration" value="1" <?=$requiresregistration?>>
 						<label>Require registration</label>
 					</div>
 				</div>
 				<div class="field">
 					<div class="ui checkbox">
-						<input type="checkbox" name="flag_application" value="1" <?=$requireapplication?>>
-						<label>Require application</label>
+						<input type="checkbox" name="flag_application" value="1" <?=$requiresapproval?>>
+						<label>Require application & approval</label>
 					</div>
 				</div>
 			</div>
@@ -290,19 +297,26 @@
 				?>
 					<div class="item">
 						<div class="image">
-							<i class="huge box open icon"></i>
+							<i class="huge copy outline icon"></i>
 						</div>
-						<div class="content">
-							<a class="header"><?=$name?></a>
-							<div class="meta">
-								<span class="cinema">Created <?=$createdate?></span>
-							</div>
-							<div class="description">
-								<p><?=$desc?></p>
-							</div>
-							<div class="extra">
-								<? if (in_array("REQUIRES_REGISTRATION", $flags)) { ?><div class="ui label" title="Registration on this NiDB instance is required to download this dataset">Registration required</div><? } ?>
-								<? if (in_array("REQUIRES_APPROVFAL", $flags)) { ?><div class="ui label" title="An application must be submitted and approved to access this dataset">Application required</div><? } ?>
+						<div class="ui content">
+							<div class="ui two column grid">
+								<div class="ui column">
+									<a class="ui header"><?=$name?></a>
+									<div class="meta">
+										<span class="cinema">Created <?=$createdate?></span>
+									</div>
+									<div class="description">
+										<p><?=$desc?></p>
+									</div>
+									<div class="extra">
+										<? if (in_array("REQUIRES_REGISTRATION", $flags)) { ?><div class="ui label" title="Registration on this NiDB instance is required to download this dataset">Registration required</div><? } ?>
+										<? if (in_array("REQUIRES_APPROVFAL", $flags)) { ?><div class="ui label" title="An application must be submitted and approved to access this dataset">Application required</div><? } ?>
+									</div>
+								</div>
+								<div class="right aligned column">
+									<a class="ui button" href="publicdatasets.php?action=form&id=<?=$id?>"><i class="pencil alternate icon"></i> Edit</a>
+								</div>
 							</div>
 						</div>
 					</div>		
@@ -310,67 +324,6 @@
 			}
 		?>
 	</div>
-	
-	<table class="ui small celled selectable grey compact table">
-		<thead>
-			<tr>
-				<th>Description</th>
-				<th>Status</th>
-				<th>Created</th>
-				<th>Expires</th>
-				<th>Release notes</th>
-				<th>Zip size<br><span class="tiny" style="font-weight: normal">bytes</span></th>
-				<th>Unzipped size<br><span class="tiny" style="font-weight: normal">bytes</span></th>
-				<th>Creator</th>
-				<th>Password</th>
-				<th>Download link<br><span class="tiny" style="font-weight: normal">Copy link to use</span></th>
-			</tr>
-		</thead>
-		<tbody>
-			<?
-				$sqlstring = "select * from public_downloads where pd_createdby = '" . $_SESSION['username'] . "' or pd_shareinternal = 1 order by pd_createdate desc";
-				//PrintSQL($sqlstring);
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-					$id = $row['pd_id'];
-					$createdate = $row['pd_createdate'];
-					$expiredate = $row['pd_expiredate'];
-					$expiredays = $row['pd_expiredays'];
-					$createdby = $row['pd_createdby'];
-					$zipsize = $row['pd_zippedsize'];
-					$unzipsize = $row['pd_unzippedsize'];
-					$filename = $row['pd_filename'];
-					$desc = $row['pd_desc'];
-					$notes = $row['pd_notes'];
-					$filecontents = $row['pd_filecontents'];
-					$shareinternal = $row['pd_shareinternal'];
-					$registerrequired = $row['pd_registerrequired'];
-					$password = strtoupper($row['pd_password']);
-					$status = $row['pd_status'];
-					$key = strtoupper($row['pd_key']);
-			?>
-			<tr>
-				<td><?=$desc?></td>
-				<td><?=$status?></td>
-				<td style="font-size:9pt"><?=$createdate?></td>
-				<td style="font-size:9pt"><?=$expiredate?></td>
-				<td><i class="sticky note outline icon" title="<?=$notes?>"></i></td>
-				<td style="font-size:9pt" align="right"><?=HumanReadableFilesize($zipsize)?></td>
-				<td style="font-size:9pt" align="right"><?=HumanReadableFilesize($unzipsize)?></td>
-				<td><?=$createdby?></td>
-				<td style="font-size:8pt"><tt><?=$password?></tt></td>
-				<td>
-					<div class="ui action input">
-						<input type="text" size="80" id="linktext<?=$id?>" value="<?=$GLOBALS['cfg']['siteurl'] . "/pd.php?k=$key"?>">
-						<button class="ui button" onClick="CopyToClipboard('linktext<?=$id?>')" title="Copy only works when HTTPS is enabled :("><i class="copy icon"></i> Copy</button>
-					</div>
-				</td>
-			</tr>
-			<? 
-				}
-			?>
-		</tbody>
-	</table>
 	<?
 	}
 ?>

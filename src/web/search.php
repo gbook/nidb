@@ -135,6 +135,7 @@
 	$requestvars['publicdownloadshareinternal'] = GetVariable("publicdownloadshareinternal");
 	$requestvars['publicdownloadregisterrequired'] = GetVariable("publicdownloadregisterrequired");
 	$requestvars['publicdownloadexpire'] = GetVariable("publicdownloadexpire");
+	$requestvars['publicdatasetid'] = GetVariable("publicdatasetid");
 	$requestvars['dicomtags'] = GetVariable("dicomtags");
 	$requestvars['timepoints'] = GetVariable("timepoints");
 	$requestvars['behformat'] = GetVariable("behformat");
@@ -4390,6 +4391,7 @@
 					$('.bids').hide();
 					$('.squirrel').hide();
 					$('.publicdownload').hide();
+					$('.publicdataset').hide();
 					<? if ($s_resultoutput != 'subject') { ?>
 					$('.export').hide();
 					<? } else { ?>
@@ -4616,6 +4618,14 @@
 						$('.publicdownload').hide();
 					}
 
+					/* public download */
+					if (dest == 'publicdataset') {
+						$('.publicdataset').show("highlight",{},1000);
+					}
+					else {
+						$('.publicdataset').hide();
+					}
+
 					/* check the filetype */
 					var filetype = $("[name='filetype']:checked").val();
 					if (filetype == 'dicom') {
@@ -4748,7 +4758,7 @@
 					<div class="ui horizontal left aligned divider header">Destination</div>
 					<div class="ui grid">
 						<div class="two wide column">&nbsp;</div>
-						<div class="four wide column">
+						<div class="six wide column">
 							<h4 class="ui header">This server</h4>
 							<div class="ui vertically fitted basic segment">
 								<? if ($GLOBALS['cfg']['enablewebexport']) { ?>
@@ -4757,8 +4767,10 @@
 									<label title="Export can be downloaded from this website">Web</label>
 								</div>
 								<br>
-								<? } ?>
-								<? if (($GLOBALS['isadmin']) && ($GLOBALS['cfg']['enablepublicdownloads'])) { ?>
+								<?
+								}
+								if (($GLOBALS['isadmin']) && ($GLOBALS['cfg']['enablepublicdownloads'])) {
+									?>
 								<div class="ui radio checkbox" onChange="CheckDestination()">
 									<input type="radio" name="destination" id="radio_publicdownload" value="publicdownload">
 									<label title="Export can be downloaded by anyone, through the public downloads section">Public Download</label>
@@ -4820,6 +4832,39 @@
 										<br>
 									</div>
 								</div>
+
+								<!-- public dataset -->
+								<div class="ui radio checkbox" onChange="CheckDestination()">
+									<input type="radio" name="destination" id="radio_publicdataset" value="publicdataset">
+									<label title="Export can be downloaded by anyone, through the public downloads section">Add to Public Dataset</label>
+								</div>
+								<br>
+								<div class="ui segment publicdataset">
+									<div class="field">
+										<select name="publicdatasetid">
+											<option value="">Select existing public dataset...
+											<?
+												$username = $_SESSION['username'];
+												$sqlstring  = "select * from public_datasets where publicdataset_createdby = '$username'";
+												$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+												while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+													$id = $row['publicdataset_id'];
+													$name = $row['publicdataset_name'];
+													echo "<option value='$id'>$name";
+												}
+											?>
+										</select>
+									</div>
+									<div class="field">
+										Short name
+										<input type="text" name="publicdownloadname" maxlength="255">
+										<span class="tiny">Max 255 chars</span>
+									</div>
+									<div class="field">
+										Longer description
+										<input type="text" name="publicdownloaddesc">
+									</div>
+								</div>
 							<?
 							}
 							if ($s_resultoutput != 'subject') {
@@ -4851,7 +4896,7 @@
 							</div>
 							
 						</div>
-						<div class="ten wide column">
+						<div class="eight wide column">
 							<h4 class="ui header">Remote server</h4>
 							<div class="ui vertically fitted basic segment">
 								<?
@@ -5992,23 +6037,17 @@
 		$remoteftpport = $r['remoteftpport'];
 		$remoteftppath = $r['remoteftppath'];
 		$remoteconnid = $r['remoteconnid'];
-		//$remotenidbserver = $r['remotenidbserver'];
-		//$remotenidbusername = $r['remotenidbusername'];
-		//$remotenidbpassword = $r['remotenidbpassword'];
-		//$remoteinstanceid = $r['remoteinstanceid'];
-		//$remotesiteid = $r['remotesiteid'];
-		//$remoteprojectid = $r['remoteprojectid'];
 		$publicdownloaddesc = mysqli_real_escape_string($GLOBALS['linki'], $r['publicdownloaddesc']);
 		$publicdownloadreleasenotes = mysqli_real_escape_string($GLOBALS['linki'], $r['publicdownloadreleasenotes']);
 		$publicdownloadpassword = $r['publicdownloadpassword'];
 		$publicdownloadshareinternal = ($r['publicdownloadshareinternal'] == 1) ? 1 : 0;
 		$publicdownloadregisterrequired = ($r['publicdownloadregisterrequired'] == 1) ? 1 : 0;
 		$publicdownloadexpire = $r['publicdownloadexpire'];
+		$publicdownloadname = mysqli_real_escape_string($GLOBALS['linki'], $r['publicdownloadname']);
+		$publicdatasetid = mysqli_real_escape_string($GLOBALS['linki'], $r['publicdatasetid']);
 		$bidsreadme = mysqli_real_escape_string($GLOBALS['linki'], $r['bidsreadme']);
 		$bidsflaguseuid = mysqli_real_escape_string($GLOBALS['linki'], $r['bidsflag_useuid']);
 		$bidsflagusestudyid = mysqli_real_escape_string($GLOBALS['linki'], $r['bidsflag_usestudyid']);
-		//$squirrelformat = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrel_dataformat']);
-		//$squirrelflag_anonymize = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_anonymize']);
 		$squirrelflagdataformat = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_dataformat']);
 		$squirrelflagincsubject = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_incsubject']);
 		$squirrelflagincstudy = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_incstudy']);
@@ -6116,6 +6155,15 @@
 			$publicDownloadRowID = mysqli_insert_id($GLOBALS['linki']);
 		}
 		
+		/* if this is a public DATASET download, create the row in the publicdataset_download table, and get the ID */
+		if ($destinationtype == "publicdataset") {
+			$sqlstring = "insert into publicdataset_downloads (dataset_id, download_name, download_desc) values ($publicdatasetid, '$publicdownloadname', '$publicdownloaddesc')";
+			PrintSQL($sqlstring);
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			$publicDatasetDownloadRowID = mysqli_insert_id($GLOBALS['linki']);
+		}
+		
+		/* collect the download flags */
 		$downloadflags = array();
 		if ($downloadimaging) $downloadflags[] = "DOWNLOAD_IMAGING";
 		if ($downloadbeh) $downloadflags[] = "DOWNLOAD_BEH";
@@ -6130,6 +6178,7 @@
 		else
 			$downloadflagstr = "null";
 		
+		/* collect the BIDS flags */
 		$bidsflags = array();
 		if ($bidsflaguseuid) $bidsflags[] = "BIDS_USEUID";
 		if ($bidsflagusestudyid) $bidsflags[] = "BIDS_USESTUDYID";
@@ -6138,11 +6187,7 @@
 		else
 			$bidsflagstr = "null";
 
-		//$squirrelflagdataformat = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_dataformat']);
-		//$squirrelflagincsubject = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_incsubject']);
-		//$squirrelflagincstudy = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_incstudy']);
-		//$squirrelflagincseries = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_incseries']);
-
+		/* collect the squirrel flags */
 		$squirrelflags = array();
 		if ($squirrelflagdataformat == "anon") $squirrelflags[] = "SQUIRREL_FORMAT_ANONYMIZE";
 		if ($squirrelflagdataformat == "anonfull") $squirrelflags[] = "SQUIRREL_FORMAT_ANONYMIZEFULL";

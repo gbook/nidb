@@ -54,6 +54,8 @@
 	$redcapfieldval = GetVariable("redcapfieldval");
 	$redcapfielddate = GetVariable("redcapfielddate");
 	$redcapfieldtime = GetVariable("redcapfieldtime");
+	$redcapfieldrater = GetVariable("redcapfieldrater");
+	$redcapfieldnotes = GetVariable("redcapfieldnotes");
 	$redcapfieldtype = GetVariable("redcapfieldtype");
         $nidbdatatype = GetVariable("nidbdatatype");
         $nidbvariablename = GetVariable("nidbvariablename");
@@ -71,7 +73,7 @@
 			DisplayRedCapSettings($projectid,$inst,$nidbdatatype);
 			break;
 		case 'updatemapping':
-                       UpdateMapping($projectid, $redcapevent, $inst, $redcapfieldval, $redcapfielddate, $redcapfieldtime, $redcapfieldtype, $nidbdatatype, $nidbvariablename, $nidbinstrumentname);
+                       UpdateMapping($projectid, $redcapevent, $inst, $redcapfieldval, $redcapfielddate, $redcapfieldrater, $redcapfieldnotes, $redcapfieldtime, $redcapfieldtype, $nidbdatatype, $nidbvariablename, $nidbinstrumentname);
                        projectinfo($projectid);
                        DisplayRedCapSettings($projectid,$inst,$nidbdatatype);
 			break;
@@ -94,11 +96,13 @@
         /* -------------------------------------------- */
         /* ------- UpdateMapping ---------------------- */
         /* -------------------------------------------- */
-        function UpdateMapping($projectid, $redcapevent, $redcapform, $redcapfieldval, $redcapfielddate, $redcapfieldtime, $redcapfieldtype, $nidbdatatype, $nidbvariablename, $nidbinstrumentname) {
+        function UpdateMapping($projectid, $redcapevent, $redcapform, $redcapfieldval, $redcapfielddate, $redcapfieldrater, $redcapfieldnotes, $redcapfieldtime, $redcapfieldtype, $nidbdatatype, $nidbvariablename, $nidbinstrumentname) {
                 $redcapevent = mysqli_real_escape_string($GLOBALS['linki'], $redcapevent);
                 $redcapform = mysqli_real_escape_string($GLOBALS['linki'], $redcapform);
 		$redcapfielval = mysqli_real_escape_string($GLOBALS['linki'], $redcapfieldval);
 		$redcapfielddate = mysqli_real_escape_string($GLOBALS['linki'], $redcapfielddate);
+		$redcapfieldrater = mysqli_real_escape_string($GLOBALS['linki'], $redcapfieldrater);
+		$redcapfieldnotes = mysqli_real_escape_string($GLOBALS['linki'], $redcapfieldnotes);
 		$redcapfieldtime = mysqli_real_escape_string($GLOBALS['linki'], $redcapfieldtime);
 		$redcapfieldtype = mysqli_real_escape_string($GLOBALS['linki'], $redcapfieldtype);
                 $nidbdatatype = mysqli_real_escape_string($GLOBALS['linki'], $nidbdatatype);
@@ -126,6 +130,14 @@
 			 if (! empty($redcapfielddate)) {
 				$sqlstring = "insert ignore into redcap_import_mapping (project_id, redcap_event, redcap_form, redcap_fields, redcap_fieldtype, redcap_fieldgroupid, nidb_datatype, nidb_variablename, nidb_instrumentname) values($projectid, '$Event', '$redcapform', '$redcapfielddate', 'date' ,'$maxgid', '$nidbdatatype', '$nidbvariablename', '$nidbinstrumentname')";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);}
+
+			 if (! empty($redcapfieldrater)) {
+                                $sqlstring = "insert ignore into redcap_import_mapping (project_id, redcap_event, redcap_form, redcap_fields, redcap_fieldtype, redcap_fieldgroupid, nidb_datatype, nidb_variablename, nidb_instrumentname) values($projectid, '$Event', '$redcapform', '$redcapfieldrater', 'rater' ,'$maxgid', '$nidbdatatype', '$nidbvariablename', '$nidbinstrumentname')";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);}
+
+			 if (! empty($redcapfieldnotes)) {
+                                $sqlstring = "insert ignore into redcap_import_mapping (project_id, redcap_event, redcap_form, redcap_fields, redcap_fieldtype, redcap_fieldgroupid, nidb_datatype, nidb_variablename, nidb_instrumentname) values($projectid, '$Event', '$redcapform', '$redcapfieldnotes', 'notes' ,'$maxgid', '$nidbdatatype', '$nidbvariablename', '$nidbinstrumentname')";
+                                $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);}
 
 			if (! empty($redcapfieldtime)) {
 				$sqlstring = "insert ignore into redcap_import_mapping (project_id, redcap_event, redcap_form, redcap_fields, redcap_fieldtype, redcap_fieldgroupid, nidb_datatype, nidb_variablename, nidb_instrumentname) values($projectid, '$Event', '$redcapform', '$redcapfieldtime', 'time' ,'$maxgid', '$nidbdatatype', '$nidbvariablename', '$nidbinstrumentname')";
@@ -236,7 +248,7 @@
                           <div class="default text">NiDB Type</div>
 			  <div class="menu">
                                 <div class="item" data-value="m" selected>Measures (Forms containing various cognitive measures)</div>
-                                <div class="item" data-value="v"> Repeated Measures / Vitals (Like:BP,HR, ...)</div>
+                                <div class="item" data-value="v"> Vitals (Like:BP,HR, ...)</div>
                                 <div class="item" data-value="d">Drug/dose (Dose Time and date information)</div>
                           </div>
 		</div>
@@ -293,7 +305,7 @@
                 <table class="ui graydisplaytable">
                         <thead>
                                 <tr>
-                                        <th style="text-align: center; border-right: 1px solid #bdbdbd" colspan="6">RedCap</th>
+                                        <th style="text-align: center; border-right: 1px solid #bdbdbd" colspan="7">RedCap</th>
                                         <th rowspan="2" style="text-align: center; vertical-align: middle; font-size: 20pt; border-right: 1px solid #bdbdbd; padding: 0px 30px">&#10132;</th>
                                         <th style="text-align: center" colspan="4">NiDB</th>
                                 </tr>
@@ -302,8 +314,9 @@
                                         <th>Form</th>
 					<th> Value </th>
 					<th> Date </th>
-					<th> Time </th>
-                                        <th style="border-right: 1px solid #bdbdbd">Field Type</th>
+					<th> Rater </th>
+					<th> Notes </th>
+					<th style="border-right: 1px solid #bdbdbd"> Time </th>
                                         <th>Type</th>
                                         <th>Variable</th>
                                         <th>Instrument</th>
@@ -324,7 +337,8 @@
 					<? $V_names=getrcvariables($projectid,$inst,$redcapevent);?>
 
 					<td>
-                                                <select name="redcapfieldval" required  onchange="document.getElementById('nidbvariablename').value=this.options[this.selectedIndex].text;">
+						<select name="redcapfieldval" required  onchange="document.getElementById('nidbvariablename').value=this.options[this.selectedIndex].text;">
+						    <option value=''> </option>
 						   <?for($Fi=0;$Fi < count($V_names); $Fi++){?> 
                                                        <option value=<?=$V_names[$Fi]?>> <?=$V_names[$Fi]?> </option>
 						   
@@ -333,8 +347,8 @@
 					</td>
 
 					 <td>
-						<select name="redcapfielddate" >
-						       <option value=''> </option>
+                                                <select name="redcapfielddate" >
+                                                       <option value=''> </option>
                                                    <?for($Fi=0;$Fi < count($V_names); $Fi++){?>
                                                        <option value=<?=$V_names[$Fi]?>> <?=$V_names[$Fi]?> </option>
 
@@ -342,7 +356,28 @@
                                                 </select>
 					</td>
 
-					 <td>
+					<td>
+                                                <select name="redcapfieldrater" >
+                                                       <option value=''> </option>
+                                                   <?for($Fi=0;$Fi < count($V_names); $Fi++){?>
+                                                       <option value=<?=$V_names[$Fi]?>> <?=$V_names[$Fi]?> </option>
+
+                                                   <?}?>
+                                                </select>
+					</td>
+
+					<td>
+                                                <select name="redcapfieldnotes" >
+                                                       <option value=''> </option>
+                                                   <?for($Fi=0;$Fi < count($V_names); $Fi++){?>
+                                                       <option value=<?=$V_names[$Fi]?>> <?=$V_names[$Fi]?> </option>
+
+                                                   <?}?>
+                                                </select>
+                                        </td>
+
+
+					 <td style="border-right: 1px solid #bdbdbd">
 						<select name="redcapfieldtime">
 						      <option value=''> </option>
                                                    <?for($Fi=0;$Fi < count($V_names); $Fi++){?>
@@ -352,9 +387,6 @@
                                                 </select>
 					</td>
 
-
-					<td style="border-right: 1px solid #bdbdbd"><input type="text" name="redcapfieldtype"></td>
-					
 
 
 					<td style="border-right: 1px solid #bdbdbd"></td>
@@ -390,6 +422,7 @@
                                                         <td><?=$event?></td>
                                                         <td><?=$form?></td>
 							<td> <?=$fields?></td>
+							<td></td>
 							<td></td>
 							<td></td>
                                                         <td style="border-right: 1px solid #bdbdbd"><?=$fieldtype?></td>
@@ -467,7 +500,9 @@
                                 $inst_arr = array('dose_information','dose_day_cover_sheet');
                                 $RC_Record = getrcrecords($projectid,$inst_arr,$redcapevent,'record_id',$jointid);
                                 $inst = 'dose_day_cover_sheet';}
-                        else {  $RC_Record = getrcrecords($projectid,$inst,$redcapevent,'record_id',$jointid);}
+			 else {  $RC_Record = getrcrecords($projectid,$inst,$redcapevent,'record_id',$jointid);}
+
+			if ($inst == 'dose_day_cover_sheet'){$inst='dose_information';}
 
 
 //  CHECK $RC_Record **********************************
@@ -481,137 +516,94 @@
 
 			 while ($rowgrp = mysqli_fetch_array($resultgrp, MYSQLI_ASSOC)) {
 
-				$rcgrp = $rowgrp['grp'];
+				 $rcgrp = $rowgrp['grp'];
+
+
+				 $sqlstringVal = "SELECT redcap_fields,nidb_datatype,redcap_fieldtype FROM redcap_import_mapping WHERE redcap_event = '$redcapevent' and  redcap_form = '$inst' and project_id = '$projectid' and redcap_fieldtype = 'value' and redcap_fieldgroupid = '$rcgrp'";
+                                $resultVal = MySQLiQuery($sqlstringVal, __FILE__, __LINE__);
+                                $rowVal = mysqli_fetch_array($resultVal, MYSQLI_ASSOC);
+				$mvdVal = $rowVal['redcap_fields'];
+				$nidbdatatype = $rowVal['nidb_datatype'];
+				$redcapfieldtype = $rowVal ['redcap_fieldtype'];
+
+				if ($inst == 'dose_information'){$inst='dose_day_cover_sheet';}
 
 				$sqlstringDate = "SELECT redcap_fields FROM redcap_import_mapping WHERE redcap_event = '$redcapevent' and  redcap_form = '$inst' and project_id = '$projectid' and redcap_fieldtype = 'date' and redcap_fieldgroupid = '$rcgrp'";
-		                $resultDate = MySQLiQuery($sqlstringDate, __FILE__, __LINE__);
-                	        $rowDate = mysqli_fetch_array($resultDate, MYSQLI_ASSOC);
-                        	$mvdDate = $rowDate['redcap_fields'];
+				$resultDate = MySQLiQuery($sqlstringDate, __FILE__, __LINE__);
+				if (mysqli_num_rows($resultDate) > 0) {
+	                	        $rowDate = mysqli_fetch_array($resultDate, MYSQLI_ASSOC);
+					$mvdDate = $rowDate['redcap_fields'];}
+				else	{$mvdDate = '';}
 
 
+				 $sqlstringTime = "SELECT redcap_fields FROM redcap_import_mapping WHERE redcap_event = '$redcapevent' and  redcap_form = '$inst' and project_id = '$projectid' and redcap_fieldtype = 'time' and redcap_fieldgroupid = '$rcgrp'";
+				 $resultTime = MySQLiQuery($sqlstringTime, __FILE__, __LINE__);
+                                if (mysqli_num_rows($resultTime) > 0) {
+                                        $rowTime = mysqli_fetch_array($resultTime, MYSQLI_ASSOC);
+					$mvdTime = $rowTime['redcap_fields'];}
+				else	{$mvdTime = '';}
 
-			 }
-			
-			
-			
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Measure / Vital date
-			//
-			$sqlstringDate = "SELECT redcap_fields FROM redcap_import_mapping WHERE redcap_event = '$redcapevent' and  redcap_form = '$inst' and project_id = '$projectid' and redcap_fieldtype = 'date' ";
-                        $resultDate = MySQLiQuery($sqlstringDate, __FILE__, __LINE__);
-			$rowDate = mysqli_fetch_array($resultDate, MYSQLI_ASSOC);
-			$mvdDate = $rowDate['redcap_fields'];			
-//			echo $mvdDate;
+				
+				 // Measure / Vital rater
+	                        $sqlstringRater = "SELECT redcap_fields FROM redcap_import_mapping WHERE redcap_event = '$redcapevent' and  redcap_form = '$inst' and project_id = '$projectid' and redcap_fieldtype = 'rater' ";
+        	                $resultRater = MySQLiQuery($sqlstringRater, __FILE__, __LINE__);
+                	        $rowRater = mysqli_fetch_array($resultRater, MYSQLI_ASSOC);
+                        	$mvdRater = $rowRater['redcap_fields'];
+	//                      echo $mvdRater;
 
-        // Measure / Vital rater
-                        $sqlstringRater = "SELECT redcap_fields FROM redcap_import_mapping WHERE redcap_event = '$redcapevent' and  redcap_form = '$inst' and project_id = '$projectid' and redcap_fieldtype = 'rater' ";
-                        $resultRater = MySQLiQuery($sqlstringRater, __FILE__, __LINE__);
-                        $rowRater = mysqli_fetch_array($resultRater, MYSQLI_ASSOC);
-                        $mvdRater = $rowRater['redcap_fields'];
-//			echo $mvdRater;
+	// Measure / Vital notes
+        	                $sqlstringNotes = "SELECT redcap_fields FROM redcap_import_mapping WHERE redcap_event = '$redcapevent' and  redcap_form = '$inst' and project_id = '$projectid' and redcap_fieldtype = 'notes' ";
+                	        $resultNotes = MySQLiQuery($sqlstringNotes, __FILE__, __LINE__);
+                        	$rowNotes = mysqli_fetch_array($resultNotes, MYSQLI_ASSOC);
+	                        $mvdNotes = $rowNotes['redcap_fields'];
+	//                      echo $mvdNotes;
 
-// Measure / Vital notes
-                        $sqlstringNotes = "SELECT redcap_fields FROM redcap_import_mapping WHERE redcap_event = '$redcapevent' and  redcap_form = '$inst' and project_id = '$projectid' and redcap_fieldtype = 'notes' ";
-                        $resultNotes = MySQLiQuery($sqlstringNotes, __FILE__, __LINE__);
-                        $rowNotes = mysqli_fetch_array($resultNotes, MYSQLI_ASSOC);
-                        $mvdNotes = $rowNotes['redcap_fields'];
-//			echo $mvdNotes;
+			 if ($inst == 'dose_day_cover_sheet'){$inst='dose_information';} 
 
-// Measure / Vital Value
 
-			if ($inst == 'dose_day_cover_sheet'){$inst='dose_information';}
-
-			$sqlstringVal = "SELECT redcap_fields,nidb_datatype,redcap_fieldtype FROM redcap_import_mapping WHERE redcap_event = '$redcapevent' and  redcap_form = '$inst' and project_id = '$projectid' and redcap_fieldtype LIKE  '%value%' ";
-//			PrintSQL($sqlstringVal);
-                	$resultVal = MySQLiQuery($sqlstringVal, __FILE__, __LINE__);
-
-			while ($rowVal = mysqli_fetch_array($resultVal, MYSQLI_ASSOC)) {
-        	              $redcapfields = $rowVal['redcap_fields'];
-			      $nidbdatatype = $rowVal['nidb_datatype'];
-			      $redcapfieldtype = $rowVal ['redcap_fieldtype'];
-                      	
 			switch ($nidbdatatype) {
-                	         case 'm': 
-                        	 	$Flg = 0;
-					foreach ($RC_Record as $block => $info){
-						echo $mvdDate;
-						echo $mvdRater;
-						echo $mvdNotes;
-						echo $subjectid[$Flg];
-						echo $redcapfields;
-						echo $info[$redcapfields];
-						echo "<br>";
-					
-						$instid = MeasureInstr($inst);
-
-						if ($redcapfieldtype=='value'){
-							Addmeasures($subjectid[$Flg],$projectid, $redcapfields, $info[$redcapfields],$inst, $instid, $info[$mvdNotes], $info[$mvdRater], $info[$mvdDate],$info[$mvdDate],'');
-						}
-						
-						$Flg = $Flg +1;
-					
-					}
-
-				 break;	
-				
-				 case 'v': 
-
-				// Getting number of accurances in a day (NEED TO UPDATE HERE)
-					 
-					$sqlstringtime = "SELECT COUNT(DISTINCT(redcap_fieldgroupid)) as Num_times FROM redcap_import_mapping WHERE redcap_event = '$redcapevent' and  redcap_form = '$inst' and project_id = '$projectid' ";
-	                         	$resulttime = MySQLiQuery($sqlstringtime, __FILE__, __LINE__);
-				 	$rowtime = mysqli_fetch_array($resulttime, MYSQLI_ASSOC);
-	                         	$vnum = $rowtime['Num_times'];
-//					echo $vnum;
-				
+				case 'm':
 					$Flg = 0;
-                                        foreach ($RC_Record as $block => $info){
-	
-						for ($tee = 0; $tee <= $vnum; $tee++) {
-							$sqlstringvtime = "SELECT redcap_fields FROM redcap_import_mapping WHERE redcap_event = '$redcapevent' and  redcap_form = '$inst' and project_id = '$projectid' and redcap_fieldtype like 'time%' ";
-				                        $resultvtime = MySQLiQuery($sqlstringvtime, __FILE__, __LINE__);
-				                        $rowvtime = mysqli_fetch_array($resultvtime, MYSQLI_ASSOC);
-				                        $vtime = $rowvtime['redcap_fields'];
-//							echo $info[$vtime];
-//							echo "<br>";
-							
-							if ($redcapfieldtype=='value'){
-							
-								$vitalStdate = $info[$mvdDate].' '.$info[$vtime];
-								echo $vitalStdate;
-								echo $redcapfields;
-								 Addvitals($subjectid[$Flg],$projectid,$redcapfields,$info[$redcapfields],$inst,$info[$mvdNotes], $info[$mvdRater], $info[$mvdDate], $vitalStdate, '');
-								 $Flg = $Flg +1;
-							
-							}
-					
-						}
+					foreach ($RC_Record as $block => $info){
+
+						$Flg = $Flg +1;
+//						echo $mvdDate;	echo $mvdRater;	echo $mvdNotes;	echo $subjectid[$Flg];	echo $mvdVal;	echo $info[$mvdVal];	echo "<br>";
+						$instid = MeasureInstr($inst);
+						Addmeasures($subjectid[$Flg],$projectid, $mvdVal, $info[$mvdVal],$inst, $instid, $info[$mvdNotes], $info[$mvdRater], $info[$mvdDate],$info[$mvdDate],'');
 					}
+				 break;	
+				case 'v': 
+					$Flg = 0;
+					foreach ($RC_Record as $block => $info){
+						$Flg = $Flg +1;
+						$vitalStdate = $info[$mvdDate].' '.$info[$mvdTime];
+						Addvitals($subjectid[$Flg],$projectid,$mvdVal,$info[$mvdVal],$inst,$info[$mvdNotes], $info[$mvdRater], $info[$mvdDate], $vitalStdate, '');
+					}
+				break;
 
-				 break;
-
-				 case 'd': 
+				case 'd': 
 				
-				$inst = 'dose_day_cover_sheet';
-				$sqlstringtime = "SELECT redcap_event,redcap_fields FROM redcap_import_mapping WHERE redcap_event = '$redcapevent' and  redcap_form = '$inst' and project_id = '$projectid' and redcap_fieldtype LIKE  '%time%' ";
+//					$inst = 'dose_day_cover_sheet';
+					$sqlstringtime = "SELECT redcap_event,redcap_fields FROM redcap_import_mapping WHERE redcap_event = '$redcapevent' and  redcap_form LIKE  '%dose%' and project_id = '$projectid' and redcap_fieldtype LIKE  '%time%' ";
                                         $resulttime = MySQLiQuery($sqlstringtime, __FILE__, __LINE__);
                                         $rowtime = mysqli_fetch_array($resulttime, MYSQLI_ASSOC);
                                         $dtime = $rowtime['redcap_fields'];
 					$dosename = $rowtime['redcap_event'];
-					$dosestdate = $info[$mvdDate].' '.$info[$dtime];
-					$doseenddate = $info[$mvdDate].' '.$info[$dtime];
+					$dosestdate = $info[$mvdDate].' '.$info[$mvdTime];
+					$doseenddate = $info[$mvdDate].' '.$info[$mvdTime];
+
+//					echo $mvdDate;
+//					echo $mvdTime;
 					
-				
-				        $Flg = 0;
+					$Flg = 0;
 					foreach ($RC_Record as $block => $info){
 
-						if ($redcapfields == 'dosedelivered') {
+						if ($mvdVal == 'dosedelivered') {
 
-                                        		AddDose($subjectid[$Flg],$projectid,$dosename,$dosestdate,$doseenddate, $info[$redcapfields],$info[$mvdRater],$info[$mvdNotes], $info['dosedayinfo_dosekey'],$info['doseweight']);
+                                        		AddDose($subjectid[$Flg],$projectid,$dosename,$dosestdate,$doseenddate, $info[$mvdVal],$info[$mvdRater],$info[$mvdNotes], $info['dosedayinfo_dosekey'],$info['doseweight']);
 	                                                $Flg = $Flg +1;
-        	                                        echo 'Dose Information Transfered';
+							echo 'Dose Information Transfered';?><br><?
                                                }
-
 
                                         }
 
@@ -619,14 +611,8 @@
 
         	              }
 
-		//	     echo $redcapfields;
-		//	     echo $nidbdatatype;
 			}
-		//	echo var_dump($RC_Record);
-		
-
 		}
-
 	}
 
 	
@@ -668,7 +654,7 @@
                  if ($enrollmentid!=''){
                 $sqlstring = "insert ignore into measures (enrollment_id, measure_dateentered,instrumentname_id, measurename_id, measure_notes,measure_desc,  measure_rater,measure_value,measure_startdate,measure_enddate,measure_entrydate,measure_createdate,measure_modifydate) values ($enrollmentid, now(),$instid,$measurenameid, '$measurenotes','$measuredesc','$measurerater','$measurevalue',NULLIF('$measurestdate',''),NULLIF('$measureenddate',''),now(),now(),now()) on duplicate key update measure_value='$measurevalue', measure_modifydate=now()";
                 $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);}
-                else {echo 'Subject '.$subjectid.' was not found in ADO';}
+                else {echo 'Subject '.$subjectid.' was not found in ADO';?><br><?}
         }
 
 
@@ -699,7 +685,7 @@
                         //echo "$sqlstringA\n";
                         $resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
                         $dosenameid = mysqli_insert_id($GLOBALS['linki']);
-                        echo 'A new drugname added!';
+                        echo 'A new drugname added!';?><br><?
                 }
 
 
@@ -708,7 +694,7 @@
            if ($enrollmentid!=''){
                 $sqlstring = "insert ignore into drugs (enrollment_id, drug_startdate, drug_enddate, drug_doseamount, drugname_id, drug_dosekey, drug_doseunit, drug_rater, drug_notes, drug_entrydate, drug_recordcreatedate, drug_recordmodifydate) values ($enrollmentid, '$dosestdate', '$doseenddate','$dosedelivered','$dosenameid','$dosekey','$doseinhaled','$doserater','$dosenotes',now(),now(),now() ) on duplicate key update drug_doseunit = '$doseinhaled', drug_recordmodifydate = now()";
                 $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);}
-           else { echo 'Subject '.$subjectid.' was not found in ADO';}
+           else { echo 'Subject '.$subjectid.' was not found in ADO';?><br><?}
 
 
         }
@@ -753,7 +739,7 @@
                  if ($enrollmentid!=''){
                 $sqlstring = "insert ignore into vitals (enrollment_id, vital_date,vital_value,vital_notes,vital_desc,vital_rater,vitalname_id,vital_type,vital_startdate,vital_enddate,vital_entrydate,vital_recordcreatedate,vital_recordmodifydate) values ($enrollmentid, '$vitaldate','$vitalvalue','$vitalnotes','$vitaldesc','$vitalrater','$vitalnameid','$Form_name',NULLIF('$vitalStdate',''),NULLIF('$vitalStdate',''),now(),now(),now()) on duplicate key update vital_value='$vitalvalue', vital_recordmodifydate=now()";
                 $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);}
-                else {echo 'Subject '.$subjectid.' was not found in ADO';}
+                else {echo 'Subject '.$subjectid.' was not found in ADO';?><br><?}
         }
 
 
