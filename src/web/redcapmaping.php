@@ -246,7 +246,7 @@
                           <input type="hidden" name="nidbdatatype">
                           <i class="dropdown icon"></i>
                           <div class="default text">NiDB Type</div>
-			  <div class="menu">
+			  <div class="menu" onchange="action.submit()">
                                 <div class="item" data-value="m" selected>Measures (Forms containing various cognitive measures)</div>
                                 <div class="item" data-value="v"> Vitals (Like:BP,HR, ...)</div>
                                 <div class="item" data-value="d">Drug/dose (Dose Time and date information)</div>

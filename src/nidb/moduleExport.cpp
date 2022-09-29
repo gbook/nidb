@@ -85,7 +85,8 @@ int moduleExport::Run() {
             QString remoteftppath = q.value("remoteftp_path").toString().trimmed();
             int remotenidbconnid = q.value("remotenidb_connectionid").toInt();
             int publicdownloadid = q.value("publicdownloadid").toInt();
-            QString bidsreadme = q.value("bidsreadme").toString().trimmed();
+			int publicdatasetid = q.value("publicdatasetid").toInt();
+			QString bidsreadme = q.value("bidsreadme").toString().trimmed();
             QStringList bidsflags = q.value("bids_flags").toString().trimmed().split(",");
             QStringList squirrelflags = q.value("squirrel_flags").toString().trimmed().split(",");
             QString squirreltitle = q.value("squirrel_title").toString().trimmed();
@@ -118,16 +119,19 @@ int moduleExport::Run() {
             QString log;
 
             if (exporttype == "web") {
-                found = ExportLocal(exportid, exporttype, "", 0, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
+				found = ExportLocal(exportid, exporttype, "", 0, 0, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
             }
             else if (exporttype == "publicdownload") {
-                found = ExportLocal(exportid, exporttype, "", publicdownloadid, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
+				found = ExportLocal(exportid, exporttype, "", publicdownloadid, 0, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
             }
-            else if (exporttype == "nfs") {
-                found = ExportLocal(exportid, exporttype, nfsdir, 0, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
+			else if (exporttype == "publicdataset") {
+				found = ExportLocal(exportid, exporttype, "", 0, publicdatasetid, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
+			}
+			else if (exporttype == "nfs") {
+				found = ExportLocal(exportid, exporttype, nfsdir, 0, 0, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
             }
             else if (exporttype == "localftp") {
-                found = ExportLocal(exportid, exporttype, nfsdir, 0, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
+				found = ExportLocal(exportid, exporttype, nfsdir, 0, 0, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
             }
             else if (exporttype == "export") {
                 //found = ExportNiDB(exportid);
@@ -362,10 +366,12 @@ bool moduleExport::GetExportSeriesList(int exportid) {
 /* ---------------------------------------------------------- */
 /* --------- ExportLocal ------------------------------------ */
 /* ---------------------------------------------------------- */
-bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir, int publicdownloadid, QStringList downloadflags, QString filetype, QString dirformat, int preserveseries, bool gzip, int anonlevel, QString behformat, QString behdirrootname, QString behdirseriesname, QString bidsreadme, QStringList bidsflags, QString squirreltitle, QString squirreldesc, QStringList squirrelflags, QString &exportstatus, QString &msg) {
+bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir, int publicdownloadid, int publicdatasetid, QStringList downloadflags, QString filetype, QString dirformat, int preserveseries, bool gzip, int anonlevel, QString behformat, QString behdirrootname, QString behdirseriesname, QString bidsreadme, QStringList bidsflags, QString squirreltitle, QString squirreldesc, QStringList squirrelflags, QString &exportstatus, QString &msg) {
 
     QStringList msgs;
     QString tmpexportdir;
+
+	n->WriteLog("Checkpoint A");
 
     /* check if it's a special type of export first */
     if (filetype == "bids") {
@@ -384,6 +390,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
             msg = "Unable to get a series list";
             return false;
         }
+		n->WriteLog("Checkpoint B");
 
         tmpexportdir = n->cfg["tmpdir"] + "/" + GenerateRandomString(20);
 
@@ -402,6 +409,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                 /* iterate through the seriesnums */
                 for(QMap<int, QMap<QString, QString>>::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
                     int seriesnum = c.key();
+					n->WriteLog("Checkpoint C");
 
                     int exportseriesid = s[uid][studynum][seriesnum]["exportseriesid"].toInt();
                     n->SetExportSeriesStatus(exportseriesid, "processing");
@@ -454,6 +462,8 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                     else
                         subjectdir = QString("%1%2").arg(uid).arg(studynum);
 
+					n->WriteLog("Checkpoint D");
+
                     /* format the series number part of the output path */
                     switch (preserveseries) {
                     case 0:
@@ -484,6 +494,8 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                     else
                         rootoutdir = QString("%1/%2").arg(tmpexportdir).arg(subjectdir);
 
+					n->WriteLog("Checkpoint E");
+
                     /* make the output directory */
                     QDir d;
                     if (d.mkpath(rootoutdir)) {
@@ -504,6 +516,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                         msgs << "Unable to create output directory [" + rootoutdir + "]";
                         statusmessage = "Unable to create rootoutdir [" + rootoutdir + "]";
                     }
+					n->WriteLog("Checkpoint F");
 
                     /* create the behavioral dir output path */
                     QString outdir = QString("%1/%2").arg(rootoutdir).arg(newseriesnum);
@@ -616,6 +629,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                     else {
                         n->WriteLog("Imaging data not selected for download");
                     }
+					n->WriteLog("Checkpoint H");
 
                     /* export the beh data */
                     if (downloadflags.contains("DOWNLOAD_BEH",Qt::CaseInsensitive)) {
@@ -814,8 +828,82 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
         }
         else {
             /* public downloadid not found */
-        }
+			msgs << n->WriteLog("publicdownloadid not found");
+		}
     }
+
+	/* extra steps for publicdownload */
+	if (exporttype == "publicdataset") {
+		n->WriteLog("Working on a public dataset download");
+
+		QSqlQuery q;
+		q.prepare("select * from public_datasets where dataset_id = :publicdatasetid");
+		q.bindValue(":publicdownloadid",publicdownloadid);
+		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+		if (q.size() > 0) {
+			q.first();
+			int expiredays = q.value("pd_expiredays").toInt();
+
+			QString filename = QString("NiDB-%1.zip").arg(exportid);
+			QString zipfile = n->cfg["webdownloaddir"] + "/" + filename;
+			QString outdir = tmpexportdir;
+
+			QString pwd = QDir::currentPath();
+			n->WriteLog("Current directory is [" + pwd + "], changing directory to [" + outdir + "]");
+			QDir d;
+			if (d.exists(outdir)) {
+				QString systemstring;
+				QDir::setCurrent(outdir);
+				if (QFile::exists(zipfile))
+					systemstring = "zip -1grq " + zipfile + " .";
+				else
+					systemstring = "zip -1rq " + zipfile + " .";
+				n->WriteLog(SystemCommand(systemstring, true));
+				//n->WriteLog("Changing directory to [" + pwd + "]");
+				QDir::setCurrent(pwd);
+				systemstring = "unzip -vl " + zipfile;
+				QString filecontents = SystemCommand(systemstring, false);
+				QStringList lines = filecontents.split("\n");
+				QString lastline = lines.last().trimmed();
+				n->WriteLog(QString("Last line of [%1] %2").arg(systemstring).arg(lastline));
+				QStringList parts = lastline.trimmed().split(QRegularExpression("\\s+"), Qt::SkipEmptyParts); /* split on whitespace */
+				qint64 unzippedsize(0);
+				qint64 zippedsize(0);
+				if (parts.size() >= 2) {
+					unzippedsize = parts[0].toLongLong();
+					zippedsize = parts[1].toLongLong();
+				}
+
+				QSqlQuery q2;
+				q2.prepare("update public_downloads set pd_createdate = now(), pd_expiredate = date_add(now(), interval :expiredays day), pd_zippedsize = :zippedsize, pd_unzippedsize = :unzippedsize, pd_filename = :filename, pd_filecontents = :filecontents, pd_key = upper(sha1(now())), pd_status = 'complete' where pd_id = :publicdownloadid");
+				q2.bindValue(":expiredays",expiredays);
+				q2.bindValue(":zippedsize",zippedsize);
+				q2.bindValue(":unzippedsize",unzippedsize);
+				q2.bindValue(":filename",filename);
+				q2.bindValue(":filecontents",filecontents);
+				q2.bindValue(":publicdownloadid",publicdownloadid);
+				n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+			}
+			else {
+				exportstatus = "error";
+				n->WriteLog("ERROR directory [" + outdir + "] does not exist");
+				msgs << "Outdir [" + zipfile + "] does not exist";
+			}
+
+			if (QFile::exists(zipfile)) {
+				msgs << "Created .zip file [" + zipfile + "]";
+			}
+			else {
+				exportstatus = "error";
+				n->WriteLog("ERROR unable to create zip file [" + zipfile + "]");
+				msgs << "Unable to create [" + zipfile + "]";
+			}
+		}
+		else {
+			/* publicdatasetid not found */
+			msgs << n->WriteLog("publicdatasetid not found");
+		}
+	}
 
     n->WriteLog("Leaving ExportLocal()...");
 

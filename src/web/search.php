@@ -6012,7 +6012,7 @@
 		
 		foreach ($seriesids as $seriesid) {
 			$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, modality, anonymize_fields, request_status, username, requestdate) values ('anonymize','series',$seriesid,'$modality','$dicomtags','pending','$username',now())";
-			PrintSQL($sqlstring);
+			//PrintSQL($sqlstring);
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		}
 	}
@@ -6022,7 +6022,7 @@
 	/* ------- ProcessRequest --------------------- */
 	/* -------------------------------------------- */
 	function ProcessRequest($r, $username) {
-		PrintVariable($r);
+		//PrintVariable($r);
 		
 		$ip = getenv('REMOTE_ADDR');
 		$modality = $r['modality'];
@@ -6140,6 +6140,7 @@
 			//$remoteprojectid = ($remoteprojectid == '') ? 'null' : $remoteprojectid;
 			//$remotesiteid = ($remotesiteid == '') ? 'null' : $remotesiteid;
 			$publicDownloadRowID = ($publicDownloadRowID == '') ? 'null' : $publicDownloadRowID;
+			$publicDatasetDownloadRowID = ($publicDatasetDownloadRowID == '') ? 'null' : $publicDatasetDownloadRowID;
 			$behonly = ($behonly == 1) ? 1 : 0;
 			//$downloadbeh = $behonly;
 		}
@@ -6158,7 +6159,7 @@
 		/* if this is a public DATASET download, create the row in the publicdataset_download table, and get the ID */
 		if ($destinationtype == "publicdataset") {
 			$sqlstring = "insert into publicdataset_downloads (dataset_id, download_name, download_desc) values ($publicdatasetid, '$publicdownloadname', '$publicdownloaddesc')";
-			PrintSQL($sqlstring);
+			//PrintSQL($sqlstring);
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			$publicDatasetDownloadRowID = mysqli_insert_id($GLOBALS['linki']);
 		}
@@ -6206,8 +6207,8 @@
 		$squirreltitle = mysqli_real_escape_string($GLOBALS['linki'], $r['squirreltitle']);
 		$squirreldesc = mysqli_real_escape_string($GLOBALS['linki'], $r['squirreldesc']);
 
-		$sqlstring = "insert into exports (username, ip, download_imaging, download_beh, download_qc, download_flags, destinationtype, filetype, do_gzip, do_preserveseries, anonymization_level, dirformat, beh_format, beh_dirrootname, beh_dirseriesname, nfsdir, remoteftp_username, remoteftp_password, remoteftp_server, remoteftp_port, remoteftp_path, remoteftp_log, remotenidb_connectionid, publicdownloadid, bidsreadme, bids_flags, squirrel_flags, squirrel_title, squirrel_desc, submitdate, status) values ('$username', '$ip', $downloadimaging, $downloadbeh, $downloadqc, $downloadflagstr, '$destinationtype', '$filetype', $gzip, $preserveseries, $anonymize, '$dirformat', '$behformat', '$behdirnameroot','$behdirnameseries', '$nfsdir', '$remoteftpusername', '$remoteftppassword', '$remoteftpserver', $remoteftpport, '$remoteftppath', '$remoteftplog', $remoteconnid, $publicDownloadRowID, '$bidsreadme', $bidsflagstr, $squirrelflagstr, '$squirreltitle', '$squirreldesc', now(), 'submitted')";
-		PrintSQL($sqlstring);
+		$sqlstring = "insert into exports (username, ip, download_imaging, download_beh, download_qc, download_flags, destinationtype, filetype, do_gzip, do_preserveseries, anonymization_level, dirformat, beh_format, beh_dirrootname, beh_dirseriesname, nfsdir, remoteftp_username, remoteftp_password, remoteftp_server, remoteftp_port, remoteftp_path, remoteftp_log, remotenidb_connectionid, publicdownloadid, publicdatasetid, bidsreadme, bids_flags, squirrel_flags, squirrel_title, squirrel_desc, submitdate, status) values ('$username', '$ip', $downloadimaging, $downloadbeh, $downloadqc, $downloadflagstr, '$destinationtype', '$filetype', $gzip, $preserveseries, $anonymize, '$dirformat', '$behformat', '$behdirnameroot','$behdirnameseries', '$nfsdir', '$remoteftpusername', '$remoteftppassword', '$remoteftpserver', $remoteftpport, '$remoteftppath', '$remoteftplog', $remoteconnid, $publicDownloadRowID, $publicDatasetDownloadRowID, $publ, '$bidsreadme', $bidsflagstr, $squirrelflagstr, '$squirreltitle', '$squirreldesc', now(), 'submitted')";
+		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$exportRowID = mysqli_insert_id($GLOBALS['linki']);
 		

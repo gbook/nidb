@@ -220,7 +220,7 @@
 					$statusstr = "";
 					break;
 				case "complete": $statusstr = "<i class='large green check icon'></i>Complete"; $iconcolor = "green"; break;
-				case "error": $statusstr = "<i class='large red exclamation circle icon'></i>Complete w/Errors"; $iconcolor = "red"; break;
+				case "error": $statusstr = "<i class='large red exclamation circle icon'></i>Complete"; $iconcolor = "red"; break;
 				case "processing": $statusstr = "<i class='large blue spinner loading icon'></i>Processing"; $iconcolor = "grey"; break;
 				default: $statusstr = $exportstatus; $iconcolor = "";
 			}
@@ -287,16 +287,16 @@
 					<i class="big grey archive icon"></i>
 					<?=$statusstr?> <?=$witherrors?>
 				</div>
-				<div class="content">
-					<div class="header"><?=date("D M j, Y h:ia",strtotime($submitdate))?></div>
-					<div class="meta">
+				<div class="ui content">
+					<div class="ui header"><?=date("D M j, Y h:ia",strtotime($submitdate))?></div>
+					<div class="ui meta">
 						<?=$deststr?> &nbsp; &nbsp; <?=$numseries?> series &nbsp; &nbsp; <?=HumanReadableFilesize($totalbytes)?>
 						<p>Requested by <?=$username?></p>
 						<? if ($numahead > 0) {
 							echo "<p>$numahead exports queued ahead of this export</p>";
 						} ?>
 					</div>
-					<div class="description">
+					<div class="ui description">
 						<? if (($destinationtype == "remotenidb") && ($connectionid != "") && ($transactionid != "")) { ?>
 						<br><iframe src="ajaxapi.php?action=remoteexportstatus&connectionid=<?=$connectionid?>&transactionid=<?=$transactionid?>&detail=0&total=<?=$total?>" width="650px" height="50px" style="border: 0px">Checking with remote server...</iframe>
 						<? }
@@ -430,7 +430,7 @@
 					$statusstr = "";
 					break;
 				case "complete": $statusstr = "<i class='large green check icon'></i>Complete"; $iconcolor = "green"; break;
-				case "error": $statusstr = "<i class='large red exclamation circle icon'></i>Complete w/Errors"; $iconcolor = "red"; break;
+				case "error": $statusstr = "<i class='large red exclamation circle icon'></i>Complete"; $iconcolor = "red"; break;
 				case "processing": $statusstr = "<i class='large blue spinner loading icon'></i>Processing"; $iconcolor = "grey"; break;
 				default: $statusstr = $exportstatus; $iconcolor = "";
 			}
@@ -497,16 +497,16 @@
 					<i class="big grey archive icon"></i>
 					<?=$statusstr?> <?=$witherrors?>
 				</div>
-				<div class="content">
-					<div class="header"><?=date("D M j, Y h:ia",strtotime($submitdate))?></div>
-					<div class="meta">
+				<div class="ui content">
+					<div class="ui header"><?=date("D M j, Y h:ia",strtotime($submitdate))?></div>
+					<div class="ui meta">
 						<?=$deststr?> &nbsp; &nbsp; <?=$numseries?> series &nbsp; &nbsp; <?=HumanReadableFilesize($totalbytes)?>
 						<p>Requested by <?=$username?></p>
 						<? if ($numahead > 0) {
 							echo "<p>$numahead exports queued ahead of this export</p>";
 						} ?>
 					</div>
-					<div class="description">
+					<div class="ui description">
 						<? if (($destinationtype == "remotenidb") && ($connectionid != "") && ($transactionid != "")) { ?>
 						<br><iframe src="ajaxapi.php?action=remoteexportstatus&connectionid=<?=$connectionid?>&transactionid=<?=$transactionid?>&detail=0&total=<?=$total?>" width="650px" height="50px" style="border: 0px">Checking with remote server...</iframe>
 						<? }
