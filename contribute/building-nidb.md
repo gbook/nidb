@@ -40,13 +40,13 @@ yum group install 'Development Tools'
 yum install cmake3 rpmdevtools rpm-build
 ```
 
-### Install Qt 6.3.1
+### Install Qt 6.3.2
 
 1. Download Qt open-source from https://www.qt.io/download-open-source
 2. Make the installer executable `chmod 777 qt-unified-linux-x64-x.x.x-online.run`
 3. Run `./qt-unified-linux-x64-x.x.x-online.run`
 4. The Qt Maintenance Tool will start. An account is required to download Qt open source
-5. On the components screen, select the checkbox for **Qt 6.3.1 → Desktop gcc 64-bit**
+5. On the components screen, select the checkbox for **Qt 6.3.2 → Desktop gcc 64-bit**
 
 ### Building NiDB
 
@@ -142,3 +142,13 @@ You can check which libraries are missing by running `ldd` on the `nidb` executa
 ```
 
 Copy the missing library file(s) to `/lib` as root. Then run `ldconfig` to register any new libraries.
+
+#### Virtual Machine Has No Network
+
+If you are using a virtual machine to build NiDB, there are a couple of weird bugs in VMWare Workstation Player (possibly other VMWare products as well) where the network adapters on a Linux guest simply stop working. You can't activate them, you can't do anything with them, they just are offline and can't be activated. Or it's connected and network connection is present, but your VM is inaccessible from the outside.
+
+Try these two fixes to get the network back:
+
+1\) While the VM is running, suspend the guest OS. Wait for it to suspend and close itself. Then resume the guest OS. No idea why, but this should fix the lack of network adapter in Linux
+
+2\) (This is if you are using bridged networking only) Open the VM settings. Go to network, and click the button to edit the bridged adapters. Uncheck the VM adapter.
