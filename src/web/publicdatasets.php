@@ -41,7 +41,7 @@
 	require "menu.php";
 	require "nidbapi.php";
 	
-	PrintVariable($_POST);
+	//PrintVariable($_POST);
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
@@ -55,11 +55,11 @@
 	
 	/* determine action */
 	switch ($action) {
-		//case 'changepassword':
-		//	ChangePassword($id);
-		//	break;
 		case 'delete':
 			DeleteDataset($id);
+			break;
+		case 'view':
+			ViewDataset($id);
 			break;
 		case 'form':
 			DisplayDatasetForm($id);
@@ -236,6 +236,79 @@
 		</div>
 		<?
 	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ViewDataset ------------------------ */
+	/* -------------------------------------------- */
+	function ViewDataset($id) {
+
+		$publicdatasetid = mysqli_real_escape_string($GLOBALS['linki'], $id);
+		
+		$sqlstring = "select * from public_datasets where publicdataset_id = $id";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		
+		$name = $row['publicdataset_name'];
+		$desc = $row['publicdataset_desc'];
+		$startdate = $row['publicdataset_startdate'];
+		$enddate = $row['publicdataset_enddate'];
+		$flags = explode(",", $row['publicdataset_flags']);
+		$createdate = $row['publicdataset_createdate'];
+		$createdby = $row['publicdataset_createdby'];
+
+		?>
+		<div class="ui text container">
+			<h1 class="ui header">
+				<?=$name?>
+				<div class="sub header">
+				<?=$desc?>
+				</div>
+			</h1>
+			Available <?=$startdate?> to <?=$enddate?>
+			<br>
+			<? if (in_array("REQUIRES_REGISTRATION", $flags)) { ?><div class="ui label" title="Registration on this NiDB instance is required to download this dataset">Registration required</div><? } ?>
+			<? if (in_array("REQUIRES_APPROVFAL", $flags)) { ?><div class="ui label" title="An application must be submitted and approved to access this dataset">Application required</div><? } ?>
+			<br><br>
+		<?
+		
+		$sqlstring = "select * from publicdataset_downloads where dataset_id $publicdataset_id";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$numdownloads = mysqli_num_rows($result);
+		if ($numdownloads > 0) {
+			?>
+			This dataset has <?=$numdownloads?> downloads available
+			<div class="ui accordion"><?
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$downloadname = $row['download_name'];
+				$downloaddesc = $row['download_desc'];
+				$downloadzipsize = $row['download_zipsize'];
+				$downloadunzipsize = $row['download_unzipsize'];
+				$downloadnumfiles = $row['download_numfiles'];
+				$downloadfilelist = $row['download_filelist'];
+				$downloadpackageformat = $row['download_packageformat'];
+				$downloadimageformat = $row['download_imageformat'];
+				$downloadkey = $row['download_key'];
+				$downloadnumdownloads = $row['download_numdownloads'];
+				?>
+					<div class="title">
+						<i class="dropdown icon"></i>
+						<?=$downloadname?>
+					</div>
+					<div class="content">
+						<p><?=$downloaddesc?></p>
+					</div>
+				<?
+			}
+			?></div><?
+		}
+		else {
+			?>No downloads available<?
+		}
+		?>
+		</div>
+		<?
+	}
 	
 
 	/* -------------------------------------------- */
@@ -274,7 +347,9 @@
 				<a class="ui button" href="">Show all datasets</a>
 			</div>
 			<div class="right aligned column">
+				<? if (isAdmin()) { ?>
 				<a class="ui primary button" href="publicdatasets.php?action=form"><i class="plus icon"></i> New Dataset</a>
+				<? } ?>
 			</div>
 		</div>
 		
@@ -315,8 +390,14 @@
 									</div>
 								</div>
 								<div class="right aligned column">
+									<? if (isAdmin()) { ?>
 									<a class="ui button" href="publicdatasets.php?action=form&id=<?=$id?>"><i class="pencil alternate icon"></i> Edit</a>
+									<?} ?>
+									<a class="ui button" href="publicdatasets.php?action=view&id=<?=$id?>"><i class="eye icon"></i> View Dataset</a>
 								</div>
+							</div>
+							<div class="ui fitted segment">
+								Available downloads for this dataset
 							</div>
 						</div>
 					</div>		
