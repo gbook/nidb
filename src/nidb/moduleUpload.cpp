@@ -340,10 +340,14 @@ bool moduleUpload::UpdateParsedUploads(QMap<QString, QMap<QString, QMap<QString,
         }
         else if (upload_subjectcriteria == "namesexdob") {
             /* get subjectid by PatientName/PatientSex/PatientBirthDate */
+			QString PatientName, PatientSex, PatientBirthDate;
             QStringList parts = subject.split("|");
-            QString PatientName = parts[0];
-            QString PatientSex = parts[1];
-            QString PatientBirthDate = parts[2];
+			if (parts.size() > 0)
+				PatientName = parts[0];
+			if (parts.size() > 1)
+				PatientSex = parts[1];
+			if (parts.size() > 2)
+				PatientBirthDate = parts[2];
 
             QSqlQuery q3;
             /* check if the subjectid already exists ... */

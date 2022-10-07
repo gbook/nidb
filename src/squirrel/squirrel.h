@@ -69,7 +69,9 @@ public:
 private:
     void PrintPackage();
     bool MakeTempDir(QString &dir);
+	QString Log(QString m);
     QString workingDir;
+	QString logfile;
     QStringList msgs; /* squirrel messages, to be passed back upon writing (or reading) through the squirrel library */
 
     QList<squirrelSubject> subjectList; /*!< List of subjects within this package */

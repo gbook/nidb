@@ -268,7 +268,8 @@ int modulePipeline::Run() {
 				pipelinedep = p.parentIDs[0];
 
             QString modality;
-            modality = dataSteps[0].modality;
+			if (dataSteps.size() > 0)
+				modality = dataSteps[0].modality;
 
             /* get the list of studies which meet the criteria for being processed through the pipeline */
             QList<int> studyids = GetStudyToDoList(pipelineid, modality, pipelinedep, JoinIntArray(p.groupIDs, ","), runnum);

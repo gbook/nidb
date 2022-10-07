@@ -371,7 +371,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
     QStringList msgs;
     QString tmpexportdir;
 
-    n->WriteLog("Checkpoint A");
+	//n->WriteLog("Checkpoint A");
 
     /* check if it's a special type of export first */
     if (filetype == "bids") {
@@ -390,7 +390,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
             msg = "Unable to get a series list";
             return false;
         }
-        n->WriteLog("Checkpoint B");
+		//n->WriteLog("Checkpoint B");
 
         tmpexportdir = n->cfg["tmpdir"] + "/" + GenerateRandomString(20);
 
@@ -409,7 +409,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                 /* iterate through the seriesnums */
                 for(QMap<int, QMap<QString, QString>>::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
                     int seriesnum = c.key();
-                    n->WriteLog("Checkpoint C");
+					//n->WriteLog("Checkpoint C");
 
                     int exportseriesid = s[uid][studynum][seriesnum]["exportseriesid"].toInt();
                     n->SetExportSeriesStatus(exportseriesid, "processing");
@@ -462,7 +462,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                     else
                         subjectdir = QString("%1%2").arg(uid).arg(studynum);
 
-                    n->WriteLog("Checkpoint D");
+					//n->WriteLog("Checkpoint D");
 
                     /* format the series number part of the output path */
                     switch (preserveseries) {
@@ -494,7 +494,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                     else
                         rootoutdir = QString("%1/%2").arg(tmpexportdir).arg(subjectdir);
 
-                    n->WriteLog("Checkpoint E");
+					//n->WriteLog("Checkpoint E");
 
                     /* make the output directory */
                     QDir d;
@@ -516,7 +516,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                         msgs << "Unable to create output directory [" + rootoutdir + "]";
                         statusmessage = "Unable to create rootoutdir [" + rootoutdir + "]";
                     }
-                    n->WriteLog("Checkpoint F");
+					//n->WriteLog("Checkpoint F");
 
                     /* create the behavioral dir output path */
                     QString outdir = QString("%1/%2").arg(rootoutdir).arg(newseriesnum);
@@ -629,7 +629,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                     else {
                         n->WriteLog("Imaging data not selected for download");
                     }
-                    n->WriteLog("Checkpoint H");
+					//n->WriteLog("Checkpoint H");
 
                     /* export the beh data */
                     if (downloadflags.contains("DOWNLOAD_BEH",Qt::CaseInsensitive)) {
@@ -1544,7 +1544,7 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
                             msgs << speedmsg;
 
                             QStringList parts = results.split(",");
-                            if (parts[0].trimmed() == "SUCCESS") {
+							if ((parts.size() > 0) && (parts[0].trimmed() == "SUCCESS")) {
                                 /* a file was received by the remote NiDB server, now check the return md5 */
                                 if (parts[1].trimmed().toUpper() == zipmd5.toUpper()) {
                                     seriesstatus = "complete";

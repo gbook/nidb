@@ -124,10 +124,15 @@ bool squirrel::read(QString filepath, bool validateOnly) {
  */
 bool squirrel::write(QString outpath, QString &m, bool debug) {
 
-    PrintPackage();
+	/* create the log file */
+	QFileInfo finfo(outpath);
+	logfile = QString(finfo.absolutePath() + "/squirrel-" + CreateLogDate() + ".log");
+
+	msgs << Log("Beginning writing of squirrel package");
 
     /* create temp directory */
-    MakeTempDir(workingDir);
+	MakeTempDir(workingDir);
+	msgs << Log(QString("Created working directory [" + workingDir + "]"));
 
     /* ----- 1) write data. And set the relative paths in the objects ----- */
     /* iterate through subjects */
@@ -145,6 +150,8 @@ bool squirrel::write(QString outpath, QString &m, bool debug) {
         QString vPath = QString("data/%1").arg(subjDir);
         subjectList[i].virtualPath = vPath;
 
+		msgs << Log(QString("Working on subject [" + subjDir + "]"));
+
         /* iterate through studies */
         for (int j=0; j < sub.studyList.size(); j++) {
 
@@ -159,6 +166,8 @@ bool squirrel::write(QString outpath, QString &m, bool debug) {
             studyDir.replace(QRegularExpression("[^a-zA-Z0-9 _-]", QRegularExpression::CaseInsensitiveOption), "");
             QString vPath = QString("data/%1/%2").arg(subjDir).arg(studyDir);
             subjectList[i].studyList[j].virtualPath = vPath;
+
+			msgs << Log(QString("Working on study [" + studyDir + "]"));
 
             /* iterate through series */
             for (int k=0; k < stud.seriesList.size(); k++) {
@@ -179,9 +188,13 @@ bool squirrel::write(QString outpath, QString &m, bool debug) {
                 QString seriesPath = QString("%1/%2").arg(workingDir).arg(subjectList[i].studyList[j].seriesList[k].virtualPath);
                 MakePath(seriesPath,m);
 
-                /* orig vs other formats */
+				msgs << Log(QString("Working on series [" + seriesDir + "]"));
+				msgs << Log(QString("Package data format [" + dataFormat + "]"));
+
+				/* orig vs other formats */
                 if (dataFormat == "orig") {
                     msgs << QString("Squirrel: dataformat original [%1]").arg(dataFormat);
+
                     /* copy all of the series files to the temp directory */
                     foreach (QString f, ser.stagedFiles) {
                         QString systemstring = QString("cp -uv %1 %2").arg(f).arg(seriesPath);
@@ -218,7 +231,7 @@ bool squirrel::write(QString outpath, QString &m, bool debug) {
                     RemoveDir(td, m2);
                 }
                 else if (dataFormat.contains("nifti")) {
-                    msgs << QString("Squirrel: dataformat nifti [%1]").arg(dataFormat);
+					msgs << QString("dataformat nifti [%1]").arg(dataFormat);
                     int numConv(0), numRename(0);
                     //QString format = dataFormat.left(5);
                     bool gzip;
@@ -228,21 +241,28 @@ bool squirrel::write(QString outpath, QString &m, bool debug) {
                         gzip = false;
 
                     /* get path of first file to be converted */
-                    QFileInfo f(ser.stagedFiles[0]);
-                    QString origSeriesPath = f.absoluteDir().absolutePath();
-                    squirrelImageIO io;
-                    QString m3;
-                    io.ConvertDicom(dataFormat, origSeriesPath, seriesPath, QDir::currentPath(), gzip, subjDir, studyDir, seriesDir, "dicom", numConv, numRename, m3);
-                    msgs << QString("ConvertDicom() returned [%1]").arg(m3);
+					if (ser.stagedFiles.size() > 0) {
+						msgs << Log(QString("Converting [%1] files to nifti").arg(ser.stagedFiles.size()));
+
+						QFileInfo f(ser.stagedFiles[0]);
+						QString origSeriesPath = f.absoluteDir().absolutePath();
+						squirrelImageIO io;
+						QString m3;
+						io.ConvertDicom(dataFormat, origSeriesPath, seriesPath, QDir::currentPath(), gzip, subjDir, studyDir, seriesDir, "dicom", numConv, numRename, m3);
+						msgs << QString("ConvertDicom() returned [%1]").arg(m3);
+					}
+					else {
+						msgs << Log(QString("Variable squirrelSeries.stagedFiles is empty. No files to convert to Nifti"));
+					}
                 }
                 else
-                    msgs << QString("Squirrel: dataFormat not found [%1]").arg(dataFormat);
+					msgs << QString("dataFormat not found [%1]").arg(dataFormat);
 
                 /* get the number of files and size of the series */
                 qint64 c(0), b(0);
-                msgs << QString("Squirrel: running GetDirSizeAndFileCount() on [%1]").arg(seriesPath);
+				msgs << QString("Running GetDirSizeAndFileCount() on [%1]").arg(seriesPath);
                 GetDirSizeAndFileCount(seriesPath, c, b, false);
-                msgs << QString("Squirrel: GetDirSizeAndFileCount() found  [%1] files   [%2] bytes").arg(c).arg(b);
+				msgs << QString("GetDirSizeAndFileCount() found  [%1] files   [%2] bytes").arg(c).arg(b);
                 subjectList[i].studyList[j].seriesList[k].numFiles = c;
                 subjectList[i].studyList[j].seriesList[k].size = b;
 
@@ -251,10 +271,14 @@ bool squirrel::write(QString outpath, QString &m, bool debug) {
                 params = ser.ParamsToJSON();
                 QByteArray j = QJsonDocument(params).toJson();
                 QFile fout(QString("%1/params.json").arg(seriesPath));
-                if (fout.open(QIODevice::WriteOnly))
+				if (fout.open(QIODevice::WriteOnly)) {
                     fout.write(j);
-                else
+					msgs << Log(QString("Wrote %1/params.json").arg(seriesPath));
+				}
+				else {
                     msgs << QString("Error writing [%1]").arg(fout.fileName());
+					msgs << Log(QString("Error writing %1/params.json").arg(seriesPath));
+				}
             }
         }
     }
@@ -308,36 +332,38 @@ bool squirrel::write(QString outpath, QString &m, bool debug) {
     fout.write(j);
     fout.close();
 
+	msgs << Log(QString("Wrote %1/squirrel.json").arg(workingDir));
+
     /* zip the temp directory into the output file */
     QString zipfile = outpath;
     if (!zipfile.endsWith(".zip"))
         zipfile += ".zip";
 
     QString systemstring = "cd " + workingDir + "; zip -1rv " + zipfile + " .";
-    Print("Beginning zipping package...");
-    if (debug)
-        Print(SystemCommand(systemstring));
-    else
+	msgs << ("Beginning zipping package...");
+	if (debug) {
+		msgs << (SystemCommand(systemstring));
+	}
+	else {
         SystemCommand(systemstring, false);
+	}
 
-    Print("Finished zipping package...");
+	msgs << ("Finished zipping package...");
 
     if (FileExists(zipfile)) {
-        Print("Created .zip file [" + zipfile + "]");
+		msgs << ("Created .zip file [" + zipfile + "]");
 
         /* delete the tmp dir, if it exists */
         if (DirectoryExists(workingDir)) {
-            Print("Temporary export dir [" + workingDir + "] exists and will be deleted");
+			msgs << ("Temporary export dir [" + workingDir + "] exists and will be deleted");
             QString m;
             if (!RemoveDir(workingDir, m))
-                Print("Error [" + m + "] removing directory [" + workingDir + "]");
+				msgs << ("Error [" + m + "] removing directory [" + workingDir + "]");
         }
     }
     else {
-        Print("Error creating zip file [" + zipfile + "]");
+		msgs << Log("Error creating zip file [" + zipfile + "]");
     }
-
-    PrintPackage();
 
     m = msgs.join("\n");
     return true;
@@ -535,4 +561,18 @@ bool squirrel::MakeTempDir(QString &dir) {
         dir = "";
         return false;
     }
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- Log -------------------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief squirrel::Log
+ * @return the log message for continued use
+ */
+QString squirrel::Log(QString m) {
+	Print(m);
+	AppendCustomLog(logfile, m);
+	return m;
 }

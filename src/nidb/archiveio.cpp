@@ -2394,7 +2394,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
         int studyCounter = 1; /* the session (study) counter */
 
         subject subj(uid, "", n); /* get the subject object by UID */
-        subj.PrintSubjectInfo();
+		//subj.PrintSubjectInfo();
 
         n->WriteLog("Working on [" + uid + "]");
 
@@ -2402,7 +2402,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
 
         /* create the squirrelSubject object */
         squirrelSubject sqrlSubject = subj.GetSquirrelObject();
-        sqrlSubject.PrintSubject();
+		//sqrlSubject.PrintSubject();
 
         QList<int> enrollmentIDs;
 
@@ -2560,13 +2560,17 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                     msgs << n->WriteLog("ERROR datadir [" + datadir + "] does not exist");
                 }
 
-                /* export the beh data */
+				//msgs << n->WriteLog("Checkpoint A-1");
+
+				/* export the beh data */
                 if (downloadflags.contains("DOWNLOAD_BEH", Qt::CaseInsensitive)) {
                     if (behdirexists) {
                         /* all we need to do here is tell the squirrel object where the raw beh files are */
                         sqrlSeries.stagedBehFiles = FindAllFiles(behindir, "*", true);
                     }
                 }
+
+				//msgs << n->WriteLog("Checkpoint A-2");
 
                 /* append minipipelinesIDs */
                 if (downloadflags.contains("DOWNLOAD_MINIPIPELINES", Qt::CaseInsensitive)) {
@@ -2584,6 +2588,8 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                     }
                 }
 
+				//msgs << n->WriteLog("Checkpoint A-3");
+
                 /* append experimentIDs */
                 if (downloadflags.contains("DOWNLOAD_EXPERIMENTS", Qt::CaseInsensitive)) {
                     QSqlQuery q2;
@@ -2600,18 +2606,22 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                     }
                 }
 
+				//msgs << n->WriteLog("Checkpoint A-4");
+
                 n->SetExportSeriesStatus(seriesid,seriesstatus,statusmessage);
                 msgs << QString("Series [%1%2-%3 (%4)] complete").arg(uid).arg(studynum).arg(seriesnum).arg(seriesdesc);
 
-                QSqlQuery q2;
-                q2.prepare("update exportseries set status = :status where series_id = :id and modality = :modality");
-                q2.bindValue(":id", seriesid);
-                q2.bindValue(":status", seriesstatus);
-                q2.bindValue(":modality", modality);
-                n->WriteLog(n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__));
+				//QSqlQuery q2;
+				//q2.prepare("update exportseries set status = :status where series_id = :id and modality = :modality");
+				//q2.bindValue(":id", seriesid);
+				//q2.bindValue(":status", seriesstatus);
+				//q2.bindValue(":modality", modality);
+				//n->WriteLog(n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__));
 
                 /* add the completed squirrelSeries to the squirrelStudy object */
                 sqrlStudy.addSeries(sqrlSeries);
+
+				//msgs << n->WriteLog("Checkpoint A-5");
 
                 seriesCounter++;
             }
@@ -2619,6 +2629,9 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
 
             /* add this completed squirrelStudy to the squirrelSubject */
             sqrlSubject.addStudy(sqrlStudy);
+
+			//msgs << n->WriteLog("Checkpoint B-1");
+
         }
         subjectCounter++;
 
@@ -2692,6 +2705,8 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     /* while iterating through the list of series, a list of pipelines, mini-pipelines and experiments
      * were created. Now add the the pipelines, mini-pipelines, and experiments to the squirrel object */
 
+	//msgs << n->WriteLog("Checkpoint C-1");
+
     /* add pipelines to the JSON object */
     if (downloadflags.contains("DOWNLOAD_PIPELINES", Qt::CaseInsensitive)) {
         if (pipelineIDs.size() > 0) {
@@ -2706,6 +2721,8 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
         }
     }
 
+	//msgs << n->WriteLog("Checkpoint C-2");
+
     /* add experiments to the JSON object */
     if (downloadflags.contains("DOWNLOAD_EXPERIMENTS", Qt::CaseInsensitive)) {
         if (experimentIDs.size() > 0) {
@@ -2719,6 +2736,8 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
             }
         }
     }
+
+	//msgs << n->WriteLog("Checkpoint C-3");
 
     /* add mini-pipelines to the JSON object */
     if (downloadflags.contains("DOWNLOAD_MINIPIPELINES", Qt::CaseInsensitive)) {
@@ -2735,11 +2754,13 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
             //root["minipipelines"] = JSONminipipelines;
         }
     }
+	//msgs << n->WriteLog("Checkpoint C-4");
 
     /* the squirrel object should be complete, so write it out */
     QString m2;
     sqrl.write(outdir,m2);
     n->WriteLog("squirrel.write returned [" + m2 + "]");
+	//msgs << n->WriteLog("Checkpoint C-5");
 
     msg = msgs.join("\n");
     n->WriteLog("Leaving WriteSquirrel()...");
