@@ -137,7 +137,7 @@ function getprojectinfo($projectid)
 
 			<button class="ui primary right floated button" type="submit">
                           <i class="linkify icon"></i>
-                          Update Connection Settings
+                          Save Connection Settings
 		       </button>
 		</form>
 	</div>

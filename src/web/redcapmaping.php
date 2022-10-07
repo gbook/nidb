@@ -225,47 +225,23 @@
 	<input type="hidden" name="action" value="displaymapping">
         <input type="hidden" name="projectid" value="<?=$projectid?>">
 	
-		<div class="ui form">
-		  <div class="field">
-		      <label>Select a Redcap Form:</label>
-		      <div class="ui selection dropdown">
-		          <input type="hidden" name="inst">
-		          <i class="dropdown icon"></i>
-		          <div class="default text">Redcap Forms</div>
-		          <div class="menu">
-			     <?for($In=0;$In < count($In_Name); $In++){ ?>
-	                        <div class="item" data-value=<?=$In_Name[$In]?>> <?=$In_Name[$In]?> </div>
-	                    <?}?>
-		          </div>
-		      </div>
-		  </div>
+		<label>Select a Redcap Form:</label>
+		<select name="inst" required >
+			<option selected disabled>Redcap Forms </option>
+			<?for($In=0;$In < count($In_Name); $In++){ ?>
+                           <option value=<?=$In_Name[$In]?>> <?=$In_Name[$In]?> </option>
+                       <?}?>
+		</select>
 
-		 <div class="field">
-                      <label>Select the type of NiDB data</label>
-                      <div class="ui selection dropdown">
-                          <input type="hidden" name="nidbdatatype">
-                          <i class="dropdown icon"></i>
-                          <div class="default text">NiDB Type</div>
-			  <div class="menu" onchange="action.submit()">
-                                <div class="item" data-value="m" selected>Measures (Forms containing various cognitive measures)</div>
-                                <div class="item" data-value="v"> Vitals (Like:BP,HR, ...)</div>
-                                <div class="item" data-value="d">Drug/dose (Dose Time and date information)</div>
-                          </div>
-		</div>
-
-	 <br><br>
-
-                 <button class="fluid ui button" type="submit">
-                   <i class="buffer icon"></i>
-                     Redcap Fields Mapping
-                  </button>
+		<label>Select the type of NiDB data</label>
+		<select name="nidbdatatype" required  onchange="this.form.submit()">
+			<option selected disabled>NiDB data type </option>
+			<option value="m">Measures (Forms containing various cognitive measures) </option>
+			<option value="v">Vitals (Like:BP,HR, ...) </option>
+		 	<option value="d">Drug/dose (Dose Time and date information) </option>
+                </select>
 
         </form>
-
-
-
-
-	<br>
 
 <?}
 
@@ -295,7 +271,7 @@
 
                 <br>
                 
-                <form action="redcapmaping.php" method="post">
+                <form class="ui form" action="redcapmaping.php" method="post">
                 <input type="hidden" name="action" value="updatemapping">
                 <input type="hidden" name="projectid" value="<?=$projectid?>">
 		<input type="hidden" name="inst" value="<?=$inst?>">
@@ -438,21 +414,28 @@
                         </tbody>
                 </table>
                 </form>
-                <br><br>
+		<br><br>
 
-		
-		<form action="redcapmaping.php" method="post">
+
+		<form class"=ui form" action="redcapmaping.php" method="post">
                 <input type="hidden" name="action" value="transferdata">
                 <input type="hidden" name="projectid" value="<?=$projectid?>">
                 <input type="hidden" name="inst" value="<?=$inst?>">
+		
 
 
-		<label> Enter the Redcap Field name containing a unique ID to join Redcap and NiDB</label>
-		<input type="text" name="jointid" value="<?=$jointid?>">
+			<? $V_names=getrcvariables($projectid,$insts,$redcapevent);?>
+
+			<label>Select the Redcap Field name containing a unique ID to join Redcap and NiDB</label><br>
+                	<select name="jointid" required >
+                       		<option value=''> </option>
+	                        <?for($Fi=0;$Fi < count($V_names); $Fi++){?>
+        	                 <option value=<?=$V_names[$Fi]?>> <?=$V_names[$Fi]?> </option>
+	                        <?}?>
+	                </select>
 		<br>
 		<style>
-		.button { border: none; background-color: #4CAF50; color: white; padding: 15px 32px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 4px 2px; cursor: pointer;}		
-
+			.button { border: none; background-color: #4CAF50; color: white; padding: 15px 32px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 4px 2px; cursor: pointer;}	
 	       </style>
 		
 		<button class="button" onclick="window.location.href='redcapmaping.php?action=transferdata&projectid=<?=$projectid?>&jointid=<?=$jointid?>'" style="float:left">Start Transfer ---></button>
@@ -560,7 +543,8 @@
 
 			 if ($inst == 'dose_day_cover_sheet'){$inst='dose_information';} 
 
-
+			$CID = array();
+			$AddN = 0;
 			switch ($nidbdatatype) {
 				case 'm':
 					$Flg = 0;
@@ -569,7 +553,11 @@
 						$Flg = $Flg +1;
 //						echo $mvdDate;	echo $mvdRater;	echo $mvdNotes;	echo $subjectid[$Flg];	echo $mvdVal;	echo $info[$mvdVal];	echo "<br>";
 						$instid = MeasureInstr($inst);
-						Addmeasures($subjectid[$Flg],$projectid, $mvdVal, $info[$mvdVal],$inst, $instid, $info[$mvdNotes], $info[$mvdRater], $info[$mvdDate],$info[$mvdDate],'');
+						$Reg = Addmeasures($subjectid[$Flg],$projectid, $mvdVal, $info[$mvdVal],$inst, $instid, $info[$mvdNotes], $info[$mvdRater], $info[$mvdDate],$info[$mvdDate],'');
+
+						if ($Reg == 0){array_push($CID ,$subjectid[$Flg]);}
+
+						$AddN = $AddN + $Reg;
 					}
 				 break;	
 				case 'v': 
@@ -577,7 +565,11 @@
 					foreach ($RC_Record as $block => $info){
 						$Flg = $Flg +1;
 						$vitalStdate = $info[$mvdDate].' '.$info[$mvdTime];
-						Addvitals($subjectid[$Flg],$projectid,$mvdVal,$info[$mvdVal],$inst,$info[$mvdNotes], $info[$mvdRater], $info[$mvdDate], $vitalStdate, '');
+						$Reg =  Addvitals($subjectid[$Flg],$projectid,$mvdVal,$info[$mvdVal],$inst,$info[$mvdNotes], $info[$mvdRater], $info[$mvdDate], $vitalStdate, '');
+
+						if ($Reg == 0){array_push($CID ,$subjectid[$Flg]);}
+
+                                                $AddN = $AddN + $Reg;
 					}
 				break;
 
@@ -609,9 +601,12 @@
 
 			      break;
 
-        	              }
-
 			}
+
+			 }
+			 echo "The following subject/s were not found in NiDB for ".$redcapevent." event";?><br><?
+				 echo implode(", ",$CID);?><br><?
+			 echo "Total ".$AddN." records transferred";;?><br><br><?
 		}
 	}
 
@@ -626,7 +621,7 @@
 
                 $sqlstringEn = "SELECT enrollment_id FROM `enrollment` WHERE subject_id in (select subject_id from subjects where subjects.uid = '$subjectid' ) and project_id = '$projectid' ";
 
-                PrintSQL($sqlstringEn);
+//                PrintSQL($sqlstringEn);
                 $resultEn = MySQLiQuery($sqlstringEn, __FILE__, __LINE__);
                 $rowEn = mysqli_fetch_array($resultEn, MYSQLI_ASSOC);
                 $enrollmentid = $rowEn['enrollment_id'];
@@ -653,13 +648,14 @@
 
                  if ($enrollmentid!=''){
                 $sqlstring = "insert ignore into measures (enrollment_id, measure_dateentered,instrumentname_id, measurename_id, measure_notes,measure_desc,  measure_rater,measure_value,measure_startdate,measure_enddate,measure_entrydate,measure_createdate,measure_modifydate) values ($enrollmentid, now(),$instid,$measurenameid, '$measurenotes','$measuredesc','$measurerater','$measurevalue',NULLIF('$measurestdate',''),NULLIF('$measureenddate',''),now(),now(),now()) on duplicate key update measure_value='$measurevalue', measure_modifydate=now()";
-                $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);}
-                else {echo 'Subject '.$subjectid.' was not found in ADO';?><br><?}
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		 return 1;}
+		 else{  return 0;}
         }
 
 
 	/* -------------------------------------------- */
-        /* ------ Transferring Dose info into ADO------ */
+        /* ------ Transferring Dose info into NiDB------ */
         /* -------------------------------------------- */
 
    function  AddDose($subjectid,$projectid,$dosename,$dosestdate,$doseenddate,$dosedelivered,$doserater,$dosenotes,$dosekey,$doseinhaled){
@@ -694,7 +690,7 @@
            if ($enrollmentid!=''){
                 $sqlstring = "insert ignore into drugs (enrollment_id, drug_startdate, drug_enddate, drug_doseamount, drugname_id, drug_dosekey, drug_doseunit, drug_rater, drug_notes, drug_entrydate, drug_recordcreatedate, drug_recordmodifydate) values ($enrollmentid, '$dosestdate', '$doseenddate','$dosedelivered','$dosenameid','$dosekey','$doseinhaled','$doserater','$dosenotes',now(),now(),now() ) on duplicate key update drug_doseunit = '$doseinhaled', drug_recordmodifydate = now()";
                 $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);}
-           else { echo 'Subject '.$subjectid.' was not found in ADO';?><br><?}
+           else { echo 'Subject '.$subjectid.' was not found in NiDB';?><br><?}
 
 
         }
@@ -702,14 +698,14 @@
 
 
 	/* -------------------------------------------- */
-        /* ---- Transfering vitals into ADO --------- */
+        /* ---- Transfering vitals into NiDB --------- */
         /* -------------------------------------------- */
 
         function Addvitals($subjectid, $projectid, $vitalname, $vitalvalue, $Form_name, $vitalnotes, $vitalrater, $vitaldate, $vitalStdate,$vitaltdesc) {
 
                 $sqlstringEn = "SELECT enrollment_id FROM `enrollment` WHERE subject_id in (select subject_id from subjects where subjects.uid = '$subjectid' ) and project_id = '$projectid' ";
 
-                PrintSQL($sqlstringEn);
+  //              PrintSQL($sqlstringEn);
                 $resultEn = MySQLiQuery($sqlstringEn, __FILE__, __LINE__);
                 $rowEn = mysqli_fetch_array($resultEn, MYSQLI_ASSOC);
                 $enrollmentid = $rowEn['enrollment_id'];
@@ -738,8 +734,9 @@
 
                  if ($enrollmentid!=''){
                 $sqlstring = "insert ignore into vitals (enrollment_id, vital_date,vital_value,vital_notes,vital_desc,vital_rater,vitalname_id,vital_type,vital_startdate,vital_enddate,vital_entrydate,vital_recordcreatedate,vital_recordmodifydate) values ($enrollmentid, '$vitaldate','$vitalvalue','$vitalnotes','$vitaldesc','$vitalrater','$vitalnameid','$Form_name',NULLIF('$vitalStdate',''),NULLIF('$vitalStdate',''),now(),now(),now()) on duplicate key update vital_value='$vitalvalue', vital_recordmodifydate=now()";
-                $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);}
-                else {echo 'Subject '.$subjectid.' was not found in ADO';?><br><?}
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		 return 1;}
+		 else{  return 0;}
         }
 
 
