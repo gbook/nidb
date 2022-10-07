@@ -68,7 +68,7 @@ Options --> Pipeline dependency --> Criteria: study
 
 This configuration takes data from multiple studies and uses multiple pipelines to analyze the data. This can come in multiple ways. Below are some examples of complex pipelines.
 
-<figure><img src="../.gitbook/assets/image.png" alt=""><figcaption><p>An HCP example</p></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (6).png" alt=""><figcaption><p>An HCP example</p></figcaption></figure>
 
 In this example, the pipeline settings are the same as above. The only difference is that each analysis (each study) will pull fMRI from the study, and the T1 from 'somewhere'. For the studies that have a T1, it will come from there. For studies that don't have a T1, the T1 will come from the study nearest in time.
 

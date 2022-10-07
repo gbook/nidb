@@ -32,6 +32,8 @@
 
 ## Tutorials
 
+* [Manipulating Data](tutorials/manipulating-data/README.md)
+  * [Renaming series](tutorials/manipulating-data/renaming-series.md)
 * [Pipelines](tutorials/pipelines.md)
 * [Import DICOM data](tutorials/import-dicom-data.md)
 * [Adding Users to Projects](tutorials/adding-users-to-projects.md)

@@ -22,7 +22,7 @@ In the next section the steps to create two reports are listed showing how vario
 
 Following are the steps to create a simple report where data is not grouped and there is no drug / dose variable is used. The following figure shows the selection of variables and settings to generate this report.
 
-![](<../.gitbook/assets/image (6).png>)
+![](<../.gitbook/assets/image (6) (1).png>)
 
 ### Steps - Simple Report
 
