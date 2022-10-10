@@ -896,6 +896,17 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                 n->WriteLog("ERROR unable to create zip file [" + zipfile + "]");
                 msgs << "Unable to create [" + zipfile + "]";
             }
+
+			/* update the publicdataset_downloads table */
+			//QSqlQuery q2;
+			//q2.prepare("update publicdataset_downloads set download_zippedsize = :zippedsize, download_unzippedsize = :unzippedsize, download_filelist = :filecontents, download_key = upper(sha1(now())) where publicdownload_id = :publicdownloadid");
+			//q2.bindValue(":zippedsize",zippedsize);
+			//q2.bindValue(":unzippedsize",unzippedsize);
+			//q2.bindValue(":filename",filename);
+			//q2.bindValue(":filecontents",filecontents);
+			//q2.bindValue(":publicdownloadid",publicdownloadid);
+			//n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+
         }
         else {
             /* publicdatasetid not found */
@@ -1361,6 +1372,8 @@ bool moduleExport::ExportSquirrel(int exportid, QString squirreltitle, QString s
             n->WriteLog("WriteSquirrel() returned false");
 
         /* move the .zip file to the download directory if a web download */
+
+		/* update the publicdataset_download table to reflect the numfiles,zipsize, unzipsize, package format, image format, and status */
     }
     else {
         n->WriteLog("No series found");
