@@ -33,11 +33,11 @@
 ## Tutorials
 
 * [Working with Imaging Data](tutorials/working-with-imaging-data/README.md)
-  * [Troubleshooting Missing Imaging Data](tutorials/working-with-imaging-data/troubleshooting-missing-imaging-data.md)
-  * [Import DICOM data](tutorials/working-with-imaging-data/import-dicom-data.md)
-* [Manipulating Subjects, Studies, & Series](tutorials/manipulating-subjects-studies-and-series/README.md)
-  * [Working with subject IDs](tutorials/manipulating-subjects-studies-and-series/working-with-subject-ids.md)
-  * [Renaming series](tutorials/manipulating-subjects-studies-and-series/renaming-series.md)
+  * [Troubleshooting Missing Imaging Data](tutorials/troublshooting-missing-data.md)
+  * [Import DICOM data](tutorials/import-dicom-data.md)
+* [Manipulating Subjects, Studies, & Series](tutorials/manipulating-data/README.md)
+  * [Working with subject IDs](tutorials/working-with-subject-ids.md)
+  * [Renaming series](tutorials/manipulating-data/renaming-series.md)
 * [Pipelines](tutorials/pipelines.md)
 * [Working with Redcap](tutorials/importing-from-redcap/README.md)
   * [Importing Data from a Redcap Project](tutorials/importing-from-redcap/importing-data-from-a-redcap-project.md)
@@ -46,8 +46,8 @@
 * [Analysis Builder](tutorials/analysis-builder.md)
 * [Administration of Users, Projects, & System](tutorials/administration-of-users-projects-and-system/README.md)
   * [Creating new projects](tutorials/administration-of-users-projects-and-system/creating-new-projects.md)
-  * [Adding Users to Projects](tutorials/administration-of-users-projects-and-system/adding-users-to-projects.md)
-  * [Editing the config file](tutorials/administration-of-users-projects-and-system/editing-the-config-file.md)
+  * [Adding Users to Projects](tutorials/adding-users-to-projects.md)
+  * [Editing the config file](tutorials/editing-the-config-file.md)
 
 ## Contribute
 

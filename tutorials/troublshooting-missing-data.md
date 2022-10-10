@@ -2,7 +2,7 @@
 description: It's not supposed to happen... but it can. Here's how to fix it.
 ---
 
-# Troublshooting Missing Data
+# Troubleshooting Missing Imaging Data
 
 ### Why is my data missing??
 

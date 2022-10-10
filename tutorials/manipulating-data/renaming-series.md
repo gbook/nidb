@@ -10,7 +10,7 @@ On the study page, find the series, or series(s), you want to rename. On the rig
 
 From the menu, select **Rename**
 
-<img src="../../.gitbook/assets/image.png" alt="" data-size="original">
+<img src="../../.gitbook/assets/image (15).png" alt="" data-size="original">
 
 Rename the series(s) and click **Rename**.
 

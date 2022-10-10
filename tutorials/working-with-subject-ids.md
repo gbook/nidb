@@ -19,11 +19,11 @@ A few possible reasons
 
 The simplest way to find a subject by any ID is to use the ID mapper. Go to **Data** --> **ID Mapper**. Enter your ID(s) in textbox and click **Map IDs**. There are some options available to filter by project, instance, only matches, and only active subjects.
 
-![We're searching for six IDs: 2310, 50, 13, 529, 401, S1234ABC](<../../.gitbook/assets/image (6) (1) (1).png>)
+![We're searching for six IDs: 2310, 50, 13, 529, 401, S1234ABC](<../.gitbook/assets/image (6) (1) (1).png>)
 
 The next page will show any matching subjects.
 
-![4 of 6 IDs were found!](<../../.gitbook/assets/image (7) (1).png>)
+![4 of 6 IDs were found!](<../.gitbook/assets/image (7) (1).png>)
 
 The first column **Foreign ID** is the ID you searched for. If that ID is found anywhere in the system, there will be details about it in the **Local** columns to the right.
 
