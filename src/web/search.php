@@ -129,6 +129,7 @@
 	$requestvars['remoteftpport'] = GetVariable("remoteftpport");
 	$requestvars['remoteftpsecure'] = GetVariable("remoteftpsecure");
 	$requestvars['remoteconnid'] = GetVariable("remoteconnid");
+	$requestvars['publicdownloadname'] = GetVariable("publicdownloadname");
 	$requestvars['publicdownloaddesc'] = GetVariable("publicdownloaddesc");
 	$requestvars['publicdownloadreleasenotes'] = GetVariable("publicdownloadreleasenotes");
 	$requestvars['publicdownloadpassword'] = GetVariable("publicdownloadpassword");

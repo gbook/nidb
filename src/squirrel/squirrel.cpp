@@ -439,6 +439,59 @@ void squirrel::print() {
 
 
 /* ------------------------------------------------------------ */
+/* ----- GetUnzipSize ----------------------------------------- */
+/* ------------------------------------------------------------ */
+qint64 squirrel::GetUnzipSize() {
+
+	qint64 unzipSize(0);
+
+	/* iterate through subjects */
+	for (int i=0; i < subjectList.size(); i++) {
+		squirrelSubject sub = subjectList[i];
+		/* iterate through studies */
+		for (int j=0; j < sub.studyList.size(); j++) {
+			squirrelStudy stud = sub.studyList[j];
+			/* iterate through series */
+			for (int k=0; k < stud.seriesList.size(); k++) {
+				squirrelSeries ser = stud.seriesList[k];
+				unzipSize += ser.size;
+			}
+			/* iterate through analyses */
+			for (int k=0; k < stud.analysisList.size(); k++) {
+				squirrelAnalysis an = stud.analysisList[k];
+				unzipSize += an.size;
+			}
+		}
+	}
+	return unzipSize;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- GetNumFiles ------------------------------------------ */
+/* ------------------------------------------------------------ */
+qint64 squirrel::GetNumFiles() {
+
+	qint64 numFiles(0);
+
+	/* iterate through subjects */
+	for (int i=0; i < subjectList.size(); i++) {
+		squirrelSubject sub = subjectList[i];
+		/* iterate through studies */
+		for (int j=0; j < sub.studyList.size(); j++) {
+			squirrelStudy stud = sub.studyList[j];
+			/* iterate through series */
+			for (int k=0; k < stud.seriesList.size(); k++) {
+				squirrelSeries ser = stud.seriesList[k];
+				numFiles += ser.numFiles;
+			}
+		}
+	}
+	return numFiles;
+}
+
+
+/* ------------------------------------------------------------ */
 /* ----- addSubject ------------------------------------------- */
 /* ------------------------------------------------------------ */
 /**

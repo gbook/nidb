@@ -2627,6 +2627,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 				<p><?=$msg?></p>
 			</div>
 		</div>
+		<br>
 		<?
 	}
 
@@ -2643,6 +2644,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 				<p><?=$msg?></p>
 			</div>
 		</div>
+		<br>
 		<?
 	}
 
@@ -2659,6 +2661,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 				<p><?=$msg?></p>
 			</div>
 		</div>
+		<br>
 		<?
 	}
 

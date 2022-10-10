@@ -212,7 +212,7 @@ function Showprojectinfo($projectid)
 	<br><br>
 
 
-	<button class="ui primary right floated button" onclick="window.location.href='redcapmaping.php?action=default&projectid=<?=$projectid?>'">
+	<button class="ui primary right floated button" onclick="window.location.href='redcapmapping.php?action=default&projectid=<?=$projectid?>'">
           <i class="map icon"></i>
             Map This Project
         </button>

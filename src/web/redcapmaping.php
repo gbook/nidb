@@ -221,7 +221,7 @@
 
 		<h3 class="ui top attached inverted header"> RedCap to NiDB form / variable mapping  </h3>
 
-	<form  class="ui form" action="redcapmaping.php" >
+	<form  class="ui form" action="redcapmapping.php" >
 	<input type="hidden" name="action" value="displaymapping">
         <input type="hidden" name="projectid" value="<?=$projectid?>">
 	
@@ -271,7 +271,7 @@
 
                 <br>
                 
-                <form class="ui form" action="redcapmaping.php" method="post">
+                <form class="ui form" action="redcapmapping.php" method="post">
                 <input type="hidden" name="action" value="updatemapping">
                 <input type="hidden" name="projectid" value="<?=$projectid?>">
 		<input type="hidden" name="inst" value="<?=$inst?>">
@@ -406,7 +406,7 @@
                                                         <td><?=$typeStr?></td>
                                                         <td><?=$variable?></td>
                                                         <td><?=$instrument?></td>
-                                                        <td title="Delete mapping"><a href="redcapmaping.php?action=deletemapping&mappingid=<?=$formmapid?>&projectid=<?=$projectid?>&inst=<?=$inst?>" class="redlinkbutton" style="font-size: smaller">X</a></td>
+                                                        <td title="Delete mapping"><a href="redcapmapping.php?action=deletemapping&mappingid=<?=$formmapid?>&projectid=<?=$projectid?>&inst=<?=$inst?>" class="redlinkbutton" style="font-size: smaller">X</a></td>
                                                 </tr>
                                         <?
                                         }
@@ -417,7 +417,7 @@
 		<br><br>
 
 
-		<form class"=ui form" action="redcapmaping.php" method="post">
+		<form class"=ui form" action="redcapmapping.php" method="post">
                 <input type="hidden" name="action" value="transferdata">
                 <input type="hidden" name="projectid" value="<?=$projectid?>">
                 <input type="hidden" name="inst" value="<?=$inst?>">
@@ -438,7 +438,7 @@
 			.button { border: none; background-color: #4CAF50; color: white; padding: 15px 32px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 4px 2px; cursor: pointer;}	
 	       </style>
 		
-		<button class="button" onclick="window.location.href='redcapmaping.php?action=transferdata&projectid=<?=$projectid?>&jointid=<?=$jointid?>'" style="float:left">Start Transfer ---></button>
+		<button class="button" onclick="window.location.href='redcapmapping.php?action=transferdata&projectid=<?=$projectid?>&jointid=<?=$jointid?>'" style="float:left">Start Transfer ---></button>
 		</form>
 
 <?
@@ -605,7 +605,7 @@
 
 			 }
 			 echo "The following subject/s were not found in NiDB for ".$redcapevent." event";?><br><?
-				 echo implode(", ",$CID);?><br><?
+			 echo implode(", ",$CID);?><br><?
 			 echo "Total ".$AddN." records transferred";;?><br><br><?
 		}
 	}

@@ -51,7 +51,7 @@ public:
     bool ExportBIDS(int exportid, QString bidsreadme, QStringList bidsflags, QString &outdir, QString &exportstatus, QString &msg);
     bool ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, QString &exportstatus, QString &msg);
     bool ExportToRemoteFTP(int exportid, QString remoteftpusername, QString remoteftppassword, QString remoteftpserver, int remoteftpport, QString remoteftppath, QString &exportstatus, QString &msg);
-    bool ExportSquirrel(int exportid, QString squirreltitle, QString squirreldesc, QStringList downloadflags, QStringList squirrelflags, QString &exportstatus, QString &outdir, QString &msg);
+	bool ExportSquirrel(int exportid, QString squirreltitle, QString squirreldesc, QStringList downloadflags, QStringList squirrelflags, QString &exportstatus, QString &outdir, qint64 &zipsize, qint64 &unzipsize, qint64 &numfiles, QString &msg);
     bool ExportXNAT(int exportid, QString &exportstatus, QString &msg);
 
     bool WriteNDARHeader(QString headerfile, QString modality, QStringList &log);

@@ -27,7 +27,6 @@
 	
 	$nologin = true;
 ?>
-
 <html>
 	<head>
 		<link rel="icon" type="image/png" href="images/squirrel.png">
@@ -35,32 +34,46 @@
 	</head>
 
 <body>
-<link rel="stylesheet" type="text/css" href="style.css">
-<div style="text-align: left; background-color: #eee; border-bottom: 2px solid #666; padding: 20px;">
-	<table width="100%">
-		<tr>
-			<td>
-				<span style="font-weight:bold; font-size:18pt; color: #35486D">NeuroInformatics Database public downloads</span>
-				<br><br>
-				<? if ($_SESSION['username'] == "") { ?>
-				<a href="signup.php">Create</a> an account | <a href="login.php">Sign in</a>
-				<? } else {?>
-				<span style="font-size:9pt">You are logged into NiDB as <?=$_SESSION['username'];?><br>
-				Go to your <a href="index.php">home</a> page
-				<? } ?>
-			</td>
-			<td align="right">
-				<img src="images/nidb_short_notext_small.png">
-			</td>
-		</tr>
-	</table>
-</div>
-<div style="margin:20px">
-<?
+<?	
 	require "functions.php";
 	require "includes_php.php";
 	require "includes_html.php";
-	
+?>
+	<br>
+	<div class="ui container">
+		<div class="ui top attached inverted styled segment">
+			<div class="ui grid">
+				<div class="ui eight wide column">
+					<h1 class="ui inverted header">
+						<div class="content">
+							Publicly Available Datasets
+							<div class="sub header">Datasets available from <?=$GLOBALS['cfg']['sitename']?></div>
+						</div>
+					</h1>
+				</div>
+				<div class="ui eight wide right aligned column">
+					<div class="ui styled green compact segment">
+						<? if ($_SESSION['username'] == "") { ?>
+						<a href="signup.php">Create</a> an account | <a href="login.php">Sign in</a>
+						<? } else {?>
+						You are logged into NiDB as <?=$_SESSION['username'];?><br>
+						<? } ?>
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<div class="ui bottom attached icon message">
+			<i class="yellow info circle icon"></i>
+			<div class="content">
+				<p><b>Note</b> Some downloads may require registration or an approved application to download data</p>
+			</div>
+		</div>
+		
+		<br><br>
+
+<?
+
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
 	$id = GetVariable("id");
@@ -73,7 +86,7 @@
 		DeleteDownload($id);
 	}
 	else {
-		DisplayDownloadList();
+		DisplayDatasetList();
 	}
 
 	
@@ -81,72 +94,60 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- DisplayDownloadList ---------------- */
+	/* ------- DisplayDatasetList ----------------- */
 	/* -------------------------------------------- */
-	function DisplayDownloadList() {
+	function DisplayDatasetList() {
 	?>
-
-	<p style="background-color: #FFFFDF; border: 1px solid yellow; padding: 8px"><b>Notes</b><br>Some downloads may require registration. Click Download link to view release notes and contents of the download file. All downloads were created from data stored on this server. More detailed search criteria and QC information is available by logging in to the server and going to the Search page.</p>
 	
-	<div align="center">
-	<table class="ui very compact celled grey table">
-		<thead>
-			<tr>
-				<th>Description</th>
-				<th>Created</th>
-				<th>Expire date</th>
-				<th>Release notes</th>
-				<th>Zip size</th>
-				<th>Unzipped size</th>
-				<th># downloaded</th>
-				<th>&nbsp;<span style="color: red; font-size:16pt">*</span> <span class="tiny">registration required</span></th>
-			</tr>
-		</thead>
-		<tbody>
-			<?
-				$sqlstring = "select * from public_downloads where pd_status = 'complete' and pd_ispublic = 1 order by pd_desc asc";
-				//PrintSQL($sqlstring);
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-					$id = $row['pd_id'];
-					$createdate = $row['pd_createdate'];
-					$expiredate = $row['pd_expiredate'];
-					$expiredays = $row['pd_expiredays'];
-					$createdby = $row['pd_createdby'];
-					$zipsize = $row['pd_zippedsize'];
-					$unzipsize = $row['pd_unzippedsize'];
-					$filename = $row['pd_filename'];
-					$desc = $row['pd_desc'];
-					$notes = $row['pd_notes'];
-					$filecontents = $row['pd_filecontents'];
-					$shareinternal = $row['pd_shareinternal'];
-					$registerrequired = $row['pd_registerrequired'];
-					$status = $row['pd_status'];
-					$key = strtoupper($row['pd_key']);
-					$numdownload = $row['pd_numdownloads'];
-					
-					if ($createdate == $expiredate) {
-						$expiredate = "None";
-					}
-			?>
-			<tr>
-				<td><?=$desc?></td>
-				<td style="font-size:9pt"><?=$createdate?></td>
-				<td style="font-size:9pt"><?=$expiredate?></td>
-				<td><img src="images/preview.gif" title="<?=$notes?>"></td>
-				<td style="font-size:9pt" align="right"><?=HumanReadableFilesize($zipsize)?></td>
-				<td style="font-size:9pt" align="right"><?=HumanReadableFilesize($unzipsize)?></td>
-				<td style="font-size:9pt" align="right"><?=$numdownload?></td>
-				<td>&nbsp;<a href="<?=$GLOBALS['cfg']['siteurl'] . "/pd.php?k=$key"?>">Download</a>&nbsp; <? if ($registerrequired) { ?><span style="color: red; font-size:16pt">*</span><?} ?></td>
-			</tr>
-			<? 
-				}
-			?>
-		</tbody>
-	</table>
+	<div class="ui container">
+
+		<div class="ui divided items">
+		<?
+			$sqlstring = "select * from public_datasets where publicdataset_createdby = '" . $_SESSION['username'] . "' order by publicdataset_createdate desc";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$id = $row['publicdataset_id'];
+				$name = $row['publicdataset_name'];
+				$desc = $row['publicdataset_desc'];
+				$startdate = $row['publicdataset_startdate'];
+				$enddate = $row['publicdataset_enddate'];
+				$flags = explode(",", $row['publicdataset_flags']);
+				$createdate = $row['publicdataset_createdate'];
+				$createdby = $row['publicdataset_createdby'];
+				?>
+					<div class="item">
+						<div class="ui content">
+							<div class="ui two column grid">
+								<div class="ui column">
+									<a class="ui header"><?=$name?></a>
+									<div class="meta">
+										<span class="cinema">Created <?=$createdate?></span>
+									</div>
+									<div class="description">
+										<p><?=$desc?></p>
+									</div>
+									<div class="extra">
+										<? if (in_array("REQUIRES_REGISTRATION", $flags)) { ?><div class="ui basic orange label" title="Registration on this NiDB instance is required to download this dataset">Registration required</div><? } ?>
+										<? if (in_array("REQUIRES_APPROVFAL", $flags)) { ?><div class="ui basic red label" title="An application must be submitted and approved to access this dataset">Application required</div><? } ?>
+									</div>
+								</div>
+								<div class="right aligned column">
+									<? if (isAdmin()) { ?>
+									<a class="ui button" href="publicdatasets.php?action=form&id=<?=$id?>"><i class="pencil alternate icon"></i> Edit</a>
+									<?} ?>
+									<a class="ui button" href="publicdatasets.php?action=view&id=<?=$id?>"><i class="eye icon"></i> View Dataset</a>
+								</div>
+							</div>
+							<div class="ui segment">
+								Available downloads for this dataset
+							</div>
+						</div>
+					</div>		
+				<?
+			}
+		?>
+		</div>
 	</div>
 	<?
 	}
 ?>
-
-<? include("footer.php") ?>

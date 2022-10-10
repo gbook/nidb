@@ -371,8 +371,6 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
     QStringList msgs;
     QString tmpexportdir;
 
-	//n->WriteLog("Checkpoint A");
-
     /* check if it's a special type of export first */
     if (filetype == "bids") {
         QString log;
@@ -384,13 +382,22 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
         QString log;
         ExportSquirrel(exportid, squirreltitle, squirreldesc, downloadflags, squirrelflags, exportstatus, tmpexportdir, log);
         msgs << log;
+
+		QSqlQuery q2;
+		q2.prepare("update publicdataset_downloads set download_zippedsize = :zippedsize, download_unzippedsize = :unzippedsize, download_filelist = :filecontents, download_key = upper(sha1(now())) where publicdownload_id = :publicdownloadid");
+		q2.bindValue(":zippedsize",zippedsize);
+		q2.bindValue(":unzippedsize",unzippedsize);
+		q2.bindValue(":filename",filename);
+		q2.bindValue(":filecontents",filecontents);
+		q2.bindValue(":publicdownloadid",publicdownloadid);
+		n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+
     }
     else {
         if (!GetExportSeriesList(exportid)) {
             msg = "Unable to get a series list";
             return false;
         }
-		//n->WriteLog("Checkpoint B");
 
         tmpexportdir = n->cfg["tmpdir"] + "/" + GenerateRandomString(20);
 
@@ -409,7 +416,6 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                 /* iterate through the seriesnums */
                 for(QMap<int, QMap<QString, QString>>::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
                     int seriesnum = c.key();
-					//n->WriteLog("Checkpoint C");
 
                     int exportseriesid = s[uid][studynum][seriesnum]["exportseriesid"].toInt();
                     n->SetExportSeriesStatus(exportseriesid, "processing");
@@ -462,8 +468,6 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                     else
                         subjectdir = QString("%1%2").arg(uid).arg(studynum);
 
-					//n->WriteLog("Checkpoint D");
-
                     /* format the series number part of the output path */
                     switch (preserveseries) {
                     case 0:
@@ -494,8 +498,6 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                     else
                         rootoutdir = QString("%1/%2").arg(tmpexportdir).arg(subjectdir);
 
-					//n->WriteLog("Checkpoint E");
-
                     /* make the output directory */
                     QDir d;
                     if (d.mkpath(rootoutdir)) {
@@ -516,7 +518,6 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                         msgs << "Unable to create output directory [" + rootoutdir + "]";
                         statusmessage = "Unable to create rootoutdir [" + rootoutdir + "]";
                     }
-					//n->WriteLog("Checkpoint F");
 
                     /* create the behavioral dir output path */
                     QString outdir = QString("%1/%2").arg(rootoutdir).arg(newseriesnum);
@@ -629,7 +630,6 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                     else {
                         n->WriteLog("Imaging data not selected for download");
                     }
-					//n->WriteLog("Checkpoint H");
 
                     /* export the beh data */
                     if (downloadflags.contains("DOWNLOAD_BEH",Qt::CaseInsensitive)) {
@@ -875,7 +875,6 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 
                 QSqlQuery q2;
                 q2.prepare("update publicdataset_downloads set download_zippedsize = :zippedsize, download_unzippedsize = :unzippedsize, download_filelist = :filecontents, download_key = upper(sha1(now())) where publicdownload_id = :publicdownloadid");
-                //q2.bindValue(":expiredays",expiredays);
                 q2.bindValue(":zippedsize",zippedsize);
                 q2.bindValue(":unzippedsize",unzippedsize);
                 q2.bindValue(":filename",filename);
@@ -1323,9 +1322,9 @@ bool moduleExport::ExportBIDS(int exportid, QString bidsreadme, QStringList bids
 /* ---------------------------------------------------------- */
 /* --------- ExportSquirrel --------------------------------- */
 /* ---------------------------------------------------------- */
-bool moduleExport::ExportSquirrel(int exportid, QString squirreltitle, QString squirreldesc, QStringList downloadflags, QStringList squirrelflags, QString &exportstatus, QString &outdir, QString &msg) {
-    n->WriteLog("Entering ExportSquirrel()...");
+bool moduleExport::ExportSquirrel(int exportid, QString squirreltitle, QString squirreldesc, QStringList downloadflags, QStringList squirrelflags, QString &exportstatus, QString &outdir, qint64 &zipsize, qint64 &unzipsize, qint64 &numfiles, QString &msg) {
 
+	n->WriteLog("Entering ExportSquirrel()...");
     exportstatus = "complete";
 
     /* get list of seriesids/modalities */
@@ -1340,9 +1339,7 @@ bool moduleExport::ExportSquirrel(int exportid, QString squirreltitle, QString s
         while (q.next()) {
             seriesids.append(q.value("series_id").toLongLong());
             modalities.append(q.value("modality").toString().toLower());
-            //n->WriteLog(QString("Appended series [%1], modality [%2]").arg(seriesids.last()).arg(modalities.last()));
         }
-        //n->WriteLog( QString("seriesids contains [%1] items    modalities contains [%2] items").arg(seriesids.size()).arg(modalities.size()) );
 
         QString rootoutdir = QString("%1/NiDB-Squirrel-%2").arg(n->cfg["ftpdir"]).arg(exportid);
         outdir = rootoutdir;

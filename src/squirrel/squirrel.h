@@ -65,6 +65,8 @@ public:
     QString studyDirFormat; /*!< orig, seq */
     QString seriesDirFormat; /*!< orig, seq */
     QString dataFormat; /*!< orig, anon, anonfull, nift3d, nifti3dgz, nifti4d, nifti4dgz */
+	qint64 GetUnzipSize();
+	qint64 GetNumFiles();
 
 private:
     void PrintPackage();

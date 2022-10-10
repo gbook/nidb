@@ -210,7 +210,7 @@
 		}
 		
 		/* data sub-menu */
-		elseif ($page=="import.php" || $page=="importimaging.php" || $page=="importlog.php" || $page=="publicdownloads.php" || $page=="downloads.php" || $page=="datasetrequests.php") {
+		elseif ($page=="import.php" || $page=="importimaging.php" || $page=="importlog.php" || $page=="publicdownloads.php" || $page=="publicdatasets.php" || $page=="downloads.php" || $page=="datasetrequests.php") {
 			
 			if ($GLOBALS['cfg']['enabledatamenu']) {
 				?><a href="import.php" class="<? if (($page == "import.php") && ($action != "idmapper")) { echo "active"; } ?> item">Import</a><?
@@ -218,7 +218,7 @@
 				?><a href="import.php?action=idmapper" class="<? if (($page == "import.php") && ($action == "idmapper")) { echo "active"; } ?> item">ID mapper</a><?
 				?><a href="importlog.php" class="<? if ($page == "importlog.php") { echo "active"; } ?> item">Import Log</a><?
 				?><a href="publicdownloads.php" class="<? if ($page == "publicdownloads.php") { echo "active"; } ?> item">Public Downloads</a><?
-				?><a href="downloads.php" class="<? if ($page == "downloads.php") { echo "active"; } ?> item">Downloads</a><?
+				?><a href="publicdatasets.php" class="<? if ($page == "publicdatasets.php") { echo "active"; } ?> item">Public Datasets</a><?
 				?><a href="datasetrequests.php" class="<? if ($page == "datasetrequests.php") { echo "active"; } ?> item">Request a Dataset</a><?
 			}
 			
