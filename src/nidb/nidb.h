@@ -48,6 +48,7 @@ class nidb
 public:
     QHash<QString, QString> cfg;
     QSqlDatabase db;
+    bool debug;
 
     nidb();
     nidb(QString m, bool c=false);
@@ -84,6 +85,7 @@ public:
     //double GetPatientAge(QString PatientAgeStr, QString StudyDate, QString PatientBirthDate);
     QString SQLQuery(QSqlQuery &q, QString function, QString file, int line, bool d=false, bool batch=false);
     QString WriteLog(QString msg, int wrap=0, bool timeStamp=true);
+    QString Debug(QString msg, int wrap=0, bool timeStamp=true);
     bool SendEmail(QString to, QString subject, QString body);
     bool GetSQLComparison(QString c, QString &comp, int &num);
     bool SubmitClusterJob(QString f, QString submithost, QString qsub, QString user, QString queue, QString &msg, int &jobid, QString &result);

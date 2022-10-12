@@ -19,6 +19,7 @@ else
 	BUILDDIR=$3
 fi
 
+ORIGDIR=$PWD
 
 # this script requires make, cmake (3), and qmake
 command -v make >/dev/null 2>&1 || { echo -e "\nThis script requires make, but it is not installed\n"; exit 1; }
@@ -80,3 +81,11 @@ echo -e "\nBuilding NiDB core\n"
 $QMAKEBIN -o $BUILDDIR/nidb/Makefile $SRCDIR/nidb/nidb.pro -spec linux-g++
 cd $BUILDDIR/nidb
 make -B -j 16
+
+# try to copy the binaries to their final locations (this may fail because it requires sudo, but its not a critical step to build)
+cd $ORIGDIR
+echo -e "\nCopying libsquirrel to /lib"
+sudo cp -uv bin/squirrel/libsquirrel* /lib/
+
+echo -e "\nCopying nidb to /nidb/bin"
+sudo cp -uv bin/nidb/nidb /nidb/bin/

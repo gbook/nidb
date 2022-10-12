@@ -100,8 +100,8 @@ QString SystemCommand(QString s, bool detail, bool truncate, bool bufferOutput) 
     while(process->waitForReadyRead(-1)) {
         buffer = QString(process->readAll());
         output += buffer;
-		//if (!bufferOutput)
-		//	n->WriteLog(buffer,0,false);
+        //if (!bufferOutput)
+        //	n->WriteLog(buffer,0,false);
     }
     /* check if it finished */
     process->waitForFinished();
@@ -1055,11 +1055,11 @@ double GetPatientAge(QString PatientAgeStr, QString StudyDate, QString PatientBi
 /* --------- DirectoryExists -------------------------------- */
 /* ---------------------------------------------------------- */
 bool DirectoryExists(QString dir) {
-	QFile d(dir);
-	if (d.exists())
-		return true;
-	else
-		return false;
+    QFile d(dir);
+    if (d.exists())
+        return true;
+    else
+        return false;
 }
 
 
@@ -1067,11 +1067,11 @@ bool DirectoryExists(QString dir) {
 /* --------- FileExists ------------------------------------- */
 /* ---------------------------------------------------------- */
 bool FileExists(QString f) {
-	QFile file(f);
-	if (file.exists())
-		return true;
-	else
-		return false;
+    QFile file(f);
+    if (file.exists())
+        return true;
+    else
+        return false;
 }
 
 
@@ -1079,10 +1079,35 @@ bool FileExists(QString f) {
 /* --------- FileDirectoryExists ---------------------------- */
 /* ---------------------------------------------------------- */
 bool FileDirectoryExists(QString f) {
-	QFileInfo info(f);
-	QDir d(info.absoluteDir());
-	if (d.exists())
-		return true;
-	else
-		return false;
+    QFileInfo info(f);
+    QDir d(info.absoluteDir());
+    if (d.exists())
+        return true;
+    else
+        return false;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetZipFileDetails ------------------------------ */
+/* ---------------------------------------------------------- */
+bool GetZipFileDetails(QString zippath, qint64 &unzipsize, qint64 &zipsize, QString &compression, qint64 &numfiles, QString &filelisting) {
+
+    /* get the contents of the zip file */
+    QString systemstring = "unzip -vl " + zippath;
+    filelisting = SystemCommand(systemstring, false);
+
+    /* get the zipped, unzipped sizes & numfiles from the filecontents listing */
+    QStringList lines = filelisting.split("\n");
+    QString lastline = lines.last().trimmed();
+    //n->WriteLog(QString("Last line of [%1] %2").arg(systemstring).arg(lastline));
+    QStringList parts = lastline.trimmed().split(QRegularExpression("\\s+"), Qt::SkipEmptyParts); /* split on whitespace */
+    if (parts.size() >= 2) {
+        unzipsize = parts[0].toLongLong();
+        zipsize = parts[1].toLongLong();
+        compression = parts[2];
+        numfiles = parts[3].replace(" files","").toLongLong();
+    }
+
+    return true;
 }

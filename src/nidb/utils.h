@@ -92,5 +92,6 @@ bool BatchRenameFiles(QString dir, QString seriesnum, QString studynum, QString 
 bool DirectoryExists(QString dir);
 bool FileExists(QString f);
 bool FileDirectoryExists(QString f);
+bool GetZipFileDetails(QString zippath, qint64 &unzipsize, qint64 &zipsize, QString &compression, qint64 &numfiles, QString &filelisting);
 
 #endif // UTILS_H

@@ -85,7 +85,7 @@ int moduleExport::Run() {
             QString remoteftppath = q.value("remoteftp_path").toString().trimmed();
             int remotenidbconnid = q.value("remotenidb_connectionid").toInt();
             int publicdownloadid = q.value("publicdownloadid").toInt();
-            int publicdatasetid = q.value("publicdatasetid").toInt();
+            int publicdatasetdownloadid = q.value("publicdatasetid").toInt();
             QString bidsreadme = q.value("bidsreadme").toString().trimmed();
             QStringList bidsflags = q.value("bids_flags").toString().trimmed().split(",");
             QStringList squirrelflags = q.value("squirrel_flags").toString().trimmed().split(",");
@@ -125,7 +125,7 @@ int moduleExport::Run() {
                 found = ExportLocal(exportid, exporttype, "", publicdownloadid, 0, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
             }
             else if (exporttype == "publicdataset") {
-                found = ExportLocal(exportid, exporttype, "", 0, publicdatasetid, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
+                found = ExportLocal(exportid, exporttype, "", 0, publicdatasetdownloadid, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
             }
             else if (exporttype == "nfs") {
                 found = ExportLocal(exportid, exporttype, nfsdir, 0, 0, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
@@ -366,32 +366,36 @@ bool moduleExport::GetExportSeriesList(int exportid) {
 /* ---------------------------------------------------------- */
 /* --------- ExportLocal ------------------------------------ */
 /* ---------------------------------------------------------- */
-bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir, int publicdownloadid, int publicdatasetid, QStringList downloadflags, QString filetype, QString dirformat, int preserveseries, bool gzip, int anonlevel, QString behformat, QString behdirrootname, QString behdirseriesname, QString bidsreadme, QStringList bidsflags, QString squirreltitle, QString squirreldesc, QStringList squirrelflags, QString &exportstatus, QString &msg) {
+bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir, int publicdownloadid, int publicdatasetdownloadid, QStringList downloadflags, QString filetype, QString dirformat, int preserveseries, bool gzip, int anonlevel, QString behformat, QString behdirrootname, QString behdirseriesname, QString bidsreadme, QStringList bidsflags, QString squirreltitle, QString squirreldesc, QStringList squirrelflags, QString &exportstatus, QString &msg) {
 
     QStringList msgs;
     QString tmpexportdir;
+    QString squirrelfilepath;
+    QString packageformat;
+    QString imageformat;
 
     /* check if it's a special type of export first */
     if (filetype == "bids") {
+        packageformat = "bids";
         QString log;
         ExportBIDS(exportid, bidsreadme, bidsflags, tmpexportdir, exportstatus, log);
         msgs << log;
     }
     /* squirrel */
     else if (filetype == "squirrel") {
+        packageformat = "squirrel";
+        imageformat = "orig";
+        if (squirrelflags.contains("SQUIRREL_FORMAT_ANONYMIZE")) imageformat = "anon";
+        if (squirrelflags.contains("SQUIRREL_FORMAT_ANONYMIZEFULL")) imageformat = "anonfull";
+        if (squirrelflags.contains("SQUIRREL_FORMAT_NIFTI4D")) imageformat = "nifti4d";
+        if (squirrelflags.contains("SQUIRREL_FORMAT_NIFTI4DGZ")) imageformat = "nifti4dgz";
+        if (squirrelflags.contains("SQUIRREL_FORMAT_NIFTI3D")) imageformat = "nifti3d";
+        if (squirrelflags.contains("SQUIRREL_FORMAT_NIFTI3DGZ")) imageformat = "nifti3d";
+
         QString log;
-        ExportSquirrel(exportid, squirreltitle, squirreldesc, downloadflags, squirrelflags, exportstatus, tmpexportdir, log);
+        ExportSquirrel(exportid, squirreltitle, squirreldesc, downloadflags, squirrelflags, exportstatus, tmpexportdir, squirrelfilepath, log);
+        n->WriteLog(QString("ExportLocal() after calling ExportSquirrel(): tmpexportdir [%1]   squirrelfilepath [%2]").arg(tmpexportdir).arg(squirrelfilepath));
         msgs << log;
-
-		QSqlQuery q2;
-		q2.prepare("update publicdataset_downloads set download_zippedsize = :zippedsize, download_unzippedsize = :unzippedsize, download_filelist = :filecontents, download_key = upper(sha1(now())) where publicdownload_id = :publicdownloadid");
-		q2.bindValue(":zippedsize",zippedsize);
-		q2.bindValue(":unzippedsize",unzippedsize);
-		q2.bindValue(":filename",filename);
-		q2.bindValue(":filecontents",filecontents);
-		q2.bindValue(":publicdownloadid",publicdownloadid);
-		n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
-
     }
     else {
         if (!GetExportSeriesList(exportid)) {
@@ -607,24 +611,19 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                                     }
                                 }
                                 else {
-                                    seriesstatus = "error";
-                                    exportstatus = "error";
-                                    n->WriteLog("ERROR [" + indir + "] is empty");
-                                    msgs << "Directory [" + indir + "] is empty";
+                                    seriesstatus = exportstatus = "error";
+                                    msgs << n->WriteLog("ERROR [" + indir + "] is empty");
                                     statusmessage = "Directory [" + indir + "] is empty. Data missing from disk";
                                 }
                             }
                             else {
-                                seriesstatus = "error";
-                                exportstatus = "error";
-                                n->WriteLog("ERROR indir [" + indir + "] does not exist");
-                                msgs << "Directory [" + indir + "] does not exist";
+                                seriesstatus = exportstatus = "error";
                                 statusmessage = "Directory [" + indir + "] does not exist. Data missing from disk";
+                                msgs << n->WriteLog(statusmessage);
                             }
                         }
                         else {
-                            n->WriteLog("numfiles is 0");
-                            msgs << "Series contains 0 files";
+                            msgs << n->WriteLog("numfiles is 0");
                         }
                     }
                     else {
@@ -646,13 +645,11 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                                 msgs << "Error [" + m + "] while creating path [" + behoutdir + "]";
                         }
                         else {
-                            n->WriteLog("WARNING behindir [" + behindir + "] does not exist");
-                            msgs << "Directory [" + behindir + "] does not exist";
+                            msgs << n->WriteLog("WARNING behindir [" + behindir + "] does not exist");
                         }
                     }
                     else {
-                        n->WriteLog("Not downloading beh data");
-                        msgs << "Not downloading beh data\n";
+                        msgs << n->WriteLog("Not downloading beh data");
                     }
 
                     /* copy the QC data */
@@ -760,7 +757,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
         }
     }
 
-    /* extra steps for publicdownload */
+    /* extra steps for public DOWNLOAD */
     if (exporttype == "publicdownload") {
 
         QSqlQuery q;
@@ -786,26 +783,19 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                 else
                     systemstring = "zip -1rq " + zipfile + " .";
                 n->WriteLog(SystemCommand(systemstring, true));
-                //n->WriteLog("Changing directory to [" + pwd + "]");
-                QDir::setCurrent(pwd);
-                systemstring = "unzip -vl " + zipfile;
-                QString filecontents = SystemCommand(systemstring, false);
-                QStringList lines = filecontents.split("\n");
-                QString lastline = lines.last().trimmed();
-                n->WriteLog(QString("Last line of [%1] %2").arg(systemstring).arg(lastline));
-                QStringList parts = lastline.trimmed().split(QRegularExpression("\\s+"), Qt::SkipEmptyParts); /* split on whitespace */
-                qint64 unzippedsize(0);
-                qint64 zippedsize(0);
-                if (parts.size() >= 2) {
-                    unzippedsize = parts[0].toLongLong();
-                    zippedsize = parts[1].toLongLong();
-                }
 
+                /* get the zip file details */
+                QString filecontents;
+                qint64 unzipsize(0), zipsize(0), numfiles(0);
+                QString compression;
+                GetZipFileDetails(zipfile, unzipsize, zipsize, compression, numfiles, filecontents);
+
+                /* update the download's zippedsize, file contents, and file name - These should all be available by this point in the process */
                 QSqlQuery q2;
                 q2.prepare("update public_downloads set pd_createdate = now(), pd_expiredate = date_add(now(), interval :expiredays day), pd_zippedsize = :zippedsize, pd_unzippedsize = :unzippedsize, pd_filename = :filename, pd_filecontents = :filecontents, pd_key = upper(sha1(now())), pd_status = 'complete' where pd_id = :publicdownloadid");
                 q2.bindValue(":expiredays",expiredays);
-                q2.bindValue(":zippedsize",zippedsize);
-                q2.bindValue(":unzippedsize",unzippedsize);
+                q2.bindValue(":zipsize",zipsize);
+                q2.bindValue(":unzipsize",unzipsize);
                 q2.bindValue(":filename",filename);
                 q2.bindValue(":filecontents",filecontents);
                 q2.bindValue(":publicdownloadid",publicdownloadid);
@@ -813,8 +803,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
             }
             else {
                 exportstatus = "error";
-                n->WriteLog("ERROR directory [" + outdir + "] does not exist");
-                msgs << "Outdir [" + zipfile + "] does not exist";
+                msgs << n->WriteLog("ERROR directory [" + outdir + "] does not exist");
             }
 
             if (QFile::exists(zipfile)) {
@@ -822,23 +811,23 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
             }
             else {
                 exportstatus = "error";
-                n->WriteLog("ERROR unable to create zip file [" + zipfile + "]");
-                msgs << "Unable to create [" + zipfile + "]";
+                msgs << n->WriteLog("ERROR unable to create zip file [" + zipfile + "]");
             }
         }
+        /* public downloadid not found */
         else {
-            /* public downloadid not found */
             msgs << n->WriteLog("publicdownloadid not found");
         }
     }
 
-    /* extra steps for publicdownload */
+    /* extra steps for public DATASET download */
     if (exporttype == "publicdataset") {
-        n->WriteLog("Working on a public dataset download");
+        n->WriteLog(QString("Working on a publicdatasetdownloadid [%1]").arg(publicdatasetdownloadid));
+        n->WriteLog(QString("ExportLocal() exporttype is publicdataset: tmpexportdir [%1]   squirrelfilepath [%2]").arg(tmpexportdir).arg(squirrelfilepath));
 
         QSqlQuery q;
-        q.prepare("select * from public_datasets where publicdataset_id = :publicdatasetid");
-        q.bindValue(":publicdatasetid", publicdatasetid);
+        q.prepare("select * from publicdataset_downloads where publicdownload_id = :publicdatasetdownloadid");
+        q.bindValue(":publicdatasetdownloadid", publicdatasetdownloadid);
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         if (q.size() > 0) {
             q.first();
@@ -848,44 +837,45 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
             QString outdir = tmpexportdir;
 
             QString pwd = QDir::currentPath();
-            n->WriteLog("Current directory is [" + pwd + "], changing directory to [" + outdir + "]");
+            n->WriteLog("Current directory is [" + pwd + "], changing directory to outdir [" + outdir + "]");
             QDir d;
             if (d.exists(outdir)) {
-                QString systemstring;
-                QDir::setCurrent(outdir);
-                if (QFile::exists(zipfile))
-                    systemstring = "zip -1grq " + zipfile + " .";
-                else
-                    systemstring = "zip -1rq " + zipfile + " .";
-                n->WriteLog(SystemCommand(systemstring, true));
-                //n->WriteLog("Changing directory to [" + pwd + "]");
-                QDir::setCurrent(pwd);
-                systemstring = "unzip -vl " + zipfile;
-                QString filecontents = SystemCommand(systemstring, false);
-                QStringList lines = filecontents.split("\n");
-                QString lastline = lines.last().trimmed();
-                n->WriteLog(QString("Last line of [%1] %2").arg(systemstring).arg(lastline));
-                QStringList parts = lastline.trimmed().split(QRegularExpression("\\s+"), Qt::SkipEmptyParts); /* split on whitespace */
-                qint64 unzippedsize(0);
-                qint64 zippedsize(0);
-                if (parts.size() >= 2) {
-                    unzippedsize = parts[0].toLongLong();
-                    zippedsize = parts[1].toLongLong();
+
+                /* if this zip file already exists (squirrel format), no need to create it */
+                if (QFile::exists(squirrelfilepath)) {
+                    zipfile = squirrelfilepath;
+                }
+                else {
+                    QString systemstring;
+                    QDir::setCurrent(outdir);
+                    if (QFile::exists(zipfile))
+                        systemstring = "zip -1grq " + zipfile + " .";
+                    else
+                        systemstring = "zip -1rq " + zipfile + " .";
+                    n->WriteLog(SystemCommand(systemstring, true));
                 }
 
+                /* get the zip file details */
+                QString filecontents;
+                qint64 unzipsize(0), zipsize(0), numfiles(0);
+                QString compression;
+                GetZipFileDetails(zipfile, unzipsize, zipsize, compression, numfiles, filecontents);
+
                 QSqlQuery q2;
-                q2.prepare("update publicdataset_downloads set download_zippedsize = :zippedsize, download_unzippedsize = :unzippedsize, download_filelist = :filecontents, download_key = upper(sha1(now())) where publicdownload_id = :publicdownloadid");
-                q2.bindValue(":zippedsize",zippedsize);
-                q2.bindValue(":unzippedsize",unzippedsize);
+                q2.prepare("update publicdataset_downloads set download_zipsize = :zipsize, download_unzipsize = :unzipsize, download_numfiles = :numfiles, download_filelist = :filecontents, download_key = upper(sha1(now())), download_packageformat = :packageformat, download_imageformat = :imageformat where publicdownload_id = :publicdatasetdownloadid");
+                q2.bindValue(":zipsize",zipsize);
+                q2.bindValue(":unzipsize",unzipsize);
+                q2.bindValue(":numfiles",numfiles);
                 q2.bindValue(":filename",filename);
                 q2.bindValue(":filecontents",filecontents);
-                q2.bindValue(":publicdownloadid",publicdownloadid);
+                q2.bindValue(":packageformat",packageformat);
+                q2.bindValue(":imageformat",imageformat);
+                q2.bindValue(":publicdatasetdownloadid",publicdatasetdownloadid);
                 n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
             }
             else {
                 exportstatus = "error";
-                n->WriteLog("ERROR directory [" + outdir + "] does not exist");
-                msgs << "Outdir [" + zipfile + "] does not exist";
+                msgs << n->WriteLog("ERROR directory [" + outdir + "] does not exist");
             }
 
             if (QFile::exists(zipfile)) {
@@ -893,24 +883,12 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
             }
             else {
                 exportstatus = "error";
-                n->WriteLog("ERROR unable to create zip file [" + zipfile + "]");
-                msgs << "Unable to create [" + zipfile + "]";
+                msgs << n->WriteLog("ERROR unable to create zip file [" + zipfile + "]");
             }
-
-			/* update the publicdataset_downloads table */
-			//QSqlQuery q2;
-			//q2.prepare("update publicdataset_downloads set download_zippedsize = :zippedsize, download_unzippedsize = :unzippedsize, download_filelist = :filecontents, download_key = upper(sha1(now())) where publicdownload_id = :publicdownloadid");
-			//q2.bindValue(":zippedsize",zippedsize);
-			//q2.bindValue(":unzippedsize",unzippedsize);
-			//q2.bindValue(":filename",filename);
-			//q2.bindValue(":filecontents",filecontents);
-			//q2.bindValue(":publicdownloadid",publicdownloadid);
-			//n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
-
         }
         else {
-            /* publicdatasetid not found */
-            msgs << n->WriteLog("publicdatasetid not found");
+            /* publicdownloadid not found */
+            msgs << n->WriteLog("publicdownloadid not found");
         }
     }
 
@@ -1333,9 +1311,9 @@ bool moduleExport::ExportBIDS(int exportid, QString bidsreadme, QStringList bids
 /* ---------------------------------------------------------- */
 /* --------- ExportSquirrel --------------------------------- */
 /* ---------------------------------------------------------- */
-bool moduleExport::ExportSquirrel(int exportid, QString squirreltitle, QString squirreldesc, QStringList downloadflags, QStringList squirrelflags, QString &exportstatus, QString &outdir, qint64 &zipsize, qint64 &unzipsize, qint64 &numfiles, QString &msg) {
+bool moduleExport::ExportSquirrel(int exportid, QString squirreltitle, QString squirreldesc, QStringList downloadflags, QStringList squirrelflags, QString &exportstatus, QString &outdir, QString &filepath, QString &msg) {
 
-	n->WriteLog("Entering ExportSquirrel()...");
+    n->WriteLog(QString("%1() starting...").arg(__FUNCTION__));
     exportstatus = "complete";
 
     /* get list of seriesids/modalities */
@@ -1346,7 +1324,7 @@ bool moduleExport::ExportSquirrel(int exportid, QString squirreltitle, QString s
     q.bindValue(":exportid",exportid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.size() > 0) {
-        n->WriteLog(QString("Found [%1] rows for exportID [%2]").arg(q.size()).arg(exportid));
+        n->WriteLog(QString("%1() Found [%1] rows (series to be exported) for exportID [%2]").arg(__FUNCTION__).arg(q.size()).arg(exportid));
         while (q.next()) {
             seriesids.append(q.value("series_id").toLongLong());
             modalities.append(q.value("modality").toString().toLower());
@@ -1357,26 +1335,26 @@ bool moduleExport::ExportSquirrel(int exportid, QString squirreltitle, QString s
 
         QString m;
         if (MakePath(rootoutdir, m)) {
-            n->WriteLog("Created rootoutdir (A) [" + rootoutdir + "]");
+            n->WriteLog(QString("%1() Created rootoutdir (A) [" + rootoutdir + "]").arg(__FUNCTION__));
         }
         else {
             exportstatus = "error";
-            msg = n->WriteLog("ERROR [" + m + "] unable to create rootoutdir [" + rootoutdir + "]");
+            msg = n->WriteLog("ExportQuirrel() ERROR [" + m + "] unable to create rootoutdir [" + rootoutdir + "]");
             return false;
         }
 
-        n->WriteLog(QString("Calling WriteSquirrel(%1, %2, ...)").arg(seriesids.size()).arg(modalities.size()));
-        if (io->WriteSquirrel(exportid, squirreltitle, squirreldesc, downloadflags, squirrelflags, seriesids, modalities, rootoutdir, m))
-            n->WriteLog("WriteSquirrel() returned true");
+        n->WriteLog(QString("ExportQuirrel() Calling WriteSquirrel(%1, %2, ...)").arg(seriesids.size()).arg(modalities.size()));
+        if (io->WriteSquirrel(exportid, squirreltitle, squirreldesc, downloadflags, squirrelflags, seriesids, modalities, rootoutdir, filepath, m))
+            n->WriteLog("ExportQuirrel() WriteSquirrel() returned true");
         else
-            n->WriteLog("WriteSquirrel() returned false");
+            n->WriteLog("ExportQuirrel() WriteSquirrel() returned false");
 
         /* move the .zip file to the download directory if a web download */
 
-		/* update the publicdataset_download table to reflect the numfiles,zipsize, unzipsize, package format, image format, and status */
+        /* update the publicdataset_download table to reflect the numfiles,zipsize, unzipsize, package format, image format, and status */
     }
     else {
-        n->WriteLog("No series found");
+        n->WriteLog("ExportQuirrel() No series found");
         return false;
     }
 
@@ -1554,7 +1532,7 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
                             msgs << speedmsg;
 
                             QStringList parts = results.split(",");
-							if ((parts.size() > 0) && (parts[0].trimmed() == "SUCCESS")) {
+                            if ((parts.size() > 0) && (parts[0].trimmed() == "SUCCESS")) {
                                 /* a file was received by the remote NiDB server, now check the return md5 */
                                 if (parts[1].trimmed().toUpper() == zipmd5.toUpper()) {
                                     seriesstatus = "complete";

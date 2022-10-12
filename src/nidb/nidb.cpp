@@ -28,6 +28,7 @@
 nidb::nidb()
 {
     pid = QCoreApplication::applicationPid();
+    debug = false;
 }
 
 
@@ -38,6 +39,7 @@ nidb::nidb(QString m, bool c)
 {
     module = m;
     runningFromCluster = c;
+    debug = false;
 
     pid = QCoreApplication::applicationPid();
 
@@ -542,6 +544,34 @@ QString nidb::WriteLog(QString msg, int wrap, bool timeStamp) {
         }
         else {
             Print("Unable to write to log file. Maybe the logfile hasn't been created yet? Tried to write [" + msg + "] to [" + log.fileName() + "]");
+        }
+    }
+
+    return msg;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- Debug ------------------------------------------ */
+/* ---------------------------------------------------------- */
+QString nidb::Debug(QString msg, int wrap, bool timeStamp) {
+    if (debug) {
+        if (msg.trimmed() != "") {
+            if (wrap > 0)
+                msg = WrapText(msg, wrap);
+            if (log.isWritable()) {
+                bool success;
+                if (timeStamp)
+                    success = log.write(QString("\n[%1][%2] %3").arg(CreateCurrentDateTime()).arg(pid).arg(msg).toLatin1());
+                else
+                    success = log.write(QString("%3").toLatin1());
+
+                if (!success)
+                    Print("Unable to write to log file!");
+            }
+            else {
+                Print("Unable to write to log file. Maybe the logfile hasn't been created yet? Tried to write [" + msg + "] to [" + log.fileName() + "]");
+            }
         }
     }
 

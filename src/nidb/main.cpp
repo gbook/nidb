@@ -172,8 +172,10 @@ int main(int argc, char *argv[])
         n = new nidb(module);
         if (n->DatabaseConnect()) {
             bool keepLog = false;
-            if (debug)
+            if (debug) {
                 n->cfg["debug"] = "1";
+                n->debug = true;
+            }
 
             if (n->cfg["debug"].toInt())
                 if (!quiet)

@@ -45,7 +45,7 @@ public:
     squirrel();
 
     bool read(QString filename, bool validateOnly=false);
-    bool write(QString outpath, QString &m, bool debug=false);
+    bool write(QString outpath, QString &filepath, QString &m, bool debug=false);
     bool validate();
     void print();
 
@@ -65,15 +65,15 @@ public:
     QString studyDirFormat; /*!< orig, seq */
     QString seriesDirFormat; /*!< orig, seq */
     QString dataFormat; /*!< orig, anon, anonfull, nift3d, nifti3dgz, nifti4d, nifti4dgz */
-	qint64 GetUnzipSize();
-	qint64 GetNumFiles();
+    qint64 GetUnzipSize();
+    qint64 GetNumFiles();
 
 private:
     void PrintPackage();
     bool MakeTempDir(QString &dir);
-	QString Log(QString m);
+    QString Log(QString m);
     QString workingDir;
-	QString logfile;
+    QString logfile;
     QStringList msgs; /* squirrel messages, to be passed back upon writing (or reading) through the squirrel library */
 
     QList<squirrelSubject> subjectList; /*!< List of subjects within this package */

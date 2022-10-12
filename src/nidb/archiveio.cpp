@@ -2321,8 +2321,9 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 /* ---------------------------------------------------------- */
 /* --------- WriteSquirrel ---------------------------------- */
 /* ---------------------------------------------------------- */
-bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStringList downloadflags, QStringList squirrelflags, QList<qint64> seriesids, QStringList modalities, QString odir, qint64 &zipsize, qint64 &unzipsize, qint64 &numfiles, QString &msg) {
-    n->WriteLog(QString("Entering WriteSquirrel(%1)...").arg(exportid));
+bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStringList downloadflags, QStringList squirrelflags, QList<qint64> seriesids, QStringList modalities, QString odir, QString &filepath, QString &msg) {
+
+    n->WriteLog(QString("%1() Entering WriteSquirrel() exportid [%2]").arg(__FUNCTION__).arg(exportid));
 
     QString exportstatus = "complete";
     subjectStudySeriesContainer s;
@@ -2337,11 +2338,11 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     QString outdir = odir;
     QString m;
     if (MakePath(outdir, m)) {
-        n->WriteLog("Created outdir [" + outdir + "]");
+        n->WriteLog(QString("%1() Created outdir [%2]").arg(__FUNCTION__).arg(outdir));
     }
     else {
         exportstatus = "error";
-        msg = n->WriteLog("ERROR [" + m + "] unable to create outdir [" + outdir + "]");
+        msg = n->WriteLog(QString("%1() ERROR, unable to create outdir [" + outdir + "]   msg [" + m + "]").arg(__FUNCTION__));
         return false;
     }
 
@@ -2367,7 +2368,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
         SQUIRREL_INCSTUDYNUM
         SQUIRREL_INCSERIESNUM
     */
-    n->WriteLog(QString("Squirrel flags [%1]").arg(squirrelflags.join(",")));
+    n->WriteLog(QString("%1() Squirrel flags [%1]").arg(__FUNCTION__).arg(squirrelflags.join(",")));
 
     if (squirrelflags.contains("SQUIRREL_FORMAT_ANONYMIZE")) sqrl.dataFormat = "anon";
     if (squirrelflags.contains("SQUIRREL_FORMAT_ANONYMIZEFULL")) sqrl.dataFormat = "anonfull";
@@ -2391,15 +2392,13 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
         int studyCounter = 1; /* the session (study) counter */
 
         subject subj(uid, "", n); /* get the subject object by UID */
-		//subj.PrintSubjectInfo();
 
-        n->WriteLog("Working on [" + uid + "]");
+        n->WriteLog(QString("%1() Working on subject [" + uid + "]").arg(__FUNCTION__));
 
         double subjectAge = s[uid][0][0]["subjectage"].toDouble();
 
         /* create the squirrelSubject object */
         squirrelSubject sqrlSubject = subj.GetSquirrelObject();
-		//sqrlSubject.PrintSubject();
 
         QList<int> enrollmentIDs;
 
@@ -2410,7 +2409,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
             if (studynum == 0)
                 continue;
 
-            n->WriteLog(QString("Working on [" + uid + "] and study [%1]").arg(studynum));
+            n->WriteLog(QString("%1() Working on subject [%2]  study [%3]").arg(__FUNCTION__).arg(uid).arg(studynum));
 
             int studyid = s[uid][studynum][0]["studyid"].toInt();
             study stdy(studyid, n);
@@ -2446,7 +2445,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                 if (q2.size() > 0) {
                     while (q2.next()) {
                         int pipelineid = q2.value("pipeline_id").toInt();
-                        n->WriteLog(QString("Found pipeline with ID [%1]").arg(pipelineid));
+                        n->WriteLog(QString("[%1] Found pipeline with ID [%2]").arg(__FUNCTION__).arg(pipelineid));
                         if (!pipelineIDs.contains(pipelineid)) {
                             pipelineIDs.append(pipelineid);
                         }
@@ -2463,7 +2462,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                 if (seriesnum == 0)
                     continue;
 
-                n->WriteLog(QString("Working on [" + uid + "] and study [%1] and series [%2]").arg(studynum).arg(seriesnum));
+                n->WriteLog(QString("%1() Working on subject [%2]  study [%3]  series [%4]").arg(__FUNCTION__).arg(uid).arg(studynum).arg(seriesnum));
 
                 QString seriesstatus = "complete";
                 QString statusmessage;
@@ -2499,6 +2498,8 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
 
                 if (datadirexists) {
                     if (!datadirempty) {
+                        msgs << n->WriteLog(QString("%1() Appending raw data file list").arg(__FUNCTION__));
+
                         /* all we need to do here is tell the squirrel object where the raw data files are */
                         sqrlSeries.stagedFiles = FindAllFiles(datadir, "*", true);
                         QHash<QString, QString> tags;
@@ -2549,15 +2550,15 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                     }
                     else {
                         seriesstatus = exportstatus = "error";
-                        msgs << n->WriteLog("ERROR. Directory [" + datadir + "] is empty");
+                        msgs << n->WriteLog(QString("%1() ERROR. Directory [" + datadir + "] is empty").arg(__FUNCTION__));
                     }
                 }
                 else {
                     seriesstatus = exportstatus = "error";
-                    msgs << n->WriteLog("ERROR datadir [" + datadir + "] does not exist");
+                    msgs << n->WriteLog(QString("%1() ERROR datadir [" + datadir + "] does not exist").arg(__FUNCTION__));
                 }
 
-				/* export the beh data */
+                /* export the beh data */
                 if (downloadflags.contains("DOWNLOAD_BEH", Qt::CaseInsensitive)) {
                     if (behdirexists) {
                         /* all we need to do here is tell the squirrel object where the raw beh files are */
@@ -2598,7 +2599,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                 }
 
                 n->SetExportSeriesStatus(seriesid,seriesstatus,statusmessage);
-                msgs << QString("Series [%1%2-%3 (%4)] complete").arg(uid).arg(studynum).arg(seriesnum).arg(seriesdesc);
+                msgs << n->WriteLog(QString("Series [%1%2-%3 (%4)] complete").arg(uid).arg(studynum).arg(seriesnum).arg(seriesdesc));
 
                 /* add the completed squirrelSeries to the squirrelStudy object */
                 sqrlStudy.addSeries(sqrlSeries);
@@ -2728,11 +2729,8 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
 
     /* the squirrel object should be complete, so write it out */
     QString m2;
-    sqrl.write(outdir,m2);
-	msgs << n->WriteLog("squirrel.write returned [" + m2 + "]");
-
-	numfiles = sqrl.GetNumFiles();
-	unzipsize = sqrl.GetUnzipSize();
+    sqrl.write(outdir, filepath, m2);
+    msgs << n->WriteLog(QString("[%1] squirrel.write() returned [" + m2 + "]").arg(__FUNCTION__));
 
     msg = msgs.join("\n");
     n->WriteLog("Leaving WriteSquirrel()...");
