@@ -277,30 +277,43 @@
 		$numdownloads = mysqli_num_rows($result);
 		if ($numdownloads > 0) {
 			?>
-			This dataset has <?=$numdownloads?> downloads available
-			<div class="ui accordion"><?
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$downloadname = $row['download_name'];
-				$downloaddesc = $row['download_desc'];
-				$downloadzipsize = $row['download_zipsize'];
-				$downloadunzipsize = $row['download_unzipsize'];
-				$downloadnumfiles = $row['download_numfiles'];
-				$downloadfilelist = $row['download_filelist'];
-				$downloadpackageformat = $row['download_packageformat'];
-				$downloadimageformat = $row['download_imageformat'];
-				$downloadkey = $row['download_key'];
-				$downloadnumdownloads = $row['download_numdownloads'];
+			<div class="ui top attached blue segment">
+				This dataset has <?=$numdownloads?> downloads available
+			</div>
+			<div class="ui bottom attached segment">
+				<div class="ui compact fluid accordion"><?
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+					$downloadname = $row['download_name'];
+					$downloaddesc = $row['download_desc'];
+					$downloadzipsize = $row['download_zipsize'];
+					$downloadunzipsize = $row['download_unzipsize'];
+					$downloadnumfiles = $row['download_numfiles'];
+					$downloadfilelist = $row['download_filelist'];
+					$downloadpackageformat = $row['download_packageformat'];
+					$downloadimageformat = $row['download_imageformat'];
+					$downloadkey = $row['download_key'];
+					$downloadnumdownloads = $row['download_numdownloads'];
+					?>
+						<div class="title">
+							<i class="dropdown icon"></i>
+							<?=$downloadname?>
+						</div>
+						<div class="content">
+							<table class="ui compact table">
+								<tr><td><b>Description</b></td><td><?=$downloaddesc?></td></tr>
+								<tr><td><b>Zip size</b></td><td><?=HumanReadableFileSize($downloadzipsize)?></td></tr>
+								<tr><td><b>Unzip size</b></td><td><?=HumanReadableFileSize($downloadunzipsize)?></td></tr>
+								<tr><td><b>Number of files in package</b></td><td><?=number_format($downloadnumfiles)?></td></tr>
+								<tr><td><b>Package format</b></td><td><?=$downloadpackageformat?></td></tr>
+								<tr><td><b>Image format</b></td><td><?=$downloadimageformat?></td></tr>
+							</table>
+						</div>
+					<?
+				}
 				?>
-					<div class="title">
-						<i class="dropdown icon"></i>
-						<?=$downloadname?>
-					</div>
-					<div class="content">
-						<p><?=$downloaddesc?></p>
-					</div>
-				<?
-			}
-			?></div><?
+				</div>
+			</div>
+			<?
 		}
 		else {
 			?>No downloads available<?
