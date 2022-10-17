@@ -757,23 +757,25 @@
 					<tr>
 						<td class="right aligned"><h4 class="header">Log</h4></td>
 						<td>
-							<?
-								$sqlstring = "select * from upload_logs where upload_id = $uploadid";
-								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-							?>
-							<div class="ui accordion">
-								<div class="title">
-									<i class="dropdown icon"></i>
-									View Log <span class="tiny"><?=mysqli_num_rows($result)?> entries</span>
-								</div>
-								<div class="content">
-									<tt><pre><?
-										while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-											$date = $row['log_date'];
-											$msg = $row['log_msg'];
-											echo "[$date] $msg\n";
-										}
-									?></pre></tt>
+							<div class="ui scrolling segment">						
+								<?
+									$sqlstring = "select * from upload_logs where upload_id = $uploadid";
+									$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+								?>
+								<div class="ui accordion">
+									<div class="title">
+										<i class="dropdown icon"></i>
+										View Log <span class="tiny"><?=mysqli_num_rows($result)?> entries</span>
+									</div>
+									<div class="content">
+										<tt><pre><?
+											while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+												$date = $row['log_date'];
+												$msg = $row['log_msg'];
+												echo "[$date] $msg\n";
+											}
+										?></pre></tt>
+									</div>
 								</div>
 							</div>
 						</td>
