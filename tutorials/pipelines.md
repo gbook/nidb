@@ -18,7 +18,7 @@ Your pipeline may pull data from multiple studies, but each analysis will only b
 
 This configuration starts off with a single imaging study, and a single pipeline. An example is a single T1 image which is passed through a freesurfer pipeline.
 
-<figure><img src="../.gitbook/assets/image (12).png" alt=""><figcaption><p>Simple pipeline example</p></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (12) (1).png" alt=""><figcaption><p>Simple pipeline example</p></figcaption></figure>
 
 Here's a sample pipeline specification for the above scenario
 
@@ -48,7 +48,7 @@ Pipeline dependency --> Criteria: study
 
 This configuration takes data from multiple studies and passes it through a single pipeline. An example is an fMRI task analysis that requires a T1 from a different study. The T1 comes from study A, and the fMRI task from study B.
 
-<figure><img src="../.gitbook/assets/image (11).png" alt=""><figcaption><p>In this example, Study1 is the study of record.</p></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (11) (1).png" alt=""><figcaption><p>In this example, Study1 is the study of record.</p></figcaption></figure>
 
 In this example, Study1 is the 'study of record'. All analyses, statuses, and results are associated with Study1. Here's the pipeline settings to use in this example.
 

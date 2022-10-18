@@ -37,17 +37,61 @@ Install or upgrade NiDB in minutes on RHEL compatible Linux OS.
 
 ### Automated import of DICOM data
 
-DICOM data can be automatically imported using the included dcmrcv DICOM receiver. Set your MRI or other DICOM compatible device to send images to NiDB, and NiDB will automatically archive them. Image series can arrive on NiDB in any order; partial series sent; or full series to overlap incomplete series.
+DICOM data can be automatically imported using the included `dcmrcv` DICOM receiver. Setup your MRI or other DICOM compatible device to send images to NiDB, and NiDB will automatically archive them. Image series can arrive on NiDB in any order: partial series, or full series to overlap incomplete series.
 
 ### Store any type of data
 
 Literally **any** type of imaging data: binary; assessment; paper based; genetics. See full list of [supported modalities](contribute/squirrel-data-sharing-format/modalities.md). All data is stored in a hierarchy: subject --> study --> series. Data is searchable across project, across subject.
 
-<img src=".gitbook/assets/image.png" alt="" data-size="original">
+<img src=".gitbook/assets/image (11).png" alt="" data-size="original">
 
 ### Store clinical trial data
 
 NiDB stores multiple time-points with identifiers for clinical trials; exact day numbers (days 1, 15, 30 ...) or ordinal timepoints (timepoint 1, 2, 3 ...) or both (day1-time1, day1-time2, day2-time1, ... )
+
+### Bulk import of imaging data
+
+Got a batch of DICOMs from a collaborator, or from an old DVD? Import them easily
+
+<figure><img src=".gitbook/assets/image (7).png" alt=""><figcaption></figcaption></figure>
+
+### Search and export imaging data
+
+Find imaging data from any project (that you have permissions to...) and export data. Search by dozens of criteria.
+
+<figure><img src=".gitbook/assets/image.png" alt=""><figcaption></figcaption></figure>
+
+### Export to multiple formats
+
+**Image formats**
+
+* Original raw data - DICOM, Par/Rec, Nifti
+  * Anonymized DICOM data: partial and full anonymization
+* Nifti3d
+* Nifti3dgz
+* Nifti4d
+* Nifti4dgz
+* squirrel
+
+**Package formats**
+
+* squirrel
+* BIDS
+* NDA/NDAR
+
+**Destinations**
+
+* NFS share
+* Web
+* Public download/dataset
+* Local FTP
+* Remote NiDB instance
+
+### Search and export non-imaging data
+
+Data obtained from pipeline analysis, imported and locally generated measures, drugs, vitals, measures, are all searchable.
+
+![](<.gitbook/assets/image (12).png>)
 
 ## Publications
 
