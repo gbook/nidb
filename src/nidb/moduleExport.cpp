@@ -394,12 +394,13 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 
         QString log;
         ExportSquirrel(exportid, squirreltitle, squirreldesc, downloadflags, squirrelflags, exportstatus, tmpexportdir, squirrelfilepath, log);
-        n->WriteLog(QString("ExportLocal() after calling ExportSquirrel(): tmpexportdir [%1]   squirrelfilepath [%2]").arg(tmpexportdir).arg(squirrelfilepath));
+        n->WriteLog(QString("ExportLocal() - After calling ExportSquirrel(): tmpexportdir [%1]   squirrelfilepath [%2]").arg(tmpexportdir).arg(squirrelfilepath));
         msgs << log;
     }
     else {
         if (!GetExportSeriesList(exportid)) {
-            msg = "Unable to get a series list";
+            msgs << n->WriteLog(QString("%1() - Unable to get a series list").arg(__FUNCTION__));
+            msg = msgs.join("\n");
             return false;
         }
 
@@ -409,15 +410,15 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
         int laststudyid = 0;
         QString newseriesnum = "1";
 
-        /* iterate through the UIDs */
+        /* iterate through the subjects (UIDs) */
         for(QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>>::iterator a = s.begin(); a != s.end(); ++a) {
             QString uid = a.key();
 
-            /* iterate through the studynums */
+            /* iterate through the studies (studynums) */
             for(QMap<int, QMap<int, QMap<QString, QString>>>::iterator b = s[uid].begin(); b != s[uid].end(); ++b) {
                 int studynum = b.key();
 
-                /* iterate through the seriesnums */
+                /* iterate through the series (seriesnums) */
                 for(QMap<int, QMap<QString, QString>>::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
                     int seriesnum = c.key();
 
@@ -516,10 +517,8 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                         }
                     }
                     else {
-                        seriesstatus = "error";
-                        exportstatus = "error";
-                        n->WriteLog("ERROR unable to create rootoutdir [" + rootoutdir + "]");
-                        msgs << "Unable to create output directory [" + rootoutdir + "]";
+                        seriesstatus = exportstatus = "error";
+                        msgs << n->WriteLog("ERROR unable to create rootoutdir [" + rootoutdir + "]");
                         statusmessage = "Unable to create rootoutdir [" + rootoutdir + "]";
                     }
 
@@ -540,15 +539,22 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 
                     n->WriteLog(QString("Export type is '%1'. rootoutdir [%2], outdir [%3], qcoutdir [%4], behoutdir [%5]").arg(exporttype).arg(rootoutdir).arg(outdir).arg(qcoutdir).arg(behoutdir));
 
-                    /* export the imaging data */
+                    /* export the imaging data, with validity checks */
                     if (downloadflags.contains("DOWNLOAD_IMAGING",Qt::CaseInsensitive)) {
+
+                        /* check if there are files to export */
                         if (numfiles > 0) {
                             n->WriteLog(QString("Downloading imaging data. Series contains [%1] files").arg(numfiles));
+
+                            /* check if the data directory actually exists on disk */
                             if (datadirexists) {
                                 n->WriteLog("Series data directory [" + indir + "] exists");
+
+                                /* check if the data directory actually contains files */
                                 if (!datadirempty) {
                                     n->WriteLog("Data directory is not empty");
-                                    // output the correct file type
+
+                                    /* output the correct file type */
                                     if ((modality != "mr") || (filetype == "dicom") || ((datatype != "dicom") && (datatype != "parrec"))) {
                                         // use rsync instead of cp because of the number of files limit
                                         QString systemstring = QString("rsync %1/* %2/").arg(indir).arg(outdir);
@@ -612,22 +618,22 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                                 }
                                 else {
                                     seriesstatus = exportstatus = "error";
-                                    msgs << n->WriteLog("ERROR [" + indir + "] is empty");
                                     statusmessage = "Directory [" + indir + "] is empty. Data missing from disk";
+                                    msgs << n->WriteLog(QString("%1() - %2").arg(__FUNCTION__).arg(statusmessage));
                                 }
                             }
                             else {
                                 seriesstatus = exportstatus = "error";
                                 statusmessage = "Directory [" + indir + "] does not exist. Data missing from disk";
-                                msgs << n->WriteLog(statusmessage);
+                                msgs << n->WriteLog(QString("%1() - %2").arg(__FUNCTION__).arg(statusmessage));
                             }
                         }
                         else {
-                            msgs << n->WriteLog("numfiles is 0");
+                            msgs << n->WriteLog(QString("%1() - numfiles is 0").arg(__FUNCTION__).arg(statusmessage));
                         }
                     }
                     else {
-                        n->WriteLog("Imaging data not selected for download");
+                        msgs << n->WriteLog(QString("%1() - Imaging data was not selected for download").arg(__FUNCTION__).arg(statusmessage));
                     }
 
                     /* export the beh data */
@@ -635,14 +641,18 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                         if (behdirexists) {
                             QString m;
                             if (MakePath(behoutdir, m)) {
+                                /* copy the behavioral data */
                                 QString systemstring = "cp -R " + behindir + "/* " + behoutdir;
                                 n->WriteLog(SystemCommand(systemstring, true));
+
+                                /* chmod the copied data to 777 */
                                 systemstring = "chmod -Rf 777 " + behoutdir;
                                 n->WriteLog(SystemCommand(systemstring, true));
-                                msgs << "Copying behavioral data from [" + behindir + "] to [" + behoutdir + "]";
+
+                                msgs << n->WriteLog("Copied behavioral data from [" + behindir + "] to [" + behoutdir + "]");
                             }
                             else
-                                msgs << "Error [" + m + "] while creating path [" + behoutdir + "]";
+                                msgs << n->WriteLog("Error [" + m + "] while creating path [" + behoutdir + "]");
                         }
                         else {
                             msgs << n->WriteLog("WARNING behindir [" + behindir + "] does not exist");
@@ -667,10 +677,8 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                                 msgs << "Error [" + m + "] while creating path [" + behoutdir + "]";
                         }
                         else {
-                            seriesstatus = "error";
-                            exportstatus = "error";
-                            n->WriteLog("ERROR qcindir [" + qcindir + "] does not exist");
-                            msgs << "Directory [" + qcindir + "] does not exist";
+                            seriesstatus = exportstatus = "error";
+                            msgs << n->WriteLog("ERROR qcindir [" + qcindir + "] does not exist");
                             statusmessage = "Directory [" + qcindir + "] does not exist";
                         }
                     }
@@ -688,7 +696,6 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                     n->SetExportSeriesStatus(exportseriesid,seriesstatus,statusmessage);
                     msgs << QString("Series [%1%2-%3 (%4)] complete").arg(uid).arg(studynum).arg(seriesnum).arg(seriesdesc);
 
-                    //laststudynum = studynum;
                     laststudyid = studyid;
                 }
             }
@@ -718,13 +725,13 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
             QDir d;
             if (d.exists(outdir)) {
                 QString pwd = QDir::currentPath();
-                n->WriteLog("Current directory is [" + pwd + "], changing directory to [" + outdir + "]");
+                msgs << n->WriteLog("Current directory is [" + pwd + "], changing directory to [" + outdir + "]");
 
                 QString systemstring;
                 QDir::setCurrent(outdir);
 
-                pwd = QDir::currentPath();
-                n->WriteLog("Current directory is... [" + pwd + "]");
+                //pwd = QDir::currentPath();
+                //n->WriteLog("Current directory is... [" + pwd + "]");
 
                 if (QFile::exists(zipfile))
                     systemstring = "cd " + outdir + "; zip -1grv " + zipfile + " .";
@@ -893,10 +900,8 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
     }
 
     n->WriteLog("Leaving ExportLocal()...");
-
     msg = msgs.join("\n");
-
-    return 1;
+    return true;
 }
 
 

@@ -2323,14 +2323,15 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 /* ---------------------------------------------------------- */
 bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStringList downloadflags, QStringList squirrelflags, QList<qint64> seriesids, QStringList modalities, QString odir, QString &filepath, QString &msg) {
 
-    n->WriteLog(QString("%1() Entering WriteSquirrel() exportid [%2]").arg(__FUNCTION__).arg(exportid));
+    n->WriteLog(QString("Entering WriteSquirrel() exportid [%2]").arg(__FUNCTION__).arg(exportid));
 
     QString exportstatus = "complete";
     subjectStudySeriesContainer s;
 
     QStringList msgs;
     if (!GetSeriesListDetails(seriesids, modalities, s)) {
-        msg = "Unable to get a series list";
+        msgs << n->WriteLog(QString("%1() Error - unable to get a series list").arg(__FUNCTION__));
+        msg = msgs.join("\n");
         return false;
     }
 
@@ -2338,7 +2339,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     QString outdir = odir;
     QString m;
     if (MakePath(outdir, m)) {
-        n->WriteLog(QString("%1() Created outdir [%2]").arg(__FUNCTION__).arg(outdir));
+        msgs << n->WriteLog(QString("%1() Created outdir [%2]").arg(__FUNCTION__).arg(outdir));
     }
     else {
         exportstatus = "error";
@@ -2730,7 +2731,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     /* the squirrel object should be complete, so write it out */
     QString m2;
     sqrl.write(outdir, filepath, m2);
-    msgs << n->WriteLog(QString("[%1] squirrel.write() returned [" + m2 + "]").arg(__FUNCTION__));
+    msgs << n->WriteLog(QString("%1() - squirrel.write() returned [\n" + m2 + "\n]").arg(__FUNCTION__));
 
     msg = msgs.join("\n");
     n->WriteLog("Leaving WriteSquirrel()...");
