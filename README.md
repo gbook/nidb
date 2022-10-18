@@ -4,7 +4,7 @@ description: NiDB
 
 # NeuroInformatics Database
 
-### Overview
+## Overview
 
 The Neuroinformatics Database (NiDB) is designed to store, retrieve, analyze, and share neuroimaging data. Modalities include MR, EEG, ET, video, genetics, assessment data, and any binary data. Subject demographics, family relationships, and data imported from RedCap can be stored and queried in the database.
 
@@ -29,12 +29,34 @@ The Neuroinformatics Database (NiDB) is designed to store, retrieve, analyze, an
 * Usage reports, audits, tape backup module
 * Intuitive, modern UI. Easy to use
 
-### Publications
+## Features
+
+### .rpm based installation & upgrade
+
+Install or upgrade NiDB in minutes on RHEL compatible Linux OS.
+
+### Automated import of DICOM data
+
+DICOM data can be automatically imported using the included dcmrcv DICOM receiver. Set your MRI or other DICOM compatible device to send images to NiDB, and NiDB will automatically archive them. Image series can arrive on NiDB in any order; partial series sent; or full series to overlap incomplete series.
+
+### Store any type of data
+
+Literally **any** type of imaging data: binary; assessment; paper based; genetics. See full list of [supported modalities](contribute/squirrel-data-sharing-format/modalities.md). All data is stored in a hierarchy: subject --> study --> series. Data is searchable across project, across subject.
+
+<img src=".gitbook/assets/image.png" alt="" data-size="original">
+
+### Store clinical trial data
+
+NiDB stores multiple time-points with identifiers for clinical trials; exact day numbers (days 1, 15, 30 ...) or ordinal timepoints (timepoint 1, 2, 3 ...) or both (day1-time1, day1-time2, day2-time1, ... )
+
+## Publications
 
 * Book GA, Anderson BM, Stevens MC, Glahn DC, Assaf M, Pearlson GD. Neuroinformatics Database (NiDB)--a modular, portable database for the storage, analysis, and sharing of neuroimaging data. Neuroinformatics. 2013 Oct;11(4):495-505. doi: 10.1007/s12021-013-9194-1. PMID: 23912507; PMCID: PMC3864015. https://pubmed.ncbi.nlm.nih.gov/23912507/
 * Book GA, Stevens MC, Assaf M, Glahn DC, Pearlson GD. Neuroimaging data sharing on the neuroinformatics database platform. Neuroimage. 2016 Jan 1;124(Pt B):1089-1092. doi: 10.1016/j.neuroimage.2015.04.022. Epub 2015 Apr 16. PMID: 25888923; PMCID: PMC4608854. https://pubmed.ncbi.nlm.nih.gov/25888923/
 
 **Outdated information** Watch an overview of the main features of NiDB (recorded 2015, so it's a little outdated): [Part 1](https://youtu.be/tOX7VamHGvM) | [Part 2](https://youtu.be/dX11HRj\_kEs) | [Part 3](https://youtu.be/aovrq-oKO-M)
+
+## Documentation
 
 ### Getting Started
 

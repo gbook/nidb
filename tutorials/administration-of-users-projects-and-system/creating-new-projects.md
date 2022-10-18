@@ -6,7 +6,7 @@ You must be an an NiDB administrator to create projects.
 
 Navigate to the project administration section of NiDB. **Admin** --> **Front-end** --> **Projects**. Click the **Create Project** button. This will show the new project form.
 
-<figure><img src="../../.gitbook/assets/image.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../.gitbook/assets/image (3).png" alt=""><figcaption></figcaption></figure>
 
 Fill out the information about the project. There isn't a lot of information required to create a project. Details such as templates, users, etc are created later. Descriptions of the fields:
 
