@@ -93,6 +93,10 @@ Data obtained from pipeline analysis, imported and locally generated measures, d
 
 ![](<.gitbook/assets/image (12).png>)
 
+Full analysis pipeline system
+
+
+
 ## Publications
 
 * Book GA, Anderson BM, Stevens MC, Glahn DC, Assaf M, Pearlson GD. Neuroinformatics Database (NiDB)--a modular, portable database for the storage, analysis, and sharing of neuroimaging data. Neuroinformatics. 2013 Oct;11(4):495-505. doi: 10.1007/s12021-013-9194-1. PMID: 23912507; PMCID: PMC3864015. https://pubmed.ncbi.nlm.nih.gov/23912507/
