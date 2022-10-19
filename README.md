@@ -43,7 +43,7 @@ DICOM data can be automatically imported using the included `dcmrcv` DICOM recei
 
 Literally **any** type of imaging data: binary; assessment; paper based; genetics. See full list of [supported modalities](contribute/squirrel-data-sharing-format/modalities.md). All data is stored in a hierarchy: subject --> study --> series. Data is searchable across project, across subject.
 
-<img src=".gitbook/assets/image (11).png" alt="" data-size="original">
+<img src=".gitbook/assets/image (11).png" alt="" data-size="original">![](<.gitbook/assets/image (6).png>)
 
 ### Store clinical trial data
 
@@ -59,7 +59,7 @@ Got a batch of DICOMs from a collaborator, or from an old DVD? Import them easil
 
 Find imaging data from any project (that you have permissions to...) and export data. Search by dozens of criteria.
 
-<figure><img src=".gitbook/assets/image.png" alt=""><figcaption></figcaption></figure>
+<figure><img src=".gitbook/assets/image (1).png" alt=""><figcaption></figcaption></figure>
 
 ### Export to multiple formats
 
@@ -91,11 +91,23 @@ Find imaging data from any project (that you have permissions to...) and export 
 
 Data obtained from pipeline analysis, imported and locally generated measures, drugs, vitals, measures, are all searchable.
 
-![](<.gitbook/assets/image (12).png>)
+<figure><img src=".gitbook/assets/image (12).png" alt=""><figcaption></figcaption></figure>
 
 Full analysis pipeline system
 
+### Automated MR quality control
 
+Large number of automatically generated metrics. Metrics are exportable as .csv and tables.
+
+<div>
+
+<figure><img src=".gitbook/assets/image.png" alt=""><figcaption><p>Basic motion QC on the study view page</p></figcaption></figure>
+
+ 
+
+<figure><img src=".gitbook/assets/image (16).png" alt=""><figcaption><p>Detailed QC</p></figcaption></figure>
+
+</div>
 
 ## Publications
 
