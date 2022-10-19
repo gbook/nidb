@@ -93,7 +93,13 @@ Data obtained from pipeline analysis, imported and locally generated measures, d
 
 <figure><img src=".gitbook/assets/image (12).png" alt=""><figcaption></figcaption></figure>
 
-Full analysis pipeline system
+### Full analysis pipeline system
+
+From raw data to analyzed, and storing result values/images. Utilize a compute cluster to process jobs in parallel. Example below, 200,000 hrs of compute time completed in a few weeks. Hundreds of thousands of result values automatically stored in NiDB and are searchable.
+
+<figure><img src=".gitbook/assets/image (10).png" alt=""><figcaption><p>Overview of a pipeline</p></figcaption></figure>
+
+<figure><img src=".gitbook/assets/image.png" alt=""><figcaption><p>List of analyses for a pipeline</p></figcaption></figure>
 
 ### Automated MR quality control
 
@@ -101,7 +107,7 @@ Large number of automatically generated metrics. Metrics are exportable as .csv 
 
 <div>
 
-<figure><img src=".gitbook/assets/image.png" alt=""><figcaption><p>Basic motion QC on the study view page</p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (17).png" alt=""><figcaption><p>Basic motion QC on the study view page</p></figcaption></figure>
 
  
 
