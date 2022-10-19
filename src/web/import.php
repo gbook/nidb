@@ -125,14 +125,39 @@
 	
 		?>
 		<div class="ui text container">
-			<i class="large sitemap icon"></i> <a href="import.php?action=idmapper" title="Matches a list of alternate IDs to the NiDB ID">ID mapper</a>
+		
+			<div class="ui large relaxed divided list">
+				<div class="item">
+					<i class="sitemap icon"></i>
+					<div class="content">
+						<a href="import.php?action=idmapper">ID mapper</a>
+						<div class="description" style="font-size:smaller; color:#555">Matches a list of alternate IDs to the NiDB ID</div>
+					</div>
+				</div>
+				<div class="item">
+					<i class="cloud upload icon"></i>
+					<div class="content">
+						<a href="importimaging.php">Import imaging</a>
+						<div class="description" style="font-size:smaller; color:#555">Upload imaging data and track existing uploads</div>
+					</div>
+				</div>
+				<div class="item">
+					<i class="file alternate outline icon"></i>
+					<div class="content">
+						DICOM receiver <a href="importimaging.php?action=viewdcmrcvlogs">import logs</a>
+						<div class="description" style="font-size:smaller; color:#555">View the logs from the dcmrcv</div>
+					</div>
+				</div>
+				<div class="item">
+					<i class="github icon"></i>
+					<div class="content">
+						<a href="https://github.com/gbook/nidbuploader/releases" target="_blank">Download</a> the NiDB uploader
+						<div class="description" style="font-size:smaller; color:#555">via github.com</div>
+					</div>
+				</div>
+			</div>
+		
 			<br><br>
-			<i class="large cloud upload icon"></i> <a href="importimaging.php">Import imaging</a>
-			<br><br>
-			<i class="large file alternate outline icon"></i> DICOM receiver <a href="importimaging.php?action=viewdcmrcvlogs">import logs</a>
-			<br><br>
-			<i class="large github icon"></i> <a href="https://github.com/gbook/nidbuploader/releases" target="_blank">Download</a> the NiDB uploader <span class="tiny">via github.com</span>
-			<br><br><br>
 			<i class="large disabled upload icon"></i> <span style="color: gray"><a href="import.php?action=import">Import</a> data via website (deprecated)</span>
 			<br><br>
 			<i class="large disabled file alternate outline icon"></i> <span style="color: gray">View <a href="importlog.php?action=viewtransactions">import logs</a> (deprecated)</span>

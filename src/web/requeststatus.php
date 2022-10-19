@@ -283,7 +283,7 @@
 			
 			?>
 			<div class="ui item">
-				<div class="image" style="text-align: left">
+				<div class="tiny image" style="text-align: left">
 					<i class="big grey archive icon"></i>
 					<?=$statusstr?> <?=$witherrors?>
 				</div>
