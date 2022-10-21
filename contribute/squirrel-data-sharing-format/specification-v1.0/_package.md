@@ -12,17 +12,17 @@ This object contains information about the package. The first letter is an under
 
 <mark style="color:red;">\*required</mark>
 
-| _**Variable**_ | **Type**   | **Description**                                              |
-| -------------: | ---------- | ------------------------------------------------------------ |
-|     _\*format_ | string     | Defines the package format                                   |
-|    _\*version_ | string     | squirrel format version                                      |
-|  _NiDBVersion_ | string     | The NiDB version which wrote the package                     |
-|       _\*name_ | string     | Short name of the package                                    |
-|  _description_ | string     | Longer description of the package                            |
-|       _\*date_ | datetime   | Date the package was created                                 |
-|     _subjects_ | JSON array |                                                              |
-|      dirFormat | string     | orig, seq                                                    |
-|     dataFormat | string     | orig, anon, anonfull, nifti3d, nifti3dgz, nifti4d, nifti4dgz |
+| _**Variable**_ | **Type**   | **Description**                                                                      |
+| -------------: | ---------- | ------------------------------------------------------------------------------------ |
+|     _\*format_ | string     | Defines the package format                                                           |
+|    _\*version_ | string     | squirrel format version                                                              |
+|  _NiDBVersion_ | string     | The NiDB version which wrote the package                                             |
+|       _\*name_ | string     | Short name of the package                                                            |
+|  _description_ | string     | Longer description of the package                                                    |
+|       _\*date_ | datetime   | Date the package was created                                                         |
+|     _subjects_ | JSON array |                                                                                      |
+|      dirFormat | string     | orig, seq (**see details below**)                                                    |
+|     dataFormat | string     | orig, anon, anonfull, nifti3d, nifti3dgz, nifti4d, nifti4dgz (**see details below**) |
 
 ### dirFormat
 

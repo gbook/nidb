@@ -41,7 +41,7 @@ DICOM data can be automatically imported using the included `dcmrcv` DICOM recei
 
 ### Store any type of data
 
-Literally **any** type of imaging data: binary; assessment; paper based; genetics. See full list of [supported modalities](contribute/squirrel-data-sharing-format/modalities.md). All data is stored in a hierarchy: subject --> study --> series. Data is searchable across project, across subject.
+Literally **any** type of imaging data: binary; assessment; paper based; genetics. See full list of [supported modalities](contribute/squirrel-data-sharing-format/modalities.md). All data is stored in a hierarchy: Subject --> Study --> Series. Data is searchable across project and across subject.
 
 <img src=".gitbook/assets/image (11).png" alt="" data-size="original">![](<.gitbook/assets/image (6).png>)
 
@@ -99,7 +99,7 @@ From raw data to analyzed, and storing result values/images. Utilize a compute c
 
 <figure><img src=".gitbook/assets/image (10).png" alt=""><figcaption><p>Overview of a pipeline</p></figcaption></figure>
 
-<figure><img src=".gitbook/assets/image.png" alt=""><figcaption><p>List of analyses for a pipeline</p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (2).png" alt=""><figcaption><p>List of analyses for a pipeline</p></figcaption></figure>
 
 ### Automated MR quality control
 
@@ -114,6 +114,12 @@ Large number of automatically generated metrics. Metrics are exportable as .csv 
 <figure><img src=".gitbook/assets/image (16).png" alt=""><figcaption><p>Detailed QC</p></figcaption></figure>
 
 </div>
+
+### Calendar
+
+Fully featured calendar, running securely on your internal network. Repeating appts, blocking appts, and time requests.
+
+<figure><img src=".gitbook/assets/image.png" alt=""><figcaption><p>Week view, showing US holidays</p></figcaption></figure>
 
 ## Publications
 
