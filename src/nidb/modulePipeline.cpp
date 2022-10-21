@@ -703,7 +703,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
     /* get pipeline information, for data copying preferences */
     pipeline p(pipelineid, n);
     if (!p.isValid) {
-        n->WriteLog("Pipeline was not valid [ in GetData()]: [" + p.msg + "]");
+		n->WriteLog("\tGetData() Pipeline was not valid [ in GetData()]: [" + p.msg + "]");
         return false;
     }
     QString submithost;
@@ -716,7 +716,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
     /* get information about the study */
     study s(studyid, n);
     if (!s.valid()) {
-        n->WriteLog("Study was not valid: [" + s.msg() + "]");
+		n->WriteLog("\tGetData() Study was not valid: [" + s.msg() + "]");
         return false;
     }
     QString modality = s.modality();
@@ -856,7 +856,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                 q.bindValue(":studytype", studytype);
             }
 
-            dlog << n->WriteLog("   SQL used for this search (for debugging) [" + n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true) + "]");
+			dlog << n->WriteLog("\tGetData() SQL used for this search (for debugging) [" + n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true) + "]");
             if (q.size() > 0) {
                 dlog << QString("   Data FOUND for step [%1] (subject level)").arg(i);
                 RecordDataDownload(datadownloadid, analysisid, modality, 1, 1, -1, "", i, "Data found for this step (subject level)");
@@ -981,7 +981,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
 
         /* check to see if we should even run this step */
         if (!enabled) {
-            dlog << n->WriteLog("   This data step [" + protocol + "] is not enabled. Data step will not be downloaded.");
+			dlog << n->WriteLog("\tGetData() This data step [" + protocol + "] is not enabled. Data step will not be downloaded.");
             RecordDataDownload(datadownloadid, analysisid, modality, 1, -1, -1, "", i, "Step not enabled. Not downloading.");
             continue;
         }
@@ -997,7 +997,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
         q.prepare(QString("show tables like '%1_series'").arg(modality.toLower()));
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         if (q.size() < 1) {
-			dlog << n->WriteLog(QString("pipeline [] - Error - Modality [" + modality + "] not found. Data step will not be downloaded.").arg(p.name));
+			dlog << n->WriteLog(QString("\tGetData() - Error - Modality [" + modality + "] not found. Data step will not be downloaded.").arg(p.name));
             RecordDataDownload(datadownloadid, analysisid, modality, 1, -1, -1, "", i, "Invalid modality. Not downloading.");
             continue;
         }
@@ -1032,7 +1032,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
 
             if ((assoctype == "nearesttime") || (assoctype == "nearestintime")) {
                 /* find the data from the same subject and modality that has the nearest (in time) matching scan */
-                dlog << n->WriteLog("   Searching for subject-level data nearest-in-time.");
+				dlog << n->WriteLog("\tGetData() Searching for subject-level data nearest-in-time.");
 
                 /* get the otherstudyid */
                 QSqlQuery q2;
@@ -1058,7 +1058,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                     continue;
                 }
 
-                dlog << n->WriteLog("   Preparing (subject-level) data search:  protocols [" + protocols + "]  criteria [" + criteria + "]  imagetype [" + imagetypes + "]");
+				dlog << n->WriteLog("\tGetData() Preparing (subject-level) data search:  protocols [" + protocols + "]  criteria [" + criteria + "]  imagetype [" + imagetypes + "]");
 
                 /* base SQL string */
                 sqlstring = QString("select * from %1_series where study_id = :otherstudyid and trim(%2) in (%3)").arg(modality).arg(seriesdescfield).arg(protocols);
@@ -1084,7 +1084,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                 q.bindValue(":otherstudyid", otherstudyid);
             }
             else if (assoctype == "all") {
-                dlog << n->WriteLog("   Searching for all subject-level data.");
+				dlog << n->WriteLog("\tGetData() Searching for all subject-level data.");
                 sqlstring = QString("SELECT *, `%1_series`.%1series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `%1_series` on `%1_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '%1' AND `subjects`.subject_id = :subjectid AND trim(`%1_series`.%2) in (%3)").arg(modality).arg(seriesdescfield).arg(protocols);
 
                 if (imagetypes != "''")
@@ -1098,7 +1098,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
             }
             else {
                 /* find the data from the same subject and modality that has the same study_type */
-                dlog << n->WriteLog("   Searching for subject-level data with same study type.");
+				dlog << n->WriteLog("\tGetData() Searching for subject-level data with same study type.");
 
                 sqlstring = QString("SELECT *, `%1_series`.%1series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `%1_series` on `%1_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '%1' AND `subjects`.subject_id = :subjectid AND trim(`%1_series`.%2) in (%3)").arg(modality).arg(seriesdescfield).arg(protocols);
 
@@ -1120,18 +1120,18 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
         QString sql = n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         if (q.size() > 0) {
 
-            dlog << n->WriteLog(QString("   Found [%1] matching subject-level series").arg(q.size()));
+			dlog << n->WriteLog(QString("\tGetData() Found [%1] matching subject-level series").arg(q.size()));
             /* in theory, data for this analysis exists for this study, so lets now create the analysis directory */
             QString m;
             if (!MakePath(analysispath + "/pipeline", m)) {
-                dlog << n->WriteLog("   Error: unable to create directory [" + analysispath + "/pipeline] - C");
+				dlog << n->WriteLog("\tGetData() Error: unable to create directory [" + analysispath + "/pipeline] - C");
                 UpdateAnalysisStatus(analysisid, "error", "Unable to create directory [" + analysispath + "/pipeline]", -1, -1, "", "", false, true, 0, 0);
                 continue;
             }
 
             while (q.next()) {
                 int localstudynum;
-                n->WriteLog(QString("NumDownloaded [%1]").arg(numdownloaded));
+				n->WriteLog(QString("\tGetData() NumDownloaded [%1]").arg(numdownloaded));
                 int seriesid = q.value(modality+"series_id").toInt();
                 int seriesnum = q.value("series_num").toInt();
                 QString seriesdesc = q.value("series_desc").toString();
@@ -1165,15 +1165,15 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                         localstudynum = neareststudynum;
                 }
 
-                dlog << n->WriteLog(QString("   Beginning to copy data -  protocol [%1]  seriesnum [%2]  seriesdatetime [%3]").arg(seriesdesc).arg(seriesnum).arg(seriesdatetime));
+				dlog << n->WriteLog(QString("\tGetData() Beginning to copy data -  protocol [%1]  seriesnum [%2]  seriesdatetime [%3]").arg(seriesdesc).arg(seriesnum).arg(seriesdatetime));
 
                 QString behoutdir;
                 QString indir = QString("%1/%2/%3/%4/%5").arg(n->cfg["archivedir"]).arg(uid).arg(localstudynum).arg(seriesnum).arg(datatype);
                 QString behindir = QString("%1/%2/%3/%4/beh").arg(n->cfg["archivedir"]).arg(uid).arg(localstudynum).arg(seriesnum);
 
-                dlog << n->WriteLog("   Copying imaging data from [" + indir + "]");
+				dlog << n->WriteLog("\tGetData() Copying imaging data from [" + indir + "]");
                 if (behformat != "none")
-                    dlog << n->WriteLog("   Copying behavioral data from [" + behindir + "]");
+					dlog << n->WriteLog("\tGetData() Copying behavioral data from [" + behindir + "]");
 
                 /* start building the analysis path */
                 QString newanalysispath = analysispath + "/" + location;
@@ -1211,11 +1211,11 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
 
                 QString m;
                 if (!MakePath(newanalysispath, m)) {
-                    dlog << n->WriteLog("   Error: unable to create directory [" + newanalysispath + "] message [" + m + "]");
+					dlog << n->WriteLog("\tGetData() Error: unable to create directory [" + newanalysispath + "] message [" + m + "]");
                     UpdateAnalysisStatus(analysisid, "error", "Unable to create directory [" + newanalysispath + "]", 0, -1, "", "", false, true, -1, -1);
                 }
                 else
-                    dlog << n->WriteLog("   Created imaging data output directory [" + newanalysispath + "]");
+					dlog << n->WriteLog("\tGetData() Created imaging data output directory [" + newanalysispath + "]");
 
                 SystemCommand("chmod -Rf 777 " + newanalysispath, true, true);
 
@@ -1233,17 +1233,17 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                     qint64 c;
                     qint64 b;
                     GetDirSizeAndFileCount(newanalysispath, c, b, true);
-                    dlog << n->WriteLog(QString("   Imaging data output directory [%1] now contains [%2] files, and is [%3] bytes in size.").arg(newanalysispath).arg(c).arg(b));
+					dlog << n->WriteLog(QString("\tGetData() Imaging data output directory [%1] now contains [%2] files, and is [%3] bytes in size.").arg(newanalysispath).arg(c).arg(b));
                 }
                 else {
                     QString tmpdir = n->cfg["tmpdir"] + "/" + GenerateRandomString(10);
                     QString m;
                     if (!MakePath(tmpdir, m)) {
-                        dlog << n->WriteLog("   Error: unable to create temp directory [" + tmpdir + "] message [" + m + "] for DICOM conversion");
+						dlog << n->WriteLog("\tGetData() Error: unable to create temp directory [" + tmpdir + "] message [" + m + "] for DICOM conversion");
                         UpdateAnalysisStatus(analysisid, "error", "Unable to create directory [" + newanalysispath + "]", 0, -1, "", "", false, true, -1, -1);
                     }
                     else
-                        dlog << n->WriteLog("   Created temp directory [" + tmpdir + "] for DICOM conversion");
+						dlog << n->WriteLog("\tGetData() Created temp directory [" + tmpdir + "] for DICOM conversion");
                     int numfilesconv(0);
                     int numfilesrenamed(0);
 					QString binpath = n->cfg["nidbdir"] + "/bin";
@@ -1256,16 +1256,16 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                         systemstring = QString("cp -v %1/* %2").arg(tmpdir).arg(newanalysispath);
                     n->WriteLog(SystemCommand(systemstring, true, true));
 
-                    dlog << n->WriteLog("   Removing temp directory ["+tmpdir+"]");
+					dlog << n->WriteLog("\tGetData() Removing temp directory ["+tmpdir+"]");
                     if (!RemoveDir(tmpdir,m))
-                        dlog << n->WriteLog("   Error: unable to remove temp directory [" + tmpdir + "] error [" + m + "]");
+						dlog << n->WriteLog("\tGetData() Error: unable to remove temp directory [" + tmpdir + "] error [" + m + "]");
 
                     dlog << QString("   Done copying converted imaging data from [%1] via [%2] to [%3]").arg(indir).arg(tmpdir).arg(newanalysispath);
 
                     qint64 c;
                     qint64 b;
                     GetDirSizeAndFileCount(newanalysispath, c, b, true);
-                    dlog << n->WriteLog(QString("   Imaging output directory [%1] now contains [%2] files, and is [%3] bytes in size.").arg(newanalysispath).arg(c).arg(b));
+					dlog << n->WriteLog(QString("\tGetData() Imaging output directory [%1] now contains [%2] files, and is [%3] bytes in size.").arg(newanalysispath).arg(c).arg(b));
                 }
 
                 RecordDataDownload(datadownloadid, analysisid, modality, 1, 1, seriesid, newanalysispath, i, "Data downloaded");
@@ -1277,11 +1277,11 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                     dlog << "   Copying behavioral data";
                     QString m;
                     if (!MakePath(behoutdir, m)) {
-                        dlog << n->WriteLog("   Error: unable to create behavioral output directory [" + behoutdir + "] message [" + m + "] - F");
+						dlog << n->WriteLog("\tGetData() Error: unable to create behavioral output directory [" + behoutdir + "] message [" + m + "] - F");
                         UpdateAnalysisStatus(analysisid, "error", "Unable to create directory [" + newanalysispath + "]", 0, -1, "", "", false, true, -1, -1);
                     }
                     else
-                        dlog << n->WriteLog("   Created behavioral output directory [" + behoutdir + "] - F");
+						dlog << n->WriteLog("\tGetData() Created behavioral output directory [" + behoutdir + "] - F");
                     QString systemstring = "cp -Rv " + behindir + "/* " + behoutdir;
                     n->WriteLog(SystemCommand(systemstring, true, true));
 
@@ -1291,13 +1291,13 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                     qint64 c;
                     qint64 b;
                     GetDirSizeAndFileCount(behoutdir, c, b, true);
-                    dlog << n->WriteLog(QString("   Behavioral output directory now contains [%1] files, and is [%2] bytes in size.").arg(c).arg(b));
+					dlog << n->WriteLog(QString("\tGetData() Behavioral output directory now contains [%1] files, and is [%2] bytes in size.").arg(c).arg(b));
                 }
 
                 /* give full read/write permissions to everyone */
                 SystemCommand("chmod -Rf 777 " + newanalysispath, true, true);
 
-                dlog << n->WriteLog("   Done writing data to [" + newanalysispath + "]");
+				dlog << n->WriteLog("\tGetData() Done writing data to [" + newanalysispath + "]");
             }
         }
         else {
@@ -2090,7 +2090,7 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
     if (q.size() > 0) {
         while (q.next()) {
             int studyid = q.value("study_id").toInt();
-            n->WriteLog(QString("Found study (results rerun) [%1]").arg(studyid));
+			n->WriteLog(QString("\tGetStudyTodoList() Found study (results rerun) [%1]").arg(studyid));
             list.append(studyid);
             rerunStudyList << QString("%1%2").arg(q.value("uid").toString()).arg(q.value("study_num").toString());
             addedStudies++;
@@ -2108,7 +2108,7 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
     if (q.size() > 0) {
         while (q.next()) {
             int studyid = q.value("study_id").toInt();
-            n->WriteLog(QString("Found study (results rerun) [%1]").arg(studyid));
+			n->WriteLog(QString("\tGetStudyTodoList() Found study (results rerun) [%1]").arg(studyid));
             list.append(studyid);
             supplementStudyList << QString("%1%2").arg(q.value("uid").toString()).arg(q.value("study_num").toString());
             addedStudies++;
@@ -2121,7 +2121,7 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
     /* step 3 - get list of studies which do not have an entry in the analysis table for this pipeline */
     if (depend >= 0) {
         /* there is a dependency. need to check if ANY of the subject's studies have the dependency... */
-        n->WriteLog(QString("This pipeline [%1] depends on [%2]").arg(pipelineid).arg(depend));
+		n->WriteLog(QString("\tGetStudyTodoList() This pipeline [%1] depends on [%2]").arg(pipelineid).arg(depend));
 
         /* step 3a) get list of studies that have completed the dependency */
         QList<int> list;
@@ -2157,14 +2157,14 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
             /* NO groupids */
             q.prepare("select study_id from studies where study_id not in (select study_id from analysis where pipeline_id = :pipelineid) and study_id in (" + studyidlist + ") and (study_datetime < date_sub(now(), interval 6 hour)) order by study_datetime desc");
             q.bindValue(":pipelineid", pipelineid);
-            m = n->WriteLog(QString("Pipeline has a dependency [%1] and NO groups. Found %2 studies that have completed the dependency").arg(depend).arg(list.size()));
+			m = n->WriteLog(QString("\tGetStudyTodoList() Pipeline has a dependency [%1] and NO groups. Found %2 studies that have completed the dependency").arg(depend).arg(list.size()));
             InsertPipelineEvent(pipelineid, runnum, -1, "getstudylist", m);
         }
         else {
             /* with groupids */
             q.prepare("select a.study_id from studies a left join group_data b on a.study_id = b.data_id where a.study_id not in (select study_id from analysis where pipeline_id = :pipelineid) and a.study_id in (" + studyidlist + ") and (a.study_datetime < date_sub(now(), interval 6 hour)) and b.group_id in (" + groupids + ") order by a.study_datetime desc");
             q.bindValue(":pipelineid", pipelineid);
-            m = n->WriteLog(QString("Pipeline HAS a dependency [%1] and group(s) [%2]. Found %3 studies that have completed the dependency and are within the group(s)").arg(depend).arg(groupids).arg(list.size()));
+			m = n->WriteLog(QString("\tGetStudyTodoList() Pipeline HAS a dependency [%1] and group(s) [%2]. Found %3 studies that have completed the dependency and are within the group(s)").arg(depend).arg(groupids).arg(list.size()));
             InsertPipelineEvent(pipelineid, runnum, -1, "getstudylist", m);
         }
     }
@@ -2175,7 +2175,7 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
             q.prepare("select a.study_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id not in (select study_id from analysis where pipeline_id = :pipelineid) and (a.study_datetime < date_sub(now(), interval 6 hour)) and a.study_modality = :modality and c.isactive = 1 order by a.study_datetime desc");
             q.bindValue(":pipelineid", pipelineid);
             q.bindValue(":modality", modality);
-            m = n->WriteLog("Pipeline has NO dependency and NO groups");
+			m = n->WriteLog("\tGetStudyTodoList() Pipeline has NO dependency and NO groups");
             InsertPipelineEvent(pipelineid, runnum, -1, "getstudylist", m);
         }
         else {
@@ -2183,7 +2183,7 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
             q.prepare("SELECT a.study_id FROM studies a left join group_data b on a.study_id = b.data_id left join enrollment c on a.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id WHERE a.study_id NOT IN (SELECT study_id FROM analysis WHERE pipeline_id = :pipelineid) AND ( a.study_datetime < DATE_SUB( NOW( ) , INTERVAL 6 hour )) AND a.study_modality = :modality and b.group_id in (" + groupids + ") and d.isactive = 1 ORDER BY a.study_datetime DESC");
             q.bindValue(":pipelineid", pipelineid);
             q.bindValue(":modality", modality);
-            m = n->WriteLog(QString("Pipeline has NO dependency and HAS groups [%1]").arg(groupids));
+			m = n->WriteLog(QString("\tGetStudyTodoList() Pipeline has NO dependency and HAS groups [%1]").arg(groupids));
             InsertPipelineEvent(pipelineid, runnum, -1, "getstudylist", m);
         }
     }
@@ -2212,7 +2212,7 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
     if (debug)
         InsertPipelineEvent(pipelineid, runnum, -1, "getstudylist", QString("Found %1 unprocessed studies that meet criteria [" + normalStudyList.join(", ") + "]").arg(normalStudyList.size()));
 
-    m = n->WriteLog(QString("Found [%1] total studies that met criteria: [%2] initial match  [%3] rerun  [%4] supplement").arg(list.size()).arg(numInitial).arg(numRerun).arg(numSupplement));
+	m = n->WriteLog(QString("\tGetStudyTodoList() Found [%1] total studies that met criteria: [%2] initial match  [%3] rerun  [%4] supplement").arg(list.size()).arg(numInitial).arg(numRerun).arg(numSupplement));
     InsertPipelineEvent(pipelineid, runnum, -1, "getstudylist", m);
 
     return list;
