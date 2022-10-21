@@ -72,16 +72,18 @@ int modulePipeline::Run() {
        we're only going to run 1 pipeline per instance of this module */
     q.prepare("select pipeline_id from pipelines where pipeline_status <> 'running' and (pipeline_enabled = 1 or pipeline_testing = 1) order by pipeline_laststart asc");
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    if (q.size() < 1) {
+	int numPipelines = q.size();
+	if (numPipelines < 1) {
         n->WriteLog("No pipelines need to be run. Exiting module");
         SetPipelineProcessStatus("complete",0,0);
         return false;
     }
 
     /* get the list of pipelines to be run */
+	int i = 0;
     while (q.next()) {
+		i++;
         n->ModuleRunningCheckIn();
-        //bool debug(false);
 
         int pipelineid = q.value("pipeline_id").toInt();
 
@@ -89,7 +91,7 @@ int modulePipeline::Run() {
         /* check if the pipeline is valid */
         pipeline p(pipelineid, n);
         if (!p.isValid) {
-            m = n->WriteLog("Error starting pipeline. Pipeline was not valid [" + p.msg + "]");
+			m = n->WriteLog(QString("[%1] Error starting pipeline. Pipeline was not valid [" + p.msg + "]").arg(p.name));
             InsertPipelineEvent(pipelineid, runnum, -1, "pipeline_started", m);
             InsertPipelineEvent(pipelineid, runnum, -1, "pipeline_finished", "Pipeline stopped prematurely due to error");
             continue;
@@ -97,7 +99,6 @@ int modulePipeline::Run() {
         else {
             InsertPipelineEvent(pipelineid, runnum, -1, "pipeline_started", QString("Pipeline %1 started").arg(p.name));
         }
-        //debug = p.debug;
 
         /* get analysis directory root */
         QString analysisdir;
@@ -106,7 +107,7 @@ int modulePipeline::Run() {
         else
             analysisdir = n->cfg["analysisdir"];
 
-        n->WriteLog(QString("========== Working on pipeline [%1] - [%2] Submits to queue [%3] through host [%4] ==========").arg(pipelineid).arg(p.name).arg(p.queue).arg(p.submitHost));
+		n->WriteLog(QString("========== Working on pipeline [%1] - [%2] Submits to queue [%3] through host [%4] ==========").arg(p.name).arg(pipelineid).arg(p.queue).arg(p.submitHost));
 
         SetPipelineProcessStatus("running",pipelineid,0);
 
@@ -118,7 +119,7 @@ int modulePipeline::Run() {
 
         /* check if the pipeline's queue is valid */
         if (p.queue == "") {
-            m = n->WriteLog("No queue specified");
+			m = n->WriteLog(QString("[%1] No queue specified").arg(p.name));
             InsertPipelineEvent(pipelineid, runnum, -1, "error_noqueue", m);
             InsertPipelineEvent(pipelineid, runnum, -1, "pipeline_finished", "Pipeline stopped prematurely due to error");
             SetPipelineStopped(pipelineid, m);
@@ -126,7 +127,7 @@ int modulePipeline::Run() {
         }
         /* check if the submit host is valid */
         if (p.submitHost == "") {
-            m = n->WriteLog("No submit host specified");
+			m = n->WriteLog(QString("[%1] No submit host specified").arg(p.name));
             InsertPipelineEvent(pipelineid, runnum, -1, "error_nosubmithost", m);
             InsertPipelineEvent(pipelineid, runnum, -1, "pipeline_finished", "Pipeline stopped prematurely due to error");
             SetPipelineStopped(pipelineid, m);
@@ -136,7 +137,7 @@ int modulePipeline::Run() {
         /* check if the pipeline is running, if so, go on to the next one */
         QString status = GetPipelineStatus(pipelineid);
         if (status == "running") {
-            n->WriteLog("This pipeline is already running");
+			n->WriteLog(QString("[%1] pipeline is already running").arg(p.name));
             continue;
         }
 
@@ -151,7 +152,7 @@ int modulePipeline::Run() {
 
                 /* if there is no data definition and no dependency */
 				if ((dataSteps.size() < 1) && (p.parentIDs.size() < 1)) {
-                    m = n->WriteLog("Pipeline has no data items. Skipping pipeline.");
+					m = n->WriteLog(QString("[%1] pipeline has no data items. Skipping pipeline.").arg(p.name));
                     InsertPipelineEvent(pipelineid, runnum, -1, "error_nodatasteps", m);
                     InsertPipelineEvent(pipelineid, runnum, -1, "pipeline_finished", "Pipeline stopped prematurely due to error");
                     SetPipelineStopped(pipelineid, m);
@@ -165,7 +166,7 @@ int modulePipeline::Run() {
         /* get the pipeline steps (the script) */
         QList<pipelineStep> steps = GetPipelineSteps(pipelineid, p.version);
         if (steps.size() < 1) {
-            m = n->WriteLog("Pipeline has no script commands. Skipping pipeline.");
+			m = n->WriteLog(QString("[%1] Pipeline has no script commands. Skipping pipeline.").arg(p.name));
             InsertPipelineEvent(pipelineid, runnum, -1, "error_nopipelinesteps", m);
             InsertPipelineEvent(pipelineid, runnum, -1, "pipeline_finished", "Pipeline stopped prematurely due to error");
             SetPipelineStopped(pipelineid, m);
@@ -178,7 +179,7 @@ int modulePipeline::Run() {
         if (p.level == 0) {
             /* check if this module should be running now or not */
             if (!n->ModuleCheckIfActive()) {
-                n->WriteLog("Module disabled. Exiting");
+				n->WriteLog(QString("[%1] Module disabled. Exiting").arg(p.name));
                 SetPipelineStopped(pipelineid, "Pipeline module disabled while running. Stopping.");
                 SetPipelineProcessStatus("complete",0,0);
                 return 1;
@@ -190,27 +191,27 @@ int modulePipeline::Run() {
             q2.bindValue(":pid", pipelineid);
             n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
             if (q2.size() > 0) {
-                m = n->WriteLog("An analysis already exists for this one-shot level pipeline, exiting");
+				m = n->WriteLog(QString("[%1] An analysis already exists for this one-shot level pipeline, exiting").arg(p.name));
                 SetPipelineStopped(pipelineid, m);
                 continue;
             }
 
             /* create the analysis path */
             QString analysispath = QString("%1/%3").arg(p.pipelineRootDir).arg(p.name);
-            n->WriteLog("Creating path [" + analysispath + "/pipeline]");
+			n->WriteLog(QString("[%1] Creating path [" + analysispath + "/pipeline]").arg(p.name));
             QString m;
             if (!MakePath(analysispath + "/pipeline", m)) {
-                n->WriteLog("Error: unable to create directory [" + analysispath + "/pipeline] - A");
+				n->WriteLog(QString("[%1] Error: unable to create directory [" + analysispath + "/pipeline] - A").arg(p.name));
                 //UpdateAnalysisStatus(analysisid, "error", "Unable to create directory [" + analysispath + "/pipeline]", 0, -1, "", "", false, true, -1, -1);
                 continue;
             }
             else
-                n->WriteLog("Created directory [" + analysispath + "/pipeline] - A");
+				n->WriteLog(QString("[%1] Created directory [" + analysispath + "/pipeline] - A").arg(p.name));
 
             /* this file will record any events during setup */
             QString setupLogFile = "/mount" + analysispath + "/pipeline/analysisSetup.log";
             AppendCustomLog(setupLogFile, "Beginning recording");
-            n->WriteLog("Should have created this analysis setup log [" + setupLogFile + "]");
+			n->WriteLog(QString("[%1] Should have created this analysis setup log [" + setupLogFile + "]").arg(p.name));
 
             /* insert a temporary row, to be updated later, in the analysis table as a placeholder
              * so that no other processes end up running it */
@@ -223,10 +224,10 @@ int modulePipeline::Run() {
             /* create the cluster job file */
             QString sgefilepath = analysispath + "/sge.job";
             if (CreateClusterJobFile(sgefilepath, p.clusterType, analysisRowID, "UID", 0, analysispath, p.useTmpDir, p.tmpDir, "", p.name, pipelineid, p.resultScript, p.maxWallTime, steps, false)) {
-                n->WriteLog("Created sge job submit file [" + sgefilepath + "]");
+				n->WriteLog(QString("[%1] Created sge job submit file [" + sgefilepath + "]").arg(p.name));
             }
             else {
-                n->WriteLog("Error: unable to create sge job submit file [" + sgefilepath + "]");
+				n->WriteLog(QString("[%1] Error: unable to create sge job submit file [" + sgefilepath + "]").arg(p.name));
                 continue;
             }
 
@@ -236,11 +237,11 @@ int modulePipeline::Run() {
             QString qm, qresult;
             int jobid;
             if (n->SubmitClusterJob(sgefilepath, p.submitHost, n->cfg["qsubpath"], n->cfg["queueuser"], p.queue, qm, jobid, qresult)) {
-                n->WriteLog("Successfully submitted job to cluster [" + qresult + "]");
+				n->WriteLog(QString("[%1] Successfully submitted job to cluster [" + qresult + "]").arg(p.name));
                 UpdateAnalysisStatus(analysisRowID, "submitted", "Submitted to [" + p.queue + "]", jobid, -1, "", "", true, false, 0, 0);
             }
             else {
-                n->WriteLog("Error submitting job to cluster [" + qresult + "]");
+				n->WriteLog(QString("[%1] Error submitting job to cluster [" + qresult + "]").arg(p.name));
                 UpdateAnalysisStatus(analysisRowID, "error", "Submit error [" + qm + "]", 0, -1, "", "", false, true, 0, 0);
             }
             n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
@@ -289,11 +290,11 @@ int modulePipeline::Run() {
                 /* get information about the study */
                 study s(sid, n);
                 if (!s.valid()) {
-                    n->WriteLog("Study was not valid: [" + s.msg() + "]");
+					n->WriteLog(QString("[%1] Study was not valid: [" + s.msg() + "]").arg(p.name));
                     continue;
                 }
 
-                n->WriteLog(QString("---------- Working on study [%1%2] (%3 of %4) for pipeline [%5] ----------").arg(s.UID()).arg(s.studyNum()).arg(i).arg(studyids.size()).arg(p.name));
+				n->WriteLog(QString("[%1] ---------- Working on study [%2%3] (%4 of %5) ----------").arg(p.name).arg(s.UID()).arg(s.studyNum()).arg(i).arg(studyids.size()));
 
                 /* check if the number of concurrent jobs is reached. the function also checks if this pipeline module is enabled */
                 int filled;
@@ -319,7 +320,7 @@ int modulePipeline::Run() {
                         break;
 
                     if (filled == 1) {
-                        m = n->WriteLog("Concurrent analysis quota reached, waiting 15 seconds");
+						m = n->WriteLog(QString("Concurrent analysis quota reached, waiting 15 seconds").arg(p.name));
                         SetPipelineStatusMessage(pipelineid, m);
                         InsertPipelineEvent(pipelineid, runnum, -1, "maxjobs_reached", m);
                         n->ModuleRunningCheckIn();
@@ -336,7 +337,7 @@ int modulePipeline::Run() {
                 }
 
                 /* get the analysis info, if an analysis already exists for this study */
-                n->WriteLog(QString("Getting analysis info for pipelineID [%1] studyID [%2] pipelineVersion [%3]").arg(pipelineid).arg(sid).arg(p.version));
+				n->WriteLog(QString("[%1] Getting analysis info for pipelineID [%2] studyID [%3] pipelineVersion [%4]").arg(p.name).arg(pipelineid).arg(sid).arg(p.version));
                 analysis a(pipelineid, sid, n);
                 if (a.exists)
                     analysisRowID = a.analysisid;
@@ -390,7 +391,7 @@ int modulePipeline::Run() {
                         analysispath = QString("%1/%2/%3/%4").arg(p.pipelineRootDir).arg(p.name).arg(s.UID()).arg(s.studyNum());
                     else
                         analysispath = QString("%1/%2/%3/%4").arg(p.pipelineRootDir).arg(s.UID()).arg(s.studyNum()).arg(p.name);
-                    n->WriteLog("analysispath is [" + analysispath + "]");
+					n->WriteLog(QString("[%1] analysispath is [" + analysispath + "]").arg(p.name));
 
                     /* get the nearest study for this subject that has the dependency */
                     int studyNumNearest(0);
@@ -408,10 +409,10 @@ int modulePipeline::Run() {
                     QString deppath;
                     if (pipelinedep != -1) {
                         if (p.depLevel == "subject") {
-                            setuplog << n->WriteLog("Dependency is a subject level (will match dep for same subject, any study)");
+							setuplog << n->WriteLog(QString("[%1] Dependency is a subject level (will match dep for same subject, any study)").arg(p.name));
                         }
                         else {
-                            setuplog << n->WriteLog("Dependency is a study level (will match dep for same subject, same study)");
+							setuplog << n->WriteLog(QString("[%1] Dependency is a study level (will match dep for same subject, same study)").arg(p.name));
 
                             /* check the dependency and see if there's anything amiss about it */
                             QString depstatus = CheckDependency(sid, pipelinedep);
@@ -421,16 +422,16 @@ int modulePipeline::Run() {
                             }
                         }
                     }
-                    setuplog << n->WriteLog("This analysis path is [" + analysispath + "]");
+					setuplog << n->WriteLog(QString("[%1] This analysis path is [" + analysispath + "]").arg(p.name));
 
                     int numseriesdownloaded = 0;
                     /* get the data if we are not running a supplement, and not rerunning the results */
                     if ((!a.runSupplement) && (!a.rerunResults)) {
                         if (!GetData(sid, analysispath, s.UID(), analysisRowID, pipelineid, pipelinedep, p.depLevel, dataSteps, numseriesdownloaded, datalog)) {
-                            n->WriteLog("GetData() returned false");
+							n->WriteLog(QString("[%1] GetData() returned false").arg(p.name));
                         }
                         else
-                            n->WriteLog(QString("GetData() downloaded [%1] series").arg(numseriesdownloaded));
+							n->WriteLog(QString("[%1] GetData() downloaded [%2] series").arg(p.name).arg(numseriesdownloaded));
                     }
                     UpdateAnalysisStatus(analysisRowID, "", "", -1, numseriesdownloaded, "", datalog, false, false, -1, -1);
 
@@ -443,19 +444,19 @@ int modulePipeline::Run() {
 
                     if (numseriesdownloaded > 0) {
                         okToRun = true; // there is data to download from this study
-                        setuplog << n->WriteLog(QString("Study [%1%2] has [%2] matching series downloaded. Beginning analysis.").arg(s.UID()).arg(s.studyNum()).arg(numseriesdownloaded));
+						setuplog << n->WriteLog(QString("[%1] Study [%2%3] has [%4] matching series downloaded. Beginning analysis.").arg(p.name).arg(s.UID()).arg(s.studyNum()).arg(numseriesdownloaded));
                     }
                     if (a.rerunResults) {
                         okToRun = true;
-                        setuplog << n->WriteLog(QString("Study [%1%2] set to have results rerun. Beginning analysis.").arg(s.UID()).arg(s.studyNum()));
+						setuplog << n->WriteLog(QString("[%1] Study [%2%3] set to have results rerun. Beginning analysis.").arg(p.name).arg(s.UID()).arg(s.studyNum()));
                     }
                     if (a.runSupplement) {
                         okToRun = true;
-                        setuplog << n->WriteLog(QString("Study [%1%2] set to have supplement run. Beginning analysis.").arg(s.UID()).arg(s.studyNum()));
+						setuplog << n->WriteLog(QString("[%1] Study [%2%3] set to have supplement run. Beginning analysis.").arg(p.name).arg(s.UID()).arg(s.studyNum()));
                     }
                     if ((pipelinedep != -1) && (p.depLevel == "study")) {
                         okToRun = true; // there is a parent pipeline and we're using the same study from the parent pipeline. may or may not have data to download
-                        setuplog << n->WriteLog(QString("Study [%1%2] has a study-level parent pipeline. Beginning analysis.").arg(s.UID()).arg(s.studyNum()));
+						setuplog << n->WriteLog(QString("[%1] Study [%2%3] has a study-level parent pipeline. Beginning analysis.").arg(p.name).arg(s.UID()).arg(s.studyNum()));
                     }
 
                     /* one of the above criteria has been satisfied, so its ok to run the pipeline on this study and submit the cluster */
@@ -466,17 +467,17 @@ int modulePipeline::Run() {
                          * the directory should not yet exist */
                         if ((!a.rerunResults) && (!a.runSupplement)) {
                             if (pipelinedep != -1) {
-                                setuplog << n->WriteLog(QString("This pipeline depends on [%1]").arg(pipelinedep));
+								setuplog << n->WriteLog(QString("[%1] This pipeline depends on [%1]").arg(p.name).arg(pipelinedep));
                                 q2.prepare("select pipeline_name from pipelines where pipeline_id = :pipelinedep");
                                 q2.bindValue(":pipelinedep", pipelinedep);
                                 n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
                                 if (q2.size() > 0) {
                                     q2.first();
                                     dependencyname = q2.value("pipeline_name").toString();
-                                    setuplog << n->WriteLog(QString("Found [%1] rows for parent pipeline [%2]").arg(q2.size()).arg(dependencyname));
+									setuplog << n->WriteLog(QString("[%1] Found [%2] rows for parent pipeline [%3]").arg(p.name).arg(q2.size()).arg(dependencyname));
                                 }
                                 else {
-                                    setuplog << n->WriteLog(QString("Parent pipeline [%1] does not exist!").arg(pipelinedep));
+									setuplog << n->WriteLog(QString("[%1] Parent pipeline [%2] does not exist!").arg(p.name).arg(pipelinedep));
                                     SetPipelineStopped(pipelineid, QString("Parent pipeline [%1] does not exist!").arg(pipelinedep));
                                     continue;
                                 }
@@ -674,7 +675,7 @@ int modulePipeline::Run() {
             n->WriteLog(QString("Invalid pipeline level [%1]").arg(p.level));
         }
 
-        n->WriteLog(QString("Done with pipeline [%1] - [%2]").arg(pipelineid).arg(p.name));
+		n->WriteLog(QString("Done with pipeline [%1] - [%2]").arg(p.name).arg(pipelineid));
         //SetPipelineStatusMessage(pipelineid, "Finished submitting jobs");
         SetPipelineStopped(pipelineid, "Finished submitting jobs");
     }
@@ -996,7 +997,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
         q.prepare(QString("show tables like '%1_series'").arg(modality.toLower()));
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         if (q.size() < 1) {
-            dlog << n->WriteLog("   Error - Modality [" + modality + "] not found. Data step will not be downloaded.");
+			dlog << n->WriteLog(QString("pipeline [] - Error - Modality [" + modality + "] not found. Data step will not be downloaded.").arg(p.name));
             RecordDataDownload(datadownloadid, analysisid, modality, 1, -1, -1, "", i, "Invalid modality. Not downloading.");
             continue;
         }
@@ -2349,5 +2350,5 @@ void modulePipeline::ClearPipelineHistory() {
     q.prepare("delete from pipeline_history where event_datetime < date_add(now(), interval -2 day)");
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
-    n->WriteLog(QString("Deleted %1 rows older than two days").arg(q.numRowsAffected()));
+	n->WriteLog(QString("Deleted %1 pipeline_history rows older than two days").arg(q.numRowsAffected()));
 }
