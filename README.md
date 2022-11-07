@@ -43,7 +43,7 @@ DICOM data can be automatically imported using the included `dcmrcv` DICOM recei
 
 Literally **any** type of imaging data: binary; assessment; paper based; genetics. See full list of [supported modalities](contribute/squirrel-data-sharing-format/modalities.md). All data is stored in a hierarchy: Subject --> Study --> Series. Data is searchable across project and across subject.
 
-<img src=".gitbook/assets/image (11).png" alt="" data-size="original">![](<.gitbook/assets/image (6).png>)
+<img src=".gitbook/assets/image (11) (2).png" alt="" data-size="original">![](<.gitbook/assets/image (6).png>)
 
 ### Store clinical trial data
 
@@ -99,7 +99,7 @@ From raw data to analyzed, and storing result values/images. Utilize a compute c
 
 <figure><img src=".gitbook/assets/image (10).png" alt=""><figcaption><p>Overview of a pipeline</p></figcaption></figure>
 
-<figure><img src=".gitbook/assets/image (2).png" alt=""><figcaption><p>List of analyses for a pipeline</p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (2) (3).png" alt=""><figcaption><p>List of analyses for a pipeline</p></figcaption></figure>
 
 ### Automated MR quality control
 
