@@ -1,6 +1,7 @@
 # Table of contents
 
 * [NeuroInformatics Database](README.md)
+  * [HIPAA Compliance](neuroinformatics-database/hipaa-compliance.md)
 
 ## Getting Started
 
