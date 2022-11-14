@@ -46,6 +46,7 @@
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
 	$id = GetVariable("id");
+	$viewtype = GetVariable("viewtype");
 	$newprojectid = GetVariable("newprojectid");
 	$studyids = GetVariable("studyids");
 	$matchidonly = GetVariable("matchidonly");
@@ -168,19 +169,19 @@
 			break;
 		case 'obliteratesubject':
 			ObliterateSubject($studyids);
-			DisplayProjectList();
+			DisplayProjects($viewtype);
 			break;
 		case 'obliteratestudy':
 			ObliterateStudy($studyids);
-			DisplayProjectList();
+			DisplayProjects($viewtype);
 			break;
 		case 'rearchivestudies':
 			RearchiveStudies($studyids, $matchidonly);
-			DisplayProjectList();
+			DisplayProjects($viewtype);
 			break;
 		case 'rearchivesubjects':
 			RearchiveSubjects($studyids, $matchidonly);
-			DisplayProjectList();
+			DisplayProjects($viewtype);
 			break;
 		case 'resetqa':
 			ResetProjectQA($id);
@@ -202,7 +203,7 @@
 			break;
 		default:
 			if ($id == '') {
-				DisplayProjectList();
+				DisplayProjects($viewtype);
 			}
 			else {
 				DisplayProject($id);
@@ -3144,142 +3145,376 @@
 
 		<?
 	}
-	
+
 
 	/* -------------------------------------------- */
-	/* ------- DisplayProjectList ----------------- */
+	/* ------- DisplayProjects -------------------- */
 	/* -------------------------------------------- */
-	function DisplayProjectList() {
+	function DisplayProjects($viewtype) {
 		
 		if ($_SESSION['instanceid'] == "") {
 			Error("InstanceID is blank. Page may not display properly. Try selecting an NiDB instance from the top left corner of the page.");
 		}
 		
 		?>
-		<!--View <a href="projects.php?action=viewinstancesummary&id=<?=$_SESSION['instanceid']?>">instance summary</a>
-		<br><br>-->
+		
 		<div class="ui container">
+			<a href="projects.php?viewtype=groupbypi" class="ui labeled icon <? if ($viewtype == "groupbypi") echo "yellow"; ?> button"><i class="address card icon"></i>Group by PI</a>
+			<a href="projects.php?viewtype=groupbyadmin" class="ui labeled icon <? if ($viewtype == "groupbyadmin") echo "yellow"; ?> button"><i class="users icon"></i>Group by Admin</a>
+			<a href="projects.php" class="ui labeled icon <? if ($viewtype == "") echo "yellow"; ?> button"><i class="list icon"></i>View list</a>
+			<br><br>
 			
-			<p id="msg" style="color: #0A0; text-align: center;">&nbsp;</p>
-			
-			<table class="ui celled selectable grey table" id="projecttable">
-				<thead>
-					<th data-sort="string-ins">Name &nbsp; 
-						<div class="ui icon input">
-							<input id="projectnamefilter" type="text" placeholder="Filter by project name"/>
-							<i class="search icon"></i>
-						</div>
-
-						<script type="text/javascript">
-							function filterTable(event) {
-								var filter = event.target.value.toUpperCase();
-								var rows = document.querySelector("#projecttable tbody").rows;
-								
-								for (var i = 0; i < rows.length; i++) {
-									var firstCol = rows[i].cells[0].textContent.toUpperCase();
-									var secondCol = rows[i].cells[1].textContent.toUpperCase();
-									if (firstCol.indexOf(filter) > -1 || secondCol.indexOf(filter) > -1) {
-										rows[i].style.display = "";
-									} else {
-										rows[i].style.display = "none";
-									}      
-								}
-							}
-
-							document.querySelector('#projectnamefilter').addEventListener('keyup', filterTable, false);
-						</script>
-					</th>
-					<th data-sort="string-ins">UID</th>
-					<th data-sort="string-ins">Cost Center</th>
-					<th data-sort="string-ins">Admin</th>
-					<th data-sort="string-ins">PI</th>
-					<th data-sort="int">Studies</th>
-					<th data-sort="string-ins">RDoC Submission</th>
-				</thead>
-				<tbody>
-					<?
-						$sqlstring = "select a.*, b.username 'adminusername', b.user_fullname 'adminfullname', c.username 'piusername', c.user_fullname 'pifullname', d.label 'label' from projects a left join users b on a.project_admin = b.user_id left join users c on a.project_pi = c.user_id LEFT JOIN rdoc_uploads d ON  d.project_id = a.project_id where a.project_status = 'active' and a.instance_id = '" . $_SESSION['instanceid'] . "' order by a.project_name";
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-							$id = $row['project_id'];
-							$name = $row['project_name'];
-							$adminusername = $row['adminusername'];
-							$adminfullname = $row['adminfullname'];
-							$piusername = $row['piusername'];
-							$pifullname = $row['pifullname'];
-							$projectuid = $row['project_uid'];
-							$costcenter = $row['project_costcenter'];
-							$rdoc_label = $row['label'];
-
-							$sqlstringA = "select * from user_project where user_id in (select user_id from users where username = '" . $GLOBALS['username'] . "') and project_id = $id";
-							$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-							$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-							$view_data = $rowA['view_data'];
-							$view_phi = $rowA['view_phi'];
-							
-							if ($view_data) {
-								?>
-								<tr valign="top">
-									<td><a href="projects.php?id=<?=$id?>"><?=$name?></td>
-									<td><?=$projectuid?></td>
-									<td><?=$costcenter?></td>
-									<td><?=$adminfullname?></td>
-									<td><?=$pifullname?></td>
-									<?
-									$totalstudies = 0;
-									$totalsize = 0.0;
-									$studydetail = "";
-									$sqlstring = "SELECT a.study_modality, b.project_id, count(b.project_id) 'count' FROM `studies` a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.project_id = $id and c.isactive = 1 group by b.project_id,a.study_modality";
-									$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-									while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
-										$modality = $row2['study_modality'];
-										$count = $row2['count'];
-										
-										$projectModalitySize = 0;
-										if (IsNiDBModality($modality)) {
-											if ($modality != "") {
-												$sqlstring3 = "select sum(series_size) 'modalitysize' from " . strtolower($modality) ."_series where study_id in (SELECT a.study_id FROM `studies` a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.project_id = $id and c.isactive = 1 and a.study_modality = '$modality')";
-												$projectModalitySize = $row3['modalitysize'];
-											}
-										}
-										
-										$totalstudies += $count;
-										$totalsize += $projectModalitySize;
-										
-										if ($modality == "") { $modality = "(blank)"; }
-										
-										$studydetail .= "<li><b>$modality</b> - $count";
-									}
-									$studydetail = "<ul>$studydetail<ul>";
-									?>
-									<td align="left" title="<?=$studydetail?>">
-										<?=$totalstudies?>
-									</td>
-									<td><a href="projects.php?action=show_rdoc_list&rdoc_label=<?=$rdoc_label?>"><?=$rdoc_label?></td> 
-								</tr>
-								<?
-							}
-							else {
-							?>
-								<tr>
-									<td style="color: #999; padding-left: 20px">No access to <b><?=$name?></b></td>
-									<td></td>
-									<td></td>
-									<td></td>
-									<td></td>
-									<td></td>
-									<td></td>
-								</tr>
-							<?
-							}
-						}
-					?>
-				</tbody>
-			</table>
+			<?
+				if ($viewtype == "groupbypi") {
+					DisplayProjectsByPI();
+				}
+				elseif ($viewtype == "groupbyadmin") {
+					DisplayProjectsByAdmin();
+				}
+				else {
+					DisplayProjectList();
+				}
+			?>
 		</div>
 		<?
+		
 	}
-	
+
+	/* -------------------------------------------- */
+	/* ------- DisplayProjectList ----------------- */
+	/* -------------------------------------------- */
+	function DisplayProjectList() {
+		
+		?>
+			
+		<!--<p id="msg" style="color: #0A0; text-align: center;">&nbsp;</p>-->
+
+		<table class="ui celled selectable grey table" id="projecttable">
+			<thead>
+				<th data-sort="string-ins">Name &nbsp; 
+					<div class="ui icon input">
+						<input id="projectnamefilter" type="text" placeholder="Filter by project name"/>
+						<i class="search icon"></i>
+					</div>
+
+					<script type="text/javascript">
+						function filterTable(event) {
+							var filter = event.target.value.toUpperCase();
+							var rows = document.querySelector("#projecttable tbody").rows;
+							
+							for (var i = 0; i < rows.length; i++) {
+								var firstCol = rows[i].cells[0].textContent.toUpperCase();
+								var secondCol = rows[i].cells[1].textContent.toUpperCase();
+								if (firstCol.indexOf(filter) > -1 || secondCol.indexOf(filter) > -1) {
+									rows[i].style.display = "";
+								} else {
+									rows[i].style.display = "none";
+								}      
+							}
+						}
+
+						document.querySelector('#projectnamefilter').addEventListener('keyup', filterTable, false);
+					</script>
+				</th>
+				<th data-sort="string-ins">UID</th>
+				<th data-sort="string-ins">Cost Center</th>
+				<th data-sort="string-ins">Admin</th>
+				<th data-sort="string-ins">PI</th>
+				<th data-sort="int">Studies</th>
+			</thead>
+			<tbody>
+				<?
+					$sqlstring = "select a.*, b.username 'adminusername', b.user_fullname 'adminfullname', c.username 'piusername', c.user_fullname 'pifullname' from projects a left join users b on a.project_admin = b.user_id left join users c on a.project_pi = c.user_id where a.project_status = 'active' and a.instance_id = '" . $_SESSION['instanceid'] . "' order by a.project_name";
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+						$id = $row['project_id'];
+						$name = $row['project_name'];
+						$adminusername = $row['adminusername'];
+						$adminfullname = $row['adminfullname'];
+						$piusername = $row['piusername'];
+						$pifullname = $row['pifullname'];
+						$projectuid = $row['project_uid'];
+						$costcenter = $row['project_costcenter'];
+
+						$sqlstringA = "select * from user_project where user_id in (select user_id from users where username = '" . $GLOBALS['username'] . "') and project_id = $id";
+						$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+						$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+						$view_data = $rowA['view_data'];
+						$view_phi = $rowA['view_phi'];
+						
+						if ($view_data) {
+							?>
+							<tr valign="top">
+								<td><a href="projects.php?id=<?=$id?>"><?=$name?></td>
+								<td><?=$projectuid?></td>
+								<td><?=$costcenter?></td>
+								<td><?=$adminfullname?></td>
+								<td><?=$pifullname?></td>
+								<?
+								$totalstudies = 0;
+								$totalsize = 0.0;
+								$studydetail = "";
+								$sqlstring = "SELECT a.study_modality, b.project_id, count(b.project_id) 'count' FROM `studies` a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.project_id = $id and c.isactive = 1 group by b.project_id,a.study_modality";
+								$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+								while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
+									$modality = $row2['study_modality'];
+									$count = $row2['count'];
+									
+									$projectModalitySize = 0;
+									if (IsNiDBModality($modality)) {
+										if ($modality != "") {
+											$sqlstring3 = "select sum(series_size) 'modalitysize' from " . strtolower($modality) ."_series where study_id in (SELECT a.study_id FROM `studies` a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.project_id = $id and c.isactive = 1 and a.study_modality = '$modality')";
+											$projectModalitySize = $row3['modalitysize'];
+										}
+									}
+									
+									$totalstudies += $count;
+									$totalsize += $projectModalitySize;
+									
+									if ($modality == "") { $modality = "(blank)"; }
+									
+									$studydetail .= "<li><b>$modality</b> - $count";
+								}
+								$studydetail = "<ul>$studydetail<ul>";
+								?>
+								<td align="left" title="<?=$studydetail?>">
+									<?=$totalstudies?>
+								</td>
+							</tr>
+							<?
+						}
+						else {
+						?>
+							<tr>
+								<td style="color: #999; padding-left: 20px">No access to <b><?=$name?></b></td>
+								<td></td>
+								<td></td>
+								<td></td>
+								<td></td>
+								<td></td>
+							</tr>
+						<?
+						}
+					}
+				?>
+			</tbody>
+		</table>
+		<?
+	}
+
+	/* -------------------------------------------- */
+	/* ------- DisplayProjectsByPI ---------------- */
+	/* -------------------------------------------- */
+	function DisplayProjectsByPI() {
+		
+		/* get project list, sort by pi */
+		$sqlstring = "select a.*, b.username 'adminusername', b.user_fullname 'adminfullname', c.username 'piusername', c.user_fullname 'pifullname' from projects a left join users b on a.project_admin = b.user_id left join users c on a.project_pi = c.user_id where a.project_status = 'active' and a.instance_id = '" . $_SESSION['instanceid'] . "' order by a.project_pi";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$lastprojectpi = "";
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$id = $row['project_id'];
+			$name = $row['project_name'];
+			$adminusername = $row['adminusername'];
+			$adminfullname = $row['adminfullname'];
+			$piusername = $row['piusername'];
+			$pifullname = $row['pifullname'];
+			$projectuid = $row['project_uid'];
+			$costcenter = $row['project_costcenter'];
+			
+			/* start a new block for this PI */
+			if ($lastprojectpi != $piusername) {
+				
+				/* terminate the previous block if there was one */
+				if ($lastprojectpi != "") {
+					?></div><?
+				}
+					
+				?>
+				<div class="ui styled segment">
+					<h2 class="ui header">
+						<i class="blue user icon"></i>
+						<?=$pifullname?>
+					</h2>
+					<table class="ui scrolling table">
+						<thead>
+							<th>Project</th>
+							<th>UID</th>
+							<th>Cost center</th>
+							<th>Admin</th>
+							<th>Studies</th>
+						</thead>
+				<?
+			}
+			$lastprojectpi = $piusername;
+
+			/* display the project list for this PI */
+			$sqlstringA = "select * from user_project where user_id in (select user_id from users where username = '" . $GLOBALS['username'] . "') and project_id = $id";
+			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+			$view_data = $rowA['view_data'];
+			$view_phi = $rowA['view_phi'];
+			
+			if ($view_data) {
+				?>
+				<tr valign="top">
+					<td><b><a href="projects.php?id=<?=$id?>"><?=$name?></b></td>
+					<td><?=$projectuid?></td>
+					<td><?=$costcenter?></td>
+					<td><?=$adminfullname?></td>
+					<?
+					$totalstudies = 0;
+					$totalsize = 0.0;
+					$studydetail = "";
+					$sqlstring = "SELECT a.study_modality, b.project_id, count(b.project_id) 'count' FROM `studies` a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.project_id = $id and c.isactive = 1 group by b.project_id,a.study_modality";
+					$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
+						$modality = $row2['study_modality'];
+						$count = $row2['count'];
+						
+						$projectModalitySize = 0;
+						if (IsNiDBModality($modality)) {
+							if ($modality != "") {
+								$sqlstring3 = "select sum(series_size) 'modalitysize' from " . strtolower($modality) ."_series where study_id in (SELECT a.study_id FROM `studies` a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.project_id = $id and c.isactive = 1 and a.study_modality = '$modality')";
+								$projectModalitySize = $row3['modalitysize'];
+							}
+						}
+						
+						$totalstudies += $count;
+						$totalsize += $projectModalitySize;
+						
+						if ($modality == "") { $modality = "(blank)"; }
+						
+						$studydetail .= "<li><b>$modality</b> - $count";
+					}
+					$studydetail = "<ul>$studydetail<ul>";
+					?>
+					<td align="left" title="<?=$studydetail?>">
+						<?=$totalstudies?>
+					</td>
+				</tr>
+				<?
+			}
+			else {
+			?>
+				<tr>
+					<td colspan="5">No access to <b><?=$name?></b></td>
+				</tr>
+			<?
+			}
+		}
+		if ($lastprojectpi != "") {
+			?></table></div><?
+		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayProjectsByAdmin ------------- */
+	/* -------------------------------------------- */
+	function DisplayProjectsByAdmin() {
+		
+		/* get project list, sort by pi */
+		$sqlstring = "select a.*, b.username 'adminusername', b.user_fullname 'adminfullname', c.username 'piusername', c.user_fullname 'pifullname' from projects a left join users b on a.project_admin = b.user_id left join users c on a.project_pi = c.user_id where a.project_status = 'active' and a.instance_id = '" . $_SESSION['instanceid'] . "' order by a.project_admin";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$lastprojectpi = "";
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$id = $row['project_id'];
+			$name = $row['project_name'];
+			$adminusername = $row['adminusername'];
+			$adminfullname = $row['adminfullname'];
+			$piusername = $row['piusername'];
+			$pifullname = $row['pifullname'];
+			$projectuid = $row['project_uid'];
+			$costcenter = $row['project_costcenter'];
+			
+			/* start a new block for this PI */
+			if ($lastprojectpi != $piusername) {
+				
+				/* terminate the previous block if there was one */
+				if ($lastprojectpi != "") {
+					?></div><?
+				}
+					
+				?>
+				<div class="ui styled segment">
+					<h2 class="ui header">
+						<i class="blue user icon"></i>
+						<?=$pifullname?>
+					</h2>
+					<table class="ui scrolling table">
+						<thead>
+							<th>Project</th>
+							<th>UID</th>
+							<th>Cost center</th>
+							<th>PI</th>
+							<th>Studies</th>
+						</thead>
+				<?
+			}
+			$lastprojectpi = $piusername;
+
+			/* display the project list for this PI */
+			$sqlstringA = "select * from user_project where user_id in (select user_id from users where username = '" . $GLOBALS['username'] . "') and project_id = $id";
+			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+			$view_data = $rowA['view_data'];
+			$view_phi = $rowA['view_phi'];
+			$favorite = $rowA['favorite'];
+			
+			if ($view_data) {
+				?>
+				<tr valign="top">
+					<td><b><a href="projects.php?id=<?=$id?>"><?=$name?></b></td>
+					<td><?=$projectuid?></td>
+					<td><?=$costcenter?></td>
+					<td><?=$pifullname?></td>
+					<?
+					$totalstudies = 0;
+					$totalsize = 0.0;
+					$studydetail = "";
+					$sqlstring = "SELECT a.study_modality, b.project_id, count(b.project_id) 'count' FROM `studies` a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.project_id = $id and c.isactive = 1 group by b.project_id,a.study_modality";
+					$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
+						$modality = $row2['study_modality'];
+						$count = $row2['count'];
+						
+						$projectModalitySize = 0;
+						if (IsNiDBModality($modality)) {
+							if ($modality != "") {
+								$sqlstring3 = "select sum(series_size) 'modalitysize' from " . strtolower($modality) ."_series where study_id in (SELECT a.study_id FROM `studies` a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.project_id = $id and c.isactive = 1 and a.study_modality = '$modality')";
+								$projectModalitySize = $row3['modalitysize'];
+							}
+						}
+						
+						$totalstudies += $count;
+						$totalsize += $projectModalitySize;
+						
+						if ($modality == "") { $modality = "(blank)"; }
+						
+						$studydetail .= "<li><b>$modality</b> - $count";
+					}
+					$studydetail = "<ul>$studydetail<ul>";
+					?>
+					<td align="left" title="<?=$studydetail?>">
+						<?=$totalstudies?>
+					</td>
+				</tr>
+				<?
+			}
+			else {
+			?>
+				<tr>
+					<td colspan="5">No access to <b><?=$name?></b></td>
+				</tr>
+			<?
+			}
+		}
+		if ($lastprojectpi != "") {
+			?></table></div><?
+		}
+	}
+
+
 	/* -------------------------------------------- */
     /* ------- DisplayRDoCList -------------------- */
     /* -------------------------------------------- */
