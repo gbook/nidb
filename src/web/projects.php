@@ -3241,11 +3241,20 @@
 						$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
 						$view_data = $rowA['view_data'];
 						$view_phi = $rowA['view_phi'];
+						$favorite = $rowA['favorite'];
 						
 						if ($view_data) {
 							?>
 							<tr valign="top">
-								<td><a href="projects.php?id=<?=$id?>"><?=$name?></td>
+								<td>
+									<b><a href="projects.php?id=<?=$id?>"><?=$name?></b>
+									<? if ($favorite) { ?>
+									<a href="projects.php?action=unsetfavorite&id=<?=$id?>"><i class="yellow star icon" title="Click to remove this project from your favorites"></i></a>
+									<? } else { ?>
+									<a href="projects.php?action=setfavorite&id=<?=$id?>"><i class="grey star outline icon" title="Click to add this project to your favorites"></i></a><br>
+									<? } ?>
+									
+								</td>
 								<td><?=$projectuid?></td>
 								<td><?=$costcenter?></td>
 								<td><?=$adminfullname?></td>
@@ -3308,7 +3317,7 @@
 	function DisplayProjectsByPI() {
 		
 		/* get project list, sort by pi */
-		$sqlstring = "select a.*, b.username 'adminusername', b.user_fullname 'adminfullname', c.username 'piusername', c.user_fullname 'pifullname' from projects a left join users b on a.project_admin = b.user_id left join users c on a.project_pi = c.user_id where a.project_status = 'active' and a.instance_id = '" . $_SESSION['instanceid'] . "' order by a.project_pi";
+		$sqlstring = "select a.*, b.username 'adminusername', b.user_fullname 'adminfullname', c.username 'piusername', c.user_fullname 'pifullname' from projects a left join users b on a.project_admin = b.user_id left join users c on a.project_pi = c.user_id where a.project_status = 'active' and a.instance_id = '" . $_SESSION['instanceid'] . "' order by a.project_pi, a.project_name";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$lastprojectpi = "";
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -3321,12 +3330,17 @@
 			$projectuid = $row['project_uid'];
 			$costcenter = $row['project_costcenter'];
 			
+			if ($piusername == "")
+				$piusername = "(blank)";
+			
 			/* start a new block for this PI */
 			if ($lastprojectpi != $piusername) {
 				
 				/* terminate the previous block if there was one */
 				if ($lastprojectpi != "") {
-					?></div><?
+					?>
+						</table>
+					</div><?
 				}
 					
 				?>
@@ -3334,6 +3348,7 @@
 					<h2 class="ui header">
 						<i class="blue user icon"></i>
 						<?=$pifullname?>
+						<div class="sub header"><?=$piusername?></div>
 					</h2>
 					<table class="ui scrolling table">
 						<thead>
@@ -3353,11 +3368,19 @@
 			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
 			$view_data = $rowA['view_data'];
 			$view_phi = $rowA['view_phi'];
+			$favorite = $rowA['favorite'];
 			
 			if ($view_data) {
 				?>
 				<tr valign="top">
-					<td><b><a href="projects.php?id=<?=$id?>"><?=$name?></b></td>
+					<td>
+						<b><a href="projects.php?id=<?=$id?>"><?=$name?></b>
+						<? if ($favorite) { ?>
+						<a href="projects.php?action=unsetfavorite&id=<?=$id?>"><i class="yellow star icon" title="Click to remove this project from your favorites"></i></a>
+						<? } else { ?>
+						<a href="projects.php?action=setfavorite&id=<?=$id?>"><i class="grey star outline icon" title="Click to add this project to your favorites"></i></a><br>
+						<? } ?>
+					</td>
 					<td><?=$projectuid?></td>
 					<td><?=$costcenter?></td>
 					<td><?=$adminfullname?></td>
@@ -3403,7 +3426,10 @@
 			}
 		}
 		if ($lastprojectpi != "") {
-			?></table></div><?
+			?>
+				</table>
+			</div>
+			<?
 		}
 	}
 
@@ -3414,9 +3440,9 @@
 	function DisplayProjectsByAdmin() {
 		
 		/* get project list, sort by pi */
-		$sqlstring = "select a.*, b.username 'adminusername', b.user_fullname 'adminfullname', c.username 'piusername', c.user_fullname 'pifullname' from projects a left join users b on a.project_admin = b.user_id left join users c on a.project_pi = c.user_id where a.project_status = 'active' and a.instance_id = '" . $_SESSION['instanceid'] . "' order by a.project_admin";
+		$sqlstring = "select a.*, b.username 'adminusername', b.user_fullname 'adminfullname', c.username 'piusername', c.user_fullname 'pifullname' from projects a left join users b on a.project_admin = b.user_id left join users c on a.project_pi = c.user_id where a.project_status = 'active' and a.instance_id = '" . $_SESSION['instanceid'] . "' order by a.project_admin, a.project_name";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$lastprojectpi = "";
+		$lastprojectadmin = "";
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$id = $row['project_id'];
 			$name = $row['project_name'];
@@ -3426,20 +3452,25 @@
 			$pifullname = $row['pifullname'];
 			$projectuid = $row['project_uid'];
 			$costcenter = $row['project_costcenter'];
+
+			if ($adminusername == "")
+				$adminusername = "(blank)";
 			
 			/* start a new block for this PI */
-			if ($lastprojectpi != $piusername) {
+			if ($lastprojectadmin != $adminusername) {
 				
 				/* terminate the previous block if there was one */
 				if ($lastprojectpi != "") {
-					?></div><?
+					?></table>
+					</div><?
 				}
 					
 				?>
 				<div class="ui styled segment">
 					<h2 class="ui header">
 						<i class="blue user icon"></i>
-						<?=$pifullname?>
+						<?=$adminfullname?>
+						<div class="sub header"><?=$adminusername?></div>
 					</h2>
 					<table class="ui scrolling table">
 						<thead>
@@ -3451,7 +3482,7 @@
 						</thead>
 				<?
 			}
-			$lastprojectpi = $piusername;
+			$lastprojectadmin = $adminusername;
 
 			/* display the project list for this PI */
 			$sqlstringA = "select * from user_project where user_id in (select user_id from users where username = '" . $GLOBALS['username'] . "') and project_id = $id";
@@ -3464,7 +3495,14 @@
 			if ($view_data) {
 				?>
 				<tr valign="top">
-					<td><b><a href="projects.php?id=<?=$id?>"><?=$name?></b></td>
+					<td>
+						<b><a href="projects.php?id=<?=$id?>"><?=$name?></b>
+						<? if ($favorite) { ?>
+						<a href="projects.php?action=unsetfavorite&id=<?=$id?>"><i class="yellow star icon" title="Click to remove this project from your favorites"></i></a>
+						<? } else { ?>
+						<a href="projects.php?action=setfavorite&id=<?=$id?>"><i class="grey star outline icon" title="Click to add this project to your favorites"></i></a><br>
+						<? } ?>
+					</td>
 					<td><?=$projectuid?></td>
 					<td><?=$costcenter?></td>
 					<td><?=$pifullname?></td>
@@ -3509,7 +3547,7 @@
 			<?
 			}
 		}
-		if ($lastprojectpi != "") {
+		if ($lastprojectadmin != "") {
 			?></table></div><?
 		}
 	}
