@@ -1,8 +1,6 @@
----
-description: NiDB
----
+# 🐿 NeuroInformatics Database
 
-# NeuroInformatics Database
+<figure><img src=".gitbook/assets/NIDB_logo.png" alt=""><figcaption><p>The NiDB logo</p></figcaption></figure>
 
 ## Overview
 
