@@ -437,7 +437,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                     QString studytype = s[uid][studynum][seriesnum]["studytype"];
                     int studydaynum = s[uid][studynum][seriesnum]["studydaynum"].toInt();
                     int studytimepoint = s[uid][studynum][seriesnum]["studytimepoint"].toInt();
-                    //QString studyaltid = s[uid][studynum][seriesnum]["studyaltid"];
+                    QString studyaltid = s[uid][studynum][seriesnum]["studyaltid"];
                     QString modality = s[uid][studynum][seriesnum]["modality"];
                     //int seriessize = s[uid][studynum][seriesnum]["seriessize"].toInt();
                     QString seriesdesc = s[uid][studynum][seriesnum]["seriesdesc"];
@@ -453,6 +453,12 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                     //bool behdirempty = s[uid][studynum][seriesnum]["behdirempty"].toInt();
                     //bool qcdirempty = s[uid][studynum][seriesnum]["qcdirempty"].toInt();
 
+                    /* fix any blank values */
+                    if (primaryaltuid == "")
+                        primaryaltuid = uid;
+                    if (studyaltid == "")
+                        studyaltid = QString("%1").arg(studynum);
+
                     /* format the subject/study part of the output directory path */
                     QString subjectdir;
                     if (dirformat == "shortid")
@@ -460,10 +466,9 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                     else if (dirformat == "shortstudyid")
                         subjectdir = QString("%1/%2").arg(uid).arg(studynum);
                     else if (dirformat == "altuid")
-                        if (primaryaltuid == "")
-                            subjectdir = uid;
-                        else
-                            subjectdir = primaryaltuid;
+                        subjectdir = primaryaltuid;
+                    else if (dirformat == "altuidstudynum")
+                        subjectdir = QString("%1/%2").arg(primaryaltuid).arg(studyaltid);
                     else if (dirformat == "visittype")
                         subjectdir = QString("%1/%2").arg(uid).arg(studytype);
                     else if (dirformat == "daynum")

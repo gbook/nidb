@@ -4451,6 +4451,7 @@
 						document.getElementById("label_shortid").classList.add('red');
 						document.getElementById("label_shortstudyid").classList.remove('red');
 						document.getElementById("label_altuid").classList.remove('red');
+						document.getElementById("label_altuidstudynum").classList.remove('red');
 						document.getElementById("label_visittype").classList.remove('red');
 						document.getElementById("label_daynum").classList.remove('red');
 						document.getElementById("label_timepoint").classList.remove('red');
@@ -4459,6 +4460,7 @@
 						document.getElementById("label_shortid").classList.remove('red');
 						document.getElementById("label_shortstudyid").classList.add('red');
 						document.getElementById("label_altuid").classList.remove('red');
+						document.getElementById("label_altuidstudynum").classList.remove('red');
 						document.getElementById("label_visittype").classList.remove('red');
 						document.getElementById("label_daynum").classList.remove('red');
 						document.getElementById("label_timepoint").classList.remove('red');
@@ -4467,6 +4469,16 @@
 						document.getElementById("label_shortid").classList.remove('red');
 						document.getElementById("label_shortstudyid").classList.remove('red');
 						document.getElementById("label_altuid").classList.add('red');
+						document.getElementById("label_altuidstudynum").classList.remove('red');
+						document.getElementById("label_visittype").classList.remove('red');
+						document.getElementById("label_daynum").classList.remove('red');
+						document.getElementById("label_timepoint").classList.remove('red');
+					}
+					else if (dirformat == "altuidstudynum") {
+						document.getElementById("label_shortid").classList.remove('red');
+						document.getElementById("label_shortstudyid").classList.remove('red');
+						document.getElementById("label_altuid").classList.remove('red');
+						document.getElementById("label_altuidstudynum").classList.add('red');
 						document.getElementById("label_visittype").classList.remove('red');
 						document.getElementById("label_daynum").classList.remove('red');
 						document.getElementById("label_timepoint").classList.remove('red');
@@ -4475,6 +4487,7 @@
 						document.getElementById("label_shortid").classList.remove('red');
 						document.getElementById("label_shortstudyid").classList.remove('red');
 						document.getElementById("label_altuid").classList.remove('red');
+						document.getElementById("label_altuidstudynum").classList.remove('red');
 						document.getElementById("label_visittype").classList.add('red');
 						document.getElementById("label_daynum").classList.remove('red');
 						document.getElementById("label_timepoint").classList.remove('red');
@@ -4483,6 +4496,7 @@
 						document.getElementById("label_shortid").classList.remove('red');
 						document.getElementById("label_shortstudyid").classList.remove('red');
 						document.getElementById("label_altuid").classList.remove('red');
+						document.getElementById("label_altuidstudynum").classList.remove('red');
 						document.getElementById("label_visittype").classList.remove('red');
 						document.getElementById("label_daynum").classList.add('red');
 						document.getElementById("label_timepoint").classList.remove('red');
@@ -4491,6 +4505,7 @@
 						document.getElementById("label_shortid").classList.remove('red');
 						document.getElementById("label_shortstudyid").classList.remove('red');
 						document.getElementById("label_altuid").classList.remove('red');
+						document.getElementById("label_altuidstudynum").classList.remove('red');
 						document.getElementById("label_visittype").classList.remove('red');
 						document.getElementById("label_daynum").classList.remove('red');
 						document.getElementById("label_timepoint").classList.add('red');
@@ -5254,6 +5269,20 @@
 									<div class="thirteen wide column">
 										<div class="ui left pointing label" id="label_altuid">
 											<tt>23505/1<br>23505/2</tt>
+										</div>
+									</div>
+
+									<div class="three wide column">
+										<div class="field">
+											<div class="ui radio checkbox" onChange="HighlightStudyDir()">
+												<input type="radio" name="dirformat" id="dirformat_altuidstudynum" value="altuidstudynum">
+												<label>Primary alternate subject ID<br><span class="tiny">with alternate study number</span></label>
+											</div>
+										</div>
+									</div>
+									<div class="thirteen wide column">
+										<div class="ui left pointing label" id="label_altuidstudynum">
+											<tt>23505/PH23<br>23505/PH24</tt>
 										</div>
 									</div>
 
