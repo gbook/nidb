@@ -46,6 +46,7 @@
   * [Reports based on data imported from Redcap](tutorials/importing-from-redcap/reports-based-on-data-imported-from-redcap.md)
 * [Analysis Builder](tutorials/analysis-builder.md)
 * [Administration of Users, Projects, & System](tutorials/administration-of-users-projects-and-system/README.md)
+  * [User Permissions](tutorials/administration-of-users-projects-and-system/user-permissions.md)
   * [Creating new projects](tutorials/administration-of-users-projects-and-system/creating-new-projects.md)
   * [Adding Users to Projects](tutorials/adding-users-to-projects.md)
   * [Editing the config file](tutorials/editing-the-config-file.md)
