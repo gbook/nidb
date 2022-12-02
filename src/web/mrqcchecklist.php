@@ -509,6 +509,7 @@
 								</td>
 							<?
 							
+							
 							/* ----- check for MR pulse sequence parameter matching ----- */
 							$matched = 0;
 							$msgs = array();

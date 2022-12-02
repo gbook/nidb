@@ -41,20 +41,21 @@
 	require "menu.php";
 	require "nidbapi.php";
 	
-	if (!isAdmin()) {
-		Error("This account does not have permissions to view this page");
+	/* check if they have permissions to this view page */
+	if (!isSiteAdmin()) {
+		Warning("You do not have permissions to view this page");
+		exit(0);
+	}
+	
+	/* ----- setup variables ----- */
+	$action = GetVariable("action");
+	
+	/* determine action */
+	if ($action == "editform") {
+		DisplaySiteForm("edit", $id);
 	}
 	else {
-		/* ----- setup variables ----- */
-		$action = GetVariable("action");
-		
-		/* determine action */
-		if ($action == "editform") {
-			DisplaySiteForm("edit", $id);
-		}
-		else {
-			DisplayErrorLogs();
-		}
+		DisplayErrorLogs();
 	}
 	
 	/* ------------------------------------ functions ------------------------------------ */

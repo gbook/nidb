@@ -48,12 +48,11 @@
 		require "menu.php";
 	}
 
-	/* kick them out if they are not a site admin, unless  */
-	if (!$GLOBALS['issiteadmin'] && !$setup) {
-		?><div width="100%">You are not a site admin, so cannot view this page</div><?
+	/* check if they have permissions to this view page */
+	if (!isSiteAdmin() && !$setup) {
+		Warning("You do not have permissions to view this page");
 		exit(0);
 	}
-	//PrintVariable($_POST);
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");

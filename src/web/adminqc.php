@@ -41,37 +41,38 @@
 	require "nidbapi.php";
 	require "menu.php";
 
-	if (!isAdmin()) {
-		Error("This account does not have permissions to view this page");
+	/* check if they have permissions to this view page */
+	if (!isSiteAdmin()) {
+		Warning("You do not have permissions to view this page");
+		exit(0);
 	}
-	else {
-		/* ----- setup variables ----- */
-		$action = GetVariable("action");
-		$id = GetVariable("id");
-		$modulename = GetVariable("modulename");
-		$modality = GetVariable("modality");
-		
-		/* determine action */
-		switch ($action) {
-			case 'addmodule':
-				AddQCModule($modulename,$modality);
-				DisplayQCModuleList();
-				break;
-			case 'disable':
-				DisableQCModule($id);
-				DisplayQCModuleList();
-				break;
-			case 'enable':
-				EnableQCModule($id);
-				DisplayQCModuleList();
-				break;
-			case 'reset':
-				ResetQCModule($id);
-				DisplayQCModuleList();
-				break;
-			default:
-				DisplayQCModuleList();
-		}
+
+	/* ----- setup variables ----- */
+	$action = GetVariable("action");
+	$id = GetVariable("id");
+	$modulename = GetVariable("modulename");
+	$modality = GetVariable("modality");
+	
+	/* determine action */
+	switch ($action) {
+		case 'addmodule':
+			AddQCModule($modulename,$modality);
+			DisplayQCModuleList();
+			break;
+		case 'disable':
+			DisableQCModule($id);
+			DisplayQCModuleList();
+			break;
+		case 'enable':
+			EnableQCModule($id);
+			DisplayQCModuleList();
+			break;
+		case 'reset':
+			ResetQCModule($id);
+			DisplayQCModuleList();
+			break;
+		default:
+			DisplayQCModuleList();
 	}
 	
 	/* ------------------------------------ functions ------------------------------------ */
