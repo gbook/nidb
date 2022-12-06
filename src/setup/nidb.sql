@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Oct 04, 2022 at 02:33 PM
+-- Generation Time: Dec 06, 2022 at 03:41 PM
 -- Server version: 10.3.32-MariaDB
 -- PHP Version: 7.2.24
 
@@ -2338,6 +2338,21 @@ CREATE TABLE `project_checklist` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `project_nda_uploads`
+--
+
+CREATE TABLE `project_nda_uploads` (
+  `projectndaupload_id` int(11) NOT NULL,
+  `project_id` int(11) NOT NULL,
+  `update_date` date DEFAULT NULL,
+  `csv_file` mediumtext DEFAULT NULL,
+  `ndaprojectnum` int(11) DEFAULT NULL,
+  `ndasubmission_id` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `project_protocol`
 --
 
@@ -4262,6 +4277,12 @@ ALTER TABLE `project_checklist`
   ADD PRIMARY KEY (`projectchecklist_id`);
 
 --
+-- Indexes for table `project_nda_uploads`
+--
+ALTER TABLE `project_nda_uploads`
+  ADD PRIMARY KEY (`projectndaupload_id`);
+
+--
 -- Indexes for table `project_protocol`
 --
 ALTER TABLE `project_protocol`
@@ -5292,6 +5313,12 @@ ALTER TABLE `projects`
 --
 ALTER TABLE `project_checklist`
   MODIFY `projectchecklist_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `project_nda_uploads`
+--
+ALTER TABLE `project_nda_uploads`
+  MODIFY `projectndaupload_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `project_protocol`
