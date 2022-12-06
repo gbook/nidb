@@ -41,25 +41,26 @@
 	require "nidbapi.php";
 	require "menu.php";
 
-	if (!isAdmin()) {
-		Error("This account does not have permissions to view this page");
+	/* check if they have permissions to this view page */
+	if (!isSiteAdmin()) {
+		Warning("You do not have permissions to view this page");
+		exit(0);
 	}
-	else {
-		/* ----- setup variables ----- */
-		$action = GetVariable("action");
-		$emailbody = GetVariable("emailbody");
-		$emailsubject = GetVariable("emailsubject");
-		$emailto = GetVariable("emailto");
-		
-		/* determine action */
-		switch ($action) {
-			case 'sendemail':
-				SendEmail($emailbody, $emailsubject, $emailto);
-				break;
-			default:
-				DisplayEmailForm();
-		}
-	}	
+
+	/* ----- setup variables ----- */
+	$action = GetVariable("action");
+	$emailbody = GetVariable("emailbody");
+	$emailsubject = GetVariable("emailsubject");
+	$emailto = GetVariable("emailto");
+	
+	/* determine action */
+	switch ($action) {
+		case 'sendemail':
+			SendEmail($emailbody, $emailsubject, $emailto);
+			break;
+		default:
+			DisplayEmailForm();
+	}
 	
 	/* ------------------------------------ functions ------------------------------------ */
 

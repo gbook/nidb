@@ -39,9 +39,13 @@
 	require "includes_php.php";
 	require "includes_html.php";
 	require "menu.php";
-?>
 
-<?
+	/* check if they have permissions to this view page */
+	if (!isSiteAdmin()) {
+		Warning("You do not have permissions to view this page");
+		exit(0);
+	}
+
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
 

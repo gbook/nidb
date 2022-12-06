@@ -40,7 +40,7 @@
 	require "includes_html.php";
 	require "menu.php";
 
-	if (!isAdmin()) {
+	if (!isAdmin() && !isSiteAdmin()) {
 		Error("This account does not have permissions to view this page");
 	}
 	else {
@@ -125,14 +125,17 @@
 
 				<a href="adminusers.php" class="ui big basic fluid button"><i class="black users icon"></i> Users</a>
 				<a href="adminprojects.php" class="ui big basic fluid button"><i class="black clipboard list icon"></i> Projects</a>
+				<!--<a href="longqc.php" class="ui button"><i class="black check circle icon"></i> Longitudinal QC</a>-->
+				<a href="projects.php?action=editbidsmapping&id=null" class="ui basic fluid button"><i class="map signs icon"></i> Edit Global BIDS Protocol Mapping</a>
+				
+				<? if (isSiteAdmin()) { ?>
 				<a href="reports.php" class="ui big basic fluid button"><i class="black clipboard icon"></i> Reports</a>
 				<a href="adminaudits.php" class="ui big basic fluid button"><i class="black clipboard check icon"></i> Audits</a>
 				<a href="cleanup.php" class="ui big basic fluid button"><i class="black eraser icon"></i> Clean-up data</a>
-				<!--<a href="longqc.php" class="ui button"><i class="black check circle icon"></i> Longitudinal QC</a>-->
-				<a href="adminmodalities.php" class="ui big basic fluid button"><i class="black list alternate icon"></i> Modalities</a>
 				<a href="adminsites.php" class="ui big basic fluid button"><i class="black list alternate icon"></i> Sites</a>
 				<a href="admininstances.php" class="ui big basic fluid button"><i class="black list alternate icon"></i> Instances</a>
-				<a href="projects.php?action=editbidsmapping&id=null" class="ui basic fluid button"><i class="map signs icon"></i> Edit Global BIDS Protocol Mapping</a>
+				<a href="adminmodalities.php" class="ui big basic fluid button"><i class="black list alternate icon"></i> Modalities</a>
+				<? } ?>
 			</div>
 			<div class="ui eight wide column">
 				<div class="ui header">
@@ -140,6 +143,7 @@
 					<div class="sub header">System Administration</div>
 				</div>
 
+				<? if (isSiteAdmin()) { ?>
 				<a href="system.php" class="ui big fluid button"><i class="cog icon"></i> System settings...</a>
 				<br>
 				<a href="status.php" class="ui big basic fluid button"><i class="black info circle icon"></i> System status</a>
@@ -150,6 +154,7 @@
 				<a href="stats.php" class="ui big basic fluid button"><i class="black thermometer half icon"></i> System Usage</a>
 				<a href="backup.php" class="ui big basic fluid button"><i class="black archive icon"></i> Backup</a>
 				<a href="adminerrorlogs.php" class="ui big basic fluid button"><i class="bug icon"></i> View Error Logs</a>
+				<? } ?>
 			</div>
 		</div>
 		<br><br>
