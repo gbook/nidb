@@ -2945,9 +2945,19 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 
 		if ($returnpage == "setup") { $active = "active"; } else { $active = ""; }
 		
+		$firstsetup = false;
+		if (($GLOBALS['cfg']['cfgpath'] == "") && ($returnpage == "setup")) {
+			echo "config file does not exist, and return page is setup.php. <b>This is a first time setup</b>";
+			$firstsetup = true;
+			PrintVariable($GLOBALS['cfg']);
+		}
+		
+		/* set default values if they're not already set in the config */
+		if (($GLOBALS['cfg']['mysqlhost'] != "") && (isset($GLOBALS['cfg']['mysqlhost']))) { $mysqlhost = $GLOBALS['cfg']['mysqlhost']; } else { $mysqlhost = "localhost"; }
+		if (($GLOBALS['cfg']['mysqluser'] != "") && (isset($GLOBALS['cfg']['mysqluser']))) { $mysqluser = $GLOBALS['cfg']['mysqluser']; } else { $mysqluser = "nidb"; }
+		if (($GLOBALS['cfg']['mysqlpassword'] != "") && (isset($GLOBALS['cfg']['mysqlpassword']))) { $mysqlpassword = $GLOBALS['cfg']['mysqlpassword']; } else { $mysqlpassword = "password"; }
 		?>
 		<div class="ui container">
-		
 			<div class="ui fluid styled accordion">
 				<div class="<?=$active?> title">
 					<div class="ui header">
@@ -2994,19 +3004,19 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 						</tr>
 						<tr>
 							<td class="right aligned tt">mysqlhost</td>
-							<td><input type="text" name="mysqlhost" value="<?=($GLOBALS['cfg']['mysqlhost'] == "") ? $GLOBALS['cfg']['mysqlhost'] : "localhost"; ?>" size="100"></td>
+							<td><input type="text" name="mysqlhost" value="<?=$mysqlhost?>" size="100"></td>
 							<td class="center aligned"><? if ($dbconnect) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Database hostname (should be <code>localhost</code> or <code>127.0.0.1</code> unless the database is running on a different server than the website)</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">mysqluser</td>
-							<td><input type="text" name="mysqluser" value="<?=($GLOBALS['cfg']['mysqluser'] == "") ? $GLOBALS['cfg']['mysqluser'] : "nidb"; ?>"></td>
+							<td><input type="text" name="mysqluser" value="<?=$mysqluser?>"></td>
 							<td class="center aligned"><? if ($dbconnect) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Database username</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">mysqlpassword</td>
-							<td><input type="password" name="mysqlpassword" value="<?=($GLOBALS['cfg']['mysqlpassword'] == "") ? $GLOBALS['cfg']['mysqlpassword'] : "password"; ?>"></td>
+							<td><input type="password" name="mysqlpassword" value="<?=$mysqlpassword?>"></td>
 							<td class="center aligned"><? if ($dbconnect) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Database password</td>
 						</tr>
