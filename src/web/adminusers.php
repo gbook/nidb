@@ -492,36 +492,27 @@
 					});
 				});
 				</script>
-				
+			
+			<!--<i class="question circle outline icon" title="<b>Project admin</b><br><br>User has the following permissions for the selected projects:<ul><li>Assign admin permissions to users<li>Modify all data<li>View all data<li>Modify PHI/PII<li>View PHI/PII"></i>-->
 			<h3 class="ui header">Project Permissions</h3>
 			<table class="ui small celled selectable grey compact table">
 				<thead>
-					<th></th>
-					<th></th>
-					<th colspan="2" align="center">Data</th>
-					<th colspan="2" align="center">PHI/PII</th>
+					<tr>
+						<th></th>
+						<th></th>
+						<th colspan="2" class="center aligned">Imaging Data</th>
+						<th colspan="2" class="center aligned">PHI</th>
+					</tr>
+					<tr>
+						<th>Select/unselect all</th>
+						<th class="right aligned">Project admin <label><input type="checkbox" id="allprojectadmin"></label></th>
+						<th class="right aligned">Full &nbsp;<label><input type="checkbox" id="allmodifydata"></label></th>
+						<th class="right aligned">View &nbsp;<label><input type="checkbox" id="allviewdata"></label></th>
+						<th class="right aligned">Full &nbsp;<label><input type="checkbox" id="allmodifyphi"></label></th>
+						<th class="right aligned">View &nbsp;<label><input type="checkbox" id="allviewphi"></label></th>
+					</tr>
 				</thead>
 				<tbody>
-					<tr>
-						<td></td>
-						<td>
-							Project admin <i class="question circle outline icon" title="<b>Project admin</b><br><br>User has the following permissions for the selected projects:<ul><li>Assign admin permissions to users<li>Modify all data<li>View all data<li>Modify PHI/PII<li>View PHI/PII"></i>
-						</td>
-						<td>
-							Modify <i class="question circle outline icon" title="User has permissions to modify, upload/import data, delete subjects/studies/series. Excluding PHI/PII"></i>
-						</td>
-						<td title="User has permissions to view all data, excluding PHI/PII">View</td>
-						<td title="User has permissions to modify PHI/PII">Modify</td>
-						<td title="User has permissions to view, but not modify PHI/PII">View</td>
-					</tr>
-					<tr>
-						<td>Select/unselect all</td>
-						<td class="checkcell"><label><input type="checkbox" id="allprojectadmin"></label></td>
-						<td class="checkcell"><label><input type="checkbox" id="allmodifydata"></label></td>
-						<td class="checkcell"><label><input type="checkbox" id="allviewdata"></label></td>
-						<td class="checkcell"><label><input type="checkbox" id="allmodifyphi"></label></td>
-						<td class="checkcell"><label><input type="checkbox" id="allviewphi"></label></td>
-					</tr>
 				<?
 					$sqlstring = "select * from user_instance where user_id = '$id'";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -557,6 +548,7 @@
 							$sqlstringA = "select * from projects where instance_id = $instance_id order by project_name";
 							$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 							while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+								
 								$project_id = $rowA['project_id'];
 								$project_name = $rowA['project_name'];
 								$project_costcenter = $rowA['project_costcenter'];
@@ -580,24 +572,33 @@
 										$write_phi = "";
 									}
 								}
-
+								
 								?>
+								<script type="text/javascript">
+								$(document).ready(function() {
+									$(".projectadmin<?=$project_id?>").click(function() {
+										var checked_status = this.checked;
+										$(".project<?=$project_id?>").prop("checked", checked_status);
+										});
+									});
+								</script>
+
 								<tr style="color: darkblue; font-size:11pt;" class="projects<?=$instance_id?>">
 									<td><?=$project_name?> (<tt><?=$project_costcenter?></tt>)</td>
-									<td class="projectadmin checkcell">
-										<label><input type="checkbox" class="chkInstance<?=$instance_id?>" name="projectadmin[]" value="<?=$project_id?>" <?if ($project_admin) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?>></label>
+									<td class="projectadmin checkcell right aligned">
+										<label><input type="checkbox" class="chkInstance<?=$instance_id?> projectadmin<?=$project_id?>" name="projectadmin[]" value="<?=$project_id?>" <?if ($project_admin) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?>></label>
 									</td>
-									<td class="modifydata checkcell">
-										<label><input type="checkbox" class="chkInstance<?=$instance_id?>" name="modifydata[]" value="<?=$project_id?>" <?if ($write_data) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?>></label>
+									<td class="modifydata checkcell right aligned">
+										<label><input type="checkbox" class="chkInstance<?=$instance_id?> project<?=$project_id?>" name="modifydata[]" value="<?=$project_id?>" <?if ($write_data) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?>></label>
 									</td>
-									<td class="viewdata checkcell">
-										<label><input type="checkbox" class="chkInstance<?=$instance_id?>" name="viewdata[]" value="<?=$project_id?>" <?if ($view_data) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?>></label>
+									<td class="viewdata checkcell right aligned">
+										<label><input type="checkbox" class="chkInstance<?=$instance_id?> project<?=$project_id?>" name="viewdata[]" value="<?=$project_id?>" <?if ($view_data) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?>></label>
 									</td>
-									<td class="modifyphi checkcell">
-										<label><input type="checkbox" class="chkInstance<?=$instance_id?>" name="modifyphi[]" value="<?=$project_id?>" <?if ($write_phi) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?>></label>
+									<td class="modifyphi checkcell right aligned">
+										<label><input type="checkbox" class="chkInstance<?=$instance_id?> project<?=$project_id?>" name="modifyphi[]" value="<?=$project_id?>" <?if ($write_phi) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?>></label>
 									</td>
-									<td class="viewphi checkcell">
-										<label><input type="checkbox" class="chkInstance<?=$instance_id?>" name="viewphi[]" value="<?=$project_id?>" <?if ($view_phi) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?>></label>
+									<td class="viewphi checkcell right aligned">
+										<label><input type="checkbox" class="chkInstance<?=$instance_id?> project<?=$project_id?>" name="viewphi[]" value="<?=$project_id?>" <?if ($view_phi) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?>></label>
 									</td>
 								</tr>
 								<?

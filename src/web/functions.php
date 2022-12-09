@@ -2952,10 +2952,52 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 			PrintVariable($GLOBALS['cfg']);
 		}
 		
-		/* set default values if they're not already set in the config */
+		/* set default values if they're not set in the config */
 		if (($GLOBALS['cfg']['mysqlhost'] != "") && (isset($GLOBALS['cfg']['mysqlhost']))) { $mysqlhost = $GLOBALS['cfg']['mysqlhost']; } else { $mysqlhost = "localhost"; }
 		if (($GLOBALS['cfg']['mysqluser'] != "") && (isset($GLOBALS['cfg']['mysqluser']))) { $mysqluser = $GLOBALS['cfg']['mysqluser']; } else { $mysqluser = "nidb"; }
 		if (($GLOBALS['cfg']['mysqlpassword'] != "") && (isset($GLOBALS['cfg']['mysqlpassword']))) { $mysqlpassword = $GLOBALS['cfg']['mysqlpassword']; } else { $mysqlpassword = "password"; }
+		if (($GLOBALS['cfg']['mysqldatabase'] != "") && (isset($GLOBALS['cfg']['mysqldatabase']))) { $mysqldatabase = $GLOBALS['cfg']['mysqldatabase']; } else { $mysqldatabase = "nidb"; }
+
+		if (($GLOBALS['cfg']['modulefileiothreads'] != "") && (isset($GLOBALS['cfg']['modulefileiothreads']))) { $modulefileiothreads = $GLOBALS['cfg']['modulefileiothreads']; } else { $modulefileiothreads = "1"; }
+		if (($GLOBALS['cfg']['moduleexportthreads'] != "") && (isset($GLOBALS['cfg']['moduleexportthreads']))) { $moduleexportthreads = $GLOBALS['cfg']['moduleexportthreads']; } else { $moduleexportthreads = "2"; }
+		if (($GLOBALS['cfg']['moduleimportthreads'] != "") && (isset($GLOBALS['cfg']['moduleimportthreads']))) { $moduleimportthreads = $GLOBALS['cfg']['moduleimportthreads']; } else { $moduleimportthreads = "1"; }
+		if (($GLOBALS['cfg']['modulemriqathreads'] != "") && (isset($GLOBALS['cfg']['modulemriqathreads']))) { $modulemriqathreads = $GLOBALS['cfg']['modulemriqathreads']; } else { $modulemriqathreads = "4"; }
+		if (($GLOBALS['cfg']['modulepipelinethreads'] != "") && (isset($GLOBALS['cfg']['modulepipelinethreads']))) { $modulepipelinethreads = $GLOBALS['cfg']['modulepipelinethreads']; } else { $modulepipelinethreads = "4"; }
+		if (($GLOBALS['cfg']['moduleimportuploadedthreads'] != "") && (isset($GLOBALS['cfg']['moduleimportuploadedthreads']))) { $moduleimportuploadedthreads = $GLOBALS['cfg']['moduleimportuploadedthreads']; } else { $moduleimportuploadedthreads = "1"; }
+		if (($GLOBALS['cfg']['moduleqcthreads'] != "") && (isset($GLOBALS['cfg']['moduleqcthreads']))) { $moduleqcthreads = $GLOBALS['cfg']['moduleqcthreads']; } else { $moduleqcthreads = "2"; }
+		if (($GLOBALS['cfg']['moduleuploadthreads'] != "") && (isset($GLOBALS['cfg']['moduleuploadthreads']))) { $moduleuploadthreads = $GLOBALS['cfg']['moduleuploadthreads']; } else { $moduleuploadthreads = "1"; }
+		if (($GLOBALS['cfg']['modulebackupthreads'] != "") && (isset($GLOBALS['cfg']['modulebackupthreads']))) { $modulebackupthreads = $GLOBALS['cfg']['modulebackupthreads']; } else { $modulebackupthreads = "1"; }
+		if (($GLOBALS['cfg']['moduleminipipelinethreads'] != "") && (isset($GLOBALS['cfg']['moduleminipipelinethreads']))) { $moduleminipipelinethreads = $GLOBALS['cfg']['moduleminipipelinethreads']; } else { $moduleminipipelinethreads = "4"; }
+
+		if (($GLOBALS['cfg']['analysisdir'] != "") && (isset($GLOBALS['cfg']['analysisdir']))) { $analysisdir = $GLOBALS['cfg']['analysisdir']; } else { $analysisdir = "/nidb/data/pipeline"; }
+		if (($GLOBALS['cfg']['analysisdirb'] != "") && (isset($GLOBALS['cfg']['analysisdirb']))) { $analysisdirb = $GLOBALS['cfg']['analysisdirb']; } else { $analysisdirb = "/nidb/data/pipelineb"; }
+		if (($GLOBALS['cfg']['archivedir'] != "") && (isset($GLOBALS['cfg']['archivedir']))) { $archivedir = $GLOBALS['cfg']['archivedir']; } else { $archivedir = "/nidb/data/archive"; }
+		if (($GLOBALS['cfg']['backupdir'] != "") && (isset($GLOBALS['cfg']['backupdir']))) { $backupdir = $GLOBALS['cfg']['backupdir']; } else { $backupdir = "/nidb/data/backup"; }
+		if (($GLOBALS['cfg']['clusteranalysisdir'] != "") && (isset($GLOBALS['cfg']['clusteranalysisdir']))) { $clusteranalysisdir = $GLOBALS['cfg']['clusteranalysisdir']; } else { $clusteranalysisdir = "/nidb/data/pipeline"; }
+		if (($GLOBALS['cfg']['clusteranalysisdirb'] != "") && (isset($GLOBALS['cfg']['clusteranalysisdirb']))) { $clusteranalysisdirb = $GLOBALS['cfg']['clusteranalysisdirb']; } else { $clusteranalysisdirb = "/nidb/data/pipelineb"; }
+		if (($GLOBALS['cfg']['deleteddir'] != "") && (isset($GLOBALS['cfg']['deleteddir']))) { $deleteddir = $GLOBALS['cfg']['deleteddir']; } else { $deleteddir = "/nidb/data/deleted"; }
+		if (($GLOBALS['cfg']['downloaddir'] != "") && (isset($GLOBALS['cfg']['downloaddir']))) { $downloaddir = $GLOBALS['cfg']['downloaddir']; } else { $downloaddir = "/nidb/data/download"; }
+		if (($GLOBALS['cfg']['ftpdir'] != "") && (isset($GLOBALS['cfg']['ftpdir']))) { $ftpdir = $GLOBALS['cfg']['ftpdir']; } else { $ftpdir = "/nidb/data/ftp"; }
+		if (($GLOBALS['cfg']['groupanalysisdir'] != "") && (isset($GLOBALS['cfg']['groupanalysisdir']))) { $groupanalysisdir = $GLOBALS['cfg']['groupanalysisdir']; } else { $groupanalysisdir = "/nidb/data/pipelinegroup"; }
+		if (($GLOBALS['cfg']['importdir'] != "") && (isset($GLOBALS['cfg']['importdir']))) { $importdir = $GLOBALS['cfg']['importdir']; } else { $importdir = "/nidb/data/import"; }
+		if (($GLOBALS['cfg']['incoming2dir'] != "") && (isset($GLOBALS['cfg']['incoming2dir']))) { $incoming2dir = $GLOBALS['cfg']['incoming2dir']; } else { $incoming2dir = "/nidb/data/dicomincoming2"; }
+		if (($GLOBALS['cfg']['incomingdir'] != "") && (isset($GLOBALS['cfg']['incomingdir']))) { $incomingdir = $GLOBALS['cfg']['incomingdir']; } else { $incomingdir = "/nidb/data/dicomincoming"; }
+		if (($GLOBALS['cfg']['lockdir'] != "") && (isset($GLOBALS['cfg']['lockdir']))) { $lockdir = $GLOBALS['cfg']['lockdir']; } else { $lockdir = "/nidb/lock"; }
+		if (($GLOBALS['cfg']['logdir'] != "") && (isset($GLOBALS['cfg']['logdir']))) { $logdir = $GLOBALS['cfg']['logdir']; } else { $logdir = "/nidb/logs"; }
+		if (($GLOBALS['cfg']['mountdir'] != "") && (isset($GLOBALS['cfg']['mountdir']))) { $mountdir = $GLOBALS['cfg']['mountdir']; } else { $mountdir = "/nidb/mount"; }
+		if (($GLOBALS['cfg']['nidbdir'] != "") && (isset($GLOBALS['cfg']['nidbdir']))) { $nidbdir = $GLOBALS['cfg']['nidbdir']; } else { $nidbdir = "/nidb"; }
+		if (($GLOBALS['cfg']['packageimportdir'] != "") && (isset($GLOBALS['cfg']['packageimportdir']))) { $packageimportdir = $GLOBALS['cfg']['packageimportdir']; } else { $packageimportdir = "/nidb/data/packageimport"; }
+		if (($GLOBALS['cfg']['problemdir'] != "") && (isset($GLOBALS['cfg']['problemdir']))) { $problemdir = $GLOBALS['cfg']['problemdir']; } else { $problemdir = "/nidb/data/problem"; }
+		if (($GLOBALS['cfg']['publicdownloaddir'] != "") && (isset($GLOBALS['cfg']['publicdownloaddir']))) { $publicdownloaddir = $GLOBALS['cfg']['publicdownloaddir']; } else { $publicdownloaddir = "/nidb/data/publicdownload"; }
+		if (($GLOBALS['cfg']['publicwebdir'] != "") && (isset($GLOBALS['cfg']['publicwebdir']))) { $publicwebdir = $GLOBALS['cfg']['publicwebdir']; } else { $publicwebdir = "/var/www/html/pub"; }
+		if (($GLOBALS['cfg']['qcmoduledir'] != "") && (isset($GLOBALS['cfg']['qcmoduledir']))) { $qcmoduledir = $GLOBALS['cfg']['qcmoduledir']; } else { $qcmoduledir = "/nidb/qcmodules"; }
+		if (($GLOBALS['cfg']['tmpdir'] != "") && (isset($GLOBALS['cfg']['tmpdir']))) { $tmpdir = $GLOBALS['cfg']['tmpdir']; } else { $tmpdir = "/nidb/data/tmp"; }
+		if (($GLOBALS['cfg']['uploaddir'] != "") && (isset($GLOBALS['cfg']['uploaddir']))) { $uploaddir = $GLOBALS['cfg']['uploaddir']; } else { $uploaddir = "/nidb/data/upload"; }
+		if (($GLOBALS['cfg']['uploadeddir'] != "") && (isset($GLOBALS['cfg']['uploadeddir']))) { $uploadeddir = $GLOBALS['cfg']['uploadeddir']; } else { $uploadeddir = "/nidb/data/uploaded"; }
+		if (($GLOBALS['cfg']['uploadstagingdir'] != "") && (isset($GLOBALS['cfg']['uploadstagingdir']))) { $uploadstagingdir = $GLOBALS['cfg']['uploadstagingdir']; } else { $uploadstagingdir = "/nidb/data/uploadstaging"; }
+		if (($GLOBALS['cfg']['webdir'] != "") && (isset($GLOBALS['cfg']['webdir']))) { $webdir = $GLOBALS['cfg']['webdir']; } else { $webdir = "/var/www/html"; }
+		if (($GLOBALS['cfg']['webdownloaddir'] != "") && (isset($GLOBALS['cfg']['webdownloaddir']))) { $webdownloaddir = $GLOBALS['cfg']['webdownloaddir']; } else { $webdownloaddir = "/var/www/html/download"; }
+		
 		?>
 		<div class="ui container">
 			<div class="ui fluid styled accordion">
@@ -3022,7 +3064,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 						</tr>
 						<tr>
 							<td class="right aligned tt">mysqldatabase</td>
-							<td><input type="text" name="mysqldatabase" value="<?=($GLOBALS['cfg']['mysqldatabase'] == "") ? $GLOBALS['cfg']['mysqlpassword'] : "nidb"; ?>"></td>
+							<td><input type="text" name="mysqldatabase" value="<?=$mysqldatabase?>"></td>
 							<td class="center aligned"><? if ($dbconnect) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Database (default is <tt>nidb</tt>)</td>
 						</tr>
@@ -3074,7 +3116,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 						</tr>
 						<tr>
 							<td class="right aligned tt">moduleexportthreads</td>
-							<td><input type="number" name="moduleexportthreads" value="<?=$GLOBALS['cfg']['moduleexportthreads']?>"></td>
+							<td><input type="number" name="moduleexportthreads" value="<?=$moduleexportthreads?>"></td>
 							<td></td>
 							<td><b>export</b> module. Recommended is 2</td>
 						</tr>
@@ -3086,13 +3128,13 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 						</tr>
 						<tr>
 							<td class="right aligned tt">modulemriqathreads</td>
-							<td><input type="number" name="modulemriqathreads" value="<?=$GLOBALS['cfg']['modulemriqathreads']?>"></td>
+							<td><input type="number" name="modulemriqathreads" value="<?=$modulemriqathreads?>"></td>
 							<td></td>
 							<td><b>mriqa</b> module. Recommended is 4</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">modulepipelinethreads</td>
-							<td><input type="number" name="modulepipelinethreads" value="<?=$GLOBALS['cfg']['modulepipelinethreads']?>"></td>
+							<td><input type="number" name="modulepipelinethreads" value="<?=$modulepipelinethreads?>"></td>
 							<td></td>
 							<td><b>pipeline</b> module. Recommended is 4</td>
 						</tr>
@@ -3104,13 +3146,13 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 						</tr>
 						<tr>
 							<td class="right aligned tt">moduleqcthreads</td>
-							<td><input type="number" name="moduleqcthreads" value="<?=$GLOBALS['cfg']['moduleqcthreads']?>"></td>
+							<td><input type="number" name="moduleqcthreads" value="<?=$moduleqcthreads?>"></td>
 							<td></td>
 							<td><b>qc</b> module. Recommended is 2</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">moduleuploadthreads</td>
-							<td><input type="number" name="moduleuploadthreads" value="<?=$GLOBALS['cfg']['moduleuploadthreads']?>"></td>
+							<td><input type="number" name="moduleuploadthreads" value="<?=$moduleuploadthreads?>"></td>
 							<td></td>
 							<td><b>upload</b> module. Recommended is 1</td>
 						</tr>
@@ -3122,7 +3164,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 						</tr>
 						<tr>
 							<td class="right aligned tt">moduleminipipelinethreads</td>
-							<td><input type="number" name="moduleminipipelinethreads" value="<?=$GLOBALS['cfg']['moduleminipipelinethreads']?>"></td>
+							<td><input type="number" name="moduleminipipelinethreads" value="<?=$moduleminipipelinethreads?>"></td>
 							<td></td>
 							<td><b>minipipeline</b> module. Recommended is 4</td>
 						</tr>
@@ -3488,7 +3530,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 							<td class="right aligned tt">localftpusername</td>
 							<td><input type="text" name="localftpusername" value="<?=$GLOBALS['cfg']['localftpusername']?>"></td>
 							<td></td>
-							<td>Username for the locall access FTP account</td>
+							<td>Username for the local access FTP account</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">localftppassword</td>
@@ -3502,37 +3544,37 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 						</tr>
 						<tr>
 							<td class="right aligned tt"><b>nidbdir</b></td>
-							<td><input type="text" name="nidbdir" value="<?=$GLOBALS['cfg']['nidbdir']?>"></td>
+							<td><input type="text" name="nidbdir" value="<?=$nidbdir?>"></td>
 							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['nidbdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td><b>Main NiDB installation directory</b></td>
 						</tr>
 						<tr>
 							<td class="right aligned tt"><b>webdir</b></td>
-							<td><input type="text" name="webdir" value="<?=$GLOBALS['cfg']['webdir']?>"></td>
+							<td><input type="text" name="webdir" value="<?=$webdir?>"></td>
 							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['webdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td><b>Root of the website directory (Frontend)</b></td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">lockdir</td>
-							<td><input type="text" name="lockdir" value="<?=$GLOBALS['cfg']['lockdir']?>"></td>
+							<td><input type="text" name="lockdir" value="<?=$lockdir?>"></td>
 							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['lockdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Lock directory for the programs</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">logdir</td>
-							<td><input type="text" name="logdir" value="<?=$GLOBALS['cfg']['logdir']?>"></td>
+							<td><input type="text" name="logdir" value="<?=$logdir?>"></td>
 							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['logdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Log directory for the programs</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">mountdir</td>
-							<td><input type="text" name="mountdir" value="<?=$GLOBALS['cfg']['mountdir']?>"></td>
+							<td><input type="text" name="mountdir" value="<?=$mountdir?>"></td>
 							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['mountdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Directory in which user data directories are mounted and any directories which should be accessible from the NFS mount export option of the Search page. For example, if the user enters <code>/home/user1/data/testing</code> the mountdir will be prepended to point to the real mount point of <code>/mount/home/user1/data/testing</code>. This prevents users from writing data to the OS directories.</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">qcmoduledir</td>
-							<td><input type="text" name="qcmoduledir" value="<?=$GLOBALS['cfg']['qcmoduledir']?>"></td>
+							<td><input type="text" name="qcmoduledir" value="<?=$qcmoduledir?>"></td>
 							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['qcmoduledir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Directory containing QC modules. Usually a subdirectory of the programs directory</td>
 						</tr>
@@ -3543,103 +3585,103 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 						</tr>
 						<tr>
 							<td class="right aligned tt">archivedir</td>
-							<td><input type="text" name="archivedir" value="<?=$GLOBALS['cfg']['archivedir']?>"></td>
+							<td><input type="text" name="archivedir" value="<?=$archivedir?>"></td>
 							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['archivedir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Directory for archived data. All binary data is stored in this directory.</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">backupdir</td>
-							<td><input type="text" name="backupdir" value="<?=$GLOBALS['cfg']['backupdir']?>"></td>
+							<td><input type="text" name="backupdir" value="<?=$backupdir?>"></td>
 							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['backupdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>All data is copied to this directory at the same time it is added to the archive directory. This can be useful if you want to use a tape backup and only copy out newer files from this directory to fill up a tape.</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">ftpdir</td>
-							<td><input type="text" name="ftpdir" value="<?=$GLOBALS['cfg']['ftpdir']?>"></td>
+							<td><input type="text" name="ftpdir" value="<?=$ftpdir?>"></td>
 							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['ftpdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Downloaded data to be retreived by FTP is stored here</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">importdir</td>
-							<td><input type="text" name="importdir" value="<?=$GLOBALS['cfg']['importdir']?>"></td>
+							<td><input type="text" name="importdir" value="<?=$importdir?>"></td>
 							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['importdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Old method of importing data. Unused</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">incomingdir</td>
-							<td><input type="text" name="incomingdir" value="<?=$GLOBALS['cfg']['incomingdir']?>"></td>
+							<td><input type="text" name="incomingdir" value="<?=$incomingdir?>"></td>
 							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['incomingdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>All data received from the DICOM receiver is placed in the root of this directory. All non-DICOM data is stored in numbered sub-directories of this directory.</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">incoming2dir</td>
-							<td><input type="text" name="incoming2dir" value="<?=$GLOBALS['cfg']['incoming2dir']?>"></td>
+							<td><input type="text" name="incoming2dir" value="<?=$incoming2dir?>"></td>
 							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['incoming2dir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Unused</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">packageimportdir</td>
-							<td><input type="text" name="packageimportdir" value="<?=$GLOBALS['cfg']['packageimportdir']?>"></td>
+							<td><input type="text" name="packageimportdir" value="<?=$packageimportdir?>"></td>
 							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['packageimportdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>If using the data package export/import feature, packages to be imported should be placed here</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">problemdir</td>
-							<td><input type="text" name="problemdir" value="<?=$GLOBALS['cfg']['problemdir']?>"></td>
+							<td><input type="text" name="problemdir" value="<?=$problemdir?>"></td>
 							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['problemdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Files which encounter problems during import/archiving are placed here</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">webdownloaddir</td>
-							<td><input type="text" name="webdownloaddir" value="<?=$GLOBALS['cfg']['webdownloaddir']?>"></td>
+							<td><input type="text" name="webdownloaddir" value="<?=$webdownloaddir?>"></td>
 							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['webdownloaddir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Directory within the webdir that will link to the physical download directory. Sometimes the downloads can be HUGE, and the default <code>/var/www/html</code> directory may be on a small partition. This directory should point to the real [downloaddir] on a filesystem with enough space to store the large downloads.</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">publicwebdir</td>
-							<td><input type="text" name="publicwebdir" value="<?=$GLOBALS['cfg']['publicwebdir']?>"></td>
+							<td><input type="text" name="publicwebdir" value="<?=$publicwebdir?>"></td>
 							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['publicwebdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Directory within the [webdir] that will link to the physical public download directory. Sometimes the downloads can be HUGE, and the default <code>/var/www/html</code> directory may be on a small partition. This directory should be a link pointing to the real [downloaddir] on a filesystem with enough space to store the large downloads.</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">downloaddir</td>
-							<td><input type="text" name="downloaddir" value="<?=$GLOBALS['cfg']['downloaddir']?>"></td>
+							<td><input type="text" name="downloaddir" value="<?=$downloaddir?>"></td>
 							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['downloaddir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Directory which stores downloads available from the website</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">publicdownloaddir</td>
-							<td><input type="text" name="publicdownloaddir" value="<?=$GLOBALS['cfg']['publicdownloaddir']?>"></td>
+							<td><input type="text" name="publicdownloaddir" value="<?=$publicdownloaddir?>"></td>
 							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['publicdownloaddir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Directory which stores public downloads. This directory is not automatically cleaned by cron. Downloads in this directory are expected to be available permanently.</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">uploaddir</td>
-							<td><input type="text" name="uploaddir" value="<?=$GLOBALS['cfg']['uploaddir']?>"></td>
+							<td><input type="text" name="uploaddir" value="<?=$uploaddir?>"></td>
 							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['uploaddir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Uploaded data is placed here</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">uploadeddir</td>
-							<td><input type="text" name="uploadeddir" value="<?=$GLOBALS['cfg']['uploadeddir']?>"></td>
+							<td><input type="text" name="uploadeddir" value="<?=$uploadeddir?>"></td>
 							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['uploadeddir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Data received from the api.php and import pages is placed here</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">uploadstagingdir</td>
-							<td><input type="text" name="uploadstagingdir" value="<?=$GLOBALS['cfg']['uploadstagingdir']?>"></td>
+							<td><input type="text" name="uploadstagingdir" value="<?=$uploadstagingdir?>"></td>
 							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['uploadstagingdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Data being imported into NiDB is copied here for staging and preparation for archiving. Files are unzipped, parsed, and cataloged prior to import into NiDB so that the user can view the upload contents.</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">tmpdir</td>
-							<td><input type="text" name="tmpdir" value="<?=$GLOBALS['cfg']['tmpdir']?>"></td>
+							<td><input type="text" name="tmpdir" value="<?=$tmpdir?>"></td>
 							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['tmpdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Directory used for temporary operations. Depending upon data sizes requested or processed, this directory may get very large, and may need to be outside of the OS drive.</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">deleteddir</td>
-							<td><input type="text" name="deleteddir" value="<?=$GLOBALS['cfg']['deleteddir']?>"></td>
+							<td><input type="text" name="deleteddir" value="<?=$deleteddir?>"></td>
 							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['deleteddir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Data is not usually deleted. It may be removed from the database and not appear on the website, but the data will end up in this directory.</td>
 						</tr>
@@ -3650,31 +3692,31 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 						</tr>
 						<tr>
 							<td class="right aligned tt">analysisdir</td>
-							<td><input type="text" name="analysisdir" value="<?=$GLOBALS['cfg']['analysisdir']?>"></td>
+							<td><input type="text" name="analysisdir" value="<?=$analysisdir?>"></td>
 							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['analysisdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Pipeline analysis directory (full path, including any /mount prefixes specified in [mountdir]) for data stored in the <code>/S1234ABC/<b>PipelineName</b>/1</code> format</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">analysisdirb</td>
-							<td><input type="text" name="analysisdirb" value="<?=$GLOBALS['cfg']['analysisdirb']?>"></td>
+							<td><input type="text" name="analysisdirb" value="<?=$analysisdirb?>"></td>
 							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['analysisdirb'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Pipeline analysis directory (full path, including any /mount prefixes specified in [mountdir]) for data stored in the <code>/<b>PipelineName</b>/S1234ABC/1</code> format</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">clusteranalysisdir</td>
-							<td><input type="text" name="clusteranalysisdir" value="<?=$GLOBALS['cfg']['clusteranalysisdir']?>"></td>
+							<td><input type="text" name="clusteranalysisdir" value="<?=$clusteranalysisdir?>"></td>
 							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['clusteranalysisdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Pipeline analysis directory as seen from the cluster (full path, including any /mount prefixes specified in [mountdir]) for data stored in the <code>/S1234ABC/<b>PipelineName</b>/1</code> format</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">clusteranalysisdirb</td>
-							<td><input type="text" name="clusteranalysisdirb" value="<?=$GLOBALS['cfg']['clusteranalysisdirb']?>"></td>
+							<td><input type="text" name="clusteranalysisdirb" value="<?=$clusteranalysisdirb?>"></td>
 							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['clusteranalysisdirb'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Pipeline analysis directory as seen from the cluster (full path, including any /mount prefixes specified in [mountdir]) for data stored in the <code>/<b>PipelineName</b>/S1234ABC/1</code> format</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">groupanalysisdir</td>
-							<td><input type="text" name="groupanalysisdir" value="<?=$GLOBALS['cfg']['groupanalysisdir']?>"></td>
+							<td><input type="text" name="groupanalysisdir" value="<?=$groupanalysisdir?>"></td>
 							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['groupanalysisdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Pipeline directory for group analyses (full path, including any /mount prefixes specified in [mountdir])</td>
 						</tr>

@@ -2106,8 +2106,18 @@ void archiveIO::AppendUploadLog(QString func, QString m) {
 
 
 /* ---------------------------------------------------------- */
-/* --------- WriteBIDS ------------------------------------- */
+/* --------- WriteBIDS -------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief archiveIO::WriteBIDS
+ * @param seriesids - list of seriesids
+ * @param modalities - list of modalities
+ * @param odir - final output directory
+ * @param bidsreadme - BIDS readme
+ * @param bidsflags - BIDS flags
+ * @param msg - returned msgs
+ * @return true if successful
+ */
 bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QString odir, QString bidsreadme, QStringList bidsflags, QString &msg) {
     n->WriteLog("Entering WriteBIDS()...");
 

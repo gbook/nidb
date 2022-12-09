@@ -376,9 +376,18 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 
     /* check if it's a special type of export first */
     if (filetype == "bids") {
+
+        QString outdir;
+        if (exporttype == "nfs")
+            outdir = QString("%1%2").arg(n->cfg["mountdir"]).arg(nfsdir);
+        else if ((exporttype == "web") || (exporttype == "publicdownload"))
+            outdir = QString("%1").arg(tmpexportdir);
+        else
+            outdir = QString("%1/NiDB-%2").arg(n->cfg["ftpdir"]).arg(exportid);
+
         packageformat = "bids";
         QString log;
-        ExportBIDS(exportid, bidsreadme, bidsflags, tmpexportdir, exportstatus, log);
+        ExportBIDS(exportid, bidsreadme, bidsflags, outdir, exportstatus, log);
         msgs << log;
     }
     /* squirrel */
@@ -1286,21 +1295,23 @@ bool moduleExport::ExportBIDS(int exportid, QString bidsreadme, QStringList bids
         }
         //n->WriteLog( QString("seriesids contains [%1] items    modalities contains [%2] items").arg(seriesids.size()).arg(modalities.size()) );
 
-        QString rootoutdir = n->cfg["ftpdir"] + "/NiDB-BIDS-" + CreateLogDate();
-        outdir = rootoutdir;
+        if (outdir == "")
+            outdir = n->cfg["ftpdir"] + "/NiDB-BIDS-" + CreateLogDate();
+        else
+            outdir += "/BIDS-" + CreateLogDate();
 
         QString m;
-        if (MakePath(rootoutdir, m)) {
-            n->WriteLog("Created rootoutdir (A) [" + rootoutdir + "]");
+        if (MakePath(outdir, m)) {
+            n->WriteLog("Created outdir (A) [" + outdir + "]");
         }
         else {
             exportstatus = "error";
-            msg = n->WriteLog("ERROR [" + m + "] unable to create rootoutdir [" + rootoutdir + "]");
+            msg = n->WriteLog("ERROR [" + m + "] unable to create outdir [" + outdir + "]");
             return false;
         }
 
         n->WriteLog(QString("Calling WriteBIDS(%1, %2, ...)").arg(seriesids.size()).arg(modalities.size()));
-        if (io->WriteBIDS(seriesids, modalities, rootoutdir, bidsreadme, bidsflags, m))
+        if (io->WriteBIDS(seriesids, modalities, outdir, bidsreadme, bidsflags, m))
             n->WriteLog("WriteBIDS() returned true");
         else
             n->WriteLog("WriteBIDS() returned false");
