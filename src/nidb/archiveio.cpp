@@ -2267,7 +2267,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 
                             int numfilesconv(0), numfilesrenamed(0);
                             QString binpath = n->cfg["nidbdir"] + "/bin";
-                            if (!img->ConvertDicom("bids", datadir, tmpdir, binpath, 1, subjectdir, sessiondir, seriesdir, datatype, numfilesconv, numfilesrenamed, m))
+							if (!img->ConvertDicom("bids", datadir, tmpdir, binpath, true, false, subjectdir, sessiondir, seriesdir, datatype, numfilesconv, numfilesrenamed, m))
                                 msgs << "Error converting files [" + m + "]";
 
                             //n->WriteLog("About to copy files from " + tmpdir + " to " + seriesoutdir);

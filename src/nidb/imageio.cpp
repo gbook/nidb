@@ -50,7 +50,7 @@ imageIO::~imageIO()
 /* ---------------------------------------------------------- */
 /* --------- ConvertDicom ----------------------------------- */
 /* ---------------------------------------------------------- */
-bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QString bindir, bool gzip, QString uid, QString studynum, QString seriesnum, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg) {
+bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QString bindir, bool gzip, bool json, QString uid, QString studynum, QString seriesnum, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg) {
 
     QStringList msgs;
 
@@ -59,6 +59,10 @@ bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QStr
     QString gzipstr;
     if (gzip) gzipstr = "-z y";
     else gzipstr = "-z n";
+
+	QString jsonstr;
+	if (json) jsonstr = "y";
+	else jsonstr = "n";
 
     numfilesconv = 0; /* need to fix this to be correct at some point */
 
@@ -75,9 +79,9 @@ bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QStr
     if (filetype == "nifti4dme")
         systemstring = QString("%1/./dcm2niixme %2 -o '%3' %4").arg(bindir).arg(gzipstr).arg(outdir).arg(indir);
     else if (filetype == "nifti4d")
-        systemstring = QString("%1/./dcm2niix -1 -b n %2 -o '%3' %4%5").arg(bindir).arg(gzipstr).arg(outdir).arg(indir).arg(fileext);
+		systemstring = QString("%1/./dcm2niix -1 -b %6 %2 -o '%3' %4%5").arg(bindir).arg(gzipstr).arg(outdir).arg(indir).arg(fileext).arg(jsonstr);
     else if (filetype == "nifti3d")
-        systemstring = QString("%1/./dcm2niix -1 -b n -z 3 -o '%2' %3%4").arg(bindir).arg(outdir).arg(indir).arg(fileext);
+		systemstring = QString("%1/./dcm2niix -1 -b %5 -z 3 -o '%2' %3%4").arg(bindir).arg(outdir).arg(indir).arg(fileext).arg(jsonstr);
     else if (filetype == "bids")
         systemstring = QString("%1/./dcm2niix -1 -b y -z y -o '%2' %3%4").arg(bindir).arg(outdir).arg(indir).arg(fileext);
     else

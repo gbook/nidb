@@ -87,7 +87,8 @@ int moduleExport::Run() {
             int publicdownloadid = q.value("publicdownloadid").toInt();
             int publicdatasetdownloadid = q.value("publicdatasetid").toInt();
             QString bidsreadme = q.value("bidsreadme").toString().trimmed();
-            QStringList bidsflags = q.value("bids_flags").toString().trimmed().split(",");
+			QStringList niftiflags = q.value("nifti_flags").toString().trimmed().split(",");
+			QStringList bidsflags = q.value("bids_flags").toString().trimmed().split(",");
             QStringList squirrelflags = q.value("squirrel_flags").toString().trimmed().split(",");
             QString squirreltitle = q.value("squirrel_title").toString().trimmed();
             QString squirreldesc = q.value("squirrel_desc").toString().trimmed();
@@ -119,19 +120,19 @@ int moduleExport::Run() {
             QString log;
 
             if (exporttype == "web") {
-                found = ExportLocal(exportid, exporttype, "", 0, 0, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
+				found = ExportLocal(exportid, exporttype, "", 0, 0, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, niftiflags, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
             }
             else if (exporttype == "publicdownload") {
-                found = ExportLocal(exportid, exporttype, "", publicdownloadid, 0, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
+				found = ExportLocal(exportid, exporttype, "", publicdownloadid, 0, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, niftiflags, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
             }
             else if (exporttype == "publicdataset") {
-                found = ExportLocal(exportid, exporttype, "", 0, publicdatasetdownloadid, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
+				found = ExportLocal(exportid, exporttype, "", 0, publicdatasetdownloadid, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, niftiflags, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
             }
             else if (exporttype == "nfs") {
-                found = ExportLocal(exportid, exporttype, nfsdir, 0, 0, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
+				found = ExportLocal(exportid, exporttype, nfsdir, 0, 0, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, niftiflags, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
             }
             else if (exporttype == "localftp") {
-                found = ExportLocal(exportid, exporttype, nfsdir, 0, 0, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
+				found = ExportLocal(exportid, exporttype, nfsdir, 0, 0, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, niftiflags, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
             }
             else if (exporttype == "export") {
                 //found = ExportNiDB(exportid);
@@ -366,7 +367,7 @@ bool moduleExport::GetExportSeriesList(int exportid) {
 /* ---------------------------------------------------------- */
 /* --------- ExportLocal ------------------------------------ */
 /* ---------------------------------------------------------- */
-bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir, int publicdownloadid, int publicdatasetdownloadid, QStringList downloadflags, QString filetype, QString dirformat, int preserveseries, bool gzip, int anonlevel, QString behformat, QString behdirrootname, QString behdirseriesname, QString bidsreadme, QStringList bidsflags, QString squirreltitle, QString squirreldesc, QStringList squirrelflags, QString &exportstatus, QString &msg) {
+bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir, int publicdownloadid, int publicdatasetdownloadid, QStringList downloadflags, QString filetype, QString dirformat, int preserveseries, bool gzip, int anonlevel, QString behformat, QString behdirrootname, QString behdirseriesname, QString bidsreadme, QStringList niftiflags, QStringList bidsflags, QString squirreltitle, QString squirreldesc, QStringList squirrelflags, QString &exportstatus, QString &msg) {
 
     QStringList msgs;
     QString tmpexportdir;
@@ -418,6 +419,9 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
         exportstatus = "complete";
         int laststudyid = 0;
         QString newseriesnum = "1";
+
+		bool json = false;
+		if (niftiflags.contains("NIFTI_JSON")) json = true;
 
         /* iterate through the subjects (UIDs) */
         for(QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>>::iterator a = s.begin(); a != s.end(); ++a) {
@@ -615,7 +619,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                                             QString m2;
                                             int numfilesconv(0), numfilesrenamed(0);
                                             QString binpath = n->cfg["nidbdir"] + "/bin";
-                                            if (!img->ConvertDicom(filetype, indir, tmpdir, binpath, gzip, uid, QString("%1").arg(studynum), QString("%1").arg(seriesnum), datatype, numfilesconv, numfilesrenamed, m2))
+											if (!img->ConvertDicom(filetype, indir, tmpdir, binpath, gzip, json, uid, QString("%1").arg(studynum), QString("%1").arg(seriesnum), datatype, numfilesconv, numfilesrenamed, m2))
                                                 msgs << "Error converting files [" + m2 + "]";
                                             //n->WriteLog("About to copy files from " + tmpdir + " to " + outdir);
                                             QString systemstring = "rsync " + tmpdir + "/* " + outdir + "/";
