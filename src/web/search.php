@@ -121,6 +121,8 @@
 	$requestvars['nfsdir'] = GetVariable("nfsdir");
 	$requestvars['filetype'] = GetVariable("filetype");
 	$requestvars['gzip'] = GetVariable("gzip");
+	$requestvars['niftijson'] = GetVariable("niftijson");
+	$requestvars['niftibids'] = GetVariable("niftibids");
 	$requestvars['preserveseries'] = GetVariable("preserveseries");
 	$requestvars['remoteftpserver'] = GetVariable("remoteftpserver");
 	$requestvars['remoteftppath'] = GetVariable("remoteftppath");
@@ -5068,6 +5070,11 @@
 									<label>Gzip nifti</label>
 								</div>
 								<br>
+								<div class="ui checkbox" style="padding-left: 15px">
+									<input type="checkbox" name="niftijson" value="1" onChange="CheckDestination()">
+									<label>Nifti .json</label>
+								</div>
+								<br>
 								<br>
 								<div class="ui radio checkbox">
 									<input type="radio" name="filetype" id="filetype_dicom" value="dicom" onChange="CheckDestination()">
@@ -6087,6 +6094,7 @@
 		if ($r['preserveseries'] == '') { $preserveseries = 0; } else { $preserveseries = $r['preserveseries']; }
 		$filetype = mysqli_real_escape_string($GLOBALS['linki'], $r['filetype']);
 		$gzip = ($r['gzip'] == 1) ? 1 : 0;
+		$niftijson = ($r['niftijson'] == 1) ? 1 : 0;
 		$anonymize = ($r['anonymize'] == 1) ? 1 : 0;
 		$dirformat = $r['dirformat'];
 		$timepoints = $r['timepoints'];
@@ -6218,6 +6226,21 @@
 		else
 			$bidsflagstr = "null";
 
+		/* collect the Nifti flags */
+		$niftiflags = array();
+		if ($filetype == "nifti3d") $niftiflags[] = "NIFTI_3D";
+		if ($filetype == "nifti3dgz") $niftiflags[] = "NIFTI_3D"; $niftiflags[] = "NIFTI_GZIP";
+		if ($filetype == "nifti4d") $niftiflags[] = "NIFTI_4D";
+		if ($filetype == "nifti4dgz") $niftiflags[] = "NIFTI_4D"; $niftiflags[] = "NIFTI_GZIP";
+		if ($gzip) $niftiflags[] = "NIFTI_GZIP";
+		if ($niftijson) $niftiflags[] = "NIFTI_JSON";
+		if (count($niftiflags) > 0) {
+			$niftiflags = array_unique($niftiflags);
+			$niftiflagstr = "('" . implode2(",",$niftiflags) . "')";
+		}
+		else
+			$niftiflagstr = "null";
+
 		/* collect the squirrel flags */
 		$squirrelflags = array();
 		if ($squirrelflagdataformat == "anon") $squirrelflags[] = "SQUIRREL_FORMAT_ANONYMIZE";
@@ -6237,7 +6260,7 @@
 		$squirreltitle = mysqli_real_escape_string($GLOBALS['linki'], $r['squirreltitle']);
 		$squirreldesc = mysqli_real_escape_string($GLOBALS['linki'], $r['squirreldesc']);
 
-		$sqlstring = "insert into exports (username, ip, download_imaging, download_beh, download_qc, download_flags, destinationtype, filetype, do_gzip, do_preserveseries, anonymization_level, dirformat, beh_format, beh_dirrootname, beh_dirseriesname, nfsdir, remoteftp_username, remoteftp_password, remoteftp_server, remoteftp_port, remoteftp_path, remoteftp_log, remotenidb_connectionid, publicdownloadid, publicdatasetid, bidsreadme, bids_flags, squirrel_flags, squirrel_title, squirrel_desc, submitdate, status) values ('$username', '$ip', $downloadimaging, $downloadbeh, $downloadqc, $downloadflagstr, '$destinationtype', '$filetype', $gzip, $preserveseries, $anonymize, '$dirformat', '$behformat', '$behdirnameroot','$behdirnameseries', '$nfsdir', '$remoteftpusername', '$remoteftppassword', '$remoteftpserver', $remoteftpport, '$remoteftppath', '$remoteftplog', $remoteconnid, $publicDownloadRowID, $publicDatasetDownloadRowID, '$bidsreadme', $bidsflagstr, $squirrelflagstr, '$squirreltitle', '$squirreldesc', now(), 'submitted')";
+		$sqlstring = "insert into exports (username, ip, download_imaging, download_beh, download_qc, download_flags, destinationtype, filetype, do_gzip, do_preserveseries, anonymization_level, dirformat, beh_format, beh_dirrootname, beh_dirseriesname, nfsdir, remoteftp_username, remoteftp_password, remoteftp_server, remoteftp_port, remoteftp_path, remoteftp_log, remotenidb_connectionid, publicdownloadid, publicdatasetid, bidsreadme, nifti_flags, bids_flags, squirrel_flags, squirrel_title, squirrel_desc, submitdate, status) values ('$username', '$ip', $downloadimaging, $downloadbeh, $downloadqc, $downloadflagstr, '$destinationtype', '$filetype', $gzip, $preserveseries, $anonymize, '$dirformat', '$behformat', '$behdirnameroot','$behdirnameseries', '$nfsdir', '$remoteftpusername', '$remoteftppassword', '$remoteftpserver', $remoteftpport, '$remoteftppath', '$remoteftplog', $remoteconnid, $publicDownloadRowID, $publicDatasetDownloadRowID, '$bidsreadme', $niftiflagstr, $bidsflagstr, $squirrelflagstr, '$squirreltitle', '$squirreldesc', now(), 'submitted')";
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$exportRowID = mysqli_insert_id($GLOBALS['linki']);

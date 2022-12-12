@@ -127,8 +127,9 @@
 				<a href="adminprojects.php" class="ui big basic fluid button"><i class="black clipboard list icon"></i> Projects</a>
 				<!--<a href="longqc.php" class="ui button"><i class="black check circle icon"></i> Longitudinal QC</a>-->
 				<a href="projects.php?action=editbidsmapping&id=null" class="ui basic fluid button"><i class="map signs icon"></i> Edit Global BIDS Protocol Mapping</a>
-				
+
 				<? if (isSiteAdmin()) { ?>
+				<br>
 				<a href="reports.php" class="ui big basic fluid button"><i class="black clipboard icon"></i> Reports</a>
 				<a href="adminaudits.php" class="ui big basic fluid button"><i class="black clipboard check icon"></i> Audits</a>
 				<a href="cleanup.php" class="ui big basic fluid button"><i class="black eraser icon"></i> Clean-up data</a>
