@@ -1,10 +1,10 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.0
+-- version 5.1.2
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Dec 06, 2022 at 03:41 PM
--- Server version: 10.3.32-MariaDB
+-- Generation Time: Dec 12, 2022 at 09:45 PM
+-- Server version: 10.3.28-MariaDB
 -- PHP Version: 7.2.24
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -1100,6 +1100,7 @@ CREATE TABLE `exports` (
   `publicdownloadid` int(11) DEFAULT NULL,
   `publicdatasetid` int(11) DEFAULT NULL,
   `bidsreadme` longtext DEFAULT NULL,
+  `nifti_flags` set('NIFTI_3D','NIFTI_4D','NIFTI_GZIP','NIFTI_JSON','NIFTI_BIDS') DEFAULT NULL,
   `bids_flags` set('BIDS_USEUID','BIDS_USESTUDYID') DEFAULT NULL,
   `squirrel_flags` set('SQUIRREL_FORMAT_ANONYMIZE','SQUIRREL_FORMAT_ANONYMIZEFULL','SQUIRREL_FORMAT_NIFTI4D','SQUIRREL_FORMAT_NIFTI4DGZ','SQUIRREL_FORMAT_NIFTI3D','SQUIRREL_FORMAT_NIFTI3DGZ','SQUIRREL_INCSUBJECTNUM','SQUIRREL_INCSTUDYNUM','SQUIRREL_INCSERIESNUM') DEFAULT NULL,
   `squirrel_title` varchar(255) DEFAULT NULL,
