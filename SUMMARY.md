@@ -72,8 +72,8 @@
     * [minipipeline](contribute/squirrel-data-sharing-format/specification-v1.0/minipipeline.md)
     * [experiments](contribute/squirrel-data-sharing-format/specification-v1.0/experiments.md)
   * [Modalities](contribute/squirrel-data-sharing-format/modalities.md)
-  * [Building the squirrel library and utils](contribute/squirrel-data-sharing-format/building-the-squirrel-library-and-utils.md)
   * [Example package](contribute/squirrel-data-sharing-format/example-package.md)
+  * [Building squirrel library and utils](contribute/squirrel-data-sharing-format/building-squirrel-library-and-utils.md)
 * [Building NiDB](contribute/building-nidb.md)
 
 ## Help!

@@ -1,4 +1,4 @@
-# Building the squirrel library and utils
+# Building squirrel library and utils
 
 ## Building squirrel library
 
@@ -143,3 +143,13 @@ Try these fixes to get the network back:
 1. While the VM is running, suspend the guest OS. Wait for it to suspend and close itself. Then resume the guest OS. No idea why, but this should fix the lack of network adapter in Linux.
 2. Open the VM settings. Go to network, and click the button to edit the bridged adapters. Uncheck the VM adapter. This is if you are using **bridged networking** only.
 3. Switch to NAT networking. This may be better if you are connected to a public wifi.
+
+## Using the squirrel Library
+
+Copy the squirrel library files to the lib directory. The libs will then be available for the whole system.
+
+```
+cd ~/squirrel/bin/squirrel
+sudo cp -uv libsquirrel* /lib/
+```
+
