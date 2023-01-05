@@ -1007,12 +1007,21 @@ bool BatchRenameFiles(QString dir, QString seriesnum, QString studynum, QString 
         int i = 1;
         QFile f;
         QDirIterator it(dir, QStringList() << ext, QDir::Files);
+
+		/* get a list of files */
+		QStringList files;
         while (it.hasNext()) {
-            QString fname = it.next();
+			files.append(it.next());
+		}
+		/* sort the files */
+		SortQStringListNaturally(files);
+
+		/* rename the files */
+		foreach (QString fname, files) {
             f.setFileName(fname);
             QFileInfo fi(f);
             QString newName = fi.path() + "/" + QString("%1_%2_%3_%4%5").arg(uid).arg(studynum).arg(seriesnum).arg(i,5,10,QChar('0')).arg(ext.replace("*",""));
-            //WriteLog( fname + " --> " + newName);
+			msg += QString(fname + " --> " + newName);
             if (f.rename(newName))
                 numfilesrenamed++;
             else

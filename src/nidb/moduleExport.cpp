@@ -621,7 +621,10 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                                             QString binpath = n->cfg["nidbdir"] + "/bin";
 											if (!img->ConvertDicom(filetype, indir, tmpdir, binpath, gzip, json, uid, QString("%1").arg(studynum), QString("%1").arg(seriesnum), datatype, numfilesconv, numfilesrenamed, m2))
                                                 msgs << "Error converting files [" + m2 + "]";
-                                            //n->WriteLog("About to copy files from " + tmpdir + " to " + outdir);
+											else
+												n->WriteLog("Converted files successfully [" + m2 + "]");
+
+											//n->WriteLog("About to copy files from " + tmpdir + " to " + outdir);
                                             QString systemstring = "rsync " + tmpdir + "/* " + outdir + "/";
                                             n->WriteLog(SystemCommand(systemstring));
                                             //n->WriteLog("Done copying files...");

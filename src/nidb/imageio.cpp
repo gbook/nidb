@@ -117,6 +117,8 @@ bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QStr
     m = "";
     if (!BatchRenameFiles(outdir, seriesnum, studynum, uid, numfilesrenamed, m))
         msgs << "Error renaming output files [" + m + "]";
+	//else
+	//	msgs << "Renamed files [" + m + "]";
 
     /* change back to original directory before leaving */
     QDir::setCurrent(pwd);
