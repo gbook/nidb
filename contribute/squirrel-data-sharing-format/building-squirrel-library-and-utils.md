@@ -2,12 +2,13 @@
 
 ## Building squirrel library
 
-The following OS configurations have been tested to build squirrel with Qt 6.3 and 6.4
+The following OS configurations have been tested to build squirrel with Qt 6.4
 
 * <mark style="color:green;">Compatible</mark>
-  * Rocky Linux 8.5
+  * Rocky Linux 8.5, 8.7 (not 8.6)
   * CentOS 8
   * CentOS 7
+  * Windows 10/11
 
 {% hint style="danger" %}
 **squirrel library and utils cannot be built on CentOS Stream 8 or Rocky Linux 8.6.** There are kernel bugs which do not work correctly with Qt's QProcess library. This can lead to inconsistencies when running shell commands, and qmake build errors.
@@ -153,3 +154,35 @@ cd ~/squirrel/bin/squirrel
 sudo cp -uv libsquirrel* /lib/
 ```
 
+## Building on Windows
+
+### Prepare the build environment
+
+* Install **Visual Studio 2019 Community** edition, available from Microsoft. Install the C++ extensions.
+* Install **CMake3**
+* Install **Qt 6.4.2** for MSVC2019x64
+* Install Github Desktop, or TortoiseGit, or other Git interface
+
+### Clone the repository
+
+* Using Github Desktop, clone the squirrel repository to `C:\squirrel`
+* Build GDCM
+  * Open CMake
+  * Set _source_ directory to `C:\squirrel\src\gdcm`
+  * Set _build_ directory to `C:\squirrel\bin\gdcm`
+  * Click **Configure** (click **Yes** to create the build directory)
+  * Select _Visual Studio 16 2019_. Click **Finish**
+  * After it's done generating, make sure `GDCM_BUILD_SHARED_LIBS` is checked
+  * Click **Generate**. This will create the Visual Studio solution and project files
+  * Open the `C:\squirrel\bin\gdcm\GDCM.sln` file in Visual Studio
+  * Change the build to **Release**
+  * Right-click **ALL\_BUILD** and click **Build**
+* Build squirrel library
+  * Double-click `C:\squirrel\src\squirrel\squirrellib.pro`
+  * Configure the project for Qt 6.4.2 as necessary
+  * Switch the build to **Release** and build it
+  * `squirrel.dll` and `squirrel.lib` will now be in `C:\squirrel\bin\squirrel`
+* Build squirrel-gui
+  * Configure the project for Qt 6.4.2 as necessary
+  * Double-click `C:\squirrel\src\squirrel-gui\squirrel-gui.pro`
+  * Switch the build to **Release** and build it
