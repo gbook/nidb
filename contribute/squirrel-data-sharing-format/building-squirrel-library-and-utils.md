@@ -158,10 +158,10 @@ sudo cp -uv libsquirrel* /lib/
 
 ### Prepare the build environment
 
-* Install **Visual Studio 2019 Community** edition, available from Microsoft. Install the C++ extensions.
-* Install **CMake3**
-* Install **Qt 6.4.2** for MSVC2019x64
-* Install Github Desktop, or TortoiseGit, or other Git interface
+* Install [**Visual Studio 2019 Community**](https://visualstudio.microsoft.com/vs/older-downloads/) edition, available from Microsoft. Install the C++ extensions.
+* Install [**CMake3**](https://cmake.org/download/)****
+* Install **Qt 6.4.2** for MSVC2019 x64
+* Install [Github Desktop](https://desktop.github.com/), or TortoiseGit, or other Git interface
 
 ### Clone the repository
 
