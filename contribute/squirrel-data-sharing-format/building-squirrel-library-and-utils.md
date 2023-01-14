@@ -173,6 +173,7 @@ sudo cp -uv libsquirrel* /lib/
   * Click **Configure** (click **Yes** to create the build directory)
   * Select _Visual Studio 16 2019_. Click **Finish**
   * After it's done generating, make sure `GDCM_BUILD_SHARED_LIBS` is checked
+  * Click **Configure** again
   * Click **Generate**. This will create the Visual Studio solution and project files
   * Open the `C:\squirrel\bin\gdcm\GDCM.sln` file in Visual Studio
   * Change the build to **Release**
