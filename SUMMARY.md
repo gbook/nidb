@@ -69,7 +69,6 @@
     * [pipelines](contribute/squirrel-data-sharing-format/specification-v1.0/pipelines/README.md)
       * [dataSpec](contribute/squirrel-data-sharing-format/specification-v1.0/pipelines/dataspec.md)
       * [Pipeline scripts](contribute/squirrel-data-sharing-format/specification-v1.0/pipelines/pipeline-scripts.md)
-    * [minipipeline](contribute/squirrel-data-sharing-format/specification-v1.0/minipipeline.md)
     * [experiments](contribute/squirrel-data-sharing-format/specification-v1.0/experiments.md)
   * [Modalities](contribute/squirrel-data-sharing-format/modalities.md)
   * [Example package](contribute/squirrel-data-sharing-format/example-package.md)
