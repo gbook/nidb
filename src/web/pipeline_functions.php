@@ -85,6 +85,13 @@
 								<div class="sub header"><?=$pipelinedesc?></div>
 							</div>
 						</h1>
+						<?
+							$sqlstring = "select sum(analysis_disksize) 'disksize' from analysis where pipeline_id = $id";
+							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+							$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+							$diskusage = $row['disksize'];
+						?>
+						Disk usage <?=HumanReadableFilesize($diskusage)?> <i class="question circle outline icon" title="May not be accurate if this pipeline depends on other pipelines and hard links are used. Check the parent pipeline for its usage."></i>
 					</div>
 					<div class="right aligned column">
 						<? if ($isenabled) { ?>
@@ -105,7 +112,7 @@
 				<div class="ui accordion">
 					<div class="title">
 						<i class="dropdown icon"></i>
-						Pipeline history (last 100 logs)
+						Pipeline history (last 25 log entries)
 					</div>
 					<div class="content">
 						<table class="ui very compact table">
@@ -117,7 +124,7 @@
 								<th>Message</th>
 							</thead>
 						<?
-							$sqlstring = "select * from pipeline_history where pipeline_id = $id order by run_num desc, event_datetime asc limit 100";
+							$sqlstring = "select * from pipeline_history where pipeline_id = $id order by run_num desc, event_datetime asc limit 25";
 							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$version = $row['pipeline_version'];

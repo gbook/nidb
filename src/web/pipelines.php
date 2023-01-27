@@ -1314,7 +1314,7 @@
 							$children[$childid]['notes'] = $row['pipeline_notes'];
 						}
 					?>
-					<div class="ui compact segment" style="width: 50%">
+					<div class="ui compact segment">
 						<div class="ui very compact grid">
 							<div class="four wide right aligned column"><i class="user icon"></i> <b>Parents</b></div>
 							<div class="twelve wide center aligned column">
@@ -1342,12 +1342,13 @@
 							<div class="twelve wide center aligned column"><i class="arrow down icon"></i></div>
 
 							<div class="four wide right aligned column"><i class="child icon"></i> <b>Children</b></div>
-							<div class="twelve wide center aligned column">
+							<div class="twelve wide left aligned column">
 								<?
 									if (count($children) > 0) {
 										foreach ($children as $child => $info) {
 											?>
 												&rdsh; <a href="pipelines.php?action=editpipeline&id=<?=$child?>" title="<?=$info['desc']?><br><br><?=$info['notes']?>"><?=$info['name']?></a>
+												<br>
 											<?
 										}
 									}
@@ -1366,18 +1367,44 @@
 					<td valign="top" style="padding-bottom: 10pt">
 						<span style="background-color: #ddd; padding:5px; font-family: monospace; border-radius:3px">
 						<?
+							$dfmount = "";
 							if ($directory != "") {
+								$dfmount = $directory;
 								echo $directory;
 							} else {
 								if ($dirstructure == "b") {
+									$dfmount = $GLOBALS['cfg']['analysisdirb'];
 									echo $GLOBALS['cfg']['analysisdirb'];
 								}
 								else {
+									$dfmount = $GLOBALS['cfg']['analysisdir'];
 									echo $GLOBALS['cfg']['analysisdir'];
 								}
 							}
 						?>/<i>UID</i>/<i>StudyNum</i>/<?=$title?>
 						</span>
+						<br>
+						<?
+							$freespace = disk_free_space($dfmount);
+							$totalspace = disk_total_space($dfmount);
+							
+							$percentfree = ($freespace / $totalspace) * 100.0;
+							
+							if ($percentfree > 10) {
+								$color = "green";
+								$icon = "check icon";
+							}
+							elseif ($percentfree > 1) {
+								$color = "yellow";
+								$icon = "exclamation";
+							}
+							else {
+								$color = "red";
+								$icon = "exclamation circle icon";
+							}
+						?>
+						<br>
+						Disk free space <div class="ui <?=$color?> label"><i class="<?=$icon?>"></i> <?=number_format($percentfree,1)?>% <div class="detail"><?=HumanReadableFilesize($freespace)?></div></div>
 					</td>
 				</tr>
 				<tr>
