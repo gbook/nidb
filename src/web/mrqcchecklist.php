@@ -427,19 +427,40 @@
 					<a class="ui primary button" href="mrqcchecklist.php?action=editqcparams&id=<?=$id?>"><i class="edit icon"></i> Edit QC criteria</a>
 				</div>
 			</div>
-			<table class="ui small celled selectable grey very compact table">
+			<div class="ui long scrolling segment "> 
+			<table class="ui celled selectable grey very  compact head stuck table">
 				<thead>
-					<th colspan="5">
+					<th colspan="14">
 					<form action="mrqcchecklist.php" action="post">
 					<input type="hidden" name="action" value="viewqcparams">
 					<input type="hidden" name="id" value="<?=$id?>">
 					Filter by protocol name <input type="input" name="protocolfilter" value="<?=$protocolfilter?>" list="protocollist"> <input type="submit" value="Filter">
 					</form>
 					</th>
+
+				 <tr>
+                                       <th><b>UID</b></th>
+                                       <th><b>Study No.</b></th>
+                                       <th><b>Series No.</b></th>
+                                       <th><b>Series Desc.</b></th>
+                                       <th><b>Primary alt UID</b></th>
+                                       <th><b>Params good?</b></th>
+                                       <th><b>Files on disk?</b></th>
+                                       <th><b>Num Files</b></th>
+                                       <th><b>Avg Rating</b></th>
+                                       <th><b>Basic QC?</b></th>
+                                       <th title="Displacement (X,Y,Z), Velocity in (X,Y,Z) direction, Rotation (Pitch,Roll,Yaw)"><b>Disp, Motion, Rotation</b></th>
+                                       <th><b>SNR</b></th>
+                                       <th><b>FD</b></th>
+                                       <th><b>DVARS</b></th>
+                                       <!--<th style="border: 1px solid black">Advanced QC</th>-->
+                               </tr>
+
 				</thead>
 				<tbody>
-			<?
 			
+			<?	
+
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$studyid = $row['study_id'];
 				$subjectid = $row['subject_id'];
@@ -463,16 +484,7 @@
 						$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
 						$altuid = $rowB['altuid'];
 						
-						?>
-							<tr>
-								<td><a href="studies.php?id=<?=$studyid?>"><b><?=$uid?><?=$studynum?></b></a> &nbsp;Primary alt UID: &nbsp; <b style="background-color: darkred; color: white; padding: 2px 8px"><?=$altuid?></b></td>
-								<td><b>Params</b></td>
-								<td><b>Files on disk</b></td>
-								<td><b>Avg Rating</b></td>
-								<td><b>Basic QC</b></td>
-								<!--<td style="border: 1px solid black">Advanced QC</td>-->
-							</tr>
-						<?
+						$count = 0; # Counter to display Alternative ID once
 						while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 							$seriesid = $rowA['mrseries_id'];
 							$seriesnum = $rowA['series_num'];
@@ -500,13 +512,22 @@
 							
 							?>
 							<tr>
-								<td>
-									 &nbsp; <?=$seriesnum?> - <?=$p1?>
-									<? if (file_exists($thumbpath)) { ?>
-									<a href="preview.php?image=<?=$thumbpath?>" class="preview"><img src="images/preview.gif" border="0"></a>
-									&nbsp;
-									<? } ?>
-								</td>
+								<? $count = $count +1;
+                                                                if ($count < 2) {?>
+									<td> &nbsp; <?=$uid?></td>
+									<td><a href="studies.php?id=<?=$studyid?>"><b><?=$uid?><?=$studynum?></b></a></td>
+								 <?} else {?>
+									<td></td>
+									<td></td>
+								<?}?>
+								<td> &nbsp; <?=$seriesnum?></td>
+								<td> <?=$p1?>&nbsp;</td>
+								<?
+								if ($count < 2) {?>
+									<td><b style="background-color: darkred; color: white; padding: 2px 8px"><?=$altuid?></b> </td>
+								<?} else {?> 
+									<td></td>
+								<?}?>
 							<?
 							
 							
@@ -610,7 +631,7 @@
 								?><td style="padding-left: 8px; background-color: #cbf7be"> </td><?
 							}
 							elseif ($matched == -2) { /* missing parameter criteria */
-								?><td style="padding-left: 8px;" title="No MR parameter criteria specified for this protocol">&mdash;</td><?
+								?><td style="padding-left: 8px; background-color: lightyellow;" title="No MR parameter criteria specified for this protocol"> <i class="exclamation icon"></i> </td><?
 							}
 							elseif ($matched == -1) { /* ambiguous or missing parameter criteria */
 								?><td style="padding-left: 8px;" title="Parameter criteria is blank">?</td><?
@@ -628,19 +649,33 @@
 								<?
 							}
 							
+						
+					
 							/* check for files on disk */
 							$fcount = 0;
 							$files = glob($datapath . "/*");
 							if ($files){ $fcount = count($files); }
 							if ($fcount == $numfiles) {
-								?><td style="padding-left: 8px; background-color: #cbf7be"> </td><?
+								?><td style="padding-left: 8px; background-color: #cbf7be"> 
+									<i class="folder icon"></i>	
+								  </td><?
 							}
 							elseif ($fcount == 0) {
-								?><td style="padding-left: 8px; background-color: #ffddd1;" title="No files on disk in [<?=$datapath?>]"> </td><?
+								?><td style="padding-left: 8px; background-color: #ffddd1;" title="Disk location [<?=$datapath?>]"> 
+									<i class="exclamation icon"></i>No file found
+								</td><?
 							}
 							else {
-								?><td style="padding-left: 8px; background-color: lightyellow;" title="Filecount in database [<?=$numfiles?>] does not match that on disk [<?=$fcount?>] from [<?=$datapath?>]">&#9898;</td><?
+								?><td style="padding-left: 8px; background-color: lightyellow;" title="Filecount in database [<?=$numfiles?>] does not match that on disk [<?=$fcount?>] from [<?=$datapath?>]">;
+                                                                        <i class="folder minus icon"></i>File count mismatch
+								</td><?
 							}
+
+							?>
+	 						<td><?=$numfiles?></td>
+							<?
+
+
 
 							/* check user ratings */
 							$sqlstring3 = "select * from ratings where rating_type = 'series' and data_modality = 'MR' and data_id = '$seriesid'";
@@ -679,18 +714,29 @@
 							if ($isbadseries) { $cellcolor = "red"; }
 							if ($istestseries) { $cellcolor = "#aaa"; }
 							
-							?><td style="padding-left: 8px;"><span style="color: <?=$cellcolor?>"><?=$ratingavg?></span> <? if ($ratingavg != "") { ?><span class="tiny">(<?=$ratingcount2?>)</span><? } ?></td><?
-							
+							?><td style="padding-left: 8px;"><span style="color: <?=$cellcolor?>"><?=$ratingavg?></span> <? if ($ratingavg != "") { ?><span class="tiny">(<?=$ratingcount2?>)</span><? } ?></td>
+
+
+					
+							<?
 							/* check basic QC */
-							$sqlstringB = "select (move_maxx-move_minx) 'movex', (move_maxy-move_miny) 'movey', (move_maxz-move_minz) 'movez', io_snr, pv_snr from mr_qa where mrseries_id = '$seriesid'";
+							$sqlstringB = "select (move_maxx-move_minx) 'movex', (move_maxy-move_miny) 'movey', (move_maxz-move_minz) 'movez', (acc_maxx-acc_minx) 'accx', (acc_maxy-acc_miny) 'accy',(acc_maxz-acc_minz) 'accz',(rot_maxp-rot_minp) 'rotp', (rot_maxr-rot_minr) 'rotr',(rot_maxy-rot_miny) 'roty', io_snr, pv_snr, fd_mean, dvars_mean from mr_qa where mrseries_id = '$seriesid'";
 							//PrintSQL($sqlstringB);
 							$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
 							$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
-							$movex = $rowB['movex'] + 0.0;
-							$movey = $rowB['movey'] + 0.0;
-							$movez = $rowB['movez'] + 0.0;
-							$iosnr = $rowB['io_snr'] + 0.0;
-							$pvsnr = $rowB['pv_snr'] + 0.0;
+							$movex =number_format($rowB['movex'] + 0.0,1);
+							$movey =number_format($rowB['movey'] + 0.0,1);
+							$movez =number_format($rowB['movez'] + 0.0,1);
+							$accx = number_format($rowB['accx'] + 0.0,1);
+                                                        $accy = number_format($rowB['accy'] + 0.0,1);
+							$accz = number_format($rowB['accz'] + 0.0,1);
+							$rotp = number_format($rowB['rotp'] + 0.0,1);
+                                                        $rotr = number_format($rowB['rotr'] + 0.0,1);
+                                                        $roty = number_format($rowB['roty'] + 0.0,1);
+							$iosnr =number_format($rowB['io_snr'] + 0.0,1);
+							$pvsnr = number_format($rowB['pv_snr'] + 0.0,1);
+							$fd_mean =number_format($rowB['fd_mean'] + 0.0,1);
+							$dvars_mean =number_format($rowB['dvars_mean'] + 0.0,1);
 							
 							$msgs = array();
 							if (array_key_exists($p1, $qcparms)) {
@@ -718,13 +764,9 @@
 								
 								if ($bad) {
 									?>
-									<td style="border: 1px solid #aaa; padding-left: 8px; background-color: #ffddd1; font-size:8pt; color: #666">
-									<details>
-									<summary>out of spec</summary>
-									<ul>
-									<li><?=implode2('<li>',$msgs)?>
-									</ul>
-									</details>
+									<td style="border: 1px solid #aaa; padding-left: 8px; background-color: #ffddd1; font-size:8pt; color: #666" title="<li><?=implode2('<li>',$msgs)?>">
+									<i class="exclamation icon"></i>
+									Out of spec
 									</td>
 									<?
 								}
@@ -733,9 +775,15 @@
 								}
 							}
 							else {
-								?><td style="border: 1px solid #aaa; padding-left: 8px;" title="QC crtieria not specified">&mdash;</td><?
-							}
-							
+								?><td style="border: 1px solid #aaa; background-color: lightyellow; padding-left: 8px;" title="QC crtieria not specified"> <i class="exclamation icon"></i> </td>
+						       <?}?>
+
+
+						       <td>(<?=$movex?>,<?=$movey?>,<?=$movez?>),&nbsp;(<?=$accx?>,<?=$accy?>,<?=$accz?>),&nbsp;(<?=$rotp?>,<?=$rotr?>,<?=$roty?>)</td>
+						       <td><?=$iosnr?></td>
+						       <td><?=$fd_mean?></td>
+						       <td><?=$dvars_mean?></td>
+							<?
 							/* check advanced QC */
 							?><!--<td>?</td>--><?
 							
@@ -754,6 +802,7 @@
 			?>
 				</tbody>
 			</table>
+			</div>
 			<?
 		}
 		else {
