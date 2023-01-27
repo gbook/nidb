@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Dec 12, 2022 at 09:45 PM
+-- Generation Time: Jan 27, 2023 at 08:39 PM
 -- Server version: 10.3.28-MariaDB
 -- PHP Version: 7.2.24
 
@@ -1124,6 +1124,7 @@ CREATE TABLE `exportseries` (
   `exportseries_id` int(11) NOT NULL,
   `export_id` int(11) NOT NULL,
   `series_id` int(11) NOT NULL,
+  `pipeline_id` int(11) DEFAULT NULL COMMENT 'for squirrel exports',
   `modality` varchar(25) NOT NULL DEFAULT '',
   `startdate` datetime DEFAULT NULL,
   `enddate` datetime DEFAULT NULL,
