@@ -2331,14 +2331,28 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 /* ---------------------------------------------------------- */
 /* --------- WriteSquirrel ---------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief archiveIO::WriteSquirrel
+ * @param exportid - exportID
+ * @param name - squirrel package name
+ * @param desc - squirrel package description
+ * @param downloadflags - which data to download
+ * @param squirrelflags - squirrel package options
+ * @param seriesids - list of seriesIDs
+ * @param modalities - list of modalities to be exported
+ * @param odir - output directory
+ * @param filepath - the final squirrel package path
+ * @param msg - any messages generated during squirrel package writing
+ * @return
+ */
 bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStringList downloadflags, QStringList squirrelflags, QList<qint64> seriesids, QStringList modalities, QString odir, QString &filepath, QString &msg) {
 
     n->WriteLog(QString("Entering WriteSquirrel() exportid [%2]").arg(__FUNCTION__).arg(exportid));
 
-    QString exportstatus = "complete";
+	QStringList msgs;
+	QString exportstatus = "complete";
     subjectStudySeriesContainer s;
 
-    QStringList msgs;
     if (!GetSeriesListDetails(seriesids, modalities, s)) {
         msgs << n->WriteLog(QString("%1() Error - unable to get a series list").arg(__FUNCTION__));
         msg = msgs.join("\n");
@@ -2696,6 +2710,20 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
 
     /* add pipelines to the JSON object */
     if (downloadflags.contains("DOWNLOAD_PIPELINES", Qt::CaseInsensitive)) {
+		/* check if there are any pipeline IDs specified in the export_series table */
+		QSqlQuery q;
+		q.prepare("select * from exportseries where export_id = :exportid and pipeline_id is not null");
+		q.bindValue(":exportid", exportid);
+		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+		if (q.size() > 0) {
+			if (q.size() > 1) {
+				n->WriteLog(QString("%1() Found [%2] pipelines").arg(__FUNCTION__).arg(q.size()));
+				while (q.next()) {
+					pipelineIDs.append(q.value("pipeline_id").toInt());
+				}
+			}
+		}
+
         if (pipelineIDs.size() > 0) {
             //QString dir(QString("%1/pipelines").arg(outdir));
             //QJsonArray JSONpipelines;
@@ -2723,6 +2751,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     }
 
     /* add mini-pipelines to the JSON object */
+	/* minipipelines will be exported as pipelines */
     if (downloadflags.contains("DOWNLOAD_MINIPIPELINES", Qt::CaseInsensitive)) {
         if (minipipelineIDs.size() > 0) {
             //QString dir(QString("%1/minipipelines").arg(outdir));

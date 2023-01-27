@@ -125,6 +125,7 @@ int modulePipeline::Run() {
             SetPipelineStopped(pipelineid, m);
             continue;
         }
+
         /* check if the submit host is valid */
         if (p.submitHost == "") {
 			m = n->WriteLog(QString("[%1] No submit host specified").arg(p.name));
@@ -133,6 +134,17 @@ int modulePipeline::Run() {
             SetPipelineStopped(pipelineid, m);
             continue;
         }
+
+		/* check if there is enough space on the target drive */
+		QStorageInfo storage = QStorageInfo(analysisdir);
+		double percentFree = ((double)storage.bytesAvailable()/(double)storage.bytesTotal())*100.0;
+		if (percentFree < 1.0) {
+			m = n->WriteLog(QString("[%1] Less than 1% free space on target disk").arg(p.name));
+			InsertPipelineEvent(pipelineid, runnum, -1, "error_notenoughspace", m);
+			InsertPipelineEvent(pipelineid, runnum, -1, "pipeline_finished", "Pipeline stopped prematurely due to error");
+			SetPipelineStopped(pipelineid, m);
+			continue;
+		}
 
         /* check if the pipeline is running, if so, go on to the next one */
         QString status = GetPipelineStatus(pipelineid);
@@ -2209,8 +2221,9 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
             numInitial++;
         }
     }
-    if (debug)
+	if (debug) {
         InsertPipelineEvent(pipelineid, runnum, -1, "getstudylist", QString("Found %1 unprocessed studies that meet criteria [" + normalStudyList.join(", ") + "]").arg(normalStudyList.size()));
+	}
 
 	m = n->WriteLog(QString("\tGetStudyTodoList() Found [%1] total studies that met criteria: [%2] initial match  [%3] rerun  [%4] supplement").arg(list.size()).arg(numInitial).arg(numRerun).arg(numSupplement));
     InsertPipelineEvent(pipelineid, runnum, -1, "getstudylist", m);
@@ -2288,6 +2301,7 @@ void modulePipeline::InsertPipelineEvent(int pipelineid, qint64 &runnum, qint64 
         pipeline_started
         error_noqueue
         error_nosubmithost
+		error_notenoughspace
         getdatasteps
         getpipelinesteps
         getstudylist

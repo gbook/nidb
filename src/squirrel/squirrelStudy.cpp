@@ -140,6 +140,10 @@ void squirrelStudy::PrintStudy() {
 /* ------------------------------------------------------------ */
 /* ----- ToJSON ----------------------------------------------- */
 /* ------------------------------------------------------------ */
+/**
+ * @brief squirrelStudy::ToJSON
+ * @return QJsonObject
+ */
 QJsonObject squirrelStudy::ToJSON() {
 	QJsonObject json;
 
@@ -157,6 +161,7 @@ QJsonObject squirrelStudy::ToJSON() {
 	json["equipment"] = equipment;
 	json["path"] = virtualPath;
 
+    /* add all the series */
 	QJsonArray JSONseries;
 	for (int i=0; i<seriesList.size(); i++) {
 		JSONseries.append(seriesList[i].ToJSON());

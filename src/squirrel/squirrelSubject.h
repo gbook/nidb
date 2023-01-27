@@ -48,7 +48,7 @@ public:
 	QJsonObject ToJSON();
 
     /* subject info */
-    QString ID; /*!< Unique identifier. Must be unique within the squirrel package */
+	QString ID; /*!< --- Unique identifier --- Must be unique within the squirrel package */
 	QStringList alternateIDs; /*!< List of alternate subject IDs */
     QString GUID;  /*!< globally unique identifier, from NIMH's NDA */
 	QDate dateOfBirth; /*!< Date of birth. Not required, but can be useful to calculate age during studies. Can also contain only year, or only year and month */

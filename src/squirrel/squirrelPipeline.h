@@ -137,13 +137,10 @@ public:
 	QList<dataStep> dataSteps;
 
     /* scripts (required) */
-	//QList<pipelineStep> primaryScript;
-	//QList<pipelineStep> secondaryScript;
 	QString primaryScript;
 	QString secondaryScript;
 
 private:
-//	bool GetFormattedScripts(QString &primaryFile, QString &secondaryFile);
     QString virtualPath; /*!< path within the squirrel package, no leading slash */
 
 };

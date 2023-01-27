@@ -7,7 +7,14 @@ CONFIG += silent
 TARGET = squirrel
 TEMPLATE = lib
 DEFINES += SQUIRREL_BUILD
-win32:CONFIG += dll
+#win32:CONFIG += dll
+#win32:CONFIG += lib
+*msvc* {
+    #LIBS += Advapi32.lib Setupapi.lib
+    CONFIG -= dll
+    CONFIG += shared static
+}
+DESTDIR = ../../bin/squirrel
 
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -17,7 +24,6 @@ win32:CONFIG += dll
 
 SOURCES += \
 	squirrelImageIO.cpp \
-	squirrelMiniPipeline.cpp \
 	utils.cpp \
 	convert.cpp \
 	dicom.cpp \
@@ -40,7 +46,6 @@ SOURCES += \
 
 HEADERS += \
 	squirrelImageIO.h \
-	squirrelMiniPipeline.h \
 	squirrelVersion.h \
 	utils.h \
 	convert.h \
@@ -57,66 +62,34 @@ HEADERS += \
 	validate.h
 
 
-# gdcm
-win32: {
-    GDCMBIN = C:/gdcmbin
-    GDCMSRC = C:/gdcm/Source
-    win32:CONFIG(release, debug|release): LIBS += -L$$GDCMBIN/bin/Release/
-    else:win32:CONFIG(debug, debug|release): LIBS += -L$$GDCMBIN/bin/Debug/
-    INCLUDEPATH += $$GDCMSRC/Attribute
-    INCLUDEPATH += $$GDCMSRC/Common
-    INCLUDEPATH += $$GDCMSRC/DataDictionary
-    INCLUDEPATH += $$GDCMSRC/DataStructureAndEncodingDefinition
-    INCLUDEPATH += $$GDCMSRC/InformationObjectDefinition
-    INCLUDEPATH += $$GDCMSRC/MediaStorageAndFileFormat
-    INCLUDEPATH += $$GDCMSRC/MessageExchangeDefinition
-    INCLUDEPATH += $$GDCMBIN/Source/Common # for gdcmConfigure.h
-    HEADERS += $$GDCMBIN/Source/Common/gdcmConfigure.h
+# gdcm library
+GDCMBIN = ../../bin/gdcm
+GDCMSRC = ../gdcm/Source
 
-    LIBS += -lgdcmMSFF \
-	-lgdcmCommon \
-	-lgdcmDICT \
-	-lgdcmDSED \
-	-lgdcmIOD \
-	-lgdcmMEXD \
-	-lgdcmcharls \
-	-lgdcmexpat \
-	-lgdcmjpeg12 \
-	-lgdcmjpeg16 \
-	-lgdcmjpeg8 \
-	-lgdcmopenjp2 \
-	-lgdcmzlib \
-	-lsocketxx
+*msvc*:CONFIG(release, debug|release): LIBS += -L$$GDCMBIN/bin/Release/
+else:*msvc*:CONFIG(debug, debug|release): LIBS += -L$$GDCMBIN/bin/Debug/
+linux: LIBS += -L$$GDCMBIN/bin
+INCLUDEPATH += $$GDCMSRC/Attribute
+INCLUDEPATH += $$GDCMSRC/Common
+INCLUDEPATH += $$GDCMSRC/DataDictionary
+INCLUDEPATH += $$GDCMSRC/DataStructureAndEncodingDefinition
+INCLUDEPATH += $$GDCMSRC/InformationObjectDefinition
+INCLUDEPATH += $$GDCMSRC/MediaStorageAndFileFormat
+INCLUDEPATH += $$GDCMSRC/MessageExchangeDefinition
+INCLUDEPATH += $$GDCMBIN/Source/Common # for gdcmConfigure.h
+HEADERS += $$GDCMBIN/Source/Common/gdcmConfigure.h
 
-}
-unix: {
-
-    GDCMBIN = ../../bin/gdcm
-    GDCMSRC = ../gdcm/Source
-    LIBS += -L$$GDCMBIN/bin/
-    INCLUDEPATH += $$GDCMSRC/Attribute
-    INCLUDEPATH += $$GDCMSRC/Common
-    INCLUDEPATH += $$GDCMSRC/DataDictionary
-    INCLUDEPATH += $$GDCMSRC/DataStructureAndEncodingDefinition
-    INCLUDEPATH += $$GDCMSRC/InformationObjectDefinition
-    INCLUDEPATH += $$GDCMSRC/MediaStorageAndFileFormat
-    INCLUDEPATH += $$GDCMSRC/MessageExchangeDefinition
-    INCLUDEPATH += $$GDCMBIN/Source/Common # for gdcmConfigure.h
-    HEADERS += $$GDCMBIN/Source/Common/gdcmConfigure.h
-
-    LIBS += -lgdcmMSFF \
-	-lgdcmCommon \
-	-lgdcmDICT \
-	-lgdcmDSED \
-	-lgdcmIOD \
-	-lgdcmMEXD \
-	-lgdcmcharls \
-	-lgdcmexpat \
-	-lgdcmjpeg12 \
-	-lgdcmjpeg16 \
-	-lgdcmjpeg8 \
-	-lgdcmopenjp2 \
-	-lgdcmuuid \
-	-lgdcmzlib \
-	-lsocketxx
-}
+LIBS += -lgdcmMSFF \
+    -lgdcmCommon \
+    -lgdcmDICT \
+    -lgdcmDSED \
+    -lgdcmIOD \
+    -lgdcmMEXD \
+    -lgdcmcharls \
+    -lgdcmexpat \
+    -lgdcmjpeg12 \
+    -lgdcmjpeg16 \
+    -lgdcmjpeg8 \
+    -lgdcmopenjp2 \
+    -lgdcmzlib \
+    -lsocketxx

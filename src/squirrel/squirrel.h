@@ -26,11 +26,11 @@
 #include <QString>
 #include <QDate>
 #include <QDateTime>
+#include <QDebug>
 #include "squirrelSubject.h"
 #include "squirrelExperiment.h"
 #include "squirrelPipeline.h"
 #include "squirrelMeasure.h"
-#include "squirrelMiniPipeline.h"
 #include "squirrelDrug.h"
 #include "squirrelVersion.h"
 
@@ -60,13 +60,33 @@ public:
     QString name; /*!< name of the package */
     QString NiDBversion; /*!< NiDB version that wrote this package */
     QString version; /*!< squirrel version */
-    QString format; /*!< package format, most likely 'squirrel' */
+    QString format; /*!< package format. will always be 'squirrel' */
     QString subjectDirFormat; /*!< orig, seq */
     QString studyDirFormat; /*!< orig, seq */
     QString seriesDirFormat; /*!< orig, seq */
     QString dataFormat; /*!< orig, anon, anonfull, nift3d, nifti3dgz, nifti4d, nifti4dgz */
+    QString filePath; /*!< full path to the zip file */
     qint64 GetUnzipSize();
     qint64 GetNumFiles();
+
+    /* subject, pipeline, and experiment data */
+    QList<squirrelSubject> subjectList; /*!< List of subjects within this package */
+    QList<squirrelPipeline> pipelineList; /*!< List of pipelines within this package */
+    QList<squirrelExperiment> experimentList; /*!< List of experiments within this package */
+
+    /* searching/retrieval functions */
+    bool GetSubject(QString ID, squirrelSubject &sqrlSubject);
+    bool GetStudy(QString ID, int studyNum, squirrelStudy &sqrlStudy);
+    bool GetSeries(QString ID, int studyNum, int seriesNum, squirrelSeries &sqrlSeries);
+    bool GetSubjectList(QList<squirrelSubject> &subjects);
+    bool GetStudyList(QString ID, QList<squirrelStudy> &studies);
+    bool GetSeriesList(QString ID, int studyNum, QList<squirrelSeries> &series);
+    bool GetDrugList(QString ID, QList<squirrelDrug> &drugs);
+    bool GetMeasureList(QString ID, QList<squirrelMeasure> &measures);
+    bool GetAnalysis(QString ID, int studyNum, QString pipelineName, squirrelAnalysis &sqrlAnalysis);
+    bool GetPipeline(QString pipelineName, squirrelPipeline &sqrlPipeline);
+    bool GetExperiment(QString experimentName, squirrelExperiment &sqrlExperiment);
+	QString GetTempDir();
 
 private:
     void PrintPackage();
@@ -75,10 +95,6 @@ private:
     QString workingDir;
     QString logfile;
     QStringList msgs; /* squirrel messages, to be passed back upon writing (or reading) through the squirrel library */
-
-    QList<squirrelSubject> subjectList; /*!< List of subjects within this package */
-    QList<squirrelPipeline> pipelineList; /*!< List of pipelines within this package */
-    QList<squirrelExperiment> experimentList; /*!< List of experiments within this package */
 
 };
 

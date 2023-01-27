@@ -81,8 +81,6 @@ QString CreateLogDate() {
 /* ---------------------------------------------------------- */
 /* --------- SystemCommand ---------------------------------- */
 /* ---------------------------------------------------------- */
-/* this function does not work in Windows                     */
-/* ---------------------------------------------------------- */
 QString SystemCommand(QString s, bool detail, bool truncate, bool bufferOutput) {
 
     double starttime = double(QDateTime::currentMSecsSinceEpoch());
@@ -92,22 +90,40 @@ QString SystemCommand(QString s, bool detail, bool truncate, bool bufferOutput) 
     QProcess *process = new QProcess();
 
     /* start QProcess and check if it started */
-    process->start("sh", QStringList() << "-c" << s);
-    if (!process->waitForStarted()) {
-        output = "QProcess failed to start, with error [" + process->errorString() + "]";
-    }
-    /* collect the output */
-    while(process->waitForReadyRead(-1)) {
-        buffer = QString(process->readAll());
-        output += buffer;
-        //if (!bufferOutput)
-        //    WriteLog(buffer,0,false);
-    }
-    /* check if it finished */
-    process->waitForFinished();
-    //if (!process->waitForFinished()) {
-    //    output = "QProcess failed to finish, with error [" + process->errorString() + "]";
-    //}
+
+    #ifdef Q_OS_WINDOWS
+	    /* Windows is so difficult... cmd.exe must be started, and only then can you pass the command to it, with a newline as if the Enter key was pressed */
+	    s = QString(s + "\n");
+		process->start("cmd.exe");
+		if (!process->waitForStarted()) {
+			output = "QProcess failed to start, with error [" + process->errorString() + "]";
+		}
+		process->write(s.toLatin1());
+		process->closeWriteChannel();
+
+		/* collect the output */
+		while(process->waitForReadyRead(-1)) {
+			buffer = QString(process->readAll());
+			output += buffer;
+		}
+		/* check if it finished */
+		process->waitForFinished();
+		output += QString(process->readAll());
+    #else
+	    /* Linux is so much easier... */
+	    process->start("sh", QStringList() << "-c" << s);
+		if (!process->waitForStarted()) {
+			output = "QProcess failed to start, with error [" + process->errorString() + "]";
+		}
+		/* collect the output */
+		while(process->waitForReadyRead(-1)) {
+			buffer = QString(process->readAll());
+			output += buffer;
+		}
+		/* check if it finished */
+		process->waitForFinished();
+		output += QString(process->readAll());
+    #endif
 
     delete process;
 

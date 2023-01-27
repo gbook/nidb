@@ -59,8 +59,8 @@ HEADERS += \
 
 # gdcm
 win32: {
-    GDCMBIN = C:/gdcmbin
-    GDCMSRC = C:/gdcm/Source
+    GDCMBIN = ../gdcm/bin
+    GDCMSRC = ../gdcm/Source
     win32:CONFIG(release, debug|release): LIBS += -L$$GDCMBIN/bin/Release/
     else:win32:CONFIG(debug, debug|release): LIBS += -L$$GDCMBIN/bin/Debug/
     INCLUDEPATH += $$GDCMSRC/Attribute

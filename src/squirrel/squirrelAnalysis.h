@@ -33,12 +33,13 @@
 class squirrelAnalysis
 {
 public:
-	squirrelAnalysis();
-	QJsonObject ToJSON();
-	void PrintAnalysis();
+    squirrelAnalysis();
+    QJsonObject ToJSON();
+    void PrintAnalysis();
 
     QString pipelineName; /*!< name of the pipeline */
     int pipelineVersion; /*!< pipeline version */
+    //int analysisNumber; /*!< studies can have multiple analyses this should be unique for this study */
     QDateTime clusterStartDate; /*!< datetime the analysis started running on the cluster */
     QDateTime clusterEndDate; /*!< datetime the analysis finished running on the cluster */
     QDateTime startDate; /*!< datetime the analysis was started, includes the setup time */
