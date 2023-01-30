@@ -2785,6 +2785,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
 bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modalities, subjectStudySeriesContainer &s) {
 
     QSqlQuery q;
+	n->WriteLog(QString("seriesids size [%1]").arg(seriesids.size()));
     for (int i=0; i<seriesids.size(); i++) {
         qint64 seriesid = seriesids[i];
         QString modality = modalities[i];

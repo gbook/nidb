@@ -428,7 +428,7 @@
 				</div>
 			</div>
 			<div class="ui long scrolling segment "> 
-			<table class="ui celled selectable grey very  compact head stuck table">
+			<table class="ui celled selectable grey compact head stuck table">
 				<thead>
 					<th colspan="14">
 					<form action="mrqcchecklist.php" action="post">
@@ -514,7 +514,7 @@
 							<tr>
 								<? $count = $count +1;
                                                                 if ($count < 2) {?>
-									<td> &nbsp; <?=$uid?></td>
+									<td> <?=$uid?></td>
 									<td><a href="studies.php?id=<?=$studyid?>"><b><?=$uid?><?=$studynum?></b></a></td>
 								 <?} else {?>
 									<td></td>
@@ -711,10 +711,10 @@
 								}
 							}
 							
-							if ($isbadseries) { $cellcolor = "red"; }
-							if ($istestseries) { $cellcolor = "#aaa"; }
+							if ($isbadseries) { $cellcolor = "#ffddd1"; }
+							if ($istestseries) { $cellcolor = "lightyellow"; }
 							
-							?><td style="padding-left: 8px;"><span style="color: <?=$cellcolor?>"><?=$ratingavg?></span> <? if ($ratingavg != "") { ?><span class="tiny">(<?=$ratingcount2?>)</span><? } ?></td>
+							?><td style="padding-left: 8px; background-color:<?=$cellcolor?>"><?=$ratingavg?> <? if ($ratingavg != "") { ?><span class="tiny">(<?=$ratingcount2?>)</span><? } ?></td>
 
 
 					

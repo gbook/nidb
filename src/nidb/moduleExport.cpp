@@ -1348,43 +1348,46 @@ bool moduleExport::ExportSquirrel(int exportid, QString squirreltitle, QString s
     QStringList modalities;
     QList<qint64> seriesids;
     QSqlQuery q;
-    q.prepare("select * from exportseries where export_id = :exportid");
+	q.prepare("select * from exportseries where export_id = :exportid");
     q.bindValue(":exportid",exportid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.size() > 0) {
         n->WriteLog(QString("%1() Found [%1] rows (series to be exported) for exportID [%2]").arg(__FUNCTION__).arg(q.size()).arg(exportid));
+
         while (q.next()) {
-            seriesids.append(q.value("series_id").toLongLong());
-            modalities.append(q.value("modality").toString().toLower());
+			/* only append the series IDs if they're not null */
+			if (!q.value("series_id").isNull()) {
+				seriesids.append(q.value("series_id").toLongLong());
+				modalities.append(q.value("modality").toString().toLower());
+			}
         }
+	}
+	else {
+		n->WriteLog("ExportQuirrel() No series found. But this might be ok if only a pipeline is being exported for example");
+	}
 
-        QString rootoutdir = QString("%1/NiDB-Squirrel-%2").arg(n->cfg["ftpdir"]).arg(exportid);
-        outdir = rootoutdir;
+	QString rootoutdir = QString("%1/NiDB-Squirrel-%2").arg(n->cfg["ftpdir"]).arg(exportid);
+	outdir = rootoutdir;
 
-        QString m;
-        if (MakePath(rootoutdir, m)) {
-            n->WriteLog(QString("%1() Created rootoutdir (A) [" + rootoutdir + "]").arg(__FUNCTION__));
-        }
-        else {
-            exportstatus = "error";
-            msg = n->WriteLog("ExportQuirrel() ERROR [" + m + "] unable to create rootoutdir [" + rootoutdir + "]");
-            return false;
-        }
+	QString m;
+	if (MakePath(rootoutdir, m)) {
+		n->WriteLog(QString("%1() Created rootoutdir (A) [" + rootoutdir + "]").arg(__FUNCTION__));
+	}
+	else {
+		exportstatus = "error";
+		msg = n->WriteLog("ExportQuirrel() ERROR [" + m + "] unable to create rootoutdir [" + rootoutdir + "]");
+		return false;
+	}
 
-        n->WriteLog(QString("ExportQuirrel() Calling WriteSquirrel(%1, %2, ...)").arg(seriesids.size()).arg(modalities.size()));
-        if (io->WriteSquirrel(exportid, squirreltitle, squirreldesc, downloadflags, squirrelflags, seriesids, modalities, rootoutdir, filepath, m))
-            n->WriteLog("ExportQuirrel() WriteSquirrel() returned true");
-        else
-            n->WriteLog("ExportQuirrel() WriteSquirrel() returned false");
+	n->WriteLog(QString("ExportQuirrel() Calling WriteSquirrel(%1, %2, ...)").arg(seriesids.size()).arg(modalities.size()));
+	if (io->WriteSquirrel(exportid, squirreltitle, squirreldesc, downloadflags, squirrelflags, seriesids, modalities, rootoutdir, filepath, m))
+		n->WriteLog("ExportQuirrel() WriteSquirrel() returned true");
+	else
+		n->WriteLog("ExportQuirrel() WriteSquirrel() returned false");
 
-        /* move the .zip file to the download directory if a web download */
+	/* move the .zip file to the download directory if a web download */
 
-        /* update the publicdataset_download table to reflect the numfiles,zipsize, unzipsize, package format, image format, and status */
-    }
-    else {
-        n->WriteLog("ExportQuirrel() No series found");
-        return false;
-    }
+	/* update the publicdataset_download table to reflect the numfiles,zipsize, unzipsize, package format, image format, and status */
 
     QStringList msgs;
 

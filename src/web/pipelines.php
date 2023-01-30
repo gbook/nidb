@@ -3800,6 +3800,12 @@ echo "#$ps_command     $logged $ps_desc\n";
 		$sqlstring = "insert into exports (username, ip, download_flags, destinationtype, filetype, squirrel_flags, squirrel_title, squirrel_desc, submitdate, status) values ('$username', '$ip', $downloadflagstr, 'web', 'squirrel', $squirrelflagstr, '$pipelinename', '$pipelinedesc', now(), 'submitted')";
 		PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$exportid = mysqli_insert_id($GLOBALS['linki']);
+		
+		$sqlstring = "insert into exportseries (export_id, pipeline_id, status) values ($exportid, $id, 'submitted')";
+		PrintSQL($sqlstring);
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		
 		Notice("Pipeline queued for export. Download squirrel file from the <a href='requeststatus.php'>Exports</a> page");
 	}
 	
