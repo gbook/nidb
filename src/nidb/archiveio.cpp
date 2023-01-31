@@ -2267,7 +2267,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 
                             int numfilesconv(0), numfilesrenamed(0);
                             QString binpath = n->cfg["nidbdir"] + "/bin";
-							if (!img->ConvertDicom("bids", datadir, tmpdir, binpath, true, false, subjectdir, sessiondir, seriesdir, datatype, numfilesconv, numfilesrenamed, m))
+                            if (!img->ConvertDicom("bids", datadir, tmpdir, binpath, true, false, subjectdir, sessiondir, seriesdir, datatype, numfilesconv, numfilesrenamed, m))
                                 msgs << "Error converting files [" + m + "]";
 
                             //n->WriteLog("About to copy files from " + tmpdir + " to " + seriesoutdir);
@@ -2349,8 +2349,8 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
 
     n->WriteLog(QString("Entering WriteSquirrel() exportid [%2]").arg(__FUNCTION__).arg(exportid));
 
-	QStringList msgs;
-	QString exportstatus = "complete";
+    QStringList msgs;
+    QString exportstatus = "complete";
     subjectStudySeriesContainer s;
 
     if (!GetSeriesListDetails(seriesids, modalities, s)) {
@@ -2710,19 +2710,17 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
 
     /* add pipelines to the JSON object */
     if (downloadflags.contains("DOWNLOAD_PIPELINES", Qt::CaseInsensitive)) {
-		/* check if there are any pipeline IDs specified in the export_series table */
-		QSqlQuery q;
-		q.prepare("select * from exportseries where export_id = :exportid and pipeline_id is not null");
-		q.bindValue(":exportid", exportid);
-		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-		if (q.size() > 0) {
-			if (q.size() > 1) {
-				n->WriteLog(QString("%1() Found [%2] pipelines").arg(__FUNCTION__).arg(q.size()));
-				while (q.next()) {
-					pipelineIDs.append(q.value("pipeline_id").toInt());
-				}
-			}
-		}
+        /* check if there are any pipeline IDs specified in the export_series table */
+        QSqlQuery q;
+        q.prepare("select * from exportseries where export_id = :exportid and pipeline_id is not null");
+        q.bindValue(":exportid", exportid);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        if (q.size() > 0) {
+            n->WriteLog(QString("%1() Found [%2] pipelines").arg(__FUNCTION__).arg(q.size()));
+            while (q.next()) {
+                pipelineIDs.append(q.value("pipeline_id").toInt());
+            }
+        }
 
         if (pipelineIDs.size() > 0) {
             //QString dir(QString("%1/pipelines").arg(outdir));
@@ -2734,6 +2732,9 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                 sqrl.addPipeline(sqrlPipeline);
             }
         }
+    }
+    else {
+
     }
 
     /* add experiments to the JSON object */
@@ -2751,7 +2752,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     }
 
     /* add mini-pipelines to the JSON object */
-	/* minipipelines will be exported as pipelines */
+    /* minipipelines will be exported as pipelines */
     if (downloadflags.contains("DOWNLOAD_MINIPIPELINES", Qt::CaseInsensitive)) {
         if (minipipelineIDs.size() > 0) {
             //QString dir(QString("%1/minipipelines").arg(outdir));
@@ -2785,7 +2786,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
 bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modalities, subjectStudySeriesContainer &s) {
 
     QSqlQuery q;
-	n->WriteLog(QString("seriesids size [%1]").arg(seriesids.size()));
+    n->WriteLog(QString("seriesids size [%1]").arg(seriesids.size()));
     for (int i=0; i<seriesids.size(); i++) {
         qint64 seriesid = seriesids[i];
         QString modality = modalities[i];

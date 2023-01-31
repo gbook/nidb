@@ -68,13 +68,13 @@ bool squirrel::read(QString filepath, bool validateOnly) {
     /* get listing of the zip the file, check if the squirrel.json exists in the root */
     QString systemstring;
     #ifdef Q_OS_WINDOWS
-	    systemstring = QString("\"C:/Program Files/7-Zip/7z.exe\" l \"" + filepath + "\"");
+        systemstring = QString("\"C:/Program Files/7-Zip/7z.exe\" l \"" + filepath + "\"");
     #else
-	    systemstring = "unzip -l " + filepath;
+        systemstring = "unzip -l " + filepath;
     #endif
-	//qDebug().noquote() << systemstring;
-	QString output = SystemCommand(systemstring, false);
-	qDebug().noquote() << output;
+    //qDebug().noquote() << systemstring;
+    QString output = SystemCommand(systemstring, false);
+    qDebug().noquote() << output;
     if (!output.contains("squirrel.json")) {
         Print("File " + filepath + " does not appear to be a squirrel package");
         return false;
@@ -85,48 +85,48 @@ bool squirrel::read(QString filepath, bool validateOnly) {
 
     /* unzip the .zip to the working dir */
     #ifdef Q_OS_WINDOWS
-	    systemstring = QString("\"C:/Program Files/7-Zip/7z.exe\" x \"" + filepath + "\" -o\"" + workingDir + "\" -y");
+        systemstring = QString("\"C:/Program Files/7-Zip/7z.exe\" x \"" + filepath + "\" -o\"" + workingDir + "\" -y");
     #else
-	    systemstring = QString("unzip " + filepath + " -d " + workingDir);
+        systemstring = QString("unzip " + filepath + " -d " + workingDir);
     #endif
-		output = SystemCommand(systemstring, false);
-	qDebug().noquote() << output;
+        output = SystemCommand(systemstring, false);
+    qDebug().noquote() << output;
 
-	/* read from .json file */
-	QString jsonStr;
-	QFile file;
-	file.setFileName(workingDir + "/squirrel.json");
-	file.open(QIODevice::ReadOnly | QIODevice::Text);
-	jsonStr = file.readAll();
-	file.close();
+    /* read from .json file */
+    QString jsonStr;
+    QFile file;
+    file.setFileName(workingDir + "/squirrel.json");
+    file.open(QIODevice::ReadOnly | QIODevice::Text);
+    jsonStr = file.readAll();
+    file.close();
 
-	/* get the JSON document and root object */
-	QJsonDocument d = QJsonDocument::fromJson(jsonStr.toUtf8());
-	QJsonObject root = d.object();
+    /* get the JSON document and root object */
+    QJsonDocument d = QJsonDocument::fromJson(jsonStr.toUtf8());
+    QJsonObject root = d.object();
 
-	/* get the package info */
-	QJsonValue pkgVal = root.value("_package");
-	QJsonObject pkgObj = pkgVal.toObject();
-	description = pkgObj["description"].toString();
-	datetime.fromString(pkgObj["datetime"].toString());
-	name = pkgObj["name"].toString();
-	qDebug() << pkgObj;
+    /* get the package info */
+    QJsonValue pkgVal = root.value("_package");
+    QJsonObject pkgObj = pkgVal.toObject();
+    description = pkgObj["description"].toString();
+    datetime.fromString(pkgObj["datetime"].toString());
+    name = pkgObj["name"].toString();
+    qDebug() << pkgObj;
 
-	/* get the data object, and check for any subjects */
-	QJsonValue dataVal = root.value("data");
-	QJsonObject dataObj = dataVal.toObject();
-	QJsonArray subjects = dataObj["subjects"].toArray();
-	qDebug() << subjects;
+    /* get the data object, and check for any subjects */
+    QJsonValue dataVal = root.value("data");
+    QJsonObject dataObj = dataVal.toObject();
+    QJsonArray subjects = dataObj["subjects"].toArray();
+    qDebug() << subjects;
 
-	/* in case of string value get value and convert into string*/
-	//qWarning() << tr("QJsonObject[appName] of description: ") << item["description"];
-	//QJsonValue subobj = item["description"];
-	//qWarning() << subobj.toString();
+    /* in case of string value get value and convert into string*/
+    //qWarning() << tr("QJsonObject[appName] of description: ") << item["description"];
+    //QJsonValue subobj = item["description"];
+    //qWarning() << subobj.toString();
 
-	/* in case of array get array and convert into string*/
-	//qWarning() << tr("QJsonObject[appName] of value: ") << item["imp"];
-	//QJsonArray test = item["imp"].toArray();
-	//qWarning() << test[1].toString();
+    /* in case of array get array and convert into string*/
+    //qWarning() << tr("QJsonObject[appName] of value: ") << item["imp"];
+    //QJsonArray test = item["imp"].toArray();
+    //qWarning() << test[1].toString();
 
 
     /* delete the tmp dir, if it exists */
@@ -352,7 +352,9 @@ bool squirrel::write(QString outpath, QString &filepath, QString &m, bool debug)
     root["subjects"] = JSONsubjects;
 
     /* add pipelines */
+    msgs << Log(QString("Adding [%1] pipelines to JSON file").arg(pipelineList.size()), __FUNCTION__);
     if (pipelineList.size() > 0) {
+        msgs << Log(QString("Adding pipelines to JSON file"), __FUNCTION__);
         QJsonArray JSONpipelines;
         for (int i=0; i < pipelineList.size(); i++) {
             JSONpipelines.append(pipelineList[i].ToJSON(workingDir));
@@ -652,11 +654,11 @@ void squirrel::PrintPackage() {
  */
 bool squirrel::MakeTempDir(QString &dir) {
 
-	QString d;
+    QString d;
     #ifdef Q_OS_WINDOWS
-	    d = QString("C:/tmp/%1").arg(GenerateRandomString(20));
+        d = QString("C:/tmp/%1").arg(GenerateRandomString(20));
     #else
-	    d = QString("/tmp/%1").arg(GenerateRandomString(20));
+        d = QString("/tmp/%1").arg(GenerateRandomString(20));
     #endif
 
     QString m;
@@ -918,5 +920,5 @@ bool squirrel::GetExperiment(QString experimentName, squirrelExperiment &sqrlExp
 /* ----- GetTempDir ------------------------------------------- */
 /* ------------------------------------------------------------ */
 QString squirrel::GetTempDir() {
-	return workingDir;
+    return workingDir;
 }
