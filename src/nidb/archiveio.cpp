@@ -2322,6 +2322,9 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
     /* write the readme file */
     if (!WriteTextFile(outdir + "/README", bidsreadme, false)) n->WriteLog("Error writing README file [" + outdir + "/README]");
 
+    QString systemstring = "chmod -rf 777 " + outdir;
+    n->WriteLog(SystemCommand(systemstring));
+
     msg = msgs.join("\n");
     n->WriteLog("Leaving WriteBIDS()...");
     return true;
