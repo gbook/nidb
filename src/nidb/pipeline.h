@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB pipeline.h
-  Copyright (C) 2004 - 2022
+  Copyright (C) 2004 - 2023
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -48,7 +48,7 @@ public:
     QString pipelineRootDir;
     bool useTmpDir;
     QString tmpDir;
-	QList<int> parentIDs;
+    QList<int> parentIDs;
     QString depLevel;
     QString depDir;
     QString depLinkType;
@@ -82,16 +82,16 @@ public:
     int version;
 
     QJsonObject GetJSONObject(QString path);
-	squirrelPipeline GetSquirrelObject();
+    squirrelPipeline GetSquirrelObject();
 
 private:
     void LoadPipelineInfo();
     void AppendJSONParents(QJsonObject &obj, QList<int> parentIDs, QString path);
     void AppendJSONDataSpec(QJsonObject &obj);
     void AppendJSONScripts(QJsonObject &obj);
-	QString GetPrimaryScript();
-	QString GetSecondaryScript();
-	QStringList GetParentList();
+    QString GetPrimaryScript();
+    QString GetSecondaryScript();
+    QStringList GetParentList();
 
     int pipelineid;
 };

@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   Squirrel pipeline.h
-  Copyright (C) 2004 - 2022
+  Copyright (C) 2004 - 2023
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -94,9 +94,9 @@ struct dataStep {
 class squirrelPipeline
 {
 public:
-	squirrelPipeline();
+    squirrelPipeline();
     QJsonObject ToJSON(QString path);
-	void PrintPipeline();
+    void PrintPipeline();
 
     /* pipeline information (required fields) */
     QString pipelineName; /*!< pipeline name (required) */
@@ -130,15 +130,15 @@ public:
     QString clusterQueue; /*!< [NiDB] compute cluster queue */
     QString clusterSubmitHost; /*!< [NiDB] hostname of the sge/slurm submit node */
     int numConcurrentAnalyses; /*!< [NiDB] max number of concurrent analyses allowed to run */
-	int maxWallTime; /*!< [NiDB] maximum allowed clock (wall) time the analysis is allowed to run (seconds) */
+    int maxWallTime; /*!< [NiDB] maximum allowed clock (wall) time the analysis is allowed to run (seconds) */
     int submitDelay; /*!< [NiDB] time in hours after the study datetime to delay before running this analysis */
 
     /* data */
-	QList<dataStep> dataSteps;
+    QList<dataStep> dataSteps;
 
     /* scripts (required) */
-	QString primaryScript;
-	QString secondaryScript;
+    QString primaryScript;
+    QString secondaryScript;
 
 private:
     QString virtualPath; /*!< path within the squirrel package, no leading slash */
