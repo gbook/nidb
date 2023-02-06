@@ -92,37 +92,37 @@ QString SystemCommand(QString s, bool detail, bool truncate, bool bufferOutput) 
     /* start QProcess and check if it started */
 
     #ifdef Q_OS_WINDOWS
-	    /* Windows is so difficult... cmd.exe must be started, and only then can you pass the command to it, with a newline as if the Enter key was pressed */
-	    s = QString(s + "\n");
-		process->start("cmd.exe");
-		if (!process->waitForStarted()) {
-			output = "QProcess failed to start, with error [" + process->errorString() + "]";
-		}
-		process->write(s.toLatin1());
-		process->closeWriteChannel();
+        /* Windows is so difficult... cmd.exe must be started, and only then can you pass the command to it, with a newline as if the Enter key was pressed */
+        s = QString(s + "\n");
+        process->start("cmd.exe");
+        if (!process->waitForStarted()) {
+            output = "QProcess failed to start, with error [" + process->errorString() + "]";
+        }
+        process->write(s.toLatin1());
+        process->closeWriteChannel();
 
-		/* collect the output */
-		while(process->waitForReadyRead(-1)) {
-			buffer = QString(process->readAll());
-			output += buffer;
-		}
-		/* check if it finished */
-		process->waitForFinished();
-		output += QString(process->readAll());
+        /* collect the output */
+        while(process->waitForReadyRead(-1)) {
+            buffer = QString(process->readAll());
+            output += buffer;
+        }
+        /* check if it finished */
+        process->waitForFinished();
+        output += QString(process->readAll());
     #else
-	    /* Linux is so much easier... */
-	    process->start("sh", QStringList() << "-c" << s);
-		if (!process->waitForStarted()) {
-			output = "QProcess failed to start, with error [" + process->errorString() + "]";
-		}
-		/* collect the output */
-		while(process->waitForReadyRead(-1)) {
-			buffer = QString(process->readAll());
-			output += buffer;
-		}
-		/* check if it finished */
-		process->waitForFinished();
-		output += QString(process->readAll());
+        /* Linux is so much easier... */
+        process->start("sh", QStringList() << "-c" << s);
+        if (!process->waitForStarted()) {
+            output = "QProcess failed to start, with error [" + process->errorString() + "]";
+        }
+        /* collect the output */
+        while(process->waitForReadyRead(-1)) {
+            buffer = QString(process->readAll());
+            output += buffer;
+        }
+        /* check if it finished */
+        process->waitForFinished();
+        output += QString(process->readAll());
     #endif
 
     delete process;
@@ -1017,7 +1017,7 @@ bool BatchRenameFiles(QString dir, QString seriesnum, QString studynum, QString 
 
     numfilesrenamed = 0;
     QStringList exts;
-    exts << "*.img" << "*.hdr" << "*.nii" << "*.nii.gz" << "*.json" << "*.bvec" << "*.bval";
+    exts << "*.img" << "*.hdr" << "*.nii" << "*.nii.gz" << "*.json" << "*.json.gz" << "*.bvec" << "*.bval";
     /* loop through all the extensions we want to rename/renumber */
     foreach (QString ext, exts) {
         int i = 1;
@@ -1071,11 +1071,11 @@ double GetPatientAge(QString PatientAgeStr, QString StudyDate, QString PatientBi
 /* --------- DirectoryExists -------------------------------- */
 /* ---------------------------------------------------------- */
 bool DirectoryExists(QString dir) {
-	QFile d(dir);
-	if (d.exists())
-		return true;
-	else
-		return false;
+    QFile d(dir);
+    if (d.exists())
+        return true;
+    else
+        return false;
 }
 
 
@@ -1083,11 +1083,11 @@ bool DirectoryExists(QString dir) {
 /* --------- FileExists ------------------------------------- */
 /* ---------------------------------------------------------- */
 bool FileExists(QString f) {
-	QFile file(f);
-	if (file.exists())
-		return true;
-	else
-		return false;
+    QFile file(f);
+    if (file.exists())
+        return true;
+    else
+        return false;
 }
 
 
@@ -1095,10 +1095,10 @@ bool FileExists(QString f) {
 /* --------- FileDirectoryExists ---------------------------- */
 /* ---------------------------------------------------------- */
 bool FileDirectoryExists(QString f) {
-	QFileInfo info(f);
-	QDir d(info.absoluteDir());
-	if (d.exists())
-		return true;
-	else
-		return false;
+    QFileInfo info(f);
+    QDir d(info.absoluteDir());
+    if (d.exists())
+        return true;
+    else
+        return false;
 }
