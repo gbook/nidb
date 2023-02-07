@@ -55,6 +55,7 @@
 	$viewowner = GetVariable("viewowner");
 	$viewstatus = GetVariable("viewstatus");
 	$viewenabled = GetVariable("viewenabled");
+	$viewhidden = GetVariable("viewhidden");
 	$viewall = GetVariable("viewall");
 	$viewuserid = GetVariable("viewuserid");
 	
@@ -144,30 +145,30 @@
 			break;
 		case 'changeowner':
 			ChangeOwner($id,$newuserid);
-			//DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewuserid);
+			//DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewhidden, $viewuserid);
 			DisplayPipelineForm("edit", $id, $returntab);
 			break;
 		case 'delete':
 			DeletePipeline($id);
-			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewuserid);
+			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewhidden, $viewuserid);
 			break;
 		case 'copy':
 			CopyPipeline($id, $newname);
-			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewuserid);
+			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewhidden, $viewuserid);
 			break;
 		case 'reset':
 			ResetPipeline($id);
-			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewuserid);
+			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewhidden, $viewuserid);
 			break;
 		case 'resetanalyses':
 			ResetAnalyses($id);
-			//DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewuserid);
+			//DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewhidden, $viewuserid);
 			DisplayPipelineForm("edit", $id, $returntab);
 			break;
 		case 'disable':
 			DisablePipeline($id);
 			if ($returnpage == "home") {
-				DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewuserid);
+				DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewhidden, $viewuserid);
 			}
 			elseif ($returnpage == "analysis") {
 				/* redirect to analysis page */
@@ -180,7 +181,7 @@
 		case 'enable':
 			EnablePipeline($id);
 			if ($returnpage == "home") {
-				DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewuserid);
+				DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewhidden, $viewuserid);
 			}
 			else {
 				DisplayPipelineForm("edit", $id, $returntab);
@@ -189,7 +190,7 @@
 		case 'disabledebug':
 			DisablePipelineDebug($id);
 			if ($returnpage == "home") {
-				DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewuserid);
+				DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewhidden, $viewuserid);
 			}
 			elseif ($returnpage == "analysis") {
 				/* redirect to analysis page */
@@ -202,14 +203,14 @@
 		case 'enabledebug':
 			EnablePipelineDebug($id);
 			if ($returnpage == "home") {
-				DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewuserid);
+				DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewhidden, $viewuserid);
 			}
 			else {
 				DisplayPipelineForm("edit", $id, $returntab);
 			}
 			break;
 		case 'viewpipelinelist':
-			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewuserid);
+			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewhidden, $viewuserid);
 			break;
 		case 'viewusage':
 			DisplayPipelineUsage();
@@ -219,7 +220,7 @@
 			DisplayPipelineForm("edit", $id, $returntab);
 			break;
 		default:
-			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewuserid);
+			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewhidden, $viewuserid);
 	}
 	//PrintVariable($GLOBALS['t']);
 
@@ -857,7 +858,7 @@
 		//PrintVariable($row);
 		
 		echo "DEBUG - ignore this stuff<br>";
-		PrintVariable($history);
+		//PrintVariable($history);
 		
 		$history = mysqli_real_escape_string($GLOBALS['linki'], trim($history));
 		$sqlstring = "insert into changelog (performing_userid, change_datetime, change_event, change_desc) values (" . $GLOBALS['userid'] . ", now(), 'pipelinecopy', '$history')";
@@ -1131,10 +1132,10 @@
 				<? if ($type != "add") { ?>
 				<a class="<?=$tab_oneactive?> item" data-tab="first">Information</a>
 				<? } ?>
-				<a class="<?=$tab_twoactive?> item" data-tab="second">Settings</a>
+				<a class="<?=$tab_twoactive?> item" data-tab="second"><i class="cog icon"></i> Settings</a>
 				<? if ($type != "add") { ?>
-				<a class="<?=$tab_threeactive?> item" data-tab="third">Data & Scripts</a>
-				<a class="<?=$tab_fouractive?> item" data-tab="fourth">Operations</a>
+				<a class="<?=$tab_threeactive?> item" data-tab="third"><i class="file alternate icon"></i> Data & Scripts</a>
+				<a class="<?=$tab_fouractive?> item" data-tab="fourth"><i class="wrench icon"></i> Operations</a>
 				<? } ?>
 			</div>
 
@@ -1147,8 +1148,8 @@
 					<td><h3 class="ui header">View</h3</td>
 					<td valign="top" style="padding-bottom: 10pt">
 						<a href="analysis.php?action=viewanalyses&id=<?=$id?>" class="ui large green button">Analyses</a>
-						<a href="analysis.php?action=viewfailedanalyses&id=<?=$id?>" title="View all imaging studies which did not meet the data criteria, and therefore the pipeline did not attempt to run the analysis" class="ui basic button">Ignored studies<br>
-						<a href="pipelines.php?action=viewversion&id=<?=$id?>" class="ui basic button">Pipeline versions</a>
+						<a href="analysis.php?action=viewfailedanalyses&id=<?=$id?>" title="View all imaging studies which did not meet the data criteria, and therefore the pipeline did not attempt to run the analysis" class="ui basic green button">Ignored studies<br>
+						<a href="pipelines.php?action=viewversion&id=<?=$id?>" class="ui basic green button">Pipeline versions</a>
 					</td>
 				</tr>
 				<tr>
@@ -1206,26 +1207,26 @@
 								}
 								
 								?>
-								<div class="ui statistics">
-									<div class="ui tiny statistic">
+								<div class="ui mini statistics">
+									<div class="ui statistic">
 										<div class="value"><?=$numcomplete?></div>
-										<div class="label">Completed</div>
+										<div class="label" style="font-size: smaller">Completed</div>
 									</div>
-									<div class="ui tiny statistic">
+									<div class="ui statistic">
 										<div class="value"><?=$numcompletesuccess?></div>
-										<div class="label">Completed<br>Successfuly</div>
+										<div class="label" style="font-size: smaller">Completed<br>Successfuly</div>
 									</div>
-									<div class="ui tiny statistic">
+									<div class="ui statistic">
 										<div class="value"><?=$numprocessing?></div>
-										<div class="label">Processing</div>
+										<div class="label" style="font-size: smaller">Processing</div>
 									</div>
-									<div class="ui tiny statistic">
+									<div class="ui statistic">
 										<div class="value"><?=$numpending?></div>
-										<div class="label">Pending</div>
+										<div class="label" style="font-size: smaller">Pending</div>
 									</div>
-									<div class="ui mini grey statistic">
+									<div class="ui grey statistic">
 										<div class="value"><?=$totaltime?> hr</div>
-										<div class="label">Total CPU Time</div>
+										<div class="label" style="font-size: smaller">Total CPU Time</div>
 									</div>
 								</div>
 								<br><br>
@@ -1346,7 +1347,7 @@
 							<div class="twelve wide center aligned column"><i class="arrow down icon"></i></div>
 
 							<div class="four wide right aligned column"><i class="child icon"></i> <b>Children</b></div>
-							<div class="twelve wide left aligned column">
+							<div class="twelve wide center aligned column">
 								<?
 									if (count($children) > 0) {
 										foreach ($children as $child => $info) {
@@ -2956,7 +2957,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 		<span style="font-size:10pt">View: <a href="pipelines.php?action=viewusage">Disk usage</a></span>
 		<br>
 		<?	
-			$pipelinetree = GetPipelineTree($viewall, 0);
+			$pipelinetree = GetPipelineTree($viewall, $viewhidden, 0);
 			//PrintVariable($pipelinetree);
 		?>
 		<br><br>
@@ -2990,7 +2991,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 	/* -------------------------------------------- */
 	/* ------- DisplayPipelineTree ---------------- */
 	/* -------------------------------------------- */
-	function DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewuserid) {
+	function DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewhidden, $viewuserid) {
 	
 		MarkTime("DisplayPipelineTree()");
 	
@@ -3067,7 +3068,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 			
 			foreach ($useridlist as $userid) {
 				$username = $userids[$userid];
-				$pipelinetree = GetPipelineTree($viewall, $userid);
+				$pipelinetree = GetPipelineTree($viewall, $viewhidden, $userid);
 				if (trim($username) == "") { $username = "(blank)"; }
 				?>
 				<br><br>
@@ -3098,6 +3099,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 				<!--		</td>
 					</tr>
 				</table>-->
+				<a href="pipelines.php?viewhidden=1">View hidden pipelines</a>
 				<table class="ui single line selectable table" id="pipelinetable<?=$username?>" width="100%">
 					<thead>
 						<tr style="vertical-align: top;text-align:left">
@@ -3130,8 +3132,10 @@ echo "#$ps_command     $logged $ps_desc\n";
 	/* -------------------------------------------- */
 	/* ------- GetPipelineTree -------------------- */
 	/* -------------------------------------------- */
-	function GetPipelineTree($viewall, $userid) {
+	function GetPipelineTree($viewall, $viewhidden, $userid) {
 		MarkTime("GetPipelineTree($viewall, $userid)");
+		
+		//PrintVariable($viewhidden);
 		
 		/* get list of pipelines owned by this username */
 		if ($viewall) {
@@ -3141,10 +3145,19 @@ echo "#$ps_command     $logged $ps_desc\n";
 		}
 		else {
 			if ($userid == 0) {
-				$whereclause = "where b.pipeline_ishidden <> 1";
+				if ($viewhidden == 1) {
+				}
+				else {
+					$whereclause = "where b.pipeline_ishidden <> 1";
+				}
 			}
 			else {
-				$whereclause = "where b.pipeline_ishidden <> 1 and b.pipeline_admin = $userid";
+				if ($viewhidden == 1) {
+					$whereclause = "where b.pipeline_admin = $userid";
+				}
+				else {
+					$whereclause = "where b.pipeline_ishidden <> 1 and b.pipeline_admin = $userid";
+				}
 			}
 		}
 		/* get list of pipelines */
@@ -3546,7 +3559,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 		//$statsoutput = explode("\n",shell_exec("ssh $pipeline_submithost qstat -f -u '*'"));
 		$statsoutput = explode("\n",shell_exec("ssh compute01 qstat -f -u '*'"));
 		
-		PrintVariable($statsoutput);
+		//PrintVariable($statsoutput);
 
 		$hostname = $queue = "";
 		$hostnames = $queues = null;

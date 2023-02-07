@@ -75,13 +75,13 @@
 
 		?>
 		<div class="ui container">
-			<div class="ui top attached segment">
+			<div class="ui top attached black segment">
 				<div class="ui two column grid">
 					<div class="column">
 						<h1 class="ui header">
-							<i class="small grey settings icon"></i>
+							<!--<i class="small grey settings icon"></i>-->
 							<div class="content">
-								<?=$pipelinename?>
+								<a href="pipelines.php?action=editpipeline&id=<?=$id?>"><span style="font-size: larger"><?=$pipelinename?><span></a>
 								<div class="sub header"><?=$pipelinedesc?></div>
 							</div>
 						</h1>
@@ -108,14 +108,15 @@
 					</div>
 				</div>
 			</div>
-			<div class="ui vertically fitted attached segment">
-				<div class="ui accordion">
+			<div class="ui vertically fitted attached very short scrolling segment">
+				<div class="ui accordion" style="font-size:smaller">
 					<div class="title">
 						<i class="dropdown icon"></i>
-						Pipeline history (last 25 log entries)
+						Pipeline history
 					</div>
 					<div class="content">
-						<table class="ui very compact table">
+						Displaying last 25 entries
+						<table class="ui very compact small table">
 							<thead>
 								<th>Version</th>
 								<th>AnalysisID</th>
@@ -163,14 +164,14 @@
 				</div>
 			</div>
 			<? if ($pipeline_status == "running") { ?>
-			<div class="ui three bottom attached steps">
+			<div class="ui three bottom attached mini steps">
 				<div class="step" style="padding: 5px">
 					<div class="content">
 						<div class="title">Start</div>
 						<div class="description">Started <?=$pipeline_laststart?></div>
 					</div>
 				</div>
-				<div class="active step">
+				<div class="active step" style="padding: 5px">
 					<div class="content">
 						<div class="title">Running</div>
 						<div class="description">Checked in <?=$pipeline_lastcheck?></div>
@@ -178,7 +179,7 @@
 						<a href="pipelines.php?action=reset&id=<?=$id?>" class="ui orange basic small button">reset</a>
 					</div>
 				</div>
-				<div class="disabled step">
+				<div class="disabled step" style="padding: 5px">
 					<div class="content">
 						<div class="title">Finish</div>
 						<div class="description"></div>
@@ -186,35 +187,34 @@
 				</div>
 			</div>
 			<? } else { ?>
-			<div class="ui four bottom attached steps">
-				<div class="active step" style="padding: 10px 5px">
+			<div class="ui four bottom attached mini steps">
+				<div class="active step" style="padding: 5px">
 					<div class="content">
 						<div class="title">Idle</div>
-						<div class="description"></div>
 					</div>
 				</div>
-				<div class="disabled step" style="padding: 10px 5px">
+				<div class="disabled step" style="padding: 5px">
 					<div class="content">
 						<div class="title">Start</div>
-						<div class="description">Last started <?=$pipeline_laststart?></div>
+						<span style="font-size: smaller">Last start <?=$pipeline_laststart?></span>
 					</div>
 				</div>
-				<div class="disabled step" style="padding: 10px 5px">
+				<div class="disabled step" style="padding: 5px">
 					<div class="content">
 						<div class="title">Running</div>
-						<div class="description">Last checked in <?=$pipeline_lastcheck?></div>
-						<!--<?=$pipeline_statusmessage?>-->
+						<span style="font-size: smaller">Last check-in <?=$pipeline_lastcheck?></span>
 					</div>
 				</div>
-				<div class="disabled step" style="padding: 10px 5px">
+				<div class="disabled step" style="padding: 5px">
 					<div class="content">
 						<div class="title">Finish</div>
-						<div class="description">Last finished <?=$pipeline_lastfinish?></div>
+						<span style="font-size: smaller">Last finish <?=$pipeline_lastfinish?></span>
 					</div>
 				</div>
 			</div>
 			<? } ?>
 		</div>
+		<br>
 		<?
 	}
 ?>

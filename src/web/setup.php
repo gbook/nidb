@@ -75,7 +75,8 @@
 				$valid = true;
 		}
 		if (!$valid) {
-			Notice("<b>You are not allowed to access this page.</b> Setup/upgrade functionality is only available to localhost and specified IP addresses.<br>Your IP is " . $_SERVER['REMOTE_ADDR']);
+			echo "<br><br>";
+			Notice("<b>You are not allowed to access this page.</b> Setup/upgrade functionality is only available to localhost and specified IP addresses. Your IP is " . $_SERVER['REMOTE_ADDR']);
 			exit(0);
 		}
 	}
