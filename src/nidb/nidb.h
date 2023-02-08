@@ -74,7 +74,7 @@ public:
     /* logging */
     void InsertAnalysisEvent(qint64 analysisid, int pipelineid, int pipelineversion, int studyid, QString event, QString message);
     void InsertSubjectChangeLog(QString username, QString uid, QString newuid, QString changetype, QString log);
-    bool SetExportSeriesStatus(qint64 exportseriesid, QString status, QString msg = "");
+    bool SetExportSeriesStatus(qint64 exportseriesid, qint64 exportid, qint64 seriesid, QString modality, QString status, QString msg = "");
 
     /* generic nidb functions */
     QString CreateUID(QString prefix, int numletters=3);

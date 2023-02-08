@@ -240,10 +240,12 @@
 				$modality = strtolower($rowA['modality']);
 				$seriesid = $rowA['series_id'];
 				$status = $rowA['status'];
-				$sqlstringB = "select * from $modality" . "_series where $modality" . "series_id = $seriesid";
-				$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
-				$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
-				$totalbytes += $rowB['series_size'];
+				if ($modality != "") {
+					$sqlstringB = "select * from $modality" . "_series where $modality" . "series_id = $seriesid";
+					$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
+					$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
+					$totalbytes += $rowB['series_size'];
+				}
 				
 				$total++;
 				switch ($status) {
@@ -450,10 +452,12 @@
 				$modality = strtolower($rowA['modality']);
 				$seriesid = $rowA['series_id'];
 				$status = $rowA['status'];
-				$sqlstringB = "select * from $modality" . "_series where $modality" . "series_id = $seriesid";
-				$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
-				$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
-				$totalbytes += $rowB['series_size'];
+				if ($modality != "") {
+					$sqlstringB = "select * from $modality" . "_series where $modality" . "series_id = $seriesid";
+					$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
+					$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
+					$totalbytes += $rowB['series_size'];
+				}
 				
 				$total++;
 				switch ($status) {
@@ -635,20 +639,22 @@
 				$status = $row['status'];
 				$statusmessage = $row['statusmessage'];
 				
-				$sqlstringB = "select a.*, b.*, d.project_name, e.uid, e.subject_id from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id left join subjects e on e.subject_id = c.subject_id where a.$modality" . "series_id = $seriesid order by uid, study_num, series_num";
-				$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
-				$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
-				$seriesdesc = $rowB['series_desc'];
-				if ($modality != "mr") {
-					$seriesdesc = $rowB['series_protocol'];
+				if ($modality != "") {
+					$sqlstringB = "select a.*, b.*, d.project_name, e.uid, e.subject_id from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id left join subjects e on e.subject_id = c.subject_id where a.$modality" . "series_id = $seriesid order by uid, study_num, series_num";
+					$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
+					$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
+					$seriesdesc = $rowB['series_desc'];
+					if ($modality != "mr") {
+						$seriesdesc = $rowB['series_protocol'];
+					}
+					$subjectid = $rowB['subject_id'];
+					$studyid = $rowB['study_id'];
+					$uid = $rowB['uid'];
+					$seriesnum = $rowB['series_num'];
+					$studynum = $rowB['study_num'];
+					$seriessize = $rowB['series_size'];
+					$totalbytes += $rowB['series_size'];
 				}
-				$subjectid = $rowB['subject_id'];
-				$studyid = $rowB['study_id'];
-				$uid = $rowB['uid'];
-				$seriesnum = $rowB['series_num'];
-				$studynum = $rowB['study_num'];
-				$seriessize = $rowB['series_size'];
-				$totalbytes += $rowB['series_size'];
 				
 				$total++;
 				switch ($status) {

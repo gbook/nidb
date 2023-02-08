@@ -2303,7 +2303,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
                     n->WriteLog(SystemCommand(systemstring, true));
                 }
 
-                n->SetExportSeriesStatus(seriesid,seriesstatus,statusmessage);
+                n->SetExportSeriesStatus(seriesid, -1, -1, "",seriesstatus,statusmessage);
                 msgs << QString("Series [%1%2-%3 (%4)] complete").arg(uid).arg(studynum).arg(seriesnum).arg(seriesdesc);
 
                 QSqlQuery q2;
@@ -2626,13 +2626,16 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                     }
                 }
 
-                n->SetExportSeriesStatus(seriesid,seriesstatus,statusmessage);
+                //n->SetExportSeriesStatus(seriesid,seriesstatus,statusmessage);
                 msgs << n->WriteLog(QString("Series [%1%2-%3 (%4)] complete").arg(uid).arg(studynum).arg(seriesnum).arg(seriesdesc));
 
                 /* add the completed squirrelSeries to the squirrelStudy object */
                 sqrlStudy.addSeries(sqrlSeries);
 
                 seriesCounter++;
+
+                n->SetExportSeriesStatus(-1, exportid, seriesid, modality, "processing", "preparing squirrel export");
+
             }
             studyCounter++;
 

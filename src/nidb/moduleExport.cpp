@@ -436,7 +436,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                     int seriesnum = c.key();
 
                     int exportseriesid = s[uid][studynum][seriesnum]["exportseriesid"].toInt();
-                    n->SetExportSeriesStatus(exportseriesid, "processing");
+                    n->SetExportSeriesStatus(exportseriesid, -1, -1, "", "processing");
 
                     QString seriesstatus = "complete";
                     QString statusmessage;
@@ -714,7 +714,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                     if (filetype == "dicom")
                         img->AnonymizeDir(outdir,anonlevel,"Anonymous","Anonymous",m);
 
-                    n->SetExportSeriesStatus(exportseriesid,seriesstatus,statusmessage);
+                    n->SetExportSeriesStatus(exportseriesid, -1, -1, "", seriesstatus, statusmessage);
                     msgs << QString("Series [%1%2-%3 (%4)] complete").arg(uid).arg(studynum).arg(seriesnum).arg(seriesdesc);
 
                     laststudyid = studyid;
@@ -958,7 +958,7 @@ bool moduleExport::ExportXNAT(int exportid, QString &exportstatus, QString &msg)
                 int seriesnum = c.key();
 
                 int exportseriesid = s[uid][studynum][seriesnum]["exportseriesid"].toInt();
-                n->SetExportSeriesStatus(exportseriesid, "processing");
+                n->SetExportSeriesStatus(exportseriesid, -1, -1, "", "processing");
 
                 QString seriesstatus = "complete";
                 QString statusmessage;
@@ -1073,7 +1073,7 @@ bool moduleExport::ExportXNAT(int exportid, QString &exportstatus, QString &msg)
                 /* always anonymize the DICOM data */
                 img->AnonymizeDir(outdir,2,"Anonymous","Anonymous",m);
 
-                n->SetExportSeriesStatus(exportseriesid,seriesstatus,statusmessage);
+                n->SetExportSeriesStatus(exportseriesid, -1, -1, "", seriesstatus,statusmessage);
                 msgs << QString("Series [%1%2-%3 (%4)] complete").arg(uid).arg(studynum).arg(seriesnum).arg(seriesdesc);
 
                 //laststudynum = studynum;
@@ -1179,7 +1179,7 @@ bool moduleExport::ExportNDAR(int exportid, bool csvonly, QString &exportstatus,
                 int seriesnum = c.key();
 
                 qint64 exportseriesid = s[uid][studynum][seriesnum]["exportseriesid"].toLongLong();
-                n->SetExportSeriesStatus(exportseriesid, "processing");
+                n->SetExportSeriesStatus(exportseriesid, -1, -1, "", "processing");
 
                 QString seriesstatus = "complete";
                 QString statusmessage;
@@ -1265,7 +1265,7 @@ bool moduleExport::ExportNDAR(int exportid, bool csvonly, QString &exportstatus,
                     statusmessage = "Data directory [" + indir + "] does not exist";
                     msgs << "ExportNDAR() Data directory does not exist. Unable to export data from [" + indir + "]\n";
                 }
-                n->SetExportSeriesStatus(exportseriesid,seriesstatus,statusmessage);
+                n->SetExportSeriesStatus(exportseriesid, -1, -1, "",seriesstatus,statusmessage);
             }
         }
     }
@@ -1355,11 +1355,15 @@ bool moduleExport::ExportSquirrel(int exportid, QString squirreltitle, QString s
         n->WriteLog(QString("%1() Found [%1] rows (series to be exported) for exportID [%2]").arg(__FUNCTION__).arg(q.size()).arg(exportid));
 
         while (q.next()) {
+            qint64 exportseriesid = q.value("exportseries_id").toLongLong();
             /* only append the series IDs if they're not null */
             if (!q.value("series_id").isNull()) {
                 seriesids.append(q.value("series_id").toLongLong());
                 modalities.append(q.value("modality").toString().toLower());
             }
+
+            /* set the series to processing */
+            n->SetExportSeriesStatus(exportseriesid, -1, -1, "","processing","preparing squirrel export");
         }
     }
     else {
@@ -1443,7 +1447,7 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
                 int seriesnum = c.key();
 
                 qint64 exportseriesid = s[uid][studynum][seriesnum]["exportseriesid"].toLongLong();
-                n->SetExportSeriesStatus(exportseriesid, "processing");
+                n->SetExportSeriesStatus(exportseriesid, -1, -1, "", "processing");
 
                 QString seriesstatus = "complete";
                 //QString statusmessage;
@@ -1595,7 +1599,7 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
                     seriesstatus = exportstatus = "error";
                     msgs << n->WriteLog("ERROR indir [" + indir + "] does not exist");
                 }
-                n->SetExportSeriesStatus(exportseriesid, seriesstatus);
+                n->SetExportSeriesStatus(exportseriesid, -1, -1, "", seriesstatus);
                 msgs << n->WriteLog(QString("Series [%1%2-%3 (%4)] complete").arg(uid).arg(studynum).arg(seriesnum).arg(seriesdesc));
             }
         }

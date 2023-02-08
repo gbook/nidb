@@ -896,7 +896,21 @@ QString nidb::GetGroupListing(int groupid) {
 /* ---------------------------------------------------------- */
 /* --------- SetExportSeriesStatus -------------------------- */
 /* ---------------------------------------------------------- */
-bool nidb::SetExportSeriesStatus(qint64 exportseriesid, QString status, QString msg) {
+bool nidb::SetExportSeriesStatus(qint64 exportseriesid, qint64 exportid, qint64 seriesid, QString modality, QString status, QString msg) {
+
+    /* get the export series ID by exportID and modality if the exportseriesid is blank */
+    if (exportseriesid == -1) {
+        QSqlQuery q;
+        q.prepare("select exportseries_id from exportseries where export_id = :exportid and series_id = :seriesid and modality = :modality");
+        q.bindValue(":exportid", exportid);
+        q.bindValue(":seriesid", seriesid);
+        q.bindValue(":modality", modality);
+        SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        if (q.size() > 0) {
+            q.first();
+            exportseriesid = q.value("study_num").toLongLong();
+        }
+    }
 
     if (((status == "pending") || (status == "deleting") || (status == "complete") || (status == "error") || (status == "processing") || (status == "cancelled") || (status == "canceled")) && (exportseriesid > 0)) {
         if (msg.trimmed() == "") {
