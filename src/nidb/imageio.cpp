@@ -117,8 +117,6 @@ bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QStr
     m = "";
     if (!BatchRenameFiles(outdir, seriesnum, studynum, uid, numfilesrenamed, m))
         msgs << "Error renaming output files [" + m + "]";
-    //else
-    //	msgs << "Renamed files [" + m + "]";
 
     /* change back to original directory before leaving */
     QDir::setCurrent(pwd);
@@ -153,15 +151,6 @@ bool imageIO::AnonymizeDicomFile(gdcm::Anonymizer &anon, QString infile, QString
     reader.SetFileName( infile.toStdString().c_str() );
     if( !reader.Read() ) {
         msg += QString("Could not read [%1]").arg(infile);
-        //if( continuemode ) {
-        //	WriteLog("Skipping from anonymization process (continue mode).");
-        //	return true;
-        //}
-        //else
-        //{
-        //	WriteLog("Check [--continue] option for skipping files.");
-        //	return false;
-        //}
     }
     gdcm::File &file = reader.GetFile();
 

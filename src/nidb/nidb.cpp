@@ -239,7 +239,7 @@ int nidb::ModuleGetNumThreads() {
         numThreads = 1;
     }
 
-    WriteLog(QString("ModuleGetNumThreads() returned [%1] threads for module [%2]").arg(numThreads).arg(module));
+    //WriteLog(QString("ModuleGetNumThreads() returned [%1] threads for module [%2]").arg(numThreads).arg(module));
     return numThreads;
 }
 
@@ -259,7 +259,7 @@ qint64 nidb::ModuleGetNumLockFiles() {
     qint64 numlocks = files.size();
 
     Print(QString("Found [%1] lockfiles for module [%2]").arg(numlocks).arg(module));
-    WriteLog(QString("ModuleGetNumLockFiles() found [%1] lockfiles for module [%2]").arg(numlocks).arg(module));
+    //WriteLog(QString("ModuleGetNumLockFiles() found [%1] lockfiles for module [%2]").arg(numlocks).arg(module));
 
     return numlocks;
 }
@@ -422,11 +422,11 @@ bool nidb::ModuleCheckIfActive() {
     SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
     if (q.size() < 1) {
-        WriteLog("ModuleCheckIfActive() returned false");
+        //WriteLog("ModuleCheckIfActive() returned false");
         return false;
     }
     else {
-        WriteLog("ModuleCheckIfActive() returned true");
+        //WriteLog("ModuleCheckIfActive() returned true");
         return true;
     }
 }
