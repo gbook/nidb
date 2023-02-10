@@ -132,59 +132,6 @@ QJsonObject squirrelPipeline::ToJSON(QString path) {
 }
 
 
-/* ---------------------------------------------------------- */
-/* --------- GetFormattedScripts ---------------------------- */
-/* ---------------------------------------------------------- */
-//bool pipeline::GetFormattedScripts(QString &primaryFile, QString &secondaryFile) {
-//	//QString primaryFile, secondaryFile;
-
-//    /* write the primary script file */
-//    for(int i=0; i<primaryScript.size(); i++) {
-//        QString line = QString("%1 #%2").arg(primaryScript[i].command).arg(primaryScript[i].description);
-
-//        if (!primaryScript[i].flags.checkin) line = line + "{NOCHECKIN}";
-//        if (!primaryScript[i].flags.logged) line = line + "{NOLOG}";
-//        if (!primaryScript[i].flags.enabled) line = "#" + line;
-
-//        primaryFile += line + "\n";
-//    }
-//    QString pfFilepath = path + "/primaryScript.sh";
-//    QFile pf(pfFilepath);
-//    if (pf.open(QIODevice::WriteOnly)) {
-
-//        QTextStream stream(&pf);
-//        stream << primaryFile;
-
-//        /* write the secondary script file */
-//        for(int i=0; i<secondaryFile.size(); i++) {
-//            QString line = QString("%1 #%2").arg(secondaryScript[i].command).arg(secondaryScript[i].description);
-
-//            if (!secondaryScript[i].flags.checkin) line = line + "{NOCHECKIN}";
-//            if (!secondaryScript[i].flags.logged) line = line + "{NOLOG}";
-//            if (!secondaryScript[i].flags.enabled) line = "#" + line;
-
-//            secondaryFile += line + "\n";
-//        }
-
-//        QString sfFilepath = path + "/secondaryScript.sh";
-//        QFile sf(sfFilepath);
-//        if (sf.open(QIODevice::WriteOnly)) {
-//            QTextStream stream(&sf);
-//            stream << secondaryFile;
-//            return true;
-//        }
-//        else {
-//            Print("Unable to write secondary script [" + sfFilepath + "]");
-//            return false;
-//        }
-//    }
-//    else {
-//        Print("Unable to write primary script [" + pfFilepath + "]");
-//        return false;
-//    }
-//}
-
-
 /* ------------------------------------------------------------ */
 /* ----- PrintPipeline ---------------------------------------- */
 /* ------------------------------------------------------------ */
