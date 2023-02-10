@@ -2346,7 +2346,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
  * @param odir - output directory
  * @param filepath - the final squirrel package path
  * @param msg - any messages generated during squirrel package writing
- * @return
+ * @return true if written, false otherwise
  */
 bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStringList downloadflags, QStringList squirrelflags, QList<qint64> seriesids, QStringList modalities, QString odir, QString &filepath, QString &msg) {
 

@@ -63,26 +63,6 @@ struct dataStep {
 
 
 /**
- * @brief The pipelineStep struct
- *
- * This is primarily used by NiDB for inter-instance pipeline sharing but can also be used
- * for other sharing contexts
- */
-//struct pipelineStep {
-//    QString command; /*!< the bash command */
-//    QString description; /*!< description of the command (#comment) */
-//    int order; /*!< the order of the step */
-//    QString workingDir; /*!< unused */
-//
-//    struct flag {
-//        bool enabled; /*!< if the step is enabled */
-//        bool logged; /*!< if the step should be logged. use {NOLOG} in the description/comment to prevent logging */
-//        bool checkin; /*!< if the step should be checked in. use {NOCHECKIN} in the description/comment to prevent check-in */
-//    } flags;
-//};
-
-
-/**
  * @brief The pipeline class
  *
  * pipelines contain 3 sections: pipeline info, dataspec, steps (the script)

@@ -74,26 +74,60 @@ QJsonObject squirrelPipeline::ToJSON(QString path) {
     json["submitDelay"] = submitDelay;
     json["numConcurrentAnalyses"] = numConcurrentAnalyses;
 
-    //AppendJSONParents(json, parentDependencyIDs, path);
-    //AppendJSONDataSpec(json);
-//	AppendJSONScripts(json);
+    /* add the dataSteps */
+    QJsonArray JSONdataSteps;
+    for (int i=0; i < dataSteps.size(); i++) {
+        QJsonObject dataStep;
+        dataStep["associationType"] = dataSteps[i].associationType;
+        dataStep["behDir"] = dataSteps[i].behDir;
+        dataStep["behFormat"] = dataSteps[i].behFormat;
+        dataStep["dataFormat"] = dataSteps[i].dataFormat;
+        dataStep["imageType"] = dataSteps[i].imageType;
+        dataStep["datalevel"] = dataSteps[i].datalevel;
+        dataStep["location"] = dataSteps[i].location;
+        dataStep["modality"] = dataSteps[i].modality;
+        dataStep["numBOLDreps"] = dataSteps[i].numBOLDreps;
+        dataStep["numImagesCriteria"] = dataSteps[i].numImagesCriteria;
+        dataStep["order"] = dataSteps[i].order;
+        dataStep["protocol"] = dataSteps[i].protocol;
+        dataStep["seriesCriteria"] = dataSteps[i].seriesCriteria;
+        dataStep["enabled"] = dataSteps[i].flags.enabled;
+        dataStep["optional"] = dataSteps[i].flags.optional;
+        dataStep["gzip"] = dataSteps[i].flags.gzip;
+        dataStep["preserveSeries"] = dataSteps[i].flags.preserveSeries;
+        dataStep["primaryProtocol"] = dataSteps[i].flags.primaryProtocol;
+        dataStep["usePhaseDir"] = dataSteps[i].flags.usePhaseDir;
+        dataStep["useSeries"] = dataSteps[i].flags.useSeries;
+
+        JSONdataSteps.append(dataStep);
+    }
+    json["numSubjects"] = JSONdataSteps.size();
+    json["dataSteps"] = JSONdataSteps;
 
     /* write all pipeline info to path */
     QString m;
     QString pipelinepath = QString("%1/%2").arg(path).arg(pipelineName);
-    if (!MakePath(pipelinepath, m))
-    //	n->WriteLog("Created path [" + pipelinepath + "]");
-    //else
+    if (MakePath(pipelinepath, m)) {
+        QByteArray j = QJsonDocument(json).toJson();
+        QFile fout(QString("%1/%2/pipeline.json").arg(path).arg(pipelineName));
+        if (fout.open(QIODevice::WriteOnly))
+            fout.write(j);
+        else
+            Print("Error writing file [" + QString("%1/%2/pipeline.json").arg(path).arg(pipelineName) + "]");
+
+        /* write the scripts */
+        if (!WriteTextFile(QString(pipelinepath + "/primaryScript.sh"), primaryScript))
+            Print("Error writing primary script [" + pipelinepath + "/primaryScript.sh]");
+
+        if (!WriteTextFile(QString(pipelinepath + "/secondaryScript.sh"), secondaryScript))
+            Print("Error writing secondary script [" + pipelinepath + "/secondaryScript.sh]");
+
+    }
+    else {
         Print("Error creating path [" + pipelinepath + "] because of [" + m + "]");
+    }
 
-    QByteArray j = QJsonDocument(json).toJson();
-    QFile fout(QString("%1/%2/pipeline.json").arg(path).arg(pipelineName));
-    if (fout.open(QIODevice::WriteOnly))
-        fout.write(j);
-    else
-        Print("Error writing file [" + QString("%1/%2/pipeline.json").arg(path).arg(pipelineName) + "]");
-
-    /* return small JSON object */
+    /* return JSON object */
     return json;
 }
 

@@ -420,6 +420,7 @@ QString pipeline::GetPrimaryScript() {
             if (!enable)
                 str = QString("#" + str);
 
+            str += "\n";
             script.append(str);
         }
     }
@@ -450,6 +451,7 @@ QString pipeline::GetSecondaryScript() {
             if (!enable)
                 str = QString("#" + str);
 
+            str += "\n";
             script.append(str);
         }
     }
