@@ -106,14 +106,14 @@ QJsonObject squirrelPipeline::ToJSON(QString path) {
 
     /* write all pipeline info to path */
     QString m;
-    QString pipelinepath = QString("%1/%2").arg(path).arg(pipelineName);
+    QString pipelinepath = QString("%1/pipelines/%2").arg(path).arg(pipelineName);
     if (MakePath(pipelinepath, m)) {
         QByteArray j = QJsonDocument(json).toJson();
-        QFile fout(QString("%1/%2/pipeline.json").arg(path).arg(pipelineName));
+        QFile fout(QString(pipelinepath + "/pipeline.json"));
         if (fout.open(QIODevice::WriteOnly))
             fout.write(j);
         else
-            Print("Error writing file [" + QString("%1/%2/pipeline.json").arg(path).arg(pipelineName) + "]");
+            Print("Error writing file [" + pipelinepath + "/pipeline.json]");
 
         /* write the scripts */
         if (!WriteTextFile(QString(pipelinepath + "/primaryScript.sh"), primaryScript))
