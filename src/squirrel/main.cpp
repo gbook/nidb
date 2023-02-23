@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   Squirrel main.cpp
-  Copyright (C) 2004 - 2022
+  Copyright (C) 2004 - 2023
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
             /* create squirrel object and validate */
             squirrel *sqrl = new squirrel();
             QString m;
-            if (sqrl->read(paramInputFile, true)) {
+            if (sqrl->read(paramInputFile, m, true)) {
                 Print("Valid squirrel file");
             }
             else {

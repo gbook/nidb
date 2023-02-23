@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB utils.h
-  Copyright (C) 2004 - 2022
+  Copyright (C) 2004 - 2023
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -92,5 +92,7 @@ bool BatchRenameFiles(QString dir, QString seriesnum, QString studynum, QString 
 bool DirectoryExists(QString dir);
 bool FileExists(QString f);
 bool FileDirectoryExists(QString f);
+
+void PrependQStringList(QStringList &list, QString s);
 
 #endif // UTILS_H

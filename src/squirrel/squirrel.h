@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   Squirrel squirrel.h
-  Copyright (C) 2004 - 2022
+  Copyright (C) 2004 - 2023
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -44,7 +44,7 @@ class squirrel
 public:
     squirrel();
 
-    bool read(QString filename, bool validateOnly=false);
+    bool read(QString filename, QString &m, bool validateOnly=false);
     bool write(QString outpath, QString &filepath, QString &m, bool debug=false);
     bool validate();
     void print();
@@ -86,7 +86,8 @@ public:
     bool GetAnalysis(QString ID, int studyNum, QString pipelineName, squirrelAnalysis &sqrlAnalysis);
     bool GetPipeline(QString pipelineName, squirrelPipeline &sqrlPipeline);
     bool GetExperiment(QString experimentName, squirrelExperiment &sqrlExperiment);
-	QString GetTempDir();
+    QString GetTempDir();
+    bool valid() { return isvalid; };
 
 private:
     void PrintPackage();
@@ -96,6 +97,7 @@ private:
     QString logfile;
     QStringList msgs; /* squirrel messages, to be passed back upon writing (or reading) through the squirrel library */
 
+    bool isvalid;
 };
 
 #endif // SQUIRREL_H

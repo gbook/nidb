@@ -2652,12 +2652,12 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	/* -------------------------------------------- */
 	/* ------- Notice ----------------------------- */
 	/* -------------------------------------------- */
-	function Notice($msg) {
+	function Notice($msg, $title="Notice") {
 		?>
 		<div class="ui text container">
 			<div class="ui info message">
 				<i class="close icon"></i>
-				<div class="header">Notice</div>
+				<div class="header"><?=$title?></div>
 				<p><?=$msg?></p>
 			</div>
 		</div>

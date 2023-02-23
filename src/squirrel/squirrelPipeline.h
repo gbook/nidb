@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   Squirrel pipeline.h
-  Copyright (C) 2004 - 2022
+  Copyright (C) 2004 - 2023
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -63,26 +63,6 @@ struct dataStep {
 
 
 /**
- * @brief The pipelineStep struct
- *
- * This is primarily used by NiDB for inter-instance pipeline sharing but can also be used
- * for other sharing contexts
- */
-//struct pipelineStep {
-//    QString command; /*!< the bash command */
-//    QString description; /*!< description of the command (#comment) */
-//    int order; /*!< the order of the step */
-//    QString workingDir; /*!< unused */
-//
-//    struct flag {
-//        bool enabled; /*!< if the step is enabled */
-//        bool logged; /*!< if the step should be logged. use {NOLOG} in the description/comment to prevent logging */
-//        bool checkin; /*!< if the step should be checked in. use {NOCHECKIN} in the description/comment to prevent check-in */
-//    } flags;
-//};
-
-
-/**
  * @brief The pipeline class
  *
  * pipelines contain 3 sections: pipeline info, dataspec, steps (the script)
@@ -94,9 +74,9 @@ struct dataStep {
 class squirrelPipeline
 {
 public:
-	squirrelPipeline();
+    squirrelPipeline();
     QJsonObject ToJSON(QString path);
-	void PrintPipeline();
+    void PrintPipeline();
 
     /* pipeline information (required fields) */
     QString pipelineName; /*!< pipeline name (required) */
@@ -130,15 +110,15 @@ public:
     QString clusterQueue; /*!< [NiDB] compute cluster queue */
     QString clusterSubmitHost; /*!< [NiDB] hostname of the sge/slurm submit node */
     int numConcurrentAnalyses; /*!< [NiDB] max number of concurrent analyses allowed to run */
-	int maxWallTime; /*!< [NiDB] maximum allowed clock (wall) time the analysis is allowed to run (seconds) */
+    int maxWallTime; /*!< [NiDB] maximum allowed clock (wall) time the analysis is allowed to run (seconds) */
     int submitDelay; /*!< [NiDB] time in hours after the study datetime to delay before running this analysis */
 
     /* data */
-	QList<dataStep> dataSteps;
+    QList<dataStep> dataSteps;
 
     /* scripts (required) */
-	QString primaryScript;
-	QString secondaryScript;
+    QString primaryScript;
+    QString secondaryScript;
 
 private:
     QString virtualPath; /*!< path within the squirrel package, no leading slash */

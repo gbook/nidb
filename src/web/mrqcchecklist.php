@@ -427,8 +427,8 @@
 					<a class="ui primary button" href="mrqcchecklist.php?action=editqcparams&id=<?=$id?>"><i class="edit icon"></i> Edit QC criteria</a>
 				</div>
 			</div>
-			<div class="ui long scrolling segment "> 
-			<table class="ui celled selectable grey compact head stuck table">
+			<div class="ui long scrolling fluid container"> 
+			<table class="ui head stuck celled selectable grey compact stuck table" >
 				<thead>
 					<th colspan="14">
 					<form action="mrqcchecklist.php" action="post">
@@ -438,12 +438,13 @@
 					</form>
 					</th>
 
+				<? $ray=array();	 	?>
 				 <tr>
-                                       <th><b>UID</b></th>
+				       <th><b>UID</b></th>
+				       <th><b>Primary alt UID</b></th>
                                        <th><b>Study No.</b></th>
                                        <th><b>Series No.</b></th>
                                        <th><b>Series Desc.</b></th>
-                                       <th><b>Primary alt UID</b></th>
                                        <th><b>Params good?</b></th>
                                        <th><b>Files on disk?</b></th>
                                        <th><b>Num Files</b></th>
@@ -510,23 +511,24 @@
 
 							$thumbpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum/$seriesnum/thumb.png";
 							
+							$count = $count +1;
+							if ($count == 1) { $rowcolor = "positive"; }
+							else { $rowcolor = "";}
 							?>
-							<tr>
-								<? $count = $count +1;
-                                                                if ($count < 2) {?>
-									<td> <?=$uid?></td>
-									<td><a href="studies.php?id=<?=$studyid?>"><b><?=$uid?><?=$studynum?></b></a></td>
-								 <?} else {?>
-									<td></td>
-									<td></td>
-								<?}?>
-								<td> &nbsp; <?=$seriesnum?></td>
-								<td> <?=$p1?>&nbsp;</td>
+								<tr class="<?=$rowcolor?>">
 								<?
-								if ($count < 2) {?>
+                                                                if ($count == 1) {?>
+									<td><b> <?=$uid?></b></td>
 									<td><b style="background-color: darkred; color: white; padding: 2px 8px"><?=$altuid?></b> </td>
-								<?} else {?> 
-									<td></td>
+									<td><a href="studies.php?id=<?=$studyid?>"><b><?=$uid?><?=$studynum?></b></a></td>
+									<td> &nbsp;<b><?=$seriesnum?></b></td>
+                                                                	<td><b><?=$p1?></b>&nbsp;</td>
+								 <?} else {?>
+									<td><?=$uid?></td>
+									<td><?=$altuid?></td>
+									<td><a href="studies.php?id=<?=$studyid?>"><?=$uid?><?=$studynum?></a></td>
+									<td> &nbsp; <?=$seriesnum?></td>
+                                                                	<td> <?=$p1?>&nbsp;</td>
 								<?}?>
 							<?
 							
@@ -802,7 +804,82 @@
 			?>
 				</tbody>
 			</table>
+			
+
+			<div align="right"><input class="ui primary button" type="submit" value="Save As CSV" onMouseDown="tabletocsv();" style="font-size: 14pt; font-weight: bold"></div>
+			
+			
+			<script type="text/javascript">
+			   function tabletocsv() {
+ 
+        		    // Variable to store the final csv data
+		            var csv_data = [];
+ 
+		            // Get each row data
+		            var rows = document.getElementsByTagName('tr');
+		            for (var i = 0; i < rows.length; i++) {
+ 
+                		// Get each column data
+		                var cols = rows[i].querySelectorAll('td,th');
+ 
+                		// Stores each csv row data
+		                var csvrow = [];
+                		for (var j = 0; j < cols.length; j++) {
+ 
+		                    // Get the text data of each cell
+                		    // of a row and push it to csvrow
+		                    csvrow.push(cols[j].innerText);
+                		}
+ 
+		               // Combine each column value with comma
+		               csv_data.push(csvrow.join(","));
+			}            		
+ 
+		          // Combine each row data with new line character
+        		  csv_data = csv_data.join('\n');
+ 
+		           // Call this function to download csv file 
+				downloadCSVFile(csv_data);
+			    } 
+        	
+ 
+		        function downloadCSVFile(csv_data) {
+ 
+		            // Create CSV file object and feed
+		            // our csv_data into it
+		           CSVFile = new Blob([csv_data], {
+                	   type: "text/csv"
+		            });
+ 
+		            // Create to temporary link to initiate
+		            // download process
+		            var temp_link = document.createElement('a');
+ 
+			    // Download csv file
+			    const d = new Date();
+			    tt = d.getTime();
+		            temp_link.download = "MRQuality"+tt+".csv";
+		            var url = window.URL.createObjectURL(CSVFile);
+		            temp_link.href = url;
+ 
+		            // This link should not be displayed
+		            temp_link.style.display = "none";
+		            document.body.appendChild(temp_link);
+ 
+		            // Automatically click the link to
+		            // trigger download
+		            temp_link.click();
+		            document.body.removeChild(temp_link);
+        	    }
+		       				
+				
+				
+		</script>
+
+
+				
 			</div>
+
 			<?
 		}
 		else {

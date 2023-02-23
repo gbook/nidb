@@ -81,6 +81,10 @@
 		case 'displaystudies':
 			DisplayStudiesTable($id);
 			break;
+		case 'updatestudyage':
+			UpdateStudyAge($id);
+			DisplayStudiesTable($id);
+			break;
 		case 'auditstudies':
 			AuditStudies($id);
 			break;
@@ -894,6 +898,33 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- UpdateStudyAge --------------------- */
+	/* -------------------------------------------- */
+	function UpdateStudyAge($projectid) {
+		$projectid = mysqli_real_escape_array($projectid);
+		
+		/* get list of studies for this project */
+		$sqlstring = "select a.study_id, a.study_datetime, a.study_ageatscan, d.birthdate from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on b.project_id = c.project_id left join subjects d on d.subject_id = b.subject_id where c.project_id = $projectid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		
+		/* for each study, calculate and update the StudyAge */
+		$numupdated = 0;
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			list($studyAge, $calcStudyAge) = GetStudyAge($row['birthdate'], $row['study_ageatscan'], $row['study_datetime']);
+			
+			if ($calcStudyAge != null) {
+				$studyid = $row["study_id"];
+				$sqlstringA = "update studies set study_ageatscan = $calcStudyAge where study_id = $studyid";
+				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+				$numupdated++;
+			}
+		}
+ 
+		Notice("Updated StudyAge for $numupdated studies");
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- ChangeSeriesAlternateNames --------- */
 	/* -------------------------------------------- */
 	function ChangeSeriesAlternateNames($id, $modalities, $oldnames, $newnames) {
@@ -1260,10 +1291,10 @@
 		$enddate = $row['project_enddate'];
 	
 		?>
-		<script type='text/javascript' src='scripts/x/x.js'></script>
+		<!--<script type='text/javascript' src='scripts/x/x.js'></script>
 		<script type='text/javascript' src='scripts/x/lib/xgetelementbyid.js'></script>
 		<script type='text/javascript' src='scripts/x/lib/xtableiterate.js'></script>
-		<script type='text/javascript' src='scripts/x/lib/xpreventdefault.js'></script>
+		<script type='text/javascript' src='scripts/x/lib/xpreventdefault.js'></script> -->
 		<script type='text/javascript' src="scripts/editablegrid/editablegrid.js"></script>
 		<script type='text/javascript' src="scripts/editablegrid/editablegrid_renderers.js" ></script>
 		<script type='text/javascript' src="scripts/editablegrid/editablegrid_editors.js" ></script>
@@ -1307,7 +1338,7 @@
 		$lowdate = min($studydates);
 		$highdate = max($studydates);
 		?>
-		
+
 		<? if ($GLOBALS['issiteadmin']) { ?>
 		<form action="projects.php" method="post" name="theform" id="theform">
 		<input type="hidden" name="action" value="changeproject">
@@ -1359,6 +1390,12 @@
 				});
 			}
 		</script>
+		<? if ($GLOBALS['issiteadmin']) { ?>
+		<div style="text-align: right">
+			<a href="projects.php?action=updatestudyage&id=<?=$id?>" class="ui small button" title="Set StudyAge to CalcStudyAge for all studies">Update StudyAge</a>
+		</div>
+		<? } ?>
+		
 		<table class="testgrid ui celled small very compact selectable table" id='table1'>
 			<thead>
 			<tr>
