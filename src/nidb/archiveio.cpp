@@ -2281,17 +2281,13 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
                         }
                     }
                     else {
-                        seriesstatus = "error";
-                        exportstatus = "error";
-                        n->WriteLog("ERROR [" + datadir + "] is empty");
-                        msgs << "Directory [" + datadir + "] is empty";
+						seriesstatus = exportstatus = "error";
+						msgs << n->WriteLog("ERROR [" + datadir + "] is empty");
                     }
                 }
                 else {
-                    seriesstatus = "error";
-                    exportstatus = "error";
-                    n->WriteLog("ERROR datadir [" + datadir + "] does not exist");
-                    msgs << "Directory [" + datadir + "] does not exist";
+					seriesstatus = exportstatus = "error";
+					msgs << n->WriteLog("ERROR datadir [" + datadir + "] does not exist");
                 }
 
                 /* copy the beh data */
