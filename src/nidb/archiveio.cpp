@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB archiveio.h
-  Copyright (C) 2004 - 2022
+  Copyright (C) 2004 - 2023
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -2267,7 +2267,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 
                             int numfilesconv(0), numfilesrenamed(0);
                             QString binpath = n->cfg["nidbdir"] + "/bin";
-							if (!img->ConvertDicom("bids", datadir, tmpdir, binpath, true, false, subjectdir, sessiondir, seriesdir, datatype, numfilesconv, numfilesrenamed, m))
+                            if (!img->ConvertDicom("bids", datadir, tmpdir, binpath, true, false, subjectdir, sessiondir, seriesdir, datatype, numfilesconv, numfilesrenamed, m))
                                 msgs << "Error converting files [" + m + "]";
 
                             //n->WriteLog("About to copy files from " + tmpdir + " to " + seriesoutdir);
@@ -2303,7 +2303,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
                     n->WriteLog(SystemCommand(systemstring, true));
                 }
 
-                n->SetExportSeriesStatus(seriesid,seriesstatus,statusmessage);
+                n->SetExportSeriesStatus(seriesid, -1, -1, "",seriesstatus,statusmessage);
                 msgs << QString("Series [%1%2-%3 (%4)] complete").arg(uid).arg(studynum).arg(seriesnum).arg(seriesdesc);
 
                 QSqlQuery q2;
@@ -2321,6 +2321,9 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 
     /* write the readme file */
     if (!WriteTextFile(outdir + "/README", bidsreadme, false)) n->WriteLog("Error writing README file [" + outdir + "/README]");
+
+    QString systemstring = "chmod -rf 777 " + outdir;
+    n->WriteLog(SystemCommand(systemstring));
 
     msg = msgs.join("\n");
     n->WriteLog("Leaving WriteBIDS()...");
@@ -2343,15 +2346,22 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
  * @param odir - output directory
  * @param filepath - the final squirrel package path
  * @param msg - any messages generated during squirrel package writing
- * @return
+ * @return true if written, false otherwise
  */
 bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStringList downloadflags, QStringList squirrelflags, QList<qint64> seriesids, QStringList modalities, QString odir, QString &filepath, QString &msg) {
 
     n->WriteLog(QString("Entering WriteSquirrel() exportid [%2]").arg(__FUNCTION__).arg(exportid));
 
-	QStringList msgs;
-	QString exportstatus = "complete";
+    QStringList msgs;
+    QString exportstatus = "complete";
     subjectStudySeriesContainer s;
+
+    /* get the total number of objects being exported */
+    QSqlQuery q;
+    q.prepare("select * from exportseries where export_id = :exportid");
+    q.bindValue(":exportid", exportid);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
+    int numObjects = q.size();
 
     if (!GetSeriesListDetails(seriesids, modalities, s)) {
         msgs << n->WriteLog(QString("%1() Error - unable to get a series list").arg(__FUNCTION__));
@@ -2412,11 +2422,11 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     QList<int> minipipelineIDs;
 
     /* iterate through the subjects (array key is UIDs) */
-    for(QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>>::iterator a = s.begin(); a != s.end(); ++a) {
+    for(QMap<QString, QMap<int, QMap<int, QMap<QString, QString> > > >::iterator a = s.begin(); a != s.end(); ++a) {
         QString uid = a.key();
         int studyCounter = 1; /* the session (study) counter */
 
-        subject subj(uid, "", n); /* get the subject object by UID */
+        subject subj(uid, -1, n); /* get the subject object by UID */
 
         n->WriteLog(QString("%1() Working on subject [" + uid + "]").arg(__FUNCTION__));
 
@@ -2428,7 +2438,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
         QList<int> enrollmentIDs;
 
         /* iterate through the studies (array key is studynum) */
-        for(QMap<int, QMap<int, QMap<QString, QString>>>::iterator b = s[uid].begin(); b != s[uid].end(); ++b) {
+        for(QMap<int, QMap<int, QMap<QString, QString> > >::iterator b = s[uid].begin(); b != s[uid].end(); ++b) {
             int studynum = b.key();
 
             if (studynum == 0)
@@ -2451,10 +2461,10 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                 n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
                 if (q2.size() > 0) {
                     while (q2.next()) {
-                        analysis a(q2.value("analysis_id").toInt(), n);
-                        if (a.isValid) {
+                        analysis a1(q2.value("analysis_id").toInt(), n);
+                        if (a1.isValid) {
                             /* create and add each squirrelAnalysis object */
-                            squirrelAnalysis sqrlAnalysis = a.GetSquirrelObject();
+                            squirrelAnalysis sqrlAnalysis = a1.GetSquirrelObject();
                             sqrlStudy.addAnalysis(sqrlAnalysis);
                         }
                     }
@@ -2480,7 +2490,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
 
             int seriesCounter = 1;
             /* iterate through the series (array key is seriesnum) */
-            for(QMap<int, QMap<QString, QString>>::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
+            for(QMap<int, QMap<QString, QString> >::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
                 int seriesnum = c.key();
 
                 /* skip the series that contained only a placeholder for the subject/study info */
@@ -2528,7 +2538,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                         /* all we need to do here is tell the squirrel object where the raw data files are */
                         sqrlSeries.stagedFiles = FindAllFiles(datadir, "*", true);
                         QHash<QString, QString> tags;
-                        QString m;
+                        //QString m;
                         QString bindir = QString("%1/bin").arg(n->cfg["nidbdir"]);
                         img->GetImageFileTags(sqrlSeries.stagedFiles[0], bindir, true, tags, m);
 
@@ -2623,13 +2633,16 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                     }
                 }
 
-                n->SetExportSeriesStatus(seriesid,seriesstatus,statusmessage);
+                //n->SetExportSeriesStatus(seriesid,seriesstatus,statusmessage);
                 msgs << n->WriteLog(QString("Series [%1%2-%3 (%4)] complete").arg(uid).arg(studynum).arg(seriesnum).arg(seriesdesc));
 
                 /* add the completed squirrelSeries to the squirrelStudy object */
                 sqrlStudy.addSeries(sqrlSeries);
 
                 seriesCounter++;
+
+                n->SetExportSeriesStatus(-1, exportid, seriesid, modality, "processing", "preparing squirrel export");
+
             }
             studyCounter++;
 
@@ -2710,19 +2723,19 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
 
     /* add pipelines to the JSON object */
     if (downloadflags.contains("DOWNLOAD_PIPELINES", Qt::CaseInsensitive)) {
-		/* check if there are any pipeline IDs specified in the export_series table */
-		QSqlQuery q;
-		q.prepare("select * from exportseries where export_id = :exportid and pipeline_id is not null");
-		q.bindValue(":exportid", exportid);
-		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-		if (q.size() > 0) {
-			if (q.size() > 1) {
-				n->WriteLog(QString("%1() Found [%2] pipelines").arg(__FUNCTION__).arg(q.size()));
-				while (q.next()) {
-					pipelineIDs.append(q.value("pipeline_id").toInt());
-				}
-			}
-		}
+        /* check if there are any pipeline IDs specified in the export_series table */
+        //QSqlQuery q;
+        q.prepare("select * from exportseries where export_id = :exportid and pipeline_id is not null");
+        q.bindValue(":exportid", exportid);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        if (q.size() > 0) {
+            n->WriteLog(QString("%1() Found [%2] pipelines").arg(__FUNCTION__).arg(q.size()));
+            while (q.next()) {
+                pipelineIDs.append(q.value("pipeline_id").toInt());
+                int exportseriesid = q.value("exportseries_id").toInt();
+                n->SetExportSeriesStatus(exportseriesid, -1, -1, "", "complete");
+            }
+        }
 
         if (pipelineIDs.size() > 0) {
             //QString dir(QString("%1/pipelines").arg(outdir));
@@ -2751,7 +2764,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     }
 
     /* add mini-pipelines to the JSON object */
-	/* minipipelines will be exported as pipelines */
+    /* minipipelines will be exported as pipelines */
     if (downloadflags.contains("DOWNLOAD_MINIPIPELINES", Qt::CaseInsensitive)) {
         if (minipipelineIDs.size() > 0) {
             //QString dir(QString("%1/minipipelines").arg(outdir));
@@ -2785,7 +2798,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
 bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modalities, subjectStudySeriesContainer &s) {
 
     QSqlQuery q;
-	n->WriteLog(QString("seriesids size [%1]").arg(seriesids.size()));
+    n->WriteLog(QString("seriesids size [%1]").arg(seriesids.size()));
     for (int i=0; i<seriesids.size(); i++) {
         qint64 seriesid = seriesids[i];
         QString modality = modalities[i];

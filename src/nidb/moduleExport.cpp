@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB moduleExport.cpp
-  Copyright (C) 2004 - 2022
+  Copyright (C) 2004 - 2023
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -87,8 +87,8 @@ int moduleExport::Run() {
             int publicdownloadid = q.value("publicdownloadid").toInt();
             int publicdatasetdownloadid = q.value("publicdatasetid").toInt();
             QString bidsreadme = q.value("bidsreadme").toString().trimmed();
-			QStringList niftiflags = q.value("nifti_flags").toString().trimmed().split(",");
-			QStringList bidsflags = q.value("bids_flags").toString().trimmed().split(",");
+            QStringList niftiflags = q.value("nifti_flags").toString().trimmed().split(",");
+            QStringList bidsflags = q.value("bids_flags").toString().trimmed().split(",");
             QStringList squirrelflags = q.value("squirrel_flags").toString().trimmed().split(",");
             QString squirreltitle = q.value("squirrel_title").toString().trimmed();
             QString squirreldesc = q.value("squirrel_desc").toString().trimmed();
@@ -120,19 +120,19 @@ int moduleExport::Run() {
             QString log;
 
             if (exporttype == "web") {
-				found = ExportLocal(exportid, exporttype, "", 0, 0, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, niftiflags, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
+                found = ExportLocal(exportid, exporttype, "", 0, 0, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, niftiflags, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
             }
             else if (exporttype == "publicdownload") {
-				found = ExportLocal(exportid, exporttype, "", publicdownloadid, 0, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, niftiflags, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
+                found = ExportLocal(exportid, exporttype, "", publicdownloadid, 0, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, niftiflags, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
             }
             else if (exporttype == "publicdataset") {
-				found = ExportLocal(exportid, exporttype, "", 0, publicdatasetdownloadid, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, niftiflags, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
+                found = ExportLocal(exportid, exporttype, "", 0, publicdatasetdownloadid, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, niftiflags, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
             }
             else if (exporttype == "nfs") {
-				found = ExportLocal(exportid, exporttype, nfsdir, 0, 0, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, niftiflags, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
+                found = ExportLocal(exportid, exporttype, nfsdir, 0, 0, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, niftiflags, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
             }
             else if (exporttype == "localftp") {
-				found = ExportLocal(exportid, exporttype, nfsdir, 0, 0, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, niftiflags, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
+                found = ExportLocal(exportid, exporttype, nfsdir, 0, 0, downloadflags, filetype, dirformat, preserveseries, gzip, anonymize, behformat, behdirrootname, behdirseriesname, bidsreadme, niftiflags, bidsflags, squirreltitle, squirreldesc, squirrelflags, status, log);
             }
             else if (exporttype == "export") {
                 //found = ExportNiDB(exportid);
@@ -420,8 +420,8 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
         int laststudyid = 0;
         QString newseriesnum = "1";
 
-		bool json = false;
-		if (niftiflags.contains("NIFTI_JSON")) json = true;
+        bool json = false;
+        if (niftiflags.contains("NIFTI_JSON")) json = true;
 
         /* iterate through the subjects (UIDs) */
         for(QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>>::iterator a = s.begin(); a != s.end(); ++a) {
@@ -436,7 +436,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                     int seriesnum = c.key();
 
                     int exportseriesid = s[uid][studynum][seriesnum]["exportseriesid"].toInt();
-                    n->SetExportSeriesStatus(exportseriesid, "processing");
+                    n->SetExportSeriesStatus(exportseriesid, -1, -1, "", "processing");
 
                     QString seriesstatus = "complete";
                     QString statusmessage;
@@ -619,12 +619,12 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                                             QString m2;
                                             int numfilesconv(0), numfilesrenamed(0);
                                             QString binpath = n->cfg["nidbdir"] + "/bin";
-											if (!img->ConvertDicom(filetype, indir, tmpdir, binpath, gzip, json, uid, QString("%1").arg(studynum), QString("%1").arg(seriesnum), datatype, numfilesconv, numfilesrenamed, m2))
+                                            if (!img->ConvertDicom(filetype, indir, tmpdir, binpath, gzip, json, uid, QString("%1").arg(studynum), QString("%1").arg(seriesnum), datatype, numfilesconv, numfilesrenamed, m2))
                                                 msgs << "Error converting files [" + m2 + "]";
-											else
-												n->WriteLog("Converted files successfully [" + m2 + "]");
+                                            else
+                                                n->WriteLog("Converted files successfully [" + m2 + "]");
 
-											//n->WriteLog("About to copy files from " + tmpdir + " to " + outdir);
+                                            //n->WriteLog("About to copy files from " + tmpdir + " to " + outdir);
                                             QString systemstring = "rsync " + tmpdir + "/* " + outdir + "/";
                                             n->WriteLog(SystemCommand(systemstring));
                                             //n->WriteLog("Done copying files...");
@@ -714,7 +714,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                     if (filetype == "dicom")
                         img->AnonymizeDir(outdir,anonlevel,"Anonymous","Anonymous",m);
 
-                    n->SetExportSeriesStatus(exportseriesid,seriesstatus,statusmessage);
+                    n->SetExportSeriesStatus(exportseriesid, -1, -1, "", seriesstatus, statusmessage);
                     msgs << QString("Series [%1%2-%3 (%4)] complete").arg(uid).arg(studynum).arg(seriesnum).arg(seriesdesc);
 
                     laststudyid = studyid;
@@ -958,7 +958,7 @@ bool moduleExport::ExportXNAT(int exportid, QString &exportstatus, QString &msg)
                 int seriesnum = c.key();
 
                 int exportseriesid = s[uid][studynum][seriesnum]["exportseriesid"].toInt();
-                n->SetExportSeriesStatus(exportseriesid, "processing");
+                n->SetExportSeriesStatus(exportseriesid, -1, -1, "", "processing");
 
                 QString seriesstatus = "complete";
                 QString statusmessage;
@@ -1073,7 +1073,7 @@ bool moduleExport::ExportXNAT(int exportid, QString &exportstatus, QString &msg)
                 /* always anonymize the DICOM data */
                 img->AnonymizeDir(outdir,2,"Anonymous","Anonymous",m);
 
-                n->SetExportSeriesStatus(exportseriesid,seriesstatus,statusmessage);
+                n->SetExportSeriesStatus(exportseriesid, -1, -1, "", seriesstatus,statusmessage);
                 msgs << QString("Series [%1%2-%3 (%4)] complete").arg(uid).arg(studynum).arg(seriesnum).arg(seriesdesc);
 
                 //laststudynum = studynum;
@@ -1179,7 +1179,7 @@ bool moduleExport::ExportNDAR(int exportid, bool csvonly, QString &exportstatus,
                 int seriesnum = c.key();
 
                 qint64 exportseriesid = s[uid][studynum][seriesnum]["exportseriesid"].toLongLong();
-                n->SetExportSeriesStatus(exportseriesid, "processing");
+                n->SetExportSeriesStatus(exportseriesid, -1, -1, "", "processing");
 
                 QString seriesstatus = "complete";
                 QString statusmessage;
@@ -1265,7 +1265,7 @@ bool moduleExport::ExportNDAR(int exportid, bool csvonly, QString &exportstatus,
                     statusmessage = "Data directory [" + indir + "] does not exist";
                     msgs << "ExportNDAR() Data directory does not exist. Unable to export data from [" + indir + "]\n";
                 }
-                n->SetExportSeriesStatus(exportseriesid,seriesstatus,statusmessage);
+                n->SetExportSeriesStatus(exportseriesid, -1, -1, "",seriesstatus,statusmessage);
             }
         }
     }
@@ -1348,46 +1348,50 @@ bool moduleExport::ExportSquirrel(int exportid, QString squirreltitle, QString s
     QStringList modalities;
     QList<qint64> seriesids;
     QSqlQuery q;
-	q.prepare("select * from exportseries where export_id = :exportid");
+    q.prepare("select * from exportseries where export_id = :exportid");
     q.bindValue(":exportid",exportid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.size() > 0) {
         n->WriteLog(QString("%1() Found [%1] rows (series to be exported) for exportID [%2]").arg(__FUNCTION__).arg(q.size()).arg(exportid));
 
         while (q.next()) {
-			/* only append the series IDs if they're not null */
-			if (!q.value("series_id").isNull()) {
-				seriesids.append(q.value("series_id").toLongLong());
-				modalities.append(q.value("modality").toString().toLower());
-			}
+            qint64 exportseriesid = q.value("exportseries_id").toLongLong();
+            /* only append the series IDs if they're not null */
+            if (!q.value("series_id").isNull()) {
+                seriesids.append(q.value("series_id").toLongLong());
+                modalities.append(q.value("modality").toString().toLower());
+            }
+
+            /* set the series to processing */
+            n->SetExportSeriesStatus(exportseriesid, -1, -1, "","processing","preparing squirrel export");
         }
-	}
-	else {
-		n->WriteLog("ExportQuirrel() No series found. But this might be ok if only a pipeline is being exported for example");
-	}
+    }
+    else {
+        n->WriteLog("ExportQuirrel() No series found. But this might be ok if only a pipeline is being exported for example");
+    }
 
-	QString rootoutdir = QString("%1/NiDB-Squirrel-%2").arg(n->cfg["ftpdir"]).arg(exportid);
-	outdir = rootoutdir;
+    QString rootoutdir = QString("%1/NiDB-Squirrel-%2").arg(n->cfg["ftpdir"]).arg(exportid);
+    outdir = rootoutdir;
 
-	QString m;
-	if (MakePath(rootoutdir, m)) {
-		n->WriteLog(QString("%1() Created rootoutdir (A) [" + rootoutdir + "]").arg(__FUNCTION__));
-	}
-	else {
-		exportstatus = "error";
-		msg = n->WriteLog("ExportQuirrel() ERROR [" + m + "] unable to create rootoutdir [" + rootoutdir + "]");
-		return false;
-	}
+    QString m;
+    if (MakePath(rootoutdir, m)) {
+        n->WriteLog(QString("%1() Created rootoutdir (A) [" + rootoutdir + "]").arg(__FUNCTION__));
+    }
+    else {
+        exportstatus = "error";
+        msg = n->WriteLog("ExportQuirrel() ERROR [" + m + "] unable to create rootoutdir [" + rootoutdir + "]");
+        return false;
+    }
 
-	n->WriteLog(QString("ExportQuirrel() Calling WriteSquirrel(%1, %2, ...)").arg(seriesids.size()).arg(modalities.size()));
-	if (io->WriteSquirrel(exportid, squirreltitle, squirreldesc, downloadflags, squirrelflags, seriesids, modalities, rootoutdir, filepath, m))
-		n->WriteLog("ExportQuirrel() WriteSquirrel() returned true");
-	else
-		n->WriteLog("ExportQuirrel() WriteSquirrel() returned false");
+    n->WriteLog(QString("ExportQuirrel() Calling WriteSquirrel(%1, %2, ...)").arg(seriesids.size()).arg(modalities.size()));
+    if (io->WriteSquirrel(exportid, squirreltitle, squirreldesc, downloadflags, squirrelflags, seriesids, modalities, rootoutdir, filepath, m))
+        n->WriteLog("ExportQuirrel() WriteSquirrel() returned true");
+    else
+        n->WriteLog("ExportQuirrel() WriteSquirrel() returned false");
 
-	/* move the .zip file to the download directory if a web download */
+    /* move the .zip file to the download directory if a web download */
 
-	/* update the publicdataset_download table to reflect the numfiles,zipsize, unzipsize, package format, image format, and status */
+    /* update the publicdataset_download table to reflect the numfiles,zipsize, unzipsize, package format, image format, and status */
 
     QStringList msgs;
 
@@ -1443,7 +1447,7 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
                 int seriesnum = c.key();
 
                 qint64 exportseriesid = s[uid][studynum][seriesnum]["exportseriesid"].toLongLong();
-                n->SetExportSeriesStatus(exportseriesid, "processing");
+                n->SetExportSeriesStatus(exportseriesid, -1, -1, "", "processing");
 
                 QString seriesstatus = "complete";
                 //QString statusmessage;
@@ -1595,7 +1599,7 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
                     seriesstatus = exportstatus = "error";
                     msgs << n->WriteLog("ERROR indir [" + indir + "] does not exist");
                 }
-                n->SetExportSeriesStatus(exportseriesid, seriesstatus);
+                n->SetExportSeriesStatus(exportseriesid, -1, -1, "", seriesstatus);
                 msgs << n->WriteLog(QString("Series [%1%2-%3 (%4)] complete").arg(uid).arg(studynum).arg(seriesnum).arg(seriesdesc));
             }
         }

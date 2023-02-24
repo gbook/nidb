@@ -1,10 +1,10 @@
 -- phpMyAdmin SQL Dump
--- version 5.1.2
+-- version 5.2.0
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jan 27, 2023 at 08:39 PM
--- Server version: 10.3.28-MariaDB
+-- Generation Time: Jan 31, 2023 at 06:38 PM
+-- Server version: 10.3.35-MariaDB
 -- PHP Version: 7.2.24
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -1123,7 +1123,7 @@ CREATE TABLE `exports` (
 CREATE TABLE `exportseries` (
   `exportseries_id` int(11) NOT NULL,
   `export_id` int(11) NOT NULL,
-  `series_id` int(11) NOT NULL,
+  `series_id` int(11) DEFAULT NULL,
   `pipeline_id` int(11) DEFAULT NULL COMMENT 'for squirrel exports',
   `modality` varchar(25) NOT NULL DEFAULT '',
   `startdate` datetime DEFAULT NULL,

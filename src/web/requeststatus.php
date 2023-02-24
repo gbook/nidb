@@ -173,7 +173,6 @@
 				$('.ui .progress').progress();
 			});
 		</script>
-		<div class="ui divided items">
 		<?
 		$completecolor = "66AAFF";
 		$processingcolor = "AAAAFF";
@@ -219,9 +218,9 @@
 				case "pending":
 					$statusstr = "";
 					break;
-				case "complete": $statusstr = "<i class='large green check icon'></i>Complete"; $iconcolor = "green"; break;
-				case "error": $statusstr = "<i class='large red exclamation circle icon'></i>Complete"; $iconcolor = "red"; break;
-				case "processing": $statusstr = "<i class='large blue spinner loading icon'></i>Processing"; $iconcolor = "grey"; break;
+				case "complete": $statusstr = "<i class='big green check icon'></i>Complete"; $iconcolor = "green"; break;
+				case "error": $statusstr = "<i class='big red exclamation circle icon'></i>Complete"; $iconcolor = "red"; break;
+				case "processing": $statusstr = "<i class='big blue spinner loading icon'></i>Processing"; $iconcolor = "grey"; break;
 				default: $statusstr = $exportstatus; $iconcolor = "";
 			}
 			
@@ -240,10 +239,12 @@
 				$modality = strtolower($rowA['modality']);
 				$seriesid = $rowA['series_id'];
 				$status = $rowA['status'];
-				$sqlstringB = "select * from $modality" . "_series where $modality" . "series_id = $seriesid";
-				$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
-				$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
-				$totalbytes += $rowB['series_size'];
+				if ($modality != "") {
+					$sqlstringB = "select * from $modality" . "_series where $modality" . "series_id = $seriesid";
+					$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
+					$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
+					$totalbytes += $rowB['series_size'];
+				}
 				
 				$total++;
 				switch ($status) {
@@ -282,111 +283,107 @@
 			}
 			
 			?>
-			<div class="ui item">
-				<div class="tiny image" style="text-align: left">
-					<i class="big grey archive icon"></i>
-					<?=$statusstr?> <?=$witherrors?>
-				</div>
-				<div class="ui content">
-					<div class="ui header"><?=date("D M j, Y h:ia",strtotime($submitdate))?></div>
-					<div class="ui meta">
-						<?=$deststr?> &nbsp; &nbsp; <?=$numseries?> series &nbsp; &nbsp; <?=HumanReadableFilesize($totalbytes)?>
-						<p>Requested by <?=$username?></p>
-						<? if ($numahead > 0) {
-							echo "<p>$numahead exports queued ahead of this export</p>";
-						} ?>
-					</div>
-					<div class="ui description">
-						<? if (($destinationtype == "remotenidb") && ($connectionid != "") && ($transactionid != "")) { ?>
-						<br><iframe src="ajaxapi.php?action=remoteexportstatus&connectionid=<?=$connectionid?>&transactionid=<?=$transactionid?>&detail=0&total=<?=$total?>" width="650px" height="50px" style="border: 0px">Checking with remote server...</iframe>
-						<? }
-						
-						if ((($totals['complete']/$total)*100) < 100) {
-						?>
-						<div class="ui small progress <?=$error?>" data-percent="<?=($totals['complete']/$total)*100?>">
-							<div class="bar">
-								<div class="centered progress"></div>
-							</div>
-							<div class="label" style="font-size: smaller; font-weight: normal">Exporting series (<?=number_format($totals['complete'])?> of <?=number_format($total)?>)</div>
+			<div class="ui styled black top attached segment">
+				<div class="ui two column very compact grid">
+					<div class="column">
+						<div class="ui header"><?=date("D M j, Y h:ia",strtotime($submitdate))?></div>
+						<div class="ui meta">
+							<?=$deststr?> &nbsp; &nbsp; <?=$numseries?> objects &nbsp; &nbsp; <?=HumanReadableFilesize($totalbytes)?>
+							<p>Requested by <?=$username?></p>
+							<? if ($numahead > 0) {
+								echo "<p>$numahead exports queued ahead of this export</p>";
+							} ?>
 						</div>
-						<?
-						}
-						else {
-							echo $totals['complete'] . " series exported";
-						}
-						?>
+						<div class="ui description">
+							<? if (($destinationtype == "remotenidb") && ($connectionid != "") && ($transactionid != "")) { ?>
+							<br><iframe src="ajaxapi.php?action=remoteexportstatus&connectionid=<?=$connectionid?>&transactionid=<?=$transactionid?>&detail=0&total=<?=$total?>" width="650px" height="50px" style="border: 0px">Checking with remote server...</iframe>
+							<? }
+							
+							if ((($totals['complete']/$total)*100) < 100) {
+							?>
+							<div class="ui yellow image label">
+								Exporting object <?=number_format($totals['complete'])?> of <?=number_format($total)?>
+								<div class="detail"><?=($totals['complete']/$total)*100?>%</div>
+							</div>
+							<?
+							}
+							else {
+								echo $totals['complete'] . " objects exported";
+							}
+							?>
+						</div>
 					</div>
-					<div class="extra">
-						<div class="ui two column very compact grid">
-							<div class="column">
-								<script>
-									$(document).ready(function() {
-										$('#popupbutton<?=$exportid?>').popup({ popup : $('#popupmenu<?=$exportid?>'), on : 'click'	});
-									});
-								</script>
-								<div class="ui small basic compact button" id="popupbutton<?=$exportid?>"><i class="cog icon"></i> Options</div>
-								<div class="ui popup" id="popupmenu<?=$exportid?>" style="width: 400px">
-									<a href="requeststatus.php?action=viewexport&exportid=<?=$exportid?>" title="View status" class="ui fluid primary button"><i class="binoculars icon"></i>View Export Details</a>
-									<br>
-									<? if ($exportstatus == "error") { ?>
-									<a href="requeststatus.php?action=resetexport&exportid=<?=$exportid?>" title="Retry failed series" class="ui fluid button"><i class="sync alternate icon"></i> Retry</a>
-									<? } elseif (($exportstatus == "complete") || ($exportstatus == "cancelled")) { ?>
-									<a href="requeststatus.php?action=resetexport&exportid=<?=$exportid?>" title="Resend all series" class="ui fluid button"><i class="file import icon"></i> Resend</a>
-									<? } elseif (($exportstatus == "submitted") || ($exportstatus == "processing")) { ?>
-									<a href="requeststatus.php?action=cancelexport&exportid=<?=$exportid?>" title="Cancel the remaining series" class="ui fluid red button"><i class="times circle icon"></i> Cancel</a>
-									<? } ?>
-								</div>
-							</div>
-							<div class="right aligned column">
-								<?
-									if (($destinationtype == "web") || ($destinationtype == "xnat") || ($destinationtype == "squirrel")) {
-										if ((round($totals['complete']/$total)*100 == 100) || (($totals['submitted'] == 0) && ($totals['processing'] == 0))) {
-											$zipfile = $_SERVER['DOCUMENT_ROOT'] . "/download/NIDB-$exportid.zip";
-											if (file_exists($zipfile)) {
-												$output = shell_exec("du -sb $zipfile");
-												list($filesize, $fname) = preg_split('/\s+/', $output);
-												$zipfilename = "NIDB-$exportid.zip";
-											}
-											else {
-												$zipfile = $_SERVER['DOCUMENT_ROOT'] . "/download/NiDB-Squirrel-$exportid.zip";
-												if (file_exists($zipfile)) {
-													$output = shell_exec("du -sb $zipfile");
-													list($filesize, $fname) = preg_split('/\s+/', $output);
-													$zipfilename = "NiDB-Squirrel-$exportid.zip";
-													//echo $zipfilename;
-												}
-												else {
-													$filesize = 0;
-												}
-											}
-											
-											//echo "[$zipfilename] [$zipfile]";
-											if ($filesize == 0) {
-												echo "Zipping download...";
-											}
-											else {
-												?>
-													<div class="ui labeled button">
-														<a class="ui blue button" href="download/<?=$zipfilename?>" title="Download zip file"><i class="download icon"></i> Download</a>
-														<div class="ui basic label" style="font-weight: normal; font-size: smaller"><?=HumanReadableFilesize($filesize)?></div>
-													</div>
-												<?
-											}
-										}
-										else {
-											?>Preparing download...<?
-										}
-									}
-								?>
-							</div>
+					<div class="right aligned column">
+						<script>
+							$(document).ready(function() {
+								$('#popupbutton<?=$exportid?>').popup({ popup : $('#popupmenu<?=$exportid?>'), on : 'click'	});
+							});
+						</script>
+						<div class="ui vertical labeled spaced buttons">
+							<a href="requeststatus.php?action=viewexport&exportid=<?=$exportid?>" title="View status" class="ui basic compact button"><i class="list alternate outline icon"></i> View Details</a>
+							<? if ($exportstatus == "error") { ?>
+							<a href="requeststatus.php?action=resetexport&exportid=<?=$exportid?>" title="Retry failed series" class="ui basic compact button"><i class="sync alternate icon"></i> Retry</a>
+							<? } elseif (($exportstatus == "complete") || ($exportstatus == "cancelled")) { ?>
+							<a href="requeststatus.php?action=resetexport&exportid=<?=$exportid?>" title="Resend all series" class="ui basic compact button"><i class="file import icon"></i> Resend</a>
+							<? } elseif (($exportstatus == "submitted") || ($exportstatus == "processing")) { ?>
+							<a href="requeststatus.php?action=cancelexport&exportid=<?=$exportid?>" title="Cancel the remaining series" class="ui basic red compact button"><i class="times circle icon"></i> Cancel</a>
+							<? } ?>
+							<br>
 						</div>
 					</div>
 				</div>
 			</div>
+			<div class="ui bottom attached compact segment">
+				<div class="ui two column very compact grid">
+					<div class="column">
+						<b><?=$statusstr?></b> <?=$witherrors?>						
+					</div>
+					<div class="right aligned column">
+						<?
+							if (($destinationtype == "web") || ($destinationtype == "xnat") || ($destinationtype == "squirrel")) {
+								if ((round($totals['complete']/$total)*100 == 100) || (($totals['submitted'] == 0) && ($totals['processing'] == 0))) {
+									$zipfile = $_SERVER['DOCUMENT_ROOT'] . "/download/NIDB-$exportid.zip";
+									if (file_exists($zipfile)) {
+										$output = shell_exec("du -sb $zipfile");
+										list($filesize, $fname) = preg_split('/\s+/', $output);
+										$zipfilename = "NIDB-$exportid.zip";
+									}
+									else {
+										$zipfile = $_SERVER['DOCUMENT_ROOT'] . "/download/NiDB-Squirrel-$exportid.zip";
+										if (file_exists($zipfile)) {
+											$output = shell_exec("du -sb $zipfile");
+											list($filesize, $fname) = preg_split('/\s+/', $output);
+											$zipfilename = "NiDB-Squirrel-$exportid.zip";
+											//echo $zipfilename;
+										}
+										else {
+											$filesize = 0;
+										}
+									}
+									
+									//echo "[$zipfilename] [$zipfile]";
+									if ($filesize == 0) {
+										echo "Zipping download...";
+									}
+									else {
+										?>
+											<a class="ui blue button" href="download/<?=$zipfilename?>" title="Download zip file"><i class="download icon"></i> Download <span style="font-size: smaller"><?=HumanReadableFilesize($filesize)?></span></a>
+											<br>
+										<?
+									}
+								}
+								else {
+									?>Preparing download...<?
+								}
+							}
+						?>
+					</div>
+				</div>
+			</div>
+			<br>
 			<?
 			}
 		?>
-		</div>
 		</div>
 		<?
 	}
@@ -450,10 +447,12 @@
 				$modality = strtolower($rowA['modality']);
 				$seriesid = $rowA['series_id'];
 				$status = $rowA['status'];
-				$sqlstringB = "select * from $modality" . "_series where $modality" . "series_id = $seriesid";
-				$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
-				$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
-				$totalbytes += $rowB['series_size'];
+				if ($modality != "") {
+					$sqlstringB = "select * from $modality" . "_series where $modality" . "series_id = $seriesid";
+					$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
+					$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
+					$totalbytes += $rowB['series_size'];
+				}
 				
 				$total++;
 				switch ($status) {
@@ -635,20 +634,22 @@
 				$status = $row['status'];
 				$statusmessage = $row['statusmessage'];
 				
-				$sqlstringB = "select a.*, b.*, d.project_name, e.uid, e.subject_id from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id left join subjects e on e.subject_id = c.subject_id where a.$modality" . "series_id = $seriesid order by uid, study_num, series_num";
-				$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
-				$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
-				$seriesdesc = $rowB['series_desc'];
-				if ($modality != "mr") {
-					$seriesdesc = $rowB['series_protocol'];
+				if ($modality != "") {
+					$sqlstringB = "select a.*, b.*, d.project_name, e.uid, e.subject_id from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id left join subjects e on e.subject_id = c.subject_id where a.$modality" . "series_id = $seriesid order by uid, study_num, series_num";
+					$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
+					$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
+					$seriesdesc = $rowB['series_desc'];
+					if ($modality != "mr") {
+						$seriesdesc = $rowB['series_protocol'];
+					}
+					$subjectid = $rowB['subject_id'];
+					$studyid = $rowB['study_id'];
+					$uid = $rowB['uid'];
+					$seriesnum = $rowB['series_num'];
+					$studynum = $rowB['study_num'];
+					$seriessize = $rowB['series_size'];
+					$totalbytes += $rowB['series_size'];
 				}
-				$subjectid = $rowB['subject_id'];
-				$studyid = $rowB['study_id'];
-				$uid = $rowB['uid'];
-				$seriesnum = $rowB['series_num'];
-				$studynum = $rowB['study_num'];
-				$seriessize = $rowB['series_size'];
-				$totalbytes += $rowB['series_size'];
 				
 				$total++;
 				switch ($status) {

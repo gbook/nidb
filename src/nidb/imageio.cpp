@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB imageio.cpp
-  Copyright (C) 2004 - 2022
+  Copyright (C) 2004 - 2023
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -60,9 +60,9 @@ bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QStr
     if (gzip) gzipstr = "-z y";
     else gzipstr = "-z n";
 
-	QString jsonstr;
-	if (json) jsonstr = "y";
-	else jsonstr = "n";
+    QString jsonstr;
+    if (json) jsonstr = "y";
+    else jsonstr = "n";
 
     numfilesconv = 0; /* need to fix this to be correct at some point */
 
@@ -79,9 +79,9 @@ bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QStr
     if (filetype == "nifti4dme")
         systemstring = QString("%1/./dcm2niixme %2 -o '%3' %4").arg(bindir).arg(gzipstr).arg(outdir).arg(indir);
     else if (filetype == "nifti4d")
-		systemstring = QString("%1/./dcm2niix -1 -b %6 %2 -o '%3' %4%5").arg(bindir).arg(gzipstr).arg(outdir).arg(indir).arg(fileext).arg(jsonstr);
+        systemstring = QString("%1/./dcm2niix -1 -b %6 %2 -o '%3' %4%5").arg(bindir).arg(gzipstr).arg(outdir).arg(indir).arg(fileext).arg(jsonstr);
     else if (filetype == "nifti3d")
-		systemstring = QString("%1/./dcm2niix -1 -b %5 -z 3 -o '%2' %3%4").arg(bindir).arg(outdir).arg(indir).arg(fileext).arg(jsonstr);
+        systemstring = QString("%1/./dcm2niix -1 -b %5 -z 3 -o '%2' %3%4").arg(bindir).arg(outdir).arg(indir).arg(fileext).arg(jsonstr);
     else if (filetype == "bids")
         systemstring = QString("%1/./dcm2niix -1 -b y -z y -o '%2' %3%4").arg(bindir).arg(outdir).arg(indir).arg(fileext);
     else
@@ -109,7 +109,7 @@ bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QStr
 
     /* conversion should be done, so check if it actually gzipped the file */
     if ((gzip) && (filetype != "bids")) {
-        systemstring = "cd " + outdir + "; gzip *";
+        systemstring = "cd " + outdir + "; gzip *.nii";
         msgs << SystemCommand(systemstring, true);
     }
 
@@ -117,8 +117,6 @@ bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QStr
     m = "";
     if (!BatchRenameFiles(outdir, seriesnum, studynum, uid, numfilesrenamed, m))
         msgs << "Error renaming output files [" + m + "]";
-	//else
-	//	msgs << "Renamed files [" + m + "]";
 
     /* change back to original directory before leaving */
     QDir::setCurrent(pwd);
@@ -153,15 +151,6 @@ bool imageIO::AnonymizeDicomFile(gdcm::Anonymizer &anon, QString infile, QString
     reader.SetFileName( infile.toStdString().c_str() );
     if( !reader.Read() ) {
         msg += QString("Could not read [%1]").arg(infile);
-        //if( continuemode ) {
-        //	WriteLog("Skipping from anonymization process (continue mode).");
-        //	return true;
-        //}
-        //else
-        //{
-        //	WriteLog("Check [--continue] option for skipping files.");
-        //	return false;
-        //}
     }
     gdcm::File &file = reader.GetFile();
 
@@ -655,10 +644,10 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
             tags["Modality"] = "EEG";
             QFileInfo fn = QFileInfo(f);
             QStringList parts = fn.baseName().split("_");
-			if (parts.size() > 0)
-				tags["PatientID"] = parts[0];
-			else
-				tags["PatientID"] = "Empty";
+            if (parts.size() > 0)
+                tags["PatientID"] = parts[0];
+            else
+                tags["PatientID"] = "Empty";
         }
         /* check if ET */
         else if (f.endsWith(".edf", Qt::CaseInsensitive)) {
@@ -666,22 +655,22 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
             tags["Modality"] = "ET";
             QFileInfo fn = QFileInfo(f);
             QStringList parts = fn.baseName().split("_");
-			if (parts.size() > 0)
-				tags["PatientID"] = parts[0];
-			else
-				tags["PatientID"] = "Empty";
-		}
+            if (parts.size() > 0)
+                tags["PatientID"] = parts[0];
+            else
+                tags["PatientID"] = "Empty";
+        }
         /* check if MR (Non-DICOM) analyze or nifti */
         else if ((f.endsWith(".nii", Qt::CaseInsensitive)) || (f.endsWith(".nii.gz", Qt::CaseInsensitive)) || (f.endsWith(".hdr", Qt::CaseInsensitive)) || (f.endsWith(".img", Qt::CaseInsensitive))) {
             tags["FileType"] = "NIFTI";
             tags["Modality"] = "NIFTI";
             QFileInfo fn = QFileInfo(f);
             QStringList parts = fn.baseName().split("_");
-			if (parts.size() > 0)
-				tags["PatientID"] = parts[0];
-			else
-				tags["PatientID"] = "Empty";
-		}
+            if (parts.size() > 0)
+                tags["PatientID"] = parts[0];
+            else
+                tags["PatientID"] = "Empty";
+        }
         /* check if par/rec */
         else if (f.endsWith(".par", Qt::CaseInsensitive) || f.endsWith(".rec", Qt::CaseInsensitive)) {
             tags["FileType"] = "PARREC";
@@ -820,10 +809,10 @@ void imageIO::GetFileType(QString f, QString &fileType, QString &fileModality, Q
             QFileInfo fn = QFileInfo(f);
             QStringList parts = fn.baseName().split("_");
             filePatientID = parts[0];
-			if (parts.size() > 0)
-				filePatientID = parts[0];
-			else
-				filePatientID = "Empty";
+            if (parts.size() > 0)
+                filePatientID = parts[0];
+            else
+                filePatientID = "Empty";
         }
         /* check if ET */
         else if (f.endsWith(".edf", Qt::CaseInsensitive)) {
@@ -832,12 +821,12 @@ void imageIO::GetFileType(QString f, QString &fileType, QString &fileModality, Q
             fileModality = "ET";
             QFileInfo fn = QFileInfo(f);
             QStringList parts = fn.baseName().split("_");
-			filePatientID = parts[0];
-			if (parts.size() > 0)
-				filePatientID = parts[0];
-			else
-				filePatientID = "Empty";
-		}
+            filePatientID = parts[0];
+            if (parts.size() > 0)
+                filePatientID = parts[0];
+            else
+                filePatientID = "Empty";
+        }
         /* check if MR (Non-DICOM) analyze or nifti */
         else if ((f.endsWith(".nii", Qt::CaseInsensitive)) || (f.endsWith(".nii.gz", Qt::CaseInsensitive)) || (f.endsWith(".hdr", Qt::CaseInsensitive)) || (f.endsWith(".img", Qt::CaseInsensitive))) {
             //WriteLog("Found an analyze or Nifti image [" + f + "]");
@@ -845,12 +834,12 @@ void imageIO::GetFileType(QString f, QString &fileType, QString &fileModality, Q
             fileModality = "NIFTI";
             QFileInfo fn = QFileInfo(f);
             QStringList parts = fn.baseName().split("_");
-			filePatientID = parts[0];
-			if (parts.size() > 0)
-				filePatientID = parts[0];
-			else
-				filePatientID = "Empty";
-		}
+            filePatientID = parts[0];
+            if (parts.size() > 0)
+                filePatientID = parts[0];
+            else
+                filePatientID = "Empty";
+        }
         /* check if par/rec */
         else if (f.endsWith(".par")) {
             //WriteLog("Found a PARREC image [" + f + "]");

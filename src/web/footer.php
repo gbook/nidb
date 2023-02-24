@@ -30,31 +30,31 @@
 	$pagetotaltime = round(($pagefinish - $GLOBALS['pagestart']), 3);
 	
 	# get number of fileio operations pending
-	$sqlstring = "select count(*) 'numiopending' from fileio_requests where request_status in ('pending','')";
-	$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-	$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-	$numiopending = $row['numiopending'];
+	//$sqlstring = "select count(*) 'numiopending' from fileio_requests where request_status in ('pending','')";
+	//$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+	//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+	//$numiopending = $row['numiopending'];
 	
 	# get number of directories in dicomincoming directory
 	//$dirs = glob($GLOBALS['cfg']['incomingdir'].'/*', GLOB_ONLYDIR);
-	$dirs = 0;
-	$numdicomdirs = count($dirs);
+	//$dirs = 0;
+	//$numdicomdirs = count($dirs);
 	
 	# get number of files in dicomincoming directory
 	//$files = glob($GLOBALS['cfg']['incomingdir'].'/*');
-	$files = 0;
-	$numdicomfiles = count($files) - $numdicomdirs;
+	//$files = 0;
+	//$numdicomfiles = count($files) - $numdicomdirs;
 	
 	# get number of import requests
-	$sqlstring = "select count(*) 'numimportpending' from import_requests where import_status in ('pending','')";
-	$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-	$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-	$numimportpending = $row['numimportpending'];
+	//$sqlstring = "select count(*) 'numimportpending' from import_requests where import_status in ('pending','')";
+	//$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+	//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+	//$numimportpending = $row['numimportpending'];
 	
 	# get number of directories in dicomincoming directory
-	$dirs = glob($GLOBALS['cfg']['uploadeddir'].'/*', GLOB_ONLYDIR);
-	$dirs = 0;
-	$numimportdirs = count($dirs);
+	//$dirs = glob($GLOBALS['cfg']['uploadeddir'].'/*', GLOB_ONLYDIR);
+	//$dirs = 0;
+	//$numimportdirs = count($dirs);
 	
 	/* get system load & number of cores */
 	$load = sys_getloadavg();
@@ -100,10 +100,7 @@
 		<em data-emoji=":chipmunk:"></em>&nbsp; <a href="neuroinfodb.org"><b>NiDB</b> v<?=$GLOBALS['cfg']['version']?></a>
 	</div>
 	<div class="item">
-		Page generated: <? echo date("D M j, Y g:i a T"); ?>
-	</div>
-	<div class="item">
-		Page creation time: <?=$pagetotaltime?> sec
+		Page generated: <? echo date("D M j, Y g:i a T"); ?> in <?=$pagetotaltime?> sec
 	</div>
 	<div class="item">
 		System status: <b>CPU</b> <?=$percentLoad?>% (on <?=$cpuCoreNo?> cores) &nbsp; &nbsp; &nbsp; <b>Module status:</b> 

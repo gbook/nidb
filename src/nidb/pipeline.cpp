@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB pipeline.cpp
-  Copyright (C) 2004 - 2022
+  Copyright (C) 2004 - 2023
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -332,25 +332,25 @@ squirrelPipeline pipeline::GetSquirrelObject() {
     /* pipeline options */
     s.parentPipelines = GetParentList();
     s.completeFiles = completeFiles.join(",");
-	//s.dataCopyMethod; /*!< cp, hardlink, softlink  */
-	//s.depDir; /*!< dependency directory */
-	//s.depLevel; /*!<  */
-	//s.depLinkType; /*!<  */
-	//s.dirStructure; /*!<  */
-	//s.directory; /*!< [NiDB] directory where this pipeline will live if not using the default pipeline directory */
-	//s.group; /*!< [NiDB] group on which the pipeline will be run */
-	//s.groupType; /*!< [NiDB] subject, study */
-	//s.notes; /*!< freeform area for notes */
-	//s.resultScript; /*!< path to a script to run to get a results at the end */
-	//s.tmpDir; /*!< name of temp dir, if one is to be used */
+    s.dataCopyMethod = dataCopyMethod;
+    s.depDir = depDir;
+    s.depLevel = depLevel;
+    s.depLinkType = depLinkType;
+    s.dirStructure = dirStructure;
+    s.directory = directory;
+    s.group = group;
+    s.groupType = groupType;
+    s.notes = notes;
+    s.resultScript = resultScript;
+    s.tmpDir = tmpDir;
     s.flags.useProfile = useProfile;
     s.flags.useTmpDir = useTmpDir;
 
     /* cluster information */
     s.clusterType = clusterType; /*!< [NiDB] compute cluster engine (sge, slurm) */
     s.clusterUser = clusterUser; /*!< [NiDB] compute cluster user */
-    //s.clusterQueue = clusterQueue; /*!< [NiDB] compute cluster queue */
-    //s.clusterSubmitHost = clusterSubmitHost; /*!< [NiDB] hostname of the sge/slurm submit node */
+    s.clusterQueue = queue; /*!< [NiDB] compute cluster queue */
+    s.clusterSubmitHost = submitHost; /*!< [NiDB] hostname of the sge/slurm submit node */
     s.numConcurrentAnalyses = numConcurrentAnalysis; /*!< [NiDB] max number of concurrent analyses allowed to run */
     s.maxWallTime = maxWallTime; /*!< [NiDB] maximum allowed clock (wall) time the analysis is allowed to run */
     s.submitDelay = submitDelay; /*!< [NiDB] time in hours after the study datetime to delay before running this analysis */
@@ -403,6 +403,28 @@ squirrelPipeline pipeline::GetSquirrelObject() {
 /* ---------------------------------------------------------- */
 QString pipeline::GetPrimaryScript() {
     QString script;
+
+    /* get primary script from the pipeline_steps */
+    QSqlQuery q;
+    q.prepare("select * from pipeline_steps where pipeline_id = :pipelineid and pipeline_version = :version and ps_supplement = 0 order by ps_order asc");
+    q.bindValue(":pipelineid", pipelineid);
+    q.bindValue(":version", version);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.size() > 0) {
+        while (q.next()) {
+            QString str;
+            QString command = q.value("ps_command").toString();
+            QString description = q.value("ps_description").toString();
+            bool enable = q.value("ps_enabled").toBool();
+            str = QString(command + " #" + description);
+            if (!enable)
+                str = QString("#" + str);
+
+            str += "\n";
+            script.append(str);
+        }
+    }
+
     return script;
 }
 
@@ -412,5 +434,27 @@ QString pipeline::GetPrimaryScript() {
 /* ---------------------------------------------------------- */
 QString pipeline::GetSecondaryScript() {
     QString script;
+
+    /* get primary script from the pipeline_steps */
+    QSqlQuery q;
+    q.prepare("select * from pipeline_steps where pipeline_id = :pipelineid and pipeline_version = :version and ps_supplement = 1 order by ps_order asc");
+    q.bindValue(":pipelineid", pipelineid);
+    q.bindValue(":version", version);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.size() > 0) {
+        while (q.next()) {
+            QString str;
+            QString command = q.value("ps_command").toString();
+            QString description = q.value("ps_description").toString();
+            bool enable = q.value("ps_enabled").toBool();
+            str = QString(command + " #" + description);
+            if (!enable)
+                str = QString("#" + str);
+
+            str += "\n";
+            script.append(str);
+        }
+    }
+
     return script;
 }
