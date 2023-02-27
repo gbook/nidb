@@ -1,10 +1,10 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.0
+-- version 5.1.2
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jan 31, 2023 at 06:38 PM
--- Server version: 10.3.35-MariaDB
+-- Generation Time: Feb 27, 2023 at 07:02 PM
+-- Server version: 10.3.28-MariaDB
 -- PHP Version: 7.2.24
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -1101,7 +1101,7 @@ CREATE TABLE `exports` (
   `publicdatasetid` int(11) DEFAULT NULL,
   `bidsreadme` longtext DEFAULT NULL,
   `nifti_flags` set('NIFTI_3D','NIFTI_4D','NIFTI_GZIP','NIFTI_JSON','NIFTI_BIDS') DEFAULT NULL,
-  `bids_flags` set('BIDS_USEUID','BIDS_USESTUDYID') DEFAULT NULL,
+  `bids_flags` set('BIDS_USEUID','BIDS_USESTUDYID','BIDS_SUBJECTDIR_INCREMENT','BIDS_SUBJECTDIR_UID','BIDS_SUBJECTDIR_ALTUID','BIDS_STUDYDIR_INCREMENT','BIDS_STUDYDIR_STUDYNUM','BIDS_STUDYDIR_ALTSTUDYID','BIDS_STUDYDIR_DATE') DEFAULT NULL,
   `squirrel_flags` set('SQUIRREL_FORMAT_ANONYMIZE','SQUIRREL_FORMAT_ANONYMIZEFULL','SQUIRREL_FORMAT_NIFTI4D','SQUIRREL_FORMAT_NIFTI4DGZ','SQUIRREL_FORMAT_NIFTI3D','SQUIRREL_FORMAT_NIFTI3DGZ','SQUIRREL_INCSUBJECTNUM','SQUIRREL_INCSTUDYNUM','SQUIRREL_INCSERIESNUM') DEFAULT NULL,
   `squirrel_title` varchar(255) DEFAULT NULL,
   `squirrel_desc` text DEFAULT NULL,
@@ -1125,7 +1125,7 @@ CREATE TABLE `exportseries` (
   `export_id` int(11) NOT NULL,
   `series_id` int(11) DEFAULT NULL,
   `pipeline_id` int(11) DEFAULT NULL COMMENT 'for squirrel exports',
-  `modality` varchar(25) NOT NULL DEFAULT '',
+  `modality` varchar(25) DEFAULT NULL,
   `startdate` datetime DEFAULT NULL,
   `enddate` datetime DEFAULT NULL,
   `timepoint_label` varchar(100) DEFAULT NULL,

@@ -5154,14 +5154,30 @@
 								<div class="ui segment bids">
 									<h4 class="ui dividing header">BIDS options</h4>
 									<div class="field">
-										<div class="ui checkbox">
-											<input type="checkbox" name="bidsflag_useuid">
-											<label>UID instead of sub-0001</label>
+										<label><b>Subject</b> directory format</label>
+										<div class="ui selection dropdown">
+											<input type="hidden" name="bidsflag_subject">
+											<i class="dropdown icon"></i>
+											<!--<div class="default text">BIDS <b>subject</b> directory format</div>-->
+											<div class="scrollhint menu">
+												<div class="item" data-value="subjectdir_increment">sub-0001</div>
+												<div class="item" data-value="subjectdir_uid">sub-&lt;UID&gt;</div>
+												<div class="item" data-value="subjectdir_altuid">sub-&lt;AltUID&gt;</div>
+											</div>
 										</div>
-										<br>
-										<div class="ui checkbox">
-											<input type="checkbox" name="bidsflag_usestudyid">
-											<label>StudyNum instead of ses-0001</label>
+									</div>
+									<div class="field">
+										<label><b>Study</b> directory format</label>
+										<div class="ui selection dropdown">
+											<input type="hidden" name="bidsflag_study">
+											<i class="dropdown icon"></i>
+											<!--<div class="default text">BIDS <b>study</b> directory format</div>-->
+											<div class="scrollhint menu">
+												<div class="item" data-value="studydir_increment">ses-0001</div>
+												<div class="item" data-value="studydir_studynum">ses-&lt;StudyNum&gt;</div>
+												<div class="item" data-value="studydir_altuid">ses-&lt;AltStudyID&gt;</div>
+												<div class="item" data-value="studydir_date">ses-&lt;YYYYMMDD&gt;</div>
+											</div>
 										</div>
 									</div>
 									<div class="field">
