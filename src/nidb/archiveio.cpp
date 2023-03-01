@@ -2200,12 +2200,12 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 
                 int seriesid = s[uid][studynum][seriesnum]["seriesid"].toInt();
                 //int subjectid = s[uid][studynum][seriesnum]["subjectid"].toInt();
-                //QString primaryaltuid = s[uid][studynum][seriesnum]["primaryaltuid"];
+				QString primaryaltuid = s[uid][studynum][seriesnum]["primaryaltuid"];
                 //QString altuids = s[uid][studynum][seriesnum]["altuids"];
                 //QString projectname = s[uid][studynum][seriesnum]["projectname"];
-                //int studyid = s[uid][studynum][seriesnum]["studyid"].toInt();
+				int studyid = s[uid][studynum][seriesnum]["studyid"].toInt();
                 //QString studytype = s[uid][studynum][seriesnum]["studytype"];
-                //QString studyaltid = s[uid][studynum][seriesnum]["studyaltid"];
+				QString studyaltid = s[uid][studynum][seriesnum]["studyaltid"];
                 QString modality = s[uid][studynum][seriesnum]["modality"];
                 //double seriessize = s[uid][studynum][seriesnum]["seriessize"].toDouble();
                 QString seriesdesc = s[uid][studynum][seriesnum]["seriesdesc"];
@@ -2221,18 +2221,38 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
                 //bool behdirempty = s[uid][studynum][seriesnum]["behdirempty"].toInt();
                 //bool qcdirempty = s[uid][studynum][seriesnum]["qcdirempty"].toInt();
 
-                /* create the subject identifier */
-                QString subjectdir;
-                if (bidsflags.contains("BIDS_USEUID",Qt::CaseInsensitive))
-                    subjectdir = uid;
-                else
+				/* Create the subject identifier, based on one of the following flags
+				   BIDS_SUBJECTDIR_INCREMENT (default)
+				   BIDS_SUBJECTDIR_UID
+				   BIDS_SUBJECTDIR_ALTUID */
+				QString subjectdir = "";
+				if (bidsflags.contains("BIDS_SUBJECTDIR_UID", Qt::CaseInsensitive)) {
+					subjectdir = QString("sub-%1").arg(uid);
+				}
+				else if (bidsflags.contains("BIDS_SUBJECTDIR_ALTUID", Qt::CaseInsensitive)) {
+					subjectdir = QString("sub-%1").arg(primaryaltuid);
+				}
+				if (subjectdir == "sub-")
                     subjectdir = QString("sub-%1").arg(i, 4, 10, QChar('0'));
 
-                /* create the session (study) identifier */
-                QString sessiondir;
-                if (bidsflags.contains("BIDS_USESTUDYID",Qt::CaseInsensitive))
-                    sessiondir = QString("%1").arg(studynum);
-                else
+				/* Create the session (study) identifier, based on one of the following flags
+				   BIDS_STUDYDIR_INCREMENT (default)
+				   BIDS_STUDYDIR_STUDYNUM
+				   BIDS_STUDYDIR_ALTSTUDYID
+				   BIDS_STUDYDIR_DATE */
+				QString sessiondir = "";
+				if (bidsflags.contains("BIDS_STUDYDIR_STUDYNUM",Qt::CaseInsensitive)) {
+					sessiondir = QString("ses-%1").arg(studynum);
+				}
+				else if (bidsflags.contains("BIDS_STUDYDIR_ALTSTUDYID",Qt::CaseInsensitive)) {
+					sessiondir = QString("ses-%1").arg(studyaltid);
+				}
+				else if (bidsflags.contains("BIDS_STUDYDIR_DATE",Qt::CaseInsensitive)) {
+					study std(studyid, n);
+					QString studyDate = std.dateTime().toString("yyyyMMdd");
+					sessiondir = QString("ses-%1").arg(studyDate);
+				}
+				if (sessiondir == "ses-")
                     sessiondir = QString("ses-%1").arg(j, 4, 10, QChar('0'));
 
                 /* determine the datatype (what BIDS calls the 'modality') */

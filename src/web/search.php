@@ -154,8 +154,10 @@
     $requestvars['seriesdata'] = GetVariable("seriesdata");
     $requestvars['allsubject'] = GetVariable("allsubject");
     $requestvars['bidsreadme'] = GetVariable("bidsreadme");
-    $requestvars['bidsflag_useuid'] = GetVariable("bidsflag_useuid");
-    $requestvars['bidsflag_usestudyid'] = GetVariable("bidsflag_usestudyid");
+    $requestvars['bidsflag_study'] = GetVariable("bidsflag_study");
+    $requestvars['bidsflag_subject'] = GetVariable("bidsflag_subject");
+    //$requestvars['bidsflag_useuid'] = GetVariable("bidsflag_useuid");
+    //$requestvars['bidsflag_usestudyid'] = GetVariable("bidsflag_usestudyid");
     $requestvars['squirrelflag_dataformat'] = GetVariable("squirrelflag_dataformat");
     $requestvars['squirrelflag_incsubject'] = GetVariable("squirrelflag_incsubject");
     $requestvars['squirrelflag_incstudy'] = GetVariable("squirrelflag_incstudy");
@@ -5160,9 +5162,9 @@
 											<i class="dropdown icon"></i>
 											<!--<div class="default text">BIDS <b>subject</b> directory format</div>-->
 											<div class="scrollhint menu">
-												<div class="item" data-value="subjectdir_increment">sub-0001</div>
-												<div class="item" data-value="subjectdir_uid">sub-&lt;UID&gt;</div>
-												<div class="item" data-value="subjectdir_altuid">sub-&lt;AltUID&gt;</div>
+												<div class="item" data-value="subjectdir_increment"><tt>sub-<i>0001</i></tt></div>
+												<div class="item" data-value="subjectdir_uid"><tt>sub-<i>UID</i></tt></div>
+												<div class="item" data-value="subjectdir_altuid"><tt>sub-<i>AltUID</i></tt></div>
 											</div>
 										</div>
 									</div>
@@ -5173,10 +5175,10 @@
 											<i class="dropdown icon"></i>
 											<!--<div class="default text">BIDS <b>study</b> directory format</div>-->
 											<div class="scrollhint menu">
-												<div class="item" data-value="studydir_increment">ses-0001</div>
-												<div class="item" data-value="studydir_studynum">ses-&lt;StudyNum&gt;</div>
-												<div class="item" data-value="studydir_altuid">ses-&lt;AltStudyID&gt;</div>
-												<div class="item" data-value="studydir_date">ses-&lt;YYYYMMDD&gt;</div>
+												<div class="item" data-value="studydir_increment"><tt>ses-<i>0001</i></tt></div>
+												<div class="item" data-value="studydir_studynum"><tt>ses-<i>StudyNum</i></tt></div>
+												<div class="item" data-value="studydir_altuid"><tt>ses-<i>AltStudyID</i></tt></div>
+												<div class="item" data-value="studydir_date"><tt>ses-<i>YYYYMMDD</i></tt></div>
 											</div>
 										</div>
 									</div>
@@ -6099,8 +6101,10 @@
 		$publicdownloadname = mysqli_real_escape_string($GLOBALS['linki'], $r['publicdownloadname']);
 		$publicdatasetid = mysqli_real_escape_string($GLOBALS['linki'], $r['publicdatasetid']);
 		$bidsreadme = mysqli_real_escape_string($GLOBALS['linki'], $r['bidsreadme']);
-		$bidsflaguseuid = mysqli_real_escape_string($GLOBALS['linki'], $r['bidsflag_useuid']);
-		$bidsflagusestudyid = mysqli_real_escape_string($GLOBALS['linki'], $r['bidsflag_usestudyid']);
+		$bidsflagstudy = mysqli_real_escape_string($GLOBALS['linki'], $r['bidsflag_study']);
+		$bidsflagsubject = mysqli_real_escape_string($GLOBALS['linki'], $r['bidsflag_subject']);
+		//$bidsflaguseuid = mysqli_real_escape_string($GLOBALS['linki'], $r['bidsflag_useuid']);
+		//$bidsflagusestudyid = mysqli_real_escape_string($GLOBALS['linki'], $r['bidsflag_usestudyid']);
 		$squirrelflagdataformat = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_dataformat']);
 		$squirrelflagincsubject = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_incsubject']);
 		$squirrelflagincstudy = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_incstudy']);
@@ -6235,8 +6239,33 @@
 		
 		/* collect the BIDS flags */
 		$bidsflags = array();
-		if ($bidsflaguseuid) $bidsflags[] = "BIDS_USEUID";
-		if ($bidsflagusestudyid) $bidsflags[] = "BIDS_USESTUDYID";
+		switch ($bidsflagsubject) {
+			case "subjectdir_increment":
+				$bidsflags[] = "BIDS_SUBJECTDIR_INCREMENT";
+				break;
+			case "subjectdir_uid":
+				$bidsflags[] = "BIDS_SUBJECTDIR_UID";
+				break;
+			case "subjectdir_altuid":
+				$bidsflags[] = "BIDS_SUBJECTDIR_ALTUID";
+				break;
+		}
+		switch ($bidsflagstudy) {
+			case "studydir_increment":
+				$bidsflags[] = "BIDS_STUDYDIR_INCREMENT";
+				break;
+			case "studydir_studynum":
+				$bidsflags[] = "BIDS_STUDYDIR_STUDYNUM";
+				break;
+			case "studydir_altstudyid":
+				$bidsflags[] = "BIDS_STUDYDIR_ALTSTUDYID";
+				break;
+			case "studydir_date":
+				$bidsflags[] = "BIDS_STUDYDIR_DATE";
+				break;
+		}
+		//if ($bidsflaguseuid) $bidsflags[] = "BIDS_USEUID";
+		//if ($bidsflagusestudyid) $bidsflags[] = "BIDS_USESTUDYID";
 		if (count($bidsflags) > 0)
 			$bidsflagstr = "('" . implode2(",",$bidsflags) . "')";
 		else
