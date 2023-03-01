@@ -93,6 +93,7 @@ int moduleExport::Run() {
             QString squirreltitle = q.value("squirrel_title").toString().trimmed();
             QString squirreldesc = q.value("squirrel_desc").toString().trimmed();
             n->WriteLog(QString("SQUIRREL flags [%1]").arg(q.value("squirrel_flags").toString()));
+			n->WriteLog(QString("BIDS flags [%1]").arg(q.value("bids_flags").toString()));
 
             /* remove a trailing slash if it exists */
             if (nfsdir.right(1) == "/")

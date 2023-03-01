@@ -2125,8 +2125,6 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
     QString bidsver = "1.4.1";
     subjectStudySeriesContainer s;
 
-    //QStringList flags = bidsflags.split(",");
-
     QStringList msgs;
     if (!GetSeriesListDetails(seriesids, modalities, s)) {
         msg = "Unable to get a series list";
@@ -2232,7 +2230,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 				else if (bidsflags.contains("BIDS_SUBJECTDIR_ALTUID", Qt::CaseInsensitive)) {
 					subjectdir = QString("sub-%1").arg(primaryaltuid);
 				}
-				if (subjectdir == "sub-")
+				if ((subjectdir == "") || (subjectdir == "sub-"))
                     subjectdir = QString("sub-%1").arg(i, 4, 10, QChar('0'));
 
 				/* Create the session (study) identifier, based on one of the following flags
@@ -2243,17 +2241,23 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 				QString sessiondir = "";
 				if (bidsflags.contains("BIDS_STUDYDIR_STUDYNUM",Qt::CaseInsensitive)) {
 					sessiondir = QString("ses-%1").arg(studynum);
+					//n->WriteLog(QString("Creating BIDS_STUDYDIR_STUDYNUM [" + sessiondir + "]"));
 				}
 				else if (bidsflags.contains("BIDS_STUDYDIR_ALTSTUDYID",Qt::CaseInsensitive)) {
 					sessiondir = QString("ses-%1").arg(studyaltid);
+					//n->WriteLog(QString("Creating BIDS_STUDYDIR_ALTSTUDYID [" + sessiondir + "]"));
 				}
 				else if (bidsflags.contains("BIDS_STUDYDIR_DATE",Qt::CaseInsensitive)) {
-					study std(studyid, n);
+					study std(QString("%1%2").arg(uid).arg(studynum), n);
+					//std.PrintStudyInfo();
 					QString studyDate = std.dateTime().toString("yyyyMMdd");
 					sessiondir = QString("ses-%1").arg(studyDate);
+					//n->WriteLog(QString("Creating BIDS_STUDYDIR_DATE [" + sessiondir + "]"));
 				}
-				if (sessiondir == "ses-")
+				if ((sessiondir == "") || (sessiondir == "ses-")) {
+					//n->WriteLog(QString("sessdir is [" + sessiondir + "] so it will become the ses-0001 format"));
                     sessiondir = QString("ses-%1").arg(j, 4, 10, QChar('0'));
+				}
 
                 /* determine the datatype (what BIDS calls the 'modality') */
                 QString seriesdir;
