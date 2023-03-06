@@ -142,7 +142,7 @@ function getprojectinfo($projectid)
 		</form>
 	</div>
 	<br><br>
-	<div onclick="window.location.href='redcaptonidb.php?action=showrcinfo&projectid=<?=$projectid?>'" class="ui bottom attached button">Show Project Info</div> 
+	<div onclick="window.location.href='redcaptonidb.php?action=showrcinfo&projectid=<?=$projectid?>'" class="ui bottom attached button">Show Project Information</div> 
 
 <?}
 
@@ -180,10 +180,12 @@ function Showprojectinfo($projectid)
 ?>
 
 	<table class="ui celled padded definition table">
-	  <thead>
-	    <tr><th></th>
-	    <th> Project Information</th>
-	  </tr></thead>
+	 <thead>
+	   <tr>
+		<th>Redcap Components</th>
+	    	<th>Redcap Project Information</th>
+	  </tr>
+	 </thead>
 	  <tbody>
 	    <tr>
               <td>Arms</td>
@@ -204,11 +206,13 @@ function Showprojectinfo($projectid)
 
 	<br>
 	
-	<div onclick="window.location.href='redcaptonidb.php?action=default&projectid=<?=$projectid?>'" class="ui bottom attached button">Hide Project Info</div>
-	<br><br>
+	<div onclick="window.location.href='redcaptonidb.php?action=default&projectid=<?=$projectid?>'" class="ui bottom attached button">Hide Project Information</div>
+	<br>
 
 
-	<b> Establish mapping to NiDB click "Map This Project" ==========> <b> 
+	To establish a mapping for importing data from Redcap to NiDB <br><br>
+	 <b> Please Click "Map This Project" button ==========> <b> 
+
 	<br><br>
 
 

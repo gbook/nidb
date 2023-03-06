@@ -1820,23 +1820,48 @@
 								<tr>
 									<td valign="top" align="right" style="font-size:10pt; font-weight:bold;color: #555;">Criteria</td>
 									<td valign="top">
-										<input type="radio" name="deplevel" id="deplevel" value="study" <?=$disabled?> <? if (($deplevel == "study") || ($deplevel == "")) { echo "checked"; } ?>> study <span class="tiny">use dependencies from same study (RECOMMENDED)</span><br>
-										<input type="radio" name="deplevel" id="deplevel" value="subject" <?=$disabled?> <? if ($deplevel == "subject") { echo "checked"; } ?>> subject <span class="tiny">use dependencies from same subject (other studies)</span>
+										<div class="ui radio checkbox">
+											<input type="radio" name="deplevel" id="deplevel" value="study" <?=$disabled?> <? if (($deplevel == "study") || ($deplevel == "")) { echo "checked"; } ?>>
+											<label>study <i class="question circle icon" title="Use dependencies from same study (RECOMMENDED)"></i></label>
+										</div>
+										<br>
+										<div class="ui radio checkbox">
+											<input type="radio" name="deplevel" id="deplevel" value="subject" <?=$disabled?> <? if ($deplevel == "subject") { echo "checked"; } ?>>
+											<label>subject <i class="question circle icon" title="Use dependencies from same subject (other studies)"></i></label>
+										</div>
 									</td>
 								</tr>
 								<tr>
 									<td valign="top" align="right" style="font-size:10pt; font-weight:bold;color: #555;">Directory</td>
 									<td valign="top">
-										<input type="radio" name="depdir" value="root" <?=$disabled?> <? if (($depdir == "root") || ($depdir == "")) { echo "checked"; } ?>> root directory <i class="blue question circle icon" title="copies all files into the analysis root directory <code>{analysisrootdir}/*</code>"></i><br>
-										<input type="radio" name="depdir" value="subdir" <?=$disabled?> <? if ($depdir == "subdir") { echo "checked"; } ?>> sub-directory <i class="blue question circle icon" title="copies dependency into a subdirectory of the analysis <code>{analysisrootdir}/<i>DependencyName</i>/*</code>"></i>
+										<div class="ui radio checkbox">
+											<input type="radio" name="depdir" value="root" <?=$disabled?> <? if (($depdir == "root") || ($depdir == "")) { echo "checked"; } ?>>
+											<label>root directory <i class="question circle icon" title="copies all files into the analysis root directory <tt>{analysisrootdir}/*</tt>"></i></label>
+										</div>
+										<br>
+										<div class="ui radio checkbox">
+											<input type="radio" name="depdir" value="subdir" <?=$disabled?> <? if ($depdir == "subdir") { echo "checked"; } ?>>
+											<label>sub-directory <i class="question circle icon" title="copies dependency into a subdirectory of the analysis <tt>{analysisrootdir}/<i>DependencyName</i>/*</tt>"></i></label>
+										</div>
 									</td>
 								</tr>
 								<tr>
 									<td valign="top" align="right" style="font-size:10pt; font-weight:bold;color: #555;">File linking type</td>
 									<td valign="top">
-										<input type="radio" name="deplinktype" value="hardlink" <?=$disabled?> <? if (($deplinktype == "hardlink") || ($deplinktype == "")) { echo "checked"; } ?>> hard link<br>
-										<input type="radio" name="deplinktype" value="softlink" <?=$disabled?> <? if ($deplinktype == "softlink") { echo "checked"; } ?>> soft link<br>
-										<input type="radio" name="deplinktype" value="regularcopy" <?=$disabled?> <? if ($deplinktype == "regularcopy") { echo "checked"; } ?>> Regular copy<br>
+										<div class="ui radio checkbox">
+											<input type="radio" name="deplinktype" value="hardlink" <?=$disabled?> <? if (($deplinktype == "hardlink") || ($deplinktype == "")) { echo "checked"; } ?>>
+											<label>hard link</label>
+										</div>
+										<br>
+										<div class="ui radio checkbox">
+											<input type="radio" name="deplinktype" value="softlink" <?=$disabled?> <? if ($deplinktype == "softlink") { echo "checked"; } ?>>
+											<label>soft link</label>
+										</div>
+										<br>
+										<div class="ui radio checkbox">
+											<input type="radio" name="deplinktype" value="regularcopy" <?=$disabled?> <? if ($deplinktype == "regularcopy") { echo "checked"; } ?>>
+											<label>Regular copy</label>
+										</div>
 									</td>
 								</tr>
 							</table>
@@ -2002,6 +2027,18 @@
 					</tr>
 				</table>
 				
+				<script>
+					$(document).ready(function(){
+						/* if the options TD is clicked */
+						$(".optionToggler").click(function(e){
+							e.preventDefault();
+							$('.optionRow'+$(this).attr('data-prod-row')).toggle();
+							$('.optionRow'+$(this).attr('data-prod-row')).toggleClass("yellow");
+							$(this).toggleClass("yellow");
+						});
+					});
+				</script>
+				
 				<table class="level1 ui very compact celled table">
 					<thead>
 						<th>Enabled</th>
@@ -2062,6 +2099,7 @@
 					
 					?>
 					<script>
+						/*
 						$(document).ready(function() {
 							$('.row<?=$neworder?>').mouseover(function() {
 								$('.row<?=$neworder?>').css('background-color','#eee');
@@ -2069,7 +2107,7 @@
 							.mouseout(function() {
 								$('.row<?=$neworder?>').css('background-color','');
 							});
-						});
+						}); */
 					</script>
 					<style>
 						.row1 { background-color: lightyellow; }
@@ -2126,7 +2164,7 @@
 							?>
 							</select>
 						</td>
-						<td style="text-align:left">
+						<td>
 							<div class="ui accordion">
 								<div class="title">
 									<i class="dropdown icon"></i> Options
@@ -2238,6 +2276,7 @@
 				for ($ii=0;$ii<5;$ii++) {
 				?>
 					<script>
+						/*
 						$(document).ready(function() {
 							$('.row<?=$neworder?>').mouseover(function() {
 								$('.row<?=$neworder?>').css('background-color','#eee');
@@ -2245,31 +2284,31 @@
 							.mouseout(function() {
 								$('.row<?=$neworder?>').css('background-color','');
 							});
-						});
+						}); */
 					</script>
 					<tr class="row<?=$neworder?> ui top aligned">
-						<td>
+						<td style="border-top: 2px solid #555;" class="center aligned middle aligned">
 							<div class="ui checkbox">
 								<input type="checkbox" name="dd_enabled[<?=$neworder?>]" value="1"><label></label>
 							</div>
 						</td>
-						<td>
+						<td style="border-top: 2px solid #555;" class="center aligned middle aligned">
 							<div class="ui checkbox">
 								<input type="checkbox" name="dd_optional[<?=$neworder?>]" value="1"><label></label>
 							</div>
 						</td>
-						<td>
+						<td style="border-top: 2px solid #555;" class="center aligned middle aligned">
 							<div class="ui radio checkbox">
 								<input type="radio" name="dd_isprimary" value="<?=$neworder?>"><label></label>
 							</div>
 						</td>
-						<td>
+						<td style="border-top: 2px solid #555;">
 							<input type="text" name="dd_order[<?=$neworder?>]" value="<?=$neworder?>" size="2" maxlength="3">
 						</td>
-						<td>
+						<td style="border-top: 2px solid #555;">
 							<input type="text" name="dd_protocol[<?=$neworder?>]" size="50" title='Enter exact protocol name(s). Use quotes if entering a protocol with spaces or entering more than one protocol: "Task1" "Task 2" "Etc". Use multiple protocol names ONLY if you do not expect the protocols to occur in the same study'>
 						</td>
-						<td id="row<?=$neworder?>">
+						<td id="row<?=$neworder?>" style="border-top: 2px solid #555;">
 							<select class="ui fluid dropdown" name="dd_modality[<?=$neworder?>]">
 								<option value="">Modality...</option>
 							<?
@@ -2291,28 +2330,56 @@
 							?>
 							</select>
 						</td>
-						<td style="text-align:left">
+						<td style="border-top: 2px solid #555; border-bottom: 0px" class="left aligned optionToggler" data-prod-row="<?=$neworder?>">
 							<div class="ui accordion">
 								<div class="title">
 									<i class="dropdown icon"></i> Options
 								</div>
 								<div class="content">
+								</div>
+							</div>
+						</td>
+					</tr>
+					<tr class="optionRow<?=$neworder?>" style="display:none">
+						<td colspan="7" style="padding: 20px; border-top: 0px">
+							<div class="ui grid">
+								<div class="six wide column">
 									<div class="field">
-										<label>Data source <i class="blue question circle icon" title="<b>Data Source</b><br>Analyses are run on the <u>study</u> level. If you want data from this <u>subject</u>, but the data was collected in a different study, select the Subject data level. For example, the subject has been scanned on three different dates but only one of them has a T1."></i></label>
-										<select class="ui fluid dropdown" name="dd_datalevel[<?=$neworder?>]">
-											<option value="">Level...
+										<label>Data source <i class="blue question circle icon" title="<b>Data Source - Should we search only within this study or search within the entire subject?</b><br>Analyses are run on the <u>study</u> level. If you want data from this <u>subject</u>, but the data was collected in a different study, select the Subject data level. For example, the subject has been scanned on three different dates but only one of them has a T1."></i></label>
+										<div class="ui fluid search selection dropdown">
+											<input type="hidden" name="dd_datalevel[<?=$neworder?>]">
+											<div class="default text">Where to search for data?</div>
+											<i class="dropdown icon"></i>
+											<div class="menu">
+												<div class="item" data-value="study">Only this <b>study</b></div>
+												<div class="item" data-value="subject">The entire <b>subject</b></div>
+											</div>
+										</div>
+										<!--<select class="ui selection dropdown" name="dd_datalevel[<?=$neworder?>]">
+											<option value="">Where to search for data?
 											<option value="study">Study
 											<option value="subject">Subject
-										</select>
+										</select>-->
 									</div>
 									
 									<div class="field">
-										<label>Subject linkage <i class="blue question circle icon" title="<b>Data Level</b><br>Only use this option if your data is coming from the subject level"></i></label>
-										<select class="ui fluid dropdown" name="dd_studyassoc[<?=$neworder?>]">
-											<option value="">Link...
-											<option value="nearestintime">Nearest in time
-											<option value="samestudytype">Same study type
-										</select>
+										<label>Study criteria <i class="blue question circle icon" title="<b>Data Level</b><br>Only use this option to search for your data in another study (same subject)"></i></label>
+										<div class="ui fluid search selection dropdown">
+											<input type="hidden" name="dd_studyassoc[<?=$neworder?>]">
+											<div class="default text">Which studies to search?</div>
+											<i class="dropdown icon"></i>
+											<div class="menu">
+												<div class="item" data-value="nearestintime">Search only the study <b>nearest in time</b></div>
+												<div class="item" data-value="samestudytype">Search only studies with the <b>same VisitType</b></div>
+											</div>
+										</div>
+										
+										<!--<select class="ui fluid dropdown" name="dd_studyassoc[<?=$neworder?>]">
+											<option value="">Which studies to search?
+											<option value="allstudies">Search <b>all</b> studies for this subject
+											<option value="nearestintime">Search only the study <b>nearest in time</b>
+											<option value="samestudytype">Search only studies with the <b>same VisitType<b>
+										</select>-->
 									</div>
 									<div class="field">
 										<label>Image type <i class="blue question circle icon" title="Comma separated list of image types"></i></label>
@@ -2333,7 +2400,8 @@
 										<label>Number of BOLD reps <i class="blue question circle icon" title="<b>Must be an integer or a criteria:</b><ul><li><i>N</i> (exactly N)<li>> <i>N</i> (greater than)<li>>= <i>N</i> (greater than or equal to)<li>< <i>N</i> (less than)<li><= <i>N</i> (less than or equal to)<li>~ <i>N</i> (not)</ul>"></i></label>
 										<input type="text" name="dd_numboldreps[<?=$neworder?>]">
 									</div>
-
+								</div>
+								<div class="ten wide column">
 									<h3 class="ui blue header">Output format</h3>
 
 									<div class="field">
@@ -2390,7 +2458,6 @@
 										<label>Behavioral data directory name</label>
 										<input type="text" name="dd_behdir[<?=$neworder?>]">
 									</div>
-									
 								</div>
 							</div>
 						</td>
