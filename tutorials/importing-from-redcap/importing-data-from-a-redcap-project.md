@@ -23,7 +23,7 @@ Use **Projects** menu in NiDB to get to the desired project's main page. From **
 
 ### Step 3
 
-Enter the Redcap server address and API token information and press **Update Connection Settings** button on the right as shown below.
+Enter the Redcap server address and API token information and press **Save Connection Settings** button on the right as shown below.
 
 Then press **Show Project Info** button to establish the API connection with the Redcap server. If the connection is successful, the information from connected redcap project will be appeared as shown in the figure below.
 
@@ -37,23 +37,27 @@ Next step to import the data from Redcap into NiDB is mapping each form and vari
 
 To start mapping Click on the **Map This Project** button at the end of screen on the right as shown in the above figure. A new page will appear as shown below.
 
-![](<../../.gitbook/assets/image (8).png>)
+<figure><img src="../../.gitbook/assets/RC2NiDB-Step4-1.png" alt=""><figcaption></figcaption></figure>
 
 ### Step 5
 
-Each Redcap form (Required to be imported) is required to map separately. Pick a Redcap form **** from the **Select a Redcap Form** drop-down list as shown above.
+Each Redcap form is required to map separately. Pick a Redcap form **** from the **Select a Redcap Form** drop-down list as shown above. You can type the name of the Redcap form as well.
 
-Select an appropriate type of data for the selected Redcap form. In NiDB, Redcap data is defined as the following three types:
+Now select the Redcap form containing "unique id" to map the subjects in Redcap and NiDB.&#x20;
+
+{% hint style="info" %}
+The corresponding NiDB and Redcap projects should hold a field containing unique Ids for the subjects to be mapped.
+{% endhint %}
+
+Next, select an appropriate type of NiDB data representing the selected Redcap form. In NiDB, Redcap data is defined as the following three types:
 
 * **Measures**: Redcap forms that store measures like cognitive and other measures are defined as **Measures** in NiDB
 * **Vitals**: Redcap forms that contains information like hearth rate, blood pressure, blood test results are stored as this form of data. Also daily repeated measures should be recorded as this type.
 * **Drug / Dose**: Redcap forms that store information regarding administration of drugs, will be stored as this type in NiDB.
 
-After choosing the Redcap **Form** and its type of data in NiDB, Click on the **Redcap Field Mapping** button as shown in the figure above.
+As you select the type of NiDB data, a new section to map the fields from Redcap to NiDB variables will appear as shown in the figure below.
 
-A new section to map the fields from Redcap to NiDB variables will appear as shown in the figure below.
-
-![](<../../.gitbook/assets/image (4) (2).png>)
+<figure><img src="../../.gitbook/assets/RC2NiDB-Step5.png" alt=""><figcaption></figcaption></figure>
 
 ### Step 6
 
@@ -61,25 +65,24 @@ The variable mapping table has two sides: Recap and NiDB.
 
 **Redcap Variable Side**
 
-This side has four columns. Following is the explanation of each column on Redcap side.
+This side has seven columns. Following is the explanation of each column on Redcap side.
 
 * **Event**: A Redcap project can have multiple events. All the events will be listed in this column. Any number of events can be chosen from the list that is needed to map. In our example we chose only one event because the Redcap form selected to map contain only data for that event.
-* **Form**: Name of the Redcap form selected in the last step will be displayed here.
-* **Field**: A drop-down list will list all the fields related to the selected Redcap form. Choose one field at a time to map.
-* **Field Type**: There can be following five types of field:
-  * **date**: Fields defined as date in Redcap.
-  * **time**: Fields defined as time in Redcap
-  * **notes**: Field that stores information regarding the collected data entry
-  * **rater**: Field that contains the name of the rater
-  * **value**: Fields containing the data value other than date, time, notes, and rater.
 
-![](<../../.gitbook/assets/image (10) (1).png>)
+The next six columns define the fields of the "selected Redcap Form" in the last step
 
-In case of repeating measures like blood pressure, heart rate, blood glucose level, some cognitive measure etc. please choose **Vitals** in the **step 5** and define the field type for **time** as **time0**, **time1**, **time2**, ... and **value** as **value0**, **value1**, **value2**, ... as depicted in the figure above.
+* **Value**: Select the field that carries value / data
+* **Date**: Select the field that hold the "date" information corresponding to the value field.
+* **Rater**: Select the field having the "rater" information corresponding to the value field.
+* **Notes**: Select the field having the "notes" information corresponding to the value field.
+* **Start Time**: Select the field that hold the "initial time" or "time" information corresponding to the value field.
+* **End Time** : Select the field that hold the "end time" information corresponding to the value field.
 
-Defining the correct type of field is very important for the importing data into NiDB. Especially value, time and date are very important to define correctly to create the valid reports based on the information imported into NiDB.
+{% hint style="info" %}
+If you have only one time field corresponding to the value, then use the "Start Time" column to define this time field and left the "End Time" field empty
+{% endhint %}
 
-In the above example the data from a project where the  variables are collected on the _**screening day**_ has been used. These variables includes _**cudit**_, _**cudit1**, **cudit\_2**, ... as shown in the figure above. A tutorial on how to create a report based on this imported data is available_ [_here_](reports-based-on-data-imported-from-redcap.md)_._
+
 
 **NiDB Variable Side**
 
