@@ -79,7 +79,7 @@ The next six columns define the fields of the "selected Redcap Form" in the last
 * **End Time** : Select the field that hold the "end time" information corresponding to the value field.
 
 {% hint style="info" %}
-If you have only one time field corresponding to the value, then use the "Start Time" column to define this time field and left the "End Time" field empty
+If you have only one time field corresponding to the value, then use the "Start Time" column to define the time field and left the "End Time" field empty
 {% endhint %}
 
 
@@ -92,19 +92,25 @@ After defining one variable in a form, hit **Add** button on the right to add th
 
 In case of any mistake, a mapping item can be deleted and later can be added again according to the above stated process.
 
-The mapping of each variable is a painstaking task. However this is very important step in mapping Redcap variables into NiDB and need to be done only once. Once the structure is defined, it will be stored in NiDB and imports for further data can be performed with the click of a button.
+The mapping of each variable is a time taking task. However this is very important step mapping and need to be done only once. Once the structure is defined, it will be stored in NiDB and imports for further data can be performed with the click of a button.
 
-**However, this mapping needs to be updated in case the structure of the corresponding redcap project is changed.**
+{% hint style="info" %}
+**However, the mapping needs to be updated accordingly as the structure of the corresponding redcap project is altered.**
+{% endhint %}
 
 ### Step 7
 
 The last step is to recheck all the mapping information. It is important, because the integrity, and accuracy of data transfer is based on accurate mapping. So check, recheck and make sure!
 
-After you have done with your mapping, you are ready to transfer the data from Redcap to NiDB.
+After you have done making sure that your mapping is correct, you are ready to transfer the data from Redcap to NiDB.
 
-You can complete the mapping for the all the Redcap forms to be exported first and then transfer the data one by one OR you can transfer the data of one form and then go to the next to map and transfer.
+{% hint style="info" %}
+You can complete the mapping for the all the Redcap forms to be exported first and then transfer the data one by one OR data can be transfer for one form at a time and then go to the next to map and transfer.
+{% endhint %}
 
-To transfer the data, press the **Start Transfer** button on the left at the end of the variable mapping table. The data will transfer for the selected form.
+To transfer the data, first select the redcap field corresponding to the unique subject id in both NiDB and Redcap. A list of variables from the above selected redcap form for this purpose will be available. If you did not select the Redcap form for this purpose in Step , then it will show all the variables of the Redcap project. After selecting the right variable:
+
+Press the **Start Transfer** button on the far right. It will start transferring data for the selected form.
 
 You need to transfer the data for each mapped form separately by selecting it as mentioned in the step 4 above.
 

@@ -36,6 +36,7 @@
 * [Working with Imaging Data](tutorials/working-with-imaging-data/README.md)
   * [Troubleshooting Missing Imaging Data](tutorials/troublshooting-missing-data.md)
   * [Import DICOM data](tutorials/import-dicom-data.md)
+  * [MR scan quality control](tutorials/working-with-imaging-data/mr-scan-quality-control.md)
 * [Manipulating Subjects, Studies, & Series](tutorials/manipulating-data/README.md)
   * [Working with subject IDs](tutorials/working-with-subject-ids.md)
   * [Renaming series](tutorials/manipulating-data/renaming-series.md)
