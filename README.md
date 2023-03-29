@@ -25,10 +25,10 @@ The Neuroinformatics Database (NiDB) is designed to store, retrieve, analyze, an
 
 ## Download and Install
 * Current release: https://github.com/gbook/nidb/releases
-* Installation instructions: http://nidb.gitbook.io
+* Installation instructions: https://docs.neuroinfodb.org/nidb/getting-started/installation
 
 ## Documentation
-http://nidb.gitbook.io
+http://docs.neuroinfodb.org/nidb
 
 ## Support
 Visit the NiDB's github <a href="https://github.com/gbook/nidb/issues">issues</a> page for more support.

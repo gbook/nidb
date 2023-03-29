@@ -1,4 +1,6 @@
-# NiDB modules
+# NOTE - This crontab is overwritten each time NiDB is upgraded. Any changes will be lost
+
+# NiDB modules - run every minute
 * * * * * cd /nidb/bin; ./nidb modulemanager > /dev/null 2>&1
 * * * * * cd /nidb/bin; ./nidb import > /dev/null 2>&1
 * * * * * cd /nidb/bin; ./nidb export > /dev/null 2>&1
@@ -11,6 +13,10 @@
 * * * * * cd /nidb/bin; ./nidb upload > /dev/null 2>&1
 * * * * * cd /nidb/bin; ./nidb backup > /dev/null 2>&1
 
-# NiDB cleanup
+# NiDB cleanup - remove log files older than 4 days; tmp files older than 7 days
 @hourly find /nidb/logs/*.log -mtime +4 -exec rm {} \;
 @hourly find /nidb/data/tmp/* -mtime +7 -exec rm {} \;
+
+# NiDB SQL backup - Uncomment this line (and add the correct password) for a nightly backup of the MySQL database
+# NOTE - the backup module already does this, if it is enabled and running)
+# @daily mysqldump --single-transaction --compact -unidb -pPASSWORD nidb > /nidb/data/backup/NiDB-backup-$(date +\%Y-\%m-\%d).sql
