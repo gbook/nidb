@@ -87,7 +87,8 @@ public:
     bool GetPipeline(QString pipelineName, squirrelPipeline &sqrlPipeline);
     bool GetExperiment(QString experimentName, squirrelExperiment &sqrlExperiment);
     QString GetTempDir();
-    bool valid() { return isvalid; };
+	bool valid() { return isValid; }
+	bool okToDelete() { return isOkToDelete; }
 
 private:
     void PrintPackage();
@@ -97,7 +98,8 @@ private:
     QString logfile;
     QStringList msgs; /* squirrel messages, to be passed back upon writing (or reading) through the squirrel library */
 
-    bool isvalid;
+	bool isValid;
+	bool isOkToDelete;
 };
 
 #endif // SQUIRREL_H

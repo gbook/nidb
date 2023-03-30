@@ -2370,7 +2370,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
  */
 bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStringList downloadflags, QStringList squirrelflags, QList<qint64> seriesids, QStringList modalities, QString odir, QString &filepath, QString &msg) {
 
-    n->WriteLog(QString("Entering WriteSquirrel() exportid [%2]").arg(__FUNCTION__).arg(exportid));
+    n->WriteLog(QString("Entering %1() exportid [%2]").arg(__FUNCTION__).arg(exportid));
 
     QStringList msgs;
     QString exportstatus = "complete";
@@ -2423,7 +2423,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
         SQUIRREL_INCSTUDYNUM
         SQUIRREL_INCSERIESNUM
     */
-    n->WriteLog(QString("%1() Squirrel flags [%1]").arg(__FUNCTION__).arg(squirrelflags.join(",")));
+    n->WriteLog(QString("%1() Squirrel flags [%2]").arg(__FUNCTION__).arg(squirrelflags.join(",")));
 
     if (squirrelflags.contains("SQUIRREL_FORMAT_ANONYMIZE")) sqrl.dataFormat = "anon";
     if (squirrelflags.contains("SQUIRREL_FORMAT_ANONYMIZEFULL")) sqrl.dataFormat = "anonfull";
@@ -2446,7 +2446,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
         QString uid = a.key();
         int studyCounter = 1; /* the session (study) counter */
 
-        subject subj(uid, -1, n); /* get the subject object by UID */
+        subject subj(uid, false, n); /* get the subject object by UID */
 
         n->WriteLog(QString("%1() Working on subject [" + uid + "]").arg(__FUNCTION__));
 
@@ -2454,6 +2454,8 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
 
         /* create the squirrelSubject object */
         squirrelSubject sqrlSubject = subj.GetSquirrelObject();
+
+        n->WriteLog(QString("%1() sqrlSubject.ID [" + sqrlSubject.ID + "]   subj.UID() [" + subj.UID() + "]").arg(__FUNCTION__));
 
         QList<int> enrollmentIDs;
 
@@ -2828,8 +2830,8 @@ bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modal
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
         if (q.size() > 0) {
-            if (q.size() > 1)
-                n->WriteLog(QString("%1() Found [%2] rows").arg(__FUNCTION__).arg(q.size()));
+            n->WriteLog(QString("%1() Found [%2] rows").arg(__FUNCTION__).arg(q.size()));
+
             while (q.next()) {
                 QString uid = q.value("uid").toString();
                 qint64 subjectid = q.value("subject_id").toLongLong();

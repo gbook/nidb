@@ -50,7 +50,7 @@ void series::LoadSeriesInfo() {
     }
     else {
         QSqlQuery q;
-        QString sqlstring = QString("select *, d.uid, d.subject_id, c.enrollment_id, b.study_id from %1_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.%1series_id = :seriesid").arg(modality);
+        QString sqlstring = QString("select *, b.study_num, d.uid, d.subject_id, c.enrollment_id, b.study_id from %1_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.%1series_id = :seriesid").arg(modality);
         q.prepare(sqlstring);
         q.bindValue(":seriesid", seriesid);
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);

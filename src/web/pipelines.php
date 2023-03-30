@@ -1931,7 +1931,7 @@
 			<div class="ui blue secondary attached segment">
 				<h3 class="ui header">Data</h3>
 			</div>
-			<div class="ui attached segment">
+			<div class="ui attached fitted segment">
 			
 				<table>
 					<tr>
@@ -2343,65 +2343,57 @@
 					<tr class="optionRow<?=$neworder?>" style="display:none">
 						<td colspan="7" style="padding: 20px; border-top: 0px">
 							<div class="ui grid">
-								<div class="six wide column">
-									<div class="field">
-										<label>Data source <i class="blue question circle icon" title="<b>Data Source - Should we search only within this study or search within the entire subject?</b><br>Analyses are run on the <u>study</u> level. If you want data from this <u>subject</u>, but the data was collected in a different study, select the Subject data level. For example, the subject has been scanned on three different dates but only one of them has a T1."></i></label>
-										<div class="ui fluid search selection dropdown">
-											<input type="hidden" name="dd_datalevel[<?=$neworder?>]">
-											<div class="default text">Where to search for data?</div>
-											<i class="dropdown icon"></i>
-											<div class="menu">
-												<div class="item" data-value="study">Only this <b>study</b></div>
-												<div class="item" data-value="subject">The entire <b>subject</b></div>
-											</div>
-										</div>
-										<!--<select class="ui selection dropdown" name="dd_datalevel[<?=$neworder?>]">
-											<option value="">Where to search for data?
-											<option value="study">Study
-											<option value="subject">Subject
-										</select>-->
-									</div>
-									
-									<div class="field">
-										<label>Study criteria <i class="blue question circle icon" title="<b>Data Level</b><br>Only use this option to search for your data in another study (same subject)"></i></label>
-										<div class="ui fluid search selection dropdown">
-											<input type="hidden" name="dd_studyassoc[<?=$neworder?>]">
-											<div class="default text">Which studies to search?</div>
-											<i class="dropdown icon"></i>
-											<div class="menu">
-												<div class="item" data-value="nearestintime">Search only the study <b>nearest in time</b></div>
-												<div class="item" data-value="samestudytype">Search only studies with the <b>same VisitType</b></div>
+								<div class="eight wide column">
+									<div class="two fields">
+										<div class="field">
+											<label>Data source <i class="blue question circle icon" title="<b>Data Source - Should we search only within this study or search within the entire subject?</b><br>Analyses are run on the <u>study</u> level. If you want data from this <u>subject</u>, but the data was collected in a different study, select the Subject data level. For example, the subject has been scanned on three different dates but only one of them has a T1."></i></label>
+											<div class="ui fluid search selection dropdown">
+												<input type="hidden" name="dd_datalevel[<?=$neworder?>]">
+												<div class="default text">Where to search for data?</div>
+												<i class="dropdown icon"></i>
+												<div class="menu">
+													<div class="item" data-value="study">Only this <b>study</b></div>
+													<div class="item" data-value="subject">The entire <b>subject</b></div>
+												</div>
 											</div>
 										</div>
 										
-										<!--<select class="ui fluid dropdown" name="dd_studyassoc[<?=$neworder?>]">
-											<option value="">Which studies to search?
-											<option value="allstudies">Search <b>all</b> studies for this subject
-											<option value="nearestintime">Search only the study <b>nearest in time</b>
-											<option value="samestudytype">Search only studies with the <b>same VisitType<b>
-										</select>-->
+										<div class="field">
+											<label>Study criteria <i class="blue question circle icon" title="<b>Data Level</b><br>Only use this option to search for your data in another study (same subject)"></i></label>
+											<div class="ui fluid search selection dropdown">
+												<input type="hidden" name="dd_studyassoc[<?=$neworder?>]">
+												<div class="default text">Which studies to search?</div>
+												<i class="dropdown icon"></i>
+												<div class="menu">
+													<div class="item" data-value="nearestintime">Search only the study <b>nearest in time</b></div>
+													<div class="item" data-value="samestudytype">Search only studies with the <b>same VisitType</b></div>
+												</div>
+											</div>
+										</div>
 									</div>
 									<div class="field">
 										<label>Image type <i class="blue question circle icon" title="Comma separated list of image types"></i></label>
 										<input type="text" name="dd_imagetype[<?=$neworder?>]">
 									</div>
-									<div class="field">
-										<label>Series criteria <i class="blue question circle icon" title="<b>All</b> - All matching series will be downloaded<br><b>First</b> - Only the lowest numbered series will be downloaded<br><b>Last</b> - Only the highest numbered series will be downloaded<br><b>Largest</b> - Only one series with the most number of volumes or slices will be downloaded<br><b>Smallest</b> - Only one series with the least number of volumes or slices will be downloaded"></i></label>
-										<select name="dd_seriescriteria[<?=$neworder?>]" class="ui dropdown">
-											<option value="all">All</option>
-											<option value="first">First</option>
-											<option value="last">Last</option>
-											<option value="largestsize">Largest</option>
-											<option value="smallestsize">Smallest</option>
-											<option value="usesizecriteria">Use size criteria below</option>
-										</select>
-									</div>
-									<div class="field">
-										<label>Number of BOLD reps <i class="blue question circle icon" title="<b>Must be an integer or a criteria:</b><ul><li><i>N</i> (exactly N)<li>> <i>N</i> (greater than)<li>>= <i>N</i> (greater than or equal to)<li>< <i>N</i> (less than)<li><= <i>N</i> (less than or equal to)<li>~ <i>N</i> (not)</ul>"></i></label>
-										<input type="text" name="dd_numboldreps[<?=$neworder?>]">
+									<div class="two fields">
+										<div class="field">
+											<label>Series criteria <i class="blue question circle icon" title="<b>All</b> - All matching series will be downloaded<br><b>First</b> - Only the lowest numbered series will be downloaded<br><b>Last</b> - Only the highest numbered series will be downloaded<br><b>Largest</b> - Only one series with the most number of volumes or slices will be downloaded<br><b>Smallest</b> - Only one series with the least number of volumes or slices will be downloaded"></i></label>
+											<select name="dd_seriescriteria[<?=$neworder?>]" class="ui dropdown">
+												<option value="all">All</option>
+												<option value="first">First</option>
+												<option value="last">Last</option>
+												<option value="largestsize">Largest</option>
+												<option value="smallestsize">Smallest</option>
+												<option value="usesizecriteria">Use size criteria below</option>
+											</select>
+										</div>
+										<div class="field">
+											<label>Number of BOLD reps <i class="blue question circle icon" title="<b>Must be an integer or a criteria:</b><ul><li><i>N</i> (exactly N)<li>> <i>N</i> (greater than)<li>>= <i>N</i> (greater than or equal to)<li>< <i>N</i> (less than)<li><= <i>N</i> (less than or equal to)<li>~ <i>N</i> (not)</ul>"></i></label>
+											<input type="text" name="dd_numboldreps[<?=$neworder?>]">
+										</div>
 									</div>
 								</div>
-								<div class="ten wide column">
+								<div class="eight wide column">
 									<h3 class="ui blue header">Output format</h3>
 
 									<div class="field">
@@ -2444,19 +2436,21 @@
 											<label>Phase encoding direction <i class="blue question circle icon" title="<b>Phase Encoding Direction</b> If selected, it will write the data to a subdirectory corresponding to the acquired phase encoding direction: AP, PA, RL, LR, COL, ROW, unknownPE"></i></label>
 										</div>
 									</div>
-									<div class="field">
-										<label>Behavioral data directory format</label>
-										<select name="dd_behformat[<?=$neworder?>]" class="ui fluid dropdown">
-											<option value="behnone">Don't download behavioral data</option>
-											<option value="behroot">Place in root (file.log)</option>
-											<option value="behrootdir">Place in directory in root (beh/file.log)</option>
-											<option value="behseries">Place in series (2/file.log)</option>
-											<option value="behseriesdir">Place in directory in series (2/beh/file.log)</option>
-										</select>
-									</div>
-									<div class="field">
-										<label>Behavioral data directory name</label>
-										<input type="text" name="dd_behdir[<?=$neworder?>]">
+									<div class="two fields">
+										<div class="field">
+											<label>Behavioral data directory format</label>
+											<select name="dd_behformat[<?=$neworder?>]" class="ui fluid dropdown">
+												<option value="behnone">Don't download behavioral data</option>
+												<option value="behroot">Place in root (file.log)</option>
+												<option value="behrootdir">Place in directory in root (beh/file.log)</option>
+												<option value="behseries">Place in series (2/file.log)</option>
+												<option value="behseriesdir">Place in directory in series (2/beh/file.log)</option>
+											</select>
+										</div>
+										<div class="field">
+											<label>Behavioral data directory name</label>
+											<input type="text" name="dd_behdir[<?=$neworder?>]">
+										</div>
 									</div>
 								</div>
 							</div>

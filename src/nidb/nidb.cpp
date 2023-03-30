@@ -118,7 +118,7 @@ bool nidb::LoadConfig() {
         while (!in.atEnd()) {
             QString line = in.readLine();
             lineno++;
-            if ((line.trimmed().count() > 0) && (line.at(0) != '#')) {
+            if ((line.trimmed().size() > 0) && (line.at(0) != '#')) {
                 QStringList parts = line.split(" = ");
                 if (parts.size() >= 2) {
                     QString var = parts[0].trimmed();
@@ -908,7 +908,7 @@ bool nidb::SetExportSeriesStatus(qint64 exportseriesid, qint64 exportid, qint64 
         SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         if (q.size() > 0) {
             q.first();
-            exportseriesid = q.value("study_num").toLongLong();
+            exportseriesid = q.value("exportseries_id").toLongLong();
         }
     }
 

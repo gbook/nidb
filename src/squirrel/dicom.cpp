@@ -43,13 +43,14 @@ dicom::dicom()
  */
 bool dicom::LoadToSquirrel(QString dir, QString binpath, squirrel *sqrl, QString &msg) {
 
+	QStringList msgs;
     numFiles = 0;
-    msg += "";
 
     /* check if the directory exists */
     QDir d(dir);
     if (!d.exists()) {
-        Print(QString("Directory [%1] does not exist").arg(dir));
+		msgs << QString("Directory [%1] does not exist").arg(dir);
+		msg = msgs.join("\n");
         return false;
     }
 
@@ -67,7 +68,7 @@ bool dicom::LoadToSquirrel(QString dir, QString binpath, squirrel *sqrl, QString
 
         if (processedFileCount%1000 == 0) {
             double percent = static_cast<double>(processedFileCount)/static_cast<double>(numFiles) * 100.0;
-            Print(QString("Processed %1 of %2 files [%3%%]").arg(processedFileCount).arg(numFiles).arg(percent));
+			msgs << QString("Processed %1 of %2 files [%3%%]").arg(processedFileCount).arg(numFiles).arg(percent);
         }
 
         QHash<QString, QString> tags;
@@ -78,7 +79,7 @@ bool dicom::LoadToSquirrel(QString dir, QString binpath, squirrel *sqrl, QString
             }
         }
     }
-    Print(QString("Found %1 subjects in %2 files").arg(dcms.size()).arg(foundFileCount));
+	msgs << QString("Found %1 subjects in %2 files").arg(dcms.size()).arg(foundFileCount);
 
     if (foundFileCount > 0) {
         /* ---------- iterate through the subjects ---------- */
@@ -139,6 +140,7 @@ bool dicom::LoadToSquirrel(QString dir, QString binpath, squirrel *sqrl, QString
 
                     currStudy.addSeries(currSeries);
 
+					msgs << QString("Added [%1-%2-%3]").arg(currSubject.ID).arg(currStudy.dateTime.toString()).arg(currSeries.number);
                 }
                 currSubject.addStudy(currStudy);
             }
@@ -146,10 +148,11 @@ bool dicom::LoadToSquirrel(QString dir, QString binpath, squirrel *sqrl, QString
             sqrl->addSubject(currSubject);
         }
 
-        sqrl->print();
+		//sqrl->print();
     }
 
     delete img;
 
-    return true;
+	msg = msgs.join("\n");
+	return true;
 }

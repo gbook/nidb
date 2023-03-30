@@ -196,10 +196,13 @@ bool squirrel::write(QString outpath, QString &filepath, QString &m, bool debug)
         squirrelSubject sub = subjectList[i];
 
         QString subjDir;
-        if (subjectDirFormat == "orig")
+        if (subjectDirFormat == "orig") {
             subjDir = sub.ID;
-        else
+            msgs << Log(QString("sub.ID [" + sub.ID + "]"), __FUNCTION__);
+        }
+        else {
             subjDir = QString("%1").arg(i+1); /* start the numbering at 1 instead of 0 */
+        }
 
         subjDir.replace(QRegularExpression("[^a-zA-Z0-9 _-]", QRegularExpression::CaseInsensitiveOption), "");
         QString vPath = QString("data/%1").arg(subjDir);

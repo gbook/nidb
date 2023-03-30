@@ -438,7 +438,7 @@
 					</form>
 					</th>
 
-				<? $ray=array();	 	?>
+				<?$ray=array();	 	?>
 				 <tr>
 				       <th><b>UID</b></th>
 				       <th><b>Primary alt UID</b></th>
@@ -450,7 +450,7 @@
                                        <th><b>Num Files</b></th>
                                        <th><b>Avg Rating</b></th>
                                        <th><b>Basic QC?</b></th>
-                                       <th title="Displacement (X,Y,Z), Velocity in (X,Y,Z) direction, Rotation (Pitch,Roll,Yaw)"><b>Disp, Motion, Rotation</b></th>
+                                       <th title="Displacement (X,Y,Z), Velocity in (X,Y,Z) direction, Rotation (Pitch,Roll,Yaw)"><b>Disp(X,Y,Z), Mot(X,Y,Z), Rot(P,R,Y)</b></th>
                                        <th><b>SNR</b></th>
                                        <th><b>FD</b></th>
                                        <th><b>DVARS</b></th>
@@ -817,28 +817,48 @@
  
 		            // Get each row data
 		            var rows = document.getElementsByTagName('tr');
-		            for (var i = 0; i < rows.length; i++) {
+		            for (var i = 1; i < rows.length; i++) {
  
-                		// Get each column data
+			        // Get each column data
+				
 		                var cols = rows[i].querySelectorAll('td,th');
  
                 		// Stores each csv row data
 		                var csvrow = [];
-                		for (var j = 0; j < cols.length; j++) {
+				for (var j =0; j < cols.length; j++) {
  
 		                    // Get the text data of each cell
-                		    // of a row and push it to csvrow
-		                    csvrow.push(cols[j].innerText);
+					// of a row and push it to csvrow
+				var txt;
+				txt = cols[j].innerText;
+
+				// The following code is to remove paranthesis () from Disp, Motion and Rotaion data
+				var newtxt = "";
+
+				for (var k=0; k<txt.length; k++){
+					if ((txt[k] == "(" || txt[k] == ")") && j > 9) {
+						newtxt += '';
+					}
+					else {
+						newtxt += txt[k];
+					}
+				}
+				// To handle The displacement, motion, and rotation column titles
+				if (i==1 && txt.slice(0,4)== "Disp") {
+					newtxt = 'DispX,DispY,DispZ,MotX,MotY,MotZ,RotP,RotR,RotY'; 
+					}
+				// csv rows
+		                csvrow.push(newtxt);
                 		}
  
-		               // Combine each column value with comma
+		               // Combining each column value with comma
 		               csv_data.push(csvrow.join(","));
 			}            		
  
-		          // Combine each row data with new line character
+		          // Combining each row data with new line character
         		  csv_data = csv_data.join('\n');
  
-		           // Call this function to download csv file 
+		           // Download csv file 
 				downloadCSVFile(csv_data);
 			    } 
         	
@@ -847,7 +867,7 @@
  
 		            // Create CSV file object and feed
 		            // our csv_data into it
-		           CSVFile = new Blob([csv_data], {
+		           CSVFile = new Blob(['\ufeff' + csv_data], {
                 	   type: "text/csv"
 		            });
  

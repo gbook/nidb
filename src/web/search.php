@@ -5199,8 +5199,8 @@
 											<div class="field">
 												<label>Data Format</label>
 												<select name="squirrelflag_dataformat" id="squirrelflag_dataformat" class="ui dropdown">
-													<option value="anon">Anonymize DICOM
-													<option value="anonfull">Anonymize-Full DICOM
+													<option value="anon">Anonymized DICOM
+													<option value="anonfull">Anonymized-Full DICOM
 													<option value="nifti4dgz">Nifti4D.gz
 													<option value="nifti4d">Nifti4D
 													<option value="nifti3dgz">Nifti3D.gz
@@ -5208,7 +5208,7 @@
 												</select>
 											</div>
 											<div class="grouped fields">
-												<label>Options</label>
+												<label>Options <span class="tiny">Default is to use original SubjectID, StudyNum, SeriesNum</span></label>
 												<div class="field">
 													<div class="ui checkbox">
 														<input type="checkbox" name="squirrelflag_incsubject" value="1">
