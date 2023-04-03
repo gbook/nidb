@@ -1584,7 +1584,7 @@
 	function DisplayResultMetrics($numrows, $numsubjects, $numstudies, $totalbytes, $missinguids, $missingaltuids, $misingstudynums, $restrictedprojectnames, $querytime, $sqlstring, $s) {
 		?>
 		<div class="ui container">
-		<div class="ui top attached grey segment">
+		<div class="ui top attached blue large segment">
 			Found <b><?=$numsubjects?> subjects</b> in <b><?=$numstudies?> studies</b> with <b><?=number_format($numrows,0)?> series</b> matching your query (<?=HumanReadableFilesize($totalbytes);?> data)
 		</div>
 		<?
@@ -1695,7 +1695,6 @@
 		}
 		?>
 		</div>
-		<br><br>
 		<?
 	}
 	
@@ -1791,6 +1790,10 @@
 		}
 		
 		?>
+		<h3 class="ui top attached header secondary inverted black segment">
+			<b>Search Results</b>
+		</h3>
+		<div class="ui bottom attached long scrolling segment">
 		<? if ($s_resultoutput == "table") { ?>
 		<table width="100%" class="searchresultssheet">
 		<? } else { ?>
@@ -2133,10 +2136,10 @@
 							<br>
 							<table class="ui very compact yellow celled selectable table" width="100%">
 								<tr>
-									<td class="one wide tertiary yellow segment">
+									<td class="one wide yellow segment">
 										<h4 class="header" style="color: #222"><?=$name?></h4>
 									</td>
-									<td class="two wide tertiary yellow segment middle aligned tt">
+									<td class="two wide yellow segment middle aligned tt">
 										<a href="subjects.php?id=<?=$subject_id?>" style="color: <?=$displayidcolor?>; font-weight: bold" class="ui compact blue button"><?=$displayid?> &nbsp; <i class="external alternate icon"></i></a>
 									</td>
 									<td class="two wide yellow"><h4 class="header tt" style="color: #222">
@@ -2148,17 +2151,17 @@
 											echo "$altuidlist";
 										}
 									?></h4></td>
-									<td class="two wide tertiary yellow segment">
+									<td class="two wide yellow segment">
 										<a href="studies.php?id=<?=$study_id?>" class="ui large image blue label"><?=$uid?><div class="detail"><?=$study_num?></div></a>
 									</td>
-									<td class="two wide tertiary yellow segment"><h4 class="header" style="color: #222"><?=$project_name?> (<?=$project_costcenter?>)</h4></td>
-									<td class="one wide tertiary yellow segment"><span style="color: #222; font-weight: bold"><?=$study_datetime?></span></td>
-									<td class="one wide tertiary yellow segment"><h4 class="header" style="color: #222"><?=$enrollsubgroup?></h4></td>
-									<td class="one wide tertiary yellow segment"><h4 class="header" style="color: #222"><?=number_format($studyAge,1)?>Y , <?=number_format($calcStudyAge,1)?>Y</h4></td>
-									<td class="one wide tertiary yellow segment"><h4 class="header" style="color: #222"><?=$gender?></h4></td>
-									<td class="one wide tertiary yellow segment"><h4 class="header tt" style="color: #222"><?=$study_alternateid?></h4></td>
-									<td class="one wide tertiary yellow segment"><h4 class="header" style="color: #222"><?=$study_type?></h4></td>
-									<td class="one wide tertiary yellow segment"><h4 class="header" style="color: #222"><?=$study_site?></h4></td>
+									<td class="two wide yellow segment"><h4 class="header" style="color: #222"><?=$project_name?> (<?=$project_costcenter?>)</h4></td>
+									<td class="one wide yellow segment"><span style="color: #222; font-weight: bold"><?=$study_datetime?></span></td>
+									<td class="one wide yellow segment"><h4 class="header" style="color: #222"><?=$enrollsubgroup?></h4></td>
+									<td class="one wide yellow segment"><h4 class="header" style="color: #222"><?=number_format($studyAge,1)?>Y , <?=number_format($calcStudyAge,1)?>Y</h4></td>
+									<td class="one wide yellow segment"><h4 class="header" style="color: #222"><?=$gender?></h4></td>
+									<td class="one wide yellow segment"><h4 class="header tt" style="color: #222"><?=$study_alternateid?></h4></td>
+									<td class="one wide yellow segment"><h4 class="header" style="color: #222"><?=$study_type?></h4></td>
+									<td class="one wide yellow segment"><h4 class="header" style="color: #222"><?=$study_site?></h4></td>
 								</tr>
 							</table>
 						</td>
@@ -2207,13 +2210,9 @@
 			if ($study_modality == "mr") {
 				if ($s_resultoutput == "csv") {
 					if ($s_usealtseriesdesc) {
-						//$csv .= "$series_num, $series_altdesc, $uid, $gender, $ageatscan, " . implode2(' ',$altuids) . ", $newstudyid, $study_alternateid, $study_type, $study_num, $study_datetime, $study_type, $project_name($project_costcenter), $study_height, $study_weight, $study_bmi, $series_datetime, $move_minx, $move_miny, $move_minz, $move_maxx, $move_maxy, $move_maxz, $rangex, $rangey, $rangez, $rangePitch, $rangeRoll, $rangeYaw, $pvsnr, $iosnr, $img_cols, $img_rows, $numfiles, $series_size, $sequence, $series_tr, $numfiles_beh, $beh_size";
-
 						$csv .= "$uid, $series_num, $series_altdesc, $series_protocol, $gender, $studyAge, $calcStudyAge, " . implode2(' ',$altuids) . ", $newstudyid, $study_alternateid, $study_num, $study_datetime, $study_type, $project_name($project_costcenter), $study_height, $study_weight, $study_bmi, $series_datetime, $move_minx, $move_miny, $move_minz, $move_maxx, $move_maxy, $move_maxz, $rangex, $rangey, $rangez, $rangePitch, $rangeRoll, $rangeYaw, $pvsnr, $iosnr, $dimn, $dimx, $dimy, $dimz, $dimt, $numfiles, $series_size, $sequence, $imagetype, $imagecomment, $series_tr, $numfiles_beh, $beh_size";
 					}
 					else {
-						//$csv .= "$series_num, $series_desc, $uid, $gender, $ageatscan, " . implode2(' ',$altuids) . ", $newstudyid, $study_alternateid, $study_type, $study_num, $study_datetime, $study_type, $project_name($project_costcenter), $study_height, $study_weight, $study_bmi, $series_datetime, $move_minx, $move_miny, $move_minz, $move_maxx, $move_maxy, $move_maxz, $rangex, $rangey, $rangez, $rangePitch, $rangeRoll, $rangeYaw, $pvsnr, $iosnr, $img_cols, $img_rows, $numfiles, $series_size, $sequence, $series_tr, $numfiles_beh, $beh_size";
-						
 						$csv .= "$uid, $series_num, $series_desc, $series_protocol, $gender, $studyAge, $calcStudyAge, " . implode2(' ',$altuids) . ", $newstudyid, $study_alternateid, $study_num, $study_datetime, $study_type, $project_name($project_costcenter), $study_height, $study_weight, $study_bmi, $series_datetime, $move_minx, $move_miny, $move_minz, $move_maxx, $move_maxy, $move_maxz, $rangex, $rangey, $rangez, $rangePitch, $rangeRoll, $rangeYaw, $pvsnr, $iosnr, $dimn, $dimx, $dimy, $dimz, $dimt, $numfiles, $series_size, $sequence, $imagetype, $imagecomment, $series_tr, $numfiles_beh, $beh_size";
 					}
 					if (count($measurenames) > 0) {
@@ -2224,23 +2223,7 @@
 					$csv .= "\n";
 				}
 				else {
-					//if ($series_num - $lastseriesnum > 1) {
-					//	$firstmissing = $lastseriesnum+1;
-					//	$lastmissing = $series_num-1;
-					//	if ($firstmissing == $lastmissing) {
-					//		$missingmsg = $firstmissing;
-					//	}
-					//	else {
-					//		$missingmsg = "$firstmissing - $lastmissing";
-					//	}
-						?>
-						<!--<tr>
-							<td colspan="24" align="center" style="border-top: solid 1px #FF7F7F; border-bottom: solid 1px #FF7F7F; padding:3px; font-size:8pt">Non-consecutive series numbers in search results. Probably normal. Missing series <?=$missingmsg?></td>
-						</tr>-->
-						<?
-					//}
-					
-				?>
+					?>
 					<tr class="tr<?=$study_id?> allseries" style="color: <?=$rowcolor?>; white-space: nowrap">
 						<? if ($s_resultoutput != "table") { ?>
 							<td class="<?=$rowstyle?>">
@@ -2371,6 +2354,7 @@
 		}
 		?>
 		</table>
+		</div>
 		
 		<div style="padding-left: 15px">
 		<?
@@ -4391,12 +4375,8 @@
 			<script type="text/javascript">
 				$(document).ready(function() {
 					/* hide it by default */
-					$('.remoteftp').hide();
-					$('.remotenidb').hide();
 					$('.bids').hide();
 					$('.squirrel').hide();
-					$('.publicdownload').hide();
-					$('.publicdataset').hide();
 					<? if ($s_resultoutput != 'subject') { ?>
 					$('.export').hide();
 					<? } else { ?>
@@ -4404,29 +4384,6 @@
 					<?} ?>
 					$('.dicom').hide();
 
-					/*
-					$('input[name=filetype]').click(function() {
-						if ($('#filetype:checked').val() == 'dicom') {
-							$('.dicom').show();
-							$('.bids').hide();
-							$('.dirstructure').show();
-						}
-						else if ($('#filetype:checked').val() == 'bids') {
-							$('.bids').show();
-							$('.dicom').hide();
-							$('.dirstructure').hide();
-						}
-						else if ($('#filetype:checked').val() == 'squirrel') {
-							$('.bids').hide();
-							$('.dicom').hide();
-							$('.dirstructure').hide();
-						}
-						else {
-							$('.dicom').hide();
-							$('.bids').hide();
-							$('.dirstructure').show();
-						}
-					}); */
 					
 					/* types of information to download */
 					$('input[name=downloadimaging]').click(function() {
@@ -4578,74 +4535,20 @@
 					
 					var dest = $("[name='destination']:checked").val();
 					console.log(dest);
-					
-					/* export */
-					if (dest == 'export') {
-						$('.export').show("highlight",{},1000);
-						$('.format').hide();
-						$('.dirstructure').hide();
-					}
-					else if ((dest == 'ndar') || (dest == 'ndarcsv')) {
-						$('.export').hide();
-						$('.format').hide();
-						$('.dirstructure').hide();
-						$('.datatoexport').hide();
-					}
-					else {
-						$('.export').hide();
-						$('.format').show("highlight",{},1000);
-						$('.dirstructure').show("highlight",{},1000);
-						$('.datatoexport').show("highlight",{},1000);
-					}
-					
-					/* remote ftp */
-					if (dest == 'remoteftp') {
-						$('.remoteftp').show("highlight",{},1000);
-					}
-					else {
-						$('.remoteftp').hide();
-					}
-					
-					/* remote nidb */
-					if (dest == 'remotenidb') {
-						$('.remotenidb').show("highlight",{},1000);
-						$('.export').hide();
-						$('.dirstructure').hide();
-						$('.format').hide();
-						$('.datatoexport').hide();
-					}
-					else {
-						$('.remotenidb').hide();
-					}
-					
-					/* XNAT */
-					if (dest == 'xnat') {
-						$('.xnat').show("highlight",{},1000);
-						$('.export').hide();
-						$('.dirstructure').hide();
-						$('.format').hide();
-						$('.datatoexport').hide();
-					}
-					else {
-						$('.xnat').hide();
-					}
-					
-					/* public download */
-					if (dest == 'publicdownload') {
-						$('.publicdownload').show("highlight",{},1000);
-					}
-					else {
-						$('.publicdownload').hide();
-					}
 
-					/* public download */
-					if (dest == 'publicdataset') {
-						$('.publicdataset').show("highlight",{},1000);
+					/* hide everything first */
+					$('.format').hide();
+					$('.dirstructure').hide();
+					$('.datatoexport').hide();
+					$('.beh').hide();
+					
+					/* only show necessary sections */
+					if ((dest == 'web') || (dest == 'publicdownload') || (dest == 'publicdataset') || (dest == 'localftp') || (dest == 'nfs')) {
+						$('.format').show();
+						$('.dirstructure').show();
+						$('.datatoexport').show();
 					}
-					else {
-						$('.publicdataset').hide();
-					}
-
+					
 					/* check the filetype */
 					var filetype = $("[name='filetype']:checked").val();
 					if (filetype == 'dicom') {
@@ -4670,7 +4573,6 @@
 						$('.dicom').hide();
 						$('.bids').hide();
 						$('.squirrel').hide();
-						//$('.dirstructure').show();
 					}
 					
 					if ($('#downloadbeh:checked').val() == '1') {
@@ -4775,224 +4677,283 @@
 					Transfer & Export Data
 				</h3>
 				<div class="ui bottom attached segment">
+				
+					<!-- destination menu -->
 					<div class="ui horizontal left aligned divider header">Destination</div>
+					<script>
+						$('.tabular.menu .item').tab();
+					</script>
 					<div class="ui grid">
-						<div class="two wide column">&nbsp;</div>
-						<div class="six wide column">
-							<h4 class="ui header">This server</h4>
-							<div class="ui vertically fitted basic segment">
+						<div class="four wide stretched left attached column">
+							<div class="ui vertical fluid tabular menu">
 								<? if ($GLOBALS['cfg']['enablewebexport']) { ?>
-								<div class="ui radio checkbox" onChange="CheckDestination()">
-									<input type="radio" name="destination" id="radio_web" value="web">
-									<label title="Export can be downloaded from this website">Web</label>
-								</div>
-								<br>
+								<a class="active item" data-tab="tab-web">
+									<div class="ui radio checkbox" onChange="CheckDestination()">
+										<input type="radio" name="destination" id="radio_web" value="web" checked>
+										<label>Web</label>
+									</div>
+								</a>
 								<?
 								}
-								if (($GLOBALS['isadmin']) && ($GLOBALS['cfg']['enablepublicdownloads'])) {
-									?>
-								<div class="ui radio checkbox" onChange="CheckDestination()">
-									<input type="radio" name="destination" id="radio_publicdownload" value="publicdownload">
-									<label title="Export can be downloaded by anyone, through the public downloads section">Public Download</label>
-								</div>
-								<br>
-								<div class="ui segment publicdownload">
-									<div class="field">
-										Short description
-										<input type="text" name="publicdownloaddesc" maxlength="255">
-										<span class="tiny">Max 255 chars</span>
-									</div>
-
-									<div class="field">
-										Release notes
-										<textarea name="publicdownloadreleasenotes"></textarea>
-									</div>
-
-									<div class="field">
-										Password <img src="images/help.gif" title="Set a password for the download link, otherwise anyone with the link can download the data. Leave blank for no password">
-										<input type="password" name="publicdownloadpassword">
-									</div>
-
-									<div class="field">
-										<div class="ui checkbox">
-											<input type="checkbox" name="publicdownloadshareinternal" value="1">
-											<label>Share download within this system <i class="small blue question circle outline icon" title="This option allows other users (users within this system, not public users) to modify or delete this public download"></i></label>
+								if (($GLOBALS['isadmin']) && ($GLOBALS['cfg']['enablepublicdownloads'])) { ?>
+									<a class="item" data-tab="tab-publicdownload">
+										<div class="ui radio checkbox" onChange="CheckDestination()">
+											<input type="radio" name="destination" id="radio_publicdownload" value="publicdownload">
+											<label>Public Download</label>
 										</div>
-									</div>
-
-									<div class="field">
-										<div class="ui checkbox">
-											<input type="checkbox" name="publicdownloadregisterrequired" value="1" checked>
-											<label>Require registration <i class="small blue question circle outline icon" title="If selected, anyone downloading the files must create an account on NiDB before downloading the file. Useful to keep track of who downloads this download"></i></label>
+									</a>
+									<a class="item" data-tab="tab-publicdataset">
+										<div class="ui radio checkbox" onChange="CheckDestination()">
+											<input type="radio" name="destination" id="radio_publicdataset" value="publicdataset">
+											<label>Add to Public Dataset</label>
 										</div>
-									</div>
-
-									<div class="field">
-										Expiration Date <i class="small blue question circle outline icon" title="Time after creating the download when it will be deleted from the system and become unavailable for download"></i>
-										<br>
-										<div class="ui radio checkbox">
-											<input type="radio" name="publicdownloadexpire" value="7" checked>
-											<label>7 days</label>
-										</div>
-										<br>
-										<div class="ui radio checkbox">
-											<input type="radio" name="publicdownloadexpire" value="30">
-											<label>30 days</label>
-										</div>
-										<br>
-										<div class="ui radio checkbox">
-											<input type="radio" name="publicdownloadexpire" value="90">
-											<label>90 days</label>
-										</div>
-										<br>
-										<div class="ui radio checkbox">
-											<input type="radio" name="publicdownloadexpire" value="0">
-											<label>No expiration</label>
-										</div>
-										<br>
-									</div>
-								</div>
-
-								<!-- public dataset -->
-								<div class="ui radio checkbox" onChange="CheckDestination()">
-									<input type="radio" name="destination" id="radio_publicdataset" value="publicdataset">
-									<label title="Export can be downloaded by anyone, through the public downloads section">Add to Public Dataset</label>
-								</div>
-								<br>
-								<div class="ui segment publicdataset">
-									<div class="field">
-										<select name="publicdatasetid">
-											<option value="">Select existing public dataset...
-											<?
-												$username = $_SESSION['username'];
-												$sqlstring  = "select * from public_datasets where publicdataset_createdby = '$username'";
-												$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-												while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-													$id = $row['publicdataset_id'];
-													$name = $row['publicdataset_name'];
-													echo "<option value='$id'>$name";
-												}
-											?>
-										</select>
-									</div>
-									<div class="field">
-										Short name
-										<input type="text" name="publicdownloadname" maxlength="255">
-										<span class="tiny">Max 255 chars</span>
-									</div>
-									<div class="field">
-										Longer description
-										<input type="text" name="publicdownloaddesc">
-									</div>
-								</div>
-							<?
-							}
-							if ($s_resultoutput != 'subject') {
-								if (!$GLOBALS['cfg']['ispublic']) {
-									?>
-									<div class="ui radio checkbox" onChange="CheckDestination()">
-										<input type="radio" name="destination" id="radio_localftp" value="localftp" <? if ($GLOBALS['isguest']) { echo "checked"; } ?>>
-										<label>Local FTP/scp</label>
-									</div>
-									<br><?
+									</a>
+								<?
 								}
-
-								if ($GLOBALS['cfg']['enablerdoc']) {
-									?>
-									<div class="ui radio checkbox" onChange="CheckDestination()">
-										<input type="radio" name="destination" id="radio_ndar" value="ndar">
-										<label>NDAR/RDoC submission</label>
-									</div>
-									<br>
-									<div class="ui radio checkbox" onChange="CheckDestination()">
-										<input type="radio" name="destination" id="radio_ndarcsv" value="ndarcsv">
-										<label>NDAR/RDoC submission <span class="tiny">.csv</span></label>
-									</div>
-									<br>
+								if ($s_resultoutput != 'subject') {
+									if (!$GLOBALS['cfg']['ispublic']) { ?>
+										<a class="item" data-tab="tab-localftp">
+											<div class="ui radio checkbox" onChange="CheckDestination()">
+												<input type="radio" name="destination" id="radio_localftp" value="localftp" <? if ($GLOBALS['isguest']) { echo "checked"; } ?>>
+												<label>Local FTP/scp</label>
+											</div>
+										</a>
 									<?
+									}
+									if ($GLOBALS['cfg']['enablerdoc']) { ?>
+										<a class="item" data-tab="tab-nda">
+											<div class="ui radio checkbox" onChange="CheckDestination()">
+												<input type="radio" name="destination" id="radio_ndar" value="ndar">
+												<label>NDAR/RDoC submission</label>
+											</div>
+										</a>
+										<a class="item" data-tab="tab-ndacsv">
+											<div class="ui radio checkbox" onChange="CheckDestination()">
+												<input type="radio" name="destination" id="radio_ndarcsv" value="ndarcsv">
+												<label>NDAR/RDoC submission <span class="tiny">.csv</span></label>
+											</div>
+										</a>
+									<?
+									}
 								}
-							}
-							?>
-							</div>
-							
-						</div>
-						<div class="eight wide column">
-							<h4 class="ui header">Remote server</h4>
-							<div class="ui vertically fitted basic segment">
-								<?
 								if ($s_resultoutput != 'subject') {
 									?>
-									<script>
-										function CheckNFSPath() {
-											var xhttp = new XMLHttpRequest();
-											xhttp.onreadystatechange = function() {
-												if (this.readyState == 4 && this.status == 200) {
-													document.getElementById("pathcheckresult").innerHTML = this.responseText;
-												}
-											};
-											var nfsdir = document.getElementById("nfsdir").value;
-											//alert(nfsdir);
-											xhttp.open("GET", "ajaxapi.php?action=validatepath&nfspath=" + nfsdir, true);
-											xhttp.send();
-										}
-									</script>
-									<div class="ui radio checkbox" onChange="CheckDestination()">
-										<input type="radio" name="destination" id="radio_nfs" value="nfs" checked>
-										<label>Linux NFS Mount</label>
-									</div>
-									<div class="ui fluid input">
-										<input type="text" id="nfsdir" name="nfsdir" onKeyUp="CheckNFSPath()" placeholder="NFS path..." onFocus="document.getElementById('radio_nfs').checked=true"><span id="pathcheckresult"></span>
-									</div>
-									<br>
-									<div class="ui radio checkbox" onChange="CheckDestination()">
-										<input type="radio" name="destination" id="radio_xnat" value="xnat">
-										<label>Remote XNAT</label>
-									</div>
-									<br>
-									<div class="ui radio checkbox" onChange="CheckDestination()">
-										<input type="radio" name="destination" id="radio_remoteftp" value="remoteftp">
-										<label>Remote FTP site</label>
-									</div>
-									<table class="remoteftp" style="margin-left:40px; border:1px solid gray">
-										<tr><td align="right" width="30%" style="font-size:10pt">Remote FTP Server</td><td><input type="text" name="remoteftpserver"></td></tr>
-										<tr><td align="right" width="30%" style="font-size:10pt">Remote Directory</td><td><input type="text" name="remoteftppath"></td></tr>
-										<tr><td align="right" width="30%" style="font-size:10pt">Username</td><td><input type="text" name="remoteftpusername"></td></tr>
-										<tr><td align="right" width="30%" style="font-size:10pt">Password</td><td><input type="text" name="remoteftppassword"></td></tr>
-										<tr><td align="right" width="30%" style="font-size:10pt">Port number</td><td><input type="text" name="remoteftpport" value="21" size="5"></td></tr>
-									</table>
-									<br>
+									<a class="item" data-tab="tab-nfs">
+										<div class="ui radio checkbox" onChange="CheckDestination()">
+											<input type="radio" name="destination" id="radio_nfs" value="nfs">
+											<label>Linux NFS Mount</label>
+										</div>
+									</a>
+									<a class="item" data-tab="tab-xnat">
+										<div class="ui radio checkbox" onChange="CheckDestination()">
+											<input type="radio" name="destination" id="radio_xnat" value="xnat">
+											<label>Remote XNAT</label>
+										</div>
+									</a>
+									<a class="item" data-tab="tab-remoteftp">
+										<div class="ui radio checkbox" onChange="CheckDestination()">
+											<input type="radio" name="destination" id="radio_remoteftp" value="remoteftp">
+											<label>Remote FTP site</label>
+										</div>
+									</a>
 									<? if ($GLOBALS['cfg']['enableremoteconn']) { ?>
-									<div class="ui radio checkbox" onChange="CheckDestination()">
-										<input type="radio" name="destination" id="radio_remotenidb" value="remotenidb">
-										<label>Remote NiDB site</label>
-									</div>
-									<select name="remoteconnid" class="remotenidb">
-										<option value="">(Select connection)</option>
-										<?
-											$sqlstring = "select * from remote_connections where user_id = (select user_id from users where username = '" . $GLOBALS['username'] . "') order by conn_name";
-											$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-											while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-												$connid = $row['remoteconn_id'];
-												$connname = $row['conn_name'];
-												$remoteserver = $row['remote_server'];
-												$remoteusername = $row['remote_username'];
-												$remotepassword = $row['remote_password'];
-												$remoteinstanceid = $row['remote_instanceid'];
-												$remoteprojectid = $row['remote_projectid'];
-												$remotesiteid = $row['remote_siteid'];
-												?>
-												<option value="<?=$connid?>"><?=$connname?> - [<?=$remoteusername?>@<?=$remoteserver?> Project: <?=$remoteprojectid?>]
-												<?
-											}
-										?>
-									</select>
+									<a class="item" data-tab="tab-remotenidb">
+										<div class="ui radio checkbox" onChange="CheckDestination()">
+											<input type="radio" name="destination" id="radio_remotenidb" value="remotenidb">
+											<label>Remote NiDB site</label>
+										</div>
+									</a>
 									<?
 									}
 								}
 								?>
 							</div>
 						</div>
+
+						<!-- tab contents -->
+						<div class="ui twelve wide stretched right attached column">
+							
+							<!-- web download tab -->
+							<div class="ui active tab seamless right attached segment" data-tab="tab-web">
+								<p style="text-align: center">Web download links will be available on the <b>Export Status</b> page after export is complete</p>
+							</div>
+							
+							<? if (($GLOBALS['isadmin']) && ($GLOBALS['cfg']['enablepublicdownloads'])) { ?>
+							<!-- public download tab -->
+							<div class="ui tab seamless right attached segment" data-tab="tab-publicdownload">
+								<p style="text-align: center">Public downloads are available publicly on the <b>Data &rarr; Public Downloads</b> section</p>
+								
+								<br>
+								
+								<div class="field">
+									Short description
+									<input type="text" name="publicdownloaddesc" maxlength="255">
+									<span class="tiny">Max 255 chars</span>
+								</div>
+
+								<div class="field">
+									Release notes
+									<textarea name="publicdownloadreleasenotes"></textarea>
+								</div>
+
+								<div class="field">
+									Password <img src="images/help.gif" title="Set a password for the download link, otherwise anyone with the link can download the data. Leave blank for no password">
+									<input type="password" name="publicdownloadpassword">
+								</div>
+
+								<div class="field">
+									<div class="ui checkbox">
+										<input type="checkbox" name="publicdownloadshareinternal" value="1">
+										<label>Share download within this system <i class="small blue question circle outline icon" title="This option allows other users (users within this system, not public users) to modify or delete this public download"></i></label>
+									</div>
+								</div>
+
+								<div class="field">
+									<div class="ui checkbox">
+										<input type="checkbox" name="publicdownloadregisterrequired" value="1" checked>
+										<label>Require registration <i class="small blue question circle outline icon" title="If selected, anyone downloading the files must create an account on NiDB before downloading the file. Useful to keep track of who downloads this download"></i></label>
+									</div>
+								</div>
+
+								<div class="field">
+									Expiration Date <i class="small blue question circle outline icon" title="Time after creating the download when it will be deleted from the system and become unavailable for download"></i>
+									<br>
+									<div class="ui radio checkbox">
+										<input type="radio" name="publicdownloadexpire" value="7" checked>
+										<label>7 days</label>
+									</div>
+									<br>
+									<div class="ui radio checkbox">
+										<input type="radio" name="publicdownloadexpire" value="30">
+										<label>30 days</label>
+									</div>
+									<br>
+									<div class="ui radio checkbox">
+										<input type="radio" name="publicdownloadexpire" value="90">
+										<label>90 days</label>
+									</div>
+									<br>
+									<div class="ui radio checkbox">
+										<input type="radio" name="publicdownloadexpire" value="0">
+										<label>No expiration</label>
+									</div>
+									<br>
+								</div>
+							</div>
+
+							<!-- public dataset tab -->
+							<div class="ui tab seamless right attached segment" data-tab="tab-publicdataset">
+								<p style="text-align: center">Add this data to an existing public dataset</p>
+								<br>
+								<div class="field">
+									<select name="publicdatasetid">
+										<option value="">Select existing public dataset...
+										<?
+											$username = $_SESSION['username'];
+											$sqlstring  = "select * from public_datasets where publicdataset_createdby = '$username'";
+											$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+											while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+												$id = $row['publicdataset_id'];
+												$name = $row['publicdataset_name'];
+												echo "<option value='$id'>$name";
+											}
+										?>
+									</select>
+								</div>
+								<div class="field">
+									Short name
+									<input type="text" name="publicdownloadname" maxlength="255">
+									<span class="tiny">Max 255 chars</span>
+								</div>
+								<div class="field">
+									Longer description
+									<input type="text" name="publicdownloaddesc">
+								</div>
+							</div>
+							<? } ?>
+							
+							<!-- local FTP tab -->
+							<div class="ui tab seamless right attached segment" data-tab="tab-localftp">
+								<p style="text-align: center">Data will be available on the Local FTP</p>
+							</div>
+							
+							<!-- NDA tab -->
+							<div class="ui tab seamless right attached segment" data-tab="tab-nda">
+								<p style="text-align: center">Data packaged in NDA format</p>
+							</div>
+							
+							<!-- NDA csv tab -->
+							<div class="ui tab seamless right attached segment" data-tab="tab-ndacsv">
+								<p style="text-align: center">NDA format data, .csv file only</p>
+							</div>
+							
+							<!-- NFS tab -->
+							<div class="ui tab seamless right attached segment" data-tab="tab-nfs">
+								<script>
+									function CheckNFSPath() {
+										var xhttp = new XMLHttpRequest();
+										xhttp.onreadystatechange = function() {
+											if (this.readyState == 4 && this.status == 200) {
+												document.getElementById("pathcheckresult").innerHTML = this.responseText;
+											}
+										};
+										var nfsdir = document.getElementById("nfsdir").value;
+										//alert(nfsdir);
+										xhttp.open("GET", "ajaxapi.php?action=validatepath&nfspath=" + nfsdir, true);
+										xhttp.send();
+									}
+								</script>
+								<p style="text-align: center">Enter full NFS path</p>
+								<div class="ui fluid input">
+									<input type="text" id="nfsdir" name="nfsdir" onKeyUp="CheckNFSPath()" placeholder="NFS path..." onFocus="document.getElementById('radio_nfs').checked=true"><span id="pathcheckresult"></span>
+								</div>
+							</div>
+							
+							<!-- Remote XNAT tab -->
+							<div class="ui tab seamless right attached segment" data-tab="tab-xnat">
+								<p style="text-align: center">XNAT transfer settings are taken from the project</p>
+							</div>
+							
+							<!-- Remote FTP tab -->
+							<div class="ui tab seamless right attached segment" data-tab="tab-remoteftp">
+								<p style="text-align: center">Remote FTP settings (this option is deprecated)</p>
+								<table class="remoteftp" style="margin-left:40px; border:1px solid gray">
+									<tr><td align="right" width="30%" style="font-size:10pt">Remote FTP Server</td><td><input type="text" name="remoteftpserver"></td></tr>
+									<tr><td align="right" width="30%" style="font-size:10pt">Remote Directory</td><td><input type="text" name="remoteftppath"></td></tr>
+									<tr><td align="right" width="30%" style="font-size:10pt">Username</td><td><input type="text" name="remoteftpusername"></td></tr>
+									<tr><td align="right" width="30%" style="font-size:10pt">Password</td><td><input type="text" name="remoteftppassword"></td></tr>
+									<tr><td align="right" width="30%" style="font-size:10pt">Port number</td><td><input type="text" name="remoteftpport" value="21" size="5"></td></tr>
+								</table>
+							</div>
+							
+							<!-- Remote NiDB tab -->
+							<div class="ui tab seamless right attached segment" data-tab="tab-remotenidb">
+								<p style="text-align: center">Send this data to a remote NiDB server</p>
+								<select name="remoteconnid">
+									<option value="">(Select connection)</option>
+									<?
+										$sqlstring = "select * from remote_connections where user_id = (select user_id from users where username = '" . $GLOBALS['username'] . "') order by conn_name";
+										$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+										while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+											$connid = $row['remoteconn_id'];
+											$connname = $row['conn_name'];
+											$remoteserver = $row['remote_server'];
+											$remoteusername = $row['remote_username'];
+											$remotepassword = $row['remote_password'];
+											$remoteinstanceid = $row['remote_instanceid'];
+											$remoteprojectid = $row['remote_projectid'];
+											$remotesiteid = $row['remote_siteid'];
+											?>
+											<option value="<?=$connid?>"><?=$connname?> - [<?=$remoteusername?>@<?=$remoteserver?> Project: <?=$remoteprojectid?>]
+											<?
+										}
+									?>
+								</select>
+							</div>
+							
+						</div>
 					</div>
+					
 					<div class="ui horizontal left aligned divider header">Data</div>
 					<div class="ui grid">
 						<div class="two wide column">&nbsp;</div>
@@ -5000,12 +4961,12 @@
 
 							<div class="ui basic vertically fitted segment datatoexport" id="sectiondatatype">
 								<div class="ui checkbox" style="padding: 3px">
-									<input type="checkbox" name="downloadimaging" id="downloadimaging" value="1" checked>
+									<input type="checkbox" name="downloadimaging" id="downloadimaging" value="1" checked onChange="CheckDestination()">
 									<label>Imaging</label>
 								</div>
 								<br>
 								<div class="ui checkbox" style="padding: 3px">
-									<input type="checkbox" name="downloadbeh" id="downloadbeh" value="1" checked>
+									<input type="checkbox" name="downloadbeh" id="downloadbeh" value="1" checked onChange="CheckDestination()">
 									<label>Behavioral</label>
 								</div>
 								<!--<br>
