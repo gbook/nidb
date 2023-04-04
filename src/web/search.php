@@ -2137,31 +2137,31 @@
 							<table class="ui very compact yellow celled selectable table" width="100%">
 								<tr>
 									<td class="one wide yellow segment">
-										<h4 class="header" style="color: #222"><?=$name?></h4>
+										<span style="color: #222; font-size: larger; font-weight: bold"><?=$name?></span>
 									</td>
 									<td class="two wide yellow segment middle aligned tt">
 										<a href="subjects.php?id=<?=$subject_id?>" style="color: <?=$displayidcolor?>; font-weight: bold" class="ui compact blue button"><?=$displayid?> &nbsp; <i class="external alternate icon"></i></a>
 									</td>
-									<td class="two wide yellow"><h4 class="header tt" style="color: #222">
+									<td class="two wide yellow"><span class="tt" style="color: #222">
 										<?
-										if (strlen($altuidlist) > 60) {
-											?><span title="<?=$altuidlist?>"><?=substr($altuidlist,0,60)?>...</span><?
+										if (strlen($altuidlist) > 30) {
+											?><span title="<?=$altuidlist?>"><?=substr($altuidlist,0,30)?>&hellip;</span><?
 										}
 										else {
 											echo "$altuidlist";
 										}
-									?></h4></td>
+									?></span></td>
 									<td class="two wide yellow segment">
 										<a href="studies.php?id=<?=$study_id?>" class="ui large image blue label"><?=$uid?><div class="detail"><?=$study_num?></div></a>
 									</td>
-									<td class="two wide yellow segment"><h4 class="header" style="color: #222"><?=$project_name?> (<?=$project_costcenter?>)</h4></td>
-									<td class="one wide yellow segment"><span style="color: #222; font-weight: bold"><?=$study_datetime?></span></td>
-									<td class="one wide yellow segment"><h4 class="header" style="color: #222"><?=$enrollsubgroup?></h4></td>
-									<td class="one wide yellow segment"><h4 class="header" style="color: #222"><?=number_format($studyAge,1)?>Y , <?=number_format($calcStudyAge,1)?>Y</h4></td>
-									<td class="one wide yellow segment"><h4 class="header" style="color: #222"><?=$gender?></h4></td>
-									<td class="one wide yellow segment"><h4 class="header tt" style="color: #222"><?=$study_alternateid?></h4></td>
-									<td class="one wide yellow segment"><h4 class="header" style="color: #222"><?=$study_type?></h4></td>
-									<td class="one wide yellow segment"><h4 class="header" style="color: #222"><?=$study_site?></h4></td>
+									<td class="two wide yellow segment"><span style="color: #222; font-size: larger; white-space: nowrap;"><?=$project_name?> (<?=$project_costcenter?>)</span></td>
+									<td class="one wide yellow segment"><span style="color: #222; font-size: larger; white-space: nowrap;"><?=$study_datetime?></span></td>
+									<td class="one wide yellow segment"><span style="color: #222; font-size: larger;"><?=$enrollsubgroup?></span></td>
+									<td class="one wide yellow segment"><span style="color: #222; font-size: larger;"><?=number_format($studyAge,1)?>Y , <?=number_format($calcStudyAge,1)?>Y</span></td>
+									<td class="one wide yellow segment"><span style="color: #222; font-size: larger;"><?=$gender?></span></td>
+									<td class="one wide yellow segment" title="<?=$study_alternateid?>"><span class="tt" style="color: #222; white-space: nowrap;"><?=substr($study_alternateid,0,20)?><?if (strlen($study_alternateid) > 20) { echo "&hellip;"; } ?></span></td>
+									<td class="one wide yellow segment"><span style="color: #222; font-size: larger;"><?=$study_type?></span></td>
+									<td class="one wide yellow segment"><span style="color: #222; font-size: larger;"><?=$study_site?></span></td>
 								</tr>
 							</table>
 						</td>
