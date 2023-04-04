@@ -1,5 +1,5 @@
 Name:           nidb
-Version:        2023.2.942
+Version:        2023.4.967
 Release:        1%{?dist}
 Summary:        NeuroInformatics Database
 
@@ -15,7 +15,7 @@ Requires:       php, php-mysqlnd, php-gd, php-cli, php-process, php-pear, php-mb
 NeuroInformatics Database (NiDB) is a full neuroimaging database system to store, retrieve, analyze, and distribute neuroscience data.
 
 %build # This section does the building. all the binary files will end up in %{builddir}
-%{_sourcedir}/build.sh ~/Qt/6.4.2/gcc_64/bin/qmake %{_sourcedir}/src %{_builddir}/bin
+%{_sourcedir}/build.sh ~/Qt/6.4.3/gcc_64/bin/qmake %{_sourcedir}/src %{_builddir}/bin
 
 %install # This section installs the files to the BUILDROOT dir, which is basically a copy of what the user's computer will look like after the RPM installs
 mkdir -p %{buildroot}/usr/lib/sqldrivers
@@ -49,14 +49,14 @@ cp -f %{_builddir}/bin/gdcm/bin/libgdcmjpeg12.so.3.0 %{buildroot}/usr/lib/ # cop
 cp -f %{_builddir}/bin/gdcm/bin/libgdcmjpeg16.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
 cp -f %{_builddir}/bin/gdcm/bin/libgdcmMEXD.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
 cp -f %{_builddir}/bin/gdcm/bin/libsocketxx.so.1.2 %{buildroot}/usr/lib/ # copy GDCM libs
-cp -f ~/Qt/6.4.2/gcc_64/lib/libQt6Core.so.6 %{buildroot}/usr/lib/ # copy Qt libs
-cp -f ~/Qt/6.4.2/gcc_64/lib/libQt6Network.so.6 %{buildroot}/usr/lib/ # copy Qt libs
-cp -f ~/Qt/6.4.2/gcc_64/lib/libQt6Sql.so.6 %{buildroot}/usr/lib/ # copy Qt libs
-cp -f ~/Qt/6.4.2/gcc_64/lib/libicudata.so.56 %{buildroot}/usr/lib/ # copy Qt libs
-cp -f ~/Qt/6.4.2/gcc_64/lib/libicui18n.so.56 %{buildroot}/usr/lib/ # copy Qt libs
-cp -f ~/Qt/6.4.2/gcc_64/lib/libicuuc.so.56 %{buildroot}/usr/lib/ # copy Qt libs
-cp -f ~/Qt/6.4.2/gcc_64/plugins/sqldrivers/libqsqlmysql.so %{buildroot}/usr/lib/sqldrivers/ # copy Qt MySQL lib
-cp -f ~/Qt/6.4.2/gcc_64/plugins/sqldrivers/libqsqlmysql.so %{buildroot}/nidb/bin/sqldrivers/ # copy Qt MySQL lib to here also... sometimes the binary only checks this location for the lib
+cp -f ~/Qt/6.4.3/gcc_64/lib/libQt6Core.so.6 %{buildroot}/usr/lib/ # copy Qt libs
+cp -f ~/Qt/6.4.3/gcc_64/lib/libQt6Network.so.6 %{buildroot}/usr/lib/ # copy Qt libs
+cp -f ~/Qt/6.4.3/gcc_64/lib/libQt6Sql.so.6 %{buildroot}/usr/lib/ # copy Qt libs
+cp -f ~/Qt/6.4.3/gcc_64/lib/libicudata.so.56 %{buildroot}/usr/lib/ # copy Qt libs
+cp -f ~/Qt/6.4.3/gcc_64/lib/libicui18n.so.56 %{buildroot}/usr/lib/ # copy Qt libs
+cp -f ~/Qt/6.4.3/gcc_64/lib/libicuuc.so.56 %{buildroot}/usr/lib/ # copy Qt libs
+cp -f ~/Qt/6.4.3/gcc_64/plugins/sqldrivers/libqsqlmysql.so %{buildroot}/usr/lib/sqldrivers/ # copy Qt MySQL lib
+cp -f ~/Qt/6.4.3/gcc_64/plugins/sqldrivers/libqsqlmysql.so %{buildroot}/nidb/bin/sqldrivers/ # copy Qt MySQL lib to here also... sometimes the binary only checks this location for the lib
 
 # This section LISTS the files that are available once everything is installed, but this is NOT the specification for what files will be installed...
 %files
