@@ -64,6 +64,11 @@
 	
 	/* check if the client can run this page. ie, is it in the list of safe IPs */
 	$cfg['setupips'] .= ",::1,127.0.0.1,localhost";
+	/* if this is a first time install, allow the requestor's IP address */
+	if ($installtype == "install") {
+		$cfg['setupips'] .= "," . $_SERVER['REMOTE_ADDR'];
+	}
+	
 	if ($cfg['setupips'] != "") {
 		$valid = false;
 		$iplist = explode(",", $cfg['setupips']);
@@ -81,9 +86,6 @@
 		}
 	}
 	
-	$setup = true;
-	
-	//PrintVariable($_POST);
 	
 	/* ----- setup variables ----- */
 	$step = GetVariable("step");
@@ -178,6 +180,7 @@
 
 	$c['archivedir'] = GetVariable("archivedir");
 	$c['backupdir'] = GetVariable("backupdir");
+	$c['backupstagingdir'] = GetVariable("backupstagingdir");
 	$c['ftpdir'] = GetVariable("ftpdir");
 	$c['importdir'] = GetVariable("importdir");
 	$c['incomingdir'] = GetVariable("incomingdir");
@@ -303,6 +306,17 @@
 				
 				<br><br><br>
 				
+				<? if ($installtype == "install") {
+					$disabled = "";
+				?>
+				<div class="ui message">
+					<h3>This is a new installation</h3>
+				</div>
+				
+				<?
+				} else {
+				?>
+				
 				<div class="ui message">
 					<h3>Perform the following before continuing with the setup</h3>
 					
@@ -321,6 +335,7 @@
 						<p style="color: black">Run the above command, then come back to this page and refresh.</p>
 					</div>
 				</div>
+				<? } ?>
 			</div>
 		</div>
 		
