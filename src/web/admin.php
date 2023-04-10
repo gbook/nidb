@@ -75,46 +75,63 @@
 	/* ------- DisplayAdminList ------------------- */
 	/* -------------------------------------------- */
 	function DisplayAdminList() {
-		
-		$systemstring = "curl --silent \"https://api.github.com/repos/gbook/nidb/releases/latest\" | grep '\"tag_name\":'";
-		$latestnidb = shell_exec($systemstring);
-		$latestnidb = str_replace("\"tag_name\": \"","", $latestnidb);
-		$latestnidb = str_replace("\",","", $latestnidb);
-		$latestnidb = trim(str_replace("v","", $latestnidb));
-		
-		$currentnidb = trim(GetNiDBVersion());
-		if ($currentnidb != $latestnidb) {
-		?>
-			<div class="ui text container">
+
+		if (file_exists("/nidb/setup/dbupgrade")) {
+			?>
+			<div class="ui container">
 				<div class="ui warning icon message">
-					<i class="cloud download alternate icon"></i>
+					<i class="exclamation circle icon"></i>
 					<div class="content">
-						<div class="header">Update available</div>
-						Current version [v<?=GetNiDBVersion();?>]<br>
-						Latest version [v<?=$latestnidb;?>]<br>
-						<br>
-						To upgrade, install .rpm from <a href="http://github.com/gbook/nidb"><i class="github icon"></i> github</a>, then return here to <a href="setup.php" class="ui basic button"><i class="wrench icon"></i> Setup/Upgrade</a>
-					</div>
-				</div>
-			</div>
-		<? }
-		else {
-		?>
-			<div class="ui text container">
-				<div class="ui positive icon message">
-					<i class="check circle icon"></i>
-					<div class="content">
-						<div class="header">NiDB is up to date</div>
-						Current NiDB version <b>v<?=GetNiDBVersion();?></b><br>
-						<br>
-						If you've just installed the .rpm, click here to <a href="setup.php" class="ui basic button"><i class="wrench icon"></i> Setup/Upgrade</a>
+						<div class="header">Installation/upgrade not complete</div>
+						
+						Click here to <a href="setup.php"> finish setup/upgrade</a>
 					</div>
 				</div>
 			</div>
 			<br>
 			<?
+		} else {
+		
+			$systemstring = "curl --silent \"https://api.github.com/repos/gbook/nidb/releases/latest\" | grep '\"tag_name\":'";
+			$latestnidb = shell_exec($systemstring);
+			$latestnidb = str_replace("\"tag_name\": \"","", $latestnidb);
+			$latestnidb = str_replace("\",","", $latestnidb);
+			$latestnidb = trim(str_replace("v","", $latestnidb));
+			
+			$currentnidb = trim(GetNiDBVersion());
+			if ($currentnidb != $latestnidb) {
+			?>
+				<div class="ui text container">
+					<div class="ui warning icon message">
+						<i class="cloud download alternate icon"></i>
+						<div class="content">
+							<div class="header">Update available</div>
+							Current version [v<?=GetNiDBVersion();?>]<br>
+							Latest version [v<?=$latestnidb;?>]<br>
+							<br>
+							To upgrade, install .rpm from <a href="http://github.com/gbook/nidb"><i class="github icon"></i> github</a>, then return here to <a href="setup.php" class="ui basic button"><i class="wrench icon"></i> Setup/Upgrade</a>
+						</div>
+					</div>
+				</div>
+			<? }
+			else {
+			?>
+				<div class="ui text container">
+					<div class="ui positive icon message">
+						<i class="check circle icon"></i>
+						<div class="content">
+							<div class="header">NiDB is up to date</div>
+							Current NiDB version <b>v<?=GetNiDBVersion();?></b><br>
+							<br>
+						</div>
+					</div>
+				</div>
+				<br>
+				<?
+			}
 		}
 		?>
+		
 		<br>
 		<div class="ui text container grid">
 			<div class="ui eight wide column">

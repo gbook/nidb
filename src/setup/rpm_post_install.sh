@@ -62,16 +62,6 @@ chown -R nidb:nidb /var/lib/php/session
 
 systemctl restart php-fpm.service
 
-# change permissions of the /nidb directory
-echo 'Change ownership of /nidb contents'
-chown -Rv nidb:nidb /nidb/bin /nidb/lock /nidb/logs /nidb/qcmodules /nidb/setup # change ownership of the install directory
-chown -v nidb:nidb /nidb/*  # change ownership of the install directory
-echo 'Change permissions of /nidb'
-chmod -Rv g+w /nidb/bin /nidb/lock /nidb/logs /nidb/qcmodules /nidb/setup # change permissions of the install directorys contents
-chmod -v g+w /nidb/* # change permissions of the install directorys contents
-echo 'Change ownership of /nidb'
-chmod 777 /nidb              # change permissions of the install directory
-
 # setup cron jobs
 echo 'Install crontab'
 crontab -u nidb /nidb/setup/crontab.txt
@@ -104,9 +94,23 @@ mkdir -p /nidb/data/upload
 mkdir -p /nidb/data/uploaded
 mkdir -p /nidb/data/uploadstaging
 
+# change permissions of the /nidb directory
+echo 'Change ownership of /nidb contents'
+chown -Rv nidb:nidb /nidb/bin /nidb/lock /nidb/logs /nidb/qcmodules /nidb/setup # change ownership of the install directory
+chown -v nidb:nidb /nidb/*  # change ownership of the install directory
+chown -v nidb:nidb /nidb/data  # change ownership of the data directory
+chown -v nidb:nidb /nidb/data/archive /nidb/data/backup /nidb/data/backupstaging /nidb/data/deleted /nidb/data/dicomincoming /nidb/data/ftp /nidb/data/problem /nidb/data/tmp /nidb/data/upload /nidb/data/uploaded /nidb/data/uploadstaging  # change ownership of the data directories
+echo 'Change permissions of /nidb'
+chmod -Rv g+w /nidb/bin /nidb/lock /nidb/logs /nidb/qcmodules /nidb/setup # change permissions of the install directorys contents
+chmod -v g+w /nidb/* # change permissions of the install directorys contents
+echo 'Change ownership of /nidb'
+chmod 777 /nidb              # change permissions of the install directory
+
 # change owner and permissions of the web directory
 chown -R nidb:nidb /var/www/html
 find /var/www -type d -exec chmod 755 {} \;
 find /var/www -type f -exec chmod 644 {} \;
+
+touch /nidb/setup/dbupgrade
 
 echo "IMPORTANT! - visit http://localhost/setup.php to finish the upgrade process"

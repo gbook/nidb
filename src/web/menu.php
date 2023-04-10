@@ -66,7 +66,7 @@
 		<?
 			/* admin */
 			if ($GLOBALS['isadmin']) {
-				?><a href="admin.php" class="<? if ((substr($page,0,5) == "admin") || ($page == "system.php") || ($page == "status.php") || ($page == "reports.php") || ($page == "cleanup.php") || ($page == "stats.php") || ($page == "status.php") || ($page == "longqc.php") || ($page == "backup.php")) { echo "active"; } ?> item"><i class="cog icon"></i>Admin</a><?
+				?><a href="admin.php" class="<? if ((substr($page,0,5) == "admin") || ($page == "system.php") || ($page == "status.php") || ($page == "reports.php") || ($page == "cleanup.php") || ($page == "stats.php") || ($page == "status.php") || ($page == "longqc.php") || ($page == "backup.php")) { echo "active"; } ?> item"><i class="cog <? if (file_exists("/nidb/setup/dbupgrade")) { echo "yellow loading"; } ?> icon"></i>Admin</a><?
 			}
 			/* user options */
 			?><a href="users.php" class="<? if ($page=="users.php" || $page=="remoteconnections.php") { echo "active"; } ?> item">My Account <div class="ui mini label"><?=$GLOBALS['username']?></div></a><?

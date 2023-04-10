@@ -862,6 +862,9 @@
 		</div>
 		<?
 		
+		/* remove /nidb/setup/dbupgrade file */
+		unlink("/nidb/setup/dbupgrade");
+		
 	}
 
 
