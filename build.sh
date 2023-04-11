@@ -25,6 +25,9 @@ ORIGDIR=$PWD
 command -v make >/dev/null 2>&1 || { echo -e "\nThis script requires make, but it is not installed\n"; exit 1; }
 command -v gcc >/dev/null 2>&1 || { echo -e "\nThis script requires gcc, but it is not installed\n"; exit 1; }
 
+CMAKEBIN=cmake3
+command -v cmake3 >/dev/null 2>&1 || { CMAKEBIN=cmake; }
+
 # create the build directory
 echo "Creating build directory"
 mkdir -p $BUILDDIR
@@ -33,14 +36,15 @@ mkdir -p $BUILDDIR
 
 # build gdcm (make sure cmake 3 is installed)
 if [ ! -d "$BUILDDIR/gdcm" ]; then
-	command -v cmake >/dev/null 2>&1 || { echo -e "\nThis script requires cmake 3.x. Install using 'yum install cmake' or 'apt-get cmake'.\n"; exit 1; }
+
+	#command -v cmake >/dev/null 2>&1 || { echo -e "\nThis script requires cmake 3.x. Install using 'yum install cmake' or 'apt-get cmake'.\n"; exit 1; }
 
 	echo -e "\ngdcm not built. Building gdcm now\n"
 
 	mkdir -p $BUILDDIR/gdcm
 	mkdir -p $BUILDDIR/gdcm
 	cd $BUILDDIR/gdcm
-	cmake -DGDCM_BUILD_APPLICATIONS:STRING=NO -DGDCM_BUILD_DOCBOOK_MANPAGES:BOOL=OFF -DGDCM_BUILD_SHARED_LIBS:STRING=YES -DGDCM_BUILD_TESTING:STRING=NO -DGDCM_BUILD_EXAMPLES:STRING=NO $SRCDIR/gdcm
+	$CMAKEBIN -DGDCM_BUILD_APPLICATIONS:STRING=NO -DGDCM_BUILD_DOCBOOK_MANPAGES:BOOL=OFF -DGDCM_BUILD_SHARED_LIBS:STRING=YES -DGDCM_BUILD_TESTING:STRING=NO -DGDCM_BUILD_EXAMPLES:STRING=NO $SRCDIR/gdcm
 	make -j 16
 else
 	echo -e "\ngdcm already built in $BUILDDIR/gdcm\n"
