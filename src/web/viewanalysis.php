@@ -445,18 +445,69 @@
 	function DisplayResults($analysisid, $studyid) {
 		if (!ValidID($analysisid,'Analysis ID - DisplayResults(a)')) { return; }
 		
+		$analysispath = GetAnalysisPath($analysisid);
+		
 		?>
-		Results for this analysis<br><br>
-		<table class="smalldisplaytable">
+		<script>
+			$(document).ready(function(){
+				$('#pageloading').hide();
+			});
+		</script>
+		
+		<div class="ui yellow message" align="center" id="pageloading">
+			<h2 class="ui header">
+				<em data-emoji=":chipmunk:" class="loading"></em> Loading...
+			</h2>
+		</div>
+		
+		<div class="ui top attached segment">
+			<div class="ui two column grid">
+				<div class="ui column">
+					<b>Results for</b> <code><?=$analysispath?></code>
+				</div>
+
+				<div class="ui column">
+					<div class="ui labeled icon input">
+						<div class="ui label">Filter Results</div>
+						<input id="resultsnamefilter" type="text" placeholder="Result name"/>
+						<i class="filter icon"></i>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="ui black attached long scrolling segment">
+
+			<script type="text/javascript">
+				function filterTable(event) {
+					var filter = event.target.value.toUpperCase();
+					var rows = document.querySelector("#resultstable tbody").rows;
+					
+					for (var i = 0; i < rows.length; i++) {
+						var firstCol = rows[i].cells[0].textContent.toUpperCase();
+						var secondCol = rows[i].cells[1].textContent.toUpperCase();
+						if (firstCol.indexOf(filter) > -1 || secondCol.indexOf(filter) > -1) {
+							rows[i].style.display = "";
+						} else {
+							rows[i].style.display = "none";
+						}      
+					}
+				}
+
+				document.querySelector('#resultsnamefilter').addEventListener('keyup', filterTable, false);
+			</script>
+		
+			<table class="smalldisplaytable" id="resultstable">
+				<tbody>
 		<?
 			if ($studyid == "") {
-				$sqlstring2 = "select a.*, d.result_name from analysis_results a left join analysis b on a.analysis_id = b.analysis_id left join pipelines c on b.pipeline_id = c.pipeline_id left join analysis_resultnames d on d.resultname_id = a.result_nameid where a.analysis_id = $analysisid order by d.result_name";
+				$sqlstring2 = "select a.*, d.result_name from analysis_results a left join analysis b on a.analysis_id = b.analysis_id left join pipelines c on b.pipeline_id = c.pipeline_id left join analysis_resultnames d on d.resultname_id = a.result_nameid where a.analysis_id = $analysisid order by a.result_type, d.result_name";
 			}
 			else {
 				if (!ValidID($studyid,'Study ID - DisplayResults(b)')) { return; }
-				$sqlstring2 = "select a.*, d.result_name from analysis_results a left join analysis b on a.analysis_id = b.analysis_id left join pipelines c on b.pipeline_id = c.pipeline_id left join analysis_resultnames d on d.resultname_id = a.result_nameid where b.study_id = $studyid and a.analysis_id = $analysisid order by d.result_name";
+				$sqlstring2 = "select a.*, d.result_name from analysis_results a left join analysis b on a.analysis_id = b.analysis_id left join pipelines c on b.pipeline_id = c.pipeline_id left join analysis_resultnames d on d.resultname_id = a.result_nameid where b.study_id = $studyid and a.analysis_id = $analysisid order by a.result_type, d.result_name";
 			}
 			$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);
+			$numresults = mysqli_num_rows($result2);
 			while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
 				//$step = $row['analysis_step'];
 				$pipelinename = $row2['pipeline_name'];
@@ -497,7 +548,7 @@
 									break;
 								case "i":
 									?>
-									<img src="preview.php?image=<?=$filename?>" style="max-width:800px">
+									<img src="preview.php?image=<?=$filename?>" style="max-width:400px">
 									<?
 									break;
 							}
@@ -511,7 +562,12 @@
 				<?
 			}
 		?>
-		</table>
+			</tbody>
+			</table>
+		</div>
+		<div class="ui bottom attached inverted segment">
+			Found <?=$numresults?> results
+		</div>
 		<?
 	}	
 
