@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Apr 04, 2023 at 03:17 PM
+-- Generation Time: Apr 19, 2023 at 03:58 PM
 -- Server version: 10.3.28-MariaDB
 -- PHP Version: 7.2.24
 
@@ -2168,13 +2168,13 @@ CREATE TABLE `pipeline_groups` (
 
 CREATE TABLE `pipeline_history` (
   `pipelinehistory_id` bigint(20) NOT NULL,
-  `run_num` bigint(20) NOT NULL,
+  `run_num` bigint(20) DEFAULT NULL,
   `pipeline_id` int(11) NOT NULL,
-  `pipeline_version` int(11) NOT NULL,
-  `analysis_id` bigint(11) NOT NULL,
+  `pipeline_version` int(11) DEFAULT NULL,
+  `analysis_id` bigint(11) DEFAULT NULL,
   `pipeline_event` enum('pipeline_started','error_noqueue','error_nosubmithost','getdatasteps','getpipelinesteps','getstudylist','maxjobs_reached','analysis_exists','analysis_runsupplement','analysis_rerunresults','analysis_checkdependency','analysis_getdata','analysis_createdir','analysis_oktosubmit','analysis_copyparent','analysis_errorcreatepath','submit_analysis','error_submitanalysis','pipeline_disabled','pipeline_finished','error_nodatasteps','error_nopipelinesteps') NOT NULL,
   `event_datetime` timestamp NOT NULL DEFAULT current_timestamp(),
-  `event_message` longtext NOT NULL
+  `event_message` longtext DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------

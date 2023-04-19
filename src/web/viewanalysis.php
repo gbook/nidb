@@ -460,7 +460,7 @@
 			</h2>
 		</div>
 		
-		<div class="ui top attached segment">
+		<div class="ui top attached raised segment">
 			<div class="ui two column grid">
 				<div class="ui column">
 					<b>Results for</b> <code><?=$analysispath?></code>
@@ -475,7 +475,7 @@
 				</div>
 			</div>
 		</div>
-		<div class="ui black attached long scrolling segment">
+		<div class="ui attached long scrolling raised segment">
 
 			<script type="text/javascript">
 				function filterTable(event) {
@@ -565,7 +565,7 @@
 			</tbody>
 			</table>
 		</div>
-		<div class="ui bottom attached inverted segment">
+		<div class="ui bottom attached inverted vertically fitted raised segment">
 			Found <?=$numresults?> results
 		</div>
 		<?
