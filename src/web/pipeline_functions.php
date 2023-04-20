@@ -76,7 +76,7 @@
 		?>
 		<div class="ui container">
 			<div class="ui top attached black segment">
-				<div class="ui two column grid">
+				<div class="ui three column grid">
 					<div class="column">
 						<h1 class="ui header">
 							<!--<i class="small grey settings icon"></i>-->
@@ -85,13 +85,16 @@
 								<div class="sub header"><?=$pipelinedesc?></div>
 							</div>
 						</h1>
+					</div>
+					<div class="center aligned column">
 						<?
 							$sqlstring = "select sum(analysis_disksize) 'disksize' from analysis where pipeline_id = $id";
 							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 							$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 							$diskusage = $row['disksize'];
 						?>
-						Disk usage <?=HumanReadableFilesize($diskusage)?> <i class="question circle outline icon" title="May not be accurate if this pipeline depends on other pipelines and hard links are used. Check the parent pipeline for its usage."></i>
+						Disk usage <?=HumanReadableFilesize($diskusage)?> <i class="question circle outline icon" title="Disk usage may not be accurate if this pipeline depends on other pipelines and hard links are used.
+						<p>Check the parent pipeline for its usage</p>"></i>
 					</div>
 					<div class="right aligned column">
 						<? if ($isenabled) { ?>

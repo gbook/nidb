@@ -472,7 +472,7 @@
 		if (($sortorder == "asc") || ($sortorder == "")) { $newsortorder = "desc"; }
 		elseif ($sortorder == "desc") { $newsortorder = "asc"; }
 
-		if ($sortorder == "asc") { $sortarrow = "&uarr;"; } else { $sortarrow = "&darr;"; }
+		if ($sortorder == "asc") { $sortarrow = "<i class='arrow up icon'></i>"; } else { $sortarrow = "<i class='arrow down icon'></i>"; }
 		
 		/* create the color lookup table */
 		$colors = GenerateColorGradient();
@@ -549,12 +549,19 @@
 						<option value="50000" <?if ($numperpage == 50000) { echo "selected"; } ?>>50,000
 					</select>
 				</td>
-				<td class="middle">&nbsp;</td>
-				<td class="firstpage" title="First page"><a href="analysis.php?action=viewanalyses&id=<?=$id?>&numperpage=<?=$numperpage?>&pagenum=1&searchuid=<?=$searchuid?>&searchstatus=<?=$searchstatus?>&searchsuccess=<?=$searchsuccess?>&sortby=<?=$sortby?>&sortorder=<?=$sortorder?>">&#171;</a></td>
-				<td class="previouspage" title="Previous page"><a href="analysis.php?action=viewanalyses&id=<?=$id?>&numperpage=<?=$numperpage?>&pagenum=<?=($pagenum-1)?>&searchuid=<?=$searchuid?>&searchstatus=<?=$searchstatus?>&searchsuccess=<?=$searchsuccess?>&sortby=<?=$sortby?>&sortorder=<?=$sortorder?>">&lsaquo;</a></td>
-				<td title="Refresh page"><a href="" style="margin-left:20px; margin-right:20px; font-size:14pt">&#10227;</a></td>
-				<td class="nextpage" title="Next page"><a href="analysis.php?action=viewanalyses&id=<?=$id?>&numperpage=<?=$numperpage?>&pagenum=<?=($pagenum+1)?>&searchuid=<?=$searchuid?>&searchstatus=<?=$searchstatus?>&searchsuccess=<?=$searchsuccess?>&sortby=<?=$sortby?>&sortorder=<?=$sortorder?>">&rsaquo;</a></td>
-				<td class="lastpage" title="Last page"><a href="analysis.php?action=viewanalyses&id=<?=$id?>&numperpage=<?=$numperpage?>&pagenum=<?=$numpages?>&searchuid=<?=$searchuid?>&searchstatus=<?=$searchstatus?>&searchsuccess=<?=$searchsuccess?>&sortby=<?=$sortby?>&sortorder=<?=$sortorder?>">&#187;</a></td>
+				<td style="text-align: right">
+					<div class="ui buttons">
+						<a class="ui button" title="First page" href="analysis.php?action=viewanalyses&id=<?=$id?>&numperpage=<?=$numperpage?>&pagenum=1&searchuid=<?=$searchuid?>&searchstatus=<?=$searchstatus?>&searchsuccess=<?=$searchsuccess?>&sortby=<?=$sortby?>&sortorder=<?=$sortorder?>"><i class="step backward icon"></i></a>
+				
+						<a class="ui button" title="Previous page" href="analysis.php?action=viewanalyses&id=<?=$id?>&numperpage=<?=$numperpage?>&pagenum=<?=($pagenum-1)?>&searchuid=<?=$searchuid?>&searchstatus=<?=$searchstatus?>&searchsuccess=<?=$searchsuccess?>&sortby=<?=$sortby?>&sortorder=<?=$sortorder?>"><i class="angle left icon"></i></a>
+						
+						<a class="ui button" title="Reresh" href=""><i class="redo icon"></i></a>
+				
+						<a class="ui button" title="Next page" href="analysis.php?action=viewanalyses&id=<?=$id?>&numperpage=<?=$numperpage?>&pagenum=<?=($pagenum+1)?>&searchuid=<?=$searchuid?>&searchstatus=<?=$searchstatus?>&searchsuccess=<?=$searchsuccess?>&sortby=<?=$sortby?>&sortorder=<?=$sortorder?>"><i class="angle right icon"></i></a>
+				
+						<a class="ui button" title="Last page" href="analysis.php?action=viewanalyses&id=<?=$id?>&numperpage=<?=$numperpage?>&pagenum=<?=$numpages?>&searchuid=<?=$searchuid?>&searchstatus=<?=$searchstatus?>&searchsuccess=<?=$searchsuccess?>&sortby=<?=$sortby?>&sortorder=<?=$sortorder?>"><i class="step forward icon"></i></a>
+					</div>
+				</td>
 			</tr>
 			</form>
 		</table>
@@ -571,7 +578,8 @@
 			   }
 			}
 		</script>
-		<table id="analysistable" class="ui very compact small celled grey table">
+
+		<table id="analysistable" class="ui very compact small celled grey top attached table">
 			<form method="post" name="filteranalysis" id="filteranalysis" action="analysis.php" class="ui form">
 			<input type="hidden" name="action" value="viewanalyses">
 			<input type="hidden" name="id" value="<?=$id?>">
@@ -630,17 +638,23 @@
 						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=clustertime&sortorder=<?=$newsortorder?>">Cluster time</a> <? if ($sortby == "clustertime") { echo $sortarrow; } ?><br>
 						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=clustercompletedate&sortorder=<?=$newsortorder?>"><span class="tiny">completed date</span></a> <? if ($sortby == "clustercompletedate") { echo $sortarrow; } ?>
 					</th>
-					<th align="left">Operations<br><input type="checkbox" id="analysesall"><span class="tiny">Select All</span></th>
+					<th align="left" style="background-color: Lavender">Operations<br><input type="checkbox" id="analysesall"><span class="tiny">Select All</span></th>
 				</tr>
+			</thead>
+			<tbody>
 				<tr>
-					<th align="left"><input type="text" name="searchuid" placeholder="UID" value="<?=$searchuid?>" size="10" class="ui input"></th>
-					<th></th>
-					<th></th>
-					<th></th>
-					<th></th>
-					<th align="left">
+					<td align="left">
+						<div class="ui input">
+							<input type="text" name="searchuid" placeholder="UID..." value="<?=$searchuid?>">
+						</div>
+					</td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td align="left">
 						<select name="searchstatus" class="ui dropdown">
-							<option value="" <? if ($searchstatus == "") { echo "selected"; } ?>>(Select status)
+							<option value="" <? if ($searchstatus == "") { echo "selected"; } ?>>Select status...
 							<option value="complete" <? if ($searchstatus == "complete") { echo "selected"; } ?>>Complete
 							<option value="pending" <? if ($searchstatus == "pending") { echo "selected"; } ?>>Pending
 							<option value="processing" <? if ($searchstatus == "processing") { echo "selected"; } ?>>Processing
@@ -648,26 +662,25 @@
 							<option value="submitted" <? if ($searchstatus == "submitted") { echo "selected"; } ?>>Submitted
 							<option value="allothers" <? if ($searchstatus == "allothers") { echo "selected"; } ?>>All other status (ignored, etc)
 						</select>
-					</th>
-					<th>
+					</td>
+					<td>
 						<select name="searchsuccess" class="ui dropdown">
-							<option value="" <? if ($searchsuccess == "") { echo "selected"; } ?>>(Select success)
+							<option value="" <? if ($searchsuccess == "") { echo "selected"; } ?>>Select success...
 							<option value="1" <? if ($searchsuccess == "1") { echo "selected"; } ?>>Successful
 							<option value="2" <? if ($searchsuccess == "2") { echo "selected"; } ?>>Not Successful
 						</select>
-					<th></th>
-					<th></th>
-					<th></th>
-					<th></th>
-					<th></th>
-					<th></th>
-					<th></th>
-					<th></th>
-					<th></th>
-					<th><input type="submit" name="btnSubmitFilter" value="Filter" class="ui button"></th>
-					<th></th>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td style="background-color: Lavender"><input type="submit" name="btnSubmitFilter" value="Filter" class="ui blue button"></td>
 				</tr>
-			</thead>
 			</form>
 			<form method="post" name="studieslist" id="studieslist" action="analysis.php" class="ui form">
 			<input type="hidden" name="action" value="deleteanalyses" id="studieslistaction">
@@ -675,7 +688,6 @@
 			<input type="hidden" name="analysisnotes" value="">
 			<input type="hidden" name="analysisid" id="analysisid" value="">
 			<input type="hidden" name="id" value="<?=$id?>">
-			<tbody>
 				<?
 					if (($searchuid == "") && ($searchstatus == "") && ($searchsuccess == "")) {
 						$sqlstring = "select *, timediff(analysis_enddate, analysis_startdate) 'analysis_time', timediff(analysis_clusterenddate, analysis_clusterstartdate) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and a.analysis_status not in ('NoMatchingSeries','NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency')";
@@ -764,173 +776,184 @@
 
 					/* rewind the result */
 					mysqli_data_seek($result, 0);
-					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-						$analysis_id = $row['analysis_id'];
-						$analysis_qsubid = $row['analysis_qsubid'];
-						$analysis_status = $row['analysis_status'];
-						$analysis_numseries = $row['analysis_numseries'];
-						$analysis_statusmessage = $row['analysis_statusmessage'];
-						$analysis_statusdatetime = $row['analysis_statusdatetime'];
-						$analysis_swversion = $row['analysis_swversion'];
-						$analysis_iscomplete = $row['analysis_iscomplete'];
-						$analysis_time = $row['analysis_time'];
-						$analysis_size = $row['analysis_disksize'];
-						$analysis_isbad = $row['analysis_isbad'];
-						$analysis_rerunresults = $row['analysis_rerunresults'];
-						$analysis_runsupplement = $row['analysis_runsupplement'];
-						$notes = $row['analysis_notes'];
-						$analysis_hostname = $row['analysis_hostname'];
-						$cluster_time = $row['cluster_time'];
-						$analysis_enddate = date('Y-m-d H:i',strtotime($row['analysis_enddate']));
-						if ($row['analysis_clusterenddate'] == "") {
-							$analysis_clusterenddate = "-";
-						}
-						else {
-							$analysis_clusterenddate = date('Y-m-d H:i',strtotime($row['analysis_clusterenddate']));
-						}
-						$study_id = $row['study_id'];
-						$study_num = $row['study_num'];
-						$study_datetime = date('M j, Y H:i',strtotime($row['study_datetime']));
-						$uid = $row['uid'];
-						$visittype = $row['study_type'];
-						$pipeline_version = $row['pipeline_version'];
-						$pipeline_dependency = $row['pipeline_dependency'];
-						
-						if ($analysis_status == "") { $analysis_status = "unknown"; }
-						
-						$sqlstringA = "select pipeline_submithost from pipelines where pipeline_id = $id";
-						$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-						$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-						$pipeline_submithost = $rowA['pipeline_submithost'];
-						if ($pipeline_submithost == "") { $pipeline_submithost = $GLOBALS['cfg']['clustersubmithost']; }
-						
-						$sqlstringA = "select pipeline_name, pipeline_submithost from pipelines where pipeline_id = $pipeline_dependency";
-						$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-						$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-						$pipeline_dep_name = $rowA['pipeline_name'];
-						
-						if ($notes == "") {
-							$notestitle = "Click to create notes";
-							$notescolor = "grey";
-						}
-						else {
-							$notestitle = $notes;
-							$notescolor = "red";
-						}
-						
-						if ($analysis_isbad) {
-							$rowcolor = "#f2d7d7";
-						}
-						else {
-							$rowcolor = "";
-						}
-						
-						/* get color index for the size */
-						$sizeindex = 0;
-						if ($analysis_size > 0) {
-							$sizeindex = round(($analysis_size/($maxsize-$minsize))*100.0);
-							if ($sizeindex > 100) { $sizeindex = 100; }
-							$sizecolor = $colors[$sizeindex];
-						}
-						else { $sizecolor = "#fff"; }
-				?>
-				<tr bgcolor="<?=$rowcolor?>">
-					<td class="allstudies" style="text-align:left"><input type="checkbox" name="studyid[]" value="<?=$study_id?>">
-						<a href="studies.php?id=<?=$study_id?>"><?=$uid?><?=$study_num?></a></td>
-					<td><?=$visittype?></td>
-					<td><?=$pipeline_version?></td>
-					<? if ($pipeline_level == 1) { ?>
-					<td class="tiny"><?=$study_datetime?></td>
-					<td><?=$analysis_numseries?></td>
-					<? } ?>
-					<td>
-						<?
-							if (($analysis_status == 'processing') && ($analysis_qsubid != 0)) {
-								?>
-								<a href="<?=$GLOBALS['cfg']['siteurl']?>/analysis.php?action=viewjob&id=<?=$analysis_qsubid?>" title="Click to view SGE status">processing</a>
-								<!--<iframe src="ajaxapi.php?action=sgejobstatus&jobid=<?=$analysis_qsubid?>" width="25px" height="25px" style="border: 0px">No iframes available?</iframe>-->
-								<?
+					
+					if (mysqli_num_rows($result) > 0) {
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+							$analysis_id = $row['analysis_id'];
+							$analysis_qsubid = $row['analysis_qsubid'];
+							$analysis_status = $row['analysis_status'];
+							$analysis_numseries = $row['analysis_numseries'];
+							$analysis_statusmessage = $row['analysis_statusmessage'];
+							$analysis_statusdatetime = $row['analysis_statusdatetime'];
+							$analysis_swversion = $row['analysis_swversion'];
+							$analysis_iscomplete = $row['analysis_iscomplete'];
+							$analysis_time = $row['analysis_time'];
+							$analysis_size = $row['analysis_disksize'];
+							$analysis_isbad = $row['analysis_isbad'];
+							$analysis_rerunresults = $row['analysis_rerunresults'];
+							$analysis_runsupplement = $row['analysis_runsupplement'];
+							$notes = $row['analysis_notes'];
+							$analysis_hostname = $row['analysis_hostname'];
+							$cluster_time = $row['cluster_time'];
+							$analysis_enddate = date('Y-m-d H:i',strtotime($row['analysis_enddate']));
+							if ($row['analysis_clusterenddate'] == "") {
+								$analysis_clusterenddate = "-";
 							}
 							else {
-								if (($analysis_qsubid == 0) && ($analysis_status != 'complete')) {
-									echo "[$analysis_status] Copying data?";
-								}
-								else {
-									switch ($analysis_status) {
-										case 'pending':
-											$tip = "Data has finished copying for this analysis, and job has been submitted. Waiting for the job to check in with NiDB";
-											break;
-										case 'complete':
-											$tip = "Analysis is complete";
-											break;
-										case 'error':
-											$tip = "An unspecified error has occured";
-											break;
-									}
-									?><span style="text-decoration: underline; text-decoration-style: dashed; text-decoration-color: #aaa" title="<?=$tip?>"><?=$analysis_status?></span><?
-								}
+								$analysis_clusterenddate = date('Y-m-d H:i',strtotime($row['analysis_clusterenddate']));
+							}
+							$study_id = $row['study_id'];
+							$study_num = $row['study_num'];
+							$study_datetime = date('M j, Y H:i',strtotime($row['study_datetime']));
+							$uid = $row['uid'];
+							$visittype = $row['study_type'];
+							$pipeline_version = $row['pipeline_version'];
+							$pipeline_dependency = $row['pipeline_dependency'];
+							
+							if ($analysis_status == "") { $analysis_status = "unknown"; }
+							
+							$sqlstringA = "select pipeline_submithost from pipelines where pipeline_id = $id";
+							$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+							$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+							$pipeline_submithost = $rowA['pipeline_submithost'];
+							if ($pipeline_submithost == "") { $pipeline_submithost = $GLOBALS['cfg']['clustersubmithost']; }
+							
+							$sqlstringA = "select pipeline_name, pipeline_submithost from pipelines where pipeline_id = $pipeline_dependency";
+							$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+							$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+							$pipeline_dep_name = $rowA['pipeline_name'];
+							
+							if ($notes == "") {
+								$notestitle = "Click to create notes";
+								$notescolor = "grey";
+							}
+							else {
+								$notestitle = $notes;
+								$notescolor = "red";
 							}
 							
-							if ($analysis_runsupplement) { ?> <span class="tiny">supplement</span><? }
-							if ($analysis_rerunresults) { ?> <span class="tiny">rerun results</span><? }
-						?>
-					</td>
-					<td style="font-weight: bold; color: green">
-						<? if ($analysis_iscomplete) { echo "&#x2713;"; } ?>
-					</td>
-					<? if ($analysis_status != "") { ?>
-					<td class="center aligned">
-						<a href="viewanalysis.php?action=viewgraph&analysisid=<?=$analysis_id?>&studyid=<?=$study_id?>&pipelineid=<?=$id?>&pipelineversion=<?=$pipeline_version?>" target="_viewgraph" title="View analysis graph"><i class="large grey file alternate outline icon"></i></a>
-					</td>
-					<td class="center aligned">
-						<a href="viewanalysis.php?action=viewfiles&analysisid=<?=$analysis_id?>" target="_viewfiles" title="View file listing"><i class="large grey folder open outline icon"></i></a>
-					</td>
-					<td class="center aligned">
-						<? if ($GLOBALS['cfg']['allowrawdicomexport']) { ?>
-						<a href="download.php?modality=pipeline&analysisid=<?=$analysisid?>" border="0"><i class="large grey download icon"></i></a>
+							if ($analysis_isbad) {
+								$rowcolor = "#f2d7d7";
+							}
+							else {
+								$rowcolor = "";
+							}
+							
+							/* get color index for the size */
+							$sizeindex = 0;
+							if ($analysis_size > 0) {
+								$sizeindex = round(($analysis_size/($maxsize-$minsize))*100.0);
+								if ($sizeindex > 100) { $sizeindex = 100; }
+								$sizecolor = $colors[$sizeindex];
+							}
+							else { $sizecolor = "#fff"; }
+					?>
+					<tr bgcolor="<?=$rowcolor?>">
+						<td class="allstudies" style="text-align:left"><input type="checkbox" name="studyid[]" value="<?=$study_id?>">
+							<a href="studies.php?id=<?=$study_id?>"><?=$uid?><?=$study_num?></a></td>
+						<td><?=$visittype?></td>
+						<td><?=$pipeline_version?></td>
+						<? if ($pipeline_level == 1) { ?>
+						<td class="tiny"><?=$study_datetime?></td>
+						<td><?=$analysis_numseries?></td>
+						<? } ?>
+						<td>
+							<?
+								if (($analysis_status == 'processing') && ($analysis_qsubid != 0)) {
+									?>
+									<a href="<?=$GLOBALS['cfg']['siteurl']?>/analysis.php?action=viewjob&id=<?=$analysis_qsubid?>" title="Click to view SGE status">processing</a>
+									<!--<iframe src="ajaxapi.php?action=sgejobstatus&jobid=<?=$analysis_qsubid?>" width="25px" height="25px" style="border: 0px">No iframes available?</iframe>-->
+									<?
+								}
+								else {
+									if (($analysis_qsubid == 0) && ($analysis_status != 'complete')) {
+										echo "[$analysis_status] Copying data?";
+									}
+									else {
+										switch ($analysis_status) {
+											case 'pending':
+												$tip = "Data has finished copying for this analysis, and job has been submitted. Waiting for the job to check in with NiDB";
+												break;
+											case 'complete':
+												$tip = "Analysis is complete";
+												break;
+											case 'error':
+												$tip = "An unspecified error has occured";
+												break;
+										}
+										?><span style="text-decoration: underline; text-decoration-style: dashed; text-decoration-color: #aaa" title="<?=$tip?>"><?=$analysis_status?></span><?
+									}
+								}
+								
+								if ($analysis_runsupplement) { ?> <span class="tiny">supplement</span><? }
+								if ($analysis_rerunresults) { ?> <span class="tiny">rerun results</span><? }
+							?>
+						</td>
+						<td style="font-weight: bold; color: green">
+							<? if ($analysis_iscomplete) { echo "&#x2713;"; } ?>
+						</td>
+						<? if ($analysis_status != "") { ?>
+						<td class="center aligned">
+							<a href="viewanalysis.php?action=viewgraph&analysisid=<?=$analysis_id?>&studyid=<?=$study_id?>&pipelineid=<?=$id?>&pipelineversion=<?=$pipeline_version?>" target="_viewgraph" title="View analysis graph"><i class="large grey file alternate outline icon"></i></a>
+						</td>
+						<td class="center aligned">
+							<a href="viewanalysis.php?action=viewfiles&analysisid=<?=$analysis_id?>" target="_viewfiles" title="View file listing"><i class="large grey folder open outline icon"></i></a>
+						</td>
+						<td class="center aligned">
+							<? if ($GLOBALS['cfg']['allowrawdicomexport']) { ?>
+							<a href="download.php?modality=pipeline&analysisid=<?=$analysisid?>" border="0"><i class="large grey download icon"></i></a>
+							<? } else { ?>
+							
+							<? } ?>
+						</td>
+						<td class="center aligned">
+							<a href="viewanalysis.php?action=viewresults&analysisid=<?=$analysis_id?>&studyid=<?=$study_id?>" target="_viewresults" title="View analysis results"><i class="large grey chart bar icon"></i></a>
+						</td>
 						<? } else { ?>
-						
+						<td></td>
+						<td></td>
+						<td></td>
+						<td></td>
 						<? } ?>
-					</td>
-					<td class="center aligned">
-						<a href="viewanalysis.php?action=viewresults&analysisid=<?=$analysis_id?>&studyid=<?=$study_id?>" target="_viewresults" title="View analysis results"><i class="large grey chart bar icon"></i></a>
-					</td>
-					<? } else { ?>
-					<td></td>
-					<td></td>
-					<td></td>
-					<td></td>
-					<? } ?>
-					<td>
-						<span onClick="GetAnalysisNotes(<?=$id?>, <?=$analysis_id?>);" title="<?=$notestitle?>"><i class="large <?=$notescolor?> pencil alternate icon"></i></span>
-					</td>
-					<td style="font-size:9pt; white-space:nowrap">
-						<?=$analysis_statusmessage?><br>
-						<?
-							if (strpos($analysis_statusmessage,"processing step") !== false) {
-								$parts = explode(" ",$analysis_statusmessage);
-								$stepnum = $parts[2];
-								$steptotal = $parts[4];
-						?>
-						<img src="horizontalchart.php?b=no&w=150&h=3&v=<?=$stepnum?>,<?=($steptotal-$stepnum)?>&c=666666,DDDDDD" style="margin:2px"><br>
-						<? } ?>
-						<span class="tiny"><?=$analysis_statusdatetime?></span>
-					</td>
-					<td align="right" style="font-size:8pt; border-bottom: 5px solid <?=$sizecolor?>; margin-bottom:0px; padding-bottom:0px" valign="bottom">
-						<?=number_format($analysis_size,0)?>
-						<table cellspacing="0" cellpadding="0" border="0" width="100%" height="5px" style="margin-top:5px">
-							<tr>
-								<td width="100%" height="5px" style="background-color: <?=$sizecolor?>; height:5px; font-size: 1pt; border: 0px">&nbsp;</td>
-							</tr>
-						</table>
-					</td>
-					<td><?=$analysis_hostname?></td>
-					<td><?=$analysis_time?><br><span class="tiny"><?=$analysis_enddate?></span></td>
-					<td><?=$cluster_time?><br><span class="tiny"><?=$analysis_clusterenddate?></span></td>
-					<td class="allanalyses" ><input type="checkbox" name="analysisids[]" value="<?=$analysis_id?>"></td>
-				</tr>
-				<? 
+						<td>
+							<span onClick="GetAnalysisNotes(<?=$id?>, <?=$analysis_id?>);" title="<?=$notestitle?>"><i class="large <?=$notescolor?> pencil alternate icon"></i></span>
+						</td>
+						<td style="font-size:9pt; white-space:nowrap">
+							<? if (strlen($analysis_statusmessage) > 50) { echo "<span title='$analysis_statusmessage'>" . substr($analysis_statusmessage, 0, 50) . "...</span>"; } else { echo $analysis_statusmessage; } ?><br>
+							<?
+								if (strpos($analysis_statusmessage,"processing step") !== false) {
+									$parts = explode(" ",$analysis_statusmessage);
+									$stepnum = $parts[2];
+									$steptotal = $parts[4];
+							?>
+							<img src="horizontalchart.php?b=no&w=150&h=3&v=<?=$stepnum?>,<?=($steptotal-$stepnum)?>&c=666666,DDDDDD" style="margin:2px"><br>
+							<? } ?>
+							<span class="tiny"><?=$analysis_statusdatetime?></span>
+						</td>
+						<td align="right" style="font-size:8pt; border-bottom: 5px solid <?=$sizecolor?>; margin-bottom:0px; padding-bottom:0px" valign="bottom">
+							<?=number_format($analysis_size,0)?>
+							<table cellspacing="0" cellpadding="0" border="0" width="100%" height="5px" style="margin-top:5px">
+								<tr>
+									<td width="100%" height="5px" style="background-color: <?=$sizecolor?>; height:5px; font-size: 1pt; border: 0px">&nbsp;</td>
+								</tr>
+							</table>
+						</td>
+						<td><?=$analysis_hostname?></td>
+						<td><?=$analysis_time?><br><span class="tiny"><?=$analysis_enddate?></span></td>
+						<td><?=$cluster_time?><br><span class="tiny"><?=$analysis_clusterenddate?></span></td>
+						<td class="allanalyses" style="background-color: Lavender; text-align: center"><input type="checkbox" name="analysisids[]" value="<?=$analysis_id?>"></td>
+					</tr>
+					<? 
+						}
 					}
+					else {
+						?>
+						<tr>
+							<td colspan="18" class="center aligned" style="padding: 15px">No analyses found</td>
+						</tr>
+						<?
+					}
+					
 				?>
 				<script>
 				function GetDestination(){
@@ -956,81 +979,75 @@
 					document.studieslist.submit();
 				}
 				</script>
-				
-				<tfoot>
-				<tr style="color: #444; font-size:12pt; font-weight:bold">
-					<td colspan="8" valign="top" style="background-color: #fff">
-						<table>
-						<tr>
-							<td valign="top" style="color: #444; font-size:12pt; font-weight:bold; border-top:none">
-								Studies group
-							</td>
-							<td valign="top" style="border-top:none">
-								<select name="studygroupid" style="width:150px">
-									<?
-										$sqlstring = "select * from groups where group_type = 'study'";
-										$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-										while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-											$groupid = $row['group_id'];
-											$groupname = $row['group_name'];
-											?>
-											<option value="<?=$groupid?>"><?=$groupname?>
-											<?
-										}
-									?>
-								</select>
-								<input type="submit" name="addtogroup" value="Add" onclick="document.studieslist.action='groups.php';document.studieslist.action.value='addstudiestogroup'">
-							</td>
-						</tr>
-						</table>
-					</td>
-					<td colspan="10" align="right" style="background-color: #fff; font-size: 12pt">
-						<br>
-						<h3 class="ui header">With Selected...</h3>
-						<button class="ui red button" style="width: 200px" type="submit" onclick="document.studieslist.action.value='deleteanalyses';return confirm('Are you absolutely sure you want to DELETE the selected analyses?')" title="<b style='color:pink'>Pipeline will be disabled. Wait until the deletions are compelte before reenabling the pipeline</b><Br> This will delete the selected analyses, which will be regenerated using the latest pipeline version"><i class="trash icon"></i> Delete</button>
-						<br><br><br>
-						
-						<p><button class="ui button" style="width: 200px" type="button" name="copyanalyses" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='copyanalyses'; GetDestination(); return;"><i class="copy icon"></i> Copy analyses to...</button></p>
-						
-						<p><button class="ui button" style="width: 200px" type="button" name="createlinks" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='createlinks'; GetDestination2(); return;" title="Creates a directory called 'data' which contains links to all of the selected studies"><i class="linkify icon"></i> Create links...</button></p>
-
-						<p><input class="ui button" style="width: 200px" type="button" name="rerunresults" value="Re-run results script" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='rerunresults';document.studieslist.submit();" title="This will delete any existing results inserted into NiDB and re-run the results script"></p>
-
-						<p><input class="ui button" style="width: 200px" type="button" name="runsupplement" value="Run supplement script" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='runsupplement';document.studieslist.submit();" title="Run the script specified in the supplemental command script. This will not download new data or re-download existing data. It will only perform commands on the existing files in the analysis directory"></p>
-
-						<p><button class="ui button" style="width: 200px" type="button" name="rechecksuccess" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='rechecksuccess';document.studieslist.submit();" title="This option will check the selected analyses against the 'successfully completed files' field and mark them as successful if the file(s) exist"><i class="clipboard check icon"></i>Recheck success</button></p>
-						
-						<p>
-							<div class="ui left labeled button">
-								<a class="ui basic label">Mark as</a>
-								<div class="ui button" style="width: 150px" type="button" name="markasbad" value="Bad" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='markbad'; MarkAnalysis()" title="Mark the analyses as bad so they will not be used in dependent pipelines">Bad</div>
-							</div>
-							<br>
-							<div class="ui left labeled button">
-								<a class="ui basic label">Mark as</a>
-								<input class="ui button" style="width: 150px" type="button" name="markasgood" value="Good" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='markgood'; MarkAnalysis()" title="Unmark an analysis as bad">
-							</div>
-							<br>
-							<div class="ui left labeled button">
-								<a class="ui basic label">Mark as</a>
-								<input class="ui button" style="width: 150px" type="button" name="markcomplete" value="Complete" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='markcomplete'; MarkAnalysis()" title="Mark the analysis as complete. In case the job was killed or died outside of the pipeline system. Also clears pending jobs and any flags as 'run supplement' or 'rerun results'">
-							</div>
-							<br>
-							<div class="ui left labeled button">
-								<a class="ui basic label">Mark as</a>
-								<input class="ui button" style="width: 150px" type="button" name="marksuccessful" value="Successful" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='marksuccessful'; MarkAnalysis()" title="Mark the analysis as successful">
-							</div>
-							<br>
-							<div class="ui left labeled button">
-								<a class="ui basic label">Mark as</a>
-								<input class="ui button" style="width: 150px" type="button" name="markunsuccessful" value="Unsuccessful" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='markunsuccessful'; MarkAnalysis()" title="Mark the analysis as unsuccessful">
-							</div>
-						</p>
-					</td>
-				</tr>
-				</tfoot>
 			</tbody>
 		</table>
+		
+		<script>
+			$(document).ready(function() {
+				$('#popupbutton2').popup({
+					popup : $('#popupmenu2'),
+					on : 'click'
+				});
+			});
+		</script>
+		<div class="ui bottom attached menu">
+			<div class="item" href="studies.php?studyid=<?=$studyid?>&action=displayfiles">
+				<div class="ui action input">
+					<select name="studygroupid" class="ui selection dropdown">
+						<option value="">Add to study group...
+						<?
+							$sqlstring = "select * from groups where group_type = 'study'";
+							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+								$groupid = $row['group_id'];
+								$groupname = $row['group_name'];
+								?>
+								<option value="<?=$groupid?>"><?=$groupname?>
+								<?
+							}
+						?>
+					</select>
+					<button class="ui button" type="submit" name="addtogroup" value="Add" onclick="document.studieslist.action='groups.php';document.studieslist.action.value='addstudiestogroup'">Add</button>
+				</div>
+			</div>
+			
+			<div class="right menu" id="popupbutton2">
+				<a class="browse item" style="background-color: Lavender">
+					With Selected...
+					<i class="dropdown icon"></i>
+				</a>
+			</div>
+		</div>
+		<div class="ui popup" id="popupmenu2">
+			<h3 class="ui header">With Selected...</h3>
+			
+			<p><div class="ui fluid red button" type="submit" onclick="document.studieslist.action.value='deleteanalyses';return confirm('Are you absolutely sure you want to DELETE the selected analyses?')" title="<b style='color:pink'>Pipeline will be disabled. Wait until the deletions are compelte before reenabling the pipeline</b><Br> This will delete the selected analyses, which will be regenerated using the latest pipeline version"><i class="trash icon"></i> Delete</div></p>
+			<br>
+			
+			<p><div class="ui fluid button" type="button" name="copyanalyses" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='copyanalyses'; GetDestination(); return;"><i class="copy icon"></i> Copy analyses to...</div></p>
+			
+			<p><div class="ui fluid button" type="button" name="createlinks" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='createlinks'; GetDestination2(); return;" title="Creates a directory called 'data' which contains links to all of the selected studies"><i class="linkify icon"></i> Create links...</div></p>
+
+			<p><div class="ui fluid button" type="button" name="rerunresults" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='rerunresults';document.studieslist.submit();" title="This will delete any existing results inserted into NiDB and re-run the results script">Re-run results script</div></p>
+
+			<p><div class="ui fluid button" name="runsupplement" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='runsupplement';document.studieslist.submit();" title="Run the script specified in the supplemental command script. This will not download new data or re-download existing data. It will only perform commands on the existing files in the analysis directory">Run supplement script</div></p>
+
+			<p><div class="ui fluid button" type="button" name="rechecksuccess" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='rechecksuccess';document.studieslist.submit();" title="This option will check the selected analyses against the 'successfully completed files' field and mark them as successful if the file(s) exist"><i class="clipboard check icon"></i>Recheck success</div></p>
+
+			<br>
+			
+			<p><div class="ui fluid button" name="markasbad" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='markbad'; MarkAnalysis()" title="Mark the analyses as bad so they will not be used in dependent pipelines"><i class="large red frown outline icon"></i> Mark bad</div></p>
+
+			<p><div class="ui fluid button" name="markasgood" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='markgood'; MarkAnalysis()" title="Unmark an analysis as bad"><i class="large green smile outline icon"></i> Mark good</div></p>
+
+			<p><div class="ui fluid button" name="markcomplete" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='markcomplete'; MarkAnalysis()" title="Mark the analysis as complete. In case the job was killed or died outside of the pipeline system. Also clears pending jobs and any flags as 'run supplement' or 'rerun results'"><i class="tasks icon"></i> Mark complete</div></p>
+
+			<p><div class="ui fluid button" type="button" name="marksuccessful" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='marksuccessful'; MarkAnalysis()" title="Mark the analysis as successful">Mark successful</div></p>
+
+			<p><div class="ui fluid button" type="button" name="markunsuccessful" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='markunsuccessful'; MarkAnalysis()" title="Mark the analysis as unsuccessful">Mark unsuccessful</div></p>
+			
+		</div>
+		
 		</form>
 		<?
 	}
