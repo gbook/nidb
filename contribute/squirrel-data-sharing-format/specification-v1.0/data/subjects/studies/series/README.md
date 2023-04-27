@@ -8,20 +8,20 @@ An array of series. Basic series information is stored in the main `squirrel.jso
 
 <mark style="color:red;">\* required</mark>
 
-|   _**Variable**_ | **Type**   | **Description**                                                                                         |
-| ---------------: | ---------- | ------------------------------------------------------------------------------------------------------- |
-|   _\***number**_ | number     | Series number. May be sequential, correspond to NiDB assigned series number, or taken from DICOM header |
-| _\***dateTime**_ | date       | Date of the series, usually taken from the DICOM header                                                 |
-|      _seriesUID_ | string     | From the SeriesUID DICOM tag                                                                            |
-|    _description_ | string     | Description of the series                                                                               |
-|       _protocol_ | string     | Protocol name                                                                                           |
-| _experimentName_ | string     | Links to the _experiments_ section of the squirrel package                                              |
-|     _\***size**_ | number     | Size of the data, in bytes                                                                              |
-|         numFiles | number     | Total number of files (including files in subdirs)                                                      |
-|          behSize | number     | Size of beh data, in bytes                                                                              |
-|      numBehFiles | number     | Total number of beh files (including files in subdirs)                                                  |
-|         _params_ | JSON file  | _/data/subjectID/studyNum/seriesNum/params.json_                                                        |
-|       _analysis_ | JSONobject |  __                                                                                                     |
+|        _**Variable**_ | **Type**   | **Description**                                                                                         |
+| --------------------: | ---------- | ------------------------------------------------------------------------------------------------------- |
+|        _\***number**_ | number     | Series number. May be sequential, correspond to NiDB assigned series number, or taken from DICOM header |
+|      _\***dateTime**_ | date       | Date of the series, usually taken from the DICOM header                                                 |
+|           _seriesUID_ | string     | From the SeriesUID DICOM tag                                                                            |
+|         _description_ | string     | Description of the series                                                                               |
+|            _protocol_ | string     | Protocol name                                                                                           |
+|      _experimentName_ | string     | Links to the _experiments_ section of the squirrel package                                              |
+|          _\***size**_ | number     | Size of the data, in bytes                                                                              |
+|              numFiles | number     | Total number of files (including files in subdirs)                                                      |
+|               behSize | number     | Size of beh data, in bytes                                                                              |
+|           numBehFiles | number     | Total number of beh files (including files in subdirs)                                                  |
+| [_params_](params.md) | JSON file  | _/data/subjectID/studyNum/seriesNum/params.json_                                                        |
+|            _analysis_ | JSONobject |                                                                                                         |
 
 ### Directory structure
 

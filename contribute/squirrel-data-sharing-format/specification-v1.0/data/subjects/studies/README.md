@@ -14,23 +14,22 @@ Valid squirrel **modalities** are derived from the DICOM standard and from NiDB 
 
 <mark style="color:red;">\*required</mark>
 
-|        _**Variable**_ | **Type**   | **Description**                                                                                             |
-| --------------------: | ---------- | ----------------------------------------------------------------------------------------------------------- |
-|        _\***number**_ | number     | Study number. May be sequential or correspond to NiDB assigned study number                                 |
-| _\***studyDateTime**_ | datetime   | Date of the study                                                                                           |
-|    _\***ageAtStudy**_ | number     | Subject’s age at the time of the study                                                                      |
-|                height | number     | Height in **m** of the subject at the time of the study                                                     |
-|                weight | number     | Weight in **kg** of the subject at the time of the study                                                    |
-|      _\***modality**_ | string     | Defines the type of data. See table of supported modalities                                                 |
-|   _\***description**_ | string     | Study description                                                                                           |
-|            _studyUID_ | string     | DICOM field StudyUID                                                                                        |
-|           _visitType_ | string     | Type of visit. ex: Pre, Post                                                                                |
-|           _dayNumber_ | number     | For repeated studies and clinical trials, this indicates the day number of this study in relation to time 0 |
-|           _timePoint_ | number     | Similar to day number, but timePoint should be an ordinal number                                            |
-|           _equipment_ | string     | Equipment name, on which the imaging session was collected                                                  |
-|           _numSeries_ | number     | The number of series for this study                                                                         |
-|                  path | string     | Relative path to the data within the package                                                                |
-|              _series_ | JSON array |                                                                                                             |
+|      _**Variable**_ | **Type**   | **Description**                                                                                             |
+| ------------------: | ---------- | ----------------------------------------------------------------------------------------------------------- |
+|      _\***number**_ | number     | Study number. May be sequential or correspond to NiDB assigned study number                                 |
+|    _**\*dateTime**_ | datetime   | Date of the study                                                                                           |
+|  _\***ageAtStudy**_ | number     | Subject’s age at the time of the study                                                                      |
+|              height | number     | Height in **m** of the subject at the time of the study                                                     |
+|              weight | number     | Weight in **kg** of the subject at the time of the study                                                    |
+|    _\***modality**_ | string     | Defines the type of data. See table of supported modalities                                                 |
+| _\***description**_ | string     | Study description                                                                                           |
+|          _studyUID_ | string     | DICOM field StudyUID                                                                                        |
+|         _visitType_ | string     | Type of visit. ex: Pre, Post                                                                                |
+|         _dayNumber_ | number     | For repeated studies and clinical trials, this indicates the day number of this study in relation to time 0 |
+|         _timePoint_ | number     | Similar to day number, but timePoint should be an ordinal number                                            |
+|         _equipment_ | string     | Equipment name, on which the imaging session was collected                                                  |
+|         virtualPath | string     | Relative path to the data within the package                                                                |
+| [_series_](series/) | JSON array |                                                                                                             |
 
 ### Directory structure
 
