@@ -25,6 +25,7 @@
 * [Administration](using-nidb/administration/README.md)
   * [Front end (user facing)](using-nidb/administration/front-end-user-facing.md)
   * [Back end](using-nidb/administration/back-end.md)
+  * [nidb command line](using-nidb/administration/nidb-command-line.md)
 
 ## Specifications
 
