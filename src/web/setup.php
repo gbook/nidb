@@ -21,6 +21,9 @@
  // along with this program.  If not, see <http://www.gnu.org/licenses/>.
  // ------------------------------------------------------------------------------
 
+	/* allow the page to run for 2 minutes. necessary for the schema update */
+	set_time_limit(120);
+	
 	declare(strict_types = 1);
 	define("LEGIT_REQUEST", true);
 	session_start();

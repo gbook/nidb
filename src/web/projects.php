@@ -2975,7 +2975,9 @@
 				<?=$numsubjects?> subjects
 			</div>
 			
-			<table class="ui very compact celled grey table">
+			<div class="ui short scrolling container">
+
+			<table class="ui very compact celled head first stuck grey table">
 				<thead>
 					<th>UID</th>
 					<th>Alt IDs</th>
@@ -3012,7 +3014,7 @@
 				
 				?>
 				<tr>
-					<td><a class="ui very compact large blue button" href="subjects.php?id=<?=$subjectid?>"><i class="small external alternate icon"></i> <tt><?=$uid?></tt></a></td>
+					<td><a class="ui very compact large blue button" href="subjects.php?id=<?=$subjectid?>"><tt><?=$uid?></tt></a></td>
 					<td><?=$altuidlist?></td>
 					<td><?=$guid?></td>
 					<td><?=$birthdate?></td>
@@ -3024,15 +3026,9 @@
 			}
 			?>
 			</table>
+			</div>
 		</div>
 		<?
-	}
-
-
-
-# Asim Addtition .........................................................................
-	function AssessmentsInfo($id) {
-		//DisplayProjectsMenu('assessments', $id);
 	}
 
 
