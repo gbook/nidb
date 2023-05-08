@@ -2923,7 +2923,7 @@
 			</div>
 
 			<div class="ui popup bottom left transition hidden" id="toolspopup">
-				<div class="ui vertical menu">
+				<div class="ui big vertical menu">
 					<a class="item" href="datadictionary.php?projectid=<?=$id?>">Data dictionary <i class="right floating database icon"></i></a>
 					<a class="item" href="analysisbuilder.php?action=viewanalysissummary&projectid=<?=$id?>">Analysis builder <i class="list alternate outline icon"></i></a>
 					<a class="item" href="templates.php?action=displaystudytemplatelist&projectid=<?=$id?>">Study templates <i class="clone outline icon"></i></a>
@@ -2936,8 +2936,8 @@
 			</div>
 
 			<div class="ui popup bottom left transition hidden" id="importpopup">
-				<div class="ui vertical menu">
-					<a class="item" href="importimaging.php?action=newimportform&projectid=<?=$id?>">Import imaging</a>
+				<div class="ui big vertical menu">
+					<a class="item" href="importimaging.php?action=newimportform&projectid=<?=$id?>">Import imaging <i class="file import icon"></i></a>
 					<a class="item" href="redcapimport.php?action=importsettings&projectid=<?=$id?>">Global Redcap settings <i class="red redhat icon"></i></a>
 					<a class="item" href="redcapimportsubjects.php?action=default&projectid=<?=$id?>">Redcap subject import <i class="red redhat icon"></i></a>
 					<a class="item" href="redcaptonidb.php?action=default&projectid=<?=$id?>">Import from Redcap <i class="red redhat icon"></i></a>
@@ -2946,21 +2946,18 @@
 			</div>
 
 			<div class="ui popup bottom left transition hidden" id="adminpopup">
-				<? if ($GLOBALS['isadmin']) { ?>
-				<div class="item">
-					<div class="header">Admin</div>
-					<div class="menu">
+				<div class="ui big vertical menu">
+					<? if ($GLOBALS['isadmin']) { ?>
 						<a class="item" href="projects.php?action=resetqa&id=<?=$id?>">
 							Reset MRI QA
 							<i class="red sync icon"></i>
 						</a>
+					<? } ?>
+					<div class="item"><b>Remote connection params</b><br>
+						Project ID: <?=$id?><br>
+						Instance ID: <?=$instanceid?><br>
+						Site IDs: <?=implode2(",",$siteids)?><br>
 					</div>
-				</div>
-				<? } ?>
-				<div class="item">Remote connection params<br>
-					Project ID: <?=$id?><br>
-					Instance ID: <?=$instanceid?><br>
-					Site IDs: <?=implode2(",",$siteids)?><br>
 				</div>
 			</div>
 
