@@ -4,7 +4,7 @@ description: JSON array
 
 # drugs
 
-‘Drugs’ represents any substances administered to a participant; through a clinical trial or the participant’s use of prescription or recreational drugs.
+‘Drugs’ represents any substances administered to a participant; through a clinical trial or the participant’s use of prescription or recreational drugs. Detailed variables are available to record exactly how much and when a drug is administered. This allows searching by dose amount, or other variable.
 
 <figure><img src="https://mermaid.ink/img/pako:eNqVk01r4zAQhv9KmBJwwA5OcFNHhZ7aS1l2YXtbDGU2Gidq_YUks_GG_PeV7EiJsz20OkjvSM-rkcbWATY1J2CwldjsJt9-ZtXENFnXOnh--fG9V7MoeuCoMbDd7P6MmPnXBjfvuKXAiav1RjRUiIpU4NUVQfuGpCip0iq40I6yOQ2l2t9vtDGIE27dxZbRLRcm02n8gCgJVSsN4sQHDJftVgV971eHDW0KczyboR_-X8YKi04JFTjhkd4QzU1BUGKpclFQMEiHTKdnyF7aImpU8un0oj4WO4cDfI4n_cTM-Xzt-xOcgsHjoiuHu4A1OD0YXDQy-CvorqCJP75lCnaT53loqiTrd4o4qh1KiR1bjk2jLF8xXlXhK9ZRKT5jPNn8N_yM59LZ_1beRLdxHA42dpMkyUlHfwTXO5Y0ewihJFmi4OaJHuxGGegdlZQBM5JTjm2hM8iqo0HbxhSenrjQtQSWY6EoBGx1_dJVG2BatuSgR4HmxZeearD6VdejGNgB9sDiEDpgy3g1X6XJXbpKF3fLdJ2kxxD-9o54vh5aerteLFbLND3-A0mQdY4?type=png" alt=""><figcaption></figcaption></figure>
 
@@ -37,8 +37,6 @@ The following examples convert between common language and the squirrel storage 
 
 > esomeprazole 20mg capsule by mouth daily
 
-
-
 | Variable          | Value        |
 | ----------------- | ------------ |
 | drugClass         | PPI          |
@@ -51,11 +49,7 @@ The following examples convert between common language and the squirrel storage 
 | frequencyValue    | 1            |
 | frequencyUnit     | day          |
 
-
-
 > 2 puffs atrovent inhaler every 6 hours
-
-
 
 | Variable            | Value          |
 | ------------------- | -------------- |
