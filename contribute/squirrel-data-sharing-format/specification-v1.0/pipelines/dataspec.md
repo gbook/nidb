@@ -21,7 +21,7 @@ dataSpec describes the criteria to find data if searching a database (NiDB for e
 |           _enabled_ | bool     | Whether the step is enabled or not                                                                                           |
 |              _gzip_ | bool     | Whether to gzip data if converted to Nifti                                                                                   |
 |         _imageType_ | string   | Comma separated list of image types, often derived from the DICOM ImageType tag, (0008:0008)                                 |
-|       _\*datalevel_ | string   | nearestintime, samestudy                                                                                                     |
+|       _\*dataLevel_ | string   | nearestintime, samestudy                                                                                                     |
 |          _location_ | string   | Directory, relative to the analysisroot, where this data will be written                                                     |
 |        _\*modality_ | string   | Modality to search for                                                                                                       |
 |       _numBOLDreps_ | string   | If seriesCriteria is set to usecriteria, then search based on this option                                                    |

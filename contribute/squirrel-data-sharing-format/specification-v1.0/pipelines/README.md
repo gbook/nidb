@@ -8,7 +8,7 @@ Pipelines are the methods used to analyze data after it has been collected. In o
 
 Basic pipeline information is stored in the main `squirrel.json` file, and complete pipeline information is stored in the pipeline subdirectory in the `pipeline.json` file.
 
-![](https://mermaid.ink/img/pako:eNptkj1rwzAQhv-KURYFHMjgLip0apdSWmhWQ7laZ0eNZAt90ISQ\_96Ta9kljQfdY98jvebsM2sGiUywzoHdFy\_vdV\_Q5YYh8Ofd2-tI683mQUIAnpb1\_aLQ8w8LzQE65Bmu-lZZ1KpHz2e6MvBo0SmDffD8D2crZZLl4-cXNqRkyP18n5wQpaKkqd4wDIKPjpQMNxzpYuf5uM7d3wNTBL1eShjL\_zb0oE9eeZ5hVsYNaR7gwNAwxpK782imQe8sNjzDknLSuKhFq7QWq7bFu-229MENBxSrqqom3nwrGfaiskdWMoPOgJL0nc\_psJqFPRqsmSCU2ELUoWZ1fyE1WgrGJ6nC4JhoQXssGcQw7E59w0RwEbP0qIB-GzNZlx8c0sgX)
+<figure><img src="https://mermaid.ink/img/pako:eNqVk01r4zAQhv9KmBJwwA5OcFNHhT1tL6XswvZWDGU2Gidq_YUk03hD_nslO1LqbA-tDtI70vNqpBE6wKbmBAy2Epvd5OFPVk1Mk3Wtg_vH3796NYuiHxw1Brab3Z4RM__c4OYVtxQ4cbHeiIYKUZEKvLogaN-QFCVVWgUftKNsTkOp9u8LbQzihFt3sWV0y4XJdBo_IUpC1UqDOPEJw2W7VUHf-9VhQ5vCHM9m6If_l7HColNCBU54pDdEc1MQlFiqXBQUDNIh0-kZspe2iBqVfDr9UB-LncMBPseTfmLmfL72_QlOweBx0YXDXcAanB4MLhoZ_BV0V9DEH98yBbvK8zw0VZL1K0Uc1Q6lxI4tx6ZRlu8YL6rwHeuoFF8xnmz-Db_iGTndQ3gjXcdxOFjZVZIkJx29Ca53LGn2EEJJskTBzTc92M0y0DsqKQNmJKcc20JnkFVHg7aNKT7dcaFrCSzHQlEI2Or6sas2wLRsyUE_BZpfX3qqweqprkcxsAPsgcUhdMCW8Wq-SpObdJUubpbpOkmPIfzrHfF8PbT0er1YrJZpenwHeqt3Mg?type=png" alt=""><figcaption></figcaption></figure>
 
 ### JSON Variables
 
@@ -28,7 +28,7 @@ Basic pipeline information is stored in the main `squirrel.json` file, and compl
 |          _**Variable**_ | **Type**   | **Description**                                                                                                                  |
 | ----------------------: | ---------- | -------------------------------------------------------------------------------------------------------------------------------- |
 |           _clusterType_ | string     | Compute cluster engine (sge or slurm)                                                                                            |
-|         _completeFiles_ | string     | JSON array of complete files, with relative paths to analysisroot                                                                |
+|         _completeFiles_ | JSON array | JSON array of complete files, with relative paths to analysisroot                                                                |
 |            _createDate_ | datetime   | Date the pipeline was created                                                                                                    |
 |        _dataCopyMethod_ | string     |                                                                                                                                  |
 |                _depDir_ | string     |                                                                                                                                  |
@@ -52,8 +52,8 @@ Basic pipeline information is stored in the main `squirrel.json` file, and compl
 |             _useTmpDir_ | bool       |                                                                                                                                  |
 |               _version_ | number     | Version of the pipeline                                                                                                          |
 |              _dataSpec_ | JSON array |                                                                                                                                  |
-|         _primaryScript_ | string     | See details of pipeline scripts                                                                                                  |
-|       _secondaryScript_ | string     | See details of pipeline scripts                                                                                                  |
+|         _primaryScript_ | string     | See details of [pipeline scripts](pipeline-scripts.md)                                                                           |
+|       _secondaryScript_ | string     | See details of [pipeline scripts](pipeline-scripts.md)                                                                           |
 
 ### Directory structure
 
