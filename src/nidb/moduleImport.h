@@ -52,7 +52,6 @@ public:
     int ParseDirectory(QString dir, int importid);
     QString GetImportStatus(int importid);
     bool SetImportStatus(int importid, QString status, QString msg, QString report, bool enddate);
-    void PrintPerformance();
 
 private:
     nidb *n;

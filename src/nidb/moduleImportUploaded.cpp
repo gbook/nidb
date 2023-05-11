@@ -44,7 +44,7 @@ int moduleImportUploaded::Run() {
             //int fileisseries = q.value("import_fileisseries").toInt();
             QString importstatus = q.value("import_status").toString().trimmed();
 
-            /* if somehow the status was changed elsewhere, don't attempt to process these statuses */
+            /* if somehow the status was changed elsewhere, we should not attempt to process this export */
             if (importstatus != "pending")
                 continue;
 

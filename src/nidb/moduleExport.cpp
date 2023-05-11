@@ -35,7 +35,7 @@ moduleExport::moduleExport(nidb *a)
 
 
 /* ---------------------------------------------------------- */
-/* --------- ~moduleFileIO ---------------------------------- */
+/* --------- ~moduleExport ---------------------------------- */
 /* ---------------------------------------------------------- */
 moduleExport::~moduleExport()
 {
@@ -49,7 +49,7 @@ moduleExport::~moduleExport()
 int moduleExport::Run() {
     n->WriteLog("Entering the export module");
 
-    /* get list of things to delete */
+    /* get list of things to export */
     QSqlQuery q("select * from exports where status = 'submitted'");
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 

@@ -93,8 +93,6 @@ int moduleImport::Run() {
 
     n->WriteLog("Leaving the import module");
 
-    PrintPerformance();
-
     return ret;
 }
 
@@ -204,7 +202,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
             if ((importStatus == "complete") || (importStatus == "") || (importStatus == "received") || (importStatus == "error")) { }
             else {
                 n->WriteLog("This import is not complete. Status is [" + importStatus + "]. Skipping.");
-                /* cleanup so this import can continue another time */
+                /* cleanup so this import can continue at another time */
                 SetImportStatus(importid, "", "", "", false);
 
                 n->WriteLog(perf.End());
@@ -439,12 +437,4 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
 
     n->WriteLog(perf.End());
     return ret;
-}
-
-
-/* ---------------------------------------------------------- */
-/* --------- PrintPerformance ------------------------------- */
-/* ---------------------------------------------------------- */
-void moduleImport::PrintPerformance() {
-
 }
