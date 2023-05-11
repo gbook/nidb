@@ -9,19 +9,44 @@ description: How to build NiDB and contribute to its development
 The following OS configurations have been tested to build nidb with Qt 6.3
 
 * <mark style="color:green;">Compatible</mark>
-  * Rocky Linux 8.5
+  * Rocky Linux 9
+  * Rocky Linux 8 (not 8.6)
   * CentOS 8
   * CentOS 7
+
+Other OS configurations may work to build nidb, but only these environments have been tested.
 
 {% hint style="danger" %}
 **NiDB cannot be built on CentOS Stream 8 or Rocky Linux 8.6.** There are kernel bugs which do not work correctly with Qt's QProcess library. This can lead to inconsistencies when running shell commands through NiDB, and qmake build errors.
 {% endhint %}
 
-Other OS configurations may work to build nidb, but extensive testing is needed.
+{% tabs %}
+{% tab title="Rocky 9" %}
+
+{% endtab %}
+
+{% tab title="Rocky 8" %}
+
+{% endtab %}
+
+{% tab title="CentOS 7" %}
+
+{% endtab %}
+{% endtabs %}
 
 ### Prepare Build Environment
 
-Install development tools on **Rocky Linux 8.5** (Recommended)
+Install development tools on **Rocky 9**
+
+```bash
+yum group install 'Development Tools'
+yum install cmake3
+yum install rpmdevtools
+yum install xcb*
+yum install libxcb*
+```
+
+Install development tools on **Rocky 8**
 
 ```bash
 yum group install 'Development Tools'
@@ -40,13 +65,13 @@ yum group install 'Development Tools'
 yum install cmake3 rpmdevtools rpm-build
 ```
 
-### Install Qt 6.3.2
+### Install Qt 6.5
 
 1. Download Qt open-source from https://www.qt.io/download-open-source
 2. Make the installer executable `chmod 777 qt-unified-linux-x64-x.x.x-online.run`
 3. Run `./qt-unified-linux-x64-x.x.x-online.run`
 4. The Qt Maintenance Tool will start. An account is required to download Qt open source
-5. On the components screen, select the checkbox for **Qt 6.3.2 → Desktop gcc 64-bit**
+5. On the components screen, select the checkbox for **Qt 6.5 → Desktop gcc 64-bit**
 
 ### Building NiDB
 
@@ -124,13 +149,13 @@ This error happens because of a kernel bug in Rocky Linux 8.6 and any qmake buil
 
 If you get an error similar to the following, you'll need to install the missing library
 
-```
+```bash
 ./nidb: error while loading shared libraries: libsquirrel.so.1: cannot open shared object file: No such file or directory./nidb: error while loading shared libraries: libsquirrel.so.1: cannot open shared object file: No such file or directory
 ```
 
 You can check which libraries are missing by running `ldd` on the `nidb` executable
 
-```
+```bash
 [nidb@ado2dev bin]$ ldd nidb
         linux-vdso.so.1 (0x00007ffd07fe4000)
         libSMTPEmail.so.1 => /lib/libSMTPEmail.so.1 (0x00007fdb4e2b0000)
