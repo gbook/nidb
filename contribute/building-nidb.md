@@ -158,7 +158,8 @@ This will create a git repository called nidb in your home directory.
 
 ```bash
 cd ~/nidb
-# Copy in any webpage changes. Be careful not to overwrite uncommitted edits
+
+# copy IN any webpage changes. Be careful not to overwrite uncommitted edits
 cp -uv /var/www/html/*.php ~/nidb/src/web/
 git commit -am "Comments about the changes"
 git push origin master
@@ -171,7 +172,8 @@ To keep your local copy of the repository up to date, you'll need to pull any ch
 ```bash
 cd ~/nidb
 git pull origin master
-# Copy out any webpage changes. Be careful not to overwrite uncommitted edits
+
+# copy OUT any webpage changes. Be careful not to overwrite uncommitted edits
 cp -uv ~/nidb/src/web/*.php /var/www/html/
 ```
 
@@ -179,7 +181,7 @@ cp -uv ~/nidb/src/web/*.php /var/www/html/
 
 #### Build freezes
 
-This may happen if the build machine does not have enough RAM or processors. More likely this is happening inside of a VM in which the VM does not have enough RAM or processors allocated.
+This may happen if the build machine does not have enough RAM or processors. More likely, this is happening inside of a VM if the VM does not have enough RAM or processors allocated.
 
 #### Build fails with "QMAKE\_CXX.COMPILER\_MACROS not defined"
 
