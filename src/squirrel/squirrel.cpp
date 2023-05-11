@@ -46,6 +46,21 @@ squirrel::squirrel()
 
 
 /* ------------------------------------------------------------ */
+/* ----- ~squirrel -------------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief squirrel::~squirrel
+ */
+squirrel::~squirrel()
+{
+    if (isValid && (workingDir.size() > 20)) {
+        QString m;
+        RemoveDir(workingDir, m);
+    }
+}
+
+
+/* ------------------------------------------------------------ */
 /* ----- read ------------------------------------------------- */
 /* ------------------------------------------------------------ */
 /**
@@ -126,9 +141,9 @@ bool squirrel::read(QString filepath, QString &m, bool validateOnly) {
         jsonSubjects = dataObj["subjects"].toArray();
         msgs << QString("Found [%1] subjects").arg(jsonSubjects.size());
     }
-    else {
+    else if (root.contains("subjects")) {
         jsonSubjects = root["subjects"].toArray();
-        msgs << QString("NOTICE: Found [%1] subjects in the root of the JSON. (Slightly malformed squirrel file, but I'll accept it)").arg(jsonSubjects.size());
+        msgs << QString("NOTICE: Found [%1] subjects in the root of the JSON. (This is a slightly malformed squirrel file, but I'll accept it)").arg(jsonSubjects.size());
     }
 
     /* loop through and read any subjects */
@@ -216,8 +231,50 @@ bool squirrel::read(QString filepath, QString &m, bool validateOnly) {
         }
 
         /* read all measures */
+        QJsonArray jsonMeasures = jsonSubject["measures"].toArray();
+        msgs << QString("Found [%1] measures").arg(jsonMeasures.size());
+        for (auto v : jsonMeasures) {
+            QJsonObject jsonMeasure = v.toObject();
+            squirrelMeasure sqrlMeasure;
+
+            sqrlMeasure.dateEnd.fromString(jsonMeasure["dateEnd"].toString(), "yyyy-MM-dd hh:mm:ss");
+            sqrlMeasure.dateStart.fromString(jsonMeasure["dateStart"].toString(), "yyyy-MM-dd hh:mm:ss");
+            sqrlMeasure.measureName = jsonMeasure["measureName"].toString();
+            sqrlMeasure.instrumentName = jsonMeasure["instrumentName"].toString();
+            sqrlMeasure.rater = jsonMeasure["rater"].toString();
+            sqrlMeasure.notes = jsonMeasure["notes"].toString();
+            sqrlMeasure.value = jsonMeasure["value"].toString();
+            sqrlMeasure.description = jsonMeasure["description"].toString();
+
+            sqrlSubject.addMeasure(sqrlMeasure);
+        }
 
         /* read all drugs */
+        QJsonArray jsonDrugs = jsonSubject["drugs"].toArray();
+        msgs << QString("Found [%1] drugs").arg(jsonDrugs.size());
+        for (auto v : jsonDrugs) {
+            QJsonObject jsonDrug = v.toObject();
+            squirrelDrug sqrlDrug;
+
+            sqrlDrug.dateEnd.fromString(jsonDrug["dateEnd"].toString(), "yyyy-MM-dd hh:mm:ss");
+            sqrlDrug.dateStart.fromString(jsonDrug["dateStart"].toString(), "yyyy-MM-dd hh:mm:ss");
+            sqrlDrug.dateEntry.fromString(jsonDrug["dateEntry"].toString(), "yyyy-MM-dd hh:mm:ss");
+            sqrlDrug.drugName = jsonDrug["drugName"].toString();
+            sqrlDrug.doseAmount = jsonDrug["doseAmount"].toDouble();
+            sqrlDrug.doseFrequency = jsonDrug["doseFrequency"].toString();
+            sqrlDrug.route = jsonDrug["route"].toString();
+            sqrlDrug.type = jsonDrug["type"].toString();
+            sqrlDrug.doseKey = jsonDrug["doseKey"].toString();
+            sqrlDrug.doseUnit = jsonDrug["doseUnit"].toString();
+            sqrlDrug.frequencyModifier = jsonDrug["frequencyModifier"].toString();
+            sqrlDrug.frequencyValue = jsonDrug["frequencyValue"].toDouble();
+            sqrlDrug.frequencyUnit = jsonDrug["frequencyUnit"].toString();
+            sqrlDrug.description = jsonDrug["description"].toString();
+            sqrlDrug.rater = jsonDrug["rater"].toString();
+            sqrlDrug.notes = jsonDrug["notes"].toString();
+
+            sqrlSubject.addDrug(sqrlDrug);
+        }
 
         /* add the subject */
         if (addSubject(sqrlSubject)) {
@@ -225,24 +282,99 @@ bool squirrel::read(QString filepath, QString &m, bool validateOnly) {
         }
     }
 
-    /* in case of string value get value and convert into string*/
-    //qWarning() << tr("QJsonObject[appName] of description: ") << item["description"];
-    //QJsonValue subobj = item["description"];
-    //qWarning() << subobj.toString();
+    /* read all experiments */
+    QJsonArray jsonExperiments;
+    jsonExperiments = root["experiments"].toArray();
+    msgs << QString("Found [%1] experiments").arg(jsonExperiments.size());
+    for (auto v : jsonExperiments) {
+        QJsonObject jsonExperiment = v.toObject();
+        squirrelExperiment sqrlExperiment;
 
-    /* in case of array get array and convert into string*/
-    //qWarning() << tr("QJsonObject[appName] of value: ") << item["imp"];
-    //QJsonArray test = item["imp"].toArray();
-    //qWarning() << test[1].toString();
+        sqrlExperiment.experimentName = jsonExperiment["experimentName"].toString();
+        sqrlExperiment.numFiles = jsonExperiment["numFiles"].toInt();
+        sqrlExperiment.size = jsonExperiment["size"].toInt();
 
+        experimentList.append(sqrlExperiment);
+    }
 
-    /* delete the tmp dir, if it exists */
+    /* read all pipelines */
+    QJsonArray jsonPipelines;
+    jsonPipelines = root["pipelines"].toArray();
+    msgs << QString("Found [%1] pipelines").arg(jsonPipelines.size());
+    for (auto v : jsonPipelines) {
+        QJsonObject jsonPipeline = v.toObject();
+        squirrelPipeline sqrlPipeline;
+
+        sqrlPipeline.clusterQueue = jsonPipeline["clusterQueue"].toString();
+        sqrlPipeline.clusterSubmitHost = jsonPipeline["clusterSubmitHost"].toString();
+        sqrlPipeline.clusterUser = jsonPipeline["clusterUser"].toString();
+        sqrlPipeline.createDate.fromString(jsonPipeline["createDate"].toString(), "yyyy-MM-dd hh:mm:ss");
+        sqrlPipeline.dataCopyMethod = jsonPipeline["dataCopyMethod"].toString();
+        sqrlPipeline.depDir = jsonPipeline["depDir"].toString();
+        sqrlPipeline.depLevel = jsonPipeline["depLevel"].toString();
+        sqrlPipeline.depLinkType = jsonPipeline["depLinkType"].toString();
+        sqrlPipeline.description = jsonPipeline["description"].toString();
+        sqrlPipeline.dirStructure = jsonPipeline["dirStructure"].toString();
+        sqrlPipeline.directory = jsonPipeline["directory"].toString();
+        sqrlPipeline.group = jsonPipeline["group"].toString();
+        sqrlPipeline.groupType = jsonPipeline["groupType"].toString();
+        sqrlPipeline.level = jsonPipeline["level"].toString();
+        sqrlPipeline.pipelineName = jsonPipeline["name"].toString();
+        sqrlPipeline.notes = jsonPipeline["notes"].toString();
+        sqrlPipeline.numConcurrentAnalyses = jsonPipeline["numConcurrentAnalyses"].toInt();
+        sqrlPipeline.parentPipelines = jsonPipeline["parentPipelines"].toString().split(",");
+        sqrlPipeline.resultScript = jsonPipeline["resultScript"].toString();
+        sqrlPipeline.submitDelay = jsonPipeline["submitDelay"].toInt();
+        sqrlPipeline.tmpDir = jsonPipeline["tmpDir"].toString();
+        sqrlPipeline.version = jsonPipeline["version"].toInt();
+        sqrlPipeline.flags.useProfile = jsonPipeline["useProfile"].toBool();
+        sqrlPipeline.flags.useTmpDir = jsonPipeline["useTmpDir"].toBool();
+
+        QJsonArray jsonCompleteFiles;
+        jsonCompleteFiles = jsonPipeline["completeFiles"].toArray();
+        for (auto v : jsonCompleteFiles) {
+            sqrlPipeline.completeFiles.append(v.toString());
+        }
+
+        /* read the pipeline data steps */
+        QJsonArray jsonDataSteps;
+        jsonDataSteps = jsonPipeline["dataSteps"].toArray();
+        for (auto v : jsonDataSteps) {
+            QJsonObject jsonDataStep = v.toObject();
+            dataStep ds;
+            ds.associationType = jsonDataStep["associationType"].toString();
+            ds.behDir = jsonDataStep["behDir"].toString();
+            ds.behFormat = jsonDataStep["behFormat"].toString();
+            ds.dataFormat = jsonDataStep["dataFormat"].toString();
+            ds.imageType = jsonDataStep["imageType"].toString();
+            ds.datalevel = jsonDataStep["dataLevel"].toString();
+            ds.location = jsonDataStep["location"].toString();
+            ds.modality = jsonDataStep["modality"].toString();
+            ds.numBOLDreps = jsonDataStep["numBOLDreps"].toString();
+            ds.numImagesCriteria = jsonDataStep["numImagesCriteria"].toString();
+            ds.order = jsonDataStep["order"].toInt();
+            ds.protocol = jsonDataStep["protocol"].toString();
+            ds.seriesCriteria = jsonDataStep["seriesCriteria"].toString();
+            ds.protocol = jsonDataStep["protocol"].toString();
+            ds.flags.enabled = jsonDataStep["enabled"].toBool();
+            ds.flags.optional = jsonDataStep["optional"].toBool();
+            ds.flags.gzip = jsonDataStep["gzip"].toBool();
+            ds.flags.usePhaseDir = jsonDataStep["usePhaseDir"].toBool();
+            ds.flags.useSeries = jsonDataStep["useSeries"].toBool();
+            ds.flags.preserveSeries = jsonDataStep["preserveSeries"].toBool();
+            ds.flags.primaryProtocol = jsonDataStep["primaryProtocol"].toBool();
+            sqrlPipeline.dataSteps.append(ds);
+        }
+        pipelineList.append(sqrlPipeline);
+    }
+
+    /* If we're only validating: delete the tmpdir if it exists */
     if (validateOnly) {
         if (DirectoryExists(workingDir)) {
-            Print("Temporary export dir [" + workingDir + "] exists and will be deleted");
+            msgs << "Temporary export dir [" + workingDir + "] exists and will be deleted";
             QString m;
             if (!RemoveDir(workingDir, m))
-                Print("Error [" + m + "] removing directory [" + workingDir + "]");
+                msgs << "Error [" + m + "] removing directory [" + workingDir + "]";
         }
     }
 
@@ -455,14 +587,15 @@ bool squirrel::write(QString outpath, QString &filepath, QString &m, bool debug)
 
     root["_package"] = pkgInfo;
 
+    QJsonObject data;
     QJsonArray JSONsubjects;
-
     /* add subjects */
     for (int i=0; i < subjectList.size(); i++) {
         JSONsubjects.append(subjectList[i].ToJSON());
     }
-    root["numSubjects"] = JSONsubjects.size();
-    root["subjects"] = JSONsubjects;
+    data["numSubjects"] = JSONsubjects.size();
+    data["subjects"] = JSONsubjects;
+    root["data"] = data;
 
     /* add pipelines */
     msgs << Log(QString("Adding [%1] pipelines to JSON file").arg(pipelineList.size()), __FUNCTION__);

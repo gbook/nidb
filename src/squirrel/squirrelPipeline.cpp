@@ -50,7 +50,7 @@ QJsonObject squirrelPipeline::ToJSON(QString path) {
     json["level"] = level;
 
     json["parentPipelines"] = parentPipelines.join(",");
-    json["completeFiles"] = QJsonArray::fromStringList(completeFiles.split(","));
+    json["completeFiles"] = QJsonArray::fromStringList(completeFiles);
 
     json["dataCopyMethod"] = dataCopyMethod;
     json["directory"] = directory;
@@ -108,12 +108,12 @@ QJsonObject squirrelPipeline::ToJSON(QString path) {
     QString m;
     QString pipelinepath = QString("%1/pipelines/%2").arg(path).arg(pipelineName);
     if (MakePath(pipelinepath, m)) {
-        QByteArray j = QJsonDocument(json).toJson();
-        QFile fout(QString(pipelinepath + "/pipeline.json"));
-        if (fout.open(QIODevice::WriteOnly))
-            fout.write(j);
-        else
-            Print("Error writing file [" + pipelinepath + "/pipeline.json]");
+        //QByteArray j = QJsonDocument(json).toJson();
+        //QFile fout(QString(pipelinepath + "/pipeline.json"));
+        //if (fout.open(QIODevice::WriteOnly))
+        //    fout.write(j);
+        //else
+        //    Print("Error writing file [" + pipelinepath + "/pipeline.json]");
 
         /* write the scripts */
         if (!WriteTextFile(QString(pipelinepath + "/primaryScript.sh"), primaryScript))
@@ -149,7 +149,7 @@ void squirrelPipeline::PrintPipeline() {
     Print(QString("       PipelineName: %1").arg(level));
 
     Print(QString("       PipelineName: %1").arg(parentPipelines.join(",")));
-    Print(QString("       PipelineName: %1").arg(completeFiles));
+    Print(QString("       PipelineName: %1").arg(completeFiles.join(",")));
 
     Print(QString("       PipelineName: %1").arg(dataCopyMethod));
     Print(QString("       PipelineName: %1").arg(directory));

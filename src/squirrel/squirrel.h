@@ -43,6 +43,7 @@ class squirrel
 {
 public:
     squirrel();
+    ~squirrel();
 
     bool read(QString filename, QString &m, bool validateOnly=false);
     bool write(QString outpath, QString &filepath, QString &m, bool debug=false);

@@ -87,7 +87,7 @@ public:
 
     /* pipeline options */
     QStringList parentPipelines; /*!< list of pipelines on which this pipeline depends */
-    QString completeFiles; /*!< list of files that must exists to indicate the analysis was complete */
+    QStringList completeFiles; /*!< list of files that must exists to indicate the analysis was complete */
     QString dataCopyMethod; /*!< cp, hardlink, softlink  */
     QString depDir; /*!< dependency directory */
     QString depLevel; /*!<  */
