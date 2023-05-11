@@ -6,38 +6,28 @@ description: How to build NiDB and contribute to its development
 
 ## Building NiDB
 
-The following OS configurations have been tested to build nidb with Qt 6.3
+The following OS configurations have been tested to build nidb. It may be possible to build NiDB on other OS configurations, but only the below environments have been tested.
 
-* <mark style="color:green;">Compatible</mark>
-  * Rocky Linux 9
-  * Rocky Linux 8 (not 8.6)
-  * CentOS 8
-  * CentOS 7
-
-Other OS configurations may work to build nidb, but only these environments have been tested.
+* <mark style="color:green;">**Tested & Compatible**</mark>
+  * RHEL 9 compatible (Rocky Linux 9, AlmaLinux 9, RHEL 9)
+  * RHEL 8 compatible (Rocky Linux 8, AlmaLinux 8, CentOS 8, RHEL 8)
+  * RHEL 7 compatible (RHEL 7, CentOS 7)
+* <mark style="color:red;">**Incompatible**</mark>
+  * RHEL-compatible 8.6 (RHEL 8.6, Rocky 8.6, AlmaLinux 8.6)
+  * CentOS 8 Stream
 
 {% hint style="danger" %}
-**NiDB cannot be built on CentOS Stream 8 or Rocky Linux 8.6.** There are kernel bugs which do not work correctly with Qt's QProcess library. This can lead to inconsistencies when running shell commands through NiDB, and qmake build errors.
+**NiDB cannot be built on CentOS Stream 8 or Rocky Linux 8.6.** These distros contain kernel bugs which are incompatible with the QProcess library.
 {% endhint %}
-
-{% tabs %}
-{% tab title="Rocky 9" %}
-
-{% endtab %}
-
-{% tab title="Rocky 8" %}
-
-{% endtab %}
-
-{% tab title="CentOS 7" %}
-
-{% endtab %}
-{% endtabs %}
 
 ### Prepare Build Environment
 
-Install development tools on **Rocky 9**
+#### Step 1 - Install development tools
 
+Run these commands as root (or sudo) based on your distribution
+
+{% tabs %}
+{% tab title="RHEL 9" %}
 ```bash
 yum group install 'Development Tools'
 yum install cmake3
@@ -45,9 +35,9 @@ yum install rpmdevtools
 yum install xcb*
 yum install libxcb*
 ```
+{% endtab %}
 
-Install development tools on **Rocky 8**
-
+{% tab title="RHEL 8" %}
 ```bash
 yum group install 'Development Tools'
 yum install cmake3
@@ -56,16 +46,18 @@ yum install xcb*
 yum install libxcb*
 yum install gcc-toolset-10
 ```
+{% endtab %}
 
-Install development tools on **CentOS 7**
-
+{% tab title="RHEL 7" %}
 ```bash
 yum install epel-release
 yum group install 'Development Tools'
 yum install cmake3 rpmdevtools rpm-build
 ```
+{% endtab %}
+{% endtabs %}
 
-### Install Qt 6.5
+#### Step 2 - Install Qt 6.5
 
 1. Download Qt open-source from https://www.qt.io/download-open-source
 2. Make the installer executable `chmod 777 qt-unified-linux-x64-x.x.x-online.run`
@@ -79,7 +71,31 @@ Once the build environment is setup, the builds can be done by script. The `buil
 
 #### Rocky Linux 8.5
 
-The first time building NiDB on this machine, perform the following
+{% tabs %}
+{% tab title="RHEL 9" %}
+**First time build** on this machine, perform the following
+
+```bash
+cd ~
+wget https://github.com/gbook/nidb/archive/master.zip
+unzip master.zip
+mv nidb-master nidb
+cd nidb
+./build.sh      # build only the NiDB executable
+./rpmbuild9.sh  # build the nidb .rpm
+```
+
+All **subsequent builds** on this machine can be done with the following
+
+```bash
+cd ~/nidb
+./build.sh      # build only the executable
+./rpmbuild9.sh  # build the .rpm
+```
+{% endtab %}
+
+{% tab title="RHEL 8" %}
+**First time build** on this machine, perform the following
 
 ```bash
 cd ~
@@ -91,13 +107,37 @@ cd nidb
 ./rpmbuild8.sh  # build the nidb .rpm
 ```
 
-All subsequent builds on this machine can be done with the following
+All **subsequent builds** on this machine can be done with the following
 
 ```bash
 cd ~/nidb
-./build.sh      # build only the NiDB executable
-./rpmbuild8.sh  # build the nidb .rpm
+./build.sh      # build only the executable
+./rpmbuild8.sh  # build the .rpm
 ```
+{% endtab %}
+
+{% tab title="RHEL 7" %}
+**First time build** on this machine, perform the following
+
+```bash
+cd ~
+wget https://github.com/gbook/nidb/archive/master.zip
+unzip master.zip
+mv nidb-master nidb
+cd nidb
+./build.sh      # build only the NiDB executable
+./rpmbuild7.sh  # build the nidb .rpm
+```
+
+All **subsequent builds** on this machine can be done with the following
+
+```bash
+cd ~/nidb
+./build.sh      # build only the executable
+./rpmbuild7.sh  # build the .rpm
+```
+{% endtab %}
+{% endtabs %}
 
 ### Contributing to the NiDB Project
 
