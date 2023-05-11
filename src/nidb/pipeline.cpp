@@ -331,7 +331,7 @@ squirrelPipeline pipeline::GetSquirrelObject() {
 
     /* pipeline options */
     s.parentPipelines = GetParentList();
-    s.completeFiles = completeFiles.join(",");
+    s.completeFiles = completeFiles;
     s.dataCopyMethod = dataCopyMethod;
     s.depDir = depDir;
     s.depLevel = depLevel;

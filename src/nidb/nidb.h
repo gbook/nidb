@@ -38,6 +38,8 @@
 
 typedef QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>> subjectStudySeriesContainer;
 
+#pragma warning(disable : 5045)
+
 /**
  * @brief The nidb class
  *

@@ -179,6 +179,7 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$groupid = $row['maxgroupid'] + 1;
 		
+		$msg = "";
 		foreach ($analysisids as $analysisid) {
 			
 			$sqlstring = "update analysis set analysis_statusmessage = 'Queued for deletion' where analysis_id = $analysisid";
@@ -210,8 +211,9 @@
 			elseif ($pipelinelevel == 2) {
 				$datapath = $GLOBALS['cfg']['groupanalysisdir'] . "/$pipelinename";
 			}
-			?><span class="codelisting"><?=$datapath?> queued for deletion</span><br><?
+			$msg .= "<tt>$datapath</tt><br>";
 		}
+		Notice($msg, "Analyses queued for deletion");
 	}
 
 
@@ -1021,7 +1023,7 @@
 		<div class="ui popup" id="popupmenu2">
 			<h3 class="ui header">With Selected...</h3>
 			
-			<p><div class="ui fluid red button" type="submit" onclick="document.studieslist.action.value='deleteanalyses';return confirm('Are you absolutely sure you want to DELETE the selected analyses?')" title="<b style='color:pink'>Pipeline will be disabled. Wait until the deletions are compelte before reenabling the pipeline</b><Br> This will delete the selected analyses, which will be regenerated using the latest pipeline version"><i class="trash icon"></i> Delete</div></p>
+			<p><button class="ui fluid red button" type="submit" onclick="document.studieslist.action.value='deleteanalyses';return confirm('Are you absolutely sure you want to DELETE the selected analyses?')" title="<b style='color:pink'>Pipeline will be disabled. Wait until the deletions are compelte before reenabling the pipeline</b><Br> This will delete the selected analyses, which will be regenerated using the latest pipeline version"><i class="trash icon"></i> Delete</button></p>
 			<br>
 			
 			<p><div class="ui fluid button" type="button" name="copyanalyses" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='copyanalyses'; GetDestination(); return;"><i class="copy icon"></i> Copy analyses to...</div></p>
