@@ -12,6 +12,7 @@ The following OS configurations have been tested to build nidb. It may be possib
   * RHEL 9 compatible (Rocky Linux 9, AlmaLinux 9, RHEL 9)
   * RHEL 8 compatible (Rocky Linux 8, AlmaLinux 8, CentOS 8, RHEL 8)
   * RHEL 7 compatible (RHEL 7, CentOS 7)
+  * Ubuntu 20
 * <mark style="color:red;">**Incompatible**</mark>
   * RHEL-compatible 8.6 (RHEL 8.6, Rocky 8.6, AlmaLinux 8.6)
   * CentOS 8 Stream
@@ -55,11 +56,20 @@ yum group install 'Development Tools'
 yum install cmake3 rpmdevtools rpm-build
 ```
 {% endtab %}
+
+{% tab title="Ubuntu" %}
+```
+apt install build-essential
+apt install libxcb*
+apt install make
+apt install cmake
+```
+{% endtab %}
 {% endtabs %}
 
 #### Step 2 - Install Qt 6.5
 
-1. Download Qt open-source from https://www.qt.io/download-open-source
+1. Download Qt open-source from [https://www.qt.io/download-open-source](https://www.qt.io/download-open-source)
 2. Make the installer executable `chmod 777 qt-unified-linux-x64-x.x.x-online.run`
 3. Run `./qt-unified-linux-x64-x.x.x-online.run`
 4. The Qt Maintenance Tool will start. An account is required to download Qt open source
@@ -135,6 +145,26 @@ All **subsequent builds** on this machine can be done with the following
 cd ~/nidb
 ./build.sh      # build only the executable
 ./rpmbuild7.sh  # build the .rpm
+```
+{% endtab %}
+
+{% tab title="Ubuntu" %}
+**First time build** on this machine, perform the following
+
+```bash
+cd ~
+wget https://github.com/gbook/nidb/archive/master.zip
+unzip master.zip
+mv nidb-master nidb
+cd nidb
+./build.sh      # build only the NiDB executable
+```
+
+All **subsequent builds** on this machine can be done with the following
+
+```bash
+cd ~/nidb
+./build.sh      # build only the executable
 ```
 {% endtab %}
 {% endtabs %}
