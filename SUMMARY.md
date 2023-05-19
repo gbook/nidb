@@ -76,6 +76,7 @@
   * [Example package](contribute/squirrel-data-sharing-format/example-package.md)
   * [Building squirrel library and utils](contribute/squirrel-data-sharing-format/building-squirrel-library-and-utils.md)
 * [Building NiDB](contribute/building-nidb.md)
+* [Creating a Development VM](contribute/creating-a-development-vm.md)
 
 ## Help!
 

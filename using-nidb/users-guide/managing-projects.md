@@ -20,7 +20,11 @@ On the next page, fill the following form related to the new project. Name the n
 
 After clicking "Add" button, a new project will be added to the project list and it will be shown in the list of existing projects as shown in the figure below.
 
-![](https://user-images.githubusercontent.com/24811295/154159860-50dc0c2e-f7b3-4f0d-91d1-62ce667a0c51.png)
+<div align="center">
+
+<img src="https://user-images.githubusercontent.com/24811295/154159860-50dc0c2e-f7b3-4f0d-91d1-62ce667a0c51.png" alt="" width="563">
+
+</div>
 
 ### Project Setup
 

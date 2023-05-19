@@ -57,7 +57,7 @@ Got a batch of DICOMs from a collaborator, or from an old DVD? Import them easil
 
 Find imaging data from any project (that you have permissions to...) and export data. Search by dozens of criteria.
 
-<figure><img src=".gitbook/assets/image (1).png" alt=""><figcaption></figcaption></figure>
+<figure><img src=".gitbook/assets/image (1) (4).png" alt=""><figcaption></figcaption></figure>
 
 ### Export to multiple formats
 
@@ -117,7 +117,7 @@ Large number of automatically generated metrics. Metrics are exportable as .csv 
 
 Fully featured calendar, running securely on your internal network. Repeating appts, blocking appts, and time requests.
 
-<figure><img src=".gitbook/assets/image.png" alt=""><figcaption><p>Week view, showing US holidays</p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (8).png" alt=""><figcaption><p>Week view, showing US holidays</p></figcaption></figure>
 
 ## Publications
 

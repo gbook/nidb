@@ -41,7 +41,7 @@ To start mapping Click on the **Map This Project** button at the end of screen o
 
 ### Step 5
 
-Each Redcap form is required to map separately. Pick a Redcap form **** from the **Select a Redcap Form** drop-down list as shown above. You can type the name of the Redcap form as well.
+Each Redcap form is required to map separately. Pick a Redcap form from the **Select a Redcap Form** drop-down list as shown above. You can type the name of the Redcap form as well.
 
 Now select the Redcap form containing "unique id" to map the subjects in Redcap and NiDB.&#x20;
 
