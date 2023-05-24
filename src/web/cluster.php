@@ -58,7 +58,7 @@
 	/* -------------------------------------------- */
 	function DisplayStatsMenu() {
 		?>
-		<div class="ui center aligned text container">
+		<div class="ui center aligned container">
 			<h3 class="ui header">View cluster information</h3>
 			<a class="ui basic button" href="cluster.php?action=qstatjobs"><tt>qstat</tt> job output</a>
 			<a class="ui basic button" href="cluster.php?action=qstatusage"><tt>qstat</tt> usage output</a>
@@ -145,7 +145,7 @@
 		$statsoutput = explode("\n",shell_exec($command));
 		
 		?>
-		<div class="ui text container">
+		<div class="ui container">
 			<div class="ui styled segment" style="font-family: monospace; white-space: pre;"><?
 			foreach ($statsoutput as $line) {
 				$line = trim($line);
@@ -168,7 +168,7 @@ echo "$line\n";
 		$statsoutput = explode("\n",shell_exec($command));
 		
 		?>
-		<div class="ui text container">
+		<div class="ui container">
 			<div class="ui styled segment" style="font-family: monospace; white-space: pre;"><?
 			foreach ($statsoutput as $line) {
 				if (!strstr($line,'------')) {
@@ -196,7 +196,7 @@ echo "$line\n";
 		$slotsunusedcolor = "EEEEEE";
 		
 		?>
-		<div class="ui text container">
+		<div class="ui container">
 			<table class="ui small very compact celled grey table">
 				<thead>
 					<tr>
@@ -271,43 +271,45 @@ echo "$line\n";
 
 		?>
 
-		<table>
-			<tr>
-				<td valign="top">
-					<table border="0">
-						<tr>
-							<td>Queue</td>
-						<?
-							foreach ($queues as $queue) {
-								$slotsused = 0;
-								$slotsunused = 0;
-								
-								foreach ($hostnames as $hostname) {
-									if (isset($report[$hostname]['queues'][$queue])) {
-										echo "<pre>";
-										//print_r($report[$hostname]['queues'][$queue]['jobs']);
-										$slotsused += $report[$hostname]['queues'][$queue]['slotsused'];
-										$slotsunused += $report[$hostname]['queues'][$queue]['slotsavailable'];
-										echo "</pre>";
+		<div class="ui container">
+			<table class="ui table">
+				<tr>
+					<td valign="top">
+						<table border="0">
+							<tr>
+								<td>Queue</td>
+							<?
+								foreach ($queues as $queue) {
+									$slotsused = 0;
+									$slotsunused = 0;
+									
+									foreach ($hostnames as $hostname) {
+										if (isset($report[$hostname]['queues'][$queue])) {
+											echo "<pre>";
+											//print_r($report[$hostname]['queues'][$queue]['jobs']);
+											$slotsused += $report[$hostname]['queues'][$queue]['slotsused'];
+											$slotsunused += $report[$hostname]['queues'][$queue]['slotsavailable'];
+											echo "</pre>";
+										}
 									}
+									?>
+									<tr>
+										<td><b><?=$queue?></b> &nbsp;</td>
+										<td>
+											<img src="horizontalchart.php?b=yes&w=600&h=25&v=<?=$slotsused?>,<?=($slotsunused-$slotsused)?>&c=<?=$slotsusedcolor?>,<?=$slotsunusedcolor?>">
+											<? if (($slotsused == 0) && ($slotsunused == 0)) { echo "Idle"; } else { echo "$slotsused of $slotsunused"; } ?>
+										</td>
+									</tr>
+									<?
 								}
-								?>
-								<tr>
-									<td><b><?=$queue?></b> &nbsp;</td>
-									<td>
-										<img src="horizontalchart.php?b=yes&w=600&h=25&v=<?=$slotsused?>,<?=($slotsunused-$slotsused)?>&c=<?=$slotsusedcolor?>,<?=$slotsunusedcolor?>">
-										<? if (($slotsused == 0) && ($slotsunused == 0)) { echo "Idle"; } else { echo "$slotsused of $slotsunused"; } ?>
-									</td>
-								</tr>
-								<?
-							}
-						?>
-					</table>
-				</td>
-				<td valign="top">
-				</td>
-			</tr>
-		</table>
+							?>
+						</table>
+					</td>
+					<td valign="top">
+					</td>
+				</tr>
+			</table>
+		</div>
 	<?
 	}
 	
