@@ -38,7 +38,6 @@
 	require "functions.php";
 	require "includes_php.php";
 	require "includes_html.php";
-	//require "nidbapi.php";
 	require "menu.php";
 
 	/* check if this page is being called from itself */
@@ -356,7 +355,7 @@
 		}
 		else {
 			$formaction = "add";
-			$formtitle = "Add new user to this instance";
+			$formtitle = "Adding new user to the <b>" . $_SESSION['instancename'] . "</b> instance";
 			$submitbuttonlabel = "Add";
 		}
 		
@@ -370,22 +369,38 @@
 			}
 		</style>
 		<div class="ui text container">
-			<div class="ui attached visible message">
-			  <div class="header"><?=$formtitle?></div>
+			<div class="ui top attached raised segment">
+				<i class="user plus icon"></i>
+				<?=$formtitle?>
 			</div>
-
-			<form method="post" action="adminusers.php" autocomplete="off" class="ui form attached fluid segment">
+			
+			<form method="post" action="adminusers.php" autocomplete="off" class="ui form raised bottom attached segment">
 			<input type="hidden" name="action" value="<?=$formaction?>">
 			<input type="hidden" name="id" value="<?=$id?>">
 
 			<h3 class="ui header">User Information</h3>
 			
+			<script>
+				function CheckUserExists() {
+					var xhttp = new XMLHttpRequest();
+					xhttp.onreadystatechange = function() {
+						if (this.readyState == 4 && this.status == 200) {
+							document.getElementById("usercheckresult").innerHTML = this.responseText;
+						}
+					};
+					var username = document.getElementById("username").value;
+					xhttp.open("GET", "ajaxapi.php?action=checkuser&username=" + username, true);
+					xhttp.send();
+				}
+			</script>
+
 			<? if ($type != 'edit') { ?>
 			<div class="field">
 				<label>Username</label>
 				<div class="field">
-					<input type="text" name="username" value="<?=$username?>">
+					<input type="text" name="username" id="username" onKeyUp="CheckUserExists()" value="<?=$username?>" required placeholder="Username or email address">
 				</div>
+				<span id="usercheckresult"></span>
 			</div>
 			<? } ?>
 

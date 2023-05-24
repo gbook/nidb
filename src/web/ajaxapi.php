@@ -38,6 +38,7 @@
 	$jobid = GetVariable("jobid");
 	$uid = GetVariable("uid");
 	$hostname = GetVariable("hostname");
+	$username = GetVariable("username");
 	
 	$s['pipelineid'] = GetVariable("pipelineid");
 	$s['dependency'] = GetVariable("dependency");
@@ -66,6 +67,9 @@
 			break;
 		case 'validatepath':
 			ValidatePath($nfspath);
+			break;
+		case 'checkuser':
+			CheckUsername($username);
 			break;
 		case 'sgejobstatus':
 			DisplaySGEJobStatus($jobid);
@@ -195,6 +199,28 @@
 		}
 		if ($exists && $writeable) { $icon = "green check circle"; } else { $icon = "red exclamation circle"; }
 		echo " <div class='ui left pointing label'><i class='$icon icon'></i> $msg</div>";
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- CheckUsername ---------------------- */
+	/* -------------------------------------------- */
+	function CheckUsername($username) {
+		$username = trim(mysqli_real_escape_string($GLOBALS['linki'], $username));
+
+		$msg = "";
+
+		$sqlstring = "select * from users where username = '$username'";
+		$result = MySQLiQuery($sqlstring, __FILE__ , __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		
+		if (mysqli_num_rows($result) > 0) {
+			echo " <div class='ui pointing label'><i class='red exclamation circle icon'></i> Username exists</div>";
+		}
+		else {
+			echo " <div class='ui pointing label'><i class='green check circle icon'></i> Username available</div>";
+		}
+		
 	}
 
 
