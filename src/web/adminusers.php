@@ -399,8 +399,8 @@
 				<label>Username</label>
 				<div class="field">
 					<input type="text" name="username" id="username" onKeyUp="CheckUserExists()" value="<?=$username?>" required placeholder="Username or email address">
+					<span id="usercheckresult"></span>
 				</div>
-				<span id="usercheckresult"></span>
 			</div>
 			<? } ?>
 
@@ -434,15 +434,15 @@
 				</div>
 			</div>
 			<div class="field">
-				<label>Enabled</label>
-				<div class="field">
+				<div class="ui checkbox">
 					<input type="checkbox" name="enabled" value="1" <?=$enabledcheck?>>
+					<label>Enabled</label>
 				</div>
 			</div>
 			<div class="field">
-				<label>NiDB admin</label>
-				<div class="field">
+				<div class="ui checkbox">
 					<input type="checkbox" name="isadmin" value="1" <?=$isadmincheck?>>
+					<label>NiDB admin</label>
 				</div>
 			</div>
 
