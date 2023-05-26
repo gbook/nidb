@@ -3,6 +3,6 @@
 
 #define VERSION_MAJ "2023"
 #define VERSION_MIN "5"
-#define BUILD_NUM "988"
+#define BUILD_NUM "998"
 
 #endif // VERSION_H
