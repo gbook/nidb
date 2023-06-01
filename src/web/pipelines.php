@@ -1765,12 +1765,12 @@
 			<div class="ui attached segment">
 				<table class="entrytable">
 					<tr>
-						<td class="label" valign="top">Successful files <i class="blue question circle icon" title="<b>Successful files</b><br><br>The analysis is marked as successful if ALL of the files specified exist at the end of the analysis. If left blank, the analysis will always be marked as successful.<br>Example: <tt>analysis/T1w/T1w_acpc_dc_restore_brain.nii.gz</tt>"></i></td>
+						<td class="label" valign="top">Successful files <i class="grey question outline circle icon" title="<b>Successful files</b><br><br>The analysis is marked as successful if ALL of the files specified exist at the end of the analysis. If left blank, the analysis will always be marked as successful.<br>Example: <tt>analysis/T1w/T1w_acpc_dc_restore_brain.nii.gz</tt>"></i></td>
 						<td valign="top"><textarea name="completefiles" <?=$disabled?> rows="5" cols="60"><?=$completefiles?></textarea><br>
 						<span class="tiny">Comma seperated list of files (relative paths)</span></td>
 					</tr>
 					<tr>
-						<td class="label" valign="top">Results script <i class="blue question circle icon" title="<b>Results script</b><br><br>This script will be executed last and can be re-run separate from the analysis pipeline. The results script would often be used to create thumbnails of images and parse text files, and reinsert those results back into the database. The same pipeline variables available in the script command section below are available here to be passed as parameters to the results script"></i></td>
+						<td class="label" valign="top">Results script <i class="grey question outline circle icon" title="<b>Results script</b><br><br>This script will be executed last and can be re-run separate from the analysis pipeline. The results script would often be used to create thumbnails of images and parse text files, and reinsert those results back into the database. The same pipeline variables available in the script command section below are available here to be passed as parameters to the results script"></i></td>
 						<td valign="top">
 							<textarea name="pipelineresultsscript" rows="3" cols="60"><?=$resultscript?></textarea>
 						</td>
@@ -1868,7 +1868,7 @@
 						</td>
 					</tr>
 					<tr class="level1">
-						<td class="label" valign="top">Study Group(s) <i class="blue question circle icon" title="Perform this analysis ONLY<br>on the studies in the specified groups"></i><br>
+						<td class="label" valign="top">Study Group(s) <i class="grey question outline circle icon" title="Perform this analysis ONLY<br>on the studies in the specified groups"></i><br>
 						<span class="level2" style="color:darkred; font-size:8pt; font-weight:normal"> Second level must have<br> at least one group.<br>Group(s) must be identical to<br>first level <b>dependency's</b> group(s)</span>
 						</td>
 						<td valign="top">
@@ -1898,7 +1898,7 @@
 						</td>
 					</tr>
 					<tr class="level1">
-						<td class="label" valign="top">Project(s) <i class="blue question circle icon" title="Perform this analysis ONLY<br>on the studies in the specified project(s)"></i></td>
+						<td class="label" valign="top">Project(s) <i class="grey question outline circle icon" title="Perform this analysis ONLY<br>on the studies in the specified project(s)"></i></td>
 						<td valign="top">
 							<select name="projectid[]" id="projectid" <?=$disabled?> multiple="multiple" class="ui dropdown">
 								<option value="" <? if ($projectid == "") { echo "selected"; } ?>>(Select project)</option>
@@ -2043,11 +2043,11 @@
 					<thead>
 						<th>Enabled</th>
 						<th>Optional</th>
-						<th title="<b>Primary</b> This flag indicates which criteria will specify the primary study which will be later used in the analysis listing. The primary study determines the primary modality, which also determines how other modalities and data steps are related to the primary study. Primary study also determines how dependent pipelines act.">Primary <i class="blue question circle icon"></i></td>
+						<th title="<b>Primary</b> This flag indicates which criteria will specify the primary study which will be later used in the analysis listing. The primary study determines the primary modality, which also determines how other modalities and data steps are related to the primary study. Primary study also determines how dependent pipelines act.">Primary <i class="grey question outline circle icon"></i></td>
 						<th>Order</th>
 						<th>Protocol</th>
 						<th>Modality</th>
-						<th>Output &nbsp; <input type="checkbox" name="outputbids" value="1" <? if ($outputbids) { echo "checked"; } ?>> BIDS<i class="blue question circle icon" title="If this option is checked, all data will be written in BIDS format. Output formats for individual data items will be ignored."></i></th>
+						<th>Output &nbsp; <input type="checkbox" name="outputbids" value="1" <? if ($outputbids) { echo "checked"; } ?>> BIDS<i class="grey question outline circle icon" title="If this option is checked, all data will be written in BIDS format. Output formats for individual data items will be ignored."></i></th>
 					</thead>
 				<?
 				$neworder = 1;
@@ -2172,7 +2172,7 @@
 								<div class="content">
 
 									<div class="field">
-										<label>Data source <i class="blue question circle icon" title="<b>Data Source</b><br>Analyses are run on the <u>study</u> level. If you want data from this <u>subject</u>, but the data was collected in a different study, select the Subject data level. For example, the subject has been scanned on three different dates but only one of them has a T1."></i></label>
+										<label>Data source <i class="grey question outline circle icon" title="<b>Data Source</b><br>Analyses are run on the <u>study</u> level. If you want data from this <u>subject</u>, but the data was collected in a different study, select the Subject data level. For example, the subject has been scanned on three different dates but only one of them has a T1."></i></label>
 										<select class="ui fluid dropdown" name="dd_datalevel[<?=$neworder?>]">
 											<option value="">Level...
 											<option value="study" <? if (($dd_datalevel == "study") || ($dd_datalevel == "")) { echo "selected"; } ?>>Study
@@ -2181,7 +2181,7 @@
 									</div>
 									
 									<div class="field">
-										<label>Subject linkage <i class="blue question circle icon" title="<b>Data Level</b><br>Only use this option if your data is coming from the subject level"></i></label>
+										<label>Subject linkage <i class="grey question outline circle icon" title="<b>Data Level</b><br>Only use this option if your data is coming from the subject level"></i></label>
 										<select class="ui fluid dropdown" name="dd_studyassoc[<?=$neworder?>]">
 											<option value="">Link...
 											<option value="nearestintime" <? if (($dd_assoctype == "nearestintime") || ($dd_assoctype == "")) { echo "selected"; } ?>>Nearest in time
@@ -2190,11 +2190,11 @@
 									</div>
 									
 									<div class="field">
-										<label>Image type <i class="blue question circle icon" title="Comma separated list of image types"></i></label>
+										<label>Image type <i class="grey question outline circle icon" title="Comma separated list of image types"></i></label>
 										<input type="text" name="dd_imagetype[<?=$neworder?>]" value="<?=$dd_imagetype?>">
 									</div>
 									<div class="field">
-										<label>Series criteria <i class="blue question circle icon" title="<b>All</b> - All matching series will be downloaded<br><b>First</b> - Only the lowest numbered series will be downloaded<br><b>Last</b> - Only the highest numbered series will be downloaded<br><b>Largest</b> - Only one series with the most number of volumes or slices will be downloaded<br><b>Smallest</b> - Only one series with the least number of volumes or slices will be downloaded"></i></label>
+										<label>Series criteria <i class="grey question outline circle icon" title="<b>All</b> - All matching series will be downloaded<br><b>First</b> - Only the lowest numbered series will be downloaded<br><b>Last</b> - Only the highest numbered series will be downloaded<br><b>Largest</b> - Only one series with the most number of volumes or slices will be downloaded<br><b>Smallest</b> - Only one series with the least number of volumes or slices will be downloaded"></i></label>
 										<select name="dd_seriescriteria[<?=$neworder?>]" class="ui dropdown">
 											<option value="all" <? if ($dd_seriescriteria == "all") { echo "selected"; } ?>>All</option>
 											<option value="first" <? if ($dd_seriescriteria == "first") { echo "selected"; } ?>>First</option>
@@ -2205,14 +2205,14 @@
 										</select>
 									</div>
 									<div class="field">
-										<label>Number of BOLD reps <i class="blue question circle icon" title="<b>Must be an integer or a criteria:</b><ul><li><i>N</i> (exactly N)<li>> <i>N</i> (greater than)<li>>= <i>N</i> (greater than or equal to)<li>< <i>N</i> (less than)<li><= <i>N</i> (less than or equal to)<li>~ <i>N</i> (not)</ul>"></i></label>
+										<label>Number of BOLD reps <i class="grey question outline circle icon" title="<b>Must be an integer or a criteria:</b><ul><li><i>N</i> (exactly N)<li>> <i>N</i> (greater than)<li>>= <i>N</i> (greater than or equal to)<li>< <i>N</i> (less than)<li><= <i>N</i> (less than or equal to)<li>~ <i>N</i> (not)</ul>"></i></label>
 										<input type="text" name="dd_numboldreps[<?=$neworder?>]" value="<?=$dd_numboldreps?>">
 									</div>
 
 									<h3 class="ui blue header">Output format</h3>
 
 									<div class="field">
-										<label>Directory <i class="blue question circle icon" title="<b>Tip:</b> choose a directory called 'data/<i>taskname</i>'. If converting data or putting into a new directory structure, this data directory can be used as a staging area and can then be deleted later in your script"></i> <span class="tiny">Relative to analysis root</span></label>
+										<label>Directory <i class="grey question outline circle icon" title="<b>Tip:</b> choose a directory called 'data/<i>taskname</i>'. If converting data or putting into a new directory structure, this data directory can be used as a staging area and can then be deleted later in your script"></i> <span class="tiny">Relative to analysis root</span></label>
 										<input type="text" name="dd_location[<?=$neworder?>]" size="30" value="<?=$dd_location?>">
 									</div>
 									<div class="field">
@@ -2236,19 +2236,19 @@
 									<div class="field">
 										<div class="ui checkbox">
 											<input type="checkbox" name="dd_useseriesdirs[<?=$neworder?>]" value="1" <? if ($dd_useseries) {echo "checked";} ?>>
-											<label>Use series directories <i class="blue question circle icon" title="<b>Tip:</b> If you plan to download multiple series with the same name, you will want to use series directories. This option will place each series into its own directory (data/task/1, data/task/2, etc)"></i></label>
+											<label>Use series directories <i class="grey question outline circle icon" title="<b>Tip:</b> If you plan to download multiple series with the same name, you will want to use series directories. This option will place each series into its own directory (data/task/1, data/task/2, etc)"></i></label>
 										</div>
 									</div>
 									<div class="field">
 										<div class="ui checkbox">
 											<input type="checkbox" name="dd_preserveseries[<?=$neworder?>]" value="1" <? if ($dd_preserveseries) {echo "checked";} ?>>
-											<label>Preserve series numbers <i class="blue question circle icon" title="If data is placed in a series directory, check this box to preserve the original series number. Otherwise the series number directories will be sequential starting at 1, regardless of the orignal series number"></i></label>
+											<label>Preserve series numbers <i class="grey question outline circle icon" title="If data is placed in a series directory, check this box to preserve the original series number. Otherwise the series number directories will be sequential starting at 1, regardless of the orignal series number"></i></label>
 										</div>
 									</div>
 									<div class="field">
 										<div class="ui checkbox">
 											<input type="checkbox" name="dd_usephasedir[<?=$neworder?>]" value="1" <? if ($dd_usephasedir) {echo "checked";} ?>>
-											<label>Phase encoding direction <i class="blue question circle icon" title="<b>Phase Encoding Direction</b> If selected, it will write the data to a subdirectory corresponding to the acquired phase encoding direction: AP, PA, RL, LR, COL, ROW, unknownPE"></i></label>
+											<label>Phase encoding direction <i class="grey question outline circle icon" title="<b>Phase Encoding Direction</b> If selected, it will write the data to a subdirectory corresponding to the acquired phase encoding direction: AP, PA, RL, LR, COL, ROW, unknownPE"></i></label>
 										</div>
 									</div>
 									<div class="field">
@@ -2341,14 +2341,55 @@
 						</td>
 					</tr>
 					<tr class="optionRow<?=$neworder?>" style="display:none">
+						
+						<script>
+							$(document).ready(function() {
+								$('#studycriteria<?=$neworder?>').hide();
+								$('#numboldreps<?=$neworder?>').hide();
+								$('#behdirname<?=$neworder?>').hide();
+							});
+							
+							function ShowHideOptions<?=$neworder?>() {
+								
+								/* study criteria */
+								var element = document.getElementById('dd_datalevel<?=$neworder?>');
+								if (element.value == "subject") {
+									$('#studycriteria<?=$neworder?>').show();
+								}
+								else {
+									$('#studycriteria<?=$neworder?>').hide();
+								}
+
+								/* num bold reps */
+								var element2 = document.getElementById('dd_seriescriteria<?=$neworder?>');
+								if (element2.value == "usesizecriteria") {
+									$('#numboldreps<?=$neworder?>').show();
+								}
+								else {
+									$('#numboldreps<?=$neworder?>').hide();
+								}
+								
+								/* beh directory */
+								var element3 = document.getElementById('dd_behformat<?=$neworder?>');
+								if (element3.value == "behrootdir" || element3.value == "behseriesdir") {
+									$('#behdirname<?=$neworder?>').show();
+								}
+								else {
+									$('#behdirname<?=$neworder?>').hide();
+								}
+							}
+						</script>
+						
 						<td colspan="7" style="padding: 20px; border-top: 0px">
 							<div class="ui grid">
 								<div class="eight wide column">
+									<h3 class="ui blue header">Search criteria</h3>
+								
 									<div class="two fields">
 										<div class="field">
-											<label>Data source <i class="blue question circle icon" title="<b>Data Source - Should we search only within this study or search within the entire subject?</b><br>Analyses are run on the <u>study</u> level. If you want data from this <u>subject</u>, but the data was collected in a different study, select the Subject data level. For example, the subject has been scanned on three different dates but only one of them has a T1."></i></label>
+											<label>Data source <i class="grey question outline circle icon" title="<b>Data Source - Should we search only within this study or search within the entire subject?</b><br>Analyses are run on the <u>study</u> level. If you want data from this <u>subject</u>, but the data was collected in a different study, select the Subject data level. For example, the subject has been scanned on three different dates but only one of them has a T1."></i></label>
 											<div class="ui fluid search selection dropdown">
-												<input type="hidden" name="dd_datalevel[<?=$neworder?>]">
+												<input type="hidden" name="dd_datalevel[<?=$neworder?>]" id="dd_datalevel<?=$neworder?>" onChange="ShowHideOptions<?=$neworder?>()">
 												<div class="default text">Where to search for data?</div>
 												<i class="dropdown icon"></i>
 												<div class="menu">
@@ -2358,8 +2399,8 @@
 											</div>
 										</div>
 										
-										<div class="field">
-											<label>Study criteria <i class="blue question circle icon" title="<b>Data Level</b><br>Only use this option to search for your data in another study (same subject)"></i></label>
+										<div class="field" id="studycriteria<?=$neworder?>">
+											<label>Study criteria <i class="grey question outline circle icon" title="<b>Data Level</b><br>Only use this option to search for your data in another study (same subject)"></i></label>
 											<div class="ui fluid search selection dropdown">
 												<input type="hidden" name="dd_studyassoc[<?=$neworder?>]">
 												<div class="default text">Which studies to search?</div>
@@ -2367,28 +2408,29 @@
 												<div class="menu">
 													<div class="item" data-value="nearestintime">Search only the study <b>nearest in time</b></div>
 													<div class="item" data-value="samestudytype">Search only studies with the <b>same VisitType</b></div>
+													<div class="item" data-value="entiresubject">Search <b>all studies</b></div>
 												</div>
 											</div>
 										</div>
 									</div>
 									<div class="field">
-										<label>Image type <i class="blue question circle icon" title="Comma separated list of image types"></i></label>
+										<label>Image type <i class="grey question outline circle icon" title="Comma separated list of image types. Useful to differentiate intensity normalized vs non-normalized data on Siemens MRIs. For example <tt>ORIGINALPRIMARYMND</tt> or <tt>ORIGINAL/PRIMARY/M/ND/NORM</tt>"></i></label>
 										<input type="text" name="dd_imagetype[<?=$neworder?>]">
 									</div>
 									<div class="two fields">
 										<div class="field">
-											<label>Series criteria <i class="blue question circle icon" title="<b>All</b> - All matching series will be downloaded<br><b>First</b> - Only the lowest numbered series will be downloaded<br><b>Last</b> - Only the highest numbered series will be downloaded<br><b>Largest</b> - Only one series with the most number of volumes or slices will be downloaded<br><b>Smallest</b> - Only one series with the least number of volumes or slices will be downloaded"></i></label>
-											<select name="dd_seriescriteria[<?=$neworder?>]" class="ui dropdown">
+											<label>Series criteria <i class="grey question outline circle icon" title="<b>All</b> - All matching series will be downloaded<br><b>First</b> - Only the lowest numbered series will be downloaded<br><b>Last</b> - Only the highest numbered series will be downloaded<br><b>Largest</b> - Only one series with the most number of volumes or slices will be downloaded<br><b>Smallest</b> - Only one series with the least number of volumes or slices will be downloaded"></i></label>
+											<select name="dd_seriescriteria[<?=$neworder?>]" class="ui dropdown" id="dd_seriescriteria<?=$neworder?>" onChange="ShowHideOptions<?=$neworder?>()">
 												<option value="all">All</option>
 												<option value="first">First</option>
 												<option value="last">Last</option>
 												<option value="largestsize">Largest</option>
 												<option value="smallestsize">Smallest</option>
-												<option value="usesizecriteria">Use size criteria below</option>
+												<option value="usesizecriteria">Use num BOLD reps criteria</option>
 											</select>
 										</div>
-										<div class="field">
-											<label>Number of BOLD reps <i class="blue question circle icon" title="<b>Must be an integer or a criteria:</b><ul><li><i>N</i> (exactly N)<li>> <i>N</i> (greater than)<li>>= <i>N</i> (greater than or equal to)<li>< <i>N</i> (less than)<li><= <i>N</i> (less than or equal to)<li>~ <i>N</i> (not)</ul>"></i></label>
+										<div class="field" id="numboldreps<?=$neworder?>">
+											<label>Number of BOLD reps <i class="grey question outline circle icon" title="<b>Must be an integer or a criteria:</b><ul><li><i>N</i> (exactly N)<li>> <i>N</i> (greater than)<li>>= <i>N</i> (greater than or equal to)<li>< <i>N</i> (less than)<li><= <i>N</i> (less than or equal to)<li>~ <i>N</i> (not)</ul>"></i></label>
 											<input type="text" name="dd_numboldreps[<?=$neworder?>]">
 										</div>
 									</div>
@@ -2397,7 +2439,7 @@
 									<h3 class="ui blue header">Output format</h3>
 
 									<div class="field">
-										<label>Directory <i class="blue question circle icon" title="<b>Tip:</b> choose a directory called 'data/<i>taskname</i>'. If converting data or putting into a new directory structure, this data directory can be used as a staging area and can then be deleted later in your script"></i> <span class="tiny">Relative to analysis root</span></label>
+										<label>Directory <i class="grey question outline circle icon" title="<b>Tip:</b> choose a directory called 'data/<i>taskname</i>'. If converting data or putting into a new directory structure, this data directory can be used as a staging area and can then be deleted later in your script"></i> <span class="tiny">Relative to analysis root</span></label>
 										<input type="text" name="dd_location[<?=$neworder?>]" size="30">
 									</div>
 									<div class="field">
@@ -2421,25 +2463,25 @@
 									<div class="field">
 										<div class="ui checkbox">
 											<input type="checkbox" name="dd_useseriesdirs[<?=$neworder?>]" value="1">
-											<label>Use series directories <i class="blue question circle icon" title="<b>Tip:</b> If you plan to download multiple series with the same name, you will want to use series directories. This option will place each series into its own directory (data/task/1, data/task/2, etc)"></i></label>
+											<label>Use series directories <i class="grey question outline circle icon" title="<b>Tip:</b> If you plan to download multiple series with the same name, you will want to use series directories. This option will place each series into its own directory (data/task/1, data/task/2, etc)"></i></label>
 										</div>
 									</div>
 									<div class="field">
 										<div class="ui checkbox">
 											<input type="checkbox" name="dd_preserveseries[<?=$neworder?>]" value="1">
-											<label>Preserve series numbers <i class="blue question circle icon" title="If data is placed in a series directory, check this box to preserve the original series number. Otherwise the series number directories will be sequential starting at 1, regardless of the orignal series number"></i></label>
+											<label>Preserve series numbers <i class="grey question outline circle icon" title="If data is placed in a series directory, check this box to preserve the original series number. Otherwise the series number directories will be sequential starting at 1, regardless of the orignal series number"></i></label>
 										</div>
 									</div>
 									<div class="field">
 										<div class="ui checkbox">
 											<input type="checkbox" name="dd_usephasedir[<?=$neworder?>]" value="1">
-											<label>Phase encoding direction <i class="blue question circle icon" title="<b>Phase Encoding Direction</b> If selected, it will write the data to a subdirectory corresponding to the acquired phase encoding direction: AP, PA, RL, LR, COL, ROW, unknownPE"></i></label>
+											<label>Phase encoding direction <i class="grey question outline circle icon" title="<b>Phase Encoding Direction</b> If selected, it will write the data to a subdirectory corresponding to the acquired phase encoding direction: AP, PA, RL, LR, COL, ROW, unknownPE"></i></label>
 										</div>
 									</div>
 									<div class="two fields">
 										<div class="field">
 											<label>Behavioral data directory format</label>
-											<select name="dd_behformat[<?=$neworder?>]" class="ui fluid dropdown">
+											<select name="dd_behformat[<?=$neworder?>]" class="ui fluid dropdown" id="dd_behformat<?=$neworder?>" onChange="ShowHideOptions<?=$neworder?>()">
 												<option value="behnone">Don't download behavioral data</option>
 												<option value="behroot">Place in root (file.log)</option>
 												<option value="behrootdir">Place in directory in root (beh/file.log)</option>
@@ -2447,7 +2489,7 @@
 												<option value="behseriesdir">Place in directory in series (2/beh/file.log)</option>
 											</select>
 										</div>
-										<div class="field">
+										<div class="field" id="behdirname<?=$neworder?>">
 											<label>Behavioral data directory name</label>
 											<input type="text" name="dd_behdir[<?=$neworder?>]">
 										</div>
