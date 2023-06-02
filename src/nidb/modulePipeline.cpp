@@ -841,7 +841,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                 q.prepare(sqlstring);
                 q.bindValue(":subjectid", subjectid);
             }
-            else if (assoctype == "all") {
+            else if ((assoctype == "all") || (assoctype == "entiresubject")) {
                 dlog << QString("   Searching for ALL data from the same SUBJECT and modality");
 
                 sqlstring = QString("SELECT *, `%1_series`.%1series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `%1_series` on `%1_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '%1' AND `subjects`.subject_id = :subjectid AND trim(`%1_series`.%2) in (%3)").arg(modality).arg(seriesdescfield).arg(protocols);

@@ -2098,43 +2098,32 @@
 					$dd[$dd_order]['numimagescriteria'] = $row['pdd_numimagescriteria'];
 					
 					?>
-					<script>
-						/*
-						$(document).ready(function() {
-							$('.row<?=$neworder?>').mouseover(function() {
-								$('.row<?=$neworder?>').css('background-color','#eee');
-							})
-							.mouseout(function() {
-								$('.row<?=$neworder?>').css('background-color','');
-							});
-						}); */
-					</script>
 					<style>
 						.row1 { background-color: lightyellow; }
 					</style>
 					<tr class="row<?=$neworder?> ui top aligned">
-						<td>
+						<td style="border-top: 2px solid #999;" class="center aligned middle aligned">
 							<div class="ui checkbox">
 								<input type="checkbox" name="dd_enabled[<?=$neworder?>]" value="1" <? if ($dd_enabled) {echo "checked";} ?>><label></label>
 							</div>
 						</td>
-						<td>
+						<td style="border-top: 2px solid #999;" class="center aligned middle aligned">
 							<div class="ui checkbox">
 								<input type="checkbox" name="dd_optional[<?=$neworder?>]" value="1" <? if ($dd_optional) { echo "checked"; } ?>><label></label>
 							</div>
 						</td>
-						<td>
+						<td style="border-top: 2px solid #999;" class="center aligned middle aligned">
 							<div class="ui radio checkbox">
 								<input type="radio" name="dd_isprimary" value="<?=$neworder?>" <? if ($dd_isprimaryprotocol) { echo "checked"; } ?>><label></label>
 							</div>
 						</td>
-						<td>
+						<td style="border-top: 2px solid #999;" class="center aligned middle aligned">
 							<input type="text" name="dd_order[<?=$neworder?>]" size="2" maxlength="3" value="<?=$neworder?>">
 						</td>
-						<td>
+						<td style="border-top: 2px solid #999;" class="center aligned middle aligned">
 							<input type="text" name="dd_protocol[<?=$neworder?>]" size="50" value='<?=$dd_protocol?>' title='Enter exact protocol name(s). Use quotes if entering a protocol with spaces or entering more than one protocol: "Task1" "Task 2" "Etc". Use multiple protocol names ONLY if you do not expect the protocols to occur in the same study'>
 						</td>
-						<td id="row<?=$neworder?>">
+						<td id="row<?=$neworder?>" style="border-top: 2px solid #999;">
 							<select class="ui fluid dropdown" name="dd_modality[<?=$neworder?>]">
 								<option value="">Modality...</option>
 							<?
@@ -2164,51 +2153,114 @@
 							?>
 							</select>
 						</td>
-						<td>
+						<td style="border-top: 2px solid #999; border-bottom: 0px" class="left aligned optionToggler" data-prod-row="<?=$neworder?>">
 							<div class="ui accordion">
 								<div class="title">
 									<i class="dropdown icon"></i> Options
 								</div>
 								<div class="content">
+								</div>
+							</div>
+						</td>
+					</tr>
+					<tr class="optionRow<?=$neworder?>" style="display:none">
+						
+						<script>
+							$(document).ready(function() {
+								$('#studycriteria<?=$neworder?>').hide();
+								$('#numboldreps<?=$neworder?>').hide();
+								$('#behdirname<?=$neworder?>').hide();
+								
+								ShowHideOptions<?=$neworder?>();
+							});
+							
+							function ShowHideOptions<?=$neworder?>() {
+								
+								/* study criteria */
+								var element = document.getElementById('dd_datalevel<?=$neworder?>');
+								if (element.value == "subject") {
+									$('#studycriteria<?=$neworder?>').show();
+								}
+								else {
+									$('#studycriteria<?=$neworder?>').hide();
+								}
 
-									<div class="field">
-										<label>Data source <i class="grey question outline circle icon" title="<b>Data Source</b><br>Analyses are run on the <u>study</u> level. If you want data from this <u>subject</u>, but the data was collected in a different study, select the Subject data level. For example, the subject has been scanned on three different dates but only one of them has a T1."></i></label>
-										<select class="ui fluid dropdown" name="dd_datalevel[<?=$neworder?>]">
-											<option value="">Level...
-											<option value="study" <? if (($dd_datalevel == "study") || ($dd_datalevel == "")) { echo "selected"; } ?>>Study
-											<option value="subject" <? if ($dd_datalevel == "subject") { echo "selected"; } ?>>Subject
-										</select>
+								/* num bold reps */
+								var element2 = document.getElementById('dd_seriescriteria<?=$neworder?>');
+								if (element2.value == "usesizecriteria") {
+									$('#numboldreps<?=$neworder?>').show();
+								}
+								else {
+									$('#numboldreps<?=$neworder?>').hide();
+								}
+								
+								/* beh directory */
+								var element3 = document.getElementById('dd_behformat<?=$neworder?>');
+								if (element3.value == "behrootdir" || element3.value == "behseriesdir") {
+									$('#behdirname<?=$neworder?>').show();
+								}
+								else {
+									$('#behdirname<?=$neworder?>').hide();
+								}
+							}
+						</script>
+						
+						<td colspan="7" style="padding: 20px; border-top: 0px">
+							<div class="ui grid">
+								<div class="eight wide column">
+									<h3 class="ui blue header">Search criteria</h3>
+								
+									<div class="two fields">
+										<div class="field">
+											<label>Data source <i class="grey question outline circle icon" title="<b>Data Source - Should we search only within this study or search within the entire subject?</b><br>Analyses are run on the <u>study</u> level. If you want data from this <u>subject</u>, but the data was collected in a different study, select the Subject data level. For example, the subject has been scanned on three different dates but only one of them has a T1."></i></label>
+											<div class="ui fluid search selection dropdown">
+												<input type="hidden" name="dd_datalevel[<?=$neworder?>]" id="dd_datalevel<?=$neworder?>" onChange="ShowHideOptions<?=$neworder?>()" value="<?=$dd_datalevel?>" onLoad="ShowHideOptions<?=$neworder?>()">
+												<div class="default text">Where to search for data?</div>
+												<i class="dropdown icon"></i>
+												<div class="menu">
+													<div class="item" data-value="study">Only this <b>study</b></div>
+													<div class="item" data-value="subject">The entire <b>subject</b></div>
+												</div>
+											</div>
+										</div>
+										
+										<div class="field" id="studycriteria<?=$neworder?>">
+											<label>Study criteria <i class="grey question outline circle icon" title="<b>Data Level</b><br>Only use this option to search for your data in another study (same subject)"></i></label>
+											<div class="ui fluid search selection dropdown">
+												<input type="hidden" name="dd_studyassoc[<?=$neworder?>]" value="<?=$dd_assoctype?>">
+												<div class="default text">Which studies to search?</div>
+												<i class="dropdown icon"></i>
+												<div class="menu">
+													<div class="item" data-value="nearestintime">Search only the study <b>nearest in time</b></div>
+													<div class="item" data-value="samestudytype">Search only studies with the <b>same VisitType</b></div>
+													<div class="item" data-value="entiresubject">Search <b>all studies</b></div>
+												</div>
+											</div>
+										</div>
 									</div>
-									
 									<div class="field">
-										<label>Subject linkage <i class="grey question outline circle icon" title="<b>Data Level</b><br>Only use this option if your data is coming from the subject level"></i></label>
-										<select class="ui fluid dropdown" name="dd_studyassoc[<?=$neworder?>]">
-											<option value="">Link...
-											<option value="nearestintime" <? if (($dd_assoctype == "nearestintime") || ($dd_assoctype == "")) { echo "selected"; } ?>>Nearest in time
-											<option value="samestudytype" <? if ($dd_assoctype == "samestudytype") { echo "selected"; } ?>>Same study type
-										</select>
-									</div>
-									
-									<div class="field">
-										<label>Image type <i class="grey question outline circle icon" title="Comma separated list of image types"></i></label>
+										<label>Image type <i class="grey question outline circle icon" title="Comma separated list of image types. Useful to differentiate intensity normalized vs non-normalized data on Siemens MRIs. For example <tt>ORIGINALPRIMARYMND</tt> or <tt>ORIGINAL/PRIMARY/M/ND/NORM</tt>"></i></label>
 										<input type="text" name="dd_imagetype[<?=$neworder?>]" value="<?=$dd_imagetype?>">
 									</div>
-									<div class="field">
-										<label>Series criteria <i class="grey question outline circle icon" title="<b>All</b> - All matching series will be downloaded<br><b>First</b> - Only the lowest numbered series will be downloaded<br><b>Last</b> - Only the highest numbered series will be downloaded<br><b>Largest</b> - Only one series with the most number of volumes or slices will be downloaded<br><b>Smallest</b> - Only one series with the least number of volumes or slices will be downloaded"></i></label>
-										<select name="dd_seriescriteria[<?=$neworder?>]" class="ui dropdown">
-											<option value="all" <? if ($dd_seriescriteria == "all") { echo "selected"; } ?>>All</option>
-											<option value="first" <? if ($dd_seriescriteria == "first") { echo "selected"; } ?>>First</option>
-											<option value="last" <? if ($dd_seriescriteria == "last") { echo "selected"; } ?>>Last</option>
-											<option value="largestsize" <? if ($dd_seriescriteria == "largestsize") { echo "selected"; } ?>>Largest</option>
-											<option value="smallestsize" <? if ($dd_seriescriteria == "smallestsize") { echo "selected"; } ?>>Smallest</option>
-											<option value="usesizecriteria" <? if ($dd_seriescriteria == "usesizecriteria") { echo "selected"; } ?>>Use size criteria below</option>
-										</select>
+									<div class="two fields">
+										<div class="field">
+											<label>Series criteria <i class="grey question outline circle icon" title="<b>All</b> - All matching series will be downloaded<br><b>First</b> - Only the lowest numbered series will be downloaded<br><b>Last</b> - Only the highest numbered series will be downloaded<br><b>Largest</b> - Only one series with the most number of volumes or slices will be downloaded<br><b>Smallest</b> - Only one series with the least number of volumes or slices will be downloaded"></i></label>
+											<select name="dd_seriescriteria[<?=$neworder?>]" class="ui dropdown" id="dd_seriescriteria<?=$neworder?>" onChange="ShowHideOptions<?=$neworder?>()">
+												<option value="all" <? if ($dd_seriescriteria == "all") { echo "selected"; } ?>>All</option>
+												<option value="first" <? if ($dd_seriescriteria == "first") { echo "selected"; } ?>>First</option>
+												<option value="last" <? if ($dd_seriescriteria == "last") { echo "selected"; } ?>>Last</option>
+												<option value="largestsize" <? if ($dd_seriescriteria == "largestsize") { echo "selected"; } ?>>Largest</option>
+												<option value="smallestsize" <? if ($dd_seriescriteria == "smallestsize") { echo "selected"; } ?>>Smallest</option>
+												<option value="usesizecriteria" <? if ($dd_seriescriteria == "usesizecriteria") { echo "selected"; } ?>>Use num BOLD reps criteria</option>
+											</select>
+										</div>
+										<div class="field" id="numboldreps<?=$neworder?>">
+											<label>Number of BOLD reps <i class="grey question outline circle icon" title="<b>Must be an integer or a criteria:</b><ul><li><i>N</i> (exactly N)<li>> <i>N</i> (greater than)<li>>= <i>N</i> (greater than or equal to)<li>< <i>N</i> (less than)<li><= <i>N</i> (less than or equal to)<li>~ <i>N</i> (not)</ul>"></i></label>
+											<input type="text" name="dd_numboldreps[<?=$neworder?>]" value="<?=$dd_numboldreps?>">
+										</div>
 									</div>
-									<div class="field">
-										<label>Number of BOLD reps <i class="grey question outline circle icon" title="<b>Must be an integer or a criteria:</b><ul><li><i>N</i> (exactly N)<li>> <i>N</i> (greater than)<li>>= <i>N</i> (greater than or equal to)<li>< <i>N</i> (less than)<li><= <i>N</i> (less than or equal to)<li>~ <i>N</i> (not)</ul>"></i></label>
-										<input type="text" name="dd_numboldreps[<?=$neworder?>]" value="<?=$dd_numboldreps?>">
-									</div>
-
+								</div>
+								<div class="eight wide column">
 									<h3 class="ui blue header">Output format</h3>
 
 									<div class="field">
@@ -2251,21 +2303,22 @@
 											<label>Phase encoding direction <i class="grey question outline circle icon" title="<b>Phase Encoding Direction</b> If selected, it will write the data to a subdirectory corresponding to the acquired phase encoding direction: AP, PA, RL, LR, COL, ROW, unknownPE"></i></label>
 										</div>
 									</div>
-									<div class="field">
-										<label>Behavioral data directory format</label>
-										<select name="dd_behformat[<?=$neworder?>]" class="ui fluid dropdown">
-											<option value="behnone" <? if ($dd_behformat == "behnone") { echo "selected"; } ?>>Don't download behavioral data</option>
-											<option value="behroot" <? if ($dd_behformat == "behroot") { echo "selected"; } ?>>Place in root (file.log)</option>
-											<option value="behrootdir" <? if ($dd_behformat == "behrootdir") { echo "selected"; } ?>>Place in directory in root (beh/file.log)</option>
-											<option value="behseries" <? if ($dd_behformat == "behseries") { echo "selected"; } ?>>Place in series (2/file.log)</option>
-											<option value="behseriesdir" <? if ($dd_behformat == "behseriesdir") { echo "selected"; } ?>>Place in directory in series (2/beh/file.log)</option>
-										</select>
+									<div class="two fields">
+										<div class="field">
+											<label>Behavioral data directory format</label>
+											<select name="dd_behformat[<?=$neworder?>]" class="ui fluid dropdown" id="dd_behformat<?=$neworder?>" onChange="ShowHideOptions<?=$neworder?>()">
+												<option value="behnone" <? if ($dd_behformat == "behnone") { echo "selected"; } ?>>Don't download behavioral data</option>
+												<option value="behroot" <? if ($dd_behformat == "behroot") { echo "selected"; } ?>>Place in root (file.log)</option>
+												<option value="behrootdir" <? if ($dd_behformat == "behrootdir") { echo "selected"; } ?>>Place in directory in root (beh/file.log)</option>
+												<option value="behseries" <? if ($dd_behformat == "behseries") { echo "selected"; } ?>>Place in series (2/file.log)</option>
+												<option value="behseriesdir" <? if ($dd_behformat == "behseriesdir") { echo "selected"; } ?>>Place in directory in series (2/beh/file.log)</option>
+											</select>
+										</div>
+										<div class="field" id="behdirname<?=$neworder?>">
+											<label>Behavioral data directory name</label>
+											<input type="text" name="dd_behdir[<?=$neworder?>]" value="<?=$dd_behdir?>">
+										</div>
 									</div>
-									<div class="field">
-										<label>Behavioral data directory name</label>
-										<input type="text" name="dd_behdir[<?=$neworder?>]" value="<?=$dd_behdir?>">
-									</div>
-									
 								</div>
 							</div>
 						</td>
@@ -2275,40 +2328,29 @@
 				}
 				for ($ii=0;$ii<5;$ii++) {
 				?>
-					<script>
-						/*
-						$(document).ready(function() {
-							$('.row<?=$neworder?>').mouseover(function() {
-								$('.row<?=$neworder?>').css('background-color','#eee');
-							})
-							.mouseout(function() {
-								$('.row<?=$neworder?>').css('background-color','');
-							});
-						}); */
-					</script>
 					<tr class="row<?=$neworder?> ui top aligned">
-						<td style="border-top: 2px solid #555;" class="center aligned middle aligned">
+						<td style="border-top: 2px solid #999;" class="center aligned middle aligned">
 							<div class="ui checkbox">
 								<input type="checkbox" name="dd_enabled[<?=$neworder?>]" value="1"><label></label>
 							</div>
 						</td>
-						<td style="border-top: 2px solid #555;" class="center aligned middle aligned">
+						<td style="border-top: 2px solid #999;" class="center aligned middle aligned">
 							<div class="ui checkbox">
 								<input type="checkbox" name="dd_optional[<?=$neworder?>]" value="1"><label></label>
 							</div>
 						</td>
-						<td style="border-top: 2px solid #555;" class="center aligned middle aligned">
+						<td style="border-top: 2px solid #999;" class="center aligned middle aligned">
 							<div class="ui radio checkbox">
 								<input type="radio" name="dd_isprimary" value="<?=$neworder?>"><label></label>
 							</div>
 						</td>
-						<td style="border-top: 2px solid #555;">
+						<td style="border-top: 2px solid #999;">
 							<input type="text" name="dd_order[<?=$neworder?>]" value="<?=$neworder?>" size="2" maxlength="3">
 						</td>
-						<td style="border-top: 2px solid #555;">
+						<td style="border-top: 2px solid #999;">
 							<input type="text" name="dd_protocol[<?=$neworder?>]" size="50" title='Enter exact protocol name(s). Use quotes if entering a protocol with spaces or entering more than one protocol: "Task1" "Task 2" "Etc". Use multiple protocol names ONLY if you do not expect the protocols to occur in the same study'>
 						</td>
-						<td id="row<?=$neworder?>" style="border-top: 2px solid #555;">
+						<td id="row<?=$neworder?>" style="border-top: 2px solid #999;">
 							<select class="ui fluid dropdown" name="dd_modality[<?=$neworder?>]">
 								<option value="">Modality...</option>
 							<?
@@ -2330,7 +2372,7 @@
 							?>
 							</select>
 						</td>
-						<td style="border-top: 2px solid #555; border-bottom: 0px" class="left aligned optionToggler" data-prod-row="<?=$neworder?>">
+						<td style="border-top: 2px solid #999; border-bottom: 0px" class="left aligned optionToggler" data-prod-row="<?=$neworder?>">
 							<div class="ui accordion">
 								<div class="title">
 									<i class="dropdown icon"></i> Options
