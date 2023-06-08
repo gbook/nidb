@@ -248,6 +248,13 @@
 			$report1 = json_decode(shell_exec($systemstring), true);
 
 			?>
+			<style>
+				table, th, td {
+					border: 1px solid #888;
+					border-collapse: collapse;
+				}
+			</style>
+			
 			<div align="center">Block receipt status</div>
 			<table class="ui very compact celled grey table">
 				<thead>

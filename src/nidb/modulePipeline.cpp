@@ -735,8 +735,8 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
     int studynum = s.studyNum();
     QString studytype = s.type();
 
-    dlog << QString("Working on study [%1%2]\nstudyid [%3]\nModality [%4]\n").arg(uid).arg(studynum).arg(studyid).arg(modality);
-    dlog << " ********** Checking if all required data exists **********";
+    dlog << QString("%1() Working on study [%2%3]\nstudyid [%4]\nModality [%5]\n").arg(__FUNCTION__).arg(uid).arg(studynum).arg(studyid).arg(modality);
+    dlog << QString("%1() ********** Checking if all required data exists **********").arg(__FUNCTION__);
 
     /* ------------------------------------------------------------------------
        check all of the steps to see if this data spec is valid
@@ -765,7 +765,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
         if (modality != "mr")
             seriesdescfield = "series_protocol";
 
-        dlog << QString("Checking step [%1]").arg(i);
+        dlog << QString("%1() Checking step [%2]").arg(__FUNCTION__).arg(i);
 
         /* check if the step is enabled */
         if (!enabled) {
@@ -989,11 +989,11 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
         if (n->GetSQLComparison(numboldreps, comparison, num))
             validComparisonStr = true;
 
-        dlog << QString("Downloading data for step [%1]  NumBoldReps [%2]  Comparison [%3]  num [%4]  valid [%5]").arg(i).arg(numboldreps).arg(comparison).arg(num).arg(validComparisonStr);
+        dlog << QString("Downloading data for Step %1  -   NumBoldReps [%2]  Comparison [%3]  num [%4]  valid [%5]").arg(i).arg(numboldreps).arg(comparison).arg(num).arg(validComparisonStr);
 
         /* check to see if we should even run this step */
         if (!enabled) {
-            dlog << n->WriteLog("\tGetData() This data step [" + protocol + "] is not enabled. Data step will not be downloaded.");
+            dlog << n->WriteLog(QString("\t%1() This data step [" + protocol + "] is not enabled. Data step will not be downloaded.").arg(__FUNCTION__));
             RecordDataDownload(datadownloadid, analysisid, modality, 1, -1, -1, "", i, "Step not enabled. Not downloading.");
             continue;
         }
@@ -1017,7 +1017,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
         QString sqlstring;
         /* get a list of series satisfying the search criteria, if it exists */
         if (level == "study") {
-            dlog << "   Getting list of series that match this (STUDY-level) data step -  protocols [" + protocols + "]  criteria [" + criteria + "]  imagetype [" + imagetype + "]";
+            dlog << "\tGetting list of series that match this (STUDY-level) data step -  protocols [" + protocols + "]  criteria [" + criteria + "]  imagetype [" + imagetype + "]";
 
             sqlstring = QString("select * from %1_series where study_id = :studyid and (trim(%2) in (%3))").arg(modality).arg(seriesdescfield).arg(protocols);
             if (imagetypes != "''")
@@ -1040,7 +1040,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
             q.bindValue(":studyid", studyid);
         }
         else {
-            dlog << "   Getting list of series matching this (SUBJECT-level) data step -  protocols [" + protocols + "]  criteria [" + criteria + "]  imagetype [" + imagetype + "]";
+            dlog << "\tGetting list of series matching this (SUBJECT-level) data step -  protocols [" + protocols + "]  criteria [" + criteria + "]  imagetype [" + imagetype + "]";
 
             if ((assoctype == "nearesttime") || (assoctype == "nearestintime")) {
                 /* find the data from the same subject and modality that has the nearest (in time) matching scan */
@@ -1070,7 +1070,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                     continue;
                 }
 
-                dlog << n->WriteLog("\tGetData() Preparing (subject-level) data search:  protocols [" + protocols + "]  criteria [" + criteria + "]  imagetype [" + imagetypes + "]");
+                dlog << n->WriteLog(QString("%1() Preparing (subject-level) data search:  protocols [%2]  criteria [%3]  imagetype [%4]").arg(__FUNCTION__).arg(protocols).arg(criteria).arg(imagetypes));
 
                 /* base SQL string */
                 sqlstring = QString("select * from %1_series where study_id = :otherstudyid and trim(%2) in (%3)").arg(modality).arg(seriesdescfield).arg(protocols);
@@ -1095,8 +1095,8 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                 q.bindValue(":subjectid", s.subjectRowID());
                 q.bindValue(":otherstudyid", otherstudyid);
             }
-            else if (assoctype == "all") {
-                dlog << n->WriteLog("\tGetData() Searching for all subject-level data.");
+            else if ((assoctype == "all") || (assoctype == "entiresubject")) {
+                dlog << n->WriteLog(QString("%1() Searching for all subject-level data.").arg(__FUNCTION__));
                 sqlstring = QString("SELECT *, `%1_series`.%1series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `%1_series` on `%1_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '%1' AND `subjects`.subject_id = :subjectid AND trim(`%1_series`.%2) in (%3)").arg(modality).arg(seriesdescfield).arg(protocols);
 
                 if (imagetypes != "''")
@@ -1110,7 +1110,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
             }
             else {
                 /* find the data from the same subject and modality that has the same study_type */
-                dlog << n->WriteLog("\tGetData() Searching for subject-level data with same study type.");
+                dlog << n->WriteLog(QString("%1() Searching for subject-level data with same study type. assoctype [%2]").arg(__FUNCTION__).arg(assoctype));
 
                 sqlstring = QString("SELECT *, `%1_series`.%1series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `%1_series` on `%1_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '%1' AND `subjects`.subject_id = :subjectid AND trim(`%1_series`.%2) in (%3)").arg(modality).arg(seriesdescfield).arg(protocols);
 
@@ -1208,7 +1208,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                 }
 
                 if (usephasedir) {
-                    dlog << QString("   PhasePlane [" + phaseplane + "] PhasePositive [%1]").arg(phasepositive);
+                    dlog << QString("\tPhasePlane [" + phaseplane + "] PhasePositive [%1]").arg(phasepositive);
 
                     QString phasedir = "unknownPE";
                     if ((phaseplane == "COL") && (phasepositive == 1)) phasedir = "AP";
@@ -1240,7 +1240,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                         systemstring = QString("cp -v %1/* %2").arg(indir).arg(newanalysispath);
                     n->WriteLog(SystemCommand(systemstring, true, true));
 
-                    dlog << QString("   Done copying imaging data from [%1] to [%2]").arg(indir).arg(newanalysispath);
+                    dlog << QString("\tDone copying imaging data from [%1] to [%2]").arg(indir).arg(newanalysispath);
 
                     qint64 c;
                     qint64 b;
@@ -1272,7 +1272,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                     if (!RemoveDir(tmpdir,m))
                         dlog << n->WriteLog("\tGetData() Error: unable to remove temp directory [" + tmpdir + "] error [" + m + "]");
 
-                    dlog << QString("   Done copying converted imaging data from [%1] via [%2] to [%3]").arg(indir).arg(tmpdir).arg(newanalysispath);
+                    dlog << QString("\tDone copying converted imaging data from [%1] via [%2] to [%3]").arg(indir).arg(tmpdir).arg(newanalysispath);
 
                     qint64 c;
                     qint64 b;
@@ -1281,12 +1281,12 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                 }
 
                 RecordDataDownload(datadownloadid, analysisid, modality, 1, 1, seriesid, newanalysispath, i, "Data downloaded");
-                dlog << QString("   Data for step [%1] downloaded to [%2]").arg(i).arg(newanalysispath);
+                dlog << QString("\tData for step [%1] downloaded to [%2]").arg(i).arg(newanalysispath);
                 numdownloaded++;
 
                 /* copy the beh data */
                 if (behformat != "behnone") {
-                    dlog << "   Copying behavioral data";
+                    dlog << "\tCopying behavioral data";
                     QString m;
                     if (!MakePath(behoutdir, m)) {
                         dlog << n->WriteLog("\tGetData() Error: unable to create behavioral output directory [" + behoutdir + "] message [" + m + "] - F");
@@ -1313,7 +1313,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
             }
         }
         else {
-            dlog << "   Error: found no matching subject-level [" + protocol + "] series. SQL: [" + sql + "]";
+            dlog << "\tError: found no matching subject-level [" + protocol + "] series. SQL: [" + sql + "]";
         }
     }
     n->WriteLog("Leaving GetData() successfully");

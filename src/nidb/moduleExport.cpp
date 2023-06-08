@@ -1433,7 +1433,7 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
     /* ... and if our credentials work and we can start a transaction on it */
     QString m;
     int transactionid = StartRemoteNiDBTransaction(conn.server, conn.username, conn.password, m);
-    msgs << m;
+    msgs << n->WriteLog(m);
     if (transactionid < 0) {
         msgs << n->WriteLog(QString("ERROR: Invalid transaction ID [%1] received from [%2]").arg(transactionid).arg(conn.server));
         msg = msgs.join("\n");
@@ -1945,17 +1945,28 @@ int moduleExport::StartRemoteNiDBTransaction(QString remotenidbserver, QString r
 
     /* build a cURL string to start the transaction */
     QString systemstring = QString("curl -gs -F 'action=startTransaction' -F 'u=%1' -F 'p=%2' %3/api.php").arg(remotenidbusername).arg(remotenidbpassword).arg(remotenidbserver);
-    msgs << QString("%1() Running [" + systemstring + "]").arg(__FUNCTION__);
+    msgs << n->WriteLog(QString("%1() Running [" + systemstring + "]").arg(__FUNCTION__));
 
     QString str = SystemCommand(systemstring, false).simplified();
-    msgs << QString("%1() Response [" + str + "]").arg(__FUNCTION__);
+    msgs << n->WriteLog(QString("%1() Response [" + str + "]").arg(__FUNCTION__));
+
+    if (str.contains("301 Moved")) {
+        msgs << n->WriteLog("Received response from server [" + str + "] attempting to connect to HTTPS instead");
+
+        remotenidbserver.replace("http://", "https://");
+        QString systemstring = QString("curl -gs -F 'action=startTransaction' -F 'u=%1' -F 'p=%2' %3/api.php").arg(remotenidbusername).arg(remotenidbpassword).arg(remotenidbserver);
+        msgs << n->WriteLog(QString("%1() Running [" + systemstring + "]").arg(__FUNCTION__));
+
+        QString str = SystemCommand(systemstring, false).simplified();
+        msgs << n->WriteLog(QString("%1() Response [" + str + "]").arg(__FUNCTION__));
+    }
 
     bool ok;
     int t = str.toLong(&ok);
     if (ok)
         ret = t;
 
-    msgs << QString("%1() Remote NiDB transactionID: [%2]").arg(__FUNCTION__).arg(t);
+    msgs << n->WriteLog(QString("%1() Remote NiDB transactionID: [%2]").arg(__FUNCTION__).arg(t));
     m = msgs.join("\n");
 
     return ret;
@@ -1976,6 +1987,17 @@ void moduleExport::EndRemoteNiDBTransaction(int tid, QString remotenidbserver, Q
     QString str = SystemCommand(systemstring);
     msgs << QString("%1() Response [" + str + "]").arg(__FUNCTION__);
     n->WriteLog(str);
+
+    if (str.contains("301 Moved")) {
+        msgs << n->WriteLog("Received response from server [" + str + "] attempting to connect to HTTPS instead");
+
+        remotenidbserver.replace("http://", "https://");
+        QString systemstring = QString("curl -gs -F 'action=startTransaction' -F 'u=%1' -F 'p=%2' %3/api.php").arg(remotenidbusername).arg(remotenidbpassword).arg(remotenidbserver);
+        msgs << n->WriteLog(QString("%1() Running [" + systemstring + "]").arg(__FUNCTION__));
+
+        QString str = SystemCommand(systemstring, false).simplified();
+        msgs << n->WriteLog(QString("%1() Response [" + str + "]").arg(__FUNCTION__));
+    }
 
     m = msgs.join("\n");
 }

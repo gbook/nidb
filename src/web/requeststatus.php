@@ -606,9 +606,8 @@
 			
 			<div class="ui top attached segment">
 				<h2 class="ui header">
-					<i class="file export icon"></i>
 					<div class="content">
-						Local export status
+						<i class="file export icon"></i> Local export status
 						<div class="sub header">
 							Status of local NiDB export
 						</div>
@@ -675,9 +674,8 @@
 			<? if ($destinationtype == 'remotenidb') { ?>
 			<div class="ui top attached segment">
 				<h2 class="ui header">
-					<i class="file import icon"></i>
 					<div class="content">
-						Remote import status
+						<i class="file import icon"></i> Remote import status
 						<div class="sub header">
 							Status of remote NiDB import
 						</div>

@@ -38,7 +38,9 @@
 
 typedef QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>> subjectStudySeriesContainer;
 
+#ifdef Q_OS_WINDOWS
 #pragma warning(disable : 5045)
+#endif
 
 /**
  * @brief The nidb class
