@@ -6,7 +6,11 @@ description: JSON object
 
 The package root contains all data and files for the package. The JSON root contains all JSON objects for the package.
 
+<div data-full-width="true">
+
 <figure><img src="https://mermaid.ink/img/pako:eNqVlF1vmzAUhv9K5CoSkSAiEU2JK_Wqu5mmTVrvJm48fEi8Akb-0MKi_PfZBjuB9qLlAr8HP-_x8bHMGZWcAsLoIEh3XHz7WbQL8wjOVZI8daR8JQeIxnH1eJ2Nvr78-O7UyoCUKBLZ1y1iE7AOataCjIKaEXDqQLAGWiWjGz2jbGrKSuXWSKxivCWiXw2U-5o8Sf37D5QmkRc-yzh_EFx3pCV1L5mMXJT40KPeatMpTZkpfRzfIRogUguDePEOQ4U-yMi9w-yQ0C5h9mtXcMPb6VDrvMrlcrAka3tIgjSyYrU9Jys99Ba1fbCgnJzVcnnTeItdwwG-xgv3YeV94VBdHWMweHw0c_iNWIPXg8FHE0PYguprWITyLVPju6qqYtMtwV8hoUQeiRCkx9upabLKZ4yzLnzGOmnFR4wzezjRj3gHj70ogYb7NI0HHt9lWTbq5C-j6oiz7oRi1IBoCKPm6p9tngKpIzRQIGwkhYroWhWoaC8G1Z3pPHyhTHGBcEVqCTEiWvGXvi0RVkKDh54ZMX-SJlDmuv3ifBIjfEYnhNMY9Qhv0916l2cP-S7fPGzzfZZfYvTPOdL1fnjy-_1ms9vm-eU_g66S1g?type=png" alt=""><figcaption></figcaption></figure>
+
+</div>
 
 ### JSON variables
 
