@@ -8,13 +8,11 @@ Series collection parameters are stored in a separate JSON file called `params.j
 
 All DICOM tags are acceptable parameters. See this list for available DICOM tags [https://exiftool.org/TagNames/DICOM.html](https://exiftool.org/TagNames/DICOM.html). Variable keys can be either the hexadecimal format (ID) or string format (Name). For example `0018:1030` or `ProtocolName`. The params object contains any number of key/value pairs.
 
-<figure><img src="https://mermaid.ink/img/pako:eNqVlN1q4zAQhV8lTAk44AQnuKmjhb3avVlKC-1dMZTZaJxo6z8kmcYNefdKdqTE2RZaX9hnpO_MSCPkPawrTsBgI7Hejm4f0nJkHllVOvjzeH_Xqcl0-pOjxsC-Jj9OiBl_rnH9ghsKnLiYr0VNuShJBV5dELSrSYqCSq2CM-0oW9NQqvn7j9YGccLNu9gyuuHCVDp-PyAKQtVIgzjxAcNls1FB9_azfUJbwizPVug-_09jiXmrhAqc8EhnmM5MQ1BioTKRU9BLh4zHJ8hu2iJq0PLx-Kw_FjuFPXyKR93AxPl877sVHIPe46ILh9uANTjdG1w0MPgt6DankV--ZXJ2lWVZaLokqxeaclRblBJbthiaBlW-Y7zownesg1Z8xXi0-TP0HrqOImdjV3Ecf55juAR7C4ZZzpMcc7wKrrcsrncQQkGyQMHNnd3bTCnoLRWUAjOSU4ZNrlNIy4NBm9qcBP3mQlcSWIa5ohCw0dVjW66BadmQg34JNL-AwlM1lk9VNYiB7WEHLAqhBbaIlrNlEt8ky2R-s0hWcXII4a1zRLNV_yTXq_l8uUiSwzs6rHno?type=png" alt=""><figcaption></figcaption></figure>
+<figure><img src="https://mermaid.ink/img/pako:eNqVlFFvmzAQx79K5CoSkSAiiKbEk_q0vUzTJq1vEy9XfCReASPbaGFRvvtsg0lIO6nlwf4f_v3P9p3gRArBkFCyl9AeFt9-5s3CPFIIHUWPLRQvsMdgnFefLqvB16cf351aGZCBhsAO14hNwFuseIMqmNQNgccWJa-x0Sq40jeUTc14od0ekVVcNCD71UC5t9Gj6p5_Y2ESeeGzjOt7KboWGqh6xVXgosiHHvVWm053jJujj_MbRI2gOmkQL95gmOz2KnDjtDoktFuY-9od3PR6eTrrq1M6Q7S2LZJQq5JXtktWemQYl8sLaqtgQTXr1HJ5VXaLXcIBvsQL92LlfVNL3TnGYPD46Mbhr2ENXg8GH80M0xV0X-FiOr5lKnpXlmVoaiXFC0YM1AGkhJ4mc9Nsl48Yb6rwEeusFO8x-rY789TP9zj_68H7OA4HF71L03TU0R_O9IEm7ZGEpEZZA2fm4z_ZbDnRB6wxJ9RIhiV0lc5J3pwN2rWm-viFcS0koSVUCkMCnRZPfVMQqmWHHvrMwfxL6okyH9wvIWYxoSdyJDQOSU9oEm_X2yx9yLbZ5iHJdml2Dslf54jXu-HJ7nebzTbJsvM_ooWUoA?type=png" alt=""><figcaption></figcaption></figure>
 
 ### JSON variables
 
-| _**Variable**_ | **Description**                                       | **Example**                                |
-| -------------- | ----------------------------------------------------- | ------------------------------------------ |
-| _{Tags}_       | A unique key, sometimes derived from the DICOM header | <p>Protocol, T1w<br>FieldStrength, 3.0</p> |
+<table data-header-hidden><thead><tr><th width="150"></th><th></th><th width="150"></th></tr></thead><tbody><tr><td><em><strong>Variable</strong></em></td><td><strong>Description</strong></td><td><strong>Example</strong></td></tr><tr><td><em>{Tags}</em></td><td>A unique key, sometimes derived from the DICOM header</td><td>Protocol, T1w<br>FieldStrength, 3.0</td></tr></tbody></table>
 
 ### Directory structure
 

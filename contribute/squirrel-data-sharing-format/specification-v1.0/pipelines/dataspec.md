@@ -4,39 +4,10 @@ description: JSON array
 
 # dataSpec
 
-dataSpec describes the criteria to find data if searching a database (NiDB for example, since this pipeline is usually connected to a database). The dataSpec is a JSON array of the following variables.
-
-![JSON object hierarchy](https://mermaid.ink/img/pako:eNptkj1rwzAQhv-KURYFHMjgLip0apdSWqhXQ7la50SNZAt90JiQ\_96TazkljQfdY91jvebsE2sHiUywnQO7L17em76gyw1D4M\_12-tE683mQUIAnpb1\_UWh\_Q8L7QF2yDNc9a2yqFWPni90ZeDRolMG--D5H85WyiTLx88vbEnJkPv5PjkhSkVJc71hGAQfHSkZbjjSxZ3n07p0fw9MEfR6KWEq\_9vQgx698jzDokwPpHmAA0PDmEruLqOZB11bbHmGS8qosci7Rae0Fquuw7vttvTBDQcUq6qqZt58Kxn2orJHVjKDzoCS9JlP6ayGhT0abJgglNhB1KFhTX8mNVpKwCepwuCY6EB7LBnEMNRj3zIRXMQsPSqgv8bM1vkHKAnHcw)
+dataSpec describes the criteria used to find data if searching a database (NiDB for example, since this pipeline is usually connected to a database). The dataSpec is a JSON array of the following variables.
 
 ### JSON variables
 
 <mark style="color:red;">\*required</mark>
 
-|      _**Variable**_ | **Type** | **Description**                                                                                                              |
-| ------------------: | -------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| _\*associationType_ | string   | study, or subject                                                                                                            |
-|            _behDir_ | string   | if behFormat writes data to a sub directory, the directory should be named this                                              |
-|         _behFormat_ | string   | nobeh, behroot, behseries, behseriesdir                                                                                      |
-|      _\*dataFormat_ | string   | native, dicom, nift3d, nift4d, analyze3d, analyze4d, bids                                                                    |
-|           _enabled_ | bool     | Whether the step is enabled or not                                                                                           |
-|              _gzip_ | bool     | Whether to gzip data if converted to Nifti                                                                                   |
-|         _imageType_ | string   | Comma separated list of image types, often derived from the DICOM ImageType tag, (0008:0008)                                 |
-|       _\*dataLevel_ | string   | nearestintime, samestudy                                                                                                     |
-|          _location_ | string   | Directory, relative to the analysisroot, where this data will be written                                                     |
-|        _\*modality_ | string   | Modality to search for                                                                                                       |
-|       _numBOLDreps_ | string   | If seriesCriteria is set to usecriteria, then search based on this option                                                    |
-| _numImagesCriteria_ | string   |                                                                                                                              |
-|        _\*optional_ | bool     | Whether this step is optional or not. If not optional, the analysis will not run if the data step is not found               |
-|           _\*order_ | number   | The numerical order of this particular step                                                                                  |
-|    _preserveSeries_ | bool     | Whether to preserve series numbers or to assign new ordinal numbers                                                          |
-|   _primaryProtocol_ | bool     | This data step determines the primary study, from which subsequent analyses are run                                          |
-|          _protocol_ | string   | Protocol name(s)                                                                                                             |
-|    _seriesCriteria_ | string   | Criteria for which series are downloaded if more than one matches criteria: all, first, last, largest, smallest, usecriteria |
-|       _usePhaseDir_ | bool     | Write data to a sub directory based on the phase encoding direction                                                          |
-|         _useSeries_ | bool     | Write each series to an individually numbered directory                                                                      |
-
-### Directory structure
-
-Files associated with this section are stored in the following directory. Where `pipelineName` is the unique name of the pipeline.
-
-> `/pipelines/pipelineName`
+<table data-header-hidden><thead><tr><th align="right"></th><th width="150"></th><th></th></tr></thead><tbody><tr><td align="right"><em><strong>Variable</strong></em></td><td><strong>Type</strong></td><td><strong>Description</strong></td></tr><tr><td align="right"><em>*associationType</em></td><td>string</td><td>study, or subject</td></tr><tr><td align="right"><em>behDir</em></td><td>string</td><td>if behFormat writes data to a sub directory, the directory should be named this</td></tr><tr><td align="right"><em>behFormat</em></td><td>string</td><td>nobeh, behroot, behseries, behseriesdir</td></tr><tr><td align="right"><em>*dataFormat</em></td><td>string</td><td>native, dicom, nift3d, nift4d, analyze3d, analyze4d, bids</td></tr><tr><td align="right"><em>enabled</em></td><td>bool</td><td>Whether the step is enabled or not</td></tr><tr><td align="right"><em>gzip</em></td><td>bool</td><td>Whether to gzip data if converted to Nifti</td></tr><tr><td align="right"><em>imageType</em></td><td>string</td><td>Comma separated list of image types, often derived from the DICOM ImageType tag, (0008:0008)</td></tr><tr><td align="right"><em>*dataLevel</em></td><td>string</td><td>nearestintime, samestudy</td></tr><tr><td align="right"><em>location</em></td><td>string</td><td>Directory, relative to the analysisroot, where this data will be written</td></tr><tr><td align="right"><em>*modality</em></td><td>string</td><td>Modality to search for</td></tr><tr><td align="right"><em>numBOLDreps</em></td><td>string</td><td>If seriesCriteria is set to usecriteria, then search based on this option</td></tr><tr><td align="right"><em>numImagesCriteria</em></td><td>string</td><td> </td></tr><tr><td align="right"><em>*optional</em></td><td>bool</td><td>Whether this step is optional or not. If not optional, the analysis will not run if the data step is not found</td></tr><tr><td align="right"><em>*order</em></td><td>number</td><td>The numerical order of this particular step</td></tr><tr><td align="right"><em>preserveSeries</em></td><td>bool</td><td>Whether to preserve series numbers or to assign new ordinal numbers</td></tr><tr><td align="right"><em>primaryProtocol</em></td><td>bool</td><td>This data step determines the primary study, from which subsequent analyses are run</td></tr><tr><td align="right"><em>protocol</em></td><td>string</td><td>Protocol name(s)</td></tr><tr><td align="right"><em>seriesCriteria</em></td><td>string</td><td>Criteria for which series are downloaded if more than one matches criteria: all, first, last, largest, smallest, usecriteria</td></tr><tr><td align="right"><em>usePhaseDir</em></td><td>bool</td><td>Write data to a sub directory based on the phase encoding direction</td></tr><tr><td align="right"><em>useSeries</em></td><td>bool</td><td>Write each series to an individually numbered directory</td></tr></tbody></table>

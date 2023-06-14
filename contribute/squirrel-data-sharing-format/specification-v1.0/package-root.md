@@ -6,18 +6,13 @@ description: JSON object
 
 The package root contains all data and files for the package. The JSON root contains all JSON objects for the package.
 
-<figure><img src="https://mermaid.ink/img/pako:eNqVk01r4zAQhv9KmBJwwA5OcFNHhZ7aS1l2YXtbDGU2Gidq_YUks_GG_PeV7EiJsz20OkjvSM-rkcbWATY1J2CwldjsJt9-ZtXENFnXOnh--fG9V7MoeuCoMbDd7P6MmPnXBjfvuKXAiav1RjRUiIpU4NUVQfuGpCip0iq40I6yOQ2l2t9vtDGIE27dxZbRLRcm02n8gCgJVSsN4sQHDJftVgV971eHDW0KczyboR_-X8YKi04JFTjhkd4QzU1BUGKpclFQMEiHTKdnyF7aImpU8un0oj4WO4cDfI4n_cTM-Xzt-xOcgsHjoiuHu4A1OD0YXDQy-CvorqCJP75lCnaT53loqiTrd4o4qh1KiR1bjk2jLF8xXlXhK9ZRKT5jPNn8N_yM59Jp_3nvods4DgcXu0mS5KSjP4LrHUuaPYRQkixRcPNCD3afDPSOSsqAGckpx7bQGWTV0aBtY-pOT1zoWgLLsVAUAra6fumqDTAtW3LQo0Dz4EtPNVj9qutRDOwAe2BxCB2wZbyar9LkLl2li7tluk7SYwh_e0c8Xw8tvV0vFqtlmh7_AcV5dS0?type=png" alt=""><figcaption></figcaption></figure>
+<figure><img src="https://mermaid.ink/img/pako:eNqVlF1vmzAUhv9K5CoSkSAiEU2JK_Wqu5mmTVrvJm48fEi8Akb-0MKi_PfZBjuB9qLlAr8HP-_x8bHMGZWcAsLoIEh3XHz7WbQL8wjOVZI8daR8JQeIxnH1eJ2Nvr78-O7UyoCUKBLZ1y1iE7AOataCjIKaEXDqQLAGWiWjGz2jbGrKSuXWSKxivCWiXw2U-5o8Sf37D5QmkRc-yzh_EFx3pCV1L5mMXJT40KPeatMpTZkpfRzfIRogUguDePEOQ4U-yMi9w-yQ0C5h9mtXcMPb6VDrvMrlcrAka3tIgjSyYrU9Jys99Ba1fbCgnJzVcnnTeItdwwG-xgv3YeV94VBdHWMweHw0c_iNWIPXg8FHE0PYguprWITyLVPju6qqYtMtwV8hoUQeiRCkx9upabLKZ4yzLnzGOmnFR4wzezjRj3gHj70ogYb7NI0HHt9lWTbq5C-j6oiz7oRi1IBoCKPm6p9tngKpIzRQIGwkhYroWhWoaC8G1Z3pPHyhTHGBcEVqCTEiWvGXvi0RVkKDh54ZMX-SJlDmuv3ifBIjfEYnhNMY9Qhv0916l2cP-S7fPGzzfZZfYvTPOdL1fnjy-_1ms9vm-eU_g66S1g?type=png" alt=""><figcaption></figcaption></figure>
 
 ### JSON variables
 
 <mark style="color:red;">\*required</mark>
 
-|    _**Variable**_ | **Type**    | **Description**                               |
-| ----------------: | ----------- | --------------------------------------------- |
-| _**\*\_package**_ | JSON object | Package information                           |
-|            _data_ | JSON object | Raw and analyzed data                         |
-|         pipelines | JSON object | Methods used to analyze the data              |
-|       experiments | JSON object | Experimental methods used to collect the data |
+<table data-header-hidden><thead><tr><th width="150" align="right">Variable</th><th width="150"></th><th width="150"></th></tr></thead><tbody><tr><td align="right"><em><strong>Variable</strong></em></td><td><strong>Type</strong></td><td><strong>Description</strong></td></tr><tr><td align="right"><em><strong>*package</strong></em></td><td>JSON object</td><td>Package information</td></tr><tr><td align="right"><em>data</em></td><td>JSON object</td><td>Raw and analyzed data</td></tr><tr><td align="right">pipelines</td><td>JSON object</td><td>Methods used to analyze the data</td></tr><tr><td align="right">experiments</td><td>JSON object</td><td>Experimental methods used to collect the data</td></tr></tbody></table>
 
 ### Directory structure
 

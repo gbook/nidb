@@ -6,17 +6,13 @@ description: JSON array
 
 Experiments describe how data was collected from the participant. In other words, the methods used to get the data. This does not describe how to analyze the data once it’s collected.
 
-<figure><img src="https://mermaid.ink/img/pako:eNqVk01r4zAQhv9KmBJwwA5OcFNHhZ7aS1l2YXtbDGU2Gidq_YUks_GG_PeV7EiJsz20OkjvSM-rkUboAJuaEzDYSmx2k28_s2pimqxrHTy__Pjeq1kUPXDUGNhudn9GzPxrg5t33FLgxNV6IxoqREUq8OqKoH1DUpRUaRVcaEfZnIZS7e832hjECbfuYsvolguT6TR-QJSEqpUGceIDhst2q4K-96vDhjaFOZ7N0A__L2OFRaeECpzwSG-I5qYgKLFUuSgoGKRDptMzZC9tETUq-XR6UR-LncMBPseTfmLmfL72_QlOweBx0ZXDXcAanB4MLhoZ_BV0V9DEH98yBbvJ8zw0VZL1O0Uc1Q6lxI4tx6ZRlq8Yr6rwFeuoFJ8xnmz-DT_juXRePKC30m0ch4OZ3SRJctLRH8H1jiXNHkIoSZYouPmoB7tdBnpHJWXAjOSUY1voDLLqaNC2MeWnJy50LYHlWCgKAVtdv3TVBpiWLTnoUaD596WnGqx-1fUoBnaAPbA4hA7YMl7NV2lyl67Sxd0yXSfpMYS_vSOer4eW3q4Xi9UyTY__AKwJeB0?type=png" alt=""><figcaption></figcaption></figure>
+<figure><img src="https://mermaid.ink/img/pako:eNqVVFFvmzAQ_iuRq0hEgohENCWu1KfuZZo2aX2beLnhI_EKGNlGC4vy32cbTALtQ-sH-zvu--7Od8JnkguGhJKDhOa4-PYzqxdmSSF0FD01kL_CAYPhXD1evcHXlx_fHVoZIgMNgd1uKTYAb7DkNapgRDMGnhqUvMJaq-AGz1g2NOO5djkii7ioQXarnuW-Rk-q_f0HcxPIAx9l8B-kaBuooewUV4GzIm96qpfacLpl3JQ-nO8wKgTVSkPx4B0Ok-1BBW4fvX1Am8Lc12Zwx1v3WOu8yuWyl0RrOyQJlSp4aedkoSe9pdo-WKKazGq5vGm8pV3Nnny1F-7DyuvGobo6BqPXeGum8BexAo97gbcmgvEKuitxMZZvOSW9K4oiNN2S4hUjBuoIUkJHt1PRJMtnhLMufEY6acVHhDP5ONGPaOfVXhPifRyHvYzeJUky4OgvZ_pIk-ZEQlKhrIAz8wKcbbiM6CNWmBFqIMMC2lJnJKsvhto2ZgD4hXEtJKEFlApDAq0WL12dE6pli570zME8KNXIMn_dLyEmNqFnciI0DklH6DberXdp8pDu0s3DNt0n6SUk_5wiXu_7ld7vN5vdNk0v_wE57JXG?type=png" alt=""><figcaption></figcaption></figure>
 
 ### JSON variables
 
 <mark style="color:red;">\*required</mark>
 
-|     _**Variable**_ | **Type** | **Description**                             |
-| -----------------: | -------- | ------------------------------------------- |
-| _\*experimentName_ | string   | Unique name of the experiment               |
-|       _\*numFiles_ | number   | Number of files contained in the experiment |
-|           _\*size_ | number   | Size in bytes of the experiment files       |
+<table data-header-hidden><thead><tr><th align="right"></th><th width="150"></th><th></th></tr></thead><tbody><tr><td align="right"><em><strong>Variable</strong></em></td><td><strong>Type</strong></td><td><strong>Description</strong></td></tr><tr><td align="right"><em>*experimentName</em></td><td>string</td><td>Unique name of the experiment</td></tr><tr><td align="right"><em>*numFiles</em></td><td>number</td><td>Number of files contained in the experiment</td></tr><tr><td align="right"><em>*size</em></td><td>number</td><td>Size in bytes of the experiment files</td></tr></tbody></table>
 
 ### Directory structure
 

@@ -2,12 +2,7 @@
 
 ### Default Usernames and Passwords
 
-|  System | Username | Default Password |
-| ------: | -------- | ---------------- |
-|   Linux | `nidb`   | `password`       |
-| MariaDB | `root`   | `password`       |
-| MariaDB | `nidb`   | `password`       |
-|    NiDB | `admin`  | `password`       |
+<table><thead><tr><th width="150" align="right">System</th><th width="150">Username</th><th>Default Password</th></tr></thead><tbody><tr><td align="right">Linux</td><td><code>nidb</code></td><td><code>password</code></td></tr><tr><td align="right">MariaDB</td><td><code>root</code></td><td><code>password</code></td></tr><tr><td align="right">MariaDB</td><td><code>nidb</code></td><td><code>password</code></td></tr><tr><td align="right">NiDB</td><td><code>admin</code></td><td><code>password</code></td></tr></tbody></table>
 
 ### How to change Linux password
 

@@ -6,30 +6,13 @@ description: JSON array
 
 ‘Drugs’ represents any substances administered to a participant; through a clinical trial or the participant’s use of prescription or recreational drugs. Detailed variables are available to record exactly how much and when a drug is administered. This allows searching by dose amount, or other variable.
 
-<figure><img src="https://mermaid.ink/img/pako:eNqVk01r4zAQhv9KmBJwwA5OcFNHhZ7aS1l2YXtbDGU2Gidq_YUks_GG_PeV7EiJsz20OkjvSM-rkcbWATY1J2CwldjsJt9-ZtXENFnXOnh--fG9V7MoeuCoMbDd7P6MmPnXBjfvuKXAiav1RjRUiIpU4NUVQfuGpCip0iq40I6yOQ2l2t9vtDGIE27dxZbRLRcm02n8gCgJVSsN4sQHDJftVgV971eHDW0KczyboR_-X8YKi04JFTjhkd4QzU1BUGKpclFQMEiHTKdnyF7aImpU8un0oj4WO4cDfI4n_cTM-Xzt-xOcgsHjoiuHu4A1OD0YXDQy-CvorqCJP75lCnaT53loqiTrd4o4qh1KiR1bjk2jLF8xXlXhK9ZRKT5jPNn8N_yM59LZ_1beRLdxHA42dpMkyUlHfwTXO5Y0ewihJFmi4OaJHuxGGegdlZQBM5JTjm2hM8iqo0HbxhSenrjQtQSWY6EoBGx1_dJVG2BatuSgR4HmxZeearD6VdejGNgB9sDiEDpgy3g1X6XJXbpKF3fLdJ2kxxD-9o54vh5aerteLFbLND3-A0mQdY4?type=png" alt=""><figcaption></figcaption></figure>
+<figure><img src="https://mermaid.ink/img/pako:eNqVlF1vmzAUhv9K5CoSkSAiEU2JK_Wqu5mmTVrvJm48fEi8Akb-0MKi_PfZBjuB9qLlAr8HP-_x8TFwRiWngDA6CNIdF99-Fu3CXIJzlSRPHSlfyQGicVw9Xmejry8_vju1MiAlikT2dovYBKyDmrUgo6BmBJw6EKyBVsnoRs8om5qyUrk1EqsYb4noVwPlniZPUv_-A6VJ5IXPMs4fBNcdaUndSyYjFyU-9Ki32nRKU2ZKH8d3iAaI1MIgXrzDUKEPMnL3MDsktEuY_doV3PB2OtQ6r3K5HCzJ2h6SII2sWG3PyUoPvUVtHywoJ2e1XN403mLXcICv8cI9WHlfOFRXxxgMHh_NHH4j1uD1YPDRxBC2oPoaFqF8y9T4rqqq2HRL8FdIKJFHIgTp8XZqmqzyGeOsC5-xTlrxEePMHk70I96xN_YFCzjcp2k8GPBdlmWjTv4yqo44604oRg2IhjBqvv2zTVQgdYQGCoSNpFARXasCFe3FoLozrYcvlCkuEK5ILSFGRCv-0rclwkpo8NAzI-ZX0gTKfG-_OJ_ECJ_RCeE0Rj3C23S33uXZQ77LNw_bfJ_llxj9c450vR-u_H6_2ey2eX75DyVukzc?type=png" alt=""><figcaption></figcaption></figure>
 
 ### JSON variables
 
 <mark style="color:red;">\*required</mark>
 
-|        _**Variable**_ | **Type** | **Description**                                                    |
-| --------------------: | -------- | ------------------------------------------------------------------ |
-|      _\***drugName**_ | string   | Name of the drug                                                   |
-|     _\***dateStart**_ | datetime | Date the drug was started                                          |
-|             _dateEnd_ | datetime | Date the drug was stopped                                          |
-|    _\***doseAmount**_ | number   | In combination with other dose variables, the quantity of the drug |
-| _\***doseFrequency**_ | string   | Description of the frequency of administration                     |
-| _administrationRoute_ | string   | Drug entry route (oral, IV, unknown, etc)                          |
-|           _drugClass_ | string   | Drug class                                                         |
-|             _doseKey_ | string   | For clinical trials, the dose key                                  |
-|            _doseUnit_ | string   | mg, g, ml, tablets, capsules, etc                                  |
-|   _frequencyModifier_ | string   | (every, times)                                                     |
-|      _frequencyValue_ | number   | Number                                                             |
-|       _frequencyUnit_ | string   | (bolus, dose, second, minute, hour, day, week, month, year)        |
-|         _description_ | string   | Longer description                                                 |
-|               _rater_ | string   | Rater/experimenter                                                 |
-|               _notes_ | string   |                                                                    |
-|           _dateEntry_ | string   |  date for the data-entry                                           |
+<table data-header-hidden><thead><tr><th align="right"></th><th width="150"></th><th></th></tr></thead><tbody><tr><td align="right"><em><strong>Variable</strong></em></td><td><strong>Type</strong></td><td><strong>Description</strong></td></tr><tr><td align="right"><em>*<strong>drugName</strong></em></td><td>string</td><td>Name of the drug</td></tr><tr><td align="right"><em>*<strong>dateStart</strong></em></td><td>datetime</td><td>Date the drug was started</td></tr><tr><td align="right"><em>dateEnd</em></td><td>datetime</td><td>Date the drug was stopped</td></tr><tr><td align="right"><em>*<strong>doseAmount</strong></em></td><td>number</td><td>In combination with other dose variables, the quantity of the drug</td></tr><tr><td align="right"><em>*<strong>doseFrequency</strong></em></td><td>string</td><td>Description of the frequency of administration</td></tr><tr><td align="right"><em>administrationRoute</em></td><td>string</td><td>Drug entry route (oral, IV, unknown, etc)</td></tr><tr><td align="right"><em>drugClass</em></td><td>string</td><td>Drug class </td></tr><tr><td align="right"><em>doseKey</em></td><td>string</td><td>For clinical trials, the dose key</td></tr><tr><td align="right"><em>doseUnit</em></td><td>string</td><td>mg, g, ml, tablets, capsules, etc</td></tr><tr><td align="right"><em>frequencyModifier</em></td><td>string</td><td>(every, times)</td></tr><tr><td align="right"><em>frequencyValue</em></td><td>number</td><td>Number</td></tr><tr><td align="right"><em>frequencyUnit</em></td><td>string</td><td>(bolus, dose, second, minute, hour, day, week, month, year)</td></tr><tr><td align="right"><em>description</em></td><td>string</td><td>Longer description</td></tr><tr><td align="right"><em>rater</em></td><td>string</td><td>Rater/experimenter</td></tr><tr><td align="right"><em>notes</em></td><td>string</td><td> </td></tr><tr><td align="right"><em>dateEntry</em></td><td>string</td><td> date for the data-entry</td></tr></tbody></table>
 
 ### Recording drug administration
 

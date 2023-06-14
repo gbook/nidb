@@ -6,24 +6,13 @@ description: JSON array
 
 This object is an **array** of subjects, with information about each subject.
 
-<figure><img src="https://mermaid.ink/img/pako:eNqVk01r4zAQhv9KmBJwwA5OcFNHhZ7aS1l2YXtbDGU2Gidq_YUks_GG_PeV7EiJsz20OkjvSM-rkcbWATY1J2CwldjsJt9-ZtXENFnXOnh--fG9V7MoeuCoMbDd7P6MmPnXBjfvuKXAiav1RjRUiIpU4NUVQfuGpCip0iq40I6yOQ2l2t9vtDGIE27dxZbRLRcm02n8gCgJVSsN4sQHDJftVgV971eHDW0KczyboR_-X8YKi04JFTjhkd4QzU1BUGKpclFQMEiHTKdnyF7aImpU8un0oj4WO4cDfI4n_cTM-Xzt-xOcgsHjoiuHu4A1OD0YXDQy-CvorqCJP75lCnaT53loqiTrd4o4qh1KiR1bjk2jLF8xXlXhK9ZRKT5jPNn8N_yM59Lp_jPvo9s4Dgcnu0mS5KSjP4LrHUuaPYRQkixRcPNKD3avDPSOSsqAGckpx7bQGWTV0aBtY2pPT1zoWgLLsVAUAra6fumqDTAtW3LQo0Dz6EtPNVj9qutRDOwAe2BxCB2wZbyar9LkLl2li7tluk7SYwh_e0c8Xw8tvV0vFqtlmh7_AfB4dsw?type=png" alt=""><figcaption></figcaption></figure>
+<figure><img src="https://mermaid.ink/img/pako:eNqVlF1vmzAUhv9K5CoSkSAiEU2JK_Wqu5mmTVrvJm48fEi8Akb-0MKi_PfZBjuB9qLlAr8HP-_x8TFwRiWngDA6CNIdF99-Fu3CXIJzlSRPHSlfyQGicVw9Xmejry8_vju1MiAlikT2dovYBKyDmrUgo6BmBJw6EKyBVsnoRs8om5qyUrk1EqsYb4noVwPlniZPUv_-A6VJ5IXPMs4fBNcdaUndSyYjFyU-9Ki32nRKU2ZKH8d3iAaI1MIgXrzDUKEPMnL3MDsktEuY_doV3PB2OtQ6r3K5HCzJ2h6SII2sWG3PyUoPvUVtHywoJ2e1XN403mLXcICv8cI9WHlfOFRXxxgMHh_NHH4j1uD1YPDRxBC2oPoaFqF8y9T4rqqq2HRL8FdIKJFHIgTp8XZqmqzyGeOsC5-xTlrxEePMHk70I97B49-44ID7NI0HD77LsmzUyV9G1RFn3QnFqAHREEbN53-2uQqkjtBAgbCRFCqia1Wgor0YVHem-_CFMsUFwhWpJcSIaMVf-rZEWAkNHnpmxPxNmkCZT-4X55MY4TM6IZzGqEd4m-7Wuzx7yHf55mGb77P8EqN_zpGu98OV3-83m902zy__ASVglHU?type=png" alt=""><figcaption></figcaption></figure>
 
 ### JSON variables
 
 <mark style="color:red;">\*required</mark>
 
-|        _**Variable**_ | **Type**   | **Description (acceptable values)**                                                                                   |
-| --------------------: | ---------- | --------------------------------------------------------------------------------------------------------------------- |
-|            _**\*ID**_ | string     | Unique ID of this subject. It must be unique within the package, ie no other subjects in the package have the same ID |
-|        _alternateIDs_ | JSON array | List of alternate IDs                                                                                                 |
-|                _GUID_ | string     | Globally unique identifier, from NDA                                                                                  |
-|         _dateOfBirth_ | date       | Subject’s date of birth                                                                                               |
-|           _**\*sex**_ | char       | Sex at birth (F,M,O,U)                                                                                                |
-|              _gender_ | char       | Self-identified gender                                                                                                |
-|          _ethnicity1_ | string     | Usually Hispanic/non-hispanic                                                                                         |
-|          _ethnicity2_ | string     | NIH defined race                                                                                                      |
-|           virtualPath | string     | relative path to the data within the package                                                                          |
-| [_studies_](studies/) | JSON array |                                                                                                                       |
+<table data-header-hidden><thead><tr><th align="right"></th><th width="152.00000000000003"></th><th></th></tr></thead><tbody><tr><td align="right"><em><strong>Variable</strong></em></td><td><strong>Type</strong></td><td><strong>Description (acceptable values)</strong></td></tr><tr><td align="right"><em><strong>*ID</strong></em></td><td>string</td><td>Unique ID of this subject. It must be unique within the package, ie no other subjects in the package have the same ID</td></tr><tr><td align="right"><em>alternateIDs</em></td><td>JSON array</td><td>List of alternate IDs</td></tr><tr><td align="right"><em>GUID</em></td><td>string</td><td>Globally unique identifier, from NDA</td></tr><tr><td align="right"><em>dateOfBirth</em></td><td>date</td><td>Subject’s date of birth</td></tr><tr><td align="right"><em><strong>*sex</strong></em></td><td>char</td><td>Sex at birth (F,M,O,U)</td></tr><tr><td align="right"><em>gender</em></td><td>char</td><td>Self-identified gender</td></tr><tr><td align="right"><em>ethnicity1</em></td><td>string</td><td>Usually Hispanic/non-hispanic</td></tr><tr><td align="right"><em>ethnicity2</em></td><td>string</td><td>NIH defined race</td></tr><tr><td align="right">virtualPath</td><td>string</td><td>relative path to the data within the package</td></tr><tr><td align="right"><a href="studies/"><em>studies</em></a></td><td>JSON array</td><td></td></tr></tbody></table>
 
 ### Directory structure
 

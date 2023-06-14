@@ -20,16 +20,7 @@ JSON is JavaScript object notation, and many tutorials are available for how to 
 
 The JSON specification includes several data types, but squirrel uses some derivative data types: string, number, date, datetime, char. Date, datetime, and char are stored as the JSON string datatype and should be enclosed in double quotes.
 
-|    **Type** | **Notes**                                                                                                                                             | **Example**           |
-| ----------: | ----------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
-|      string | Regular string                                                                                                                                        | “My string of text”   |
-|      number | Any JSON acceptable number                                                                                                                            | 3.14159 or 1000000    |
-|    datetime | Datetime is formatted as `YYYY-MM-DD HH:MI:SS`where all numbers are zero-padded and use a 24-hour clock. Datetime is stored as a JSON string datatype | “2022-12-03 15:34:56” |
-|        date | Date is formatted as `YYYY-MM-DD`                                                                                                                     | “1990-01-05”          |
-|        char | A single character                                                                                                                                    | F                     |
-|        bool | true or false                                                                                                                                         | true                  |
-|  JSON array | Item is a JSON array of any data type                                                                                                                 |                       |
-| JSON object | Item is a JSON object                                                                                                                                 |                       |
+<table data-header-hidden><thead><tr><th width="150" align="right"></th><th width="377"></th><th></th></tr></thead><tbody><tr><td align="right"><strong>Type</strong></td><td><strong>Notes</strong></td><td><strong>Example</strong></td></tr><tr><td align="right">string</td><td>Regular string</td><td>“My string of text”</td></tr><tr><td align="right">number</td><td>Any JSON acceptable number</td><td>3.14159 or 1000000</td></tr><tr><td align="right">datetime</td><td>Datetime is formatted as <code>YYYY-MM-DD HH:MI:SS</code>where all numbers are zero-padded and use a 24-hour clock. Datetime is stored as a JSON string datatype</td><td>“2022-12-03 15:34:56”</td></tr><tr><td align="right">date</td><td>Date is formatted as <code>YYYY-MM-DD</code></td><td>“1990-01-05”</td></tr><tr><td align="right">char</td><td>A single character</td><td>F</td></tr><tr><td align="right">bool</td><td>true or false</td><td>true</td></tr><tr><td align="right">JSON array</td><td>Item is a JSON array of any data type</td><td> </td></tr><tr><td align="right">JSON object</td><td>Item is a JSON object</td><td> </td></tr></tbody></table>
 
 **Directory Structure**
 
@@ -41,4 +32,4 @@ A squirrel package becomes a package once the entire directory structure is comb
 
 ## Package Specification
 
-<figure><img src="https://mermaid.ink/img/pako:eNptkU1PAjEQhv8KmdOSLAQILqUmnvRijCZyM5uYcXeA6m7b9CMBCf_ddrGrIj3MvJ33aaeZHqBSNQGHjUG9HTw8l3IQllHKZferp8dODUejmxodZjEMr3-QUH_VWH3ghrIkznwtNDVCks16dUbQTpMRLUlns186UbFnoKx_e6cqIEkkP-0j43wtQqfvfIFoCa03AUniAlMbv7FZF3v3dGFsEZ4XO3Tpv40Sm70VNkuiR7oDcR5osA3D6FJySwk5tGRaFHX4i0OsluC21FIJPMia1ugbV0IpjwH1OkyF7mrhlAG-xsZSDuidWu1lBdwZTwm6FRi-tu0pjfJFqT974AfYAZ_ksAc-mxTjgs0XrGDTxYwt5-yYw2d3YjJenha7Wk6nxYyx4xcTGrzz?type=png" alt=""><figcaption></figcaption></figure>
+<figure><img src="https://mermaid.ink/img/pako:eNqdlMFuozAQhl8FuYpEJIhIRFPiSj21l2q1K21vKy5TPCRuASPbaMNGefe1AZNAe9guBzyDv39mPCN8IplgSCjZS6gP3refaeWZRwqhw_Chhuwd9ugP6_L-sus_v_z43llLAzLQ4NvXNWID8BoLXqHyR2tG4LFGyUustPKv7BllQzOe6S6HZy0uKpDtsqfsV0Op5vUNMxPIGS7KsL-XoqmhgqJVXPmd5znXoU5qw-mGcVP6sH5ClAiqkQZxxicMk81e-d173O0D2hTmvDZDt3zcHmudV7lY9JJwZYckoVQ5L-ycrOmgj6jtgwXVZFaLxVXjLXZxe_jie92HpdONQ-3qGJxe47yZwh3ECpzdC5w3EYxH0G2B3li-ZQp6k-d5YLolxTuGDNQBpISWbqaiSZavCGdd-Ip00op_Ec7k40T_r95LSryNoqAX0ps4jgc7_M2ZPtC4PpKAlChL4MzcAScbMCX6gCWmhBqTYQ5NoVOSVmeDNrUZAT4xroUkNIdCYUCg0eKlrTJCtWzQQY8czJVSjpT5734JMfEJPZEjoVFAWkI30Xa1TeK7ZJus7zbJLk7OAfnTKaLVrn-S2916vd0kyfkvrDGV9g?type=png" alt=""><figcaption></figcaption></figure>
