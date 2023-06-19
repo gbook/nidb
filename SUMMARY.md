@@ -57,6 +57,7 @@
 ## Contribute
 
 * [Squirrel data sharing format](contribute/squirrel-data-sharing-format/README.md)
+  * [Using the squirrel library](contribute/squirrel-data-sharing-format/using-the-squirrel-library.md)
   * [Specification v1.0](contribute/squirrel-data-sharing-format/specification-v1.0/README.md)
     * [Package root](contribute/squirrel-data-sharing-format/specification-v1.0/package-root.md)
     * [package](contribute/squirrel-data-sharing-format/specification-v1.0/package.md)
