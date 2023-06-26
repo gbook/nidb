@@ -180,7 +180,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
 
     /* if there is an importRowID, check to see how that thing is doing */
     if (importid > 0) {
-        subjectMatchCriteria = "uid";
+        subjectMatchCriteria = "uidOrAltUID";
         studyMatchCriteria = "ModalityStudyDate";
         seriesMatchCriteria = "SeriesNum";
 

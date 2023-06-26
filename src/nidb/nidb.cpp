@@ -678,22 +678,22 @@ QString nidb::CreateUID(QString prefix, int numletters) {
     QString numbers("0123456789");
     QString C1, C2, C3, C4, C5, C6, C7, C8;
 
-    C1 = numbers.at( QRandomGenerator::global()->bounded(numbers.length())-1 );
-    C2 = numbers.at( QRandomGenerator::global()->bounded(numbers.length())-1 );
-    C3 = numbers.at( QRandomGenerator::global()->bounded(numbers.length())-1 );
-    C4 = numbers.at( QRandomGenerator::global()->bounded(numbers.length())-1 );
+    C1 = numbers.at( QRandomGenerator::global()->bounded(numbers.length()) );
+    C2 = numbers.at( QRandomGenerator::global()->bounded(numbers.length()) );
+    C3 = numbers.at( QRandomGenerator::global()->bounded(numbers.length()) );
+    C4 = numbers.at( QRandomGenerator::global()->bounded(numbers.length()) );
 
     QStringList badarray;
     badarray << "fuck" << "shit" << "piss" << "tits" << "dick" << "cunt" << "twat" << "jism" << "jizz" << "arse" << "damn" << "fart" << "hell" << "wang" << "wank" << "gook" << "kike" << "kyke" << "spic" << "arse" << "dyke" << "cock" << "muff" << "pusy" << "butt" << "crap" << "poop" << "slut" << "dumb" << "snot" << "boob" << "dead" << "anus" << "clit" << "homo" << "poon" << "tard" << "kunt" << "tity" << "tit" << "ass" << "dic" << "dik" << "fuk" << "kkk";
     bool done = false;
 
     do {
-        C5 = letters.at( QRandomGenerator::global()->bounded(letters.length())-1 );
-        C6 = letters.at( QRandomGenerator::global()->bounded(letters.length())-1 );
-        C7 = letters.at( QRandomGenerator::global()->bounded(letters.length())-1 );
+        C5 = letters.at( QRandomGenerator::global()->bounded(letters.length()) );
+        C6 = letters.at( QRandomGenerator::global()->bounded(letters.length()) );
+        C7 = letters.at( QRandomGenerator::global()->bounded(letters.length()) );
 
         if (numletters == 4)
-            C8 = letters.at( QRandomGenerator::global()->bounded(letters.length())-1 );
+            C8 = letters.at( QRandomGenerator::global()->bounded(letters.length()) );
 
         QString str;
         str = QString("%1%2%3%4").arg(C5).arg(C6).arg(C7).arg(C8);
