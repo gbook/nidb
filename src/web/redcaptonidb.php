@@ -109,7 +109,7 @@ function getprojectinfo($projectid)
 		?>
 
 	<div class="ui four column centered container">
-		<form action="redcaptonidb.php" method="post">
+		<form action="redcaptonidb.php" >
 		<input type="hidden" name="action" value="updateconnection">
 		<input type="hidden" name="projectid" value="<?=$projectid?>">
 		
@@ -118,31 +118,23 @@ function getprojectinfo($projectid)
 
 			
 		<div class="four row column">
-                        <div class="ui labeled input">
                           <div class="ui  label">
-                            *Redcap Server
+				<div>
+				 <?=$projectname?> 
+				</div>
                           </div>
-                          <input type="text"  name="redcapurl" value="<?=$redcapurl?>"  size="50" required>
-                        </div>
 
                         <br>
-                         <div class="ui labeled input">
                           <div class="ui  label">
-                            *Redcap Token  
+			   Redcap Server: <?=$redcapurl?>
                           </div>
-                                <input type="text" name="redcaptoken" value="<?=$redcaptoken?>" size="50" required>
-                        </div>
 
 		</div>
 
-			<button class="ui primary right floated button" type="submit">
-                          <i class="linkify icon"></i>
-                          Save Connection Settings
-		       </button>
 		</form>
 	</div>
 	<br><br>
-	<div onclick="window.location.href='redcaptonidb.php?action=showrcinfo&projectid=<?=$projectid?>'" class="ui bottom attached button">Show Project Information</div> 
+	<div onclick="window.location.href='redcaptonidb.php?action=showrcinfo&projectid=<?=$projectid?>'" class="ui button">Show Project Information</div> 
 
 <?}
 
@@ -206,17 +198,15 @@ function Showprojectinfo($projectid)
 
 	<br>
 	
-	<div onclick="window.location.href='redcaptonidb.php?action=default&projectid=<?=$projectid?>'" class="ui bottom attached button">Hide Project Information</div>
+	<div onclick="window.location.href='redcaptonidb.php?action=default&projectid=<?=$projectid?>'" class="ui right floated button">Hide Project Information</div>
 	<br>
 
 
-	To establish a mapping for importing data from Redcap to NiDB <br><br>
-	 <b> Please Click "Map This Project" button ==========> <b> 
-
-	<br><br>
+	Before importing data from Redcap define the mapping between Redcap and NiDB entities <br><br>
+	 <b> Click this button to map ======> <b> 
 
 
-	<button class="ui primary right floated button" onclick="window.location.href='redcapmapping.php?action=default&projectid=<?=$projectid?>'">
+	<button class="ui primary center floated button" onclick="window.location.href='redcapmapping.php?action=default&projectid=<?=$projectid?>'">
           <i class="map icon"></i>
             Map This Project
         </button>
