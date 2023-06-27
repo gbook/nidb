@@ -2969,6 +2969,10 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		if (($GLOBALS['cfg']['modulebackupthreads'] != "") && (isset($GLOBALS['cfg']['modulebackupthreads']))) { $modulebackupthreads = $GLOBALS['cfg']['modulebackupthreads']; } else { $modulebackupthreads = "1"; }
 		if (($GLOBALS['cfg']['moduleminipipelinethreads'] != "") && (isset($GLOBALS['cfg']['moduleminipipelinethreads']))) { $moduleminipipelinethreads = $GLOBALS['cfg']['moduleminipipelinethreads']; } else { $moduleminipipelinethreads = "4"; }
 
+		if (($GLOBALS['cfg']['subjectmatchcriteria'] != "") && (isset($GLOBALS['cfg']['subjectmatchcriteria']))) { $subjectmatchcriteria = $GLOBALS['cfg']['subjectmatchcriteria']; } else { $subjectmatchcriteria = "uidoraltuid"; }
+		if (($GLOBALS['cfg']['studymatchcriteria'] != "") && (isset($GLOBALS['cfg']['studymatchcriteria']))) { $studymatchcriteria = $GLOBALS['cfg']['studymatchcriteria']; } else { $studymatchcriteria = "modalitystudydate"; }
+		if (($GLOBALS['cfg']['seriesmatchcriteria'] != "") && (isset($GLOBALS['cfg']['seriesmatchcriteria']))) { $seriesmatchcriteria = $GLOBALS['cfg']['seriesmatchcriteria']; } else { $seriesmatchcriteria = "seriesnum"; }
+
 		if (($GLOBALS['cfg']['analysisdir'] != "") && (isset($GLOBALS['cfg']['analysisdir']))) { $analysisdir = $GLOBALS['cfg']['analysisdir']; } else { $analysisdir = "/nidb/data/pipeline"; }
 		if (($GLOBALS['cfg']['analysisdirb'] != "") && (isset($GLOBALS['cfg']['analysisdirb']))) { $analysisdirb = $GLOBALS['cfg']['analysisdirb']; } else { $analysisdirb = "/nidb/data/pipelineb"; }
 		if (($GLOBALS['cfg']['archivedir'] != "") && (isset($GLOBALS['cfg']['archivedir']))) { $archivedir = $GLOBALS['cfg']['archivedir']; } else { $archivedir = "/nidb/data/archive"; }
@@ -3384,6 +3388,55 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 
 						<tr>
 							<td colspan="4" class="active"><h3>Data Import/Export</h3></td>
+						</tr>
+						<tr>
+							<td class="right aligned tt">subjectmatchcriteria</td>
+							<td>
+								<div class="ui selection dropdown">
+									<input type="hidden" name="subjectmatchcriteria" value="<?=$GLOBALS['cfg']['subjectmatchcriteria']?>">
+									<i class="dropdown icon"></i>
+									<div class="default text">Subject match criteria</div>
+									<div class="scrollhint menu">
+										<div class="item" data-value="uidoraltuid">UID or Alternate UID</div>
+										<div class="item" data-value="uid">UID only</div>
+										<div class="item" data-value="namesexdob">Name, sex, and DOB</div>
+									</div>
+								</div>
+							</td>
+							<td></td>
+							<td>Default subject match criteria for automated imports</td>
+						</tr>
+						<tr>
+							<td class="right aligned tt">studymatchcriteria</td>
+							<td>
+								<div class="ui selection dropdown">
+									<input type="hidden" name="studymatchcriteria" value="<?=$GLOBALS['cfg']['studymatchcriteria']?>">
+									<i class="dropdown icon"></i>
+									<div class="default text">Study match criteria</div>
+									<div class="scrollhint menu">
+										<div class="item" data-value="modalitystudydate">Modality and StudyDateTime</div>
+										<div class="item" data-value="studyuid">Study UID</div>
+									</div>
+								</div>
+							</td>
+							<td></td>
+							<td>Default study match criteria for automated imports</td>
+						</tr>
+						<tr>
+							<td class="right aligned tt">seriesmatchcriteria</td>
+							<td>
+								<div class="ui selection dropdown">
+									<input type="hidden" name="seriesmatchcriteria" value="<?=$GLOBALS['cfg']['seriesmatchcriteria']?>">
+									<i class="dropdown icon"></i>
+									<div class="default text">Series match criteria</div>
+									<div class="scrollhint menu">
+										<div class="item" data-value="seriesnum">Series number</div>
+										<div class="item" data-value="seriesuid">Series UID</div>
+									</div>
+								</div>
+							</td>
+							<td></td>
+							<td>Default series match criteria for automated imports</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">enablecsa</td>
@@ -3809,6 +3862,10 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		if ($moduleuploadthreads == "") { $moduleuploadthreads = 1; }
 		if ($modulebackupthreads == "") { $modulebackupthreads = 1; }
 		if ($moduleminipipelinethreads == "") { $moduleminipipelinethreads = 4; }
+
+		if ($subjectmatchcriteria == "") { $subjectmatchcriteria = "uidoraltuid"; }
+		if ($studymatchcriteria == "") { $studymatchcriteria = "modalitystudydate"; }
+		if ($seriesmatchcriteria == "") { $seriesmatchcriteria = "seriesnum"; }
 		
 		if ($analysisdir == "") { $analysisdir = "/nidb/data/pipeline"; }
 		if ($analysisdirb == "") { $analysisdirb = "/nidb/data/pipelineb"; }
@@ -3938,6 +3995,9 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 [backupserver] = $backupserver
 
 # ----- import/export options -----
+[subjectmatchcriteria] = $subjectmatchcriteria
+[studymatchcriteria] = $studymatchcriteria
+[seriesmatchcriteria] = $seriesmatchcriteria
 [enablecsa] = $enablecsa
 [importchunksize] = $importchunksize
 [numretry] = $numretry
