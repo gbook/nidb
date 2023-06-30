@@ -140,3 +140,12 @@ else {
     cout << "Unable to find subject by ID [123456]" << endl;
 }
 ```
+
+### Write package
+
+```cpp
+QString outdir = "/home/squirrel/thedata" /* output directory of the squirrel package */
+QString zippath; /* the full filepath of the written zip file */
+
+sqrl->write(outdir, zippath);++
+```
