@@ -18,28 +18,72 @@ The squirrel library can be included at the top of your program. Make sure the p
 #include "squirrel.h"
 ```
 
-## Reading a squirrel package
+## Reading
 
 Create an object and read an existing squirrel package
 
 ```cpp
 squirrel *sqrl = new squirrel();
 
-QString filename = "/home/squirrel.zip";
-QString m;
-
 /* read the squirrel package and check for success */
-bool success = sqrl->read(filename, m);
-
-if (success) {
+if (sqrl->read("/home/squirrel.zip"))
     cout << "Successfuly read squirrel package. Log: " << m << endl;
-}
-else {
+else
     cout << "Error reading squirrel package. Log: " << m << endl;
+
+/* print the entire package */
+sqrl->print();
+
+/* access individual package meta-data */
+cout << sqrl->name;
+```
+
+### Subject data
+
+All imaging data is stored in a Subject->Study(session)->Series hierarchy. Subjects are stored in the root of the squirrel object.
+
+```cpp
+/* iterate by list to access copies of the subjects (read only) */
+foreach (squirrelSubject subj, sqrl->subjectList) {
+    cout << subj.ID << endl;
+}
+
+/* iterate by index to change the original subject (read/write) */
+for (int i=0; i < sqrl->subjectList.size(); i++) {
+    sqrl->subjectList[i].ID = i;
+}
+
+/* get a list of subjects (copy) */
+QList<squirrelSubject> subjects;
+if (sqrl->GetSubjectList(subjects))
+    cout << "Retrieved " << subjects.size() << " subjects" << endl;
+```
+
+### Experiments and Pipelines
+
+Access to these objects is similar to accessing subjects
+
+```cpp
+/* iterate by list to access copies of the objects(read only) */
+foreach (squirrelExperiment exp, sqrl->experimentList) {
+    cout << exp.experimentName << endl;
+}
+foreach (squirrelPipeline pipe, sqrl->pipelineList) {
+    cout << pipe.pipelineName << endl;
+}
+
+/* iterate by index to change the original object (read/write) */
+for (int i=0; i < sqrl->experimentList.size(); i++) {
+    sqrl->experimentList[i].numFiles = 0;
+}
+for (int i=0; i < sqrl->pipelineList.size(); i++) {
+    sqrl->pipelineList[i].numFiles = 0;
 }
 ```
 
-## Build a new squirrel package and add a subject
+## Writing
+
+### Create a new squirrel package and add a subject
 
 ```cpp
 squirrel *sqrl = new squirrel();
@@ -68,13 +112,14 @@ sqrlSubject.ethnicity2 = subjectInfo->GetValue("ethnicity2");
 sqrl->addSubject(sqrlSubject);
 ```
 
-## Add study to existing subject
+### Add a study to existing subject
 
 ```cpp
 /* see if we can find a subject by ID */
-squirrelSubject sqrlSubject;
-if (sqrl->GetSubject("123456", sqrlSubject)) {
+int subjIndex = sqrl->GetSubjectIndex("123456");
+if (subjIndex >= 0) {
 
+    /* build the study object */
     squirrelStudy sqrlStudy;
     sqrlStudy.number = 1;
     sqrlStudy.dateTime.fromString("2023-06-19 15:34:56", "yyyy-MM-dd hh:mm:ss");
@@ -89,7 +134,7 @@ if (sqrl->GetSubject("123456", sqrlSubject)) {
     sqrlStudy.timePoint = 1;
     sqrlStudy.equipment = "Siemens 3T Prisma;
     
-    sqrlSubject.addStudy(sqrlStudy);
+    sqrl->subjectList[subjIndex].addStudy(sqrlStudy);
 }
 else {
     cout << "Unable to find subject by ID [123456]" << endl;

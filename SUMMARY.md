@@ -77,7 +77,8 @@
     * [data-dictionary](contribute/squirrel-data-sharing-format/specification-v1.0/data-dictionary.md)
   * [Modalities](contribute/squirrel-data-sharing-format/modalities.md)
   * [Example package](contribute/squirrel-data-sharing-format/example-package.md)
-  * [Building squirrel library and utils](contribute/squirrel-data-sharing-format/building-squirrel-library-and-utils.md)
+  * [Building squirrel library and utils](contribute/squirrel-data-sharing-format/building-squirrel-library-and-utils/README.md)
+    * [Building Python Wrapper](contribute/squirrel-data-sharing-format/building-squirrel-library-and-utils/building-python-wrapper.md)
 * [Building NiDB](contribute/building-nidb.md)
 * [Creating a Development VM](contribute/creating-a-development-vm.md)
 
