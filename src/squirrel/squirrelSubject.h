@@ -44,6 +44,7 @@ public:
 	bool addStudy(squirrelStudy s);
 	bool addMeasure(squirrelMeasure m);
 	bool addDrug(squirrelDrug d);
+    qint64 GetNextStudyNumber();
 	void PrintSubject();
 	QJsonObject ToJSON();
 
@@ -52,8 +53,8 @@ public:
 	QStringList alternateIDs; /*!< List of alternate subject IDs */
     QString GUID;  /*!< globally unique identifier, from NIMH's NDA */
 	QDate dateOfBirth; /*!< Date of birth. Not required, but can be useful to calculate age during studies. Can also contain only year, or only year and month */
-	QString sex; /*!< Sex at birth (biological sex) */
-    QString gender; /*!< Gender identity */
+    QString sex = "U"; /*!< Sex at birth (biological sex) */
+    QString gender = "U"; /*!< Gender identity */
     QString ethnicity1; /*!< Ethnicity: hispanic, non-hispanic */
     QString ethnicity2; /*!< Race: americanindian, asian, black, hispanic, islander, white */
 

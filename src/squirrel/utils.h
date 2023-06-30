@@ -64,7 +64,8 @@ bool IsDouble(QString s);
 bool IsNumber(QString s);
 QString WrapText(QString s, int col);
 bool ParseCSV(QString csv, indexedHash &table, QStringList &columns, QString &msg);
-
+bool ParseTSV(QString tsv, indexedHash &table, QStringList &columns, QString &msg);
+QString CleanJSON(QString s);
 double GetPatientAge(QString PatientAgeStr, QString StudyDate, QString PatientBirthDate);
 
 /* math */
@@ -73,6 +74,7 @@ double Variance(QList<double> a);
 double StdDev(QList<double> a);
 
 /* file and directory operations */
+bool CopyFile(QString f, QString dir);
 bool MakePath(QString p, QString &msg, bool perm777=true);
 bool RemoveDir(QString p, QString &msg);
 QStringList FindAllFiles(QString dir, QString pattern, bool recursive=false);
@@ -88,6 +90,7 @@ bool chmod(QString f, QString perm);
 QString UnzipDirectory(QString dir, bool recurse=false);
 bool WriteTextFile(QString filepath, QString str, bool append=true);
 QStringList ReadTextFileIntoArray(QString filepath, bool ignoreEmptyLines=true);
+QString ReadTextFileToString(QString filepath);
 bool BatchRenameFiles(QString dir, QString seriesnum, QString studynum, QString uid, int &numfilesrenamed, QString &msg);
 bool DirectoryExists(QString dir);
 bool FileExists(QString f);

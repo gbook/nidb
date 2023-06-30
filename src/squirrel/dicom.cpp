@@ -35,22 +35,20 @@ dicom::dicom()
 /* ----- LoadToSquirrel ------------------------------------------------------- */
 /* ---------------------------------------------------------------------------- */
 /**
- * @brief dicom::ReadDirectory
- * @param dir
- * @param nFiles
- * @param m
- * @return
+ * @brief Recursively load DICOM files found in a directory
+ * @param dir the directory to load
+ * @param binpath path to the dcm2nii executable
+ * @param sqrl squirrel object
+ * @return true if successful, false otherwise
  */
-bool dicom::LoadToSquirrel(QString dir, QString binpath, squirrel *sqrl, QString &msg) {
+bool dicom::LoadToSquirrel(QString dir, QString binpath, squirrel *sqrl) {
 
-	QStringList msgs;
     numFiles = 0;
 
     /* check if the directory exists */
     QDir d(dir);
     if (!d.exists()) {
-		msgs << QString("Directory [%1] does not exist").arg(dir);
-		msg = msgs.join("\n");
+        sqrl->Log(QString("Directory [%1] does not exist").arg(dir), __FUNCTION__);
         return false;
     }
 
@@ -68,7 +66,7 @@ bool dicom::LoadToSquirrel(QString dir, QString binpath, squirrel *sqrl, QString
 
         if (processedFileCount%1000 == 0) {
             double percent = static_cast<double>(processedFileCount)/static_cast<double>(numFiles) * 100.0;
-			msgs << QString("Processed %1 of %2 files [%3%%]").arg(processedFileCount).arg(numFiles).arg(percent);
+            sqrl->Log(QString("Processed %1 of %2 files [%3%%]").arg(processedFileCount).arg(numFiles).arg(percent), __FUNCTION__);
         }
 
         QHash<QString, QString> tags;
@@ -79,7 +77,7 @@ bool dicom::LoadToSquirrel(QString dir, QString binpath, squirrel *sqrl, QString
             }
         }
     }
-	msgs << QString("Found %1 subjects in %2 files").arg(dcms.size()).arg(foundFileCount);
+    sqrl->Log(QString("Found %1 subjects in %2 files").arg(dcms.size()).arg(foundFileCount), __FUNCTION__);
 
     if (foundFileCount > 0) {
         /* ---------- iterate through the subjects ---------- */
@@ -140,7 +138,7 @@ bool dicom::LoadToSquirrel(QString dir, QString binpath, squirrel *sqrl, QString
 
                     currStudy.addSeries(currSeries);
 
-					msgs << QString("Added [%1-%2-%3]").arg(currSubject.ID).arg(currStudy.dateTime.toString()).arg(currSeries.number);
+                    sqrl->Log(QString("Added [%1-%2-%3]").arg(currSubject.ID).arg(currStudy.dateTime.toString()).arg(currSeries.number), __FUNCTION__);
                 }
                 currSubject.addStudy(currStudy);
             }
@@ -153,6 +151,5 @@ bool dicom::LoadToSquirrel(QString dir, QString binpath, squirrel *sqrl, QString
 
     delete img;
 
-	msg = msgs.join("\n");
 	return true;
 }

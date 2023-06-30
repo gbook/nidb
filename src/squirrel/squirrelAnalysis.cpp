@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------------------
-  Squirrel analysis.cpp
+  Squirrel squirrelAnalysis.cpp
   Copyright (C) 2004 - 2023
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
@@ -60,25 +60,25 @@ QJsonObject squirrelAnalysis::ToJSON() {
 /* ----- PrintAnalysis ---------------------------------------- */
 /* ------------------------------------------------------------ */
 /**
- * @brief squirrelAnalysis::PrintAnalysis
+ * @brief Print the analysis details
  */
 void squirrelAnalysis::PrintAnalysis() {
 
-	Print("-- ANALYSIS----------");
-	Print(QString("       PipelineName: %1").arg(pipelineName));
-	Print(QString("       PipelineVersion: %1").arg(pipelineVersion));
-	Print(QString("       ClusterStartDate: %1").arg(clusterStartDate.toString("yyyy-MM-dd HH:mm:ss")));
-	Print(QString("       ClusterEndDate: %1").arg(clusterEndDate.toString("yyyy-MM-dd HH:mm:ss")));
-	Print(QString("       StartDate: %1").arg(startDate.toString("yyyy-MM-dd HH:mm:ss")));
-	Print(QString("       EndDate: %1").arg(endDate.toString("yyyy-MM-dd HH:mm:ss")));
-	Print(QString("       SetupTime: %1").arg(setupTime));
-	Print(QString("       RunTime: %1").arg(runTime));
-	Print(QString("       NumSeries: %1").arg(numSeries));
-	Print(QString("       Successful: %1").arg(successful));
-	Print(QString("       Size: %1").arg(size));
-	Print(QString("       Hostname: %1").arg(hostname));
-	Print(QString("       Status: %1").arg(status));
-	Print(QString("       LastMessage: %1").arg(lastMessage));
-	Print(QString("       VirtualPath: %1").arg(virtualPath));
+    Print("\t\t\t\t----- ANALYSIS -----");
+    Print(QString("\t\t\t\tPipelineName: %1").arg(pipelineName));
+    Print(QString("\t\t\t\tPipelineVersion: %1").arg(pipelineVersion));
+    Print(QString("\t\t\t\tClusterStartDate: %1").arg(clusterStartDate.toString("yyyy-MM-dd HH:mm:ss")));
+    Print(QString("\t\t\t\tClusterEndDate: %1").arg(clusterEndDate.toString("yyyy-MM-dd HH:mm:ss")));
+    Print(QString("\t\t\t\tStartDate: %1").arg(startDate.toString("yyyy-MM-dd HH:mm:ss")));
+    Print(QString("\t\t\t\tEndDate: %1").arg(endDate.toString("yyyy-MM-dd HH:mm:ss")));
+    Print(QString("\t\t\t\tSetupTime: %1").arg(setupTime));
+    Print(QString("\t\t\t\tRunTime: %1").arg(runTime));
+    Print(QString("\t\t\t\tNumSeries: %1").arg(numSeries));
+    Print(QString("\t\t\t\tSuccessful: %1").arg(successful));
+    Print(QString("\t\t\t\tSize: %1").arg(size));
+    Print(QString("\t\t\t\tHostname: %1").arg(hostname));
+    Print(QString("\t\t\t\tStatus: %1").arg(status));
+    Print(QString("\t\t\t\tLastMessage: %1").arg(lastMessage));
+    Print(QString("\t\t\t\tVirtualPath: %1").arg(virtualPath));
 
 }

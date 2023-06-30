@@ -120,9 +120,7 @@ public:
     QString primaryScript;
     QString secondaryScript;
 
-private:
     QString virtualPath; /*!< path within the squirrel package, no leading slash */
-
 };
 
 #endif // SQUIRRELPIPELINE_H

@@ -64,22 +64,22 @@ QJsonObject squirrelDrug::ToJSON() {
  */
 void squirrelDrug::PrintDrug() {
 
-	Print("-- DRUG----------");
-	Print(QString("       DrugName: %1").arg(drugName));
-	Print(QString("       DateStart: %1").arg(dateStart.toString("yyyy-MM-dd HH:mm:ss")));
-	Print(QString("       DateEnd: %1").arg(dateEnd.toString("yyyy-MM-dd HH:mm:ss")));
-	Print(QString("       DoseAmount: %1").arg(doseAmount));
-	Print(QString("       DoseFrequency: %1").arg(doseFrequency));
-	Print(QString("       Route: %1").arg(route));
-	Print(QString("       Type: %1").arg(type));
-	Print(QString("       DoseKey: %1").arg(doseKey));
-	Print(QString("       DoseUnit: %1").arg(doseUnit));
-	Print(QString("       FrequencyModifier: %1").arg(frequencyModifier));
-	Print(QString("       FrequencyValue: %1").arg(frequencyValue));
-	Print(QString("       FrequencyUnit: %1").arg(frequencyUnit));
-	Print(QString("       Description: %1").arg(description));
-	Print(QString("       Rater: %1").arg(rater));
-	Print(QString("       Notes: %1").arg(notes));
-	Print(QString("       DateEntry: %1").arg(dateEntry.toString("yyyy-MM-dd HH:mm:ss")));
+    Print("\t\t\t----- DRUG -----");
+    Print(QString("\t\t\tDrugName: %1").arg(drugName));
+    Print(QString("\t\t\tDateStart: %1").arg(dateStart.toString("yyyy-MM-dd HH:mm:ss")));
+    Print(QString("\t\t\tDateEnd: %1").arg(dateEnd.toString("yyyy-MM-dd HH:mm:ss")));
+    Print(QString("\t\t\tDoseAmount: %1").arg(doseAmount));
+    Print(QString("\t\t\tDoseFrequency: %1").arg(doseFrequency));
+    Print(QString("\t\t\tRoute: %1").arg(route));
+    Print(QString("\t\t\tType: %1").arg(type));
+    Print(QString("\t\t\tDoseKey: %1").arg(doseKey));
+    Print(QString("\t\t\tDoseUnit: %1").arg(doseUnit));
+    Print(QString("\t\t\tFrequencyModifier: %1").arg(frequencyModifier));
+    Print(QString("\t\t\tFrequencyValue: %1").arg(frequencyValue));
+    Print(QString("\t\t\tFrequencyUnit: %1").arg(frequencyUnit));
+    Print(QString("\t\t\tDescription: %1").arg(description));
+    Print(QString("\t\t\tRater: %1").arg(rater));
+    Print(QString("\t\t\tNotes: %1").arg(notes));
+    Print(QString("\t\t\tDateEntry: %1").arg(dateEntry.toString("yyyy-MM-dd HH:mm:ss")));
 
 }

@@ -27,9 +27,9 @@ squirrelSeries::squirrelSeries()
 {
 	number = 0;
 	dateTime = QDateTime::currentDateTime();
-	seriesUID = "Uninitialized";
-	description = "Uninitialized";
-	protocol = "Uninitialized";
+    seriesUID = "";
+    description = "";
+    protocol = "";
 	numFiles = 0;
 	size = 0;
 	numBehFiles = 0;
@@ -44,52 +44,31 @@ squirrelSeries::squirrelSeries()
 
 
 /* ------------------------------------------------------------ */
-/* ----- AddExperiment ---------------------------------------- */
-/* ------------------------------------------------------------ */
-// /**
-// * @brief series::AddExperiment
-// * @param s
-// * @return
-// */
-//bool series::AddExperiment(experiment *e) {
-
-    /* check size of the study list before and after adding */
-//    qint64 size = experimentList.size();
-
-    /* check if this study already exists, by UID */
-
-//    /* if it doesn't exist, append it */
-//    experimentList.append(e);
-
-//    if (experimentList.size() > size)
-//        return true;
-//    else
-//        return false;
-//}
-
-
-/* ------------------------------------------------------------ */
 /* ----- PrintSeries ------------------------------------------ */
 /* ------------------------------------------------------------ */
 /**
- * @brief series::PrintSeries
+ * @brief Print the series details
  */
 void squirrelSeries::PrintSeries() {
-    Print("-------- SERIES ----------");
-    Print(QString("         SeriesUID: %1").arg(seriesUID));
-	Print(QString("         SeriesNum: %1").arg(number));
-    Print(QString("         Description: %1").arg(description));
-    Print(QString("         Protocol: %1").arg(protocol));
-    Print(QString("         NumFiles: %1").arg(numFiles));
-    Print(QString("         Size: %1").arg(size));
-	Print(QString("         NumBehFiles: %1").arg(numBehFiles));
-	Print(QString("         BehSize: %1").arg(behSize));
+    Print("\t\t\t\t----- SERIES -----");
+    Print(QString("\t\t\t\tSeriesUID: %1").arg(seriesUID));
+    Print(QString("\t\t\t\tSeriesNum: %1").arg(number));
+    Print(QString("\t\t\t\tDescription: %1").arg(description));
+    Print(QString("\t\t\t\tProtocol: %1").arg(protocol));
+    Print(QString("\t\t\t\tNumFiles: %1").arg(numFiles));
+    Print(QString("\t\t\t\tSize: %1").arg(size));
+    Print(QString("\t\t\t\tNumBehFiles: %1").arg(numBehFiles));
+    Print(QString("\t\t\t\tBehSize: %1").arg(behSize));
 }
 
 
 /* ------------------------------------------------------------ */
 /* ----- ToJSON ----------------------------------------------- */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Get a JSON object for the entire series
+ * @return JSON object
+ */
 QJsonObject squirrelSeries::ToJSON() {
     QJsonObject json;
 
@@ -117,6 +96,10 @@ QJsonObject squirrelSeries::ToJSON() {
 /* ------------------------------------------------------------ */
 /* ----- ParamsToJSON ----------------------------------------- */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Get series params in JSON format, likely MRI sequence params
+ * @return JSON object containing series params
+ */
 QJsonObject squirrelSeries::ParamsToJSON() {
 	QJsonObject json;
 

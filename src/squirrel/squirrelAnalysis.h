@@ -53,9 +53,7 @@ public:
     QString status; /*!< status of the analysis. eg running, complete, pending */
     QString lastMessage; /*!< if the analysis had a status message, the last would be stored here */
 
-private:
     QString virtualPath; /*!< path within the squirrel package, no leading slash */
-
 };
 
 #endif // SQUIRRELANALYSIS_H

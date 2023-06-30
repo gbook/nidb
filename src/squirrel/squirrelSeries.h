@@ -43,15 +43,15 @@ public:
     QJsonObject ParamsToJSON();
 
     /* subject info */
-    qint64 number; /*!< Series number. must be unique to the study */
+    qint64 number = -1; /*!< Series number. must be unique to the study */
     QDateTime dateTime; /*!< Series datetime */
     QString seriesUID; /*!< SeriesInstanceUID */
     QString description; /*!< Description of the series */
     QString protocol; /*!< Protocol (may differ from description) */
-    qint64 numFiles; /*!< Number of files associated with the series */
-    qint64 size; /*!< total size in bytes of the series */
-    qint64 numBehFiles; /*!< Number of files associated with the behavioral data */
-    qint64 behSize; /*!< total size in bytes of the beh data */
+    qint64 numFiles = 0; /*!< Number of files associated with the series */
+    qint64 size = 0; /*!< total size in bytes of the series */
+    qint64 numBehFiles = 0; /*!< Number of files associated with the behavioral data */
+    qint64 behSize = 0; /*!< total size in bytes of the beh data */
     QHash<QString, QString> params; /*!< Hash containing experimental parameters. eg MR params */
     QStringList stagedFiles; /*!< staged file list: list of raw files in their own directories before the package is zipped up */
     QStringList stagedBehFiles; /*!< staged beh file list: list of raw files in their own directories before the package is zipped up */
@@ -59,8 +59,6 @@ public:
     QStringList experimentList; /*!< List of experiment names attached to this series */
 
     QString virtualPath; /*!< path within the squirrel package, no leading slash */
-
-    //QString stagingPath; /*!< absolute path to the staging area for this series. This is also used if reading a DICOM directory */
 };
 
 #endif // SQUIRRELSERIES_H

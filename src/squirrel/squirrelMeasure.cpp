@@ -56,14 +56,15 @@ QJsonObject squirrelMeasure::ToJSON() {
  */
 void squirrelMeasure::PrintMeasure() {
 
-	Print("-- MEASURE ----------");
-	Print(QString("   Name: %1").arg(measureName));
-	Print(QString("   DateStart: %1").arg(dateStart.toString()));
-	Print(QString("   DateEnd: %1").arg(dateEnd.toString()));
-	Print(QString("   InstrumentName: %1").arg(instrumentName));
-	Print(QString("   Rater: %1").arg(rater));
-	Print(QString("   Notes: %1").arg(notes));
-	Print(QString("   Value: %1").arg(value));
-	Print(QString("   Description: %1").arg(description));
+    //Print("-- MEASURE ----------");
+    //Print(QString("\t\t\tName: %1").arg(measureName));
+    //Print(QString("\t\t\tDateStart: %1").arg(dateStart.toString()));
+    //Print(QString("\t\t\tDateEnd: %1").arg(dateEnd.toString()));
+    //Print(QString("\t\t\tInstrumentName: %1").arg(instrumentName));
+    //Print(QString("\t\t\tRater: %1").arg(rater));
+    //Print(QString("\t\t\tNotes: %1").arg(notes));
+    //Print(QString("\t\t\tValue: %1").arg(value));
+    //Print(QString("\t\t\tDescription: %1").arg(description));
 
+    Print(QString("\t\t\tMEASURE\tName [%1]\tDateStart [%2]\tDateEnd [%3]\tInstrumentName [%4]\tRater [%5]\tNotes [%6]\tValue [%7]\tDescription [%8]").arg(measureName).arg(dateStart.toString()).arg(dateEnd.toString()).arg(instrumentName).arg(rater).arg(notes).arg(value).arg(description));
 }

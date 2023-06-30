@@ -39,40 +39,12 @@ squirrelStudy::squirrelStudy()
 
 
 /* ------------------------------------------------------------ */
-/* ----- squirrelStudy ---------------------------------------- */
-/* ------------------------------------------------------------ */
-/**
- * @brief squirrelStudy::squirrelStudy
- * @param s
- * Copy constructor
- */
-squirrelStudy::squirrelStudy(const squirrelStudy& s)
-{
-	ageAtStudy = s.ageAtStudy;
-	analysisList = s.analysisList;
-	dateTime = s.dateTime;
-	dayNumber = s.dayNumber;
-	description = s.description;
-	equipment = s.equipment;
-	height = s.height;
-	modality = s.modality;
-	number = s.number;
-	seriesList = s.seriesList;
-	studyUID = s.studyUID;
-	timePoint = s.timePoint;
-	virtualPath = s.virtualPath;
-	visitType = s.visitType;
-	weight = s.weight;
-}
-
-
-/* ------------------------------------------------------------ */
 /* ----- addSeries -------------------------------------------- */
 /* ------------------------------------------------------------ */
 /**
- * @brief study::addSeries
- * @param s
- * @return true if series was added, false if not added
+ * @brief Add series to this study
+ * @param s squirrelSeries to be added
+ * @return true if series was added, false otherwise
  */
 bool squirrelStudy::addSeries(squirrelSeries s) {
 	/* check size of the series list before and after adding */
@@ -80,8 +52,7 @@ bool squirrelStudy::addSeries(squirrelSeries s) {
 	size = seriesList.size();
 
 	/* create a copy of the object before appending */
-	squirrelSeries *s2 = new squirrelSeries(s);
-	seriesList.append(*s2);
+    seriesList.append(s);
 
     if (seriesList.size() > size)
         return true;
@@ -94,9 +65,9 @@ bool squirrelStudy::addSeries(squirrelSeries s) {
 /* ----- addAnalysis ------------------------------------------ */
 /* ------------------------------------------------------------ */
 /**
- * @brief study::addAnalysis
- * @param a
- * @return true if analysis was added, false if not added
+ * @brief Add an analysis to this study
+ * @param a squirrelAnalysis to be added
+ * @return true if analysis was added, false otherwise
  */
 bool squirrelStudy::addAnalysis(squirrelAnalysis a) {
 
@@ -113,27 +84,46 @@ bool squirrelStudy::addAnalysis(squirrelAnalysis a) {
 
 
 /* ------------------------------------------------------------ */
+/* ----- GetNextSeriesNumber ---------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief Get the next series number for this study
+ * @return the next series number
+ */
+qint64 squirrelStudy::GetNextSeriesNumber() {
+
+    /* find the current highest series number */
+    qint64 maxnum = 0;
+    for (int i=0; i<seriesList.size(); i++)
+        if (seriesList[i].number > maxnum)
+            maxnum = seriesList[i].number;
+
+    return maxnum+1;
+}
+
+
+/* ------------------------------------------------------------ */
 /* ----- PrintStudy ------------------------------------------- */
 /* ------------------------------------------------------------ */
 /**
- * @brief study::PrintStudy
+ * @brief Print study details
  */
 void squirrelStudy::PrintStudy() {
 
-	Print("------ STUDY ----------");
-	Print(QString("       number: %1").arg(number));
-	Print(QString("       dateTime: %1").arg(dateTime.toString()));
-	Print(QString("       ageAtStudy: %1").arg(ageAtStudy));
-	Print(QString("       Height: %1 m").arg(height));
-	Print(QString("       Weight: %1 kg").arg(weight));
-	Print(QString("       Modality: %1").arg(modality));
-	Print(QString("       Description: %1").arg(description));
-	Print(QString("       StudyUID: %1").arg(studyUID));
-	Print(QString("       VisitType: %1").arg(visitType));
-	Print(QString("       DayNumber: %1").arg(dayNumber));
-	Print(QString("       TimePoint: %1").arg(timePoint));
-	Print(QString("       Equipment: %1").arg(equipment));
-	Print(QString("       Path: %1").arg(virtualPath));
+    Print("\t\t\t----- STUDY -----");
+    Print(QString("\t\t\tnumber: %1").arg(number));
+    Print(QString("\t\t\tdateTime: %1").arg(dateTime.toString()));
+    Print(QString("\t\t\tageAtStudy: %1").arg(ageAtStudy));
+    Print(QString("\t\t\tHeight: %1 m").arg(height));
+    Print(QString("\t\t\tWeight: %1 kg").arg(weight));
+    Print(QString("\t\t\tModality: %1").arg(modality));
+    Print(QString("\t\t\tDescription: %1").arg(description));
+    Print(QString("\t\t\tStudyUID: %1").arg(studyUID));
+    Print(QString("\t\t\tVisitType: %1").arg(visitType));
+    Print(QString("\t\t\tDayNumber: %1").arg(dayNumber));
+    Print(QString("\t\t\tTimePoint: %1").arg(timePoint));
+    Print(QString("\t\t\tEquipment: %1").arg(equipment));
+    Print(QString("\t\t\tPath: %1").arg(virtualPath));
 }
 
 
@@ -141,8 +131,8 @@ void squirrelStudy::PrintStudy() {
 /* ----- ToJSON ----------------------------------------------- */
 /* ------------------------------------------------------------ */
 /**
- * @brief squirrelStudy::ToJSON
- * @return QJsonObject
+ * @brief Get a JSON object for this study
+ * @return JSON object containing the study
  */
 QJsonObject squirrelStudy::ToJSON() {
 	QJsonObject json;

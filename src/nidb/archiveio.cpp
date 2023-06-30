@@ -2803,9 +2803,8 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     }
 
     /* the squirrel object should be complete, so write it out */
-    QString m2;
-    sqrl.write(outdir, filepath, m2);
-    msgs << n->WriteLog(QString("%1() - squirrel.write() returned [\n" + m2 + "\n]").arg(__FUNCTION__));
+    sqrl.write(outdir, filepath);
+    msgs << n->WriteLog(QString("%1() - squirrel.write() returned [\n" + sqrl.GetLog() + "\n]").arg(__FUNCTION__));
 
     msg = msgs.join("\n");
     n->WriteLog("Leaving WriteSquirrel()...");
