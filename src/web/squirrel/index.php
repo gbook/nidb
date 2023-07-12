@@ -1,6 +1,6 @@
 <?
  // ------------------------------------------------------------------------------
- // NiDB squirrel/index.php
+ // squirrel index.php
  // Copyright (C) 2004 - 2023
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
@@ -23,241 +23,355 @@
 
 
 	define("LEGIT_REQUEST", true);
-	
-	session_start();
+	if (!session_start())
+		echo "Error starting session. _SESSION variable not created";
 
+	date_default_timezone_set("America/New_York");
 	require "functions.php";
 
-
-	/* ----- setup variables ----- */
-	$action = GetVariable("action");
-	$id = GetVariable("id");
-	
-	/* determine action */
-	if ($action == "changepassword") {
-		
-	}
-	elseif ($action == "delete") {
-		
-	}
-	else {
-		
-	}
-	
 ?>
-
 <html>
 	<head>
-		<link rel="icon" type="image/png" href="images/squirrel.png">
+		<link rel="icon" type="image/png" href="../images/squirrel.png">
 		<title>Squirrel package builder</title>
 	</head>
 
-<body>
-<link rel="stylesheet" type="text/css" href="style.css">
-<link rel="stylesheet" type="text/css" href="scripts/semantic/semantic.css">
-<script src="scripts/semantic/semantic.min.js"></script>
+	<body>
+	<script type="text/javascript" src="../scripts/jquery-3.5.1.min.js"></script>
+	<script type="text/javascript" src="../scripts/jquery-ui.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="../scripts/jquery-ui.min.css">
+	<link rel="stylesheet" type="text/css" href="../style.css">
+	<link rel="stylesheet" type="text/css" href="../scripts/semantic/semantic.css">
+	<script src="../scripts/semantic/semantic.min.js"></script>
 
-<noscript>Javascript is required to use NiDB</noscript>
-<div id="cookiemessage" style="font-weight:bold; border: 2px solid orange; text-align: center; width: 98%"></div>
-<script type="text/javascript">
-<!--
-function AreCookiesEnabled()
-{
-    var cookieEnabled = (navigator.cookieEnabled) ? true : false;
+	<noscript>Javascript is required to use NiDB</noscript>
+	<div id="cookiemessage" class="ui orange message"></div>
+	<script type="text/javascript">
+		<!--
+		function AreCookiesEnabled() {
+			var cookieEnabled = (navigator.cookieEnabled) ? true : false;
+			if (typeof navigator.cookieEnabled == "undefined" && !cookieEnabled) { 
+				document.cookie="testcookie";
+				cookieEnabled = (document.cookie.indexOf("testcookie") != -1) ? true : false;
+			}
+			var div = document.getElementById('cookiemessage');
+			if (!cookieEnabled) {
+				div.innerHTML = 'This site requires cookies to be enabled';
+			}
+			else {
+				div.style.display = 'none';
+				div.style.visibility = 'hidden';
+			}
+		};
 
-    if (typeof navigator.cookieEnabled == "undefined" && !cookieEnabled)
-    { 
-        document.cookie="testcookie";
-        cookieEnabled = (document.cookie.indexOf("testcookie") != -1) ? true : false;
-    }
+		window.onload = AreCookiesEnabled;
+		-->
+	</script>
 	
-	var div = document.getElementById('cookiemessage');
-    if (!cookieEnabled) {
-		div.innerHTML = 'This site requires cookies to be enabled';
-	}
-	else {
-		div.style.display = 'none';
-		div.style.visibility = 'hidden';
-	}
-};
-
-window.onload = AreCookiesEnabled;
--->
-</script>
-<?
-
-	/* ----- setup variables ----- */
-	$action = GetVariable("action");
-
-	/* edit variables */
-	$username = GetVariable("username");
-	$password = GetVariable("password");
+	<script>
+		$(document).ready(function() {
+			$('.ui.accordion').accordion();
+			$('.ui.dropdown').dropdown();
+			$('.menu .item').tab();
+		});
+	</script>
+	<?
 
 	/* database connection */
 	$linki = mysqli_connect('localhost', 'nidb', 'password', 'squirrel') or die ("Could not connect. Error [" . mysqli_error() . "]  File [" . __FILE__ . "] Line [ " . __LINE__ . "]");
+
+	/* ----- setup variables ----- */
+	$action = GetVariable("action");
+	$email = GetVariable("email");
 	
-	/* ----- determine which action to take ----- */
+	/* package variables */
+	$packageid = GetVariable("packageid");
+	$name = GetVariable("name");
+	$desc = GetVariable("desc");
+	$subjectdirformat = GetVariable("subjectdirformat");
+	$studydirformat = GetVariable("studydirformat");
+	$seriesdirformat = GetVariable("seriesdirformat");
+	$dataformat = GetVariable("dataformat");
+	$license = GetVariable("license");
+	$readme = GetVariable("readme");
+	$changes = GetVariable("changes");
+	$notes = GetVariable("notes");
+
+	/* Do the login... */
+	$msg = "";
 	if ($action == "login") {
-		if (!CheckLogin($username, $password)) {
-			DisplayLogin("Incorrect login. Make sure Caps Lock is not on");
-		}
-		else {
-			header("Location: index.php");
-		}
+		$msg = DoLogin($email);
 	}
-	elseif ($action =="logout") {
-		DoLogout();
+
+	/* ... then check if they should see the login screen */
+	if ($_SESSION['valid'] != "true") {
+		DisplayLogin("Session variable not valid");
+	}
+	
+	/* determine action */
+	if (($action == "") || ($action == "login")) {
+		DisplayHeader($msg);
+		DisplayPackage();
+	}
+	elseif ($action == "newpackage") {
+		NewPackage();
+	}
+	elseif ($action == "setpackageinfo") {
+		$msg = SetPackageInfo($packageid, $name, $desc, $subjectdirformat, $studydirformat, $seriesdirformat, $dataformat, $license, $readme, $changes, $notes);
+		DisplayHeader($msg);
+		DisplayPackage();
 	}
 	else {
-		if ($GLOBALS['cfg']['enablecas']){
-			$username = AuthenticateCASUser();
-			if ($username == "") {
-				DisplayLogin("Invalid CAS login");
-			}
-			else {
-				echo "Created the client (session already exists)...<br>";
-				phpCAS::setNoCasServerValidation();
-				if (phpCAS::checkAuthentication()) {
-					$username = phpCAS::getUser();
-					echo "Username [$username]";
-				}
-				else {
-					phpCAS::forceAuthentication();
-				}
-				DoLogin($username);
-				header("Location: index.php");
-			}
-		}
-		else {
-			DisplayLogin("");
-		}
-	}
-
-	
-	/* -------------------------------------------- */
-	/* ------- CheckLogin ------------------------- */
-	/* -------------------------------------------- */
-	function CheckLogin($username, $password) {
-		$validlogin = false;
-		if ((AuthenticateUnixUser($username, $password)) && (!$GLOBALS['ispublic'])) {
-			Debug(__FILE__, __LINE__,"This is a Unix user account");
-			$validlogin = true;
-		}
-		else {
-			Debug(__FILE__, __LINE__,"Not a unix user account");
-			if (AuthenticateStandardUser($username, $password)) {
-				$validlogin = true;
-			}
-			else {
-				return false;
-			}
-		}
 		
-		if ($validlogin) {
-			DoLogin($username);
-			return true;
-		}
 	}
 
-	
+
 	/* -------------------------------------------- */
-	/* ------- DoLogin ---------------------------- */
+	/* ------- DisplayHeader ---------------------- */
 	/* -------------------------------------------- */
-	function DoLogin($username) {
-		/* check if they are an admin */
-		$sqlstring = "select user_isadmin, user_id from users where username = '$username'";
+	function DisplayHeader($msg) {
+		?>
+		<div class="ui container">
+			<div class="ui horizontal segments">		
+				<div class="ui brown segment">
+					<img src="../images/squirrel.png" width="30px">
+					<span class="ui big brown text"><b>Squirrel package creator</b></span>
+				</div>
+				<div class="ui brown segment">
+					<?=$msg?>&nbsp;
+				</div>
+				<div class="ui right aligned brown segment">
+					Running on NiDB &copy;2023
+				</div>
+			</div>
+		</div>
+		<br><br>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- SetPackageInfo --------------------- */
+	/* -------------------------------------------- */
+	function SetPackageInfo($packageid, $name, $desc, $subjectdirformat, $studydirformat, $seriesdirformat, $dataformat, $license, $readme, $changes, $notes) {
+
+		$name = mysqli_real_escape_string($GLOBALS['linki'], trim($name));
+		$desc = mysqli_real_escape_string($GLOBALS['linki'], trim($desc));
+		$subjectdirformat = mysqli_real_escape_string($GLOBALS['linki'], trim($subjectdirformat));
+		$studydirformat = mysqli_real_escape_string($GLOBALS['linki'], trim($studydirformat));
+		$seriesdirformat = mysqli_real_escape_string($GLOBALS['linki'], trim($seriesdirformat));
+		$dataformat = mysqli_real_escape_string($GLOBALS['linki'], trim($dataformat));
+		$license = mysqli_real_escape_string($GLOBALS['linki'], trim($license));
+		$readme = mysqli_real_escape_string($GLOBALS['linki'], trim($readme));
+		$changes = mysqli_real_escape_string($GLOBALS['linki'], trim($changes));
+		$notes = mysqli_real_escape_string($GLOBALS['linki'], trim($notes));
+		
+		/* get userid, they're only allowed to have one package */
+		$email = $_SESSION['email'];
+		
+		$sqlstring = "select * from users where email = '$email'";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$userid = $row['user_id'];
-		if ($row['user_isadmin'] == '1')
-			$isadmin = true;
-		else
-			$isadmin = false;
 		
-		if (mysqli_num_rows($result) > 0) {
-			$sqlstring = "update users set user_lastlogin = now() where username = '$username'";
+		/* get the packageid. if it doesn't exist, create it */
+		if ($userid >= 0) {
+			$sqlstring = "select * from packages where user_id = $userid";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			if (mysqli_num_rows($result) > 0) {
+				$packageid = $row['package_id'];
+				$sqlstring = "update packages set pkg_name = '$name', pkg_desc = '$desc', pkg_subjectdirformat = '$subjectdirformat', pkg_studydirformat = '$studydirformat', pkg_seriesdirformat = '$seriesdirformat', pkg_dataformat = '$dataformat', pkg_license = '$license', pkg_readme = '$readme', pkg_changes = '$changes', pkg_notes = '$notes'";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			}
+			else {
+				$sqlstring = "insert into packages (user_id, pkg_name, pkg_desc, pkg_date, pkg_subjectdirformat, pkg_studydirformat, pkg_seriesdirformat, pkg_dataformat, pkg_license, pkg_readme, pkg_changes, pkg_notes) values ($userid, '$name', '$desc', now(), '$subjectdirformat', '$studydirformat', '$seriesdirformat', '$dataformat', '$license', '$readme', '$changes', '$notes')";
+				//PrintSQL($sqlstring);
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			}
+		}
+		
+	}
+	
 
-			$sqlstring = "update users set user_logincount = user_logincount + 1 where username = '$username'";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		}
-		else {
-			$sqlstring = "insert into users (username, login_type, user_lastlogin, user_logincount, user_enabled) values ('$username', 'NIS', now(), 1, 1)";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		}
-			
-		$_SESSION['username'] = $username;
-		$_SESSION['validlogin'] = "true";
-		$_SESSION['userid'] = $userid;
-		if ($isadmin) $_SESSION['isadmin'] = "true";
-		else $_SESSION['isadmin'] = "false";
+	/* -------------------------------------------- */
+	/* ------- DisplayPackage --------------------- */
+	/* -------------------------------------------- */
+	function DisplayPackage() {
 		
-		$sqlstring = "select instance_id from user_instance where user_id = (select user_id from users where username = '$username')";
+		?>
+			<div class="ui container">
+				<div class="ui top attached tabular menu">
+					<a class="item" data-tab="package">Package</a>
+					<a class="active item" data-tab="subjects">Subjects</a>
+					<a class="item" data-tab="experiments">Experiments</a>
+					<a class="item" data-tab="pipelines">Pipelines</a>
+				</div>
+				<div class="ui bottom attached tab segment" data-tab="package">
+					<? DisplayPackageInfo(); ?>
+				</div>
+				<div class="ui bottom attached active tab segment" data-tab="subjects">
+					First
+				</div>
+				<div class="ui bottom attached tab segment" data-tab="experiments">
+					Second
+				</div>
+				<div class="ui bottom attached tab segment" data-tab="pipelines">
+					Third
+				</div>
+			</div>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayPackageInfo ----------------- */
+	/* -------------------------------------------- */
+	function DisplayPackageInfo() {
+
+		/* get the user_id and package info */
+		$email = $_SESSION['email'];
+		
+		$sqlstring = "select * from users where email = '$email'";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$instanceid = $row['instance_id'];
-		if ($instanceid == '') {
-			$sqlstring = "insert into user_instance (user_id, instance_id) values ((select user_id from users where username = '$username'),(select instance_id from instance where instance_default = 1))";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			
-			$sqlstring = "select instance_id from instance where instance_default = 1";
+		$userid = $row['user_id'];
+		
+		if ($userid >= 0) {
+			$sqlstring = "select * from packages where user_id = $userid";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$instanceid = $row['instance_id'];
+			$name = $row['pkg_name'];
+			$desc = $row['pkg_desc'];
+			$subjectdirformat = $row['pkg_subjectdirformat'];
+			$studydirformat = $row['pkg_studydirformat'];
+			$seriesdirformat = $row['pkg_seriesdirformat'];
+			$dataformat = $row['pkg_dataformat'];
+			$license = $row['pkg_license'];
+			$readme = $row['pkg_readme'];
+			$changes = $row['pkg_changes'];
+			$notes = $row['pkg_notes'];
 		}
 		
-		$sqlstring = "select instance_name from instance where instance_id = $instanceid";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$instancename = $row['instance_name'];
-		
-		$_SESSION['instanceid'] = $instanceid;
-		$_SESSION['instancename'] = $instancename;
-	}
-
-	/* -------------------------------------------- */
-	/* ------- DoLogout --------------------------- */
-	/* -------------------------------------------- */
-	function DoLogout() {
-		session_destroy();
-		setcookie('MOD_AUTH_CAS', '', time()-1000, '/');
-		
-		if ($GLOBALS['cfg']['enablecas']) {
-			phpCAS::logoutWithRedirectService($GLOBALS['cfg']['siteurl']);
-			echo "You have been logged out of NiDB through CAS. <a href='login.php'>Login</a> again.";
+		if ($name == "") {
+			$name = "(Unnamed)";
 		}
-		else {
-			DisplayLogin("You have been logged out");
-		}
+
+		?>
+			<form method="post" action="index.php" class="ui form">
+				<input type="hidden" name="action" value="setpackageinfo">
+						
+				<div class="field">
+					<label>Name</label>
+					<div class="field">
+						<input type="text" name="name" value="<?=$name?>">
+					</div>
+				</div>
+				
+				<div class="field">
+					<label>Description</label>
+					<div class="field">
+						<textarea name="desc" rows="3" placeholder="Longer description..."><?=$desc?></textarea>
+					</div>
+				</div>
+				
+				<div class="four fields">
+					<div class="field">
+						<label>Subject directory format</label>
+						<select class="ui selection dropdown" name="subjectdirformat">
+							<option value="orig">Original</option>
+							<option value="seq">Sequential</option>
+						</select>										
+					</div>
+					<div class="field">
+						<label>Study directory format</label>
+						<select class="ui selection dropdown" name="studydirformat">
+							<option value="orig">Original</option>
+							<option value="seq">Sequential</option>
+						</select>										
+					</div>
+					<div class="field">
+						<label>Series directory format</label>
+						<select class="ui selection dropdown" name="seriesdirformat">
+							<option value="orig">Original</option>
+							<option value="seq">Sequential</option>
+						</select>										
+					</div>
+					<div class="field">
+						<label>Package data format</label>
+						<select class="ui selection dropdown" name="dataformat">
+							<option value="orig">Original</option>
+							<option value="anon">Anonymized (if DICOM)</option>
+							<option value="anonfull">Full anonymization (if DICOM)</option>
+							<option value="nifti3d">Nifti3D</option>
+							<option value="nifti3dgz">Nifti3D.gz</option>
+							<option value="nifti4d">Nifti4D</option>
+							<option value="nifti4dgz">Nifti4D.gz</option>
+						</select>										
+					</div>
+				</div>
+
+				<div class="field">
+					<label>License</label>
+					<div class="field">
+						<textarea name="license" rows="3" placeholder="LICENSE (often imported from BIDS)..."><?=$license?></textarea>
+					</div>
+				</div>
+
+				<div class="field">
+					<label>Readme</label>
+					<div class="field">
+						<textarea name="readme" rows="3" placeholder="README (often imported from BIDS)..."><?=$readme?></textarea>
+					</div>
+				</div>
+
+				<div class="field">
+					<label>Changes</label>
+					<div class="field">
+						<textarea name="changes" rows="3" placeholder="CHANGES (often imported from BIDS)..."><?=$changes?></textarea>
+					</div>
+				</div>
+
+				<div class="field">
+					<label>Notes</label>
+					<div class="field">
+						<textarea name="notes" rows="3" placeholder="NOTES (often imported from BIDS)..."><?=$notes?></textarea>
+					</div>
+				</div>
+
+				<br>
+				<div align="right">
+					<input type="submit" class="ui primary button" value="Save Package Details">
+				</div>
+
+			</form>
+		<?
 	}
 
 
 	/* -------------------------------------------- */
-	/* ------- AuthenticateStandardUser ----------- */
+	/* ------- DisplaySubjects -------------------- */
 	/* -------------------------------------------- */
-	function AuthenticateStandardUser($username, $password) {
-		/* attempt to authenticate a standard user */
-		$username = mysqli_real_escape_string($GLOBALS['linki'], $username);
-		$password = mysqli_real_escape_string($GLOBALS['linki'], $password);
-		
-		if ((trim($username) == "") || (trim($password) == ""))
-			return false;
-			
-		$sqlstring = "select user_id from users where username = '$username' and password = sha1('$password') and user_enabled = 1";
-		Debug(__FILE__, __LINE__,"In AuthenticateStandardUser(): [$sqlstring]");
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		if (mysqli_num_rows($result) > 0)
-			return true;
-		else
-			return false;
+	function DisplaySubjects() {
 	}
 	
-	
-	
+
+	/* -------------------------------------------- */
+	/* ------- DisplayExperiments ----------------- */
+	/* -------------------------------------------- */
+	function DisplayExperiments() {
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayPipelines ------------------- */
+	/* -------------------------------------------- */
+	function DisplayPipelines() {
+	}
+
 	/* -------------------------------------------- */
 	/* ------- DisplayLogin ----------------------- */
 	/* -------------------------------------------- */
-	function DisplayLogin($message) {
+	function DisplayLogin($msg) {
 		?>
 		<style>
 			.center-screen {
@@ -270,76 +384,69 @@ window.onload = AreCookiesEnabled;
 		</style>
 		
 		<div class="center-screen">
-			<form method="post" action="login.php" class="ui form">
-				<input type="hidden" name="action" value="login">
-
-				<div class="ui raised compact segment">
-					<? if ($message != "") { ?>
-					<div class="ui center aligned inverted tertiary red segment">
-						<?=$message?>
+			<?=$msg?>
+			<div class="ui raised segment">
+				<h1 class="ui left aligned header">
+					<em data-emoji=":chipmunk:"></em>
+					<div class="content">
+						Squirrel package builder
+						<div class="sub header">Enter your email to login</div>
 					</div>
-					<? } ?>
-						<img class="ui medium centered image" src="images/NIDB_logo.png">
-						<br><br>
-						<? if ($GLOBALS['cfg']['enablecas']) { ?>
-							<input class="ui primary button" type="submit" value="Login with CAS">
-						<?
-							}
-							else {
-						?>
-						<table cellspacing="5" cellpadding="5">
-							<tr>
-								<td>
-									<div class="ui header">
-										Username
-									</div>
-								</td>
-								<td>
-									<input type="text" name="username" maxlength="50" autofocus="autofocus">
-								</td>
-							</tr>
-							<tr>
-								<td>
-									<div class="ui header">
-										Password
-									</div>
-								</td>
-								<td>
-									<input type="password" name="password" maxlength="50">
-								</td>
-							</tr>
-							
-							<tr>
-								<td>
-									<? if ($GLOBALS['cfg']['ispublic']) { ?>
-									New user? <a href="signup.php">Sign up</a>.<br>
-									Forgot password? <a href="signup.php?a=r">Reset it</a>.
-									<? } ?>
-								</td>
-								<td align="right">
-									<input class="ui primary button" type="submit" value="Login">
-								</td>
-							</tr>
-						</table>
-						<?
-							}
-						?>
-				</div>
-				
-			</form>
-		</div>
-		
-		<div style="position:absolute; bottom:5; width:95%; height: 30px; padding:10px">
-			<table width="100%" cellspacing="0" cellpadding="6">
-				<tr>
-					<td align="left" style="font-size:8pt; color: #555">
-						NiDB v<?=$GLOBALS['cfg']['version']?> on <?=$_SERVER['HTTP_HOST']?>
-					</td>
-				</tr>
-			</table>
+				</h1>
+				<br>
+				<br>
+				<form method="post" action="index.php" class="ui form">
+					<input type="hidden" name="action" value="login">
+					<div class="ui left icon input">
+						<input type="text" name="email" placeholder="Email...">
+						<i class="envelope icon"></i>
+					</div>
+					<input class="ui button" type="submit" value="Login">
+				</form>
+			</div>
 		</div>
 		<?
 	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DoLogin ---------------------------- */
+	/* -------------------------------------------- */
+	function DoLogin($email) {
+
+		$email = mysqli_real_escape_string($GLOBALS['linki'], trim($email));
+		$ip = $_SERVER['REMOTE_ADDR'];
+		
+		/* check if they already have an entry */
+		$sqlstring = "select * from users where email = '$email'";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		
+		if (mysqli_num_rows($result) > 0) {
+			$sqlstring = "update users set ip_address = '$ip', last_login = now() where email = '$email'";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$msg = "Email address $email already registerd. Welcome back!";
+		}
+		else {
+			$sqlstring = "insert into users (ip_address, email, first_login) values ('$ip', '$email', now())";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$msg = "New email address registerd. Welcome!";
+		}
+		
+		$_SESSION['email'] = $email;
+		$_SESSION['valid'] = "true";
+		return $msg;
+	}
+
+	/* -------------------------------------------- */
+	/* ------- DoLogout --------------------------- */
+	/* -------------------------------------------- */
+	function DoLogout() {
+		session_destroy();
+		
+		DisplayLogin("You have been logged out");
+	}
 ?>
-</body>
+	</body>
+</html>
 <? ob_end_flush(); ?>

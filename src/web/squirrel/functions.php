@@ -272,7 +272,6 @@
 				<b>POST</b> <pre>" . print_r($_POST,true) . "</pre><br>
 				<b>GET</b> <pre>" . print_r($_GET,true) . "</pre>";
 			}
-			$gm = SendGmail($GLOBALS['cfg']['adminemail'],"User encountered error in $file",$body, 0);
 			
 			$file = mysqli_real_escape_string($GLOBALS['linki'], $file);
 			$msg = mysqli_real_escape_string($GLOBALS['linki'], $body);
@@ -280,65 +279,61 @@
 			$sqlstring = "insert into error_log (error_hostname, error_type, error_source, error_module, error_date, error_message) values ('localhost', 'sql', 'web', '$file', now(), '$msg')";
 			$result = mysqli_query($GLOBALS['linki'], $sqlstring);
 			
-			if (($GLOBALS['cfg']['hideerrors']) && ($continue == false)) {
-				die("<div width='100%' style='border:1px solid red; background-color: #FFC; margin:10px; padding:10px; border-radius:5px; text-align: center'><b>Internal NiDB error.</b><br>The site administrator has been notified. Contact the administrator &lt;".$GLOBALS['cfg']['adminemail']."&gt; if you can provide additional information that may have led to the error<br><br><img src='images/topmen.png'></div>");
-			}
-			else {
-				?>
-				<div class="ui inverted yellow segment" style="padding:4px;">
-					<div class="ui segment">
-						<h1 class="ui header">
-							<i class="red exclamation circle icon"></i>
-							<div class="content">
-								SQL error
-								<div class="sub header">Contact your NiDB administrator</div>
-							</div>
-						</h1>
-						<div class="ui grid">
-							<div class="four wide right aligned column">
-								<h3 class="header">Query</h3>
-							</div>
-							<div class="twelve wide column"> <code><?=$file?></code> (line <tt><?=$line?></tt>)</div>
-							
-							<div class="four wide right aligned column">
-								<h3 class="header">Datetime</h3>
-							</div>
-							<div class="twelve wide column"><?=$datetime?></div>
-							
-							<div class="four wide right aligned column">
-								<h3 class="header">Error</h3>
-							</div>
-							<div class="twelve wide column"><?=$errormsg?></div>
-							
-							<div class="four wide right aligned column">
-								<h3 class="header">Username</h3>
-							</div>
-							<div class="twelve wide column"><?=$username?></div>
-
-							<div class="four wide right aligned column">
-								<h3 class="header">POST</h3>
-							</div>
-							<div class="twelve wide column" style="max-height: 400px; overflow: auto"><pre><? echo print_r($_POST, true)?></pre></div>
-
-							<div class="four wide right aligned column">
-								<h3 class="header">GET</h3>
-							</div>
-							<div class="twelve wide column" style="max-height: 400px; overflow: auto"><pre><? echo print_r($_GET, true)?></pre></div>
-
-							<div class="four wide right aligned column">
-								<h3 class="header">SESSION</h3>
-							</div>
-							<div class="twelve wide column" style="max-height: 400px; overflow: auto"><pre><? echo print_r($_SESSION, true)?></pre></div>
-
-							<div class="four wide right aligned column">
-								<h3 class="header">SERVER</h3>
-							</div>
-							<div class="twelve wide column" style="max-height: 400px; overflow: auto"><pre><? echo print_r($_SERVER, true)?></pre></div>
+			?>
+			<div class="ui inverted yellow segment" style="padding:4px;">
+				<div class="ui segment">
+					<h1 class="ui header">
+						<i class="red exclamation circle icon"></i>
+						<div class="content">
+							SQL error
+							<div class="sub header">Contact your NiDB administrator</div>
 						</div>
+					</h1>
+					<div class="ui grid">
+						<div class="four wide right aligned column">
+							<h3 class="header">Query</h3>
+						</div>
+						<div class="twelve wide column"> <code><?=$file?></code> (line <tt><?=$line?></tt>)</div>
+						
+						<div class="four wide right aligned column">
+							<h3 class="header">Datetime</h3>
+						</div>
+						<div class="twelve wide column"><?=$datetime?></div>
+						
+						<div class="four wide right aligned column">
+							<h3 class="header">Error</h3>
+						</div>
+						<div class="twelve wide column"><?=$errormsg?></div>
+						
+						<div class="four wide right aligned column">
+							<h3 class="header">Username</h3>
+						</div>
+						<div class="twelve wide column"><?=$username?></div>
+
+						<div class="four wide right aligned column">
+							<h3 class="header">POST</h3>
+						</div>
+						<div class="twelve wide column" style="max-height: 400px; overflow: auto"><pre><? echo print_r($_POST, true)?></pre></div>
+
+						<div class="four wide right aligned column">
+							<h3 class="header">GET</h3>
+						</div>
+						<div class="twelve wide column" style="max-height: 400px; overflow: auto"><pre><? echo print_r($_GET, true)?></pre></div>
+
+						<div class="four wide right aligned column">
+							<h3 class="header">SESSION</h3>
+						</div>
+						<div class="twelve wide column" style="max-height: 400px; overflow: auto"><pre><? echo print_r($_SESSION, true)?></pre></div>
+
+						<div class="four wide right aligned column">
+							<h3 class="header">SERVER</h3>
+						</div>
+						<div class="twelve wide column" style="max-height: 400px; overflow: auto"><pre><? echo print_r($_SERVER, true)?></pre></div>
 					</div>
 				</div>
-				<?
-			}
+			</div>
+			<?
+
 			$ret['error'] = 1;
 			$ret['errormsg'] = $errormsg;
 			$ret['sql'] = $origsql;
@@ -596,6 +591,39 @@
 		return trim($sql_formatted);
 	}
 
+
+	function myErrorHandler($errno, $errstr, $errfile, $errline)
+	{
+		if (!(error_reporting() & $errno)) {
+			// This error code is not included in error_reporting
+			return;
+		}
+
+		switch ($errno) {
+		case E_USER_ERROR:
+			echo "<b>My ERROR</b> [$errno] $errstr<br />\n";
+			echo "  Fatal error on line $errline in file $errfile";
+			echo ", PHP " . PHP_VERSION . " (" . PHP_OS . ")<br />\n";
+			echo "Aborting...<br />\n";
+			exit(1);
+			break;
+
+		case E_USER_WARNING:
+			echo "<b>My WARNING</b> [$errno] $errstr<br />\n";
+			break;
+
+		case E_USER_NOTICE:
+			echo "<b>My NOTICE</b> [$errno] $errstr<br />\n";
+			break;
+
+		//default:
+		//   echo "Unknown error type: [$errno] $errstr<br />\n";
+		//    break;
+		}
+
+		/* Don't execute PHP internal error handler */
+		return true;
+	}
 
 	/**
 	 * Checks for a fatal error, work around for set_error_handler not working on fatal errors.
