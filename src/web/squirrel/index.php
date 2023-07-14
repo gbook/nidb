@@ -73,6 +73,14 @@
 			$('.ui.accordion').accordion();
 			$('.ui.dropdown').dropdown();
 			$('.menu .item').tab();
+			$('.ui.calendar').calendar();
+			$('#dob')
+				.calendar({
+					type: 'date',
+					formatter: {
+					  date: 'YYYY-MM-DD'
+					}
+				});
 		});
 	</script>
 	<?
@@ -97,6 +105,23 @@
 	$changes = GetVariable("changes");
 	$notes = GetVariable("notes");
 
+	/* subject variables */
+	$subjectid = GetVariable("subjectid");
+	$id = GetVariable("id");
+	$altids = GetVariable("altids");
+	$guid = GetVariable("guid");
+	$dob = GetVariable("dob");
+	$sex = GetVariable("sex");
+	$gender = GetVariable("gender");
+	$ethnicity1 = GetVariable("ethnicity1");
+	$ethnicity2 = GetVariable("ethnicity2");
+
+	/* study variables */
+	$studyid = GetVariable("studyid");
+
+	/* series variables */
+	$seriesid = GetVariable("seriesid");
+
 	/* Do the login... */
 	$msg = "";
 	if ($action == "login") {
@@ -105,7 +130,7 @@
 
 	/* ... then check if they should see the login screen */
 	if ($_SESSION['valid'] != "true") {
-		DisplayLogin("Session variable not valid");
+		DisplayLogin("Not logged in");
 	}
 	
 	/* determine action */
@@ -118,6 +143,35 @@
 	}
 	elseif ($action == "setpackageinfo") {
 		$msg = SetPackageInfo($packageid, $name, $desc, $subjectdirformat, $studydirformat, $seriesdirformat, $dataformat, $license, $readme, $changes, $notes);
+		DisplayHeader($msg);
+		DisplayPackage();
+	}
+	elseif ($action == "setsubjectinfo") {
+		$msg = SetSubjectInfo($subjectid, $id, $altids, $guid, $dob, $sex, $gender, $ethnicity1, $ethnicity2);
+		DisplayHeader($msg);
+		DisplayPackage();
+	}
+	elseif ($action == "setstudyinfo") {
+		$msg = SetStudyInfo($subjectid, $id, $altids, $guid, $dob, $sex, $gender, $ethnicity1, $ethnicity2);
+		DisplayHeader($msg);
+		DisplayPackage();
+	}
+	elseif ($action == "setseriesinfo") {
+		$msg = SetSeriesInfo($subjectid, $id, $altids, $guid, $dob, $sex, $gender, $ethnicity1, $ethnicity2);
+		DisplayHeader($msg);
+		DisplayPackage();
+	}
+	elseif ($action == "subjectform") {
+		DisplayHeader($msg);
+		ShowSubjectForm($subjectid);
+	}
+	elseif ($action == "studyform") {
+		ShowStudyForm($studyid);
+		DisplayHeader($msg);
+		DisplayPackage();
+	}
+	elseif ($action == "subjectform") {
+		ShowSeriesForm($seriesid);
 		DisplayHeader($msg);
 		DisplayPackage();
 	}
@@ -194,15 +248,74 @@
 	
 
 	/* -------------------------------------------- */
+	/* ------- SetSubjectInfo --------------------- */
+	/* -------------------------------------------- */
+	function SetSubjectInfo($subjectid, $id, $altids, $guid, $dob, $sex, $gender, $ethnicity1, $ethnicity2) {
+
+		$subjectid = mysqli_real_escape_string($GLOBALS['linki'], trim($subjectid));
+		$id = mysqli_real_escape_string($GLOBALS['linki'], trim($id));
+		$altids = mysqli_real_escape_string($GLOBALS['linki'], trim($altids));
+		$guid = mysqli_real_escape_string($GLOBALS['linki'], trim($guid));
+		$dob = mysqli_real_escape_string($GLOBALS['linki'], trim($dob));
+		$sex = mysqli_real_escape_string($GLOBALS['linki'], trim($sex));
+		$gender = mysqli_real_escape_string($GLOBALS['linki'], trim($gender));
+		$ethnicity1 = mysqli_real_escape_string($GLOBALS['linki'], trim($ethnicity1));
+		$ethnicity2 = mysqli_real_escape_string($GLOBALS['linki'], trim($ethnicity2));
+		
+		/* get the user_id and package_id */
+		list($userid, $packageid) = GetUserAndPackageIDs();
+		
+		/* get the packageid. if it doesn't exist, create it */
+		if (($userid >= 0) && ($packageid >= 0)) {
+			if ($subjectid != "") {
+				$sqlstring = "select * from subjects where subject_id = '$subjectid'";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				if (mysqli_num_rows($result) > 0) {
+					$sqlstring = "update subjects set id = '$id', altids = '$altids', guid = '$guid', dob = '$dob', sex = '$sex', gender = '$gender', ethnicity1 = '$ethnicity1', ethnicity2 = '$ethnicity2'";
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					$msg = "Subject updated";
+				}
+				else {
+					$msg = "Subject ID [$subjectid] not found";
+				}
+			}
+			else {
+				$sqlstring = "insert into subjects (package_id, id, altids, guid, dob, sex, gender, ethnicity1, ethnicity2) values ($packageid, '$id', '$altids', '$guid', '$dob', '$sex', '$gender', '$ethnicity1', '$ethnicity2')";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$msg = "Subject added";
+			}
+		}
+		
+		return $msg;
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- DisplayPackage --------------------- */
 	/* -------------------------------------------- */
 	function DisplayPackage() {
 		
+		/* get the user_id and package_id */
+		list($userid, $packageid) = GetUserAndPackageIDs();
+
+		$name = "Unnamed";
+		$numsubjects = 0;
+		if ($userid >= 0) {
+			$sqlstring = "select * from packages where package_id = $packageid";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			$name = $row['pkg_name'];
+
+			$sqlstring = "select * from subjects where package_id = $packageid";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$numsubjects = mysqli_num_rows($result);
+		}
+		
 		?>
 			<div class="ui container">
 				<div class="ui top attached tabular menu">
-					<a class="item" data-tab="package">Package</a>
-					<a class="active item" data-tab="subjects">Subjects</a>
+					<a class="item" data-tab="package">Package (<?=$name?>)</a>
+					<a class="active item" data-tab="subjects">Subjects (<?=$numsubjects?>)</a>
 					<a class="item" data-tab="experiments">Experiments</a>
 					<a class="item" data-tab="pipelines">Pipelines</a>
 				</div>
@@ -210,7 +323,7 @@
 					<? DisplayPackageInfo(); ?>
 				</div>
 				<div class="ui bottom attached active tab segment" data-tab="subjects">
-					First
+					<? DisplaySubjects(); ?>
 				</div>
 				<div class="ui bottom attached tab segment" data-tab="experiments">
 					Second
@@ -229,15 +342,10 @@
 	function DisplayPackageInfo() {
 
 		/* get the user_id and package info */
-		$email = $_SESSION['email'];
-		
-		$sqlstring = "select * from users where email = '$email'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$userid = $row['user_id'];
+		list($userid, $packageid) = GetUserAndPackageIDs();
 		
 		if ($userid >= 0) {
-			$sqlstring = "select * from packages where user_id = $userid";
+			$sqlstring = "select * from packages where package_id = $packageid";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$name = $row['pkg_name'];
@@ -352,6 +460,202 @@
 	/* ------- DisplaySubjects -------------------- */
 	/* -------------------------------------------- */
 	function DisplaySubjects() {
+		
+		list($userid, $packageid) = GetUserAndPackageIDs();
+		
+		?>
+		<div class="ui styled tree accordion">
+		<?		
+		$sqlstring = "select * from subjects where package_id = $packageid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$subjectid = $row['subject_id'];
+			$id = $row['id'];
+			$altids = $row['altids'];
+			$guid = $row['guid'];
+			$dob = $row['dob'];
+			$sex = $row['sex'];
+			$gender = $row['gender'];
+			$ethnicity1 = $row['ethnicity1'];
+			$ethnicity2 = $row['ethnicity2'];
+			?>
+			<div class="title">
+				<i class="dropdown icon"></i>Subject <?=$id?>
+			</div>
+			<div class="content">
+			<?
+				$sqlstringA = "select * from studies where subject_id = $subjectid";
+				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+					$studyid = $rowA['study_id'];
+				
+					?>
+					<div class="styled accordion">
+						<div class="title">
+							<i class="dropdown icon"></i>Study <?=$studynum?>
+						</div>
+						<div class="content">
+							<?
+								$sqlstringC = "select * from series where study_id = $studyid";
+								$resultC = MySQLiQuery($sqlstringC, __FILE__, __LINE__);
+								while ($rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC)) {
+									$seriesid = $rowC['series_id'];
+								
+									?>
+									<div class="styled accordion">
+										<div class="title">
+											<i class="dropdown icon"></i>Series <?=$seriesnum?>
+										</div>
+										<div class="content">
+											Series details
+										</div>
+									</div>
+									<?
+								}
+							?>
+								<a href="index.php?action=seriesform" class="ui small compact button" style="padding: 5px"><i class="plus icon"></i> Add series</a>
+						</div>
+					</div>
+					<?
+				}
+			?>
+				<a href="index.php?action=studyform" class="ui small compact button" style="padding: 5px"><i class="plus icon"></i> Add study</a>
+			</div>
+			<?
+		}
+		
+		?>
+			<a href="index.php?action=subjectform" class="ui small compact button" style="margin: 5px"><i class="plus icon"></i> Add subject</a>
+		</div>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ShowSubjectForm -------------------- */
+	/* -------------------------------------------- */
+	function ShowSubjectForm($subjectid) {
+
+		list($userid, $packageid) = GetUserAndPackageIDs();
+		
+		if ($userid >= 0) {
+			$sqlstring = "select * from packages where user_id = $userid";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			$subjectid = $row['subject_id'];
+			$id = $row['id'];
+			$altids = $row['altids'];
+			$guid = $row['guid'];
+			$dob = $row['dob'];
+			$sex = $row['sex'];
+			$gender = $row['gender'];
+			$ethnicity1 = $row['ethnicity1'];
+			$ethnicity2 = $row['ethnicity2'];
+		}
+		
+		?>
+		<div class="ui text container">
+			<form method="post" action="index.php" class="ui form">
+				<input type="hidden" name="action" value="setsubjectinfo">
+
+				<h4 class="ui dividing header">IDs</h4>
+				<div class="ui three fields">
+					<div class="field">
+						<label>Primary ID</label>
+						<div class="field">
+							<input type="text" name="id" value="<?=$id?>">
+						</div>
+					</div>
+					
+					<div class="field">
+						<label>Alternate IDs</label>
+						<div class="field">
+							<input type="text" name="altids" value="<?=$altids?>">
+						</div>
+					</div>
+
+					<div class="field">
+						<label>GUID</label>
+						<div class="field">
+							<input type="text" name="guid" value="<?=$guid?>">
+						</div>
+					</div>
+				</div>
+
+				<div class="ui three fields">
+					<div class="field">
+						<label>DOB</label>
+						<div class="field">
+							<div class="ui calendar" id="dob">
+								<div class="ui fluid input left icon">
+									<i class="calendar icon"></i>
+									<input type="text" name="dob" value="<?=$dob?>" placeholder="Date/Time">
+								</div>
+							</div>
+						</div>
+					</div>
+					
+					<div class="field">
+						<label>Sex</label>
+						<div class="field">
+							<div class="ui selection dropdown">
+								<input type="hidden" name="sex" value="<?=$sex?>">
+									<i class="dropdown icon"></i>
+								<div class="default text">Select Country</div>
+								<div class="menu">
+									<div class="item" data-value="F">F</div>
+									<div class="item" data-value="M">M</div>
+									<div class="item" data-value="O">O</div>
+									<div class="item" data-value="U">U</div>
+								</div>
+							</div>
+							
+						</div>
+					</div>
+
+					<div class="field">
+						<label>Gender</label>
+						<div class="field">
+							<div class="ui selection dropdown">
+								<input type="hidden" name="gender" value="<?=$gender?>">
+									<i class="dropdown icon"></i>
+								<div class="default text">Select Country</div>
+								<div class="menu">
+									<div class="item" data-value="F">F</div>
+									<div class="item" data-value="M">M</div>
+									<div class="item" data-value="O">O</div>
+									<div class="item" data-value="U">U</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="ui two fields">
+					<div class="field">
+						<label>Ethnicity1</label>
+						<div class="field">
+							<input type="text" name="ethnicity1" value="<?=$ethnicity1?>">
+						</div>
+					</div>
+					
+					<div class="field">
+						<label>Ethnicity2</label>
+						<div class="field">
+							<input type="text" name="ethnicity1" value="<?=$ethnicity2?>">
+						</div>
+					</div>
+				</div>
+
+				<br>
+				<div align="right">
+					<a href="index.php" class="ui button">Cancel</a>
+					<input type="submit" class="ui primary button" value="Save Subject Details">
+				</div>
+
+			</form>
+		</div>
+		<?
 	}
 	
 
@@ -368,6 +672,36 @@
 	function DisplayPipelines() {
 	}
 
+
+	/* -------------------------------------------- */
+	/* ------- GetUserAndPackageIDs --------------- */
+	/* -------------------------------------------- */
+	function GetUserAndPackageIDs() {
+
+		$userid = -1;
+		$packageid = -1;
+
+		/* get the user_id and package info */
+		$email = $_SESSION['email'];
+		
+		$sqlstring = "select user_id from users where email = '$email'";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		if (mysqli_num_rows($result) > 0) {
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			$userid = $row['user_id'];
+		}
+		
+		if ($userid >= 0) {
+			$sqlstring = "select package_id from packages where user_id = $userid";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			$packageid = $row['package_id'];
+		}
+		
+		return array($userid, $packageid);
+	}
+	
+	
 	/* -------------------------------------------- */
 	/* ------- DisplayLogin ----------------------- */
 	/* -------------------------------------------- */
@@ -384,8 +718,9 @@
 		</style>
 		
 		<div class="center-screen">
-			<?=$msg?>
 			<div class="ui raised segment">
+				<?=$msg?>
+				<br>
 				<h1 class="ui left aligned header">
 					<em data-emoji=":chipmunk:"></em>
 					<div class="content">
@@ -425,12 +760,12 @@
 		if (mysqli_num_rows($result) > 0) {
 			$sqlstring = "update users set ip_address = '$ip', last_login = now() where email = '$email'";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$msg = "Email address $email already registerd. Welcome back!";
+			$msg = "Welcome back $email!";
 		}
 		else {
 			$sqlstring = "insert into users (ip_address, email, first_login) values ('$ip', '$email', now())";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$msg = "New email address registerd. Welcome!";
+			$msg = "Welcome $email!";
 		}
 		
 		$_SESSION['email'] = $email;
