@@ -383,21 +383,62 @@
 	
 	
 	/* -------------------------------------------- */
-	/* ------- GetDataPathFromStudyID ------------- */
+	/* ------- GetDataPathFromSeriesID ------------ */
 	/* -------------------------------------------- */
-	function GetDataPathFromStudyID($id) {
-		$sqlstring = "select * from studies b left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where b.study_id = $id";
+	function GetDataPathFromSeriesID($id) {
+		
+		$sqlstring = "select d.pkg_path 'path', d.package_id, c.id 'subject', b.number 'study', a.series_num 'series' from series a left join studies b on a.study_id = b.study_id left join subjects c on b.subject_id = c.subject_id left join packages d on c.package_id = d.package_id where a.series_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$uid = $row['uid'];
-		$studynum = $row['study_num'];
-		$subjectid = $row['subject_id'];
-		$studyid = $row['study_id'];
-		$modality = $row['study_modality'];
+		$subject = $row['subject'];
+		$study = $row['study'];
+		$series = $row['series'];
+		$rootpath = $row['path'];
+		$packageid = $row['package_id'];
 		
-		$path = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum";
-		return array($path, $uid, $studynum, $studyid, $subjectid, $modality);
+		if ($rootpath == "") {
+			$rootpath = GenerateRandomString(20);
+			
+			mkdir($GLOBALS['tmpdir'] . "/$rootpath", 0777, true);
+			
+			$sqlstring = "update packages set pkg_path = '$rootpath' where package_id = $packageid";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		}
+		
+		$path = $GLOBALS['tmpdir'] . "/$rootpath/$subject/$study/$series";
+		
+		return $path;
 	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetDirectorySize ------------------- */
+	/* -------------------------------------------- */
+	function GetDirectorySize($dirname) {
+		// open the directory, if the script cannot open the directory then return folderSize = 0
+		$dir_handle = opendir($dirname);
+		if (!$dir_handle)
+			return 0;
+
+		$folderSize = 0;
+		
+		// traversal for every entry in the directory
+		while ($file = readdir($dir_handle)){
+			// ignore '.' and '..' directory
+			if  ($file  !=  "."  &&  $file  !=  "..")  {
+				/* if this is a directory then go recursive! */
+				if (is_dir($dirname."/".$file)) {
+					$folderSize += GetDirectorySize($dirname.'/'.$file);
+				} else {
+					$folderSize += filesize($dirname."/".$file);
+				}
+			}
+		}
+		// close the directory
+		closedir($dir_handle);
+		// return $dirname folder size
+		return $folderSize ;
+	}	
 
 
 	/* -------------------------------------------- */

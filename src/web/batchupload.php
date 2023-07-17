@@ -227,7 +227,7 @@
 										});
 										this.on("error", function(files, response) {
 											console.log("error [" + response + "]");
-										});										
+										});
 									}
 								};
 								</script>

@@ -301,9 +301,9 @@
 							
 							if ((($totals['complete']/$total)*100) < 100) {
 							?>
-							<div class="ui yellow image label">
+							<div class="ui orange image label">
 								Exporting object <?=number_format($totals['complete'])?> of <?=number_format($total)?>
-								<div class="detail"><?=($totals['complete']/$total)*100?>%</div>
+								<div class="detail"><?=number_format(($totals['complete']/$total)*100, 1)?>%</div>
 							</div>
 							<?
 							}
