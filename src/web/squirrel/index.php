@@ -654,7 +654,7 @@
 			}
 		</style>
 		
-		<div class="ui fluid styled tree accordion" style="background-color: #ddd">
+		<div class="ui fluid styled tree accordion">
 		<?		
 		$sqlstring = "select * from subjects where package_id = $packageid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -668,12 +668,25 @@
 			$gender = $row['gender'];
 			$ethnicity1 = $row['ethnicity1'];
 			$ethnicity2 = $row['ethnicity2'];
+			
+			$subjectdetails = "<table>
+			<tr><td><b>ID</b></td><td><tt>$subjectid</tt></td></tr>
+			<tr><td><b>AltIDs</b></td><td><tt>$altids</tt></td></tr>
+			<tr><td><b>GUID</b></td><td><tt>$guid</tt></td></tr>
+			<tr><td><b>DOB</b></td><td><tt>$dob</tt></td></tr>
+			<tr><td><b>Sex</b></td><td><tt>$sex</tt></td></tr>
+			<tr><td><b>Gender</b></td><td><tt>$gender</tt></td></tr>
+			<tr><td><b>Ethnicity1</b></td><td><tt>$ethnicity1</tt></td></tr>
+			<tr><td><b>Ethnicity2</b></td><td><tt>$ethnicity2</tt></td></tr>
+			</table>";
 			?>
 			<div class="title" style="font-size: larger">
-				<i class="dropdown icon"></i><tt><?=$id?></tt>
+				<i class="dropdown icon"></i><tt><?=$id?></tt> (<?=$sex?>)
 			</div>
 			<div class="content">
-				<a href="index.php?action=subjectform&subjectid=<?=$subjectid?>" class="ui primary compact button"><i class="edit icon"></i>Edit</a> <div class="ui large blue label" data-html="<?=$id?><br><?=$altids?>"><i class="info circle icon"></i> Details</div> &nbsp; &nbsp; <a href="index.php?action=studyform&subjectid=<?=$subjectid?>" class="ui primary compact button"><i class="plus icon"></i> Add study</a>
+				<a href="index.php?action=subjectform&subjectid=<?=$subjectid?>" class="ui primary compact button"><i class="edit icon"></i>Edit</a> <div class="ui large blue label" data-html="<?=$subjectdetails?>"><i class="info circle icon"></i> Details</div> &nbsp; &nbsp; <a href="index.php?action=studyform&subjectid=<?=$subjectid?>" class="ui primary compact button"><i class="plus icon"></i> Add study</a>
+
+				<div class="styled accordion" style="margin-top: 15px; background-color: #eee; important!">
 			<?
 				$sqlstringA = "select * from studies where subject_id = $subjectid";
 				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
@@ -692,13 +705,28 @@
 					$timepoint = $rowA['timepoint'];
 					$equipment = $rowA['equipment'];
 				
+					$studydetails = "<table>
+					<tr><td><b>Number</b></td><td><tt>$studynumber</tt></td></tr>
+					<tr><td><b>Date/time</b></td><td><tt>$studydatetime</tt></td></tr>
+					<tr><td><b>Age-at-study</b></td><td><tt>$age</tt></td></tr>
+					<tr><td><b>Height</b></td><td><tt>$height</tt></td></tr>
+					<tr><td><b>Weight</b></td><td><tt>$weight</tt></td></tr>
+					<tr><td><b>Description</b></td><td><tt>$studydescription</tt></td></tr>
+					<tr><td><b>StudyUID</b></td><td><tt>$studyuid</tt></td></tr>
+					<tr><td><b>Visit type</b></td><td><tt>$visittype</tt></td></tr>
+					<tr><td><b>Day number</b></td><td><tt>$daynumber</tt></td></tr>
+					<tr><td><b>Timepoint</b></td><td><tt>$timepoint</tt></td></tr>
+					<tr><td><b>Equipment</b></td><td><tt>$equipment</tt></td></tr>
+					</table>";
+				
 					?>
-					<div class="styled accordion" style="margin-top: 15px; background-color: #eee; important!">
 						<div class="title">
-							<i class="dropdown icon"></i><tt><?=$studynumber?></tt>
+							<i class="dropdown icon"></i><tt><?=$studynumber?></tt> - <?=$modality?> - <?=$studydatetime?>
 						</div>
 						<div class="content">
-							<a href="index.php?action=studyform&studyid=<?=$studyid?>" class="ui primary compact button"><i class="edit icon"></i> Edit study</a> <div class="ui large blue label" data-html="<?=$id?><br><?=$altids?>"><i class="info circle icon"></i> Details</div> &nbsp; &nbsp;  <a href="index.php?action=seriesform&subjectid=<?=$subjectid?>&studyid=<?=$studyid?>" class="ui primary compact button"><i class="plus icon"></i> Add series</a>
+							<a href="index.php?action=studyform&studyid=<?=$studyid?>" class="ui primary compact button"><i class="edit icon"></i> Edit study</a> <div class="ui large blue label" data-html="<?=$studydetails?>"><i class="info circle icon"></i> Details</div> &nbsp; &nbsp;  <a href="index.php?action=seriesform&subjectid=<?=$subjectid?>&studyid=<?=$studyid?>" class="ui primary compact button"><i class="plus icon"></i> Add series</a>
+
+							<div class="attached styled accordion" style="margin-top: 15px; important!">
 							<?
 								$sqlstringC = "select * from series where study_id = $studyid";
 								$resultC = MySQLiQuery($sqlstringC, __FILE__, __LINE__);
@@ -716,9 +744,8 @@
 									$behnumfiles = $rowC['behnumfiles'];
 								
 									?>
-									<div class="styled accordion" style="margin-top: 15px; important!">
 										<div class="title">
-											<i class="dropdown icon"></i><tt><?=$seriesnumber?></tt>
+											<i class="dropdown icon"></i><tt><?=$seriesnumber?></tt> <?=$seriesdescription?> <?=$protocol?> <?=$seriesdatetime?> (<?=$numfiles?> files, <?=$size?>)
 										</div>
 										<div class="content">
 											<a href="index.php?action=seriesform&seriesid=<?=$seriesid?>" class="ui primary compact button"><i class="edit icon"></i> Edit series</a> <div class="ui large blue label" data-html
@@ -757,15 +784,15 @@
 											</script>
 											
 										</div>
-									</div>
 									<?
 								}
 							?>
+							</div>
 						</div>
-					</div>
 					<?
 				}
 			?>
+				</div>
 			</div>
 			<?
 		}
