@@ -115,4 +115,3 @@ The locations of the written config file(s) are noted on this page. `nidb-cluste
 
 Setup should now be complete and you can visit the home page.
 
-***

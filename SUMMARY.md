@@ -35,6 +35,7 @@
 ## Tutorials
 
 * [Working with Imaging Data](tutorials/working-with-imaging-data/README.md)
+  * [Uploading data for a sample project](tutorials/working-with-imaging-data/uploading-data-for-a-sample-project.md)
   * [Troubleshooting Missing Imaging Data](tutorials/troublshooting-missing-data.md)
   * [Import DICOM data](tutorials/import-dicom-data.md)
   * [MR scan quality control](tutorials/working-with-imaging-data/mr-scan-quality-control.md)
