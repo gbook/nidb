@@ -761,24 +761,12 @@
 													thumbnailHeight: 60,
 													maxFilesize: 1000000,
 													init: function() {
-														this.on("addedfile", file => {
-															console.log("A file has been added");
-														});
-														this.on("sendingmultiple", function() {
-															console.log("sending multiple files");
-														});
-														this.on("successmultiple", function(files, response) {
-															console.log("successmultiple [" + response + "]");
-														});
-														this.on("errormultiple", function(files, response) {
-															console.log("errormultiple [" + response + "]");
-														});										
-														this.on("success", function(files, response) {
-															console.log("success [" + response + "]");
-														});
-														this.on("error", function(files, response) {
-															console.log("error [" + response + "]");
-														});
+														this.on("addedfile", file => { console.log("A file has been added"); });
+														this.on("sendingmultiple", function() { console.log("sending multiple files"); });
+														this.on("successmultiple", function(files, response) { console.log("successmultiple [" + response + "]"); });
+														this.on("errormultiple", function(files, response) { console.log("errormultiple [" + response + "]"); });
+														this.on("success", function(files, response) { console.log("success [" + response + "]"); });
+														this.on("error", function(files, response) { console.log("error [" + response + "]"); });
 													}
 												};
 											</script>
@@ -799,7 +787,57 @@
 		
 		?>
 		</div>
-		<a href="index.php?action=subjectform" class="ui small compact button" style="margin-top: 15px"><i class="plus icon"></i> Add subject</a>
+		<div class="ui three column grid">
+			<div class="column">
+				<a href="index.php?action=subjectform" class="ui small compact button" style="margin-top: 15px"><i class="plus icon"></i> Add subject</a>
+			</div>
+			<div class="column">
+				<form action="upload.php" class="dropzone" id="uploadbids">
+					<input type="hidden" name="action" value="uploadbids">
+					<input type="hidden" name="packageid" value="<?=$packageid?>">
+					<div class="dz-message" data-dz-message><span>Drop BIDS files here (One .zip file only)</span></div>
+				</form>
+				<script>
+					Dropzone.options.uploadbids = {
+						createImageThumbnails: false,
+						thumbnailHeight: 60,
+						maxFilesize: 1000000,
+						acceptedFiles: '.zip',
+						init: function() {
+							this.on("addedfile", file => { console.log("A file has been added"); });
+							this.on("sendingmultiple", function() { console.log("sending multiple files"); });
+							this.on("successmultiple", function(files, response) { console.log("successmultiple [" + response + "]"); });
+							this.on("errormultiple", function(files, response) { console.log("errormultiple [" + response + "]"); });
+							this.on("success", function(files, response) { console.log("success [" + response + "]"); });
+							this.on("error", function(files, response) { console.log("error [" + response + "]"); });
+						}
+					};
+				</script>
+			</div>
+			<div class="column">
+				<form action="upload.php" class="dropzone" id="uploaddicom">
+					<input type="hidden" name="action" value="uploaddicom">
+					<input type="hidden" name="packageid" value="<?=$packageid?>">
+					<div class="dz-message" data-dz-message><span>Drop DICOM files here (One .zip file only)</span></div>
+				</form>
+				<script>
+					Dropzone.options.uploadbids = {
+						createImageThumbnails: false,
+						thumbnailHeight: 60,
+						maxFilesize: 1000000,
+						acceptedFiles: '.zip',
+						init: function() {
+							this.on("addedfile", file => { console.log("A file has been added"); });
+							this.on("sendingmultiple", function() { console.log("sending multiple files"); });
+							this.on("successmultiple", function(files, response) { console.log("successmultiple [" + response + "]"); });
+							this.on("errormultiple", function(files, response) { console.log("errormultiple [" + response + "]"); });
+							this.on("success", function(files, response) { console.log("success [" + response + "]"); });
+							this.on("error", function(files, response) { console.log("error [" + response + "]"); });
+						}
+					};
+				</script>
+			</div>
+		</div>
 		<?
 	}
 

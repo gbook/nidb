@@ -32,14 +32,22 @@
 
 	$action = GetVariable("action");
 	$seriesid = GetVariable("seriesid");
-
+	$packageid = GetVariable("packageid");
 
 	if ($action == "uploadseries") {
 		UploadSeries($seriesid);
 	}
+	elseif ($action == "uploadbids") {
+		UploadBIDS($packageid);
+	}
+	elseif ($action == "uploaddicom") {
+		UploadDICOM($packageid);
+	}
 	
 	/* -------------------------------------------- */
 	/* ------- UploadSeries ----------------------- */
+	/* -------------------------------------------- */
+	/* this function accept one file at a time      */
 	/* -------------------------------------------- */
 	function UploadSeries($seriesid) {
 		$seriesid = mysqli_real_escape_string($GLOBALS['linki'], $seriesid);
@@ -47,8 +55,6 @@
 		$output = array();
 		$success = false;
 
-		//echo "Hello";
-		
 		$outpath = GetDataPathFromSeriesID($seriesid);
 		$output[] = $outpath;
 		
@@ -97,6 +103,116 @@
 		echo json_encode( $output );
 		
 		//print_r($output);
+	}
+
+	
+	/* -------------------------------------------- */
+	/* ------- UploadBIDS ------------------------- */
+	/* -------------------------------------------- */
+	/* this function accept one file at a time      */
+	/* -------------------------------------------- */
+	function UploadBIDS($packageid) {
+		$packageid = mysqli_real_escape_string($GLOBALS['linki'], $packageid);
+
+		$success = false;
+
+		$outpath = GetDataPathFromPackageID($packageid);
+		
+		/* go through all the files and save them */
+		mkdir($outpath, 0777, true);
+		chmod($outpath, 0777);
+		foreach ($_FILES as $i => $file) {
+			$name = $file['name'];
+			$tmpname = $file['tmp_name'];
+			
+			//echo "Working on file [$name]\n";
+			$filesize = 0;
+			error_reporting(E_ALL);
+			if (move_uploaded_file($tmpname, "$outpath/$name")) {
+				$filesize = filesize("$outpath/$name");
+				chmod("$outpath/$name", 0777);
+				$success = true;
+				$output['status'] = 1;
+				$output['msg'] = "SUCCESS: File [$name] written to [$outpath]";
+				
+				$systemstring = "cd $outpath; unzip $name";
+				$output['msg'] += shell_exec($systemstring);
+			}
+			else {
+				$output['status'] = 0;
+				$output['msg'] = "ERROR moving [$tmpname] to [$outpath/$name]";
+				$success = false;
+			}
+		}
+		
+		//print_r($output);
+		if ($success) {
+			http_response_code (200);
+		}
+		else {
+			http_response_code (400);
+		}
+		//header( 'Content-Type: application/json; charset=utf-8' );
+		echo json_encode( $output );
+	}
+
+	
+	/* -------------------------------------------- */
+	/* ------- UploadDICOM ------------------------ */
+	/* -------------------------------------------- */
+	/* this function accepts one file at a time      */
+	/* -------------------------------------------- */
+	function UploadDICOM($packageid) {
+		$packageid = mysqli_real_escape_string($GLOBALS['linki'], $packageid);
+
+		$output = array();
+		$success = false;
+
+		/* create temp directory to unzip the zip file */
+		$unzippath = $GLOBALS['tmpdir'] . "/" . GenerateRandomString(25);
+		$outpath = $GLOBALS['tmpdir'];
+		$output[] = $outpath;
+		
+		/* go through all the files and save them */
+		mkdir($outpath, 0777, true);
+		chmod($outpath, 0777);
+		
+		$output[] = print_r($_FILES);
+		foreach ($_FILES as $i => $file) {
+			$name = $file['name'];
+			$tmpname = $file['tmp_name'];
+			
+			echo "Working on file [$name]\n";
+			$filesize = 0;
+			error_reporting(E_ALL);
+			if (move_uploaded_file($tmpname, "$outpath/$name")) {
+				$filesize = filesize("$outpath/$name");
+				chmod("$outpath/$name", 0777);
+				$success = true;
+				$output['success'] = "SUCCESS: File [$name] written to [$outpath]";
+			}
+			else {
+				$output['error'] = "ERROR moving [$tmpname] to [$outpath/$name]";
+				$success = false;
+			}
+		}
+		
+		Unzip("$outpath/$name", $unzippath);
+		$filecount = count(glob("$outpath/*"));
+		$filesize = GetDirectorySize($outpath);
+		
+		/* update the database to reflect the number of size of the files */
+		$sqlstring = "update series set numfiles = $filecount, size = $filesize where series_id = $seriesid";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		
+		if ($success) {
+			http_response_code (200);
+		}
+		else {
+			http_response_code (400);
+		}
+		header( 'Content-Type: application/json; charset=utf-8' );
+		echo json_encode( $output );
 	}
 
 ?>

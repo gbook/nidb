@@ -387,25 +387,51 @@
 	/* -------------------------------------------- */
 	function GetDataPathFromSeriesID($id) {
 		
-		$sqlstring = "select d.pkg_path 'path', d.package_id, c.id 'subject', b.number 'study', a.series_num 'series' from series a left join studies b on a.study_id = b.study_id left join subjects c on b.subject_id = c.subject_id left join packages d on c.package_id = d.package_id where a.series_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$subject = $row['subject'];
-		$study = $row['study'];
-		$series = $row['series'];
-		$rootpath = $row['path'];
-		$packageid = $row['package_id'];
-		
-		if ($rootpath == "") {
-			$rootpath = GenerateRandomString(20);
-			
-			mkdir($GLOBALS['tmpdir'] . "/$rootpath", 0777, true);
-			
-			$sqlstring = "update packages set pkg_path = '$rootpath' where package_id = $packageid";
+		if ($id != "") {
+			$sqlstring = "select d.pkg_path 'path', d.package_id, c.id 'subject', b.number 'study', a.series_num 'series' from series a left join studies b on a.study_id = b.study_id left join subjects c on b.subject_id = c.subject_id left join packages d on c.package_id = d.package_id where a.series_id = $id";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			$subject = $row['subject'];
+			$study = $row['study'];
+			$series = $row['series'];
+			$rootpath = $row['path'];
+			$packageid = $row['package_id'];
+			
+			if ($rootpath == "") {
+				$rootpath = GenerateRandomString(20);
+				
+				mkdir($GLOBALS['tmpdir'] . "/$rootpath", 0777, true);
+				
+				$sqlstring = "update packages set pkg_path = '$rootpath' where package_id = $packageid";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			}
+			
+			$path = $GLOBALS['tmpdir'] . "/$rootpath/$subject/$study/$series";
+		}
+		else {
+			$path = "";
 		}
 		
-		$path = $GLOBALS['tmpdir'] . "/$rootpath/$subject/$study/$series";
+		return $path;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetDataPathFromPackageID ----------- */
+	/* -------------------------------------------- */
+	function GetDataPathFromPackageID($id) {
+		
+		if ($id != "") {
+			$sqlstring = "select pkg_path from packages where package_id = $id";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			$pkgpath = $row['pkg_path'];
+			
+			$path = $GLOBALS['tmpdir'] . "/$pkgpath";
+		}
+		else {
+			$path = "";
+		}
 		
 		return $path;
 	}
@@ -786,4 +812,29 @@
 		<br>
 		<?
 	}
+	
+
+	/* -------------------------------------------- */
+	/* ------- Unzip ------------------------------ */
+	/* -------------------------------------------- */
+	function Unzip($f, $dest) {
+		if (file_exists($dest) && $dest != "/") {
+			$systemstring = "unzip $f -d $dest";
+			print_r("Running $systemstring");
+			shell_exec($systemstring);
+		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- Zip -------------------------------- */
+	/* -------------------------------------------- */
+	function Zip($dir, $zipfile) {
+		if (file_exists($dest) && $dest != "/") {
+			$systemstring = "zip $zipfile $dir";
+			print_r("Running $systemstring");
+			shell_exec($systemstring);
+		}
+	}
+
 ?>
