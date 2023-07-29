@@ -59,6 +59,9 @@
 
 * [Squirrel data sharing format](contribute/squirrel-data-sharing-format/README.md)
   * [Using the squirrel library](contribute/squirrel-data-sharing-format/using-the-squirrel-library.md)
+  * [Modalities](contribute/squirrel-data-sharing-format/modalities.md)
+  * [Example package](contribute/squirrel-data-sharing-format/example-package.md)
+  * [squirrel vs BIDS](contribute/squirrel-data-sharing-format/squirrel-vs-bids.md)
   * [Specification v1.0](contribute/squirrel-data-sharing-format/specification-v1.0/README.md)
     * [Package root](contribute/squirrel-data-sharing-format/specification-v1.0/package-root.md)
     * [package](contribute/squirrel-data-sharing-format/specification-v1.0/\_package.md)
@@ -76,8 +79,6 @@
       * [Pipeline scripts](contribute/squirrel-data-sharing-format/specification-v1.0/pipelines/pipeline-scripts.md)
     * [experiments](contribute/squirrel-data-sharing-format/specification-v1.0/experiments.md)
     * [data-dictionary](contribute/squirrel-data-sharing-format/specification-v1.0/data-dictionary.md)
-  * [Modalities](contribute/squirrel-data-sharing-format/modalities.md)
-  * [Example package](contribute/squirrel-data-sharing-format/example-package.md)
   * [Building squirrel library and utils](contribute/squirrel-data-sharing-format/building-squirrel-library-and-utils.md)
     * [Building Python Wrapper](contribute/squirrel-data-sharing-format/building-squirrel-library-and-utils/building-python-wrapper.md)
 * [Building NiDB](contribute/building-nidb.md)
