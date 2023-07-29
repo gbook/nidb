@@ -70,7 +70,7 @@ Download the NiDBUploader from github: [https://github.com/gbook/nidbuploader/re
 
 Install it and run the program.
 
-<figure><img src="../../.gitbook/assets/image (1).png" alt=""><figcaption><p>The NiDBUploader</p></figcaption></figure>
+<figure><img src="../../.gitbook/assets/image (1) (5).png" alt=""><figcaption><p>The NiDBUploader</p></figcaption></figure>
 
 **Create a connection**
 

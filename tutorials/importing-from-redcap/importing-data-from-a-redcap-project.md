@@ -19,7 +19,7 @@ Gather the following API information from **Redcap administrator** to connect wi
 
 Use **Projects** menu in NiDB to get to the desired project's main page. From **Data Transfer** section on the right side of the project's main page, click **Import from Redcap** link.
 
-![](<../../.gitbook/assets/image (1) (2) (1).png>)
+![](<../../.gitbook/assets/image (1) (2).png>)
 
 ### Step 3
 

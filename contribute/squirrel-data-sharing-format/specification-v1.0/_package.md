@@ -4,7 +4,7 @@ description: JSON object
 
 # package
 
-This object contains information about the package. The first letter is an underscore so that the package details appear at the top of the JSON file. All other objects are listed in alphabetical order in the text file, which follows the JSON standard.
+This object contains information about the squirrel package.
 
 <figure><img src="https://mermaid.ink/img/pako:eNqVlF1vmzAUhv9K5CoSkSAiEU2JK_Wqu5mmTVrvJm48fEi8Akb-0MKi_PfZBjuB9qLlAr8HP-_x8bHMGZWcAsLoIEh3XHz7WbQL8wjOVZI8daR8JQeIxnH1eJ2Nvr78-O7UyoCUKBLZ1y1iE7AOataCjIKaEXDqQLAGWiWjGz2jbGrKSuXWSKxivCWiXw2U-5o8Sf37D5QmkRc-yzh_EFx3pCV1L5mMXJT40KPeatMpTZkpfRzfIRogUguDePEOQ4U-yMi9w-yQ0C5h9mtXcMPb6VDrvMrlcrAka3tIgjSyYrU9Jys99Ba1fbCgnJzVcnnTeItdwwG-xgv3YeV94VBdHWMweHw0c_iNWIPXg8FHE0PYguprWITyLVPju6qqYtMtwV8hoUQeiRCkx9upabLKZ4yzLnzGOmnFR4wzezjRj3i9x13RYID7NI0HC77LsmzUyV9G1RFn3QnFqAHREEbN7T_bVAVSR2igQNhIChXRtSpQ0V4MqjvTfPhCmeIC4YrUEmJEtOIvfVsirIQGDz0zYn4mTaDMjfvF-SRG-IxOCKcx6hHeprv1Ls8e8l2-edjm-yy_xOifc6Tr_fDk9_vNZrfN88t_UiWT3g?type=png" alt=""><figcaption></figcaption></figure>
 
