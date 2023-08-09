@@ -245,7 +245,7 @@ bool moduleExport::GetExportSeriesList(int exportid) {
 
             if (q2.size() > 0) {
                 while (q2.next()) {
-                    QString uid = q2.value("uid").toString();
+                    QString uid = q2.value("uid").toString().replace('\u0000', "");
                     int subjectid = q2.value("subject_id").toInt();
                     int studynum = q2.value("study_num").toInt();
                     int studyid = q2.value("study_id").toInt();
@@ -1728,7 +1728,7 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
             QString studydatetime = q.value("study_datetime").toDate().toString("MM/dd/yyyy");
             //QString birthdate = q.value("birthdate").toString().trimmed();
             QString gender = q.value("gender").toString().trimmed();
-            QString uid = q.value("uid").toString().trimmed();
+            QString uid = q.value("uid").toString().trimmed().replace('\u0000', "");
             double ageatscan = q.value("ageatscan").toDouble();
             double studyageatscan = q.value("study_ageatscan").toDouble();
             QString seriesdesc = q.value("series_desc").toString().trimmed();

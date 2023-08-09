@@ -124,7 +124,7 @@ void study::LoadStudyInfo() {
         q.first();
         _isValid = true;
         _studyid = q.value("study_id").toInt();
-        _uid = q.value("uid").toString().trimmed();
+        _uid = q.value("uid").toString().trimmed().replace('\u0000', "");
 		_desc = q.value("study_desc").toString().trimmed();
 		_studynum = q.value("study_num").toInt();
         _projectid = q.value("project_id").toInt();

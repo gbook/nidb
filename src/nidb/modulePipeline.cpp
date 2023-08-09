@@ -2104,7 +2104,7 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
             int studyid = q.value("study_id").toInt();
             n->WriteLog(QString("\tGetStudyTodoList() Found study (results rerun) [%1]").arg(studyid));
             list.append(studyid);
-            rerunStudyList << QString("%1%2").arg(q.value("uid").toString()).arg(q.value("study_num").toString());
+            rerunStudyList << QString("%1%2").arg(q.value("uid").toString().replace('\u0000', "")).arg(q.value("study_num").toString());
             addedStudies++;
         }
         if (debug)
@@ -2122,7 +2122,7 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
             int studyid = q.value("study_id").toInt();
             n->WriteLog(QString("\tGetStudyTodoList() Found study (results rerun) [%1]").arg(studyid));
             list.append(studyid);
-            supplementStudyList << QString("%1%2").arg(q.value("uid").toString()).arg(q.value("study_num").toString());
+            supplementStudyList << QString("%1%2").arg(q.value("uid").toString().replace('\u0000', "")).arg(q.value("study_num").toString());
             addedStudies++;
         }
         if (debug)
@@ -2146,7 +2146,7 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
             while (q2.next()) {
                 list.append(q2.value("study_id").toInt());
                 //studylist << QString("%1%2").arg(q2.value("uid").toString()).arg(q2.value("study_num").toString());
-                normalStudyList << QString("%1%2").arg(q2.value("uid").toString()).arg(q2.value("study_num").toString());
+                normalStudyList << QString("%1%2").arg(q2.value("uid").toString().replace('\u0000', "")).arg(q2.value("study_num").toString());
             }
         }
         QString studyidlist = JoinIntArray(list, ", ");
@@ -2214,7 +2214,7 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
                 q2.first();
                 //QString uidstudynum;
                 //uidstudynum = QString("%1%2").arg(q2.value("uid").toString()).arg(q2.value("study_num").toInt());
-                normalStudyList << QString("%1%2").arg(q2.value("uid").toString()).arg(q2.value("study_num").toString());
+                normalStudyList << QString("%1%2").arg(q2.value("uid").toString().replace('\u0000', "")).arg(q2.value("study_num").toString());
             }
             list.append(studyid);
 
