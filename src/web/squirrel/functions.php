@@ -276,8 +276,8 @@
 			$file = mysqli_real_escape_string($GLOBALS['linki'], $file);
 			$msg = mysqli_real_escape_string($GLOBALS['linki'], $body);
 			
-			$sqlstring = "insert into error_log (error_hostname, error_type, error_source, error_module, error_date, error_message) values ('localhost', 'sql', 'web', '$file', now(), '$msg')";
-			$result = mysqli_query($GLOBALS['linki'], $sqlstring);
+			//$sqlstring = "insert into error_log (error_hostname, error_type, error_source, error_module, error_date, error_message) values ('localhost', 'sql', 'web', '$file', now(), '$msg')";
+			//$result = mysqli_query($GLOBALS['linki'], $sqlstring);
 			
 			?>
 			<div class="ui inverted yellow segment" style="padding:4px;">
@@ -304,6 +304,11 @@
 							<h3 class="header">Error</h3>
 						</div>
 						<div class="twelve wide column"><?=$errormsg?></div>
+
+						<div class="four wide right aligned column">
+							<h3 class="header">SQL</h3>
+						</div>
+						<div class="twelve wide column"><?=$sqlstring?></div>
 						
 						<div class="four wide right aligned column">
 							<h3 class="header">Username</h3>
@@ -417,6 +422,72 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- GetDataPathFromStudyID ------------- */
+	/* -------------------------------------------- */
+	function GetDataPathFromStudyID($id) {
+		
+		if ($id != "") {
+			$sqlstring = "select d.pkg_path 'path', d.package_id, c.id 'subject', b.number 'study' from studies b left join subjects c on b.subject_id = c.subject_id left join packages d on c.package_id = d.package_id where b.study_id = $id";
+			PrintSQL($sqlstring);
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			$subject = $row['subject'];
+			$study = $row['study'];
+			$rootpath = $row['path'];
+			$packageid = $row['package_id'];
+			
+			if ($rootpath == "") {
+				$rootpath = GenerateRandomString(20);
+				
+				mkdir($GLOBALS['tmpdir'] . "/$rootpath", 0777, true);
+				
+				$sqlstring = "update packages set pkg_path = '$rootpath' where package_id = $packageid";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			}
+			
+			$path = $GLOBALS['tmpdir'] . "/$rootpath/$subject/$study";
+		}
+		else {
+			$path = "";
+		}
+		
+		return $path;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetDataPathFromSubjectID ----------- */
+	/* -------------------------------------------- */
+	function GetDataPathFromSubjectID($id) {
+		
+		if ($id != "") {
+			$sqlstring = "select d.pkg_path 'path', d.package_id, c.id 'subject' from subjects c left join packages d on c.package_id = d.package_id where c.subject_id = $id";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			$subject = $row['subject'];
+			$rootpath = $row['path'];
+			$packageid = $row['package_id'];
+			
+			if ($rootpath == "") {
+				$rootpath = GenerateRandomString(20);
+				
+				mkdir($GLOBALS['tmpdir'] . "/$rootpath", 0777, true);
+				
+				$sqlstring = "update packages set pkg_path = '$rootpath' where package_id = $packageid";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			}
+			
+			$path = $GLOBALS['tmpdir'] . "/$rootpath/$subject";
+		}
+		else {
+			$path = "";
+		}
+		
+		return $path;
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- GetDataPathFromPackageID ----------- */
 	/* -------------------------------------------- */
 	function GetDataPathFromPackageID($id) {
@@ -433,7 +504,12 @@
 			$path = "";
 		}
 		
-		return $path;
+		if (in_array($path, array("", "$pkgpath", $GLOBALS['tmpdir'], "/tmp", "/"))) {
+			return "";
+		}
+		else {
+			return $path;
+		}
 	}
 
 
@@ -833,6 +909,17 @@
 		if (file_exists($dest) && $dest != "/") {
 			$systemstring = "zip $zipfile $dir";
 			print_r("Running $systemstring");
+			shell_exec($systemstring);
+		}
+	}
+
+	/* -------------------------------------------- */
+	/* ------- RemoveDir -------------------------- */
+	/* -------------------------------------------- */
+	function RemoveDir($dir) {
+		if (($dir != "") && ($dir != "/") && ($dir != "/bin") && ($dir != "/lib") && ($dir != "/root") && ($dir != "/etc") && (startsWith($dir, $GLOBALS['tmpdir'])) && ($dir != $GLOBALS['tmpdir'])) {
+			$systemstring = "rm -rv $dir";
+			echo("Removing directory using [$systemstring]<br>");
 			shell_exec($systemstring);
 		}
 	}

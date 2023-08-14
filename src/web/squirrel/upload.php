@@ -134,9 +134,12 @@
 				$success = true;
 				$output['status'] = 1;
 				$output['msg'] = "SUCCESS: File [$name] written to [$outpath]";
+				$bidsdirpath = "$outpath/$name";
+				$bidsdirpath = str_ireplace(".zip", "", $bidsdirpath);
 				
-				$systemstring = "cd $outpath; unzip $name";
-				$output['msg'] += shell_exec($systemstring);
+				$systemstring = "cd $outpath; unzip $name; " . $GLOBALS['bindir'] . "/./squirrel bids2squirrel -i $bidsdirpath";
+				$output['msg'] .= "\n\n$systemstring\n\n";
+				$output['msg'] .= shell_exec($systemstring);
 			}
 			else {
 				$output['status'] = 0;

@@ -184,7 +184,7 @@
 	elseif ($action == "downloadpackage") {
 		DownloadPackage();
 	}
-	elseif ($action == "setpackageinfo") {
+	elseif ($action == "setpackage	") {
 		$msg = SetPackageInfo($packageid, $name, $desc, $subjectdirformat, $studydirformat, $seriesdirformat, $dataformat, $license, $readme, $changes, $notes);
 		DisplayHeader($msg);
 		DisplayPackage();
@@ -216,8 +216,15 @@
 		DisplayHeader($msg);
 		ShowSeriesForm($subjectid, $studyid, $seriesid);
 	}
+	elseif ($action == "clearpackage") {
+		ClearPackage();
+		$msg = "Package cleared";
+		DisplayHeader($msg);
+		DisplayPackage();
+	}
 	else {
-		
+		DisplayHeader($msg);
+		DisplayPackage();
 	}
 
 
@@ -245,6 +252,15 @@
 		<?
 	}
 
+
+	/* -------------------------------------------- */
+	/* ------- NewPackage ------------------------- */
+	/* -------------------------------------------- */
+	function NewPackage() {
+		$packageid = SetPackageInfo("", "New package","Squirrel package","orig","orig","orig","orig","","","","");
+		return $packageid;
+	}
+	
 
 	/* -------------------------------------------- */
 	/* ------- SetPackageInfo --------------------- */
@@ -281,11 +297,12 @@
 			}
 			else {
 				$sqlstring = "insert into packages (user_id, pkg_name, pkg_desc, pkg_date, pkg_subjectdirformat, pkg_studydirformat, pkg_seriesdirformat, pkg_dataformat, pkg_license, pkg_readme, pkg_changes, pkg_notes) values ($userid, '$name', '$desc', now(), '$subjectdirformat', '$studydirformat', '$seriesdirformat', '$dataformat', '$license', '$readme', '$changes', '$notes')";
-				//PrintSQL($sqlstring);
+				PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$packageid = mysqli_insert_id($GLOBALS['linki']);
 			}
 		}
-		
+		return $packageid;
 	}
 	
 
@@ -433,13 +450,23 @@
 		/* get the user_id and package_id */
 		list($userid, $packageid) = GetUserAndPackageIDs();
 
+		$packagepath = GetDataPathFromPackageID($packageid);
+
 		$name = "Unnamed";
 		$numsubjects = 0;
 		if ($userid >= 0) {
-			$sqlstring = "select * from packages where package_id = $packageid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$name = $row['pkg_name'];
+
+			if (($packageid != "") && ($packageid >= 0)) {
+				$sqlstring = "select * from packages where package_id = $packageid";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+				$name = $row['pkg_name'];
+				echo "Found existing package with id [$packageid]";
+			}
+			else {
+				$packageid = NewPackage();
+				echo "Created new package with id [$packageid]";
+			}
 
 			$sqlstring = "select * from subjects where package_id = $packageid";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -467,11 +494,27 @@
 					Third
 				</div>
 				
-				<br><br>
-				<div align="center">
-					<a href="index.php?action=downloadpackage" class="ui primary button"><i class="large cloud download alternate icon"></i> Download Package</a>
+				<div class="ui two column grid">
+					<div class="column">
+						<a href="index.php?action=downloadpackage" class="ui large primary button"><i class="cloud download alternate icon"></i> Download Package</a>
+					</div>
+					<div class="right aligned column">
+						<a href="index.php?action=clearpackage" class="ui red button"><i class="trash alternate icon"></i> Clear Package</a>
+					</div>
 				</div>
-				<br><br><br>
+				
+				<div class="ui segment">
+					<div class="ui accordion">
+						<div class="title">
+							<i class="dropdown icon"></i>File listing
+						</div>
+						<div class="content">
+							<tt>
+								<pre><?=shell_exec("tree $packagepath");?></pre>
+							</tt>
+						</div>
+					</div>
+				</div>
 			</div>
 		<?
 	}
@@ -743,13 +786,24 @@
 									$behsize = $rowC['behsize'];
 									$behnumfiles = $rowC['behnumfiles'];
 								
+									$seriesdetails = "<table>
+									<tr><td><b>Number</b></td><td><tt>$studynumber</tt></td></tr>
+									<tr><td><b>Date/time</b></td><td><tt>$studydatetime</tt></td></tr>
+									<tr><td><b>Description</b></td><td><tt>$studydescription</tt></td></tr>
+									<tr><td><b>Series UID</b></td><td><tt>$seriesuid</tt></td></tr>
+									<tr><td><b>Protocol</b></td><td><tt>$protocol</tt></td></tr>
+									<tr><td><b>Size</b></td><td><tt>$size</tt> bytes</td></tr>
+									<tr><td><b>Num files</b></td><td><tt>$numfiles</tt></td></tr>
+									<tr><td><b>Beh size</b></td><td><tt>$behsize</tt> bytes</td></tr>
+									<tr><td><b>Beh num files</b></td><td><tt>$behnumfiles</tt></td></tr>
+									</table>";
 									?>
 										<div class="title">
-											<i class="dropdown icon"></i><tt><?=$seriesnumber?></tt> <?=$seriesdescription?> <?=$protocol?> <?=$seriesdatetime?> (<?=$numfiles?> files, <?=$size?>)
+											<i class="dropdown icon"></i><tt><?=$seriesnumber?></tt> <?=$seriesdescription?> <?=$protocol?> <?=$seriesdatetime?> (<?=$numfiles?> files, <?=HumanReadableFilesize($size)?>)
 										</div>
 										<div class="content">
 											<a href="index.php?action=seriesform&seriesid=<?=$seriesid?>" class="ui primary compact button"><i class="edit icon"></i> Edit series</a> <div class="ui large blue label" data-html
-											="<?=$id?><br><?=$altids?>"><i class="info circle icon"></i> Details</div>
+											="<?=$seriesdetails?>"><i class="info circle icon"></i> Details</div>
 
 											<form action="upload.php" class="dropzone" id="uploadseries<?=$seriesid?>">
 												<input type="hidden" name="action" value="uploadseries">
@@ -791,7 +845,7 @@
 			<div class="column">
 				<a href="index.php?action=subjectform" class="ui small compact button" style="margin-top: 15px"><i class="plus icon"></i> Add subject</a>
 			</div>
-			<div class="column">
+			<div class="column" style="padding-bottom: 2px">
 				<form action="upload.php" class="dropzone" id="uploadbids">
 					<input type="hidden" name="action" value="uploadbids">
 					<input type="hidden" name="packageid" value="<?=$packageid?>">
@@ -814,11 +868,11 @@
 					};
 				</script>
 			</div>
-			<div class="column">
+			<div class="column" style="padding-bottom: 2px">
 				<form action="upload.php" class="dropzone" id="uploaddicom">
 					<input type="hidden" name="action" value="uploaddicom">
 					<input type="hidden" name="packageid" value="<?=$packageid?>">
-					<div class="dz-message" data-dz-message><span>Drop DICOM files here (One .zip file only)</span></div>
+					<div class="dz-message" data-dz-message><span>Drop DICOM files here (DICOMs zipped in a single file)</span></div>
 				</form>
 				<script>
 					Dropzone.options.uploadbids = {
@@ -1242,6 +1296,156 @@
 		$json = GetJSON();
 		
 		PrintVariable($json);
+	}
+	
+	/* -------------------------------------------- */
+	/* ------- ClearPackage ----------------------- */
+	/* -------------------------------------------- */
+	function ClearPackage() {
+		list($userid, $packageid) = GetUserAndPackageIDs();
+		
+		if (($packageid != "") && ($packageid > 0)) {
+			
+			/* delete all subjects */
+			$sqlstring = "select * from subjects where package_id = $packageid";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$subjectid = $row['subject_id'];
+				DeleteSubject($subjectid);
+			}
+			
+			/* delete pipelines */
+			$sqlstring = "select * from pipelines where package_id = $packageid";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$pipelineid = $row['pipeline_id'];
+				DeletePipeline($pipelineid);
+			}
+			
+			/* delete experiments */
+			$sqlstring = "select * from experiments where package_id = $packageid";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$experimentid = $row['experiment_id'];
+				DeleteExperiment($experimentid);
+			}
+			
+			/* delete the package and temp directory */
+			DeletePackage($packageid);
+		}
+	}	
+
+
+	/* -------------------------------------------- */
+	/* ------- DeleteSubject ---------------------- */
+	/* -------------------------------------------- */
+	function DeleteSubject($subjectid) {
+		
+		if ($subjectid >= 0) {
+			/* get the subject path on disk */
+			$subjectpath = GetDataPathFromSubjectID($subjectid);
+
+			$sqlstring = "select * from studies where subject_id = $subjectid";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$studyid = $row['study_id'];
+				DeleteStudy($studyid);
+			}
+			
+			/* delete any measures */
+			$sqlstring = "delete * from measures where subject_id = $subjectid";
+			echo "Deleting SQL measures [$sqlstring]<br>";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			
+			/* delete any drugs */
+			$sqlstring = "delete * from drugs where subject_id = $subjectid";
+			echo "Deleting SQL drugs [$sqlstring]<br>";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			
+			/* delete the SQL row */
+			$sqlstring = "delete from subjects where subject_id = $subjectid";
+			echo "Deleting SQL subject [$sqlstring]<br>";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+			echo "Deleting subject directory [$subjectpath]<br>";
+			if ($subjectpath != "") {
+				RemoveDir($subjectpath);
+			}
+		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DeleteStudy ------------------------ */
+	/* -------------------------------------------- */
+	function DeleteStudy($studyid) {
+		
+		if ($studyid >= 0) {
+			/* get the subject path on disk */
+			$studypath = GetDataPathFromStudyID($studyid);
+
+			$sqlstring = "select * from series where study_id = $studyid";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$seriesid = $row['series_id'];
+				DeleteSeries($seriesid);
+			}
+			
+			/* delete the SQL row */
+			$sqlstring = "delete from studies where subject_id = $studyid";
+			echo "Deleting SQL study [$sqlstring]<br>";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+			echo "Deleting study directory [$studypath]<br>";
+			if ($studypath != "") {
+				RemoveDir($studypath);
+			}
+		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DeleteSeries ----------------------- */
+	/* -------------------------------------------- */
+	function DeleteSeries($seriesid) {
+		
+		if ($seriesid >= 0) {
+			/* get the series path on disk */
+			$seriespath = GetDataPathFromSeriesID($seriesid);
+
+			$sqlstring = "delete from params where series_id = $seriesid";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			
+			/* delete the SQL row */
+			$sqlstring = "delete from series where series_id = $seriesid";
+			echo "Deleting SQL series [$sqlstring]<br>";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+			echo "Deleting series directory [$seriespath]<br>";
+			if ($seriespath != "") {
+				RemoveDir($seriespath);
+			}
+		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DeletePackage ---------------------- */
+	/* -------------------------------------------- */
+	function DeletePackage($packageid) {
+		
+		/* delete the files on disk */
+		$packagepath = GetDataPathFromPackageID($packageid);
+		
+		/* delete the SQL row */
+		$sqlstring = "delete from packages where package_id = $packageid";
+		echo "Deleting SQL package [$sqlstring]<br>";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+		echo "Deleting package directory [$packagepath]<br>";
+		if ($packagepath != "") {
+			RemoveDir($packagepath);
+		}
 	}
 	
 	
