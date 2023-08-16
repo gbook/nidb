@@ -172,6 +172,12 @@
 	if ($_SESSION['valid'] != "true") {
 		DisplayLogin("Not logged in");
 	}
+
+	/* get the user_id and package_id */
+	list($userid, $packageid) = GetUserAndPackageIDs();
+	if ($packageid == "" || $packageid < 0) {
+		$action = "home";
+	}
 	
 	/* determine action */
 	if (($action == "") || ($action == "login")) {
@@ -180,47 +186,52 @@
 	}
 	elseif ($action == "newpackage") {
 		NewPackage();
+		DisplayHeader();
+		DisplayPackage();
 	}
 	elseif ($action == "downloadpackage") {
 		DownloadPackage();
 	}
 	elseif ($action == "setpackage	") {
 		$msg = SetPackageInfo($packageid, $name, $desc, $subjectdirformat, $studydirformat, $seriesdirformat, $dataformat, $license, $readme, $changes, $notes);
-		DisplayHeader($msg);
+		DisplayHeader("Updated package info");
 		DisplayPackage();
 	}
 	elseif ($action == "setsubjectinfo") {
 		$msg = SetSubjectInfo($subjectid, $id, $altids, $guid, $dob, $sex, $gender, $ethnicity1, $ethnicity2);
-		DisplayHeader($msg);
+		DisplayHeader("Updated subject info");
 		DisplayPackage();
 	}
 	elseif ($action == "setstudyinfo") {
 		$msg = SetStudyInfo($subjectid, $studyid, $study_number, $study_datetime, $study_age, $study_height, $study_weight, $study_modality,$study_description, $study_studyuid, $study_visittype, $study_daynumber, $study_timepoint, $study_equipment);
-		DisplayHeader($msg);
+		DisplayHeader("Updated study info");
 		DisplayPackage();
 	}
 	elseif ($action == "setseriesinfo") {
 		$msg = SetSeriesInfo($subjectid, $studyid, $seriesid, $series_number, $series_datetime, $series_uid, $series_description, $series_protocol, $series_experimentid);
-		DisplayHeader($msg);
+		DisplayHeader("Updated series info");
 		DisplayPackage();
 	}
 	elseif ($action == "subjectform") {
-		DisplayHeader($msg);
+		DisplayHeader("Editing subject...");
 		ShowSubjectForm($subjectid);
 	}
 	elseif ($action == "studyform") {
-		DisplayHeader($msg);
+		DisplayHeader("Editing study...");
 		ShowStudyForm($subjectid, $studyid);
 	}
 	elseif ($action == "seriesform") {
-		DisplayHeader($msg);
+		DisplayHeader("Editing series...");
 		ShowSeriesForm($subjectid, $studyid, $seriesid);
 	}
 	elseif ($action == "clearpackage") {
 		ClearPackage();
-		$msg = "Package cleared";
-		DisplayHeader($msg);
-		DisplayPackage();
+		DisplayHeader("Package cleared");
+		DisplayHomeScreen();
+	}
+	elseif ($action == "home") {
+		DisplayHeader("Choose a package creation method");
+		DisplayHomeScreen();
 	}
 	else {
 		DisplayHeader($msg);
@@ -234,21 +245,99 @@
 	function DisplayHeader($msg) {
 		?>
 		<div class="ui container">
-			<div class="ui horizontal segments">		
-				<div class="ui brown segment">
-					<a href="index.php"><img src="../images/squirrel.png" width="30px">
-					<span class="ui big brown text"><b>Squirrel package creator</b></span></a>
+			<div class="ui top attached brown segment">
+				<div class="ui two column grid">
+					<div class="column">
+						<a href="index.php"><img src="../images/squirrel.png" width="30px">
+						<span class="ui big brown text"><b>Squirrel package creator</b></span></a>
+					</div>
+					<div class="right aligned column">
+						Logged in as <?=$_SESSION['email']?><br>
+						<a href="https://github.com/gbook/squirrel">Squirrel</a> running on <a href="https://github.com/gbook/nidb">NiDB</a> &copy;2023
+					</div>
 				</div>
-				<div class="ui brown segment">
-					<?=$msg?>&nbsp;
-				</div>
-				<div class="ui right aligned brown segment">
-					Logged in as <?=$_SESSION['email']?><br>
-					<a href="https://github.com/gbook/squirrel">Squirrel</a> running on <a href="https://github.com/gbook/nidb">NiDB</a> &copy;2023
-				</div>
+			</div>
+			<div class="ui inverted brown bottom attached center aligned vertically fitted segment">
+				<?=$msg?>
 			</div>
 		</div>
 		<br><br>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayHomeScreen ------------------ */
+	/* -------------------------------------------- */
+	function DisplayHomeScreen() {
+		?>
+		<div class="ui container">
+
+			<div class="ui cards">
+
+				<div class="ui card">
+					<div class="content">
+						<div class="center aligned header">
+							Build package manually
+						</div>
+					</div>
+					<div class="content">
+						<p>Make a new package manually by creating subject, studies, and series and uploading files</p>
+					</div>
+					<div class="center aligned extra content">
+						<a href="index.php?action=newpackage" class="ui primary button"> <i class="file outline icon"></i> </i>Create New Package</a>
+					</div>
+				</div>
+
+				<div class="ui card">
+					<div class="content">
+						<div class="center aligned header">
+							BIDS <i class="arrow right icon"></i> squirrel
+						</div>
+					</div>
+					<div class="content">
+						<p>Convert a BIDS package to a squirrel package. The BIDs package must be a single .zip file.</p>
+					</div>
+					<div class="center aligned extra content">
+						<form action="upload.php" class="dropzone" id="uploadbids">
+							<input type="hidden" name="action" value="uploadbids">
+							<input type="hidden" name="packageid" value="<?=$packageid?>">
+							<div class="dz-message" data-dz-message><span>Drop BIDS files here (One .zip file only)</span></div>
+						</form>
+						<script>
+							Dropzone.options.uploadbids = {
+								createImageThumbnails: false,
+								thumbnailHeight: 60,
+								maxFilesize: 1000000,
+								acceptedFiles: '.zip',
+								init: function() {
+									this.on("addedfile", file => { console.log("A file has been added"); });
+									this.on("sendingmultiple", function() { console.log("sending multiple files"); });
+									this.on("successmultiple", function(files, response) { console.log("successmultiple [" + response + "]"); });
+									this.on("errormultiple", function(files, response) { console.log("errormultiple [" + response + "]"); });
+									this.on("success", function(files, response) { console.log("success [" + response + "]"); });
+									this.on("error", function(files, response) { console.log("error [" + response + "]"); });
+								}
+							};
+						</script>
+					</div>
+				</div>
+
+				<div class="ui card">
+					<div class="content">
+						<div class="center aligned header">
+							DICOM to squirrel
+						</div>
+					</div>
+					<div class="content">
+						<p>Convert DICOM files to a squirrel package. DICOMs must be contained in a single .zip file</p>
+					</div>
+					<div class="center aligned extra content">
+						<a href="index.php?action=newpackage" class="ui primary button"> <i class="file outline icon"></i> </i>Create New Package</a>
+					</div>
+				</div>
+			</div>
+		</div>
 		<?
 	}
 
@@ -297,7 +386,7 @@
 			}
 			else {
 				$sqlstring = "insert into packages (user_id, pkg_name, pkg_desc, pkg_date, pkg_subjectdirformat, pkg_studydirformat, pkg_seriesdirformat, pkg_dataformat, pkg_license, pkg_readme, pkg_changes, pkg_notes) values ($userid, '$name', '$desc', now(), '$subjectdirformat', '$studydirformat', '$seriesdirformat', '$dataformat', '$license', '$readme', '$changes', '$notes')";
-				PrintSQL($sqlstring);
+				//PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				$packageid = mysqli_insert_id($GLOBALS['linki']);
 			}
@@ -369,6 +458,9 @@
 		$timepoint = mysqli_real_escape_string($GLOBALS['linki'], trim($study_timepoint));
 		$equipment = mysqli_real_escape_string($GLOBALS['linki'], trim($study_equipment));
 		
+		if ($daynumber == "") $daynumber = "null";
+		if ($timepoint == "") $timepoint = "null";
+		
 		/* get the user_id and package_id */
 		list($userid, $packageid) = GetUserAndPackageIDs();
 		
@@ -387,7 +479,7 @@
 				}
 			}
 			else {
-				$sqlstring = "insert into studies (subject_id, number, datetime, age, height, weight, modality, description, studyuid, visittype, daynumber, timepoint, equipment) values ($subjectid, '$number', '$datetime', '$age', '$height', '$weight', '$modality', '$description', '$studyuid', '$visittype', '$daynumber', '$timepoint', '$equipment')";
+				$sqlstring = "insert into studies (subject_id, number, datetime, age, height, weight, modality, description, studyuid, visittype, daynumber, timepoint, equipment) values ($subjectid, '$number', '$datetime', '$age', '$height', '$weight', '$modality', '$description', '$studyuid', '$visittype', $daynumber, $timepoint, '$equipment')";
 				//PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				$msg = "Study added";
@@ -461,11 +553,11 @@
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 				$name = $row['pkg_name'];
-				echo "Found existing package with id [$packageid]";
+				//echo "Found existing package with id [$packageid]";
 			}
 			else {
 				$packageid = NewPackage();
-				echo "Created new package with id [$packageid]";
+				//echo "Created new package with id [$packageid]";
 			}
 
 			$sqlstring = "select * from subjects where package_id = $packageid";
@@ -727,9 +819,18 @@
 				<i class="dropdown icon"></i><tt><?=$id?></tt> (<?=$sex?>)
 			</div>
 			<div class="content">
-				<a href="index.php?action=subjectform&subjectid=<?=$subjectid?>" class="ui primary compact button"><i class="edit icon"></i>Edit</a> <div class="ui large blue label" data-html="<?=$subjectdetails?>"><i class="info circle icon"></i> Details</div> &nbsp; &nbsp; <a href="index.php?action=studyform&subjectid=<?=$subjectid?>" class="ui primary compact button"><i class="plus icon"></i> Add study</a>
+				<div class="ui two column grid">
+					<div class="column">
+						<a href="index.php?action=subjectform&subjectid=<?=$subjectid?>" class="ui primary compact button"><i class="edit icon"></i>Edit</a>
+						<div class="ui large blue label" data-html="<?=$subjectdetails?>"><i class="info circle icon"></i> Details</div>
+						&nbsp; &nbsp; <a href="index.php?action=studyform&subjectid=<?=$subjectid?>" class="ui primary compact button"><i class="plus icon"></i> Add study</a>
+					</div>
+					<div class="right aligned column">
+						<a href="index.php?action=deletesubject&subjectid=<?=$subjectid?>" class="ui red basic compact button"><i class="trash alternate icon"></i> Delete subject</a>
+					</div>
+				</div>
 
-				<div class="styled accordion" style="margin-top: 15px; background-color: #eee; important!">
+				<div class="accordion" style="margin-top: 15px; background-color: #eee; important!">
 			<?
 				$sqlstringA = "select * from studies where subject_id = $subjectid";
 				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
@@ -767,7 +868,17 @@
 							<i class="dropdown icon"></i><tt><?=$studynumber?></tt> - <?=$modality?> - <?=$studydatetime?>
 						</div>
 						<div class="content">
-							<a href="index.php?action=studyform&studyid=<?=$studyid?>" class="ui primary compact button"><i class="edit icon"></i> Edit study</a> <div class="ui large blue label" data-html="<?=$studydetails?>"><i class="info circle icon"></i> Details</div> &nbsp; &nbsp;  <a href="index.php?action=seriesform&subjectid=<?=$subjectid?>&studyid=<?=$studyid?>" class="ui primary compact button"><i class="plus icon"></i> Add series</a>
+						
+							<div class="ui two column grid">
+								<div class="column">
+									<a href="index.php?action=studyform&studyid=<?=$studyid?>" class="ui primary compact button"><i class="edit icon"></i> Edit study</a>
+									<div class="ui large blue label" data-html="<?=$studydetails?>"><i class="info circle icon"></i> Details</div>
+									&nbsp; &nbsp;  <a href="index.php?action=seriesform&subjectid=<?=$subjectid?>&studyid=<?=$studyid?>" class="ui primary compact button"><i class="plus icon"></i> Add series</a>
+								</div>
+								<div class="right aligned column">
+									<a href="index.php?action=deletestudy&studyid=<?=$studyid?>" class="ui red basic compact button"><i class="trash alternate icon"></i> Delete study</a>
+								</div>
+							</div>
 
 							<div class="attached styled accordion" style="margin-top: 15px; important!">
 							<?
@@ -802,8 +913,16 @@
 											<i class="dropdown icon"></i><tt><?=$seriesnumber?></tt> <?=$seriesdescription?> <?=$protocol?> <?=$seriesdatetime?> (<?=$numfiles?> files, <?=HumanReadableFilesize($size)?>)
 										</div>
 										<div class="content">
-											<a href="index.php?action=seriesform&seriesid=<?=$seriesid?>" class="ui primary compact button"><i class="edit icon"></i> Edit series</a> <div class="ui large blue label" data-html
-											="<?=$seriesdetails?>"><i class="info circle icon"></i> Details</div>
+
+											<div class="ui two column grid">
+												<div class="column">
+													<a href="index.php?action=seriesform&seriesid=<?=$seriesid?>" class="ui primary compact button"><i class="edit icon"></i> Edit series</a>
+													<div class="ui large blue label" data-html="<?=$seriesdetails?>"><i class="info circle icon"></i> Details</div>
+												</div>
+												<div class="right aligned column">
+													<a href="index.php?action=deleteseries&seriesid=<?=$studyid?>" class="ui red basic compact button"><i class="trash alternate icon"></i> Delete series</a>
+												</div>
+											</div>
 
 											<form action="upload.php" class="dropzone" id="uploadseries<?=$seriesid?>">
 												<input type="hidden" name="action" value="uploadseries">
@@ -1353,12 +1472,12 @@
 			}
 			
 			/* delete any measures */
-			$sqlstring = "delete * from measures where subject_id = $subjectid";
+			$sqlstring = "delete from measures where subject_id = $subjectid";
 			echo "Deleting SQL measures [$sqlstring]<br>";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			
 			/* delete any drugs */
-			$sqlstring = "delete * from drugs where subject_id = $subjectid";
+			$sqlstring = "delete from drugs where subject_id = $subjectid";
 			echo "Deleting SQL drugs [$sqlstring]<br>";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			
