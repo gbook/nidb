@@ -8,7 +8,7 @@ description: Tutorial on how to import subjects form Redcap
 
 * For a project, subjects can be imported from redcap using an option on the project page as shown below:
 
-![](../.gitbook/assets/image.png)
+![](<../.gitbook/assets/image (3).png>)
 
 * Fill the following form requiring information for API connection to redcap and required redcap field names. After providing the required fields click "Subjects Information" button.
 

@@ -31,4 +31,4 @@ Analysis builder is designed to create reports based on various variables that c
 5. Select the report format, showing it on the screen or saving it as csv file.
 6. Hit the "Update Summary" button to generate the final report as shown below.
 
-![](<../.gitbook/assets/image (1).png>)
+![](<../.gitbook/assets/image (1) (2).png>)

@@ -120,7 +120,7 @@ This tutorial is based on the Importing data section of the User's guide, but th
 
 Go to **Data**-->**Import Imaging**. Click the **New Import** button.
 
-![](<../.gitbook/assets/image (1) (2).png>)
+![](<../.gitbook/assets/image (1) (2) (1).png>)
 
 Fill out the required information. Choose if you are uploading a file, or if the data is located in an NFS path. Select the modality and project. Then select the matching criteria, which will determine how the data will structured into a subject/study/series hierarchy. When everything is all set, click **Upload**.
 
