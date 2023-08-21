@@ -6,11 +6,19 @@ description: JSON array
 
 Measures are observations collected from a participant in response to an experiment.
 
-<figure><img src="https://mermaid.ink/img/pako:eNqVlF1vmzAUhv9K5CoSkSAiEU2JK_Wqu5mmTVrvJm48fEi8Akb-0MKi_PfZBjuB9qLlAr8HP-_x8TFwRiWngDA6CNIdF99-Fu3CXIJzlSRPHSlfyQGicVw9Xmejry8_vju1MiAlikT2dovYBKyDmrUgo6BmBJw6EKyBVsnoRs8om5qyUrk1EqsYb4noVwPlniZPUv_-A6VJ5IXPMs4fBNcdaUndSyYjFyU-9Ki32nRKU2ZKH8d3iAaI1MIgXrzDUKEPMnL3MDsktEuY_doV3PB2OtQ6r3K5HCzJ2h6SII2sWG3PyUoPvUVtHywoJ2e1XN403mLXcICv8cI9WHlfOFRXxxgMHh_NHH4j1uD1YPDRxBC2oPoaFqF8y9T4rqqq2HRL8FdIKJFHIgTp8XZqmqzyGeOsC5-xTlrxEePMHk70I97B49_A4ID7NI0HD77LsmzUyV9G1RFn3QnFqAHREEbN53-2uQqkjtBAgbCRFCqia1Wgor0YVHem-_CFMsUFwhWpJcSIaMVf-rZEWAkNHnpmxPxNmkCZT-4X55MY4TM6IZzGqEd4m-7Wuzx7yHf55mGb77P8EqN_zpGu98OV3-83m902zy__ASb4lHc?type=png" alt=""><figcaption></figcaption></figure>
+![JSON object hierarchy](https://mermaid.ink/img/pako:eNptkj1rwzAQhv-KURYFHMjgLip0apdSWqhXQ7la50SNZAt90JiQ\_96TazkljQfdY99jveLsE2sHiUywnQO7L17em76gyw1D4M\_12-tE683mQUIAnpb1\_UWh5x8W2gPskGe46ltlUasePV\_oysCjRacM9sHzP5ytlEmWj59f2JKSIffzfXJClIqS5nrDMAg-OlIy3HCkizvPp3Xp\_m6YIuh4KWEq\_9vQgx698jzDokwvpHmAA0PDmEruLqOZB11bbHmGS8qoscgHLzqltVh1Hd5tt6UPbjigWFVVNfPmW8mwF5U9spIZdAaUpM98Sns1LOzRYMMEocQOog4Na\_ozqdFSLj5JFQbHRAfaY8kghqEe-5aJ4CJm6VEB\_TVmts4\_TXPHsw)
 
 ### JSON variables
 
 <mark style="color:red;">\*required</mark>
 
-<table data-header-hidden><thead><tr><th width="186.8637200736648" align="right"></th><th width="150"></th><th></th></tr></thead><tbody><tr><td align="right"><em><strong>Variable</strong></em></td><td><strong>Type</strong></td><td><strong>Description</strong></td></tr><tr><td align="right"><em>*<strong>measureName</strong></em></td><td>string</td><td>Name of the measure</td></tr><tr><td align="right"><em>*<strong>dateStart</strong></em></td><td>datetime</td><td>Start date/time of the measurement</td></tr><tr><td align="right"><em>dateEnd</em></td><td>datetime</td><td>End date/time of the measurement</td></tr><tr><td align="right"><em>instrumentName</em></td><td>string</td><td>Name of the instrument associated with this measure</td></tr><tr><td align="right"><em>rater</em></td><td>string</td><td>Name of the rater</td></tr><tr><td align="right"><em>notes</em></td><td>string</td><td> </td></tr><tr><td align="right"><em>*<strong>value</strong></em></td><td>string</td><td>Value (string or number)</td></tr><tr><td align="right"><em>description</em></td><td>string</td><td>Longer description of the measure</td></tr></tbody></table>
-
+|      _**Variable**_ | **Type** | **Description**                                     |
+| ------------------: | -------- | --------------------------------------------------- |
+| _\***measureName**_ | string   | Name of the measure                                 |
+|   _\***dateStart**_ | datetime | Start date/time of the measurement                  |
+|           _dateEnd_ | datetime | End date/time of the measurement                    |
+|    _instrumentName_ | string   | Name of the instrument associated with this measure |
+|             _rater_ | string   | Name of the rater                                   |
+|             _notes_ | string   |                                                     |
+|       _\***value**_ | string   | Value (string or number)                            |
+|       _description_ | string   | Longer description of the measure                   |

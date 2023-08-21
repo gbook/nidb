@@ -10,11 +10,7 @@ description: Front end settings are what the users see. Projects, users, etc.
 
 Access the user administration page from the **Admin** page. **Admin** page is only accessible if you are logged in as an administrator
 
-<div align="center">
-
-<img src="../../.gitbook/assets/image (2) (1) (1).png" alt="Main admin page">
-
-</div>
+![Main admin page](<../../.gitbook/assets/image (1) (1).png>)
 
 ### Creating Users
 

@@ -1,22 +1,19 @@
----
-description: JSON object
----
-
 # Package root
 
-The package root contains all data and files for the package. The JSON root contains all JSON objects for the package.
+The package root contains all data and files for the package. The JSON root contain all JSON objects for the package.
 
-<div data-full-width="true">
-
-<figure><img src="https://mermaid.ink/img/pako:eNqVlF1vmzAUhv9K5CoSkSAiEU2JK_Wqu5mmTVrvJm48fEi8Akb-0MKi_PfZBjuB9qLlAr8HP-_x8bHMGZWcAsLoIEh3XHz7WbQL8wjOVZI8daR8JQeIxnH1eJ2Nvr78-O7UyoCUKBLZ1y1iE7AOataCjIKaEXDqQLAGWiWjGz2jbGrKSuXWSKxivCWiXw2U-5o8Sf37D5QmkRc-yzh_EFx3pCV1L5mMXJT40KPeatMpTZkpfRzfIRogUguDePEOQ4U-yMi9w-yQ0C5h9mtXcMPb6VDrvMrlcrAka3tIgjSyYrU9Jys99Ba1fbCgnJzVcnnTeItdwwG-xgv3YeV94VBdHWMweHw0c_iNWIPXg8FHE0PYguprWITyLVPju6qqYtMtwV8hoUQeiRCkx9upabLKZ4yzLnzGOmnFR4wzezjRj3gHj70ogYb7NI0HHt9lWTbq5C-j6oiz7oRi1IBoCKPm6p9tngKpIzRQIGwkhYroWhWoaC8G1Z3pPHyhTHGBcEVqCTEiWvGXvi0RVkKDh54ZMX-SJlDmuv3ifBIjfEYnhNMY9Qhv0916l2cP-S7fPGzzfZZfYvTPOdL1fnjy-_1ms9vm-eU_g66S1g?type=png" alt=""><figcaption></figcaption></figure>
-
-</div>
+![JSON object hierarchy](https://mermaid.ink/img/pako:eNptks1qwzAQhF8lKBcFEsjBvajQU3sppYX6aihba52okWShHxoT8u5duZZT0vigHXs-aczYJ9b2EplgOw9uv3h5b-yCLt\_3kT\_Xb6-jWm02DxIi8Lys7i8IPf9w0B5gh7yIK98ph1pZDHxWVwQeHXpl0MbA\_-hC5UyiQvr8wpaQIopf7jMTk1SUNM0bhEEIyRNSxA1G-rQLfFxn9\_fAHEGvlxPG8d8GC3oIKvAiZmTckPsAD4bKGEdx52qmomuHLS\_ikjJoHEtbdEprsew6vNtu1yH6\_oBiWVXVpDffSsa9qNyRrZlBb0BJ-sSnfE7D4h4NNkyQlNhB0rFhjT0Tmhxl4pNUsfdMdKADrhmk2NeDbZmIPmGBHhXQH2Mm6vwDCvzGEg)
 
 ### JSON variables
 
 <mark style="color:red;">\*required</mark>
 
-<table data-header-hidden><thead><tr><th width="150" align="right">Variable</th><th width="150"></th><th width="150"></th></tr></thead><tbody><tr><td align="right"><em><strong>Variable</strong></em></td><td><strong>Type</strong></td><td><strong>Description</strong></td></tr><tr><td align="right"><em><strong>*package</strong></em></td><td>JSON object</td><td>Package information</td></tr><tr><td align="right"><em>data</em></td><td>JSON object</td><td>Raw and analyzed data</td></tr><tr><td align="right">pipelines</td><td>JSON object</td><td>Methods used to analyze the data</td></tr><tr><td align="right">experiments</td><td>JSON object</td><td>Experimental methods used to collect the data</td></tr></tbody></table>
+| _**Variable**_ | **Type**    | **Description**                               |
+| -------------: | ----------- | --------------------------------------------- |
+|  _\*\_package_ | JSON object | Package information                           |
+|         _data_ | JSON object | Raw and analyzed data                         |
+|      pipelines | JSON object | Methods used to analyze the data              |
+|    experiments | JSON object | Experimental methods used to collect the data |
 
 ### Directory structure
 
