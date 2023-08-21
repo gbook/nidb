@@ -2811,7 +2811,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	/* -------------------------------------------- */
 	/* ------- getrcvariables --------------------- */
 	/* -------------------------------------------- */
-	function getrcvariables($projectid,$IN,$RCEvents) {
+	function getrcvariables($projectid,$RCForms,$RCEvents) {
 		$sqlstring =  "SELECT redcap_token, redcap_server FROM `projects` WHERE  project_id = '$projectid' ";
 		$result =  MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
@@ -2823,7 +2823,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 			'content' => 'record',
 			'format' => 'json',
 			'type' => 'flat',
-			'forms' => $IN,
+			'forms' => $RCForms,
 			'events' => $RCEvents,
 			'rawOrLabel' => 'raw',
 			'rawOrLabelHeaders' => 'raw',
@@ -2853,12 +2853,50 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 
 		return $Var_Names;
 	}
+	
+	/* -------------------------------------------- */
+        /* ----- Extracting Redcap Variable Labels----- */
+        /* -------------------------------------------- */
+        function getrclabels($projectid,$rcfields) {
+                $sqlstring =  "SELECT redcap_token, redcap_server FROM `projects` WHERE  project_id = '$projectid' ";
+                $result =  MySQLiQuery($sqlstring, __FILE__, __LINE__);
+                $row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+                $RCtoken = $row['redcap_token'];
+                $RCserver = $row['redcap_server'];
 
+                $data = array(
+                        'token' => $RCtoken,
+			'content' => 'metadata',
+                        'format' => 'json',
+                        'fields' => array($rcfields),
+                        'returnFormat' => 'json'
+                );
+                $ch = curl_init();
+                curl_setopt($ch, CURLOPT_URL, $RCserver);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                curl_setopt($ch, CURLOPT_VERBOSE, 0);
+                curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+                curl_setopt($ch, CURLOPT_AUTOREFERER, true);
+                curl_setopt($ch, CURLOPT_MAXREDIRS, 10);
+                curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
+                curl_setopt($ch, CURLOPT_FRESH_CONNECT, 1);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data, '', '&'));
+                $output = curl_exec($ch);
+                //print $output;
+		curl_close($ch);
+		$rcmeta =  json_decode($output,true);
+		$rclabels =  $rcmeta[0]["field_label"];
+
+		//                return $rcfielddesc;
+		return $rclabels;
+        }
+	
 
 	/* -------------------------------------------- */
 	/* ------- getrcrecords ----------------------- */
 	/* -------------------------------------------- */
-	function getrcrecords($projectid,$IN,$RCEvents,$RCID,$JointID) {
+	function getrcrecords($projectid,$RCForms,$RCEvents,$RCFields,$RCRecords) {
 		$sqlstring =  "SELECT redcap_token, redcap_server FROM `projects` WHERE  project_id = '$projectid' ";
 		$result =  MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
@@ -2870,12 +2908,13 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 			'content' => 'record',
 			'format' => 'json',
 			'type' => 'flat',
-			'fields' => array($RCID,$JointID),
-			'forms' => $IN,
+			'records' => $RCRecords,
+			'fields' => $RCFields,
+			'forms' => $RCForms,
 			'events' => $RCEvents,
 			'rawOrLabel' => 'raw',
 			'rawOrLabelHeaders' => 'raw',
-			'exportCheckboxLabel' => 'false',
+			'exportCheckboxLabel' => 'true',
 			'exportSurveyFields' => 'false',
 			'exportDataAccessGroups' => 'false',
 			'returnFormat' => 'json'
@@ -2973,7 +3012,6 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		if (($GLOBALS['cfg']['analysisdirb'] != "") && (isset($GLOBALS['cfg']['analysisdirb']))) { $analysisdirb = $GLOBALS['cfg']['analysisdirb']; } else { $analysisdirb = "/nidb/data/pipelineb"; }
 		if (($GLOBALS['cfg']['archivedir'] != "") && (isset($GLOBALS['cfg']['archivedir']))) { $archivedir = $GLOBALS['cfg']['archivedir']; } else { $archivedir = "/nidb/data/archive"; }
 		if (($GLOBALS['cfg']['backupdir'] != "") && (isset($GLOBALS['cfg']['backupdir']))) { $backupdir = $GLOBALS['cfg']['backupdir']; } else { $backupdir = "/nidb/data/backup"; }
-		if (($GLOBALS['cfg']['backupstagingdir'] != "") && (isset($GLOBALS['cfg']['backupstagingdir']))) { $backupstagingdir = $GLOBALS['cfg']['backupstagingdir']; } else { $backupstagingdir = "/nidb/data/backupstaging"; }
 		if (($GLOBALS['cfg']['clusteranalysisdir'] != "") && (isset($GLOBALS['cfg']['clusteranalysisdir']))) { $clusteranalysisdir = $GLOBALS['cfg']['clusteranalysisdir']; } else { $clusteranalysisdir = "/nidb/data/pipeline"; }
 		if (($GLOBALS['cfg']['clusteranalysisdirb'] != "") && (isset($GLOBALS['cfg']['clusteranalysisdirb']))) { $clusteranalysisdirb = $GLOBALS['cfg']['clusteranalysisdirb']; } else { $clusteranalysisdirb = "/nidb/data/pipelineb"; }
 		if (($GLOBALS['cfg']['deleteddir'] != "") && (isset($GLOBALS['cfg']['deleteddir']))) { $deleteddir = $GLOBALS['cfg']['deleteddir']; } else { $deleteddir = "/nidb/data/deleted"; }

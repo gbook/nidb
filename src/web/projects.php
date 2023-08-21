@@ -2789,192 +2789,193 @@
 		$siteids = array_unique($siteids);
 		
 		?>
-		
 		<div class="ui container">
-			<h1 class="ui header">
-				<?=$name?>
-				<? if ($favorite) { ?>
-				<a href="projects.php?action=unsetfavorite&id=<?=$id?>"><i class="yellow star icon" title="Click to remove this project from your favorites"></i></a>
-				<? } else { ?>
-				<a href="projects.php?action=setfavorite&id=<?=$id?>"><i class="grey star outline icon" title="Click to add this project to your favorites"></i></a><br>
-				<? } ?>
-			
-				<div class="sub header"><?=count($uids)?> subjects &nbsp; &nbsp; <?=$numstudies?> studies</div>
-			</h1>
-
-			<br>
-			
-			<script>
-				$(document).ready(function() {
-					$('#viewdata')
-					  .popup({
-  					    popup : $('#viewdatapopup'),
-						inline     : true,
-						hoverable  : true,
-						on         : 'hover',
-						position   : 'bottom left',
-						delay: {
-						  hide: 300
-						}
-					  });
-					$('#tools')
-					  .popup({
-  					    popup : $('#toolspopup'),
-						inline     : true,
-						hoverable  : true,
-						on         : 'hover',
-						position   : 'bottom left',
-						delay: {
-						  hide: 300
-						}
-					  });
-					$('#import')
-					  .popup({
-  					    popup : $('#importpopup'),
-						inline     : true,
-						hoverable  : true,
-						on         : 'hover',
-						position   : 'bottom left',
-						delay: {
-						  hide: 300
-						}
-					  });
-					$('#admin')
-					  .popup({
-  					    popup : $('#adminpopup'),
-						inline     : true,
-						hoverable  : true,
-						on         : 'hover',
-						position   : 'bottom left',
-						delay: {
-						  hide: 300
-						}
-					  });
-				});
-			</script>
-
-			<?
-				/* get list of studies created since project.lastview */
-				$sqlstring = "select *, year(c.birthdate) 'dobyear' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.project_id = $id and a.lastupdate > '$lastview'";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				$numnewstudies = mysqli_num_rows($result);
-			?>
-			
-			<div class="ui large menu">
-				<a class="active item" id="viewdata"><i class="binoculars icon"></i><b>View Data</b>
-					<i class="dropdown icon"></i>
-				    <? if ($numnewstudies > 0) { ?><div class="left floating ui red label"><?=$numnewstudies?> new studies</div><? } ?>
-				</a>
-				<a class="tools item" id="tools">Tools
-					<i class="dropdown icon"></i>
-				</a>
-				<a class="import item" id="import">Import Data
-					<i class="dropdown icon"></i>
-				</a>
-				<a class="admin item" id="admin">Admin
-					<i class="dropdown icon"></i>
-				</a>
+			<div class="ui two column grid">
+				<div class="column">
+					<h2 class="ui header">
+						<?=$name?>
+						<div class="sub header"><?=count($uids)?> subjects &nbsp; &nbsp; <?=$numstudies?> studies</div>
+					</h2>
+				</div>
+				<div class="right aligned column">
+					<? if ($favorite) { ?>
+					<a href="projects.php?action=unsetfavorite&id=<?=$id?>"><i class="large yellow star icon" title="Click to remove this project from your favorites"></i></a>
+					<? } else { ?>
+					<a href="projects.php?action=setfavorite&id=<?=$id?>"><i class="large grey star outline icon" title="Click to add this project to your favorites"></i></a><br>
+					<? } ?>
+				</div>
 			</div>
-			
-			<div class="ui popup bottom left transition hidden" id="viewdatapopup">
-				<div class="ui big vertical menu">
-					<a class="item" href="projects.php?action=editsubjects&id=<?=$id?>"><i class="users icon"></i> Subjects</a>
-					<a class="item" href="projects.php?action=displaystudies&id=<?=$id?>"><i class="sitemap icon"></i> Studies</a>
-					<a class="item" href="projectchecklist.php?projectid=<?=$id?>"><i class="clipboard list icon"></i> Checklist</a>
-					<a class="item" href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>"><i class="clipboard list icon"></i> MR scan QC</a>
-					
+			<div class="ui grid">
+				<div class="ui eight wide column">
 					<?
+					/* get list of studies created since project.lastview */
+					$sqlstring = "select *, year(c.birthdate) 'dobyear' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.project_id = $id and a.lastupdate > '$lastview'";
+					//PrintSQL($sqlstring);
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					$numnewstudies = mysqli_num_rows($result);
 					if ($numnewstudies > 0) {
+						
 						$lastview = date("F j, Y g:ia",strtotime($lastview));
+						
 					?>
-					
-					<div class="ui dropdown item">
-						<i class="dropdown icon"></i>
-						New Studies <div class="ui red label"><?=$numnewstudies?></div>
-						<div class="menu">
-							<div class="header">Since <?=$lastview?> &nbsp; &nbsp; <a href="projects.php?action=dismissnewstudies&id=<?=$id?>" class="ui small basic button"><i class="times icon"></i> Dismiss</a></div>
-							<?
-							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-								$studyid = $row['study_id'];
-								$subjectid = $row['subject_id'];
-								$uid = $row['uid'];
-								$studynum = $row['study_num'];
-								//$age = $row['study_ageatscan'];
-								$studydate = $row['study_datetime'];
-								$gender = $row['gender'];
-								
-								$dobyear = $row['dobyear'];
-								$age = date("Y") - $dobyear;
-								
-								?>
-								<div class="item">
-									<a href="studies.php?studyid=<?=$studyid?>">
-										<?=$uid?><?=$studynum?>
-									</a>
-									<div class="description"><?=$gender?> <?=$age?>Y - <?=$studydate?></div>
+						<div class="ui segment">
+							<div class="ui two column grid">
+								<div class="column">
+									<h3 class="ui header"><?=$numnewstudies?> new studies
+										<div class="sub header">Since <?=$lastview?></div>
+									</h3>
 								</div>
-								<?
-							}
-							?>
+								<div class="right aligned column">
+									<a href="projects.php?action=dismissnewstudies&id=<?=$id?>" class="ui button"><i class="times icon"></i> Dismiss</a>
+								</div>
+							</div>
+							<div class="ui accordion">
+								<div class="title">
+									<i class="dropdown icon"></i> View Studies
+								</div>
+								<div class="content">
+									<div class="ui relaxed divided list">
+									<?
+									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+										$studyid = $row['study_id'];
+										$subjectid = $row['subject_id'];
+										$uid = $row['uid'];
+										$studynum = $row['study_num'];
+										//$age = $row['study_ageatscan'];
+										$studydate = $row['study_datetime'];
+										$gender = $row['gender'];
+										
+										$dobyear = $row['dobyear'];
+										$age = date("Y") - $dobyear;
+										
+										?>
+										<div class="item">
+											<div class="content">
+												<a class="ui large yellow image label" href="studies.php?studyid=<?=$studyid?>">
+													<i class="external alternate icon"></i>
+													<?=$uid?>
+													<div class="detail"><?=$studynum?></div>
+												</a>
+												<div class="description"><?=$gender?> <?=$age?>Y - <?=$studydate?></div>
+											</div>
+										</div>
+										<?
+									}
+									?>
+									</div>
+								</div>
+							</div>
 						</div>
-					</div>
-					<? } ?>
+					<? } ?>				
 				</div>
-			</div>
-
-			<div class="ui popup bottom left transition hidden" id="toolspopup">
-				<div class="ui big vertical menu">
-					<a class="item" href="datadictionary.php?projectid=<?=$id?>">Data dictionary <i class="right floating database icon"></i></a>
-					<a class="item" href="analysisbuilder.php?action=viewanalysissummary&projectid=<?=$id?>">Analysis builder <i class="list alternate outline icon"></i></a>
-					<a class="item" href="templates.php?action=displaystudytemplatelist&projectid=<?=$id?>">Study templates <i class="clone outline icon"></i></a>
-					<a class="item" href="minipipeline.php?projectid=<?=$id?>">Mini-pipelines <i class="cogs icon"></i></a>
-					<a class="item" href="experiment.php?projectid=<?=$id?>">Experiments <i class="clipboard icon"></i></a>
-					<a class="item" href="projects.php?action=editbidsmapping&id=<?=$id?>">BIDS protocol mapping <i class="tasks icon"></i></a>
-					<a class="item" href="projects.php?action=editndamapping&id=<?=$id?>">NDA mapping <i class="tasks icon"></i></a>
-					<a class="item" href="projects.php?action=editexperimentmapping&id=<?=$id?>">Experiment mapping <i class="tasks icon"></i></a>
-				</div>
-			</div>
-
-			<div class="ui popup bottom left transition hidden" id="importpopup">
-				<div class="ui big vertical menu">
-					<a class="item" href="importimaging.php?action=newimportform&projectid=<?=$id?>">Import imaging <i class="file import icon"></i></a>
-					<a class="item" href="redcapimport.php?action=importsettings&projectid=<?=$id?>">Global Redcap settings <i class="red redhat icon"></i></a>
-					<a class="item" href="redcapimportsubjects.php?action=default&projectid=<?=$id?>">Redcap subject import <i class="red redhat icon"></i></a>
-					<a class="item" href="redcaptonidb.php?action=default&projectid=<?=$id?>">Import from Redcap <i class="red redhat icon"></i></a>
-					<!--<a class="item" href="projects.php?action=editxnat&id=<?=$id?>">Export to XNAT <i class="times circle outline icon"></i></a>-->
-				</div>
-			</div>
-
-			<div class="ui popup bottom left transition hidden" id="adminpopup">
-				<div class="ui big vertical menu">
-					<? if ($GLOBALS['isadmin']) { ?>
-						<a class="item" href="projects.php?action=resetqa&id=<?=$id?>">
-							Reset MRI QA
-							<i class="red sync icon"></i>
-						</a>
-					<? } ?>
-					<div class="item"><b>Remote connection params</b><br>
-						Project ID: <?=$id?><br>
-						Instance ID: <?=$instanceid?><br>
-						Site IDs: <?=implode2(",",$siteids)?><br>
+				<div class="ui four wide column">
+					<h3 class="ui header"><i class="binoculars icon"></i> Data Views</h3>
+					<div class="ui blue inverted big vertical fluid menu">
+						<a class="item" href="projects.php?action=editsubjects&id=<?=$id?>"><i class="users icon"></i> Subjects</a>
+						<a class="item" href="projects.php?action=displaystudies&id=<?=$id?>"><i class="sitemap icon"></i> Studies</a>
+						<a class="item" href="projectchecklist.php?projectid=<?=$id?>"><i class="clipboard list icon"></i> Checklist</a>
+						<a class="item" href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>"><i class="clipboard list icon"></i> MR scan QC</a>
 					</div>
 				</div>
+				<div class="ui four wide column">
+					<div class="ui huge vertical fluid menu">
+						<div class="item">
+							<div class="header">Tools</div>
+							<div class="menu">
+								<a class="item" href="datadictionary.php?projectid=<?=$id?>">
+									Data dictionary
+									<i class="right floating database icon"></i>
+								</a>
+								<a class="item" href="analysisbuilder.php?action=viewanalysissummary&projectid=<?=$id?>">
+									Analysis builder
+									<i class="list alternate outline icon"></i>
+								</a>
+								<a class="item" href="templates.php?action=displaystudytemplatelist&projectid=<?=$id?>">
+									Study templates
+									<i class="clone outline icon"></i>
+								</a>
+								<a class="item" href="minipipeline.php?projectid=<?=$id?>">
+									Mini-pipelines
+									<i class="cogs icon"></i>
+								</a>
+								<a class="item" href="experiment.php?projectid=<?=$id?>">
+									Experiments
+									<i class="clipboard icon"></i>
+								</a>
+							</div>
+						</div>
+						
+						<div class="item">
+							<div class="header">Data Transfer</div>
+							<div class="menu">
+								<a class="item" href="redcapimport.php?action=importsettings&projectid=<?=$id?>">
+									Global Redcap settings
+									<i class="red redhat icon"></i>
+								</a>
+								<a class="item" href="redcapimportsubjects.php?action=default&projectid=<?=$id?>">
+									Redcap Subject Import
+									<i class="red redhat icon"></i>
+								</a>
+								<a class="item" href="redcaptonidb.php?action=default&projectid=<?=$id?>">
+									Import from Redcap
+									<i class="red redhat icon"></i>
+								</a>
+								<a class="item" href="projects.php?action=editxnat&id=<?=$id?>">
+									Export to XNAT
+									<i class="times circle outline icon"></i>
+								</a>
+							</div>
+						</div>
+						<div class="item">
+							<div class="header">Mapping</div>
+							<div class="menu">
+								<a class="item" href="projects.php?action=editbidsmapping&id=<?=$id?>">
+									BIDS protocol mapping
+									<i class="tasks icon"></i>
+								</a>
+								<a class="item" href="projects.php?action=editndamapping&id=<?=$id?>">
+									NDA mapping
+									<i class="tasks icon"></i>
+								</a>
+								<a class="item" href="projects.php?action=editexperimentmapping&id=<?=$id?>">
+									Experiment mapping
+									<i class="tasks icon"></i>
+								</a>
+							</div>
+						</div>
+						<? if ($GLOBALS['isadmin']) { ?>
+						<div class="item">
+							<div class="header">Admin</div>
+							<div class="menu">
+								<a class="item" href="projects.php?action=resetqa&id=<?=$id?>">
+									Reset MRI QA
+									<i class="red sync icon"></i>
+								</a>
+							</div>
+						</div>
+						<? } ?>
+						<div class="item">Remote connection params<br>
+							Project ID: <?=$id?><br>
+							Instance ID: <?=$instanceid?><br>
+							Site IDs: <?=implode2(",",$siteids)?><br>
+						</div>
+						
+					</div>
+					
+				</div>
 			</div>
-
-			<br>
+			
 			<?
 				/* get all subjects, and their enrollment info, associated with the project */
 				$sqlstring = "select * from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = $id and a.isactive = 1 order by a.uid";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				$numstudies = mysqli_num_rows($result);
+				$numsubjects = mysqli_num_rows($result);
 			?>
 			<div class="ui header">
-				<?=$numstudies?> studies
+				<?=$numsubjects?> subjects
 			</div>
 			
-			<div class="ui short scrolling container">
-
-			<table class="ui very compact celled head first stuck grey table">
+			<table class="ui very compact celled grey table">
 				<thead>
 					<th>UID</th>
 					<th>Alt IDs</th>
@@ -3011,7 +3012,7 @@
 				
 				?>
 				<tr>
-					<td><a class="ui very compact large blue button" href="subjects.php?id=<?=$subjectid?>"><tt><?=$uid?></tt></a></td>
+					<td><a class="ui very compact large blue button" href="subjects.php?id=<?=$subjectid?>"><i class="small external alternate icon"></i> <tt><?=$uid?></tt></a></td>
 					<td><?=$altuidlist?></td>
 					<td><?=$guid?></td>
 					<td><?=$birthdate?></td>
@@ -3023,9 +3024,15 @@
 			}
 			?>
 			</table>
-			</div>
 		</div>
 		<?
+	}
+
+
+
+# Asim Addtition .........................................................................
+	function AssessmentsInfo($id) {
+		//DisplayProjectsMenu('assessments', $id);
 	}
 
 
