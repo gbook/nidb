@@ -21,6 +21,7 @@
   ------------------------------------------------------------------------------ */
 
 #include "squirrelExperiment.h"
+#include "utils.h"
 
 squirrelExperiment::squirrelExperiment()
 {
@@ -39,4 +40,19 @@ QJsonObject squirrelExperiment::ToJSON() {
 	json["size"] = size;
 
     return json;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- PrintExperiment -------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief squirrelExperiment::PrintExperiment
+ */
+void squirrelExperiment::PrintExperiment() {
+
+    Print("\t----- EXPERIMENT -----");
+    Print(QString("\tExperimentName: %1").arg(experimentName));
+    Print(QString("\tnumfiles: %1").arg(numFiles));
+    Print(QString("\tsize: %1").arg(size));
 }

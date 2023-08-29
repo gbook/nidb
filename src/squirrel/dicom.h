@@ -33,11 +33,9 @@ class dicom
 public:
     dicom();
 
-	bool LoadToSquirrel(QString dir, QString binpath, squirrel *sqrl, QString &msg);
+    bool LoadToSquirrel(QString dir, QString binpath, squirrel *sqrl);
 
     qint64 NumFiles() { return numFiles; }
-
-	//squirrel *sqrl;
 
 private:
     qint64 numFiles;

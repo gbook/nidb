@@ -1,3 +1,5 @@
+# Use this file to build libsquirrel
+
 QT -= gui
 
 CONFIG += c++17 console
@@ -23,7 +25,10 @@ DEFINES += SQUIRREL_BUILD
 #INCLUDEPATH += $$PWD/../nidb
 
 SOURCES += \
+	bids.cpp \
+	squirrelDataDictionary.cpp \
 	squirrelImageIO.cpp \
+	squirrelGroupAnalysis.cpp \
 	utils.cpp \
 	convert.cpp \
 	dicom.cpp \
@@ -45,8 +50,11 @@ SOURCES += \
 #!isEmpty(target.path): INSTALLS += target
 
 HEADERS += \
+	bids.h \
+	squirrelDataDictionary.h \
 	squirrelImageIO.h \
 	squirrelVersion.h \
+	squirrelGroupAnalysis.h \
 	utils.h \
 	convert.h \
 	dicom.h \

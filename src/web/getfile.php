@@ -28,12 +28,25 @@ if ($file != "") {
 	if (file_exists($file)) {
 		if ($action == "download") {
 			$filename = basename($file);
+			
+			header("Pragma: public");
+			header("Expires: 0");
+			header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
+			header("Cache-Control: public");
 			header("Content-Description: File Transfer");
-			header("Content-Disposition: attachment; filename=$filename");
-			header("Content-Type: application/download");
-			//header("Content-type: ".mime_content_type($file)); 
-			header("Content-length: " . filesize($file) . "\n\n");
+			header("Content-type: application/x-gzip");
+			header("Content-Disposition: attachment; filename=\"$filename\"");
 			header("Content-Transfer-Encoding: binary");
+			header("Content-Length: " . filesize($file));
+			
+			//header("Content-Description: File Transfer");
+			//header("Content-Disposition: attachment; filename=$filename");
+			//header("Content-Type: application/octet-stream");
+			////header("Content-type: ".mime_content_type($file)); 
+			//header("Content-length: " . filesize($file) . "\n\n");
+			//header("Content-Transfer-Encoding: binary");
+			
+			ob_end_flush();
 			readfile($file);
 		}
 		else {

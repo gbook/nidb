@@ -676,24 +676,24 @@ QString nidb::CreateUID(QString prefix, int numletters) {
     QString newID;
     QString letters("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
     QString numbers("0123456789");
-    QString C1, C2, C3, C4, C5, C6, C7, C8;
-
-    C1 = numbers.at( QRandomGenerator::global()->bounded(numbers.length())-1 );
-    C2 = numbers.at( QRandomGenerator::global()->bounded(numbers.length())-1 );
-    C3 = numbers.at( QRandomGenerator::global()->bounded(numbers.length())-1 );
-    C4 = numbers.at( QRandomGenerator::global()->bounded(numbers.length())-1 );
+    QChar C1, C2, C3, C4, C5, C6, C7, C8;
 
     QStringList badarray;
     badarray << "fuck" << "shit" << "piss" << "tits" << "dick" << "cunt" << "twat" << "jism" << "jizz" << "arse" << "damn" << "fart" << "hell" << "wang" << "wank" << "gook" << "kike" << "kyke" << "spic" << "arse" << "dyke" << "cock" << "muff" << "pusy" << "butt" << "crap" << "poop" << "slut" << "dumb" << "snot" << "boob" << "dead" << "anus" << "clit" << "homo" << "poon" << "tard" << "kunt" << "tity" << "tit" << "ass" << "dic" << "dik" << "fuk" << "kkk";
     bool done = false;
 
+    C1 = numbers.at( QRandomGenerator::global()->bounded(10) );
+    C2 = numbers.at( QRandomGenerator::global()->bounded(10) );
+    C3 = numbers.at( QRandomGenerator::global()->bounded(10) );
+    C4 = numbers.at( QRandomGenerator::global()->bounded(10) );
+
     do {
-        C5 = letters.at( QRandomGenerator::global()->bounded(letters.length())-1 );
-        C6 = letters.at( QRandomGenerator::global()->bounded(letters.length())-1 );
-        C7 = letters.at( QRandomGenerator::global()->bounded(letters.length())-1 );
+        C5 = letters.at( QRandomGenerator::global()->bounded(26) );
+        C6 = letters.at( QRandomGenerator::global()->bounded(26) );
+        C7 = letters.at( QRandomGenerator::global()->bounded(26) );
 
         if (numletters == 4)
-            C8 = letters.at( QRandomGenerator::global()->bounded(letters.length())-1 );
+            C8 = letters.at( QRandomGenerator::global()->bounded(26) );
 
         QString str;
         str = QString("%1%2%3%4").arg(C5).arg(C6).arg(C7).arg(C8);
@@ -702,7 +702,11 @@ QString nidb::CreateUID(QString prefix, int numletters) {
     }
     while (!done);
 
-    newID = prefix+C1+C2+C3+C4+C5+C6+C7+C8;
+    if (numletters == 4)
+        newID = QString("%1%2%3%4%5%6%7%8%9").arg(prefix).arg(C1).arg(C2).arg(C3).arg(C4).arg(C5).arg(C6).arg(C7).arg(C8);
+    else
+        newID = QString("%1%2%3%4%5%6%7%8").arg(prefix).arg(C1).arg(C2).arg(C3).arg(C4).arg(C5).arg(C6).arg(C7);
+
     return newID.trimmed();
 }
 
@@ -870,7 +874,7 @@ QString nidb::GetGroupListing(int groupid) {
         if (q.size() > 0) {
             while (q.next()) {
                 int subjectid = q.value("subject_id").toInt();
-                QString uid = q.value("uid").toString();
+                QString uid = q.value("uid").toString().replace('\u0000', "");
                 s += QString("%1, ").arg(uid).arg(subjectid);
             }
         }
@@ -883,7 +887,7 @@ QString nidb::GetGroupListing(int groupid) {
         if (q.size() > 0) {
             while (q.next()) {
                 int studynum = q.value("study_num").toInt();
-                QString uid = q.value("uid").toString();
+                QString uid = q.value("uid").toString().replace('\u0000', "");
                 s += QString("%1%2, ").arg(uid).arg(studynum);
             }
         }

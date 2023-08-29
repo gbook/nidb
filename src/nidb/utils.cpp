@@ -91,6 +91,9 @@ QString SystemCommand(QString s, bool detail, bool truncate, bool bufferOutput) 
     QString buffer;
     QProcess *process = new QProcess();
 
+    /* in the off chance a null-terminator snuck in here */
+    s.replace('\u0000', "");
+
     /* start QProcess and check if it started */
     process->start("sh", QStringList() << "-c" << s);
     if (!process->waitForStarted()) {
@@ -210,6 +213,9 @@ bool MakePath(QString p, QString &msg, bool perm777) {
         msg = "Path [" + p + "] is not valid";
         return false;
     }
+
+    /* remove non printable unicode characters */
+    p.replace('\u0000', "");
 
     QDir d(p);
 

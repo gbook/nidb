@@ -167,7 +167,8 @@ void subject::LoadSubjectInfo() {
         }
         else {
             q.first();
-            _uid = q.value("uid").toString().trimmed();
+            /* off chance there is a null-terminator in the UID from database */
+            _uid = q.value("uid").toString().trimmed().replace('\u0000', "");
             _dob = q.value("birthdate").toDate();
             _sex = q.value("gender").toString().trimmed();
             _ethnicity1 = q.value("ethnicity1").toString().trimmed();

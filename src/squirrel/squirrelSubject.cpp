@@ -38,8 +38,8 @@ squirrelSubject::squirrelSubject() {
 /* ----- addStudy --------------------------------------------- */
 /* ------------------------------------------------------------ */
 /**
- * @brief subject::addStudy
- * @param s
+ * @brief Add a study to this subject
+ * @param s squirrelStudy to be added
  * @return true if added, false otherwise
  */
 bool squirrelSubject::addStudy(squirrelStudy s) {
@@ -50,7 +50,7 @@ bool squirrelSubject::addStudy(squirrelStudy s) {
     /* check if this study already exists, by UID */
     bool exists = false;
     for (int i=0; i<studyList.size(); i++)
-		if (studyList.at(i).studyUID == s.studyUID)
+        if ((studyList[i].studyUID == s.studyUID) && (s.studyUID != ""))
             exists = true;
 
     /* if it doesn't exist, append it */
@@ -68,8 +68,8 @@ bool squirrelSubject::addStudy(squirrelStudy s) {
 /* ----- addMeasure ------------------------------------------- */
 /* ------------------------------------------------------------ */
 /**
- * @brief subject::addMeasure
- * @param s
+ * @brief Add a measure to this subject
+ * @param m squirrelMeasure to be added
  * @return true if added, false otherwise
  */
 bool squirrelSubject::addMeasure(squirrelMeasure m) {
@@ -98,11 +98,11 @@ bool squirrelSubject::addMeasure(squirrelMeasure m) {
 /* ----- addDrug ---------------------------------------------- */
 /* ------------------------------------------------------------ */
 /**
- * @brief subject::addDrug
- * @param s
+ * @brief Add a drug to this subject
+ * @param d squirrelDrug to be added
  * @return true if added, false otherwise
  */
-bool squirrelSubject::addDrug(squirrelDrug m) {
+bool squirrelSubject::addDrug(squirrelDrug d) {
 
 	/* check size of the drug list before and after adding */
 	qint64 size = drugList.size();
@@ -115,7 +115,7 @@ bool squirrelSubject::addDrug(squirrelDrug m) {
 
 	/* if it doesn't exist, append it */
 	if (!exists)
-		drugList.append(m);
+        drugList.append(d);
 
 	if (drugList.size() > size)
 		return true;
@@ -125,28 +125,51 @@ bool squirrelSubject::addDrug(squirrelDrug m) {
 
 
 /* ------------------------------------------------------------ */
+/* ----- GetNextStudyNumber ----------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief Gets the next study number for this subject
+ * @return the next study number
+ */
+qint64 squirrelSubject::GetNextStudyNumber() {
+
+    /* find the current highest study number */
+    qint64 maxnum = 0;
+    for (int i=0; i<studyList.size(); i++)
+        if (studyList[i].number > maxnum)
+            maxnum = studyList[i].number;
+
+    return maxnum+1;
+}
+
+
+/* ------------------------------------------------------------ */
 /* ----- PrintSubject ----------------------------------------- */
 /* ------------------------------------------------------------ */
 /**
- * @brief subject::PrintSubject
+ * @brief Print subject details
  */
 void squirrelSubject::PrintSubject() {
 
-    Print("---- SUBJECT ----------");
-    Print(QString("     ID: %1").arg(ID));
-	Print(QString("     AlternateIDs: %1").arg(alternateIDs.join(",")));
-    Print(QString("     GUID: %1").arg(GUID));
-    Print(QString("     Sex: %1").arg(sex));
-    Print(QString("     Gender: %1").arg(gender));
-	Print(QString("     dateOfBirth: %1").arg(dateOfBirth.toString()));
-    Print(QString("     Ethnicity1: %1").arg(ethnicity1));
-    Print(QString("     Ethnicity2: %1").arg(ethnicity2));
+    Print("\t\t----- SUBJECT -----");
+    Print(QString("\t\tID: %1").arg(ID));
+    Print(QString("\t\tAlternateIDs: %1").arg(alternateIDs.join(",")));
+    Print(QString("\t\tGUID: %1").arg(GUID));
+    Print(QString("\t\tSex: %1").arg(sex));
+    Print(QString("\t\tGender: %1").arg(gender));
+    Print(QString("\t\tdateOfBirth: %1").arg(dateOfBirth.toString()));
+    Print(QString("\t\tEthnicity1: %1").arg(ethnicity1));
+    Print(QString("\t\tEthnicity2: %1").arg(ethnicity2));
 }
 
 
 /* ------------------------------------------------------------ */
 /* ----- ToJSON ----------------------------------------------- */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Get JSON object for this subject
+ * @return a JSON object containing the entire subject
+ */
 QJsonObject squirrelSubject::ToJSON() {
     QJsonObject json;
 

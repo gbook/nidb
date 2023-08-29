@@ -32,6 +32,8 @@
 #include "squirrelPipeline.h"
 #include "squirrelMeasure.h"
 #include "squirrelDrug.h"
+#include "squirrelGroupAnalysis.h"
+#include "squirrelDataDictionary.h"
 #include "squirrelVersion.h"
 
 /**
@@ -45,8 +47,8 @@ public:
     squirrel();
     ~squirrel();
 
-    bool read(QString filename, QString &m, bool validateOnly=false);
-    bool write(QString outpath, QString &filepath, QString &m, bool debug=false);
+    bool read(QString filename, bool validateOnly=false);
+    bool write(QString outpath, QString &filepath);
     bool validate();
     void print();
 
@@ -67,6 +69,10 @@ public:
     QString seriesDirFormat; /*!< orig, seq */
     QString dataFormat; /*!< orig, anon, anonfull, nift3d, nifti3dgz, nifti4d, nifti4dgz */
     QString filePath; /*!< full path to the zip file */
+    QString license;
+    QString readme;
+    QString changes;
+    QString notes; /* JSON string of notes */
     qint64 GetUnzipSize();
     qint64 GetNumFiles();
 
@@ -74,8 +80,19 @@ public:
     QList<squirrelSubject> subjectList; /*!< List of subjects within this package */
     QList<squirrelPipeline> pipelineList; /*!< List of pipelines within this package */
     QList<squirrelExperiment> experimentList; /*!< List of experiments within this package */
+    QList<squirrelGroupAnalysis> groupAnalysisList; /*!< List of groupAnalyses within this package */
 
-    /* searching/retrieval functions */
+    /* data dictionary (just a single object, not array) */
+    squirrelDataDictionary dataDictionary;
+
+    /* searching/retrieval, get index */
+    int GetSubjectIndex(QString ID);
+    int GetStudyIndex(QString ID, int studyNum);
+    int GetSeriesIndex(QString ID, int studyNum, int seriesNum);
+    int GetExperimentIndex(QString experimentName);
+    int GetPipelineIndex(QString pipelineName);
+
+    /* searching/retrieval functions - get copies */
     bool GetSubject(QString ID, squirrelSubject &sqrlSubject);
     bool GetStudy(QString ID, int studyNum, squirrelStudy &sqrlStudy);
     bool GetSeries(QString ID, int studyNum, int seriesNum, squirrelSeries &sqrlSeries);
@@ -87,17 +104,32 @@ public:
     bool GetAnalysis(QString ID, int studyNum, QString pipelineName, squirrelAnalysis &sqrlAnalysis);
     bool GetPipeline(QString pipelineName, squirrelPipeline &sqrlPipeline);
     bool GetExperiment(QString experimentName, squirrelExperiment &sqrlExperiment);
+
+    /* validation functions */
     QString GetTempDir();
 	bool valid() { return isValid; }
 	bool okToDelete() { return isOkToDelete; }
 
+    /* functions to manipulate, add files */
+    bool AddSeriesFiles(QString ID, int studyNum, int seriesNum, QStringList files, QString destDir="");
+    bool AddAnalysisFiles(QString ID, int studyNum, QString pipelineName, QStringList files, QString destDir="");
+    bool AddPipelineFiles(QString pipelineName, QStringList files, QString destDir="");
+    bool AddExperimentFiles(QString experimentName, QStringList files, QString destDir="");
+
+    /* functions to read special files */
+    QHash<QString, QString> ReadParamsFile(QString f);
+
+    /* logging */
+    void Log(QString s, QString func);
+    QString GetLog() { return log; }
+
 private:
     void PrintPackage();
     bool MakeTempDir(QString &dir);
-    QString Log(QString m, QString f);
     QString workingDir;
     QString logfile;
     QStringList msgs; /* squirrel messages, to be passed back upon writing (or reading) through the squirrel library */
+    QString log;
 
 	bool isValid;
 	bool isOkToDelete;

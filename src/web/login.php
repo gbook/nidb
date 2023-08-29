@@ -315,22 +315,26 @@ window.onload = AreCookiesEnabled;
 	/* -------------------------------------------- */
 	function DisplayLogin($message) {
 		?>
-		<form method="post" action="login.php" class="ui form">
-			<input type="hidden" name="action" value="login">
+		<style>
+			.center-screen {
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				text-align: center;
+				min-height: 100vh;
+			}
+		</style>
+		
+		<div class="center-screen">
+			<form method="post" action="login.php" class="ui form">
+				<input type="hidden" name="action" value="login">
 
-			<br><br><br>
-			<div class="ui grid">
-				<div class="ui six wide column"></div>
-				<div class="ui four wide column">
-					<div class="ui top attached inverted center aligned segment">
-						<h2 class="ui header">Login</h2>
-					</div>
+				<div class="ui raised compact segment">
 					<? if ($message != "") { ?>
-					<div class="ui attached center aligned inverted tertiary red segment">
+					<div class="ui center aligned inverted tertiary red segment">
 						<?=$message?>
 					</div>
 					<? } ?>
-					<div class="ui bottom attached segment">
 						<img class="ui medium centered image" src="images/NIDB_logo.png">
 						<br><br>
 						<? if ($GLOBALS['cfg']['enablecas']) { ?>
@@ -339,67 +343,70 @@ window.onload = AreCookiesEnabled;
 							}
 							else {
 						?>
-						<div class="ui two column grid">
-							<div class="right aligned column">
-								<div class="ui header">
-									Username
-									<div class="sub header">or email address</div>
-								</div>
-							</div>
-							<div class="column">
-								<input type="text" name="username" maxlength="50" autofocus="autofocus">
-							</div>
-							<div class="right aligned column">
-								<div class="ui header">
-									Password
-									<div class="sub header">case sensitive</div>
-								</div>
-							</div>
-							<div class="column">
-								<input type="password" name="password" maxlength="50">
-							</div>
-							
-							<div class="column">
-								<? if ($GLOBALS['cfg']['ispublic']) { ?>
-								New user? <a href="signup.php">Sign up</a>.<br>
-								Forgot password? <a href="signup.php?a=r">Reset it</a>.
-								<? } ?>
-							</div>
-							<div class="right aligned column">
-								<input class="ui primary button" type="submit" value="Login">
-							</div>
-						</div>
-						<?
-							}
-						?>
-							
-					</div>
-				</div>
-				<div class="ui six wide column">
-					<? if ($GLOBALS['cfg']['ispublic']) { ?>
-						<table>
+						<table cellspacing="5" cellpadding="5">
 							<tr>
-								<td align="center">
-									View publicly available <a href="downloads.php">downloads</a>
-									<br><br><br><br><br>
+								<td>
+									<div class="ui header">
+										Username
+									</div>
+								</td>
+								<td>
+									<input type="text" name="username" maxlength="50" autofocus="autofocus">
 								</td>
 							</tr>
 							<tr>
-								<td width="500px">
-									<span style="font-size:10pt; color: #444">
-									<b>Interested in NeuroInformatics Database?</b> <span style="font-size:8pt">This instance of NiDB is hosted by the <a href="http://www.nrc-iol.org/">Olin Neuropsychiatry Research Center</a> and <a href="http://www.harthosp.org">Hartford Hospital</a><br></span>
-									<ul>
-										<li><b>Want to share data?</b> <span style="font-size:8pt">Contact gregory.book@hhchealth.org</span>
-										<li><b>NiDB is open source</b> <span style="font-size:8pt">Download on <a href="https://github.com/gbook/nidb">github</a></span>
-									</ul>
-									</span>
+								<td>
+									<div class="ui header">
+										Password
+									</div>
+								</td>
+								<td>
+									<input type="password" name="password" maxlength="50">
+								</td>
+							</tr>
+							
+							<tr>
+								<td>
+									<? if ($GLOBALS['cfg']['ispublic']) { ?>
+									New user? <a href="signup.php">Sign up</a>.<br>
+									Forgot password? <a href="signup.php?a=r">Reset it</a>.
+									<? } ?>
+								</td>
+								<td align="right">
+									<input class="ui primary button" type="submit" value="Login">
 								</td>
 							</tr>
 						</table>
-					<? } ?>
+						<?
+							}
+						?>
 				</div>
-			</div>
-		</form>
+				
+				<? if ($GLOBALS['cfg']['ispublic']) { ?>
+				<div class="ui segment">
+					<table>
+						<tr>
+							<td align="center">
+								View publicly available <a href="downloads.php">downloads</a>
+								<br><br><br><br><br>
+							</td>
+						</tr>
+						<tr>
+							<td width="500px">
+								<span style="font-size:10pt; color: #444">
+								<b>Interested in NeuroInformatics Database?</b> <span style="font-size:8pt">This instance of NiDB is hosted by the <a href="http://www.nrc-iol.org/">Olin Neuropsychiatry Research Center</a> and <a href="http://www.harthosp.org">Hartford Hospital</a><br></span>
+								<ul>
+									<li><b>Want to share data?</b> <span style="font-size:8pt">Contact gregory.book@hhchealth.org</span>
+									<li><b>NiDB is open source</b> <span style="font-size:8pt">Download on <a href="https://github.com/gbook/nidb">github</a></span>
+								</ul>
+								</span>
+							</td>
+						</tr>
+					</table>
+				</div>
+				<? } ?>
+			</form>
+		</div>
 		
 		<div style="position:absolute; bottom:5; width:95%; height: 30px; padding:10px">
 			<table width="100%" cellspacing="0" cellpadding="6">

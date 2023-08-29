@@ -124,43 +124,107 @@
 	function DisplayMenu() {
 	
 		?>
-		<div class="ui text container">
-		
-			<div class="ui large relaxed divided list">
-				<div class="item">
-					<i class="sitemap icon"></i>
+		<div class="ui container">
+
+			<h2 class="ui header">Imports</h2>
+			
+			<div class="ui cards">
+				<div class="ui card">
 					<div class="content">
-						<a href="import.php?action=idmapper">ID mapper</a>
-						<div class="description" style="font-size:smaller; color:#555">Matches a list of alternate IDs to the NiDB ID</div>
+						<div class="header">ID Mapping</div>
+					</div>
+					<div class="content">
+						Subjects and studies can having multiple IDs. This tool will match a list of IDs to existing objects.
+					</div>
+					<div class="center aligned extra content">
+						<a href="import.php?action=idmapper" class="ui button">ID mapper</a>
 					</div>
 				</div>
-				<div class="item">
-					<i class="cloud upload icon"></i>
+
+				<div class="ui card">
 					<div class="content">
-						<a href="importimaging.php">Import imaging</a>
-						<div class="description" style="font-size:smaller; color:#555">Upload imaging data and track existing uploads</div>
+						<div class="header">Import Imaging</div>
+					</div>
+					<div class="content">
+						Upload imaging data and track existing uploads<br><br>
+					</div>
+					<div class="center aligned extra content">
+						<a href="importimaging.php" class="ui button">Import</a>
 					</div>
 				</div>
-				<div class="item">
-					<i class="file alternate outline icon"></i>
+
+				<div class="ui card">
 					<div class="content">
-						DICOM receiver <a href="importimaging.php?action=viewdcmrcvlogs">import logs</a>
-						<div class="description" style="font-size:smaller; color:#555">View the logs from the dcmrcv</div>
+						<div class="header">Import Logs</div>
+					</div>
+					<div class="content">
+						View <tt>dcmrcv</tt> import logs<br><br><br>
+					</div>
+					<div class="center aligned extra content">
+						<a href="importimaging.php?action=viewdcmrcvlogs" class="ui button">DICOM receiver logs</a>
 					</div>
 				</div>
-				<div class="item">
-					<i class="github icon"></i>
+
+				<div class="ui card">
 					<div class="content">
-						<a href="https://github.com/gbook/nidbuploader/releases" target="_blank">Download</a> the NiDB uploader
-						<div class="description" style="font-size:smaller; color:#555">via github.com</div>
+						<div class="header">Uploader</div>
+					</div>
+					<div class="content">
+						Download the <b>NiDB Uploader</b> from github
+					</div>
+					<div class="center aligned extra content">
+						<a href="https://github.com/gbook/nidbuploader/releases" class="ui button" target="_blank">Download the uploader</a>
 					</div>
 				</div>
 			</div>
-		
+			
 			<br><br>
-			<i class="large disabled upload icon"></i> <span style="color: gray"><a href="import.php?action=import">Import</a> data via website (deprecated)</span>
-			<br><br>
-			<i class="large disabled file alternate outline icon"></i> <span style="color: gray">View <a href="importlog.php?action=viewtransactions">import logs</a> (deprecated)</span>
+			<h2 class="ui header">Exports</h2>
+			
+			<div class="ui cards">
+				<div class="ui card">
+					<div class="content">
+						<div class="header">Public Downloads</div>
+					</div>
+					<div class="content">
+						Single public downloads. Available <b>temporarily</b> up to 90 days before being removed.<br><br>
+					</div>
+					<div class="center aligned extra content">
+						<a href="publicdownloads.php" class="ui button">Manage Downloads</a>
+					</div>
+				</div>
+
+				<div class="ui card">
+					<div class="content">
+						<div class="header">Public Datasets</div>
+					</div>
+					<div class="content">
+						Groups of downloads, available <b>permamently</b>. Example: a multi-site project, where data from each site is available as a separate download
+					</div>
+					<div class="center aligned extra content">
+						<a href="publicdatasets.php" class="ui button">Manage Datasets</a>
+					</div>
+				</div>
+
+				<div class="ui card">
+					<div class="content">
+						<div class="header">Request a Dataset</div>
+					</div>
+					<div class="content">
+						Your NiDB admin may allow you to submit a description of a requested dataset and destination. Check with your admin.<br><br>
+					</div>
+					<div class="center aligned extra content">
+						<a href="datasetrequests.php" class="ui button">Manage Requests</a>
+					</div>
+				</div>
+			</div>
+			
+			<!--
+				<br><br>
+				<i class="large disabled upload icon"></i> <span style="color: gray"><a href="import.php?action=import">Import</a> data via website (deprecated)</span>
+				<br><br>
+				<i class="large disabled file alternate outline icon"></i> <span style="color: gray">View <a href="importlog.php?action=viewtransactions">import logs</a> (deprecated)</span>
+			-->
 		</div>
 		<?
 	}

@@ -1028,7 +1028,7 @@ bool archiveIO::InsertParRec(int importid, QString file) {
             n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__, true);
             if (q2.size() > 0) {
                 q2.first();
-                subjectUID = q2.value("uid").toString();
+                subjectUID = q2.value("uid").toString().replace('\u0000', "");
                 subjectRowID = q2.value("subject_id").toInt();
                 AppendUploadLog(__FUNCTION__, "This subject exists. UID [" + subjectUID + "]");
                 subjectFoundByName = 1;
@@ -1049,7 +1049,7 @@ bool archiveIO::InsertParRec(int importid, QString file) {
         if (q2.size() > 0) {
             q2.first();
             subjectRowID = q2.value("subject_id").toInt();
-            subjectUID = q2.value("uid").toString().toUpper().trimmed();
+            subjectUID = q2.value("uid").toString().toUpper().trimmed().replace('\u0000', "");
 
             AppendUploadLog(__FUNCTION__, QString("Found subject [subjectid %1, UID " + subjectUID + "] by searching for PatientID [" + PatientID + "] and alternate IDs [" + SQLIDs + "]").arg(subjectRowID));
         }
@@ -1498,7 +1498,7 @@ bool archiveIO::InsertEEG(int importid, QString file) {
     if (q.size() > 0) {
         q.first();
         subjectRowID = q.value("subject_id").toInt();
-        subjectUID = q.value("uid").toString().trimmed();
+        subjectUID = q.value("uid").toString().trimmed().replace('\u0000', "");
     }
     else {
         /* subject doesn't already exist. Not creating new subjects as part of EEG/ET/etc upload because we have no age, DOB, sex. So note this failure in the import_logs table */
@@ -2803,9 +2803,8 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     }
 
     /* the squirrel object should be complete, so write it out */
-    QString m2;
-    sqrl.write(outdir, filepath, m2);
-    msgs << n->WriteLog(QString("%1() - squirrel.write() returned [\n" + m2 + "\n]").arg(__FUNCTION__));
+    sqrl.write(outdir, filepath);
+    msgs << n->WriteLog(QString("%1() - squirrel.write() returned [\n" + sqrl.GetLog() + "\n]").arg(__FUNCTION__));
 
     msg = msgs.join("\n");
     n->WriteLog("Leaving WriteSquirrel()...");
@@ -2833,7 +2832,7 @@ bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modal
             n->WriteLog(QString("%1() Found [%2] rows").arg(__FUNCTION__).arg(q.size()));
 
             while (q.next()) {
-                QString uid = q.value("uid").toString();
+                QString uid = q.value("uid").toString().replace('\u0000', "");
                 qint64 subjectid = q.value("subject_id").toLongLong();
                 QString subjectsex = q.value("gender").toString();
                 QString subjectdob = q.value("birthdate").toString();

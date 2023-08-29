@@ -60,7 +60,7 @@ void series::LoadSeriesInfo() {
         }
         else {
             q.first();
-            uid = q.value("uid").toString().trimmed();
+            uid = q.value("uid").toString().trimmed().replace('\u0000', "");
             studynum = q.value("study_num").toInt();
             seriesnum = q.value("series_num").toInt();
             desc = q.value("series_desc").toString().trimmed();

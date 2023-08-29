@@ -40,6 +40,14 @@ squirrelPipeline::squirrelPipeline()
 /* ---------------------------------------------------------- */
 /* if path is specified, write the full JSON object to that
  * path and return a small JSON object */
+
+/**
+ * @brief Get JSON object describing the pipeline
+ * @param path if a path is specified, the full JSON object is written
+ * to that path and a smaller JSON object is returned
+ * @return JSON object
+ */
+
 QJsonObject squirrelPipeline::ToJSON(QString path) {
     QJsonObject json;
 
@@ -136,41 +144,41 @@ QJsonObject squirrelPipeline::ToJSON(QString path) {
 /* ----- PrintPipeline ---------------------------------------- */
 /* ------------------------------------------------------------ */
 /**
- * @brief squirrelPipeline::PrintPipeline
+ * @brief Print pipeline details
  */
 void squirrelPipeline::PrintPipeline() {
 
-    Print("-- PIPELINE ----------");
+    Print("\t----- PIPELINE -----");
 
-    Print(QString("       PipelineName: %1").arg(pipelineName));
-    Print(QString("       PipelineName: %1").arg(description));
-    Print(QString("       PipelineName: %1").arg(createDate.toString()));
-    Print(QString("       PipelineName: %1").arg(version));
-    Print(QString("       PipelineName: %1").arg(level));
+    Print(QString("\tPipelineName: %1").arg(pipelineName));
+    Print(QString("\tPipelineName: %1").arg(description));
+    Print(QString("\tPipelineName: %1").arg(createDate.toString()));
+    Print(QString("\tPipelineName: %1").arg(version));
+    Print(QString("\tPipelineName: %1").arg(level));
 
-    Print(QString("       PipelineName: %1").arg(parentPipelines.join(",")));
-    Print(QString("       PipelineName: %1").arg(completeFiles.join(",")));
+    Print(QString("\tPipelineName: %1").arg(parentPipelines.join(",")));
+    Print(QString("\tPipelineName: %1").arg(completeFiles.join(",")));
 
-    Print(QString("       PipelineName: %1").arg(dataCopyMethod));
-    Print(QString("       PipelineName: %1").arg(directory));
-    Print(QString("       PipelineName: %1").arg(dirStructure));
-    Print(QString("       PipelineName: %1").arg(depLevel));
-    Print(QString("       PipelineName: %1").arg(depDir));
-    Print(QString("       PipelineName: %1").arg(depLinkType));
-    Print(QString("       PipelineName: %1").arg(group));
-    Print(QString("       PipelineName: %1").arg(groupType));
-    Print(QString("       PipelineName: %1").arg(notes));
-    Print(QString("       PipelineName: %1").arg(resultScript));
-    Print(QString("       PipelineName: %1").arg(tmpDir));
-    Print(QString("       PipelineName: %1").arg(flags.useTmpDir));
-    Print(QString("       PipelineName: %1").arg(flags.useProfile));
+    Print(QString("\tPipelineName: %1").arg(dataCopyMethod));
+    Print(QString("\tPipelineName: %1").arg(directory));
+    Print(QString("\tPipelineName: %1").arg(dirStructure));
+    Print(QString("\tPipelineName: %1").arg(depLevel));
+    Print(QString("\tPipelineName: %1").arg(depDir));
+    Print(QString("\tPipelineName: %1").arg(depLinkType));
+    Print(QString("\tPipelineName: %1").arg(group));
+    Print(QString("\tPipelineName: %1").arg(groupType));
+    Print(QString("\tPipelineName: %1").arg(notes));
+    Print(QString("\tPipelineName: %1").arg(resultScript));
+    Print(QString("\tPipelineName: %1").arg(tmpDir));
+    Print(QString("\tPipelineName: %1").arg(flags.useTmpDir));
+    Print(QString("\tPipelineName: %1").arg(flags.useProfile));
 
-    Print(QString("       PipelineName: %1").arg(clusterType));
-    Print(QString("       PipelineName: %1").arg(clusterUser));
-    Print(QString("       PipelineName: %1").arg(clusterQueue));
-    Print(QString("       PipelineName: %1").arg(clusterSubmitHost));
-    Print(QString("       PipelineName: %1").arg(maxWallTime));
-    Print(QString("       PipelineName: %1").arg(submitDelay));
-    Print(QString("       PipelineName: %1").arg(numConcurrentAnalyses));
+    Print(QString("\tPipelineName: %1").arg(clusterType));
+    Print(QString("\tPipelineName: %1").arg(clusterUser));
+    Print(QString("\tPipelineName: %1").arg(clusterQueue));
+    Print(QString("\tPipelineName: %1").arg(clusterSubmitHost));
+    Print(QString("\tPipelineName: %1").arg(maxWallTime));
+    Print(QString("\tPipelineName: %1").arg(submitDelay));
+    Print(QString("\tPipelineName: %1").arg(numConcurrentAnalyses));
 
 }

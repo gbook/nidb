@@ -912,6 +912,106 @@ bool ParseCSV(QString csv, indexedHash &table, QStringList &columns, QString &ms
 
 
 /* ---------------------------------------------------------- */
+/* --------- ParseTSV --------------------------------------- */
+/* ---------------------------------------------------------- */
+/* this function handles most .tsv formats but it does not
+ *  handle nested quotes, and must have a header row */
+bool ParseTSV(QString tsv, indexedHash &table, QStringList &columns, QString &msg) {
+
+    QStringList m;
+    bool ret(true);
+
+    /* get header row */
+    QStringList lines = tsv.trimmed().split(QRegularExpression(R"(\n|\r\n|\r)"));
+
+    m << QString("Found [%1] lines").arg(lines.size());
+    if (lines.size() > 1) {
+        QString header = lines.takeFirst();
+        QStringList cols = header.trimmed().toLower().split(QRegularExpression("\\s*\t\\s*"));
+        columns = cols;
+
+        m << QString("Found [%1] columns [%2]").arg(cols.size()).arg(cols.join(","));
+        /* remove the last column if it was blank, because the file contained an extra trailing comma */
+        if (cols.last() == "") {
+            cols.removeLast();
+            m << QString("Last column was blank, removing").arg(cols.size());
+        }
+
+        qint64 numcols = cols.size();
+
+        int row = 0;
+        foreach (QString line, lines) {
+            QString buffer = "";
+            int col = 0;
+            bool inQuotes = false;
+            for (int i=0; i<line.size(); i++) {
+                QChar c = line.at(i);
+
+                /* determine if we're in quotes or not */
+                if (c == '"') {
+                    if (inQuotes)
+                        inQuotes = false;
+                    else
+                        inQuotes = true;
+                }
+
+                /* check if we've hit the next tab, and therefor should end the previous variable */
+                if ((c == '\t') && (!inQuotes)) {
+                    table[row][cols[col]] = buffer.trimmed();
+
+                    buffer = "";
+                    col++;
+                }
+                else {
+                    buffer = QString("%1%2").arg(buffer).arg(c); /* make sure no null terminators end up in the string */
+                }
+            }
+            /* acquire the last column */
+            table[row][cols[col]] = buffer.trimmed();
+            buffer = "";
+
+            if ((col+1) != numcols) {
+                m << QString("Error: row [%1] has [%2] columns, but expecting [%3] columns").arg(row+1).arg(col+1).arg(numcols);
+                ret = false;
+            }
+
+            row++;
+        }
+        m << QString("Processed [%1] data rows").arg(row);
+    }
+    else {
+        ret = false;
+        m << ".tsv file contained only one row. The tsv must contain at least one header row and one data row";
+    }
+
+    msg = m.join("  \n");
+
+    return ret;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- CleanJSON -------------------------------------- */
+/* ---------------------------------------------------------- */
+QString CleanJSON(QString s) {
+    s.replace("\"","");
+    s.replace("\\\"","");
+    s.replace("{","");
+    s.replace("}","");
+    s.replace(":", " : ");
+    s.replace("\\n", "");
+    s.replace("\\t", "");
+    s.replace("\\\\", "");
+    s.replace(QRegularExpression("\\\\n"), "");
+    s.replace(QRegularExpression("\\n"), "");
+    s.replace(QRegularExpression("\\\\t"), "");
+    s.replace(QRegularExpression("\\t"), "");
+
+    return s;
+}
+
+
+/* ---------------------------------------------------------- */
 /* --------- WriteTextFile ---------------------------------- */
 /* ---------------------------------------------------------- */
 bool WriteTextFile(QString filepath, QString str, bool append) {
@@ -950,6 +1050,27 @@ QStringList ReadTextFileIntoArray(QString filepath, bool ignoreEmptyLines) {
             if (ignoreEmptyLines && (line.size() == 0)) {}
             else
                 a.append(line);
+        }
+    }
+
+    return a;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- ReadTextFileToString -------------------------- */
+/* ---------------------------------------------------------- */
+QString ReadTextFileToString(QString filepath) {
+    QString a;
+
+    QFile inputFile(filepath);
+    inputFile.open(QIODevice::ReadOnly);
+    if (inputFile.isOpen()) {
+        QTextStream in(&inputFile);
+
+        QString line;
+        while (in.readLineInto(&line)) {
+            a.append(line + "\n");
         }
     }
 
@@ -1110,5 +1231,20 @@ bool FileDirectoryExists(QString f) {
 void PrependQStringList(QStringList &list, QString s) {
     for (int i=0; i<list.size(); i++) {
         list[i] = s + list[i];
+    }
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- CopyFile --------------------------------------- */
+/* ---------------------------------------------------------- */
+bool CopyFile(QString f, QString dir) {
+    QFileInfo file(f);
+
+    if (QFile::copy(f, QString("%1/%2").arg(dir).arg(file.fileName()))) {
+        return true;
+    }
+    else {
+        return false;
     }
 }

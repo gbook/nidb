@@ -151,15 +151,6 @@ bool squirrelImageIO::AnonymizeDicomFile(gdcm::Anonymizer &anon, QString infile,
     reader.SetFileName( infile.toStdString().c_str() );
     if( !reader.Read() ) {
         msg += QString("Could not read [%1]").arg(infile);
-        //if( continuemode ) {
-        //	WriteLog("Skipping from anonymization process (continue mode).");
-        //	return true;
-        //}
-        //else
-        //{
-        //	WriteLog("Check [--continue] option for skipping files.");
-        //	return false;
-        //}
     }
     gdcm::File &file = reader.GetFile();
 
@@ -623,7 +614,6 @@ bool squirrelImageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa
                         }
                     }
                 }
-                //WriteLog(QString("Found PhaseEncodeAngle of [%1]").arg(tags["PhaseEncodeAngle"]));
                 df.close();
             }
 
@@ -640,7 +630,6 @@ bool squirrelImageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa
                     val = "";
                 tags["PhaseEncodingDirectionPositive"] = val.trimmed();
             }
-            //WriteLog(QString("Found PhaseEncodingDirectionPositive of [%1]").arg(tags["PhaseEncodingDirectionPositive"]));
         }
     }
     else {
@@ -800,10 +789,8 @@ void squirrelImageIO::GetFileType(QString f, QString &fileType, QString &fileMod
         fileProtocol = QString(s.c_str());
     }
     else {
-        //WriteLog("[" + f + "] is not a DICOM file");
         /* check if EEG, and Polhemus */
         if ((f.endsWith(".cnt", Qt::CaseInsensitive)) || (f.endsWith(".dat", Qt::CaseInsensitive)) || (f.endsWith(".3dd", Qt::CaseInsensitive)) || (f.endsWith(".eeg", Qt::CaseInsensitive))) {
-            //WriteLog("Found an EEG file [" + f + "]");
             fileType = "EEG";
             fileModality = "EEG";
             QFileInfo fn = QFileInfo(f);
@@ -812,7 +799,6 @@ void squirrelImageIO::GetFileType(QString f, QString &fileType, QString &fileMod
         }
         /* check if ET */
         else if (f.endsWith(".edf", Qt::CaseInsensitive)) {
-            //WriteLog("Found an ET file [" + f + "]");
             fileType = "ET";
             fileModality = "ET";
             QFileInfo fn = QFileInfo(f);
@@ -821,7 +807,6 @@ void squirrelImageIO::GetFileType(QString f, QString &fileType, QString &fileMod
         }
         /* check if MR (Non-DICOM) analyze or nifti */
         else if ((f.endsWith(".nii", Qt::CaseInsensitive)) || (f.endsWith(".nii.gz", Qt::CaseInsensitive)) || (f.endsWith(".hdr", Qt::CaseInsensitive)) || (f.endsWith(".img", Qt::CaseInsensitive))) {
-            //WriteLog("Found an analyze or Nifti image [" + f + "]");
             fileType = "NIFTI";
             fileModality = "NIFTI";
             QFileInfo fn = QFileInfo(f);
@@ -830,7 +815,6 @@ void squirrelImageIO::GetFileType(QString f, QString &fileType, QString &fileMod
         }
         /* check if par/rec */
         else if (f.endsWith(".par")) {
-            //WriteLog("Found a PARREC image [" + f + "]");
             fileType = "PARREC";
             fileModality = "PARREC";
 
@@ -857,7 +841,6 @@ void squirrelImageIO::GetFileType(QString f, QString &fileType, QString &fileMod
             }
         }
         else {
-            //WriteLog("Filetype is unknown [" + f + "]");
             fileType = "Unknown";
         }
     }

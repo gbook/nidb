@@ -4683,7 +4683,7 @@
 						$('.tabular.menu .item').tab();
 					</script>
 					<style>
-						.active.item {
+						.active.item2 {
 							background-color: #EBF5FB !important;
 						}
 					</style>
@@ -4691,13 +4691,13 @@
 						<div class="four wide stretched left attached column">
 							<div class="ui vertical fluid tabular menu">
 								<? if ($GLOBALS['cfg']['enablewebexport']) { ?>
-									<a class="active item" data-tab="tab-web" onClick="radio_web.checked=true">
+									<a class="active item item2" data-tab="tab-web" onClick="radio_web.checked=true">
 										<div class="ui radio checkbox">
 											<input type="radio" name="destination" id="radio_web" value="web" checked onChange="CheckDestination()">
 											<label>Web</label>
 										</div>
 									</a>
-									<a class="item" data-tab="tab-nfs" onClick="radio_nfs.checked=true">
+									<a class="item item2" data-tab="tab-nfs" onClick="radio_nfs.checked=true">
 										<div class="ui radio checkbox">
 											<input type="radio" name="destination" id="radio_nfs" value="nfs" onChange="CheckDestination()">
 											<label>Linux NFS Mount</label>
@@ -4706,13 +4706,13 @@
 								<?
 								}
 								if (($GLOBALS['isadmin']) && ($GLOBALS['cfg']['enablepublicdownloads'])) { ?>
-									<a class="item" data-tab="tab-publicdownload" onClick="radio_publicdownload.checked=true">
+									<a class="item item2" data-tab="tab-publicdownload" onClick="radio_publicdownload.checked=true">
 										<div class="ui radio checkbox">
 											<input type="radio" name="destination" id="radio_publicdownload" value="publicdownload" onChange="CheckDestination()">
 											<label>Public Download</label>
 										</div>
 									</a>
-									<a class="item" data-tab="tab-publicdataset" onClick="radio_publicdataset.checked=true">
+									<a class="item item2" data-tab="tab-publicdataset" onClick="radio_publicdataset.checked=true">
 										<div class="ui radio checkbox">
 											<input type="radio" name="destination" id="radio_publicdataset" value="publicdataset" onChange="CheckDestination()">
 											<label>Add to Public Dataset</label>
@@ -4722,7 +4722,7 @@
 								}
 								if ($s_resultoutput != 'subject') {
 									if (!$GLOBALS['cfg']['ispublic']) { ?>
-										<a class="item" data-tab="tab-localftp" onClick="radio_localftp.checked=true">
+										<a class="item item2" data-tab="tab-localftp" onClick="radio_localftp.checked=true">
 											<div class="ui radio checkbox">
 												<input type="radio" name="destination" id="radio_localftp" value="localftp" <? if ($GLOBALS['isguest']) { echo "checked"; } ?> onChange="CheckDestination()">
 												<label>Local FTP/scp</label>
@@ -4731,13 +4731,13 @@
 									<?
 									}
 									if ($GLOBALS['cfg']['enablerdoc']) { ?>
-										<a class="item" data-tab="tab-nda" onClick="radio_ndar.checked=true">
+										<a class="item item2" data-tab="tab-nda" onClick="radio_ndar.checked=true">
 											<div class="ui radio checkbox">
 												<input type="radio" name="destination" id="radio_ndar" value="ndar" onChange="CheckDestination()">
 												<label>NDAR/RDoC submission</label>
 											</div>
 										</a>
-										<a class="item" data-tab="tab-ndacsv" onClick="radio_ndarcsv.checked=true">
+										<a class="item item2" data-tab="tab-ndacsv" onClick="radio_ndarcsv.checked=true">
 											<div class="ui radio checkbox">
 												<input type="radio" name="destination" id="radio_ndarcsv" value="ndarcsv" onChange="CheckDestination()">
 												<label>NDAR/RDoC submission <span class="tiny">.csv</span></label>
@@ -4748,7 +4748,7 @@
 								}
 								if ($s_resultoutput != 'subject') {
 									?>
-									<a class="item" data-tab="tab-xnat" onClick="radio_xnat.checked=true">
+									<a class="item item2" data-tab="tab-xnat" onClick="radio_xnat.checked=true">
 										<div class="ui radio checkbox">
 											<input type="radio" name="destination" id="radio_xnat" value="xnat" onChange="CheckDestination()">
 											<label>Remote XNAT</label>
@@ -4763,7 +4763,7 @@
 									</a>
 									-->
 									<? if ($GLOBALS['cfg']['enableremoteconn']) { ?>
-									<a class="item" data-tab="tab-remotenidb" onClick="radio_remotenidb.checked=true">
+									<a class="item item2" data-tab="tab-remotenidb" onClick="radio_remotenidb.checked=true">
 										<div class="ui radio checkbox">
 											<input type="radio" name="destination" id="radio_remotenidb" value="remotenidb" onChange="CheckDestination()">
 											<label>Remote NiDB site</label>

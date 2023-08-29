@@ -94,6 +94,7 @@ void analysis::LoadAnalysisInfo() {
 	}
 	q.first();
 	uid = q.value("uid").toString().trimmed();
+    uid.replace('\u0000', "");
 	studynum = q.value("study_num").toInt();
 	studyid = q.value("study_id").toInt();
 	studyDateTime = q.value("study_datetime").toString();

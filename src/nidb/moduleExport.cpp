@@ -93,7 +93,7 @@ int moduleExport::Run() {
             QString squirreltitle = q.value("squirrel_title").toString().trimmed();
             QString squirreldesc = q.value("squirrel_desc").toString().trimmed();
             n->WriteLog(QString("SQUIRREL flags [%1]").arg(q.value("squirrel_flags").toString()));
-			n->WriteLog(QString("BIDS flags [%1]").arg(q.value("bids_flags").toString()));
+            n->WriteLog(QString("BIDS flags [%1]").arg(q.value("bids_flags").toString()));
 
             /* remove a trailing slash if it exists */
             if (nfsdir.right(1) == "/")
@@ -245,7 +245,7 @@ bool moduleExport::GetExportSeriesList(int exportid) {
 
             if (q2.size() > 0) {
                 while (q2.next()) {
-                    QString uid = q2.value("uid").toString();
+                    QString uid = q2.value("uid").toString().replace('\u0000', "");
                     int subjectid = q2.value("subject_id").toInt();
                     int studynum = q2.value("study_num").toInt();
                     int studyid = q2.value("study_id").toInt();
@@ -1418,17 +1418,25 @@ bool moduleExport::ExportSquirrel(int exportid, QString squirreltitle, QString s
 /* ---------------------------------------------------------- */
 bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, QString &exportstatus, QString &msg) {
 
+    QStringList msgs;
+
     /* check to see if the remote server is reachable ... */
     QString systemstring = "curl -sSf " + conn.server;
+    msgs << "Running [" + systemstring + "]";
     QString serverResponse = SystemCommand(systemstring, false);
     if ((serverResponse == "") || (serverResponse.contains("Could not resolve host",Qt::CaseInsensitive))) {
-        msg = n->WriteLog("ERROR: Unable to access remote NiDB server [" + conn.server + "]. Received error [" + serverResponse + "]");
+        msgs << n->WriteLog("ERROR: Unable to access remote NiDB server [" + conn.server + "]. Received response [" + serverResponse + "]");
+        msg = msgs.join("\n");
         return false;
     }
+
     /* ... and if our credentials work and we can start a transaction on it */
-    int transactionid = StartRemoteNiDBTransaction(conn.server, conn.username, conn.password);
+    QString m;
+    int transactionid = StartRemoteNiDBTransaction(conn.server, conn.username, conn.password, m);
+    msgs << n->WriteLog(m);
     if (transactionid < 0) {
-        msg = n->WriteLog(QString("ERROR: Invalid transaction ID [%1] received from [%2]").arg(transactionid).arg(conn.server));
+        msgs << n->WriteLog(QString("ERROR: Invalid transaction ID [%1] received from [%2]").arg(transactionid).arg(conn.server));
+        msg = msgs.join("\n");
         return false;
     }
 
@@ -1441,9 +1449,9 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
 
     //QString tmpexportdir = n->cfg["tmpdir"] + "/" + n->GenerateRandomString(20);
 
-    QStringList msgs;
     if (!GetExportSeriesList(exportid)) {
-        msg = "Unable to get a series list";
+        msgs << "Unable to get a series list";
+        msg = msgs.join("\n");
         return false;
     }
 
@@ -1617,10 +1625,13 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
         }
     }
 
-    EndRemoteNiDBTransaction(transactionid, conn.server, conn.username, conn.password);
+    m = "";
+    EndRemoteNiDBTransaction(transactionid, conn.server, conn.username, conn.password, m);
+    msgs << m;
 
     n->WriteLog("Leaving ExportToRemoteNiDB()...");
 
+    msg = msgs.join("\n");
     return true;
 }
 
@@ -1717,7 +1728,7 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
             QString studydatetime = q.value("study_datetime").toDate().toString("MM/dd/yyyy");
             //QString birthdate = q.value("birthdate").toString().trimmed();
             QString gender = q.value("gender").toString().trimmed();
-            QString uid = q.value("uid").toString().trimmed();
+            QString uid = q.value("uid").toString().trimmed().replace('\u0000', "");
             double ageatscan = q.value("ageatscan").toDouble();
             double studyageatscan = q.value("study_ageatscan").toDouble();
             QString seriesdesc = q.value("series_desc").toString().trimmed();
@@ -1927,19 +1938,36 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
 /* ---------------------------------------------------------- */
 /* --------- StartRemoteNiDBTransaction --------------------- */
 /* ---------------------------------------------------------- */
-int moduleExport::StartRemoteNiDBTransaction(QString remotenidbserver, QString remotenidbusername, QString remotenidbpassword) {
+int moduleExport::StartRemoteNiDBTransaction(QString remotenidbserver, QString remotenidbusername, QString remotenidbpassword, QString &m) {
 
     int ret = -1;
+    QStringList msgs;
+
     /* build a cURL string to start the transaction */
     QString systemstring = QString("curl -gs -F 'action=startTransaction' -F 'u=%1' -F 'p=%2' %3/api.php").arg(remotenidbusername).arg(remotenidbpassword).arg(remotenidbserver);
+    msgs << n->WriteLog(QString("%1() Running [" + systemstring + "]").arg(__FUNCTION__));
+
     QString str = SystemCommand(systemstring, false).simplified();
+    msgs << n->WriteLog(QString("%1() Response [" + str + "]").arg(__FUNCTION__));
+
+    if (str.contains("301 Moved")) {
+        msgs << n->WriteLog("Received response from server [" + str + "] attempting to connect to HTTPS instead");
+
+        remotenidbserver.replace("http://", "https://");
+        QString systemstring = QString("curl -gs -F 'action=startTransaction' -F 'u=%1' -F 'p=%2' %3/api.php").arg(remotenidbusername).arg(remotenidbpassword).arg(remotenidbserver);
+        msgs << n->WriteLog(QString("%1() Running [" + systemstring + "]").arg(__FUNCTION__));
+
+        QString str = SystemCommand(systemstring, false).simplified();
+        msgs << n->WriteLog(QString("%1() Response [" + str + "]").arg(__FUNCTION__));
+    }
 
     bool ok;
     int t = str.toLong(&ok);
     if (ok)
         ret = t;
 
-    n->WriteLog(QString("Remote NiDB transactionID: [%1]").arg(t));
+    msgs << n->WriteLog(QString("%1() Remote NiDB transactionID: [%2]").arg(__FUNCTION__).arg(t));
+    m = msgs.join("\n");
 
     return ret;
 }
@@ -1948,9 +1976,28 @@ int moduleExport::StartRemoteNiDBTransaction(QString remotenidbserver, QString r
 /* ---------------------------------------------------------- */
 /* --------- EndRemoteNiDBTransaction ----------------------- */
 /* ---------------------------------------------------------- */
-void moduleExport::EndRemoteNiDBTransaction(int tid, QString remotenidbserver, QString remotenidbusername, QString remotenidbpassword) {
+void moduleExport::EndRemoteNiDBTransaction(int tid, QString remotenidbserver, QString remotenidbusername, QString remotenidbpassword, QString &m) {
+
+    QStringList msgs;
 
     /* build a cURL string to end the transaction */
     QString systemstring = QString ("curl -gs -F 'action=endTransaction' -F 'u=%1' -F 'p=%2' -F 'transactionid=%3' %4/api.php").arg(remotenidbusername).arg(remotenidbpassword).arg(tid).arg(remotenidbserver);
-    n->WriteLog(SystemCommand(systemstring));
+    msgs << QString("%1() Running [" + systemstring + "]").arg(__FUNCTION__);
+
+    QString str = SystemCommand(systemstring);
+    msgs << QString("%1() Response [" + str + "]").arg(__FUNCTION__);
+    n->WriteLog(str);
+
+    if (str.contains("301 Moved")) {
+        msgs << n->WriteLog("Received response from server [" + str + "] attempting to connect to HTTPS instead");
+
+        remotenidbserver.replace("http://", "https://");
+        QString systemstring = QString("curl -gs -F 'action=startTransaction' -F 'u=%1' -F 'p=%2' %3/api.php").arg(remotenidbusername).arg(remotenidbpassword).arg(remotenidbserver);
+        msgs << n->WriteLog(QString("%1() Running [" + systemstring + "]").arg(__FUNCTION__));
+
+        QString str = SystemCommand(systemstring, false).simplified();
+        msgs << n->WriteLog(QString("%1() Response [" + str + "]").arg(__FUNCTION__));
+    }
+
+    m = msgs.join("\n");
 }
