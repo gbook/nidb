@@ -1,6 +1,7 @@
 # Table of contents
 
-* [NeuroInformatics Database](README.md)
+* [🐿 NeuroInformatics Database](README.md)
+  * [HIPAA Compliance](neuroinformatics-database/hipaa-compliance.md)
 
 ## Getting Started
 
@@ -11,10 +12,6 @@
 * [Upgrade](getting-started/upgrade/README.md)
   * [Quick Upgrade](getting-started/upgrade/quick-upgrade.md)
   * [Migrate Existing Installation](getting-started/upgrade/migrate-existing-installation.md)
-
-***
-
-* [Data Storage Hierarchy](data-storage-hierarchy.md)
 
 ## Using NiDB
 
@@ -28,22 +25,46 @@
 * [Administration](using-nidb/administration/README.md)
   * [Front end (user facing)](using-nidb/administration/front-end-user-facing.md)
   * [Back end](using-nidb/administration/back-end.md)
+  * [nidb command line](using-nidb/administration/nidb-command-line.md)
+
+## Specifications
+
+* [Data Storage Hierarchy](data-storage-hierarchy.md)
+* [DICOM Anonymization](specifications/dicom-anonymization.md)
 
 ## Tutorials
 
-* [Importing Subjects from Redcap](tutorials/importing-subjects-from-redcap.md)
+* [Working with Imaging Data](tutorials/working-with-imaging-data/README.md)
+  * [Uploading data for a sample project](tutorials/working-with-imaging-data/uploading-data-for-a-sample-project.md)
+  * [Troubleshooting Missing Imaging Data](tutorials/troublshooting-missing-data.md)
+  * [Import DICOM data](tutorials/import-dicom-data.md)
+  * [MR scan quality control](tutorials/working-with-imaging-data/mr-scan-quality-control.md)
+* [Manipulating Subjects, Studies, & Series](tutorials/manipulating-data/README.md)
+  * [Working with subject IDs](tutorials/working-with-subject-ids.md)
+  * [Renaming series](tutorials/manipulating-data/renaming-series.md)
+* [Pipelines](tutorials/pipelines.md)
+* [Working with Redcap](tutorials/importing-from-redcap/README.md)
+  * [Importing Data from a Redcap Project](tutorials/importing-from-redcap/importing-data-from-a-redcap-project.md)
+  * [Importing Subjects from Redcap](tutorials/importing-from-redcap/importing-subjects-from-redcap.md)
+  * [Reports based on data imported from Redcap](tutorials/importing-from-redcap/reports-based-on-data-imported-from-redcap.md)
 * [Analysis Builder](tutorials/analysis-builder.md)
-* [Importing Data from a Redcap Project](tutorials/importing-data-from-a-redcap-project.md)
-* [Import DICOM data](tutorials/import-dicom-data.md)
-* [Adding Users to Projects](tutorials/adding-users-to-projects.md)
-* [Editing the config file](tutorials/editing-the-config-file.md)
+* [Administration of Users, Projects, & System](tutorials/administration-of-users-projects-and-system/README.md)
+  * [User Permissions](tutorials/administration-of-users-projects-and-system/user-permissions.md)
+  * [Creating new projects](tutorials/administration-of-users-projects-and-system/creating-new-projects.md)
+  * [Adding Users to Projects](tutorials/adding-users-to-projects.md)
+  * [Editing the config file](tutorials/editing-the-config-file.md)
+  * [Deleting all the data](tutorials/administration-of-users-projects-and-system/deleting-all-the-data.md)
 
 ## Contribute
 
 * [Squirrel data sharing format](contribute/squirrel-data-sharing-format/README.md)
-  * [Specification v1.0](contribute/squirrel-data-sharing-format/specification.md)
+  * [Using the squirrel library](contribute/squirrel-data-sharing-format/using-the-squirrel-library.md)
+  * [Modalities](contribute/squirrel-data-sharing-format/modalities.md)
+  * [Example package](contribute/squirrel-data-sharing-format/example-package.md)
+  * [squirrel vs BIDS](contribute/squirrel-data-sharing-format/squirrel-vs-bids.md)
+  * [Specification v1.0](contribute/squirrel-data-sharing-format/specification-v1.0/README.md)
     * [Package root](contribute/squirrel-data-sharing-format/specification-v1.0/package-root.md)
-    * [\_package](contribute/squirrel-data-sharing-format/specification-v1.0/\_package.md)
+    * [package](contribute/squirrel-data-sharing-format/specification-v1.0/\_package.md)
     * [data](contribute/squirrel-data-sharing-format/specification-v1.0/data/README.md)
       * [subjects](contribute/squirrel-data-sharing-format/specification-v1.0/data/subjects/README.md)
         * [studies](contribute/squirrel-data-sharing-format/specification-v1.0/data/subjects/studies/README.md)
@@ -52,13 +73,16 @@
           * [analysis](contribute/squirrel-data-sharing-format/specification-v1.0/data/subjects/studies/analysis.md)
         * [measures](contribute/squirrel-data-sharing-format/specification-v1.0/data/subjects/measures.md)
         * [drugs](contribute/squirrel-data-sharing-format/specification-v1.0/data/subjects/drugs.md)
+      * [group-analysis](contribute/squirrel-data-sharing-format/specification-v1.0/data/group-analysis.md)
     * [pipelines](contribute/squirrel-data-sharing-format/specification-v1.0/pipelines/README.md)
       * [dataSpec](contribute/squirrel-data-sharing-format/specification-v1.0/pipelines/dataspec.md)
       * [Pipeline scripts](contribute/squirrel-data-sharing-format/specification-v1.0/pipelines/pipeline-scripts.md)
     * [experiments](contribute/squirrel-data-sharing-format/specification-v1.0/experiments.md)
-  * [Modalities](contribute/squirrel-data-sharing-format/modalities.md)
-  * [Example package](contribute/squirrel-data-sharing-format/example-package.md)
+    * [data-dictionary](contribute/squirrel-data-sharing-format/specification-v1.0/data-dictionary.md)
+  * [Building squirrel library and utils](contribute/squirrel-data-sharing-format/building-squirrel-library-and-utils.md)
+    * [Building Python Wrapper](contribute/squirrel-data-sharing-format/building-squirrel-library-and-utils/building-python-wrapper.md)
 * [Building NiDB](contribute/building-nidb.md)
+* [Creating a Development VM](contribute/creating-a-development-vm.md)
 
 ## Help!
 

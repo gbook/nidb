@@ -6,26 +6,10 @@ description: JSON array
 
 Analysis results, run on an imaging study level. Can contain files, directories, and variables.
 
-![JSON object hierarchy](https://mermaid.ink/img/pako:eNptks1qwzAQhF\_FKBcFHMjBvajQU3sppYX6aihba52okWyhHxoT8u5duZZT0vigHXk-7Yi1T6wdJDLBdg7svnh5b\_qCHjcMgT\_Xb6-TWm82DxIC8LSs7y8Ivf-w0B5ghzyLK98qi1r16Pmirgg8WnTKYB88\_6MzlTKJ8vHzC1tCssh-3icmRKkoaa43CIPgoyMkixuMdHHn-bQu7m\_DFEHXSwlT-W9DD3r0yvMsFmQ6kOYBDgwNYyrZXUYzD7q22PIsLimjxiI3LjqltVh1Hd5tt6UPbjigWFVVNevNt5JhLyp7ZCUz6AwoSZ\_5lHo1LOzRYMMESYkdRB0a1vRnQqOlXHySKgyOiQ60x5JBDEM99i0TwUXM0KMC-mvMTJ1\_AEy4x7I)
+<figure><img src="https://mermaid.ink/img/pako:eNqVlF1vmzAUhv9K5CoSkSAiEU2JK_Wqu5mmTVrvJm48fEi8Akb-0MKi_PfZBjuB9qLlAr8HP-_x8bHMGZWcAsLoIEh3XHz7WbQL8wjOVZI8daR8JQeIxnH1eJ2Nvr78-O7UyoCUKBLZ1y1iE7AOataCjIKaEXDqQLAGWiWjGz2jbGrKSuXWSKxivCWiXw2U-5o8Sf37D5QmkRc-yzh_EFx3pCV1L5mMXJT40KPeatMpTZkpfRzfIRogUguDePEOQ4U-yMi9w-yQ0C5h9mtXcMPb6VDrvMrlcrAka3tIgjSyYrU9Jys99Ba1fbCgnJzVcnnTeItdwwG-xgv3YeV94VBdHWMweHw0c_iNWIPXg8FHE0PYguprWITyLVPju6qqYtMtwV8hoUQeiRCkx9upabLKZ4yzLnzGOmnFR4wzezjRj3in2wwOuE_TePDguyzLRp38ZVQdcdadUIwaEA1h1Fz_s81VIHWEBgqEjaRQEV2rAhXtxaC6M92HL5QpLhCuSC0hRkQr_tK3JcJKaPDQMyPmb9IEyly5X5xPYoTP6IRwGqMe4W26W-_y7CHf5ZuHbb7P8kuM_jlHut4PT36_32x22zy__Acl7pR2?type=png" alt=""><figcaption></figcaption></figure>
 
 ### JSON variables
 
 <mark style="color:red;">\* required</mark>
 
-|          _**Variable**_ | **Type** | **Description**                                                          |
-| ----------------------: | -------- | ------------------------------------------------------------------------ |
-|    _\***pipelineName**_ | string   | Name of the pipeline used to generate these results                      |
-|      _clusterStartDate_ | date     | Datetime the job began running on the cluster                            |
-|        _clusterEndDate_ | date     | Datetime the job finished running on the cluster                         |
-| _\***pipelineVersion**_ | number   | Version of the pipeline used                                             |
-|       _\***startDate**_ | date     | Datetime of the start of the analysis                                    |
-|               _endDate_ | date     | Datetime of the end of the analysis                                      |
-|             _setupTime_ | number   | Wall time, in seconds, to copy data and set up analysis                  |
-|               _runtime_ | number   | Wall time, in seconds, to run the analysis after setup                   |
-|             _numSeries_ | number   | Number of series downloaded/used to perform analysis                     |
-|                _status_ | string   | Status of the analysis: complete, error, etc                             |
-|            _successful_ | number   | Analysis ran to completion without error and expected files were created |
-|                  _size_ | number   | Size in bytes of the analysis                                            |
-|              _hostname_ | string   | If run on a cluster, the hostname of the node on which the analysis run  |
-|                _status_ | string   | Status, should always be ‘complete’                                      |
-|         _statusMessage_ | string   | Last running status message                                              |
+<table data-header-hidden><thead><tr><th align="right"></th><th width="150"></th><th></th></tr></thead><tbody><tr><td align="right"><em><strong>Variable</strong></em></td><td><strong>Type</strong></td><td><strong>Description</strong></td></tr><tr><td align="right"><em>*<strong>pipelineName</strong></em></td><td>string</td><td>Name of the pipeline used to generate these results</td></tr><tr><td align="right"><em>clusterStartDate</em></td><td>date</td><td>Datetime the job began running on the cluster</td></tr><tr><td align="right"><em>clusterEndDate</em></td><td>date</td><td>Datetime the job finished running on the cluster</td></tr><tr><td align="right"><em>*<strong>pipelineVersion</strong></em></td><td>number</td><td>Version of the pipeline used</td></tr><tr><td align="right"><em>*<strong>startDate</strong></em></td><td>date</td><td>Datetime of the start of the analysis</td></tr><tr><td align="right"><em>endDate</em></td><td>date</td><td>Datetime of the end of the analysis</td></tr><tr><td align="right"><em>setupTime</em></td><td>number</td><td>Wall time, in seconds, to copy data and set up analysis</td></tr><tr><td align="right"><em>runtime</em></td><td>number</td><td>Wall time, in seconds, to run the analysis after setup</td></tr><tr><td align="right"><em>numSeries</em></td><td>number</td><td>Number of series downloaded/used to perform analysis</td></tr><tr><td align="right"><em>status</em></td><td>string</td><td>Status of the analysis: complete, error, etc</td></tr><tr><td align="right"><em>successful</em></td><td>number</td><td>Analysis ran to completion without error and expected files were created</td></tr><tr><td align="right"><em>size</em></td><td>number</td><td>Size in bytes of the analysis</td></tr><tr><td align="right"><em>hostname</em></td><td>string</td><td>If run on a cluster, the hostname of the node on which the analysis run</td></tr><tr><td align="right"><em>status</em></td><td>string</td><td>Status, should always be ‘complete’</td></tr><tr><td align="right">path</td><td>string</td><td>Relative path to the data within the package</td></tr><tr><td align="right"><em>statusMessage</em></td><td>string</td><td>Last running status message</td></tr></tbody></table>
