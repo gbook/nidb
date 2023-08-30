@@ -4,114 +4,135 @@ description: Tutorial on how to import data form a Redcap project to a NiDB proj
 
 # Importing Data from a Redcap Project
 
-Redcap is a widely used web-based data management tool to manage clinical research data. NiDB provides an interface to import data from a Redcap project to a NiDB project. This is a very useful option in various scenarios like: migration of a project from Redcap to NiDB, OR managing data for some modalities in Redcap and rest in NiDB then merging the data in NiDB.&#x20;
+## Step 1
 
-The following are the steps to import data from Redcap.
+Gather the following information from Redcap administrator for API connection .&#x20;
 
-### Step 1
+* Redcap Server
+* Redcap API Token
 
-Gather the following API information from **Redcap administrator** to connect with the Redcap project.
+## Step 2
 
-* **Redcap Server**&#x20;
-* **Redcap API Token**
+Use 'Projects' menu in NiDB to get to the desired project's main page. From Data Transfer section of the links on the right, click "Global Redcap Settings" link.
 
-### Step 2
+<figure><img src="../../.gitbook/assets/image (18).png" alt=""><figcaption></figcaption></figure>
 
-Use **Projects** menu in NiDB to get to the desired project's main page. From **Data Transfer** section on the right side of the project's main page, click **Import from Redcap** link.
 
-![](<../../.gitbook/assets/image (1) (2).png>)
 
-### Step 3
+## Step 3
 
-Enter the Redcap server address and API token information and press **Save Connection Settings** button on the right as shown below.
+* Enter the Redcap server address and API token information and press "Update Connection Settings" button on the right as shown below.
 
-Then press **Show Project Info** button to establish the API connection with the Redcap server. If the connection is successful, the information from connected redcap project will be appeared as shown in the figure below.
+![](<../../.gitbook/assets/image (19).png>)
 
-In case of an error, please recheck the **Redcap Server** and **Redcap API Token** information provided above and hit the **Show Project Info** button again. If problem persists, please contact to the the Redcap administrator.
+## Step 4
 
-![](<../../.gitbook/assets/image (2) (2) (1).png>)
+Next steps to import the data correctly from redcap into NiDB is testing the connection, mapping each variable / field from redcap to NiDB and transferring the data. To test and established the connection with Redcap follow the following steps:
 
-### Step 4
 
-Next step to import the data from Redcap into NiDB is mapping each form and variable / field for Redcap and NiDB project.  The correct mapping is crucial to accurately import the data.
 
-To start mapping Click on the **Map This Project** button at the end of screen on the right as shown in the above figure. A new page will appear as shown below.
+* Go to the project page and click the "Import from Redcap" link as shown below.
 
-<figure><img src="../../.gitbook/assets/RC2NiDB-Step4-1.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../.gitbook/assets/image (20).png" alt=""><figcaption></figcaption></figure>
 
-### Step 5
 
-Each Redcap form is required to map separately. Pick a Redcap form from the **Select a Redcap Form** drop-down list as shown above. You can type the name of the Redcap form as well.
 
-Now select the Redcap form containing "unique id" to map the subjects in Redcap and NiDB.&#x20;
+* Click on the "Connect To Redcap" button on the right. If the connection is successful, a table with the Redcap Project information as shown below will appear.&#x20;
+* Once the connection is tested, click on the<img src="../../.gitbook/assets/image (31).png" alt="" data-size="line">button to start the mapping and /or transfer data process.
 
-{% hint style="info" %}
-The corresponding NiDB and Redcap projects should hold a field containing unique Ids for the subjects to be mapped.
-{% endhint %}
+<figure><img src="../../.gitbook/assets/image (21).png" alt=""><figcaption></figcaption></figure>
 
-Next, select an appropriate type of NiDB data representing the selected Redcap form. In NiDB, Redcap data is defined as the following three types:
+## Step 5
 
-* **Measures**: Redcap forms that store measures like cognitive and other measures are defined as **Measures** in NiDB
-* **Vitals**: Redcap forms that contains information like hearth rate, blood pressure, blood test results are stored as this form of data. Also daily repeated measures should be recorded as this type.
-* **Drug / Dose**: Redcap forms that store information regarding administration of drugs, will be stored as this type in NiDB.
+The Mapping / Transfer page will appear as shown below. This page is used to map variables or transfer data according to established mapping.
 
-As you select the type of NiDB data, a new section to map the fields from Redcap to NiDB variables will appear as shown in the figure below.
+<figure><img src="../../.gitbook/assets/image (22).png" alt=""><figcaption></figcaption></figure>
 
-<figure><img src="../../.gitbook/assets/RC2NiDB-Step5.png" alt=""><figcaption></figcaption></figure>
+To start new or edit existing mapping Click on the "Edit Mapping" button on the left as shown in the above figure. A new page will appear as shown below.
 
-### Step 6
 
-The variable mapping table has two sides: Recap and NiDB.
 
-**Redcap Variable Side**
+<div>
+
+<figure><img src="../../.gitbook/assets/image (23).png" alt=""><figcaption></figcaption></figure>
+
+ 
+
+<figure><img src="../../.gitbook/assets/image (24).png" alt=""><figcaption></figcaption></figure>
+
+</div>
+
+Each Redcap form is required to map separately. Pick NiDB data type and  "Redcap Form" from the drop-down list shown above.
+
+Select a type of data that redcap form contains. NiDB handles this in three types of data, which are following:
+
+* Measures: Redcap forms storing cognitive measures and similar other measures are stored as this data form in NiDB
+* Vitals: Redcap forms  that contains information of vitals like hearth rate, blood pressure, blood test results are stored as this form of data. Also any tests that need to be done multiple times in a day can be recorded as this form.
+* Drug / dose: If your project have information related to administrating drugs, this type of Redcap form is stored as Drugs / Dose in NiDB.
+
+After choosing the Redcap "Form", a new section to map the variables from Redcap to NiDB will appear as shown in the figure below.
+
+![](<../../.gitbook/assets/image (25).png>)
+
+A variable mapping table has two sides: NiDB and Recap.&#x20;
+
+#### NiDB Variable Side
+
+The NiDB variable side contains two columns. These columns will automatically filled with the same variable and instrument names based on the Redcap choices of the form and variables. However, one can change these names. These are the names that will be stored in NiDB for corresponding Redcap Form and variable names.
+
+#### Redcap Variable Side
 
 This side has seven columns. Following is the explanation of each column on Redcap side.
 
-* **Event**: A Redcap project can have multiple events. All the events will be listed in this column. Any number of events can be chosen from the list that is needed to map. In our example we chose only one event because the Redcap form selected to map contain only data for that event.
+* Event: A Redcap project can have multiple events. All the events will be listed in this column. Any number of events can be chosen from the list that is needed to map. In our example we chose only one event because the Redcap form selected tp map contain only data for that event.
+* Value: Pick the Redcap variable to map from a dropdown menu list.
+* Date: Pick the Redcap variable storing "date" information of the redcap form from a dropdown menu list.
+* Rater: Pick the Redcap variable storing "rater" information from a dropdown menu list.
+* Notes: Pick the Redcap variable storing "notes" information from a dropdown menu list.
+* Start / End Time: Pick the Redcap variable storing  "start and end time" information form from a dropdown menu list.&#x20;
 
-The next six columns define the fields of the "selected Redcap Form" in the last step
+Defining the correct type of field is very crucial for the mapping in NiDB. Especially time and date are very important to create reports based on the information stored in NiDB.
 
-* **Value**: Select the field that carries value / data
-* **Date**: Select the field that hold the "date" information corresponding to the value field.
-* **Rater**: Select the field having the "rater" information corresponding to the value field.
-* **Notes**: Select the field having the "notes" information corresponding to the value field.
-* **Start Time**: Select the field that hold the "initial time" or "time" information corresponding to the value field.
-* **End Time** : Select the field that hold the "end time" information corresponding to the value field.
+#### Add the Mapping
 
-{% hint style="info" %}
-If you have only one time field corresponding to the value, then use the "Start Time" column to define the time field and left the "End Time" field empty
-{% endhint %}
-
-
-
-**NiDB Variable Side**
-
-The NiDB variable side contains three columns. These columns will automatically filled with the same **Variable** and **Instrument / Form** names based on the Redcap side. However, one can change these names. These are the names of variables and Redcap forms that will be stored in NiDB for mapping these items for all the later imports.
-
-After defining one variable in a form, hit **Add** button on the right to add this mapping definition.
+After defining one variable in a form, hit "Add" button on the right to add this mapping definition.&#x20;
 
 In case of any mistake, a mapping item can be deleted and later can be added again according to the above stated process.
 
-The mapping of each variable is a time taking task. However this is very important step mapping and need to be done only once. Once the structure is defined, it will be stored in NiDB and imports for further data can be performed with the click of a button.
+After completing the mapping for a redcap form. Complete mapping the other redcap forms similarly. &#x20;
 
-{% hint style="info" %}
-**However, the mapping needs to be updated accordingly as the structure of the corresponding redcap project is altered.**
-{% endhint %}
+## Step 6
 
-### Step 7
+Before the last step it is critical to recheck all the mapping information. It is important, because the integrity, and accuracy of data transfer is based on accurate mapping. So check, recheck and make sure!
 
-The last step is to recheck all the mapping information. It is important, because the integrity, and accuracy of data transfer is based on accurate mapping. So check, recheck and make sure!
+After you have done with your recheck, you are ready to transfer the data from Redcap to NiDB.&#x20;
 
-After you have done making sure that your mapping is correct, you are ready to transfer the data from Redcap to NiDB.
 
-{% hint style="info" %}
-You can complete the mapping for the all the Redcap forms to be exported first and then transfer the data one by one OR data can be transfer for one form at a time and then go to the next to map and transfer.
-{% endhint %}
 
-To transfer the data, first select the redcap field corresponding to the unique subject id in both NiDB and Redcap. A list of variables from the above selected redcap form for this purpose will be available. If you did not select the Redcap form for this purpose in Step , then it will show all the variables of the Redcap project. After selecting the right variable:
+* Go to the following Mapping / Transfer page by clicking on the<img src="../../.gitbook/assets/image (26).png" alt="" data-size="line">button from the mapping page or connection page.
 
-Press the **Start Transfer** button on the far right. It will start transferring data for the selected form.
+<figure><img src="../../.gitbook/assets/image (27).png" alt=""><figcaption></figcaption></figure>
 
-You need to transfer the data for each mapped form separately by selecting it as mentioned in the step 4 above.
 
-Reports on data can be generated by using the [Analysis Builder](../analysis-builder.md) tool.
+
+* Click on the "Transfer Data" button, the following screen will appear.
+
+<figure><img src="../../.gitbook/assets/image (28).png" alt=""><figcaption></figcaption></figure>
+
+
+
+* First select the NiDB instrument (mapped in the mapping step) to transfer the data for.
+* Choose the recap event that holds the subject identification information. ![](<../../.gitbook/assets/image (29).png>)
+* Next, select the Redcap variable storing the redcap unique id.![](<../../.gitbook/assets/image (30).png>)
+* Select the redcap variable storing the NiDB unique id of the subjects. This is the variable that connects the records in the Redcap and NiDB.
+* Click the "Transfer" button to transfer data. This may take some time and the data transfer information will be displayed after data is transferred.
+
+#### Tips / Information&#x20;
+
+You can complete all the mapping for the Redcap forms to be exported at once and then transfer the data one by one OR you can transfer the data of one Redcap form mapped and then go to the next forms to map and transfer.
+
+To transfer / synchronized the data, Just press the "Transfer" button on the right  The data will be transferred / synchronized for the selected NiDB instrument.
+
+You need to transfer the data for each mapped instrument separately by selecting them one by one.&#x20;
+
+Reports on data can be generated by using the "Analysis Builder" tool, selection from a project's main page from "Tools" section on the right.
