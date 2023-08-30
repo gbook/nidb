@@ -15,7 +15,7 @@ Gather the following information from Redcap administrator for API connection .&
 
 Use 'Projects' menu in NiDB to get to the desired project's main page. From Data Transfer section of the links on the right, click "Global Redcap Settings" link.
 
-<figure><img src="../../.gitbook/assets/image (18).png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../.gitbook/assets/image (18) (1).png" alt=""><figcaption></figcaption></figure>
 
 
 
