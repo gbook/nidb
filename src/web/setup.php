@@ -453,7 +453,7 @@
 				if ($GLOBALS['cfgexists']) {
 					if (is_null($GLOBALS['cfg']['nidbdir'])) {
 						?>
-						The NiDB root directory was not defined in the config file. Go to <a href="system.php">NiDB Settings</a> to update the <code>nidbrootdir</code> variable to reflect the installation directory of NiDB. This should be something similar to <code>/nidb</code>. The new <code>nidb.sql</code> schema file should then be located in that directory.
+						The NiDB root directory was not defined in the config file. Go to <a href="settings.php">NiDB Settings</a> to update the <code>nidbrootdir</code> variable to reflect the installation directory of NiDB. This should be something similar to <code>/nidb</code>. The new <code>nidb.sql</code> schema file should then be located in that directory.
 						<?
 					}
 					else {

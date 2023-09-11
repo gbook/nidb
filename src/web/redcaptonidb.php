@@ -108,41 +108,12 @@ function getprojectinfo($projectid)
 		
 		?>
 
-	<div class="ui four column centered container">
-		<form action="redcaptonidb.php" method="post">
-		<input type="hidden" name="action" value="updateconnection">
-		<input type="hidden" name="projectid" value="<?=$projectid?>">
-		
-		<h2 class="ui top attached inverted header" align="center"> Redcap ===> NiDB Transfer </h2>
-		<br> 
+	<h1 class="ui header" align="left"> Redcap ===> NiDB Transfer 
+			<div class="sub header"> Project: <?=$projectname?> &nbsp; &nbsp; Redcap Server: <?=$redcapurl?></div>
+	</h1>
 
-			
-		<div class="four row column">
-                        <div class="ui labeled input">
-                          <div class="ui  label">
-                            *Redcap Server
-                          </div>
-                          <input type="text"  name="redcapurl" value="<?=$redcapurl?>"  size="50" required>
-                        </div>
-
-                        <br>
-                         <div class="ui labeled input">
-                          <div class="ui  label">
-                            *Redcap Token  
-                          </div>
-                                <input type="text" name="redcaptoken" value="<?=$redcaptoken?>" size="50" required>
-                        </div>
-
-		</div>
-
-			<button class="ui primary right floated button" type="submit">
-                          <i class="linkify icon"></i>
-                          Save Connection Settings
-		       </button>
-		</form>
-	</div>
 	<br><br>
-	<div onclick="window.location.href='redcaptonidb.php?action=showrcinfo&projectid=<?=$projectid?>'" class="ui bottom attached button">Show Project Information</div> 
+	<div onclick="window.location.href='redcaptonidb.php?action=showrcinfo&projectid=<?=$projectid?>'" class="ui right floated button">Connect To Redcap</div> 
 
 <?}
 
@@ -174,8 +145,8 @@ function Showprojectinfo($projectid)
 	$Ar_m=getrcarms($projectid);
 
 	$Event_s=getrcevents($projectid);
-                        
 	list($In_Name,$In_Label)=getrcinstruments($projectid);
+
 
 ?>
 
@@ -189,15 +160,23 @@ function Showprojectinfo($projectid)
 	  <tbody>
 	    <tr>
               <td>Arms</td>
-              <td> <?echo $Ar_m[0]?></td>
+              <td> <?for($i=0; $i<count($Ar_m); $i++){
+	      		if (count($Ar_m)>1 & $i!=count($Ar_m)) {echo $Ar_m[$i].", ";}
+		        else echo $Ar_m[$i];
+			}?>
+		</td>
             </tr>
 	    <tr>
 	      <td>Events</td>
-	      <td><?for($Ev=0;$Ev < count($Event_s);$Ev++){ echo $Event_s[$Ev];echo ","; }?></td>
+	      <td><?for($Ev=0;$Ev < count($Event_s);$Ev++){ 
+	      		if (count($Event_s)>1 & $Ev!=count($Event_s)-1) {echo $Event_s[$Ev].", ";}
+			else echo $Event_s[$Ev]; 
+			}?>
+	      </td>
 	    </tr>
 	    <tr>
 	      <td>Instruments</td>
-	      <td><?for($In=0;$In < count($In_Name); $In++){if(($In+1)%8==0){  echo $In_Name[$In];echo ","."<br>"; }else {echo $In_Name[$In];echo ",";}}?></td>
+	      <td><?for($In=0;$In < count($In_Name); $In++){if(($In+1)%8==0){  echo $In_Name[$In].", "."<br>"; }else {echo $In_Name[$In].", ";}}?></td>
 	    </tr>
 	</tbody></table>
 
@@ -206,19 +185,14 @@ function Showprojectinfo($projectid)
 
 	<br>
 	
-	<div onclick="window.location.href='redcaptonidb.php?action=default&projectid=<?=$projectid?>'" class="ui bottom attached button">Hide Project Information</div>
-	<br>
+	<div onclick="window.location.href='redcaptonidb.php?action=default&projectid=<?=$projectid?>'" class="ui right floated button">Disconnect From Redcap</div>
+	<br><br><br>
 
 
-	To establish a mapping for importing data from Redcap to NiDB <br><br>
-	 <b> Please Click "Map This Project" button ==========> <b> 
 
-	<br><br>
-
-
-	<button class="ui primary right floated button" onclick="window.location.href='redcapmapping.php?action=default&projectid=<?=$projectid?>'">
+	<button class="ui primary right floated large button" onclick="window.location.href='redcapmapping.php?action=default&projectid=<?=$projectid?>'">
           <i class="map icon"></i>
-            Map This Project
+            Mapping / <i class="level down alternate icon"></i> Transfer
         </button>
 
 

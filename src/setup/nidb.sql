@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jun 27, 2023 at 03:50 PM
+-- Generation Time: Sep 11, 2023 at 08:30 PM
 -- Server version: 10.3.28-MariaDB
 -- PHP Version: 7.2.24
 
@@ -56,6 +56,20 @@ CREATE TABLE `analysis` (
   `analysis_clusterenddate` timestamp NULL DEFAULT NULL,
   `analysis_enddate` timestamp NULL DEFAULT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `analysisdirs`
+--
+
+CREATE TABLE `analysisdirs` (
+  `analysisdir_id` int(11) NOT NULL,
+  `nidbpath` text NOT NULL,
+  `clusterpath` text NOT NULL,
+  `shortname` varchar(255) NOT NULL,
+  `dirformat` enum('pipelinefirst','uidfirst') NOT NULL DEFAULT 'pipelinefirst'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -3524,6 +3538,12 @@ ALTER TABLE `analysis`
   ADD KEY `study_id` (`study_id`);
 
 --
+-- Indexes for table `analysisdirs`
+--
+ALTER TABLE `analysisdirs`
+  ADD PRIMARY KEY (`analysisdir_id`);
+
+--
 -- Indexes for table `analysis_data`
 --
 ALTER TABLE `analysis_data`
@@ -4693,6 +4713,12 @@ ALTER TABLE `xa_series`
 --
 ALTER TABLE `analysis`
   MODIFY `analysis_id` bigint(20) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `analysisdirs`
+--
+ALTER TABLE `analysisdirs`
+  MODIFY `analysisdir_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `analysis_data`

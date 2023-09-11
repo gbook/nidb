@@ -581,7 +581,7 @@
 			}
 		</script>
 
-		<table id="analysistable" class="ui very compact small celled grey top attached table">
+		<table id="analysistable" class="ui very compact small celled grey selectable top attached table">
 			<form method="post" name="filteranalysis" id="filteranalysis" action="analysis.php" class="ui form">
 			<input type="hidden" name="action" value="viewanalyses">
 			<input type="hidden" name="id" value="<?=$id?>">

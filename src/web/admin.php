@@ -162,8 +162,9 @@
 				</div>
 
 				<? if (isSiteAdmin()) { ?>
-				<a href="system.php" class="ui big fluid button"><i class="cog icon"></i> System settings...</a>
+				<a href="settings.php" class="ui big fluid button"><i class="cog icon"></i> NiDB Settings...</a>
 				<br>
+				<a href="pipelinesettings.php" class="ui big basic fluid button"><i class="black cog icon"></i> Pipeline/cluster settings</a>
 				<a href="status.php" class="ui big basic fluid button"><i class="black info circle icon"></i> System status</a>
 				<a href="adminmodules.php" class="ui big basic fluid button"><i class="black list alternate icon"></i> Modules</a>
 				<a href="adminqc.php" class="ui big basic fluid button"><i class="black list alternate icon"></i> QC Modules</a>

@@ -417,7 +417,10 @@
 				<b>POST</b> <pre>" . print_r($_POST,true) . "</pre><br>
 				<b>GET</b> <pre>" . print_r($_GET,true) . "</pre>";
 			}
-			$gm = SendGmail($GLOBALS['cfg']['adminemail'],"User encountered error in $file",$body, 0);
+			
+			if ($GLOBALS['cfg']['emailonerror']) {
+				$gm = SendGmail($GLOBALS['cfg']['adminemail'],"User encountered error in $file",$body, 0);
+			}
 			
 			$file = mysqli_real_escape_string($GLOBALS['linki'], $file);
 			$msg = mysqli_real_escape_string($GLOBALS['linki'], $body);
@@ -2811,7 +2814,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	/* -------------------------------------------- */
 	/* ------- getrcvariables --------------------- */
 	/* -------------------------------------------- */
-	function getrcvariables($projectid,$IN,$RCEvents) {
+	function getrcvariables($projectid,$RCForms,$RCEvents) {
 		$sqlstring =  "SELECT redcap_token, redcap_server FROM `projects` WHERE  project_id = '$projectid' ";
 		$result =  MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
@@ -2823,7 +2826,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 			'content' => 'record',
 			'format' => 'json',
 			'type' => 'flat',
-			'forms' => $IN,
+			'forms' => $RCForms,
 			'events' => $RCEvents,
 			'rawOrLabel' => 'raw',
 			'rawOrLabelHeaders' => 'raw',
@@ -2853,12 +2856,50 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 
 		return $Var_Names;
 	}
+	
+	/* -------------------------------------------- */
+        /* ----- Extracting Redcap Variable Labels----- */
+        /* -------------------------------------------- */
+        function getrclabels($projectid,$rcfields) {
+                $sqlstring =  "SELECT redcap_token, redcap_server FROM `projects` WHERE  project_id = '$projectid' ";
+                $result =  MySQLiQuery($sqlstring, __FILE__, __LINE__);
+                $row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+                $RCtoken = $row['redcap_token'];
+                $RCserver = $row['redcap_server'];
 
+                $data = array(
+                        'token' => $RCtoken,
+			'content' => 'metadata',
+                        'format' => 'json',
+                        'fields' => array($rcfields),
+                        'returnFormat' => 'json'
+                );
+                $ch = curl_init();
+                curl_setopt($ch, CURLOPT_URL, $RCserver);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                curl_setopt($ch, CURLOPT_VERBOSE, 0);
+                curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+                curl_setopt($ch, CURLOPT_AUTOREFERER, true);
+                curl_setopt($ch, CURLOPT_MAXREDIRS, 10);
+                curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
+                curl_setopt($ch, CURLOPT_FRESH_CONNECT, 1);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data, '', '&'));
+                $output = curl_exec($ch);
+                //print $output;
+		curl_close($ch);
+		$rcmeta =  json_decode($output,true);
+		$rclabels =  $rcmeta[0]["field_label"];
+
+		//                return $rcfielddesc;
+		return $rclabels;
+        }
+	
 
 	/* -------------------------------------------- */
 	/* ------- getrcrecords ----------------------- */
 	/* -------------------------------------------- */
-	function getrcrecords($projectid,$IN,$RCEvents,$RCID,$JointID) {
+	function getrcrecords($projectid,$RCForms,$RCEvents,$RCFields,$RCRecords) {
 		$sqlstring =  "SELECT redcap_token, redcap_server FROM `projects` WHERE  project_id = '$projectid' ";
 		$result =  MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
@@ -2870,12 +2911,13 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 			'content' => 'record',
 			'format' => 'json',
 			'type' => 'flat',
-			'fields' => array($RCID,$JointID),
-			'forms' => $IN,
+			'records' => $RCRecords,
+			'fields' => $RCFields,
+			'forms' => $RCForms,
 			'events' => $RCEvents,
 			'rawOrLabel' => 'raw',
 			'rawOrLabelHeaders' => 'raw',
-			'exportCheckboxLabel' => 'false',
+			'exportCheckboxLabel' => 'true',
 			'exportSurveyFields' => 'false',
 			'exportDataAccessGroups' => 'false',
 			'returnFormat' => 'json'
@@ -2969,15 +3011,10 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		if (($GLOBALS['cfg']['modulebackupthreads'] != "") && (isset($GLOBALS['cfg']['modulebackupthreads']))) { $modulebackupthreads = $GLOBALS['cfg']['modulebackupthreads']; } else { $modulebackupthreads = "1"; }
 		if (($GLOBALS['cfg']['moduleminipipelinethreads'] != "") && (isset($GLOBALS['cfg']['moduleminipipelinethreads']))) { $moduleminipipelinethreads = $GLOBALS['cfg']['moduleminipipelinethreads']; } else { $moduleminipipelinethreads = "4"; }
 
-		if (($GLOBALS['cfg']['subjectmatchcriteria'] != "") && (isset($GLOBALS['cfg']['subjectmatchcriteria']))) { $subjectmatchcriteria = $GLOBALS['cfg']['subjectmatchcriteria']; } else { $subjectmatchcriteria = "uidoraltuid"; }
-		if (($GLOBALS['cfg']['studymatchcriteria'] != "") && (isset($GLOBALS['cfg']['studymatchcriteria']))) { $studymatchcriteria = $GLOBALS['cfg']['studymatchcriteria']; } else { $studymatchcriteria = "modalitystudydate"; }
-		if (($GLOBALS['cfg']['seriesmatchcriteria'] != "") && (isset($GLOBALS['cfg']['seriesmatchcriteria']))) { $seriesmatchcriteria = $GLOBALS['cfg']['seriesmatchcriteria']; } else { $seriesmatchcriteria = "seriesnum"; }
-
 		if (($GLOBALS['cfg']['analysisdir'] != "") && (isset($GLOBALS['cfg']['analysisdir']))) { $analysisdir = $GLOBALS['cfg']['analysisdir']; } else { $analysisdir = "/nidb/data/pipeline"; }
 		if (($GLOBALS['cfg']['analysisdirb'] != "") && (isset($GLOBALS['cfg']['analysisdirb']))) { $analysisdirb = $GLOBALS['cfg']['analysisdirb']; } else { $analysisdirb = "/nidb/data/pipelineb"; }
 		if (($GLOBALS['cfg']['archivedir'] != "") && (isset($GLOBALS['cfg']['archivedir']))) { $archivedir = $GLOBALS['cfg']['archivedir']; } else { $archivedir = "/nidb/data/archive"; }
 		if (($GLOBALS['cfg']['backupdir'] != "") && (isset($GLOBALS['cfg']['backupdir']))) { $backupdir = $GLOBALS['cfg']['backupdir']; } else { $backupdir = "/nidb/data/backup"; }
-		if (($GLOBALS['cfg']['backupstagingdir'] != "") && (isset($GLOBALS['cfg']['backupstagingdir']))) { $backupstagingdir = $GLOBALS['cfg']['backupstagingdir']; } else { $backupstagingdir = "/nidb/data/backupstaging"; }
 		if (($GLOBALS['cfg']['clusteranalysisdir'] != "") && (isset($GLOBALS['cfg']['clusteranalysisdir']))) { $clusteranalysisdir = $GLOBALS['cfg']['clusteranalysisdir']; } else { $clusteranalysisdir = "/nidb/data/pipeline"; }
 		if (($GLOBALS['cfg']['clusteranalysisdirb'] != "") && (isset($GLOBALS['cfg']['clusteranalysisdirb']))) { $clusteranalysisdirb = $GLOBALS['cfg']['clusteranalysisdirb']; } else { $clusteranalysisdirb = "/nidb/data/pipelineb"; }
 		if (($GLOBALS['cfg']['deleteddir'] != "") && (isset($GLOBALS['cfg']['deleteddir']))) { $deleteddir = $GLOBALS['cfg']['deleteddir']; } else { $deleteddir = "/nidb/data/deleted"; }
@@ -3015,7 +3052,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 					<span style="font-weight: normal">Reading from config file <div class="ui large label"><tt><?=$GLOBALS['cfg']['cfgpath']?></tt></div></span>
 			
 					<? if ($returnpage == "settings") { ?>
-					<form name="configform" method="post" action="system.php" class="ui form">
+					<form name="configform" method="post" action="settings.php" class="ui form">
 					<? } elseif ($returnpage == "setup") { ?>
 					<form name="configform" method="post" action="setup.php" class="ui form">
 					<input type="hidden" name="step" value="setupcomplete">
@@ -3175,7 +3212,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 						</tr>
 
 						<tr>
-							<td colspan="4" class="active"><h3>Email &nbsp; &nbsp;<a href="system.php?action=testemail" class="ui compact yellow button">Send test email</a></h3></td>
+							<td colspan="4" class="active"><h3>Email &nbsp; &nbsp;<a href="settings.php?action=testemail" class="ui compact yellow button">Send test email</a></h3></td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">emaillib</td>
@@ -3205,13 +3242,19 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 							<td class="right aligned tt">emailport</td>
 							<td><input type="number" name="emailport" value="<?=$GLOBALS['cfg']['emailport']?>"></td>
 							<td></td>
-							<td>Email server port. For gmail, it should be <tt>587</tt></td>
+							<td>Email server port. For gmail, it should be <code>587</code></td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">emailfrom</td>
 							<td><input type="email" name="emailfrom" value="<?=$GLOBALS['cfg']['emailfrom']?>"></td>
 							<td></td>
 							<td>Email return address</td>
+						</tr>
+						<tr>
+							<td class="right aligned tt">emailonerror</td>
+							<td><input type="checkbox" name="emailonerror" value="1" <? if ($GLOBALS['cfg']['emailonerror']) { echo "checked"; } ?>></td>
+							<td></td>
+							<td>Send an email for SQL errors. Errors are always stored in the <code>error_log</code> table.</td>
 						</tr>
 						<tr>
 							<td colspan="4" class="active"><h3>Site options</h3></td>
@@ -3388,55 +3431,6 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 
 						<tr>
 							<td colspan="4" class="active"><h3>Data Import/Export</h3></td>
-						</tr>
-						<tr>
-							<td class="right aligned tt">subjectmatchcriteria</td>
-							<td>
-								<div class="ui selection dropdown">
-									<input type="hidden" name="subjectmatchcriteria" value="<?=$GLOBALS['cfg']['subjectmatchcriteria']?>">
-									<i class="dropdown icon"></i>
-									<div class="default text">Subject match criteria</div>
-									<div class="scrollhint menu">
-										<div class="item" data-value="uidoraltuid">UID or Alternate UID</div>
-										<div class="item" data-value="uid">UID only</div>
-										<div class="item" data-value="namesexdob">Name, sex, and DOB</div>
-									</div>
-								</div>
-							</td>
-							<td></td>
-							<td>Default subject match criteria for automated imports</td>
-						</tr>
-						<tr>
-							<td class="right aligned tt">studymatchcriteria</td>
-							<td>
-								<div class="ui selection dropdown">
-									<input type="hidden" name="studymatchcriteria" value="<?=$GLOBALS['cfg']['studymatchcriteria']?>">
-									<i class="dropdown icon"></i>
-									<div class="default text">Study match criteria</div>
-									<div class="scrollhint menu">
-										<div class="item" data-value="modalitystudydate">Modality and StudyDateTime</div>
-										<div class="item" data-value="studyuid">Study UID</div>
-									</div>
-								</div>
-							</td>
-							<td></td>
-							<td>Default study match criteria for automated imports</td>
-						</tr>
-						<tr>
-							<td class="right aligned tt">seriesmatchcriteria</td>
-							<td>
-								<div class="ui selection dropdown">
-									<input type="hidden" name="seriesmatchcriteria" value="<?=$GLOBALS['cfg']['seriesmatchcriteria']?>">
-									<i class="dropdown icon"></i>
-									<div class="default text">Series match criteria</div>
-									<div class="scrollhint menu">
-										<div class="item" data-value="seriesnum">Series number</div>
-										<div class="item" data-value="seriesuid">Series UID</div>
-									</div>
-								</div>
-							</td>
-							<td></td>
-							<td>Default series match criteria for automated imports</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">enablecsa</td>
@@ -3862,10 +3856,6 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		if ($moduleuploadthreads == "") { $moduleuploadthreads = 1; }
 		if ($modulebackupthreads == "") { $modulebackupthreads = 1; }
 		if ($moduleminipipelinethreads == "") { $moduleminipipelinethreads = 4; }
-
-		if ($subjectmatchcriteria == "") { $subjectmatchcriteria = "uidoraltuid"; }
-		if ($studymatchcriteria == "") { $studymatchcriteria = "modalitystudydate"; }
-		if ($seriesmatchcriteria == "") { $seriesmatchcriteria = "seriesnum"; }
 		
 		if ($analysisdir == "") { $analysisdir = "/nidb/data/pipeline"; }
 		if ($analysisdirb == "") { $analysisdirb = "/nidb/data/pipelineb"; }
@@ -3962,6 +3952,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 [emailport] = $emailport
 [emailfrom] = $emailfrom
 [adminemail] = $adminemail
+[emailonerror] = $emailonerror
 
 # ----- Site/server options -----
 [siteurl] = $siteurl
@@ -3995,9 +3986,6 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 [backupserver] = $backupserver
 
 # ----- import/export options -----
-[subjectmatchcriteria] = $subjectmatchcriteria
-[studymatchcriteria] = $studymatchcriteria
-[seriesmatchcriteria] = $seriesmatchcriteria
 [enablecsa] = $enablecsa
 [importchunksize] = $importchunksize
 [numretry] = $numretry

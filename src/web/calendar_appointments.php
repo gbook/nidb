@@ -1,8 +1,8 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB calendar.php
- // Copyright (C) 2004 - 2022
- // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
+ // Copyright (C) 2004 - 2023
+ // Gregory A Book <gregory.book@hhchealth.org> <greg@squirrelresearch.com>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
  // GPLv3 License:
@@ -41,39 +41,38 @@
 	require "includes_html.php";
 	require "menu.php";
 
+	$currentcal = $_COOKIE['currentcal'];
+
+	PrintVariable($_POST);
+	exit(0);
+	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-
-	$currentcal = $_COOKIE['currentcal'];
+	$id = GetVariable("id");
+	$calendarid = GetVariable("calendarid");
+	$projectid = GetVariable("projectid");
+	$details = GetVariable("details");
+	$title = GetVariable("title");
+	$startdate = GetVariable("startdate");
+	$starttime = GetVariable("starttime");
+	$enddate = GetVariable("enddate");
+	$endtime = GetVariable("endtime");
+	$isalldayevent = GetVariable("isalldayevent");
+	$istimerequest = GetVariable("istimerequest");
+	$cancelreason = GetVariable("cancelreason");
+	$notifyusers = GetVariable("notifyusers");
+	$repeats = GetVariable("repeats");
+	$repeattype = GetVariable("repeattype");
+	$repeatsun = GetVariable("repeatsun");
+	$repeatmon = GetVariable("repeatmon");
+	$repeattue = GetVariable("repeattue");
+	$repeatwed = GetVariable("repeatwed");
+	$repeatthu = GetVariable("repeatthu");
+	$repeatfri = GetVariable("repeatfri");
+	$repeatsat = GetVariable("repeatsat");
+	$repeatenddate = GetVariable("repeatenddate");
+	$groupid = GetVariable("groupid");
 	
-	/* get variables */
-	if ($_POST["action"] == "") { $action = $_GET["action"]; } else { $action = $_POST["action"]; }
-	if ($_POST["id"] == "") { $id = $_GET["id"]; } else { $id = $_POST["id"]; }
-	//if ($_POST["username"] == "") { $username = $_GET["username"]; } else { $username = $_POST["username"]; }
-	if ($_POST["calendarid"] == "") { $calendarid = $_GET["calendarid"]; } else { $calendarid = $_POST["calendarid"]; }
-	if ($_POST["projectid"] == "") { $projectid = $_GET["projectid"]; } else { $projectid = $_POST["projectid"]; }
-	if ($_POST["details"] == "") { $details = $_GET["details"]; } else { $details = $_POST["details"]; }
-	if ($_POST["title"] == "") { $title = $_GET["title"]; } else { $title = $_POST["title"]; }
-	if ($_POST["startdate"] == "") { $startdate = $_GET["startdate"]; } else { $startdate = $_POST["startdate"]; }
-	if ($_POST["starttime"] == "") { $starttime = $_GET["starttime"]; } else { $starttime = $_POST["starttime"]; }
-	if ($_POST["enddate"] == "") { $enddate = $_GET["enddate"]; } else { $enddate = $_POST["enddate"]; }
-	if ($_POST["endtime"] == "") { $endtime = $_GET["endtime"]; } else { $endtime = $_POST["endtime"]; }
-	if ($_POST["isalldayevent"] == "") { $isalldayevent = $_GET["isalldayevent"]; } else { $isalldayevent = $_POST["isalldayevent"]; }
-	if ($_POST["istimerequest"] == "") { $istimerequest = $_GET["istimerequest"]; } else { $istimerequest = $_POST["istimerequest"]; }
-	if ($_POST["cancelreason"] == "") { $cancelreason = $_GET["cancelreason"]; } else { $cancelreason = $_POST["cancelreason"]; }
-	if ($_POST["notifyusers"] == "") { $notifyusers = $_GET["notifyusers"]; } else { $notifyusers = $_POST["notifyusers"]; }
-	if ($_POST["repeats"] == "") { $repeats = $_GET["repeats"]; } else { $repeats = $_POST["repeats"]; }
-	if ($_POST["repeattype"] == "") { $repeattype = $_GET["repeattype"]; } else { $repeattype = $_POST["repeattype"]; }
-	if ($_POST["repeatsun"] == "") { $repeatsun = $_GET["repeatsun"]; } else { $repeatsun = $_POST["repeatsun"]; }
-	if ($_POST["repeatmon"] == "") { $repeatmon = $_GET["repeatmon"]; } else { $repeatmon = $_POST["repeatmon"]; }
-	if ($_POST["repeattue"] == "") { $repeattue = $_GET["repeattue"]; } else { $repeattue = $_POST["repeattue"]; }
-	if ($_POST["repeatwed"] == "") { $repeatwed = $_GET["repeatwed"]; } else { $repeatwed = $_POST["repeatwed"]; }
-	if ($_POST["repeatthu"] == "") { $repeatthu = $_GET["repeatthu"]; } else { $repeatthu = $_POST["repeatthu"]; }
-	if ($_POST["repeatfri"] == "") { $repeatfri = $_GET["repeatfri"]; } else { $repeatfri = $_POST["repeatfri"]; }
-	if ($_POST["repeatsat"] == "") { $repeatsat = $_GET["repeatsat"]; } else { $repeatsat = $_POST["repeatsat"]; }
-	if ($_POST["repeatenddate"] == "") { $repeatenddate = $_GET["repeatenddate"]; } else { $repeatenddate = $_POST["repeatenddate"]; }
-	if ($_POST["groupid"] == "") { $groupid = $_GET["groupid"]; } else { $groupid = $_POST["groupid"]; }
-
 	$startdatetime = "$startdate $starttime";
 	$enddatetime = "$enddate $endtime";
 	
@@ -132,6 +131,7 @@
 		
 		/* check if any form elements are bad, if so redisplay the addform */
 		if ($title == "") { DisplayForm("", "'Title' is blank", "", $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate); return; }
+		if ($calendarid == "") { DisplayForm("", "Calendar ID is blank", "", $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate); return; }
 		if (!strtotime($startdatetime)) { DisplayForm("", "'Start date/time' is invalid", "", $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate); return; }
 		if (!strtotime($enddatetime)) { DisplayForm("", "'End date/time' is invalid", "", $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate); return; }
 		
@@ -564,7 +564,9 @@
 			<tr>
 				<td class="label">Title</td>
 				<td class="rightvalue">
-					<input type="text" name="title" size="47" value="<?=$title?>"><br>
+					<div class="ui input">
+						<input type="text" name="title" size="47" value="<?=$title?>">
+					</div>
 				</td>
 			</tr>
 			<tr>
@@ -573,11 +575,13 @@
 					<table>
 						<tr>
 							<td>
-								<input type="text" name="startdate" size="12" value="<?=$startdate?>" <? if ($repeats) { echo "disabled"; } ?>>
+								<div class="ui input">
+									<input type="text" name="startdate" size="12" value="<?=$startdate?>" <? if ($repeats) { echo "disabled"; } ?>>
+								</div>
 							</td>
 							<td>
 								<!--<input type="text" name="starttime" size="10" value="<?=$starttime?>" <? if ($repeats) { echo "disabled"; } ?>>-->
-								<select name="starttime" style="width: 100px" <? if ($repeats) { echo "disabled"; } ?>>
+								<select class="ui dropdown" name="starttime" style="width: 100px" <? if ($repeats) { echo "disabled"; } ?>>
 									<?
 										$hours = array(12,1,2,3,4,5,6,7,8,9,10,11);
 										foreach ($hours as $hr) {
@@ -625,11 +629,13 @@
 					<table>
 						<tr>
 							<td>
-								<input type="text" name="enddate" size="12" value="<?=$enddate?>" <? if ($repeats) { echo "disabled"; } ?>>
+								<div class="ui input">
+									<input type="text" name="enddate" size="12" value="<?=$enddate?>" <? if ($repeats) { echo "disabled"; } ?>>
+								</div>
 							</td>
 							<td>
 								<!--<input type="text" name="endtime" size="10" value="<?=$endtime?>" <? if ($repeats) { echo "disabled"; } ?>>-->
-								<select name="endtime" style="width: 100px" <? if ($repeats) { echo "disabled"; } ?>>
+								<select class="ui dropdown" name="endtime" style="width: 100px" <? if ($repeats) { echo "disabled"; } ?>>
 									<?
 										$hours = array(12,1,2,3,4,5,6,7,8,9,10,11);
 										foreach ($hours as $hr) {
@@ -674,7 +680,7 @@
 			<tr>
 				<td class="label">Calendar</td>
 				<td class="rightvalue">
-					<select name="calendarid">
+					<select name="calendarid" class="ui dropdown">
 					<?
 						$sqlstring = "select calendar_id, calendar_name from calendars where calendar_deletedate > now()";
 						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -693,7 +699,7 @@
 			<tr>
 				<td class="label">Project</td>
 				<td class="rightvalue">
-					<select name="projectid">
+					<select name="projectid" class="ui dropdown">
 					<?
 						$sqlstring = "select project_id, project_name from calendar_projects where project_enddate > now()";
 						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -712,8 +718,13 @@
 			<tr>
 				<td class="label">Options</td>
 				<td class="rightvalue">
-					<input type="checkbox" name="isalldayevent" value="yes" <?=$isalldayeventcheck?>> All day event<br>
-					<input type="checkbox" name="istimerequest" value="yes" <?=$istimerequestcheck?>> Time Request ONLY
+					<div class="ui checkbox" style="margin-bottom: 5px">
+						<input type="checkbox" name="isalldayevent" value="yes" <?=$isalldayeventcheck?>><label>All day event</label>
+					</div>
+					<br>
+					<div class="ui checkbox">
+						<input type="checkbox" name="istimerequest" value="yes" <?=$istimerequestcheck?>><label>Time Request ONLY</label>
+					</div>
 				</td>
 			</tr>
 			<tr>
@@ -726,29 +737,58 @@
 			<tr>
 				<td class="label">Recurring appointment</td>
 				<td class="rightvalue">
-					<input type="checkbox" name="repeats" value="yes" <?=$apptrepeatscheck?>> Appointment repeats?<br>
-					<table class="editor">
+					<div class="ui checkbox">
+						<input type="checkbox" name="repeats" value="yes" <?=$apptrepeatscheck?>><label>Appointment repeats?</label><br>
+					</div>
+					<table class="editor" style="padding-left: 20px">
 						<tr>
-							<td colspan="2" style="color:darkblue">Frequency</td>
+							<td colspan="2" style="color:darkblue"><b>Frequency</b></td>
 						</tr>
 						<tr>
-							<td class="rightvalue"><input type="radio" name="repeattype" value="daily">Daily</td>
+							<td class="rightvalue">
+								<div class="ui radio checkbox">
+									<input type="radio" name="repeattype" value="daily"><label>Daily</label>
+								</div>
+							</td>
 							<td></td>
 						</tr>
 						<tr>
-							<td class="rightvalue"><input type="radio" name="repeattype" value="weekly">Weekly on</td>
-							<td> &nbsp; <input type="checkbox" name="repeatsun" value="1">S &nbsp;
-							<input type="checkbox" name="repeatmon" value="1">M &nbsp;
-							<input type="checkbox" name="repeattue" value="1">T &nbsp;
-							<input type="checkbox" name="repeatwed" value="1">W &nbsp;
-							<input type="checkbox" name="repeatthu" value="1">T &nbsp;
-							<input type="checkbox" name="repeatfri" value="1">F &nbsp;
-							<input type="checkbox" name="repeatsat" value="1">S 
+							<td class="rightvalue">
+								<div class="ui radio checkbox">
+									<input type="radio" name="repeattype" value="weekly"><label>Weekly on</label>
+								</div>
+							</td>
+							<td>
+							<div class="ui checkbox" style="margin-right: 15px">
+								<input type="checkbox" name="repeatsun" value="1"><label style="padding-left: 23px">S</label>
+							</div>
+							<div class="ui checkbox" style="margin-right: 15px">
+								<input type="checkbox" name="repeatmon" value="1"><label style="padding-left: 23px">M</label>
+							</div>
+							<div class="ui checkbox" style="margin-right: 15px">
+								<input type="checkbox" name="repeattue" value="1"><label style="padding-left: 23px">T</label>
+							</div>
+							<div class="ui checkbox" style="margin-right: 15px">
+								<input type="checkbox" name="repeatwed" value="1"><label style="padding-left: 23px">W</label>
+							</div>
+							<div class="ui checkbox" style="margin-right: 15px">
+								<input type="checkbox" name="repeatthu" value="1"><label style="padding-left: 23px">T</label>
+							</div>
+							<div class="ui checkbox" style="margin-right: 15px">
+								<input type="checkbox" name="repeatfri" value="1"><label style="padding-left: 23px">F</label>
+							</div>
+							<div class="ui checkbox" style="margin-right: 15px">
+								<input type="checkbox" name="repeatsat" value="1"><label style="padding-left: 23px">S</label>
+							</div>
 							</td>
 						</tr>
 						<tr>
-							<td class="rightvalue"><input type="radio" name="repeattype" value="monthly">Monthly on day </td>
-							<td><select name="repeatdayofmonth">
+							<td class="rightvalue">
+								<div class="ui radio checkbox">
+									<input type="radio" name="repeattype" value="monthly"><label>Monthly on day</label>
+								</div>
+							</td>
+							<td><select name="repeatdayofmonth" class="ui dropdown">
 							<?
 								for ($i=1;$i<=31;$i++) {
 									?><option value="<?=$i?>"><?=$i?><?
@@ -758,12 +798,14 @@
 							</td>
 						</tr>
 						<tr>
-							<td align="right">Until &nbsp;</td>
-							<td><input type="text" name="repeatenddate" size="12" value="<?=$enddate?>"></td>
-						</tr>
-						<tr>
-							<td>&nbsp;</td>
-							<td><span class="tiny">YYYY-MM-DD</span></td>
+							<td colspan="2">
+								<br><br>
+								<b style="color:darkblue">Until</b> &nbsp;
+								<div class="ui input">
+									<input type="text" name="repeatenddate" size="12" value="<?=$enddate?>">
+								</div>
+								<span class="tiny">YYYY-MM-DD</span>
+							</td>
 						</tr>
 					</table>
 				</td>
