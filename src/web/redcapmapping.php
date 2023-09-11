@@ -1122,8 +1122,13 @@
 ///		echo $redcapfield."<br>";
 ///		echo $info[$redcapfield]."<br>";
 	
+<<<<<<< HEAD
 
 
+=======
+
+
+>>>>>>> da1cd495ba7cac8796218a12a4ddaaff85d523af
 		
 		// Get the date field
 		$sqlstringdate = "SELECT redcap_fields FROM `redcap_import_mapping` WHERE `redcap_form`='$inst' and project_id=$projectid and nidb_instrumentname='$nidbinstrument' and redcap_fieldtype='date' and redcap_event='$redcapevent' and redcap_fieldgroupid = (Select distinct(`redcap_fieldgroupid`) from `redcap_import_mapping` WHERE redcap_form='$inst' and project_id=$projectid and nidb_instrumentname='$nidbinstrument' and redcap_fieldtype='value' and redcap_event='$redcapevent' and `redcap_fields`='$redcapfield')";
@@ -1144,9 +1149,14 @@
 
 	    
 ///		echo $info[$RCdate]."<br>";
+<<<<<<< HEAD
+		//
+=======
+>>>>>>> da1cd495ba7cac8796218a12a4ddaaff85d523af
 		//
 		//
 		//
+
 
 
 		// Let us get the rater field
@@ -1437,3 +1447,4 @@
 
 
 <? include("footer.php") ?>
+
