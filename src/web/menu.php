@@ -236,7 +236,7 @@
 		}
 		
 		/* admin sub-menu. any pages starting with 'admin' */
-		elseif ((substr($page,0,5) == "admin") || ($page == "settings.php") || ($page == "status.php") || ($page == "reports.php") || ($page == "cleanup.php") || ($page == "stats.php") || ($page == "status.php") || ($page == "longqc.php") || ($page == "backup.php")) {
+		elseif ((substr($page,0,5) == "admin") || ($page == "settings.php") || ($page == "status.php") || ($page == "reports.php") || ($page == "cleanup.php") || ($page == "stats.php") || ($page == "status.php") || ($page == "longqc.php") || ($page == "backup.php") || ($page == "pipelinesettings.php")) {
 			?><a href="admin.php" class="<? if ($page=="admin.php") { echo "active"; } ?> item"><i class="cog icon"></i> Admin</a><?
 			?><a href="adminmodules.php" class="<? if ($page=="adminmodules.php") { echo "active"; } ?> item">Modules</a><?
 			?><a href="settings.php" class="<? if ($page=="settings.php") { echo "active"; } ?> item">Settings...</a><?

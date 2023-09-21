@@ -107,6 +107,8 @@ public:
     void InsertPipelineEvent(int pipelineid, qint64 &runnum, qint64 analysisid, QString event, QString message);
     QString GetPipelineStatus(int pipelineid);
     void ClearPipelineHistory();
+    QString GetAnalysisLocalPath(QString dirStructureCode, QString pipelineName="", QString UID="", int studyNum=-1);
+    QString GetAnalysisClusterPath(QString dirStructureCode, QString pipelineName="", QString UID="", int studyNum=-1);
 
 private:
     nidb *n;

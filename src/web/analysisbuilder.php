@@ -73,8 +73,8 @@
     $a['outputformat'] = GetVariable("outputformat");
 	$a['collapsevariables'] = GetVariable("collapsevariables");
 	$a['collapsebyexpression'] = GetVariable("collapsebyexpression");
-	$a['pinnedvariable'] = GetVariable("pinnedvariable");
-	$a['distancevariable'] = GetVariable("distancevariable");
+	$a['pinnedvariable'] = trim(GetVariable("pinnedvariable"));
+	$a['distancevariable'] = trim(GetVariable("distancevariable"));
 	
 	/* determine action */
 	switch ($action) {
@@ -93,8 +93,17 @@
 	/* perform the default operation for this page, which is to display the search criteria and results */
 	if ($a['outputformat'] == "csv") {
 		if ($a['reportformat'] == "long") {
-			list($h, $t, $n) = CreateLongReport($projectid, $a);
-			PrintCSV($h,$t,'long');
+
+			PrintVariable($a['pinnedvariable']);
+			
+			if ($a['pinnedvariable'] == "") {
+				list($h, $t, $n) = CreateLongReport($projectid, $a);
+				PrintCSV($h,$t,'long');
+			}
+			else {
+				list($h, $t, $n) = TimelineCorrelationReport($projectid, $a);
+				PrintCSV($h,$t,'long');
+			}
 		}
 		else {
 			list($h, $t, $n) = CreateWideReport($projectid, $a);
@@ -936,10 +945,12 @@
 				<div class="ui twelve wide column" style="overflow: auto; padding:0px" id="resultsTable">
 					<?
 						if ($a['reportformat'] == "long") {
-							list($h, $t, $n) = CreateLongReport($projectid, $a);
-						}
-						elseif ($a['reportformat'] == "wide") {
-							list($h, $t, $n) = CreateWideReport($projectid, $a);
+							if ($a['pinnedvariable'] == "") {
+								list($h, $t, $n) = CreateLongReport($projectid, $a);
+							}
+							else {
+								list($h, $t, $n) = TimelineCorrelationReport($projectid, $a);
+							}
 						}
 						
 						//PrintVariable($t);
@@ -1661,6 +1672,342 @@
 		}
 		$h = array_keys($h2);
 		
+		return array($h, $t, $n);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- TimelineCorrelationReport ---------- */
+	/* -------------------------------------------- */
+	function TimelineCorrelationReport($projectid, $a) {
+
+		/* setup some global-ish variables */
+		$doseVariable = $a['dosevariable'];
+		$doseTimeRange = $a['dosetimerange'];
+		$doseDisplayTime = $a['dosedisplaytime'];
+		$includeDuration = $a['includeduration'];
+		$includeEndDate = $a['includeenddate'];
+		$includeHeightWeight = $a['includeheightweight'];
+		$includeDOB = $a['includedob'];
+		$blankValuePlaceholder = $a['blankvalueplaceholder'];
+		$missingValuePlaceholder = $a['missingvalueplaceholder'];
+		$groupByDate = $a['groupbydate'];
+		$collapseByVars = $a['collapsevariables'];
+		$collapseExpression = $a['collapsebyexpression'];
+		$pinnedvariable = trim($a['pinnedvariable']);
+		$distancevariable = trim($a['distancevariable']);
+		
+		/* create the table */
+		$t;
+		
+		if ($projectid == "") {
+			Error("Project is blank. Select a project to generate a report");
+			return;
+		}
+		
+		/* get all of the subject information */
+		$sqlstring = "select a.*, b.* from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = $projectid order by a.uid";
+		//PrintSQL($sqlstring);
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$i = 0;
+		while ($rowA = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$subjects[$i]['subjectid'] = $rowA['subject_id'];
+			$subjects[$i]['uid'] = $rowA['uid'];
+			$subjects[$i]['enrollmentid'] = $rowA['enrollment_id'];
+			$subjects[$i]['dob'] = $rowA['birthdate'];
+			$subjects[$i]['sex'] = $rowA['gender'];
+			$subjects[$i]['height'] = $rowA['height'];
+			$subjects[$i]['weight'] = $rowA['weight'];
+			$subjects[$i]['enrollgroup'] = $rowA['enroll_subgroup'];
+			
+			$altuids = GetAlternateUIDs($subjects[$i]['subjectid'], $subjects[$i]['enrollmentid']);
+			$subjects[$i]['altuids'] = implode2(" | ", $altuids);
+			
+			$i++;
+		}
+		
+		/* loop through the subjects and add their info to the table */
+		$row = 0;
+		foreach ($subjects as $i => $subj) {
+			$hasdata = false;
+			
+			$uid = $subj['uid'];
+			if ($groupByDate)
+				$row = $uid . "0000-00-00";
+			else
+				$row = $uid . "0000-00-00 00:00:00";
+				
+			$enrollmentid = $subj['enrollmentid'];
+			$age = "";
+			
+			/* get dose datetimes for this enrollment */
+			$drugdoses = array();
+			if ($a['includetimesincedose']) {
+				if ($doseVariable != "") {
+					$sqlstringA = "select a.*, b.drug_name from drugs a left join drugnames b on a.drugname_id = b.drugname_id where a.enrollment_id = $enrollmentid and (" . CreateSQLSearchString("b.drug_name", $a['dosevariable']) . ")";
+					$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+					$i=0;
+					while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+						/* add the measure info to this row */
+						$drugdoses[$i]['date'] = $rowA['drug_startdate'];
+						$drugdoses[$i]['doseamount'] = $rowA['drug_doseamount'];
+						$drugdoses[$i]['dosekey'] = $rowA['drug_dosekey'];
+						$i++;
+					}
+				}
+			}
+
+			/* ----- Get pinned variable info from Pipeline ----- */
+			if (($a['pipelineresultname'] != "") && ($a['pipelineid'] != "NONE")) {
+
+				/* get the pipeline result names first (due to MySQL bug which prevents joining in this table in the main query) */
+				$resultnameids = array();
+				$sqlstringX = "select * from analysis_resultnames where " . CreateSQLSearchString("result_name", $a['pipelineresultname']);
+				$resultX = MySQLiQuery($sqlstringX,__FILE__,__LINE__);
+				while ($rowX = mysqli_fetch_array($resultX, MYSQLI_ASSOC)) {
+					$resultnameids[] = $rowX['resultname_id'];
+					$resultnames[$rowX['resultname_id']] = $rowX['result_name'];
+				}
+
+				if (count($resultnameids) > 0) {
+					$sqlstringA = "SELECT c.study_datetime, c.study_height, c.study_weight, c.study_type, c.study_id, c.study_num, c.study_modality, e.birthdate, TIMESTAMPDIFF( MONTH, e.birthdate, c.study_datetime ) 'ageinmonths', b.* FROM analysis a LEFT JOIN analysis_results b ON a.analysis_id = b.analysis_id LEFT JOIN studies c ON a.study_id = c.study_id LEFT JOIN enrollment d on c.enrollment_id = d.enrollment_id LEFT JOIN subjects e ON d.subject_id = e.subject_id WHERE e.isactive = 1 AND d.project_id = $projectid AND (" . CreateSQLSearchString("a.pipeline_id", $a['pipelineid']) . ") AND b.result_nameid IN(" . implode2(",", $resultnameids) . ") AND b.result_type = 'v' AND e.subject_id = " . $subj['subjectid'] . " ORDER BY c.study_num, c.study_datetime";
+					
+					$laststudyid = "";
+					
+					/* create a hash of series datetimes */
+					$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+					if (mysqli_num_rows($resultA) > 0) {
+						while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+							$studyage = $rowA['ageinmonths']/12.0;
+							$studydatetime = $rowA['study_datetime'];
+							$studynum = $rowA['study_num'];
+							$studyid = $rowA['study_id'];
+							$studyvisit = $rowA['study_type'];
+							$studymodality = strtolower($rowA['study_modality']);
+							
+							if (($studyage == "") || ($studyage == "null") || ($studyage == 0)) $age = strtotime($studydate) - strtotime($subj['dob']);
+							else $age = $studyage;
+							
+							/* if we should search for a series datetime */
+							$variabledatetime = $studydatetime;
+							if ($a['pipelineseriesdatetime'] != "") {
+								$sqlstringB = "select series_datetime from $studymodality" . "_series where (" . CreateSQLSearchString("series_protocol", $a['pipelineseriesdatetime']) . ") and study_id = $studyid limit 1";
+								$resultB = MySQLiQuery($sqlstringB,__FILE__,__LINE__);
+								if (mysqli_num_rows($resultB) > 0) {
+									$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
+									$variabledatetime = $rowB['series_datetime'];
+
+									if ($groupByDate)
+										$row = $uid . substr($rowA['drug_startdate'], 0, 10);
+									else
+										$row = $uid . $rowA['drug_startdate'];
+									
+									//$t[$row]['SeriesDateTime'] = $variabledatetime;
+								}
+							}
+							if ($groupByDate)
+								$row = $uid . substr($variabledatetime, 0, 10);
+							else
+								$row = $uid . $variabledatetime;
+							
+							
+							/* find the nearest-in-time vital/measure */
+							$sqlstringB = "select a.*, b.vital_name, timestampdiff(minute, '$variabledatetime', a.vital_startdate) 'timediff' from vitals a left join vitalnames b on a.vitalname_id = b.vitalname_id where a.enrollment_id = $enrollmentid and (" . CreateSQLSearchString("b.vital_name", $a['vitalname']) . ") order by abs(timestampdiff(minute, '$variabledatetime', a.vital_startdate)) limit 1";
+							//PrintSQL($sqlstringB);
+							$resultB = MySQLiQuery($sqlstringB,__FILE__,__LINE__);
+							while ($rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC)) {
+
+								/* add the vital info to this row */
+								$vitalname = $rowB['vital_name'];
+								$vitalvalue = $rowB['vital_value'];
+								//if (($rowB['vital_startdate'] == "0000-00-00 00:00:00") || ($rowB['vital_startdate'] == "")) {
+								//	$vitalDate = $rowB['vital_date'];
+								//}
+								//else {
+									$vitalDate = $rowB['vital_startdate'];
+									$vitalDiff = $rowB['timediff'];
+								//}
+							}
+							
+							$t[$row]["Pipeline-Time"] = $variabledatetime;
+							$t[$row]["Pipeline-Value"] = $rowA['result_value'];
+							$t[$row]["Vital-Time"] = $vitalDate;
+							$t[$row]["Vital-Value"] = $vitalvalue;
+							$t[$row]["TimeDiffCalc"] = DatetimeDiff($variabledatetime, $vitalDate);
+							$t[$row]["TimeDiffSQL"] = $vitalDiff;
+							
+							/* need to add the demographic info to every row */
+							$t[$row]['UID'] = $subj['uid'];
+							$t[$row]['Sex'] = $subj['sex'];
+							//$t[$row]['AgeAtEvent'] = $age;
+							$t[$row]['EnrollGroup'] = $subj['enrollgroup'];
+							//$t[$row]['AltUIDs'] = $subj['altuids'];
+							$t[$row]['Pipeline-StudyID'] = $subj['uid'] . $studynum;
+							$t[$row]['Pipeline-StudyDateTime'] = $studydatetime;
+							$t[$row]['EventDateTime'] = $variabledatetime;
+							$t[$row]['VisitType'] = $studyvisit;
+
+							$resultname = trim($resultnames[$rowA['result_nameid']]);
+							
+							/* add the measure info to this row */
+							$t[$row][$resultname] = $rowA['result_value'];
+
+							list($timeSinceDose, $doseamount, $dosekey) = GetTimeSinceDose($drugdoses, $variabledatetime, $doseDisplayTime);
+							if ($timeSinceDose != null) {
+								$t[$row][$resultname . "_TIMESINCEDOSE_$doseDisplayTime"] = $timeSinceDose;
+								$t[$row]['DoseAmount'] = $doseamount;
+								$t[$row]['DoseKey'] = $dosekey;
+							}
+							
+							$hasdata = true;
+							$laststudyid = $studyid;
+						}
+						$row++;
+					}
+				}
+				else {
+					$n .= "Pipeline results not found using search criteria entered. Check the analysis result name and try again. SQL [$sqlstringX]\n";
+				}
+			}
+			
+			/* ---------- Drugs ---------- */
+			if (($a['includealldrugs']) || ($a['drugname'] != "") || ($a['includedrugdetails']) || ($a['dosevariable'] != "")) {
+				
+				if ($a['includealldrugs']) {
+					$sqlstringA = "select a.*, b.drug_name from drugs a left join drugnames b on a.drugname_id = b.drugname_id where enrollment_id = $enrollmentid";
+				}
+				else {
+					$drugarray = array();
+					
+					if (is_array($a['drugname']))
+						$drugarray = array_merge($drugarray, $a['drugname']);
+					elseif (($a['drugname'] != "") && ($a['drugname'] != null))
+						$drugarray[] = $a['drugname'];
+						
+					$drugarray = array_unique($drugarray);
+
+					$drugstr = CreateSQLSearchString("b.drug_name", $drugarray);
+					if ($drugstr == "") {
+						$sqlstringA = "select a.*, b.drug_name from drugs a left join drugnames b on a.drugname_id = b.drugname_id where a.enrollment_id = $enrollmentid";
+					}
+					else {
+						$sqlstringA = "select a.*, b.drug_name from drugs a left join drugnames b on a.drugname_id = b.drugname_id where a.enrollment_id = $enrollmentid and ($drugstr)";
+					}
+				}
+				if (count($drugarray) > 0) {
+					$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+					while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+
+						$drugname = $rowA['drug_name'];
+
+						/* attempt to collapse variables based on the expression provided by the user */
+						$timepoint = "";
+						if ($collapseByVars)
+							if ($collapseExpression != "") {
+								/* replace all potential regex characters that the user may have entered */
+								$preg = preg_quote2($collapseExpression);
+								//$n .= "CollapseBy expression after preg_replace2(drugs): [$preg]\n";
+								
+								/* replace the escaped # and * with the equivalent actual regex chars */
+								$preg = str_replace("*", "+", $preg);
+								$preg = "/^" . str_replace("#", "(\d+)", $preg) . "/";
+								$n .= "Final collapseBy expression (drugs): [$preg]\n";
+								preg_match($preg, $drugname, $matches);
+								$timepoint = $matches[1];
+								$drugname = str_replace($timepoint, "", $drugname);
+							}
+							else
+								$n .= "Collapse variables was selected, but an expression was not specified\n";
+
+						if ($groupByDate || $collapseByVars)
+							$row = $uid . substr($rowA['drug_startdate'], 0, 10) . $timepoint;
+						else
+							$row = $uid . $rowA['drug_startdate'];
+						
+						if ($collapseByVars)
+							$t[$row]['collapseGroup'] = $timepoint;
+
+						$drugvalue = $rowA['drug_value'];
+						
+						$dob = date_create($subj['dob']);
+						$eventdate = date_create($rowA['drug_startdate']);
+						$diff = date_diff($eventdate, $dob);
+						$age = $diff->format("%a")/365.25;
+						
+						/* need to add the demographic info to every row */
+						$t[$row]['UID'] = $subj['uid'];
+						$t[$row]['Sex'] = $subj['sex'];
+						if ($includeHeightWeight) {
+							$t[$row]['Height'] = $subj['height'];
+							$t[$row]['Weight'] = $subj['weight'];
+						}
+						if ($includeDOB) {
+							$t[$row]['DOB'] = $subj['dob'];
+						}
+						$t[$row]['AgeAtEvent'] = $age;
+						$t[$row]['EnrollGroup'] = $subj['enrollgroup'];
+						$t[$row]['AltUIDs'] = $subj['altuids'];
+
+						/* add the drug info to this row */
+						$t[$row]['EventDateTime'] = $rowA['drug_startdate'];
+						if ($includeDuration)
+							$t[$row][$drugname . '_DURATION'] = $rowA['drug_duration'];
+						if ($includeEndDate)
+							$t[$row][$drugname . '_ENDDATETIME'] = $rowA['drug_enddate'];
+						if ($drugvalue == "")
+							$t[$row][$drugname] = $blankValuePlaceholder;
+						else
+							$t[$row][$drugname] = $drugvalue;
+
+						list($timeSinceDose, $doseamount, $dosekey) = GetTimeSinceDose($drugdoses, $rowA['drug_startdate'], $doseDisplayTime);
+						if ($timeSinceDose != null) {
+							$t[$row]["$drugname-TimeSinceDose-$doseDisplayTime"] = $timeSinceDose;
+							$t[$row]['DoseAmount'] = $doseamount;
+							$t[$row]['DoseKey'] = $dosekey;
+						}
+						else {
+							$n .= $subj['uid'] . ": $drugname-TimeSinceDose-$doseDisplayTime was null. Comparing DOSE TIMES " . json_encode($drugdoses) . " to ITEM TIME " . $rowA['drug_startdate'] . "\n";
+						}
+
+						/* add the drug details */
+						if ($a['includedrugdetails']) {
+							$t[$row][$drugname . '_doseamount'] = $rowA['drug_doseamount'];
+							$t[$row][$drugname . '_dosekey'] = $rowA['drug_dosekey'];
+						}
+						
+						$hasdata = true;
+					}
+				}
+			}
+			
+			/* ----- add a row if the subject had no data ----- */
+			if ((!$hasdata) && ($a['includeemptysubjects'] == 1)) {
+				$t[$row]['UID'] = $subj['uid'];
+				$t[$row]['Sex'] = $subj['sex'];
+				if ($includeHeightWeight) {
+					$t[$row]['Height'] = $subj['height'];
+					$t[$row]['Weight'] = $subj['weight'];
+				}
+				if ($includeDOB) {
+					$t[$row]['DOB'] = $subj['dob'];
+				}
+				$t[$row]['EnrollGroup'] = $subj['enrollgroup'];
+				$t[$row]['AltUIDs'] = $subj['altuids'];
+				$t[$row]['AgeAtEvent'] = $age;
+			}
+		}
+
+		//PrintVariable($t);
+		
+		/* create table header */
+		$h2 = array();
+		foreach ($t as $r => $subj) {
+			foreach ($subj as $col => $vals) {
+				$h2[$col] = "";
+			}
+		}
+		$h = array_keys($h2);
+
 		return array($h, $t, $n);
 	}
 	

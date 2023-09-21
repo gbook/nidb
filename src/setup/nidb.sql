@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Sep 11, 2023 at 08:30 PM
+-- Generation Time: Sep 21, 2023 at 07:53 PM
 -- Server version: 10.3.28-MariaDB
 -- PHP Version: 7.2.24
 
@@ -2036,7 +2036,7 @@ CREATE TABLE `pipelines` (
   `pipeline_level` int(11) DEFAULT NULL COMMENT '1,2,3, N (first, second, third, Nth level)',
   `pipeline_group` varchar(255) DEFAULT NULL,
   `pipeline_directory` varchar(255) DEFAULT NULL,
-  `pipeline_dirstructure` char(1) DEFAULT NULL,
+  `pipeline_dirstructure` varchar(50) DEFAULT NULL,
   `pipeline_usetmpdir` tinyint(1) DEFAULT NULL,
   `pipeline_tmpdir` longtext DEFAULT NULL,
   `pipeline_dependency` longtext DEFAULT NULL,
@@ -2363,6 +2363,7 @@ CREATE TABLE `project_checklist` (
 CREATE TABLE `project_nda_uploads` (
   `projectndaupload_id` int(11) NOT NULL,
   `project_id` int(11) NOT NULL,
+  `export_id` int(11) NOT NULL,
   `update_date` date DEFAULT NULL,
   `csv_file` mediumtext DEFAULT NULL,
   `ndaprojectnum` int(11) DEFAULT NULL,

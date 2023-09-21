@@ -1596,6 +1596,7 @@
 						<tr>
 							<td class="label" valign="top" align="right">Directory structure</td>
 							<td valign="top">
+								<!--
 								<div class="field">
 									<div class="ui radio checkbox">
 										<input type="radio" name="pipelinedirstructure" id="level1" value="a" <?=$disabled?> <? if (($dirstructure == 'a') || ($dirstructure == '')) echo "checked"; ?>><label><?=$GLOBALS['cfg']['analysisdir']?> <code>/S1234ABC/1/ThisPipeline</code></label>
@@ -1606,6 +1607,37 @@
 										<input type="radio" name="pipelinedirstructure" id="level1" value="b" <?=$disabled?> <? if ($dirstructure == 'b') echo "checked"; ?>><label><?=$GLOBALS['cfg']['analysisdirb']?> <code>/ThisPipeline/S1234ABC/1</code></label>
 									</div>
 								</div>
+								-->
+								<div class="ui fluid selection dropdown">
+									<input type="hidden" name="pipelinedirstructure" value="<?=$dirstrcture?>">
+									<i class="dropdown icon"></i>
+									<div class="default text">Directory...</div>
+									<div class="scrollhint menu">
+										<div class="item" data-value="a"><tt><?=$GLOBALS['cfg']['analysisdir']?></tt> <div class="ui label">/S1234ABC/1/<b>ThePipeline</b></div></div>
+										<div class="item" data-value="b"><tt><?=$GLOBALS['cfg']['analysisdirb']?></tt> <div class="ui label">/<b>ThePipeline</b>/S1234ABC/1</div></div>
+								<?
+									$sqlstring = "select * from analysisdirs order by shortname";
+									$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+										$id = $row['analysisdir_id'];
+										$shortname = $row['shortname'];
+										$nidbpath = $row['nidbpath'];
+										$clusterpath = $row['clusterpath'];
+										$dirformat = $row['dirformat'];
+										if ($dirformat == "uidfirst") {
+											$dispformat = "/S1234ABC/1/<b>ThePipeline</b>";
+										}
+										else {
+											$dispformat = "/<b>ThePipeline</b>/S1234ABC/1";
+										}
+										?>
+										<div class="item" data-value="<?=$id?>"><tt><?=$clusterpath?></tt> <div class="ui label"><?=$dispformat?></div></div>
+										<?
+									}
+								?>
+									</div>
+								</div>
+								
 							</td>
 						</tr>
 						<tr>

@@ -102,10 +102,11 @@ int modulePipeline::Run() {
 
         /* get analysis directory root */
         QString analysisdir;
-        if (p.dirStructure == "b")
-            analysisdir = n->cfg["analysisdirb"];
-        else
-            analysisdir = n->cfg["analysisdir"];
+        analysisdir = GetAnalysisLocalPath(p.dirStructure);
+        //if (p.dirStructure == "b")
+        //    analysisdir = n->cfg["analysisdirb"];
+        //else
+        //    analysisdir = n->cfg["analysisdir"];
 
         n->WriteLog(QString("========== Working on pipeline [%1] - [%2] Submits to queue [%3] through host [%4] ==========").arg(p.name).arg(pipelineid).arg(p.queue).arg(p.submitHost));
 
@@ -188,6 +189,8 @@ int modulePipeline::Run() {
             InsertPipelineEvent(pipelineid, runnum, -1, "getpipelinesteps", QString("Retreived [%1] pipeline script commands").arg(steps.size()));
 
         /* ------------------------------ level 0 ----------------------------- */
+        /* avoid using this, Level 0 is not maintained */
+        /* ------------------------------------------- */
         if (p.level == 0) {
             /* check if this module should be running now or not */
             if (!n->ModuleCheckIfActive()) {
@@ -399,10 +402,11 @@ int modulePipeline::Run() {
                     //n->WriteLog(QString("StudyDateTime: [%1], Working on: [%2%3]").arg(s.studydatetime.toString("yyyy-MM-dd hh:mm:ss")).arg(s.uid).arg(s.studynum));
 
                     QString analysispath = "";
-                    if (p.dirStructure == "b")
-                        analysispath = QString("%1/%2/%3/%4").arg(p.pipelineRootDir).arg(p.name).arg(s.UID()).arg(s.studyNum());
-                    else
-                        analysispath = QString("%1/%2/%3/%4").arg(p.pipelineRootDir).arg(s.UID()).arg(s.studyNum()).arg(p.name);
+                    analysispath = GetAnalysisLocalPath(p.dirStructure, p.name, s.UID(), s.studyNum());
+                    //if (p.dirStructure == "b")
+                    //    analysispath = QString("%1/%2/%3/%4").arg(p.pipelineRootDir).arg(p.name).arg(s.UID()).arg(s.studyNum());
+                    //else
+                    //    analysispath = QString("%1/%2/%3/%4").arg(p.pipelineRootDir).arg(s.UID()).arg(s.studyNum()).arg(p.name);
                     n->WriteLog(QString("[%1] analysispath is [" + analysispath + "]").arg(p.name));
 
                     /* get the nearest study for this subject that has the dependency */
@@ -2365,4 +2369,102 @@ void modulePipeline::ClearPipelineHistory() {
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
     n->WriteLog(QString("Deleted %1 pipeline_history rows older than two days").arg(q.numRowsAffected()));
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetAnalysisLocalPath --------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief modulePipeline::GetAnalysisLocalPath - get the analysis path as seen by NiDB
+ * @param dirStructure
+ * @return the path
+ */
+QString modulePipeline::GetAnalysisLocalPath(QString dirStructureCode, QString pipelineName, QString UID, int studyNum) {
+    QSqlQuery q;
+    QString path;
+    QChar dirtype;
+
+    if (dirStructureCode == "b") {
+        path = n->cfg["analysisdirb"];
+        dirtype = 'b';
+    }
+    else if (IsInt(dirStructureCode)) {
+        q.prepare("select * from analysisdirs where analysisdir_id = :dir");
+        q.bindValue(":dir", dirStructureCode);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        if (q.size() > 0) {
+            q.first();
+            path = q.value("nidbpath").toString();
+            QString dirformat = q.value("dirformat").toString();
+            if (dirformat == "uidfirst")
+                dirtype = 'a';
+            else
+                dirtype = 'b';
+        }
+    }
+    else {
+        path = n->cfg["analysisdir"];
+        dirtype = 'a';
+    }
+
+    if ((pipelineName != "") && (UID != "") && (studyNum > -1)) {
+        if (dirtype == 'a') {
+            path = QString("%1/%2/%3/%4").arg(path).arg(UID).arg(studyNum).arg(pipelineName);
+        }
+        else {
+            path = QString("%1/%2/%3/%4").arg(path).arg(pipelineName).arg(UID).arg(studyNum);
+        }
+    }
+
+    return path;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetAnalysisClusterPath ------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief modulePipeline::GetAnalysisClusterPath - get the analysis base path as see by the cluster
+ * @param dirStructure
+ * @return the path
+ */
+QString modulePipeline::GetAnalysisClusterPath(QString dirStructureCode, QString pipelineName, QString UID, int studyNum) {
+    QSqlQuery q;
+    QString path;
+    QChar dirtype;
+
+    if (dirStructureCode == "b") {
+        path = n->cfg["clusteranalysisdirb"];
+        dirtype = 'b';
+    }
+    else if (IsInt(dirStructureCode)) {
+        q.prepare("select * from analysisdirs where analysisdir_id = :dir");
+        q.bindValue(":dir", dirStructureCode);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        if (q.size() > 0) {
+            q.first();
+            path = q.value("clusterpath").toString();
+            QString dirformat = q.value("dirformat").toString();
+            if (dirformat == "uidfirst")
+                dirtype = 'a';
+            else
+                dirtype = 'b';
+        }
+    }
+    else {
+        path = n->cfg["clusteranalysisdir"];
+        dirtype = 'a';
+    }
+
+    if ((pipelineName != "") && (UID != "") && (studyNum > -1)) {
+        if (dirtype == 'a') {
+            path = QString("%1/%2/%3/%4").arg(path).arg(UID).arg(studyNum).arg(pipelineName);
+        }
+        else {
+            path = QString("%1/%2/%3/%4").arg(path).arg(pipelineName).arg(UID).arg(studyNum);
+        }
+    }
+
+    return path;
 }
