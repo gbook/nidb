@@ -1381,13 +1381,13 @@
 									$dfmount = $GLOBALS['cfg']['analysisdirb'];
 									//echo $GLOBALS['cfg']['analysisdirb'];
 									$nidbpath = $dfmount . "/<b>ThePipeline</b>/S1234ABC/1";
-									$clusterpath = $dfmount . "/<b>ThePipeline</b>/S1234ABC/1";
+									$clusterpath = $GLOBALS['cfg']['clusteranalysisdirb'] . "/<b>ThePipeline</b>/S1234ABC/1";
 								}
 								elseif ($dirstructure == "a") {
 									$dfmount = $GLOBALS['cfg']['analysisdir'];
 									//echo $GLOBALS['cfg']['analysisdir'];
 									$nidbpath .= $dfmount . "/S1234ABC/1/<b>ThePipeline</b>";
-									$clusterpath .= $dfmount . "/S1234ABC/1/<b>ThePipeline</b>";
+									$clusterpath .= $GLOBALS['cfg']['clusteranalysisdir'] . "/S1234ABC/1/<b>ThePipeline</b>";
 								}
 								elseif (is_integer($dirstructure)) {
 									$sqlstring = "select * from analysisdirs where analysisdir_id = $dirstructure";
