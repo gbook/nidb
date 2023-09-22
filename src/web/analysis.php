@@ -1013,14 +1013,47 @@
 				</div>
 			</div>
 			
-			<div class="right menu" id="popupbutton2">
+			<!--<div class="right menu" id="popupbutton2">
 				<a class="browse item" style="background-color: Lavender">
 					With Selected...
 					<i class="dropdown icon"></i>
 				</a>
+			</div>-->
+			
+			<div class="right menu">
+				<div class="ui icon bottom left pointing dropdown button" style="background-color: lavender">
+					<i class="dropdown icon"></i>
+					<span class="text">With Selected...</span>
+					<div class="ui vertical menu">
+						
+						<div class="ui item" onclick="document.studieslist.action.value='deleteanalyses';return confirm('Are you absolutely sure you want to DELETE the selected analyses?')" title="<b style='color:orange'>Pipeline will be disabled. Wait until the deletions are compelte before reenabling the pipeline</b><Br> This will delete the selected analyses, which will be regenerated using the latest pipeline version"><i class="red trash icon"></i> Delete</div>
+						
+						<div class="ui item" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='copyanalyses'; GetDestination(); return;"><i class="copy icon"></i> Copy analyses to...</div>
+						
+						<div class="ui item" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='createlinks'; GetDestination2(); return;" title="Creates a directory called 'data' which contains links to all of the selected studies"><i class="linkify icon"></i> Create links...</div>
+
+						<div class="ui item" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='rerunresults';document.studieslist.submit();" title="This will delete any existing results inserted into NiDB and re-run the results script">Re-run results script</div>
+
+						<div class="ui item" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='runsupplement';document.studieslist.submit();" title="Run the script specified in the supplemental command script. This will not download new data or re-download existing data. It will only perform commands on the existing files in the analysis directory">Run supplement script</div>
+
+						<div class="ui item" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='rechecksuccess';document.studieslist.submit();" title="This option will check the selected analyses against the 'successfully completed files' field and mark them as successful if the file(s) exist"><i class="clipboard check icon"></i>Recheck success</div>
+
+						<div class="ui item" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='markbad'; MarkAnalysis()" title="Mark the analyses as bad so they will not be used in dependent pipelines"><i class="large red frown outline icon"></i> Mark bad</div>
+
+						<div class="ui item" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='markgood'; MarkAnalysis()" title="Unmark an analysis as bad"><i class="large green smile outline icon"></i> Mark good</div>
+
+						<div class="ui item" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='markcomplete'; MarkAnalysis()" title="Mark the analysis as complete. In case the job was killed or died outside of the pipeline system. Also clears pending jobs and any flags as 'run supplement' or 'rerun results'"><i class="tasks icon"></i> Mark complete</div>
+
+						<div class="ui item" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='marksuccessful'; MarkAnalysis()" title="Mark the analysis as successful">Mark successful</div>
+
+						<div class="ui item" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='markunsuccessful'; MarkAnalysis()" title="Mark the analysis as unsuccessful">Mark unsuccessful</div>
+						
+					</div>
+				</div>
 			</div>
+	
 		</div>
-		<div class="ui popup" id="popupmenu2">
+		<div class="ui visble popup" id="popupmenu2">
 			<h3 class="ui header">With Selected...</h3>
 			
 			<p><button class="ui fluid red button" type="submit" onclick="document.studieslist.action.value='deleteanalyses';return confirm('Are you absolutely sure you want to DELETE the selected analyses?')" title="<b style='color:pink'>Pipeline will be disabled. Wait until the deletions are compelte before reenabling the pipeline</b><Br> This will delete the selected analyses, which will be regenerated using the latest pipeline version"><i class="trash icon"></i> Delete</button></p>

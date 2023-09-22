@@ -1145,11 +1145,12 @@
 		<div class="ui bottom attached <?=$tab_oneactive?> tab segment" data-tab="first">
 			<table class="entrytable" style="border:0px">
 				<tr>
-					<td><h3 class="ui header">View</h3</td>
+					<td><h3 class="ui header">View</h3></td>
 					<td valign="top" style="padding-bottom: 10pt">
-						<a href="analysis.php?action=viewanalyses&id=<?=$id?>" class="ui large green button">Analyses</a>
+						<a href="analysis.php?action=viewanalyses&id=<?=$id?>" class="ui green button">Analyses</a>
+						&nbsp; &nbsp; 
 						<a href="analysis.php?action=viewfailedanalyses&id=<?=$id?>" title="View all imaging studies which did not meet the data criteria, and therefore the pipeline did not attempt to run the analysis" class="ui basic green button">Ignored studies<br>
-						<a href="pipelines.php?action=viewversion&id=<?=$id?>" class="ui basic green button">Pipeline versions</a>
+						<a href="pipelines.php?action=viewversion&id=<?=$id?>" class="ui basic green button"><i class="ui code branch icon"></i>Pipeline versions</a>
 					</td>
 				</tr>
 				<tr>
@@ -1370,46 +1371,83 @@
 				<tr>
 					<td><h3 class="ui header">Data location</h3></td>
 					<td valign="top" style="padding-bottom: 10pt">
-						<span style="background-color: #ddd; padding:5px; font-family: monospace; border-radius:3px">
 						<?
 							$dfmount = "";
 							if ($directory != "") {
 								$dfmount = $directory;
-								echo $directory;
+								//echo $directory;
 							} else {
 								if ($dirstructure == "b") {
 									$dfmount = $GLOBALS['cfg']['analysisdirb'];
-									echo $GLOBALS['cfg']['analysisdirb'];
+									//echo $GLOBALS['cfg']['analysisdirb'];
+									$nidbpath = $dfmount . "/<b>ThePipeline</b>/S1234ABC/1";
+									$clusterpath = $dfmount . "/<b>ThePipeline</b>/S1234ABC/1";
+								}
+								elseif ($dirstructure == "a") {
+									$dfmount = $GLOBALS['cfg']['analysisdir'];
+									//echo $GLOBALS['cfg']['analysisdir'];
+									$nidbpath .= $dfmount . "/S1234ABC/1/<b>ThePipeline</b>";
+									$clusterpath .= $dfmount . "/S1234ABC/1/<b>ThePipeline</b>";
+								}
+								elseif (is_integer($dirstructure)) {
+									$sqlstring = "select * from analysisdirs where analysisdir_id = $dirstructure";
+									$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+									$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+									$nidbpath = $row['nidbpath'];
+									$clusterpath = $row['clusterpath'];
+									$dirformat = $row['dirformat'];
+									if ($dirformat == "uidfirst") {
+										$nidbpath .= "/S1234ABC/1/<b>ThePipeline</b>";
+										$clusterpath .= "/S1234ABC/1/<b>ThePipeline</b>";
+									}
+									else {
+										$nidbpath .= "/<b>ThePipeline</b>/S1234ABC/1";
+										$clusterpath .= "/<b>ThePipeline</b>/S1234ABC/1";
+									}
+									
+								}
+							}
+
+							if (is_dir($dfmount)) {
+								$freespace = disk_free_space($dfmount);
+								$totalspace = disk_total_space($dfmount);
+								
+								$percentfree = ($freespace / $totalspace) * 100.0;
+								
+								if ($percentfree > 10) {
+									$color = "green";
+									$icon = "check icon";
+								}
+								elseif ($percentfree > 1) {
+									$color = "yellow";
+									$icon = "exclamation";
 								}
 								else {
-									$dfmount = $GLOBALS['cfg']['analysisdir'];
-									echo $GLOBALS['cfg']['analysisdir'];
+									$color = "red";
+									$icon = "exclamation circle icon";
 								}
-							}
-						?>/<i>UID</i>/<i>StudyNum</i>/<?=$title?>
-						</span>
-						<br>
-						<?
-							$freespace = disk_free_space($dfmount);
-							$totalspace = disk_total_space($dfmount);
-							
-							$percentfree = ($freespace / $totalspace) * 100.0;
-							
-							if ($percentfree > 10) {
-								$color = "green";
-								$icon = "check icon";
-							}
-							elseif ($percentfree > 1) {
-								$color = "yellow";
-								$icon = "exclamation";
+								$msg = number_format($percentfree,1) . "% <div class='detail'>" . HumanReadableFilesize($freespace) . "</div>";
 							}
 							else {
 								$color = "red";
 								$icon = "exclamation circle icon";
+								$msg = "<tt>$dfmount</tt> does not exist";
 							}
 						?>
-						<br>
-						Disk free space <div class="ui <?=$color?> label"><i class="<?=$icon?>"></i> <?=number_format($percentfree,1)?>% <div class="detail"><?=HumanReadableFilesize($freespace)?></div></div>
+						<table class="ui very basic compact collapsing table">
+							<tr>
+								<td>Cluster <i class="question circle outline icon" title="The path as seen by the cluster"></i></td>
+								<td><tt><?=$clusterpath?></tt></td>
+							</tr>
+							<tr class="disabled">
+								<td>NiDB <i class="question circle outline icon" title="The path as seen by NiDB"></i></td>
+								<td><tt><?=$nidbpath?></tt></td>
+							</tr>
+							<tr>
+								<td>Disk free space</td>
+								<td><div class="ui <?=$color?> label"><i class="<?=$icon?>"></i> <?=$msg?></div></td>
+							</tr>
+						</table>
 					</td>
 				</tr>
 				<tr>
@@ -1609,7 +1647,7 @@
 								</div>
 								-->
 								<div class="ui fluid selection dropdown">
-									<input type="hidden" name="pipelinedirstructure" value="<?=$dirstrcture?>">
+									<input type="hidden" name="pipelinedirstructure" value="<?=$dirstructure?>">
 									<i class="dropdown icon"></i>
 									<div class="default text">Directory...</div>
 									<div class="scrollhint menu">
@@ -1798,7 +1836,7 @@
 				<table class="entrytable">
 					<tr>
 						<td class="label" valign="top">Successful files <i class="grey question outline circle icon" title="<b>Successful files</b><br><br>The analysis is marked as successful if ALL of the files specified exist at the end of the analysis. If left blank, the analysis will always be marked as successful.<br>Example: <tt>analysis/T1w/T1w_acpc_dc_restore_brain.nii.gz</tt>"></i></td>
-						<td valign="top"><textarea name="completefiles" <?=$disabled?> rows="5" cols="60"><?=$completefiles?></textarea><br>
+						<td valign="top"><textarea name="completefiles" <?=$disabled?> rows="4" cols="60"><?=$completefiles?></textarea><br>
 						<span class="tiny">Comma seperated list of files (relative paths)</span></td>
 					</tr>
 					<tr>

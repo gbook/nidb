@@ -40,8 +40,13 @@
 <!--<link rel="stylesheet" type="text/css" href="scripts/themes/blue/style.css">-->
 <!--<link href='https://fonts.googleapis.com/css?family=Roboto Mono' rel='stylesheet'>-->
 
-<link rel="stylesheet" type="text/css" href="scripts/semantic/semantic.css">
-<script src="scripts/semantic/semantic.js"></script>
+<!--<link rel="stylesheet" type="text/css" href="scripts/semantic/semantic.css">
+<script src="scripts/semantic/semantic.js"></script>-->
+<!-- You MUST include jQuery 3.4+ before Fomantic -->
+<!--<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>-->
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/fomantic-ui@2.9.3/dist/semantic.min.css">
+<script src="https://cdn.jsdelivr.net/npm/fomantic-ui@2.9.3/dist/semantic.min.js"></script>
+
 <script src="scripts/tablesort.js"></script>
 
 <!-- file uploader -->
@@ -92,6 +97,7 @@
 		$('.ui.accordion').accordion({exclusive: false, animateChildren: false, duration: 0});
 		$('.ui.dropdown').dropdown({duration: 50});
 		$('.ui.checkbox').checkbox();
+		$('.ui.modal').modal('show');		
 		//$('.context.example .ui.sidebar').sidebar({context: $('.context.example .bottom.segment')}).sidebar('attach events', '.context.example .menu .item');
 		//$('table').tablesort();
 
