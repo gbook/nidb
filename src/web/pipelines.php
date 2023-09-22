@@ -1619,7 +1619,7 @@
 									$sqlstring = "select * from analysisdirs order by shortname";
 									$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-										$id = $row['analysisdir_id'];
+										$analysisdirid = $row['analysisdir_id'];
 										$shortname = $row['shortname'];
 										$nidbpath = $row['nidbpath'];
 										$clusterpath = $row['clusterpath'];
@@ -1631,7 +1631,7 @@
 											$dispformat = "/<b>ThePipeline</b>/S1234ABC/1";
 										}
 										?>
-										<div class="item" data-value="<?=$id?>"><tt><?=$clusterpath?></tt> <div class="ui label"><?=$dispformat?></div></div>
+										<div class="item" data-value="<?=$analysisdirid?>"><tt><?=$clusterpath?></tt> <div class="ui label"><?=$dispformat?></div></div>
 										<?
 									}
 								?>
