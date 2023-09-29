@@ -45,17 +45,20 @@
 	$action = GetVariable("action");
 	$projectid = GetVariable("projectid");
 	$exportid = GetVariable("exportid");
-	
+	$csvfile = GetVariable("csvfile");
+	$ndaprojectnumber = GetVariable("ndaprojectnumber");
+	$ndasubmissionid = GetVariable("ndasubmissionid");
 
 
  switch ($action) 
 {
-		case 'showndainfo':
-			showndauploads($projectid);
-			break;
-		default:
-			showndauploads($projectid);
-			break;
+ case 'updatendainfo':
+		UpdateNdaSubmission($projectid,$exportid,$ndaprojectnumber,$ndasubmissionid,$csvfile);
+		showndauploads($projectid);
+		break;
+	default:
+		showndauploads($projectid);
+		break;
 }
 
 /* ---------------------------------------------- */
@@ -91,14 +94,61 @@ function showndauploads($projectid)
 		$t_name = 'details'.$indx;
 ?>
 		<div class="ui black top attached segment">
-			<div class="column">
-				<div class="ui header"><?=date("D M j, Y h:ia",strtotime($submitdate))?></div>
-				<div class="ui meta">
-					<p><b>Requested By:</b> <?=$username?></p>
-					<button class="circular ui icon button"  id='<?=$b_name?>'>
-					  <i class="angle double down icon"></i>
-					</button>
+			<div class="ui two column very compact grid">
+				<div class="column">
+					<div class="ui header"><?=date("D M j, Y h:ia",strtotime($submitdate))?></div>
+					<div class="ui meta">
+						<p><b>Requested By:</b> <?=$username?></p>
+						<button class="circular ui icon button"  id='<?=$b_name?>'>
+						  <i class="angle double down icon"></i>
+						</button>
+					</div>
+				
 				</div>
+				<div class="right aligned column">
+<?					$sqlstrsub = "SELECT ndaprojectnum, ndasubmission_id FROM project_nda_uploads WHERE project_id=$projectid and export_id=$exportid";
+					$resultsub = MySQLiQuery($sqlstrsub, __FILE__, __LINE__);
+					$rowsub =  mysqli_fetch_array($resultsub, MYSQLI_ASSOC);
+					$ndaprojectnumber = $rowsub['ndaprojectnum'];
+					$ndasubmissionid = $rowsub['ndasubmission_id'];
+?>
+					<form class="ui form" action="ndarequests.php" enctype="multipart/form-data" method="POST">
+						<input type="hidden" name="action" value="updatendainfo">
+						<input type="hidden" name="projectid" value="<?=$projectid?>">
+						<input type="hidden" name="exportid" value="<?=$exportid?>">
+						<div class="inline field">
+							<label><b>NDA Project Number:</b></label>
+							<input type="text" name="ndaprojectnumber" value="<?=$ndaprojectnumber?>">
+						</div>
+                	                	<div class="inline field">
+						<label><b>NDA Submission Id:</b></label>
+	                                       		<input type="text"  name="ndasubmissionid" value="<?=$ndasubmissionid?>">
+						</div>
+<?                                      $sqlstrcsv = "SELECT csv_file  FROM project_nda_uploads WHERE project_id=$projectid and export_id=$exportid";
+					$resultcsv = MySQLiQuery($sqlstrcsv, __FILE__, __LINE__);
+					$rowcsv =  mysqli_fetch_array($resultcsv, MYSQLI_ASSOC);
+					if (!(is_null($rowcsv['csv_file']))){
+?>						<div class="inline field">
+                                                        <label><b>NDA CSV File:</b></label>
+							<input type="file" name="csvfile" accept=".csv">
+							<button class="circular green ui icon button">
+                                                        	<i class="download icon"></i>
+	                                                </button>
+                                                </div>
+<?					}
+
+					elseif (is_null($rowcsv['csv_file'])){
+?>						<div class="inline field">
+                                                        <label><b>NDA CSV File:</b></label>
+							<input type="file" name="csvfile" accept=".csv">
+						</div>
+<?					}
+?>
+						<button class="ui icon button"  type="submit"> 
+	                        	                <i class="save icon"></i>
+        	                                </button>
+					</form>
+                                </div>
 			</div>
 		</div>
 		<table class="ui bottom attached celled grey table" id='<?=$t_name?>' hidden>
@@ -161,7 +211,7 @@ function showndauploads($projectid)
 
 			        <?=$b_name?>.addEventListener('click', function() {
 			            if (<?=$t_name?>.style.display === 'none' || <?=$t_name?>.style.display === '') {
-			                <?=$t_name?>.style.display = 'table'; // Show the table
+					<?=$t_name?>.style.display = 'table'; // Show the table
 			            } else {
 			                <?=$t_name?>.style.display = 'none'; // Hide the table
 			            }
@@ -173,6 +223,56 @@ function showndauploads($projectid)
 }
 
 
+
+/* -------------------------------------------- */
+/* ------- Update ---------------------- */
+/* -------------------------------------------- */
+function UpdateNdaSubmission($projectid,$exportid,$ndaprojectnumber,$ndasubmissionid,$file)
+{
+	if ((trim($projectid) == "") || ($projectid < 0)) {
+                ?>Invalid or blank Project ID [<?=$projectid?>]<?
+                return;
+	}
+
+	if ($ndaprojectnumber == "" || $ndaprojectnumber== " " || $file==""){
+		$ndaprojectnumber='NULL';
+		$ndasubmissionid='NULL';
+		$file = 'NULL';
+	}
+
+	if ($ndasubmissionid == "" || $ndasubmissionid == " " || $file==" "){
+		$ndaprojectnumber='NULL';
+                $ndasubmissionid='NULL';
+                $file = 'NULL';
+	}
+
+	$sqltest = "select * from  project_nda_uploads WHERE project_id=$projectid and export_id=$exportid ";
+	$resulttest = MySQLiQuery($sqltest, __FILE__, __LINE__);
+	if (mysqli_num_rows($resulttest)>0){
+		if ($_FILES["file"]["error"]== 0){
+			$filecontent = file_get_contents($_FILES["csvfile"]["tmp_name"]);
+			$sqlstringUp = "UPDATE project_nda_uploads SET ndaprojectnum=$ndaprojectnumber, ndasubmission_id =$ndasubmissionid, csv_file=NULLIF('$filecontent','')  WHERE project_id=$projectid and export_id=$exportid ";
+			$resultUp = MySQLiQuery($sqlstringUp, __FILE__, __LINE__);
+		}
+		else{
+			$sqlstringUp = "UPDATE project_nda_uploads SET ndaprojectnum=$ndaprojectnumber, ndasubmission_id =$ndasubmissionid  WHERE project_id=$projectid and export_id=$exportid ";
+			$resultUp = MySQLiQuery($sqlstringUp, __FILE__, __LINE__);
+		}
+	}
+	else {
+		if ($_FILES["csvfile"]["error"]== 0){
+                        $filecontent = file_get_contents($_FILES["csvfile"]["temp_name"]);
+                        $sqlstringIn = "insert into project_nda_uploads (project_id,export_id,csv_file,ndaprojectnum,ndasubmission_id) values ($projectid, $exportid, NULLIF($filecontent,''), NULLIF('$ndaprojectnumber',''), NULLIF('$ndasubmissionid','')) on duplicate key update ndaprojectnum=$ndaprojectnumber, ndasubmission_id =$ndasubmissionid ";
+                        $resultIn = MySQLiQuery($sqlstringIn, __FILE__, __LINE__);
+                }
+                else{
+		$sqlstringIn = "insert into project_nda_uploads (project_id,export_id,ndaprojectnum,ndasubmission_id) values ($projectid, $exportid, NULLIF('$ndaprojectnumber',''), NULLIF('$ndasubmissionid','')) on duplicate key update ndaprojectnum=$ndaprojectnumber, ndasubmission_id =$ndasubmissionid ";
+		$resultIn = MySQLiQuery($sqlstringIn, __FILE__, __LINE__);
+		}
+	}
+
+
+}
 /* --------------------------------------------- */
 /* -----------------getexportid----------------- */
 /* --------------------------------------------- */

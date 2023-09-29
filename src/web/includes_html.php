@@ -92,12 +92,12 @@
 		$('.message .close').on('click', function() {
 			$(this).closest('.message').transition('fade');
 		});
-		$('.menu .item').tab();
-		$('.tabular.menu .item').tab();
+		//$('.menu .item').tab();
+		//$('.tabular.menu .item').tab();
 		$('.ui.accordion').accordion({exclusive: false, animateChildren: false, duration: 0});
 		$('.ui.dropdown').dropdown({duration: 50});
 		$('.ui.checkbox').checkbox();
-		$('.ui.modal').modal('show');		
+		$('.ui.modal').modal('show');
 		//$('.context.example .ui.sidebar').sidebar({context: $('.context.example .bottom.segment')}).sidebar('attach events', '.context.example .menu .item');
 		//$('table').tablesort();
 

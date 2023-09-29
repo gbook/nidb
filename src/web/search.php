@@ -263,24 +263,26 @@
 	<script>
 		$(document).ready(function(){
 			$('#pageloading').hide();
+
+			$('.menu .item').tab();
+			$('.tabular.menu .item').tab();
 			
 			$('.custom_format_calendar')
 			  .calendar({
 				monthFirst: false,
 				type: 'date',
 				formatter: {
-				  date: function (date, settings) {
-					if (!date) return '';
-					var day = date.getDate();
-					if (day < 10) { day = "0" + day; }
-					var month = date.getMonth() + 1;
-					if (month < 10) { month = "0" + month; }
-					var year = date.getFullYear();
-					return year + '-' + month + '-' + day;
-				  }
+					date: function (date, settings) {
+						if (!date) return '';
+						var day = date.getDate();
+						if (day < 10) { day = "0" + day; }
+						var month = date.getMonth() + 1;
+						if (month < 10) { month = "0" + month; }
+						var year = date.getFullYear();
+						return year + '-' + month + '-' + day;
+					}
 				}
-			  })
-			;
+			});
 		});
 		
 		/* changed the results/view output type when a search element is clicked */

@@ -43,8 +43,8 @@
 
 	$currentcal = $_COOKIE['currentcal'];
 
-	PrintVariable($_POST);
-	exit(0);
+	//PrintVariable($_POST);
+	//exit(0);
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");

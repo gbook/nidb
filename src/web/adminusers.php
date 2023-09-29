@@ -648,6 +648,13 @@
 	function DisplayUserList() {
 	?>
 
+	<script>
+		$(document).ready(function() {
+			$('.menu .item').tab();
+			$('.tabular.menu .item').tab();
+		});
+	</script>
+
 	<div style="padding: 0px 50px">
 	<button class="ui primary large button" onClick="window.location.href='adminusers.php?action=addform'; return false;"><i class="plus square outline icon"></i>Add User</button>
 	<br><br>

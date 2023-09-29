@@ -2282,22 +2282,43 @@
 			</tbody>
 		</table>
 		<script>
-			$(document).ready(function() {
+			/*$(document).ready(function() {
 				$('#popupbutton2').popup({
 					popup : $('#popupmenu2'),
 					on : 'click'
 				});
-			});
+			});*/
 		</script>
 		<div class="ui bottom attached menu">
 			<a class="item" href="studies.php?studyid=<?=$studyid?>&action=displayfiles"><i class="file alternate icon"></i> View file list</a>
 			<div class="right menu" id="popupbutton2">
-				<a class="browse item" style="background-color: Lavender">
-					With Selected...
-					<i class="dropdown icon"></i>
-				</a>
+				<div class="right menu">
+					<div class="ui icon bottom left pointing dropdown button" style="background-color: lavender">
+						<i class="dropdown icon"></i>
+						<span class="text">With Selected...</span>
+						<div class="ui vertical menu">
+							
+							<div class="ui item" onclick="document.studieslist.action.value='deleteanalyses';return confirm('Are you absolutely sure you want to DELETE the selected analyses?')" title="<b style='color:orange'>Pipeline will be disabled. Wait until the deletions are compelte before reenabling the pipeline</b><Br> This will delete the selected analyses, which will be regenerated using the latest pipeline version"><i class="red trash icon"></i> Delete</div>
+							
+							<div class="ui item" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='renameseriesform';document.serieslist.submit();"><i class="icons"><i class="square outline icon"></i><i class="corner i cursor icon"></i>Rename</div>
+							
+							<div class="ui item" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='updateseriesnotesform';document.serieslist.submit();"><i class="clipboard outline icon"></i> Edit notes</div>
+							
+							<div class="ui item" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='moveseriestonewstudy';document.serieslist.submit();">Move to new study</div>
+							
+							<div class="ui item" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='hideseries';document.serieslist.submit();" title="Hide the series. The series will not show up in search results"><i class="eye slash icon"></i> Hide</div>
+							
+							<div class="ui item" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='unhideseries';document.serieslist.submit();" title="Unhide the selected series. The series will now show up in search results"><i class="eye icon"></i> Un-hide</div>
+							
+							<div class="ui item" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='resetqa';document.serieslist.submit();" title="Reset the QA results for this series. New QA results will be re-generated"><i class="redo alternate icon"></i> Reset QC</div>
+							
+							<div class="ui item" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='deleteseries';document.serieslist.submit();" title="Delete the selected series. The series will be moved to the <span class='tt'><?=$GLOBALS['cfg']['deleteddir']?></span> directory and will not appear anywhere on the website"><i class="trash alternate icon"></i>Delete</div>
+						</div>
+					</div>
+				</div>
 			</div>
 		</div>
+		<!--
 		<div class="ui popup" id="popupmenu2">
 			<? if ($GLOBALS['isadmin']) { ?>
 				<h3>With Selected Series...</h3>
@@ -2315,7 +2336,7 @@
 				<br><br>
 				<button class="ui fluid red button" name="deleteseries" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='deleteseries';document.serieslist.submit();" title="Delete the selected series. The series will be moved to the <span class='tt'><?=$GLOBALS['cfg']['deleteddir']?></span> directory and will not appear anywhere on the website"><i class="trash alternate icon"></i>Delete</button>
 			<? } ?>
-		</div>
+		</div>-->
 		
 		</form>
 		<?

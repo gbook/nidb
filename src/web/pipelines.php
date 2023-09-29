@@ -1028,7 +1028,11 @@
 	?>
 	
 		<script type="text/javascript">
+		
 			$(document).ready(function() {
+
+				$('.menu .item').tab();
+				$('.tabular.menu .item').tab();
 				
 				$('#pageloading').hide();
 				
