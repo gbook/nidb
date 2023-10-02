@@ -56,6 +56,10 @@
 		UpdateNdaSubmission($projectid,$exportid,$ndaprojectnumber,$ndasubmissionid,$csvfile);
 		showndauploads($projectid);
 		break;
+ case 'downloadcsv':
+	 	DownloadCsvfile($projectid,$exportid);
+		showndauploads($projectid);
+                break;
 	default:
 		showndauploads($projectid);
 		break;
@@ -129,12 +133,21 @@ function showndauploads($projectid)
 					$rowcsv =  mysqli_fetch_array($resultcsv, MYSQLI_ASSOC);
 					if (!(is_null($rowcsv['csv_file']))){
 ?>						<div class="inline field">
-                                                        <label><b>NDA CSV File:</b></label>
-							<input type="file" name="csvfile" accept=".csv">
-							<button class="circular green ui icon button">
-                                                        	<i class="download icon"></i>
-	                                                </button>
-                                                </div>
+							<label><b>NDA CSV File:</b></label>
+							<div class="ui file action input">
+							<input type="file" name="csvfile" id="csvfile" accept=".csv" >
+							<label for="csvfile" class="ui button">
+								 Overwrite
+								<i class="file alternate"></i>
+							</label>
+							</div>
+						</div>
+						<div class="inline field">
+							 <label><b>Download existing NDA CSV File:</b></label>
+							<a href="ndarequests.php?action=downloadcsv&projectid=<?=$projectid?>&exportid=<?=$exportid?>">
+							Download >>><i class="download icon"></i>
+							</a>
+						</div>
 <?					}
 
 					elseif (is_null($rowcsv['csv_file'])){
@@ -143,10 +156,11 @@ function showndauploads($projectid)
 							<input type="file" name="csvfile" accept=".csv">
 						</div>
 <?					}
-?>
-						<button class="ui icon button"  type="submit"> 
+?>						<div>
+						<button class="ui icon large button"  type="submit"> 
 	                        	                <i class="save icon"></i>
-        	                                </button>
+						</button>
+						</div>
 					</form>
                                 </div>
 			</div>
@@ -234,16 +248,12 @@ function UpdateNdaSubmission($projectid,$exportid,$ndaprojectnumber,$ndasubmissi
                 return;
 	}
 
-	if ($ndaprojectnumber == "" || $ndaprojectnumber== " " || $file==""){
+	if ($ndaprojectnumber == "" || $ndaprojectnumber== " "){
 		$ndaprojectnumber='NULL';
-		$ndasubmissionid='NULL';
-		$file = 'NULL';
 	}
 
-	if ($ndasubmissionid == "" || $ndasubmissionid == " " || $file==" "){
-		$ndaprojectnumber='NULL';
+	if ($ndasubmissionid == "" || $ndasubmissionid == " "){
                 $ndasubmissionid='NULL';
-                $file = 'NULL';
 	}
 
 	$sqltest = "select * from  project_nda_uploads WHERE project_id=$projectid and export_id=$exportid ";
@@ -270,6 +280,58 @@ function UpdateNdaSubmission($projectid,$exportid,$ndaprojectnumber,$ndasubmissi
 		$resultIn = MySQLiQuery($sqlstringIn, __FILE__, __LINE__);
 		}
 	}
+
+
+}
+
+/* --------------------------------------------- */
+/* ------------- DownloadCsvfile---------------- */
+/* --------------------------------------------- */
+function DownloadCsvfile($projectid,$exportid){
+	$sqltest = "select csv_file  from  project_nda_uploads WHERE project_id=$projectid and export_id=$exportid ";
+	$resulttest = MySQLiQuery($sqltest, __FILE__, __LINE__);
+	$rowtest =  mysqli_fetch_array($resulttest, MYSQLI_ASSOC);
+	if (mysqli_num_rows($resulttest)==0 || is_null($rowtest['csv_file'])){
+		$message = "CSV File does not exist";
+		echo "<script type='text/javascript'>alert('$message');</script>";
+	}
+	else{
+		$csv_contents = $rowtest['csv_file'];
+		// Extracting Project Name
+		$sqlproject = "select project_name  from  projects WHERE project_id=$projectid";
+	        $resultproject = MySQLiQuery($sqlproject, __FILE__, __LINE__);
+		$rowproject =  mysqli_fetch_array($resultproject, MYSQLI_ASSOC);
+		$projectname = $rowproject['project_name'];
+		 // Extracting 
+                $sqlexp = "select username,submitdate  from  exports WHERE export_id=$exportid";
+                $resultexp = MySQLiQuery($sqlexp, __FILE__, __LINE__);
+		$rowexp =  mysqli_fetch_array($resultexp, MYSQLI_ASSOC);
+		$submitdate = $rowexp['submitdate'];
+		$username = $rowexp['username'];
+
+		$filename = $projectname.$username.$submitdate.$exportid;
+		$filename = preg_replace('/[^\w]/', '', $filename);
+
+		// Method I to write csv file
+		file_put_contents($filename.".csv",$csv_contents);
+		//echo $csv_contents;
+		// MEthod 2 to write .csv file
+//		$flp = fopen($filename,'w');
+//		fputs($flp,$csv_contents);
+//		fclose($flp);
+		
+		// Method 3 to write .csv file
+//		header("Content-Description: File Transfer");
+//		header("Content-Disposition: attachment; filename=$filename.csv");
+//		header("Content-Type: text/csv");
+//		header("Content-length: " . strlen($csv_contents) . "\n\n");
+//		header("Content-Transfer-Encoding: text");
+                // Show csv Contents to the browser
+//                echo $csv_contents;
+		
+
+	}
+
 
 
 }

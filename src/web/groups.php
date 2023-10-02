@@ -60,9 +60,6 @@
 	$groupmeasures = GetVariable("groupmeasures");
 	$studylist = GetVariable("studylist");
 
-	//if ($groupid == "")
-		
-
 	/* determine action */
 	switch ($action) {
 		case 'add':
@@ -139,6 +136,7 @@
 
 				/* check if its already in the db */
 				$sqlstring  = "select * from group_data where group_id = $groupid and data_id = $uidid and modality = ''";
+				//PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				if (mysqli_num_rows($result) > 0) {
 					$numexisting++;
@@ -174,7 +172,7 @@
 				}
 			}
 		}
-		Notice("<b>$numadded</b> studies added<br><b>$numexisting</b> studies already in group");
+		Notice("<b>$numadded</b> subjects added<br><b>$numexisting</b> subjects already in group");
 	}
 
 	

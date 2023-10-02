@@ -735,191 +735,180 @@
 		$name = strtoupper(substr($fname,0,1)) . strtoupper(substr($lname,0,1));
 		
 		?>
-		<div align="center" class="message">
-		<b>Are you absolutely sure you want to delete this subject?</b><img src="images/chili24.png">
-		<br><br>
-		<span class="uid"><?=$uid?></span>
-		</div>
-		<br><br>
 		
-		<table width="100%">
-			<tr>
-				<td valign="top" align="center">
-					<table class="reviewtable">
-						<tr>
-							<td class="label">Subject initials</td>
-							<td class="value"><?=$name?></td>
-						</tr>
-						<tr>
-							<td class="label">Alternate UID 1</td>
-							<td class="value"><?=implode2(', ',$altuids)?></td>
-						</tr>
-						<tr>
-							<td class="label">Date of birth</td>
-							<td class="value"><span <? if (!ValidDOB($dob)) { echo "class='invalid' title='Invalid birthdate'"; } ?> ><?=$dob?></span></td>
-						</tr>
-						<tr>
-							<td class="label">Gender</td>
-							<td class="value"><?=$gender?></td>
-						</tr>
-						<tr>
-							<td class="label">Ethnicity1&2</td>
-							<td class="value"><?=$ethnicity1?>, <?=$ethnicity2?></td>
-						</tr>
-						<tr>
-							<td class="label">Handedness</td>
-							<td class="value"><?=$handedness?></td>
-						</tr>
-						<tr>
-							<td class="label">Education</td>
-							<td class="value"><?=$education?></td>
-						</tr>
-						<tr>
-							<td class="label">Phone</td>
-							<td class="value"><?=$phone?></td>
-						</tr>
-						<tr>
-							<td class="label">E-mail</td>
-							<td class="value"><?=$email?></td>
-						</tr>
-						<tr>
-							<td class="label">Marital Status</td>
-							<td class="value"><?=$maritalstatus?></td>
-						</tr>
-						<tr>
-							<td class="label">Smoking Status</td>
-							<td class="value"><?=$smokingstatus?></td>
-						</tr>
-						<tr>
-							<td class="label">GUID</td>
-							<td class="value"><?=$guid?></td>
-						</tr>
-						<tr>
-							<td class="label">Can contact?</td>
-							<td class="value"><?=$cancontact?></td>
-						</tr>
-						<tr>
-							<td class="label">Tags</td>
-							<td class="value"><?=implode2(', ',$tags)?></td>
-						</tr>
-					</table>
-				</td>
-				<td valign="top" align="center">
-					<table class="download">
-						<tr>
-							<td class="title">
-								Projects
-							</td>
-						</tr>
-						
+		<div class="ui text container">
+			<div class="ui inverted red segment">
+				<h2 class="ui header">
+					<i class="exclamation circle icon"></i>
+					<div class="content">
+						Are you absolutely sure you want to delete this subject?
+						<div class="sub header">
+							This will delete all of the subject demographics and studies listed below
+						</div>
+					</div>
+				</h2>
+			</div>
+				
+			<div class="ui center aligned blue raised top attached segment"><span style="font-size:24pt; font-weight: bold"><?=$uid?></span></div>
+			
+			<div class="ui attached raised segment">
+				<h3 class="ui header">Demographics</h3>
+				
+				<table class="ui very compact very simple table">
+					<tr>
+						<td>Subject initials</td>
+						<td><?=$name?></td>
+					</tr>
+					<tr>
+						<td>Alternate UID 1</td>
+						<td><?=implode2(', ',$altuids)?></td>
+					</tr>
+					<tr>
+						<td>Date of birth</td>
+						<td><span <? if (!ValidDOB($dob)) { echo "class='invalid' title='Invalid birthdate'"; } ?> ><?=$dob?></span></td>
+					</tr>
+					<tr>
+						<td>Gender</td>
+						<td><?=$gender?></td>
+					</tr>
+					<tr>
+						<td>Ethnicity1&2</td>
+						<td><?=$ethnicity1?>, <?=$ethnicity2?></td>
+					</tr>
+					<tr>
+						<td>Handedness</td>
+						<td><?=$handedness?></td>
+					</tr>
+					<tr>
+						<td>Education</td>
+						<td><?=$education?></td>
+					</tr>
+					<tr>
+						<td>Phone</td>
+						<td><?=$phone?></td>
+					</tr>
+					<tr>
+						<td>E-mail</td>
+						<td><?=$email?></td>
+					</tr>
+					<tr>
+						<td>Marital Status</td>
+						<td><?=$maritalstatus?></td>
+					</tr>
+					<tr>
+						<td>Smoking Status</td>
+						<td><?=$smokingstatus?></td>
+					</tr>
+					<tr>
+						<td>GUID</td>
+						<td><?=$guid?></td>
+					</tr>
+					<tr>
+						<td>Can contact?</td>
+						<td><?=$cancontact?></td>
+					</tr>
+					<tr>
+						<td>Tags</td>
+						<td><?=implode2(', ',$tags)?></td>
+					</tr>
+				</table>
+			</div>
+			
+			<div class="ui bottom attached raised blue segment">
+				<h3 class="ui header">Enrollments</h3>
+		<?
+			$sqlstring = "select a.*, b.*, date(enroll_startdate) 'enroll_startdate', date(enroll_enddate) 'enroll_enddate' from enrollment a left join projects b on a.project_id = b.project_id where a.subject_id = $id";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$enrollmentid = $row['enrollment_id'];
+				$enroll_startdate = $row['enroll_startdate'];
+				$enroll_enddate = $row['enroll_enddate'];
+				$project_name = $row['project_name'];
+				$costcenter = $row['project_costcenter'];
+				$project_enddate = $row['project_enddate'];
+				
+				if ($row['irb_consent'] != "") { $irb = "Y"; }
+				else { $irb = "N"; }
+				?>
+				<div class="ui gray segment">
+					<?=$project_name?> (<?=$costcenter?>)<br><br>
+					Enroll date: <?=$enroll_startdate?><br>
+					Un-enroll date: <?=$enroll_enddate?><br>
+					Project end date: <?=$project_enddate;?>
+					Imaging Studies
+					<table class="ui small very compact basic table">
+						<thead>
+							<th>#</th>
+							<th>Modality</th>
+							<th>Date</th>
+							<th>Physician</th>
+							<th>Operator</th>
+							<th>Site</th>
+							<th>Status</th>
+							<th>Study ID</th>
+						</thead>
+						<tbody>
 						<?
-							$sqlstring = "select a.*, b.*, date(enroll_startdate) 'enroll_startdate', date(enroll_enddate) 'enroll_enddate' from enrollment a left join projects b on a.project_id = b.project_id where a.subject_id = $id";
-							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-								$enrollmentid = $row['enrollment_id'];
-								$enroll_startdate = $row['enroll_startdate'];
-								$enroll_enddate = $row['enroll_enddate'];
-								$project_name = $row['project_name'];
-								$costcenter = $row['project_costcenter'];
-								$project_enddate = $row['project_enddate'];
+						$sqlstring = "select * from studies where enrollment_id = $enrollmentid";
+						$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						if (mysqli_num_rows($result2) > 0) {
+							while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
+								$study_id = $row2['study_id'];
+								$study_num = $row2['study_num'];
+								$study_modality = $row2['study_modality'];
+								$study_datetime = $row2['study_datetime'];
+								$study_operator = $row2['study_operator'];
+								$study_performingphysician = $row2['study_performingphysician'];
+								$study_site = $row2['study_site'];
+								$study_status = $row2['study_status'];
 								
-								if ($row['irb_consent'] != "") { $irb = "Y"; }
-								else { $irb = "N"; }
-						?>
-						<tr>
-							<td class="section">
-								<table class="subdownload" width="100%">
-									<tr>
-										<td class="label" style="width: 250px; text-align: left">
-											<?=$project_name?> (<?=$costcenter?>)<br><br>
-											<div style="font-size:10pt; font-weight: normal;">
-											Enroll date: <?=$enroll_startdate?><br>
-											Un-enroll date: <?=$enroll_enddate?><br>
-											Project end date: <?=$project_enddate;?>
-											</div>
-										</td>
-										<td class="main">
-											<table width="100%">
-												<tr>
-													<td><b>Studies</b>
-													</td>
-												</tr>
-											</table>
-											<table width="100%" class="smalldisplaytable" style="background-color: #FFFFFF; border-radius: 8px; width: 100%; padding:5px">
-												<thead>
-													<th>#</th>
-													<th>Modality</th>
-													<th>Date</th>
-													<th>Physician</th>
-													<th>Operator</th>
-													<th>Site</th>
-													<th>Status</th>
-													<th>Study ID</th>
-												</thead>
-												<tbody>
-												<?
-												$sqlstring = "select * from studies where enrollment_id = $enrollmentid";
-												//$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-												$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-												if (mysqli_num_rows($result2) > 0) {
-													while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
-														$study_id = $row2['study_id'];
-														$study_num = $row2['study_num'];
-														$study_modality = $row2['study_modality'];
-														$study_datetime = $row2['study_datetime'];
-														$study_operator = $row2['study_operator'];
-														$study_performingphysician = $row2['study_performingphysician'];
-														$study_site = $row2['study_site'];
-														$study_status = $row2['study_status'];
-														
-														?>
-														<tr onMouseOver="this.style.backgroundColor='#9EBDFF'" onMouseOut="this.style.backgroundColor=''">
-															<td><?=$study_num?></td>
-															<td><?=$study_modality?></td>
-															<td><?=$study_datetime?></td>
-															<td><?=$study_performingphysician?></td>
-															<td><?=$study_operator?></td>
-															<td><?=$study_site?></td>
-															<td><?=$study_status?></td>
-															<td><tt><?=$uid?><?=$study_num?></tt></td>
-														</tr>
-														<?
-													}
-												}
-												else {
-													?>
-													<tr>
-														<td align="center">
-															None
-														</td>
-													</tr>
-													<?
-												}
-												?>
-											</table>
-										</td>
-									</tr>
-								</table>
-							</td>
-						</tr>
-						<?
+								?>
+								<tr>
+									<td><?=$study_num?></td>
+									<td><?=$study_modality?></td>
+									<td><?=$study_datetime?></td>
+									<td><?=$study_performingphysician?></td>
+									<td><?=$study_operator?></td>
+									<td><?=$study_site?></td>
+									<td><?=$study_status?></td>
+									<td><tt><?=$uid?><?=$study_num?></tt></td>
+								</tr>
+								<?
 							}
+						}
+						else {
+							?>
+							<tr>
+								<td align="center">
+									None
+								</td>
+							</tr>
+							<?
+						}
 						?>
 					</table>
-				</td>
-			</tr>
-		</table>
-		<br><br>
-		<table width="100%">
-			<tr>
-				<td align="center" width="50%"><FORM><INPUT TYPE="BUTTON" VALUE="Back" ONCLICK="history.go(-1)"></FORM></td>
-				<form method="post" action="subjects.php">
-				<input type="hidden" name="action" value="delete">
-				<input type="hidden" name="id" value="<?=$id?>">
-				<td align="center"><input type="submit" value="Yes, delete it"</td>
-				</form>
-			</tr>
-		</table>
+				</div>
+			<?
+			}
+			?>
+			</div>
+			
+			<br>
+			<div class="ui two column grid">
+
+				<div class="ui column">
+					<a href="subjects.php?id=<?=$id?>" class="ui button">Cancel</a>
+				</div>
+				
+				<div class="ui right aligned column">
+					<form method="post" action="subjects.php">
+						<input type="hidden" name="action" value="delete">
+						<input type="hidden" name="id" value="<?=$id?>">
+						<input type="submit" class="ui red button" value="Yes, delete it">
+					</form>
+				</div>
+			</div>
+		</div>
 		<?
 	}
 	
@@ -1305,23 +1294,24 @@
 								}
 							?>
 								<form action="subjects.php" method="post">
-								<input type="hidden" name="id" value="<?=$id?>">
-								<input type="hidden" name="action" value="addrelation">
-								<input type="hidden" name="makesymmetric" value="1">
-								<div class="ui small labeled action input">
-								<label for="relation" class="ui label grey"><?=$uid?> is the </label>
-								<select class="ui selection dropdown" name="relation" id="relation">
-									<option value="siblingm">Half-sibling (same mother)</option>
-									<option value="siblingf">Half-sibling (same father)</option>
-									<option value="sibling">Sibling</option>
-									<option value="parent">Parent</option>
-									<option value="child">Child</option>
-								</select>
-								<label for="uid2" class="ui label grey">of</label>
-								<input type="text" size="10" name="uid2" id="uid2" placeholder="UID">
-								<button class="ui primary button" type="submit" value="Enroll">Add</button>
-								</div>
-								<br>
+									<input type="hidden" name="id" value="<?=$id?>">
+									<input type="hidden" name="action" value="addrelation">
+									<input type="hidden" name="makesymmetric" value="1">
+									<?=$uid?> is the
+									<select class="ui selection dropdown" name="relation" id="relation">
+										<option value="siblingm">Half-sibling (same mother)</option>
+										<option value="siblingf">Half-sibling (same father)</option>
+										<option value="sibling">Sibling</option>
+										<option value="parent">Parent</option>
+										<option value="child">Child</option>
+									</select> &hellip;
+									<br>
+									&hellip; of
+									<div class="ui input">
+										<input type="text" size="10" name="uid2" id="uid2" placeholder="UID">
+									</div>
+									<button class="ui button" type="submit" value="Enroll">Add relation</button>
+									<br>
 								</form>
 							<? } ?>
 							<table class="ui very basic celled collapsing very compact table">
@@ -1336,7 +1326,7 @@
 							</table>
 						</div>
 						<div class="title">
-							<h3 class="ui header"><i class="dropdown icon"></i>Options</h3>
+							<h3 class="ui header"><i class="dropdown icon"></i>Admin Operations</h3>
 						</div>
 						<div class="content">
 							<? if (GetPerm($perms, 'modifyphi', $projectid)) { ?>
@@ -2537,17 +2527,17 @@
 			<tr>
 				<td>&nbsp;</td>
 				<td>
-					<div class="ui input">
+					<div class="ui fluid input">
 						<input type="text" placeholder="UID" name="searchuid" id="searchuid" value="<?=$searchuid?>" autofocus="autofocus">
 					</div>
 				</td>
 				<td>
-					<div class="ui input">
+					<div class="ui fluid input">
 						<input type="text" placeholder="Alternate UID" name="searchaltuid" value="<?=$searchaltuid?>">
 					</div>
 				</td>
 				<td>
-					<div class="ui input">
+					<div class="ui fluid input">
 						<input type="text" placeholder="Name" name="searchname" value="<?=$searchname?>">
 					</div>
 				</td>
@@ -2569,10 +2559,9 @@
 				</td>
 				<td> - </td>
 				<td>
-					<input type="submit" value="Search" class="ui primary button">
+					<div class="ui primary button" onclick="document.subjectlist.action='subjects.php';document.subjectlist.action.value='search'; document.subjectlist.submit();">Search</div>
 				</td>
 			</tr>
-			</form>
 			
 			<?
 				$subjectsfound = 0;
@@ -2596,6 +2585,7 @@
 					$sqlstring .= "and a.isactive = '$searchactive' group by a.uid order by a.name asc";
 					//PrintSQL($sqlstring);
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					$subjectsfound = mysqli_num_rows($result);
 					if (mysqli_num_rows($result) > 0) {
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$id = $row['subject_id'];
@@ -2638,7 +2628,7 @@
 							
 							if ($isactive == 0) { ?><tr style="background-image:url('images/deleted.png')"><? } else { ?><tr><? } ?>
 							
-								<td><input type="checkbox" name="uids[]" value="<?=$uid?>"></td>
+								<td style="background-color: lightyellow"><input type="checkbox" name="uids[]" value="<?=$uid?>"></td>
 								<!--<input type="hidden" name="uidids[]" value="<?=$id?>">-->
 								<td><a href="subjects.php?action=display&id=<?=$id?>"><?=$uid?></a></td>
 								<td><?=implode2(', ',$altuids)?></td>
@@ -2693,10 +2683,20 @@
 					}
 				}
 				?>
-			</table>
-			<div class="ui bottom attached menu">
-				<div class="small item">
-					<select name="subjectgroupid" class="ui dropdown">
+		</tbody>
+	</table>
+		<?
+		if ($subjectsfound > 0) {
+		?>
+		<div class="ui bottom attached menu">
+			<div class="item" style="background-color: lightyellow">
+				<div class="ui action input">
+					<div class="ui selection dropdown">
+						<input type="hidden" name="subjectgroupid">
+						<i class="dropdown icon"></i>
+						<div class="default text">Select subject group</div>
+						<div class="scrollhint menu">
+					<!--<select name="groupid" class="ui selection dropdown">-->
 						<?
 							$userid = $_SESSION['userid'];
 						
@@ -2706,24 +2706,34 @@
 								$groupid = $row['group_id'];
 								$groupname = $row['group_name'];
 								?>
-								<option value="<?=$groupid?>"><?=$groupname?>
+								<!--<option value="<?=$groupid?>"><?=$groupname?>-->
+								<div class="item" data-value="<?=$groupid?>"><?=$groupname?></div>
 								<?
 							}
 						?>
-					</select>
-					<input type="submit" class="button" name="addtogroup" value="Add to group" onclick="document.subjectlist.action='groups.php';document.subjectlist.action.value='addsubjectstogroup'">
-				</div>
-				<div class="right menu">
-					<? if ($GLOBALS['issiteadmin']) {?>
-					<a class="item" style="background-color: Lavender" title="Remove all database entries for the subject and move their data to a /deleted directory" onclick="document.subjectlist.action='subjects.php';document.subjectlist.action.value='obliterate'">Obliterate Subjects</a>
-					<? } ?>
+						</div>
+					</div>
+					<!--</select>-->
+					<div class="ui button" value="Add to group" onclick="document.subjectlist.action='groups.php'; document.subjectlist.action.value='addsubjectstogroup'; document.subjectlist.submit();">Add to Group</div>
 				</div>
 			</div>
 			</form>
-		</tbody>
-	</table>
-	<?
+			
+			<div class="right menu">
+				<? if ($GLOBALS['issiteadmin']) {?>
+				<a class="item" style="background-color: Lavender" title="Remove all database entries for the subject and move their data to a /deleted directory" onclick="document.subjectlist.action='subjects.php';document.subjectlist.action.value='obliterate'; document.subjectlist.submit();">Obliterate Subjects</a>
+				<? } ?>
+			</div>
+		</div>
+		<?
+		}
+		else {
+			?></form><?
+		}
 	}
+	?>
+	<br><br><br><br>
+	<?
 ?>
 
 <? include("footer.php") ?>
