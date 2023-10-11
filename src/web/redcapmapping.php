@@ -60,6 +60,7 @@
 	$redcapfieldnotes = GetVariable("redcapfieldnotes");
 	$redcapfieldtype = GetVariable("redcapfieldtype");
 	$rcid = GetVariable("rcid");
+	$uid = GetVariable("uid");
 	$rcmainevent = GetVariable("rcmainevent");
         $nidbdatatype = GetVariable("nidbdatatype");
         $nidbvariablename = GetVariable("nidbvariablename");
@@ -96,7 +97,7 @@
 			break;
 		case 'transferdata':
 			gettransfervals($projectid);
-			TransferData($projectid,$nidbinstrument,$rcmainevent,$rcid,$jointid);
+			TransferData($projectid,$nidbinstrument,$rcmainevent,$rcid,$jointid,$uid);
 			break;
                 default:
 			maptransfer($projectid);
@@ -193,7 +194,8 @@
         <input type="hidden" name="rcmainevent" value="<?=$rcmainevent?>">
         <input type="hidden" name="rcid" value="<?=$rcid?>">
         <input type="hidden" name="nidbinstrument" value="<?=$nidbinstrument?>">
-        <input type="hidden" name="jointid" value="<?=$jointid?>">
+	<input type="hidden" name="jointid" value="<?=$jointid?>">
+	<input type="hidden" name="uid" value="<?=$uid?>">
 		
 		<table class="ui basic table">
 
@@ -247,6 +249,11 @@
 					</select>
 
 				</td>
+				<td>
+                                        <h4> UIds  <i class="small blue question circle outline icon" title="List of UIDs separated by comma and starts with 'S'"></i></h4>
+					<input type="text"  name="uid"  id="sid" value="<?=$uid?>">
+
+                                </td>
                         </tr>
 		</table>
 		<br>
@@ -978,7 +985,7 @@
         /* -- Transfering Data into NiDB from Redcap -- */
         /* -------------------------------------------- */
 
-	function TransferData($projectid,$nidbinstrument,$rcmainevent,$rcid,$jointid)
+	function TransferData($projectid,$nidbinstrument,$rcmainevent,$rcid,$jointid,$uid)
 	{
 
 /*		echo $projectid."<br>";
@@ -1122,13 +1129,8 @@
 ///		echo $redcapfield."<br>";
 ///		echo $info[$redcapfield]."<br>";
 	
-<<<<<<< HEAD
 
 
-=======
-
-
->>>>>>> da1cd495ba7cac8796218a12a4ddaaff85d523af
 		
 		// Get the date field
 		$sqlstringdate = "SELECT redcap_fields FROM `redcap_import_mapping` WHERE `redcap_form`='$inst' and project_id=$projectid and nidb_instrumentname='$nidbinstrument' and redcap_fieldtype='date' and redcap_event='$redcapevent' and redcap_fieldgroupid = (Select distinct(`redcap_fieldgroupid`) from `redcap_import_mapping` WHERE redcap_form='$inst' and project_id=$projectid and nidb_instrumentname='$nidbinstrument' and redcap_fieldtype='value' and redcap_event='$redcapevent' and `redcap_fields`='$redcapfield')";
@@ -1149,14 +1151,9 @@
 
 	    
 ///		echo $info[$RCdate]."<br>";
-<<<<<<< HEAD
-		//
-=======
->>>>>>> da1cd495ba7cac8796218a12a4ddaaff85d523af
 		//
 		//
 		//
-
 
 
 		// Let us get the rater field
@@ -1447,4 +1444,3 @@
 
 
 <? include("footer.php") ?>
-

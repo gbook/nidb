@@ -976,6 +976,14 @@
 					  document.studieslist.submit();
 				   }
 				}
+				function DeleteAnalyses(){
+					var yes = confirm("Are you absolutely sure you want to delete the selected analyses?");
+					if (yes){
+					  document.studieslist.action='analysis.php';
+					  $("#studieslistaction").attr("value", "deleteanalyses");
+					  document.studieslist.submit();
+				   }
+				}
 				function MarkAnalysis(){
 					document.studieslist.action='analysis.php';
 					document.studieslist.submit();
@@ -1026,7 +1034,7 @@
 					<span class="text">With Selected...</span>
 					<div class="ui vertical menu">
 						
-						<div class="ui item" onclick="document.studieslist.action.value='deleteanalyses';return confirm('Are you absolutely sure you want to DELETE the selected analyses?')" title="<b style='color:orange'>Pipeline will be disabled. Wait until the deletions are compelte before reenabling the pipeline</b><Br> This will delete the selected analyses, which will be regenerated using the latest pipeline version"><i class="red trash icon"></i> Delete</div>
+						<div class="ui item" onclick="DeleteAnalyses()" title="<b style='color:orange'>Pipeline will be disabled. Wait until the deletions are compelte before reenabling the pipeline</b><Br> This will delete the selected analyses, which will be regenerated using the latest pipeline version"><i class="red trash icon"></i> Delete</div>
 						
 						<div class="ui item" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='copyanalyses'; GetDestination(); return;"><i class="copy icon"></i> Copy analyses to...</div>
 						

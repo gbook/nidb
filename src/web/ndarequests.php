@@ -24,23 +24,10 @@
 	session_start();
 
 
-?>
-
-<html>
-	<head>
-		<link rel="icon" type="image/png" href="images/squirrel.png">
-		<title>NiDB - NDAR Submission</title>
-	</head>
-
-	<div id="wrapper">
-
-<?
 //	require "config.php";
 	require "functions.php";
 //	require "includes.php";
 	require "includes_php.php";
-	require "includes_html.php";
-	require "menu.php";
 
 	$action = GetVariable("action");
 	$projectid = GetVariable("projectid");
@@ -53,14 +40,38 @@
  switch ($action) 
 {
  case 'updatendainfo':
+?>
+<html>
+        <head>
+                <link rel="icon" type="image/png" href="images/squirrel.png">
+                <title>NiDB - NDAR Submission</title>
+        </head>
+<body>
+        <div id="wrapper">
+
+<?
+                require "includes_html.php";
+                require "menu.php";
 		UpdateNdaSubmission($projectid,$exportid,$ndaprojectnumber,$ndasubmissionid,$csvfile);
 		showndauploads($projectid);
 		break;
  case 'downloadcsv':
-	 	DownloadCsvfile($projectid,$exportid);
-		showndauploads($projectid);
+		DownloadCsvfile($projectid,$exportid);
+                showndauploads($projectid);
                 break;
-	default:
+ default:
+?>
+<html>
+        <head>
+                <link rel="icon" type="image/png" href="images/squirrel.png">
+                <title>NiDB - NDAR Submission</title>
+        </head>
+<body>
+        <div id="wrapper">
+
+<?
+		require "includes_html.php";
+	        require "menu.php";		
 		showndauploads($projectid);
 		break;
 }
@@ -157,9 +168,9 @@ function showndauploads($projectid)
 						</div>
 <?					}
 ?>						<div>
-						<button class="ui icon large button"  type="submit"> 
-	                        	                <i class="save icon"></i>
-						</button>
+							<button class="ui icon large button"  type="submit" onclick="return confirm('Are you sure you want to save the changes?');"> 
+		                        	                <i class="save icon"></i>
+							</button>
 						</div>
 					</form>
                                 </div>
@@ -229,7 +240,8 @@ function showndauploads($projectid)
 			            } else {
 			                <?=$t_name?>.style.display = 'none'; // Hide the table
 			            }
-				        });
+				});
+
 		    </script>
 	<?	
 
@@ -260,7 +272,7 @@ function UpdateNdaSubmission($projectid,$exportid,$ndaprojectnumber,$ndasubmissi
 	$resulttest = MySQLiQuery($sqltest, __FILE__, __LINE__);
 	if (mysqli_num_rows($resulttest)>0){
 		if ($_FILES["file"]["error"]== 0){
-			$filecontent = file_get_contents($_FILES["csvfile"]["tmp_name"]);
+			$filecontent = base64_encode(file_get_contents($_FILES["csvfile"]["tmp_name"]));
 			$sqlstringUp = "UPDATE project_nda_uploads SET ndaprojectnum=$ndaprojectnumber, ndasubmission_id =$ndasubmissionid, csv_file=NULLIF('$filecontent','')  WHERE project_id=$projectid and export_id=$exportid ";
 			$resultUp = MySQLiQuery($sqlstringUp, __FILE__, __LINE__);
 		}
@@ -271,7 +283,7 @@ function UpdateNdaSubmission($projectid,$exportid,$ndaprojectnumber,$ndasubmissi
 	}
 	else {
 		if ($_FILES["csvfile"]["error"]== 0){
-                        $filecontent = file_get_contents($_FILES["csvfile"]["temp_name"]);
+                        $filecontent = base64_encode(file_get_contents($_FILES["csvfile"]["temp_name"]));
                         $sqlstringIn = "insert into project_nda_uploads (project_id,export_id,csv_file,ndaprojectnum,ndasubmission_id) values ($projectid, $exportid, NULLIF($filecontent,''), NULLIF('$ndaprojectnumber',''), NULLIF('$ndasubmissionid','')) on duplicate key update ndaprojectnum=$ndaprojectnumber, ndasubmission_id =$ndasubmissionid ";
                         $resultIn = MySQLiQuery($sqlstringIn, __FILE__, __LINE__);
                 }
@@ -296,7 +308,7 @@ function DownloadCsvfile($projectid,$exportid){
 		echo "<script type='text/javascript'>alert('$message');</script>";
 	}
 	else{
-		$csv_contents = $rowtest['csv_file'];
+		$csv_contents = base64_decode($rowtest['csv_file']);
 		// Extracting Project Name
 		$sqlproject = "select project_name  from  projects WHERE project_id=$projectid";
 	        $resultproject = MySQLiQuery($sqlproject, __FILE__, __LINE__);
@@ -312,8 +324,10 @@ function DownloadCsvfile($projectid,$exportid){
 		$filename = $projectname.$username.$submitdate.$exportid;
 		$filename = preg_replace('/[^\w]/', '', $filename);
 
+
+//		echo "<script type='text/javascript'>downloadCSVFile('$filename','$csv_contents');</script>";
 		// Method I to write csv file
-		file_put_contents($filename.".csv",$csv_contents);
+//		file_put_contents($filename.".csv",$csv_contents);
 		//echo $csv_contents;
 		// MEthod 2 to write .csv file
 //		$flp = fopen($filename,'w');
@@ -321,17 +335,16 @@ function DownloadCsvfile($projectid,$exportid){
 //		fclose($flp);
 		
 		// Method 3 to write .csv file
-//		header("Content-Description: File Transfer");
-//		header("Content-Disposition: attachment; filename=$filename.csv");
-//		header("Content-Type: text/csv");
-//		header("Content-length: " . strlen($csv_contents) . "\n\n");
-//		header("Content-Transfer-Encoding: text");
+		header("Content-Description: File Transfer");
+		header("Content-Disposition: attachment; filename=$filename.csv");
+		header("Content-Type: text/csv");
+		header("Content-length: " . strlen($csv_contents) . "\n\n");
+		header("Content-Transfer-Encoding: text");
                 // Show csv Contents to the browser
-//                echo $csv_contents;
+                echo $csv_contents;
 		
 
 	}
-
 
 
 }
@@ -396,6 +409,36 @@ function getexportid($projectid,$desttype)
 }
 
 ?>
+ <script type="text/javascript">
+	function downloadCSVFile(filename,csv_data) {
 
+                        	    // Create CSV file object and feed
+	                            // our csv_data into it
+        	                   CSVFile = new Blob(['\ufeff' + csv_data], {
+                	           type: "text/csv"
+				});
+				   alert('Working');
 
+	                            // Create to temporary link to initiate
+        	                    // download process
+                	            var temp_link = document.createElement('a');
+
+                        	    // Download csv file
+	                            const d = new Date();
+        	                    tt = d.getTime();
+                	            temp_link.download = filename+".csv";
+                        	    var url = window.URL.createObjectURL(CSVFile);
+	                            temp_link.href = url;
+
+        	                    // This link should not be displayed
+                	            temp_link.style.display = "none";
+                        	    document.body.appendChild(temp_link);
+
+	                            // Automatically click the link to
+        	                    // trigger download
+                	            temp_link.click();
+	                       	    document.body.removeChild(temp_link);
+        	            }
+
+</script>
 <? include("footer.php") ?>

@@ -1141,40 +1141,23 @@
 		if (count($weights) > 0) { $varweight = sd($weights); } else { $varweight = 0; }
 
 		?>
-		<div class="ui top attached grey segment">
-			<div class="ui two column grid">
-				<div class="ui column">
-					<h2 class="ui header"><?=$groupname?></h2>
-				</div>
-				<div class="ui right aligned column">
-					<button class="ui tiny red button">Delete Group</button>
-				</div>
-			</div>
-			<div class="ui grid">
-				<div class="ui four wide column">
-					Summary
-					<?
-					DisplayDemographicsTable($n,$numage,$avgage,$varage,$genders,$ethnicity1s,$ethnicity2s,$educations,$handednesses,$avgweight,$varweight);
-					?>
-					<div class="ui styled accordion">
-						<div class="title">
-							<i class="dropdown icon"></i>
-							SQL
-						</div>
-						<div class="content">
-							<tt><?=PrintSQL($sqlstring)?></tt>
-						</div>
+		<div class="ui text container">
+			<div class="ui grey raised segment">
+				<h1 class="ui header">
+					<i class="user friends icon"></i>
+					<div class="content">
+						<?=$groupname?>
+						<div class="sub header">Subject group</div>
 					</div>
-				</div>
-				<div class="ui four wide column">
-					Options
-				</div>
-				<div class="ui eight wide column">
-					Group members
-				</div>
+				</h1>
+				<?
+					DisplayDemographicsTable($n,$numage,$avgage,$varage,$genders,$ethnicity1s,$ethnicity2s,$educations,$handednesses,$avgweight,$varweight);
+				?>
+				<button class="ui tiny red button">Delete Group</button>
 			</div>
 		</div>
-		<div class="ui bottom attached segment">
+		
+		<div class="ui segment">
 			<form action="groups.php" method="post">
 				<input type="hidden" name="id" value="<?=$id?>">
 				<input type="hidden" name="action" value="removegroupitem">
@@ -1236,8 +1219,8 @@
 					}
 					?>
 					<tr>
-						<td colspan="100" align="right">
-							<input type="submit" value="Remove">
+						<td colspan="11" class="ui right aligned">
+							<input type="submit" class="ui red button" value="Remove">
 						</td>
 					</tr>
 				</table>
@@ -1324,17 +1307,17 @@
 	/* -------------------------------------------- */
 	function DisplayDemographicsTable($n,$numage,$avgage,$varage,$genders,$ethnicity1s,$ethnicity2s,$educations,$handednesses,$avgweight,$varweight) {
 		?>
-		<table class="ui attached very basic very compact collapsing celled table">
+		<table class="ui very basic very compact collapsing table">
 			<tr>
-				<td>N</td>
+				<td class="right aligned">N</td>
 				<td><?=$n?></td>
 			</tr>
 			<tr>
-				<td>Age<br><span class="tiny">computed from<br><?=$numage?> non-zero ages</span></td>
+				<td class="right aligned">Age<br><span class="tiny">computed from<br><?=$numage?> non-zero ages</span></td>
 				<td><?=number_format($avgage,1)?>Y <span class="small">&plusmn;<?=number_format($varage,1)?>Y</span></td>
 			</tr>
 			<tr>
-				<td>Sex</td>
+				<td class="right aligned">Sex</td>
 				<td>
 					<?
 					foreach ($genders as $key => $value) {
