@@ -531,7 +531,7 @@ int modulePipeline::Run() {
 
                                 setuplog << n->WriteLog("Dependency path is [" + deppath + "]");
 
-                                QString fulldeppath = deppath + "/" + dependencyname;
+                                QString fulldeppath = deppath;
                                 QDir d(fulldeppath);
                                 if (d.exists())
                                     setuplog << n->WriteLog("Full path to parent pipeline [" + fulldeppath + "] exists");
