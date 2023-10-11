@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Sep 21, 2023 at 07:53 PM
+-- Generation Time: Oct 11, 2023 at 05:41 PM
 -- Server version: 10.3.28-MariaDB
 -- PHP Version: 7.2.24
 
@@ -2365,7 +2365,7 @@ CREATE TABLE `project_nda_uploads` (
   `project_id` int(11) NOT NULL,
   `export_id` int(11) NOT NULL,
   `update_date` date DEFAULT NULL,
-  `csv_file` mediumtext DEFAULT NULL,
+  `csv_file` longblob DEFAULT NULL,
   `ndaprojectnum` int(11) DEFAULT NULL,
   `ndasubmission_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
