@@ -12,7 +12,7 @@ description: JSON array
 
 <mark style="color:red;">\*required</mark>
 
-<table data-header-hidden><thead><tr><th align="right"></th><th width="150"></th><th></th></tr></thead><tbody><tr><td align="right"><em><strong>Variable</strong></em></td><td><strong>Type</strong></td><td><strong>Description</strong></td></tr><tr><td align="right"><em>*<strong>drugName</strong></em></td><td>string</td><td>Name of the drug</td></tr><tr><td align="right"><em>*<strong>dateStart</strong></em></td><td>datetime</td><td>Date the drug was started</td></tr><tr><td align="right"><em>dateEnd</em></td><td>datetime</td><td>Date the drug was stopped</td></tr><tr><td align="right"><em>*<strong>doseAmount</strong></em></td><td>number</td><td>In combination with other dose variables, the quantity of the drug</td></tr><tr><td align="right"><em>*<strong>doseFrequency</strong></em></td><td>string</td><td>Description of the frequency of administration</td></tr><tr><td align="right"><em>administrationRoute</em></td><td>string</td><td>Drug entry route (oral, IV, unknown, etc)</td></tr><tr><td align="right"><em>drugClass</em></td><td>string</td><td>Drug class </td></tr><tr><td align="right"><em>doseKey</em></td><td>string</td><td>For clinical trials, the dose key</td></tr><tr><td align="right"><em>doseUnit</em></td><td>string</td><td>mg, g, ml, tablets, capsules, etc</td></tr><tr><td align="right"><em>frequencyModifier</em></td><td>string</td><td>(every, times)</td></tr><tr><td align="right"><em>frequencyValue</em></td><td>number</td><td>Number</td></tr><tr><td align="right"><em>frequencyUnit</em></td><td>string</td><td>(bolus, dose, second, minute, hour, day, week, month, year)</td></tr><tr><td align="right"><em>description</em></td><td>string</td><td>Longer description</td></tr><tr><td align="right"><em>rater</em></td><td>string</td><td>Rater/experimenter</td></tr><tr><td align="right"><em>notes</em></td><td>string</td><td> </td></tr><tr><td align="right"><em>dateEntry</em></td><td>string</td><td> date for the data-entry</td></tr></tbody></table>
+<table data-header-hidden><thead><tr><th width="244" align="right"></th><th width="120"></th><th></th></tr></thead><tbody><tr><td align="right"><em><strong>Variable</strong></em></td><td><strong>Type</strong></td><td><strong>Description</strong></td></tr><tr><td align="right"><code>DrugName</code></td><td>string</td><td>Name of the drug. <mark style="color:red;">REQUIRED</mark></td></tr><tr><td align="right"><code>DateStart</code></td><td>datetime</td><td>Datetime the drug was started. <mark style="color:red;">REQUIRED</mark></td></tr><tr><td align="right"><code>DateEnd</code></td><td>datetime</td><td>Datetime the drug was stopped.</td></tr><tr><td align="right"><code>DoseString</code></td><td>string</td><td>Full dosing string. Examples <code>tylenol 325mg twice daily by mouth</code>, or <code>5g marijuana inhaled by volcano</code></td></tr><tr><td align="right"><code>DoseAmount</code></td><td>number</td><td>In combination with other dose variables, the quantity of the drug. <mark style="color:red;">REQUIRED</mark></td></tr><tr><td align="right"><code>DoseFrequency</code></td><td>string</td><td>Description of the frequency of administration. <mark style="color:red;">REQUIRED</mark></td></tr><tr><td align="right"><code>AdministrationRoute</code></td><td>string</td><td>Drug entry route (oral, IV, unknown, etc).</td></tr><tr><td align="right"><code>DrugClass</code></td><td>string</td><td>Drug class.</td></tr><tr><td align="right"><code>DoseKey</code></td><td>string</td><td>For clinical trials, the dose key.</td></tr><tr><td align="right"><code>DoseUnit</code></td><td>string</td><td>mg, g, ml, tablets, capsules, etc.</td></tr><tr><td align="right"><code>FrequencyModifier</code></td><td>string</td><td>(every, times)</td></tr><tr><td align="right"><code>FrequencyValue</code></td><td>number</td><td>A number corresponding to the dose frequency.</td></tr><tr><td align="right"><code>FrequencyUnit</code></td><td>string</td><td>(bolus, dose, second, minute, hour, day, week, month, year)</td></tr><tr><td align="right"><code>Description</code></td><td>string</td><td>Longer description.</td></tr><tr><td align="right"><code>Rater</code></td><td>string</td><td>Rater/experimenter name.</td></tr><tr><td align="right"><code>Notes</code></td><td>string</td><td>Notes about drug.</td></tr><tr><td align="right"><code>DateRecordEntry</code></td><td>string</td><td>Date of the data entry.</td></tr></tbody></table>
 
 ### Recording drug administration
 
@@ -22,27 +22,31 @@ The following examples convert between common language and the squirrel storage 
 
 | Variable          | Value        |
 | ----------------- | ------------ |
-| drugClass         | PPI          |
-| drugName          | esomeprazole |
-| doseAmount        | 20mg         |
-| doseFrequency     | daily        |
-| route             | oral         |
-| doseUnit          | mg           |
-| frequencyModifier | every        |
-| frequencyValue    | 1            |
-| frequencyUnit     | day          |
+| DrugClass         | PPI          |
+| DrugName          | esomeprazole |
+| DoseAmount        | 20mg         |
+| DoseFrequency     | daily        |
+| Route             | oral         |
+| DoseUnit          | mg           |
+| FrequencyModifier | every        |
+| FrequencyValue    | 1            |
+| FrequencyUnit     | day          |
+
+
 
 > 2 puffs atrovent inhaler every 6 hours
 
+
+
 | Variable            | Value          |
 | ------------------- | -------------- |
-| drugName            | ipratropium    |
-| drugClass           | bronchodilator |
-| doseAmount          | 2              |
-| doseFrequency       | every 6 hours  |
-| administrationRoute | inhaled        |
-| doseUnit            | puffs          |
-| frequencyModifier   | every          |
-| frequencyValue      | 6              |
-| frequencyUnit       | hours          |
+| DrugName            | ipratropium    |
+| DrugClass           | bronchodilator |
+| DoseAmount          | 2              |
+| DoseFrequency       | every 6 hours  |
+| AdministrationRoute | inhaled        |
+| DoseUnit            | puffs          |
+| FrequencyModifier   | every          |
+| FrequencyValue      | 6              |
+| FrequencyUnit       | hours          |
 

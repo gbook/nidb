@@ -12,14 +12,14 @@ This object contains information about the squirrel package.
 
 <mark style="color:red;">\*required</mark>
 
-<table data-header-hidden><thead><tr><th align="right"></th><th width="150"></th><th></th></tr></thead><tbody><tr><td align="right"><em><strong>Variable</strong></em></td><td><strong>Type</strong></td><td><strong>Description</strong></td></tr><tr><td align="right"><em><strong>*format</strong></em></td><td>string</td><td>Defines the package format</td></tr><tr><td align="right"><em><strong>*version</strong></em></td><td>string</td><td>squirrel format version</td></tr><tr><td align="right"><em>NiDBVersion</em></td><td>string</td><td>The NiDB version which wrote the package</td></tr><tr><td align="right"><em><strong>*name</strong></em></td><td>string</td><td>Short name of the package</td></tr><tr><td align="right"><em>description</em></td><td>string</td><td>Longer description of the package</td></tr><tr><td align="right"><em><strong>*date</strong></em></td><td>datetime</td><td>Date the package was created</td></tr><tr><td align="right"><em>subjects</em></td><td>JSON array</td><td></td></tr><tr><td align="right">dirFormat</td><td>string</td><td><code>orig</code>, <code>seq</code> (<strong>see details below</strong>)</td></tr><tr><td align="right">dataFormat</td><td>string</td><td><code>orig</code>, <code>anon</code>, <code>anonfull</code>, <code>nifti3d</code>, <code>nifti3dgz</code>, <code>nifti4d</code>, <code>nifti4dgz</code> (<strong>see details below</strong>)</td></tr><tr><td align="right">license</td><td>string</td><td>Any sharing or license notes</td></tr><tr><td align="right">readme</td><td>string</td><td>Any readmes, likely imported</td></tr><tr><td align="right">changes</td><td>string</td><td>Any change files</td></tr><tr><td align="right">notes</td><td>JSON object</td><td>See details below</td></tr></tbody></table>
+<table data-header-hidden><thead><tr><th align="right"></th><th width="128.00000000000003"></th><th></th></tr></thead><tbody><tr><td align="right"><em><strong>Variable</strong></em></td><td><strong>Type</strong></td><td><strong>Description</strong></td></tr><tr><td align="right"><code>PackageFormat</code></td><td>string</td><td>Either <code>dir</code> or <code>zip</code></td></tr><tr><td align="right"><code>SquirrelVersion</code></td><td>string</td><td>Squirrel format version.</td></tr><tr><td align="right"><code>NiDBVersion</code></td><td>string</td><td>The NiDB version which wrote the package.</td></tr><tr><td align="right"><code>PackageName</code></td><td>string</td><td>Short name of the package.</td></tr><tr><td align="right"><code>Description</code></td><td>string</td><td>Longer description of the package.</td></tr><tr><td align="right"><code>Datetime</code></td><td>datetime</td><td>Datetime the package was created.</td></tr><tr><td align="right"><code>SubjectDirFormat</code></td><td>string</td><td><code>orig</code>, <code>seq</code> (<strong>see details below</strong>).</td></tr><tr><td align="right"><code>StudyDirFormat</code></td><td>string</td><td><code>orig</code>, <code>seq</code> (<strong>see details below</strong>).</td></tr><tr><td align="right"><code>SeriesDirFormat</code></td><td>string</td><td><code>orig</code>, <code>seq</code> (<strong>see details below</strong>).</td></tr><tr><td align="right"><code>DataFormat</code></td><td>string</td><td>Data format for imaging data to be written. Squirrel should attempt to convert to the specified format if possible. <code>orig</code>, <code>anon</code>, <code>anonfull</code>, <code>nifti3d</code>, <code>nifti3dgz</code>, <code>nifti4d</code>, <code>nifti4dgz</code> (<strong>see details below</strong>).</td></tr><tr><td align="right"><code>License</code></td><td>string</td><td>Any sharing or license notes.</td></tr><tr><td align="right"><code>Readme</code></td><td>string</td><td>Any readmes. Likely imported.</td></tr><tr><td align="right"><code>Changes</code></td><td>string</td><td>Any change files.</td></tr><tr><td align="right"><code>Notes</code></td><td>JSON object</td><td>See details below.</td></tr></tbody></table>
 
 ### Variable options
 
-#### dirFormat
+#### subjectDirFormat, studyDirFormat, seriesDirFormat
 
 * `orig` - Original subject, study, series directory structure format. Example `S1234ABC/1/1`
-* `seq` - Sequential. Zero-padded sequential numbers. Example `1/1/1`
+* `seq` - Sequential. Zero-padded sequential numbers. Example `00001/0001/00001`
 
 #### dataFormat
 
@@ -41,12 +41,7 @@ Notes about the package are stored here. This includes import and export logs, a
 
 Notes sections
 
-|         |                                                                                                    |
-| ------- | -------------------------------------------------------------------------------------------------- |
-| Section | Description                                                                                        |
-| import  | Any notes related to import. BIDS files such as README and CHANGES are stored here.                |
-| merge   | Any notes related to the merging of datasets. Such as information about renumbering of subject IDs |
-| export  | Any notes related to the export process                                                            |
+<table><thead><tr><th width="163">Section</th><th>Description</th></tr></thead><tbody><tr><td>import</td><td>Any notes related to import. BIDS files such as README and CHANGES are stored here.</td></tr><tr><td>merge</td><td>Any notes related to the merging of datasets. Such as information about renumbering of subject IDs</td></tr><tr><td>export</td><td>Any notes related to the export process</td></tr></tbody></table>
 
 ### Directory structure
 

@@ -12,10 +12,10 @@ All DICOM tags are acceptable parameters. See this list for available DICOM tags
 
 ### JSON variables
 
-<table data-header-hidden><thead><tr><th width="150"></th><th></th><th width="150"></th></tr></thead><tbody><tr><td><em><strong>Variable</strong></em></td><td><strong>Description</strong></td><td><strong>Example</strong></td></tr><tr><td><em>{Tags}</em></td><td>A unique key, sometimes derived from the DICOM header</td><td>Protocol, T1w<br>FieldStrength, 3.0</td></tr></tbody></table>
+<table data-header-hidden><thead><tr><th width="127.4"></th><th width="345"></th><th width="243"></th></tr></thead><tbody><tr><td><em><strong>Variable</strong></em></td><td><strong>Description</strong></td><td><strong>Example</strong></td></tr><tr><td><em>{Tags}</em></td><td>A unique key, sometimes derived from the DICOM header</td><td>Protocol, T1w<br>FieldStrength, 3.0</td></tr></tbody></table>
 
 ### Directory structure
 
 Files associated with this section are stored in the following directory. `subjectID`, `studyNum`, `seriesNum` are the actual subject ID, study number, and series number. For example `/data/S1234ABC/1/1`.
 
-> `/data/subjectID/studyNum/seriesNum/params.json`
+> `/data/<SubjectID>/<StudyNum>/<SeriesNum>/params.json`

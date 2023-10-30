@@ -12,13 +12,7 @@ This object is an array of group analyses. A group analysis is considered an ana
 
 <mark style="color:red;">\*required</mark>
 
-|           _**Variable**_ | **Type** | **Description**             |
-| -----------------------: | -------- | --------------------------- |
-| _**\*numGroupAnalyses**_ | number   | Number of group analyses    |
-|     _**\*analysisName**_ | string   | Name of this group analysis |
-|              description | string   | Description                 |
-|                startDate | datetime | Start date                  |
-|                  endDate | datetime | End date                    |
+<table data-header-hidden><thead><tr><th width="221.33333333333331" align="right"></th><th width="132"></th><th></th></tr></thead><tbody><tr><td align="right"><em><strong>Variable</strong></em></td><td><strong>Type</strong></td><td><strong>Description</strong></td></tr><tr><td align="right"><code>GroupAnalysisName</code></td><td>string</td><td>Name of this group analysis.</td></tr><tr><td align="right"><code>Description</code></td><td>string</td><td>Description.</td></tr><tr><td align="right"><code>Notes</code></td><td>string</td><td>Notes about the group analysis.</td></tr><tr><td align="right"><code>Datetime</code></td><td>datetime</td><td>Datetime of the group analysis.</td></tr><tr><td align="right"><code>NumFiles</code></td><td>number</td><td>Number of files in the group analysis.</td></tr><tr><td align="right"><code>Size</code></td><td>number</td><td>Size in bytes of the analysis.</td></tr><tr><td align="right"><code>VirtualPath</code></td><td>string</td><td>Path to the group analysis data within the squirrel package.</td></tr></tbody></table>
 
 ### Directory structure
 

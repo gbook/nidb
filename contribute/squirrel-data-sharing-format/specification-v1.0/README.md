@@ -16,7 +16,7 @@ JSON is JavaScript object notation, and many tutorials are available for how to 
 * Wiki - [https://en.wikipedia.org/wiki/JSON](https://en.wikipedia.org/wiki/JSON)
 * JSON specification - [https://www.json.org/json-en.html](https://www.json.org/json-en.html)
 
-**Squirrel data types**
+**Data types**
 
 The JSON specification includes several data types, but squirrel uses some derivative data types: string, number, date, datetime, char. Date, datetime, and char are stored as the JSON string datatype and should be enclosed in double quotes.
 
@@ -32,4 +32,4 @@ A squirrel package becomes a package once the entire directory structure is comb
 
 ## Package Specification
 
-<figure><img src="https://mermaid.ink/img/pako:eNqVVE2PmzAQ_SuRV5GIBBGJ2CxxpT21l6pqpe6t4uLFQ-IuYOQPNTTKf69tsBPYPTQ-2G-Y92bGM8hnVHIKCKODIN1x8e1n0S7MEpyrJHnuSPlGDhCN5-rT1Rt9ffnx3aGVIVKiSGS3W4oNwDqoWQsyCmjGgFMHgjXQKhnd4BnLhqasVC5HYhHjLRH9amC5r8mz1K-_oTSBPPBRRv9BcN2RltS9ZDJyVuJNT_VSG05pykzp4_kBowEitTAUDz7gUKEPMnJ78A4BbQpzX5vBHe_dodZ5lcvlIEnWdkiCNLJitZ2ThZ70nmr7YIlyMqvl8qbxlnY1B_LVXrgPK68LQ3V1jMag8dZM4S9iBR4PAm9NBOEKqq9hEcq3nBo_VFUVm24J_gYJJfJIhCA93k5Fkyz3CGdduEc6acX_CGfyMNF7kk7-7iCExzSNByl-yLJsxMkfRtURZ90JxagB0RBGzStwtiELpI7QQIGwgRQqomtVoKK9GKruzBDgC2WKC4QrUkuIEdGKv_RtibASGjzpMyPmUWkCy9T2i_OJjfAZnRBOY9QjvE13612ePeW7fPO0zfdZfonRX6dI1_th5Y_7zWa3zfPLP3NDlu0?type=png" alt=""><figcaption></figcaption></figure>
+<figure><img src="https://mermaid.ink/img/pako:eNqVVE2PmzAQ_SuRV5GIBBGJ2CxxpT21l6pqpe6t4uLFQ-IuYOQPNTTKf69tsBPYPTQ-2G-Y92bGM8hnVHIKCKODIN1x8e1n0S7MEpyrJHnuSPlGDhCN5-rT1Rt9ffnx3aGVIVKiSGS3W4oNwDqoWQsyCmjGgFMHgjXQKhnd4BnLhqasVC5HYhHjLRH9amC5r8mz1K-_oTSBPPBRRv9BcN2RltS9ZDJyVuJNT_VSG05pykzp4_kBowEitTAUDz7gUKEPMnJ78A4BbQpzX5vBHe_dodZ5lcvlIEnWdkiCNLJitZ2ThZ70nmr7YIlyMqvl8qbxlnY1B_LVXrgPK68LQ3V1jMag8dZM4S9iBR4PAm9NBOEKqq9hEcq3nBo_VFUVm24J_gYJJfJIhCA93k5Fkyz3CGdduEc6acX_CGfyMNF7kk7-7iCExzSNByl-yLJsxMkfRtURZ90JxagB0RBGzStwtiELpI7QQIGwgRQqomtVoKK9GKruzBDgC2WKC4QrUkuIEdGKv_RtibASGjzpMyPmUWkCy9T2i_OJjfAZnRBOY9QjvE13612ePeW7fPO0zfdZfonRX6dI1_th5Y_7zWa3zfPLP3NDlu0?type=png" alt=""><figcaption><p>Object heirarchy of a squirrel package</p></figcaption></figure>

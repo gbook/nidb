@@ -12,10 +12,10 @@ Experiments describe how data was collected from the participant. In other words
 
 <mark style="color:red;">\*required</mark>
 
-<table data-header-hidden><thead><tr><th align="right"></th><th width="150"></th><th></th></tr></thead><tbody><tr><td align="right"><em><strong>Variable</strong></em></td><td><strong>Type</strong></td><td><strong>Description</strong></td></tr><tr><td align="right"><em>*experimentName</em></td><td>string</td><td>Unique name of the experiment</td></tr><tr><td align="right"><em>*numFiles</em></td><td>number</td><td>Number of files contained in the experiment</td></tr><tr><td align="right"><em>*size</em></td><td>number</td><td>Size in bytes of the experiment files</td></tr></tbody></table>
+<table data-header-hidden><thead><tr><th width="198" align="right"></th><th width="98.00000000000003"></th><th></th></tr></thead><tbody><tr><td align="right"><em><strong>Variable</strong></em></td><td><strong>Type</strong></td><td><strong>Description</strong></td></tr><tr><td align="right"><code>ExperimentName</code></td><td>string</td><td>Unique name of the experiment. <mark style="color:red;">REQUIRED</mark></td></tr><tr><td align="right"><code>NumFiles</code></td><td>number</td><td>Number of files contained in the experiment. <mark style="color:red;">REQUIRED</mark></td></tr><tr><td align="right"><code>Size</code></td><td>number</td><td>Size, in bytes, of the experiment files. <mark style="color:red;">REQUIRED</mark></td></tr><tr><td align="right"><code>VirtualPath</code></td><td>string</td><td>Path to the experiment within the squirrel package.</td></tr></tbody></table>
 
 ### Directory structure
 
-Files associated with this section are stored in the following directory. Where `experimentName` is the unique name of the experiment.
+Files associated with this section are stored in the following directory. Where `ExperimentName` is the unique name of the experiment.
 
-> `/experiments/experimentName`
+> `/experiments/<ExperimentName>`

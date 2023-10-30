@@ -12,10 +12,16 @@ Examples include mapping numeric values (1,2,3,...) to descriptions (right, left
 
 ### JSON variables
 
-The data-dictionary object is freeform and can contain any files or JSON objects.
+_data-dictionary_
+
+<table data-header-hidden><thead><tr><th width="256" align="right"></th><th width="131.00000000000003"></th><th></th></tr></thead><tbody><tr><td align="right"><em><strong>Variable</strong></em></td><td><strong>Type</strong></td><td><strong>Description</strong></td></tr><tr><td align="right"><code>NumFiles</code></td><td>number</td><td>Number of files contained in the experiment. <mark style="color:red;">REQUIRED</mark></td></tr><tr><td align="right"><code>Size</code></td><td>number</td><td>Size, in bytes, of the experiment files. <mark style="color:red;">REQUIRED</mark></td></tr><tr><td align="right"><code>VirtualPath</code></td><td>string</td><td>Path to the data-dictionary within the squirrel package.</td></tr><tr><td align="right"><code>data-dictionary-item</code></td><td>JSON array</td><td>Array of data dictionary items.</td></tr></tbody></table>
+
+_data-dictionary-item_
+
+<table data-header-hidden><thead><tr><th width="240" align="right"></th><th width="98.00000000000003"></th><th></th></tr></thead><tbody><tr><td align="right"><em><strong>Variable</strong></em></td><td><strong>Type</strong></td><td><strong>Description</strong></td></tr><tr><td align="right"><code>VariableType</code></td><td>string</td><td>Type of variable. <mark style="color:red;">REQUIRED</mark></td></tr><tr><td align="right"><code>VariableName</code></td><td>string</td><td>Name of the variable. <mark style="color:red;">REQUIRED</mark></td></tr><tr><td align="right"><code>Description</code></td><td>string</td><td>Description of the variable.</td></tr><tr><td align="right"><code>KeyValue</code></td><td>string</td><td>List of possible key/value mappings in the format <code>key1=value1, key2=value2</code>. Example <code>1=Female, 2=Male</code></td></tr><tr><td align="right"><code>ExpectedTimepoints</code></td><td>number</td><td>Number of expected timepoints. Example, the study is expected to have 5 records of a variable.</td></tr><tr><td align="right"><code>RangeLow</code></td><td>number</td><td>For numeric values, the lower limit.</td></tr><tr><td align="right"><code>RangeHigh</code></td><td>number</td><td>For numeric values, the upper limit.</td></tr></tbody></table>
 
 ### Directory structure
 
 Files associated with this section are stored in the following directory.
 
-> `/datadictionary`
+> `/data-dictionary`
