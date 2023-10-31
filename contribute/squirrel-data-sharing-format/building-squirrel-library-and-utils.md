@@ -2,10 +2,10 @@
 
 ## Overview
 
-The following OS configurations have been tested to build squirrel with Qt 6.4
+The following OS configurations have been tested to build squirrel with Qt 6.5
 
 * <mark style="color:green;">Compatible</mark>
-  * Rocky Linux 8 (not 8.6)
+  * RHEL compatible Linux 8 (not 8.6)
   * CentOS 8 (not CentOS 8 Stream)
   * CentOS 7
   * Windows 10/11
