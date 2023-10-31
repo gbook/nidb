@@ -4,7 +4,7 @@ description: JSON array
 
 # drugs
 
-‘Drugs’ represents any substances administered to a participant; through a clinical trial or the participant’s use of prescription or recreational drugs. Detailed variables are available to record exactly how much and when a drug is administered. This allows searching by dose amount, or other variable.
+‘Drugs’ represents any substances **administered to** a participant; through a clinical trial or the participant’s use of prescription or recreational drugs. Detailed variables are available to record exactly how much and when a drug is administered. This allows searching by dose amount, or other variable.
 
 <figure><img src="https://mermaid.ink/img/pako:eNqVlF1vmzAUhv9K5CoSkSAiEU2JK_Wqu5mmTVrvJm48fEi8Akb-0MKi_PfZBjuB9qLlAr8HP-_x8TFwRiWngDA6CNIdF99-Fu3CXIJzlSRPHSlfyQGicVw9Xmejry8_vju1MiAlikT2dovYBKyDmrUgo6BmBJw6EKyBVsnoRs8om5qyUrk1EqsYb4noVwPlniZPUv_-A6VJ5IXPMs4fBNcdaUndSyYjFyU-9Ki32nRKU2ZKH8d3iAaI1MIgXrzDUKEPMnL3MDsktEuY_doV3PB2OtQ6r3K5HCzJ2h6SII2sWG3PyUoPvUVtHywoJ2e1XN403mLXcICv8cI9WHlfOFRXxxgMHh_NHH4j1uD1YPDRxBC2oPoaFqF8y9T4rqqq2HRL8FdIKJFHIgTp8XZqmqzyGeOsC5-xTlrxEePMHk70I96xN_YFCzjcp2k8GPBdlmWjTv4yqo44604oRg2IhjBqvv2zTVQgdYQGCoSNpFARXasCFe3FoLozrYcvlCkuEK5ILSFGRCv-0rclwkpo8NAzI-ZX0gTKfG-_OJ_ECJ_RCeE0Rj3C23S33uXZQ77LNw_bfJ_llxj9c450vR-u_H6_2ey2eX75DyVukzc?type=png" alt=""><figcaption></figcaption></figure>
 
@@ -32,11 +32,7 @@ The following examples convert between common language and the squirrel storage 
 | FrequencyValue    | 1            |
 | FrequencyUnit     | day          |
 
-
-
 > 2 puffs atrovent inhaler every 6 hours
-
-
 
 | Variable            | Value          |
 | ------------------- | -------------- |

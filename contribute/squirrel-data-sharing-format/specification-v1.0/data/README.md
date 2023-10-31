@@ -12,7 +12,7 @@ This data object contains information about the subjects, and potential future d
 
 <mark style="color:red;">\*required</mark>
 
-<table data-header-hidden><thead><tr><th align="right"></th><th width="168.33333333333331"></th><th></th></tr></thead><tbody><tr><td align="right"><em><strong>Variable</strong></em></td><td><strong>Type</strong></td><td><strong>Description</strong></td></tr><tr><td align="right"><code>NumSubjects</code></td><td>number</td><td>Number of subjects in the package.</td></tr><tr><td align="right">NumGroupAnalyses</td><td>number</td><td>Number of group analyses.</td></tr><tr><td align="right"><a href="subjects/">subjects</a></td><td>JSON array</td><td>Array containing the subjects.</td></tr><tr><td align="right"><a href="group-analysis.md">group-analysis</a></td><td>JSON array</td><td>Array containing group analyses.</td></tr></tbody></table>
+<table data-header-hidden><thead><tr><th align="right"></th><th width="168.33333333333331"></th><th></th></tr></thead><tbody><tr><td align="right"><em><strong>Variable</strong></em></td><td><strong>Type</strong></td><td><strong>Description</strong></td></tr><tr><td align="right"><code>NumSubjects</code></td><td>number</td><td>Number of subjects in the package.</td></tr><tr><td align="right"><code>NumGroupAnalyses</code></td><td>number</td><td>Number of group analyses.</td></tr><tr><td align="right"><a href="subjects/">subjects</a></td><td>JSON array</td><td>Array containing the subjects.</td></tr><tr><td align="right"><a href="group-analysis.md">group-analysis</a></td><td>JSON array</td><td>Array containing group analyses.</td></tr></tbody></table>
 
 ### Directory structure
 

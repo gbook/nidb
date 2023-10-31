@@ -1,12 +1,12 @@
 # Building squirrel library and utils
 
-## Building squirrel library
+## Overview
 
 The following OS configurations have been tested to build squirrel with Qt 6.4
 
 * <mark style="color:green;">Compatible</mark>
-  * Rocky Linux 8.5, 8.7 (not 8.6)
-  * CentOS 8
+  * Rocky Linux 8 (not 8.6)
+  * CentOS 8 (not CentOS 8 Stream)
   * CentOS 7
   * Windows 10/11
 
@@ -16,9 +16,30 @@ The following OS configurations have been tested to build squirrel with Qt 6.4
 
 Other OS configurations may work to build squirrel, but have not been tested.
 
-### Prepare Build Environment
+## Prepare Build Environment
 
-Install development tools on **Rocky Linux 8.5** (Recommended)
+{% tabs %}
+{% tab title="RHEL 9" %}
+**Install the following as root**
+
+```bash
+dnf group install 'Development Tools'
+dnf install cmake3
+dnf install xcb*
+dnf install libxcb*
+```
+
+**Install Qt**
+
+1. Download Qt open-source from [https://www.qt.io/download-open-source](https://www.qt.io/download-open-source)
+2. Make the installer executable `chmod 777 qt-unified-linux-x64-x.x.x-online.run`
+3. Run `./qt-unified-linux-x64-x.x.x-online.run`
+4. The Qt Maintenance Tool will start. An account is required to download Qt open source.
+5. On the components screen, select the checkbox for **Qt 6.5.3 → Desktop gcc 64-bit**
+{% endtab %}
+
+{% tab title="RHEL 8" %}
+**Install the following as root**
 
 ```bash
 yum group install 'Development Tools'
@@ -28,7 +49,17 @@ yum install libxcb*
 yum install gcc-toolset-10
 ```
 
-Install development tools on **CentOS 7**
+**Install Qt**
+
+1. Download Qt open-source from [https://www.qt.io/download-open-source](https://www.qt.io/download-open-source)
+2. Make the installer executable `chmod 777 qt-unified-linux-x64-x.x.x-online.run`
+3. Run `./qt-unified-linux-x64-x.x.x-online.run`
+4. The Qt Maintenance Tool will start. An account is required to download Qt open source.
+5. On the components screen, select the checkbox for **Qt 6.5.3 → Desktop gcc 64-bit**
+{% endtab %}
+
+{% tab title="RHEL 7" %}
+**Install the following as root**
 
 ```bash
 yum install epel-release
@@ -36,21 +67,58 @@ yum group install 'Development Tools'
 yum install cmake3
 ```
 
-### Install Qt 6.3.2
+**Install Qt**
 
 1. Download Qt open-source from [https://www.qt.io/download-open-source](https://www.qt.io/download-open-source)
 2. Make the installer executable `chmod 777 qt-unified-linux-x64-x.x.x-online.run`
 3. Run `./qt-unified-linux-x64-x.x.x-online.run`
-4. The Qt Maintenance Tool will start. An account is required to download Qt open source
-5. On the components screen, select the checkbox for **Qt 6.3.2 → Desktop gcc 64-bit**
+4. The Qt Maintenance Tool will start. An account is required to download Qt open source.
+5. On the components screen, select the checkbox for **Qt 6.5.3 → Desktop gcc 64-bit**
+{% endtab %}
 
-### Building squirrel
+{% tab title="Ubuntu" %}
+**Install the following as root**
+
+```
+apt install build-essential
+apt install libxcb*
+apt install make
+apt install cmake
+```
+
+**Install Qt**
+
+1. Download Qt open-source from [https://www.qt.io/download-open-source](https://www.qt.io/download-open-source)
+2. Make the installer executable `chmod 777 qt-unified-linux-x64-x.x.x-online.run`
+3. Run `./qt-unified-linux-x64-x.x.x-online.run`
+4. The Qt Maintenance Tool will start. An account is required to download Qt open source.
+5. On the components screen, select the checkbox for **Qt 6.5.3 → Desktop gcc 64-bit**
+{% endtab %}
+
+{% tab title="Windows" %}
+**Install build environment**
+
+1. Install [**Visual Studio 2019 Community**](https://visualstudio.microsoft.com/vs/older-downloads/) edition, available from Microsoft. Install the C++ extensions.
+2. Install [**CMake3**](https://cmake.org/download/)
+3. Install **Qt 6.4.2** for MSVC2019 x64
+4. Install [Github Desktop](https://desktop.github.com/), or TortoiseGit, or other Git interface
+
+**Install Qt**
+
+1. Download Qt open-source from [https://www.qt.io/download-open-source](https://www.qt.io/download-open-source)
+2. Run the setup program.
+3. The Qt Maintenance Tool will start. An account is required to download Qt open source.
+4. On the components screen, select the checkbox for **Qt 6.5.3 → MSVC 2019 64-bit**
+{% endtab %}
+{% endtabs %}
+
+## Building the squirrel Library
 
 Once the build environment is setup, the build process can be performed by script. The `build.sh` script will build the squirrel library files and the squirrel utils.
 
-#### Rocky Linux 8.5
-
-If this is the first time building squirrel on this machine, perform the following
+{% tabs %}
+{% tab title="Linux" %}
+The **first time** building squirrel on this machine, perform the following
 
 ```bash
 cd ~
@@ -61,16 +129,45 @@ cd squirrel
 ./build.sh
 ```
 
-This will build gdcm (on which squirrel depends for reading DICOM headers), squirrel lib, and squirrel-gui.
+This will build gdcm (squirrel depends on GDCM for reading DICOM headers), squirrel lib, and squirrel-gui.
 
-All subsequent builds on this machine can be done with the following
+All **subsequent builds** on this machine can be done with the following
 
 ```bash
 cd ~/squirrel
 ./build.sh
 ```
+{% endtab %}
 
-### Contributing to the squirrel Library
+{% tab title="Windows" %}
+
+
+* Using Github Desktop, clone the squirrel repository to `C:\squirrel`
+* Build GDCM
+  * Open CMake
+  * Set _source_ directory to `C:\squirrel\src\gdcm`
+  * Set _build_ directory to `C:\squirrel\bin\gdcm`
+  * Click **Configure** (click **Yes** to create the build directory)
+  * Select _Visual Studio 16 2019_. Click **Finish**
+  * After it's done generating, make sure `GDCM_BUILD_SHARED_LIBS` is checked
+  * Click **Configure** again
+  * Click **Generate**. This will create the Visual Studio solution and project files
+  * Open the `C:\squirrel\bin\gdcm\GDCM.sln` file in Visual Studio
+  * Change the build to **Release**
+  * Right-click **ALL\_BUILD** and click **Build**
+* Build squirrel library
+  * Double-click `C:\squirrel\src\squirrel\squirrellib.pro`
+  * Configure the project for Qt 6.4.2 as necessary
+  * Switch the build to **Release** and build it
+  * `squirrel.dll` and `squirrel.lib` will now be in `C:\squirrel\bin\squirrel`
+* Build squirrel-gui
+  * Configure the project for Qt 6.4.2 as necessary
+  * Double-click `C:\squirrel\src\squirrel-gui\squirrel-gui.pro`
+  * Switch the build to **Release** and build it
+{% endtab %}
+{% endtabs %}
+
+## Contributing to the squirrel Library
 
 #### Setting up a development environment
 
@@ -102,7 +199,7 @@ cd ~/squirrel
 git pull origin main
 ```
 
-### Troubleshooting
+## Troubleshooting
 
 #### Build freezes
 
@@ -154,36 +251,3 @@ cd ~/squirrel/bin/squirrel
 sudo cp -uv libsquirrel* /lib/
 ```
 
-## Building on Windows
-
-### Prepare the build environment
-
-* Install [**Visual Studio 2019 Community**](https://visualstudio.microsoft.com/vs/older-downloads/) edition, available from Microsoft. Install the C++ extensions.
-* Install [**CMake3**](https://cmake.org/download/)
-* Install **Qt 6.4.2** for MSVC2019 x64
-* Install [Github Desktop](https://desktop.github.com/), or TortoiseGit, or other Git interface
-
-### Clone the repository
-
-* Using Github Desktop, clone the squirrel repository to `C:\squirrel`
-* Build GDCM
-  * Open CMake
-  * Set _source_ directory to `C:\squirrel\src\gdcm`
-  * Set _build_ directory to `C:\squirrel\bin\gdcm`
-  * Click **Configure** (click **Yes** to create the build directory)
-  * Select _Visual Studio 16 2019_. Click **Finish**
-  * After it's done generating, make sure `GDCM_BUILD_SHARED_LIBS` is checked
-  * Click **Configure** again
-  * Click **Generate**. This will create the Visual Studio solution and project files
-  * Open the `C:\squirrel\bin\gdcm\GDCM.sln` file in Visual Studio
-  * Change the build to **Release**
-  * Right-click **ALL\_BUILD** and click **Build**
-* Build squirrel library
-  * Double-click `C:\squirrel\src\squirrel\squirrellib.pro`
-  * Configure the project for Qt 6.4.2 as necessary
-  * Switch the build to **Release** and build it
-  * `squirrel.dll` and `squirrel.lib` will now be in `C:\squirrel\bin\squirrel`
-* Build squirrel-gui
-  * Configure the project for Qt 6.4.2 as necessary
-  * Double-click `C:\squirrel\src\squirrel-gui\squirrel-gui.pro`
-  * Switch the build to **Release** and build it
