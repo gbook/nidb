@@ -130,7 +130,11 @@ After you have done with your recheck, you are ready to transfer the data from R
 * First select the "NiDB Mapped instrument" (mapped in the mapping step) to transfer the data for.
 * Choose the recap event that holds the subject identification information. ![](<../.gitbook/assets/image (1).png>)
 * List the redcap unique Ids or NiDB SIds to filter the data transfer process based on the list..
-* Click the "Transfer" button to transfer data. This may take some time and the data transfer information will be displayed after data is transferred.
+* Click the "Transfer" button to transfer data. This may take some time and the data transfer information will be displayed after data is transferred. You can click the <img src="../.gitbook/assets/image.png" alt="" data-size="line">button on the rignt corner at the end of the data transfer information page as shown below.
+
+
+
+<figure><img src="../.gitbook/assets/DataTransferInfo.png" alt=""><figcaption></figcaption></figure>
 
 #### Tips / Information&#x20;
 
