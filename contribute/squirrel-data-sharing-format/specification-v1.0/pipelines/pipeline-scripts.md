@@ -110,18 +110,16 @@ chmod -Rf 777 /home/pipeline/onrc/data/pipeline/S2907GCS/8/freesurferUnified6
 
 1. Details for the grid engine are added at the beginning
    * This includes max wall time, output directories, run-as user, etc
-   *   ```bash
-       #!/bin/sh
-       #$ -N freesurferUnified6
-       #$ -S /bin/bash
-       #$ -j y
-       #$ -o /home/pipeline/onrc/data/pipeline/S2907GCS/8/freesurferUnified6/pipeline/
-       #$ -V
-       #$ -u onrc
-       #$ -l h_rt=72:00:00
-       ```
-
-
+   * ```bash
+     #!/bin/sh
+     #$ -N freesurferUnified6
+     #$ -S /bin/bash
+     #$ -j y
+     #$ -o /home/pipeline/onrc/data/pipeline/S2907GCS/8/freesurferUnified6/pipeline/
+     #$ -V
+     #$ -u onrc
+     #$ -l h_rt=72:00:00
+     ```
 2. Each command is changed to include logging and check-ins
    * ```
      /opt/pipeline/nidb/nidb cluster -u pipelinecheckin -a 3151385 -s processing -m 'processing step 1 of 10'
@@ -137,4 +135,30 @@ chmod -Rf 777 /home/pipeline/onrc/data/pipeline/S2907GCS/8/freesurferUnified6
 
 There are a few pipeline variables that are interpreted by NiDB when running. **The variable is replaced with the value before the final script is written out.** Each study on which a pipeline runs will have a different script, with different paths, IDs, and other variables listed below.
 
-<table data-header-hidden><thead><tr><th width="263.57142857142856"></th><th></th></tr></thead><tbody><tr><td><strong>Variable</strong></td><td><strong>Description</strong></td></tr><tr><td>{NOLOG}</td><td>This does not append <code>>></code> to the end of a command to log the output</td></tr><tr><td>{NOCHECKIN}</td><td>This does not prepend a command with a check in, and does not echo the command being run. This is useful (necessary) when running multi-line commands like for loops and if/then statements</td></tr><tr><td>{PROFILE}</td><td>This prepends the command with a profiler to output information about CPU and memory usage.</td></tr><tr><td>{analysisrootdir}</td><td>The full path to the analysis root directory. ex <code>/home/user/thePipeline/S1234ABC/1/</code></td></tr><tr><td>{subjectuid}</td><td>The UID of the subject being analyzed. Ex <code>S1234ABC</code></td></tr><tr><td>{studynum}</td><td>The study number of the study being analyzed. ex <code>2</code></td></tr><tr><td>{uidstudynum}</td><td>UID and studynumber together. ex <code>S1234ABC2</code></td></tr><tr><td>{pipelinename}</td><td>The pipeline name</td></tr><tr><td>{studydatetime}</td><td>The study datetime. ex <code>2022-07-04 12:34:56</code></td></tr><tr><td>{first_ext_file}</td><td>Replaces the variable with the first file (alphabetically) found with the <code>ext</code> extension</td></tr><tr><td>{first_n_ext_files}</td><td>Replaces the variable with the first <code>N</code> files (alphabetically) found with the <code>ext</code> extension</td></tr><tr><td>{last_ext_file}</td><td>Replaces the variable with the last file (alphabetically) found with the <code>ext</code> extension</td></tr><tr><td>{all_ext_files}</td><td>Replaces the variable with all files (alphabetically) found with the <code>ext</code> extension</td></tr><tr><td>{command}</td><td>The command being run. ex <code>ls -l</code></td></tr><tr><td>{workingdir}</td><td>The current working directory</td></tr><tr><td>{description}</td><td>The description of the command. This is anything following the <code>#</code>, also called a comment</td></tr><tr><td>{analysisid}</td><td>The analysisID of the analysis. This is useful when inserting analysis results, as the analysisID is required to do that</td></tr><tr><td>{subjectuids}</td><td>[<em>Second level analysis</em>] List of subjectIDs</td></tr><tr><td>{studydatetimes}</td><td>[<em>Second level analysis</em>] List of studyDateTimes in the group</td></tr><tr><td>{analysisgroupid}</td><td>[<em>Second level analysis</em>] The analysisID</td></tr><tr><td>{uidstudynums}</td><td>[<em>Second level analysis</em>] List of UIDStudyNums</td></tr><tr><td>{numsubjects}</td><td>[<em>Second level analysis</em>] Total number of subjects in the group analysis</td></tr><tr><td>{groups}</td><td>[<em>Second level analysis</em>] List of group names contributing to the group analysis. Sometimes this can be used when comparing groups</td></tr><tr><td>{numsubjects_groupname}</td><td>[<em>Second level analysis</em>] Number of subjects within the specified <code>groupname</code></td></tr><tr><td>{uidstudynums_groupname}</td><td>[<em>Second level analysis</em>] Number of studies within the specified <code>groupname</code></td></tr></tbody></table>
+| **Variable**              | **Description**                                                                                                                                                                             |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| {NOLOG}                   | This does not append `>>` to the end of a command to log the output                                                                                                                         |
+| {NOCHECKIN}               | This does not prepend a command with a check in, and does not echo the command being run. This is useful (necessary) when running multi-line commands like for loops and if/then statements |
+| {PROFILE}                 | This prepends the command with a profiler to output information about CPU and memory usage.                                                                                                 |
+| {analysisrootdir}         | The full path to the analysis root directory. ex `/home/user/thePipeline/S1234ABC/1/`                                                                                                       |
+| {subjectuid}              | The UID of the subject being analyzed. Ex `S1234ABC`                                                                                                                                        |
+| {studynum}                | The study number of the study being analyzed. ex `2`                                                                                                                                        |
+| {uidstudynum}             | UID and studynumber together. ex `S1234ABC2`                                                                                                                                                |
+| {pipelinename}            | The pipeline name                                                                                                                                                                           |
+| {studydatetime}           | The study datetime. ex `2022-07-04 12:34:56`                                                                                                                                                |
+| {first\_ext\_file}        | Replaces the variable with the first file (alphabetically) found with the `ext` extension                                                                                                   |
+| {first\_n\_ext\_files}    | Replaces the variable with the first `N` files (alphabetically) found with the `ext` extension                                                                                              |
+| {last\_ext\_file}         | Replaces the variable with the last file (alphabetically) found with the `ext` extension                                                                                                    |
+| {all\_ext\_files}         | Replaces the variable with all files (alphabetically) found with the `ext` extension                                                                                                        |
+| {command}                 | The command being run. ex `ls -l`                                                                                                                                                           |
+| {workingdir}              | The current working directory                                                                                                                                                               |
+| {description}             | The description of the command. This is anything following the `#`, also called a comment                                                                                                   |
+| {analysisid}              | The analysisID of the analysis. This is useful when inserting analysis results, as the analysisID is required to do that                                                                    |
+| {subjectuids}             | \[_Second level analysis_] List of subjectIDs                                                                                                                                               |
+| {studydatetimes}          | \[_Second level analysis_] List of studyDateTimes in the group                                                                                                                              |
+| {analysisgroupid}         | \[_Second level analysis_] The analysisID                                                                                                                                                   |
+| {uidstudynums}            | \[_Second level analysis_] List of UIDStudyNums                                                                                                                                             |
+| {numsubjects}             | \[_Second level analysis_] Total number of subjects in the group analysis                                                                                                                   |
+| {groups}                  | \[_Second level analysis_] List of group names contributing to the group analysis. Sometimes this can be used when comparing groups                                                         |
+| {numsubjects\_groupname}  | \[_Second level analysis_] Number of subjects within the specified `groupname`                                                                                                              |
+| {uidstudynums\_groupname} | \[_Second level analysis_] Number of studies within the specified `groupname`                                                                                                               |

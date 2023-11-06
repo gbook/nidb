@@ -15,15 +15,15 @@ Gather the following information from Redcap administrator for API connection .&
 
 Use 'Projects' menu in NiDB to get to the desired project's main page. From Data Transfer section of the links on the right, click "Global Redcap Settings" link.
 
-<figure><img src="../.gitbook/assets/ProjeectScreen01.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../.gitbook/assets/ProjectScreen01.png" alt=""><figcaption></figcaption></figure>
 
 
 
 ## Step 3
 
-* Enter the Redcap server address and API token information and press "Update Connection Settings" button on the right as shown below.
+* Enter the Redcap server address and API token information. Also provide the Redcap unique record id field's name and Redcap to NiDB unique id (A Redcap field that contains the NiDB Ids starts with 'S'). Press "Update Connection Settings" button on the right as shown below to save the global settings for Redcap to NiDB data export.
 
-![](../.gitbook/assets/SetupRedcapConnection.png)
+![](../.gitbook/assets/GlobalSettings.png)
 
 ## Step 4
 
@@ -127,10 +127,9 @@ After you have done with your recheck, you are ready to transfer the data from R
 
 
 
-* First select the NiDB instrument (mapped in the mapping step) to transfer the data for.
+* First select the "NiDB Mapped instrument" (mapped in the mapping step) to transfer the data for.
 * Choose the recap event that holds the subject identification information. ![](<../.gitbook/assets/image (1).png>)
-* Next, select the Redcap variable storing the redcap unique id.![](<../.gitbook/assets/image (2).png>)
-* Select the redcap variable storing the NiDB unique id of the subjects. This is the variable that connects the records in the Redcap and NiDB.
+* List the redcap unique Ids or NiDB SIds to filter the data transfer process based on the list..
 * Click the "Transfer" button to transfer data. This may take some time and the data transfer information will be displayed after data is transferred.
 
 #### Tips / Information&#x20;

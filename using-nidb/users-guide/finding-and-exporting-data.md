@@ -119,19 +119,17 @@ The "public Download" will be created after pressing the "Transfer" button at th
 
 ### Request a Dataset
 
-Sometimes you as a user have no idea how the data is stored for a particular project, or you don't have permissions to the project. If you are lucky enough to have a data manager, you can send a request for data to a data manager who can then follow your instructions to find the data and send it to them.
-
-To request a dataset from NiDB-based database, select **Data** --> **Request a Dataset**. The following page will appear.
+To request a dataset from NiDB-based database, select data --> Request a Dataset. The following page will appear.
 
 ![](https://user-images.githubusercontent.com/24811295/153469796-8e6069af-6b64-4deb-a9d4-79af536bc249.png)
 
-Click **Submit New Dataset Request** button, and fill the following form to request a dataset from the NiDB-databse.
+click "Submit a New Dataset Request" button, and fill the following form to request a dataset from the NiDB-databse.
 
 ![](https://user-images.githubusercontent.com/24811295/153470699-c8c34e01-cbf7-4316-9d9a-d339c01304ab.png)
 
 ### Analysis Builder
 
-Analysis builder is a report generating tool that can be used to generate various types of reports using the stored data in NiDB. This report generating tool builds on the base of various types of data variables that is being stored in the NiDB. This is different than the search tool where you can search different types of data and download it. In this tool you can search the variables those are generated and stored / imported in the NiDB (Example: You can query the variables generated from a task using MRI / EEG data, but not the actual EEG and MRI data). Analysis builder can be reached via **Search** --> **Analysis Builder** or you can go to a specific project front page and select the option (Analysis Builder) on the right from "Project tool and settings" and you will land on the following screen.
+Analysis builder is a report generating tool that can be used to generate various types of reports using the stored data in NiDB. This report generating tool builds on the base of various types of data variables that is being stored in the NiDB. This is different than the search tool where you can search different types of data and download it. In this tool you can search the variables those are generated and stored / imported in the NiDB (Example: You can query the variables generated from a task using MRI / EEG data, but not the actual EEG and MRI data). Analysis builder can be reached via "ado2/analysisbuilder.php" or you can go to a specific project front page and select the option (Analysis Builder) on the right from "Project tool and settings" and you will land on the following screen.
 
 ![](http://neuroinfodb.org/wp-content/uploads/2021/10/AnalysisBuilderMain-1024x497.png)
 
