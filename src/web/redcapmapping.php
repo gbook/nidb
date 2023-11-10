@@ -95,9 +95,12 @@
 			projectinfo($projectid);
 		        DisplayRedCapSettings($projectid,$inst,$uinst,$nidbdatatype,$jointid);
 			break;
+		 case 'settransferdata':
+                        gettransfervals($projectid);
+                        break;
 		case 'transferdata':
-			gettransfervals($projectid);
-			TransferData($projectid,$nidbinstrument,$rcmainevent,$rcid,$jointid,$uid);
+//			echo $uid;
+			TransferData($projectid,$nidbinstrument,$rcmainevent,$uid);
 			break;
                 default:
 			maptransfer($projectid);
@@ -141,7 +144,7 @@
 	    </div>
 	    <div class="middle aligned column">
 		<form class"=ui form" action="redcapmapping.php" method="post">
-                  <input type="hidden" name="action" value="transferdata">
+                  <input type="hidden" name="action" value="settransferdata">
                   <input type="hidden" name="projectid" value="<?=$projectid?>">
                   <button class="ui floated huge primary button"  type="submit"><i class="level down alternate icon"></i>Transfer Data</button>
                 </form>
@@ -192,17 +195,15 @@
 	<input type="hidden" name="action" value="transferdata">
         <input type="hidden" name="projectid" value="<?=$projectid?>">
         <input type="hidden" name="rcmainevent" value="<?=$rcmainevent?>">
-        <input type="hidden" name="rcid" value="<?=$rcid?>">
+        <input type="hidden" name="uid" value="<?=$uid?>">
         <input type="hidden" name="nidbinstrument" value="<?=$nidbinstrument?>">
-	<input type="hidden" name="jointid" value="<?=$jointid?>">
-	<input type="hidden" name="uid" value="<?=$uid?>">
 		
 		<table class="ui basic table">
 
 
 			<tr>
 				<td style="border-right: 1px solid #bdbdbd; text-align: center">
-					 <h4 align="left">NiDB Instrument <i class="small blue question circle outline icon" title="Select the NiDB instrument to transfer data from Redcap"></i></h4>
+					 <h4 align="left">NiDB Mapped Instruments <i class="small blue question circle outline icon" title="Select the NiDB instrument to transfer data from Redcap"></i></h4>
 					<select name="nidbinstrument" id="nidbinstrument" required>
 					     <? $sqlnidbinst = "SELECT DISTINCT(`nidb_instrumentname`) as NIDBinst FROM `redcap_import_mapping` WHERE `project_id`=$projectid";
 				                $resultnidbinst = MySQLiQuery($sqlnidbinst, __FILE__, __LINE__);
@@ -225,39 +226,16 @@
 						</select>
 					<script type="text/javascript"> document.getElementById('rcmainevent').value = "<?php echo $_GET['rcmainevent'];?>";</script>
                                 </td>
-				<td> 
-					<h4>Redcap Unique Id <i class="small blue question circle outline icon" title="Select the Redcap Field containing Unique Record Id "></i></h4>
-					<select name="rcid" id="rcid" required>
-						<option value=''></option>
-                                                <?for($Fi=0;$Fi < count($V_names); $Fi++){?>
-                                                 <option value=<?=$V_names[$Fi]?>> <?=$V_names[$Fi]?> </option>
-                                                <?}?>
-
-					</select>
-					<script type="text/javascript"> document.getElementById('rcid).value = "<?php echo $_GET['rcid'];?>";</script>
-				</td>
 				<td>
-					<h4> Unique Mapping Id  <i class="small blue question circle outline icon" title="Select the column containg information of Unique Id. <br> It is a column storing NiDB UID values starts with 'S'"></i></h4>
-					<select name="jointid"  id="jointid" >
-						<option value=''></option>
-						<? 
-						//$V_names=getrcvariables($projectid,'',$rcmainevent);
-						?>
-                                                <?for($Fi=0;$Fi < count($V_names); $Fi++){?>
-                                                 <option value=<?=$V_names[$Fi]?>> <?=$V_names[$Fi]?> </option>
-                                                <?}?>
-					</select>
+                                        <h4> UIds  <i class="small blue question circle outline icon" title="List of UIDs separated by commas start with 'S'. OR Redcap IDs separated by commas."></i></h4>
+					<input type="text"  name="uid"  id="uid" value="<?=$uid?>" size=59>
 
 				</td>
-				<td>
-                                        <h4> UIds  <i class="small blue question circle outline icon" title="List of UIDs separated by comma and starts with 'S'"></i></h4>
-					<input type="text"  name="uid"  id="sid" value="<?=$uid?>">
-
-                                </td>
+				<td valign='bottom'>
+					<button class="ui right floated huge primary button"  type="submit"><i class="fill icon"></i>Transfer</button>
+				</td>
                         </tr>
 		</table>
-		<br>
-                <button class="ui right floated huge primary button"  type="submit"><i class="fill icon"></i>Transfer</button>
 
 	</form>
 	</div>
@@ -985,7 +963,7 @@
         /* -- Transfering Data into NiDB from Redcap -- */
         /* -------------------------------------------- */
 
-	function TransferData($projectid,$nidbinstrument,$rcmainevent,$rcid,$jointid,$uid)
+	function TransferData($projectid,$nidbinstrument,$rcmainevent,$uid)
 	{
 
 /*		echo $projectid."<br>";
@@ -993,20 +971,53 @@
 		echo $rcid."<br>";
 		echo $jointid."<br>";
 		echo $nidbinstrument."<br>";
+		
  */
-	
+		// Retrevinh the ID fields for redcap and redcap to NiDB joint ID
+		$sqlstringid =  "SELECT redcapid_field, redcapnidbid_field FROM `projects` WHERE  project_id = '$projectid' ";
+                $resultid =  MySQLiQuery($sqlstringid, __FILE__, __LINE__);
+                $rowid = mysqli_fetch_array($resultid, MYSQLI_ASSOC);
+                $rcid = $rowid['redcapid_field'];
+                $jointid = $rowid['redcapnidbid_field'];
+		
+		// Retreiving the redcap from mapping table	
 		$sqlstringIn = "SELECT DISTINCT(`redcap_form`) as Inst FROM `redcap_import_mapping` WHERE `nidb_instrumentname`='$nidbinstrument' and project_id = '$projectid' ";
                 $resultIn = MySQLiQuery($sqlstringIn, __FILE__, __LINE__);
                 $rowIn = mysqli_fetch_array($resultIn, MYSQLI_ASSOC);
-                $inst = $rowIn['Inst'];
+		$inst = $rowIn['Inst'];
+		$uid = str_replace(' ', '', $uid);
+		$uid = explode(",",$uid);
+		foreach ($uid as $key => $val) {
+			if (!strlen($val)) {
+				unset($uid[$key]);
+			}
+		}
+		if (!$uid){
+			$Report_Id = getrcrecords($projectid,$inst,$rcmainevent,array($rcid,$jointid),'');
+		}
+		elseif (substr($uid[0],0,1 )=="S"){
+			$NId = getrcrecords($projectid,$inst,$rcmainevent,array($rcid,$jointid),'');
+                        $Fl =0;
+                        foreach ($NId as $block => $info) {
+				$sid = $info[$jointid];
+				$rid = $info[$rcid];
+				if (in_array($sid,$uid, TRUE)){
+					$UID[$Fl] = $rid;
+					$Fl = $Fl + 1;
+				}
 
-		$Report_Id = getrcrecords($projectid,$inst,$rcmainevent,array($rcid,$jointid),'');
-
-                $Flg = 0;
+			}
+			$Report_Id = getrcrecords($projectid,$inst,$rcmainevent,array($rcid,$jointid),$UID);
+		}
+		else {
+	//		var_dump($uid);
+			$Report_Id = getrcrecords($projectid,$inst,$rcmainevent,array($rcid,$jointid),$uid);
+	//		var_dump($Report_Id);
+		}
+		$Flg = 0;
                 foreach ($Report_Id as $block => $info) {
 			$sid = $info[$jointid];
 			$sqlstringEn = "SELECT enrollment_id FROM `enrollment` WHERE subject_id in (select subject_id from subjects where subjects.uid = '$sid' ) and project_id = '$projectid' ";
-
 
 	                $resultEn = MySQLiQuery($sqlstringEn, __FILE__, __LINE__);
         	        $rowEn = mysqli_fetch_array($resultEn, MYSQLI_ASSOC);
@@ -1016,8 +1027,8 @@
                         	$RC_Id[$Flg] = $info[$rcid];
                         	$subjectid[$Flg] = $info[$jointid];
 
-		//	echo $RC_Id[$Flg]."&nbsp";	
-		//	echo $subjectid[$Flg]."<br>";
+//			echo $RC_Id[$Flg]."&nbsp";	
+//			echo $subjectid[$Flg]."<br>";
 
                         	$Flg = $Flg + 1;}
 			}
@@ -1040,7 +1051,8 @@
 		while ($rowEvents = mysqli_fetch_array($resultEvents, MYSQLI_ASSOC)) {
 			$redcapevent = $rowEvents['RC_Events'];
 		//	echo $redcapevent."<br>";
-	
+
+
 			$sqlstringdrugs = "SELECT `nidb_variablename`,`redcap_fields`, `redcap_fieldtype` FROM `redcap_import_mapping` WHERE `project_id`='$projectid' and `nidb_instrumentname`='$nidbinstrument' and `redcap_event`='$redcapevent' order by `nidb_variablename`";		
 			$resultdrugs = MySQLiQuery($sqlstringdrugs, __FILE__, __LINE__);
 			$cnt = 0;
@@ -1080,7 +1092,7 @@
 		
 		}// Loop over records that were extracted above 
 
-	}// Loop of Events 			
+		}// Loop of Events 			
 	}// Drug / Dose Entering Loop
 
 
@@ -1101,11 +1113,12 @@
 
 			
 	// Find the nidb data type (measure, vitals and dose/drug)
-	$sqlstringType = "SELECT DISTINCT(nidb_datatype) as D_Type FROM redcap_import_mapping WHERE redcap_form = '$inst' and project_id = '$projectid'and nidb_instrumentname='$nidbinstrument' and redcap_fieldtype='value' and `redcap_event`='$redcapevent'";
+			//	$sqlstringType = "SELECT DISTINCT(nidb_datatype) as D_Type FROM redcap_import_mapping WHERE redcap_form = '$inst' and project_id = '$projectid'and nidb_instrumentname='$nidbinstrument' and redcap_fieldtype='value' and `redcap_event`='$redcapevent'";
+	$sqlstringType ="SELECT DISTINCT(nidb_datatype) as D_Type FROM redcap_import_mapping WHERE project_id = '$projectid'and nidb_instrumentname='$nidbinstrument'";
 	$resultType = MySQLiQuery($sqlstringType, __FILE__, __LINE__);
 	$rowType = mysqli_fetch_array($resultType, MYSQLI_ASSOC);
-        $Dtype = $rowType['D_Type'];		
-///	echo $Dtype."<br>";
+	$Dtype = $rowType['D_Type'];		
+//	echo $Dtype."<br>";
 	
 		
 	// Getting Data from Redcap and looping over Records
@@ -1215,7 +1228,7 @@
 		  
 		  $CID = array();
                   $AddN = 0;
-		  
+//		  echo $Dtype;		  
 		  switch ($Dtype) {
                                 case 'm':
 
@@ -1233,7 +1246,7 @@
                                  break;
                                 case 'v':
 					$vitalStdate = $info[$RCdate].' '.$info[$RCtime];
-//					echo $subjectid[$Flg];
+					echo $subjectid[$Flg];
                                                 $Reg =  Addvitals($subjectid[$Flg],$projectid,$redcapfield,$info[$redcapfield],$inst,$info[$RCnotes], $info[$RCrater], $info[$RCdate], $vitalStdate, '');
 
 					if ($Reg == 0){array_push($CID ,$subjectid[$Flg]);}
@@ -1256,6 +1269,12 @@
 
 	 } // end of Redcap records' For-Loop
 	}//end of Event While-Loop
+		
+	 ?> 	      <form>
+                                <input type="hidden" name="action" value="default">
+                                <input type="hidden" name="projectid" value="<?=$projectid?>">
+                                <button class="ui right floated large primary button"  type="submit"><i class="map icon"></i> Mapping / <i class="level down alternate icon"></i> Transfer</button>
+                     </form> <?
 
 
 	}

@@ -1034,7 +1034,7 @@
 				$('.menu .item').tab();
 				$('.tabular.menu .item').tab();
 				
-				$('#pageloading').hide();
+				$('.pageloading').hide();
 				
 				/* default action */
 				<? if($level == 1) { ?>
@@ -1100,11 +1100,17 @@
 			}
 		</script>
 		<div class="ui text container">
-			<div class="ui small yellow message" align="center" id="pageloading" style="margin-bottom:15px">
+			<div class="ui small yellow message pageloading" align="center" id="pageloading" style="margin-bottom:15px">
 				<em data-emoji=":chipmunk:" class="loading"></em> Loading...
 			</div>
 		</div>
-	
+		
+		<div class="ui text container pageloading">
+			<div class="ui active inverted dimmer">
+				<div class="ui text loader">Loading</div>
+			</div>
+		</div>
+		
 		<?
 			if ($type != "add") {
 				DisplayPipelineStatus($title, $desc, $isenabled, $isdebug, $id, "pipelines", $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck);
@@ -1195,6 +1201,18 @@
 								$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 								$numpending = $row['numpending'];
 								
+								/* group by and count() */
+								//$sqlstring = "select analysis_status, count(*) 'count' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id group by analysis_status";
+								//$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								//while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+								//	$status = $row['analysis_status'];
+								//	$count = $row['count'];
+								//	if ($status == "complete") { $numcomplete = $count; }
+								//	if ($status == "processing") { $numprocessing = $count; }
+								//	if ($status == "pending") { $numpending = $count; }
+								//	if ($status == "error") { $numerror = $count; }
+								//}
+								
 								/* get mean processing times */
 								$sqlstring = "select analysis_id, timestampdiff(second, analysis_startdate, analysis_enddate) 'analysis_time', timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status <> ''";
 								//PrintSQL($sqlstring);
@@ -1229,6 +1247,10 @@
 										<div class="value"><?=$numpending?></div>
 										<div class="label" style="font-size: smaller">Pending</div>
 									</div>
+									<div class="ui statistic">
+										<div class="value"><?=$numerror?></div>
+										<div class="label" style="font-size: smaller">Error</div>
+									</div>
 									<div class="ui grey statistic">
 										<div class="value"><?=$totaltime?> hr</div>
 										<div class="label" style="font-size: smaller">Total CPU Time</div>
@@ -1236,33 +1258,6 @@
 								</div>
 								<br><br>
 
-								<!--
-								<tr>
-									<td style="font-weight: bold; font-size: 9pt; text-align: right">Finished processing<br><span style="font-weight: normal">Total CPU time</span></td>
-									<td style="font-size: 9pt"><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numcomplete?></a><br><?=$totaltime?> hours</td>
-								</tr>
-								<tr>
-									<td style="font-weight: bold; font-size: 9pt; text-align: right">Completed successfuly<br><span style="font-weight: normal">Total CPU time</span></td>
-									<td style="font-size: 9pt"><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numcompletesuccess?></a><br><?=$totaltimesuccess?> hours</td>
-								</tr>
-								<tr>
-									<td style="font-weight: bold; font-size: 9pt; text-align: right">Currently processing</td>
-									<td style="font-size: 9pt"><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numprocessing?></a></td>
-								</tr>
-								<tr>
-									<td style="font-weight: bold; font-size: 9pt; text-align: right">Pending<br><span class="tiny">analyses yet to be submitted</span></td>
-									<td style="font-size: 9pt"><a href="analysis.php?action=viewanalyses&id=<?=$id?>"><?=$numpending?></a></td>
-								</tr>
-								</tr>
-									<td style="font-weight: bold; font-size: 9pt; text-align: right">Setup Time</td>
-									<td style="font-size: 9pt"><?=number_format(min($analysistimes),1)?> - <?=number_format(max($analysistimes),1)?> seconds
-									<br>Mean: <?=number_format(mean($analysistimes),1)?> seconds</td>
-								</tr>
-								<tr>
-									<td style="font-weight: bold; font-size: 9pt; text-align: right">Cluster Time</td>
-									<td style="font-size: 9pt"><?=number_format(min($clustertimes)/60/60,2)?> - <?=number_format(max($clustertimes)/60/60,2)?> hours
-									<br>Mean: <?=number_format(mean($clustertimes)/60/60,2)?> hours</td>
-								</tr>-->
 								<div class="ui accordion">
 									<div class="title">
 										<i class="dropdown icon"></i>
@@ -1279,7 +1274,7 @@
 												<td><b>Count</b></td>
 											</tr>
 										<?
-											$sqlstring = "select avg(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'avgcpu', hostname, count(hostname) 'count' FROM (select analysis_clusterstartdate, analysis_clusterenddate, trim(Replace(Replace(Replace(analysis_hostname,'\t',''),'\n',''),'\r','')) 'hostname' from `analysis` WHERE pipeline_id = $id and (analysis_iscomplete = 1 or analysis_status = 'complete')) hostnames group by hostname order by hostname";
+											/* $sqlstring = "select avg(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'avgcpu', hostname, count(hostname) 'count' FROM (select analysis_clusterstartdate, analysis_clusterenddate, trim(Replace(Replace(Replace(analysis_hostname,'\t',''),'\n',''),'\r','')) 'hostname' from `analysis` WHERE pipeline_id = $id and (analysis_iscomplete = 1 or analysis_status = 'complete')) hostnames group by hostname order by hostname";
 											$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 											while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 												$cpuhrs = number_format(($row['avgcpu']/60/60),2);
@@ -1292,7 +1287,7 @@
 													<td><?=$count?></td>
 												</tr>
 												<?
-											}
+											} */
 										?>
 										</table>
 									</div>

@@ -1795,7 +1795,7 @@
 		<h3 class="ui top attached header secondary inverted black segment">
 			<b>Search Results</b>
 		</h3>
-		<div class="ui bottom attached long scrolling segment">
+		<!--<div class="ui bottom attached long scrolling segment">-->
 		<? if ($s_resultoutput == "table") { ?>
 		<table width="100%" class="searchresultssheet">
 		<? } else { ?>
@@ -2356,7 +2356,7 @@
 		}
 		?>
 		</table>
-		</div>
+		<!--</div>-->
 		
 		<div style="padding-left: 15px">
 		<?
@@ -4782,13 +4782,13 @@
 						<div class="ui twelve wide stretched right attached column">
 							
 							<!-- web download tab -->
-							<div class="ui active tab seamless right attached segment" data-tab="tab-web" style="background-color: #EBF5FB44">
+							<div class="ui active tab seamless right attached segment" data-tab="tab-web" style="background-color: #EBF5FB">
 								<p style="text-align: center">Web download links will be available on the <b>Export Status</b> page after export is complete</p>
 							</div>
 							
 							<? if (($GLOBALS['isadmin']) && ($GLOBALS['cfg']['enablepublicdownloads'])) { ?>
 							<!-- public download tab -->
-							<div class="ui tab seamless right attached segment" data-tab="tab-publicdownload" style="background-color: #EBF5FB44">
+							<div class="ui tab seamless right attached segment" data-tab="tab-publicdownload" style="background-color: #EBF5FB">
 								<p style="text-align: center">Public downloads are available publicly on the <b>Data &rarr; Public Downloads</b> section</p>
 								
 								<br>
@@ -4850,7 +4850,7 @@
 							</div>
 
 							<!-- public dataset tab -->
-							<div class="ui tab seamless right attached segment" data-tab="tab-publicdataset" style="background-color: #EBF5FB44">
+							<div class="ui tab seamless right attached segment" data-tab="tab-publicdataset" style="background-color: #EBF5FB">
 								<p style="text-align: center">Add this data to an existing public dataset</p>
 								<br>
 								<div class="field">
@@ -4881,22 +4881,22 @@
 							<? } ?>
 							
 							<!-- local FTP tab -->
-							<div class="ui tab seamless right attached segment" data-tab="tab-localftp" style="background-color: #EBF5FB44">
+							<div class="ui tab seamless right attached segment" data-tab="tab-localftp" style="background-color: #EBF5FB">
 								<p style="text-align: center">Data will be available on the Local FTP</p>
 							</div>
 							
 							<!-- NDA tab -->
-							<div class="ui tab seamless right attached segment" data-tab="tab-nda" style="background-color: #EBF5FB44">
+							<div class="ui tab seamless right attached segment" data-tab="tab-nda" style="background-color: #EBF5FB">
 								<p style="text-align: center">Data packaged in NDA format</p>
 							</div>
 							
 							<!-- NDA csv tab -->
-							<div class="ui tab seamless right attached segment" data-tab="tab-ndacsv" style="background-color: #EBF5FB44">
+							<div class="ui tab seamless right attached segment" data-tab="tab-ndacsv" style="background-color: #EBF5FB">
 								<p style="text-align: center">NDA format data, .csv file only</p>
 							</div>
 							
 							<!-- NFS tab -->
-							<div class="ui tab seamless right attached segment" data-tab="tab-nfs" style="background-color: #EBF5FB44">
+							<div class="ui tab seamless right attached segment" data-tab="tab-nfs" style="background-color: #EBF5FB">
 								<script>
 									function CheckNFSPath() {
 										var xhttp = new XMLHttpRequest();
@@ -4918,12 +4918,12 @@
 							</div>
 							
 							<!-- Remote XNAT tab -->
-							<div class="ui tab seamless right attached segment" data-tab="tab-xnat" style="background-color: #EBF5FB44">
+							<div class="ui tab seamless right attached segment" data-tab="tab-xnat" style="background-color: #EBF5FB">
 								<p style="text-align: center">XNAT transfer settings are taken from the project</p>
 							</div>
 							
 							<!-- Remote FTP tab -->
-							<div class="ui tab seamless right attached segment" data-tab="tab-remoteftp" style="background-color: #EBF5FB44">
+							<div class="ui tab seamless right attached segment" data-tab="tab-remoteftp" style="background-color: #EBF5FB">
 								<p style="text-align: center">Remote FTP settings (this option is deprecated)</p>
 								<table class="remoteftp" style="margin-left:40px; border:1px solid gray">
 									<tr><td align="right" width="30%" style="font-size:10pt">Remote FTP Server</td><td><input type="text" name="remoteftpserver"></td></tr>
@@ -4935,7 +4935,7 @@
 							</div>
 							
 							<!-- Remote NiDB tab -->
-							<div class="ui tab seamless right attached segment" data-tab="tab-remotenidb" style="background-color: #EBF5FB44">
+							<div class="ui tab seamless right attached segment" data-tab="tab-remotenidb" style="background-color: #EBF5FB">
 								<p style="text-align: center">Send this data to a remote NiDB server</p>
 								<select name="remoteconnid">
 									<option value="">(Select connection)</option>

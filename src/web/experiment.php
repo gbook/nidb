@@ -81,6 +81,9 @@
 	elseif (($action == "viewfile") && ($selfcall)) {
 		ViewFile($projectid, $fileid);
 	}
+	elseif (($action == "download") && ($selfcall)) {
+		DownloadExperiment($expid);
+	}
 	else {
 		DisplayExperimentList($projectid);
 	}
@@ -118,8 +121,9 @@
 					$fileSize = $_FILES['files']['size'][$key];
 
 					/* insert the new experiment files */
-					$sqlstring = "insert into experiment_files (experiment_id, exp_version, file_name, file, file_size,
-file_createdate, file_modifydate) values($expid, 1, '$fileFilename', '$fileData', $fileSize, now(), now()";
+					$sqlstring = "insert into experiment_files (experiment_id, file_name, file, file_size,
+file_createdate, file_modifydate) values($expid, '$fileFilename', '$fileData', $fileSize, now(), now())";
+					//PrintSQL($sqlstring);
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 			}
@@ -289,10 +293,11 @@ file_modifydate, file_createdate) values($expid, '$fileFilename', '$fileData', $
 				<thead>
 					<tr>
 						<th>Name</th>
+						<th>File(s)</th>
+						<th>Download</th>
 						<th>Version</th>
 						<th>Create date</th>
 						<th>Modify date</th>
-						<th>File(s)</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -308,10 +313,9 @@ file_modifydate, file_createdate) values($expid, '$fileFilename', '$fileData', $
 							
 							?>
 							<tr>
-								<td valign="top"><a class="ui primary fluid button" href="experiment.php?action=editform&expid=<?=$expid?>&projectid=<?=$projectid?>"><i class="edit icon"></i> <?=$name?></td>
-								<td valign="top"><?=$version?></td>
-								<td valign="top"><?=$createdate?></td>
-								<td valign="top"><?=$modifydate?></td>
+								<td valign="top">
+									<a href="experiment.php?action=editform&expid=<?=$expid?>&projectid=<?=$projectid?>"><b><?=$name?></b></a>
+								</td>
 								<td valign="top" align="center">
 								<?
 									$sqlstringA = "select sum(file_size) total_size, count(file_name) file_count from experiment_files where experiment_id = $expid";
@@ -328,6 +332,10 @@ file_modifydate, file_createdate) values($expid, '$fileFilename', '$fileData', $
 									}
 									?>
 								</td>
+								<td valign="top" class="ui center aligned"><a class="ui basic icon button" href="experiment.php?action=download&expid=<?=$expid?>" title="Download <?=$name?> experiment"><i class="large file archive outline icon"></i></a></td>
+								<td valign="top"><?=$version?></td>
+								<td valign="top"><?=$createdate?></td>
+								<td valign="top"><?=$modifydate?></td>
 							</tr>
 							<?
 						}
@@ -392,6 +400,68 @@ file_modifydate, file_createdate) values($expid, '$fileFilename', '$fileData', $
 			</div>
 			<?
 		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DownloadExperiment ----------------- */
+	/* -------------------------------------------- */
+	function DownloadExperiment($experimentid) {
+		$experimentid = mysqli_real_escape_string($GLOBALS['linki'], $experimentid);
+
+		if (!ValidID($experimentid,'Experiment ID')) { return; }
+		
+		/* get list of files, and get the files */
+		$sqlstring = "select * from experiment_files where experiment_id = $expid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		if (mysqli_num_rows($result) > 0) {
+			
+			/* create temp dir */
+			$tmppath = $GLOBALS['cfg']['tmpdir'] . '/' . GenerateRandomString(20);
+			
+			/* create the directory in which the files are stored until the import module takes them */
+			mkdir($tmppath, 0, true);
+			chmod($tmppath, 0777);
+			
+			$sqlstring = "select experiment_name from experiments where experiment_id = $expid";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			if (mysqli_num_rows($result) > 0) {
+				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+				$expname = $row['experiment_name'];
+			}
+			else {
+				$expname = "experiment";
+			}
+			
+			$filename = "$tmppath/$expname.zip";
+			
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$fileid = $row['experimentfile_id'];
+				$filename = $row['file_name'];
+				$contents = base64_decode($row['file']);
+				$filesize = $row['file_size'];
+				$createdate = date('M j, Y h:ia',strtotime($row['file_createdate']));
+				$modifydate = date('M j, Y h:ia',strtotime($row['file_modifydate']));
+				
+				/* write file to temp dir */
+				file_put_contents("$tmppath/$filename", $contents);
+			}
+			
+			$systemstring = "cd $tmppath; zip $filename .";
+			shell_exec($systemstring);
+			
+			/* send the .zip file to the browser */
+			header("Content-Description: File Transfer");
+			header("Content-Disposition: attachment; filename=$filename");
+			header("Content-Type: application/zip");
+			header("Content-length: " . filesize($filename) . "\n\n");
+			header("Content-Transfer-Encoding: binary");
+			// output data to the browser
+			readfile($filename);
+			unlink($filename);
+			rmdir($tmppath);
+			
+		}		
 	}
 	
 ?>

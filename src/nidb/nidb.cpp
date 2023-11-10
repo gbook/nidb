@@ -731,7 +731,8 @@ bool nidb::isValidNiDBModality(QString m) {
 /* ---------------------------------------------------------- */
 bool nidb::SubmitClusterJob(QString f, QString submithost, QString qsub, QString user, QString queue, QString &msg, int &jobid, QString &result) {
 
-    /* submit the job to the cluster */
+    /* submit the job to the cluster. Command will be in the format:
+     * ssh <submithost> qsub -u <username> -q <queuelist> "/full/path/to/sge.job" */
     QString systemstring = QString("ssh %1 %2 -u %3 -q %4 \"%5\"").arg(submithost).arg(qsub).arg(user).arg(queue).arg(f);
     result = SystemCommand(systemstring,true).trimmed();
 
