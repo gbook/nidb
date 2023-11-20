@@ -24,11 +24,14 @@
 	if (!defined("LEGIT_REQUEST")) die ("This page cannot be called directly.");
 	
 ?>
-
 <!-- all of the javascripts and style include files -->
-<script type="text/javascript" src="scripts/jquery-3.5.1.min.js"></script>
-<script type="text/javascript" src="scripts/jquery-ui.min.js"></script>
-<link rel="stylesheet" type="text/css" href="scripts/jquery-ui.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.13.2/themes/smoothness/jquery-ui.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.13.2/jquery-ui.min.js"></script>
+
+<!--<script type="text/javascript" src="scripts/jquery-3.5.1.min.js"></script>-->
+<!--<script type="text/javascript" src="scripts/jquery-ui.min.js"></script>-->
+<!--<link rel="stylesheet" type="text/css" href="scripts/jquery-ui.min.css">-->
 <script type="text/javascript" src="scripts/flot/jquery.flot.min.js"></script>
 <script type="text/javascript" src="scripts/flot/jquery.flot.time.min.js"></script>
 <script type="text/javascript" src="scripts/jquery.editinplace.js"></script>
@@ -40,12 +43,11 @@
 <!--<link rel="stylesheet" type="text/css" href="scripts/themes/blue/style.css">-->
 <!--<link href='https://fonts.googleapis.com/css?family=Roboto Mono' rel='stylesheet'>-->
 
-<!--<link rel="stylesheet" type="text/css" href="scripts/semantic/semantic.css">
-<script src="scripts/semantic/semantic.js"></script>-->
-<!-- You MUST include jQuery 3.4+ before Fomantic -->
-<!--<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>-->
-<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/fomantic-ui@2.9.3/dist/semantic.min.css">
-<script src="https://cdn.jsdelivr.net/npm/fomantic-ui@2.9.3/dist/semantic.min.js"></script>
+<link rel="stylesheet" type="text/css" href="scripts/semantic/semantic.css">
+<script src="scripts/semantic/semantic.js"></script>
+
+<!--<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/fomantic-ui/2.9.3/semantic.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fomantic-ui/2.9.3/semantic.min.js"></script>-->
 
 <script src="scripts/tablesort.js"></script>
 
@@ -61,21 +63,21 @@
 	window.console || (window.console = { 'log': alert });
 	
 	/* odd fix necessary to make the HTML'd jQuery tooltips work */
-	$(function () {
+	/*$(function () {
 		$(document).tooltip({
 			content: function () {
 				return $(this).prop('title');
 			}
 		});
-	});
+	});*/
   
 </script>
 
 <!-- for the global tooltip settings -->
 <script>
-	$(function() {
-		$( document ).tooltip({show:{effect:'appear', delay: 500}, hide:{duration:0}});
-	});
+	//$(function() {
+	//	$( document ).tooltip({show:{effect:'appear', delay: 500}, hide:{duration:0}});
+	//});
 </script>
 
 <style>

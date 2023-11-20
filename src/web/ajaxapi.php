@@ -39,6 +39,10 @@
 	$uid = GetVariable("uid");
 	$hostname = GetVariable("hostname");
 	$username = GetVariable("username");
+
+	$subjectid = GetVariable("subjectid");
+	$column = GetVariable("column");
+	$value = GetVariable("value");
 	
 	$s['pipelineid'] = GetVariable("pipelineid");
 	$s['dependency'] = GetVariable("dependency");
@@ -82,6 +86,9 @@
 			break;
 		case 'checksgehost':
 			CheckSGESubmitStatus($hostname);
+			break;
+		case 'updatesubjectdetails':
+			UpdateSubjectDetails($subjectid, $column, $value);
 			break;
 	}
 	
@@ -725,4 +732,88 @@
 		</tr>
 		<?
 	}
+	
+
+	/* -------------------------------------------- */
+	/* ------- UpdateSubjectDetails --------------- */
+	/* -------------------------------------------- */
+	function UpdateSubjectDetails($subjectid, $column, $value) {
+		
+		$subjectid = trim(mysqli_real_escape_string($GLOBALS['linki'], $subjectid));
+		$column = trim(mysqli_real_escape_string($GLOBALS['linki'], $column));
+		$value = trim(mysqli_real_escape_string($GLOBALS['linki'], $value));
+		
+		if ($subjectid == "") {
+			echo "error, subjectID blank";
+			return;
+		}
+		
+		if ($column == "altuids") {
+			StartSQLTransaction();
+			/* delete entries for this subject from the altuid table ... */
+			$sqlstring = "delete from subject_altuid where subject_id = $subjectid";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			/* ... and insert the new rows into the altuids table */
+			$altuidsublist = $value;
+			//echo($altuidsublist);
+			$altuids = explode(',',$altuidsublist);
+			foreach ($altuids as $altuid) {
+				$altuid = trim($altuid);
+				if ($altuid != "") {
+					$enrollmentid = $enrollmentids[$i];
+					if ($enrollmentid == "") { $enrollmentid = 0; }
+					//echo "enrollmentID [$enrollmentid] - altuid [$altuid]<br>";
+					if (strpos($altuid, '*') !== FALSE) {
+						$altuid = str_replace('*','',$altuid);
+						$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values ($subjectid, '$altuid',1, '$enrollmentid')";
+					}
+					else {
+						$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values ($subjectid, '$altuid',0, '$enrollmentid')";
+					}
+					//PrintSQL($sqlstring);
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				}
+			}
+			CommitSQLTransaction();
+		}
+		else {
+			$sqlstring = "update subjects set ";
+			switch ($column) {
+				case "uid": $sqlstring .= "uid"; break;
+				case "guid": $sqlstring .= "guid"; break;
+				case "sex": $sqlstring .= "subjects.sex"; break;
+				case "gender": $sqlstring .= "gender"; break;
+				case "dob": $sqlstring .= "birthdate"; break;
+				case "ethnicity1": $sqlstring .= "ethnicity1"; break;
+				case "ethnicity2": $sqlstring .= "ethnicity2"; break;
+				case "handedness": $sqlstring .= "handedness"; break;
+				case "education":
+					switch ($value) {
+						case "Unknown": $value = 0; break;
+						case "Grade School": $value = 1; break;
+						case "Middle School": $value = 2; break;
+						case "High School/GED": $value = 3; break;
+						case "Trade School": $value = 4; break;
+						case "Associates Degree": $value = 5; break;
+						case "Bachelors Degree": $value = 6; break;
+						case "Masters Degree": $value = 7; break;
+						case "Doctoral Degree": $value = 8; break;
+						default: $value = "";
+					}
+					$sqlstring .= "education";
+					break;
+				case "marital": $sqlstring .= "marital_status"; break;
+				case "smoking": $sqlstring .= "smoking_status"; break;
+				case "enrollgroup": $sqlstring .= "enroll_subgroup"; break;
+				default: echo "error - [$column] not recognized"; return;
+			}
+			$sqlstring .= " = '$value' where subject_id = $subjectid";
+			
+			//echo "$sqlstring";
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		}
+		
+		echo "success";
+	}
+	
 ?>

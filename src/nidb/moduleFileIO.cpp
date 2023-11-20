@@ -357,24 +357,30 @@ bool moduleFileIO::DeleteAnalysis(qint64 analysisid, QString &msg) {
             okToDeleteDBEntries = true;
         }
         else {
-            QString systemstring = QString("sudo rm -rfv %1").arg(a.analysispath);
-            n->WriteLog("Not all files deleted. Deleting remaining files using sudo.");
-            n->WriteLog(SystemCommand(systemstring));
-
-            QDir d(a.analysispath);
-            if (d.exists()) {
-                n->WriteLog("Datapath [" + a.analysispath + "] still exists, even after sudo rm -rf");
-
-                QSqlQuery q;
-                q.prepare("update analysis set analysis_statusmessage = 'Analysis directory not deleted. Manually delete the directory and then delete from this webpage again' where analysis_id = :analysisid");
-                q.bindValue(":analysisid", analysisid);
-                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-
-                n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysisdeleteerror", "Analysis directory not deleted. Probably because permissions have changed and NiDB does not have permission to delete the directory [" + a.analysispath + "]");
-                return false;
+            QString p = a.analysispath;
+            if ((p == "") || (p == ".") || (p == "..") || (p == "/") || (p.contains("//")) || (p.startsWith("/root")) || (p == "/home")) {
+                n->WriteLog("Path is not valid [" + p + "]");
             }
             else {
-                okToDeleteDBEntries = true;
+                QString systemstring = QString("rm -rfv %1").arg(a.analysispath);
+                n->WriteLog("Not all files deleted. Deleting remaining files using rm -rf");
+                n->WriteLog(SystemCommand(systemstring));
+
+                QDir d(a.analysispath);
+                if (d.exists()) {
+                    n->WriteLog("Datapath [" + a.analysispath + "] still exists, even after rm -rf");
+
+                    QSqlQuery q;
+                    q.prepare("update analysis set analysis_statusmessage = 'Analysis directory not deleted. Manually delete the directory and then delete from this webpage again' where analysis_id = :analysisid");
+                    q.bindValue(":analysisid", analysisid);
+                    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+
+                    n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysisdeleteerror", "Analysis directory not deleted. Probably because permissions have changed and NiDB does not have permission to delete the directory [" + a.analysispath + "]");
+                    return false;
+                }
+                else {
+                    okToDeleteDBEntries = true;
+                }
             }
         }
     }

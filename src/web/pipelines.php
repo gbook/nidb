@@ -2759,7 +2759,9 @@ echo "#$ps_command     $logged $ps_desc\n";
 				<input class="ui primary button" type="submit" <?=$disabled?> value="Save Pipeline Details">
 			</div>
 			</form>
-			<script src="scripts/aceeditor/ace.js" type="text/javascript" charset="utf-8"></script>
+			<!--<script src="scripts/aceeditor/ace.js" type="text/javascript" charset="utf-8"></script>-->
+			<script src="https://cdn.jsdelivr.net/npm/ace-builds/src-min-noconflict/ace.min.js"></script>
+
 			<script>
 				var editor = ace.edit("commandlist");
 				var textarea = $('textarea[name="commandlist"]').hide();

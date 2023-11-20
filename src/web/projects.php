@@ -2019,9 +2019,9 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- DisplaySubjects -------------------- */
+	/* ------- DisplaySubjectsTable --------------- */
 	/* -------------------------------------------- */
-	function DisplaySubjects($id, $isactive=1) {
+	function DisplaySubjectsTable($id, $isactive=1) {
 		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 		if (!isInteger($id)) { echo "Invalid project ID [$id]"; return; }
 		
@@ -2030,33 +2030,15 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$name = $row['project_name'];
 		
-		?>
-		<b>Options:</b> <a href="projects.php?action=displaydemographics&id=<?=$id?>" style="font-weight: normal">View table</a>
-		<div align="center">
-		<br>
-		<table class="ui very compact celled grey table">
-			<thead>
-				<th>UID</th>
-				<th>Alt IDs<br><span class="tiny">Comma separated, * next to main ID</span></th>
-				<th>GUID</th>
-				<th>Birthdate<br><span class="tiny">YYY-MM-DD</span></th>
-				<th>Sex<br><span class="tiny">M,F,U,O</span></th>
-				<th>Race</th>
-				<th>Ethnicity</th>
-				<th>Handedness<br><span class="tiny">R,L,A,U</span></th>
-				<th>Education</th>
-				<th>Marital</th>
-				<th>Smoking</th>
-				<th>Enroll group</th>
-			</thead>
-		<?
 		/* get all subjects, and their enrollment info, associated with the project */
 		$sqlstring = "select * from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = $id and a.isactive = '$isactive' order by a.uid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$numsubjects = mysqli_num_rows($result);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$subjectid = $row['subject_id'];
 			$uid = $row['uid'];
 			$guid = $row['guid'];
+			$sex = $row['sex'];
 			$gender = $row['gender'];
 			$birthdate = $row['birthdate'];
 			$ethnicity1 = $row['ethnicity1'];
@@ -2082,29 +2064,6 @@
 			$altuidlist = implode2(", ",$altids);
 			$altids = array();
 			
-			switch ($ethnicity1) {
-				case "": $ethnicity1 = "-"; break;
-				case "hispanic": $ethnicity1 = "Hispanic/Latino"; break;
-				case "nothispanic": $ethnicity1 = "Not hispanic/Latino"; break;
-			}
-
-			switch ($ethnicity2) {
-				case "": $ethnicity2 = "-"; break;
-				case "indian": $ethnicity2 = "American Indian/Alaska Native"; break;
-				case "asian": $ethnicity2 = "Asian"; break;
-				case "black": $ethnicity2 = "Black/African American"; break;
-				case "islander": $ethnicity2 = "Hawaiian/Pacific Islander"; break;
-				case "white": $ethnicity2 = "White"; break;
-			}
-			
-			switch ($handedness) {
-				case "": $handedness = "-"; break;
-				case "U": $handedness = "Unknown"; break;
-				case "R": $handedness = "Right"; break;
-				case "L": $handedness = "Left"; break;
-				case "A": $handedness = "Ambidextrous"; break;
-			}
-			
 			switch ($education) {
 				case "": $education = "-"; break;
 				case 0: $education = "Unknown"; break;
@@ -2117,33 +2076,187 @@
 				case 7: $education = "Masters Degree"; break;
 				case 8: $education = "Doctoral Degree"; break;
 			}
-			
-			?>
-			<tr>
-				<td style="font-weight: bold; font-size:12pt"><tt><?=$uid?></tt></td>
-				<td><?=$altuidlist?></td>
-				<td><?=$guid?></td>
-				<td><?=$birthdate?></td>
-				<td><?=$gender?></td>
-				<td><?=$ethnicity1?></td>
-				<td><?=$ethnicity2?></td>
-				<td><?=$handedness?></td>
-				<td><?=$education?></td>
-				<td><?=$maritalstatus?></td>
-				<td><?=$smokingstatus?></td>
-				<td><?=$enrollsubgroup?></td>
-			</tr>
-			<?
+
+			$rowdata[] = "{ id: $subjectid, uid: \"$uid\", altuids: \"$altuidlist\", guid: \"$guid\", dob: \"$birthdate\", sex: \"$sex\", gender: \"$gender\", ethnicity1: \"$ethnicity1\", ethnicity2: \"$ethnicity2\", handedness: \"$handedness\", education: \"$education\", marital: \"$maritalstatus\", smoking: \"$smokingstatus\", enrollgroup: \"$enrollsubgroup\" }";
 		}
+		
+		$data = implode(",", $rowdata);
 		?>
-		</table>
+		
+		Displaying <?=$numsubjects?> subjects
+		<br>
+		<div class="ui button" onClick="onBtnExport()">Save as .csv</div>
+		<br><br>
+		
+		<!-- Include the JS for AG Grid -->
+		<script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.noStyle.js"></script>
+		<!-- Include the core CSS, this is needed by the grid -->
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-grid.css"/>
+		<!-- Include the theme CSS, only need to import the theme you are going to use -->
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-theme-alpine.css"/>
+		<!--<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-theme-balham.css"/>-->
+
+		<div class="ui text container">
+			<span id="updateresult"></span>
+			<br>
 		</div>
+	  
+		<div id="myGrid" class="ag-theme-alpine" style="height: 63vh"></div>
+		<script type="text/javascript">
+			// Function to demonstrate calling grid's API
+			function deselect(){
+				gridOptions.api.deselectAll()
+			}
+			
+			function onBtnExport() {
+				gridOptions.api.exportDataAsCsv( {allColumns: false} );
+			}			
+
+			// Grid Options are properties passed to the grid
+			const gridOptions = {
+
+				// each entry here represents one column
+				columnDefs: [
+					{ field: 'id', hide: true },
+					{
+						headerName: "UID",
+						field: "uid",
+						pinned: 'left',
+						width: 150,
+						cellRenderer: function(params) {
+							return '<a href="subjects.php?id=' + params.data.id + '">' + params.value + '</a>'
+						}
+					},
+					{ 
+						headerName: "Alt UIDs",
+						field: "altuids",
+						editable: true,
+						cellEditor: 'agLargeTextCellEditor',
+						cellRenderer: function(params) {
+							return '<tt>' + params.value + '</tt>'
+						},
+						
+					},
+					{ headerName: "GUID", field: "guid", editable: true },
+					{ headerName: "Birthdate", field: "dob", editable: true, cellDataType: 'dateString' },
+					{
+						headerName: "Sex",
+						field: "sex",
+						editable: true,
+						cellEditor: 'agSelectCellEditor',
+						cellEditorParams: {
+							values: ['', 'F', 'M', 'O', 'U'],
+							valueListGap: 0
+						}
+					},
+					{
+						headerName: "Gender",
+						field: "gender",
+						editable: true,
+						cellEditor: 'agSelectCellEditor',
+						cellEditorParams: {
+							values: ['', 'F', 'M', 'O', 'U'],
+							valueListGap: 0
+						}
+					},
+					{
+						headerName: "Ethnicity1",
+						field: "ethnicity1",
+						editable: true,
+						cellEditor: 'agSelectCellEditor',
+						cellEditorParams: {
+							values: ['', 'hispanic', 'nothispanic'],
+							valueListGap: 0
+						}
+					},
+					{ 
+						headerName: "Ethnicity2",
+						field: "ethnicity2",
+						editable: true,
+						cellEditor: 'agSelectCellEditor',
+						cellEditorParams: {
+							values: ['unknown','','asian','black','white','indian','islander','mixed','other'],
+							valueListGap: 0
+						}
+					},
+					{
+						headerName: "Handedness",
+						field: "handedness",
+						editable: true,
+						cellEditor: 'agSelectCellEditor',
+						cellEditorParams: {	values: ['', 'R', 'L', 'U', 'A'], valueListGap: 0 }
+					},
+					{
+						headerName: "Education",
+						field: "education",
+						editable: true,
+						cellEditor: 'agSelectCellEditor',
+						cellEditorParams: {	values: ['Unknown', '', 'Grade School', 'Middle School', 'High School/GED', 'Trade School', 'Associates Degree', 'Bachelors Degree', 'Masters Degree', 'Doctoral Degree'], valueListGap: 0 }
+					},
+					{
+						headerName: "Marital Status",
+						field: "marital",
+						editable: true,
+						cellEditor: 'agSelectCellEditor',
+						cellEditorParams: {	values: ['unknown', '', 'married', 'single', 'divorced', 'separated', 'civilunion', 'cohabitating', 'widowed'], valueListGap: 0 }
+					},
+					{
+						headerName: "Smoking Status",
+						field: "smoking",
+						editable: true,
+						cellEditor: 'agSelectCellEditor',
+						cellEditorParams: {	values: ['unknown', '', 'never', 'current', 'past'], valueListGap: 0 }
+					},
+					{ headerName: "Enroll Sub-group", field: "enrollgroup", editable: true },
+				],
+
+				rowData: [ <?=$data?> ],
+				
+				// default col def properties get applied to all columns
+				defaultColDef: {sortable: true, filter: true, resizable: true},
+
+				rowSelection: 'multiple', // allow rows to be selected
+				animateRows: false, // have rows animate to new positions when sorted
+				onFirstDataRendered: onFirstDataRendered,
+				stopEditingWhenCellsLoseFocus: true,
+				suppressMovableColumns: true,
+				onCellEditingStopped: (event) => {
+
+					url = "ajaxapi.php?action=updatesubjectdetails&subjectid=" + event.data.id + "&column=" + event.column.getColDef().field + "&value=" + event.value;
+					//console.log(url);
+					var xhttp = new XMLHttpRequest();
+					xhttp.onreadystatechange = function() {
+						if (this.readyState == 4 && this.status == 200) {
+							console.log(this.responseText);
+							if (this.responseText == "success") {
+								document.getElementById("updateresult").innerHTML = '<div class="ui success message" style="transition: opacity 3s ease-in-out, opacity 1; !important">Success updating ' + event.column.getColDef().field + ' to ' + event.value + '</div>';
+							}
+							else {
+								document.getElementById("updateresult").innerHTML = '<div class="ui error message">Error updating ' + event.column.getColDef().field + ' to ' + event.value + '</div>';
+							}
+						}
+					};
+					xhttp.open("GET", url, true);
+					xhttp.send();
+					
+				},				
+			};
+
+			function onFirstDataRendered(params) {
+				params.api.sizeColumnsToFit();
+			}
+			// get div to host the grid
+			const eGridDiv = document.getElementById("myGrid");
+			// new grid instance, passing in the hosting DIV and Grid Options
+			new agGrid.Grid(eGridDiv, gridOptions);
+
+		</script>
 		<?
 	}
 
 
 	/* -------------------------------------------- */
-	/* ------- EditBIDSDatatypes ---------------- */
+	/* ------- EditBIDSDatatypes ------------------ */
 	/* -------------------------------------------- */
 	function EditBIDSDatatypes($id) {
 		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
@@ -2776,6 +2889,7 @@
 			}
 			$subjects[$uid] = "1";
 		}
+		$numsubjects = count($subjects);
 		
 		$lowdate = min($studydates);
 		$highdate = max($studydates);
@@ -2804,6 +2918,23 @@
 			</h1>
 
 			<br>
+			
+			<div class="ui large dropdown">
+				<div class="text">View Data</div>
+				<i class="dropdown icon"></i>
+				<div class="menu">
+					<div class="item">
+						<span class="description"><?=$numsubjects?></span>
+						<a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a>
+					</div>
+					<div class="item">
+						<span class="description"><?=$numstudies?></span>
+						<a href="projects.php?action=displaystudies&id=<?=$id?>">Studies</a>
+					</div>
+					<div class="item">Checklist</div>
+					<div class="item">MR scan QC</div>
+				</div>
+			</div>
 			
 			<script>
 				$(document).ready(function() {
