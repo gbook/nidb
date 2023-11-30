@@ -137,7 +137,7 @@
 			DisplayEditSubjectsTable($id);
 			break;
 		case 'displaysubjects':
-			DisplaySubjects($id,1);
+			DisplaySubjectsTable($id,1);
 			break;
 		case 'updatedemographics':
 			UpdateDemographics($id,$subjectids,$altuids,$guids,$birthdates,$genders,$ethnicity1s,$ethnicity2s,$educations,$maritalstatus,$smokingstatus,$enrollgroups);
@@ -2083,11 +2083,6 @@
 		$data = implode(",", $rowdata);
 		?>
 		
-		Displaying <?=$numsubjects?> subjects
-		<br>
-		<div class="ui button" onClick="onBtnExport()">Save as .csv</div>
-		<br><br>
-		
 		<!-- Include the JS for AG Grid -->
 		<script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.noStyle.js"></script>
 		<!-- Include the core CSS, this is needed by the grid -->
@@ -2096,12 +2091,23 @@
 		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-theme-alpine.css"/>
 		<!--<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-theme-balham.css"/>-->
 
+		<br>
 		<div class="ui text container">
 			<span id="updateresult"></span>
-			<br>
 		</div>
 	  
-		<div id="myGrid" class="ag-theme-alpine" style="height: 63vh"></div>
+		<div class="ui top attached yellow segment">
+			<div class="ui two column grid">
+				<div class="column">
+					<h3 class="ui header">Displaying <?=$numsubjects?> subjects</h3>
+				</div>
+				<div class="right aligned column">
+					<div class="ui basic compact button" onClick="onBtnExport()"><i class="file excel outline icon"></i> Export table as .csv</div>
+					<div class="ui label"><i class="exclamation circle icon"></i> This table is editable. Changes are permanent after editing each cell</div>
+				</div>
+			</div>
+		</div>
+		<div id="myGrid" class="ag-theme-alpine" style="height: 60vh"></div>
 		<script type="text/javascript">
 			// Function to demonstrate calling grid's API
 			function deselect(){
@@ -2229,7 +2235,7 @@
 						if (this.readyState == 4 && this.status == 200) {
 							console.log(this.responseText);
 							if (this.responseText == "success") {
-								document.getElementById("updateresult").innerHTML = '<div class="ui success message" style="transition: opacity 3s ease-in-out, opacity 1; !important">Success updating ' + event.column.getColDef().field + ' to ' + event.value + '</div>';
+								document.getElementById("updateresult").innerHTML = '<div class="ui success message" style="transition: opacity 3s ease-in-out, opacity 1; !important">Success updating <b>' + event.column.getColDef().field + '</b> to \'' + event.value + '\'</div>';
 							}
 							else {
 								document.getElementById("updateresult").innerHTML = '<div class="ui error message">Error updating ' + event.column.getColDef().field + ' to ' + event.value + '</div>';
@@ -2919,170 +2925,56 @@
 
 			<br>
 			
-			<div class="ui large dropdown">
-				<div class="text">View Data</div>
+			<div class="ui large dropdown labeled icon button">
+				<div class="text"><i class="search icon"></i> View Data</div>
 				<i class="dropdown icon"></i>
 				<div class="menu">
 					<div class="item">
 						<span class="description"><?=$numsubjects?></span>
-						<a href="projects.php?action=editsubjects&id=<?=$id?>">Subjects</a>
+						<a href="projects.php?action=editsubjects&id=<?=$id?>" style="color: #222"><i class="user friends icon"></i> Subjects</a>
 					</div>
 					<div class="item">
 						<span class="description"><?=$numstudies?></span>
-						<a href="projects.php?action=displaystudies&id=<?=$id?>">Studies</a>
+						<a href="projects.php?action=displaystudies&id=<?=$id?>" style="color: #222"><i class="project diagram icon"></i> Studies</a>
 					</div>
-					<div class="item">Checklist</div>
-					<div class="item">MR scan QC</div>
+					<div class="item" title="Checklist of expected data items"><a href="projectchecklist.php?projectid=<?=$id?>" style="color: #222"><i class="clipboard list icon"></i> Checklist</a></div>
+					<div class="item"><a href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>" style="color: #222"><i class="clipboard check icon"></i> MR scan QC</a></div>
 				</div>
 			</div>
-			
-			<script>
-				$(document).ready(function() {
-					$('.menu .item').tab();
-					
-					$('#viewdata')
-					  .popup({
-  					    popup : $('#viewdatapopup'),
-						inline     : true,
-						hoverable  : true,
-						on         : 'hover',
-						position   : 'bottom left',
-						delay: {
-						  hide: 300
-						}
-					  });
-					$('#tools')
-					  .popup({
-  					    popup : $('#toolspopup'),
-						inline     : true,
-						hoverable  : true,
-						on         : 'hover',
-						position   : 'bottom left',
-						delay: {
-						  hide: 300
-						}
-					  });
-					$('#import')
-					  .popup({
-  					    popup : $('#importpopup'),
-						inline     : true,
-						hoverable  : true,
-						on         : 'hover',
-						position   : 'bottom left',
-						delay: {
-						  hide: 300
-						}
-					  });
-					$('#admin')
-					  .popup({
-  					    popup : $('#adminpopup'),
-						inline     : true,
-						hoverable  : true,
-						on         : 'hover',
-						position   : 'bottom left',
-						delay: {
-						  hide: 300
-						}
-					  });
-				});
-			</script>
 
-			<?
-				/* get list of studies created since project.lastview */
-				$sqlstring = "select *, year(c.birthdate) 'dobyear' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.project_id = $id and a.lastupdate > '$lastview'";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				$numnewstudies = mysqli_num_rows($result);
-			?>
-			<style>
-				.active.item2 {
-					background-color: #EBF5FB !important;
-				}
-			</style>
-			
-			<div class="ui top attached tabular menu" style="font-size: larger">
-				<a class="active item item2" data-tab="viewdata"><i class="binoculars icon"></i> View Data<? if ($numnewstudies > 0) { ?><div class="left floating ui red label"><?=$numnewstudies?> new</div><? } ?></a>
-				<a class="item item2" data-tab="tools"><i class="tools icon"></i> Tools</a>
-				<a class="item item2" data-tab="importdata"><i class="file import icon"></i> Import Data</a>
-				<a class="item item2" data-tab="admin"><i class="cog icon"></i> Admin</a>
-			</div>
-			<div class="ui bottom attached active tab segment" data-tab="viewdata">
-				<br>
-				<a class="ui primary big button" href="projects.php?action=editsubjects&id=<?=$id?>"><i class="users icon"></i> <b>Subjects</b></a>
-				<a class="ui primary big button" href="projects.php?action=displaystudies&id=<?=$id?>"><i class="sitemap icon"></i> Studies</a>
-				<a class="ui big button" href="projectchecklist.php?projectid=<?=$id?>"><i class="clipboard list icon"></i> Checklist</a>
-				<a class="ui big button" href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>"><i class="clipboard list icon"></i> MR scan QC</a>
-				<br>
-				<br>
-				<!--
-				<div class="ui big vertical menu">
-					<?
-					if ($numnewstudies > 0) {
-						$lastview = date("F j, Y g:ia",strtotime($lastview));
-					?>
-					
-					<div class="ui dropdown item">
-						<i class="dropdown icon"></i>
-						New Studies <div class="ui red label"><?=$numnewstudies?></div>
-						<div class="menu">
-							<div class="header">Since <?=$lastview?> &nbsp; &nbsp; <a href="projects.php?action=dismissnewstudies&id=<?=$id?>" class="ui small basic button"><i class="times icon"></i> Dismiss</a></div>
-							<?
-							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-								$studyid = $row['study_id'];
-								$subjectid = $row['subject_id'];
-								$uid = $row['uid'];
-								$studynum = $row['study_num'];
-								//$age = $row['study_ageatscan'];
-								$studydate = $row['study_datetime'];
-								$gender = $row['gender'];
-								
-								$dobyear = $row['dobyear'];
-								$age = date("Y") - $dobyear;
-								
-								?>
-								<div class="item">
-									<a href="studies.php?studyid=<?=$studyid?>">
-										<?=$uid?><?=$studynum?>
-									</a>
-									<div class="description"><?=$gender?> <?=$age?>Y - <?=$studydate?></div>
-								</div>
-								<?
-							}
-							?>
-						</div>
-					</div>
-					<? } ?>
-				</div>
-				-->
-			</div>
-			<div class="ui bottom attached tab segment" data-tab="tools">
-				<div class="ui big vertical menu">
-					<a class="item" href="datadictionary.php?projectid=<?=$id?>">Data dictionary <i class="right floating database icon"></i></a>
-					<a class="item" href="analysisbuilder.php?action=viewanalysissummary&projectid=<?=$id?>">Analysis builder <i class="list alternate outline icon"></i></a>
-					<a class="item" href="templates.php?action=displaystudytemplatelist&projectid=<?=$id?>">Study templates <i class="clone outline icon"></i></a>
-					<a class="item" href="minipipeline.php?projectid=<?=$id?>">Mini-pipelines <i class="cogs icon"></i></a>
-					<a class="item" href="experiment.php?projectid=<?=$id?>">Experiments <i class="clipboard icon"></i></a>
-					<a class="item" href="projects.php?action=editbidsmapping&id=<?=$id?>">BIDS protocol mapping <i class="tasks icon"></i></a>
-					<a class="item" href="projects.php?action=editndamapping&id=<?=$id?>">NDA mapping <i class="tasks icon"></i></a>
-					<a class="item" href="projects.php?action=editexperimentmapping&id=<?=$id?>">Experiment mapping <i class="tasks icon"></i></a>
-					<a class="item" href="ndarequests.php?action=default&projectid=<?=$id?>">NDA request history <i class="history icon"></i></a>
+			<div class="ui large dropdown labeled icon button">
+				<div class="text"><i class="tools icon"></i> Tools</div>
+				<i class="dropdown icon"></i>
+				<div class="menu">
+					<div class="item"><a href="datadictionary.php?projectid=<?=$id?>" style="color: #222"><i class="database icon"></i> Data dictionary</a></div>
+					<div class="item"><a href="analysisbuilder.php?action=viewanalysissummary&projectid=<?=$id?>" style="color: #222"><i class="list alternate outline icon"></i> Analysis builder</a></div>
+					<div class="item"><a href="templates.php?action=displaystudytemplatelist&projectid=<?=$id?>" style="color: #222"><i class="clone outline icon"></i> Study templates</a></div>
+					<div class="item"><a href="minipipeline.php?projectid=<?=$id?>" style="color: #222"><i class="cogs icon"></i> Mini-pipelines</a></div>
+					<div class="item"><a href="experiment.php?projectid=<?=$id?>" style="color: #222"><i class="clipboard icon"></i> Experiments</a></div>
+					<div class="item"><a href="projects.php?action=editbidsmapping&id=<?=$id?>" style="color: #222"><i class="tasks icon"></i> BIDS protocol mapping</a></div>
+					<div class="item"><a href="projects.php?action=editndamapping&id=<?=$id?>" style="color: #222"><i class="tasks icon"></i> NDA experiment ID mapping</a></div>
+					<div class="item"><a href="projects.php?action=editexperimentmapping&id=<?=$id?>" style="color: #222"><i class="tasks icon"></i> Experiment &harr; protocol mapping</a></div>
+					<div class="item"><a href="ndarequests.php?action=default&projectid=<?=$id?>" style="color: #222"><i class="history icon"></i> NDA request history</a></div>
 				</div>
 			</div>
-			<div class="ui bottom attached tab segment" data-tab="importdata">
-				<div class="ui big vertical menu">
-					<a class="item" href="importimaging.php?action=newimportform&projectid=<?=$id?>">Import imaging <i class="file import icon"></i></a>
-					<a class="item" href="redcapimport.php?action=importsettings&projectid=<?=$id?>">Global Redcap settings <i class="red redhat icon"></i></a>
-					<a class="item" href="redcapimportsubjects.php?action=default&projectid=<?=$id?>">Redcap subject import <i class="red redhat icon"></i></a>
-					<a class="item" href="redcaptonidb.php?action=default&projectid=<?=$id?>">Import from Redcap <i class="red redhat icon"></i></a>
-					<!--<a class="item" href="projects.php?action=editxnat&id=<?=$id?>">Export to XNAT <i class="times circle outline icon"></i></a>-->
+
+			<div class="ui large dropdown labeled icon button">
+				<div class="text"><i class="file import icon"></i> Import Data</div>
+				<i class="dropdown icon"></i>
+				<div class="menu">
+					<div class="item"><a href="importimaging.php?action=newimportform&projectid=<?=$id?>" style="color: #222"><i class="file import icon"></i> Import imaging</a></div>
+					<div class="item"><a href="redcapimport.php?action=importsettings&projectid=<?=$id?>" style="color: #222"><i class="red redhat icon"></i> Global Redcap settings</a></div>
+					<div class="item"><a href="redcapimportsubjects.php?action=default&projectid=<?=$id?>" style="color: #222"><i class="red redhat icon"></i> Redcap subject import</a></div>
+					<div class="item"><a href="redcaptonidb.php?action=default&projectid=<?=$id?>" style="color: #222"><i class="red redhat icon"></i> Import from Redcap</a></div>
 				</div>
 			</div>
-			<div class="ui bottom attached tab segment" data-tab="admin">
-				<div class="ui big vertical menu">
+
+			<div class="ui large dropdown labeled icon button">
+				<div class="text"><i class="cog icon"></i> Admin</div>
+				<i class="dropdown icon"></i>
+				<div class="menu">
 					<? if ($GLOBALS['isadmin']) { ?>
-						<a class="item" href="projects.php?action=resetqa&id=<?=$id?>">
-							Reset MRI QA
-							<i class="red sync icon"></i>
-						</a>
+						<div class="item"><a class="item" href="projects.php?action=resetqa&id=<?=$id?>"><i class="red sync icon"></i> Reset MRI QA</a></div>
 					<? } ?>
 					<div class="item"><b>Remote connection params</b><br>
 						Project ID: <?=$id?><br>
@@ -3091,73 +2983,17 @@
 					</div>
 				</div>
 			</div>
-			
-			<!--
-			<br>
-			<?
-				/* get all subjects, and their enrollment info, associated with the project */
-				$sqlstring = "select * from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = $id and a.isactive = 1 order by a.uid";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				$numstudies = mysqli_num_rows($result);
-			?>
-			<div class="ui header">
-				<?=$numstudies?> studies
-			</div>
-			
-			<div class="ui short scrolling container">
 
-			<table class="ui very compact celled head first stuck grey table">
-				<thead>
-					<th>UID</th>
-					<th>Alt IDs</th>
-					<th>GUID</th>
-					<th>Birthdate</th>
-					<th>Sex</th>
-					<th>Enroll group</th>
-					<th>Status</th>
-				</thead>
+			
 			<?
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$subjectid = $row['subject_id'];
-				$uid = $row['uid'];
-				$guid = $row['guid'];
-				$gender = $row['gender'];
-				$birthdate = $row['birthdate'];
-				$enrollsubgroup = $row['enroll_subgroup'];
-				$enrollstatus = $row['enroll_status'];
-				
-				$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' order by isprimary desc";
-				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-					$isprimary = $rowA['isprimary'];
-					$altid = $rowA['altuid'];
-					if ($isprimary) {
-						$altids[] = "*" . $altid;
-					}
-					else {
-						$altids[] = $altid;
-					}
-				}
-				$altuidlist = implode2(", ",$altids);
-				$altids = array();
-				
-				?>
-				<tr>
-					<td><a class="ui very compact large blue button" href="subjects.php?id=<?=$subjectid?>"><tt><?=$uid?></tt></a></td>
-					<td><?=$altuidlist?></td>
-					<td><?=$guid?></td>
-					<td><?=$birthdate?></td>
-					<td><?=$gender?></td>
-					<td><?=$enrollsubgroup?></td>
-					<td><?=$enrollstatus?></td>
-				</tr>
-				<?
-			}
+				/* get list of studies created since project.lastview */
+				$sqlstring = "select *, year(c.birthdate) 'dobyear' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.project_id = $id and a.lastupdate > '$lastview'";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$numnewstudies = mysqli_num_rows($result);
 			?>
-			</table>
-			</div>-->
 		</div>
 		<?
+		DisplaySubjectsTable($id);
 	}
 
 

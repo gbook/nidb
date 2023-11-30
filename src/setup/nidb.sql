@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Oct 11, 2023 at 05:41 PM
+-- Generation Time: Nov 30, 2023 at 08:22 PM
 -- Server version: 10.3.28-MariaDB
 -- PHP Version: 7.2.24
 
@@ -2331,6 +2331,8 @@ CREATE TABLE `projects` (
   `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `redcap_token` varchar(255) DEFAULT NULL,
   `redcap_server` varchar(255) DEFAULT NULL,
+  `redcapid_field` varchar(255) CHARACTER SET utf16 DEFAULT NULL,
+  `redcapnidbid_field` varchar(255) CHARACTER SET utf16 DEFAULT NULL,
   `xnat_hostname` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='System can have multiple projects. There must be 1 project a' ROW_FORMAT=DYNAMIC;
 
@@ -2708,6 +2710,7 @@ CREATE TABLE `redcap_import_mapping` (
   `redcap_form` varchar(250) DEFAULT NULL,
   `redcap_fields` mediumtext DEFAULT NULL,
   `redcap_fieldtype` varchar(250) DEFAULT NULL,
+  `redcapfield_desc` varchar(250) DEFAULT NULL,
   `redcap_fieldgroupid` int(11) NOT NULL,
   `nidb_datatype` enum('m','v','d') NOT NULL COMMENT 'measure, vital, drug/dose',
   `nidb_variablename` varchar(250) DEFAULT NULL,
@@ -3010,6 +3013,7 @@ CREATE TABLE `subjects` (
   `subject_id` int(11) NOT NULL,
   `name` varchar(255) NOT NULL,
   `birthdate` date DEFAULT NULL,
+  `sex` char(1) DEFAULT NULL,
   `gender` char(1) DEFAULT NULL,
   `ethnicity1` enum('hispanic','nothispanic','') DEFAULT NULL,
   `ethnicity2` set('asian','black','white','indian','islander','mixed','other','unknown') DEFAULT NULL,
@@ -3456,6 +3460,7 @@ CREATE TABLE `video_series` (
 CREATE TABLE `vitalnames` (
   `vitalname_id` int(11) NOT NULL,
   `vital_name` varchar(250) NOT NULL,
+  `vital_desc` varchar(250) DEFAULT NULL,
   `normal_range` varchar(255) DEFAULT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8;
 

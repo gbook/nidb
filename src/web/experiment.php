@@ -23,20 +23,9 @@
 
 	define("LEGIT_REQUEST", true);
 	session_start();
-?>
 
-<html>
-	<head>
-		<link rel="icon" type="image/png" href="images/squirrel.png">
-		<title>NiDB - Experiments</title>
-	</head>
-<body>
-	<div id="wrapper">
-<?
 	require "functions.php";
 	require "includes_php.php";
-	require "includes_html.php";
-	require "menu.php";
 
 	//PrintVariable($_FILES);
 	//PrintVariable($_POST);
@@ -54,40 +43,54 @@
 	$expid = GetVariable("expid");
 	$projectid = GetVariable("projectid");
 	$experimentname = GetVariable("experimentname");
+	$experimentdesc = GetVariable("experimentdesc");
 	$filedeleteids = GetVariable("filedeleteids");
 	$fileid = GetVariable("fileid");
 	
 	/* determine action */
-	if (($action == "editform") && ($selfcall))  {
-		DisplayExperimentForm($projectid, "edit", $expid);
-	}
-	elseif (($action == "addform") && ($selfcall)) {
-		DisplayExperimentForm($projectid, "add", "");
-	}
-	elseif (($action == "update") && ($selfcall)) {
-		if (UpdateExperiment($expid, $experimentname, $filedeleteids))
-			DisplayExperimentList($projectid);
-		else
-			DisplayExperimentForm($projectid, "edit", $expid);
-	}
-	elseif (($action == "add") && ($selfcall)) {
-		AddExperiment($projectid, $experimentname);
-		DisplayExperimentList($projectid);
-	}
-	elseif (($action == "delete") && ($selfcall)) {
-		DeleteExperiment($expid);
-		DisplayExperimentList($projectid);
-	}
-	elseif (($action == "viewfile") && ($selfcall)) {
-		ViewFile($projectid, $fileid);
-	}
-	elseif (($action == "download") && ($selfcall)) {
+	if (($action == "download") && ($selfcall)) {
 		DownloadExperiment($expid);
 	}
 	else {
-		DisplayExperimentList($projectid);
-	}
-	
+?>
+<html>
+	<head>
+		<link rel="icon" type="image/png" href="images/squirrel.png">
+		<title>NiDB - Experiments</title>
+	</head>
+<body>
+	<div id="wrapper">
+<?
+		require "includes_html.php";
+		require "menu.php";
+
+		if (($action == "editform") && ($selfcall))  {
+			DisplayExperimentForm($projectid, "edit", $expid);
+		}
+		elseif (($action == "addform") && ($selfcall)) {
+			DisplayExperimentForm($projectid, "add", "");
+		}
+		elseif (($action == "update") && ($selfcall)) {
+			if (UpdateExperiment($expid, $experimentname, $experimentdesc, $filedeleteids))
+				DisplayExperimentList($projectid);
+			else
+				DisplayExperimentForm($projectid, "edit", $expid);
+		}
+		elseif (($action == "add") && ($selfcall)) {
+			AddExperiment($projectid, $experimentname, $experimentdesc);
+			DisplayExperimentList($projectid);
+		}
+		elseif (($action == "delete") && ($selfcall)) {
+			DeleteExperiment($expid);
+			DisplayExperimentList($projectid);
+		}
+		elseif (($action == "viewfile") && ($selfcall)) {
+			ViewFile($projectid, $fileid);
+		}
+		else {
+			DisplayExperimentList($projectid);
+		}
+	}	
 	
 	/* ------------------------------------ functions ------------------------------------ */
 
@@ -95,12 +98,13 @@
 	/* -------------------------------------------- */
 	/* ------- UpdateExperiment ------------------- */
 	/* -------------------------------------------- */
-	function UpdateExperiment($expid, $experimentname, $filedeleteids) {
+	function UpdateExperiment($expid, $experimentname, $experimentdesc, $filedeleteids) {
 		/* perform data checks */
 		$experimentname = mysqli_real_escape_string($GLOBALS['linki'], $experimentname);
+		$experimentdesc = mysqli_real_escape_string($GLOBALS['linki'], $experimentdesc);
 		
 		/* update the experiment */
-		$sqlstring = "update experiments set exp_version = exp_version + 1, exp_name = '$experimentname', exp_modifydate = now() where experiment_id = $expid";
+		$sqlstring = "update experiments set exp_version = exp_version + 1, exp_name = '$experimentname', exp_desc = '$experimentdesc', exp_modifydate = now() where experiment_id = $expid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		/* remove files to be removed last... in case the user updated an option and wanted to delete it as well */
@@ -137,12 +141,13 @@ file_createdate, file_modifydate) values($expid, '$fileFilename', '$fileData', $
 	/* -------------------------------------------- */
 	/* ------- AddExperiment ---------------------- */
 	/* -------------------------------------------- */
-	function AddExperiment($projectid, $experimentname) {
+	function AddExperiment($projectid, $experimentname, $experimentdesc) {
 		/* perform data checks */
 		$experimentname = mysqli_real_escape_string($GLOBALS['linki'], $experimentname);
-		
+		$experimentdesc = mysqli_real_escape_string($GLOBALS['linki'], $experimentdesc);
+
 		/* insert the new experiment */
-		$sqlstring = "insert into experiments (project_id, exp_version, exp_name, exp_modifydate, exp_createdate) values ($projectid, 1, '$experimentname', now(), now())";
+		$sqlstring = "insert into experiments (project_id, exp_version, exp_name, exp_desc, exp_modifydate, exp_createdate) values ($projectid, 1, '$experimentname', '$experimentdesc', now(), now())";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$expid = mysqli_insert_id($GLOBALS['linki']);
 
@@ -198,6 +203,7 @@ file_modifydate, file_createdate) values($expid, '$fileFilename', '$fileData', $
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$experimentid = $row['experiment_id'];
 			$name = $row['exp_name'];
+			$desc = $row['exp_desc'];
 		
 			$formaction = "update";
 			$formtitle = "$name";
@@ -214,7 +220,7 @@ file_modifydate, file_createdate) values($expid, '$fileFilename', '$fileData', $
 			<div class="ui attached visible message">
 				<div class="header"><?=$formtitle?></div>
 			</div>
-			<form method="post" action="experiment.php" enctype="multipart/form-data" class="ui form attached fluid segment">
+			<form method="post" action="experiment.php" enctype="multipart/form-data" class="ui form attached fluid raised segment">
 			<input type="hidden" name="action" value="<?=$formaction?>">
 			<input type="hidden" name="expid" value="<?=$expid?>">
 			<input type="hidden" name="projectid" value="<?=$projectid?>">
@@ -223,6 +229,13 @@ file_modifydate, file_createdate) values($expid, '$fileFilename', '$fileData', $
 				<label>Name</label>
 				<div class="field">
 					<input type="text" name="experimentname" value="<?=$name?>" maxlength="255" required>
+				</div>
+			</div>
+
+			<div class="field">
+				<label>Description (Task instructions, README, how to analyze, etc)</label>
+				<div class="field">
+					<textarea name="experimentdesc"><?=$desc?></textarea>
 				</div>
 			</div>
 			
@@ -412,7 +425,7 @@ file_modifydate, file_createdate) values($expid, '$fileFilename', '$fileData', $
 		if (!ValidID($experimentid,'Experiment ID')) { return; }
 		
 		/* get list of files, and get the files */
-		$sqlstring = "select * from experiment_files where experiment_id = $expid";
+		$sqlstring = "select * from experiment_files where experiment_id = $experimentid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		if (mysqli_num_rows($result) > 0) {
 			
@@ -423,45 +436,59 @@ file_modifydate, file_createdate) values($expid, '$fileFilename', '$fileData', $
 			mkdir($tmppath, 0, true);
 			chmod($tmppath, 0777);
 			
-			$sqlstring = "select experiment_name from experiments where experiment_id = $expid";
+			$sqlstring = "select exp_name from experiments where experiment_id = $experimentid";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			if (mysqli_num_rows($result) > 0) {
 				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-				$expname = $row['experiment_name'];
+				$expname = $row['exp_name'];
+				$expname = preg_replace("/[^A-Za-z0-9]/", '', $expname);
 			}
 			else {
 				$expname = "experiment";
 			}
 			
-			$filename = "$tmppath/$expname.zip";
+			$zipfilename = "$tmppath/$expname.zip";
 			
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$fileid = $row['experimentfile_id'];
-				$filename = $row['file_name'];
-				$contents = base64_decode($row['file']);
-				$filesize = $row['file_size'];
-				$createdate = date('M j, Y h:ia',strtotime($row['file_createdate']));
-				$modifydate = date('M j, Y h:ia',strtotime($row['file_modifydate']));
+			$sqlstringA = "select * from experiment_files where experiment_id = $experimentid";
+			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+				$fileid = $rowA['experimentfile_id'];
+				$filename = $rowA['file_name'];
+				$contents = base64_decode($rowA['file']);
+				$filesize = $rowA['file_size'];
+				$createdate = date('M j, Y h:ia',strtotime($rowA['file_createdate']));
+				$modifydate = date('M j, Y h:ia',strtotime($rowA['file_modifydate']));
 				
 				/* write file to temp dir */
-				file_put_contents("$tmppath/$filename", $contents);
+				//echo "Writing to $tmppath/$filename<br><br>$contents<br><br>";
+				if (file_put_contents("$tmppath/$filename", $contents) === false){
+					//echo "$tmppath/$filename file not written<br>";
+				}
+				
+				if (file_exists("$tmppath/$filename")) {
+					//echo "$tmppath/$filename exists. Size " . filesize("$tmppath/$filename") . "<br>";
+				}
+				else {
+					//echo "$tmppath/$filename does not exist.<br>";
+				}
 			}
 			
-			$systemstring = "cd $tmppath; zip $filename .";
+			$systemstring = "cd $tmppath; zip $zipfilename *";
+			//PrintVariable($systemstring);
 			shell_exec($systemstring);
 			
 			/* send the .zip file to the browser */
 			header("Content-Description: File Transfer");
-			header("Content-Disposition: attachment; filename=$filename");
+			header("Content-Disposition: attachment; filename=$expname.zip");
 			header("Content-Type: application/zip");
-			header("Content-length: " . filesize($filename) . "\n\n");
+			header("Content-length: " . filesize($zipfilename) . "\n\n");
 			header("Content-Transfer-Encoding: binary");
 			// output data to the browser
-			readfile($filename);
-			unlink($filename);
+			readfile($zipfilename);
+			unlink($zipfilename);
 			rmdir($tmppath);
-			
-		}		
+			exit(0);
+		}
 	}
 	
 ?>
