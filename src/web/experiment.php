@@ -341,11 +341,11 @@ file_modifydate, file_createdate) values($expid, '$fileFilename', '$fileData', $
 										if ($count > 0)
 											echo "$count files, $size\n";
 										else
-											echo "None";
+											echo "-";
 									}
 									?>
 								</td>
-								<td valign="top" class="ui center aligned"><a class="ui basic icon button" href="experiment.php?action=download&expid=<?=$expid?>" title="Download <?=$name?> experiment"><i class="large file archive outline icon"></i></a></td>
+								<td valign="top" class="ui center aligned"><a class="ui basic primary icon button" href="experiment.php?action=download&expid=<?=$expid?>" title="Download <?=$name?> experiment"><i class="large download icon"></i></a></td>
 								<td valign="top"><?=$version?></td>
 								<td valign="top"><?=$createdate?></td>
 								<td valign="top"><?=$modifydate?></td>

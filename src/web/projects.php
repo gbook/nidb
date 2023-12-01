@@ -2103,7 +2103,7 @@
 				</div>
 				<div class="right aligned column">
 					<div class="ui basic compact button" onClick="onBtnExport()"><i class="file excel outline icon"></i> Export table as .csv</div>
-					<div class="ui label"><i class="exclamation circle icon"></i> This table is editable. Changes are permanent after editing each cell</div>
+					<div class="ui orange label"><i class="exclamation circle icon"></i> This table is editable. Changes are permanent after editing each cell</div>
 				</div>
 			</div>
 		</div>
@@ -2225,6 +2225,7 @@
 				animateRows: false, // have rows animate to new positions when sorted
 				onFirstDataRendered: onFirstDataRendered,
 				stopEditingWhenCellsLoseFocus: true,
+				undoRedoCellEditing: true,
 				suppressMovableColumns: true,
 				onCellEditingStopped: (event) => {
 
@@ -2895,7 +2896,11 @@
 			}
 			$subjects[$uid] = "1";
 		}
-		$numsubjects = count($subjects);
+
+		$sqlstring = "select count(*) 'numsubjects' from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = $id";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$numsubjects = $row['numsubjects'];
 		
 		$lowdate = min($studydates);
 		$highdate = max($studydates);
@@ -2920,7 +2925,7 @@
 				<a href="projects.php?action=setfavorite&id=<?=$id?>"><i class="grey star outline icon" title="Click to add this project to your favorites"></i></a><br>
 				<? } ?>
 			
-				<div class="sub header"><?=count($subjects)?> subjects &nbsp; &nbsp; <?=$numstudies?> studies</div>
+				<div class="sub header"><?=$numsubjects?> subjects &nbsp; &nbsp; <?=$numstudies?> studies</div>
 			</h1>
 
 			<br>
