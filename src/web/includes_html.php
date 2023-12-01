@@ -38,7 +38,7 @@
 <script type="text/javascript" src="scripts/jquery.jeditable.js"></script>
 <!--<script type="text/javascript" src="scripts/jquery.tablesorter.min.js"></script>-->
 <script type="text/javascript" src="scripts/jquery.imagepreview.js"></script>
-<script type="text/javascript" src="scripts/stupidtable.min.js"></script>
+<!--<script type="text/javascript" src="scripts/stupidtable.min.js"></script>-->
 
 <!--<link rel="stylesheet" type="text/css" href="scripts/themes/blue/style.css">-->
 <!--<link href='https://fonts.googleapis.com/css?family=Roboto Mono' rel='stylesheet'>-->
@@ -75,9 +75,9 @@
 
 <!-- for the global tooltip settings -->
 <script>
-	//$(function() {
-	//	$( document ).tooltip({show:{effect:'appear', delay: 500}, hide:{duration:0}});
-	//});
+	$(function() {
+		$( document ).tooltip({show:{effect:'appear', delay: 300}, hide:{duration:0}});
+	});
 </script>
 
 <style>
@@ -115,6 +115,7 @@
           var Day = DateParts[1];
           return new Date(Year, Month, Day);
         }
+		/*
         var table = $('.sortable').stupidtable({
           "date": function(a,b) {
             // Get these into date objects for comparison.
@@ -138,6 +139,7 @@
           var dir = $.fn.stupidtable.dir;
           var arrow = data.direction === dir.ASC ? "&uarr;" : "&darr;";
           th.eq(data.column).append('<span class="arrow">' + arrow +'</span>');
-        });		
+        });
+		*/
 	});
 </script>

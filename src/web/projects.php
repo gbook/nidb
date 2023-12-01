@@ -79,7 +79,7 @@
 	/* determine action */
 	switch ($action) {
 		case 'displaystudies':
-			DisplayStudiesTable($id);
+			DisplayStudiesTable2($id);
 			break;
 		case 'updatestudyage':
 			UpdateStudyAge($id);
@@ -134,7 +134,7 @@
 			DisplayProject($id);
 			break;
 		case 'editsubjects':
-			DisplayEditSubjectsTable($id);
+			DisplaySubjectsTable($id);
 			break;
 		case 'displaysubjects':
 			DisplaySubjectsTable($id,1);
@@ -147,8 +147,9 @@
 			DisplaySubjects($id,0);
 			break;
 		case 'updatesubjecttable':
-			UpdateSubjectTable($id,$subjecttable);
-			DisplayEditSubjectsTable($id);
+			Notice("This action [$action] has been deprecated");
+			//UpdateSubjectTable($id,$subjecttable);
+			//DisplaytSubjectsTable($id);
 			break;
 		case 'updatestudytable':
 			UpdateStudyTable($id,$studytable);
@@ -2097,13 +2098,13 @@
 		</div>
 	  
 		<div class="ui top attached yellow segment">
-			<div class="ui two column grid">
-				<div class="column">
-					<h3 class="ui header">Displaying <?=$numsubjects?> subjects</h3>
+			<div class="ui red right corner label" title="This table is editable. Changes are permanent after editing each cell."><i class="exclamation circle icon"></i></div>
+			<div class="ui grid">
+				<div class="eight wide column">
+					<h3 class="ui header">Subjects</h3>
 				</div>
-				<div class="right aligned column">
-					<div class="ui basic compact button" onClick="onBtnExport()"><i class="file excel outline icon"></i> Export table as .csv</div>
-					<div class="ui orange label"><i class="exclamation circle icon"></i> This table is editable. Changes are permanent after editing each cell</div>
+				<div class="right aligned seven wide column">
+					<div class="ui small basic primary compact button" onClick="onBtnExport()"><i class="file excel outline icon"></i> Export table as .csv</div> &nbsp;
 				</div>
 			</div>
 		</div>
@@ -2252,6 +2253,408 @@
 			function onFirstDataRendered(params) {
 				params.api.sizeColumnsToFit();
 			}
+			// get div to host the grid
+			const eGridDiv = document.getElementById("myGrid");
+			// new grid instance, passing in the hosting DIV and Grid Options
+			new agGrid.Grid(eGridDiv, gridOptions);
+
+		</script>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayCompactSubjectsTable -------- */
+	/* -------------------------------------------- */
+	function DisplayCompactSubjectsTable($id, $isactive=1) {
+		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
+		if (!isInteger($id)) { echo "Invalid project ID [$id]"; return; }
+		
+		$sqlstring = "select * from projects where project_id = $id";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$name = $row['project_name'];
+		
+		/* get all subjects, and their enrollment info, associated with the project */
+		$sqlstring = "select * from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = $id and a.isactive = '$isactive' order by a.uid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$numsubjects = mysqli_num_rows($result);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$subjectid = $row['subject_id'];
+			$uid = $row['uid'];
+			$guid = $row['guid'];
+			$sex = $row['sex'];
+			$gender = $row['gender'];
+			$birthdate = $row['birthdate'];
+			$enrollsubgroup = $row['enroll_subgroup'];
+			
+			$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' order by isprimary desc";
+			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+				$isprimary = $rowA['isprimary'];
+				$altid = $rowA['altuid'];
+				if ($isprimary) {
+					$altids[] = "*" . $altid;
+				}
+				else {
+					$altids[] = $altid;
+				}
+			}
+			$altuidlist = implode2(", ",$altids);
+			$altids = array();
+			
+			$rowdata[] = "{ id: $subjectid, uid: \"$uid\", altuids: \"$altuidlist\", guid: \"$guid\", dob: \"$birthdate\", sex: \"$sex\", gender: \"$gender\", enrollgroup: \"$enrollsubgroup\" }";
+		}
+		
+		$data = implode(",", $rowdata);
+		?>
+		
+		<!-- Include the JS for AG Grid -->
+		<script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.noStyle.js"></script>
+		<!-- Include the core CSS, this is needed by the grid -->
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-grid.css"/>
+		<!-- Include the theme CSS, only need to import the theme you are going to use -->
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-theme-alpine.css"/>
+		<!--<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-theme-balham.css"/>-->
+
+		<br>
+		<div class="ui text container">
+			<span id="updateresult"></span>
+		</div>
+	  
+		<div class="ui top attached yellow segment">
+			<div class="ui red right corner label" title="This table is editable. Changes are permanent after editing each cell."><i class="exclamation circle icon"></i></div>
+			<div class="ui grid">
+				<div class="eight wide column">
+					<h3 class="ui header">Subjects</h3>
+				</div>
+				<div class="right aligned seven wide column">
+					<div class="ui small basic primary compact button" onClick="onBtnExport()"><i class="file excel outline icon"></i> Export table as .csv</div> &nbsp;
+				</div>
+			</div>
+		</div>
+		<div id="myGrid" class="ag-theme-alpine" style="height: 60vh"></div>
+		<script type="text/javascript">
+			// Function to demonstrate calling grid's API
+			function deselect(){
+				gridOptions.api.deselectAll()
+			}
+			
+			function onBtnExport() {
+				gridOptions.api.exportDataAsCsv( {allColumns: false} );
+			}			
+
+			// Grid Options are properties passed to the grid
+			const gridOptions = {
+
+				// each entry here represents one column
+				columnDefs: [
+					{ field: 'id', hide: true },
+					{
+						headerName: "UID",
+						field: "uid",
+						pinned: 'left',
+						width: 150,
+						cellRenderer: function(params) {
+							return '<a href="subjects.php?id=' + params.data.id + '">' + params.value + '</a>'
+						}
+					},
+					{ 
+						headerName: "Alt UIDs",
+						field: "altuids",
+						editable: true,
+						cellEditor: 'agLargeTextCellEditor',
+						cellRenderer: function(params) {
+							return '<tt>' + params.value + '</tt>'
+						},
+						
+					},
+					{ headerName: "GUID", field: "guid", editable: true },
+					{ headerName: "Birthdate", field: "dob", editable: true, cellDataType: 'dateString' },
+					{
+						headerName: "Sex",
+						field: "sex",
+						editable: true,
+						cellEditor: 'agSelectCellEditor',
+						cellEditorParams: {
+							values: ['', 'F', 'M', 'O', 'U'],
+							valueListGap: 0
+						}
+					},
+					{
+						headerName: "Gender",
+						field: "gender",
+						editable: true,
+						cellEditor: 'agSelectCellEditor',
+						cellEditorParams: {
+							values: ['', 'F', 'M', 'O', 'U'],
+							valueListGap: 0
+						}
+					},
+					{ headerName: "Enroll Sub-group", field: "enrollgroup", editable: true },
+				],
+
+				rowData: [ <?=$data?> ],
+				
+				// default col def properties get applied to all columns
+				defaultColDef: {sortable: true, filter: true, resizable: true},
+
+				rowSelection: 'multiple', // allow rows to be selected
+				animateRows: false, // have rows animate to new positions when sorted
+				onFirstDataRendered: onFirstDataRendered,
+				stopEditingWhenCellsLoseFocus: true,
+				undoRedoCellEditing: true,
+				suppressMovableColumns: true,
+				onCellEditingStopped: (event) => {
+
+					url = "ajaxapi.php?action=updatesubjectdetails&subjectid=" + event.data.id + "&column=" + event.column.getColDef().field + "&value=" + event.value;
+					//console.log(url);
+					var xhttp = new XMLHttpRequest();
+					xhttp.onreadystatechange = function() {
+						if (this.readyState == 4 && this.status == 200) {
+							console.log(this.responseText);
+							if (this.responseText == "success") {
+								document.getElementById("updateresult").innerHTML = '<div class="ui success message" style="transition: opacity 3s ease-in-out, opacity 1; !important">Success updating <b>' + event.column.getColDef().field + '</b> to \'' + event.value + '\'</div>';
+							}
+							else {
+								document.getElementById("updateresult").innerHTML = '<div class="ui error message">Error updating ' + event.column.getColDef().field + ' to ' + event.value + '</div>';
+							}
+						}
+					};
+					xhttp.open("GET", url, true);
+					xhttp.send();
+					
+				},				
+			};
+
+			function onFirstDataRendered(params) {
+				params.api.sizeColumnsToFit();
+			}
+			// get div to host the grid
+			const eGridDiv = document.getElementById("myGrid");
+			// new grid instance, passing in the hosting DIV and Grid Options
+			new agGrid.Grid(eGridDiv, gridOptions);
+
+		</script>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayStudiesTable2 --------------- */
+	/* -------------------------------------------- */
+	function DisplayStudiesTable2($id, $isactive=1) {
+		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
+		if (!isInteger($id)) { echo "Invalid project ID [$id]"; return; }
+		
+		/* get all subjects, and their enrollment info, associated with the project */
+		/* display studies associated with this project */
+		$sqlstring = "select a.*, c.*, d.* from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on b.project_id = c.project_id left join subjects d on d.subject_id = b.subject_id where c.project_id = $id order by d.uid asc, a.study_modality asc limit 5000";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$numstudies = mysqli_num_rows($result);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$study_id = $row['study_id'];
+			$modality = $row['study_modality'];
+			$study_datetime = $row['study_datetime'];
+			$studysite = $row['study_site'];
+			$studynum = $row['study_num'];
+			$studydesc = $row['study_desc'];
+			$studyvisit = $row['study_type'];
+			$studyaltid = $row['study_alternateid'];
+			$studyageatscan = $row['study_ageatscan'];
+			//$age = $row['age'];
+			$sex = $row['sex'];
+			$gender = $row['gender'];
+			$dob = $row['birthdate'];
+			$uid = $row['uid'];
+			$subjectid = $row['subject_id'];
+			$enrollmentid = $row['enrollment_id'];
+			$project_name = $row['project_name'];
+			$project_costcenter = $row['project_costcenter'];
+			$isactive = $row['isactive'];
+
+			list($studyAge, $calcStudyAge) = GetStudyAge($dob, $study_ageatscan, $study_datetime);
+			
+			if ($studyAge == null)
+				$studyAge = "";
+			else
+				$studyAge = number_format($studyAge,1);
+
+			if ($calcStudyAge == null)
+				$calcStudyAge = "-";
+			else
+				$calcStudyAge = number_format($calcStudyAge,1);
+			
+			$altids = array();
+			$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' and enrollment_id = '$enrollmentid' and altuid <> '' order by isprimary desc";
+			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+				$isprimary = $rowA['isprimary'];
+				$altid = $rowA['altuid'];
+				if ($isprimary) {
+					$altids[] = "*" . $altid;
+				}
+				else {
+					$altids[] = $altid;
+				}
+			}
+			$altids = array_unique($altids);
+			$altuidlist = implode2(", ",$altids);
+			
+				$rowdata[] = "{ subjectid: $subjectid, studyid: $study_id, uid: \"$uid\", sex: \"$sex\", gender: \"$gender\", altuids: \"$altuidlist\", uidstudynum: \"$uid$studynum\", visit: \"$studyvisit\", studydate: \"$studydatetime\", studyage: \"$studyAge\", calcstudyage: \"$calcStudyAge\", modality: \"$modality\", desc: \"$studydesc\", study_id: \"$studyaltid\", site: \"$studysite\"}";
+
+		}
+		
+		$data = implode(",", $rowdata);
+		?>
+		
+		<!-- Include the JS for AG Grid -->
+		<script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.noStyle.js"></script>
+		<!-- Include the core CSS, this is needed by the grid -->
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-grid.css"/>
+		<!-- Include the theme CSS, only need to import the theme you are going to use -->
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-theme-alpine.css"/>
+		<!--<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-theme-balham.css"/>-->
+
+		<br>
+		<div class="ui text container">
+			<span id="updateresult"></span>
+		</div>
+	  
+		<div class="ui top attached yellow segment">
+			<div class="ui red right corner label" title="This table is editable. Changes are permanent after editing each cell."><i class="exclamation circle icon"></i></div>
+			<div class="ui grid">
+				<div class="eight wide column">
+					<h3 class="ui header">Subjects</h3>
+				</div>
+				<div class="right aligned seven wide column">
+					<div class="ui small basic primary compact button" onClick="onBtnExport()"><i class="file excel outline icon"></i> Export table as .csv</div> &nbsp;
+				</div>
+			</div>
+		</div>
+		<div id="myGrid" class="ag-theme-alpine" style="height: 60vh"></div>
+		<script type="text/javascript">
+			// Function to demonstrate calling grid's API
+			function deselect(){
+				gridOptions.api.deselectAll()
+			}
+			
+			function onBtnExport() {
+				gridOptions.api.exportDataAsCsv( {allColumns: false} );
+			}			
+
+			// Grid Options are properties passed to the grid
+			const gridOptions = {
+
+				// each entry here represents one column
+				columnDefs: [
+					{ field: 'subjectid', hide: true },
+					{ field: 'studyid', hide: true },
+					{
+						headerName: "UID",
+						field: "uid",
+						pinned: 'left',
+						width: 150,
+						cellRenderer: function(params) {
+							return '<a href="subjects.php?id=' + params.data.subjectid + '">' + params.value + '</a>'
+						}
+					},
+					{
+						headerName: "Sex",
+						field: "sex",
+						editable: true,
+						cellEditor: 'agSelectCellEditor',
+						cellEditorParams: {
+							values: ['', 'F', 'M', 'O', 'U'],
+							valueListGap: 0
+						}
+					},
+					{
+						headerName: "Gender",
+						field: "gender",
+						editable: true,
+						cellEditor: 'agSelectCellEditor',
+						cellEditorParams: {
+							values: ['', 'F', 'M', 'O', 'U'],
+							valueListGap: 0
+						}
+					},
+					{ 
+						headerName: "Alt UIDs",
+						field: "altuids",
+						editable: true,
+						cellEditor: 'agLargeTextCellEditor',
+						cellRenderer: function(params) {
+							return '<tt>' + params.value + '</tt>'
+						},
+						
+					},
+					{
+						headerName: "Study",
+						field: "uidstudynum",
+						pinned: 'left',
+						cellRenderer: function(params) {
+							return '<a href="studies.php?id=' + params.data.studyid + '">' + params.value + '</a>'
+						}
+					},
+					{ headerName: "Visit", field: "visit", editable: true },
+					{ headerName: "Study Datetime", field: "studydate", editable: false },
+					{ headerName: "StudyAge", field: "studyage", editable: true },
+					{ headerName: "Calculated StudyAge", field: "calcstudyage", editable: false },
+					{ headerName: "Modality", field: "modality", editable: false },
+					{ headerName: "Description", field: "desc", editable: false },
+					{ headerName: "Study ID", field: "study_id", editable: false },
+					{ headerName: "Site", field: "site", editable: false },
+				],
+
+				rowData: [ <?=$data?> ],
+				
+				// default col def properties get applied to all columns
+				defaultColDef: {sortable: true, filter: true, resizable: true},
+
+				rowSelection: 'multiple', // allow rows to be selected
+				animateRows: false, // have rows animate to new positions when sorted
+				//onFirstDataRendered: onFirstDataRendered,
+				stopEditingWhenCellsLoseFocus: true,
+				undoRedoCellEditing: true,
+				suppressMovableColumns: true,
+				//autoSizeStrategy: { type: 'fitCellContents' },
+				onCellEditingStopped: (event) => {
+
+					url = "ajaxapi.php?action=updatesubjectdetails&subjectid=" + event.data.id + "&column=" + event.column.getColDef().field + "&value=" + event.value;
+					//console.log(url);
+					var xhttp = new XMLHttpRequest();
+					xhttp.onreadystatechange = function() {
+						if (this.readyState == 4 && this.status == 200) {
+							console.log(this.responseText);
+							if (this.responseText == "success") {
+								document.getElementById("updateresult").innerHTML = '<div class="ui success message" style="transition: opacity 3s ease-in-out, opacity 1; !important">Success updating <b>' + event.column.getColDef().field + '</b> to \'' + event.value + '\'</div>';
+							}
+							else {
+								document.getElementById("updateresult").innerHTML = '<div class="ui error message">Error updating ' + event.column.getColDef().field + ' to ' + event.value + '</div>';
+							}
+						}
+					};
+					xhttp.open("GET", url, true);
+					xhttp.send();
+					
+				},				
+			};
+
+			function onFirstDataRendered(params) {
+				//params.api.sizeColumnsToFit();
+				//params.api.autoSizeAllColumns();
+				autoSizeAll(true);
+			}
+			
+			function autoSizeAll(skipHeader) {
+				const allColumnIds = [];
+				gridApi.getColumns().forEach((column) => {
+					allColumnIds.push(column.getId());
+				});
+
+				gridApi.autoSizeColumns(allColumnIds, skipHeader);
+			}			
 			// get div to host the grid
 			const eGridDiv = document.getElementById("myGrid");
 			// new grid instance, passing in the hosting DIV and Grid Options
@@ -2514,7 +2917,13 @@
 				<tr>
 					<td><?=strtoupper($modality)?></td>
 					<td><tt><?=$series?></tt></td>
-					<td><input type="hidden" name="modalities[<?=$i?>]" value="<?=strtolower($modality)?>"><input type="hidden" name="oldname[<?=$i?>]" value="<?=$series?>"><input type="text" name="newname[<?=$i?>]" value="<?=$shortname?>"></td>
+					<td>
+						<input type="hidden" name="modalities[<?=$i?>]" value="<?=strtolower($modality)?>">
+						<input type="hidden" name="oldname[<?=$i?>]" value="<?=$series?>">
+						<div class="ui fluid input">
+							<input type="text" name="newname[<?=$i?>]" value="<?=$shortname?>">
+						</div>
+					</td>
 				</tr>
 				<?
 				$i++;
@@ -2647,7 +3056,9 @@
 					<td><tt><?=$series?></tt></td>
 					<td>
 						<input type="hidden" name="modalities[<?=$i?>]" value="<?=strtolower($modality)?>"><input type="hidden" name="protocolname[<?=$i?>]" value="<?=$series?>">
-						<input type="text" name="experimentid[<?=$i?>]" value="<?=$experiment_id?>">
+						<div class="ui input">
+							<input type="text" name="experimentid[<?=$i?>]" value="<?=$experiment_id?>">
+						</div>
 					</td>
 				</tr>
 				<?
@@ -2917,88 +3328,35 @@
 		?>
 		
 		<div class="ui container">
-			<h1 class="ui header">
-				<?=$name?>
-				<? if ($favorite) { ?>
-				<a href="projects.php?action=unsetfavorite&id=<?=$id?>"><i class="yellow star icon" title="Click to remove this project from your favorites"></i></a>
-				<? } else { ?>
-				<a href="projects.php?action=setfavorite&id=<?=$id?>"><i class="grey star outline icon" title="Click to add this project to your favorites"></i></a><br>
-				<? } ?>
-			
-				<div class="sub header"><?=$numsubjects?> subjects &nbsp; &nbsp; <?=$numstudies?> studies</div>
-			</h1>
-
-			<br>
-			
-			<div class="ui large dropdown labeled icon button">
-				<div class="text"><i class="search icon"></i> View Data</div>
-				<i class="dropdown icon"></i>
-				<div class="menu">
-					<div class="item">
-						<span class="description"><?=$numsubjects?></span>
-						<a href="projects.php?action=editsubjects&id=<?=$id?>" style="color: #222"><i class="user friends icon"></i> Subjects</a>
-					</div>
-					<div class="item">
-						<span class="description"><?=$numstudies?></span>
-						<a href="projects.php?action=displaystudies&id=<?=$id?>" style="color: #222"><i class="project diagram icon"></i> Studies</a>
-					</div>
-					<div class="item" title="Checklist of expected data items"><a href="projectchecklist.php?projectid=<?=$id?>" style="color: #222"><i class="clipboard list icon"></i> Checklist</a></div>
-					<div class="item"><a href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>" style="color: #222"><i class="clipboard check icon"></i> MR scan QC</a></div>
+			<div class="ui grid">
+				<div class="six wide column">
+					<h1 class="ui header">
+						<?=$name?>
+						<? if ($favorite) { ?>
+						<a href="projects.php?action=unsetfavorite&id=<?=$id?>"><i class="yellow star icon" title="Click to remove this project from your favorites"></i></a>
+						<? } else { ?>
+						<a href="projects.php?action=setfavorite&id=<?=$id?>"><i class="grey star outline icon" title="Click to add this project to your favorites"></i></a><br>
+						<? } ?>
+					
+						<div class="sub header"><?=$numsubjects?> subjects &nbsp; &nbsp; <?=$numstudies?> studies</div>
+					</h1>
+				</div>
+				<div class="ten wide column">
+					
 				</div>
 			</div>
-
-			<div class="ui large dropdown labeled icon button">
-				<div class="text"><i class="tools icon"></i> Tools</div>
-				<i class="dropdown icon"></i>
-				<div class="menu">
-					<div class="item"><a href="datadictionary.php?projectid=<?=$id?>" style="color: #222"><i class="database icon"></i> Data dictionary</a></div>
-					<div class="item"><a href="analysisbuilder.php?action=viewanalysissummary&projectid=<?=$id?>" style="color: #222"><i class="list alternate outline icon"></i> Analysis builder</a></div>
-					<div class="item"><a href="templates.php?action=displaystudytemplatelist&projectid=<?=$id?>" style="color: #222"><i class="clone outline icon"></i> Study templates</a></div>
-					<div class="item"><a href="minipipeline.php?projectid=<?=$id?>" style="color: #222"><i class="cogs icon"></i> Mini-pipelines</a></div>
-					<div class="item"><a href="experiment.php?projectid=<?=$id?>" style="color: #222"><i class="clipboard icon"></i> Experiments</a></div>
-					<div class="item"><a href="projects.php?action=editbidsmapping&id=<?=$id?>" style="color: #222"><i class="tasks icon"></i> BIDS protocol mapping</a></div>
-					<div class="item"><a href="projects.php?action=editndamapping&id=<?=$id?>" style="color: #222"><i class="tasks icon"></i> NDA experiment ID mapping</a></div>
-					<div class="item"><a href="projects.php?action=editexperimentmapping&id=<?=$id?>" style="color: #222"><i class="tasks icon"></i> Experiment &harr; protocol mapping</a></div>
-					<div class="item"><a href="ndarequests.php?action=default&projectid=<?=$id?>" style="color: #222"><i class="history icon"></i> NDA request history</a></div>
-				</div>
-			</div>
-
-			<div class="ui large dropdown labeled icon button">
-				<div class="text"><i class="file import icon"></i> Import Data</div>
-				<i class="dropdown icon"></i>
-				<div class="menu">
-					<div class="item"><a href="importimaging.php?action=newimportform&projectid=<?=$id?>" style="color: #222"><i class="file import icon"></i> Import imaging</a></div>
-					<div class="item"><a href="redcapimport.php?action=importsettings&projectid=<?=$id?>" style="color: #222"><i class="red redhat icon"></i> Global Redcap settings</a></div>
-					<div class="item"><a href="redcapimportsubjects.php?action=default&projectid=<?=$id?>" style="color: #222"><i class="red redhat icon"></i> Redcap subject import</a></div>
-					<div class="item"><a href="redcaptonidb.php?action=default&projectid=<?=$id?>" style="color: #222"><i class="red redhat icon"></i> Import from Redcap</a></div>
-				</div>
-			</div>
-
-			<div class="ui large dropdown labeled icon button">
-				<div class="text"><i class="cog icon"></i> Admin</div>
-				<i class="dropdown icon"></i>
-				<div class="menu">
-					<? if ($GLOBALS['isadmin']) { ?>
-						<div class="item"><a class="item" href="projects.php?action=resetqa&id=<?=$id?>"><i class="red sync icon"></i> Reset MRI QA</a></div>
-					<? } ?>
-					<div class="item"><b>Remote connection params</b><br>
-						Project ID: <?=$id?><br>
-						Instance ID: <?=$instanceid?><br>
-						Site IDs: <?=implode2(",",$siteids)?><br>
-					</div>
-				</div>
-			</div>
-
 			
 			<?
 				/* get list of studies created since project.lastview */
 				$sqlstring = "select *, year(c.birthdate) 'dobyear' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.project_id = $id and a.lastupdate > '$lastview'";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				$numnewstudies = mysqli_num_rows($result);
+
+			
+				DisplayCompactSubjectsTable($id);
 			?>
 		</div>
 		<?
-		DisplaySubjectsTable($id);
 	}
 
 
