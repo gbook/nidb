@@ -2101,7 +2101,10 @@
 			<div class="ui red right corner label" title="This table is editable. Changes are permanent after editing each cell."><i class="exclamation circle icon"></i></div>
 			<div class="ui grid">
 				<div class="eight wide column">
-					<h3 class="ui header">Subjects</h3>
+					<h2 class="ui header">
+						Subjects
+						<div class="sub header">Displaying <?=$numsubjects?> subjects</div>
+					</h2>
 				</div>
 				<div class="right aligned seven wide column">
 					<div class="ui small basic primary compact button" onClick="onBtnExport()"><i class="file excel outline icon"></i> Export table as .csv</div> &nbsp;
@@ -2326,7 +2329,10 @@
 			<div class="ui red right corner label" title="This table is editable. Changes are permanent after editing each cell."><i class="exclamation circle icon"></i></div>
 			<div class="ui grid">
 				<div class="eight wide column">
-					<h3 class="ui header">Subjects</h3>
+					<h2 class="ui header">
+						Subjects
+						<div class="sub header">Displaying <?=$numsubjects?> subjects</div>
+					</h2>
 				</div>
 				<div class="right aligned seven wide column">
 					<div class="ui small basic primary compact button" onClick="onBtnExport()"><i class="file excel outline icon"></i> Export table as .csv</div> &nbsp;
@@ -2401,10 +2407,11 @@
 
 				rowSelection: 'multiple', // allow rows to be selected
 				animateRows: false, // have rows animate to new positions when sorted
-				onFirstDataRendered: onFirstDataRendered,
+				//onFirstDataRendered: onFirstDataRendered,
 				stopEditingWhenCellsLoseFocus: true,
 				undoRedoCellEditing: true,
 				suppressMovableColumns: true,
+				autoSizeStrategy: { type: 'fitCellContents' },
 				onCellEditingStopped: (event) => {
 
 					url = "ajaxapi.php?action=updatesubjectdetails&subjectid=" + event.data.id + "&column=" + event.column.getColDef().field + "&value=" + event.value;
@@ -2427,13 +2434,23 @@
 				},				
 			};
 
-			function onFirstDataRendered(params) {
-				params.api.sizeColumnsToFit();
+			$( document ).ready(function() {
+				// get div to host the grid
+				const eGridDiv = document.getElementById("myGrid");
+				// new grid instance, passing in the hosting DIV and Grid Options
+				new agGrid.Grid(eGridDiv, gridOptions);
+				
+				autoSizeAll(false);
+			});
+			
+			function autoSizeAll(skipHeader) {
+				const allColumnIds = [];
+				gridOptions.columnApi.getColumns().forEach((column) => {
+					allColumnIds.push(column.getId());
+				});
+
+				gridOptions.columnApi.autoSizeColumns(allColumnIds, skipHeader);
 			}
-			// get div to host the grid
-			const eGridDiv = document.getElementById("myGrid");
-			// new grid instance, passing in the hosting DIV and Grid Options
-			new agGrid.Grid(eGridDiv, gridOptions);
 
 		</script>
 		<?
@@ -2525,7 +2542,10 @@
 			<div class="ui red right corner label" title="This table is editable. Changes are permanent after editing each cell."><i class="exclamation circle icon"></i></div>
 			<div class="ui grid">
 				<div class="eight wide column">
-					<h3 class="ui header">Subjects</h3>
+					<h2 class="ui header">
+						Studies
+						<div class="sub header">Displaying <?=$numstudies?> studies</div>
+					</h2>
 				</div>
 				<div class="right aligned seven wide column">
 					<div class="ui small basic primary compact button" onClick="onBtnExport()"><i class="file excel outline icon"></i> Export table as .csv</div> &nbsp;
@@ -2534,6 +2554,8 @@
 		</div>
 		<div id="myGrid" class="ag-theme-alpine" style="height: 60vh"></div>
 		<script type="text/javascript">
+			let gridApi;
+
 			// Function to demonstrate calling grid's API
 			function deselect(){
 				gridOptions.api.deselectAll()
@@ -2542,8 +2564,10 @@
 			function onBtnExport() {
 				gridOptions.api.exportDataAsCsv( {allColumns: false} );
 			}			
+			/** @type {(import('ag-grid-community').ColDef | import('ag-grid-community').ColGroupDef )[]} */
 
 			// Grid Options are properties passed to the grid
+			/** @type {import('ag-grid-community').GridOptions} */
 			const gridOptions = {
 
 				// each entry here represents one column
@@ -2618,7 +2642,7 @@
 				stopEditingWhenCellsLoseFocus: true,
 				undoRedoCellEditing: true,
 				suppressMovableColumns: true,
-				//autoSizeStrategy: { type: 'fitCellContents' },
+				autoSizeStrategy: { type: 'fitCellContents' },
 				onCellEditingStopped: (event) => {
 
 					url = "ajaxapi.php?action=updatesubjectdetails&subjectid=" + event.data.id + "&column=" + event.column.getColDef().field + "&value=" + event.value;
@@ -2641,25 +2665,32 @@
 				},				
 			};
 
-			function onFirstDataRendered(params) {
+			//function onFirstDataRendered(params) {
 				//params.api.sizeColumnsToFit();
 				//params.api.autoSizeAllColumns();
-				autoSizeAll(true);
-			}
+				//autoSizeAll(true);
+			//}
+			
+
+			$( document ).ready(function() {
+				// get div to host the grid
+				const eGridDiv = document.getElementById("myGrid");
+				// new grid instance, passing in the hosting DIV and Grid Options
+				//new agGrid.Grid(eGridDiv, gridOptions);
+				new agGrid.Grid(eGridDiv, gridOptions);
+				
+				autoSizeAll(false);
+			});
 			
 			function autoSizeAll(skipHeader) {
 				const allColumnIds = [];
-				gridApi.getColumns().forEach((column) => {
+				gridOptions.columnApi.getColumns().forEach((column) => {
 					allColumnIds.push(column.getId());
 				});
 
-				gridApi.autoSizeColumns(allColumnIds, skipHeader);
-			}			
-			// get div to host the grid
-			const eGridDiv = document.getElementById("myGrid");
-			// new grid instance, passing in the hosting DIV and Grid Options
-			new agGrid.Grid(eGridDiv, gridOptions);
-
+				gridOptions.columnApi.autoSizeColumns(allColumnIds, skipHeader);
+			}
+			
 		</script>
 		<?
 	}
