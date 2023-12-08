@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Dec 05, 2023 at 08:14 PM
+-- Generation Time: Dec 08, 2023 at 08:24 PM
 -- Server version: 10.3.28-MariaDB
 -- PHP Version: 7.2.24
 
@@ -2020,6 +2020,67 @@ CREATE TABLE `ot_series` (
   `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `series_duration` bigint(20) DEFAULT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `packages`
+--
+
+CREATE TABLE `packages` (
+  `package_id` int(11) NOT NULL,
+  `user_id` int(11) DEFAULT NULL,
+  `package_date` datetime DEFAULT NULL,
+  `package_name` varchar(255) DEFAULT NULL,
+  `package_desc` text DEFAULT NULL,
+  `package_subjectdirformat` enum('orig','seq') NOT NULL DEFAULT 'orig',
+  `package_studydirformat` enum('orig','seq') NOT NULL DEFAULT 'orig',
+  `package_seriesdirformat` enum('orig','seq') NOT NULL DEFAULT 'orig',
+  `package_dataformat` enum('orig','anon','anonfull','nifti3d','nifti3dgz','nifti4d','nifti4dgz') NOT NULL DEFAULT 'orig',
+  `package_license` text DEFAULT NULL,
+  `package_readme` text DEFAULT NULL,
+  `package_changes` text DEFAULT NULL,
+  `package_notes` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `package_enrollments`
+--
+
+CREATE TABLE `package_enrollments` (
+  `pkgenrollment_id` int(11) NOT NULL,
+  `package_id` int(11) NOT NULL,
+  `enrollment_id` int(11) NOT NULL,
+  `option_flags` set('INCLUDE_DRUGS','INCLUDE_MEASURES') DEFAULT NULL,
+  `pkg_subjectid` varchar(255) DEFAULT NULL COMMENT 'UID or other ID specific to this subject within the package'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `package_experiments`
+--
+
+CREATE TABLE `package_experiments` (
+  `packageexperiment_id` int(11) NOT NULL,
+  `package_id` int(11) NOT NULL,
+  `experiment_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `package_pipelines`
+--
+
+CREATE TABLE `package_pipelines` (
+  `packagepipeline_id` int(11) NOT NULL,
+  `package_id` int(11) NOT NULL,
+  `pipeline_id` int(11) NOT NULL,
+  `include_analyses` tinyint(1) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -4204,6 +4265,30 @@ ALTER TABLE `ot_series`
   ADD KEY `series_desc` (`series_desc`);
 
 --
+-- Indexes for table `packages`
+--
+ALTER TABLE `packages`
+  ADD PRIMARY KEY (`package_id`);
+
+--
+-- Indexes for table `package_enrollments`
+--
+ALTER TABLE `package_enrollments`
+  ADD PRIMARY KEY (`pkgenrollment_id`);
+
+--
+-- Indexes for table `package_experiments`
+--
+ALTER TABLE `package_experiments`
+  ADD PRIMARY KEY (`packageexperiment_id`);
+
+--
+-- Indexes for table `package_pipelines`
+--
+ALTER TABLE `package_pipelines`
+  ADD PRIMARY KEY (`packagepipeline_id`);
+
+--
 -- Indexes for table `pipelines`
 --
 ALTER TABLE `pipelines`
@@ -5265,6 +5350,30 @@ ALTER TABLE `notification_user`
 --
 ALTER TABLE `ot_series`
   MODIFY `otseries_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `packages`
+--
+ALTER TABLE `packages`
+  MODIFY `package_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `package_enrollments`
+--
+ALTER TABLE `package_enrollments`
+  MODIFY `pkgenrollment_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `package_experiments`
+--
+ALTER TABLE `package_experiments`
+  MODIFY `packageexperiment_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `package_pipelines`
+--
+ALTER TABLE `package_pipelines`
+  MODIFY `packagepipeline_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `pipelines`
