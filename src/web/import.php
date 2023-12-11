@@ -126,7 +126,12 @@
 		?>
 		<div class="ui container">
 
-			<h2 class="ui header">Imports</h2>
+			<h2 class="ui header">
+				<i class="grey file import icon"></i>
+				<div class="content">Imports
+					<div class="sub header">Tools to bring data into NiDB</div>
+				</div>
+			</h2>
 			
 			<div class="ui cards">
 				<div class="ui card">
@@ -146,7 +151,7 @@
 						<div class="header">Import Imaging</div>
 					</div>
 					<div class="content">
-						Upload imaging data and track existing uploads<br><br>
+						Upload imaging data and track existing uploads.<br><br>
 					</div>
 					<div class="center aligned extra content">
 						<a href="importimaging.php" class="ui button">Import</a>
@@ -158,7 +163,7 @@
 						<div class="header">Import Logs</div>
 					</div>
 					<div class="content">
-						View <tt>dcmrcv</tt> import logs<br><br><br>
+						View <tt>dcmrcv</tt> import logs.<br><br><br>
 					</div>
 					<div class="center aligned extra content">
 						<a href="importimaging.php?action=viewdcmrcvlogs" class="ui button">DICOM receiver logs</a>
@@ -170,7 +175,7 @@
 						<div class="header">Uploader</div>
 					</div>
 					<div class="content">
-						Download the <b>NiDB Uploader</b> from github
+						Download the <b>NiDB Uploader</b> from github.
 					</div>
 					<div class="center aligned extra content">
 						<a href="https://github.com/gbook/nidbuploader/releases" class="ui button" target="_blank">Download the uploader</a>
@@ -179,9 +184,26 @@
 			</div>
 			
 			<br><br>
-			<h2 class="ui header">Exports</h2>
+			<h2 class="ui header">
+				<i class="grey file export icon"></i>
+				<div class="content">Exports
+					<div class="sub header">Tools to get data out of NiDB</div>
+				</div>
+			</h2>
 			
 			<div class="ui cards">
+				<div class="ui card">
+					<div class="content">
+						<div class="header">Squirrel Packages</div>
+					</div>
+					<div class="content">
+						Share data packages containing any data elements stored in NiDB. Exported in <a href="https://github.com/gbook/squirrel">squirrel</a> format.<br><br>
+					</div>
+					<div class="center aligned extra content">
+						<a href="packages.php" class="ui button">Create & Manage Packages</a>
+					</div>
+				</div>
+
 				<div class="ui card">
 					<div class="content">
 						<div class="header">Public Downloads</div>

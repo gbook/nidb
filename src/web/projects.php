@@ -83,14 +83,14 @@
 			break;
 		case 'updatestudyage':
 			UpdateStudyAge($id);
-			DisplayStudiesTable($id);
+			DisplayStudiesTable2($id);
 			break;
 		case 'auditstudies':
 			AuditStudies($id);
 			break;
 		case 'changeproject':
 			ChangeProject($newprojectid, $studyids);
-			DisplayStudiesTable($id);
+			DisplayStudiesTable2($id);
 			break;
 		case 'editbidsdatatypes':
 			EditBIDSDatatypes($id);
@@ -153,11 +153,11 @@
 			break;
 		case 'updatestudytable':
 			UpdateStudyTable($id,$studytable);
-			DisplayStudiesTable($id);
+			DisplayStudiesTable2($id);
 			break;
 		case 'applytags':
 			ApplyTags($id, $studyids, $tags);
-			DisplayStudiesTable($id);
+			DisplayStudiesTable2($id);
 			break;
 		case 'displaycompleteprojecttable':
 			DisplayCompleteProjectTable($id);
@@ -190,7 +190,7 @@
 			break;
 		case 'resetqa':
 			ResetProjectQA($id);
-			DisplayStudiesTable($id);
+			DisplayStudiesTable2($id);
 			break;
 		case 'show_rdoc_list':
 			DisplayRDoCList($rdoc_label);
@@ -1816,210 +1816,6 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- DisplayEditSubjectsTable ----------- */
-	/* -------------------------------------------- */
-	function DisplayEditSubjectsTable($id) {
-		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
-		if (!isInteger($id)) { echo "Invalid project ID [$id]"; return; }
-		
-		$sqlstring = "select * from projects where project_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$name = $row['project_name'];
-		$usecustomid = $row['project_usecustomid'];
-		
-		# get the autocomplete list for the enrollgroup
-		$sqlstringA = "select distinct(enroll_subgroup) from enrollment where enroll_subgroup <> '' order by enroll_subgroup";
-		$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-		while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-			$enrollgroupautocomplete[] = "'" . str_replace("'","",$rowA['enroll_subgroup']) . "'";
-		}
-		?>
-		<script type='text/javascript' src='scripts/x/x.js'></script>
-		<script type='text/javascript' src='scripts/x/lib/xgetelementbyid.js'></script>
-		<script type='text/javascript' src='scripts/x/lib/xtableiterate.js'></script>
-		<script type='text/javascript' src='scripts/x/lib/xpreventdefault.js'></script>
-		<script type='text/javascript' src="scripts/editablegrid/editablegrid.js"></script>
-		<script type='text/javascript' src="scripts/editablegrid/editablegrid_renderers.js" ></script>
-		<script type='text/javascript' src="scripts/editablegrid/editablegrid_editors.js" ></script>
-		<script type='text/javascript' src="scripts/editablegrid/editablegrid_validators.js" ></script>
-		<script type='text/javascript' src="scripts/editablegrid/editablegrid_utils.js" ></script>
-		<script type='text/javascript' src="scripts/editablegrid/editablegrid_charts.js" ></script>
-		<script type='text/javascript' src="scripts/editablegrid/extensions/autocomplete/autocomplete.js" ></script>
-		<link rel="stylesheet" href="scripts/editablegrid/editablegrid.css" type="text/css" media="screen">
-		<link rel="stylesheet" href="scripts/editablegrid/extensions/autocomplete/autocomplete.css" type="text/css" media="screen">
-		<style>
-			/* table.testgrid { border-collapse: collapse; border: 1px solid #CCB; width: 100%; }
-			table.testgrid td, table.testgrid th { padding: 5px; }
-			table.testgrid th { background: #E5E5E5; text-align: left; } */
-			input.invalid { background: red; color: #FDFDFD; }
-			.editable { font-family: monospace; background-color: lightyellow; border: 1px solid skyblue }
-			.deleted { color: #aaa; }
-		</style>
-		
-		<script>
-			window.onload = function() {
-				editableGrid = new EditableGrid("DemoGridAttach", { sortIconUp: "images/up.png", sortIconDown: "images/down.png", enableSort: true, caption: 'Double-click to edit table'}); 
-
-				// we build and load the metadata in Javascript
-				editableGrid.load({ metadata: [
-					{ name: "subjectid", datatype: "string", editable: false },
-					{ name: "uid", datatype: "string", editable: false },
-					{ name: "primaryid", datatype: "string", editable: false },
-					{ name: "altuids", datatype: "html", editable: true },
-					{ name: "guid", datatype: "string", editable: true },
-					{ name: "birthdate", datatype: "string", editable: true },
-					{ name: "sex", datatype: "string", editable: true, values: { "": "", "F": "F", "M": "M", "T": "T", "O": "O", "U": "U"} },
-					{ name: "race", datatype: "string", editable: true, values: { "": "", "hispanic": "Hispanic", "nothispanic": "Not hispanic" } },
-					{ name: "ethnicity", datatype: "string", editable: true, values: {"": "", "indian": "American Indian/Alaskan native", "asian": "Asian", "black": "Black/African American", "islander": "Hawaiian/Pacific Islander", "white": "White" } },
-					{ name: "education", datatype: "string", editable: true, values: { "": "", "0":"Unknown", "1":"Grade school", "2":"Middle school", "3":"High school/GED", "4":"Trade school", "5":"Associates degree", "6":"Bachelors degree", "7":"Masters degree", "8":"Doctoral degree" } },
-					{ name: "handedness", datatype: "string", editable: true, values: { "": "", "R": "Right", "L": "Left", "A": "Ambidextrous", "U": "Unknown" } },
-					{ name: "marital", datatype: "string", editable: true, values: {"":"", "unknown":"Unknown", "single":"Single", "married":"Married", "divorced":"Divorced", "separated":"Separated", "civilunion":"Civil union", "cohabitating":"Cohabitating", "widowed":"Widowed"} },
-					{ name: "smoking", datatype: "string", editable: true, values: { "":"", "unknown":"unknown", "never":"never", "past":"past", "current":"current" } },
-					{ name: "enrollgroup", datatype: "string", editable: true }
-				]});
-
-				// use autocomplete on enrollgroup
-				editableGrid.setCellEditor("enrollgroup", new AutocompleteCellEditor({
-					suggestions: [<?=implode(",",$enrollgroupautocomplete)?>]
-				}));
-		
-				// then we attach to the HTML table and render it
-				editableGrid.attachToHTMLTable('table1');
-				editableGrid.renderGrid();
-			} 
-		</script>
-		<!--<a href="projects.php?action=displaydemographics&id=<?=$id?>" class="ui button">View table</a>-->
-		<?
-			/* get all subjects, and their enrollment info, associated with the project */
-			$sqlstring = "select * from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = $id and a.isactive = 1 order by a.uid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$i=0;
-		?>
-		<div class="ui message">
-			<b style="font-size:16pt">This table is editable &nbsp; &nbsp;</b> Edit the <span style="background-color: lightyellow; border: 1px solid skyblue; padding:5px">Highlighted</span> fields by single-clicking the cell. Use tab to navigate the table, and make sure to <b>hit enter when editing a cell before saving</b>. Click <b>Save</b> when done editing<br>
-			<br>
-			Displaying <?=mysqli_num_rows($result)?> enrollments
-		</div>
-
-		<form class="ui form">
-		<table class="ui small celled selectable grey very compact table" id="table1">
-			<thead>
-				<th></th>
-				<th>UID</th>
-				<th>Primary ID</th>
-				<th>Alt IDs<br><span class="tiny">Comma separated, * next to primary ID</span></th>
-				<th>GUID</th>
-				<th>Birthdate (YYYY-MM-DD)</th>
-				<th>Sex</th>
-				<th>Race</th>
-				<th>Ethnicity</th>
-				<th>Education</th>
-				<th>Handedness</th>
-				<th>Marital</th>
-				<th>Smoking</th>
-				<th>Enroll group</th>
-			</thead>
-		<?
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$subjectid = $row['subject_id'];
-			$uid = $row['uid'];
-			$guid = $row['guid'];
-			$gender = $row['gender'];
-			$active = $row['isactive'];
-			$birthdate = $row['birthdate'];
-			$ethnicity1 = $row['ethnicity1'];
-			$ethnicity2 = $row['ethnicity2'];
-			$handedness = $row['handedness'];
-			$education = $row['education'];
-			$maritalstatus = $row['marital_status'];
-			$smokingstatus = $row['smoking_status'];
-			$enrollsubgroup = $row['enroll_subgroup'];
-			$enrollmentid = $row['enrollment_id'];
-			
-			$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' and altuid <> '' and enrollment_id = '$enrollmentid' order by isprimary desc";
-			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-			//PrintSQLTable($resultA);
-			$altids = array();
-			$primaryaltuid = "";
-			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-				$isprimary = $rowA['isprimary'];
-				$altid = $rowA['altuid'];
-				//echo "[$altid]<br>";
-				if ($altid != "") {
-					if ($isprimary) {
-						$altids[] = "*" . $altid;
-					}
-					else {
-						$altids[] = $altid;
-					}
-				}
-			}
-			//echo "$altids<br>";
-			$altuidlist = implode2(", ",$altids);
-			$primaryaltuid = str_replace('*','',$altids[0]);
-			
-			if ($active) {
-				$deleted = "";
-			}
-			else {
-				$deleted = " (DEL)";
-			}
-			
-			if (($usecustomid == 1) && ($altuidlist == "")) {
-				$customidstyle = "border: 1px solid red; background-color: orange";
-			}
-			else {
-				$customidstyle = "";
-			}
-			?>
-			<tr id="R<?=$i?>">
-				<td class="tiny"><?=$subjectid?></td>
-				<td style="font-weight: bold; font-size:12pt;"><?=$uid?> <?=$deleted?></td>
-				<td style="<?=$customidstyle?>"><?=$primaryaltuid?></td>
-				<td class="editable"><?=$altuidlist?></td>
-				<td class="editable"><?=$guid?></td>
-				<td class="editable"><?=$birthdate?></td>
-				<td class="editable"><?=$gender?></td>
-				<td class="editable"><?=$ethnicity1?></td>
-				<td class="editable"><?=$ethnicity2?></td>
-				<td class="editable"><?=$education?></td>
-				<td class="editable"><?=$handedness?></td>
-				<td class="editable"><?=$maritalstatus?></td>
-				<td class="editable"><?=$smokingstatus?></td>
-				<td class="editable"><?=$enrollsubgroup?></td>
-			</tr>
-			<?
-			$i++;
-		}
-		?>
-		</table>
-		</form>
-		<script type="text/javascript" src="scripts/jquery.table2csv.js"></script>
-		<script>
-			//$(document).ready(function() {
-				function ConvertToCSV() {
-					$("#table1").table2csv( {
-						callback: function (csv) {
-							document.getElementById("subjecttable").value = csv;
-							//alert('Hi');
-							//document.getElementById('savetableform').submit();
-						}
-					});
-				}
-			//});
-		</script>
-		<form method="post" action="projects.php" id="savetableform">
-		<input type="hidden" name="id" value="<?=$id?>">
-		<input type="hidden" name="action" value="updatesubjecttable">
-		<input type="hidden" name="subjecttable" id="subjecttable">
-		<div align="right"><input type="submit" value="Save" onMouseDown="ConvertToCSV();"></div>
-		</form>
-		<?
-	}
-
-
-	/* -------------------------------------------- */
 	/* ------- DisplaySubjectsTable --------------- */
 	/* -------------------------------------------- */
 	function DisplaySubjectsTable($id, $isactive=1) {
@@ -2227,7 +2023,7 @@
 
 				rowSelection: 'multiple', // allow rows to be selected
 				animateRows: false, // have rows animate to new positions when sorted
-				onFirstDataRendered: onFirstDataRendered,
+				//onFirstDataRendered: onFirstDataRendered,
 				stopEditingWhenCellsLoseFocus: true,
 				undoRedoCellEditing: true,
 				suppressMovableColumns: true,
@@ -2253,13 +2049,23 @@
 				},				
 			};
 
-			function onFirstDataRendered(params) {
-				params.api.sizeColumnsToFit();
+			$( document ).ready(function() {
+				// get div to host the grid
+				const eGridDiv = document.getElementById("myGrid");
+				// new grid instance, passing in the hosting DIV and Grid Options
+				new agGrid.Grid(eGridDiv, gridOptions);
+				
+				autoSizeAll(false);
+			});
+			
+			function autoSizeAll(skipHeader) {
+				const allColumnIds = [];
+				gridOptions.columnApi.getColumns().forEach((column) => {
+					allColumnIds.push(column.getId());
+				});
+
+				gridOptions.columnApi.autoSizeColumns(allColumnIds, skipHeader);
 			}
-			// get div to host the grid
-			const eGridDiv = document.getElementById("myGrid");
-			// new grid instance, passing in the hosting DIV and Grid Options
-			new agGrid.Grid(eGridDiv, gridOptions);
 
 		</script>
 		<?
@@ -2466,19 +2272,21 @@
 		
 		/* get all subjects, and their enrollment info, associated with the project */
 		/* display studies associated with this project */
-		$sqlstring = "select a.*, c.*, d.* from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on b.project_id = c.project_id left join subjects d on d.subject_id = b.subject_id where c.project_id = $id order by d.uid asc, a.study_modality asc limit 5000";
+		$sqlstring = "select a.*, c.*, d.* from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on b.project_id = c.project_id left join subjects d on d.subject_id = b.subject_id where c.project_id = $id order by d.uid asc, a.study_modality asc";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$numstudies = mysqli_num_rows($result);
+		$rowhighlight = 0;
+		$lastuid = "";
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$study_id = $row['study_id'];
 			$modality = $row['study_modality'];
-			$study_datetime = $row['study_datetime'];
+			$studydatetime = $row['study_datetime'];
 			$studysite = $row['study_site'];
 			$studynum = $row['study_num'];
 			$studydesc = $row['study_desc'];
 			$studyvisit = $row['study_type'];
 			$studyaltid = $row['study_alternateid'];
-			$studyageatscan = $row['study_ageatscan'];
+			$studyageatscan = number_format($row['study_ageatscan'], 1);
 			//$age = $row['age'];
 			$sex = $row['sex'];
 			$gender = $row['gender'];
@@ -2490,7 +2298,8 @@
 			$project_costcenter = $row['project_costcenter'];
 			$isactive = $row['isactive'];
 
-			list($studyAge, $calcStudyAge) = GetStudyAge($dob, $study_ageatscan, $study_datetime);
+			list($studyAge, $calcStudyAge) = GetStudyAge($dob, $studyageatscan, $studydatetime);
+			//echo "list($studyAge, $calcStudyAge) = GetStudyAge($dob, $studyageatscan, $studydatetime)";
 			
 			if ($studyAge == null)
 				$studyAge = "";
@@ -2518,8 +2327,12 @@
 			$altids = array_unique($altids);
 			$altuidlist = implode2(", ",$altids);
 			
-				$rowdata[] = "{ subjectid: $subjectid, studyid: $study_id, uid: \"$uid\", sex: \"$sex\", gender: \"$gender\", altuids: \"$altuidlist\", uidstudynum: \"$uid$studynum\", visit: \"$studyvisit\", studydate: \"$studydatetime\", studyage: \"$studyAge\", calcstudyage: \"$calcStudyAge\", modality: \"$modality\", desc: \"$studydesc\", study_id: \"$studyaltid\", site: \"$studysite\"}";
+			if ($uid != $lastuid) { $rowhighlight = 1; }
+			else { $rowhighlight = 0; }
+			
+			$rowdata[] = "{ subjectid: $subjectid, studyid: $study_id, rowhighlight: $rowhighlight, uid: \"$uid\", sex: \"$sex\", gender: \"$gender\", altuids: \"$altuidlist\", uidstudynum: \"$uid$studynum\", visit: \"$studyvisit\", studydate: \"$studydatetime\", studyage: \"$studyageatscan\", calcstudyage: \"$calcStudyAge\", modality: \"$modality\", desc: \"$studydesc\", study_id: \"$studyaltid\", site: \"$studysite\"}";
 
+			$lastuid = $uid;
 		}
 		
 		$data = implode(",", $rowdata);
@@ -2548,11 +2361,17 @@
 					</h2>
 				</div>
 				<div class="right aligned seven wide column">
+					<a href="projects.php?action=updatestudyage&id=<?=$id?>" class="ui small basic primary compact button" title="Set StudyAge to CalcStudyAge for all studies">Update StudyAge</a>
 					<div class="ui small basic primary compact button" onClick="onBtnExport()"><i class="file excel outline icon"></i> Export table as .csv</div> &nbsp;
 				</div>
 			</div>
 		</div>
 		<div id="myGrid" class="ag-theme-alpine" style="height: 60vh"></div>
+		<style>
+			.rowhighlight {
+				border-top: 2px solid #888;
+			}
+		</style>
 		<script type="text/javascript">
 			let gridApi;
 
@@ -2564,16 +2383,15 @@
 			function onBtnExport() {
 				gridOptions.api.exportDataAsCsv( {allColumns: false} );
 			}			
-			/** @type {(import('ag-grid-community').ColDef | import('ag-grid-community').ColGroupDef )[]} */
 
 			// Grid Options are properties passed to the grid
-			/** @type {import('ag-grid-community').GridOptions} */
 			const gridOptions = {
 
 				// each entry here represents one column
 				columnDefs: [
 					{ field: 'subjectid', hide: true },
 					{ field: 'studyid', hide: true },
+					{ field: 'rowhighlight', hide: true },
 					{
 						headerName: "UID",
 						field: "uid",
@@ -2604,7 +2422,7 @@
 						}
 					},
 					{ 
-						headerName: "Alt UIDs",
+						headerName: "Subject Alt UIDs",
 						field: "altuids",
 						editable: true,
 						cellEditor: 'agLargeTextCellEditor',
@@ -2618,8 +2436,10 @@
 						field: "uidstudynum",
 						pinned: 'left',
 						cellRenderer: function(params) {
-							return '<a href="studies.php?id=' + params.data.studyid + '">' + params.value + '</a>'
-						}
+							return '<a href="studies.php?id=' + params.data.studyid + '"><b>' + params.value + '</b></a>'
+						},
+						headerCheckboxSelection: true,
+						checkboxSelection: true
 					},
 					{ headerName: "Visit", field: "visit", editable: true },
 					{ headerName: "Study Datetime", field: "studydate", editable: false },
@@ -2635,8 +2455,13 @@
 				
 				// default col def properties get applied to all columns
 				defaultColDef: {sortable: true, filter: true, resizable: true},
+				rowClassRules: {
+					// row style expression
+					'rowhighlight': 'data.rowhighlight == 1',
+				},
 
 				rowSelection: 'multiple', // allow rows to be selected
+				rowMultiSelectWithClick: true,
 				animateRows: false, // have rows animate to new positions when sorted
 				//onFirstDataRendered: onFirstDataRendered,
 				stopEditingWhenCellsLoseFocus: true,
@@ -2645,8 +2470,8 @@
 				autoSizeStrategy: { type: 'fitCellContents' },
 				onCellEditingStopped: (event) => {
 
-					url = "ajaxapi.php?action=updatesubjectdetails&subjectid=" + event.data.id + "&column=" + event.column.getColDef().field + "&value=" + event.value;
-					//console.log(url);
+					url = "ajaxapi.php?action=updatestudydetails&subjectid=" + event.data.subjectid + "&studyid=" + event.data.studyid + "&column=" + event.column.getColDef().field + "&value=" + event.value;
+					console.log(url);
 					var xhttp = new XMLHttpRequest();
 					xhttp.onreadystatechange = function() {
 						if (this.readyState == 4 && this.status == 200) {
@@ -2665,18 +2490,10 @@
 				},				
 			};
 
-			//function onFirstDataRendered(params) {
-				//params.api.sizeColumnsToFit();
-				//params.api.autoSizeAllColumns();
-				//autoSizeAll(true);
-			//}
-			
-
 			$( document ).ready(function() {
 				// get div to host the grid
 				const eGridDiv = document.getElementById("myGrid");
 				// new grid instance, passing in the hosting DIV and Grid Options
-				//new agGrid.Grid(eGridDiv, gridOptions);
 				new agGrid.Grid(eGridDiv, gridOptions);
 				
 				autoSizeAll(false);

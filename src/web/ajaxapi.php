@@ -41,6 +41,7 @@
 	$username = GetVariable("username");
 
 	$subjectid = GetVariable("subjectid");
+	$studyid = GetVariable("studyid");
 	$column = GetVariable("column");
 	$value = GetVariable("value");
 	
@@ -89,6 +90,9 @@
 			break;
 		case 'updatesubjectdetails':
 			UpdateSubjectDetails($subjectid, $column, $value);
+			break;
+		case 'updatestudydetails':
+			UpdateStudyDetails($subjectid, $studyid, $column, $value);
 			break;
 	}
 	
@@ -808,6 +812,84 @@
 				default: echo "error - [$column] not recognized"; return;
 			}
 			$sqlstring .= " = '$value' where subject_id = $subjectid";
+			
+			//echo "$sqlstring";
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		}
+		
+		echo "success";
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- UpdateStudyDetails ----------------- */
+	/* -------------------------------------------- */
+	function UpdateStudyDetails($subjectid, $studyid, $column, $value) {
+		
+		$subjectid = trim(mysqli_real_escape_string($GLOBALS['linki'], $subjectid));
+		$studyid = trim(mysqli_real_escape_string($GLOBALS['linki'], $studyid));
+		$column = trim(mysqli_real_escape_string($GLOBALS['linki'], $column));
+		$value = trim(mysqli_real_escape_string($GLOBALS['linki'], $value));
+		
+		if ($subjectid == "") {
+			echo "error, subjectid blank";
+			return;
+		}
+		if ($studyid == "") {
+			echo "error, studyid blank";
+			return;
+		}
+		
+		if ($column == "altuids") {
+			StartSQLTransaction();
+			
+			list($path2, $uid2, $studynum2, $studyid2, $subjectid2, $modality2, $type2, $studydatetime2, $enrollmentid, $projectname2, $projectid2) = GetStudyInfo($studyid);
+			
+			/* delete entries for this subject from the altuid table ... */
+			$sqlstring = "delete from subject_altuid where subject_id = $subjectid";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			/* ... and insert the new rows into the altuids table */
+			$altuidsublist = $value;
+			//echo($altuidsublist);
+			$altuids = explode(',',$altuidsublist);
+			foreach ($altuids as $altuid) {
+				$altuid = trim($altuid);
+				if ($altuid != "") {
+					if ($enrollmentid == "") { $enrollmentid = 0; }
+					//echo "enrollmentID [$enrollmentid] - altuid [$altuid]<br>";
+					if (strpos($altuid, '*') !== FALSE) {
+						$altuid = str_replace('*','',$altuid);
+						$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values ($subjectid, '$altuid',1, '$enrollmentid')";
+					}
+					else {
+						$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values ($subjectid, '$altuid',0, '$enrollmentid')";
+					}
+					//echo $sqlstring;
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				}
+			}
+			CommitSQLTransaction();
+		}
+		elseif ($column == "sex") {
+			$sqlstring = "update subjects set sex = '$value' where subject_id = $subjectid";
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		}
+		elseif ($column == "gender") {
+			$sqlstring = "update subjects set gender = '$value' where subject_id = $subjectid";
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		}
+		else {
+			$sqlstring = "update studies set ";
+			switch ($column) {
+				case "visit": $sqlstring .= "study_type"; break;
+				case "studydate": $sqlstring .= "study_datetime"; break;
+				case "studyage": $sqlstring .= "study_ageatscan"; break;
+				case "desc": $sqlstring .= "study_desc"; break;
+				case "study_id": $sqlstring .= "study_alternateid"; break;
+				case "site": $sqlstring .= "study_site"; break;
+				default: echo "error - [$column] not recognized"; return;
+			}
+			$sqlstring .= " = '$value' where study_id = $studyid";
 			
 			//echo "$sqlstring";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);

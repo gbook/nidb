@@ -269,7 +269,7 @@
 		}
 		
 		/* data sub-menu */
-		elseif ($page=="import.php" || $page=="importimaging.php" || $page=="importlog.php" || $page=="publicdownloads.php" || $page=="publicdatasets.php" || $page=="downloads.php" || $page=="datasetrequests.php") {
+		elseif ($page=="import.php" || $page=="importimaging.php" || $page=="importlog.php" || $page=="publicdownloads.php" || $page=="publicdatasets.php" || $page=="downloads.php" || $page=="datasetrequests.php" || $page=="packages.php") {
 			
 			if ($GLOBALS['cfg']['enabledatamenu']) {
 				?><a href="import.php" class="<? if (($page == "import.php") && ($action != "idmapper")) { echo "active"; } ?> item">Import</a><?
