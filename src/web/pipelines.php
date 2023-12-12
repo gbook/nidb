@@ -1137,22 +1137,26 @@
 		?>
 		<br>
 		
+		<style>
+			.item2.active { background-color: #333 !important; color: #fff !important; }
+		</style>
+		
 		<div class="ui container">
-			<div class="ui top attached inverted black tabular menu">
+			<div class="ui top attached tabular menu">
 				<? if ($type != "add") { ?>
-				<a class="<?=$tab_oneactive?> item" data-tab="first">Information</a>
+				<a class="<?=$tab_oneactive?> item item2" data-tab="first">Information</a>
 				<? } ?>
-				<a class="<?=$tab_twoactive?> item" data-tab="second"><i class="cog icon"></i> Settings</a>
+				<a class="<?=$tab_twoactive?> item item2" data-tab="second"><i class="cog icon"></i> Settings</a>
 				<? if ($type != "add") { ?>
-				<a class="<?=$tab_threeactive?> item" data-tab="third"><i class="file alternate icon"></i> Data & Scripts</a>
-				<a class="<?=$tab_fouractive?> item" data-tab="fourth"><i class="wrench icon"></i> Operations</a>
+				<a class="<?=$tab_threeactive?> item item2" data-tab="third"><i class="file alternate icon"></i> Data & Scripts</a>
+				<a class="<?=$tab_fouractive?> item item2" data-tab="fourth"><i class="wrench icon"></i> Operations</a>
 				<? } ?>
 			</div>
 
 		<!-- -------------------- Information tab -------------------- -->
 
 		<? if ($type != "add") { ?>
-		<div class="ui bottom attached <?=$tab_oneactive?> tab segment" data-tab="first">
+		<div class="ui bottom attached <?=$tab_oneactive?> tab raised segment" data-tab="first">
 			<table class="entrytable" style="border:0px">
 				<tr>
 					<td><h3 class="ui header">View</h3></td>
@@ -1514,7 +1518,7 @@
 			}
 		</script>
 		
-		<div class="ui bottom attached <?=$tab_twoactive?> tab segment" data-tab="second">
+		<div class="ui bottom attached <?=$tab_twoactive?> tab raised segment" data-tab="second">
 			<div class="ui right close rail">
 				<div class="ui segment">
 					<div class="ui accordion">
@@ -1819,7 +1823,7 @@
 
 		<!-- -------------------- Data & Scripts tab -------------------- -->
 		<? if ($type != "add") { ?>
-		<div class="ui bottom attached <?=$tab_threeactive?> tab segment" data-tab="third">
+		<div class="ui bottom attached <?=$tab_threeactive?> tab raised segment" data-tab="third">
 			<form method="post" action="pipelines.php" name="stepsform" id="stepsform" class="ui form">
 			<input type="hidden" name="action" value="updatepipelineoptions">
 			<input type="hidden" name="id" value="<?=$id?>">
@@ -2830,7 +2834,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 		
 		<!-- ---------- operations tab ---------- -->
 		
-		<div class="ui bottom attached <?=$tab_fouractive?> tab segment" data-tab="fourth">
+		<div class="ui bottom attached <?=$tab_fouractive?> tab raised segment" data-tab="fourth">
 			<p><a class="ui button" href="pipelines.php?action=resetanalyses&id=<?=$id?>&returntab=operations" style="width:250px" onclick="return confirm('Are you sure you want to reset the analyses for this pipeline?')" title="This will remove any entries in the database for studies which were not analyzed. If you change your data specification, you will want to reset the analyses. This option does not remove existing analyses, it only removes the flag set for studies that indicates the study has been checked for the specified data"><i class="redo alternate icon"></i> Reprocess ignored studies</a>
 			</p>
 			<p><a href="#" class="ui button" style="width:250px" onClick="GetNewPipelineName();"><i class="copy icon"></i> Copy to new pipeline...</a></p>
