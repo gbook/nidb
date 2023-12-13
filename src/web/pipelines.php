@@ -1038,37 +1038,25 @@
 				
 				/* default action */
 				<? if($level == 1) { ?>
-				$('.level0').hide();
 				$('.level1').show();
 				$('.level2').hide();
 				<? } elseif ($level == 0) { ?>
-				$('.level0').show();
 				$('.level1').hide();
 				$('.level2').hide();
 				<? } else { ?>
-				$('.level0').hide();
 				$('.level1').show();
 				$('.level2').show();
 				<? } ?>
 				
 				/* click events */
-				$('#level0').click(function() {
-					if($('#level0').is(':checked')) {
-						$('.level0').show("highlight",{},1000);
-						$('.level1').hide();
-						$('.level2').hide();
-					}
-				});
 				$('#level1').click(function() {
 					if($('#level1').is(':checked')) {
-						$('.level0').hide();
 						$('.level1').show("highlight",{},1000);
 						$('.level2').hide();
 					}
 				});
 				$('#level2').click(function() {
 					if($('#level2').is(':checked')) {
-						$('.level0').hide();
 						$('.level1').show();
 						$('.level2').show("highlight",{},1000);
 					}
@@ -1868,10 +1856,10 @@
 													
 													if (($d_name != "") && ($d_id != "")) {
 														/* get the number of analyses in the pipeline */
-														$sqlstringA = "select count(*) 'count' from analysis where pipeline_id = $d_id and analysis_status = 'complete'";
-														$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-														$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-														$nummembers = $rowA['count'];
+														//$sqlstringA = "select count(*) 'count' from analysis where pipeline_id = $d_id and analysis_status = 'complete'";
+														//$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+														//$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+														//$nummembers = $rowA['count'];
 														
 														if (in_array($d_id, explode(",",$dependency))) {
 															$selected = "selected";
@@ -1881,7 +1869,7 @@
 														
 														if ($id != $d_id) {
 															?>
-															<option value="<?=$d_id?>" <?=$selected?>><?=$d_name?>  [<?=$nummembers?>]</option>
+															<option value="<?=$d_id?>" <?=$selected?>><?=$d_name?></option>
 															<?
 														}
 													}
@@ -2764,7 +2752,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 			</div>
 			</form>
 			<!--<script src="scripts/aceeditor/ace.js" type="text/javascript" charset="utf-8"></script>-->
-			<script src="https://cdn.jsdelivr.net/npm/ace-builds/src-min-noconflict/ace.min.js"></script>
+			<script src="https://cdn.jsdelivr.net/npm/ace-builds/src/ace.js"></script>
 
 			<script>
 				var editor = ace.edit("commandlist");

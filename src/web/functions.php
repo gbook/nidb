@@ -685,6 +685,7 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$uid = $row['uid'];
+		$seriesnum = $row['series_num'];
 		$studynum = $row['study_num'];
 		$subjectid = $row['subject_id'];
 		$studyid = $row['study_id'];
@@ -696,7 +697,26 @@
 		$projectid = $row['project_id'];
 		
 		$path = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum";
-		return array($path, $uid, $studynum, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid);
+		return array($path, $uid, $studynum, $seriesnum, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetEnrollmentInfo ------------------ */
+	/* -------------------------------------------- */
+	function GetEnrollmentInfo($id) {
+		$sqlstring = "select * from enrollment a left join studies b on a.study_id = b.study_id left join left join subjects c on b.subject_id = c.subject_id left join projects d on a.project_id = d.project_id where a.enrollment_id = '$id'";
+
+		PrintSQL($sqlstring);
+		
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$uid = $row['uid'];
+		$subjectid = $row['subject_id'];
+		$projectname = $row['project_name'];
+		$projectid = $row['project_id'];
+		
+		return array($uid, $subjectid, $projectname, $projectid);
 	}
 	
 	
