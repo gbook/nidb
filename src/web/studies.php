@@ -1617,7 +1617,9 @@
 						</tr>
 					</table>
 
-					<a href="studies.php?action=editform&studyid=<?=$studyid?>" class="ui primary button"><i class="edit icon"></i> Edit study</a>
+					<a href="studies.php?action=editform&studyid=<?=$studyid?>" class="ui primary basic fluid button"><i class="edit icon"></i> Edit study</a>
+					<br>
+					<a href="packages.php?action=addobject&objecttype=study&objectids[]=<?=$studyid?>" class="ui primary basic brown fluid button"><em data-emoji=":chipmunk:"></em> Add to Package</a>
 
 					<? if ($GLOBALS['isadmin']) { ?>
 						<script>
@@ -1630,7 +1632,7 @@
 						</script>
 						
 						<br><br>
-						<div class="ui red button" id="popupbutton1"><i class="tools icon"></i> Operations...</div>
+						<div class="ui fluid basic red button" id="popupbutton1"><i class="tools icon"></i> Operations...</div>
 						
 						<div class="ui wide popup" id="popupmenu1" style="width: 400px">
 							<a href="merge.php?action=mergestudyform&studyid=<?=$studyid?>" class="ui fluid primary button"><i class="random icon"></i> Merge study with...</a>
@@ -1655,7 +1657,7 @@
 								<input type="hidden" name="subjectid" value="<?=$subjectid?>">
 								<b>Move study to new project...</b>
 								<div class="ui fluid labeled inline action input">
-									<select name="newprojectid" class="ui compact selection dropdown" required>
+									<select name="newprojectid" class="ui fluid selection dropdown" required>
 										<option value="">Select project...</option>
 									<?
 										$sqlstringB = "select a.project_id, b.project_name, b.project_costcenter from enrollment a left join projects b on a.project_id = b.project_id where a.subject_id = $subjectid";
@@ -1811,7 +1813,7 @@
 		<input type="hidden" name="studyid" value="<?=$studyid?>">
 		<input type="hidden" name="subjectid" value="<?=$subjectid?>">
 		<input type="hidden" name="modality" value="mr">
-		<table class="ui top attached very compact small celled grey table">
+		<table class="ui top attached very compact small celled grey table" style="margin: 0px">
 			<thead>
 				<tr>
 					<th>Series</th>
@@ -2295,16 +2297,14 @@
 				<div class="right menu">
 					<div class="ui icon bottom left pointing dropdown button" style="background-color: lavender">
 						<i class="dropdown icon"></i>
-						<span class="text">With Selected...</span>
+						<span class="text">With selected series...</span>
 						<div class="ui vertical menu">
 							
-							<div class="ui item" onclick="document.studieslist.action.value='deleteanalyses';return confirm('Are you absolutely sure you want to DELETE the selected analyses?')" title="<b style='color:orange'>Pipeline will be disabled. Wait until the deletions are compelte before reenabling the pipeline</b><Br> This will delete the selected analyses, which will be regenerated using the latest pipeline version"><i class="red trash icon"></i> Delete</div>
-							
-							<div class="ui item" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='renameseriesform';document.serieslist.submit();"><i class="icons"><i class="square outline icon"></i><i class="corner i cursor icon"></i>Rename</div>
+							<div class="ui item" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='renameseriesform';document.serieslist.submit();"><i class="corner i cursor icon"></i> Rename</div>
 							
 							<div class="ui item" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='updateseriesnotesform';document.serieslist.submit();"><i class="clipboard outline icon"></i> Edit notes</div>
 							
-							<div class="ui item" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='moveseriestonewstudy';document.serieslist.submit();">Move to new study</div>
+							<div class="ui item" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='moveseriestonewstudy';document.serieslist.submit();"><i class="share icon"></i> Move to new study</div>
 							
 							<div class="ui item" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='hideseries';document.serieslist.submit();" title="Hide the series. The series will not show up in search results"><i class="eye slash icon"></i> Hide</div>
 							
@@ -2312,7 +2312,10 @@
 							
 							<div class="ui item" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='resetqa';document.serieslist.submit();" title="Reset the QA results for this series. New QA results will be re-generated"><i class="redo alternate icon"></i> Reset QC</div>
 							
-							<div class="ui item" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='deleteseries';document.serieslist.submit();" title="Delete the selected series. The series will be moved to the <span class='tt'><?=$GLOBALS['cfg']['deleteddir']?></span> directory and will not appear anywhere on the website"><i class="trash alternate icon"></i>Delete</div>
+							<div class="ui item" onclick="packages.php?action=addobject&objecttype=study&objectids[]=<?=$studyid?>"><em data-emoji=":chipmunk:"></em> Add to Package</div>
+
+							
+							<div class="ui item" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='deleteseries';document.serieslist.submit();" title="Delete the selected series. The series will be moved to the <span class='tt'><?=$GLOBALS['cfg']['deleteddir']?></span> directory and will not appear anywhere on the website"><i class="red trash alternate icon"></i>Delete</div>
 						</div>
 					</div>
 				</div>
