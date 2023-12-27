@@ -957,12 +957,16 @@
 	/* -------------------------------------------- */
 	/* ------- mysqli_real_escape_array ----------- */
 	/* -------------------------------------------- */
-	function mysqli_real_escape_array ($a) {
+	function mysqli_real_escape_array ($link, $a) {
 		if (is_array($a)) {
 			foreach ($a as $i => $val) {
-				$a[$i] = mysqli_real_escape_string($GLOBALS['linki'], $val);
+				$a[$i] = mysqli_real_escape_string($link, $val);
 			}
 			return $a;
+			
+			//$a = array_map(function( $e ) {
+			//		 return mysqli_real_escape_string( $GLOBALS['linki'], $e);
+			//}, $a );			
 		}
 		else {
 			return mysqli_real_escape_string($GLOBALS['linki'], $a);

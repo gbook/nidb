@@ -1813,6 +1813,7 @@
 		<input type="hidden" name="studyid" value="<?=$studyid?>">
 		<input type="hidden" name="subjectid" value="<?=$subjectid?>">
 		<input type="hidden" name="modality" value="mr">
+		<input type="hidden" name="objecttype" value="series">
 		<table class="ui top attached very compact small celled grey table" style="margin: 0px">
 			<thead>
 				<tr>
@@ -2312,8 +2313,7 @@
 							
 							<div class="ui item" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='resetqa';document.serieslist.submit();" title="Reset the QA results for this series. New QA results will be re-generated"><i class="redo alternate icon"></i> Reset QC</div>
 							
-							<div class="ui item" onclick="packages.php?action=addobject&objecttype=study&objectids[]=<?=$studyid?>"><em data-emoji=":chipmunk:"></em> Add to Package</div>
-
+							<div class="ui item" onclick="document.serieslist.action='packages.php';document.serieslist.action.value='addobject';document.serieslist.submit();"><em data-emoji=":chipmunk:"></em> Add to Package</div>
 							
 							<div class="ui item" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='deleteseries';document.serieslist.submit();" title="Delete the selected series. The series will be moved to the <span class='tt'><?=$GLOBALS['cfg']['deleteddir']?></span> directory and will not appear anywhere on the website"><i class="red trash alternate icon"></i>Delete</div>
 						</div>
