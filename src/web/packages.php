@@ -968,6 +968,48 @@
 			$subjects[$uid][$studynum][$seriesnum] = "$modality-$seriesid";
 		}
 		
+		/* get experiments */
+		$sqlstring = "select * from package_experiments a left join experiments b on a.experiment_id = b.experiment_id where a.package_id = $packageid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$packageexperimentid = $row['packageexperiment_id'];
+			$experimentid = $row['experiment_id'];
+			$experiments[$experimentid]['name'] = $row['exp_name'];
+			$experiments[$experimentid]['version'] = $row['exp_version'];
+			$experiments[$experimentid]['desc'] = $row['exp_desc'];
+			$experiments[$experimentid]['createdate'] = $row['exp_createdate'];
+			$experiments[$experimentid]['creator'] = $row['exp_creator'];
+		}
+		
+		/* get pipelines */
+		$sqlstring = "select * from package_pipelines a left join pipelines b on a.pipeline_id = b.pipeline_id where a.package_id = $packageid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$packagepipelineid = $row['packagepipeline_id'];
+			$pipelineid = $row['pipeline_id'];
+			$pipelines[$pipelineid]['name'] = $row['pipeline_name'];
+			$pipelines[$pipelineid]['version'] = $row['pipeline_version'];
+			$pipelines[$pipelineid]['desc'] = $row['pipeline_desc'];
+			$pipelines[$pipelineid]['createdate'] = $row['pipeline_createdate'];
+		}
+		
+		/* get counts of all of the data objects */
+		$numsubjects = count($subjects);
+		$numstudies = 0;
+		$numseries = 0;
+		$nummeasures = 0;
+		$numdrugs = 0;
+		foreach ($subjects as $uid => $study) {
+			$numstudies += count($study);
+			foreach ($study as $ser => $series) {
+				$numseries += count($series);
+			}
+			$nummeasures += count($subjects[$uid]['measures']);
+			$numdrugs += count($subjects[$uid]['drugs']);
+		}
+		$numexperiments = count($experiments);
+		$numpipelines = count($pipelines);
+		
 		?>
 		<div class="ui container">
 			<div class="segment">
@@ -986,6 +1028,13 @@
 			</script>
 			<style>
 				.item2.active { background-color: #333 !important; color: #fff !important; }
+				td.a { font-weight: bold; }
+				td.b {
+					max-width: 100px;
+					overflow: hidden;
+					text-overflow: ellipsis;
+					white-space: nowrap;
+				}
 			</style>
 			
 			<div class="ui top attached large tabular menu">
@@ -996,40 +1045,105 @@
 				<a class="item item2" data-tab="datadict">Data dictionary</a>
 			</div>
 			<div class="ui bottom attached active tab raised center aligned segment" data-tab="overview">
-				<script type="module">
-					import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-				</script>
-				<pre class="mermaid">
-					graph LR
-						%%root-->package(details);
-						data-->subjects(subjects);
-						root-->pipelines(pipelines);
-						root-->experiments(experiments);
-						root-->datadict(data-dictionary);
-						root(package)-->data(data);
-						data-->groupanalysis(group-analysis);
-						subjects-->studies(studies);
-						subjects-->measures(measures);
-						subjects-->drugs(drugs);
-						studies-->series(series);
-						studies-->analysis(analysis);
+				<div class="ui grid">
+					<div class="ui five wide column">
+						<table class="ui table">
+							<tr>
+								<td class="a">Name</td>
+								<td><?=$pkg['name']?></td>
+							</tr>
+							<tr>
+								<td class="a">Description</td>
+								<td><?=$pkg['desc']?></td>
+							</tr>
+							<tr>
+								<td class="a">Date</td>
+								<td><?=$pkg['createdate']?></td>
+							</tr>
+							<tr>
+								<td class="a">Subject dir format</td>
+								<td><?=$pkg['subjectDirFormat']?></td>
+							</tr>
+							<tr>
+								<td class="a">Study dir format</td>
+								<td><?=$pkg['studyDirFormat']?></td>
+							</tr>
+							<tr>
+								<td class="a">Series dir format</td>
+								<td><?=$pkg['seriesDirFormat']?></td>
+							</tr>
+							<tr>
+								<td class="a">Data format</td>
+								<td><?=$pkg['dataFormat']?></td>
+							</tr>
+							<tr>
+								<td class="a">License</td>
+								<td class="b"><?=$pkg['license']?></td>
+							</tr>
+							<tr>
+								<td class="a">Readme</td>
+								<td class="b"><?=$pkg['readme']?></td>
+							</tr>
+							<tr>
+								<td class="a">Changes</td>
+								<td class="b"><?=$pkg['changes']?></td>
+							</tr>
+							<tr>
+								<td class="a">Notes</td>
+								<td class="b"><?=$pkg['notes']?></td>
+							</tr>
+						</table>
+					</div>
+					<div class="ui eleven wide column">
+						<script type="module">
+							import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+						</script>
 						
-						click root href "packages.php?action=editform&packageid=<?=$packageid?>"
+						<?
+							if ($numsubjects > 0) { $subjcolor = "fill:#ffe500,stroke:#444,stroke-width:4px"; $subjtext = "subjects ($numsubjects)"; } else { $subjcolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:4px"; $subjtext = "subjects"; }
+							if ($numstudies > 0) { $studcolor = "fill:#ffe500,stroke:#444,stroke-width:4px"; $studtext = "studies ($numstudies)"; } else { $studcolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:4px"; $studtext = "studies"; }
+							if ($numseries > 0) { $sercolor = "fill:#ffe500,stroke:#444,stroke-width:4px"; $sertext = "series ($numseries)"; } else { $sercolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:4px"; $sertext = "series"; }
+							if ($numexperiments > 0) { $expcolor = "fill:#FFFFCC,stroke:#444,stroke-width:1px"; $exptext = "experiments ($numexperiments)"; } else { $expcolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:1px"; $exptext = "experiments"; }
+							if ($numpipelines > 0) { $pipecolor = "fill:#FFFFCC,stroke:#444,stroke-width:1px"; $pipetext = "pipelines ($numpipelines)"; } else { $pipecolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:1px"; $pipetext = "pipelines"; }
+							if ($numdatadict > 0) { $dictcolor = "fill:#FFFFCC,stroke:#444,stroke-width:1px"; $dicttext = "data-dictionary ($numdatadict)"; } else { $dictcolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:1px"; $dicttext = "data-dictionary"; }
+							if ($nummeasures > 0) { $meascolor = "fill:#FFFFCC,stroke:#444,stroke-width:1px"; $meastext = "measures ($nummeasures)"; } else { $meascolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:1px"; $meastext = "measures"; }
+							if ($numdrugs > 0) { $drugcolor = "fill:#FFFFCC,stroke:#444,stroke-width:1px"; $drugtext = "drugs ($numdrugs)"; } else { $drugcolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:1px"; $drugtext = "drugs"; }
+							
+						?>
 						
-						style pipelines fill:#FFFFCC,stroke:#444,stroke-width:1px
-						style experiments fill:#FFFFCC,stroke:#444,stroke-width:1px
-						style datadict fill:#FFFFCC,stroke:#444,stroke-width:1px
-						style groupanalysis fill:#FFFFCC,stroke:#444,stroke-width:1px
-						style measures fill:#FFFFCC,stroke:#444,stroke-width:1px
-						style drugs fill:#FFFFCC,stroke:#444,stroke-width:1px
-						style analysis fill:#FFFFCC,stroke:#444,stroke-width:1px
-						style subjects fill:#ffe500,stroke:#444,stroke-width:4px
-						style studies fill:#ffe500,stroke:#444,stroke-width:4px
-						style series fill:#ffe500,stroke:#444,stroke-width:4px
-						style root fill:#fff, stroke:#666
-						%%style package fill:#fff, stroke:#666
-						style data fill:#fff, stroke:#666
-				</pre>
+						<pre class="mermaid">
+							graph LR
+								%%root-->package(details);
+								data-->subjects("<?=$subjtext?>");
+								root-->pipelines("<?=$pipetext?>");
+								root-->experiments("<?=$exptext?>");
+								root-->datadict("<?=$dicttext?>");
+								root(package)-->data(data);
+								data-->groupanalysis(group-analysis);
+								subjects-->studies("<?=$studtext?>");
+								subjects-->measures("<?=$meastext?>");
+								subjects-->drugs("<?=$drugtext?>");
+								studies-->series("<?=$sertext?>");
+								studies-->analysis(analysis);
+								
+								click root href "packages.php?action=editform&packageid=<?=$packageid?>"
+								
+								style pipelines <?=$pipecolor?>;
+								style experiments <?=$expcolor?>;
+								style datadict <?=$dictcolor?>;
+								style groupanalysis fill:#FFFFCC,stroke:#444,stroke-width:1px;
+								style measures <?=$meascolor?>;
+								style drugs <?=$drugcolor?>;
+								style analysis fill:#FFFFCC,stroke:#444,stroke-width:1px;
+								style subjects <?=$subjcolor?>;
+								style studies <?=$studcolor?>;
+								style series <?=$sercolor?>;
+								style root fill:#fff, stroke:#666;
+								%%style package fill:#fff, stroke:#666;
+								style data fill:#fff, stroke:#666;
+						</pre>
+					</div>
+				</div>
 			</div>
 			<div class="ui bottom attached tab raised segment" data-tab="subjects">
 				<?
@@ -1037,10 +1151,14 @@
 				?>
 			</div>
 			<div class="ui bottom attached tab raised segment" data-tab="experiments">
-				
+				<?
+				PrintVariable($experiments);
+				?>
 			</div>
 			<div class="ui bottom attached tab raised segment" data-tab="pipelines">
-				
+				<?
+				PrintVariable($pipelines);
+				?>
 			</div>
 			<div class="ui bottom attached tab raised segment" data-tab="datadict">
 				
