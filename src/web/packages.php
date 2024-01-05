@@ -165,7 +165,7 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayAddSubjectForm -------------- */
 	/* -------------------------------------------- */
-	function DisplayAddSubjectForm($objectids) {
+	function DisplayAddSubjectForm($subjectids) {
 		?>
 		The following information related to the subject(s) will be added to the package
 		
@@ -189,7 +189,7 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayAddStudyForm ---------------- */
 	/* -------------------------------------------- */
-	function DisplayAddStudyForm($objectids) {
+	function DisplayAddStudyForm($studyids) {
 		?>
 		The following information related to the study(s) will be added to the package
 		
@@ -267,349 +267,25 @@
 				<input type="hidden" name="modality" value="<?=$modality?>">
 				
 				<h2>The following objects will be added to the package</h2>
-				<span style="font-size:larger"><i class="check circle outline icon"></i> <b>Subjects</b></span> <div class="ui blue basic label"><?=$numsubjects?> of <?=$numsubjects?> subjects will be added</div>
-				<div class="ui accordion">
-					<div class="title">
-						<i class="dropdown icon"></i>
-						View subjects
-					</div>
-					<div class="content">
-						<div class="ui segment">
-							<table class="ui very compact collapsing table">
-								<thead>
-									<th>UID</th>
-									<th>Sex</th>
-									<th>Enrolled project</th>
-								</thead>
-								<tbody>
-								<?
-									$enrollmentidstr = implode2(",", $enrollmentids);
-									
-									/* get subject info - there may be series from multiple subjects in this list */
-									$sqlstring = "select * from enrollment a left join subjects b on a.subject_id = b.subject_id left join projects c on a.project_id = c.project_id where a.enrollment_id in (" . $enrollmentidstr . ")";
-									$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-										$uid = $row['uid'];
-										$subjectid = $row['subject_id'];
-										$sex = $row['sex'];
-										$projectname = $row['project_name'];
-										
-										?>
-											<tr>
-												<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
-												<td><?=$sex?></td>
-												<td><?=$projectname?></td>
-											</tr>
-										<?
-									}
-								?>
-								</tbody>
-							</table>
-						</div>
-					</div>
-				</div>
+				
+				<? DisplayFormSubjects($enrollmentids, true); ?>
 				<br>
 				
-				<span style="font-size:larger"><i class="check circle outline icon"></i> <b>Studies</b></span> <div class="ui blue basic label"><?=$numstudies?> of <?=$numstudies?> studies will be added</div>
-				<div class="ui accordion">
-					<div class="title">
-						<i class="dropdown icon"></i>
-						View studies
-					</div>
-					<div class="content">
-						<div class="ui segment">
-							<table class="ui very compact collapsing table">
-								<thead>
-									<th>Study</th>
-									<th>Date</th>
-									<th>Visit</th>
-								</thead>
-								<tbody>
-								<?
-									$studyidstr = implode2(",", $studyids);
-									
-									/* get subject info. there may be series from multiple subjects in this list */
-									$sqlstring = "select * from studies b left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where b.study_id in (" . $studyidstr . ")";
-									$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-										$uid = $row['uid'];
-										$studynum = $row['studynum'];
-										$studyid = $row['study_id'];
-										$studydate = $row['study_datetime'];
-										$visit = $row['study_visit'];
-										
-										?>
-											<tr>
-												<td><a href="studies.php?id=<?=$studyid?>"><?=$uid?><?=$studynum?></a></td>
-												<td><?=$studydate?></td>
-												<td><?=$visit?></td>
-											</tr>
-										<?
-									}
-								?>
-								</tbody>
-							</table>
-						</div>
-					</div>
-				</div>
+				<? DisplayFormStudies($studyids, true); ?>
 				<br>
-				
-				<span style="font-size:larger"><i class="check circle outline icon"></i> <b>Series</b></span> <div class="ui blue basic label"><?=$numseries?> of <?=$numseries?> series will be added</div>
-				<div class="ui accordion">
-					<div class="title">
-						<i class="dropdown icon"></i>
-						View series
-					</div>
-					<div class="content">
-						<table class="ui very compact table">
-							<thead>
-								<th>UID</th>
-								<th>Study</th>
-								<th>Series</th>
-								<th>Study desc</th>
-								<th>Series desc</th>
-								<th>Size</th>
-								<th>Num Files</th>
-							</thead>
-							<tbody>
-							<?
-								$sqlstring = "select * from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$modality" . "series_id in (" . $seriesidstr . ")";
-								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-									//PrintVariable($row);
-									$uid = $row['uid'];
-									$studynum = $row['study_num'];
-									$studydesc = $row['study_desc'];
-									$seriesnum = $row['series_num'];
-									$seriesdesc = $row['series_desc'];
-									$seriessize = $row['series_size'];
-									$seriesnumfiles = $row['numfiles'];
-									
-									?>
-										<tr>
-											<td><?=$uid?></td>
-											<td><?=$studynum?></td>
-											<td><?=$seriesnum?></td>
-											<td><?=$studydesc?></td>
-											<td><?=$seriesdesc?></td>
-											<td><?=$seriessize?></td>
-											<td><?=$seriesnumfiles?></td>
-										</tr>
-									<?
-								}
-							?>
-							</tbody>
-						</table>
-					</div>
-				</div>
+
+				<? DisplayFormSeries($seriesids, $modality, true); ?>
 				
 				<h2>Optional related objects</h3>
-				
-				<div class="ui checkbox">
-					<input type="checkbox" name="includeexperiments" value="1">
-					<label>Experiments</label>
-				</div>
-				<div class="ui accordion">
-					<div class="title">
-						<i class="dropdown icon"></i>
-						View experiments
-					</div>
-					<div class="content">
-						<table class="ui very compact collapsing table">
-							<thead>
-								<th>Experiment</th>
-								<th>Date</th>
-							</thead>
-							<tbody>
-							<?
-								/* get subject info. there may be series from multiple subjects in this list */
-								$sqlstring = "select * from experiments";
-								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-									$experimentid = $row['experiment_id'];
-									$expname = $row['exp_name'];
-									$expdate = $row['exp_date'];
-
-									$experimentids[] = $experimentid;
-									?>
-										<tr>
-											<td><a href="experiments.php?id=<?=$experimentid?>"><?=$expname?></a></td>
-											<td><?=$expdate?></td>
-										</tr>
-									<?
-								}
-							?>
-							</tbody>
-						</table>
-					</div>
-				</div>
-				
+				<? DisplayFormExperiments($experimentids, false); ?>
 				<br>
-				<div class="ui checkbox">
-					<input type="checkbox" name="includeanalyses" value="1">
-					<label>Analyses</label>
-				</div>
-				<div class="ui accordion">
-					<div class="title">
-						<i class="dropdown icon"></i>
-						View analyses
-					</div>
-					<div class="content">
-						<table class="ui very compact collapsing table">
-							<thead>
-								<th>Analysis</th>
-								<th>Date</th>
-							</thead>
-							<tbody>
-							<?
-								/* get subject info. there may be series from multiple subjects in this list */
-								$sqlstring = "select * from analysis";
-								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-									$analysisid = $row['analysis_id'];
-									$analysisdate = $row['analysis_date'];
-									
-									$analysisids[] = $analysisid;
-									?>
-										<tr>
-											<td><a href="analysis.php?analysisid=<?=$analysisid?>"><?=$analysisid?></a></td>
-											<td><?=$analysisdate?></td>
-										</tr>
-									<?
-								}
-							?>
-							</tbody>
-						</table>
-					</div>
-				</div>
-				
+				<? DisplayFormAnalyses($analysisids, false); ?>
 				<br>
-				<div class="ui checkbox">
-					<input type="checkbox" name="includepipelines" value="1">
-					<label>Pipelines</label>
-				</div>
-				<div class="ui accordion">
-					<div class="title">
-						<i class="dropdown icon"></i>
-						View pipelines
-					</div>
-					<div class="content">
-						<table class="ui very compact collapsing table">
-							<thead>
-								<th>Pipeline</th>
-							</thead>
-							<tbody>
-							<?
-								/* get subject info. there may be series from multiple subjects in this list */
-								$sqlstring = "select * from pipelines";
-								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-									$pipelineid = $row['pipeline_id'];
-									$pipelinename = $row['pipeline_name'];
-
-									$pipelineids[] = $pipelineid;
-									?>
-										<tr>
-											<td><a href="pipelines.php?pipelineid=<?=$pipelineid?>"><?=$pipelinename?></a></td>
-										</tr>
-									<?
-								}
-							?>
-							</tbody>
-						</table>
-					</div>
-				</div>
-
+				<? DisplayFormPipelines($pipelineids, false); ?>
 				<br>
-				<div class="ui checkbox" title="Include all drug records for all selected subjects">
-					<input type="checkbox" name="includedrugs" value="1">
-					<label>Drugs</label>
-				</div>
-				<div class="ui accordion">
-					<div class="title">
-						<i class="dropdown icon"></i>
-						View drugs
-					</div>
-					<div class="content">
-						<table class="ui very compact collapsing table">
-							<thead>
-								<th>UID</th>
-								<th>Drug</th>
-								<th>Dose desc</th>
-								<th>Date</th>
-							</thead>
-							<tbody>
-							<?
-								/* get subject info. there may be series from multiple subjects in this list */
-								$sqlstring = "select * from drugs a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join drugnames d on a.drugname_id = d.drugname_id where a.enrollment_id in (" . implode2(",", $enrollmentids) . ")";
-								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-									$uid = $row['uid'];
-									$subjectid = $row['subject_id'];
-									$drugdate = $row['drug_startdate'];
-									$drugid = $row['drug_id'];
-									$dosedesc = $row['drug_dosedesc'];
-									$drugname = $row['drug_name'];
-									
-									$drugids[] = $drugid;
-									?>
-										<tr>
-											<td><a href="subjects.php?subjectid=<?=$subjectid?>"><?=$uid?></a></td>
-											<td><?=$drug?></td>
-											<td><?=$drugdesc?></td>
-											<td><?=$drugdate?></td>
-										</tr>
-									<?
-								}
-							?>
-							</tbody>
-						</table>
-					</div>
-				</div>
-
+				<? DisplayFormDrugs($drugids, false); ?>
 				<br>
-				<div class="ui checkbox" title="Include all measures for all selected subjects">
-					<input type="checkbox" name="includemeasures" value="1">
-					<label>Measures</label>
-				</div>
-				<div class="ui accordion">
-					<div class="title">
-						<i class="dropdown icon"></i>
-						View measures
-					</div>
-					<div class="content">
-						<table class="ui very compact collapsing table">
-							<thead>
-								<th>UID</th>
-								<th>Measure</th>
-								<th>Date</th>
-							</thead>
-							<tbody>
-							<?
-								/* get subject info. there may be series from multiple subjects in this list */
-								$sqlstring = "select * from measures a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join measurenames d on a.measurename_id = d.measurename_id where a.enrollment_id in (" . implode2(",", $enrollmentids) . ")";
-								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-									$uid = $row['uid'];
-									$subjectid = $row['subject_id'];
-									$mesauredate = $row['measure_startdate'];
-									$measureid = $row['measure_id'];
-									$measurename = $row['measure_name'];
-									
-									$measureids[] = $measureid;
-									?>
-										<tr>
-											<td><a href="subjects.php?subjectid=<?=$subjectid?>"><?=$uid?></a></td>
-											<td><?=$measurename?></td>
-											<td><?=$measuredate?></td>
-										</tr>
-									<?
-								}
-							?>
-							</tbody>
-						</table>
-					</div>
-				</div>
+				<? DisplayFormMeasures($measureids, false); ?>
 				
 				<? foreach ($experimentids as $experimentid) {?>
 				<input type="hidden" name="experimentids[]" value="<?=$experimentid?>">
@@ -743,6 +419,428 @@
 		<?
 	}
 
+
+	/* -------------------------------------------------------------------------------------
+	    The following functions display a list of objects from the list of input IDs
+		Functions display HTML that contains <input> elements, but do not contain
+		any <form></form> elements
+	   ------------------------------------------------------------------------------------- */
+
+	/* -------------------------------------------- */
+	/* ------- DisplayFormSubjects ---------------- */
+	/* -------------------------------------------- */
+	/* this function expects a list of enrollment IDs */
+	function DisplayFormSubjects($enrollmentids, $required) {
+		$numsubjects = count($enrollmentids);
+		
+		?>
+			<span style="font-size:larger"><i class="check circle outline icon"></i> <b>Subjects</b></span> <div class="ui blue basic label"><?=$numsubjects?> of <?=$numsubjects?> subjects will be added</div>
+			<div class="ui accordion">
+				<div class="title">
+					<i class="dropdown icon"></i>
+					View subjects
+				</div>
+				<div class="content">
+					<div class="ui segment">
+						<table class="ui very compact collapsing table">
+							<thead>
+								<th>UID</th>
+								<th>Sex</th>
+								<th>Enrolled project</th>
+							</thead>
+							<tbody>
+							<?
+								$enrollmentidstr = implode2(",", $enrollmentids);
+								
+								/* get subject info - there may be series from multiple subjects in this list */
+								$sqlstring = "select * from enrollment a left join subjects b on a.subject_id = b.subject_id left join projects c on a.project_id = c.project_id where a.enrollment_id in (" . $enrollmentidstr . ")";
+								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+									$uid = $row['uid'];
+									$subjectid = $row['subject_id'];
+									$sex = $row['sex'];
+									$projectname = $row['project_name'];
+									
+									?>
+										<tr>
+											<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
+											<td><?=$sex?></td>
+											<td><?=$projectname?></td>
+										</tr>
+									<?
+								}
+							?>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayFormStudies ----------------- */
+	/* -------------------------------------------- */
+	function DisplayFormStudies($studyids, $required) {
+		?>
+			<span style="font-size:larger"><i class="check circle outline icon"></i> <b>Studies</b></span> <div class="ui blue basic label"><?=$numstudies?> of <?=$numstudies?> studies will be added</div>
+			<div class="ui accordion">
+				<div class="title">
+					<i class="dropdown icon"></i>
+					View studies
+				</div>
+				<div class="content">
+					<div class="ui segment">
+						<table class="ui very compact collapsing table">
+							<thead>
+								<th>Study</th>
+								<th>Date</th>
+								<th>Visit</th>
+							</thead>
+							<tbody>
+							<?
+								$studyidstr = implode2(",", $studyids);
+								
+								/* get subject info. there may be series from multiple subjects in this list */
+								$sqlstring = "select * from studies b left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where b.study_id in (" . $studyidstr . ")";
+								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+									$uid = $row['uid'];
+									$studynum = $row['studynum'];
+									$studyid = $row['study_id'];
+									$studydate = $row['study_datetime'];
+									$visit = $row['study_visit'];
+									
+									?>
+										<tr>
+											<td><a href="studies.php?id=<?=$studyid?>"><?=$uid?><?=$studynum?></a></td>
+											<td><?=$studydate?></td>
+											<td><?=$visit?></td>
+										</tr>
+									<?
+								}
+							?>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayFormSeries ------------------ */
+	/* -------------------------------------------- */
+	function DisplayFormSeries($seriesids, $modality, $required) {
+		$numseries = count($seriesids);
+		?>
+			<span style="font-size:larger"><i class="check circle outline icon"></i> <b>Series</b></span> <div class="ui blue basic label"><?=$numseries?> of <?=$numseries?> series will be added</div>
+			<div class="ui accordion">
+				<div class="title">
+					<i class="dropdown icon"></i>
+					View series
+				</div>
+				<div class="content">
+					<table class="ui very compact table">
+						<thead>
+							<th>UID</th>
+							<th>Study</th>
+							<th>Series</th>
+							<th>Study desc</th>
+							<th>Series desc</th>
+							<th>Size</th>
+							<th>Num Files</th>
+						</thead>
+						<tbody>
+						<?
+							$seriesidstr = implode2(",", $seriesids);
+						
+							$sqlstring = "select * from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$modality" . "series_id in (" . $seriesidstr . ")";
+							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+								//PrintVariable($row);
+								$uid = $row['uid'];
+								$studynum = $row['study_num'];
+								$studydesc = $row['study_desc'];
+								$seriesnum = $row['series_num'];
+								$seriesdesc = $row['series_desc'];
+								$seriessize = $row['series_size'];
+								$seriesnumfiles = $row['numfiles'];
+								
+								?>
+									<tr>
+										<td><?=$uid?></td>
+										<td><?=$studynum?></td>
+										<td><?=$seriesnum?></td>
+										<td><?=$studydesc?></td>
+										<td><?=$seriesdesc?></td>
+										<td><?=$seriessize?></td>
+										<td><?=$seriesnumfiles?></td>
+									</tr>
+								<?
+							}
+						?>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayFormExperiments ------------- */
+	/* -------------------------------------------- */
+	function DisplayFormExperiments($experimentids, $required) {
+		
+		$experimentidstr = implode2(",", $experimentids);
+		
+		?>
+			<div class="ui checkbox">
+				<input type="checkbox" name="includeexperiments" value="1">
+				<label>Experiments</label>
+			</div>
+			<div class="ui accordion">
+				<div class="title">
+					<i class="dropdown icon"></i>
+					View experiments
+				</div>
+				<div class="content">
+					<table class="ui very compact collapsing table">
+						<thead>
+							<th>Experiment</th>
+							<th>Date</th>
+						</thead>
+						<tbody>
+						<?
+							/* get subject info. there may be series from multiple subjects in this list */
+							$sqlstring = "select * from experiments where experiment_id in (" . $experimentidstr . ")";
+							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+								$experimentid = $row['experiment_id'];
+								$expname = $row['exp_name'];
+								$expdate = $row['exp_date'];
+
+								?>
+									<tr>
+										<td><a href="experiments.php?id=<?=$experimentid?>"><?=$expname?></a></td>
+										<td><?=$expdate?></td>
+									</tr>
+								<?
+							}
+						?>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayFormAnalyses ---------------- */
+	/* -------------------------------------------- */
+	function DisplayFormAnalyses($analysisids, $required) {
+
+		$analysisidstr = implode2(",", $analysisids);
+		
+		?>
+			<div class="ui checkbox">
+				<input type="checkbox" name="includeanalyses" value="1">
+				<label>Analyses</label>
+			</div>
+			<div class="ui accordion">
+				<div class="title">
+					<i class="dropdown icon"></i>
+					View analyses
+				</div>
+				<div class="content">
+					<table class="ui very compact collapsing table">
+						<thead>
+							<th>Analysis</th>
+							<th>Date</th>
+						</thead>
+						<tbody>
+						<?
+							/* get subject info. there may be series from multiple subjects in this list */
+							$sqlstring = "select * from analysis where analysis_id in (" . $analysisidstr . ")";
+							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+								$analysisid = $row['analysis_id'];
+								$analysisdate = $row['analysis_date'];
+								?>
+									<tr>
+										<td><a href="analysis.php?analysisid=<?=$analysisid?>"><?=$analysisid?></a></td>
+										<td><?=$analysisdate?></td>
+									</tr>
+								<?
+							}
+						?>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayFormPipelines --------------- */
+	/* -------------------------------------------- */
+	function DisplayFormPipelines($pipelineids, $required) {
+
+		$pipelineidstr = implode2(",", $pipelineids);
+
+		?>
+			<div class="ui checkbox">
+				<input type="checkbox" name="includepipelines" value="1">
+				<label>Pipelines</label>
+			</div>
+			<div class="ui accordion">
+				<div class="title">
+					<i class="dropdown icon"></i>
+					View pipelines
+				</div>
+				<div class="content">
+					<table class="ui very compact collapsing table">
+						<thead>
+							<th>Pipeline</th>
+						</thead>
+						<tbody>
+						<?
+							/* get subject info. there may be series from multiple subjects in this list */
+							$sqlstring = "select * from pipelines where pipeline_id in (" . $pipelineidstr . ")";
+							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+								$pipelineid = $row['pipeline_id'];
+								$pipelinename = $row['pipeline_name'];
+
+								?>
+									<tr>
+										<td><a href="pipelines.php?pipelineid=<?=$pipelineid?>"><?=$pipelinename?></a></td>
+									</tr>
+								<?
+							}
+						?>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayFormMeasures ---------------- */
+	/* -------------------------------------------- */
+	function DisplayFormMeasures($measureids, $required) {
+
+		$measureidstr = implode2(",", $measureids);
+		
+		?>
+			<div class="ui checkbox" title="Include all measures for all selected subjects">
+				<input type="checkbox" name="includemeasures" value="1">
+				<label>Measures</label>
+			</div>
+			<div class="ui accordion">
+				<div class="title">
+					<i class="dropdown icon"></i>
+					View measures
+				</div>
+				<div class="content">
+					<table class="ui very compact collapsing table">
+						<thead>
+							<th>UID</th>
+							<th>Measure</th>
+							<th>Date</th>
+						</thead>
+						<tbody>
+						<?
+							/* get subject info. there may be series from multiple subjects in this list */
+							$sqlstring = "select * from measures a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join measurenames d on a.measurename_id = d.measurename_id where a.enrollment_id in (" . implode2(",", $enrollmentids) . ")";
+							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+								$uid = $row['uid'];
+								$subjectid = $row['subject_id'];
+								$mesauredate = $row['measure_startdate'];
+								$measureid = $row['measure_id'];
+								$measurename = $row['measure_name'];
+								
+								$measureids[] = $measureid;
+								?>
+									<tr>
+										<td><a href="subjects.php?subjectid=<?=$subjectid?>"><?=$uid?></a></td>
+										<td><?=$measurename?></td>
+										<td><?=$measuredate?></td>
+									</tr>
+								<?
+							}
+						?>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayFormDrugs ------------------- */
+	/* -------------------------------------------- */
+	function DisplayFormDrugs($drugids, $required) {
+		
+		$drugidstr = implode2(",", $drugids);
+		
+		?>
+			<div class="ui checkbox" title="Include all drug records for all selected subjects">
+				<input type="checkbox" name="includedrugs" value="1">
+				<label>Drugs</label>
+			</div>
+			<div class="ui accordion">
+				<div class="title">
+					<i class="dropdown icon"></i>
+					View drugs
+				</div>
+				<div class="content">
+					<table class="ui very compact collapsing table">
+						<thead>
+							<th>UID</th>
+							<th>Drug</th>
+							<th>Dose desc</th>
+							<th>Date</th>
+						</thead>
+						<tbody>
+						<?
+							/* get subject info. there may be series from multiple subjects in this list */
+							$sqlstring = "select * from drugs a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join drugnames d on a.drugname_id = d.drugname_id where a.enrollment_id in (" . implode2(",", $enrollmentids) . ")";
+							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+								$uid = $row['uid'];
+								$subjectid = $row['subject_id'];
+								$drugdate = $row['drug_startdate'];
+								$drugid = $row['drug_id'];
+								$dosedesc = $row['drug_dosedesc'];
+								$drugname = $row['drug_name'];
+								
+								$drugids[] = $drugid;
+								?>
+									<tr>
+										<td><a href="subjects.php?subjectid=<?=$subjectid?>"><?=$uid?></a></td>
+										<td><?=$drug?></td>
+										<td><?=$drugdesc?></td>
+										<td><?=$drugdate?></td>
+									</tr>
+								<?
+							}
+						?>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		<?
+	}
 
 	/* -------------------------------------------- */
 	/* ------- AddObjectsToPackage ---------------- */
@@ -1007,8 +1105,11 @@
 			$nummeasures += count($subjects[$uid]['measures']);
 			$numdrugs += count($subjects[$uid]['drugs']);
 		}
+		$numanalyses = count($analyses);
 		$numexperiments = count($experiments);
 		$numpipelines = count($pipelines);
+		$numdatadict = count($datadictionaries);
+		$numgroupanalyses = count($groupanalyses);
 		
 		?>
 		<div class="ui container">
@@ -1047,7 +1148,10 @@
 			<div class="ui bottom attached active tab raised center aligned segment" data-tab="overview">
 				<div class="ui grid">
 					<div class="ui five wide column">
-						<table class="ui table">
+						<div class="ui top attached segment" style="background-color: #eee">
+							<b>Package details</b>
+						</div>
+						<table class="ui bottom attached table">
 							<tr>
 								<td class="a">Name</td>
 								<td><?=$pkg['name']?></td>
@@ -1106,6 +1210,8 @@
 							if ($numexperiments > 0) { $expcolor = "fill:#FFFFCC,stroke:#444,stroke-width:1px"; $exptext = "experiments ($numexperiments)"; } else { $expcolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:1px"; $exptext = "experiments"; }
 							if ($numpipelines > 0) { $pipecolor = "fill:#FFFFCC,stroke:#444,stroke-width:1px"; $pipetext = "pipelines ($numpipelines)"; } else { $pipecolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:1px"; $pipetext = "pipelines"; }
 							if ($numdatadict > 0) { $dictcolor = "fill:#FFFFCC,stroke:#444,stroke-width:1px"; $dicttext = "data-dictionary ($numdatadict)"; } else { $dictcolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:1px"; $dicttext = "data-dictionary"; }
+							if ($numanalyses > 0) { $analysiscolor = "fill:#FFFFCC,stroke:#444,stroke-width:1px"; $analysistext = "analysis ($numanalyses)"; } else { $analysiscolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:1px"; $analysistext = "analysis"; }
+							if ($numgroupanalyses > 0) { $groupanalysiscolor = "fill:#FFFFCC,stroke:#444,stroke-width:1px"; $groupanalysistext = "group-analysis ($numgroupanalyses)"; } else { $groupanalysiscolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:1px"; $groupanalysistext = "group-analysis"; }
 							if ($nummeasures > 0) { $meascolor = "fill:#FFFFCC,stroke:#444,stroke-width:1px"; $meastext = "measures ($nummeasures)"; } else { $meascolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:1px"; $meastext = "measures"; }
 							if ($numdrugs > 0) { $drugcolor = "fill:#FFFFCC,stroke:#444,stroke-width:1px"; $drugtext = "drugs ($numdrugs)"; } else { $drugcolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:1px"; $drugtext = "drugs"; }
 							
@@ -1119,22 +1225,22 @@
 								root-->experiments("<?=$exptext?>");
 								root-->datadict("<?=$dicttext?>");
 								root(package)-->data(data);
-								data-->groupanalysis(group-analysis);
+								data-->groupanalysis("<?=$groupanalysistext?>");
 								subjects-->studies("<?=$studtext?>");
 								subjects-->measures("<?=$meastext?>");
 								subjects-->drugs("<?=$drugtext?>");
 								studies-->series("<?=$sertext?>");
-								studies-->analysis(analysis);
+								studies-->analysis("<?=$analysistext?>");
 								
 								click root href "packages.php?action=editform&packageid=<?=$packageid?>"
 								
 								style pipelines <?=$pipecolor?>;
 								style experiments <?=$expcolor?>;
 								style datadict <?=$dictcolor?>;
-								style groupanalysis fill:#FFFFCC,stroke:#444,stroke-width:1px;
+								style groupanalysis <?=$groupanalysiscolor?>;
 								style measures <?=$meascolor?>;
 								style drugs <?=$drugcolor?>;
-								style analysis fill:#FFFFCC,stroke:#444,stroke-width:1px;
+								style analysis <?=$analysiscolor?>;
 								style subjects <?=$subjcolor?>;
 								style studies <?=$studcolor?>;
 								style series <?=$sercolor?>;

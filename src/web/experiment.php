@@ -311,6 +311,7 @@ file_modifydate, file_createdate) values($expid, '$fileFilename', '$fileData', $
 						<th>Version</th>
 						<th>Create date</th>
 						<th>Modify date</th>
+						<th>Add to package</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -345,10 +346,11 @@ file_modifydate, file_createdate) values($expid, '$fileFilename', '$fileData', $
 									}
 									?>
 								</td>
-								<td valign="top" class="ui center aligned"><a class="ui basic primary icon button" href="experiment.php?action=download&expid=<?=$expid?>" title="Download <?=$name?> experiment"><i class="large download icon"></i></a></td>
+								<td valign="top" class="ui center aligned"><a href="experiment.php?action=download&expid=<?=$expid?>" title="Download <?=$name?> experiment"><i class="large download icon"></i></a></td>
 								<td valign="top"><?=$version?></td>
 								<td valign="top"><?=$createdate?></td>
 								<td valign="top"><?=$modifydate?></td>
+								<td valign="top" class="ui center aligned"><a href="packages.php?action=addobject&objecttype=experiment&objectids[]=<?=$expid?>"><img src="images/squirrel-icon-64.png" height="24"></img></a></td>
 							</tr>
 							<?
 						}

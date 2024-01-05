@@ -1056,6 +1056,7 @@
 
 						<div class="ui item" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='markunsuccessful'; MarkAnalysis()" title="Mark the analysis as unsuccessful">Mark unsuccessful</div>
 						
+						<div class="ui item" onclick="document.studieslist.action='packages.php';document.studieslist.action.value='addobject';document.studieslist.submit();"><em data-emoji=":chipmunk:"></em>&nbsp; Add to Package</div>
 					</div>
 				</div>
 			</div>

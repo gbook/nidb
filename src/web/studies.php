@@ -2296,7 +2296,7 @@
 			<a class="item" href="studies.php?studyid=<?=$studyid?>&action=displayfiles"><i class="file alternate icon"></i> View file list</a>
 			<div class="right menu" id="popupbutton2">
 				<div class="right menu">
-					<div class="ui icon bottom left pointing dropdown button" style="background-color: lavender">
+					<div class="ui icon bottom left pointing dropdown button" style="background-color: lavender; margin-right: 0px">
 						<i class="dropdown icon"></i>
 						<span class="text">With selected series...</span>
 						<div class="ui vertical menu">
@@ -2313,7 +2313,7 @@
 							
 							<div class="ui item" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='resetqa';document.serieslist.submit();" title="Reset the QA results for this series. New QA results will be re-generated"><i class="redo alternate icon"></i> Reset QC</div>
 							
-							<div class="ui item" onclick="document.serieslist.action='packages.php';document.serieslist.action.value='addobject';document.serieslist.submit();"><em data-emoji=":chipmunk:"></em> Add to Package</div>
+							<div class="ui item" onclick="document.serieslist.action='packages.php';document.serieslist.action.value='addobject';document.serieslist.submit();"><em data-emoji=":chipmunk:"></em>&nbsp; Add to Package</div>
 							
 							<div class="ui item" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='deleteseries';document.serieslist.submit();" title="Delete the selected series. The series will be moved to the <span class='tt'><?=$GLOBALS['cfg']['deleteddir']?></span> directory and will not appear anywhere on the website"><i class="red trash alternate icon"></i>Delete</div>
 						</div>

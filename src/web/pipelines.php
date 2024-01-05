@@ -2858,6 +2858,8 @@ echo "#$ps_command     $logged $ps_desc\n";
 			</p>
 			<br>
 			<p><a href="pipelines.php?action=exportpipeline&id=<?=$id?>&returntab=operations" class="ui button" style="width:250px" title="This pipeline will be exported in squirrel format as a web download"><i class="file export icon"></i> Export pipeline</a></p>
+			<br>
+			<a href="packages.php?action=addobject&objecttype=pipeline&objectids[]=<?=$id?>" class="ui primary brown button" style="width:250px"><img src="images/squirrel-icon-bw-64.png" height="15" style="filter:invert(1)"></img> &nbsp; Add to Package</a>
 			<br><br>
 			<p><a href="pipelines.php?action=detach&id=<?=$id?>&returntab=operations" class="ui disabled red button" style="width:250px" onclick="return confirm('Are you sure you want to completely detach this pipeline?')" title="This will completely inactivate the pipeline and remove all analyses from the pipeline control. Since the data will no longer be under pipeline control, all analysis results will be deleted. All analysis data will be moved to the directory you specify"><i class="unlock alternate icon"></i> Detach pipeline</a></p>
 			<p><a href="pipelines.php?action=delete&id=<?=$id?>&returntab=operations" class="ui red button" style="width:250px" onclick="return confirm('Are you sure you want to delete this pipeline?')"><i class="trash alternate icon"></i> Delete this pipeline</a></p>
