@@ -231,18 +231,61 @@
 				$enrollmentids[] = $row['enrollment_id'];
 				$subjectids[] = $row['subject_id'];
 				$studyids[] = $row['study_id'];
+				$projectids[] = $row['project_id'];
 				if ($row[$modality . '_seriesid'] != "")
 					$seriesids[] = $row[$modality . '_seriesid'];
+
+				if (trim($row['series_desc']) == "")
+					$seriesdesc = $row['series_protocol'];
+				else
+					$seriesdesc = $row['series_desc'];
+				
+				$experimentmapping[$modality][$seriesdesc]['projectid'] = $row['project_id']; /* don't make this array unique because multiple mappings could exist for each protocol */
 			}
+			//PrintVariable($studyids, 'StudyID');
 			$enrollmentids = array_unique($enrollmentids);
 			$subjectids = array_unique($subjectids);
 			$studyids = array_unique($studyids);
 			$seriesids = array_unique($seriesids);
+			$projectids = array_unique($projectids);
+			$seriesdescs = array_unique($seriesdesc);
+			//PrintVariable($studyids, 'StudyID');
 			
 			$numenrollments = count($enrollmentids);
 			$numsubjects = count($subjectids);
 			$numstudies = count($studyids);
 			$numseries = count($seriesids);
+			
+			/* get list of analysisids */
+			$studyidstr = implode2(",", $studyids);
+			$sqlstring = "select * from analysis where study_id in (" . $studyidstr . ")";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$numseries = mysqli_num_rows($result);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$analysisids[] = $row['analysis_id'];
+				$pipelineids[] = $row['pipeline_id'];
+			}
+			$analysisids = array_unique($analysisids);
+			$pipelineids = array_unique($pipelineids);
+			
+			PrintVariable($experimentmapping);
+			/* get list of experiments - need to map the experiment to the protocol/modality and project */
+			foreach ($experimentmapping as $modalitykey => $modalityvalue) {
+				//PrintVariable($modalityvalue);
+				foreach ($modalityvalue as $seriesdesc => $value) {
+					$projectid = $value['projectid'];
+					
+					$sqlstring = "select experiment_id from experiment_mapping where project_id = $projectid and protocolname = '$seriesdesc' and modality = '$modalitykey'";
+					PrintSQL($sqlstring);
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					$numseries = mysqli_num_rows($result);
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+						$experimentids[] = $row['experiment_id'];
+					}
+				}
+			}
+			PrintVariable($experimentids);
+			$experimentids = array_unique($experimentids);
 		}
 		
 		?>
@@ -251,62 +294,26 @@
 			<div class="ui raised segment">
 				
 				<form method="post" action="packages.php">
-				<input type="hidden" name="action" value="addobjectstopackage">
-				<? foreach ($enrollmentids as $enrollmentid) {?>
-				<input type="hidden" name="enrollmentids[]" value="<?=$enrollmentid?>">
-				<? } ?>
-				<? foreach ($subjectids as $subjectid) {?>
-				<input type="hidden" name="subjectids[]" value="<?=$subjectid?>">
-				<? } ?>
-				<? foreach ($studyids as $studyid) {?>
-				<input type="hidden" name="studyids[]" value="<?=$studyid?>">
-				<? } ?>
-				<? foreach ($seriesids as $seriesid) {?>
-				<input type="hidden" name="seriesids[]" value="<?=$seriesid?>">
-				<? } ?>
-				<input type="hidden" name="modality" value="<?=$modality?>">
+					<input type="hidden" name="action" value="addobjectstopackage">
+					
+					<h2>The following objects will be added to the package</h2>
+					<? DisplayFormSubjects($enrollmentids, true); ?>
+					<br>
+					<? DisplayFormStudies($studyids, true); ?>
+					<br>
+					<? DisplayFormSeries($seriesids, $modality, true); ?>
+					
+					<h2>Optional related objects</h3>
+					<? DisplayFormExperiments($experimentids, false); ?>
+					<br>
+					<? DisplayFormAnalyses($analysisids, false); ?>
+					<br>
+					<? DisplayFormPipelines($pipelineids, false); ?>
+					<br>
+					<? DisplayFormDrugs($enrollmentids, false); ?>
+					<br>
+					<? DisplayFormMeasures($enrollmentids, false); ?>
 				
-				<h2>The following objects will be added to the package</h2>
-				
-				<? DisplayFormSubjects($enrollmentids, true); ?>
-				<br>
-				
-				<? DisplayFormStudies($studyids, true); ?>
-				<br>
-
-				<? DisplayFormSeries($seriesids, $modality, true); ?>
-				
-				<h2>Optional related objects</h3>
-				<? DisplayFormExperiments($experimentids, false); ?>
-				<br>
-				<? DisplayFormAnalyses($analysisids, false); ?>
-				<br>
-				<? DisplayFormPipelines($pipelineids, false); ?>
-				<br>
-				<? DisplayFormDrugs($drugids, false); ?>
-				<br>
-				<? DisplayFormMeasures($measureids, false); ?>
-				
-				<? foreach ($experimentids as $experimentid) {?>
-				<input type="hidden" name="experimentids[]" value="<?=$experimentid?>">
-				<? } ?>
-
-				<? foreach ($analysisids as $analysisid) {?>
-				<input type="hidden" name="analysisids[]" value="<?=$analysisid?>">
-				<? } ?>
-
-				<? foreach ($pipelineids as $pipelineid) {?>
-				<input type="hidden" name="pipelineids[]" value="<?=$pipelineid?>">
-				<? } ?>
-
-				<? foreach ($drugids as $drugid) {?>
-				<input type="hidden" name="drugids[]" value="<?=$drugid?>">
-				<? } ?>
-
-				<? foreach ($measureids as $measureid) {?>
-				<input type="hidden" name="measureids[]" value="<?=$measureid?>">
-				<? } ?>
-
 					<br><br>
 					
 					<h4 class="ui horizontal divider header">Select Package</h4>
@@ -431,7 +438,12 @@
 	/* -------------------------------------------- */
 	/* this function expects a list of enrollment IDs */
 	function DisplayFormSubjects($enrollmentids, $required) {
+		
 		$numsubjects = count($enrollmentids);
+		
+		if ($required) {
+			$checkboxstr = " checked disabled";
+		}
 		
 		?>
 			<span style="font-size:larger"><i class="check circle outline icon"></i> <b>Subjects</b></span> <div class="ui blue basic label"><?=$numsubjects?> of <?=$numsubjects?> subjects will be added</div>
@@ -444,6 +456,7 @@
 					<div class="ui segment">
 						<table class="ui very compact collapsing table">
 							<thead>
+								<th> </th>
 								<th>UID</th>
 								<th>Sex</th>
 								<th>Enrolled project</th>
@@ -463,6 +476,7 @@
 									
 									?>
 										<tr>
+											<td><input type="checkbox" name="enrollmentids[]" value="<?=$enrollmentid?>" <?=$checkboxstr?>></td>
 											<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
 											<td><?=$sex?></td>
 											<td><?=$projectname?></td>
@@ -483,6 +497,13 @@
 	/* ------- DisplayFormStudies ----------------- */
 	/* -------------------------------------------- */
 	function DisplayFormStudies($studyids, $required) {
+		
+		$numstudies = count($studyids);
+		
+		if ($required) {
+			$checkboxstr = " checked disabled";
+		}
+
 		?>
 			<span style="font-size:larger"><i class="check circle outline icon"></i> <b>Studies</b></span> <div class="ui blue basic label"><?=$numstudies?> of <?=$numstudies?> studies will be added</div>
 			<div class="ui accordion">
@@ -494,6 +515,7 @@
 					<div class="ui segment">
 						<table class="ui very compact collapsing table">
 							<thead>
+								<th> </th>
 								<th>Study</th>
 								<th>Date</th>
 								<th>Visit</th>
@@ -514,6 +536,7 @@
 									
 									?>
 										<tr>
+											<td><input type="checkbox" name="studyids[]" value="<?=$studyid?>" <?=$checkboxstr?>></td>
 											<td><a href="studies.php?id=<?=$studyid?>"><?=$uid?><?=$studynum?></a></td>
 											<td><?=$studydate?></td>
 											<td><?=$visit?></td>
@@ -534,7 +557,13 @@
 	/* ------- DisplayFormSeries ------------------ */
 	/* -------------------------------------------- */
 	function DisplayFormSeries($seriesids, $modality, $required) {
+
 		$numseries = count($seriesids);
+
+		if ($required) {
+			$checkboxstr = " checked disabled";
+		}
+
 		?>
 			<span style="font-size:larger"><i class="check circle outline icon"></i> <b>Series</b></span> <div class="ui blue basic label"><?=$numseries?> of <?=$numseries?> series will be added</div>
 			<div class="ui accordion">
@@ -545,6 +574,7 @@
 				<div class="content">
 					<table class="ui very compact table">
 						<thead>
+							<th> </th>
 							<th>UID</th>
 							<th>Study</th>
 							<th>Series</th>
@@ -560,7 +590,7 @@
 							$sqlstring = "select * from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$modality" . "series_id in (" . $seriesidstr . ")";
 							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-								//PrintVariable($row);
+								$seriesid = $row[$modality . 'series_id'];
 								$uid = $row['uid'];
 								$studynum = $row['study_num'];
 								$studydesc = $row['study_desc'];
@@ -571,6 +601,7 @@
 								
 								?>
 									<tr>
+										<td><input type="checkbox" name="seriesids[]" value="<?=$seriesid?>" <?=$checkboxstr?>></td>
 										<td><?=$uid?></td>
 										<td><?=$studynum?></td>
 										<td><?=$seriesnum?></td>
@@ -586,6 +617,7 @@
 					</table>
 				</div>
 			</div>
+			<input type="hidden" name="modality" value="<?=$modality?>">
 		<?
 	}
 
@@ -597,7 +629,12 @@
 		
 		$experimentidstr = implode2(",", $experimentids);
 		
-		?>
+		if ($required) {
+			$checkboxstr = " checked disabled";
+		}
+
+		if (count($experimentids) > 0) {
+			?>
 			<div class="ui checkbox">
 				<input type="checkbox" name="includeexperiments" value="1">
 				<label>Experiments</label>
@@ -610,6 +647,7 @@
 				<div class="content">
 					<table class="ui very compact collapsing table">
 						<thead>
+							<th> </th>
 							<th>Experiment</th>
 							<th>Date</th>
 						</thead>
@@ -625,6 +663,7 @@
 
 								?>
 									<tr>
+										<td><input type="checkbox" name="experimentids[]" value="<?=$experimentid?>" <?=$checkboxstr?>></td>
 										<td><a href="experiments.php?id=<?=$experimentid?>"><?=$expname?></a></td>
 										<td><?=$expdate?></td>
 									</tr>
@@ -635,7 +674,17 @@
 					</table>
 				</div>
 			</div>
-		<?
+			<?
+		}
+		else {
+			?>
+			<div class="ui checkbox">
+				<input type="checkbox" name="includeexperiments" value="0" disabled>
+				<label>No associated experiments found</label>
+			</div>
+			<br>
+			<?
+		}
 	}
 
 
@@ -646,19 +695,37 @@
 
 		$analysisidstr = implode2(",", $analysisids);
 		
-		?>
+		if ($required) {
+			$checkboxstr = " checked disabled";
+		}
+
+		if (count($analysisids) > 0) {
+			?>
+			<script type="text/javascript">
+			$(function() {
+				$("#selectallanalysis").click(function() {
+					var checked_status = this.checked;
+					$(".allanalyses").find("input[type='checkbox']").each(function() {
+						this.checked = checked_status;
+					});
+					document.getElementById('includeanalyses').checked = checked_status;
+				});
+			});
+			</script>
+		
 			<div class="ui checkbox">
-				<input type="checkbox" name="includeanalyses" value="1">
+				<input type="checkbox" name="includeanalyses" id="includeanalyses" value="1">
 				<label>Analyses</label>
 			</div>
 			<div class="ui accordion">
 				<div class="title">
 					<i class="dropdown icon"></i>
-					View analyses
+					Select analyses
 				</div>
 				<div class="content">
 					<table class="ui very compact collapsing table">
 						<thead>
+							<th><input type="checkbox" name="selectallanalysis" id="selectallanalysis"></th>
 							<th>Analysis</th>
 							<th>Date</th>
 						</thead>
@@ -672,6 +739,7 @@
 								$analysisdate = $row['analysis_date'];
 								?>
 									<tr>
+										<td class="allanalyses"><input type="checkbox" name="analysisids[]" value="<?=$analysisid?>" <?=$checkboxstr?>></td>
 										<td><a href="analysis.php?analysisid=<?=$analysisid?>"><?=$analysisid?></a></td>
 										<td><?=$analysisdate?></td>
 									</tr>
@@ -682,7 +750,17 @@
 					</table>
 				</div>
 			</div>
-		<?
+			<?
+		}
+		else {
+			?>
+			<div class="ui checkbox">
+				<input type="checkbox" name="includeanalyses" value="0" disabled>
+				<label>No associated analyses found</label>
+			</div>
+			<br>
+			<?
+		}
 	}
 
 
@@ -693,9 +771,25 @@
 
 		$pipelineidstr = implode2(",", $pipelineids);
 
+		if ($required) {
+			$checkboxstr = " checked disabled";
+		}
+
 		?>
+			<script type="text/javascript">
+			$(function() {
+				$("#selectallpipelines").click(function() {
+					var checked_status = this.checked;
+					$(".allpipelines").find("input[type='checkbox']").each(function() {
+						this.checked = checked_status;
+					});
+					document.getElementById('includepipelines').checked = checked_status;
+				});
+			});
+			</script>
+
 			<div class="ui checkbox">
-				<input type="checkbox" name="includepipelines" value="1">
+				<input type="checkbox" name="includepipelines" id="includepipelines" value="1">
 				<label>Pipelines</label>
 			</div>
 			<div class="ui accordion">
@@ -706,6 +800,7 @@
 				<div class="content">
 					<table class="ui very compact collapsing table">
 						<thead>
+							<th><input type="checkbox" id="selectallpipelines"></th>
 							<th>Pipeline</th>
 						</thead>
 						<tbody>
@@ -719,6 +814,7 @@
 
 								?>
 									<tr>
+										<td class="allpipelines"><input type="checkbox" name="pipelineids[]" value="<?=$pipelineid?>" <?=$checkboxstr?>></td>
 										<td><a href="pipelines.php?pipelineid=<?=$pipelineid?>"><?=$pipelinename?></a></td>
 									</tr>
 								<?
@@ -735,13 +831,29 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayFormMeasures ---------------- */
 	/* -------------------------------------------- */
-	function DisplayFormMeasures($measureids, $required) {
+	function DisplayFormMeasures($enrollmentids, $required) {
 
-		$measureidstr = implode2(",", $measureids);
+		$enrollmentidstr = implode2(",", $enrollmentids);
+		
+		if ($required) {
+			$checkboxstr = " checked disabled";
+		}
 		
 		?>
+			<script type="text/javascript">
+			$(function() {
+				$("#selectallmeasures").click(function() {
+					var checked_status = this.checked;
+					$(".allmeasurees").find("input[type='checkbox']").each(function() {
+						this.checked = checked_status;
+					});
+					document.getElementById('includemeasures').checked = checked_status;
+				});
+			});
+			</script>
+
 			<div class="ui checkbox" title="Include all measures for all selected subjects">
-				<input type="checkbox" name="includemeasures" value="1">
+				<input type="checkbox" name="includemeasures" id="includemeasures" value="1">
 				<label>Measures</label>
 			</div>
 			<div class="ui accordion">
@@ -752,6 +864,7 @@
 				<div class="content">
 					<table class="ui very compact collapsing table">
 						<thead>
+							<th><input type="checkbox" id="selectallmeasures"></th>
 							<th>UID</th>
 							<th>Measure</th>
 							<th>Date</th>
@@ -771,6 +884,7 @@
 								$measureids[] = $measureid;
 								?>
 									<tr>
+										<td class="allmeasures"><input type="checkbox" name="measureids[]" value="<?=$measureid?>" <?=$checkboxstr?>></td>
 										<td><a href="subjects.php?subjectid=<?=$subjectid?>"><?=$uid?></a></td>
 										<td><?=$measurename?></td>
 										<td><?=$measuredate?></td>
@@ -782,6 +896,9 @@
 					</table>
 				</div>
 			</div>
+			<? foreach ($measureids as $measureid) {?>
+			<input type="hidden" name="measureids[]" value="<?=$measureid?>">
+			<? } ?>
 		<?
 	}
 
@@ -789,10 +906,14 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayFormDrugs ------------------- */
 	/* -------------------------------------------- */
-	function DisplayFormDrugs($drugids, $required) {
+	function DisplayFormDrugs($enrollmentids, $required) {
 		
-		$drugidstr = implode2(",", $drugids);
+		$enrollmentidstr = implode2(",", $enrollmentids);
 		
+		if ($required) {
+			$checkboxstr = " checked disabled";
+		}
+
 		?>
 			<div class="ui checkbox" title="Include all drug records for all selected subjects">
 				<input type="checkbox" name="includedrugs" value="1">
@@ -839,6 +960,9 @@
 					</table>
 				</div>
 			</div>
+			<? foreach ($drugids as $drugid) {?>
+			<input type="hidden" name="drugids[]" value="<?=$drugid?>">
+			<? } ?>
 		<?
 	}
 
