@@ -166,22 +166,108 @@
 	/* ------- DisplayAddSubjectForm -------------- */
 	/* -------------------------------------------- */
 	function DisplayAddSubjectForm($subjectids) {
+		
+		if (count($subjectids < 1)) {
+			Error("0 subjectids passed into function");
+			return;
+		}
+		$uids = array();
+		$subjectidstr = implode2(",", $subjectids);
+		
+		/* get subject info. there may be series from multiple subjects in this list */
+		$sqlstring = "select * from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$modality" . "series_id in (" . $seriesidstr . ")";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$numseries = mysqli_num_rows($result);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$enrollmentids[] = $row['enrollment_id'];
+			$subjectids[] = $row['subject_id'];
+			$studyids[] = $row['study_id'];
+			$projectids[] = $row['project_id'];
+			if ($row[$modality . '_seriesid'] != "")
+				$seriesids[] = $row[$modality . '_seriesid'];
+
+			if (trim($row['series_desc']) == "")
+				$seriesdesc = $row['series_protocol'];
+			else
+				$seriesdesc = $row['series_desc'];
+			
+			$experimentmapping[$modality][$seriesdesc]['projectid'] = $row['project_id']; /* don't make this array unique because multiple mappings could exist for each protocol */
+		}
+		$enrollmentids = array_unique($enrollmentids);
+		$subjectids = array_unique($subjectids);
+		$studyids = array_unique($studyids);
+		$seriesids = array_unique($seriesids);
+		$projectids = array_unique($projectids);
+		$seriesdescs = array_unique($seriesdesc);
+		
+		$numenrollments = count($enrollmentids);
+		$numsubjects = count($subjectids);
+		$numstudies = count($studyids);
+		$numseries = count($seriesids);
+		
+		/* get list of analysisids */
+		$studyidstr = implode2(",", $studyids);
+		$sqlstring = "select * from analysis where study_id in (" . $studyidstr . ")";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$numseries = mysqli_num_rows($result);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$analysisids[] = $row['analysis_id'];
+			$pipelineids[] = $row['pipeline_id'];
+		}
+		$analysisids = array_unique($analysisids);
+		$pipelineids = array_unique($pipelineids);
+		
+		/* get list of experiments - need to map the experiment to the protocol/modality and project */
+		foreach ($experimentmapping as $modalitykey => $modalityvalue) {
+			foreach ($modalityvalue as $seriesdesc => $value) {
+				$projectid = $value['projectid'];
+				
+				$sqlstring = "select experiment_id from experiment_mapping where project_id = $projectid and protocolname = '$seriesdesc' and modality = '$modalitykey'";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$numseries = mysqli_num_rows($result);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+					$experimentids[] = $row['experiment_id'];
+				}
+			}
+		}
+		$experimentids = array_unique($experimentids);
+		
 		?>
-		The following information related to the subject(s) will be added to the package
 		
-		<pre>
-		[x] Subject info
-			[ ] details from enrollment
-				[ ] Vitals
-				[ ] Measures
-				[ ] Drugs
-		
-			[ ] series (and studies)
-				[ ] series list
-					[ ] experiments
-					[ ] analyses
-					[ ] pipelines
-		</pre>
+		<div class="ui text container">
+			<div class="ui raised segment">
+				
+				<form method="post" action="packages.php">
+					<input type="hidden" name="action" value="addobjectstopackage">
+					
+					<h2>The following objects will be added to the package</h2>
+					<? DisplayFormSubjects($enrollmentids, true); ?>
+					
+					<h2>Optional related objects</h3>
+					<? DisplayFormStudies($studyids, true); ?>
+					<br>
+					<? DisplayFormSeries($seriesids, $modality, true); ?>
+					<br>
+					<? DisplayFormExperiments($experimentids, false); ?>
+					<br>
+					<? DisplayFormAnalyses($analysisids, false); ?>
+					<br>
+					<? DisplayFormPipelines($pipelineids, false); ?>
+					<br>
+					<? DisplayFormDrugs($enrollmentids, false); ?>
+					<br>
+					<? DisplayFormMeasures($enrollmentids, false); ?>
+				
+					<br><br>
+					<h4 class="ui horizontal divider header">Select Package</h4>
+					<div style="text-align: center">
+						<? DisplayFormSelectPackage(); ?>
+						<br><br>
+						<input type="submit" value="Add to package" class="ui primary button">
+					</div>
+				</form>
+			</div>
+		</div>
 		<?
 	}
 	
@@ -218,79 +304,74 @@
 	/* -------------------------------------------- */
 	function DisplayAddSeriesForm($seriesids, $modality) {
 		
-		if (count($seriesids > 0)) {
-			
-			$uids = array();
-			$seriesidstr = implode2(",", $seriesids);
-			
-			/* get subject info. there may be series from multiple subjects in this list */
-			$sqlstring = "select * from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$modality" . "series_id in (" . $seriesidstr . ")";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$numseries = mysqli_num_rows($result);
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$enrollmentids[] = $row['enrollment_id'];
-				$subjectids[] = $row['subject_id'];
-				$studyids[] = $row['study_id'];
-				$projectids[] = $row['project_id'];
-				if ($row[$modality . '_seriesid'] != "")
-					$seriesids[] = $row[$modality . '_seriesid'];
+		if (count($seriesids < 1)) {
+			Error("0 seriesids passed into function");
+			return;
+		}
+		$uids = array();
+		$seriesidstr = implode2(",", $seriesids);
+		
+		/* get subject info. there may be series from multiple subjects in this list */
+		$sqlstring = "select * from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$modality" . "series_id in (" . $seriesidstr . ")";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$numseries = mysqli_num_rows($result);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$enrollmentids[] = $row['enrollment_id'];
+			$subjectids[] = $row['subject_id'];
+			$studyids[] = $row['study_id'];
+			$projectids[] = $row['project_id'];
+			if ($row[$modality . '_seriesid'] != "")
+				$seriesids[] = $row[$modality . '_seriesid'];
 
-				if (trim($row['series_desc']) == "")
-					$seriesdesc = $row['series_protocol'];
-				else
-					$seriesdesc = $row['series_desc'];
+			if (trim($row['series_desc']) == "")
+				$seriesdesc = $row['series_protocol'];
+			else
+				$seriesdesc = $row['series_desc'];
+			
+			$experimentmapping[$modality][$seriesdesc]['projectid'] = $row['project_id']; /* don't make this array unique because multiple mappings could exist for each protocol */
+		}
+		$enrollmentids = array_unique($enrollmentids);
+		$subjectids = array_unique($subjectids);
+		$studyids = array_unique($studyids);
+		$seriesids = array_unique($seriesids);
+		$projectids = array_unique($projectids);
+		$seriesdescs = array_unique($seriesdesc);
+		
+		$numenrollments = count($enrollmentids);
+		$numsubjects = count($subjectids);
+		$numstudies = count($studyids);
+		$numseries = count($seriesids);
+		
+		/* get list of analysisids */
+		$studyidstr = implode2(",", $studyids);
+		$sqlstring = "select * from analysis where study_id in (" . $studyidstr . ")";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$numseries = mysqli_num_rows($result);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$analysisids[] = $row['analysis_id'];
+			$pipelineids[] = $row['pipeline_id'];
+		}
+		$analysisids = array_unique($analysisids);
+		$pipelineids = array_unique($pipelineids);
+		
+		/* get list of experiments - need to map the experiment to the protocol/modality and project */
+		foreach ($experimentmapping as $modalitykey => $modalityvalue) {
+			foreach ($modalityvalue as $seriesdesc => $value) {
+				$projectid = $value['projectid'];
 				
-				$experimentmapping[$modality][$seriesdesc]['projectid'] = $row['project_id']; /* don't make this array unique because multiple mappings could exist for each protocol */
-			}
-			//PrintVariable($studyids, 'StudyID');
-			$enrollmentids = array_unique($enrollmentids);
-			$subjectids = array_unique($subjectids);
-			$studyids = array_unique($studyids);
-			$seriesids = array_unique($seriesids);
-			$projectids = array_unique($projectids);
-			$seriesdescs = array_unique($seriesdesc);
-			//PrintVariable($studyids, 'StudyID');
-			
-			$numenrollments = count($enrollmentids);
-			$numsubjects = count($subjectids);
-			$numstudies = count($studyids);
-			$numseries = count($seriesids);
-			
-			/* get list of analysisids */
-			$studyidstr = implode2(",", $studyids);
-			$sqlstring = "select * from analysis where study_id in (" . $studyidstr . ")";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$numseries = mysqli_num_rows($result);
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$analysisids[] = $row['analysis_id'];
-				$pipelineids[] = $row['pipeline_id'];
-			}
-			$analysisids = array_unique($analysisids);
-			$pipelineids = array_unique($pipelineids);
-			
-			PrintVariable($experimentmapping);
-			/* get list of experiments - need to map the experiment to the protocol/modality and project */
-			foreach ($experimentmapping as $modalitykey => $modalityvalue) {
-				//PrintVariable($modalityvalue);
-				foreach ($modalityvalue as $seriesdesc => $value) {
-					$projectid = $value['projectid'];
-					
-					$sqlstring = "select experiment_id from experiment_mapping where project_id = $projectid and protocolname = '$seriesdesc' and modality = '$modalitykey'";
-					PrintSQL($sqlstring);
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					$numseries = mysqli_num_rows($result);
-					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-						$experimentids[] = $row['experiment_id'];
-					}
+				$sqlstring = "select experiment_id from experiment_mapping where project_id = $projectid and protocolname = '$seriesdesc' and modality = '$modalitykey'";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$numseries = mysqli_num_rows($result);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+					$experimentids[] = $row['experiment_id'];
 				}
 			}
-			PrintVariable($experimentids);
-			$experimentids = array_unique($experimentids);
 		}
+		$experimentids = array_unique($experimentids);
 		
 		?>
 		
-		<div class="ui container">
+		<div class="ui text container">
 			<div class="ui raised segment">
 				
 				<form method="post" action="packages.php">
@@ -315,31 +396,9 @@
 					<? DisplayFormMeasures($enrollmentids, false); ?>
 				
 					<br><br>
-					
 					<h4 class="ui horizontal divider header">Select Package</h4>
-					
 					<div style="text-align: center">
-						<div class="ui selection dropdown">
-							<input type="hidden" name="packageid" required>
-							<i class="dropdown icon"></i>
-							<div class="default text">Select package</div>
-							<div class="scrollhint menu">
-						<?				
-							$sqlstring = "select * from packages where user_id = " . $_SESSION['userid'];
-							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-								$packageid = $row['package_id'];
-								$name = $row['package_name'];
-								$desc = $row['package_desc'];
-								$createdate = date('M j, Y h:ia',strtotime($row['package_date']));
-								?>
-								<div class="item" data-value="<?=$packageid?>"><?=$name?></div>
-								<?
-							}
-						?>
-							</div>
-						</div>
-
+						<? DisplayFormSelectPackage(); ?>
 						<br><br>
 						<input type="submit" value="Add to package" class="ui primary button">
 					</div>
@@ -427,10 +486,35 @@
 	}
 
 
+	/* -------------------------------------------- */
+	/* ------- DisplayFormSelectPackage ----------- */
+	/* -------------------------------------------- */
+	function DisplayFormSelectPackage() {
+		?>
+		<select class="ui selection dropdown" name="packageid" required>
+			<option value="">Select package...</option>
+		<?				
+			$sqlstring = "select * from packages where user_id = " . $_SESSION['userid'];
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$packageid = $row['package_id'];
+				$name = $row['package_name'];
+				$desc = $row['package_desc'];
+				$createdate = date('M j, Y h:ia',strtotime($row['package_date']));
+				?>
+				<option value="<?=$packageid?>"><?=$name?></option>
+				<?
+			}
+		?>
+		</select>
+		<?
+	}
+
+
 	/* -------------------------------------------------------------------------------------
 	    The following functions display a list of objects from the list of input IDs
-		Functions display HTML that contains <input> elements, but do not contain
-		any <form></form> elements
+		Functions display HTML that contains <input> elements to store variables, but
+		do not contain any <form> or </form> elements
 	   ------------------------------------------------------------------------------------- */
 
 	/* -------------------------------------------- */
@@ -442,54 +526,112 @@
 		$numsubjects = count($enrollmentids);
 		
 		if ($required) {
-			$checkboxstr = " checked disabled";
+			$checkboxstr = " checked onClick='return false' onKeyDown='return false' ";
+			$checkboxreadonly = "read-only";
+			$checkboxstate = "checked";
+			$labelstr = "will be added";
+			$numselected = $numsubjects;
+		}
+		else {
+			$labelstr = "selected";
+			$numselected = 0;
 		}
 		
-		?>
-			<span style="font-size:larger"><i class="check circle outline icon"></i> <b>Subjects</b></span> <div class="ui blue basic label"><?=$numsubjects?> of <?=$numsubjects?> subjects will be added</div>
+		if (count($enrollmentids) > 0) {
+			?>
+			<script type="text/javascript">
+				$(function() {
+					$("#selectallsubjects").click(function() {
+						var checked_status = this.checked;
+						$(".allsubjects").find("input[type='checkbox']").each(function() {
+							this.checked = checked_status;
+						});
+						if (this.checked)
+							document.getElementById('includesubjects').checked = true;
+					});
+				});
+				
+				function SelectAllSubjects() {
+					var checked_status = document.getElementById('includesubjects').checked;
+					$(".allsubjects").find("input[type='checkbox']").each(function() {
+						this.checked = checked_status;
+					});
+					CheckSelectedSubjectCount();
+				}
+
+				function CheckSelectedSubjectCount(e) {
+					var n = document.querySelectorAll('input[type="checkbox"].subjectcheck:checked').length;
+					document.getElementById('numsubjectsselected').innerHTML = n;
+
+					if (e.checked)
+						document.getElementById('includesubjects').checked = true;
+				}
+			</script>
+
+			<div class="ui grid">
+				<div class="ui four wide column">
+					<div class="ui toggle <?=$checkboxreadonly?> checkbox" onChange="SelectAllSubjects()">
+						<input type="checkbox" name="includesubjects" id="includesubjects" value="1" <?=$checkboxstate?>>
+						<label style="font-size:larger; font-weight: bold">Subjects</label>
+					</div>
+				</div>
+				<div class="ui ten wide column">
+					<div class="ui left pointing red label"><span id="numsubjectsselected"><?=$numselected?></span> of <?=$numsubjects?> subjects <?=$labelstr?></div>
+				</div>
+			</div>
+
 			<div class="ui accordion">
 				<div class="title">
 					<i class="dropdown icon"></i>
 					View subjects
 				</div>
 				<div class="content">
-					<div class="ui segment">
-						<table class="ui very compact collapsing table">
-							<thead>
-								<th> </th>
-								<th>UID</th>
-								<th>Sex</th>
-								<th>Enrolled project</th>
-							</thead>
-							<tbody>
-							<?
-								$enrollmentidstr = implode2(",", $enrollmentids);
+					<table class="ui very compact table">
+						<thead>
+							<th><input type="checkbox" id="selectallsubjects"></th>
+							<th>UID</th>
+							<th>Sex</th>
+							<th>Enrolled project</th>
+						</thead>
+						<tbody>
+						<?
+							$enrollmentidstr = implode2(",", $enrollmentids);
+							
+							/* get subject info - there may be series from multiple subjects in this list */
+							$sqlstring = "select * from enrollment a left join subjects b on a.subject_id = b.subject_id left join projects c on a.project_id = c.project_id where a.enrollment_id in (" . $enrollmentidstr . ")";
+							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+								$enrollmentid = $row['enrollment_id'];
+								$uid = $row['uid'];
+								$subjectid = $row['subject_id'];
+								$sex = $row['sex'];
+								$projectname = $row['project_name'];
 								
-								/* get subject info - there may be series from multiple subjects in this list */
-								$sqlstring = "select * from enrollment a left join subjects b on a.subject_id = b.subject_id left join projects c on a.project_id = c.project_id where a.enrollment_id in (" . $enrollmentidstr . ")";
-								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-									$uid = $row['uid'];
-									$subjectid = $row['subject_id'];
-									$sex = $row['sex'];
-									$projectname = $row['project_name'];
-									
-									?>
-										<tr>
-											<td><input type="checkbox" name="enrollmentids[]" value="<?=$enrollmentid?>" <?=$checkboxstr?>></td>
-											<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
-											<td><?=$sex?></td>
-											<td><?=$projectname?></td>
-										</tr>
-									<?
-								}
-							?>
-							</tbody>
-						</table>
-					</div>
+								?>
+									<tr>
+										<td class="allsubjects"><input type="checkbox" name="enrollmentids[]" value="<?=$enrollmentid?>" <?=$checkboxstr?> class="subjectcheck" onClick="CheckSelectedSubjectCount(this);"></td>
+										<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
+										<td><?=$sex?></td>
+										<td><?=$projectname?></td>
+									</tr>
+								<?
+							}
+						?>
+						</tbody>
+					</table>
 				</div>
 			</div>
-		<?
+			<?
+		}
+		else {
+			?>
+			<div class="ui toggle read-only checkbox">
+				<input type="checkbox" name="includesubjects" value="0">
+				<label style="font-size:larger; font-weight: bold">No subjects found</label>
+			</div>
+			<br>
+			<?
+		}
 	}
 
 
@@ -501,55 +643,112 @@
 		$numstudies = count($studyids);
 		
 		if ($required) {
-			$checkboxstr = " checked disabled";
+			$checkboxstr = " checked onClick='return false' onKeyDown='return false' ";
+			$checkboxreadonly = "read-only";
+			$checkboxstate = "checked";
+			$labelstr = "will be added";
+			$numselected = $numstudies;
+		}
+		else {
+			$labelstr = "selected";
+			$numselected = 0;
 		}
 
-		?>
-			<span style="font-size:larger"><i class="check circle outline icon"></i> <b>Studies</b></span> <div class="ui blue basic label"><?=$numstudies?> of <?=$numstudies?> studies will be added</div>
+		if (count($studyids) > 0) {
+			?>
+			<script type="text/javascript">
+				$(function() {
+					$("#selectallstudies").click(function() {
+						var checked_status = this.checked;
+						$(".allstudies").find("input[type='checkbox']").each(function() {
+							this.checked = checked_status;
+						});
+						if (this.checked)
+							document.getElementById('includestudies').checked = true;
+					});
+				});
+				
+				function SelectAllStudies() {
+					var checked_status = document.getElementById('includestudies').checked;
+					$(".allstudies").find("input[type='checkbox']").each(function() {
+						this.checked = checked_status;
+					});
+					CheckSelectedStudyCount();
+				}
+
+				function CheckSelectedStudyCount(e) {
+					var n = document.querySelectorAll('input[type="checkbox"].studycheck:checked').length;
+					document.getElementById('numstudiesselected').innerHTML = n;
+
+					if (e.checked)
+						document.getElementById('includestudies').checked = true;
+				}
+			</script>
+
+			<div class="ui grid">
+				<div class="ui four wide column">
+					<div class="ui toggle <?=$checkboxreadonly?> checkbox" onChange="SelectAllStudies()">
+						<input type="checkbox" name="includestudies" id="includestudies" value="1" <?=$checkboxstate?>>
+						<label style="font-size:larger; font-weight: bold">Studies</label>
+					</div>
+				</div>
+				<div class="ui ten wide column">
+					<div class="ui left pointing red label"><span id="numstudiesselected"><?=$numselected?></span> of <?=$numstudies?> studies <?=$labelstr?></div>
+				</div>
+			</div>
+			
 			<div class="ui accordion">
 				<div class="title">
 					<i class="dropdown icon"></i>
 					View studies
 				</div>
 				<div class="content">
-					<div class="ui segment">
-						<table class="ui very compact collapsing table">
-							<thead>
-								<th> </th>
-								<th>Study</th>
-								<th>Date</th>
-								<th>Visit</th>
-							</thead>
-							<tbody>
-							<?
-								$studyidstr = implode2(",", $studyids);
+					<table class="ui very compact table">
+						<thead>
+							<th><input type="checkbox" id="selectallstudies"></th>
+							<th>Study</th>
+							<th>Date</th>
+							<th>Visit</th>
+						</thead>
+						<tbody>
+						<?
+							$studyidstr = implode2(",", $studyids);
+							
+							/* get subject info. there may be series from multiple subjects in this list */
+							$sqlstring = "select * from studies b left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where b.study_id in (" . $studyidstr . ")";
+							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+								$uid = $row['uid'];
+								$studynum = $row['studynum'];
+								$studyid = $row['study_id'];
+								$studydate = $row['study_datetime'];
+								$visit = $row['study_visit'];
 								
-								/* get subject info. there may be series from multiple subjects in this list */
-								$sqlstring = "select * from studies b left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where b.study_id in (" . $studyidstr . ")";
-								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-									$uid = $row['uid'];
-									$studynum = $row['studynum'];
-									$studyid = $row['study_id'];
-									$studydate = $row['study_datetime'];
-									$visit = $row['study_visit'];
-									
-									?>
-										<tr>
-											<td><input type="checkbox" name="studyids[]" value="<?=$studyid?>" <?=$checkboxstr?>></td>
-											<td><a href="studies.php?id=<?=$studyid?>"><?=$uid?><?=$studynum?></a></td>
-											<td><?=$studydate?></td>
-											<td><?=$visit?></td>
-										</tr>
-									<?
-								}
-							?>
-							</tbody>
-						</table>
-					</div>
+								?>
+									<tr>
+										<td class="allstudies"><input type="checkbox" name="studyids[]" value="<?=$studyid?>" <?=$checkboxstr?> class="studycheck" onClick="CheckSelectedStudyCount(this)"></td>
+										<td><a href="studies.php?id=<?=$studyid?>"><?=$uid?><?=$studynum?></a></td>
+										<td><?=$studydate?></td>
+										<td><?=$visit?></td>
+									</tr>
+								<?
+							}
+						?>
+						</tbody>
+					</table>
 				</div>
 			</div>
-		<?
+			<?
+		}
+		else {
+			?>
+			<div class="ui toggle read-only checkbox">
+				<input type="checkbox" name="includestudies" value="0">
+				<label style="font-size:larger; font-weight: bold">No studies found</label>
+			</div>
+			<br>
+			<?
+		}
 	}
 
 
@@ -561,11 +760,60 @@
 		$numseries = count($seriesids);
 
 		if ($required) {
-			$checkboxstr = " checked disabled";
+			$checkboxstr = " checked onClick='return false' onKeyDown='return false' ";
+			$checkboxreadonly = "read-only";
+			$checkboxstate = "checked";
+			$labelstr = "will be added";
+			$numselected = $numseries;
+		}
+		else {
+			$labelstr = "selected";
+			$numselected = 0;
 		}
 
-		?>
-			<span style="font-size:larger"><i class="check circle outline icon"></i> <b>Series</b></span> <div class="ui blue basic label"><?=$numseries?> of <?=$numseries?> series will be added</div>
+		if (count($seriesids) > 0) {
+			?>
+			<script type="text/javascript">
+				$(function() {
+					$("#selectallseries").click(function() {
+						var checked_status = this.checked;
+						$(".allseries").find("input[type='checkbox']").each(function() {
+							this.checked = checked_status;
+						});
+						if (this.checked)
+							document.getElementById('includeseries').checked = true;
+					});
+				});
+					
+				function SelectAllSeries() {
+					var checked_status = document.getElementById('includeseries').checked;
+					$(".allseries").find("input[type='checkbox']").each(function() {
+						this.checked = checked_status;
+					});
+					CheckSelectedSeriesCount();
+				}
+
+				function CheckSelectedSeriesCount(e) {
+					var n = document.querySelectorAll('input[type="checkbox"].seriescheck:checked').length;
+					document.getElementById('numseriesselected').innerHTML = n;
+
+					if (e.checked)
+						document.getElementById('includeseries').checked = true;
+				}
+			</script>
+
+			<div class="ui grid">
+				<div class="ui four wide column">
+					<div class="ui toggle <?=$checkboxreadonly?> checkbox" onChange="SelectAllSeries()">
+						<input type="checkbox" name="includeseries" id="includeseries" value="1" <?=$checkboxstate?>>
+						<label style="font-size:larger; font-weight: bold">Series</label>
+					</div>
+				</div>
+				<div class="ui ten wide column">
+					<div class="ui left pointing red label"><span id="numseriesselected"><?=$numselected?></span> of <?=$numseries?> series <?=$labelstr?></div>
+				</div>
+			</div>
+
 			<div class="ui accordion">
 				<div class="title">
 					<i class="dropdown icon"></i>
@@ -574,7 +822,7 @@
 				<div class="content">
 					<table class="ui very compact table">
 						<thead>
-							<th> </th>
+							<th><input type="checkbox" id="selectallseries"></th>
 							<th>UID</th>
 							<th>Study</th>
 							<th>Series</th>
@@ -601,7 +849,7 @@
 								
 								?>
 									<tr>
-										<td><input type="checkbox" name="seriesids[]" value="<?=$seriesid?>" <?=$checkboxstr?>></td>
+										<td class="allseries"><input type="checkbox" name="seriesids[]" value="<?=$seriesid?>" <?=$checkboxstr?> class="seriescheck" onClick="CheckSelectedSeriesCount(this);"></td>
 										<td><?=$uid?></td>
 										<td><?=$studynum?></td>
 										<td><?=$seriesnum?></td>
@@ -618,7 +866,17 @@
 				</div>
 			</div>
 			<input type="hidden" name="modality" value="<?=$modality?>">
-		<?
+			<?
+		}
+		else {
+			?>
+			<div class="ui toggle read-only checkbox">
+				<input type="checkbox" name="includeseries" value="0">
+				<label style="font-size:larger; font-weight: bold">No series found</label>
+			</div>
+			<br>
+			<?
+		}
 	}
 
 
@@ -628,17 +886,63 @@
 	function DisplayFormExperiments($experimentids, $required) {
 		
 		$experimentidstr = implode2(",", $experimentids);
+		$numexperiments = count($experimentids);
 		
 		if ($required) {
-			$checkboxstr = " checked disabled";
+			$checkboxstr = " checked onClick='return false' onKeyDown='return false' ";
+			$checkboxreadonly = "read-only";
+			$checkboxstate = "checked";
+			$labelstr = "will be added";
+			$numselected = $numexperiments;
+		}
+		else {
+			$labelstr = "selected";
+			$numselected = 0;
 		}
 
 		if (count($experimentids) > 0) {
 			?>
-			<div class="ui checkbox">
-				<input type="checkbox" name="includeexperiments" value="1">
-				<label>Experiments</label>
+			<script type="text/javascript">
+				$(function() {
+					$("#selectallexperiments").click(function() {
+						var checked_status = this.checked;
+						$(".allexperiments").find("input[type='checkbox']").each(function() {
+							this.checked = checked_status;
+						});
+						if (this.checked)
+							document.getElementById('includeexperiments').checked = true;
+					});
+				});
+					
+				function SelectAllExperiments() {
+					var checked_status = document.getElementById('includeexperiments').checked;
+					$(".allexperiments").find("input[type='checkbox']").each(function() {
+						this.checked = checked_status;
+					});
+					CheckSelectedExperimentCount();
+				}
+
+				function CheckSelectedExperimentCount(e) {
+					var n = document.querySelectorAll('input[type="checkbox"].experimentcheck:checked').length;
+					document.getElementById('numexperimentsselected').innerHTML = n;
+
+					if (e.checked)
+						document.getElementById('includeexperiments').checked = true;
+				}
+			</script>
+
+			<div class="ui grid">
+				<div class="ui four wide column">
+					<div class="ui toggle <?=$checkboxreadonly?> checkbox" onChange="SelectAllExperiments()">
+						<input type="checkbox" name="includeexperiments" id="includeexperiments" value="1" <?=$checkboxstate?>>
+						<label style="font-size:larger; font-weight: bold">Experiments</label>
+					</div>
+				</div>
+				<div class="ui ten wide column">
+					<div class="ui left pointing red label"><span id="numexperimentsselected"><?=$numselected?></span> of <?=$numexperiments?> experiments <?=$labelstr?></div>
+				</div>
 			</div>
+
 			<div class="ui accordion">
 				<div class="title">
 					<i class="dropdown icon"></i>
@@ -647,7 +951,7 @@
 				<div class="content">
 					<table class="ui very compact collapsing table">
 						<thead>
-							<th> </th>
+							<th><input type="checkbox" id="selectallexperiments"></th>
 							<th>Experiment</th>
 							<th>Date</th>
 						</thead>
@@ -663,7 +967,7 @@
 
 								?>
 									<tr>
-										<td><input type="checkbox" name="experimentids[]" value="<?=$experimentid?>" <?=$checkboxstr?>></td>
+										<td class="allexperiments"><input type="checkbox" name="experimentids[]" value="<?=$experimentid?>" <?=$checkboxstr?> class="experimentcheck" onClick="CheckSelectedExperimentCount(this);"></td>
 										<td><a href="experiments.php?id=<?=$experimentid?>"><?=$expname?></a></td>
 										<td><?=$expdate?></td>
 									</tr>
@@ -678,11 +982,11 @@
 		}
 		else {
 			?>
-			<div class="ui checkbox">
-				<input type="checkbox" name="includeexperiments" value="0" disabled>
-				<label>No associated experiments found</label>
+			<div class="ui toggle read-only checkbox">
+				<input type="checkbox" name="includeexperiments" value="0">
+				<label style="font-size:larger; font-weight: bold">No experiments found</label>
 			</div>
-			<br>
+			<br><br>
 			<?
 		}
 	}
@@ -694,36 +998,70 @@
 	function DisplayFormAnalyses($analysisids, $required) {
 
 		$analysisidstr = implode2(",", $analysisids);
-		
+		$numanalysis = count($analysisids);
+
 		if ($required) {
-			$checkboxstr = " checked disabled";
+			$checkboxstr = " checked onClick='return false' onKeyDown='return false' ";
+			$checkboxreadonly = "read-only";
+			$checkboxstate = "checked";
+			$labelstr = "will be added";
+			$numselected = $numanalysis;
+		}
+		else {
+			$labelstr = "selected";
+			$numselected = 0;
 		}
 
 		if (count($analysisids) > 0) {
 			?>
 			<script type="text/javascript">
-			$(function() {
-				$("#selectallanalysis").click(function() {
-					var checked_status = this.checked;
-					$(".allanalyses").find("input[type='checkbox']").each(function() {
+				$(function() {
+					$("#selectallanalysis").click(function() {
+						var checked_status = this.checked;
+						$(".allanalysis").find("input[type='checkbox']").each(function() {
+							this.checked = checked_status;
+						});
+						if (this.checked)
+							document.getElementById('includeanalysis').checked = true;
+					});
+				});
+
+				function SelectAllAnalysis() {
+					var checked_status = document.getElementById('includeanalysis').checked;
+					$(".allanalysis").find("input[type='checkbox']").each(function() {
 						this.checked = checked_status;
 					});
-					document.getElementById('includeanalyses').checked = checked_status;
-				});
-			});
+					CheckSelectedAnalysisCount();
+				}
+
+				function CheckSelectedAnalysisCount(e) {
+					var n = document.querySelectorAll('input[type="checkbox"].analysischeck:checked').length;
+					document.getElementById('numanalysisselected').innerHTML = n;
+
+					if (e.checked)
+						document.getElementById('includeanalysis').checked = true;
+				}
 			</script>
-		
-			<div class="ui checkbox">
-				<input type="checkbox" name="includeanalyses" id="includeanalyses" value="1">
-				<label>Analyses</label>
+
+			<div class="ui grid">
+				<div class="ui four wide column">
+					<div class="ui toggle <?=$checkboxreadonly?> checkbox" onChange="SelectAllAnalysis()">
+						<input type="checkbox" name="includeanalysis" id="includeanalysis" value="1" <?=$checkboxstate?>>
+						<label style="font-size:larger; font-weight: bold">Analyses</label>
+					</div>
+				</div>
+				<div class="ui ten wide column">
+					<div class="ui left pointing red label"><span id="numanalysisselected"><?=$numselected?></span> of <?=$numanalysis?> analyses <?=$labelstr?></div>
+				</div>
 			</div>
+
 			<div class="ui accordion">
 				<div class="title">
 					<i class="dropdown icon"></i>
 					Select analyses
 				</div>
 				<div class="content">
-					<table class="ui very compact collapsing table">
+					<table class="ui very compact table">
 						<thead>
 							<th><input type="checkbox" name="selectallanalysis" id="selectallanalysis"></th>
 							<th>Analysis</th>
@@ -739,7 +1077,7 @@
 								$analysisdate = $row['analysis_date'];
 								?>
 									<tr>
-										<td class="allanalyses"><input type="checkbox" name="analysisids[]" value="<?=$analysisid?>" <?=$checkboxstr?>></td>
+										<td class="allanalysis"><input type="checkbox" name="analysisids[]" value="<?=$analysisid?>" class="analysischeck" <?=$checkboxstr?> onClick="CheckSelectedAnalysisCount(this);"></td>
 										<td><a href="analysis.php?analysisid=<?=$analysisid?>"><?=$analysisid?></a></td>
 										<td><?=$analysisdate?></td>
 									</tr>
@@ -754,9 +1092,9 @@
 		}
 		else {
 			?>
-			<div class="ui checkbox">
-				<input type="checkbox" name="includeanalyses" value="0" disabled>
-				<label>No associated analyses found</label>
+			<div class="ui toggle read-only checkbox">
+				<input type="checkbox" name="includeanalysis" value="0">
+				<label style="font-size:larger; font-weight: bold">No analyses found</label>
 			</div>
 			<br>
 			<?
@@ -770,35 +1108,70 @@
 	function DisplayFormPipelines($pipelineids, $required) {
 
 		$pipelineidstr = implode2(",", $pipelineids);
+		$numpipelines = count($pipelineids);
 
 		if ($required) {
-			$checkboxstr = " checked disabled";
+			$checkboxstr = " checked onClick='return false' onKeyDown='return false' ";
+			$checkboxreadonly = "read-only";
+			$checkboxstate = "checked";
+			$labelstr = "will be added";
+			$numselected = $numpipelines;
+		}
+		else {
+			$labelstr = "selected";
+			$numselected = 0;
 		}
 
-		?>
+		if (count($pipelineids) > 0) {
+			?>
 			<script type="text/javascript">
-			$(function() {
-				$("#selectallpipelines").click(function() {
-					var checked_status = this.checked;
+				$(function() {
+					$("#selectallpipelines").click(function() {
+						var checked_status = this.checked;
+						$(".allpipelines").find("input[type='checkbox']").each(function() {
+							this.checked = checked_status;
+						});
+						if (this.checked)
+							document.getElementById('includepipelines').checked = true;
+					});
+				});
+				
+				function SelectAllPipelines() {
+					var checked_status = document.getElementById('includepipelines').checked;
 					$(".allpipelines").find("input[type='checkbox']").each(function() {
 						this.checked = checked_status;
 					});
-					document.getElementById('includepipelines').checked = checked_status;
-				});
-			});
+					CheckSelectedPipelineCount();
+				}
+
+				function CheckSelectedPipelineCount(e) {
+					var n = document.querySelectorAll('input[type="checkbox"].pipelinecheck:checked').length;
+					document.getElementById('numpipelinesselected').innerHTML = n;
+
+					if (e.checked)
+						document.getElementById('includepipelines').checked = true;
+				}
 			</script>
 
-			<div class="ui checkbox">
-				<input type="checkbox" name="includepipelines" id="includepipelines" value="1">
-				<label>Pipelines</label>
+			<div class="ui grid">
+				<div class="ui four wide column">
+					<div class="ui toggle <?=$checkboxreadonly?> checkbox" onChange="SelectAllPipelines()">
+						<input type="checkbox" name="includepipelines" id="includepipelines" value="1" <?=$checkboxstate?>>
+						<label style="font-size:larger; font-weight: bold">Pipelines</label>
+					</div>
+				</div>
+				<div class="ui ten wide column">
+					<div class="ui left pointing red label"><span id="numpipelinesselected"><?=$numselected?></span> of <?=$numpipelines?> pipelines <?=$labelstr?></div>
+				</div>
 			</div>
+
 			<div class="ui accordion">
 				<div class="title">
 					<i class="dropdown icon"></i>
 					View pipelines
 				</div>
 				<div class="content">
-					<table class="ui very compact collapsing table">
+					<table class="ui very compact table">
 						<thead>
 							<th><input type="checkbox" id="selectallpipelines"></th>
 							<th>Pipeline</th>
@@ -814,7 +1187,7 @@
 
 								?>
 									<tr>
-										<td class="allpipelines"><input type="checkbox" name="pipelineids[]" value="<?=$pipelineid?>" <?=$checkboxstr?>></td>
+										<td class="allpipelines"><input type="checkbox" name="pipelineids[]" value="<?=$pipelineid?>" class="pipelinecheck" <?=$checkboxstr?> onClick="CheckSelectedPipelineCount(this);"></td>
 										<td><a href="pipelines.php?pipelineid=<?=$pipelineid?>"><?=$pipelinename?></a></td>
 									</tr>
 								<?
@@ -824,7 +1197,17 @@
 					</table>
 				</div>
 			</div>
-		<?
+			<?
+		}
+		else {
+			?>
+			<div class="ui toggle read-only checkbox">
+				<input type="checkbox" name="includepipelines" value="0">
+				<label style="font-size:larger; font-weight: bold">No pipelines found</label>
+			</div>
+			<br>
+			<?
+		}
 	}
 
 
@@ -834,28 +1217,66 @@
 	function DisplayFormMeasures($enrollmentids, $required) {
 
 		$enrollmentidstr = implode2(",", $enrollmentids);
+
+		$sqlstring = "select * from measures a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join measurenames d on a.measurename_id = d.measurename_id where a.enrollment_id in (" . implode2(",", $enrollmentids) . ")";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$nummeasures = mysqli_num_rows($result);
 		
 		if ($required) {
-			$checkboxstr = " checked disabled";
+			$checkboxstr = " checked onClick='return false' onKeyDown='return false' ";
+			$checkboxreadonly = "read-only";
+			$checkboxstate = "checked";
+			$labelstr = "will be added";
+			$numselected = $nummeasures;
+		}
+		else {
+			$labelstr = "selected";
+			$numselected = 0;
 		}
 		
-		?>
+		if ((count($enrollmentids) > 0) && ($nummeasures > 0)) {
+			?>
 			<script type="text/javascript">
-			$(function() {
-				$("#selectallmeasures").click(function() {
-					var checked_status = this.checked;
-					$(".allmeasurees").find("input[type='checkbox']").each(function() {
+				$(function() {
+					$("#selectallmeasures").click(function() {
+						var checked_status = this.checked;
+						$(".allmeasurees").find("input[type='checkbox']").each(function() {
+							this.checked = checked_status;
+						});
+						if (this.checked)
+							document.getElementById('includemeasures').checked = true;
+					});
+				});
+				
+				function SelectAllMeasures() {
+					var checked_status = document.getElementById('includemeasures').checked;
+					$(".allmeasures").find("input[type='checkbox']").each(function() {
 						this.checked = checked_status;
 					});
-					document.getElementById('includemeasures').checked = checked_status;
-				});
-			});
+					CheckSelectedMeasureCount();
+				}
+
+				function CheckSelectedMeasureCount(e) {
+					var n = document.querySelectorAll('input[type="checkbox"].measurecheck:checked').length;
+					document.getElementById('nummeasuresselected').innerHTML = n;
+
+					if (e.checked)
+						document.getElementById('includemeasures').checked = true;
+				}
 			</script>
 
-			<div class="ui checkbox" title="Include all measures for all selected subjects">
-				<input type="checkbox" name="includemeasures" id="includemeasures" value="1">
-				<label>Measures</label>
+			<div class="ui grid">
+				<div class="ui four wide column">
+					<div class="ui toggle <?=$checkboxreadonly?> checkbox" onChange="SelectAllMeasures()">
+						<input type="checkbox" name="includemeasures" id="includemeasures" value="1" <?=$checkboxstate?>>
+						<label style="font-size:larger; font-weight: bold">Measures</label>
+					</div>
+				</div>
+				<div class="ui ten wide column">
+					<div class="ui left pointing red label"><span id="nummeasuresselected"><?=$numselected?></span> of <?=$nummeasures?> measures <?=$labelstr?></div>
+				</div>
 			</div>
+
 			<div class="ui accordion">
 				<div class="title">
 					<i class="dropdown icon"></i>
@@ -872,8 +1293,8 @@
 						<tbody>
 						<?
 							/* get subject info. there may be series from multiple subjects in this list */
-							$sqlstring = "select * from measures a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join measurenames d on a.measurename_id = d.measurename_id where a.enrollment_id in (" . implode2(",", $enrollmentids) . ")";
-							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+							//$sqlstring = "select * from measures a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join measurenames d on a.measurename_id = d.measurename_id where a.enrollment_id in (" . implode2(",", $enrollmentids) . ")";
+							//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$uid = $row['uid'];
 								$subjectid = $row['subject_id'];
@@ -884,7 +1305,7 @@
 								$measureids[] = $measureid;
 								?>
 									<tr>
-										<td class="allmeasures"><input type="checkbox" name="measureids[]" value="<?=$measureid?>" <?=$checkboxstr?>></td>
+										<td class="allmeasures"><input type="checkbox" name="measureids[]" value="<?=$measureid?>" <?=$checkboxstr?> class="measurecheck" onClick="CheckSelectedMeasureCount(this);"></td>
 										<td><a href="subjects.php?subjectid=<?=$subjectid?>"><?=$uid?></a></td>
 										<td><?=$measurename?></td>
 										<td><?=$measuredate?></td>
@@ -896,10 +1317,17 @@
 					</table>
 				</div>
 			</div>
-			<? foreach ($measureids as $measureid) {?>
-			<input type="hidden" name="measureids[]" value="<?=$measureid?>">
-			<? } ?>
-		<?
+			<?
+		}
+		else {
+			?>
+			<div class="ui toggle read-only checkbox">
+				<input type="checkbox" name="includeneasures" value="0">
+				<label style="font-size:larger; font-weight: bold">No measures found</label>
+			</div>
+			<br>
+			<?
+		}
 	}
 
 
@@ -909,24 +1337,75 @@
 	function DisplayFormDrugs($enrollmentids, $required) {
 		
 		$enrollmentidstr = implode2(",", $enrollmentids);
+
+		$sqlstring = "select * from drugs a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join drugnames d on a.drugname_id = d.drugname_id where a.enrollment_id in (" . implode2(",", $enrollmentids) . ")";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$numdrugs = mysqli_num_rows($result);
 		
 		if ($required) {
-			$checkboxstr = " checked disabled";
+			$checkboxstr = " checked onClick='return false' onKeyDown='return false' ";
+			$checkboxreadonly = "read-only";
+			$checkboxstate = "checked";
+			$labelstr = "will be added";
+			$numselected = $numdrugs;
+		}
+		else {
+			$labelstr = "selected";
+			$numselected = 0;
 		}
 
-		?>
-			<div class="ui checkbox" title="Include all drug records for all selected subjects">
-				<input type="checkbox" name="includedrugs" value="1">
-				<label>Drugs</label>
+		if ((count($enrollmentids) > 0) && ($numdrugs > 0)) {
+			?>
+			<script type="text/javascript">
+				$(function() {
+					$("#selectalldrugs").click(function() {
+						var checked_status = this.checked;
+						$(".alldrugs").find("input[type='checkbox']").each(function() {
+							this.checked = checked_status;
+						});
+						if (this.checked)
+							document.getElementById('includedrugs').checked = true;
+					});
+				});
+
+				function SelectAllDrugs() {
+					var checked_status = document.getElementById('includedrugs').checked;
+					$(".alldrugs").find("input[type='checkbox']").each(function() {
+						this.checked = checked_status;
+					});
+					CheckSelectedDrugCount();
+				}
+
+				function CheckSelectedDrugCount(e) {
+					var n = document.querySelectorAll('input[type="checkbox"].drugcheck:checked').length;
+					document.getElementById('numdrugsselected').innerHTML = n;
+
+					if (e.checked)
+						document.getElementById('includedrugs').checked = true;
+				}
+			</script>
+
+			<div class="ui grid">
+				<div class="ui four wide column">
+					<div class="ui toggle <?=$checkboxreadonly?> checkbox" onChange="SelectAllDrugs()">
+						<input type="checkbox" name="includedrugs" id="includesubjects" value="1" <?=$checkboxstate?>>
+						<label style="font-size:larger; font-weight: bold">Drugs</label>
+					</div>
+				</div>
+				<div class="ui ten wide column">
+					<div class="ui left pointing red label"><span id="numdrugsselected"><?=$numselected?></span> of <?=$numdrugs?> drugs <?=$labelstr?></div>
+				</div>
 			</div>
+
 			<div class="ui accordion">
 				<div class="title">
 					<i class="dropdown icon"></i>
 					View drugs
 				</div>
 				<div class="content">
-					<table class="ui very compact collapsing table">
+					<table class="ui very compact table">
 						<thead>
+							<th><input type="checkbox" id="selectalldrugs"></th>
 							<th>UID</th>
 							<th>Drug</th>
 							<th>Dose desc</th>
@@ -935,8 +1414,8 @@
 						<tbody>
 						<?
 							/* get subject info. there may be series from multiple subjects in this list */
-							$sqlstring = "select * from drugs a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join drugnames d on a.drugname_id = d.drugname_id where a.enrollment_id in (" . implode2(",", $enrollmentids) . ")";
-							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+							//$sqlstring = "select * from drugs a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join drugnames d on a.drugname_id = d.drugname_id where a.enrollment_id in (" . implode2(",", $enrollmentids) . ")";
+							//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$uid = $row['uid'];
 								$subjectid = $row['subject_id'];
@@ -948,6 +1427,7 @@
 								$drugids[] = $drugid;
 								?>
 									<tr>
+										<td class="alldrugs"><input type="checkbox" name="drugids[]" value="<?=$drugid?>" <?=$checkboxstr?> class="drugcheck" onClick="CheckSelectedDrugCount(this);"></td>
 										<td><a href="subjects.php?subjectid=<?=$subjectid?>"><?=$uid?></a></td>
 										<td><?=$drug?></td>
 										<td><?=$drugdesc?></td>
@@ -960,10 +1440,17 @@
 					</table>
 				</div>
 			</div>
-			<? foreach ($drugids as $drugid) {?>
-			<input type="hidden" name="drugids[]" value="<?=$drugid?>">
-			<? } ?>
-		<?
+			<?
+		}
+		else {
+			?>
+			<div class="ui toggle read-only checkbox">
+				<input type="checkbox" name="includedrugs" value="0">
+				<label style="font-size:larger; font-weight: bold">No drugs found</label>
+			</div>
+			<br>
+			<?
+		}
 	}
 
 	/* -------------------------------------------- */

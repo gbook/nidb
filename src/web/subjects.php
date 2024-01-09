@@ -1263,7 +1263,7 @@
 							<button class="ui primary button" onClick="window.location.href='subjects.php?action=editform&id=<?=$id?>'; return false;" style="width: 200px"> <i class="edit icon"></i>Edit subject</button>
 						</div>
 					
-						<a href="packages.php?action=addobject&objecttype=subject&objectids[]=<?=$subjectid?>" class="ui primary brown button" style="width: 200px"><img src="images/squirrel-icon-bw-64.png" height="15" style="filter:invert(1)"></img> &nbsp; Add to Package</a>
+						<a href="packages.php?action=addobject&objecttype=subject&objectids[]=<?=$id?>" class="ui primary brown button" style="width: 200px"><img src="images/squirrel-icon-bw-64.png" height="15" style="filter:invert(1)"></img> &nbsp; Add to Package</a>
 
 						<div class="title">
 							<h3 class="ui header"><i class="dropdown icon"></i>Family</h3>
