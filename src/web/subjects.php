@@ -1263,7 +1263,7 @@
 							<button class="ui primary button" onClick="window.location.href='subjects.php?action=editform&id=<?=$id?>'; return false;" style="width: 200px"> <i class="edit icon"></i>Edit subject</button>
 						</div>
 					
-						<a href="packages.php?action=addobject&objecttype=subject&objectids[]=<?=$id?>" class="ui primary brown button" style="width: 200px"><img src="images/squirrel-icon-bw-64.png" height="15" style="filter:invert(1)"></img> &nbsp; Add to Package</a>
+						<!--<a href="packages.php?action=addobject&objecttype=subject&objectids[]=<?=$id?>" class="ui basic brown button" style="width: 200px"><img src="images/squirrel-icon-64.png" height="15"></img> &nbsp; Add to Package</a>-->
 
 						<div class="title">
 							<h3 class="ui header"><i class="dropdown icon"></i>Family</h3>
@@ -1485,6 +1485,7 @@
 										
 										<a class="ui fluid primary button" href="enrollment.php?enrollmentid=<?=$enrollmentid?>"><i class="newspaper icon"></i> Edit Enrollment</a>
 										<br>
+										<a href="packages.php?action=addobject&objecttype=enrollment&objectids[]=<?=$enrollmentid?>" class="ui basic fluid brown button"><img src="images/squirrel-icon-64.png" height="15"></img> &nbsp; Add to Package</a>
 										<a class="ui fluid basic button" href="timeline.php?enrollmentid=<?=$enrollmentid?>"><i class="clock icon"></i> View Timeline</a>
 										<a class="ui fluid basic button" href="subjects.php?action=print&id=<?=$id?>&enrollmentid=<?=$enrollmentid?>"><i class="clipboard list icon"></i> View Imaging Summary</a>
 										<br><br>

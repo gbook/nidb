@@ -135,6 +135,9 @@
 		$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
 
 		switch ($objecttype) {
+			case "enrollment":
+				DisplayAddEnrollmentForm($objectids);
+				break;
 			case "subject":
 				DisplayAddSubjectForm($objectids);
 				break;
@@ -163,47 +166,56 @@
 	}
 
 	/* -------------------------------------------- */
-	/* ------- DisplayAddSubjectForm -------------- */
+	/* ------- DisplayAddEnrollmentForm ----------- */
 	/* -------------------------------------------- */
-	function DisplayAddSubjectForm($subjectids) {
+	function DisplayAddEnrollmentForm($enrollmentids) {
 		
-		if (count($subjectids < 1)) {
+		if (count($enrollmentids) < 1) {
 			Error("0 subjectids passed into function");
 			return;
 		}
 		$uids = array();
-		$subjectidstr = implode2(",", $subjectids);
+		$enrollmentidstr = implode2(",", $enrollmentids);
 		
-		/* get subject info. there may be series from multiple subjects in this list */
-		$sqlstring = "select * from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$modality" . "series_id in (" . $seriesidstr . ")";
+		/* get all series from this enrollment */
+		$sqlstring = "select * from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.enrollment_id in (" . $enrollmentidstr . ")";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$numseries = mysqli_num_rows($result);
+		$numstudies = mysqli_num_rows($result);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$enrollmentids[] = $row['enrollment_id'];
 			$subjectids[] = $row['subject_id'];
 			$studyids[] = $row['study_id'];
+			$studyid = $row['study_id'];
 			$projectids[] = $row['project_id'];
-			if ($row[$modality . '_seriesid'] != "")
-				$seriesids[] = $row[$modality . '_seriesid'];
-
-			if (trim($row['series_desc']) == "")
-				$seriesdesc = $row['series_protocol'];
-			else
-				$seriesdesc = $row['series_desc'];
+			$projectid = $row['project_id'];
 			
-			$experimentmapping[$modality][$seriesdesc]['projectid'] = $row['project_id']; /* don't make this array unique because multiple mappings could exist for each protocol */
+			$modality = strtolower($row['study_modality']);
+			
+			$sqlstringA = "select * from $modality" . "_series where study_id = $studyid";
+			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+				$seriesids[$modality][] = $rowA[$modality . 'series_id'];
+
+				if (trim($rowA['series_desc']) == "")
+					$seriesdesc = $rowA['series_protocol'];
+				else
+					$seriesdesc = $rowA['series_desc'];
+				
+				$experimentmapping[$modality][$seriesdesc]['projectid'] = $projectid; /* don't make this array unique because multiple mappings could exist for each protocol */
+			}
 		}
+		//PrintVariable($seriesids);
 		$enrollmentids = array_unique($enrollmentids);
 		$subjectids = array_unique($subjectids);
 		$studyids = array_unique($studyids);
-		$seriesids = array_unique($seriesids);
+		//$seriesids = array_unique($seriesids);
 		$projectids = array_unique($projectids);
 		$seriesdescs = array_unique($seriesdesc);
 		
 		$numenrollments = count($enrollmentids);
 		$numsubjects = count($subjectids);
 		$numstudies = count($studyids);
-		$numseries = count($seriesids);
+		$numseries = count($seriesids, COUNT_RECURSIVE);
 		
 		/* get list of analysisids */
 		$studyidstr = implode2(",", $studyids);
@@ -244,9 +256,9 @@
 					<? DisplayFormSubjects($enrollmentids, true); ?>
 					
 					<h2>Optional related objects</h3>
-					<? DisplayFormStudies($studyids, true); ?>
+					<? DisplayFormStudies($studyids, false); ?>
 					<br>
-					<? DisplayFormSeries($seriesids, $modality, true); ?>
+					<? DisplayFormSeries($seriesids, $modality, false); ?>
 					<br>
 					<? DisplayFormExperiments($experimentids, false); ?>
 					<br>
@@ -410,11 +422,11 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- DisplayAddEnrollmentForm ----------- */
+	/* ------- DisplayAddSubjectForm -------------- */
 	/* -------------------------------------------- */
-	function DisplayAddEnrollmentForm($enrollmentids) {
+	function DisplayAddSubjectForm($subjectids) {
 		?>
-		The following information related to the enrollment(s) will be added to the package
+		The following information related to the subject(s) will be added to the package
 		
 		<pre>
 			[x] subject info
@@ -986,7 +998,7 @@
 				<input type="checkbox" name="includeexperiments" value="0">
 				<label style="font-size:larger; font-weight: bold">No experiments found</label>
 			</div>
-			<br><br>
+			<br>
 			<?
 		}
 	}
