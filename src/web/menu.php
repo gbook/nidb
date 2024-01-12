@@ -272,13 +272,14 @@
 		elseif ($page=="import.php" || $page=="importimaging.php" || $page=="importlog.php" || $page=="publicdownloads.php" || $page=="publicdatasets.php" || $page=="downloads.php" || $page=="datasetrequests.php" || $page=="packages.php") {
 			
 			if ($GLOBALS['cfg']['enabledatamenu']) {
-				?><a href="import.php" class="<? if (($page == "import.php") && ($action != "idmapper")) { echo "active"; } ?> item">Import</a><?
-				?><a href="importimaging.php" class="<? if ($page == "importimaging.php") { echo "active"; } ?> item">Import Imaging</a><?
-				?><a href="import.php?action=idmapper" class="<? if (($page == "import.php") && ($action == "idmapper")) { echo "active"; } ?> item">ID mapper</a><?
-				?><a href="importlog.php" class="<? if ($page == "importlog.php") { echo "active"; } ?> item">Import Log</a><?
-				?><a href="publicdownloads.php" class="<? if ($page == "publicdownloads.php") { echo "active"; } ?> item">Public Downloads</a><?
-				?><a href="publicdatasets.php" class="<? if ($page == "publicdatasets.php") { echo "active"; } ?> item">Public Datasets</a><?
-				?><a href="datasetrequests.php" class="<? if ($page == "datasetrequests.php") { echo "active"; } ?> item">Request a Dataset</a><?
+				?><a href="import.php" class="<? if (($page == "import.php") && ($action != "idmapper")) { echo "active"; } ?> blue item">Import</a><?
+				?><a href="packages.php" class="<? if ($page == "packages.php") { echo "active"; } ?> blue item">Packages</a><?
+				?><a href="importimaging.php" class="<? if ($page == "importimaging.php") { echo "active"; } ?> blue item">Import Imaging</a><?
+				?><a href="import.php?action=idmapper" class="<? if (($page == "import.php") && ($action == "idmapper")) { echo "active"; } ?> blue item">ID mapper</a><?
+				?><a href="importlog.php" class="<? if ($page == "importlog.php") { echo "active"; } ?> blue item">Import Log</a><?
+				?><a href="publicdownloads.php" class="<? if ($page == "publicdownloads.php") { echo "active"; } ?> blue item">Public Downloads</a><?
+				?><a href="publicdatasets.php" class="<? if ($page == "publicdatasets.php") { echo "active"; } ?> blue item">Public Datasets</a><?
+				?><a href="datasetrequests.php" class="<? if ($page == "datasetrequests.php") { echo "active"; } ?> blue item">Request a Dataset</a><?
 			}
 			
 		}

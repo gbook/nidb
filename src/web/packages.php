@@ -38,8 +38,8 @@
 	require "includes_html.php";
 	require "menu.php";
 
-	PrintVariable($_POST);
-	PrintVariable($_GET);
+	//PrintVariable($_POST);
+	//PrintVariable($_GET);
 
 	/* check if this page is being called from itself */
 	$referringpage = $_SERVER['HTTP_REFERER'];
@@ -246,7 +246,7 @@
 		
 		?>
 		
-		<div class="ui text container">
+		<div class="ui container">
 			<div class="ui raised segment">
 				
 				<form method="post" action="packages.php">
@@ -256,9 +256,8 @@
 					<? DisplayFormSubjects($enrollmentids, true); ?>
 					
 					<h2>Optional related objects</h3>
-					<? DisplayFormStudies($studyids, false); ?>
 					<br>
-					<? DisplayFormSeries($seriesids, $modality, false); ?>
+					<? DisplayFormSeries($seriesids, false, "Associated studies will be automatically added"); ?>
 					<br>
 					<? DisplayFormExperiments($experimentids, false); ?>
 					<br>
@@ -333,7 +332,7 @@
 			$studyids[] = $row['study_id'];
 			$projectids[] = $row['project_id'];
 			if ($row[$modality . '_seriesid'] != "")
-				$seriesids[] = $row[$modality . '_seriesid'];
+				$seriesids2[$modality][] = $row[$modality . '_seriesid'];
 
 			if (trim($row['series_desc']) == "")
 				$seriesdesc = $row['series_protocol'];
@@ -345,14 +344,14 @@
 		$enrollmentids = array_unique($enrollmentids);
 		$subjectids = array_unique($subjectids);
 		$studyids = array_unique($studyids);
-		$seriesids = array_unique($seriesids);
+		//$seriesids = array_unique($seriesids);
 		$projectids = array_unique($projectids);
 		$seriesdescs = array_unique($seriesdesc);
 		
 		$numenrollments = count($enrollmentids);
 		$numsubjects = count($subjectids);
 		$numstudies = count($studyids);
-		$numseries = count($seriesids);
+		$numseries = count($seriesids2, COUNT_RECURSIVE);
 		
 		/* get list of analysisids */
 		$studyidstr = implode2(",", $studyids);
@@ -383,7 +382,7 @@
 		
 		?>
 		
-		<div class="ui text container">
+		<div class="ui container">
 			<div class="ui raised segment">
 				
 				<form method="post" action="packages.php">
@@ -394,7 +393,7 @@
 					<br>
 					<? DisplayFormStudies($studyids, true); ?>
 					<br>
-					<? DisplayFormSeries($seriesids, $modality, true); ?>
+					<? DisplayFormSeries($seriesids, true); ?>
 					
 					<h2>Optional related objects</h3>
 					<? DisplayFormExperiments($experimentids, false); ?>
@@ -767,9 +766,23 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayFormSeries ------------------ */
 	/* -------------------------------------------- */
-	function DisplayFormSeries($seriesids, $modality, $required) {
+	/* seriesids format:
+			Array
+			(
+				[mr] => Array
+					(
+						[0] => 77
+						[1] => 79
+					)
 
-		$numseries = count($seriesids);
+			)	
+	*/
+	function DisplayFormSeries($seriesids, $required, $msg="") {
+
+		$numseries = 0;
+		foreach ($seriesids as $modality => $serieslist) {
+			$numseries += count($serieslist);
+		}
 
 		if ($required) {
 			$checkboxstr = " checked onClick='return false' onKeyDown='return false' ";
@@ -822,7 +835,7 @@
 					</div>
 				</div>
 				<div class="ui ten wide column">
-					<div class="ui left pointing red label"><span id="numseriesselected"><?=$numselected?></span> of <?=$numseries?> series <?=$labelstr?></div>
+					<div class="ui left pointing red label"><span id="numseriesselected"><?=$numselected?></span> of <?=$numseries?> series <?=$labelstr?></div> &nbsp; <? if ($msg != "") { echo $msg; } ?>
 				</div>
 			</div>
 
@@ -845,32 +858,34 @@
 						</thead>
 						<tbody>
 						<?
-							$seriesidstr = implode2(",", $seriesids);
-						
-							$sqlstring = "select * from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$modality" . "series_id in (" . $seriesidstr . ")";
-							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-								$seriesid = $row[$modality . 'series_id'];
-								$uid = $row['uid'];
-								$studynum = $row['study_num'];
-								$studydesc = $row['study_desc'];
-								$seriesnum = $row['series_num'];
-								$seriesdesc = $row['series_desc'];
-								$seriessize = $row['series_size'];
-								$seriesnumfiles = $row['numfiles'];
-								
-								?>
-									<tr>
-										<td class="allseries"><input type="checkbox" name="seriesids[]" value="<?=$seriesid?>" <?=$checkboxstr?> class="seriescheck" onClick="CheckSelectedSeriesCount(this);"></td>
-										<td><?=$uid?></td>
-										<td><?=$studynum?></td>
-										<td><?=$seriesnum?></td>
-										<td><?=$studydesc?></td>
-										<td><?=$seriesdesc?></td>
-										<td><?=$seriessize?></td>
-										<td><?=$seriesnumfiles?></td>
-									</tr>
-								<?
+							foreach ($seriesids as $modality => $serieslist) {
+								$seriesidstr = implode2(",", $serieslist);
+							
+								$sqlstring = "select * from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$modality" . "series_id in (" . $seriesidstr . ")";
+								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+									$seriesid = $row[$modality . 'series_id'];
+									$uid = $row['uid'];
+									$studynum = $row['study_num'];
+									$studydesc = $row['study_desc'];
+									$seriesnum = $row['series_num'];
+									$seriesdesc = $row['series_desc'];
+									$seriessize = $row['series_size'];
+									$seriesnumfiles = $row['numfiles'];
+									
+									?>
+										<tr>
+											<td class="allseries"><input type="checkbox" name="seriesids[]" value="<?=$seriesid?>" <?=$checkboxstr?> class="seriescheck" onClick="CheckSelectedSeriesCount(this);"></td>
+											<td><?=$uid?></td>
+											<td><?=$studynum?></td>
+											<td><?=$seriesnum?></td>
+											<td><?=$studydesc?></td>
+											<td><?=$seriesdesc?></td>
+											<td><?=$seriessize?></td>
+											<td><?=$seriesnumfiles?></td>
+										</tr>
+									<?
+								}
 							}
 						?>
 						</tbody>
@@ -1641,6 +1656,16 @@
 	function DisplayPackage($packageid) {
 		if (!ValidID($packageid,'Package ID')) { return; }
 
+		/* declare variables */
+		$subjects = array();
+		$measures = array();
+		$drugs = array();
+		$analysis = array();
+		$experiments = array();
+		$pipelines = array();
+		$datadictionaries = array();
+		
+		/* get package details */
 		$sqlstring = "select * from packages where package_id = $packageid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
@@ -1668,13 +1693,12 @@
 			list($uid, $subjectid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
 			
 			if (contains($optionflags, 'DRUGS')) {
-				$subjects[$uid]['drugs'] = GetDrugsByEnrollment($enrollmentid);
+				$drugs[$uid]['drugs'] = GetDrugsByEnrollment($enrollmentid);
 			}
 			if (contains($optionflags, 'MEASURES')) {
-				$subjects[$uid]['measures'] = GetVitalsByEnrollment($enrollmentid);
-				$subjects[$uid]['measures'] .= GetMeasuresByEnrollment($enrollmentid);
+				$measures[$uid]['measures'] = GetVitalsByEnrollment($enrollmentid);
+				$measures[$uid]['measures'] .= GetMeasuresByEnrollment($enrollmentid);
 			}
-			
 		}
 		
 		/* get series data */
@@ -1686,7 +1710,32 @@
 			$seriesid = $row['series_id'];
 			list($path, $uid, $studynum, $seriesnum, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid) = GetSeriesInfo($seriesid, $modality);
 			
-			$subjects[$uid][$studynum][$seriesnum] = "$modality-$seriesid";
+			$subjects[$uid][$studynum][$modality][$seriesnum] = "$seriesid";
+		}
+
+		/* get measures */
+		$sqlstring = "select * from package_measures a left join measures b on a.measure_id = b.measure_id left join measurenames c on b.measurename_id = c.measurename_id where a.package_id = $packageid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			//PrintVariable($row);
+			$packagemeasureid = $row['packagemeasure_id'];
+			$measureid = $row['measure_id'];
+			$measures[$measureid]['objectid'] = $packagemeasureid;
+			$measures[$measureid]['name'] = $row['measure_name'];
+			$measures[$measureid]['value'] = $row['measure_value'];
+			$measures[$measureid]['startdate'] = $row['measure_startdate'];
+		}
+
+		/* get drugs */
+		$sqlstring = "select * from package_drugs a left join drugs b on a.drug_id = b.drug_id left join drugnames c on b.drugname_id = c.drugname_id where a.package_id = $packageid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			//PrintVariable($row);
+			$packagedrugid = $row['packagedrug_id'];
+			$drugid = $row['drug_id'];
+			$drugs[$drugid]['objectid'] = $packagedrugid;
+			$drugs[$drugid]['name'] = $row['drug_name'];
+			$drugs[$drugid]['startdate'] = $row['drug_startdate'];
 		}
 		
 		/* get experiments */
@@ -1713,7 +1762,7 @@
 			$pipelines[$pipelineid]['desc'] = $row['pipeline_desc'];
 			$pipelines[$pipelineid]['createdate'] = $row['pipeline_createdate'];
 		}
-		
+
 		/* get counts of all of the data objects */
 		$numsubjects = count($subjects);
 		$numstudies = 0;
@@ -1728,6 +1777,8 @@
 			$nummeasures += count($subjects[$uid]['measures']);
 			$numdrugs += count($subjects[$uid]['drugs']);
 		}
+		$nummeasures += count($measures);
+		$numdrugs += count($drugs);
 		$numanalyses = count($analyses);
 		$numexperiments = count($experiments);
 		$numpipelines = count($pipelines);
@@ -1736,11 +1787,11 @@
 		
 		?>
 		<div class="ui container">
-			<div class="segment">
+			<div class="ui top attached raised segment">
 				<div class="ui header">
-					<em data-emoji=":chipmunk:" class="medium"></em>
-					<h2 class="content"><?=$name?></h2>
-					<div class="sub header"><?=$desc?></div>
+					<img src="images/squirrel-icon-64.png"></img>
+					<h2 class="content"><?=$pkg['name']?></h2>
+					<div class="sub header"><?=$pkg['desc']?></div>
 				</div>
 			</div>
 			
@@ -1761,9 +1812,12 @@
 				}
 			</style>
 			
-			<div class="ui top attached large tabular menu">
+			<div class="ui attached large tabular menu">
 				<a class="active item item2" data-tab="overview">Package overview</a>
 				<a class="item item2" data-tab="subjects">Subjects</a>
+				<a class="item item2" data-tab="measures">Measures</a>
+				<a class="item item2" data-tab="drugs">Drugs</a>
+				<a class="item item2" data-tab="analysis">Analysis</a>
 				<a class="item item2" data-tab="experiments">Experiments</a>
 				<a class="item item2" data-tab="pipelines">Pipelines</a>
 				<a class="item item2" data-tab="datadict">Data dictionary</a>
@@ -1875,8 +1929,76 @@
 				</div>
 			</div>
 			<div class="ui bottom attached tab raised segment" data-tab="subjects">
+				<ul class="tree">
 				<?
-				PrintVariable($subjects);
+				ksort($subjects, SORT_NATURAL);
+				foreach ($subjects as $uid =>$studies) {
+					if ($uid != "") {
+						?><li>
+							<details>
+								<summary><?=$uid?></summary>
+								<ul><?
+						
+						ksort($studies, SORT_NATURAL);
+						foreach ($studies as $studynum => $modalities) {
+							?><li>
+								<details>
+									<summary><?=$studynum?></summary>
+									<ul><?
+
+							ksort($modalities, SORT_NATURAL);
+							foreach ($modalities as $modality => $series) {
+								?><li>
+									<details>
+										<summary><?=$modality?></summary>
+										<ul><?
+								
+								ksort($series, SORT_NATURAL);
+								?>
+									<table class="ui basic very compact table">
+										<thead>
+											<th>UID</th>
+											<th>StudyNum</th>
+											<th>Modality</th>
+											<th>SeriesNum</th>
+										</thead>
+										<?
+										foreach ($series as $seriesnum => $seriesid) {
+											?>
+											<tr>
+												<td><?=$uid?></td>
+												<td><?=$studynum?></td>
+												<td><?=$modality?></td>
+												<td><?=$seriesnum?></td>
+											</tr>
+											<?
+										}
+										?>
+									</table>
+									</table>
+								</ul></details></li><?
+							}
+							?></ul></details></li><?
+						}
+						?></ul></details></li><?
+					}
+				}
+				?>
+				</ul>
+			</div>
+			<div class="ui bottom attached tab raised segment" data-tab="measures">
+				<?
+				PrintVariable($measures);
+				?>
+			</div>
+			<div class="ui bottom attached tab raised segment" data-tab="drugs">
+				<?
+				PrintVariable($drugs);
+				?>
+			</div>
+			<div class="ui bottom attached tab raised segment" data-tab="analysis">
+				<?
+				PrintVariable($analysis);
 				?>
 			</div>
 			<div class="ui bottom attached tab raised segment" data-tab="experiments">
@@ -2071,8 +2193,22 @@
 		
 		?>
 		<div class="ui container">
-			<a class="ui primary large button" href="packages.php?action=addform"><i class="plus square outline icon"></i> Create package</a>
-			<br><br>
+		
+			<div class="ui two column grid">
+				<div class="column">
+					<h2 class="ui header">
+						<img src="images/squirrel-icon-64.png"></img>
+						<div class="content">
+							Packages
+							<div class="sub header">Squirrel packages</div>
+						</div>
+					</h2>
+				</div>
+				<div class="right aligned column">
+					<a class="ui primary large button" href="packages.php?action=addform"><i class="plus icon"></i> Create package</a>
+				</div>
+			</div>
+			
 			<table class="ui celled selectable grey compact table">
 				<thead>
 					<tr>
@@ -2100,7 +2236,7 @@
 									<a href="packages.php?action=displaypackage&packageid=<?=$packageid?>"><b><?=$name?></b></a>
 								</td>
 								<td valign="top">
-									<a href="packages.php?action=editform&packageid=<?=$packageid?>">Edit</a>
+									<a href="packages.php?action=editform&packageid=<?=$packageid?>"><i class="pen icon"></i> Edit</a>
 								</td>
 								<td valign="top"><?=$desc?></td>
 								<td valign="top"><?=$createdate?></td>
