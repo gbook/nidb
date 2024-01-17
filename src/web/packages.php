@@ -459,12 +459,25 @@
 	/* -------------------------------------------- */
 	function DisplayAddPipelineForm($pipelineids) {
 		?>
-		The following information related to the pipeline(s) will be added to the package
-		
-		<pre>
-			[x] pipeline
-				[ ] analyses
-		</pre>
+		<div class="ui container">
+			<div class="ui raised segment">
+				
+				<form method="post" action="packages.php">
+					<input type="hidden" name="action" value="addobjectstopackage">
+					
+					<h2>The following objects will be added to the package</h2>
+					<? DisplayFormPipelines($pipelineids, true); ?>
+				
+					<br><br>
+					<h4 class="ui horizontal divider header">Select Package</h4>
+					<div style="text-align: center">
+						<? DisplayFormSelectPackage(); ?>
+						<br><br>
+						<input type="submit" value="Add to package" class="ui primary button">
+					</div>
+				</form>
+			</div>
+		</div>
 		<?
 	}
 
@@ -474,11 +487,25 @@
 	/* -------------------------------------------- */
 	function DisplayAddAnalysisForm($analysisids) {
 		?>
-		The following information related to the analysis(s) will be added to the package
-		
-		<pre>
-			[*] analyses
-		</pre>
+		<div class="ui container">
+			<div class="ui raised segment">
+				
+				<form method="post" action="packages.php">
+					<input type="hidden" name="action" value="addobjectstopackage">
+					
+					<h2>The following objects will be added to the package</h2>
+					<? DisplayFormAnalyses($analysisids, true); ?>
+				
+					<br><br>
+					<h4 class="ui horizontal divider header">Select Package</h4>
+					<div style="text-align: center">
+						<? DisplayFormSelectPackage(); ?>
+						<br><br>
+						<input type="submit" value="Add to package" class="ui primary button">
+					</div>
+				</form>
+			</div>
+		</div>
 		<?
 	}
 
@@ -1093,20 +1120,24 @@
 							<th><input type="checkbox" name="selectallanalysis" id="selectallanalysis"></th>
 							<th>Analysis</th>
 							<th>Date</th>
+							<th>Status</th>
 						</thead>
 						<tbody>
 						<?
+						//'complete','pending','processing','error','submitted','','notcompleted','NoMatchingStudies','rerunresults','NoMatchingStudyDependency','IncompleteDependency','BadDependency','NoMatchingSeries','OddDependencyStatus','started'
 							/* get subject info. there may be series from multiple subjects in this list */
-							$sqlstring = "select * from analysis where analysis_id in (" . $analysisidstr . ")";
+							$sqlstring = "select * from analysis where analysis_id in (" . $analysisidstr . ") and analysis_status in ('complete', 'error','rerunresults')";
 							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$analysisid = $row['analysis_id'];
 								$analysisdate = $row['analysis_date'];
+								$analysisstatus = $row['analysis_status'];
 								?>
 									<tr>
 										<td class="allanalysis"><input type="checkbox" name="analysisids[]" value="<?=$analysisid?>" class="analysischeck" <?=$checkboxstr?> onClick="CheckSelectedAnalysisCount(this);"></td>
 										<td><a href="analysis.php?analysisid=<?=$analysisid?>"><?=$analysisid?></a></td>
 										<td><?=$analysisdate?></td>
+										<td><?=$analysisstatus?></td>
 									</tr>
 								<?
 							}
@@ -1660,7 +1691,7 @@
 		$subjects = array();
 		$measures = array();
 		$drugs = array();
-		$analysis = array();
+		$analyses = array();
 		$experiments = array();
 		$pipelines = array();
 		$datadictionaries = array();
@@ -1692,13 +1723,13 @@
 			
 			list($uid, $subjectid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
 			
-			if (contains($optionflags, 'DRUGS')) {
-				$drugs[$uid]['drugs'] = GetDrugsByEnrollment($enrollmentid);
-			}
-			if (contains($optionflags, 'MEASURES')) {
-				$measures[$uid]['measures'] = GetVitalsByEnrollment($enrollmentid);
-				$measures[$uid]['measures'] .= GetMeasuresByEnrollment($enrollmentid);
-			}
+			//if (contains($optionflags, 'DRUGS')) {
+			//	$drugs[$uid]['drugs'] = GetDrugsByEnrollment($enrollmentid);
+			//}
+			//if (contains($optionflags, 'MEASURES')) {
+			//	$measures[$uid]['measures'] = GetVitalsByEnrollment($enrollmentid);
+			//	$measures[$uid]['measures'] .= GetMeasuresByEnrollment($enrollmentid);
+			//}
 		}
 		
 		/* get series data */
@@ -1716,31 +1747,34 @@
 		/* get measures */
 		$sqlstring = "select * from package_measures a left join measures b on a.measure_id = b.measure_id left join measurenames c on b.measurename_id = c.measurename_id where a.package_id = $packageid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$nummeasures = mysqli_num_rows($result);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			//PrintVariable($row);
-			$packagemeasureid = $row['packagemeasure_id'];
-			$measureid = $row['measure_id'];
-			$measures[$measureid]['objectid'] = $packagemeasureid;
-			$measures[$measureid]['name'] = $row['measure_name'];
-			$measures[$measureid]['value'] = $row['measure_value'];
-			$measures[$measureid]['startdate'] = $row['measure_startdate'];
+			$enrollmentid = $row['enrollment_id'];
+			list($uid, $subjectid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
+			$objectid = $row['packagemeasure_id'];
+			$measures[$uid][$objectid]['measureid'] = $row['measure_id'];
+			$measures[$uid][$objectid]['name'] = $row['measure_name'];
+			$measures[$uid][$objectid]['value'] = $row['measure_value'];
+			$measures[$uid][$objectid]['startdate'] = $row['measure_startdate'];
 		}
 
 		/* get drugs */
 		$sqlstring = "select * from package_drugs a left join drugs b on a.drug_id = b.drug_id left join drugnames c on b.drugname_id = c.drugname_id where a.package_id = $packageid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$numdrugs = mysqli_num_rows($result);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			//PrintVariable($row);
-			$packagedrugid = $row['packagedrug_id'];
-			$drugid = $row['drug_id'];
-			$drugs[$drugid]['objectid'] = $packagedrugid;
-			$drugs[$drugid]['name'] = $row['drug_name'];
-			$drugs[$drugid]['startdate'] = $row['drug_startdate'];
+			$enrollmentid = $row['enrollment_id'];
+			list($uid, $subjectid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
+			$objectid = $row['packagemeasure_id'];
+			$drugs[$uid][$objectid]['drugid'] = $row['drug_id'];
+			$drugs[$uid][$objectid]['name'] = $row['drug_name'];
+			$drugs[$uid][$objectid]['startdate'] = $row['drug_startdate'];
 		}
 		
 		/* get experiments */
 		$sqlstring = "select * from package_experiments a left join experiments b on a.experiment_id = b.experiment_id where a.package_id = $packageid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$numexperiments = mysqli_num_rows($result);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$packageexperimentid = $row['packageexperiment_id'];
 			$experimentid = $row['experiment_id'];
@@ -1754,6 +1788,7 @@
 		/* get pipelines */
 		$sqlstring = "select * from package_pipelines a left join pipelines b on a.pipeline_id = b.pipeline_id where a.package_id = $packageid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$numpipelines = mysqli_num_rows($result);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$packagepipelineid = $row['packagepipeline_id'];
 			$pipelineid = $row['pipeline_id'];
@@ -1761,6 +1796,21 @@
 			$pipelines[$pipelineid]['version'] = $row['pipeline_version'];
 			$pipelines[$pipelineid]['desc'] = $row['pipeline_desc'];
 			$pipelines[$pipelineid]['createdate'] = $row['pipeline_createdate'];
+		}
+
+		/* get analysis */
+		$sqlstring = "select * from package_analyses a left join analysis b on a.analysis_id = b.analysis_id left join studies c on b.study_id = c.study_id where a.package_id = $packageid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$numexperiments = mysqli_num_rows($result);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$enrollmentid = $row['enrollment_id'];
+			list($uid, $subjectid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
+
+			$objectid = $row['packageanalysis_id'];
+			$analyses[$uid][$objectid]['analysisid'] = $row['analysis_id'];
+			$analyses[$uid][$objectid]['studynum'] = $row['study_num'];
+			$analyses[$uid][$objectid]['date'] = $row['analysis_date'];
+			$analyses[$uid][$objectid]['status'] = $row['analysis_status'];
 		}
 
 		/* get counts of all of the data objects */
@@ -1774,14 +1824,7 @@
 			foreach ($study as $ser => $series) {
 				$numseries += count($series);
 			}
-			$nummeasures += count($subjects[$uid]['measures']);
-			$numdrugs += count($subjects[$uid]['drugs']);
 		}
-		$nummeasures += count($measures);
-		$numdrugs += count($drugs);
-		$numanalyses = count($analyses);
-		$numexperiments = count($experiments);
-		$numpipelines = count($pipelines);
 		$numdatadict = count($datadictionaries);
 		$numgroupanalyses = count($groupanalyses);
 		
@@ -1812,6 +1855,7 @@
 				}
 			</style>
 			
+			<!-- tab menu -->
 			<div class="ui attached large tabular menu">
 				<a class="active item item2" data-tab="overview">Package overview</a>
 				<a class="item item2" data-tab="subjects">Subjects</a>
@@ -1822,6 +1866,8 @@
 				<a class="item item2" data-tab="pipelines">Pipelines</a>
 				<a class="item item2" data-tab="datadict">Data dictionary</a>
 			</div>
+
+			<!-- package overview tab -->
 			<div class="ui bottom attached active tab raised center aligned segment" data-tab="overview">
 				<div class="ui grid">
 					<div class="ui five wide column">
@@ -1928,6 +1974,8 @@
 					</div>
 				</div>
 			</div>
+			
+			<!-- subjects tab -->
 			<div class="ui bottom attached tab raised segment" data-tab="subjects">
 				<ul class="tree">
 				<?
@@ -1975,7 +2023,6 @@
 										}
 										?>
 									</table>
-									</table>
 								</ul></details></li><?
 							}
 							?></ul></details></li><?
@@ -1986,30 +2033,161 @@
 				?>
 				</ul>
 			</div>
+
+			<!-- measures tab -->
 			<div class="ui bottom attached tab raised segment" data-tab="measures">
+				<? if (count($measures) > 0) { ?>
+				<table class="ui basic very compact table">
+					<thead>
+						<th>UID</th>
+						<th>Measure</th>
+						<th>Value</th>
+						<th>Date</th>
+					</thead>
 				<?
-				PrintVariable($measures);
+				ksort($measures, SORT_NATURAL);
+				foreach ($measures as $uid => $objects) {
+					foreach ($objects as $objectid => $measure) {
+						$measureid = $measure['measureid'];
+						$measurename = $measure['name'];
+						$measurevalue = $measure['value'];
+						$measuredate = $measure['startdate'];
+						?>
+						<tr>
+							<td><?=$uid?></td>
+							<td><?=$measurename?></td>
+							<td><?=$measurevalue?></td>
+							<td><?=$measuredate?></td>
+						</tr>
+						<?
+					}
+				}
 				?>
+				</table>
+				<? } else { ?>
+				No measure objects in this package
+				<? } ?>
 			</div>
+
+			<!-- drug tab -->
 			<div class="ui bottom attached tab raised segment" data-tab="drugs">
+				<? if (count($drugs) > 0) { ?>
+				<table class="ui basic very compact table">
+					<thead>
+						<th>UID</th>
+						<th>Drug</th>
+						<th>Date</th>
+					</thead>
 				<?
-				PrintVariable($drugs);
+				ksort($drugs, SORT_NATURAL);
+				foreach ($drugs as $uid => $objects) {
+					foreach ($objects as $objectid => $drug) {
+						$drugid = $drug['drugid'];
+						$drugname = $drug['name'];
+						$drugdate = $drug['startdate'];
+						?>
+						<tr>
+							<td><?=$uid?></td>
+							<td><?=$drugname?></td>
+							<td><?=$drugdate?></td>
+						</tr>
+						<?
+					}
+				}
 				?>
+				</table>
+				<? } else { ?>
+				No drug objects in this package
+				<? } ?>
 			</div>
+
+			<!-- analysis tab -->
 			<div class="ui bottom attached tab raised segment" data-tab="analysis">
+				<? if (count($analyses) > 0) { ?>
+				<table class="ui basic very compact table">
+					<thead>
+						<th>UID</th>
+						<th>StudyNum</th>
+						<th>Pipeline</th>
+						<th>Date</th>
+						<th>Status</th>
+					</thead>
 				<?
-				PrintVariable($analysis);
+				ksort($analyses, SORT_NATURAL);
+				foreach ($analyses as $uid => $objects) {
+					foreach ($objects as $objectid => $analysis) {
+						$analysisid = $analysis['measureid'];
+						?>
+						<tr>
+							<td><?=$uid?></td>
+							<td><?=$analysis['studynum']?></td>
+							<td><?=$analysis['name']?></td>
+							<td><?=$analysis['date']?></td>
+							<td><?=$analysis['status']?></td>
+						</tr>
+						<?
+					}
+				}
 				?>
+				</table>
+				<? } else { ?>
+				No analysis objects in this package
+				<? } ?>
 			</div>
+			
 			<div class="ui bottom attached tab raised segment" data-tab="experiments">
+				<? if (count($experiments) > 0) { ?>
+				<table class="ui basic very compact table">
+					<thead>
+						<th>Name</th>
+						<th>Version</th>
+						<th>Description</th>
+						<th>Create date</th>
+						<th>Creator</th>
+					</thead>
 				<?
-				PrintVariable($experiments);
+				foreach ($experiments as $experimentid => $experiment) {
+					?>
+					<tr>
+						<td><?=$experiment['name']?></td>
+						<td><?=$experiment['version']?></td>
+						<td><?=$experiment['desc']?></td>
+						<td><?=$experiment['createdate']?></td>
+						<td><?=$experiment['creator']?></td>
+					</tr>
+					<?
+				}
 				?>
+				</table>
+				<? } else { ?>
+				No experiment objects in this package
+				<? } ?>
 			</div>
 			<div class="ui bottom attached tab raised segment" data-tab="pipelines">
+				<? if (count($pipelines) > 0) { ?>
+				<table class="ui basic very compact table">
+					<thead>
+						<th>Name</th>
+						<th>Version</th>
+						<th>Description</th>
+						<th>Create date</th>
+					</thead>
 				<?
-				PrintVariable($pipelines);
+				foreach ($pipelines as $pipelineid => $pipeline) {
+					?>
+					<tr>
+						<td><?=$pipeline['name']?></td>
+						<td><?=$pipeline['version']?></td>
+						<td><?=$pipeline['desc']?></td>
+						<td><?=$pipeline['createdate']?></td>
+					</tr>
+					<?
+				}
 				?>
+				</table>
+				<? } else { ?>
+				No pipeline objects in this package
+				<? } ?>
 			</div>
 			<div class="ui bottom attached tab raised segment" data-tab="datadict">
 				
