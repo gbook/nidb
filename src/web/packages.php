@@ -219,7 +219,7 @@
 		
 		/* get list of analysisids */
 		$studyidstr = implode2(",", $studyids);
-		$sqlstring = "select * from analysis where study_id in (" . $studyidstr . ")";
+		$sqlstring = "select * from analysis where study_id in (" . $studyidstr . ") and analysis_status in ('complete', 'error','rerunresults')";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$numseries = mysqli_num_rows($result);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -287,25 +287,117 @@
 	/* ------- DisplayAddStudyForm ---------------- */
 	/* -------------------------------------------- */
 	function DisplayAddStudyForm($studyids) {
+		
+		if (count($studyids) < 1) {
+			Error("No studyids passed into function");
+			return;
+		}
+		$uids = array();
+		$studyidstr = implode2(",", $studyids);
+		
+		/* get all series from this study */
+		$sqlstring = "select * from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id in (" . $studyidstr . ")";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$numstudies = mysqli_num_rows($result);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$enrollmentids[] = $row['enrollment_id'];
+			$subjectids[] = $row['subject_id'];
+			$studyids[] = $row['study_id'];
+			$studyid = $row['study_id'];
+			$projectids[] = $row['project_id'];
+			$projectid = $row['project_id'];
+			
+			$modality = strtolower($row['study_modality']);
+			
+			$sqlstringA = "select * from $modality" . "_series where study_id = $studyid";
+			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+				$seriesids[$modality][] = $rowA[$modality . 'series_id'];
+
+				if (trim($rowA['series_desc']) == "")
+					$seriesdesc = $rowA['series_protocol'];
+				else
+					$seriesdesc = $rowA['series_desc'];
+				
+				$experimentmapping[$modality][$seriesdesc]['projectid'] = $projectid; /* don't make this array unique because multiple mappings could exist for each protocol */
+			}
+		}
+		//PrintVariable($seriesids);
+		$enrollmentids = array_unique($enrollmentids);
+		$subjectids = array_unique($subjectids);
+		$studyids = array_unique($studyids);
+		//$seriesids = array_unique($seriesids);
+		$projectids = array_unique($projectids);
+		$seriesdescs = array_unique($seriesdesc);
+		
+		$numenrollments = count($enrollmentids);
+		$numsubjects = count($subjectids);
+		$numstudies = count($studyids);
+		$numseries = count($seriesids, COUNT_RECURSIVE);
+		
+		/* get list of analysisids */
+		$studyidstr = implode2(",", $studyids);
+		$sqlstring = "select * from analysis where study_id in (" . $studyidstr . ") and analysis_status in ('complete', 'error','rerunresults')";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$numseries = mysqli_num_rows($result);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$analysisids[] = $row['analysis_id'];
+			$pipelineids[] = $row['pipeline_id'];
+		}
+		$analysisids = array_unique($analysisids);
+		$pipelineids = array_unique($pipelineids);
+		
+		/* get list of experiments - need to map the experiment to the protocol/modality and project */
+		foreach ($experimentmapping as $modalitykey => $modalityvalue) {
+			foreach ($modalityvalue as $seriesdesc => $value) {
+				$projectid = $value['projectid'];
+				
+				$sqlstring = "select experiment_id from experiment_mapping where project_id = $projectid and protocolname = '$seriesdesc' and modality = '$modalitykey'";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$numseries = mysqli_num_rows($result);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+					$experimentids[] = $row['experiment_id'];
+				}
+			}
+		}
+		$experimentids = array_unique($experimentids);
+		
 		?>
-		The following information related to the study(s) will be added to the package
 		
-		<pre>
-		[x] details from enrollment --> Subject info
-			[ ] Vitals
-			[ ] Measures
-			[ ] Drugs
-		
-		[x] study information (the user wanted this study added, so we'll add the study even if no series are selected)
-			[ ] analyses
-				[ ] pipelines
-		
-		[ ] series
-			[ ] series list
-				[ ] experiments
-				[ ] analyses
-				[ ] pipelines
-		</pre>
+		<div class="ui container">
+			<div class="ui raised segment">
+				
+				<form method="post" action="packages.php">
+					<input type="hidden" name="action" value="addobjectstopackage">
+					
+					<h2>The following objects will be added to the package</h2>
+					<? DisplayFormSubjects($enrollmentids, true); ?>
+					<br>
+					<? DisplayFormStudies($studyids, true); ?>
+					<br>
+					<? DisplayFormSeries($seriesids, true); ?>
+					
+					<h2>Optional related objects</h3>
+					<? DisplayFormExperiments($experimentids, false); ?>
+					<br>
+					<? DisplayFormAnalyses($analysisids, false); ?>
+					<br>
+					<? DisplayFormPipelines($pipelineids, false); ?>
+					<br>
+					<? DisplayFormDrugs($enrollmentids, false); ?>
+					<br>
+					<? DisplayFormMeasures($enrollmentids, false); ?>
+				
+					<br><br>
+					<h4 class="ui horizontal divider header">Select Package</h4>
+					<div style="text-align: center">
+						<? DisplayFormSelectPackage(); ?>
+						<br><br>
+						<input type="submit" value="Add to package" class="ui primary button">
+					</div>
+				</form>
+			</div>
+		</div>
 		<?
 	}
 
@@ -355,7 +447,7 @@
 		
 		/* get list of analysisids */
 		$studyidstr = implode2(",", $studyids);
-		$sqlstring = "select * from analysis where study_id in (" . $studyidstr . ")";
+		$sqlstring = "select * from analysis where study_id in (" . $studyidstr . ") and analysis_status in ('complete', 'error','rerunresults')";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$numseries = mysqli_num_rows($result);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -445,11 +537,25 @@
 	/* -------------------------------------------- */
 	function DisplayAddExperimentForm($experimentids) {
 		?>
-		The following information related to the experiment(s) will be added to the package
-		
-		<pre>
-			[x] experiment list
-		</pre>
+		<div class="ui container">
+			<div class="ui raised segment">
+				
+				<form method="post" action="packages.php">
+					<input type="hidden" name="action" value="addobjectstopackage">
+					
+					<h2>The following objects will be added to the package</h2>
+					<? DisplayFormExperiments($experimentids, true); ?>
+				
+					<br><br>
+					<h4 class="ui horizontal divider header">Select Package</h4>
+					<div style="text-align: center">
+						<? DisplayFormSelectPackage(); ?>
+						<br><br>
+						<input type="submit" value="Add to package" class="ui primary button">
+					</div>
+				</form>
+			</div>
+		</div>
 		<?
 	}
 
@@ -1536,10 +1642,10 @@
 		$includepipelines = mysqli_real_escape_string($GLOBALS['linki'], $includepipelines);
 		
 		/* add any enrollments */
-		if (count($enrollmentids) > 0) {
+		if ((count($enrollmentids) > 0) && (is_array($enrollmentids))) {
+			//PrintVariable($enrollments);
 			foreach ($enrollmentids as $enrollmentid) {
 				$sqlstring = "insert ignore into package_enrollments (package_id, enrollment_id) values ($packageid, $enrollmentid)";
-				//PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
 			$numobjects += count($enrollmentids);
@@ -1547,10 +1653,9 @@
 		}
 
 		/* add any series */
-		if (count($seriesids) > 0) {
+		if ((count($seriesids) > 0) && (is_array($seriesids))) {
 			foreach ($seriesids as $seriesid) {
 				$sqlstring = "insert ignore into package_series (package_id, modality, series_id) values ($packageid, '$modality', $seriesid)";
-				//PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
 			$numobjects += count($seriesids);
@@ -1558,10 +1663,9 @@
 		}
 
 		/* add any experiments */
-		if ((count($experimentids) > 0) && ($includeexperiments)) {
+		if ((count($experimentids) > 0) && ($includeexperiments) && (is_array($experimentids))) {
 			foreach ($experimentids as $experimentid) {
 				$sqlstring = "insert ignore into package_experiments (package_id, experiment_id) values ($packageid, $experimentid)";
-				//PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
 			$numobjects += count($experimentids);
@@ -1569,10 +1673,9 @@
 		}
 
 		/* add any analyses */
-		if ((count($analysisids) > 0) && ($includeanalyses)) {
+		if ((count($analysisids) > 0) && ($includeanalyses) && (is_array($analysisids))) {
 			foreach ($analysisids as $analysisid) {
 				$sqlstring = "insert ignore into package_analyses (package_id, analysis_id) values ($packageid, $analysisid)";
-				//PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
 			$numobjects += count($analysisids);
@@ -1580,10 +1683,9 @@
 		}
 		
 		/* add any pipelines */
-		if ((count($pipelineids) > 0) && ($includepipelines)) {
+		if ((count($pipelineids) > 0) && ($includepipelines) && (is_array($pipelineids))) {
 			foreach ($pipelineids as $pipelineid) {
 				$sqlstring = "insert ignore into package_pipelines (package_id, pipeline_id) values ($packageid, $pipelineid)";
-				//PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
 			$numobjects += count($pipelineids);
@@ -1591,10 +1693,9 @@
 		}
 
 		/* add any drugs */
-		if ((count($drugids) > 0) && ($includedrugs)) {
+		if ((count($drugids) > 0) && ($includedrugs) && (is_array($drugids))) {
 			foreach ($drugids as $drugid) {
 				$sqlstring = "insert ignore into package_drugs (package_id, drug_id) values ($packageid, $drugid)";
-				//PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
 			$numobjects += count($drugids);
@@ -1602,10 +1703,9 @@
 		}
 		
 		/* add any measures */
-		if ((count($measureids) > 0) && ($includemeasures)) {
+		if ((count($measureids) > 0) && ($includemeasures) && (is_array($measureids))) {
 			foreach ($measureids as $measureid) {
 				$sqlstring = "insert ignore into package_measures (package_id, measure_id) values ($packageid, $measureid)";
-				//PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
 			$numobjects += count($measureids);
@@ -1733,15 +1833,21 @@
 		}
 		
 		/* get series data */
+		$totalbytes = 0;
+		$totalfiles = 0;
 		$sqlstring = "select * from package_series where package_id = $packageid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$packageseriesid = $row['packageseries_id'];
 			$modality = $row['modality'];
 			$seriesid = $row['series_id'];
-			list($path, $uid, $studynum, $seriesnum, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid) = GetSeriesInfo($seriesid, $modality);
+			list($path, $uid, $studynum, $seriesnum, $seriessize, $numfiles, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid) = GetSeriesInfo($seriesid, $modality);
 			
-			$subjects[$uid][$studynum][$modality][$seriesnum] = "$seriesid";
+			if ($uid != "") {
+				$subjects[$uid][$studynum][$modality][$seriesnum] = "$seriesid";
+				$totalbytes += $seriessize;
+				$totalfiles += $numfiles;
+			}
 		}
 
 		/* get measures */
@@ -1774,7 +1880,6 @@
 		/* get experiments */
 		$sqlstring = "select * from package_experiments a left join experiments b on a.experiment_id = b.experiment_id where a.package_id = $packageid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$numexperiments = mysqli_num_rows($result);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$packageexperimentid = $row['packageexperiment_id'];
 			$experimentid = $row['experiment_id'];
@@ -1784,11 +1889,11 @@
 			$experiments[$experimentid]['createdate'] = $row['exp_createdate'];
 			$experiments[$experimentid]['creator'] = $row['exp_creator'];
 		}
+		$numexperiments = count($experiments);
 		
 		/* get pipelines */
 		$sqlstring = "select * from package_pipelines a left join pipelines b on a.pipeline_id = b.pipeline_id where a.package_id = $packageid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$numpipelines = mysqli_num_rows($result);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$packagepipelineid = $row['packagepipeline_id'];
 			$pipelineid = $row['pipeline_id'];
@@ -1797,11 +1902,14 @@
 			$pipelines[$pipelineid]['desc'] = $row['pipeline_desc'];
 			$pipelines[$pipelineid]['createdate'] = $row['pipeline_createdate'];
 		}
+		$numpipelines = count($pipelines);
 
 		/* get analysis */
+		$totalanalysisfiles = 0;
+		$totalanalysisbytes = 0;
 		$sqlstring = "select * from package_analyses a left join analysis b on a.analysis_id = b.analysis_id left join studies c on b.study_id = c.study_id where a.package_id = $packageid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$numexperiments = mysqli_num_rows($result);
+		$numanalysis = mysqli_num_rows($result);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$enrollmentid = $row['enrollment_id'];
 			list($uid, $subjectid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
@@ -1811,22 +1919,31 @@
 			$analyses[$uid][$objectid]['studynum'] = $row['study_num'];
 			$analyses[$uid][$objectid]['date'] = $row['analysis_date'];
 			$analyses[$uid][$objectid]['status'] = $row['analysis_status'];
+			$analyses[$uid][$objectid]['disksize'] = $row['analysis_disksize'];
+			$analyses[$uid][$objectid]['numfiles'] = $row['analysis_numfiles'];
+			
+			$totalanalysisfiles += $row['analysis_numfiles'];
+			$totalanalysisbytes += $row['analysis_disksize'];
 		}
 
 		/* get counts of all of the data objects */
 		$numsubjects = count($subjects);
 		$numstudies = 0;
-		$numseries = 0;
-		$nummeasures = 0;
-		$numdrugs = 0;
-		foreach ($subjects as $uid => $study) {
-			$numstudies += count($study);
-			foreach ($study as $ser => $series) {
-				$numseries += count($series);
-			}
-		}
+		//$nummeasures = 0;
+		//$numdrugs = 0;
 		$numdatadict = count($datadictionaries);
 		$numgroupanalyses = count($groupanalyses);
+
+		foreach ($subjects as $uid =>$studies) {
+			if ($uid != "") {
+				$numstudies += count($studies);
+				foreach ($studies as $studynum => $modalities) {
+					foreach ($modalities as $modality => $series) {
+						$numseries += count($series);
+					}
+				}
+			}
+		}
 		
 		?>
 		<div class="ui container">
@@ -1858,13 +1975,13 @@
 			<!-- tab menu -->
 			<div class="ui attached large tabular menu">
 				<a class="active item item2" data-tab="overview">Package overview</a>
-				<a class="item item2" data-tab="subjects">Subjects</a>
-				<a class="item item2" data-tab="measures">Measures</a>
-				<a class="item item2" data-tab="drugs">Drugs</a>
+				<a class="item item2" data-tab="subjects"><i class="user icon"></i> Subjects & Data</a>
+				<a class="item item2" data-tab="measures"><i class="clipboard icon"></i> Measures</a>
+				<a class="item item2" data-tab="drugs"><i class="pills icon"></i> Drugs</a>
 				<a class="item item2" data-tab="analysis">Analysis</a>
 				<a class="item item2" data-tab="experiments">Experiments</a>
 				<a class="item item2" data-tab="pipelines">Pipelines</a>
-				<a class="item item2" data-tab="datadict">Data dictionary</a>
+				<!--<a class="item item2" data-tab="datadict">Data dictionary</a>-->
 			</div>
 
 			<!-- package overview tab -->
@@ -1932,7 +2049,7 @@
 							if ($numseries > 0) { $sercolor = "fill:#ffe500,stroke:#444,stroke-width:4px"; $sertext = "series ($numseries)"; } else { $sercolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:4px"; $sertext = "series"; }
 							if ($numexperiments > 0) { $expcolor = "fill:#FFFFCC,stroke:#444,stroke-width:1px"; $exptext = "experiments ($numexperiments)"; } else { $expcolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:1px"; $exptext = "experiments"; }
 							if ($numpipelines > 0) { $pipecolor = "fill:#FFFFCC,stroke:#444,stroke-width:1px"; $pipetext = "pipelines ($numpipelines)"; } else { $pipecolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:1px"; $pipetext = "pipelines"; }
-							if ($numdatadict > 0) { $dictcolor = "fill:#FFFFCC,stroke:#444,stroke-width:1px"; $dicttext = "data-dictionary ($numdatadict)"; } else { $dictcolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:1px"; $dicttext = "data-dictionary"; }
+							//if ($numdatadict > 0) { $dictcolor = "fill:#FFFFCC,stroke:#444,stroke-width:1px"; $dicttext = "data-dictionary ($numdatadict)"; } else { $dictcolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:1px"; $dicttext = "data-dictionary"; }
 							if ($numanalyses > 0) { $analysiscolor = "fill:#FFFFCC,stroke:#444,stroke-width:1px"; $analysistext = "analysis ($numanalyses)"; } else { $analysiscolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:1px"; $analysistext = "analysis"; }
 							if ($numgroupanalyses > 0) { $groupanalysiscolor = "fill:#FFFFCC,stroke:#444,stroke-width:1px"; $groupanalysistext = "group-analysis ($numgroupanalyses)"; } else { $groupanalysiscolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:1px"; $groupanalysistext = "group-analysis"; }
 							if ($nummeasures > 0) { $meascolor = "fill:#FFFFCC,stroke:#444,stroke-width:1px"; $meastext = "measures ($nummeasures)"; } else { $meascolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:1px"; $meastext = "measures"; }
@@ -1946,7 +2063,7 @@
 								data-->subjects("<?=$subjtext?>");
 								root-->pipelines("<?=$pipetext?>");
 								root-->experiments("<?=$exptext?>");
-								root-->datadict("<?=$dicttext?>");
+								%%root-->datadict("<?=$dicttext?>");
 								root(package)-->data(data);
 								data-->groupanalysis("<?=$groupanalysistext?>");
 								subjects-->studies("<?=$studtext?>");
@@ -1959,7 +2076,7 @@
 								
 								style pipelines <?=$pipecolor?>;
 								style experiments <?=$expcolor?>;
-								style datadict <?=$dictcolor?>;
+								%%style datadict <?=$dictcolor?>;
 								style groupanalysis <?=$groupanalysiscolor?>;
 								style measures <?=$meascolor?>;
 								style drugs <?=$drugcolor?>;
@@ -1977,6 +2094,17 @@
 			
 			<!-- subjects tab -->
 			<div class="ui bottom attached tab raised segment" data-tab="subjects">
+			
+				<div class="ui message">
+					<div class="content">
+						<div class="header">
+							Object summary
+						</div>
+						<?=$numsubjects?> Subjects, <?=$numstudies?> Studies, <?=$numseries?> Series<br>
+						<?=$totalfiles?> files, <?=HumanReadableFileSize($totalbytes)?>
+					</div>				
+				</div>
+				
 				<ul class="tree">
 				<?
 				ksort($subjects, SORT_NATURAL);
@@ -2036,6 +2164,16 @@
 
 			<!-- measures tab -->
 			<div class="ui bottom attached tab raised segment" data-tab="measures">
+
+				<div class="ui message">
+					<div class="content">
+						<div class="header">
+							Object summary
+						</div>
+						<?=$nummeasures?> Measures
+					</div>				
+				</div>
+			
 				<? if (count($measures) > 0) { ?>
 				<table class="ui basic very compact table">
 					<thead>
@@ -2071,6 +2209,16 @@
 
 			<!-- drug tab -->
 			<div class="ui bottom attached tab raised segment" data-tab="drugs">
+
+				<div class="ui message">
+					<div class="content">
+						<div class="header">
+							Object summary
+						</div>
+						<?=$numdrugs?> drug records
+					</div>				
+				</div>
+				
 				<? if (count($drugs) > 0) { ?>
 				<table class="ui basic very compact table">
 					<thead>
@@ -2096,13 +2244,22 @@
 				}
 				?>
 				</table>
-				<? } else { ?>
-				No drug objects in this package
 				<? } ?>
 			</div>
 
 			<!-- analysis tab -->
 			<div class="ui bottom attached tab raised segment" data-tab="analysis">
+
+				<div class="ui message">
+					<div class="content">
+						<div class="header">
+							Object summary
+						</div>
+						<?=$numanalysis?> analyses<br>
+						<?=$totalanalysisfiles?> files, <?=HumanReadableFileSize($totalanalysisbytes)?>
+					</div>				
+				</div>
+			
 				<? if (count($analyses) > 0) { ?>
 				<table class="ui basic very compact table">
 					<thead>
@@ -2135,7 +2292,18 @@
 				<? } ?>
 			</div>
 			
+			<!-- experiments tab -->
 			<div class="ui bottom attached tab raised segment" data-tab="experiments">
+			
+				<div class="ui message">
+					<div class="content">
+						<div class="header">
+							Object summary
+						</div>
+						<?=$numexperiments?> experiments
+					</div>				
+				</div>
+			
 				<? if (count($experiments) > 0) { ?>
 				<table class="ui basic very compact table">
 					<thead>
@@ -2160,10 +2328,24 @@
 				?>
 				</table>
 				<? } else { ?>
-				No experiment objects in this package
+				<div class="ui message">
+					No experiment objects in this package
+				</div>
 				<? } ?>
 			</div>
+			
+			<!-- pipelines tab -->
 			<div class="ui bottom attached tab raised segment" data-tab="pipelines">
+			
+				<div class="ui message">
+					<div class="content">
+						<div class="header">
+							Object summary
+						</div>
+						<?=$numpipelines?> pipelines
+					</div>				
+				</div>
+			
 				<? if (count($pipelines) > 0) { ?>
 				<table class="ui basic very compact table">
 					<thead>
@@ -2189,9 +2371,9 @@
 				No pipeline objects in this package
 				<? } ?>
 			</div>
-			<div class="ui bottom attached tab raised segment" data-tab="datadict">
-				
-			</div>
+			
+			<!--<div class="ui bottom attached tab raised segment" data-tab="datadict">
+			</div> -->
 		</div>
 			
 		<?

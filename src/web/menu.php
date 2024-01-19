@@ -128,7 +128,7 @@
 				$studyid = GetVariable("studyid");
 			}
 			if (($seriesid != "") && ($modality != "")) {
-				list($path1, $uid, $studynum, $seriesnum, $studyid, $subjectid, $modality1, $studytype1, $studydatetime1, $enrollmentid1, $projectname, $projectid) = GetSeriesInfo($seriesid, $modality);
+				list($path1, $uid, $studynum, $seriesnum, $seriessize, $numfiles, $studyid, $subjectid, $modality1, $studytype1, $studydatetime1, $enrollmentid1, $projectname, $projectid) = GetSeriesInfo($seriesid, $modality);
 				?>
 				<a href="projects.php?action=displayprojectinfo&id=<?=$projectid?>" class="item"><?=$projectname?></a>
 				<a href="subjects.php?id=<?=$subjectid?>" class="item"><?=$uid?></a>

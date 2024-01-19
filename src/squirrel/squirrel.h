@@ -27,6 +27,7 @@
 #include <QDate>
 #include <QDateTime>
 #include <QDebug>
+#include <QtSql>
 #include "squirrelSubject.h"
 #include "squirrelExperiment.h"
 #include "squirrelPipeline.h"
@@ -124,12 +125,16 @@ public:
     QString GetLog() { return log; }
 
 private:
+    bool DatabaseConnect();
+
     void PrintPackage();
     bool MakeTempDir(QString &dir);
     QString workingDir;
     QString logfile;
     QStringList msgs; /* squirrel messages, to be passed back upon writing (or reading) through the squirrel library */
     QString log;
+
+    QSqlDatabase db;
 
 	bool isValid;
 	bool isOkToDelete;

@@ -1,6 +1,7 @@
 # Use this file to build libsquirrel
 
 QT -= gui
+QT += sql
 
 CONFIG += c++17 console
 CONFIG -= app_bundle
