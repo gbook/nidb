@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   Squirrel subject.cpp
-  Copyright (C) 2004 - 2023
+  Copyright (C) 2004 - 2024
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -28,118 +28,107 @@
 /* ----- subject ---------------------------------------------- */
 /* ------------------------------------------------------------ */
 squirrelSubject::squirrelSubject() {
-    sex = 'U';
-    gender = 'U';
-	dateOfBirth = QDate::fromString("0000-00-00", "YYYY-MM-dd");
+
 }
 
 
 /* ------------------------------------------------------------ */
-/* ----- addStudy --------------------------------------------- */
+/* ----- Get -------------------------------------------------- */
 /* ------------------------------------------------------------ */
 /**
- * @brief Add a study to this subject
- * @param s squirrelStudy to be added
- * @return true if added, false otherwise
+ * @brief squirrelSubject::Get
+ * @return true if successful
+ *
+ * This function will attempt to load the subject data from
+ * the database. The subjectRowID must be set before calling
+ * this function. If the object exists in the DB, it will return true.
+ * Otherwise it will return false.
  */
-bool squirrelSubject::addStudy(squirrelStudy s) {
-
-    /* check size of the study list before and after adding */
-    qint64 size = studyList.size();
-
-    /* check if this study already exists, by UID */
-    bool exists = false;
-    for (int i=0; i<studyList.size(); i++)
-        if ((studyList[i].studyUID == s.studyUID) && (s.studyUID != ""))
-            exists = true;
-
-    /* if it doesn't exist, append it */
-    if (!exists)
-        studyList.append(s);
-
-    if (studyList.size() > size)
-        return true;
-    else
+bool squirrelSubject::Get() {
+    if (objectID < 0) {
+        valid = false;
+        err = "objectID is not set";
         return false;
+    }
+
+    QSqlQuery q;
+    q.prepare("select * from Subject where SubjectRowID = :id");
+    q.bindValue(":id", objectID);
+    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.next()) {
+
+        /* get the data */
+        objectID = q.value("SubjectRowID").toLongLong();
+        ID = q.value("ID").toString();
+        alternateIDs = q.value("AltIDs").toString().split(",");
+        GUID = q.value("GUID").toString();
+        dateOfBirth = q.value("DateOfBirth").toDate();
+        sex = q.value("Sex").toString();
+        gender = q.value("Gender").toString();
+        ethnicity1 = q.value("Ethnicity1").toString();
+        ethnicity2 = q.value("Ethnicity2").toString();
+        sequence = q.value("Sequence").toInt();
+
+        valid = true;
+        return true;
+    }
+    else {
+        valid = false;
+        err = "objectID not found in database";
+        return false;
+    }
 }
 
 
 /* ------------------------------------------------------------ */
-/* ----- addMeasure ------------------------------------------- */
+/* ----- Store ------------------------------------------------ */
 /* ------------------------------------------------------------ */
 /**
- * @brief Add a measure to this subject
- * @param m squirrelMeasure to be added
- * @return true if added, false otherwise
+ * @brief squirrelSubject::Store
+ * @return true if successful
+ *
+ * This function will attempt to load the subject data from
+ * the database. The subjectRowID must be set before calling
+ * this function. If the object exists in the DB, it will return true.
+ * Otherwise it will return false.
  */
-bool squirrelSubject::addMeasure(squirrelMeasure m) {
+bool squirrelSubject::Store() {
 
-	/* check size of the measure list before and after adding */
-	qint64 size = measureList.size();
+    QSqlQuery q;
+    /* insert if the object doesn't exist ... */
+    if (objectID < 0) {
+        q.prepare("insert or ignore into Subject (ID, AltIDs, GUID, DateOfBirth, Sex, Gender, Ethnicity1, Ethnicity2, Sequence, VirtualPath) values (:ID, :AltIDs, :GUID, :DateOfBirth, :Sex, :Gender, :Ethnicity1, :Ethnicity2, :Sequence, :VirtualPath)");
+        q.bindValue(":ID", ID);
+        q.bindValue(":AltIDs", alternateIDs.join(","));
+        q.bindValue(":GUID", GUID);
+        q.bindValue(":DateOfBirth", dateOfBirth);
+        q.bindValue(":Sex", sex);
+        q.bindValue(":Gender", gender);
+        q.bindValue(":Ethnicity1", ethnicity1);
+        q.bindValue(":Ethnicity2", ethnicity2);
+        q.bindValue(":Sequence", sequence);
+        q.bindValue(":VirtualPath", VirtualPath());
+        utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        objectID = q.lastInsertId().toInt();
+    }
+    /* ... otherwise update */
+    else {
+        q.prepare("update Subject set ID = :ID, AltIDs = :AltIDs, GUID = :GUID, DateOfBirth = :DateOfBirth, Sex = :Sex, Gender = :Gender, Ethnicity1 = :Ethnicity1, Ethnicity2 = :Ethnicity2, Sequence = :Sequence, VirtualPath = :VirtualPath where SubjectRowID = :id");
+        q.bindValue(":id", objectID);
+        q.bindValue(":ID", ID);
+        q.bindValue(":AltIDs", alternateIDs.join(","));
+        q.bindValue(":GUID", GUID);
+        q.bindValue(":DateOfBirth", dateOfBirth);
+        q.bindValue(":Sex", sex);
+        q.bindValue(":Gender", gender);
+        q.bindValue(":Ethnicity1", ethnicity1);
+        q.bindValue(":Ethnicity2", ethnicity2);
+        q.bindValue(":Sequence", sequence);
+        q.bindValue(":VirtualPath", VirtualPath());
+        utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    }
 
-	/* check if this measure already exists, by UID */
-	bool exists = false;
-	//for (int i=0; i<studyList.size(); i++)
-	//	if (studyList.at(i).studyUID == s.studyUID)
-	//        exists = true;
-
-	/* if it doesn't exist, append it */
-	if (!exists)
-		measureList.append(m);
-
-	if (measureList.size() > size)
-		return true;
-	else
-		return false;
-}
-
-
-/* ------------------------------------------------------------ */
-/* ----- addDrug ---------------------------------------------- */
-/* ------------------------------------------------------------ */
-/**
- * @brief Add a drug to this subject
- * @param d squirrelDrug to be added
- * @return true if added, false otherwise
- */
-bool squirrelSubject::addDrug(squirrelDrug d) {
-
-	/* check size of the drug list before and after adding */
-	qint64 size = drugList.size();
-
-	/* check if this drug already exists, by UID */
-	bool exists = false;
-	//for (int i=0; i<studyList.size(); i++)
-	//	if (studyList.at(i).studyUID == s.studyUID)
-	//        exists = true;
-
-	/* if it doesn't exist, append it */
-	if (!exists)
-        drugList.append(d);
-
-	if (drugList.size() > size)
-		return true;
-	else
-		return false;
-}
-
-
-/* ------------------------------------------------------------ */
-/* ----- GetNextStudyNumber ----------------------------------- */
-/* ------------------------------------------------------------ */
-/**
- * @brief Gets the next study number for this subject
- * @return the next study number
- */
-qint64 squirrelSubject::GetNextStudyNumber() {
-
-    /* find the current highest study number */
-    qint64 maxnum = 0;
-    for (int i=0; i<studyList.size(); i++)
-        if (studyList[i].number > maxnum)
-            maxnum = studyList[i].number;
-
-    return maxnum+1;
+    return true;
 }
 
 
@@ -151,15 +140,70 @@ qint64 squirrelSubject::GetNextStudyNumber() {
  */
 void squirrelSubject::PrintSubject() {
 
-    Print("\t\t----- SUBJECT -----");
-    Print(QString("\t\tID: %1").arg(ID));
-    Print(QString("\t\tAlternateIDs: %1").arg(alternateIDs.join(",")));
-    Print(QString("\t\tGUID: %1").arg(GUID));
-    Print(QString("\t\tSex: %1").arg(sex));
-    Print(QString("\t\tGender: %1").arg(gender));
-    Print(QString("\t\tdateOfBirth: %1").arg(dateOfBirth.toString()));
-    Print(QString("\t\tEthnicity1: %1").arg(ethnicity1));
-    Print(QString("\t\tEthnicity2: %1").arg(ethnicity2));
+    utils::Print("\t\t----- SUBJECT -----");
+    utils::Print(QString("\t\tAlternateIDs: %1").arg(alternateIDs.join(",")));
+    utils::Print(QString("\t\tDateOfBirth: %1").arg(dateOfBirth.toString()));
+    utils::Print(QString("\t\tEthnicity1: %1").arg(ethnicity1));
+    utils::Print(QString("\t\tEthnicity2: %1").arg(ethnicity2));
+    utils::Print(QString("\t\tGUID: %1").arg(GUID));
+    utils::Print(QString("\t\tGender: %1").arg(gender));
+    utils::Print(QString("\t\tSex: %1").arg(sex));
+    utils::Print(QString("\t\tSubjectID: %1").arg(ID));
+    utils::Print(QString("\t\tVirtualPath: %1").arg(VirtualPath()));
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- Remove ----------------------------------------------- */
+/* ------------------------------------------------------------ */
+bool squirrelSubject::Remove() {
+
+    /* find all studies associated with this subject ... */
+    QSqlQuery q;
+    q.prepare("select StudyRowID from Study where SubjectRowID = :subjectid");
+    q.bindValue(":subjectid", objectID);
+    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    while (q.next()) {
+        int studyRowID = q.value("StudyRowID").toInt();
+
+        /* ... delete any staged Study files */
+        utils::RemoveStagedFileList(studyRowID, "study");
+
+        /* ... delete all staged Series files */
+        QSqlQuery q2;
+        q2.prepare("select SeriesRowID from Series where StudyRowID = :studyid");
+        q2.bindValue(":studyid", studyRowID);
+        utils::SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+        while (q2.next()) {
+            int seriesRowID = q2.value("SeriesRowID").toInt();
+
+            /* ... delete any staged Series files */
+            utils::RemoveStagedFileList(seriesRowID, "series");
+        }
+
+        /* ... delete all series for those studies */
+        q2.prepare("delete from Series where StudyRowID = :studyid");
+        q2.bindValue(":studyid", studyRowID);
+        utils::SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+    }
+
+    /* delete the studies */
+    q.prepare("delete from Study where SubjectRowID = :subjectid");
+    q.bindValue(":subjectid", objectID);
+    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+
+    /* delete the subject and any staged files */
+    q.prepare("delete from Subject where SubjectRowID = :subjectid");
+    q.bindValue(":subjectid", objectID);
+    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+
+    utils::RemoveStagedFileList(objectID, "subject");
+
+    /* in case anyone tries to use this object again */
+    objectID = -1;
+    valid = false;
+
+    return true;
 }
 
 
@@ -173,42 +217,87 @@ void squirrelSubject::PrintSubject() {
 QJsonObject squirrelSubject::ToJSON() {
     QJsonObject json;
 
-    json["ID"] = ID;
-	json["alternateIDs"] = QJsonArray::fromStringList(alternateIDs);
+    json["SubjectID"] = ID;
+    json["AlternateIDs"] = QJsonArray::fromStringList(alternateIDs);
     json["GUID"] = GUID;
-	json["dateOfBirth"] = dateOfBirth.toString("yyyy-MM-dd");
-    json["sex"] = sex;
-    json["gender"] = gender;
-    json["ethnicity1"] = ethnicity1;
-    json["ethnicity2"] = ethnicity2;
-	json["path"] = virtualPath;
+    json["DateOfBirth"] = dateOfBirth.toString("yyyy-MM-dd");
+    json["Sex"] = sex;
+    json["Gender"] = gender;
+    json["Ethnicity1"] = ethnicity1;
+    json["Ethnicity2"] = ethnicity2;
+    json["VirtualPath"] = VirtualPath();
 
+    /* add studies */
+    QSqlQuery q;
+    q.prepare("select StudyRowID from Study where SubjectRowID = :id");
+    q.bindValue(":id", objectID);
+    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     QJsonArray JSONstudies;
-    for (int i=0; i<studyList.size(); i++) {
-        JSONstudies.append(studyList[i].ToJSON());
+    while (q.next()) {
+        squirrelStudy s;
+        s.SetObjectID(q.value("StudyRowID").toInt());
+        if (s.Get()) {
+            JSONstudies.append(s.ToJSON());
+        }
     }
-    json["numStudies"] = JSONstudies.size();
-    json["studies"] = JSONstudies;
+    if (JSONstudies.size() > 0) {
+        json["NumStudies"] = JSONstudies.size();
+        json["studies"] = JSONstudies;
+    }
 
     /* add measures */
-    if (measureList.size() > 0) {
-        QJsonArray JSONmeasures;
-        for (int i=0; i < measureList.size(); i++) {
-            JSONmeasures.append(measureList[i].ToJSON());
+    q.prepare("select MeasureRowID from Measure where SubjectRowID = :id");
+    q.bindValue(":id", objectID);
+    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    QJsonArray JSONmeasures;
+    while (q.next()) {
+        squirrelMeasure m;
+        m.SetObjectID(q.value("MeasureRowID").toInt());
+        if (m.Get()) {
+            JSONmeasures.append(m.ToJSON());
         }
-		json["numMeasures"] = JSONmeasures.size();
-		json["measures"] = JSONmeasures;
+    }
+    if (JSONmeasures.size() > 0) {
+        json["NumMeasures"] = JSONmeasures.size();
+        json["measures"] = JSONmeasures;
     }
 
     /* add drugs */
-    if (drugList.size() > 0) {
-        QJsonArray JSONdrugs;
-        for (int i=0; i < drugList.size(); i++) {
-            JSONdrugs.append(drugList[i].ToJSON());
+    q.prepare("select DrugRowID from Drug where SubjectRowID = :id");
+    q.bindValue(":id", objectID);
+    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    QJsonArray JSONdrugs;
+    while (q.next()) {
+        squirrelDrug d;
+        d.SetObjectID(q.value("DrugRowID").toInt());
+        if (d.Get()) {
+            JSONdrugs.append(d.ToJSON());
         }
-		json["numDrugs"] = JSONdrugs.size();
-		json["drugs"] = JSONdrugs;
+    }
+    if (JSONdrugs.size() > 0) {
+        json["NumDrugs"] = JSONdrugs.size();
+        json["drugs"] = JSONdrugs;
     }
 
     return json;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- VirtualPath ------------------------------------------ */
+/* ------------------------------------------------------------ */
+QString squirrelSubject::VirtualPath() {
+
+    QString vPath;
+    QString subjectDir;
+
+    /* get subject directory */
+    if (subjectDirFormat == "orig")
+        subjectDir = utils::CleanString(ID);
+    else
+        subjectDir = QString("%1").arg(sequence);
+
+    vPath = QString("data/%1").arg(subjectDir);
+
+    return vPath;
 }

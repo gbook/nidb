@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   Squirrel squirrel.h
-  Copyright (C) 2004 - 2023
+  Copyright (C) 2004 - 2024
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -29,6 +29,8 @@
 #include <QDebug>
 #include <QtSql>
 #include "squirrelSubject.h"
+#include "squirrelStudy.h"
+#include "squirrelSeries.h"
 #include "squirrelExperiment.h"
 #include "squirrelPipeline.h"
 #include "squirrelMeasure.h"
@@ -45,90 +47,104 @@
 class squirrel
 {
 public:
-    squirrel();
+    squirrel(bool dbg=false, bool q=false);
     ~squirrel();
 
-    bool read(QString filename, bool validateOnly=false);
-    bool write(QString outpath, QString &filepath);
+    bool read(QString filename, bool headerOnly, bool validateOnly=false);
+    bool write(QString outpath, QString &zipFilePath);
     bool validate();
     void print();
 
     bool addSubject(squirrelSubject subj);
     bool addPipeline(squirrelPipeline pipe);
-    bool addExperiment(squirrelExperiment exp);
+    //bool addExperiment(squirrelExperiment exp);
     bool removeSubject(QString ID);
 
-    /* package data */
-    QDateTime datetime; /*!< datetime the package was created */
-    QString description; /*!< detailed description of the package */
-    QString name; /*!< name of the package */
-    QString NiDBversion; /*!< NiDB version that wrote this package */
-    QString version; /*!< squirrel version */
-    QString format; /*!< package format. will always be 'squirrel' */
-    QString subjectDirFormat; /*!< orig, seq */
-    QString studyDirFormat; /*!< orig, seq */
-    QString seriesDirFormat; /*!< orig, seq */
-    QString dataFormat; /*!< orig, anon, anonfull, nift3d, nifti3dgz, nifti4d, nifti4dgz */
-    QString filePath; /*!< full path to the zip file */
-    QString license;
-    QString readme;
-    QString changes;
-    QString notes; /* JSON string of notes */
-    qint64 GetUnzipSize();
+    /* package JSON elements */
+    QDateTime datetime;         /*!< datetime the package was created */
+    QString description;        /*!< detailed description of the package */
+    QString name;               /*!< name of the package */
+    QString NiDBversion;        /*!< NiDB version that wrote this package */
+    QString version;            /*!< squirrel version */
+    QString format;             /*!< 'dir' or 'zip' */
+    QString subjectDirFormat;   /*!< orig, seq */
+    QString studyDirFormat;     /*!< orig, seq */
+    QString seriesDirFormat;    /*!< orig, seq */
+    QString dataFormat;         /*!< orig, anon, anonfull, nift3d, nifti3dgz, nifti4d, nifti4dgz */
+    QString license;            /*!< a data usage license */
+    QString readme;             /*!< a README */
+    QString changes;            /*!< any changes since last package release */
+    QString notes;              /*!< JSON string of notes (may contain JSON sub-elements of 'import', 'merge', 'export') */
+
+    /* lib variables */
+    QString filePath;           /*!< full path to the zip file */
+
+    /* new, SQLite based functions */
+    QList<squirrelExperiment> GetAllExperiments();
+    QList<squirrelPipeline> GetAllPipelines();
+    QList<squirrelSubject> GetAllSubjects();
+    QList<squirrelStudy> GetStudies(int subjectRowID);
+    QList<squirrelSeries> GetSeries(int studyRowID);
+    QList<squirrelAnalysis> GetAnalyses(int studyRowID);
+    QList<squirrelMeasure> GetMeasures(int subjectRowID);
+    QList<squirrelDrug> GetDrugs(int subjectRowID);
+    QList<squirrelGroupAnalysis> GetAllGroupAnalyses();
+    QList<squirrelDataDictionary> GetAllDataDictionaries();
+
+    /* get numbers of objects */
     qint64 GetNumFiles();
+    int GetObjectCount(QString object);
 
-    /* subject, pipeline, and experiment data */
-    QList<squirrelSubject> subjectList; /*!< List of subjects within this package */
-    QList<squirrelPipeline> pipelineList; /*!< List of pipelines within this package */
-    QList<squirrelExperiment> experimentList; /*!< List of experiments within this package */
-    QList<squirrelGroupAnalysis> groupAnalysisList; /*!< List of groupAnalyses within this package */
+    /* find objects */
+    int FindSubject(QString id);
+    int FindStudy(QString subjectID, int studyNum);
+    int FindStudyByUID(QString studyUID);
+    int FindSeries(QString subjectID, int studyNum, int seriesNum);
+    int FindSeriesByUID(QString seriesUID);
 
-    /* data dictionary (just a single object, not array) */
-    squirrelDataDictionary dataDictionary;
+    bool AddStagedFiles(QString objectType, int rowid, QStringList files, QString destDir="");
 
-    /* searching/retrieval, get index */
-    int GetSubjectIndex(QString ID);
-    int GetStudyIndex(QString ID, int studyNum);
-    int GetSeriesIndex(QString ID, int studyNum, int seriesNum);
-    int GetExperimentIndex(QString experimentName);
-    int GetPipelineIndex(QString pipelineName);
+    //bool RemoveSubject(int subjectRowID);
+    //bool RemoveStudy(int studyRowID);
+    //bool RemoveSeries(int studyRowID);
 
-    /* searching/retrieval functions - get copies */
-    bool GetSubject(QString ID, squirrelSubject &sqrlSubject);
-    bool GetStudy(QString ID, int studyNum, squirrelStudy &sqrlStudy);
-    bool GetSeries(QString ID, int studyNum, int seriesNum, squirrelSeries &sqrlSeries);
-    bool GetSubjectList(QList<squirrelSubject> &subjects);
-    bool GetStudyList(QString ID, QList<squirrelStudy> &studies);
-    bool GetSeriesList(QString ID, int studyNum, QList<squirrelSeries> &series);
-    bool GetDrugList(QString ID, QList<squirrelDrug> &drugs);
-    bool GetMeasureList(QString ID, QList<squirrelMeasure> &measures);
-    bool GetAnalysis(QString ID, int studyNum, QString pipelineName, squirrelAnalysis &sqrlAnalysis);
-    bool GetPipeline(QString pipelineName, squirrelPipeline &sqrlPipeline);
-    bool GetExperiment(QString experimentName, squirrelExperiment &sqrlExperiment);
+    /* requence the subject data */
+    void ResequenceSubjects();
+    void ResequenceStudies(int subjectRowID);
+    void ResequenceSeries(int studyRowID);
+
+    /* package information */
+    qint64 GetUnzipSize();
 
     /* validation functions */
     QString GetTempDir();
-	bool valid() { return isValid; }
-	bool okToDelete() { return isOkToDelete; }
-
-    /* functions to manipulate, add files */
-    bool AddSeriesFiles(QString ID, int studyNum, int seriesNum, QStringList files, QString destDir="");
-    bool AddAnalysisFiles(QString ID, int studyNum, QString pipelineName, QStringList files, QString destDir="");
-    bool AddPipelineFiles(QString pipelineName, QStringList files, QString destDir="");
-    bool AddExperimentFiles(QString experimentName, QStringList files, QString destDir="");
+    bool valid() { return isValid; }
+    bool okToDelete() { return isOkToDelete; }
 
     /* functions to read special files */
     QHash<QString, QString> ReadParamsFile(QString f);
 
     /* logging */
-    void Log(QString s, QString func);
+    void Log(QString s, QString func, bool dbg=false);
     QString GetLog() { return log; }
+    bool GetDebug() { return debug; }
+    bool quiet=false;
+
+    /* printing of information to console */
+    void PrintPackage();
+    void PrintSubjects(bool details=false);
+    void PrintStudies(int subjectRowID, bool details=false);
+    void PrintSeries(int studyRowID, bool details=false);
+    void PrintExperiments(bool details=false);
+    void PrintPipelines(bool details=false);
+    void PrintGroupAnalyses(bool details=false);
+    void PrintDataDictionary(bool details=false);
 
 private:
-    bool DatabaseConnect();
-
-    void PrintPackage();
     bool MakeTempDir(QString &dir);
+    bool DatabaseConnect();
+    bool InitializeDatabase();
+
     QString workingDir;
     QString logfile;
     QStringList msgs; /* squirrel messages, to be passed back upon writing (or reading) through the squirrel library */
@@ -136,8 +152,9 @@ private:
 
     QSqlDatabase db;
 
-	bool isValid;
-	bool isOkToDelete;
+    bool debug;
+    bool isValid;
+    bool isOkToDelete;
 };
 
 #endif // SQUIRREL_H

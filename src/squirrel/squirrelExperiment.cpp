@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   Squirrel experiment.cpp
-  Copyright (C) 2004 - 2023
+  Copyright (C) 2004 - 2024
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -25,7 +25,94 @@
 
 squirrelExperiment::squirrelExperiment()
 {
+}
 
+/* ------------------------------------------------------------ */
+/* ----- Get -------------------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief squirrelExperiment::Get
+ * @return true if successful
+ *
+ * This function will attempt to load the experiment data from
+ * the database. The experimentRowID must be set before calling
+ * this function. If the object exists in the DB, it will return true.
+ * Otherwise it will return false.
+ */
+bool squirrelExperiment::Get() {
+    if (objectID < 0) {
+        valid = false;
+        err = "objectID is not set";
+        return false;
+    }
+
+    QSqlQuery q;
+    q.prepare("select * from Experiment where ExperimentRowID = :id");
+    q.bindValue(":id", objectID);
+    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.next()) {
+
+        /* get the data */
+        objectID = q.value("ExperimentRowID").toLongLong();
+        experimentName = q.value("ExperimentName").toString();
+        numFiles = q.value("NumFiles").toLongLong();
+        size = q.value("Size").toLongLong();
+        virtualPath = q.value("VirtualPath").toString();
+
+        /* get any staged files */
+        stagedFiles = utils::GetStagedFileList(objectID, "experiment");
+
+        valid = true;
+        return true;
+    }
+    else {
+        valid = false;
+        err = "objectID not found in database";
+        return false;
+    }
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- Store ------------------------------------------------ */
+/* ------------------------------------------------------------ */
+/**
+ * @brief squirrelExperiment::Store
+ * @return true if successful
+ *
+ * This function will attempt to load the experiment data from
+ * the database. The experimentRowID must be set before calling
+ * this function. If the object exists in the DB, it will return true.
+ * Otherwise it will return false.
+ */
+bool squirrelExperiment::Store() {
+
+    QSqlQuery q;
+    /* insert if the object doesn't exist ... */
+    if (objectID < 0) {
+        q.prepare("insert into Experiment (ExperimentName, Size, NumFiles, VirtualPath) values (:packageid, :name, :size, :numfiles, :virtualpath)");
+        q.bindValue(":name", experimentName);
+        q.bindValue(":size", size);
+        q.bindValue(":numfiles", numFiles);
+        q.bindValue(":virtualPath", virtualPath);
+        utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        objectID = q.lastInsertId().toInt();
+    }
+    /* ... otherwise update */
+    else {
+        q.prepare("update Experiment set ExperimentName = :name, Size = :size, NumFiles = :numfiles, VirtualPath = :virtualpath where ExperimentRowID = :id");
+        q.bindValue(":id", objectID);
+        q.bindValue(":name", experimentName);
+        q.bindValue(":size", size);
+        q.bindValue(":numfiles", numFiles);
+        q.bindValue(":virtualPath", virtualPath);
+        utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    }
+
+    /* store any staged filepaths */
+    utils::StoreStagedFileList(objectID, "experiment", stagedFiles);
+
+    return true;
 }
 
 
@@ -35,9 +122,10 @@ squirrelExperiment::squirrelExperiment()
 QJsonObject squirrelExperiment::ToJSON() {
     QJsonObject json;
 
-	json["experimentName"] = experimentName;
-	json["numFiles"] = numFiles;
-	json["size"] = size;
+    json["ExperimentName"] = experimentName;
+    json["NumFiles"] = numFiles;
+    json["Size"] = size;
+    json["VirtualPath"] = virtualPath;
 
     return json;
 }
@@ -51,8 +139,9 @@ QJsonObject squirrelExperiment::ToJSON() {
  */
 void squirrelExperiment::PrintExperiment() {
 
-    Print("\t----- EXPERIMENT -----");
-    Print(QString("\tExperimentName: %1").arg(experimentName));
-    Print(QString("\tnumfiles: %1").arg(numFiles));
-    Print(QString("\tsize: %1").arg(size));
+    utils::Print("\t----- EXPERIMENT -----");
+    utils::Print(QString("\tExperimentName: %1").arg(experimentName));
+    utils::Print(QString("\tNumfiles: %1").arg(numFiles));
+    utils::Print(QString("\tSize: %1").arg(size));
+    utils::Print(QString("\tVirtualPath: %1").arg(virtualPath));
 }

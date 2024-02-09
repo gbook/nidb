@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB squirrelImageIO.cpp
-  Copyright (C) 2004 - 2023
+  Copyright (C) 2004 - 2024
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -87,7 +87,7 @@ bool squirrelImageIO::ConvertDicom(QString filetype, QString indir, QString outd
 
     /* create the output directory */
     QString m;
-    if (!MakePath(outdir, m)) {
+    if (!utils::MakePath(outdir, m)) {
         msgs << "Unable to create path [" + outdir + "] because of error [" + m + "]";
         msg = msgs.join("\n");
         return false;
@@ -97,10 +97,10 @@ bool squirrelImageIO::ConvertDicom(QString filetype, QString indir, QString outd
      * remove any stuff and start from scratch to ensure proper file numbering */
     if ((outdir != "") && (outdir != "/") ) {
         QString systemstring2 = QString("rm -f %1/*.hdr %1/*.img %1/*.nii %1/*.gz").arg(outdir);
-        msgs << SystemCommand(systemstring2, true, true);
+        msgs << utils::SystemCommand(systemstring2, true, true);
 
         /* execute the command created above */
-        msgs << SystemCommand(systemstring, true, true);
+        msgs << utils::SystemCommand(systemstring, true, true);
     }
     else {
         msg = msgs.join("\n");
@@ -110,12 +110,12 @@ bool squirrelImageIO::ConvertDicom(QString filetype, QString indir, QString outd
     /* conversion should be done, so check if it actually gzipped the file */
     if ((gzip) && (filetype != "bids")) {
         systemstring = "cd " + outdir + "; gzip *";
-        msgs << SystemCommand(systemstring, true);
+        msgs << utils::SystemCommand(systemstring, true);
     }
 
     /* rename the files into something meaningful */
     m = "";
-    if (!BatchRenameFiles(outdir, seriesnum, studynum, uid, numfilesrenamed, m))
+    if (!utils::BatchRenameFiles(outdir, seriesnum, studynum, uid, numfilesrenamed, m))
         msgs << "Error renaming output files [" + m + "]";
 
     /* change back to original directory before leaving */
@@ -619,7 +619,7 @@ bool squirrelImageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa
 
             /* get the other part of the CSA header, the PhaseEncodingDirectionPositive value */
             QString systemstring = QString("%1/./gdcmdump -C %2 | grep PhaseEncodingDirectionPositive").arg(bindir).arg(f);
-            QString csaheader = SystemCommand(systemstring, false);
+            QString csaheader = utils::SystemCommand(systemstring, false);
             QStringList parts = csaheader.split(",");
             QString val;
             if (parts.size() == 5) {
@@ -697,7 +697,7 @@ bool squirrelImageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa
     /* fix some of the fields to be amenable to the DB */
     if (tags["Modality"] == "")
         tags["Modality"] = "OT";
-    QString StudyDate = ParseDate(tags["StudyDate"]);
+    QString StudyDate = utils::ParseDate(tags["StudyDate"]);
     //QString StudyTime = ParseTime(tags["StudyTime"]);
     //QString SeriesDate = ParseDate(tags["SeriesDate"]);
     //QString SeriesTime = ParseTime(tags["SeriesTime"]);
@@ -729,10 +729,10 @@ bool squirrelImageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa
     //}
 
     /* fix patient birthdate */
-    QString PatientBirthDate = ParseDate(tags["PatientBirthDate"]);
+    QString PatientBirthDate = utils::ParseDate(tags["PatientBirthDate"]);
 
     /* get patient age */
-    tags["PatientAge"] = QString("%1").arg(GetPatientAge(tags["PatientAge"], StudyDate, PatientBirthDate));
+    tags["PatientAge"] = QString("%1").arg(utils::GetPatientAge(tags["PatientAge"], StudyDate, PatientBirthDate));
 
     /* remove any non-printable ASCII control characters */
     tags["PatientName"].replace(QRegularExpression(QStringLiteral("[\\x00-\\x1F]")),"").replace("\\xFFFD","");

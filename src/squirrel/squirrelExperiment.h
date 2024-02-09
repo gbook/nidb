@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   Squirrel experiment.h
-  Copyright (C) 2004 - 2023
+  Copyright (C) 2004 - 2024
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -22,6 +22,7 @@
 
 #ifndef SQUIRRELEXPERIMENT_H
 #define SQUIRRELEXPERIMENT_H
+#include <QtSql>
 #include <QString>
 #include <QJsonObject>
 #include <QJsonArray>
@@ -32,14 +33,27 @@
 class squirrelExperiment
 {
 public:
-	squirrelExperiment();
-    QJsonObject ToJSON();
-    void PrintExperiment();
+    squirrelExperiment();
+    QJsonObject ToJSON();   /* returns a JSON object */
+    void PrintExperiment(); /* prints the object */
+    bool Get();             /* gets the object data from the database */
+    bool Store();           /* saves the object data from this object into the database */
+    bool isValid() { return valid; }
+    QString Error() { return err; }
+    qint64 GetObjectID() { return objectID; }
+    void SetObjectID(int id) { objectID = id; }
 
-    QString experimentName; /*!< experiment name (required) */
-    qint64 numFiles; /*!< number of experiment files (required) */
-    qint64 size; /*!< total size in bytes of the experiment files (required) */
-    QString virtualPath; /*!< path to the experiment files, relative to the package root (required) */
+    /* data items */
+    QString experimentName;     /*!< experiment name (required) */
+    qint64 numFiles;            /*!< number of experiment files (required) */
+    qint64 size;                /*!< total size in bytes of the experiment files (required) */
+    QString virtualPath;        /*!< path to the experiment files, relative to the package root (required) */
+    QStringList stagedFiles;    /*!< staged file list - list of files in their own original paths which will be copied in before the package is zipped up */
+
+private:
+    bool valid = false;
+    QString err;
+    qint64 objectID = -1;
 };
 
 #endif // SQUIRRELEXPERIMENT_H

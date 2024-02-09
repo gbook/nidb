@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   Squirrel squirrelGroupAnalysis.h
-  Copyright (C) 2004 - 2023
+  Copyright (C) 2004 - 2024
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -23,26 +23,43 @@
 
 #ifndef SQUIRRELGROUPANALYSIS_H
 #define SQUIRRELGROUPANALYSIS_H
+#include <QtSql>
 #include <QString>
 #include <QDateTime>
 #include <QJsonObject>
 
-
+/**
+ * @brief The squirrelGroupAnalysis class
+ */
 class squirrelGroupAnalysis
 {
 public:
     squirrelGroupAnalysis();
     QJsonObject ToJSON();
     void PrintGroupAnalysis();
+    bool Get();             /* gets the object data from the database */
+    bool Store();           /* saves the object data from this object into the database */
+    bool isValid() { return valid; }
+    QString Error() { return err; }
+    qint64 GetObjectID() { return objectID; }
+    void SetObjectID(int id) { objectID = id; }
 
-    QString pipelineName; /*!< name of the pipeline */
-    int pipelineVersion; /*!< pipeline version */
-    QDateTime startDate; /*!< datetime the analysis was started, includes the setup time */
-    QDateTime endDate; /*!< datetime the analysis ended */
-    qint64 numfiles;
-    qint64 size; /*!< disk size in bytes of the analysis */
+    /* JSON elements */
+    QString groupAnalysisName;  /*!< name of the group analysis */
+    QDateTime dateTime;         /*!< datetime of the group analysis */
+    QString description;        /*!< description of the group analysis */
+    QString notes;              /*!< notes about the group analysis */
+    qint64 numFiles;            /*!< number of files in the analysis */
+    qint64 size;                /*!< disk size in bytes of the analysis */
+    QString virtualPath;        /*!< path within the squirrel package, no leading slash */
 
-    QString virtualPath; /*!< path within the squirrel package, no leading slash */
+    /* lib variables */
+    QStringList stagedFiles;    /*!< staged file list: list of files in their own original paths which will be copied in before the package is zipped up */
+
+private:
+    bool valid = false;
+    QString err;
+    qint64 objectID = -1;
 };
 
 #endif // SQUIRRELGROUPANALYSIS_H

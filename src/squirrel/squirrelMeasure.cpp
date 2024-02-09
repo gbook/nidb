@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   Squirrel measure.cpp
-  Copyright (C) 2004 - 2023
+  Copyright (C) 2004 - 2024
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -30,19 +30,124 @@ squirrelMeasure::squirrelMeasure()
 
 
 /* ------------------------------------------------------------ */
+/* ----- Get -------------------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief squirrelMeasure::Get
+ * @return true if successful
+ *
+ * This function will attempt to load the measure data from
+ * the database. The measureRowID must be set before calling
+ * this function. If the object exists in the DB, it will return true.
+ * Otherwise it will return false.
+ */
+bool squirrelMeasure::Get() {
+    if (objectID < 0) {
+        valid = false;
+        err = "objectID is not set";
+        return false;
+    }
+    QSqlQuery q;
+    q.prepare("select * from Measure where MeasureRowID = :id");
+    q.bindValue(":id", objectID);
+    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.next()) {
+        //q.first();
+
+        /* get the data */
+        objectID = q.value("MeasureRowID").toLongLong();
+        subjectRowID = q.value("SubjectRowID").toLongLong();
+        measureName = q.value("MeasureName").toString();
+        dateStart = q.value("DateStart").toDateTime();
+        dateEnd = q.value("DateEnd").toDateTime();
+        instrumentName = q.value("InstrumentName").toString();
+        rater = q.value("Rater").toString();
+        notes = q.value("Notes").toString();
+        value = q.value("Value").toString();
+        description = q.value("Description").toString();
+        duration = q.value("Duration").toLongLong();
+        dateRecordEntry = q.value("DateRecordEntry").toDateTime();
+
+        valid = true;
+        return true;
+    }
+    else {
+        valid = false;
+        err = "objectID not found in database";
+        return false;
+    }
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- Store ------------------------------------------------ */
+/* ------------------------------------------------------------ */
+/**
+ * @brief squirrelMeasure::Store
+ * @return true if successful
+ *
+ * This function will attempt to load the measure data from
+ * the database. The measureRowID must be set before calling
+ * this function. If the object exists in the DB, it will return true.
+ * Otherwise it will return false.
+ */
+bool squirrelMeasure::Store() {
+    QSqlQuery q;
+
+    /* insert if the object doesn't exist ... */
+    if (objectID < 0) {
+        q.prepare("insert into Measure (SubjectRowID, MeasureName, DateStart, DateEnd, InstrumentName, Rater, Notes, Value, Duration, DateRecordEntry, Description) values (:SubjectRowID, :MeasureName, :DateStart, :DateEnd, :InstrumentName, :Rater, :Notes, :Value, :Duration, :DateRecordEntry, :Description)");
+        q.bindValue(":SubjectRowID", subjectRowID);
+        q.bindValue(":MeasureName", measureName);
+        q.bindValue(":DateStart", dateStart);
+        q.bindValue(":DateEnd", dateEnd);
+        q.bindValue(":InstrumentName", instrumentName);
+        q.bindValue(":Rater", rater);
+        q.bindValue(":Notes", notes);
+        q.bindValue(":Value", value);
+        q.bindValue(":Duration", duration);
+        q.bindValue(":DateRecordEntry", dateRecordEntry);
+        q.bindValue(":Description", description);
+        utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        objectID = q.lastInsertId().toInt();
+    }
+    /* ... otherwise update */
+    else {
+        q.prepare("update Measure set SubjectRowID = :SubjectRowID, MeasureName = :MeasureName, DateStart = :DateStart, DateEnd = :DateEnd, InstrumentName = :InstrumentName, Rater = :Rater, Notes = :Notes, Value = :Value, Duration = :Duration, DateRecordEntry = :DateRecordEntry, Description = :Description where MeasureRowID = :id");
+        q.bindValue(":id", objectID);
+        q.bindValue(":SubjectRowID", subjectRowID);
+        q.bindValue(":MeasureName", measureName);
+        q.bindValue(":DateStart", dateStart);
+        q.bindValue(":DateEnd", dateEnd);
+        q.bindValue(":InstrumentName", instrumentName);
+        q.bindValue(":Rater", rater);
+        q.bindValue(":Notes", notes);
+        q.bindValue(":Value", value);
+        q.bindValue(":Duration", duration);
+        q.bindValue(":DateRecordEntry", dateRecordEntry);
+        q.bindValue(":Description", description);
+        utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    }
+
+    return true;
+}
+
+
+/* ------------------------------------------------------------ */
 /* ----- ToJSON ----------------------------------------------- */
 /* ------------------------------------------------------------ */
 QJsonObject squirrelMeasure::ToJSON() {
     QJsonObject json;
 
-	json["measureName"] = measureName;
-	json["dateStart"] = dateStart.toString("yyyy-MM-dd HH:mm:ss");
-	json["dateEnd"] = dateEnd.toString("yyyy-MM-dd HH:mm:ss");
-	json["instrumentName"] = instrumentName;
-	json["rater"] = rater;
-	json["notes"] = notes;
-	json["value"] = value;
-	json["description"] = description;
+    json["MeasureName"] = measureName;
+    json["DateStart"] = dateStart.toString("yyyy-MM-dd HH:mm:ss");
+    json["DateEnd"] = dateEnd.toString("yyyy-MM-dd HH:mm:ss");
+    json["InstrumentName"] = instrumentName;
+    json["Rater"] = rater;
+    json["Notes"] = notes;
+    json["Value"] = value;
+    json["Description"] = description;
+    json["Duration"] = duration;
 
     return json;
 }
@@ -56,15 +161,5 @@ QJsonObject squirrelMeasure::ToJSON() {
  */
 void squirrelMeasure::PrintMeasure() {
 
-    //Print("-- MEASURE ----------");
-    //Print(QString("\t\t\tName: %1").arg(measureName));
-    //Print(QString("\t\t\tDateStart: %1").arg(dateStart.toString()));
-    //Print(QString("\t\t\tDateEnd: %1").arg(dateEnd.toString()));
-    //Print(QString("\t\t\tInstrumentName: %1").arg(instrumentName));
-    //Print(QString("\t\t\tRater: %1").arg(rater));
-    //Print(QString("\t\t\tNotes: %1").arg(notes));
-    //Print(QString("\t\t\tValue: %1").arg(value));
-    //Print(QString("\t\t\tDescription: %1").arg(description));
-
-    Print(QString("\t\t\tMEASURE\tName [%1]\tDateStart [%2]\tDateEnd [%3]\tInstrumentName [%4]\tRater [%5]\tNotes [%6]\tValue [%7]\tDescription [%8]").arg(measureName).arg(dateStart.toString()).arg(dateEnd.toString()).arg(instrumentName).arg(rater).arg(notes).arg(value).arg(description));
+    utils::Print(QString("\t\t\tMEASURE\tName [%1]\tDateStart [%2]\tDateEnd [%3]\tInstrumentName [%4]\tRater [%5]\tNotes [%6]\tValue [%7]\tDescription [%8]").arg(measureName).arg(dateStart.toString()).arg(dateEnd.toString()).arg(instrumentName).arg(rater).arg(notes).arg(value).arg(description));
 }

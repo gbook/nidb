@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   Squirrel validate.cpp
-  Copyright (C) 2004 - 2023
+  Copyright (C) 2004 - 2024
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -39,8 +39,8 @@ bool validate::LoadSquirrel(QString path, QString &m) {
 
     /* get contents of zip file */
     QString systemstring = QString("zip -l %1").arg(path);
-    QString fileList = SystemCommand(systemstring);
-    Print(fileList);
+    QString fileList = utils::SystemCommand(systemstring);
+    utils::Print(fileList);
 
     return true;
 }

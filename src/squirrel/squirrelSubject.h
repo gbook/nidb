@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   Squirrel subject.h
-  Copyright (C) 2004 - 2023
+  Copyright (C) 2004 - 2024
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -22,7 +22,7 @@
 
 #ifndef SQUIRRELSUBJECT_H
 #define SQUIRRELSUBJECT_H
-
+#include <QtSql>
 #include <QString>
 #include <QDate>
 #include <QJsonObject>
@@ -41,29 +41,36 @@ class squirrelSubject
 public:
 	squirrelSubject();
 
-	bool addStudy(squirrelStudy s);
-	bool addMeasure(squirrelMeasure m);
-	bool addDrug(squirrelDrug d);
-    qint64 GetNextStudyNumber();
+    /* functions */
 	void PrintSubject();
 	QJsonObject ToJSON();
+    bool Get();             /* gets the object data from the database */
+    bool Store();           /* saves the object data from this object into the database */
+    bool Remove();          /* remove the subject (and all child studies and series) from the database */
+    bool isValid() { return valid; }
+    QString Error() { return err; }
+    qint64 GetObjectID() { return objectID; }
+    void SetObjectID(int id) { objectID = id; }
+    void SetDirFormat(QString subject_DirFormat) {subjectDirFormat = subject_DirFormat; }
+    QString VirtualPath();
 
-    /* subject info */
-	QString ID; /*!< --- Unique identifier --- Must be unique within the squirrel package */
-	QStringList alternateIDs; /*!< List of alternate subject IDs */
-    QString GUID;  /*!< globally unique identifier, from NIMH's NDA */
-	QDate dateOfBirth; /*!< Date of birth. Not required, but can be useful to calculate age during studies. Can also contain only year, or only year and month */
-    QString sex = "U"; /*!< Sex at birth (biological sex) */
-    QString gender = "U"; /*!< Gender identity */
-    QString ethnicity1; /*!< Ethnicity: hispanic, non-hispanic */
-    QString ethnicity2; /*!< Race: americanindian, asian, black, hispanic, islander, white */
+    /* JSON elements */
+    QString ID;                 /*!< --- Unique identifier --- Must be unique within the squirrel package */
+    QStringList alternateIDs;   /*!< List of alternate subject IDs */
+    QString GUID;               /*!< globally unique identifier, from NIMH's NDA */
+    QDate dateOfBirth = QDate(0,0,0);          /*!< Date of birth. Not required, but can be useful to calculate age during studies. Can also contain only year... or contain only year and month */
+    QString sex = "U";          /*!< Sex at birth (biological sex) */
+    QString gender = "U";       /*!< Gender identity */
+    QString ethnicity1;         /*!< Ethnicity: hispanic, non-hispanic */
+    QString ethnicity2;         /*!< Race: americanindian, asian, black, hispanic, islander, white */
+    //QString virtualPath;        /*!< path within the squirrel package, no leading slash */
+    int sequence;
 
-    QString dirpath; /*!< Relative path to the subject data */
-	QList<squirrelStudy> studyList; /*!< List of studies attached to this subject */
-	QList<squirrelMeasure> measureList; /*!< List of measures (variables) attached to this subject */
-	QList<squirrelDrug> drugList; /*!< List of drugs attached to this subject */
-
-	QString virtualPath; /*!< path within the squirrel package, no leading slash */
+private:
+    bool valid = false;
+    QString err;
+    qint64 objectID = -1;
+    QString subjectDirFormat = "orig";
 };
 
 #endif // SQUIRRELSUBJECT_H

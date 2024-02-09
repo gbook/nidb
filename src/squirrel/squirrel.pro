@@ -1,6 +1,7 @@
 # Use this file to build squirrel utils
 
 QT -= gui
+QT += sql
 
 CONFIG += c++17 cmdline
 CONFIG -= app_bundle
@@ -42,6 +43,7 @@ SOURCES += \
 
 HEADERS += \
 	bids.h \
+	squirrel.sql.h \
 	squirrelDataDictionary.h \
 	squirrelImageIO.h \
 	squirrelVersion.h \
