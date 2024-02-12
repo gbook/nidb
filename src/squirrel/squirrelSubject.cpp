@@ -27,7 +27,8 @@
 /* ------------------------------------------------------------ */
 /* ----- subject ---------------------------------------------- */
 /* ------------------------------------------------------------ */
-squirrelSubject::squirrelSubject() {
+squirrelSubject::squirrelSubject()
+{
 
 }
 
@@ -51,7 +52,7 @@ bool squirrelSubject::Get() {
         return false;
     }
 
-    QSqlQuery q;
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
     q.prepare("select * from Subject where SubjectRowID = :id");
     q.bindValue(":id", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -94,7 +95,7 @@ bool squirrelSubject::Get() {
  */
 bool squirrelSubject::Store() {
 
-    QSqlQuery q;
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
     /* insert if the object doesn't exist ... */
     if (objectID < 0) {
         q.prepare("insert or ignore into Subject (ID, AltIDs, GUID, DateOfBirth, Sex, Gender, Ethnicity1, Ethnicity2, Sequence, VirtualPath) values (:ID, :AltIDs, :GUID, :DateOfBirth, :Sex, :Gender, :Ethnicity1, :Ethnicity2, :Sequence, :VirtualPath)");
@@ -159,7 +160,7 @@ void squirrelSubject::PrintSubject() {
 bool squirrelSubject::Remove() {
 
     /* find all studies associated with this subject ... */
-    QSqlQuery q;
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
     q.prepare("select StudyRowID from Study where SubjectRowID = :subjectid");
     q.bindValue(":subjectid", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -170,7 +171,7 @@ bool squirrelSubject::Remove() {
         utils::RemoveStagedFileList(studyRowID, "study");
 
         /* ... delete all staged Series files */
-        QSqlQuery q2;
+        QSqlQuery q2(QSqlDatabase::database("squirrel"));
         q2.prepare("select SeriesRowID from Series where StudyRowID = :studyid");
         q2.bindValue(":studyid", studyRowID);
         utils::SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
@@ -228,7 +229,7 @@ QJsonObject squirrelSubject::ToJSON() {
     json["VirtualPath"] = VirtualPath();
 
     /* add studies */
-    QSqlQuery q;
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
     q.prepare("select StudyRowID from Study where SubjectRowID = :id");
     q.bindValue(":id", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);

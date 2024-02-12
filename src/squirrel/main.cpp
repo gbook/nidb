@@ -143,7 +143,7 @@ int main(int argc, char *argv[])
         else {
             /* create squirrel object and validate */
             squirrel *sqrl = new squirrel(debug);
-            if (sqrl->read(paramInput, true, true)) {
+            if (sqrl->Read(paramInput, true, true)) {
                 sqrl->Log("Valid squirrel file", __FUNCTION__);
             }
             else {
@@ -181,7 +181,8 @@ int main(int argc, char *argv[])
 
             /* 2) write the squirrel file */
             QString filepath;
-            sqrl->write(paramOutputFile, filepath);
+            sqrl->SetFilename(filepath);
+            sqrl->Write();
 
             delete dcm;
             delete sqrl;
@@ -223,8 +224,8 @@ int main(int argc, char *argv[])
             /* save the squirrel object */
             QString outpath;
             sqrl->filePath = outputfile;
-            //sqrl->print();
-            sqrl->write(paramInput, outpath);
+            sqrl->SetFilename(outputfile);
+            sqrl->Write();
         }
     }
     /* ---------- Run the squirrel2bids tool ---------- */
@@ -249,7 +250,7 @@ int main(int argc, char *argv[])
         else {
             squirrel *sqrl = new squirrel(debug, quiet);
             sqrl->quiet = quiet;
-            sqrl->read(paramInput, true);
+            sqrl->Read(paramInput, true);
 
             //possible objects: subjects  studies  series  experiments  pipelines  groupanalyses  datadictionary
 

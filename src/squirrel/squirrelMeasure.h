@@ -34,7 +34,7 @@
 class squirrelMeasure
 {
 public:
-	squirrelMeasure();
+    squirrelMeasure();
     QJsonObject ToJSON();
 	void PrintMeasure();
     bool Get();             /* gets the object data from the database */

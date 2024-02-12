@@ -39,7 +39,7 @@
 class squirrelSubject
 {
 public:
-	squirrelSubject();
+    squirrelSubject();
 
     /* functions */
 	void PrintSubject();

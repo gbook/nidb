@@ -83,9 +83,8 @@ squirrel::~squirrel()
  */
 bool squirrel::DatabaseConnect() {
 
-    db = QSqlDatabase::addDatabase("QSQLITE");
+    db = QSqlDatabase::addDatabase("QSQLITE", "squirrel");
     db.setDatabaseName(":memory:");
-    //db.setDatabaseName("C:/Temp/sqlite.db");
 
     if (db.open()) {
         Log("Successfuly opened SQLite memory database", __FUNCTION__);
@@ -107,9 +106,9 @@ bool squirrel::DatabaseConnect() {
  */
 bool squirrel::InitializeDatabase() {
 
-    /* NOTE - SQLite does not support multiple statements, so each table needs to be created individualy */
-    QSqlQuery q;
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
 
+    /* NOTE - SQLite does not support multiple statements, so each table needs to be created individualy */
     q.prepare(tableAnalysis);
     if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error creating table [Analysis]", __FUNCTION__); return false; }
 
@@ -161,7 +160,7 @@ bool squirrel::InitializeDatabase() {
 
 
 /* ------------------------------------------------------------ */
-/* ----- read ------------------------------------------------- */
+/* ----- Read ------------------------------------------------- */
 /* ------------------------------------------------------------ */
 /**
  * @brief Reads a squirrel package from disk
@@ -170,7 +169,7 @@ bool squirrel::InitializeDatabase() {
  * @param validateOnly true if validating the package
  * @return
  */
-bool squirrel::read(QString filepath, bool headerOnly, bool validateOnly) {
+bool squirrel::Read(QString filepath, bool headerOnly, bool validateOnly) {
 
     /* set the package path */
     filePath = filepath;
@@ -510,23 +509,21 @@ bool squirrel::read(QString filepath, bool headerOnly, bool validateOnly) {
 
 
 /* ------------------------------------------------------------ */
-/* ----- write ------------------------------------------------ */
+/* ----- Write ------------------------------------------------ */
 /* ------------------------------------------------------------ */
 /**
- * @brief squirrel::write
- * @param outpath
- * @param zipFilePath -
+ * @brief squirrel::Write
  * @return true if successfuly written, false otherwise
  */
-bool squirrel::write(QString outpath, QString &zipFilePath) {
+bool squirrel::Write(bool writeLog) {
 
     /* create the log file */
-    QFileInfo finfo(outpath);
+    QFileInfo finfo(zipPath);
     logfile = QString(finfo.absolutePath() + "/squirrel-" + utils::CreateLogDate() + ".log");
 
-    Log(QString("Beginning writing squirrel package: workingdir [%1]  outpath [%2]").arg(workingDir).arg(outpath), __FUNCTION__);
+    Log(QString("Writing squirrel package: workingdir [%1]  zippath [%2]").arg(workingDir).arg(zipPath), __FUNCTION__);
 
-    /* ----- 1) write data. And set the relative paths in the objects ----- */
+    /* ----- 1) Write data. And set the relative paths in the objects ----- */
     /* iterate through subjects */
     QList<squirrelSubject> subjects = GetAllSubjects();
     foreach (squirrelSubject subject, subjects) {
@@ -557,7 +554,7 @@ bool squirrel::write(QString outpath, QString &zipFilePath) {
                     }
                 }
                 else if ((dataFormat == "anon") || (dataFormat == "anonfull")) {
-                    /* create temp directory */
+                    /* create temp directory for the anonymization */
                     QString td;
                     MakeTempDir(td);
 
@@ -621,17 +618,10 @@ bool squirrel::write(QString outpath, QString &zipFilePath) {
                 series.Store();
 
                 /* write the series .json file, containing the dicom header params */
-                QJsonObject params;
-                params = series.ParamsToJSON();
-                QByteArray j = QJsonDocument(params).toJson();
-                QFile fout(QString("%1/params.json").arg(seriesPath));
-                if (fout.open(QIODevice::WriteOnly)) {
-                    fout.write(j);
-                    Log(QString("Wrote %1/params.json").arg(seriesPath), __FUNCTION__, true);
-                }
-                else {
-                    Log(QString("Error writing [%1]").arg(fout.fileName()), __FUNCTION__);
-                }
+                QString paramFilePath = QString("%1/params.json").arg(seriesPath);
+                QByteArray j = QJsonDocument(series.ParamsToJSON()).toJson();
+                if (!utils::WriteTextFile(paramFilePath, j))
+                    Log("Error writing [" + paramFilePath + "]", __FUNCTION__, true);
             }
         }
     }
@@ -726,33 +716,25 @@ bool squirrel::write(QString outpath, QString &zipFilePath) {
     root["TotalNumFiles"] = GetNumFiles();
 
     /* write the final .json file */
+    QString jsonFilePath = workingDir + "/squirrel.json";
     QByteArray j = QJsonDocument(root).toJson();
-    QFile fout(QString("%1/squirrel.json").arg(workingDir));
-    fout.open(QIODevice::WriteOnly);
-    fout.write(j);
-    fout.close();
-
-    Log(QString("Wrote main JSON file [%1/squirrel.json]").arg(workingDir), __FUNCTION__);
-
-    /* zip the temp directory into the output file */
-    QString zipfile = outpath;
-    if (!zipfile.endsWith(".zip"))
-        zipfile += ".zip";
+    if (!utils::WriteTextFile(jsonFilePath, j))
+        Log("Error writing [" + jsonFilePath + "]", __FUNCTION__, true);
 
     QString systemstring;
     #ifdef Q_OS_WINDOWS
-        systemstring = QString("\"C:/Program Files/7-Zip/7z.exe\" a \"" + zipfile + "\" \"" + workingDir + "/*\"");
+        systemstring = QString("\"C:/Program Files/7-Zip/7z.exe\" a \"" + zipPath + "\" \"" + workingDir + "/*\"");
     #else
-        systemstring = "cd " + workingDir + "; zip -1rv " + zipfile + " .";
+        systemstring = "cd " + workingDir + "; zip -1rv " + zipPath + " .";
     #endif
 
-    Log("Beginning zipping package...", __FUNCTION__);
+    Log("Beginning zipping package", __FUNCTION__);
     utils::SystemCommand(systemstring);
-    Log("Finished zipping package...", __FUNCTION__);
 
-    if (utils::FileExists(zipfile)) {
-        Log("Created .zip file [" + zipfile + "]", __FUNCTION__);
-        zipFilePath = zipfile;
+    if (utils::FileExists(zipPath)) {
+        QFileInfo fi(zipPath);
+        qint64 zipSize = fi.size();
+        Log(QString("Finished zipping package [%1]. Size is [%2] bytes").arg(zipPath).arg(zipSize), __FUNCTION__);
 
         /* delete the tmp dir, if it exists */
         if (utils::DirectoryExists(workingDir)) {
@@ -763,34 +745,38 @@ bool squirrel::write(QString outpath, QString &zipFilePath) {
         }
     }
     else {
-        Log("Error creating zip file [" + zipfile + "]", __FUNCTION__);
+        Log("Error creating zip file [" + zipPath + "]", __FUNCTION__);
         return false;
     }
+
+    /* write the log file */
+    if (writeLog)
+        utils::WriteTextFile(logfile, log);
 
     return true;
 }
 
 
 /* ------------------------------------------------------------ */
-/* ----- validate --------------------------------------------- */
+/* ----- Validate --------------------------------------------- */
 /* ------------------------------------------------------------ */
 /**
  * @brief Validate if a squirrel package is readable
  * @return true if valid squirrel file, false otherwise
  */
-bool squirrel::validate() {
+bool squirrel::Validate() {
 
     return true;
 }
 
 
 /* ------------------------------------------------------------ */
-/* ----- print ------------------------------------------------ */
+/* ----- Print ------------------------------------------------ */
 /* ------------------------------------------------------------ */
 /**
  * @brief Print the details of a package, including all objects
  */
-void squirrel::print() {
+void squirrel::Print() {
 
     /* print package info */
     PrintPackage();
@@ -852,7 +838,7 @@ qint64 squirrel::GetUnzipSize() {
 
     qint64 unzipSize(0);
 
-    QSqlQuery q;
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
 
     /* Analysis */
     q.prepare("select sum(Size) 'Size' from Analysis");
@@ -899,7 +885,7 @@ qint64 squirrel::GetUnzipSize() {
 qint64 squirrel::GetNumFiles() {
     qint64 total(0);
 
-    QSqlQuery q;
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
 
     /* Analysis */
     q.prepare("select sum(NumFiles) 'NumFiles' from Analysis");
@@ -943,7 +929,7 @@ int squirrel::GetObjectCount(QString object) {
     int count(0);
     QString table;
 
-    QSqlQuery q;
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
     if (object == "subject") table = "Subject";
     else if (object == "study") table = "Study";
     else if (object == "series") table = "Series";
@@ -1290,7 +1276,7 @@ void squirrel::PrintDataDictionary(bool details) {
 /* ----- GetAllExperiments ------------------------------------ */
 /* ------------------------------------------------------------ */
 QList<squirrelExperiment> squirrel::GetAllExperiments() {
-    QSqlQuery q;
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
     QList<squirrelExperiment> list;
     q.prepare("select ExperimentRowID from Experiment");
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -1310,7 +1296,7 @@ QList<squirrelExperiment> squirrel::GetAllExperiments() {
 /* ----- GetAllPipelines -------------------------------------- */
 /* ------------------------------------------------------------ */
 QList<squirrelPipeline> squirrel::GetAllPipelines() {
-    QSqlQuery q;
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
     QList<squirrelPipeline> list;
     q.prepare("select PipelineRowID from Pipeline");
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -1329,7 +1315,7 @@ QList<squirrelPipeline> squirrel::GetAllPipelines() {
 /* ----- GetAllSubjects --------------------------------------- */
 /* ------------------------------------------------------------ */
 QList<squirrelSubject> squirrel::GetAllSubjects() {
-    QSqlQuery q;
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
     QList<squirrelSubject> list;
     q.prepare("select SubjectRowID from Subject order by ID asc, Sequence");
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -1350,7 +1336,7 @@ QList<squirrelSubject> squirrel::GetAllSubjects() {
 /* ----- GetStudies ------------------------------------------- */
 /* ------------------------------------------------------------ */
 QList<squirrelStudy> squirrel::GetStudies(int subjectRowID) {
-    QSqlQuery q;
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
     QList<squirrelStudy> list;
     q.prepare("select StudyRowID from Study where SubjectRowID = :id order by StudyNumber asc, Sequence");
     q.bindValue(":id", subjectRowID);
@@ -1371,7 +1357,7 @@ QList<squirrelStudy> squirrel::GetStudies(int subjectRowID) {
 /* ----- GetSeries -------------------------------------------- */
 /* ------------------------------------------------------------ */
 QList<squirrelSeries> squirrel::GetSeries(int studyRowID) {
-    QSqlQuery q;
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
     QList<squirrelSeries> list;
     q.prepare("select SeriesRowID from Series where StudyRowID = :id order by SeriesNumber asc, Sequence");
     q.bindValue(":id", studyRowID);
@@ -1392,7 +1378,7 @@ QList<squirrelSeries> squirrel::GetSeries(int studyRowID) {
 /* ----- GetAnalyses ------------------------------------------ */
 /* ------------------------------------------------------------ */
 QList<squirrelAnalysis> squirrel::GetAnalyses(int studyRowID) {
-    QSqlQuery q;
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
     QList<squirrelAnalysis> list;
     q.prepare("select AnalysisRowID from Analysis where StudyRowID = :id");
     q.bindValue(":id", studyRowID);
@@ -1413,7 +1399,7 @@ QList<squirrelAnalysis> squirrel::GetAnalyses(int studyRowID) {
 /* ----- GetMeasures ------------------------------------------ */
 /* ------------------------------------------------------------ */
 QList<squirrelMeasure> squirrel::GetMeasures(int subjectRowID) {
-    QSqlQuery q;
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
     QList<squirrelMeasure> list;
     q.prepare("select MeasureRowID from Measure where SubjectRowID = :id");
     q.bindValue(":id", subjectRowID);
@@ -1433,7 +1419,7 @@ QList<squirrelMeasure> squirrel::GetMeasures(int subjectRowID) {
 /* ----- GetDrugs --------------------------------------------- */
 /* ------------------------------------------------------------ */
 QList<squirrelDrug> squirrel::GetDrugs(int subjectRowID) {
-    QSqlQuery q;
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
     QList<squirrelDrug> list;
     q.prepare("select DrugRowID from Drug where SubjectRowID = :id");
     q.bindValue(":id", subjectRowID);
@@ -1457,7 +1443,7 @@ QList<squirrelDrug> squirrel::GetDrugs(int subjectRowID) {
  * @return list of all groupAnalysis objects
  */
 QList<squirrelGroupAnalysis> squirrel::GetAllGroupAnalyses() {
-    QSqlQuery q;
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
     QList<squirrelGroupAnalysis> list;
     q.prepare("select GroupAnalysisRowID from GroupAnalysis");
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -1480,7 +1466,7 @@ QList<squirrelGroupAnalysis> squirrel::GetAllGroupAnalyses() {
  * @return list of all dataDictionary objects
  */
 QList<squirrelDataDictionary> squirrel::GetAllDataDictionaries() {
-    QSqlQuery q;
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
     QList<squirrelDataDictionary> list;
     q.prepare("select DataDictionaryRowID from DataDictionary");
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -1505,7 +1491,7 @@ QList<squirrelDataDictionary> squirrel::GetAllDataDictionaries() {
  */
 int squirrel::FindSubject(QString id) {
     int rowid(-1);
-    QSqlQuery q;
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
     q.prepare("select * from Subject where ID = :id");
     q.bindValue(":id", id);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -1521,7 +1507,7 @@ int squirrel::FindSubject(QString id) {
 /* ------------------------------------------------------------ */
 int squirrel::FindStudy(QString subjectID, int studyNum) {
     int rowid(-1);
-    QSqlQuery q;
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
     q.prepare("select * from Study a left join Subject b on a.SubjectRowID = b.SubjectRowID where a.StudyNumber = :studynum and b.ID = :id");
     q.bindValue(":studynum", studyNum);
     q.bindValue(":id", subjectID);
@@ -1538,7 +1524,7 @@ int squirrel::FindStudy(QString subjectID, int studyNum) {
 /* ------------------------------------------------------------ */
 int squirrel::FindStudyByUID(QString studyUID) {
     int rowid(-1);
-    QSqlQuery q;
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
     q.prepare("select * from Study where StudyUID = :studyuid");
     q.bindValue(":studyuid", studyUID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -1555,7 +1541,7 @@ int squirrel::FindStudyByUID(QString studyUID) {
 /* ------------------------------------------------------------ */
 int squirrel::FindSeries(QString subjectID, int studyNum, int seriesNum) {
     int rowid(-1);
-    QSqlQuery q;
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
     q.prepare("select * from Series a left join Study b on a.StudyRowID = b.StudyRowID left join Subject c on b.SubjectRowID = b.SubjectRowID where a.SeriesNumber = :seriesnum and b.StudyNumber = :studynum and c.ID = :id");
     q.bindValue(":seriesnum", seriesNum);
     q.bindValue(":studynum", studyNum);
@@ -1573,7 +1559,7 @@ int squirrel::FindSeries(QString subjectID, int studyNum, int seriesNum) {
 /* ------------------------------------------------------------ */
 int squirrel::FindSeriesByUID(QString seriesUID) {
     int rowid(-1);
-    QSqlQuery q;
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
     q.prepare("select * from Series where SeriesUID = :seriesuid");
     q.bindValue(":seriesuid", seriesUID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);

@@ -46,7 +46,7 @@ bool squirrelSeries::Get() {
         err = "objectID is not set";
         return false;
     }
-    QSqlQuery q;
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
     q.prepare("select * from Series where SeriesRowID = :id");
     q.bindValue(":id", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -99,7 +99,7 @@ bool squirrelSeries::Get() {
  */
 bool squirrelSeries::Store() {
 
-    QSqlQuery q;
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
     /* insert if the object doesn't exist ... */
     if (objectID < 0) {
         q.prepare("insert or ignore into Series (StudyRowID, SeriesNumber, Datetime, SeriesUID, Description, Protocol, ExperimentRowID, Size, NumFiles, BehSize, BehNumFiles, Sequence, VirtualPath) values (:StudyRowID, :SeriesNumber, :Datetime, :SeriesUID, :Description, :Protocol, :ExperimentRowID, :Size, :NumFiles, :BehSize, :BehNumFiles, :Sequence, :VirtualPath)");
@@ -155,7 +155,7 @@ bool squirrelSeries::Store() {
 /* ------------------------------------------------------------ */
 bool squirrelSeries::Remove() {
 
-    QSqlQuery q;
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
 
     /* ... delete any staged Study files */
     utils::RemoveStagedFileList(objectID, "series");
@@ -267,7 +267,7 @@ QString squirrelSeries::VirtualPath() {
     int subjectRowID = -1;
 
     /* get the parent study directory */
-    QSqlQuery q;
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
     q.prepare("select SubjectRowID, StudyNumber, Sequence from Study where StudyRowID = :studyid");
     q.bindValue(":studyid", studyRowID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);

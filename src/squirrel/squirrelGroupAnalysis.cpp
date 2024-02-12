@@ -47,7 +47,7 @@ bool squirrelGroupAnalysis::Get() {
         err = "objectID is not set";
         return false;
     }
-    QSqlQuery q;
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
     q.prepare("select * from GroupAnalysis where GroupAnalysisRowID = :id");
     q.bindValue(":id", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -91,7 +91,7 @@ bool squirrelGroupAnalysis::Get() {
  */
 bool squirrelGroupAnalysis::Store() {
 
-    QSqlQuery q;
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
 
     /* insert if the object doesn't exist ... */
     if (objectID < 0) {

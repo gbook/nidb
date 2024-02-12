@@ -36,7 +36,7 @@
 class squirrelDrug
 {
 public:
-	squirrelDrug();
+    squirrelDrug();
     QJsonObject ToJSON();
 	void PrintDrug();
     bool Get();             /* gets the object data from the database */

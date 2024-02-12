@@ -48,7 +48,7 @@ bool squirrelAnalysis::Get() {
         err = "objectID is not set";
         return false;
     }
-    QSqlQuery q;
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
     q.prepare("select * from Analysis a left join Pipeline b on a.PipelineRowID = b.PipelineRowID where a.AnalysisRowID = :id");
     q.bindValue(":id", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -110,7 +110,7 @@ bool squirrelAnalysis::Get() {
  * Otherwise it will return false.
  */
 bool squirrelAnalysis::Store() {
-    QSqlQuery q;
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
 
     /* insert if the object doesn't exist ... */
     if (objectID < 0) {

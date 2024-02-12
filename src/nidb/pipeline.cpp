@@ -327,7 +327,7 @@ squirrelPipeline pipeline::GetSquirrelObject() {
     s.description = desc;
     s.createDate = createDate;
     s.version = version;
-    s.level = QString("%1").arg(level);
+    s.level = level;
 
     /* pipeline options */
     s.parentPipelines = GetParentList();

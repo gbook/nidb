@@ -197,13 +197,13 @@ squirrelStudy study::GetSquirrelObject() {
 	squirrelStudy sqrl;
 
 	sqrl.dateTime = _studydatetime;
-	sqrl.dayNumber = _daynum;
+    sqrl.dayNumber = _daynum.toInt();
 	sqrl.description = _desc;
 	sqrl.equipment = _equipment;
 	sqrl.height = _height;
 	sqrl.modality = _modality;
 	sqrl.number = _studynum;
-	sqrl.timePoint = _timepoint;
+    sqrl.timePoint = _timepoint.toInt();
 	sqrl.visitType = _studytype;
 	sqrl.weight = _weight;
 

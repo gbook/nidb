@@ -2,7 +2,7 @@
 
 # global build variables
 if [ -z "$1" ]; then
-	QMAKEBIN=~/Qt/6.5.3/gcc_64/bin/qmake
+	QMAKEBIN=~/Qt/6.6.1/gcc_64/bin/qmake
 else
 	QMAKEBIN=$1
 fi

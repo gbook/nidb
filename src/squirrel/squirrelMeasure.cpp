@@ -47,7 +47,7 @@ bool squirrelMeasure::Get() {
         err = "objectID is not set";
         return false;
     }
-    QSqlQuery q;
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
     q.prepare("select * from Measure where MeasureRowID = :id");
     q.bindValue(":id", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -92,7 +92,7 @@ bool squirrelMeasure::Get() {
  * Otherwise it will return false.
  */
 bool squirrelMeasure::Store() {
-    QSqlQuery q;
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
 
     /* insert if the object doesn't exist ... */
     if (objectID < 0) {

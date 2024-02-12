@@ -38,7 +38,7 @@ public:
     nidb *n;
 
     void PrintSubjectInfo();
-	squirrelSubject GetSquirrelObject();
+    squirrelSubject GetSquirrelObject();
 
     int subjectRowID() { return _subjectid; }
     QString UID() { return _uid; }

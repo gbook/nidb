@@ -2436,7 +2436,6 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     if (squirrelflags.contains("SQUIRREL_INCSTUDYNUM")) sqrl.studyDirFormat = "seq";
     if (squirrelflags.contains("SQUIRREL_INCSERIESNUM")) sqrl.seriesDirFormat = "seq";
 
-    int subjectCounter = 1; /* the subject counter */
     QList<int> pipelineIDs;
     QList<int> experimentIDs;
     QList<int> minipipelineIDs;
@@ -2444,9 +2443,9 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     /* iterate through the subjects (array key is UIDs) */
     for(QMap<QString, QMap<int, QMap<int, QMap<QString, QString> > > >::iterator a = s.begin(); a != s.end(); ++a) {
         QString uid = a.key();
-        int studyCounter = 1; /* the session (study) counter */
 
-        subject subj(uid, false, n); /* get the subject object by UID */
+        /* get the subject object by UID */
+        subject subj(uid, false, n);
 
         n->WriteLog(QString("%1() Working on subject [" + uid + "]").arg(__FUNCTION__));
 
@@ -2454,6 +2453,8 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
 
         /* create the squirrelSubject object */
         squirrelSubject sqrlSubject = subj.GetSquirrelObject();
+        sqrlSubject.Store();
+        int squirrelSubjectRowID = sqrlSubject.GetObjectID();
 
         n->WriteLog(QString("%1() sqrlSubject.ID [" + sqrlSubject.ID + "]   subj.UID() [" + subj.UID() + "]").arg(__FUNCTION__));
 
@@ -2474,6 +2475,9 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
             /* create the squirrelStudy object, and populate extra fields */
             squirrelStudy sqrlStudy = stdy.GetSquirrelObject();
             sqrlStudy.ageAtStudy = subjectAge;
+            sqrlStudy.subjectRowID = squirrelSubjectRowID;
+            sqrlStudy.Store();
+            int squirrelStudyRowID = sqrlStudy.GetObjectID();
 
             /* export analyses (study level) */
             if (downloadflags.contains("DOWNLOAD_ANALYSIS", Qt::CaseInsensitive)) {
@@ -2487,7 +2491,8 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                         if (a1.isValid) {
                             /* create and add each squirrelAnalysis object */
                             squirrelAnalysis sqrlAnalysis = a1.GetSquirrelObject();
-                            sqrlStudy.addAnalysis(sqrlAnalysis);
+                            sqrlAnalysis.studyRowID = squirrelStudyRowID;
+                            sqrlAnalysis.Store();
                         }
                     }
                 }
@@ -2510,7 +2515,6 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                 }
             }
 
-            int seriesCounter = 1;
             /* iterate through the series (array key is seriesnum) */
             for(QMap<int, QMap<QString, QString> >::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
                 int seriesnum = c.key();
@@ -2522,34 +2526,21 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                 n->WriteLog(QString("%1() Working on subject [%2]  study [%3]  series [%4]").arg(__FUNCTION__).arg(uid).arg(studynum).arg(seriesnum));
 
                 QString seriesstatus = "complete";
-                QString statusmessage;
 
                 int seriesid = s[uid][studynum][seriesnum]["seriesid"].toInt();
                 int enrollmentid = s[uid][studynum][seriesnum]["enrollmentid"].toInt();
-                //int subjectid = s[uid][studynum][seriesnum]["subjectid"].toInt();
-                //QString primaryaltuid = s[uid][studynum][seriesnum]["primaryaltuid"];
-                //QString altuids = s[uid][studynum][seriesnum]["altuids"];
-                //QString projectname = s[uid][studynum][seriesnum]["projectname"];
-                //int studyid = s[uid][studynum][seriesnum]["studyid"].toInt();
-                //QString studytype = s[uid][studynum][seriesnum]["studytype"];
-                //QString studyaltid = s[uid][studynum][seriesnum]["studyaltid"];
                 QString modality = s[uid][studynum][seriesnum]["modality"];
-                //double seriessize = s[uid][studynum][seriesnum]["seriessize"].toDouble();
                 QString seriesdesc = s[uid][studynum][seriesnum]["seriesdesc"];
-                //QString seriesaltdesc = s[uid][studynum][seriesnum]["seriesaltdesc"].trimmed();
                 QString datatype = s[uid][studynum][seriesnum]["datatype"];
                 QString datadir = s[uid][studynum][seriesnum]["datadir"];
                 QString behindir = s[uid][studynum][seriesnum]["behdir"];
-                //QString qcindir = s[uid][studynum][seriesnum]["qcdir"];
                 bool datadirexists = s[uid][studynum][seriesnum]["datadirexists"].toInt();
                 bool behdirexists = s[uid][studynum][seriesnum]["behdirexists"].toInt();
-                //bool qcdirexists = s[uid][studynum][seriesnum]["qcdirexists"].toInt();
                 bool datadirempty = s[uid][studynum][seriesnum]["datadirempty"].toInt();
-                //bool behdirempty = s[uid][studynum][seriesnum]["behdirempty"].toInt();
-                //bool qcdirempty = s[uid][studynum][seriesnum]["qcdirempty"].toInt();
 
                 series sers(seriesid, modality, n);
                 squirrelSeries sqrlSeries = sers.GetSquirrelObject();
+                sqrlSeries.studyRowID = squirrelStudyRowID;
 
                 enrollmentIDs.append(enrollmentid);
 
@@ -2655,23 +2646,14 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                     }
                 }
 
-                //n->SetExportSeriesStatus(seriesid,seriesstatus,statusmessage);
                 msgs << n->WriteLog(QString("Series [%1%2-%3 (%4)] complete").arg(uid).arg(studynum).arg(seriesnum).arg(seriesdesc));
 
                 /* add the completed squirrelSeries to the squirrelStudy object */
-                sqrlStudy.addSeries(sqrlSeries);
-
-                seriesCounter++;
+                sqrlSeries.Store();
 
                 n->SetExportSeriesStatus(-1, exportid, seriesid, modality, "processing", "preparing squirrel export");
-
             }
-            studyCounter++;
-
-            /* add this completed squirrelStudy to the squirrelSubject */
-            sqrlSubject.addStudy(sqrlStudy);
         }
-        subjectCounter++;
 
         /* export variables (only variables from enrollments associated with the studies) */
         if (downloadflags.contains("DOWNLOAD_VARIABLES", Qt::CaseInsensitive)) {
@@ -2699,10 +2681,10 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
 
                         sqrlMeasure.duration = q2.value("measure_duration").toDouble();
                         sqrlMeasure.dateRecordEntry = q2.value("measure_entrydate").toDateTime();
-                        sqrlMeasure.dateRecordCreate = q2.value("measure_createdate").toDateTime();
-                        sqrlMeasure.dateRecordModify = q2.value("measure_modifydate").toDateTime();
-
-                        sqrlSubject.addMeasure(sqrlMeasure);
+                        //sqrlMeasure.dateRecordCreate = q2.value("measure_createdate").toDateTime();
+                        //sqrlMeasure.dateRecordModify = q2.value("measure_modifydate").toDateTime();
+                        sqrlMeasure.subjectRowID = squirrelSubjectRowID;
+                        sqrlMeasure.Store();
                     }
                 }
 
@@ -2714,7 +2696,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                     while (q2.next()) {
                         squirrelDrug sqrlDrug;
                         sqrlDrug.drugName = q2.value("drug_name").toString();
-                        sqrlDrug.type = q2.value("drug_type").toString();
+                        sqrlDrug.drugClass = q2.value("drug_type").toString();
                         sqrlDrug.dateStart = q2.value("drug_startdate").toDateTime();
                         sqrlDrug.dateEnd = q2.value("drug_enddate").toDateTime();
                         sqrlDrug.doseAmount = q2.value("drug_doseamount").toDouble();
@@ -2728,16 +2710,14 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                         sqrlDrug.rater = q2.value("measure_rater").toString();
                         sqrlDrug.notes = q2.value("measure_notes").toString();
                         sqrlDrug.dateRecordEntry = q2.value("measure_entrydate").toDateTime();
-                        sqrlDrug.dateRecordCreate = q2.value("measure_createdate").toDateTime();
-                        sqrlDrug.dateRecordModify = q2.value("measure_modifydate").toDateTime();
-
-                        sqrlSubject.addDrug(sqrlDrug);
+                        //sqrlDrug.dateRecordCreate = q2.value("measure_createdate").toDateTime();
+                        //sqrlDrug.dateRecordModify = q2.value("measure_modifydate").toDateTime();
+                        sqrlDrug.subjectRowID = squirrelSubjectRowID;
+                        sqrlDrug.Store();
                     }
                 }
             }
         }
-        /* add the completed squirrelSubject to the squirrel object */
-        sqrl.addSubject(sqrlSubject);
     }
 
     /* while iterating through the list of series, a list of pipelines, mini-pipelines and experiments
@@ -2746,7 +2726,6 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     /* add pipelines to the JSON object */
     if (downloadflags.contains("DOWNLOAD_PIPELINES", Qt::CaseInsensitive)) {
         /* check if there are any pipeline IDs specified in the export_series table */
-        //QSqlQuery q;
         q.prepare("select * from exportseries where export_id = :exportid and pipeline_id is not null");
         q.bindValue(":exportid", exportid);
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -2760,13 +2739,11 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
         }
 
         if (pipelineIDs.size() > 0) {
-            //QString dir(QString("%1/pipelines").arg(outdir));
-            //QJsonArray JSONpipelines;
             for (int i=0; i<pipelineIDs.size(); i++) {
                 /* create and add each squirrelPipeline object */
                 pipeline p(pipelineIDs[i], n);
                 squirrelPipeline sqrlPipeline = p.GetSquirrelObject();
-                sqrl.addPipeline(sqrlPipeline);
+                sqrlPipeline.Store();
             }
         }
     }
@@ -2774,13 +2751,11 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     /* add experiments to the JSON object */
     if (downloadflags.contains("DOWNLOAD_EXPERIMENTS", Qt::CaseInsensitive)) {
         if (experimentIDs.size() > 0) {
-            //QString dir(QString("%1/experiments").arg(outdir));
-            //QJsonArray JSONexperiments;
             for (int i=0; i<experimentIDs.size(); i++) {
                 /* create and add each squirrelPipeline object */
                 experiment e(experimentIDs[i], n);
                 squirrelExperiment sqrlExperiment = e.GetSquirrelObject();
-                sqrl.addExperiment(sqrlExperiment);
+                sqrlExperiment.Store();
             }
         }
     }
@@ -2803,7 +2778,8 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     }
 
     /* the squirrel object should be complete, so write it out */
-    sqrl.write(outdir, filepath);
+    sqrl.SetFilename(outdir);
+    sqrl.Write(false);
     msgs << n->WriteLog(QString("%1() - squirrel.write() returned [\n" + sqrl.GetLog() + "\n]").arg(__FUNCTION__));
 
     msg = msgs.join("\n");

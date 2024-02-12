@@ -50,15 +50,11 @@ public:
     squirrel(bool dbg=false, bool q=false);
     ~squirrel();
 
-    bool read(QString filename, bool headerOnly, bool validateOnly=false);
-    bool write(QString outpath, QString &zipFilePath);
-    bool validate();
-    void print();
-
-    bool addSubject(squirrelSubject subj);
-    bool addPipeline(squirrelPipeline pipe);
-    //bool addExperiment(squirrelExperiment exp);
-    bool removeSubject(QString ID);
+    bool Read(QString filename, bool headerOnly, bool validateOnly=false);
+    bool Write(bool writeLog);
+    bool Validate();
+    void Print();
+    void SetFilename(QString p) { zipPath = p; }
 
     /* package JSON elements */
     QDateTime datetime;         /*!< datetime the package was created */
@@ -104,10 +100,6 @@ public:
 
     bool AddStagedFiles(QString objectType, int rowid, QStringList files, QString destDir="");
 
-    //bool RemoveSubject(int subjectRowID);
-    //bool RemoveStudy(int studyRowID);
-    //bool RemoveSeries(int studyRowID);
-
     /* requence the subject data */
     void ResequenceSubjects();
     void ResequenceStudies(int subjectRowID);
@@ -118,8 +110,8 @@ public:
 
     /* validation functions */
     QString GetTempDir();
-    bool valid() { return isValid; }
-    bool okToDelete() { return isOkToDelete; }
+    bool IsValid() { return isValid; }
+    bool OkToDelete() { return isOkToDelete; }
 
     /* functions to read special files */
     QHash<QString, QString> ReadParamsFile(QString f);
@@ -140,6 +132,8 @@ public:
     void PrintGroupAnalyses(bool details=false);
     void PrintDataDictionary(bool details=false);
 
+    QSqlDatabase db;
+
 private:
     bool MakeTempDir(QString &dir);
     bool DatabaseConnect();
@@ -147,10 +141,9 @@ private:
 
     QString workingDir;
     QString logfile;
-    QStringList msgs; /* squirrel messages, to be passed back upon writing (or reading) through the squirrel library */
+    QStringList msgs; /* squirrel messages to be passed back through the squirrel library */
     QString log;
-
-    QSqlDatabase db;
+    QString zipPath;
 
     bool debug;
     bool isValid;

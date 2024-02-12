@@ -34,7 +34,7 @@ public:
 	nidb *n;
 
 	void PrintAnalysisInfo();
-	squirrelAnalysis GetSquirrelObject();
+    squirrelAnalysis GetSquirrelObject();
 
 	QString analysispath;
 	qint64 analysisid = -1;

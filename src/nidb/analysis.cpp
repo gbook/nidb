@@ -211,7 +211,7 @@ QJsonObject analysis::GetJSONObject() {
 /* --------- GetSquirrelObject ------------------------------ */
 /* ---------------------------------------------------------- */
 squirrelAnalysis analysis::GetSquirrelObject() {
-	squirrelAnalysis s;
+    squirrelAnalysis s;
 
 	s.clusterEndDate = clusterEndDate;
 	s.clusterStartDate = clusterStartDate;

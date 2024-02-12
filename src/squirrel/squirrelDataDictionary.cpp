@@ -48,7 +48,7 @@ bool squirrelDataDictionary::Get() {
         return false;
     }
 
-    QSqlQuery q;
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
     q.prepare("select * from DataDictionary where DataDictionaryRowID = :id");
     q.bindValue(":id", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -63,7 +63,7 @@ bool squirrelDataDictionary::Get() {
 
         /* get the DataDictionaryItems */
         dictItems.clear();
-        QSqlQuery q;
+        QSqlQuery q(QSqlDatabase::database("squirrel"));
         q.prepare("select * from DataDictionaryItems where DataDictionaryRowID = :id");
         q.bindValue(":id", objectID);
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -107,7 +107,7 @@ bool squirrelDataDictionary::Get() {
  */
 bool squirrelDataDictionary::Store() {
 
-    QSqlQuery q;
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
     /* insert if the object doesn't exist ... */
     if (objectID < 0) {
         q.prepare("insert into DataDictionary (NumFiles, Size, VirtualPath) values (:NumFiles, :Size, :VirtualPath)");
