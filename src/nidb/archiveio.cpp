@@ -2368,7 +2368,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
  * @param msg - any messages generated during squirrel package writing
  * @return true if written, false otherwise
  */
-bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStringList downloadflags, QStringList squirrelflags, QList<qint64> seriesids, QStringList modalities, QString odir, QString &filepath, QString &msg) {
+bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStringList downloadflags, QStringList squirrelflags, QList<qint64> seriesids, QStringList modalities, QString zipfilepath, QString &msg) {
 
     n->WriteLog(QString("Entering %1() exportid [%2]").arg(__FUNCTION__).arg(exportid));
 
@@ -2389,17 +2389,12 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
         return false;
     }
 
-    /* create the output directory */
-    QString outdir = odir;
-    QString m;
-    if (MakePath(outdir, m)) {
-        msgs << n->WriteLog(QString("%1() Created outdir [%2]").arg(__FUNCTION__).arg(outdir));
-    }
-    else {
-        exportstatus = "error";
-        msg = n->WriteLog(QString("%1() ERROR, unable to create outdir [" + outdir + "]   msg [" + m + "]").arg(__FUNCTION__));
-        return false;
-    }
+    /* create the zip file name */
+    if (zipfilepath.endsWith("/"))
+        zipfilepath.chop(1);
+
+    if (!zipfilepath.endsWith(".zip", Qt::CaseInsensitive))
+        zipfilepath = zipfilepath + ".zip";
 
     /* create squirrel object with default settings... */
     squirrel sqrl;
@@ -2439,6 +2434,8 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     QList<int> pipelineIDs;
     QList<int> experimentIDs;
     QList<int> minipipelineIDs;
+
+    n->WriteLog(QString("%1() Building squirrel object using squirrel library...").arg(__FUNCTION__));
 
     /* iterate through the subjects (array key is UIDs) */
     for(QMap<QString, QMap<int, QMap<int, QMap<QString, QString> > > >::iterator a = s.begin(); a != s.end(); ++a) {
@@ -2548,53 +2545,15 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                     if (!datadirempty) {
                         msgs << n->WriteLog(QString("%1() Appending raw data file list").arg(__FUNCTION__));
 
-                        /* all we need to do here is tell the squirrel object where the raw data files are */
+                        /* all we need to do here is tell the squirrel object the location of the raw data files */
                         sqrlSeries.stagedFiles = FindAllFiles(datadir, "*", true);
                         QHash<QString, QString> tags;
-                        //QString m;
+                        QString m;
                         QString bindir = QString("%1/bin").arg(n->cfg["nidbdir"]);
                         img->GetImageFileTags(sqrlSeries.stagedFiles[0], bindir, true, tags, m);
 
-                        /* remove tags that might contain PHI */
-                        tags.remove("AcquisitionDate");
-                        tags.remove("AcquisitionTime");
-                        tags.remove("CommentsOnThePerformedProcedureSte");
-                        tags.remove("ContentDate");
-                        tags.remove("ContentTime");
-                        tags.remove("Filename");
-                        tags.remove("FrameOfReferenceUID");
-                        tags.remove("InstanceCreationDate");
-                        tags.remove("InstanceCreationTime");
-                        tags.remove("InstitutionAddress");
-                        tags.remove("InstitutionName");
-                        tags.remove("InstitutionalDepartmentName");
-                        tags.remove("OperatorsName");
-                        tags.remove("ParentDirectory");
-                        tags.remove("PatientAge");
-                        tags.remove("PatientBirthDate");
-                        tags.remove("PatientID");
-                        tags.remove("PatientName");
-                        tags.remove("PatientSex");
-                        tags.remove("PatientSize");
-                        tags.remove("PatientWeight");
-                        tags.remove("PerformedProcedureStepStartDate");
-                        tags.remove("PerformedProcedureStepStartTime");
-                        tags.remove("PerformingPhysicianName");
-                        tags.remove("RequestedProcedureDescription");
-                        tags.remove("RequestingPhysician");
-                        tags.remove("SeriesDate");
-                        tags.remove("SeriesDateTime");
-                        tags.remove("SeriesInstanceUID");
-                        tags.remove("SeriesTime");
-                        tags.remove("StationName");
-                        tags.remove("StudyDate");
-                        tags.remove("StudyDateTime");
-                        tags.remove("StudyInstanceUID");
-                        tags.remove("StudyTime");
-                        tags.remove("TimeOfAcquisition");
-                        tags.remove("UniqueSeriesString");
-
                         sqrlSeries.params = tags;
+                        sqrlSeries.AnonymizeParams(); /* remove tags that might contain PHI */
                     }
                     else {
                         seriesstatus = exportstatus = "error";
@@ -2723,7 +2682,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     /* while iterating through the list of series, a list of pipelines, mini-pipelines and experiments
      * were created. Now add the the pipelines, mini-pipelines, and experiments to the squirrel object */
 
-    /* add pipelines to the JSON object */
+    /* add pipelines to squirrel object */
     if (downloadflags.contains("DOWNLOAD_PIPELINES", Qt::CaseInsensitive)) {
         /* check if there are any pipeline IDs specified in the export_series table */
         q.prepare("select * from exportseries where export_id = :exportid and pipeline_id is not null");
@@ -2760,25 +2719,21 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
         }
     }
 
-    /* add mini-pipelines to the JSON object */
-    /* minipipelines will be exported as pipelines */
+    /* add mini-pipelines as pipelines */
     if (downloadflags.contains("DOWNLOAD_MINIPIPELINES", Qt::CaseInsensitive)) {
         if (minipipelineIDs.size() > 0) {
             //QString dir(QString("%1/minipipelines").arg(outdir));
             //QJsonArray JSONminipipelines;
             for (int i=0; i<minipipelineIDs.size(); i++) {
                 minipipeline p(minipipelineIDs[i], n);
-                //JSONminipipelines.append(p.GetJSONObject(dir));
+                //squirrelPipeline sqrlPipeline = p.GetSquirrelObject();
+                //sqrlExperiment.Store();
             }
-
-            /* TODO - add minipipelines to the squirrel object */
-
-            //root["minipipelines"] = JSONminipipelines;
         }
     }
 
     /* the squirrel object should be complete, so write it out */
-    sqrl.SetFilename(outdir);
+    sqrl.SetFilename(zipfilepath);
     sqrl.Write(false);
     msgs << n->WriteLog(QString("%1() - squirrel.write() returned [\n" + sqrl.GetLog() + "\n]").arg(__FUNCTION__));
 

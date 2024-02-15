@@ -114,9 +114,7 @@ int moduleExport::Run() {
                 continue;
             }
 
-            n->WriteLog("");
             n->WriteLog(QString(" ---------- Export operation (%1 of %2) ---------- ").arg(i).arg(q.size()));
-            n->WriteLog("");
 
             QString log;
 
@@ -1385,7 +1383,7 @@ bool moduleExport::ExportSquirrel(int exportid, QString squirreltitle, QString s
     }
 
     n->WriteLog(QString("%1() calling WriteSquirrel(%2, %3, ...)").arg(__FUNCTION__).arg(seriesids.size()).arg(modalities.size()));
-    if (io->WriteSquirrel(exportid, squirreltitle, squirreldesc, downloadflags, squirrelflags, seriesids, modalities, rootoutdir, filepath, m)) {
+    if (io->WriteSquirrel(exportid, squirreltitle, squirreldesc, downloadflags, squirrelflags, seriesids, modalities, rootoutdir, m)) {
         n->WriteLog(QString("%1() - WriteSquirrel() returned true").arg(__FUNCTION__));
 
         /* mark all series as 'complete' */

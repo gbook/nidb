@@ -60,6 +60,7 @@ public:
 
     /* JSON elements */
     QList<dataDictionaryItem> dictItems; /*!< List of data dictionary items */
+    QString dataDictionaryName;
     qint64 numfiles;                     /*!< total number of files */
     qint64 size;                         /*!< disk size in bytes of the data dictionary */
 

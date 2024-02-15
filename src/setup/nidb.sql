@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Dec 08, 2023 at 08:24 PM
+-- Generation Time: Feb 15, 2024 at 07:07 PM
 -- Server version: 10.3.28-MariaDB
 -- PHP Version: 7.2.24
 
@@ -2046,14 +2046,37 @@ CREATE TABLE `packages` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `package_analyses`
+--
+
+CREATE TABLE `package_analyses` (
+  `packageanalysis_id` int(11) NOT NULL,
+  `package_id` int(11) NOT NULL,
+  `analysis_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `package_drugs`
+--
+
+CREATE TABLE `package_drugs` (
+  `packagedrug_id` int(11) NOT NULL,
+  `package_id` int(11) NOT NULL,
+  `drug_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `package_enrollments`
 --
 
 CREATE TABLE `package_enrollments` (
-  `pkgenrollment_id` int(11) NOT NULL,
+  `packageenrollment_id` int(11) NOT NULL,
   `package_id` int(11) NOT NULL,
   `enrollment_id` int(11) NOT NULL,
-  `option_flags` set('INCLUDE_DRUGS','INCLUDE_MEASURES') DEFAULT NULL,
   `pkg_subjectid` varchar(255) DEFAULT NULL COMMENT 'UID or other ID specific to this subject within the package'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -2072,6 +2095,18 @@ CREATE TABLE `package_experiments` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `package_measures`
+--
+
+CREATE TABLE `package_measures` (
+  `packagemeasure_id` int(11) NOT NULL,
+  `package_id` int(11) NOT NULL,
+  `measure_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `package_pipelines`
 --
 
@@ -2080,6 +2115,43 @@ CREATE TABLE `package_pipelines` (
   `package_id` int(11) NOT NULL,
   `pipeline_id` int(11) NOT NULL,
   `include_analyses` tinyint(1) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `package_series`
+--
+
+CREATE TABLE `package_series` (
+  `packageseries_id` int(11) NOT NULL,
+  `package_id` int(11) NOT NULL,
+  `modality` varchar(255) NOT NULL,
+  `series_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `package_studies`
+--
+
+CREATE TABLE `package_studies` (
+  `packagestudy_id` int(11) NOT NULL,
+  `package_id` int(11) NOT NULL,
+  `study_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `package_subjects`
+--
+
+CREATE TABLE `package_subjects` (
+  `packagesubject_id` int(11) NOT NULL,
+  `package_id` int(11) NOT NULL,
+  `subject_id` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -4271,22 +4343,67 @@ ALTER TABLE `packages`
   ADD PRIMARY KEY (`package_id`);
 
 --
+-- Indexes for table `package_analyses`
+--
+ALTER TABLE `package_analyses`
+  ADD PRIMARY KEY (`packageanalysis_id`),
+  ADD UNIQUE KEY `package_id` (`package_id`,`analysis_id`);
+
+--
+-- Indexes for table `package_drugs`
+--
+ALTER TABLE `package_drugs`
+  ADD PRIMARY KEY (`packagedrug_id`),
+  ADD UNIQUE KEY `package_id` (`package_id`,`drug_id`);
+
+--
 -- Indexes for table `package_enrollments`
 --
 ALTER TABLE `package_enrollments`
-  ADD PRIMARY KEY (`pkgenrollment_id`);
+  ADD PRIMARY KEY (`packageenrollment_id`),
+  ADD UNIQUE KEY `package_id` (`package_id`,`enrollment_id`);
 
 --
 -- Indexes for table `package_experiments`
 --
 ALTER TABLE `package_experiments`
-  ADD PRIMARY KEY (`packageexperiment_id`);
+  ADD PRIMARY KEY (`packageexperiment_id`),
+  ADD UNIQUE KEY `package_id` (`package_id`,`experiment_id`);
+
+--
+-- Indexes for table `package_measures`
+--
+ALTER TABLE `package_measures`
+  ADD PRIMARY KEY (`packagemeasure_id`),
+  ADD UNIQUE KEY `package_id` (`package_id`,`measure_id`);
 
 --
 -- Indexes for table `package_pipelines`
 --
 ALTER TABLE `package_pipelines`
-  ADD PRIMARY KEY (`packagepipeline_id`);
+  ADD PRIMARY KEY (`packagepipeline_id`),
+  ADD UNIQUE KEY `package_id` (`package_id`,`pipeline_id`);
+
+--
+-- Indexes for table `package_series`
+--
+ALTER TABLE `package_series`
+  ADD PRIMARY KEY (`packageseries_id`),
+  ADD UNIQUE KEY `package_id` (`package_id`,`modality`,`series_id`);
+
+--
+-- Indexes for table `package_studies`
+--
+ALTER TABLE `package_studies`
+  ADD PRIMARY KEY (`packagestudy_id`),
+  ADD UNIQUE KEY `package_id` (`package_id`,`study_id`);
+
+--
+-- Indexes for table `package_subjects`
+--
+ALTER TABLE `package_subjects`
+  ADD PRIMARY KEY (`packagesubject_id`),
+  ADD UNIQUE KEY `package_id` (`package_id`,`subject_id`);
 
 --
 -- Indexes for table `pipelines`
@@ -5358,10 +5475,22 @@ ALTER TABLE `packages`
   MODIFY `package_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `package_analyses`
+--
+ALTER TABLE `package_analyses`
+  MODIFY `packageanalysis_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `package_drugs`
+--
+ALTER TABLE `package_drugs`
+  MODIFY `packagedrug_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `package_enrollments`
 --
 ALTER TABLE `package_enrollments`
-  MODIFY `pkgenrollment_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `packageenrollment_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `package_experiments`
@@ -5370,10 +5499,34 @@ ALTER TABLE `package_experiments`
   MODIFY `packageexperiment_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `package_measures`
+--
+ALTER TABLE `package_measures`
+  MODIFY `packagemeasure_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `package_pipelines`
 --
 ALTER TABLE `package_pipelines`
   MODIFY `packagepipeline_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `package_series`
+--
+ALTER TABLE `package_series`
+  MODIFY `packageseries_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `package_studies`
+--
+ALTER TABLE `package_studies`
+  MODIFY `packagestudy_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `package_subjects`
+--
+ALTER TABLE `package_subjects`
+  MODIFY `packagesubject_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `pipelines`

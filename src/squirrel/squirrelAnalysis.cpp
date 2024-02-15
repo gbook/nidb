@@ -74,7 +74,7 @@ bool squirrelAnalysis::Get() {
         hostname = q.value("Hostname").toString();
         status = q.value("Status").toString();
         lastMessage = q.value("StatusMessage").toString();
-        virtualPath = q.value("VirtualPath").toString();
+        //virtualPath = q.value("VirtualPath").toString();
 
         /* get any staged files */
         stagedFiles.clear();
@@ -130,7 +130,7 @@ bool squirrelAnalysis::Store() {
         q.bindValue(":Size", size);
         q.bindValue(":Hostname", hostname);
         q.bindValue(":StatusMessage", lastMessage);
-        q.bindValue(":VirtualPath", virtualPath);
+        q.bindValue(":VirtualPath", VirtualPath());
 
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         objectID = q.lastInsertId().toInt();
@@ -153,7 +153,7 @@ bool squirrelAnalysis::Store() {
         q.bindValue(":Size", size);
         q.bindValue(":Hostname", hostname);
         q.bindValue(":StatusMessage", lastMessage);
-        q.bindValue(":VirtualPath", virtualPath);
+        q.bindValue(":VirtualPath", VirtualPath());
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     }
 
@@ -181,7 +181,7 @@ bool squirrelAnalysis::Store() {
 /* ----- ToJSON ----------------------------------------------- */
 /* ------------------------------------------------------------ */
 QJsonObject squirrelAnalysis::ToJSON() {
-	QJsonObject json;
+    QJsonObject json;
 
     json["PipelineName"] = pipelineName;
     json["PipelineVersion"] = pipelineVersion;
@@ -197,9 +197,9 @@ QJsonObject squirrelAnalysis::ToJSON() {
     json["Hostname"] = hostname;
     json["Status"] = status;
     json["LastMessage"] = lastMessage;
-    json["VirtualPath"] = virtualPath;
+    json["VirtualPath"] = VirtualPath();
 
-	return json;
+    return json;
 }
 
 
@@ -226,6 +226,47 @@ void squirrelAnalysis::PrintAnalysis() {
     utils::Print(QString("\t\t\t\tHostname: %1").arg(hostname));
     utils::Print(QString("\t\t\t\tStatus: %1").arg(status));
     utils::Print(QString("\t\t\t\tLastMessage: %1").arg(lastMessage));
-    utils::Print(QString("\t\t\t\tVirtualPath: %1").arg(virtualPath));
+    utils::Print(QString("\t\t\t\tVirtualPath: %1").arg(VirtualPath()));
 
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- VirtualPath ------------------------------------------ */
+/* ------------------------------------------------------------ */
+QString squirrelAnalysis::VirtualPath() {
+
+    QString vPath;
+    QString subjectDir;
+    QString studyDir;
+    QString seriesDir;
+    int subjectRowID = -1;
+
+    /* get the parent study directory */
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
+    q.prepare("select SubjectRowID, StudyNumber, Sequence from Study where StudyRowID = :studyid");
+    q.bindValue(":studyid", studyRowID);
+    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.next()) {
+        subjectRowID = q.value("SubjectRowID").toInt();
+        if (studyDirFormat == "orig")
+            studyDir = QString("%1").arg(q.value("StudyNumber").toInt());
+        else
+            studyDir = QString("%1").arg(q.value("Sequence").toInt());
+    }
+
+    /* get parent subject directory */
+    q.prepare("select ID, Sequence from Subject where SubjectRowID = :subjectid");
+    q.bindValue(":subjectid", subjectRowID);
+    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.next()) {
+        if (subjectDirFormat == "orig")
+            subjectDir = utils::CleanString(q.value("ID").toString());
+        else
+            subjectDir = QString("%1").arg(q.value("Sequence").toInt());
+    }
+
+    vPath = QString("data/%1/%2/%3").arg(subjectDir).arg(studyDir).arg(pipelineName);
+
+    return vPath;
 }

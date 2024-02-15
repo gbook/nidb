@@ -43,6 +43,7 @@ namespace utils {
 
     /* generic functions */
     void Print(QString s, bool n=true, bool pad=false);
+    void PrintHeader();
     QString CreateCurrentDateTime(int format=1);
     QString CreateLogDate();
     QString SystemCommand(QString s, bool detail=true, bool truncate=false, bool bufferOutput=true);

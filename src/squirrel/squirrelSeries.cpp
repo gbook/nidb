@@ -300,3 +300,53 @@ QString squirrelSeries::VirtualPath() {
 
     return vPath;
 }
+
+
+/* ---------------------------------------------------------- */
+/* --------- AnonymizeParams -------------------------------- */
+/* ---------------------------------------------------------- */
+void squirrelSeries::AnonymizeParams() {
+
+    QHash<QString, QString> p;
+    QStringList anonFields;
+    anonFields << "AcquisitionDate";
+    anonFields << "AcquisitionTime";
+    anonFields << "CommentsOnThePerformedProcedureSte";
+    anonFields << "ContentDate";
+    anonFields << "ContentTime";
+    anonFields << "Filename";
+    anonFields << "InstanceCreationDate";
+    anonFields << "InstanceCreationTime";
+    anonFields << "InstitutionAddress";
+    anonFields << "InstitutionName";
+    anonFields << "InstitutionalDepartmentName";
+    anonFields << "OperatorsName";
+    anonFields << "ParentDirectory";
+    anonFields << "PatientBirthDate";
+    anonFields << "PatientID";
+    anonFields << "PatientName";
+    anonFields << "PerformedProcedureStepDescription";
+    anonFields << "PerformedProcedureStepID";
+    anonFields << "PerformedProcedureStepStartDate";
+    anonFields << "PerformedProcedureStepStartTime";
+    anonFields << "PerformingPhysicianName";
+    anonFields << "ReferringPhysicianName";
+    anonFields << "RequestedProcedureDescription";
+    anonFields << "RequestingPhysician";
+    anonFields << "SeriesDate";
+    anonFields << "SeriesDateTime";
+    anonFields << "SeriesTime";
+    anonFields << "StationName";
+    anonFields << "StudyDate";
+    anonFields << "StudyDateTime";
+    anonFields << "StudyDescription";
+    anonFields << "StudyTime";
+    anonFields << "UniqueSeriesString";
+
+    for(QHash<QString, QString>::iterator a = params.begin(); a != params.end(); ++a) {
+        if (!anonFields.contains(a.key()))
+            p[a.key()] = a.value();
+    }
+
+    params = p;
+}

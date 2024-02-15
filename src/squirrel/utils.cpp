@@ -21,6 +21,7 @@
   ------------------------------------------------------------------------------ */
 
 #include "utils.h"
+#include "squirrelVersion.h"
 
 namespace utils {
 
@@ -853,6 +854,7 @@ namespace utils {
         QStringList anonFields;
         anonFields << "AcquisitionDate";
         anonFields << "AcquisitionTime";
+        anonFields << "CommentsOnThePerformedProcedureSte";
         anonFields << "ContentDate";
         anonFields << "ContentTime";
         anonFields << "Filename";
@@ -860,7 +862,9 @@ namespace utils {
         anonFields << "InstanceCreationTime";
         anonFields << "InstitutionAddress";
         anonFields << "InstitutionName";
+        anonFields << "InstitutionalDepartmentName";
         anonFields << "OperatorsName";
+        anonFields << "ParentDirectory";
         anonFields << "PatientBirthDate";
         anonFields << "PatientID";
         anonFields << "PatientName";
@@ -870,8 +874,8 @@ namespace utils {
         anonFields << "PerformedProcedureStepStartTime";
         anonFields << "PerformingPhysicianName";
         anonFields << "ReferringPhysicianName";
-        anonFields << "RequestingPhysician";
         anonFields << "RequestedProcedureDescription";
+        anonFields << "RequestingPhysician";
         anonFields << "SeriesDate";
         anonFields << "SeriesDateTime";
         anonFields << "SeriesTime";
@@ -890,4 +894,15 @@ namespace utils {
         return p;
     }
 
+    /* ---------------------------------------------------------- */
+    /* --------- PrintHeader ------------------------------------ */
+    /* ---------------------------------------------------------- */
+    void PrintHeader() {
+        QString bindir = QDir::currentPath();
+
+        Print("+----------------------------------------------------+");
+        Print(QString("|  Squirrel utils version %1.%2\n|\n|  Build date [%3 %4]\n|  C++ [%5]\n|  Qt compiled [%6]\n|  Qt runtime [%7]\n|  Build system [%8]" ).arg(SQUIRREL_VERSION_MAJ).arg(SQUIRREL_VERSION_MIN).arg(__DATE__).arg(__TIME__).arg(__cplusplus).arg(QT_VERSION_STR).arg(qVersion()).arg(QSysInfo::buildAbi()));
+        Print(QString("|\n|  Current working directory is %1").arg(bindir));
+        Print("+----------------------------------------------------+\n");
+    }
 }

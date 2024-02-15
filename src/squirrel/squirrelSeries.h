@@ -50,6 +50,7 @@ public:
     void SetObjectID(int id) { objectID = id; }
     void SetDirFormat(QString subject_DirFormat, QString study_DirFormat, QString series_DirFormat) {subjectDirFormat = subject_DirFormat; studyDirFormat = study_DirFormat; seriesDirFormat = series_DirFormat; }
     QString VirtualPath();
+    void AnonymizeParams();
 
     /* JSON elements */
     qint64 studyRowID;

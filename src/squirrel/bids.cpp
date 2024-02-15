@@ -82,17 +82,22 @@ bool bids::LoadToSquirrel(QString dir, squirrel *sqrl) {
         QStringList sesdirs = utils::FindAllDirs(subjpath, "ses-*", false);
         sqrl->Log(QString("Found [%1] session directories matching '%2/ses-*'").arg(sesdirs.size()).arg(subjdir), __FUNCTION__, true);
         if (sesdirs.size() > 0) {
+            int studyNum = 1;
             foreach (QString sesdir, sesdirs) {
                 /* each session will become its own study */
                 QString sespath = QString("%1/%2/%3").arg(dir).arg(subjdir).arg(sesdir);
                 //int subjectIndex = sqrl->GetSubjectIndex(subjdir);
-                int subjectRowID = sqrl->FindSubject(subjdir);
-                int studyNum;
+                //int subjectRowID = sqrl->FindSubject(subjdir);
+                //squirrelSubject subj;
+                //subj.SetObjectID(subjectRowID);
+                //subj.Get();
+                //int studyNum;
                 //studyNum = sqrl->subjectList[subjectIndex].GetNextStudyNumber();
 
                 sqrl->Log(QString("Loading session path [%1] into study [%2]").arg(sespath).arg(studyNum), __FUNCTION__, true);
 
                 LoadSessionDir(sespath, studyNum, sqrl);
+                studyNum++;
             }
         }
         else {
@@ -323,7 +328,7 @@ bool bids::LoadSessionDir(QString sesdir, int studyNum, squirrel *sqrl) {
                         subjectRowID = subject.GetObjectID();
                     }
 
-                    /* create a subjectRowID if it doesn't exist */
+                    /* create a studyRowID if it doesn't exist */
                     int studyRowID = sqrl->FindStudy(ID, studyNum);
                     if (studyRowID < 0) {
                         squirrelStudy study;

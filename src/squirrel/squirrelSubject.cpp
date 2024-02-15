@@ -40,10 +40,8 @@ squirrelSubject::squirrelSubject()
  * @brief squirrelSubject::Get
  * @return true if successful
  *
- * This function will attempt to load the subject data from
- * the database. The subjectRowID must be set before calling
- * this function. If the object exists in the DB, it will return true.
- * Otherwise it will return false.
+ * Load the subject data from the database. The subjectRowID
+ * must be set before calling this function.
  */
 bool squirrelSubject::Get() {
     if (objectID < 0) {

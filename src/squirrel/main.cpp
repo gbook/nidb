@@ -33,126 +33,64 @@ int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
+    QString bindir = QDir::currentPath();
+
     /* this whole section reads the command line parameters */
     a.setApplicationVersion(QString("Build %1.%2.%3  (squirrellib %4.%5)").arg(UTIL_VERSION_MAJ).arg(UTIL_VERSION_MIN).arg(UTIL_BUILD_NUM).arg(SQUIRREL_VERSION_MAJ).arg(SQUIRREL_VERSION_MIN));
     a.setApplicationName("Squirrel Utilities");
 
     /* setup the command line parser */
     QCommandLineParser p;
-    p.setApplicationDescription("Squirrel data format tools");
+    p.setApplicationDescription("Tools to manage squirrel data packages");
     p.setSingleDashWordOptionMode(QCommandLineParser::ParseAsCompactedShortOptions);
     p.setOptionsAfterPositionalArgumentsMode(QCommandLineParser::ParseAsOptions);
     p.addHelpOption();
     p.addVersionOption();
-    p.addPositionalArgument("tool", "Available tools:  validate  dicom2squirrel  bids2squirrel  squirrel2bids  modify  list");
 
-    /* command line flag options */
-    QCommandLineOption optDebug(QStringList() << "d" << "debug", "Enable debugging");
-    QCommandLineOption optQuiet(QStringList() << "q" << "quiet", "Dont print headers and checks");
-    p.addOption(optDebug);
-    p.addOption(optQuiet);
-
-    /* command line options that take values */
-    QCommandLineOption optInputFile(QStringList() << "i" << "in", "Input file/directory", "input file/dir");
-    QCommandLineOption optOutputFile(QStringList() << "o" << "out", "Output file/directory", "output file/dir");
-    QCommandLineOption optOutputDataFormat(QStringList() << "output-data-format", "Output data format if converted from DICOM:\n  anon - Anonymized DICOM\n  nifti4d - Nifti 4D\n  nifti4dgz - Nifti 4D gz (default)\n  nifti3d - Nifti 3D\n  nifti3dgz - Nifti 3D gz", "dataformat");
-    QCommandLineOption optOutputDirFormat(QStringList() << "output-dir-format", "Output directory structure\n  seq - Sequentially numbered\n  orig - Original ID (default)", "dirformat");
-    QCommandLineOption optOutputPackageFormat(QStringList() << "output-package-format", "Output package format\n  dir - Directory\n  zip - .zip file (default)", "packageformat");
-    //QCommandLineOption optRenumberIDs(QStringList() << "renumber-ids", "Renumber IDs in zero-padded format #####. Existing IDs are moved to subject alt-IDs field");
-    //QCommandLineOption optDicomDir(QStringList() << "add-dicom-dir", "Modify an existing squirrel package by adding in this DICOM directory. IDs will be automatically renumbered.", "dicomdir");
-    QCommandLineOption optAddObject(QStringList() << "add", "Add an object [dicomdir  subject  study  series  experiment  analysis  pipeline].", "object");
-    QCommandLineOption optRemoveObject(QStringList() << "remove", "Remove an object [subject  study  series  experiment  analysis  pipeline].", "object");
-    QCommandLineOption optListObject(QStringList() << "list", "List an object [package  subjects  studies  series  experiments  pipelines  groupanalyses  datadictionary].", "object");
-    QCommandLineOption optSubjectID(QStringList() << "subject-id", "Subject ID.", "subjectid");
-    QCommandLineOption optStudyNum(QStringList() << "study-num", "Study Number.", "studynum");
-    QCommandLineOption optSeriesNum(QStringList() << "series-num", "Series Number.", "seriesnum");
-
-    QCommandLineOption optListDetails(QStringList() << "list-details", "Include details when printing lists.");
-    p.addOption(optOutputFile);
-    p.addOption(optInputFile);
-    p.addOption(optOutputDataFormat);
-    p.addOption(optOutputDirFormat);
-    p.addOption(optOutputPackageFormat);
-    //p.addOption(optRenumberIDs);
-    //p.addOption(optDicomDir);
-    p.addOption(optAddObject);
-    p.addOption(optRemoveObject);
-    p.addOption(optListObject);
-    p.addOption(optSubjectID);
-    p.addOption(optStudyNum);
-    p.addOption(optSeriesNum);
-    p.addOption(optListDetails);
-
-    /* Process the actual command line arguments given by the user */
-    p.process(a);
-
-    QString tool;
-    bool debug, quiet;
-    //bool renumberIDs;
-    bool listDetails;
-
+    /* setup and obtain the tool we're supposed to run */
+    p.addPositionalArgument("tool", "Available tools:\n   bids2squirrel\n   dicom2squirrel\n   list\n   modify\n   validate");
+    p.parse(QCoreApplication::arguments());
     const QStringList args = p.positionalArguments();
-    if (args.size() > 0)
-        tool = args.at(0).trimmed();
+    const QString command = args.isEmpty() ? QString() : args.first();
 
-    debug = p.isSet(optDebug);
-    quiet = p.isSet(optQuiet);
-    QString paramOutputFile = p.value(optOutputFile).trimmed();
-    QString paramInput = p.value(optInputFile).trimmed();
-    QString paramOutputDataFormat = p.value(optOutputDataFormat).trimmed();
-    QString paramOutputDirFormat = p.value(optOutputDirFormat).trimmed();
-    QString paramOutputPackageFormat = p.value(optOutputPackageFormat).trimmed();
-    QString paramListObject = p.value(optListObject);
-    QString paramSubjectID = p.value(optSubjectID).trimmed();
-    int paramStudyNum = p.value(optStudyNum).trimmed().toInt();
-    int paramSeriesNum = p.value(optSeriesNum).trimmed().toInt();
-    //renumberIDs = p.isSet(optRenumberIDs);
-    listDetails = p.isSet(optListDetails);
+    /* check which tool to run */
+    if (command == "dicom2squirrel") {
+        p.clearPositionalArguments();
+        p.addPositionalArgument("dicom2squirrel", "Convert DICOM directory to squirrel.", "dicom2squirrel [options]");
 
-    if (quiet)
-        debug = false;
+        /* command line flag options */
+        p.addOption(QCommandLineOption(QStringList() << "d" << "debug", "Enable debugging"));
+        p.addOption(QCommandLineOption(QStringList() << "q" << "quiet", "Dont print headers and checks"));
+        p.addOption(QCommandLineOption(QStringList() << "i" << "input", "Input path", "dir"));
+        p.addOption(QCommandLineOption(QStringList() << "o" << "outout", "Output path", "zipfilename"));
+        p.addOption(QCommandLineOption(QStringList() << "output-data-format", "Output data format if converted from DICOM:\n  anon - Anonymized DICOM\n  nifti4d - Nifti 4D\n  nifti4dgz - Nifti 4D gz (default)\n  nifti3d - Nifti 3D\n  nifti3dgz - Nifti 3D gz", "dataformat"));
+        p.addOption(QCommandLineOption(QStringList() << "output-dir-format", "Output directory structure\n  seq - Sequentially numbered\n  orig - Original ID (default)", "dirformat"));
+        p.addOption(QCommandLineOption(QStringList() << "output-package-format", "Output package format\n  dir - Directory\n  zip - .zip file (default)", "packageformat"));
 
-    QStringList tools = { "dicom2squirrel", "validate", "bids2squirrel", "squirrel2bids", "modify", "list" };
+        p.process(a);
 
-    /* now check the command line parameters passed in, to see if they are calling a valid module */
-    if (!tools.contains(tool)) {
-        if (tool != "")
-            std::cout << QString("***** Error: unrecognized option [%1] *****\n").arg(tool).toStdString().c_str();
+        bool debug = p.isSet("d");
+        bool quiet = p.isSet("q");
+        QString paramOutputFile = p.value("o").trimmed();
+        QString paramInput = p.value("i").trimmed();
+        QString paramOutputDataFormat = p.value("output-data-format").trimmed();
+        QString paramOutputDirFormat = p.value("output-dir-format").trimmed();
+        QString paramOutputPackageFormat = p.value("output-package-format").trimmed();
 
-        std::cout << p.helpText().toStdString().c_str();
-        return 0;
-    }
-
-    QString bindir = QDir::currentPath();
-
-    if (!quiet) {
-        utils::Print("+----------------------------------------------------+");
-        utils::Print(QString("|  Squirrel utils version %1.%2\n|\n|  Build date [%3 %4]\n|  C++ [%5]\n|  Qt compiled [%6]\n|  Qt runtime [%7]\n|  Build system [%8]" ).arg(SQUIRREL_VERSION_MAJ).arg(SQUIRREL_VERSION_MIN).arg(__DATE__).arg(__TIME__).arg(__cplusplus).arg(QT_VERSION_STR).arg(qVersion()).arg(QSysInfo::buildAbi()));
-        utils::Print(QString("|\n|  Current working directory is %1").arg(bindir));
-        utils::Print("+----------------------------------------------------+\n");
-    }
-
-    /* ---------- Run the validate tool ---------- */
-    if (tool == "validate") {
-        if (paramInput.trimmed() == "") {
-            utils::Print("*** Input file blank ***");
+        if (paramInput == "") {
+            std::cout << p.helpText().toStdString().c_str();
+            std::cout << "\n**** ERROR - Missing input path. Use -i to specify an input directory. ****\n";
+            return 0;
         }
-        else if (!QFile::exists(paramInput)) {
-            utils::Print(QString("*** Input file [%1] does not exist ***").arg(paramInput));
+        if (paramOutputFile == "") {
+            std::cout << p.helpText().toStdString().c_str();
+            std::cout << "\n**** ERROR - Missing output path. Use -o to specify an output path. ****\n";
+            return 0;
         }
-        else {
-            /* create squirrel object and validate */
-            squirrel *sqrl = new squirrel(debug);
-            if (sqrl->Read(paramInput, true, true)) {
-                sqrl->Log("Valid squirrel file", __FUNCTION__);
-            }
-            else {
-                sqrl->Log("*** Invalid squirrel file ***", __FUNCTION__);
-            }
-        }
-    }
-    /* ---------- Run the dicom2squirrel tool ---------- */
-    else if (tool == "dicom2squirrel") {
+
+        /* finished with checks, now run the tool */
+        if (!quiet)
+            utils::PrintHeader();
 
         /* check if the outfile's parent directory exists */
         QFileInfo outinfo(paramOutputFile);
@@ -182,18 +120,44 @@ int main(int argc, char *argv[])
             /* 2) write the squirrel file */
             QString filepath;
             sqrl->SetFilename(filepath);
-            sqrl->Write();
+            sqrl->Write(true);
 
             delete dcm;
             delete sqrl;
         }
 
     }
-    /* ---------- Run the bids2squirrel tool ---------- */
-    else if (tool == "bids2squirrel") {
+    else if (command == "bids2squirrel") {
+        p.clearPositionalArguments();
+        p.addPositionalArgument("dicom2squirrel", "Convert DICOM directory to squirrel.", "dicom2squirrel [options]");
 
-        utils::Print(QString("Running bids2squirrel on input directory [%1]").arg(paramInput));
-        utils::Print(QString("Output file [%1]").arg(paramOutputFile));
+        /* command line flag options */
+        p.addOption(QCommandLineOption(QStringList() << "d" << "debug", "Enable debugging"));
+        p.addOption(QCommandLineOption(QStringList() << "q" << "quiet", "Dont print headers and checks"));
+        p.addOption(QCommandLineOption(QStringList() << "i" << "input", "Input path", "dir"));
+        p.addOption(QCommandLineOption(QStringList() << "o" << "outout", "Output path", "zipfilename"));
+
+        p.process(a);
+
+        bool debug = p.isSet("d");
+        bool quiet = p.isSet("q");
+        QString paramOutputFile = p.value("o").trimmed();
+        QString paramInput = p.value("i").trimmed();
+
+        if (paramInput == "") {
+            std::cout << p.helpText().toStdString().c_str();
+            std::cout << "\n**** Missing input parameter. Use -i to specify an input directory. ****\n";
+            return 0;
+        }
+        if (paramOutputFile == "") {
+            std::cout << p.helpText().toStdString().c_str();
+            std::cout << "\n**** Missing output path. Use -o to specify an output path. ****\n";
+            return 0;
+        }
+
+        /* everything is ok, so let's run the tool */
+        if (!quiet)
+            utils::PrintHeader();
 
         /* check if the infile directory exists */
         QDir indir(paramInput);
@@ -219,74 +183,131 @@ int main(int argc, char *argv[])
 
             bds->LoadToSquirrel(indir.path(), sqrl);
 
-            /* display progress or messages */
-
             /* save the squirrel object */
-            QString outpath;
             sqrl->filePath = outputfile;
             sqrl->SetFilename(outputfile);
-            sqrl->Write();
+            sqrl->Write(true);
         }
     }
-    /* ---------- Run the squirrel2bids tool ---------- */
-    else if (tool == "squirrel2bids") {
+    else if (command == "list") {
+        p.clearPositionalArguments();
+        p.addPositionalArgument("list", "List all instances of an object within a squirrel package.", "list [options]");
 
-    }
-    /* ---------- Run the list tool ---------- */
-    else if (tool == "list") {
+        /* command line flag options */
+        p.addOption(QCommandLineOption(QStringList() << "d" << "debug", "Enable debugging"));
+        p.addOption(QCommandLineOption(QStringList() << "q" << "quiet", "Dont print headers and checks"));
+        p.addOption(QCommandLineOption(QStringList() << "i" << "input", "Input path", "dir"));
+        p.addOption(QCommandLineOption(QStringList() << "object", "List an object [package  subject  study  series  experiment  pipeline  groupanalysis  datadictionary].", "object"));
+        p.addOption(QCommandLineOption(QStringList() << "subject-id", "Subject ID.", "subjectid"));
+        p.addOption(QCommandLineOption(QStringList() << "study-num", "Study Number\n  -subject-id must also be specified.", "studynum"));
+        //p.addOption(QCommandLineOption(QStringList() << "series-num", "Series Number\n  -subject-id and -study-num must also be specified.", "seriesnum"));
+        p.addOption(QCommandLineOption(QStringList() << "details", "Include details when printing lists."));
+        p.process(a);
 
-        //Print("--subject-id " + paramSubjectID);
-        //Print("--study-num " + paramStudyNum);
-        //if (quiet)
-        //    Print("-q option is set");
-        //else
-        //    Print("-q option is not set");
+        bool debug = p.isSet("d");
+        bool quiet = p.isSet("q");
+        QString inputPath = p.value("i").trimmed();
+        QString object = p.value("object").trimmed();
+        QString subjectID = p.value("i").trimmed();
+        int studyNum = p.value("i").toInt();
+        //QString seriesNum = p.value("i").trimmed();
+        bool details = p.isSet("details");
 
         /* check if the infile exists */
-        QFile infile(paramInput);
+        QFile infile(inputPath);
         if (!infile.exists()) {
-            utils::Print(QString("Input file [%1] does not exist").arg(paramInput));
+            std::cout << p.helpText().toStdString().c_str();
+            std::cout << "\n**** ERROR - Missing input file path. Use -i to specify an input file. ****\n";
+            return 0;
         }
         else {
             squirrel *sqrl = new squirrel(debug, quiet);
             sqrl->quiet = quiet;
-            sqrl->Read(paramInput, true);
+            sqrl->Read(inputPath, true);
 
-            //possible objects: subjects  studies  series  experiments  pipelines  groupanalyses  datadictionary
-
-            if (paramListObject == "package") {
+            if (object == "package") {
                 sqrl->PrintPackage();
             }
-            else if (paramListObject == "subjects") {
-                sqrl->PrintSubjects(listDetails);
+            else if (object == "subject") {
+                sqrl->PrintSubjects(details);
             }
-            else if (paramListObject == "studies") {
-                int studyRowID = sqrl->FindStudy(paramSubjectID, paramStudyNum);
-                sqrl->PrintStudies(studyRowID, listDetails);
+            else if (object == "study") {
+                int subjectRowID = sqrl->FindSubject(subjectID);
+                if (subjectRowID < 0)
+                    utils::Print(QString("Subject not found. Searched for subject [%1]").arg(subjectID));
+                else
+                    sqrl->PrintStudies(subjectRowID, details);
             }
-            else if (paramListObject == "series") {
-                int seriesRowID = sqrl->FindSeries(paramSubjectID, paramStudyNum, paramSeriesNum);
-                sqrl->PrintSeries(seriesRowID, listDetails);
+            else if (object == "series") {
+                int subjectRowID = sqrl->FindSubject(subjectID);
+                if (subjectRowID < 0)
+                    utils::Print(QString("Subject not found. Searched for subject [%1]").arg(subjectID));
+                else {
+                    int studyRowID = sqrl->FindStudy(subjectID, studyNum);
+                    if (studyRowID < 0)
+                        utils::Print(QString("Study not found. Searched for subject [%1] study [%2]").arg(subjectID).arg(studyNum));
+                    else
+                        sqrl->PrintSeries(studyRowID, details);
+                }
             }
-            else if (paramListObject == "experiments") {
-                sqrl->PrintExperiments(listDetails);
+            else if (object == "experiment") {
+                sqrl->PrintExperiments(details);
             }
-            else if (paramListObject == "pipelines") {
-                sqrl->PrintPipelines(listDetails);
+            else if (object == "pipeline") {
+                sqrl->PrintPipelines(details);
             }
-            else if (paramListObject == "groupanalyses") {
-                sqrl->PrintGroupAnalyses(listDetails);
+            else if (object == "groupanalysis") {
+                sqrl->PrintGroupAnalyses(details);
             }
-            else if (paramListObject == "datadictionary") {
-                sqrl->PrintDataDictionary(listDetails);
+            else if (object == "datadictionary") {
+                sqrl->PrintDataDictionary(details);
             }
 
             delete sqrl;
         }
     }
+    else if (command == "modify") {
+    }
+    else if (command == "validate") {
+        p.clearPositionalArguments();
+        p.addPositionalArgument("validate", "Validate a squirrel package.", "validate [options]");
 
-    if (!quiet)
-        utils::Print("\nExiting squirrel utils");
+        /* command line flag options */
+        p.addOption(QCommandLineOption(QStringList() << "d" << "debug", "Enable debugging"));
+        p.addOption(QCommandLineOption(QStringList() << "i" << "input", "Input path", "dir"));
+
+        p.process(a);
+
+        bool debug = p.isSet("d");
+        QString paramInput = p.value("i").trimmed();
+
+        if (paramInput == "") {
+            std::cout << p.helpText().toStdString().c_str();
+            std::cout << "\n**** ERROR - Missing input parameter. Use -i to specify an input directory. ****\n";
+            return 0;
+        }
+
+        /* create squirrel object and validate */
+        squirrel *sqrl = new squirrel(debug);
+        if (sqrl->Read(paramInput, true, true)) {
+            sqrl->Log("Valid squirrel file", __FUNCTION__);
+        }
+        else {
+            sqrl->Log("*** Invalid squirrel file ***", __FUNCTION__);
+        }
+    }
+    else {
+
+        bool v = p.isSet("v");
+        if (v)
+            p.showVersion();
+        else
+            p.showHelp(0);
+        return 0;
+    }
+
+    //if (!quiet)
+    //    utils::Print("\nExiting squirrel utils");
 
     a.exit();
     return 0;

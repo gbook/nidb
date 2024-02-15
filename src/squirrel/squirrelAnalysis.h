@@ -43,6 +43,8 @@ public:
     QString Error() { return err; }
     qint64 GetObjectID() { return objectID; }
     void SetObjectID(int id) { objectID = id; }
+    void SetDirFormat(QString subject_DirFormat, QString study_DirFormat) {subjectDirFormat = subject_DirFormat; studyDirFormat = study_DirFormat; }
+    QString VirtualPath();
 
     /* JSON variables */
     qint64 studyRowID;          /*!< database row id of the parent study */
@@ -63,13 +65,15 @@ public:
     QString lastMessage;        /*!< if the analysis had a status message, the last would be stored here */
 
     /* lib variables */
-    QString virtualPath;        /*!< path within the squirrel package, no leading slash */
+    //QString virtualPath;        /*!< path within the squirrel package, no leading slash */
     QStringList stagedFiles;    /*!< staged file list: list of files in their own original paths which will be copied in before the package is zipped up */
 
 private:
     bool valid = false;
     QString err;
     qint64 objectID = -1;
+    QString subjectDirFormat = "orig";
+    QString studyDirFormat = "orig";
 };
 
 #endif // SQUIRRELANALYSIS_H
