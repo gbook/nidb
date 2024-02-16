@@ -38,8 +38,8 @@
 	require "includes_html.php";
 	require "menu.php";
 
-	PrintVariable($_POST);
-	PrintVariable($_GET);
+	//PrintVariable($_POST);
+	//PrintVariable($_GET);
 
 	/* check if this page is being called from itself */
 	$referringpage = $_SERVER['HTTP_REFERER'];
@@ -1917,7 +1917,10 @@
 			list($path, $uid, $studynum, $seriesnum, $seriessize, $numfiles, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid) = GetSeriesInfo($seriesid, $modality);
 			
 			if ($uid != "") {
-				$subjects[$uid][$studynum][$modality][$seriesnum] = "$seriesid";
+				$subjects[$uid][$studynum][$modality][$seriesnum]['objectid'] = $objectid;
+				$subjects[$uid][$studynum][$modality][$seriesnum]['seriesid'] = $seriesid;
+				$subjects[$uid][$studynum][$modality][$seriesnum]['studydatetime'] = $studydatetime;
+				$subjects[$uid][$studynum][$modality][$seriesnum]['projectname'] = $projectname;
 				$totalbytes += $seriessize;
 				$totalfiles += $numfiles;
 			}
@@ -2239,10 +2242,28 @@
 				?>
 				</ul> -->
 				
+				<script type="text/javascript">
+					$(function() {
+						$("#selectallseries").click(function() {
+							var checked_status = this.checked;
+							$(".allseries").find("input[type='checkbox']").each(function() {
+								this.checked = checked_status;
+							});
+						});
+					});
+				</script>
+				
+				<form method="post" action="packages.php">
+				<input type="hidden" name="action" value="removeobject">
+				<input type="hidden" name="objecttype" value="series">
+				<input type="hidden" name="packageid" value="<?=$packageid?>">
 				<table class="ui very compact table">
 					<thead>
+						<th><input type="checkbox" id="selectallseries"></th>
 						<th>UID</th>
 						<th>StudyNum</th>
+						<th>StudyDateTime</th>
+						<th>ProjectName</th>
 						<th>Modality</th>
 						<th>SeriesNum</th>
 					</thead>
@@ -2258,11 +2279,18 @@
 							foreach ($modalities as $modality => $series) {
 								
 								ksort($series, SORT_NATURAL);
-								foreach ($series as $seriesnum => $seriesid) {
+								foreach ($series as $seriesnum => $ser) {
+									$objectid = $ser['objectid'];
+									$seriesid = $ser['seriesid'];
+									$studydatetime = $ser['studydatetime'];
+									$projectname = $ser['projectname'];
 									?>
 									<tr>
+										<td class="allseries"><input type="checkbox" name="objectids[]" value="<?=$objectid?>"></td>
 										<td><?=$uid?></td>
 										<td><?=$studynum?></td>
+										<td><?=$studydatetime?></td>
+										<td><?=$projectname?></td>
 										<td><?=$modality?></td>
 										<td><?=$seriesnum?></td>
 									</tr>
@@ -2274,7 +2302,8 @@
 				}
 				?>
 				</table>
-				
+				<button type="submit" class="ui orange button"><i class="trash icon"></i>Remove selected series</button>
+				</form>
 			</div>
 
 
