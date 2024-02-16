@@ -2026,10 +2026,17 @@
 		?>
 		<div class="ui container">
 			<div class="ui top attached raised segment">
-				<div class="ui header">
-					<img src="images/squirrel-icon-64.png"></img>
-					<h2 class="content"><?=$pkg['name']?></h2>
-					<div class="sub header"><?=$pkg['desc']?></div>
+				<div class="ui two column grid">
+					<div class="column">
+						<div class="ui header">
+							<img src="images/squirrel-icon-64.png"></img>
+							<h2 class="content"><?=$pkg['name']?></h2>
+							<div class="sub header"><?=$pkg['desc']?></div>
+						</div>
+					</div>
+					<div class="ui middle aligned right aligned column">
+						<div class="ui big green button"><i class="box open icon"></i>Export Package</div>
+					</div>
 				</div>
 			</div>
 			
