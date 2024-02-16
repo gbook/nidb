@@ -116,7 +116,7 @@
 		$guid = mysqli_real_escape_string($GLOBALS['linki'], $guid[$selectedid]);
 
 		//PrintVariable($subjectids);
-		$subjectids = mysqli_real_escape_array($subjectids);
+		$subjectids = mysqli_real_escape_array($GLOBALS['linki'], $subjectids);
 		//PrintVariable($subjectids);
 		
 		$mergeids = implode2(",", $subjectids);
@@ -212,7 +212,7 @@
 	function DisplayMergeStudies($studyids, $studyid) {
 
 		$studyid = mysqli_real_escape_string($GLOBALS['linki'], $studyid);
-		$studyids = mysqli_real_escape_array($studyids);
+		$studyids = mysqli_real_escape_array($GLOBALS['linki'], $studyids);
 
 		$sqlstring = "select c.uid, a.study_modality from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id = $studyid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);

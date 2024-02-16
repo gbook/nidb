@@ -78,7 +78,7 @@
 	/* ------- DisplaySeriesList ------------------ */
 	/* -------------------------------------------- */
 	function DisplaySeriesList($seriesids, $modality) {
-		$seriesids = mysqli_real_escape_array($seriesids);
+		$seriesids = mysqli_real_escape_array($GLOBALS['linki'], $seriesids);
 		$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
 
 		if (!IsNiDBModality($modality)) {

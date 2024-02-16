@@ -107,14 +107,14 @@
 		/* perform data checks */
 		$projectid = mysqli_real_escape_string($GLOBALS['linki'], trim($projectid));
 		
-		$itemid = mysqli_real_escape_array($itemid);
-		$itemorder = mysqli_real_escape_array($itemorder);
-		$itemname = mysqli_real_escape_array($itemname);
-		$modality = mysqli_real_escape_array($modality);
-		$protocol = mysqli_real_escape_array($protocol);
-		$itemcount = mysqli_real_escape_array($itemcount);
-		$frequency = mysqli_real_escape_array($frequency);
-		$frequencyunit = mysqli_real_escape_array($frequencyunit);
+		$itemid = mysqli_real_escape_array($GLOBALS['linki'], $itemid);
+		$itemorder = mysqli_real_escape_array($GLOBALS['linki'], $itemorder);
+		$itemname = mysqli_real_escape_array($GLOBALS['linki'], $itemname);
+		$modality = mysqli_real_escape_array($GLOBALS['linki'], $modality);
+		$protocol = mysqli_real_escape_array($GLOBALS['linki'], $protocol);
+		$itemcount = mysqli_real_escape_array($GLOBALS['linki'], $itemcount);
+		$frequency = mysqli_real_escape_array($GLOBALS['linki'], $frequency);
+		$frequencyunit = mysqli_real_escape_array($GLOBALS['linki'], $frequencyunit);
 		
 		if (!isInteger($projectid)) { echo "Invalid project ID [$projectid]"; return; }
 

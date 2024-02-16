@@ -507,7 +507,7 @@
 	/* ------- DeactiveateSubjects ---------------- */
 	/* -------------------------------------------- */
 	function DeactivateSubjects($subjectids) {
-		$subjectids = mysqli_real_escape_array($subjectids);
+		$subjectids = mysqli_real_escape_array($GLOBALS['linki'], $subjectids);
 
 		echo "<tt style='font-size:8pt'>";
 		foreach ($subjectids as $id) {
@@ -523,7 +523,7 @@
 	/* ------- ObliterateSubjects ----------------- */
 	/* -------------------------------------------- */
 	function ObliterateSubjects($subjectids) {
-		$subjectids = mysqli_real_escape_array($subjectids);
+		$subjectids = mysqli_real_escape_array($GLOBALS['linki'], $subjectids);
 		
 		/* get list of subjects from the studyids */
 		$sqlstring = "select subject_id, uid from subjects where subject_id in (" . implode(',',$subjectids) . ")";

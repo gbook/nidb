@@ -353,7 +353,7 @@
 	/* -------------------------------------------- */
 	function MergeStudies($subjectid, $studyids) {
 		$subjectid = mysqli_real_escape_string($GLOBALS['linki'], $subjectid);
-		$studyids = mysqli_real_escape_array($studyids);
+		$studyids = mysqli_real_escape_array($GLOBALS['linki'], $studyids);
 
 		$sqlstring = "select uid from subjects where subject_id = $subjectid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -455,7 +455,7 @@
 	/* -------------------------------------------- */
 	function MoveSeriesToNewStudy($subjectid, $studyid, $seriesids) {
 		$studyid = mysqli_real_escape_string($GLOBALS['linki'], $studyid);
-		$seriesids = mysqli_real_escape_array($seriesids);
+		$seriesids = mysqli_real_escape_array($GLOBALS['linki'], $seriesids);
 		
 		$logmsg = "";
 		echo "<ol>";
@@ -601,7 +601,7 @@
 	/* ------- RenameSeriesForm ------------------- */
 	/* -------------------------------------------- */
 	function RenameSeriesForm($studyid, $seriesids) {
-		$seriesids = mysqli_real_escape_array($seriesids);
+		$seriesids = mysqli_real_escape_array($GLOBALS['linki'], $seriesids);
 		$studyid = mysqli_real_escape_string($GLOBALS['linki'], $studyid);
 
 		list($path, $uid, $studynum, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid) = GetStudyInfo($studyid);
@@ -668,8 +668,8 @@
 	/* ------- RenameSeries ----------------------- */
 	/* -------------------------------------------- */
 	function RenameSeries($studyid, $newseriesdesc, $newseriesprotocol) {
-		$newseriesdesc = mysqli_real_escape_array($newseriesdesc);
-		$newseriesprotocol = mysqli_real_escape_array($newseriesprotocol);
+		$newseriesdesc = mysqli_real_escape_array($GLOBALS['linki'], $newseriesdesc);
+		$newseriesprotocol = mysqli_real_escape_array($GLOBALS['linki'], $newseriesprotocol);
 		$studyid = mysqli_real_escape_string($GLOBALS['linki'], $studyid);
 
 		list($path, $uid, $studynum, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid) = GetStudyInfo($studyid);
@@ -694,7 +694,7 @@
 	/* ------- UpdateSeriesNotesForm -------------- */
 	/* -------------------------------------------- */
 	function UpdateSeriesNotesForm($studyid, $seriesids) {
-		$seriesids = mysqli_real_escape_array($seriesids);
+		$seriesids = mysqli_real_escape_array($GLOBALS['linki'], $seriesids);
 		$studyid = mysqli_real_escape_string($GLOBALS['linki'], $studyid);
 
 		list($path, $uid, $studynum, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid) = GetStudyInfo($studyid);
@@ -755,7 +755,7 @@
 	/* ------- UpdateSeriesNotes ------------------ */
 	/* -------------------------------------------- */
 	function UpdateSeriesNotes($studyid, $seriesnotes) {
-		$seriesnotes = mysqli_real_escape_array($seriesnotes);
+		$seriesnotes = mysqli_real_escape_array($GLOBALS['linki'], $seriesnotes);
 		$studyid = mysqli_real_escape_string($GLOBALS['linki'], $studyid);
 
 		list($path, $uid, $studynum, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid) = GetStudyInfo($studyid);
@@ -775,7 +775,7 @@
 	/* ------- HideSeries ------------------------- */
 	/* -------------------------------------------- */
 	function HideSeries($modality, $seriesids) {
-		$seriesids = mysqli_real_escape_array($seriesids);
+		$seriesids = mysqli_real_escape_array($GLOBALS['linki'], $seriesids);
 		$modality = strtolower(trim(mysqli_real_escape_string($GLOBALS['linki'], $modality)));
 
 		foreach ($seriesids as $seriesid) {
@@ -795,7 +795,7 @@
 	/* ------- UnhideSeries ----------------------- */
 	/* -------------------------------------------- */
 	function UnhideSeries($modality, $seriesids) {
-		$seriesids = mysqli_real_escape_array($seriesids);
+		$seriesids = mysqli_real_escape_array($GLOBALS['linki'], $seriesids);
 		$modality = strtolower(trim(mysqli_real_escape_string($GLOBALS['linki'], $modality)));
 		
 		foreach ($seriesids as $seriesid) {

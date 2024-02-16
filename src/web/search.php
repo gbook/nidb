@@ -1166,7 +1166,7 @@
 		
 		/* escape all the variables and put them back into meaningful variable names */
 		foreach ($s as $key => $value) {
-			if (is_array($value)) { $$key = mysqli_real_escape_array($s[$key]); }
+			if (is_array($value)) { $$key = mysqli_real_escape_array($GLOBALS['linki'], $s[$key]); }
 			elseif (is_scalar($value)) { $$key = mysqli_real_escape_string($GLOBALS['linki'], $s[$key]); }
 			else { $$key = $s[$key]; }
 		}
@@ -5442,7 +5442,7 @@
 		foreach ($s as $key => $value) {
 			if (is_array($value)) {
 				//PrintVariable($value);
-				$$key = mysqli_real_escape_array($s[$key]);
+				$$key = mysqli_real_escape_array($GLOBALS['linki'], $s[$key]);
 			}
 			elseif (is_scalar($value)) {
 				$$key = trim(mysqli_real_escape_string($GLOBALS['linki'], $s[$key]));

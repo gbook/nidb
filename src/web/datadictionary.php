@@ -132,12 +132,12 @@
 	function UpdateVariables($projectid, $datadictid, $descs, $types, $expectedcounts, $rangelows, $rangehighs, $deleteids) {
 		/* perform data checks */
 		if (!ValidID($projectid)) { return; }
-		$descs = mysqli_real_escape_array($descs);
-		$types = mysqli_real_escape_array($types);
+		$descs = mysqli_real_escape_array($GLOBALS['linki'], $descs);
+		$types = mysqli_real_escape_array($GLOBALS['linki'], $types);
 		//$expectedcounts = mysqli_real_escape_array($expectedcounts);
-		$rangelows = mysqli_real_escape_array($rangelows);
-		$rangehighs = mysqli_real_escape_array($rangehighs);
-		$deleteids = mysqli_real_escape_array($deleteids);
+		$rangelows = mysqli_real_escape_array($GLOBALS['linki'], $rangelows);
+		$rangehighs = mysqli_real_escape_array($GLOBALS['linki'], $rangehighs);
+		$deleteids = mysqli_real_escape_array($GLOBALS['linki'], $deleteids);
 		
 		$ids = array_keys($types);
 		foreach ($ids as $id) {
@@ -176,12 +176,12 @@
 	function AddVariables($projectid, $varnames, $descs, $types, $expectedcounts, $rangelows, $rangehighs, $ids) {
 		/* perform data checks */
 		if (!ValidID($projectid)) { return; }
-		$varnames = mysqli_real_escape_array($varnames);
-		$descs = mysqli_real_escape_array($descs);
-		$types = mysqli_real_escape_array($types);
-		$expectedcounts = mysqli_real_escape_array($expectedcounts);
-		$rangelows = mysqli_real_escape_array($rangelows);
-		$rangehighs = mysqli_real_escape_array($rangehighs);
+		$varnames = mysqli_real_escape_array($GLOBALS['linki'], $varnames);
+		$descs = mysqli_real_escape_array($GLOBALS['linki'], $descs);
+		$types = mysqli_real_escape_array($GLOBALS['linki'], $types);
+		$expectedcounts = mysqli_real_escape_array($GLOBALS['linki'], $expectedcounts);
+		$rangelows = mysqli_real_escape_array($GLOBALS['linki'], $rangelows);
+		$rangehighs = mysqli_real_escape_array($GLOBALS['linki'], $rangehighs);
 		
 		foreach ($ids as $id) {
 			$varname = $varnames[$id];

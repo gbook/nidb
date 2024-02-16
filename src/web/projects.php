@@ -226,17 +226,17 @@
 		
 		/* prepare the fields for SQL */
 		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
-		$subjectids = mysqli_real_escape_array($subjectids);
-		$altuids = mysqli_real_escape_array($altuids);
-		$guids = mysqli_real_escape_array($guids);
-		$birthdates = mysqli_real_escape_array($birthdates);
-		$genders = mysqli_real_escape_array($genders);
-		$ethnicity1s = mysqli_real_escape_array($ethnicity1s);
-		$ethnicity2s = mysqli_real_escape_array($ethnicity2s);
-		$educations = mysqli_real_escape_array($educations);
-		$maritalstatus = mysqli_real_escape_array($maritalstatus);
-		$smokingstatus = mysqli_real_escape_array($smokingstatus);
-		$enrollgroups = mysqli_real_escape_array($enrollgroups);
+		$subjectids = mysqli_real_escape_array($GLOBALS['linki'], $subjectids);
+		$altuids = mysqli_real_escape_array($GLOBALS['linki'], $altuids);
+		$guids = mysqli_real_escape_array($GLOBALS['linki'], $guids);
+		$birthdates = mysqli_real_escape_array($GLOBALS['linki'], $birthdates);
+		$genders = mysqli_real_escape_array($GLOBALS['linki'], $genders);
+		$ethnicity1s = mysqli_real_escape_array($GLOBALS['linki'], $ethnicity1s);
+		$ethnicity2s = mysqli_real_escape_array($GLOBALS['linki'], $ethnicity2s);
+		$educations = mysqli_real_escape_array($GLOBALS['linki'], $educations);
+		$maritalstatus = mysqli_real_escape_array($GLOBALS['linki'], $maritalstatus);
+		$smokingstatus = mysqli_real_escape_array($GLOBALS['linki'], $smokingstatus);
+		$enrollgroups = mysqli_real_escape_array($GLOBALS['linki'], $enrollgroups);
 		
 		/* check to see if each array has the same number of elements */
 		if (count($subjectids) != count($altuids)) { echo "Error in number of items received"; return; }
@@ -315,7 +315,7 @@
 	function ApplyTags($id, $studyids, $tags) {
 		/* prepare the fields for SQL */
 		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
-		$studyids = mysqli_real_escape_array($studyids);
+		$studyids = mysqli_real_escape_array($GLOBALS['linki'], $studyids);
 		$tags = mysqli_real_escape_string($GLOBALS['linki'], $tags);
 		$taglist = explode(',', $tags);
 		
@@ -625,7 +625,7 @@
 		foreach ($csv as $line) {
 			/* only accept valid lines with the correct # of columns */
 			if (trim($line) != '') {
-				$parts = mysqli_real_escape_array(str_getcsv($line));
+				$parts = mysqli_real_escape_array($GLOBALS['linki'], str_getcsv($line));
 				//PrintVariable($parts,'Parts');
 				$numparts = count($parts);
 				if (($numparts == 17) || ($numparts == 16)) {
@@ -750,7 +750,7 @@
 	/* ------- ObliterateSubject ------------------ */
 	/* -------------------------------------------- */
 	function ObliterateSubject($studyids) {
-		$studyids = mysqli_real_escape_array($studyids);
+		$studyids = mysqli_real_escape_array($GLOBALS['linki'], $studyids);
 		
 		/* get list of subjects from the studyids */
 		$sqlstring = "select subject_id, uid from subjects where subject_id in (select subject_id from enrollment where enrollment_id in (select enrollment_id from studies where study_id in (" . implode(',',$studyids) . ") ))";
@@ -775,7 +775,7 @@
 	/* ------- ObliterateStudy -------------------- */
 	/* -------------------------------------------- */
 	function ObliterateStudy($studyids) {
-		$studyids = mysqli_real_escape_array($studyids);
+		$studyids = mysqli_real_escape_array($GLOBALS['linki'], $studyids);
 		
 		/* delete all information about this SUBJECT from the database */
 		foreach ($studyids as $id) {
@@ -793,7 +793,7 @@
 	/* ------- RearchiveStudies ------------------- */
 	/* -------------------------------------------- */
 	function RearchiveStudies($studyids, $matchidonly) {
-		$studyids = mysqli_real_escape_array($studyids);
+		$studyids = mysqli_real_escape_array($GLOBALS['linki'], $studyids);
 		$matchidonly = mysqli_real_escape_string($GLOBALS['linki'], $matchidonly);
 		
 		/* rearchive all the studies */
@@ -814,7 +814,7 @@
 	/* ------- RearchiveSubjects ------------------ */
 	/* -------------------------------------------- */
 	function RearchiveSubjects($studyids, $matchidonly) {
-		$studyids = mysqli_real_escape_array($studyids);
+		$studyids = mysqli_real_escape_array($GLOBALS['linki'], $studyids);
 		$matchidonly = mysqli_real_escape_string($GLOBALS['linki'], $matchidonly);
 		
 		/* get list of subjects from the studyids */
@@ -902,7 +902,7 @@
 	/* ------- UpdateStudyAge --------------------- */
 	/* -------------------------------------------- */
 	function UpdateStudyAge($projectid) {
-		$projectid = mysqli_real_escape_array($projectid);
+		$projectid = mysqli_real_escape_array($GLOBALS['linki'], $projectid);
 		
 		/* get list of studies for this project */
 		$sqlstring = "select a.study_id, a.study_datetime, a.study_ageatscan, d.birthdate from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on b.project_id = c.project_id left join subjects d on d.subject_id = b.subject_id where c.project_id = $projectid";

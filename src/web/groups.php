@@ -275,7 +275,7 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		$studies = preg_split('/\s+/', $studylist);
-		$studies = mysqli_real_escape_array($studies);
+		$studies = mysqli_real_escape_array($GLOBALS['linki'], $studies);
 		$studies = array_unique($studies);
 
 		/* delete all old group entries */

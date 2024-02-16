@@ -529,7 +529,7 @@
 		//PrintVariable($itemprotocol);
 		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
 		$templateid = mysqli_real_escape_string($GLOBALS['linki'], $templateid);
-		$itemprotocol = mysqli_real_escape_array($itemprotocol);
+		$itemprotocol = mysqli_real_escape_array($GLOBALS['linki'], $itemprotocol);
 		
 		/* start a transaction */
 		$sqlstring = "start transaction";
@@ -564,14 +564,14 @@
 	function UpdateProjectTemplate($projectid, $ptid, $visittype, $modality, $protocols, $studydesc, $studyoperator, $studyphysician, $studysite, $studynotes) {
 		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
 		$ptid = mysqli_real_escape_string($GLOBALS['linki'], $ptid);
-		$visittype = mysqli_real_escape_array($visittype);
-		$modality = mysqli_real_escape_array($modality);
-		$protocols = mysqli_real_escape_array($protocols);
-		$studydesc = mysqli_real_escape_array($studydesc);
-		$studyoperator = mysqli_real_escape_array($studyoperator);
-		$studyphysician = mysqli_real_escape_array($studyphysician);
-		$studysite = mysqli_real_escape_array($studysite);
-		$studynotes = mysqli_real_escape_array($studynotes);
+		$visittype = mysqli_real_escape_array($GLOBALS['linki'], $visittype);
+		$modality = mysqli_real_escape_array($GLOBALS['linki'], $modality);
+		$protocols = mysqli_real_escape_array($GLOBALS['linki'], $protocols);
+		$studydesc = mysqli_real_escape_array($GLOBALS['linki'], $studydesc);
+		$studyoperator = mysqli_real_escape_array($GLOBALS['linki'], $studyoperator);
+		$studyphysician = mysqli_real_escape_array($GLOBALS['linki'], $studyphysician);
+		$studysite = mysqli_real_escape_array($GLOBALS['linki'], $studysite);
+		$studynotes = mysqli_real_escape_array($GLOBALS['linki'], $studynotes);
 		
 		/* start a transaction */
 		$sqlstring = "start transaction";

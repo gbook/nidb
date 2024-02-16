@@ -150,9 +150,9 @@
 	function SaveSearch($projectid, $savedsearchname, $a) {
 		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
 		$savedSearchName = mysqli_real_escape_string($GLOBALS['linki'], $savedsearchname);
-		$MRprotocols = implode2(",", mysqli_real_escape_array($a['mr_protocols']));
-		$EEGprotocols = implode2(",", mysqli_real_escape_array($a['eeg_protocols']));
-		$ETprotocols = implode2(",", mysqli_real_escape_array($a['et_protocols']));
+		$MRprotocols = implode2(",", mysqli_real_escape_array($GLOBALS['linki'], $a['mr_protocols']));
+		$EEGprotocols = implode2(",", mysqli_real_escape_array($GLOBALS['linki'], $a['eeg_protocols']));
+		$ETprotocols = implode2(",", mysqli_real_escape_array($GLOBALS['linki'], $a['et_protocols']));
 		$pipelineid = mysqli_real_escape_string($GLOBALS['linki'], $a['pipelineid']);
 		$pipelineresultname = mysqli_real_escape_string($GLOBALS['linki'], $a['pipelineresultname']);
 		$pipelineseriesdatetime = mysqli_real_escape_string($GLOBALS['linki'], $a['pipelineseriesdatetime']);

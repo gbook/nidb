@@ -38,8 +38,8 @@
 	require "includes_html.php";
 	require "menu.php";
 
-	//PrintVariable($_POST);
-	//PrintVariable($_GET);
+	PrintVariable($_POST);
+	PrintVariable($_GET);
 
 	/* check if this page is being called from itself */
 	$referringpage = $_SERVER['HTTP_REFERER'];
@@ -79,7 +79,7 @@
 	$includedrugs = GetVariable("includedrugs");
 	$includemeasures = GetVariable("includemeasures");
 	$includeexperiments = GetVariable("includeexperiments");
-	$includeanalyses = GetVariable("includeanalyses");
+	$includeanalysis = GetVariable("includeanalysis");
 	$includepipelines = GetVariable("includepipelines");
 
 	if (count($seriesids) > 0)
@@ -105,7 +105,12 @@
 			DisplayPackage($packageid);
 		}
 		elseif ($action == "addobjectstopackage") {
-			AddObjectsToPackage($packageid, $enrollmentids, $subjectids, $studyids, $seriesids, $modality, $experimentids, $analysisids, $pipelineids, $datadictionaryids, $drugids, $measureids, $includedrugs, $includemeasures, $includeexperiments, $includeanalyses, $includepipelines);
+			AddObjectsToPackage($packageid, $enrollmentids, $subjectids, $studyids, $seriesids, $modality, $experimentids, $analysisids, $pipelineids, $datadictionaryids, $drugids, $measureids, $includedrugs, $includemeasures, $includeexperiments, $includeanalysis, $includepipelines);
+			DisplayPackage($packageid);
+		}
+		elseif ($action == "removeobject") {
+			echo "Calling RemoveObject()";
+			RemoveObject($packageid, $objecttype, $objectids);
 			DisplayPackage($packageid);
 		}
 		else {
@@ -146,9 +151,6 @@
 				break;
 			case "series":
 				DisplayAddSeriesForm($objectids, $modality);
-				break;
-			case "enrollment":
-				DisplayAddEnrollmentForm($objectids);
 				break;
 			case "experiment":
 				DisplayAddExperimentForm($objectids);
@@ -1008,7 +1010,7 @@
 									
 									?>
 										<tr>
-											<td class="allseries"><input type="checkbox" name="seriesids[]" value="<?=$seriesid?>" <?=$checkboxstr?> class="seriescheck" onClick="CheckSelectedSeriesCount(this);"></td>
+											<td class="allseries"><input type="checkbox" name="seriesids[]" value="<?=$modality?>-<?=$seriesid?>" <?=$checkboxstr?> class="seriescheck" onClick="CheckSelectedSeriesCount(this);"></td>
 											<td><?=$uid?></td>
 											<td><?=$studynum?></td>
 											<td><?=$seriesnum?></td>
@@ -1617,10 +1619,79 @@
 		}
 	}
 
+
+	/* -------------------------------------------- */
+	/* ------- RemoveObject ----------------------- */
+	/* -------------------------------------------- */
+	function RemoveObject($packageid, $objecttype, $objectids) {
+
+		/* perform data checks */
+		$packageid = mysqli_real_escape_string($GLOBALS['linki'], $packageid);
+		$objecttype = mysqli_real_escape_string($GLOBALS['linki'], $objecttype);
+		$objectids = mysqli_real_escape_array($GLOBALS['linki'], $objectids);
+
+		$numobjects = count($objectids);
+		$objectidstr = implode2(",", $objectids);
+		switch ($objecttype) {
+			case "enrollment":
+				DisplayAddEnrollmentForm($objectids);
+				break;
+			case "subject":
+				DisplayAddSubjectForm($objectids);
+				break;
+			case "study":
+				DisplayAddStudyForm($objectids);
+				break;
+			case "series":
+				$sqlstring = "delete from package_series where packageseries_id in ($objectidstr)";
+				PrintSQL($sqlstring);
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				Notice("Removed $numobjects series");
+				break;
+			case "measure":
+				$sqlstring = "delete from package_measures where packagemeasure_id in ($objectidstr)";
+				PrintSQL($sqlstring);
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				Notice("Removed $numobjects measures");
+				break;
+			case "drug":
+				$sqlstring = "delete from package_drugs where packagedrug_id in ($objectidstr)";
+				PrintSQL($sqlstring);
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				Notice("Removed $numobjects drugs");
+				break;
+			case "experiment":
+				$sqlstring = "delete from package_experiments where packageexperiment_id in ($objectidstr)";
+				PrintSQL($sqlstring);
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				Notice("Removed $numobjects experiments");
+				break;
+			case "pipeline":
+				$sqlstring = "delete from package_pipelines where packagepipeline_id in ($objectidstr)";
+				PrintSQL($sqlstring);
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				Notice("Removed $numobjects pipelines");
+				break;
+			case "analysis":
+				$sqlstring = "delete from package_analyses where packageanalysis_id in ($objectidstr)";
+				PrintSQL($sqlstring);
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				Notice("Removed $numobjects analyses");
+				break;
+			case "datadictionary":
+				$sqlstring = "delete from package_dictionaries where packagedatadictionary_id in ($objectidstr)";
+				PrintSQL($sqlstring);
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				Notice("Removed $numobjects datadictionaries");
+				break;
+		}
+	}
+
+
 	/* -------------------------------------------- */
 	/* ------- AddObjectsToPackage ---------------- */
 	/* -------------------------------------------- */
-	function AddObjectsToPackage($packageid, $enrollmentids, $subjectids, $studyids, $seriesids, $modality, $experimentids, $analysisids, $pipelineids, $datadictionaryids, $drugids, $measureids, $includedrugs, $includemeasures, $includeexperiments, $includeanalyses, $includepipelines) {
+	function AddObjectsToPackage($packageid, $enrollmentids, $subjectids, $studyids, $seriesids, $modality, $experimentids, $analysisids, $pipelineids, $datadictionaryids, $drugids, $measureids, $includedrugs, $includemeasures, $includeexperiments, $includeanalysis, $includepipelines) {
 
 		/* perform data checks */
 		$packageid = mysqli_real_escape_string($GLOBALS['linki'], $packageid);
@@ -1638,7 +1709,7 @@
 		$includedrugs = mysqli_real_escape_string($GLOBALS['linki'], $includedrugs);
 		$includemeasures = mysqli_real_escape_string($GLOBALS['linki'], $includemeasures);
 		$includeexperiments = mysqli_real_escape_string($GLOBALS['linki'], $includeexperiments);
-		$includeanalyses = mysqli_real_escape_string($GLOBALS['linki'], $includeanalyses);
+		$includeanalysis = mysqli_real_escape_string($GLOBALS['linki'], $includeanalysis);
 		$includepipelines = mysqli_real_escape_string($GLOBALS['linki'], $includepipelines);
 		
 		/* add any enrollments */
@@ -1655,7 +1726,9 @@
 		/* add any series */
 		if ((count($seriesids) > 0) && (is_array($seriesids))) {
 			foreach ($seriesids as $seriesid) {
-				$sqlstring = "insert ignore into package_series (package_id, modality, series_id) values ($packageid, '$modality', $seriesid)";
+				list($mod, $sid) = explode("-",$seriesid);
+				$sqlstring = "insert ignore into package_series (package_id, modality, series_id) values ($packageid, '$mod', $sid)";
+				//PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
 			$numobjects += count($seriesids);
@@ -1673,7 +1746,7 @@
 		}
 
 		/* add any analyses */
-		if ((count($analysisids) > 0) && ($includeanalyses) && (is_array($analysisids))) {
+		if ((count($analysisids) > 0) && ($includeanalysis) && (is_array($analysisids))) {
 			foreach ($analysisids as $analysisid) {
 				$sqlstring = "insert ignore into package_analyses (package_id, analysis_id) values ($packageid, $analysisid)";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -1883,6 +1956,7 @@
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$packageexperimentid = $row['packageexperiment_id'];
 			$experimentid = $row['experiment_id'];
+			$experiments[$experimentid]['objectid'] = $packageexperimentid;
 			$experiments[$experimentid]['name'] = $row['exp_name'];
 			$experiments[$experimentid]['version'] = $row['exp_version'];
 			$experiments[$experimentid]['desc'] = $row['exp_desc'];
@@ -1897,6 +1971,7 @@
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$packagepipelineid = $row['packagepipeline_id'];
 			$pipelineid = $row['pipeline_id'];
+			$pipelines[$pipelineid]['objectid'] = $packagepipelineid;
 			$pipelines[$pipelineid]['name'] = $row['pipeline_name'];
 			$pipelines[$pipelineid]['version'] = $row['pipeline_version'];
 			$pipelines[$pipelineid]['desc'] = $row['pipeline_desc'];
@@ -1974,14 +2049,14 @@
 			
 			<!-- tab menu -->
 			<div class="ui attached large tabular menu">
-				<a class="active item item2" data-tab="overview">Package overview</a>
-				<a class="item item2" data-tab="subjects"><i class="user icon"></i> Subjects & Data</a>
-				<a class="item item2" data-tab="measures"><i class="clipboard icon"></i> Measures</a>
-				<a class="item item2" data-tab="drugs"><i class="pills icon"></i> Drugs</a>
+				<a class="active item item2" data-tab="overview"><i class="grey box open icon"></i>Package overview</a>
+				<a class="item item2" data-tab="subjects"><i class="grey user icon"></i> Subjects & Data</a>
+				<a class="item item2" data-tab="measures"><i class="grey clipboard icon"></i> Measures</a>
+				<a class="item item2" data-tab="drugs"><i class="grey pills icon"></i> Drugs</a>
 				<a class="item item2" data-tab="analysis">Analysis</a>
 				<a class="item item2" data-tab="experiments">Experiments</a>
 				<a class="item item2" data-tab="pipelines">Pipelines</a>
-				<!--<a class="item item2" data-tab="datadict">Data dictionary</a>-->
+				<a class="item item2" data-tab="datadict"><i class="grey book icon"></i>Data dictionary</a>
 			</div>
 
 			<!-- package overview tab -->
@@ -2050,7 +2125,7 @@
 							if ($numexperiments > 0) { $expcolor = "fill:#FFFFCC,stroke:#444,stroke-width:1px"; $exptext = "experiments ($numexperiments)"; } else { $expcolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:1px"; $exptext = "experiments"; }
 							if ($numpipelines > 0) { $pipecolor = "fill:#FFFFCC,stroke:#444,stroke-width:1px"; $pipetext = "pipelines ($numpipelines)"; } else { $pipecolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:1px"; $pipetext = "pipelines"; }
 							//if ($numdatadict > 0) { $dictcolor = "fill:#FFFFCC,stroke:#444,stroke-width:1px"; $dicttext = "data-dictionary ($numdatadict)"; } else { $dictcolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:1px"; $dicttext = "data-dictionary"; }
-							if ($numanalyses > 0) { $analysiscolor = "fill:#FFFFCC,stroke:#444,stroke-width:1px"; $analysistext = "analysis ($numanalyses)"; } else { $analysiscolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:1px"; $analysistext = "analysis"; }
+							if ($numanalysis > 0) { $analysiscolor = "fill:#FFFFCC,stroke:#444,stroke-width:1px"; $analysistext = "analysis ($numanalysis)"; } else { $analysiscolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:1px"; $analysistext = "analysis"; }
 							if ($numgroupanalyses > 0) { $groupanalysiscolor = "fill:#FFFFCC,stroke:#444,stroke-width:1px"; $groupanalysistext = "group-analysis ($numgroupanalyses)"; } else { $groupanalysiscolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:1px"; $groupanalysistext = "group-analysis"; }
 							if ($nummeasures > 0) { $meascolor = "fill:#FFFFCC,stroke:#444,stroke-width:1px"; $meastext = "measures ($nummeasures)"; } else { $meascolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:1px"; $meastext = "measures"; }
 							if ($numdrugs > 0) { $drugcolor = "fill:#FFFFCC,stroke:#444,stroke-width:1px"; $drugtext = "drugs ($numdrugs)"; } else { $drugcolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:1px"; $drugtext = "drugs"; }
@@ -2105,8 +2180,11 @@
 					</div>				
 				</div>
 				
+				<!-- This tree view is neat, but not very practical for quickly accessing the data -->
+				<!--
 				<ul class="tree">
 				<?
+				/*
 				ksort($subjects, SORT_NATURAL);
 				foreach ($subjects as $uid =>$studies) {
 					if ($uid != "") {
@@ -2157,10 +2235,48 @@
 						}
 						?></ul></details></li><?
 					}
+				} */
+				?>
+				</ul> -->
+				
+				<table class="ui very compact table">
+					<thead>
+						<th>UID</th>
+						<th>StudyNum</th>
+						<th>Modality</th>
+						<th>SeriesNum</th>
+					</thead>
+				<?
+				ksort($subjects, SORT_NATURAL);
+				foreach ($subjects as $uid =>$studies) {
+					if ($uid != "") {
+						
+						ksort($studies, SORT_NATURAL);
+						foreach ($studies as $studynum => $modalities) {
+
+							ksort($modalities, SORT_NATURAL);
+							foreach ($modalities as $modality => $series) {
+								
+								ksort($series, SORT_NATURAL);
+								foreach ($series as $seriesnum => $seriesid) {
+									?>
+									<tr>
+										<td><?=$uid?></td>
+										<td><?=$studynum?></td>
+										<td><?=$modality?></td>
+										<td><?=$seriesnum?></td>
+									</tr>
+									<?
+								}
+							}
+						}
+					}
 				}
 				?>
-				</ul>
+				</table>
+				
 			</div>
+
 
 			<!-- measures tab -->
 			<div class="ui bottom attached tab raised segment" data-tab="measures">
@@ -2175,8 +2291,24 @@
 				</div>
 			
 				<? if (count($measures) > 0) { ?>
+				<script type="text/javascript">
+					$(function() {
+						$("#selectallmeasure").click(function() {
+							var checked_status = this.checked;
+							$(".allmeasure").find("input[type='checkbox']").each(function() {
+								this.checked = checked_status;
+							});
+						});
+					});
+				</script>
+				
+				<form method="post" action="packages.php">
+				<input type="hidden" name="action" value="removeobject">
+				<input type="hidden" name="objecttype" value="measure">
+				<input type="hidden" name="packageid" value="<?=$packageid?>">
 				<table class="ui basic very compact table">
 					<thead>
+						<th><input type="checkbox" id="selectallmeasure"></th>
 						<th>UID</th>
 						<th>Measure</th>
 						<th>Value</th>
@@ -2192,6 +2324,7 @@
 						$measuredate = $measure['startdate'];
 						?>
 						<tr>
+							<td class="allmeasure"><input type="checkbox" name="objectids[]" value="<?=$objectid?>"></td>
 							<td><?=$uid?></td>
 							<td><?=$measurename?></td>
 							<td><?=$measurevalue?></td>
@@ -2202,6 +2335,8 @@
 				}
 				?>
 				</table>
+				<button type="submit" class="ui orange button"><i class="trash icon"></i>Remove selected measures</button>
+				</form>
 				<? } else { ?>
 				No measure objects in this package
 				<? } ?>
@@ -2220,8 +2355,24 @@
 				</div>
 				
 				<? if (count($drugs) > 0) { ?>
+				<script type="text/javascript">
+					$(function() {
+						$("#selectalldrug").click(function() {
+							var checked_status = this.checked;
+							$(".alldrug").find("input[type='checkbox']").each(function() {
+								this.checked = checked_status;
+							});
+						});
+					});
+				</script>
+				
+				<form method="post" action="packages.php">
+				<input type="hidden" name="action" value="removeobject">
+				<input type="hidden" name="objecttype" value="drug">
+				<input type="hidden" name="packageid" value="<?=$packageid?>">
 				<table class="ui basic very compact table">
 					<thead>
+						<th><input type="checkbox" id="selectalldrug"></th>
 						<th>UID</th>
 						<th>Drug</th>
 						<th>Date</th>
@@ -2235,6 +2386,7 @@
 						$drugdate = $drug['startdate'];
 						?>
 						<tr>
+							<td class="alldrug"><input type="checkbox" name="objectids[]" value="<?=$objectid?>"></td>
 							<td><?=$uid?></td>
 							<td><?=$drugname?></td>
 							<td><?=$drugdate?></td>
@@ -2244,6 +2396,8 @@
 				}
 				?>
 				</table>
+				<button type="submit" class="ui orange button"><i class="trash icon"></i>Remove selected drugs</button>
+				</form>
 				<? } ?>
 			</div>
 
@@ -2261,8 +2415,24 @@
 				</div>
 			
 				<? if (count($analyses) > 0) { ?>
+				<script type="text/javascript">
+					$(function() {
+						$("#selectallanalysis").click(function() {
+							var checked_status = this.checked;
+							$(".allanalysis").find("input[type='checkbox']").each(function() {
+								this.checked = checked_status;
+							});
+						});
+					});
+				</script>
+				
+				<form method="post" action="packages.php">
+				<input type="hidden" name="action" value="removeobject">
+				<input type="hidden" name="objecttype" value="analysis">
+				<input type="hidden" name="packageid" value="<?=$packageid?>">
 				<table class="ui basic very compact table">
 					<thead>
+						<th><input type="checkbox" id="selectallanalysis"></th>
 						<th>UID</th>
 						<th>StudyNum</th>
 						<th>Pipeline</th>
@@ -2273,9 +2443,10 @@
 				ksort($analyses, SORT_NATURAL);
 				foreach ($analyses as $uid => $objects) {
 					foreach ($objects as $objectid => $analysis) {
-						$analysisid = $analysis['measureid'];
+						$analysisid = $analysis['analysisid'];
 						?>
 						<tr>
+							<td class="allanalysis"><input type="checkbox" name="objectids[]" value="<?=$objectid?>"></td>
 							<td><?=$uid?></td>
 							<td><?=$analysis['studynum']?></td>
 							<td><?=$analysis['name']?></td>
@@ -2287,6 +2458,8 @@
 				}
 				?>
 				</table>
+				<button type="submit" class="ui orange button"><i class="trash icon"></i>Remove selected analyses</button>
+				</form>
 				<? } else { ?>
 				No analysis objects in this package
 				<? } ?>
@@ -2305,8 +2478,24 @@
 				</div>
 			
 				<? if (count($experiments) > 0) { ?>
+				<script type="text/javascript">
+					$(function() {
+						$("#selectallexperiment").click(function() {
+							var checked_status = this.checked;
+							$(".allexperiment").find("input[type='checkbox']").each(function() {
+								this.checked = checked_status;
+							});
+						});
+					});
+				</script>
+				
+				<form method="post" action="packages.php">
+				<input type="hidden" name="action" value="removeobject">
+				<input type="hidden" name="objecttype" value="experiment">
+				<input type="hidden" name="packageid" value="<?=$packageid?>">
 				<table class="ui basic very compact table">
 					<thead>
+						<th><input type="checkbox" id="selectallexperiment"></th>
 						<th>Name</th>
 						<th>Version</th>
 						<th>Description</th>
@@ -2317,6 +2506,7 @@
 				foreach ($experiments as $experimentid => $experiment) {
 					?>
 					<tr>
+						<td class="allexperiment"><input type="checkbox" name="objectids[]" value="<?=$experiment['objectid']?>"></td>
 						<td><?=$experiment['name']?></td>
 						<td><?=$experiment['version']?></td>
 						<td><?=$experiment['desc']?></td>
@@ -2327,6 +2517,8 @@
 				}
 				?>
 				</table>
+				<button type="submit" class="ui orange button"><i class="trash icon"></i>Remove selected experiments</button>
+				</form>
 				<? } else { ?>
 				<div class="ui message">
 					No experiment objects in this package
@@ -2334,7 +2526,7 @@
 				<? } ?>
 			</div>
 			
-			<!-- pipelines tab -->
+			<!-- ********** pipelines tab ********* -->
 			<div class="ui bottom attached tab raised segment" data-tab="pipelines">
 			
 				<div class="ui message">
@@ -2347,8 +2539,24 @@
 				</div>
 			
 				<? if (count($pipelines) > 0) { ?>
+				<script type="text/javascript">
+					$(function() {
+						$("#selectallpipeline").click(function() {
+							var checked_status = this.checked;
+							$(".allpipeline").find("input[type='checkbox']").each(function() {
+								this.checked = checked_status;
+							});
+						});
+					});
+				</script>
+				
+				<form method="post" action="packages.php">
+				<input type="hidden" name="action" value="removeobject">
+				<input type="hidden" name="objecttype" value="pipeline">
+				<input type="hidden" name="packageid" value="<?=$packageid?>">
 				<table class="ui basic very compact table">
 					<thead>
+						<th><input type="checkbox" id="selectallpipeline"></th>
 						<th>Name</th>
 						<th>Version</th>
 						<th>Description</th>
@@ -2358,6 +2566,7 @@
 				foreach ($pipelines as $pipelineid => $pipeline) {
 					?>
 					<tr>
+						<td class="allpipeline"><input type="checkbox" name="objectids[]" value="<?=$pipeline['objectid']?>"></td>
 						<td><?=$pipeline['name']?></td>
 						<td><?=$pipeline['version']?></td>
 						<td><?=$pipeline['desc']?></td>
@@ -2367,13 +2576,15 @@
 				}
 				?>
 				</table>
+				<button type="submit" class="ui orange button"><i class="trash icon"></i>Remove selected pipelines</button>
+				</form>
 				<? } else { ?>
 				No pipeline objects in this package
 				<? } ?>
 			</div>
 			
-			<!--<div class="ui bottom attached tab raised segment" data-tab="datadict">
-			</div> -->
+			<div class="ui bottom attached tab raised segment" data-tab="datadict">
+			</div>
 		</div>
 			
 		<?
