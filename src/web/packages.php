@@ -109,8 +109,11 @@
 			DisplayPackage($packageid);
 		}
 		elseif ($action == "removeobject") {
-			echo "Calling RemoveObject()";
 			RemoveObject($packageid, $objecttype, $objectids);
+			DisplayPackage($packageid);
+		}
+		elseif ($action == "export") {
+			ExportPackage($packageid);
 			DisplayPackage($packageid);
 		}
 		else {
@@ -2035,7 +2038,32 @@
 						</div>
 					</div>
 					<div class="ui middle aligned right aligned column">
-						<div class="ui big green button"><i class="box open icon"></i>Export Package</div>
+						<a href="packages.php?action=export&packageid=<?=$packageid?>" class="ui huge green button"><i class="box open icon"></i>Export Package</a>
+						<div class="ui accordion">
+							<div class="title">
+								<i class="dropdown icon"></i>
+								Previous exports
+							</div>
+							<div class="content">
+								<ul>
+								<?
+									$sqlstring = "select a.* from exports a left join exportseries b on a.export_id = b.export_id where b.package_id = $packageid";
+									$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+									$numanalysis = mysqli_num_rows($result);
+									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+										$exportid = $row['export_id'];
+										$startdate = $row['startdate'];
+										$submitdate = $row['submitdate'];
+										$completeddate = $row['completeddate'];
+										$status = $row['status'];
+										?>
+										<li><b>Submitted</b> <?=$submitdate?> - <b>Status</b> <?=$status?>
+										<?
+									}
+								?>
+								</ul>
+							</div>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -2857,6 +2885,25 @@
 		</div>
 		<?
 	}
+	
+	
+	/* -------------------------------------------- */
+	/* ------- ExportPackage ---------------------- */
+	/* -------------------------------------------- */
+	function ExportPackage($packageid) {
+		$ip = getenv('REMOTE_ADDR');
+		$username = $_SESSION['username'];
+		
+		$sqlstring = "insert into exports (username, ip, download_flags, destinationtype, filetype, submitdate, status) values ('$username', '$ip', 'DOWNLOAD_PACKAGE', 'web', 'package', now(), 'submitted')";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$exportRowID = mysqli_insert_id($GLOBALS['linki']);
+
+		$sqlstring = "insert into exportseries (export_id, package_id, status) values ($exportRowID, $packageid, 'submitted')";
+		$result = MySQLiQuery($sqlstring, __FILE__ , __LINE__);
+		
+		Notice("Package queued for export. Status can be checked, and package can be downloaded, from this page.");
+	}
+
 ?>
 
 

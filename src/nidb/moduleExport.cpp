@@ -65,9 +65,6 @@ int moduleExport::Run() {
             int exportid = q.value("export_id").toInt();
             //QString username = q.value("username").toString().trimmed();
             QString exporttype = q.value("destinationtype").toString().trimmed();
-            //bool downloadimaging = q.value("download_imaging").toBool();
-            //bool downloadbeh = q.value("download_beh").toBool();
-            //bool downloadqc = q.value("download_qc").toBool();
             QStringList downloadflags = q.value("download_flags").toString().trimmed().split(",");
             QString nfsdir = q.value("nfsdir").toString().trimmed();
             QString filetype = q.value("filetype").toString().trimmed();
@@ -403,6 +400,13 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 
         QString log;
         ExportSquirrel(exportid, squirreltitle, squirreldesc, downloadflags, squirrelflags, exportstatus, tmpexportdir, squirrelfilepath, log);
+        n->WriteLog(QString("ExportLocal() - After calling ExportSquirrel(): tmpexportdir [%1]   squirrelfilepath [%2]").arg(tmpexportdir).arg(squirrelfilepath));
+        msgs << log;
+    }
+    /* squirrel */
+    else if (filetype == "package") {
+        QString log;
+        ExportPackage(exportid, log);
         n->WriteLog(QString("ExportLocal() - After calling ExportSquirrel(): tmpexportdir [%1]   squirrelfilepath [%2]").arg(tmpexportdir).arg(squirrelfilepath));
         msgs << log;
     }
@@ -1359,6 +1363,80 @@ bool moduleExport::ExportSquirrel(int exportid, QString squirreltitle, QString s
             if (!q.value("series_id").isNull()) {
                 seriesids.append(q.value("series_id").toLongLong());
                 modalities.append(q.value("modality").toString().toLower());
+            }
+
+            /* mark the series as 'processing' */
+            n->SetExportSeriesStatus(exportseriesid, -1, -1, "","processing","preparing squirrel export");
+        }
+    }
+    else {
+        n->WriteLog(QString("%1() No series found. But this might be ok if only a pipeline is being exported for example").arg(__FUNCTION__));
+    }
+
+    QString rootoutdir = QString("%1/NiDB-Squirrel-%2").arg(n->cfg["ftpdir"]).arg(exportid);
+    outdir = rootoutdir;
+
+    QString m;
+    if (MakePath(rootoutdir, m)) {
+        n->WriteLog(QString("%1() Created rootoutdir (A) [" + rootoutdir + "]").arg(__FUNCTION__));
+    }
+    else {
+        exportstatus = "error";
+        msg = n->WriteLog(QString("%1() ERROR [" + m + "] unable to create rootoutdir [" + rootoutdir + "]").arg(__FUNCTION__));
+        return false;
+    }
+
+    n->WriteLog(QString("%1() calling WriteSquirrel(%2, %3, ...)").arg(__FUNCTION__).arg(seriesids.size()).arg(modalities.size()));
+    if (io->WriteSquirrel(exportid, squirreltitle, squirreldesc, downloadflags, squirrelflags, seriesids, modalities, rootoutdir, m)) {
+        n->WriteLog(QString("%1() - WriteSquirrel() returned true").arg(__FUNCTION__));
+
+        /* mark all series as 'complete' */
+        q.prepare("select * from exportseries where export_id = :exportid");
+        q.bindValue(":exportid",exportid);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        if (q.size() > 0) {
+            while (q.next()) {
+                n->SetExportSeriesStatus(q.value("exportseries_id").toLongLong(), -1, -1, "","complete","Entire squirrel export completed");
+            }
+        }
+    }
+    else
+        n->WriteLog(QString("%1() WriteSquirrel() returned false").arg(__FUNCTION__));
+
+    /* move the .zip file to the download directory if a web download */
+
+    /* update the publicdataset_download table to reflect the numfiles,zipsize, unzipsize, package format, image format, and status */
+
+    QStringList msgs;
+
+    msg = msgs.join("\n");
+    n->WriteLog(QString("Leaving %1()...").arg(__FUNCTION__));
+    return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- ExportPackage ---------------------------------- */
+/* ---------------------------------------------------------- */
+bool moduleExport::ExportPackage(int exportid, QString &exportstatus, QString &filepath, QString &msg) {
+
+    n->WriteLog(QString("%1() starting...").arg(__FUNCTION__));
+    exportstatus = "complete";
+
+    /* get list of seriesids/modalities */
+    QList<qint64> packageids;
+    QSqlQuery q;
+    q.prepare("select * from exportseries where export_id = :exportid");
+    q.bindValue(":exportid",exportid);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.size() > 0) {
+        n->WriteLog(QString("%1() Found [%2] rows (series to be exported) for exportID [%3]").arg(__FUNCTION__).arg(q.size()).arg(exportid));
+
+        while (q.next()) {
+            qint64 exportseriesid = q.value("exportseries_id").toLongLong();
+            /* only append the series IDs if they're not null */
+            if (!q.value("series_id").isNull()) {
+                packageids.append(q.value("package_id").toLongLong());
             }
 
             /* mark the series as 'processing' */

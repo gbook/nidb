@@ -24,6 +24,7 @@ SOURCES += \
     experiment.cpp \
     imageio.cpp \
     main.cpp \
+    measure.cpp \
     minipipeline.cpp \
     moduleBackup.cpp \
     moduleCluster.cpp \
@@ -64,6 +65,7 @@ HEADERS += \
     archiveio.h \
     experiment.h \
     imageio.h \
+    measure.h \
     minipipeline.h \
     moduleBackup.h \
     moduleCluster.h \
