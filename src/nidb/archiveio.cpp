@@ -2832,7 +2832,6 @@ bool archiveIO::WritePackage(qint64 exportid, QString zipfilepath, QString &msg)
         /* create squirrel SERIES */
         squirrelSeries sqrlSeries;
         sqrlSeries = ser.GetSquirrelObject();
-        //sqrlSeries.subjectRowID = sqrlSubjectRowID;
         sqrlSeries.studyRowID = sqrlStudyRowID;
         sqrlSeries.Store();
         int sqrlSeriesRowID = sqrlSeries.GetObjectID();
@@ -2943,6 +2942,8 @@ bool archiveIO::WritePackage(qint64 exportid, QString zipfilepath, QString &msg)
         sqrlDrug.subjectRowID = sqrlSubjectRowID;
         sqrlDrug.Store();
     }
+
+    /* PIPELINES */
 
 }
 
