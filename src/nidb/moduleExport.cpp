@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB moduleExport.cpp
-  Copyright (C) 2004 - 2023
+  Copyright (C) 2004 - 2024
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -406,7 +406,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
     /* squirrel */
     else if (filetype == "package") {
         QString log;
-        ExportPackage(exportid, log);
+        ExportPackage(exportid, exportstatus, squirrelfilepath, log);
         n->WriteLog(QString("ExportLocal() - After calling ExportSquirrel(): tmpexportdir [%1]   squirrelfilepath [%2]").arg(tmpexportdir).arg(squirrelfilepath));
         msgs << log;
     }
@@ -1448,7 +1448,7 @@ bool moduleExport::ExportPackage(int exportid, QString &exportstatus, QString &f
     }
 
     QString rootoutdir = QString("%1/NiDB-Squirrel-%2").arg(n->cfg["ftpdir"]).arg(exportid);
-    outdir = rootoutdir;
+    //outdir = rootoutdir;
 
     QString m;
     if (MakePath(rootoutdir, m)) {
@@ -1460,9 +1460,9 @@ bool moduleExport::ExportPackage(int exportid, QString &exportstatus, QString &f
         return false;
     }
 
-    n->WriteLog(QString("%1() calling WriteSquirrel(%2, %3, ...)").arg(__FUNCTION__).arg(seriesids.size()).arg(modalities.size()));
-    if (io->WriteSquirrel(exportid, squirreltitle, squirreldesc, downloadflags, squirrelflags, seriesids, modalities, rootoutdir, m)) {
-        n->WriteLog(QString("%1() - WriteSquirrel() returned true").arg(__FUNCTION__));
+    //n->WriteLog(QString("%1() calling WriteSquirrel(%2, %3, ...)").arg(__FUNCTION__).arg(seriesids.size()).arg(modalities.size()));
+    //if (io->WriteSquirrel(exportid, squirreltitle, squirreldesc, downloadflags, squirrelflags, seriesids, modalities, rootoutdir, m)) {
+    //    n->WriteLog(QString("%1() - WriteSquirrel() returned true").arg(__FUNCTION__));
 
         /* mark all series as 'complete' */
         q.prepare("select * from exportseries where export_id = :exportid");
@@ -1473,9 +1473,9 @@ bool moduleExport::ExportPackage(int exportid, QString &exportstatus, QString &f
                 n->SetExportSeriesStatus(q.value("exportseries_id").toLongLong(), -1, -1, "","complete","Entire squirrel export completed");
             }
         }
-    }
-    else
-        n->WriteLog(QString("%1() WriteSquirrel() returned false").arg(__FUNCTION__));
+    //}
+    //else
+    //    n->WriteLog(QString("%1() WriteSquirrel() returned false").arg(__FUNCTION__));
 
     /* move the .zip file to the download directory if a web download */
 

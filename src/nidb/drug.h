@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------------------
-  NIDB moduleUpload.h
+  NIDB drug.h
   Copyright (C) 2004 - 2024
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
@@ -20,31 +20,50 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
   ------------------------------------------------------------------------------ */
 
-#ifndef MODULEUPLOAD_H
-#define MODULEUPLOAD_H
+#ifndef DRUG_H
+#define DRUG_H
+#include <QString>
 #include "nidb.h"
-#include "archiveio.h"
-#include "imageio.h"
+#include "squirrelDrug.h"
 
-class moduleUpload
+class drug
 {
 public:
-    moduleUpload();
-    moduleUpload(nidb *n);
-    ~moduleUpload();
+    drug();
+    drug(qint64 id, nidb *a);
+    nidb *n;
 
-    int Run();
-    //QString AppendUploadLog(int uploadid, QString msg);
-    bool ParseUploads();
-    bool ArchiveParsedUploads();
-    void SetUploadStatus(int uploadid, QString status, double percent=-1.0);
-    QString GetUploadStatus(int uploadid);
-    bool UpdateParsedUploads(QMap<QString, QMap<QString, QMap<QString, QStringList> > > fs, QString upload_subjectcriteria, QString upload_studycriteria, QString upload_seriescriteria, QString uploadstagingpath, int upload_id);
+    void PrintDrugInfo();
+    squirrelDrug GetSquirrelObject();
+
+    QDateTime dateDrugComplete;
+    QDateTime dateDrugEnd;
+    QDateTime dateDrugStart;
+    QDateTime dateRecordCreate;
+    QDateTime dateRecordEntry;
+    QDateTime dateRecordModify;
+    QString desc;
+    QString instrumentName;
+    QString drugName;
+    QString notes;
+    QString rater;
+    QString uid;
+    QString value;
+    QString valueString;
+    char drugType;
+    double valueNumber;
+    int duration;
+    int enrollmentid;
+    int instrumentNameID;
+    int drugNameID;
+    int drugid;
+    int subjectid;
+
+    bool isValid = true;
+    QString msg;
 
 private:
-    nidb *n;
-    archiveIO *io;
-    imageIO *img;
+    void LoadDrugInfo();
 };
 
-#endif // MODULEUPLOAD_H
+#endif // DRUG_H

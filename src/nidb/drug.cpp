@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------------------
-  NIDB measure.cpp
+  NIDB drug.cpp
   Copyright (C) 2004 - 2024
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
@@ -20,66 +20,66 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
   ------------------------------------------------------------------------------ */
 
-#include "measure.h"
+#include "drug.h"
 #include "study.h"
 #include <QSqlQuery>
 
 
 /* ---------------------------------------------------------- */
-/* --------- measure ---------------------------------------- */
+/* --------- drug ---------------------------------------- */
 /* ---------------------------------------------------------- */
-measure::measure(qint64 id, nidb *a)
+drug::drug(qint64 id, nidb *a)
 {
     n = a;
-    measureid = id;
-    LoadMeasureInfo();
+    drugid = id;
+    LoadDrugInfo();
 }
 
 
 /* ---------------------------------------------------------- */
-/* --------- LoadMeasureInfo -------------------------------- */
+/* --------- LoadDrugInfo -------------------------------- */
 /* ---------------------------------------------------------- */
-void measure::LoadMeasureInfo() {
+void drug::LoadDrugInfo() {
 
     QStringList msgs;
 
-    if (measureid < 1) {
-        msgs << "Invalid measure ID";
+    if (drugid < 1) {
+        msgs << "Invalid drug ID";
         isValid = false;
     }
     else {
         QSqlQuery q;
-        q.prepare("select * from measures a left join measurenames b on a.measurename_id = b.measurename_id left join measureinstruments c on a.instrumentname_id = c.measureinstrument_id left join enrollment d on a.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.measure_id = :measureid");
-        q.bindValue(":measureid", measureid);
+        q.prepare("select * from drugs a left join drugnames b on a.drugname_id = b.drugname_id left join druginstruments c on a.instrumentname_id = c.druginstrument_id left join enrollment d on a.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.drug_id = :drugid");
+        q.bindValue(":drugid", drugid);
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         if (q.size() < 1) {
-            msgs << "Query returned no results. Possibly invalid measure ID or recently deleted?";
+            msgs << "Query returned no results. Possibly invalid drug ID or recently deleted?";
             isValid = false;
         }
         else {
             q.first();
 
-            dateMeasureComplete = q.value("measure_datecomplete").toDateTime();
-            dateMeasureEnd = q.value("measure_enddate").toDateTime();
-            dateMeasureStart = q.value("measure_startdate").toDateTime();
-            dateRecordCreate = q.value("measure_createdate").toDateTime();
-            dateRecordEntry = q.value("measure_entrydate").toDateTime();
-            dateRecordModify = q.value("measure_modifydate").toDateTime();
-            desc = q.value("measure_desc").toString();
-            duration = q.value("measure_duration").toInt();
+            dateDrugComplete = q.value("drug_datecomplete").toDateTime();
+            dateDrugEnd = q.value("drug_enddate").toDateTime();
+            dateDrugStart = q.value("drug_startdate").toDateTime();
+            dateRecordCreate = q.value("drug_createdate").toDateTime();
+            dateRecordEntry = q.value("drug_entrydate").toDateTime();
+            dateRecordModify = q.value("drug_modifydate").toDateTime();
+            desc = q.value("drug_desc").toString();
+            duration = q.value("drug_duration").toInt();
             enrollmentid = q.value("enrollment_id").toInt();
             instrumentName = q.value("instrument_name").toString();
             instrumentNameID = q.value("instrumentname_id").toInt();
-            measureName = q.value("measure_name").toString();
-            measureNameID = q.value("measurename_id").toInt();
-            measureType = q.value("measure_type").toChar().toLatin1();
-            notes = q.value("measure_notes").toString();
-            rater = q.value("measure_rater").toString();
+            drugName = q.value("drug_name").toString();
+            drugNameID = q.value("drugname_id").toInt();
+            drugType = q.value("drug_type").toChar().toLatin1();
+            notes = q.value("drug_notes").toString();
+            rater = q.value("drug_rater").toString();
             subjectid = q.value("subject_id").toInt();
             uid = q.value("UID").toString();
-            value = q.value("measure_value").toString();
-            valueNumber = q.value("measure_valuenum").toDouble();
-            valueString = q.value("measure_valuestring").toString();
+            value = q.value("drug_value").toString();
+            valueNumber = q.value("drug_valuenum").toDouble();
+            valueString = q.value("drug_valuestring").toString();
 
         }
         isValid = true;
@@ -89,14 +89,14 @@ void measure::LoadMeasureInfo() {
 
 
 /* ---------------------------------------------------------- */
-/* --------- PrintMeasureInfo -------------------------------- */
+/* --------- PrintDrugInfo -------------------------------- */
 /* ---------------------------------------------------------- */
-void measure::PrintMeasureInfo() {
-    QString	output = QString("***** Measure - [%1] *****\n").arg(measureid);
+void drug::PrintDrugInfo() {
+    QString	output = QString("***** Drug - [%1] *****\n").arg(drugid);
 
-    output += QString("   dateMeasureComplete: [%1]\n").arg(dateMeasureComplete.toString());
-    output += QString("   dateMeasureEnd: [%1]\n").arg(dateMeasureEnd.toString());
-    output += QString("   dateMeasureStart: [%1]\n").arg(dateMeasureStart.toString());
+    output += QString("   dateDrugComplete: [%1]\n").arg(dateDrugComplete.toString());
+    output += QString("   dateDrugEnd: [%1]\n").arg(dateDrugEnd.toString());
+    output += QString("   dateDrugStart: [%1]\n").arg(dateDrugStart.toString());
     output += QString("   dateRecordCreate: [%1]\n").arg(dateRecordCreate.toString());
     output += QString("   dateRecordEntry: [%1]\n").arg(dateRecordEntry.toString());
     output += QString("   dateRecordModify: [%1]\n").arg(dateRecordModify.toString());
@@ -105,10 +105,10 @@ void measure::PrintMeasureInfo() {
     output += QString("   enrollmentid: [%1]\n").arg(enrollmentid);
     output += QString("   instrumentName: [%1]\n").arg(instrumentName);
     output += QString("   instrumentNameID: [%1]\n").arg(instrumentNameID);
-    output += QString("   measureName: [%1]\n").arg(measureName);
-    output += QString("   measureNameID: [%1]\n").arg(measureNameID);
-    output += QString("   measureType: [%1]\n").arg(measureType);
-    output += QString("   measureid: [%1]\n").arg(measureid);
+    output += QString("   drugName: [%1]\n").arg(drugName);
+    output += QString("   drugNameID: [%1]\n").arg(drugNameID);
+    output += QString("   drugType: [%1]\n").arg(drugType);
+    output += QString("   drugid: [%1]\n").arg(drugid);
     output += QString("   notes: [%1]\n").arg(notes);
     output += QString("   rater: [%1]\n").arg(rater);
     output += QString("   subjectid: [%1]\n").arg(subjectid);
@@ -124,25 +124,18 @@ void measure::PrintMeasureInfo() {
 /* ---------------------------------------------------------- */
 /* --------- GetSquirrelObject ------------------------------ */
 /* ---------------------------------------------------------- */
-squirrelMeasure measure::GetSquirrelObject() {
-    squirrelMeasure sqrl;
+squirrelDrug drug::GetSquirrelObject() {
+    squirrelDrug sqrl;
 
-    sqrl.dateEnd = dateMeasureEnd;
+    sqrl.dateEnd = dateDrugEnd;
     sqrl.dateRecordEntry = dateRecordEntry;
-    sqrl.dateStart = dateMeasureStart;
+    sqrl.dateStart = dateDrugStart;
     sqrl.description = desc;
-    sqrl.duration = duration;
-    sqrl.instrumentName = instrumentName;
-    sqrl.measureName = measureName;
+    //sqrl.duration = duration;
+    //sqrl.instrumentName = instrumentName;
+    sqrl.drugName = drugName;
     sqrl.notes = notes;
     sqrl.rater = rater;
-
-    if (value != "")
-        sqrl.value = value;
-    else if (measureType == 'n')
-        sqrl.value = QString("%1").arg(valueNumber);
-    else
-        sqrl.value = valueString;
 
     return sqrl;
 }

@@ -21,6 +21,7 @@ QMAKE_CXXFLAGS += -Wall
 SOURCES += \
     analysis.cpp \
     archiveio.cpp \
+    drug.cpp \
     experiment.cpp \
     imageio.cpp \
     main.cpp \
@@ -63,6 +64,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 HEADERS += \
     analysis.h \
     archiveio.h \
+    drug.h \
     experiment.h \
     imageio.h \
     measure.h \

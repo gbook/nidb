@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB archiveio.h
-  Copyright (C) 2004 - 2023
+  Copyright (C) 2004 - 2024
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -33,6 +33,8 @@
 #include "pipeline.h"
 #include "minipipeline.h"
 #include "experiment.h"
+#include "measure.h"
+#include "drug.h"
 
 class archiveIO
 {

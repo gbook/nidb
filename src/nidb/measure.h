@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB measure.h
-  Copyright (C) 2004 - 2023
+  Copyright (C) 2004 - 2024
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -30,34 +30,37 @@ class measure
 {
 public:
     measure();
-    measure(qint64 id, QString m, nidb *a);
+    measure(qint64 id, nidb *a);
     nidb *n;
 
     void PrintMeasureInfo();
     squirrelMeasure GetSquirrelObject();
 
-    QString modality;
-    QString uid;
-    int studynum;
-    int measurenum;
+    QDateTime dateMeasureComplete;
+    QDateTime dateMeasureEnd;
+    QDateTime dateMeasureStart;
+    QDateTime dateRecordCreate;
+    QDateTime dateRecordEntry;
+    QDateTime dateRecordModify;
     QString desc;
-    QString protocol;
-    QDateTime datetime;
-    int subjectid;
-    int studyid;
-    qint64 measureid;
-    QString measurepath;
-    QString datapath;
-    QString behpath;
-    QString datatype;
+    QString instrumentName;
+    QString measureName;
+    QString notes;
+    QString rater;
+    QString uid;
+    QString value;
+    QString valueString;
+    char measureType;
+    double valueNumber;
+    int duration;
     int enrollmentid;
-    int projectid;
-    bool isderived;
+    int instrumentNameID;
+    int measureNameID;
+    int measureid;
+    int subjectid;
 
     bool isValid = true;
     QString msg;
-
-    bool ChangeMeasurePath(int studyid, int newMeasureNum);
 
 private:
     void LoadMeasureInfo();

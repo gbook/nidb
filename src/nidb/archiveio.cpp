@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB archiveio.h
-  Copyright (C) 2004 - 2023
+  Copyright (C) 2004 - 2024
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -2746,7 +2746,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
 /* ---------------------------------------------------------- */
 /* --------- WritePackage ----------------------------------- */
 /* ---------------------------------------------------------- */
-bool WritePackage(qint64 exportid, QString zipfilepath, QString &msg) {
+bool archiveIO::WritePackage(qint64 exportid, QString zipfilepath, QString &msg) {
 
     /* get the total number of objects being exported */
     qint64 exportseriesid;
@@ -2808,8 +2808,8 @@ bool WritePackage(qint64 exportid, QString zipfilepath, QString &msg) {
 
         /* get squirrel SUBJECT (create the object in the package if it doesn't already exist) */
         squirrelSubject sqrlSubject;
-        subject subj(ser.subjectid);
-        int sqrlSubjectRowID = sqrl.FindSubject(subj.UID);
+        subject subj(ser.subjectid, n);
+        int sqrlSubjectRowID = sqrl.FindSubject(subj.UID());
         if (sqrlSubjectRowID < 0) {
             /* ... create subject if necessary */
             sqrlSubject = subj.GetSquirrelObject();
@@ -2819,11 +2819,11 @@ bool WritePackage(qint64 exportid, QString zipfilepath, QString &msg) {
 
         /* get squirrel STUDY (create the object in the package if it doesn't already exist) */
         squirrelStudy sqrlStudy;
-        study stud(ser.studyid);
-        int sqrlStudyRowID = sqrl.FindStudy(subj.UID, stud.studyNum);
+        study stud(ser.studyid, n);
+        int sqrlStudyRowID = sqrl.FindStudy(subj.UID(), stud.studyNum());
         if (sqrlStudyRowID < 0) {
             /* ... create study if necessary */
-            sqrlStudy = subj.GetSquirrelObject();
+            sqrlStudy = stud.GetSquirrelObject();
             sqrlStudy.subjectRowID = sqrlSubjectRowID;
             sqrlStudy.Store();
             sqrlStudyRowID = sqrlStudy.GetObjectID();
@@ -2832,10 +2832,10 @@ bool WritePackage(qint64 exportid, QString zipfilepath, QString &msg) {
         /* create squirrel SERIES */
         squirrelSeries sqrlSeries;
         sqrlSeries = ser.GetSquirrelObject();
-        sqrlSeries.subjectRowID = sqrlSubjectRowID;
+        //sqrlSeries.subjectRowID = sqrlSubjectRowID;
         sqrlSeries.studyRowID = sqrlStudyRowID;
         sqrlSeries.Store();
-        sqrlSeriesRowID = sqrlSeries.GetObjectID();
+        int sqrlSeriesRowID = sqrlSeries.GetObjectID();
     }
 
     /* ANALYSES - add all analysis associated with this package */
@@ -2846,15 +2846,15 @@ bool WritePackage(qint64 exportid, QString zipfilepath, QString &msg) {
         int analysisRowID = q.value("analysis_id").toInt();
         int studyRowID = q.value("study_id").toInt();
 
-        study stud(studyRowID);
-        if (!stud.valid) continue;
+        study stud(studyRowID, n);
+        if (!stud.valid()) continue;
 
-        subject subj(stud.subjectRowID);
-        if (!subj.valid) continue;
+        subject subj(stud.subjectRowID(), n);
+        if (!subj.valid()) continue;
 
         /* get squirrel SUBJECT (create the object in the package if it doesn't already exist) */
         squirrelSubject sqrlSubject;
-        int sqrlSubjectRowID = sqrl.FindSubject(subj.UID);
+        int sqrlSubjectRowID = sqrl.FindSubject(subj.UID());
         if (sqrlSubjectRowID < 0) {
             /* ... create subject if necessary */
             sqrlSubject = subj.GetSquirrelObject();
@@ -2864,10 +2864,10 @@ bool WritePackage(qint64 exportid, QString zipfilepath, QString &msg) {
 
         /* get squirrel STUDY (create the object in the package if it doesn't already exist) */
         squirrelStudy sqrlStudy;
-        int sqrlStudyRowID = sqrl.FindStudy(stud.UID, stud.studyNum);
+        int sqrlStudyRowID = sqrl.FindStudy(stud.UID(), stud.studyNum());
         if (sqrlStudyRowID < 0) {
             /* ... create study if necessary */
-            sqrlStudy = subj.GetSquirrelObject();
+            sqrlStudy = stud.GetSquirrelObject();
             sqrlStudy.subjectRowID = sqrlSubjectRowID;
             sqrlStudy.Store();
             sqrlStudyRowID = sqrlStudy.GetObjectID();
@@ -2883,19 +2883,19 @@ bool WritePackage(qint64 exportid, QString zipfilepath, QString &msg) {
     }
 
     /* MEASURES - add all measures associated with this package */
-    q.prepare("select b.analysis_id, c.subject_id from package_measures a left join measures b on a.measure_id = b.mesaure_id left join enrollment c on b.enrollment_id = c.enrollment_id where a.package_id = :packageid");
+    q.prepare("select b.measure_id, c.subject_id from package_measures a left join measures b on a.measure_id = b.measure_id left join enrollment c on b.enrollment_id = c.enrollment_id where a.package_id = :packageid");
     q.bindValue(":packageid", packageid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
     while (q.next()) {
         int measureRowID = q.value("measure_id").toInt();
         int subjectRowID = q.value("subject_id").toInt();
 
-        subject subj(subjectRowID);
-        if (!subj.valid) continue;
+        subject subj(subjectRowID, n);
+        if (!subj.valid()) continue;
 
         /* get squirrel SUBJECT (create the object in the package if it doesn't already exist) */
         squirrelSubject sqrlSubject;
-        int sqrlSubjectRowID = sqrl.FindSubject(subj.UID);
+        int sqrlSubjectRowID = sqrl.FindSubject(subj.UID());
         if (sqrlSubjectRowID < 0) {
             /* ... create subject if necessary */
             sqrlSubject = subj.GetSquirrelObject();
@@ -2904,12 +2904,44 @@ bool WritePackage(qint64 exportid, QString zipfilepath, QString &msg) {
         }
 
         /* add the analysis to the package */
-        //measure a(analysisRowID, n);
-        //if (!a.isValid) continue;
-        //squirrelAnalysis sqrlAnalysis;
-        //sqrlAnalysis = a.GetSquirrelObject();
-        //sqrlAnalysis.studyRowID = sqrlStudyRowID;
-        //sqrlAnalysis.Store();
+        measure m(measureRowID, n);
+        if (!m.isValid) continue;
+
+        squirrelMeasure sqrlMeasure;
+        sqrlMeasure = m.GetSquirrelObject();
+        sqrlMeasure.subjectRowID = sqrlSubjectRowID;
+        sqrlMeasure.Store();
+    }
+
+    /* DRUGS - add all drugs associated with this package */
+    q.prepare("select b.drug_id, c.subject_id from package_drugs a left join drugs b on a.drug_id = b.drug_id left join enrollment c on b.enrollment_id = c.enrollment_id where a.package_id = :packageid");
+    q.bindValue(":packageid", packageid);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
+    while (q.next()) {
+        int drugRowID = q.value("drug_id").toInt();
+        int subjectRowID = q.value("subject_id").toInt();
+
+        subject subj(subjectRowID, n);
+        if (!subj.valid()) continue;
+
+        /* get squirrel SUBJECT (create the object in the package if it doesn't already exist) */
+        squirrelSubject sqrlSubject;
+        int sqrlSubjectRowID = sqrl.FindSubject(subj.UID());
+        if (sqrlSubjectRowID < 0) {
+            /* ... create subject if necessary */
+            sqrlSubject = subj.GetSquirrelObject();
+            sqrlSubject.Store();
+            sqrlSubjectRowID = sqrlSubject.GetObjectID();
+        }
+
+        /* add the drug to the package */
+        drug d(drugRowID, n);
+        if (!d.isValid) continue;
+
+        squirrelDrug sqrlDrug;
+        sqrlDrug = d.GetSquirrelObject();
+        sqrlDrug.subjectRowID = sqrlSubjectRowID;
+        sqrlDrug.Store();
     }
 
 }
