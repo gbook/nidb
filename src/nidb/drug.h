@@ -36,27 +36,28 @@ public:
     void PrintDrugInfo();
     squirrelDrug GetSquirrelObject();
 
-    QDateTime dateDrugComplete;
     QDateTime dateDrugEnd;
     QDateTime dateDrugStart;
     QDateTime dateRecordCreate;
     QDateTime dateRecordEntry;
     QDateTime dateRecordModify;
-    QString desc;
-    QString instrumentName;
+    QString doseAmount;
+    QString doseDesc;
+    QString doseFrequency;
+    QString doseKey;
+    QString doseUnit;
     QString drugName;
+    QString drugType;
+    QString frequencyModifier;
+    QString frequencyUnit;
+    QString frequencyValue;
     QString notes;
     QString rater;
+    QString route;
     QString uid;
-    QString value;
-    QString valueString;
-    char drugType;
-    double valueNumber;
-    int duration;
-    int enrollmentid;
-    int instrumentNameID;
     int drugNameID;
     int drugid;
+    int enrollmentid;
     int subjectid;
 
     bool isValid = true;
