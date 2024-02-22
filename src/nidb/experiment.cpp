@@ -62,7 +62,7 @@ void experiment::LoadExperimentInfo() {
     name = q.value("exp_name").toString().trimmed();
     createDate = q.value("exp_createdate").toDateTime();
     modifyDate = q.value("exp_modifydate").toDateTime();
-    version = q.value("mp_version").toInt();
+    version = q.value("exp_version").toInt();
     desc = q.value("exp_desc").toString();
     creator = q.value("exp_creator").toString();
 

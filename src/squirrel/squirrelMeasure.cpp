@@ -142,6 +142,9 @@ QJsonObject squirrelMeasure::ToJSON() {
     json["MeasureName"] = measureName;
     json["DateStart"] = dateStart.toString("yyyy-MM-dd HH:mm:ss");
     json["DateEnd"] = dateEnd.toString("yyyy-MM-dd HH:mm:ss");
+    json["DateRecordCreate"] = dateRecordCreate.toString("yyyy-MM-dd HH:mm:ss");
+    json["DateRecordEntry"] = dateRecordEntry.toString("yyyy-MM-dd HH:mm:ss");
+    json["DateRecordModify"] = dateRecordModify.toString("yyyy-MM-dd HH:mm:ss");
     json["InstrumentName"] = instrumentName;
     json["Rater"] = rater;
     json["Notes"] = notes;

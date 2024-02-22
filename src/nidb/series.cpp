@@ -22,6 +22,7 @@
 
 #include "series.h"
 #include "study.h"
+#include "imageio.h"
 #include <QSqlQuery>
 
 
@@ -70,7 +71,8 @@ void series::LoadSeriesInfo() {
             studyid = q.value("study_id").toInt();
             projectid = q.value("project_id").toInt();
             enrollmentid = q.value("enrollment_id").toInt();
-            datatype = q.value("data_type").toString().trimmed();
+            if (q.value("data_type").isValid())
+                datatype = q.value("data_type").toString().trimmed();
             isderived = q.value("is_derived").toBool();
 
             /* check to see if anything isn't valid or is blank */
@@ -106,21 +108,21 @@ void series::LoadSeriesInfo() {
 void series::PrintSeriesInfo() {
     QString	output = QString("***** Series - [%1] *****\n").arg(seriesid);
 
-    output += QString("   uid: [%1]\n").arg(uid);
-    output += QString("   subjectid: [%1]\n").arg(subjectid);
-    output += QString("   studyid: [%1]\n").arg(studyid);
-    output += QString("   studynum: [%1]\n").arg(studynum);
-    output += QString("   seriesid: [%1]\n").arg(seriesid);
-    output += QString("   seriesnum: [%1]\n").arg(seriesnum);
-    output += QString("   projectid: [%1]\n").arg(projectid);
-    output += QString("   enrollmentid: [%1]\n").arg(enrollmentid);
+    output += QString("   datapath: [%1]\n").arg(datapath);
     output += QString("   datatype: [%1]\n").arg(datatype);
-    output += QString("   modality: [%1]\n").arg(modality);
+    output += QString("   enrollmentid: [%1]\n").arg(enrollmentid);
     output += QString("   isDerived: [%1]\n").arg(isderived);
     output += QString("   isValid: [%1]\n").arg(isValid);
+    output += QString("   modality: [%1]\n").arg(modality);
     output += QString("   msg: [%1]\n").arg(msg);
+    output += QString("   projectid: [%1]\n").arg(projectid);
+    output += QString("   seriesid: [%1]\n").arg(seriesid);
+    output += QString("   seriesnum: [%1]\n").arg(seriesnum);
     output += QString("   seriespath: [%1]\n").arg(seriespath);
-    output += QString("   datapath: [%1]\n").arg(datapath);
+    output += QString("   studyid: [%1]\n").arg(studyid);
+    output += QString("   studynum: [%1]\n").arg(studynum);
+    output += QString("   subjectid: [%1]\n").arg(subjectid);
+    output += QString("   uid: [%1]\n").arg(uid);
 
     n->WriteLog(output);
 }
@@ -152,10 +154,16 @@ squirrelSeries series::GetSquirrelObject() {
     sqrl.description = desc;
     sqrl.number = seriesnum;
     sqrl.protocol = protocol;
-    //sqrl.experimentList;
-    //sqrl.files;
-    //sqrl.numFiles = ;
-    //sqrl.size = ;
+
+    sqrl.stagedFiles = FindAllFiles(datapath,"*");
+    sqrl.stagedBehFiles = FindAllFiles(behpath,"*");
+    QString file, m;
+    if (FindFirstFile(datapath,"*",file,m)) {
+        imageIO io;
+        QHash<QString, QString> tags;
+        io.GetImageFileTags(file, n->cfg["bindir"], true, tags, m);
+        sqrl.params = tags;
+    }
 
     return sqrl;
 }

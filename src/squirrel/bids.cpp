@@ -60,27 +60,27 @@ bool bids::LoadToSquirrel(QString dir, squirrel *sqrl) {
 
     /* check for all .json files in the root directory */
     QStringList rootfiles = utils::FindAllFiles(dir, "*", false);
-    sqrl->Log(QString("Found [%1] root files matching '%2/*'").arg(rootfiles.size()).arg(dir), __FUNCTION__, true);
+    sqrl->Debug(QString("Found [%1] root files matching '%2/*'").arg(rootfiles.size()).arg(dir), __FUNCTION__);
     LoadRootFiles(rootfiles, sqrl);
 
     /* get list of directories in the root named 'sub-*' */
     QStringList subjdirs = utils::FindAllDirs(dir, "sub-*", false);
 
-    sqrl->Log(QString("Found [%1] subject directories matching '%2/sub-*'").arg(subjdirs.size()).arg(dir), __FUNCTION__, true);
+    sqrl->Debug(QString("Found [%1] subject directories matching '%2/sub-*'").arg(subjdirs.size()).arg(dir), __FUNCTION__);
     foreach (QString subjdir, subjdirs) {
 
         QString subjpath = QString("%1/%2").arg(dir).arg(subjdir);
 
         /* get all the FILES inside of the subject directory */
         QStringList subjfiles = utils::FindAllFiles(subjpath, "*", false);
-        sqrl->Log(QString("Found [%1] subject root files matching '%2/*'").arg(subjfiles.size()).arg(subjdir), __FUNCTION__, true);
+        sqrl->Debug(QString("Found [%1] subject root files matching '%2/*'").arg(subjfiles.size()).arg(subjdir), __FUNCTION__);
 
         QString ID = subjdir;
         LoadSubjectFiles(subjfiles, subjdir, sqrl);
 
         /* get a list of ses-* DIRS, if there are any */
         QStringList sesdirs = utils::FindAllDirs(subjpath, "ses-*", false);
-        sqrl->Log(QString("Found [%1] session directories matching '%2/ses-*'").arg(sesdirs.size()).arg(subjdir), __FUNCTION__, true);
+        sqrl->Debug(QString("Found [%1] session directories matching '%2/ses-*'").arg(sesdirs.size()).arg(subjdir), __FUNCTION__);
         if (sesdirs.size() > 0) {
             int studyNum = 1;
             foreach (QString sesdir, sesdirs) {
@@ -94,7 +94,7 @@ bool bids::LoadToSquirrel(QString dir, squirrel *sqrl) {
                 //int studyNum;
                 //studyNum = sqrl->subjectList[subjectIndex].GetNextStudyNumber();
 
-                sqrl->Log(QString("Loading session path [%1] into study [%2]").arg(sespath).arg(studyNum), __FUNCTION__, true);
+                sqrl->Debug(QString("Loading session path [%1] into study [%2]").arg(sespath).arg(studyNum), __FUNCTION__);
 
                 LoadSessionDir(sespath, studyNum, sqrl);
                 studyNum++;
@@ -295,18 +295,18 @@ bool bids::LoadSessionDir(QString sesdir, int studyNum, squirrel *sqrl) {
 
     /* get list of all dirs in this sesdir */
     QStringList sesdirs = utils::FindAllDirs(sesdir, "*", false);
-    sqrl->Log(QString("Found [%1] directories in [%2/*]").arg(sesdirs.size()).arg(sesdir), __FUNCTION__, true);
+    sqrl->Debug(QString("Found [%1] directories in [%2/*]").arg(sesdirs.size()).arg(sesdir), __FUNCTION__);
     if (sesdirs.size() > 0) {
         foreach (QString dir, sesdirs) {
             QString datadir = QString("%1/%2").arg(sesdir).arg(dir);
             QStringList files = utils::FindAllFiles(datadir, "*", false);
-            sqrl->Log(QString("Found [%1] files in '%2'").arg(files.size()).arg(datadir), __FUNCTION__, true);
+            sqrl->Debug(QString("Found [%1] files in '%2'").arg(files.size()).arg(datadir), __FUNCTION__);
 
             /* now do something with the files, depending on what they are */
             if ((dir == "anat") || (dir == "fmap") || (dir == "perf")) {
                 foreach (QString f, files) {
 
-                    sqrl->Log(QString("Found file [%1] of type [%2]").arg(f).arg(dir), __FUNCTION__, true);
+                    sqrl->Debug(QString("Found file [%1] of type [%2]").arg(f).arg(dir), __FUNCTION__);
 
                     QString filename = QFileInfo(f).fileName();
                     filename.replace(".nii.gz", "");
@@ -1093,7 +1093,7 @@ bool bids::LoadTaskFile(QString f, squirrel *sqrl) {
     //sqrlExp.virtualPath = QString("%1/experiments/%2").arg(sqrl->GetTempDir()).arg(experimentName);
     //sqrl->experimentList.append(sqrlExp);
     sqrl->AddStagedFiles("experiment", expRowID, files);
-    sqrl->Log(QString("Added [%1] files to experiment [%2] with path [%3]").arg(files.size()).arg(experimentName).arg(exp.virtualPath), __FUNCTION__, true);
+    sqrl->Debug(QString("Added [%1] files to experiment [%2] with path [%3]").arg(files.size()).arg(experimentName).arg(exp.virtualPath), __FUNCTION__);
 
     return true;
 }

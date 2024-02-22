@@ -203,7 +203,7 @@ bool squirrel::Read(QString filepath, bool headerOnly, bool validateOnly) {
     if (headerOnly) {
         #ifdef Q_OS_WINDOWS
             systemstring = QString("\"C:/Program Files/7-Zip/7z.exe\" x \"" + filepath + "\" -o\"" + workingDir + "\" squirrel.json -y");
-            Log(systemstring, __FUNCTION__, true);
+            Log(systemstring, __FUNCTION__);
             output = utils::SystemCommand(systemstring, true);
             /* read from .json file */
             jsonStr = utils::ReadTextFileToString(workingDir + "/squirrel.json");
@@ -220,7 +220,7 @@ bool squirrel::Read(QString filepath, bool headerOnly, bool validateOnly) {
             systemstring = QString("unzip " + filepath + " -d " + workingDir);
         #endif
         output = utils::SystemCommand(systemstring, true);
-        Log(output, __FUNCTION__, true);
+        Log(output, __FUNCTION__);
 
         /* read from .json file */
         jsonStr = utils::ReadTextFileToString(workingDir + "/squirrel.json");
@@ -330,14 +330,13 @@ bool squirrel::Read(QString filepath, bool headerOnly, bool validateOnly) {
                 sqrlAnalysis.endDate.fromString(jsonAnalyses["EndDate"].toString(), "yyyy-MM-dd hh:mm:ss");
                 sqrlAnalysis.hostname = jsonAnalyses["Hostname"].toString();
                 sqrlAnalysis.lastMessage = jsonAnalyses["StatusMessage"].toString();
-                sqrlAnalysis.numSeries = jsonAnalyses["NumSeries"].toInt();
+                sqrlAnalysis.numSeries = jsonAnalyses["NumberSeries"].toInt();
                 sqrlAnalysis.pipelineName = jsonAnalyses["PipelineName"].toString();
                 sqrlAnalysis.pipelineVersion = jsonAnalyses["PipelineVersion"].toInt();
                 sqrlAnalysis.runTime = jsonAnalyses["RunTime"].toInteger();
                 sqrlAnalysis.setupTime = jsonAnalyses["RunTime"].toInteger();
                 sqrlAnalysis.size = jsonAnalyses["Size"].toInteger();
                 sqrlAnalysis.startDate.fromString(jsonAnalyses["StartDate"].toString(), "yyyy-MM-dd hh:mm:ss");
-                sqrlAnalysis.status = jsonAnalyses["Status"].toString();
                 sqrlAnalysis.status = jsonAnalyses["Status"].toString();
                 sqrlAnalysis.successful = jsonAnalyses["Successful"].toBool();
                 //sqrlAnalysis.virtualPath = jsonAnalyses["VirtualPath"].toString();
@@ -586,7 +585,7 @@ bool squirrel::Write(bool writeLog) {
 
                     /* get path of first file to be converted */
                     if (series.stagedFiles.size() > 0) {
-                        Log(QString("Converting [%1] files to nifti").arg(series.stagedFiles.size()), __FUNCTION__, true);
+                        Log(QString("Converting [%1] files to nifti").arg(series.stagedFiles.size()), __FUNCTION__);
 
                         QFileInfo f(series.stagedFiles[0]);
                         QString origSeriesPath = f.absoluteDir().absolutePath();
@@ -597,7 +596,7 @@ bool squirrel::Write(bool writeLog) {
                         }
                     }
                     else {
-                        Log(QString("Variable squirrelSeries.stagedFiles is empty. No files to convert to Nifti"), __FUNCTION__, true);
+                        Log(QString("Variable squirrelSeries.stagedFiles is empty. No files to convert to Nifti"), __FUNCTION__);
                     }
                 }
                 else
@@ -614,7 +613,7 @@ bool squirrel::Write(bool writeLog) {
                 QString paramFilePath = QString("%1/params.json").arg(seriesPath);
                 QByteArray j = QJsonDocument(series.ParamsToJSON()).toJson();
                 if (!utils::WriteTextFile(paramFilePath, j))
-                    Log("Error writing [" + paramFilePath + "]", __FUNCTION__, true);
+                    Log("Error writing [" + paramFilePath + "]", __FUNCTION__);
             }
         }
     }
@@ -650,14 +649,14 @@ bool squirrel::Write(bool writeLog) {
         foreach (squirrelGroupAnalysis g, groupAnalyses) {
             if (g.Get()) {
                 JSONgroupanalyses.append(g.ToJSON());
-                Log(QString("Added group-analysis [%1]").arg(g.groupAnalysisName), __FUNCTION__, true);
+                Log(QString("Added group-analysis [%1]").arg(g.groupAnalysisName), __FUNCTION__);
             }
         }
-        data["NumGroupAnalyses"] = JSONgroupanalyses.size();
+        data["GroupAnalysisCount"] = JSONgroupanalyses.size();
         data["group-analysis"] = JSONgroupanalyses;
     }
 
-    data["NumSubjects"] = JSONsubjects.size();
+    data["SubjectCount"] = JSONsubjects.size();
     data["subjects"] = JSONsubjects;
     root["data"] = data;
 
@@ -669,10 +668,10 @@ bool squirrel::Write(bool writeLog) {
         foreach (squirrelPipeline p, pipelines) {
             if (p.Get()) {
                 JSONpipelines.append(p.ToJSON(workingDir));
-                Log(QString("Added pipeline [%1]").arg(p.pipelineName), __FUNCTION__, true);
+                Log(QString("Added pipeline [%1]").arg(p.pipelineName), __FUNCTION__);
             }
         }
-        root["NumPipelines"] = JSONpipelines.size();
+        root["PipelineCount"] = JSONpipelines.size();
         root["pipelines"] = JSONpipelines;
     }
 
@@ -684,10 +683,10 @@ bool squirrel::Write(bool writeLog) {
         foreach (squirrelExperiment e, exps) {
             if (e.Get()) {
                 JSONexperiments.append(e.ToJSON());
-                Log(QString("Added experiment [%1]").arg(e.experimentName), __FUNCTION__, true);
+                Log(QString("Added experiment [%1]").arg(e.experimentName), __FUNCTION__);
             }
         }
-        root["NumExperiments"] = JSONexperiments.size();
+        root["ExperimentCount"] = JSONexperiments.size();
         root["experiments"] = JSONexperiments;
     }
 
@@ -699,20 +698,20 @@ bool squirrel::Write(bool writeLog) {
         foreach (squirrelDataDictionary d, dicts) {
             if (d.Get()) {
                 JSONdataDictionaries.append(d.ToJSON());
-                Log("Added data-dictionary", __FUNCTION__, true);
+                Log("Added data-dictionary", __FUNCTION__);
             }
         }
-        root["NumDataDictionaries"] = JSONdataDictionaries.size();
+        root["DataDictionaryCount"] = JSONdataDictionaries.size();
         root["data-dictionaries"] = JSONdataDictionaries;
     }
     root["TotalSize"] = GetUnzipSize();
-    root["TotalNumFiles"] = GetNumFiles();
+    root["TotalFileCount"] = GetNumFiles();
 
     /* write the final .json file */
     QString jsonFilePath = workingDir + "/squirrel.json";
     QByteArray j = QJsonDocument(root).toJson();
     if (!utils::WriteTextFile(jsonFilePath, j))
-        Log("Error writing [" + jsonFilePath + "]", __FUNCTION__, true);
+        Log("Error writing [" + jsonFilePath + "]", __FUNCTION__);
 
     QString systemstring;
     #ifdef Q_OS_WINDOWS
@@ -1096,13 +1095,24 @@ QString squirrel::GetTempDir() {
  * @param func function that called this function
  * @param dbg is this is a debug message, to be displayed only if debug is enabled at the command line
  */
-void squirrel::Log(QString s, QString func, bool dbg) {
+void squirrel::Log(QString s, QString func) {
     if (!quiet) {
-        if ((!dbg) || (debug && dbg)) {
-            if (s.trimmed() != "") {
-                log.append(QString("%1() %2\n").arg(func).arg(s));
-                utils::Print(QString("%1() %2").arg(func).arg(s));
-            }
+        if (s.trimmed() != "") {
+            log.append(QString("squirrel::%1() %2\n").arg(func).arg(s));
+            utils::Print(QString("squirrel::%1() %2").arg(func).arg(s));
+        }
+    }
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- Debug ------------------------------------------------ */
+/* ------------------------------------------------------------ */
+void squirrel::Debug(QString s, QString func) {
+    if (debug) {
+        if (s.trimmed() != "") {
+            log.append(QString("Debug squirrel::%1() %2\n").arg(func).arg(s));
+            utils::Print(QString("Debug squirrel::%1() %2").arg(func).arg(s));
         }
     }
 }
@@ -1354,7 +1364,7 @@ QList<squirrelPipeline> squirrel::GetAllPipelines() {
 QList<squirrelSubject> squirrel::GetAllSubjects() {
     QSqlQuery q(QSqlDatabase::database("squirrel"));
     QList<squirrelSubject> list;
-    q.prepare("select SubjectRowID from Subject order by ID asc, Sequence");
+    q.prepare("select SubjectRowID from Subject order by ID asc, Sequence asc");
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     while (q.next()) {
         squirrelSubject s;
@@ -1380,7 +1390,7 @@ QList<squirrelSubject> squirrel::GetAllSubjects() {
 QList<squirrelStudy> squirrel::GetStudies(int subjectRowID) {
     QSqlQuery q(QSqlDatabase::database("squirrel"));
     QList<squirrelStudy> list;
-    q.prepare("select StudyRowID from Study where SubjectRowID = :id order by StudyNumber asc, Sequence");
+    q.prepare("select StudyRowID from Study where SubjectRowID = :id order by StudyNumber asc, Sequence asc");
     q.bindValue(":id", subjectRowID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     while (q.next()) {
@@ -1626,6 +1636,7 @@ void squirrel::ResequenceSubjects() {
     QList<squirrelSubject> subjects = GetAllSubjects();
     int i = 1;
     foreach (squirrelSubject subject, subjects) {
+        //Debug(QString("Requence subject [%1]  old [%2]  new [%3]").arg(subject.ID).arg(subject.sequence).arg(i), __FUNCTION__);
         subject.sequence = i;
         subject.Store();
         i++;
@@ -1647,6 +1658,7 @@ void squirrel::ResequenceStudies(int subjectRowID) {
     QList<squirrelStudy> studies = GetStudies(subjectRowID);
     int i = 1;
     foreach (squirrelStudy study, studies) {
+        //Debug(QString("Requence study [%1]  old [%2]  new [%3]").arg(study.number).arg(study.sequence).arg(i), __FUNCTION__);
         study.sequence = i;
         study.Store();
         i++;
@@ -1662,6 +1674,7 @@ void squirrel::ResequenceSeries(int studyRowID) {
     QList<squirrelSeries> serieses = GetSeries(studyRowID);
     int i = 1;
     foreach (squirrelSeries series, serieses) {
+        //Debug(QString("Requence series [%1]  old [%2]  new [%3]").arg(series.number).arg(series.sequence).arg(i), __FUNCTION__);
         series.sequence = i;
         series.Store();
         i++;

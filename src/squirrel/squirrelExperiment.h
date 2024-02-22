@@ -42,6 +42,7 @@ public:
     QString Error() { return err; }
     qint64 GetObjectID() { return objectID; }
     void SetObjectID(int id) { objectID = id; }
+    QString VirtualPath();
 
     /* data items */
     QString experimentName;     /*!< experiment name (required) */

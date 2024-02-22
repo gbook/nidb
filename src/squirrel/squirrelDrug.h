@@ -47,24 +47,26 @@ public:
     void SetObjectID(int id) { objectID = id; }
 
     /* JSON elements */
-    qint64 subjectRowID;        /*!< database row ID of the parent object */
-    QString drugName;           /*!< drug name (required) */
-    QDateTime dateStart;        /*!< drug start date (required) */
     QDateTime dateEnd;          /*!< drug end date */
-    QString doseString;         /*!< full dose string (example "tylenol 325mg twice daily by mouth") */
-    double doseAmount;          /*!< dose amount (required) */
-    QString doseFrequency;      /*!< string representation of dose frequency, ie '2 tablets daily' */
-    QString route;              /*!< drug delivery route (oral, IV, IM, etc) */
-    QString drugClass;          /*!< drug class */
-    QString doseKey;            /*!< for clinical trials, the dose key */
-    QString doseUnit;           /*!< mg, g, ml, tablets, etc */
-    QString frequencyModifier;  /*!< 'every' or 'times' */
-    double frequencyValue;      /*!< the frequency as a number */
-    QString frequencyUnit;      /*!< the time of the frequency: bolus, dose, second, minute, hour, day, week, month, year */
+    QDateTime dateRecordCreate;  /*!< date the record was created */
+    QDateTime dateRecordEntry;  /*!< date the record was entered */
+    QDateTime dateRecordModify;  /*!< date the record was modified */
+    QDateTime dateStart;        /*!< drug start date (required) */
     QString description;        /*!< longer description of the drug and dosing */
-    QString rater;              /*!< rater/experimenter/prescriber */
+    QString doseFrequency;      /*!< string representation of dose frequency, ie '2 tablets daily' */
+    QString doseKey;            /*!< for clinical trials, the dose key */
+    QString doseString;         /*!< full dose string (example "tylenol 325mg twice daily by mouth") */
+    QString doseUnit;           /*!< mg, g, ml, tablets, etc */
+    QString drugClass;          /*!< drug class */
+    QString drugName;           /*!< drug name (required) */
+    QString frequencyModifier;  /*!< 'every' or 'times' */
+    QString frequencyUnit;      /*!< the time of the frequency: bolus, dose, second, minute, hour, day, week, month, year */
     QString notes;              /*!< freeform field for notes */
-    QDateTime dateRecordEntry;  /*!< date of the data entry */
+    QString rater;              /*!< rater/experimenter/prescriber */
+    QString route;              /*!< drug delivery route (oral, IV, IM, etc) */
+    double doseAmount;          /*!< dose amount (required) */
+    double frequencyValue;      /*!< the frequency as a number */
+    qint64 subjectRowID;        /*!< database row ID of the parent object */
 
 private:
     bool valid = false;

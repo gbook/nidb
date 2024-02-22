@@ -1461,8 +1461,8 @@ bool moduleExport::ExportPackage(int exportid, QString &exportstatus, QString &f
     }
 
     //n->WriteLog(QString("%1() calling WriteSquirrel(%2, %3, ...)").arg(__FUNCTION__).arg(seriesids.size()).arg(modalities.size()));
-    //if (io->WriteSquirrel(exportid, squirreltitle, squirreldesc, downloadflags, squirrelflags, seriesids, modalities, rootoutdir, m)) {
-    //    n->WriteLog(QString("%1() - WriteSquirrel() returned true").arg(__FUNCTION__));
+    if (io->WritePackage(exportid, rootoutdir, m)) {
+        n->WriteLog(QString("%1() - WritePackage() returned [%2]").arg(__FUNCTION__).arg(m));
 
         /* mark all series as 'complete' */
         q.prepare("select * from exportseries where export_id = :exportid");
@@ -1473,9 +1473,9 @@ bool moduleExport::ExportPackage(int exportid, QString &exportstatus, QString &f
                 n->SetExportSeriesStatus(q.value("exportseries_id").toLongLong(), -1, -1, "","complete","Entire squirrel export completed");
             }
         }
-    //}
-    //else
-    //    n->WriteLog(QString("%1() WriteSquirrel() returned false").arg(__FUNCTION__));
+    }
+    else
+        n->WriteLog(QString("%1() WritePackage() returned false").arg(__FUNCTION__));
 
     /* move the .zip file to the download directory if a web download */
 

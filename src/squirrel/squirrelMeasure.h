@@ -55,7 +55,9 @@ public:
     QString value;              /*!< value, in string or number stored as a string */
     QString description;        /*!< extended measurement description */
     double duration;            /*!< duration of the measure, in seconds */
-    QDateTime dateRecordEntry;  /*!< data entry date */
+    QDateTime dateRecordEntry;  /*!< date the record was entered */
+    QDateTime dateRecordCreate;  /*!< date the record was created */
+    QDateTime dateRecordModify;  /*!< date the record was modified */
 
 private:
     bool valid = false;

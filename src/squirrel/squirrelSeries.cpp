@@ -192,6 +192,7 @@ void squirrelSeries::PrintSeries() {
     utils::Print(QString("\t\t\t\tSeriesNumber: %1").arg(number));
     utils::Print(QString("\t\t\t\tSeriesUID: %1").arg(seriesUID));
     utils::Print(QString("\t\t\t\tSize: %1").arg(size));
+    utils::Print(QString("\t\t\t\tSeriesRowID: %1").arg(objectID));
     utils::Print(QString("\t\t\t\tVirtualPath: %1").arg(VirtualPath()));
 
     foreach (QString f, stagedFiles) {
@@ -213,10 +214,10 @@ void squirrelSeries::PrintSeries() {
 QJsonObject squirrelSeries::ToJSON() {
     QJsonObject json;
 
-    json["BehSize"] = behSize;
+    json["BehavioralDataSize"] = behSize;
     json["Description"] = description;
-    json["NumBehFiles"] = numBehFiles;
-    json["NumFiles"] = numFiles;
+    json["NumberBehavioralFiles"] = numBehFiles;
+    json["NumberFiles"] = numFiles;
     json["Protocol"] = protocol;
     json["Sequence"] = sequence;
     json["SeriesDatetime"] = dateTime.toString("yyyy-MM-dd HH:mm:ss");

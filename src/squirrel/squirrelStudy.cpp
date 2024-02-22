@@ -214,13 +214,13 @@ void squirrelStudy::PrintStudy() {
     utils::Print(QString("\t\t\tHeight: %1 m").arg(height));
     utils::Print(QString("\t\t\tModality: %1").arg(modality));
     utils::Print(QString("\t\t\tStudyNumber: %1").arg(number));
+    utils::Print(QString("\t\t\tStudyRowID: %1").arg(objectID));
+    utils::Print(QString("\t\t\tStudyUID: %1").arg(studyUID));
+    utils::Print(QString("\t\t\tSubjectRowID: %1").arg(subjectRowID));
     utils::Print(QString("\t\t\tTimePoint: %1").arg(timePoint));
     utils::Print(QString("\t\t\tVirtualPath: %1").arg(VirtualPath()));
     utils::Print(QString("\t\t\tVisitType: %1").arg(visitType));
     utils::Print(QString("\t\t\tWeight: %1 kg").arg(weight));
-    utils::Print(QString("\t\t\tStudyUID: %1").arg(studyUID));
-    utils::Print(QString("\t\t\tSubjectRowID: %1").arg(subjectRowID));
-    utils::Print(QString("\t\t\tObjectRowID: %1").arg(objectID));
 }
 
 
@@ -280,23 +280,15 @@ QJsonObject squirrelStudy::ToJSON() {
     QJsonArray JSONanalysis;
     while (q.next()) {
         squirrelSeries s;
-        s.SetObjectID(q.value("SeriesRowID").toInt());
+        s.SetObjectID(q.value("AnalysisRowID").toInt());
         if (s.Get()) {
             JSONanalysis.append(s.ToJSON());
         }
     }
     if (JSONanalysis.size() > 0) {
-        json["NumAnalyses"] = JSONanalysis.size();
+        json["NumberAnalyses"] = JSONanalysis.size();
         json["analyses"] = JSONanalysis;
     }
-
-
-    // QJsonArray JSONanalyses;
-    // for (int i=0; i<analysisList.size(); i++) {
-    //     JSONanalyses.append(analysisList[i].ToJSON());
-    // }
-    // json["NumAnalyses"] = JSONanalyses.size();
-    // json["analyses"] = JSONanalyses;
 
 	return json;
 }

@@ -90,7 +90,7 @@ bool squirrelPipeline::Get() {
         numConcurrentAnalyses = q.value("NumConcurrentAnalysis").toInt();
         maxWallTime = q.value("MaxWallTime").toInt();
         submitDelay = q.value("SubmitDelay").toInt();
-        virtualPath = q.value("VirtualPath").toString();
+        //virtualPath = q.value("VirtualPath").toString();
 
         /* get any staged files */
         stagedFiles = utils::GetStagedFileList(objectID, "pipeline");
@@ -152,7 +152,7 @@ bool squirrelPipeline::Store() {
         q.bindValue(":NumConcurrentAnalysis", numConcurrentAnalyses);
         q.bindValue(":MaxWallTime", maxWallTime);
         q.bindValue(":SubmitDelay", submitDelay);
-        q.bindValue(":VirtualPath", virtualPath);
+        q.bindValue(":VirtualPath", VirtualPath());
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         objectID = q.lastInsertId().toInt();
     }
@@ -188,7 +188,7 @@ bool squirrelPipeline::Store() {
         q.bindValue(":NumConcurrentAnalysis", numConcurrentAnalyses);
         q.bindValue(":MaxWallTime", maxWallTime);
         q.bindValue(":SubmitDelay", submitDelay);
-        q.bindValue(":VirtualPath", virtualPath);
+        q.bindValue(":VirtualPath", VirtualPath());
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     }
 
@@ -222,18 +222,18 @@ QJsonObject squirrelPipeline::ToJSON(QString path) {
     json["CompleteFiles"] = QJsonArray::fromStringList(completeFiles);
     json["CreateDate"] = createDate.toString();
     json["DataCopyMethod"] = dataCopyMethod;
-    json["DepDir"] = depDir;
-    json["DepLevel"] = depLevel;
-    json["DepLinkType"] = depLinkType;
+    json["DependencyDirectory"] = depDir;
+    json["DependencyLevel"] = depLevel;
+    json["DependencyLinkType"] = depLinkType;
     json["Description"] = description;
-    json["DirStructure"] = dirStructure;
     json["Directory"] = directory;
+    json["DirectoryStructure"] = dirStructure;
     json["Group"] = group;
     json["GroupType"] = groupType;
     json["Level"] = level;
     json["MaxWallTime"] = maxWallTime;
     json["Notes"] = notes;
-    json["NumConcurrentAnalyses"] = numConcurrentAnalyses;
+    json["NumberConcurrentAnalyses"] = numConcurrentAnalyses;
     json["ParentPipelines"] = parentPipelines.join(",");
     json["PipelineName"] = pipelineName;
     json["PipelineVersion"] = version;
@@ -242,15 +242,15 @@ QJsonObject squirrelPipeline::ToJSON(QString path) {
     json["TempDir"] = tmpDir;
     json["UseProfile"] = flags.useProfile;
     json["UseTempDir"] = flags.useTmpDir;
-    json["VirtualPath"] = virtualPath;
+    json["VirtualPath"] = VirtualPath();
 
     /* add the dataSteps */
     QJsonArray JSONdataSteps;
     for (int i=0; i < dataSteps.size(); i++) {
         QJsonObject dataStep;
         dataStep["AssociationType"] = dataSteps[i].associationType;
-        dataStep["BehDir"] = dataSteps[i].behDir;
-        dataStep["BehFormat"] = dataSteps[i].behFormat;
+        dataStep["BehavioralDirectory"] = dataSteps[i].behDir;
+        dataStep["BehavioralDirectoryFormat"] = dataSteps[i].behFormat;
         dataStep["DataFormat"] = dataSteps[i].dataFormat;
         dataStep["DataLevel"] = dataSteps[i].datalevel;
         dataStep["Enabled"] = dataSteps[i].flags.enabled;
@@ -258,20 +258,20 @@ QJsonObject squirrelPipeline::ToJSON(QString path) {
         dataStep["ImageType"] = dataSteps[i].imageType;
         dataStep["Location"] = dataSteps[i].location;
         dataStep["Modality"] = dataSteps[i].modality;
-        dataStep["NumBOLDreps"] = dataSteps[i].numBOLDreps;
-        dataStep["NumImagesCriteria"] = dataSteps[i].numImagesCriteria;
+        dataStep["NumberBOLDreps"] = dataSteps[i].numBOLDreps;
+        dataStep["NumberImagesCriteria"] = dataSteps[i].numImagesCriteria;
         dataStep["Optional"] = dataSteps[i].flags.optional;
         dataStep["Order"] = dataSteps[i].order;
         dataStep["PreserveSeries"] = dataSteps[i].flags.preserveSeries;
         dataStep["PrimaryProtocol"] = dataSteps[i].flags.primaryProtocol;
         dataStep["Protocol"] = dataSteps[i].protocol;
         dataStep["SeriesCriteria"] = dataSteps[i].seriesCriteria;
-        dataStep["UsePhaseDir"] = dataSteps[i].flags.usePhaseDir;
-        dataStep["UseSeries"] = dataSteps[i].flags.useSeries;
+        dataStep["UsePhaseDirectory"] = dataSteps[i].flags.usePhaseDir;
+        dataStep["UseSeriesDirectory"] = dataSteps[i].flags.useSeries;
 
         JSONdataSteps.append(dataStep);
     }
-    json["NumDataSteps"] = JSONdataSteps.size();
+    json["NumberDataSteps"] = JSONdataSteps.size();
     json["dataSteps"] = JSONdataSteps;
 
     /* write all pipeline info to path */
@@ -333,11 +333,23 @@ void squirrelPipeline::PrintPipeline() {
     utils::Print(QString("\tNumConcurrentAnalyses: %1").arg(numConcurrentAnalyses));
     utils::Print(QString("\tParentPipelines: %1").arg(parentPipelines.join(",")));
     utils::Print(QString("\tPipelineName: %1").arg(pipelineName));
+    utils::Print(QString("\tPipelineRowID: %1").arg(objectID));
     utils::Print(QString("\tResultScript: %1").arg(resultScript));
     utils::Print(QString("\tSubmitDelay: %1").arg(submitDelay));
     utils::Print(QString("\tTempDir: %1").arg(tmpDir));
     utils::Print(QString("\tUseProfile: %1").arg(flags.useProfile));
     utils::Print(QString("\tUseTempDir: %1").arg(flags.useTmpDir));
     utils::Print(QString("\tVersion: %1").arg(version));
+    utils::Print(QString("\tVirtualPath: %1").arg(VirtualPath()));
 
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- VirtualPath ------------------------------------------ */
+/* ------------------------------------------------------------ */
+QString squirrelPipeline::VirtualPath() {
+    QString vPath = QString("pipeline/%1").arg(pipelineName);
+
+    return vPath;
 }

@@ -842,6 +842,8 @@ namespace utils {
     /* ---------------------------------------------------------- */
     QString CleanString(QString s) {
         s.replace(QRegularExpression("[^a-zA-Z0-9 _-]", QRegularExpression::CaseInsensitiveOption), "");
+        s.simplified().remove(' ');
+        s.remove(" ");
         return s;
     }
 

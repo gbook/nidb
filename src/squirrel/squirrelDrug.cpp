@@ -160,22 +160,25 @@ bool squirrelDrug::Store() {
 QJsonObject squirrelDrug::ToJSON() {
     QJsonObject json;
 
-    json["DrugName"] = drugName;
-    json["DateStart"] = dateStart.toString("yyyy-MM-dd HH:mm:ss");
-    json["DateEnd"] = dateEnd.toString("yyyy-MM-dd HH:mm:ss");
+    json["AdministrationRoute"] = route;
+    json["DateDrugEnd"] = dateEnd.toString("yyyy-MM-dd HH:mm:ss");
+    json["DateDrugStart"] = dateStart.toString("yyyy-MM-dd HH:mm:ss");
+    json["DateRecordCreate"] = dateRecordCreate.toString("yyyy-MM-dd HH:mm:ss");
+    json["DateRecordEntry"] = dateRecordEntry.toString("yyyy-MM-dd HH:mm:ss");
+    json["DateRecordModify"] = dateRecordModify.toString("yyyy-MM-dd HH:mm:ss");
     json["DoseAmount"] = doseAmount;
     json["DoseFrequency"] = doseFrequency;
-    json["Route"] = route;
-    json["DrugClass"] = drugClass;
     json["DoseKey"] = doseKey;
+    json["DoseString"] = doseString;
     json["DoseUnit"] = doseUnit;
+    json["DrugClass"] = drugClass;
+    json["DrugDescription"] = description;
+    json["DrugName"] = drugName;
     json["FrequencyModifier"] = frequencyModifier;
-    json["FrequencyValue"] = frequencyValue;
     json["FrequencyUnit"] = frequencyUnit;
-    json["Description"] = description;
-    json["Rater"] = rater;
+    json["FrequencyValue"] = frequencyValue;
     json["Notes"] = notes;
-    json["DateRecordEntry"] = dateRecordEntry.toString("yyyy-MM-dd HH:mm:ss");
+    json["Rater"] = rater;
 
     return json;
 }

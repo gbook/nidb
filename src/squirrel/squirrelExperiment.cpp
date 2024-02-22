@@ -58,7 +58,7 @@ bool squirrelExperiment::Get() {
         experimentName = q.value("ExperimentName").toString();
         numFiles = q.value("NumFiles").toLongLong();
         size = q.value("Size").toLongLong();
-        virtualPath = q.value("VirtualPath").toString();
+        //virtualPath = q.value("VirtualPath").toString();
 
         /* get any staged files */
         stagedFiles = utils::GetStagedFileList(objectID, "experiment");
@@ -91,11 +91,11 @@ bool squirrelExperiment::Store() {
     QSqlQuery q(QSqlDatabase::database("squirrel"));
     /* insert if the object doesn't exist ... */
     if (objectID < 0) {
-        q.prepare("insert into Experiment (ExperimentName, Size, NumFiles, VirtualPath) values (:packageid, :name, :size, :numfiles, :virtualpath)");
+        q.prepare("insert or ignore into Experiment (ExperimentName, Size, NumFiles, VirtualPath) values (:name, :size, :numfiles, :virtualpath)");
         q.bindValue(":name", experimentName);
         q.bindValue(":size", size);
         q.bindValue(":numfiles", numFiles);
-        q.bindValue(":virtualPath", virtualPath);
+        q.bindValue(":virtualPath", VirtualPath());
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         objectID = q.lastInsertId().toInt();
     }
@@ -106,7 +106,7 @@ bool squirrelExperiment::Store() {
         q.bindValue(":name", experimentName);
         q.bindValue(":size", size);
         q.bindValue(":numfiles", numFiles);
-        q.bindValue(":virtualPath", virtualPath);
+        q.bindValue(":virtualPath", VirtualPath());
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     }
 
@@ -124,9 +124,9 @@ QJsonObject squirrelExperiment::ToJSON() {
     QJsonObject json;
 
     json["ExperimentName"] = experimentName;
-    json["NumFiles"] = numFiles;
+    json["NumberFiles"] = numFiles;
     json["Size"] = size;
-    json["VirtualPath"] = virtualPath;
+    json["VirtualPath"] = VirtualPath();
 
     return json;
 }
@@ -144,5 +144,16 @@ void squirrelExperiment::PrintExperiment() {
     utils::Print(QString("\tExperimentName: %1").arg(experimentName));
     utils::Print(QString("\tNumfiles: %1").arg(numFiles));
     utils::Print(QString("\tSize: %1").arg(size));
-    utils::Print(QString("\tVirtualPath: %1").arg(virtualPath));
+    utils::Print(QString("\tExperimentRowID: %1").arg(objectID));
+    utils::Print(QString("\tVirtualPath: %1").arg(VirtualPath()));
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- VirtualPath ------------------------------------------ */
+/* ------------------------------------------------------------ */
+QString squirrelExperiment::VirtualPath() {
+    QString vPath = QString("experiment/%1").arg(utils::CleanString(experimentName));
+
+    return vPath;
 }

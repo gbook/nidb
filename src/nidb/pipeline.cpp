@@ -245,7 +245,7 @@ void pipeline::AppendJSONDataSpec(QJsonObject &obj) {
             JSONline["associatonType"] = q.value("pdd_assoctype").toString();
             JSONline["optional"] = q.value("pdd_optional").toBool();
             JSONline["level"] = q.value("pdd_level").toString();
-            JSONline["numImagesCriteria"] = q.value("pdd_numimagescriteria").toInt();
+            //JSONline["numImagesCriteria"] = q.value("pdd_numimagescriteria").toInt();
             JSONdata.append(JSONline);
         }
         obj["dataSpec"] = JSONdata;
@@ -384,7 +384,7 @@ squirrelPipeline pipeline::GetSquirrelObject() {
             d.associationType = q.value("pdd_assoctype").toString();
             d.flags.optional = q.value("pdd_optional").toBool();
             //d. = q.value("pdd_level").toString();
-            d.numImagesCriteria = q.value("pdd_numimagescriteria").toString();
+            //d.numImagesCriteria = q.value("pdd_numimagescriteria").toString();
 
             s.dataSteps.append(d);
         }

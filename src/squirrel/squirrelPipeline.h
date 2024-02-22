@@ -84,6 +84,7 @@ public:
     QString Error() { return err; }
     qint64 GetObjectID() { return objectID; }
     void SetObjectID(int id) { objectID = id; }
+    QString VirtualPath();
 
     /* JSON elements */
     /* pipeline information (required fields) */

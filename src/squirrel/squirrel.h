@@ -117,7 +117,8 @@ public:
     QHash<QString, QString> ReadParamsFile(QString f);
 
     /* logging */
-    void Log(QString s, QString func, bool dbg=false);
+    void Log(QString s, QString func);
+    void Debug(QString s, QString func="");
     QString GetLog() { return log; }
     bool GetDebug() { return debug; }
     bool quiet=false;

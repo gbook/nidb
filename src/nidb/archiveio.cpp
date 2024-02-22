@@ -2771,7 +2771,7 @@ bool archiveIO::WritePackage(qint64 exportid, QString zipfilepath, QString &msg)
         zipfilepath = zipfilepath + ".zip";
 
     /* PACKAGE - get the details, and create package object */
-    squirrel sqrl;
+    squirrel sqrl(true);
     q.prepare("select * from packages where package_id = :packageid");
     q.bindValue(":packageid", packageid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
@@ -2815,6 +2815,7 @@ bool archiveIO::WritePackage(qint64 exportid, QString zipfilepath, QString &msg)
             sqrlSubject = subj.GetSquirrelObject();
             sqrlSubject.Store();
             sqrlSubjectRowID = sqrlSubject.GetObjectID();
+            sqrl.ResequenceSubjects();
         }
 
         /* get squirrel STUDY (create the object in the package if it doesn't already exist) */
@@ -2827,6 +2828,7 @@ bool archiveIO::WritePackage(qint64 exportid, QString zipfilepath, QString &msg)
             sqrlStudy.subjectRowID = sqrlSubjectRowID;
             sqrlStudy.Store();
             sqrlStudyRowID = sqrlStudy.GetObjectID();
+            sqrl.ResequenceStudies(sqrlSubjectRowID);
         }
 
         /* create squirrel SERIES */
@@ -2834,7 +2836,7 @@ bool archiveIO::WritePackage(qint64 exportid, QString zipfilepath, QString &msg)
         sqrlSeries = ser.GetSquirrelObject();
         sqrlSeries.studyRowID = sqrlStudyRowID;
         sqrlSeries.Store();
-        int sqrlSeriesRowID = sqrlSeries.GetObjectID();
+        sqrl.ResequenceSeries(sqrlStudyRowID);
     }
 
     /* ANALYSES - add all analysis associated with this package */
@@ -2859,6 +2861,7 @@ bool archiveIO::WritePackage(qint64 exportid, QString zipfilepath, QString &msg)
             sqrlSubject = subj.GetSquirrelObject();
             sqrlSubject.Store();
             sqrlSubjectRowID = sqrlSubject.GetObjectID();
+            sqrl.ResequenceSubjects();
         }
 
         /* get squirrel STUDY (create the object in the package if it doesn't already exist) */
@@ -2870,6 +2873,7 @@ bool archiveIO::WritePackage(qint64 exportid, QString zipfilepath, QString &msg)
             sqrlStudy.subjectRowID = sqrlSubjectRowID;
             sqrlStudy.Store();
             sqrlStudyRowID = sqrlStudy.GetObjectID();
+            sqrl.ResequenceStudies(sqrlSubjectRowID);
         }
 
         /* add the analysis to the package */
@@ -2900,6 +2904,7 @@ bool archiveIO::WritePackage(qint64 exportid, QString zipfilepath, QString &msg)
             sqrlSubject = subj.GetSquirrelObject();
             sqrlSubject.Store();
             sqrlSubjectRowID = sqrlSubject.GetObjectID();
+            sqrl.ResequenceSubjects();
         }
 
         /* add the analysis to the package */
@@ -2943,8 +2948,48 @@ bool archiveIO::WritePackage(qint64 exportid, QString zipfilepath, QString &msg)
         sqrlDrug.Store();
     }
 
-    /* PIPELINES */
+    /* PIPELINES - add all pipelines associated with this package */
+    q.prepare("select * from package_pipelines where package_id = :packageid");
+    q.bindValue(":packageid", packageid);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
+    while (q.next()) {
+        int pipelineRowID = q.value("pipeline_id").toInt();
 
+        /* add the pipeline to the package */
+        pipeline p(pipelineRowID, n);
+        if (!p.isValid) continue;
+
+        squirrelPipeline sqrlPipeline;
+        sqrlPipeline = p.GetSquirrelObject();
+        sqrlPipeline.Store();
+    }
+
+    /* EXPERIMENTS - add all experiments associated with this package */
+    q.prepare("select * from package_experiments where package_id = :packageid");
+    q.bindValue(":packageid", packageid);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
+    while (q.next()) {
+        int experimentRowID = q.value("experiment_id").toInt();
+
+        /* add the experiment to the package */
+        experiment e(experimentRowID, n);
+        if (!e.isValid) continue;
+
+        squirrelExperiment sqrlExperiment;
+        sqrlExperiment = e.GetSquirrelObject();
+        sqrlExperiment.Store();
+    }
+
+    //sqrl.Print();
+
+    if (sqrl.Write(false)) {
+        msg = sqrl.GetLog();
+        return true;
+    }
+    else {
+        msg = sqrl.GetLog();
+        return false;
+    }
 }
 
 
