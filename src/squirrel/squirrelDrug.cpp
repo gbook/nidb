@@ -53,25 +53,28 @@ bool squirrelDrug::Get() {
     if (q.next()) {
 
         /* get the data */
+        AdministrationRoute = q.value("AdministrationRoute").toString();
+        DateEnd = q.value("DateEnd").toDateTime();
+        DateRecordCreate = q.value("DateRecordCreate").toDateTime();
+        DateRecordEntry = q.value("DateRecordEntry").toDateTime();
+        DateRecordModify = q.value("DateRecordModify").toDateTime();
+        DateStart = q.value("DateStart").toDateTime();
+        Description = q.value("Description").toString();
+        DoseAmount = q.value("DoseAmount").toDouble();
+        DoseFrequency = q.value("DoseFrequency").toString();
+        DoseKey = q.value("DoseKey").toString();
+        DoseString = q.value("DoseString").toString();
+        DoseUnit = q.value("DoseUnit").toString();
+        DrugClass = q.value("DrugClass").toString();
+        DrugName = q.value("DrugName").toString();
+        Notes = q.value("Notes").toString();
+        Rater = q.value("Rater").toString();
         objectID = q.value("DrugRowID").toLongLong();
         subjectRowID = q.value("SubjectRowID").toLongLong();
-        drugName = q.value("DrugName").toString();
-        dateStart = q.value("DateStart").toDateTime();
-        dateEnd = q.value("DateEnd").toDateTime();
-        doseString = q.value("DoseString").toString();
-        doseAmount = q.value("DoseAmount").toDouble();
-        doseFrequency = q.value("DoseFrequency").toString();
-        route = q.value("Route").toString();
-        drugClass = q.value("DrugClass").toString();
-        doseKey = q.value("DoseKey").toString();
-        doseUnit = q.value("DoseUnit").toString();
-        frequencyModifier = q.value("FrequencyModifier").toString();
-        frequencyValue = q.value("FrequencyValue").toDouble();
-        frequencyUnit = q.value("FrequencyUnit").toString();
-        description = q.value("Description").toString();
-        rater = q.value("Rater").toString();
-        notes = q.value("Notes").toString();
-        dateRecordEntry = q.value("DateRecordEntry").toDateTime();
+
+        //FrequencyModifier = q.value("FrequencyModifier").toString();
+        //FrequencyUnit = q.value("FrequencyUnit").toString();
+        //FrequencyValue = q.value("FrequencyValue").toDouble();
 
         valid = true;
         return true;
@@ -104,23 +107,25 @@ bool squirrelDrug::Store() {
         q.prepare("insert into Drug (SubjectRowID, DrugName, DateStart, DateEnd, DateRecordEntry, DoseString, DoseAmount, DoseFrequency, AdministrationRoute, DrugClass, DoseKey, DoseUnit, FrequencyModifer, FrequencyValue, FrequencyUnit, Description, Rater, Notes) values (:SubjectRowID, :DrugName, :DateStart, :DateEnd, :DateRecordEntry, :DoseString, :DoseAmount, :DoseFrequency, :AdministrationRoute, :DrugClass, :DoseKey, :DoseUnit, :FrequencyModifer, :FrequencyValue, :FrequencyUnit, :Description, :Rater, :Notes)");
 
         q.bindValue(":SubjectRowID", subjectRowID);
-        q.bindValue(":DrugName", drugName);
-        q.bindValue(":DateStart", dateStart);
-        q.bindValue(":DateEnd", dateEnd);
-        q.bindValue(":DateRecordEntry", dateRecordEntry);
-        q.bindValue(":DoseString", doseString);
-        q.bindValue(":DoseAmount", doseAmount);
-        q.bindValue(":DoseFrequency", doseFrequency);
-        q.bindValue(":AdministrationRoute", route);
-        q.bindValue(":DrugClass", drugClass);
-        q.bindValue(":DoseKey", doseKey);
-        q.bindValue(":DoseUnit", doseUnit);
-        q.bindValue(":FrequencyModifer", frequencyModifier);
-        q.bindValue(":FrequencyValue", frequencyValue);
-        q.bindValue(":FrequencyUnit", frequencyUnit);
-        q.bindValue(":Description", description);
-        q.bindValue(":Rater", rater);
-        q.bindValue(":Notes", notes);
+        q.bindValue(":DrugName", DrugName);
+        q.bindValue(":DateStart", DateStart);
+        q.bindValue(":DateEnd", DateEnd);
+        q.bindValue(":DateRecordCreate", DateRecordCreate);
+        q.bindValue(":DateRecordEntry", DateRecordEntry);
+        q.bindValue(":DateRecordModify", DateRecordModify);
+        q.bindValue(":DoseString", DoseString);
+        q.bindValue(":DoseAmount", DoseAmount);
+        q.bindValue(":DoseFrequency", DoseFrequency);
+        q.bindValue(":AdministrationRoute", AdministrationRoute);
+        q.bindValue(":DrugClass", DrugClass);
+        q.bindValue(":DoseKey", DoseKey);
+        q.bindValue(":DoseUnit", DoseUnit);
+        //q.bindValue(":FrequencyModifer", frequencyModifier);
+        //q.bindValue(":FrequencyValue", frequencyValue);
+        //q.bindValue(":FrequencyUnit", frequencyUnit);
+        q.bindValue(":Description", Description);
+        q.bindValue(":Rater", Rater);
+        q.bindValue(":Notes", Notes);
 
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         objectID = q.lastInsertId().toInt();
@@ -130,23 +135,25 @@ bool squirrelDrug::Store() {
         q.prepare("update Drug set SubjectRowID = :SubjectRowID, DrugName = :DrugName, DateStart = :DateStart, DateEnd = :DateEnd, DateRecordEntry = :DateRecordEntry, DoseString = :DoseString, DoseAmount = :DoseAmount, DoseFrequency = :DoseFrequency, AdministrationRoute = :AdministrationRoute, DrugClass = :DrugClass, DoseKey = :DoseKey, DoseUnit = :DoseUnit, FrequencyModifer = :FrequencyModifer, FrequencyValue = :FrequencyValue, FrequencyUnit = :FrequencyUnit, Description = :Description, Rater = :Rater, Notes = :Notes where DrugRowID = :id");
         q.bindValue(":id", objectID);
         q.bindValue(":SubjectRowID", subjectRowID);
-        q.bindValue(":DrugName", drugName);
-        q.bindValue(":DateStart", dateStart);
-        q.bindValue(":DateEnd", dateEnd);
-        q.bindValue(":DateRecordEntry", dateRecordEntry);
-        q.bindValue(":DoseString", doseString);
-        q.bindValue(":DoseAmount", doseAmount);
-        q.bindValue(":DoseFrequency", doseFrequency);
-        q.bindValue(":AdministrationRoute", route);
-        q.bindValue(":DrugClass", drugClass);
-        q.bindValue(":DoseKey", doseKey);
-        q.bindValue(":DoseUnit", doseUnit);
-        q.bindValue(":FrequencyModifer", frequencyModifier);
-        q.bindValue(":FrequencyValue", frequencyValue);
-        q.bindValue(":FrequencyUnit", frequencyUnit);
-        q.bindValue(":Description", description);
-        q.bindValue(":Rater", rater);
-        q.bindValue(":Notes", notes);
+        q.bindValue(":DrugName", DrugName);
+        q.bindValue(":DateStart", DateStart);
+        q.bindValue(":DateEnd", DateEnd);
+        q.bindValue(":DateRecordCreate", DateRecordCreate);
+        q.bindValue(":DateRecordEntry", DateRecordEntry);
+        q.bindValue(":DateRecordModify", DateRecordModify);
+        q.bindValue(":DoseString", DoseString);
+        q.bindValue(":DoseAmount", DoseAmount);
+        q.bindValue(":DoseFrequency", DoseFrequency);
+        q.bindValue(":AdministrationRoute", AdministrationRoute);
+        q.bindValue(":DrugClass", DrugClass);
+        q.bindValue(":DoseKey", DoseKey);
+        q.bindValue(":DoseUnit", DoseUnit);
+        //q.bindValue(":FrequencyModifer", frequencyModifier);
+        //q.bindValue(":FrequencyValue", frequencyValue);
+        //q.bindValue(":FrequencyUnit", frequencyUnit);
+        q.bindValue(":Description", Description);
+        q.bindValue(":Rater", Rater);
+        q.bindValue(":Notes", Notes);
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     }
 
@@ -160,25 +167,25 @@ bool squirrelDrug::Store() {
 QJsonObject squirrelDrug::ToJSON() {
     QJsonObject json;
 
-    json["AdministrationRoute"] = route;
-    json["DateDrugEnd"] = dateEnd.toString("yyyy-MM-dd HH:mm:ss");
-    json["DateDrugStart"] = dateStart.toString("yyyy-MM-dd HH:mm:ss");
-    json["DateRecordCreate"] = dateRecordCreate.toString("yyyy-MM-dd HH:mm:ss");
-    json["DateRecordEntry"] = dateRecordEntry.toString("yyyy-MM-dd HH:mm:ss");
-    json["DateRecordModify"] = dateRecordModify.toString("yyyy-MM-dd HH:mm:ss");
-    json["DoseAmount"] = doseAmount;
-    json["DoseFrequency"] = doseFrequency;
-    json["DoseKey"] = doseKey;
-    json["DoseString"] = doseString;
-    json["DoseUnit"] = doseUnit;
-    json["DrugClass"] = drugClass;
-    json["DrugDescription"] = description;
-    json["DrugName"] = drugName;
-    json["FrequencyModifier"] = frequencyModifier;
-    json["FrequencyUnit"] = frequencyUnit;
-    json["FrequencyValue"] = frequencyValue;
-    json["Notes"] = notes;
-    json["Rater"] = rater;
+    json["AdministrationRoute"] = AdministrationRoute;
+    json["DateDrugEnd"] = DateEnd.toString("yyyy-MM-dd HH:mm:ss");
+    json["DateDrugStart"] = DateStart.toString("yyyy-MM-dd HH:mm:ss");
+    json["DateRecordCreate"] = DateRecordCreate.toString("yyyy-MM-dd HH:mm:ss");
+    json["DateRecordEntry"] = DateRecordEntry.toString("yyyy-MM-dd HH:mm:ss");
+    json["DateRecordModify"] = DateRecordModify.toString("yyyy-MM-dd HH:mm:ss");
+    json["DoseAmount"] = DoseAmount;
+    json["DoseFrequency"] = DoseFrequency;
+    json["DoseKey"] = DoseKey;
+    json["DoseString"] = DoseString;
+    json["DoseUnit"] = DoseUnit;
+    json["DrugClass"] = DrugClass;
+    json["DrugDescription"] = Description;
+    json["DrugName"] = DrugName;
+    //json["FrequencyModifier"] = frequencyModifier;
+    //json["FrequencyUnit"] = frequencyUnit;
+    //json["FrequencyValue"] = frequencyValue;
+    json["Notes"] = Notes;
+    json["Rater"] = Rater;
 
     return json;
 }
@@ -193,21 +200,23 @@ QJsonObject squirrelDrug::ToJSON() {
 void squirrelDrug::PrintDrug() {
 
     utils::Print("\t\t\t----- DRUG -----");
-    utils::Print(QString("\t\t\tDrugName: %1").arg(drugName));
-    utils::Print(QString("\t\t\tDateStart: %1").arg(dateStart.toString("yyyy-MM-dd HH:mm:ss")));
-    utils::Print(QString("\t\t\tDateEnd: %1").arg(dateEnd.toString("yyyy-MM-dd HH:mm:ss")));
-    utils::Print(QString("\t\t\tDoseAmount: %1").arg(doseAmount));
-    utils::Print(QString("\t\t\tDoseFrequency: %1").arg(doseFrequency));
-    utils::Print(QString("\t\t\tRoute: %1").arg(route));
-    utils::Print(QString("\t\t\tDrugClass: %1").arg(drugClass));
-    utils::Print(QString("\t\t\tDoseKey: %1").arg(doseKey));
-    utils::Print(QString("\t\t\tDoseUnit: %1").arg(doseUnit));
-    utils::Print(QString("\t\t\tFrequencyModifier: %1").arg(frequencyModifier));
-    utils::Print(QString("\t\t\tFrequencyValue: %1").arg(frequencyValue));
-    utils::Print(QString("\t\t\tFrequencyUnit: %1").arg(frequencyUnit));
-    utils::Print(QString("\t\t\tDescription: %1").arg(description));
-    utils::Print(QString("\t\t\tRater: %1").arg(rater));
-    utils::Print(QString("\t\t\tNotes: %1").arg(notes));
-    utils::Print(QString("\t\t\tDateRecordEntry: %1").arg(dateRecordEntry.toString("yyyy-MM-dd HH:mm:ss")));
+    utils::Print(QString("\t\t\tAdministrationRoute: %1").arg(AdministrationRoute));
+    utils::Print(QString("\t\t\tDateEnd: %1").arg(DateEnd.toString("yyyy-MM-dd HH:mm:ss")));
+    utils::Print(QString("\t\t\tDateRecordCreate: %1").arg(DateRecordCreate.toString("yyyy-MM-dd HH:mm:ss")));
+    utils::Print(QString("\t\t\tDateRecordEntry: %1").arg(DateRecordEntry.toString("yyyy-MM-dd HH:mm:ss")));
+    utils::Print(QString("\t\t\tDateRecordModify: %1").arg(DateRecordModify.toString("yyyy-MM-dd HH:mm:ss")));
+    utils::Print(QString("\t\t\tDateStart: %1").arg(DateStart.toString("yyyy-MM-dd HH:mm:ss")));
+    utils::Print(QString("\t\t\tDescription: %1").arg(Description));
+    utils::Print(QString("\t\t\tDoseAmount: %1").arg(DoseAmount));
+    utils::Print(QString("\t\t\tDoseFrequency: %1").arg(DoseFrequency));
+    utils::Print(QString("\t\t\tDoseKey: %1").arg(DoseKey));
+    utils::Print(QString("\t\t\tDoseUnit: %1").arg(DoseUnit));
+    utils::Print(QString("\t\t\tDrugClass: %1").arg(DrugClass));
+    utils::Print(QString("\t\t\tDrugName: %1").arg(DrugName));
+    //utils::Print(QString("\t\t\tFrequencyModifier: %1").arg(frequencyModifier));
+    //utils::Print(QString("\t\t\tFrequencyUnit: %1").arg(frequencyUnit));
+    //utils::Print(QString("\t\t\tFrequencyValue: %1").arg(frequencyValue));
+    utils::Print(QString("\t\t\tNotes: %1").arg(Notes));
+    utils::Print(QString("\t\t\tRater: %1").arg(Rater));
 
 }

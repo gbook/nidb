@@ -44,20 +44,21 @@ public:
     qint64 GetObjectID() { return objectID; }
     void SetObjectID(int id) { objectID = id; }
 
-    /* JSON elements */
     qint64 subjectRowID;
-    QString measureName;        /*!< measure name (required) */
-    QDateTime dateStart;        /*!< start date of the measurement (required) */
-    QDateTime dateEnd;          /*!< end date of the measurement */
-    QString instrumentName;     /*!< name of the instrument (test, assessment, etc) from which this measure came */
-    QString rater;              /*!< name or username of the person who rated the measure */
-    QString notes;              /*!< notes about the measure */
-    QString value;              /*!< value, in string or number stored as a string */
-    QString description;        /*!< extended measurement description */
-    double duration;            /*!< duration of the measure, in seconds */
-    QDateTime dateRecordEntry;  /*!< date the record was entered */
-    QDateTime dateRecordCreate;  /*!< date the record was created */
-    QDateTime dateRecordModify;  /*!< date the record was modified */
+
+    /* JSON elements */
+    QDateTime DateEnd;          /*!< end date of the measurement */
+    QDateTime DateRecordCreate;  /*!< date the record was created */
+    QDateTime DateRecordEntry;  /*!< date the record was entered */
+    QDateTime DateRecordModify;  /*!< date the record was modified */
+    QDateTime DateStart;        /*!< start date of the measurement (required) */
+    QString Description;        /*!< extended measurement description */
+    QString InstrumentName;     /*!< name of the instrument (test, assessment, etc) from which this measure came */
+    QString MeasureName;        /*!< measure name (required) */
+    QString Notes;              /*!< notes about the measure */
+    QString Rater;              /*!< name or username of the person who rated the measure */
+    QString Value;              /*!< value, in string or number stored as a string */
+    double Duration;            /*!< duration of the measure, in seconds */
 
 private:
     bool valid = false;

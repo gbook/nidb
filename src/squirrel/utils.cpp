@@ -115,7 +115,7 @@ namespace utils {
     /* ---------------------------------------------------------- */
     /* --------- SystemCommand ---------------------------------- */
     /* ---------------------------------------------------------- */
-    QString SystemCommand(QString s, bool detail, bool truncate, bool bufferOutput) {
+    QString SystemCommand(QString s, bool detail, bool truncate) {
 
         double starttime = double(QDateTime::currentMSecsSinceEpoch());
         QString ret;

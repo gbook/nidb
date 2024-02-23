@@ -55,10 +55,9 @@ bool squirrelExperiment::Get() {
 
         /* get the data */
         objectID = q.value("ExperimentRowID").toLongLong();
-        experimentName = q.value("ExperimentName").toString();
-        numFiles = q.value("NumFiles").toLongLong();
-        size = q.value("Size").toLongLong();
-        //virtualPath = q.value("VirtualPath").toString();
+        ExperimentName = q.value("ExperimentName").toString();
+        FileCount = q.value("FileCount").toLongLong();
+        Size = q.value("Size").toLongLong();
 
         /* get any staged files */
         stagedFiles = utils::GetStagedFileList(objectID, "experiment");
@@ -91,21 +90,21 @@ bool squirrelExperiment::Store() {
     QSqlQuery q(QSqlDatabase::database("squirrel"));
     /* insert if the object doesn't exist ... */
     if (objectID < 0) {
-        q.prepare("insert or ignore into Experiment (ExperimentName, Size, NumFiles, VirtualPath) values (:name, :size, :numfiles, :virtualpath)");
-        q.bindValue(":name", experimentName);
-        q.bindValue(":size", size);
-        q.bindValue(":numfiles", numFiles);
+        q.prepare("insert or ignore into Experiment (ExperimentName, Size, FileCount, VirtualPath) values (:name, :size, :FileCount, :virtualpath)");
+        q.bindValue(":name", ExperimentName);
+        q.bindValue(":size", Size);
+        q.bindValue(":FileCount", FileCount);
         q.bindValue(":virtualPath", VirtualPath());
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         objectID = q.lastInsertId().toInt();
     }
     /* ... otherwise update */
     else {
-        q.prepare("update Experiment set ExperimentName = :name, Size = :size, NumFiles = :numfiles, VirtualPath = :virtualpath where ExperimentRowID = :id");
+        q.prepare("update Experiment set ExperimentName = :name, Size = :size, FileCount = :FileCount, VirtualPath = :virtualpath where ExperimentRowID = :id");
         q.bindValue(":id", objectID);
-        q.bindValue(":name", experimentName);
-        q.bindValue(":size", size);
-        q.bindValue(":numfiles", numFiles);
+        q.bindValue(":name", ExperimentName);
+        q.bindValue(":size", Size);
+        q.bindValue(":FileCount", FileCount);
         q.bindValue(":virtualPath", VirtualPath());
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     }
@@ -123,9 +122,9 @@ bool squirrelExperiment::Store() {
 QJsonObject squirrelExperiment::ToJSON() {
     QJsonObject json;
 
-    json["ExperimentName"] = experimentName;
-    json["NumberFiles"] = numFiles;
-    json["Size"] = size;
+    json["ExperimentName"] = ExperimentName;
+    json["FileCount"] = FileCount;
+    json["Size"] = Size;
     json["VirtualPath"] = VirtualPath();
 
     return json;
@@ -141,9 +140,9 @@ QJsonObject squirrelExperiment::ToJSON() {
 void squirrelExperiment::PrintExperiment() {
 
     utils::Print("\t----- EXPERIMENT -----");
-    utils::Print(QString("\tExperimentName: %1").arg(experimentName));
-    utils::Print(QString("\tNumfiles: %1").arg(numFiles));
-    utils::Print(QString("\tSize: %1").arg(size));
+    utils::Print(QString("\tExperimentName: %1").arg(ExperimentName));
+    utils::Print(QString("\tFileCount: %1").arg(FileCount));
+    utils::Print(QString("\tSize: %1").arg(Size));
     utils::Print(QString("\tExperimentRowID: %1").arg(objectID));
     utils::Print(QString("\tVirtualPath: %1").arg(VirtualPath()));
 }
@@ -153,7 +152,7 @@ void squirrelExperiment::PrintExperiment() {
 /* ----- VirtualPath ------------------------------------------ */
 /* ------------------------------------------------------------ */
 QString squirrelExperiment::VirtualPath() {
-    QString vPath = QString("experiment/%1").arg(utils::CleanString(experimentName));
+    QString vPath = QString("experiment/%1").arg(utils::CleanString(ExperimentName));
 
     return vPath;
 }

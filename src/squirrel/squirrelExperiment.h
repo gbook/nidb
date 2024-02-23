@@ -44,11 +44,11 @@ public:
     void SetObjectID(int id) { objectID = id; }
     QString VirtualPath();
 
-    /* data items */
-    QString experimentName;     /*!< experiment name (required) */
-    qint64 numFiles;            /*!< number of experiment files (required) */
-    qint64 size;                /*!< total size in bytes of the experiment files (required) */
-    QString virtualPath;        /*!< path to the experiment files, relative to the package root (required) */
+    /* JSON elements */
+    QString ExperimentName;     /*!< experiment name (required) */
+    qint64 FileCount;            /*!< number of experiment files (required) */
+    qint64 Size;                /*!< total size in bytes of the experiment files (required) */
+
     QStringList stagedFiles;    /*!< staged file list - list of files in their own original paths which will be copied in before the package is zipped up */
 
 private:

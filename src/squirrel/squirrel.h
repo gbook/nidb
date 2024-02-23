@@ -58,19 +58,20 @@ public:
 
     /* package JSON elements */
     QDateTime datetime;         /*!< datetime the package was created */
-    QString description;        /*!< detailed description of the package */
-    QString name;               /*!< name of the package */
     QString NiDBversion;        /*!< NiDB version that wrote this package */
-    QString version;            /*!< squirrel version */
-    QString format;             /*!< 'dir' or 'zip' */
-    QString subjectDirFormat;   /*!< orig, seq */
-    QString studyDirFormat;     /*!< orig, seq */
-    QString seriesDirFormat;    /*!< orig, seq */
-    QString dataFormat;         /*!< orig, anon, anonfull, nift3d, nifti3dgz, nifti4d, nifti4dgz */
-    QString license;            /*!< a data usage license */
-    QString readme;             /*!< a README */
     QString changes;            /*!< any changes since last package release */
+    QString dataFormat;         /*!< orig, anon, anonfull, nift3d, nifti3dgz, nifti4d, nifti4dgz */
+    QString description;        /*!< detailed description of the package */
+    QString format;             /*!< 'squirrel' */
+    QString license;            /*!< a data usage license */
+    QString name;               /*!< name of the package */
     QString notes;              /*!< JSON string of notes (may contain JSON sub-elements of 'import', 'merge', 'export') */
+    QString readme;             /*!< a README */
+    QString seriesDirFormat;    /*!< orig, seq */
+    QString squirrelBuild;      /*!< squirrel build */
+    QString squirrelVersion;    /*!< squirrel version */
+    QString studyDirFormat;     /*!< orig, seq */
+    QString subjectDirFormat;   /*!< orig, seq */
 
     /* lib variables */
     QString filePath;           /*!< full path to the zip file */
@@ -88,7 +89,7 @@ public:
     QList<squirrelDataDictionary> GetAllDataDictionaries();
 
     /* get numbers of objects */
-    qint64 GetNumFiles();
+    qint64 GetFileCount();
     int GetObjectCount(QString object);
 
     /* find objects */

@@ -2201,7 +2201,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 				QString primaryaltuid = s[uid][studynum][seriesnum]["primaryaltuid"];
                 //QString altuids = s[uid][studynum][seriesnum]["altuids"];
                 //QString projectname = s[uid][studynum][seriesnum]["projectname"];
-				int studyid = s[uid][studynum][seriesnum]["studyid"].toInt();
+                //int studyid = s[uid][studynum][seriesnum]["studyid"].toInt();
                 //QString studytype = s[uid][studynum][seriesnum]["studytype"];
 				QString studyaltid = s[uid][studynum][seriesnum]["studyaltid"];
                 QString modality = s[uid][studynum][seriesnum]["modality"];
@@ -2381,7 +2381,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     q.prepare("select * from exportseries where export_id = :exportid");
     q.bindValue(":exportid", exportid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
-    int numObjects = q.size();
+    //int numObjects = q.size();
 
     if (!GetSeriesListDetails(seriesids, modalities, s)) {
         msgs << n->WriteLog(QString("%1() Error - unable to get a series list").arg(__FUNCTION__));
@@ -2471,7 +2471,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
 
             /* create the squirrelStudy object, and populate extra fields */
             squirrelStudy sqrlStudy = stdy.GetSquirrelObject();
-            sqrlStudy.ageAtStudy = subjectAge;
+            sqrlStudy.AgeAtStudy = subjectAge;
             sqrlStudy.subjectRowID = squirrelSubjectRowID;
             sqrlStudy.Store();
             int squirrelStudyRowID = sqrlStudy.GetObjectID();
@@ -2627,21 +2627,21 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                 if (q2.size() > 0) {
                     while (q2.next()) {
                         squirrelMeasure sqrlMeasure;
-                        sqrlMeasure.dateEnd = q2.value("measure_enddate").toDateTime();
-                        sqrlMeasure.dateStart = q2.value("measure_startdate").toDateTime();
-                        sqrlMeasure.instrumentName = q2.value("instrument_name").toString();
-                        sqrlMeasure.measureName = q2.value("measure_name").toString();
-                        sqrlMeasure.notes = q2.value("measure_notes").toString();
-                        sqrlMeasure.rater = q2.value("measure_rater").toString();
+                        sqrlMeasure.DateEnd = q2.value("measure_enddate").toDateTime();
+                        sqrlMeasure.DateStart = q2.value("measure_startdate").toDateTime();
+                        sqrlMeasure.InstrumentName = q2.value("instrument_name").toString();
+                        sqrlMeasure.MeasureName = q2.value("measure_name").toString();
+                        sqrlMeasure.Notes = q2.value("measure_notes").toString();
+                        sqrlMeasure.Rater = q2.value("measure_rater").toString();
 
                         QChar measuretype = q2.value("measure_type").toChar();
-                        if (measuretype == 's') { sqrlMeasure.value = q2.value("measure_valuestring").toString(); }
-                        else { sqrlMeasure.value = q2.value("measure_valuenum").toString(); }
+                        if (measuretype == 's') { sqrlMeasure.Value = q2.value("measure_valuestring").toString(); }
+                        else { sqrlMeasure.Value = q2.value("measure_valuenum").toString(); }
 
-                        sqrlMeasure.duration = q2.value("measure_duration").toDouble();
-                        sqrlMeasure.dateRecordEntry = q2.value("measure_entrydate").toDateTime();
-                        //sqrlMeasure.dateRecordCreate = q2.value("measure_createdate").toDateTime();
-                        //sqrlMeasure.dateRecordModify = q2.value("measure_modifydate").toDateTime();
+                        sqrlMeasure.Duration = q2.value("measure_duration").toDouble();
+                        sqrlMeasure.DateRecordEntry = q2.value("measure_entrydate").toDateTime();
+                        sqrlMeasure.DateRecordCreate = q2.value("measure_createdate").toDateTime();
+                        sqrlMeasure.DateRecordModify = q2.value("measure_modifydate").toDateTime();
                         sqrlMeasure.subjectRowID = squirrelSubjectRowID;
                         sqrlMeasure.Store();
                     }
@@ -2654,23 +2654,23 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                     //QJsonArray JSONdrugs;
                     while (q2.next()) {
                         squirrelDrug sqrlDrug;
-                        sqrlDrug.drugName = q2.value("drug_name").toString();
-                        sqrlDrug.drugClass = q2.value("drug_type").toString();
-                        sqrlDrug.dateStart = q2.value("drug_startdate").toDateTime();
-                        sqrlDrug.dateEnd = q2.value("drug_enddate").toDateTime();
-                        sqrlDrug.doseAmount = q2.value("drug_doseamount").toDouble();
-                        sqrlDrug.doseFrequency = q2.value("drug_dosefrequency").toString();
-                        sqrlDrug.route = q2.value("drug_route").toString();
-                        sqrlDrug.doseKey = q2.value("drug_dosekey").toString();
-                        sqrlDrug.doseUnit = q2.value("drug_doseunit").toString();
-                        sqrlDrug.frequencyModifier = q2.value("drug_frequencymodifier").toString();
-                        sqrlDrug.frequencyValue = q2.value("drug_frequencyvalue").toDouble();
-                        sqrlDrug.frequencyUnit = q2.value("drug_frequencyunit").toString();
-                        sqrlDrug.rater = q2.value("measure_rater").toString();
-                        sqrlDrug.notes = q2.value("measure_notes").toString();
-                        sqrlDrug.dateRecordEntry = q2.value("measure_entrydate").toDateTime();
-                        //sqrlDrug.dateRecordCreate = q2.value("measure_createdate").toDateTime();
-                        //sqrlDrug.dateRecordModify = q2.value("measure_modifydate").toDateTime();
+                        sqrlDrug.DrugName = q2.value("drug_name").toString();
+                        sqrlDrug.DrugClass = q2.value("drug_type").toString();
+                        sqrlDrug.DateStart = q2.value("drug_startdate").toDateTime();
+                        sqrlDrug.DateEnd = q2.value("drug_enddate").toDateTime();
+                        sqrlDrug.DoseAmount = q2.value("drug_doseamount").toDouble();
+                        sqrlDrug.DoseFrequency = q2.value("drug_dosefrequency").toString();
+                        sqrlDrug.AdministrationRoute = q2.value("drug_route").toString();
+                        sqrlDrug.DoseKey = q2.value("drug_dosekey").toString();
+                        sqrlDrug.DoseUnit = q2.value("drug_doseunit").toString();
+                        //sqrlDrug.FrequencyModifier = q2.value("drug_frequencymodifier").toString();
+                        //sqrlDrug.FrequencyValue = q2.value("drug_frequencyvalue").toDouble();
+                        //sqrlDrug.FrequencyUnit = q2.value("drug_frequencyunit").toString();
+                        sqrlDrug.Rater = q2.value("measure_rater").toString();
+                        sqrlDrug.Notes = q2.value("measure_notes").toString();
+                        sqrlDrug.DateRecordEntry = q2.value("measure_entrydate").toDateTime();
+                        sqrlDrug.DateRecordCreate = q2.value("measure_createdate").toDateTime();
+                        sqrlDrug.DateRecordModify = q2.value("measure_modifydate").toDateTime();
                         sqrlDrug.subjectRowID = squirrelSubjectRowID;
                         sqrlDrug.Store();
                     }
@@ -2749,14 +2749,14 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
 bool archiveIO::WritePackage(qint64 exportid, QString zipfilepath, QString &msg) {
 
     /* get the total number of objects being exported */
-    qint64 exportseriesid;
+    //qint64 exportseriesid;
     qint64 packageid;
     QSqlQuery q;
     q.prepare("select * from exportseries where export_id = :exportid");
     q.bindValue(":exportid", exportid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
     if (q.next()) {
-        exportseriesid = q.value("exportseries_id").toLongLong();
+        //exportseriesid = q.value("exportseries_id").toLongLong();
         packageid = q.value("package_id").toLongLong();
     }
     else {

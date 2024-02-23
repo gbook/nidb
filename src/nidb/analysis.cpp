@@ -213,20 +213,20 @@ QJsonObject analysis::GetJSONObject() {
 squirrelAnalysis analysis::GetSquirrelObject() {
     squirrelAnalysis s;
 
-	s.clusterEndDate = clusterEndDate;
-	s.clusterStartDate = clusterStartDate;
-	s.endDate = endDate;
-	s.hostname = hostname;
-	s.lastMessage = statusmessage;
-	s.numSeries = numSeries;
-	s.pipelineName = pipelinename;
-	s.pipelineVersion = pipelineversion;
+    s.DateClusterEnd = clusterEndDate;
+    s.DateClusterStart = clusterStartDate;
+    s.DateEnd = endDate;
+    s.Hostname = hostname;
+    s.LastMessage = statusmessage;
+    s.SeriesCount = numSeries;
+    s.PipelineName = pipelinename;
+    s.PipelineVersion = pipelineversion;
 	//s.runTime;
 	//s.setupTime;
-	s.size = diskSize;
-	s.startDate = startDate;
-	s.status = status;
-	s.successful = isComplete;
+    s.Size = diskSize;
+    s.DateStart = startDate;
+    s.Status = status;
+    s.Successful = isComplete;
 
 	return s;
 }

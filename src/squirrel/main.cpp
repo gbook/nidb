@@ -24,7 +24,6 @@
 #include <QCommandLineParser>
 #include <iostream>
 #include "squirrelVersion.h"
-#include "validate.h"
 #include "dicom.h"
 #include "bids.h"
 #include "squirrel.h"
@@ -295,19 +294,15 @@ int main(int argc, char *argv[])
         else {
             sqrl->Log("*** Invalid squirrel file ***", __FUNCTION__);
         }
+        delete sqrl;
     }
     else {
-
         bool v = p.isSet("v");
         if (v)
             p.showVersion();
         else
             p.showHelp(0);
-        return 0;
     }
-
-    //if (!quiet)
-    //    utils::Print("\nExiting squirrel utils");
 
     a.exit();
     return 0;

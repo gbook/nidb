@@ -173,8 +173,8 @@ QJsonObject experiment::GetJSONObject(QString path) {
 squirrelExperiment experiment::GetSquirrelObject() {
     squirrelExperiment s;
 
-    s.experimentName = name;
-    s.numFiles = files.size();
+    s.ExperimentName = name;
+    s.FileCount = files.size();
 
     return s;
 }

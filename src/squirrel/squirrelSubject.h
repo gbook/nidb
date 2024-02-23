@@ -55,22 +55,21 @@ public:
     QString VirtualPath();
 
     /* JSON elements */
-    QString ID;                 /*!< --- Unique identifier --- Must be unique within the squirrel package */
-    QStringList alternateIDs;   /*!< List of alternate subject IDs */
-    QString GUID;               /*!< globally unique identifier, from NIMH's NDA */
-    QDate dateOfBirth = QDate(0,0,0);          /*!< Date of birth. Not required, but can be useful to calculate age during studies. Can also contain only year... or contain only year and month */
-    QString sex = "U";          /*!< Sex at birth (biological sex) */
-    QString gender = "U";       /*!< Gender identity */
-    QString ethnicity1;         /*!< Ethnicity: hispanic, non-hispanic */
-    QString ethnicity2;         /*!< Race: americanindian, asian, black, hispanic, islander, white */
-    //QString virtualPath;        /*!< path within the squirrel package, no leading slash */
-    int sequence;
+    QDate DateOfBirth;      /*!< Date of birth. Not required, but can be useful to calculate age during studies. Can also contain only year... or contain only year and month */
+    QString Ethnicity1;     /*!< Ethnicity: hispanic, non-hispanic */
+    QString Ethnicity2;     /*!< Race: americanindian, asian, black, hispanic, islander, white */
+    QString GUID;           /*!< globally unique identifier, from NIMH's NDA */
+    QString Gender;         /*!< Gender identity */
+    QString ID;             /*!< --- Unique identifier --- Must be unique within the squirrel package */
+    QString Sex;            /*!< Sex at birth (biological sex) */
+    QStringList AlternateIDs;   /*!< List of alternate subject IDs */
+    int SequenceNumber;
 
 private:
-    bool valid = false;
+    bool valid;
     QString err;
-    qint64 objectID = -1;
-    QString subjectDirFormat = "orig";
+    qint64 objectID;
+    QString subjectDirFormat;
 };
 
 #endif // SQUIRRELSUBJECT_H

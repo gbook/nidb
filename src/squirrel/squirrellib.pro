@@ -42,8 +42,7 @@ SOURCES += \
 	squirrelPipeline.cpp \
 	squirrelSeries.cpp \
 	squirrelStudy.cpp \
-	squirrelSubject.cpp \
-	validate.cpp
+	squirrelSubject.cpp
 
 # Default rules for deployment.
 #qnx: target.path = /tmp/$${TARGET}/bin
@@ -67,8 +66,7 @@ HEADERS += \
 	squirrelPipeline.h \
 	squirrelSeries.h \
 	squirrelStudy.h \
-	squirrelSubject.h \
-	validate.h
+	squirrelSubject.h
 
 
 # gdcm library

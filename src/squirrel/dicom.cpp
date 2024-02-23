@@ -108,10 +108,10 @@ bool dicom::LoadToSquirrel(QString dir, QString binpath, squirrel *sqrl) {
                     subjectRowID = sqrl->FindSubject(tags["PatientID"]);
                     if (subjectRowID < 0) {
                         sqrl->Log(QString("Creating squirrel Subject [%1]").arg(tags["PatientID"]), __FUNCTION__);
-                        currSubject.dateOfBirth = QDate::fromString(tags["PatientBirthDate"], "yyyy-MM-dd");
-                        currSubject.gender = tags["PatientSex"][0];
+                        currSubject.DateOfBirth = QDate::fromString(tags["PatientBirthDate"], "yyyy-MM-dd");
+                        currSubject.Gender = tags["PatientSex"][0];
                         currSubject.ID = tags["PatientID"];
-                        currSubject.sex = tags["PatientSex"][0];
+                        currSubject.Sex = tags["PatientSex"][0];
                         currSubject.Store();
                         subjectRowID = currSubject.GetObjectID();
                         /* resequence the newly added subject */
@@ -123,12 +123,12 @@ bool dicom::LoadToSquirrel(QString dir, QString binpath, squirrel *sqrl) {
                     studyRowID = sqrl->FindStudyByUID(tags["StudyInstanceUID"]);
                     if (studyRowID < 0) {
                         sqrl->Log(QString("Creating squirrel Study [%1]").arg(tags["StudyInstanceUID"]), __FUNCTION__);
-                        currStudy.dateTime = QDateTime::fromString(tags["StudyDateTime"], "yyyy-MM-dd HH:mm:ss");
-                        currStudy.description = tags["StudyDescription"];
-                        currStudy.modality = tags["Modality"];
-                        currStudy.studyUID = tags["StudyInstanceUID"];
-                        currStudy.height = tags["PatientSize"].toDouble();
-                        currStudy.weight = tags["PatientWeight"].toDouble();
+                        currStudy.DateTime = QDateTime::fromString(tags["StudyDateTime"], "yyyy-MM-dd HH:mm:ss");
+                        currStudy.Description = tags["StudyDescription"];
+                        currStudy.Modality = tags["Modality"];
+                        currStudy.StudyUID = tags["StudyInstanceUID"];
+                        currStudy.Height = tags["PatientSize"].toDouble();
+                        currStudy.Weight = tags["PatientWeight"].toDouble();
                         currStudy.subjectRowID = subjectRowID;
                         currStudy.Store();
                         studyRowID = currStudy.GetObjectID();
@@ -138,12 +138,12 @@ bool dicom::LoadToSquirrel(QString dir, QString binpath, squirrel *sqrl) {
 
                     /* create the series object */
                     squirrelSeries currSeries;
-                    currSeries.description = tags["SeriesDescription"];
-                    currSeries.protocol = tags["Protocol"];
-                    currSeries.number = tags["SeriesNumber"].toLongLong();
-                    currSeries.dateTime = QDateTime::fromString(tags["SeriesDateTime"], "yyyy-MM-dd HH:mm:ss");
-                    currSeries.numFiles = numfiles;
-                    currSeries.seriesUID = tags["SeriesInstanceUID"];
+                    currSeries.Description = tags["SeriesDescription"];
+                    currSeries.Protocol = tags["Protocol"];
+                    currSeries.SeriesNumber = tags["SeriesNumber"].toLongLong();
+                    currSeries.DateTime = QDateTime::fromString(tags["SeriesDateTime"], "yyyy-MM-dd HH:mm:ss");
+                    currSeries.FileCount = numfiles;
+                    currSeries.SeriesUID = tags["SeriesInstanceUID"];
                     currSeries.stagedFiles = files;
 
                     qint64 totalSize(0);
@@ -151,7 +151,7 @@ bool dicom::LoadToSquirrel(QString dir, QString binpath, squirrel *sqrl) {
                         QFileInfo fi(f);
                         totalSize += fi.size();
                     }
-                    currSeries.size = totalSize;
+                    currSeries.Size = totalSize;
                     currSeries.studyRowID = studyRowID;
                     currSeries.params = tags;
                     currSeries.AnonymizeParams();
@@ -159,11 +159,10 @@ bool dicom::LoadToSquirrel(QString dir, QString binpath, squirrel *sqrl) {
                     /* resequence the newly added series */
                     sqrl->ResequenceSeries(studyRowID);
 
-                    sqrl->Log(QString("Created squirrel Series [%1]").arg(currSeries.number), __FUNCTION__);
+                    sqrl->Log(QString("Created squirrel Series [%1]").arg(currSeries.SeriesNumber), __FUNCTION__);
                 }
             }
         }
-        //sqrl->print();
     }
 
     delete img;

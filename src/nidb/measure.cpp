@@ -127,22 +127,24 @@ void measure::PrintMeasureInfo() {
 squirrelMeasure measure::GetSquirrelObject() {
     squirrelMeasure sqrl;
 
-    sqrl.dateEnd = dateMeasureEnd;
-    sqrl.dateRecordEntry = dateRecordEntry;
-    sqrl.dateStart = dateMeasureStart;
-    sqrl.description = desc;
-    sqrl.duration = duration;
-    sqrl.instrumentName = instrumentName;
-    sqrl.measureName = measureName;
-    sqrl.notes = notes;
-    sqrl.rater = rater;
+    sqrl.DateEnd = dateMeasureEnd;
+    sqrl.DateRecordCreate = dateRecordCreate;
+    sqrl.DateRecordEntry = dateRecordEntry;
+    sqrl.DateRecordModify = dateRecordModify;
+    sqrl.DateStart = dateMeasureStart;
+    sqrl.Description = desc;
+    sqrl.Duration = duration;
+    sqrl.InstrumentName = instrumentName;
+    sqrl.MeasureName = measureName;
+    sqrl.Notes = notes;
+    sqrl.Rater = rater;
 
     if (value != "")
-        sqrl.value = value;
+        sqrl.Value = value;
     else if (measureType == 'n')
-        sqrl.value = QString("%1").arg(valueNumber);
+        sqrl.Value = QString("%1").arg(valueNumber);
     else
-        sqrl.value = valueString;
+        sqrl.Value = valueString;
 
     return sqrl;
 }

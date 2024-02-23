@@ -218,12 +218,12 @@ void subject::PrintSubjectInfo() {
 squirrelSubject subject::GetSquirrelObject() {
     squirrelSubject sqrl;
 
-    sqrl.alternateIDs = _altuids;
-    sqrl.dateOfBirth = _dob;
-    sqrl.ethnicity1 = _ethnicity1;
-    sqrl.ethnicity2 = _ethnicity2;
-    sqrl.gender = _sex;
-    sqrl.sex = _sex;
+    sqrl.AlternateIDs = _altuids;
+    sqrl.DateOfBirth = _dob;
+    sqrl.Ethnicity1 = _ethnicity1;
+    sqrl.Ethnicity2 = _ethnicity2;
+    sqrl.Gender = _sex;
+    sqrl.Sex = _sex;
     sqrl.GUID = _guid;
     sqrl.ID = _uid;
 

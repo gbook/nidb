@@ -43,14 +43,15 @@ public:
     QString Error() { return err; }
     qint64 GetObjectID() { return objectID; }
     void SetObjectID(int id) { objectID = id; }
+    QString VirtualPath();
 
     /* JSON elements */
-    QString groupAnalysisName;  /*!< name of the group analysis */
-    QDateTime dateTime;         /*!< datetime of the group analysis */
-    QString description;        /*!< description of the group analysis */
-    QString notes;              /*!< notes about the group analysis */
-    qint64 numFiles;            /*!< number of files in the analysis */
-    qint64 size;                /*!< disk size in bytes of the analysis */
+    QString GroupAnalysisName;  /*!< name of the group analysis */
+    QDateTime DateTime;         /*!< datetime of the group analysis */
+    QString Description;        /*!< description of the group analysis */
+    QString Notes;              /*!< notes about the group analysis */
+    qint64 FileCount;            /*!< number of files in the analysis */
+    qint64 Size;                /*!< disk size in bytes of the analysis */
     QString virtualPath;        /*!< path within the squirrel package, no leading slash */
 
     /* lib variables */

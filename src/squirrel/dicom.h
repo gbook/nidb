@@ -35,7 +35,7 @@ public:
 
     bool LoadToSquirrel(QString dir, QString binpath, squirrel *sqrl);
 
-    qint64 NumFiles() { return numFiles; }
+    qint64 FileCount() { return numFiles; }
 
 private:
     qint64 numFiles;

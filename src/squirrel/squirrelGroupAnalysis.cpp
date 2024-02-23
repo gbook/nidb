@@ -55,12 +55,12 @@ bool squirrelGroupAnalysis::Get() {
 
         /* get the data */
         objectID = q.value("GroupAnalysisRowID").toLongLong();
-        groupAnalysisName = q.value("GroupAnalysisName").toString();
-        numFiles = q.value("NumFiles").toLongLong();
-        size = q.value("Size").toLongLong();
-        description = q.value("Description").toString();
-        notes = q.value("Notes").toString();
-        dateTime = q.value("Datetime").toDateTime();
+        GroupAnalysisName = q.value("GroupAnalysisName").toString();
+        FileCount = q.value("FileCount").toLongLong();
+        Size = q.value("Size").toLongLong();
+        Description = q.value("Description").toString();
+        Notes = q.value("Notes").toString();
+        DateTime = q.value("Datetime").toDateTime();
         virtualPath = q.value("VirtualPath").toString();
 
         /* get any staged files */
@@ -95,25 +95,25 @@ bool squirrelGroupAnalysis::Store() {
 
     /* insert if the object doesn't exist ... */
     if (objectID < 0) {
-        q.prepare("insert into GroupAnalysis (GroupAnalysisName, Description, Datetime, NumFiles, Size, VirtualPath) values (:GroupAnalysisName, :Description, :Datetime, :NumFiles, :Size, :VirtualPath)");
-        q.bindValue(":GroupAnalysisName", groupAnalysisName);
-        q.bindValue(":Description", description);
-        q.bindValue(":Datetime", dateTime);
-        q.bindValue(":NumFiles", numFiles);
-        q.bindValue(":Size", size);
+        q.prepare("insert into GroupAnalysis (GroupAnalysisName, Description, Datetime, FileCount, Size, VirtualPath) values (:GroupAnalysisName, :Description, :Datetime, :FileCount, :Size, :VirtualPath)");
+        q.bindValue(":GroupAnalysisName", GroupAnalysisName);
+        q.bindValue(":Description", Description);
+        q.bindValue(":Datetime", DateTime);
+        q.bindValue(":FileCount", FileCount);
+        q.bindValue(":Size", Size);
         q.bindValue(":VirtualPath", virtualPath);
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         objectID = q.lastInsertId().toInt();
     }
     /* ... otherwise update */
     else {
-        q.prepare("update GroupAnalysis set GroupAnalysisName = :GroupAnalysisName, Description = :Description, Datetime = :Datetime, NumFiles = :NumFiles, Size = :Size, VirtualPath = :Virtualpath where GroupAnalysisRowID = :id");
+        q.prepare("update GroupAnalysis set GroupAnalysisName = :GroupAnalysisName, Description = :Description, Datetime = :Datetime, FileCount = :FileCount, Size = :Size, VirtualPath = :Virtualpath where GroupAnalysisRowID = :id");
         q.bindValue(":id", objectID);
-        q.bindValue(":GroupAnalysisName", groupAnalysisName);
-        q.bindValue(":Description", description);
-        q.bindValue(":Datetime", dateTime);
-        q.bindValue(":NumFiles", numFiles);
-        q.bindValue(":Size", size);
+        q.bindValue(":GroupAnalysisName", GroupAnalysisName);
+        q.bindValue(":Description", Description);
+        q.bindValue(":Datetime", DateTime);
+        q.bindValue(":FileCount", FileCount);
+        q.bindValue(":Size", Size);
         q.bindValue(":VirtualPath", virtualPath);
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     }
@@ -131,12 +131,12 @@ bool squirrelGroupAnalysis::Store() {
 QJsonObject squirrelGroupAnalysis::ToJSON() {
     QJsonObject json;
 
-    json["GroupAnalysisName"] = groupAnalysisName;
-    json["Datetime"] = dateTime.toString("yyyy-MM-dd HH:mm:ss");
-    json["Description"] = description;
-    json["Notes"] = notes;
-    json["NumFiles"] = numFiles;
-    json["Size"] = size;
+    json["GroupAnalysisName"] = GroupAnalysisName;
+    json["Datetime"] = DateTime.toString("yyyy-MM-dd HH:mm:ss");
+    json["Description"] = Description;
+    json["Notes"] = Notes;
+    json["FileCount"] = FileCount;
+    json["Size"] = Size;
     json["VirtualPath"] = virtualPath;
 
     return json;
@@ -152,12 +152,22 @@ QJsonObject squirrelGroupAnalysis::ToJSON() {
 void squirrelGroupAnalysis::PrintGroupAnalysis() {
 
     utils::Print("\t----- GROUPANALYSIS ------");
-    utils::Print(QString("\tGroupAnalysisName: %1").arg(groupAnalysisName));
-    utils::Print(QString("\tDatetime: %1").arg(dateTime.toString("yyyy-MM-dd HH:mm:ss")));
-    utils::Print(QString("\tDescription: %1").arg(description));
-    utils::Print(QString("\tNotes: %1").arg(notes));
-    utils::Print(QString("\tNumfiles: %1").arg(numFiles));
-    utils::Print(QString("\tSize: %1").arg(size));
+    utils::Print(QString("\tGroupAnalysisName: %1").arg(GroupAnalysisName));
+    utils::Print(QString("\tDatetime: %1").arg(DateTime.toString("yyyy-MM-dd HH:mm:ss")));
+    utils::Print(QString("\tDescription: %1").arg(Description));
+    utils::Print(QString("\tNotes: %1").arg(Notes));
+    utils::Print(QString("\tFileCount: %1").arg(FileCount));
+    utils::Print(QString("\tSize: %1").arg(Size));
     utils::Print(QString("\tVirtualPath: %1").arg(virtualPath));
 
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- VirtualPath ------------------------------------------ */
+/* ------------------------------------------------------------ */
+QString squirrelGroupAnalysis::VirtualPath() {
+    QString vPath = QString("group-analysis/%1").arg(utils::CleanString(GroupAnalysisName));
+
+    return vPath;
 }

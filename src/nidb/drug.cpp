@@ -130,23 +130,23 @@ void drug::PrintDrugInfo() {
 squirrelDrug drug::GetSquirrelObject() {
     squirrelDrug sqrl;
 
-    sqrl.dateEnd = dateDrugEnd;
-    sqrl.dateRecordEntry = dateRecordEntry;
-    sqrl.dateStart = dateDrugStart;
-    sqrl.description = doseDesc;
-    sqrl.doseAmount = doseAmount.toDouble();
-    sqrl.doseFrequency = doseFrequency;
-    sqrl.doseKey = doseKey;
-    sqrl.doseString = doseDesc;
-    sqrl.doseUnit = doseUnit;
-    sqrl.drugClass = drugType;
-    sqrl.drugName = drugName;
-    sqrl.frequencyModifier = frequencyModifier;
-    sqrl.frequencyUnit = frequencyUnit;
-    sqrl.frequencyValue = frequencyValue.toDouble();
-    sqrl.notes = notes;
-    sqrl.rater = rater;
-    sqrl.route = route;
+    sqrl.DateEnd = dateDrugEnd;
+    sqrl.DateRecordEntry = dateRecordEntry;
+    sqrl.DateStart = dateDrugStart;
+    sqrl.Description = doseDesc;
+    sqrl.DoseAmount = doseAmount.toDouble();
+    sqrl.DoseFrequency = doseFrequency;
+    sqrl.DoseKey = doseKey;
+    sqrl.DoseString = doseDesc;
+    sqrl.DoseUnit = doseUnit;
+    sqrl.DrugClass = drugType;
+    sqrl.DrugName = drugName;
+    //sqrl.frequencyModifier = frequencyModifier;
+    //sqrl.frequencyUnit = frequencyUnit;
+    //sqrl.frequencyValue = frequencyValue.toDouble();
+    sqrl.Notes = notes;
+    sqrl.Rater = rater;
+    sqrl.AdministrationRoute = route;
 
     return sqrl;
 }

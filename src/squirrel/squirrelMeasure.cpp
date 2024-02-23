@@ -52,21 +52,22 @@ bool squirrelMeasure::Get() {
     q.bindValue(":id", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.next()) {
-        //q.first();
 
         /* get the data */
         objectID = q.value("MeasureRowID").toLongLong();
         subjectRowID = q.value("SubjectRowID").toLongLong();
-        measureName = q.value("MeasureName").toString();
-        dateStart = q.value("DateStart").toDateTime();
-        dateEnd = q.value("DateEnd").toDateTime();
-        instrumentName = q.value("InstrumentName").toString();
-        rater = q.value("Rater").toString();
-        notes = q.value("Notes").toString();
-        value = q.value("Value").toString();
-        description = q.value("Description").toString();
-        duration = q.value("Duration").toLongLong();
-        dateRecordEntry = q.value("DateRecordEntry").toDateTime();
+        MeasureName = q.value("MeasureName").toString();
+        DateStart = q.value("DateStart").toDateTime();
+        DateEnd = q.value("DateEnd").toDateTime();
+        InstrumentName = q.value("InstrumentName").toString();
+        Rater = q.value("Rater").toString();
+        Notes = q.value("Notes").toString();
+        Value = q.value("Value").toString();
+        Description = q.value("Description").toString();
+        Duration = q.value("Duration").toLongLong();
+        DateRecordCreate = q.value("DateRecordCreate").toDateTime();
+        DateRecordEntry = q.value("DateRecordEntry").toDateTime();
+        DateRecordModify = q.value("DateRecordModify").toDateTime();
 
         valid = true;
         return true;
@@ -98,16 +99,18 @@ bool squirrelMeasure::Store() {
     if (objectID < 0) {
         q.prepare("insert into Measure (SubjectRowID, MeasureName, DateStart, DateEnd, InstrumentName, Rater, Notes, Value, Duration, DateRecordEntry, Description) values (:SubjectRowID, :MeasureName, :DateStart, :DateEnd, :InstrumentName, :Rater, :Notes, :Value, :Duration, :DateRecordEntry, :Description)");
         q.bindValue(":SubjectRowID", subjectRowID);
-        q.bindValue(":MeasureName", measureName);
-        q.bindValue(":DateStart", dateStart);
-        q.bindValue(":DateEnd", dateEnd);
-        q.bindValue(":InstrumentName", instrumentName);
-        q.bindValue(":Rater", rater);
-        q.bindValue(":Notes", notes);
-        q.bindValue(":Value", value);
-        q.bindValue(":Duration", duration);
-        q.bindValue(":DateRecordEntry", dateRecordEntry);
-        q.bindValue(":Description", description);
+        q.bindValue(":MeasureName", MeasureName);
+        q.bindValue(":DateStart", DateStart);
+        q.bindValue(":DateEnd", DateEnd);
+        q.bindValue(":InstrumentName", InstrumentName);
+        q.bindValue(":Rater", Rater);
+        q.bindValue(":Notes", Notes);
+        q.bindValue(":Value", Value);
+        q.bindValue(":Duration", Duration);
+        q.bindValue(":DateRecordCreate", DateRecordCreate);
+        q.bindValue(":DateRecordEntry", DateRecordEntry);
+        q.bindValue(":DateRecordModify", DateRecordModify);
+        q.bindValue(":Description", Description);
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         objectID = q.lastInsertId().toInt();
     }
@@ -116,16 +119,18 @@ bool squirrelMeasure::Store() {
         q.prepare("update Measure set SubjectRowID = :SubjectRowID, MeasureName = :MeasureName, DateStart = :DateStart, DateEnd = :DateEnd, InstrumentName = :InstrumentName, Rater = :Rater, Notes = :Notes, Value = :Value, Duration = :Duration, DateRecordEntry = :DateRecordEntry, Description = :Description where MeasureRowID = :id");
         q.bindValue(":id", objectID);
         q.bindValue(":SubjectRowID", subjectRowID);
-        q.bindValue(":MeasureName", measureName);
-        q.bindValue(":DateStart", dateStart);
-        q.bindValue(":DateEnd", dateEnd);
-        q.bindValue(":InstrumentName", instrumentName);
-        q.bindValue(":Rater", rater);
-        q.bindValue(":Notes", notes);
-        q.bindValue(":Value", value);
-        q.bindValue(":Duration", duration);
-        q.bindValue(":DateRecordEntry", dateRecordEntry);
-        q.bindValue(":Description", description);
+        q.bindValue(":MeasureName", MeasureName);
+        q.bindValue(":DateStart", DateStart);
+        q.bindValue(":DateEnd", DateEnd);
+        q.bindValue(":InstrumentName", InstrumentName);
+        q.bindValue(":Rater", Rater);
+        q.bindValue(":Notes", Notes);
+        q.bindValue(":Value", Value);
+        q.bindValue(":Duration", Duration);
+        q.bindValue(":DateRecordCreate", DateRecordCreate);
+        q.bindValue(":DateRecordEntry", DateRecordEntry);
+        q.bindValue(":DateRecordModify", DateRecordModify);
+        q.bindValue(":Description", Description);
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     }
 
@@ -139,18 +144,18 @@ bool squirrelMeasure::Store() {
 QJsonObject squirrelMeasure::ToJSON() {
     QJsonObject json;
 
-    json["MeasureName"] = measureName;
-    json["DateStart"] = dateStart.toString("yyyy-MM-dd HH:mm:ss");
-    json["DateEnd"] = dateEnd.toString("yyyy-MM-dd HH:mm:ss");
-    json["DateRecordCreate"] = dateRecordCreate.toString("yyyy-MM-dd HH:mm:ss");
-    json["DateRecordEntry"] = dateRecordEntry.toString("yyyy-MM-dd HH:mm:ss");
-    json["DateRecordModify"] = dateRecordModify.toString("yyyy-MM-dd HH:mm:ss");
-    json["InstrumentName"] = instrumentName;
-    json["Rater"] = rater;
-    json["Notes"] = notes;
-    json["Value"] = value;
-    json["Description"] = description;
-    json["Duration"] = duration;
+    json["DateEnd"] = DateEnd.toString("yyyy-MM-dd HH:mm:ss");
+    json["DateRecordCreate"] = DateRecordCreate.toString("yyyy-MM-dd HH:mm:ss");
+    json["DateRecordEntry"] = DateRecordEntry.toString("yyyy-MM-dd HH:mm:ss");
+    json["DateRecordModify"] = DateRecordModify.toString("yyyy-MM-dd HH:mm:ss");
+    json["DateStart"] = DateStart.toString("yyyy-MM-dd HH:mm:ss");
+    json["Description"] = Description;
+    json["Duration"] = Duration;
+    json["InstrumentName"] = InstrumentName;
+    json["MeasureName"] = MeasureName;
+    json["Notes"] = Notes;
+    json["Rater"] = Rater;
+    json["Value"] = Value;
 
     return json;
 }
@@ -164,5 +169,5 @@ QJsonObject squirrelMeasure::ToJSON() {
  */
 void squirrelMeasure::PrintMeasure() {
 
-    utils::Print(QString("\t\t\tMEASURE\tName [%1]\tDateStart [%2]\tDateEnd [%3]\tInstrumentName [%4]\tRater [%5]\tNotes [%6]\tValue [%7]\tDescription [%8]").arg(measureName).arg(dateStart.toString()).arg(dateEnd.toString()).arg(instrumentName).arg(rater).arg(notes).arg(value).arg(description));
+    utils::Print(QString("\t\t\tMEASURE\tName [%1]\tDateStart [%2]\tDateEnd [%3]\tInstrumentName [%4]\tRater [%5]\tNotes [%6]\tValue [%7]\tDescription [%8]").arg(MeasureName).arg(DateStart.toString()).arg(DateEnd.toString()).arg(InstrumentName).arg(Rater).arg(Notes).arg(Value).arg(Description));
 }

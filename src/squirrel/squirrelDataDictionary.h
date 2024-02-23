@@ -31,13 +31,13 @@
  * @brief The dataDictionaryItem structure
  */
 struct dataDictionaryItem {
-    QString type;           /*!< the variable type */
-    QString variableName;   /*!< the variable name */
-    QString desc;           /*!< longer variable description */
-    QString keyValue;       /*!< 'key1=value2, key2=value2' ... example '1=Male, 2=Female' */
-    int expectedTimepoints; /*!< expected number of timepoints */
-    double rangeLow;        /*!< for numeric values, the lower limit */
-    double rangeHigh;       /*!< for numeric values, the higher limit */
+    QString VariableType;           /*!< the variable type */
+    QString VariableName;   /*!< the variable name */
+    QString Description;           /*!< longer variable description */
+    QString KeyValueMapping;       /*!< 'key1=value2, key2=value2' ... example '1=Male, 2=Female' */
+    int ExpectedTimepoints; /*!< expected number of timepoints */
+    double RangeLow;        /*!< for numeric values, the lower limit */
+    double RangeHigh;       /*!< for numeric values, the higher limit */
 };
 
 
@@ -57,15 +57,15 @@ public:
     QString Error() { return err; }
     qint64 GetObjectID() { return objectID; }
     void SetObjectID(int id) { objectID = id; }
+    QString VirtualPath();
 
     /* JSON elements */
     QList<dataDictionaryItem> dictItems; /*!< List of data dictionary items */
-    QString dataDictionaryName;
-    qint64 numfiles;                     /*!< total number of files */
-    qint64 size;                         /*!< disk size in bytes of the data dictionary */
+    QString DataDictionaryName;
+    qint64 FileCount;                     /*!< total number of files */
+    qint64 Size;                         /*!< disk size in bytes of the data dictionary */
 
     /* lib variables */
-    QString virtualPath = "data-dictionary";    /*!< path within the squirrel package, no leading slash */
     QStringList stagedFiles;                    /*!< staged file list: list of files in their own original paths which will be copied in before the package is zipped up */
 
 private:

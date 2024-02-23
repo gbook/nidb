@@ -52,21 +52,21 @@ public:
     QString VirtualPath();
     void AnonymizeParams();
 
-    /* JSON elements */
     qint64 studyRowID;
-    qint64 number = -1;             /*!< Series number. must be unique to the study */
-    QDateTime dateTime;             /*!< Series datetime */
-    QString seriesUID;              /*!< SeriesInstanceUID */
-    QString description;            /*!< Description of the series */
-    QString protocol;               /*!< Protocol (may differ from description) */
-    qint64 experimentRowID = -1;    /*!< List of experiment names attached to this series */
-    qint64 numFiles = 0;            /*!< Number of files associated with the series */
-    qint64 size = 0;                /*!< total size in bytes of the series */
-    qint64 numBehFiles = 0;         /*!< Number of files associated with the behavioral data */
-    qint64 behSize = 0;             /*!< total size in bytes of the beh data */
+    qint64 experimentRowID = -1;
+
+    /* JSON elements */
+    qint64 SeriesNumber = -1;             /*!< Series number. must be unique to the study */
+    QDateTime DateTime;             /*!< Series datetime */
+    QString SeriesUID;              /*!< SeriesInstanceUID */
+    QString Description;            /*!< Description of the series */
+    QString Protocol;               /*!< Protocol (may differ from description) */
+    qint64 FileCount = 0;            /*!< Number of files associated with the series */
+    qint64 Size = 0;                /*!< total size in bytes of the series */
+    qint64 BehavioralFileCount = 0;         /*!< Number of files associated with the behavioral data */
+    qint64 BehavioralSize = 0;             /*!< total size in bytes of the beh data */
     QHash<QString, QString> params; /*!< Hash containing experimental parameters. eg MR params */
-    int sequence = 0;
-    //QString virtualPath;            /*!< path within the squirrel package, no leading slash */
+    int SequenceNumber = 0;
 
     /* lib variables */
     QStringList stagedFiles;        /*!< staged file list: list of raw files in their own directories before the package is zipped up */

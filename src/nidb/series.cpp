@@ -150,10 +150,10 @@ bool series::ChangeSeriesPath(int studyid, int newSeriesNum) {
 squirrelSeries series::GetSquirrelObject() {
     squirrelSeries sqrl;
 
-    sqrl.dateTime = datetime;
-    sqrl.description = desc;
-    sqrl.number = seriesnum;
-    sqrl.protocol = protocol;
+    sqrl.DateTime = datetime;
+    sqrl.Description = desc;
+    sqrl.SeriesNumber = seriesnum;
+    sqrl.Protocol = protocol;
 
     sqrl.stagedFiles = FindAllFiles(datapath,"*");
     sqrl.stagedBehFiles = FindAllFiles(behpath,"*");

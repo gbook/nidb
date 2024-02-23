@@ -323,37 +323,37 @@ QStringList pipeline::GetParentList() {
 squirrelPipeline pipeline::GetSquirrelObject() {
     squirrelPipeline s;
 
-    s.pipelineName = name;
-    s.description = desc;
-    s.createDate = createDate;
-    s.version = version;
-    s.level = level;
+    s.PipelineName = name;
+    s.Description = desc;
+    s.CreateDate = createDate;
+    s.Version = version;
+    s.Level = level;
 
     /* pipeline options */
-    s.parentPipelines = GetParentList();
-    s.completeFiles = completeFiles;
-    s.dataCopyMethod = dataCopyMethod;
-    s.depDir = depDir;
-    s.depLevel = depLevel;
-    s.depLinkType = depLinkType;
-    s.dirStructure = dirStructure;
-    s.directory = directory;
-    s.group = group;
-    s.groupType = groupType;
-    s.notes = notes;
-    s.resultScript = resultScript;
-    s.tmpDir = tmpDir;
-    s.flags.useProfile = useProfile;
-    s.flags.useTmpDir = useTmpDir;
+    s.ParentPipelines = GetParentList();
+    s.CompleteFiles = completeFiles;
+    s.DataCopyMethod = dataCopyMethod;
+    s.DependencyDirectory = depDir;
+    s.DependencyLevel = depLevel;
+    s.DependencyLinkType = depLinkType;
+    s.DirectoryStructure = dirStructure;
+    s.Directory = directory;
+    s.Group = group;
+    s.GroupType = groupType;
+    s.Notes = notes;
+    s.ResultScript = resultScript;
+    s.TempDirectory = tmpDir;
+    s.flags.UseProfile = useProfile;
+    s.flags.UseTempDirectory = useTmpDir;
 
     /* cluster information */
-    s.clusterType = clusterType; /*!< [NiDB] compute cluster engine (sge, slurm) */
-    s.clusterUser = clusterUser; /*!< [NiDB] compute cluster user */
-    s.clusterQueue = queue; /*!< [NiDB] compute cluster queue */
-    s.clusterSubmitHost = submitHost; /*!< [NiDB] hostname of the sge/slurm submit node */
-    s.numConcurrentAnalyses = numConcurrentAnalysis; /*!< [NiDB] max number of concurrent analyses allowed to run */
-    s.maxWallTime = maxWallTime; /*!< [NiDB] maximum allowed clock (wall) time the analysis is allowed to run */
-    s.submitDelay = submitDelay; /*!< [NiDB] time in hours after the study datetime to delay before running this analysis */
+    s.ClusterType = clusterType; /*!< [NiDB] compute cluster engine (sge, slurm) */
+    s.ClusterUser = clusterUser; /*!< [NiDB] compute cluster user */
+    s.ClusterQueue = queue; /*!< [NiDB] compute cluster queue */
+    s.ClusterSubmitHost = submitHost; /*!< [NiDB] hostname of the sge/slurm submit node */
+    s.NumberConcurrentAnalyses = numConcurrentAnalysis; /*!< [NiDB] max number of concurrent analyses allowed to run */
+    s.MaxWallTime = maxWallTime; /*!< [NiDB] maximum allowed clock (wall) time the analysis is allowed to run */
+    s.SubmitDelay = submitDelay; /*!< [NiDB] time in hours after the study datetime to delay before running this analysis */
 
     /* dataSteps */
     QSqlQuery q;
@@ -362,27 +362,27 @@ squirrelPipeline pipeline::GetSquirrelObject() {
     q.bindValue(":version", version);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.size() > 0) {
-        QJsonArray JSONdata;
+        //QJsonArray JSONdata;
         while (q.next()) {
             dataStep d;
-            d.order = q.value("pdd_order").toInt();
-            d.flags.primaryProtocol = q.value("pdd_isprimaryprotocol").toBool();
-            d.seriesCriteria = q.value("pdd_seriescriteria").toString();
-            d.protocol = q.value("pdd_protocol").toString();
-            d.modality = q.value("pdd_modality").toString();
-            d.dataFormat = q.value("pdd_dataformat").toString();
-            d.imageType = q.value("pdd_imagetype").toString();
-            d.flags.gzip = q.value("pdd_gzip").toBool();
-            d.location = q.value("pdd_location").toString();
-            d.flags.useSeries = q.value("pdd_useseries").toBool();
-            d.flags.preserveSeries = q.value("pdd_preserveseries").toBool();
-            d.flags.usePhaseDir = q.value("pdd_usephasedir").toBool();
-            d.behFormat = q.value("pdd_behformat").toString();
-            d.behDir = q.value("pdd_behdir").toString();
-            d.numBOLDreps = q.value("pdd_numboldreps").toString();
-            d.flags.enabled = q.value("pdd_enabled").toBool();
-            d.associationType = q.value("pdd_assoctype").toString();
-            d.flags.optional = q.value("pdd_optional").toBool();
+            d.Order = q.value("pdd_order").toInt();
+            d.flags.PrimaryProtocol = q.value("pdd_isprimaryprotocol").toBool();
+            d.SeriesCriteria = q.value("pdd_seriescriteria").toString();
+            d.Protocol = q.value("pdd_protocol").toString();
+            d.Modality = q.value("pdd_modality").toString();
+            d.DataFormat = q.value("pdd_dataformat").toString();
+            d.ImageType = q.value("pdd_imagetype").toString();
+            d.flags.Gzip = q.value("pdd_gzip").toBool();
+            d.Location = q.value("pdd_location").toString();
+            d.flags.UseSeries = q.value("pdd_useseries").toBool();
+            d.flags.PreserveSeries = q.value("pdd_preserveseries").toBool();
+            d.flags.UsePhaseDirectory = q.value("pdd_usephasedir").toBool();
+            d.BehavioralFormat = q.value("pdd_behformat").toString();
+            d.BehavioralDirectory = q.value("pdd_behdir").toString();
+            d.NumberBOLDreps = q.value("pdd_numboldreps").toString();
+            d.flags.Enabled = q.value("pdd_enabled").toBool();
+            d.AssociationType = q.value("pdd_assoctype").toString();
+            d.flags.Optional = q.value("pdd_optional").toBool();
             //d. = q.value("pdd_level").toString();
             //d.numImagesCriteria = q.value("pdd_numimagescriteria").toString();
 
@@ -391,8 +391,8 @@ squirrelPipeline pipeline::GetSquirrelObject() {
     }
 
     /* scripts (required) */
-    s.primaryScript = GetPrimaryScript();
-    s.secondaryScript = GetSecondaryScript();
+    s.PrimaryScript = GetPrimaryScript();
+    s.SecondaryScript = GetSecondaryScript();
 
     return s;
 }

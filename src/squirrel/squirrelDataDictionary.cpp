@@ -57,9 +57,9 @@ bool squirrelDataDictionary::Get() {
 
         /* get the data */
         objectID = q.value("DataDictionaryRowID").toLongLong();
-        numfiles = q.value("NumFiles").toLongLong();
-        size = q.value("Size").toLongLong();
-        virtualPath = q.value("VirtualPath").toString();
+        FileCount = q.value("FileCount").toLongLong();
+        Size = q.value("Size").toLongLong();
+        //virtualPath = q.value("VirtualPath").toString();
 
         /* get the DataDictionaryItems */
         dictItems.clear();
@@ -69,13 +69,13 @@ bool squirrelDataDictionary::Get() {
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         while (q.next()) {
             dataDictionaryItem d;
-            d.type = q.value("VariableType").toString();
-            d.variableName = q.value("VariableName").toString();
-            d.desc = q.value("VariableDescription").toString();
-            d.keyValue = q.value("KeyValue").toString();
-            d.expectedTimepoints = q.value("ExpectedTimepoints").toInt();
-            d.rangeLow = q.value("RangeLow").toDouble();
-            d.rangeHigh = q.value("RangeHigh").toDouble();
+            d.VariableType = q.value("VariableType").toString();
+            d.VariableName = q.value("VariableName").toString();
+            d.Description = q.value("VariableDescription").toString();
+            d.KeyValueMapping = q.value("KeyValueMapping").toString();
+            d.ExpectedTimepoints = q.value("ExpectedTimepoints").toInt();
+            d.RangeLow = q.value("RangeLow").toDouble();
+            d.RangeHigh = q.value("RangeHigh").toDouble();
             dictItems.append(d);
         }
 
@@ -110,20 +110,20 @@ bool squirrelDataDictionary::Store() {
     QSqlQuery q(QSqlDatabase::database("squirrel"));
     /* insert if the object doesn't exist ... */
     if (objectID < 0) {
-        q.prepare("insert into DataDictionary (NumFiles, Size, VirtualPath) values (:NumFiles, :Size, :VirtualPath)");
-        q.bindValue(":NumFiles", numfiles);
-        q.bindValue(":Size", size);
-        q.bindValue(":VirtualPath", virtualPath);
+        q.prepare("insert into DataDictionary (FileCount, Size, VirtualPath) values (:FileCount, :Size, :VirtualPath)");
+        q.bindValue(":FileCount", FileCount);
+        q.bindValue(":Size", Size);
+        q.bindValue(":VirtualPath", VirtualPath());
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         objectID = q.lastInsertId().toInt();
     }
     /* ... otherwise update */
     else {
-        q.prepare("update DataDictionary set NumFiles = :NumFiles, Size = :Size, VirtualPath = :VirtualPath where DataDictionaryRowID = :id");
+        q.prepare("update DataDictionary set FileCount = :FileCount, Size = :Size, VirtualPath = :VirtualPath where DataDictionaryRowID = :id");
         q.bindValue(":id", objectID);
-        q.bindValue(":NumFiles", numfiles);
-        q.bindValue(":Size", size);
-        q.bindValue(":VirtualPath", virtualPath);
+        q.bindValue(":FileCount", FileCount);
+        q.bindValue(":Size", Size);
+        q.bindValue(":VirtualPath", VirtualPath());
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     }
 
@@ -135,13 +135,13 @@ bool squirrelDataDictionary::Store() {
     foreach (dataDictionaryItem dic, dictItems) {
         q.prepare("insert into DataDictionaryItems (DataDictionaryRowID, VariableType, VariableName, VariableDescription, KeyValue, ExpectedTimepoints, RangeLow, RangeHigh) values (:DataDictionaryRowID, :VariableType, :VariableName, :VariableDescription, :KeyValue, :ExpectedTimepoints, :RangeLow, :RangeHigh)");
         q.bindValue(":DataDictionaryRowID", objectID);
-        q.bindValue(":VariableType", dic.type);
-        q.bindValue(":VariableName", dic.variableName);
-        q.bindValue(":VariableDescription", dic.desc);
-        q.bindValue(":KeyValue", dic.keyValue);
-        q.bindValue(":ExpectedTimepoints", dic.expectedTimepoints);
-        q.bindValue(":RangeLow", dic.rangeLow);
-        q.bindValue(":RangeHigh", dic.rangeHigh);
+        q.bindValue(":VariableType", dic.VariableType);
+        q.bindValue(":VariableName", dic.VariableName);
+        q.bindValue(":VariableDescription", dic.Description);
+        q.bindValue(":KeyValue", dic.KeyValueMapping);
+        q.bindValue(":ExpectedTimepoints", dic.ExpectedTimepoints);
+        q.bindValue(":RangeLow", dic.RangeLow);
+        q.bindValue(":RangeHigh", dic.RangeHigh);
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     }
 
@@ -162,19 +162,19 @@ QJsonObject squirrelDataDictionary::ToJSON() {
     QJsonArray jsonItems;
     foreach (dataDictionaryItem item, dictItems) {
         QJsonObject jsonItem;
-        jsonItem["type"] = item.type;
-        jsonItem["variableName"] = item.variableName;
-        jsonItem["desc"] = item.desc;
-        jsonItem["keyValue"] = item.keyValue;
-        jsonItem["expectedTimepoints"] = item.expectedTimepoints;
-        jsonItem["rangeLow"] = item.rangeLow;
-        jsonItem["rangeHigh"] = item.rangeHigh;
+        jsonItem["VariableType"] = item.VariableType;
+        jsonItem["variableName"] = item.VariableName;
+        jsonItem["Description"] = item.Description;
+        jsonItem["KeyValueMapping"] = item.KeyValueMapping;
+        jsonItem["ExpectedTimepoints"] = item.ExpectedTimepoints;
+        jsonItem["RangeLow"] = item.RangeLow;
+        jsonItem["RangeHigh"] = item.RangeHigh;
         jsonItems.append(jsonItem);
     }
 
-    json["numfiles"] = numfiles;
-    json["size"] = size;
-    json["virtualPath"] = virtualPath;
+    json["FileCount"] = FileCount;
+    json["Size"] = Size;
+    json["VirtualPath"] = VirtualPath();
     json["data-dictionary-items"] = jsonItems;
 
     return json;
@@ -190,13 +190,23 @@ QJsonObject squirrelDataDictionary::ToJSON() {
 void squirrelDataDictionary::PrintDataDictionary() {
 
     utils::Print("\t----- DATADICTIONARY ------");
-    utils::Print(QString("\tNumFiles: %1").arg(numfiles));
-    utils::Print(QString("\tSize: %1").arg(size));
-    utils::Print(QString("\tVirtualPath: %1").arg(virtualPath));
+    utils::Print(QString("\tFileCount: %1").arg(FileCount));
+    utils::Print(QString("\tSize: %1").arg(Size));
+    utils::Print(QString("\tVirtualPath: %1").arg(VirtualPath()));
 
     int i = 0;
     foreach (dataDictionaryItem item, dictItems) {
-        utils::Print(QString("\tItem [%1]\ttype [%2]\tvariableName [%3]\ttype [%4]\ttype [%5]\ttype [%6]\ttype [%7]\ttype [%8]").arg(i).arg(item.type).arg(item.variableName).arg(item.desc).arg(item.keyValue).arg(item.expectedTimepoints).arg(item.rangeLow).arg(item.rangeHigh));
+        utils::Print(QString("\tItem [%1]\ttype [%2]\tvariableName [%3]\ttype [%4]\ttype [%5]\ttype [%6]\ttype [%7]\ttype [%8]").arg(i).arg(item.VariableType).arg(item.VariableName).arg(item.Description).arg(item.KeyValueMapping).arg(item.ExpectedTimepoints).arg(item.RangeLow).arg(item.RangeHigh));
         i++;
     }
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- VirtualPath ------------------------------------------ */
+/* ------------------------------------------------------------ */
+QString squirrelDataDictionary::VirtualPath() {
+    QString vPath = QString("data-dictionary/%1").arg(utils::CleanString(DataDictionaryName));
+
+    return vPath;
 }

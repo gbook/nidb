@@ -51,32 +51,33 @@ public:
     void SetDirFormat(QString subject_DirFormat, QString study_DirFormat) {subjectDirFormat = subject_DirFormat; studyDirFormat = study_DirFormat; }
     QString VirtualPath();
 
-    /* JSON elements */
     qint64 subjectRowID;
-    qint64 number = -1;             /*!< Unique study number. Must be unique within the subject */
-    QDateTime dateTime = QDateTime::currentDateTime();         /*!< start datetime of the study */
-    double ageAtStudy = 0.0;        /*!< age in years at the time of the study */
-    double height = 0.0;            /*!< height in meters */
-    double weight = 0.0;            /*!< weight in kg */
-    QString modality = "UNKNOWN";   /*!< study modality */
-    QString description;            /*!< Description of the imaging study */
-    QString studyUID;               /*!< DICOM StudyInstanceUID */
-    QString visitType;              /*!< Description of the visit, eg. pre, post */
-    int dayNumber = 0;              /*!< Day number for repeated studies or clinical trials. eg. 6 for 'day 6' */
-    int timePoint = 0;              /*!< Ordinal time point for repeated studies. eg. 3 for the 3rd consecutive imaging study */
-    QString equipment;              /*!< Equipment the study was run on */
-    int sequence = 0;
+
+    /* JSON elements */
+    QDateTime DateTime;         /*!< start datetime of the study */
+    QString Description;            /*!< Description of the imaging study */
+    QString Equipment;              /*!< Equipment the study was run on */
+    QString Modality;   /*!< study modality */
+    QString StudyUID;               /*!< DICOM StudyInstanceUID */
+    QString VisitType;              /*!< Description of the visit, eg. pre, post */
+    double AgeAtStudy;        /*!< age in years at the time of the study */
+    double Height;            /*!< height in meters */
+    double Weight;            /*!< weight in kg */
+    int DayNumber;              /*!< Day number for repeated studies or clinical trials. eg. 6 for 'day 6' */
+    int SequenceNumber;
+    int StudyNumber;             /*!< Unique study number. Must be unique within the subject */
+    int TimePoint;              /*!< Ordinal time point for repeated studies. eg. 3 for the 3rd consecutive imaging study */
 
     /* lib variables */
     QList<squirrelSeries> seriesList; /*!< List of series attached to this study */
     QList<squirrelAnalysis> analysisList; /*!< List of analyses attached to this study */
 
 private:
-    bool valid = false;
+    bool valid;
     QString err;
-    qint64 objectID = -1;
-    QString subjectDirFormat = "orig";
-    QString studyDirFormat = "orig";
+    qint64 objectID;
+    QString subjectDirFormat;
+    QString studyDirFormat;
 };
 
 #endif // SQUIRRELSTUDY_H

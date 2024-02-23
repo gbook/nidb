@@ -46,26 +46,27 @@ public:
     void SetDirFormat(QString subject_DirFormat, QString study_DirFormat) {subjectDirFormat = subject_DirFormat; studyDirFormat = study_DirFormat; }
     QString VirtualPath();
 
-    /* JSON variables */
+    /* squirrel database variables */
     qint64 studyRowID;          /*!< database row id of the parent study */
     qint64 pipelineRowID;       /*!< database row id of the parent pipeline */
-    QString pipelineName;       /*!< name of the pipeline */
-    int pipelineVersion;        /*!< pipeline version */
-    QDateTime clusterStartDate; /*!< datetime the analysis started running on the cluster */
-    QDateTime clusterEndDate;   /*!< datetime the analysis finished running on the cluster */
-    QDateTime startDate;        /*!< datetime the analysis was started, includes the setup time */
-    QDateTime endDate;          /*!< datetime the analysis ended */
-    qint64 setupTime;           /*!< total time in minutes (elapsed wall time) to setup the analysis, most time will be spent copying data into the analysis directories */
-    qint64 runTime;             /*!< total run time in minutes (elapsed wall time) of the analysis after analysis was submitted to the cluster */
-    int numSeries;              /*!< number of series downloaded into the analysis */
-    bool successful;            /*!< true if the analysis completed successfully */
-    qint64 size;                /*!< disk size in bytes of the analysis */
-    QString hostname;           /*!< hostname on which the analysis was run */
-    QString status;             /*!< status of the analysis. eg running, complete, pending */
-    QString lastMessage;        /*!< if the analysis had a status message, the last would be stored here */
+
+    /* JSON variables */
+    QDateTime DateClusterEnd;   /*!< datetime the analysis finished running on the cluster */
+    QDateTime DateClusterStart; /*!< datetime the analysis started running on the cluster */
+    QDateTime DateEnd;          /*!< datetime the analysis ended */
+    QDateTime DateStart;        /*!< datetime the analysis was started, includes the setup time */
+    QString Hostname;           /*!< hostname on which the analysis was run */
+    QString LastMessage;        /*!< if the analysis had a status message, the last would be stored here */
+    QString PipelineName;       /*!< name of the pipeline */
+    QString Status;             /*!< status of the analysis. eg running, complete, pending */
+    bool Successful;            /*!< true if the analysis completed successfully */
+    int PipelineVersion;        /*!< pipeline version */
+    int SeriesCount;            /*!< number of series downloaded into the analysis */
+    qint64 RunTime;             /*!< total run time in minutes (elapsed wall time) of the analysis after analysis was submitted to the cluster */
+    qint64 SetupTime;           /*!< total time in minutes (elapsed wall time) to setup the analysis, most time will be spent copying data into the analysis directories */
+    qint64 Size;                /*!< disk size in bytes of the analysis */
 
     /* lib variables */
-    //QString virtualPath;        /*!< path within the squirrel package, no leading slash */
     QStringList stagedFiles;    /*!< staged file list: list of files in their own original paths which will be copied in before the package is zipped up */
 
 private:
