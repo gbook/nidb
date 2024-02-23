@@ -26,13 +26,13 @@ Create an object and read an existing squirrel package
 squirrel *sqrl = new squirrel();
 
 /* read the squirrel package and check for success */
-if (sqrl->read("/home/squirrel.zip"))
+if (sqrl->Read("/home/squirrel.zip"))
     cout << "Successfuly read squirrel package. Log: " << m << endl;
 else
     cout << "Error reading squirrel package. Log: " << m << endl;
 
 /* print the entire package */
-sqrl->print();
+sqrl->Print();
 
 /* access individual package meta-data */
 cout << sqrl->name;

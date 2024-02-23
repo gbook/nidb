@@ -4,15 +4,25 @@ description: Detailed installation instructions
 
 # Installation
 
-### Pre-requisities
+## Prerequisites
+
+{% hint style="danger" %}
+NiDB will not run correctly on Fedora, CentOS Stream 8, or RHEL/Rocky 8.6 as they contain a kernel bug. If you have already updated to this version, you can downgrade the kernel or boot into the previous kernel. Kernel `4.18.0-348.12.2.el8_5.x86_64` is known to work correctly.
+{% endhint %}
 
 **Hardware** - There are no minimum specifications. If the hardware can run Linux, then it should be able to run NiDB.
 
-**RHEL8/Rocky8/CentOS 8** - NiDB runs only on RHEL 8 compatible OSes. NiDB does not run on Fedora or CentOS Stream.
+**RHEL8.5/Rocky8.5/CentOS 8** - NiDB runs only on RHEL 8 compatible OSes. NiDB does not run on Fedora or CentOS Stream.
 
-**FSL** - Download FSL from https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation and follow the installation instructions. After installation, note the location of FSL, usually `/usr/local/fsl`.
+#### FSL
 
-Alternatively, try these commands to install FSL.
+{% hint style="info" %}
+FSL requires at least 20GB of **free** disk space to install correctly
+{% endhint %}
+
+Download FSL from [https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation) and follow the installation instructions. After installation, note the location of FSL, usually `/usr/local/fsl`.
+
+Alternatively, try these commands to install FSL
 
 ```bash
 wget https://fsl.fmrib.ox.ac.uk/fsldownloads/fslinstaller.py # this may work
@@ -20,13 +30,15 @@ sudo yum install python2
 sudo python2 fslinstaller.py
 ```
 
-**firejail** - firejail is used to run user-defined scripts in a sandboxed environment. This may be deprecated in future releases of NiDB. Install firejail from https://firejail.wordpress.com/
+#### firejail
+
+firejail is used to run user-defined scripts in a sandboxed environment. This may be deprecated in future releases of NiDB. Install firejail from https://firejail.wordpress.com/
 
 ```bash
 sudo rpm -i firejail-x.y.z.rpm
 ```
 
-### Install NiDB rpm
+## Install NiDB rpm
 
 Download the latest .rpm package from http://github.com/gbook/nidb
 
@@ -48,19 +60,18 @@ Secure the MariaDB installation by running `mysql_secure_installation` as root a
   Reload privilege tables now? [Y/n] Y
 ```
 
-### Finish Setup
+## Finish Setup
 
-Use firefox to view http://localhost/setup.php (or http://servername/setup.php). Follow the instructions on the webpage to configure the server.
+Use Firefox to view [http://localhost/setup.php](http://localhost/setup.php) (or http://servername/setup.php). Follow the instructions on the webpage to configure the server.
 
-If you encounter this error when viewing the setup page...
+{% hint style="info" %}
+**If you encounter an error when viewing the Setup page...**
 
-![](https://user-images.githubusercontent.com/8302215/162640328-0c29622f-ef1a-4ad3-a20d-cc3d0d3e35b1.png)
+* The setup page must be accessed from localhost.
+* Or the config file must be manually edited to include the IP address of the computer you are using the access setup.php. Add your IP address by editing `/nidb/nidb.cfg` and add your IP address (comma separated list) to the `[setupips]` config variable. It should look something like `[setupips] 127.0.0.1, 192.168.0.1` depending on the IP(s)
+{% endhint %}
 
-... follow this instruction to fix it
-
-* The setup page must be acessed from localhost -or- the config file must be manually edited to include the IP address of the computer you are using the access setup.php. Add your IP address by editing `/nidb/nidb.cfg` and add your IP address (comma separated list) to the `[setupips]` config variable. It should look something like `[setupips] 127.0.0.1, 192.168.0.1` depending on the IP(s)
-
-**The first screen will ask you to backup the SQL database**
+### **1 - Backup SQL database**
 
 ![Beginning the website based setup process. The backup file must exist before setup can continue.](https://user-images.githubusercontent.com/8302215/162640572-c1d6ff3f-20d9-4caa-9a95-8602a220c91e.png)
 
@@ -70,19 +81,27 @@ Copy the `mysqldump` command and run that on the command line. It should create 
 
 Click **Next** to continue, and the following page will show the status of Linux packages required by NiDB.
 
+### 2 - Linux Prerequisites
+
 ![](https://user-images.githubusercontent.com/8302215/162640726-9654b0dd-36bb-4eee-b103-a9e5c4224399.png)
 
-If there are any missing packages or if a version needs to be updated, it will show here. Install the package and refresh the page. Click **Next** to contine, and the following page will show the SQL schema upgrade information.
+If there are any missing packages or if a version needs to be updated, it will show here. Install the package and refresh the page. Click **Next** to continue, and the following page will show the SQL schema upgrade information.
+
+### 3 - Database connection
 
 ![](https://user-images.githubusercontent.com/8302215/162640778-a5cf1971-7030-44d6-9381-508aa021b76e.png)
 
-Enter the MariaDB root password, which should be 'password' if this is the first installation. The SQL schema will be upgraded using the .sql file listed at the bottom. As your instance of NiDB collects more data, the tables can get very large and tables over 100 million rows are possible. This will cause the setup webpage to time out, so there is an option to skip tables that have more than x rows. This should really only be done if a specific table is preventing the schema upgrade because it so large and you are familiar with how to manually update the schema. The debug option is available to test the upgrade without actually changing the table structure. Click **Next** to continue, and the following page will perform the actual schema upgrade.
+Enter the MariaDB root password, which should be `password` if this is the first installation. The SQL schema will be upgraded using the .sql file listed at the bottom. As your instance of NiDB collects more data, the tables can get very large and tables over 100 million rows are possible. This will cause the setup webpage to time out, so there is an option to skip tables that have more than x rows. This should really only be done if a specific table is preventing the schema upgrade because it so large and you are familiar with how to manually update the schema. The debug option is available to test the upgrade without actually changing the table structure. Click **Next** to continue, and the following page will perform the actual schema upgrade.
+
+### 4 - Schema upgrade
 
 ![](https://user-images.githubusercontent.com/8302215/162641016-ce2bde85-f818-472d-b48a-e66329ca9cba.png)
 
 If any errors occur during upgrade, they will be displayed at the bottom of the page. You can attempt to fix these, or preferably seek help on the NiDB github support page! Click the red box to dismiss any error messages. Click **Next** to go to the next page which will show the configuration variables.
 
 ![](https://user-images.githubusercontent.com/8302215/162641071-6d7c71da-c4ad-4d9f-9265-a7d075d59521.png)
+
+### 5 - Config settings
 
 On this page you can edit variables, paths, name of the instance, email configuration, enable features.
 
@@ -92,31 +111,8 @@ Click **Write Config** to continue.
 
 ![](https://user-images.githubusercontent.com/8302215/162641179-b36025a1-4923-42a3-a83c-d77f90f00180.png)
 
-The locations of the written config file(s) are noted on this page. `nidb-cluster.cfg` is meant to be placed on cluster nodes, to allow nidb pipelines running on the cluster to communicate with the main nidb instance and perform checkins and storing of pipeline results.
+The locations of the written config file(s) are noted on this page. `nidb-cluster.cfg` is meant to be placed on cluster nodes, to allow nidb pipelines running on the cluster to communicate with the main nidb instance and perform check-ins and storing of pipeline results.
 
 Setup should now be complete and you can visit the home page.
-
-### Changing Passwords
-
-The default usernames and passwords are as follows, change them using the method listed. Changed MariaDB passwords must also be updated in the config file (Edit `/nidb/nidb.cfg` or use **Admin** --> **Settings**)
-
-|         Username | Default password | How to change password                                                                                                                                                                                                                                                                                             |
-| ---------------: | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-|   (Linux) `nidb` | `password`       | <p>(as root) <code>passwd nidb</code><br>(as nidb) <code>passwd</code></p>                                                                                                                                                                                                                                         |
-| (MariaDB) `root` | `password`       | Login to http://localhost/phpMyAdmin using the root MySQL account and password. Go to the **User Accounts** menu option. Then click **Edit privileges** for the root account that has a `‘%’` as the hostname. Then click **Change password** button at the top of the page. Enter a new password and click **Go** |
-| (MariaDB) `nidb` | `password`       | See above                                                                                                                                                                                                                                                                                                          |
-|   (NiDB) `admin` | `password`       | When logged in as `admin`, go to **My Account**. Enter a new password in the password field(s). Click **Save** to change the password.                                                                                                                                                                             |
-
-***
-
-## Upgrade Existing Installation
-
-Quick upgrade instructions below. See detailed upgrade instructions for a more in-depth explanation of the upgrade.
-
-1. Download latest NiDB release.
-2. `yum --nogpgcheck localinstall nidb-xxxx.xx.xx-1.el8.x86_64.rpm`
-3. Make sure your IP address is set in the `[setupips]` variable in the config file. This can be done manually by editing `/nidb/nidb.cfg` or by going to **Admin** → **Settings**
-4. Go to http://localhost/setup.php (Or within NiDB, go to **Admin** → **Setup/upgrade**)
-5. Follow the instructions on the webpages to complete the upgrade
 
 ***

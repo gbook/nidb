@@ -4,4 +4,18 @@ description: JSON array
 
 # experiments
 
-![JSON object hierarchy](https://mermaid.ink/img/pako:eNptks1qwzAQhF\_FKBcFHMjBvajQU3sppYXmaihba-0okWyhH5oQ8u5duZYT0vigHXs-aczYJ9YMEplgnQO7Ld4-676gyw1D4K-bj\_dRLVerJwkBeFqWjxeEnn9ZaPbQIc\_ixrfKolY9ej6rGwIPFp0y2AfPr3SmUiZRPn7vsCEki-zn-8SEKBUlTfMOYRB8dIRkcYeRLnaej-vs\_h2YIuj1UsI4\_tvQgz565XkWMzJuSH2AA0NljCO7czVT0RuLDc\_iknLUWFw1VLRKa7FoW3xYr0sf3LBHsaiqatKrHyXDVlT2wEpm0BlQkr70KR1Xs7BFgzUTJCW2EHWoWd2fCY2WovFFqjA4JlrQHksGMQybY98wEVzEDD0roB\_HTNT5F9DryQI)
+Experiments describe how data was collected from the participant. In other words, the methods used to get the data. This does not describe how to analyze the data once it’s collected.
+
+<figure><img src="https://mermaid.ink/img/pako:eNqVVFFvmzAQ_iuRq0hEgohENCWu1KfuZZo2aX2beLnhI_EKGNlGC4vy32cbTALtQ-sH-zvu--7Od8JnkguGhJKDhOa4-PYzqxdmSSF0FD01kL_CAYPhXD1evcHXlx_fHVoZIgMNgd1uKTYAb7DkNapgRDMGnhqUvMJaq-AGz1g2NOO5djkii7ioQXarnuW-Rk-q_f0HcxPIAx9l8B-kaBuooewUV4GzIm96qpfacLpl3JQ-nO8wKgTVSkPx4B0Ok-1BBW4fvX1Am8Lc12Zwx1v3WOu8yuWyl0RrOyQJlSp4aedkoSe9pdo-WKKazGq5vGm8pV3Nnny1F-7DyuvGobo6BqPXeGum8BexAo97gbcmgvEKuitxMZZvOSW9K4oiNN2S4hUjBuoIUkJHt1PRJMtnhLMufEY6acVHhDP5ONGPaOfVXhPifRyHvYzeJUky4OgvZ_pIk-ZEQlKhrIAz8wKcbbiM6CNWmBFqIMMC2lJnJKsvhto2ZgD4hXEtJKEFlApDAq0WL12dE6pli570zME8KNXIMn_dLyEmNqFnciI0DklH6DberXdp8pDu0s3DNt0n6SUk_5wiXu_7ld7vN5vdNk0v_wE57JXG?type=png" alt=""><figcaption></figcaption></figure>
+
+### JSON variables
+
+<mark style="color:red;">\*required</mark>
+
+<table data-header-hidden><thead><tr><th width="198" align="right"></th><th width="98.00000000000003"></th><th></th></tr></thead><tbody><tr><td align="right"><em><strong>Variable</strong></em></td><td><strong>Type</strong></td><td><strong>Description</strong></td></tr><tr><td align="right"><code>ExperimentName</code></td><td>string</td><td>Unique name of the experiment. <mark style="color:red;">REQUIRED</mark></td></tr><tr><td align="right"><code>FileCount</code></td><td>number</td><td>Number of files contained in the experiment. <mark style="color:red;">REQUIRED</mark></td></tr><tr><td align="right"><code>Size</code></td><td>number</td><td>Size, in bytes, of the experiment files. <mark style="color:red;">REQUIRED</mark></td></tr><tr><td align="right"><code>VirtualPath</code></td><td>string</td><td>Path to the experiment within the squirrel package.</td></tr></tbody></table>
+
+### Directory structure
+
+Files associated with this section are stored in the following directory. Where `ExperimentName` is the unique name of the experiment.
+
+> `/experiments/<ExperimentName>`
