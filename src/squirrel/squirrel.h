@@ -50,7 +50,7 @@ public:
     squirrel(bool dbg=false, bool q=false);
     ~squirrel();
 
-    bool Read(QString filename, bool headerOnly, bool validateOnly=false);
+    bool Read(bool readonly=true);
     bool Write(bool writeLog);
     bool Validate();
     void Print();
@@ -74,7 +74,7 @@ public:
     QString subjectDirFormat;   /*!< orig, seq */
 
     /* lib variables */
-    QString filePath;           /*!< full path to the zip file */
+    //QString filePath;           /*!< full path to the zip file */
 
     /* new, SQLite based functions */
     QList<squirrelExperiment> GetAllExperiments();

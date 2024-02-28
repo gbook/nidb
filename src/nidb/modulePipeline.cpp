@@ -103,10 +103,6 @@ int modulePipeline::Run() {
         /* get analysis directory root */
         QString analysisdir;
         analysisdir = GetAnalysisLocalPath(p.dirStructure);
-        //if (p.dirStructure == "b")
-        //    analysisdir = n->cfg["analysisdirb"];
-        //else
-        //    analysisdir = n->cfg["analysisdir"];
 
         n->WriteLog(QString("========== Working on pipeline [%1] - [%2] Submits to queue [%3] through host [%4] ==========").arg(p.name).arg(pipelineid).arg(p.queue).arg(p.submitHost));
 
@@ -190,7 +186,7 @@ int modulePipeline::Run() {
 
         /* ------------------------------ level 0 ----------------------------- */
         /* avoid using this, Level 0 is not maintained */
-        /* ------------------------------------------- */
+        /* -------------------------------------------------------------------- */
         if (p.level == 0) {
             /* check if this module should be running now or not */
             if (!n->ModuleCheckIfActive()) {
@@ -403,10 +399,6 @@ int modulePipeline::Run() {
 
                     QString analysispath = "";
                     analysispath = GetAnalysisLocalPath(p.dirStructure, p.name, s.UID(), s.studyNum());
-                    //if (p.dirStructure == "b")
-                    //    analysispath = QString("%1/%2/%3/%4").arg(p.pipelineRootDir).arg(p.name).arg(s.UID()).arg(s.studyNum());
-                    //else
-                    //    analysispath = QString("%1/%2/%3/%4").arg(p.pipelineRootDir).arg(s.UID()).arg(s.studyNum()).arg(p.name);
                     n->WriteLog(QString("[%1] analysispath is [" + analysispath + "]").arg(p.name));
 
                     /* get the nearest study for this subject that has the dependency */
@@ -564,8 +556,8 @@ int modulePipeline::Run() {
                                 n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysismessage", "Parent pipeline copied by running [" + systemstring + "]");
                                 n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysisdependencyid", QString("%1").arg(dependencyanalysisid));
 
-                                /* delete any log files and SGE files that came with the dependency */
-                                setuplog << n->WriteLog(SystemCommand(QString("rm --preserve-root %1/pipeline/* %1/origfiles.log %1/sge.job").arg(analysispath)));
+                                /* delete any log files and job files that came with the dependency */
+                                setuplog << n->WriteLog(SystemCommand(QString("rm --preserve-root %1/pipeline/* %1/origfiles.log %1/sge.job %1/slurm.job").arg(analysispath)));
 
                                 /* make sure the whole tree is writeable */
                                 setuplog << n->WriteLog(SystemCommand("chmod -Rf 777 " + analysispath, true, true));
@@ -591,21 +583,21 @@ int modulePipeline::Run() {
                         QString clusteranalysispath = analysispath;
                         clusteranalysispath.replace("/mount","");
 
-                        /* create the SGE job file */
-                        QString localsgefilepath;
-                        QString clustersgefilepath;
-                        QString sgefilename;
+                        /* create the cluster job file */
+                        QString localJobFilePath;
+                        QString clusterJobFilePath;
+                        QString jobFilename;
                         if (a.rerunResults)
-                            sgefilename = "sgererunresults.job";
+                            jobFilename = p.clusterType + "rerunresults.job";
                         else if (a.runSupplement)
-                            sgefilename = "sge-supplement.job";
+                            jobFilename = p.clusterType + "-supplement.job";
                         else
-                            sgefilename = "sge.job";
-                        localsgefilepath = analysispath + "/" + sgefilename;
-                        clustersgefilepath = clusteranalysispath + "/" + sgefilename;
+                            jobFilename = p.clusterType + ".job";
+                        localJobFilePath = analysispath + "/" + jobFilename;
+                        clusterJobFilePath = clusteranalysispath + "/" + jobFilename;
 
-                        if (CreateClusterJobFile(localsgefilepath, p.clusterType, analysisRowID, s.UID(), s.studyNum(), clusteranalysispath, p.useTmpDir, p.tmpDir, s.dateTime().toString("yyyy-MM-dd hh:mm:ss"), p.name, pipelineid, p.resultScript, p.maxWallTime, steps, a.runSupplement)) {
-                            n->WriteLog("Created (local path) sge job submit file [" + localsgefilepath + "]");
+                        if (CreateClusterJobFile(localJobFilePath, p.clusterType, analysisRowID, s.UID(), s.studyNum(), clusteranalysispath, p.useTmpDir, p.tmpDir, s.dateTime().toString("yyyy-MM-dd hh:mm:ss"), p.name, pipelineid, p.resultScript, p.maxWallTime, steps, a.runSupplement)) {
+                            n->WriteLog("Created (local path) " + p.clusterType + " job submit file [" + localJobFilePath + "]");
                         }
                         else {
                             UpdateAnalysisStatus(analysisRowID, "error", "Error creating cluster job file", 0, -1, "", "", false, true, -1, -1);
@@ -617,7 +609,7 @@ int modulePipeline::Run() {
                         /* submit the cluster job file */
                         QString qm, qresult;
                         int jobid;
-                        if (n->SubmitClusterJob(clustersgefilepath, p.submitHost, n->cfg["qsubpath"], n->cfg["queueuser"], p.queue, qm, jobid, qresult)) {
+                        if (n->SubmitClusterJob(clusterJobFilePath, p.submitHost, n->cfg["qsubpath"], n->cfg["queueuser"], p.queue, qm, jobid, qresult)) {
                             n->WriteLog("Successfully submitted job to cluster ["+qresult+"]");
                             UpdateAnalysisStatus(analysisRowID, "submitted", "Submitted to [" + p.queue + "]", jobid, numseriesdownloaded, "", "", false, true, 0, 0);
                             n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysissubmitted", qresult);
@@ -1847,8 +1839,6 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clusterty
         rerunresults = q.value("analysis_rerunresults").toBool();
     }
 
-    //n->WriteLog(QString("ReRunResults: [%1]").arg(rerunresults));
-
     QString jobfile;
     QString clusteranalysispath = analysispath;
     QString localanalysispath = QString("%1/%2-%3").arg(tmpdir).arg(pipelinename).arg(analysisid);
@@ -1884,17 +1874,28 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clusterty
 
     /* different submission parameters for slurm */
     if (clustertype == "slurm") {
-        jobfile += "#!/bin/sh\n";
+        jobfile += "#!/bin/sh -L\n";
         if (runsupplement)
-            jobfile += "#$ -J "+pipelinename+"-supplement\n";
+            jobfile += "#SBATCH -J "+pipelinename+"-supplement\n";
         else
-            jobfile += "#$ -J "+pipelinename+"\n";
+            jobfile += "#SBATCH -J "+pipelinename+"\n";
 
-        jobfile += "#$ -o "+analysispath+"/pipeline/\n";
-        jobfile += "#$ --export=ALL\n";
-        jobfile += "#$ --uid=" + n->cfg["queueuser"] + "\n\n";
+        jobfile += "#SBATCH -o "+analysispath+"/pipeline/%x.e%j\n";
+        jobfile += "#SBATCH -e "+analysispath+"/pipeline/%x.e%j\n";
+        //jobfile += "#$ --export=ALL\n"; /* not sure what this is */
+        //jobfile += "#$ --uid=" + n->cfg["queueuser"] + "\n\n"; //this is done in the submit command line
+        jobfile += "#SBATCH -p " + queueName + "\n";
+        if (maxwalltime > 0) {
+            int hours = int(floor(maxwalltime/60));
+            int min = maxwalltime % 60;
+
+            if (min < 10)
+                jobfile += QString("#SBATCH -t %1:0%2:00\n").arg(hours).arg(min);
+            else
+                jobfile += QString("#SBATCH -t %1:%2:00\n").arg(hours).arg(min);
+        }
     }
-    else { /* assuming SGE or derivative if not slurm */
+    else { /* assume SGE otherwise */
         jobfile += "#!/bin/sh\n";
         if (runsupplement)
             jobfile += "#$ -N "+pipelinename+"-supplement\n";

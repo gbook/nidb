@@ -26,7 +26,13 @@
 #include "squirrelVersion.h"
 #include "dicom.h"
 #include "bids.h"
+#include "modify.h"
 #include "squirrel.h"
+
+void CommandLineError(QCommandLineParser &p, QString m) {
+    std::cout << p.helpText().toStdString().c_str();
+    std::cout << "\n**** ERROR " << m.toStdString().c_str() << " ****\n";
+}
 
 int main(int argc, char *argv[])
 {
@@ -62,9 +68,9 @@ int main(int argc, char *argv[])
         p.addOption(QCommandLineOption(QStringList() << "q" << "quiet", "Dont print headers and checks"));
         p.addOption(QCommandLineOption(QStringList() << "i" << "input", "Input path", "dir"));
         p.addOption(QCommandLineOption(QStringList() << "o" << "outout", "Output path", "zipfilename"));
-        p.addOption(QCommandLineOption(QStringList() << "output-data-format", "Output data format if converted from DICOM:\n  anon - Anonymized DICOM\n  nifti4d - Nifti 4D\n  nifti4dgz - Nifti 4D gz (default)\n  nifti3d - Nifti 3D\n  nifti3dgz - Nifti 3D gz", "dataformat"));
-        p.addOption(QCommandLineOption(QStringList() << "output-dir-format", "Output directory structure\n  seq - Sequentially numbered\n  orig - Original ID (default)", "dirformat"));
-        p.addOption(QCommandLineOption(QStringList() << "output-package-format", "Output package format\n  dir - Directory\n  zip - .zip file (default)", "packageformat"));
+        p.addOption(QCommandLineOption(QStringList() << "data-format", "Output data format if converted from DICOM:\n  anon - Anonymized DICOM\n  nifti4d - Nifti 4D\n  nifti4dgz - Nifti 4D gz (default)\n  nifti3d - Nifti 3D\n  nifti3dgz - Nifti 3D gz", "format"));
+        p.addOption(QCommandLineOption(QStringList() << "dir-format", "Output directory structure\n  seq - Sequentially numbered\n  orig - Original ID (default)", "format"));
+        //p.addOption(QCommandLineOption(QStringList() << "output-package-format", "Output package format\n  dir - Directory\n  zip - .zip file (default)", "packageformat"));
 
         p.process(a);
 
@@ -183,7 +189,7 @@ int main(int argc, char *argv[])
             bds->LoadToSquirrel(indir.path(), sqrl);
 
             /* save the squirrel object */
-            sqrl->filePath = outputfile;
+            //sqrl->filePath = outputfile;
             sqrl->SetFilename(outputfile);
             sqrl->Write(true);
         }
@@ -222,7 +228,7 @@ int main(int argc, char *argv[])
         else {
             squirrel *sqrl = new squirrel(debug, quiet);
             sqrl->quiet = quiet;
-            sqrl->Read(inputPath, true);
+            sqrl->Read(true);
 
             if (object == "package") {
                 sqrl->PrintPackage();
@@ -266,6 +272,41 @@ int main(int argc, char *argv[])
         }
     }
     else if (command == "modify") {
+        p.clearPositionalArguments();
+        p.addPositionalArgument("modify", "Modify squirrel package by adding/removing objects.", "modify");
+
+        /* command line flag options */
+        p.addOption(QCommandLineOption(QStringList() << "d" << "debug", "Enable debugging"));
+        p.addOption(QCommandLineOption(QStringList() << "q" << "quiet", "Quiet mode. No printing of headers and checks"));
+        p.addOption(QCommandLineOption(QStringList() << "p" << "package", "Squirrel package path", "path"));
+        p.addOption(QCommandLineOption(QStringList() << "add", "Add object to the package.", "object"));
+        p.addOption(QCommandLineOption(QStringList() << "remove", "Remove object (and all dependent objects) from the package.", "object"));
+        p.addOption(QCommandLineOption(QStringList() << "datapath", "Path to new object data. Can include wildcard: /path/*.dcm", "path"));
+        p.addOption(QCommandLineOption(QStringList() << "recursive", "Search the data path recursively"));
+        p.addOption(QCommandLineOption(QStringList() << "objectid", "Existing object ID, name, or number to remove.", "id"));
+        p.addOption(QCommandLineOption(QStringList() << "subjectid", "Parent subject ID. Used when adding a study, series, measure, drug, or analysis object.", "id"));
+        p.addOption(QCommandLineOption(QStringList() << "studynum", "Parent study number. Used when adding a series or analysis object (subjectid is also needed).", "num"));
+        p.addOption(QCommandLineOption(QStringList() << "objectdata", "String specifying the new object meta-data.", "string"));
+
+        p.process(a);
+
+        bool debug = p.isSet("d");
+        bool quiet = p.isSet("q");
+        QString packagePath = p.value("p").trimmed();
+        QString addObject = p.value("add").trimmed(); /* possible objects: subject study series measure drug analysis experiment pipeline groupanalysis datadictionary */
+        QString removeObject = p.value("remove").trimmed();
+        QString dataPath = p.value("datapath").trimmed();
+        QString objectData = p.value("objectdata").trimmed();
+        QString objectID = p.value("objectid").trimmed();
+        QString subjectID = p.value("subjectid").trimmed();
+        int studyNum = p.value("studynum").toInt();
+        bool recursive = p.isSet("recursive");
+
+        QString m;
+        modify mod;
+        if (!mod.DoModify(packagePath, addObject, removeObject, dataPath, recursive, objectData, objectID, subjectID, studyNum, m)) {
+            CommandLineError(p,m);
+        }
     }
     else if (command == "validate") {
         p.clearPositionalArguments();
@@ -288,7 +329,7 @@ int main(int argc, char *argv[])
 
         /* create squirrel object and validate */
         squirrel *sqrl = new squirrel(debug);
-        if (sqrl->Read(paramInput, true, true)) {
+        if (sqrl->Read(true)) {
             sqrl->Log("Valid squirrel file", __FUNCTION__);
         }
         else {

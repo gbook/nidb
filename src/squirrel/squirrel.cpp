@@ -169,56 +169,53 @@ bool squirrel::InitializeDatabase() {
  * @param validateOnly true if validating the package
  * @return
  */
-bool squirrel::Read(QString filepath, bool headerOnly, bool validateOnly) {
+bool squirrel::Read(bool readonly) {
 
-    /* set the package path */
-    filePath = filepath;
-
-    if (validateOnly)
-        Log(QString("Validating [%1]").arg(filepath), __FUNCTION__);
+    if (readonly)
+        Log(QString("Validating [%1]").arg(zipPath), __FUNCTION__);
     else
-        Log(QString("Reading squirrel file [%1]. Using working directory [%2]").arg(filepath).arg(workingDir), __FUNCTION__);
+        Log(QString("Reading squirrel file [%1]. Using working directory [%2]").arg(zipPath).arg(workingDir), __FUNCTION__);
 
     /* check if file exists */
-    if (!utils::FileExists(filepath)) {
-        Log(QString("File %1 does not exist").arg(filepath), __FUNCTION__);
+    if (!utils::FileExists(zipPath)) {
+        Log(QString("File %1 does not exist").arg(zipPath), __FUNCTION__);
         return false;
     }
 
     /* get listing of the zip the file, check if the squirrel.json exists in the root */
     QString systemstring;
     #ifdef Q_OS_WINDOWS
-        systemstring = QString("\"C:/Program Files/7-Zip/7z.exe\" l \"" + filepath + "\"");
+        systemstring = QString("\"C:/Program Files/7-Zip/7z.exe\" l \"" + zipPath + "\"");
     #else
-        systemstring = "unzip -l " + filepath;
+        systemstring = "unzip -l " + zipPath;
     #endif
     QString output = utils::SystemCommand(systemstring, true);
     Log(output, __FUNCTION__);
     if (!output.contains("squirrel.json")) {
-        Log(QString("File " + filepath + " does not appear to be a squirrel package"), __FUNCTION__);
+        Log(QString("File " + zipPath + " does not appear to be a squirrel package"), __FUNCTION__);
         return false;
     }
 
     /* get the header .json file (either by unzipping or extracting only the file) */
     QString jsonStr;
-    if (headerOnly) {
+    if (readonly) {
         #ifdef Q_OS_WINDOWS
-            systemstring = QString("\"C:/Program Files/7-Zip/7z.exe\" x \"" + filepath + "\" -o\"" + workingDir + "\" squirrel.json -y");
+            systemstring = QString("\"C:/Program Files/7-Zip/7z.exe\" x \"" + zipPath + "\" -o\"" + workingDir + "\" squirrel.json -y");
             Log(systemstring, __FUNCTION__);
             output = utils::SystemCommand(systemstring, true);
             /* read from .json file */
             jsonStr = utils::ReadTextFileToString(workingDir + "/squirrel.json");
         #else
-            systemstring = QString("unzip -p " + filepath + " squirrel.json");
+            systemstring = QString("unzip -p " + zipPath + " squirrel.json");
         output = utils::SystemCommand(systemstring, true);
         #endif
     }
     else {
         /* unzip the .zip to the working dir */
         #ifdef Q_OS_WINDOWS
-            systemstring = QString("\"C:/Program Files/7-Zip/7z.exe\" x \"" + filepath + "\" -o\"" + workingDir + "\" -y");
+            systemstring = QString("\"C:/Program Files/7-Zip/7z.exe\" x \"" + zipPath + "\" -o\"" + workingDir + "\" -y");
         #else
-            systemstring = QString("unzip " + filepath + " -d " + workingDir);
+            systemstring = QString("unzip " + zipPath + " -d " + workingDir);
         #endif
         output = utils::SystemCommand(systemstring, true);
         Log(output, __FUNCTION__);
@@ -312,7 +309,7 @@ bool squirrel::Read(QString filepath, bool headerOnly, bool validateOnly) {
                 sqrlSeries.studyRowID = studyRowID;
 
                 /* read any params from the data/Subject/Study/Series/params.json file */
-                if (!headerOnly)
+                if (!readonly)
                     sqrlSeries.params = ReadParamsFile(QString("%1/data/%2/%3/%4/params.json").arg(workingDir).arg(sqrlSubject.ID).arg(sqrlStudy.StudyNumber).arg(sqrlSeries.SeriesNumber));
 
                 sqrlSeries.Store();
@@ -485,8 +482,8 @@ bool squirrel::Read(QString filepath, bool headerOnly, bool validateOnly) {
         sqrlPipeline.Store();
     }
 
-    /* If we're only validating: delete the tmpdir if it exists */
-    if (validateOnly) {
+    /* delete the tmpdir if it exists */
+    if (!readonly) {
         if (utils::DirectoryExists(workingDir)) {
             Log(QString("Temporary export dir [" + workingDir + "] exists and will be deleted"), __FUNCTION__);
             QString m;
@@ -976,7 +973,7 @@ void squirrel::PrintPackage() {
     qint64 numDataDictionaries = GetObjectCount("datadictionary");
     //qint64 numDataDictionaryItems = GetObjectCount("datadictionaryitem");
 
-    utils::Print("Squirrel Package: " + filePath);
+    utils::Print("Squirrel Package: " + zipPath);
     utils::Print(QString("  DataFormat: %1").arg(dataFormat));
     utils::Print(QString("  Date: %1").arg(datetime.toString()));
     utils::Print(QString("  Description: %1").arg(description));
@@ -985,7 +982,7 @@ void squirrel::PrintPackage() {
     utils::Print(QString("  PackageName: %1").arg(name));
     utils::Print(QString("  SquirrelBuild: %1").arg(squirrelBuild));
     utils::Print(QString("  SquirrelVersion: %1").arg(squirrelVersion));
-    utils::Print(QString("  Object count:\n    %1 subjects\n    %2 studies\n    %3 series\n    %4 measures\n    %5 drugs\n    %6 analyses\n    %7 experiments\n    %8 pipelines\n    %9 group analyses\n    %10 data dictionary").arg(numSubjects).arg(numStudies).arg(numSeries).arg(numMeasures).arg(numDrugs).arg(numAnalyses).arg(numExperiments).arg(numPipelines).arg(numGroupAnalyses).arg(numDataDictionaries));
+    utils::Print(QString("  Object count:\n    %1 subjects\n     └ %2 studies\n     └ %3 series\n    └ %4 measures\n    └ %5 drugs\n     └ %6 analyses\n    %7 experiments\n    %8 pipelines\n    %9 group analyses\n    %10 data dictionary").arg(numSubjects).arg(numStudies).arg(numSeries).arg(numMeasures).arg(numDrugs).arg(numAnalyses).arg(numExperiments).arg(numPipelines).arg(numGroupAnalyses).arg(numDataDictionaries));
 }
 
 
