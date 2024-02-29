@@ -69,6 +69,8 @@
 	$pipelinemaxwalltime = GetVariable("pipelinemaxwalltime");
 	$pipelinesubmitdelay = GetVariable("pipelinesubmitdelay");
 	$pipelinequeue = GetVariable("pipelinequeue");
+	$pipelinenumcores = GetVariable("pipelinenumcores");
+	$pipelinememory = GetVariable("pipelinememory");
 	$pipelinedatacopymethod = GetVariable("pipelinedatacopymethod");
 	$pipelineremovedata = GetVariable("pipelineremovedata");
 	$pipelineresultsscript = GetVariable("pipelineresultsscript");
@@ -136,11 +138,11 @@
 			DisplayPipelineForm("edit", $id, $returntab);
 			break;
 		case 'update':
-			UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelinedirectory, $pipelinedirstructure, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $level, $ishidden);
+			UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelinenumcores, $pipelinememory, $pipelineremovedata, $pipelinedirectory, $pipelinedirstructure, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $level, $ishidden);
 			DisplayPipelineForm("edit", $id, $returntab);
 			break;
 		case 'add':
-			$id = AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelinedirectory, $pipelinedirstructure, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $projectid, $level, $groupbysubject, $outputbids);
+			$id = AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelinenumcores, $pipelinememory, $pipelineremovedata, $pipelinedirectory, $pipelinedirstructure, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $projectid, $level, $groupbysubject, $outputbids);
 			DisplayPipelineForm("edit", $id, $returntab);
 			break;
 		case 'changeowner':
@@ -233,7 +235,7 @@
 	/* this function does NOT CHANGE the version    */
 	/* number                                       */
 	/* -------------------------------------------- */
-	function UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelinedirectory, $pipelinedirstructure, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $level, $ishidden) {
+	function UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelinenumcores, $pipelinememory, $pipelineremovedata, $pipelinedirectory, $pipelinedirstructure, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $level, $ishidden) {
 		
 		if (!ValidID($id,'Pipeline ID - A')) { return; }
 		
@@ -249,6 +251,8 @@
 		$pipelinesubmitdelay = mysqli_real_escape_string($GLOBALS['linki'], $pipelinesubmitdelay) + 0;
 		$pipelinedatacopymethod = mysqli_real_escape_string($GLOBALS['linki'], $pipelinedatacopymethod);
 		$pipelinequeue = mysqli_real_escape_string($GLOBALS['linki'], $pipelinequeue);
+		$pipelinenumcores = mysqli_real_escape_string($GLOBALS['linki'], $pipelinenumcores);
+		$pipelinememory = mysqli_real_escape_string($GLOBALS['linki'], $pipelinememory);
 		$pipelineremovedata = mysqli_real_escape_string($GLOBALS['linki'], $pipelineremovedata) + 0;
 		$pipelinedirectory = mysqli_real_escape_string($GLOBALS['linki'], $pipelinedirectory);
 		$pipelinedirstructure = mysqli_real_escape_string($GLOBALS['linki'], $pipelinedirstructure);
@@ -259,8 +263,8 @@
 		$pipelinequeue = preg_replace('/\s+/', '', trim($pipelinequeue));
 		
 		/* update the pipeline */
-		$sqlstring = "update pipelines set pipeline_name = '$pipelinetitle', pipeline_desc = '$pipelinedesc', pipeline_group = '$pipelinegroup', pipeline_numproc = $pipelinenumproc, pipeline_submithost = '$pipelinesubmithost', pipeline_maxwalltime = '$pipelinemaxwalltime', pipeline_submitdelay = '$pipelinesubmitdelay', pipeline_datacopymethod = '$pipelinedatacopymethod', pipeline_queue = '$pipelinequeue', pipeline_clustertype = '$pipelineclustertype', pipeline_clusteruser = '$pipelineclusteruser', pipeline_removedata = '$pipelineremovedata', pipeline_directory = '$pipelinedirectory', pipeline_dirstructure = '$pipelinedirstructure', pipeline_usetmpdir = '$pipelineusetmpdir', pipeline_tmpdir = '$pipelinetmpdir', pipeline_notes = '$pipelinenotes', pipeline_ishidden = '$ishidden' where pipeline_id = $id";
-		//PrintVariable($sqlstring);
+		$sqlstring = "update pipelines set pipeline_name = '$pipelinetitle', pipeline_desc = '$pipelinedesc', pipeline_group = '$pipelinegroup', pipeline_numproc = $pipelinenumproc, pipeline_submithost = '$pipelinesubmithost', pipeline_maxwalltime = '$pipelinemaxwalltime', pipeline_submitdelay = '$pipelinesubmitdelay', pipeline_datacopymethod = '$pipelinedatacopymethod', pipeline_queue = '$pipelinequeue', pipeline_numcores = '$pipelinenumcores', pipeline_memory = '$pipelinememory', pipeline_clustertype = '$pipelineclustertype', pipeline_clusteruser = '$pipelineclusteruser', pipeline_removedata = '$pipelineremovedata', pipeline_directory = '$pipelinedirectory', pipeline_dirstructure = '$pipelinedirstructure', pipeline_usetmpdir = '$pipelineusetmpdir', pipeline_tmpdir = '$pipelinetmpdir', pipeline_notes = '$pipelinenotes', pipeline_ishidden = '$ishidden' where pipeline_id = $id";
+		PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 
 		Notice("Pipeline info for <b>$pipelinetitle</b> updated");
@@ -540,7 +544,7 @@
 	/* -------------------------------------------- */
 	/* ------- AddPipeline ------------------------ */
 	/* -------------------------------------------- */
-	function AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelineremovedata, $pipelinedirectory, $pipelinedirstructure, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $projectid, $level, $groupbysubject, $outputbids) {
+	function AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelinenumcores, $pipelinememory, $pipelineremovedata, $pipelinedirectory, $pipelinedirstructure, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $projectid, $level, $groupbysubject, $outputbids) {
 		/* perform data checks */
 		$pipelinetitle = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinetitle));
 		$pipelinedesc = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinedesc));
@@ -553,6 +557,8 @@
 		$pipelinesubmitdelay = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinesubmitdelay));
 		$pipelinedatacopymethod = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinedatacopymethod));
 		$pipelinequeue = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinequeue));
+		$pipelinenumcores = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinenumcores));
+		$pipelinememory = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinememory));
 		$pipelineremovedata = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelineremovedata));
 		$pipelineresultsscript = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelineresultsscript));
 		$pipelinedirectory = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinedirectory));
@@ -599,7 +605,7 @@
 			$userid = $row['user_id'];
 			
 			/* insert the new form */
-			$sqlstring = "insert into pipelines (pipeline_name, pipeline_desc, pipeline_group, pipeline_admin, pipeline_createdate, pipeline_status, pipeline_numproc, pipeline_submithost, pipeline_maxwalltime, pipeline_submitdelay, pipeline_datacopymethod, pipeline_queue, pipeline_clustertype, pipeline_clusteruser, pipeline_removedata, pipeline_resultsscript, pipeline_completefiles, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_projectid, pipeline_level, pipeline_directory, pipeline_dirstructure, pipeline_usetmpdir, pipeline_tmpdir, pipeline_notes, pipeline_ishidden, pipeline_groupbysubject, pipeline_outputbids) values ('$pipelinetitle', '$pipelinedesc', '$pipelinegroup', '$userid', now(), 'stopped', '$pipelinenumproc', '$pipelinesubmithost', $pipelinemaxwalltime, $pipelinesubmitdelay, '$pipelinedatacopymethod', '$pipelinequeue', '$pipelineclustertype', '$pipelineclusteruser', $pipelineremovedata, '$pipelineresultsscript', '$completefiles', '$dependencies', '$deplevel', '$depdir', '$deplinktype', '$groupids', '$projectids', '$level', '$pipelinedirectory', '$pipelinedirstructure', $pipelineusetmpdir, '$pipelinetmpdir', '$pipelinenotes', 0, $groupbysubject, $outputbids)";
+			$sqlstring = "insert into pipelines (pipeline_name, pipeline_desc, pipeline_group, pipeline_admin, pipeline_createdate, pipeline_status, pipeline_numproc, pipeline_submithost, pipeline_maxwalltime, pipeline_submitdelay, pipeline_datacopymethod, pipeline_queue, pipeline_numcores, pipeline_memory, pipeline_clustertype, pipeline_clusteruser, pipeline_removedata, pipeline_resultsscript, pipeline_completefiles, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_projectid, pipeline_level, pipeline_directory, pipeline_dirstructure, pipeline_usetmpdir, pipeline_tmpdir, pipeline_notes, pipeline_ishidden, pipeline_groupbysubject, pipeline_outputbids) values ('$pipelinetitle', '$pipelinedesc', '$pipelinegroup', '$userid', now(), 'stopped', '$pipelinenumproc', '$pipelinesubmithost', $pipelinemaxwalltime, $pipelinesubmitdelay, '$pipelinedatacopymethod', '$pipelinequeue', '$pipelinenumcores', '$pipelinememory', '$pipelineclustertype', '$pipelineclusteruser', $pipelineremovedata, '$pipelineresultsscript', '$completefiles', '$dependencies', '$deplevel', '$depdir', '$deplinktype', '$groupids', '$projectids', '$level', '$pipelinedirectory', '$pipelinedirstructure', $pipelineusetmpdir, '$pipelinetmpdir', '$pipelinenotes', 0, $groupbysubject, $outputbids)";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			$pipelineid = mysqli_insert_id($GLOBALS['linki']);
 			
@@ -959,6 +965,8 @@
 			$maxwalltime = $row['pipeline_maxwalltime'];
 			$submitdelay = $row['pipeline_submitdelay'];
 			$queue = $row['pipeline_queue'];
+			$numcores = $row['pipeline_numcores'];
+			$memory = $row['pipeline_memory'];
 			$clustertype = $row['pipeline_clustertype'];
 			$clusteruser = $row['pipeline_clusteruser'];
 			$datacopymethod = $row['pipeline_datacopymethod'];
@@ -1574,76 +1582,62 @@
 					</div>
 				</div>
 			</div>
-			<!--<div class="ui two column relaxed grid">
-				<div class="column">-->
-					<table class="entrytable" width="100%">
-						<form method="post" action="pipelines.php">
-						<input type="hidden" name="action" value="<?=$formaction?>">
-						<input type="hidden" name="id" value="<?=$id?>">
-						<input type="hidden" name="returntab" value="settings">
-						<tr>
-							<td class="label" valign="top" align="right">Name</td>
-							<td valign="top">
-								<div class="ui input">
-									<input type="text" name="pipelinetitle" required value="<?=$title?>" maxlength="50" size="60" onKeyPress="return AlphaNumeric(event)" <? if ($type == "edit") { echo "readonly style='background-color: #EEE;"; } ?>>
-								</div>
-							</td>
-						</tr>
-						<tr>
-							<td class="label" valign="top" align="right">Description</td>
-							<td valign="top">
-								<div class="ui input">
-									<input type="text" <?=$disabled?> name="pipelinedesc" value="<?=$desc?>" size="60">
-								</div>
-							</td>
-						</tr>
-						<tr>
-							<td class="label" valign="top" align="right">Stats level</td>
-							<td valign="top">
-								<div class="field">
-									<div class="ui radio checkbox">
-										<input type="radio" name="level" id="level1" value="1" <?=$disabled?> <? if ($level == 1) echo "checked"; ?>>
-										<label>First <span class="tiny">subject level</span></label>
-									</div>
-								</div>
-								<div class="field">
-									<div class="ui radio checkbox">
-										<input type="radio" name="level" id="level2" value="2" <?=$disabled?> <? if ($level == 2) echo "checked"; ?>>
-										<label>Second <span class="tiny">group level</span></label>
-									</div>
-								</div>
-							</td>
-						</tr>
-						<tr>
-							<td class="label" valign="top" align="right">Directory</td>
-							<td valign="top">
-								<div class="ui input">
-									<input type="text" name="pipelinedirectory" <?=$disabled?> value="<?=$directory?>" maxlength="255" size="60" <? if ($type == "edit") { echo "readonly style='background-color: #EEE;"; } ?> >
-								</div>
-							</td>
-						</tr>
-						<tr>
-							<td class="label" valign="top" align="right">Directory structure</td>
-							<td valign="top">
-								<!--
-								<div class="field">
-									<div class="ui radio checkbox">
-										<input type="radio" name="pipelinedirstructure" id="level1" value="a" <?=$disabled?> <? if (($dirstructure == 'a') || ($dirstructure == '')) echo "checked"; ?>><label><?=$GLOBALS['cfg']['analysisdir']?> <code>/S1234ABC/1/ThisPipeline</code></label>
-									</div>
-								</div>
-								<div class="field">
-									<div class="ui radio checkbox" style="padding: 5px 1px">
-										<input type="radio" name="pipelinedirstructure" id="level1" value="b" <?=$disabled?> <? if ($dirstructure == 'b') echo "checked"; ?>><label><?=$GLOBALS['cfg']['analysisdirb']?> <code>/ThisPipeline/S1234ABC/1</code></label>
-									</div>
-								</div>
-								-->
-								<div class="ui fluid selection dropdown">
-									<input type="hidden" name="pipelinedirstructure" value="<?=$dirstructure?>">
-									<i class="dropdown icon"></i>
-									<div class="default text">Directory...</div>
-									<div class="scrollhint menu">
-										<div class="item" data-value="a"><tt><?=$GLOBALS['cfg']['analysisdir']?></tt> <div class="ui label">/S1234ABC/1/<b>ThePipeline</b></div></div>
-										<div class="item" data-value="b"><tt><?=$GLOBALS['cfg']['analysisdirb']?></tt> <div class="ui label">/<b>ThePipeline</b>/S1234ABC/1</div></div>
+			<table class="entrytable" width="100%">
+				<form method="post" action="pipelines.php">
+				<input type="hidden" name="action" value="<?=$formaction?>">
+				<input type="hidden" name="id" value="<?=$id?>">
+				<input type="hidden" name="returntab" value="settings">
+				<tr>
+					<td class="label" valign="top" align="right">Name</td>
+					<td valign="top">
+						<div class="ui input">
+							<input type="text" name="pipelinetitle" required value="<?=$title?>" maxlength="50" size="60" onKeyPress="return AlphaNumeric(event)" <? if ($type == "edit") { echo "readonly style='background-color: #EEE;"; } ?>>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td class="label" valign="top" align="right">Description</td>
+					<td valign="top">
+						<div class="ui input">
+							<input type="text" <?=$disabled?> name="pipelinedesc" value="<?=$desc?>" size="60">
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td class="label" valign="top" align="right">Stats level</td>
+					<td valign="top">
+						<div class="field">
+							<div class="ui radio checkbox">
+								<input type="radio" name="level" id="level1" value="1" <?=$disabled?> <? if ($level == 1) echo "checked"; ?>>
+								<label>First <span class="tiny">subject level</span></label>
+							</div>
+						</div>
+						<div class="field">
+							<div class="ui radio checkbox">
+								<input type="radio" name="level" id="level2" value="2" <?=$disabled?> <? if ($level == 2) echo "checked"; ?>>
+								<label>Second <span class="tiny">group level</span></label>
+							</div>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td class="label" valign="top" align="right">Directory</td>
+					<td valign="top">
+						<div class="ui input">
+							<input type="text" name="pipelinedirectory" <?=$disabled?> value="<?=$directory?>" maxlength="255" size="60" <? if ($type == "edit") { echo "readonly style='background-color: #EEE;"; } ?> >
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td class="label" valign="top" align="right">Directory structure</td>
+					<td valign="top">
+						<div class="ui fluid selection dropdown">
+							<input type="hidden" name="pipelinedirstructure" value="<?=$dirstructure?>">
+							<i class="dropdown icon"></i>
+							<div class="default text">Directory...</div>
+							<div class="scrollhint menu">
+								<div class="item" data-value="a"><tt><?=$GLOBALS['cfg']['analysisdir']?></tt> <div class="ui label">/S1234ABC/1/<b>ThePipeline</b></div></div>
+								<div class="item" data-value="b"><tt><?=$GLOBALS['cfg']['analysisdirb']?></tt> <div class="ui label">/<b>ThePipeline</b>/S1234ABC/1</div></div>
 								<?
 									$sqlstring = "select * from analysisdirs order by shortname";
 									$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -1664,149 +1658,172 @@
 										<?
 									}
 								?>
-									</div>
-								</div>
-								
-							</td>
-						</tr>
-						<tr>
-							<td class="label" valign="top" align="right">Pipeline group</td>
-							<td valign="top">
-								<div class="ui input">
-									<input type="text" name="pipelinegroup" list="grouplist" <?=$disabled?> value="<?=$pipelinegroup?>" maxlength="255" size="60">
-								</div>
-							</td>
-							<datalist id="grouplist">
-								<?
-									$sqlstring = "select distinct(pipeline_group) 'pipeline_group' from pipelines";
-									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-										$pgroup = $row['pipeline_group'];
-										echo "<option value='$pgroup'>";
-									}
-								?>
-							</datalist>
-						</tr>
-						<tr>
-							<td class="label" valign="top" align="right">Notes</td>
-							<td valign="top">
-								<div class="ui input">
-									<textarea name="pipelinenotes" <?=$disabled?> rows="8" cols="60"><?=$pipelinenotes?></textarea>
-								</div>
-							</td>
-						</tr>
-						<tr>
-							<td class="label" valign="top" align="right">Data transfer method</td>
-							<td valign="top">
-								<div class="field">
-									<div class="ui radio checkbox">
-										<input type="radio" name="pipelinedatacopymethod" id="datacopymethod1" value="nfs" <?=$disabled?> <? if (($datacopymethod == "nfs") || ($datacopymethod == "")) echo "checked"; ?>>
-										<label>NFS <span class="tiny">default</span></label>
-									</div>
-								</div>
-								<div class="field">
-									<div class="ui radio checkbox">
-										<input type="radio" name="pipelinedatacopymethod" id="datacopymethod2" value="scp" <?=$disabled?> <? if ($datacopymethod == "scp") echo "checked"; ?>>
-										<label>scp <span class="tiny">requires passwordless ssh</span></label>
-									</div>
-								</div>
-							</td>
-						</tr>
-						<tr class="level1">
-							<td class="label" valign="top" align="right">Concurrent processes</td>
-							<td valign="top">
-								<div class="ui input">
-									<input type="number" name="pipelinenumproc" <?=$disabled?> value="<?=$numproc?>" min="1" max="350">
-								</div>
-							</td>
-						</tr>
-						<tr>
-							<datalist id="clustertypelist">
-								<option value="sge">
-								<option value="slurm">
-							</datalist>
-							<td class="label" valign="top" align="right">Cluster type</td>
-							<td valign="top">
-								<div class="ui input">
-									<input type="text" name="pipelineclustertype" list="clustertypelist" <?=$disabled?> value="<?=$clustertype?>">
-								</div>
-							</td>
-						</tr>
-						<tr>
-							<td class="label" valign="top" align="right">Cluster user</td>
-							<td valign="top">
-								<div class="ui input">
-									<input type="text" name="pipelineclusteruser" <?=$disabled?> value="<?=$clusteruser?>">
-								</div>
-							</td>
-						</tr>
-						<tr>
-							<td class="label" valign="top" align="right">Submit hostname</td>
-							<td valign="top">
-								<div class="ui error input" id="pipelinesubmithostinput">
-									<input type="text" name="pipelinesubmithost" id="pipelinesubmithost" <?=$disabled?> value="<?=$submithost?>" onChange="CheckHostnameStatus()" onLoad="CheckHostnameStatus()">
-									<div id="hostup"></div>
-								</div>
-							</td>
-						</tr>
-						<tr>
-							<td class="label" valign="top" align="right">Max wall time</td>
-							<td valign="top">
-								<div class="ui right labeled input">
-									<input type="text" name="pipelinemaxwalltime" <?=$disabled?> value="<?=$maxwalltime?>" size="5" maxlength="7">
-									<div class="ui basic label">mins</div>
-								</div>
-							</td>
-						</tr>
-						<tr>
-							<td class="label" valign="top" align="right">Submit delay</td>
-							<td valign="top">
-								<div class="ui right labeled input">
-									<input type="text" name="pipelinesubmitdelay" <?=$disabled?> value="<?=$submitdelay?>" size="5" maxlength="7">
-									<div class="ui basic label">hrs</div>
-								</div>
-							</td>
-						</tr>
-						<tr>
-							<td class="label" valign="top" align="right">Queue(s)<br><span class="tiny">Comma separated list</span></td>
-							<td valign="top">
-								<div class="ui input">
-									<input type="text" name="pipelinequeue" <?=$disabled?> value="<?=$queue?>" required>
-								</div>
-							</td>
-						</tr>
-						<tr>
-							<td class="label" valign="top" align="right">Use temporary directory<br><span class="tiny">Usually <tt>/tmp</tt>. Check with your sysadmin</span></td>
-							<td valign="top">
-								<div class="ui checkbox">
-									<input type="checkbox" name="pipelineusetmpdir" <?=$disabled?> value="1" <? if ($usetmpdir == "1") { echo "checked"; } ?>>
-								</div>
-								<div class="ui input">
-									<input type="text" name="pipelinetmpdir" <?=$disabled?> value="<?=$tmpdir?>" size="60" placeholder="/path/to/tmp/dir">
-								</div>
-							</td>
-						</tr>
-						<tr>
-							<td class="label" valign="top" align="right">Hidden?</td>
-							<td valign="top" title="<b>Hidden</b><br><br>Useful to hide a pipeline from the main pipeline list. The pipeline still exists, but it won't show up">
-								<div class="ui checkbox">
-									<input type="checkbox" name="pipelineishidden" value="1" <? if ($ishidden) { echo "checked"; } ?>>
-								</div>
-							</td>
-						</tr>
-						
-						<tr>
-							<td colspan="2" align="right">
-								<br>
-								<button class="ui primary button" type="submit" <?=$disabled?>><?=$submitbuttonlabel?></button>
-							</td>
-						</tr>
-						</form>
-					</table>
-				<!--</div>
-				<div class="column">
-				</div>
-			</div>-->
+							</div>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td class="label" valign="top" align="right">Pipeline group</td>
+					<td valign="top">
+						<div class="ui input">
+							<input type="text" name="pipelinegroup" list="grouplist" <?=$disabled?> value="<?=$pipelinegroup?>" maxlength="255" size="60">
+						</div>
+					</td>
+					<datalist id="grouplist">
+						<?
+							$sqlstring = "select distinct(pipeline_group) 'pipeline_group' from pipelines";
+							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+								$pgroup = $row['pipeline_group'];
+								echo "<option value='$pgroup'>";
+							}
+						?>
+					</datalist>
+				</tr>
+				<tr>
+					<td class="label" valign="top" align="right">Notes</td>
+					<td valign="top">
+						<div class="ui input">
+							<textarea name="pipelinenotes" <?=$disabled?> rows="8" cols="60"><?=$pipelinenotes?></textarea>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td class="label" valign="top" align="right">Data transfer method</td>
+					<td valign="top">
+						<div class="field">
+							<div class="ui radio checkbox">
+								<input type="radio" name="pipelinedatacopymethod" id="datacopymethod1" value="nfs" <?=$disabled?> <? if (($datacopymethod == "nfs") || ($datacopymethod == "")) echo "checked"; ?>>
+								<label>NFS <span class="tiny">default</span></label>
+							</div>
+						</div>
+						<div class="field">
+							<div class="ui radio checkbox">
+								<input type="radio" name="pipelinedatacopymethod" id="datacopymethod2" value="scp" <?=$disabled?> <? if ($datacopymethod == "scp") echo "checked"; ?>>
+								<label>scp <span class="tiny">requires passwordless ssh</span></label>
+							</div>
+						</div>
+					</td>
+				</tr>
+				<tr class="level1">
+					<td class="label" valign="top" align="right">Concurrent processes</td>
+					<td valign="top">
+						<div class="ui input">
+							<input type="number" name="pipelinenumproc" <?=$disabled?> value="<?=$numproc?>" min="1" max="350">
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td class="label" valign="top" align="right">Use temporary directory<br><span class="tiny">Usually <tt>/tmp</tt>. Check with your sysadmin</span></td>
+					<td valign="top">
+						<div class="ui checkbox">
+							<input type="checkbox" name="pipelineusetmpdir" <?=$disabled?> value="1" <? if ($usetmpdir == "1") { echo "checked"; } ?>>
+						</div>
+						<div class="ui input">
+							<input type="text" name="pipelinetmpdir" <?=$disabled?> value="<?=$tmpdir?>" size="60" placeholder="/path/to/tmp/dir">
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td class="label" valign="top" align="right">Hidden?</td>
+					<td valign="top" title="<b>Hidden</b><br><br>Useful to hide a pipeline from the main pipeline list. The pipeline still exists, but it won't show up">
+						<div class="ui checkbox">
+							<input type="checkbox" name="pipelineishidden" value="1" <? if ($ishidden) { echo "checked"; } ?>>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td colspan="2">
+						<h4 class="ui horizontal divider header">
+							<i class="server icon"></i>
+							Cluster options
+						</h4>
+					</td>
+				</tr>
+				<tr>
+					<td class="label" valign="top" align="right">Cluster type</td>
+					<td valign="top">
+						<div class="ui selection dropdown">
+							<input type="hidden" name="pipelineclustertype" <?=$disabled?> value="<?=$clustertype?>">
+							<i class="dropdown icon"></i>
+							<div class="default text">Cluster...</div>
+							<div class="scrollhint menu">
+								<div class="item" data-value="slurm">slurm</div>
+								<div class="item" data-value="sge">sge</div>
+							</div>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td class="label" valign="top" align="right">Cluster user</td>
+					<td valign="top">
+						<div class="ui input">
+							<input type="text" name="pipelineclusteruser" <?=$disabled?> value="<?=$clusteruser?>">
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td class="label" valign="top" align="right">Submit hostname</td>
+					<td valign="top">
+						<div class="ui error input" id="pipelinesubmithostinput">
+							<input type="text" name="pipelinesubmithost" id="pipelinesubmithost" <?=$disabled?> value="<?=$submithost?>" onChange="CheckHostnameStatus()" onLoad="CheckHostnameStatus()">
+							<div id="hostup"></div>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td class="label" valign="top" align="right">Queue(s)<br><span class="tiny">Comma separated list</span></td>
+					<td valign="top">
+						<div class="ui input">
+							<input type="text" name="pipelinequeue" <?=$disabled?> value="<?=$queue?>" required>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td class="label" valign="top" align="right">Number of cores per job</td>
+					<td valign="top">
+						<div class="ui right labeled input">
+							<input type="number" name="pipelinenumcores" <?=$disabled?> value="<?=$numcores?>">
+							<div class="ui basic label">cores</div>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td class="label" valign="top" align="right">Memory</td>
+					<td valign="top">
+						<div class="ui right labeled input">
+							<input type="number" name="pipelinememory" step="0.1" <?=$disabled?> value="<?=$memory?>">
+							<div class="ui basic label">GB</div>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td class="label" valign="top" align="right">Max wall time</td>
+					<td valign="top">
+						<div class="ui right labeled input">
+							<input type="number" name="pipelinemaxwalltime" <?=$disabled?> value="<?=$maxwalltime?>">
+							<div class="ui basic label">mins</div>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td class="label" valign="top" align="right">Submit delay</td>
+					<td valign="top">
+						<div class="ui right labeled input">
+							<input type="number" name="pipelinesubmitdelay" <?=$disabled?> value="<?=$submitdelay?>">
+							<div class="ui basic label">hrs</div>
+						</div>
+					</td>
+				</tr>
+				
+				<tr>
+					<td colspan="2" align="right">
+						<br>
+						<button class="ui primary button" type="submit" <?=$disabled?>><?=$submitbuttonlabel?></button>
+					</td>
+				</tr>
+				</form>
+			</table>
 		</div>
 
 		<!-- -------------------- Data & Scripts tab -------------------- -->

@@ -57,54 +57,58 @@ void pipeline::LoadPipelineInfo() {
     }
     q.first();
 
-    name = q.value("pipeline_name").toString().trimmed();
-    desc = q.value("pipeline_desc").toString().trimmed();
-    ownerID = q.value("pipeline_admin").toInt();
-    createDate = q.value("pipeline_createdate").toDateTime();
-    level = q.value("pipeline_level").toInt();
-    group = q.value("pipeline_group").toString().trimmed();
-    directory = q.value("pipeline_directory").toString().trimmed();
-    dirStructure = q.value("pipeline_dirstructure").toString().trimmed();
-    useTmpDir = q.value("pipeline_usetmpdir").toBool();
-    tmpDir = q.value("pipeline_tmpdir").toString().trimmed();
-    foreach (QString did, q.value("pipeline_dependency").toString().trimmed().split(",", Qt::SkipEmptyParts)) {
-        parentIDs.append(did.toInt());
-    }
-
-    depLevel = q.value("pipeline_dependencylevel").toString().trimmed();
-    depDir = q.value("pipeline_dependencydir").toString().trimmed();
-    depLinkType = q.value("pipeline_deplinktype").toString().trimmed();
-    foreach (QString gid, q.value("pipeline_groupid").toString().trimmed().split(",", Qt::SkipEmptyParts)) {
-        groupIDs.append(gid.toInt());
-    }
-
-    groupType = q.value("pipeline_grouptype").toString().trimmed();
-    groupBySubject = q.value("pipeline_groupbysubject").toBool();
-    dynamicGroupID = q.value("pipeline_dynamicgroupid").toInt();
-    status = q.value("pipeline_status").toString().trimmed();
-    statusMessage = q.value("pipeline_statusmessage").toString().trimmed();
-    lastStart = q.value("pipeline_laststart").toDateTime();
-    lastFinish = q.value("pipeline_lastfinish").toDateTime();
-    lastCheck = q.value("pipeline_lastcheck").toDateTime();
-    completeFiles = q.value("pipeline_desc").toString().trimmed().split(",", Qt::SkipEmptyParts);
-    numConcurrentAnalysis = q.value("pipeline_numproc").toInt();
-    queue = q.value("pipeline_queue").toString().trimmed();
-    submitHost = q.value("pipeline_submithost").toString().trimmed();
     clusterType = q.value("pipeline_clustertype").toString().trimmed();
     clusterUser = q.value("pipeline_clusteruser").toString().trimmed();
-    maxWallTime = q.value("pipeline_maxwalltime").toInt();
-    submitDelay = q.value("pipeline_submitdelay").toInt();
+    completeFiles = q.value("pipeline_desc").toString().trimmed().split(",", Qt::SkipEmptyParts);
+    createDate = q.value("pipeline_createdate").toDateTime();
     dataCopyMethod = q.value("pipeline_datacopymethod").toString().trimmed();
+    debug = q.value("pipeline_debug").toBool();
+    depDir = q.value("pipeline_dependencydir").toString().trimmed();
+    depLevel = q.value("pipeline_dependencylevel").toString().trimmed();
+    depLinkType = q.value("pipeline_deplinktype").toString().trimmed();
+    desc = q.value("pipeline_desc").toString().trimmed();
+    dirStructure = q.value("pipeline_dirstructure").toString().trimmed();
+    directory = q.value("pipeline_directory").toString().trimmed();
+    dynamicGroupID = q.value("pipeline_dynamicgroupid").toInt();
+    enabled = q.value("pipeline_enabled").toBool();
+    group = q.value("pipeline_group").toString().trimmed();
+    groupBySubject = q.value("pipeline_groupbysubject").toBool();
+    groupType = q.value("pipeline_grouptype").toString().trimmed();
+    isHidden = q.value("pipeline_ishidden").toBool();
+    isPrivate = q.value("pipeline_isprivate").toBool();
+    lastCheck = q.value("pipeline_lastcheck").toDateTime();
+    lastFinish = q.value("pipeline_lastfinish").toDateTime();
+    lastStart = q.value("pipeline_laststart").toDateTime();
+    level = q.value("pipeline_level").toInt();
+    maxWallTime = q.value("pipeline_maxwalltime").toInt();
+    memory = q.value("pipeline_memory").toDouble();
+    name = q.value("pipeline_name").toString().trimmed();
     notes = q.value("pipeline_notes").toString().trimmed();
-    useProfile = q.value("pipeline_useprofile").toBool();
+    numConcurrentAnalysis = q.value("pipeline_numproc").toInt();
+    numCores = q.value("pipeline_numcores").toInt();
+    ownerID = q.value("pipeline_admin").toInt();
+    queue = q.value("pipeline_queue").toString().trimmed();
     removeData = q.value("pipeline_removedata").toBool();
     resultScript = q.value("pipeline_resultsscript").toString().trimmed();
-    enabled = q.value("pipeline_enabled").toBool();
+    status = q.value("pipeline_status").toString().trimmed();
+    statusMessage = q.value("pipeline_statusmessage").toString().trimmed();
+    submitDelay = q.value("pipeline_submitdelay").toInt();
+    submitHost = q.value("pipeline_submithost").toString().trimmed();
     testing = q.value("pipeline_testing").toBool();
-    isPrivate = q.value("pipeline_isprivate").toBool();
-    isHidden = q.value("pipeline_ishidden").toBool();
-    debug = q.value("pipeline_debug").toBool();
+    tmpDir = q.value("pipeline_tmpdir").toString().trimmed();
+    useProfile = q.value("pipeline_useprofile").toBool();
+    useTmpDir = q.value("pipeline_usetmpdir").toBool();
     version = q.value("pipeline_version").toInt();
+    QStringList dependencyStr = q.value("pipeline_dependency").toString().trimmed().split(",", Qt::SkipEmptyParts);
+    QStringList groupIDStr = q.value("pipeline_groupid").toString().trimmed().split(",", Qt::SkipEmptyParts);
+
+    /* split the 'list' variables */
+    foreach (QString did, dependencyStr) {
+        parentIDs.append(did.toInt());
+    }
+    foreach (QString gid, groupIDStr) {
+        groupIDs.append(gid.toInt());
+    }
 
     /* check if anything is missing */
     if (submitHost == "")
@@ -154,6 +158,8 @@ QJsonObject pipeline::GetJSONObject(QString path) {
     jsonLarge["completeFiles"] = QJsonArray::fromStringList(completeFiles);
     jsonLarge["numConcurrentAnalysis"] = numConcurrentAnalysis;
     jsonLarge["queue"] = queue;
+    jsonLarge["numCores"] = numCores;
+    jsonLarge["memory"] = memory;
     jsonLarge["submitHost"] = submitHost;
     jsonLarge["clusterType"] = clusterType;
     jsonLarge["clusterUser"] = clusterUser;
@@ -365,24 +371,24 @@ squirrelPipeline pipeline::GetSquirrelObject() {
         //QJsonArray JSONdata;
         while (q.next()) {
             dataStep d;
-            d.Order = q.value("pdd_order").toInt();
-            d.flags.PrimaryProtocol = q.value("pdd_isprimaryprotocol").toBool();
-            d.SeriesCriteria = q.value("pdd_seriescriteria").toString();
-            d.Protocol = q.value("pdd_protocol").toString();
-            d.Modality = q.value("pdd_modality").toString();
+            d.AssociationType = q.value("pdd_assoctype").toString();
+            d.BehavioralDirectory = q.value("pdd_behdir").toString();
+            d.BehavioralFormat = q.value("pdd_behformat").toString();
             d.DataFormat = q.value("pdd_dataformat").toString();
             d.ImageType = q.value("pdd_imagetype").toString();
-            d.flags.Gzip = q.value("pdd_gzip").toBool();
             d.Location = q.value("pdd_location").toString();
-            d.flags.UseSeries = q.value("pdd_useseries").toBool();
-            d.flags.PreserveSeries = q.value("pdd_preserveseries").toBool();
-            d.flags.UsePhaseDirectory = q.value("pdd_usephasedir").toBool();
-            d.BehavioralFormat = q.value("pdd_behformat").toString();
-            d.BehavioralDirectory = q.value("pdd_behdir").toString();
+            d.Modality = q.value("pdd_modality").toString();
             d.NumberBOLDreps = q.value("pdd_numboldreps").toString();
+            d.Order = q.value("pdd_order").toInt();
+            d.Protocol = q.value("pdd_protocol").toString();
+            d.SeriesCriteria = q.value("pdd_seriescriteria").toString();
             d.flags.Enabled = q.value("pdd_enabled").toBool();
-            d.AssociationType = q.value("pdd_assoctype").toString();
+            d.flags.Gzip = q.value("pdd_gzip").toBool();
             d.flags.Optional = q.value("pdd_optional").toBool();
+            d.flags.PreserveSeries = q.value("pdd_preserveseries").toBool();
+            d.flags.PrimaryProtocol = q.value("pdd_isprimaryprotocol").toBool();
+            d.flags.UsePhaseDirectory = q.value("pdd_usephasedir").toBool();
+            d.flags.UseSeries = q.value("pdd_useseries").toBool();
             //d. = q.value("pdd_level").toString();
             //d.numImagesCriteria = q.value("pdd_numimagescriteria").toString();
 
