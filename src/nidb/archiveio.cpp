@@ -2398,6 +2398,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
 
     /* create squirrel object with default settings... */
     squirrel sqrl;
+    sqrl.SetFilename(zipfilepath);
     sqrl.PackageName = name;
     sqrl.Description = desc;
     sqrl.NiDBversion = n->GetVersion();
@@ -2733,7 +2734,6 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     }
 
     /* the squirrel object should be complete, so write it out */
-    sqrl.SetFilename(zipfilepath);
     sqrl.Write(false);
     msgs << n->WriteLog(QString("%1() - squirrel.write() returned [\n" + sqrl.GetLog() + "\n]").arg(__FUNCTION__));
 

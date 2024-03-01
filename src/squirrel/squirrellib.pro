@@ -33,6 +33,7 @@ SOURCES += \
 	utils.cpp \
 	convert.cpp \
 	dicom.cpp \
+	modify.cpp \
 	main.cpp \
 	squirrel.cpp \
 	squirrelAnalysis.cpp \
@@ -58,6 +59,7 @@ HEADERS += \
 	utils.h \
 	convert.h \
 	dicom.h \
+	modify.h \
 	squirrel.h \
 	squirrelAnalysis.h \
 	squirrelDrug.h \
