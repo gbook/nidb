@@ -12,7 +12,7 @@ All DICOM tags are acceptable parameters. See this list for available DICOM tags
 
 ### JSON variables
 
-<table data-header-hidden><thead><tr><th width="127.4"></th><th width="345"></th><th width="243"></th></tr></thead><tbody><tr><td><em><strong>Variable</strong></em></td><td><strong>Description</strong></td><td><strong>Example</strong></td></tr><tr><td><em>{Tags}</em></td><td>A unique key, sometimes derived from the DICOM header</td><td>Protocol, T1w<br>FieldStrength, 3.0</td></tr></tbody></table>
+<table data-header-hidden><thead><tr><th width="137.4"></th><th width="345"></th><th width="243"></th></tr></thead><tbody><tr><td><em><strong>Variable</strong></em></td><td><strong>Description</strong></td><td><strong>Example</strong></td></tr><tr><td><em>{Key:Value}</em></td><td>A unique key, sometimes derived from the DICOM header</td><td>Protocol, T1w<br>FieldStrength, 3.0</td></tr></tbody></table>
 
 ### Directory structure
 
