@@ -35,16 +35,16 @@
  */
 squirrel::squirrel(bool dbg, bool q)
 {
-    datetime = QDateTime::currentDateTime();
-    description = "Squirrel package";
-    name = "Squirrel package";
-    squirrelVersion = QString("%1.%2").arg(SQUIRREL_VERSION_MAJ).arg(SQUIRREL_VERSION_MIN);
-    squirrelBuild = QString("%1.%2.%3").arg(UTIL_VERSION_MAJ).arg(UTIL_VERSION_MIN).arg(UTIL_BUILD_NUM);
-    format = "squirrel";
-    subjectDirFormat = "orig";
-    studyDirFormat = "orig";
-    seriesDirFormat = "orig";
-    dataFormat = "nifti4dgz";
+    DataFormat = "nifti4dgz";
+    Datetime = QDateTime::currentDateTime();
+    Description = "Squirrel package";
+    PackageFormat = "squirrel";
+    PackageName = "Squirrel package";
+    SeriesDirFormat = "orig";
+    SquirrelBuild = QString("%1.%2.%3").arg(UTIL_VERSION_MAJ).arg(UTIL_VERSION_MIN).arg(UTIL_BUILD_NUM);
+    SquirrelVersion = QString("%1.%2").arg(SQUIRREL_VERSION_MAJ).arg(SQUIRREL_VERSION_MIN);
+    StudyDirFormat = "orig";
+    SubjectDirFormat = "orig";
     isOkToDelete = true;
     debug = dbg;
     quiet = q;
@@ -229,11 +229,24 @@ bool squirrel::Read(bool readonly) {
     QJsonObject root = d.object();
 
     /* get the package info */
-    QJsonValue pkgVal = root.value("package");
-    QJsonObject pkgObj = pkgVal.toObject();
-    description = pkgObj["description"].toString();
-    datetime.fromString(pkgObj["datetime"].toString());
-    name = pkgObj["name"].toString();
+    //QJsonValue pkgVal = root.value("package");
+    //QJsonObject pkgObj = pkgVal.toObject();
+    QJsonObject pkgObj = root["package"].toObject();
+    Changes = pkgObj["Changes"].toString();
+    DataFormat = pkgObj["DataFormat"].toString();
+    Datetime.fromString(pkgObj["Datetime"].toString());
+    Description = pkgObj["Description"].toString();
+    License = pkgObj["License"].toString();
+    Notes = pkgObj["Notes"].toString();
+    PackageFormat = pkgObj["PackageFormat"].toString();
+    PackageName = pkgObj["PackageName"].toString();
+    PackageName = pkgObj["PackageName"].toString();
+    Readme = pkgObj["Readme"].toString();
+    SeriesDirFormat = pkgObj["SeriesDirectoryFormat"].toString();
+    SquirrelBuild = pkgObj["SquirrelBuild"].toString();
+    SquirrelVersion = pkgObj["SquirrelVersion"].toString();
+    StudyDirFormat = pkgObj["StudyDirectoryFormat"].toString();
+    SubjectDirFormat = pkgObj["SubjectDirectoryFormat"].toString();
 
     /* get the data object, and check for any subjects */
     QJsonArray jsonSubjects;
@@ -247,6 +260,12 @@ bool squirrel::Read(bool readonly) {
         jsonSubjects = root["subjects"].toArray();
         Log(QString("NOTICE: Found [%1] subjects in the root of the JSON. (This is a slightly malformed squirrel file, but I'll accept it)").arg(jsonSubjects.size()), __FUNCTION__);
     }
+    else {
+        Log("root does not contain 'data' or 'subjects'", __FUNCTION__);
+    }
+
+    Log(QString("TotalFileCount: [%1]").arg(root["TotalFileCount"].toInt()), __FUNCTION__);
+    Log(QString("TotalSize: [%1]").arg(root["TotalSize"].toInt()), __FUNCTION__);
 
     /* loop through and read any subjects */
     for (auto v : jsonSubjects) {
@@ -415,6 +434,9 @@ bool squirrel::Read(bool readonly) {
         QJsonObject jsonPipeline = v.toObject();
         squirrelPipeline sqrlPipeline;
 
+        sqrlPipeline.ClusterMaxWallTime = jsonPipeline["ClusterMaxWallTime"].toInt();
+        sqrlPipeline.ClusterMemory = jsonPipeline["ClusterMemory"].toInt();
+        sqrlPipeline.ClusterNumberCores = jsonPipeline["ClusterNumberCores"].toInt();
         sqrlPipeline.ClusterQueue = jsonPipeline["ClusterQueue"].toString();
         sqrlPipeline.ClusterSubmitHost = jsonPipeline["ClusterSubmitHost"].toString();
         sqrlPipeline.ClusterType = jsonPipeline["ClusterType"].toString();
@@ -425,14 +447,11 @@ bool squirrel::Read(bool readonly) {
         sqrlPipeline.DependencyLevel = jsonPipeline["DependencyLevel"].toString();
         sqrlPipeline.DependencyLinkType = jsonPipeline["DependencyLinkType"].toString();
         sqrlPipeline.Description = jsonPipeline["Description"].toString();
-        sqrlPipeline.DirectoryStructure = jsonPipeline["DirectoryStructure"].toString();
         sqrlPipeline.Directory = jsonPipeline["Directory"].toString();
-        sqrlPipeline.flags.UseProfile = jsonPipeline["UseProfile"].toBool();
-        sqrlPipeline.flags.UseTempDirectory = jsonPipeline["UseTempDirectory"].toBool();
+        sqrlPipeline.DirectoryStructure = jsonPipeline["DirectoryStructure"].toString();
         sqrlPipeline.Group = jsonPipeline["Group"].toString();
         sqrlPipeline.GroupType = jsonPipeline["GroupType"].toString();
         sqrlPipeline.Level = jsonPipeline["Level"].toInt();
-        sqrlPipeline.MaxWallTime = jsonPipeline["MaxWallTime"].toInt();
         sqrlPipeline.Notes = jsonPipeline["Notes"].toString();
         sqrlPipeline.NumberConcurrentAnalyses = jsonPipeline["NumberConcurrentAnalyses"].toInt();
         sqrlPipeline.ParentPipelines = jsonPipeline["ParentPipelines"].toString().split(",");
@@ -443,6 +462,8 @@ bool squirrel::Read(bool readonly) {
         sqrlPipeline.SubmitDelay = jsonPipeline["SubmitDelay"].toInt();
         sqrlPipeline.TempDirectory = jsonPipeline["TempDir"].toString();
         sqrlPipeline.Version = jsonPipeline["Version"].toInt();
+        sqrlPipeline.flags.UseProfile = jsonPipeline["UseProfile"].toBool();
+        sqrlPipeline.flags.UseTempDirectory = jsonPipeline["UseTempDirectory"].toBool();
 
         QJsonArray jsonCompleteFiles;
         jsonCompleteFiles = jsonPipeline["CompleteFiles"].toArray();
@@ -532,17 +553,17 @@ bool squirrel::Write(bool writeLog) {
                 QString seriesPath = QString("%1/%2").arg(workingDir).arg(series.VirtualPath());
                 utils::MakePath(seriesPath,m);
 
-                Log(QString("Writing series [%1] to [%2]. Data format [%3]").arg(series.SeriesNumber).arg(seriesPath).arg(dataFormat), __FUNCTION__);
+                Log(QString("Writing series [%1] to [%2]. Data format [%3]").arg(series.SeriesNumber).arg(seriesPath).arg(DataFormat), __FUNCTION__);
 
                 /* orig vs other formats */
-                if (dataFormat == "orig") {
+                if (DataFormat == "orig") {
                     /* copy all of the series files to the temp directory */
                     foreach (QString f, series.stagedFiles) {
                         QString systemstring = QString("cp -uv %1 %2").arg(f).arg(seriesPath);
                         utils::SystemCommand(systemstring);
                     }
                 }
-                else if ((dataFormat == "anon") || (dataFormat == "anonfull")) {
+                else if ((DataFormat == "anon") || (DataFormat == "anonfull")) {
                     /* create temp directory for the anonymization */
                     QString td;
                     MakeTempDir(td);
@@ -557,7 +578,7 @@ bool squirrel::Write(bool writeLog) {
                     /* anonymize the directory */
                     squirrelImageIO io;
                     QString m;
-                    if (dataFormat == "anon")
+                    if (DataFormat == "anon")
                         io.AnonymizeDir(td,1,"Anonymized","Anonymized",m);
                     else
                         io.AnonymizeDir(td,2,"Anonymized","Anonymized",m);
@@ -570,10 +591,10 @@ bool squirrel::Write(bool writeLog) {
                     QString m2;
                     utils::RemoveDir(td, m2);
                 }
-                else if (dataFormat.contains("nifti")) {
+                else if (DataFormat.contains("nifti")) {
                     int numConv(0), numRename(0);
                     bool gzip;
-                    if (dataFormat.contains("gz"))
+                    if (DataFormat.contains("gz"))
                         gzip = true;
                     else
                         gzip = false;
@@ -586,7 +607,7 @@ bool squirrel::Write(bool writeLog) {
                         QString origSeriesPath = f.absoluteDir().absolutePath();
                         squirrelImageIO io;
                         QString m3;
-                        if (!io.ConvertDicom(dataFormat, origSeriesPath, seriesPath, QDir::currentPath(), gzip, utils::CleanString(subject.ID), QString("%1").arg(study.StudyNumber), QString("%1").arg(series.SeriesNumber), "dicom", numConv, numRename, m3)) {
+                        if (!io.ConvertDicom(DataFormat, origSeriesPath, seriesPath, QDir::currentPath(), gzip, utils::CleanString(subject.ID), QString("%1").arg(study.StudyNumber), QString("%1").arg(series.SeriesNumber), "dicom", numConv, numRename, m3)) {
                             Log(QString("ConvertDicom() failed. Returned [%1]").arg(m3), __FUNCTION__);
                         }
                     }
@@ -595,7 +616,7 @@ bool squirrel::Write(bool writeLog) {
                     }
                 }
                 else
-                    Log(QString("dataFormat [%1] not recognized").arg(dataFormat), __FUNCTION__);
+                    Log(QString("DataFormat [%1] not recognized").arg(DataFormat), __FUNCTION__);
 
                 /* get the number of files and size of the series */
                 qint64 c(0), b(0);
@@ -619,20 +640,20 @@ bool squirrel::Write(bool writeLog) {
     QJsonObject root;
 
     QJsonObject pkgInfo;
-    pkgInfo["Changes"] = changes;
-    pkgInfo["DataFormat"] = dataFormat;
+    pkgInfo["Changes"] = Changes;
+    pkgInfo["DataFormat"] = DataFormat;
     pkgInfo["Datetime"] = utils::CreateCurrentDateTime(2);
-    pkgInfo["Description"] = description;
-    pkgInfo["License"] = license;
-    pkgInfo["Notes"] = notes;
-    pkgInfo["PackageFormat"] = format;
-    pkgInfo["PackageName"] = name;
-    pkgInfo["Readme"] = readme;
-    pkgInfo["SeriesDirectoryFormat"] = seriesDirFormat;
-    pkgInfo["SquirrelBuild"] = squirrelBuild;
-    pkgInfo["SquirrelVersion"] = squirrelVersion;
-    pkgInfo["StudyDirectoryFormat"] = studyDirFormat;
-    pkgInfo["SubjectDirectoryFormat"] = subjectDirFormat;
+    pkgInfo["Description"] = Description;
+    pkgInfo["License"] = License;
+    pkgInfo["Notes"] = Notes;
+    pkgInfo["PackageFormat"] = DataFormat;
+    pkgInfo["PackageName"] = PackageName;
+    pkgInfo["Readme"] = Readme;
+    pkgInfo["SeriesDirectoryFormat"] = SeriesDirFormat;
+    pkgInfo["SquirrelBuild"] = SquirrelBuild;
+    pkgInfo["SquirrelVersion"] = SquirrelVersion;
+    pkgInfo["StudyDirectoryFormat"] = StudyDirFormat;
+    pkgInfo["SubjectDirectoryFormat"] = SubjectDirFormat;
 
     root["package"] = pkgInfo;
 
@@ -974,15 +995,15 @@ void squirrel::PrintPackage() {
     //qint64 numDataDictionaryItems = GetObjectCount("datadictionaryitem");
 
     utils::Print("Squirrel Package: " + zipPath);
-    utils::Print(QString("  DataFormat: %1").arg(dataFormat));
-    utils::Print(QString("  Date: %1").arg(datetime.toString()));
-    utils::Print(QString("  Description: %1").arg(description));
-    utils::Print(QString("  DirectoryFormat (subject, study, series): %1, %2, %3").arg(subjectDirFormat).arg(studyDirFormat).arg(seriesDirFormat));
+    utils::Print(QString("  DataFormat: %1").arg(DataFormat));
+    utils::Print(QString("  Date: %1").arg(Datetime.toString()));
+    utils::Print(QString("  Description: %1").arg(Description));
+    utils::Print(QString("  DirectoryFormat (subject, study, series): %1, %2, %3").arg(SubjectDirFormat).arg(StudyDirFormat).arg(SeriesDirFormat));
     utils::Print(QString("  Files:\n    %1 files\n    %2 bytes (unzipped)").arg(GetFileCount()).arg(GetUnzipSize()));
-    utils::Print(QString("  PackageName: %1").arg(name));
-    utils::Print(QString("  SquirrelBuild: %1").arg(squirrelBuild));
-    utils::Print(QString("  SquirrelVersion: %1").arg(squirrelVersion));
-    utils::Print(QString("  Object count:\n    %1 subjects\n     └ %2 studies\n     └ %3 series\n    └ %4 measures\n    └ %5 drugs\n     └ %6 analyses\n    %7 experiments\n    %8 pipelines\n    %9 group analyses\n    %10 data dictionary").arg(numSubjects).arg(numStudies).arg(numSeries).arg(numMeasures).arg(numDrugs).arg(numAnalyses).arg(numExperiments).arg(numPipelines).arg(numGroupAnalyses).arg(numDataDictionaries));
+    utils::Print(QString("  PackageName: %1").arg(PackageName));
+    utils::Print(QString("  SquirrelBuild: %1").arg(SquirrelBuild));
+    utils::Print(QString("  SquirrelVersion: %1").arg(SquirrelVersion));
+    utils::Print(QString("  Object count:\n    %1 subjects\n    +-- %4 measures\n    +-- %5 drugs\n    +-- %2 studies\n    +---- %3 series\n    +---- %6 analyses\n    %7 experiments\n    %8 pipelines\n    %9 group analyses\n    %10 data dictionary").arg(numSubjects).arg(numStudies).arg(numSeries).arg(numMeasures).arg(numDrugs).arg(numAnalyses).arg(numExperiments).arg(numPipelines).arg(numGroupAnalyses).arg(numDataDictionaries));
 }
 
 
@@ -1375,7 +1396,7 @@ QList<squirrelSubject> squirrel::GetAllSubjects() {
         squirrelSubject s;
         s.SetObjectID(q.value("SubjectRowID").toInt());
         if (s.Get()) {
-            s.SetDirFormat(subjectDirFormat);
+            s.SetDirFormat(SubjectDirFormat);
             list.append(s);
         }
     }
@@ -1402,7 +1423,7 @@ QList<squirrelStudy> squirrel::GetStudies(int subjectRowID) {
         squirrelStudy s;
         s.SetObjectID(q.value("StudyRowID").toInt());
         if (s.Get()) {
-            s.SetDirFormat(subjectDirFormat, studyDirFormat);
+            s.SetDirFormat(SubjectDirFormat, StudyDirFormat);
             list.append(s);
         }
     }
@@ -1428,7 +1449,7 @@ QList<squirrelSeries> squirrel::GetSeries(int studyRowID) {
         squirrelSeries s;
         s.SetObjectID(q.value("SeriesRowID").toInt());
         if (s.Get()) {
-            s.SetDirFormat(subjectDirFormat, studyDirFormat, seriesDirFormat);
+            s.SetDirFormat(SubjectDirFormat, StudyDirFormat, SeriesDirFormat);
             list.append(s);
         }
     }

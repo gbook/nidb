@@ -2398,13 +2398,13 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
 
     /* create squirrel object with default settings... */
     squirrel sqrl;
-    sqrl.name = name;
-    sqrl.description = desc;
+    sqrl.PackageName = name;
+    sqrl.Description = desc;
     sqrl.NiDBversion = n->GetVersion();
-    sqrl.dataFormat = "orig";
-    sqrl.subjectDirFormat = "orig";
-    sqrl.studyDirFormat = "orig";
-    sqrl.seriesDirFormat = "orig";
+    sqrl.DataFormat = "orig";
+    sqrl.SubjectDirFormat = "orig";
+    sqrl.StudyDirFormat = "orig";
+    sqrl.SeriesDirFormat = "orig";
 
     /* ... and set the squirrel options based on the flags passed in
         SQUIRREL_FORMAT_ANONYMIZE
@@ -2420,16 +2420,16 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     */
     n->WriteLog(QString("%1() Squirrel flags [%2]").arg(__FUNCTION__).arg(squirrelflags.join(",")));
 
-    if (squirrelflags.contains("SQUIRREL_FORMAT_ANONYMIZE")) sqrl.dataFormat = "anon";
-    if (squirrelflags.contains("SQUIRREL_FORMAT_ANONYMIZEFULL")) sqrl.dataFormat = "anonfull";
-    if (squirrelflags.contains("SQUIRREL_FORMAT_NIFTI4D")) sqrl.dataFormat = "nifti4d";
-    if (squirrelflags.contains("SQUIRREL_FORMAT_NIFTI4DGZ")) sqrl.dataFormat = "nifti4dgz";
-    if (squirrelflags.contains("SQUIRREL_FORMAT_NIFTI3D")) sqrl.dataFormat = "nifti3d";
-    if (squirrelflags.contains("SQUIRREL_FORMAT_NIFTI3DGZ")) sqrl.dataFormat = "nifti3d";
+    if (squirrelflags.contains("SQUIRREL_FORMAT_ANONYMIZE")) sqrl.DataFormat = "anon";
+    if (squirrelflags.contains("SQUIRREL_FORMAT_ANONYMIZEFULL")) sqrl.DataFormat = "anonfull";
+    if (squirrelflags.contains("SQUIRREL_FORMAT_NIFTI4D")) sqrl.DataFormat = "nifti4d";
+    if (squirrelflags.contains("SQUIRREL_FORMAT_NIFTI4DGZ")) sqrl.DataFormat = "nifti4dgz";
+    if (squirrelflags.contains("SQUIRREL_FORMAT_NIFTI3D")) sqrl.DataFormat = "nifti3d";
+    if (squirrelflags.contains("SQUIRREL_FORMAT_NIFTI3DGZ")) sqrl.DataFormat = "nifti3d";
 
-    if (squirrelflags.contains("SQUIRREL_INCSUBJECTNUM")) sqrl.subjectDirFormat = "seq";
-    if (squirrelflags.contains("SQUIRREL_INCSTUDYNUM")) sqrl.studyDirFormat = "seq";
-    if (squirrelflags.contains("SQUIRREL_INCSERIESNUM")) sqrl.seriesDirFormat = "seq";
+    if (squirrelflags.contains("SQUIRREL_INCSUBJECTNUM")) sqrl.SubjectDirFormat = "seq";
+    if (squirrelflags.contains("SQUIRREL_INCSTUDYNUM")) sqrl.StudyDirFormat = "seq";
+    if (squirrelflags.contains("SQUIRREL_INCSERIESNUM")) sqrl.SeriesDirFormat = "seq";
 
     QList<int> pipelineIDs;
     QList<int> experimentIDs;
@@ -2776,17 +2776,17 @@ bool archiveIO::WritePackage(qint64 exportid, QString zipfilepath, QString &msg)
     q.bindValue(":packageid", packageid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
     if (q.next()) {
-        sqrl.name = q.value("package_name").toString();
-        sqrl.description = q.value("package_desc").toString();
+        sqrl.Changes = q.value("package_changes").toString();
+        sqrl.DataFormat = q.value("package_dataformat").toString();
+        sqrl.Description = q.value("package_desc").toString();
+        sqrl.License = q.value("package_license").toString();
         sqrl.NiDBversion = n->GetVersion();
-        sqrl.dataFormat = q.value("package_dataformat").toString();
-        sqrl.subjectDirFormat = q.value("package_subjectdirformat").toString();
-        sqrl.studyDirFormat = q.value("package_studydirformat").toString();
-        sqrl.seriesDirFormat = q.value("package_seriesdirformat").toString();
-        sqrl.license = q.value("package_license").toString();
-        sqrl.readme = q.value("package_readme").toString();
-        sqrl.changes = q.value("package_changes").toString();
-        sqrl.notes = q.value("package_notes").toString();
+        sqrl.Notes = q.value("package_notes").toString();
+        sqrl.PackageName = q.value("package_name").toString();
+        sqrl.Readme = q.value("package_readme").toString();
+        sqrl.SeriesDirFormat = q.value("package_seriesdirformat").toString();
+        sqrl.StudyDirFormat = q.value("package_studydirformat").toString();
+        sqrl.SubjectDirFormat = q.value("package_subjectdirformat").toString();
         sqrl.SetFilename(zipfilepath);
     }
     else {

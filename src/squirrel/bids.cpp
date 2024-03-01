@@ -156,13 +156,13 @@ bool bids::LoadRootFiles(QStringList rootfiles, squirrel *sqrl) {
 
         if (filename == "dataset_description.json") {
             QString desc = utils::CleanJSON(utils::ReadTextFileToString(f));
-            sqrl->description = desc;
+            sqrl->Description = desc;
         }
         else if ((filename == "README") || (filename == "README.md")) {
-            sqrl->readme = utils::ReadTextFileToString(f);
+            sqrl->Readme = utils::ReadTextFileToString(f);
         }
         else if (filename == "CHANGES") {
-            sqrl->changes = utils::ReadTextFileToString(f);
+            sqrl->Changes = utils::ReadTextFileToString(f);
         }
         else if (filename.startsWith("task-")) {
             /* this goes into the squirrel experiments object */

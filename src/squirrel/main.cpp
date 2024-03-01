@@ -108,23 +108,22 @@ int main(int argc, char *argv[])
             squirrel *sqrl = new squirrel(debug, quiet);
 
             if (paramOutputDataFormat != "")
-                sqrl->dataFormat = paramOutputDataFormat;
+                sqrl->DataFormat = paramOutputDataFormat;
 
             if (paramOutputDirFormat != "") {
-                sqrl->subjectDirFormat = paramOutputDirFormat;
-                sqrl->studyDirFormat = paramOutputDirFormat;
-                sqrl->seriesDirFormat = paramOutputDirFormat;
+                sqrl->SubjectDirFormat = paramOutputDirFormat;
+                sqrl->StudyDirFormat = paramOutputDirFormat;
+                sqrl->SeriesDirFormat = paramOutputDirFormat;
             }
 
             if (paramOutputPackageFormat != "")
-                sqrl->format = paramOutputPackageFormat;
+                sqrl->PackageFormat = paramOutputPackageFormat;
 
             /* 1) load the DICOM data to a squirrel object */
             dcm->LoadToSquirrel(paramInput, bindir, sqrl);
 
             /* 2) write the squirrel file */
-            QString filepath;
-            sqrl->SetFilename(filepath);
+            sqrl->SetFilename(paramOutputFile);
             sqrl->Write(true);
 
             delete dcm;
@@ -194,9 +193,9 @@ int main(int argc, char *argv[])
             sqrl->Write(true);
         }
     }
-    else if (command == "list") {
+    else if (command == "info") {
         p.clearPositionalArguments();
-        p.addPositionalArgument("list", "List all instances of an object within a squirrel package.", "list [options]");
+        p.addPositionalArgument("info", "Display instances of an object within a squirrel package.", "info [options]");
 
         /* command line flag options */
         p.addOption(QCommandLineOption(QStringList() << "d" << "debug", "Enable debugging"));
@@ -228,6 +227,7 @@ int main(int argc, char *argv[])
         else {
             squirrel *sqrl = new squirrel(debug, quiet);
             sqrl->quiet = quiet;
+            sqrl->SetFilename(inputPath);
             sqrl->Read(true);
 
             if (object == "package") {

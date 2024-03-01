@@ -61,35 +61,37 @@ bool squirrelPipeline::Get() {
 
         /* get the data */
         objectID = q.value("PipelineRowID").toLongLong();
-        PipelineName = q.value("PipelineName").toString();
-        Description = q.value("Description").toString();
-        CreateDate = q.value("Datetime").toDateTime();
-        Level = q.value("Level").toInt();
-        PrimaryScript = q.value("PrimaryScript").toString();
-        SecondaryScript = q.value("SecondaryScript").toString();
-        Version = q.value("Version").toInt();
         //parentPipelines = q.value("CompleteFiles").toString();
+        ClusterMaxWallTime = q.value("MaxWallTime").toInt();
+        ClusterMemory = q.value("Memory").toInt();
+        ClusterNumberCores = q.value("NumberCores").toInt();
+        ClusterQueue = q.value("ClusterQueue").toString();
+        ClusterSubmitHost = q.value("ClusterSubmitHost").toString();
+        ClusterType = q.value("ClusterType").toString();
+        ClusterUser = q.value("ClusterUser").toString();
         CompleteFiles = q.value("CompleteFiles").toString().split(",");
+        CreateDate = q.value("Datetime").toDateTime();
         DataCopyMethod = q.value("DataCopyMethod").toString();
         DependencyDirectory = q.value("DependencyDirectory").toString();
         DependencyLevel = q.value("DependencyLevel").toString();
         DependencyLinkType = q.value("DependencyLinkType").toString();
-        DirectoryStructure = q.value("DirStructure").toString();
+        Description = q.value("Description").toString();
         Directory = q.value("Directory").toString();
+        DirectoryStructure = q.value("DirStructure").toString();
         Group = q.value("GroupName").toString();
         GroupType = q.value("GroupType").toString();
+        Level = q.value("Level").toInt();
         Notes = q.value("Notes").toString();
+        NumberConcurrentAnalyses = q.value("NumConcurrentAnalysis").toInt();
+        PipelineName = q.value("PipelineName").toString();
+        PrimaryScript = q.value("PrimaryScript").toString();
         ResultScript = q.value("ResultScript").toString();
+        SecondaryScript = q.value("SecondaryScript").toString();
+        SubmitDelay = q.value("SubmitDelay").toInt();
         TempDirectory = q.value("TempDir").toString();
+        Version = q.value("Version").toInt();
         flags.UseProfile = q.value("FlagUseProfile").toBool();
         flags.UseTempDirectory = q.value("FlagUseTempDir").toBool();
-        ClusterType = q.value("ClusterType").toString();
-        ClusterUser = q.value("ClusterUser").toString();
-        ClusterQueue = q.value("ClusterQueue").toString();
-        ClusterSubmitHost = q.value("ClusterSubmitHost").toString();
-        NumberConcurrentAnalyses = q.value("NumConcurrentAnalysis").toInt();
-        MaxWallTime = q.value("MaxWallTime").toInt();
-        SubmitDelay = q.value("SubmitDelay").toInt();
 
         /* get any staged files */
         stagedFiles = utils::GetStagedFileList(objectID, "pipeline");
@@ -122,7 +124,7 @@ bool squirrelPipeline::Store() {
 
     /* insert if the object doesn't exist ... */
     if (objectID < 0) {
-        q.prepare("insert into Pipeline (PipelineName, Description, Datetime, Level, PrimaryScript, SecondaryScript, Version, CompleteFiles, DataCopyMethod, DependencyDirectory, DependencyLevel, DependencyLinkType, DirStructure, Directory, GroupName, GroupType, Notes, ResultScript, TempDir, FlagUseProfile, FlagUseTempDir, ClusterType, ClusterUser, ClusterQueue, ClusterSubmitHost, NumConcurrentAnalysis, MaxWallTime, SubmitDelay, VirtualPath) values (:PipelineName, :Description, :Datetime, :Level, :PrimaryScript, :SecondaryScript, :Version, :CompleteFiles, :DataCopyMethod, :DependencyDirectory, :DependencyLevel, :DependencyLinkType, :DirStructure, :Directory, :GroupName, :GroupType, :Notes, :ResultScript, :TempDir, :FlagUseProfile, :FlagUseTempDir, :ClusterType, :ClusterUser, :ClusterQueue, :ClusterSubmitHost, :NumConcurrentAnalysis, :MaxWallTime, :SubmitDelay, :VirtualPath)");
+        q.prepare("insert into Pipeline (PipelineName, Description, Datetime, Level, PrimaryScript, SecondaryScript, Version, CompleteFiles, DataCopyMethod, DependencyDirectory, DependencyLevel, DependencyLinkType, DirStructure, Directory, GroupName, GroupType, Notes, ResultScript, TempDir, FlagUseProfile, FlagUseTempDir, ClusterType, ClusterUser, ClusterQueue, ClusterSubmitHost, NumConcurrentAnalysis, MaxWallTime, SubmitDelay, VirtualPath) values (:PipelineName, :Description, :Datetime, :Level, :PrimaryScript, :SecondaryScript, :Version, :CompleteFiles, :DataCopyMethod, :DependencyDirectory, :DependencyLevel, :DependencyLinkType, :DirStructure, :Directory, :GroupName, :GroupType, :Notes, :ResultScript, :TempDir, :FlagUseProfile, :FlagUseTempDir, :ClusterType, :ClusterUser, :ClusterQueue, :ClusterSubmitHost, :NumConcurrentAnalysis, :ClusterMaxWallTime, :ClusterNumberCores, :ClusterMemory, :SubmitDelay, :VirtualPath)");
         q.bindValue(":PipelineName", PipelineName);
         q.bindValue(":Description", Description);
         q.bindValue(":Datetime", CreateDate);
@@ -149,7 +151,9 @@ bool squirrelPipeline::Store() {
         q.bindValue(":ClusterQueue", ClusterQueue);
         q.bindValue(":ClusterSubmitHost", ClusterSubmitHost);
         q.bindValue(":NumConcurrentAnalysis", NumberConcurrentAnalyses);
-        q.bindValue(":MaxWallTime", MaxWallTime);
+        q.bindValue(":ClusterMaxWallTime", ClusterMaxWallTime);
+        q.bindValue(":ClusterNumberCores", ClusterNumberCores);
+        q.bindValue(":ClusterMemory", ClusterMemory);
         q.bindValue(":SubmitDelay", SubmitDelay);
         q.bindValue(":VirtualPath", VirtualPath());
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -157,7 +161,7 @@ bool squirrelPipeline::Store() {
     }
     /* ... otherwise update */
     else {
-        q.prepare("update Pipeline set PipelineName = :PipelineName, Description = :Description, Datetime = :Datetime, Level = :Level, PrimaryScript = :PrimaryScript, SecondaryScript = :SecondaryScript, Version = :Version, CompleteFiles = :CompleteFiles, DataCopyMethod = :DataCopyMethod, DependencyDirectory = :DependencyDirectory, DependencyLevel = :DependencyLevel, DependencyLinkType = :DependencyLinkType, DirStructure = :DirStructure, Directory = :Directory, GroupName = :GroupName, GroupType = :GroupType, Notes = :Notes, ResultScript = :ResultScript, TempDir = :TempDir, FlagUseProfile = :FlagUseProfile, FlagUseTempDir = :FlagUseTempDir, ClusterType = :ClusterType, ClusterUser = :ClusterUser, ClusterQueue = :ClusterQueue, ClusterSubmitHost = :ClusterSubmitHost, NumConcurrentAnalysis = :NumConcurrentAnalysis, MaxWallTime = :MaxWallTime, SubmitDelay = :SubmitDelay, VirtualPath = :VirtualPath where PipelineRowID = :id");
+        q.prepare("update Pipeline set PipelineName = :PipelineName, Description = :Description, Datetime = :Datetime, Level = :Level, PrimaryScript = :PrimaryScript, SecondaryScript = :SecondaryScript, Version = :Version, CompleteFiles = :CompleteFiles, DataCopyMethod = :DataCopyMethod, DependencyDirectory = :DependencyDirectory, DependencyLevel = :DependencyLevel, DependencyLinkType = :DependencyLinkType, DirStructure = :DirStructure, Directory = :Directory, GroupName = :GroupName, GroupType = :GroupType, Notes = :Notes, ResultScript = :ResultScript, TempDir = :TempDir, FlagUseProfile = :FlagUseProfile, FlagUseTempDir = :FlagUseTempDir, ClusterType = :ClusterType, ClusterUser = :ClusterUser, ClusterQueue = :ClusterQueue, ClusterSubmitHost = :ClusterSubmitHost, NumConcurrentAnalysis = :NumConcurrentAnalysis, ClusterMaxWallTime = :ClusterMaxWallTime, ClusterNumberCores = :ClusterNumberCores, ClusterMemory = :ClusterMemory, SubmitDelay = :SubmitDelay, VirtualPath = :VirtualPath where PipelineRowID = :id");
         q.bindValue(":id", objectID);
         q.bindValue(":PipelineName", PipelineName);
         q.bindValue(":Description", Description);
@@ -185,7 +189,9 @@ bool squirrelPipeline::Store() {
         q.bindValue(":ClusterQueue", ClusterQueue);
         q.bindValue(":ClusterSubmitHost", ClusterSubmitHost);
         q.bindValue(":NumConcurrentAnalysis", NumberConcurrentAnalyses);
-        q.bindValue(":MaxWallTime", MaxWallTime);
+        q.bindValue(":ClusterMaxWallTime", ClusterMaxWallTime);
+        q.bindValue(":ClusterNumberCores", ClusterNumberCores);
+        q.bindValue(":ClusterMemory", ClusterMemory);
         q.bindValue(":SubmitDelay", SubmitDelay);
         q.bindValue(":VirtualPath", VirtualPath());
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -214,6 +220,9 @@ bool squirrelPipeline::Store() {
 QJsonObject squirrelPipeline::ToJSON(QString path) {
     QJsonObject json;
 
+    json["ClusterMaxWallTime"] = ClusterMaxWallTime;
+    json["ClusterMemory"] = ClusterMemory;
+    json["ClusterNumberCores"] = ClusterNumberCores;
     json["ClusterQueue"] = ClusterQueue;
     json["ClusterSubmitHost"] = ClusterSubmitHost;
     json["ClusterType"] = ClusterType;
@@ -230,17 +239,16 @@ QJsonObject squirrelPipeline::ToJSON(QString path) {
     json["Group"] = Group;
     json["GroupType"] = GroupType;
     json["Level"] = Level;
-    json["MaxWallTime"] = MaxWallTime;
     json["Notes"] = Notes;
     json["NumberConcurrentAnalyses"] = NumberConcurrentAnalyses;
     json["ParentPipelines"] = ParentPipelines.join(",");
     json["PipelineName"] = PipelineName;
-    json["Version"] = Version;
     json["ResultScript"] = ResultScript;
     json["SubmitDelay"] = SubmitDelay;
     json["TempDirectory"] = TempDirectory;
     json["UseProfile"] = flags.UseProfile;
     json["UseTempDirectory"] = flags.UseTempDirectory;
+    json["Version"] = Version;
     json["VirtualPath"] = VirtualPath();
 
     /* add the dataSteps */
@@ -320,7 +328,9 @@ void squirrelPipeline::PrintPipeline() {
     utils::Print(QString("\tGroup: %1").arg(Group));
     utils::Print(QString("\tGroupType: %1").arg(GroupType));
     utils::Print(QString("\tLevel: %1").arg(Level));
-    utils::Print(QString("\tMaxWallTime: %1").arg(MaxWallTime));
+    utils::Print(QString("\tClusterMaxWallTime: %1").arg(ClusterMaxWallTime));
+    utils::Print(QString("\tClusterMemory: %1").arg(ClusterMemory));
+    utils::Print(QString("\tClusterNumberCores: %1").arg(ClusterNumberCores));
     utils::Print(QString("\tNotes: %1").arg(Notes));
     utils::Print(QString("\tNumConcurrentAnalyses: %1").arg(NumberConcurrentAnalyses));
     utils::Print(QString("\tParentPipelines: %1").arg(ParentPipelines.join(",")));

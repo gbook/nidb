@@ -1874,7 +1874,7 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clusterty
 
     /* different submission parameters for slurm */
     if (clustertype == "slurm") {
-        jobfile += "#!/bin/sh -L\n";
+        jobfile += "#!/bin/sh -l\n";
         if (runsupplement)
             jobfile += "#SBATCH -J "+pipelinename+"-supplement\n";
         else
@@ -1883,7 +1883,7 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clusterty
         jobfile += "#SBATCH -o " + analysispath + "/pipeline/%x.e%j\n";
         jobfile += "#SBATCH -e " + analysispath + "/pipeline/%x.e%j\n";
         jobfile += QString("#SBATCH --ntasks 1 --cpus-per-task %1\n").arg(numcores);
-        jobfile += QString("#SBATCH --mem %1G\n").arg(memory);
+        //jobfile += QString("#SBATCH --mem %1G\n").arg(memory);
         //jobfile += "#$ --export=ALL\n"; /* not sure what this is */
         //jobfile += "#$ --uid=" + n->cfg["queueuser"] + "\n\n"; //this is done in the submit command line
         //jobfile += "#SBATCH -p " + queueName + "\n";

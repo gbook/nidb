@@ -57,21 +57,21 @@ public:
     void SetFilename(QString p) { zipPath = p; }
 
     /* package JSON elements */
-    QDateTime datetime;         /*!< datetime the package was created */
+    QDateTime Datetime;         /*!< datetime the package was created */
+    QString Changes;            /*!< any changes since last package release */
+    QString DataFormat;         /*!< orig, anon, anonfull, nift3d, nifti3dgz, nifti4d, nifti4dgz */
+    QString Description;        /*!< detailed description of the package */
+    QString License;            /*!< a data usage license */
     QString NiDBversion;        /*!< NiDB version that wrote this package */
-    QString changes;            /*!< any changes since last package release */
-    QString dataFormat;         /*!< orig, anon, anonfull, nift3d, nifti3dgz, nifti4d, nifti4dgz */
-    QString description;        /*!< detailed description of the package */
-    QString format;             /*!< 'squirrel' */
-    QString license;            /*!< a data usage license */
-    QString name;               /*!< name of the package */
-    QString notes;              /*!< JSON string of notes (may contain JSON sub-elements of 'import', 'merge', 'export') */
-    QString readme;             /*!< a README */
-    QString seriesDirFormat;    /*!< orig, seq */
-    QString squirrelBuild;      /*!< squirrel build */
-    QString squirrelVersion;    /*!< squirrel version */
-    QString studyDirFormat;     /*!< orig, seq */
-    QString subjectDirFormat;   /*!< orig, seq */
+    QString Notes;              /*!< JSON string of notes (may contain JSON sub-elements of 'import', 'merge', 'export') */
+    QString PackageFormat;      /*!< 'squirrel' */
+    QString PackageName;               /*!< name of the package */
+    QString Readme;             /*!< a README */
+    QString SeriesDirFormat;    /*!< orig, seq */
+    QString SquirrelBuild;      /*!< squirrel build */
+    QString SquirrelVersion;    /*!< squirrel version */
+    QString StudyDirFormat;     /*!< orig, seq */
+    QString SubjectDirFormat;   /*!< orig, seq */
 
     /* lib variables */
     //QString filePath;           /*!< full path to the zip file */

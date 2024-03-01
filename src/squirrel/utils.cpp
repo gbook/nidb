@@ -602,7 +602,7 @@ namespace utils {
 
         if (f.isOpen()) {
             QTextStream fs(&f);
-            fs << str;
+            fs << str.replace("\r\n", "\n");
             f.close();
             return true;
         }
@@ -627,6 +627,8 @@ namespace utils {
                 a.append(line + "\n");
             }
         }
+
+        a = a.replace("\r\n", "\n");
 
         return a;
     }

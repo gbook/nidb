@@ -109,8 +109,10 @@ public:
     QString TempDirectory;                 /*!< name of temp dir, if one is to be used */
     QStringList CompleteFiles;      /*!< list of files that must exists to indicate the analysis was complete */
     QStringList ParentPipelines;    /*!< list of pipelines on which this pipeline depends */
+    int ClusterMaxWallTime;                /*!< [NiDB] maximum allowed clock (wall) time the analysis is allowed to run (seconds) */
+    int ClusterMemory;                     /*!< [NiDB] memory requested */
+    int ClusterNumberCores;                /*!< [NiDB] number of cores requested */
     int Level;                  /*!< 1 (subject), or 2 (group) */
-    int MaxWallTime;                /*!< [NiDB] maximum allowed clock (wall) time the analysis is allowed to run (seconds) */
     int NumberConcurrentAnalyses;      /*!< [NiDB] max number of concurrent analyses allowed to run */
     int SubmitDelay;                /*!< [NiDB] time in hours after the study datetime to delay before running this analysis */
     int Version;                    /*!< pipeline version (required) */
