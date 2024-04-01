@@ -2398,7 +2398,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
 
     /* create squirrel object with default settings... */
     squirrel sqrl;
-    sqrl.SetFilename(zipfilepath);
+    sqrl.SetPackagePath(zipfilepath);
     sqrl.PackageName = name;
     sqrl.Description = desc;
     sqrl.NiDBversion = n->GetVersion();
@@ -2787,7 +2787,7 @@ bool archiveIO::WritePackage(qint64 exportid, QString zipfilepath, QString &msg)
         sqrl.SeriesDirFormat = q.value("package_seriesdirformat").toString();
         sqrl.StudyDirFormat = q.value("package_studydirformat").toString();
         sqrl.SubjectDirFormat = q.value("package_subjectdirformat").toString();
-        sqrl.SetFilename(zipfilepath);
+        sqrl.SetPackagePath(zipfilepath);
     }
     else {
         return 0;

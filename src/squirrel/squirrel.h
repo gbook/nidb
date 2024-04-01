@@ -23,6 +23,7 @@
 #ifndef SQUIRREL_H
 #define SQUIRREL_H
 
+#include <string>
 #include <QString>
 #include <QDate>
 #include <QDateTime>
@@ -39,6 +40,10 @@
 #include "squirrelDataDictionary.h"
 #include "squirrelVersion.h"
 
+enum FileMode { NewPackage, ExistingPackage };
+typedef QPair<QString, QString> QStringPair;
+typedef QList<QStringPair> pairList;
+
 /**
  * @brief The squirrel class
  *
@@ -50,11 +55,13 @@ public:
     squirrel(bool dbg=false, bool q=false);
     ~squirrel();
 
-    bool Read(bool readonly=true);
+    bool Read();
     bool Write(bool writeLog);
     bool Validate();
     void Print();
-    void SetFilename(QString p) { zipPath = p; }
+    void SetPackagePath(QString p) { packagePath = p; }
+    QString GetPackagePath();
+    void SetFileMode(FileMode m) { fileMode = m; } /*!< Set the file mode to either NewPackage or ExistingPackage */
 
     /* package JSON elements */
     QDateTime Datetime;         /*!< datetime the package was created */
@@ -65,7 +72,7 @@ public:
     QString NiDBversion;        /*!< NiDB version that wrote this package */
     QString Notes;              /*!< JSON string of notes (may contain JSON sub-elements of 'import', 'merge', 'export') */
     QString PackageFormat;      /*!< 'squirrel' */
-    QString PackageName;               /*!< name of the package */
+    QString PackageName;        /*!< name of the package */
     QString Readme;             /*!< a README */
     QString SeriesDirFormat;    /*!< orig, seq */
     QString SquirrelBuild;      /*!< squirrel build */
@@ -73,38 +80,52 @@ public:
     QString StudyDirFormat;     /*!< orig, seq */
     QString SubjectDirFormat;   /*!< orig, seq */
 
-    /* lib variables */
-    //QString filePath;           /*!< full path to the zip file */
-
-    /* new, SQLite based functions */
+    /* get list(s) of objects */
     QList<squirrelExperiment> GetAllExperiments();
     QList<squirrelPipeline> GetAllPipelines();
     QList<squirrelSubject> GetAllSubjects();
-    QList<squirrelStudy> GetStudies(int subjectRowID);
-    QList<squirrelSeries> GetSeries(int studyRowID);
-    QList<squirrelAnalysis> GetAnalyses(int studyRowID);
-    QList<squirrelMeasure> GetMeasures(int subjectRowID);
-    QList<squirrelDrug> GetDrugs(int subjectRowID);
+    QList<squirrelStudy> GetStudies(qint64 subjectRowID);
+    QList<squirrelSeries> GetSeries(qint64 studyRowID);
+    QList<squirrelAnalysis> GetAnalyses(qint64 studyRowID);
+    QList<squirrelMeasure> GetMeasures(qint64 subjectRowID);
+    QList<squirrelDrug> GetDrugs(qint64 subjectRowID);
     QList<squirrelGroupAnalysis> GetAllGroupAnalyses();
     QList<squirrelDataDictionary> GetAllDataDictionaries();
 
     /* get numbers of objects */
     qint64 GetFileCount();
-    int GetObjectCount(QString object);
+    qint64 GetObjectCount(QString object);
 
-    /* find objects */
-    int FindSubject(QString id);
-    int FindStudy(QString subjectID, int studyNum);
-    int FindStudyByUID(QString studyUID);
-    int FindSeries(QString subjectID, int studyNum, int seriesNum);
-    int FindSeriesByUID(QString seriesUID);
+    /* find objects, return rowID */
+    qint64 FindSubject(QString id);
+    qint64 FindStudy(QString subjectID, int studyNum);
+    qint64 FindStudyByUID(QString studyUID);
+    qint64 FindSeries(QString subjectID, int studyNum, int seriesNum);
+    qint64 FindSeriesByUID(QString seriesUID);
+    qint64 FindAnalysis(QString subjectID, int studyNum, QString analysisName);
+    qint64 FindExperiment(QString experimentName);
+    qint64 FindPipeline(QString pipelineName);
+    qint64 FindGroupAnalysis(QString groupAnalysisName);
+    qint64 FindDataDictionary(QString dataDictionaryName);
 
-    bool AddStagedFiles(QString objectType, int rowid, QStringList files, QString destDir="");
+    /* remove objects */
+    bool RemoveSubject(qint64 subjectRowID);
+    bool RemoveStudy(qint64 studyRowID);
+    bool RemoveSeries(qint64 seriesRowID);
+    bool RemoveMeasure(qint64 measureRowID);
+    bool RemoveDrug(qint64 drugRowID);
+    bool RemoveAnalysis(qint64 analysisRowID);
+    bool RemoveExperiment(qint64 experimentRowID);
+    bool RemovePipeline(qint64 pipelineRowID);
+    bool RemoveGroupAnalysis(qint64 groupAnalysisRowID);
+    bool RemoveDataDictionary(qint64 dataDictionaryRowID);
+
+    bool AddStagedFiles(QString objectType, qint64 rowid, QStringList files);
 
     /* requence the subject data */
     void ResequenceSubjects();
-    void ResequenceStudies(int subjectRowID);
-    void ResequenceSeries(int studyRowID);
+    void ResequenceStudies(qint64 subjectRowID);
+    void ResequenceSeries(qint64 studyRowID);
 
     /* package information */
     qint64 GetUnzipSize();
@@ -127,8 +148,8 @@ public:
     /* printing of information to console */
     void PrintPackage();
     void PrintSubjects(bool details=false);
-    void PrintStudies(int subjectRowID, bool details=false);
-    void PrintSeries(int studyRowID, bool details=false);
+    void PrintStudies(qint64 subjectRowID, bool details=false);
+    void PrintSeries(qint64 studyRowID, bool details=false);
     void PrintExperiments(bool details=false);
     void PrintPipelines(bool details=false);
     void PrintGroupAnalyses(bool details=false);
@@ -140,12 +161,19 @@ private:
     bool MakeTempDir(QString &dir);
     bool DatabaseConnect();
     bool InitializeDatabase();
+    bool ExtractFileFromArchive(QString archivePath, QString filePath, QString &fileContents);
+    bool CompressDirectoryToArchive(QString dir, QString archivePath, QString &m);
+    bool AddFilesToArchive(QStringList filePaths, QStringList compressedFilePaths, QString archivePath, QString &m);
+    bool RemoveDirectoryFromArchive(QString compressedDirPath, QString archivePath, QString &m);
+    bool UpdateMemoryFileToArchive(QString file, QString compressedFilePath, QString archivePath, QString &m);
 
     QString workingDir;
     QString logfile;
     QStringList msgs; /* squirrel messages to be passed back through the squirrel library */
     QString log;
-    QString zipPath;
+    QString packagePath;
+
+    FileMode fileMode;
 
     bool debug;
     bool isValid;

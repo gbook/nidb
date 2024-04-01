@@ -83,8 +83,9 @@ public:
     bool isValid() { return valid; }
     QString Error() { return err; }
     qint64 GetObjectID() { return objectID; }
-    void SetObjectID(int id) { objectID = id; }
+    void SetObjectID(qint64 id) { objectID = id; }
     QString VirtualPath();
+    QList<QPair<QString,QString>> GetStagedFileList();
 
     /* JSON elements */
     QDateTime CreateDate;           /*!< date the pipeline was created */
@@ -125,6 +126,8 @@ public:
 
     /* lib variables */
     QStringList stagedFiles; /*!< staged file list: list of files in their own original directories which will be copied in before the package is zipped up */
+
+    QStringList files; /* actual files in the package, with virtual paths */
 
 private:
     bool valid = false;

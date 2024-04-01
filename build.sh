@@ -50,6 +50,16 @@ else
 	echo -e "\ngdcm already built in $BUILDDIR/gdcm\n"
 fi
 
+# ----- build bit7z library -----
+echo -e "\n ----- Building bit7z -----\n"
+mkdir -p $BUILDDIR/bit7z
+cd $BUILDDIR/bit7z
+cmake -DBIT7Z_AUTO_FORMAT:BOOL=ON -DCMAKE_CXX_FLAGS:STRING=-fPIC -DCMAKE_C_FLAGS:STRING=-fPIC $SRCDIR/bit7z
+make -j 16
+echo -e "\nCopying bit7z library to $BUILDDIR\n"
+mkdir -pv $BUILDDIR/../bit7z/lib/x64
+cp -uv $SRCDIR/bit7z/lib/x64/* $BUILDDIR/../bit7z/lib/x64
+
 # ----- build smtp module -----
 if [ ! -d "$BUILDDIR/smtp" ]; then
 

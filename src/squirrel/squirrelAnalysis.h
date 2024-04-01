@@ -42,9 +42,10 @@ public:
     bool isValid() { return valid; }
     QString Error() { return err; }
     qint64 GetObjectID() { return objectID; }
-    void SetObjectID(int id) { objectID = id; }
+    void SetObjectID(qint64 id) { objectID = id; }
     void SetDirFormat(QString subject_DirFormat, QString study_DirFormat) {subjectDirFormat = subject_DirFormat; studyDirFormat = study_DirFormat; }
     QString VirtualPath();
+    QList<QPair<QString,QString>> GetStagedFileList();
 
     /* squirrel database variables */
     qint64 studyRowID;          /*!< database row id of the parent study */
@@ -55,6 +56,7 @@ public:
     QDateTime DateClusterStart; /*!< datetime the analysis started running on the cluster */
     QDateTime DateEnd;          /*!< datetime the analysis ended */
     QDateTime DateStart;        /*!< datetime the analysis was started, includes the setup time */
+    QString AnalysisName;       /*!< name of this analysis, usually same as the pipeline name */
     QString Hostname;           /*!< hostname on which the analysis was run */
     QString LastMessage;        /*!< if the analysis had a status message, the last would be stored here */
     QString PipelineName;       /*!< name of the pipeline */

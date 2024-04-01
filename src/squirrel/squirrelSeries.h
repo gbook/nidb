@@ -47,21 +47,22 @@ public:
     bool isValid() { return valid; }
     QString Error() { return err; }
     qint64 GetObjectID() { return objectID; }
-    void SetObjectID(int id) { objectID = id; }
+    void SetObjectID(qint64 id) { objectID = id; }
     void SetDirFormat(QString subject_DirFormat, QString study_DirFormat, QString series_DirFormat) {subjectDirFormat = subject_DirFormat; studyDirFormat = study_DirFormat; seriesDirFormat = series_DirFormat; }
     QString VirtualPath();
     void AnonymizeParams();
+    QList<QPair<QString,QString>> GetStagedFileList();
 
     qint64 studyRowID;
     qint64 experimentRowID = -1;
 
     /* JSON elements */
-    qint64 SeriesNumber = -1;             /*!< Series number. must be unique to the study */
+    qint64 SeriesNumber = -1;       /*!< Series number. must be unique to the study */
     QDateTime DateTime;             /*!< Series datetime */
     QString SeriesUID;              /*!< SeriesInstanceUID */
     QString Description;            /*!< Description of the series */
     QString Protocol;               /*!< Protocol (may differ from description) */
-    qint64 FileCount = 0;            /*!< Number of files associated with the series */
+    qint64 FileCount = 0;           /*!< Number of files associated with the series */
     qint64 Size = 0;                /*!< total size in bytes of the series */
     qint64 BehavioralFileCount = 0;         /*!< Number of files associated with the behavioral data */
     qint64 BehavioralSize = 0;             /*!< total size in bytes of the beh data */
@@ -71,6 +72,9 @@ public:
     /* lib variables */
     QStringList stagedFiles;        /*!< staged file list: list of raw files in their own directories before the package is zipped up */
     QStringList stagedBehFiles;     /*!< staged beh file list: list of raw files in their own directories before the package is zipped up */
+
+    QStringList files;              /* actual files in the package, not staged files */
+    QStringList behFiles;
 
 private:
     bool valid = false;

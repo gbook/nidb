@@ -7,6 +7,8 @@ CONFIG += c++17 console
 CONFIG -= app_bundle
 CONFIG += silent
 
+win32: LIBS += -loleaut32 -lole32
+
 TARGET = squirrel
 TEMPLATE = lib
 DEFINES += SQUIRREL_BUILD
@@ -70,11 +72,19 @@ HEADERS += \
 	squirrelStudy.h \
 	squirrelSubject.h
 
+# bit7z library (provides LZMA)
+LZMABIN = ../../bit7z/lib/x64
+LZMAINCLUDE = ../../bit7z/include/bit7z
+*msvc*:CONFIG(release, debug|release): LIBS += -L$$LZMABIN/Release
+else:*msvc*:CONFIG(debug, debug|release): LIBS += -L$$LZMABIN/Debug
+linux: LIBS += -L$$LZMABIN -lbit7z64 -ldl
+INCLUDEPATH += $$LZMAINCLUDE
+HEADERS += $$LZMAINCLUDE/bit7z.hpp
+win32:LIBS += -lbit7z
 
 # gdcm library
 GDCMBIN = ../../bin/gdcm
 GDCMSRC = ../gdcm/Source
-
 *msvc*:CONFIG(release, debug|release): LIBS += -L$$GDCMBIN/bin/Release/
 else:*msvc*:CONFIG(debug, debug|release): LIBS += -L$$GDCMBIN/bin/Debug/
 linux: LIBS += -L$$GDCMBIN/bin

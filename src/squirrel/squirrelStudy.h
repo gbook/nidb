@@ -47,9 +47,10 @@ public:
     bool isValid() { return valid; }
     QString Error() { return err; }
     qint64 GetObjectID() { return objectID; }
-    void SetObjectID(int id) { objectID = id; }
+    void SetObjectID(qint64 id) { objectID = id; }
     void SetDirFormat(QString subject_DirFormat, QString study_DirFormat) {subjectDirFormat = subject_DirFormat; studyDirFormat = study_DirFormat; }
     QString VirtualPath();
+    QList<QPair<QString,QString>> GetStagedFileList();
 
     qint64 subjectRowID;
 

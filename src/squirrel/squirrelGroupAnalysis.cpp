@@ -171,3 +171,23 @@ QString squirrelGroupAnalysis::VirtualPath() {
 
     return vPath;
 }
+
+
+/* ------------------------------------------------------------ */
+/* ----- GetStagedFileList ------------------------------------ */
+/* ------------------------------------------------------------ */
+QList<QPair<QString,QString>> squirrelGroupAnalysis::GetStagedFileList() {
+
+    QList<QPair<QString,QString>> stagedList;
+    QString virtualPath = VirtualPath();
+
+    QString path;
+    foreach (path, stagedFiles) {
+        QPair<QString, QString> pair;
+        pair.first = path;
+        pair.second = virtualPath;
+        stagedList.append(pair);
+    }
+
+    return stagedList;
+}

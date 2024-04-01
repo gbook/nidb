@@ -268,7 +268,7 @@ QJsonObject squirrelStudy::ToJSON() {
     QJsonArray JSONseries;
     while (q.next()) {
         squirrelSeries s;
-        s.SetObjectID(q.value("SeriesRowID").toInt());
+        s.SetObjectID(q.value("SeriesRowID").toLongLong());
         if (s.Get()) {
             JSONseries.append(s.ToJSON());
         }
@@ -284,10 +284,10 @@ QJsonObject squirrelStudy::ToJSON() {
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     QJsonArray JSONanalysis;
     while (q.next()) {
-        squirrelSeries s;
-        s.SetObjectID(q.value("AnalysisRowID").toInt());
-        if (s.Get()) {
-            JSONanalysis.append(s.ToJSON());
+        squirrelAnalysis a;
+        a.SetObjectID(q.value("AnalysisRowID").toLongLong());
+        if (a.Get()) {
+            JSONanalysis.append(a.ToJSON());
         }
     }
     if (JSONanalysis.size() > 0) {
@@ -329,4 +329,40 @@ QString squirrelStudy::VirtualPath() {
     vPath = QString("data/%1/%2").arg(subjectDir).arg(studyDir);
 
     return vPath;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- GetStagedFileList ------------------------------------ */
+/* ------------------------------------------------------------ */
+QList<QPair<QString,QString>> squirrelStudy::GetStagedFileList() {
+
+    QList<QPair<QString,QString>> stagedList;
+
+    /* add all the series staged files */
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
+    q.prepare("select SeriesRowID from Series where StudyRowID = :id");
+    q.bindValue(":id", objectID);
+    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    while (q.next()) {
+        squirrelSeries s;
+        s.SetObjectID(q.value("SeriesRowID").toLongLong());
+        if (s.Get()) {
+            stagedList += s.GetStagedFileList();
+        }
+    }
+
+    /* add all the analysis staged files */
+    q.prepare("select AnalysisRowID from Analysis where StudyRowID = :id");
+    q.bindValue(":id", objectID);
+    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    while (q.next()) {
+        squirrelAnalysis a;
+        a.SetObjectID(q.value("AnalysisRowID").toLongLong());
+        if (a.Get()) {
+            stagedList += a.GetStagedFileList();
+        }
+    }
+
+    return stagedList;
 }

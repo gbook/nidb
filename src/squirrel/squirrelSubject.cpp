@@ -242,7 +242,7 @@ QJsonObject squirrelSubject::ToJSON() {
     QJsonArray JSONstudies;
     while (q.next()) {
         squirrelStudy s;
-        s.SetObjectID(q.value("StudyRowID").toInt());
+        s.SetObjectID(q.value("StudyRowID").toLongLong());
         if (s.Get()) {
             JSONstudies.append(s.ToJSON());
         }
@@ -259,7 +259,7 @@ QJsonObject squirrelSubject::ToJSON() {
     QJsonArray JSONmeasures;
     while (q.next()) {
         squirrelMeasure m;
-        m.SetObjectID(q.value("MeasureRowID").toInt());
+        m.SetObjectID(q.value("MeasureRowID").toLongLong());
         if (m.Get()) {
             JSONmeasures.append(m.ToJSON());
         }
@@ -276,7 +276,7 @@ QJsonObject squirrelSubject::ToJSON() {
     QJsonArray JSONdrugs;
     while (q.next()) {
         squirrelDrug d;
-        d.SetObjectID(q.value("DrugRowID").toInt());
+        d.SetObjectID(q.value("DrugRowID").toLongLong());
         if (d.Get()) {
             JSONdrugs.append(d.ToJSON());
         }
@@ -307,4 +307,28 @@ QString squirrelSubject::VirtualPath() {
     vPath = QString("data/%1").arg(subjectDir);
 
     return vPath;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- GetStagedFileList ------------------------------------ */
+/* ------------------------------------------------------------ */
+QList<QPair<QString,QString>> squirrelSubject::GetStagedFileList() {
+
+    QList<QPair<QString,QString>> stagedList;
+
+    /* add all studies staged files */
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
+    q.prepare("select StudyRowID from Study where SubjectRowID = :id");
+    q.bindValue(":id", objectID);
+    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    while (q.next()) {
+        squirrelStudy s;
+        s.SetObjectID(q.value("StudyRowID").toLongLong());
+        if (s.Get()) {
+            stagedList += s.GetStagedFileList();
+        }
+    }
+
+    return stagedList;
 }

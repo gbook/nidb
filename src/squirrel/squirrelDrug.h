@@ -44,7 +44,7 @@ public:
     bool isValid() { return valid; }
     QString Error() { return err; }
     qint64 GetObjectID() { return objectID; }
-    void SetObjectID(int id) { objectID = id; }
+    void SetObjectID(qint64 id) { objectID = id; }
 
     /* squirrel database variables */
     qint64 subjectRowID;        /*!< database row ID of the parent object */

@@ -62,9 +62,9 @@ bool squirrelPipeline::Get() {
         /* get the data */
         objectID = q.value("PipelineRowID").toLongLong();
         //parentPipelines = q.value("CompleteFiles").toString();
-        ClusterMaxWallTime = q.value("MaxWallTime").toInt();
-        ClusterMemory = q.value("Memory").toInt();
-        ClusterNumberCores = q.value("NumberCores").toInt();
+        ClusterMaxWallTime = q.value("ClusterMaxWallTime").toInt();
+        ClusterMemory = q.value("ClusterMemory").toInt();
+        ClusterNumberCores = q.value("ClusterNumberCores").toInt();
         ClusterQueue = q.value("ClusterQueue").toString();
         ClusterSubmitHost = q.value("ClusterSubmitHost").toString();
         ClusterType = q.value("ClusterType").toString();
@@ -77,7 +77,7 @@ bool squirrelPipeline::Get() {
         DependencyLinkType = q.value("DependencyLinkType").toString();
         Description = q.value("Description").toString();
         Directory = q.value("Directory").toString();
-        DirectoryStructure = q.value("DirStructure").toString();
+        DirectoryStructure = q.value("DirectoryStructure").toString();
         Group = q.value("GroupName").toString();
         GroupType = q.value("GroupType").toString();
         Level = q.value("Level").toInt();
@@ -88,10 +88,10 @@ bool squirrelPipeline::Get() {
         ResultScript = q.value("ResultScript").toString();
         SecondaryScript = q.value("SecondaryScript").toString();
         SubmitDelay = q.value("SubmitDelay").toInt();
-        TempDirectory = q.value("TempDir").toString();
+        TempDirectory = q.value("TempDirectory").toString();
         Version = q.value("Version").toInt();
         flags.UseProfile = q.value("FlagUseProfile").toBool();
-        flags.UseTempDirectory = q.value("FlagUseTempDir").toBool();
+        flags.UseTempDirectory = q.value("FlagUseTempDirectory").toBool();
 
         /* get any staged files */
         stagedFiles = utils::GetStagedFileList(objectID, "pipeline");
@@ -124,7 +124,7 @@ bool squirrelPipeline::Store() {
 
     /* insert if the object doesn't exist ... */
     if (objectID < 0) {
-        q.prepare("insert into Pipeline (PipelineName, Description, Datetime, Level, PrimaryScript, SecondaryScript, Version, CompleteFiles, DataCopyMethod, DependencyDirectory, DependencyLevel, DependencyLinkType, DirStructure, Directory, GroupName, GroupType, Notes, ResultScript, TempDir, FlagUseProfile, FlagUseTempDir, ClusterType, ClusterUser, ClusterQueue, ClusterSubmitHost, NumConcurrentAnalysis, MaxWallTime, SubmitDelay, VirtualPath) values (:PipelineName, :Description, :Datetime, :Level, :PrimaryScript, :SecondaryScript, :Version, :CompleteFiles, :DataCopyMethod, :DependencyDirectory, :DependencyLevel, :DependencyLinkType, :DirStructure, :Directory, :GroupName, :GroupType, :Notes, :ResultScript, :TempDir, :FlagUseProfile, :FlagUseTempDir, :ClusterType, :ClusterUser, :ClusterQueue, :ClusterSubmitHost, :NumConcurrentAnalysis, :ClusterMaxWallTime, :ClusterNumberCores, :ClusterMemory, :SubmitDelay, :VirtualPath)");
+        q.prepare("insert into Pipeline (PipelineName, Description, Datetime, Level, PrimaryScript, SecondaryScript, Version, CompleteFiles, DataCopyMethod, DependencyDirectory, DependencyLevel, DependencyLinkType, DirectoryStructure, Directory, GroupName, GroupType, Notes, ResultScript, TempDirectory, FlagUseProfile, FlagUseTempDirectory, ClusterType, ClusterUser, ClusterQueue, ClusterSubmitHost, NumConcurrentAnalysis, ClusterMaxWallTime, ClusterNumberCores, ClusterMemory, SubmitDelay, VirtualPath) values (:PipelineName, :Description, :Datetime, :Level, :PrimaryScript, :SecondaryScript, :Version, :CompleteFiles, :DataCopyMethod, :DependencyDirectory, :DependencyLevel, :DependencyLinkType, :DirectoryStructure, :Directory, :GroupName, :GroupType, :Notes, :ResultScript, :TempDirectory, :FlagUseProfile, :FlagUseTempDirectory, :ClusterType, :ClusterUser, :ClusterQueue, :ClusterSubmitHost, :NumConcurrentAnalysis, :ClusterMaxWallTime, :ClusterNumberCores, :ClusterMemory, :SubmitDelay, :VirtualPath)");
         q.bindValue(":PipelineName", PipelineName);
         q.bindValue(":Description", Description);
         q.bindValue(":Datetime", CreateDate);
@@ -137,15 +137,15 @@ bool squirrelPipeline::Store() {
         q.bindValue(":DependencyDirectory", DependencyDirectory);
         q.bindValue(":DependencyLevel", DependencyLevel);
         q.bindValue(":DependencyLinkType", DependencyLinkType);
-        q.bindValue(":DirStructure", DirectoryStructure);
+        q.bindValue(":DirectoryStructure", DirectoryStructure);
         q.bindValue(":Directory", Directory);
         q.bindValue(":GroupName", Group);
         q.bindValue(":GroupType", GroupType);
         q.bindValue(":Notes", Notes);
         q.bindValue(":ResultScript", ResultScript);
-        q.bindValue(":TempDir", TempDirectory);
+        q.bindValue(":TempDirectory", TempDirectory);
         q.bindValue(":FlagUseProfile", flags.UseProfile);
-        q.bindValue(":FlagUseTempDir", flags.UseTempDirectory);
+        q.bindValue(":FlagUseTempDirectory", flags.UseTempDirectory);
         q.bindValue(":ClusterType", ClusterType);
         q.bindValue(":ClusterUser", ClusterUser);
         q.bindValue(":ClusterQueue", ClusterQueue);
@@ -161,7 +161,7 @@ bool squirrelPipeline::Store() {
     }
     /* ... otherwise update */
     else {
-        q.prepare("update Pipeline set PipelineName = :PipelineName, Description = :Description, Datetime = :Datetime, Level = :Level, PrimaryScript = :PrimaryScript, SecondaryScript = :SecondaryScript, Version = :Version, CompleteFiles = :CompleteFiles, DataCopyMethod = :DataCopyMethod, DependencyDirectory = :DependencyDirectory, DependencyLevel = :DependencyLevel, DependencyLinkType = :DependencyLinkType, DirStructure = :DirStructure, Directory = :Directory, GroupName = :GroupName, GroupType = :GroupType, Notes = :Notes, ResultScript = :ResultScript, TempDir = :TempDir, FlagUseProfile = :FlagUseProfile, FlagUseTempDir = :FlagUseTempDir, ClusterType = :ClusterType, ClusterUser = :ClusterUser, ClusterQueue = :ClusterQueue, ClusterSubmitHost = :ClusterSubmitHost, NumConcurrentAnalysis = :NumConcurrentAnalysis, ClusterMaxWallTime = :ClusterMaxWallTime, ClusterNumberCores = :ClusterNumberCores, ClusterMemory = :ClusterMemory, SubmitDelay = :SubmitDelay, VirtualPath = :VirtualPath where PipelineRowID = :id");
+        q.prepare("update Pipeline set PipelineName = :PipelineName, Description = :Description, Datetime = :Datetime, Level = :Level, PrimaryScript = :PrimaryScript, SecondaryScript = :SecondaryScript, Version = :Version, CompleteFiles = :CompleteFiles, DataCopyMethod = :DataCopyMethod, DependencyDirectory = :DependencyDirectory, DependencyLevel = :DependencyLevel, DependencyLinkType = :DependencyLinkType, DirectoryStructure = :DirectoryStructure, Directory = :Directory, GroupName = :GroupName, GroupType = :GroupType, Notes = :Notes, ResultScript = :ResultScript, TempDirectory = :TempDirectory, FlagUseProfile = :FlagUseProfile, FlagUseTempDirectory = :FlagUseTempDirectory, ClusterType = :ClusterType, ClusterUser = :ClusterUser, ClusterQueue = :ClusterQueue, ClusterSubmitHost = :ClusterSubmitHost, NumConcurrentAnalysis = :NumConcurrentAnalysis, ClusterMaxWallTime = :ClusterMaxWallTime, ClusterNumberCores = :ClusterNumberCores, ClusterMemory = :ClusterMemory, SubmitDelay = :SubmitDelay, VirtualPath = :VirtualPath where PipelineRowID = :id");
         q.bindValue(":id", objectID);
         q.bindValue(":PipelineName", PipelineName);
         q.bindValue(":Description", Description);
@@ -181,9 +181,9 @@ bool squirrelPipeline::Store() {
         q.bindValue(":GroupType", GroupType);
         q.bindValue(":Notes", Notes);
         q.bindValue(":ResultScript", ResultScript);
-        q.bindValue(":TempDir", TempDirectory);
+        q.bindValue(":TempDirectory", TempDirectory);
         q.bindValue(":FlagUseProfile", flags.UseProfile);
-        q.bindValue(":FlagUseTempDir", flags.UseTempDirectory);
+        q.bindValue(":FlagUseTempDirectory", flags.UseTempDirectory);
         q.bindValue(":ClusterType", ClusterType);
         q.bindValue(":ClusterUser", ClusterUser);
         q.bindValue(":ClusterQueue", ClusterQueue);
@@ -312,6 +312,9 @@ void squirrelPipeline::PrintPipeline() {
 
     utils::Print("\t----- PIPELINE -----");
 
+    utils::Print(QString("\tClusterMaxWallTime: %1").arg(ClusterMaxWallTime));
+    utils::Print(QString("\tClusterMemory: %1").arg(ClusterMemory));
+    utils::Print(QString("\tClusterNumberCores: %1").arg(ClusterNumberCores));
     utils::Print(QString("\tClusterQueue: %1").arg(ClusterQueue));
     utils::Print(QString("\tClusterSubmitHost: %1").arg(ClusterSubmitHost));
     utils::Print(QString("\tClusterType: %1").arg(ClusterType));
@@ -323,14 +326,11 @@ void squirrelPipeline::PrintPipeline() {
     utils::Print(QString("\tDepLevel: %1").arg(DependencyLevel));
     utils::Print(QString("\tDepLinkType: %1").arg(DependencyLinkType));
     utils::Print(QString("\tDescription: %1").arg(Description));
-    utils::Print(QString("\tDirStructure: %1").arg(DirectoryStructure));
     utils::Print(QString("\tDirectory: %1").arg(Directory));
+    utils::Print(QString("\tDirectoryStructure: %1").arg(DirectoryStructure));
     utils::Print(QString("\tGroup: %1").arg(Group));
     utils::Print(QString("\tGroupType: %1").arg(GroupType));
     utils::Print(QString("\tLevel: %1").arg(Level));
-    utils::Print(QString("\tClusterMaxWallTime: %1").arg(ClusterMaxWallTime));
-    utils::Print(QString("\tClusterMemory: %1").arg(ClusterMemory));
-    utils::Print(QString("\tClusterNumberCores: %1").arg(ClusterNumberCores));
     utils::Print(QString("\tNotes: %1").arg(Notes));
     utils::Print(QString("\tNumConcurrentAnalyses: %1").arg(NumberConcurrentAnalyses));
     utils::Print(QString("\tParentPipelines: %1").arg(ParentPipelines.join(",")));
@@ -338,9 +338,9 @@ void squirrelPipeline::PrintPipeline() {
     utils::Print(QString("\tPipelineRowID: %1").arg(objectID));
     utils::Print(QString("\tResultScript: %1").arg(ResultScript));
     utils::Print(QString("\tSubmitDelay: %1").arg(SubmitDelay));
-    utils::Print(QString("\tTempDir: %1").arg(TempDirectory));
+    utils::Print(QString("\tTempDirectory: %1").arg(TempDirectory));
     utils::Print(QString("\tUseProfile: %1").arg(flags.UseProfile));
-    utils::Print(QString("\tUseTempDir: %1").arg(flags.UseTempDirectory));
+    utils::Print(QString("\tUseTempDirectory: %1").arg(flags.UseTempDirectory));
     utils::Print(QString("\tVersion: %1").arg(Version));
     utils::Print(QString("\tVirtualPath: %1").arg(VirtualPath()));
 
@@ -354,4 +354,24 @@ QString squirrelPipeline::VirtualPath() {
     QString vPath = QString("pipeline/%1").arg(PipelineName);
 
     return vPath;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- GetStagedFileList ------------------------------------ */
+/* ------------------------------------------------------------ */
+QList<QPair<QString,QString>> squirrelPipeline::GetStagedFileList() {
+
+    QList<QPair<QString,QString>> stagedList;
+    QString virtualPath = VirtualPath();
+
+    QString path;
+    foreach (path, stagedFiles) {
+        QPair<QString, QString> pair;
+        pair.first = path;
+        pair.second = virtualPath;
+        stagedList.append(pair);
+    }
+
+    return stagedList;
 }

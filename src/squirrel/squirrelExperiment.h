@@ -41,8 +41,9 @@ public:
     bool isValid() { return valid; }
     QString Error() { return err; }
     qint64 GetObjectID() { return objectID; }
-    void SetObjectID(int id) { objectID = id; }
+    void SetObjectID(qint64 id) { objectID = id; }
     QString VirtualPath();
+    QList<QPair<QString,QString>> GetStagedFileList();
 
     /* JSON elements */
     QString ExperimentName;     /*!< experiment name (required) */
