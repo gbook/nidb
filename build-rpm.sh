@@ -35,10 +35,17 @@ mkdir -p $BUILDDIR
 # ----- build pre-requisites -----
 
 mkdir -p $BUILDDIR/gdcm
-mkdir -p $BUILDDIR/gdcm
 cd $BUILDDIR/gdcm
 $CMAKEBIN -DGDCM_BUILD_APPLICATIONS:STRING=NO -DGDCM_BUILD_DOCBOOK_MANPAGES:BOOL=OFF -DGDCM_BUILD_SHARED_LIBS:STRING=YES -DGDCM_BUILD_TESTING:STRING=NO -DGDCM_BUILD_EXAMPLES:STRING=NO $SRCDIR/gdcm
 make -j 16
+
+# ----- build bit7z library -----
+mkdir -p $BUILDDIR/bit7z
+cd $BUILDDIR/bit7z
+cmake -DBIT7Z_AUTO_FORMAT:BOOL=ON -DCMAKE_CXX_FLAGS:STRING=-fPIC -DCMAKE_C_FLAGS:STRING=-fPIC $SRCDIR/bit7z
+make -j 16
+mkdir -pv $BUILDDIR/../bit7z/lib/x64
+cp -uv $SRCDIR/bit7z/lib/x64/* $BUILDDIR/../bit7z/lib/x64
 
 # ----- build smtp module -----
 echo $QMAKEBIN -o $BUILDDIR/smtp/Makefile $SRCDIR/smtp/SMTPEmail.pro -spec linux-g++
