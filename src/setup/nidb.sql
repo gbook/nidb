@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Feb 15, 2024 at 07:07 PM
+-- Generation Time: Apr 03, 2024 at 05:21 PM
 -- Server version: 10.3.28-MariaDB
 -- PHP Version: 7.2.24
 
@@ -1083,10 +1083,7 @@ CREATE TABLE `exports` (
   `export_id` int(11) NOT NULL,
   `username` varchar(50) DEFAULT NULL,
   `ip` varchar(30) DEFAULT NULL,
-  `download_imaging` tinyint(1) DEFAULT NULL,
-  `download_beh` tinyint(1) DEFAULT NULL,
-  `download_qc` tinyint(1) DEFAULT NULL,
-  `download_flags` set('DOWNLOAD_IMAGING','DOWNLOAD_BEH','DOWNLOAD_QC','DOWNLOAD_EXPERIMENTS','DOWNLOAD_ANALYSIS','DOWNLOAD_PIPELINES','DOWNLOAD_VARIABLES','DOWNLOAD_MINIPIPELINES') DEFAULT NULL,
+  `download_flags` set('DOWNLOAD_IMAGING','DOWNLOAD_BEH','DOWNLOAD_QC','DOWNLOAD_EXPERIMENTS','DOWNLOAD_ANALYSIS','DOWNLOAD_PIPELINES','DOWNLOAD_VARIABLES','DOWNLOAD_MINIPIPELINES','DOWNLOAD_PACKAGE') DEFAULT NULL,
   `destinationtype` varchar(20) DEFAULT NULL COMMENT 'nfs, localftp, remoteftp',
   `filetype` varchar(20) DEFAULT NULL,
   `do_gzip` tinyint(1) DEFAULT NULL,
@@ -1096,7 +1093,7 @@ CREATE TABLE `exports` (
   `beh_format` varchar(35) DEFAULT NULL,
   `beh_dirrootname` varchar(50) DEFAULT NULL,
   `beh_dirseriesname` varchar(250) DEFAULT NULL,
-  `nfsdir` varchar(250) DEFAULT NULL,
+  `nfsdir` text DEFAULT NULL,
   `remoteftp_username` varchar(50) DEFAULT NULL,
   `remoteftp_password` varchar(50) DEFAULT NULL,
   `remoteftp_server` varchar(100) DEFAULT NULL,
@@ -1139,6 +1136,7 @@ CREATE TABLE `exportseries` (
   `export_id` int(11) NOT NULL,
   `series_id` int(11) DEFAULT NULL,
   `pipeline_id` int(11) DEFAULT NULL COMMENT 'for squirrel exports',
+  `package_id` int(11) DEFAULT NULL,
   `modality` varchar(25) DEFAULT NULL,
   `startdate` datetime DEFAULT NULL,
   `enddate` datetime DEFAULT NULL,
@@ -2193,6 +2191,8 @@ CREATE TABLE `pipelines` (
   `pipeline_submithost` varchar(255) DEFAULT NULL,
   `pipeline_clustertype` enum('','sge','slurm') DEFAULT NULL,
   `pipeline_clusteruser` varchar(255) DEFAULT NULL,
+  `pipeline_numcores` int(11) DEFAULT 1,
+  `pipeline_memory` double DEFAULT NULL,
   `pipeline_maxwalltime` bigint(20) DEFAULT NULL COMMENT 'maximum wall execution time in minutes',
   `pipeline_submitdelay` int(11) DEFAULT NULL COMMENT 'delay after studydatetime in hours',
   `pipeline_datacopymethod` varchar(50) DEFAULT NULL,
