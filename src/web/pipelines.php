@@ -1496,6 +1496,8 @@
 				var xhttp = new XMLHttpRequest();
 				xhttp.onreadystatechange = function() {
 					if (this.readyState == 4 && this.status == 200) {
+						var clustertype = document.getElementById("pipelineclustertype").value;
+						console.log(this.responseText);
 						var retCode = this.responseText.charAt(0);
 						if (retCode == "1") {
 							document.getElementById("hostup").innerHTML = "<div class='ui left pointing basic label'><i class='ui green check circle icon'></i> Valid submit host</div>";
@@ -1503,13 +1505,14 @@
 						}
 						else {
 							errMsg = this.responseText;
-							document.getElementById("hostup").innerHTML = "<div class='ui left pointing red label'><i class='ui exclamation circle icon'></i> Submit host is not accessible [" + errMsg + "]</div>";
+							document.getElementById("hostup").innerHTML = "<div class='ui left pointing red label'><i class='ui exclamation circle icon'></i> Invalid " + clustertype + " submit host [" + errMsg + "]</div>";
 							//document.getElementById("pipelinesubmithostinput").classList.add('error');
 						}
 					}
 				};
 				var hostname = document.getElementById("pipelinesubmithost").value;
-				xhttp.open("GET", "ajaxapi.php?action=checksgehost&hostname=" + hostname, true);
+				var clustertype = document.getElementById("pipelineclustertype").value;
+				xhttp.open("GET", "ajaxapi.php?action=checksgehost&hostname=" + hostname + "&clustertype=" + clustertype, true);
 				xhttp.send();
 			}
 		</script>
@@ -1744,7 +1747,7 @@
 					<td class="label" valign="top" align="right">Cluster type</td>
 					<td valign="top">
 						<div class="ui selection dropdown">
-							<input type="hidden" name="pipelineclustertype" <?=$disabled?> value="<?=$clustertype?>">
+							<input type="hidden" name="pipelineclustertype" id="pipelineclustertype" <?=$disabled?> value="<?=$clustertype?>" onChange="CheckHostnameStatus()">
 							<i class="dropdown icon"></i>
 							<div class="default text">Cluster...</div>
 							<div class="scrollhint menu">

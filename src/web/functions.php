@@ -1000,7 +1000,7 @@
 	function ResetQA($seriesids) {
 		
 		if (is_array($seriesids)) {
-			$seriesids = mysqli_real_escape_array($seriesids);
+			$seriesids = mysqli_real_escape_array($GLOBALS['linki'], $seriesids);
 		}
 		else {
 			$seriesids = array(mysqli_real_escape_string($GLOBALS['linki'], $seriesids));

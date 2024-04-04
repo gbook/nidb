@@ -39,6 +39,7 @@
 	$uid = GetVariable("uid");
 	$hostname = GetVariable("hostname");
 	$username = GetVariable("username");
+	$clustertype = GetVariable("clustertype");
 
 	$subjectid = GetVariable("subjectid");
 	$studyid = GetVariable("studyid");
@@ -86,7 +87,7 @@
 			CheckHostStatus($hostname);
 			break;
 		case 'checksgehost':
-			CheckSGESubmitStatus($hostname);
+			CheckSGESubmitStatus($hostname, $clustertype);
 			break;
 		case 'updatesubjectdetails':
 			UpdateSubjectDetails($subjectid, $column, $value);
@@ -147,20 +148,37 @@
 	/* -------------------------------------------- */
 	/* ------- CheckSGESubmitStatus --------------- */
 	/* -------------------------------------------- */
-	function CheckSGESubmitStatus($hostname) {
+	function CheckSGESubmitStatus($hostname, $clustertype) {
 		
 		$hostname = trim($hostname);
 		$hostname = preg_replace("/[^A-Za-z0-9 ]/", '', $hostname);
+		$clustertype = trim($clustertype);
+		$clustertype = preg_replace("/[^A-Za-z0-9 ]/", '', $clustertype);
 
-		exec("ssh '$hostname' which qsub", $output, $result);
+		if ($clustertype == "slurm") {
+			exec("ssh '$hostname' which sbatch", $output, $result);
+			$clustercommand = "sbatch";
+		}
+		else {
+			exec("ssh '$hostname' which qsub", $output, $result);
+			$clustercommand = "qsub";
+		}
 		
 		if ($result == 0) {
+			/* success */
 			echo "1";
 			print_r($output);
 		}
 		else {
+			/* error */
 			echo "0";
-			print_r($output);
+
+			exec("ping -c 1 '$hostname'", $output, $result);
+			
+			if ($result != 0)
+				echo "Host [$hostname] is not reachable";
+			else
+				echo "Cannot ssh, or cannot find $clustercommand";
 		}
 	}
 

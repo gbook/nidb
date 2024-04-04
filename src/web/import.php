@@ -125,6 +125,11 @@
 	
 		?>
 		<div class="ui container">
+		
+			<div class="ui spaced buttons">
+				<a href="requeststatus.php" class="ui large green button"><i class="cloud download alternate icon"></i> Data Exports & Downloads</a>
+				<a href="search.php" class="ui large green button"><i class="search icon"></i> Search for Data</a>
+			</div>
 
 			<h2 class="ui header">
 				<i class="grey file import icon"></i>
@@ -133,7 +138,7 @@
 				</div>
 			</h2>
 			
-			<div class="ui cards">
+			<div class="ui four cards">
 				<div class="ui card">
 					<div class="content">
 						<div class="header">ID Mapping</div>
@@ -191,10 +196,10 @@
 				</div>
 			</h2>
 			
-			<div class="ui cards">
+			<div class="ui four cards">
 				<div class="ui card">
 					<div class="content">
-						<div class="header">Squirrel Packages</div>
+						<div class="header"><img src="images/squirrel-icon-64.png" height="50%"></img> Squirrel Packages</div>
 					</div>
 					<div class="content">
 						Share data packages containing any data elements stored in NiDB. Exported in <a href="https://github.com/gbook/squirrel">squirrel</a> format.<br><br>
