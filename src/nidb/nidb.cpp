@@ -729,11 +729,12 @@ bool nidb::isValidNiDBModality(QString m) {
 /* ---------------------------------------------------------- */
 /* --------- SubmitClusterJob ------------------------------- */
 /* ---------------------------------------------------------- */
-bool nidb::SubmitClusterJob(QString f, QString submithost, QString qsub, QString user, QString queue, QString &msg, int &jobid, QString &result) {
+//bool nidb::SubmitClusterJob(QString f, QString submithost, QString qsub, QString user, QString queue, QString &msg, int &jobid, QString &result) {
+bool nidb::SubmitClusterJob(QString jobFilePath, QString clusterType, QString submitHost, QString submitUser, QString qsub, QString clusterUser, QString clusterQueue, QString &msg, int &jobid, QString &result) {
 
     /* submit the job to the cluster. Command will be in the format:
      * ssh <submithost> qsub -u <username> -q <queuelist> "/full/path/to/sge.job" */
-    QString systemstring = QString("ssh %1 %2 -u %3 -q %4 \"%5\"").arg(submithost).arg(qsub).arg(user).arg(queue).arg(f);
+    QString systemstring = QString("ssh %1 %2 -u %3 -q %4 \"%5\"").arg(submitHost).arg(qsub).arg(clusterUser).arg(clusterQueue).arg(jobFilePath);
     result = SystemCommand(systemstring,true).trimmed();
 
     /* get the jobid */
@@ -756,15 +757,15 @@ bool nidb::SubmitClusterJob(QString f, QString submithost, QString qsub, QString
         return false;
     }
     else if (result.contains("cannot connect to server", Qt::CaseInsensitive)) {
-        msg = "Invalid qsub hostname (" + submithost + ")";
+        msg = "Invalid qsub hostname (" + submitHost + ")";
         return false;
     }
     else if (result.contains("unknown queue", Qt::CaseInsensitive)) {
-        msg = "Invalid queue (" + queue + ")";
+        msg = "Invalid queue (" + clusterQueue + ")";
         return false;
     }
     else if (result.contains("queue is not enabled", Qt::CaseInsensitive)) {
-        msg = "Queue (" + queue + ") is not enabled";
+        msg = "Queue (" + clusterQueue + ") is not enabled";
         return false;
     }
     else if (result.contains("job exceeds queue resource limits", Qt::CaseInsensitive)) {

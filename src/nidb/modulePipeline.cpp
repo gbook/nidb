@@ -104,7 +104,7 @@ int modulePipeline::Run() {
         QString analysisdir;
         analysisdir = GetAnalysisLocalPath(p.dirStructure);
 
-        n->WriteLog(QString("========== Working on pipeline [%1] - [%2] Submits to queue [%3] through host [%4] ==========").arg(p.name).arg(pipelineid).arg(p.queue).arg(p.submitHost));
+        n->WriteLog(QString("========== Working on pipeline [%1] - [%2] Submits to queue [%3] through host [%4] ==========").arg(p.name).arg(pipelineid).arg(p.clusterQueue).arg(p.clusterSubmitHost));
 
         SetPipelineProcessStatus("running",pipelineid,0);
 
@@ -115,7 +115,7 @@ int modulePipeline::Run() {
         n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
 
         /* check if the pipeline's queue is valid */
-        if (p.queue == "") {
+        if (p.clusterQueue == "") {
             m = n->WriteLog(QString("[%1] No queue specified").arg(p.name));
             InsertPipelineEvent(pipelineid, runnum, -1, "error_noqueue", m);
             InsertPipelineEvent(pipelineid, runnum, -1, "pipeline_finished", "Pipeline stopped prematurely due to error");
@@ -124,7 +124,7 @@ int modulePipeline::Run() {
         }
 
         /* check if the submit host is valid */
-        if (p.submitHost == "") {
+        if (p.clusterSubmitHost == "") {
             m = n->WriteLog(QString("[%1] No submit host specified").arg(p.name));
             InsertPipelineEvent(pipelineid, runnum, -1, "error_nosubmithost", m);
             InsertPipelineEvent(pipelineid, runnum, -1, "pipeline_finished", "Pipeline stopped prematurely due to error");
@@ -233,12 +233,12 @@ int modulePipeline::Run() {
             qint64 analysisRowID = q2.lastInsertId().toLongLong();
 
             /* create the cluster job file */
-            QString sgefilepath = analysispath + "/sge.job";
-            if (CreateClusterJobFile(sgefilepath, p.clusterType, analysisRowID, "UID", 0, analysispath, p.useTmpDir, p.tmpDir, "", p.name, pipelineid, p.resultScript, p.maxWallTime, p.numCores, p.memory, steps, false)) {
-                n->WriteLog(QString("[%1] Created sge job submit file [" + sgefilepath + "]").arg(p.name));
+            QString jobFilePath = analysispath + "/sge.job";
+            if (CreateClusterJobFile(jobFilePath, p.clusterType, analysisRowID, "UID", 0, analysispath, p.useTmpDir, p.tmpDir, "", p.name, pipelineid, p.resultScript, p.clusterMaxWallTime, p.clusterNumCores, p.clusterMemory, steps, false)) {
+                n->WriteLog(QString("[%1] Created sge job submit file [" + jobFilePath + "]").arg(p.name));
             }
             else {
-                n->WriteLog(QString("[%1] Error: unable to create sge job submit file [" + sgefilepath + "]").arg(p.name));
+                n->WriteLog(QString("[%1] Error: unable to create sge job submit file [" + jobFilePath + "]").arg(p.name));
                 continue;
             }
 
@@ -247,9 +247,9 @@ int modulePipeline::Run() {
             /* submit the cluster job file */
             QString qm, qresult;
             int jobid;
-            if (n->SubmitClusterJob(sgefilepath, p.submitHost, n->cfg["qsubpath"], n->cfg["queueuser"], p.queue, qm, jobid, qresult)) {
+            if (n->SubmitClusterJob(jobFilePath, p.clusterType, p.clusterSubmitHost, p.clusterSubmitHostUser, n->cfg["qsubpath"], p.clusterUser, p.clusterQueue, qm, jobid, qresult)) {
                 n->WriteLog(QString("[%1] Successfully submitted job to cluster [" + qresult + "]").arg(p.name));
-                UpdateAnalysisStatus(analysisRowID, "submitted", "Submitted to [" + p.queue + "]", jobid, -1, "", "", true, false, 0, 0);
+                UpdateAnalysisStatus(analysisRowID, "submitted", "Submitted to [" + p.clusterQueue + "]", jobid, -1, "", "", true, false, 0, 0);
             }
             else {
                 n->WriteLog(QString("[%1] Error submitting job to cluster [" + qresult + "]").arg(p.name));
@@ -596,7 +596,7 @@ int modulePipeline::Run() {
                         localJobFilePath = analysispath + "/" + jobFilename;
                         clusterJobFilePath = clusteranalysispath + "/" + jobFilename;
 
-                        if (CreateClusterJobFile(localJobFilePath, p.clusterType, analysisRowID, s.UID(), s.studyNum(), clusteranalysispath, p.useTmpDir, p.tmpDir, s.dateTime().toString("yyyy-MM-dd hh:mm:ss"), p.name, pipelineid, p.resultScript, p.maxWallTime, p.numCores, p.memory, steps, a.runSupplement)) {
+                        if (CreateClusterJobFile(localJobFilePath, p.clusterType, analysisRowID, s.UID(), s.studyNum(), clusteranalysispath, p.useTmpDir, p.tmpDir, s.dateTime().toString("yyyy-MM-dd hh:mm:ss"), p.name, pipelineid, p.resultScript, p.clusterMaxWallTime, p.clusterNumCores, p.clusterMemory, steps, a.runSupplement)) {
                             n->WriteLog("Created (local path) " + p.clusterType + " job submit file [" + localJobFilePath + "]");
                         }
                         else {
@@ -609,9 +609,9 @@ int modulePipeline::Run() {
                         /* submit the cluster job file */
                         QString qm, qresult;
                         int jobid;
-                        if (n->SubmitClusterJob(clusterJobFilePath, p.submitHost, n->cfg["qsubpath"], n->cfg["queueuser"], p.queue, qm, jobid, qresult)) {
+                        if (n->SubmitClusterJob(clusterJobFilePath, p.clusterType, p.clusterSubmitHost, p.clusterSubmitHostUser, n->cfg["qsubpath"], p.clusterUser, p.clusterQueue, qm, jobid, qresult)) {
                             n->WriteLog("Successfully submitted job to cluster ["+qresult+"]");
-                            UpdateAnalysisStatus(analysisRowID, "submitted", "Submitted to [" + p.queue + "]", jobid, numseriesdownloaded, "", "", false, true, 0, 0);
+                            UpdateAnalysisStatus(analysisRowID, "submitted", "Submitted to [" + p.clusterQueue + "]", jobid, numseriesdownloaded, "", "", false, true, 0, 0);
                             n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysissubmitted", qresult);
                         }
                         else {
@@ -716,8 +716,8 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
     }
     QString submithost;
     QString clusteruser;
-    if (p.submitHost == "") submithost = n->cfg["clustersubmithost"];
-    else submithost = p.submitHost;
+    if (p.clusterSubmitHost == "") submithost = n->cfg["clustersubmithost"];
+    else submithost = p.clusterSubmitHost;
     if (p.clusterUser == "") clusteruser = n->cfg["clusteruser"];
     else clusteruser = n->cfg["pipeline_clusteruser"];
 
@@ -1231,7 +1231,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                 if ((dataformat == "dicom") || ((datatype != "dicom") && (datatype != "parrec"))) {
                     QString systemstring;
                     if (p.dataCopyMethod == "scp")
-                        systemstring = QString("scp %1/* %2\\@%3:%4").arg(indir).arg(n->cfg["clusteruser"]).arg(p.submitHost).arg(newanalysispath);
+                        systemstring = QString("scp %1/* %2\\@%3:%4").arg(indir).arg(n->cfg["clusteruser"]).arg(p.clusterSubmitHost).arg(newanalysispath);
                     else
                         systemstring = QString("cp -v %1/* %2").arg(indir).arg(newanalysispath);
                     n->WriteLog(SystemCommand(systemstring, true, true));
@@ -1259,7 +1259,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
 
                     QString systemstring;
                     if (p.dataCopyMethod == "scp")
-                        systemstring = QString("scp %1/* %2\\@%3:%4").arg(tmpdir).arg(n->cfg["clusteruser"]).arg(p.submitHost).arg(newanalysispath);
+                        systemstring = QString("scp %1/* %2\\@%3:%4").arg(tmpdir).arg(n->cfg["clusteruser"]).arg(p.clusterSubmitHost).arg(newanalysispath);
                     else
                         systemstring = QString("cp -v %1/* %2").arg(tmpdir).arg(newanalysispath);
                     n->WriteLog(SystemCommand(systemstring, true, true));

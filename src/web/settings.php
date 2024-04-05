@@ -99,6 +99,7 @@
     $c['queuename'] = GetVariable("queuename");
     $c['queueuser'] = GetVariable("queueuser");
     $c['clustersubmithost'] = GetVariable("clustersubmithost");
+    $c['clustersubmituser'] = GetVariable("clustersubmituser");
     $c['qsubpath'] = GetVariable("qsubpath");
     $c['clusteruser'] = GetVariable("clusteruser");
     $c['clusternidbpath'] = GetVariable("clusternidbpath");

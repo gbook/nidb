@@ -57,6 +57,12 @@ void pipeline::LoadPipelineInfo() {
     }
     q.first();
 
+    clusterMaxWallTime = q.value("pipeline_maxwalltime").toInt();
+    clusterMemory = q.value("pipeline_memory").toDouble();
+    clusterNumCores = q.value("pipeline_numcores").toInt();
+    clusterQueue = q.value("pipeline_queue").toString().trimmed();
+    clusterSubmitHost = q.value("pipeline_submithost").toString().trimmed();
+    clusterSubmitHostUser = q.value("pipeline_submithostuser").toString().trimmed();
     clusterType = q.value("pipeline_clustertype").toString().trimmed();
     clusterUser = q.value("pipeline_clusteruser").toString().trimmed();
     completeFiles = q.value("pipeline_desc").toString().trimmed().split(",", Qt::SkipEmptyParts);
@@ -80,20 +86,15 @@ void pipeline::LoadPipelineInfo() {
     lastFinish = q.value("pipeline_lastfinish").toDateTime();
     lastStart = q.value("pipeline_laststart").toDateTime();
     level = q.value("pipeline_level").toInt();
-    maxWallTime = q.value("pipeline_maxwalltime").toInt();
-    memory = q.value("pipeline_memory").toDouble();
     name = q.value("pipeline_name").toString().trimmed();
     notes = q.value("pipeline_notes").toString().trimmed();
     numConcurrentAnalysis = q.value("pipeline_numproc").toInt();
-    numCores = q.value("pipeline_numcores").toInt();
     ownerID = q.value("pipeline_admin").toInt();
-    queue = q.value("pipeline_queue").toString().trimmed();
     removeData = q.value("pipeline_removedata").toBool();
     resultScript = q.value("pipeline_resultsscript").toString().trimmed();
     status = q.value("pipeline_status").toString().trimmed();
     statusMessage = q.value("pipeline_statusmessage").toString().trimmed();
     submitDelay = q.value("pipeline_submitdelay").toInt();
-    submitHost = q.value("pipeline_submithost").toString().trimmed();
     testing = q.value("pipeline_testing").toBool();
     tmpDir = q.value("pipeline_tmpdir").toString().trimmed();
     useProfile = q.value("pipeline_useprofile").toBool();
@@ -111,8 +112,8 @@ void pipeline::LoadPipelineInfo() {
     }
 
     /* check if anything is missing */
-    if (submitHost == "")
-        submitHost = n->cfg["clustersubmithost"];
+    if (clusterSubmitHost == "")
+        clusterSubmitHost = n->cfg["clustersubmithost"];
 
     if (dirStructure == "b")
         pipelineRootDir = n->cfg["analysisdirb"];
@@ -122,7 +123,7 @@ void pipeline::LoadPipelineInfo() {
 
     /* remove any whitespace from the queue... SGE hates whitespace */
     static const QRegularExpression re("\\s+");
-    queue.replace(re,"");
+    clusterQueue.replace(re,"");
 
     isValid = true;
     msg = "Loaded pipeline details";
@@ -329,11 +330,12 @@ QStringList pipeline::GetParentList() {
 squirrelPipeline pipeline::GetSquirrelObject() {
     squirrelPipeline s;
 
-    s.ClusterMaxWallTime = maxWallTime;
-    s.ClusterMemory = memory;
-    s.ClusterNumberCores = numCores;
-    s.ClusterQueue = queue;
-    s.ClusterSubmitHost = submitHost;
+    s.ClusterMaxWallTime = clusterMaxWallTime;
+    s.ClusterMemory = clusterMemory;
+    s.ClusterNumberCores = clusterNumCores;
+    s.ClusterQueue = clusterQueue;
+    s.ClusterSubmitHost = clusterSubmitHost;
+    //s.ClusterSubmitHostUser = clusterSubmitHostUser;
     s.ClusterType = clusterType;
     s.ClusterUser = clusterUser;
     s.CompleteFiles = completeFiles;

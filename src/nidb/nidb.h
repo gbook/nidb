@@ -92,7 +92,8 @@ public:
     QString Debug(QString msg, int wrap=0, bool timeStamp=true);
     bool SendEmail(QString to, QString subject, QString body);
     bool GetSQLComparison(QString c, QString &comp, int &num);
-    bool SubmitClusterJob(QString f, QString submithost, QString qsub, QString user, QString queue, QString &msg, int &jobid, QString &result);
+    //bool SubmitClusterJob(QString f, QString submithost, QString qsub, QString user, QString queue, QString &msg, int &jobid, QString &result);
+    bool SubmitClusterJob(QString jobFilePath, QString clusterType, QString submitHost, QString submitUser, QString qsub, QString clusterUser, QString clusterQueue, QString &msg, int &jobid, QString &result);
 
 private:
     void FatalError(QString err);

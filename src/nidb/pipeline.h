@@ -43,8 +43,6 @@ public:
     QDateTime lastStart;
     QList<int> groupIDs;
     QList<int> parentIDs;
-    QString clusterType;
-    QString clusterUser;
     QString dataCopyMethod;
     QString depDir;
     QString depLevel;
@@ -57,11 +55,9 @@ public:
     QString name;
     QString notes;
     QString pipelineRootDir;
-    QString queue;
     QString resultScript;
     QString status;
     QString statusMessage;
-    QString submitHost;
     QString tmpDir;
     QStringList completeFiles;
     bool debug;
@@ -73,15 +69,21 @@ public:
     bool testing;
     bool useProfile;
     bool useTmpDir;
-    double memory;
     int dynamicGroupID;
     int level;
-    int maxWallTime;
     int numConcurrentAnalysis;
-    int numCores;
     int ownerID;
     int submitDelay;
     int version;
+
+    QString clusterQueue;
+    QString clusterSubmitHost;
+    QString clusterSubmitHostUser;
+    QString clusterType;
+    QString clusterUser;
+    double clusterMemory;
+    int clusterMaxWallTime;
+    int clusterNumCores;
 
     //QJsonObject GetJSONObject(QString path);
     squirrelPipeline GetSquirrelObject();

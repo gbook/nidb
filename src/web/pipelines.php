@@ -66,6 +66,7 @@
 	$pipelineclustertype = GetVariable("pipelineclustertype");
 	$pipelineclusteruser = GetVariable("pipelineclusteruser");
 	$pipelinesubmithost = GetVariable("pipelinesubmithost");
+	$pipelinesubmithostuser = GetVariable("pipelinesubmithostuser");
 	$pipelinemaxwalltime = GetVariable("pipelinemaxwalltime");
 	$pipelinesubmitdelay = GetVariable("pipelinesubmitdelay");
 	$pipelinequeue = GetVariable("pipelinequeue");
@@ -138,11 +139,11 @@
 			DisplayPipelineForm("edit", $id, $returntab);
 			break;
 		case 'update':
-			UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelinenumcores, $pipelinememory, $pipelineremovedata, $pipelinedirectory, $pipelinedirstructure, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $level, $ishidden);
+			UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinesubmithostuser, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelinenumcores, $pipelinememory, $pipelineremovedata, $pipelinedirectory, $pipelinedirstructure, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $level, $ishidden);
 			DisplayPipelineForm("edit", $id, $returntab);
 			break;
 		case 'add':
-			$id = AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelinenumcores, $pipelinememory, $pipelineremovedata, $pipelinedirectory, $pipelinedirstructure, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $projectid, $level, $groupbysubject, $outputbids);
+			$id = AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinesubmithostuser, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelinenumcores, $pipelinememory, $pipelineremovedata, $pipelinedirectory, $pipelinedirstructure, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $projectid, $level, $groupbysubject, $outputbids);
 			DisplayPipelineForm("edit", $id, $returntab);
 			break;
 		case 'changeowner':
@@ -235,7 +236,7 @@
 	/* this function does NOT CHANGE the version    */
 	/* number                                       */
 	/* -------------------------------------------- */
-	function UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelinenumcores, $pipelinememory, $pipelineremovedata, $pipelinedirectory, $pipelinedirstructure, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $level, $ishidden) {
+	function UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinesubmithostuser, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelinenumcores, $pipelinememory, $pipelineremovedata, $pipelinedirectory, $pipelinedirstructure, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $level, $ishidden) {
 		
 		if (!ValidID($id,'Pipeline ID - A')) { return; }
 		
@@ -247,6 +248,7 @@
 		$pipelineclustertype = mysqli_real_escape_string($GLOBALS['linki'], $pipelineclustertype);
 		$pipelineclusteruser = mysqli_real_escape_string($GLOBALS['linki'], $pipelineclusteruser);
 		$pipelinesubmithost = mysqli_real_escape_string($GLOBALS['linki'], $pipelinesubmithost);
+		$pipelinesubmithostuser = mysqli_real_escape_string($GLOBALS['linki'], $pipelinesubmithostuser);
 		$pipelinemaxwalltime = mysqli_real_escape_string($GLOBALS['linki'], $pipelinemaxwalltime) + 0;
 		$pipelinesubmitdelay = mysqli_real_escape_string($GLOBALS['linki'], $pipelinesubmitdelay) + 0;
 		$pipelinedatacopymethod = mysqli_real_escape_string($GLOBALS['linki'], $pipelinedatacopymethod);
@@ -263,8 +265,8 @@
 		$pipelinequeue = preg_replace('/\s+/', '', trim($pipelinequeue));
 		
 		/* update the pipeline */
-		$sqlstring = "update pipelines set pipeline_name = '$pipelinetitle', pipeline_desc = '$pipelinedesc', pipeline_group = '$pipelinegroup', pipeline_numproc = $pipelinenumproc, pipeline_submithost = '$pipelinesubmithost', pipeline_maxwalltime = '$pipelinemaxwalltime', pipeline_submitdelay = '$pipelinesubmitdelay', pipeline_datacopymethod = '$pipelinedatacopymethod', pipeline_queue = '$pipelinequeue', pipeline_numcores = '$pipelinenumcores', pipeline_memory = '$pipelinememory', pipeline_clustertype = '$pipelineclustertype', pipeline_clusteruser = '$pipelineclusteruser', pipeline_removedata = '$pipelineremovedata', pipeline_directory = '$pipelinedirectory', pipeline_dirstructure = '$pipelinedirstructure', pipeline_usetmpdir = '$pipelineusetmpdir', pipeline_tmpdir = '$pipelinetmpdir', pipeline_notes = '$pipelinenotes', pipeline_ishidden = '$ishidden' where pipeline_id = $id";
-		PrintSQL($sqlstring);
+		$sqlstring = "update pipelines set pipeline_name = '$pipelinetitle', pipeline_desc = '$pipelinedesc', pipeline_group = '$pipelinegroup', pipeline_numproc = $pipelinenumproc, pipeline_submithost = '$pipelinesubmithost', pipeline_submithostuser = '$pipelinesubmithostuser', pipeline_maxwalltime = '$pipelinemaxwalltime', pipeline_submitdelay = '$pipelinesubmitdelay', pipeline_datacopymethod = '$pipelinedatacopymethod', pipeline_queue = '$pipelinequeue', pipeline_numcores = '$pipelinenumcores', pipeline_memory = '$pipelinememory', pipeline_clustertype = '$pipelineclustertype', pipeline_clusteruser = '$pipelineclusteruser', pipeline_removedata = '$pipelineremovedata', pipeline_directory = '$pipelinedirectory', pipeline_dirstructure = '$pipelinedirstructure', pipeline_usetmpdir = '$pipelineusetmpdir', pipeline_tmpdir = '$pipelinetmpdir', pipeline_notes = '$pipelinenotes', pipeline_ishidden = '$ishidden' where pipeline_id = $id";
+		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 
 		Notice("Pipeline info for <b>$pipelinetitle</b> updated");
@@ -544,7 +546,7 @@
 	/* -------------------------------------------- */
 	/* ------- AddPipeline ------------------------ */
 	/* -------------------------------------------- */
-	function AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelinenumcores, $pipelinememory, $pipelineremovedata, $pipelinedirectory, $pipelinedirstructure, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $projectid, $level, $groupbysubject, $outputbids) {
+	function AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinesubmithostuser, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelinenumcores, $pipelinememory, $pipelineremovedata, $pipelinedirectory, $pipelinedirstructure, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $projectid, $level, $groupbysubject, $outputbids) {
 		/* perform data checks */
 		$pipelinetitle = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinetitle));
 		$pipelinedesc = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinedesc));
@@ -553,6 +555,7 @@
 		$pipelineclustertype = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelineclustertype));
 		$pipelineclusteruser = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelineclusteruser));
 		$pipelinesubmithost = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinesubmithost));
+		$pipelinesubmithostuser = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinesubmithostuser));
 		$pipelinemaxwalltime = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinemaxwalltime));
 		$pipelinesubmitdelay = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinesubmitdelay));
 		$pipelinedatacopymethod = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinedatacopymethod));
@@ -605,7 +608,7 @@
 			$userid = $row['user_id'];
 			
 			/* insert the new form */
-			$sqlstring = "insert into pipelines (pipeline_name, pipeline_desc, pipeline_group, pipeline_admin, pipeline_createdate, pipeline_status, pipeline_numproc, pipeline_submithost, pipeline_maxwalltime, pipeline_submitdelay, pipeline_datacopymethod, pipeline_queue, pipeline_numcores, pipeline_memory, pipeline_clustertype, pipeline_clusteruser, pipeline_removedata, pipeline_resultsscript, pipeline_completefiles, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_projectid, pipeline_level, pipeline_directory, pipeline_dirstructure, pipeline_usetmpdir, pipeline_tmpdir, pipeline_notes, pipeline_ishidden, pipeline_groupbysubject, pipeline_outputbids) values ('$pipelinetitle', '$pipelinedesc', '$pipelinegroup', '$userid', now(), 'stopped', '$pipelinenumproc', '$pipelinesubmithost', $pipelinemaxwalltime, $pipelinesubmitdelay, '$pipelinedatacopymethod', '$pipelinequeue', '$pipelinenumcores', '$pipelinememory', '$pipelineclustertype', '$pipelineclusteruser', $pipelineremovedata, '$pipelineresultsscript', '$completefiles', '$dependencies', '$deplevel', '$depdir', '$deplinktype', '$groupids', '$projectids', '$level', '$pipelinedirectory', '$pipelinedirstructure', $pipelineusetmpdir, '$pipelinetmpdir', '$pipelinenotes', 0, $groupbysubject, $outputbids)";
+			$sqlstring = "insert into pipelines (pipeline_name, pipeline_desc, pipeline_group, pipeline_admin, pipeline_createdate, pipeline_status, pipeline_numproc, pipeline_submithost, pipeline_submithostuser, pipeline_maxwalltime, pipeline_submitdelay, pipeline_datacopymethod, pipeline_queue, pipeline_numcores, pipeline_memory, pipeline_clustertype, pipeline_clusteruser, pipeline_removedata, pipeline_resultsscript, pipeline_completefiles, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_projectid, pipeline_level, pipeline_directory, pipeline_dirstructure, pipeline_usetmpdir, pipeline_tmpdir, pipeline_notes, pipeline_ishidden, pipeline_groupbysubject, pipeline_outputbids) values ('$pipelinetitle', '$pipelinedesc', '$pipelinegroup', '$userid', now(), 'stopped', '$pipelinenumproc', '$pipelinesubmithost', '$pipelinesubmithostuser', $pipelinemaxwalltime, $pipelinesubmitdelay, '$pipelinedatacopymethod', '$pipelinequeue', '$pipelinenumcores', '$pipelinememory', '$pipelineclustertype', '$pipelineclusteruser', $pipelineremovedata, '$pipelineresultsscript', '$completefiles', '$dependencies', '$deplevel', '$depdir', '$deplinktype', '$groupids', '$projectids', '$level', '$pipelinedirectory', '$pipelinedirstructure', $pipelineusetmpdir, '$pipelinetmpdir', '$pipelinenotes', 0, $groupbysubject, $outputbids)";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			$pipelineid = mysqli_insert_id($GLOBALS['linki']);
 			
@@ -962,6 +965,7 @@
 			$desc = $row['pipeline_desc'];
 			$numproc = $row['pipeline_numproc'];
 			$submithost = $row['pipeline_submithost'];
+			$submithostuser = $row['pipeline_submithostuser'];
 			$maxwalltime = $row['pipeline_maxwalltime'];
 			$submitdelay = $row['pipeline_submitdelay'];
 			$queue = $row['pipeline_queue'];
@@ -1512,7 +1516,8 @@
 				};
 				var hostname = document.getElementById("pipelinesubmithost").value;
 				var clustertype = document.getElementById("pipelineclustertype").value;
-				xhttp.open("GET", "ajaxapi.php?action=checksgehost&hostname=" + hostname + "&clustertype=" + clustertype, true);
+				var submithostuser = document.getElementById("pipelinesubmithostuser").value;
+				xhttp.open("GET", "ajaxapi.php?action=checksgehost&hostname=" + hostname + "&clustertype=" + clustertype + "&submithostuser=" + submithostuser, true);
 				xhttp.send();
 			}
 		</script>
@@ -1761,7 +1766,7 @@
 					<td class="label" valign="top" align="right">Cluster user</td>
 					<td valign="top">
 						<div class="ui input">
-							<input type="text" name="pipelineclusteruser" <?=$disabled?> value="<?=$clusteruser?>">
+							<input type="text" name="pipelineclusteruser" <?=$disabled?> value="<?=$clusteruser?>" id="pipelineclusteruser" onChange="CheckHostnameStatus()">
 						</div>
 					</td>
 				</tr>
@@ -1771,6 +1776,14 @@
 						<div class="ui error input" id="pipelinesubmithostinput">
 							<input type="text" name="pipelinesubmithost" id="pipelinesubmithost" <?=$disabled?> value="<?=$submithost?>" onChange="CheckHostnameStatus()" onLoad="CheckHostnameStatus()">
 							<div id="hostup"></div>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td class="label" valign="top" align="right">Submit host username</td>
+					<td valign="top">
+						<div class="ui input">
+							<input type="text" name="pipelinesubmithostuser" <?=$disabled?> value="<?=$submithostuser?>" id="pipelinesubmithostuser" onChange="CheckHostnameStatus()">
 						</div>
 					</td>
 				</tr>

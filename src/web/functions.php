@@ -3540,6 +3540,12 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 							<td>Hostname which QC jobs are submitted</td>
 						</tr>
 						<tr>
+							<td class="right aligned tt">clustersubmituser</td>
+							<td><input type="text" name="clustersubmituser" value="<?=$GLOBALS['cfg']['clustersubmituser']?>"></td>
+							<td></td>
+							<td>Username to ssh into <code>clustersubmithost</code></td>
+						</tr>
+						<tr>
 							<td class="right aligned tt">qsubpath</td>
 							<td><input type="text" name="qsubpath" value="<?=$GLOBALS['cfg']['qsubpath']?>"></td>
 							<td></td>
@@ -4025,6 +4031,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 [queuename] = $queuename
 [queueuser] = $queueuser
 [clustersubmithost] = $clustersubmithost
+[clustersubmituser] = $clustersubmituser
 [qsubpath] = $qsubpath
 [clusteruser] = $clusteruser
 [clusternidbpath] = $clusternidbpath

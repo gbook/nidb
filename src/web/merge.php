@@ -301,7 +301,7 @@
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$subjectids[] = $row['subject_id'];
 		}
-		$subjectids = mysqli_real_escape_array($subjectids);
+		$subjectids = mysqli_real_escape_array($GLOBALS['linki'], $subjectids);
 
 		if (((count($subjectids) == 0) || ($subjectids == "")) && ($subjectuid == "")) {
 			?>

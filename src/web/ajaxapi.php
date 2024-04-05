@@ -40,6 +40,7 @@
 	$hostname = GetVariable("hostname");
 	$username = GetVariable("username");
 	$clustertype = GetVariable("clustertype");
+	$submithostuser = GetVariable("submithostuser");
 
 	$subjectid = GetVariable("subjectid");
 	$studyid = GetVariable("studyid");
@@ -87,7 +88,7 @@
 			CheckHostStatus($hostname);
 			break;
 		case 'checksgehost':
-			CheckSGESubmitStatus($hostname, $clustertype);
+			CheckSGESubmitStatus($hostname, $clustertype, $submithostuser);
 			break;
 		case 'updatesubjectdetails':
 			UpdateSubjectDetails($subjectid, $column, $value);
@@ -148,19 +149,21 @@
 	/* -------------------------------------------- */
 	/* ------- CheckSGESubmitStatus --------------- */
 	/* -------------------------------------------- */
-	function CheckSGESubmitStatus($hostname, $clustertype) {
+	function CheckSGESubmitStatus($hostname, $clustertype, $submithostuser) {
 		
 		$hostname = trim($hostname);
 		$hostname = preg_replace("/[^A-Za-z0-9 ]/", '', $hostname);
 		$clustertype = trim($clustertype);
 		$clustertype = preg_replace("/[^A-Za-z0-9 ]/", '', $clustertype);
+		$submithostuser = trim($submithostuser);
+		$submithostuser = preg_replace("/[^A-Za-z0-9 ]/", '', $submithostuser);
 
 		if ($clustertype == "slurm") {
-			exec("ssh '$hostname' which sbatch", $output, $result);
+			exec("ssh $submithostuser@'$hostname' which sbatch", $output, $result);
 			$clustercommand = "sbatch";
 		}
 		else {
-			exec("ssh '$hostname' which qsub", $output, $result);
+			exec("ssh $submithostuser@'$hostname' which qsub", $output, $result);
 			$clustercommand = "qsub";
 		}
 		
