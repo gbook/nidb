@@ -2,7 +2,7 @@
 
 # global build variables
 if [ -z "$1" ]; then
-	QMAKEBIN=~/Qt/6.6.1/gcc_64/bin/qmake
+	QMAKEBIN=~/Qt/6.6.3/gcc_64/bin/qmake
 else
 	QMAKEBIN=$1
 fi
@@ -93,6 +93,9 @@ make -B -j 16
 cd $ORIGDIR
 echo -e "\nCopying libsquirrel to /lib"
 sudo cp -uv bin/squirrel/libsquirrel* /lib/
+sudo cp -uv bin/squirrel/libsquirrel* /lib/x86_64-linux-gnu/
+sudo cp -uv bin/gdcm/libgdcm* /lib/x86_64-linux-gnu/
+sudo cp -uv bin/smtp/libSMTPEmail* /lib/x86_64-linux-gnu/
 
 echo -e "\nCopying nidb to /nidb/bin"
 sudo cp -uv bin/nidb/nidb /nidb/bin/

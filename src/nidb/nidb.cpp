@@ -734,7 +734,12 @@ bool nidb::SubmitClusterJob(QString jobFilePath, QString clusterType, QString su
 
     /* submit the job to the cluster. Command will be in the format:
      * ssh <submithost> qsub -u <username> -q <queuelist> "/full/path/to/sge.job" */
-    QString systemstring = QString("ssh %1 %2 -u %3 -q %4 \"%5\"").arg(submitHost).arg(qsub).arg(clusterUser).arg(clusterQueue).arg(jobFilePath);
+    QString systemstring;
+    if (clusterType == "sge")
+        systemstring = QString("ssh %1 %2 -u %3 -q %4 \"%5\"").arg(submitHost).arg(qsub).arg(clusterUser).arg(clusterQueue).arg(jobFilePath);
+    else
+        systemstring = QString("ssh %1@%2 sbatch \"%3\"").arg(submitUser).arg(submitHost).arg(jobFilePath);
+
     result = SystemCommand(systemstring,true).trimmed();
 
     /* get the jobid */
@@ -775,6 +780,10 @@ bool nidb::SubmitClusterJob(QString jobFilePath, QString clusterType, QString su
     else if (result.contains("unable to read script file", Qt::CaseInsensitive)) {
         msg = "Error reading job submission file";
         return false;
+    }
+    else if ((clusterType == "slurm") && (result.contains("submitted batch job"))) {
+        msg = "slurm job submitted successfully";
+        return true;
     }
 
     msg = "Cluster job submitted successfully";
