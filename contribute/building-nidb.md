@@ -13,6 +13,7 @@ The following OS configurations have been tested to build nidb. It may be possib
   * RHEL 8 compatible (Rocky Linux 8, AlmaLinux 8, CentOS 8, RHEL 8)
   * RHEL 7 compatible (RHEL 7, CentOS 7)
   * Ubuntu 20
+  * Debian 12
 * <mark style="color:red;">**Incompatible**</mark>
   * RHEL-compatible 8.6 (RHEL 8.6, Rocky 8.6, AlmaLinux 8.6)
   * CentOS 8 Stream
@@ -30,11 +31,12 @@ Run these commands as root (or sudo) based on your distribution
 {% tabs %}
 {% tab title="RHEL 9" %}
 ```bash
-yum group install 'Development Tools'
-yum install cmake3
-yum install rpmdevtools
-yum install xcb*
-yum install libxcb*
+dnf group install 'Development Tools'
+dnf install cmake3
+dnf install rpmdevtools
+dnf install xcb*
+dnf install libxcb*
+dnf install git
 ```
 {% endtab %}
 
@@ -46,6 +48,7 @@ yum install rpmdevtools
 yum install xcb*
 yum install libxcb*
 yum install gcc-toolset-10
+yum install git
 ```
 {% endtab %}
 
@@ -54,32 +57,41 @@ yum install gcc-toolset-10
 yum install epel-release
 yum group install 'Development Tools'
 yum install cmake3 rpmdevtools rpm-build
+yum install git
 ```
 {% endtab %}
 
-{% tab title="Ubuntu" %}
+{% tab title="Ubuntu 20" %}
 ```
 apt install build-essential
 apt install libxcb*
 apt install make
 apt install cmake
+apt install git
+```
+{% endtab %}
+
+{% tab title="Debian 12" %}
+```
+apt install build-essential
+apt install make
+apt install cmake
+apt install git
 ```
 {% endtab %}
 {% endtabs %}
 
-#### Step 2 - Install Qt 6.5
+#### Step 2 - Install Qt 6.6.x
 
 1. Download Qt open-source from [https://www.qt.io/download-open-source](https://www.qt.io/download-open-source)
 2. Make the installer executable `chmod 777 qt-unified-linux-x64-x.x.x-online.run`
 3. Run `./qt-unified-linux-x64-x.x.x-online.run`
 4. The Qt Maintenance Tool will start. An account is required to download Qt open source
-5. On the components screen, select the checkbox for **Qt 6.5 → Desktop gcc 64-bit**
+5. On the components screen, select the checkbox for **Qt 6.6.x → Desktop gcc 64-bit**
 
 ### Building NiDB
 
 Once the build environment is setup, the builds can be done by script. The `build.sh` script will build only the nidb executable, this is useful when testing. The `rpmbuildx.sh` scripts will build the rpm which will create releases.
-
-#### Rocky Linux 8.5
 
 {% tabs %}
 {% tab title="RHEL 9" %}
@@ -148,7 +160,27 @@ cd ~/nidb
 ```
 {% endtab %}
 
-{% tab title="Ubuntu" %}
+{% tab title="Ubuntu 20" %}
+**First time build** on this machine, perform the following
+
+```bash
+cd ~
+wget https://github.com/gbook/nidb/archive/master.zip
+unzip master.zip
+mv nidb-master nidb
+cd nidb
+./build.sh      # build only the NiDB executable
+```
+
+All **subsequent builds** on this machine can be done with the following
+
+```bash
+cd ~/nidb
+./build.sh      # build only the executable
+```
+{% endtab %}
+
+{% tab title="Debian 12" %}
 **First time build** on this machine, perform the following
 
 ```bash
