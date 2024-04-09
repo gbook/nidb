@@ -252,7 +252,9 @@ bool moduleExport::GetExportSeriesList(int exportid) {
                     QString seriesaltdesc = q2.value("series_altdesc").toString();
                     QString projectname = q2.value("project_name").toString();
                     QString studyaltid = q2.value("study_alternateid").toString();
-                    QString datatype = q2.value("data_type").toString();
+                    QString datatype;
+                    if (q2.value("data_type").isValid())
+                        datatype = q2.value("data_type").toString().trimmed();
                     QString studytype = q2.value("study_type").toString();
                     QString equipment = q2.value("study_site").toString();
                     int studydaynum = q2.value("study_daynum").toInt();
@@ -1800,7 +1802,9 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
             int imgrows = q.value("img_rows").toInt();
             int imgcols = q.value("img_cols").toInt();
             int imgslices = q.value("img_slices").toInt();
-            QString datatype = q.value("data_type").toString().trimmed().toUpper();
+            QString datatype;
+            if (q.value("data_type").isValid())
+                datatype = q.value("data_type").toString().trimmed().toUpper();
             QString studydatetime = q.value("study_datetime").toDate().toString("MM/dd/yyyy");
             //QString birthdate = q.value("birthdate").toString().trimmed();
             QString gender = q.value("gender").toString().trimmed();

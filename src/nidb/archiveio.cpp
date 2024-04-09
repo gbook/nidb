@@ -2393,12 +2393,13 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     if (zipfilepath.endsWith("/"))
         zipfilepath.chop(1);
 
-    if (!zipfilepath.endsWith(".zip", Qt::CaseInsensitive))
-        zipfilepath = zipfilepath + ".zip";
+    //if (!zipfilepath.endsWith(".zip", Qt::CaseInsensitive))
+    //    zipfilepath = zipfilepath + ".zip";
 
     /* create squirrel object with default settings... */
     squirrel sqrl;
     sqrl.SetPackagePath(zipfilepath);
+    sqrl.SetFileMode(FileMode::NewPackage);
     sqrl.PackageName = name;
     sqrl.Description = desc;
     sqrl.NiDBversion = n->GetVersion();
@@ -2788,6 +2789,7 @@ bool archiveIO::WritePackage(qint64 exportid, QString zipfilepath, QString &msg)
         sqrl.StudyDirFormat = q.value("package_studydirformat").toString();
         sqrl.SubjectDirFormat = q.value("package_subjectdirformat").toString();
         sqrl.SetPackagePath(zipfilepath);
+        sqrl.SetFileMode(FileMode::NewPackage);
     }
     else {
         return 0;
@@ -3030,7 +3032,9 @@ bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modal
                 int projectid = q.value("project_id").toInt();
                 QString studyaltid = q.value("study_alternateid").toString();
                 QString studytype = q.value("study_type").toString();
-                QString datatype = q.value("data_type").toString();
+                QString datatype;
+                if (q.value("data_type").isValid())
+                    datatype = q.value("data_type").toString().trimmed();
                 if (datatype == "") /* If the modality is MR, the datatype will have a value (dicom, nifti, parrec), otherwise we will set the datatype to the modality */
                     datatype = modality;
                 qint64 numfiles = q.value("numfiles").toLongLong();

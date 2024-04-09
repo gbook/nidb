@@ -176,22 +176,65 @@ bool modify::DoModify(QString packagePath, QString addObject, QString removeObje
                 return false;
             }
             else {
-                squirrelMeasure measure;
-                sqrl->Log(QString("Creating squirrel Measure [%1]").arg(vars["MeasureName"]), __FUNCTION__);
-                measure.DateEnd = QDateTime::fromString(vars["DateEnd"], "yyyy-MM-dd HH:mm:ss");
-                measure.DateRecordCreate = QDateTime::fromString(vars["DateRecordCreate"], "yyyy-MM-dd HH:mm:ss");
-                measure.DateRecordEntry = QDateTime::fromString(vars["DateRecordEntry"], "yyyy-MM-dd HH:mm:ss");
-                measure.DateRecordModify = QDateTime::fromString(vars["DateRecordModify"], "yyyy-MM-dd HH:mm:ss");
-                measure.DateStart = QDateTime::fromString(vars["DateStart"], "yyyy-MM-dd HH:mm:ss");
-                measure.Description = vars["Description"];
-                measure.Duration = vars["Duration"].toDouble();
-                measure.InstrumentName = vars["InstrumentName"];
-                measure.MeasureName = vars["MeasureName"];
-                measure.Notes = vars["Notes"];
-                measure.Rater = vars["Rater"];
-                measure.Value = vars["Value"];
-                measure.subjectRowID = subjectRowID;
-                measure.Store();
+                if (dataPath == "") {
+                    squirrelMeasure measure;
+                    sqrl->Log(QString("Creating squirrel Measure [%1]").arg(vars["MeasureName"]), __FUNCTION__);
+                    measure.DateEnd = QDateTime::fromString(vars["DateEnd"], "yyyy-MM-dd HH:mm:ss");
+                    measure.DateRecordCreate = QDateTime::fromString(vars["DateRecordCreate"], "yyyy-MM-dd HH:mm:ss");
+                    measure.DateRecordEntry = QDateTime::fromString(vars["DateRecordEntry"], "yyyy-MM-dd HH:mm:ss");
+                    measure.DateRecordModify = QDateTime::fromString(vars["DateRecordModify"], "yyyy-MM-dd HH:mm:ss");
+                    measure.DateStart = QDateTime::fromString(vars["DateStart"], "yyyy-MM-dd HH:mm:ss");
+                    measure.Description = vars["Description"];
+                    measure.Duration = vars["Duration"].toDouble();
+                    measure.InstrumentName = vars["InstrumentName"];
+                    measure.MeasureName = vars["MeasureName"];
+                    measure.Notes = vars["Notes"];
+                    measure.Rater = vars["Rater"];
+                    measure.Value = vars["Value"];
+                    measure.subjectRowID = subjectRowID;
+                    measure.Store();
+                }
+                else {
+                    /* load the measures from a CSV or TSV file */
+                    if (utils::FileExists(dataPath)) {
+
+                        utils::indexedHash csv;
+                        QStringList cols;
+                        QString m;
+
+                        /* if csv, read csv */
+                        if (dataPath.endsWith(".csv", Qt::CaseInsensitive)) {
+                            if (utils::ParseTSV(dataPath, csv, cols, m)) {
+                            }
+                        }
+                        else if (dataPath.endsWith(".tsv", Qt::CaseInsensitive)) {
+                            if (utils::ParseTSV(dataPath, csv, cols, m)) {
+                                //sqrl->Log(QString("Successfuly read [%1] into [%2] rows").arg(f).arg(tsv.size()), __FUNCTION__);
+                            }
+                            else {
+                                m = QString("File containing measures [%1] not found").arg(dataPath);
+                                delete sqrl;
+                                return false;
+                            }
+                        }
+                        else {
+                            // unrecognized file extension
+                            return false;
+                        }
+
+                        /* load all the measures into squirrel */
+                        for (int i=0; i<csv.size(); i++) {
+                            QString sesid = csv[i]["session_id"];
+                            QString datetime = csv[i]["acq_time"];
+                        }
+
+                    }
+                    else {
+                        m = QString("File containing measures [%1] not found").arg(dataPath);
+                        delete sqrl;
+                        return false;
+                    }
+                }
             }
         }
         /* ----- drug ----- */

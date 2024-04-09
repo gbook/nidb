@@ -71,9 +71,10 @@ void series::LoadSeriesInfo() {
             studyid = q.value("study_id").toInt();
             projectid = q.value("project_id").toInt();
             enrollmentid = q.value("enrollment_id").toInt();
-            if (q.value("data_type").isValid())
+            if (modality == "mr") {
                 datatype = q.value("data_type").toString().trimmed();
-            isderived = q.value("is_derived").toBool();
+                isderived = q.value("is_derived").toBool();
+            }
 
             /* check to see if anything isn't valid or is blank */
             if ((n->cfg["archivedir"] == "") || (n->cfg["archivedir"] == "/")) { msgs << "cfg->archivedir was invalid"; isValid = false; }

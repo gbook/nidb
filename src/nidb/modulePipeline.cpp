@@ -1145,7 +1145,9 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                 QString seriesdesc = q.value("series_desc").toString();
                 QString seriesprotocol = q.value("series_protocol").toString();
                 QString seriesdatetime = q.value("series_datetime").toString();
-                QString datatype = q.value("data_type").toString();
+                QString datatype;
+                if (q.value("data_type").isValid())
+                    datatype = q.value("data_type").toString().trimmed();
                 QString phaseplane = q.value("phaseencodedir").toString();
                 int phasepositive;
                 if (q.value("PhaseEncodingDirectionPositive").isNull())

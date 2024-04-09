@@ -94,8 +94,10 @@ cd $ORIGDIR
 echo -e "\nCopying libsquirrel to /lib"
 sudo cp -uv bin/squirrel/libsquirrel* /lib/
 sudo cp -uv bin/squirrel/libsquirrel* /lib/x86_64-linux-gnu/
-sudo cp -uv bin/gdcm/libgdcm* /lib/x86_64-linux-gnu/
+sudo cp -uv bin/gdcm/bin/libgdcm* /lib/x86_64-linux-gnu/
 sudo cp -uv bin/smtp/libSMTPEmail* /lib/x86_64-linux-gnu/
 
 echo -e "\nCopying nidb to /nidb/bin"
 sudo cp -uv bin/nidb/nidb /nidb/bin/
+
+#zip -r nidb-cluster.zip bin/nidb/nidb bin/squirrel/libsquirrel* bin/gdcm/bin/libgdcm* bin/smtp/libSMTPEmail*

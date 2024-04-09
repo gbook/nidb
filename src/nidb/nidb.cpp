@@ -735,10 +735,10 @@ bool nidb::SubmitClusterJob(QString jobFilePath, QString clusterType, QString su
     /* submit the job to the cluster. Command will be in the format:
      * ssh <submithost> qsub -u <username> -q <queuelist> "/full/path/to/sge.job" */
     QString systemstring;
-    if (clusterType == "sge")
-        systemstring = QString("ssh %1 %2 -u %3 -q %4 \"%5\"").arg(submitHost).arg(qsub).arg(clusterUser).arg(clusterQueue).arg(jobFilePath);
-    else
+    if (clusterType == "slurm")
         systemstring = QString("ssh %1@%2 sbatch \"%3\"").arg(submitUser).arg(submitHost).arg(jobFilePath);
+    else
+        systemstring = QString("ssh %1 %2 -u %3 -q %4 \"%5\"").arg(submitHost).arg(qsub).arg(clusterUser).arg(clusterQueue).arg(jobFilePath);
 
     result = SystemCommand(systemstring,true).trimmed();
 

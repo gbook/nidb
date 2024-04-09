@@ -61,7 +61,9 @@ int moduleFileIO::Run() {
 
             int requestid = q.value("fileiorequest_id").toInt();
             QString fileio_operation = q.value("fileio_operation").toString().trimmed();
-            QString data_type = q.value("data_type").toString().trimmed();
+            QString data_type;
+            if (q.value("data_type").isValid())
+                data_type = q.value("data_type").toString().trimmed();
             int data_id = q.value("data_id").toInt();
             QString modality = q.value("modality").toString().trimmed();
             QString data_destination = q.value("data_destination").toString().trimmed();
@@ -349,21 +351,22 @@ bool moduleFileIO::DeleteAnalysis(qint64 analysisid, QString &msg) {
         qint64 c;
         qint64 b;
         GetDirSizeAndFileCount(a.analysispath, c, b, true);
-
         n->WriteLog(QString("Going to remove [%1] files and directories from [%2]").arg(c).arg(a.analysispath));
-        if (RemoveDir(a.analysispath, msg)) {
-            /* QDir.remove worked */
-            n->WriteLog("Analysispath removed");
-            okToDeleteDBEntries = true;
-        }
-        else {
+
+        n->WriteLog(QString("Going to recursively remove [%1]").arg(a.analysispath));
+        //if (RemoveDir(a.analysispath, msg)) {
+        //    /* QDir.remove worked */
+        //    n->WriteLog("Analysispath removed");
+        //    okToDeleteDBEntries = true;
+        //}
+        //else {
             QString p = a.analysispath;
-            if ((p == "") || (p == ".") || (p == "..") || (p == "/") || (p.contains("//")) || (p.startsWith("/root")) || (p == "/home")) {
+            if ((p == "") || (p == ".") || (p == "..") || (p == "/") || (p.contains("//")) || (p.startsWith("/root")) || (p == "/home") || (p.size() < 20)) {
                 n->WriteLog("Path is not valid [" + p + "]");
             }
             else {
-                QString systemstring = QString("rm -rfv %1").arg(a.analysispath);
-                n->WriteLog("Not all files deleted. Deleting remaining files using rm -rf");
+                QString systemstring = QString("rm -rf %1").arg(a.analysispath);
+                n->WriteLog("Not all files deleted. Deleting remaining files using command [" + systemstring + "]");
                 n->WriteLog(SystemCommand(systemstring));
 
                 QDir d(a.analysispath);
@@ -382,7 +385,7 @@ bool moduleFileIO::DeleteAnalysis(qint64 analysisid, QString &msg) {
                     okToDeleteDBEntries = true;
                 }
             }
-        }
+        //}
     }
     else {
         n->WriteLog("Path [" + a.analysispath + "] did not exist. Did not attempt to delete");

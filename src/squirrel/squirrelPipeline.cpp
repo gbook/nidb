@@ -122,6 +122,8 @@ bool squirrelPipeline::Get() {
 bool squirrelPipeline::Store() {
     QSqlQuery q(QSqlDatabase::database("squirrel"));
 
+    utils::Print(QString("squirrelPipeline has been asked to Store(%1, %2). Current objectID [%3]").arg(PipelineName).arg(Version).arg(objectID));
+
     /* insert if the object doesn't exist ... */
     if (objectID < 0) {
         q.prepare("insert into Pipeline (PipelineName, Description, Datetime, Level, PrimaryScript, SecondaryScript, Version, CompleteFiles, DataCopyMethod, DependencyDirectory, DependencyLevel, DependencyLinkType, DirectoryStructure, Directory, GroupName, GroupType, Notes, ResultScript, TempDirectory, FlagUseProfile, FlagUseTempDirectory, ClusterType, ClusterUser, ClusterQueue, ClusterSubmitHost, NumConcurrentAnalysis, ClusterMaxWallTime, ClusterNumberCores, ClusterMemory, SubmitDelay, VirtualPath) values (:PipelineName, :Description, :Datetime, :Level, :PrimaryScript, :SecondaryScript, :Version, :CompleteFiles, :DataCopyMethod, :DependencyDirectory, :DependencyLevel, :DependencyLinkType, :DirectoryStructure, :Directory, :GroupName, :GroupType, :Notes, :ResultScript, :TempDirectory, :FlagUseProfile, :FlagUseTempDirectory, :ClusterType, :ClusterUser, :ClusterQueue, :ClusterSubmitHost, :NumConcurrentAnalysis, :ClusterMaxWallTime, :ClusterNumberCores, :ClusterMemory, :SubmitDelay, :VirtualPath)");
