@@ -319,6 +319,12 @@ bool nidb::ModuleCreateLogFile () {
         else if (pid < 10000) padding = " ";
         else padding = "  ";
         log.write(GetBuildString().toLatin1());
+
+        if (cfg["debug"].toInt())
+            log.write("\nDebug mode");
+        else
+            log.write("\nNot debug mode");
+
         Print("[\033[0;32mOk\033[0m]");
         return 1;
     }
@@ -528,7 +534,10 @@ void nidb::InsertAnalysisEvent(qint64 analysisid, int pipelineid, int pipelineve
 /* ---------------------------------------------------------- */
 /* --------- WriteLog --------------------------------------- */
 /* ---------------------------------------------------------- */
-QString nidb::WriteLog(QString msg, int wrap, bool timeStamp) {
+QString nidb::WriteLog(QString msg, QString func, int wrap, bool timeStamp) {
+    if (func.trimmed() != "")
+        msg = func + "() " + msg;
+
     if (msg.trimmed() != "") {
         if (wrap > 0)
             msg = WrapText(msg, wrap);
@@ -554,8 +563,11 @@ QString nidb::WriteLog(QString msg, int wrap, bool timeStamp) {
 /* ---------------------------------------------------------- */
 /* --------- Debug ------------------------------------------ */
 /* ---------------------------------------------------------- */
-QString nidb::Debug(QString msg, int wrap, bool timeStamp) {
-    if (debug) {
+QString nidb::Debug(QString msg, QString func, int wrap, bool timeStamp) {
+    if (cfg["debug"].toInt()) {
+        if (func.trimmed() != "")
+            msg = func + "() " + msg;
+
         if (msg.trimmed() != "") {
             if (wrap > 0)
                 msg = WrapText(msg, wrap);

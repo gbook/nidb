@@ -86,16 +86,16 @@
 							</div>
 						</h1>
 					</div>
-					<div class="center aligned column">
+					<!--<div class="center aligned column">
 						<?
-							$sqlstring = "select sum(analysis_disksize) 'disksize' from analysis where pipeline_id = $id";
-							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-							$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-							$diskusage = $row['disksize'];
+							//$sqlstring = "select sum(analysis_disksize) 'disksize' from analysis where pipeline_id = $id";
+							//$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+							//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+							//$diskusage = $row['disksize'];
 						?>
 						Disk usage <?=HumanReadableFilesize($diskusage)?> <i class="question circle outline icon" title="Disk usage may not be accurate if this pipeline depends on other pipelines and hard links are used.
 						<p>Check the parent pipeline for its usage</p>"></i>
-					</div>
+					</div> -->
 					<div class="right aligned column">
 						<? if ($isenabled) { ?>
 							Enable <a href="<?=$returnpage?>.php?action=disable&returnpage=<?=$returnpage?>&id=<?=$id?>"><i class="big green toggle on icon" title="Pipeline enabled, click to disable"></i></a>

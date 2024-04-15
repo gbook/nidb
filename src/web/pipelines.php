@@ -946,6 +946,8 @@
 	/* ------- DisplayPipelineForm ---------------- */
 	/* -------------------------------------------- */
 	function DisplayPipelineForm($type, $id, $returntab) {
+		MarkTime("DisplayPipelineForm() start");
+
 		if ($type != "add") { 
 			if (!ValidID($id,'Pipeline ID - L')) { return; }
 		}
@@ -1043,7 +1045,7 @@
 		
 			$(document).ready(function() {
 
-				$('.menu .item').tab();
+				//$('.menu .item').tab();
 				$('.tabular.menu .item').tab();
 				
 				$('.pageloading').hide();
@@ -1111,6 +1113,8 @@
 			</div>
 		</div>
 		
+		<? MarkTime("Finished display 'Loading...'"); ?>
+		
 		<?
 			if ($type != "add") {
 				DisplayPipelineStatus($title, $desc, $isenabled, $isdebug, $id, "pipelines", $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck);
@@ -1136,6 +1140,7 @@
 			}
 		?>
 		<br>
+		<? MarkTime("Checkin - 1"); ?>
 		
 		<style>
 			.item2.active { background-color: #333 !important; color: #fff !important; }
@@ -1172,38 +1177,56 @@
 					<td valign="top" style="padding-bottom: 10pt">
 						<div class="ui segment">
 							<?
+								MarkTime("Info Tab - A");
+								
 								/* gather statistics about the analyses */
 								$sqlstring = "select sum(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete'";
+								//PrintSQL($sqlstring);
 								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 								$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 								$totaltime = $row['cluster_time'];
 								$totaltime = number_format(($totaltime/60/60),2);
+
+								MarkTime("Info Tab - B");
 								
-								$sqlstring = "select sum(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'cluster_timesuccess' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete' and analysis_iscomplete = 1";
-								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-								$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-								$totaltimesuccess = $row['cluster_timesuccess'];
-								$totaltimesuccess = number_format(($totaltimesuccess/60/60),2);
+								//$sqlstring = "select sum(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'cluster_timesuccess' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete' and analysis_iscomplete = 1";
+								//PrintSQL($sqlstring);
+								//$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+								//$totaltimesuccess = $row['cluster_timesuccess'];
+								//$totaltimesuccess = number_format(($totaltimesuccess/60/60),2);
 								
+								MarkTime("Info Tab - C");
+
 								$sqlstring = "select count(*) 'numcomplete' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete'";
+								//PrintSQL($sqlstring);
 								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 								$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 								$numcomplete = $row['numcomplete'];
 
-								$sqlstring = "select count(*) 'numcompletesuccess' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete' and analysis_iscomplete = 1";
-								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-								$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-								$numcompletesuccess = $row['numcompletesuccess'];
+								MarkTime("Info Tab - D");
+
+								//$sqlstring = "select count(*) 'numcompletesuccess' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete' and analysis_iscomplete = 1";
+								//PrintSQL($sqlstring);
+								//$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+								//$numcompletesuccess = $row['numcompletesuccess'];
+
+								MarkTime("Info Tab - E");
 								
-								$sqlstring = "select count(*) 'numprocessing' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'processing'";
-								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-								$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-								$numprocessing = $row['numprocessing'];
+								//$sqlstring = "select count(*) 'numprocessing' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'processing'";
+								//PrintSQL($sqlstring);
+								//$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+								//$numprocessing = $row['numprocessing'];
 								
-								$sqlstring = "select count(*) 'numpending' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'pending'";
-								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-								$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-								$numpending = $row['numpending'];
+								MarkTime("Info Tab - F");
+								
+								//$sqlstring = "select count(*) 'numpending' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'pending'";
+								//PrintSQL($sqlstring);
+								//$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+								//$numpending = $row['numpending'];
 								
 								/* group by and count() */
 								//$sqlstring = "select analysis_status, count(*) 'count' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id group by analysis_status";
@@ -1217,10 +1240,12 @@
 								//	if ($status == "error") { $numerror = $count; }
 								//}
 								
+								MarkTime("Info Tab - G");
+								
 								/* get mean processing times */
 								$sqlstring = "select analysis_id, timestampdiff(second, analysis_startdate, analysis_enddate) 'analysis_time', timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status <> ''";
 								//PrintSQL($sqlstring);
-								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								//$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 									//$analysis_id = $row['analysis_id'];
 									$analysistimes[] = $row['analysis_time'];
@@ -1232,6 +1257,8 @@
 								if (count($analysistimes) == 0) {
 									$analysistimes[] = 0;
 								}
+
+								MarkTime("Info Tab - H");
 								
 								?>
 								<div class="ui mini statistics">
@@ -1239,7 +1266,7 @@
 										<div class="value"><?=$numcomplete?></div>
 										<div class="label" style="font-size: smaller">Completed</div>
 									</div>
-									<div class="ui statistic">
+									<!--<div class="ui statistic">
 										<div class="value"><?=$numcompletesuccess?></div>
 										<div class="label" style="font-size: smaller">Completed<br>Successfuly</div>
 									</div>
@@ -1254,7 +1281,7 @@
 									<div class="ui statistic">
 										<div class="value"><?=$numerror?></div>
 										<div class="label" style="font-size: smaller">Error</div>
-									</div>
+									</div>-->
 									<div class="ui grey statistic">
 										<div class="value"><?=$totaltime?> hr</div>
 										<div class="label" style="font-size: smaller">Total CPU Time</div>
@@ -1487,6 +1514,8 @@
 			</table>
 		</div>
 		<? } ?>
+
+		<? MarkTime("Between Info and Settings tabs"); ?>
 		
 		<!-- -------------------- Settings tab -------------------- -->
 
@@ -2927,6 +2956,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 		</div>
 		<?
 		}
+		MarkTime("DisplayPipelineForm() end");
 	}
 
 	
