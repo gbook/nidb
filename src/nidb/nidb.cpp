@@ -731,13 +731,26 @@ bool nidb::isValidNiDBModality(QString m) {
 /* ---------------------------------------------------------- */
 //bool nidb::SubmitClusterJob(QString f, QString submithost, QString qsub, QString user, QString queue, QString &msg, int &jobid, QString &result) {
 bool nidb::SubmitClusterJob(QString jobFilePath, QString clusterType, QString submitHost, QString submitUser, QString qsub, QString clusterUser, QString clusterQueue, QString &msg, int &jobid, QString &result) {
+    clusterType = clusterType.toLower();
 
-    /* submit the job to the cluster. Command will be in the format:
-     * ssh <submithost> qsub -u <username> -q <queuelist> "/full/path/to/sge.job" */
+    /* submitHost = cfg['clustersubmithost']
+     * submitUser = cfg['clustersubmituser']
+     * clusterUser = cfg['clusteruser']
+     */
+
+    if (submitHost == "")
+        submitHost = cfg["clustersubmithost"];
+    if (submitUser == "")
+        submitHost = cfg["clustersubmituser"];
+    if (clusterUser == "")
+        clusterUser = cfg["clusteruser"];
+
     QString systemstring;
     if (clusterType == "slurm")
         systemstring = QString("ssh %1@%2 sbatch \"%3\"").arg(submitUser).arg(submitHost).arg(jobFilePath);
     else
+        /* submit the job to the cluster. Command will be in the format:
+         * ssh <submithost> qsub -u <username> -q <queuelist> "/full/path/to/sge.job" */
         systemstring = QString("ssh %1 %2 -u %3 -q %4 \"%5\"").arg(submitHost).arg(qsub).arg(clusterUser).arg(clusterQueue).arg(jobFilePath);
 
     result = SystemCommand(systemstring,true).trimmed();
@@ -781,12 +794,12 @@ bool nidb::SubmitClusterJob(QString jobFilePath, QString clusterType, QString su
         msg = "Error reading job submission file";
         return false;
     }
-    else if ((clusterType == "slurm") && (result.contains("submitted batch job"))) {
+    else if ((clusterType == "slurm") && (result.contains("submitted batch job", Qt::CaseInsensitive))) {
         msg = "slurm job submitted successfully";
         return true;
     }
 
-    msg = "Cluster job submitted successfully";
+    msg = "Cluster job submitted successfully [" + result + "]";
 
     return true;
 }

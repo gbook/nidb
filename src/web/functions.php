@@ -656,22 +656,28 @@
 	/* ------- GetStudyInfo ----------------------- */
 	/* -------------------------------------------- */
 	function GetStudyInfo($id) {
-		$sqlstring = "select * from studies b left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join projects e on c.project_id = e.project_id where b.study_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$uid = $row['uid'];
-		$studynum = $row['study_num'];
-		$subjectid = $row['subject_id'];
-		$studyid = $row['study_id'];
-		$modality = $row['study_modality'];
-		$type = $row['study_type'];
-		$studydatetime = $row['study_datetime'];
-		$enrollmentid = $row['enrollment_id'];
-		$projectname = $row['project_name'];
-		$projectid = $row['project_id'];
-		
-		$path = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum";
-		return array($path, $uid, $studynum, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid);
+		if ($id != "") {
+			$sqlstring = "select * from studies b left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join projects e on c.project_id = e.project_id where b.study_id = $id";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			$uid = $row['uid'];
+			$studynum = $row['study_num'];
+			$subjectid = $row['subject_id'];
+			$studyid = $row['study_id'];
+			$modality = $row['study_modality'];
+			$type = $row['study_type'];
+			$studydatetime = $row['study_datetime'];
+			$enrollmentid = $row['enrollment_id'];
+			$projectname = $row['project_name'];
+			$projectid = $row['project_id'];
+			
+			$path = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum";
+			return array($path, $uid, $studynum, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid);
+		}
+		else {
+			echo "Invalid study_id<br>";
+			return array("", "", -1, -1, "", "", "", -1, "", -1);
+		}
 	}
 
 
@@ -761,15 +767,19 @@
 	/* ------- GetEnrollmentInfo ------------------ */
 	/* -------------------------------------------- */
 	function GetEnrollmentInfo($id) {
-		$sqlstring = "select * from enrollment a left join subjects b on a.subject_id = b.subject_id left join projects c on a.project_id = c.project_id where a.enrollment_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$uid = $row['uid'];
-		$subjectid = $row['subject_id'];
-		$projectname = $row['project_name'];
-		$projectid = $row['project_id'];
-		
-		return array($uid, $subjectid, $projectname, $projectid);
+		if ($id != "") {
+			$sqlstring = "select * from enrollment a left join subjects b on a.subject_id = b.subject_id left join projects c on a.project_id = c.project_id where a.enrollment_id = $id";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			$uid = $row['uid'];
+			$subjectid = $row['subject_id'];
+			$projectname = $row['project_name'];
+			$projectid = $row['project_id'];
+			return array($uid, $subjectid, $projectname, $projectid);
+		}
+		else {
+			return array("",-1,"",-1);
+		}
 	}
 	
 	

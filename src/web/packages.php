@@ -1897,6 +1897,7 @@
 			$optionflags = $row['option_flags'];
 			$pkgsubjectid = $row['pkg_subjectid'];
 			
+			//echo "enrollmentid [$enrollmentid] D<br>";
 			list($uid, $subjectid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
 			
 			//if (contains($optionflags, 'DRUGS')) {
@@ -1988,17 +1989,23 @@
 		/* get analysis */
 		$totalanalysisfiles = 0;
 		$totalanalysisbytes = 0;
-		$sqlstring = "select * from package_analyses a left join analysis b on a.analysis_id = b.analysis_id left join studies c on b.study_id = c.study_id where a.package_id = $packageid";
+		$sqlstring = "select a.*, b.analysis_startdate, b.analysis_status, b.analysis_disksize, b.analysis_numfiles, c.* from package_analyses a left join analysis b on a.analysis_id = b.analysis_id left join studies c on b.study_id = c.study_id where a.package_id = $packageid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$numanalysis = mysqli_num_rows($result);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$enrollmentid = $row['enrollment_id'];
-			list($uid, $subjectid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
+			$studyid = $row['study_id'];
+			
+			if ($studyid == "")  {
+				echo "Analysis with analysis_id [" . $row['analysis_id'] . "] does not exist any longer<br>";
+				continue;
+			}
+			
+			list($path, $uid, $studynum, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid) = GetStudyInfo($studyid);
 
 			$objectid = $row['packageanalysis_id'];
 			$analyses[$uid][$objectid]['analysisid'] = $row['analysis_id'];
 			$analyses[$uid][$objectid]['studynum'] = $row['study_num'];
-			$analyses[$uid][$objectid]['date'] = $row['analysis_date'];
+			$analyses[$uid][$objectid]['date'] = $row['analysis_startdate'];
 			$analyses[$uid][$objectid]['status'] = $row['analysis_status'];
 			$analyses[$uid][$objectid]['disksize'] = $row['analysis_disksize'];
 			$analyses[$uid][$objectid]['numfiles'] = $row['analysis_numfiles'];
