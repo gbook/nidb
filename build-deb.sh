@@ -2,8 +2,8 @@
 
 PACKAGE=nidb_2024.4.1085
 LIBDIR=$PACKAGE/lib/x86_64-linux-gnu/
-BINDIR=$PACKAGE/usr/local/bin
-DEBDIR=$PACKAGE/DEBIAN/
+BINDIR=$PACKAGE/usr/local/bin/
+DEBDIR=$PACKAGE/DEBIAN
 
 mkdir -p $LIBDIR
 mkdir -p $BINDIR
