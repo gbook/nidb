@@ -7,6 +7,7 @@ DEBDIR=$PACKAGE/DEBIAN
 
 mkdir -p $LIBDIR
 mkdir -p $BINDIR
+mkdir -p $DEBDIR
 
 # try to copy the binaries to their final locations (this may fail because it requires sudo, but its not a critical step to build)
 cp -uv bin/squirrel/libsquirrel* $LIBDIR
