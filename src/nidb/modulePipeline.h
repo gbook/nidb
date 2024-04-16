@@ -109,6 +109,7 @@ public:
     void ClearPipelineHistory();
     QString GetAnalysisLocalPath(QString dirStructureCode, QString pipelineName="", QString UID="", int studyNum=-1);
     QString GetAnalysisClusterPath(QString dirStructureCode, QString pipelineName="", QString UID="", int studyNum=-1);
+    void DisablePipeline(int pipelineid);
 
 private:
     nidb *n;

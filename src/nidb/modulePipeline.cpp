@@ -85,7 +85,13 @@ int modulePipeline::Run() {
     /* get the list of pipelines to be run */
     int i = 0;
     while (q.next()) {
+
+pipeline_loop: /* first time ever using goto */
+
         i++;
+        double percent = ((double)i/(double)numPipelines)*100.0;
+        //QString percentStr = QString::number(percent, 'f', 1);
+
         n->ModuleRunningCheckIn();
 
         int pipelineid = q.value("pipeline_id").toInt();
@@ -107,7 +113,7 @@ int modulePipeline::Run() {
         QString analysisdir;
         analysisdir = GetAnalysisLocalPath(p.dirStructure);
 
-        n->WriteLog(QString("========== Working on pipeline [%1] - [%2] Submits to queue [%3] through host [%4] ==========").arg(p.name).arg(pipelineid).arg(p.clusterQueue).arg(p.clusterSubmitHost), __FUNCTION__);
+        n->WriteLog(QString("===== [%1%] Working on pipeline [%2] - [%3] Submits to cluster [%4@%5] queue [%6] through host [%7@%8] =====").arg(percent, 0, 'f', 1).arg(p.name).arg(pipelineid).arg(p.clusterUser).arg(p.clusterType).arg(p.clusterQueue).arg(p.clusterSubmitHostUser).arg(p.clusterSubmitHost));
 
         SetPipelineProcessStatus("running",pipelineid,0);
 
@@ -295,7 +301,6 @@ int modulePipeline::Run() {
                 i++;
                 qint64 analysisRowID = -1;
                 QStringList setuplog;
-                //QString setupLogFile;
 
                 SetPipelineProcessStatus("running", pipelineid, sid);
 
@@ -308,7 +313,7 @@ int modulePipeline::Run() {
                     continue;
                 }
 
-                n->WriteLog(QString("[%1] ---------- Working on study [%2%3] (%4 of %5) ----------").arg(p.name).arg(s.UID()).arg(s.studyNum()).arg(i).arg(studyids.size()), __FUNCTION__);
+                n->WriteLog(QString("[%1] ---------- Working on study [%2%3] (%4 of %5) ----------").arg(p.name).arg(s.UID()).arg(s.studyNum()).arg(i).arg(studyids.size()));
 
                 /* check if the number of concurrent jobs is reached. the function also checks if this pipeline module is enabled */
                 int filled;
@@ -334,11 +339,13 @@ int modulePipeline::Run() {
                         break;
 
                     if (filled == 1) {
-                        m = n->WriteLog(QString("Concurrent analysis quota reached, waiting 15 seconds").arg(p.name), __FUNCTION__);
+                        //m = n->WriteLog(QString("Concurrent analysis quota reached, waiting 15 seconds").arg(p.name), __FUNCTION__);
+                        m = n->WriteLog(QString("Concurrent number of running jobs reached. Skipping to next pipeline.").arg(p.name), __FUNCTION__);
                         SetPipelineStatusMessage(pipelineid, m);
                         InsertPipelineEvent(pipelineid, runnum, -1, "maxjobs_reached", m);
                         n->ModuleRunningCheckIn();
-                        QThread::sleep(15); /* sleep for 15 seconds */
+                        //QThread::sleep(15); /* sleep for 15 seconds */
+                        goto pipeline_loop; /* first time ever using goto in 25 years of programming... */
                     }
                     if (filled == 2) {
                         return 1;
@@ -686,15 +693,29 @@ int modulePipeline::Run() {
             n->WriteLog(QString("Invalid pipeline level [%1]").arg(p.level), __FUNCTION__);
         }
 
-        n->WriteLog(QString("Done with pipeline [%1] - [%2]").arg(p.name).arg(pipelineid), __FUNCTION__);
-        //SetPipelineStatusMessage(pipelineid, "Finished submitting jobs");
+        n->WriteLog(QString("Done with pipeline [%1] - [%2]").arg(p.name).arg(pipelineid));
         SetPipelineStopped(pipelineid, "Finished submitting jobs");
+
+        /* check if there have been any completed analyses in the last 60 days */
+        q2.prepare("select count(*) 'count' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = :pid and analysis_status = 'complete' and abs(timestampdiff(day, now(), analysis_clusterenddate)) < 60");
+        q2.bindValue(":pid", pipelineid);
+        n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+        if (q2.size() > 0) {
+            q2.first();
+            int count = q2.value("count").toInt();
+            /* disable the pipeline if there are no analyses completed in the last 60 days */
+            if (count < 1) {
+                n->WriteLog(QString("Disabling pipeline [%1]. No analyses completed within the past 60 days").arg(p.name));
+                DisablePipeline(pipelineid);
+            }
+        }
+
     }
 
     SetPipelineProcessStatus("complete",0,0);
 
     if (jobsWereSubmitted) {
-        n->WriteLog(QString("Done with pipeline module. [%1] total jobs were submitted. jobsWereSubmitted [%2]").arg(totalSubmitted).arg(jobsWereSubmitted), __FUNCTION__);
+        n->WriteLog(QString("Done with pipeline module. [%1] total jobs were submitted. jobsWereSubmitted [%2]").arg(totalSubmitted).arg(jobsWereSubmitted));
         return true;
     }
     else
@@ -2472,4 +2493,15 @@ QString modulePipeline::GetAnalysisClusterPath(QString dirStructureCode, QString
     }
 
     return path;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- DisablePipeline -------------------------------- */
+/* ---------------------------------------------------------- */
+void modulePipeline::DisablePipeline(int pipelineid) {
+    QSqlQuery q;
+    q.prepare("update pipelines set pipeline_enabled = 0 where pipeline_id = :pid");
+    q.bindValue(":pid", pipelineid);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 }
