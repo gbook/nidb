@@ -105,6 +105,7 @@ apt install wget   # if needed
 ```
 sudo apt install ninja-build
 sudo apt install libmariadb-devel*
+sudo apt install libglib2*
 cd ~
 mkdir build-sqldrivers
 cd build-sqldrivers
