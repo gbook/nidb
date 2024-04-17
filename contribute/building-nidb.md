@@ -92,6 +92,29 @@ apt install wget   # if needed
 4. The Qt Maintenance Tool will start. An account is required to download Qt open source
 5. On the components screen, select the checkbox for **Qt 6.6.x → Desktop gcc 64-bit**
 
+#### Step 3 - (Optional) Build MySQL/MariaDB driver for Qt
+
+{% tabs %}
+{% tab title="First Tab" %}
+
+{% endtab %}
+
+{% tab title="Debian 12" %}
+
+
+```
+sudo apt install ninja-build
+sudo apt install libmariadb-devel*
+cd ~
+mkdir build-sqldrivers
+cd build-sqldrivers
+~/Qt/6.6.3/gcc_64/bin/qt-cmake -G Ninja ~/Qt/6.6.3/Src/qtbase/src/plugins/sqldrivers -DCMAKE_INSTALL_PREFIX=~/Qt/6.6.3/gcc_64 -DMySQL_INCLUDE_DIR="/usr/include/mariadb" -DMySQL_LIBRARY="/usr/lib/x86_64-linux-gnu/libmariadbclient.so"
+cmake --build .
+cmake --install .
+```
+{% endtab %}
+{% endtabs %}
+
 ### Building NiDB
 
 Once the build environment is setup, the builds can be done by script. The `build.sh` script will build only the nidb executable, this is useful when testing. The `rpmbuildx.sh` scripts will build the rpm which will create releases.
