@@ -62,7 +62,7 @@ yum install git
 {% endtab %}
 
 {% tab title="Ubuntu 20" %}
-```
+```bash
 apt install build-essential
 apt install libxcb*
 apt install make
@@ -72,7 +72,7 @@ apt install git
 {% endtab %}
 
 {% tab title="Debian 12" %}
-```
+```bash
 apt install build-essential
 apt install make
 apt install cmake
@@ -94,15 +94,15 @@ apt install wget   # if needed
 
 #### Step 3 - (Optional) Build MySQL/MariaDB driver for Qt
 
+Sometimes the MySQL/MariaDB driver supplied with Qt will not work correctly, and needs to be built manually. This happens on Debian 12.
+
 {% tabs %}
-{% tab title="First Tab" %}
+{% tab title="RHEL 9" %}
 
 {% endtab %}
 
 {% tab title="Debian 12" %}
-
-
-```
+```bash
 sudo apt install ninja-build
 sudo apt install libmariadb-devel*
 sudo apt install libglib2*
