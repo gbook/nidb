@@ -94,7 +94,7 @@ apt install wget   # if needed
 
 #### Step 3 - (Optional) Build MySQL/MariaDB driver for Qt
 
-Sometimes the MySQL/MariaDB driver supplied with Qt will not work correctly, and needs to be built manually. This happens on Debian 12.
+Sometimes the MySQL/MariaDB driver supplied with Qt will not work correctly, and needs to be built manually. This happens on Debian 12, for example. If building is successful, the path to the driver should eventually be `~/Qt/6.6.3/gcc_64/plugins/sqldrivers/libqsqlmysql.so`
 
 {% tabs %}
 {% tab title="RHEL 9" %}
@@ -102,7 +102,7 @@ Sometimes the MySQL/MariaDB driver supplied with Qt will not work correctly, and
 # need to fix this, don't use it yet.
 
 sudo apt install ninja-build
-sudo apt install libmariadb-devel*
+sudo apt install libmariadb-dev*
 sudo apt install libglib2*
 cd ~
 mkdir build-sqldrivers
