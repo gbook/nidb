@@ -75,10 +75,7 @@ apt install git
 
 {% tab title="Debian 12" %}
 ```bash
-apt install build-essential
-apt install make
-apt install cmake
-apt install git
+apt install build-essential make cmake git
 apt install libxcb* libxkb* libX11-xcb*
 apt install libdbus-1*
 apt install wget   # if needed
@@ -93,6 +90,7 @@ apt install wget   # if needed
 3. Run `./qt-unified-linux-x64-x.x.x-online.run`
 4. The Qt Maintenance Tool will start. An account is required to download Qt open source
 5. On the components screen, select the checkbox for **Qt 6.6.x → Desktop gcc 64-bit**
+6. **(Optional for building MySQL/MariaDB driver)** On the components screen, select the checkbox for **Qt 6.6.x → Sources**
 
 #### Step 3 - (Optional) Build MySQL/MariaDB driver for Qt
 
@@ -118,7 +116,7 @@ cmake --install .
 {% tab title="Debian 12" %}
 ```bash
 sudo apt install ninja-build
-sudo apt install libmariadb-devel*
+sudo apt install libmariadb-dev*
 sudo apt install libglib2*
 cd ~
 mkdir build-sqldrivers
@@ -130,7 +128,7 @@ cmake --install .
 {% endtab %}
 {% endtabs %}
 
-## Building NiDB executable
+## Building the NiDB executable
 
 Once the build environment is setup, the builds can be done by script. The `build.sh` script will build only the nidb executable, this is useful when testing. The `rpmbuildx.sh` scripts will build the rpm which will create releases.
 
