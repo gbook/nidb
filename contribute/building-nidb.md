@@ -98,7 +98,19 @@ Sometimes the MySQL/MariaDB driver supplied with Qt will not work correctly, and
 
 {% tabs %}
 {% tab title="RHEL 9" %}
+```bash
+# need to fix this, don't use it yet.
 
+sudo apt install ninja-build
+sudo apt install libmariadb-devel*
+sudo apt install libglib2*
+cd ~
+mkdir build-sqldrivers
+cd build-sqldrivers
+~/Qt/6.6.3/gcc_64/bin/qt-cmake -G Ninja ~/Qt/6.6.3/Src/qtbase/src/plugins/sqldrivers -DCMAKE_INSTALL_PREFIX=~/Qt/6.6.3/gcc_64 -DMySQL_INCLUDE_DIR="/usr/include/mariadb" -DMySQL_LIBRARY="/usr/lib/x86_64-linux-gnu/libmariadbclient.so"
+cmake --build .
+cmake --install .
+```
 {% endtab %}
 
 {% tab title="Debian 12" %}
