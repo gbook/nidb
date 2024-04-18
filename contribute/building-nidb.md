@@ -4,7 +4,7 @@ description: How to build NiDB and contribute to its development
 
 # Building NiDB
 
-## Building NiDB
+## Compatible Linux Distributions
 
 The following OS configurations have been tested to build nidb. It may be possible to build NiDB on other OS configurations, but only the below environments have been tested.
 
@@ -17,12 +17,14 @@ The following OS configurations have been tested to build nidb. It may be possib
 * <mark style="color:red;">**Incompatible**</mark>
   * RHEL-compatible 8.6 (RHEL 8.6, Rocky 8.6, AlmaLinux 8.6)
   * CentOS 8 Stream
+* **Unknown**
+  * Windows 10/11 - NiDB will compile and build on Windows, but NiDB uses Linux system calls to perform many background operations, and thus would not work on Windows.
 
 {% hint style="danger" %}
 **NiDB cannot be built on CentOS Stream 8 or Rocky Linux 8.6.** These distros contain kernel bugs which are incompatible with the QProcess library.
 {% endhint %}
 
-### Prepare Build Environment
+## Prepare Build Environment
 
 #### Step 1 - Install development tools
 
@@ -128,7 +130,7 @@ cmake --install .
 {% endtab %}
 {% endtabs %}
 
-### Building NiDB
+## Building NiDB executable
 
 Once the build environment is setup, the builds can be done by script. The `build.sh` script will build only the nidb executable, this is useful when testing. The `rpmbuildx.sh` scripts will build the rpm which will create releases.
 
@@ -240,13 +242,13 @@ cd ~/nidb
 {% endtab %}
 {% endtabs %}
 
-### Contributing to the NiDB Project
+## Contributing to the NiDB Project
 
-#### Setting up a development server
+### Setting up a development server
 
 A development server can be a full server, a VM, or any installation of one of the supported Linux operating systems. Once you've been granted access to the nidb project on github, you'll need to add your SSH key under your account (github.com --> click your username --> Settings --> SSH and GPG keys). There are directions on the github site for how to do this. Then you can clone the current source code into your .
 
-#### Cloning a new repository with SSH
+### Cloning a new repository with SSH
 
 ```bash
 cd ~
@@ -255,7 +257,7 @@ git clone git@github.com:gbook/nidb.git nidb
 
 This will create a git repository called nidb in your home directory.
 
-#### Committing changes
+### Committing changes
 
 ```bash
 cd ~/nidb
@@ -266,7 +268,7 @@ git commit -am "Comments about the changes"
 git push origin master
 ```
 
-#### Updating your repository
+### Updating your repository
 
 To keep your local copy of the repository up to date, you'll need to pull any changes from github.
 
@@ -278,7 +280,7 @@ git pull origin master
 cp -uv ~/nidb/src/web/*.php /var/www/html/
 ```
 
-### Troubleshooting
+## Troubleshooting
 
 #### Build freezes
 
