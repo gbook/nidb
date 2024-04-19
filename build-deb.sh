@@ -18,11 +18,11 @@ cp -uv ~/Qt/6.6.3/gcc_64/lib/libicu* $LIBDIR
 
 cp -uv bin/nidb/nidb $BINDIR
 
-echo "Package: nidb\n
-Version: 2024.4.1085\n
+echo "Package: nidb
+Version: 2024.4.1085
 Section: base
 Priority: optional
-Architecture: x86_64
+Architecture: amd64
 Maintainer: Greg Book <gregory.a.book@gmail.com>
 Description: Neuroinformatics Database" > $DEBDIR/control
 
