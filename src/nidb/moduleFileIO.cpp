@@ -336,7 +336,15 @@ bool moduleFileIO::DeleteAnalysis(qint64 analysisid, QString &msg) {
 
     /* attempt to kill the SGE job, if its running */
     if (a.jobid > 0) {
-        QString systemstring = QString("/sge/sge-root/bin/lx24-amd64/./qdelete %1").arg(a.jobid);
+        pipeline p(a.pipelineid, n);
+        QString clusterType = p.clusterType;
+        QString systemstring;
+        if (clusterType == "slurm") {
+            systemstring = QString("ssh %1@%2 scancel %3").arg(p.clusterSubmitHostUser).arg(p.clusterSubmitHost).arg(a.jobid);
+        }
+        else {
+            systemstring = QString("/sge/sge-root/bin/lx24-amd64/./qdelete %1").arg(a.jobid);
+        }
         n->WriteLog(SystemCommand(systemstring, true));
     }
     else {

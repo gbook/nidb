@@ -100,4 +100,4 @@ sudo cp -uv bin/smtp/libSMTPEmail* /lib/x86_64-linux-gnu/
 echo -e "\nCopying nidb to /nidb/bin"
 sudo cp -uv bin/nidb/nidb /nidb/bin/
 
-zip -j nidb-cluster.zip bin/nidb/nidb bin/squirrel/libsquirrel* bin/gdcm/bin/libgdcm* bin/smtp/libSMTPEmail* ~/Qt/6.6.3/gcc_64/lib/libQt6Sql.so* ~/Qt/6.6.3/gcc_64/lib/libQt6Network.so* ~/Qt/6.6.3/gcc_64/lib/libQt6Core.so*
+#zip -j nidb-cluster.zip bin/nidb/nidb bin/squirrel/libsquirrel* bin/gdcm/bin/libgdcm* bin/smtp/libSMTPEmail* ~/Qt/6.6.3/gcc_64/lib/libQt6Sql.so* ~/Qt/6.6.3/gcc_64/lib/libQt6Network.so* ~/Qt/6.6.3/gcc_64/lib/libQt6Core.so*

@@ -98,7 +98,7 @@ public:
     QList<pipelineStep> GetPipelineSteps(int pipelineid, int version);
     QList<dataDefinitionStep> GetPipelineDataDef(int pipelineid, int version);
     QString FormatCommand(int pipelineid, QString clusteranalysispath, QString command, QString analysispath, qint64 analysisid, QString uid, int studynum, QString studydatetime, QString pipelinename, QString workingdir, QString description);
-    bool CreateClusterJobFile(QString jobfilename, QString clustertype, qint64 analysisid, QString uid, int studynum, QString analysispath, bool usetmpdir, QString tmpdir, QString studydatetime, QString pipelinename, int pipelineid, QString resultscript, int maxwalltime, int numcores, double memory, QList<pipelineStep> steps, bool runsupplement = false);
+    bool CreateClusterJobFile(QString jobfilename, QString clustertype, QString queue, qint64 analysisid, QString uid, int studynum, QString analysispath, bool usetmpdir, QString tmpdir, QString studydatetime, QString pipelinename, int pipelineid, QString resultscript, int maxwalltime, int numcores, double memory, QList<pipelineStep> steps, bool runsupplement = false);
     QList<int> GetStudyToDoList(int pipelineid, QString modality, int depend, QString groupids, qint64 &runnum);
     bool GetData(int studyid, QString analysispath, QString uid, qint64 analysisid, int pipelineid, int pipelinedep, QString deplevel, QList<dataDefinitionStep> datadef, int &numdownloaded, QString &datalog);
     QString GetBehPath(QString behformat, QString analysispath, QString location, QString behdir, int newseriesnum);

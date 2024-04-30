@@ -770,8 +770,15 @@ bool nidb::SubmitClusterJob(QString jobFilePath, QString clusterType, QString su
     /* get the jobid */
     jobid = -1;
     QStringList parts = result.split(" ");
-    if (parts.size() >= 3)
-        jobid = parts[2].toInt();
+    if (clusterType == "slurm") {
+        // Submitted batch job nnnnn
+        if (parts.size() >= 4)
+            jobid = parts[3].toInt();
+    }
+    else {
+        if (parts.size() >= 3)
+            jobid = parts[2].toInt();
+    }
 
     /* check the return message from qsub */
     if (result.contains("invalid option", Qt::CaseInsensitive)) {

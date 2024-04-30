@@ -243,7 +243,7 @@ pipeline_loop: /* first time ever using goto */
 
             /* create the cluster job file */
             QString jobFilePath = analysispath + "/sge.job";
-            if (CreateClusterJobFile(jobFilePath, p.clusterType, analysisRowID, "UID", 0, analysispath, p.useTmpDir, p.tmpDir, "", p.name, pipelineid, p.resultScript, p.clusterMaxWallTime, p.clusterNumCores, p.clusterMemory, steps, false)) {
+            if (CreateClusterJobFile(jobFilePath, p.clusterType, p.clusterQueue, analysisRowID, "UID", 0, analysispath, p.useTmpDir, p.tmpDir, "", p.name, pipelineid, p.resultScript, p.clusterMaxWallTime, p.clusterNumCores, p.clusterMemory, steps, false)) {
                 n->WriteLog(QString("[%1] Created sge job submit file [" + jobFilePath + "]").arg(p.name), __FUNCTION__);
             }
             else {
@@ -606,7 +606,7 @@ pipeline_loop: /* first time ever using goto */
                         localJobFilePath = analysispath + "/" + jobFilename;
                         clusterJobFilePath = clusteranalysispath + "/" + jobFilename;
 
-                        if (CreateClusterJobFile(localJobFilePath, p.clusterType, analysisRowID, s.UID(), s.studyNum(), clusteranalysispath, p.useTmpDir, p.tmpDir, s.dateTime().toString("yyyy-MM-dd hh:mm:ss"), p.name, pipelineid, p.resultScript, p.clusterMaxWallTime, p.clusterNumCores, p.clusterMemory, steps, a.runSupplement)) {
+                        if (CreateClusterJobFile(localJobFilePath, p.clusterType, p.clusterQueue, analysisRowID, s.UID(), s.studyNum(), clusteranalysispath, p.useTmpDir, p.tmpDir, s.dateTime().toString("yyyy-MM-dd hh:mm:ss"), p.name, pipelineid, p.resultScript, p.clusterMaxWallTime, p.clusterNumCores, p.clusterMemory, steps, a.runSupplement)) {
                             n->Debug("Created (local path) " + p.clusterType + " job submit file [" + localJobFilePath + "]");
                         }
                         else {
@@ -1411,7 +1411,7 @@ bool modulePipeline::UpdateAnalysisStatus(qint64 analysisid, QString status, QSt
 
     q.bindValue(":analysisid", analysisid);
 
-    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
 
     return true;
 }
@@ -1848,7 +1848,7 @@ QString modulePipeline::FormatCommand(int pipelineid, QString clusteranalysispat
 /* ---------------------------------------------------------- */
 /* --------- CreateClusterJobFile --------------------------- */
 /* ---------------------------------------------------------- */
-bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clustertype, qint64 analysisid, QString uid, int studynum, QString analysispath, bool usetmpdir, QString tmpdir, QString studydatetime, QString pipelinename, int pipelineid, QString resultscript, int maxwalltime, int numcores, double memory,  QList<pipelineStep> steps, bool runsupplement) {
+bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clustertype, QString queue, qint64 analysisid, QString uid, int studynum, QString analysispath, bool usetmpdir, QString tmpdir, QString studydatetime, QString pipelinename, int pipelineid, QString resultscript, int maxwalltime, int numcores, double memory,  QList<pipelineStep> steps, bool runsupplement) {
 
     bool rerunresults(false);
 
@@ -1897,19 +1897,18 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clusterty
 
     /* different submission parameters for slurm */
     if (clustertype == "slurm") {
-        jobfile += "#!/bin/sh -l\n";
+        jobfile += "#!/bin/bash -l\n";
         if (runsupplement)
-            jobfile += "#SBATCH -J "+pipelinename+"-supplement\n";
+            jobfile += "#SBATCH -J " + pipelinename + "-supplement\n";
         else
-            jobfile += "#SBATCH -J "+pipelinename+"\n";
+            jobfile += "#SBATCH -J " + pipelinename + "\n";
 
+        jobfile += "#SBATCH --nodes=1\n";
+        jobfile += "#SBATCH --partition=" + queue + "\n";
         jobfile += "#SBATCH -o " + analysispath + "/pipeline/%x.e%j\n";
         jobfile += "#SBATCH -e " + analysispath + "/pipeline/%x.e%j\n";
-        jobfile += QString("#SBATCH --ntasks 1 --cpus-per-task %1\n").arg(numcores);
-        //jobfile += QString("#SBATCH --mem %1G\n").arg(memory);
-        //jobfile += "#$ --export=ALL\n"; /* not sure what this is */
-        //jobfile += "#$ --uid=" + n->cfg["queueuser"] + "\n\n"; //this is done in the submit command line
-        //jobfile += "#SBATCH -p " + queueName + "\n";
+        jobfile += QString("#SBATCH --mem-per-cpu=%1G\n").arg(memory);
+        jobfile += QString("#SBATCH --ntasks=1 --cpus-per-task=%1\n").arg(numcores);
         if (maxwalltime > 0) {
             int hours = int(floor(maxwalltime/60));
             int min = maxwalltime % 60;
@@ -1941,10 +1940,10 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clusterty
             else
                 jobfile += QString("#$ -l h_rt=%1:%2:00\n").arg(hours).arg(min);
         }
+        /* add the library path SO the cluster version of the nidb executable to run, and diagnostic echos */
+        jobfile += "LD_LIBRARY_PATH=" + n->cfg["clusternidbpath"] + "/; export LD_LIBRARY_PATH;\n";
     }
 
-    /* add the library path SO the cluster version of the nidb executable to run, and diagnostic echos */
-    jobfile += "LD_LIBRARY_PATH=" + n->cfg["clusternidbpath"] + "/; export LD_LIBRARY_PATH;\n";
     jobfile += "echo Hostname: `hostname`\n";
     jobfile += "echo Username: `whoami`\n\n";
 

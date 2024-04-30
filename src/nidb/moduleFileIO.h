@@ -27,6 +27,7 @@
 #include "subject.h"
 #include "study.h"
 #include "series.h"
+#include "pipeline.h"
 
 class moduleFileIO
 {
