@@ -137,3 +137,6 @@
 /src/web/squirrel/config.php
 /src/build-nidb-Desktop_Qt_6_6_1_MSVC2019_64bit-Debug
 /src/build-nidb-Desktop_Qt_6_6_1_MSVC2019_64bit-Release
+/src/nidb/build/Desktop_Qt_6_6_1_MSVC2019_64bit-Debug
+src/nidb/nidb.pro.user.0a56b21
+src/nidb/nidb.pro.user
