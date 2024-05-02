@@ -266,6 +266,7 @@ bool moduleCluster::ResultInsert(QString paramAnalysisID, QString paramResultTex
         m += "Inserted analysis result [" + sql + "]";
     }
 
+    Print(m);
     return true;
 }
 
