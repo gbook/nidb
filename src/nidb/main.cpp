@@ -155,6 +155,7 @@ int main(int argc, char *argv[])
             ret = m->CheckCompleteAnalysis(paramAnalysisID, msg);
 
         /* if the operation failed, let the user know */
+        Print(msg);
         if (!ret)
             std::cout << "Error: " << msg.toStdString().c_str() << std::endl;
 
