@@ -201,7 +201,7 @@ bool moduleCluster::ResultInsert(QString paramAnalysisID, QString paramResultTex
     else {
         q.prepare("insert ignore into analysis_resultnames (result_name) values (:desc)");
         q.bindValue(":desc",paramResultDesc);
-        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         resultnameid = q.lastInsertId().toLongLong();
         m += "Inserted analysis_resultname [" + paramResultDesc + "]";
     }
@@ -212,7 +212,7 @@ bool moduleCluster::ResultInsert(QString paramAnalysisID, QString paramResultTex
         q.bindValue(":analysisid", paramAnalysisID.toInt());
         q.bindValue(":resultnameid", resultnameid);
         q.bindValue(":text", paramResultText);
-        QString sql = n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+        QString sql = n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         m += "Inserted analysis result [" + sql + "]";
     }
 
@@ -230,7 +230,7 @@ bool moduleCluster::ResultInsert(QString paramAnalysisID, QString paramResultTex
         else {
             q.prepare("insert ignore into analysis_resultunit (result_unit) values (:unit)");
             q.bindValue(":unit",paramResultUnit);
-            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
             resultunitid = q.lastInsertId().toLongLong();
         }
 
@@ -242,7 +242,7 @@ bool moduleCluster::ResultInsert(QString paramAnalysisID, QString paramResultTex
             q.bindValue(":value", static_cast<double>(paramResultNumber.toInt())); /* type casting... I know. But the user could have passed an int for a value, and the database only accepts double */
         else
             q.bindValue(":value", paramResultNumber.toDouble());
-        QString sql = n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+        QString sql = n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         m += "Inserted analysis result [" + sql + "]";
     }
 
@@ -252,7 +252,7 @@ bool moduleCluster::ResultInsert(QString paramAnalysisID, QString paramResultTex
         q.bindValue(":analysisid", paramAnalysisID.toInt());
         q.bindValue(":resultnameid", resultnameid);
         q.bindValue(":filename", paramResultFile);
-        QString sql = n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+        QString sql = n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         m += "Inserted analysis result [" + sql + "]";
     }
 
@@ -262,11 +262,11 @@ bool moduleCluster::ResultInsert(QString paramAnalysisID, QString paramResultTex
         q.bindValue(":analysisid", paramAnalysisID.toInt());
         q.bindValue(":resultnameid", resultnameid);
         q.bindValue(":filename", paramResultImage);
-        QString sql = n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+        QString sql = n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         m += "Inserted analysis result [" + sql + "]";
     }
 
-    Print(m);
+    //Print(m);
     return true;
 }
 
