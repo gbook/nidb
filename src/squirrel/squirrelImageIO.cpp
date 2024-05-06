@@ -56,13 +56,9 @@ bool squirrelImageIO::ConvertDicom(QString filetype, QString indir, QString outd
 
     QString pwd = QDir::currentPath();
 
-    //QString gzipstr;
-    //if (gzip) gzipstr = "-z y";
-    //else gzipstr = "-z n";
-
     numfilesconv = 0; /* need to fix this to be correct at some point */
 
-    msgs << QString("Working on indir [" + indir + "], outdir [" + outdir + "] and filetype [" + filetype + "]");
+    msgs << QString("Converting DICOM to Nifti.  indir [" + indir + "]  outdir [" + outdir + "]  outfiletype [" + filetype + "]");
 
     /* in case of par/rec, the argument list to dcm2niix is a file instead of a directory */
     QString fileext = "";

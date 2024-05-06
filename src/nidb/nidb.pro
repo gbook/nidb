@@ -144,7 +144,7 @@ unix: {
     # Location of SMTP Library and header
 	INCLUDEPATH += ../smtp
     SMTPBIN = ../../bin/smtp
-    LIBS += -L$$SMTPBIN/ -lSMTPEmail
+	LIBS += -L$$SMTPBIN/ -lSMTPEmail
     INCLUDEPATH += $$SMTPBIN
     DEPENDPATH += $$SMTPBIN
 
@@ -155,6 +155,7 @@ unix: {
 	INCLUDEPATH += $$SQUIRRELBIN
 	DEPENDPATH += $$SQUIRRELBIN
 
+    # GDCM library
     GDCMBIN = ../../bin/gdcm
     GDCMSRC = ../gdcm/Source
     LIBS += -L$$GDCMBIN/bin/

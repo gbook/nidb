@@ -588,6 +588,7 @@ bool squirrel::Write(bool writeLog) {
                         if (!io.ConvertDicom(DataFormat, origSeriesPath, seriesPath, QDir::currentPath(), gzip, utils::CleanString(subject.ID), QString("%1").arg(study.StudyNumber), QString("%1").arg(series.SeriesNumber), "dicom", numConv, numRename, m3)) {
                             Log(QString("ConvertDicom() failed. Returned [%1]").arg(m3), __FUNCTION__);
                         }
+                        Log(QString("ConvertDicom() returned [%1]").arg(m3), __FUNCTION__);
                     }
                     else {
                         Log(QString("Variable squirrelSeries.stagedFiles is empty. No files to convert to Nifti"), __FUNCTION__);
@@ -2171,7 +2172,7 @@ bool squirrel::ExtractFileFromArchive(QString archivePath, QString filePath, QSt
         #ifdef Q_OS_WINDOWS
            Bit7zLibrary lib("C:/Program Files/7-Zip/7z.dll");
         #else
-           Bit7zLibrary lib("/usr/lib/p7zip/7z.so");
+           Bit7zLibrary lib("/usr/libexec/p7zip/7z.so");
         #endif
         if (archivePath.endsWith(".zip", Qt::CaseInsensitive)) {
             BitFileExtractor extractor(lib, BitFormat::Zip);
@@ -2204,13 +2205,18 @@ bool squirrel::ExtractFileFromArchive(QString archivePath, QString filePath, QSt
  * @return true if successful, false otherwise
  */
 bool squirrel::CompressDirectoryToArchive(QString dir, QString archivePath, QString &m) {
+    utils::Print("Inside CompressDirectoryToArchive()");
+
     try {
         using namespace bit7z;
 #ifdef Q_OS_WINDOWS
         Bit7zLibrary lib("C:/Program Files/7-Zip/7z.dll");
 #else
+        utils::Print("Checkpoint A");
         Bit7zLibrary lib("/usr/libexec/p7zip/7z.so");
+        utils::Print("Checkpoint B");
 #endif
+        utils::Print("Checkpoint C");
         if (archivePath.endsWith(".zip", Qt::CaseInsensitive)) {
             BitArchiveWriter archive(lib, BitFormat::Zip);
             //archive.setOverwriteMode(OverwriteMode::Overwrite);
@@ -2219,11 +2225,16 @@ bool squirrel::CompressDirectoryToArchive(QString dir, QString archivePath, QStr
             archive.compressTo(archivePath.toStdString());
         }
         else {
+            utils::Print("Checkpoint D");
             BitArchiveWriter archive(lib, BitFormat::SevenZip);
+            utils::Print("Checkpoint E");
             //archive.setOverwriteMode(OverwriteMode::Overwrite);
             archive.setUpdateMode(UpdateMode::Update);
+            utils::Print("Checkpoint F");
             archive.addDirectory(dir.toStdString());
+            utils::Print("Checkpoint G (" + archivePath + ")");
             archive.compressTo(archivePath.toStdString());
+            utils::Print("Checkpoint H");
         }
         m = "Successfully compressed directory [" + dir + "] to archive [" + archivePath + "]";
         return true;
@@ -2253,7 +2264,7 @@ bool squirrel::AddFilesToArchive(QStringList filePaths, QStringList compressedFi
 #ifdef Q_OS_WINDOWS
         Bit7zLibrary lib("C:/Program Files/7-Zip/7z.dll");
 #else
-        Bit7zLibrary lib("/usr/lib/p7zip/7z.so");
+        Bit7zLibrary lib("/usr/libexec/p7zip/7z.so");
 #endif
         if (archivePath.endsWith(".zip", Qt::CaseInsensitive)) {
             bit7z::BitArchiveEditor editor(lib, archivePath.toStdString(), bit7z::BitFormat::Zip);
@@ -2302,7 +2313,7 @@ bool squirrel::RemoveDirectoryFromArchive(QString compressedDirPath, QString arc
 #ifdef Q_OS_WINDOWS
         Bit7zLibrary lib("C:/Program Files/7-Zip/7z.dll");
 #else
-        Bit7zLibrary lib("/usr/lib/p7zip/7z.so");
+        Bit7zLibrary lib("/usr/libexec/p7zip/7z.so");
 #endif
 
         if (archivePath.endsWith(".zip", Qt::CaseInsensitive)) {
@@ -2371,7 +2382,7 @@ bool squirrel::UpdateMemoryFileToArchive(QString file, QString compressedFilePat
 #ifdef Q_OS_WINDOWS
         Bit7zLibrary lib("C:/Program Files/7-Zip/7z.dll");
 #else
-        Bit7zLibrary lib("/usr/lib/p7zip/7z.so");
+        Bit7zLibrary lib("/usr/libexec/p7zip/7z.so");
 #endif
         /* convert the QString to a istream */
         std::istringstream i(file.toStdString());

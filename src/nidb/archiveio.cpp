@@ -2768,8 +2768,8 @@ bool archiveIO::WritePackage(qint64 exportid, QString zipfilepath, QString &msg)
     if (zipfilepath.endsWith("/"))
         zipfilepath.chop(1);
 
-    if (!zipfilepath.endsWith(".zip", Qt::CaseInsensitive))
-        zipfilepath = zipfilepath + ".zip";
+    if (!zipfilepath.endsWith(".sqrl", Qt::CaseInsensitive))
+        zipfilepath = zipfilepath + ".sqrl";
 
     /* PACKAGE - get the details, and create package object */
     squirrel sqrl(true);
