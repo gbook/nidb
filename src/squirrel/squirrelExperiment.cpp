@@ -152,7 +152,7 @@ void squirrelExperiment::PrintExperiment() {
 /* ----- VirtualPath ------------------------------------------ */
 /* ------------------------------------------------------------ */
 QString squirrelExperiment::VirtualPath() {
-    QString vPath = QString("experiment/%1").arg(utils::CleanString(ExperimentName));
+    QString vPath = QString("experiments/%1").arg(utils::CleanString(ExperimentName));
 
     return vPath;
 }
@@ -164,14 +164,14 @@ QString squirrelExperiment::VirtualPath() {
 QList<QPair<QString,QString>> squirrelExperiment::GetStagedFileList() {
 
     QList<QPair<QString,QString>> stagedList;
-    QString virtualPath = VirtualPath();
 
     QString path;
     foreach (path, stagedFiles) {
         QPair<QString, QString> pair;
         pair.first = path;
-        pair.second = virtualPath;
+        pair.second = VirtualPath();
         stagedList.append(pair);
+        utils::Print(QString("Inside GetStagedFileList() - stagedList [%1] -- [%2]").arg(pair.first).arg(pair.second));
     }
 
     return stagedList;

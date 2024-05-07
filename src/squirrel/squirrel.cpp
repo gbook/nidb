@@ -58,6 +58,14 @@ squirrel::squirrel(bool dbg, bool q)
     InitializeDatabase();
 
     Log(QString("Created squirrel object."), __FUNCTION__);
+    if (debug)
+        Log("'debug' is set to true", __FUNCTION__);
+    else
+        Log("'debug' is set to false", __FUNCTION__);
+
+    Log("Next line should be a Debug() line", __FUNCTION__);
+    Debug("This line should be a Debug() line", __FUNCTION__);
+    Log("Previous line should be a Debug() line", __FUNCTION__);
 }
 
 
@@ -535,16 +543,25 @@ bool squirrel::Write(bool writeLog) {
 
                 /* orig vs other formats */
                 if (DataFormat == "orig") {
+                    Log("Export data format is 'orig'. Copying files...", __FUNCTION__);
                     /* copy all of the series files to the temp directory */
                     foreach (QString f, series.stagedFiles) {
                         QString systemstring = QString("cp -uv %1 %2").arg(f).arg(seriesPath);
-                        utils::SystemCommand(systemstring);
+                        Log(utils::SystemCommand(systemstring), __FUNCTION__);
+                    }
+                }
+                else if (study.Modality.toUpper() != "MR") {
+                    Log(QString("Study modality is [%1]. Copying files...").arg(study.Modality.toUpper()), __FUNCTION__);
+                    /* copy all of the series files to the temp directory */
+                    foreach (QString f, series.stagedFiles) {
+                        QString systemstring = QString("cp -uv %1 %2").arg(f).arg(seriesPath);
+                        Log(utils::SystemCommand(systemstring), __FUNCTION__);
                     }
                 }
                 else if ((DataFormat == "anon") || (DataFormat == "anonfull")) {
                     /* create temp directory for the anonymization */
                     QString td;
-                    MakeTempDir(td);
+                    //MakeTempDir(td);
 
                     /* copy all files to temp directory */
                     QString systemstring;
@@ -646,9 +663,9 @@ bool squirrel::Write(bool writeLog) {
     }
 
     /* add staged files to list */
-    foreach (squirrelSubject subject, subjectses) {
-        stagedFiles += subject.GetStagedFileList();
-    }
+    //foreach (squirrelSubject subject, subjectses) {
+    //    stagedFiles += subject.GetStagedFileList();
+    //}
 
     /* add group-analyses */
     QList <squirrelGroupAnalysis> groupAnalyses = GetAllGroupAnalyses();
@@ -726,14 +743,29 @@ bool squirrel::Write(bool writeLog) {
     if (fileMode == NewPackage) {
 
         /* copy in all files from the staged files list */
+        Debug(QString("stagedFiles size is [%1]").arg(stagedFiles.size()), __FUNCTION__);
+        for (int i=0; i<stagedFiles.size(); i++) {
+            Log(QString("[%1] , [%2]").arg(stagedFiles.at(i).first).arg(stagedFiles.at(i).second), __FUNCTION__);
+        }
+
         for (int i=0; i<stagedFiles.size(); i++) {
             QStringPair file = stagedFiles.at(i);
-            QString source = file.first;
+
+            QString sourcePath = file.first;
             QFileInfo fi(file.first);
             QString fname = fi.fileName();
-            QString dest = workingDir + "/" + fname;
-            if (!QFile::copy(source, dest))
-                Log(QString("Error copying [%1] to [%2]").arg(source).arg(dest), __FUNCTION__);
+
+            QString destPath = workingDir + "/" + file.second + "/" + fname;
+            QString destDir = workingDir + "/" + file.second;
+            QString m;
+            if (!utils::MakePath(destDir,m))
+                Log(QString("Error creating directory [%1] - message [%2]").arg(destDir).arg(m), __FUNCTION__);
+            else
+                Log(QString("Successfully created directory [%1] - message [%2]").arg(destDir).arg(m), __FUNCTION__);
+
+            Log(QString("Copying [%1] to [%2]").arg(sourcePath).arg(destPath), __FUNCTION__);
+            if (!QFile::copy(sourcePath, destPath))
+                Log(QString("Error copying [%1] to [%2]").arg(sourcePath).arg(destPath), __FUNCTION__);
         }
 
         Log("Zipping the archive from a temp directory", __FUNCTION__);
@@ -753,8 +785,8 @@ bool squirrel::Write(bool writeLog) {
             if (utils::DirectoryExists(workingDir)) {
                 Log("Temporary export dir [" + workingDir + "] exists and will be deleted", __FUNCTION__);
                 QString m;
-                if (!utils::RemoveDir(workingDir, m))
-                    Log("Error [" + m + "] removing directory [" + workingDir + "]", __FUNCTION__);
+                //if (!utils::RemoveDir(workingDir, m))
+                //    Log("Error [" + m + "] removing directory [" + workingDir + "]", __FUNCTION__);
             }
         }
         else {

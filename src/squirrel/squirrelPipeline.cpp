@@ -353,7 +353,7 @@ void squirrelPipeline::PrintPipeline() {
 /* ----- VirtualPath ------------------------------------------ */
 /* ------------------------------------------------------------ */
 QString squirrelPipeline::VirtualPath() {
-    QString vPath = QString("pipeline/%1").arg(PipelineName);
+    QString vPath = QString("pipelines/%1").arg(PipelineName);
 
     return vPath;
 }

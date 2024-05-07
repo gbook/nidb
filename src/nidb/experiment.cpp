@@ -92,7 +92,7 @@ void experiment::LoadExperimentInfo() {
 /* ---------------------------------------------------------- */
 /* --------- WriteFiles ------------------------------------- */
 /* ---------------------------------------------------------- */
-bool experiment::WriteFiles(QString dir, QString &m) {
+bool experiment::WriteFiles(QString dir, QStringList &fileList, QString &m) {
 
     QDir d(dir);
     if (!d.exists()) {
@@ -120,6 +120,7 @@ bool experiment::WriteFiles(QString dir, QString &m) {
             m = QString("Created file size [%1] does not match database file size [%2]").arg(fi.size()).arg(s.filesize);
             return false;
         }
+        fileList.append(filename);
     }
 
     return true;

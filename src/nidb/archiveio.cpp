@@ -2372,6 +2372,8 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
 
     n->WriteLog(QString("Entering %1() exportid [%2]").arg(__FUNCTION__).arg(exportid));
 
+    n->WriteLog("Squirrel flags [" + downloadflags.join(", ") + "]");
+
     QStringList msgs;
     QString exportstatus = "complete";
     subjectStudySeriesContainer s;
@@ -2393,8 +2395,12 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     if (zipfilepath.endsWith("/"))
         zipfilepath.chop(1);
 
-    //if (!zipfilepath.endsWith(".zip", Qt::CaseInsensitive))
-    //    zipfilepath = zipfilepath + ".zip";
+    /* create a local temp directory for exporting files from database */
+    QString localTempDir = n->cfg["tmpdir"] + "/squirrel-" + GenerateRandomString(20);
+    QString m;
+    if (!MakePath(localTempDir, m)) {
+        n->WriteLog(QString("Error create temp directory [%1] - message [%2]").arg(localTempDir).arg(m));
+    }
 
     /* create squirrel object with default settings... */
     squirrel sqrl;
@@ -2711,11 +2717,19 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
 
     /* add experiments to the JSON object */
     if (downloadflags.contains("DOWNLOAD_EXPERIMENTS", Qt::CaseInsensitive)) {
+        n->WriteLog(QString("Processing [%1] experiments").arg(experimentIDs.size()));
         if (experimentIDs.size() > 0) {
             for (int i=0; i<experimentIDs.size(); i++) {
                 /* create and add each squirrelPipeline object */
                 experiment e(experimentIDs[i], n);
+                QStringList stagedFileList;
+                if (e.WriteFiles(localTempDir, stagedFileList, m))
+                    n->WriteLog(QString("Successfully wrote experiment files [%1]").arg(m));
+                else
+                    n->WriteLog(QString("Error writing experiment files [%1]").arg(m));
+
                 squirrelExperiment sqrlExperiment = e.GetSquirrelObject();
+                sqrlExperiment.stagedFiles = stagedFileList;
                 sqrlExperiment.Store();
             }
         }
@@ -2737,6 +2751,14 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     /* the squirrel object should be complete, so write it out */
     sqrl.Write(false);
     msgs << n->WriteLog(QString("%1() - squirrel.write() returned [\n" + sqrl.GetLog() + "\n]").arg(__FUNCTION__));
+
+    if (FileDirectoryExists(localTempDir))
+        if (RemoveDir(localTempDir, m))
+            n->WriteLog(QString("Successfully removed localTempDir [%1]").arg(localTempDir));
+        else
+            n->WriteLog(QString("Error removing localTempDir [%1] - message [%2]").arg(localTempDir).arg(m));
+    else
+        n->WriteLog(QString("localTempDir [%1] does not exist").arg(localTempDir));
 
     msg = msgs.join("\n");
     n->WriteLog("Leaving WriteSquirrel()...");
@@ -2770,6 +2792,13 @@ bool archiveIO::WritePackage(qint64 exportid, QString zipfilepath, QString &msg)
 
     if (!zipfilepath.endsWith(".sqrl", Qt::CaseInsensitive))
         zipfilepath = zipfilepath + ".sqrl";
+
+    /* create a local temp directory for exporting files from database */
+    QString localTempDir = n->cfg["tmpdir"] + "/squirrel-" + GenerateRandomString(20);
+    QString m;
+    if (!MakePath(localTempDir, m)) {
+        n->WriteLog(QString("Error create temp directory [%1] - message [%2]").arg(localTempDir).arg(m));
+    }
 
     /* PACKAGE - get the details, and create package object */
     squirrel sqrl(true);
@@ -2977,8 +3006,19 @@ bool archiveIO::WritePackage(qint64 exportid, QString zipfilepath, QString &msg)
         experiment e(experimentRowID, n);
         if (!e.isValid) continue;
 
-        squirrelExperiment sqrlExperiment;
-        sqrlExperiment = e.GetSquirrelObject();
+        QString m;
+        if (!MakePath(localTempDir + "/" + e.name, m)) {
+            n->WriteLog(QString("Error create temp directory [%1] - message [%2]").arg(localTempDir + "/" + e.name).arg(m));
+        }
+
+        QStringList stagedFileList;
+        if (e.WriteFiles(localTempDir + "/" + e.name, stagedFileList, m))
+            n->WriteLog(QString("Successfully wrote experiment files [%1]").arg(m));
+        else
+            n->WriteLog(QString("Error writing experiment files [%1]").arg(m));
+
+        squirrelExperiment sqrlExperiment = e.GetSquirrelObject();
+        sqrlExperiment.stagedFiles = stagedFileList;
         sqrlExperiment.Store();
     }
 
@@ -2986,6 +3026,15 @@ bool archiveIO::WritePackage(qint64 exportid, QString zipfilepath, QString &msg)
 
     if (sqrl.Write(false)) {
         msg = sqrl.GetLog();
+
+        // if (FileDirectoryExists(localTempDir))
+        //     if (RemoveDir(localTempDir, m))
+        //         n->WriteLog(QString("Successfully removed localTempDir [%1]").arg(localTempDir));
+        //     else
+        //         n->WriteLog(QString("Error removing localTempDir [%1] - message [%2]").arg(localTempDir).arg(m));
+        // else
+        //     n->WriteLog(QString("localTempDir [%1] does not exist").arg(localTempDir));
+
         return true;
     }
     else {

@@ -42,7 +42,7 @@ public:
     experiment(int id, nidb *a);
     nidb *n;
 
-    bool WriteFiles(QString dir, QString &m);
+    bool WriteFiles(QString dir, QStringList &fileList, QString &m);
 
     /* object variables */
     QString msg;

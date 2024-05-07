@@ -88,7 +88,7 @@ echo -e "\nBuilding squirrel library\n"
 echo $QMAKEBIN -o $BUILDDIR/squirrel/Makefile $SRCDIR/squirrel/squirrellib.pro -spec linux-g++
 $QMAKEBIN -o $BUILDDIR/squirrel/Makefile $SRCDIR/squirrel/squirrellib.pro -spec linux-g++
 cd $BUILDDIR/squirrel
-make -B -j 16
+make -j 16
 
 
 # ----- build NiDB core -----
