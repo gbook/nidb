@@ -159,6 +159,7 @@ public:
 
 private:
     bool MakeTempDir(QString &dir);
+    bool DeleteTempDir(QString dir);
     bool DatabaseConnect();
     bool InitializeDatabase();
     bool ExtractFileFromArchive(QString archivePath, QString filePath, QString &fileContents);

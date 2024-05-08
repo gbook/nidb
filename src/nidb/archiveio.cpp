@@ -2801,7 +2801,7 @@ bool archiveIO::WritePackage(qint64 exportid, QString zipfilepath, QString &msg)
     }
 
     /* PACKAGE - get the details, and create package object */
-    squirrel sqrl(true);
+    squirrel sqrl(n->debug);
     q.prepare("select * from packages where package_id = :packageid");
     q.bindValue(":packageid", packageid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
@@ -3027,13 +3027,15 @@ bool archiveIO::WritePackage(qint64 exportid, QString zipfilepath, QString &msg)
     if (sqrl.Write(false)) {
         msg = sqrl.GetLog();
 
-        // if (FileDirectoryExists(localTempDir))
-        //     if (RemoveDir(localTempDir, m))
-        //         n->WriteLog(QString("Successfully removed localTempDir [%1]").arg(localTempDir));
-        //     else
-        //         n->WriteLog(QString("Error removing localTempDir [%1] - message [%2]").arg(localTempDir).arg(m));
-        // else
-        //     n->WriteLog(QString("localTempDir [%1] does not exist").arg(localTempDir));
+        if (!n->debug) {
+            if (FileDirectoryExists(localTempDir))
+                if (RemoveDir(localTempDir, m))
+                    n->WriteLog(QString("Successfully removed localTempDir [%1]").arg(localTempDir));
+                else
+                    n->WriteLog(QString("Error removing localTempDir [%1] - message [%2]").arg(localTempDir).arg(m));
+            else
+                n->WriteLog(QString("localTempDir [%1] does not exist").arg(localTempDir));
+        }
 
         return true;
     }

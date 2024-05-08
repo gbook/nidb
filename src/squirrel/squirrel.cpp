@@ -59,13 +59,7 @@ squirrel::squirrel(bool dbg, bool q)
 
     Log(QString("Created squirrel object."), __FUNCTION__);
     if (debug)
-        Log("'debug' is set to true", __FUNCTION__);
-    else
-        Log("'debug' is set to false", __FUNCTION__);
-
-    Log("Next line should be a Debug() line", __FUNCTION__);
-    Debug("This line should be a Debug() line", __FUNCTION__);
-    Log("Previous line should be a Debug() line", __FUNCTION__);
+        Debug("Squirrel is running in debug mode", __FUNCTION__);
 }
 
 
@@ -547,7 +541,7 @@ bool squirrel::Write(bool writeLog) {
                     /* copy all of the series files to the temp directory */
                     foreach (QString f, series.stagedFiles) {
                         QString systemstring = QString("cp -uv %1 %2").arg(f).arg(seriesPath);
-                        Log(utils::SystemCommand(systemstring), __FUNCTION__);
+                        Debug(utils::SystemCommand(systemstring), __FUNCTION__);
                     }
                 }
                 else if (study.Modality.toUpper() != "MR") {
@@ -555,36 +549,37 @@ bool squirrel::Write(bool writeLog) {
                     /* copy all of the series files to the temp directory */
                     foreach (QString f, series.stagedFiles) {
                         QString systemstring = QString("cp -uv %1 %2").arg(f).arg(seriesPath);
-                        Log(utils::SystemCommand(systemstring), __FUNCTION__);
+                        Debug(utils::SystemCommand(systemstring), __FUNCTION__);
                     }
                 }
                 else if ((DataFormat == "anon") || (DataFormat == "anonfull")) {
                     /* create temp directory for the anonymization */
                     QString td;
-                    //MakeTempDir(td);
+                    if (MakeTempDir(td)) {
+                        /* copy all files to temp directory */
+                        QString systemstring;
+                        foreach (QString f, series.stagedFiles) {
+                            systemstring = QString("cp -uv %1 %2").arg(f).arg(td);
+                            Debug(utils::SystemCommand(systemstring), __FUNCTION__);
+                        }
 
-                    /* copy all files to temp directory */
-                    QString systemstring;
-                    foreach (QString f, series.stagedFiles) {
-                        systemstring = QString("cp -uv %1 %2").arg(f).arg(td);
-                        utils::SystemCommand(systemstring);
+                        /* anonymize the directory */
+                        squirrelImageIO io;
+                        QString m;
+                        if (DataFormat == "anon")
+                            io.AnonymizeDir(td,1,"Anonymized","Anonymized",m);
+                        else
+                            io.AnonymizeDir(td,2,"Anonymized","Anonymized",m);
+
+                        /* move the anonymized files to the staging area */
+                        systemstring = QString("mv %1/* %2/").arg(td).arg(seriesPath);
+                        Debug(utils::SystemCommand(systemstring), __FUNCTION__);
+
+                        /* delete temp directory */
+                        DeleteTempDir(td);
                     }
-
-                    /* anonymize the directory */
-                    squirrelImageIO io;
-                    QString m;
-                    if (DataFormat == "anon")
-                        io.AnonymizeDir(td,1,"Anonymized","Anonymized",m);
                     else
-                        io.AnonymizeDir(td,2,"Anonymized","Anonymized",m);
-
-                    /* move the anonymized files to the staging area */
-                    systemstring = QString("mv %1/* %2/").arg(td).arg(seriesPath);
-                    utils::SystemCommand(systemstring);
-
-                    /* delete temp directory */
-                    QString m2;
-                    utils::RemoveDir(td, m2);
+                        Log("Error creating temp directory for DICOM anonymization", __FUNCTION__);
                 }
                 else if (DataFormat.contains("nifti")) {
                     int numConv(0), numRename(0);
@@ -596,16 +591,16 @@ bool squirrel::Write(bool writeLog) {
 
                     /* get path of first file to be converted */
                     if (series.stagedFiles.size() > 0) {
-                        Log(QString("Converting [%1] files to nifti").arg(series.stagedFiles.size()), __FUNCTION__);
+                        Log(QString("Converting %1 files to nifti").arg(series.stagedFiles.size()), __FUNCTION__);
 
                         QFileInfo f(series.stagedFiles[0]);
                         QString origSeriesPath = f.absoluteDir().absolutePath();
                         squirrelImageIO io;
                         QString m3;
-                        if (!io.ConvertDicom(DataFormat, origSeriesPath, seriesPath, QDir::currentPath(), gzip, utils::CleanString(subject.ID), QString("%1").arg(study.StudyNumber), QString("%1").arg(series.SeriesNumber), "dicom", numConv, numRename, m3)) {
+                        if (io.ConvertDicom(DataFormat, origSeriesPath, seriesPath, QDir::currentPath(), gzip, utils::CleanString(subject.ID), QString("%1").arg(study.StudyNumber), QString("%1").arg(series.SeriesNumber), "dicom", numConv, numRename, m3))
+                            Debug(QString("ConvertDicom() returned [%1]").arg(m3), __FUNCTION__);
+                        else
                             Log(QString("ConvertDicom() failed. Returned [%1]").arg(m3), __FUNCTION__);
-                        }
-                        Log(QString("ConvertDicom() returned [%1]").arg(m3), __FUNCTION__);
                     }
                     else {
                         Log(QString("Variable squirrelSeries.stagedFiles is empty. No files to convert to Nifti"), __FUNCTION__);
@@ -662,15 +657,10 @@ bool squirrel::Write(bool writeLog) {
         JSONsubjects.append(subject.ToJSON());
     }
 
-    /* add staged files to list */
-    //foreach (squirrelSubject subject, subjectses) {
-    //    stagedFiles += subject.GetStagedFileList();
-    //}
-
     /* add group-analyses */
     QList <squirrelGroupAnalysis> groupAnalyses = GetAllGroupAnalyses();
     if (groupAnalyses.size() > 0) {
-        Log(QString("Adding [%1] group-analyses...").arg(groupAnalyses.size()), __FUNCTION__);
+        Log(QString("Adding %1 group-analyses...").arg(groupAnalyses.size()), __FUNCTION__);
         QJsonArray JSONgroupanalyses;
         foreach (squirrelGroupAnalysis g, groupAnalyses) {
             if (g.Get()) {
@@ -690,7 +680,7 @@ bool squirrel::Write(bool writeLog) {
     /* add pipelines */
     QList <squirrelPipeline> pipelines = GetAllPipelines();
     if (pipelines.size() > 0) {
-        Log(QString("Adding [%1] pipelines...").arg(pipelines.size()), __FUNCTION__);
+        Log(QString("Adding %1 pipelines...").arg(pipelines.size()), __FUNCTION__);
         QJsonArray JSONpipelines;
         foreach (squirrelPipeline p, pipelines) {
             if (p.Get()) {
@@ -706,7 +696,7 @@ bool squirrel::Write(bool writeLog) {
     /* add experiments */
     QList <squirrelExperiment> exps = GetAllExperiments();
     if (exps.size() > 0) {
-        Log(QString("Adding [%1] experiments...").arg(exps.size()), __FUNCTION__);
+        Log(QString("Adding %1 experiments...").arg(exps.size()), __FUNCTION__);
         QJsonArray JSONexperiments;
         foreach (squirrelExperiment e, exps) {
             if (e.Get()) {
@@ -722,7 +712,7 @@ bool squirrel::Write(bool writeLog) {
     /* add data-dictionary */
     QList <squirrelDataDictionary> dicts = GetAllDataDictionaries();
     if (dicts.size() > 0) {
-        Log(QString("Adding [%1] data-dictionaries...").arg(dicts.size()), __FUNCTION__);
+        Log(QString("Adding %1 data-dictionaries...").arg(dicts.size()), __FUNCTION__);
         QJsonArray JSONdataDictionaries;
         foreach (squirrelDataDictionary d, dicts) {
             if (d.Get()) {
@@ -745,7 +735,7 @@ bool squirrel::Write(bool writeLog) {
         /* copy in all files from the staged files list */
         Debug(QString("stagedFiles size is [%1]").arg(stagedFiles.size()), __FUNCTION__);
         for (int i=0; i<stagedFiles.size(); i++) {
-            Log(QString("[%1] , [%2]").arg(stagedFiles.at(i).first).arg(stagedFiles.at(i).second), __FUNCTION__);
+            Debug(QString("[%1] , [%2]").arg(stagedFiles.at(i).first).arg(stagedFiles.at(i).second), __FUNCTION__);
         }
 
         for (int i=0; i<stagedFiles.size(); i++) {
@@ -761,9 +751,9 @@ bool squirrel::Write(bool writeLog) {
             if (!utils::MakePath(destDir,m))
                 Log(QString("Error creating directory [%1] - message [%2]").arg(destDir).arg(m), __FUNCTION__);
             else
-                Log(QString("Successfully created directory [%1] - message [%2]").arg(destDir).arg(m), __FUNCTION__);
+                Debug(QString("Successfully created directory [%1] - message [%2]").arg(destDir).arg(m), __FUNCTION__);
 
-            Log(QString("Copying [%1] to [%2]").arg(sourcePath).arg(destPath), __FUNCTION__);
+            Debug(QString("Copying [%1] to [%2]").arg(sourcePath).arg(destPath), __FUNCTION__);
             if (!QFile::copy(sourcePath, destPath))
                 Log(QString("Error copying [%1] to [%2]").arg(sourcePath).arg(destPath), __FUNCTION__);
         }
@@ -781,13 +771,8 @@ bool squirrel::Write(bool writeLog) {
             qint64 zipSize = fi.size();
             Log(QString("Finished zipping package [%1]. Size is [%2] bytes").arg(GetPackagePath()).arg(zipSize), __FUNCTION__);
 
-            /* delete the tmp dir, if it exists */
-            if (utils::DirectoryExists(workingDir)) {
-                Log("Temporary export dir [" + workingDir + "] exists and will be deleted", __FUNCTION__);
-                QString m;
-                //if (!utils::RemoveDir(workingDir, m))
-                //    Log("Error [" + m + "] removing directory [" + workingDir + "]", __FUNCTION__);
-            }
+            /* delete the squirrel temp dir */
+            DeleteTempDir(workingDir);
         }
         else {
             Log("Error creating zip file [" + GetPackagePath() + "]  message [" + m + "]", __FUNCTION__);
@@ -1062,7 +1047,7 @@ void squirrel::PrintPackage() {
     utils::Print(QString("  PackageName: %1").arg(PackageName));
     utils::Print(QString("  SquirrelBuild: %1").arg(SquirrelBuild));
     utils::Print(QString("  SquirrelVersion: %1").arg(SquirrelVersion));
-    utils::Print(QString("  Object count:\n    %1 subjects\n    +-- %4 measures\n    +-- %5 drugs\n    +-- %2 studies\n    +---- %3 series\n    +---- %6 analyses\n    %7 experiments\n    %8 pipelines\n    %9 group analyses\n    %10 data dictionary").arg(numSubjects).arg(numStudies).arg(numSeries).arg(numMeasures).arg(numDrugs).arg(numAnalyses).arg(numExperiments).arg(numPipelines).arg(numGroupAnalyses).arg(numDataDictionaries));
+    utils::Print(QString("  Objects:\n    ├── %1 subjects\n    │  ├── %4 measures\n    │  ├── %5 drugs\n    │  ├── %2 studies\n    │  ├──── %3 series\n    │  └──── %6 analyses\n    ├── %7 experiments\n    ├── %8 pipelines\n    ├── %9 group analyses\n    └── %10 data dictionary").arg(numSubjects).arg(numStudies).arg(numSeries).arg(numMeasures).arg(numDrugs).arg(numAnalyses).arg(numExperiments).arg(numPipelines).arg(numGroupAnalyses).arg(numDataDictionaries));
 }
 
 
@@ -1091,6 +1076,27 @@ bool squirrel::MakeTempDir(QString &dir) {
         dir = "";
         return false;
     }
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- DeleteTempDir ---------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief squirrel::DeleteTempDir
+ * @return true if created/exists, false otherwise
+ */
+bool squirrel::DeleteTempDir(QString dir) {
+    /* delete the tmp dir, if it exists */
+    if (utils::FileExists(dir)) {
+        Debug("Temporary directory [" + dir + "] exists and will be deleted", __FUNCTION__);
+        QString m;
+        if (!utils::RemoveDir(dir, m)) {
+            Log("Error [" + m + "] removing directory [" + dir + "]", __FUNCTION__);
+            return false;
+        }
+    }
+    return true;
 }
 
 
@@ -2237,43 +2243,36 @@ bool squirrel::ExtractFileFromArchive(QString archivePath, QString filePath, QSt
  * @return true if successful, false otherwise
  */
 bool squirrel::CompressDirectoryToArchive(QString dir, QString archivePath, QString &m) {
-    utils::Print("Inside CompressDirectoryToArchive()");
+    Log(QString("Compressing directory [%1] to archive [%2]...").arg(dir).arg(archivePath), __FUNCTION__);
+
+    //if (archivePath.last(1) != "/")
+    //    archivePath += "/";
 
     try {
         using namespace bit7z;
 #ifdef Q_OS_WINDOWS
         Bit7zLibrary lib("C:/Program Files/7-Zip/7z.dll");
 #else
-        utils::Print("Checkpoint A");
         Bit7zLibrary lib("/usr/libexec/p7zip/7z.so");
-        utils::Print("Checkpoint B");
 #endif
-        utils::Print("Checkpoint C");
         if (archivePath.endsWith(".zip", Qt::CaseInsensitive)) {
             BitArchiveWriter archive(lib, BitFormat::Zip);
-            //archive.setOverwriteMode(OverwriteMode::Overwrite);
             archive.setUpdateMode(UpdateMode::Update);
             archive.addDirectory(dir.toStdString());
             archive.compressTo(archivePath.toStdString());
         }
         else {
-            utils::Print("Checkpoint D");
             BitArchiveWriter archive(lib, BitFormat::SevenZip);
-            utils::Print("Checkpoint E");
-            //archive.setOverwriteMode(OverwriteMode::Overwrite);
             archive.setUpdateMode(UpdateMode::Update);
-            utils::Print("Checkpoint F");
             archive.addDirectory(dir.toStdString());
-            utils::Print("Checkpoint G (" + archivePath + ")");
             archive.compressTo(archivePath.toStdString());
-            utils::Print("Checkpoint H");
         }
         m = "Successfully compressed directory [" + dir + "] to archive [" + archivePath + "]";
         return true;
     }
     catch ( const bit7z::BitException& ex ) {
         /* Do something with ex.what()...*/
-        m = "Unable to compress directory into archive using bit7z library [" + QString(ex.what()) + "]";
+        m = "Unable to compress directory into archive using bit7z library. Error [" + QString(ex.what()) + "]";
         return false;
     }
 }

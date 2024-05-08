@@ -122,7 +122,7 @@ bool squirrelPipeline::Get() {
 bool squirrelPipeline::Store() {
     QSqlQuery q(QSqlDatabase::database("squirrel"));
 
-    utils::Print(QString("squirrelPipeline has been asked to Store(%1, %2). Current objectID [%3]").arg(PipelineName).arg(Version).arg(objectID));
+    //utils::Print(QString("squirrelPipeline has been asked to Store(%1, %2). Current objectID [%3]").arg(PipelineName).arg(Version).arg(objectID));
 
     /* insert if the object doesn't exist ... */
     if (objectID < 0) {

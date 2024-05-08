@@ -171,7 +171,7 @@ QList<QPair<QString,QString>> squirrelExperiment::GetStagedFileList() {
         pair.first = path;
         pair.second = VirtualPath();
         stagedList.append(pair);
-        utils::Print(QString("Inside GetStagedFileList() - stagedList [%1] -- [%2]").arg(pair.first).arg(pair.second));
+        //utils::Print(QString("Inside GetStagedFileList() - stagedList [%1] -- [%2]").arg(pair.first).arg(pair.second));
     }
 
     return stagedList;

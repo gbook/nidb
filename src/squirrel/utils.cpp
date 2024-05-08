@@ -701,8 +701,7 @@ namespace utils {
     /* --------- DirectoryExists -------------------------------- */
     /* ---------------------------------------------------------- */
     bool DirectoryExists(QString dir) {
-        QFile d(dir);
-        if (d.exists())
+        if (QFile::exists(dir))
             return true;
         else
             return false;
@@ -713,8 +712,7 @@ namespace utils {
     /* --------- FileExists ------------------------------------- */
     /* ---------------------------------------------------------- */
     bool FileExists(QString f) {
-        QFile file(f);
-        if (file.exists())
+        if (QFile::exists(f))
             return true;
         else
             return false;
