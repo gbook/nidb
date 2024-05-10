@@ -249,7 +249,6 @@ int main(int argc, char *argv[])
             sqrl->Read();
 
             sqrl->Debug("Reading package...", __FUNCTION__);
-            utils::Print("Reading package...");
             if (object == "package") {
                 sqrl->PrintPackage();
             }
