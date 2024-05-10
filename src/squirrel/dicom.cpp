@@ -130,6 +130,7 @@ bool dicom::LoadToSquirrel(QString dir, QString binpath, squirrel *sqrl) {
                         currStudy.Height = tags["PatientSize"].toDouble();
                         currStudy.Weight = tags["PatientWeight"].toDouble();
                         currStudy.subjectRowID = subjectRowID;
+                        currStudy.StudyNumber = currSubject.GetNextStudyNumber();
                         currStudy.Store();
                         studyRowID = currStudy.GetObjectID();
                         /* resequence the newly added studies */

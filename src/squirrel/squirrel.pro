@@ -64,14 +64,22 @@ HEADERS += \
 	squirrelSubject.h
 
 # bit7z library (provides LZMA)
-LZMABIN = ../../bit7z/lib/x64
-LZMAINCLUDE = ../../bit7z/include/bit7z
-*msvc*:CONFIG(release, debug|release): LIBS += -L$$LZMABIN/Release
-else:*msvc*:CONFIG(debug, debug|release): LIBS += -L$$LZMABIN/Debug
-linux: LIBS += -L$$LZMABIN -lbit7z64 -ldl
-INCLUDEPATH += $$LZMAINCLUDE
-HEADERS += $$LZMAINCLUDE/bit7z.hpp
-win32:LIBS += -lbit7z
+win32: {
+    LZMABIN = ../../bit7z/lib/x64
+	LZMAINCLUDE = ../../bit7z/include/bit7z
+	*msvc*:CONFIG(release, debug|release): LIBS += -L$$LZMABIN/Release
+	else:*msvc*:CONFIG(debug, debug|release): LIBS += -L$$LZMABIN/Debug
+	INCLUDEPATH += $$LZMAINCLUDE
+	HEADERS += $$LZMAINCLUDE/bit7z.hpp
+	LIBS += -lbit7z
+}
+linux: {
+    LZMABIN = ../../bit7z/lib/x64
+	LZMAINCLUDE = ../../bit7z/include/bit7z
+	LIBS += -L$$LZMABIN -lbit7z64 -ldl
+	INCLUDEPATH += $$LZMAINCLUDE
+	HEADERS += $$LZMAINCLUDE/bit7z.hpp
+}
 
 # gdcm library
 GDCMBIN = ../../bin/gdcm

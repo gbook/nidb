@@ -215,14 +215,17 @@ int main(int argc, char *argv[])
             inputPath = args[1];
 
         /* command line flag options */
+        p.addOption(QCommandLineOption(QStringList() << "d" << "debug", "Enable debugging"));
         p.addOption(QCommandLineOption(QStringList() << "object", "List an object [package  subject  study  series  experiment  pipeline  groupanalysis  datadictionary].", "object"));
         p.addOption(QCommandLineOption(QStringList() << "subjectid", "Subject ID.", "subjectid"));
         p.addOption(QCommandLineOption(QStringList() << "studynum", "Study Number\n  -subject-id must also be specified.", "studynum"));
         p.addOption(QCommandLineOption(QStringList() << "details", "Include details when printing lists."));
         p.process(a);
 
-        bool debug = false;
+        bool debug = p.isSet("d");
         bool quiet = true;
+        if (debug)
+            quiet = false;
         QString object = p.value("object").trimmed();
         QString subjectID = p.value("subjectid").trimmed();
         int studyNum = p.value("studynum").toInt();
@@ -245,6 +248,8 @@ int main(int argc, char *argv[])
             sqrl->SetFileMode(FileMode::ExistingPackage);
             sqrl->Read();
 
+            sqrl->Debug("Reading package...", __FUNCTION__);
+            utils::Print("Reading package...");
             if (object == "package") {
                 sqrl->PrintPackage();
             }

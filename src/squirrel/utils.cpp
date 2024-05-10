@@ -247,8 +247,6 @@ namespace utils {
     /* --------- FindAllFiles ----------------------------------- */
     /* ---------------------------------------------------------- */
     QStringList FindAllFiles(QString dir, QString pattern, bool recursive) {
-        //if (cfg["debug"] == "1") WriteLog("Finding all files in ["+dir+"] with pattern ["+pattern+"]");
-
         QStringList files;
         if (recursive) {
             QDirIterator it(dir, QStringList() << pattern, QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks, QDirIterator::Subdirectories);
@@ -658,7 +656,6 @@ namespace utils {
                 f.setFileName(fname);
                 QFileInfo fi(f);
                 QString newName = fi.path() + "/" + QString("%1_%2_%3_%4%5").arg(uid).arg(studynum).arg(seriesnum).arg(i,5,10,QChar('0')).arg(ext.replace("*",""));
-                //WriteLog( fname + " --> " + newName);
                 if (f.rename(newName))
                     numfilesrenamed++;
                 else
