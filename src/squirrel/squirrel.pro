@@ -74,8 +74,8 @@ win32: {
 	LIBS += -lbit7z
 }
 linux: {
-    LZMABIN = ../../bit7z/lib/x64
-	LZMAINCLUDE = ../../bit7z/include/bit7z
+    LZMABIN = ../../bin/bit7z
+	LZMAINCLUDE = ../bit7z/include/bit7z
 	LIBS += -L$$LZMABIN -lbit7z64 -ldl
 	INCLUDEPATH += $$LZMAINCLUDE
 	HEADERS += $$LZMAINCLUDE/bit7z.hpp

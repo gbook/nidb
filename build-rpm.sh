@@ -50,6 +50,7 @@ echo -e "\n ----- chdir to $BUILDDIR/bit7z -----\n"
 cd $BUILDDIR/bit7z
 echo -e "\n ----- Running cmake --build . --config Release -----\n"
 cmake --build . --config Release
+cp -uv $SRCDIR/bit7z/lib/x64/libbit7z64.a $BUILDDIR/bit7z/
 
 # ----- build smtp module -----
 echo $QMAKEBIN -o $BUILDDIR/smtp/Makefile $SRCDIR/smtp/SMTPEmail.pro -spec linux-g++
