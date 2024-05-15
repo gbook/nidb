@@ -52,11 +52,24 @@ else
 fi
 
 # ----- build bit7z library -----
+#echo -e "\n ----- Building bit7z -----\n"
+#mkdir -p $BIT7ZDIR/build
+#cd $BIT7ZDIR/build
+#cmake .. -DBIT7Z_AUTO_FORMAT:BOOL=ON -DBIT7Z_USE_LEGACY_IUNKNOWN=ON -DBIT7Z_GENERATE_PIC=ON -DCMAKE_CXX_FLAGS:STRING=-fPIC -DCMAKE_C_FLAGS:STRING=-fPIC
+#cmake --build . --config Release
+
 echo -e "\n ----- Building bit7z -----\n"
-mkdir -p $BIT7ZDIR/build
-cd $BIT7ZDIR/build
-cmake .. -DBIT7Z_AUTO_FORMAT:BOOL=ON -DBIT7Z_USE_LEGACY_IUNKNOWN=ON -DBIT7Z_GENERATE_PIC=ON -DCMAKE_CXX_FLAGS:STRING=-fPIC -DCMAKE_C_FLAGS:STRING=-fPIC
+echo -e "\n ----- Created path $BUILDDIR/bit7z -----\n"
+mkdir -p $BUILDDIR/bit7z
+echo -e "\n ----- Running cmake -DBIT7Z_AUTO_FORMAT:BOOL=ON -DBIT7Z_USE_LEGACY_IUNKNOWN=ON -DBIT7Z_GENERATE_PIC=ON -DCMAKE_CXX_FLAGS:STRING=-fPIC -DCMAKE_C_FLAGS:STRING=-fPIC -S $SRCDIR/bit7z -B $BUILDDIR/bit7z -----\n"
+cmake -DBIT7Z_AUTO_FORMAT:BOOL=ON -DBIT7Z_USE_LEGACY_IUNKNOWN=ON -DBIT7Z_GENERATE_PIC=ON -DCMAKE_CXX_FLAGS:STRING=-fPIC -DCMAKE_C_FLAGS:STRING=-fPIC -S $SRCDIR/bit7z -B $BUILDDIR/bit7z
+echo -e "\n ----- chdir to $BUILDDIR/bit7z -----\n"
+cd $BUILDDIR/bit7z
+echo -e "\n ----- Running cmake --build . --config Release -----\n"
 cmake --build . --config Release
+cp -uv $SRCDIR/bit7z/lib/x64/libbit7z64.a $BUILDDIR/bit7z/
+cp -uv $SRCDIR/bit7z/lib/x64/libbit7z64.a $SRCDIR/bit7z/
+
 
 #mkdir -p $BUILDDIR/bit7z
 #cd $BUILDDIR/bit7z
