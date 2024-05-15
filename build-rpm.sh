@@ -43,8 +43,8 @@ make -j 16
 # ----- build bit7z library -----
 echo -e "\n ----- Building bit7z -----\n"
 mkdir -p $BIT7ZDIR/build
-cd $BIT7ZDIR
 cmake -DBIT7Z_AUTO_FORMAT:BOOL=ON -DBIT7Z_USE_LEGACY_IUNKNOWN=ON -DBIT7Z_GENERATE_PIC=ON -DCMAKE_CXX_FLAGS:STRING=-fPIC -DCMAKE_C_FLAGS:STRING=-fPIC -S $BIT7ZDIR -B $BIT7ZDIR/build
+cd $BIT7ZDIR/build
 cmake --build . --config Release
 
 # ----- build smtp module -----
