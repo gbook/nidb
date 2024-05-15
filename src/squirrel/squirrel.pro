@@ -80,8 +80,8 @@ linux: {
 	INCLUDEPATH += $$LZMAINCLUDE
 	HEADERS += $$LZMAINCLUDE/bit7z.hpp
 
-    message(LIBS)
-	message(QMAKE_LIBDIR)
+    message($$LIBS)
+	message($$QMAKE_LIBDIR)
 }
 
 # gdcm library
