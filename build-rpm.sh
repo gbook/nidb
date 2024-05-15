@@ -39,6 +39,7 @@ mkdir -p $BUILDDIR/gdcm
 cd $BUILDDIR/gdcm
 $CMAKEBIN -DGDCM_BUILD_APPLICATIONS:STRING=NO -DGDCM_BUILD_DOCBOOK_MANPAGES:BOOL=OFF -DGDCM_BUILD_SHARED_LIBS:STRING=YES -DGDCM_BUILD_TESTING:STRING=NO -DGDCM_BUILD_EXAMPLES:STRING=NO $SRCDIR/gdcm
 make -j 16
+echo -e "\n Built gdcm in $BUILDDIR/gdcm\n"
 
 # ----- build bit7z library -----
 echo -e "\n ----- Building bit7z -----\n"
@@ -51,12 +52,14 @@ cd $BUILDDIR/bit7z
 echo -e "\n ----- Running cmake --build . --config Release -----\n"
 cmake --build . --config Release
 cp -uv $SRCDIR/bit7z/lib/x64/libbit7z64.a $BUILDDIR/bit7z/
+echo -e "\n Built gdcm in $BUILDDIR/bit7z\n"
 
 # ----- build smtp module -----
 echo $QMAKEBIN -o $BUILDDIR/smtp/Makefile $SRCDIR/smtp/SMTPEmail.pro -spec linux-g++
 $QMAKEBIN -o $BUILDDIR/smtp/Makefile $SRCDIR/smtp/SMTPEmail.pro -spec linux-g++
 cd $BUILDDIR/smtp
 make -j 16
+echo -e "\n Built smtp in $BUILDDIR/smtp\n"
 
 # ----- build squirrel library -----
 echo -e "\nBuilding squirrel library\n"
@@ -64,6 +67,7 @@ echo $QMAKEBIN -o $BUILDDIR/squirrel/Makefile $SRCDIR/squirrel/squirrellib.pro -
 $QMAKEBIN -o $BUILDDIR/squirrel/Makefile $SRCDIR/squirrel/squirrellib.pro -spec linux-g++
 cd $BUILDDIR/squirrel
 make -j 16
+echo -e "\n Built squirrel in $BUILDDIR/squirrel\n"
 
 # ----- build NiDB core -----
 echo -e "\nBuilding NiDB core\n"
@@ -71,3 +75,4 @@ echo -e "\nBuilding NiDB core\n"
 $QMAKEBIN -o $BUILDDIR/nidb/Makefile $SRCDIR/nidb/nidb.pro -spec linux-g++
 cd $BUILDDIR/nidb
 make -B -j 16
+echo -e "\n Built nidb in $BUILDDIR/nidb\n"
