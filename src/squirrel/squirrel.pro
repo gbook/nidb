@@ -79,6 +79,9 @@ linux: {
 	LIBS += -L$$LZMABIN -lbit7z64 -ldl
 	INCLUDEPATH += $$LZMAINCLUDE
 	HEADERS += $$LZMAINCLUDE/bit7z.hpp
+
+    message(LIBS)
+	message(QMAKE_LIBDIR)
 }
 
 # gdcm library
