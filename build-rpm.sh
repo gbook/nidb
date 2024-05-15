@@ -52,7 +52,10 @@ cd $BUILDDIR/bit7z
 echo -e "\n ----- Running cmake --build . --config Release -----\n"
 cmake --build . --config Release
 cp -uv $SRCDIR/bit7z/lib/x64/libbit7z64.a $BUILDDIR/bit7z/
-echo -e "\n Built gdcm in $BUILDDIR/bit7z\n"
+cp -uv $SRCDIR/bit7z/lib/x64/libbit7z64.a $SRCDIR/bit7z/
+cp -uv $SRCDIR/bit7z/lib/x64/libbit7z64.a ~/rpmbuild/SOURCES/bin/bit7z/
+cp -uv $SRCDIR/bit7z/lib/x64/libbit7z64.a ~/rpmbuild/SOURCES/src/bit7z/
+echo -e "\n Built bit7z in $BUILDDIR/bit7z\n"
 
 # ----- build smtp module -----
 echo $QMAKEBIN -o $BUILDDIR/smtp/Makefile $SRCDIR/smtp/SMTPEmail.pro -spec linux-g++
