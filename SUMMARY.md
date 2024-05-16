@@ -9,6 +9,7 @@
   * [Quick Install](getting-started/installation/quick-install.md)
   * [How to change passwords](getting-started/installation/how-to-change-passwords.md)
   * [Optional software](getting-started/installation/optional-software.md)
+  * [MySQL/MariaDB tweaks](getting-started/installation/mysql-mariadb-tweaks.md)
 * [Upgrade](getting-started/upgrade/README.md)
   * [Quick Upgrade](getting-started/upgrade/quick-upgrade.md)
   * [Migrate Existing Installation](getting-started/upgrade/migrate-existing-installation.md)

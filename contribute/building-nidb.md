@@ -78,6 +78,7 @@ apt install git
 apt install build-essential make cmake git
 apt install libxcb* libxkb* libX11-xcb*
 apt install libdbus-1*
+apt install libzstd-dev
 apt install wget   # if needed
 ```
 {% endtab %}
