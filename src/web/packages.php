@@ -1995,12 +1995,14 @@
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$studyid = $row['study_id'];
 			
+			$exists = 1;
 			if ($studyid == "")  {
-				echo "Analysis with analysis_id [" . $row['analysis_id'] . "] does not exist any longer<br>";
-				continue;
+				$msgs[] = "Analysis with analysis_id [" . $row['analysis_id'] . "] no longer exists";
+				$exists = 0;
 			}
-			
-			list($path, $uid, $studynum, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid) = GetStudyInfo($studyid);
+			else {
+				list($path, $uid, $studynum, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid) = GetStudyInfo($studyid);
+			}
 
 			$objectid = $row['packageanalysis_id'];
 			$analyses[$uid][$objectid]['analysisid'] = $row['analysis_id'];
@@ -2009,6 +2011,7 @@
 			$analyses[$uid][$objectid]['status'] = $row['analysis_status'];
 			$analyses[$uid][$objectid]['disksize'] = $row['analysis_disksize'];
 			$analyses[$uid][$objectid]['numfiles'] = $row['analysis_numfiles'];
+			$analyses[$uid][$objectid]['exists'] = $exists;
 			
 			$totalanalysisfiles += $row['analysis_numfiles'];
 			$totalanalysisbytes += $row['analysis_disksize'];
@@ -2033,7 +2036,30 @@
 			}
 		}
 		
+		if (count($msgs) > 0) {
+			?>
+			<div class="ui container">
+				<div class="ui info message">
+					<i class="close icon"></i>
+					<div class="header">
+						<i class="exclamation circle icon"></i> Package Issues
+					</div>
+					<br>
+					<p><b>Missing objects detected in this package</b> The package manager creates pointers to existing data within NiDB until a squirrel package is actually exported. If data was added to this package and later deleted from NiDB, it can no longer be included in the package. These missing objects should be manually deleted from the package.
+					<ul class="list">
+						<? foreach ($msgs as $msg) {
+							echo "<li>$msg\n";
+						} ?>
+					</ul>
+					</p>
+				</div>
+			</div>
+			<br>
+			<?
+		}
+		
 		?>
+
 		<div class="ui container">
 			<div class="ui top attached raised segment">
 				<div class="ui two column grid">
@@ -2056,7 +2082,7 @@
 								<?
 									$sqlstring = "select a.* from exports a left join exportseries b on a.export_id = b.export_id where b.package_id = $packageid";
 									$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-									$numanalysis = mysqli_num_rows($result);
+									$numexports = mysqli_num_rows($result);
 									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 										$exportid = $row['export_id'];
 										$startdate = $row['startdate'];
@@ -2514,9 +2540,13 @@
 				ksort($analyses, SORT_NATURAL);
 				foreach ($analyses as $uid => $objects) {
 					foreach ($objects as $objectid => $analysis) {
+						$exists = $analysis['exists'];
 						$analysisid = $analysis['analysisid'];
+						
+						if (!$exists) { $trclass = "class='error left red marked'"; }
+						else $trclass = "";
 						?>
-						<tr>
+						<tr <?=$trclass?>>
 							<td class="allanalysis"><input type="checkbox" name="objectids[]" value="<?=$objectid?>"></td>
 							<td><?=$uid?></td>
 							<td><?=$analysis['studynum']?></td>

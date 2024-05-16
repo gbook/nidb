@@ -1261,6 +1261,7 @@
 								MarkTime("Info Tab - H");
 								
 								?>
+								<a href="pipeline_performance.php?pipelineid=<?=$id?>">Pipeline performance</a>
 								<div class="ui mini statistics">
 									<div class="ui statistic">
 										<div class="value"><?=$numcomplete?></div>
@@ -1288,7 +1289,6 @@
 									</div>
 								</div>
 								<br><br>
-
 								<div class="ui accordion">
 									<div class="title">
 										<i class="dropdown icon"></i>
