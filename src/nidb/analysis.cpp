@@ -178,7 +178,7 @@ void analysis::PrintAnalysisInfo() {
 	output += QString("   msg: [%1]\n").arg(msg);
 	output += QString("   analysispath: [%1]\n").arg(analysispath);
 
-	n->WriteLog(output);
+	n->Log(output);
 }
 
 

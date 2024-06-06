@@ -89,13 +89,15 @@ squirrel::~squirrel()
 bool squirrel::DatabaseConnect() {
 
     db = QSqlDatabase::addDatabase("QSQLITE", "squirrel");
-    if (debug)
+    if (debug) {
+        QFile::remove("/tmp/sqlite.db");
         db.setDatabaseName("/tmp/sqlite.db");
+    }
     else
         db.setDatabaseName(":memory:");
 
     if (db.open()) {
-        Log(QString("Successfuly opened SQLite database [%1]").arg(db.databaseName()), __FUNCTION__);
+        Debug(QString("Successfuly opened SQLite database [%1]").arg(db.databaseName()), __FUNCTION__);
         return true;
     }
     else {
@@ -543,22 +545,24 @@ bool squirrel::Write(bool writeLog) {
                 QString seriesPath = QString("%1/%2").arg(workingDir).arg(series.VirtualPath());
                 utils::MakePath(seriesPath,m);
 
-                Log(QString("Writing series [%1] to [%2]. Data format [%3]").arg(series.SeriesNumber).arg(seriesPath).arg(DataFormat), __FUNCTION__);
+                Log(QString("Writing Subject-Study-Series [%1-%2-%3] to tmpdir [%4]. Data format [%5]").arg(subject.ID).arg(study.StudyNumber).arg(series.SeriesNumber).arg(seriesPath).arg(DataFormat), __FUNCTION__);
 
                 /* orig vs other formats */
                 if (DataFormat == "orig") {
-                    Log("Export data format is 'orig'. Copying files...", __FUNCTION__);
+                    Debug(QString("Export data format is 'orig'. Copying [%1] files...").arg(series.stagedFiles.size()), __FUNCTION__);
                     /* copy all of the series files to the temp directory */
                     foreach (QString f, series.stagedFiles) {
                         QString systemstring = QString("cp -uv %1 %2").arg(f).arg(seriesPath);
+                        Log(QString("  ... copying original files from %1 to %2").arg(f).arg(seriesPath), __FUNCTION__);
                         Debug(utils::SystemCommand(systemstring), __FUNCTION__);
                     }
                 }
                 else if (study.Modality.toUpper() != "MR") {
-                    Log(QString("Study modality is [%1]. Copying files...").arg(study.Modality.toUpper()), __FUNCTION__);
+                    Debug(QString("Study modality is [%1]. Copying files...").arg(study.Modality.toUpper()), __FUNCTION__);
                     /* copy all of the series files to the temp directory */
                     foreach (QString f, series.stagedFiles) {
                         QString systemstring = QString("cp -uv %1 %2").arg(f).arg(seriesPath);
+                        Log(QString("  ... copying files from %1 to %2").arg(f).arg(seriesPath), __FUNCTION__);
                         Debug(utils::SystemCommand(systemstring), __FUNCTION__);
                     }
                 }
@@ -583,6 +587,7 @@ bool squirrel::Write(bool writeLog) {
 
                         /* move the anonymized files to the staging area */
                         systemstring = QString("mv %1/* %2/").arg(td).arg(seriesPath);
+                        Log(QString("  ... anonymizing DICOM files from %1 to %2").arg(td).arg(seriesPath), __FUNCTION__);
                         Debug(utils::SystemCommand(systemstring), __FUNCTION__);
 
                         /* delete temp directory */
@@ -601,7 +606,7 @@ bool squirrel::Write(bool writeLog) {
 
                     /* get path of first file to be converted */
                     if (series.stagedFiles.size() > 0) {
-                        Log(QString("Converting %1 files to nifti").arg(series.stagedFiles.size()), __FUNCTION__);
+                        Log(QString(" ... converting %1 files to nifti").arg(series.stagedFiles.size()), __FUNCTION__);
 
                         QFileInfo f(series.stagedFiles[0]);
                         QString origSeriesPath = f.absoluteDir().absolutePath();
@@ -851,7 +856,7 @@ void squirrel::Print() {
     QList<squirrelSubject> subjects = GetAllSubjects();
     foreach (squirrelSubject sub, subjects) {
         qint64 subjectRowID = sub.GetObjectID();
-        sub.PrintSubject();
+        sub.PrintDetails();
 
         /* iterate through studies */
         QList<squirrelStudy> studies = GetStudies(subjectRowID);
@@ -1126,14 +1131,21 @@ bool squirrel::AddStagedFiles(QString objectType, qint64 rowid, QStringList file
     if (rowid < 0) return false;
     if (files.size() <= 0) return false;
 
+    Debug(QString("Adding [%1] files of type [%2] to rowID [%3]").arg(files.size()).arg(objectType).arg(rowid), __FUNCTION__);
+
     if (objectType == "series") {
         squirrelSeries s;
         s.SetObjectID(rowid);
         if (s.Get()) {
-            foreach (QString f, files)
+            foreach (QString f, files) {
                 s.stagedFiles.append(f);
+                Debug(QString("Appended file [%1] of type [%2] to rowID [%3]. Size is now [%4]").arg(files.size()).arg(objectType).arg(rowid).arg(s.stagedFiles.size()), __FUNCTION__);
+            }
             if (s.Store())
                 return true;
+        }
+        else {
+            Debug("Unable to get series object. Error [" + s.Error() + "]", __FUNCTION__);
         }
     }
 
@@ -1248,20 +1260,50 @@ QHash<QString, QString> squirrel::ReadParamsFile(QString f) {
  * @brief squirrel::PrintSubjects print list of subjects to stdout
  * @param details true to print details, false to print list of subject IDs
  */
-void squirrel::PrintSubjects(bool details) {
+void squirrel::PrintSubjects(PrintingType printType) {
 
     QList <squirrelSubject> subjects = GetAllSubjects();
-    QStringList subjectIDs;
-    foreach (squirrelSubject s, subjects) {
-        if (s.Get()) {
-            if (details)
-                s.PrintSubject();
-            else
-                subjectIDs.append(s.ID);
+    int count = subjects.size();
+    if (count > 0) {
+        if (printType == PrintingType::Details) {
+            foreach (squirrelSubject s, subjects) {
+                if (s.Get())
+                    s.PrintDetails();
+            }
+        }
+        else if (printType == PrintingType::CSV) {
+            QStringList csvLines;
+            foreach (squirrelSubject s, subjects) {
+                if (s.Get())
+                    csvLines.append(s.CSVLine());
+            }
+            utils::Print("ID, AlternateIDs, DateOfBirth, Ethnicity1, Ethnicity2, GUID, Gender, Sex");
+            utils::Print(csvLines.join("\n"));
+        }
+        else if (printType == PrintingType::Tree) {
+            utils::Print("Subjects");
+            int i = 0;
+            foreach (squirrelSubject s, subjects) {
+                if (s.Get()) {
+                    i++;
+                    if (count == i)
+                        s.PrintTree(true);
+                    else
+                        s.PrintTree(false);
+                }
+            }
+        }
+        else {
+            QStringList subjectIDs;
+            foreach (squirrelSubject s, subjects) {
+                if (s.Get())
+                    subjectIDs.append(s.ID);
+            }
+            utils::Print("Subjects: " + subjectIDs.join(" "));
         }
     }
-    if (!details)
-        utils::Print("Subjects: " + subjectIDs.join(" "));
+    else
+        utils::Print("No subjects in this package");
 }
 
 
@@ -1520,13 +1562,13 @@ QList<squirrelSeries> squirrel::GetSeries(qint64 studyRowID) {
         if (s.Get()) {
             s.SetDirFormat(SubjectDirFormat, StudyDirFormat, SeriesDirFormat);
             list.append(s);
-            Log(QString("Found SeriesNumber [%1]").arg(s.SeriesNumber), __FUNCTION__);
+            Debug(QString("Found SeriesNumber [%1]").arg(s.SeriesNumber), __FUNCTION__);
         }
         else {
             Log(QString("Unable to load SeriesRowID [%1]").arg(s.GetObjectID()), __FUNCTION__);
         }
     }
-    Log(QString("Found [%1] series for StudyRowID [%2]").arg(list.size()).arg(studyRowID), __FUNCTION__);
+    Debug(QString("Found [%1] series for StudyRowID [%2]").arg(list.size()).arg(studyRowID), __FUNCTION__);
     return list;
 }
 
@@ -1669,10 +1711,10 @@ qint64 squirrel::FindSubject(QString id) {
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.next()) {
         rowid = q.value("SubjectRowID").toLongLong();
-        Log(QString("Searched for SubjectID [%1] and found SubjectRowID [%2]").arg(id).arg(rowid), __FUNCTION__);
+        Debug(QString("Searched for SubjectID [%1] and found SubjectRowID [%2]").arg(id).arg(rowid), __FUNCTION__);
     }
     else {
-        Log(QString("Could not find SubjectID [%1]").arg(id), __FUNCTION__);
+        Debug(QString("Could not find SubjectID [%1]").arg(id), __FUNCTION__);
     }
     return rowid;
 }
@@ -1696,10 +1738,10 @@ qint64 squirrel::FindStudy(QString subjectID, int studyNum) {
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.next()) {
         rowid = q.value("StudyRowID").toLongLong();
-        Log(QString("Searched for SubjectID, StudyNumber [%1], [%2] and found StudyRowID [%3]").arg(subjectID).arg(studyNum).arg(rowid), __FUNCTION__);
+        Debug(QString("Searched for SubjectID, StudyNumber [%1], [%2] and found StudyRowID [%3]").arg(subjectID).arg(studyNum).arg(rowid), __FUNCTION__);
     }
     else {
-        Log(QString("Could not find SubjectID, StudyNumber [%1], [%2]").arg(subjectID).arg(studyNum), __FUNCTION__);
+        Debug(QString("Could not find SubjectID, StudyNumber [%1], [%2]").arg(subjectID).arg(studyNum), __FUNCTION__);
     }
     return rowid;
 }
@@ -2277,18 +2319,24 @@ bool squirrel::CompressDirectoryToArchive(QString dir, QString archivePath, QStr
 #else
         Bit7zLibrary lib("/usr/libexec/p7zip/7z.so");
 #endif
+
+        if (overwritePackage) {
+            if (QFile::exists(archivePath) && (archivePath != "")) {
+                Debug("Overwrite option specified. Deleting existing package [" + archivePath + "]", __FUNCTION__);
+                QFile::remove(archivePath);
+            }
+        }
+
         if (archivePath.endsWith(".zip", Qt::CaseInsensitive)) {
             BitArchiveWriter archive(lib, BitFormat::Zip);
             archive.setUpdateMode(UpdateMode::Update);
             archive.addFiles(dir.toStdString(), "*", true); // instead of addDirectory
-            //archive.addDirectory(dir.toStdString());
             archive.compressTo(archivePath.toStdString());
         }
         else {
             BitArchiveWriter archive(lib, BitFormat::SevenZip);
             archive.setUpdateMode(UpdateMode::Update);
             archive.addFiles(dir.toStdString(), "*", true); // instead of addDirectory
-            //archive.addDirectory(dir.toStdString());
             archive.compressTo(archivePath.toStdString());
         }
         m = "Successfully compressed directory [" + dir + "] to archive [" + archivePath + "]";

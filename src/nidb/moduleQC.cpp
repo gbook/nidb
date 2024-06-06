@@ -50,7 +50,7 @@ moduleQC::~moduleQC()
 /* --------- Run -------------------------------------------- */
 /* ---------------------------------------------------------- */
 int moduleQC::Run() {
-    n->WriteLog("Entering the QC module");
+    n->Log("Entering the QC module");
 
     int ret(0);
 
@@ -64,7 +64,7 @@ int moduleQC::Run() {
             int moduleid = q.value("qcmodule_id").toInt();
             QString modality = q.value("qcm_modality").toString().toLower();
 
-            n->WriteLog(QString("*********************** Working on module [%1][%2] ***********************").arg(moduleid).arg(modality));
+            n->Log(QString("*********************** Working on module [%1][%2] ***********************").arg(moduleid).arg(modality));
 
             /* look through DB for all series (of this modality) that don't have an associated QCdata row */
             QSqlQuery q2;
@@ -89,7 +89,7 @@ int moduleQC::Run() {
 
                         /* check if this module should be running now or not */
                         if (!n->ModuleCheckIfActive()) {
-                            n->WriteLog("Not supposed to be running right now");
+                            n->Log("Not supposed to be running right now");
                             return 0;
                         }
 
@@ -100,22 +100,22 @@ int moduleQC::Run() {
                         QThread::sleep(1); // sleep for 1 sec
                     }
                     else {
-                        n->WriteLog(QString("Skipping this MR series [%1] because it does not have an mr_qa row yet... QC needs the 3D/4D information from the mr_qa script first").arg(seriesid));
+                        n->Log(QString("Skipping this MR series [%1] because it does not have an mr_qa row yet... QC needs the 3D/4D information from the mr_qa script first").arg(seriesid));
                     }
                 }
-                n->WriteLog("Finished checking for MR series that dont have a QC row");
+                n->Log("Finished checking for MR series that dont have a QC row");
             }
             else {
-                n->WriteLog("Nothing to do");
+                n->Log("Nothing to do");
             }
 
-            n->WriteLog(QString("*********************** Finished module [%1][%2] ***********************").arg(moduleid).arg(modality));
+            n->Log(QString("*********************** Finished module [%1][%2] ***********************").arg(moduleid).arg(modality));
 
         }
-        n->WriteLog("Finished all modules");
+        n->Log("Finished all modules");
     }
     else {
-        n->WriteLog("No QC modules exist (in the database)!");
+        n->Log("No QC modules exist (in the database)!");
     }
 
     return ret;
@@ -145,7 +145,7 @@ bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
     /* get the series info */
     series s(seriesid, modality.toUpper(), n);
     if (!s.isValid) {
-        n->WriteLog("Series was not valid: [" + s.msg + "]");
+        n->Log("Series was not valid: [" + s.msg + "]");
         return false;
     }
 
@@ -154,11 +154,11 @@ bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
     QString uid = s.uid;
     //QString datatype = s.datatype;
 
-    n->WriteLog(QString("-------------- Running %1 on %2 series %3 --------------").arg(moduleid).arg(modality).arg(seriesid));
+    n->Log(QString("-------------- Running %1 on %2 series %3 --------------").arg(moduleid).arg(modality).arg(seriesid));
 
     int qcmoduleseriesid(0);
 
-    n->WriteLog(QString("============== Working on [%1-%2-%3] ==============").arg(uid).arg(studynum).arg(seriesnum));
+    n->Log(QString("============== Working on [%1-%2-%3] ==============").arg(uid).arg(studynum).arg(seriesnum));
     // check if this qc_moduleseries row exists
     q.prepare("select * from qc_moduleseries where series_id = :seriesid and modality = :modality and qcmodule_id = :moduleid");
     q.bindValue(":seriesid",seriesid);
@@ -182,29 +182,29 @@ bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
     QString qcpath = QString("%1/%2/%3/%4/qa").arg(n->cfg["archivedir"]).arg(uid).arg(studynum).arg(seriesnum);
     QString m;
     if (!MakePath(qcpath, m)) {
-        n->WriteLog("Unable to create directory ["+qcpath+"] because of error ["+m+"]");
+        n->Log("Unable to create directory ["+qcpath+"] because of error ["+m+"]");
         return false;
     }
-    n->WriteLog("Working on ["+qcpath+"]");
+    n->Log("Working on ["+qcpath+"]");
 
     if (n->cfg["usecluster"].toInt()) {
         /* submit this module to the cluster. first create the SGE job file */
-        n->WriteLog("About to create the SGE job file");
+        n->Log("About to create the SGE job file");
         QString sgebatchfile = CreateSGEJobFile(modulename, qcmoduleseriesid, qcpath);
-        n->WriteLog("Created SGE job file");
+        n->Log("Created SGE job file");
 
         /* submit the SGE job */
         QString systemstring = QString("ssh %1 %2 -u %3 -q %4 \"%5\"").arg(n->cfg["clustersubmithost"]).arg(n->cfg["qsubpath"]).arg(n->cfg["queueuser"]).arg(n->cfg["queuename"]).arg(sgebatchfile);
-        n->WriteLog("About to submit SGE job file");
-        n->WriteLog(SystemCommand(systemstring));
-        n->WriteLog("Submitted SGE job file");
+        n->Log("About to submit SGE job file");
+        n->Log(SystemCommand(systemstring));
+        n->Log("Submitted SGE job file");
     }
     else {
-        n->WriteLog("About to run the QC module locally");
+        n->Log("About to run the QC module locally");
         QDir::setCurrent(n->cfg["qcmoduledir"] + "/" + modulename);
         QString systemstring = QString("%1/%2/./%2.sh %3").arg(n->cfg["qcmoduledir"]).arg(modulename).arg(qcmoduleseriesid);
-        n->WriteLog(SystemCommand(systemstring));
-        n->WriteLog("Finished running the QC module locally");
+        n->Log(SystemCommand(systemstring));
+        n->Log("Finished running the QC module locally");
     }
 
     /* calculate the total time running */
@@ -220,7 +220,7 @@ bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
     //numProcessed++;
 
     //QThread::sleep(1);
-    n->WriteLog(QString("-------------- Finished %1 on %2 series %3 --------------").arg(moduleid).arg(modality).arg(seriesid));
+    n->Log(QString("-------------- Finished %1 on %2 series %3 --------------").arg(moduleid).arg(modality).arg(seriesid));
 
     return true;
 }
@@ -233,16 +233,16 @@ QString moduleQC::CreateSGEJobFile(QString modulename, int qcmoduleseriesid, QSt
 
     QString jobfilename;
 
-    n->WriteLog("CreateSGEJobFile() - A");
+    n->Log("CreateSGEJobFile() - A");
 
     /* check if any of the variables might be blank */
     if ((modulename == "") || (qcmoduleseriesid < 1)) {
-        n->WriteLog("CreateSGEJobFile() - B");
+        n->Log("CreateSGEJobFile() - B");
         return jobfilename;
     }
 
     QString jobfile;
-    n->WriteLog("CreateSGEJobFile() - C");
+    n->Log("CreateSGEJobFile() - C");
 
     jobfile += "#!/bin/sh\n";
     jobfile += QString("#$ -N NIDB-QC-%1\n").arg(modulename);
@@ -253,7 +253,7 @@ QString moduleQC::CreateSGEJobFile(QString modulename, int qcmoduleseriesid, QSt
     jobfile += QString("#$ -u %1\n\n").arg(n->cfg["queueuser"]);
     jobfile += QString("cd %1/%2\n").arg(n->cfg["qcmoduledir"]).arg(modulename);
     jobfile += QString("%1/%2/./%2.sh %3\n").arg(n->cfg["qcmoduledir"]).arg(modulename).arg(qcmoduleseriesid);
-    n->WriteLog("CreateSGEJobFile() - D");
+    n->Log("CreateSGEJobFile() - D");
 
     jobfilename = QString("%1/sge-%2.job").arg(qcpath).arg(GenerateRandomString(10));
     QFile f(jobfilename);
@@ -262,9 +262,9 @@ QString moduleQC::CreateSGEJobFile(QString modulename, int qcmoduleseriesid, QSt
         fs << jobfile;
         f.close();
     }
-    n->WriteLog("CreateSGEJobFile() - E");
-    n->WriteLog(SystemCommand("chmod 777 " + jobfilename));
-    n->WriteLog("CreateSGEJobFile() - F");
+    n->Log("CreateSGEJobFile() - E");
+    n->Log(SystemCommand("chmod 777 " + jobfilename));
+    n->Log("CreateSGEJobFile() - F");
 
     return jobfilename;
 }

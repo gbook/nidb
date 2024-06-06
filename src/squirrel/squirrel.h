@@ -41,6 +41,7 @@
 #include "squirrelVersion.h"
 
 enum FileMode { NewPackage, ExistingPackage };
+enum PrintingType { IDList, Details, CSV, Tree };
 typedef QPair<QString, QString> QStringPair;
 typedef QList<QStringPair> pairList;
 
@@ -62,6 +63,8 @@ public:
     void SetPackagePath(QString p) { packagePath = p; }
     QString GetPackagePath();
     void SetFileMode(FileMode m) { fileMode = m; } /*!< Set the file mode to either NewPackage or ExistingPackage */
+    void SetDebugSQL(bool d) { debugSQL = d; }
+    void SetOverwritePackage(bool o) { overwritePackage = o; }
 
     /* package JSON elements */
     QDateTime Datetime;         /*!< datetime the package was created */
@@ -143,11 +146,12 @@ public:
     void Debug(QString s, QString func="");
     QString GetLog() { return log; }
     bool GetDebug() { return debug; }
+    bool GetDebugSQL() { return debugSQL; }
     bool quiet=false;
 
     /* printing of information to console */
     void PrintPackage();
-    void PrintSubjects(bool details=false);
+    void PrintSubjects(PrintingType printType=PrintingType::IDList);
     void PrintStudies(qint64 subjectRowID, bool details=false);
     void PrintSeries(qint64 studyRowID, bool details=false);
     void PrintExperiments(bool details=false);
@@ -177,6 +181,8 @@ private:
     FileMode fileMode;
 
     bool debug;
+    bool debugSQL;
+    bool overwritePackage;
     bool isValid;
     bool isOkToDelete;
 };

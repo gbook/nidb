@@ -125,7 +125,7 @@ void series::PrintSeriesInfo() {
     output += QString("   subjectid: [%1]\n").arg(subjectid);
     output += QString("   uid: [%1]\n").arg(uid);
 
-    n->WriteLog(output);
+    n->Log(output);
 }
 
 
@@ -136,7 +136,7 @@ bool series::ChangeSeriesPath(int studyid, int newSeriesNum) {
     study s(studyid, n);
     QString newSeriesPath = QString("%1/%2").arg(s.path()).arg(newSeriesNum);
 
-    n->WriteLog("Changing series path from [" + seriespath + "] to [" + newSeriesPath + "]");
+    n->Log("Changing series path from [" + seriespath + "] to [" + newSeriesPath + "]");
 
     if (RenameFile(seriespath, newSeriesPath))
         return true;

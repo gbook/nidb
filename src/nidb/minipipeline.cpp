@@ -79,7 +79,7 @@ void minipipeline::LoadMiniPipelineInfo() {
             mps.file = q.value("mp_script").toByteArray();
             scripts.append(mps);
 
-            n->WriteLog(QString("Entry point [%1] [%2]").arg(mps.filename).arg(mps.isEntryPoint));
+            n->Log(QString("Entry point [%1] [%2]").arg(mps.filename).arg(mps.isEntryPoint));
             if (mps.isEntryPoint)
                 entrypoint = mps.filename;
         }
@@ -157,14 +157,14 @@ QJsonObject minipipeline::GetJSONObject(QString path) {
         QString m;
         QString minipipelinepath = QString("%1/%2").arg(path).arg(name);
         if (!MakePath(minipipelinepath, m))
-            n->WriteLog("Error creating path [" + minipipelinepath + "] because of [" + m + "]");
+            n->Log("Error creating path [" + minipipelinepath + "] because of [" + m + "]");
 
         QByteArray j = QJsonDocument(jsonLarge).toJson();
         QFile fout(QString("%1/%2/minipipeline.json").arg(path).arg(name));
         if (fout.open(QIODevice::WriteOnly))
             fout.write(j);
         else
-            n->WriteLog("Error writing file [" + QString("%1/%2/minipipeline.json").arg(path).arg(name) + "]");
+            n->Log("Error writing file [" + QString("%1/%2/minipipeline.json").arg(path).arg(name) + "]");
 
         /* return small JSON object */
         return jsonSmall;

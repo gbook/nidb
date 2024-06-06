@@ -39,6 +39,7 @@ class squirrelSeries
 public:
     squirrelSeries();
     void PrintSeries();
+    void PrintTree(bool isLast);
     QJsonObject ToJSON();
     QJsonObject ParamsToJSON();
     bool Get();             /* gets the object data from the database */

@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
     QString bindir = QDir::currentPath();
 
     /* this whole section reads the command line parameters */
-    a.setApplicationVersion(QString("Build %1.%2.%3  (squirrellib %4.%5)").arg(UTIL_VERSION_MAJ).arg(UTIL_VERSION_MIN).arg(UTIL_BUILD_NUM).arg(SQUIRREL_VERSION_MAJ).arg(SQUIRREL_VERSION_MIN));
+    a.setApplicationVersion(QString("Build %1.%2.%3  (squirrellib %4.%5)  Build date %6 %7").arg(UTIL_VERSION_MAJ).arg(UTIL_VERSION_MIN).arg(UTIL_BUILD_NUM).arg(SQUIRREL_VERSION_MAJ).arg(SQUIRREL_VERSION_MIN).arg(__DATE__).arg(__TIME__));
     a.setApplicationName("Squirrel Utilities");
 
     /* setup the command line parser */
@@ -154,10 +154,14 @@ int main(int argc, char *argv[])
         /* command line flag options */
         p.addOption(QCommandLineOption(QStringList() << "d" << "debug", "Enable debugging"));
         p.addOption(QCommandLineOption(QStringList() << "q" << "quiet", "Dont print headers and checks"));
+        p.addOption(QCommandLineOption(QStringList() << "overwrite", "Overwrite existing squirrel package, if package with same name exists"));
+        p.addOption(QCommandLineOption(QStringList() << "debugsql", "Enable debugging of SQL statements"));
 
         p.process(a);
 
         bool debug = p.isSet("d");
+        bool debugsql = p.isSet("debugsql");
+        bool overwrite = p.isSet("overwrite");
         bool quiet = p.isSet("q");
 
         if (inputPath == "") {
@@ -187,12 +191,15 @@ int main(int argc, char *argv[])
             QString outputfile = outputPath;
 
             if (outputPath == "") {
-                outputfile = QString(inputPath + "/squirrel.zip");
-                utils::Print(QString("Output file not specified. Creating squirrel file in input directory [%1]").arg(outputfile));
+                outputfile = QString(inputPath + "/squirrel.sqrl");
+                utils::Print(QString("Output package path not specified. Creating squirrel package in input directory [%1]").arg(outputfile));
             }
 
             /* create a squirrel object */
             squirrel *sqrl = new squirrel(debug);
+            sqrl->SetDebugSQL(debugsql);
+            sqrl->SetOverwritePackage(overwrite);
+            sqrl->DataFormat = "orig";
 
             /* create a BIDS object, and start reading the directory */
             bids *bds = new bids();
@@ -220,6 +227,8 @@ int main(int argc, char *argv[])
         p.addOption(QCommandLineOption(QStringList() << "subjectid", "Subject ID.", "subjectid"));
         p.addOption(QCommandLineOption(QStringList() << "studynum", "Study Number\n  -subject-id must also be specified.", "studynum"));
         p.addOption(QCommandLineOption(QStringList() << "details", "Include details when printing lists."));
+        p.addOption(QCommandLineOption(QStringList() << "tree", "Display tree view of data."));
+        p.addOption(QCommandLineOption(QStringList() << "csv", "Display csv output of data"));
         p.process(a);
 
         bool debug = p.isSet("d");
@@ -230,6 +239,18 @@ int main(int argc, char *argv[])
         QString subjectID = p.value("subjectid").trimmed();
         int studyNum = p.value("studynum").toInt();
         bool details = p.isSet("details");
+        bool tree = p.isSet("tree");
+        bool csv = p.isSet("csv");
+
+        PrintingType printType;
+        if (details)
+            printType = PrintingType::Details;
+        else if (csv)
+            printType = PrintingType::CSV;
+        else if (tree)
+            printType = PrintingType::Tree;
+        else
+            printType = PrintingType::IDList;
 
         if (object == "")
             object = "package";
@@ -253,21 +274,21 @@ int main(int argc, char *argv[])
                 sqrl->PrintPackage();
             }
             else if (object == "subject") {
-                sqrl->PrintSubjects(details);
+                sqrl->PrintSubjects(printType);
             }
             else if (object == "study") {
-                int subjectRowID = sqrl->FindSubject(subjectID);
+                qint64 subjectRowID = sqrl->FindSubject(subjectID);
                 if (subjectRowID < 0)
                     utils::Print(QString("Subject not found. Searched for subject [%1]").arg(subjectID));
                 else
                     sqrl->PrintStudies(subjectRowID, details);
             }
             else if (object == "series") {
-                int subjectRowID = sqrl->FindSubject(subjectID);
+                qint64 subjectRowID = sqrl->FindSubject(subjectID);
                 if (subjectRowID < 0)
                     utils::Print(QString("Subject not found. Searched for subject [%1]").arg(subjectID));
                 else {
-                    int studyRowID = sqrl->FindStudy(subjectID, studyNum);
+                    qint64 studyRowID = sqrl->FindStudy(subjectID, studyNum);
                     if (studyRowID < 0)
                         utils::Print(QString("Study not found. Searched for subject [%1] study [%2]").arg(subjectID).arg(studyNum));
                     else

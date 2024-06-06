@@ -45,7 +45,7 @@ moduleFileIO::~moduleFileIO()
 /* --------- Run -------------------------------------------- */
 /* ---------------------------------------------------------- */
 int moduleFileIO::Run() {
-    n->WriteLog("Entering the fileio module");
+    n->Log("Entering the fileio module");
 
     /* get list of things to delete */
     QSqlQuery q("select * from fileio_requests where request_status = 'pending'");
@@ -82,21 +82,21 @@ int moduleFileIO::Run() {
 
             /* get the current status of this fileio request, make sure no one else is processing it, and mark it as being processed if not */
             QString status = GetIORequestStatus(requestid);
-            n->WriteLog(QString("Status for request_id [%1] is [%2]").arg(requestid).arg(status));
+            n->Log(QString("Status for request_id [%1] is [%2]").arg(requestid).arg(status));
             if (status == "pending") {
                 /* set the status, if something is wrong, skip this request */
                 if (!SetIORequestStatus(requestid, "pending")) {
-                    n->WriteLog(QString("Unable to set fileiorequest_status to [%1]").arg(status));
+                    n->Log(QString("Unable to set fileiorequest_status to [%1]").arg(status));
                     continue;
                 }
             }
             else {
                 /* skip this IO request... the status was changed outside of this instance of the program */
-                n->WriteLog(QString("The status for this fileiorequest [%1] has been changed to [%2]. Skipping.").arg(requestid).arg(status));
+                n->Log(QString("The status for this fileiorequest [%1] has been changed to [%2]. Skipping.").arg(requestid).arg(status));
                 continue;
             }
 
-            n->WriteLog(QString(" ----- FileIO operation (%1 of %2) [%3] on datatype [%4] ----- ").arg(i).arg(q.size()).arg(fileio_operation).arg(data_type));
+            n->Log(QString(" ----- FileIO operation (%1 of %2) [%3] on datatype [%4] ----- ").arg(i).arg(q.size()).arg(fileio_operation).arg(data_type));
 
             if (fileio_operation == "rechecksuccess") {
                 if (data_type == "analysis") {
@@ -163,12 +163,12 @@ int moduleFileIO::Run() {
                 /* some error occurred, so set it to 'error' */
                 SetIORequestStatus(requestid, "error", msg);
             }
-            n->WriteLog("File IO operation finished, with message from function [" + msg + "]");
+            n->Log("File IO operation finished, with message from function [" + msg + "]");
         }
-        n->WriteLog("Finished performing file IO");
+        n->Log("Finished performing file IO");
     }
     else {
-        n->WriteLog("Nothing to do");
+        n->Log("Nothing to do");
         return 0;
     }
 
@@ -223,7 +223,7 @@ bool moduleFileIO::SetIORequestStatus(int requestid, QString status, QString msg
 /* --------- RecheckSuccess --------------------------------- */
 /* ---------------------------------------------------------- */
 bool moduleFileIO::RecheckSuccess(qint64 analysisid, QString &msg) {
-    n->WriteLog(QString("In RecheckSuccess(%1)").arg(analysisid));
+    n->Log(QString("In RecheckSuccess(%1)").arg(analysisid));
 
     analysis a(analysisid, n); /* get the analysis info */
     if (!a.isValid) { msg = "analysis was not valid: [" + a.msg + "]"; return false; }
@@ -241,13 +241,13 @@ bool moduleFileIO::RecheckSuccess(qint64 analysisid, QString &msg) {
     int iscomplete = 1;
     for(int i=0; i<filelist.size(); i++) {
         QString filepath = a.analysispath + "/" + filelist[i];
-        n->WriteLog(QString("Checking for [" + filepath + "]"));
+        n->Log(QString("Checking for [" + filepath + "]"));
         QFile f(filepath);
         if (f.exists()) {
-            n->WriteLog(QString("File [" + filepath + "] exists"));
+            n->Log(QString("File [" + filepath + "] exists"));
         }
         else {
-            n->WriteLog(QString("File [" + filepath + "] does not exist"));
+            n->Log(QString("File [" + filepath + "] does not exist"));
             iscomplete = 0;
             break;
         }
@@ -268,7 +268,7 @@ bool moduleFileIO::RecheckSuccess(qint64 analysisid, QString &msg) {
 /* --------- CreateLinks ------------------------------------ */
 /* ---------------------------------------------------------- */
 bool moduleFileIO::CreateLinks(qint64 analysisid, QString destination, QString &msg) {
-    n->WriteLog(QString("In CreateLinks(%1, %2)").arg(analysisid).arg(destination));
+    n->Log(QString("In CreateLinks(%1, %2)").arg(analysisid).arg(destination));
 
     /* check if destination is somewhat valid */
     if ((destination == "") || (destination == ".") || (destination == "..") || (destination == "/") || (destination.contains("//"))) {
@@ -284,7 +284,7 @@ bool moduleFileIO::CreateLinks(qint64 analysisid, QString destination, QString &
 
     if (MakePath(destination, msg)) {
         QString systemstring = QString("cd %1; ln -s %2 %3%4; chmod 777 %5%6").arg(destination).arg(a.analysispath).arg(a.uid).arg(a.studynum).arg(a.uid).arg(a.studynum);
-        n->WriteLog(SystemCommand(systemstring));
+        n->Log(SystemCommand(systemstring));
         n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysiscreatelink", "Analysis links created");
         return true;
     }
@@ -299,7 +299,7 @@ bool moduleFileIO::CreateLinks(qint64 analysisid, QString destination, QString &
 /* --------- CopyAnalysis ----------------------------------- */
 /* ---------------------------------------------------------- */
 bool moduleFileIO::CopyAnalysis(qint64 analysisid, QString destination, QString &msg) {
-    n->WriteLog(QString("In CopyAnalysis(%1, %2)").arg(analysisid).arg(destination));
+    n->Log(QString("In CopyAnalysis(%1, %2)").arg(analysisid).arg(destination));
 
     /* check if destination is somewhat valid */
     if ((destination == "") || (destination == ".") || (destination == "..") || (destination == "/") || (destination.contains("//"))) {
@@ -313,8 +313,8 @@ bool moduleFileIO::CopyAnalysis(qint64 analysisid, QString destination, QString 
     destination = QString("%1/%2%3").arg(destination).arg(a.uid).arg(a.studynum);
     if (MakePath(destination, msg)) {
         QString systemstring = QString("rsync -az %1/* %2").arg(a.analysispath).arg(destination);
-        n->WriteLog(QString("About to run the following command[" + systemstring + "]"));
-        n->WriteLog(SystemCommand(systemstring));
+        n->Log(QString("About to run the following command[" + systemstring + "]"));
+        n->Log(SystemCommand(systemstring));
         n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysiscopy", "Analysis copied");
         return true;
     }
@@ -329,7 +329,7 @@ bool moduleFileIO::CopyAnalysis(qint64 analysisid, QString destination, QString 
 /* --------- DeleteAnalysis --------------------------------- */
 /* ---------------------------------------------------------- */
 bool moduleFileIO::DeleteAnalysis(qint64 analysisid, QString &msg) {
-    n->WriteLog("In DeleteAnalysis()");
+    n->Log("In DeleteAnalysis()");
 
     analysis a(analysisid, n); /* get the analysis info */
     if (!a.isValid) { msg = "Analysis was not valid: [" + a.msg + "]"; return false; }
@@ -345,13 +345,13 @@ bool moduleFileIO::DeleteAnalysis(qint64 analysisid, QString &msg) {
         else {
             systemstring = QString("/sge/sge-root/bin/lx24-amd64/./qdelete %1").arg(a.jobid);
         }
-        n->WriteLog(SystemCommand(systemstring, true));
+        n->Log(SystemCommand(systemstring, true));
     }
     else {
-        n->WriteLog(QString("SGE job id [%1] is not valid. Not attempting to kill the job").arg(a.jobid));
+        n->Log(QString("SGE job id [%1] is not valid. Not attempting to kill the job").arg(a.jobid));
     }
 
-    n->WriteLog("Analysispath: [" + a.analysispath + "]");
+    n->Log("Analysispath: [" + a.analysispath + "]");
 
     bool okToDeleteDBEntries = false;
 
@@ -359,9 +359,9 @@ bool moduleFileIO::DeleteAnalysis(qint64 analysisid, QString &msg) {
         qint64 c;
         qint64 b;
         GetDirSizeAndFileCount(a.analysispath, c, b, true);
-        n->WriteLog(QString("Going to remove [%1] files and directories from [%2]").arg(c).arg(a.analysispath));
+        n->Log(QString("Going to remove [%1] files and directories from [%2]").arg(c).arg(a.analysispath));
 
-        n->WriteLog(QString("Going to recursively remove [%1]").arg(a.analysispath));
+        n->Log(QString("Going to recursively remove [%1]").arg(a.analysispath));
         //if (RemoveDir(a.analysispath, msg)) {
         //    /* QDir.remove worked */
         //    n->WriteLog("Analysispath removed");
@@ -370,16 +370,16 @@ bool moduleFileIO::DeleteAnalysis(qint64 analysisid, QString &msg) {
         //else {
             QString p = a.analysispath;
             if ((p == "") || (p == ".") || (p == "..") || (p == "/") || (p.contains("//")) || (p.startsWith("/root")) || (p == "/home") || (p.size() < 20)) {
-                n->WriteLog("Path is not valid [" + p + "]");
+                n->Log("Path is not valid [" + p + "]");
             }
             else {
                 QString systemstring = QString("rm -rf %1").arg(a.analysispath);
-                n->WriteLog("Not all files deleted. Deleting remaining files using command [" + systemstring + "]");
-                n->WriteLog(SystemCommand(systemstring));
+                n->Log("Not all files deleted. Deleting remaining files using command [" + systemstring + "]");
+                n->Log(SystemCommand(systemstring));
 
                 QDir d(a.analysispath);
                 if (d.exists()) {
-                    n->WriteLog("Datapath [" + a.analysispath + "] still exists, even after rm -rf");
+                    n->Log("Datapath [" + a.analysispath + "] still exists, even after rm -rf");
 
                     QSqlQuery q;
                     q.prepare("update analysis set analysis_statusmessage = 'Analysis directory not deleted. Manually delete the directory and then delete from this webpage again' where analysis_id = :analysisid");
@@ -396,7 +396,7 @@ bool moduleFileIO::DeleteAnalysis(qint64 analysisid, QString &msg) {
         //}
     }
     else {
-        n->WriteLog("Path [" + a.analysispath + "] did not exist. Did not attempt to delete");
+        n->Log("Path [" + a.analysispath + "] did not exist. Did not attempt to delete");
         okToDeleteDBEntries = true;
     }
 
@@ -428,7 +428,7 @@ bool moduleFileIO::DeleteAnalysis(qint64 analysisid, QString &msg) {
 /* --------- DeletePipeline --------------------------------- */
 /* ---------------------------------------------------------- */
 bool moduleFileIO::DeletePipeline(int pipelineid, QString &msg) {
-    n->WriteLog("In DeletePipeline()");
+    n->Log("In DeletePipeline()");
 
     /* get list of analyses associated with this pipeline */
     QSqlQuery q;
@@ -441,12 +441,12 @@ bool moduleFileIO::DeletePipeline(int pipelineid, QString &msg) {
             QString msg;
             int analysisid = q.value("analysis_id").toInt();
             if (!DeleteAnalysis(analysisid, msg))
-                n->WriteLog(QString("Attempted to delete analysis [%1], but received error [%2]").arg(analysisid).arg(msg));
+                n->Log(QString("Attempted to delete analysis [%1], but received error [%2]").arg(analysisid).arg(msg));
         }
     }
     else {
         msg = "No analyses to delete for this pipeline";
-        n->WriteLog("No analyses to delete for this pipeline");
+        n->Log("No analyses to delete for this pipeline");
     }
 
     /* delete the actual pipeline entry */
@@ -473,20 +473,20 @@ bool moduleFileIO::DeleteSubject(int subjectid, QString username, QString &msg) 
     if (s.path() != "") {
         if (d.exists(s.path())) {
             if (d.rename(s.path(), newpath)) {
-                msg = n->WriteLog(QString("Moved [%1] to [%2]").arg(s.path()).arg(newpath));
+                msg = n->Log(QString("Moved [%1] to [%2]").arg(s.path()).arg(newpath));
             }
             else {
                 msg = QString("Error in moving [%1] to [%2]").arg(s.path()).arg(newpath);
-                n->WriteLog(msg);
+                n->Log(msg);
                 return false;
             }
         }
         else {
-            n->WriteLog(QString("Subject path on disk [" + s.path() + "] does not exist"));
+            n->Log(QString("Subject path on disk [" + s.path() + "] does not exist"));
         }
     }
     else {
-        n->WriteLog(QString("Subject has no path on disk"));
+        n->Log(QString("Subject has no path on disk"));
     }
 
     /* remove all database entries about this subject:
@@ -541,7 +541,7 @@ bool moduleFileIO::DeleteSubject(int subjectid, QString username, QString &msg) 
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     }
     else {
-        n->WriteLog("No enrollments found");
+        n->Log("No enrollments found");
     }
 
     // delete the subject
@@ -559,7 +559,7 @@ bool moduleFileIO::DeleteSubject(int subjectid, QString username, QString &msg) 
 /* --------- DeleteStudy ------------------------------------ */
 /* ---------------------------------------------------------- */
 bool moduleFileIO::DeleteStudy(int studyid, QString &msg) {
-    n->WriteLog("In DeleteStudy()");
+    n->Log("In DeleteStudy()");
 
     QSqlQuery q;
     study s(studyid, n); /* get the study info */
@@ -569,7 +569,7 @@ bool moduleFileIO::DeleteStudy(int studyid, QString &msg) {
     QString newpath = QString("%1/%2-%3-%4").arg(n->cfg["deleteddir"]).arg(s.UID()).arg(s.studyNum()).arg(GenerateRandomString(10));
     QDir d;
     if(d.rename(s.path(), newpath)) {
-        n->WriteLog(QString("Moved [%1] to [%2]").arg(s.path()).arg(newpath));
+        n->Log(QString("Moved [%1] to [%2]").arg(s.path()).arg(newpath));
 
         // move all archive data to the deleted directory
         // delete all series
@@ -584,7 +584,7 @@ bool moduleFileIO::DeleteStudy(int studyid, QString &msg) {
     }
     else {
         msg = QString("Error in moving [%1] to [%2]").arg(s.path()).arg(newpath);
-        n->WriteLog(msg);
+        n->Log(msg);
         return false;
     }
     return true;
@@ -595,7 +595,7 @@ bool moduleFileIO::DeleteStudy(int studyid, QString &msg) {
 /* --------- DeleteSeries ----------------------------------- */
 /* ---------------------------------------------------------- */
 bool moduleFileIO::DeleteSeries(int seriesid, QString modality, QString &msg) {
-    n->WriteLog("In DeleteSeries()");
+    n->Log("In DeleteSeries()");
     modality = modality.toLower();
 
     QSqlQuery q;
@@ -605,7 +605,7 @@ bool moduleFileIO::DeleteSeries(int seriesid, QString modality, QString &msg) {
     QString newpath = QString("%1/%2-%3-%4-%5").arg(n->cfg["deleteddir"]).arg(s.uid).arg(s.studynum).arg(s.seriesnum).arg(GenerateRandomString(10));
     QDir d;
     if(d.rename(s.seriespath, newpath)) {
-        n->WriteLog(QString("Moved [%1] to [%2]").arg(s.seriespath).arg(newpath));
+        n->Log(QString("Moved [%1] to [%2]").arg(s.seriespath).arg(newpath));
 
         QString sqlstring = QString("delete from %1_series where %1series_id = :seriesid").arg(modality);
         q.prepare(sqlstring);
@@ -615,7 +615,7 @@ bool moduleFileIO::DeleteSeries(int seriesid, QString modality, QString &msg) {
     }
     else {
         msg = QString("Error in moving series [%1] to [%2]").arg(s.seriespath).arg(newpath);
-        n->WriteLog(msg);
+        n->Log(msg);
         return false;
     }
     return true;
@@ -626,7 +626,7 @@ bool moduleFileIO::DeleteSeries(int seriesid, QString modality, QString &msg) {
 /* --------- RearchiveStudy --------------------------------- */
 /* ---------------------------------------------------------- */
 bool moduleFileIO::RearchiveStudy(int studyid, bool matchidonly, QString &msg) {
-    n->WriteLog("In RearchiveStudy()");
+    n->Log("In RearchiveStudy()");
 
     QStringList msgs;
     QSqlQuery q;
@@ -666,20 +666,20 @@ bool moduleFileIO::RearchiveStudy(int studyid, bool matchidonly, QString &msg) {
     /* move all DICOMs to the incomingdir */
     QString m;
     if (!MoveAllFiles(s.path(),"*.dcm",outpath, m)) {
-        msgs << n->WriteLog(QString("Error moving DICOM files from archivedir to incomingdir [%1]").arg(m));
+        msgs << n->Log(QString("Error moving DICOM files from archivedir to incomingdir [%1]").arg(m));
     }
     else {
-        n->WriteLog(QString("Moved all .dcm files from [%1] to [%2]").arg(s.path()).arg(outpath));
+        n->Log(QString("Moved all .dcm files from [%1] to [%2]").arg(s.path()).arg(outpath));
     }
 
     /* move the old study to the deleted directory */
     QString newpath = QString("%1/%2-%3-%4").arg(n->cfg["deleteddir"]).arg(s.UID()).arg(s.studyNum()).arg(GenerateRandomString(10));
     QDir d2;
     if(d2.rename(s.path(), newpath)) {
-        n->WriteLog(QString("Moved [%1] to [%2]").arg(s.path()).arg(newpath));
+        n->Log(QString("Moved [%1] to [%2]").arg(s.path()).arg(newpath));
     }
     else {
-        n->WriteLog(QString("Unable to move [%1] to [%2]").arg(s.path()).arg(newpath));
+        n->Log(QString("Unable to move [%1] to [%2]").arg(s.path()).arg(newpath));
     }
 
     /* update the import_requests table with the new uploadid */
@@ -707,7 +707,7 @@ bool moduleFileIO::RearchiveStudy(int studyid, bool matchidonly, QString &msg) {
 /* --------- RearchiveSubject ------------------------------- */
 /* ---------------------------------------------------------- */
 bool moduleFileIO::RearchiveSubject(int subjectid, bool matchidonly, int projectid, QString &msg) {
-    n->WriteLog("In RearchiveSubject()");
+    n->Log("In RearchiveSubject()");
 
     QStringList msgs;
     QSqlQuery q;
@@ -757,10 +757,10 @@ bool moduleFileIO::RearchiveSubject(int subjectid, bool matchidonly, int project
     QString newpath = QString("%1/%2-%3").arg(n->cfg["deleteddir"]).arg(s.UID()).arg(GenerateRandomString(10));
     QDir d2;
     if(d2.rename(s.path(), newpath)) {
-        msgs << n->WriteLog(QString("Moved [%1] to [%2]").arg(s.path()).arg(newpath));
+        msgs << n->Log(QString("Moved [%1] to [%2]").arg(s.path()).arg(newpath));
     }
     else {
-        msgs << n->WriteLog(QString("Unable to move [%1] to [%2]").arg(s.path()).arg(newpath));
+        msgs << n->Log(QString("Unable to move [%1] to [%2]").arg(s.path()).arg(newpath));
     }
 
     /* update the import_requests table with the new uploadid */
@@ -816,13 +816,13 @@ bool moduleFileIO::MoveStudyToSubject(int studyid, QString newuid, int newsubjec
 
     study thestudy(studyid, n); /* get the original study info */
     if (!thestudy.valid()) {
-        msg = n->WriteLog("Original study was not valid: [" + thestudy.msg() + "]");
+        msg = n->Log("Original study was not valid: [" + thestudy.msg() + "]");
         return false;
     }
 
     subject origsubject(thestudy.subjectRowID(), n); /* get the original subject info */
     if (!origsubject.valid()) {
-        msg = n->WriteLog("Original subject was not valid: [" + origsubject.msg() + "]");
+        msg = n->Log("Original subject was not valid: [" + origsubject.msg() + "]");
         return false;
     }
 
@@ -831,7 +831,7 @@ bool moduleFileIO::MoveStudyToSubject(int studyid, QString newuid, int newsubjec
     if ((newuid == "") && (newsubjectid > -1)) {
         newsubject = new subject(newsubjectid, n); /* get the new subject info, by subjectID */
         if (!newsubject->valid()) {
-            msg = n->WriteLog("New subject was not valid: [" + newsubject->msg() + "]");
+            msg = n->Log("New subject was not valid: [" + newsubject->msg() + "]");
             delete newsubject;
             return false;
         }
@@ -839,7 +839,7 @@ bool moduleFileIO::MoveStudyToSubject(int studyid, QString newuid, int newsubjec
     else {
         newsubject = new subject(newuid, false, n); /* get the new subject info, by UID */
         if (!newsubject->valid()) {
-            msg = n->WriteLog("New subject was not valid: [" + newsubject->msg() + "]");
+            msg = n->Log("New subject was not valid: [" + newsubject->msg() + "]");
             delete newsubject;
             return false;
         }
@@ -847,13 +847,13 @@ bool moduleFileIO::MoveStudyToSubject(int studyid, QString newuid, int newsubjec
 
     QDateTime now = QDateTime::currentDateTime();
     if (now < thestudy.dateTime().addDays(1)) {
-        msg = n->WriteLog("This study was collected in the past 24 hours. The study may not be completely archived so no changes can be made until 1 day after the study's start time");
+        msg = n->Log("This study was collected in the past 24 hours. The study may not be completely archived so no changes can be made until 1 day after the study's start time");
         delete newsubject;
         return false;
     }
 
     /* all of the checks are ok, so lets do the move */
-    n->WriteLog(QString("Moving study [%1%2] to subject [%3]").arg(thestudy.UID()).arg(thestudy.studyNum()).arg(newuid));
+    n->Log(QString("Moving study [%1%2] to subject [%3]").arg(thestudy.UID()).arg(thestudy.studyNum()).arg(newuid));
 
     /* check if the new subject is enrolled in the old project, if not, enroll them */
     QSqlQuery q;
@@ -865,7 +865,7 @@ bool moduleFileIO::MoveStudyToSubject(int studyid, QString newuid, int newsubjec
     if (q.size() > 0) {
         q.first();
         newenrollmentid = q.value("enrollment_id").toInt();
-        n->WriteLog("Subject already enrolled in project");
+        n->Log("Subject already enrolled in project");
     }
     else {
         q.prepare("insert into enrollment (subject_id, project_id, enroll_startdate) values (:subjectid, :projectid, now())");
@@ -873,7 +873,7 @@ bool moduleFileIO::MoveStudyToSubject(int studyid, QString newuid, int newsubjec
         q.bindValue(":projectid", thestudy.projectRowID());
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         newenrollmentid = q.lastInsertId().toInt();
-        n->WriteLog(QString("Subject now enrolled in project. enrollmentid [%1]").arg(newenrollmentid));
+        n->Log(QString("Subject now enrolled in project. enrollmentid [%1]").arg(newenrollmentid));
     }
 
     /* get the next study number for the new subject */
@@ -884,7 +884,7 @@ bool moduleFileIO::MoveStudyToSubject(int studyid, QString newuid, int newsubjec
     if (q.size() > 0) {
         q.first();
         newstudynum = q.value("maxstudynum").toInt() + 1;
-        n->WriteLog(QString("Highest studynum for subject [%1], New studynum [%2]").arg(q.value("maxstudynum").toInt()).arg(newstudynum));
+        n->Log(QString("Highest studynum for subject [%1], New studynum [%2]").arg(q.value("maxstudynum").toInt()).arg(newstudynum));
     }
 
     /* change the enrollment_id associated with the studyid */
@@ -900,7 +900,7 @@ bool moduleFileIO::MoveStudyToSubject(int studyid, QString newuid, int newsubjec
     if (!newsubject->dataPathExists()) {
         QString m;
         if (!MakePath(newsubject->path(), m)) {
-            n->WriteLog("Subject directory [" + newsubject->path() + "] did not exist on disk. Tried to create the directory path, but failed with error [" + m + "]");
+            n->Log("Subject directory [" + newsubject->path() + "] did not exist on disk. Tried to create the directory path, but failed with error [" + m + "]");
         }
     }
 
@@ -910,9 +910,9 @@ bool moduleFileIO::MoveStudyToSubject(int studyid, QString newuid, int newsubjec
     if (!d.exists(newpath)) msgs << "Error creating newpath [" + newpath + "]";
     if (!d.exists(oldpath)) msgs << "Error: oldpath [" + oldpath + "] does not exist";
 
-    n->WriteLog("Moving data within archive directory");
+    n->Log("Moving data within archive directory");
     QString systemstring = QString("rsync -rtu %1/* %2").arg(oldpath).arg(newpath);
-    msgs << n->WriteLog(SystemCommand(systemstring));
+    msgs << n->Log(SystemCommand(systemstring));
 
     msg = msgs.join(" | ");
     q.prepare("insert into changelog (affected_projectid1, affected_projectid2, affected_subjectid1, affected_subjectid2, affected_enrollmentid1, affected_enrollmentid2, affected_studyid1, affected_studyid2, change_datetime, change_event, change_desc) values (:oldprojectid, :oldprojectid, :oldsubjectid, :newsubjectid, :oldenrollmentid, :newenrollmentid, :studyid, :studyid, now(), 'MoveStudyToSubject', :msg)");
@@ -953,17 +953,17 @@ bool moduleFileIO::MergeSubjects(int subjectid, QString mergeIDs, QString mergeN
             q.bindValue(":subjectid", id.toInt());
             n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
             if (q.size() > 0) {
-                n->WriteLog(QString("Found [%1] studies for subject [%2]").arg(q.size()).arg(id.toInt()));
+                n->Log(QString("Found [%1] studies for subject [%2]").arg(q.size()).arg(id.toInt()));
                 while (q.next()) {
                     int studyid = q.value("study_id").toInt();
                     QString m;
                     if (!MoveStudyToSubject(studyid, "", subjectid, m)) {
-                        n->WriteLog("Error moving study to subject [" + m + "]");
+                        n->Log("Error moving study to subject [" + m + "]");
                         return false;
                     }
                 }
             }
-            n->WriteLog(QString("Found no studies for this subject [%1]").arg(id.toInt()));
+            n->Log(QString("Found no studies for this subject [%1]").arg(id.toInt()));
 
             /* delete the subject that has just been merged */
             q.prepare("update subjects set isactive = 0 where subject_id = :subjectid");
@@ -1053,11 +1053,11 @@ bool moduleFileIO::MergeStudies(int studyid, QString mergeIDs, QString mergeMeth
                 QString seriesDesc = q.value("series_desc").toString();
                 QString seriesDateTime = q.value("series_datetime").toDateTime().toString();
 
-                n->WriteLog(QString("Moving seriesNum [%1]  desc [%2]  datetime [%3]  from studynum [%4] (id [%5]) to studynum [%6] (id [%7]). New seriesnum [%8]").arg(seriesNum).arg(seriesDesc).arg(seriesDateTime).arg(studyNum).arg(sourceStudyID).arg(finalStudyNum).arg(destStudyID).arg(newSeriesNum));
+                n->Log(QString("Moving seriesNum [%1]  desc [%2]  datetime [%3]  from studynum [%4] (id [%5]) to studynum [%6] (id [%7]). New seriesnum [%8]").arg(seriesNum).arg(seriesDesc).arg(seriesDateTime).arg(studyNum).arg(sourceStudyID).arg(finalStudyNum).arg(destStudyID).arg(newSeriesNum));
 
                 newSeriesNumMap[seriesID] = newSeriesNum;
                 tmpSeriesNumMap[seriesID] = tmpSeriesNum;
-                n->WriteLog(QString("Mapping seriesID [%1] to tmpSeriesNum [%2]  and newSeriesNum [%3]").arg(seriesID).arg(tmpSeriesNum).arg(newSeriesNum));
+                n->Log(QString("Mapping seriesID [%1] to tmpSeriesNum [%2]  and newSeriesNum [%3]").arg(seriesID).arg(tmpSeriesNum).arg(newSeriesNum));
 
                 /* FIRST - move the series directory */
                 series s(seriesID, modality, n);
@@ -1099,7 +1099,7 @@ bool moduleFileIO::MergeStudies(int studyid, QString mergeIDs, QString mergeMeth
             foreach (int delStudyID, deleteStudyIDs) {
                 QString m;
                 if (!DeleteStudy(delStudyID, m))
-                    n->WriteLog("Error deleting study, with message [" + m + "]");
+                    n->Log("Error deleting study, with message [" + m + "]");
             }
         }
     }
@@ -1126,15 +1126,15 @@ bool moduleFileIO::MergeStudies(int studyid, QString mergeIDs, QString mergeMeth
                 QFileInfo fi(newPath);
                 if (fi.exists()) {
                     int chkSeriesNum = 10000 + seriesNum;
-                    n->WriteLog(QString("New series path [%1] already exists. Checking if [%2] exists").arg(newPath).arg(chkSeriesNum));
+                    n->Log(QString("New series path [%1] already exists. Checking if [%2] exists").arg(newPath).arg(chkSeriesNum));
                     while (1) {
                         QString chkPath(QString("%1/%2").arg(destStudy.path()).arg(chkSeriesNum));
                         if (QDir(chkPath).exists()) {
-                            n->WriteLog(QString("Path [%1] already exists. Will check next one").arg(chkPath));
+                            n->Log(QString("Path [%1] already exists. Will check next one").arg(chkPath));
                             chkSeriesNum++;
                         }
                         else {
-                            n->WriteLog(QString("Path [%1] does not exist. This will be the new series number").arg(chkPath));
+                            n->Log(QString("Path [%1] does not exist. This will be the new series number").arg(chkPath));
                             newSeriesNum = chkSeriesNum;
                             break;
                         }
@@ -1144,7 +1144,7 @@ bool moduleFileIO::MergeStudies(int studyid, QString mergeIDs, QString mergeMeth
                     newSeriesNum = seriesNum;
                 }
 
-                n->WriteLog(QString("Moving seriesNum [%1]  desc [%2]  datetime [%3]  from studynum [%4] (id [%5]) to studynum [%6] (id [%7]). New seriesnum [%8]").arg(seriesNum).arg(seriesDesc).arg(seriesDateTime).arg(studyNum).arg(sourceStudyID).arg(finalStudyNum).arg(destStudyID).arg(newSeriesNum));
+                n->Log(QString("Moving seriesNum [%1]  desc [%2]  datetime [%3]  from studynum [%4] (id [%5]) to studynum [%6] (id [%7]). New seriesnum [%8]").arg(seriesNum).arg(seriesDesc).arg(seriesDateTime).arg(studyNum).arg(sourceStudyID).arg(finalStudyNum).arg(destStudyID).arg(newSeriesNum));
 
                 /* FIRST - move the series directory */
                 series s(seriesID, modality, n);
@@ -1165,7 +1165,7 @@ bool moduleFileIO::MergeStudies(int studyid, QString mergeIDs, QString mergeMeth
             foreach (int delStudyID, deleteStudyIDs) {
                 QString m;
                 if (!DeleteStudy(delStudyID, m))
-                    n->WriteLog("Error deleting study, with message [" + m + "]");
+                    n->Log("Error deleting study, with message [" + m + "]");
             }
         }
     }

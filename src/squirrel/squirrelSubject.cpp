@@ -139,12 +139,12 @@ bool squirrelSubject::Store() {
 
 
 /* ------------------------------------------------------------ */
-/* ----- PrintSubject ----------------------------------------- */
+/* ----- PrintDetails ----------------------------------------- */
 /* ------------------------------------------------------------ */
 /**
  * @brief Print subject details
  */
-void squirrelSubject::PrintSubject() {
+void squirrelSubject::PrintDetails() {
 
     utils::Print("\t\t----- SUBJECT -----");
     utils::Print(QString("\t\tAlternateIDs: %1").arg(AlternateIDs.join(",")));
@@ -157,6 +157,69 @@ void squirrelSubject::PrintSubject() {
     utils::Print(QString("\t\tSubjectID: %1").arg(ID));
     utils::Print(QString("\t\tSubjectRowID: %1").arg(objectID));
     utils::Print(QString("\t\tVirtualPath: %1").arg(VirtualPath()));
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- PrintTree -------------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief Print subject tree
+ */
+void squirrelSubject::PrintTree(bool isLast) {
+
+    if (isLast)
+        utils::Print(QString("   └─── ID %1  AltIDs %2  DOB %3  Sex %4").arg(ID).arg(AlternateIDs.join(",")).arg(DateOfBirth.toString()).arg(Sex));
+    else
+        utils::Print(QString("   ├─── ID %1  AltIDs %2  DOB %3  Sex %4").arg(ID).arg(AlternateIDs.join(",")).arg(DateOfBirth.toString()).arg(Sex));
+
+    /* find all studies associated with this subject ... */
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
+
+    int count(0);
+    q.prepare("select count(*) 'count' from Study where SubjectRowID = :subjectid");
+    q.bindValue(":subjectid", objectID);
+    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.first())
+        count = q.value("count").toInt();
+
+    q.prepare("select StudyRowID from Study where SubjectRowID = :subjectid");
+    q.bindValue(":subjectid", objectID);
+    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    int i(0);
+    while (q.next()) {
+        qint64 studyRowID = q.value("StudyRowID").toLongLong();
+        squirrelStudy stud;
+        stud.SetObjectID(studyRowID);
+        if (stud.Get()) {
+            i++;
+            if (count == i)
+                stud.PrintTree(true);
+            else
+                stud.PrintTree(false);
+        }
+    }
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- CSVLine ---------------------------------------------- */
+/* ------------------------------------------------------------ */
+QString squirrelSubject::CSVLine() {
+    QStringList data;
+
+    data.append(ID);
+    data.append(AlternateIDs.join(","));
+    data.append(DateOfBirth.toString());
+    data.append(Ethnicity1);
+    data.append(Ethnicity2);
+    data.append(GUID);
+    data.append(Gender);
+    data.append(Sex);
+
+    QString line = "\"" + data.join("\",\"") + "\"";
+
+    return line;
 }
 
 
@@ -340,9 +403,9 @@ QList<QPair<QString,QString>> squirrelSubject::GetStagedFileList() {
 int squirrelSubject::GetNextStudyNumber() {
     int nextStudyNum = 1;
 
-    /* get the next study number */
+    /* get the next study number for this subject */
     QSqlQuery q(QSqlDatabase::database("squirrel"));
-    q.prepare("select max(StudyNumber) 'Max' from Study where StudyRowID = :id");
+    q.prepare("select max(StudyNumber) 'Max' from Study where SubjectRowID = :id");
     q.bindValue(":id", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.next())

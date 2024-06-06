@@ -117,7 +117,7 @@ void measure::PrintMeasureInfo() {
     output += QString("   valueNumber: [%1]\n").arg(valueNumber);
     output += QString("   valueString: [%1]\n").arg(valueString);
 
-    n->WriteLog(output);
+    n->Log(output);
 }
 
 

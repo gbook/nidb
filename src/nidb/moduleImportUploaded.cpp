@@ -23,7 +23,7 @@ moduleImportUploaded::~moduleImportUploaded()
 /* --------- Run -------------------------------------------- */
 /* ---------------------------------------------------------- */
 int moduleImportUploaded::Run() {
-    n->WriteLog("Entering the importuploaded module");
+    n->Log("Entering the importuploaded module");
 
     int ret(0);
 
@@ -57,14 +57,14 @@ int moduleImportUploaded::Run() {
             QString outdir = QString("%1/%2").arg(n->cfg["incomingdir"]).arg(importrequestid);
             QString m;
             if (!MakePath(outdir, m)) {
-                n->WriteLog("Unable to create outdir [" + outdir + "] because of error [" + m + "]");
+                n->Log("Unable to create outdir [" + outdir + "] because of error [" + m + "]");
                 continue;
             }
 
             if (datatype == "")
                 datatype = "dicom";
 
-            n->WriteLog(QString("Datatype for %1 is [%2]").arg(importrequestid).arg(datatype));
+            n->Log(QString("Datatype for %1 is [%2]").arg(importrequestid).arg(datatype));
 
             /* ----- get list of files in directory ----- */
             QStringList files;
@@ -76,14 +76,14 @@ int moduleImportUploaded::Run() {
 
             /* special procedures for each datatype */
             if ((datatype == "dicom") || (datatype == "parrec")) {
-                n->WriteLog("Working on [" + uploaddir + "]");
+                n->Log("Working on [" + uploaddir + "]");
 
                 /* go through the files */
                 foreach (QString file, files) {
 
                     if (img->IsDICOMFile(file)) {
                         /* anonymize, replace project and site, rename, and dump to incoming */
-                        n->WriteLog("[" + file + "] is a DICOM file");
+                        n->Log("[" + file + "] is a DICOM file");
                         PrepareAndMoveDICOM(file, outdir, anonymize);
                     }
                     else if (file.endsWith(".par")) {
@@ -93,7 +93,7 @@ int moduleImportUploaded::Run() {
                         /* .par/.rec are pairs, and only the .par contains meta-info, so leave the .rec alone */
                     }
                     else {
-                        n->WriteLog("[" + file + "] is NOT a DICOM file");
+                        n->Log("[" + file + "] is NOT a DICOM file");
 
                         QString tmppath = n->cfg["tmpdir"] + "/" + GenerateRandomString(10);
                         QString systemstring;
@@ -105,16 +105,16 @@ int moduleImportUploaded::Run() {
                         else if (file.endsWith(".tar", Qt::CaseInsensitive)) systemstring = "tar -xf '" + file + "' -C " + tmppath;
 
                         if (systemstring == "") {
-                            n->WriteLog("Did not know how to handle this file [" + file + "]");
+                            n->Log("Did not know how to handle this file [" + file + "]");
                         }
                         else {
                             QString m;
                             if (!MakePath(tmppath, m)) {
-                                n->WriteLog("Unable to create tmpdir [" + tmppath + "] because of error [" + m + "]");
+                                n->Log("Unable to create tmpdir [" + tmppath + "] because of error [" + m + "]");
                                 continue;
                             }
 
-                            n->WriteLog(SystemCommand(systemstring));
+                            n->Log(SystemCommand(systemstring));
 
                             /* find all files in the /tmp dir and (anonymize,replace fields, rename, and dump to incoming) */
                             QStringList tmpfiles = FindAllFiles(tmppath, "*", true);
@@ -125,7 +125,7 @@ int moduleImportUploaded::Run() {
 
                             /* delete the tmp directory */
                             if (!RemoveDir(tmppath,m))
-                                n->WriteLog("Unable to remove tmpdir [" + tmppath + "] because of error [" + m + "]");
+                                n->Log("Unable to remove tmpdir [" + tmppath + "] because of error [" + m + "]");
                         }
                     }
                 }
@@ -139,7 +139,7 @@ int moduleImportUploaded::Run() {
                 }
             }
             else if ((datatype == "eeg") || (datatype == "et")) {
-                n->WriteLog("Encountered [" + datatype + "] import");
+                n->Log("Encountered [" + datatype + "] import");
 
                 /* unzip anything in the directory before parsing it */
                 foreach (QString file, files) {
@@ -151,37 +151,37 @@ int moduleImportUploaded::Run() {
                     else if (file.endsWith(".tar.bz2", Qt::CaseInsensitive)) systemstring = "tar -xjf '" + file + "' --warning=no-timestamp -C " + uploaddir + "/";
                     else if (file.endsWith(".tar", Qt::CaseInsensitive)) systemstring = "tar -xf '" + file + "' -C " + uploaddir + "/";
                     if (systemstring == "")
-                        n->WriteLog("Did not know how to unzip this file [" + file + "]");
+                        n->Log("Did not know how to unzip this file [" + file + "]");
                     else {
-                        n->WriteLog(SystemCommand(systemstring));
+                        n->Log(SystemCommand(systemstring));
 
                         /* remove the zip file */
                         systemstring = "rm -v " + file;
-                        n->WriteLog(SystemCommand(systemstring));
+                        n->Log(SystemCommand(systemstring));
                     }
                 }
 
                 /* move the unzipped files */
                 QString systemstring = QString("touch %1/*; mv -v %1/* %2/").arg(uploaddir).arg(outdir);
-                n->WriteLog(SystemCommand(systemstring));
+                n->Log(SystemCommand(systemstring));
 
-                n->WriteLog("Finished moving the files");
+                n->Log("Finished moving the files");
             }
             else {
-                n->WriteLog("Datatype not recognized [" + datatype + "]");
+                n->Log("Datatype not recognized [" + datatype + "]");
             }
 
             SetImportRequestStatus(importrequestid, "received");
 
             /* delete the uploaded directory */
-            n->WriteLog("Attempting to remove [" + uploaddir + "]");
+            n->Log("Attempting to remove [" + uploaddir + "]");
             if (!RemoveDir(uploaddir, m))
-                n->WriteLog("Unable to remove directory [" + uploaddir + "] because error [" + m + "]");
+                n->Log("Unable to remove directory [" + uploaddir + "] because error [" + m + "]");
         }
         ret = 1;
     }
     else {
-        n->WriteLog("No rows in import_requests found");
+        n->Log("No rows in import_requests found");
         ret = 0;
     }
 
@@ -230,7 +230,7 @@ bool moduleImportUploaded::PrepareAndMoveDICOM(QString filepath, QString outdir,
 /* ---------------------------------------------------------- */
 bool moduleImportUploaded::PrepareAndMovePARREC(QString parfilepath, QString outdir) {
 
-    n->WriteLog("PrepareAndMovePARREC(" + parfilepath + "," + outdir + ")");
+    n->Log("PrepareAndMovePARREC(" + parfilepath + "," + outdir + ")");
 
     /* if the filename exists in the outgoing directory, prepend some junk to it, since the filename is unimportant
        some directories have all their files named IM0001.dcm ..... so, inevitably, something will get overwrtten, which is bad */
@@ -242,7 +242,7 @@ bool moduleImportUploaded::PrepareAndMovePARREC(QString parfilepath, QString out
     QString newparfilepath = outdir + "/" + newparfilename;
 
     //n->WriteLog(QString("A) Size of file [%1] is [%2]").arg(parfilepath).arg(QFileInfo(parfilepath).size()));
-    n->WriteLog(SystemCommand(QString("touch %1; mv -v %1 %2").arg(parfilepath).arg(newparfilepath)));
+    n->Log(SystemCommand(QString("touch %1; mv -v %1 %2").arg(parfilepath).arg(newparfilepath)));
     //n->WriteLog(QString("B) Size of file [%1] is [%2]").arg(newparfilepath).arg(QFileInfo(newparfilepath).size()));
 
     QString recfilename = parfilename.replace(".par", ".rec", Qt::CaseInsensitive);
@@ -251,7 +251,7 @@ bool moduleImportUploaded::PrepareAndMovePARREC(QString parfilepath, QString out
     QString newrecfilepath = outdir + "/" + newrecfilename;
 
     //n->WriteLog(QString("C) Size of file [%1] is [%2]").arg(recfilepath).arg(QFileInfo(recfilepath).size()));
-    n->WriteLog(SystemCommand(QString("touch %1; mv -v %1 %2").arg(recfilepath).arg(newrecfilepath)));
+    n->Log(SystemCommand(QString("touch %1; mv -v %1 %2").arg(recfilepath).arg(newrecfilepath)));
     //n->WriteLog(QString("D) Size of file [%1] is [%2]").arg(newrecfilepath).arg(QFileInfo(newrecfilepath).size()));
 
     return true;
@@ -263,7 +263,7 @@ bool moduleImportUploaded::PrepareAndMovePARREC(QString parfilepath, QString out
 /* ---------------------------------------------------------- */
 bool moduleImportUploaded::SetImportRequestStatus(int importid, QString status, QString msg) {
 
-    n->WriteLog("Setting status to ["+status+"]");
+    n->Log("Setting status to ["+status+"]");
 
     if (((status == "pending") || (status == "deleting") || (status == "receiving")|| (status == "received") || (status == "complete") || (status == "error") || (status == "processing") || (status == "cancelled") || (status == "canceled")) && (importid > 0)) {
         QSqlQuery q;

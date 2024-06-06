@@ -345,11 +345,11 @@ void nidb::ModuleDeleteLockFile() {
     QFile f(lockFilepath);
     if (f.remove()) {
         Print("[\033[0;32mOk\033[0m]");
-        WriteLog("Successfully removed lock file [" + lockFilepath + "]");
+        Log("Successfully removed lock file [" + lockFilepath + "]");
     }
     else {
         Print("[\033[0;31mError\033[0m]");
-        WriteLog("Error removing lock file [" + lockFilepath + "]");
+        Log("Error removing lock file [" + lockFilepath + "]");
     }
 }
 
@@ -388,7 +388,7 @@ QString nidb::SQLQuery(QSqlQuery &q, QString function, QString file, int line, b
 
     /* debugging */
     if (cfg["debug"].toInt() || d) {
-        WriteLog(sql);
+        Log(sql);
     }
 
     /* run the query */
@@ -403,8 +403,8 @@ QString nidb::SQLQuery(QSqlQuery &q, QString function, QString file, int line, b
     SendEmail(cfg["adminemail"], "SQL error", err);
     qDebug() << err;
     qDebug() << q.lastError();
-    WriteLog(err);
-    WriteLog("SQL error, exiting program");
+    Log(err);
+    Log("SQL error, exiting program");
 
     /* record error in error_log */
     QSqlQuery q2;
@@ -532,9 +532,9 @@ void nidb::InsertAnalysisEvent(qint64 analysisid, int pipelineid, int pipelineve
 
 
 /* ---------------------------------------------------------- */
-/* --------- WriteLog --------------------------------------- */
+/* --------- Log --------------------------------------- */
 /* ---------------------------------------------------------- */
-QString nidb::WriteLog(QString msg, QString func, int wrap, bool timeStamp) {
+QString nidb::Log(QString msg, QString func, int wrap, bool timeStamp) {
     if (func.trimmed() != "")
         msg = func + "() " + msg;
 
@@ -564,7 +564,7 @@ QString nidb::WriteLog(QString msg, QString func, int wrap, bool timeStamp) {
 /* --------- Debug ------------------------------------------ */
 /* ---------------------------------------------------------- */
 QString nidb::Debug(QString msg, QString func, int wrap, bool timeStamp) {
-    if (cfg["debug"].toInt()) {
+    if (cfg["debug"].toInt() || debug) {
         if (func.trimmed() != "")
             msg = func + "() " + msg;
 
@@ -671,7 +671,7 @@ QString nidb::GetPrimaryAlternateUID(qint64 subjectid, qint64 enrollmentid) {
         QString altuid = q.value("altuid").toString();
         bool isprimary = q.value("isprimary").toBool();
         if (isprimary) {
-            WriteLog("Found primary alternate ID [" + altuid + "]");
+            Log("Found primary alternate ID [" + altuid + "]");
             return altuid;
         }
     }

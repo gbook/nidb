@@ -120,7 +120,7 @@ void drug::PrintDrugInfo() {
     output += QString("   subjectid: [%1]\n").arg(subjectid);
     output += QString("   uid: [%1]\n").arg(uid);
 
-    n->WriteLog(output);
+    n->Log(output);
 }
 
 

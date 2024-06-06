@@ -102,10 +102,10 @@ subject::subject(QString altuid, int projectid, nidb *a)
         _subjectid = q.value("subject_id").toInt();
         _isValid = true;
 
-        n->WriteLog(QString("Subject with subjectRowID [%1] found by:  altuid [%2]  projectid [%3]").arg(_subjectid).arg(altuid).arg(projectid));
+        n->Log(QString("Subject with subjectRowID [%1] found by:  altuid [%2]  projectid [%3]").arg(_subjectid).arg(altuid).arg(projectid));
     }
     else {
-        n->WriteLog(QString("Subject not found by:  altuid [%2]  projectid [%3]").arg(altuid).arg(projectid));
+        n->Log(QString("Subject not found by:  altuid [%2]  projectid [%3]").arg(altuid).arg(projectid));
         msgs << QString("Subject not found by altUID [" + altuid + "] within project [%1]").arg(projectid);
         _isValid = false;
     }
@@ -208,7 +208,7 @@ void subject::PrintSubjectInfo() {
     output += QString("   msg: [%1]\n").arg(_msg);
     output += QString("   analysispath: [%1]\n").arg(_subjectpath);
 
-    n->WriteLog(output);
+    n->Log(output);
 }
 
 

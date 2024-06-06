@@ -153,14 +153,14 @@ QJsonObject experiment::GetJSONObject(QString path) {
         QString m;
         QString experimentpath = QString("%1/%2").arg(path).arg(name);
         if (!MakePath(experimentpath, m))
-            n->WriteLog("Error creating path [" + experimentpath + "] because of [" + m + "]");
+            n->Log("Error creating path [" + experimentpath + "] because of [" + m + "]");
 
         QByteArray j = QJsonDocument(jsonLarge).toJson();
         QFile fout(QString("%1/%2/experiment.json").arg(path).arg(name));
         if (fout.open(QIODevice::WriteOnly))
             fout.write(j);
         else
-            n->WriteLog("Error writing file [" + QString("%1/%2/experiment.json").arg(path).arg(name) + "]");
+            n->Log("Error writing file [" + QString("%1/%2/experiment.json").arg(path).arg(name) + "]");
 
         /* return small JSON object */
         return jsonSmall;

@@ -46,7 +46,7 @@ moduleUpload::~moduleUpload()
 /* --------- Run -------------------------------------------- */
 /* ---------------------------------------------------------- */
 int moduleUpload::Run() {
-    n->WriteLog("Entering the upload module");
+    n->Log("Entering the upload module");
 
     //QSqlQuery q;
     bool ret(false);
@@ -57,7 +57,7 @@ int moduleUpload::Run() {
     /* archive any uploads */
     ret |= ArchiveParsedUploads();
 
-    n->WriteLog("Leaving the upload module");
+    n->Log("Leaving the upload module");
     return ret;
 }
 
@@ -76,7 +76,7 @@ bool moduleUpload::ParseUploads() {
         while (q.next()) {
             /* check if this module should be running */
             n->ModuleRunningCheckIn();
-            if (!n->ModuleCheckIfActive()) { n->WriteLog("Module is now inactive, stopping the module"); return 0; }
+            if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); return 0; }
 
             ret = 1;
             int upload_id = q.value("upload_id").toInt();
@@ -247,7 +247,7 @@ bool moduleUpload::ParseUploads() {
 
                     /* check if this module should be running */
                     n->ModuleRunningCheckIn();
-                    if (!n->ModuleCheckIfActive()) { n->WriteLog("Module is now inactive, stopping the module"); return 0; }
+                    if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); return 0; }
 
                     /* check if the upload status has changed */
                     QString status = GetUploadStatus(upload_id);
@@ -271,7 +271,7 @@ bool moduleUpload::ParseUploads() {
 
             /* check if this module should be running */
             n->ModuleRunningCheckIn();
-            if (!n->ModuleCheckIfActive()) { n->WriteLog("Module is now inactive, stopping the module"); return 0; }
+            if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); return 0; }
 
             /* check if the upload status has changed */
             QString status = GetUploadStatus(upload_id);
@@ -375,7 +375,7 @@ bool moduleUpload::UpdateParsedUploads(QMap<QString, QMap<QString, QMap<QString,
             }
         }
         else
-            n->WriteLog("Unspecified subject criteria [" + upload_subjectcriteria + "]. That's weird it would show up here...");
+            n->Log("Unspecified subject criteria [" + upload_subjectcriteria + "]. That's weird it would show up here...");
 
         /* ---------- iterate through the studies ---------- */
         for(QMap<QString, QMap<QString, QStringList> >::iterator b = fs[subject].begin(); b != fs[subject].end(); ++b) {
@@ -732,7 +732,7 @@ bool moduleUpload::ArchiveParsedUploads() {
 
             /* check if this module should be running */
             n->ModuleRunningCheckIn();
-            if (!n->ModuleCheckIfActive()) { n->WriteLog("Module is now inactive, stopping the module"); return 0; }
+            if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); return 0; }
 
             ret = 1;
             bool error = false;
@@ -764,12 +764,12 @@ bool moduleUpload::ArchiveParsedUploads() {
 
                     /* check if this module should be running */
                     n->ModuleRunningCheckIn();
-                    if (!n->ModuleCheckIfActive()) { n->WriteLog("Module is now inactive, stopping the module"); return 0; }
+                    if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); return 0; }
 
                     ret = 1;
                     int uploadseries_id = q2.value("uploadseries_id").toInt();
 
-                    n->WriteLog(QString("Working on series [%1]").arg(uploadseries_id));
+                    n->Log(QString("Working on series [%1]").arg(uploadseries_id));
 
                     /* get any matching subject/study/series */
                     int matchingsubjectid(-1), matchingstudyid(-1), matchingseriesid(-1);

@@ -40,6 +40,7 @@ class squirrelStudy
 public:
     squirrelStudy();
     void PrintStudy();
+    void PrintTree(bool isLast);
     QJsonObject ToJSON();
     bool Get();             /* gets the object data from the database */
     bool Store();           /* saves the object data from this object into the database */
@@ -51,6 +52,7 @@ public:
     void SetDirFormat(QString subject_DirFormat, QString study_DirFormat) {subjectDirFormat = subject_DirFormat; studyDirFormat = study_DirFormat; }
     QString VirtualPath();
     QList<QPair<QString,QString>> GetStagedFileList();
+    int GetNextSeriesNumber();
 
     qint64 subjectRowID;
 

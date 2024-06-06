@@ -473,7 +473,7 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
     else {
         /* this is the catch all for modalities which don't have a table in the database */
 
-        n->WriteLog(QString("Modality [%1] numfiles [%2] zsize [%3]").arg(Modality).arg(numfiles).arg(zsize));
+        n->Log(QString("Modality [%1] numfiles [%2] zsize [%3]").arg(Modality).arg(numfiles).arg(zsize));
 
         if (n->isValidNiDBModality(Modality))
             dbModality = Modality.toLower();
@@ -1067,7 +1067,7 @@ bool archiveIO::InsertParRec(int importid, QString file) {
         }
     }
 
-    n->WriteLog("subjectUID [" + subjectUID + "]");
+    n->Log("subjectUID [" + subjectUID + "]");
     if (subjectUID == "") {
         AppendUploadLog(__FUNCTION__, "Error finding/creating subject. UID is blank");
         return 0;
@@ -1155,10 +1155,10 @@ bool archiveIO::InsertParRec(int importid, QString file) {
 
     /* update alternate IDs, if there are any */
     if (altuidlist.size() > 0) {
-        n->WriteLog(QString("altuidlist is of size [%1]").arg(altuidlist.size()));
+        n->Log(QString("altuidlist is of size [%1]").arg(altuidlist.size()));
         foreach (QString altuid, altuidlist) {
             if (altuid.trimmed() != "") {
-                n->WriteLog("Updating/inserting an altuid ["+altuid+"]");
+                n->Log("Updating/inserting an altuid ["+altuid+"]");
                 q2.prepare("replace into subject_altuid (subject_id, altuid, enrollment_id) values (:subjectid, :altuid, :enrollmentid)");
                 q2.bindValue(":subjectid", subjectRowID);
                 q2.bindValue(":altuid", altuid);
@@ -1241,7 +1241,7 @@ bool archiveIO::InsertParRec(int importid, QString file) {
         studyRowID = q4.lastInsertId().toInt();
     }
 
-    n->WriteLog(QString("Going forward using the following: SubjectRowID [%1] ProjectRowID [%2] EnrollmentRowID [%3] StudyRowID [%4]").arg(subjectRowID).arg(projectRowID).arg(enrollmentRowID).arg(studyRowID));
+    n->Log(QString("Going forward using the following: SubjectRowID [%1] ProjectRowID [%2] EnrollmentRowID [%3] StudyRowID [%4]").arg(subjectRowID).arg(projectRowID).arg(enrollmentRowID).arg(studyRowID));
 
     // ----- insert or update the series -----
     q2.prepare("select mrseries_id from mr_series where study_id = :studyid and series_num = :SeriesNumber");
@@ -1646,7 +1646,7 @@ bool archiveIO::InsertEEG(int importid, QString file) {
     /* move the files into the outdir */
     AppendUploadLog(__FUNCTION__, "Moving ["+file+"] -> ["+outdir+"]");
     if (!MoveFile(file, outdir, m)) {
-        n->WriteLog(QString("Unable to move [%1] to [%2], with error [%3]").arg(file, outdir, m));
+        n->Log(QString("Unable to move [%1] to [%2], with error [%3]").arg(file, outdir, m));
     }
 
     /* get the size of the files and update the DB */
@@ -1846,7 +1846,7 @@ bool archiveIO::GetEnrollment(int subjectRowID, int projectRowID, int &enrollmen
     q.prepare("select enrollment_id from enrollment where subject_id = :subjectid and project_id = :projectid");
     q.bindValue(":subjectid", subjectRowID);
     q.bindValue(":projectid", projectRowID);
-    n->WriteLog(n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__));
+    n->Log(n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__));
     if (q.size() > 0) {
         q.first();
         enrollmentRowID = q.value("enrollment_id").toInt();
@@ -2100,7 +2100,7 @@ void archiveIO::AppendUploadLog(QString func, QString m) {
         q.bindValue(":msg", str);
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
-        n->WriteLog(str);
+        n->Log(str);
     }
 }
 
@@ -2119,7 +2119,7 @@ void archiveIO::AppendUploadLog(QString func, QString m) {
  * @return true if successful
  */
 bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QString odir, QString bidsreadme, QStringList bidsflags, QString &msg) {
-    n->WriteLog("Entering WriteBIDS()...");
+    n->Log("Entering WriteBIDS()...");
 
     QString exportstatus = "complete";
     QString bidsver = "1.4.1";
@@ -2135,11 +2135,11 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
     QString outdir = odir;
     QString m;
     if (MakePath(outdir, m)) {
-        n->WriteLog("Created outdir [" + outdir + "]");
+        n->Log("Created outdir [" + outdir + "]");
     }
     else {
         exportstatus = "error";
-        msg = n->WriteLog("ERROR [" + m + "] unable to create outdir [" + outdir + "]");
+        msg = n->Log("ERROR [" + m + "] unable to create outdir [" + outdir + "]");
         return false;
     }
 
@@ -2156,7 +2156,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 
     /* write the participants.csv file */
     QString pfile = outdir + "/participants.tsv";
-    if (!WriteTextFile(pfile, "participant_id\tAge\tGender\n", false)) n->WriteLog("Error writing " + pfile);
+    if (!WriteTextFile(pfile, "participant_id\tAge\tGender\n", false)) n->Log("Error writing " + pfile);
 
     int i = 1; /* the subject counter */
     /* iterate through the UIDs */
@@ -2164,12 +2164,12 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
         QString uid = a.key();
         int j = 1; /* the session (study) counter */
 
-        n->WriteLog("Working on [" + uid + "]");
+        n->Log("Working on [" + uid + "]");
         QString subjectSex = s[uid][0][0]["subjectsex"];
         double subjectAge = s[uid][0][0]["subjectage"].toDouble();
 
         /* write subject to participants file */
-        if (!WriteTextFile(pfile, QString("sub-%1\t%2\t%3\n").arg(i, 3, 10, QChar('0')).arg(subjectAge).arg(subjectSex), true)) n->WriteLog("Error writing " + pfile);
+        if (!WriteTextFile(pfile, QString("sub-%1\t%2\t%3\n").arg(i, 3, 10, QChar('0')).arg(subjectAge).arg(subjectSex), true)) n->Log("Error writing " + pfile);
 
         /* iterate through the studynums */
         for(QMap<int, QMap<int, QMap<QString, QString>>>::iterator b = s[uid].begin(); b != s[uid].end(); ++b) {
@@ -2178,7 +2178,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
             if (studynum == 0)
                 continue;
 
-            n->WriteLog(QString("Working on [" + uid + "] and study [%1]").arg(studynum));
+            n->Log(QString("Working on [" + uid + "] and study [%1]").arg(studynum));
 
             /* iterate through the seriesnums */
             for(QMap<int, QMap<QString, QString>>::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
@@ -2188,7 +2188,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
                 if (seriesnum == 0)
                     continue;
 
-                n->WriteLog(QString("Working on [" + uid + "] and study [%1] and series [%2]").arg(studynum).arg(seriesnum));
+                n->Log(QString("Working on [" + uid + "] and study [%1] and series [%2]").arg(studynum).arg(seriesnum));
 
                 //int exportseriesid = s[uid][studynum][seriesnum]["exportseriesid"].toInt();
                 //SetExportSeriesStatus(exportseriesid, "processing");
@@ -2274,11 +2274,11 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 
                 QString m;
                 if (MakePath(seriesoutdir, m)) {
-                    n->WriteLog("Created seriesoutdir [" + seriesoutdir + "]");
+                    n->Log("Created seriesoutdir [" + seriesoutdir + "]");
                 }
                 else {
                     exportstatus = "error";
-                    n->WriteLog("ERROR [" + m + "] unable to create seriesoutdir [" + seriesoutdir + "]");
+                    n->Log("ERROR [" + m + "] unable to create seriesoutdir [" + seriesoutdir + "]");
                     msg = "Unable to create output directory [" + seriesoutdir + "]";
                     return false;
                 }
@@ -2296,31 +2296,31 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 
                             //n->WriteLog("About to copy files from " + tmpdir + " to " + seriesoutdir);
                             QString systemstring = "rsync " + tmpdir + "/* " + seriesoutdir + "/";
-                            n->WriteLog(SystemCommand(systemstring));
+                            n->Log(SystemCommand(systemstring));
                             //n->WriteLog("Done copying files...");
                             RemoveDir(tmpdir,m);
                         }
                         else {
-                            n->WriteLog("Unable to create directory");
+                            n->Log("Unable to create directory");
                         }
                     }
                     else {
 						seriesstatus = exportstatus = "error";
-						msgs << n->WriteLog("ERROR [" + datadir + "] is empty");
+						msgs << n->Log("ERROR [" + datadir + "] is empty");
                     }
                 }
                 else {
 					seriesstatus = exportstatus = "error";
-					msgs << n->WriteLog("ERROR datadir [" + datadir + "] does not exist");
+					msgs << n->Log("ERROR datadir [" + datadir + "] does not exist");
                 }
 
                 /* copy the beh data */
                 if (behdirexists) {
                     QString systemstring;
                     systemstring = "cp -R " + behindir + "/* " + seriesoutdir;
-                    n->WriteLog(SystemCommand(systemstring, true));
+                    n->Log(SystemCommand(systemstring, true));
                     systemstring = "chmod -Rf 777 " + seriesoutdir;
-                    n->WriteLog(SystemCommand(systemstring, true));
+                    n->Log(SystemCommand(systemstring, true));
                 }
 
                 n->SetExportSeriesStatus(seriesid, -1, -1, "",seriesstatus,statusmessage);
@@ -2340,13 +2340,13 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
     }
 
     /* write the readme file */
-    if (!WriteTextFile(outdir + "/README", bidsreadme, false)) n->WriteLog("Error writing README file [" + outdir + "/README]");
+    if (!WriteTextFile(outdir + "/README", bidsreadme, false)) n->Log("Error writing README file [" + outdir + "/README]");
 
     QString systemstring = "chmod -rf 777 " + outdir;
-    n->WriteLog(SystemCommand(systemstring));
+    n->Log(SystemCommand(systemstring));
 
     msg = msgs.join("\n");
-    n->WriteLog("Leaving WriteBIDS()...");
+    n->Log("Leaving WriteBIDS()...");
     return true;
 }
 
@@ -2370,9 +2370,9 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
  */
 bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStringList downloadflags, QStringList squirrelflags, QList<qint64> seriesids, QStringList modalities, QString zipfilepath, QString &msg) {
 
-    n->WriteLog(QString("Entering %1() exportid [%2]").arg(__FUNCTION__).arg(exportid));
+    n->Log(QString("Entering %1() exportid [%2]").arg(__FUNCTION__).arg(exportid));
 
-    n->WriteLog("Squirrel flags [" + downloadflags.join(", ") + "]");
+    n->Log("Squirrel flags [" + downloadflags.join(", ") + "]");
 
     QStringList msgs;
     QString exportstatus = "complete";
@@ -2386,7 +2386,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     //int numObjects = q.size();
 
     if (!GetSeriesListDetails(seriesids, modalities, s)) {
-        msgs << n->WriteLog(QString("%1() Error - unable to get a series list").arg(__FUNCTION__));
+        msgs << n->Log(QString("%1() Error - unable to get a series list").arg(__FUNCTION__));
         msg = msgs.join("\n");
         return false;
     }
@@ -2399,7 +2399,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     QString localTempDir = n->cfg["tmpdir"] + "/squirrel-" + GenerateRandomString(20);
     QString m;
     if (!MakePath(localTempDir, m)) {
-        n->WriteLog(QString("Error create temp directory [%1] - message [%2]").arg(localTempDir).arg(m));
+        n->Log(QString("Error create temp directory [%1] - message [%2]").arg(localTempDir).arg(m));
     }
 
     /* create squirrel object with default settings... */
@@ -2426,7 +2426,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
         SQUIRREL_INCSTUDYNUM
         SQUIRREL_INCSERIESNUM
     */
-    n->WriteLog(QString("%1() Squirrel flags [%2]").arg(__FUNCTION__).arg(squirrelflags.join(",")));
+    n->Log(QString("%1() Squirrel flags [%2]").arg(__FUNCTION__).arg(squirrelflags.join(",")));
 
     if (squirrelflags.contains("SQUIRREL_FORMAT_ANONYMIZE")) sqrl.DataFormat = "anon";
     if (squirrelflags.contains("SQUIRREL_FORMAT_ANONYMIZEFULL")) sqrl.DataFormat = "anonfull";
@@ -2443,7 +2443,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     QList<int> experimentIDs;
     QList<int> minipipelineIDs;
 
-    n->WriteLog(QString("%1() Building squirrel object using squirrel library...").arg(__FUNCTION__));
+    n->Log(QString("%1() Building squirrel object using squirrel library...").arg(__FUNCTION__));
 
     /* iterate through the subjects (array key is UIDs) */
     for(QMap<QString, QMap<int, QMap<int, QMap<QString, QString> > > >::iterator a = s.begin(); a != s.end(); ++a) {
@@ -2452,7 +2452,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
         /* get the subject object by UID */
         subject subj(uid, false, n);
 
-        n->WriteLog(QString("%1() Working on subject [" + uid + "]").arg(__FUNCTION__));
+        n->Log(QString("%1() Working on subject [" + uid + "]").arg(__FUNCTION__));
 
         double subjectAge = s[uid][0][0]["subjectage"].toDouble();
 
@@ -2461,7 +2461,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
         sqrlSubject.Store();
         int squirrelSubjectRowID = sqrlSubject.GetObjectID();
 
-        n->WriteLog(QString("%1() sqrlSubject.ID [" + sqrlSubject.ID + "]   subj.UID() [" + subj.UID() + "]").arg(__FUNCTION__));
+        n->Log(QString("%1() sqrlSubject.ID [" + sqrlSubject.ID + "]   subj.UID() [" + subj.UID() + "]").arg(__FUNCTION__));
 
         QList<int> enrollmentIDs;
 
@@ -2472,7 +2472,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
             if (studynum == 0)
                 continue;
 
-            n->WriteLog(QString("%1() Working on subject [%2]  study [%3]").arg(__FUNCTION__).arg(uid).arg(studynum));
+            n->Log(QString("%1() Working on subject [%2]  study [%3]").arg(__FUNCTION__).arg(uid).arg(studynum));
 
             int studyid = s[uid][studynum][0]["studyid"].toInt();
             study stdy(studyid, n);
@@ -2512,7 +2512,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                 if (q2.size() > 0) {
                     while (q2.next()) {
                         int pipelineid = q2.value("pipeline_id").toInt();
-                        n->WriteLog(QString("[%1] Found pipeline with ID [%2]").arg(__FUNCTION__).arg(pipelineid));
+                        n->Log(QString("[%1] Found pipeline with ID [%2]").arg(__FUNCTION__).arg(pipelineid));
                         if (!pipelineIDs.contains(pipelineid)) {
                             pipelineIDs.append(pipelineid);
                         }
@@ -2528,7 +2528,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                 if (seriesnum == 0)
                     continue;
 
-                n->WriteLog(QString("%1() Working on subject [%2]  study [%3]  series [%4]").arg(__FUNCTION__).arg(uid).arg(studynum).arg(seriesnum));
+                n->Log(QString("%1() Working on subject [%2]  study [%3]  series [%4]").arg(__FUNCTION__).arg(uid).arg(studynum).arg(seriesnum));
 
                 QString seriesstatus = "complete";
 
@@ -2551,7 +2551,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
 
                 if (datadirexists) {
                     if (!datadirempty) {
-                        msgs << n->WriteLog(QString("%1() Appending raw data file list").arg(__FUNCTION__));
+                        msgs << n->Log(QString("%1() Appending raw data file list").arg(__FUNCTION__));
 
                         /* all we need to do here is tell the squirrel object the location of the raw data files */
                         sqrlSeries.stagedFiles = FindAllFiles(datadir, "*", true);
@@ -2565,12 +2565,12 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                     }
                     else {
                         seriesstatus = exportstatus = "error";
-                        msgs << n->WriteLog(QString("%1() ERROR. Directory [" + datadir + "] is empty").arg(__FUNCTION__));
+                        msgs << n->Log(QString("%1() ERROR. Directory [" + datadir + "] is empty").arg(__FUNCTION__));
                     }
                 }
                 else {
                     seriesstatus = exportstatus = "error";
-                    msgs << n->WriteLog(QString("%1() ERROR datadir [" + datadir + "] does not exist").arg(__FUNCTION__));
+                    msgs << n->Log(QString("%1() ERROR datadir [" + datadir + "] does not exist").arg(__FUNCTION__));
                 }
 
                 /* export the beh data */
@@ -2613,7 +2613,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                     }
                 }
 
-                msgs << n->WriteLog(QString("Series [%1%2-%3 (%4)] complete").arg(uid).arg(studynum).arg(seriesnum).arg(seriesdesc));
+                msgs << n->Log(QString("Series [%1%2-%3 (%4)] complete").arg(uid).arg(studynum).arg(seriesnum).arg(seriesdesc));
 
                 /* add the completed squirrelSeries to the squirrelStudy object */
                 sqrlSeries.Store();
@@ -2697,7 +2697,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
         q.bindValue(":exportid", exportid);
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         if (q.size() > 0) {
-            n->WriteLog(QString("%1() Found [%2] pipelines").arg(__FUNCTION__).arg(q.size()));
+            n->Log(QString("%1() Found [%2] pipelines").arg(__FUNCTION__).arg(q.size()));
             while (q.next()) {
                 pipelineIDs.append(q.value("pipeline_id").toInt());
                 int exportseriesid = q.value("exportseries_id").toInt();
@@ -2717,16 +2717,16 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
 
     /* add experiments to the JSON object */
     if (downloadflags.contains("DOWNLOAD_EXPERIMENTS", Qt::CaseInsensitive)) {
-        n->WriteLog(QString("Processing [%1] experiments").arg(experimentIDs.size()));
+        n->Log(QString("Processing [%1] experiments").arg(experimentIDs.size()));
         if (experimentIDs.size() > 0) {
             for (int i=0; i<experimentIDs.size(); i++) {
                 /* create and add each squirrelPipeline object */
                 experiment e(experimentIDs[i], n);
                 QStringList stagedFileList;
                 if (e.WriteFiles(localTempDir, stagedFileList, m))
-                    n->WriteLog(QString("Successfully wrote experiment files [%1]").arg(m));
+                    n->Log(QString("Successfully wrote experiment files [%1]").arg(m));
                 else
-                    n->WriteLog(QString("Error writing experiment files [%1]").arg(m));
+                    n->Log(QString("Error writing experiment files [%1]").arg(m));
 
                 squirrelExperiment sqrlExperiment = e.GetSquirrelObject();
                 sqrlExperiment.stagedFiles = stagedFileList;
@@ -2750,18 +2750,18 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
 
     /* the squirrel object should be complete, so write it out */
     sqrl.Write(false);
-    msgs << n->WriteLog(QString("%1() - squirrel.write() returned [\n" + sqrl.GetLog() + "\n]").arg(__FUNCTION__));
+    msgs << n->Log(QString("%1() - squirrel.write() returned [\n" + sqrl.GetLog() + "\n]").arg(__FUNCTION__));
 
     if (FileDirectoryExists(localTempDir))
         if (RemoveDir(localTempDir, m))
-            n->WriteLog(QString("Successfully removed localTempDir [%1]").arg(localTempDir));
+            n->Log(QString("Successfully removed localTempDir [%1]").arg(localTempDir));
         else
-            n->WriteLog(QString("Error removing localTempDir [%1] - message [%2]").arg(localTempDir).arg(m));
+            n->Log(QString("Error removing localTempDir [%1] - message [%2]").arg(localTempDir).arg(m));
     else
-        n->WriteLog(QString("localTempDir [%1] does not exist").arg(localTempDir));
+        n->Log(QString("localTempDir [%1] does not exist").arg(localTempDir));
 
     msg = msgs.join("\n");
-    n->WriteLog("Leaving WriteSquirrel()...");
+    n->Log("Leaving WriteSquirrel()...");
     return true;
 }
 
@@ -2797,7 +2797,7 @@ bool archiveIO::WritePackage(qint64 exportid, QString zipfilepath, QString &msg)
     QString localTempDir = n->cfg["tmpdir"] + "/squirrel-" + GenerateRandomString(20);
     QString m;
     if (!MakePath(localTempDir, m)) {
-        n->WriteLog(QString("Error create temp directory [%1] - message [%2]").arg(localTempDir).arg(m));
+        n->Log(QString("Error create temp directory [%1] - message [%2]").arg(localTempDir).arg(m));
     }
 
     /* PACKAGE - get the details, and create package object */
@@ -3008,14 +3008,14 @@ bool archiveIO::WritePackage(qint64 exportid, QString zipfilepath, QString &msg)
 
         QString m;
         if (!MakePath(localTempDir + "/" + e.name, m)) {
-            n->WriteLog(QString("Error create temp directory [%1] - message [%2]").arg(localTempDir + "/" + e.name).arg(m));
+            n->Log(QString("Error create temp directory [%1] - message [%2]").arg(localTempDir + "/" + e.name).arg(m));
         }
 
         QStringList stagedFileList;
         if (e.WriteFiles(localTempDir + "/" + e.name, stagedFileList, m))
-            n->WriteLog(QString("Successfully wrote experiment files [%1]").arg(m));
+            n->Log(QString("Successfully wrote experiment files [%1]").arg(m));
         else
-            n->WriteLog(QString("Error writing experiment files [%1]").arg(m));
+            n->Log(QString("Error writing experiment files [%1]").arg(m));
 
         squirrelExperiment sqrlExperiment = e.GetSquirrelObject();
         sqrlExperiment.stagedFiles = stagedFileList;
@@ -3030,11 +3030,11 @@ bool archiveIO::WritePackage(qint64 exportid, QString zipfilepath, QString &msg)
         if (!n->debug) {
             if (FileDirectoryExists(localTempDir))
                 if (RemoveDir(localTempDir, m))
-                    n->WriteLog(QString("Successfully removed localTempDir [%1]").arg(localTempDir));
+                    n->Log(QString("Successfully removed localTempDir [%1]").arg(localTempDir));
                 else
-                    n->WriteLog(QString("Error removing localTempDir [%1] - message [%2]").arg(localTempDir).arg(m));
+                    n->Log(QString("Error removing localTempDir [%1] - message [%2]").arg(localTempDir).arg(m));
             else
-                n->WriteLog(QString("localTempDir [%1] does not exist").arg(localTempDir));
+                n->Log(QString("localTempDir [%1] does not exist").arg(localTempDir));
         }
 
         return true;
@@ -3053,7 +3053,7 @@ bool archiveIO::WritePackage(qint64 exportid, QString zipfilepath, QString &msg)
 bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modalities, subjectStudySeriesContainer &s) {
 
     QSqlQuery q;
-    n->WriteLog(QString("seriesids size [%1]").arg(seriesids.size()));
+    n->Log(QString("seriesids size [%1]").arg(seriesids.size()));
     for (int i=0; i<seriesids.size(); i++) {
         qint64 seriesid = seriesids[i];
         QString modality = modalities[i];
@@ -3063,7 +3063,7 @@ bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modal
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
         if (q.size() > 0) {
-            n->WriteLog(QString("%1() Found [%2] rows").arg(__FUNCTION__).arg(q.size()));
+            n->Log(QString("%1() Found [%2] rows").arg(__FUNCTION__).arg(q.size()));
 
             while (q.next()) {
                 QString uid = q.value("uid").toString().replace('\u0000', "");
@@ -3193,7 +3193,7 @@ bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modal
             }
         }
         else {
-            n->WriteLog(QString("No rows found for this seriesid [%1] and modality [%2]").arg(seriesid).arg(modality));
+            n->Log(QString("No rows found for this seriesid [%1] and modality [%2]").arg(seriesid).arg(modality));
         }
     }
     return true;

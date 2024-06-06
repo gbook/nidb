@@ -46,7 +46,7 @@ moduleImport::~moduleImport()
 /* --------- Run -------------------------------------------- */
 /* ---------------------------------------------------------- */
 int moduleImport::Run() {
-    n->WriteLog("Entering the import module");
+    n->Log("Entering the import module");
 
     int ret(0);
 
@@ -64,34 +64,34 @@ int moduleImport::Run() {
      * which contains additional information about the files being imported, such as project and site
     */
     QStringList dirs = FindAllDirs(n->cfg["incomingdir"],"",false, false);
-    n->WriteLog(QString("Found [%1] directories in [%2]").arg(dirs.size()).arg(n->cfg["incomingdir"]));
-    n->WriteLog("Directories found: " + dirs.join("|"));
+    n->Log(QString("Found [%1] directories in [%2]").arg(dirs.size()).arg(n->cfg["incomingdir"]));
+    n->Log("Directories found: " + dirs.join("|"));
     foreach (QString dir, dirs) {
-        n->WriteLog("Found dir ["+dir+"]");
+        n->Log("Found dir ["+dir+"]");
         QString fulldir = QString("%1/%2").arg(n->cfg["incomingdir"]).arg(dir);
         if (ParseDirectory(fulldir, dir.toInt())) {
             /* check if the directrory is empty */
             if (QDir(fulldir).entryInfoList(QDir::NoDotAndDotDot|QDir::AllEntries).count() == 0) {
                 QString m;
                 if (RemoveDir(fulldir, m))
-                    n->WriteLog("Removed directory [" + fulldir + "]");
+                    n->Log("Removed directory [" + fulldir + "]");
                 else
-                    n->WriteLog("Error removing directory [" + fulldir + "] [" + m + "]");
+                    n->Log("Error removing directory [" + fulldir + "] [" + m + "]");
 
                 ret = ret | 1;
             }
         }
         else
-            n->WriteLog(QString("ParseDirectory(%1,%2) returned false").arg(fulldir).arg(dir.toInt()));
+            n->Log(QString("ParseDirectory(%1,%2) returned false").arg(fulldir).arg(dir.toInt()));
 
         n->ModuleRunningCheckIn();
         if (!n->ModuleCheckIfActive()) {
-            n->WriteLog("Module is now inactive, stopping the module");
+            n->Log("Module is now inactive, stopping the module");
             return ret;
         }
     }
 
-    n->WriteLog("Leaving the import module");
+    n->Log("Leaving the import module");
 
     return ret;
 }
@@ -111,7 +111,7 @@ QString moduleImport::GetImportStatus(int importid) {
         status = q.value("import_status").toString();
     }
 
-    n->WriteLog("Got import status of [" + status + "]");
+    n->Log("Got import status of [" + status + "]");
 
     return status;
 }
@@ -143,7 +143,7 @@ bool moduleImport::SetImportStatus(int importid, QString status, QString msg, QS
         q.bindValue(":importid", importid);
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
-        n->WriteLog("Set import status to ["+status+"]");
+        n->Log("Set import status to ["+status+"]");
         return true;
     }
     else {
@@ -157,7 +157,7 @@ bool moduleImport::SetImportStatus(int importid, QString status, QString msg, QS
 /* ---------------------------------------------------------- */
 int moduleImport::ParseDirectory(QString dir, int importid) {
 
-    n->WriteLog(QString("********** Working on directory [" + dir + "] with importRowID [%1] **********").arg(importid));
+    n->Log(QString("********** Working on directory [" + dir + "] with importRowID [%1] **********").arg(importid));
     n->ModuleRunningCheckIn();
 
     dcmseries.clear();
@@ -201,11 +201,11 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
 
             if ((importStatus == "complete") || (importStatus == "") || (importStatus == "received") || (importStatus == "error")) { }
             else {
-                n->WriteLog("This import is not complete. Status is [" + importStatus + "]. Skipping.");
+                n->Log("This import is not complete. Status is [" + importStatus + "]. Skipping.");
                 /* cleanup so this import can continue at another time */
                 SetImportStatus(importid, "", "", "", false);
 
-                n->WriteLog(perf.End());
+                n->Log(perf.End());
                 return 0;
             }
         }
@@ -226,7 +226,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
     /* ----- parse all files in /incoming ----- */
     QStringList files = FindAllFiles(dir, "*");
     qint64 numfiles = files.size();
-    n->WriteLog(QString("Found [%1] files in [%2]").arg(numfiles).arg(dir));
+    n->Log(QString("Found [%1] files in [%2]").arg(numfiles).arg(dir));
     int processedFileCount(0);
     foreach (QString file, files) {
 
@@ -237,16 +237,16 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
             qint64 fsize = QFileInfo(file).size();
             perf.numBytesRead += fsize;
             if (fsize < 1) {
-                n->WriteLog(QString("File [%1] - size [%2] is 0 bytes!").arg(file).arg(fsize));
+                n->Log(QString("File [%1] - size [%2] is 0 bytes!").arg(file).arg(fsize));
                 SetImportStatus(importid, "error", "File has size of 0 bytes", QString("File [" + file + "] is empty"), true);
                 QString m;
                 if (!MoveFile(file, n->cfg["problemdir"], m))
-                    n->WriteLog(QString("Unable to move [%1] to [%2], with error [%3]").arg(file).arg(n->cfg["problemdir"]).arg(m));
+                    n->Log(QString("Unable to move [%1] to [%2], with error [%3]").arg(file).arg(n->cfg["problemdir"]).arg(m));
                 continue;
             }
         }
         else {
-            n->WriteLog("File [" + file + "] no longer exists. That's ok if it's a .rec file");
+            n->Log("File [" + file + "] no longer exists. That's ok if it's a .rec file");
             continue;
         }
 
@@ -255,7 +255,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
         QDateTime now = QDateTime::currentDateTime();
         qint64 fileAgeInSec = now.secsTo(QFileInfo(file).lastModified());
         if (fileAgeInSec > -60) {
-            n->WriteLog(QString("File [%1] has an age of [%2] sec").arg(file).arg(fileAgeInSec));
+            n->Log(QString("File [%1] has an age of [%2] sec").arg(file).arg(fileAgeInSec));
             okToDeleteDir = false;
             continue;
         }
@@ -264,12 +264,12 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
         processedFileCount++;
 
         if (processedFileCount%1000 == 0) {
-            n->WriteLog(QString("Processed %1 files...").arg(processedFileCount));
+            n->Log(QString("Processed %1 files...").arg(processedFileCount));
             n->ModuleRunningCheckIn();
             if (!n->ModuleCheckIfActive()) {
-                n->WriteLog("Module is now inactive, stopping the module");
+                n->Log("Module is now inactive, stopping the module");
                 //okToDeleteDir = false;
-                n->WriteLog(perf.End());
+                n->Log(perf.End());
                 return 1;
             }
         }
@@ -279,7 +279,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
             chunksize = n->cfg["importchunksize"].toInt();
 
         if (processedFileCount >= chunksize) {
-            n->WriteLog(QString("Checked [%1] files, going to archive them now").arg(processedFileCount));
+            n->Log(QString("Checked [%1] files, going to archive them now").arg(processedFileCount));
             break;
         }
 
@@ -288,12 +288,12 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
 
             QString ext = QFileInfo(file).completeSuffix().toLower();
             if (ext == "par") {
-                n->WriteLog("Filetype is .par");
+                n->Log("Filetype is .par");
 
                 QString m;
 
                 if (!io->InsertParRec(importid, file)) {
-                    n->WriteLog(QString("InsertParRec(%1, %2) failed: [%3]").arg(file).arg(importid).arg(m));
+                    n->Log(QString("InsertParRec(%1, %2) failed: [%3]").arg(file).arg(importid).arg(m));
 
                     QSqlQuery q;
                     q.prepare("insert into importlogs (filename_orig, fileformat, importgroupid, importstartdate, result) values (:file, 'PARREC', :importid, now(), :msg)");
@@ -304,7 +304,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
 
                     QString m;
                     if (!MoveFile(file, n->cfg["problemdir"], m))
-                        n->WriteLog(QString("Unable to move [%1] to [%2]").arg(file).arg(n->cfg["problemdir"]).arg(m));
+                        n->Log(QString("Unable to move [%1] to [%2]").arg(file).arg(n->cfg["problemdir"]).arg(m));
 
                     SetImportStatus(importid, "error", "Problem inserting PAR/REC: " + m, archivereport, true);
                 }
@@ -314,14 +314,14 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
                 i++;
             }
             else if (ext == "rec")
-                n->WriteLog("Filetype is a .rec");
+                n->Log("Filetype is a .rec");
             else if ((ext == "cnt") || (ext == "3dd") || (ext == "dat") || (ext == "edf") || (importModality == "eeg") || (importDatatype == "eeg") || (importModality == "et") || (ext == "et") ) {
-                n->WriteLog("Filetype is an EEG or ET file");
+                n->Log("Filetype is an EEG or ET file");
 
                 QString m;
 
                 if (!io->InsertEEG(importid, file)) {
-                    n->WriteLog(QString("InsertEEG(%1, %2) failed: [%3]").arg(file).arg(importid).arg(m));
+                    n->Log(QString("InsertEEG(%1, %2) failed: [%3]").arg(file).arg(importid).arg(m));
                     QSqlQuery q;
                     q.prepare("insert into importlogs (filename_orig, fileformat, importgroupid, importstartdate, result) values (:file, :datatype, :importid, now(), :msg)");
                     q.bindValue(":file", file);
@@ -330,7 +330,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
                     q.bindValue(":msg", m + " - moving to problem directory");
                     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
                     if (!MoveFile(file, n->cfg["problemdir"], m))
-                        n->WriteLog(QString("Unable to move [%1] to [%2], with error [%3]").arg(file).arg(n->cfg["problemdir"]).arg(m));
+                        n->Log(QString("Unable to move [%1] to [%2], with error [%3]").arg(file).arg(n->cfg["problemdir"]).arg(m));
 
                     SetImportStatus(importid, "error", "Problem inserting " + importDatatype.toUpper() + " - subject ID did not exist", archivereport, true);
                 }
@@ -353,7 +353,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
                 }
                 else {
                     qint64 fsize = QFileInfo(file).size();
-                    n->WriteLog(QString("Unable to parse file [%1] (size [%2]) as a DICOM file. Moving to [%3]").arg(file).arg(fsize).arg(n->cfg["problemdir"]));
+                    n->Log(QString("Unable to parse file [%1] (size [%2]) as a DICOM file. Moving to [%3]").arg(file).arg(fsize).arg(n->cfg["problemdir"]));
 
                     QSqlQuery q;
                     QString m = "Not a DICOM file, moving to the problem directory";
@@ -365,7 +365,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
                     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
                     QString m2;
                     if (!MoveFile(file, n->cfg["problemdir"], m2))
-                        n->WriteLog(QString("Unable to move [%1] to [%2], with error [%3]").arg(file).arg(n->cfg["problemdir"]).arg(m2));
+                        n->Log(QString("Unable to move [%1] to [%2], with error [%3]").arg(file).arg(n->cfg["problemdir"]).arg(m2));
 
                     /* change the import status to reflect the error */
                     if (importid > 0)
@@ -374,17 +374,17 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
             }
         }
         else {
-            n->WriteLog(file + " does not exist");
+            n->Log(file + " does not exist");
         }
     }
 
-    n->WriteLog(QString("dcmseries contains [%1] entries").arg(dcmseries.size()));
+    n->Log(QString("dcmseries contains [%1] entries").arg(dcmseries.size()));
     /* done reading all of the files in the directory (more may show up, but we'll get to those later)
      * now archive them */
     for(QMap<QString, QStringList>::iterator a = dcmseries.begin(); a != dcmseries.end(); ++a) {
         QString seriesuid = a.key();
 
-        n->WriteLog(QString("Getting list of files for seriesuid [" + seriesuid + "] - number of files is [%1]").arg(dcmseries[seriesuid].size()));
+        n->Log(QString("Getting list of files for seriesuid [" + seriesuid + "] - number of files is [%1]").arg(dcmseries[seriesuid].size()));
         QStringList files = dcmseries[seriesuid];
 
         performanceMetric perf2;
@@ -393,12 +393,12 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
             iscomplete = true;
         else
             iscomplete = false;
-        n->WriteLog(perf2.End());
+        n->Log(perf2.End());
 
         n->ModuleRunningCheckIn();
         /* check if this module should be running now or not */
         if (!n->ModuleCheckIfActive()) {
-            n->WriteLog("Not supposed to be running right now");
+            n->Log("Not supposed to be running right now");
             /* cleanup so this import can continue another time */
             QSqlQuery q;
             q.prepare("update import_requests set import_status = '', import_enddate = now(), archivereport = :archivereport where importrequest_id = :importid");
@@ -406,7 +406,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
             q.bindValue(":importid", importid);
             n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
-            n->WriteLog(perf.End());
+            n->Log(perf.End());
 
             return 1;
         }
@@ -416,10 +416,10 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
         QDir d(dir);
         if (d.exists()) {
             /* delete the uploaded directory */
-            n->WriteLog("Attempting to remove [" + dir + "]");
+            n->Log("Attempting to remove [" + dir + "]");
             QString m;
             if (!RemoveDir(dir, m))
-                n->WriteLog("Unable to delete directory [" + dir + "] because of error [" + m + "]");
+                n->Log("Unable to delete directory [" + dir + "] because of error [" + m + "]");
         }
         SetImportStatus(importid, "archived", importDatatype.toUpper() + " successfully archived", archivereport, true);
     }
@@ -427,14 +427,14 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
         SetImportStatus(importid, "checked", "Files less than 2 minutes old in directory", "", false);
 
     if (i > 0) {
-        n->WriteLog("Finished archiving data for [" + dir + "]");
+        n->Log("Finished archiving data for [" + dir + "]");
         ret = 1;
     }
     else {
-        n->WriteLog("Nothing to do for [" + dir + "]");
+        n->Log("Nothing to do for [" + dir + "]");
         ret = 0;
     }
 
-    n->WriteLog(perf.End());
+    n->Log(perf.End());
     return ret;
 }

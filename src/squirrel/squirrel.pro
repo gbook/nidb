@@ -66,22 +66,19 @@ HEADERS += \
 # bit7z library (provides LZMA)
 win32: {
     LZMABIN = ../../bit7z/lib/x64
-	LZMAINCLUDE = ../../bit7z/include/bit7z
-	*msvc*:CONFIG(release, debug|release): LIBS += -L$$LZMABIN/Release
-	else:*msvc*:CONFIG(debug, debug|release): LIBS += -L$$LZMABIN/Debug
-	INCLUDEPATH += $$LZMAINCLUDE
-	HEADERS += $$LZMAINCLUDE/bit7z.hpp
-	LIBS += -lbit7z
+    LZMAINCLUDE = ../../bit7z/include/bit7z
+    *msvc*:CONFIG(release, debug|release): LIBS += -L$$LZMABIN/Release
+    else:*msvc*:CONFIG(debug, debug|release): LIBS += -L$$LZMABIN/Debug
+    INCLUDEPATH += $$LZMAINCLUDE
+    HEADERS += $$LZMAINCLUDE/bit7z.hpp
+    LIBS += -lbit7z
 }
 linux: {
     LZMABIN = ../../bin/bit7z
-	LZMAINCLUDE = ../bit7z/include/bit7z
-	LIBS += -L$$LZMABIN -lbit7z64 -ldl
-	INCLUDEPATH += $$LZMAINCLUDE
-	HEADERS += $$LZMAINCLUDE/bit7z.hpp
-
-    message($$LIBS)
-	message($$QMAKE_LIBDIR)
+    LZMAINCLUDE = ../bit7z/include/bit7z
+    LIBS += -L$$LZMABIN -lbit7z64 -ldl
+    INCLUDEPATH += $$LZMAINCLUDE
+    HEADERS += $$LZMAINCLUDE/bit7z.hpp
 }
 
 # gdcm library

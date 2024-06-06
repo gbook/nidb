@@ -88,7 +88,7 @@ public:
     //bool BatchRenameFiles(QString dir, QString seriesnum, QString studynum, QString uid, int &numfilesrenamed, QString &msg);
     //double GetPatientAge(QString PatientAgeStr, QString StudyDate, QString PatientBirthDate);
     QString SQLQuery(QSqlQuery &q, QString function, QString file, int line, bool d=false, bool batch=false);
-    QString WriteLog(QString msg, QString func="", int wrap=0, bool timeStamp=true);
+    QString Log(QString msg, QString func="", int wrap=0, bool timeStamp=true);
     QString Debug(QString msg, QString func="", int wrap=0, bool timeStamp=true);
     bool SendEmail(QString to, QString subject, QString body);
     bool GetSQLComparison(QString c, QString &comp, int &num);

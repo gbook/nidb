@@ -45,7 +45,7 @@ moduleManager::~moduleManager()
 /* --------- Run -------------------------------------------- */
 /* ---------------------------------------------------------- */
 int moduleManager::Run() {
-    n->WriteLog("Entering the fileio module");
+    n->Log("Entering the fileio module");
 
     /* get list of modules with a last checkin older than 1 hours, ignore the backup module because writing tapes can take days */
     QSqlQuery q;
@@ -60,13 +60,13 @@ int moduleManager::Run() {
 
             QString lockfile = QString("%1/%2.%3").arg(n->cfg["lockdir"]).arg(modulename).arg(pid);
 
-            n->WriteLog("Deleting [" + lockfile + "] last checked in on [" + lastcheckin + "]");
+            n->Log("Deleting [" + lockfile + "] last checked in on [" + lastcheckin + "]");
 
             QFile f(lockfile);
             if (f.remove())
-                n->WriteLog(QString("Lockfile [" + lockfile + "] deleted"));
+                n->Log(QString("Lockfile [" + lockfile + "] deleted"));
             else
-                n->WriteLog(QString("Lockfile [" + lockfile + "] NOT deleted"));
+                n->Log(QString("Lockfile [" + lockfile + "] NOT deleted"));
 
             QSqlQuery q2;
             q2.prepare("delete from module_procs where module_name = :modulename and process_id = :pid");
@@ -76,7 +76,7 @@ int moduleManager::Run() {
         }
     }
     else {
-        n->WriteLog("Found no lock files to delete");
+        n->Log("Found no lock files to delete");
         return 0;
     }
 

@@ -186,7 +186,7 @@ void study::PrintStudyInfo() {
     output += QString("   studypath: [%1]\n").arg(_studypath);
     output += QString("   studydatetime: [%1]\n").arg(_studydatetime.toString("yyyy-MM-dd HH:mm:ss"));
 
-    n->WriteLog(output);
+    n->Log(output);
 }
 
 

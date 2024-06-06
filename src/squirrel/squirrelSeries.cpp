@@ -51,7 +51,6 @@ bool squirrelSeries::Get() {
     q.bindValue(":id", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.next()) {
-
         /* get the data */
         objectID = q.value("SeriesRowID").toLongLong();
         studyRowID = q.value("StudyRowID").toLongLong();
@@ -71,15 +70,17 @@ bool squirrelSeries::Get() {
         params = utils::GetParams(objectID);
 
         /* get any staged files */
+        //utils::Print(QString("Series contains [%1] files before calling GetStagedFileList").arg(stagedFiles.size()));
         stagedFiles = utils::GetStagedFileList(objectID, "series");
         stagedBehFiles = utils::GetStagedFileList(objectID, "behseries");
+        //utils::Print(QString("Series contains [%1] files AFTER calling GetStagedFileList").arg(stagedFiles.size()));
 
         valid = true;
         return true;
     }
     else {
         valid = false;
-        err = "objectID not found in database";
+        err = QString("objectID [%1] not found in database").arg(objectID);
         return false;
     }
 }
@@ -118,6 +119,7 @@ bool squirrelSeries::Store() {
         q.bindValue(":VirtualPath", VirtualPath());
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         objectID = q.lastInsertId().toInt();
+        //utils::Print(QString("Added series with seriesRowID [%1]").arg(objectID));
     }
     /* ... otherwise update */
     else {
@@ -137,14 +139,17 @@ bool squirrelSeries::Store() {
         q.bindValue(":VirtualPath", VirtualPath());
         q.bindValue(":id", objectID);
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        //utils::Print(QString("Updated series with seriesRowID [%1]").arg(objectID));
     }
 
     /* store any params */
     utils::StoreParams(objectID, params);
 
     /* store any staged filepaths */
+    //utils::Print(QString("Series contains [%1] files before calling StoreStagedFileList").arg(stagedFiles.size()));
     utils::StoreStagedFileList(objectID, "series", stagedFiles);
     utils::StoreStagedFileList(objectID, "behseries", stagedBehFiles);
+    //utils::Print(QString("Series contains [%1] files AFTER calling StoreStagedFileList").arg(stagedFiles.size()));
 
     return true;
 }
@@ -201,6 +206,20 @@ void squirrelSeries::PrintSeries() {
     foreach (QString f, stagedBehFiles) {
         utils::Print(QString("\t\t\t\t\tBehFile: %1").arg(f));
     }
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- PrintTree -------------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief Print series tree
+ */
+void squirrelSeries::PrintTree(bool isLast) {
+    if (isLast)
+        utils::Print(QString("           └─── Series %1 - Datetime %2  Protocol %3").arg(SeriesNumber).arg(DateTime.toString("yyyy-MM-dd HH:mm:ss")).arg(Protocol));
+    else
+        utils::Print(QString("   │   │   ├─── Series %1 - Datetime %2  Protocol %3").arg(SeriesNumber).arg(DateTime.toString("yyyy-MM-dd HH:mm:ss")).arg(Protocol));
 }
 
 

@@ -57,7 +57,7 @@ moduleMiniPipeline::~moduleMiniPipeline()
 /* --------- Run -------------------------------------------- */
 /* ---------------------------------------------------------- */
 int moduleMiniPipeline::Run() {
-    n->WriteLog("Entering the pipeline module");
+    n->Log("Entering the pipeline module");
 
     n->ModuleRunningCheckIn();
 
@@ -68,10 +68,10 @@ int moduleMiniPipeline::Run() {
         int i = 0;
         foreach(int mpjobid, mpjobs) {
             i++;
-            n->WriteLog(QString("Working on mini-pipeline job [%1] of [%2]").arg(i).arg(mpjobs.size()));
+            n->Log(QString("Working on mini-pipeline job [%1] of [%2]").arg(i).arg(mpjobs.size()));
             n->ModuleRunningCheckIn();
             if (!n->ModuleCheckIfActive()) {
-                n->WriteLog("Module is now inactive, stopping the module");
+                n->Log("Module is now inactive, stopping the module");
                 if (numJobsRun > 0)
                     return 1;
                 else
@@ -83,7 +83,7 @@ int moduleMiniPipeline::Run() {
             q.bindValue(":mpjobid", mpjobid);
             n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
             if (q.size() < 1) {
-                n->WriteLog("This job's status is no longer 'pending'");
+                n->Log("This job's status is no longer 'pending'");
                 continue;
             }
 
@@ -109,24 +109,24 @@ int moduleMiniPipeline::Run() {
 
                 minipipeline mp(mpid, n); /* get the analysis info */
                 if (!mp.isValid) {
-                    AppendMiniPipelineLog(n->WriteLog("mini-pipeline was not valid: [" + mp.msg + "]"), mpjobid);
+                    AppendMiniPipelineLog(n->Log("mini-pipeline was not valid: [" + mp.msg + "]"), mpjobid);
                     continue;
                 }
 
                 series s(seriesid, modality, n); /* get the series info */
                 if (!s.isValid) {
-                    AppendMiniPipelineLog(n->WriteLog("Series was not valid: [" + s.msg + "]"), mpjobid);
+                    AppendMiniPipelineLog(n->Log("Series was not valid: [" + s.msg + "]"), mpjobid);
                     return 0;
                 }
                 enrollmentID = s.enrollmentid;
 
-                AppendMiniPipelineLog(n->WriteLog("Running mini-pipeline [" + mp.name + "] on [" + s.datapath + "]"), mpjobid);
+                AppendMiniPipelineLog(n->Log("Running mini-pipeline [" + mp.name + "] on [" + s.datapath + "]"), mpjobid);
 
                 /* (1) create a temp space */
                 QString m;
                 QString tmpdir = "/tmp/" + GenerateRandomString(10);
                 if (!MakePath(tmpdir, m))
-                    AppendMiniPipelineLog(n->WriteLog("Error creating directory [" + tmpdir + "] error message [" + m + "]"), mpjobid);
+                    AppendMiniPipelineLog(n->Log("Error creating directory [" + tmpdir + "] error message [" + m + "]"), mpjobid);
                 else {
                     /* (2) write the script files */
                     if (mp.WriteScripts(tmpdir, m)) {
@@ -135,23 +135,23 @@ int moduleMiniPipeline::Run() {
                         QString m;
                         qint64 c = CopyAllSeriesData(modality, seriesid, tmpdir, m);
                         if (c > 0)
-                            AppendMiniPipelineLog(n->WriteLog(QString("Copied [%1] files to [%2]").arg(c).arg(tmpdir)), mpjobid);
+                            AppendMiniPipelineLog(n->Log(QString("Copied [%1] files to [%2]").arg(c).arg(tmpdir)), mpjobid);
                         else
-                            AppendMiniPipelineLog(n->WriteLog("Did not copy any series from data directory. Message from CopyAllSeriesData() [" + m + "]"), mpjobid);
+                            AppendMiniPipelineLog(n->Log("Did not copy any series from data directory. Message from CopyAllSeriesData() [" + m + "]"), mpjobid);
 
                         /* (4) execute the script (sandboxed to the tmp directory), and limit execution time to 5 minutes */
                         QString systemstring = mp.entrypoint;
                         QString output = "";
                         SandboxedSystemCommand(systemstring, tmpdir, output, "00:05:00", true, false);
-                        AppendMiniPipelineLog(n->WriteLog(output), mpjobid);
+                        AppendMiniPipelineLog(n->Log(output), mpjobid);
 
                         /* (5) parse the output */
                         QString outfilename = tmpdir + "/output.csv";
                         QFile f(outfilename);
                         if (f.exists())
-                            AppendMiniPipelineLog(n->WriteLog("[" + outfilename + "] exists"), mpjobid);
+                            AppendMiniPipelineLog(n->Log("[" + outfilename + "] exists"), mpjobid);
                         else
-                            AppendMiniPipelineLog(n->WriteLog("[" + outfilename + "] does not exist"), mpjobid);
+                            AppendMiniPipelineLog(n->Log("[" + outfilename + "] does not exist"), mpjobid);
 
                         if (f.open(QFile::ReadOnly | QFile::Text)) {
                             QTextStream in(&f);
@@ -200,15 +200,15 @@ int moduleMiniPipeline::Run() {
 
                                     /* check the variable name */
                                     if (csvVariableName == "")
-                                        AppendMiniPipelineLog(n->WriteLog(QString("variablename was blank for line %1").arg(i)), mpjobid);
+                                        AppendMiniPipelineLog(n->Log(QString("variablename was blank for line %1").arg(i)), mpjobid);
                                     /* check the value name */
                                     if (csvValue == "")
-                                        AppendMiniPipelineLog(n->WriteLog(QString("value was blank for line %1").arg(i)), mpjobid);
+                                        AppendMiniPipelineLog(n->Log(QString("value was blank for line %1").arg(i)), mpjobid);
 
                                     /* check and reformat the startDate */
                                     QDateTime startDate;
                                     if (csvStartDate == "")
-                                        AppendMiniPipelineLog(n->WriteLog(QString("startdate was blank for line %1").arg(i)), mpjobid);
+                                        AppendMiniPipelineLog(n->Log(QString("startdate was blank for line %1").arg(i)), mpjobid);
                                     else {
                                         QStringList sdparts = csvStartDate.split(" ");
                                         if (sdparts.size() == 1)
@@ -243,9 +243,9 @@ int moduleMiniPipeline::Run() {
 
                                     /* check for valid dates */
                                     if (!startDate.isValid())
-                                        AppendMiniPipelineLog(n->WriteLog("Error. Invalid start date [" + csvStartDate + "]"), mpjobid);
+                                        AppendMiniPipelineLog(n->Log("Error. Invalid start date [" + csvStartDate + "]"), mpjobid);
                                     if (!endDate.isValid())
-                                        AppendMiniPipelineLog(n->WriteLog("Invalid end date [" + csvEndDate + "]"), mpjobid);
+                                        AppendMiniPipelineLog(n->Log("Invalid end date [" + csvEndDate + "]"), mpjobid);
 
                                     /* insert the value */
                                     //QSqlQuery q2;
@@ -264,31 +264,31 @@ int moduleMiniPipeline::Run() {
                                         numInserts += InsertDrug(enrollmentID, startDate, endDate, csvValue, "", "", "", "", "", "", 0.0, "");
                                     }
                                     else {
-                                        AppendMiniPipelineLog(n->WriteLog("Error. Invalid value type [" + csvType + "]"), mpjobid);
+                                        AppendMiniPipelineLog(n->Log("Error. Invalid value type [" + csvType + "]"), mpjobid);
                                     }
                                 }
                             }
                             else {
-                                AppendMiniPipelineLog(n->WriteLog("Error. Unable to parse csv output file. Message(s) from parser [" + m + "]"), mpjobid);
+                                AppendMiniPipelineLog(n->Log("Error. Unable to parse csv output file. Message(s) from parser [" + m + "]"), mpjobid);
                             }
                         }
                         else {
-                            AppendMiniPipelineLog(n->WriteLog("Error. Unable to read .csv output file [" + outfilename + "]"), mpjobid);
+                            AppendMiniPipelineLog(n->Log("Error. Unable to read .csv output file [" + outfilename + "]"), mpjobid);
                         }
                     }
                     else
-                        AppendMiniPipelineLog(n->WriteLog("Error. Unable to write scripts to [" + tmpdir + "] error message [" + m + "]"), mpjobid);
+                        AppendMiniPipelineLog(n->Log("Error. Unable to write scripts to [" + tmpdir + "] error message [" + m + "]"), mpjobid);
 
                     /* (6) cleanup */
                     if (!RemoveDir(tmpdir, m))
-                        AppendMiniPipelineLog(n->WriteLog("Error deleting directory [" + tmpdir + "] error message [" + m + "]"), mpjobid);
+                        AppendMiniPipelineLog(n->Log("Error deleting directory [" + tmpdir + "] error message [" + m + "]"), mpjobid);
                     else
-                        AppendMiniPipelineLog(n->WriteLog("Deleted temp directory [" + tmpdir + "]"), mpjobid);
+                        AppendMiniPipelineLog(n->Log("Deleted temp directory [" + tmpdir + "]"), mpjobid);
                 }
             }
             else {
                 /* the minipipeline specified by this job was not found, set an error */
-                AppendMiniPipelineLog(n->WriteLog("The pipeline specified was not found. Maybe it was deleted since this job was submitted?"), mpjobid);
+                AppendMiniPipelineLog(n->Log("The pipeline specified was not found. Maybe it was deleted since this job was submitted?"), mpjobid);
             }
 
             /* done running the job - update the status and log */
@@ -299,10 +299,10 @@ int moduleMiniPipeline::Run() {
         }
     }
     else {
-        n->WriteLog("Nothing to run");
+        n->Log("Nothing to run");
     }
 
-    n->WriteLog("Leaving the minipipeline module");
+    n->Log("Leaving the minipipeline module");
 
     if (numJobsRun > 0)
         return 1;

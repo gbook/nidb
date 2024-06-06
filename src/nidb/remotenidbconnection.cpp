@@ -91,5 +91,5 @@ void remoteNiDBConnection::PrintConnectionInfo() {
 	output += QString("   projectid: [%1]\n").arg(projectid);
 	output += QString("   siteid: [%1]\n").arg(siteid);
 
-	n->WriteLog(output);
+	n->Log(output);
 }

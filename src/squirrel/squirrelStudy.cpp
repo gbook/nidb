@@ -230,6 +230,35 @@ void squirrelStudy::PrintStudy() {
 
 
 /* ------------------------------------------------------------ */
+/* ----- PrintTree -------------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief Print study tree items
+ */
+void squirrelStudy::PrintTree(bool isLast) {
+
+    if (isLast)
+        utils::Print(QString("       └─── Study %1 - Datetime %2  Modality %3").arg(StudyNumber).arg(DateTime.toString("yyyy-MM-dd HH:mm:ss")).arg(Modality));
+    else
+        utils::Print(QString("   │   ├─── Study %1 - Datetime %2  Modality %3").arg(StudyNumber).arg(DateTime.toString("yyyy-MM-dd HH:mm:ss")).arg(Modality));
+
+    /* print all series for this study */
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
+    q.prepare("select SeriesRowID from Series where StudyRowID = :studyid");
+    q.bindValue(":studyid", objectID);
+    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    while (q.next()) {
+        qint64 seriesRowID = q.value("SeriesRowID").toLongLong();
+        squirrelSeries ser;
+        ser.SetObjectID(seriesRowID);
+        if (ser.Get()) {
+            ser.PrintTree(false);
+        }
+    }
+}
+
+
+/* ------------------------------------------------------------ */
 /* ----- ToJSON ----------------------------------------------- */
 /* ------------------------------------------------------------ */
 /**
@@ -358,4 +387,22 @@ QList<QPair<QString,QString>> squirrelStudy::GetStagedFileList() {
     }
 
     return stagedList;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- GetNextSeriesNumber ---------------------------------- */
+/* ------------------------------------------------------------ */
+int squirrelStudy::GetNextSeriesNumber() {
+    int nextSeriesNum = 1;
+
+    /* get the next series number for this study */
+    QSqlQuery q(QSqlDatabase::database("squirrel"));
+    q.prepare("select max(SeriesNumber) 'Max' from Series where StudyRowID = :id");
+    q.bindValue(":id", objectID);
+    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.next())
+        nextSeriesNum = q.value("Max").toInt() + 1;
+
+    return nextSeriesNum;
 }
