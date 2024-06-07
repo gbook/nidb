@@ -332,7 +332,7 @@
 						<i class="large <?=$icon2?> icon"></i> <b>Backup your database</b>
 						<p style="color: black"> Upgrade cannot continue until the backup <code><?=$backupfile?></code> exists (yes, even during the initial install. This will make sure you are familiar with the database backup process). Use the following command to backup your database. Replace PASSWORD with the <tt>nidb</tt> account password. This will be <tt>password</tt> for the initial install.</p>
 						<div class="ui fluid action input">
-							<input type="text" value="mysqldump --single-transaction --compact -u<?=$GLOBALS['cfg']['mysqluser']?> -pPASSWORD <?=$GLOBALS['cfg']['mysqldatabase']?> &gt; <?=$backupfile?>" style="font-family: monospace" id="backuptxt">
+							<input type="text" value="mysqldump --max_allowed_packet=1G --single-transaction --compact -u<?=$GLOBALS['cfg']['mysqluser']?> -pPASSWORD <?=$GLOBALS['cfg']['mysqldatabase']?> &gt; <?=$backupfile?>" style="font-family: monospace" id="backuptxt">
 							<button class="ui button" onClick="CopyToClipboard('backuptxt')" title="Copy only works when HTTPS is enabled :("><i class="copy icon"></i> Copy</button>
 						</div>
 						<p style="color: black">Run the above command, then come back to this page and refresh.</p>

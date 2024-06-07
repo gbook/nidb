@@ -70,6 +70,7 @@
 	$subjectids = GetVariable("subjectids");
 	$studyids = GetVariable("studyids");
 	$seriesids = GetVariable("seriesids");
+	$seriesid = GetVariable("seriesid"); /* from the search page this variable is 'seriesid', but will contain multiple values */
 	$experimentids = GetVariable("experimentids");
 	$analysisids = GetVariable("analysisids");
 	$pipelineids = GetVariable("pipelineids");
@@ -84,6 +85,10 @@
 
 	if (count($seriesids) > 0)
 		$objectids = $seriesids;
+	if (count($seriesid) > 0)
+		$objectids = $seriesid;
+	
+	//PrintVariable($objectids);
 	
 	/* determine action */
 	if ($selfcall) {
@@ -137,10 +142,18 @@
 	/* -------------------------------------------- */
 	function AddObjectForm($objecttype, $objectids, $modality) {
 
+		//PrintVariable($objecttype);
+		//PrintVariable($objectids);
+		//PrintVariable($modality);
+
 		/* perform data checks */
 		$objecttype = mysqli_real_escape_string($GLOBALS['linki'], $objecttype);
 		$objectids = mysqli_real_escape_array($GLOBALS['linki'], $objectids);
 		$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
+
+		//PrintVariable($objecttype);
+		//PrintVariable($objectids);
+		//PrintVariable($modality);
 
 		switch ($objecttype) {
 			case "enrollment":
@@ -412,7 +425,10 @@
 	/* -------------------------------------------- */
 	function DisplayAddSeriesForm($seriesids, $modality) {
 		
-		if (count($seriesids < 1)) {
+		//PrintVariable($seriesids);
+		//PrintVariable($modality);
+		
+		if (count($seriesids) < 1) {
 			Error("0 seriesids passed into function");
 			return;
 		}
@@ -421,15 +437,19 @@
 		
 		/* get subject info. there may be series from multiple subjects in this list */
 		$sqlstring = "select * from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$modality" . "series_id in (" . $seriesidstr . ")";
+		PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$numseries = mysqli_num_rows($result);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			//echo "Hello";
 			$enrollmentids[] = $row['enrollment_id'];
 			$subjectids[] = $row['subject_id'];
 			$studyids[] = $row['study_id'];
 			$projectids[] = $row['project_id'];
-			if ($row[$modality . '_seriesid'] != "")
-				$seriesids2[$modality][] = $row[$modality . '_seriesid'];
+			//echo $modality . "series_id";
+			//echo $row[$modality . "series_id"];
+			if ($row[$modality . "series_id"] != "")
+				$seriesids2[$modality][] = $row[$modality . 'series_id'];
 
 			if (trim($row['series_desc']) == "")
 				$seriesdesc = $row['series_protocol'];
@@ -477,6 +497,8 @@
 		}
 		$experimentids = array_unique($experimentids);
 		
+		//PrintVariable($seriesids2);
+		
 		?>
 		
 		<div class="ui container">
@@ -490,7 +512,7 @@
 					<br>
 					<? DisplayFormStudies($studyids, true); ?>
 					<br>
-					<? DisplayFormSeries($seriesids, true); ?>
+					<? DisplayFormSeries($seriesids2, true); ?>
 					
 					<h2>Optional related objects</h3>
 					<? DisplayFormExperiments($experimentids, false); ?>

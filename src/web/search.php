@@ -1748,6 +1748,7 @@
 		<form name="subjectlist" method="post" action="search.php" class="ui form">
 		<input type="hidden" name="modality" value="<?=$s_studymodality?>">
 		<input type="hidden" name="action" value="submit">
+		<input type="hidden" name="objecttype" value="series">
 		<?
 		
 		/* if its MRI, get the basic QC data */
@@ -4669,7 +4670,10 @@
 						<div class="ui primary button" onclick="document.subjectlist.action='studies.php';document.subjectlist.action.value='submitminipipelines';document.subjectlist.submit();">Run</div>
 					</div>
 					<div class="ui horizontal left aligned divider">Batch Upload Data</div>
-					<div class="ui primary button" onclick="document.subjectlist.action='batchupload.php';document.subjectlist.action.value='displaystudylist';document.subjectlist.submit();">Upload</div>
+						<div class="ui primary button" onclick="document.subjectlist.action='batchupload.php';document.subjectlist.action.value='displaystudylist';document.subjectlist.submit();">Upload</div>
+					<div class="ui horizontal left aligned divider">Add to Package</div>
+						<!--<div class="ui primary button" onclick="document.subjectlist.action='batchupload.php';document.subjectlist.action.value='displaystudylist';document.subjectlist.submit();">Upload</div>-->
+						<div class="ui primary basic brown button" onclick="document.subjectlist.action='packages.php';document.subjectlist.action.value='addobject';document.subjectlist.submit();"><em data-emoji=":chipmunk:"></em> Add to Package</div>
 				</div>
 			
 				<br><br>
