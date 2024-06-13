@@ -975,6 +975,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
         bool useseries = datadef[i].flags.useSeries;
         bool preserveseries = datadef[i].flags.preserveSeries;
         bool usephasedir = datadef[i].flags.usePhaseDir;
+        bool behonly = datadef[i].flags.behOnly;
         QString behformat = datadef[i].behformat;
         QString behdir = datadef[i].behdir;
         bool enabled = datadef[i].flags.enabled;
@@ -1257,53 +1258,55 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
 
                 SystemCommand("chmod -Rf 777 " + newanalysispath, true, true);
 
-                /* output the correct file type */
-                if ((dataformat == "dicom") || ((datatype != "dicom") && (datatype != "parrec"))) {
-                    QString systemstring;
-                    if (p.dataCopyMethod == "scp")
-                        systemstring = QString("scp %1/* %2\\@%3:%4").arg(indir).arg(n->cfg["clusteruser"]).arg(p.clusterSubmitHost).arg(newanalysispath);
-                    else
-                        systemstring = QString("cp -v %1/* %2").arg(indir).arg(newanalysispath);
-                    n->Debug(SystemCommand(systemstring, true, true));
+                if (!behonly) {
+                    /* output the correct file type */
+                    if ((dataformat == "dicom") || ((datatype != "dicom") && (datatype != "parrec"))) {
+                        QString systemstring;
+                        if (p.dataCopyMethod == "scp")
+                            systemstring = QString("scp %1/* %2\\@%3:%4").arg(indir).arg(n->cfg["clusteruser"]).arg(p.clusterSubmitHost).arg(newanalysispath);
+                        else
+                            systemstring = QString("cp -v %1/* %2").arg(indir).arg(newanalysispath);
+                        n->Debug(SystemCommand(systemstring, true, true));
 
-                    dlog << n->Log(QString("Finished copying imaging data from [%1] to [%2]").arg(indir).arg(newanalysispath), __FUNCTION__);
+                        dlog << n->Log(QString("Finished copying imaging data from [%1] to [%2]").arg(indir).arg(newanalysispath), __FUNCTION__);
 
-                    qint64 c;
-                    qint64 b;
-                    GetDirSizeAndFileCount(newanalysispath, c, b, true);
-                    dlog << n->Log(QString("Imaging data output directory [%1] now contains [%2] files, and is [%3] bytes in size.").arg(newanalysispath).arg(c).arg(b), __FUNCTION__);
-                }
-                else {
-                    QString tmpdir = n->cfg["tmpdir"] + "/" + GenerateRandomString(10);
-                    QString m;
-                    if (!MakePath(tmpdir, m)) {
-                        dlog << n->Log("Error: unable to create temp directory [" + tmpdir + "] message [" + m + "] for DICOM conversion", __FUNCTION__);
-                        UpdateAnalysisStatus(analysisid, "error", "Unable to create directory [" + newanalysispath + "]", 0, -1, "", "", false, true, -1, -1);
+                        qint64 c;
+                        qint64 b;
+                        GetDirSizeAndFileCount(newanalysispath, c, b, true);
+                        dlog << n->Log(QString("Imaging data output directory [%1] now contains [%2] files, and is [%3] bytes in size.").arg(newanalysispath).arg(c).arg(b), __FUNCTION__);
                     }
-                    else
-                        dlog << n->Debug("Created temp directory [" + tmpdir + "] for DICOM conversion", __FUNCTION__);
-                    int numfilesconv(0);
-                    int numfilesrenamed(0);
-                    QString binpath = n->cfg["nidbdir"] + "/bin";
-                    img->ConvertDicom(dataformat, indir, tmpdir, binpath, gzip, false, uid, QString("%1").arg(localstudynum), QString("%1").arg(seriesnum), datatype, numfilesconv, numfilesrenamed, m);
+                    else {
+                        QString tmpdir = n->cfg["tmpdir"] + "/" + GenerateRandomString(10);
+                        QString m;
+                        if (!MakePath(tmpdir, m)) {
+                            dlog << n->Log("Error: unable to create temp directory [" + tmpdir + "] message [" + m + "] for DICOM conversion", __FUNCTION__);
+                            UpdateAnalysisStatus(analysisid, "error", "Unable to create directory [" + newanalysispath + "]", 0, -1, "", "", false, true, -1, -1);
+                        }
+                        else
+                            dlog << n->Debug("Created temp directory [" + tmpdir + "] for DICOM conversion", __FUNCTION__);
+                        int numfilesconv(0);
+                        int numfilesrenamed(0);
+                        QString binpath = n->cfg["nidbdir"] + "/bin";
+                        img->ConvertDicom(dataformat, indir, tmpdir, binpath, gzip, false, uid, QString("%1").arg(localstudynum), QString("%1").arg(seriesnum), datatype, numfilesconv, numfilesrenamed, m);
 
-                    QString systemstring;
-                    if (p.dataCopyMethod == "scp")
-                        systemstring = QString("scp %1/* %2\\@%3:%4").arg(tmpdir).arg(n->cfg["clusteruser"]).arg(p.clusterSubmitHost).arg(newanalysispath);
-                    else
-                        systemstring = QString("cp -v %1/* %2").arg(tmpdir).arg(newanalysispath);
-                    n->Log(SystemCommand(systemstring, true, true));
+                        QString systemstring;
+                        if (p.dataCopyMethod == "scp")
+                            systemstring = QString("scp %1/* %2\\@%3:%4").arg(tmpdir).arg(n->cfg["clusteruser"]).arg(p.clusterSubmitHost).arg(newanalysispath);
+                        else
+                            systemstring = QString("cp -v %1/* %2").arg(tmpdir).arg(newanalysispath);
+                        n->Log(SystemCommand(systemstring, true, true));
 
-                    dlog << "Removing temp directory [" + tmpdir + "]";
-                    if (!RemoveDir(tmpdir,m))
-                        dlog << n->Log("Error: unable to remove temp directory [" + tmpdir + "] error [" + m + "]", __FUNCTION__);
+                        dlog << "Removing temp directory [" + tmpdir + "]";
+                        if (!RemoveDir(tmpdir,m))
+                            dlog << n->Log("Error: unable to remove temp directory [" + tmpdir + "] error [" + m + "]", __FUNCTION__);
 
-                    dlog << QString("\tDone copying converted imaging data from [%1] via [%2] to [%3]").arg(indir).arg(tmpdir).arg(newanalysispath);
+                        dlog << QString("\tDone copying converted imaging data from [%1] via [%2] to [%3]").arg(indir).arg(tmpdir).arg(newanalysispath);
 
-                    qint64 c;
-                    qint64 b;
-                    GetDirSizeAndFileCount(newanalysispath, c, b, true);
-                    dlog << n->Debug(QString("Imaging output directory [%1] now contains [%2] files, and is [%3] bytes in size.").arg(newanalysispath).arg(c).arg(b), __FUNCTION__);
+                        qint64 c;
+                        qint64 b;
+                        GetDirSizeAndFileCount(newanalysispath, c, b, true);
+                        dlog << n->Debug(QString("Imaging output directory [%1] now contains [%2] files, and is [%3] bytes in size.").arg(newanalysispath).arg(c).arg(b), __FUNCTION__);
+                    }
                 }
 
                 RecordDataDownload(datadownloadid, analysisid, modality, 1, 1, seriesid, newanalysispath, i, "Data downloaded");
@@ -1758,26 +1761,28 @@ QList<dataDefinitionStep> modulePipeline::GetPipelineDataDef(int pipelineid, int
     if (q.size() > 0) {
         while (q.next()) {
             dataDefinitionStep rec;
-            rec.id = q.value("pipelinedatadef_id").toInt();
-            rec.order = q.value("pdd_order").toInt();
-            rec.type = q.value("pdd_type").toString().trimmed();
-            rec.criteria = q.value("pdd_seriescriteria").toString().trimmed();
             rec.assoctype = q.value("pdd_assoctype").toString().trimmed();
-            rec.protocol = q.value("pdd_protocol").toString().trimmed();
-            rec.modality = q.value("pdd_modality").toString().trimmed();
+            rec.behdir = q.value("pdd_behdir").toString().trimmed();
+            rec.behformat = q.value("pdd_behformat").toString().trimmed();
+            rec.criteria = q.value("pdd_seriescriteria").toString().trimmed();
             rec.dataformat = q.value("pdd_dataformat").toString().trimmed();
-            rec.imagetype = q.value("pdd_imagetype").toString().trimmed();
+            rec.flags.behOnly = q.value("pdd_behonly").toBool();
+            rec.flags.enabled = q.value("pdd_enabled").toBool();
             rec.flags.gzip = q.value("pdd_gzip").toBool();
-            rec.location = q.value("pdd_location").toString().trimmed();
-            rec.flags.useSeries = q.value("pdd_useseries").toBool();
+            rec.flags.optional = q.value("pdd_optional").toBool();
             rec.flags.preserveSeries = q.value("pdd_preserveseries").toBool();
             rec.flags.usePhaseDir = q.value("pdd_usephasedir").toBool();
-            rec.behformat = q.value("pdd_behformat").toString().trimmed();
-            rec.behdir = q.value("pdd_behdir").toString().trimmed();
-            rec.flags.enabled = q.value("pdd_enabled").toBool();
-            rec.flags.optional = q.value("pdd_optional").toBool();
-            rec.numboldreps = q.value("pdd_numboldreps").toString().trimmed();
+            rec.flags.behOnly = q.value("pdd_behonly").toBool();
+            rec.flags.useSeries = q.value("pdd_useseries").toBool();
+            rec.id = q.value("pipelinedatadef_id").toInt();
+            rec.imagetype = q.value("pdd_imagetype").toString().trimmed();
             rec.level = q.value("pdd_level").toString().trimmed();
+            rec.location = q.value("pdd_location").toString().trimmed();
+            rec.modality = q.value("pdd_modality").toString().trimmed();
+            rec.numboldreps = q.value("pdd_numboldreps").toString().trimmed();
+            rec.order = q.value("pdd_order").toInt();
+            rec.protocol = q.value("pdd_protocol").toString().trimmed();
+            rec.type = q.value("pdd_type").toString().trimmed();
             rec.datadownloadid = -1;
             datadef.append(rec);
         }

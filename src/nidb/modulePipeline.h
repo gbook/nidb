@@ -72,6 +72,7 @@ struct dataDefinitionStep {
 		bool primaryProtocol; /*!< true if this is the primary protocol. this determines if this study will be used as the parent for child pipelines */
 		bool usePhaseDir; /*!< whether to place data into a sub-directory based on the phase-encoding direction */
 		bool useSeries; /*!< true to write each series to an individually numbered directory, otherwise write it to the directory specified in 'location' */
+        bool behOnly; // download behavioral data only, no imaging data
 	} flags;
 };
 

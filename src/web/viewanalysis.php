@@ -93,7 +93,6 @@
 				$commands['reg'][$ps_order] = $ps_command;
 			}
 		}
-		//PrintVariable($descriptions);
 		
 		/* build the correct path */
 		if (($pipeline_level == 1) && ($pipelinedirectory == "")) {
@@ -103,7 +102,6 @@
 			else {
 				$path = $GLOBALS['cfg']['analysisdir'] . "/$uid/$studynum/$pipelinename/pipeline";
 			}
-			//echo "(1) Path is [$path]<br>";
 		}
 		elseif (($pipeline_level == 0) || ($pipelinedirectory != "")) {
 			
@@ -113,12 +111,9 @@
 			else {
 				$path = $GLOBALS['cfg']['analysisdir'] . "/$uid/$studynum/$pipelinename/pipeline";
 			}
-			
-			//echo "(2) Path is [$path]<br>";
 		}
 		else {
 			$path = $GLOBALS['cfg']['groupanalysisdir'] . "/$pipelinename/pipeline";
-			//echo "(3) Path is [$path]<br>";
 		}
 		
 		/* check if the path exists */
@@ -133,28 +128,18 @@
 			foreach ($logs as $log) {
 				$file = file_get_contents("$path/$log");
 				$size = filesize("$path/$log");
-				$filedate = date ("F d Y H:i:s.", filemtime("$path/$log"));
+				$filedate = date ("F d Y H:i:s", filemtime("$path/$log"));
 				
-				if (preg_match('/^step(\d*)\.log/', $log, $matches)) {
-					//echo "<pre>";
-					//print_r($matches);
-					//echo "</pre>";
-					$step = $matches[1];
-					$command = $commands['reg'][$step];
-					$desc = $descriptions['reg'][$step];
+				if (substr($log, 0, 4) == "Step") {
+					$stepnum = str_replace("Step", "", $log) - 1;
+					$command = $commands['reg'][$stepnum];
+					$desc = $descriptions['reg'][$stepnum];
 				}
-				elseif (preg_match('/^supplement-step(\d*)\.log/', $log, $matches)) {
-					//echo "<pre>";
-					//print_r($matches);
-					//echo "</pre>";
-					$step = $matches[1];
-					$command = $commands['supp'][$step];
-					$desc = $descriptions['supp'][$step];
-				}
+				
 				?>
 				<details>
-					<summary><?="<b>$log</b>"?> <span class="tiny"><?=number_format($size)?> bytes - <?=$filedate?></style> &nbsp; <span style="color: darkred;"><?=$desc?></span></span></summary>
-					<pre style="font-size:9pt; background-color: #EEEEEE">
+					<summary><?="<b>$log</b>"?> <span class="tiny"><?=number_format($size)?> bytes - <?=$filedate?></span> &nbsp; <div class="ui basic label"><tt><?=$command?></tt></div> <div class="ui green label"><?=$desc?></div></summary>
+					<pre style="font-size:9pt; background-color: #EEEEEE; padding: 6px">
 <?=$file?>
 					</pre>
 				</details>
@@ -185,9 +170,7 @@
 		$pipelinedirectory = $row['pipeline_directory'];
 		$pipelinedirstructure = $row['pipeline_dirstructure'];
 		
-		//$path = $GLOBALS['pipelinedatapath'] . "/$uid/$studynum/$pipelinename/";
 		/* build the correct path */
-		//if (($pipeline_level == 1) && ($pipelinedirectory == "")) {
 		if ($pipeline_level == 1) {
 			if ($pipelinedirstructure == "b") {
 				$path = $GLOBALS['cfg']['analysisdirb'] . "/$pipelinename/$uid/$studynum";
@@ -195,23 +178,21 @@
 			else {
 				$path = $GLOBALS['cfg']['analysisdir'] . "/$uid/$studynum/$pipelinename";
 			}
-			echo "(1) Path is [$path]<br>";
+			#echo "(1) Path is [$path]<br>";
 		}
-		//elseif (($pipeline_level == 0) || ($pipelinedirectory != "")) {
 		elseif ($pipeline_level == 0) {
 			$path = "$pipelinedirectory/$uid/$studynum/$pipelinename";
-			echo "(2) Path is [$path]<br>";
+			#echo "(2) Path is [$path]<br>";
 		}
 		else {
 			$path = $GLOBALS['cfg']['groupanalysisdir'] . "/$pipelinename";
-			echo "(3) Path is [$path]<br>";
+			#echo "(3) Path is [$path]<br>";
 		}
 		
 		$origfileslog = $path . "origfiles.log";
 		$finfo = finfo_open(FILEINFO_MIME);
 		if ((!file_exists($origfileslog)) || ($fileviewtype == "filesystem")) {
 			$files = find_all_files($path);
-			//print_r($files);
 			?>
 			Showing files from <b><?=$path?></b> (<?=count($files)?> files) <span class="tiny">Reading from filesystem</span>
 			<br><br>
@@ -863,14 +844,14 @@
 			<div class="three wide column">&nbsp;</div>
 			<div class="center aligned two wide column">
 				<div class="ui center aligned inverted blue segment" style="height:100%;">
-					<h2>Cluster</h2>
+					<h2><em data-emoji=":gear:"></em>Cluster</h2>
 				</div>
 			</div>
 			<div class="eleven wide column">
 				<div class="ui grey segment">
 					<div class="ui accordion">
 						<div class="title">
-							<h3 class="ui header"><i class="dropdown icon"></i>History</h3>
+							<h3 class="ui header"><i class="dropdown icon"></i> Pipeline history/timeline</h3>
 						</div>
 						<div class="content" style="height: 400px; overflow: auto">
 							<table class="ui very compact celled table">
@@ -930,7 +911,7 @@
 						</div>
 					
 						<div class="title">
-							<h3 class="ui header"><i class="dropdown icon"></i>Log files</h3>
+							<h3 class="ui header"><i class="dropdown icon"></i> Log files</h3>
 						</div>
 						<div class="content" style="height: 400px; overflow: auto">
 							<? DisplayLogs($analysisid); ?>
@@ -946,7 +927,7 @@
 			<div class="three wide column">&nbsp;</div>
 			<div class="center aligned two wide column">
 				<div class="ui center aligned inverted blue segment" style="height:100%;">
-					<h2>Results</h2>
+					<h2><em data-emoji=":bar_chart:"></em>Results</h2>
 				</div>
 			</div>
 			<div class="eleven wide column">
@@ -993,6 +974,8 @@
 							<td><?=$numhtml?></td>
 						</tr>
 					</table>
+					<a class="ui basic button" href="viewanalysis.php?action=viewresults&analysisid=<?=$analysisid?>&studyid=<?=$studyid?>" target="_viewresults" title="View analysis results">View all results</a>
+					<a class="ui basic button" href="viewanalysis.php?action=viewfiles&analysisid=<?=$analysisid?>" target="_viewfiles" title="View file listing"><i class="folder open outline icon"></i> View all files</a>
 				</div>
 			</div>
 		</div>

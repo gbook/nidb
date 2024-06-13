@@ -119,6 +119,7 @@
 	$dd_isprimary = GetVariable("dd_isprimary");
 	$dd_preserveseries = GetVariable("dd_preserveseries");
 	$dd_usephasedir = GetVariable("dd_usephasedir");
+	$dd_behonly = GetVariable("dd_behonly");
 	
 	$returnpage = GetVariable("returnpage");
 	$returntab = GetVariable("returntab");
@@ -135,7 +136,7 @@
 			DisplayPipelineForm("add", "", $returntab);
 			break;
 		case 'updatepipelineoptions':
-			UpdatePipelineOptions($id, $commandlist, $supplementcommandlist, $steporder, $dd_enabled, $dd_order, $dd_protocol, $dd_modality, $dd_datalevel, $dd_studyassoc, $dd_dataformat, $dd_imagetype, $dd_gzip, $dd_location, $dd_seriescriteria, $dd_numboldreps, $dd_behformat, $dd_behdir, $dd_useseriesdirs, $dd_optional, $dd_isprimary, $dd_preserveseries, $dd_usephasedir, $pipelineresultsscript, $completefiles, $deplevel, $depdir, $deplinktype, $groupid, $projectid, $dependency, $groupbysubject, $outputbids);
+			UpdatePipelineOptions($id, $commandlist, $supplementcommandlist, $steporder, $dd_enabled, $dd_order, $dd_protocol, $dd_modality, $dd_datalevel, $dd_studyassoc, $dd_dataformat, $dd_imagetype, $dd_gzip, $dd_location, $dd_seriescriteria, $dd_numboldreps, $dd_behformat, $dd_behdir, $dd_useseriesdirs, $dd_optional, $dd_isprimary, $dd_preserveseries, $dd_usephasedir, $dd_behonly, $pipelineresultsscript, $completefiles, $deplevel, $depdir, $deplinktype, $groupid, $projectid, $dependency, $groupbysubject, $outputbids);
 			DisplayPipelineForm("edit", $id, $returntab);
 			break;
 		case 'update':
@@ -278,7 +279,7 @@
 	/* -------------------------------------------- */
 	/* this function CHANGES the version number     */
 	/* -------------------------------------------- */
-	function UpdatePipelineOptions($id, $commandlist, $supplementcommandlist, $steporder, $dd_enabled, $dd_order, $dd_protocol, $dd_modality, $dd_datalevel, $dd_studyassoc, $dd_dataformat, $dd_imagetype, $dd_gzip, $dd_location, $dd_seriescriteria, $dd_numboldreps, $dd_behformat, $dd_behdir, $dd_useseriesdirs, $dd_optional, $dd_isprimary, $dd_preserveseries, $dd_usephasedir, $pipelineresultsscript, $completefiles, $deplevel, $depdir, $deplinktype, $groupid, $projectid, $dependency, $groupbysubject, $outputbids) {
+	function UpdatePipelineOptions($id, $commandlist, $supplementcommandlist, $steporder, $dd_enabled, $dd_order, $dd_protocol, $dd_modality, $dd_datalevel, $dd_studyassoc, $dd_dataformat, $dd_imagetype, $dd_gzip, $dd_location, $dd_seriescriteria, $dd_numboldreps, $dd_behformat, $dd_behdir, $dd_useseriesdirs, $dd_optional, $dd_isprimary, $dd_preserveseries, $dd_usephasedir, $dd_behonly, $pipelineresultsscript, $completefiles, $deplevel, $depdir, $deplinktype, $groupid, $projectid, $dependency, $groupbysubject, $outputbids) {
 		
 		if (!ValidID($id,'Pipeline ID - C')) { return; }
 
@@ -517,10 +518,11 @@
 				//$dd_primary[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_primary[$i]) + 0;
 				$dd_preserveseries[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_preserveseries[$i]) + 0;
 				$dd_usephasedir[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_usephasedir[$i]) + 0;
+				$dd_behonly[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_behonly[$i]) + 0;
 				
 				if ($dd_isprimary == $dd_order[$i]) { $primary = "1"; } else { $primary = "0"; }
 				
-				$sqlstring = "insert into pipeline_data_def (pipeline_id, pipeline_version, pdd_isprimaryprotocol, pdd_order, pdd_seriescriteria, pdd_protocol, pdd_modality, pdd_dataformat, pdd_imagetype, pdd_gzip, pdd_location, pdd_useseries, pdd_preserveseries, pdd_usephasedir, pdd_behformat, pdd_behdir, pdd_enabled, pdd_optional, pdd_numboldreps, pdd_level, pdd_assoctype) values ($id, $newversion, $primary, '$dd_order[$i]', '$dd_seriescriteria[$i]', '$dd_protocol[$i]', '$dd_modality[$i]', '$dd_dataformat[$i]', '$dd_imagetype[$i]', '$dd_gzip[$i]', '$dd_location[$i]', '$dd_useseriesdirs[$i]', '$dd_preserveseries[$i]', '$dd_usephasedir[$i]', '$dd_behformat[$i]', '$dd_behdir[$i]', $dd_enabled[$i], '$dd_optional[$i]', '$dd_numboldreps[$i]', '$dd_datalevel[$i]', '$dd_studyassoc[$i]')";
+				$sqlstring = "insert into pipeline_data_def (pipeline_id, pipeline_version, pdd_isprimaryprotocol, pdd_order, pdd_seriescriteria, pdd_protocol, pdd_modality, pdd_dataformat, pdd_imagetype, pdd_gzip, pdd_location, pdd_useseries, pdd_preserveseries, pdd_usephasedir, pdd_behonly, pdd_behformat, pdd_behdir, pdd_enabled, pdd_optional, pdd_numboldreps, pdd_level, pdd_assoctype) values ($id, $newversion, $primary, '$dd_order[$i]', '$dd_seriescriteria[$i]', '$dd_protocol[$i]', '$dd_modality[$i]', '$dd_dataformat[$i]', '$dd_imagetype[$i]', '$dd_gzip[$i]', '$dd_location[$i]', '$dd_useseriesdirs[$i]', '$dd_preserveseries[$i]', '$dd_usephasedir[$i]', '$dd_behonly[$i]', '$dd_behformat[$i]', '$dd_behdir[$i]', $dd_enabled[$i], '$dd_optional[$i]', '$dd_numboldreps[$i]', '$dd_datalevel[$i]', '$dd_studyassoc[$i]')";
 				//PrintSQL($sqlstring);
 				$msg .= "<li>Inserted data definition [$dd_protocol[$i]]";
 				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -2191,6 +2193,7 @@
 					$dd_useseries = $row['pdd_useseries'];
 					$dd_preserveseries = $row['pdd_preserveseries'];
 					$dd_usephasedir = $row['pdd_usephasedir'];
+					$dd_behonly = $row['pdd_behonly'];
 					$dd_behformat = $row['pdd_behformat'];
 					$dd_behdir = $row['pdd_behdir'];
 					$dd_numboldreps = $row['pdd_numboldreps'];
@@ -2211,6 +2214,7 @@
 					$dd[$dd_order]['useseries'] = $row['pdd_useseries'];
 					$dd[$dd_order]['preserveseries'] = $row['pdd_preserveseries'];
 					$dd[$dd_order]['usephasedir'] = $row['pdd_usephasedir'];
+					$dd[$dd_order]['behonly'] = $row['pdd_behonly'];
 					$dd[$dd_order]['behformat'] = $row['pdd_behformat'];
 					$dd[$dd_order]['behdir'] = $row['pdd_behdir'];
 					$dd[$dd_order]['numboldreps'] = $row['pdd_numboldreps'];
@@ -2424,6 +2428,12 @@
 										<div class="ui checkbox">
 											<input type="checkbox" name="dd_usephasedir[<?=$neworder?>]" value="1" <? if ($dd_usephasedir) {echo "checked";} ?>>
 											<label>Phase encoding direction <i class="grey question outline circle icon" title="<b>Phase Encoding Direction</b> If selected, it will write the data to a subdirectory corresponding to the acquired phase encoding direction: AP, PA, RL, LR, COL, ROW, unknownPE"></i></label>
+										</div>
+									</div>
+									<div class="field">
+										<div class="ui checkbox">
+											<input type="checkbox" name="dd_behonly[<?=$neworder?>]" value="1" <? if ($dd_behonly) {echo "checked";} ?>>
+											<label>Download behavioral data only</label>
 										</div>
 									</div>
 									<div class="two fields">
@@ -2641,6 +2651,12 @@
 										<div class="ui checkbox">
 											<input type="checkbox" name="dd_usephasedir[<?=$neworder?>]" value="1">
 											<label>Phase encoding direction <i class="grey question outline circle icon" title="<b>Phase Encoding Direction</b> If selected, it will write the data to a subdirectory corresponding to the acquired phase encoding direction: AP, PA, RL, LR, COL, ROW, unknownPE"></i></label>
+										</div>
+									</div>
+									<div class="field">
+										<div class="ui checkbox">
+											<input type="checkbox" name="dd_behonly[<?=$neworder?>]" value="1">
+											<label>Download behavioral data only</label>
 										</div>
 									</div>
 									<div class="two fields">
@@ -3102,6 +3118,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 							<th>Use series?</th>
 							<th>Preserve series?</th>
 							<th>Use phase dir?</th>
+							<th>Beh only?</th>
 							<th>Beh format</th>
 							<th>Beh dir</th>
 						</tr>
@@ -3127,6 +3144,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 							$pdd_useseries = $row['pdd_useseries'];
 							$pdd_preserveseries = $row['pdd_preserveseries'];
 							$pdd_usephasedir = $row['pdd_usephasedir'];
+							$pdd_behonly = $row['pdd_behonly'];
 							$pdd_behformat = $row['pdd_behformat'];
 							$pdd_behdir = $row['pdd_behdir'];
 							$pdd_enabled = $row['pdd_enabled'];
@@ -3152,6 +3170,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 								<td><? if ($pdd_useseries) { echo "&#10003"; } ?></td>
 								<td><? if ($pdd_preserveseries) { echo "&#10003"; } ?></td>
 								<td><? if ($pdd_usephasedir) { echo "&#10003"; } ?></td>
+								<td><? if ($pdd_behonly) { echo "&#10003"; } ?></td>
 								<td><?=$pdd_behformat?></td>
 								<td><tt><?=$pdd_behdir?></tt></td>
 							</tr>
@@ -3907,6 +3926,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 			$dd[$dd_order]['useseries'] = $row['pdd_useseries'];
 			$dd[$dd_order]['preserveseries'] = $row['pdd_preserveseries'];
 			$dd[$dd_order]['usephasedir'] = $row['pdd_usephasedir'];
+			$dd[$dd_order]['behonly'] = $row['pdd_behonly'];
 			$dd[$dd_order]['behformat'] = $row['pdd_behformat'];
 			$dd[$dd_order]['behdir'] = $row['pdd_behdir'];
 			$dd[$dd_order]['numboldreps'] = $row['pdd_numboldreps'];

@@ -2029,7 +2029,7 @@
 				suppressMovableColumns: true,
 				onCellEditingStopped: (event) => {
 
-					url = "ajaxapi.php?action=updatesubjectdetails&subjectid=" + event.data.id + "&column=" + event.column.getColDef().field + "&value=" + event.value;
+					url = "ajaxapi.php?action=updatesubjectdetails&projectid=<?=$id?>&subjectid=" + event.data.id + "&column=" + event.column.getColDef().field + "&value=" + event.value;
 					//console.log(url);
 					var xhttp = new XMLHttpRequest();
 					xhttp.onreadystatechange = function() {
@@ -3185,12 +3185,16 @@
 						<? } else { ?>
 						<a href="projects.php?action=setfavorite&id=<?=$id?>"><i class="grey star outline icon" title="Click to add this project to your favorites"></i></a><br>
 						<? } ?>
-					
 						<div class="sub header"><?=$numsubjects?> subjects &nbsp; &nbsp; <?=$numstudies?> studies</div>
 					</h1>
 				</div>
 				<div class="ten wide column">
-					
+					<a class="ui green button" href="projects.php?action=editsubjects&id=<?=$projectid?>">
+						<i class="user friends icon"></i> Subjects
+					</a>
+					<a class="ui green button" href="projects.php?action=displaystudies&id=<?=$projectid?>">
+						<i class="project diagram icon"></i> Studies
+					</a>
 				</div>
 			</div>
 			

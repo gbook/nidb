@@ -42,6 +42,7 @@
 	$clustertype = GetVariable("clustertype");
 	$submithostuser = GetVariable("submithostuser");
 
+	$projectid = GetVariable("projectid");
 	$subjectid = GetVariable("subjectid");
 	$studyid = GetVariable("studyid");
 	$column = GetVariable("column");
@@ -91,7 +92,7 @@
 			CheckSGESubmitStatus($hostname, $clustertype, $submithostuser);
 			break;
 		case 'updatesubjectdetails':
-			UpdateSubjectDetails($subjectid, $column, $value);
+			UpdateSubjectDetails($subjectid, $projectid, $column, $value);
 			break;
 		case 'updatestudydetails':
 			UpdateStudyDetails($subjectid, $studyid, $column, $value);
@@ -762,9 +763,10 @@
 	/* -------------------------------------------- */
 	/* ------- UpdateSubjectDetails --------------- */
 	/* -------------------------------------------- */
-	function UpdateSubjectDetails($subjectid, $column, $value) {
+	function UpdateSubjectDetails($subjectid, $projectid, $column, $value) {
 		
 		$subjectid = trim(mysqli_real_escape_string($GLOBALS['linki'], $subjectid));
+		$projectid = trim(mysqli_real_escape_string($GLOBALS['linki'], $projectid));
 		$column = trim(mysqli_real_escape_string($GLOBALS['linki'], $column));
 		$value = trim(mysqli_real_escape_string($GLOBALS['linki'], $value));
 		
@@ -800,6 +802,11 @@
 				}
 			}
 			CommitSQLTransaction();
+		}
+		elseif ($column == "enrollgroup") {
+			$sqlstring = "update enrollment set enroll_subgroup = '$value' where project_id = $projectid and subject_id = $subjectid";
+			//PrintVariable($sqlstring);
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		}
 		else {
 			$sqlstring = "update subjects set ";
