@@ -521,18 +521,6 @@
 	function DisplayImportMenu() {
 	
 		?>
-		<style>
-			.gradientsummary {
-background: -moz-linear-gradient(left, rgba(151,187,229,1) 0%, rgba(151,187,229,0.99) 1%, rgba(125,185,232,0) 100%); /* FF3.6+ */
-background: -webkit-gradient(linear, left top, right top, color-stop(0%,rgba(151,187,229,1)), color-stop(1%,rgba(151,187,229,0.99)), color-stop(100%,rgba(125,185,232,0))); /* Chrome,Safari4+ */
-background: -webkit-linear-gradient(left, rgba(151,187,229,1) 0%,rgba(151,187,229,0.99) 1%,rgba(125,185,232,0) 100%); /* Chrome10+,Safari5.1+ */
-background: -o-linear-gradient(left, rgba(151,187,229,1) 0%,rgba(151,187,229,0.99) 1%,rgba(125,185,232,0) 100%); /* Opera 11.10+ */
-background: -ms-linear-gradient(left, rgba(151,187,229,1) 0%,rgba(151,187,229,0.99) 1%,rgba(125,185,232,0) 100%); /* IE10+ */
-background: linear-gradient(to right, rgba(151,187,229,1) 0%,rgba(151,187,229,0.99) 1%,rgba(125,185,232,0) 100%); /* W3C */
-filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#97bbe5', endColorstr='#007db9e8',GradientType=1 ); /* IE6-9 */				color: black;
-				/*font-weight:bold*/
-			}
-		</style>
 		
 		<script>
 			function AlphaNumeric(e) {
@@ -670,7 +658,7 @@ filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#97bbe5', end
 			.freelabel {font-weight: bold; text-align: right; padding-right: 10px; vertical-align: top; color: #666666; font-size:12pt; white-space:nowrap; }
 		</style>
 		
-		<? if ($_SESSION['enablebeta']) { ?>
+		<? //if ($_SESSION['enablebeta']) { ?>
 		<details>
 			<summary>Import non-DICOM Image Data <?=PrintBeta();?></summary>
 			<form action="import.php" id="nondicomform" method="post">
@@ -749,7 +737,7 @@ filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#97bbe5', end
 			</div>
 			</form>
 		</details>
-		<? } ?>
+		<? //} ?>
 		<br>
 		
 		<details>

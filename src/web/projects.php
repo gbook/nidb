@@ -46,6 +46,8 @@
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
 	$id = GetVariable("id");
+	$projectid = GetVariable("projectid");
+	if ($id == "") { $id = $projectid; }
 	$viewtype = GetVariable("viewtype");
 	$newprojectid = GetVariable("newprojectid");
 	$studyids = GetVariable("studyids");
@@ -71,6 +73,7 @@
 	$tags = GetVariable("tags");
 	$serieslist1 = GetVariable("serieslist1");
 	$serieslist2 = GetVariable("serieslist2");
+	$csv = GetVariable("csv");
 	
 	$rdoc_label = GetVariable("rdoc_label");
 	$itemprotocol = GetVariable("itemprotocol");
@@ -139,22 +142,6 @@
 		case 'displaysubjects':
 			DisplaySubjectsTable($id,1);
 			break;
-		case 'updatedemographics':
-			UpdateDemographics($id,$subjectids,$altuids,$guids,$birthdates,$genders,$ethnicity1s,$ethnicity2s,$educations,$maritalstatus,$smokingstatus,$enrollgroups);
-			DisplaySubjects($id,1);
-			break;
-		case 'displaydeletedsubjects':
-			DisplaySubjects($id,0);
-			break;
-		case 'updatesubjecttable':
-			Notice("This action [$action] has been deprecated");
-			//UpdateSubjectTable($id,$subjecttable);
-			//DisplaytSubjectsTable($id);
-			break;
-		case 'updatestudytable':
-			UpdateStudyTable($id,$studytable);
-			DisplayStudiesTable2($id);
-			break;
 		case 'applytags':
 			ApplyTags($id, $studyids, $tags);
 			DisplayStudiesTable2($id);
@@ -206,6 +193,10 @@
 			UnsetFavorite($id);
 			DisplayProject($id);
 			break;
+		case 'batchupdatesubject':
+			BatchUpdateSubject($id, $csv);
+			DisplaySubjectsTable($id);
+			break;
 		default:
 			if ($id == '') {
 				DisplayProjects($viewtype);
@@ -219,96 +210,125 @@
 	
 	/* ------------------------------------ functions ------------------------------------ */
 
+
 	/* -------------------------------------------- */
-	/* ------- UpdateDemographics ----------------- */
+	/* ------- BatchUpdateSubject ----------------- */
 	/* -------------------------------------------- */
-	function UpdateDemographics($id,$subjectids,$altuids,$guids,$birthdates,$genders,$ethnicity1s,$ethnicity2s,$educations,$maritalstatus,$smokingstatus,$enrollgroups) {
+	function BatchUpdateSubject($projectid, $csvstr) {
+		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
 		
-		/* prepare the fields for SQL */
-		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
-		$subjectids = mysqli_real_escape_array($GLOBALS['linki'], $subjectids);
-		$altuids = mysqli_real_escape_array($GLOBALS['linki'], $altuids);
-		$guids = mysqli_real_escape_array($GLOBALS['linki'], $guids);
-		$birthdates = mysqli_real_escape_array($GLOBALS['linki'], $birthdates);
-		$genders = mysqli_real_escape_array($GLOBALS['linki'], $genders);
-		$ethnicity1s = mysqli_real_escape_array($GLOBALS['linki'], $ethnicity1s);
-		$ethnicity2s = mysqli_real_escape_array($GLOBALS['linki'], $ethnicity2s);
-		$educations = mysqli_real_escape_array($GLOBALS['linki'], $educations);
-		$maritalstatus = mysqli_real_escape_array($GLOBALS['linki'], $maritalstatus);
-		$smokingstatus = mysqli_real_escape_array($GLOBALS['linki'], $smokingstatus);
-		$enrollgroups = mysqli_real_escape_array($GLOBALS['linki'], $enrollgroups);
+		$csv = preg_split('/\r\n|\r|\n/', $csvstr);
+		$csv[0] = str_replace(' ','', $csv[0]);
 		
-		/* check to see if each array has the same number of elements */
-		if (count($subjectids) != count($altuids)) { echo "Error in number of items received"; return; }
-		if (count($altuids) != count($guids)) { echo "Error in number of items received"; return; }
-		if (count($guids) != count($birthdates)) { echo "Error in number of items received"; return; }
-		if (count($birthdates) != count($genders)) { echo "Error in number of items received"; return; }
-		if (count($genders) != count($ethnicity1s)) { echo "Error in number of items received"; return; }
-		if (count($ethnicity1s) != count($ethnicity2s)) { echo "Error in number of items received"; return; }
-		if (count($ethnicity2s) != count($educations)) { echo "Error in number of items received"; return; }
-		if (count($educations) != count($maritalstatus)) { echo "Error in number of items received"; return; }
-		if (count($maritalstatus) != count($smokingstatus)) { echo "Error in number of items received"; return; }
-		if (count($smokingstatus) != count($enrollgroups)) { echo "Error in number of items received"; return; }
-	
+		$data = array_map('str_getcsv', $csv);
+		array_walk($data, function(&$a) use ($data) {
+			$a = array_combine($data[0], $a);
+		});
+		array_shift($data); # remove column header
 		
-		for ($i=0;$i<count($subjectids);$i++) {
-			$subjectid = $subjectids[$i];
-			$altuid = $altuids[$i];
-			$guid = $guids[$i];
-			$birthdate = $birthdates[$i];
-			$gender = $genders[$i];
-			$ethnicity1 = $ethnicity1s[$i];
-			$ethnicity2 = $ethnicity2s[$i];
-			$education = $educations[$i];
-			$marital = $maritalstatus[$i];
-			$smoking = $smokingstatus[$i];
-			$enrollgroup = $enrollgroups[$i];
-			
-			/* only do updates if its a valid subjectid */
-			if (isInteger($subjectid)) {
-				$sqlstring = "update subjects set guid = '$guid', birthdate = '$birthdate', gender = '$gender', ethnicity1 = '$ethnicity1', ethnicity2 = '$ethnicity2', education = '$education', marital_status = '$marital', smoking_status = '$smoking' where subject_id = $subjectid";
-				//PrintSQL($sqlstring);
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				
-				$sqlstring = "update enrollment set enroll_subgroup = '$enrollgroup' where subject_id = $subjectid and project_id = $id";
-				//PrintSQL($sqlstring);
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				
-				$sqlstring = "select enrollment_id from enrollment where subject_id = $subjectid and project_id = $id";
-				//PrintSQL($sqlstring);
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				if (mysqli_num_rows($result) > 0){
-					$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-					$enrollmentid = $row['enrollment_id'];
-				}
-				else {
-					continue;
-				}
-				
-				/* now update the alternate IDs */
-				/* ... first delete entries for this subject from the altuid table ... */
-				$sqlstring = "delete from subject_altuid where subject_id = $subjectid and enrollment_id = $enrollmentid";
-				//PrintSQL($sqlstring);
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				/* ... and insert the new rows into the altuids table */
-				$altuidlist = explode(',',$altuid);
-				foreach ($altuidlist as $altid) {
-					$altid = trim($altid);
-					if (strpos($altid, '*') !== FALSE) {
-						$altid = str_replace('*','',$altid);
-						$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values ($subjectid, '$altid',1, '$enrollmentid')";
+		$msgs = array();
+		foreach ($data as $line) {
+			$uid = $line['uid'];
+			$sqlstring = "select subject_id from subjects where uid = '$uid'";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			if (mysqli_num_rows($result) > 0){
+				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+				$subjectid = $row['subject_id'];
+				foreach ($line as $column => $value) {
+					$column = mysqli_real_escape_string($GLOBALS['linki'], trim($column));
+					$value = mysqli_real_escape_string($GLOBALS['linki'], trim($value));
+					if (in_array($column, array('altuids', 'guid', 'birthdate', 'sex', 'gender', 'ethnicity1', 'ethnicity2', 'handedness', 'education', 'marital', 'smoking', 'enrollgroup'))) {
+						$msgs[] = UpdateSubjectDetails($uid, $subjectid, $projectid, $column, $value);
 					}
-					else {
-						$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values ($subjectid, '$altid',0, '$enrollmentid')";
-					}
-					//PrintSQL($sqlstring);
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				}
 			}
 		}
+		Notice(implode2("<br>", $msgs));
 	}
 
-	
+
+	/* -------------------------------------------- */
+	/* ------- UpdateSubjectDetails --------------- */
+	/* -------------------------------------------- */
+	function UpdateSubjectDetails($uid, $subjectid, $projectid, $column, $value) {
+		
+		if ($subjectid == "") {
+			echo "error, subjectID blank";
+			return;
+		}
+		
+		$msg = "";
+		
+		if ($column == "altuids") {
+			StartSQLTransaction();
+			/* delete entries for this subject from the altuid table ... */
+			$sqlstring = "delete from subject_altuid where subject_id = $subjectid";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			/* ... and insert the new rows into the altuids table */
+			$altuidsublist = $value;
+			$altuids = explode(',',$altuidsublist);
+			foreach ($altuids as $altuid) {
+				$altuid = trim($altuid);
+				if ($altuid != "") {
+					$enrollmentid = $enrollmentids[$i];
+					if ($enrollmentid == "") { $enrollmentid = 0; }
+					if (strpos($altuid, '*') !== FALSE) {
+						$altuid = str_replace('*','',$altuid);
+						$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values ($subjectid, '$altuid',1, '$enrollmentid')";
+					}
+					else {
+						$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values ($subjectid, '$altuid',0, '$enrollmentid')";
+					}
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				}
+			}
+			CommitSQLTransaction();
+			$msg = "$uid - Updated $column alternate UIDs <tt>$value</tt>";
+		}
+		elseif ($column == "enrollgroup") {
+			$sqlstring = "update enrollment set enroll_subgroup = '$value' where project_id = $projectid and subject_id = $subjectid";
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			$msg = "$uid - Updated enroll group &rarr; <tt>$value</tt>";
+		}
+		else {
+			$sqlstring = "update subjects set ";
+			switch ($column) {
+				case "guid": $sqlstring .= "guid"; break;
+				case "sex": $sqlstring .= "subjects.sex"; break;
+				case "gender": $sqlstring .= "gender"; break;
+				case "dob": $sqlstring .= "birthdate"; break;
+				case "ethnicity1": $sqlstring .= "ethnicity1"; break;
+				case "ethnicity2": $sqlstring .= "ethnicity2"; break;
+				case "handedness": $sqlstring .= "handedness"; break;
+				case "education":
+					switch ($value) {
+						case "Unknown": $value = 0; break;
+						case "Grade School": $value = 1; break;
+						case "Middle School": $value = 2; break;
+						case "High School/GED": $value = 3; break;
+						case "Trade School": $value = 4; break;
+						case "Associates Degree": $value = 5; break;
+						case "Bachelors Degree": $value = 6; break;
+						case "Masters Degree": $value = 7; break;
+						case "Doctoral Degree": $value = 8; break;
+						default: $value = "";
+					}
+					$sqlstring .= "education";
+					break;
+				case "marital": $sqlstring .= "marital_status"; break;
+				case "smoking": $sqlstring .= "smoking_status"; break;
+				case "enrollgroup": $sqlstring .= "enroll_subgroup"; break;
+				default: echo "error - [$column] not recognized"; return;
+			}
+			$sqlstring .= " = '$value' where subject_id = $subjectid";
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			$msg = "$uid - Updated $column &rarr; <tt>$value</tt>";
+		}
+		
+		return $msg;
+	}
+
+
 	/* -------------------------------------------- */
 	/* ------- ApplyTags -------------------------- */
 	/* -------------------------------------------- */
@@ -420,309 +440,6 @@
 		
 		$sqlstring = "update user_project set favorite = 0 where user_id in (select user_id from users where username = '" . $GLOBALS['username'] . "') and project_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-	}
-	
-	
-	/* -------------------------------------------- */
-	/* ------- UpdateSubjectTable ----------------- */
-	/* -------------------------------------------- */
-	function UpdateSubjectTable($id,$subjecttable) {
-		
-		StartSQLTransaction();
-		
-		/* prepare the fields for SQL */
-		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
-		
-		$numRowsUpdated = 0;
-		//PrintVariable($studytable);
-		$csv = explode("\n",$subjecttable);
-		array_shift($csv); /* remove headers from csv */
-		foreach ($csv as $line) {
-			/* only accept valid lines with the correct # of columns */
-			if (trim($line) != '') {
-				$parts = str_getcsv($line);
-				//PrintVariable($parts,'Parts');
-				$numparts = count($parts);
-				if ($numparts == 15) {
-					//PrintVariable($parts, 'Parts');
-					$subjectid = mysqli_real_escape_string($GLOBALS['linki'],trim($parts[0]));
-					$uid = mysqli_real_escape_string($GLOBALS['linki'],trim($parts[1]));
-					$primaryid = mysqli_real_escape_string($GLOBALS['linki'],trim($parts[2]));
-					$altuidlist = mysqli_real_escape_string($GLOBALS['linki'],trim($parts[3]));
-					$guid = mysqli_real_escape_string($GLOBALS['linki'],trim($parts[4]));
-					$dob = mysqli_real_escape_string($GLOBALS['linki'],trim($parts[5]));
-					$sex = mysqli_real_escape_string($GLOBALS['linki'],strtoupper(trim($parts[6])));
-					$ethnicity1 = mysqli_real_escape_string($GLOBALS['linki'],trim($parts[7]));
-					$ethnicity2 = mysqli_real_escape_string($GLOBALS['linki'],trim($parts[8]));
-					$education = mysqli_real_escape_string($GLOBALS['linki'],trim($parts[9]));
-					$handedness = mysqli_real_escape_string($GLOBALS['linki'],trim($parts[10]));
-					$marital = mysqli_real_escape_string($GLOBALS['linki'],trim($parts[11]));
-					$smoking = mysqli_real_escape_string($GLOBALS['linki'],strtolower(trim($parts[12])));
-					$enrollgroup = mysqli_real_escape_string($GLOBALS['linki'],trim($parts[13]));
-					
-					/* validate the IDs */
-					if (!ctype_digit(strval($subjectid))) { echo "SubjectID [$subjectid] is not an integer<br>"; continue; }
-					
-					/* valdiate and build the SQL update statement */
-					$sqlupdates = array();
-					if ($guid != "") { $sqlupdates[] = "guid = '$guid'"; }
-					if (($dob != "") && (strtotime($dob) != false)) { $sqlupdates[] = "birthdate = '$dob'"; }
-					if (in_array($sex,array('F','M','O','U','T'))) { $sqlupdates[] = "gender = '$sex'"; }
-					switch(strtolower($ethnicity1)) {
-						case 'hispanic':
-							$sqlupdates[] = "ethnicity1 = 'hispanic'"; break;
-						case 'nothispanic':
-						case 'not hispanic':
-							$sqlupdates[] = "ethnicity1 = 'nothispanic'"; break;
-					}
-					switch(strtolower($ethnicity2)) {
-						case 'indian':
-						case 'american indian/alaskan native':
-							$sqlupdates[] = "ethnicity2 = 'indian'"; break;
-						case 'asian':
-							$sqlupdates[] = "ethnicity2 = 'asian'"; break;
-						case 'black':
-						case 'black/african american':
-							$sqlupdates[] = "ethnicity2 = 'black'"; break;
-						case 'islander':
-						case 'hawaiian/pacific islander':
-							$sqlupdates[] = "ethnicity2 = 'asian'"; break;
-						case 'white':
-							$sqlupdates[] = "ethnicity2 = 'white'"; break;
-					}
-					switch(strtolower($education)) {
-						case '0':
-						case 'unknown':
-							$sqlupdates[] = "education = '0'"; break;
-						case '1':
-						case 'grade school':
-							$sqlupdates[] = "education = '1'"; break;
-						case '2':
-						case 'middle school':
-							$sqlupdates[] = "education = '2'"; break;
-						case '3':
-						case 'high school/ged':
-							$sqlupdates[] = "education = '3'"; break;
-						case '4':
-						case 'trade school':
-							$sqlupdates[] = "education = '4'"; break;
-						case '5':
-						case 'associates degree':
-							$sqlupdates[] = "education = '5'"; break;
-						case '6':
-						case 'bachelors degree':
-							$sqlupdates[] = "education = '6'"; break;
-						case '7':
-						case 'masters degree':
-							$sqlupdates[] = "education = '7'"; break;
-						case '8':
-						case 'doctoral degree':
-							$sqlupdates[] = "education = '8'"; break;
-					}
-					switch(strtolower($handedness)) {
-						case 'r':
-						case 'right':
-							$sqlupdates[] = "handedness = 'R'"; break;
-						case 'l':
-						case 'left':
-							$sqlupdates[] = "handedness = 'L'"; break;
-						case 'a':
-						case 'ambidextrous':
-							$sqlupdates[] = "handedness = 'A'"; break;
-						case 'u':
-						case 'unknown':
-							$sqlupdates[] = "handedness = 'U'"; break;
-					}
-					switch(strtolower($marital)) {
-						case 'unknown':
-							$sqlupdates[] = "marital_status = 'unknown'"; break;
-						case 'single':
-							$sqlupdates[] = "marital_status = 'single'"; break;
-						case 'married':
-							$sqlupdates[] = "marital_status = 'married'"; break;
-						case 'divorced':
-							$sqlupdates[] = "marital_status = 'divorced'"; break;
-						case 'separated':
-							$sqlupdates[] = "marital_status = 'separated'"; break;
-						case 'civilunion':
-						case 'civil union':
-							$sqlupdates[] = "marital_status = 'civilunion'"; break;
-						case 'cohabitating':
-							$sqlupdates[] = "marital_status = 'cohabitating'"; break;
-						case 'widowed':
-							$sqlupdates[] = "marital_status = 'widowed'"; break;
-					}
-					if ($smoking != "") {
-						$sqlupdates[] = "smoking_status = '$smoking'";
-					}
-					
-					$sqlstring = "update subjects set " . implode(", ",$sqlupdates) . " where subject_id = '$subjectid'";
-					//PrintSQL($sqlstring);
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					
-					/* ----- update the alternate UIDs ----- */
-					/* get the enrollmentid */
-					$sqlstring = "select enrollment_id from enrollment where project_id = '$id' and subject_id = $subjectid";
-					//PrintSQL($sqlstring);
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-					$enrollmentid = $row['enrollment_id'];
-					
-					/* if there are no alternate IDs, skip this step */
-					if (($altuidlist == '') || ($altuidlist == '*')) { continue; }
-					
-					/* delete entries for this subject from the altuid table ... */
-					$sqlstring = "delete from subject_altuid where subject_id = $subjectid and enrollment_id = $enrollmentid";
-					//PrintSQL($sqlstring);
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					/* ... and insert the new rows into the altuids table */
-					$altuids = explode(',',$altuidlist);
-					foreach ($altuids as $altuid) {
-						$altuid = trim($altuid);
-						if ($altuid == '') { continue; }
-						//echo "enrollmentID [$enrollmentid] - altuid [$altuid]<br>";
-						if (strpos($altuid, '*') !== FALSE) {
-							$altuid = str_replace('*','',$altuid);
-							$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values ($subjectid, '$altuid',1, '$enrollmentid')";
-							if ($altuid == '') { continue; }
-						}
-						else {
-							$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values ($subjectid, '$altuid',0, '$enrollmentid')";
-						}
-						//PrintSQL($sqlstring);
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-						//echo "<span class='tiny'>" . mysqli_affected_rows() . " rows updated</span>";
-						$numRowsUpdated += mysqli_affected_rows();
-					}
-					
-					$sqlstring = "update enrollment set enroll_subgroup = '$enrollgroup' where enrollment_id = $enrollmentid";
-					//PrintSQL($sqlstring);
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				}
-			}
-		}
-		CommitSQLTransaction();
-	}
-
-
-	/* -------------------------------------------- */
-	/* ------- UpdateStudyTable ------------------- */
-	/* -------------------------------------------- */
-	function UpdateStudyTable($id,$studytable) {
-		
-		StartSQLTransaction();
-		
-		/* prepare the fields for SQL */
-		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
-		
-		$numRowsUpdated = 0;
-		
-		$noticemsg = "";
-		$errormsg = "";
-		//PrintVariable($studytable);
-		$csv = explode("\n",$studytable);
-		array_shift($csv); /* remove headers from csv */
-		foreach ($csv as $line) {
-			/* only accept valid lines with the correct # of columns */
-			if (trim($line) != '') {
-				$parts = mysqli_real_escape_array($GLOBALS['linki'], str_getcsv($line));
-				//PrintVariable($parts,'Parts');
-				$numparts = count($parts);
-				if (($numparts == 17) || ($numparts == 16)) {
-					//PrintVariable($parts, 'Parts');
-					
-					if ($numparts == 17) {
-						$studyid = trim($parts[0]);
-						$subjectid = trim($parts[1]);
-						$uid = trim($parts[2]);
-						$sex = strtoupper(trim($parts[3]));
-						$altuidlist = trim($parts[4]);
-						$visit = trim($parts[6]);
-						$ageatscan = trim($parts[9]);
-						$site = trim($parts[15]);
-					}
-					else {
-						$studyid = trim($parts[0]);
-						$subjectid = trim($parts[1]);
-						$uid = trim($parts[2]);
-						$sex = strtoupper(trim($parts[3]));
-						$altuidlist = trim($parts[4]);
-						$visit = trim($parts[6]);
-						$ageatscan = trim($parts[9]);
-						$site = trim($parts[14]);
-					}
-					
-					/* validate each variable before trying the SQL */
-					if (!ctype_digit(strval($studyid))) { $noticemsg .= "StudyID [$studyid] is not an integer<br>"; continue; }
-					if (!ctype_digit(strval($subjectid))) { $noticemsg .= "SubjectID [$subjectid] is not an integer<br>"; continue; }
-					
-					if ($ageatscan != "") {
-						if (is_numeric($ageatscan)) {
-							$sqlstring = "update studies set study_ageatscan = '$ageatscan', study_type = '$visit', study_site = '$site' where study_id = '$studyid'";
-							//PrintSQL($sqlstring);
-							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-							$numRowsUpdated += mysqli_affected_rows();
-						}
-						else {
-							$noticemsg .= "Age-at-scan [$ageatscan] is not a number<br>";
-						}
-					}
-					
-					/* update the sex, if its valid */
-					if (($sex == 'F') || ($sex == 'M') || ($sex == 'O') || ($sex == 'U')) {
-						$sqlstring = "update subjects set gender = '$sex' where subject_id = '$subjectid'";
-						//PrintSQL($sqlstring);
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-						$numRowsUpdated += mysqli_affected_rows();
-					}
-					
-					/* update the alternate UIDs */
-					/* get the enrollmentid */
-					$sqlstring = "select enrollment_id from studies where study_id = '$studyid'";
-					//PrintSQL($sqlstring);
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-					$enrollmentid = $row['enrollment_id'];
-					
-					/* if there are no alternate IDs, skip this step */
-					if (($altuidlist == '') || ($altuidlist == '*')) { continue; }
-					
-					/* delete entries for this subject from the altuid table ... */
-					$sqlstring = "delete from subject_altuid where subject_id = $subjectid and enrollment_id = $enrollmentid";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					/* ... and insert the new rows into the altuids table */
-					$altuids = explode(',',$altuidlist);
-					foreach ($altuids as $altuid) {
-						$altuid = trim($altuid);
-						if ($altuid == '') { continue; }
-						//echo "enrollmentID [$enrollmentid] - altuid [$altuid]<br>";
-						if (strpos($altuid, '*') !== FALSE) {
-							$altuid = str_replace('*','',$altuid);
-							$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values ($subjectid, '$altuid',1, '$enrollmentid')";
-							if ($altuid == '') { continue; }
-						}
-						else {
-							$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values ($subjectid, '$altuid',0, '$enrollmentid')";
-						}
-						//PrintSQL($sqlstring);
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-						$numRowsUpdated += mysqli_affected_rows();
-					}
-				}
-				else {
-					$errormsg .= "Expecting 16 or 17 columns, but received $numcols. Ignoring this line.";
-				}
-			}
-		}
-		CommitSQLTransaction();
-		
-		if ($errormsg != "")
-			Error($errormsg);
-
-		if ($noticemsg != "")
-			Notice($noticemsg);
-		else
-			Notice("Study details updated");
 	}
 
 
@@ -1273,382 +990,6 @@
 
 # End My Changes Asim 04/16/2018
 	
-
-	/* -------------------------------------------- */
-	/* ------- DisplayStudiesTable ---------------- */
-	/* -------------------------------------------- */
-	function DisplayStudiesTable($id) {
-		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
-	
-		$sqlstring = "select * from projects where project_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$name = $row['project_name'];
-		$admin = $row['project_admin'];
-		$pi = $row['project_pi'];
-		$costcenter = $row['project_costcenter'];
-		$sharing = $row['project_sharing'];
-		$startdate = $row['project_startdate'];
-		$enddate = $row['project_enddate'];
-	
-		?>
-		<!--<script type='text/javascript' src='scripts/x/x.js'></script>
-		<script type='text/javascript' src='scripts/x/lib/xgetelementbyid.js'></script>
-		<script type='text/javascript' src='scripts/x/lib/xtableiterate.js'></script>
-		<script type='text/javascript' src='scripts/x/lib/xpreventdefault.js'></script> -->
-		<script type='text/javascript' src="scripts/editablegrid/editablegrid.js"></script>
-		<script type='text/javascript' src="scripts/editablegrid/editablegrid_renderers.js" ></script>
-		<script type='text/javascript' src="scripts/editablegrid/editablegrid_editors.js" ></script>
-		<script type='text/javascript' src="scripts/editablegrid/editablegrid_validators.js" ></script>
-		<script type='text/javascript' src="scripts/editablegrid/editablegrid_utils.js" ></script>
-		<script type='text/javascript' src="scripts/editablegrid/editablegrid_charts.js" ></script>
-		<link rel="stylesheet" href="scripts/editablegrid/editablegrid.css" type="text/css" media="screen">
-		<style>
-			table.testgrid { border-collapse: collapse; border: 1px solid #CCB; width: 100%; }
-			table.testgrid td, table.testgrid th { padding: 5px; }
-			table.testgrid th { background: #E5E5E5; text-align: left; }
-			input.invalid { background: red; color: #FDFDFD; }
-			td .editable { background-color: lightyellow; }
-		</style>
-		<?		
-		/* display studies associated with this project */
-		$sqlstring = "select a.*, c.*, d.* from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on b.project_id = c.project_id left join subjects d on d.subject_id = b.subject_id where c.project_id = $id order by d.uid asc, a.study_modality asc limit 5000";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$numstudies = mysqli_num_rows($result);
-		
-		/* get some stats about the project */
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$uid = $row['uid'];
-			
-			$uids[$uid]['sex'] = $row['gender']; /* create hash of UID and sex */
-			$studydates[] = $row['study_datetime']; /* get list of study dates */
-			$genders[$row['gender']]['count']++; /* get the count of each gender */
-			
-			list($studyAge, $calcStudyAge) = GetStudyAge($row['birthdate'], $row['study_ageatscan'], $row['study_datetime']);
-			
-			if ($studyAge != null) {
-				$ages[] = $studyAge;
-				$genders[$row['gender']]['ages'][] = $studyAge;
-			}
-			elseif ($calcStudyAge != null) {
-				$ages[] = $calcStudyAge;
-				$genders[$row['gender']]['ages'][] = $calcStudyAge;
-			}
-		}
-		
-		$lowdate = min($studydates);
-		$highdate = max($studydates);
-		?>
-
-		<? if ($GLOBALS['issiteadmin']) { ?>
-		<form action="projects.php" method="post" name="theform" id="theform">
-		<input type="hidden" name="action" value="changeproject">
-		<input type="hidden" name="id" value="<?=$id?>">
-		<? } ?>
-
-		<script>
-			window.onload = function() {
-				editableGrid = new EditableGrid("DemoGridAttach", { sortIconUp: "images/up.png", sortIconDown: "images/down.png", enableSort: false, caption: 'Double-click to edit table'}); 
-
-				// we build and load the metadata in Javascript
-				editableGrid.load({ metadata: [
-					{ name: "studyid", datatype: "string", editable: false },
-					{ name: "subjectid", datatype: "string", editable: false },
-					{ name: "subject", datatype: "html", editable: false },
-					{ name: "sex", datatype: "html", editable: true },
-					{ name: "altuids", datatype: "html", editable: true },
-					{ name: "study", datatype: "html", editable: false },
-					{ name: "visit", datatype: "string", editable: true },
-					{ name: "deleted", datatype: "html", editable: false },
-					{ name: "studydate", datatype: "date", editable: false },
-					{ name: "ageatscan", datatype: "double", editable: true, precision: 2, thousands_separator: '', decimal_point: '.' },
-					{ name: "calcageatscan", datatype: "string", editable: false },
-					{ name: "modality", datatype: "string", editable: false },
-					{ name: "studydesc", datatype: "string", editable: false },
-					{ name: "studyid", datatype: "string", editable: false },
-					{ name: "delete", datatype: "html", editable: false },
-					{ name: "site", datatype: "string", editable: true }
-				]});
-
-				// then we attach to the HTML table and render it
-				editableGrid.attachToHTMLTable('table1');
-				editableGrid.renderGrid();
-			} 
-		</script>
-		
-		<br><br>
-		<div align="center">
-		<b>This table is editable</b>. Edit the <span style="background-color: lightyellow; border: 1px solid skyblue; padding:5px">Highlighted</span> fields by single-clicking the cell. Use tab to navigate the table, and make sure to <b>hit enter when editing a cell before saving</b>. Click <b>Save</b> when done editing<br>
-		<br>
-		Displaying <?=$numstudies?> studies
-		</div>
-		<br>
-		<script type="text/javascript">
-			function CheckAll(checkbox) {
-				var checked_status = checkbox.checked;
-				$(".allcheck").find("input[type='checkbox']").each(function() {
-					this.checked = checked_status;
-				});
-			}
-		</script>
-		<? if ($GLOBALS['issiteadmin']) { ?>
-		<div style="text-align: right">
-			<a href="projects.php?action=updatestudyage&id=<?=$id?>" class="ui small button" title="Set StudyAge to CalcStudyAge for all studies">Update StudyAge</a>
-		</div>
-		<? } ?>
-		
-		<table class="testgrid ui celled small very compact selectable table" id='table1'>
-			<thead>
-			<tr>
-				<th></th><!-- studyID -->
-				<th></th><!-- subjectID -->
-				<th>Subject</th>
-				<th>Sex <span class="tiny" style="font-weight: normal">F, M, O, U</span></th>
-				<th>Alt Subject IDs <span class="tiny">comma separated, * next to primary ID</span></th>
-				<th>Study</th>
-				<th>Visit</th>
-				<th>Active?</th>
-				<th>Study Date</th>
-				<th>StudyAge</th>
-				<th>CalcStudyAge</th>
-				<th>Modality</th>
-				<th>Study Desc</th>
-				<th>Study ID</th>
-				<? if ($GLOBALS['issiteadmin']) { ?>
-				<th><input type="checkbox" id="checkall" onClick="CheckAll(this)"></th>
-				<? } ?>
-				<th>Site</th>
-			</tr>
-			</thead>
-			<?
-			$uid = "";
-			$bgcolor = "";
-			$i = 1;
-			mysqli_data_seek($result,0);
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$study_id = $row['study_id'];
-				$modality = $row['study_modality'];
-				$study_datetime = $row['study_datetime'];
-				$study_site = $row['study_site'];
-				$study_num = $row['study_num'];
-				$study_desc = $row['study_desc'];
-				$study_visit = $row['study_type'];
-				$study_site = $row['study_site'];
-				$study_altid = $row['study_alternateid'];
-				$study_ageatscan = $row['study_ageatscan'];
-				//$age = $row['age'];
-				$sex = $row['gender'];
-				$dob = $row['birthdate'];
-				$uid = $row['uid'];
-				$subjectid = $row['subject_id'];
-				$enrollmentid = $row['enrollment_id'];
-				$project_name = $row['project_name'];
-				$project_costcenter = $row['project_costcenter'];
-				$isactive = $row['isactive'];
-
-				list($studyAge, $calcStudyAge) = GetStudyAge($dob, $study_ageatscan, $study_datetime);
-				
-				if ($studyAge == null)
-					$studyAge = "";
-				else
-					$studyAge = number_format($studyAge,1);
-
-				if ($calcStudyAge == null)
-					$calcStudyAge = "-";
-				else
-					$calcStudyAge = number_format($calcStudyAge,1);
-				
-				$altids = array();
-				$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' and enrollment_id = '$enrollmentid' and altuid <> '' order by isprimary desc";
-				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-					$isprimary = $rowA['isprimary'];
-					$altid = $rowA['altuid'];
-					if ($isprimary) {
-						$altids[] = "*" . $altid;
-					}
-					else {
-						$altids[] = $altid;
-					}
-				}
-				$altids = array_unique($altids);
-				$altuidlist = implode2(", ",$altids);
-				
-				if ($lastuid != $uid) {
-					$bgcolor = "";
-					//if ($bgcolor == "") {
-						//$bgcolor = "background-color: #efefef;";
-					//}
-					//else {
-					//	$bgcolor = "";
-					//}
-					$rowstyle = "border-top: 2px solid #666; border-bottom: 0px; $bgcolor";
-				}
-				else {
-					$rowstyle = "$bgcolor";
-				}
-
-				?>
-				<tr id="R<?=$i?>">
-					<? if ($lastuid != $uid) { ?>
-						<td style="<?=$rowstyle?>; font-size: 6pt;"><?=$study_id?></td>
-						<td style="<?=$rowstyle?>; font-size: 6pt;"><?=$subjectid?></td>
-						<td style="<?=$rowstyle?>">
-							<a class="ui large compact primary button" href="subjects.php?id=<?=$subjectid?>"><span class="tt"><?=$uid;?></span></a>
-						</td>
-						<td style="<?=$rowstyle?>" class="editable"><?=$sex?></td>
-						<td style="<?=$rowstyle?>" class="editable tt"><?=$altuidlist?></td>
-						<?
-					}
-					else {
-						?>
-						<td style="<?=$rowstyle?>; font-size: 6pt;"><?=$study_id?></td>
-						<td style="<?=$rowstyle?>; font-size: 6pt;"><?=$subjectid?></td>
-						<td style="<?=$rowstyle?>"></td>
-						<td style="<?=$rowstyle?>"></td>
-						<td style="<?=$rowstyle?>"></td>
-						<?
-					}
-					?>
-					<td style="<?=$rowstyle?>" class="tt">
-						<a class="ui basic large compact primary button" href="studies.php?id=<?=$study_id?>"><span class="tt"><span style="color: gray"><?=$uid;?></span><b><?=$study_num;?></b></span></a>
-					</td>
-					<td style="<?=$rowstyle?>" class="editable"><?=$study_visit?></td>
-					<td style="<?=$rowstyle?>"><? if ($isactive) { echo "<i class='check green icon'></i>"; } ?></td>
-					<td style="<?=$rowstyle?>"><?=$study_datetime?></td>
-					<td style="<?=$rowstyle?>" class="editable"><?=$studyAge?></td>
-					<td style="<?=$rowstyle?>"><?=$calcStudyAge?></td>
-					<td style="<?=$rowstyle?>"><?=$modality?></td>
-					<td style="<?=$rowstyle?>"><?=$study_desc?></td>
-					<td style="<?=$rowstyle?>" class="tt"><?=$study_altid?></td>
-					<? if ($GLOBALS['issiteadmin']) { ?>
-					<td class="allcheck" style="background-color: #FFFF99; border-left: 1px solid #4C4C1F; border-right: 1px solid #4C4C1F;" <?=$rowstyle?>><input type='checkbox' name="studyids[]" value="<?=$study_id?>"></td>
-					<? } ?>
-					<td style="<?=$rowstyle?>" class="editable"><?=$study_site?></td>
-				</tr>
-				<?
-				$lastuid = $uid;
-				$i++;
-			}
-			?>
-		</table>
-		<script type="text/javascript" src="scripts/jquery.table2csv.js"></script>
-		<script>
-			function ConvertToCSV() {
-				$("#table1").table2csv( {
-					callback: function (csv) {
-						document.getElementById("studytable").value = csv;
-						document.getElementById('savetableform').submit();
-					}
-				});
-			}
-		</script>
-		
-		<br>
-
-		<table width="100%">
-			<tr>
-				<? if ($GLOBALS['issiteadmin']) { ?>
-				<td style="background-color: #FFFF99; border: 1px solid #4C4C1F; border-radius:5px; padding:8px;" width="70%">
-
-					<h2 class="ui header">
-						<i class="tools icon"></i>
-						<div class="content">
-							Powerful Tools
-							<div class="sub header">Perform operations on the selected studies</div>
-						</div>
-					</h2>
-
-					<div class="ui segment">
-						<h3 class="ui header">
-							Apply enrollment tag(s)
-							<div class="sub header">Comma separated list</div>
-						</h3>
-						<div class="ui action input">
-							<input type="text" name="tags" id="tags" list="taglist" multiple>
-							<datalist id="taglist">
-							<?
-								$sqlstring = "select distinct(tag) 'tag' from tags where enrollment_id is not null and enrollment_id <> 0 and enrollment_id <> ''";
-								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-									$tag = $row['tag'];
-									?>
-									<option value="<?=$tag?>">
-									<?
-								}
-							?>
-							</datalist>
-							<button class="ui button" title="Applies the tags to the selected studies" onclick="document.theform.action='projects.php'; document.theform.action.value='applytags'; document.theform.submit()">Apply tags</button>
-						</div>
-					</div>
-
-					<div class="ui segment">
-						<h3 class="ui header">
-							Move studies to new project
-						</h3>
-						<div class="ui action input">
-							<select name="newprojectid" id="newprojectid" class="ui dropdown">
-							<?
-								$sqlstring = "select a.*, b.user_fullname from projects a left join users b on a.project_pi = b.user_id where a.project_status = 'active' order by a.project_name";
-								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-									$project_id = $row['project_id'];
-									$project_name = $row['project_name'];
-									$project_costcenter = $row['project_costcenter'];
-									$project_enddate = $row['project_enddate'];
-									$user_fullname = $row['user_fullname'];
-									
-									if (strtotime($project_enddate) < strtotime("now")) { $style="color: gray"; } else { $style = ""; }
-									?>
-									<option value="<?=$project_id?>" style="<?=$style?>"><?=$project_name?> (<?=$project_costcenter?>)</option>
-									<?
-								}
-							?>
-							</select>
-							<button class="ui button" title="Moves the imaging studies from this project to the selected project" onclick="document.theform.action='projects.php'; document.theform.action.value='changeproject'; document.theform.submit()">Move studies</button>
-						</div>
-					</div>
-					
-					<div class="ui segment">
-						<h3 class="ui header">
-							Rearchive
-						</h3>
-
-						<div class="ui checkbox" title="When re-archiving, only match existing subjects by ID. Do not use the Patient ID, DOB, or Sex fields to match subjects">
-							<input type="checkbox" name="matchidonly" value="1" checked>
-							<label>Match by ID only</label>
-						</div>
-						&nbsp; &nbsp;
-						<button class="ui orange button" title="Moves all DICOM files back into the incoming directory to be parsed again. Useful if there was an archiving error and too many subjects are in the wrong place." onclick="document.theform.action='projects.php'; document.theform.action.value='rearchivestudies'; document.theform.submit()">Re-archive DICOM studies</button>
-						&nbsp; &nbsp;
-						<button class="ui orange button" title="Moves all DICOM files from this SUBJECT into the incoming directory, and deletes the subject" onclick="document.theform.action='projects.php'; document.theform.action.value='rearchivesubjects'; document.theform.submit()">Re-archive Subjects</button>
-					</div>
-					
-					<div class="ui segment">
-						<h3 class="ui header">
-							Obliterate
-						</h3>
-						<button class="ui red button" title="Delete the subject permanently" onclick="document.theform.action='projects.php';document.theform.action.value='obliteratesubject'; document.theform.submit()"><i class="bomb icon"></i> Obliterate Subjects</button> &nbsp; &nbsp;
-						<button class="ui red button" title="Delete the studies permanently" onclick="document.theform.action='projects.php';document.theform.action.value='obliteratestudy'; document.theform.submit()"><i class="bomb icon"></i> Obliterate Studies</button>
-					</div>
-				</td>
-				<? } ?>
-			</form>
-
-				<td align="right" valign="top">
-					<!-- save the form -->
-					<form method="post" action="projects.php" id="savetableform">
-					<input type="hidden" name="id" value="<?=$id?>">
-					<input type="hidden" name="action" value="updatestudytable">
-					<input type="hidden" name="studytable" id="studytable">
-					<div align="right"><input class="ui primary button" type="submit" value="Save Studies Table" onMouseDown="ConvertToCSV();" style="font-size: 14pt; font-weight: bold"></div>
-					</form>
-				</td>
-			</tr>
-		</table>
-		<?
-	}
-
 	
 	/* -------------------------------------------- */
 	/* ------- DisplayCompleteProjectTable -------- */
@@ -1903,12 +1244,60 @@
 					</h2>
 				</div>
 				<div class="right aligned seven wide column">
+					<button class="ui small basic primary compact button" id="batchsubjectupdatebutton"> Batch update...</button> &nbsp;
 					<div class="ui small basic primary compact button" onClick="onBtnExport()"><i class="file excel outline icon"></i> Export table as .csv</div> &nbsp;
 				</div>
 			</div>
 		</div>
+		<div class="ui modal" id="batchmodal">
+			<div class="header">Batch Update Subject Information</div>
+			<div class="content">
+				<form action="projects.php" method="post" class="ui form">
+					<input type="hidden" name="action" value="batchupdatesubject">
+					<input type="hidden" name="projectid" value="<?=$id?>">
+					<div class="field">
+						<label>Paste .csv formatted data</label>
+						<textarea name="csv" style="font-family:monospace"></textarea>
+					</div>
+					<i class="blue question circle icon"></i> <b>Formatting Guide</b><br>
+					Available columns (csv must always contain at least <b>uid</b>)
+					<ul>
+						<li><tt>uid</tt> - The UID of the subject
+						<li><tt>altuids</tt> - space delimited list of alternate UIDs with asterisk indicating primary alternate ID. Example <code>*1234 AB539 ID2054</code>
+						<li><tt>guid</tt>
+						<li><tt>birthdate</tt> - format <code>YYYY-MM-DD</code>
+						<li><tt>sex</tt> - Possible values: F, M, O, U
+						<li><tt>gender</tt> - Possible values: F, M, O, U
+						<li><tt>ethnicity1</tt> - Possible values: hispanic, nothispanic
+						<li><tt>ethnicity2</tt> - Possible values: unknown, asian, black, white, indian, islander, mixed, other
+						<li><tt>handedness</tt> - Possible values: R, L, A, U
+						<li><tt>education</tt> - Possible values:  0 (Unknown), 1 (Grade School), 2 (Middle School), 3 (High School/GED), 4 (Trade School), 5 (Associates Degree), 6 (Bachelors Degree), 7 (Masters Degree), 8 (Doctoral Degree)
+						<li><tt>marital</tt> - Possible values: unknown, married, single, divorced, separated, civilunion, cohabitating, widowed
+						<li><tt>smoking</tt> - Possible values: unknown, never, current, past
+						<li><tt>enrollgroup</tt>
+					</ul>
+					<b>Sample .csv format</b>
+					<div style="font-family:monospace; padding:8px; background-color: #eee; border: 1px dashed #aaa">
+						uid, guid, sex, enrollgroup<br>
+						S1234ABC, NDA23548239, F, control
+					</div>
+				</div>
+			<div class="actions">
+				<input type="submit" class="ui approve button" value="Update">
+				<div class="ui cancel button">Cancel</div>
+				</form>
+			</div>
+		</div>
 		<div id="myGrid" class="ag-theme-alpine" style="height: 60vh"></div>
 		<script type="text/javascript">
+			let gridApi;
+
+			$(document).ready(function(){
+				$('#batchsubjectupdatebutton').click(function(){
+					$('#batchmodal').modal('show');
+				});
+			});
+			
 			// Function to demonstrate calling grid's API
 			function deselect(){
 				gridOptions.api.deselectAll()
@@ -2053,18 +1442,21 @@
 				// get div to host the grid
 				const eGridDiv = document.getElementById("myGrid");
 				// new grid instance, passing in the hosting DIV and Grid Options
-				new agGrid.Grid(eGridDiv, gridOptions);
+				//new agGrid.Grid(eGridDiv, gridOptions);
+				gridApi = agGrid.createGrid(eGridDiv, gridOptions);
 				
 				autoSizeAll(false);
 			});
 			
 			function autoSizeAll(skipHeader) {
 				const allColumnIds = [];
-				gridOptions.columnApi.getColumns().forEach((column) => {
+				//gridOptions.columnApi.getColumns().forEach((column) => {
+				gridApi.getColumns().forEach((column) => {
 					allColumnIds.push(column.getId());
 				});
 
-				gridOptions.columnApi.autoSizeColumns(allColumnIds, skipHeader);
+				//gridOptions.columnApi.autoSizeColumns(allColumnIds, skipHeader);
+				gridApi.autoSizeColumns(allColumnIds, skipHeader);
 			}
 
 		</script>
@@ -2147,6 +1539,8 @@
 		</div>
 		<div id="myGrid" class="ag-theme-alpine" style="height: 60vh"></div>
 		<script type="text/javascript">
+			let gridApi;
+
 			// Function to demonstrate calling grid's API
 			function deselect(){
 				gridOptions.api.deselectAll()
@@ -2244,18 +1638,21 @@
 				// get div to host the grid
 				const eGridDiv = document.getElementById("myGrid");
 				// new grid instance, passing in the hosting DIV and Grid Options
-				new agGrid.Grid(eGridDiv, gridOptions);
+				//new agGrid.Grid(eGridDiv, gridOptions);
+				gridApi = agGrid.createGrid(eGridDiv, gridOptions);
 				
 				autoSizeAll(false);
 			});
 			
 			function autoSizeAll(skipHeader) {
 				const allColumnIds = [];
-				gridOptions.columnApi.getColumns().forEach((column) => {
+				//gridOptions.columnApi.getColumns().forEach((column) => {
+				gridApi.getColumns().forEach((column) => {
 					allColumnIds.push(column.getId());
 				});
 
-				gridOptions.columnApi.autoSizeColumns(allColumnIds, skipHeader);
+				//gridOptions.columnApi.autoSizeColumns(allColumnIds, skipHeader);
+				gridApi.autoSizeColumns(allColumnIds, skipHeader);
 			}
 
 		</script>
@@ -2493,22 +1890,127 @@
 			$( document ).ready(function() {
 				// get div to host the grid
 				const eGridDiv = document.getElementById("myGrid");
+				
 				// new grid instance, passing in the hosting DIV and Grid Options
-				new agGrid.Grid(eGridDiv, gridOptions);
+				//new agGrid.Grid(eGridDiv, gridOptions);
+				gridApi = agGrid.createGrid(eGridDiv, gridOptions);
 				
 				autoSizeAll(false);
 			});
 			
 			function autoSizeAll(skipHeader) {
 				const allColumnIds = [];
-				gridOptions.columnApi.getColumns().forEach((column) => {
+				//gridOptions.columnApi.getColumns().forEach((column) => {
+				gridApi.getColumns().forEach((column) => {
 					allColumnIds.push(column.getId());
 				});
 
-				gridOptions.columnApi.autoSizeColumns(allColumnIds, skipHeader);
+				//gridOptions.columnApi.autoSizeColumns(allColumnIds, skipHeader);
+				gridApi.autoSizeColumns(allColumnIds, skipHeader);
 			}
 			
 		</script>
+		
+		<table width="100%">
+			<tr>
+				<? if ($GLOBALS['issiteadmin']) { ?>
+				<td style="background-color: #FFFF99; border: 1px solid #4C4C1F; border-radius:5px; padding:8px;" width="70%">
+
+					<h2 class="ui header">
+						<i class="tools icon"></i>
+						<div class="content">
+							Powerful Tools
+							<div class="sub header">Perform operations on the selected studies</div>
+						</div>
+					</h2>
+
+					<div class="ui segment">
+						<h3 class="ui header">
+							Apply enrollment tag(s)
+							<div class="sub header">Comma separated list</div>
+						</h3>
+						<div class="ui action input">
+							<input type="text" name="tags" id="tags" list="taglist" multiple>
+							<datalist id="taglist">
+							<?
+								$sqlstring = "select distinct(tag) 'tag' from tags where enrollment_id is not null and enrollment_id <> 0 and enrollment_id <> ''";
+								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+									$tag = $row['tag'];
+									?>
+									<option value="<?=$tag?>">
+									<?
+								}
+							?>
+							</datalist>
+							<button class="ui button" title="Applies the tags to the selected studies" onclick="document.theform.action='projects.php'; document.theform.action.value='applytags'; document.theform.submit()">Apply tags</button>
+						</div>
+					</div>
+
+					<div class="ui segment">
+						<h3 class="ui header">
+							Move studies to new project
+						</h3>
+						<div class="ui action input">
+							<select name="newprojectid" id="newprojectid" class="ui dropdown">
+							<?
+								$sqlstring = "select a.*, b.user_fullname from projects a left join users b on a.project_pi = b.user_id where a.project_status = 'active' order by a.project_name";
+								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+									$project_id = $row['project_id'];
+									$project_name = $row['project_name'];
+									$project_costcenter = $row['project_costcenter'];
+									$project_enddate = $row['project_enddate'];
+									$user_fullname = $row['user_fullname'];
+									
+									if (strtotime($project_enddate) < strtotime("now")) { $style="color: gray"; } else { $style = ""; }
+									?>
+									<option value="<?=$project_id?>" style="<?=$style?>"><?=$project_name?> (<?=$project_costcenter?>)</option>
+									<?
+								}
+							?>
+							</select>
+							<button class="ui button" title="Moves the imaging studies from this project to the selected project" onclick="document.theform.action='projects.php'; document.theform.action.value='changeproject'; document.theform.submit()">Move studies</button>
+						</div>
+					</div>
+					
+					<div class="ui segment">
+						<h3 class="ui header">
+							Rearchive
+						</h3>
+
+						<div class="ui checkbox" title="When re-archiving, only match existing subjects by ID. Do not use the Patient ID, DOB, or Sex fields to match subjects">
+							<input type="checkbox" name="matchidonly" value="1" checked>
+							<label>Match by ID only</label>
+						</div>
+						&nbsp; &nbsp;
+						<button class="ui orange button" title="Moves all DICOM files back into the incoming directory to be parsed again. Useful if there was an archiving error and too many subjects are in the wrong place." onclick="document.theform.action='projects.php'; document.theform.action.value='rearchivestudies'; document.theform.submit()">Re-archive DICOM studies</button>
+						&nbsp; &nbsp;
+						<button class="ui orange button" title="Moves all DICOM files from this SUBJECT into the incoming directory, and deletes the subject" onclick="document.theform.action='projects.php'; document.theform.action.value='rearchivesubjects'; document.theform.submit()">Re-archive Subjects</button>
+					</div>
+					
+					<div class="ui segment">
+						<h3 class="ui header">
+							Obliterate
+						</h3>
+						<button class="ui red button" title="Delete the subject permanently" onclick="document.theform.action='projects.php';document.theform.action.value='obliteratesubject'; document.theform.submit()"><i class="bomb icon"></i> Obliterate Subjects</button> &nbsp; &nbsp;
+						<button class="ui red button" title="Delete the studies permanently" onclick="document.theform.action='projects.php';document.theform.action.value='obliteratestudy'; document.theform.submit()"><i class="bomb icon"></i> Obliterate Studies</button>
+					</div>
+				</td>
+				<? } ?>
+
+				<td align="right" valign="top">
+					<!-- save the form -->
+					<form method="post" action="projects.php" id="savetableform">
+					<input type="hidden" name="id" value="<?=$id?>">
+					<input type="hidden" name="action" value="updatestudytable">
+					<input type="hidden" name="studytable" id="studytable">
+					<div align="right"><input class="ui primary button" type="submit" value="Save Studies Table"></div>
+					</form>
+				</td>
+			</tr>
+		</table>
+		
 		<?
 	}
 
@@ -3189,10 +2691,10 @@
 					</h1>
 				</div>
 				<div class="ten wide column">
-					<a class="ui green button" href="projects.php?action=editsubjects&id=<?=$projectid?>">
+					<a class="ui green button" href="projects.php?action=editsubjects&id=<?=$id?>">
 						<i class="user friends icon"></i> Subjects
 					</a>
-					<a class="ui green button" href="projects.php?action=displaystudies&id=<?=$projectid?>">
+					<a class="ui green button" href="projects.php?action=displaystudies&id=<?=$id?>">
 						<i class="project diagram icon"></i> Studies
 					</a>
 				</div>
@@ -3204,7 +2706,6 @@
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				$numnewstudies = mysqli_num_rows($result);
 
-			
 				DisplayCompactSubjectsTable($id);
 			?>
 		</div>

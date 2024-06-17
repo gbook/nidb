@@ -155,12 +155,10 @@
 		/* projects sub-menu */
 		elseif ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="projectassessments.php" || $page=="studies.php" || $page=="minipipeline.php" || $page=="templates.php" || $page=="datadictionary.php" || $page == "experiment.php") {
 			
-			if ($page=="projectchecklist.php" || $page=="projectassessments.php" || $page=="minipipeline.php" || $page=="templates.php" || $page=="datadictionary.php" || $page == "experiment.php") {
-				$projectid = GetVariable("projectid");
-			}
-			else {
+			//if ($page=="projectchecklist.php" || $page=="projectassessments.php" || $page=="minipipeline.php" || $page=="templates.php" || $page=="datadictionary.php" || $page == "experiment.php") {
+			$projectid = GetVariable("projectid");
+			if ($projectid == "")
 				$projectid = GetVariable("id");
-			}
 			
 			if ($projectid == "") {
 				?><!--<a href="projects.php" style="background-color:#273f70" class="item">Project List</a>--><?
@@ -172,9 +170,9 @@
 				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 				$name = $row['project_name'];
 				?>
-				<a href="projects.php?action=displayprojectinfo&id=<?=$projectid?>" class="<? if (($page == "projects.php") && ($action == "" || $action == "displayprojectinfo")) { echo "active"; } ?> blue item"><?=$name?></a>
+				<a href="projects.php?action=displayprojectinfo&id=<?=$projectid?>" class="active blue item"><?=$name?></a>
 				<div class="ui dropdown item">
-					<div class="text"><i class="search icon"></i> View Data</div>
+					<div class="text">View Data</div>
 					<i class="dropdown icon"></i>
 					<div class="menu">
 						<a class="item" href="projects.php?action=editsubjects&id=<?=$projectid?>" style="color: #222">
@@ -190,7 +188,7 @@
 					</div>
 				</div>
 				<div class="ui dropdown item">
-					<div class="text"><i class="tools icon"></i> Tools</div>
+					<div class="text">Tools</div>
 					<i class="dropdown icon"></i>
 					<div class="menu">
 						<a class="item" href="datadictionary.php?projectid=<?=$projectid?>" style="color: #222"><i class="database icon"></i> Data dictionary</a>
@@ -205,7 +203,7 @@
 					</div>
 				</div>
 				<div class="ui dropdown item">
-					<div class="text"><i class="file import icon"></i> Import Data</div>
+					<div class="text">Import Data</div>
 					<i class="dropdown icon"></i>
 					<div class="menu">
 						<a class="item" href="importimaging.php?action=newimportform&projectid=<?=$projectid?>" style="color: #222"><i class="file import icon"></i> Import imaging</a>
@@ -216,7 +214,7 @@
 				</div>
 
 				<div class="ui dropdown item">
-					<div class="text"><i class="cog icon"></i> Admin</div>
+					<div class="text"><i class="cog icon"></i>Admin</div>
 					<i class="dropdown icon"></i>
 					<div class="menu">
 						<? if ($GLOBALS['isadmin']) { ?>

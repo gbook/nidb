@@ -1417,6 +1417,7 @@
 			}
 			elseif ($s_resultoutput == 'subject') {
 				/* display only subject data */
+				//PrintVariable($result);
 				DisplaySearchResultsStudy($result);
 			}
 			elseif ($s_resultoutput == 'uniquesubject') {
@@ -3555,8 +3556,10 @@
 	/* -------------------------------------------- */
 	/* ------- DisplaySearchResultsSubject -------- */
 	/* -------------------------------------------- */
-	function DisplaySearchResultsSubject(&$result) {
-		//PrintSQLTable(&$result);
+	function DisplaySearchResultsSubject($result) {
+
+		mysqli_data_seek($result, 0);
+
 		?>
 		<form name="subjectlist" method="post" action="search.php">
 		<input type="hidden" name="modality" value="">
@@ -3598,8 +3601,9 @@
 	/* -------------------------------------------- */
 	/* ------- DisplaySearchResultsStudy ---------- */
 	/* -------------------------------------------- */
-	function DisplaySearchResultsStudy(&$result) {
-		//PrintSQLTable(&$result);
+	function DisplaySearchResultsStudy($result) {
+		mysqli_data_seek($result, 0);
+		//PrintVariable($result);
 		?>
 		<form name="subjectlist" method="post" action="search.php">
 		<input type="hidden" name="modality" value="">
