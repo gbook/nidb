@@ -1264,67 +1264,6 @@
 								
 								?>
 								<a href="pipeline_performance.php?pipelineid=<?=$id?>">Pipeline performance</a>
-								<div class="ui mini statistics">
-									<div class="ui statistic">
-										<div class="value"><?=$numcomplete?></div>
-										<div class="label" style="font-size: smaller">Completed</div>
-									</div>
-									<!--<div class="ui statistic">
-										<div class="value"><?=$numcompletesuccess?></div>
-										<div class="label" style="font-size: smaller">Completed<br>Successfuly</div>
-									</div>
-									<div class="ui statistic">
-										<div class="value"><?=$numprocessing?></div>
-										<div class="label" style="font-size: smaller">Processing</div>
-									</div>
-									<div class="ui statistic">
-										<div class="value"><?=$numpending?></div>
-										<div class="label" style="font-size: smaller">Pending</div>
-									</div>
-									<div class="ui statistic">
-										<div class="value"><?=$numerror?></div>
-										<div class="label" style="font-size: smaller">Error</div>
-									</div>-->
-									<div class="ui grey statistic">
-										<div class="value"><?=$totaltime?> hr</div>
-										<div class="label" style="font-size: smaller">Total CPU Time</div>
-									</div>
-								</div>
-								<br><br>
-								<div class="ui accordion">
-									<div class="title">
-										<i class="dropdown icon"></i>
-										Computing Performance
-									</div>
-									<div class="content">
-										<table class="ui very compact very small celled table">
-											<thead>
-												<th colspan="3">Computing performance<br><span class="tiny">Successful analyses only</span></th>
-											</thead>
-											<tr>
-												<td><b>Hostname</b></td>
-												<td><b>Avg CPU</b></td>
-												<td><b>Count</b></td>
-											</tr>
-										<?
-											/* $sqlstring = "select avg(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'avgcpu', hostname, count(hostname) 'count' FROM (select analysis_clusterstartdate, analysis_clusterenddate, trim(Replace(Replace(Replace(analysis_hostname,'\t',''),'\n',''),'\r','')) 'hostname' from `analysis` WHERE pipeline_id = $id and (analysis_iscomplete = 1 or analysis_status = 'complete')) hostnames group by hostname order by hostname";
-											$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-											while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-												$cpuhrs = number_format(($row['avgcpu']/60/60),2);
-												$count = $row['count'];
-												$hostname = $row['hostname'];
-												?>
-												<tr>
-													<td><?=$hostname?></td>
-													<td><?=$cpuhrs?> hrs</td>
-													<td><?=$count?></td>
-												</tr>
-												<?
-											} */
-										?>
-										</table>
-									</div>
-								</div>
 						</div>
 					</td>
 				</tr>

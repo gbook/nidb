@@ -806,8 +806,7 @@
 			<div class="two wide column">
 				<div class="ui segment" style="height:100%;">
 					<div class="ui header">
-						<i class="sitemap icon"></i>
-						<div class="content">Dependencies
+						<div class="content">Parent pipeline(s)
 							<div class="sub header"><?=$dependencylist?></div>
 						</div>
 					</div>
@@ -826,7 +825,6 @@
 			<div class="two wide column">
 				<div class="ui center aligned inverted blue segment" style="height:100%;">
 					<div class="ui header">
-						<i class="project diagram icon"></i>
 						<div class="content">Analysis graph</div>
 					</div>
 				</div>
@@ -927,7 +925,7 @@
 			<div class="three wide column">&nbsp;</div>
 			<div class="center aligned two wide column">
 				<div class="ui center aligned inverted blue segment" style="height:100%;">
-					<h2><em data-emoji=":bar_chart:"></em>Results</h2>
+					<h2>Results</h2>
 				</div>
 			</div>
 			<div class="eleven wide column">
@@ -974,7 +972,7 @@
 							<td><?=$numhtml?></td>
 						</tr>
 					</table>
-					<a class="ui basic button" href="viewanalysis.php?action=viewresults&analysisid=<?=$analysisid?>&studyid=<?=$studyid?>" target="_viewresults" title="View analysis results">View all results</a>
+					<a class="ui basic button" href="viewanalysis.php?action=viewresults&analysisid=<?=$analysisid?>&studyid=<?=$studyid?>" target="_viewresults" title="View analysis results"><em data-emoji=":bar_chart:"></em> View all results</a>
 					<a class="ui basic button" href="viewanalysis.php?action=viewfiles&analysisid=<?=$analysisid?>" target="_viewfiles" title="View file listing"><i class="folder open outline icon"></i> View all files</a>
 				</div>
 			</div>

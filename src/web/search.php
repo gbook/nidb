@@ -3661,7 +3661,7 @@
 			<tr>
 				<!--<td><input type="checkbox" name="enrollmentid[]" value="<?=$enrollment_id?>"></td>-->
 				<td><a href="subjects.php?id=<?=$subject_id?>"><?=$uid?></a></td>
-				<td><?=$project_name?><br><span class="tiny"><?=$enroll_startdate?> - <?=$enroll_enddate?></span></td>
+				<td><?=$project_name?></td>
 				<td><?=$birthdate?></td>
 				<td><?=$gender?></td>
 				<td><?=$ethnicity1?> <?=$ethnicity2?></td>
