@@ -41,9 +41,6 @@
 	require "nidbapi.php";
 	require "menu.php";
 
-	//PrintVariable($_POST);
-	//PrintVariable($_GET);
-	//PrintVariable($_FILES);
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
@@ -211,7 +208,24 @@
 									}
 									
 								} else {
-									$filteredRow[$type] = $mrow[$index];
+									// Some subjects has different uid in olinnidb.org
+
+									$test_uid = $mrow[$index];
+
+									$sqlstringuid = "SELECT uid FROM subjects WHER uid = $test_uid')";
+                                                                        $resultuid = MySQLiQuery($sqlstringuid, __FILE__, __LINE__);
+
+									if (mysqli_num_rows($resultuid) > 0) {
+										$filteredRow[$type] = $test_uid;
+									} else {
+										$AltID = $filteredRow['altid'];
+										$sqlstringUid = "SELECT uid FROM subjects WHERE subject_id in (select subject_id from subject_altuid where altuid = '$AltID')";
+	//                                                                      PrintSQL($sqlstringUid);
+        	                                                                $resultUid = MySQLiQuery($sqlstringUid, __FILE__, __LINE__);
+                	                                                        $rowUid = mysqli_fetch_array($resultUid, MYSQLI_ASSOC);
+                        	                                                $filteredRow[$type] = $rowUid['uid'];
+
+									}
 								}
 
                                                                 }
@@ -346,17 +360,18 @@
                  $measurenotes = str_replace("'","''",$measurenotes);
                  $measurenotes = str_replace('"',"''",$measurenotes);
 		
-		 $mstdate = date('Y-m-d',strtotime($measurestdate));
+		 $msttime = strtotime($measurestdate);
+		 $mstdate = ($msttime === false) ? '0000-00-00 00:00:00' : date('Y-m-d', $msttime);
 //		 echo $mstdate;
 
                  if ($enrollmentid!=''){
                 $sqlstring = "insert ignore into measures (enrollment_id, measure_dateentered, measurename_id, measure_notes, measure_rater,measure_value,measure_startdate,measure_entrydate,measure_createdate,measure_modifydate) values ($enrollmentid, now(),$measurenameid, NULLIF('$measurenotes',''),NULLIF('$measurerater',''),NULLIF('$measurevalue',''),NULLIF('$mstdate',''),now(),now(),now()) on duplicate key update measure_value='$measurevalue', measure_modifydate=now()";
                 $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-                 return 1;}
+		return 1;
+		 echo "Done Loading Data";
+		 }
                  else{  return 0;}
         }
-
-
 
 
 
