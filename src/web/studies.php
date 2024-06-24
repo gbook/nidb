@@ -2178,7 +2178,7 @@
 							<tr style="color: <?=$rowcolor?>">
 								<td><?=$series_num?><span id="series<?=$series_num?>"></td>
 								<td><span id="uploader<?=$mrseries_id?>"></span></td>
-								<td title="<b>Series Description</b> <?=$series_desc?><br><b>Protocol</b> <?=$protocol?><br><b>Sequence Description</b> <?=$sequence?><br><b>TE</b> <?=$series_te?>ms<br><b>Magnet</b> <?=$series_fieldstrength?>T<br><b>Flip angle</b> <?=$series_flip?>&deg;<br><b>Image type</b> <?=$image_type?><br><b>Image comment</b> <?=$image_comments?><br><b>Phase encoding</b> <?=$phase?>">
+								<td data-tooltip="Series Description - <?=$series_desc?>&#10;Protocol - <?=$protocol?>&#10;Sequence Description - <?=$sequence?>&#10;TE - <?=$series_te?>ms&#10;Magnet - <?=$series_fieldstrength?>T&#10;Flip angle - <?=$series_flip?>&deg;&#10;Image type - <?=$image_type?>&#10;Image comment - <?=$image_comments?>&#10;Phase encoding - <?=$phase?>" data-inverted="" data-variation="multiline">
 									<a href="series.php?action=scanparams&seriesid=<?=$mrseries_id?>&modality=mr"><?=$series_desc?></a>&nbsp;<span id="thumbnail<?=$series_num?>"></span>
 									<? //if (($bold_reps < 2) && ($GLOBALS['cfg']['allowrawdicomexport'])) { ?>
 									<!--&nbsp;<a href="viewimage.php?modality=mr&type=dicom&seriesid=<?=$mrseries_id?>"><i class="cube icon"></i></a>-->

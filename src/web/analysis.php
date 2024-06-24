@@ -862,7 +862,6 @@
 								if (($analysis_status == 'processing') && ($analysis_qsubid != 0)) {
 									?>
 									<a href="<?=$GLOBALS['cfg']['siteurl']?>/analysis.php?action=viewjob&id=<?=$analysis_qsubid?>" title="Click to view SGE status">processing</a>
-									<!--<iframe src="ajaxapi.php?action=sgejobstatus&jobid=<?=$analysis_qsubid?>" width="25px" height="25px" style="border: 0px">No iframes available?</iframe>-->
 									<?
 								}
 								else {
@@ -896,19 +895,6 @@
 						<td class="center aligned">
 							<a href="viewanalysis.php?action=viewgraph&analysisid=<?=$analysis_id?>&studyid=<?=$study_id?>&pipelineid=<?=$id?>&pipelineversion=<?=$pipeline_version?>" target="_viewgraph" title="View analysis information"><i class="large grey info circle icon"></i></a>
 						</td>
-						<!--<td class="center aligned">
-							<a href="viewanalysis.php?action=viewfiles&analysisid=<?=$analysis_id?>" target="_viewfiles" title="View file listing"><i class="large grey folder open outline icon"></i></a>
-						</td>
-						<td class="center aligned">
-							<? if ($GLOBALS['cfg']['allowrawdicomexport']) { ?>
-							<a href="download.php?modality=pipeline&analysisid=<?=$analysisid?>" border="0"><i class="large grey download icon"></i></a>
-							<? } else { ?>
-							
-							<? } ?>
-						</td>
-						<td class="center aligned">
-							<a href="viewanalysis.php?action=viewresults&analysisid=<?=$analysis_id?>&studyid=<?=$study_id?>" target="_viewresults" title="View analysis results"><i class="large grey chart bar icon"></i></a>
-						</td>-->
 						<? } else { ?>
 						<td></td>
 						<? } ?>

@@ -1189,61 +1189,12 @@
 								$totaltime = $row['cluster_time'];
 								$totaltime = number_format(($totaltime/60/60),2);
 
-								MarkTime("Info Tab - B");
-								
-								//$sqlstring = "select sum(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'cluster_timesuccess' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete' and analysis_iscomplete = 1";
-								//PrintSQL($sqlstring);
-								//$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-								//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-								//$totaltimesuccess = $row['cluster_timesuccess'];
-								//$totaltimesuccess = number_format(($totaltimesuccess/60/60),2);
-								
-								MarkTime("Info Tab - C");
-
 								$sqlstring = "select count(*) 'numcomplete' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete'";
 								//PrintSQL($sqlstring);
 								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 								$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 								$numcomplete = $row['numcomplete'];
 
-								MarkTime("Info Tab - D");
-
-								//$sqlstring = "select count(*) 'numcompletesuccess' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'complete' and analysis_iscomplete = 1";
-								//PrintSQL($sqlstring);
-								//$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-								//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-								//$numcompletesuccess = $row['numcompletesuccess'];
-
-								MarkTime("Info Tab - E");
-								
-								//$sqlstring = "select count(*) 'numprocessing' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'processing'";
-								//PrintSQL($sqlstring);
-								//$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-								//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-								//$numprocessing = $row['numprocessing'];
-								
-								MarkTime("Info Tab - F");
-								
-								//$sqlstring = "select count(*) 'numpending' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status = 'pending'";
-								//PrintSQL($sqlstring);
-								//$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-								//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-								//$numpending = $row['numpending'];
-								
-								/* group by and count() */
-								//$sqlstring = "select analysis_status, count(*) 'count' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id group by analysis_status";
-								//$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-								//while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-								//	$status = $row['analysis_status'];
-								//	$count = $row['count'];
-								//	if ($status == "complete") { $numcomplete = $count; }
-								//	if ($status == "processing") { $numprocessing = $count; }
-								//	if ($status == "pending") { $numpending = $count; }
-								//	if ($status == "error") { $numerror = $count; }
-								//}
-								
-								MarkTime("Info Tab - G");
-								
 								/* get mean processing times */
 								$sqlstring = "select analysis_id, timestampdiff(second, analysis_startdate, analysis_enddate) 'analysis_time', timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status <> ''";
 								//PrintSQL($sqlstring);
@@ -1260,10 +1211,19 @@
 									$analysistimes[] = 0;
 								}
 
-								MarkTime("Info Tab - H");
-								
-								?>
-								<a href="pipeline_performance.php?pipelineid=<?=$id?>">Pipeline performance</a>
+							?>
+							<div class="ui mini statistics">
+								<div class="ui statistic">
+									<div class="value"><?=$numcomplete?></div>
+									<div class="label" style="font-size: smaller">Completed</div>
+								</div>
+								<div class="ui grey statistic">
+									<div class="value"><?=$totaltime?> hr</div>
+									<div class="label" style="font-size: smaller">Total CPU Time</div>
+								</div>
+							</div>
+							<br>
+							<a href="pipeline_performance.php?pipelineid=<?=$id?>">Pipeline performance</a>
 						</div>
 					</td>
 				</tr>
@@ -1820,7 +1780,7 @@
 			<input type="hidden" name="id" value="<?=$id?>">
 			<input type="hidden" name="returntab" value="datascripts">
 			<?
-				if (($level == 1) || (($level == 2) && ($dependency == ''))) {
+				//if (($level == 1) || (($level == 2) && ($dependency == ''))) {
 			?>
 			
 			<div class="ui blue secondary top attached segment">
@@ -1829,12 +1789,18 @@
 			<div class="ui attached segment">
 				<table class="entrytable">
 					<tr>
-						<td class="label" valign="top">Successful files <i class="grey question outline circle icon" title="<b>Successful files</b><br><br>The analysis is marked as successful if ALL of the files specified exist at the end of the analysis. If left blank, the analysis will always be marked as successful.<br>Example: <tt>analysis/T1w/T1w_acpc_dc_restore_brain.nii.gz</tt>"></i></td>
-						<td valign="top"><textarea name="completefiles" <?=$disabled?> rows="4" cols="60"><?=$completefiles?></textarea><br>
-						<span class="tiny">Comma seperated list of files (relative paths)</span></td>
+						<td class="label" valign="top">
+							Successful files <i class="grey question outline circle icon" title="<b>Successful files</b><br><br>The analysis is marked as successful if ALL of the files specified exist at the end of the analysis. If left blank, the analysis will always be marked as successful.<br>Example: <tt>analysis/T1w/T1w_acpc_dc_restore_brain.nii.gz</tt>"></i>
+						</td>
+						<td valign="top">
+							<textarea name="completefiles" <?=$disabled?> rows="4" cols="60"><?=$completefiles?></textarea><br>
+							<span class="tiny">Comma seperated list of files (relative paths)</span>
+						</td>
 					</tr>
 					<tr>
-						<td class="label" valign="top">Results script <i class="grey question outline circle icon" title="<b>Results script</b><br><br>This script will be executed last and can be re-run separate from the analysis pipeline. The results script would often be used to create thumbnails of images and parse text files, and reinsert those results back into the database. The same pipeline variables available in the script command section below are available here to be passed as parameters to the results script"></i></td>
+						<td class="label" valign="top">
+							Results script <i class="grey question outline circle icon" title="<b>Results script</b><br><br>This script will be executed last and can be re-run separate from the analysis pipeline. The results script would often be used to create thumbnails of images and parse text files, and reinsert those results back into the database. The same pipeline variables available in the script command section below are available here to be passed as parameters to the results script"></i>
+						</td>
 						<td valign="top">
 							<textarea name="pipelineresultsscript" rows="3" cols="60"><?=$resultscript?></textarea>
 						</td>
@@ -1858,12 +1824,6 @@
 													$d_ver = $row['pipeline_version'];
 													
 													if (($d_name != "") && ($d_id != "")) {
-														/* get the number of analyses in the pipeline */
-														//$sqlstringA = "select count(*) 'count' from analysis where pipeline_id = $d_id and analysis_status = 'complete'";
-														//$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-														//$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-														//$nummembers = $rowA['count'];
-														
 														if (in_array($d_id, explode(",",$dependency))) {
 															$selected = "selected";
 															$dependencies[] = $d_name;
@@ -1932,8 +1892,9 @@
 						</td>
 					</tr>
 					<tr class="level1">
-						<td class="label" valign="top">Study Group(s) <i class="grey question outline circle icon" title="Perform this analysis ONLY<br>on the studies in the specified groups"></i><br>
-						<span class="level2" style="color:darkred; font-size:8pt; font-weight:normal"> Second level must have<br> at least one group.<br>Group(s) must be identical to<br>first level <b>dependency's</b> group(s)</span>
+						<td class="label" valign="top">
+							Study Group(s) <i class="grey question outline circle icon" title="Perform this analysis ONLY on the studies in the specified groups"></i><br>
+							<span class="level2" style="color:darkred; font-size:8pt; font-weight:normal"> Second level must have<br> at least one group.<br>Group(s) must be identical to<br>first level <b>dependency's</b> group(s)</span>
 						</td>
 						<td valign="top">
 							<select name="groupid[]" id="groupid" <?=$disabled?> multiple="multiple" class="ui dropdown">
@@ -1984,8 +1945,9 @@
 						</td>
 					</tr>
 					<tr class="level2">
-						<td class="label" valign="top">Group by Subject <img src="images/help.gif" title="<b>Group by Subject</b><br><br>Useful for longitudinal analyses. <u>Second level pipelines only</u>"><br>
-						<span class="level2" style="color:darkred; font-size:8pt; font-weight:normal"> Second level only</span>
+						<td class="label" valign="top">
+							Group by Subject <i class="help icon" title="Group by Subject - Useful for longitudinal analyses. Second level pipelines only"></i><br>
+							<span class="level2" style="color:darkred; font-size:8pt; font-weight:normal"> Second level only</span>
 						</td>
 						<td valign="top" title="<b>Group by Subject</b><br><br>Useful for longitudinal studies"><input type="checkbox" name="groupbysubject" value="1" <? if ($groupbysubject) { echo "checked"; } ?>></td>
 					</tr>
@@ -2622,7 +2584,8 @@
 					<? } ?>
 				</table>
 				<?
-				} /* end of the check to display the data specs */ ?>
+				//} /* end of the check to display the data specs */
+				?>
 			</div>
 
 			<div class="ui blue secondary attached segment">
