@@ -143,14 +143,26 @@
 			
 			/* group by and count() */
 			$sqlstring = "select analysis_status, count(*) 'count' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $pipelineid group by analysis_status";
+			$numTotal = 0;
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$status = $row['analysis_status'];
 				$count = $row['count'];
-				if ($status == "complete") { $numcomplete = $count; }
-				if ($status == "processing") { $numprocessing = $count; }
-				if ($status == "pending") { $numpending = $count; }
-				if ($status == "error") { $numerror = $count; }
+				$numTotal += $count;
+				if ($status == "complete") { $numComplete = $count; }
+				if ($status == "pending") { $numPending = $count; }
+				if ($status == "processing") { $numProcessing = $count; }
+				if ($status == "error") { $numError = $count; }
+				if ($status == "submitted") { $numSubmitted = $count; }
+				if ($status == "notcompleted") { $numNotCompleted = $count; }
+				if ($status == "NoMatchingStudies") { $numNoMatchingStudies = $count; }
+				if ($status == "rerunresults") { $numRerunResults = $count; }
+				if ($status == "NoMatchingStudyDependency") { $numNoMatchingStudyDependency = $count; }
+				if ($status == "IncompleteDependency") { $numIncompleteDependency = $count; }
+				if ($status == "BadDependency") { $numBadDependency = $count; }
+				if ($status == "NoMatchingSeries") { $numNoMatchingSeries = $count; }
+				if ($status == "OddDependencyStatus") { $numOddDependencyStatus = $count; }
+				if ($status == "started") { $numStarted = $count; }
 			}
 			
 			MarkTime("Info Tab - G");
@@ -305,6 +317,33 @@
 				</div>
 				
 			</div>
+
+			<br><br>
+			<script type="module">
+				import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+			</script>
+			<pre class="mermaid">
+				sankey-beta
+
+				%% source,target,value
+				All,Complete,72
+				All,Not processed, 5
+			</pre>
+
+				$numComplete
+				$numPending
+				$numProcessing
+				$numError
+				$numSubmitted
+				$numNotCompleted
+				$numNoMatchingStudies
+				$numRerunResults
+				$numNoMatchingStudyDependency
+				$numIncompleteDependency
+				$numBadDependency
+				$numNoMatchingSeries
+				$numOddDependencyStatus
+				$numStarted
 			
 			<br><br>
 			<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>

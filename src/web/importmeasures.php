@@ -41,6 +41,9 @@
 	require "nidbapi.php";
 	require "menu.php";
 
+	//PrintVariable($_POST);
+	//PrintVariable($_GET);
+	//PrintVariable($_FILES);
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
@@ -175,12 +178,12 @@
 						foreach (['altid', 'siteid', 'nidbid', 'date', 'rater', 'notes'] as $type) {
 							$index = array_search($columns[$type], $mheader);
 							if ($index !== false) {
-								if ($type === 'nidbid' && empty($mrow[$index])) {
+								if ($type === 'nidbid' ) {
 //									echo $filteredRow[$type];
-									$AltID = $filteredRow['altid'];
+									$AltID = substr($filteredRow['altid'],-5);
 									$SiteID = $filteredRow['siteid'];
 									$PID = $projectinfo[$SiteID];
-//									echo "1 . Alternate ID:".$AltID.", Site ID:".$SiteID.", Project ID:".$PID."<br>";
+									echo "1 . Alternate ID:".$AltID.", Site ID:".$SiteID.", Project ID:".$PID."<br>";
 									$sqlstringUid = "SELECT uid FROM subjects WHERE subject_id in (select subject_id from subject_altuid where altuid = '$AltID')";
 //									PrintSQL($sqlstringUid);
 							                $resultUid = MySQLiQuery($sqlstringUid, __FILE__, __LINE__);
@@ -198,7 +201,7 @@
 
 										if (mysqli_num_rows($resultPid) > 0) {
 //											echo "2. Alternate ID:".$AltID.", Site ID:".$SiteID.", Project ID:".$PID."<br>";
-											$Uid = AddSubject($filteredRow['altid'], $filteredRow['altid'], $filteredRow['altid'],$projectinfo[$SiteID]);
+											$Uid = AddSubject( $AltID, $AltID,  $AltID ,$projectinfo[$SiteID]);
 											$filteredRow[$type] = $Uid;
 										}
 																		
@@ -208,24 +211,8 @@
 									}
 									
 								} else {
-									// Some subjects has different uid in olinnidb.org
-
-									$test_uid = $mrow[$index];
-
-									$sqlstringuid = "SELECT uid FROM subjects WHER uid = $test_uid')";
-                                                                        $resultuid = MySQLiQuery($sqlstringuid, __FILE__, __LINE__);
-
-									if (mysqli_num_rows($resultuid) > 0) {
-										$filteredRow[$type] = $test_uid;
-									} else {
-										$AltID = $filteredRow['altid'];
-										$sqlstringUid = "SELECT uid FROM subjects WHERE subject_id in (select subject_id from subject_altuid where altuid = '$AltID')";
-	//                                                                      PrintSQL($sqlstringUid);
-        	                                                                $resultUid = MySQLiQuery($sqlstringUid, __FILE__, __LINE__);
-                	                                                        $rowUid = mysqli_fetch_array($resultUid, MYSQLI_ASSOC);
-                        	                                                $filteredRow[$type] = $rowUid['uid'];
-
-									}
+									$SiteID = $filteredRow['siteid'];
+									$filteredRow[$type] = $mrow[$index];
 								}
 
                                                                 }
@@ -317,7 +304,7 @@
 		// Inserting Subject into Corresponding Study
 //		echo "ENROLLING"."<br>";
 		$sqlstringEn = "insert into enrollment (project_id, subject_id, enroll_startdate) values ($projid, $SubjectRowID, now())";
-//		 PrintSQL($sqlstringEn);
+		 PrintSQL($sqlstringEn);
                 $resultEn = MySQLiQuery($sqlstringEn , __FILE__, __LINE__);
 
 		
@@ -359,19 +346,21 @@
 
                  $measurenotes = str_replace("'","''",$measurenotes);
                  $measurenotes = str_replace('"',"''",$measurenotes);
+		 
+		 // Dealing with no date values
 		
 		 $msttime = strtotime($measurestdate);
-		 $mstdate = ($msttime === false) ? '0000-00-00 00:00:00' : date('Y-m-d', $msttime);
+		 $mstdate = ($msttime === false) ? '0000-00-00' : date('Y-m-d', $msttime);
 //		 echo $mstdate;
 
                  if ($enrollmentid!=''){
-                $sqlstring = "insert ignore into measures (enrollment_id, measure_dateentered, measurename_id, measure_notes, measure_rater,measure_value,measure_startdate,measure_entrydate,measure_createdate,measure_modifydate) values ($enrollmentid, now(),$measurenameid, NULLIF('$measurenotes',''),NULLIF('$measurerater',''),NULLIF('$measurevalue',''),NULLIF('$mstdate',''),now(),now(),now()) on duplicate key update measure_value='$measurevalue', measure_modifydate=now()";
+                $sqlstring = "insert ignore into measures (enrollment_id, measure_dateentered, measurename_id, measure_notes, measure_rater,measure_value,measure_startdate,measure_entrydate,measure_createdate,measure_modifydate) values ($enrollmentid, now(),$measurenameid, '$measurenotes','$measurerater','$measurevalue',NULLIF('$mstdate',''),now(),now(),now()) on duplicate key update measure_value='$measurevalue', measure_modifydate=now()";
                 $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		return 1;
-		 echo "Done Loading Data";
-		 }
+                 return 1;}
                  else{  return 0;}
         }
+
+
 
 
 
