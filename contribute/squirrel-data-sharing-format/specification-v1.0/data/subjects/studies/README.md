@@ -8,7 +8,7 @@ An array of imaging studies, with information about each study. An imaging study
 
 Valid squirrel **modalities** are derived from the DICOM standard and from NiDB modalities. Modality can be any string, but some squirrel readers may not correctly interpret the modality or may convert it to “other” or “unknown”. See full list of [modalities](../../../../modalities.md).
 
-<figure><img src="https://mermaid.ink/img/pako:eNqVlF1vmzAUhv9K5CoSkSAiEU2JK_Wqu5mmTVrvJm48fEi8Akb-0MKi_PfZBjuB9qLlAr8HP-_x8TFwRiWngDA6CNIdF99-Fu3CXIJzlSRPHSlfyQGicVw9Xmejry8_vju1MiAlikT2dovYBKyDmrUgo6BmBJw6EKyBVsnoRs8om5qyUrk1EqsYb4noVwPlniZPUv_-A6VJ5IXPMs4fBNcdaUndSyYjFyU-9Ki32nRKU2ZKH8d3iAaI1MIgXrzDUKEPMnL3MDsktEuY_doV3PB2OtQ6r3K5HCzJ2h6SII2sWG3PyUoPvUVtHywoJ2e1XN403mLXcICv8cI9WHlfOFRXxxgMHh_NHH4j1uD1YPDRxBC2oPoaFqF8y9T4rqqq2HRL8FdIKJFHIgTp8XZqmqzyGeOsC5-xTlrxEePMHk70I97BM740wQD3aRoPFnyXZdmok7-MqiPOuhOKUQOiIYyar_9sUxVIHaGBAmEjKVRE16pARXsxqO5M8-ELZYoLhCtSS4gR0Yq_9G2JsBIaPPTMiPmZNIEyX9wvzicxwmd0QjiNUY_wNt2td3n2kO_yzcM232f5JUb_nCNd74crv99vNrttnl_-A4GhlBM?type=png" alt=""><figcaption></figcaption></figure>
+<figure><img src="https://mermaid.ink/img/pako:eNqVlEFvgjAUx78KqSHBRBazsAtLPG2XZdmSeVu4POlDOoGStmwS43dfSykKelAO9P3b37-vfU85kJRTJDHZCqhz7_0rqTz9CM5V8Lb-_OiieRiuKCgIzGv-fEL0fA3pDrYY9ON0ldVYsAplMEQTAvc1ClZipWRwFk8okzikLFWMVyDaYKLnFu5mw9VW8KaGCopW6sSd8px0-_aobDY_mOrULnDrThtGNZTpjfrxCsE3EsUvmMPI4FxcYVml9LK-YgeP1EDbRCa1LofJ3A2Xy_ZSTAYucIjvW0v4YBokoJQZK0yPTOigS9QUxYBy1GjfP-uLwU7SwiftdRNz5xt63p2jF9bj1MThLmIMLrYGp0aG4QqqLdAbjm-YIp5lWbbQ1RJ8hyEFmYMQ0MaPY9Moyz3GSRXusY5KcYtxYh86eovXevofzWDAp-VyYS3xLIqiPg7_GFV5HNV7siAlihIY1R-Hg9kqISrHEhMS65BiBk2hEpJUR402tS4-vlKmuCBxBoXEBYFG8XVbpSRWokEHvTDQ35rSTeo_6jfnZW86_gPjwJGq?type=png" alt=""><figcaption></figcaption></figure>
 
 ### JSON variables
 

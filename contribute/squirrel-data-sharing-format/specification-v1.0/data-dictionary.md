@@ -6,9 +6,9 @@ description: JSON object
 
 The data-dictionary object stores information describing mappings or any other descriptive information about the data. This can also contain any information that doesn't fit elsewhere in the squirrel package, such as project descriptions.
 
-Examples include mapping numeric values (1,2,3,...) to descriptions (right, left, ambi, ...)
+Examples include mapping numeric values (1,2,3,...) to descriptions (F, M, O, ...)
 
-<figure><img src="https://mermaid.ink/img/pako:eNqVVE1v2zAM_SuBigAOYAdO4KaOCvTUXYZhA9bb4Itm0YlW2zL0gcUL8t8nyZYSuz20OkiP5nskRUI-o5JTQBgdBOmOi28_i3ZhluBcJclTR8pXcoBoPFePV2_09eXHd4dWhkiJIpHdbik2AOugZi3IKKAZA04dCNZAq2R0g2csG5qyUrkciUWMt0T0q4HlviZPUv_-A6UJ5IGPMvoPguuOtKTuJZORsxJveqqX2nBKU2ZKH893GA0QqYWhePAOhwp9kJHbg3cIaFOY-9oM7njrDrXOq1wuB0mytkMSpJEVq-2cLPSkt1TbB0uUk1ktlzeNt7SrOZCv9sJ9WHldGKqrYzQGjbdmCn8RK_B4EHhrIghXUH0Ni1C-5dT4rqqq2HRL8FdIKJFHIgTp8XYqmmT5jHDWhc9IJ634iHAmDxP9iPbaG_suggLu0zQeNPguy7IRJ38ZVUecdScUowZEQxg1z_9sYxVIHaGBAmEDKVRE16pARXsxVN2ZDPCFMsUFwhWpJcSIaMVf-rZEWAkNnvTMiPmbNIFlntwvzic2wmd0QjiNUY_wNt2td3n2kO_yzcM232f5JUb_nCJd74eV3-83m902zy__AQQDlFA?type=png" alt=""><figcaption></figcaption></figure>
+<figure><img src="https://mermaid.ink/img/pako:eNptksFqwzAMhl8leBRcaEYZ2cWDnrbLGBust5GLGiuN18Q2trM1lL777KRO26w5xL-sT5Jl-UAKxZEwsjWgq-TtM5eJ_4xSjr6uP957NU_TFQcHNPzmT2fE72sodrBFelqnXqGxFhItHdWEwL1GIxqUztILPaFC4ZSLwgklwXR0Ys8HuN9NV1ujWg0S6s4KS3sriWbMe0Jtu_nGwpeOIvqjHRjXcuE7OK03CLWxaH4gHMbSS-MGK6Tzbt9iD19ZIz0UCqX9dYTK_fLfPfY47W42G0LS-zAgA40tRR1mFOQZGmcSuHAj1qG2w-X2MqJjVtfVmIxk4rPW7K4s8XG5XPiDGbXDlIOtwBjo2EM8cIy6GNl17BDK7rIsO-n0V3BXsUzvyYI0aBoQ3D_TQ0iZE1dhgzlhXnIsoa1dTnJ59GirfSF84cIpQ1gJtcUFgdapdScLwpxpMULPAvyrb0bKv5kvpaJ9_AP3KBDt?type=png" alt=""><figcaption></figcaption></figure>
 
 ### JSON variables
 

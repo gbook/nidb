@@ -6,9 +6,7 @@ description: JSON array
 
 Pipelines are the methods used to analyze data after it has been collected. In other words, the experiment provides the methods to collect the data and the pipelines provide the methods to analyze the data once it has been collected.
 
-Basic pipeline information is stored in the main `squirrel.json` file, and complete pipeline information is stored in the pipeline subdirectory in the `pipeline.json` file.
-
-<figure><img src="https://mermaid.ink/img/pako:eNqVVFFvmzAQ_iuRq0hEgohENCWu1KfuZZo2aX2beLnhI_EKGNlGC4vy32cbTALtQ-sH-zvu--7OdzJnkguGhJKDhOa4-PYzqxdmSSF0FD01kL_CAYPhXD1evcHXlx_fHVoZIgMNgd1uKTYAb7DkNapgRDMGnhqUvMJaq-AGz1g2NOO5djkii7ioQXarnuW-Rk-q_f0HcxPIAx9l8B-kaBuooewUV4GzIm96qpfacLpl3JQ-nO8wKgTVSkPx4B0Ok-1BBW4fvX1Am8Lc12Zwx1v3WOu8yuWyl0RrOyQJlSp4aedkoSe9pdo-WKKazGq5vGm8pV3Nnny1F-7DyuvGobo6BqPXeGum8BexAo97gbcmgvEKuitxMZZvOSW9K4oiNN2S4hUjBuoIUkJHt1PRJMtnhLMufEY6acVHhDP5ONGPaKcpr-nwPo7DXkTvkiQZcPSXM32kSXMiIalQVsCZef9nGywj-ogVZoQayLCAttQZyeqLobaNaT9-YVwLSWgBpcKQQKvFS1fnhGrZoic9czC_k2pkmTf3S4iJTeiZnAiNQ9IRuo13612aPKS7dPOwTfdJegnJP6eI1_t-pff7zWa3TdPLf80tlNs?type=png" alt=""><figcaption></figcaption></figure>
+<figure><img src="https://mermaid.ink/img/pako:eNptklFPwyAQx79Kg1nCktYspr7UZE_6Yowm7s305VauK64FAlTXLPvuQjtw1vWh_I_7HX8OOJJKMiQF2WlQTfLyXorEfVpKS583b6-jWmbZmoEF6n_Lh1_EzSuo9rBDeh7nWa6w5QINjWpG4EGh5h0Ka-iFnlHeOGO8slwK0AOdxcsJHmez9U7LXoGAdjDc0DFKQhjWPaOm335i5ayDCPkQe8b2jLsOzuMVQm4N6i_wmzH0MrjCcmFd2rU4wn-iSE9G3todh3ceh__p2OO8u8ViKslu_QVp6EzNW39HXgYo3oin_HkYi8pMRzvKAAbbocUkcolbsS1u6rpOXUrLPWYMTANaw1DcXZZEn1iC96tVOhUVN3men3X2zZltilwdSEo61B1w5l7m0S9WEttghyUpnGRYQ9_akpTi5NBeuV3hE-NWalLU0BpMCfRWbgZRkcLqHgP0yME99C5S7pl8SBni0w9HOA2R?type=png" alt=""><figcaption></figcaption></figure>
 
 ### JSON Variables
 
