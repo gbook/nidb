@@ -10,9 +10,10 @@ Experiments describe how data was collected from the participant. In other words
 
 ### JSON variables
 
-<mark style="color:red;">\*required</mark>
+:blue\_circle: Primary key\
+:red\_circle: Required
 
-<table data-header-hidden><thead><tr><th width="198" align="right"></th><th width="98.00000000000003"></th><th></th></tr></thead><tbody><tr><td align="right"><em><strong>Variable</strong></em></td><td><strong>Type</strong></td><td><strong>Description</strong></td></tr><tr><td align="right"><code>ExperimentName</code></td><td>string</td><td>Unique name of the experiment. <mark style="color:red;">REQUIRED</mark></td></tr><tr><td align="right"><code>FileCount</code></td><td>number</td><td>Number of files contained in the experiment. <mark style="color:red;">REQUIRED</mark></td></tr><tr><td align="right"><code>Size</code></td><td>number</td><td>Size, in bytes, of the experiment files. <mark style="color:red;">REQUIRED</mark></td></tr><tr><td align="right"><code>VirtualPath</code></td><td>string</td><td>Path to the experiment within the squirrel package.</td></tr></tbody></table>
+<table data-full-width="true"><thead><tr><th width="198" align="right">Variable</th><th width="98.00000000000003">Type</th><th width="93">Default</th><th>Description</th></tr></thead><tbody><tr><td align="right"><code>ExperimentName</code></td><td>string</td><td><span data-gb-custom-inline data-tag="emoji" data-code="1f534">🔴</span> <span data-gb-custom-inline data-tag="emoji" data-code="1f535">🔵</span></td><td>Unique name of the experiment.</td></tr><tr><td align="right"><code>FileCount</code></td><td>number</td><td><span data-gb-custom-inline data-tag="emoji" data-code="1f534">🔴</span></td><td>Number of files contained in the experiment.</td></tr><tr><td align="right"><code>Size</code></td><td>number</td><td><span data-gb-custom-inline data-tag="emoji" data-code="1f534">🔴</span></td><td>Size, in bytes, of the experiment files.</td></tr><tr><td align="right"><code>VirtualPath</code></td><td>string</td><td></td><td>Path to the experiment within the squirrel package.</td></tr></tbody></table>
 
 ### Directory structure
 
