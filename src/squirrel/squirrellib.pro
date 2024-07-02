@@ -39,9 +39,9 @@ SOURCES += \
 	main.cpp \
 	squirrel.cpp \
 	squirrelAnalysis.cpp \
-	squirrelDrug.cpp \
+	squirrelIntervention.cpp \
 	squirrelExperiment.cpp \
-	squirrelMeasure.cpp \
+	squirrelObservation.cpp \
 	squirrelPipeline.cpp \
 	squirrelSeries.cpp \
 	squirrelStudy.cpp \
@@ -64,9 +64,9 @@ HEADERS += \
 	modify.h \
 	squirrel.h \
 	squirrelAnalysis.h \
-	squirrelDrug.h \
+	squirrelIntervention.h \
 	squirrelExperiment.h \
-	squirrelMeasure.h \
+	squirrelObservation.h \
 	squirrelPipeline.h \
 	squirrelSeries.h \
 	squirrelStudy.h \

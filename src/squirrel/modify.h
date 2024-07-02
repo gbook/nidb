@@ -30,6 +30,7 @@ public:
     modify();
 
     bool DoModify(QString packagePath, QString addObject, QString removeObject, QString dataPath, bool recursive, QString objectData, QString objectID, QString subjectID, int studyNum, QString &m);
+    void PrintVariables(QString object);
 };
 
 #endif // MODIFY_H

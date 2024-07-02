@@ -34,8 +34,8 @@
 #include "squirrelSeries.h"
 #include "squirrelExperiment.h"
 #include "squirrelPipeline.h"
-#include "squirrelMeasure.h"
-#include "squirrelDrug.h"
+#include "squirrelObservation.h"
+#include "squirrelIntervention.h"
 #include "squirrelGroupAnalysis.h"
 #include "squirrelDataDictionary.h"
 #include "squirrelVersion.h"
@@ -90,8 +90,8 @@ public:
     QList<squirrelStudy> GetStudies(qint64 subjectRowID);
     QList<squirrelSeries> GetSeries(qint64 studyRowID);
     QList<squirrelAnalysis> GetAnalyses(qint64 studyRowID);
-    QList<squirrelMeasure> GetMeasures(qint64 subjectRowID);
-    QList<squirrelDrug> GetDrugs(qint64 subjectRowID);
+    QList<squirrelObservation> GetObservations(qint64 subjectRowID);
+    QList<squirrelIntervention> GetInterventions(qint64 subjectRowID);
     QList<squirrelGroupAnalysis> GetAllGroupAnalyses();
     QList<squirrelDataDictionary> GetAllDataDictionaries();
 
@@ -115,8 +115,8 @@ public:
     bool RemoveSubject(qint64 subjectRowID);
     bool RemoveStudy(qint64 studyRowID);
     bool RemoveSeries(qint64 seriesRowID);
-    bool RemoveMeasure(qint64 measureRowID);
-    bool RemoveDrug(qint64 drugRowID);
+    bool RemoveObservation(qint64 observationRowID);
+    bool RemoveIntervention(qint64 InterventionRowID);
     bool RemoveAnalysis(qint64 analysisRowID);
     bool RemoveExperiment(qint64 experimentRowID);
     bool RemovePipeline(qint64 pipelineRowID);

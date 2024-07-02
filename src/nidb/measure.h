@@ -24,7 +24,7 @@
 #define MEASURE_H
 #include <QString>
 #include "nidb.h"
-#include "squirrelMeasure.h"
+#include "squirrelObservation.h"
 
 class measure
 {
@@ -34,7 +34,7 @@ public:
     nidb *n;
 
     void PrintMeasureInfo();
-    squirrelMeasure GetSquirrelObject();
+    squirrelObservation GetSquirrelObject();
 
     QDateTime dateMeasureComplete;
     QDateTime dateMeasureEnd;

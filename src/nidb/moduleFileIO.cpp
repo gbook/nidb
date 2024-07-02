@@ -934,61 +934,127 @@ bool moduleFileIO::MoveStudyToSubject(int studyid, QString newuid, int newsubjec
 /* ---------------------------------------------------------- */
 /* --------- MergeSubjects ---------------------------------- */
 /* ---------------------------------------------------------- */
-bool moduleFileIO::MergeSubjects(int subjectid, QString mergeIDs, QString mergeName, QString mergeDOB, QString mergeSex, QString mergeEthnicity1, QString mergeEthnicity2, QString mergeGUID, QString mergeAltUIDs, QString &msg) {
+bool moduleFileIO::MergeSubjects(int targetSubjectID, QString mergeIDs, QString mergeName, QString mergeDOB, QString mergeSex, QString mergeEthnicity1, QString mergeEthnicity2, QString mergeGUID, QString mergeAltUIDs, QString &msg) {
 
     QSqlQuery q;
     msg = "";
 
-    QStringList ids = mergeIDs.split(",");
-    if (ids.size() > 0) {
-        /* moving all studies from each existing subject to the new subject */
-        foreach (QString id, ids) {
+    subject targetSubject(targetSubjectID, n);
 
-            /* make sure the target subjectid is not in the list of merge ids */
-            if (id.toInt() == subjectid)
+    QStringList sourceSubjectIDs = mergeIDs.split(",");
+    if (sourceSubjectIDs.size() > 0) {
+
+        /* go through all other subjects, and move studies from each source subject to the target subject */
+        foreach (QString sourceSubjectID, sourceSubjectIDs) {
+
+            /* ignore the targetSubjectID if it appears in the list */
+            if (sourceSubjectID.toInt() == targetSubjectID)
                 continue;
+
+            subject sourceSubject(sourceSubjectID.toInt(), n);
 
             /* get list of studies for this subject */
             q.prepare("select study_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id where b.subject_id = :subjectid");
-            q.bindValue(":subjectid", id.toInt());
-            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+            q.bindValue(":subjectid", sourceSubjectID.toInt());
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
             if (q.size() > 0) {
-                n->Log(QString("Found [%1] studies for subject [%2]").arg(q.size()).arg(id.toInt()));
+                n->Log(QString("Found [%1] studies for subject [%2]").arg(q.size()).arg(sourceSubject.UID()));
                 while (q.next()) {
-                    int studyid = q.value("study_id").toInt();
+                    int sourceStudyID = q.value("study_id").toInt();
                     QString m;
-                    if (!MoveStudyToSubject(studyid, "", subjectid, m)) {
+                    if (!MoveStudyToSubject(sourceStudyID, "", targetSubjectID, m)) {
                         n->Log("Error moving study to subject [" + m + "]");
                         return false;
                     }
                 }
             }
-            n->Log(QString("Found no studies for this subject [%1]").arg(id.toInt()));
+            n->Log(QString("Found no studies for this subject [%1]").arg(sourceSubjectID.toInt()));
+
+            /* get a list of enrollments for this source subject */
+            q.prepare("select * from enrollment where subject_id = :subjectid");
+            q.bindValue(":subjectid", sourceSubjectID.toInt());
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+            if (q.size() > 0) {
+                n->Log(QString("Moving measures and drugs to target subject. Found [%1] enrollments for subject [%2]").arg(q.size()).arg(sourceSubject.UID()));
+                while (q.next()) {
+                    /* foreach enrollment, get the project_id */
+                    int sourceProjectID = q.value("project_id").toInt();
+                    int sourceEnrollmentID = q.value("enrollment_id").toInt();
+
+                    int targetEnrollmentID;
+
+                    /* Create (or get) the enrollment in the target subject */
+                    QSqlQuery q2;
+                    q2.prepare("select enrollment_id from enrollment where subject_id = :subjectid and project_id = :projectid");
+                    q2.bindValue(":subjectid", targetSubjectID);
+                    q2.bindValue(":projectid", sourceProjectID);
+                    n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+                    if (q2.size() > 0) {
+                        q2.first();
+                        targetEnrollmentID = q2.value("enrollment_id").toInt();
+                        n->Log(QString("Found existing enrollment [%1] for subject [%2] in project [%3]").arg(targetEnrollmentID).arg(sourceSubject.UID()).arg(sourceProjectID));
+                    }
+                    else {
+                        q2.prepare("insert into enrollment (subject_id, project_id) values (:subjectid, :projectid)");
+                        q2.bindValue(":subjectid", targetSubjectID);
+                        q2.bindValue(":projectid", sourceProjectID);
+                        n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+                        targetEnrollmentID = q2.lastInsertId().toInt();
+                        n->Log(QString("Created enrollment [%1] for subject [%2] in project [%3]").arg(targetEnrollmentID).arg(sourceSubject.UID()).arg(sourceProjectID));
+                    }
+
+                    /* move all of the measures from the source enrollment to the target subject's enrollment */
+                    q2.prepare("select * from measures where enrollment_id = :sourceenrollmentid");
+                    q2.bindValue(":sourceenrollmentid", sourceEnrollmentID);
+                    n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+                    n->Log(QString("Found [%1] measures for subject [%2]").arg(q2.size()).arg(sourceSubject.UID()));
+
+                    q2.prepare("update measures set enrollment_id = :targetenrollmentid where enrollment_id = :sourceenrollmentid");
+                    q2.bindValue(":targetenrollmentid", targetEnrollmentID);
+                    q2.bindValue(":sourceenrollmentid", sourceEnrollmentID);
+                    n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+                    n->Log(QString("Moved [%1] measures from [%2] to [%3]").arg(q2.numRowsAffected()).arg(sourceSubject.UID()).arg(targetSubject.UID()));
+
+                    /* move all of the drugs from the source enrollment to the target subject's enrollment */
+                    q2.prepare("select * from drugs where enrollment_id = :sourceenrollmentid");
+                    q2.bindValue(":sourceenrollmentid", sourceEnrollmentID);
+                    n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+                    n->Log(QString("Found [%1] drugs for subject [%2]").arg(q2.size()).arg(sourceSubject.UID()));
+
+                    q2.prepare("update drugs set enrollment_id = :targetenrollmentid where enrollment_id = :sourceenrollmentid");
+                    q2.bindValue(":targetenrollmentid", targetEnrollmentID);
+                    q2.bindValue(":sourceenrollmentid", sourceEnrollmentID);
+                    n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+                    n->Log(QString("Moved [%1] drugs from [%2] to [%3]").arg(q2.numRowsAffected()).arg(sourceSubject.UID()).arg(targetSubject.UID()));
+                }
+            }
 
             /* delete the subject that has just been merged */
-            q.prepare("update subjects set isactive = 0 where subject_id = :subjectid");
-            q.bindValue(":subjectid", id.toInt());
+            q.prepare("update subjects set isactive = 0 where subject_id = :sourcesubjectid");
+            q.bindValue(":sourcesubjectid", sourceSubjectID.toInt());
             n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+            n->Log(QString("Deleting subject [%1]").arg(sourceSubject.UID()));
         }
     }
 
     /* update the final subject with the info */
-    q.prepare("update subjects set name = :name, birthdate = :dob, gender = :sex, ethnicity1 = :ethnicity1, ethnicity2 = :ethnicity2, guid = :guid where subject_id = :subjectid");
+    q.prepare("update subjects set name = :name, birthdate = :dob, gender = :sex, ethnicity1 = :ethnicity1, ethnicity2 = :ethnicity2, guid = :guid where subject_id = :targetsubjectid");
     q.bindValue(":name", mergeName);
     q.bindValue(":dob", mergeDOB);
     q.bindValue(":sex", mergeSex);
     q.bindValue(":ethnicity1", mergeEthnicity1);
     q.bindValue(":ethnicity2", mergeEthnicity2);
     q.bindValue(":guid", mergeGUID);
-    q.bindValue(":subjectid", subjectid);
+    q.bindValue(":targetsubjectid", targetSubjectID);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
     /* update the Global (subject level) alternate UIDs */
 
     /* delete entries for this subject from the altuid table ... */
-    q.prepare("delete from subject_altuid where subject_id = :subjectid");
-    q.bindValue(":subjectid",subjectid);
+    q.prepare("delete from subject_altuid where subject_id = :targetsubjectid");
+    q.bindValue(":targetsubjectid",targetSubjectID);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    n->Log(QString("Deleting all altUIDs for subject [%1]").arg(targetSubject.UID()));
 
     /* ... and insert the new rows into the altuids table */
     QStringList altuids = mergeAltUIDs.split(",");
@@ -997,14 +1063,15 @@ bool moduleFileIO::MergeSubjects(int subjectid, QString mergeIDs, QString mergeN
         if (altuid != "") {
             if (altuid.contains("*")) {
                 altuid.replace("*","");
-                q.prepare("insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values (:subjectid, :altuid, 1, -1)");
+                q.prepare("insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values (:targetsubjectid, :altuid, 1, -1)");
             }
             else {
-                q.prepare("insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values (:subjectid, :altuid, 0, -1)");
+                q.prepare("insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values (:targetsubjectid, :altuid, 0, -1)");
             }
-            q.bindValue(":subjectid", subjectid);
+            q.bindValue(":targetsubjectid", targetSubjectID);
             q.bindValue(":altuid", altuid);
             n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+            n->Log(QString("Adding altUID [%1] for subject [%2]").arg(altuid).arg(targetSubject.UID()));
         }
     }
 

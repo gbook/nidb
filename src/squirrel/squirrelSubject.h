@@ -28,8 +28,8 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include "squirrelStudy.h"
-#include "squirrelMeasure.h"
-#include "squirrelDrug.h"
+#include "squirrelObservation.h"
+#include "squirrelIntervention.h"
 
 /**
  * @brief The subject class

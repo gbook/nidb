@@ -120,7 +120,7 @@ bool bids::LoadToSquirrel(QString dir, squirrel *sqrl) {
 
     /* check for a 'stimuli' directory, which are experiments */
 
-    /* check for a 'phenotype' directory, which are ... subject demographics, or measures? */
+    /* check for a 'phenotype' directory, which are ... subject demographics, or observations? */
 
     return true;
 }
@@ -220,7 +220,7 @@ bool bids::LoadSubjectFiles(QStringList subjfiles, QString ID, squirrel *sqrl) {
 
             /* get the subject */
             squirrelSubject sqrlSubject;
-            int subjectRowID = sqrl->FindSubject(ID);
+            qint64 subjectRowID = sqrl->FindSubject(ID);
             if (subjectRowID < 0) {
                 sqrlSubject.ID = ID;
                 sqrlSubject.Store();
@@ -240,7 +240,7 @@ bool bids::LoadSubjectFiles(QStringList subjfiles, QString ID, squirrel *sqrl) {
             sqrlAnalysis.LastMessage = "BIDS imported analysis file";
             sqrlAnalysis.studyRowID = studyRowID;
             sqrlAnalysis.Store();
-            int analysisRowID = sqrlAnalysis.GetObjectID();
+            qint64 analysisRowID = sqrlAnalysis.GetObjectID();
 
             QStringList files;
             files.append(f);
@@ -640,36 +640,36 @@ bool bids::LoadParticipantsFile(QString f, squirrel *sqrl) {
             sqrlSubj.Sex = sex;
             sqrlSubj.Gender = sex;
             sqrlSubj.Store();
-            int subjectRowID = sqrlSubj.GetObjectID();
+            qint64 subjectRowID = sqrlSubj.GetObjectID();
 
-            /* add handedness as a measure */
-            squirrelMeasure sqrlMeas;
-            sqrlMeas.Description = "Handedness";
-            sqrlMeas.MeasureName = "Handedness";
-            sqrlMeas.Value = hand;
-            sqrlMeas.subjectRowID = subjectRowID;
-            sqrlMeas.Store();
+            /* add handedness as a observation */
+            squirrelObservation sqrlObs;
+            sqrlObs.Description = "Handedness";
+            sqrlObs.ObservationName = "Handedness";
+            sqrlObs.Value = hand;
+            sqrlObs.subjectRowID = subjectRowID;
+            sqrlObs.Store();
 
-            squirrelMeasure sqrlMeas2;
-            sqrlMeas2.Description = "Species";
-            sqrlMeas2.MeasureName = "Species";
-            sqrlMeas2.Value = species;
-            sqrlMeas2.subjectRowID = subjectRowID;
-            sqrlMeas2.Store();
+            squirrelObservation sqrlObs2;
+            sqrlObs2.Description = "Species";
+            sqrlObs2.ObservationName = "Species";
+            sqrlObs2.Value = species;
+            sqrlObs2.subjectRowID = subjectRowID;
+            sqrlObs2.Store();
 
-            squirrelMeasure sqrlMeas3;
-            sqrlMeas3.Description = "Strain";
-            sqrlMeas3.MeasureName = "Strain";
-            sqrlMeas3.Value = strain;
-            sqrlMeas3.subjectRowID = subjectRowID;
-            sqrlMeas3.Store();
+            squirrelObservation sqrlObs3;
+            sqrlObs3.Description = "Strain";
+            sqrlObs3.ObservationName = "Strain";
+            sqrlObs3.Value = strain;
+            sqrlObs3.subjectRowID = subjectRowID;
+            sqrlObs3.Store();
 
-            squirrelMeasure sqrlMeas4;
-            sqrlMeas4.Description = "age";
-            sqrlMeas4.MeasureName = "age";
-            sqrlMeas4.Value = age;
-            sqrlMeas4.subjectRowID = subjectRowID;
-            sqrlMeas4.Store();
+            squirrelObservation sqrlObs4;
+            sqrlObs4.Description = "age";
+            sqrlObs4.ObservationName = "age";
+            sqrlObs4.Value = age;
+            sqrlObs4.subjectRowID = subjectRowID;
+            sqrlObs4.Store();
 
             sqrl->Debug(QString("Read subject ID [%1]  age [%2]  sex [%3]. Stored in squirrel with SubjectRowID [%4]").arg(id).arg(age).arg(sex).arg(subjectRowID), __FUNCTION__);
         }

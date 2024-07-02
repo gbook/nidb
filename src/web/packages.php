@@ -236,13 +236,15 @@
 		$numseries = count($seriesids, COUNT_RECURSIVE);
 		
 		/* get list of analysisids */
-		$studyidstr = implode2(",", $studyids);
-		$sqlstring = "select * from analysis where study_id in (" . $studyidstr . ") and analysis_status in ('complete', 'error','rerunresults')";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$numseries = mysqli_num_rows($result);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$analysisids[] = $row['analysis_id'];
-			$pipelineids[] = $row['pipeline_id'];
+		if (count($studyids) > 0) {
+			$studyidstr = implode2(",", $studyids);
+			$sqlstring = "select * from analysis where study_id in (" . $studyidstr . ") and analysis_status in ('complete', 'error','rerunresults')";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$numseries = mysqli_num_rows($result);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$analysisids[] = $row['analysis_id'];
+				$pipelineids[] = $row['pipeline_id'];
+			}
 		}
 		$analysisids = array_unique($analysisids);
 		$pipelineids = array_unique($pipelineids);
@@ -1922,6 +1924,7 @@
 			//echo "enrollmentid [$enrollmentid] D<br>";
 			list($uid, $subjectid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
 			
+			$subjects[$uid][$studynum][$modality][$seriesnum]['objectid'] = -1;
 			//if (contains($optionflags, 'DRUGS')) {
 			//	$drugs[$uid]['drugs'] = GetDrugsByEnrollment($enrollmentid);
 			//}
@@ -2047,7 +2050,7 @@
 		$numdatadict = count($datadictionaries);
 		$numgroupanalyses = count($groupanalyses);
 
-		foreach ($subjects as $uid =>$studies) {
+		foreach ($subjects as $uid => $studies) {
 			if ($uid != "") {
 				$numstudies += count($studies);
 				foreach ($studies as $studynum => $modalities) {
@@ -2915,7 +2918,10 @@
 				</thead>
 				<tbody>
 					<?
-						$sqlstring = "select * from packages where user_id = " . $_SESSION['userid'];
+						if ($_SESSION['isadmin'])
+							$sqlstring = "select * from packages";
+						else
+							$sqlstring = "select * from packages where user_id = " . $_SESSION['userid'];
 						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$packageid = $row['package_id'];

@@ -937,7 +937,7 @@
 		<?=$uid?><br><br>
 		<? } ?>
 		
-		
+		<div class="ui text container">
 		<table class="reviewtable">
 			<? if (($encrypt) && ($type != 'update')) { ?>
 			<tr>
@@ -1022,12 +1022,12 @@
 			<tr>
 				<td colspan="2" align="center">
 					<br>
-					<span class="staticmessage">Are you sure this subject's information is correct and not a duplicate?</span>
+					<? Warning("Are you sure this subject's information is correct and not a duplicate?"); ?>
 					<br><br>
 				</td>
 			</tr>
 			<tr>
-				<td align="center" valign="middle"><FORM><INPUT TYPE="BUTTON" VALUE="Back" ONCLICK="history.go(-1)"></FORM></td>
+				<td align="left"><button class="ui button" OnClick="history.go(-1)">Back</button></td>
 				
 				<form method="post" action="subjects.php">
 				<input type="hidden" name="action" value="<?=$type?>">
@@ -1057,10 +1057,11 @@
 				<? } ?>
 				<input type="hidden" name="guid" value="<?=$guid?>">
 				<input type="hidden" name="returnpage" value="subject">
-				<td align="center" valign="middle"><input type="submit" value="Yes, <?=$type?> it"</td>
+				<td align="right"><input type="submit" class="ui primary button" value="Yes, <?=$type?> it"</td>
 				</form>
 			</tr>
 		</table>
+		</div>
 		<?
 	}	
 

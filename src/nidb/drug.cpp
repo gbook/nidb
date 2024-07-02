@@ -127,8 +127,8 @@ void drug::PrintDrugInfo() {
 /* ---------------------------------------------------------- */
 /* --------- GetSquirrelObject ------------------------------ */
 /* ---------------------------------------------------------- */
-squirrelDrug drug::GetSquirrelObject() {
-    squirrelDrug sqrl;
+squirrelIntervention drug::GetSquirrelObject() {
+    squirrelIntervention sqrl;
 
     sqrl.DateEnd = dateDrugEnd;
     sqrl.DateRecordEntry = dateRecordEntry;
@@ -139,8 +139,8 @@ squirrelDrug drug::GetSquirrelObject() {
     sqrl.DoseKey = doseKey;
     sqrl.DoseString = doseDesc;
     sqrl.DoseUnit = doseUnit;
-    sqrl.DrugClass = drugType;
-    sqrl.DrugName = drugName;
+    sqrl.InterventionClass = drugType;
+    sqrl.InterventionName = drugName;
     //sqrl.frequencyModifier = frequencyModifier;
     //sqrl.frequencyUnit = frequencyUnit;
     //sqrl.frequencyValue = frequencyValue.toDouble();

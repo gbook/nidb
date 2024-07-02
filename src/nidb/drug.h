@@ -24,7 +24,7 @@
 #define DRUG_H
 #include <QString>
 #include "nidb.h"
-#include "squirrelDrug.h"
+#include "squirrelIntervention.h"
 
 class drug
 {
@@ -34,7 +34,7 @@ public:
     nidb *n;
 
     void PrintDrugInfo();
-    squirrelDrug GetSquirrelObject();
+    squirrelIntervention GetSquirrelObject();
 
     QDateTime dateDrugEnd;
     QDateTime dateDrugStart;

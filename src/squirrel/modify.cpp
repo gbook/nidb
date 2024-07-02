@@ -81,7 +81,7 @@ bool modify::DoModify(QString packagePath, QString addObject, QString removeObje
         sqrl->SetFileMode(FileMode::ExistingPackage);
         sqrl->SetPackagePath(packagePath);
         if (!sqrl->Read()) {
-            m = QString("Package unreadable [%1] already exists in package").arg(vars["SubjectID"]);
+            m = QString("Package unreadable [%1] already exists in package").arg(vars["ID"]);
             delete sqrl;
             return false;
         }
@@ -89,11 +89,11 @@ bool modify::DoModify(QString packagePath, QString addObject, QString removeObje
         /* ----- subject ----- */
         if (addObject == "subject") {
             qint64 subjectRowID;
-            subjectRowID = sqrl->FindSubject(vars["PatientID"]);
+            subjectRowID = sqrl->FindSubject(vars["ID"]);
             if (subjectRowID < 0) {
                 squirrelSubject subject;
-                sqrl->Log(QString("Creating squirrel Subject [%1]").arg(vars["PatientID"]), __FUNCTION__);
-                subject.ID = vars["SubjectID"];
+                sqrl->Log(QString("Creating squirrel Subject [%1]").arg(vars["ID"]), __FUNCTION__);
+                subject.ID = vars["ID"];
                 subject.AlternateIDs = vars["AlternateIDs"].split(",");
                 subject.GUID = vars["GUID"];
                 subject.DateOfBirth = QDate::fromString(vars["DateOfBirth"], "yyyy-MM-dd");
@@ -106,7 +106,7 @@ bool modify::DoModify(QString packagePath, QString addObject, QString removeObje
                 sqrl->ResequenceSubjects();
             }
             else {
-                m = QString("Subject with ID [%1] already exists in package").arg(vars["SubjectID"]);
+                m = QString("Subject with ID [%1] already exists in package").arg(vars["ID"]);
                 delete sqrl;
                 return false;
             }
@@ -117,7 +117,7 @@ bool modify::DoModify(QString packagePath, QString addObject, QString removeObje
             qint64 studyRowID = sqrl->FindStudy(subjectID, vars["StudyNumber"].toInt());
             if (studyRowID < 0) {
                 squirrelStudy study;
-                sqrl->Log(QString("Creating squirrel Subject [%1]").arg(vars["PatientID"]), __FUNCTION__);
+                sqrl->Log(QString("Creating squirrel Subject [%1]").arg(vars["ID"]), __FUNCTION__);
                 study.StudyNumber = vars["StudyNumber"].toInt();
                 study.DateTime = QDateTime::fromString(vars["Datetime"], "yyyy-MM-dd HH:mm:ss");
                 study.AgeAtStudy = vars["AgeAtStudy"].toDouble();
@@ -144,8 +144,8 @@ bool modify::DoModify(QString packagePath, QString addObject, QString removeObje
         }
         /* ----- series ----- */
         else if (addObject == "series") {
-            int studyRowID = sqrl->FindStudy(subjectID, studyNum);
-            int seriesRowID = sqrl->FindSeries(subjectID, studyNum, vars["SeriesNumber"].toInt());
+            qint64 studyRowID = sqrl->FindStudy(subjectID, studyNum);
+            qint64 seriesRowID = sqrl->FindSeries(subjectID, studyNum, vars["SeriesNumber"].toInt());
             if (seriesRowID < 0) {
                 squirrelSeries series;
                 sqrl->Log(QString("Creating squirrel Series [%1]").arg(vars["SeriesNumber"]), __FUNCTION__);
@@ -167,9 +167,9 @@ bool modify::DoModify(QString packagePath, QString addObject, QString removeObje
                 return false;
             }
         }
-        /* ----- measure ----- */
-        else if (addObject == "measure") {
-            int subjectRowID = sqrl->FindSubject(subjectID);
+        /* ----- observation ----- */
+        else if (addObject == "observation") {
+            qint64 subjectRowID = sqrl->FindSubject(subjectID);
             if (subjectRowID < 0) {
                 m = QString("Subject [%3] not found in package").arg(subjectID);
                 delete sqrl;
@@ -177,25 +177,25 @@ bool modify::DoModify(QString packagePath, QString addObject, QString removeObje
             }
             else {
                 if (dataPath == "") {
-                    squirrelMeasure measure;
-                    sqrl->Log(QString("Creating squirrel Measure [%1]").arg(vars["MeasureName"]), __FUNCTION__);
-                    measure.DateEnd = QDateTime::fromString(vars["DateEnd"], "yyyy-MM-dd HH:mm:ss");
-                    measure.DateRecordCreate = QDateTime::fromString(vars["DateRecordCreate"], "yyyy-MM-dd HH:mm:ss");
-                    measure.DateRecordEntry = QDateTime::fromString(vars["DateRecordEntry"], "yyyy-MM-dd HH:mm:ss");
-                    measure.DateRecordModify = QDateTime::fromString(vars["DateRecordModify"], "yyyy-MM-dd HH:mm:ss");
-                    measure.DateStart = QDateTime::fromString(vars["DateStart"], "yyyy-MM-dd HH:mm:ss");
-                    measure.Description = vars["Description"];
-                    measure.Duration = vars["Duration"].toDouble();
-                    measure.InstrumentName = vars["InstrumentName"];
-                    measure.MeasureName = vars["MeasureName"];
-                    measure.Notes = vars["Notes"];
-                    measure.Rater = vars["Rater"];
-                    measure.Value = vars["Value"];
-                    measure.subjectRowID = subjectRowID;
-                    measure.Store();
+                    squirrelObservation observation;
+                    sqrl->Log(QString("Creating squirrel Observation [%1]").arg(vars["ObservationName"]), __FUNCTION__);
+                    observation.DateEnd = QDateTime::fromString(vars["DateEnd"], "yyyy-MM-dd HH:mm:ss");
+                    observation.DateRecordCreate = QDateTime::fromString(vars["DateRecordCreate"], "yyyy-MM-dd HH:mm:ss");
+                    observation.DateRecordEntry = QDateTime::fromString(vars["DateRecordEntry"], "yyyy-MM-dd HH:mm:ss");
+                    observation.DateRecordModify = QDateTime::fromString(vars["DateRecordModify"], "yyyy-MM-dd HH:mm:ss");
+                    observation.DateStart = QDateTime::fromString(vars["DateStart"], "yyyy-MM-dd HH:mm:ss");
+                    observation.Description = vars["Description"];
+                    observation.Duration = vars["Duration"].toDouble();
+                    observation.InstrumentName = vars["InstrumentName"];
+                    observation.ObservationName = vars["ObservationName"];
+                    observation.Notes = vars["Notes"];
+                    observation.Rater = vars["Rater"];
+                    observation.Value = vars["Value"];
+                    observation.subjectRowID = subjectRowID;
+                    observation.Store();
                 }
                 else {
-                    /* load the measures from a CSV or TSV file */
+                    /* load the observations from a CSV or TSV file */
                     if (utils::FileExists(dataPath)) {
 
                         utils::indexedHash csv;
@@ -212,7 +212,7 @@ bool modify::DoModify(QString packagePath, QString addObject, QString removeObje
                                 //sqrl->Log(QString("Successfuly read [%1] into [%2] rows").arg(f).arg(tsv.size()), __FUNCTION__);
                             }
                             else {
-                                m = QString("File containing measures [%1] not found").arg(dataPath);
+                                m = QString("File containing observations [%1] not found").arg(dataPath);
                                 delete sqrl;
                                 return false;
                             }
@@ -222,7 +222,7 @@ bool modify::DoModify(QString packagePath, QString addObject, QString removeObje
                             return false;
                         }
 
-                        /* load all the measures into squirrel */
+                        /* load all the observations into squirrel */
                         for (int i=0; i<csv.size(); i++) {
                             QString sesid = csv[i]["session_id"];
                             QString datetime = csv[i]["acq_time"];
@@ -230,47 +230,47 @@ bool modify::DoModify(QString packagePath, QString addObject, QString removeObje
 
                     }
                     else {
-                        m = QString("File containing measures [%1] not found").arg(dataPath);
+                        m = QString("File containing observations [%1] not found").arg(dataPath);
                         delete sqrl;
                         return false;
                     }
                 }
             }
         }
-        /* ----- drug ----- */
-        else if (addObject == "drug") {
-            int subjectRowID = sqrl->FindSubject(subjectID);
+        /* ----- intervention ----- */
+        else if (addObject == "intervention") {
+            qint64 subjectRowID = sqrl->FindSubject(subjectID);
             if (subjectRowID < 0) {
                 m = QString("Subject [%3] not found in package").arg(subjectID);
                 delete sqrl;
                 return false;
             }
             else {
-                squirrelDrug drug;
-                sqrl->Log(QString("Creating squirrel Drug [%1]").arg(vars["DrugName"]), __FUNCTION__);
-                drug.DateEnd = QDateTime::fromString(vars["DateEnd"], "yyyy-MM-dd HH:mm:ss");
-                drug.DateRecordCreate = QDateTime::fromString(vars["DateRecordCreate"], "yyyy-MM-dd HH:mm:ss");
-                drug.DateRecordEntry = QDateTime::fromString(vars["DateRecordEntry"], "yyyy-MM-dd HH:mm:ss");
-                drug.DateRecordModify = QDateTime::fromString(vars["DateRecordModify"], "yyyy-MM-dd HH:mm:ss");
-                drug.DateStart = QDateTime::fromString(vars["DateStart"], "yyyy-MM-dd HH:mm:ss");
-                drug.Description = vars["Description"];
-                drug.DoseAmount = vars["DoseAmount"].toDouble();
-                drug.DoseFrequency = vars["DoseFrequency"];
-                drug.DoseKey = vars["DoseKey"];
-                drug.DoseString = vars["DoseString"];
-                drug.DoseUnit = vars["DoseUnit"];
-                drug.DrugClass = vars["DrugClass"];
-                drug.DrugName = vars["DrugName"];
-                drug.Notes = vars["Notes"];
-                drug.Rater = vars["Rater"];
-                drug.subjectRowID = subjectRowID;
-                drug.Store();
+                squirrelIntervention intervention;
+                sqrl->Log(QString("Creating squirrel intervention [%1]").arg(vars["InterventionName"]), __FUNCTION__);
+                intervention.DateEnd = QDateTime::fromString(vars["DateEnd"], "yyyy-MM-dd HH:mm:ss");
+                intervention.DateRecordCreate = QDateTime::fromString(vars["DateRecordCreate"], "yyyy-MM-dd HH:mm:ss");
+                intervention.DateRecordEntry = QDateTime::fromString(vars["DateRecordEntry"], "yyyy-MM-dd HH:mm:ss");
+                intervention.DateRecordModify = QDateTime::fromString(vars["DateRecordModify"], "yyyy-MM-dd HH:mm:ss");
+                intervention.DateStart = QDateTime::fromString(vars["DateStart"], "yyyy-MM-dd HH:mm:ss");
+                intervention.Description = vars["Description"];
+                intervention.DoseAmount = vars["DoseAmount"].toDouble();
+                intervention.DoseFrequency = vars["DoseFrequency"];
+                intervention.DoseKey = vars["DoseKey"];
+                intervention.DoseString = vars["DoseString"];
+                intervention.DoseUnit = vars["DoseUnit"];
+                intervention.InterventionClass = vars["InterventionClass"];
+                intervention.InterventionName = vars["InterventionName"];
+                intervention.Notes = vars["Notes"];
+                intervention.Rater = vars["Rater"];
+                intervention.subjectRowID = subjectRowID;
+                intervention.Store();
             }
         }
         /* ----- analysis ----- */
         else if (addObject == "analysis") {
             qint64 studyRowID = sqrl->FindStudy(subjectID, studyNum);
-            int analysisRowID = sqrl->FindAnalysis(subjectID, studyNum, vars["AnalysisName"]);
+            qint64 analysisRowID = sqrl->FindAnalysis(subjectID, studyNum, vars["AnalysisName"]);
             if (analysisRowID < 0) {
                 squirrelAnalysis analysis;
                 sqrl->Log(QString("Creating squirrel Analysis [%1]").arg(vars["AnalysisName"]), __FUNCTION__);
@@ -301,7 +301,7 @@ bool modify::DoModify(QString packagePath, QString addObject, QString removeObje
         }
         /* ----- experiment ----- */
         else if (addObject == "experiment") {
-            int experimentRowID = sqrl->FindExperiment(vars["ExperimentName"]);
+            qint64 experimentRowID = sqrl->FindExperiment(vars["ExperimentName"]);
             if (experimentRowID < 0) {
                 squirrelExperiment experiment;
                 sqrl->Log(QString("Creating squirrel Experiment [%1]").arg(vars["ExperimentName"]), __FUNCTION__);
@@ -364,7 +364,7 @@ bool modify::DoModify(QString packagePath, QString addObject, QString removeObje
         }
         /* ----- groupanalysis ----- */
         else if (addObject == "groupanalysis") {
-            int groupAnalysisRowID = sqrl->FindGroupAnalysis(vars["GroupAnalysisName"]);
+            qint64 groupAnalysisRowID = sqrl->FindGroupAnalysis(vars["GroupAnalysisName"]);
             if (groupAnalysisRowID < 0) {
                 squirrelGroupAnalysis groupAnalysis;
                 sqrl->Log(QString("Creating squirrel GroupAnalysis [%1]").arg(vars["GroupAnalysisName"]), __FUNCTION__);
@@ -385,7 +385,7 @@ bool modify::DoModify(QString packagePath, QString addObject, QString removeObje
         }
         /* ----- datadictionary ----- */
         else if (addObject == "datadictionary") {
-            int dataDictionaryRowID = sqrl->FindDataDictionary(vars["DataDictionaryName"]);
+            qint64 dataDictionaryRowID = sqrl->FindDataDictionary(vars["DataDictionaryName"]);
             if (dataDictionaryRowID < 0) {
                 squirrelDataDictionary dataDictionary;
                 sqrl->Log(QString("Creating squirrel DataDictionary [%1]").arg(vars["DataDictionaryName"]), __FUNCTION__);
@@ -511,4 +511,15 @@ bool modify::DoModify(QString packagePath, QString addObject, QString removeObje
         }
     }
     return true;
+}
+
+
+void modify::PrintVariables(QString object) {
+
+    if (object == "subject")
+        utils::Print("ID\nAltIDs\nGUID\nDateOfBirth\nSex\nGender\nEthnicity1\nEthnicity2");
+
+    if (object == "study")
+        utils::Print("StudyNumber\nDatetime\nAge\nHeight\nWeight\nModality\nDescription\nStudyUID\nVisitType\nDayNumber\nTimepoint\nEquipment");
+
 }

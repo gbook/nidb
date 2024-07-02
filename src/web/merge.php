@@ -41,7 +41,7 @@
 	require "nidbapi.php";
 	require "menu.php";
 
-	//PrintVariable($_POST);
+	PrintVariable($_POST);
 	//PrintVariable($_GET);
 	
 	/* ----- setup variables ----- */
@@ -93,7 +93,7 @@
 	/* -------------------------------------------- */
 	function SubmitMerge($subjectids, $selectedid, $name, $dob, $gender, $ethnicity1, $ethnicity2, $altuids, $guid, $enrollgroup) {
 
-		//PrintVariable($subjectids);
+		PrintVariable($subjectids);
 		
 		/* remove the 'selectedid' */
 		foreach ($subjectids as $key => $id) {
@@ -111,13 +111,13 @@
 		$gender = mysqli_real_escape_string($GLOBALS['linki'], $gender[$selectedid]);
 		$ethnicity1 = mysqli_real_escape_string($GLOBALS['linki'], $ethnicity1[$selectedid]);
 		$ethnicity2 = mysqli_real_escape_string($GLOBALS['linki'], $ethnicity2[$selectedid]);
-		$altuid = mysqli_real_escape_string($GLOBALS['linki'], $altuid[$selectedid]);
+		$altuids = mysqli_real_escape_string($GLOBALS['linki'], $altuids[$selectedid]);
 		$enrollgroup = mysqli_real_escape_string($GLOBALS['linki'], $enrollgroup[$selectedid]);
 		$guid = mysqli_real_escape_string($GLOBALS['linki'], $guid[$selectedid]);
 
-		//PrintVariable($subjectids);
+		PrintVariable($subjectids);
 		$subjectids = mysqli_real_escape_array($GLOBALS['linki'], $subjectids);
-		//PrintVariable($subjectids);
+		PrintVariable($subjectids);
 		
 		$mergeids = implode2(",", $subjectids);
 		//PrintVariable($mergeids);
@@ -126,8 +126,8 @@
 			return;
 		}
 		
-		$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, merge_ids, merge_name, merge_dob, merge_sex, merge_ethnicity1, merge_ethnicity2, merge_guid, merge_enrollgroup, merge_altuids, request_status, request_message, username, requestdate) values ('merge', 'subject', $selectedid, '$mergeids', '$name', '$dob', '$gender', '$ethnicity1', '$ethnicity2', '$guid', '$enrollgroup', '$altuid', 'pending', 'Request submitted', '" . $GLOBALS['username'] . "', now())";
-		//PrintVariable($sqlstring);
+		$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, merge_ids, merge_name, merge_dob, merge_sex, merge_ethnicity1, merge_ethnicity2, merge_guid, merge_enrollgroup, merge_altuids, request_status, request_message, username, requestdate) values ('merge', 'subject', $selectedid, '$mergeids', '$name', '$dob', '$gender', '$ethnicity1', '$ethnicity2', '$guid', '$enrollgroup', '$altuids', 'pending', 'Request submitted', '" . $GLOBALS['username'] . "', now())";
+		PrintVariable($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
 		$sqlstring = "select uid from subjects where subject_id = $selectedid";

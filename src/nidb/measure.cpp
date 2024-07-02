@@ -124,8 +124,8 @@ void measure::PrintMeasureInfo() {
 /* ---------------------------------------------------------- */
 /* --------- GetSquirrelObject ------------------------------ */
 /* ---------------------------------------------------------- */
-squirrelMeasure measure::GetSquirrelObject() {
-    squirrelMeasure sqrl;
+squirrelObservation measure::GetSquirrelObject() {
+    squirrelObservation sqrl;
 
     sqrl.DateEnd = dateMeasureEnd;
     sqrl.DateRecordCreate = dateRecordCreate;
@@ -135,7 +135,7 @@ squirrelMeasure measure::GetSquirrelObject() {
     sqrl.Description = desc;
     sqrl.Duration = duration;
     sqrl.InstrumentName = instrumentName;
-    sqrl.MeasureName = measureName;
+    sqrl.ObservationName = measureName;
     sqrl.Notes = notes;
     sqrl.Rater = rater;
 

@@ -298,14 +298,7 @@
 									#$setuphrs = $row['avgsetup']/60;
 									$count = $row['count'];
 									$startdate = $row['analysisdate'];
-									?>
-									<!--<tr>
-										<td><?=$startdate?></td>
-										<td><?=$cpuhrs?></td>
-										<td><?=$setuphrs?></td>
-										<td class="right aligned"><?=$count?></td>
-									</tr>-->
-									<?
+
 									$datarows[] = "['$startdate', $setuphrs, $cpuhrs]";
 								}
 								
@@ -322,15 +315,18 @@
 			<script type="module">
 				import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
 			</script>
-			<pre class="mermaid">
-				sankey-beta
-
-				%% source,target,value
-				All,Complete,72
-				All,Not processed, 5
-			</pre>
-
-				$numComplete
+			<?
+				$numAll = $numTotal + 0;
+				$numCluster = $numError + $numProcessing + $numPending + $numSubmitted + $numStarted + 0;
+				$numRunning = $numProcessing + $numPending + $numSubmitted + $numStarted + 0;
+				$numComplete = $numcomplete + 0;
+				$numSuccess = $numcompletesuccess + 0;
+				$numNotSuccess = $numComplete - $numSuccess + 0;
+				$numError = $numError + 0;
+				$numNoMatch = $numNoMatchingSeries + $numNoMatchingStudies + 0;
+				$numDepIssue = $numNoMatchingStudyDependency + $numIncompleteDependency + $numBadDependency + 0;
+				
+				/*$numComplete
 				$numPending
 				$numProcessing
 				$numError
@@ -343,7 +339,21 @@
 				$numBadDependency
 				$numNoMatchingSeries
 				$numOddDependencyStatus
-				$numStarted
+				$numStarted*/
+			?>
+			<pre class="mermaid" style="width: 100%">
+				sankey-beta
+
+				%% source,target,value
+				All,Cluster,<?="$numCluster\n"?>
+				Cluster,Complete,<?="$numComplete\n"?>
+				Complete,Successful,<?="$numSuccess\n"?>
+				Complete,Other status,<?="$numNotSuccess\n"?>
+				Cluster,Running,<?="$numRunning\n"?>
+				Cluster,Error,<?="$numError\n"?>
+				All,No matching data found,<?="$numNoMatch\n"?>
+				All,Dependency issue,<?="$numDepIssue\n"?>
+			</pre>
 			
 			<br><br>
 			<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>

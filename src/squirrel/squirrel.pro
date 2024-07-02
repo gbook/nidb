@@ -23,15 +23,15 @@ SOURCES += \
 	squirrelDataDictionary.cpp \
 	squirrelImageIO.cpp \
 	squirrelGroupAnalysis.cpp \
+	squirrelIntervention.cpp \
+	squirrelObservation.cpp \
 	utils.cpp \
 	convert.cpp \
 	dicom.cpp \
 	main.cpp \
 	squirrel.cpp \
 	squirrelAnalysis.cpp \
-	squirrelDrug.cpp \
 	squirrelExperiment.cpp \
-	squirrelMeasure.cpp \
 	squirrelPipeline.cpp \
 	squirrelSeries.cpp \
 	squirrelStudy.cpp \
@@ -48,6 +48,8 @@ HEADERS += \
 	squirrel.sql.h \
 	squirrelDataDictionary.h \
 	squirrelImageIO.h \
+	squirrelIntervention.h \
+	squirrelObservation.h \
 	squirrelVersion.h \
 	squirrelGroupAnalysis.h \
 	utils.h \
@@ -55,9 +57,7 @@ HEADERS += \
 	dicom.h \
 	squirrel.h \
 	squirrelAnalysis.h \
-	squirrelDrug.h \
 	squirrelExperiment.h \
-	squirrelMeasure.h \
 	squirrelPipeline.h \
 	squirrelSeries.h \
 	squirrelStudy.h \

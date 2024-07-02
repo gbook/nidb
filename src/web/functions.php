@@ -2741,7 +2741,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	function Error($msg, $close=true) {
 		?>
 		<div class="ui text container">
-			<div class="ui warning message">
+			<div class="ui negative message">
 				<? if ($close) { ?><i class="close icon"></i> <? } ?>
 				<div class="header">Error</div>
 				<p><?=$msg?></p>
@@ -2758,7 +2758,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	function Warning($msg) {
 		?>
 		<div class="ui text container">
-			<div class="ui orange message">
+			<div class="ui warning message">
 				<i class="close icon"></i>
 				<div class="header">Warning</div>
 				<p><?=$msg?></p>

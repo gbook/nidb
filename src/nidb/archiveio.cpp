@@ -2634,24 +2634,24 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                 n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
                 if (q2.size() > 0) {
                     while (q2.next()) {
-                        squirrelMeasure sqrlMeasure;
-                        sqrlMeasure.DateEnd = q2.value("measure_enddate").toDateTime();
-                        sqrlMeasure.DateStart = q2.value("measure_startdate").toDateTime();
-                        sqrlMeasure.InstrumentName = q2.value("instrument_name").toString();
-                        sqrlMeasure.MeasureName = q2.value("measure_name").toString();
-                        sqrlMeasure.Notes = q2.value("measure_notes").toString();
-                        sqrlMeasure.Rater = q2.value("measure_rater").toString();
+                        squirrelObservation sqrlObservation;
+                        sqrlObservation.DateEnd = q2.value("measure_enddate").toDateTime();
+                        sqrlObservation.DateStart = q2.value("measure_startdate").toDateTime();
+                        sqrlObservation.InstrumentName = q2.value("instrument_name").toString();
+                        sqrlObservation.ObservationName = q2.value("measure_name").toString();
+                        sqrlObservation.Notes = q2.value("measure_notes").toString();
+                        sqrlObservation.Rater = q2.value("measure_rater").toString();
 
                         QChar measuretype = q2.value("measure_type").toChar();
-                        if (measuretype == 's') { sqrlMeasure.Value = q2.value("measure_valuestring").toString(); }
-                        else { sqrlMeasure.Value = q2.value("measure_valuenum").toString(); }
+                        if (measuretype == 's') { sqrlObservation.Value = q2.value("measure_valuestring").toString(); }
+                        else { sqrlObservation.Value = q2.value("measure_valuenum").toString(); }
 
-                        sqrlMeasure.Duration = q2.value("measure_duration").toDouble();
-                        sqrlMeasure.DateRecordEntry = q2.value("measure_entrydate").toDateTime();
-                        sqrlMeasure.DateRecordCreate = q2.value("measure_createdate").toDateTime();
-                        sqrlMeasure.DateRecordModify = q2.value("measure_modifydate").toDateTime();
-                        sqrlMeasure.subjectRowID = squirrelSubjectRowID;
-                        sqrlMeasure.Store();
+                        sqrlObservation.Duration = q2.value("measure_duration").toDouble();
+                        sqrlObservation.DateRecordEntry = q2.value("measure_entrydate").toDateTime();
+                        sqrlObservation.DateRecordCreate = q2.value("measure_createdate").toDateTime();
+                        sqrlObservation.DateRecordModify = q2.value("measure_modifydate").toDateTime();
+                        sqrlObservation.subjectRowID = squirrelSubjectRowID;
+                        sqrlObservation.Store();
                     }
                 }
 
@@ -2661,26 +2661,26 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                 if (q2.size() > 0) {
                     //QJsonArray JSONdrugs;
                     while (q2.next()) {
-                        squirrelDrug sqrlDrug;
-                        sqrlDrug.DrugName = q2.value("drug_name").toString();
-                        sqrlDrug.DrugClass = q2.value("drug_type").toString();
-                        sqrlDrug.DateStart = q2.value("drug_startdate").toDateTime();
-                        sqrlDrug.DateEnd = q2.value("drug_enddate").toDateTime();
-                        sqrlDrug.DoseAmount = q2.value("drug_doseamount").toDouble();
-                        sqrlDrug.DoseFrequency = q2.value("drug_dosefrequency").toString();
-                        sqrlDrug.AdministrationRoute = q2.value("drug_route").toString();
-                        sqrlDrug.DoseKey = q2.value("drug_dosekey").toString();
-                        sqrlDrug.DoseUnit = q2.value("drug_doseunit").toString();
-                        //sqrlDrug.FrequencyModifier = q2.value("drug_frequencymodifier").toString();
-                        //sqrlDrug.FrequencyValue = q2.value("drug_frequencyvalue").toDouble();
-                        //sqrlDrug.FrequencyUnit = q2.value("drug_frequencyunit").toString();
-                        sqrlDrug.Rater = q2.value("measure_rater").toString();
-                        sqrlDrug.Notes = q2.value("measure_notes").toString();
-                        sqrlDrug.DateRecordEntry = q2.value("measure_entrydate").toDateTime();
-                        sqrlDrug.DateRecordCreate = q2.value("measure_createdate").toDateTime();
-                        sqrlDrug.DateRecordModify = q2.value("measure_modifydate").toDateTime();
-                        sqrlDrug.subjectRowID = squirrelSubjectRowID;
-                        sqrlDrug.Store();
+                        squirrelIntervention sqrlIntervention;
+                        sqrlIntervention.InterventionName = q2.value("drug_name").toString();
+                        sqrlIntervention.InterventionClass = q2.value("drug_type").toString();
+                        sqrlIntervention.DateStart = q2.value("drug_startdate").toDateTime();
+                        sqrlIntervention.DateEnd = q2.value("drug_enddate").toDateTime();
+                        sqrlIntervention.DoseAmount = q2.value("drug_doseamount").toDouble();
+                        sqrlIntervention.DoseFrequency = q2.value("drug_dosefrequency").toString();
+                        sqrlIntervention.AdministrationRoute = q2.value("drug_route").toString();
+                        sqrlIntervention.DoseKey = q2.value("drug_dosekey").toString();
+                        sqrlIntervention.DoseUnit = q2.value("drug_doseunit").toString();
+                        //sqrlIntervention.FrequencyModifier = q2.value("drug_frequencymodifier").toString();
+                        //sqrlIntervention.FrequencyValue = q2.value("drug_frequencyvalue").toDouble();
+                        //sqrlIntervention.FrequencyUnit = q2.value("drug_frequencyunit").toString();
+                        sqrlIntervention.Rater = q2.value("measure_rater").toString();
+                        sqrlIntervention.Notes = q2.value("measure_notes").toString();
+                        sqrlIntervention.DateRecordEntry = q2.value("measure_entrydate").toDateTime();
+                        sqrlIntervention.DateRecordCreate = q2.value("measure_createdate").toDateTime();
+                        sqrlIntervention.DateRecordModify = q2.value("measure_modifydate").toDateTime();
+                        sqrlIntervention.subjectRowID = squirrelSubjectRowID;
+                        sqrlIntervention.Store();
                     }
                 }
             }
@@ -2942,10 +2942,10 @@ bool archiveIO::WritePackage(qint64 exportid, QString zipfilepath, QString &msg)
         measure m(measureRowID, n);
         if (!m.isValid) continue;
 
-        squirrelMeasure sqrlMeasure;
-        sqrlMeasure = m.GetSquirrelObject();
-        sqrlMeasure.subjectRowID = sqrlSubjectRowID;
-        sqrlMeasure.Store();
+        squirrelObservation sqrlObservation;
+        sqrlObservation = m.GetSquirrelObject();
+        sqrlObservation.subjectRowID = sqrlSubjectRowID;
+        sqrlObservation.Store();
     }
 
     /* DRUGS - add all drugs associated with this package */
@@ -2973,10 +2973,10 @@ bool archiveIO::WritePackage(qint64 exportid, QString zipfilepath, QString &msg)
         drug d(drugRowID, n);
         if (!d.isValid) continue;
 
-        squirrelDrug sqrlDrug;
-        sqrlDrug = d.GetSquirrelObject();
-        sqrlDrug.subjectRowID = sqrlSubjectRowID;
-        sqrlDrug.Store();
+        squirrelIntervention sqrlIntervention;
+        sqrlIntervention = d.GetSquirrelObject();
+        sqrlIntervention.subjectRowID = sqrlSubjectRowID;
+        sqrlIntervention.Store();
     }
 
     /* PIPELINES - add all pipelines associated with this package */

@@ -315,38 +315,38 @@ QJsonObject squirrelSubject::ToJSON() {
         json["studies"] = JSONstudies;
     }
 
-    /* add measures */
-    q.prepare("select MeasureRowID from Measure where SubjectRowID = :id");
+    /* add observations */
+    q.prepare("select ObservationRowID from Observation where SubjectRowID = :id");
     q.bindValue(":id", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    QJsonArray JSONmeasures;
+    QJsonArray JSONobservations;
     while (q.next()) {
-        squirrelMeasure m;
-        m.SetObjectID(q.value("MeasureRowID").toLongLong());
+        squirrelObservation m;
+        m.SetObjectID(q.value("ObservationRowID").toLongLong());
         if (m.Get()) {
-            JSONmeasures.append(m.ToJSON());
+            JSONobservations.append(m.ToJSON());
         }
     }
-    if (JSONmeasures.size() > 0) {
-        json["MeasureCount"] = JSONmeasures.size();
-        json["measures"] = JSONmeasures;
+    if (JSONobservations.size() > 0) {
+        json["ObservationCount"] = JSONobservations.size();
+        json["observations"] = JSONobservations;
     }
 
-    /* add drugs */
-    q.prepare("select DrugRowID from Drug where SubjectRowID = :id");
+    /* add interventions */
+    q.prepare("select InterventionRowID from Intervention where SubjectRowID = :id");
     q.bindValue(":id", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    QJsonArray JSONdrugs;
+    QJsonArray JSONinterventions;
     while (q.next()) {
-        squirrelDrug d;
-        d.SetObjectID(q.value("DrugRowID").toLongLong());
+        squirrelIntervention d;
+        d.SetObjectID(q.value("InterventionRowID").toLongLong());
         if (d.Get()) {
-            JSONdrugs.append(d.ToJSON());
+            JSONinterventions.append(d.ToJSON());
         }
     }
-    if (JSONdrugs.size() > 0) {
-        json["DrugCount"] = JSONdrugs.size();
-        json["drugs"] = JSONdrugs;
+    if (JSONinterventions.size() > 0) {
+        json["InterventionCount"] = JSONinterventions.size();
+        json["interventions"] = JSONinterventions;
     }
 
     return json;
