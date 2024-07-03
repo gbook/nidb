@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Apr 03, 2024 at 05:21 PM
+-- Generation Time: Jul 03, 2024 at 04:54 PM
 -- Server version: 10.3.28-MariaDB
 -- PHP Version: 7.2.24
 
@@ -2189,6 +2189,7 @@ CREATE TABLE `pipelines` (
   `pipeline_numproc` int(11) DEFAULT NULL COMMENT 'number of concurrent jobs allowed to run',
   `pipeline_queue` varchar(255) DEFAULT NULL,
   `pipeline_submithost` varchar(255) DEFAULT NULL,
+  `pipeline_submithostuser` varchar(255) DEFAULT NULL,
   `pipeline_clustertype` enum('','sge','slurm') DEFAULT NULL,
   `pipeline_clusteruser` varchar(255) DEFAULT NULL,
   `pipeline_numcores` int(11) DEFAULT 1,
@@ -2251,6 +2252,7 @@ CREATE TABLE `pipeline_data_def` (
   `pdd_useseries` tinyint(1) NOT NULL,
   `pdd_preserveseries` tinyint(1) NOT NULL,
   `pdd_usephasedir` tinyint(1) NOT NULL,
+  `pdd_behonly` tinyint(1) DEFAULT NULL,
   `pdd_behformat` varchar(50) NOT NULL,
   `pdd_behdir` varchar(255) NOT NULL,
   `pdd_enabled` tinyint(1) NOT NULL,
