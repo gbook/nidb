@@ -23,7 +23,7 @@
 #ifndef SQUIRREL_H
 #define SQUIRREL_H
 
-#include <string>
+//#include <string>
 #include <QString>
 #include <QDate>
 #include <QDateTime>
@@ -145,6 +145,7 @@ public:
     void Log(QString s, QString func);
     void Debug(QString s, QString func="");
     QString GetLog() { return log; }
+    QString GetLogBuffer();
     bool GetDebug() { return debug; }
     bool GetDebugSQL() { return debugSQL; }
     bool quiet=false;
@@ -176,6 +177,7 @@ private:
     QString logfile;
     QStringList msgs; /* squirrel messages to be passed back through the squirrel library */
     QString log;
+    QString logBuffer;
     QString packagePath;
 
     FileMode fileMode;

@@ -48,13 +48,13 @@ public:
 
     /* JSON elements */
     QDateTime DateEnd;          /*!< end date of the observationment */
-    QDateTime DateRecordCreate;  /*!< date the record was created */
+    QDateTime DateRecordCreate; /*!< date the record was created */
     QDateTime DateRecordEntry;  /*!< date the record was entered */
-    QDateTime DateRecordModify;  /*!< date the record was modified */
+    QDateTime DateRecordModify; /*!< date the record was modified */
     QDateTime DateStart;        /*!< start date of the observationment (required) */
     QString Description;        /*!< extended observationment description */
     QString InstrumentName;     /*!< name of the instrument (test, assessment, etc) from which this observation came */
-    QString ObservationName;        /*!< observation name (required) */
+    QString ObservationName;    /*!< observation name (required) */
     QString Notes;              /*!< notes about the observation */
     QString Rater;              /*!< name or username of the person who rated the observation */
     QString Value;              /*!< value, in string or number stored as a string */

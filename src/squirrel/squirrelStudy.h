@@ -57,19 +57,19 @@ public:
     qint64 subjectRowID;
 
     /* JSON elements */
-    QDateTime DateTime;         /*!< start datetime of the study */
-    QString Description;            /*!< Description of the imaging study */
-    QString Equipment;              /*!< Equipment the study was run on */
-    QString Modality;   /*!< study modality */
-    QString StudyUID;               /*!< DICOM StudyInstanceUID */
-    QString VisitType;              /*!< Description of the visit, eg. pre, post */
-    double AgeAtStudy;        /*!< age in years at the time of the study */
-    double Height;            /*!< height in meters */
-    double Weight;            /*!< weight in kg */
-    int DayNumber;              /*!< Day number for repeated studies or clinical trials. eg. 6 for 'day 6' */
+    QDateTime DateTime;     /*!< start datetime of the study */
+    QString Description;    /*!< Description of the imaging study */
+    QString Equipment;      /*!< Equipment the study was run on */
+    QString Modality;       /*!< study modality */
+    QString StudyUID;       /*!< DICOM StudyInstanceUID */
+    QString VisitType;      /*!< Description of the visit, eg. pre, post */
+    double AgeAtStudy;      /*!< age in years at the time of the study */
+    double Height;          /*!< height in meters */
+    double Weight;          /*!< weight in kg */
+    int DayNumber;          /*!< Day number for repeated studies or clinical trials. eg. 6 for 'day 6' */
     int SequenceNumber;
-    int StudyNumber;             /*!< Unique study number. Must be unique within the subject */
-    int TimePoint;              /*!< Ordinal time point for repeated studies. eg. 3 for the 3rd consecutive imaging study */
+    int StudyNumber;        /*!< Unique study number. Must be unique within the subject */
+    int TimePoint;          /*!< Ordinal time point for repeated studies. eg. 3 for the 3rd consecutive imaging study */
 
     /* lib variables */
     QList<squirrelSeries> seriesList; /*!< List of series attached to this study */

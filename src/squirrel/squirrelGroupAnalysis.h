@@ -51,7 +51,7 @@ public:
     QDateTime DateTime;         /*!< datetime of the group analysis */
     QString Description;        /*!< description of the group analysis */
     QString Notes;              /*!< notes about the group analysis */
-    qint64 FileCount;            /*!< number of files in the analysis */
+    qint64 FileCount;           /*!< number of files in the analysis */
     qint64 Size;                /*!< disk size in bytes of the analysis */
     QString virtualPath;        /*!< path within the squirrel package, no leading slash */
 

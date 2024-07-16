@@ -61,13 +61,13 @@ public:
     QList<QPair<QString,QString>> GetStagedFileList();
 
     /* JSON elements */
-    QList<dataDictionaryItem> dictItems; /*!< List of data dictionary items */
+    QList<dataDictionaryItem> dictItems;    /*!< List of data dictionary items */
     QString DataDictionaryName;
-    qint64 FileCount;                     /*!< total number of files */
-    qint64 Size;                         /*!< disk size in bytes of the data dictionary */
+    qint64 FileCount;                       /*!< total number of files */
+    qint64 Size;                            /*!< disk size in bytes of the data dictionary */
 
     /* lib variables */
-    QStringList stagedFiles;                    /*!< staged file list: list of files in their own original paths which will be copied in before the package is zipped up */
+    QStringList stagedFiles;                /*!< staged file list: list of files in their own original paths which will be copied in before the package is zipped up */
 
 private:
     bool valid = false;

@@ -65,8 +65,8 @@ public:
     QString Protocol;               /*!< Protocol (may differ from description) */
     qint64 FileCount = 0;           /*!< Number of files associated with the series */
     qint64 Size = 0;                /*!< total size in bytes of the series */
-    qint64 BehavioralFileCount = 0;         /*!< Number of files associated with the behavioral data */
-    qint64 BehavioralSize = 0;             /*!< total size in bytes of the beh data */
+    qint64 BehavioralFileCount = 0; /*!< Number of files associated with the behavioral data */
+    qint64 BehavioralSize = 0;      /*!< total size in bytes of the beh data */
     QHash<QString, QString> params; /*!< Hash containing experimental parameters. eg MR params */
     int SequenceNumber = 0;
 

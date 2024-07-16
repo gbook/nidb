@@ -2802,6 +2802,7 @@ bool archiveIO::WritePackage(qint64 exportid, QString zipfilepath, QString &msg)
 
     /* PACKAGE - get the details, and create package object */
     squirrel sqrl(n->debug);
+    n->Log(sqrl.GetLogBuffer());
     q.prepare("select * from packages where package_id = :packageid");
     q.bindValue(":packageid", packageid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
@@ -2823,6 +2824,7 @@ bool archiveIO::WritePackage(qint64 exportid, QString zipfilepath, QString &msg)
     else {
         return 0;
     }
+    n->Log(sqrl.GetLogBuffer());
 
     /* SERIES - add all series associated with this package, first */
     q.prepare("select * from package_series where package_id = :packageid");
@@ -2875,8 +2877,10 @@ bool archiveIO::WritePackage(qint64 exportid, QString zipfilepath, QString &msg)
         sqrlSeries.Store();
         sqrl.ResequenceSeries(sqrlStudyRowID);
     }
+    n->Log("Finished adding series to package");
+    n->Log(sqrl.GetLogBuffer());
 
-    sqrl.Print();
+    //sqrl.Print();
 
     /* ANALYSES - add all analysis associated with this package */
     q.prepare("select b.* from package_analyses a left join analysis b on a.analysis_id = b.analysis_id where a.package_id = :packageid");
