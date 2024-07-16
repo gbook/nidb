@@ -137,14 +137,17 @@ QJsonObject squirrelExperiment::ToJSON() {
 /**
  * @brief squirrelExperiment::PrintExperiment
  */
-void squirrelExperiment::PrintExperiment() {
+QString squirrelExperiment::PrintExperiment() {
+    QString str;
 
-    utils::Print("\t----- EXPERIMENT -----");
-    utils::Print(QString("\tExperimentName: %1").arg(ExperimentName));
-    utils::Print(QString("\tFileCount: %1").arg(FileCount));
-    utils::Print(QString("\tSize: %1").arg(Size));
-    utils::Print(QString("\tExperimentRowID: %1").arg(objectID));
-    utils::Print(QString("\tVirtualPath: %1").arg(VirtualPath()));
+    str += utils::Print("\t----- EXPERIMENT -----");
+    str += utils::Print(QString("\tExperimentName: %1").arg(ExperimentName));
+    str += utils::Print(QString("\tFileCount: %1").arg(FileCount));
+    str += utils::Print(QString("\tSize: %1").arg(Size));
+    str += utils::Print(QString("\tExperimentRowID: %1").arg(objectID));
+    str += utils::Print(QString("\tVirtualPath: %1").arg(VirtualPath()));
+
+    return str;
 }
 
 

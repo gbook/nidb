@@ -208,24 +208,27 @@ bool squirrelStudy::Remove() {
 /**
  * @brief Print study details
  */
-void squirrelStudy::PrintStudy() {
+QString squirrelStudy::PrintStudy() {
+    QString str;
 
-    utils::Print("\t\t\t----- STUDY -----");
-    utils::Print(QString("\t\t\tAgeAtStudy: %1").arg(AgeAtStudy));
-    utils::Print(QString("\t\t\tDayNumber: %1").arg(DayNumber));
-    utils::Print(QString("\t\t\tDescription: %1").arg(Description));
-    utils::Print(QString("\t\t\tEquipment: %1").arg(Equipment));
-    utils::Print(QString("\t\t\tHeight: %1 m").arg(Height));
-    utils::Print(QString("\t\t\tModality: %1").arg(Modality));
-    utils::Print(QString("\t\t\tStudyDatetime: %1").arg(DateTime.toString("yyyy-MM-dd HH:mm:ss")));
-    utils::Print(QString("\t\t\tStudyNumber: %1").arg(StudyNumber));
-    utils::Print(QString("\t\t\tStudyRowID: %1").arg(objectID));
-    utils::Print(QString("\t\t\tStudyUID: %1").arg(StudyUID));
-    utils::Print(QString("\t\t\tSubjectRowID: %1").arg(subjectRowID));
-    utils::Print(QString("\t\t\tTimePoint: %1").arg(TimePoint));
-    utils::Print(QString("\t\t\tVirtualPath: %1").arg(VirtualPath()));
-    utils::Print(QString("\t\t\tVisitType: %1").arg(VisitType));
-    utils::Print(QString("\t\t\tWeight: %1 kg").arg(Weight));
+    str += utils::Print("\t\t\t----- STUDY -----");
+    str += utils::Print(QString("\t\t\tAgeAtStudy: %1").arg(AgeAtStudy));
+    str += utils::Print(QString("\t\t\tDayNumber: %1").arg(DayNumber));
+    str += utils::Print(QString("\t\t\tDescription: %1").arg(Description));
+    str += utils::Print(QString("\t\t\tEquipment: %1").arg(Equipment));
+    str += utils::Print(QString("\t\t\tHeight: %1 m").arg(Height));
+    str += utils::Print(QString("\t\t\tModality: %1").arg(Modality));
+    str += utils::Print(QString("\t\t\tStudyDatetime: %1").arg(DateTime.toString("yyyy-MM-dd HH:mm:ss")));
+    str += utils::Print(QString("\t\t\tStudyNumber: %1").arg(StudyNumber));
+    str += utils::Print(QString("\t\t\tStudyRowID: %1").arg(objectID));
+    str += utils::Print(QString("\t\t\tStudyUID: %1").arg(StudyUID));
+    str += utils::Print(QString("\t\t\tSubjectRowID: %1").arg(subjectRowID));
+    str += utils::Print(QString("\t\t\tTimePoint: %1").arg(TimePoint));
+    str += utils::Print(QString("\t\t\tVirtualPath: %1").arg(VirtualPath()));
+    str += utils::Print(QString("\t\t\tVisitType: %1").arg(VisitType));
+    str += utils::Print(QString("\t\t\tWeight: %1 kg").arg(Weight));
+
+    return str;
 }
 
 
@@ -235,12 +238,13 @@ void squirrelStudy::PrintStudy() {
 /**
  * @brief Print study tree items
  */
-void squirrelStudy::PrintTree(bool isLast) {
+QString squirrelStudy::PrintTree(bool isLast) {
+    QString str;
 
     if (isLast)
-        utils::Print(QString("       └─── Study %1 - Datetime %2  Modality %3").arg(StudyNumber).arg(DateTime.toString("yyyy-MM-dd HH:mm:ss")).arg(Modality));
+        str += utils::Print(QString("       └─── Study %1 - Datetime %2  Modality %3").arg(StudyNumber).arg(DateTime.toString("yyyy-MM-dd HH:mm:ss")).arg(Modality));
     else
-        utils::Print(QString("   │   ├─── Study %1 - Datetime %2  Modality %3").arg(StudyNumber).arg(DateTime.toString("yyyy-MM-dd HH:mm:ss")).arg(Modality));
+        str += utils::Print(QString("   │   ├─── Study %1 - Datetime %2  Modality %3").arg(StudyNumber).arg(DateTime.toString("yyyy-MM-dd HH:mm:ss")).arg(Modality));
 
     /* print all series for this study */
     QSqlQuery q(QSqlDatabase::database("squirrel"));
@@ -252,9 +256,11 @@ void squirrelStudy::PrintTree(bool isLast) {
         squirrelSeries ser;
         ser.SetObjectID(seriesRowID);
         if (ser.Get()) {
-            ser.PrintTree(false);
+            str += ser.PrintTree(false);
         }
     }
+
+    return str;
 }
 
 

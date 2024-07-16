@@ -42,7 +42,7 @@ namespace utils {
     typedef QHash <int, QHash<QString, QString>> indexedHash;
 
     /* generic functions */
-    void Print(QString s, bool n=true, bool pad=false);
+    QString Print(QString s, bool n=true, bool pad=false);
     void PrintHeader();
     QString CreateCurrentDateTime(int format=1);
     QString CreateLogDate();

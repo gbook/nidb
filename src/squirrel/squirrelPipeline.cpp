@@ -310,42 +310,44 @@ QJsonObject squirrelPipeline::ToJSON(QString path) {
 /**
  * @brief Print pipeline details
  */
-void squirrelPipeline::PrintPipeline() {
+QString squirrelPipeline::PrintPipeline() {
+    QString str;
 
-    utils::Print("\t----- PIPELINE -----");
+    str += utils::Print("\t----- PIPELINE -----");
 
-    utils::Print(QString("\tClusterMaxWallTime: %1").arg(ClusterMaxWallTime));
-    utils::Print(QString("\tClusterMemory: %1").arg(ClusterMemory));
-    utils::Print(QString("\tClusterNumberCores: %1").arg(ClusterNumberCores));
-    utils::Print(QString("\tClusterQueue: %1").arg(ClusterQueue));
-    utils::Print(QString("\tClusterSubmitHost: %1").arg(ClusterSubmitHost));
-    utils::Print(QString("\tClusterType: %1").arg(ClusterType));
-    utils::Print(QString("\tClusterUser: %1").arg(ClusterUser));
-    utils::Print(QString("\tCompleteFiles: %1").arg(CompleteFiles.join(",")));
-    utils::Print(QString("\tCreateDate: %1").arg(CreateDate.toString()));
-    utils::Print(QString("\tDataCopyMethod: %1").arg(DataCopyMethod));
-    utils::Print(QString("\tDepDirectory: %1").arg(DependencyDirectory));
-    utils::Print(QString("\tDepLevel: %1").arg(DependencyLevel));
-    utils::Print(QString("\tDepLinkType: %1").arg(DependencyLinkType));
-    utils::Print(QString("\tDescription: %1").arg(Description));
-    utils::Print(QString("\tDirectory: %1").arg(Directory));
-    utils::Print(QString("\tDirectoryStructure: %1").arg(DirectoryStructure));
-    utils::Print(QString("\tGroup: %1").arg(Group));
-    utils::Print(QString("\tGroupType: %1").arg(GroupType));
-    utils::Print(QString("\tLevel: %1").arg(Level));
-    utils::Print(QString("\tNotes: %1").arg(Notes));
-    utils::Print(QString("\tNumConcurrentAnalyses: %1").arg(NumberConcurrentAnalyses));
-    utils::Print(QString("\tParentPipelines: %1").arg(ParentPipelines.join(",")));
-    utils::Print(QString("\tPipelineName: %1").arg(PipelineName));
-    utils::Print(QString("\tPipelineRowID: %1").arg(objectID));
-    utils::Print(QString("\tResultScript: %1").arg(ResultScript));
-    utils::Print(QString("\tSubmitDelay: %1").arg(SubmitDelay));
-    utils::Print(QString("\tTempDirectory: %1").arg(TempDirectory));
-    utils::Print(QString("\tUseProfile: %1").arg(flags.UseProfile));
-    utils::Print(QString("\tUseTempDirectory: %1").arg(flags.UseTempDirectory));
-    utils::Print(QString("\tVersion: %1").arg(Version));
-    utils::Print(QString("\tVirtualPath: %1").arg(VirtualPath()));
+    str += utils::Print(QString("\tClusterMaxWallTime: %1").arg(ClusterMaxWallTime));
+    str += utils::Print(QString("\tClusterMemory: %1").arg(ClusterMemory));
+    str += utils::Print(QString("\tClusterNumberCores: %1").arg(ClusterNumberCores));
+    str += utils::Print(QString("\tClusterQueue: %1").arg(ClusterQueue));
+    str += utils::Print(QString("\tClusterSubmitHost: %1").arg(ClusterSubmitHost));
+    str += utils::Print(QString("\tClusterType: %1").arg(ClusterType));
+    str += utils::Print(QString("\tClusterUser: %1").arg(ClusterUser));
+    str += utils::Print(QString("\tCompleteFiles: %1").arg(CompleteFiles.join(",")));
+    str += utils::Print(QString("\tCreateDate: %1").arg(CreateDate.toString()));
+    str += utils::Print(QString("\tDataCopyMethod: %1").arg(DataCopyMethod));
+    str += utils::Print(QString("\tDepDirectory: %1").arg(DependencyDirectory));
+    str += utils::Print(QString("\tDepLevel: %1").arg(DependencyLevel));
+    str += utils::Print(QString("\tDepLinkType: %1").arg(DependencyLinkType));
+    str += utils::Print(QString("\tDescription: %1").arg(Description));
+    str += utils::Print(QString("\tDirectory: %1").arg(Directory));
+    str += utils::Print(QString("\tDirectoryStructure: %1").arg(DirectoryStructure));
+    str += utils::Print(QString("\tGroup: %1").arg(Group));
+    str += utils::Print(QString("\tGroupType: %1").arg(GroupType));
+    str += utils::Print(QString("\tLevel: %1").arg(Level));
+    str += utils::Print(QString("\tNotes: %1").arg(Notes));
+    str += utils::Print(QString("\tNumConcurrentAnalyses: %1").arg(NumberConcurrentAnalyses));
+    str += utils::Print(QString("\tParentPipelines: %1").arg(ParentPipelines.join(",")));
+    str += utils::Print(QString("\tPipelineName: %1").arg(PipelineName));
+    str += utils::Print(QString("\tPipelineRowID: %1").arg(objectID));
+    str += utils::Print(QString("\tResultScript: %1").arg(ResultScript));
+    str += utils::Print(QString("\tSubmitDelay: %1").arg(SubmitDelay));
+    str += utils::Print(QString("\tTempDirectory: %1").arg(TempDirectory));
+    str += utils::Print(QString("\tUseProfile: %1").arg(flags.UseProfile));
+    str += utils::Print(QString("\tUseTempDirectory: %1").arg(flags.UseTempDirectory));
+    str += utils::Print(QString("\tVersion: %1").arg(Version));
+    str += utils::Print(QString("\tVirtualPath: %1").arg(VirtualPath()));
 
+    return str;
 }
 
 

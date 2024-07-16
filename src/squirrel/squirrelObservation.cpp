@@ -167,7 +167,10 @@ QJsonObject squirrelObservation::ToJSON() {
 /**
  * @brief squirrelObservation::PrintObservation
  */
-void squirrelObservation::PrintObservation() {
+QString squirrelObservation::PrintObservation() {
+    QString str;
 
-    utils::Print(QString("\t\t\tMEASURE\tName [%1]\tDateStart [%2]\tDateEnd [%3]\tInstrumentName [%4]\tRater [%5]\tNotes [%6]\tValue [%7]\tDescription [%8]").arg(ObservationName).arg(DateStart.toString()).arg(DateEnd.toString()).arg(InstrumentName).arg(Rater).arg(Notes).arg(Value).arg(Description));
+    str += utils::Print(QString("\t\t\tMEASURE\tName [%1]\tDateStart [%2]\tDateEnd [%3]\tInstrumentName [%4]\tRater [%5]\tNotes [%6]\tValue [%7]\tDescription [%8]").arg(ObservationName).arg(DateStart.toString()).arg(DateEnd.toString()).arg(InstrumentName).arg(Rater).arg(Notes).arg(Value).arg(Description));
+
+    return str;
 }

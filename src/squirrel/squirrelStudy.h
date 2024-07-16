@@ -39,8 +39,8 @@ class squirrelStudy
 {
 public:
     squirrelStudy();
-    void PrintStudy();
-    void PrintTree(bool isLast);
+    QString PrintStudy();
+    QString PrintTree(bool isLast);
     QJsonObject ToJSON();
     bool Get();             /* gets the object data from the database */
     bool Store();           /* saves the object data from this object into the database */

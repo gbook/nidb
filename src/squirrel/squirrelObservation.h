@@ -36,7 +36,7 @@ class squirrelObservation
 public:
     squirrelObservation();
     QJsonObject ToJSON();
-    void PrintObservation();
+    QString PrintObservation();
     bool Get();             /* gets the object data from the database */
     bool Store();           /* saves the object data from this object into the database */
     bool isValid() { return valid; }

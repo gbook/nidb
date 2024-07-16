@@ -59,7 +59,7 @@ public:
     bool Read();
     bool Write(bool writeLog);
     bool Validate();
-    void Print();
+    QString Print();
     void SetPackagePath(QString p) { packagePath = p; }
     QString GetPackagePath();
     void SetFileMode(FileMode m) { fileMode = m; } /*!< Set the file mode to either NewPackage or ExistingPackage */
@@ -150,14 +150,14 @@ public:
     bool quiet=false;
 
     /* printing of information to console */
-    void PrintPackage();
-    void PrintSubjects(PrintingType printType=PrintingType::IDList);
-    void PrintStudies(qint64 subjectRowID, bool details=false);
-    void PrintSeries(qint64 studyRowID, bool details=false);
-    void PrintExperiments(bool details=false);
-    void PrintPipelines(bool details=false);
-    void PrintGroupAnalyses(bool details=false);
-    void PrintDataDictionary(bool details=false);
+    QString PrintPackage();
+    QString PrintSubjects(PrintingType printType=PrintingType::IDList);
+    QString PrintStudies(qint64 subjectRowID, bool details=false);
+    QString PrintSeries(qint64 studyRowID, bool details=false);
+    QString PrintExperiments(bool details=false);
+    QString PrintPipelines(bool details=false);
+    QString PrintGroupAnalyses(bool details=false);
+    QString PrintDataDictionary(bool details=false);
 
     QSqlDatabase db;
 

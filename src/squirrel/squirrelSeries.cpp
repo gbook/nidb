@@ -184,28 +184,32 @@ bool squirrelSeries::Remove() {
 /**
  * @brief Print the series details
  */
-void squirrelSeries::PrintSeries() {
-    utils::Print("\t\t\t\t----- SERIES -----");
-    utils::Print(QString("\t\t\t\tBehavioralFileCount: %1").arg(BehavioralFileCount));
-    utils::Print(QString("\t\t\t\tBehavioralSize: %1").arg(BehavioralSize));
-    utils::Print(QString("\t\t\t\tDatetime: %1").arg(DateTime.toString("yyyy-MM-dd HH:mm:ss")));
-    utils::Print(QString("\t\t\t\tDescription: %1").arg(Description));
-    utils::Print(QString("\t\t\t\tExperimentName: %1").arg(experimentRowID));
-    utils::Print(QString("\t\t\t\tFileCount: %1").arg(FileCount));
-    utils::Print(QString("\t\t\t\tProtocol: %1").arg(Protocol));
-    utils::Print(QString("\t\t\t\tSequenceNumber: %1").arg(SequenceNumber));
-    utils::Print(QString("\t\t\t\tSeriesNumber: %1").arg(SeriesNumber));
-    utils::Print(QString("\t\t\t\tSeriesRowID: %1").arg(objectID));
-    utils::Print(QString("\t\t\t\tSeriesUID: %1").arg(SeriesUID));
-    utils::Print(QString("\t\t\t\tSize: %1").arg(Size));
-    utils::Print(QString("\t\t\t\tVirtualPath: %1").arg(VirtualPath()));
+QString squirrelSeries::PrintSeries() {
+    QString str;
+
+    str += utils::Print("\t\t\t\t----- SERIES -----");
+    str += utils::Print(QString("\t\t\t\tBehavioralFileCount: %1").arg(BehavioralFileCount));
+    str += utils::Print(QString("\t\t\t\tBehavioralSize: %1").arg(BehavioralSize));
+    str += utils::Print(QString("\t\t\t\tDatetime: %1").arg(DateTime.toString("yyyy-MM-dd HH:mm:ss")));
+    str += utils::Print(QString("\t\t\t\tDescription: %1").arg(Description));
+    str += utils::Print(QString("\t\t\t\tExperimentName: %1").arg(experimentRowID));
+    str += utils::Print(QString("\t\t\t\tFileCount: %1").arg(FileCount));
+    str += utils::Print(QString("\t\t\t\tProtocol: %1").arg(Protocol));
+    str += utils::Print(QString("\t\t\t\tSequenceNumber: %1").arg(SequenceNumber));
+    str += utils::Print(QString("\t\t\t\tSeriesNumber: %1").arg(SeriesNumber));
+    str += utils::Print(QString("\t\t\t\tSeriesRowID: %1").arg(objectID));
+    str += utils::Print(QString("\t\t\t\tSeriesUID: %1").arg(SeriesUID));
+    str += utils::Print(QString("\t\t\t\tSize: %1").arg(Size));
+    str += utils::Print(QString("\t\t\t\tVirtualPath: %1").arg(VirtualPath()));
 
     foreach (QString f, stagedFiles) {
-        utils::Print(QString("\t\t\t\t\tFile: %1").arg(f));
+        str += utils::Print(QString("\t\t\t\t\tFile: %1").arg(f));
     }
     foreach (QString f, stagedBehFiles) {
-        utils::Print(QString("\t\t\t\t\tBehFile: %1").arg(f));
+        str += utils::Print(QString("\t\t\t\t\tBehFile: %1").arg(f));
     }
+
+    return str;
 }
 
 
@@ -215,11 +219,15 @@ void squirrelSeries::PrintSeries() {
 /**
  * @brief Print series tree
  */
-void squirrelSeries::PrintTree(bool isLast) {
+QString squirrelSeries::PrintTree(bool isLast) {
+    QString str;
+
     if (isLast)
-        utils::Print(QString("           └─── Series %1 - Datetime %2  Protocol %3").arg(SeriesNumber).arg(DateTime.toString("yyyy-MM-dd HH:mm:ss")).arg(Protocol));
+        str += utils::Print(QString("           └─── Series %1 - Datetime %2  Protocol %3").arg(SeriesNumber).arg(DateTime.toString("yyyy-MM-dd HH:mm:ss")).arg(Protocol));
     else
-        utils::Print(QString("   │   │   ├─── Series %1 - Datetime %2  Protocol %3").arg(SeriesNumber).arg(DateTime.toString("yyyy-MM-dd HH:mm:ss")).arg(Protocol));
+        str += utils::Print(QString("   │   │   ├─── Series %1 - Datetime %2  Protocol %3").arg(SeriesNumber).arg(DateTime.toString("yyyy-MM-dd HH:mm:ss")).arg(Protocol));
+
+    return str;
 }
 
 

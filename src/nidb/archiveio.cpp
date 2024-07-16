@@ -2828,14 +2828,20 @@ bool archiveIO::WritePackage(qint64 exportid, QString zipfilepath, QString &msg)
     q.prepare("select * from package_series where package_id = :packageid");
     q.bindValue(":packageid", packageid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
+    n->Log(QString("Found [%1] series for package [%2]").arg(q.size()).arg(packageid));
     while (q.next()) {
         int seriesRowID = q.value("series_id").toInt();
         QString modality = q.value("modality").toString();
 
         /* get local NiDB objects */
         series ser(seriesRowID, modality, n);
-        if (!ser.isValid)
+        if (!ser.isValid) {
+            n->Log(QString("Series [%1,%2] is invalid").arg(seriesRowID).arg(modality));
             continue;
+        }
+        else {
+            n->Log(QString("Adding series [%1,%2] to squirrel package").arg(seriesRowID).arg(modality));
+        }
 
         /* get squirrel SUBJECT (create the object in the package if it doesn't already exist) */
         squirrelSubject sqrlSubject;
@@ -2869,6 +2875,8 @@ bool archiveIO::WritePackage(qint64 exportid, QString zipfilepath, QString &msg)
         sqrlSeries.Store();
         sqrl.ResequenceSeries(sqrlStudyRowID);
     }
+
+    sqrl.Print();
 
     /* ANALYSES - add all analysis associated with this package */
     q.prepare("select b.* from package_analyses a left join analysis b on a.analysis_id = b.analysis_id where a.package_id = :packageid");

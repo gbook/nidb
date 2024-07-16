@@ -35,7 +35,7 @@ class squirrelExperiment
 public:
     squirrelExperiment();
     QJsonObject ToJSON();   /* returns a JSON object */
-    void PrintExperiment(); /* prints the object */
+    QString PrintExperiment(); /* prints the object */
     bool Get();             /* gets the object data from the database */
     bool Store();           /* saves the object data from this object into the database */
     bool isValid() { return valid; }

@@ -59,17 +59,29 @@ namespace utils {
     /* ---------------------------------------------------------- */
     /* --------- Print ------------------------------------------ */
     /* ---------------------------------------------------------- */
-    void Print(QString s, bool n, bool pad) {
-        if (n)
-            if (pad)
+    QString Print(QString s, bool n, bool pad) {
+        QString str;
+        if (n) {
+            if (pad) {
                 printf("%-80s\n", s.toStdString().c_str());
-            else
+                str = s + "\n";
+            }
+            else {
                 printf("%s\n", s.toStdString().c_str());
-        else
-            if (pad)
+                str = s + "\n";
+            }
+        }
+        else {
+            if (pad) {
                 printf("%-80s", s.toStdString().c_str());
-            else
+                str = s;
+            }
+            else {
                 printf("%s", s.toStdString().c_str());
+                str = s;
+            }
+        }
+        return str;
     }
 
 

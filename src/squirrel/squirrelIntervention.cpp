@@ -197,26 +197,28 @@ QJsonObject squirrelIntervention::ToJSON() {
 /**
  * @brief squirrelIntervention::PrintIntervention
  */
-void squirrelIntervention::PrintIntervention() {
+QString squirrelIntervention::PrintIntervention() {
+    QString str;
 
-    utils::Print("\t\t\t----- Intervention -----");
-    utils::Print(QString("\t\t\tAdministrationRoute: %1").arg(AdministrationRoute));
-    utils::Print(QString("\t\t\tDateEnd: %1").arg(DateEnd.toString("yyyy-MM-dd HH:mm:ss")));
-    utils::Print(QString("\t\t\tDateRecordCreate: %1").arg(DateRecordCreate.toString("yyyy-MM-dd HH:mm:ss")));
-    utils::Print(QString("\t\t\tDateRecordEntry: %1").arg(DateRecordEntry.toString("yyyy-MM-dd HH:mm:ss")));
-    utils::Print(QString("\t\t\tDateRecordModify: %1").arg(DateRecordModify.toString("yyyy-MM-dd HH:mm:ss")));
-    utils::Print(QString("\t\t\tDateStart: %1").arg(DateStart.toString("yyyy-MM-dd HH:mm:ss")));
-    utils::Print(QString("\t\t\tDescription: %1").arg(Description));
-    utils::Print(QString("\t\t\tDoseAmount: %1").arg(DoseAmount));
-    utils::Print(QString("\t\t\tDoseFrequency: %1").arg(DoseFrequency));
-    utils::Print(QString("\t\t\tDoseKey: %1").arg(DoseKey));
-    utils::Print(QString("\t\t\tDoseUnit: %1").arg(DoseUnit));
-    utils::Print(QString("\t\t\tInterventionClass: %1").arg(InterventionClass));
-    utils::Print(QString("\t\t\tInterventionName: %1").arg(InterventionName));
+    str += utils::Print("\t\t\t----- Intervention -----");
+    str += utils::Print(QString("\t\t\tAdministrationRoute: %1").arg(AdministrationRoute));
+    str += utils::Print(QString("\t\t\tDateEnd: %1").arg(DateEnd.toString("yyyy-MM-dd HH:mm:ss")));
+    str += utils::Print(QString("\t\t\tDateRecordCreate: %1").arg(DateRecordCreate.toString("yyyy-MM-dd HH:mm:ss")));
+    str += utils::Print(QString("\t\t\tDateRecordEntry: %1").arg(DateRecordEntry.toString("yyyy-MM-dd HH:mm:ss")));
+    str += utils::Print(QString("\t\t\tDateRecordModify: %1").arg(DateRecordModify.toString("yyyy-MM-dd HH:mm:ss")));
+    str += utils::Print(QString("\t\t\tDateStart: %1").arg(DateStart.toString("yyyy-MM-dd HH:mm:ss")));
+    str += utils::Print(QString("\t\t\tDescription: %1").arg(Description));
+    str += utils::Print(QString("\t\t\tDoseAmount: %1").arg(DoseAmount));
+    str += utils::Print(QString("\t\t\tDoseFrequency: %1").arg(DoseFrequency));
+    str += utils::Print(QString("\t\t\tDoseKey: %1").arg(DoseKey));
+    str += utils::Print(QString("\t\t\tDoseUnit: %1").arg(DoseUnit));
+    str += utils::Print(QString("\t\t\tInterventionClass: %1").arg(InterventionClass));
+    str += utils::Print(QString("\t\t\tInterventionName: %1").arg(InterventionName));
     //utils::Print(QString("\t\t\tFrequencyModifier: %1").arg(frequencyModifier));
     //utils::Print(QString("\t\t\tFrequencyUnit: %1").arg(frequencyUnit));
     //utils::Print(QString("\t\t\tFrequencyValue: %1").arg(frequencyValue));
-    utils::Print(QString("\t\t\tNotes: %1").arg(Notes));
-    utils::Print(QString("\t\t\tRater: %1").arg(Rater));
+    str += utils::Print(QString("\t\t\tNotes: %1").arg(Notes));
+    str += utils::Print(QString("\t\t\tRater: %1").arg(Rater));
 
+    return str;
 }

@@ -211,26 +211,29 @@ QJsonObject squirrelAnalysis::ToJSON() {
 /**
  * @brief Print the analysis details
  */
-void squirrelAnalysis::PrintAnalysis() {
+QString squirrelAnalysis::PrintAnalysis() {
+    QString str;
 
-    utils::Print("\t\t\t\t----- ANALYSIS -----");
-    utils::Print(QString("\t\t\t\tAnalysisName: %1").arg(AnalysisName));
-    utils::Print(QString("\t\t\t\tDateClusterEnd: %1").arg(DateClusterEnd.toString("yyyy-MM-dd HH:mm:ss")));
-    utils::Print(QString("\t\t\t\tDateClusterStart: %1").arg(DateClusterStart.toString("yyyy-MM-dd HH:mm:ss")));
-    utils::Print(QString("\t\t\t\tDateEnd: %1").arg(DateEnd.toString("yyyy-MM-dd HH:mm:ss")));
-    utils::Print(QString("\t\t\t\tDateStart: %1").arg(DateStart.toString("yyyy-MM-dd HH:mm:ss")));
-    utils::Print(QString("\t\t\t\tHostname: %1").arg(Hostname));
-    utils::Print(QString("\t\t\t\tLastMessage: %1").arg(LastMessage));
-    utils::Print(QString("\t\t\t\tPipelineName: %1").arg(PipelineName));
-    utils::Print(QString("\t\t\t\tPipelineVersion: %1").arg(PipelineVersion));
-    utils::Print(QString("\t\t\t\tRunTime: %1").arg(RunTime));
-    utils::Print(QString("\t\t\t\tSeriesCount: %1").arg(SeriesCount));
-    utils::Print(QString("\t\t\t\tSetupTime: %1").arg(SetupTime));
-    utils::Print(QString("\t\t\t\tSize: %1").arg(Size));
-    utils::Print(QString("\t\t\t\tStatus: %1").arg(Status));
-    utils::Print(QString("\t\t\t\tStudyRowID: %1").arg(objectID));
-    utils::Print(QString("\t\t\t\tSuccessful: %1").arg(Successful));
-    utils::Print(QString("\t\t\t\tVirtualPath: %1").arg(VirtualPath()));
+    str += utils::Print("\t\t\t\t----- ANALYSIS -----");
+    str += utils::Print(QString("\t\t\t\tAnalysisName: %1").arg(AnalysisName));
+    str += utils::Print(QString("\t\t\t\tDateClusterEnd: %1").arg(DateClusterEnd.toString("yyyy-MM-dd HH:mm:ss")));
+    str += utils::Print(QString("\t\t\t\tDateClusterStart: %1").arg(DateClusterStart.toString("yyyy-MM-dd HH:mm:ss")));
+    str += utils::Print(QString("\t\t\t\tDateEnd: %1").arg(DateEnd.toString("yyyy-MM-dd HH:mm:ss")));
+    str += utils::Print(QString("\t\t\t\tDateStart: %1").arg(DateStart.toString("yyyy-MM-dd HH:mm:ss")));
+    str += utils::Print(QString("\t\t\t\tHostname: %1").arg(Hostname));
+    str += utils::Print(QString("\t\t\t\tLastMessage: %1").arg(LastMessage));
+    str += utils::Print(QString("\t\t\t\tPipelineName: %1").arg(PipelineName));
+    str += utils::Print(QString("\t\t\t\tPipelineVersion: %1").arg(PipelineVersion));
+    str += utils::Print(QString("\t\t\t\tRunTime: %1").arg(RunTime));
+    str += utils::Print(QString("\t\t\t\tSeriesCount: %1").arg(SeriesCount));
+    str += utils::Print(QString("\t\t\t\tSetupTime: %1").arg(SetupTime));
+    str += utils::Print(QString("\t\t\t\tSize: %1").arg(Size));
+    str += utils::Print(QString("\t\t\t\tStatus: %1").arg(Status));
+    str += utils::Print(QString("\t\t\t\tStudyRowID: %1").arg(objectID));
+    str += utils::Print(QString("\t\t\t\tSuccessful: %1").arg(Successful));
+    str += utils::Print(QString("\t\t\t\tVirtualPath: %1").arg(VirtualPath()));
+
+    return str;
 }
 
 

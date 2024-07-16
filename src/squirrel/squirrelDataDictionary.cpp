@@ -187,18 +187,21 @@ QJsonObject squirrelDataDictionary::ToJSON() {
 /**
  * @brief squirrelDataDictionary::PrintDataDictionary
  */
-void squirrelDataDictionary::PrintDataDictionary() {
+QString squirrelDataDictionary::PrintDataDictionary() {
+    QString str;
 
-    utils::Print("\t----- DATADICTIONARY ------");
-    utils::Print(QString("\tFileCount: %1").arg(FileCount));
-    utils::Print(QString("\tSize: %1").arg(Size));
-    utils::Print(QString("\tVirtualPath: %1").arg(VirtualPath()));
+    str += utils::Print("\t----- DATADICTIONARY ------");
+    str += utils::Print(QString("\tFileCount: %1").arg(FileCount));
+    str += utils::Print(QString("\tSize: %1").arg(Size));
+    str += utils::Print(QString("\tVirtualPath: %1").arg(VirtualPath()));
 
     int i = 0;
     foreach (dataDictionaryItem item, dictItems) {
-        utils::Print(QString("\tItem [%1]\ttype [%2]\tvariableName [%3]\ttype [%4]\ttype [%5]\ttype [%6]\ttype [%7]\ttype [%8]").arg(i).arg(item.VariableType).arg(item.VariableName).arg(item.Description).arg(item.KeyValueMapping).arg(item.ExpectedTimepoints).arg(item.RangeLow).arg(item.RangeHigh));
+        str += utils::Print(QString("\tItem [%1]\ttype [%2]\tvariableName [%3]\ttype [%4]\ttype [%5]\ttype [%6]\ttype [%7]\ttype [%8]").arg(i).arg(item.VariableType).arg(item.VariableName).arg(item.Description).arg(item.KeyValueMapping).arg(item.ExpectedTimepoints).arg(item.RangeLow).arg(item.RangeHigh));
         i++;
     }
+
+    return str;
 }
 
 

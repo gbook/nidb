@@ -149,17 +149,19 @@ QJsonObject squirrelGroupAnalysis::ToJSON() {
 /**
  * @brief squirrelGroupAnalysis::PrintGroupAnalysis
  */
-void squirrelGroupAnalysis::PrintGroupAnalysis() {
+QString squirrelGroupAnalysis::PrintGroupAnalysis() {
+    QString str;
 
-    utils::Print("\t----- GROUPANALYSIS ------");
-    utils::Print(QString("\tGroupAnalysisName: %1").arg(GroupAnalysisName));
-    utils::Print(QString("\tDatetime: %1").arg(DateTime.toString("yyyy-MM-dd HH:mm:ss")));
-    utils::Print(QString("\tDescription: %1").arg(Description));
-    utils::Print(QString("\tNotes: %1").arg(Notes));
-    utils::Print(QString("\tFileCount: %1").arg(FileCount));
-    utils::Print(QString("\tSize: %1").arg(Size));
-    utils::Print(QString("\tVirtualPath: %1").arg(virtualPath));
+    str += utils::Print("\t----- GROUPANALYSIS ------");
+    str += utils::Print(QString("\tGroupAnalysisName: %1").arg(GroupAnalysisName));
+    str += utils::Print(QString("\tDatetime: %1").arg(DateTime.toString("yyyy-MM-dd HH:mm:ss")));
+    str += utils::Print(QString("\tDescription: %1").arg(Description));
+    str += utils::Print(QString("\tNotes: %1").arg(Notes));
+    str += utils::Print(QString("\tFileCount: %1").arg(FileCount));
+    str += utils::Print(QString("\tSize: %1").arg(Size));
+    str += utils::Print(QString("\tVirtualPath: %1").arg(virtualPath));
 
+    return str;
 }
 
 

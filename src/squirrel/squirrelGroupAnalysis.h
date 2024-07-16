@@ -36,7 +36,7 @@ class squirrelGroupAnalysis
 public:
     squirrelGroupAnalysis();
     QJsonObject ToJSON();
-    void PrintGroupAnalysis();
+    QString PrintGroupAnalysis();
     bool Get();             /* gets the object data from the database */
     bool Store();           /* saves the object data from this object into the database */
     bool isValid() { return valid; }
