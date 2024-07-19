@@ -172,6 +172,7 @@ private:
     bool AddFilesToArchive(QStringList filePaths, QStringList compressedFilePaths, QString archivePath, QString &m);
     bool RemoveDirectoryFromArchive(QString compressedDirPath, QString archivePath, QString &m);
     bool UpdateMemoryFileToArchive(QString file, QString compressedFilePath, QString archivePath, QString &m);
+    bool Get7zipLibPath();
 
     QString workingDir;
     QString logfile;
@@ -179,6 +180,7 @@ private:
     QString log;
     QString logBuffer;
     QString packagePath;
+    QString p7zipLibPath;
 
     FileMode fileMode;
 

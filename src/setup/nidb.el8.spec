@@ -10,7 +10,7 @@ URL:            http://github.com/gbook/nidb
 BuildArch:	x86_64
 # 'cmake3' is required by CentOS 8, 'cmake' is required by CentOS 8 Stream. Make sure the right one is used depending on your build OS
 BuildRequires:  gcc, cmake, make, gcc-toolset-10
-Requires:       php, php-mysqlnd, php-gd, php-cli, php-process, php-pear, php-mbstring, php-fpm, php-json, php-opcache, mariadb, mariadb-common, mariadb-server, mariadb-server-utils, mariadb-connector-c-devel, mariadb-connector-c, mariadb-connector-c-config, mariadb-backup, httpd, ImageMagick, perl-Image-ExifTool, openssl, openssl3, gcc-toolset-10
+Requires:       php, php-mysqlnd, php-gd, php-cli, php-process, php-pear, php-mbstring, php-fpm, php-json, php-opcache, mariadb, mariadb-common, mariadb-server, mariadb-server-utils, mariadb-connector-c-devel, mariadb-connector-c, mariadb-connector-c-config, mariadb-backup, httpd, ImageMagick, perl-Image-ExifTool, openssl, openssl3, gcc-toolset-10, p7zip, p7zip-plugins
 
 %description
 NeuroInformatics Database (NiDB) is a full neuroimaging database system to store, retrieve, analyze, and distribute neuroscience data.

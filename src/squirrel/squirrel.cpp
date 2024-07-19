@@ -54,8 +54,20 @@ squirrel::squirrel(bool dbg, bool q)
     isOkToDelete = true;
     quiet = q;
 
-    DatabaseConnect();
-    InitializeDatabase();
+    if (!DatabaseConnect()) {
+        Log(QString("Error connecting to database. Unable to initilize squirrel library"), __FUNCTION__);
+        isValid = false;
+    }
+
+    if (!InitializeDatabase()) {
+        Log(QString("Error connecting to database. Unable to initilize squirrel library"), __FUNCTION__);
+        isValid = false;
+    }
+
+    if (!Get7zipLibPath()) {
+        Log(QString("Error connecting to database. Unable to initilize squirrel library"), __FUNCTION__);
+        isValid = false;
+    }
 
     Log(QString("Created squirrel object."), __FUNCTION__);
     if (debug)
@@ -76,6 +88,30 @@ squirrel::~squirrel()
         if (!utils::RemoveDir(workingDir, m))
             Log(QString("Error removing working directory [%1]. Message [%2]").arg(workingDir).arg(m), __FUNCTION__);
     }
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- Get7zipLibPath --------------------------------- */
+/* ---------------------------------------------------------- */
+bool squirrel::Get7zipLibPath() {
+#ifdef Q_OS_WINDOWS
+    if (QFile::exists("/usr/libexec/p7zip/7z.so")) {
+        p7zipLibPath = "C:/Program Files/7-Zip/7z.dll";
+        return true;
+    }
+#else
+    if (QFile::exists("/usr/libexec/p7zip/7z.so")) {
+        p7zipLibPath = "/usr/libexec/p7zip/7z.so";
+        return true;
+    }
+    else if (QFile::exists("/usr/libexec/p7zip/7za.so")) {
+        p7zipLibPath = "/usr/libexec/p7zip/7za.so";
+        return true;
+    }
+#endif
+
+    return false;
 }
 
 
@@ -2327,11 +2363,7 @@ bool squirrel::ExtractFileFromArchive(QString archivePath, QString filePath, QSt
     try {
         using namespace bit7z;
         std::vector<unsigned char> buffer;
-        #ifdef Q_OS_WINDOWS
-           Bit7zLibrary lib("C:/Program Files/7-Zip/7z.dll");
-        #else
-           Bit7zLibrary lib("/usr/libexec/p7zip/7z.so");
-        #endif
+        Bit7zLibrary lib(p7zipLibPath.toStdString());
         if (archivePath.endsWith(".zip", Qt::CaseInsensitive)) {
             BitFileExtractor extractor(lib, BitFormat::Zip);
             extractor.extractMatching(archivePath.toStdString(), filePath.toStdString(), buffer);
@@ -2368,11 +2400,7 @@ bool squirrel::CompressDirectoryToArchive(QString dir, QString archivePath, QStr
 
     try {
         using namespace bit7z;
-#ifdef Q_OS_WINDOWS
-        Bit7zLibrary lib("C:/Program Files/7-Zip/7z.dll");
-#else
-        Bit7zLibrary lib("/usr/libexec/p7zip/7z.so");
-#endif
+        Bit7zLibrary lib(p7zipLibPath.toStdString());
 
         if (overwritePackage) {
             if (QFile::exists(archivePath) && (archivePath != "")) {
@@ -2418,11 +2446,7 @@ bool squirrel::CompressDirectoryToArchive(QString dir, QString archivePath, QStr
 bool squirrel::AddFilesToArchive(QStringList filePaths, QStringList compressedFilePaths, QString archivePath, QString &m) {
     try {
         using namespace bit7z;
-#ifdef Q_OS_WINDOWS
-        Bit7zLibrary lib("C:/Program Files/7-Zip/7z.dll");
-#else
-        Bit7zLibrary lib("/usr/libexec/p7zip/7z.so");
-#endif
+        Bit7zLibrary lib(p7zipLibPath.toStdString());
         if (archivePath.endsWith(".zip", Qt::CaseInsensitive)) {
             bit7z::BitArchiveEditor editor(lib, archivePath.toStdString(), bit7z::BitFormat::Zip);
             editor.setUpdateMode(UpdateMode::Update);
@@ -2467,11 +2491,7 @@ bool squirrel::AddFilesToArchive(QStringList filePaths, QStringList compressedFi
 bool squirrel::RemoveDirectoryFromArchive(QString compressedDirPath, QString archivePath, QString &m) {
     try {
         using namespace bit7z;
-#ifdef Q_OS_WINDOWS
-        Bit7zLibrary lib("C:/Program Files/7-Zip/7z.dll");
-#else
-        Bit7zLibrary lib("/usr/libexec/p7zip/7z.so");
-#endif
+        Bit7zLibrary lib(p7zipLibPath.toStdString());
 
         if (archivePath.endsWith(".zip", Qt::CaseInsensitive)) {
             /* first, get the index of the directory to remove */
@@ -2536,11 +2556,7 @@ bool squirrel::RemoveDirectoryFromArchive(QString compressedDirPath, QString arc
 bool squirrel::UpdateMemoryFileToArchive(QString file, QString compressedFilePath, QString archivePath, QString &m) {
     try {
         using namespace bit7z;
-#ifdef Q_OS_WINDOWS
-        Bit7zLibrary lib("C:/Program Files/7-Zip/7z.dll");
-#else
-        Bit7zLibrary lib("/usr/libexec/p7zip/7z.so");
-#endif
+        Bit7zLibrary lib(p7zipLibPath.toStdString());
         /* convert the QString to a istream */
         std::istringstream i(file.toStdString());
 
