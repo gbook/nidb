@@ -261,8 +261,15 @@
 		
 		if ($column == "altuids") {
 			StartSQLTransaction();
+			/* get enrollmentid */
+			$sqlstring = "select enrollment_id from enrollment where subject_id = $subjectid and project_id = $projectid";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			$enrollmentid = $row['enrollment_id'];
+			if ($enrollmentid == "") { $enrollmentid = 0; }
+
 			/* delete entries for this subject from the altuid table ... */
-			$sqlstring = "delete from subject_altuid where subject_id = $subjectid";
+			$sqlstring = "delete from subject_altuid where subject_id = $subjectid and enrollment_id = $enrollmentid";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			/* ... and insert the new rows into the altuids table */
 			$altuidsublist = $value;
@@ -270,7 +277,7 @@
 			foreach ($altuids as $altuid) {
 				$altuid = trim($altuid);
 				if ($altuid != "") {
-					$enrollmentid = $enrollmentids[$i];
+					//$enrollmentid = $enrollmentids[$i];
 					if ($enrollmentid == "") { $enrollmentid = 0; }
 					if (strpos($altuid, '*') !== FALSE) {
 						$altuid = str_replace('*','',$altuid);
@@ -296,7 +303,7 @@
 				case "guid": $sqlstring .= "guid"; break;
 				case "sex": $sqlstring .= "subjects.sex"; break;
 				case "gender": $sqlstring .= "gender"; break;
-				case "dob": $sqlstring .= "birthdate"; break;
+				case "birthdate": $sqlstring .= "birthdate"; break;
 				case "ethnicity1": $sqlstring .= "ethnicity1"; break;
 				case "ethnicity2": $sqlstring .= "ethnicity2"; break;
 				case "handedness": $sqlstring .= "handedness"; break;
@@ -1174,6 +1181,7 @@
 		$numsubjects = mysqli_num_rows($result);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$subjectid = $row['subject_id'];
+			$enrollmentid = $row['enrollment_id'];
 			$uid = $row['uid'];
 			$guid = $row['guid'];
 			$sex = $row['sex'];
@@ -1193,14 +1201,32 @@
 				$isprimary = $rowA['isprimary'];
 				$altid = $rowA['altuid'];
 				if ($isprimary) {
-					$altids[] = "*" . $altid;
+					$globalaltids[] = "*" . $altid;
 				}
 				else {
-					$altids[] = $altid;
+					$globalaltids[] = $altid;
 				}
 			}
-			$altuidlist = implode2(", ",$altids);
-			$altids = array();
+			$globalaltids = array_unique($globalaltids);
+			$globalaltuidlist = implode2(", ",$globalaltids);
+			$globalaltids = array();
+			
+			$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' and enrollment_id = $enrollmentid order by isprimary desc";
+			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+				$isprimary = $rowA['isprimary'];
+				$altid = $rowA['altuid'];
+				if ($isprimary) {
+					$projectaltids[] = "*" . $altid;
+				}
+				else {
+					$projectaltids[] = $altid;
+				}
+			}
+			$projectaltids = array_unique($projectaltids);
+			$projectaltuidlist = implode2(", ",$projectaltids);
+			//PrintVariable($projectaltids);
+			$projectaltids = array();
 			
 			switch ($education) {
 				case "": $education = "-"; break;
@@ -1215,10 +1241,11 @@
 				case 8: $education = "Doctoral Degree"; break;
 			}
 
-			$rowdata[] = "{ id: $subjectid, uid: \"$uid\", altuids: \"$altuidlist\", guid: \"$guid\", dob: \"$birthdate\", sex: \"$sex\", gender: \"$gender\", ethnicity1: \"$ethnicity1\", ethnicity2: \"$ethnicity2\", handedness: \"$handedness\", education: \"$education\", marital: \"$maritalstatus\", smoking: \"$smokingstatus\", enrollgroup: \"$enrollsubgroup\" }";
+			$rowdata[] = "{ id: $subjectid, enrollmentid: $subjectid, uid: \"$uid\", globalaltuids: \"$globalaltuidlist\", altuids: \"$projectaltuidlist\", guid: \"$guid\", dob: \"$birthdate\", sex: \"$sex\", gender: \"$gender\", ethnicity1: \"$ethnicity1\", ethnicity2: \"$ethnicity2\", handedness: \"$handedness\", education: \"$education\", marital: \"$maritalstatus\", smoking: \"$smokingstatus\", enrollgroup: \"$enrollsubgroup\" }";
 		}
 		
 		$data = implode(",", $rowdata);
+		//PrintVariable($data);
 		?>
 		
 		<!-- Include the JS for AG Grid -->
@@ -1304,7 +1331,7 @@
 			}
 			
 			function onBtnExport() {
-				gridOptions.api.exportDataAsCsv( {allColumns: false} );
+				gridApi.exportDataAsCsv( {allColumns: false} );
 			}			
 
 			// Grid Options are properties passed to the grid
@@ -1313,6 +1340,7 @@
 				// each entry here represents one column
 				columnDefs: [
 					{ field: 'id', hide: true },
+					{ field: 'enrollmentid', hide: true },
 					{
 						headerName: "UID",
 						field: "uid",
@@ -1323,7 +1351,17 @@
 						}
 					},
 					{ 
-						headerName: "Alt UIDs",
+						headerName: "Global Alt UIDs",
+						field: "globalaltuids",
+						editable: false,
+						cellEditor: 'agLargeTextCellEditor',
+						cellRenderer: function(params) {
+							return '<tt>' + params.value + '</tt>'
+						},
+						
+					},
+					{ 
+						headerName: "Project Alt UIDs",
 						field: "altuids",
 						editable: true,
 						cellEditor: 'agLargeTextCellEditor',
@@ -1418,7 +1456,7 @@
 				suppressMovableColumns: true,
 				onCellEditingStopped: (event) => {
 
-					url = "ajaxapi.php?action=updatesubjectdetails&projectid=<?=$id?>&subjectid=" + event.data.id + "&column=" + event.column.getColDef().field + "&value=" + event.value;
+					url = "ajaxapi.php?action=updatesubjectdetails&projectid=<?=$id?>&subjectid=" + event.data.id + "&enrollmentid=" + event.data.enrollmentid + "&column=" + event.column.getColDef().field + "&value=" + event.value;
 					//console.log(url);
 					var xhttp = new XMLHttpRequest();
 					xhttp.onreadystatechange = function() {
@@ -1482,6 +1520,7 @@
 		$numsubjects = mysqli_num_rows($result);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$subjectid = $row['subject_id'];
+			$enrollmentid = $row['enrollment_id'];
 			$uid = $row['uid'];
 			$guid = $row['guid'];
 			$sex = $row['sex'];
@@ -1495,16 +1534,33 @@
 				$isprimary = $rowA['isprimary'];
 				$altid = $rowA['altuid'];
 				if ($isprimary) {
+					$globalaltids[] = "*" . $altid;
+				}
+				else {
+					$globalaltids[] = $altid;
+				}
+			}
+			$globalaltids = array_unique($globalaltids);
+			$globalaltuidlist = implode2(", ",$globalaltids);
+			$globalaltids = array();
+
+			$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' and enrollment_id = $enrollmentid order by isprimary desc";
+			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+				$isprimary = $rowA['isprimary'];
+				$altid = $rowA['altuid'];
+				if ($isprimary) {
 					$altids[] = "*" . $altid;
 				}
 				else {
 					$altids[] = $altid;
 				}
 			}
+			$altids = array_unique($altids);
 			$altuidlist = implode2(", ",$altids);
 			$altids = array();
 			
-			$rowdata[] = "{ id: $subjectid, uid: \"$uid\", altuids: \"$altuidlist\", guid: \"$guid\", dob: \"$birthdate\", sex: \"$sex\", gender: \"$gender\", enrollgroup: \"$enrollsubgroup\" }";
+			$rowdata[] = "{ id: $subjectid, uid: \"$uid\", globalaltuids: \"$globalaltuidlist\", altuids: \"$altuidlist\", guid: \"$guid\", dob: \"$birthdate\", sex: \"$sex\", gender: \"$gender\", enrollgroup: \"$enrollsubgroup\" }";
 		}
 		
 		$data = implode(",", $rowdata);
@@ -1566,6 +1622,16 @@
 						}
 					},
 					{ 
+						headerName: "Global Alt UIDs",
+						field: "globalaltuids",
+						editable: false,
+						cellEditor: 'agLargeTextCellEditor',
+						cellRenderer: function(params) {
+							return '<tt>' + params.value + '</tt>'
+						},
+						
+					},
+					{ 
 						headerName: "Alt UIDs",
 						field: "altuids",
 						editable: true,
@@ -1614,7 +1680,7 @@
 				autoSizeStrategy: { type: 'fitCellContents' },
 				onCellEditingStopped: (event) => {
 
-					url = "ajaxapi.php?action=updatesubjectdetails&subjectid=" + event.data.id + "&column=" + event.column.getColDef().field + "&value=" + event.value;
+					url = "ajaxapi.php?action=updatesubjectdetails&projectid=<?=$id?>&subjectid=" + event.data.id + "&column=" + event.column.getColDef().field + "&value=" + event.value;
 					//console.log(url);
 					var xhttp = new XMLHttpRequest();
 					xhttp.onreadystatechange = function() {
