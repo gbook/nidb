@@ -13,11 +13,12 @@ Examples include mapping numeric values (1,2,3,...) to descriptions (F, M, O, ..
 ### JSON variables
 
 :blue\_circle: Primary key\
-:red\_circle: Required
+:red\_circle: Required\
+:yellow\_circle: Computed (squirrel writer/reader should handle these variables)
 
 _**data-dictionary**_
 
-<table data-full-width="true"><thead><tr><th width="256" align="right">Variable</th><th width="131.00000000000003">Type</th><th width="89">Default</th><th>Description</th></tr></thead><tbody><tr><td align="right"><code>NumFiles</code></td><td>number</td><td><span data-gb-custom-inline data-tag="emoji" data-code="1f534">🔴</span></td><td>Number of files contained in the experiment.</td></tr><tr><td align="right"><code>Size</code></td><td>number</td><td></td><td>Size, in bytes, of the experiment files.</td></tr><tr><td align="right"><code>VirtualPath</code></td><td>string</td><td></td><td>Path to the data-dictionary within the squirrel package.</td></tr><tr><td align="right"><mark style="color:blue;">data-dictionary-item</mark></td><td>JSON array</td><td></td><td>Array of data dictionary items. See next table.</td></tr></tbody></table>
+<table data-full-width="true"><thead><tr><th width="256" align="right">Variable</th><th width="131.00000000000003">Type</th><th width="89">Default</th><th>Description</th></tr></thead><tbody><tr><td align="right"><code>NumFiles</code></td><td>number</td><td><span data-gb-custom-inline data-tag="emoji" data-code="1f7e1">🟡</span></td><td>Number of files contained in the experiment.</td></tr><tr><td align="right"><code>Size</code></td><td>number</td><td><span data-gb-custom-inline data-tag="emoji" data-code="1f7e1">🟡</span></td><td>Size, in bytes, of the experiment files.</td></tr><tr><td align="right"><code>VirtualPath</code></td><td>string</td><td><span data-gb-custom-inline data-tag="emoji" data-code="1f7e1">🟡</span></td><td>Path to the data-dictionary within the squirrel package.</td></tr><tr><td align="right"><mark style="color:blue;">data-dictionary-item</mark></td><td>JSON array</td><td></td><td>Array of data dictionary items. See next table.</td></tr></tbody></table>
 
 _**data-dictionary-item**_
 

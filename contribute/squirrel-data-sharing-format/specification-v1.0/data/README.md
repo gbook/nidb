@@ -10,7 +10,9 @@ This data object contains information about the subjects, and potential future d
 
 ### JSON variables
 
-<table data-full-width="true"><thead><tr><th width="316" align="right">Variable</th><th width="168.33333333333331">Type</th><th>Description</th></tr></thead><tbody><tr><td align="right"><code>GroupAnalysisCount</code></td><td>number</td><td>Number of group analyses.</td></tr><tr><td align="right"><code>SubjectCount</code></td><td>number</td><td>Number of subjects in the package.</td></tr><tr><td align="right"><a href="subjects/">subjects</a></td><td>JSON array</td><td>Array containing the subjects.</td></tr><tr><td align="right"><a href="group-analysis.md">group-analysis</a></td><td>JSON array</td><td>Array containing group analyses.</td></tr></tbody></table>
+:yellow\_circle: Computed (squirrel writer/reader should handle these variables)
+
+<table data-full-width="true"><thead><tr><th width="254">Variable</th><th width="168.33333333333331">Type</th><th width="123">Default</th><th>Description</th></tr></thead><tbody><tr><td><code>GroupAnalysisCount</code></td><td>number</td><td><span data-gb-custom-inline data-tag="emoji" data-code="1f7e1">🟡</span></td><td>Number of group analyses.</td></tr><tr><td><code>SubjectCount</code></td><td>number</td><td><span data-gb-custom-inline data-tag="emoji" data-code="1f7e1">🟡</span></td><td>Number of subjects in the package.</td></tr><tr><td><a href="subjects/">subjects</a></td><td>JSON array</td><td></td><td>Array containing the subjects.</td></tr><tr><td><a href="group-analysis.md">group-analysis</a></td><td>JSON array</td><td></td><td>Array containing group analyses.</td></tr></tbody></table>
 
 ### Directory structure
 
