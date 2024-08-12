@@ -1,6 +1,6 @@
 # 🐿️ NeuroInformatics Database
 
-<figure><img src=".gitbook/assets/NIDB_logo.png" alt=""><figcaption><p>The NiDB logo</p></figcaption></figure>
+<figure><img src=".gitbook/assets/NIDB_logo.png" alt="" width="375"><figcaption><p>The NiDB logo</p></figcaption></figure>
 
 ## Overview
 
@@ -51,13 +51,13 @@ NiDB stores multiple time-points with identifiers for clinical trials; exact day
 
 Got a batch of DICOMs from a collaborator, or from an old DVD? Import them easily
 
-<figure><img src=".gitbook/assets/image (7).png" alt=""><figcaption></figcaption></figure>
+<figure><img src=".gitbook/assets/image (7).png" alt="" width="563"><figcaption></figcaption></figure>
 
 ### Search and export imaging data
 
 Find imaging data from any project (that you have permissions to...) and export data. Search by dozens of criteria.
 
-<figure><img src=".gitbook/assets/image (1).png" alt=""><figcaption></figcaption></figure>
+<figure><img src=".gitbook/assets/image (1).png" alt="" width="563"><figcaption></figcaption></figure>
 
 ### Export to multiple formats
 
@@ -89,15 +89,15 @@ Find imaging data from any project (that you have permissions to...) and export 
 
 Data obtained from pipeline analysis, imported and locally generated measures, drugs, vitals, measures, are all searchable.
 
-<figure><img src=".gitbook/assets/image (12).png" alt=""><figcaption></figcaption></figure>
+<figure><img src=".gitbook/assets/image (12).png" alt="" width="354"><figcaption></figcaption></figure>
 
 ### Full analysis pipeline system
 
 From raw data to analyzed, and storing result values/images. Utilize a compute cluster to process jobs in parallel. Example below, 200,000 hrs of compute time completed in a few weeks. Hundreds of thousands of result values automatically stored in NiDB and are searchable.
 
-<figure><img src=".gitbook/assets/image (10).png" alt=""><figcaption><p>Overview of a pipeline</p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (10).png" alt="" width="563"><figcaption><p>Overview of a pipeline</p></figcaption></figure>
 
-<figure><img src=".gitbook/assets/image (2) (3).png" alt=""><figcaption><p>List of analyses for a pipeline</p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (2) (3).png" alt="" width="563"><figcaption><p>List of analyses for a pipeline</p></figcaption></figure>
 
 ### Automated MR quality control
 
@@ -105,11 +105,11 @@ Large number of automatically generated metrics. Metrics are exportable as .csv 
 
 <div>
 
-<figure><img src=".gitbook/assets/image (17).png" alt=""><figcaption><p>Basic motion QC on the study view page</p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (17).png" alt="" width="563"><figcaption><p>Basic motion QC on the study view page</p></figcaption></figure>
 
  
 
-<figure><img src=".gitbook/assets/image (16).png" alt=""><figcaption><p>Detailed QC</p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (16).png" alt="" width="375"><figcaption><p>Detailed QC</p></figcaption></figure>
 
 </div>
 
@@ -117,7 +117,7 @@ Large number of automatically generated metrics. Metrics are exportable as .csv 
 
 Fully featured calendar, running securely on your internal network. Repeating appts, blocking appts, and time requests.
 
-<figure><img src=".gitbook/assets/image.png" alt=""><figcaption><p>Week view, showing US holidays</p></figcaption></figure>
+<figure><img src=".gitbook/assets/image.png" alt="" width="563"><figcaption><p>Week view, showing US holidays</p></figcaption></figure>
 
 ## Publications
 
