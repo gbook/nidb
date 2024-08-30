@@ -710,6 +710,8 @@ namespace utils {
     /* --------- DirectoryExists -------------------------------- */
     /* ---------------------------------------------------------- */
     bool DirectoryExists(QString dir) {
+        if (dir.trimmed() == "")
+            return false;
         if (QFile::exists(dir))
             return true;
         else
@@ -721,7 +723,9 @@ namespace utils {
     /* --------- FileExists ------------------------------------- */
     /* ---------------------------------------------------------- */
     bool FileExists(QString f) {
-        if (QFile::exists(f))
+        if (f.trimmed() == "")
+            return false;
+        else if (QFile::exists(f))
             return true;
         else
             return false;

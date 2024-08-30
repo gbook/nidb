@@ -65,6 +65,8 @@ public:
     void SetFileMode(FileMode m) { fileMode = m; } /*!< Set the file mode to either NewPackage or ExistingPackage */
     void SetDebugSQL(bool d) { debugSQL = d; }
     void SetOverwritePackage(bool o) { overwritePackage = o; }
+    //bool totalArchiveSizeCallback(qint64 val);
+    //bool progressCallback(qint64 val);
 
     /* package JSON elements */
     QDateTime Datetime;         /*!< datetime the package was created */

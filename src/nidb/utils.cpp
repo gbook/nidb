@@ -1041,6 +1041,54 @@ bool BatchRenameFiles(QString dir, QString seriesnum, QString studynum, QString 
 
 
 /* ---------------------------------------------------------- */
+/* --------- BatchRenameBIDSFiles --------------------------- */
+/* ---------------------------------------------------------- */
+bool BatchRenameBIDSFiles(QString dir, QString bidsSub, QString bidsSes, QString protocol, QString bidsSuffix, int &numfilesrenamed, QString &msg) {
+
+    QDir d;
+    if (!d.exists(dir)) {
+        msg = "directory [" + dir + "] does not exist";
+        return false;
+    }
+
+    protocol.replace(QRegularExpression("[^a-zA-Z0-9]"), "");
+
+    numfilesrenamed = 0;
+    QStringList exts;
+    exts << "*.img" << "*.hdr" << "*.nii" << "*.nii.gz" << "*.json" << "*.bvec" << "*.bval";
+    /* loop through all the extensions we want to rename/renumber */
+    foreach (QString ext, exts) {
+        int i = 1;
+        QFile f;
+        QDirIterator it(dir, QStringList() << ext, QDir::Files);
+
+        /* get a list of files */
+        QStringList files;
+        while (it.hasNext()) {
+            files.append(it.next());
+        }
+        /* sort the files */
+        SortQStringListNaturally(files);
+
+        /* rename the files */
+        foreach (QString fname, files) {
+            f.setFileName(fname);
+            QFileInfo fi(f);
+            QString newName = fi.path() + "/" + QString("sub-%1_ses-%2_acq-%3_%4%5").arg(bidsSub).arg(bidsSes).arg(protocol).arg(bidsSuffix).arg(ext.replace("*",""));
+            msg += QString(fname + " --> " + newName);
+            if (f.rename(newName))
+                numfilesrenamed++;
+            else
+                msg += QString("\nError renaming file [" + fname + "] to [" + newName + "]");
+            i++;
+        }
+    }
+
+    return true;
+}
+
+
+/* ---------------------------------------------------------- */
 /* --------- GetPatientAge ---------------------------------- */
 /* ---------------------------------------------------------- */
 double GetPatientAge(QString PatientAgeStr, QString StudyDate, QString PatientBirthDate) {

@@ -140,8 +140,8 @@ int main(int argc, char *argv[])
     }
     else if (command == "bids2squirrel") {
         p.clearPositionalArguments();
-        p.addPositionalArgument("dicom2squirrel", "Convert DICOM directory to squirrel.", "dicom2squirrel [options]");
-        p.addPositionalArgument("bidsdirectory", "The squirrel package.", "bidsdirectory");
+        p.addPositionalArgument("bids2squirrel", "Convert BIDS directory to squirrel.", "bids2squirrel [options]");
+        p.addPositionalArgument("bidsdirectory", "The BIDS directory.", "bidsdirectory");
         p.addPositionalArgument("package", "The squirrel package.", "package");
         p.parse(QCoreApplication::arguments());
         QStringList args = p.positionalArguments();
@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
         /* command line flag options */
         p.addOption(QCommandLineOption(QStringList() << "d" << "debug", "Enable debugging"));
         p.addOption(QCommandLineOption(QStringList() << "q" << "quiet", "Dont print headers and checks"));
-        p.addOption(QCommandLineOption(QStringList() << "overwrite", "Overwrite existing squirrel package, if package with same name exists"));
+        p.addOption(QCommandLineOption(QStringList() << "overwrite", "Overwrite existing squirrel package if a package with same name exists"));
         p.addOption(QCommandLineOption(QStringList() << "debugsql", "Enable debugging of SQL statements"));
 
         p.process(a);

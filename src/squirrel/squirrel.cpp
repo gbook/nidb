@@ -29,6 +29,20 @@
 #include "bitarchiveeditor.hpp"
 #include "bitfileextractor.hpp"
 
+qint64 totalbytes(0);
+
+bool totalArchiveSizeCallback(qint64 val) {
+    std::cout << "Total package size is [" << val << "]" << std::endl;
+    totalbytes = val;
+    return true;
+}
+
+bool progressCallback(qint64 val) {
+    double percent = ((double)val/(double)totalbytes)*100.0;
+    printf("%.2f%% (%d of %d bytes)\n", percent, val, totalbytes);
+    return true;
+}
+
 /* ------------------------------------------------------------ */
 /* ----- squirrel --------------------------------------------- */
 /* ------------------------------------------------------------ */
@@ -52,6 +66,7 @@ squirrel::squirrel(bool dbg, bool q)
     debug = dbg;
     fileMode = FileMode::NewPackage;
     isOkToDelete = true;
+    isValid = true;
     quiet = q;
 
     if (!DatabaseConnect()) {
@@ -65,7 +80,8 @@ squirrel::squirrel(bool dbg, bool q)
     }
 
     if (!Get7zipLibPath()) {
-        Log(QString("Error connecting to database. Unable to initilize squirrel library"), __FUNCTION__);
+        Log(QString("7-zip library not found. Unable to initilize squirrel library"), __FUNCTION__);
+        utils::Print(QString("7-zip library not found. Unable to initilize squirrel library"));
         isValid = false;
     }
 
@@ -98,15 +114,18 @@ bool squirrel::Get7zipLibPath() {
 #ifdef Q_OS_WINDOWS
     if (QFile::exists("/usr/libexec/p7zip/7z.so")) {
         p7zipLibPath = "C:/Program Files/7-Zip/7z.dll";
+        Log("Found 7zip path C:/Program Files/7-Zip/7z.dll", __FUNCTION__);
         return true;
     }
 #else
     if (QFile::exists("/usr/libexec/p7zip/7z.so")) {
         p7zipLibPath = "/usr/libexec/p7zip/7z.so";
+        Log("Found 7zip path /usr/libexec/p7zip/7z.so", __FUNCTION__);
         return true;
     }
     else if (QFile::exists("/usr/libexec/p7zip/7za.so")) {
         p7zipLibPath = "/usr/libexec/p7zip/7za.so";
+        Log("Found 7zip path /usr/libexec/p7zip/7za.so", __FUNCTION__);
         return true;
     }
 #endif
@@ -127,6 +146,7 @@ bool squirrel::DatabaseConnect() {
     db = QSqlDatabase::addDatabase("QSQLITE", "squirrel");
     if (!db.isValid()) {
         Log(QString("Error initializing SQLite database (likely driver related) [%1]. Error [%2]").arg(db.databaseName()).arg(db.lastError().text()), __FUNCTION__);
+        utils::Print(QString("Error initializing SQLite database (likely driver related) [%1]. Error [%2]").arg(db.databaseName()).arg(db.lastError().text()));
         return false;
     }
 
@@ -143,6 +163,7 @@ bool squirrel::DatabaseConnect() {
     }
     else {
         Log(QString("Error opening SQLite database [%1]. Error [%2]").arg(db.databaseName()).arg(db.lastError().text()), __FUNCTION__);
+        utils::Print(QString("Error opening SQLite database [%1]. Error [%2]").arg(db.databaseName()).arg(db.lastError().text()));
         return false;
     }
 }
@@ -161,51 +182,51 @@ bool squirrel::InitializeDatabase() {
 
     /* NOTE - SQLite does not support multiple statements, so each table needs to be created individualy */
     q.prepare(tableAnalysis);
-    if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error creating table [Analysis]", __FUNCTION__); return false; }
+    if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error creating table [Analysis]", __FUNCTION__); utils::Print("Error creating table [Analysis]"); return false; }
 
     q.prepare(tableIntervention);
-    if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error creating table [Intervention]", __FUNCTION__); return false; }
+    if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error creating table [Intervention]", __FUNCTION__); utils::Print("Error creating table [Intervention]"); return false; }
 
     q.prepare(tableDataDictionary);
-    if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error creating table [DataDictionary]", __FUNCTION__); return false; }
+    if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error creating table [DataDictionary]", __FUNCTION__); utils::Print("Error creating table [DataDictionary]"); return false; }
 
     q.prepare(tableDataDictionaryItems);
-    if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error creating table [DataDictionaryItems]", __FUNCTION__); return false; }
+    if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error creating table [DataDictionaryItems]", __FUNCTION__); utils::Print("Error creating table [DataDictionaryItems]"); return false; }
 
     q.prepare(tableExperiment);
-    if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error creating table [Experiment]", __FUNCTION__); return false; }
+    if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error creating table [Experiment]", __FUNCTION__); utils::Print("Error creating table [Experiment]"); return false; }
 
     q.prepare(tableGroupAnalysis);
-    if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error creating table [GroupAnalysis]", __FUNCTION__); return false; }
+    if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error creating table [GroupAnalysis]", __FUNCTION__); utils::Print("Error creating table [GroupAnalysis]"); return false; }
 
     q.prepare(tableObservation);
-    if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error creating table [Observation]", __FUNCTION__); return false; }
+    if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error creating table [Observation]", __FUNCTION__); utils::Print("Error creating table [Observation]"); return false; }
 
     q.prepare(tablePackage);
-    if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error creating table [Package]", __FUNCTION__); return false; }
+    if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error creating table [Package]", __FUNCTION__); utils::Print("Error creating table [Package]"); return false; }
 
     q.prepare(tableParams);
-    if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error creating table [Params]", __FUNCTION__); return false; }
+    if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error creating table [Params]", __FUNCTION__); utils::Print("Error creating table [Params]"); return false; }
 
     q.prepare(tablePipeline);
-    if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error creating table [Pipeline]", __FUNCTION__); return false; }
+    if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error creating table [Pipeline]", __FUNCTION__); utils::Print("Error creating table [Pipeline]"); return false; }
 
     q.prepare(tablePipelineDataStep);
-    if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error creating table [PipelineDataStep]", __FUNCTION__); return false; }
+    if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error creating table [PipelineDataStep]", __FUNCTION__); utils::Print("Error creating table [PipelineDataStep]"); return false; }
 
     q.prepare(tableSeries);
-    if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error creating table [Series]", __FUNCTION__); return false; }
+    if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error creating table [Series]", __FUNCTION__); utils::Print("Error creating table [Series]"); return false; }
 
     q.prepare(tableStudy);
-    if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error creating table [Study]", __FUNCTION__); return false; }
+    if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error creating table [Study]", __FUNCTION__); utils::Print("Error creating table [Study]"); return false; }
 
     q.prepare(tableSubject);
-    if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error creating table [Subject]", __FUNCTION__); return false; }
+    if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error creating table [Subject]", __FUNCTION__); utils::Print("Error creating table [Subject]"); return false; }
 
     q.prepare(tableStagedFiles);
-    if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error creating table [StagedFiles]", __FUNCTION__); return false; }
+    if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error creating table [StagedFiles]", __FUNCTION__); utils::Print("Error creating table [StagedFiles]"); return false; }
 
-    Log("Successfully initialized database", __FUNCTION__);
+    Log("Successfully initialized database tables", __FUNCTION__);
     return true;
 }
 
@@ -243,12 +264,14 @@ bool squirrel::Read() {
     /* check if file exists */
     if (!utils::FileExists(GetPackagePath())) {
         Log(QString("File %1 does not exist").arg(GetPackagePath()), __FUNCTION__);
+        utils::Print(QString("File %1 does not exist").arg(GetPackagePath()));
         return false;
     }
 
     QString jsonstr;
     if (!ExtractFileFromArchive(GetPackagePath(), "squirrel.json", jsonstr)) {
         Log(QString("Error reading squirrel package. Unable to find squirrel.json"), __FUNCTION__);
+        utils::Print(QString("Error reading squirrel package. Unable to find squirrel.json"));
         return false;
     }
 
@@ -1268,10 +1291,10 @@ QString squirrel::GetTempDir() {
  * @param func The function that called this function
  */
 void squirrel::Log(QString s, QString func) {
-    if (!quiet) {
-        if (s.trimmed() != "") {
-            log.append(QString("squirrel::%1() %2\n").arg(func).arg(s));
-            logBuffer.append(QString("squirrel::%1() %2\n").arg(func).arg(s));
+    if (s.trimmed() != "") {
+        log.append(QString("squirrel::%1() %2\n").arg(func).arg(s));
+        logBuffer.append(QString("squirrel::%1() %2\n").arg(func).arg(s));
+        if (!quiet) {
             utils::Print(QString("squirrel::%1() %2").arg(func).arg(s));
         }
     }
@@ -2412,12 +2435,20 @@ bool squirrel::CompressDirectoryToArchive(QString dir, QString archivePath, QStr
         if (archivePath.endsWith(".zip", Qt::CaseInsensitive)) {
             BitArchiveWriter archive(lib, BitFormat::Zip);
             archive.setUpdateMode(UpdateMode::Update);
+            archive.setCompressionLevel(BitCompressionLevel::Fastest);
+            archive.setRetainDirectories(true);
+            archive.setProgressCallback(progressCallback);
+            archive.setTotalCallback(totalArchiveSizeCallback);
             archive.addFiles(dir.toStdString(), "*", true); // instead of addDirectory
             archive.compressTo(archivePath.toStdString());
         }
         else {
             BitArchiveWriter archive(lib, BitFormat::SevenZip);
             archive.setUpdateMode(UpdateMode::Update);
+            archive.setCompressionLevel(BitCompressionLevel::Fastest);
+            archive.setRetainDirectories(true);
+            archive.setProgressCallback(progressCallback);
+            archive.setTotalCallback(totalArchiveSizeCallback);
             archive.addFiles(dir.toStdString(), "*", true); // instead of addDirectory
             archive.compressTo(archivePath.toStdString());
         }
@@ -2450,6 +2481,8 @@ bool squirrel::AddFilesToArchive(QStringList filePaths, QStringList compressedFi
         if (archivePath.endsWith(".zip", Qt::CaseInsensitive)) {
             bit7z::BitArchiveEditor editor(lib, archivePath.toStdString(), bit7z::BitFormat::Zip);
             editor.setUpdateMode(UpdateMode::Update);
+            editor.setProgressCallback(progressCallback);
+            editor.setTotalCallback(totalArchiveSizeCallback);
             for (int i=0; i<filePaths.size(); i++) {
                 std::string filePath = filePaths.at(i).toStdString();
                 std::string compressedPath = compressedFilePaths.at(i).toStdString();
@@ -2460,6 +2493,8 @@ bool squirrel::AddFilesToArchive(QStringList filePaths, QStringList compressedFi
         else {
             bit7z::BitArchiveEditor editor(lib, archivePath.toStdString(), bit7z::BitFormat::SevenZip);
             editor.setUpdateMode(UpdateMode::Update);
+            editor.setProgressCallback(progressCallback);
+            editor.setTotalCallback(totalArchiveSizeCallback);
             for (int i=0; i<filePaths.size(); i++) {
                 std::string filePath = filePaths.at(i).toStdString();
                 std::string compressedPath = compressedFilePaths.at(i).toStdString();
@@ -2563,12 +2598,16 @@ bool squirrel::UpdateMemoryFileToArchive(QString file, QString compressedFilePat
         if (archivePath.endsWith(".zip", Qt::CaseInsensitive)) {
             bit7z::BitArchiveEditor editor(lib, archivePath.toStdString(), bit7z::BitFormat::Zip);
             editor.setUpdateMode(UpdateMode::Update);
+            editor.setProgressCallback(progressCallback);
+            editor.setTotalCallback(totalArchiveSizeCallback);
             editor.updateItem(compressedFilePath.toStdString(), i);
             editor.applyChanges();
         }
         else {
             bit7z::BitArchiveEditor editor(lib, archivePath.toStdString(), bit7z::BitFormat::SevenZip);
             editor.setUpdateMode(UpdateMode::Update);
+            editor.setProgressCallback(progressCallback);
+            editor.setTotalCallback(totalArchiveSizeCallback);
             editor.updateItem(compressedFilePath.toStdString(), i);
             editor.applyChanges();
         }
