@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jul 03, 2024 at 04:54 PM
+-- Generation Time: Aug 30, 2024 at 07:34 PM
 -- Server version: 10.3.28-MariaDB
 -- PHP Version: 7.2.24
 
@@ -442,8 +442,9 @@ CREATE TABLE `bids_mapping` (
   `protocolmapping_id` int(11) NOT NULL,
   `project_id` int(11) DEFAULT NULL COMMENT 'if project_id is null, then this alt name applies to all projects',
   `protocolname` varchar(255) NOT NULL,
-  `shortname` varchar(255) NOT NULL,
-  `modality` varchar(255) NOT NULL
+  `modality` varchar(255) NOT NULL,
+  `bidsentity` varchar(255) NOT NULL,
+  `bidssuffix` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='this table maps long protocol name(s) to short names';
 
 -- --------------------------------------------------------
@@ -3819,7 +3820,7 @@ ALTER TABLE `backups`
 --
 ALTER TABLE `bids_mapping`
   ADD PRIMARY KEY (`protocolmapping_id`),
-  ADD UNIQUE KEY `project_id` (`project_id`,`protocolname`,`shortname`,`modality`);
+  ADD UNIQUE KEY `project_id` (`project_id`,`protocolname`,`modality`) USING BTREE;
 
 --
 -- Indexes for table `binary_series`
