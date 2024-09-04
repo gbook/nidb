@@ -65,6 +65,7 @@ public:
     bool groupBySubject;
     bool isHidden;
     bool isPrivate;
+    bool outputBIDS;
     bool removeData;
     bool testing;
     bool useProfile;
@@ -85,14 +86,10 @@ public:
     int clusterMaxWallTime;
     int clusterNumCores;
 
-    //QJsonObject GetJSONObject(QString path);
     squirrelPipeline GetSquirrelObject();
 
 private:
     void LoadPipelineInfo();
-    //void AppendJSONParents(QJsonObject &obj, QList<int> parentIDs, QString path);
-    //void AppendJSONDataSpec(QJsonObject &obj);
-    //void AppendJSONScripts(QJsonObject &obj);
     QString GetPrimaryScript();
     QString GetSecondaryScript();
     QStringList GetParentList();

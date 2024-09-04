@@ -372,21 +372,22 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
     QString squirrelfilepath;
     QString packageformat;
     QString imageformat;
+    QString bidsDirPath;
 
     /* check if it's a special type of export first */
     if (filetype == "bids") {
 
-        QString outdir;
+        //QString outdir;
         if (exporttype == "nfs")
-            outdir = QString("%1%2").arg(n->cfg["mountdir"]).arg(nfsdir);
+            bidsDirPath = QString("%1%2").arg(n->cfg["mountdir"]).arg(nfsdir);
         else if ((exporttype == "web") || (exporttype == "publicdownload"))
-            outdir = QString("%1").arg(tmpexportdir);
+            bidsDirPath = QString("%1").arg(tmpexportdir);
         else
-            outdir = QString("%1/NiDB-%2").arg(n->cfg["ftpdir"]).arg(exportid);
+            bidsDirPath = QString("%1/NiDB-%2").arg(n->cfg["ftpdir"]).arg(exportid);
 
         packageformat = "bids";
         QString log;
-        ExportBIDS(exportid, bidsreadme, bidsflags, outdir, exportstatus, log);
+        ExportBIDS(exportid, bidsreadme, bidsflags, bidsDirPath, exportstatus, log);
         msgs << log;
     }
     /* squirrel */
@@ -745,8 +746,10 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
             QString zipfile = QString("%1/NIDB-%2.zip").arg(n->cfg["webdownloaddir"]).arg(exportid);
             QString outdir;
             n->Log("Final zip file will be [" + zipfile + "]");
-            n->Log("tmpexportdir: [" + tmpexportdir + "]");
-            outdir = tmpexportdir;
+            if (filetype == "bids")
+                outdir = bidsDirPath;
+            else
+                outdir = tmpexportdir;
 
             QDir d;
             if (d.exists(outdir)) {

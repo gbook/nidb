@@ -1058,7 +1058,6 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSub, QString bidsSes, QString
     exts << "*.img" << "*.hdr" << "*.nii" << "*.nii.gz" << "*.json" << "*.bvec" << "*.bval";
     /* loop through all the extensions we want to rename/renumber */
     foreach (QString ext, exts) {
-        int i = 1;
         QFile f;
         QDirIterator it(dir, QStringList() << ext, QDir::Files);
 
@@ -1071,16 +1070,23 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSub, QString bidsSes, QString
         SortQStringListNaturally(files);
 
         /* rename the files */
+        int run = 1;
         foreach (QString fname, files) {
             f.setFileName(fname);
             QFileInfo fi(f);
-            QString newName = fi.path() + "/" + QString("sub-%1_ses-%2_acq-%3_%4%5").arg(bidsSub).arg(bidsSes).arg(protocol).arg(bidsSuffix).arg(ext.replace("*",""));
-            msg += QString(fname + " --> " + newName);
+            QString newName = fi.path() + "/" + QString("%1_%2_acq-%3_%4%5").arg(bidsSub).arg(bidsSes).arg(protocol).arg(bidsSuffix).arg(ext.replace("*",""));
+            if ((QFile::exists(newName)) || (run > 1)) {
+                /* add run number if this file already exists */
+                msg += "File " + newName + " already exists\n";
+                newName = fi.path() + "/" + QString("%1_%2_acq-%3_run-%4_%5%6").arg(bidsSub).arg(bidsSes).arg(protocol).arg(run).arg(bidsSuffix).arg(ext.replace("*",""));
+                run++;
+            }
+
+            msg += QString(fname + " --> " + newName + "\n");
             if (f.rename(newName))
                 numfilesrenamed++;
             else
-                msg += QString("\nError renaming file [" + fname + "] to [" + newName + "]");
-            i++;
+                msg += QString("\nError renaming file [" + fname + "] to [" + newName + "]\n");
         }
     }
 

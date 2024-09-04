@@ -28,6 +28,7 @@
 #include "analysis.h"
 #include "pipeline.h"
 #include "imageio.h"
+#include "archiveio.h"
 
 /* data structures used in this class */
 struct pipelineStep {

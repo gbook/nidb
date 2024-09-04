@@ -2148,9 +2148,12 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
     root["BIDSVersion"] = bidsver;
     root["License"] = "This dataset was written by the Neuroinformatics Database. Licensing should be included with this dataset";
     root["Date"] = CreateLogDate();
+    QJsonArray authors = { QString("Neuroinformatics Database") };
+    root["Authors"] = authors;
     root["README"] = bidsreadme;
+    root["Name"] = "NiDB exports BIDS dataset";
     QByteArray j = QJsonDocument(root).toJson();
-    QFile fout("dataset_description.json");
+    QFile fout(outdir + "/dataset_description.json");
     fout.open(QIODevice::WriteOnly);
     fout.write(j);
 
@@ -2169,7 +2172,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
         double subjectAge = s[uid][0][0]["subjectage"].toDouble();
 
         /* write subject to participants file */
-        if (!WriteTextFile(pfile, QString("sub-%1\t%2\t%3\n").arg(i, 3, 10, QChar('0')).arg(subjectAge).arg(subjectSex), true)) n->Log("Error writing " + pfile);
+        if (!WriteTextFile(pfile, QString("sub-%1\t%2\t%3\n").arg(i, 4, 10, QChar('0')).arg(subjectAge).arg(subjectSex), true)) n->Log("Error writing " + pfile);
 
         /* iterate through the studynums */
         for(QMap<int, QMap<int, QMap<QString, QString>>>::iterator b = s[uid].begin(); b != s[uid].end(); ++b) {
@@ -2274,6 +2277,11 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
                 else
                     seriesdir = bidsEntity;
 
+                if (bidsEntity == "")
+                    bidsEntity = "unknown";
+                if (bidsSuffix == "")
+                    bidsSuffix = "unknown";
+
                 /* remove any non-alphanumeric characters */
                 //seriesdir.replace(QRegularExpression("[^a-zA-Z0-9_-]"), "_");
 
@@ -2304,6 +2312,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
                             /* rename the converted into BIDS format */
                             QString m2;
                             BatchRenameBIDSFiles(tmpdir, bidsSub, bidsSes, seriesdesc, bidsSuffix, numfilesrenamed, m2);
+                            n->Log(m2);
 
                             //n->WriteLog("About to copy files from " + tmpdir + " to " + seriesoutdir);
                             QString systemstring = "rsync " + tmpdir + "/* " + seriesoutdir + "/";
@@ -3135,8 +3144,8 @@ bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modal
                 QString bidsEntity, bidsSuffix;
                 if (q2.size() > 0) {
                     q2.first();
-                    bidsEntity = q.value("bidsentity").toString();
-                    bidsSuffix = q.value("bidssuffix").toString();
+                    bidsEntity = q2.value("bidsentity").toString();
+                    bidsSuffix = q2.value("bidssuffix").toString();
                 }
 
                 QString datadir = QString("%1/%2/%3/%4/%5").arg(n->cfg["archivedir"]).arg(uid).arg(studynum).arg(seriesnum).arg(datatype);
@@ -3168,6 +3177,9 @@ bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modal
                 s[uid][studynum][seriesnum]["datadir"] = datadir;
                 s[uid][studynum][seriesnum]["behdir"] = behdir;
                 s[uid][studynum][seriesnum]["qcdir"] = qcdir;
+                /* extra information */
+                s[uid][0][0]["subjectsex"] = subjectsex;
+                s[uid][0][0]["subjectage"] = QString("%1").arg(subjectAge);
 
                 /* Check if source data directories exist */
                 if (QDir(datadir).exists()) {

@@ -734,6 +734,9 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
     numdownloaded = 0;
     QStringList dlog;
     datalog = "";
+    bool exportBIDS = false;
+    QList<qint64> BIDSseriesids;
+    QStringList BIDSmodalities;
 
     /* get pipeline information, for data copying preferences */
     pipeline p(pipelineid, n);
@@ -747,6 +750,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
     else submithost = p.clusterSubmitHost;
     if (p.clusterUser == "") clusteruser = n->cfg["clusteruser"];
     else clusteruser = n->cfg["pipeline_clusteruser"];
+    exportBIDS = p.outputBIDS;
 
     /* get information about the study */
     study s(studyid, n);
@@ -958,7 +962,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
     n->InsertAnalysisEvent(analysisid, pipelineid, p.version, studyid, "analysiscopydata", "Started copying data to [<tt>" + analysispath + "</tt>]");
 
     /* if global BIDS export, do that as one step */
-    /* TBD */
+    /* get list of seriesids/modalities, pass to archiveio::WriteBIDS() */
 
     dlog << "\n ********** Required data for this study exists. Beginning data copy **********\n";
     /* go through list of data search criteria again to do the actual copying */
@@ -979,7 +983,6 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
         QString behformat = datadef[i].behformat;
         QString behdir = datadef[i].behdir;
         bool enabled = datadef[i].flags.enabled;
-        //bool optional = datadef[i].optional;
         QString level = datadef[i].level;
         QString numboldreps = datadef[i].numboldreps;
         qint64 datadownloadid = datadef[i].datadownloadid;
@@ -1152,196 +1155,212 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
             }
         }
 
-        int newseriesnum = 1;
-        QString sql = n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-        if (q.size() > 0) {
-
-            dlog << n->Debug(QString("Found [%1] matching subject-level series").arg(q.size()), __FUNCTION__);
-            /* in theory, data for this analysis exists for this study, so lets now create the analysis directory */
-            QString m;
-            if (!MakePath(analysispath + "/pipeline", m)) {
-                dlog << n->Log("Error: unable to create directory [" + analysispath + "/pipeline] - C", __FUNCTION__);
-                UpdateAnalysisStatus(analysisid, "error", "Unable to create directory [" + analysispath + "/pipeline]", -1, -1, "", "", false, true, 0, 0);
-                continue;
-            }
-
+        if (exportBIDS) {
+            /* consolidate the found series */
             while (q.next()) {
-                int localstudynum;
-                n->Debug(QString("NumDownloaded [%1]").arg(numdownloaded), __FUNCTION__);
                 int seriesid = q.value(modality+"series_id").toInt();
-                int seriesnum = q.value("series_num").toInt();
-                QString seriesdesc = q.value("series_desc").toString();
-                QString seriesprotocol = q.value("series_protocol").toString();
-                QString seriesdatetime = q.value("series_datetime").toString();
-                QString datatype;
-                if (q.value("data_type").isValid())
-                    datatype = q.value("data_type").toString().trimmed();
-                QString phaseplane = q.value("phaseencodedir").toString();
-                int phasepositive;
-                if (q.value("PhaseEncodingDirectionPositive").isNull())
-                    phasepositive = -1;
-                else
-                    phasepositive = q.value("PhaseEncodingDirectionPositive").toInt();
-
-                if (seriesdesc == "")
-                    seriesdesc = seriesprotocol;
-
-                if (datatype == "")
-                    datatype = modality;
-
-                if (level == "study") {
-                    /* studynum is not returned as part of this current result set, so reuse the studynum from outside this resultset loop */
-                    if (neareststudynum == -1)
-                        localstudynum = studynum;
-                    else
-                        localstudynum = neareststudynum;
-                }
-                else {
-                    if (neareststudynum == -1)
-                        localstudynum = q.value("study_num").toInt();
-                    else
-                        localstudynum = neareststudynum;
-                }
-
-                dlog << QString("Beginning to copy data -  protocol [%1]  seriesnum [%2]  seriesdatetime [%3]").arg(seriesdesc).arg(seriesnum).arg(seriesdatetime);
-
-                QString behoutdir;
-                QString indir = QString("%1/%2/%3/%4/%5").arg(n->cfg["archivedir"]).arg(uid).arg(localstudynum).arg(seriesnum).arg(datatype);
-                QString behindir = QString("%1/%2/%3/%4/beh").arg(n->cfg["archivedir"]).arg(uid).arg(localstudynum).arg(seriesnum);
-
-                /* start building the analysis path */
-                QString newanalysispath = analysispath + "/" + location;
-
-                if (behformat == "none")
-                    dlog << n->Log(QString("Copying imaging data [%1] and behavioral data [%2] into [%3]").arg(indir).arg(behindir).arg(newanalysispath), __FUNCTION__);
-                else
-                    dlog << n->Log("Copying imaging data from [" + indir + "] to [" + newanalysispath + "]", __FUNCTION__);
-
-                /* check if the series numbers are used, and if so, are they preserved */
-                if (useseries) {
-                    if (preserveseries) {
-                        newanalysispath += QString("/%1").arg(seriesnum);
-                        behoutdir = GetBehPath(behformat, analysispath, location, behdir, seriesnum);
-                    }
-                    else {
-                        /* renumber the series */
-                        newanalysispath += QString("/%1").arg(newseriesnum);
-                        behoutdir = GetBehPath(behformat, analysispath, location, behdir, newseriesnum);
-                        newseriesnum++;
-                    }
-                }
-                else {
-                    behoutdir = GetBehPath(behformat, analysispath, location, behdir, seriesnum);
-                }
-
-                if (usephasedir) {
-                    dlog << QString("\tPhasePlane [" + phaseplane + "] PhasePositive [%1]").arg(phasepositive);
-
-                    QString phasedir = "unknownPE";
-                    if ((phaseplane == "COL") && (phasepositive == 1)) phasedir = "AP";
-                    if ((phaseplane == "COL") && (phasepositive == 0)) phasedir = "PA";
-                    if ((phaseplane == "COL") && (phasepositive == -1)) phasedir = "COL";
-                    if ((phaseplane == "ROW") && (phasepositive == 1)) phasedir = "RL";
-                    if ((phaseplane == "ROW") && (phasepositive == 0)) phasedir = "LR";
-                    if ((phaseplane == "ROW") && (phasepositive == -1)) phasedir = "ROW";
-
-                    newanalysispath += "/" + phasedir;
-                }
-
-                QString m;
-                if (!MakePath(newanalysispath, m)) {
-                    dlog << n->Log("Error: unable to create directory [" + newanalysispath + "] message [" + m + "]", __FUNCTION__);
-                    UpdateAnalysisStatus(analysisid, "error", "Unable to create directory [" + newanalysispath + "]", 0, -1, "", "", false, true, -1, -1);
-                }
-                else
-                    dlog << n->Debug("Created imaging data output directory [" + newanalysispath + "]", __FUNCTION__);
-
-                SystemCommand("chmod -Rf 777 " + newanalysispath, true, true);
-
-                if (!behonly) {
-                    /* output the correct file type */
-                    if ((dataformat == "dicom") || ((datatype != "dicom") && (datatype != "parrec"))) {
-                        QString systemstring;
-                        if (p.dataCopyMethod == "scp")
-                            systemstring = QString("scp %1/* %2\\@%3:%4").arg(indir).arg(n->cfg["clusteruser"]).arg(p.clusterSubmitHost).arg(newanalysispath);
-                        else
-                            systemstring = QString("cp -v %1/* %2").arg(indir).arg(newanalysispath);
-                        n->Debug(SystemCommand(systemstring, true, true));
-
-                        dlog << n->Log(QString("Finished copying imaging data from [%1] to [%2]").arg(indir).arg(newanalysispath), __FUNCTION__);
-
-                        qint64 c;
-                        qint64 b;
-                        GetDirSizeAndFileCount(newanalysispath, c, b, true);
-                        dlog << n->Log(QString("Imaging data output directory [%1] now contains [%2] files, and is [%3] bytes in size.").arg(newanalysispath).arg(c).arg(b), __FUNCTION__);
-                    }
-                    else {
-                        QString tmpdir = n->cfg["tmpdir"] + "/" + GenerateRandomString(10);
-                        QString m;
-                        if (!MakePath(tmpdir, m)) {
-                            dlog << n->Log("Error: unable to create temp directory [" + tmpdir + "] message [" + m + "] for DICOM conversion", __FUNCTION__);
-                            UpdateAnalysisStatus(analysisid, "error", "Unable to create directory [" + newanalysispath + "]", 0, -1, "", "", false, true, -1, -1);
-                        }
-                        else
-                            dlog << n->Debug("Created temp directory [" + tmpdir + "] for DICOM conversion", __FUNCTION__);
-                        int numfilesconv(0);
-                        int numfilesrenamed(0);
-                        QString binpath = n->cfg["nidbdir"] + "/bin";
-                        img->ConvertDicom(dataformat, indir, tmpdir, binpath, gzip, false, uid, QString("%1").arg(localstudynum), QString("%1").arg(seriesnum), datatype, numfilesconv, numfilesrenamed, m);
-
-                        QString systemstring;
-                        if (p.dataCopyMethod == "scp")
-                            systemstring = QString("scp %1/* %2\\@%3:%4").arg(tmpdir).arg(n->cfg["clusteruser"]).arg(p.clusterSubmitHost).arg(newanalysispath);
-                        else
-                            systemstring = QString("cp -v %1/* %2").arg(tmpdir).arg(newanalysispath);
-                        n->Log(SystemCommand(systemstring, true, true));
-
-                        dlog << "Removing temp directory [" + tmpdir + "]";
-                        if (!RemoveDir(tmpdir,m))
-                            dlog << n->Log("Error: unable to remove temp directory [" + tmpdir + "] error [" + m + "]", __FUNCTION__);
-
-                        dlog << QString("\tDone copying converted imaging data from [%1] via [%2] to [%3]").arg(indir).arg(tmpdir).arg(newanalysispath);
-
-                        qint64 c;
-                        qint64 b;
-                        GetDirSizeAndFileCount(newanalysispath, c, b, true);
-                        dlog << n->Debug(QString("Imaging output directory [%1] now contains [%2] files, and is [%3] bytes in size.").arg(newanalysispath).arg(c).arg(b), __FUNCTION__);
-                    }
-                }
-
-                RecordDataDownload(datadownloadid, analysisid, modality, 1, 1, seriesid, newanalysispath, i, "Data downloaded");
-                dlog << QString("\tData for step [%1] downloaded to [%2]").arg(i).arg(newanalysispath);
-                numdownloaded++;
-
-                /* copy the beh data */
-                if (behformat != "behnone") {
-                    dlog << "\tCopying behavioral data";
-                    QString m;
-                    if (!MakePath(behoutdir, m)) {
-                        dlog << n->Log("Error: unable to create behavioral output directory [" + behoutdir + "] message [" + m + "] - F", __FUNCTION__);
-                        UpdateAnalysisStatus(analysisid, "error", "Unable to create directory [" + newanalysispath + "]", 0, -1, "", "", false, true, -1, -1);
-                    }
-                    else
-                        dlog << n->Debug("Created behavioral output directory [" + behoutdir + "] - F", __FUNCTION__);
-                    QString systemstring = "cp -Rv " + behindir + "/* " + behoutdir;
-                    n->Debug(SystemCommand(systemstring, true, true));
-                    n->Debug(SystemCommand("chmod -Rf 777 " + behoutdir, true, true));
-                    dlog << QString("Done copying behavioral data from [%1] to [%2]").arg(behindir).arg(behoutdir);
-
-                    qint64 c;
-                    qint64 b;
-                    GetDirSizeAndFileCount(behoutdir, c, b, true);
-                    dlog << n->Debug(QString("Behavioral output directory now contains [%1] files, and is [%2] bytes in size.").arg(c).arg(b), __FUNCTION__);
-                }
-
-                /* give full read/write permissions to everyone */
-                SystemCommand("chmod -Rf 777 " + newanalysispath, true, true);
-                dlog << n->Debug("Done writing data to [" + newanalysispath + "]", __FUNCTION__);
+                BIDSseriesids.append(seriesid);
+                BIDSmodalities.append(modality);
             }
         }
         else {
-            dlog << "\tError: found no matching subject-level [" + protocol + "] series. SQL: [" + sql + "]";
+            int newseriesnum = 1;
+            QString sql = n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+            if (q.size() > 0) {
+
+                dlog << n->Debug(QString("Found [%1] matching subject-level series").arg(q.size()), __FUNCTION__);
+                /* in theory, data for this analysis exists for this study, so lets now create the analysis directory */
+                QString m;
+                if (!MakePath(analysispath + "/pipeline", m)) {
+                    dlog << n->Log("Error: unable to create directory [" + analysispath + "/pipeline] - C", __FUNCTION__);
+                    UpdateAnalysisStatus(analysisid, "error", "Unable to create directory [" + analysispath + "/pipeline]", -1, -1, "", "", false, true, 0, 0);
+                    continue;
+                }
+
+                while (q.next()) {
+                    int localstudynum;
+                    n->Debug(QString("NumDownloaded [%1]").arg(numdownloaded), __FUNCTION__);
+                    int seriesid = q.value(modality+"series_id").toInt();
+                    int seriesnum = q.value("series_num").toInt();
+                    QString seriesdesc = q.value("series_desc").toString();
+                    QString seriesprotocol = q.value("series_protocol").toString();
+                    QString seriesdatetime = q.value("series_datetime").toString();
+                    QString datatype;
+                    if (q.value("data_type").isValid())
+                        datatype = q.value("data_type").toString().trimmed();
+                    QString phaseplane = q.value("phaseencodedir").toString();
+                    int phasepositive;
+                    if (q.value("PhaseEncodingDirectionPositive").isNull())
+                        phasepositive = -1;
+                    else
+                        phasepositive = q.value("PhaseEncodingDirectionPositive").toInt();
+
+                    if (seriesdesc == "")
+                        seriesdesc = seriesprotocol;
+
+                    if (datatype == "")
+                        datatype = modality;
+
+                    if (level == "study") {
+                        /* studynum is not returned as part of this current result set, so reuse the studynum from outside this resultset loop */
+                        if (neareststudynum == -1)
+                            localstudynum = studynum;
+                        else
+                            localstudynum = neareststudynum;
+                    }
+                    else {
+                        if (neareststudynum == -1)
+                            localstudynum = q.value("study_num").toInt();
+                        else
+                            localstudynum = neareststudynum;
+                    }
+
+                    dlog << QString("Beginning to copy data -  protocol [%1]  seriesnum [%2]  seriesdatetime [%3]").arg(seriesdesc).arg(seriesnum).arg(seriesdatetime);
+
+                    QString behoutdir;
+                    QString indir = QString("%1/%2/%3/%4/%5").arg(n->cfg["archivedir"]).arg(uid).arg(localstudynum).arg(seriesnum).arg(datatype);
+                    QString behindir = QString("%1/%2/%3/%4/beh").arg(n->cfg["archivedir"]).arg(uid).arg(localstudynum).arg(seriesnum);
+
+                    /* start building the analysis path */
+                    QString newanalysispath = analysispath + "/" + location;
+
+                    if (behformat == "none")
+                        dlog << n->Log(QString("Copying imaging data [%1] and behavioral data [%2] into [%3]").arg(indir).arg(behindir).arg(newanalysispath), __FUNCTION__);
+                    else
+                        dlog << n->Log("Copying imaging data from [" + indir + "] to [" + newanalysispath + "]", __FUNCTION__);
+
+                    /* check if the series numbers are used, and if so, are they preserved */
+                    if (useseries) {
+                        if (preserveseries) {
+                            newanalysispath += QString("/%1").arg(seriesnum);
+                            behoutdir = GetBehPath(behformat, analysispath, location, behdir, seriesnum);
+                        }
+                        else {
+                            /* renumber the series */
+                            newanalysispath += QString("/%1").arg(newseriesnum);
+                            behoutdir = GetBehPath(behformat, analysispath, location, behdir, newseriesnum);
+                            newseriesnum++;
+                        }
+                    }
+                    else {
+                        behoutdir = GetBehPath(behformat, analysispath, location, behdir, seriesnum);
+                    }
+
+                    if (usephasedir) {
+                        dlog << QString("\tPhasePlane [" + phaseplane + "] PhasePositive [%1]").arg(phasepositive);
+
+                        QString phasedir = "unknownPE";
+                        if ((phaseplane == "COL") && (phasepositive == 1)) phasedir = "AP";
+                        if ((phaseplane == "COL") && (phasepositive == 0)) phasedir = "PA";
+                        if ((phaseplane == "COL") && (phasepositive == -1)) phasedir = "COL";
+                        if ((phaseplane == "ROW") && (phasepositive == 1)) phasedir = "RL";
+                        if ((phaseplane == "ROW") && (phasepositive == 0)) phasedir = "LR";
+                        if ((phaseplane == "ROW") && (phasepositive == -1)) phasedir = "ROW";
+
+                        newanalysispath += "/" + phasedir;
+                    }
+
+                    QString m;
+                    if (!MakePath(newanalysispath, m)) {
+                        dlog << n->Log("Error: unable to create directory [" + newanalysispath + "] message [" + m + "]", __FUNCTION__);
+                        UpdateAnalysisStatus(analysisid, "error", "Unable to create directory [" + newanalysispath + "]", 0, -1, "", "", false, true, -1, -1);
+                    }
+                    else
+                        dlog << n->Debug("Created imaging data output directory [" + newanalysispath + "]", __FUNCTION__);
+
+                    SystemCommand("chmod -Rf 777 " + newanalysispath, true, true);
+
+                    if (!behonly) {
+                        /* output the correct file type */
+                        if ((dataformat == "dicom") || ((datatype != "dicom") && (datatype != "parrec"))) {
+                            QString systemstring;
+                            if (p.dataCopyMethod == "scp")
+                                systemstring = QString("scp %1/* %2\\@%3:%4").arg(indir).arg(n->cfg["clusteruser"]).arg(p.clusterSubmitHost).arg(newanalysispath);
+                            else
+                                systemstring = QString("cp -v %1/* %2").arg(indir).arg(newanalysispath);
+                            n->Debug(SystemCommand(systemstring, true, true));
+
+                            dlog << n->Log(QString("Finished copying imaging data from [%1] to [%2]").arg(indir).arg(newanalysispath), __FUNCTION__);
+
+                            qint64 c;
+                            qint64 b;
+                            GetDirSizeAndFileCount(newanalysispath, c, b, true);
+                            dlog << n->Log(QString("Imaging data output directory [%1] now contains [%2] files, and is [%3] bytes in size.").arg(newanalysispath).arg(c).arg(b), __FUNCTION__);
+                        }
+                        else {
+                            QString tmpdir = n->cfg["tmpdir"] + "/" + GenerateRandomString(10);
+                            QString m;
+                            if (!MakePath(tmpdir, m)) {
+                                dlog << n->Log("Error: unable to create temp directory [" + tmpdir + "] message [" + m + "] for DICOM conversion", __FUNCTION__);
+                                UpdateAnalysisStatus(analysisid, "error", "Unable to create directory [" + newanalysispath + "]", 0, -1, "", "", false, true, -1, -1);
+                            }
+                            else
+                                dlog << n->Debug("Created temp directory [" + tmpdir + "] for DICOM conversion", __FUNCTION__);
+                            int numfilesconv(0);
+                            int numfilesrenamed(0);
+                            QString binpath = n->cfg["nidbdir"] + "/bin";
+                            img->ConvertDicom(dataformat, indir, tmpdir, binpath, gzip, false, uid, QString("%1").arg(localstudynum), QString("%1").arg(seriesnum), datatype, numfilesconv, numfilesrenamed, m);
+
+                            QString systemstring;
+                            if (p.dataCopyMethod == "scp")
+                                systemstring = QString("scp %1/* %2\\@%3:%4").arg(tmpdir).arg(n->cfg["clusteruser"]).arg(p.clusterSubmitHost).arg(newanalysispath);
+                            else
+                                systemstring = QString("cp -v %1/* %2").arg(tmpdir).arg(newanalysispath);
+                            n->Log(SystemCommand(systemstring, true, true));
+
+                            dlog << "Removing temp directory [" + tmpdir + "]";
+                            if (!RemoveDir(tmpdir,m))
+                                dlog << n->Log("Error: unable to remove temp directory [" + tmpdir + "] error [" + m + "]", __FUNCTION__);
+
+                            dlog << QString("\tDone copying converted imaging data from [%1] via [%2] to [%3]").arg(indir).arg(tmpdir).arg(newanalysispath);
+
+                            qint64 c;
+                            qint64 b;
+                            GetDirSizeAndFileCount(newanalysispath, c, b, true);
+                            dlog << n->Debug(QString("Imaging output directory [%1] now contains [%2] files, and is [%3] bytes in size.").arg(newanalysispath).arg(c).arg(b), __FUNCTION__);
+                        }
+                    }
+
+                    RecordDataDownload(datadownloadid, analysisid, modality, 1, 1, seriesid, newanalysispath, i, "Data downloaded");
+                    dlog << QString("\tData for step [%1] downloaded to [%2]").arg(i).arg(newanalysispath);
+                    numdownloaded++;
+
+                    /* copy the beh data */
+                    if (behformat != "behnone") {
+                        dlog << "\tCopying behavioral data";
+                        QString m;
+                        if (!MakePath(behoutdir, m)) {
+                            dlog << n->Log("Error: unable to create behavioral output directory [" + behoutdir + "] message [" + m + "] - F", __FUNCTION__);
+                            UpdateAnalysisStatus(analysisid, "error", "Unable to create directory [" + newanalysispath + "]", 0, -1, "", "", false, true, -1, -1);
+                        }
+                        else
+                            dlog << n->Debug("Created behavioral output directory [" + behoutdir + "] - F", __FUNCTION__);
+                        QString systemstring = "cp -Rv " + behindir + "/* " + behoutdir;
+                        n->Debug(SystemCommand(systemstring, true, true));
+                        n->Debug(SystemCommand("chmod -Rf 777 " + behoutdir, true, true));
+                        dlog << QString("Done copying behavioral data from [%1] to [%2]").arg(behindir).arg(behoutdir);
+
+                        qint64 c;
+                        qint64 b;
+                        GetDirSizeAndFileCount(behoutdir, c, b, true);
+                        dlog << n->Debug(QString("Behavioral output directory now contains [%1] files, and is [%2] bytes in size.").arg(c).arg(b), __FUNCTION__);
+                    }
+
+                    /* give full read/write permissions to everyone */
+                    SystemCommand("chmod -Rf 777 " + newanalysispath, true, true);
+                    dlog << n->Debug("Done writing data to [" + newanalysispath + "]", __FUNCTION__);
+                }
+            }
+            else {
+                dlog << "\tError: found no matching subject-level [" + protocol + "] series. SQL: [" + sql + "]";
+            }
         }
+    }
+    if (exportBIDS) {
+        archiveIO *io = new archiveIO(n);
+        QStringList bidsflags = { "BIDS_SUBJECTDIR_UID", "BIDS_STUDYDIR_STUDYNUM" };
+        QString m2;
+        io->WriteBIDS(BIDSseriesids, BIDSmodalities, analysispath, "BIDS Readme", bidsflags, m2);
     }
     n->Debug("Leaving GetData() successfully", __FUNCTION__);
     n->InsertAnalysisEvent(analysisid, pipelineid, p.version, studyid, "analysiscopydataend", QString("Finished copying data [%1] series downloaded").arg(numdownloaded));
