@@ -777,8 +777,15 @@
 		
 		if ($column == "altuids") {
 			StartSQLTransaction();
+			/* get enrollmentid */
+			$sqlstring = "select enrollment_id from enrollment where subject_id = $subjectid and project_id = $projectid";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			$enrollmentid = $row['enrollment_id'];
+			if ($enrollmentid == "") { $enrollmentid = 0; }
+
 			/* delete entries for this subject from the altuid table ... */
-			$sqlstring = "delete from subject_altuid where subject_id = $subjectid";
+			$sqlstring = "delete from subject_altuid where subject_id = $subjectid and enrollment_id = $enrollmentid";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			/* ... and insert the new rows into the altuids table */
 			$altuidsublist = $value;
@@ -787,9 +794,6 @@
 			foreach ($altuids as $altuid) {
 				$altuid = trim($altuid);
 				if ($altuid != "") {
-					$enrollmentid = $enrollmentids[$i];
-					if ($enrollmentid == "") { $enrollmentid = 0; }
-					//echo "enrollmentID [$enrollmentid] - altuid [$altuid]<br>";
 					if (strpos($altuid, '*') !== FALSE) {
 						$altuid = str_replace('*','',$altuid);
 						$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values ($subjectid, '$altuid',1, '$enrollmentid')";

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Aug 30, 2024 at 07:34 PM
+-- Generation Time: Sep 09, 2024 at 09:05 PM
 -- Server version: 10.3.28-MariaDB
 -- PHP Version: 7.2.24
 
@@ -442,6 +442,7 @@ CREATE TABLE `bids_mapping` (
   `protocolmapping_id` int(11) NOT NULL,
   `project_id` int(11) DEFAULT NULL COMMENT 'if project_id is null, then this alt name applies to all projects',
   `protocolname` varchar(255) NOT NULL,
+  `imagetype` varchar(255) NOT NULL,
   `modality` varchar(255) NOT NULL,
   `bidsentity` varchar(255) NOT NULL,
   `bidssuffix` varchar(255) NOT NULL
@@ -3820,7 +3821,7 @@ ALTER TABLE `backups`
 --
 ALTER TABLE `bids_mapping`
   ADD PRIMARY KEY (`protocolmapping_id`),
-  ADD UNIQUE KEY `project_id` (`project_id`,`protocolname`,`modality`) USING BTREE;
+  ADD UNIQUE KEY `project_id` (`project_id`,`protocolname`,`imagetype`,`modality`) USING BTREE;
 
 --
 -- Indexes for table `binary_series`

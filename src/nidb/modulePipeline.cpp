@@ -734,7 +734,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
     numdownloaded = 0;
     QStringList dlog;
     datalog = "";
-    bool exportBIDS = false;
+    bool exportBIDS(false);
     QList<qint64> BIDSseriesids;
     QStringList BIDSmodalities;
 
@@ -1157,11 +1157,14 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
 
         if (exportBIDS) {
             /* consolidate the found series */
+            QString sql = n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
             while (q.next()) {
                 int seriesid = q.value(modality+"series_id").toInt();
                 BIDSseriesids.append(seriesid);
                 BIDSmodalities.append(modality);
             }
+            if (q.size() > 0)
+                dlog << n->Log(QString("Exporting in BIDS format. Added [%1] series to export. Total series is [%2]").arg(q.size()).arg(BIDSseriesids.size()), __FUNCTION__);
         }
         else {
             int newseriesnum = 1;
@@ -1299,7 +1302,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                             int numfilesconv(0);
                             int numfilesrenamed(0);
                             QString binpath = n->cfg["nidbdir"] + "/bin";
-                            img->ConvertDicom(dataformat, indir, tmpdir, binpath, gzip, false, uid, QString("%1").arg(localstudynum), QString("%1").arg(seriesnum), datatype, numfilesconv, numfilesrenamed, m);
+                            img->ConvertDicom(dataformat, indir, tmpdir, binpath, gzip, false, uid, QString("%1").arg(localstudynum), QString("%1").arg(seriesnum), "", "", "", "", datatype, numfilesconv, numfilesrenamed, m);
 
                             QString systemstring;
                             if (p.dataCopyMethod == "scp")
@@ -1357,10 +1360,17 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
         }
     }
     if (exportBIDS) {
-        archiveIO *io = new archiveIO(n);
-        QStringList bidsflags = { "BIDS_SUBJECTDIR_UID", "BIDS_STUDYDIR_STUDYNUM" };
-        QString m2;
-        io->WriteBIDS(BIDSseriesids, BIDSmodalities, analysispath, "BIDS Readme", bidsflags, m2);
+        if (BIDSseriesids.size() > 0) {
+            archiveIO *io = new archiveIO(n);
+            QStringList bidsflags = { "BIDS_SUBJECTDIR_UID", "BIDS_STUDYDIR_STUDYNUM" };
+            QString m2;
+            io->WriteBIDS(BIDSseriesids, BIDSmodalities, analysispath, "BIDS Readme", bidsflags, m2);
+            dlog << n->Log(QString("Exporting in BIDS format. Message from WriteBIDS [%1]").arg(m2), __FUNCTION__);
+            numdownloaded = BIDSseriesids.size();
+        }
+        else {
+            dlog << n->Log("Exporting in BIDS format, but no series found to export", __FUNCTION__);
+        }
     }
     n->Debug("Leaving GetData() successfully", __FUNCTION__);
     n->InsertAnalysisEvent(analysisid, pipelineid, p.version, studyid, "analysiscopydataend", QString("Finished copying data [%1] series downloaded").arg(numdownloaded));

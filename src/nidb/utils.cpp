@@ -997,6 +997,16 @@ double StdDev(QList<double> a) {
 /* ---------------------------------------------------------- */
 /* --------- BatchRenameFiles ------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Batch rename a directory of files into the NiDB archive filename format
+ * @param dir Directory containing the files
+ * @param seriesnum The series number
+ * @param studynum The study number
+ * @param uid The subject UID
+ * @param numfilesrenamed Number of files renamed
+ * @param msg Any messages generated while renaiming
+ * @return `true` if successful, `false` otherwise
+ */
 bool BatchRenameFiles(QString dir, QString seriesnum, QString studynum, QString uid, int &numfilesrenamed, QString &msg) {
 
     QDir d;
@@ -1043,6 +1053,17 @@ bool BatchRenameFiles(QString dir, QString seriesnum, QString studynum, QString 
 /* ---------------------------------------------------------- */
 /* --------- BatchRenameBIDSFiles --------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Rename a directory of files into BIDS format. These files are likely already converted from DICOM to Nifti
+ * @param dir Input directory
+ * @param bidsSub BIDS `sub-` label
+ * @param bidsSes BIDS `ses-` label
+ * @param protocol Protocol name
+ * @param bidsSuffix BIDS suffix
+ * @param numfilesrenamed Number of files renamed
+ * @param msg Any messages about the renaming process
+ * @return `true` if successful, `false` otherwise
+ */
 bool BatchRenameBIDSFiles(QString dir, QString bidsSub, QString bidsSes, QString protocol, QString bidsSuffix, int &numfilesrenamed, QString &msg) {
 
     QDir d;
@@ -1072,14 +1093,29 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSub, QString bidsSes, QString
         /* rename the files */
         int run = 1;
         foreach (QString fname, files) {
+
             f.setFileName(fname);
             QFileInfo fi(f);
-            QString newName = fi.path() + "/" + QString("%1_%2_acq-%3_%4%5").arg(bidsSub).arg(bidsSes).arg(protocol).arg(bidsSuffix).arg(ext.replace("*",""));
-            if ((QFile::exists(newName)) || (run > 1)) {
+            QString newName;
+            QString bidsSuf = bidsSuffix;
+
+            /* special case where one series becomes two BIDS files */
+            if (bidsSuffix == "magnitude1and2") {
+                msg += "Renaming a fieldmap magnitude 1 and 2 file. One series collected, but converted to Nifti as two .nii.gz files";
+                /* look for files ending in e1 and e2 file */
+                if (fi.baseName().endsWith("_e1"))
+                    bidsSuf = "magnitude1";
+                if (fi.baseName().endsWith("_e2"))
+                    bidsSuf = "magnitude2";
+            }
+
+            newName = fi.path() + "/" + QString("%1_%2_acq-%3_run-%4_%5%6").arg(bidsSub).arg(bidsSes).arg(protocol).arg(run).arg(bidsSuf).arg(ext.replace("*",""));
+            //newName = fi.path() + "/" + QString("%1_%2_acq-%3_%4%5").arg(bidsSub).arg(bidsSes).arg(protocol).arg(bidsSuffix).arg(ext.replace("*",""));
+            if (QFile::exists(newName)) {
                 /* add run number if this file already exists */
                 msg += "File " + newName + " already exists\n";
-                newName = fi.path() + "/" + QString("%1_%2_acq-%3_run-%4_%5%6").arg(bidsSub).arg(bidsSes).arg(protocol).arg(run).arg(bidsSuffix).arg(ext.replace("*",""));
                 run++;
+                newName = fi.path() + "/" + QString("%1_%2_acq-%3_run-%4_%5%6").arg(bidsSub).arg(bidsSes).arg(protocol).arg(run).arg(bidsSuf).arg(ext.replace("*",""));
             }
 
             msg += QString(fname + " --> " + newName + "\n");
@@ -1097,6 +1133,13 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSub, QString bidsSes, QString
 /* ---------------------------------------------------------- */
 /* --------- GetPatientAge ---------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Get patient age at the time of the imaging study, in years. From DICOM age string, or from StudyDate/PatientBirthdate calculation
+ * @param PatientAgeStr DICOM patient age string
+ * @param StudyDate Study date
+ * @param PatientBirthDate Patient DOB, from DICOM
+ * @return the age in years of the patient
+ */
 double GetPatientAge(QString PatientAgeStr, QString StudyDate, QString PatientBirthDate) {
     double PatientAge(0.0);
 

@@ -82,7 +82,7 @@ public:
     QString clusterSubmitHostUser;
     QString clusterType;
     QString clusterUser;
-    double clusterMemory;
+    int clusterMemory;
     int clusterMaxWallTime;
     int clusterNumCores;
 

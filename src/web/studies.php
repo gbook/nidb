@@ -59,6 +59,9 @@
 	$series_num = GetVariable("series_num");
 	$notes = GetVariable("notes");
 	$protocol = GetVariable("protocol");
+	$imagetype = GetVariable("imagetype");
+	$bidsentity = GetVariable("bidsentity");
+	$bidssuffix = GetVariable("bidssuffix");
 	$series_datetime = GetVariable("series_datetime");
 	$studydatetime = GetVariable("studydatetime");
 	$studyageatscan = GetVariable("studyageatscan");
@@ -195,6 +198,10 @@
 			break;
 		case 'resetqa':
 			ResetQA($seriesids);
+			DisplayStudy($studyid);
+			break;
+		case 'updatebidsmapping':
+			UpdateBIDSMapping($studyid, $protocol, $imagetype, $bidsentity, $bidssuffix);
 			DisplayStudy($studyid);
 			break;
 		case 'displayfiles':
@@ -768,6 +775,26 @@
 		}
 
 		Notice("Series notes updated");
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- UpdateBIDSMapping ------------------ */
+	/* -------------------------------------------- */
+	function UpdateBIDSMapping($studyid, $protocol, $imagetype, $entity, $suffix) {
+		$studyid = mysqli_real_escape_string($GLOBALS['linki'], $studyid);
+		$protocol = mysqli_real_escape_string($GLOBALS['linki'], $protocol);
+		$imagetype = mysqli_real_escape_string($GLOBALS['linki'], $imagetype);
+		$entity = mysqli_real_escape_string($GLOBALS['linki'], $entity);
+		$suffix = mysqli_real_escape_string($GLOBALS['linki'], $suffix);
+
+		list($path, $uid, $studynum, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid) = GetStudyInfo($studyid);
+		$modality = strtolower($modality);
+		
+		$sqlstring = "insert ignore into bids_mapping (project_id, protocolname, imagetype, modality, bidsentity, bidssuffix) values ($projectid, '$protocol', '$imagetype', '$modality', '$entity', '$suffix') on duplicate key update bidsentity = '$entity', bidssuffix = '$suffix'";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+		Notice("BIDS mapping updated for this project<br><tt>$protocol | $imagetype</tt> mapped to <tt>$entity:$suffix</tt>");
 	}
 	
 	
@@ -1718,6 +1745,14 @@
 	
 		$colors = GenerateColorGradient();
 
+		$bidsentities['anat'] = array('IRT1','MESE','MEGRE','MP2RAGE','MPM','MTS','MTR','T1map','T2map','T2starmap','R1map','R2map','R2starmap','PDmap','MTRmap','MTsat','UNIT1','T1rho','MWFmap','MTVmap','Chimap','S0map','M0map','T1w','T2w','PDw','T2starw','FLAIR','inplaneT1','inplaneT2','PDT2','angio','T2star','FLASH','PD','VFA','defacemask');
+		$bidsentities['dwi'] = array('dwi','sbref','physio','stim');
+		$bidsentities['fmap'] = array('TB1AFI','TB1TFL','TB1RFM','RB1COR','TB1DAM','TB1EPI','TB1SRGE','TB1map','RB1map','epi','m0scan','phasediff','phase1','phase2','magnitude1','magnitude2','magnitude','magnitude1and2','fieldmap');
+		$bidsentities['func'] = array('bold','cbv','sbref','events','phase','physio','stim');
+		$bidsentities['perf'] = array('asl','m0scan','aslcontext','asllabeling','physio','stim');
+		$bidsentities['derived'] = array('derived');
+		//PrintVariable($bidsentities);
+		
 		/* get the subject information */
 		$sqlstring = "select * from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id where c.study_id = $studyid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -1728,6 +1763,7 @@
 			$dbsubjectsex = $row['gender'];
 			$dbstudydatetime = $row['study_datetime'];
 			$subjectid = $row['subject_id'];
+			$projectid = $row['project_id'];
 		}
 		else {
 			echo "$sqlstring<br>";
@@ -1778,10 +1814,10 @@
 		
 		<?
 		/* get the actual MR series info */
-		$sqlstring = "select * from mr_series where study_id = $studyid order by series_num";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$mrseries_id = $row['mrseries_id'];
+		//$sqlstring = "select * from mr_series where study_id = $studyid order by series_num";
+		//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		//while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			//$mrseries_id = $row['mrseries_id'];
 			?>
 			<!--<script type="text/javascript">
 				$(document).ready(function(){
@@ -1795,7 +1831,7 @@
 				});
 			</script>-->
 			<?
-		}
+		//}
 		?>
 
 		<script type="text/javascript">
@@ -1903,7 +1939,7 @@
 							$numfiles_beh = $row['numfiles_beh'];
 							$data_type = $row['data_type'];
 							$lastupdate = $row['lastupdate'];
-							$image_type = $row['image_type'];
+							$imagetype = $row['image_type'];
 							$image_comments = $row['image_comments'];
 							$ishidden = $row['ishidden'];
 							
@@ -2151,6 +2187,23 @@
 							if ($isbadseries) { $rowcolor = "red"; }
 							if ($istestseries) { $rowcolor = "#AAA"; }
 							if ($ishidden) { $rowcolor = "#AAA"; }
+
+							/* get BIDS protocol name mapping */
+							if ($series_desc != "") {
+								$imagetype2 = $imagetype;
+								$imagetype2 = str_replace("\\", "\\\\", $imagetype2);
+								$sqlstring3 = "select bidsentity, bidssuffix from bids_mapping where protocolname = '$series_desc' and imagetype = '$imagetype2' and modality = 'MR' and project_id = $projectid";
+							}
+							else {
+								$imagetype2 = $imagetype;
+								$imagetype2 = str_replace("\\", "\\\\", $imagetype2);
+								$sqlstring3 = "select bidsentity, bidssuffix from bids_mapping where protocolname = '$protocol' and imagetype = '$imagetype2' and modality = 'MR' and project_id = $projectid";
+							}
+							//PrintSQL($sqlstring3);
+							$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
+							$row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC);
+							$bidsentity = $row3['bidsentity'];
+							$bidssuffix = $row3['bidssuffix'];
 							
 							?>
 							<script type="text/javascript">
@@ -2178,11 +2231,47 @@
 							<tr style="color: <?=$rowcolor?>">
 								<td><?=$series_num?><span id="series<?=$series_num?>"></td>
 								<td><span id="uploader<?=$mrseries_id?>"></span></td>
-								<td data-tooltip="Series Description - <?=$series_desc?>&#10;Protocol - <?=$protocol?>&#10;Sequence Description - <?=$sequence?>&#10;TE - <?=$series_te?>ms&#10;Magnet - <?=$series_fieldstrength?>T&#10;Flip angle - <?=$series_flip?>&deg;&#10;Image type - <?=$image_type?>&#10;Image comment - <?=$image_comments?>&#10;Phase encoding - <?=$phase?>" data-inverted="" data-variation="multiline">
+								<td>
 									<a href="series.php?action=scanparams&seriesid=<?=$mrseries_id?>&modality=mr"><?=$series_desc?></a>&nbsp;<span id="thumbnail<?=$series_num?>"></span>
 									<? //if (($bold_reps < 2) && ($GLOBALS['cfg']['allowrawdicomexport'])) { ?>
 									<!--&nbsp;<a href="viewimage.php?modality=mr&type=dicom&seriesid=<?=$mrseries_id?>"><i class="cube icon"></i></a>-->
 									<? //} ?>
+									<span data-tooltip="Series Description - <?=$series_desc?>&#10;Protocol - <?=$protocol?>&#10;Sequence Description - <?=$sequence?>&#10;TE - <?=$series_te?>ms&#10;Magnet - <?=$series_fieldstrength?>T&#10;Flip angle - <?=$series_flip?>&deg;&#10;Image type - <?=$imagetype?>&#10;Image comment - <?=$image_comments?>&#10;Phase encoding - <?=$phase?>" data-inverted="" data-variation="multiline"><i class="ui info circle icon"></i></span>
+									
+									<?
+										if ($bidsentity == "") {
+											$label = "BIDS...";
+											$color = "";
+										}
+										else {
+											$label = "$bidsentity : $bidssuffix";
+											$color = "green";
+										}
+									?>
+									
+									<div class="ui right pointing dropdown icon compact basic <?=$color?> button">
+										<?=$label?>
+										<div class="menu">
+											<?
+												ksort($bidsentities);
+												foreach ($bidsentities as $entity => $suff) {
+													?>
+													<div class="item">
+														<?=$entity?>
+													</div>
+													<?
+													sort($suff);
+													foreach ($suff as $suffix) {
+														?>
+														<div class="item">
+															<a href="studies.php?action=updatebidsmapping&studyid=<?=$studyid?>&modality=mr&bidsentity=<?=$entity?>&bidssuffix=<?=$suffix?>&protocol=<?=$series_desc?>&imagetype=<?=$imagetype?>"><?=$entity?> : <?=$suffix?></a>
+														</div>
+														<?
+													}
+												}
+											?>
+										</div>
+									</div>
 								</td>
 								<td style="font-size:8pt"><?=$series_datetime?></td>
 								<td style="font-size:8pt"><?=$series_notes;?></td>

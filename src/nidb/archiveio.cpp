@@ -50,11 +50,29 @@ void archiveIO::SetUploadID(int upid) {
 
 
 /* ---------------------------------------------------------- */
-/* --------- ArchiveDICOMSeries ------------------------------ */
+/* --------- ArchiveDICOMSeries ----------------------------- */
 /* ---------------------------------------------------------- */
-bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int existingStudyID, int existingSeriesID, QString subjectMatchCriteria, QString studyMatchCriteria, QString seriesMatchCriteria, int destProjectID, QString specificPatientID, int destSiteID, QString altUIDstr, QString seriesNotes, QStringList files, performanceMetric &perf) {
+/**
+ * @brief Archive a DICOM series. This function handles partial series as well. If half the files of a series are already archived, and the other half are passed into this function, this function will attempt to complete the series
+ * @param importRowID If an ImportRowID exists
+ * @param existingSubjectID If an existing SubjectRowID is known
+ * @param existingStudyID If an existing StudyRowID is known
+ * @param existingSeriesID If an existing SeriesRowID is known
+ * @param subjectMatchCriteria
+ * @param studyMatchCriteria
+ * @param seriesMatchCriteria
+ * @param destProjectID Destination ProjectRowID
+ * @param specificPatientID
+ * @param destSiteID Destination SiteRowID
+ * @param altUIDstr String with alternate UIDs
+ * @param seriesNotes Series notes
+ * @param files List of files to archive
+ * @param perf Performance metric
+ * @return
+ */
+bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int existingStudyID, int existingSeriesID, QString subjectMatchCriteria, QString studyMatchCriteria, QString seriesMatchCriteria, int destProjectID, QString specificPatientID, int destSiteID, QString altUIDstr, QString seriesNotes, QStringList files, performanceMetric &perf) {
 
-    AppendUploadLog(__FUNCTION__ , QString("Beginning to archive this DICOM series (%1, %2, %3, %4, %5, %6, %7, %8, %9, %10, %11, %12)").arg(importid).arg(existingSubjectID).arg(existingStudyID).arg(existingSeriesID).arg(subjectMatchCriteria).arg(studyMatchCriteria).arg(seriesMatchCriteria).arg(destProjectID).arg(specificPatientID).arg(destSiteID).arg(altUIDstr).arg(seriesNotes));
+    AppendUploadLog(__FUNCTION__ , QString("Beginning to archive this DICOM series (%1, %2, %3, %4, %5, %6, %7, %8, %9, %10, %11, %12)").arg(importRowID).arg(existingSubjectID).arg(existingStudyID).arg(existingSeriesID).arg(subjectMatchCriteria).arg(studyMatchCriteria).arg(seriesMatchCriteria).arg(destProjectID).arg(specificPatientID).arg(destSiteID).arg(altUIDstr).arg(seriesNotes));
 
     /* in case this function is called with capitalized criteria */
     subjectMatchCriteria = subjectMatchCriteria.toLower();
@@ -711,10 +729,10 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
     }
 
     /* if a beh directory exists for this series from an import, move it to the final series directory */
-    QString inbehdir = QString("%1/%2/beh").arg(n->cfg["incomingdir"]).arg(importid);
+    QString inbehdir = QString("%1/%2/beh").arg(n->cfg["incomingdir"]).arg(importRowID);
     QString outbehdir = QString("%1/%2/%3/%4/beh").arg(n->cfg["archivedir"]).arg(subjectUID).arg(studynum).arg(SeriesNumber);
 
-    if (importid > 0) {
+    if (importRowID > 0) {
         AppendUploadLog(__FUNCTION__ , "Checking for behavioral data in [" + inbehdir + "]");
         QDir bd(inbehdir);
         if (bd.exists()) {
@@ -768,9 +786,15 @@ bool archiveIO::ArchiveDICOMSeries(int importid, int existingSubjectID, int exis
 /* ---------------------------------------------------------- */
 /* --------- InsertParRec ----------------------------------- */
 /* ---------------------------------------------------------- */
-bool archiveIO::InsertParRec(int importid, QString file) {
+/**
+ * @brief Archive a par/rec file pair
+ * @param importRowID Use an existing ImportRowID. Pass -1 to this function otherwise
+ * @param file .par file to import (.rec file will automatically be searched for)
+ * @return
+ */
+bool archiveIO::InsertParRec(int importRowID, QString file) {
 
-    AppendUploadLog(__FUNCTION__, QString("----- In InsertParRec(%1,%2) -----").arg(importid).arg(file));
+    AppendUploadLog(__FUNCTION__, QString("----- In InsertParRec(%1,%2) -----").arg(importRowID).arg(file));
 
     QString familyRealUID;
     int familyRowID(0);
@@ -824,11 +848,11 @@ bool archiveIO::InsertParRec(int importid, QString file) {
     QString importSeriesNotes;
     QString importAltUIDs;
 
-    /* if there is an importid, check to see how that thing is doing */
-    if (importid > 0) {
+    /* if there is an importRowID, check to see how that thing is doing */
+    if (importRowID > 0) {
         QSqlQuery q;
         q.prepare("select * from import_requests where importrequest_id = :importid");
-        q.bindValue(":importid", importid);
+        q.bindValue(":importid", importRowID);
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         if (q.size() > 0) {
             q.first();
@@ -1357,9 +1381,9 @@ bool archiveIO::InsertParRec(int importid, QString file) {
 /* ---------------------------------------------------------- */
 /* --------- InsertEEG -------------------------------------- */
 /* ---------------------------------------------------------- */
-bool archiveIO::InsertEEG(int importid, QString file) {
+bool archiveIO::InsertEEG(int importRowID, QString file) {
 
-    AppendUploadLog(__FUNCTION__, QString("----- In InsertEEG(%1, %2) -----").arg(importid).arg(file));
+    AppendUploadLog(__FUNCTION__, QString("----- In InsertEEG(%1, %2) -----").arg(importRowID).arg(file));
 
     //QString familyRealUID;
 
@@ -1402,11 +1426,11 @@ bool archiveIO::InsertEEG(int importid, QString file) {
     QString importSeriesNotes;
     QString importAltUIDs;
 
-    /* if there is an importid, check to see how that thing is doing */
-    if (importid > 0) {
+    /* if there is an importRowID, check to see how that thing is doing */
+    if (importRowID > 0) {
         QSqlQuery q;
         q.prepare("select * from import_requests where importrequest_id = :importid");
-        q.bindValue(":importid", importid);
+        q.bindValue(":importid", importRowID);
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         if (q.size() > 0) {
             q.first();
@@ -1423,7 +1447,7 @@ bool archiveIO::InsertEEG(int importid, QString file) {
         }
     }
     else {
-        AppendUploadLog(__FUNCTION__, QString("ImportID [%1] not found. Using default import parameters").arg(importid));
+        AppendUploadLog(__FUNCTION__, QString("importRowID [%1] not found. Using default import parameters").arg(importRowID));
     }
 
     AppendUploadLog(__FUNCTION__, file);
@@ -1686,6 +1710,11 @@ bool archiveIO::InsertEEG(int importid, QString file) {
 /* ---------------------------------------------------------- */
 /* --------- GetCostCenter ---------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Attempt to extract the cost center or project number from a study description. This will attempt to extract the string of characters between a pair of parentheses
+ * @param studydesc Study description. Example 'My First Study (A1234)'
+ * @return the found study number. Example A1234. This number should correspond to a cost_center value from the projects table
+ */
 QString archiveIO::GetCostCenter(QString studydesc) {
     QString cc;
 
@@ -1709,6 +1738,12 @@ QString archiveIO::GetCostCenter(QString studydesc) {
 /* ---------------------------------------------------------- */
 /* --------- CreateIDSearchList ----------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Given a list of PatientID and alternate IDs, return a sanitized SQL string to search for
+ * @param PatientID Likely from the DICOM field, or other singular PatientID/SubjectID
+ * @param altuids String containing a comma separated list of IDs
+ * @return SQL formatted string in the form 'ID1','ID_2','etc'
+ */
 QString archiveIO::CreateIDSearchList(QString PatientID, QString altuids) {
     /* create the possible ID search lists and arrays */
     QStringList altuidlist;
@@ -2110,13 +2145,13 @@ void archiveIO::AppendUploadLog(QString func, QString m) {
 /* ---------------------------------------------------------- */
 /**
  * @brief archiveIO::WriteBIDS
- * @param seriesids - list of seriesids
- * @param modalities - list of modalities
- * @param odir - final output directory
- * @param bidsreadme - BIDS readme
- * @param bidsflags - BIDS flags
- * @param msg - returned msgs
- * @return true if successful
+ * @param seriesids List of SeriesRowIDs
+ * @param modalities List of modalities
+ * @param odir Final output directory
+ * @param bidsreadme BIDS readme
+ * @param bidsflags BIDS flags
+ * @param msg Returned msgs
+ * @return true if successful, false otherwise
  */
 bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QString odir, QString bidsreadme, QStringList bidsflags, QString &msg) {
     n->Log("Entering WriteBIDS()...");
@@ -2306,13 +2341,15 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 
                             int numfilesconv(0), numfilesrenamed(0);
                             QString binpath = n->cfg["nidbdir"] + "/bin";
-                            if (!img->ConvertDicom("bids", datadir, tmpdir, binpath, true, false, subjectdir, sessiondir, seriesdir, datatype, numfilesconv, numfilesrenamed, m))
+                            if (!img->ConvertDicom("bids", datadir, tmpdir, binpath, true, false, subjectdir, sessiondir, seriesdir, bidsSub, bidsSes, seriesdesc, bidsSuffix, datatype, numfilesconv, numfilesrenamed, m))
                                 msgs << "Error converting files [" + m + "]";
+                            else
+                                n->Log(m);
 
                             /* rename the converted into BIDS format */
-                            QString m2;
-                            BatchRenameBIDSFiles(tmpdir, bidsSub, bidsSes, seriesdesc, bidsSuffix, numfilesrenamed, m2);
-                            n->Log(m2);
+                            //QString m2;
+                            //BatchRenameBIDSFiles(tmpdir, bidsSub, bidsSes, seriesdesc, bidsSuffix, numfilesrenamed, m2);
+                            //n->Log(m2);
 
                             //n->WriteLog("About to copy files from " + tmpdir + " to " + seriesoutdir);
                             QString systemstring = "rsync " + tmpdir + "/* " + seriesoutdir + "/";
@@ -2375,18 +2412,18 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 /* --------- WriteSquirrel ---------------------------------- */
 /* ---------------------------------------------------------- */
 /**
- * @brief archiveIO::WriteSquirrel
- * @param exportid - exportID
- * @param name - squirrel package name
- * @param desc - squirrel package description
- * @param downloadflags - which data to download
- * @param squirrelflags - squirrel package options
- * @param seriesids - list of seriesIDs
- * @param modalities - list of modalities to be exported
- * @param odir - output directory
- * @param filepath - the final squirrel package path
- * @param msg - any messages generated during squirrel package writing
- * @return true if written, false otherwise
+ * @brief Write a squirrel package
+ * @param exportid exportRowID
+ * @param name squirrel package name
+ * @param desc squirrel package description
+ * @param downloadflags which data to download
+ * @param squirrelflags squirrel package options
+ * @param seriesids list of seriesIDs
+ * @param modalities list of modalities to be exported
+ * @param odir output directory
+ * @param filepath the final squirrel package path
+ * @param msg any messages generated during squirrel package writing
+ * @return true if package was written, false otherwise
  */
 bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStringList downloadflags, QStringList squirrelflags, QList<qint64> seriesids, QStringList modalities, QString zipfilepath, QString &msg) {
 
@@ -3087,7 +3124,13 @@ bool archiveIO::WritePackage(qint64 exportid, QString zipfilepath, QString &msg)
 /* ---------------------------------------------------------- */
 /* --------- GetSeriesListDetails --------------------------- */
 /* ---------------------------------------------------------- */
-/* create a multilevel hash s[uid][study][series]['attribute'] to store the series */
+/**
+ * @brief Search for and return series details in a multilevel hash. Series details are passed to other functions to actually do the archive operation
+ * @param seriesids List of SeriesRowIDs
+ * @param modalities List of Modalities
+ * @param s Returns a hash s[uid][study][series]['attribute'] of type subjectStudySeriesContainer
+ * @return
+ */
 bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modalities, subjectStudySeriesContainer &s) {
 
     QSqlQuery q;
@@ -3121,6 +3164,7 @@ bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modal
                 int projectid = q.value("project_id").toInt();
                 QString studyaltid = q.value("study_alternateid").toString();
                 QString studytype = q.value("study_type").toString();
+                QString imagetype = q.value("image_type").toString();
                 QString datatype;
                 if (q.value("data_type").isValid())
                     datatype = q.value("data_type").toString().trimmed();
@@ -3135,9 +3179,10 @@ bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modal
                 double subjectAge = GetPatientAge("", studydate, subjectdob);
 
                 QSqlQuery q2;
-                q2.prepare("select * from bids_mapping where project_id = :projectid and protocolname = :protocol and modality = :modality");
+                q2.prepare("select * from bids_mapping where project_id = :projectid and protocolname = :protocol and imagetype = :imagetype and modality = :modality");
                 q2.bindValue(":projectid", projectid);
                 q2.bindValue(":protocol", seriesdesc);
+                q2.bindValue(":imagetype", imagetype);
                 q2.bindValue(":modality", modality);
                 n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
 

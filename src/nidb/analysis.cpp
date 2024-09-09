@@ -26,6 +26,12 @@
 /* ---------------------------------------------------------- */
 /* --------- analysis --------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Constructor, find analysis by analysis row ID
+ * @param id AnalysisRowID
+ * @param a pointer to NiDB instance
+ * @param c true if this instance is running from a cluster, false otherwise
+ */
 analysis::analysis(qint64 id, nidb *a, bool c)
 {
 	n = a;
@@ -38,6 +44,13 @@ analysis::analysis(qint64 id, nidb *a, bool c)
 /* ---------------------------------------------------------- */
 /* --------- analysis --------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Constructor, find analysis by pipeline and study
+ * @param pipelineid PipelineRowID
+ * @param studyid StudyRowID
+ * @param a pointer to NiDB instance
+ * @param c true if this instance is running from a cluster, false otherwise
+ */
 analysis::analysis(int pipelineid, int studyid, nidb *a, bool c)
 {
 	n = a;
@@ -67,6 +80,9 @@ analysis::analysis(int pipelineid, int studyid, nidb *a, bool c)
 /* ---------------------------------------------------------- */
 /* --------- LoadAnalysisInfo ------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Load analysis information from database into object variables
+ */
 void analysis::LoadAnalysisInfo() {
 
 	isValid = true;
@@ -155,6 +171,9 @@ void analysis::LoadAnalysisInfo() {
 /* ---------------------------------------------------------- */
 /* --------- PrintAnalysisInfo ------------------------------ */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Print a summary of the analysis object variables
+ */
 void analysis::PrintAnalysisInfo() {
 	QString	output = QString("***** Analysis - [%1] *****\n").arg(analysisid);
 
@@ -210,6 +229,10 @@ QJsonObject analysis::GetJSONObject() {
 /* ---------------------------------------------------------- */
 /* --------- GetSquirrelObject ------------------------------ */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Get a squirrel analysis object
+ * @return squirrelAnalysis object
+ */
 squirrelAnalysis analysis::GetSquirrelObject() {
     squirrelAnalysis s;
 

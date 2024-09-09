@@ -25,6 +25,9 @@
 /* ---------------------------------------------------------- */
 /* --------- nidb ------------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Default constructor
+ */
 nidb::nidb()
 {
     pid = QCoreApplication::applicationPid();
@@ -35,6 +38,11 @@ nidb::nidb()
 /* ---------------------------------------------------------- */
 /* --------- nidb ------------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief nidb::nidb
+ * @param m Module name
+ * @param c true if executable is being run from the cluster
+ */
 nidb::nidb(QString m, bool c)
 {
     module = m;
@@ -50,6 +58,10 @@ nidb::nidb(QString m, bool c)
 /* ---------------------------------------------------------- */
 /* --------- GetBuildString --------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief nidb::GetBuildString
+ * @return The build string
+ */
 QString nidb::GetBuildString() {
     return QString("   NiDB version %1.%2.%3\n   Build date [%4 %5]\n   C++ [%6]\n   Qt compiled [%7]\n   Qt runtime [%8]\n   Build system [%9]").arg(VERSION_MAJ).arg(VERSION_MIN).arg(BUILD_NUM).arg(__DATE__).arg(__TIME__).arg(__cplusplus).arg(QT_VERSION_STR).arg(qVersion()).arg(QSysInfo::buildAbi());
 }
@@ -58,6 +70,10 @@ QString nidb::GetBuildString() {
 /* ---------------------------------------------------------- */
 /* --------- GetVersion ------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief nidb::GetVersion
+ * @return The NiDB version
+ */
 QString nidb::GetVersion() {
     return QString("version%1.%2.%3").arg(VERSION_MAJ).arg(VERSION_MIN).arg(BUILD_NUM);
 }
@@ -66,6 +82,10 @@ QString nidb::GetVersion() {
 /* ---------------------------------------------------------- */
 /* --------- LoadConfig ------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Load the nidb config file
+ * @return true if successful, false otherwise
+ */
 bool nidb::LoadConfig() {
 
     if (configLoaded) return 1;
@@ -150,6 +170,11 @@ bool nidb::LoadConfig() {
 /* ---------------------------------------------------------- */
 /* --------- DatabaseConnect -------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Connect to a database
+ * @param cluster True if the executable is running on the cluster
+ * @return true if successful, false otherwise
+ */
 bool nidb::DatabaseConnect(bool cluster) {
 
     if (!cluster) Print("Connecting to database", false, true);
@@ -186,6 +211,10 @@ bool nidb::DatabaseConnect(bool cluster) {
 /* ---------------------------------------------------------- */
 /* --------- FatalError ------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Exit the program with a fatal error
+ * @param err The error message
+ */
 void nidb::FatalError(QString err) {
     Print(err);
     exit(0);
@@ -195,6 +224,10 @@ void nidb::FatalError(QString err) {
 /* ---------------------------------------------------------- */
 /* --------- ModuleGetNumThreads ---------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Get the number of threads for the currently selected module
+ * @return The number of module threads
+ */
 int nidb::ModuleGetNumThreads() {
     int numThreads = 0;
 
@@ -247,6 +280,10 @@ int nidb::ModuleGetNumThreads() {
 /* ---------------------------------------------------------- */
 /* --------- ModuleGetNumLockFiles -------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Find the number of lock files for this module
+ * @return The number of existing lock files for this module
+ */
 qint64 nidb::ModuleGetNumLockFiles() {
     QDir dir;
     dir.setPath(cfg["lockdir"]);
@@ -268,6 +305,10 @@ qint64 nidb::ModuleGetNumLockFiles() {
 /* ---------------------------------------------------------- */
 /* --------- ModuleCreateLockFile --------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Create a lock file for this module. Each lock file has a file extension with the current process's PID
+ * @return True if successful, false otherwise
+ */
 bool nidb::ModuleCreateLockFile() {
     qint64 pid = 0;
     pid = QCoreApplication::applicationPid();
@@ -294,6 +335,10 @@ bool nidb::ModuleCreateLockFile() {
 /* ---------------------------------------------------------- */
 /* --------- ModuleClearLockFiles --------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Remove all lock files for this module
+ * @return true if successful, false otherwise
+ */
 bool nidb::ModuleClearLockFiles() {
 
     Print("Clearing lock files [" + lockFilepath + "]",false, true);
@@ -308,6 +353,10 @@ bool nidb::ModuleClearLockFiles() {
 /* ---------------------------------------------------------- */
 /* --------- ModuleCreateLogFile ---------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Create a log file for this module
+ * @return true if successful, false otherwise
+ */
 bool nidb::ModuleCreateLogFile () {
     logFilepath = QString("%1/%2%3.log").arg(cfg["logdir"]).arg(module).arg(CreateLogDate());
     log.setFileName(logFilepath);
@@ -338,6 +387,9 @@ bool nidb::ModuleCreateLogFile () {
 /* ---------------------------------------------------------- */
 /* --------- ModuleDeleteLockFile --------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Delete the lock file associated with this module
+ */
 void nidb::ModuleDeleteLockFile() {
 
     Print("Deleting lock file [" + lockFilepath + "]",false, true);
@@ -357,6 +409,10 @@ void nidb::ModuleDeleteLockFile() {
 /* ---------------------------------------------------------- */
 /* --------- ModuleRemoveLogFile ---------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Delete the log file for this module
+ * @param true if this log file should not be deleted
+ */
 void nidb::ModuleRemoveLogFile(bool keepLog) {
 
     if (!keepLog) {
@@ -375,8 +431,16 @@ void nidb::ModuleRemoveLogFile(bool keepLog) {
 /* ---------------------------------------------------------- */
 /* --------- SQLQuery --------------------------------------- */
 /* ---------------------------------------------------------- */
-/* QSqlQuery object must already be prepared and bound before */
-/* being passed in to this function                           */
+/**
+ * @brief Execute a SQL query and return the result
+ * @param q QSqlQuery object must already be prepared and bound before being passed to this function
+ * @param function C++ function which called this function (for debugging purposes in case the SQL query fails). Pass the macro __FUNCTION__ as a parameter
+ * @param file Source code file which called this function (for debugging purposes in case the SQL query fails). Pass the macro __FILE__ as a parameter
+ * @param line Line in the source code file that called this function (for debugging purposes in case the SQL query fails). Pass the macro __LINE__ as a parameter
+ * @param d true if debug (will write the executed statement to the Log file)
+ * @param batch true if running in batch mode
+ * @return The QString representation of the executed query
+ */
 QString nidb::SQLQuery(QSqlQuery &q, QString function, QString file, int line, bool d, bool batch) {
 
     /* get the SQL string that will be run */
@@ -420,6 +484,10 @@ QString nidb::SQLQuery(QSqlQuery &q, QString function, QString file, int line, b
 /* ---------------------------------------------------------- */
 /* --------- ModuleCheckIfActive ---------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Check if this module is enabled and should be running
+ * @return true if active, false otherwise
+ */
 bool nidb::ModuleCheckIfActive() {
 
     QSqlQuery q;
@@ -441,6 +509,9 @@ bool nidb::ModuleCheckIfActive() {
 /* ---------------------------------------------------------- */
 /* --------- ModuleDBCheckIn -------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Check this module into the database to let the system know it is running. This should be done when starting the module.
+ */
 void nidb::ModuleDBCheckIn() {
     Print("Checking module into database",false, true);
     QSqlQuery q;
@@ -471,6 +542,9 @@ void nidb::ModuleDBCheckIn() {
 /* ---------------------------------------------------------- */
 /* --------- ModuleDBCheckOut ------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Check this module out of the database. This should be done when exiting the module.
+ */
 void nidb::ModuleDBCheckOut() {
     QSqlQuery q;
     q.prepare("update modules set module_laststop = now(), module_status = 'stopped', module_numrunning = module_numrunning - 1 where module_name = :module");
@@ -489,10 +563,11 @@ void nidb::ModuleDBCheckOut() {
 /* ---------------------------------------------------------- */
 /* --------- ModuleRunningCheckIn --------------------------- */
 /* ---------------------------------------------------------- */
-/* this is a deadman's switch. if the module doesn't check in
-   after a certain period of time, the module is assumed to
-   be dead and is reset so it can start again
-   ---------------------------------------------------------- */
+/**
+ * @brief This is a "deadman's switch". If the module doesn't check in
+   after a certain period of time, the module process is assumed to
+   have died and is reset so it can start again
+ */
 void nidb::ModuleRunningCheckIn() {
 
     Print(".",false);
@@ -517,6 +592,15 @@ void nidb::ModuleRunningCheckIn() {
 /* ---------------------------------------------------------- */
 /* --------- InsertAnalysisEvent ---------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Insert an analysis event in the analysis table
+ * @param analysisid AnalysisRowID
+ * @param pipelineid PipelineRowID
+ * @param pipelineversion pipeline version
+ * @param studyid StudyRowID
+ * @param event event code
+ * @param message Event message
+ */
 void nidb::InsertAnalysisEvent(qint64 analysisid, int pipelineid, int pipelineversion, int studyid, QString event, QString message) {
     QSqlQuery q;
     q.prepare("insert into analysis_history (analysis_id, pipeline_id, pipeline_version, study_id, analysis_event, analysis_hostname, event_message) values (:analysisid, :pipelineid, :pipelineversion, :studyid, :event, :hostname, :message)");
@@ -532,8 +616,16 @@ void nidb::InsertAnalysisEvent(qint64 analysisid, int pipelineid, int pipelineve
 
 
 /* ---------------------------------------------------------- */
-/* --------- Log --------------------------------------- */
+/* --------- Log -------------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Record a log message
+ * @param msg The message
+ * @param func The function which called this Log() function (pass the __FUNCTION__ macro)
+ * @param wrap 0 for no text wrapping. An integer greater than 0 to wrap text at a specified column
+ * @param timeStamp true to include a timestampe in the Log, false otherwise
+ * @return
+ */
 QString nidb::Log(QString msg, QString func, int wrap, bool timeStamp) {
     if (func.trimmed() != "")
         msg = func + "() " + msg;
@@ -563,6 +655,14 @@ QString nidb::Log(QString msg, QString func, int wrap, bool timeStamp) {
 /* ---------------------------------------------------------- */
 /* --------- Debug ------------------------------------------ */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Similar to the Log() function, except this function only logs a message if the NiDB is in debug mode
+ * @param msg
+ * @param func
+ * @param wrap
+ * @param timeStamp
+ * @return
+ */
 QString nidb::Debug(QString msg, QString func, int wrap, bool timeStamp) {
     if (cfg["debug"].toInt() || debug) {
         if (func.trimmed() != "")
@@ -683,6 +783,12 @@ QString nidb::GetPrimaryAlternateUID(qint64 subjectid, qint64 enrollmentid) {
 /* ---------------------------------------------------------- */
 /* --------- CreateUID -------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Create a unique ID (UID) in the form S1234ABC. This is also used for project UIDs. This function tries to avoid inappropriate words spelled out using the random letters.
+ * @param prefix the letter prefix. Normally 'S'
+ * @param numletters the number of letters in the UID, normally 3
+ * @return A valid UID
+ */
 QString nidb::CreateUID(QString prefix, int numletters) {
 
     QString newID;
@@ -726,6 +832,11 @@ QString nidb::CreateUID(QString prefix, int numletters) {
 /* ---------------------------------------------------------- */
 /* --------- ValidNiDBModality ------------------------------ */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Check if a specified modality is valid in NiDB, meannig this modality has an existing <modality>_series table
+ * @param m Modality to check
+ * @return true if valid, false otherwise
+ */
 bool nidb::isValidNiDBModality(QString m) {
     QSqlQuery q;
     QString sqlstring = QString("show tables like '%1_series'").arg(m.toLower());
@@ -741,7 +852,20 @@ bool nidb::isValidNiDBModality(QString m) {
 /* ---------------------------------------------------------- */
 /* --------- SubmitClusterJob ------------------------------- */
 /* ---------------------------------------------------------- */
-//bool nidb::SubmitClusterJob(QString f, QString submithost, QString qsub, QString user, QString queue, QString &msg, int &jobid, QString &result) {
+/**
+ * @brief Submit a pipeline analysis job to a cluster
+ * @param jobFilePath Path to the job file
+ * @param clusterType either 'sge' or 'slurm'
+ * @param submitHost Hostname to which the job will be sumitted
+ * @param submitUser Username to login to the host to submit a job. User must be able to passwordless-ly ssh into the host
+ * @param qsub path to the qsub executable
+ * @param clusterUser Username to run the job on the cluster
+ * @param clusterQueue Queue under which to run the job on the cluster
+ * @param msg Any messages generated during submission
+ * @param jobid The jobid of the submitted job
+ * @param result Message from the command line after submitting a job
+ * @return true if successfully submitted, false otherwise
+ */
 bool nidb::SubmitClusterJob(QString jobFilePath, QString clusterType, QString submitHost, QString submitUser, QString qsub, QString clusterUser, QString clusterQueue, QString &msg, int &jobid, QString &result) {
     clusterType = clusterType.toLower();
 
@@ -827,6 +951,13 @@ bool nidb::SubmitClusterJob(QString jobFilePath, QString clusterType, QString su
 /* ---------------------------------------------------------- */
 /* --------- GetSQLComparison ------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Validate and parse a comparison string like <=5 into a pair of tokens (comparison, number) for later use in a SQL statement. The string passed into this function was likely input by a user, and must be validated before including in a SQL statement
+ * @param c The comparison string
+ * @param comp The comparison (<=, >=, <, >, ~, =)
+ * @param num The number
+ * @return true if successfully parsed, false otherwise
+ */
 bool nidb::GetSQLComparison(QString c, QString &comp, int &num) {
 
     /* remove whitespace */
@@ -885,6 +1016,10 @@ bool nidb::GetSQLComparison(QString c, QString &comp, int &num) {
 /* ---------------------------------------------------------- */
 /* --------- IsRunningFromCluster --------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief nidb::IsRunningFromCluster
+ * @return true if this instance if running from the cluster, false otherwise
+ */
 bool nidb::IsRunningFromCluster() {
     return runningFromCluster;
 }

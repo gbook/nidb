@@ -239,7 +239,7 @@
 		$neworder = 1;
 
 	?>
-	<a href="projectchecklist.php?action=editchecklist&projectid=<?=$projectid?>" class="ui primary basic button">Edit checklist</a>
+	<!--<a href="projectchecklist.php?action=editchecklist&projectid=<?=$projectid?>" class="ui primary basic button">Edit checklist</a>-->
 
 	<datalist id="modalitylist">
 		<?
@@ -253,7 +253,7 @@
 	</datalist>
 	
 	<div class="ui container">
-		This table is a list of expected <u>imaging</u> items for this project<br><br>
+		<h2 class="ui header">List of expected <u>imaging</u> items for this project</h2>
 		<form method="POST" action="projectchecklist.php">
 		<input type="hidden" name="action" value="updateprojectchecklist">
 		<input type="hidden" name="projectid" value="<?=$projectid?>">
@@ -286,11 +286,11 @@
 				?>
 				<input type="hidden" name="itemid[<?=$neworder?>]" value="<?=$id?>">
 				<tr>
-					<td><input type="number" name="itemorder[<?=$neworder?>]" value="<?=$neworder?>" style="width:40px"></td>
-					<td><input type="text" name="itemname[<?=$neworder?>]" value="<?=$itemname?>" size="50"></td>
-					<td><input type="text" name="modality[<?=$neworder?>]" value="<?=$modality?>" list="modalitylist"></td>
-					<td><input type="text" name="protocol[<?=$neworder?>]" value="<?=$protocol?>" size="50"></td>
-					<td><input type="number" name="itemcount[<?=$neworder?>]" value="<?=$itemcount?>" style="width:40px"></td>
+					<td><div class="ui input"><input type="number" name="itemorder[<?=$neworder?>]" value="<?=$neworder?>" style="width:40px"></div></td>
+					<td><div class="ui input"><input type="text" name="itemname[<?=$neworder?>]" value="<?=$itemname?>" size="50"></div></td>
+					<td><div class="ui input"><input type="text" name="modality[<?=$neworder?>]" value="<?=$modality?>" list="modalitylist"></div></td>
+					<td><div class="ui input"><input type="text" name="protocol[<?=$neworder?>]" value="<?=$protocol?>" size="50"></div></td>
+					<td><div class="ui input"><input type="number" name="itemcount[<?=$neworder?>]" value="<?=$itemcount?>" style="width:40px"></div></td>
 					<!--<td><input type="text" name="frequency[<?=$neworder?>]" value="<?=$frequency?>"></td>-->
 					<!--<td><input type="text" name="frequencyunit[<?=$neworder?>]" value="<?=$frequencyunit?>"></td>-->
 				</tr>
@@ -301,11 +301,11 @@
 				?>
 				<input type="hidden" name="itemid[<?=$neworder?>]" value="">
 				<tr>
-					<td><input type="number" name="itemorder[<?=$neworder?>]" value="<?=$neworder?>" style="width:40px"></td>
-					<td><input type="text" name="itemname[<?=$neworder?>]" size="50"></td>
-					<td><input type="text" name="modality[<?=$neworder?>]" list="modalitylist"></td>
-					<td><input type="text" name="protocol[<?=$neworder?>]" size="50"></td>
-					<td><input type="number" name="itemcount[<?=$neworder?>]" style="width:40px" value="1"></td>
+					<td><div class="ui input"><input type="number" name="itemorder[<?=$neworder?>]" value="<?=$neworder?>" style="width:80px"></div></td>
+					<td><div class="ui input"><input type="text" name="itemname[<?=$neworder?>]" size="50"></div></td>
+					<td><div class="ui input"><input type="text" name="modality[<?=$neworder?>]" list="modalitylist"></div></td>
+					<td><div class="ui input"><input type="text" name="protocol[<?=$neworder?>]" size="50"></div></td>
+					<td><div class="ui input"><input type="number" name="itemcount[<?=$neworder?>]" style="width:80px" value="1"></div></td>
 					<!--<td><input type="text" name="frequency[<?=$neworder?>]"></td>-->
 					<!--<td><input type="text" name="frequencyunit[<?=$neworder?>]"></td>-->
 				</tr>
@@ -314,7 +314,7 @@
 					}
 				?>
 				<tr>
-					<td colspan="5" align="right" style="padding-right: 20px"><input type="submit" value="Save/Update"></td>
+					<td colspan="5" align="right" style="padding-right: 20px"><input class="ui primary button" type="submit" value="Save/Update"></td>
 				</tr>
 			</tbody>
 		</table>
@@ -387,16 +387,15 @@
 			} );		
 		</script>
 		
-		<div class="ui container">
-			<div class="ui two column grid">
-				<div class="column">
-					<h2 class="ui header"><?=$projectname?> Checklist</h2>
-					Displaying <b><?=$numenrollments?> enrollments</b>
-				</div>
-				<div class="right aligned column">
-					<a href="projectchecklist.php?action=editchecklist&projectid=<?=$projectid?>" class="ui primary basic button">Edit checklist</a>
-				</div>
+		<div class="ui two column grid">
+			<div class="column">
+				<h2 class="ui header"><?=$projectname?> Checklist</h2>
+				Displaying <b><?=$numenrollments?> enrollments</b>
 			</div>
+			<div class="right aligned column">
+				<a href="projectchecklist.php?action=editchecklist&projectid=<?=$projectid?>" class="ui primary basic button">Edit checklist</a>
+			</div>
+		</div>
 		<table class="ui celled very compact selectable black table" id="maintable">
 			<thead>
 			<tr>
@@ -587,7 +586,6 @@
 			</tr>
 			</tfoot>
 		</table>
-		</div>
 		<?
 	}
 	

@@ -625,7 +625,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                                             QString m2;
                                             int numfilesconv(0), numfilesrenamed(0);
                                             QString binpath = n->cfg["nidbdir"] + "/bin";
-                                            if (!img->ConvertDicom(filetype, indir, tmpdir, binpath, gzip, json, uid, QString("%1").arg(studynum), QString("%1").arg(seriesnum), datatype, numfilesconv, numfilesrenamed, m2))
+                                            if (!img->ConvertDicom(filetype, indir, tmpdir, binpath, gzip, json, uid, QString("%1").arg(studynum), QString("%1").arg(seriesnum), "", "", "", "", datatype, numfilesconv, numfilesrenamed, m2))
                                                 msgs << "Error converting files [" + m2 + "]";
                                             else
                                                 n->Log("Converted files successfully [" + m2 + "]");

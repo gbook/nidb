@@ -1127,12 +1127,14 @@
 				$tab_twoactive = "active";
 				$tab_threeactive = "";
 				$tab_fouractive = "";
+				$tab_fiveactive = "";
 			}
 			else {
 				$tab_oneactive = "";
 				$tab_twoactive = "";
 				$tab_threeactive = "";
 				$tab_fouractive = "";
+				$tab_fiveactive = "";
 				switch ($returntab) {
 					case 'settings': $tab_twoactive = "active"; break;
 					case 'datascripts': $tab_threeactive = "active"; break;
@@ -1157,6 +1159,7 @@
 				<? if ($type != "add") { ?>
 				<a class="<?=$tab_threeactive?> item item2" data-tab="third"><i class="file alternate icon"></i> Data & Scripts</a>
 				<a class="<?=$tab_fouractive?> item item2" data-tab="fourth"><i class="wrench icon"></i> Operations</a>
+				<a class="<?=$tab_fiveactive?> item item2" data-tab="fifth" id="checkTabTitle"><i class="check icon"></i> Checks</a>
 				<? } ?>
 			</div>
 
@@ -1346,23 +1349,32 @@
 								$percentfree = ($freespace / $totalspace) * 100.0;
 								
 								if ($percentfree > 10) {
-									$color = "green";
-									$icon = "check icon";
+									$diskcolor = "green";
+									$diskicon = "check icon";
+									$checks['Disk space']['level'] = 'ok';
+									$checks['Disk space']['message'] = "More than 10% disk free space on $clusterpath";
+									$checks['Disk space']['description'] = "No issues with disk space";
 								}
 								elseif ($percentfree > 1) {
-									$color = "yellow";
-									$icon = "exclamation";
-								}
+									$diskcolor = "orange";
+									$diskicon = "exclamation";
+									$checks['Disk space']['level'] = 'warning';
+									$checks['Disk space']['message'] = "Less than 10% disk free space on $clusterpath";
+									$checks['Disk space']['description'] = "The disk is running out of free space. It is possible that this pipeline will fail with an out of space error";
+								} 
 								else {
-									$color = "red";
-									$icon = "exclamation circle icon";
+									$diskcolor = "red";
+									$diskicon = "exclamation circle icon";
+									$checks['Disk space']['level'] = 'error';
+									$checks['Disk space']['message'] = "Less than 1% disk free space on $clusterpath";
+									$checks['Disk space']['description'] = "The disk is nearly full. It is probable that this pipeline will fail with an out of space error";
 								}
-								$msg = number_format($percentfree,1) . "% <div class='detail'>" . HumanReadableFilesize($freespace) . "</div>";
+								$diskmsg = number_format($percentfree,1) . "% <div class='detail'>" . HumanReadableFilesize($freespace) . "</div>";
 							}
 							else {
-								$color = "red";
-								$icon = "exclamation circle icon";
-								$msg = "<tt>$dfmount</tt> does not exist";
+								$diskcolor = "red";
+								$diskicon = "exclamation circle icon";
+								$diskmsg = "<tt>$dfmount</tt> does not exist";
 							}
 						?>
 						<table class="ui very basic compact collapsing table">
@@ -1376,7 +1388,7 @@
 							</tr>
 							<tr>
 								<td>Disk free space</td>
-								<td><div class="ui <?=$color?> label"><i class="<?=$icon?>"></i> <?=$msg?></div></td>
+								<td><div class="ui <?=$diskcolor?> label"><i class="<?=$diskicon?>"></i> <?=$diskmsg?></div></td>
 							</tr>
 						</table>
 					</td>
@@ -1649,6 +1661,18 @@
 						<div class="ui input">
 							<input type="number" name="pipelinenumproc" <?=$disabled?> value="<?=$numproc?>" min="1" max="350">
 						</div>
+						<?
+							if ($numproc > 1) {
+								$checks['Concurrent&nbsp;jobs']['level'] = 'ok';
+								$checks['Concurrent&nbsp;jobs']['message'] = "More than 1 concurrent process";
+								$checks['Concurrent&nbsp;jobs']['description'] = "Jobs will run in parallel";
+							}
+							else {
+								$checks['Concurrent&nbsp;jobs']['level'] = 'warning';
+								$checks['Concurrent&nbsp;jobs']['message'] = "Only 1 concurrent process allowed";
+								$checks['Concurrent&nbsp;jobs']['description'] = "Setting <tt>concurrent processes</tt> to 1 will only allow one cluster job to run at a time. Each job must finish before another can start. If a job errors or gets stuck, no other jobs will run.";
+							}
+						?>
 					</td>
 				</tr>
 				<tr>
@@ -1692,6 +1716,62 @@
 						</div>
 					</td>
 				</tr>
+				<?
+					if ($submithost == "") {
+						$checks['Cluster submit host']['level'] = 'error';
+						$checks['Cluster submit host']['message'] = "Cluster submit host is blank";
+						$checks['Cluster submit host']['description'] = "The cluster submit host must be specified. This is the hostname of the server to which cluster jobs are submitted.";
+					}
+					else {
+						$checks['Cluster submit host']['level'] = 'ok';
+					}
+					
+					if ($submithost == "") {
+						$checks['Cluster submit host username']['level'] = 'error';
+						$checks['Cluster submit host username']['message'] = "Cluster submit host username is blank";
+						$checks['Cluster submit host username']['description'] = "The cluster submit host username must be specified. This is the username used to login to the submit server to submit jobs.";
+					}
+					else {
+						$checks['Cluster submit host username']['level'] = 'ok';
+					}
+
+					if ($clusteruser == "") {
+						$checks['Cluster user']['level'] = 'error';
+						$checks['Cluster user']['message'] = "Cluster user is blank";
+						$checks['Cluster user']['description'] = "The cluster user must be specified. This is the username under which a job is run on the cluster.";
+					}
+					else {
+						$checks['Cluster user']['level'] = 'ok';
+					}
+					
+					if ($queue == "") {
+						$checks['Cluster queue']['level'] = 'error';
+						$checks['Cluster queue']['message'] = "Cluster queue is blank";
+						$checks['Cluster queue']['description'] = "The cluster queue must be specified. This is the queue (SGE) or partition (slurm) under which a job is run on the cluster.";
+					}
+					else {
+						$checks['Cluster queue']['level'] = 'ok';
+					}
+					
+					if ($numcores < 1) {
+						$checks['Number of cores']['level'] = 'error';
+						$checks['Number of cores']['message'] = "Cluster number of cores is not specified";
+						$checks['Number of cores']['description'] = "This the number of cores allocated per job on the cluster. This must be specified when submitting to a slurm cluster.";
+					}
+					else {
+						$checks['Number of cores']['level'] = 'ok';
+					}
+					
+					if ($memory == "") {
+						$checks['Memory']['level'] = 'error';
+						$checks['Memory']['message'] = "Cluster memory is blank";
+						$checks['Memory']['description'] = "This is the memory needed (in GB) by each job submitted to the cluster. This must be specified when submitting to a slurm cluster.";
+					}
+					else {
+						$checks['Memory']['level'] = 'ok';
+					}
+					
+				?>
 				<tr>
 					<td class="label" valign="top" align="right">Cluster user</td>
 					<td valign="top">
@@ -1773,6 +1853,7 @@
 		</div>
 
 		<!-- -------------------- Data & Scripts tab -------------------- -->
+		
 		<? if ($type != "add") { ?>
 		<div class="ui bottom attached <?=$tab_threeactive?> tab raised segment" data-tab="third">
 			<form method="post" action="pipelines.php" name="stepsform" id="stepsform" class="ui form">
@@ -2077,6 +2158,8 @@
 					</thead>
 				<?
 				$neworder = 1;
+				$hasprimary = false;
+				$blankmodality = true;
 				/* display all other rows, sorted by order */
 				$sqlstring = "select * from pipeline_data_def where pipeline_id = $id and pipeline_version = $version order by pdd_order + 0";
 				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -2124,6 +2207,9 @@
 					$dd[$dd_order]['optional'] = $row['pdd_optional'];
 					$dd[$dd_order]['datalevel'] = $row['pdd_level'];
 					$dd[$dd_order]['numimagescriteria'] = $row['pdd_numimagescriteria'];
+
+					if ($dd_isprimaryprotocol) $hasprimary = true;
+					if ($dd_modality) $blankmodality = false;
 					
 					?>
 					<style>
@@ -2587,6 +2673,27 @@
 				//} /* end of the check to display the data specs */
 				?>
 			</div>
+			
+			<?
+				if ($hasprimary == false) {
+					$checks['Primary data item']['level'] = 'error';
+					$checks['Primary data item']['message'] = "Primary data item not specified";
+					$checks['Primary data item']['description'] = "A primary data item must be specified. This determines the root imaging study from which other data can be associated and downloaded.";
+				}
+				else {
+					$checks['Primary data item']['level'] = 'ok';
+				}
+				
+				if ($blankmodality == true) {
+					$checks['Blank modality']['level'] = 'error';
+					$checks['Blank modality']['message'] = "A data item is missing a modality";
+					$checks['Blank modality']['description'] = "Modality must be specified for all data items.";
+				}
+				else {
+					$checks['Blank modality']['level'] = 'ok';
+				}
+				
+			?>
 
 			<div class="ui blue secondary attached segment">
 				<div class="ui two column grid">
@@ -2845,6 +2952,51 @@ echo "#$ps_command     $logged $ps_desc\n";
 			<p><a href="pipelines.php?action=delete&id=<?=$id?>&returntab=operations" class="ui red button" style="width:250px" onclick="return confirm('Are you sure you want to delete this pipeline?')"><i class="trash alternate icon"></i> Delete this pipeline</a></p>
 			<? } ?>
 		</div>
+
+		<!-- ---------- checks tab ---------- -->
+		
+		<div class="ui bottom attached <?=$tab_fiveactive?> tab raised segment" data-tab="fifth">
+			<table class="ui table">
+				<thead>
+					<th width="20%">Check</th>
+					<th>Message</th>
+					<th>Description</th>
+				</thead>
+				<?
+					foreach ($checks as $check => $value) {
+						if ($value['level'] == 'ok') {
+							$color = "green";
+							$icon = "check circle";
+						}
+						elseif ($value['level'] == 'warning') {
+							$color = "orange";
+							$icon = "info circle";
+						}
+						else {
+							$color = "red";
+							$icon = "exclamation circle";
+						}
+						
+						?>
+						<tr>
+							<td>
+								<div class="ui large fluid <?=$color?> label">
+									<i class="<?=$icon?> icon"></i>
+									<?=$check?>
+								</div>
+							</td>
+							<td>
+								<?=$value['message']?>
+							</td>
+							<td>
+								<?=$value['description']?>
+							</td>
+						<?
+					}
+				?>
+			</table>
+		</div>
+		
 		<? } ?>
 		
 		<? if ($formaction == "update") { ?>

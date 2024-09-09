@@ -50,7 +50,28 @@ imageIO::~imageIO()
 /* ---------------------------------------------------------- */
 /* --------- ConvertDicom ----------------------------------- */
 /* ---------------------------------------------------------- */
-bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QString bindir, bool gzip, bool json, QString uid, QString studynum, QString seriesnum, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg) {
+/**
+ * @brief This function acts as a wrapper for dcm2niix to convert DICOM to Nifti. The handles temporary directories and also renames files into NiDB format filenames
+ * @param filetype Output file type: `niftime`, `nifti3d`, `nifti4d`, `bids`
+ * @param indir Input directory
+ * @param outdir Output directory
+ * @param bindir Directory containing the dcm2niix binary
+ * @param gzip true to gzip the files, false otherwise
+ * @param json true to output JSON sidecar, false otherwise
+ * @param uid UID of the images (used in renaming the files)
+ * @param studynum Study number of the images (used in renaming the files)
+ * @param seriesnum Series number of the images (used in renaming the files)
+ * @param bidsSub **BIDS** BIDS subject label
+ * @param bidsSes **BIDS** BIDS session label
+ * @param protocol **BIDS** Protocol name
+ * @param bidsSuffix **BIDS** BIDS suffix
+ * @param datatype if 'parrec', this function will handle conversion slightly differently
+ * @param numfilesconv Number of files converted (doesn't work correctly)
+ * @param numfilesrenamed Number of files renamed
+ * @param msg Any messages generated during converstion
+ * @return `true` if successful, `false` otherwise
+ */
+bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QString bindir, bool gzip, bool json, QString uid, QString studynum, QString seriesnum, QString bidsSub, QString bidsSes, QString protocol, QString bidsSuffix, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg) {
 
     QStringList msgs;
 
@@ -94,8 +115,7 @@ bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QStr
         return false;
     }
 
-    /* delete any files that may already be in the output directory.. for example, an incomplete series was put in the output directory
-     * remove any stuff and start from scratch to ensure proper file numbering */
+    /* remove any files that may already be in the output directory.. for example, an incomplete series was put in the output directory */
     if ((outdir != "") && (outdir != "/") ) {
         QString systemstring2 = QString("rm -f %1/*.hdr %1/*.img %1/*.nii %1/*.gz").arg(outdir);
         msgs << SystemCommand(systemstring2, true, true);
@@ -115,8 +135,11 @@ bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QStr
 
     /* rename the files into something meaningful */
     m = "";
-    if (!BatchRenameFiles(outdir, seriesnum, studynum, uid, numfilesrenamed, m))
-        msgs << "Error renaming output files [" + m + "]";
+    if (filetype == "bids")
+        BatchRenameBIDSFiles(outdir, bidsSub, bidsSes, protocol, bidsSuffix, numfilesrenamed, m);
+    else
+        BatchRenameFiles(outdir, seriesnum, studynum, uid, numfilesrenamed, m);
+    msgs << "Renamed output files [" + m + "]";
 
     /* change back to original directory before leaving */
     QDir::setCurrent(pwd);

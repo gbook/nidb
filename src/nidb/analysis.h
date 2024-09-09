@@ -36,40 +36,41 @@ public:
 	void PrintAnalysisInfo();
     squirrelAnalysis GetSquirrelObject();
 
-	QString analysispath;
-	qint64 analysisid = -1;
+    QDateTime clusterEndDate; /*!< datetime the analysis finished running on the cluster */
+    QDateTime clusterStartDate; /*!< datetime the analysis started running on the cluster */
+    QDateTime endDate; /*!< datetime the analysis finished setup */
+    QDateTime startDate; /*!< datetime the analysis started setup (copying data) */
+    QString analysispath; /*!< disk path to the analysis */
+    QString hostname;  /*!< hostname on which the analysis was run */
+    QString notes; /*!< user-specified notes */
+    QString status; /*!< the last status */
+    QString statusmessage; /*!< the last status message */
+    bool isBad; /*!< true if analysis is marked as bad */
+    bool isComplete; /*!< true if analysis is marked as complete */
+    int numSeries; /*!< number of series downloaded */
+    qint64 analysisid = -1; /*!< analysis RowID */
+    qint64 diskSize; /*!< size on disk, in bytes */
 
-	int studynum = -1;
-	int studyid = -1;
-	QString studyDateTime;
-	QString uid;
-	int subjectid = -1;
+    /* subject/study information */
+    QString studyDateTime; /*!< study datetime */
+    QString uid; /*!< analysis UID */
+    int studyid = -1; /*!< study RowID */
+    int studynum = -1; /*!< study number */
+    int subjectid = -1; /*!< subject RowID */
 
-	QString status;
-	QString statusmessage;
-	QString notes;
-	bool isComplete;
-	bool isBad;
-	int numSeries;
-	QString hostname;
-	qint64 diskSize;
-	QDateTime startDate;
-	QDateTime clusterStartDate;
-	QDateTime clusterEndDate;
-	QDateTime endDate;
-
-	QString pipelinename;
-	int pipelineversion = -1;
-	int pipelineid = -1;
-	int pipelinelevel = -1;
-	QString pipelinedirectory;
-	QString pipelinedirstructure;
-	int jobid = -1;
-	bool exists = true;
-	bool isValid = true;
-	bool rerunResults = false;
-	bool runSupplement = false;
-	QString msg;
+    /* pipeline information */
+    QString msg;
+    QString pipelinedirectory;
+    QString pipelinedirstructure;
+    QString pipelinename;
+    bool exists = true;
+    bool isValid = true;
+    bool rerunResults = false;
+    bool runSupplement = false;
+    int jobid = -1;
+    int pipelineid = -1;
+    int pipelinelevel = -1;
+    int pipelineversion = -1;
 
 	/* export functions */
 	QJsonObject GetJSONObject();

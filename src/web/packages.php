@@ -33,6 +33,8 @@
 <body>
 	<div id="wrapper">
 <?
+	$timestart = microtime(true);
+
 	require "functions.php";
 	require "includes_php.php";
 	require "includes_html.php";
@@ -65,6 +67,7 @@
 
 	$objecttype = GetVariable("objecttype");
 	$objectids = GetVariable("objectids");
+	$objectIDsToDelete = GetVariable("objectidstodelete");
 	$modality = GetVariable("modality");
 	$enrollmentids = GetVariable("enrollmentids");
 	$subjectids = GetVariable("subjectids");
@@ -76,17 +79,22 @@
 	$pipelineids = GetVariable("pipelineids");
 	$datadictionaryids = GetVariable("datadictionaryids");
 	$drugids = GetVariable("drugids");
-	$measureids = GetVariable("measureids");
+	$observationids = GetVariable("observationids");
 	$includedrugs = GetVariable("includedrugs");
-	$includemeasures = GetVariable("includemeasures");
+	$includeobservations = GetVariable("includeobservations");
 	$includeexperiments = GetVariable("includeexperiments");
 	$includeanalysis = GetVariable("includeanalysis");
 	$includepipelines = GetVariable("includepipelines");
+
+	//PrintVariable($objectids);
 
 	if (count($seriesids) > 0)
 		$objectids = $seriesids;
 	if (count($seriesid) > 0)
 		$objectids = $seriesid;
+	if (trim($objectIDsToDelete) != "") {
+		$objectids = explode(",", $objectIDsToDelete);
+	}
 	
 	//PrintVariable($objectids);
 	
@@ -110,12 +118,15 @@
 			DisplayPackage($packageid);
 		}
 		elseif ($action == "addobjectstopackage") {
-			AddObjectsToPackage($packageid, $enrollmentids, $subjectids, $studyids, $seriesids, $modality, $experimentids, $analysisids, $pipelineids, $datadictionaryids, $drugids, $measureids, $includedrugs, $includemeasures, $includeexperiments, $includeanalysis, $includepipelines);
+			AddObjectsToPackage($packageid, $enrollmentids, $subjectids, $studyids, $seriesids, $modality, $experimentids, $analysisids, $pipelineids, $datadictionaryids, $drugids, $observationids, $includedrugs, $includeobservations, $includeexperiments, $includeanalysis, $includepipelines);
 			DisplayPackage($packageid);
 		}
 		elseif ($action == "removeobject") {
 			RemoveObject($packageid, $objecttype, $objectids);
 			DisplayPackage($packageid);
+		}
+		elseif ($action == "splitmodality") {
+			SplitPackageByModality($packageid);
 		}
 		elseif ($action == "export") {
 			ExportPackage($packageid);
@@ -133,8 +144,18 @@
 			DisplayPackageList();
 		}
 	}
+
+	//PrintVariable($GLOBALS['t']);
 	
 	/* ------------------------------------ functions ------------------------------------ */
+
+	/* -------------------------------------------- */
+	/* ------- MarkTime --------------------------- */
+	/* -------------------------------------------- */
+	function MarkTime($msg) {
+		$time = number_format((microtime(true) - $GLOBALS['timestart']), 3);
+		$GLOBALS['t'][][$msg] = $time;
+	}
 
 
 	/* -------------------------------------------- */
@@ -287,7 +308,7 @@
 					<br>
 					<? DisplayFormDrugs($enrollmentids, false); ?>
 					<br>
-					<? DisplayFormMeasures($enrollmentids, false); ?>
+					<? DisplayFormObservations($enrollmentids, false); ?>
 				
 					<br><br>
 					<h4 class="ui horizontal divider header">Select Package</h4>
@@ -406,7 +427,7 @@
 					<br>
 					<? DisplayFormDrugs($enrollmentids, false); ?>
 					<br>
-					<? DisplayFormMeasures($enrollmentids, false); ?>
+					<? DisplayFormObservations($enrollmentids, false); ?>
 				
 					<br><br>
 					<h4 class="ui horizontal divider header">Select Package</h4>
@@ -525,7 +546,7 @@
 					<br>
 					<? DisplayFormDrugs($enrollmentids, false); ?>
 					<br>
-					<? DisplayFormMeasures($enrollmentids, false); ?>
+					<? DisplayFormObservations($enrollmentids, false); ?>
 				
 					<br><br>
 					<h4 class="ui horizontal divider header">Select Package</h4>
@@ -1405,82 +1426,82 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- DisplayFormMeasures ---------------- */
+	/* ------- DisplayFormObservations ------------ */
 	/* -------------------------------------------- */
-	function DisplayFormMeasures($enrollmentids, $required) {
+	function DisplayFormObservations($enrollmentids, $required) {
 
 		$enrollmentidstr = implode2(",", $enrollmentids);
 
 		$sqlstring = "select * from measures a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join measurenames d on a.measurename_id = d.measurename_id where a.enrollment_id in (" . implode2(",", $enrollmentids) . ")";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$nummeasures = mysqli_num_rows($result);
+		$numobservations = mysqli_num_rows($result);
 		
 		if ($required) {
 			$checkboxstr = " checked onClick='return false' onKeyDown='return false' ";
 			$checkboxreadonly = "read-only";
 			$checkboxstate = "checked";
 			$labelstr = "will be added";
-			$numselected = $nummeasures;
+			$numselected = $numobservations;
 		}
 		else {
 			$labelstr = "selected";
 			$numselected = 0;
 		}
 		
-		if ((count($enrollmentids) > 0) && ($nummeasures > 0)) {
+		if ((count($enrollmentids) > 0) && ($numobservations > 0)) {
 			?>
 			<script type="text/javascript">
 				$(function() {
-					$("#selectallmeasures").click(function() {
+					$("#selectallobservations").click(function() {
 						var checked_status = this.checked;
-						$(".allmeasurees").find("input[type='checkbox']").each(function() {
+						$(".allobservations").find("input[type='checkbox']").each(function() {
 							this.checked = checked_status;
 						});
 						if (this.checked)
-							document.getElementById('includemeasures').checked = true;
+							document.getElementById('includeobservations').checked = true;
 					});
 				});
 				
-				function SelectAllMeasures() {
-					var checked_status = document.getElementById('includemeasures').checked;
-					$(".allmeasures").find("input[type='checkbox']").each(function() {
+				function SelectAllObservations() {
+					var checked_status = document.getElementById('includeobservations').checked;
+					$(".allobservations").find("input[type='checkbox']").each(function() {
 						this.checked = checked_status;
 					});
-					CheckSelectedMeasureCount();
+					CheckSelectedObservationCount();
 				}
 
-				function CheckSelectedMeasureCount(e) {
-					var n = document.querySelectorAll('input[type="checkbox"].measurecheck:checked').length;
-					document.getElementById('nummeasuresselected').innerHTML = n;
+				function CheckSelectedObservationCount(e) {
+					var n = document.querySelectorAll('input[type="checkbox"].observationcheck:checked').length;
+					document.getElementById('numobservationsselected').innerHTML = n;
 
 					if (e.checked)
-						document.getElementById('includemeasures').checked = true;
+						document.getElementById('includeobservations').checked = true;
 				}
 			</script>
 
 			<div class="ui grid">
 				<div class="ui four wide column">
-					<div class="ui toggle <?=$checkboxreadonly?> checkbox" onChange="SelectAllMeasures()">
-						<input type="checkbox" name="includemeasures" id="includemeasures" value="1" <?=$checkboxstate?>>
-						<label style="font-size:larger; font-weight: bold">Measures</label>
+					<div class="ui toggle <?=$checkboxreadonly?> checkbox" onChange="SelectAllObservations()">
+						<input type="checkbox" name="includeobservations" id="includeobservations" value="1" <?=$checkboxstate?>>
+						<label style="font-size:larger; font-weight: bold">Observations</label>
 					</div>
 				</div>
 				<div class="ui ten wide column">
-					<div class="ui left pointing red label"><span id="nummeasuresselected"><?=$numselected?></span> of <?=$nummeasures?> measures <?=$labelstr?></div>
+					<div class="ui left pointing red label"><span id="numobservationsselected"><?=$numselected?></span> of <?=$numobservations?> observations <?=$labelstr?></div>
 				</div>
 			</div>
 
 			<div class="ui accordion">
 				<div class="title">
 					<i class="dropdown icon"></i>
-					View measures
+					View observations
 				</div>
 				<div class="content">
 					<table class="ui very compact collapsing table">
 						<thead>
-							<th><input type="checkbox" id="selectallmeasures"></th>
+							<th><input type="checkbox" id="selectallobservations"></th>
 							<th>UID</th>
-							<th>Measure</th>
+							<th>Observation</th>
 							<th>Date</th>
 						</thead>
 						<tbody>
@@ -1491,17 +1512,17 @@
 							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$uid = $row['uid'];
 								$subjectid = $row['subject_id'];
-								$mesauredate = $row['measure_startdate'];
-								$measureid = $row['measure_id'];
-								$measurename = $row['measure_name'];
+								$observationdate = $row['measure_startdate'];
+								$observationid = $row['measure_id'];
+								$observationname = $row['measure_name'];
 								
-								$measureids[] = $measureid;
+								$observationids[] = $observationid;
 								?>
 									<tr>
-										<td class="allmeasures"><input type="checkbox" name="measureids[]" value="<?=$measureid?>" <?=$checkboxstr?> class="measurecheck" onClick="CheckSelectedMeasureCount(this);"></td>
+										<td class="allobservations"><input type="checkbox" name="observationids[]" value="<?=$observationid?>" <?=$checkboxstr?> class="observationcheck" onClick="CheckSelectedObservationCount(this);"></td>
 										<td><a href="subjects.php?subjectid=<?=$subjectid?>"><?=$uid?></a></td>
-										<td><?=$measurename?></td>
-										<td><?=$measuredate?></td>
+										<td><?=$observationname?></td>
+										<td><?=$observationdate?></td>
 									</tr>
 								<?
 							}
@@ -1516,7 +1537,7 @@
 			?>
 			<div class="ui toggle read-only checkbox">
 				<input type="checkbox" name="includeneasures" value="0">
-				<label style="font-size:larger; font-weight: bold">No measures found</label>
+				<label style="font-size:larger; font-weight: bold">No observations found</label>
 			</div>
 			<br>
 			<?
@@ -1675,11 +1696,11 @@
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				Notice("Removed $numobjects series");
 				break;
-			case "measure":
+			case "observation":
 				$sqlstring = "delete from package_measures where packagemeasure_id in ($objectidstr)";
 				PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				Notice("Removed $numobjects measures");
+				Notice("Removed $numobjects observations");
 				break;
 			case "drug":
 				$sqlstring = "delete from package_drugs where packagedrug_id in ($objectidstr)";
@@ -1718,7 +1739,7 @@
 	/* -------------------------------------------- */
 	/* ------- AddObjectsToPackage ---------------- */
 	/* -------------------------------------------- */
-	function AddObjectsToPackage($packageid, $enrollmentids, $subjectids, $studyids, $seriesids, $modality, $experimentids, $analysisids, $pipelineids, $datadictionaryids, $drugids, $measureids, $includedrugs, $includemeasures, $includeexperiments, $includeanalysis, $includepipelines) {
+	function AddObjectsToPackage($packageid, $enrollmentids, $subjectids, $studyids, $seriesids, $modality, $experimentids, $analysisids, $pipelineids, $datadictionaryids, $drugids, $observationids, $includedrugs, $includeobservations, $includeexperiments, $includeanalysis, $includepipelines) {
 
 		/* perform data checks */
 		$packageid = mysqli_real_escape_string($GLOBALS['linki'], $packageid);
@@ -1732,9 +1753,9 @@
 		$pipelineids = mysqli_real_escape_array($GLOBALS['linki'], $pipelineids);
 		$datadictionaryids = mysqli_real_escape_array($GLOBALS['linki'], $datadictionaryids);
 		$drugids = mysqli_real_escape_array($GLOBALS['linki'], $drugids);
-		$measureids = mysqli_real_escape_array($GLOBALS['linki'], $measureids);
+		$observationids = mysqli_real_escape_array($GLOBALS['linki'], $observationids);
 		$includedrugs = mysqli_real_escape_string($GLOBALS['linki'], $includedrugs);
-		$includemeasures = mysqli_real_escape_string($GLOBALS['linki'], $includemeasures);
+		$includeobservations = mysqli_real_escape_string($GLOBALS['linki'], $includeobservations);
 		$includeexperiments = mysqli_real_escape_string($GLOBALS['linki'], $includeexperiments);
 		$includeanalysis = mysqli_real_escape_string($GLOBALS['linki'], $includeanalysis);
 		$includepipelines = mysqli_real_escape_string($GLOBALS['linki'], $includepipelines);
@@ -1802,14 +1823,14 @@
 			$msg .= "Added " . count($drugids) . " drugs<br>";
 		}
 		
-		/* add any measures */
-		if ((count($measureids) > 0) && ($includemeasures) && (is_array($measureids))) {
-			foreach ($measureids as $measureid) {
-				$sqlstring = "insert ignore into package_measures (package_id, measure_id) values ($packageid, $measureid)";
+		/* add any observations */
+		if ((count($observationids) > 0) && ($includeobservations) && (is_array($observationids))) {
+			foreach ($observationids as $observationid) {
+				$sqlstring = "insert ignore into package_measures (package_id, measure_id) values ($packageid, $observationid)";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
-			$numobjects += count($measureids);
-			$msg .= "Added " . count($measureids) . " measures<br>";
+			$numobjects += count($observationids);
+			$msg .= "Added " . count($observationids) . " observations<br>";
 		}
 		
 		$title = "Added $numobjects objects to package";
@@ -1889,7 +1910,7 @@
 
 		/* declare variables */
 		$subjects = array();
-		$measures = array();
+		$observations = array();
 		$drugs = array();
 		$analyses = array();
 		$experiments = array();
@@ -1911,6 +1932,8 @@
 		$pkg['readme'] = $row['package_readme'];
 		$pkg['changes'] = $row['package_changes'];
 		$pkg['notes'] = $row['package_notes'];
+		
+		MarkTime("Getting enrollment data");
 		
 		/* get enrollment data */
 		$sqlstring = "select * from package_enrollments where package_id = $packageid";
@@ -1934,19 +1957,23 @@
 			//}
 		}
 		
+		MarkTime("Getting series data");
 		/* get series data */
 		$totalbytes = 0;
 		$totalfiles = 0;
 		$sqlstring = "select * from package_series where package_id = $packageid";
+		//$sqlstring = "select * from $modality"."_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join projects e on c.project_id = e.project_id where a.$modality"."series_id = '$id'";
+		
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$packageseriesid = $row['packageseries_id'];
 			$modality = $row['modality'];
 			$seriesid = $row['series_id'];
+			
 			list($path, $uid, $studynum, $seriesnum, $seriessize, $numfiles, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid) = GetSeriesInfo($seriesid, $modality);
 			
 			if ($uid != "") {
-				$subjects[$uid][$studynum][$modality][$seriesnum]['objectid'] = $objectid;
+				$subjects[$uid][$studynum][$modality][$seriesnum]['objectid'] = $packageseriesid;
 				$subjects[$uid][$studynum][$modality][$seriesnum]['seriesid'] = $seriesid;
 				$subjects[$uid][$studynum][$modality][$seriesnum]['studydatetime'] = $studydatetime;
 				$subjects[$uid][$studynum][$modality][$seriesnum]['projectname'] = $projectname;
@@ -1955,33 +1982,38 @@
 			}
 		}
 
-		/* get measures */
-		$sqlstring = "select * from package_measures a left join measures b on a.measure_id = b.measure_id left join measurenames c on b.measurename_id = c.measurename_id where a.package_id = $packageid";
+		MarkTime("Getting observation data");
+		/* get observations */
+		$sqlstring = "select * from package_measures a left join measures b on a.measure_id = b.measure_id left join measurenames c on b.measurename_id = c.measurename_id left join enrollment d on b.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.package_id = $packageid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$nummeasures = mysqli_num_rows($result);
+		$numobservations = mysqli_num_rows($result);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$enrollmentid = $row['enrollment_id'];
-			list($uid, $subjectid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
+			$uid = $row['uid'];
+			//list($uid, $subjectid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
 			$objectid = $row['packagemeasure_id'];
-			$measures[$uid][$objectid]['measureid'] = $row['measure_id'];
-			$measures[$uid][$objectid]['name'] = $row['measure_name'];
-			$measures[$uid][$objectid]['value'] = $row['measure_value'];
-			$measures[$uid][$objectid]['startdate'] = $row['measure_startdate'];
+			$observations[$uid][$objectid]['observationid'] = $row['measure_id'];
+			$observations[$uid][$objectid]['name'] = $row['measure_name'];
+			$observations[$uid][$objectid]['value'] = $row['measure_value'];
+			$observations[$uid][$objectid]['startdate'] = $row['measure_startdate'];
 		}
 
+		MarkTime("Getting drug data");
 		/* get drugs */
-		$sqlstring = "select * from package_drugs a left join drugs b on a.drug_id = b.drug_id left join drugnames c on b.drugname_id = c.drugname_id where a.package_id = $packageid";
+		$sqlstring = "select * from package_drugs a left join drugs b on a.drug_id = b.drug_id left join drugnames c on b.drugname_id = c.drugname_id left join enrollment d on b.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.package_id = $packageid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$numdrugs = mysqli_num_rows($result);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$enrollmentid = $row['enrollment_id'];
-			list($uid, $subjectid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
-			$objectid = $row['packagemeasure_id'];
+			$uid = $row['uid'];
+			//list($uid, $subjectid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
+			$objectid = $row['packagedrug_id'];
 			$drugs[$uid][$objectid]['drugid'] = $row['drug_id'];
 			$drugs[$uid][$objectid]['name'] = $row['drug_name'];
 			$drugs[$uid][$objectid]['startdate'] = $row['drug_startdate'];
 		}
 		
+		MarkTime("Getting experiment data");
 		/* get experiments */
 		$sqlstring = "select * from package_experiments a left join experiments b on a.experiment_id = b.experiment_id where a.package_id = $packageid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -1997,6 +2029,7 @@
 		}
 		$numexperiments = count($experiments);
 		
+		MarkTime("Getting pipeline data");
 		/* get pipelines */
 		$sqlstring = "select * from package_pipelines a left join pipelines b on a.pipeline_id = b.pipeline_id where a.package_id = $packageid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -2011,6 +2044,7 @@
 		}
 		$numpipelines = count($pipelines);
 
+		MarkTime("Getting analysis data");
 		/* get analysis */
 		$totalanalysisfiles = 0;
 		$totalanalysisbytes = 0;
@@ -2045,7 +2079,7 @@
 		/* get counts of all of the data objects */
 		$numsubjects = count($subjects);
 		$numstudies = 0;
-		//$nummeasures = 0;
+		//$numobservations = 0;
 		//$numdrugs = 0;
 		$numdatadict = count($datadictionaries);
 		$numgroupanalyses = count($groupanalyses);
@@ -2070,7 +2104,7 @@
 						<i class="exclamation circle icon"></i> Package Issues
 					</div>
 					<br>
-					<p><b>Missing objects detected in this package</b> The package manager creates pointers to existing data within NiDB until a squirrel package is actually exported. If data was added to this package and later deleted from NiDB, it can no longer be included in the package. These missing objects should be manually deleted from the package.
+					<p><b>Missing objects detected in this package</b> The package manager creates pointers to existing data within NiDB until a squirrel package is exported. If data was added to this package and later deleted from NiDB, it can no longer be included in the package. These missing objects should be manually deleted from the package.
 					<ul class="list">
 						<? foreach ($msgs as $msg) {
 							echo "<li>$msg\n";
@@ -2084,10 +2118,20 @@
 		}
 		
 		?>
+		<? MarkTime("Before including AGgrid"); ?>
+
+		<!-- Include the JS for AG Grid -->
+		<script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.noStyle.js"></script>
+		<!-- Include the core CSS, this is needed by the grid -->
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-grid.css"/>
+		<!-- Include the theme CSS, only need to import the theme you are going to use -->
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-theme-alpine.css"/>
+
+		<? MarkTime("After including AGgrid"); ?>
 
 		<div class="ui container">
 			<div class="ui top attached raised segment">
-				<div class="ui two column grid">
+				<div class="ui three column grid">
 					<div class="column">
 						<div class="ui header">
 							<img src="images/squirrel-icon-64.png"></img>
@@ -2123,6 +2167,10 @@
 							</div>
 						</div>
 					</div>
+					<div class="ui middle aligned right aligned column">
+						<h3>Operations</h3>
+						<a class="ui basic primary button" href="packages.php?action=splitmodality&packageid=<?=$packageid?>">Split by modality</a>
+					</div>
 				</div>
 			</div>
 			
@@ -2147,7 +2195,7 @@
 			<div class="ui attached large tabular menu">
 				<a class="active item item2" data-tab="overview"><i class="grey box open icon"></i>Package overview</a>
 				<a class="item item2" data-tab="subjects"><i class="grey user icon"></i> Subjects & Data</a>
-				<a class="item item2" data-tab="measures"><i class="grey clipboard icon"></i> Measures</a>
+				<a class="item item2" data-tab="observations"><i class="grey clipboard icon"></i> Observations</a>
 				<a class="item item2" data-tab="drugs"><i class="grey pills icon"></i> Drugs</a>
 				<a class="item item2" data-tab="analysis">Analysis</a>
 				<a class="item item2" data-tab="experiments">Experiments</a>
@@ -2160,7 +2208,14 @@
 				<div class="ui grid">
 					<div class="ui five wide column">
 						<div class="ui top attached segment" style="background-color: #eee">
-							<b>Package details</b>
+							<div class="ui two column grid">
+								<div class="ui left aligned column">
+									<b>Package details</b>
+								</div>
+								<div class="ui right aligned column">
+									<a href="packages.php?action=editform&packageid=<?=$packageid?>"><i class="pen icon"></i>Edit</a>
+								</div>
+							</div>
 						</div>
 						<table class="ui bottom attached table">
 							<tr>
@@ -2223,7 +2278,7 @@
 							//if ($numdatadict > 0) { $dictcolor = "fill:#FFFFCC,stroke:#444,stroke-width:1px"; $dicttext = "data-dictionary ($numdatadict)"; } else { $dictcolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:1px"; $dicttext = "data-dictionary"; }
 							if ($numanalysis > 0) { $analysiscolor = "fill:#FFFFCC,stroke:#444,stroke-width:1px"; $analysistext = "analysis ($numanalysis)"; } else { $analysiscolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:1px"; $analysistext = "analysis"; }
 							if ($numgroupanalyses > 0) { $groupanalysiscolor = "fill:#FFFFCC,stroke:#444,stroke-width:1px"; $groupanalysistext = "group-analysis ($numgroupanalyses)"; } else { $groupanalysiscolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:1px"; $groupanalysistext = "group-analysis"; }
-							if ($nummeasures > 0) { $meascolor = "fill:#FFFFCC,stroke:#444,stroke-width:1px"; $meastext = "measures ($nummeasures)"; } else { $meascolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:1px"; $meastext = "measures"; }
+							if ($numobservations > 0) { $meascolor = "fill:#FFFFCC,stroke:#444,stroke-width:1px"; $meastext = "observations ($numobservations)"; } else { $meascolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:1px"; $meastext = "observations"; }
 							if ($numdrugs > 0) { $drugcolor = "fill:#FFFFCC,stroke:#444,stroke-width:1px"; $drugtext = "drugs ($numdrugs)"; } else { $drugcolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:1px"; $drugtext = "drugs"; }
 							
 						?>
@@ -2238,7 +2293,7 @@
 								root(package)-->data(data);
 								data-->groupanalysis("<?=$groupanalysistext?>");
 								subjects-->studies("<?=$studtext?>");
-								subjects-->measures("<?=$meastext?>");
+								subjects-->observations("<?=$meastext?>");
 								subjects-->drugs("<?=$drugtext?>");
 								studies-->series("<?=$sertext?>");
 								studies-->analysis("<?=$analysistext?>");
@@ -2249,7 +2304,7 @@
 								style experiments <?=$expcolor?>;
 								%%style datadict <?=$dictcolor?>;
 								style groupanalysis <?=$groupanalysiscolor?>;
-								style measures <?=$meascolor?>;
+								style observations <?=$meascolor?>;
 								style drugs <?=$drugcolor?>;
 								style analysis <?=$analysiscolor?>;
 								style subjects <?=$subjcolor?>;
@@ -2334,7 +2389,7 @@
 				} */
 				?>
 				</ul> -->
-				
+
 				<script type="text/javascript">
 					$(function() {
 						$("#selectallseries").click(function() {
@@ -2350,16 +2405,6 @@
 				<input type="hidden" name="action" value="removeobject">
 				<input type="hidden" name="objecttype" value="series">
 				<input type="hidden" name="packageid" value="<?=$packageid?>">
-				<table class="ui very compact table">
-					<thead>
-						<th><input type="checkbox" id="selectallseries"></th>
-						<th>UID</th>
-						<th>StudyNum</th>
-						<th>StudyDateTime</th>
-						<th>ProjectName</th>
-						<th>Modality</th>
-						<th>SeriesNum</th>
-					</thead>
 				<?
 				ksort($subjects, SORT_NATURAL);
 				foreach ($subjects as $uid =>$studies) {
@@ -2377,47 +2422,92 @@
 									$seriesid = $ser['seriesid'];
 									$studydatetime = $ser['studydatetime'];
 									$projectname = $ser['projectname'];
-									?>
-									<tr>
-										<td class="allseries"><input type="checkbox" name="objectids[]" value="<?=$objectid?>"></td>
-										<td><?=$uid?></td>
-										<td><?=$studynum?></td>
-										<td><?=$studydatetime?></td>
-										<td><?=$projectname?></td>
-										<td><?=$modality?></td>
-										<td><?=$seriesnum?></td>
-									</tr>
-									<?
+									
+									$seriesRowData[] = "{ id: $objectid, uid: \"$uid\", studynum: \"$studynum\", studydatetime: \"$studydatetime\", projectname: \"$projectname\", modality: \"$modality\", seriesnum: \"$seriesnum\" }";
 								}
 							}
 						}
 					}
 				}
 				?>
-				</table>
-				<button type="submit" class="ui orange button"><i class="trash icon"></i>Remove selected series</button>
+				<div id="subjectsGrid" class="ag-theme-alpine" style="height: 50vh"></div>
+				<button type="submit" class="ui orange button" onClick=getSelectedSeries()><i class="trash icon"></i>Remove selected series</button>
+				<input type="hidden" id="selectedSeries" name="objectidstodelete">
 				</form>
+				
+				<?
+					$seriesData = implode(",", $seriesRowData);
+				?>
+
+				<script type="text/javascript">
+					let gridApiSeries;
+
+					/* get the selected series prior to form submission (form to remove series from package) */
+					function getSelectedSeries() {
+						var selectedRows = gridApiSeries.getSelectedRows();
+						var selectedRowsString = "";
+						selectedRows.forEach(function (selectedRow, index) {
+							if (index > 0) {
+								selectedRowsString += ",";
+							}
+							selectedRowsString += selectedRow.id;
+						});
+						document.getElementById("selectedSeries").value = selectedRowsString;
+					}
+
+					// Grid Options are properties passed to the grid
+					const gridOptionsSeries = {
+						// each entry here represents one column
+						columnDefs: [
+							{ field: 'id', hide: true },
+							{ headerName: "UID", field: "uid", editable: false, headerCheckboxSelection: true, checkboxSelection: true },
+							{ headerName: "Study Num", field: "studynum", editable: false },
+							{ headerName: "Series Num", field: "seriesnum", editable: false },
+							{ headerName: "Study Date", field: "studydatetime", editable: false },
+							{ headerName: "Modality", field: "modality", editable: false },
+							{ headerName: "Project", field: "projectname", editable: false }
+						],
+
+						rowData: [ <?=$seriesData?> ],
+						
+						// default col def properties get applied to all columns
+						defaultColDef: {sortable: true, filter: true, resizable: true},
+
+						rowSelection: 'multiple', // allow rows to be selected
+						animateRows: false, // have rows animate to new positions when sorted
+						rowMultiSelectWithClick: true,
+						suppressMovableColumns: true
+					};
+
+					$( document ).ready(function() {
+						// get div to host the grid
+						const eGridDiv = document.getElementById("subjectsGrid");
+						// new grid instance, passing in the hosting DIV and Grid Options
+						gridApiSeries = agGrid.createGrid(eGridDiv, gridOptionsSeries);
+					});
+				</script>
+				
 			</div>
 
 
-			<!-- measures tab -->
-			<div class="ui bottom attached tab raised segment" data-tab="measures">
+			<!-- observations tab -->
+			<div class="ui bottom attached tab raised segment" data-tab="observations">
 
 				<div class="ui message">
 					<div class="content">
 						<div class="header">
 							Object summary
 						</div>
-						<?=$nummeasures?> Measures
+						<?=$numobservations?> Observations
 					</div>				
 				</div>
 			
-				<? if (count($measures) > 0) { ?>
+				<? if (count($observations) > 0) { ?>
 				<script type="text/javascript">
 					$(function() {
-						$("#selectallmeasure").click(function() {
+						$("#selectallobservation").click(function() {
 							var checked_status = this.checked;
-							$(".allmeasure").find("input[type='checkbox']").each(function() {
+							$(".allobservation").find("input[type='checkbox']").each(function() {
 								this.checked = checked_status;
 							});
 						});
@@ -2426,41 +2516,80 @@
 				
 				<form method="post" action="packages.php">
 				<input type="hidden" name="action" value="removeobject">
-				<input type="hidden" name="objecttype" value="measure">
+				<input type="hidden" name="objecttype" value="observation">
 				<input type="hidden" name="packageid" value="<?=$packageid?>">
-				<table class="ui basic very compact table">
-					<thead>
-						<th><input type="checkbox" id="selectallmeasure"></th>
-						<th>UID</th>
-						<th>Measure</th>
-						<th>Value</th>
-						<th>Date</th>
-					</thead>
 				<?
-				ksort($measures, SORT_NATURAL);
-				foreach ($measures as $uid => $objects) {
-					foreach ($objects as $objectid => $measure) {
-						$measureid = $measure['measureid'];
-						$measurename = $measure['name'];
-						$measurevalue = $measure['value'];
-						$measuredate = $measure['startdate'];
-						?>
-						<tr>
-							<td class="allmeasure"><input type="checkbox" name="objectids[]" value="<?=$objectid?>"></td>
-							<td><?=$uid?></td>
-							<td><?=$measurename?></td>
-							<td><?=$measurevalue?></td>
-							<td><?=$measuredate?></td>
-						</tr>
-						<?
+				ksort($observations, SORT_NATURAL);
+				foreach ($observations as $uid => $objects) {
+					foreach ($objects as $objectid => $observation) {
+						$observationid = $observation['observationid'];
+						$observationname = $observation['name'];
+						$observationvalue = str_replace('"', '', $observation['value']);
+						$observationvalue = str_replace("'", "", $observationvalue);
+						$observationdate = $observation['startdate'];
+
+						$observationRowData[] = "{ id: $observationid, uid: \"$uid\", name: \"$observationname\", value: \"$observationvalue\", date: \"$observationdate\" }";
 					}
 				}
 				?>
-				</table>
-				<button type="submit" class="ui orange button"><i class="trash icon"></i>Remove selected measures</button>
+				<div id="observationsGrid" class="ag-theme-alpine" style="height: 50vh"></div>
+				<button type="submit" class="ui orange button" onClick=getSelectedObservations()><i class="trash icon"></i>Remove selected observations</button>
+				<input type="hidden" id="selectedObservations" name="objectidstodelete">
 				</form>
+				
+				<?
+					$observationData = implode(",", $observationRowData);
+					//PrintVariable($observationData);
+				?>
+
+				<script type="text/javascript">
+					let gridApiObservations;
+
+					/* get the selected series prior to form submission (form to remove series from package) */
+					function getSelectedObservations() {
+						var selectedRows = gridApiObservations.getSelectedRows();
+						var selectedRowsString = "";
+						selectedRows.forEach(function (selectedRow, index) {
+							if (index > 0) {
+								selectedRowsString += ",";
+							}
+							selectedRowsString += selectedRow.id;
+						});
+						document.getElementById("selectedObservations").value = selectedRowsString;
+					}
+
+					// Grid Options are properties passed to the grid
+					const gridOptionsObservations = {
+						// each entry here represents one column
+						columnDefs: [
+							{ field: 'id', hide: true },
+							{ headerName: "UID", field: "uid", editable: false, headerCheckboxSelection: true, checkboxSelection: true },
+							{ headerName: "Name", field: "name", editable: false },
+							{ headerName: "Value", field: "value", editable: false },
+							{ headerName: "Date", field: "date", editable: false }
+						],
+
+						rowData: [ <?=$observationData?> ],
+						
+						// default col def properties get applied to all columns
+						defaultColDef: {sortable: true, filter: true, resizable: true},
+
+						rowSelection: 'multiple', // allow rows to be selected
+						animateRows: false, // have rows animate to new positions when sorted
+						rowMultiSelectWithClick: true,
+						suppressMovableColumns: true
+					};
+
+					$( document ).ready(function() {
+						// get div to host the grid
+						const eGridDiv = document.getElementById("observationsGrid");
+						// new grid instance, passing in the hosting DIV and Grid Options
+						gridApiObservations = agGrid.createGrid(eGridDiv, gridOptionsObservations);
+					});
+				</script>
+				
 				<? } else { ?>
-				No measure objects in this package
+				No observation objects in this package
 				<? } ?>
 			</div>
 
@@ -2910,7 +3039,7 @@
 				<thead>
 					<tr>
 						<th>Name</th>
-						<th></th>
+						<!--<th></th>-->
 						<th>Description</th>
 						<th>Create date</th>
 						<th>Objects</th>
@@ -2918,26 +3047,74 @@
 				</thead>
 				<tbody>
 					<?
-						if ($_SESSION['isadmin'])
+						if ($_SESSION['isadmin']) {
 							$sqlstring = "select * from packages";
-						else
+						}
+						else {
 							$sqlstring = "select * from packages where user_id = " . $_SESSION['userid'];
+						}
+						
 						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$packageid = $row['package_id'];
 							$name = $row['package_name'];
 							$desc = $row['package_desc'];
 							$createdate = date('M j, Y h:ia',strtotime($row['package_date']));
-							
+						
 							$numobjects = 0;
+							
+							$sqlstringA = "select count(*) 'count' from package_analyses where package_id = $packageid";
+							$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+							$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+							$numobjects += $rowA['count'];
+
+							$sqlstringA = "select count(*) 'count' from package_drugs where package_id = $packageid";
+							$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+							$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+							$numobjects += $rowA['count'];
+
+							$sqlstringA = "select count(*) 'count' from package_experiments where package_id = $packageid";
+							$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+							$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+							$numobjects += $rowA['count'];
+
+							$sqlstringA = "select count(*) 'count' from package_measures where package_id = $packageid";
+							$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+							$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+							$numobjects += $rowA['count'];
+
+							$sqlstringA = "select count(*) 'count' from package_pipelines where package_id = $packageid";
+							$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+							$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+							$numobjects += $rowA['count'];
+
+							$sqlstringA = "select count(*) 'count' from package_pipelines where package_id = $packageid";
+							$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+							$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+							$numobjects += $rowA['count'];
+
+							$sqlstringA = "select count(*) 'count' from package_series where package_id = $packageid";
+							$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+							$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+							$numobjects += $rowA['count'];
+							
+							$sqlstringA = "select count(*) 'count' from package_studies where package_id = $packageid";
+							$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+							$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+							$numobjects += $rowA['count'];
+							
+							$sqlstringA = "select count(*) 'count' from package_subjects where package_id = $packageid";
+							$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+							$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+							$numobjects += $rowA['count'];
 							?>
 							<tr>
 								<td valign="top">
 									<a href="packages.php?action=displaypackage&packageid=<?=$packageid?>"><b><?=$name?></b></a>
 								</td>
-								<td valign="top">
+								<!--<td valign="top">
 									<a href="packages.php?action=editform&packageid=<?=$packageid?>"><i class="pen icon"></i> Edit</a>
-								</td>
+								</td>-->
 								<td valign="top"><?=$desc?></td>
 								<td valign="top"><?=$createdate?></td>
 								<td valign="top"><?=$numobjects?></td>
@@ -2969,6 +3146,50 @@
 		Notice("Package queued for export. Status can be checked, and package can be downloaded, from this page.");
 	}
 
+
+	/* -------------------------------------------- */
+	/* ------- SplitPackageByModality ------------- */
+	/* -------------------------------------------- */
+	function SplitPackageByModality($packageid) {
+		
+		$sqlstring = "select * from packages where package_id = $packageid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$userid = $row['user_id'];
+		$createdate = $row['package_date'];
+		$origname = mysqli_real_escape_string($GLOBALS['linki'], $row['package_name']);
+		$desc = mysqli_real_escape_string($GLOBALS['linki'], $row['package_desc']);
+		$subjectDirFormat = mysqli_real_escape_string($GLOBALS['linki'], $row['package_subjectdirformat']);
+		$studyDirFormat = mysqli_real_escape_string($GLOBALS['linki'], $row['package_studydirformat']);
+		$seriesDirFormat = mysqli_real_escape_string($GLOBALS['linki'], $row['package_seriesdirformat']);
+		$dataFormat = mysqli_real_escape_string($GLOBALS['linki'], $row['package_dataformat']);
+		$license = mysqli_real_escape_string($GLOBALS['linki'], $row['package_license']);
+		$readme = mysqli_real_escape_string($GLOBALS['linki'], $row['package_readme']);
+		$changes = mysqli_real_escape_string($GLOBALS['linki'], $row['package_changes']);
+		$notes = mysqli_real_escape_string($GLOBALS['linki'], $row['package_notes']);
+		
+		/* get list of modalities in this package */
+		$sqlstring = "select distinct(modality) 'modality' from package_series where package_id = $packageid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$modality = $row['modality'];
+
+			//StartSQLTransaction();
+			/* create new package for each modality */
+			$name = $origname . " - " . strtoupper($modality);
+			
+			$sqlstring = "insert into packages (user_id, package_date, package_name, package_desc, package_subjectdirformat, package_studydirformat, package_seriesdirformat, package_dataformat, package_license, package_readme, package_changes, package_notes) values ($userid, '$createdate', '$name', '$desc', '$subjectDirFormat', '$studyDirFormat', '$seriesDirFormat', '$dataFormat', '$license', '$readme', '$changes', '$notes')";
+			PrintSQL($sqlstring);
+		
+			/* foreach subject id
+				- copy the enrollment to new package
+				- 
+			*/
+			
+			//CommitSQLTransaction();
+		}
+	}
+	
 ?>
 
 
