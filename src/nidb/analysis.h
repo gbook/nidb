@@ -26,6 +26,9 @@
 #include "nidb.h"
 #include "squirrelAnalysis.h"
 
+/**
+ * @brief The analysis class
+ */
 class analysis
 {
 public:

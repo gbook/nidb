@@ -65,13 +65,14 @@ imageIO::~imageIO()
  * @param bidsSes **BIDS** BIDS session label
  * @param protocol **BIDS** Protocol name
  * @param bidsSuffix **BIDS** BIDS suffix
+ * @param bidsSuffix **BIDS** BIDS run
  * @param datatype if 'parrec', this function will handle conversion slightly differently
  * @param numfilesconv Number of files converted (doesn't work correctly)
  * @param numfilesrenamed Number of files renamed
  * @param msg Any messages generated during converstion
  * @return `true` if successful, `false` otherwise
  */
-bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QString bindir, bool gzip, bool json, QString uid, QString studynum, QString seriesnum, QString bidsSub, QString bidsSes, QString protocol, QString bidsSuffix, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg) {
+bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QString bindir, bool gzip, bool json, QString uid, QString studynum, QString seriesnum, QString bidsSub, QString bidsSes, QString protocol, QString bidsSuffix, int run, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg) {
 
     QStringList msgs;
 
@@ -136,7 +137,7 @@ bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QStr
     /* rename the files into something meaningful */
     m = "";
     if (filetype == "bids")
-        BatchRenameBIDSFiles(outdir, bidsSub, bidsSes, protocol, bidsSuffix, numfilesrenamed, m);
+        BatchRenameBIDSFiles(outdir, bidsSub, bidsSes, protocol, bidsSuffix, run, numfilesrenamed, m);
     else
         BatchRenameFiles(outdir, seriesnum, studynum, uid, numfilesrenamed, m);
     msgs << "Renamed output files [" + m + "]";

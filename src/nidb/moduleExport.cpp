@@ -27,6 +27,10 @@
 /* ---------------------------------------------------------- */
 /* --------- moduleExport ----------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Constructor
+ * @param a pointer to the nidb object
+ */
 moduleExport::moduleExport(nidb *a)
 {
     n = a;
@@ -37,6 +41,9 @@ moduleExport::moduleExport(nidb *a)
 /* ---------------------------------------------------------- */
 /* --------- ~moduleExport ---------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Destructor
+ */
 moduleExport::~moduleExport()
 {
     delete io;
@@ -46,6 +53,10 @@ moduleExport::~moduleExport()
 /* ---------------------------------------------------------- */
 /* --------- Run -------------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Entry point for this module. This function will perform any exports if they are queued
+ * @return The number of exports completed
+ */
 int moduleExport::Run() {
     n->Log("Entering the export module");
 
@@ -176,6 +187,11 @@ int moduleExport::Run() {
 /* ---------------------------------------------------------- */
 /* --------- GetExportStatus -------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Get the status of an export
+ * @param exportid ExportRowID
+ * @return The status
+ */
 QString moduleExport::GetExportStatus(int exportid) {
     QSqlQuery q;
     q.prepare("select status from exports where export_id = :id");
@@ -190,6 +206,13 @@ QString moduleExport::GetExportStatus(int exportid) {
 /* ---------------------------------------------------------- */
 /* --------- SetExportStatus -------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Set the status of an export
+ * @param exportid ExportRowID
+ * @param status Possible values `pending`, `deleting`, `complete`, `error`, `processing`, `cancelled`, `canceled`
+ * @param msg Message. Not required
+ * @return true if status was successfuly updated
+ */
 bool moduleExport::SetExportStatus(int exportid, QString status, QString msg) {
 
     if (((status == "pending") || (status == "deleting") || (status == "complete") || (status == "error") || (status == "processing") || (status == "cancelled") || (status == "canceled")) && (exportid > 0)) {
@@ -219,6 +242,11 @@ bool moduleExport::SetExportStatus(int exportid, QString status, QString msg) {
 /* ---------------------------------------------------------- */
 /* --------- GetExportSeriesList ---------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Obtain a list of series, given an exportRowID. Resulting list is stored in the private variable called 's'
+ * @param exportid exportRowID
+ * @return true if a series list was created
+ */
 bool moduleExport::GetExportSeriesList(int exportid) {
 
     QSqlQuery q;
@@ -365,6 +393,32 @@ bool moduleExport::GetExportSeriesList(int exportid) {
 /* ---------------------------------------------------------- */
 /* --------- ExportLocal ------------------------------------ */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Export data locally, to NFS, web, FTP, or public dataset.
+ * @param exportid exportRowID
+ * @param exporttype Possible values `nfs`, `web`, `publicdownload`
+ * @param nfsdir NFS directory
+ * @param publicdownloadid publicdownloadRowID
+ * @param publicdatasetdownloadid
+ * @param downloadflags Any download flags
+ * @param filetype File type. POssible values `bids`, `squirrel`, `package`
+ * @param dirformat Directory format
+ * @param preserveseries true to preserve series numbers when exporting directories
+ * @param gzip true to gzip Nifti output
+ * @param anonlevel Anonymization level
+ * @param behformat Behavioral data directory format
+ * @param behdirrootname Behavioral data directory root name
+ * @param behdirseriesname Behavioral data directory series name
+ * @param bidsreadme BIDS readme
+ * @param niftiflags Nifti export formatting flags
+ * @param bidsflags BIDS export formatting flags
+ * @param squirreltitle squirrel package title
+ * @param squirreldesc squirrel package description
+ * @param squirrelflags squirrel export formatting flags
+ * @param exportstatus [return] export status
+ * @param msg [return] Export messages
+ * @return
+ */
 bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir, int publicdownloadid, int publicdatasetdownloadid, QStringList downloadflags, QString filetype, QString dirformat, int preserveseries, bool gzip, int anonlevel, QString behformat, QString behdirrootname, QString behdirseriesname, QString bidsreadme, QStringList niftiflags, QStringList bidsflags, QString squirreltitle, QString squirreldesc, QStringList squirrelflags, QString &exportstatus, QString &msg) {
 
     QStringList msgs;
@@ -625,7 +679,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                                             QString m2;
                                             int numfilesconv(0), numfilesrenamed(0);
                                             QString binpath = n->cfg["nidbdir"] + "/bin";
-                                            if (!img->ConvertDicom(filetype, indir, tmpdir, binpath, gzip, json, uid, QString("%1").arg(studynum), QString("%1").arg(seriesnum), "", "", "", "", datatype, numfilesconv, numfilesrenamed, m2))
+                                            if (!img->ConvertDicom(filetype, indir, tmpdir, binpath, gzip, json, uid, QString("%1").arg(studynum), QString("%1").arg(seriesnum), "", "", "", "", 0, datatype, numfilesconv, numfilesrenamed, m2))
                                                 msgs << "Error converting files [" + m2 + "]";
                                             else
                                                 n->Log("Converted files successfully [" + m2 + "]");
@@ -937,6 +991,13 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 /* ---------------------------------------------------------- */
 /* --------- ExportXNAT ------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Export to XNAT format - BETA, unlikely to work
+ * @param exportid
+ * @param exportstatus
+ * @param msg
+ * @return
+ */
 bool moduleExport::ExportXNAT(int exportid, QString &exportstatus, QString &msg) {
 
     QStringList msgs;
@@ -2021,6 +2082,14 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
 /* ---------------------------------------------------------- */
 /* --------- StartRemoteNiDBTransaction --------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief This will start a transaction when sending data to a remove NiDB server
+ * @param remotenidbserver The remote NiDB hostname or IP address
+ * @param remotenidbusername The remote NiDB username
+ * @param remotenidbpassword The remote NiDB password, likely encrypted in a SHA1 hash
+ * @param m Any messages generated while starting the transaction
+ * @return the transaction ID
+ */
 int moduleExport::StartRemoteNiDBTransaction(QString remotenidbserver, QString remotenidbusername, QString remotenidbpassword, QString &m) {
 
     int ret = -1;
@@ -2059,6 +2128,14 @@ int moduleExport::StartRemoteNiDBTransaction(QString remotenidbserver, QString r
 /* ---------------------------------------------------------- */
 /* --------- EndRemoteNiDBTransaction ----------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief moduleExport::EndRemoteNiDBTransaction
+ * @param tid The transaction ID
+ * @param remotenidbserver The remote NiDB hostname or IP address
+ * @param remotenidbusername The remote NiDB username
+ * @param remotenidbpassword The remote NiDB password, likely encrypted in a SHA1 hash
+ * @param m Any messages generated while starting the transaction
+ */
 void moduleExport::EndRemoteNiDBTransaction(int tid, QString remotenidbserver, QString remotenidbusername, QString remotenidbpassword, QString &m) {
 
     QStringList msgs;

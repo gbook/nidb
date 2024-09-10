@@ -33,7 +33,9 @@
 #include "gdcmAnonymizer.h"
 #include "squirrel.h"
 
-
+/**
+ * @brief The moduleExport class handles exports from the archive. This includes sending data to FTP, NFS, remote NiDB and manages the writing of NDA, BIDS, and squirrel formats
+ */
 class moduleExport
 {
 public:

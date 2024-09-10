@@ -1060,11 +1060,12 @@ bool BatchRenameFiles(QString dir, QString seriesnum, QString studynum, QString 
  * @param bidsSes BIDS `ses-` label
  * @param protocol Protocol name
  * @param bidsSuffix BIDS suffix
+ * @param run BIDS run
  * @param numfilesrenamed Number of files renamed
  * @param msg Any messages about the renaming process
  * @return `true` if successful, `false` otherwise
  */
-bool BatchRenameBIDSFiles(QString dir, QString bidsSub, QString bidsSes, QString protocol, QString bidsSuffix, int &numfilesrenamed, QString &msg) {
+bool BatchRenameBIDSFiles(QString dir, QString bidsSub, QString bidsSes, QString protocol, QString bidsSuffix, int run, int &numfilesrenamed, QString &msg) {
 
     QDir d;
     if (!d.exists(dir)) {
@@ -1091,7 +1092,7 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSub, QString bidsSes, QString
         SortQStringListNaturally(files);
 
         /* rename the files */
-        int run = 1;
+        int r = run;
         foreach (QString fname, files) {
 
             f.setFileName(fname);
@@ -1109,13 +1110,13 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSub, QString bidsSes, QString
                     bidsSuf = "magnitude2";
             }
 
-            newName = fi.path() + "/" + QString("%1_%2_acq-%3_run-%4_%5%6").arg(bidsSub).arg(bidsSes).arg(protocol).arg(run).arg(bidsSuf).arg(ext.replace("*",""));
+            newName = fi.path() + "/" + QString("%1_%2_acq-%3_run-%4_%5%6").arg(bidsSub).arg(bidsSes).arg(protocol).arg(r).arg(bidsSuf).arg(ext.replace("*",""));
             //newName = fi.path() + "/" + QString("%1_%2_acq-%3_%4%5").arg(bidsSub).arg(bidsSes).arg(protocol).arg(bidsSuffix).arg(ext.replace("*",""));
             if (QFile::exists(newName)) {
                 /* add run number if this file already exists */
                 msg += "File " + newName + " already exists\n";
-                run++;
-                newName = fi.path() + "/" + QString("%1_%2_acq-%3_run-%4_%5%6").arg(bidsSub).arg(bidsSes).arg(protocol).arg(run).arg(bidsSuf).arg(ext.replace("*",""));
+                r++;
+                newName = fi.path() + "/" + QString("%1_%2_acq-%3_run-%4_%5%6").arg(bidsSub).arg(bidsSes).arg(protocol).arg(r).arg(bidsSuf).arg(ext.replace("*",""));
             }
 
             msg += QString(fname + " --> " + newName + "\n");

@@ -50,9 +50,9 @@ typedef QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>> subjectStudy
 class nidb
 {
 public:
-    QHash<QString, QString> cfg;
-    QSqlDatabase db;
-    bool debug;
+    QHash<QString, QString> cfg;    /*!< configuration variables */
+    QSqlDatabase db;                /*!< database connection */
+    bool debug;                     /*!< true if module is in debugging mode */
 
     nidb();
     nidb(QString m, bool c=false);
@@ -98,12 +98,12 @@ public:
 private:
     void FatalError(QString err);
     qint64 pid = 0;                 /*!< Currently running process id */
-    bool checkedin = false;         /*!< process id */
-    bool configLoaded = false;
-    QString module;                 /*!< module name */
-    QString logFilepath;
-    QString lockFilepath;
-    QFile log;
+    bool checkedin = false;         /*!< true if this module has been checked in */
+    bool configLoaded = false;      /*!< true if the config has been loaded */
+    QString module;                 /*!< current module name */
+    QString logFilepath;            /*!< LOG file path */
+    QString lockFilepath;           /*!< LOCK file path */
+    QFile log;                      /*!< the contents of the logfile. This is available as a buffer */
     bool runningFromCluster;        /*!< This nidb executable is being run from a cluster or location other than the main NiDB instance */
 };
 

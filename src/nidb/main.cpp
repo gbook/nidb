@@ -42,6 +42,12 @@
 /* ---------------------------------------------------------- */
 /* --------- main ------------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief main Entry point into the nidb executable. Only one module can be run at a time. NiDB is designed to have any number of modules start and run simultaneously. The management of when to start those modules is normally left to `cron`
+ * @param argc Argument count
+ * @param argv Argument variables
+ * @return 0 assuming success
+ */
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);

@@ -26,6 +26,9 @@
 #include "nidb.h"
 #include "squirrelIntervention.h"
 
+/**
+ * @brief The drug (intervention) class
+ */
 class drug
 {
 public:

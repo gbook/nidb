@@ -36,6 +36,9 @@
 #include "measure.h"
 #include "drug.h"
 
+/**
+ * @brief The archiveIO class is responsible for interacting with the archive, such as adding subjects and archiving data
+ */
 class archiveIO
 {
 public:

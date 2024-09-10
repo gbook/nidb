@@ -26,6 +26,10 @@
 /* ---------------------------------------------------------- */
 /* --------- archiveIO -------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Constructor
+ * @param The nidb object
+ */
 archiveIO::archiveIO(nidb *a)
 {
     n = a;
@@ -35,6 +39,9 @@ archiveIO::archiveIO(nidb *a)
 /* ---------------------------------------------------------- */
 /* --------- ~archiveIO ------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Default constructor
+ */
 archiveIO::~archiveIO()
 {
 
@@ -44,6 +51,10 @@ archiveIO::~archiveIO()
 /* ---------------------------------------------------------- */
 /* --------- SetUploadID ------------------------------------ */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Set the upload ID
+ * @param The uploadRowID
+ */
 void archiveIO::SetUploadID(int upid) {
     uploadid = upid;
 }
@@ -790,7 +801,7 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
  * @brief Archive a par/rec file pair
  * @param importRowID Use an existing ImportRowID. Pass -1 to this function otherwise
  * @param file .par file to import (.rec file will automatically be searched for)
- * @return
+ * @return true if successful, false otherwise
  */
 bool archiveIO::InsertParRec(int importRowID, QString file) {
 
@@ -1381,6 +1392,12 @@ bool archiveIO::InsertParRec(int importRowID, QString file) {
 /* ---------------------------------------------------------- */
 /* --------- InsertEEG -------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Insert an EEG series into the database
+ * @param importRowID The importRowID if this is part of an import, -1 otherwise
+ * @param file Filename to be inserted/archived
+ * @return true if successful, false otherwise
+ */
 bool archiveIO::InsertEEG(int importRowID, QString file) {
 
     AppendUploadLog(__FUNCTION__, QString("----- In InsertEEG(%1, %2) -----").arg(importRowID).arg(file));
@@ -1769,6 +1786,11 @@ QString archiveIO::CreateIDSearchList(QString PatientID, QString altuids) {
 /* ---------------------------------------------------------- */
 /* --------- CreateThumbnail -------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Create a PNG thumbnail from an input file (DICOM usually) using ImageMagick
+ * @param f Input file
+ * @param outdir Output directory for the thumbnail image
+ */
 void archiveIO::CreateThumbnail(QString f, QString outdir) {
 
     QString outfile = outdir + "/thumb.png";
@@ -1781,6 +1803,14 @@ void archiveIO::CreateThumbnail(QString f, QString outdir) {
 /* ---------------------------------------------------------- */
 /* --------- GetFamily -------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Get a family UID for this subject. Create a family if one doesn't already exist
+ * @param subjectRowID the subjectRowID
+ * @param subjectUID The subject UID
+ * @param familyRowID The familyRowID
+ * @param familyUID the family UID
+ * @return true if a family was created or an existing family was found. false otherwise
+ */
 bool archiveIO::GetFamily(int subjectRowID, QString subjectUID, int &familyRowID, QString &familyUID) {
     AppendUploadLog(__FUNCTION__, "Entering GetFamily()");
 
@@ -1832,6 +1862,13 @@ bool archiveIO::GetFamily(int subjectRowID, QString subjectUID, int &familyRowID
 /* ---------------------------------------------------------- */
 /* --------- GetProject ------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Search for a project by costcenter/project number
+ * @param destProjectID This value would be passed in from an upload/import, where the projectRowID is already known
+ * @param StudyDescription The study description which may contain the costcenter or project number
+ * @param projectRowID The projectRowID
+ * @return true if successful, false otherwise
+ */
 bool archiveIO::GetProject(int destProjectID, QString StudyDescription, int &projectRowID) {
     QSqlQuery q;
 
@@ -1874,6 +1911,13 @@ bool archiveIO::GetProject(int destProjectID, QString StudyDescription, int &pro
 /* ---------------------------------------------------------- */
 /* --------- GetEnrollment ---------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Search for an existing enrollment, or create it if it doesn't exist
+ * @param subjectRowID The subjectRowID
+ * @param projectRowID The projectRowID
+ * @param enrollmentRowID The found/created enrollmentRowID
+ * @return true if successful, false otherwise
+ */
 bool archiveIO::GetEnrollment(int subjectRowID, int projectRowID, int &enrollmentRowID) {
     QSqlQuery q;
 
@@ -1905,6 +1949,12 @@ bool archiveIO::GetEnrollment(int subjectRowID, int projectRowID, int &enrollmen
 /* ---------------------------------------------------------- */
 /* --------- SetAlternateIDs -------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Update a subject's alternate UIDs
+ * @param subjectRowID The subjectRowID to update
+ * @param enrollmentRowID The enrollment the alternate UIDs are associated with
+ * @param altuidlist The list of alternate UIDs
+ */
 void archiveIO::SetAlternateIDs(int subjectRowID, int enrollmentRowID, QStringList altuidlist) {
     /* update alternate IDs, if there are any */
     if (altuidlist.size() > 0) {
@@ -1925,6 +1975,19 @@ void archiveIO::SetAlternateIDs(int subjectRowID, int enrollmentRowID, QStringLi
 /* ---------------------------------------------------------- */
 /* --------- GetSubject ------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Find a subject based on specified criteria
+ * @param subjectMatchCriteria Possible match criteria `patientid`, `specificpatientid`, `patientidfromdir`, `uid`, `uidoraltuid`, `namesexdob`
+ * @param existingSubjectID If the existing subjectRowID is known, -1 otherwise
+ * @param projectID projectRowID
+ * @param PatientID PatientID
+ * @param PatientName PatientName
+ * @param PatientSex PatientSex
+ * @param PatientBirthDate
+ * @param subjectRowID [returned] subjectRowID
+ * @param subjectUID [returned] subject UID
+ * @return true if subject was found, false otherwise
+ */
 bool archiveIO::GetSubject(QString subjectMatchCriteria, int existingSubjectID, int projectID, QString PatientID, QString PatientName, QString PatientSex, QString PatientBirthDate, int &subjectRowID, QString &subjectUID) {
     subjectMatchCriteria = subjectMatchCriteria.toLower();
 
@@ -1982,6 +2045,18 @@ bool archiveIO::GetSubject(QString subjectMatchCriteria, int existingSubjectID, 
 /* ---------------------------------------------------------- */
 /* --------- CreateSubject ---------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Create a subject in the database. Create the UID. This function assumes that this subject does not already exist
+ * @param PatientID PatientID, this will become one of the alternate UIDs
+ * @param PatientName Subject name. Single string, not broken up into firstname/lastname
+ * @param PatientBirthDate Subject date of birth in the form `YYYY-MM-DD`
+ * @param PatientSex Sex, either M,F,O,U
+ * @param PatientWeight Subject weight in kilograms
+ * @param PatientSize Subject height in meters
+ * @param subjectRowID [returned] subjectRowID
+ * @param subjectUID [returned] subject UID
+ * @return
+ */
 bool archiveIO::CreateSubject(QString PatientID, QString PatientName, QString PatientBirthDate, QString PatientSex, double PatientWeight, double PatientSize, int &subjectRowID, QString &subjectUID) {
 
     subjectRowID = -1;
@@ -2036,6 +2111,17 @@ bool archiveIO::CreateSubject(QString PatientID, QString PatientName, QString Pa
 /* ---------------------------------------------------------- */
 /* --------- GetStudy --------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Search for an existing study
+ * @param studyMatchCriteria Possible values `modalitystudydate`, `studyuid`
+ * @param existingStudyID Existing studyRowID
+ * @param enrollmentRowID enrollmentRowID
+ * @param StudyDateTime Study datetime in the form `YYYY-MM-DD HH:MM:SS`
+ * @param Modality Modality
+ * @param StudyInstanceUID StudyInstanceUID from the DICOM header
+ * @param studyRowID [returned] studyRowID
+ * @return true if study was found, false otherwise
+ */
 bool archiveIO::GetStudy(QString studyMatchCriteria, int existingStudyID, int enrollmentRowID, QString StudyDateTime, QString Modality, QString StudyInstanceUID, int &studyRowID) {
 
     studyMatchCriteria = studyMatchCriteria.toLower();
@@ -2125,6 +2211,11 @@ bool archiveIO::CreateStudy(int subjectRowID, int enrollmentRowID, QString Study
 /* ---------------------------------------------------------- */
 /* --------- AppendUploadLog -------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Append a message to the upload log
+ * @param func Function that called this function. Normally use the __FUNCTION__ macro
+ * @param m Message to append
+ */
 void archiveIO::AppendUploadLog(QString func, QString m) {
     if ((uploadid >= 0) && (m.trimmed() != "")) {
         QString str = func + "() " + m;
@@ -2239,6 +2330,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 				QString studyaltid = s[uid][studynum][seriesnum]["studyaltid"];
                 QString modality = s[uid][studynum][seriesnum]["modality"];
                 QString seriesdesc = s[uid][studynum][seriesnum]["seriesdesc"];
+                int run = s[uid][studynum][seriesnum]["run"].toInt();
                 //QString seriesaltdesc = s[uid][studynum][seriesnum]["seriesaltdesc"].trimmed();
                 QString bidsEntity = s[uid][studynum][seriesnum]["bidsentity"];
                 QString bidsSuffix = s[uid][studynum][seriesnum]["bidssuffix"];
@@ -2341,7 +2433,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 
                             int numfilesconv(0), numfilesrenamed(0);
                             QString binpath = n->cfg["nidbdir"] + "/bin";
-                            if (!img->ConvertDicom("bids", datadir, tmpdir, binpath, true, false, subjectdir, sessiondir, seriesdir, bidsSub, bidsSes, seriesdesc, bidsSuffix, datatype, numfilesconv, numfilesrenamed, m))
+                            if (!img->ConvertDicom("bids", datadir, tmpdir, binpath, true, false, subjectdir, sessiondir, seriesdir, bidsSub, bidsSes, seriesdesc, bidsSuffix, run, datatype, numfilesconv, numfilesrenamed, m))
                                 msgs << "Error converting files [" + m + "]";
                             else
                                 n->Log(m);
@@ -3135,6 +3227,8 @@ bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modal
 
     QSqlQuery q;
     n->Log(QString("seriesids size [%1]").arg(seriesids.size()));
+    QStringList seriesDescEncountered;
+    QHash<QString, int> runs;
     for (int i=0; i<seriesids.size(); i++) {
         qint64 seriesid = seriesids[i];
         QString modality = modalities[i];
@@ -3178,6 +3272,18 @@ bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modal
 
                 double subjectAge = GetPatientAge("", studydate, subjectdob);
 
+                if (seriesDescEncountered.contains(seriesdesc)) {
+                    runs[seriesdesc] += 1;
+                    n->Log(QString("runs[%1] = %2").arg(seriesdesc).arg(runs[seriesdesc]));
+                }
+                else {
+                    n->Log(QString("seriesDescEncountered size before [%1]").arg(seriesDescEncountered.size()));
+                    n->Log(QString("appending [%1] to seriesDescEncountered").arg(seriesdesc));
+                    seriesDescEncountered << seriesdesc;
+                    runs[seriesdesc] = 1;
+                    n->Log(QString("seriesDescEncountered size after [%1]").arg(seriesDescEncountered.size()));
+                }
+
                 QSqlQuery q2;
                 q2.prepare("select * from bids_mapping where project_id = :projectid and protocolname = :protocol and imagetype = :imagetype and modality = :modality");
                 q2.bindValue(":projectid", projectid);
@@ -3210,6 +3316,7 @@ bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modal
                 s[uid][studynum][seriesnum]["seriessize"] = QString("%1").arg(seriessize);
                 s[uid][studynum][seriesnum]["seriesnotes"] = seriesnotes;
                 s[uid][studynum][seriesnum]["seriesdesc"] = seriesdesc;
+                s[uid][studynum][seriesnum]["run"] = QString("%1").arg(runs[seriesdesc]);
                 s[uid][studynum][seriesnum]["seriesaltdesc"] = seriesaltdesc;
                 s[uid][studynum][seriesnum]["bidsentity"] = bidsEntity;
                 s[uid][studynum][seriesnum]["bidssuffix"] = bidsSuffix;
