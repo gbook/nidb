@@ -778,6 +778,8 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$uid = $row['uid'];
 		$seriesnum = $row['series_num'];
+		$seriesdesc = $row['series_desc'];
+		$imagetype = $row['image_type'];
 		$seriessize = $row['series_size'];
 		$numfiles = $row['numfiles'];
 		$studynum = $row['study_num'];
@@ -791,7 +793,7 @@
 		$projectid = $row['project_id'];
 		
 		$path = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum";
-		return array($path, $uid, $studynum, $seriesnum, $seriessize, $numfiles, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid);
+		return array($path, $uid, $studynum, $seriesnum, $seriesdesc, $imagetype, $seriessize, $numfiles, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid);
 	}
 
 

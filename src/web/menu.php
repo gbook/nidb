@@ -128,7 +128,7 @@
 				$studyid = GetVariable("studyid");
 			}
 			if (($seriesid != "") && ($modality != "")) {
-				list($path1, $uid, $studynum, $seriesnum, $seriessize, $numfiles, $studyid, $subjectid, $modality1, $studytype1, $studydatetime1, $enrollmentid1, $projectname, $projectid) = GetSeriesInfo($seriesid, $modality);
+				list($path1, $uid, $studynum, $seriesnum, $seriesdesc, $imagetype, $seriessize, $numfiles, $studyid, $subjectid, $modality1, $studytype1, $studydatetime1, $enrollmentid1, $projectname, $projectid) = GetSeriesInfo($seriesid, $modality);
 				?>
 				<a href="projects.php?action=displayprojectinfo&id=<?=$projectid?>" class="item"><?=$projectname?></a>
 				<a href="subjects.php?id=<?=$subjectid?>" class="item"><?=$uid?></a>
@@ -374,7 +374,7 @@
 	<? }?>
 
 <div class="ui grid" id="mainPageGrid">
-	<div class="sixteen wide column" style="margin: 15px; overflow-x: auto">
+	<div class="sixteen wide column" style="margin: 15px; overflow: visible">
 			<!--  begin main page content -->
 <?			
 	if (count($_POST, COUNT_RECURSIVE) >= ini_get("max_input_vars")) {

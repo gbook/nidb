@@ -1970,7 +1970,7 @@
 			$modality = $row['modality'];
 			$seriesid = $row['series_id'];
 			
-			list($path, $uid, $studynum, $seriesnum, $seriessize, $numfiles, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid) = GetSeriesInfo($seriesid, $modality);
+			list($path, $uid, $studynum, $seriesnum, $seriesdesc, $imagetype, $seriessize, $numfiles, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid) = GetSeriesInfo($seriesid, $modality);
 			
 			if ($uid != "") {
 				$subjects[$uid][$studynum][$modality][$seriesnum]['objectid'] = $packageseriesid;

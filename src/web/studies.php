@@ -200,6 +200,9 @@
 			ResetQA($seriesids);
 			DisplayStudy($studyid);
 			break;
+		case 'editbidsmapping':
+			EditBIDSMapping($seriesid, $modality);
+			break;
 		case 'updatebidsmapping':
 			UpdateBIDSMapping($studyid, $protocol, $imagetype, $bidsentity, $bidssuffix);
 			DisplayStudy($studyid);
@@ -795,6 +798,102 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
 		Notice("BIDS mapping updated for this project<br><tt>$protocol | $imagetype</tt> mapped to <tt>$entity:$suffix</tt>");
+	}
+	
+
+	/* -------------------------------------------- */
+	/* ------- EditBIDSMapping -------------------- */
+	/* -------------------------------------------- */
+	function EditBIDSMapping($seriesid, $modality) {
+		$seriesid = mysqli_real_escape_string($GLOBALS['linki'], $seriesid);
+		$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
+
+		$bidsentities['anat'] = array('IRT1','MESE','MEGRE','MP2RAGE','MPM','MTS','MTR','T1map','T2map','T2starmap','R1map','R2map','R2starmap','PDmap','MTRmap','MTsat','UNIT1','T1rho','MWFmap','MTVmap','Chimap','S0map','M0map','T1w','T2w','PDw','T2starw','FLAIR','inplaneT1','inplaneT2','PDT2','angio','T2star','FLASH','PD','VFA','defacemask');
+		$bidsentities['dwi'] = array('dwi','sbref','physio','stim');
+		$bidsentities['fmap'] = array('TB1AFI','TB1TFL','TB1RFM','RB1COR','TB1DAM','TB1EPI','TB1SRGE','TB1map','RB1map','epi','m0scan','phasediff','phase1','phase2','magnitude1','magnitude2','magnitude','magnitude1and2','fieldmap');
+		$bidsentities['func'] = array('bold','cbv','sbref','events','phase','physio','stim');
+		$bidsentities['perf'] = array('asl','m0scan','aslcontext','asllabeling','physio','stim');
+		$bidsentities['derived'] = array('derived');
+
+		list($path, $uid, $studynum, $seriesnum, $seriesdesc, $imagetype, $seriessize, $numfiles, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid) = GetSeriesInfo($seriesid, $modality);
+		
+		?>
+		<div class="ui text container" style="overflow:visible">
+			
+			<h1 class="ui header">Mapping NiDB series</h1>
+			<div class="ui segment">
+				<table>
+					<tr>
+						<td><b>Series description</b></td>
+						<td><tt><?=$seriesdesc?></tt></td>
+					</tr>
+					<tr>
+						<td><b>Image Type</b></td>
+						<td><tt><?=$imagetype?></tt></td>
+					</tr>
+					<tr>
+						<td><b>Project</b></td>
+						<td><tt><?=$projectname?></tt></td>
+					</tr>
+				</table>
+			</div>
+			
+			<h1 class="ui header">to BIDS</h1>
+			
+			<div class="ui segment">
+			
+				<form method="post" action="studies.php" class="ui form" style="overflow:visible">
+					<input type="hidden" name="action" value="updatebidsmapping">
+				
+					<div class="field">
+						<label>BIDS entity:suffix</label>
+						<div class="ui selection dropdown">
+							<input type="hidden" name="bidsentitysuffix">
+							<i class="dropdown icon"></i>
+							<div class="default text">Select Entity:Suffix</div>
+							<div class="scrollhint menu">
+								<?
+									ksort($bidsentities);
+									foreach ($bidsentities as $entity => $suff) {
+										sort($suff);
+										foreach ($suff as $suffix) {
+											?>
+											<div class="item" data-value="$entity:$suffix"><?=$entity?> : <?=$suffix?></div>					
+											<?
+										}
+									}
+								?>
+							</div>
+						</div>
+					</div>
+
+					<div class="field">
+						<label>BIDS IntendedFor <span style="font-weight:normal">(Comma separated list of series descriptions)</span></label>
+						<input type="text" name="bidsintendedfor" value="<?=$intendedfor?>">
+					</div>
+
+					<div class="field">
+						<label>BIDS Run # <span style="font-weight:normal">(This series will always be labeled <tt>run-#</tt>)</span></label>
+						<input type="number" name="bidsrun" value="<?=$run?>">
+					</div>
+
+					<div class="field">
+						<div class="ui checkbox">
+							<input type="checkbox" name="autonumberruns" value="1">
+							<label>Automatically number runs</label>
+						</div>
+					</div>
+
+					<div class="field">
+						<label>BIDS Task <span style="font-weight:normal">(<tt>task-</tt> filename option)</span></label>
+						<input type="text" name="bidstask" value="<?=$bidstask?>">
+					</div>
+				
+					<input type="submit" value="Update" class="ui primary button">
+				</form>
+			</div>
+		</div>
+		<?
 	}
 	
 	
@@ -2272,6 +2371,7 @@
 											?>
 										</div>
 									</div>
+									<a href="studies.php?action=editbidsmapping&modality=mr&seriesid=<?=$mrseries_id?>">Edit BIDS</a>
 								</td>
 								<td style="font-size:8pt"><?=$series_datetime?></td>
 								<td style="font-size:8pt"><?=$series_notes;?></td>
