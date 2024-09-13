@@ -3292,11 +3292,17 @@ bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modal
                 q2.bindValue(":modality", modality);
                 n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
 
-                QString bidsEntity, bidsSuffix;
+                QString bidsEntity, bidsSuffix, bidsIntendedFor, bidsTask;
+                int bidsRun;
+                bool bidsAutoRun;
                 if (q2.size() > 0) {
                     q2.first();
                     bidsEntity = q2.value("bidsentity").toString();
                     bidsSuffix = q2.value("bidssuffix").toString();
+                    bidsIntendedFor = q2.value("bidsintendedfor").toString();
+                    bidsRun = q2.value("bidsrun").toInt();
+                    bidsAutoRun = q2.value("bidsautorun").toBool();
+                    bidsTask = q2.value("bidstask").toString();
                 }
 
                 QString datadir = QString("%1/%2/%3/%4/%5").arg(n->cfg["archivedir"]).arg(uid).arg(studynum).arg(seriesnum).arg(datatype);
@@ -3320,6 +3326,10 @@ bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modal
                 s[uid][studynum][seriesnum]["seriesaltdesc"] = seriesaltdesc;
                 s[uid][studynum][seriesnum]["bidsentity"] = bidsEntity;
                 s[uid][studynum][seriesnum]["bidssuffix"] = bidsSuffix;
+                s[uid][studynum][seriesnum]["bidsrun"] = QString("%1").arg(bidsRun);
+                s[uid][studynum][seriesnum]["bidsautorun"] = QString("%1").arg(bidsAutoRun);
+                s[uid][studynum][seriesnum]["bidsintendedfor"] = bidsIntendedFor;
+                s[uid][studynum][seriesnum]["bidstask"] = bidsTask;
                 s[uid][studynum][seriesnum]["numfilesbeh"] = QString("%1").arg(numfilesbeh);
                 s[uid][studynum][seriesnum]["numfiles"] = QString("%1").arg(numfiles);
                 s[uid][studynum][seriesnum]["projectname"] = projectname;
