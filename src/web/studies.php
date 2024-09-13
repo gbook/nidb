@@ -59,9 +59,15 @@
 	$series_num = GetVariable("series_num");
 	$notes = GetVariable("notes");
 	$protocol = GetVariable("protocol");
+	$seriesdesc = GetVariable("seriesdesc");
 	$imagetype = GetVariable("imagetype");
 	$bidsentity = GetVariable("bidsentity");
 	$bidssuffix = GetVariable("bidssuffix");
+	$bidsentitysuffix = GetVariable("bidsentitysuffix");
+	$bidsintendedfor = GetVariable("bidsintendedfor");
+	$bidsrun = GetVariable("bidsrun");
+	$bidsautonumberruns = GetVariable("bidsautonumberruns");
+	$bidstask = GetVariable("bidstask");
 	$series_datetime = GetVariable("series_datetime");
 	$studydatetime = GetVariable("studydatetime");
 	$studyageatscan = GetVariable("studyageatscan");
@@ -204,7 +210,7 @@
 			EditBIDSMapping($seriesid, $modality);
 			break;
 		case 'updatebidsmapping':
-			UpdateBIDSMapping($studyid, $protocol, $imagetype, $bidsentity, $bidssuffix);
+			UpdateBIDSMapping($studyid, $seriesdesc, $imagetype, $bidsentitysuffix, $bidsintendedfor, $bidsrun, $bidsautonumberruns, $bidstask);
 			DisplayStudy($studyid);
 			break;
 		case 'displayfiles':
@@ -784,20 +790,33 @@
 	/* -------------------------------------------- */
 	/* ------- UpdateBIDSMapping ------------------ */
 	/* -------------------------------------------- */
-	function UpdateBIDSMapping($studyid, $protocol, $imagetype, $entity, $suffix) {
+	function UpdateBIDSMapping($studyid, $seriesdesc, $imagetype, $bidsentitysuffix, $bidsintendedfor, $bidsrun, $bidsautonumberruns, $bidstask) {
 		$studyid = mysqli_real_escape_string($GLOBALS['linki'], $studyid);
-		$protocol = mysqli_real_escape_string($GLOBALS['linki'], $protocol);
+		$seriesdesc = mysqli_real_escape_string($GLOBALS['linki'], $seriesdesc);
 		$imagetype = mysqli_real_escape_string($GLOBALS['linki'], $imagetype);
-		$entity = mysqli_real_escape_string($GLOBALS['linki'], $entity);
-		$suffix = mysqli_real_escape_string($GLOBALS['linki'], $suffix);
+		$bidsentitysuffix = mysqli_real_escape_string($GLOBALS['linki'], $bidsentitysuffix);
+		$bidsintendedfor = mysqli_real_escape_string($GLOBALS['linki'], $bidsintendedfor);
+		$bidsrun = mysqli_real_escape_string($GLOBALS['linki'], $bidsrun);
+		$bidsautonumberruns = mysqli_real_escape_string($GLOBALS['linki'], $bidsautonumberruns);
+		$bidstask = mysqli_real_escape_string($GLOBALS['linki'], $bidstask);
+		
+		list($bidsentity, $bidssuffix) = explode(":", $bidsentitysuffix);
+		if ($bidsautonumberruns == "1")
+			$bidsautonumberruns = 1;
+		else
+			$bidsautonumberruns = 0;
+
+		if ($bidsrun == "")
+			$bidsrun = 0;
 
 		list($path, $uid, $studynum, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid) = GetStudyInfo($studyid);
 		$modality = strtolower($modality);
 		
-		$sqlstring = "insert ignore into bids_mapping (project_id, protocolname, imagetype, modality, bidsentity, bidssuffix) values ($projectid, '$protocol', '$imagetype', '$modality', '$entity', '$suffix') on duplicate key update bidsentity = '$entity', bidssuffix = '$suffix'";
+		$sqlstring = "insert ignore into bids_mapping (project_id, protocolname, imagetype, modality, bidsentity, bidssuffix, bidsrun, bidsautorun, bidsintendedfor, bidstask) values ($projectid, '$seriesdesc', '$imagetype', '$modality', '$bidsentity', '$bidssuffix', $bidsrun, $bidsautonumberruns, '$bidsintendedfor', '$bidstask') on duplicate key update bidsentity = '$bidsentity', bidssuffix = '$bidssuffix', bidsrun = $bidsrun, bidsautorun = $bidsautonumberruns, bidsintendedfor = '$bidsintendedfor', bidstask = '$bidstask'";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		PrintSQL($sqlstring);
 
-		Notice("BIDS mapping updated for this project<br><tt>$protocol | $imagetype</tt> mapped to <tt>$entity:$suffix</tt>");
+		Notice("BIDS mapping updated for this project<br><tt>$seriesdesc | $imagetype</tt> mapped to <tt>$entity:$suffix</tt>");
 	}
 	
 
@@ -816,7 +835,20 @@
 		$bidsentities['derived'] = array('derived');
 
 		list($path, $uid, $studynum, $seriesnum, $seriesdesc, $imagetype, $seriessize, $numfiles, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid) = GetSeriesInfo($seriesid, $modality);
-		
+
+		$imagetype2 = $imagetype;
+		$imagetype2 = str_replace("\\", "\\\\", $imagetype2);
+		$sqlstring = "select * from bids_mapping where protocolname = '$seriesdesc' and imagetype = '$imagetype2' and modality = 'MR' and project_id = $projectid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		//PrintVariable($row);
+		$bidsentity = $row['bidsentity'];
+		$bidssuffix = $row['bidssuffix'];
+		$bidsintendedfor = $row['bidsintendedfor'];
+		$bidsrun = $row['bidsrun'];
+		$bidsautonumberruns = $row['bidsautorun'];
+		$bidstask = $row['bidstask'];
+
 		?>
 		<div class="ui text container" style="overflow:visible">
 			
@@ -844,11 +876,14 @@
 			
 				<form method="post" action="studies.php" class="ui form" style="overflow:visible">
 					<input type="hidden" name="action" value="updatebidsmapping">
+					<input type="hidden" name="studyid" value="<?=$studyid?>">
+					<input type="hidden" name="seriesdesc" value="<?=$seriesdesc?>">
+					<input type="hidden" name="imagetype" value="<?=$imagetype?>">
 				
 					<div class="field">
 						<label>BIDS entity:suffix</label>
 						<div class="ui selection dropdown">
-							<input type="hidden" name="bidsentitysuffix">
+							<input type="hidden" name="bidsentitysuffix" value="<?=$bidsentity?>:<?=$bidssuffix?>">
 							<i class="dropdown icon"></i>
 							<div class="default text">Select Entity:Suffix</div>
 							<div class="scrollhint menu">
@@ -858,7 +893,7 @@
 										sort($suff);
 										foreach ($suff as $suffix) {
 											?>
-											<div class="item" data-value="$entity:$suffix"><?=$entity?> : <?=$suffix?></div>					
+											<div class="item" data-value="<?=$entity?>:<?=$suffix?>"><?=$entity?> : <?=$suffix?></div>					
 											<?
 										}
 									}
@@ -869,17 +904,17 @@
 
 					<div class="field">
 						<label>BIDS IntendedFor <span style="font-weight:normal">(Comma separated list of series descriptions)</span></label>
-						<input type="text" name="bidsintendedfor" value="<?=$intendedfor?>">
+						<input type="text" name="bidsintendedfor" value="<?=$bidsintendedfor?>">
 					</div>
 
 					<div class="field">
 						<label>BIDS Run # <span style="font-weight:normal">(This series will always be labeled <tt>run-#</tt>)</span></label>
-						<input type="number" name="bidsrun" value="<?=$run?>">
+						<input type="number" name="bidsrun" value="<?=$bidsrun?>">
 					</div>
 
 					<div class="field">
 						<div class="ui checkbox">
-							<input type="checkbox" name="autonumberruns" value="1">
+							<input type="checkbox" name="bidsautonumberruns" value="1" <? if ($bidsautonumberruns == 1) { echo "checked"; } ?>>
 							<label>Automatically number runs</label>
 						</div>
 					</div>
@@ -1844,12 +1879,12 @@
 	
 		$colors = GenerateColorGradient();
 
-		$bidsentities['anat'] = array('IRT1','MESE','MEGRE','MP2RAGE','MPM','MTS','MTR','T1map','T2map','T2starmap','R1map','R2map','R2starmap','PDmap','MTRmap','MTsat','UNIT1','T1rho','MWFmap','MTVmap','Chimap','S0map','M0map','T1w','T2w','PDw','T2starw','FLAIR','inplaneT1','inplaneT2','PDT2','angio','T2star','FLASH','PD','VFA','defacemask');
-		$bidsentities['dwi'] = array('dwi','sbref','physio','stim');
-		$bidsentities['fmap'] = array('TB1AFI','TB1TFL','TB1RFM','RB1COR','TB1DAM','TB1EPI','TB1SRGE','TB1map','RB1map','epi','m0scan','phasediff','phase1','phase2','magnitude1','magnitude2','magnitude','magnitude1and2','fieldmap');
-		$bidsentities['func'] = array('bold','cbv','sbref','events','phase','physio','stim');
-		$bidsentities['perf'] = array('asl','m0scan','aslcontext','asllabeling','physio','stim');
-		$bidsentities['derived'] = array('derived');
+		//$bidsentities['anat'] = array('IRT1','MESE','MEGRE','MP2RAGE','MPM','MTS','MTR','T1map','T2map','T2starmap','R1map','R2map','R2starmap','PDmap','MTRmap','MTsat','UNIT1','T1rho','MWFmap','MTVmap','Chimap','S0map','M0map','T1w','T2w','PDw','T2starw','FLAIR','inplaneT1','inplaneT2','PDT2','angio','T2star','FLASH','PD','VFA','defacemask');
+		//$bidsentities['dwi'] = array('dwi','sbref','physio','stim');
+		//$bidsentities['fmap'] = array('TB1AFI','TB1TFL','TB1RFM','RB1COR','TB1DAM','TB1EPI','TB1SRGE','TB1map','RB1map','epi','m0scan','phasediff','phase1','phase2','magnitude1','magnitude2','magnitude','magnitude1and2','fieldmap');
+		//$bidsentities['func'] = array('bold','cbv','sbref','events','phase','physio','stim');
+		//$bidsentities['perf'] = array('asl','m0scan','aslcontext','asllabeling','physio','stim');
+		//$bidsentities['derived'] = array('derived');
 		//PrintVariable($bidsentities);
 		
 		/* get the subject information */
@@ -2291,12 +2326,12 @@
 							if ($series_desc != "") {
 								$imagetype2 = $imagetype;
 								$imagetype2 = str_replace("\\", "\\\\", $imagetype2);
-								$sqlstring3 = "select bidsentity, bidssuffix from bids_mapping where protocolname = '$series_desc' and imagetype = '$imagetype2' and modality = 'MR' and project_id = $projectid";
+								$sqlstring3 = "select * from bids_mapping where protocolname = '$series_desc' and imagetype = '$imagetype2' and modality = 'MR' and project_id = $projectid";
 							}
 							else {
 								$imagetype2 = $imagetype;
 								$imagetype2 = str_replace("\\", "\\\\", $imagetype2);
-								$sqlstring3 = "select bidsentity, bidssuffix from bids_mapping where protocolname = '$protocol' and imagetype = '$imagetype2' and modality = 'MR' and project_id = $projectid";
+								$sqlstring3 = "select * from bids_mapping where protocolname = '$protocol' and imagetype = '$imagetype2' and modality = 'MR' and project_id = $projectid";
 							}
 							//PrintSQL($sqlstring3);
 							$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
@@ -2347,31 +2382,7 @@
 											$color = "green";
 										}
 									?>
-									
-									<div class="ui right pointing dropdown icon compact basic <?=$color?> button">
-										<?=$label?>
-										<div class="menu">
-											<?
-												ksort($bidsentities);
-												foreach ($bidsentities as $entity => $suff) {
-													?>
-													<div class="item">
-														<?=$entity?>
-													</div>
-													<?
-													sort($suff);
-													foreach ($suff as $suffix) {
-														?>
-														<div class="item">
-															<a href="studies.php?action=updatebidsmapping&studyid=<?=$studyid?>&modality=mr&bidsentity=<?=$entity?>&bidssuffix=<?=$suffix?>&protocol=<?=$series_desc?>&imagetype=<?=$imagetype?>"><?=$entity?> : <?=$suffix?></a>
-														</div>
-														<?
-													}
-												}
-											?>
-										</div>
-									</div>
-									<a href="studies.php?action=editbidsmapping&modality=mr&seriesid=<?=$mrseries_id?>">Edit BIDS</a>
+									<a class="ui <?=$color?> compact basic button" href="studies.php?action=editbidsmapping&modality=mr&seriesid=<?=$mrseries_id?>"><?=$label?></a>
 								</td>
 								<td style="font-size:8pt"><?=$series_datetime?></td>
 								<td style="font-size:8pt"><?=$series_notes;?></td>
