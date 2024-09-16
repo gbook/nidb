@@ -814,9 +814,9 @@
 		
 		$sqlstring = "insert ignore into bids_mapping (project_id, protocolname, imagetype, modality, bidsentity, bidssuffix, bidsrun, bidsautorun, bidsintendedfor, bidstask) values ($projectid, '$seriesdesc', '$imagetype', '$modality', '$bidsentity', '$bidssuffix', $bidsrun, $bidsautonumberruns, '$bidsintendedfor', '$bidstask') on duplicate key update bidsentity = '$bidsentity', bidssuffix = '$bidssuffix', bidsrun = $bidsrun, bidsautorun = $bidsautonumberruns, bidsintendedfor = '$bidsintendedfor', bidstask = '$bidstask'";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		PrintSQL($sqlstring);
+		//PrintSQL($sqlstring);
 
-		Notice("BIDS mapping updated for this project<br><tt>$seriesdesc | $imagetype</tt> mapped to <tt>$entity:$suffix</tt>");
+		Notice("BIDS mapping updated for this project<br><tt>$seriesdesc | $imagetype</tt> mapped to <tt>$bidsentitysuffix</tt>");
 	}
 	
 
@@ -841,13 +841,20 @@
 		$sqlstring = "select * from bids_mapping where protocolname = '$seriesdesc' and imagetype = '$imagetype2' and modality = 'MR' and project_id = $projectid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		//PrintVariable($row);
 		$bidsentity = $row['bidsentity'];
 		$bidssuffix = $row['bidssuffix'];
 		$bidsintendedfor = $row['bidsintendedfor'];
 		$bidsrun = $row['bidsrun'];
 		$bidsautonumberruns = $row['bidsautorun'];
 		$bidstask = $row['bidstask'];
+		
+		/* get list of series for this study */
+		//$sqlstring = "select series_desc, imagetype from $modality" + "_series where study_id = $studyid";
+		//$sqlstring = "select * from bids_mapping where protocolname = '$seriesdesc' and imagetype = '$imagetype2' and modality = 'MR' and project_id = $projectid";
+		//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		//$seriesdesc = $row['series_desc'];
+		//$imagetype = $row['image_type'];
 
 		?>
 		<div class="ui text container" style="overflow:visible">
@@ -881,7 +888,7 @@
 					<input type="hidden" name="imagetype" value="<?=$imagetype?>">
 				
 					<div class="field">
-						<label>BIDS entity:suffix</label>
+						<label>BIDS entity : suffix</label>
 						<div class="ui selection dropdown">
 							<input type="hidden" name="bidsentitysuffix" value="<?=$bidsentity?>:<?=$bidssuffix?>">
 							<i class="dropdown icon"></i>
@@ -893,7 +900,7 @@
 										sort($suff);
 										foreach ($suff as $suffix) {
 											?>
-											<div class="item" data-value="<?=$entity?>:<?=$suffix?>"><?=$entity?> : <?=$suffix?></div>					
+											<div class="item" data-value="<?=$entity?>:<?=$suffix?>"><tt><?=$entity?> : <?=$suffix?></tt></div>
 											<?
 										}
 									}
@@ -903,12 +910,12 @@
 					</div>
 
 					<div class="field">
-						<label>BIDS IntendedFor <span style="font-weight:normal">(Comma separated list of series descriptions)</span></label>
-						<input type="text" name="bidsintendedfor" value="<?=$bidsintendedfor?>">
+						<label>BIDS IntendedFor <i class="question circle outline icon" title="BIDS 'task-' filename option"></i> <span style="font-weight:normal">Comma separated list of series descriptions</span></label>
+						<input type="text" name="bidsintendedfor" value="<?=$bidsintendedfor?>" style="font-family:monospace">
 					</div>
 
 					<div class="field">
-						<label>BIDS Run # <span style="font-weight:normal">(This series will always be labeled <tt>run-#</tt>)</span></label>
+						<label>BIDS run number <i class="question circle outline icon" title="This BIDS series will always be labeled 'run-#'"></i></label>
 						<input type="number" name="bidsrun" value="<?=$bidsrun?>">
 					</div>
 
@@ -920,8 +927,8 @@
 					</div>
 
 					<div class="field">
-						<label>BIDS Task <span style="font-weight:normal">(<tt>task-</tt> filename option)</span></label>
-						<input type="text" name="bidstask" value="<?=$bidstask?>">
+						<label>BIDS task <i class="question circle outline icon" title="BIDS 'task-' filename option"></i></label>
+						<input type="text" name="bidstask" value="<?=$bidstask?>" style="font-family:monospace">
 					</div>
 				
 					<input type="submit" value="Update" class="ui primary button">
@@ -2338,6 +2345,12 @@
 							$row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC);
 							$bidsentity = $row3['bidsentity'];
 							$bidssuffix = $row3['bidssuffix'];
+							$bidsintendedfor = $row['bidsintendedfor'];
+							$bidsrun = $row['bidsrun'];
+							$bidsautonumberruns = $row['bidsautorun'];
+							$bidstask = $row['bidstask'];
+							
+							$bidstitle = "BIDS&#10;&#10;Entity $bidsentity&#10;BIDS suffix $bidssuffix&#10;IntendedFor $bidsintendedfor&#10;Run $bidsrun&#10;Auto-renumber runs $bidsautonumberruns&#10;Task $bidstask";
 							
 							?>
 							<script type="text/javascript">

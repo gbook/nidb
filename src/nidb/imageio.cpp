@@ -61,18 +61,21 @@ imageIO::~imageIO()
  * @param uid UID of the images (used in renaming the files)
  * @param studynum Study number of the images (used in renaming the files)
  * @param seriesnum Series number of the images (used in renaming the files)
- * @param bidsSub **BIDS** BIDS subject label
- * @param bidsSes **BIDS** BIDS session label
+ * @param bidsSubject **BIDS** BIDS subject label
+ * @param bidsSession **BIDS** BIDS session label
  * @param protocol **BIDS** Protocol name
  * @param bidsSuffix **BIDS** BIDS suffix
- * @param bidsSuffix **BIDS** BIDS run
+ * @param bidsIntendedFor **BIDS** BIDS IntendedFor
+ * @param bidsRun **BIDS** BIDS run-
+ * @param bidsAutoRenumberRun **BIDS** BIDS automatically renumber runs
+ * @param bidsTask **BIDS** BIDS task-
  * @param datatype if 'parrec', this function will handle conversion slightly differently
  * @param numfilesconv Number of files converted (doesn't work correctly)
  * @param numfilesrenamed Number of files renamed
  * @param msg Any messages generated during converstion
  * @return `true` if successful, `false` otherwise
  */
-bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QString bindir, bool gzip, bool json, QString uid, QString studynum, QString seriesnum, QString bidsSub, QString bidsSes, QString protocol, QString bidsSuffix, int run, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg) {
+bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QString bindir, bool gzip, bool json, QString uid, QString studynum, QString seriesnum, QString bidsSubject, QString bidsSession, QString protocol, QString bidsSuffix, QString bidsIntendedFor, int bidsRun, bool bidsAutoRenumberRun, QString bidsTask, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg) {
 
     QStringList msgs;
 
@@ -137,7 +140,7 @@ bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QStr
     /* rename the files into something meaningful */
     m = "";
     if (filetype == "bids")
-        BatchRenameBIDSFiles(outdir, bidsSub, bidsSes, protocol, bidsSuffix, run, numfilesrenamed, m);
+        BatchRenameBIDSFiles(outdir, bidsSubject, bidsSession, protocol, bidsSuffix, bidsIntendedFor, bidsRun, bidsAutoRenumberRun, bidsTask, numfilesrenamed, m);
     else
         BatchRenameFiles(outdir, seriesnum, studynum, uid, numfilesrenamed, m);
     msgs << "Renamed output files [" + m + "]";

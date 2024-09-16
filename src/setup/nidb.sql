@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Sep 09, 2024 at 09:05 PM
+-- Generation Time: Sep 16, 2024 at 08:21 PM
 -- Server version: 10.3.28-MariaDB
 -- PHP Version: 7.2.24
 
@@ -445,7 +445,11 @@ CREATE TABLE `bids_mapping` (
   `imagetype` varchar(255) NOT NULL,
   `modality` varchar(255) NOT NULL,
   `bidsentity` varchar(255) NOT NULL,
-  `bidssuffix` varchar(255) NOT NULL
+  `bidssuffix` varchar(255) NOT NULL,
+  `bidsrun` int(11) NOT NULL,
+  `bidsautorun` int(11) NOT NULL,
+  `bidsintendedfor` text NOT NULL,
+  `bidstask` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='this table maps long protocol name(s) to short names';
 
 -- --------------------------------------------------------

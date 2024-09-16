@@ -1302,7 +1302,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                             int numfilesconv(0);
                             int numfilesrenamed(0);
                             QString binpath = n->cfg["nidbdir"] + "/bin";
-                            img->ConvertDicom(dataformat, indir, tmpdir, binpath, gzip, false, uid, QString("%1").arg(localstudynum), QString("%1").arg(seriesnum), "", "", "", "", 0, datatype, numfilesconv, numfilesrenamed, m);
+                            img->ConvertDicom(dataformat, indir, tmpdir, binpath, gzip, false, uid, QString("%1").arg(localstudynum), QString("%1").arg(seriesnum), "", "", "", "", "", 0, false, "", datatype, numfilesconv, numfilesrenamed, m);
 
                             QString systemstring;
                             if (p.dataCopyMethod == "scp")

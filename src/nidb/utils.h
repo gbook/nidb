@@ -89,7 +89,7 @@ QString UnzipDirectory(QString dir, bool recurse=false);
 bool WriteTextFile(QString filepath, QString str, bool append=true);
 QStringList ReadTextFileIntoArray(QString filepath, bool ignoreEmptyLines=true);
 bool BatchRenameFiles(QString dir, QString seriesnum, QString studynum, QString uid, int &numfilesrenamed, QString &msg);
-bool BatchRenameBIDSFiles(QString dir, QString bidsSub, QString bidsSes, QString protocol, QString bidsSuffix, int run, int &numfilesrenamed, QString &msg);
+bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession, QString protocol, QString bidsSuffix, QString bidsIntendedFor, int bidsRun, bool bidsAutoRun, QString bidsTask, int &numfilesrenamed, QString &msg);
 bool DirectoryExists(QString dir);
 bool FileExists(QString f);
 bool FileDirectoryExists(QString f);

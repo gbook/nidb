@@ -45,7 +45,7 @@ public:
     ~imageIO();
 
     /* DICOM & image functions */
-    bool ConvertDicom(QString filetype, QString indir, QString outdir, QString bindir, bool gzip, bool json, QString uid, QString studynum, QString seriesnum, QString bidsSub, QString bidsSes, QString protocol, QString bidsSuffix, int run, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg);
+    bool ConvertDicom(QString filetype, QString indir, QString outdir, QString bindir, bool gzip, bool json, QString uid, QString studynum, QString seriesnum, QString bidsSub, QString bidsSes, QString protocol, QString bidsSuffi, QString bidsIntendedFor, int bidsRun, bool bidsAutoRenumber, QString bidsTask, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg);
     bool IsDICOMFile(QString f);
     bool AnonymizeDir(QString dir, int anonlevel, QString randstr1, QString randstr2, QString &msg);
     bool AnonymizeDicomFile(gdcm::Anonymizer &anon, QString infile, QString outfile, std::vector<gdcm::Tag> const &empty_tags, std::vector<gdcm::Tag> const &remove_tags, std::vector< std::pair<gdcm::Tag, std::string> > const & replace_tags, QString &msg);

@@ -2334,6 +2334,10 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
                 //QString seriesaltdesc = s[uid][studynum][seriesnum]["seriesaltdesc"].trimmed();
                 QString bidsEntity = s[uid][studynum][seriesnum]["bidsentity"];
                 QString bidsSuffix = s[uid][studynum][seriesnum]["bidssuffix"];
+                QString bidsIntendedFor = s[uid][studynum][seriesnum]["bidsintendedfor"];
+                int bidsRun = s[uid][studynum][seriesnum]["bidsRun"].toInt();
+                bool bidsAutoRenumber = s[uid][studynum][seriesnum]["bidsautorenumber"].toInt();
+                QString bidsTask = s[uid][studynum][seriesnum]["bidstask"];
                 QString datatype = s[uid][studynum][seriesnum]["datatype"];
                 QString datadir = s[uid][studynum][seriesnum]["datadir"];
                 QString behindir = s[uid][studynum][seriesnum]["behdir"];
@@ -2341,23 +2345,29 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
                 bool behdirexists = s[uid][studynum][seriesnum]["behdirexists"].toInt();
                 bool datadirempty = s[uid][studynum][seriesnum]["datadirempty"].toInt();
 
+                /* check which run- to use */
+                if (bidsRun > 0)
+                    run = bidsRun;
+                else if (bidsAutoRenumber == false)
+                    run = 0;
+
 				/* Create the subject identifier, based on one of the following flags
 				   BIDS_SUBJECTDIR_INCREMENT (default)
 				   BIDS_SUBJECTDIR_UID
 				   BIDS_SUBJECTDIR_ALTUID */
 				QString subjectdir = "";
-                QString bidsSub = "";
+                QString bidsSubject = "";
 				if (bidsflags.contains("BIDS_SUBJECTDIR_UID", Qt::CaseInsensitive)) {
 					subjectdir = QString("sub-%1").arg(uid);
-                    bidsSub = QString("sub-%1").arg(uid);
+                    bidsSubject = QString("sub-%1").arg(uid);
 				}
 				else if (bidsflags.contains("BIDS_SUBJECTDIR_ALTUID", Qt::CaseInsensitive)) {
 					subjectdir = QString("sub-%1").arg(primaryaltuid);
-                    bidsSub = QString("sub-%1").arg(primaryaltuid);
+                    bidsSubject = QString("sub-%1").arg(primaryaltuid);
                 }
                 if ((subjectdir == "") || (subjectdir == "sub-")) {
                     subjectdir = QString("sub-%1").arg(i, 4, 10, QChar('0'));
-                    bidsSub = QString("sub-%1").arg(i, 4, 10, QChar('0'));
+                    bidsSubject = QString("sub-%1").arg(i, 4, 10, QChar('0'));
                 }
 
 				/* Create the session (study) identifier, based on one of the following flags
@@ -2366,15 +2376,15 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 				   BIDS_STUDYDIR_ALTSTUDYID
 				   BIDS_STUDYDIR_DATE */
 				QString sessiondir = "";
-                QString bidsSes;
+                QString bidsSession;
 				if (bidsflags.contains("BIDS_STUDYDIR_STUDYNUM",Qt::CaseInsensitive)) {
 					sessiondir = QString("ses-%1").arg(studynum);
-                    bidsSes = QString("ses-%1").arg(studynum);
+                    bidsSession = QString("ses-%1").arg(studynum);
                     //n->WriteLog(QString("Creating BIDS_STUDYDIR_STUDYNUM [" + sessiondir + "]"));
 				}
 				else if (bidsflags.contains("BIDS_STUDYDIR_ALTSTUDYID",Qt::CaseInsensitive)) {
 					sessiondir = QString("ses-%1").arg(studyaltid);
-                    bidsSes = QString("ses-%1").arg(studyaltid);
+                    bidsSession = QString("ses-%1").arg(studyaltid);
                     //n->WriteLog(QString("Creating BIDS_STUDYDIR_ALTSTUDYID [" + sessiondir + "]"));
 				}
 				else if (bidsflags.contains("BIDS_STUDYDIR_DATE",Qt::CaseInsensitive)) {
@@ -2382,13 +2392,13 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 					//std.PrintStudyInfo();
 					QString studyDate = std.dateTime().toString("yyyyMMdd");
 					sessiondir = QString("ses-%1").arg(studyDate);
-                    bidsSes = QString("ses-%1").arg(studyDate);
+                    bidsSession = QString("ses-%1").arg(studyDate);
                     //n->WriteLog(QString("Creating BIDS_STUDYDIR_DATE [" + sessiondir + "]"));
 				}
 				if ((sessiondir == "") || (sessiondir == "ses-")) {
 					//n->WriteLog(QString("sessdir is [" + sessiondir + "] so it will become the ses-0001 format"));
                     sessiondir = QString("ses-%1").arg(j, 4, 10, QChar('0'));
-                    bidsSes = QString("ses-%1").arg(j, 4, 10, QChar('0'));
+                    bidsSession = QString("ses-%1").arg(j, 4, 10, QChar('0'));
                 }
 
                 /* determine the datatype (what BIDS calls the 'modality') */
@@ -2433,7 +2443,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 
                             int numfilesconv(0), numfilesrenamed(0);
                             QString binpath = n->cfg["nidbdir"] + "/bin";
-                            if (!img->ConvertDicom("bids", datadir, tmpdir, binpath, true, false, subjectdir, sessiondir, seriesdir, bidsSub, bidsSes, seriesdesc, bidsSuffix, run, datatype, numfilesconv, numfilesrenamed, m))
+                            if (!img->ConvertDicom("bids", datadir, tmpdir, binpath, true, false, subjectdir, sessiondir, seriesdir, bidsSubject, bidsSession, seriesdesc, bidsSuffix, bidsIntendedFor, run, bidsAutoRenumber, bidsTask, datatype, numfilesconv, numfilesrenamed, m))
                                 msgs << "Error converting files [" + m + "]";
                             else
                                 n->Log(m);
@@ -3327,7 +3337,7 @@ bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modal
                 s[uid][studynum][seriesnum]["bidsentity"] = bidsEntity;
                 s[uid][studynum][seriesnum]["bidssuffix"] = bidsSuffix;
                 s[uid][studynum][seriesnum]["bidsrun"] = QString("%1").arg(bidsRun);
-                s[uid][studynum][seriesnum]["bidsautorun"] = QString("%1").arg(bidsAutoRun);
+                s[uid][studynum][seriesnum]["bidsautorenumber"] = QString("%1").arg(bidsAutoRun);
                 s[uid][studynum][seriesnum]["bidsintendedfor"] = bidsIntendedFor;
                 s[uid][studynum][seriesnum]["bidstask"] = bidsTask;
                 s[uid][studynum][seriesnum]["numfilesbeh"] = QString("%1").arg(numfilesbeh);

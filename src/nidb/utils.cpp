@@ -1054,18 +1054,18 @@ bool BatchRenameFiles(QString dir, QString seriesnum, QString studynum, QString 
 /* --------- BatchRenameBIDSFiles --------------------------- */
 /* ---------------------------------------------------------- */
 /**
- * @brief Rename a directory of files into BIDS format. These files are likely already converted from DICOM to Nifti
+ * @brief Rename files into BIDS format. These files are likely already converted from DICOM to Nifti
  * @param dir Input directory
- * @param bidsSub BIDS `sub-` label
- * @param bidsSes BIDS `ses-` label
+ * @param bidsSubject BIDS `sub-` label
+ * @param bidsSession BIDS `ses-` label
  * @param protocol Protocol name
  * @param bidsSuffix BIDS suffix
- * @param run BIDS run
+ * @param bidsRun BIDS run
  * @param numfilesrenamed Number of files renamed
  * @param msg Any messages about the renaming process
  * @return `true` if successful, `false` otherwise
  */
-bool BatchRenameBIDSFiles(QString dir, QString bidsSub, QString bidsSes, QString protocol, QString bidsSuffix, int run, int &numfilesrenamed, QString &msg) {
+bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession, QString protocol, QString bidsSuffix, QString bidsIntendedFor, int bidsRun, bool bidsAutoRun, QString bidsTask, int &numfilesrenamed, QString &msg) {
 
     QDir d;
     if (!d.exists(dir)) {
@@ -1092,7 +1092,7 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSub, QString bidsSes, QString
         SortQStringListNaturally(files);
 
         /* rename the files */
-        int r = run;
+        int r = bidsRun;
         foreach (QString fname, files) {
 
             f.setFileName(fname);
@@ -1102,7 +1102,7 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSub, QString bidsSes, QString
 
             /* special case where one series becomes two BIDS files */
             if (bidsSuffix == "magnitude1and2") {
-                msg += "Renaming a fieldmap magnitude 1 and 2 file. One series collected, but converted to Nifti as two .nii.gz files";
+                msg += "Renaming a fieldmap magnitude 1 and 2 file. One series was collected but converted to Nifti as two .nii.gz files";
                 /* look for files ending in e1 and e2 file */
                 if (fi.baseName().endsWith("_e1"))
                     bidsSuf = "magnitude1";
@@ -1110,13 +1110,28 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSub, QString bidsSes, QString
                     bidsSuf = "magnitude2";
             }
 
-            newName = fi.path() + "/" + QString("%1_%2_acq-%3_run-%4_%5%6").arg(bidsSub).arg(bidsSes).arg(protocol).arg(r).arg(bidsSuf).arg(ext.replace("*",""));
-            //newName = fi.path() + "/" + QString("%1_%2_acq-%3_%4%5").arg(bidsSub).arg(bidsSes).arg(protocol).arg(bidsSuffix).arg(ext.replace("*",""));
+            QString fileBaseName = QString("%1_%2").arg(bidsSubject).arg(bidsSession);
+            if (r > 0)
+                fileBaseName += QString("_run-%1").arg(r);
+            if (bidsTask != "")
+                fileBaseName += QString("_task-%1").arg(bidsTask);
+            if (protocol != "")
+                fileBaseName += QString("_acq-%1").arg(protocol);
+
+            newName = fi.path() + "/" + QString("%1_%2%3").arg(fileBaseName).arg(bidsSuf).arg(ext.replace("*",""));
             if (QFile::exists(newName)) {
                 /* add run number if this file already exists */
                 msg += "File " + newName + " already exists\n";
                 r++;
-                newName = fi.path() + "/" + QString("%1_%2_acq-%3_run-%4_%5%6").arg(bidsSub).arg(bidsSes).arg(protocol).arg(r).arg(bidsSuf).arg(ext.replace("*",""));
+
+                if (r > 0)
+                    fileBaseName += QString("_run-%1").arg(r);
+                if (bidsTask != "")
+                    fileBaseName += QString("_task-%1").arg(bidsTask);
+                if (protocol != "")
+                    fileBaseName += QString("_acq-%1").arg(protocol);
+
+                newName = fi.path() + "/" + QString("%1_%2%3").arg(fileBaseName).arg(bidsSuf).arg(ext.replace("*",""));
             }
 
             msg += QString(fname + " --> " + newName + "\n");
