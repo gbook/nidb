@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Sep 16, 2024 at 08:21 PM
+-- Generation Time: Sep 18, 2024 at 04:51 PM
 -- Server version: 10.3.28-MariaDB
 -- PHP Version: 7.2.24
 
@@ -440,16 +440,20 @@ CREATE TABLE `backups` (
 
 CREATE TABLE `bids_mapping` (
   `protocolmapping_id` int(11) NOT NULL,
-  `project_id` int(11) DEFAULT NULL COMMENT 'if project_id is null, then this alt name applies to all projects',
+  `project_id` int(11) DEFAULT NULL COMMENT 'if project_id is null, then this mapping applies to all projects',
   `protocolname` varchar(255) NOT NULL,
   `imagetype` varchar(255) NOT NULL,
   `modality` varchar(255) NOT NULL,
-  `bidsentity` varchar(255) NOT NULL,
-  `bidssuffix` varchar(255) NOT NULL,
-  `bidsrun` int(11) NOT NULL,
-  `bidsautorun` int(11) NOT NULL,
-  `bidsintendedfor` text NOT NULL,
-  `bidstask` varchar(255) NOT NULL
+  `bidsEntity` text NOT NULL,
+  `bidsSuffix` text NOT NULL,
+  `bidsRun` int(11) NOT NULL,
+  `bidsAutoNumberRuns` tinyint(1) NOT NULL,
+  `bidsIntendedForEntity` text NOT NULL,
+  `bidsIntendedForTask` text NOT NULL,
+  `bidsIntendedForRun` text NOT NULL,
+  `bidsIntendedForSuffix` text NOT NULL,
+  `bidsIntendedForFileExtension` text NOT NULL,
+  `bidsTask` text NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='this table maps long protocol name(s) to short names';
 
 -- --------------------------------------------------------
