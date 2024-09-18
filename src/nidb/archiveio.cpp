@@ -2326,18 +2326,20 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
                 QString statusmessage;
 
                 int seriesid = s[uid][studynum][seriesnum]["seriesid"].toInt();
-				QString primaryaltuid = s[uid][studynum][seriesnum]["primaryaltuid"];
+                int projectRowID = s[uid][studynum][seriesnum]["projectid"].toInt();
+                QString primaryaltuid = s[uid][studynum][seriesnum]["primaryaltuid"];
 				QString studyaltid = s[uid][studynum][seriesnum]["studyaltid"];
                 QString modality = s[uid][studynum][seriesnum]["modality"];
                 QString seriesdesc = s[uid][studynum][seriesnum]["seriesdesc"];
                 int run = s[uid][studynum][seriesnum]["run"].toInt();
                 //QString seriesaltdesc = s[uid][studynum][seriesnum]["seriesaltdesc"].trimmed();
-                QString bidsEntity = s[uid][studynum][seriesnum]["bidsentity"];
-                QString bidsSuffix = s[uid][studynum][seriesnum]["bidssuffix"];
-                QString bidsIntendedFor = s[uid][studynum][seriesnum]["bidsintendedfor"];
-                int bidsRun = s[uid][studynum][seriesnum]["bidsRun"].toInt();
-                bool bidsAutoRenumber = s[uid][studynum][seriesnum]["bidsautorenumber"].toInt();
-                QString bidsTask = s[uid][studynum][seriesnum]["bidstask"];
+                //QString bidsEntity = s[uid][studynum][seriesnum]["bidsentity"];
+                //QString bidsSuffix = s[uid][studynum][seriesnum]["bidssuffix"];
+                //QString bidsIntendedFor = s[uid][studynum][seriesnum]["bidsintendedfor"];
+                //int bidsRun = s[uid][studynum][seriesnum]["bidsRun"].toInt();
+                //bool bidsAutoRenumber = s[uid][studynum][seriesnum]["bidsautorenumber"].toInt();
+                //QString bidsTask = s[uid][studynum][seriesnum]["bidstask"];
+                QString imagetype = s[uid][studynum][seriesnum]["imagetype"];
                 QString datatype = s[uid][studynum][seriesnum]["datatype"];
                 QString datadir = s[uid][studynum][seriesnum]["datadir"];
                 QString behindir = s[uid][studynum][seriesnum]["behdir"];
@@ -2345,11 +2347,21 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
                 bool behdirexists = s[uid][studynum][seriesnum]["behdirexists"].toInt();
                 bool datadirempty = s[uid][studynum][seriesnum]["datadirempty"].toInt();
 
+                BIDSMapping mapping = GetBIDSMapping(projectRowID,seriesdesc,modality,imagetype);
+
                 /* check which run- to use */
-                if (bidsRun > 0)
-                    run = bidsRun;
-                else if (bidsAutoRenumber == false)
+                if (mapping.bidsRun > 0) {
+                    n->Log(QString("mapping.bidsRun is 0. Setting run = %1").arg(mapping.bidsRun));
+                    run = mapping.bidsRun;
+                }
+                else if (mapping.bidsAutoNumberRuns == false) {
+                    n->Log(QString("mapping.bidsAutoNumberRuns is [%1]. Setting run = 0").arg(mapping.bidsAutoNumberRuns));
                     run = 0;
+                }
+                else {
+                    n->Log(QString("No condition met: mapping.bidsRun [%1]   mapping.bidsAutoNumberRuns [%2]   run [%3]").arg(mapping.bidsRun).arg(mapping.bidsAutoNumberRuns).arg(run));
+                }
+                mapping.run = run;
 
 				/* Create the subject identifier, based on one of the following flags
 				   BIDS_SUBJECTDIR_INCREMENT (default)
@@ -2409,18 +2421,10 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
                 //else {
                 //    seriesdir = seriesaltdesc;
                 //}
-                if (bidsEntity == "")
+                if (mapping.bidsEntity == "")
                     seriesdir = "unknown";
                 else
-                    seriesdir = bidsEntity;
-
-                if (bidsEntity == "")
-                    bidsEntity = "unknown";
-                if (bidsSuffix == "")
-                    bidsSuffix = "unknown";
-
-                /* remove any non-alphanumeric characters */
-                //seriesdir.replace(QRegularExpression("[^a-zA-Z0-9_-]"), "_");
+                    seriesdir = mapping.bidsEntity;
 
                 QString seriesoutdir = QString("%1/%2/%3/%4").arg(outdir).arg(subjectdir).arg(sessiondir).arg(seriesdir);
 
@@ -2443,15 +2447,10 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 
                             int numfilesconv(0), numfilesrenamed(0);
                             QString binpath = n->cfg["nidbdir"] + "/bin";
-                            if (!img->ConvertDicom("bids", datadir, tmpdir, binpath, true, false, subjectdir, sessiondir, seriesdir, bidsSubject, bidsSession, seriesdesc, bidsSuffix, bidsIntendedFor, run, bidsAutoRenumber, bidsTask, datatype, numfilesconv, numfilesrenamed, m))
+                            if (!img->ConvertDicom("bids", datadir, tmpdir, binpath, true, false, subjectdir, sessiondir, seriesdir, bidsSubject, bidsSession, mapping, datatype, numfilesconv, numfilesrenamed, m))
                                 msgs << "Error converting files [" + m + "]";
                             else
                                 n->Log(m);
-
-                            /* rename the converted into BIDS format */
-                            //QString m2;
-                            //BatchRenameBIDSFiles(tmpdir, bidsSub, bidsSes, seriesdesc, bidsSuffix, numfilesrenamed, m2);
-                            //n->Log(m2);
 
                             //n->WriteLog("About to copy files from " + tmpdir + " to " + seriesoutdir);
                             QString systemstring = "rsync " + tmpdir + "/* " + seriesoutdir + "/";
@@ -2522,8 +2521,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
  * @param squirrelflags squirrel package options
  * @param seriesids list of seriesIDs
  * @param modalities list of modalities to be exported
- * @param odir output directory
- * @param filepath the final squirrel package path
+ * @param zipfilepath the final squirrel package path
  * @param msg any messages generated during squirrel package writing
  * @return true if package was written, false otherwise
  */
@@ -3294,6 +3292,7 @@ bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modal
                     n->Log(QString("seriesDescEncountered size after [%1]").arg(seriesDescEncountered.size()));
                 }
 
+                /*
                 QSqlQuery q2;
                 q2.prepare("select * from bids_mapping where project_id = :projectid and protocolname = :protocol and imagetype = :imagetype and modality = :modality");
                 q2.bindValue(":projectid", projectid);
@@ -3313,7 +3312,7 @@ bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modal
                     bidsRun = q2.value("bidsrun").toInt();
                     bidsAutoRun = q2.value("bidsautorun").toBool();
                     bidsTask = q2.value("bidstask").toString();
-                }
+                } */
 
                 QString datadir = QString("%1/%2/%3/%4/%5").arg(n->cfg["archivedir"]).arg(uid).arg(studynum).arg(seriesnum).arg(datatype);
                 QString behdir = QString("%1/%2/%3/%4/beh").arg(n->cfg["archivedir"]).arg(uid).arg(studynum).arg(seriesnum);
@@ -3334,12 +3333,13 @@ bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modal
                 s[uid][studynum][seriesnum]["seriesdesc"] = seriesdesc;
                 s[uid][studynum][seriesnum]["run"] = QString("%1").arg(runs[seriesdesc]);
                 s[uid][studynum][seriesnum]["seriesaltdesc"] = seriesaltdesc;
-                s[uid][studynum][seriesnum]["bidsentity"] = bidsEntity;
-                s[uid][studynum][seriesnum]["bidssuffix"] = bidsSuffix;
-                s[uid][studynum][seriesnum]["bidsrun"] = QString("%1").arg(bidsRun);
-                s[uid][studynum][seriesnum]["bidsautorenumber"] = QString("%1").arg(bidsAutoRun);
-                s[uid][studynum][seriesnum]["bidsintendedfor"] = bidsIntendedFor;
-                s[uid][studynum][seriesnum]["bidstask"] = bidsTask;
+                s[uid][studynum][seriesnum]["imagetype"] = imagetype;
+                //s[uid][studynum][seriesnum]["bidsentity"] = bidsEntity;
+                //s[uid][studynum][seriesnum]["bidssuffix"] = bidsSuffix;
+                //s[uid][studynum][seriesnum]["bidsrun"] = QString("%1").arg(bidsRun);
+                //s[uid][studynum][seriesnum]["bidsautorenumber"] = QString("%1").arg(bidsAutoRun);
+                //s[uid][studynum][seriesnum]["bidsintendedfor"] = bidsIntendedFor;
+                //s[uid][studynum][seriesnum]["bidstask"] = bidsTask;
                 s[uid][studynum][seriesnum]["numfilesbeh"] = QString("%1").arg(numfilesbeh);
                 s[uid][studynum][seriesnum]["numfiles"] = QString("%1").arg(numfiles);
                 s[uid][studynum][seriesnum]["projectname"] = projectname;
@@ -3391,7 +3391,7 @@ bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modal
                 QStringList altuids;
                 QString primaryaltuid;
 
-                //QSqlQuery q2;
+                QSqlQuery q2;
                 q2.prepare("select altuid, isprimary from subject_altuid where enrollment_id = :enrollmentid and subject_id = :subjectid");
                 q2.bindValue(":enrollmentid",enrollmentid);
                 q2.bindValue(":subjectid",subjectid);
@@ -3500,4 +3500,53 @@ bool archiveIO::AppendJSONDrugs(QJsonObject &jsonObj, QList <int> enrollmentIDs)
     }
 
     return false;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetBIDSMapping --------------------------------- */
+/* ---------------------------------------------------------- */
+BIDSMapping archiveIO::GetBIDSMapping(int projectRowID, QString protocol, QString modality, QString imageType) {
+    BIDSMapping mapping;
+    mapping.bidsAutoNumberRuns = false;
+    mapping.bidsEntity = "unknown";
+    mapping.bidsRun = 0;
+    mapping.bidsSuffix = "unknown";
+    mapping.protocol = protocol;
+    mapping.imageType = imageType;
+
+    QSqlQuery q;
+    q.prepare("select * from bids_mapping where project_id = :projectid and protocolname = :protocol and imagetype = :imagetype and modality = :modality");
+    q.bindValue(":projectid", projectRowID);
+    q.bindValue(":protocol", protocol);
+    q.bindValue(":imagetype", imageType);
+    q.bindValue(":modality", modality);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+
+    if (q.size() > 0) {
+        q.first();
+        mapping.bidsAutoNumberRuns = q.value("bidsAutoNumberRuns").toBool();
+        mapping.bidsEntity = q.value("bidsEntity").toString();
+        mapping.bidsIntendedForEntity = q.value("bidsIntendedForEntity").toString();
+        mapping.bidsIntendedForFileExtension = q.value("bidsIntendedForFileExtension").toString();
+        mapping.bidsIntendedForRun = q.value("bidsIntendedForRun").toString();
+        mapping.bidsIntendedForSuffix = q.value("bidsIntendedForSuffix").toString();
+        mapping.bidsIntendedForTask = q.value("bidsIntendedForTask").toString();
+        mapping.bidsRun = q.value("bidsRun").toInt();
+        mapping.bidsSuffix = q.value("bidsSuffix").toString();
+        mapping.bidsTask = q.value("bidsTask").toString();
+    }
+
+    n->Log(QString("bidsAutoNumberRuns: %1").arg(mapping.bidsAutoNumberRuns));
+    n->Log(QString("bidsEntity: %1").arg(mapping.bidsEntity));
+    n->Log(QString("bidsIntendedForEntity: %1").arg(mapping.bidsIntendedForEntity));
+    n->Log(QString("bidsIntendedForFileExtension: %1").arg(mapping.bidsIntendedForFileExtension));
+    n->Log(QString("bidsIntendedForRun: %1").arg(mapping.bidsIntendedForRun));
+    n->Log(QString("bidsIntendedForSuffix: %1").arg(mapping.bidsIntendedForSuffix));
+    n->Log(QString("bidsIntendedForTask: %1").arg(mapping.bidsIntendedForTask));
+    n->Log(QString("bidsRun: %1").arg(mapping.bidsRun));
+    n->Log(QString("bidsSuffix: %1").arg(mapping.bidsSuffix));
+    n->Log(QString("bidsTask: %1").arg(mapping.bidsTask));
+
+    return mapping;
 }

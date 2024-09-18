@@ -75,7 +75,7 @@ imageIO::~imageIO()
  * @param msg Any messages generated during converstion
  * @return `true` if successful, `false` otherwise
  */
-bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QString bindir, bool gzip, bool json, QString uid, QString studynum, QString seriesnum, QString bidsSubject, QString bidsSession, QString protocol, QString bidsSuffix, QString bidsIntendedFor, int bidsRun, bool bidsAutoRenumberRun, QString bidsTask, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg) {
+bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QString bindir, bool gzip, bool json, QString uid, QString studynum, QString seriesnum, QString bidsSubject, QString bidsSession, BIDSMapping bidsMapping, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg) {
 
     QStringList msgs;
 
@@ -140,7 +140,7 @@ bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QStr
     /* rename the files into something meaningful */
     m = "";
     if (filetype == "bids")
-        BatchRenameBIDSFiles(outdir, bidsSubject, bidsSession, protocol, bidsSuffix, bidsIntendedFor, bidsRun, bidsAutoRenumberRun, bidsTask, numfilesrenamed, m);
+        BatchRenameBIDSFiles(outdir, bidsSubject, bidsSession, bidsMapping, numfilesrenamed, m);
     else
         BatchRenameFiles(outdir, seriesnum, studynum, uid, numfilesrenamed, m);
     msgs << "Renamed output files [" + m + "]";

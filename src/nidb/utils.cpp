@@ -1058,14 +1058,12 @@ bool BatchRenameFiles(QString dir, QString seriesnum, QString studynum, QString 
  * @param dir Input directory
  * @param bidsSubject BIDS `sub-` label
  * @param bidsSession BIDS `ses-` label
- * @param protocol Protocol name
- * @param bidsSuffix BIDS suffix
- * @param bidsRun BIDS run
+ * @param mapping BIDS Mapping structure
  * @param numfilesrenamed Number of files renamed
  * @param msg Any messages about the renaming process
  * @return `true` if successful, `false` otherwise
  */
-bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession, QString protocol, QString bidsSuffix, QString bidsIntendedFor, int bidsRun, bool bidsAutoRun, QString bidsTask, int &numfilesrenamed, QString &msg) {
+bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession, BIDSMapping mapping, int &numfilesrenamed, QString &msg) {
 
     QDir d;
     if (!d.exists(dir)) {
@@ -1073,7 +1071,7 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession,
         return false;
     }
 
-    protocol.replace(QRegularExpression("[^a-zA-Z0-9]"), "");
+    mapping.protocol.replace(QRegularExpression("[^a-zA-Z0-9]"), "");
 
     numfilesrenamed = 0;
     QStringList exts;
@@ -1092,16 +1090,16 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession,
         SortQStringListNaturally(files);
 
         /* rename the files */
-        int r = bidsRun;
+        int r = mapping.run;
         foreach (QString fname, files) {
 
             f.setFileName(fname);
             QFileInfo fi(f);
             QString newName;
-            QString bidsSuf = bidsSuffix;
+            QString bidsSuf = mapping.bidsSuffix;
 
             /* special case where one series becomes two BIDS files */
-            if (bidsSuffix == "magnitude1and2") {
+            if (mapping.bidsSuffix == "magnitude1and2") {
                 msg += "Renaming a fieldmap magnitude 1 and 2 file. One series was collected but converted to Nifti as two .nii.gz files";
                 /* look for files ending in e1 and e2 file */
                 if (fi.baseName().endsWith("_e1"))
@@ -1113,10 +1111,10 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession,
             QString fileBaseName = QString("%1_%2").arg(bidsSubject).arg(bidsSession);
             if (r > 0)
                 fileBaseName += QString("_run-%1").arg(r);
-            if (bidsTask != "")
-                fileBaseName += QString("_task-%1").arg(bidsTask);
-            if (protocol != "")
-                fileBaseName += QString("_acq-%1").arg(protocol);
+            if (mapping.bidsTask != "")
+                fileBaseName += QString("_task-%1").arg(mapping.bidsTask);
+            if (mapping.protocol != "")
+                fileBaseName += QString("_acq-%1").arg(mapping.protocol);
 
             newName = fi.path() + "/" + QString("%1_%2%3").arg(fileBaseName).arg(bidsSuf).arg(ext.replace("*",""));
             if (QFile::exists(newName)) {
@@ -1126,10 +1124,10 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession,
 
                 if (r > 0)
                     fileBaseName += QString("_run-%1").arg(r);
-                if (bidsTask != "")
-                    fileBaseName += QString("_task-%1").arg(bidsTask);
-                if (protocol != "")
-                    fileBaseName += QString("_acq-%1").arg(protocol);
+                if (mapping.bidsTask != "")
+                    fileBaseName += QString("_task-%1").arg(mapping.bidsTask);
+                if (mapping.protocol != "")
+                    fileBaseName += QString("_acq-%1").arg(mapping.protocol);
 
                 newName = fi.path() + "/" + QString("%1_%2%3").arg(fileBaseName).arg(bidsSuf).arg(ext.replace("*",""));
             }

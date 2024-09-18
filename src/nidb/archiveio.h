@@ -62,6 +62,7 @@ public:
     bool WriteSquirrel(qint64 exportid, QString name, QString desc, QStringList downloadflags, QStringList squirrelflags, QList<qint64> seriesids, QStringList modalities, QString odir, QString &msg);
     bool WritePackage(qint64 exportid, QString zipfilepath, QString &msg);
     bool GetSeriesListDetails(QList <qint64> seriesids, QStringList modalities, subjectStudySeriesContainer &s);
+    BIDSMapping GetBIDSMapping(int projectRowID, QString protocol, QString modality, QString imageType);
 
     /* archive helper functions */
     QString GetCostCenter(QString studydesc);

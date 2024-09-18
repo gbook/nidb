@@ -42,6 +42,22 @@ typedef QHash <int, QHash<QString, QString>> indexedHash;
 static const QRegularExpression REwhiteSpace("\\s*");
 static const QRegularExpression REnonAlphaNum("[^a-zA-Z0-9_-]");
 
+struct BIDSMapping {
+    QString bidsEntity;
+    QString bidsIntendedForEntity;
+    QString bidsIntendedForFileExtension;
+    QString bidsIntendedForRun;
+    QString bidsIntendedForSuffix;
+    QString bidsIntendedForTask;
+    QString bidsSuffix;
+    QString bidsTask;
+    QString imageType;
+    QString protocol;
+    bool bidsAutoNumberRuns;
+    int bidsRun;
+    int run;
+};
+
 /* generic functions */
 void Print(QString s, bool n=true, bool pad=false);
 QString CreateCurrentDateTime(int format=1);
@@ -89,7 +105,7 @@ QString UnzipDirectory(QString dir, bool recurse=false);
 bool WriteTextFile(QString filepath, QString str, bool append=true);
 QStringList ReadTextFileIntoArray(QString filepath, bool ignoreEmptyLines=true);
 bool BatchRenameFiles(QString dir, QString seriesnum, QString studynum, QString uid, int &numfilesrenamed, QString &msg);
-bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession, QString protocol, QString bidsSuffix, QString bidsIntendedFor, int bidsRun, bool bidsAutoRun, QString bidsTask, int &numfilesrenamed, QString &msg);
+bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession, BIDSMapping mapping, int &numfilesrenamed, QString &msg);
 bool DirectoryExists(QString dir);
 bool FileExists(QString f);
 bool FileDirectoryExists(QString f);
