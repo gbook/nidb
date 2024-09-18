@@ -179,7 +179,8 @@ static const mode_t global_umask = []() noexcept -> mode_t {
 #endif
 
 #ifndef _WIN32
-#ifdef __APPLE__
+#if defined( __APPLE__ ) || defined( BSD ) || \
+    defined( __FreeBSD__ ) || defined( __NetBSD__ ) || defined( __OpenBSD__ ) || defined( __DragonFly__ )
 using stat_t = struct stat;
 const auto os_lstat = &lstat;
 const auto os_stat = &stat;
@@ -302,10 +303,6 @@ auto fsutil::get_file_attributes_ex( const fs::path& filePath,
 #if defined( _WIN32 ) && defined( BIT7Z_AUTO_PREFIX_LONG_PATHS )
 
 constexpr auto kLongPathPrefix = BIT7Z_NATIVE_STRING( R"(\\?\)" );
-
-inline auto starts_with( const native_string& str, const native_string& prefix ) -> bool {
-    return str.size() >= prefix.size() && str.compare( 0, prefix.size(), prefix ) == 0;
-}
 
 auto fsutil::should_format_long_path( const fs::path& path ) -> bool {
     constexpr auto kMaxDosFilenameSize = 12;

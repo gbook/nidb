@@ -63,12 +63,7 @@ imageIO::~imageIO()
  * @param seriesnum Series number of the images (used in renaming the files)
  * @param bidsSubject **BIDS** BIDS subject label
  * @param bidsSession **BIDS** BIDS session label
- * @param protocol **BIDS** Protocol name
- * @param bidsSuffix **BIDS** BIDS suffix
- * @param bidsIntendedFor **BIDS** BIDS IntendedFor
- * @param bidsRun **BIDS** BIDS run-
- * @param bidsAutoRenumberRun **BIDS** BIDS automatically renumber runs
- * @param bidsTask **BIDS** BIDS task-
+ * @param bidsMapping **BIDS** structure containing mapping of NiDB series desc to BIDS format
  * @param datatype if 'parrec', this function will handle conversion slightly differently
  * @param numfilesconv Number of files converted (doesn't work correctly)
  * @param numfilesrenamed Number of files renamed
@@ -109,13 +104,17 @@ bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QStr
         systemstring = QString("%1/./dcm2niix -1 -b %5 -z 3 -o '%2' %3%4").arg(bindir).arg(outdir).arg(indir).arg(fileext).arg(jsonstr);
     else if (filetype == "bids")
         systemstring = QString("%1/./dcm2niix -1 -b y -z y -o '%2' %3%4").arg(bindir).arg(outdir).arg(indir).arg(fileext);
-    else
+    else {
+        msgs << "Invalid export filetype [" + filetype + "]";
+        msg = msgs.join("\n");
         return false;
+    }
 
     /* create the output directory */
     QString m;
     if (!MakePath(outdir, m)) {
         msgs << "Unable to create path [" + outdir + "] because of error [" + m + "]";
+        msg = msgs.join("\n");
         return false;
     }
 
@@ -128,6 +127,8 @@ bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QStr
         msgs << SystemCommand(systemstring, true, true);
     }
     else {
+        msgs << "Invalid output directory [" + outdir + "]";
+        msg = msgs.join("\n");
         return false;
     }
 

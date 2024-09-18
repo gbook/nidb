@@ -2319,9 +2319,6 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 
                 n->Log(QString("Working on [" + uid + "] and study [%1] and series [%2]").arg(studynum).arg(seriesnum));
 
-                //int exportseriesid = s[uid][studynum][seriesnum]["exportseriesid"].toInt();
-                //SetExportSeriesStatus(exportseriesid, "processing");
-
                 QString seriesstatus = "complete";
                 QString statusmessage;
 
@@ -2332,13 +2329,6 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
                 QString modality = s[uid][studynum][seriesnum]["modality"];
                 QString seriesdesc = s[uid][studynum][seriesnum]["seriesdesc"];
                 int run = s[uid][studynum][seriesnum]["run"].toInt();
-                //QString seriesaltdesc = s[uid][studynum][seriesnum]["seriesaltdesc"].trimmed();
-                //QString bidsEntity = s[uid][studynum][seriesnum]["bidsentity"];
-                //QString bidsSuffix = s[uid][studynum][seriesnum]["bidssuffix"];
-                //QString bidsIntendedFor = s[uid][studynum][seriesnum]["bidsintendedfor"];
-                //int bidsRun = s[uid][studynum][seriesnum]["bidsRun"].toInt();
-                //bool bidsAutoRenumber = s[uid][studynum][seriesnum]["bidsautorenumber"].toInt();
-                //QString bidsTask = s[uid][studynum][seriesnum]["bidstask"];
                 QString imagetype = s[uid][studynum][seriesnum]["imagetype"];
                 QString datatype = s[uid][studynum][seriesnum]["datatype"];
                 QString datadir = s[uid][studynum][seriesnum]["datadir"];
@@ -2392,35 +2382,24 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 				if (bidsflags.contains("BIDS_STUDYDIR_STUDYNUM",Qt::CaseInsensitive)) {
 					sessiondir = QString("ses-%1").arg(studynum);
                     bidsSession = QString("ses-%1").arg(studynum);
-                    //n->WriteLog(QString("Creating BIDS_STUDYDIR_STUDYNUM [" + sessiondir + "]"));
 				}
 				else if (bidsflags.contains("BIDS_STUDYDIR_ALTSTUDYID",Qt::CaseInsensitive)) {
 					sessiondir = QString("ses-%1").arg(studyaltid);
                     bidsSession = QString("ses-%1").arg(studyaltid);
-                    //n->WriteLog(QString("Creating BIDS_STUDYDIR_ALTSTUDYID [" + sessiondir + "]"));
 				}
 				else if (bidsflags.contains("BIDS_STUDYDIR_DATE",Qt::CaseInsensitive)) {
 					study std(QString("%1%2").arg(uid).arg(studynum), n);
-					//std.PrintStudyInfo();
 					QString studyDate = std.dateTime().toString("yyyyMMdd");
 					sessiondir = QString("ses-%1").arg(studyDate);
                     bidsSession = QString("ses-%1").arg(studyDate);
-                    //n->WriteLog(QString("Creating BIDS_STUDYDIR_DATE [" + sessiondir + "]"));
 				}
 				if ((sessiondir == "") || (sessiondir == "ses-")) {
-					//n->WriteLog(QString("sessdir is [" + sessiondir + "] so it will become the ses-0001 format"));
                     sessiondir = QString("ses-%1").arg(j, 4, 10, QChar('0'));
                     bidsSession = QString("ses-%1").arg(j, 4, 10, QChar('0'));
                 }
 
                 /* determine the datatype (what BIDS calls the 'modality') */
                 QString seriesdir;
-                //if (seriesaltdesc == "") {
-                //    seriesdir = seriesdesc;
-                //}
-                //else {
-                //    seriesdir = seriesaltdesc;
-                //}
                 if (mapping.bidsEntity == "")
                     seriesdir = "unknown";
                 else
@@ -2452,10 +2431,8 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
                             else
                                 n->Log(m);
 
-                            //n->WriteLog("About to copy files from " + tmpdir + " to " + seriesoutdir);
                             QString systemstring = "rsync " + tmpdir + "/* " + seriesoutdir + "/";
                             n->Log(SystemCommand(systemstring));
-                            //n->WriteLog("Done copying files...");
                             RemoveDir(tmpdir,m);
                         }
                         else {
@@ -3237,6 +3214,7 @@ bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modal
     n->Log(QString("seriesids size [%1]").arg(seriesids.size()));
     QStringList seriesDescEncountered;
     QHash<QString, int> runs;
+    int lastStudyRowID(0);
     for (int i=0; i<seriesids.size(); i++) {
         qint64 seriesid = seriesids[i];
         QString modality = modalities[i];
@@ -3282,43 +3260,26 @@ bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modal
 
                 if (seriesDescEncountered.contains(seriesdesc)) {
                     runs[seriesdesc] += 1;
-                    n->Log(QString("runs[%1] = %2").arg(seriesdesc).arg(runs[seriesdesc]));
+                    //n->Log(QString("runs[%1] = %2").arg(seriesdesc).arg(runs[seriesdesc]));
                 }
                 else {
-                    n->Log(QString("seriesDescEncountered size before [%1]").arg(seriesDescEncountered.size()));
-                    n->Log(QString("appending [%1] to seriesDescEncountered").arg(seriesdesc));
+                    //n->Log(QString("seriesDescEncountered size before [%1]").arg(seriesDescEncountered.size()));
+                    //n->Log(QString("appending [%1] to seriesDescEncountered").arg(seriesdesc));
                     seriesDescEncountered << seriesdesc;
                     runs[seriesdesc] = 1;
-                    n->Log(QString("seriesDescEncountered size after [%1]").arg(seriesDescEncountered.size()));
+                    //n->Log(QString("seriesDescEncountered size after [%1]").arg(seriesDescEncountered.size()));
                 }
 
-                /*
-                QSqlQuery q2;
-                q2.prepare("select * from bids_mapping where project_id = :projectid and protocolname = :protocol and imagetype = :imagetype and modality = :modality");
-                q2.bindValue(":projectid", projectid);
-                q2.bindValue(":protocol", seriesdesc);
-                q2.bindValue(":imagetype", imagetype);
-                q2.bindValue(":modality", modality);
-                n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
-
-                QString bidsEntity, bidsSuffix, bidsIntendedFor, bidsTask;
-                int bidsRun;
-                bool bidsAutoRun;
-                if (q2.size() > 0) {
-                    q2.first();
-                    bidsEntity = q2.value("bidsentity").toString();
-                    bidsSuffix = q2.value("bidssuffix").toString();
-                    bidsIntendedFor = q2.value("bidsintendedfor").toString();
-                    bidsRun = q2.value("bidsrun").toInt();
-                    bidsAutoRun = q2.value("bidsautorun").toBool();
-                    bidsTask = q2.value("bidstask").toString();
-                } */
+                /* if we're in a new study, clear out the previous run numbering */
+                if (lastStudyRowID != studyid) {
+                    seriesDescEncountered.clear();
+                    runs.clear();
+                }
 
                 QString datadir = QString("%1/%2/%3/%4/%5").arg(n->cfg["archivedir"]).arg(uid).arg(studynum).arg(seriesnum).arg(datatype);
                 QString behdir = QString("%1/%2/%3/%4/beh").arg(n->cfg["archivedir"]).arg(uid).arg(studynum).arg(seriesnum);
                 QString qcdir = QString("%1/%2/%3/%4/qa").arg(n->cfg["archivedir"]).arg(uid).arg(studynum).arg(seriesnum);
 
-                //s[uid][studynum][seriesnum]["exportseriesid"] = QString("%1").arg(exportseriesid);
                 s[uid][0][0]["subjectid"] = uid;
                 s[uid][studynum][0]["studyid"] = QString("%1").arg(studyid);
                 s[uid][studynum][seriesnum]["seriesid"] = QString("%1").arg(seriesid);
@@ -3334,12 +3295,6 @@ bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modal
                 s[uid][studynum][seriesnum]["run"] = QString("%1").arg(runs[seriesdesc]);
                 s[uid][studynum][seriesnum]["seriesaltdesc"] = seriesaltdesc;
                 s[uid][studynum][seriesnum]["imagetype"] = imagetype;
-                //s[uid][studynum][seriesnum]["bidsentity"] = bidsEntity;
-                //s[uid][studynum][seriesnum]["bidssuffix"] = bidsSuffix;
-                //s[uid][studynum][seriesnum]["bidsrun"] = QString("%1").arg(bidsRun);
-                //s[uid][studynum][seriesnum]["bidsautorenumber"] = QString("%1").arg(bidsAutoRun);
-                //s[uid][studynum][seriesnum]["bidsintendedfor"] = bidsIntendedFor;
-                //s[uid][studynum][seriesnum]["bidstask"] = bidsTask;
                 s[uid][studynum][seriesnum]["numfilesbeh"] = QString("%1").arg(numfilesbeh);
                 s[uid][studynum][seriesnum]["numfiles"] = QString("%1").arg(numfiles);
                 s[uid][studynum][seriesnum]["projectname"] = projectname;
@@ -3405,6 +3360,7 @@ bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modal
                     s[uid][studynum][seriesnum]["primaryaltuid"] = primaryaltuid;
                     s[uid][studynum][seriesnum]["altuids"] = altuids.join(",");
                 }
+                lastStudyRowID = studyid;
             }
         }
         else {
@@ -3418,89 +3374,89 @@ bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modal
 /* ---------------------------------------------------------- */
 /* --------- AppendJSONMeasures ----------------------------- */
 /* ---------------------------------------------------------- */
-bool archiveIO::AppendJSONMeasures(QJsonObject &jsonObj, QList <int> enrollmentIDs) {
-    /* get list of variables for the list of enrollmentids */
-    if (enrollmentIDs.size() > 0) {
+// bool archiveIO::AppendJSONMeasures(QJsonObject &jsonObj, QList <int> enrollmentIDs) {
+//     /* get list of variables for the list of enrollmentids */
+//     if (enrollmentIDs.size() > 0) {
 
-        QString enrollmentIDstr = JoinIntArray(enrollmentIDs, ",");
+//         QString enrollmentIDstr = JoinIntArray(enrollmentIDs, ",");
 
-        /* get measures */
-        QSqlQuery q2;
-        q2.prepare("select * from measures a left join measureinstruments b on a.instrumentname_id = b.measureinstrument_id left join measurenames c on a.measurename_id = c.measurename_id where a.enrollment_id in (" + enrollmentIDstr + ")");
-        n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
-        if (q2.size() > 0) {
-            QJsonArray JSONmeasures;
-            while (q2.next()) {
-                QJsonObject JSONmeas;
-                QChar measuretype = q2.value("measure_type").toChar();
-                if (measuretype == 's') { JSONmeas["value"] = q2.value("measure_valuestring").toString(); }
-                else { JSONmeas["value"] = q2.value("measure_valuenum").toString(); }
-                JSONmeas["notes"] = q2.value("measure_notes").toString();
-                JSONmeas["measureName"] = q2.value("measure_name").toString();
-                JSONmeas["instrumentName"] = q2.value("instrument_name").toString();
-                JSONmeas["rater"] = q2.value("measure_rater").toString();
-                JSONmeas["dateStart"] = q2.value("measure_startdate").toString();
-                JSONmeas["dateEnd"] = q2.value("measure_enddate").toString();
-                JSONmeas["duration"] = q2.value("measure_duration").toString();
-                JSONmeas["dateRecordEntry"] = q2.value("measure_entrydate").toString();
-                JSONmeas["dateRecordCreate"] = q2.value("measure_createdate").toString();
-                JSONmeas["dateRecordModify"] = q2.value("measure_modifydate").toString();
+//         /* get measures */
+//         QSqlQuery q2;
+//         q2.prepare("select * from measures a left join measureinstruments b on a.instrumentname_id = b.measureinstrument_id left join measurenames c on a.measurename_id = c.measurename_id where a.enrollment_id in (" + enrollmentIDstr + ")");
+//         n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+//         if (q2.size() > 0) {
+//             QJsonArray JSONmeasures;
+//             while (q2.next()) {
+//                 QJsonObject JSONmeas;
+//                 QChar measuretype = q2.value("measure_type").toChar();
+//                 if (measuretype == 's') { JSONmeas["value"] = q2.value("measure_valuestring").toString(); }
+//                 else { JSONmeas["value"] = q2.value("measure_valuenum").toString(); }
+//                 JSONmeas["notes"] = q2.value("measure_notes").toString();
+//                 JSONmeas["measureName"] = q2.value("measure_name").toString();
+//                 JSONmeas["instrumentName"] = q2.value("instrument_name").toString();
+//                 JSONmeas["rater"] = q2.value("measure_rater").toString();
+//                 JSONmeas["dateStart"] = q2.value("measure_startdate").toString();
+//                 JSONmeas["dateEnd"] = q2.value("measure_enddate").toString();
+//                 JSONmeas["duration"] = q2.value("measure_duration").toString();
+//                 JSONmeas["dateRecordEntry"] = q2.value("measure_entrydate").toString();
+//                 JSONmeas["dateRecordCreate"] = q2.value("measure_createdate").toString();
+//                 JSONmeas["dateRecordModify"] = q2.value("measure_modifydate").toString();
 
-                JSONmeasures.append(JSONmeas);
-            }
-            jsonObj["measures"] = JSONmeasures;
-            return true;
-        }
-    }
-    return false;
-}
+//                 JSONmeasures.append(JSONmeas);
+//             }
+//             jsonObj["measures"] = JSONmeasures;
+//             return true;
+//         }
+//     }
+//     return false;
+// }
 
 
 /* ---------------------------------------------------------- */
 /* --------- AppendJSONDrugs -------------------------------- */
 /* ---------------------------------------------------------- */
-bool archiveIO::AppendJSONDrugs(QJsonObject &jsonObj, QList <int> enrollmentIDs) {
+// bool archiveIO::AppendJSONDrugs(QJsonObject &jsonObj, QList <int> enrollmentIDs) {
 
-    /* get list of variables for the list of enrollmentids */
-    if (enrollmentIDs.size() > 0) {
+//     /* get list of variables for the list of enrollmentids */
+//     if (enrollmentIDs.size() > 0) {
 
-        QString enrollmentIDstr = JoinIntArray(enrollmentIDs, ",");
+//         QString enrollmentIDstr = JoinIntArray(enrollmentIDs, ",");
 
-        /* get drugs */
-        QSqlQuery q2;
-        q2.prepare("select * from drugs a left join drugnames b on a.drugname_id = b.drugname_id where a.enrollment_id in (" + enrollmentIDstr + ")");
-        n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
-        if (q2.size() > 0) {
-            QJsonArray JSONdrugs;
-            while (q2.next()) {
-                QJsonObject JSONdrug;
-                JSONdrug["drugName"] = q2.value("drug_name").toString();
-                JSONdrug["drugType"] = q2.value("drug_type").toString();
-                JSONdrug["dateStart"] = q2.value("drug_startdate").toString();
-                JSONdrug["dateEnd"] = q2.value("drug_enddate").toString();
-                JSONdrug["doseAmount"] = q2.value("drug_doseamount").toString();
-                JSONdrug["doseFreq"] = q2.value("drug_dosefrequency").toString();
-                JSONdrug["doseRoute"] = q2.value("drug_route").toString();
-                JSONdrug["doseKey"] = q2.value("drug_dosekey").toString();
-                JSONdrug["doseUnit"] = q2.value("drug_doseunit").toString();
-                JSONdrug["freqModifier"] = q2.value("drug_frequencymodifier").toString();
-                JSONdrug["freqValue"] = q2.value("drug_frequencyvalue").toString();
-                JSONdrug["freqUnit"] = q2.value("drug_frequencyunit").toString();
-                JSONdrug["rater"] = q2.value("measure_rater").toString();
-                JSONdrug["notes"] = q2.value("measure_notes").toString();
-                JSONdrug["dateRecordEntry"] = q2.value("measure_entrydate").toString();
-                JSONdrug["dateRecordCreate"] = q2.value("measure_createdate").toString();
-                JSONdrug["dateRecordModify"] = q2.value("measure_modifydate").toString();
+//         /* get drugs */
+//         QSqlQuery q2;
+//         q2.prepare("select * from drugs a left join drugnames b on a.drugname_id = b.drugname_id where a.enrollment_id in (" + enrollmentIDstr + ")");
+//         n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+//         if (q2.size() > 0) {
+//             QJsonArray JSONdrugs;
+//             while (q2.next()) {
+//                 QJsonObject JSONdrug;
+//                 JSONdrug["drugName"] = q2.value("drug_name").toString();
+//                 JSONdrug["drugType"] = q2.value("drug_type").toString();
+//                 JSONdrug["dateStart"] = q2.value("drug_startdate").toString();
+//                 JSONdrug["dateEnd"] = q2.value("drug_enddate").toString();
+//                 JSONdrug["doseAmount"] = q2.value("drug_doseamount").toString();
+//                 JSONdrug["doseFreq"] = q2.value("drug_dosefrequency").toString();
+//                 JSONdrug["doseRoute"] = q2.value("drug_route").toString();
+//                 JSONdrug["doseKey"] = q2.value("drug_dosekey").toString();
+//                 JSONdrug["doseUnit"] = q2.value("drug_doseunit").toString();
+//                 JSONdrug["freqModifier"] = q2.value("drug_frequencymodifier").toString();
+//                 JSONdrug["freqValue"] = q2.value("drug_frequencyvalue").toString();
+//                 JSONdrug["freqUnit"] = q2.value("drug_frequencyunit").toString();
+//                 JSONdrug["rater"] = q2.value("measure_rater").toString();
+//                 JSONdrug["notes"] = q2.value("measure_notes").toString();
+//                 JSONdrug["dateRecordEntry"] = q2.value("measure_entrydate").toString();
+//                 JSONdrug["dateRecordCreate"] = q2.value("measure_createdate").toString();
+//                 JSONdrug["dateRecordModify"] = q2.value("measure_modifydate").toString();
 
-                JSONdrugs.append(JSONdrug);
-            }
-            jsonObj["drugs"] = JSONdrugs;
-            return true;
-        }
-    }
+//                 JSONdrugs.append(JSONdrug);
+//             }
+//             jsonObj["drugs"] = JSONdrugs;
+//             return true;
+//         }
+//     }
 
-    return false;
-}
+//     return false;
+// }
 
 
 /* ---------------------------------------------------------- */
@@ -3537,16 +3493,16 @@ BIDSMapping archiveIO::GetBIDSMapping(int projectRowID, QString protocol, QStrin
         mapping.bidsTask = q.value("bidsTask").toString();
     }
 
-    n->Log(QString("bidsAutoNumberRuns: %1").arg(mapping.bidsAutoNumberRuns));
-    n->Log(QString("bidsEntity: %1").arg(mapping.bidsEntity));
-    n->Log(QString("bidsIntendedForEntity: %1").arg(mapping.bidsIntendedForEntity));
-    n->Log(QString("bidsIntendedForFileExtension: %1").arg(mapping.bidsIntendedForFileExtension));
-    n->Log(QString("bidsIntendedForRun: %1").arg(mapping.bidsIntendedForRun));
-    n->Log(QString("bidsIntendedForSuffix: %1").arg(mapping.bidsIntendedForSuffix));
-    n->Log(QString("bidsIntendedForTask: %1").arg(mapping.bidsIntendedForTask));
-    n->Log(QString("bidsRun: %1").arg(mapping.bidsRun));
-    n->Log(QString("bidsSuffix: %1").arg(mapping.bidsSuffix));
-    n->Log(QString("bidsTask: %1").arg(mapping.bidsTask));
+    //n->Log(QString("bidsAutoNumberRuns: %1").arg(mapping.bidsAutoNumberRuns));
+    //n->Log(QString("bidsEntity: %1").arg(mapping.bidsEntity));
+    //n->Log(QString("bidsIntendedForEntity: %1").arg(mapping.bidsIntendedForEntity));
+    //n->Log(QString("bidsIntendedForFileExtension: %1").arg(mapping.bidsIntendedForFileExtension));
+    //n->Log(QString("bidsIntendedForRun: %1").arg(mapping.bidsIntendedForRun));
+    //n->Log(QString("bidsIntendedForSuffix: %1").arg(mapping.bidsIntendedForSuffix));
+    //n->Log(QString("bidsIntendedForTask: %1").arg(mapping.bidsIntendedForTask));
+    //n->Log(QString("bidsRun: %1").arg(mapping.bidsRun));
+    //n->Log(QString("bidsSuffix: %1").arg(mapping.bidsSuffix));
+    //n->Log(QString("bidsTask: %1").arg(mapping.bidsTask));
 
     return mapping;
 }

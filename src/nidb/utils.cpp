@@ -1100,7 +1100,7 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession,
 
             /* special case where one series becomes two BIDS files */
             if (mapping.bidsSuffix == "magnitude1and2") {
-                msg += "Renaming a fieldmap magnitude 1 and 2 file. One series was collected but converted to Nifti as two .nii.gz files";
+                //msg += "Renaming a fieldmap magnitude 1 and 2 file. One series was collected but converted to Nifti as two .nii.gz files";
                 /* look for files ending in e1 and e2 file */
                 if (fi.baseName().endsWith("_e1"))
                     bidsSuf = "magnitude1";
@@ -1119,7 +1119,7 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession,
             newName = fi.path() + "/" + QString("%1_%2%3").arg(fileBaseName).arg(bidsSuf).arg(ext.replace("*",""));
             if (QFile::exists(newName)) {
                 /* add run number if this file already exists */
-                msg += "File " + newName + " already exists\n";
+                //msg += "File " + newName + " already exists\n";
                 r++;
 
                 if (r > 0)
@@ -1132,11 +1132,49 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession,
                 newName = fi.path() + "/" + QString("%1_%2%3").arg(fileBaseName).arg(bidsSuf).arg(ext.replace("*",""));
             }
 
-            msg += QString(fname + " --> " + newName + "\n");
+            msg += QString("\n" + fname + " --> " + newName);
             if (f.rename(newName))
                 numfilesrenamed++;
             else
                 msg += QString("\nError renaming file [" + fname + "] to [" + newName + "]\n");
+
+            /* build an IntendedFor entry if needed */
+            if (ext.endsWith(".json") && mapping.bidsIntendedForEntity != "") {
+                QStringList intendedForEntityList = mapping.bidsIntendedForEntity.split(",");
+                QStringList intendedForFileExtensionList = mapping.bidsIntendedForFileExtension.split(",");
+                QStringList intendedForRunList = mapping.bidsIntendedForRun.split(",");
+                QStringList intendedForSuffixList = mapping.bidsIntendedForSuffix.split(",");
+                QStringList intendedForTaskList = mapping.bidsIntendedForTask.split(",");
+
+                QJsonArray jsonIntendedFor;
+                for (int i=0; i<intendedForEntityList.size(); i++) {
+                    QString intendedForStr;
+                    if (intendedForRunList.size() > 0)
+                        intendedForStr = QString("bids::%1/%2/%3/%1_%2_task-%4_run-%5_%6.%7").arg(bidsSubject).arg(bidsSession).arg(intendedForEntityList[i]).arg(intendedForTaskList[i]).arg(intendedForRunList[i]).arg(intendedForSuffixList[i]).arg(intendedForFileExtensionList[i]);
+                    else
+                        intendedForStr = QString("bids::%1/%2/%3/%1_%2_task-%4_%5.%6").arg(bidsSubject).arg(bidsSession).arg(intendedForEntityList[i]).arg(intendedForTaskList[i]).arg(intendedForSuffixList[i]).arg(intendedForFileExtensionList[i]);
+                    jsonIntendedFor.append(intendedForStr);
+                }
+
+                /* open existing JSON file */
+                QFile jsonFile;
+                jsonFile.setFileName(newName);
+                jsonFile.open(QIODevice::ReadOnly);
+                QByteArray jsonData = jsonFile.readAll();
+
+                QJsonDocument d = QJsonDocument::fromJson(jsonData);
+                QJsonObject root = d.object();
+                //qDebug() << root;
+
+                /* add IntendedFor section */
+                root["IntendedFor"] = jsonIntendedFor;
+
+                /* save JSON file */
+                QString j = QJsonDocument(root).toJson();
+                if (!WriteTextFile(newName, j))
+                    msg += "Error writing [" + newName + "]";
+
+            }
         }
     }
 

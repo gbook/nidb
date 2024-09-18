@@ -64,7 +64,11 @@
 	$bidsentity = GetVariable("bidsentity");
 	$bidssuffix = GetVariable("bidssuffix");
 	$bidsentitysuffix = GetVariable("bidsentitysuffix");
-	$bidsintendedfor = GetVariable("bidsintendedfor");
+	$bidsIntendedForEntity = GetVariable("bidsIntendedForEntity");
+	$bidsIntendedForTask = GetVariable("bidsIntendedForTask");
+	$bidsIntendedForRun = GetVariable("bidsIntendedForRun");
+	$bidsIntendedForSuffix = GetVariable("bidsIntendedForSuffix");
+	$bidsIntendedForFileExtension = GetVariable("bidsIntendedForFileExtension");
 	$bidsrun = GetVariable("bidsrun");
 	$bidsautonumberruns = GetVariable("bidsautonumberruns");
 	$bidstask = GetVariable("bidstask");
@@ -210,7 +214,7 @@
 			EditBIDSMapping($seriesid, $modality);
 			break;
 		case 'updatebidsmapping':
-			UpdateBIDSMapping($studyid, $seriesdesc, $imagetype, $bidsentitysuffix, $bidsintendedfor, $bidsrun, $bidsautonumberruns, $bidstask);
+			UpdateBIDSMapping($studyid, $seriesdesc, $imagetype, $bidsentitysuffix, $bidsIntendedForEntity, $bidsIntendedForTask, $bidsIntendedForRun, $bidsIntendedForSuffix, $bidsIntendedForFileExtension, $bidsrun, $bidsautonumberruns, $bidstask);
 			DisplayStudy($studyid);
 			break;
 		case 'displayfiles':
@@ -790,12 +794,16 @@
 	/* -------------------------------------------- */
 	/* ------- UpdateBIDSMapping ------------------ */
 	/* -------------------------------------------- */
-	function UpdateBIDSMapping($studyid, $seriesdesc, $imagetype, $bidsentitysuffix, $bidsintendedfor, $bidsrun, $bidsautonumberruns, $bidstask) {
+	function UpdateBIDSMapping($studyid, $seriesdesc, $imagetype, $bidsentitysuffix, $bidsIntendedForEntity, $bidsIntendedForTask, $bidsIntendedForRun, $bidsIntendedForSuffix, $bidsIntendedForFileExtension, $bidsrun, $bidsautonumberruns, $bidstask) {
 		$studyid = mysqli_real_escape_string($GLOBALS['linki'], $studyid);
 		$seriesdesc = mysqli_real_escape_string($GLOBALS['linki'], $seriesdesc);
 		$imagetype = mysqli_real_escape_string($GLOBALS['linki'], $imagetype);
 		$bidsentitysuffix = mysqli_real_escape_string($GLOBALS['linki'], $bidsentitysuffix);
-		$bidsintendedfor = mysqli_real_escape_string($GLOBALS['linki'], $bidsintendedfor);
+		$bidsIntendedForEntity = mysqli_real_escape_string($GLOBALS['linki'], $bidsIntendedForEntity);
+		$bidsIntendedForTask = mysqli_real_escape_string($GLOBALS['linki'], $bidsIntendedForTask);
+		$bidsIntendedForRun = mysqli_real_escape_string($GLOBALS['linki'], $bidsIntendedForRun);
+		$bidsIntendedForSuffix = mysqli_real_escape_string($GLOBALS['linki'], $bidsIntendedForSuffix);
+		$bidsIntendedForFileExtension = mysqli_real_escape_string($GLOBALS['linki'], $bidsIntendedForFileExtension);
 		$bidsrun = mysqli_real_escape_string($GLOBALS['linki'], $bidsrun);
 		$bidsautonumberruns = mysqli_real_escape_string($GLOBALS['linki'], $bidsautonumberruns);
 		$bidstask = mysqli_real_escape_string($GLOBALS['linki'], $bidstask);
@@ -812,7 +820,7 @@
 		list($path, $uid, $studynum, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid) = GetStudyInfo($studyid);
 		$modality = strtolower($modality);
 		
-		$sqlstring = "insert ignore into bids_mapping (project_id, protocolname, imagetype, modality, bidsentity, bidssuffix, bidsrun, bidsautorun, bidsintendedfor, bidstask) values ($projectid, '$seriesdesc', '$imagetype', '$modality', '$bidsentity', '$bidssuffix', $bidsrun, $bidsautonumberruns, '$bidsintendedfor', '$bidstask') on duplicate key update bidsentity = '$bidsentity', bidssuffix = '$bidssuffix', bidsrun = $bidsrun, bidsautorun = $bidsautonumberruns, bidsintendedfor = '$bidsintendedfor', bidstask = '$bidstask'";
+		$sqlstring = "insert ignore into bids_mapping (project_id, protocolname, imagetype, modality, bidsentity, bidssuffix, bidsrun, bidsAutoNumberRuns, bidsIntendedForEntity, bidsIntendedForTask, bidsIntendedForRun, bidsIntendedForSuffix, bidsIntendedForFileExtension, bidstask) values ($projectid, '$seriesdesc', '$imagetype', '$modality', '$bidsentity', '$bidssuffix', $bidsrun, $bidsautonumberruns, '$bidsIntendedForEntity', '$bidsIntendedForTask', '$bidsIntendedForRun', '$bidsIntendedForSuffix', '$bidsIntendedForFileExtension', '$bidstask') on duplicate key update bidsentity = '$bidsentity', bidssuffix = '$bidssuffix', bidsrun = $bidsrun, bidsAutoNumberRuns = $bidsautonumberruns, bidsIntendedForEntity = '$bidsIntendedForEntity', bidsIntendedForTask = '$bidsIntendedForTask', bidsIntendedForRun = '$bidsIntendedForRun', bidsIntendedForSuffix = '$bidsIntendedForSuffix', bidsIntendedForFileExtension = '$bidsIntendedForFileExtension', bidstask = '$bidstask'";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		//PrintSQL($sqlstring);
 
@@ -841,12 +849,17 @@
 		$sqlstring = "select * from bids_mapping where protocolname = '$seriesdesc' and imagetype = '$imagetype2' and modality = 'MR' and project_id = $projectid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$bidsentity = $row['bidsentity'];
-		$bidssuffix = $row['bidssuffix'];
-		$bidsintendedfor = $row['bidsintendedfor'];
-		$bidsrun = $row['bidsrun'];
-		$bidsautonumberruns = $row['bidsautorun'];
-		$bidstask = $row['bidstask'];
+		//PrintVariable($row);
+		$bidsentity = $row['bidsEntity'];
+		$bidssuffix = $row['bidsSuffix'];
+		$bidsIntendedForEntity = $row['bidsIntendedForEntity'];
+		$bidsIntendedForTask = $row['bidsIntendedForTask'];
+		$bidsIntendedForRun = $row['bidsIntendedForRun'];
+		$bidsIntendedForSuffix = $row['bidsIntendedForSuffix'];
+		$bidsIntendedForFileExtension = $row['bidsIntendedForFileExtension'];
+		$bidsrun = $row['bidsRun'];
+		$bidsautonumberruns = $row['bidsAutoNumberRuns'];
+		$bidstask = $row['bidsTask'];
 		
 		/* get list of series for this study */
 		//$sqlstring = "select series_desc, imagetype from $modality" + "_series where study_id = $studyid";
@@ -857,11 +870,10 @@
 		//$imagetype = $row['image_type'];
 
 		?>
-		<div class="ui text container" style="overflow:visible">
+		<div class="ui container" style="overflow:visible">
 			
 			<h1 class="ui header">Mapping NiDB series</h1>
-			<div class="ui segment">
-				<table>
+				<table class="ui blue table">
 					<tr>
 						<td><b>Series description</b></td>
 						<td><tt><?=$seriesdesc?></tt></td>
@@ -875,11 +887,10 @@
 						<td><tt><?=$projectname?></tt></td>
 					</tr>
 				</table>
-			</div>
 			
 			<h1 class="ui header">to BIDS</h1>
 			
-			<div class="ui segment">
+			<div class="ui blue segment">
 			
 				<form method="post" action="studies.php" class="ui form" style="overflow:visible">
 					<input type="hidden" name="action" value="updatebidsmapping">
@@ -909,9 +920,64 @@
 						</div>
 					</div>
 
-					<div class="field">
-						<label>BIDS IntendedFor <i class="question circle outline icon" title="BIDS 'task-' filename option"></i> <span style="font-weight:normal">Comma separated list of series descriptions</span></label>
-						<input type="text" name="bidsintendedfor" value="<?=$bidsintendedfor?>" style="font-family:monospace">
+					<h4 class="ui dividing header">BIDS IntendedFor</h4>
+					<div class="fields">
+						<div class="field">
+							<label>Entity</label>
+							<input type="text" name="bidsIntendedForEntity" value="<?=$bidsIntendedForEntity?>" style="font-family:monospace">
+						</div>
+						<div class="field">
+							<label>Task</label>
+							<input type="text" name="bidsIntendedForTask" value="<?=$bidsIntendedForTask?>" style="font-family:monospace">
+						</div>
+						<div class="field">
+							<label>Run</label>
+							<input type="text" name="bidsIntendedForRun" value="<?=$bidsIntendedForRun?>" style="font-family:monospace">
+						</div>
+						<div class="field">
+							<label>Suffix</label>
+							<input type="text" name="bidsIntendedForSuffix" value="<?=$bidsIntendedForSuffix?>" style="font-family:monospace">
+						</div>
+						<div class="field">
+							<label>FileExtension</label>
+							<input type="text" name="bidsIntendedForFileExtension" value="<?=$bidsIntendedForFileExtension?>" style="font-family:monospace">
+						</div>
+					</div>
+					<div class="ui segment">
+						<p><b><tt>IntendedFor</tt> Example</b></p>
+						<p>If you enter the following options</p>
+						<p>
+						<table>
+							<tr>
+								<td><div class="ui fluid label">Entity</div></td>
+								<td><tt>func, func</tt></td>
+							</tr>
+							<tr>
+								<td><div class="ui fluid label">Task</div></td>
+								<td><tt>Stroop, Stroop</tt></td>
+							</tr>
+							<tr>
+								<td><div class="ui fluid label">Run</div></td>
+								<td><tt>1,2</tt></td>
+							</tr>
+							<tr>
+								<td><div class="ui fluid label">Suffix</div></td>
+								<td><tt>bold, bold</tt></td>
+							</tr>
+							<tr>
+								<td><div class="ui fluid label">FileExtension</div></td>
+								<td><tt>nii.gz, nii.gz</tt></td>
+							</tr>
+						</table>
+						</p>
+						<p>then NiDB will generate this entry in the series' .json file</p>
+						<p><div class="code">
+							"IntendedFor": [<br>
+							&nbsp;&nbsp;&nbsp;&nbsp;bids::sub-001/ses-001/func/sub-001_ses-001_task-Stroop_run-1_bold.nii.gz,<br>
+							&nbsp;&nbsp;&nbsp;&nbsp;bids::sub-001/ses-001/func/sub-001_ses-001_task-Stroop_run-2_bold.nii.gz<br>
+							]
+						</div></p>
+						<p>subject and session will be filled in appropriately</p>
 					</div>
 
 					<div class="field">
@@ -922,7 +988,7 @@
 					<div class="field">
 						<div class="ui checkbox">
 							<input type="checkbox" name="bidsautonumberruns" value="1" <? if ($bidsautonumberruns == 1) { echo "checked"; } ?>>
-							<label>Automatically number runs</label>
+							<label data-html="<div class='header'>Hello</div>">Automatically number runs</label>
 						</div>
 					</div>
 
@@ -2343,14 +2409,18 @@
 							//PrintSQL($sqlstring3);
 							$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
 							$row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC);
-							$bidsentity = $row3['bidsentity'];
-							$bidssuffix = $row3['bidssuffix'];
-							$bidsintendedfor = $row['bidsintendedfor'];
-							$bidsrun = $row['bidsrun'];
-							$bidsautonumberruns = $row['bidsautorun'];
-							$bidstask = $row['bidstask'];
+							$bidsentity = $row3['bidsEntity'];
+							$bidssuffix = $row3['bidsSuffix'];
+							$bidsIntendedForEntity = $row['bidsIntendedForEntity'];
+							$bidsIntendedForTask = $row['bidsIntendedForTask'];
+							$bidsIntendedForRun = $row['bidsIntendedForRun'];
+							$bidsIntendedForSuffix = $row['bidsIntendedForSuffix'];
+							$bidsIntendedForFileExtension = $row['bidsIntendedForFileExtension'];
+							$bidsrun = $row['bidsRun'];
+							$bidsautonumberruns = $row['bidsAutoNumberRuns'];
+							$bidstask = $row['bidsTask'];
 							
-							$bidstitle = "BIDS&#10;&#10;Entity $bidsentity&#10;BIDS suffix $bidssuffix&#10;IntendedFor $bidsintendedfor&#10;Run $bidsrun&#10;Auto-renumber runs $bidsautonumberruns&#10;Task $bidstask";
+							$bidstitle = "BIDS&#10;&#10;Entity&nbsp;-&nbsp;$bidsentity&#10;BIDS&nbsp;suffix&nbsp;-&nbsp;$bidssuffix&#10;IntendedFor&nbsp;-&nbsp;$bidsintendedfor&#10;Run&nbsp;-&nbsp;$bidsrun&#10;Autonumber&nbsp;runs&nbsp;-&nbsp;$bidsautonumberruns&#10;Task&nbsp;-&nbsp;$bidstask";
 							
 							?>
 							<script type="text/javascript">
@@ -2395,7 +2465,7 @@
 											$color = "green";
 										}
 									?>
-									<a class="ui <?=$color?> compact basic button" href="studies.php?action=editbidsmapping&modality=mr&seriesid=<?=$mrseries_id?>"><?=$label?></a>
+									<a class="ui <?=$color?> compact basic button" href="studies.php?action=editbidsmapping&modality=mr&seriesid=<?=$mrseries_id?>" data-html="<?=$bidstitle?>" data-inverted="inverted" data-variation="multiline" data-variation="very wide"><?=$label?></a>
 								</td>
 								<td style="font-size:8pt"><?=$series_datetime?></td>
 								<td style="font-size:8pt"><?=$series_notes;?></td>

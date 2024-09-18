@@ -36,7 +36,9 @@
 #include <QCollator>
 #include <QRegularExpression>
 #include <QCoreApplication>
-
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QJsonDocument>
 
 typedef QHash <int, QHash<QString, QString>> indexedHash;
 static const QRegularExpression REwhiteSpace("\\s*");

@@ -5137,7 +5137,7 @@
 										<div class="ui selection dropdown">
 											<input type="hidden" name="bidsflag_subject">
 											<i class="dropdown icon"></i>
-											<!--<div class="default text">BIDS <b>subject</b> directory format</div>-->
+											<div class="default text">BIDS <b>subject</b> directory format</div>
 											<div class="scrollhint menu">
 												<div class="item" data-value="subjectdir_increment"><tt>sub-<i>0001</i></tt></div>
 												<div class="item" data-value="subjectdir_uid"><tt>sub-<i>UID</i></tt></div>
@@ -5150,7 +5150,7 @@
 										<div class="ui selection dropdown">
 											<input type="hidden" name="bidsflag_study">
 											<i class="dropdown icon"></i>
-											<!--<div class="default text">BIDS <b>study</b> directory format</div>-->
+											<div class="default text">BIDS <b>study</b> directory format</div>
 											<div class="scrollhint menu">
 												<div class="item" data-value="studydir_increment"><tt>ses-<i>0001</i></tt></div>
 												<div class="item" data-value="studydir_studynum"><tt>ses-<i>StudyNum</i></tt></div>
