@@ -1109,12 +1109,14 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession,
             }
 
             QString fileBaseName = QString("%1_%2").arg(bidsSubject).arg(bidsSession);
-            if (r > 0)
-                fileBaseName += QString("_run-%1").arg(r);
             if (mapping.bidsTask != "")
                 fileBaseName += QString("_task-%1").arg(mapping.bidsTask);
             if (mapping.protocol != "")
                 fileBaseName += QString("_acq-%1").arg(mapping.protocol);
+            if (r > 0)
+                fileBaseName += QString("_run-%1").arg(r);
+            if (mapping.bidsEntity == "fmap")
+                fileBaseName += QString("_dir-%1").arg(mapping.bidsPEDirection);
 
             newName = fi.path() + "/" + QString("%1_%2%3").arg(fileBaseName).arg(bidsSuf).arg(ext.replace("*",""));
             if (QFile::exists(newName)) {
@@ -1122,12 +1124,15 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession,
                 //msg += "File " + newName + " already exists\n";
                 r++;
 
-                if (r > 0)
-                    fileBaseName += QString("_run-%1").arg(r);
+                fileBaseName = QString("%1_%2").arg(bidsSubject).arg(bidsSession);
                 if (mapping.bidsTask != "")
                     fileBaseName += QString("_task-%1").arg(mapping.bidsTask);
                 if (mapping.protocol != "")
                     fileBaseName += QString("_acq-%1").arg(mapping.protocol);
+                if (r > 0)
+                    fileBaseName += QString("_run-%1").arg(r);
+                if (mapping.bidsEntity == "fmap")
+                    fileBaseName += QString("_dir-%1").arg(mapping.bidsPEDirection);
 
                 newName = fi.path() + "/" + QString("%1_%2%3").arg(fileBaseName).arg(bidsSuf).arg(ext.replace("*",""));
             }
@@ -1138,7 +1143,7 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession,
             else
                 msg += QString("\nError renaming file [" + fname + "] to [" + newName + "]\n");
 
-            /* build an IntendedFor entry if needed */
+            /* add IntendedFor entry to JSON file if needed */
             if (ext.endsWith(".json") && mapping.bidsIntendedForEntity != "") {
                 QStringList intendedForEntityList = mapping.bidsIntendedForEntity.split(",");
                 QStringList intendedForFileExtensionList = mapping.bidsIntendedForFileExtension.split(",");
@@ -1171,9 +1176,53 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession,
 
                 /* save JSON file */
                 QString j = QJsonDocument(root).toJson();
-                if (!WriteTextFile(newName, j))
+                if (!WriteTextFile(newName, j, false))
                     msg += "Error writing [" + newName + "]";
 
+            }
+
+            /* add a TaskName field to the JSON file if needed */
+            if (ext.endsWith(".json") && mapping.bidsSuffix == "bold") {
+                QString task = mapping.bidsTask;
+
+                /* open existing JSON file */
+                QFile jsonFile;
+                jsonFile.setFileName(newName);
+                jsonFile.open(QIODevice::ReadOnly);
+                QByteArray jsonData = jsonFile.readAll();
+
+                QJsonDocument d = QJsonDocument::fromJson(jsonData);
+                QJsonObject root = d.object();
+
+                /* add IntendedFor section */
+                root["TaskName"] = task;
+
+                /* save JSON file */
+                QString j = QJsonDocument(root).toJson();
+                if (!WriteTextFile(newName, j, false))
+                    msg += "Error writing [" + newName + "]";
+            }
+
+            /* add a PhaseEncodingDirection field to the JSON file if needed */
+            if (ext.endsWith(".json") && mapping.bidsSuffix == "fmap") {
+                QString peDirection = mapping.bidsPEDirection;
+
+                /* open existing JSON file */
+                QFile jsonFile;
+                jsonFile.setFileName(newName);
+                jsonFile.open(QIODevice::ReadOnly);
+                QByteArray jsonData = jsonFile.readAll();
+
+                QJsonDocument d = QJsonDocument::fromJson(jsonData);
+                QJsonObject root = d.object();
+
+                /* add IntendedFor section */
+                root["PhaseEncodingDirection"] = peDirection;
+
+                /* save JSON file */
+                QString j = QJsonDocument(root).toJson();
+                if (!WriteTextFile(newName, j, false))
+                    msg += "Error writing [" + newName + "]";
             }
         }
     }

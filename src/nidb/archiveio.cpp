@@ -2248,8 +2248,9 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
     n->Log("Entering WriteBIDS()...");
 
     QString exportstatus = "complete";
-    QString bidsver = "1.4.1";
+    QString bidsver = "1.4.0";
     subjectStudySeriesContainer s;
+    bidsreadme = "README:\n" + bidsreadme + "\n\nThis BIDS package was created by the Neuroinformatics Database (http://github.com/nidb)";
 
     QStringList msgs;
     if (!GetSeriesListDetails(seriesids, modalities, s)) {
@@ -2274,10 +2275,10 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
     root["BIDSVersion"] = bidsver;
     root["License"] = "This dataset was written by the Neuroinformatics Database. Licensing should be included with this dataset";
     root["Date"] = CreateLogDate();
-    QJsonArray authors = { QString("Neuroinformatics Database") };
+    QJsonArray authors = { QString("Neuroinformatics Database"), QString("Additional author to satisfy BIDS validator") };
     root["Authors"] = authors;
     root["README"] = bidsreadme;
-    root["Name"] = "NiDB exports BIDS dataset";
+    root["Name"] = "NiDB exported BIDS dataset";
     QByteArray j = QJsonDocument(root).toJson();
     QFile fout(outdir + "/dataset_description.json");
     fout.open(QIODevice::WriteOnly);
@@ -2296,9 +2297,20 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
         n->Log("Working on [" + uid + "]");
         QString subjectSex = s[uid][0][0]["subjectsex"];
         double subjectAge = s[uid][0][0]["subjectage"].toDouble();
+        QString primaryaltuid = s[uid][1][1]["primaryaltuid"];
 
         /* write subject to participants file */
-        if (!WriteTextFile(pfile, QString("sub-%1\t%2\t%3\n").arg(i, 4, 10, QChar('0')).arg(subjectAge).arg(subjectSex), true)) n->Log("Error writing " + pfile);
+        QString bidsSubject = "";
+        if (bidsflags.contains("BIDS_SUBJECTDIR_UID", Qt::CaseInsensitive)) {
+            bidsSubject = QString("sub-%1").arg(uid);
+        }
+        else if (bidsflags.contains("BIDS_SUBJECTDIR_ALTUID", Qt::CaseInsensitive)) {
+            bidsSubject = QString("sub-%1").arg(primaryaltuid);
+        }
+        if ((bidsSubject == "") || (bidsSubject == "sub-")) {
+            bidsSubject = QString("sub-%1").arg(i, 4, 10, QChar('0'));
+        }
+        if (!WriteTextFile(pfile, QString("%1\t%2\t%3\n").arg(bidsSubject).arg(subjectAge).arg(subjectSex), true)) n->Log("Error writing " + pfile);
 
         /* iterate through the studynums */
         for(QMap<int, QMap<int, QMap<QString, QString>>>::iterator b = s[uid].begin(); b != s[uid].end(); ++b) {
@@ -2328,6 +2340,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 				QString studyaltid = s[uid][studynum][seriesnum]["studyaltid"];
                 QString modality = s[uid][studynum][seriesnum]["modality"];
                 QString seriesdesc = s[uid][studynum][seriesnum]["seriesdesc"];
+                QString phasedir = s[uid][studynum][seriesnum]["phasedir"];
                 int run = s[uid][studynum][seriesnum]["run"].toInt();
                 QString imagetype = s[uid][studynum][seriesnum]["imagetype"];
                 QString datatype = s[uid][studynum][seriesnum]["datatype"];
@@ -2352,6 +2365,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
                     n->Log(QString("No condition met: mapping.bidsRun [%1]   mapping.bidsAutoNumberRuns [%2]   run [%3]").arg(mapping.bidsRun).arg(mapping.bidsAutoNumberRuns).arg(run));
                 }
                 mapping.run = run;
+                mapping.phaseDir = phasedir;
 
 				/* Create the subject identifier, based on one of the following flags
 				   BIDS_SUBJECTDIR_INCREMENT (default)
@@ -2451,8 +2465,9 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 
                 /* copy the beh data */
                 if (behdirexists) {
+                    QString sourceOutDir = outdir + "/sourcedata/";
                     QString systemstring;
-                    systemstring = "cp -R " + behindir + "/* " + seriesoutdir;
+                    systemstring = "cp -R " + behindir + "/* " + sourceOutDir;
                     n->Log(SystemCommand(systemstring, true));
                     systemstring = "chmod -Rf 777 " + seriesoutdir;
                     n->Log(SystemCommand(systemstring, true));
@@ -3255,6 +3270,19 @@ bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modal
                     numfiles = q.value("series_numfiles").toInt();
                 int numfilesbeh = q.value("numfiles_beh").toInt();
                 int enrollmentid = q.value("enrollment_id").toInt();
+                QString phaseplane = q.value("phaseencodedir").toString();
+                int phasepositive;
+                if (q.value("PhaseEncodingDirectionPositive").isNull())
+                    phasepositive = -1;
+                else
+                    phasepositive = q.value("PhaseEncodingDirectionPositive").toInt();
+                QString phasedir = "unknownPE";
+                if ((phaseplane == "COL") && (phasepositive == 1)) phasedir = "AP";
+                if ((phaseplane == "COL") && (phasepositive == 0)) phasedir = "PA";
+                if ((phaseplane == "COL") && (phasepositive == -1)) phasedir = "COL";
+                if ((phaseplane == "ROW") && (phasepositive == 1)) phasedir = "RL";
+                if ((phaseplane == "ROW") && (phasepositive == 0)) phasedir = "LR";
+                if ((phaseplane == "ROW") && (phasepositive == -1)) phasedir = "ROW";
 
                 double subjectAge = GetPatientAge("", studydate, subjectdob);
 
@@ -3292,6 +3320,9 @@ bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modal
                 s[uid][studynum][seriesnum]["seriessize"] = QString("%1").arg(seriessize);
                 s[uid][studynum][seriesnum]["seriesnotes"] = seriesnotes;
                 s[uid][studynum][seriesnum]["seriesdesc"] = seriesdesc;
+                //s[uid][studynum][seriesnum]["phaseplane"] = phaseplane;
+                //s[uid][studynum][seriesnum]["phasepositive"] = phasepositive;
+                s[uid][studynum][seriesnum]["phasedir"] = phasedir;
                 s[uid][studynum][seriesnum]["run"] = QString("%1").arg(runs[seriesdesc]);
                 s[uid][studynum][seriesnum]["seriesaltdesc"] = seriesaltdesc;
                 s[uid][studynum][seriesnum]["imagetype"] = imagetype;
@@ -3466,10 +3497,11 @@ BIDSMapping archiveIO::GetBIDSMapping(int projectRowID, QString protocol, QStrin
     BIDSMapping mapping;
     mapping.bidsAutoNumberRuns = false;
     mapping.bidsEntity = "unknown";
+    mapping.bidsPEDirection = "Unknown";
     mapping.bidsRun = 0;
     mapping.bidsSuffix = "unknown";
-    mapping.protocol = protocol;
     mapping.imageType = imageType;
+    mapping.protocol = protocol;
 
     QSqlQuery q;
     q.prepare("select * from bids_mapping where project_id = :projectid and protocolname = :protocol and imagetype = :imagetype and modality = :modality");
@@ -3488,21 +3520,23 @@ BIDSMapping archiveIO::GetBIDSMapping(int projectRowID, QString protocol, QStrin
         mapping.bidsIntendedForRun = q.value("bidsIntendedForRun").toString();
         mapping.bidsIntendedForSuffix = q.value("bidsIntendedForSuffix").toString();
         mapping.bidsIntendedForTask = q.value("bidsIntendedForTask").toString();
+        mapping.bidsPEDirection = q.value("bidsPEDirection").toString();
         mapping.bidsRun = q.value("bidsRun").toInt();
         mapping.bidsSuffix = q.value("bidsSuffix").toString();
         mapping.bidsTask = q.value("bidsTask").toString();
     }
 
-    //n->Log(QString("bidsAutoNumberRuns: %1").arg(mapping.bidsAutoNumberRuns));
-    //n->Log(QString("bidsEntity: %1").arg(mapping.bidsEntity));
-    //n->Log(QString("bidsIntendedForEntity: %1").arg(mapping.bidsIntendedForEntity));
-    //n->Log(QString("bidsIntendedForFileExtension: %1").arg(mapping.bidsIntendedForFileExtension));
-    //n->Log(QString("bidsIntendedForRun: %1").arg(mapping.bidsIntendedForRun));
-    //n->Log(QString("bidsIntendedForSuffix: %1").arg(mapping.bidsIntendedForSuffix));
-    //n->Log(QString("bidsIntendedForTask: %1").arg(mapping.bidsIntendedForTask));
-    //n->Log(QString("bidsRun: %1").arg(mapping.bidsRun));
-    //n->Log(QString("bidsSuffix: %1").arg(mapping.bidsSuffix));
-    //n->Log(QString("bidsTask: %1").arg(mapping.bidsTask));
+    // n->Log(QString("bidsAutoNumberRuns: %1").arg(mapping.bidsAutoNumberRuns));
+    // n->Log(QString("bidsEntity: %1").arg(mapping.bidsEntity));
+    // n->Log(QString("bidsIntendedForEntity: %1").arg(mapping.bidsIntendedForEntity));
+    // n->Log(QString("bidsIntendedForFileExtension: %1").arg(mapping.bidsIntendedForFileExtension));
+    // n->Log(QString("bidsIntendedForRun: %1").arg(mapping.bidsIntendedForRun));
+    // n->Log(QString("bidsIntendedForSuffix: %1").arg(mapping.bidsIntendedForSuffix));
+    // n->Log(QString("bidsIntendedForTask: %1").arg(mapping.bidsIntendedForTask));
+    // n->Log(QString("bidsPEDirection: %1").arg(mapping.bidsPEDirection));
+    // n->Log(QString("bidsRun: %1").arg(mapping.bidsRun));
+    // n->Log(QString("bidsSuffix: %1").arg(mapping.bidsSuffix));
+    // n->Log(QString("bidsTask: %1").arg(mapping.bidsTask));
 
     return mapping;
 }

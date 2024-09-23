@@ -51,9 +51,11 @@ struct BIDSMapping {
     QString bidsIntendedForRun;
     QString bidsIntendedForSuffix;
     QString bidsIntendedForTask;
+    QString bidsPEDirection;
     QString bidsSuffix;
     QString bidsTask;
     QString imageType;
+    QString phaseDir;
     QString protocol;
     bool bidsAutoNumberRuns;
     int bidsRun;
