@@ -1108,6 +1108,7 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession,
                     bidsSuf = "magnitude2";
             }
 
+            /* the order of the labels is important... task, acq, run, dir */
             QString fileBaseName = QString("%1_%2").arg(bidsSubject).arg(bidsSession);
             if (mapping.bidsTask != "")
                 fileBaseName += QString("_task-%1").arg(mapping.bidsTask);
@@ -1115,7 +1116,7 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession,
                 fileBaseName += QString("_acq-%1").arg(mapping.protocol);
             if (r > 0)
                 fileBaseName += QString("_run-%1").arg(r);
-            if (mapping.bidsEntity == "fmap")
+            if ((mapping.bidsEntity == "fmap") && (mapping.bidsSuffix == "epi")) /* PE direction required for fmap:epi */
                 fileBaseName += QString("_dir-%1").arg(mapping.bidsPEDirection);
 
             newName = fi.path() + "/" + QString("%1_%2%3").arg(fileBaseName).arg(bidsSuf).arg(ext.replace("*",""));
@@ -1131,7 +1132,7 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession,
                     fileBaseName += QString("_acq-%1").arg(mapping.protocol);
                 if (r > 0)
                     fileBaseName += QString("_run-%1").arg(r);
-                if (mapping.bidsEntity == "fmap")
+                if ((mapping.bidsEntity == "fmap") && (mapping.bidsSuffix == "epi")) /* PE direction required for fmap:epi */
                     fileBaseName += QString("_dir-%1").arg(mapping.bidsPEDirection);
 
                 newName = fi.path() + "/" + QString("%1_%2%3").arg(fileBaseName).arg(bidsSuf).arg(ext.replace("*",""));
@@ -1204,26 +1205,26 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession,
             }
 
             /* add a PhaseEncodingDirection field to the JSON file if needed */
-            if (ext.endsWith(".json") && mapping.bidsSuffix == "fmap") {
-                QString peDirection = mapping.bidsPEDirection;
+            // if (ext.endsWith(".json") && mapping.bidsSuffix == "fmap") {
+            //     QString peDirection = mapping.bidsPEDirection;
 
-                /* open existing JSON file */
-                QFile jsonFile;
-                jsonFile.setFileName(newName);
-                jsonFile.open(QIODevice::ReadOnly);
-                QByteArray jsonData = jsonFile.readAll();
+            //     /* open existing JSON file */
+            //     QFile jsonFile;
+            //     jsonFile.setFileName(newName);
+            //     jsonFile.open(QIODevice::ReadOnly);
+            //     QByteArray jsonData = jsonFile.readAll();
 
-                QJsonDocument d = QJsonDocument::fromJson(jsonData);
-                QJsonObject root = d.object();
+            //     QJsonDocument d = QJsonDocument::fromJson(jsonData);
+            //     QJsonObject root = d.object();
 
-                /* add IntendedFor section */
-                root["PhaseEncodingDirection"] = peDirection;
+            //     /* add IntendedFor section */
+            //     root["PhaseEncodingDirection"] = peDirection;
 
-                /* save JSON file */
-                QString j = QJsonDocument(root).toJson();
-                if (!WriteTextFile(newName, j, false))
-                    msg += "Error writing [" + newName + "]";
-            }
+            //     /* save JSON file */
+            //     QString j = QJsonDocument(root).toJson();
+            //     if (!WriteTextFile(newName, j, false))
+            //         msg += "Error writing [" + newName + "]";
+            // }
         }
     }
 
