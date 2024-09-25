@@ -1100,7 +1100,6 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession,
 
             /* special case where one series becomes two BIDS files */
             if (mapping.bidsSuffix == "magnitude1and2") {
-                //msg += "Renaming a fieldmap magnitude 1 and 2 file. One series was collected but converted to Nifti as two .nii.gz files";
                 /* look for files ending in e1 and e2 file */
                 if (fi.baseName().endsWith("_e1"))
                     bidsSuf = "magnitude1";
@@ -1122,7 +1121,6 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession,
             newName = fi.path() + "/" + QString("%1_%2%3").arg(fileBaseName).arg(bidsSuf).arg(ext.replace("*",""));
             if (QFile::exists(newName)) {
                 /* add run number if this file already exists */
-                //msg += "File " + newName + " already exists\n";
                 r++;
 
                 fileBaseName = QString("%1_%2").arg(bidsSubject).arg(bidsSession);
@@ -1170,7 +1168,6 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession,
 
                 QJsonDocument d = QJsonDocument::fromJson(jsonData);
                 QJsonObject root = d.object();
-                //qDebug() << root;
 
                 /* add IntendedFor section */
                 root["IntendedFor"] = jsonIntendedFor;
@@ -1203,28 +1200,6 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession,
                 if (!WriteTextFile(newName, j, false))
                     msg += "Error writing [" + newName + "]";
             }
-
-            /* add a PhaseEncodingDirection field to the JSON file if needed */
-            // if (ext.endsWith(".json") && mapping.bidsSuffix == "fmap") {
-            //     QString peDirection = mapping.bidsPEDirection;
-
-            //     /* open existing JSON file */
-            //     QFile jsonFile;
-            //     jsonFile.setFileName(newName);
-            //     jsonFile.open(QIODevice::ReadOnly);
-            //     QByteArray jsonData = jsonFile.readAll();
-
-            //     QJsonDocument d = QJsonDocument::fromJson(jsonData);
-            //     QJsonObject root = d.object();
-
-            //     /* add IntendedFor section */
-            //     root["PhaseEncodingDirection"] = peDirection;
-
-            //     /* save JSON file */
-            //     QString j = QJsonDocument(root).toJson();
-            //     if (!WriteTextFile(newName, j, false))
-            //         msg += "Error writing [" + newName + "]";
-            // }
         }
     }
 
