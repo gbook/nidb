@@ -45,6 +45,10 @@ moduleUpload::~moduleUpload()
 /* ---------------------------------------------------------- */
 /* --------- Run -------------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Run the module. Parse any uploads, and archive any uploads that the user has requested to be archived
+ * @return The number of operations completed, 0 otherwise
+ */
 int moduleUpload::Run() {
     n->Log("Entering the upload module");
 
@@ -65,6 +69,12 @@ int moduleUpload::Run() {
 /* ---------------------------------------------------------- */
 /* --------- ParseUploads ----------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Begin parsing the uploads received from the Data --> Import Data webpage. This function will also unzip any compressed files.
+ * After unzipping, it will call `UpdateParseUploads()` in chunks of 5000 files so the files can further parsed into subject/study/series which
+ * will be displayed to the user through the website. The user can then choose which of the subjects/studies/series to archive.
+ * @return true if uploads were parsed
+ */
 bool moduleUpload::ParseUploads() {
     QSqlQuery q;
     bool ret(false);
@@ -300,6 +310,16 @@ bool moduleUpload::ParseUploads() {
 /* ---------------------------------------------------------- */
 /* --------- UpdateParsedUploads ---------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief moduleUpload::UpdateParsedUploads
+ * @param fs Multilevel hash containing [subject][study][series][files]. Some import methods will obtain the subjectID from the directory name for example
+ * @param upload_subjectcriteria The subject parsing/archiving criteria. Possible values `patientid`, `specificpatientid`, `patientidfromdir`, `namesexdob`
+ * @param upload_studycriteria The study parsing/archiving criteria. Possible values `modalitystudydate`, `studyuid`
+ * @param upload_seriescriteria The series parsing/archiving criteria. Possible values `seriesnum`, `seriesdate`, `seriesuid`
+ * @param uploadstagingpath Path to the location of this data
+ * @param upload_id uploadRowID
+ * @return true
+ */
 bool moduleUpload::UpdateParsedUploads(QMap<QString, QMap<QString, QMap<QString, QStringList> > > fs, QString upload_subjectcriteria, QString upload_studycriteria, QString upload_seriescriteria, QString uploadstagingpath, int upload_id) {
 
     io->AppendUploadLog(__FUNCTION__, QString("Processing [%1] subjects").arg(fs.size()));
@@ -720,6 +740,10 @@ bool moduleUpload::UpdateParsedUploads(QMap<QString, QMap<QString, QMap<QString,
 /* ---------------------------------------------------------- */
 /* --------- AchiveParsedUploads ---------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Archives series marked for import/archiving based on specified upload criteria
+ * @return `true` if successful, `false` otherwise
+ */
 bool moduleUpload::ArchiveParsedUploads() {
     QSqlQuery q;
     bool ret(false);
@@ -732,9 +756,9 @@ bool moduleUpload::ArchiveParsedUploads() {
 
             /* check if this module should be running */
             n->ModuleRunningCheckIn();
-            if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); return 0; }
+            if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); return false; }
 
-            ret = 1;
+            ret = true;
             bool error = false;
             int upload_id = q.value("upload_id").toInt();
             io->SetUploadID(upload_id);
@@ -764,9 +788,9 @@ bool moduleUpload::ArchiveParsedUploads() {
 
                     /* check if this module should be running */
                     n->ModuleRunningCheckIn();
-                    if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); return 0; }
+                    if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); return false; }
 
-                    ret = 1;
+                    ret = true;
                     int uploadseries_id = q2.value("uploadseries_id").toInt();
 
                     n->Log(QString("Working on series [%1]").arg(uploadseries_id));
@@ -824,6 +848,12 @@ bool moduleUpload::ArchiveParsedUploads() {
 /* ---------------------------------------------------------- */
 /* --------- SetUploadStatus -------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Update the upload status, with a string and percent complete
+ * @param uploadid uploadRowID
+ * @param status Status message
+ * @param percent percent complete
+ */
 void moduleUpload::SetUploadStatus(int uploadid, QString status, double percent) {
 
     QSqlQuery q;
@@ -840,6 +870,11 @@ void moduleUpload::SetUploadStatus(int uploadid, QString status, double percent)
 /* ---------------------------------------------------------- */
 /* --------- GetUploadStatus -------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Get the upload status string
+ * @param uploadid uploadRowID
+ * @return The upload status
+ */
 QString moduleUpload::GetUploadStatus(int uploadid) {
     QString status = "";
 

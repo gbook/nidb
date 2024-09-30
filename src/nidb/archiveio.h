@@ -47,36 +47,31 @@ public:
     ~archiveIO();
 
     /* archive functions */
-    bool CreateSubject(QString PatientID, QString PatientName, QString PatientBirthDate, QString PatientSex, double PatientWeight, double PatientSize, int &subjectRowID, QString &subjectRealUID);
-    bool ArchiveDICOMSeries(int importid, int existingSubjectID, int existingStudyID, int existingSeriesID, QString subjectMatchCriteria, QString studyMatchCriteria, QString seriesMatchCriteria, int destProjectID, QString specificPatientID, int destSiteID, QString altUIDs, QString seriesNotes, QStringList files, performanceMetric &perf);
-    bool InsertParRec(int importid, QString file);
-    bool InsertEEG(int importid, QString file);
-
-    bool GetSubject(QString subjectMatchCriteria, int existingSubjectID, int projectID, QString PatientID, QString PatientName, QString PatientSex, QString PatientBirthDate, int &subjectRowID, QString &subjectUID);
-    bool CreateSubject(QString PatientID, QString PatientName, QString PatientSex, QString PatientBirthDate, double PatientWeight, double PatientSize, QString SQLIDs, int &subjectRowID, QString &subjectUID);
-
-    bool GetStudy(QString studyMatchCriteria, int existingStudyID, int enrollmentRowID, QString StudyDateTime, QString Modality, QString StudyInstanceUID, int &studyRowID);
-    bool CreateStudy(int subjectRowID, int enrollmentRowID, QString StudyDateTime, QString studyUID, QString Modality, QString PatientID, double PatientAge, double PatientSize, double PatientWeight, QString StudyDescription, QString OperatorsName, QString PerformingPhysiciansName, QString StationName, QString InstitutionName, QString InstitutionAddress, int &studyRowID, int &studyNum);
-
-    bool WriteBIDS(QList<qint64> seriesids, QStringList modalities, QString odir, QString bidsreadme, QStringList bidsflags, QString &msg);
-    bool WriteSquirrel(qint64 exportid, QString name, QString desc, QStringList downloadflags, QStringList squirrelflags, QList<qint64> seriesids, QStringList modalities, QString odir, QString &msg);
-    bool WritePackage(qint64 exportid, QString zipfilepath, QString &msg);
-    bool GetSeriesListDetails(QList <qint64> seriesids, QStringList modalities, subjectStudySeriesContainer &s);
     BIDSMapping GetBIDSMapping(int projectRowID, QString protocol, QString modality, QString imageType);
+    bool ArchiveDICOMSeries(int importid, int existingSubjectID, int existingStudyID, int existingSeriesID, QString subjectMatchCriteria, QString studyMatchCriteria, QString seriesMatchCriteria, int destProjectID, QString specificPatientID, int destSiteID, QString altUIDs, QString seriesNotes, QStringList files, performanceMetric &perf);
+    bool ArchiveEEGSeries(int importid, QString file);
+    bool ArchiveParRecSeries(int importid, QString file);
+    bool ArchiveSquirrelPackage(qint64 importRowID, QString file, QString subjectMatchCriteria, QString studyMatchCriteria, QString seriesMatchCriteria, int destProjectID, QString &msg);
+    bool CreateStudy(int subjectRowID, int enrollmentRowID, QString StudyDateTime, QString studyUID, QString Modality, QString PatientID, double PatientAge, double PatientSize, double PatientWeight, QString StudyDescription, QString OperatorsName, QString PerformingPhysiciansName, QString StationName, QString InstitutionName, QString InstitutionAddress, int &studyRowID, int &studyNum);
+    bool CreateSubject(QString PatientID, QString PatientName, QString PatientBirthDate, QString PatientSex, double PatientWeight, double PatientSize, int &subjectRowID, QString &subjectRealUID);
+    bool CreateSubject(QString PatientID, QString PatientName, QString PatientSex, QString PatientBirthDate, double PatientWeight, double PatientSize, QString SQLIDs, int &subjectRowID, QString &subjectUID);
+    bool GetSeriesListDetails(QList <qint64> seriesids, QStringList modalities, subjectStudySeriesContainer &s);
+    bool GetStudy(QString studyMatchCriteria, int existingStudyID, int enrollmentRowID, QString StudyDateTime, QString Modality, QString StudyInstanceUID, int &studyRowID);
+    bool GetSubject(QString subjectMatchCriteria, int existingSubjectID, int projectID, QString PatientID, QString PatientName, QString PatientSex, QString PatientBirthDate, int &subjectRowID, QString &subjectUID);
+    bool WriteBIDS(QList<qint64> seriesids, QStringList modalities, QString odir, QString bidsreadme, QStringList bidsflags, QString &msg);
+    bool WriteExportPackage(qint64 exportid, QString zipfilepath, QString &msg);
+    bool WriteSquirrel(qint64 exportid, QString name, QString desc, QStringList downloadflags, QStringList squirrelflags, QList<qint64> seriesids, QStringList modalities, QString odir, QString &msg);
 
     /* archive helper functions */
-    QString GetCostCenter(QString studydesc);
     QString CreateIDSearchList(QString PatientID, QString altuids);
-    void CreateThumbnail(QString f, QString outdir);
-    void SetAlternateIDs(int subjectRowID, int enrollmentRowID, QStringList altuidlist);
+    QString GetCostCenter(QString studydesc);
+    bool GetEnrollment(int subjectRowID, int projectRowID, int &enrollmentRowID);
     bool GetFamily(int subjectRowID, QString subjectUID, int &familyRowID, QString &familyUID);
     bool GetProject(int destProjectID, QString StudyDescription, int &projectRowID);
-    bool GetEnrollment(int subjectRowID, int projectRowID, int &enrollmentRowID);
+    void CreateThumbnail(QString f, QString outdir);
+    void SetAlternateIDs(int subjectRowID, int enrollmentRowID, QStringList altuidlist);
 
-    //bool AppendJSONMeasures(QJsonObject &jsonObj, QList <int> enrollmentIDs);
-    //bool AppendJSONDrugs(QJsonObject &jsonObj, QList <int> enrollmentIDs);
-
-    /* class helper functions */
+    /* object helper functions */
     void SetUploadID(int upid);
     void AppendUploadLog(QString func, QString m);
 

@@ -795,7 +795,7 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
 
 
 /* ---------------------------------------------------------- */
-/* --------- InsertParRec ----------------------------------- */
+/* --------- ArchiveParRecSeries ---------------------------- */
 /* ---------------------------------------------------------- */
 /**
  * @brief Archive a par/rec file pair
@@ -803,7 +803,7 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
  * @param file .par file to import (.rec file will automatically be searched for)
  * @return true if successful, false otherwise
  */
-bool archiveIO::InsertParRec(int importRowID, QString file) {
+bool archiveIO::ArchiveParRecSeries(int importRowID, QString file) {
 
     AppendUploadLog(__FUNCTION__, QString("----- In InsertParRec(%1,%2) -----").arg(importRowID).arg(file));
 
@@ -1390,7 +1390,7 @@ bool archiveIO::InsertParRec(int importRowID, QString file) {
 
 
 /* ---------------------------------------------------------- */
-/* --------- InsertEEG -------------------------------------- */
+/* --------- ArchiveEEGSeries ------------------------------- */
 /* ---------------------------------------------------------- */
 /**
  * @brief Insert an EEG series into the database
@@ -1398,7 +1398,7 @@ bool archiveIO::InsertParRec(int importRowID, QString file) {
  * @param file Filename to be inserted/archived
  * @return true if successful, false otherwise
  */
-bool archiveIO::InsertEEG(int importRowID, QString file) {
+bool archiveIO::ArchiveEEGSeries(int importRowID, QString file) {
 
     AppendUploadLog(__FUNCTION__, QString("----- In InsertEEG(%1, %2) -----").arg(importRowID).arg(file));
 
@@ -1719,6 +1719,38 @@ bool archiveIO::InsertEEG(int importRowID, QString file) {
     QString output = SystemCommand(systemstring);
     AppendUploadLog(__FUNCTION__, output);
     AppendUploadLog(__FUNCTION__, "Finished copying to the backup directory");
+
+    return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- ArchiveSquirrelPackage ------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief This function will archive a squirrel package.
+ * @param importRowID importRowID, to get import options and give feedback on import progress
+ * @param file Path to the squirrel package
+ * @param subjectMatchCriteria Possible match criteria `patientid`, `specificpatientid`, `patientidfromdir`, `uid`, `uidoraltuid`, `namesexdob`
+ * @param studyMatchCriteria Possible values `modalitystudydate`, `studyuid`
+ * @param seriesMatchCriteria Possible values ...
+ * @param destProjectID projectRowID into which this data should be imported
+ * @param msg
+ * @return
+ */
+bool archiveIO::ArchiveSquirrelPackage(qint64 importRowID, QString file, QString subjectMatchCriteria, QString studyMatchCriteria, QString seriesMatchCriteria, int destProjectID, QString &msg) {
+    /* get import options */
+
+    /* read the squirrel package */
+    squirrel *sqrl = new squirrel();
+    sqrl->SetPackagePath(file);
+    if (sqrl->Read()) {
+        n->Log("Successfully read squirrel package [" + file + "]", __FUNCTION__);
+        n->Log(sqrl->Print());
+    }
+    else {
+        msg = "Unable to read [" + file + "]";
+    }
 
     return true;
 }
@@ -2505,7 +2537,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 /* --------- WriteSquirrel ---------------------------------- */
 /* ---------------------------------------------------------- */
 /**
- * @brief Write a squirrel package
+ * @brief Write a squirrel package based on user parameters.
  * @param exportid exportRowID
  * @param name squirrel package name
  * @param desc squirrel package description
@@ -2532,7 +2564,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     q.prepare("select * from exportseries where export_id = :exportid");
     q.bindValue(":exportid", exportid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
-    //int numObjects = q.size();
+    //int packageid = q.value("package_id").toLongLong();
 
     if (!GetSeriesListDetails(seriesids, modalities, s)) {
         msgs << n->Log(QString("%1() Error - unable to get a series list").arg(__FUNCTION__));
@@ -2916,9 +2948,20 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
 
 
 /* ---------------------------------------------------------- */
-/* --------- WritePackage ----------------------------------- */
+/* --------- WriteExportPackage ----------------------------- */
 /* ---------------------------------------------------------- */
-bool archiveIO::WritePackage(qint64 exportid, QString zipfilepath, QString &msg) {
+/**
+ * @brief This function writes a squirrel package using the variables stored in the
+ * `packages` table, which is populated by using the `packages.php` page.
+ * This function is different than the writeSquirrel because it gets its source data
+ * from a different table. This function should be used to export data to other NiDB
+ * servers
+ * @param exportid exportRowID, which contains a pointer to the packageRowID
+ * @param zipfilepath Final path to the exported package
+ * @param msg Any messages generated during package export
+ * @return
+ */
+bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString &msg) {
 
     /* get the total number of objects being exported */
     //qint64 exportseriesid;

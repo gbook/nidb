@@ -60,7 +60,7 @@ int moduleImport::Run() {
         ret = 1;
 
     /* ----- Step 2 - parse the sub directories -----
-     * if there's a sub directory, the directory name is a rowID from the import table,
+     * if there's a sub directory, the directory name is a importRowID from the import table,
      * which contains additional information about the files being imported, such as project and site
     */
     QStringList dirs = FindAllDirs(n->cfg["incomingdir"],"",false, false);
@@ -178,7 +178,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
     QString studyMatchCriteria("ModalityStudyDate");
     QString seriesMatchCriteria("SeriesNum");
 
-    /* if there is an importRowID, check to see how that thing is doing */
+    /* if there is an importRowID, check to see how the import is doing */
     if (importid > 0) {
         subjectMatchCriteria = "uidOrAltUID";
         studyMatchCriteria = "ModalityStudyDate";
@@ -223,7 +223,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
     bool iscomplete = false;
     bool okToDeleteDir = true;
 
-    /* ----- parse all files in /incoming ----- */
+    /* ----- parse all files in the directory ----- */
     QStringList files = FindAllFiles(dir, "*");
     qint64 numfiles = files.size();
     n->Log(QString("Found [%1] files in [%2]").arg(numfiles).arg(dir));
@@ -292,7 +292,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
 
                 QString m;
 
-                if (!io->InsertParRec(importid, file)) {
+                if (!io->ArchiveParRecSeries(importid, file)) {
                     n->Log(QString("InsertParRec(%1, %2) failed: [%3]").arg(file).arg(importid).arg(m));
 
                     QSqlQuery q;
@@ -313,14 +313,21 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
                 }
                 i++;
             }
-            else if (ext == "rec")
+            else if (ext == "rec") {
                 n->Log("Filetype is a .rec");
+            }
+            else if (ext == "sqrl") {
+                n->Log("Filetype is a .sqrl package");
+
+                QString m;
+                io->ArchiveSquirrelPackage(importid, file, "patientid", "modalitystudydate", "seriesnum", importProjectID, m);
+            }
             else if ((ext == "cnt") || (ext == "3dd") || (ext == "dat") || (ext == "edf") || (importModality == "eeg") || (importDatatype == "eeg") || (importModality == "et") || (ext == "et") ) {
                 n->Log("Filetype is an EEG or ET file");
 
                 QString m;
 
-                if (!io->InsertEEG(importid, file)) {
+                if (!io->ArchiveEEGSeries(importid, file)) {
                     n->Log(QString("InsertEEG(%1, %2) failed: [%3]").arg(file).arg(importid).arg(m));
                     QSqlQuery q;
                     q.prepare("insert into importlogs (filename_orig, fileformat, importgroupid, importstartdate, result) values (:file, :datatype, :importid, now(), :msg)");

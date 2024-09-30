@@ -1527,8 +1527,11 @@ bool moduleExport::ExportPackage(int exportid, QString &exportstatus, QString &f
         return false;
     }
 
-    //n->WriteLog(QString("%1() calling WriteSquirrel(%2, %3, ...)").arg(__FUNCTION__).arg(seriesids.size()).arg(modalities.size()));
-    if (io->WritePackage(exportid, rootoutdir, m)) {
+    /* to write a squirrel package, we need
+     *  - seriesids
+     */
+    if (io->WriteExportPackage(exportid, rootoutdir, m)) {
+    //if (io->WriteSquirrel(exportid, squirreltitle, squirreldesc, downloadflags, squirrelflags, seriesids, modalities, rootoutdir, m)) {
         n->Log(QString("%1() - WritePackage() returned [%2]").arg(__FUNCTION__).arg(m));
 
         /* mark all series as 'complete' */
