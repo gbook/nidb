@@ -45,10 +45,273 @@ moduleImport::~moduleImport()
 /* ---------------------------------------------------------- */
 /* --------- Run -------------------------------------------- */
 /* ---------------------------------------------------------- */
-int moduleImport::Run() {
+/**
+ * @brief Run the module
+ * @return true if any data was processed, false otherwise
+ */
+bool moduleImport::Run() {
     n->Log("Entering the import module");
 
-    int ret(0);
+    bool ret(false);
+
+    /* archive local data */
+    ret |= ArchiveLocal();
+
+    /* parse remotely imported data */
+    ret |= ParseRemotelyImportedData();
+
+    n->Log("Leaving the upload module");
+    return ret;
+
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- ParseRemotelyImportedData ---------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Parse any remotely imported data. This is data that would have been sent
+ * to this server from a remote NiDB instance, and was received by the api.php
+ * @return true if any data was found and processed, false otherwise
+ */
+bool moduleImport::ParseRemotelyImportedData() {
+
+    bool ret(false);
+
+    /* get list of pending uploads */
+    QSqlQuery q;
+    q.prepare("select * from import_requests where import_status = 'pending'");
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.size() > 0) {
+        while (q.next()) {
+            n->ModuleRunningCheckIn();
+
+            int importrequestid = q.value("importrequest_id").toInt();
+            int anonymize = q.value("import_anonymize").toInt();
+            QString datatype = q.value("import_datatype").toString().trimmed();
+            QString importstatus = q.value("import_status").toString().trimmed();
+
+            /* We should not attempt to process this export if the status was changed elsewhere */
+            if (importstatus != "pending")
+                continue;
+
+            QSqlQuery q2;
+            q2.prepare("update import_requests set import_status = 'receiving', import_startdate = now() where importrequest_id = :importrequestid");
+            q2.bindValue(":importrequestid",importrequestid);
+            n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+
+            QString uploaddir = QString("%1/%2").arg(n->cfg["uploadeddir"]).arg(importrequestid);
+            QString outdir = QString("%1/%2").arg(n->cfg["incomingdir"]).arg(importrequestid);
+            QString m;
+            if (!MakePath(outdir, m)) {
+                n->Log("Unable to create outdir [" + outdir + "] because of error [" + m + "]");
+                continue;
+            }
+
+            if (datatype == "")
+                datatype = "dicom";
+
+            n->Log(QString("Datatype for %1 is [%2]").arg(importrequestid).arg(datatype));
+
+            /* ----- get list of files in directory ----- */
+
+            /* unzip the entire directory */
+            io->AppendUploadLog(__FUNCTION__, "Unzipping files located in [" + uploaddir + "]");
+            m = UnzipDirectory(uploaddir, true);
+            io->AppendUploadLog(__FUNCTION__, "Unzip output" + m);
+
+            QStringList files;
+            files = FindAllFiles(uploaddir,"*");
+            if (files.size() < 1) {
+                SetImportRequestStatus(importrequestid, "error", "No files found in [" + uploaddir + "]");
+                continue;
+            }
+
+            /* special procedures for each datatype */
+            if ((datatype == "dicom") || (datatype == "parrec")) {
+                n->Log("Working on [" + uploaddir + "]");
+
+                /* go through the files */
+                foreach (QString file, files) {
+
+                    if (img->IsDICOMFile(file)) {
+                        /* anonymize, replace project and site, rename, and dump to incoming */
+                        n->Log("[" + file + "] is a DICOM file");
+                        PrepareAndMoveDICOM(file, outdir, anonymize);
+                    }
+                    else if (file.endsWith(".par")) {
+                        PrepareAndMovePARREC(file, outdir);
+                    }
+                    else if (file.endsWith(".rec")) {
+                        /* .par/.rec are pairs, and only the .par contains meta-info, so leave the .rec alone */
+                    }
+                    else {
+                        n->Log("[" + file + "] is NOT a DICOM file");
+                    }
+                }
+
+                /* move the beh directory if it exists */
+                QString behdir = uploaddir + "/beh";
+                QDir bd(behdir);
+                if (bd.exists()) {
+                    QString systemstring = QString("mv -v %1 %2/").arg(behdir).arg(outdir);
+                    SystemCommand(systemstring);
+                }
+            }
+            else if ((datatype == "eeg") || (datatype == "et")) {
+                n->Log("Encountered [" + datatype + "] import");
+
+                /* move the files */
+                QString systemstring = QString("touch %1/*; mv -v %1/* %2/").arg(uploaddir).arg(outdir);
+                n->Log(SystemCommand(systemstring));
+
+                n->Log("Finished moving the ET or EEG files");
+            }
+            else {
+                n->Log("Datatype not recognized [" + datatype + "]");
+            }
+
+            SetImportRequestStatus(importrequestid, "received");
+
+            /* delete the uploaded directory */
+            n->Log("Attempting to remove [" + uploaddir + "]");
+            if (!RemoveDir(uploaddir, m))
+                n->Log("Unable to remove directory [" + uploaddir + "] because error [" + m + "]");
+        }
+        ret = true;
+    }
+    else {
+        n->Log("No rows in import_requests found");
+    }
+
+    return ret;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- PrepareAndMoveDICOM ---------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Used by the ParseRemotelyImportedData function to prepare (anonymize) and move the DICOM files to the
+ * `incomingdir/<exportRowID>` directory
+ * @param filepath Input DICOM file
+ * @param outdir Output directory
+ * @param anonymize true if the file should be anonymized
+ * @return true if successful, false otherwise
+ */
+bool moduleImport::PrepareAndMoveDICOM(QString filepath, QString outdir, bool anonymize) {
+
+    if (anonymize) {
+        gdcm::Anonymizer anon;
+        std::vector<gdcm::Tag> empty_tags;
+        std::vector<gdcm::Tag> remove_tags;
+        std::vector< std::pair<gdcm::Tag, std::string> > replace_tags;
+        gdcm::Tag tag;
+        const char *dcmfile = filepath.toStdString().c_str();
+
+        tag.ReadFromCommaSeparatedString("0008, 0090"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
+        tag.ReadFromCommaSeparatedString("0008, 1050"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
+        tag.ReadFromCommaSeparatedString("0008, 1070"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
+        tag.ReadFromCommaSeparatedString("0010, 0010"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
+        tag.ReadFromCommaSeparatedString("0010, 0030"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
+
+        QString m;
+        img->AnonymizeDicomFile(anon, dcmfile, dcmfile, empty_tags, remove_tags, replace_tags, m);
+    }
+    /* if the filename exists in the outgoing directory, prepend some junk to it, since the filename is unimportant
+       some directories have all their files named IM0001.dcm ..... so, inevitably, something will get overwrtten, which is bad */
+    QString newfilename = QFileInfo(filepath).baseName() + GenerateRandomString(15) + "." + QFileInfo(filepath).completeSuffix();
+
+    QString systemstring = QString("touch %1; mv %1 %2/%3").arg(filepath).arg(outdir).arg(newfilename);
+    SystemCommand(systemstring, false);
+
+    return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- PrepareAndMovePARREC --------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Used by the ParseRemotelyImportedData function to move par/rec files to the
+ * `incomingdir/<exportRowID>` directory
+ * @param parfilepath Path to the .par file
+ * @param outdir Output directory
+ * @return true if successful, false otherwise
+ */
+bool moduleImport::PrepareAndMovePARREC(QString parfilepath, QString outdir) {
+
+    n->Log("PrepareAndMovePARREC(" + parfilepath + "," + outdir + ")");
+
+    /* if the filename exists in the outgoing directory, prepend some junk to it, since the filename is unimportant
+       some directories have all their files named IM0001.dcm ..... so something will get overwrtten unless the files are renamed */
+
+    QString padding = GenerateRandomString(15);
+    QString oldpath = QFileInfo(parfilepath).path();
+    QString parfilename = QFileInfo(parfilepath).fileName();
+    QString newparfilename = padding + parfilename;
+    QString newparfilepath = outdir + "/" + newparfilename;
+
+    n->Log(SystemCommand(QString("touch %1; mv -v %1 %2").arg(parfilepath).arg(newparfilepath)));
+
+    QString recfilename = parfilename.replace(".par", ".rec", Qt::CaseInsensitive);
+    QString newrecfilename = newparfilename.replace(".par", ".rec", Qt::CaseInsensitive);
+    QString recfilepath = oldpath + "/" + recfilename;
+    QString newrecfilepath = outdir + "/" + newrecfilename;
+
+    n->Log(SystemCommand(QString("touch %1; mv -v %1 %2").arg(recfilepath).arg(newrecfilepath)));
+
+    return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- SetImportRequestStatus ------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Set the status for an import request (remote receipt of data)
+ * @param importid ImportRowID
+ * @param status status can be `pending`, `deleting`, `receiving`, `received`, `complete`, `error`, `processing`, `cancelled`, `canceled`
+ * @param msg A string message
+ * @return true if successful, false otherwise
+ */
+bool moduleImport::SetImportRequestStatus(int importid, QString status, QString msg) {
+
+    n->Log("Setting status to ["+status+"]");
+
+    if (((status == "pending") || (status == "deleting") || (status == "receiving")|| (status == "received") || (status == "complete") || (status == "error") || (status == "processing") || (status == "cancelled") || (status == "canceled")) && (importid > 0)) {
+        QSqlQuery q;
+        if (msg.trimmed() == "") {
+            q.prepare("update import_requests set import_status = :status where importrequest_id = :importid");
+            q.bindValue(":importid", importid);
+            q.bindValue(":status", status);
+        }
+        else {
+            q.prepare("update import_requests set import_status = :status, import_message = :msg where importrequest_id = :importid");
+            q.bindValue(":importid", importid);
+            q.bindValue(":msg", msg);
+            q.bindValue(":status", status);
+        }
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        return true;
+    }
+    else
+        return false;
+}
+
+
+
+/* ---------------------------------------------------------- */
+/* --------- ArchiveLocal ----------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Archive data from the local disk, from dcmrcv and remote imports.
+ * @return true if any data processed, false otherwise
+ */
+bool moduleImport::ArchiveLocal() {
+    n->Log("Entering the import module");
+
+    bool ret(false);
 
     /* before archiving the directory, delete any rows older than 4 days from the importlogs table */
     QSqlQuery q("delete from importlogs where importstartdate < date_sub(now(), interval 4 day)");
@@ -57,7 +320,7 @@ int moduleImport::Run() {
     io->SetUploadID(0);
     /* ----- Step 1 - archive all files in the main directory ----- */
     if (ParseDirectory(n->cfg["incomingdir"], 0))
-        ret = 1;
+        ret = true;
 
     /* ----- Step 2 - parse the sub directories -----
      * if there's a sub directory, the directory name is a importRowID from the import table,
@@ -78,7 +341,7 @@ int moduleImport::Run() {
                 else
                     n->Log("Error removing directory [" + fulldir + "] [" + m + "]");
 
-                ret = ret | 1;
+                ret = ret | true;
             }
         }
         else
@@ -155,7 +418,7 @@ bool moduleImport::SetImportStatus(int importid, QString status, QString msg, QS
 /* ---------------------------------------------------------- */
 /* --------- ParseDirectory --------------------------------- */
 /* ---------------------------------------------------------- */
-int moduleImport::ParseDirectory(QString dir, int importid) {
+bool moduleImport::ParseDirectory(QString dir, int importid) {
 
     n->Log(QString("********** Working on directory [" + dir + "] with importRowID [%1] **********").arg(importid));
     n->ModuleRunningCheckIn();
@@ -206,7 +469,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
                 SetImportStatus(importid, "", "", "", false);
 
                 n->Log(perf.End());
-                return 0;
+                return false;
             }
         }
     }
@@ -218,7 +481,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
 
     SetImportStatus(importid, "archiving", "", "", false);
 
-    int ret(0);
+    int ret(false);
     int i(0);
     bool iscomplete = false;
     bool okToDeleteDir = true;
@@ -270,7 +533,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
                 n->Log("Module is now inactive, stopping the module");
                 //okToDeleteDir = false;
                 n->Log(perf.End());
-                return 1;
+                return true;
             }
         }
 
@@ -415,7 +678,7 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
 
             n->Log(perf.End());
 
-            return 1;
+            return true;
         }
     }
 
@@ -435,11 +698,11 @@ int moduleImport::ParseDirectory(QString dir, int importid) {
 
     if (i > 0) {
         n->Log("Finished archiving data for [" + dir + "]");
-        ret = 1;
+        ret = true;
     }
     else {
         n->Log("Nothing to do for [" + dir + "]");
-        ret = 0;
+        ret = false;
     }
 
     n->Log(perf.End());

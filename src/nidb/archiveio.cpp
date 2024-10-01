@@ -2329,7 +2329,8 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
         n->Log("Working on [" + uid + "]");
         QString subjectSex = s[uid][0][0]["subjectsex"];
         double subjectAge = s[uid][0][0]["subjectage"].toDouble();
-        QString primaryaltuid = s[uid][1][1]["primaryaltuid"];
+        //QString primaryaltuid = s[uid][1][1]["primaryaltuid"];
+        QString primaryaltuid = s[uid][0][0]["primaryaltuid"];
 
         /* write subject to participants file */
         QString bidsSubject = "";

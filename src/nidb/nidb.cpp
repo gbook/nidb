@@ -254,9 +254,6 @@ int nidb::ModuleGetNumThreads() {
         if (cfg["moduleminipipelinethreads"] == "") numThreads = 1;
         else numThreads = cfg["moduleminipipelinethreads"].toInt();
     }
-    else if (module == "importuploaded") {
-        numThreads = 1;
-    }
     else if (module == "qc") {
         if (cfg["moduleqcthreads"] == "") numThreads = 1;
         else numThreads = cfg["moduleqcthreads"].toInt();

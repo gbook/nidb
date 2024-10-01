@@ -1171,10 +1171,11 @@
 				<tr>
 					<td><h3 class="ui header">View</h3></td>
 					<td valign="top" style="padding-bottom: 10pt">
-						<a href="analysis.php?action=viewanalyses&id=<?=$id?>" class="ui green button">Analyses</a>
-						&nbsp; &nbsp; 
-						<a href="analysis.php?action=viewfailedanalyses&id=<?=$id?>" title="View all imaging studies which did not meet the data criteria, and therefore the pipeline did not attempt to run the analysis" class="ui basic green button">Ignored studies<br>
-						<a href="pipelines.php?action=viewversion&id=<?=$id?>" class="ui basic green button"><i class="ui code branch icon"></i>Pipeline versions</a>
+						<p><a href="analysis.php?action=viewanalyses&id=<?=$id?>" class="ui green button" style="width:170px">Analyses</a> View running and completed analyses</p>
+
+						<p><a href="analysis.php?action=viewfailedanalyses&id=<?=$id?>" class="ui basic green button" style="width:170px">Ignored studies</a> View studies that did not meet criteria to be analyzed (<b>Helpful for debugging</b>)</p>
+						
+						<p><a href="pipelines.php?action=viewversion&id=<?=$id?>" class="ui basic green button" style="width:170px"><i class="ui code branch icon"></i>Pipeline versions</a></p>
 					</td>
 				</tr>
 				<tr>
@@ -1369,7 +1370,7 @@
 									$checks['Disk space']['message'] = "Less than 1% disk free space on $clusterpath";
 									$checks['Disk space']['description'] = "The disk is nearly full. It is probable that this pipeline will fail with an out of space error";
 								}
-								$diskmsg = number_format($percentfree,1) . "% <div class='detail'>" . HumanReadableFilesize($freespace) . "</div>";
+								$diskmsg = number_format($percentfree,1) . "% free <div class='detail'>(" . HumanReadableFilesize($freespace) . " free)</div>";
 							}
 							else {
 								$diskcolor = "red";
@@ -1388,7 +1389,7 @@
 							</tr>
 							<tr>
 								<td>Disk free space</td>
-								<td><div class="ui <?=$diskcolor?> label"><i class="<?=$diskicon?>"></i> <?=$diskmsg?></div></td>
+								<td><div class="ui <?=$diskcolor?> basic label"><i class="<?=$diskicon?>"></i> <?=$diskmsg?></div></td>
 							</tr>
 						</table>
 					</td>
@@ -2910,7 +2911,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 		<!-- ---------- operations tab ---------- -->
 		
 		<div class="ui bottom attached <?=$tab_fouractive?> tab raised segment" data-tab="fourth">
-			<p><a class="ui button" href="pipelines.php?action=resetanalyses&id=<?=$id?>&returntab=operations" style="width:250px" onclick="return confirm('Are you sure you want to reset the analyses for this pipeline?')" title="This will remove any entries in the database for studies which were not analyzed. If you change your data specification, you will want to reset the analyses. This option does not remove existing analyses, it only removes the flag set for studies that indicates the study has been checked for the specified data"><i class="redo alternate icon"></i> Reprocess ignored studies</a>
+			<p><a class="ui button" href="pipelines.php?action=resetanalyses&id=<?=$id?>&returntab=operations" style="width:250px" onclick="return confirm('Are you sure you want to reset the analyses for this pipeline?')" title="This will remove any entries in the database for studies which were not analyzed. If you change your data specification, you will want to reset the analyses. This option does not remove existing analyses, it only removes the flag set for studies that indicates the study has been checked for the specified data"><i class="redo alternate icon"></i> Reset ignored studies</a>
 			</p>
 			<p><a href="#" class="ui button" style="width:250px" onClick="GetNewPipelineName();"><i class="copy icon"></i> Copy to new pipeline...</a></p>
 			<? if (!$readonly) { ?>

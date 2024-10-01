@@ -32,15 +32,6 @@
 #include "gdcmAnonymizer.h"
 #include "series.h"
 
-/*struct performanceMetrics {
-    int numSeries;
-    int numFiles;
-    QDateTime startTime;
-    QDateTime endTime;
-    qint64 numBytesRead;
-    qint64 numBytesArchived;
-};*/
-
 class moduleImport
 {
 public:
@@ -48,21 +39,24 @@ public:
     moduleImport(nidb *n);
     ~moduleImport();
 
-    int Run();
-    int ParseDirectory(QString dir, int importid);
-    QString GetImportStatus(int importid);
-    bool SetImportStatus(int importid, QString status, QString msg, QString report, bool enddate);
+    bool Run();
 
 private:
     nidb *n;
     archiveIO *io;
     imageIO *img;
 
-    /* create a multilevel hash, for archiving data without a SeriesInstanceUID tag: dcms[institute][equip][modality][patient][dob][sex][date][series][files] */
-    //QMap<QString, QMap<QString, QMap<QString, QMap<QString, QMap<QString, QMap<QString, QMap<QString, QMap<QString, QMap<QString, QStringList>>>>>>>>> dcms;
+    QMap<QString, QStringList> dcmseries; /* QMap (associated hash) to store dicoms by the SeriesInstanceUID DICOM tag */
 
-    /* create a regular associated hash for dicoms with a SeriesInstanceUID tag */
-    QMap<QString, QStringList> dcmseries;
+    /* functions */
+    QString GetImportStatus(int importid);
+    bool ArchiveLocal();
+    bool ParseDirectory(QString dir, int importid);
+    bool ParseRemotelyImportedData();
+    bool PrepareAndMoveDICOM(QString file, QString outdir, bool anonymize);
+    bool PrepareAndMovePARREC(QString file, QString outdir);
+    bool SetImportRequestStatus(int importid, QString status, QString msg = "");
+    bool SetImportStatus(int importid, QString status, QString msg, QString report, bool enddate);
 };
 
 #endif // MODULEIMPORT_H

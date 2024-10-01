@@ -38,6 +38,7 @@
 
 /**
  * @brief The archiveIO class is responsible for interacting with the archive, such as adding subjects and archiving data
+ * It includes functions to: export BIDS/squirrel from the archive
  */
 class archiveIO
 {

@@ -28,7 +28,6 @@
 #include "moduleExport.h"
 #include "moduleManager.h"
 #include "moduleImport.h"
-#include "moduleImportUploaded.h"
 #include "moduleUpload.h"
 #include "moduleMRIQA.h"
 #include "moduleQC.h"
@@ -63,7 +62,7 @@ int main(int argc, char *argv[])
     p.setOptionsAfterPositionalArgumentsMode(QCommandLineParser::ParseAsOptions);
     p.addHelpOption();
     p.addVersionOption();
-    p.addPositionalArgument("module", "Available modules:  import  export  fileio  mriqa  qc  modulemanager  importuploaded  upload  pipeline  cluster  minipipeline  backup");
+    p.addPositionalArgument("module", "Available modules:  import  export  fileio  mriqa  qc  modulemanager  upload  pipeline  cluster  minipipeline  backup");
 
     /* command line flag options */
     QCommandLineOption optDebug(QStringList() << "d" << "debug", "Enable debugging");
@@ -122,7 +121,7 @@ int main(int argc, char *argv[])
     QString paramResultDesc = p.value(optResultDesc).trimmed();
     QString paramResultUnit = p.value(optResultUnit).trimmed();
 
-    QStringList modules = { "export", "fileio", "qc", "mriqa", "modulemanager", "import", "pipeline", "importuploaded", "upload", "cluster", "minipipeline", "backup" };
+    QStringList modules = { "export", "fileio", "qc", "mriqa", "modulemanager", "import", "pipeline", "upload", "cluster", "minipipeline", "backup" };
     QStringList submodules = { "pipelinecheckin", "resultinsert", "updateanalysis", "checkcompleteanalysis"};
 
     /* now check the command line parameters passed in, to see if they are calling a valid module */
@@ -223,11 +222,6 @@ int main(int argc, char *argv[])
                         }
                         else if (module == "import") {
                             moduleImport *m = new moduleImport(n);
-                            keepLog = m->Run();
-                            delete m;
-                        }
-                        else if (module == "importuploaded") {
-                            moduleImportUploaded *m = new moduleImportUploaded(n);
                             keepLog = m->Run();
                             delete m;
                         }

@@ -52,14 +52,13 @@ moduleUpload::~moduleUpload()
 int moduleUpload::Run() {
     n->Log("Entering the upload module");
 
-    //QSqlQuery q;
     bool ret(false);
 
     /* parse any uploads */
-    ret |= ParseUploads();
+    ret |= ReadUploads();
 
     /* archive any uploads */
-    ret |= ArchiveParsedUploads();
+    ret |= ArchiveSelectedFiles();
 
     n->Log("Leaving the upload module");
     return ret;
@@ -67,15 +66,15 @@ int moduleUpload::Run() {
 
 
 /* ---------------------------------------------------------- */
-/* --------- ParseUploads ----------------------------------- */
+/* --------- ReadUploads ------------------------------------ */
 /* ---------------------------------------------------------- */
 /**
- * @brief Begin parsing the uploads received from the Data --> Import Data webpage. This function will also unzip any compressed files.
- * After unzipping, it will call `UpdateParseUploads()` in chunks of 5000 files so the files can further parsed into subject/study/series which
+ * @brief Begin exploring the files received from the Data --> Import Data webpage. This function will also unzip any compressed files.
+ * After unzipping, it will call `ParseUploadedFiles()` in chunks of 5000 so the files can further parsed into subject/study/series which
  * will be displayed to the user through the website. The user can then choose which of the subjects/studies/series to archive.
  * @return true if uploads were parsed
  */
-bool moduleUpload::ParseUploads() {
+bool moduleUpload::ReadUploads() {
     QSqlQuery q;
     bool ret(false);
 
@@ -89,24 +88,24 @@ bool moduleUpload::ParseUploads() {
             if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); return 0; }
 
             ret = 1;
-            int upload_id = q.value("upload_id").toInt();
-            io->SetUploadID(upload_id);
+            int uploadRowID = q.value("upload_id").toInt();
+            io->SetUploadID(uploadRowID);
 
             QString upload_source = q.value("upload_source").toString();
             QString upload_datapath = q.value("upload_datapath").toString();
             //int upload_destprojectid = q.value("upload_destprojectid").toInt();
             QString upload_patientid = q.value("upload_patientid").toString();
             QString upload_modality = q.value("upload_modality").toString();
-            //bool upload_guessmodality = q.value("upload_guessmodality").toBool();
+            QString upload_type = q.value("upload_type").toString();
             QString upload_subjectcriteria = q.value("upload_subjectcriteria").toString();
             QString upload_studycriteria = q.value("upload_studycriteria").toString();
             QString upload_seriescriteria = q.value("upload_seriescriteria").toString();
 
             /* update the status */
-            SetUploadStatus(upload_id, "parsing", 0.0);
+            SetUploadStatus(uploadRowID, "parsing", 0.0);
 
             /* create the path for the upload data */
-            QString uploadstagingpath = QString("%1/%2").arg(n->cfg["uploadstagingdir"]).arg(upload_id);
+            QString uploadstagingpath = QString("%1/%2").arg(n->cfg["uploadstagingdir"]).arg(uploadRowID);
 
             /* create temporary directory in uploadstagingdir */
             QString m;
@@ -115,7 +114,7 @@ bool moduleUpload::ParseUploads() {
                 ret = 1;
 
                 /* update the status */
-                SetUploadStatus(upload_id, "parsingerror");
+                SetUploadStatus(uploadRowID, "parsingerror");
 
                 continue;
             }
@@ -123,7 +122,7 @@ bool moduleUpload::ParseUploads() {
             QSqlQuery q2;
             q2.prepare("update uploads set upload_stagingpath = :stagingpath where upload_id = :uploadid");
             q2.bindValue(":stagingpath", uploadstagingpath);
-            q2.bindValue(":uploadid", upload_id);
+            q2.bindValue(":uploadid", uploadRowID);
             n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
 
             /* check if the upload path is valid */
@@ -131,7 +130,7 @@ bool moduleUpload::ParseUploads() {
                 io->AppendUploadLog(__FUNCTION__, QString("upload_datapath is invalid [%1] ").arg(upload_datapath));
 
                 /* update the status */
-                SetUploadStatus(upload_id, "parsingerror");
+                SetUploadStatus(uploadRowID, "parsingerror");
 
                 continue;
             }
@@ -142,7 +141,7 @@ bool moduleUpload::ParseUploads() {
                 ret = 1;
 
                 /* update the status */
-                SetUploadStatus(upload_id, "parsingerror");
+                SetUploadStatus(uploadRowID, "parsingerror");
 
                 continue;
             }
@@ -163,143 +162,159 @@ bool moduleUpload::ParseUploads() {
                 }
             }
 
-            /* get information about the uploaded data from the uploadstagingdir (before unzipping any zip files) */
-            qint64 c;
-            qint64 b;
-            //n->GetDirSizeAndFileCount(uploadstagingpath, c, b, true);
-            //io->AppendUploadLog(__FUNCTION__, QString("(BEFORE UNZIPPING) Upload directory [%1] contains [%2] files, and is [%3] bytes in size.").arg(uploadstagingpath).arg(c).arg(b));
-
             /* unzip any files in the uploadstagingdir */
             io->AppendUploadLog(__FUNCTION__, "Unzipping files located in [" + uploadstagingpath + "]");
             QString unzipOutput = UnzipDirectory(uploadstagingpath, true);
             io->AppendUploadLog(__FUNCTION__, "Unzip output" + unzipOutput);
 
             /* get information about the uploaded data from the uploadstagingdir (after unzipping any zip files) */
-            c = 0;
-            b = 0;
+            qint64 c = 0;
+            qint64 b = 0;
             GetDirSizeAndFileCount(uploadstagingpath, c, b, true);
-            io->AppendUploadLog(__FUNCTION__, QString("AFTER 3 passes of UNZIPPING, upload directory [%1] now contains [%2] files, and is [%3] bytes in size.").arg(uploadstagingpath).arg(c).arg(b));
+            io->AppendUploadLog(__FUNCTION__, QString("After unzipping, upload directory [%1] now contains [%2] files, and is [%3] bytes in size.").arg(uploadstagingpath).arg(c).arg(b));
 
-            /* get list of all files, and iterate through all of the files */
-            int i = 0;
-            int tfiles = 0;
-            int validFiles(0);
-            int nonMatchFiles(0);
-            int unreadableFiles(0);
-            /* create a multilevel hash [subject][study][series][files] */
-            QMap<QString, QMap<QString, QMap<QString, QStringList> > > fs;
-            QStringList files = FindAllFiles(uploadstagingpath, "*", true);
-            foreach (QString f, files) {
-                QString subject, study, series;
-
-                /* get the file info */
-                QHash<QString, QString> tags;
-                QString m;
-                bool csa = false;
-                if (n->cfg["enablecsa"] == "1") csa = true;
-				QString binpath = n->cfg["nidbdir"] + "/bin";
-				if (img->GetImageFileTags(f, binpath, csa, tags, m)) {
-                    if ((tags["Modality"].toLower() == upload_modality.toLower()) || (upload_modality.toLower() == "auto")) {
-
-                        /* subject matching criteria */
-                        if (upload_subjectcriteria == "patientid")
-                            subject = tags["PatientID"];
-                        else if (upload_subjectcriteria == "specificpatientid")
-                            subject = upload_patientid;
-                        else if (upload_subjectcriteria == "patientidfromdir")
-                            subject = tags["ParentDirectory"];
-                        else if (upload_subjectcriteria == "namesexdob")
-                            subject = tags["PatientName"] + "|" + tags["PatientSex"] + "|" + tags["PatientBirthDate"];
-                        else
-                            io->AppendUploadLog(__FUNCTION__, "Unspecified subject criteria [" + upload_subjectcriteria + "]");
-
-                        /* study matching criteria */
-                        if (upload_studycriteria == "modalitystudydate")
-                            study = tags["Modality"] + "|" + tags["StudyDateTime"];
-                        else if (upload_studycriteria == "studyuid")
-                            study = tags["StudyInstanceUID"];
-                        else
-                            io->AppendUploadLog(__FUNCTION__, "Unspecified study criteria [" + upload_studycriteria + "]");
-
-                        /* series matching criteria */
-                        if (upload_seriescriteria == "seriesnum")
-                            series = tags["SeriesNumber"];
-                        else if (upload_seriescriteria == "seriesdate")
-                            series = tags["SeriesDateTime"];
-                        else if (upload_seriescriteria == "seriesuid")
-                            series = tags["SeriesInstanceUID"];
-                        else
-                            io->AppendUploadLog(__FUNCTION__, "Unspecified series criteria [" + upload_seriescriteria + "]");
-
-                        /* store the file in the appropriate group */
-                        fs[subject][study][series].append(f);
-                        validFiles++;
+            n->Log("upload_type is [" + upload_type + "]");
+            /* handle the files differently if it's a squirrel upload */
+            if (upload_type == "squirrel") {
+                QStringList files = FindAllFiles(uploadstagingpath, "*", true);
+                foreach (QString f, files) {
+                    squirrel *sqrl = new squirrel();
+                    sqrl->SetPackagePath(f);
+                    if (sqrl->Read()) {
+                        ParseUploadedSquirrel(sqrl, upload_subjectcriteria, upload_studycriteria, upload_seriescriteria, uploadstagingpath, uploadRowID);
+                        n->Log("Successfully read squirrel file [" + f + "]");
+                        n->Log(sqrl->GetLog());
                     }
                     else {
-                        //io->AppendUploadLog(__FUNCTION__, "Valid file [" + f + "] but not the modality [" + upload_modality + "] we're looking for [" + tags["Modality"] + "]");
-                        fs["nonmatch"]["nonmatch"]["nonmatch"].append(f);
-                        nonMatchFiles++;
-                    }
-                }
-                else {
-                    /* the file is not readable */
-                    fs["NiDBunreadable"]["NiDBunreadable"]["0"].append(f);
-                    unreadableFiles++;
-                    //io->AppendUploadLog(__FUNCTION__, "Unable to read file [" + f + "]");
-                }
-
-                i++;
-                tfiles++;
-
-                if (i >= 5000) {
-                    double pct = (static_cast<double>(tfiles)/static_cast<double>(c)) * 100.0;
-                    SetUploadStatus(upload_id, "parsing", pct);
-
-                    /* check if this module should be running */
-                    n->ModuleRunningCheckIn();
-                    if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); return 0; }
-
-                    /* check if the upload status has changed */
-                    QString status = GetUploadStatus(upload_id);
-                    if (status != "parsing") {
-                        return ret;
+                        /* unable to read squirrel file */
+                        n->Log("Error reading squirrel file [" + f + "]");
+                        n->Log(sqrl->GetLog());
                     }
 
-                    /* after 5000 files, put the found information into the database, then clear the fs list */
-                    io->AppendUploadLog(__FUNCTION__, QString("Found [%1] total files: [%2] valid, [%3] nonmatch, [%4] unreadable").arg(tfiles).arg(validFiles).arg(nonMatchFiles).arg(unreadableFiles));
-
-                    io->AppendUploadLog(__FUNCTION__, QString("fs.size() [%1] before being sent into UpdateParsedUploads()").arg(fs.size()));
-
-                    UpdateParsedUploads(fs, upload_subjectcriteria, upload_studycriteria, upload_seriescriteria, uploadstagingpath, upload_id);
-                    fs.clear();
-                    i = 0;
+                    delete sqrl;
                 }
             }
+            else {
 
-            double pct = (static_cast<double>(tfiles)/static_cast<double>(c)) * 100.0;
-            SetUploadStatus(upload_id, "parsing", pct);
+                /* get list of all files, and iterate through all of the files */
+                int i = 0;
+                int tfiles = 0;
+                int validFiles(0);
+                int nonMatchFiles(0);
+                int unreadableFiles(0);
+                /* create a multilevel hash [subject][study][series][files] */
+                QMap<QString, QMap<QString, QMap<QString, QStringList> > > fs;
+                QStringList files = FindAllFiles(uploadstagingpath, "*", true);
+                foreach (QString f, files) {
+                    QString subject, study, series;
 
-            /* check if this module should be running */
-            n->ModuleRunningCheckIn();
-            if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); return 0; }
+                    /* get the file info */
+                    QHash<QString, QString> tags;
+                    QString m;
+                    bool csa = false;
+                    if (n->cfg["enablecsa"] == "1") csa = true;
+                    QString binpath = n->cfg["nidbdir"] + "/bin";
+                    if (img->GetImageFileTags(f, binpath, csa, tags, m)) {
+                        if ((tags["Modality"].toLower() == upload_modality.toLower()) || (upload_modality.toLower() == "auto")) {
 
-            /* check if the upload status has changed */
-            QString status = GetUploadStatus(upload_id);
-            if (status != "parsing") {
-                return ret;
-            }
+                            /* subject matching criteria */
+                            if (upload_subjectcriteria == "patientid")
+                                subject = tags["PatientID"];
+                            else if (upload_subjectcriteria == "specificpatientid")
+                                subject = upload_patientid;
+                            else if (upload_subjectcriteria == "patientidfromdir")
+                                subject = tags["ParentDirectory"];
+                            else if (upload_subjectcriteria == "namesexdob")
+                                subject = tags["PatientName"] + "|" + tags["PatientSex"] + "|" + tags["PatientBirthDate"];
+                            else
+                                io->AppendUploadLog(__FUNCTION__, "Unspecified subject criteria [" + upload_subjectcriteria + "]");
 
-            /* after 5000 files, put the found information into the database, then clear the fs list */
-            io->AppendUploadLog(__FUNCTION__, QString("Found [%1] total files: [%2] valid, [%3] nonmatch, [%4] unreadable").arg(tfiles).arg(validFiles).arg(nonMatchFiles).arg(unreadableFiles));
+                            /* study matching criteria */
+                            if (upload_studycriteria == "modalitystudydate")
+                                study = tags["Modality"] + "|" + tags["StudyDateTime"];
+                            else if (upload_studycriteria == "studyuid")
+                                study = tags["StudyInstanceUID"];
+                            else
+                                io->AppendUploadLog(__FUNCTION__, "Unspecified study criteria [" + upload_studycriteria + "]");
 
-            io->AppendUploadLog(__FUNCTION__, QString("fs.size() [%1] before being sent into UpdateParsedUploads()").arg(fs.size()));
+                            /* series matching criteria */
+                            if (upload_seriescriteria == "seriesnum")
+                                series = tags["SeriesNumber"];
+                            else if (upload_seriescriteria == "seriesdate")
+                                series = tags["SeriesDateTime"];
+                            else if (upload_seriescriteria == "seriesuid")
+                                series = tags["SeriesInstanceUID"];
+                            else
+                                io->AppendUploadLog(__FUNCTION__, "Unspecified series criteria [" + upload_seriescriteria + "]");
 
-            UpdateParsedUploads(fs, upload_subjectcriteria, upload_studycriteria, upload_seriescriteria, uploadstagingpath, upload_id);
-            fs.clear();
+                            /* store the file in the appropriate group */
+                            fs[subject][study][series].append(f);
+                            validFiles++;
+                        }
+                        else {
+                            //io->AppendUploadLog(__FUNCTION__, "Valid file [" + f + "] but not the modality [" + upload_modality + "] we're looking for [" + tags["Modality"] + "]");
+                            fs["nonmatch"]["nonmatch"]["nonmatch"].append(f);
+                            nonMatchFiles++;
+                        }
+                    }
+                    else {
+                        /* the file is not readable */
+                        fs["NiDBunreadable"]["NiDBunreadable"]["0"].append(f);
+                        unreadableFiles++;
+                        //io->AppendUploadLog(__FUNCTION__, "Unable to read file [" + f + "]");
+                    }
 
-            /* update the status */
-            SetUploadStatus(upload_id, "parsingcomplete", 100);
+                    i++;
+                    tfiles++;
 
+                    if (i >= 5000) {
+                        double pct = (static_cast<double>(tfiles)/static_cast<double>(c)) * 100.0;
+                        SetUploadStatus(uploadRowID, "parsing", pct);
+
+                        /* check if this module should be running */
+                        n->ModuleRunningCheckIn();
+                        if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); return 0; }
+
+                        /* check if the upload status has changed */
+                        QString status = GetUploadStatus(uploadRowID);
+                        if (status != "parsing") {
+                            return ret;
+                        }
+
+                        /* after 5000 files, put the found information into the database, then clear the fs list */
+                        io->AppendUploadLog(__FUNCTION__, QString("Found [%1] total files: [%2] valid, [%3] nonmatch, [%4] unreadable").arg(tfiles).arg(validFiles).arg(nonMatchFiles).arg(unreadableFiles));
+                        io->AppendUploadLog(__FUNCTION__, QString("fs.size() [%1] before being sent into UpdateParsedUploads()").arg(fs.size()));
+
+                        ParseUploadedFiles(fs, upload_subjectcriteria, upload_studycriteria, upload_seriescriteria, uploadstagingpath, uploadRowID);
+                        fs.clear();
+                        i = 0;
+                    }
+                }
+
+                double pct = (static_cast<double>(tfiles)/static_cast<double>(c)) * 100.0;
+                SetUploadStatus(uploadRowID, "parsing", pct);
+
+                /* check if this module should be running */
+                n->ModuleRunningCheckIn();
+                if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); return 0; }
+
+                /* check if the upload status has changed */
+                QString status = GetUploadStatus(uploadRowID);
+                if (status != "parsing") {
+                    return ret;
+                }
+
+                /* after 5000 files, put the found information into the database, then clear the fs list */
+                io->AppendUploadLog(__FUNCTION__, QString("Found [%1] total files: [%2] valid, [%3] nonmatch, [%4] unreadable").arg(tfiles).arg(validFiles).arg(nonMatchFiles).arg(unreadableFiles));
+                io->AppendUploadLog(__FUNCTION__, QString("fs.size() [%1] before being sent into UpdateParsedUploads()").arg(fs.size()));
+
+                ParseUploadedFiles(fs, upload_subjectcriteria, upload_studycriteria, upload_seriescriteria, uploadstagingpath, uploadRowID);
+                fs.clear();
+
+                /* update the status */
+                SetUploadStatus(uploadRowID, "parsingcomplete", 100);
+
+            } /* end if squirrel */
         } /* end while */
     }
 
@@ -308,19 +323,19 @@ bool moduleUpload::ParseUploads() {
 
 
 /* ---------------------------------------------------------- */
-/* --------- UpdateParsedUploads ---------------------------- */
+/* --------- ParseUploadedFiles ----------------------------- */
 /* ---------------------------------------------------------- */
 /**
- * @brief moduleUpload::UpdateParsedUploads
+ * @brief This function updates the upload* tables in the database, based on the previously parsed DICOM (or other) files
  * @param fs Multilevel hash containing [subject][study][series][files]. Some import methods will obtain the subjectID from the directory name for example
  * @param upload_subjectcriteria The subject parsing/archiving criteria. Possible values `patientid`, `specificpatientid`, `patientidfromdir`, `namesexdob`
  * @param upload_studycriteria The study parsing/archiving criteria. Possible values `modalitystudydate`, `studyuid`
  * @param upload_seriescriteria The series parsing/archiving criteria. Possible values `seriesnum`, `seriesdate`, `seriesuid`
  * @param uploadstagingpath Path to the location of this data
- * @param upload_id uploadRowID
+ * @param uploadRowID uploadRowID
  * @return true
  */
-bool moduleUpload::UpdateParsedUploads(QMap<QString, QMap<QString, QMap<QString, QStringList> > > fs, QString upload_subjectcriteria, QString upload_studycriteria, QString upload_seriescriteria, QString uploadstagingpath, int upload_id) {
+bool moduleUpload::ParseUploadedFiles(QMap<QString, QMap<QString, QMap<QString, QStringList> > > fs, QString upload_subjectcriteria, QString upload_studycriteria, QString upload_seriescriteria, QString uploadstagingpath, int uploadRowID) {
 
     io->AppendUploadLog(__FUNCTION__, QString("Processing [%1] subjects").arg(fs.size()));
 
@@ -340,7 +355,7 @@ bool moduleUpload::UpdateParsedUploads(QMap<QString, QMap<QString, QMap<QString,
             QSqlQuery q3;
             /* check if the subjectid exists ... */
             q3.prepare("select uploadsubject_id from upload_subjects where upload_id = :uploadid and uploadsubject_patientid = :patientid");
-            q3.bindValue(":uploadid", upload_id);
+            q3.bindValue(":uploadid", uploadRowID);
             q3.bindValue(":patientid", PatientID);
             n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
             if (q3.size() > 0) {
@@ -351,7 +366,7 @@ bool moduleUpload::UpdateParsedUploads(QMap<QString, QMap<QString, QMap<QString,
             else {
                 /* ... otherwise create a new subject */
                 q3.prepare("insert into upload_subjects (upload_id, uploadsubject_patientid) values (:uploadid, :patientid)");
-                q3.bindValue(":uploadid", upload_id);
+                q3.bindValue(":uploadid", uploadRowID);
                 q3.bindValue(":patientid", PatientID);
                 n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
                 subjectid = q3.lastInsertId().toInt();
@@ -372,7 +387,7 @@ bool moduleUpload::UpdateParsedUploads(QMap<QString, QMap<QString, QMap<QString,
             QSqlQuery q3;
             /* check if the subjectid already exists ... */
             q3.prepare("select uploadsubject_id from upload_subjects where upload_id = :uploadid and uploadsubject_name = :patientname and uploadsubject_dob = :patientdob and uploadsubject_sex = :patientsex");
-            q3.bindValue(":uploadid", upload_id);
+            q3.bindValue(":uploadid", uploadRowID);
             q3.bindValue(":patientname", PatientName);
             q3.bindValue(":patientdob", PatientBirthDate);
             q3.bindValue(":patientsex", PatientSex);
@@ -385,7 +400,7 @@ bool moduleUpload::UpdateParsedUploads(QMap<QString, QMap<QString, QMap<QString,
             else {
                 /* ... otherwise create a new subject */
                 q3.prepare("insert into upload_subjects (upload_id, uploadsubject_name, uploadsubject_dob, uploadsubject_sex) values (:uploadid, :patientname, :patientdob, :patientsex)");
-                q3.bindValue(":uploadid", upload_id);
+                q3.bindValue(":uploadid", uploadRowID);
                 q3.bindValue(":patientname", PatientName);
                 q3.bindValue(":patientdob", PatientBirthDate);
                 q3.bindValue(":patientsex", PatientSex);
@@ -724,11 +739,6 @@ bool moduleUpload::UpdateParsedUploads(QMap<QString, QMap<QString, QMap<QString,
                     n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
                 }
                 else io->AppendUploadLog(__FUNCTION__, "Unspecified series criteria [" + upload_seriescriteria + "]");
-
-            //}
-            //else {
-            //    io->AppendUploadLog(__FUNCTION__, "Error reading file [" + files[0] + "]. That's weird it would show up here...");
-            //}
             }
         }
     }
@@ -738,13 +748,30 @@ bool moduleUpload::UpdateParsedUploads(QMap<QString, QMap<QString, QMap<QString,
 
 
 /* ---------------------------------------------------------- */
-/* --------- AchiveParsedUploads ---------------------------- */
+/* --------- ParseUploadedSquirrel -------------------------- */
 /* ---------------------------------------------------------- */
 /**
- * @brief Archives series marked for import/archiving based on specified upload criteria
+ * @brief This function updates the upload* tables in the database from a squirrel file
+ * @param sqrl squirrel object
+ * @param upload_subjectcriteria The subject parsing/archiving criteria. Possible values `patientid`, `specificpatientid`, `patientidfromdir`, `namesexdob`
+ * @param upload_studycriteria The study parsing/archiving criteria. Possible values `modalitystudydate`, `studyuid`
+ * @param upload_seriescriteria The series parsing/archiving criteria. Possible values `seriesnum`, `seriesdate`, `seriesuid`
+ * @param uploadstagingpath Path to the location of this data
+ * @param uploadRowID uploadRowID
+ * @return true
+ */
+bool moduleUpload::ParseUploadedSquirrel(squirrel *sqrl, QString upload_subjectcriteria, QString upload_studycriteria, QString upload_seriescriteria, QString uploadstagingpath, int uploadRowID) {
+    return true;
+}
+
+/* ---------------------------------------------------------- */
+/* --------- ArchiveSelectedFiles --------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Archive the series marked by the user based on specified upload criteria
  * @return `true` if successful, `false` otherwise
  */
-bool moduleUpload::ArchiveParsedUploads() {
+bool moduleUpload::ArchiveSelectedFiles() {
     QSqlQuery q;
     bool ret(false);
 
@@ -760,8 +787,8 @@ bool moduleUpload::ArchiveParsedUploads() {
 
             ret = true;
             bool error = false;
-            int upload_id = q.value("upload_id").toInt();
-            io->SetUploadID(upload_id);
+            int uploadRowID = q.value("upload_id").toInt();
+            io->SetUploadID(uploadRowID);
 
             //QString upload_status = q.value("upload_status").toString();
             int upload_destprojectid = q.value("upload_destprojectid").toInt();
@@ -771,15 +798,15 @@ bool moduleUpload::ArchiveParsedUploads() {
             QString upload_studycriteria = q.value("upload_studycriteria").toString();
             QString upload_seriescriteria = q.value("upload_seriescriteria").toString();
 
-            io->AppendUploadLog(__FUNCTION__, QString("Beginning archiving of upload [%1] with upload_destprojectid of [%2]").arg(upload_id).arg(upload_destprojectid));
+            io->AppendUploadLog(__FUNCTION__, QString("Beginning archiving of upload [%1] with upload_destprojectid of [%2]").arg(uploadRowID).arg(upload_destprojectid));
 
             /* set status to archiving */
-            SetUploadStatus(upload_id, "archiving", 0.0);
+            SetUploadStatus(uploadRowID, "archiving", 0.0);
 
             /* get list of series which should be archived from this upload */
             QSqlQuery q2;
             q2.prepare("select * from upload_series a left join upload_studies b on a.uploadstudy_id = b.uploadstudy_id left join upload_subjects c on b.uploadsubject_id = c.uploadsubject_id where a.uploadseries_status = 'import' and c.upload_id = :uploadid");
-            q2.bindValue(":uploadid", upload_id);
+            q2.bindValue(":uploadid", uploadRowID);
             n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__, true);
             int numSeries = q2.size();
             int i(0);
@@ -817,27 +844,27 @@ bool moduleUpload::ArchiveParsedUploads() {
 
                     i++;
                     double pct = static_cast<double>(i)/static_cast<double>(numSeries) * 100.0;
-                    SetUploadStatus(upload_id, "archiving", pct);
+                    SetUploadStatus(uploadRowID, "archiving", pct);
                 }
 
-                io->AppendUploadLog(__FUNCTION__, QString("Completed archiving of upload [%1]").arg(upload_id));
+                io->AppendUploadLog(__FUNCTION__, QString("Completed archiving of upload [%1]").arg(uploadRowID));
             }
             else {
                 error = true;
-                io->AppendUploadLog(__FUNCTION__, QString("Error: No series found for upload [%1]").arg(upload_id));
+                io->AppendUploadLog(__FUNCTION__, QString("Error: No series found for upload [%1]").arg(uploadRowID));
             }
 
             if (error) {
-                SetUploadStatus(upload_id, "archiveerror", -1.0);
+                SetUploadStatus(uploadRowID, "archiveerror", -1.0);
             }
             else {
-                SetUploadStatus(upload_id, "archivecomplete", 100.0);
+                SetUploadStatus(uploadRowID, "archivecomplete", 100.0);
                 /* delete all of the source data and mark status as 'archivecomplete' */
                 QString m;
                 if (RemoveDir(upload_stagingpath, m))
                     io->AppendUploadLog(__FUNCTION__, QString("Removed upload staging directory [%1]").arg(upload_stagingpath));
                 else
-                    io->AppendUploadLog(__FUNCTION__, QString("Error: No series found for upload [%1]").arg(upload_id));
+                    io->AppendUploadLog(__FUNCTION__, QString("Error: No series found for upload [%1]").arg(uploadRowID));
             }
         }
     }

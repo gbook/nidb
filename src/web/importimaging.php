@@ -51,6 +51,7 @@
 	$nfspath = GetVariable("nfspath");
 	$projectid = GetVariable("projectid");
 	$modality = GetVariable("modality");
+	$filetype = GetVariable("filetype");
 	$subjectcriteria = GetVariable("subjectcriteria");
 	$studycriteria = GetVariable("studycriteria");
 	$seriescriteria = GetVariable("seriescriteria");
@@ -68,7 +69,7 @@
 			DisplayNewImportForm();
 			break;
 		case 'newimport':
-			NewImport($datalocation, $nfspath, $projectid, $modality, $subjectcriteria, $studycriteria, $seriescriteria, $userspecifiedpatientid);
+			NewImport($datalocation, $nfspath, $projectid, $modality, $filetype, $subjectcriteria, $studycriteria, $seriescriteria, $userspecifiedpatientid);
 			DisplayImportList($displayall);
 			break;
 		case 'queueforarchive':
@@ -135,6 +136,14 @@
 								}
 							?>
 							<option value="unknown">Unknown - Have NiDB try to guess the modality</option>
+						</select>
+					</div>
+
+					<div class="three wide column"><h3 class="ui grey right aligned header">File format</h3></div>
+					<div class="thirteen wide column">
+						<select class="ui dropdown" name="filetype" required>
+							<option value="auto" selected>Imaging files</option>
+							<option value="squirrel">squirrel</option>
 						</select>
 					</div>
 
@@ -302,13 +311,14 @@
 	/* -------------------------------------------- */
 	/* ------- NewImport -------------------------- */
 	/* -------------------------------------------- */
-	function NewImport($datalocation, $nfspath, $projectid, $modality, $subjectcriteria, $studycriteria, $seriescriteria, $userspecifiedpatientid) {
+	function NewImport($datalocation, $nfspath, $projectid, $modality, $filetype, $subjectcriteria, $studycriteria, $seriescriteria, $userspecifiedpatientid) {
 		
 		/* prepare fields for SQL */
 		$datalocation = mysqli_real_escape_string($GLOBALS['linki'], $datalocation);
 		$nfspath = mysqli_real_escape_string($GLOBALS['linki'], $nfspath);
 		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
 		$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
+		$filetype = mysqli_real_escape_string($GLOBALS['linki'], $filetype);
 		$subjectcriteria = mysqli_real_escape_string($GLOBALS['linki'], $subjectcriteria);
 		$studycriteria = mysqli_real_escape_string($GLOBALS['linki'], $studycriteria);
 		$seriescriteria = mysqli_real_escape_string($GLOBALS['linki'], $seriescriteria);
@@ -324,8 +334,8 @@
 		  */
 		
 		/* create the upload and get the upload_id */
-		$sqlstring = "insert into uploads (upload_startdate, upload_status, upload_source, upload_datapath, upload_destprojectid, upload_modality, upload_guessmodality, upload_subjectcriteria, upload_studycriteria, upload_seriescriteria, upload_patientid) values (now(), 'uploading', '$datalocation', '$nfspath', $projectid, '$modality', $guessmodality, '$subjectcriteria', '$studycriteria', '$seriescriteria', '$userspecifiedpatientid')";
-		//PrintSQL($sqlstring);
+		$sqlstring = "insert into uploads (upload_startdate, upload_status, upload_source, upload_type, upload_datapath, upload_destprojectid, upload_modality, upload_guessmodality, upload_subjectcriteria, upload_studycriteria, upload_seriescriteria, upload_patientid) values (now(), 'uploading', '$datalocation', '$filetype', '$nfspath', $projectid, '$modality', $guessmodality, '$subjectcriteria', '$studycriteria', '$seriescriteria', '$userspecifiedpatientid')";
+		PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$uploadid = mysqli_insert_id($GLOBALS['linki']);
 		
@@ -469,6 +479,7 @@
 				//$log = $row['upload_log'];
 				$originalfilelist = $row['upload_originalfilelist'];
 				$source = $row['upload_source'];
+				$filetype = $row['upload_type'];
 				$datapath = $row['upload_datapath'];
 				$destprojectid = $row['upload_destprojectid'];
 				$projectname = $row['project_name'];
@@ -667,6 +678,7 @@
 			$percent = $row['upload_statuspercent'];
 			$originalfilelist = $row['upload_originalfilelist'];
 			$source = $row['upload_source'];
+			$filetype = $row['upload_type'];
 			$datapath = $row['upload_datapath'];
 			$destprojectid = $row['upload_destprojectid'];
 			$modality = $row['upload_modality'];
@@ -818,6 +830,10 @@
 					<tr>
 						<td class="right aligned"><h4 class="header">Source</h4></td>
 						<td><?=$source?></td>
+					</tr>
+					<tr>
+						<td class="right aligned"><h4 class="header">File format</h4></td>
+						<td><?=$filetype?></td>
 					</tr>
 					<tr>
 						<td class="right aligned"><h4 class="header">Source Data Path</h4></td>

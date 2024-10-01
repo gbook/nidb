@@ -32,7 +32,6 @@ SOURCES += \
     moduleExport.cpp \
     moduleFileIO.cpp \
     moduleImport.cpp \
-    moduleImportUploaded.cpp \
     moduleMRIQA.cpp \
     moduleManager.cpp \
     moduleMiniPipeline.cpp \
@@ -74,7 +73,6 @@ HEADERS += \
     moduleExport.h \
     moduleFileIO.h \
     moduleImport.h \
-    moduleImportUploaded.h \
     moduleMRIQA.h \
     moduleManager.h \
     moduleMiniPipeline.h \

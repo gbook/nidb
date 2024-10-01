@@ -4,7 +4,6 @@
 * * * * * cd /nidb/bin; ./nidb modulemanager > /dev/null 2>&1
 * * * * * cd /nidb/bin; ./nidb import > /dev/null 2>&1
 * * * * * cd /nidb/bin; ./nidb export > /dev/null 2>&1
-* * * * * cd /nidb/bin; ./nidb importuploaded > /dev/null 2>&1
 * * * * * cd /nidb/bin; ./nidb fileio > /dev/null 2>&1
 * * * * * cd /nidb/bin; ./nidb mriqa > /dev/null 2>&1
 * * * * * cd /nidb/bin; ./nidb qc > /dev/null 2>&1

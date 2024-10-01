@@ -34,17 +34,18 @@ public:
     ~moduleUpload();
 
     int Run();
-    //QString AppendUploadLog(int uploadid, QString msg);
-    bool ParseUploads();
-    bool ArchiveParsedUploads();
-    void SetUploadStatus(int uploadid, QString status, double percent=-1.0);
-    QString GetUploadStatus(int uploadid);
-    bool UpdateParsedUploads(QMap<QString, QMap<QString, QMap<QString, QStringList> > > fs, QString upload_subjectcriteria, QString upload_studycriteria, QString upload_seriescriteria, QString uploadstagingpath, int upload_id);
 
 private:
     nidb *n;
     archiveIO *io;
     imageIO *img;
+
+    QString GetUploadStatus(int uploadid);
+    bool ArchiveSelectedFiles();
+    bool ParseUploadedFiles(QMap<QString, QMap<QString, QMap<QString, QStringList> > > fs, QString upload_subjectcriteria, QString upload_studycriteria, QString upload_seriescriteria, QString uploadstagingpath, int upload_id);
+    bool ParseUploadedSquirrel(squirrel *sqrl, QString upload_subjectcriteria, QString upload_studycriteria, QString upload_seriescriteria, QString uploadstagingpath, int uploadRowID);
+    bool ReadUploads();
+    void SetUploadStatus(int uploadid, QString status, double percent=-1.0);
 };
 
 #endif // MODULEUPLOAD_H

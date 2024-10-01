@@ -4710,7 +4710,7 @@
 									<a class="item item2" data-tab="tab-nfs" onClick="radio_nfs.checked=true">
 										<div class="ui radio checkbox">
 											<input type="radio" name="destination" id="radio_nfs" value="nfs" onChange="CheckDestination()">
-											<label>Linux NFS Mount</label>
+											<label>NFS share</label>
 										</div>
 									</a>
 								<?
@@ -4732,25 +4732,27 @@
 								}
 								if ($s_resultoutput != 'subject') {
 									if (!$GLOBALS['cfg']['ispublic']) { ?>
+									<!--
 										<a class="item item2" data-tab="tab-localftp" onClick="radio_localftp.checked=true">
 											<div class="ui radio checkbox">
 												<input type="radio" name="destination" id="radio_localftp" value="localftp" <? if ($GLOBALS['isguest']) { echo "checked"; } ?> onChange="CheckDestination()">
 												<label>Local FTP/scp</label>
 											</div>
 										</a>
+										-->
 									<?
 									}
 									if ($GLOBALS['cfg']['enablerdoc']) { ?>
 										<a class="item item2" data-tab="tab-nda" onClick="radio_ndar.checked=true">
 											<div class="ui radio checkbox">
 												<input type="radio" name="destination" id="radio_ndar" value="ndar" onChange="CheckDestination()">
-												<label>NDAR/RDoC submission</label>
+												<label>NDA submission</label>
 											</div>
 										</a>
 										<a class="item item2" data-tab="tab-ndacsv" onClick="radio_ndarcsv.checked=true">
 											<div class="ui radio checkbox">
 												<input type="radio" name="destination" id="radio_ndarcsv" value="ndarcsv" onChange="CheckDestination()">
-												<label>NDAR/RDoC submission <span class="tiny">.csv</span></label>
+												<label>NDA submission <span class="tiny">.csv</span></label>
 											</div>
 										</a>
 									<?
@@ -4758,12 +4760,13 @@
 								}
 								if ($s_resultoutput != 'subject') {
 									?>
+									<!--
 									<a class="item item2" data-tab="tab-xnat" onClick="radio_xnat.checked=true">
 										<div class="ui radio checkbox">
 											<input type="radio" name="destination" id="radio_xnat" value="xnat" onChange="CheckDestination()">
 											<label>Remote XNAT</label>
 										</div>
-									</a>
+									</a> -->
 									<!--
 									<a class="item" data-tab="tab-remoteftp">
 										<div class="ui radio checkbox" onChange="CheckDestination()">
@@ -4791,13 +4794,27 @@
 							
 							<!-- web download tab -->
 							<div class="ui active tab seamless right attached segment" data-tab="tab-web" style="background-color: #EBF5FB">
-								<p style="text-align: center">Web download links will be available on the <b>Export Status</b> page after export is complete</p>
+								<div class="ui message">
+									<div class="content">
+										<div class="header">
+											Web download
+										</div>
+										<p>A .zip file will be written to <code><?=$GLOBALS['cfg']['downloaddir']?></code> and will be available to download on the <b>Search</b> &rarr; <b>Export Status</b> page after export is complete</p>
+									</div>
+								</div>
 							</div>
 							
 							<? if (($GLOBALS['isadmin']) && ($GLOBALS['cfg']['enablepublicdownloads'])) { ?>
 							<!-- public download tab -->
 							<div class="ui tab seamless right attached segment" data-tab="tab-publicdownload" style="background-color: #EBF5FB">
-								<p style="text-align: center">Public downloads are available publicly on the <b>Data &rarr; Public Downloads</b> section</p>
+								<div class="ui message">
+									<div class="content">
+										<div class="header">
+											Public download. Anyone with the link can download the dataset.
+										</div>
+										<p>A .zip file named NIDB-<i>####</i> will be written to <code><?=$GLOBALS['cfg']['webdownloaddir']?></code>. A shareable download link will be available on the <b>Data &rarr; Exports &rarr; Public Downloads</b> page</p>
+									</div>
+								</div>
 								
 								<br>
 								
@@ -4859,7 +4876,14 @@
 
 							<!-- public dataset tab -->
 							<div class="ui tab seamless right attached segment" data-tab="tab-publicdataset" style="background-color: #EBF5FB">
-								<p style="text-align: center">Add this data to an existing public dataset</p>
+								<div class="ui message">
+									<div class="content">
+										<div class="header">
+											Add this export to an existing public dataset.
+										</div>
+										<p>A .zip file named NiDB-<i>####</i> will be written to <code><?=$GLOBALS['cfg']['publicdownloaddir']?></code>. The download will be available on the <b>Data &rarr; Exports &rarr; Public Datasets</b> page</p>
+									</div>
+								</div>
 								<br>
 								<div class="field">
 									<select name="publicdatasetid">
@@ -4890,17 +4914,38 @@
 							
 							<!-- local FTP tab -->
 							<div class="ui tab seamless right attached segment" data-tab="tab-localftp" style="background-color: #EBF5FB">
-								<p style="text-align: center">Data will be available on the Local FTP</p>
+								<div class="ui message">
+									<div class="content">
+										<div class="header">
+											FTP download
+										</div>
+										<p>A .zip file will be written to <code><?=$GLOBALS['cfg']['ftpdir']?></code></p>
+									</div>
+								</div>
 							</div>
 							
 							<!-- NDA tab -->
 							<div class="ui tab seamless right attached segment" data-tab="tab-nda" style="background-color: #EBF5FB">
-								<p style="text-align: center">Data packaged in NDA format</p>
+								<div class="ui message">
+									<div class="content">
+										<div class="header">
+											NDA (NIMH data archive) format
+										</div>
+										<p>A directory named NIDB-NDAR-<i>YYYYMMDDHHMISS</i> will be written to <code><?=$GLOBALS['cfg']['ftpdir']?></code> which contains a complete package ready to upload to the NDA</p>
+									</div>
+								</div>
 							</div>
 							
 							<!-- NDA csv tab -->
 							<div class="ui tab seamless right attached segment" data-tab="tab-ndacsv" style="background-color: #EBF5FB">
-								<p style="text-align: center">NDA format data, .csv file only</p>
+								<div class="ui message">
+									<div class="content">
+										<div class="header">
+											NDA (NIMH data archive) format
+										</div>
+										<p>A directory named NIDB-NDAR-<i>YYYYMMDDHHMISS</i> will be written to <code><?=$GLOBALS['cfg']['ftpdir']?></code> which <u>contains only the .csv file</u>. No imaging data is included in this export.</p>
+									</div>
+								</div>
 							</div>
 							
 							<!-- NFS tab -->
@@ -4944,7 +4989,14 @@
 							
 							<!-- Remote NiDB tab -->
 							<div class="ui tab seamless right attached segment" data-tab="tab-remotenidb" style="background-color: #EBF5FB">
-								<p style="text-align: center">Send this data to a remote NiDB server</p>
+								<div class="ui message">
+									<div class="content">
+										<div class="header">
+											Send data to a remote NiDB server
+										</div>
+										<p>Subjects will be created at the destination server</p>
+									</div>
+								</div>
 								<select name="remoteconnid">
 									<option value="">(Select connection)</option>
 									<?
