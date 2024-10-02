@@ -761,6 +761,8 @@ bool moduleUpload::ParseUploadedFiles(QMap<QString, QMap<QString, QMap<QString, 
  * @return true
  */
 bool moduleUpload::ParseUploadedSquirrel(squirrel *sqrl, QString upload_subjectcriteria, QString upload_studycriteria, QString upload_seriescriteria, QString uploadstagingpath, int uploadRowID) {
+    n->Log(sqrl->Print());
+
     return true;
 }
 

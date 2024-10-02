@@ -1470,6 +1470,9 @@ bool moduleExport::ExportSquirrel(int exportid, QString squirreltitle, QString s
     else
         n->Log(QString("%1() WriteSquirrel() returned false").arg(__FUNCTION__));
 
+    QString systemstring = "chmod -Rf 777 " + rootoutdir;
+    n->Log(SystemCommand(systemstring, true));
+
     /* move the .zip file to the download directory if a web download */
 
     /* update the publicdataset_download table to reflect the numfiles,zipsize, unzipsize, package format, image format, and status */
