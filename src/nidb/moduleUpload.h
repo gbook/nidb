@@ -46,6 +46,9 @@ private:
     bool ParseUploadedSquirrel(squirrel *sqrl, QString upload_subjectcriteria, QString upload_studycriteria, QString upload_seriescriteria, QString uploadstagingpath, int uploadRowID);
     bool ReadUploads();
     void SetUploadStatus(int uploadid, QString status, double percent=-1.0);
+    int InsertOrUpdateParsedSubject(QString upload_subjectcriteria, int uploadRowID, QString PatientID, QString PatientName, QString PatientSex, QString PatientBirthDate);
+    int InsertOrUpdateParsedStudy(int parsedStudyRowID, QString upload_studycriteria, int subjectRowID, QString StudyDateTime, QString Modality, QString StudyInstanceUID, QString StudyDescription, QString FileType, QString Equipment, QString Operator, QString &msg);
+    int InsertOrUpdateParsedSeries(QString upload_seriescriteria, int studyRowID, QString SeriesDateTime, int SeriesNumber, QString SeriesInstanceUID, QStringList &files, int &numfiles);
 };
 
 #endif // MODULEUPLOAD_H

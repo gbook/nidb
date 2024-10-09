@@ -345,72 +345,88 @@ bool moduleUpload::ParseUploadedFiles(QMap<QString, QMap<QString, QMap<QString, 
 
         io->AppendUploadLog(__FUNCTION__, QString("Processing subject [%1]").arg(subject));
 
-        /* get the uploadsubject_id */
-        int subjectid(0);
-
+        QString PatientID, PatientName, PatientSex, PatientBirthDate;
         if ((upload_subjectcriteria == "patientid") || (upload_subjectcriteria == "specificpatientid") || (upload_subjectcriteria == "patientidfromdir")) {
-            /* get subjectid by PatientID field (or the specific PatientID, or from the parent directory) */
-            QString PatientID = subject;
-
-            QSqlQuery q3;
-            /* check if the subjectid exists ... */
-            q3.prepare("select uploadsubject_id from upload_subjects where upload_id = :uploadid and uploadsubject_patientid = :patientid");
-            q3.bindValue(":uploadid", uploadRowID);
-            q3.bindValue(":patientid", PatientID);
-            n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
-            if (q3.size() > 0) {
-                q3.first();
-                subjectid = q3.value("uploadsubject_id").toInt();
-                //io->AppendUploadLog(__FUNCTION__, QString("Found subjectid [%1]").arg(subjectid));
-            }
-            else {
-                /* ... otherwise create a new subject */
-                q3.prepare("insert into upload_subjects (upload_id, uploadsubject_patientid) values (:uploadid, :patientid)");
-                q3.bindValue(":uploadid", uploadRowID);
-                q3.bindValue(":patientid", PatientID);
-                n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
-                subjectid = q3.lastInsertId().toInt();
-                //io->AppendUploadLog(__FUNCTION__, QString("subjectid [%1] created").arg(subjectid));
-            }
+            PatientID = subject; /* get subjectid by PatientID field (or the specific PatientID, or from the parent directory) */
         }
         else if (upload_subjectcriteria == "namesexdob") {
             /* get subjectid by PatientName/PatientSex/PatientBirthDate */
-			QString PatientName, PatientSex, PatientBirthDate;
             QStringList parts = subject.split("|");
-			if (parts.size() > 0)
-				PatientName = parts[0];
-			if (parts.size() > 1)
-				PatientSex = parts[1];
-			if (parts.size() > 2)
-				PatientBirthDate = parts[2];
-
-            QSqlQuery q3;
-            /* check if the subjectid already exists ... */
-            q3.prepare("select uploadsubject_id from upload_subjects where upload_id = :uploadid and uploadsubject_name = :patientname and uploadsubject_dob = :patientdob and uploadsubject_sex = :patientsex");
-            q3.bindValue(":uploadid", uploadRowID);
-            q3.bindValue(":patientname", PatientName);
-            q3.bindValue(":patientdob", PatientBirthDate);
-            q3.bindValue(":patientsex", PatientSex);
-            n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
-            if (q3.size() > 0) {
-                q3.first();
-                subjectid = q3.value("uploadsubject_id").toInt();
-                //io->AppendUploadLog(__FUNCTION__, QString("Found subjectid [%1]").arg(subjectid));
-            }
-            else {
-                /* ... otherwise create a new subject */
-                q3.prepare("insert into upload_subjects (upload_id, uploadsubject_name, uploadsubject_dob, uploadsubject_sex) values (:uploadid, :patientname, :patientdob, :patientsex)");
-                q3.bindValue(":uploadid", uploadRowID);
-                q3.bindValue(":patientname", PatientName);
-                q3.bindValue(":patientdob", PatientBirthDate);
-                q3.bindValue(":patientsex", PatientSex);
-                n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
-                subjectid = q3.lastInsertId().toInt();
-                //io->AppendUploadLog(__FUNCTION__, QString("subjectid [%1] created").arg(subjectid));
-            }
+            if (parts.size() > 0)
+                PatientName = parts[0];
+            if (parts.size() > 1)
+                PatientSex = parts[1];
+            if (parts.size() > 2)
+                PatientBirthDate = parts[2];
         }
-        else
-            n->Log("Unspecified subject criteria [" + upload_subjectcriteria + "]. That's weird it would show up here...");
+
+        /* get the uploadsubject_id */
+        int subjectid(0);
+        subjectid = InsertOrUpdateParsedSubject(upload_subjectcriteria, uploadRowID, PatientID, PatientName, PatientSex, PatientBirthDate);
+
+   //      if ((upload_subjectcriteria == "patientid") || (upload_subjectcriteria == "specificpatientid") || (upload_subjectcriteria == "patientidfromdir")) {
+   //          /* get subjectid by PatientID field (or the specific PatientID, or from the parent directory) */
+   //          QString PatientID = subject;
+
+   //          QSqlQuery q3;
+   //          /* check if the subjectid exists ... */
+   //          q3.prepare("select uploadsubject_id from upload_subjects where upload_id = :uploadid and uploadsubject_patientid = :patientid");
+   //          q3.bindValue(":uploadid", uploadRowID);
+   //          q3.bindValue(":patientid", PatientID);
+   //          n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
+   //          if (q3.size() > 0) {
+   //              q3.first();
+   //              subjectid = q3.value("uploadsubject_id").toInt();
+   //              //io->AppendUploadLog(__FUNCTION__, QString("Found subjectid [%1]").arg(subjectid));
+   //          }
+   //          else {
+   //              /* ... otherwise create a new subject */
+   //              q3.prepare("insert into upload_subjects (upload_id, uploadsubject_patientid) values (:uploadid, :patientid)");
+   //              q3.bindValue(":uploadid", uploadRowID);
+   //              q3.bindValue(":patientid", PatientID);
+   //              n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
+   //              subjectid = q3.lastInsertId().toInt();
+   //              //io->AppendUploadLog(__FUNCTION__, QString("subjectid [%1] created").arg(subjectid));
+   //          }
+   //      }
+   //      else if (upload_subjectcriteria == "namesexdob") {
+   //          /* get subjectid by PatientName/PatientSex/PatientBirthDate */
+            // QString PatientName, PatientSex, PatientBirthDate;
+   //          QStringList parts = subject.split("|");
+            // if (parts.size() > 0)
+            // 	PatientName = parts[0];
+            // if (parts.size() > 1)
+            // 	PatientSex = parts[1];
+            // if (parts.size() > 2)
+            // 	PatientBirthDate = parts[2];
+
+   //          QSqlQuery q3;
+   //          /* check if the subjectid already exists ... */
+   //          q3.prepare("select uploadsubject_id from upload_subjects where upload_id = :uploadid and uploadsubject_name = :patientname and uploadsubject_dob = :patientdob and uploadsubject_sex = :patientsex");
+   //          q3.bindValue(":uploadid", uploadRowID);
+   //          q3.bindValue(":patientname", PatientName);
+   //          q3.bindValue(":patientdob", PatientBirthDate);
+   //          q3.bindValue(":patientsex", PatientSex);
+   //          n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
+   //          if (q3.size() > 0) {
+   //              q3.first();
+   //              subjectid = q3.value("uploadsubject_id").toInt();
+   //              //io->AppendUploadLog(__FUNCTION__, QString("Found subjectid [%1]").arg(subjectid));
+   //          }
+   //          else {
+   //              /* ... otherwise create a new subject */
+   //              q3.prepare("insert into upload_subjects (upload_id, uploadsubject_name, uploadsubject_dob, uploadsubject_sex) values (:uploadid, :patientname, :patientdob, :patientsex)");
+   //              q3.bindValue(":uploadid", uploadRowID);
+   //              q3.bindValue(":patientname", PatientName);
+   //              q3.bindValue(":patientdob", PatientBirthDate);
+   //              q3.bindValue(":patientsex", PatientSex);
+   //              n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
+   //              subjectid = q3.lastInsertId().toInt();
+   //              //io->AppendUploadLog(__FUNCTION__, QString("subjectid [%1] created").arg(subjectid));
+   //          }
+   //      }
+   //      else
+   //          n->Log("Unspecified subject criteria [" + upload_subjectcriteria + "]. That's weird it would show up here...");
 
         /* ---------- iterate through the studies ---------- */
         for(QMap<QString, QMap<QString, QStringList> >::iterator b = fs[subject].begin(); b != fs[subject].end(); ++b) {
@@ -419,70 +435,88 @@ bool moduleUpload::ParseUploadedFiles(QMap<QString, QMap<QString, QMap<QString, 
 
             io->AppendUploadLog(__FUNCTION__, QString("Processing study [%1]").arg(study));
 
-            /* get the uploadstudy_id */
-            int studyid(0);
-
+            QString Modality;
+            QString StudyDateTime;
+            QString StudyInstanceUID;
             if (upload_studycriteria == "modalitystudydate") {
                 /* get studyid from Modality/StudyDateTime fields */
                 QStringList parts = study.split("|");
-                QString Modality;
-                QString StudyDateTime;
                 if (parts.size() > 0) {
                     Modality = parts[0];
                     if (parts.size() > 1)
                         StudyDateTime = parts[1];
                 }
-
-                QSqlQuery q3;
-                /* check if the studyid exists ... */
-                q3.prepare("select uploadstudy_id from upload_studies where uploadsubject_id = :subjectid and uploadstudy_date = :studydatetime and uploadstudy_modality = :modality");
-                q3.bindValue(":subjectid", subjectid);
-                q3.bindValue(":studydatetime", StudyDateTime);
-                q3.bindValue(":modality", Modality);
-                n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
-                if (q3.size() > 0) {
-                    q3.first();
-                    studyid = q3.value("uploadstudy_id").toInt();
-                    //io->AppendUploadLog(__FUNCTION__, QString("Found studyid [%1]").arg(studyid));
-                }
-                else {
-                    /* ... otherwise create a new study */
-                    q3.prepare("insert into upload_studies (uploadsubject_id, uploadstudy_date, uploadstudy_modality) values (:subjectid, :studydatetime, :modality)");
-                    q3.bindValue(":subjectid", subjectid);
-                    q3.bindValue(":studydatetime", StudyDateTime);
-                    q3.bindValue(":modality", Modality);
-                    n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
-                    studyid = q3.lastInsertId().toInt();
-                    //io->AppendUploadLog(__FUNCTION__, QString("studyid [%1] created").arg(studyid));
-                }
             }
             else if (upload_studycriteria == "studyuid") {
                 /* get studyid using StudyInstanceUID field */
-                QString StudyInstanceUID = study;
-
-                QSqlQuery q3;
-                /* check if the studyid already exists ... */
-                q3.prepare("select uploadstudy_id from upload_studies where uploadsubject_id = :subjectid and uploadstudy_instanceuid = :studyinstanceuid");
-                q3.bindValue(":subjectid", subjectid);
-                q3.bindValue(":studyinstanceuid", StudyInstanceUID);
-                n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
-                if (q3.size() > 0) {
-                    q3.first();
-                    studyid = q3.value("uploadstudy_id").toInt();
-                    //io->AppendUploadLog(__FUNCTION__, QString("Found studyid [%1]").arg(studyid));
-                }
-                else {
-                    /* ... otherwise create a new study */
-                    q3.prepare("insert into upload_studies (uploadsubject_id, uploadstudy_instanceuid) values (:subjectid, :studyinstanceuid)");
-                    q3.bindValue(":subjectid", subjectid);
-                    q3.bindValue(":studyinstanceuid", StudyInstanceUID);
-                    n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
-                    studyid = q3.lastInsertId().toInt();
-                    //io->AppendUploadLog(__FUNCTION__, QString("studyid [%1] created").arg(studyid));
-                }
+                StudyInstanceUID = study;
             }
-            else
-                io->AppendUploadLog(__FUNCTION__, "Unspecified study criteria [" + upload_studycriteria + "]. That's weird it would show up here...");
+            /* get the uploadstudy_id */
+            int studyid(0);
+            QString m;
+            studyid = InsertOrUpdateParsedStudy(-1, upload_studycriteria, subjectid, StudyDateTime, Modality, StudyInstanceUID, "", "", "", "", m);
+
+            // if (upload_studycriteria == "modalitystudydate") {
+            //     /* get studyid from Modality/StudyDateTime fields */
+            //     QStringList parts = study.split("|");
+            //     QString Modality;
+            //     QString StudyDateTime;
+            //     if (parts.size() > 0) {
+            //         Modality = parts[0];
+            //         if (parts.size() > 1)
+            //             StudyDateTime = parts[1];
+            //     }
+
+            //     QSqlQuery q3;
+            //     /* check if the studyid exists ... */
+            //     q3.prepare("select uploadstudy_id from upload_studies where uploadsubject_id = :subjectid and uploadstudy_date = :studydatetime and uploadstudy_modality = :modality");
+            //     q3.bindValue(":subjectid", subjectid);
+            //     q3.bindValue(":studydatetime", StudyDateTime);
+            //     q3.bindValue(":modality", Modality);
+            //     n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
+            //     if (q3.size() > 0) {
+            //         q3.first();
+            //         studyid = q3.value("uploadstudy_id").toInt();
+            //         //io->AppendUploadLog(__FUNCTION__, QString("Found studyid [%1]").arg(studyid));
+            //     }
+            //     else {
+            //         /* ... otherwise create a new study */
+            //         q3.prepare("insert into upload_studies (uploadsubject_id, uploadstudy_date, uploadstudy_modality) values (:subjectid, :studydatetime, :modality)");
+            //         q3.bindValue(":subjectid", subjectid);
+            //         q3.bindValue(":studydatetime", StudyDateTime);
+            //         q3.bindValue(":modality", Modality);
+            //         n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
+            //         studyid = q3.lastInsertId().toInt();
+            //         //io->AppendUploadLog(__FUNCTION__, QString("studyid [%1] created").arg(studyid));
+            //     }
+            // }
+            // else if (upload_studycriteria == "studyuid") {
+            //     /* get studyid using StudyInstanceUID field */
+            //     QString StudyInstanceUID = study;
+
+            //     QSqlQuery q3;
+            //     /* check if the studyid already exists ... */
+            //     q3.prepare("select uploadstudy_id from upload_studies where uploadsubject_id = :subjectid and uploadstudy_instanceuid = :studyinstanceuid");
+            //     q3.bindValue(":subjectid", subjectid);
+            //     q3.bindValue(":studyinstanceuid", StudyInstanceUID);
+            //     n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
+            //     if (q3.size() > 0) {
+            //         q3.first();
+            //         studyid = q3.value("uploadstudy_id").toInt();
+            //         //io->AppendUploadLog(__FUNCTION__, QString("Found studyid [%1]").arg(studyid));
+            //     }
+            //     else {
+            //         /* ... otherwise create a new study */
+            //         q3.prepare("insert into upload_studies (uploadsubject_id, uploadstudy_instanceuid) values (:subjectid, :studyinstanceuid)");
+            //         q3.bindValue(":subjectid", subjectid);
+            //         q3.bindValue(":studyinstanceuid", StudyInstanceUID);
+            //         n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
+            //         studyid = q3.lastInsertId().toInt();
+            //         //io->AppendUploadLog(__FUNCTION__, QString("studyid [%1] created").arg(studyid));
+            //     }
+            // }
+            // else
+            //     io->AppendUploadLog(__FUNCTION__, "Unspecified study criteria [" + upload_studycriteria + "]. That's weird it would show up here...");
 
             /* ---------- iterate through the series ---------- */
             for(QMap<QString, QStringList>::iterator c = fs[subject][study].begin(); c != fs[subject][study].end(); ++c) {
@@ -490,127 +524,148 @@ bool moduleUpload::ParseUploadedFiles(QMap<QString, QMap<QString, QMap<QString, 
                 QString series = c.key();
                 io->AppendUploadLog(__FUNCTION__, QString("Processing series [%1]").arg(series));
 
-                /* get uploadseries_id */
-                int seriesid(0);
-
-                QStringList files = fs[subject][study][series];
-                qint64 numfiles = files.size();
-                //io->AppendUploadLog(__FUNCTION__, QString("numfiles [%1]   numfiles [%2]").arg(files.size()).arg(numfiles));
+                int SeriesNumber;
+                QString SeriesDateTime;
+                QString SeriesInstanceUID;
 
                 if (upload_seriescriteria == "seriesnum") {
                     /* get seriesid from SeriesNumber field */
                     bool ok = false;
-                    int SeriesNumber = series.toInt(&ok);
+                    SeriesNumber = series.toInt(&ok);
                     if (!ok)
                         SeriesNumber = 0;
-
-                    QSqlQuery q3;
-                    /* check if the studyid exists ... */
-                    q3.prepare("select uploadseries_id, uploadseries_numfiles, uploadseries_filelist from upload_series where uploadstudy_id = :studyid and uploadseries_num = :seriesnum");
-                    q3.bindValue(":studyid", studyid);
-                    q3.bindValue(":seriesnum", SeriesNumber);
-                    n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
-                    if (q3.size() > 0) {
-                        q3.first();
-                        seriesid = q3.value("uploadseries_id").toInt();
-
-                        int databaseNumFiles = q3.value("uploadseries_numfiles").toInt();
-                        io->AppendUploadLog(__FUNCTION__, QString("1) Database numfiles [%1]").arg(databaseNumFiles));
-                        io->AppendUploadLog(__FUNCTION__, QString("2) numfiles, before appending [%1]").arg(numfiles));
-                        numfiles += databaseNumFiles;
-                        io->AppendUploadLog(__FUNCTION__, QString("3) numfiles, after appending [%1]").arg(numfiles));
-
-                        QStringList databaseFiles = q3.value("uploadseries_filelist").toString().split(",");
-                        io->AppendUploadLog(__FUNCTION__, QString("1) Database contains list of [%1] files").arg(databaseFiles.size()));
-                        io->AppendUploadLog(__FUNCTION__, QString("2) Files list, before appending, contains [%1] files").arg(files.size()));
-                        files.append(databaseFiles);
-                        io->AppendUploadLog(__FUNCTION__, QString("3) Files list, after appending, contains [%1] files").arg(files.size()));
-
-                        //io->AppendUploadLog(__FUNCTION__, QString("Found seriesid [%1]").arg(seriesid));
-                    }
-                    else {
-                        /* ... otherwise create a new series */
-                        q3.prepare("insert into upload_series (uploadstudy_id, uploadseries_num) values (:studyid, :seriesnum)");
-                        q3.bindValue(":studyid", studyid);
-                        q3.bindValue(":seriesnum", SeriesNumber);
-                        n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
-                        seriesid = q3.lastInsertId().toInt();
-                        //io->AppendUploadLog(__FUNCTION__, QString("seriesid [%1] created").arg(seriesid));
-                    }
                 }
                 else if (upload_seriescriteria == "seriesdate") {
                     /* get seriesid using SeriesDateTime field */
-                    QString SeriesDateTime = series;
-
-                    QSqlQuery q3;
-                    /* check if the seriesid already exists ... */
-                    q3.prepare("select uploadseries_id, uploadseries_numfiles, uploadseries_filelist from upload_series where uploadstudy_id = :studyid and uploadseries_date = '" + SeriesDateTime + "'");
-                    q3.bindValue(":studyid", studyid);
-                    n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
-                    if (q3.size() > 0) {
-                        q3.first();
-                        seriesid = q3.value("uploadseries_id").toInt();
-                        int databaseNumFiles = q3.value("uploadseries_numfiles").toInt();
-                        io->AppendUploadLog(__FUNCTION__, QString("1) Database numfiles [%1]").arg(databaseNumFiles));
-                        io->AppendUploadLog(__FUNCTION__, QString("2) numfiles, before appending [%1]").arg(numfiles));
-                        numfiles += databaseNumFiles;
-                        io->AppendUploadLog(__FUNCTION__, QString("3) numfiles, after appending [%1]").arg(numfiles));
-
-                        QStringList databaseFiles = q3.value("uploadseries_filelist").toString().split(",");
-                        io->AppendUploadLog(__FUNCTION__, QString("1) Database contains list of [%1] files").arg(databaseFiles.size()));
-                        io->AppendUploadLog(__FUNCTION__, QString("2) Files list, before appending, contains [%1] files").arg(files.size()));
-                        files.append(databaseFiles);
-                        io->AppendUploadLog(__FUNCTION__, QString("3) Files list, after appending, contains [%1] files").arg(files.size()));
-                        //io->AppendUploadLog(__FUNCTION__, QString("Found seriesid [%1]").arg(seriesid));
-                    }
-                    else {
-                        /* ... otherwise create a new series */
-                        q3.prepare("insert into upload_series (uploadstudy_id, uploadseries_date) values (:studyid, '" + SeriesDateTime + "')");
-                        q3.bindValue(":studyid", studyid);
-                        n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
-                        seriesid = q3.lastInsertId().toInt();
-                        //io->AppendUploadLog(__FUNCTION__, QString("seriesid [%1] created").arg(seriesid));
-                    }
+                    SeriesDateTime = series;
                 }
                 else if (upload_seriescriteria == "seriesuid") {
                     /* get seriesid using SeriesInstanceUID field */
-                    QString SeriesInstanceUID = series;
-
-                    QSqlQuery q3;
-                    /* check if the seriesid already exists ... */
-                    q3.prepare("select uploadseries_id, uploadseries_numfiles, uploadseries_filelist from upload_series where uploadstudy_id = :studyid and uploadseries_instanceuid = :seriesinstanceuid");
-                    q3.bindValue(":studyid", studyid);
-                    q3.bindValue(":seriesinstanceuid", SeriesInstanceUID);
-                    n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
-                    if (q3.size() > 0) {
-                        q3.first();
-                        seriesid = q3.value("uploadseries_id").toInt();
-                        int databaseNumFiles = q3.value("uploadseries_numfiles").toInt();
-                        io->AppendUploadLog(__FUNCTION__, QString("1) Database numfiles [%1]").arg(databaseNumFiles));
-                        io->AppendUploadLog(__FUNCTION__, QString("2) numfiles, before appending [%1]").arg(numfiles));
-                        numfiles += databaseNumFiles;
-                        io->AppendUploadLog(__FUNCTION__, QString("3) numfiles, after appending [%1]").arg(numfiles));
-
-                        QStringList databaseFiles = q3.value("uploadseries_filelist").toString().split(",");
-                        io->AppendUploadLog(__FUNCTION__, QString("1) Database contains list of [%1] files").arg(databaseFiles.size()));
-                        io->AppendUploadLog(__FUNCTION__, QString("2) Files list, before appending, contains [%1] files").arg(files.size()));
-                        files.append(databaseFiles);
-                        io->AppendUploadLog(__FUNCTION__, QString("3) Files list, after appending, contains [%1] files").arg(files.size()));
-                        //io->AppendUploadLog(__FUNCTION__, QString("Found seriesid [%1]").arg(seriesid));
-                    }
-                    else {
-                        /* ... otherwise create a new series */
-                        q3.prepare("insert into upload_series (uploadstudy_id, uploadseries_instanceuid) values (:studyid, :seriesinstanceuid)");
-                        q3.bindValue(":studyid", studyid);
-                        q3.bindValue(":seriesinstanceuid", SeriesInstanceUID);
-                        n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
-                        seriesid = q3.lastInsertId().toInt();
-                        //io->AppendUploadLog(__FUNCTION__, QString("seriesid [%1] created").arg(seriesid));
-                    }
+                    SeriesInstanceUID = series;
                 }
-                else {
-                    io->AppendUploadLog(__FUNCTION__, "Unspecified seriesid criteria [" + upload_seriescriteria + "]. That's weird it would show up here...");
-                }
+
+                /* get uploadseries_id */
+                int seriesid(0);
+
+                QStringList files = fs[subject][study][series];
+                int numfiles = files.size();
+                //io->AppendUploadLog(__FUNCTION__, QString("numfiles [%1]   numfiles [%2]").arg(files.size()).arg(numfiles));
+                seriesid = InsertOrUpdateParsedSeries(upload_seriescriteria, studyid, SeriesDateTime, SeriesNumber, SeriesInstanceUID, files, numfiles);
+
+                // if (upload_seriescriteria == "seriesnum") {
+                //     /* get seriesid from SeriesNumber field */
+                //     bool ok = false;
+                //     int SeriesNumber = series.toInt(&ok);
+                //     if (!ok)
+                //         SeriesNumber = 0;
+
+                //     QSqlQuery q3;
+                //     /* check if the studyid exists ... */
+                //     q3.prepare("select uploadseries_id, uploadseries_numfiles, uploadseries_filelist from upload_series where uploadstudy_id = :studyid and uploadseries_num = :seriesnum");
+                //     q3.bindValue(":studyid", studyid);
+                //     q3.bindValue(":seriesnum", SeriesNumber);
+                //     n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
+                //     if (q3.size() > 0) {
+                //         q3.first();
+                //         seriesid = q3.value("uploadseries_id").toInt();
+
+                //         int databaseNumFiles = q3.value("uploadseries_numfiles").toInt();
+                //         io->AppendUploadLog(__FUNCTION__, QString("1) Database numfiles [%1]").arg(databaseNumFiles));
+                //         io->AppendUploadLog(__FUNCTION__, QString("2) numfiles, before appending [%1]").arg(numfiles));
+                //         numfiles += databaseNumFiles;
+                //         io->AppendUploadLog(__FUNCTION__, QString("3) numfiles, after appending [%1]").arg(numfiles));
+
+                //         QStringList databaseFiles = q3.value("uploadseries_filelist").toString().split(",");
+                //         io->AppendUploadLog(__FUNCTION__, QString("1) Database contains list of [%1] files").arg(databaseFiles.size()));
+                //         io->AppendUploadLog(__FUNCTION__, QString("2) Files list, before appending, contains [%1] files").arg(files.size()));
+                //         files.append(databaseFiles);
+                //         io->AppendUploadLog(__FUNCTION__, QString("3) Files list, after appending, contains [%1] files").arg(files.size()));
+
+                //         //io->AppendUploadLog(__FUNCTION__, QString("Found seriesid [%1]").arg(seriesid));
+                //     }
+                //     else {
+                //         /* ... otherwise create a new series */
+                //         q3.prepare("insert into upload_series (uploadstudy_id, uploadseries_num) values (:studyid, :seriesnum)");
+                //         q3.bindValue(":studyid", studyid);
+                //         q3.bindValue(":seriesnum", SeriesNumber);
+                //         n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
+                //         seriesid = q3.lastInsertId().toInt();
+                //         //io->AppendUploadLog(__FUNCTION__, QString("seriesid [%1] created").arg(seriesid));
+                //     }
+                // }
+                // else if (upload_seriescriteria == "seriesdate") {
+                //     /* get seriesid using SeriesDateTime field */
+                //     QString SeriesDateTime = series;
+
+                //     QSqlQuery q3;
+                //     /* check if the seriesid already exists ... */
+                //     q3.prepare("select uploadseries_id, uploadseries_numfiles, uploadseries_filelist from upload_series where uploadstudy_id = :studyid and uploadseries_date = '" + SeriesDateTime + "'");
+                //     q3.bindValue(":studyid", studyid);
+                //     n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
+                //     if (q3.size() > 0) {
+                //         q3.first();
+                //         seriesid = q3.value("uploadseries_id").toInt();
+                //         int databaseNumFiles = q3.value("uploadseries_numfiles").toInt();
+                //         io->AppendUploadLog(__FUNCTION__, QString("1) Database numfiles [%1]").arg(databaseNumFiles));
+                //         io->AppendUploadLog(__FUNCTION__, QString("2) numfiles, before appending [%1]").arg(numfiles));
+                //         numfiles += databaseNumFiles;
+                //         io->AppendUploadLog(__FUNCTION__, QString("3) numfiles, after appending [%1]").arg(numfiles));
+
+                //         QStringList databaseFiles = q3.value("uploadseries_filelist").toString().split(",");
+                //         io->AppendUploadLog(__FUNCTION__, QString("1) Database contains list of [%1] files").arg(databaseFiles.size()));
+                //         io->AppendUploadLog(__FUNCTION__, QString("2) Files list, before appending, contains [%1] files").arg(files.size()));
+                //         files.append(databaseFiles);
+                //         io->AppendUploadLog(__FUNCTION__, QString("3) Files list, after appending, contains [%1] files").arg(files.size()));
+                //         //io->AppendUploadLog(__FUNCTION__, QString("Found seriesid [%1]").arg(seriesid));
+                //     }
+                //     else {
+                //         /* ... otherwise create a new series */
+                //         q3.prepare("insert into upload_series (uploadstudy_id, uploadseries_date) values (:studyid, '" + SeriesDateTime + "')");
+                //         q3.bindValue(":studyid", studyid);
+                //         n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
+                //         seriesid = q3.lastInsertId().toInt();
+                //         //io->AppendUploadLog(__FUNCTION__, QString("seriesid [%1] created").arg(seriesid));
+                //     }
+                // }
+                // else if (upload_seriescriteria == "seriesuid") {
+                //     /* get seriesid using SeriesInstanceUID field */
+                //     QString SeriesInstanceUID = series;
+
+                //     QSqlQuery q3;
+                //     /* check if the seriesid already exists ... */
+                //     q3.prepare("select uploadseries_id, uploadseries_numfiles, uploadseries_filelist from upload_series where uploadstudy_id = :studyid and uploadseries_instanceuid = :seriesinstanceuid");
+                //     q3.bindValue(":studyid", studyid);
+                //     q3.bindValue(":seriesinstanceuid", SeriesInstanceUID);
+                //     n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
+                //     if (q3.size() > 0) {
+                //         q3.first();
+                //         seriesid = q3.value("uploadseries_id").toInt();
+                //         int databaseNumFiles = q3.value("uploadseries_numfiles").toInt();
+                //         io->AppendUploadLog(__FUNCTION__, QString("1) Database numfiles [%1]").arg(databaseNumFiles));
+                //         io->AppendUploadLog(__FUNCTION__, QString("2) numfiles, before appending [%1]").arg(numfiles));
+                //         numfiles += databaseNumFiles;
+                //         io->AppendUploadLog(__FUNCTION__, QString("3) numfiles, after appending [%1]").arg(numfiles));
+
+                //         QStringList databaseFiles = q3.value("uploadseries_filelist").toString().split(",");
+                //         io->AppendUploadLog(__FUNCTION__, QString("1) Database contains list of [%1] files").arg(databaseFiles.size()));
+                //         io->AppendUploadLog(__FUNCTION__, QString("2) Files list, before appending, contains [%1] files").arg(files.size()));
+                //         files.append(databaseFiles);
+                //         io->AppendUploadLog(__FUNCTION__, QString("3) Files list, after appending, contains [%1] files").arg(files.size()));
+                //         //io->AppendUploadLog(__FUNCTION__, QString("Found seriesid [%1]").arg(seriesid));
+                //     }
+                //     else {
+                //         /* ... otherwise create a new series */
+                //         q3.prepare("insert into upload_series (uploadstudy_id, uploadseries_instanceuid) values (:studyid, :seriesinstanceuid)");
+                //         q3.bindValue(":studyid", studyid);
+                //         q3.bindValue(":seriesinstanceuid", SeriesInstanceUID);
+                //         n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
+                //         seriesid = q3.lastInsertId().toInt();
+                //         //io->AppendUploadLog(__FUNCTION__, QString("seriesid [%1] created").arg(seriesid));
+                //     }
+                // }
+                // else {
+                //     io->AppendUploadLog(__FUNCTION__, "Unspecified seriesid criteria [" + upload_seriescriteria + "]. That's weird it would show up here...");
+                // }
 
                 /* remove the prefix for the files */
                 QStringList filesNoPrefix;
@@ -634,8 +689,9 @@ bool moduleUpload::ParseUploadedFiles(QMap<QString, QMap<QString, QMap<QString, 
                 QSqlQuery q3;
 
                 /* don't overwrite the tags in the databse that were used to group the subject/study/series */
+                /* we run the InsertOrUpdateS*() functions again, because sometimes information is stored at the series level, which we first encounter here. The subject/study/series may already exist, but it should be updated with the new information */
 
-                /* update subject details */
+                /* update subject details - depending on the original matching criteria, not all of these values may be in the database */
                 if ( (upload_subjectcriteria == "patientid") || (upload_subjectcriteria == "specificpatientid") || (upload_subjectcriteria == "patientidfromdir") ) {
                     /* update all subject details except PatientID */
                     q3.prepare("update upload_subjects set uploadsubject_name = :name, uploadsubject_sex = :sex, uploadsubject_dob = :dob where uploadsubject_id = :subjectid");
@@ -655,32 +711,34 @@ bool moduleUpload::ParseUploadedFiles(QMap<QString, QMap<QString, QMap<QString, 
                 else io->AppendUploadLog(__FUNCTION__, "Unspecified subject criteria [" + upload_subjectcriteria + "]");
 
 
-                /* update study details */
-                if (upload_studycriteria == "modalitystudydate") {
-                    /* update all study details except Modality/StudyDateTime */
-                    q3.prepare("update upload_studies set uploadstudy_desc = :desc, uploadstudy_datatype = :datatype, uploadstudy_equipment = :equipment, uploadstudy_operator = :operator where uploadstudy_id = :studyid");
-                    q3.bindValue(":desc", tags["StudyDescription"]);
-                    q3.bindValue(":datatype", tags["FileType"]);
-                    q3.bindValue(":equipment", tags["Manufacturer"] + " " + tags["ManufacturerModelName"]);
-                    q3.bindValue(":operator", tags["OperatorsName"]);
-                    q3.bindValue(":studyinstanceuid", tags["StudyInstanceUID"]);
-                    q3.bindValue(":studyid", studyid);
-                    n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
-                }
-                else if (upload_studycriteria == "studyuid") {
-                    /* update all study details except StudyInstanceUID */
-                    q3.prepare("update upload_studies set uploadstudy_desc = :desc, uploadstudy_date = :datetime, uploadstudy_modality = :modality, uploadstudy_datatype = :datatype, uploadstudy_equipment = :equipment, uploadstudy_operator = :operator where uploadstudy_id = :studyid");
-                    q3.bindValue(":desc", tags["StudyDescription"]);
-                    q3.bindValue(":datetime", tags["StudyDateTime"]);
-                    q3.bindValue(":modality", tags["Modality"]);
-                    q3.bindValue(":datatype", tags["FileType"]);
-                    q3.bindValue(":equipment", tags["Manufacturer"] + " " + tags["ManufacturerModelName"]);
-                    q3.bindValue(":operator", tags["OperatorsName"]);
-                    q3.bindValue(":studyinstanceuid", tags["StudyInstanceUID"]);
-                    q3.bindValue(":studyid", studyid);
-                    n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
-                }
-                else io->AppendUploadLog(__FUNCTION__, "Unspecified study criteria [" + upload_studycriteria + "]");
+                /* update study details - we already know the studyRowID, so just update some of the other fields */
+                InsertOrUpdateParsedStudy(studyid, upload_studycriteria, subjectid, StudyDateTime, Modality, StudyInstanceUID, tags["StudyDescription"], tags["FileType"], tags["Manufacturer"] + " " + tags["ManufacturerModelName"], tags["OperatorsName"], m);
+
+                // if (upload_studycriteria == "modalitystudydate") {
+                //     /* update all study details except Modality/StudyDateTime */
+                //     q3.prepare("update upload_studies set uploadstudy_desc = :desc, uploadstudy_datatype = :datatype, uploadstudy_equipment = :equipment, uploadstudy_operator = :operator where uploadstudy_id = :studyid");
+                //     q3.bindValue(":desc", tags["StudyDescription"]);
+                //     q3.bindValue(":datatype", tags["FileType"]);
+                //     q3.bindValue(":equipment", tags["Manufacturer"] + " " + tags["ManufacturerModelName"]);
+                //     q3.bindValue(":operator", tags["OperatorsName"]);
+                //     q3.bindValue(":studyinstanceuid", tags["StudyInstanceUID"]);
+                //     q3.bindValue(":studyid", studyid);
+                //     n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
+                // }
+                // else if (upload_studycriteria == "studyuid") {
+                //     /* update all study details except StudyInstanceUID */
+                //     q3.prepare("update upload_studies set uploadstudy_desc = :desc, uploadstudy_date = :datetime, uploadstudy_modality = :modality, uploadstudy_datatype = :datatype, uploadstudy_equipment = :equipment, uploadstudy_operator = :operator where uploadstudy_id = :studyid");
+                //     q3.bindValue(":desc", tags["StudyDescription"]);
+                //     q3.bindValue(":datetime", tags["StudyDateTime"]);
+                //     q3.bindValue(":modality", tags["Modality"]);
+                //     q3.bindValue(":datatype", tags["FileType"]);
+                //     q3.bindValue(":equipment", tags["Manufacturer"] + " " + tags["ManufacturerModelName"]);
+                //     q3.bindValue(":operator", tags["OperatorsName"]);
+                //     q3.bindValue(":studyinstanceuid", tags["StudyInstanceUID"]);
+                //     q3.bindValue(":studyid", studyid);
+                //     n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
+                // }
+                // else io->AppendUploadLog(__FUNCTION__, "Unspecified study criteria [" + upload_studycriteria + "]");
 
 
                 /* update series details */
@@ -762,6 +820,8 @@ bool moduleUpload::ParseUploadedFiles(QMap<QString, QMap<QString, QMap<QString, 
  */
 bool moduleUpload::ParseUploadedSquirrel(squirrel *sqrl, QString upload_subjectcriteria, QString upload_studycriteria, QString upload_seriescriteria, QString uploadstagingpath, int uploadRowID) {
     n->Log(sqrl->Print());
+
+    /* load subjects, studies, series */
 
     return true;
 }
@@ -917,4 +977,256 @@ QString moduleUpload::GetUploadStatus(int uploadid) {
     }
 
     return status;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- InsertOrUpdateParsedSubject -------------------- */
+/* ---------------------------------------------------------- */
+int moduleUpload::InsertOrUpdateParsedSubject(QString upload_subjectcriteria, int uploadRowID, QString PatientID, QString PatientName, QString PatientSex, QString PatientBirthDate) {
+    int parsedSubjectRowID(-1);
+    QSqlQuery q;
+
+    if ((upload_subjectcriteria == "patientid") || (upload_subjectcriteria == "specificpatientid") || (upload_subjectcriteria == "patientidfromdir")) {
+        /* get parsedSubjectRowID by PatientID field (or the specific PatientID, or from the parent directory) */
+
+        /* check if the parsedSubjectRowID exists ... */
+        q.prepare("select uploadsubject_id from upload_subjects where upload_id = :uploadid and uploadsubject_patientid = :patientid");
+        q.bindValue(":uploadid", uploadRowID);
+        q.bindValue(":patientid", PatientID);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        if (q.size() > 0) {
+            q.first();
+            parsedSubjectRowID = q.value("uploadsubject_id").toInt();
+        }
+        else {
+            /* ... otherwise create a new subject */
+            q.prepare("insert into upload_subjects (upload_id, uploadsubject_patientid) values (:uploadid, :patientid)");
+            q.bindValue(":uploadid", uploadRowID);
+            q.bindValue(":patientid", PatientID);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+            parsedSubjectRowID = q.lastInsertId().toInt();
+        }
+    }
+    else if (upload_subjectcriteria == "namesexdob") {
+        /* check if the parsedSubjectRowID already exists ... */
+        q.prepare("select uploadsubject_id from upload_subjects where upload_id = :uploadid and uploadsubject_name = :patientname and uploadsubject_dob = :patientdob and uploadsubject_sex = :patientsex");
+        q.bindValue(":uploadid", uploadRowID);
+        q.bindValue(":patientname", PatientName);
+        q.bindValue(":patientdob", PatientBirthDate);
+        q.bindValue(":patientsex", PatientSex);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        if (q.size() > 0) {
+            q.first();
+            parsedSubjectRowID = q.value("uploadsubject_id").toInt();
+        }
+        else {
+            /* ... otherwise create a new subject */
+            q.prepare("insert into upload_subjects (upload_id, uploadsubject_name, uploadsubject_dob, uploadsubject_sex) values (:uploadid, :patientname, :patientdob, :patientsex)");
+            q.bindValue(":uploadid", uploadRowID);
+            q.bindValue(":patientname", PatientName);
+            q.bindValue(":patientdob", PatientBirthDate);
+            q.bindValue(":patientsex", PatientSex);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+            parsedSubjectRowID = q.lastInsertId().toInt();
+        }
+    }
+    else
+        n->Log("Unspecified subject criteria [" + upload_subjectcriteria + "]. That's weird it would show up here...");
+
+    return parsedSubjectRowID;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- InsertOrUpdateParsedStudy ---------------------- */
+/* ---------------------------------------------------------- */
+int moduleUpload::InsertOrUpdateParsedStudy(int parsedStudyRowID, QString upload_studycriteria, int subjectRowID, QString StudyDateTime, QString Modality, QString StudyInstanceUID, QString StudyDescription, QString FileType, QString Equipment, QString Operator, QString &msg) {
+    //int parsedStudyRowID(-1);
+    QSqlQuery q;
+
+    if (parsedStudyRowID >= 0) {
+        /* update study details */
+        if (upload_studycriteria == "modalitystudydate") {
+            /* update all study details except Modality/StudyDateTime */
+            q.prepare("update upload_studies set uploadstudy_desc = :desc, uploadstudy_datatype = :datatype, uploadstudy_equipment = :equipment, uploadstudy_operator = :operator where uploadstudy_id = :studyid");
+            q.bindValue(":desc", StudyDescription);
+            q.bindValue(":datatype", FileType);
+            q.bindValue(":equipment", Equipment);
+            q.bindValue(":operator", Operator);
+            q.bindValue(":studyinstanceuid", StudyInstanceUID);
+            q.bindValue(":studyid", parsedStudyRowID);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        }
+        else if (upload_studycriteria == "studyuid") {
+            /* update all study details except StudyInstanceUID */
+            q.prepare("update upload_studies set uploadstudy_desc = :desc, uploadstudy_date = :datetime, uploadstudy_modality = :modality, uploadstudy_datatype = :datatype, uploadstudy_equipment = :equipment, uploadstudy_operator = :operator where uploadstudy_id = :studyid");
+            q.bindValue(":desc", StudyDescription);
+            q.bindValue(":datetime", StudyDateTime);
+            q.bindValue(":modality", Modality);
+            q.bindValue(":datatype", FileType);
+            q.bindValue(":equipment", Equipment);
+            q.bindValue(":operator", Operator);
+            q.bindValue(":studyinstanceuid", StudyInstanceUID);
+            q.bindValue(":studyid", parsedStudyRowID);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        }
+        else
+            msg = "Unspecified study criteria [" + upload_studycriteria + "]";
+    }
+    else {
+        if (upload_studycriteria == "modalitystudydate") {
+            /* check if the parsedStudyRowID exists ... */
+            q.prepare("select uploadstudy_id from upload_studies where uploadsubject_id = :subjectid and uploadstudy_date = :studydatetime and uploadstudy_modality = :modality");
+            q.bindValue(":subjectid", subjectRowID);
+            q.bindValue(":studydatetime", StudyDateTime);
+            q.bindValue(":modality", Modality);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+            if (q.size() > 0) {
+                q.first();
+                parsedStudyRowID = q.value("uploadstudy_id").toInt();
+            }
+            else {
+                /* ... otherwise create a new study */
+                q.prepare("insert into upload_studies (uploadsubject_id, uploadstudy_date, uploadstudy_modality) values (:subjectid, :studydatetime, :modality)");
+                q.bindValue(":subjectid", subjectRowID);
+                q.bindValue(":studydatetime", StudyDateTime);
+                q.bindValue(":modality", Modality);
+                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+                parsedStudyRowID = q.lastInsertId().toInt();
+            }
+        }
+        else if (upload_studycriteria == "studyuid") {
+            /* check if the parsedStudyRowID already exists ... */
+            q.prepare("select uploadstudy_id from upload_studies where uploadsubject_id = :subjectid and uploadstudy_instanceuid = :studyinstanceuid");
+            q.bindValue(":subjectid", subjectRowID);
+            q.bindValue(":studyinstanceuid", StudyInstanceUID);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+            if (q.size() > 0) {
+                q.first();
+                parsedStudyRowID = q.value("uploadstudy_id").toInt();
+            }
+            else {
+                /* ... otherwise create a new study */
+                q.prepare("insert into upload_studies (uploadsubject_id, uploadstudy_instanceuid) values (:subjectid, :studyinstanceuid)");
+                q.bindValue(":subjectid", subjectRowID);
+                q.bindValue(":studyinstanceuid", StudyInstanceUID);
+                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+                parsedStudyRowID = q.lastInsertId().toInt();
+            }
+        }
+        else
+            msg = "Unspecified study criteria [" + upload_studycriteria + "]. That's weird it would show up here...";
+    }
+
+    return parsedStudyRowID;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- InsertOrUpdateParsedSeries --------------------- */
+/* ---------------------------------------------------------- */
+int moduleUpload::InsertOrUpdateParsedSeries(QString upload_seriescriteria, int studyRowID, QString SeriesDateTime, int SeriesNumber, QString SeriesInstanceUID, QStringList &files, int &numfiles) {
+    int parsedSeriesRowID(-1);
+    QSqlQuery q;
+
+    if (upload_seriescriteria == "seriesnum") {
+
+        /* check if the studyid exists ... */
+        q.prepare("select uploadseries_id, uploadseries_numfiles, uploadseries_filelist from upload_series where uploadstudy_id = :studyid and uploadseries_num = :seriesnum");
+        q.bindValue(":studyid", studyRowID);
+        q.bindValue(":seriesnum", SeriesNumber);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        if (q.size() > 0) {
+            q.first();
+            parsedSeriesRowID = q.value("uploadseries_id").toInt();
+
+            int databaseNumFiles = q.value("uploadseries_numfiles").toInt();
+            io->AppendUploadLog(__FUNCTION__, QString("1) Database numfiles [%1]").arg(databaseNumFiles));
+            io->AppendUploadLog(__FUNCTION__, QString("2) numfiles, before appending [%1]").arg(numfiles));
+            numfiles += databaseNumFiles;
+            io->AppendUploadLog(__FUNCTION__, QString("3) numfiles, after appending [%1]").arg(numfiles));
+
+            QStringList databaseFiles = q.value("uploadseries_filelist").toString().split(",");
+            io->AppendUploadLog(__FUNCTION__, QString("1) Database contains list of [%1] files").arg(databaseFiles.size()));
+            io->AppendUploadLog(__FUNCTION__, QString("2) Files list, before appending, contains [%1] files").arg(files.size()));
+            files.append(databaseFiles);
+            io->AppendUploadLog(__FUNCTION__, QString("3) Files list, after appending, contains [%1] files").arg(files.size()));
+        }
+        else {
+            /* ... otherwise create a new series */
+            q.prepare("insert into upload_series (uploadstudy_id, uploadseries_num) values (:studyid, :seriesnum)");
+            q.bindValue(":studyid", studyRowID);
+            q.bindValue(":seriesnum", SeriesNumber);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+            parsedSeriesRowID = q.lastInsertId().toInt();
+        }
+    }
+    else if (upload_seriescriteria == "seriesdate") {
+        /* check if the seriesid already exists ... */
+        q.prepare("select uploadseries_id, uploadseries_numfiles, uploadseries_filelist from upload_series where uploadstudy_id = :studyid and uploadseries_date = '" + SeriesDateTime + "'");
+        q.bindValue(":studyid", studyRowID);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        if (q.size() > 0) {
+            q.first();
+            parsedSeriesRowID = q.value("uploadseries_id").toInt();
+            int databaseNumFiles = q.value("uploadseries_numfiles").toInt();
+            io->AppendUploadLog(__FUNCTION__, QString("1) Database numfiles [%1]").arg(databaseNumFiles));
+            io->AppendUploadLog(__FUNCTION__, QString("2) numfiles, before appending [%1]").arg(numfiles));
+            numfiles += databaseNumFiles;
+            io->AppendUploadLog(__FUNCTION__, QString("3) numfiles, after appending [%1]").arg(numfiles));
+
+            QStringList databaseFiles = q.value("uploadseries_filelist").toString().split(",");
+            io->AppendUploadLog(__FUNCTION__, QString("1) Database contains list of [%1] files").arg(databaseFiles.size()));
+            io->AppendUploadLog(__FUNCTION__, QString("2) Files list, before appending, contains [%1] files").arg(files.size()));
+            files.append(databaseFiles);
+            io->AppendUploadLog(__FUNCTION__, QString("3) Files list, after appending, contains [%1] files").arg(files.size()));
+        }
+        else {
+            /* ... otherwise create a new series */
+            q.prepare("insert into upload_series (uploadstudy_id, uploadseries_date) values (:studyid, '" + SeriesDateTime + "')");
+            q.bindValue(":studyid", studyRowID);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+            parsedSeriesRowID = q.lastInsertId().toInt();
+        }
+    }
+    else if (upload_seriescriteria == "seriesuid") {
+        /* get seriesid using SeriesInstanceUID field */
+        //QString SeriesInstanceUID = series;
+
+        QSqlQuery q;
+        /* check if the seriesid already exists ... */
+        q.prepare("select uploadseries_id, uploadseries_numfiles, uploadseries_filelist from upload_series where uploadstudy_id = :studyid and uploadseries_instanceuid = :seriesinstanceuid");
+        q.bindValue(":studyid", studyRowID);
+        q.bindValue(":seriesinstanceuid", SeriesInstanceUID);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        if (q.size() > 0) {
+            q.first();
+            parsedSeriesRowID = q.value("uploadseries_id").toInt();
+            int databaseNumFiles = q.value("uploadseries_numfiles").toInt();
+            io->AppendUploadLog(__FUNCTION__, QString("1) Database numfiles [%1]").arg(databaseNumFiles));
+            io->AppendUploadLog(__FUNCTION__, QString("2) numfiles, before appending [%1]").arg(numfiles));
+            numfiles += databaseNumFiles;
+            io->AppendUploadLog(__FUNCTION__, QString("3) numfiles, after appending [%1]").arg(numfiles));
+
+            QStringList databaseFiles = q.value("uploadseries_filelist").toString().split(",");
+            io->AppendUploadLog(__FUNCTION__, QString("1) Database contains list of [%1] files").arg(databaseFiles.size()));
+            io->AppendUploadLog(__FUNCTION__, QString("2) Files list, before appending, contains [%1] files").arg(files.size()));
+            files.append(databaseFiles);
+            io->AppendUploadLog(__FUNCTION__, QString("3) Files list, after appending, contains [%1] files").arg(files.size()));
+        }
+        else {
+            /* ... otherwise create a new series */
+            q.prepare("insert into upload_series (uploadstudy_id, uploadseries_instanceuid) values (:studyid, :seriesinstanceuid)");
+            q.bindValue(":studyid", studyRowID);
+            q.bindValue(":seriesinstanceuid", SeriesInstanceUID);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+            parsedSeriesRowID = q.lastInsertId().toInt();
+        }
+    }
+    else {
+        io->AppendUploadLog(__FUNCTION__, "Unspecified seriesid criteria [" + upload_seriescriteria + "]. That's weird it would show up here...");
+    }
+
+    return parsedSeriesRowID;
 }
