@@ -65,6 +65,7 @@ public:
     void SetFileMode(FileMode m) { fileMode = m; } /*!< Set the file mode to either NewPackage or ExistingPackage */
     void SetDebugSQL(bool d) { debugSQL = d; }
     void SetOverwritePackage(bool o) { overwritePackage = o; }
+    void SetQuickRead(bool q) { quickRead = q; }
     //bool totalArchiveSizeCallback(qint64 val);
     //bool progressCallback(qint64 val);
 
@@ -191,6 +192,7 @@ private:
     bool overwritePackage;
     bool isValid;
     bool isOkToDelete;
+    bool quickRead; /* set true to skip reading of the params.json files */
 };
 
 #endif // SQUIRREL_H

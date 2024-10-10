@@ -920,4 +920,38 @@ namespace utils {
         Print(QString("|\n|  Current working directory is %1").arg(bindir));
         Print("+----------------------------------------------------+\n");
     }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- HumanReadableSize ------------------------------ */
+    /* ---------------------------------------------------------- */
+    QString HumanReadableSize(qint64 bytes)
+    {
+        QStringList suffix = {"B", "KB", "MB", "GB", "TB"};
+        char length = sizeof(suffix) / sizeof(suffix[0]);
+
+        int i = 0;
+        double dblBytes = bytes;
+
+        if (bytes > 1024) {
+            for (i = 0; (bytes / 1024) > 0 && i<length-1; i++, bytes /= 1024)
+                dblBytes = bytes / 1024.0;
+        }
+
+        QString output = QString("%1 %2").arg(dblBytes, 0, 'g', 2).arg(suffix.at(i));
+
+        return output;
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- PrintProgress ---------------------------------- */
+    /* ---------------------------------------------------------- */
+    void PrintProgress(double percentage) {
+        int val = (int) (percentage * 100);
+        int lpad = (int) (percentage * PBWIDTH);
+        int rpad = PBWIDTH - lpad;
+        printf("\r%3d%% [%.*s%*s]", val, lpad, PBSTR, rpad, "");
+        fflush(stdout);
+    }
 }

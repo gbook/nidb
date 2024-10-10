@@ -58,17 +58,23 @@ public:
     qint64 experimentRowID = -1;
 
     /* JSON elements */
-    qint64 SeriesNumber = -1;       /*!< Series number. must be unique to the study */
     QDateTime DateTime;             /*!< Series datetime */
-    QString SeriesUID;              /*!< SeriesInstanceUID */
+    QHash<QString, QString> params; /*!< Hash containing experimental parameters. eg MR params */
+    QString BIDSEntity;             /*!< BIDS entity (anat, func, etc) */
+    QString BIDSSuffix;             /*!< BIDS suffix (T1w, T2w, etc) */
+    QString BIDSTask;               /*!< BIDS task */
+    QString BIDSRun;                /*!< BIDS run number */
+    QString BIDSPhaseEncodingDirection; /*!< BIDS phase encoding direction */
     QString Description;            /*!< Description of the series */
     QString Protocol;               /*!< Protocol (may differ from description) */
-    qint64 FileCount = 0;           /*!< Number of files associated with the series */
-    qint64 Size = 0;                /*!< total size in bytes of the series */
+    QString SeriesUID;              /*!< SeriesInstanceUID */
+    int SequenceNumber = 0;
+    int Run = 1;                    /*!< Run number, if multiple identical series */
     qint64 BehavioralFileCount = 0; /*!< Number of files associated with the behavioral data */
     qint64 BehavioralSize = 0;      /*!< total size in bytes of the beh data */
-    QHash<QString, QString> params; /*!< Hash containing experimental parameters. eg MR params */
-    int SequenceNumber = 0;
+    qint64 FileCount = 0;           /*!< Number of files associated with the series */
+    qint64 SeriesNumber = -1;       /*!< Series number. must be unique to the study */
+    qint64 Size = 0;                /*!< total size in bytes of the series */
 
     /* lib variables */
     QStringList stagedFiles;        /*!< staged file list: list of raw files in their own directories before the package is zipped up */

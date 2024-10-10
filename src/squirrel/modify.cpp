@@ -514,6 +514,9 @@ bool modify::DoModify(QString packagePath, QString addObject, QString removeObje
 }
 
 
+/* ---------------------------------------------------------------------------- */
+/* ----- PrintVariables ------------------------------------------------------- */
+/* ---------------------------------------------------------------------------- */
 void modify::PrintVariables(QString object) {
 
     if (object == "subject")

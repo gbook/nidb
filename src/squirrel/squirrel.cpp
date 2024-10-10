@@ -30,16 +30,23 @@
 #include "bitfileextractor.hpp"
 
 qint64 totalbytes(0);
+double blocksize(0.0);
+double lastupdate(0.0);
 
 bool totalArchiveSizeCallback(qint64 val) {
-    std::cout << "Total package size is [" << val << "]" << std::endl;
+    utils::Print("Total package size is [" + utils::HumanReadableSize(val) + "]");
     totalbytes = val;
+    blocksize = totalbytes/100.0;
     return true;
 }
 
 bool progressCallback(qint64 val) {
-    double percent = ((double)val/(double)totalbytes)*100.0;
-    printf("%.2f%% (%d of %d bytes)\n", percent, val, totalbytes);
+    if (val > (lastupdate+blocksize)) {
+        double percent = ((double)val/(double)totalbytes)*100.0;
+        //printf("%.0f%% (%lld of %lld bytes)\n", percent, val, totalbytes);
+        utils::PrintProgress(percent/100.0);
+        lastupdate = val;
+    }
     return true;
 }
 
@@ -67,6 +74,7 @@ squirrel::squirrel(bool dbg, bool q)
     fileMode = FileMode::NewPackage;
     isOkToDelete = true;
     isValid = true;
+    quickRead = true;
     quiet = q;
 
     if (!DatabaseConnect()) {
@@ -274,6 +282,9 @@ bool squirrel::Read() {
         utils::Print(QString("Error reading squirrel package. Unable to find squirrel.json"));
         return false;
     }
+    else {
+        utils::Print(QString("Extracted package header [%1 bytes]").arg(jsonstr.size()));
+    }
 
     /* get the JSON document and root object */
     QJsonDocument d = QJsonDocument::fromJson(jsonstr.toUtf8());
@@ -283,7 +294,7 @@ bool squirrel::Read() {
     QJsonObject pkgObj = root["package"].toObject();
     Changes = pkgObj["Changes"].toString();
     DataFormat = pkgObj["DataFormat"].toString();
-    Datetime.fromString(pkgObj["Datetime"].toString());
+    Datetime = QDateTime::fromString(pkgObj["Datetime"].toString(), "yyyy-MM-dd hh:mm:ss");
     Description = pkgObj["Description"].toString();
     License = pkgObj["License"].toString();
     Notes = pkgObj["Notes"].toString();
@@ -299,15 +310,17 @@ bool squirrel::Read() {
 
     /* get the data object, and check for any subjects */
     QJsonArray jsonSubjects;
+    qint64 numSubjects;
     if (root.contains("data")) {
         QJsonValue dataVal = root.value("data");
         QJsonObject dataObj = dataVal.toObject();
         jsonSubjects = dataObj["subjects"].toArray();
-        Log(QString("Found [%1] subjects").arg(jsonSubjects.size()), __FUNCTION__);
+        numSubjects = jsonSubjects.size();
+        Log(QString("Found [%1] subjects").arg(numSubjects), __FUNCTION__);
     }
     else if (root.contains("subjects")) {
         jsonSubjects = root["subjects"].toArray();
-        Log(QString("NOTICE: Found [%1] subjects in the root of the JSON. (This is a slightly malformed squirrel file, but I'll accept it)").arg(jsonSubjects.size()), __FUNCTION__);
+        Log(QString("NOTICE: Found [%1] subjects in the root of the JSON. (This is a slightly malformed squirrel file, but I'll accept it)").arg(numSubjects), __FUNCTION__);
     }
     else {
         Log("root does not contain 'data' or 'subjects'", __FUNCTION__);
@@ -317,7 +330,13 @@ bool squirrel::Read() {
     Debug(QString("TotalSize: [%1]").arg(root["TotalSize"].toInt()), __FUNCTION__);
 
     /* loop through and read any subjects */
+    utils::Print("\n");
+    qint64 i(0);
     for (auto a : jsonSubjects) {
+        i++;
+        Log(QString("Reading subject %1 of %2").arg(i).arg(numSubjects), __FUNCTION__);
+        utils::Print(QString("Reading subject %1 of %2").arg(i).arg(numSubjects), __FUNCTION__);
+
         QJsonObject jsonSubject = a.toObject();
 
         squirrelSubject sqrlSubject;
@@ -325,7 +344,7 @@ bool squirrel::Read() {
         sqrlSubject.ID = jsonSubject["SubjectID"].toString();
         sqrlSubject.AlternateIDs = jsonSubject["AlternateIDs"].toVariant().toStringList();
         sqrlSubject.GUID = jsonSubject["GUID"].toString();
-        sqrlSubject.DateOfBirth.fromString(jsonSubject["DateOfBirth"].toString(), "yyyy-MM-dd");
+        sqrlSubject.DateOfBirth = QDate::fromString(jsonSubject["DateOfBirth"].toString(), "yyyy-MM-dd");
         sqrlSubject.Sex = jsonSubject["Sex"].toString();
         sqrlSubject.Gender = jsonSubject["Gender"].toString();
         sqrlSubject.Ethnicity1 = jsonSubject["Ethnicity1"].toString();
@@ -341,18 +360,18 @@ bool squirrel::Read() {
             QJsonObject jsonStudy = b.toObject();
             squirrelStudy sqrlStudy;
 
-            sqrlStudy.StudyNumber = jsonStudy["StudyNumber"].toInt();
-            sqrlStudy.DateTime.fromString(jsonStudy["StudyDatetime"].toString(), "yyyy-MM-dd hh:mm:ss");
             sqrlStudy.AgeAtStudy = jsonStudy["AgeAtStudy"].toDouble();
-            sqrlStudy.Height = jsonStudy["Height"].toDouble();
-            sqrlStudy.Weight = jsonStudy["Weight"].toDouble();
-            sqrlStudy.Modality = jsonStudy["Modality"].toString();
-            sqrlStudy.Description = jsonStudy["Description"].toString();
-            sqrlStudy.StudyUID = jsonStudy["StudyUID"].toString();
-            sqrlStudy.VisitType = jsonStudy["VisitType"].toString();
+            sqrlStudy.DateTime = QDateTime::fromString(jsonStudy["StudyDatetime"].toString(), "yyyy-MM-dd hh:mm:ss");
             sqrlStudy.DayNumber = jsonStudy["DayNumber"].toInt();
-            sqrlStudy.TimePoint = jsonStudy["TimePoint"].toInt();
+            sqrlStudy.Description = jsonStudy["Description"].toString();
             sqrlStudy.Equipment = jsonStudy["Equipment"].toString();
+            sqrlStudy.Height = jsonStudy["Height"].toDouble();
+            sqrlStudy.Modality = jsonStudy["Modality"].toString();
+            sqrlStudy.StudyNumber = jsonStudy["StudyNumber"].toInt();
+            sqrlStudy.StudyUID = jsonStudy["StudyUID"].toString();
+            sqrlStudy.TimePoint = jsonStudy["TimePoint"].toInt();
+            sqrlStudy.VisitType = jsonStudy["VisitType"].toString();
+            sqrlStudy.Weight = jsonStudy["Weight"].toDouble();
             sqrlStudy.subjectRowID = subjectRowID;
             sqrlStudy.Store();
             qint64 studyRowID = sqrlStudy.GetObjectID();
@@ -365,28 +384,37 @@ bool squirrel::Read() {
                 QJsonObject jsonSeries = c.toObject();
                 squirrelSeries sqrlSeries;
 
-                sqrlSeries.SeriesNumber = jsonSeries["SeriesNumber"].toInteger();
-                sqrlSeries.DateTime.fromString(jsonSeries["SeriesDatetime"].toString(), "yyyy-MM-dd hh:mm:ss");
-                sqrlSeries.SeriesUID = jsonSeries["SeriesUID"].toString();
-                sqrlSeries.Description = jsonSeries["Description"].toString();
-                sqrlSeries.Protocol = jsonSeries["Protocol"].toString();
-                //sqrlSeries.experimentNames = jsonSeries["ExperimentNames"].toString().split(",");
-                sqrlSeries.Size = jsonSeries["Size"].toInteger();
-                sqrlSeries.FileCount = jsonSeries["FileCount"].toInteger();
-                sqrlSeries.BehavioralSize = jsonSeries["BehavioralSize"].toInteger();
+                Log("jsonSeries[SeriesDatetime].toString: " + jsonSeries["SeriesDatetime"].toString(), __FUNCTION__);
+
+                sqrlSeries.BIDSEntity = jsonSeries["BIDSEntity"].toString();
+                sqrlSeries.BIDSPhaseEncodingDirection = jsonSeries["BIDSPhaseEncodingDirection"].toString();
+                sqrlSeries.BIDSRun = jsonSeries["BIDSRun"].toString();
+                sqrlSeries.BIDSSuffix = jsonSeries["BIDSSuffix"].toString();
+                sqrlSeries.BIDSTask = jsonSeries["BIDSTask"].toString();
                 sqrlSeries.BehavioralFileCount = jsonSeries["BehavioralFileCount"].toInteger();
+                sqrlSeries.BehavioralSize = jsonSeries["BehavioralSize"].toInteger();
+                sqrlSeries.DateTime = QDateTime::fromString(jsonSeries["SeriesDatetime"].toString(), "yyyy-MM-dd HH:mm:ss");
+                sqrlSeries.Description = jsonSeries["Description"].toString();
+                sqrlSeries.FileCount = jsonSeries["FileCount"].toInteger();
+                sqrlSeries.Protocol = jsonSeries["Protocol"].toString();
+                sqrlSeries.SeriesNumber = jsonSeries["SeriesNumber"].toInteger();
+                sqrlSeries.SeriesUID = jsonSeries["SeriesUID"].toString();
+                sqrlSeries.Size = jsonSeries["Size"].toInteger();
                 sqrlSeries.studyRowID = studyRowID;
 
+                Log("Series.Datetime: " + sqrlSeries.DateTime.toString("yyyy-MM-dd hh:mm:ss"), __FUNCTION__);
                 Debug(QString("Reading series [%1][%2][%3]").arg(sqrlSubject.ID).arg(sqrlStudy.StudyNumber).arg(sqrlSeries.SeriesNumber), __FUNCTION__);
 
-                /* read any params from the data/Subject/Study/Series/params.json file */
-                QString parms;
-                QString paramsfilepath = QString("data/%2/%3/%4/params.json").arg(sqrlSubject.ID).arg(sqrlStudy.StudyNumber).arg(sqrlSeries.SeriesNumber);
-                if (ExtractFileFromArchive(GetPackagePath(), paramsfilepath, parms)) {
-                    sqrlSeries.params = ReadParamsFile(parms);
-                }
-                else {
-                    Log("Unable to read params file [" + paramsfilepath + "]", __FUNCTION__);
+                if (!quickRead) {
+                    /* read any params from the data/Subject/Study/Series/params.json file */
+                    QString parms;
+                    QString paramsfilepath = QString("data/%2/%3/%4/params.json").arg(sqrlSubject.ID).arg(sqrlStudy.StudyNumber).arg(sqrlSeries.SeriesNumber);
+                    if (ExtractFileFromArchive(GetPackagePath(), paramsfilepath, parms)) {
+                        sqrlSeries.params = ReadParamsFile(parms);
+                    }
+                    else {
+                        Log("Unable to read params file [" + paramsfilepath + "]", __FUNCTION__);
+                    }
                 }
 
                 sqrlSeries.Store();
@@ -398,10 +426,10 @@ bool squirrel::Read() {
                 QJsonObject jsonAnalysis = d.toObject();
                 squirrelAnalysis sqrlAnalysis;
 
-                sqrlAnalysis.DateClusterEnd.fromString(jsonAnalysis["DateClusterEnd"].toString(), "yyyy-MM-dd hh:mm:ss");
-                sqrlAnalysis.DateClusterStart.fromString(jsonAnalysis["DateClusterStart"].toString(), "yyyy-MM-dd hh:mm:ss");
-                sqrlAnalysis.DateStart.fromString(jsonAnalysis["DateEnd"].toString(), "yyyy-MM-dd hh:mm:ss");
-                sqrlAnalysis.DateStart.fromString(jsonAnalysis["DateStart"].toString(), "yyyy-MM-dd hh:mm:ss");
+                sqrlAnalysis.DateClusterEnd = QDateTime::fromString(jsonAnalysis["DateClusterEnd"].toString(), "yyyy-MM-dd hh:mm:ss");
+                sqrlAnalysis.DateClusterStart = QDateTime::fromString(jsonAnalysis["DateClusterStart"].toString(), "yyyy-MM-dd hh:mm:ss");
+                sqrlAnalysis.DateStart = QDateTime::fromString(jsonAnalysis["DateEnd"].toString(), "yyyy-MM-dd hh:mm:ss");
+                sqrlAnalysis.DateStart = QDateTime::fromString(jsonAnalysis["DateStart"].toString(), "yyyy-MM-dd hh:mm:ss");
                 sqrlAnalysis.Hostname = jsonAnalysis["Hostname"].toString();
                 sqrlAnalysis.LastMessage = jsonAnalysis["StatusMessage"].toString();
                 sqrlAnalysis.PipelineName = jsonAnalysis["PipelineName"].toString();
@@ -425,11 +453,11 @@ bool squirrel::Read() {
         for (auto e : jsonObservations) {
             QJsonObject jsonObservation = e.toObject();
             squirrelObservation sqrlObservation;
-            sqrlObservation.DateEnd.fromString(jsonObservation["DateEnd"].toString(), "yyyy-MM-dd hh:mm:ss");
-            sqrlObservation.DateStart.fromString(jsonObservation["DateStart"].toString(), "yyyy-MM-dd hh:mm:ss");
-            sqrlObservation.DateRecordCreate.fromString(jsonObservation["DateRecordCreate"].toString(), "yyyy-MM-dd hh:mm:ss");
-            sqrlObservation.DateRecordEntry.fromString(jsonObservation["DateRecordEntry"].toString(), "yyyy-MM-dd hh:mm:ss");
-            sqrlObservation.DateRecordModify.fromString(jsonObservation["DateRecordModify"].toString(), "yyyy-MM-dd hh:mm:ss");
+            sqrlObservation.DateEnd = QDateTime::fromString(jsonObservation["DateEnd"].toString(), "yyyy-MM-dd hh:mm:ss");
+            sqrlObservation.DateStart = QDateTime::fromString(jsonObservation["DateStart"].toString(), "yyyy-MM-dd hh:mm:ss");
+            sqrlObservation.DateRecordCreate = QDateTime::fromString(jsonObservation["DateRecordCreate"].toString(), "yyyy-MM-dd hh:mm:ss");
+            sqrlObservation.DateRecordEntry = QDateTime::fromString(jsonObservation["DateRecordEntry"].toString(), "yyyy-MM-dd hh:mm:ss");
+            sqrlObservation.DateRecordModify = QDateTime::fromString(jsonObservation["DateRecordModify"].toString(), "yyyy-MM-dd hh:mm:ss");
             sqrlObservation.Description = jsonObservation["Description"].toString();
             sqrlObservation.Duration = jsonObservation["Duration"].toDouble();
             sqrlObservation.InstrumentName = jsonObservation["InstrumentName"].toString();
@@ -448,9 +476,9 @@ bool squirrel::Read() {
             QJsonObject jsonIntervention = f.toObject();
             squirrelIntervention sqrlIntervention;
 
-            sqrlIntervention.DateEnd.fromString(jsonIntervention["DateEnd"].toString(), "yyyy-MM-dd hh:mm:ss");
-            sqrlIntervention.DateRecordEntry.fromString(jsonIntervention["DateRecordEntry"].toString(), "yyyy-MM-dd hh:mm:ss");
-            sqrlIntervention.DateStart.fromString(jsonIntervention["DateStart"].toString(), "yyyy-MM-dd hh:mm:ss");
+            sqrlIntervention.DateEnd = QDateTime::fromString(jsonIntervention["DateEnd"].toString(), "yyyy-MM-dd hh:mm:ss");
+            sqrlIntervention.DateRecordEntry = QDateTime::fromString(jsonIntervention["DateRecordEntry"].toString(), "yyyy-MM-dd hh:mm:ss");
+            sqrlIntervention.DateStart = QDateTime::fromString(jsonIntervention["DateStart"].toString(), "yyyy-MM-dd hh:mm:ss");
             sqrlIntervention.Description = jsonIntervention["Description"].toString();
             sqrlIntervention.DoseAmount = jsonIntervention["DoseAmount"].toDouble();
             sqrlIntervention.DoseFrequency = jsonIntervention["DoseFrequency"].toString();
@@ -496,7 +524,7 @@ bool squirrel::Read() {
         sqrlPipeline.ClusterSubmitHost = jsonPipeline["ClusterSubmitHost"].toString();
         sqrlPipeline.ClusterType = jsonPipeline["ClusterType"].toString();
         sqrlPipeline.ClusterUser = jsonPipeline["ClusterUser"].toString();
-        sqrlPipeline.CreateDate.fromString(jsonPipeline["CreateDate"].toString(), "yyyy-MM-dd hh:mm:ss");
+        sqrlPipeline.CreateDate = QDateTime::fromString(jsonPipeline["CreateDate"].toString(), "yyyy-MM-dd hh:mm:ss");
         sqrlPipeline.DataCopyMethod = jsonPipeline["DataCopyMethod"].toString();
         sqrlPipeline.DependencyDirectory = jsonPipeline["DependencyDirectory"].toString();
         sqrlPipeline.DependencyLevel = jsonPipeline["DependencyLevel"].toString();
@@ -2382,22 +2410,26 @@ bool squirrel::RemoveObservation(qint64 observationRowID) {
  * @return true if successful, false otherwise
  */
 bool squirrel::ExtractFileFromArchive(QString archivePath, QString filePath, QString &fileContents) {
-    //Log(QString("Reading file [%1] from archive [%2]...").arg(filePath).arg(archivePath), __FUNCTION__);
+    Debug(QString("Reading file [%1] from archive [%2]...").arg(filePath).arg(archivePath), __FUNCTION__);
     try {
         using namespace bit7z;
         std::vector<unsigned char> buffer;
         Bit7zLibrary lib(p7zipLibPath.toStdString());
         if (archivePath.endsWith(".zip", Qt::CaseInsensitive)) {
             BitFileExtractor extractor(lib, BitFormat::Zip);
+            extractor.setProgressCallback(progressCallback);
+            extractor.setTotalCallback(totalArchiveSizeCallback);
             extractor.extractMatching(archivePath.toStdString(), filePath.toStdString(), buffer);
         }
         else {
             BitFileExtractor extractor(lib, BitFormat::SevenZip);
+            extractor.setProgressCallback(progressCallback);
+            extractor.setTotalCallback(totalArchiveSizeCallback);
             extractor.extractMatching(archivePath.toStdString(), filePath.toStdString(), buffer);
         }
         std::string str{buffer.begin(), buffer.end()};
         fileContents = QString::fromStdString(str);
-        //Log(QString("Extracted file [%1]. File is [%2] bytes in length").arg(filePath).arg(fileContents.size()), __FUNCTION__);
+        Debug(QString("Extracted file [%1]. File is [%2] bytes in length").arg(filePath).arg(fileContents.size()), __FUNCTION__);
         return true;
     }
     catch ( const bit7z::BitException& ex ) {

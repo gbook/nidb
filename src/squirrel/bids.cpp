@@ -35,6 +35,33 @@ bids::bids()
 
 
 /* ---------------------------------------------------------------------------- */
+/* ----- Read ----------------------------------------------------------------- */
+/* ---------------------------------------------------------------------------- */
+/**
+ * This function does its best to load an existing BIDS directory into a squirrel
+ * package. Due to the complex nature of BIDS structures and addendums, exact
+ * converstion of BIDS into squirrel may be incomplete
+ *
+ * @brief Load a BIDS directory into a squirrel object
+ * @param dir Path to the BIDS directory
+ * @param sqrl Squirrel object
+ * @return true if loaded successfully, false otherwise
+ */
+bool bids::Read(QString dir, squirrel *sqrl) {
+
+    /* 1) Read participants.tsv to get list of expected subjects
+     * 2) Read sub- directories
+     * 3) Read ses- directories
+     * 4) Read Entity directories (anat, func, etc)
+     * 5) Within the entity directories, read the files
+     * 6) Parse the filenames into known parts (-acq, -run, _suffix, etc)
+    */
+
+    return true;
+}
+
+
+/* ---------------------------------------------------------------------------- */
 /* ----- LoadToSquirrel ------------------------------------------------------- */
 /* ---------------------------------------------------------------------------- */
 /**

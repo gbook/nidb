@@ -149,7 +149,7 @@ QString squirrelSubject::PrintDetails() {
 
     str += utils::Print("\t\t----- SUBJECT -----");
     str += utils::Print(QString("\t\tAlternateIDs: %1").arg(AlternateIDs.join(",")));
-    str += utils::Print(QString("\t\tDateOfBirth: %1").arg(DateOfBirth.toString()));
+    str += utils::Print(QString("\t\tDateOfBirth: %1").arg(DateOfBirth.toString("yyyy-MM-dd")));
     str += utils::Print(QString("\t\tEthnicity1: %1").arg(Ethnicity1));
     str += utils::Print(QString("\t\tEthnicity2: %1").arg(Ethnicity2));
     str += utils::Print(QString("\t\tGUID: %1").arg(GUID));
@@ -173,9 +173,9 @@ QString squirrelSubject::PrintTree(bool isLast) {
     QString str;
 
     if (isLast)
-        str += utils::Print(QString("   └─── ID %1  AltIDs %2  DOB %3  Sex %4").arg(ID).arg(AlternateIDs.join(",")).arg(DateOfBirth.toString()).arg(Sex));
+        str += utils::Print(QString("   └─── ID %1  AltIDs %2  DOB %3  Sex %4").arg(ID).arg(AlternateIDs.join(",")).arg(DateOfBirth.toString("yyyy-MM-dd")).arg(Sex));
     else
-        str += utils::Print(QString("   ├─── ID %1  AltIDs %2  DOB %3  Sex %4").arg(ID).arg(AlternateIDs.join(",")).arg(DateOfBirth.toString()).arg(Sex));
+        str += utils::Print(QString("   ├─── ID %1  AltIDs %2  DOB %3  Sex %4").arg(ID).arg(AlternateIDs.join(",")).arg(DateOfBirth.toString("yyyy-MM-dd")).arg(Sex));
 
     /* find all studies associated with this subject ... */
     QSqlQuery q(QSqlDatabase::database("squirrel"));
@@ -216,7 +216,7 @@ QString squirrelSubject::CSVLine() {
 
     data.append(ID);
     data.append(AlternateIDs.join(","));
-    data.append(DateOfBirth.toString());
+    data.append(DateOfBirth.toString("yyyy-MM-dd"));
     data.append(Ethnicity1);
     data.append(Ethnicity2);
     data.append(GUID);

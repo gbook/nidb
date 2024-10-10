@@ -32,6 +32,7 @@ class bids
 public:
     bids();
 
+    bool Read(QString dir, squirrel *sqrl);
     bool LoadToSquirrel(QString dir, squirrel *sqrl);
 
     bool LoadRootFiles(QStringList rootfiles, squirrel *sqrl);

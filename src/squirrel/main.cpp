@@ -267,6 +267,7 @@ int main(int argc, char *argv[])
             sqrl->quiet = quiet;
             sqrl->SetPackagePath(inputPath);
             sqrl->SetFileMode(FileMode::ExistingPackage);
+            sqrl->SetQuickRead(true);
             sqrl->Read();
 
             sqrl->Debug("Reading package...", __FUNCTION__);
