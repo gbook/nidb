@@ -60,6 +60,9 @@ int moduleUpload::Run() {
     /* archive any uploads */
     ret |= ArchiveSelectedFiles();
 
+    /* archive any squirrel */
+    ret |= ArchiveSelectedSquirrel();
+
     n->Log("Leaving the upload module");
     return ret;
 }
@@ -515,6 +518,9 @@ bool moduleUpload::ParseUploadedSquirrel(squirrel *sqrl, QString upload_subjectc
         }
     }
 
+    /* update the status */
+    SetUploadStatus(uploadRowID, "parsingcomplete", 100);
+
     return true;
 }
 
@@ -530,7 +536,7 @@ bool moduleUpload::ArchiveSelectedFiles() {
     bool ret(false);
 
     /* get list of uploads that are ready to be archived */
-    q.prepare("select * from uploads where upload_status = 'queueforarchive'");
+    q.prepare("select * from uploads where upload_status = 'queueforarchive' and upload_type <> 'squirrel'");
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.size() > 0) {
         while (q.next()) {
@@ -556,6 +562,139 @@ bool moduleUpload::ArchiveSelectedFiles() {
 
             /* set status to archiving */
             SetUploadStatus(uploadRowID, "archiving", 0.0);
+
+            /* get list of series which should be archived from this upload */
+            QSqlQuery q2;
+            q2.prepare("select * from upload_series a left join upload_studies b on a.uploadstudy_id = b.uploadstudy_id left join upload_subjects c on b.uploadsubject_id = c.uploadsubject_id where a.uploadseries_status = 'import' and c.upload_id = :uploadid");
+            q2.bindValue(":uploadid", uploadRowID);
+            n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__, true);
+            int numSeries = q2.size();
+            int i(0);
+            if (numSeries > 0) {
+                while (q2.next()) {
+
+                    /* check if this module should be running */
+                    n->ModuleRunningCheckIn();
+                    if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); return false; }
+
+                    ret = true;
+                    int uploadseries_id = q2.value("uploadseries_id").toInt();
+
+                    n->Log(QString("Working on series [%1]").arg(uploadseries_id));
+
+                    /* get any matching subject/study/series */
+                    int matchingsubjectid(-1), matchingstudyid(-1), matchingseriesid(-1);
+                    if (!q2.value("matchingsubjectid").isNull())
+                        matchingsubjectid = q2.value("matchingsubjectid").toInt();
+                    if (!q2.value("matchingstudyid").isNull())
+                        matchingstudyid = q2.value("matchingstudyid").toInt();
+                    if (!q2.value("matchingseriesid").isNull())
+                        matchingseriesid = q2.value("matchingseriesid").toInt();
+
+                    /* get information about this series to be imported */
+                    QStringList uploadseries_filelist = q2.value("uploadseries_filelist").toString().split(",");
+                    for(int i=0; i<uploadseries_filelist.size(); i++) {
+                        if (uploadseries_filelist[i].trimmed() != "")
+                            uploadseries_filelist[i] = upload_stagingpath + uploadseries_filelist[i];
+                    }
+
+                    performanceMetric perf;
+                    /* insert the series */
+                    io->ArchiveDICOMSeries(-1, matchingsubjectid, matchingstudyid, matchingseriesid, upload_subjectcriteria, upload_studycriteria, upload_seriescriteria, upload_destprojectid, upload_patientid, -1, "", "Uploaded to NiDB", uploadseries_filelist, perf);
+
+                    i++;
+                    double pct = static_cast<double>(i)/static_cast<double>(numSeries) * 100.0;
+                    SetUploadStatus(uploadRowID, "archiving", pct);
+                }
+
+                io->AppendUploadLog(__FUNCTION__, QString("Completed archiving of upload [%1]").arg(uploadRowID));
+            }
+            else {
+                error = true;
+                io->AppendUploadLog(__FUNCTION__, QString("Error: No series found for upload [%1]").arg(uploadRowID));
+            }
+
+            if (error) {
+                SetUploadStatus(uploadRowID, "archiveerror", -1.0);
+            }
+            else {
+                SetUploadStatus(uploadRowID, "archivecomplete", 100.0);
+                /* delete all of the source data and mark status as 'archivecomplete' */
+                QString m;
+                if (RemoveDir(upload_stagingpath, m))
+                    io->AppendUploadLog(__FUNCTION__, QString("Removed upload staging directory [%1]").arg(upload_stagingpath));
+                else
+                    io->AppendUploadLog(__FUNCTION__, QString("Error: No series found for upload [%1]").arg(uploadRowID));
+            }
+        }
+    }
+    return ret;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- ArchiveSelectedSquirrel ------------------------ */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Archive the series marked by the user based on specified upload criteria
+ * @return `true` if successful, `false` otherwise
+ */
+bool moduleUpload::ArchiveSelectedSquirrel() {
+    QSqlQuery q;
+    bool ret(false);
+
+    /* get list of uploads that are ready to be archived */
+    q.prepare("select * from uploads where upload_status = 'queueforarchive' and upload_type = 'squirrel'");
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.size() > 0) {
+        while (q.next()) {
+
+            /* check if this module should be running */
+            n->ModuleRunningCheckIn();
+            if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); return false; }
+
+            ret = true;
+            bool error = false;
+            int uploadRowID = q.value("upload_id").toInt();
+            io->SetUploadID(uploadRowID);
+
+            //QString upload_status = q.value("upload_status").toString();
+            int upload_destprojectid = q.value("upload_destprojectid").toInt();
+            QString upload_patientid = q.value("upload_patientid").toString();
+            QString upload_stagingpath = q.value("upload_stagingpath").toString();
+            QString upload_subjectcriteria = q.value("upload_subjectcriteria").toString();
+            QString upload_studycriteria = q.value("upload_studycriteria").toString();
+            QString upload_seriescriteria = q.value("upload_seriescriteria").toString();
+
+            io->AppendUploadLog(__FUNCTION__, QString("Beginning archiving of upload [%1] with upload_destprojectid of [%2]").arg(uploadRowID).arg(upload_destprojectid));
+
+            /* set status to archiving */
+            SetUploadStatus(uploadRowID, "archiving", 0.0);
+
+            /* unzip the squirrel package */
+            QString f;
+            QString m;
+            if (!FindFirstFile(upload_stagingpath, "*.sqrl", f, m)) {
+                n->Log("Unable to find any squirrel files in path [" + upload_stagingpath + "]", __FUNCTION__);
+                continue;
+            }
+            squirrel *sqrl = new squirrel();
+            sqrl->SetPackagePath(f);
+            if (sqrl->Read()) {
+                /* extract the file to a temp directory */
+                QString tmppath = n->cfg["tmpdir"] + "/" + GenerateRandomString(20);
+                if (!MakePath(tmppath,m)) {
+                    n->Log("Error creating temp directory [" + tmppath + "] with error [" + m + "]", __FUNCTION__);
+                    continue;
+                }
+
+                if (sqrl->Extract(tmppath, m)) {
+                    n->Log("Successfuly extract squirrel package [" + f + "] to directory [" + tmppath + "]", __FUNCTION__);
+                }
+                else {
+                    n->Log("Error extracting squirrel package [" + f + "] to directory [" + tmppath + "] with message [" + m + "]", __FUNCTION__);
+                }
+            }
 
             /* get list of series which should be archived from this upload */
             QSqlQuery q2;

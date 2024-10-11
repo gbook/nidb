@@ -920,6 +920,17 @@ bool squirrel::Write(bool writeLog) {
 
 
 /* ------------------------------------------------------------ */
+/* ----- Extract ---------------------------------------------- */
+/* ------------------------------------------------------------ */
+bool squirrel::Extract(QString destinationDir, QString &m) {
+    if (ExtractArchiveToDirectory(packagePath, destinationDir, m))
+        return true;
+    else
+        return false;
+}
+
+
+/* ------------------------------------------------------------ */
 /* ----- Validate --------------------------------------------- */
 /* ------------------------------------------------------------ */
 /**
@@ -2649,6 +2660,42 @@ bool squirrel::UpdateMemoryFileToArchive(QString file, QString compressedFilePat
     catch ( const bit7z::BitException& ex ) {
         /* Do something with ex.what()...*/
         m = "Unable to compress directory into archive using bit7z library [" + QString(ex.what()) + "]";
+        return false;
+    }
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- ExtractArchiveToDirectory ---------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief Extract an entire archive to a specified directory
+ * @param archivePath Path to the archive
+ * @return true if successful, false otherwise
+ */
+bool squirrel::ExtractArchiveToDirectory(QString archivePath, QString destinationPath, QString &m) {
+    try {
+        using namespace bit7z;
+        Bit7zLibrary lib(p7zipLibPath.toStdString());
+
+        if (archivePath.endsWith(".zip", Qt::CaseInsensitive)) {
+            bit7z::BitFileExtractor extractor(lib, bit7z::BitFormat::Zip);
+            extractor.setProgressCallback(progressCallback);
+            extractor.setTotalCallback(totalArchiveSizeCallback);
+            extractor.extract(archivePath.toStdString(), destinationPath.toStdString());
+        }
+        else {
+            bit7z::BitFileExtractor extractor(lib, bit7z::BitFormat::SevenZip);
+            extractor.setProgressCallback(progressCallback);
+            extractor.setTotalCallback(totalArchiveSizeCallback);
+            extractor.extract(archivePath.toStdString(), destinationPath.toStdString());
+        }
+        m = "Successfully extracted archive [" + archivePath + "] to directory [" + destinationPath + "]";
+        return true;
+    }
+    catch ( const bit7z::BitException& ex ) {
+        /* Do something with ex.what()...*/
+        m = "Unable to extract archive to directory using bit7z library [" + QString(ex.what()) + "]";
         return false;
     }
 }

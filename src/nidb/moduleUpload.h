@@ -42,6 +42,7 @@ private:
 
     QString GetUploadStatus(int uploadid);
     bool ArchiveSelectedFiles();
+    bool ArchiveSelectedSquirrel();
     bool ParseUploadedFiles(QMap<QString, QMap<QString, QMap<QString, QStringList> > > fs, QString upload_subjectcriteria, QString upload_studycriteria, QString upload_seriescriteria, QString uploadstagingpath, int upload_id);
     bool ParseUploadedSquirrel(squirrel *sqrl, QString upload_subjectcriteria, QString upload_studycriteria, QString upload_seriescriteria, QString uploadstagingpath, int uploadRowID);
     bool ReadUploads();

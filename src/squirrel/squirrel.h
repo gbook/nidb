@@ -66,8 +66,7 @@ public:
     void SetDebugSQL(bool d) { debugSQL = d; }
     void SetOverwritePackage(bool o) { overwritePackage = o; }
     void SetQuickRead(bool q) { quickRead = q; }
-    //bool totalArchiveSizeCallback(qint64 val);
-    //bool progressCallback(qint64 val);
+    bool Extract(QString destinationDir, QString &m);
 
     /* package JSON elements */
     QDateTime Datetime;         /*!< datetime the package was created */
@@ -166,16 +165,17 @@ public:
     QSqlDatabase db;
 
 private:
-    bool MakeTempDir(QString &dir);
-    bool DeleteTempDir(QString dir);
-    bool DatabaseConnect();
-    bool InitializeDatabase();
-    bool ExtractFileFromArchive(QString archivePath, QString filePath, QString &fileContents);
-    bool CompressDirectoryToArchive(QString dir, QString archivePath, QString &m);
     bool AddFilesToArchive(QStringList filePaths, QStringList compressedFilePaths, QString archivePath, QString &m);
+    bool CompressDirectoryToArchive(QString dir, QString archivePath, QString &m);
+    bool DatabaseConnect();
+    bool DeleteTempDir(QString dir);
+    bool ExtractArchiveToDirectory(QString archivePath, QString destinationPath, QString &m);
+    bool ExtractFileFromArchive(QString archivePath, QString filePath, QString &fileContents);
+    bool Get7zipLibPath();
+    bool InitializeDatabase();
+    bool MakeTempDir(QString &dir);
     bool RemoveDirectoryFromArchive(QString compressedDirPath, QString archivePath, QString &m);
     bool UpdateMemoryFileToArchive(QString file, QString compressedFilePath, QString archivePath, QString &m);
-    bool Get7zipLibPath();
 
     QString workingDir;
     QString logfile;
