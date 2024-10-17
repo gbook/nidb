@@ -247,7 +247,7 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
         AppendUploadLog(__FUNCTION__ , QString("GetFamily() returned error: familyID [%1]  familyUID [%2]").arg(familyRowID).arg(familyUID));
 
     /* ----- get/create enrollment ID ----- */
-    if (GetEnrollment(subjectRowID, projectRowID, enrollmentRowID))
+    if (GetOrCreateEnrollment(subjectRowID, projectRowID, enrollmentRowID))
         AppendUploadLog(__FUNCTION__ , QString("GetEnrollment returned enrollmentRowID [%1]").arg(enrollmentRowID));
     else
         AppendUploadLog(__FUNCTION__ , QString("GetEnrollment returned error: enrollmentRowID [%1]").arg(enrollmentRowID));
@@ -791,6 +791,108 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
     perf.End();
 
     return 1;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- ArchiveNiftiSeries ----------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Archive a Nifti series. Its assumed that the series is an MR modality, and that the parent subject and study have already been created
+ * @param subjectRowID Parent subjectRowID
+ * @param studyRowID Parent studyRowID
+ * @param seriesRowID seriesRowID, if it is known. -1 otherwise
+ * @param seriesNumber SeriesNumber
+ * @param tags QHash of tags/values about the image. These values may have come from a squirrel file, BIDS file, or other source
+ * @param files List of file(s) to be archived
+ * @return `true` if successfully archives, `false` otherwise
+ */
+bool archiveIO::ArchiveNiftiSeries(int subjectRowID, int studyRowID, int seriesRowID, int seriesNumber, QHash<QString, QString> tags, QStringList files) {
+
+    /* check if there are any files to archive */
+    if (files.size() < 1) {
+        AppendUploadLog(__FUNCTION__ , "No Nifti files to archive");
+        return false;
+    }
+
+    /* check if the first file exists */
+    if (!QFile::exists(files[0])) {
+        AppendUploadLog(__FUNCTION__ , QString("File [%1] does not exist - check A!").arg(files[0]));
+        return false;
+    }
+
+    SortQStringListNaturally(files);
+
+    /* check if the first file exists after sorting */
+    if (!QFile::exists(files[0])) {
+        AppendUploadLog(__FUNCTION__ , QString("File [%1] does not exist - check B!").arg(files[0]));
+        return false;
+    }
+
+    /* get parent subject and study information */
+    subject subj(subjectRowID, n);
+    study stud(studyRowID, n);
+
+    QString seriesPath = QString("%1/%2").arg(stud.path()).arg(seriesNumber);
+    QSqlQuery q;
+
+    /* check if this series already exists */
+    if (seriesRowID < 0) {
+        n->Log(QString("Creating series [%1] [%2] [%3]").arg(subj.UID()).arg(stud.studyNum()).arg(seriesNumber), __FUNCTION__);
+
+        /* series doesn't exist, so we'll create it */
+        AppendUploadLog(__FUNCTION__ , QString("MR series [%1] did not exist, creating").arg(seriesNumber));
+        QString sqlstring = "insert ignore into mr_series (study_id, series_num, data_type, series_status, series_createdby, series_createdate) values (:studyRowID, :SeriesNumber, 'nifti', 'archiving', 'import', now())";
+        QSqlQuery q;
+        q.prepare(sqlstring);
+        q.bindValue(":studyRowID", studyRowID);
+        q.bindValue(":seriesNumber", seriesNumber);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        seriesRowID = q.lastInsertId().toInt();
+    }
+
+    n->Log(QString("Updating series [%1] [%2] [%3]").arg(subj.UID()).arg(stud.studyNum()).arg(seriesNumber), __FUNCTION__);
+
+    /* update (new or existing) series */
+    QString sqlstring = "update mr_series set series_datetime = '" + tags["SeriesDateTime"] + "', series_desc = :SeriesDescription, series_protocol = :ProtocolName, series_sequencename = :SequenceName, series_tr = :RepetitionTime, series_te = :EchoTime,series_flip = :FlipAngle, phaseencodedir = :InPlanePhaseEncodingDirection, phaseencodeangle = :PhaseEncodeAngle, PhaseEncodingDirectionPositive = :PhaseEncodingDirectionPositive, series_spacingx = :pixelX,series_spacingy = :pixelY, series_spacingz = :SliceThickness, series_fieldstrength = :MagneticFieldStrength, img_rows = :Rows, img_cols = :Columns, img_slices = :zsize, series_ti = :InversionTime, percent_sampling = :PercentSampling, percent_phasefov = :PercentPhaseFieldOfView, acq_matrix = :AcquisitionMatrix, slicethickness = :SliceThickness, slicespacing = :SpacingBetweenSlices, bandwidth = :PixelBandwidth, image_type = :ImageType, image_comments = :ImageComments, bold_reps = :boldreps, numfiles = :numfiles, series_notes = :importSeriesNotes, series_status = 'complete' where mrseries_id = :seriesRowID";
+    q.prepare(sqlstring);
+    q.bindValue(":SeriesDescription", tags["SeriesDescription"]);
+    q.bindValue(":ProtocolName", tags["ProtocolName"]);
+    q.bindValue(":SequenceName", tags["SequenceName"]);
+    q.bindValue(":RepetitionTime", tags["RepetitionTime"]);
+    q.bindValue(":EchoTime", tags["EchoTime"]);
+    q.bindValue(":FlipAngle", tags["FlipAngle"]);
+    q.bindValue(":InPlanePhaseEncodingDirection", tags["InPlanePhaseEncodingDirection"]);
+
+    if (tags["PhaseEncodeAngle"] == "") q.bindValue(":PhaseEncodeAngle", QVariant(QMetaType::fromType<double>())); /* for null values */
+    else q.bindValue(":PhaseEncodeAngle", tags["PhaseEncodeAngle"]);
+
+    if (tags["PhaseEncodingDirectionPositive"] == "") q.bindValue(":PhaseEncodingDirectionPositive", QVariant(QMetaType::fromType<int>())); /* for null values */
+    else q.bindValue(":PhaseEncodingDirectionPositive", tags["PhaseEncodingDirectionPositive"]);
+
+    q.bindValue(":pixelX", tags["pixelX"]);
+    q.bindValue(":pixelY", tags["pixelY"]);
+    q.bindValue(":SliceThickness", tags["SliceThickness"]);
+    q.bindValue(":MagneticFieldStrength", tags["MagneticFieldStrength"]);
+    q.bindValue(":Rows", tags["Rows"]);
+    q.bindValue(":Columns", tags["Columns"]);
+    q.bindValue(":zsize", tags["zsize"]);
+    q.bindValue(":InversionTime", tags["InversionTime"]);
+    q.bindValue(":PercentSampling", tags["PercentSampling"]);
+    q.bindValue(":PercentPhaseFieldOfView", tags["PercentPhaseFieldOfView"]);
+    q.bindValue(":AcquisitionMatrix", tags["AcquisitionMatrix"]);
+    q.bindValue(":SliceThickness", tags["SliceThickness"]);
+    q.bindValue(":SpacingBetweenSlices", tags["SpacingBetweenSlices"]);
+    q.bindValue(":PixelBandwidth", tags["PixelBandwidth"]);
+    q.bindValue(":ImageType", tags["ImageType"]);
+    q.bindValue(":ImageComments", tags["ImageComments"]);
+    q.bindValue(":boldreps", tags["boldreps"]);
+    q.bindValue(":numfiles", files.size());
+    q.bindValue(":importSeriesNotes", tags["seriesNotes"]);
+    q.bindValue(":seriesRowID", seriesRowID);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+
+    return true;
 }
 
 
@@ -1941,7 +2043,7 @@ bool archiveIO::GetProject(int destProjectID, QString StudyDescription, int &pro
 
 
 /* ---------------------------------------------------------- */
-/* --------- GetEnrollment ---------------------------------- */
+/* --------- GetOrCreateEnrollment -------------------------- */
 /* ---------------------------------------------------------- */
 /**
  * @brief Search for an existing enrollment, or create it if it doesn't exist
@@ -1950,7 +2052,7 @@ bool archiveIO::GetProject(int destProjectID, QString StudyDescription, int &pro
  * @param enrollmentRowID The found/created enrollmentRowID
  * @return true if successful, false otherwise
  */
-bool archiveIO::GetEnrollment(int subjectRowID, int projectRowID, int &enrollmentRowID) {
+bool archiveIO::GetOrCreateEnrollment(int subjectRowID, int projectRowID, int &enrollmentRowID) {
     QSqlQuery q;
 
     /* check if the subject is enrolled in the project */

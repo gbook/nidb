@@ -618,19 +618,19 @@ bool squirrel::Write(bool writeLog) {
 
     /* ----- 1) Write data. And set the relative paths in the objects ----- */
     /* iterate through subjects */
-    QList<squirrelSubject> subjects = GetAllSubjects();
+    QList<squirrelSubject> subjects = GetSubjectList();
     foreach (squirrelSubject subject, subjects) {
         qint64 subjectRowID = subject.GetObjectID();
         Log(QString("Writing subject [%1] to virtualPath [%2]").arg(subject.ID).arg(subject.VirtualPath()), __FUNCTION__);
 
         /* iterate through studies */
-        QList<squirrelStudy> studies = GetStudies(subjectRowID);
+        QList<squirrelStudy> studies = GetStudyList(subjectRowID);
         foreach (squirrelStudy study, studies) {
             qint64 studyRowID = study.GetObjectID();
             Log(QString("Writing study [%1] to virtualPath [%2]").arg(study.StudyNumber).arg(study.VirtualPath()), __FUNCTION__);
 
             /* iterate through series */
-            QList<squirrelSeries> serieses = GetSeries(studyRowID);
+            QList<squirrelSeries> serieses = GetSeriesList(studyRowID);
             Log(QString("Writing [%1] series for [%2][%3]").arg(serieses.size()).arg(subject.ID).arg(study.StudyNumber), __FUNCTION__);
             foreach (squirrelSeries series, serieses) {
                 QString m;
@@ -761,13 +761,13 @@ bool squirrel::Write(bool writeLog) {
     QJsonArray JSONsubjects;
 
     /* add subjects to JSON */
-    QList<squirrelSubject> subjectses = GetAllSubjects();
+    QList<squirrelSubject> subjectses = GetSubjectList();
     foreach (squirrelSubject subject, subjectses) {
         JSONsubjects.append(subject.ToJSON());
     }
 
     /* add group-analyses */
-    QList <squirrelGroupAnalysis> groupAnalyses = GetAllGroupAnalyses();
+    QList <squirrelGroupAnalysis> groupAnalyses = GetGroupAnalysisList();
     if (groupAnalyses.size() > 0) {
         Log(QString("Adding %1 group-analyses...").arg(groupAnalyses.size()), __FUNCTION__);
         QJsonArray JSONgroupanalyses;
@@ -787,7 +787,7 @@ bool squirrel::Write(bool writeLog) {
     root["data"] = data;
 
     /* add pipelines */
-    QList <squirrelPipeline> pipelines = GetAllPipelines();
+    QList <squirrelPipeline> pipelines = GetPipelineList();
     if (pipelines.size() > 0) {
         Log(QString("Adding %1 pipelines...").arg(pipelines.size()), __FUNCTION__);
         QJsonArray JSONpipelines;
@@ -803,7 +803,7 @@ bool squirrel::Write(bool writeLog) {
     }
 
     /* add experiments */
-    QList <squirrelExperiment> exps = GetAllExperiments();
+    QList <squirrelExperiment> exps = GetExperimentList();
     if (exps.size() > 0) {
         Log(QString("Adding %1 experiments...").arg(exps.size()), __FUNCTION__);
         QJsonArray JSONexperiments;
@@ -819,7 +819,7 @@ bool squirrel::Write(bool writeLog) {
     }
 
     /* add data-dictionary */
-    QList <squirrelDataDictionary> dicts = GetAllDataDictionaries();
+    QList <squirrelDataDictionary> dicts = GetDataDictionaryList();
     if (dicts.size() > 0) {
         Log(QString("Adding %1 data-dictionaries...").arg(dicts.size()), __FUNCTION__);
         QJsonArray JSONdataDictionaries;
@@ -971,38 +971,38 @@ QString squirrel::Print() {
     str += PrintPackage();
 
     /* iterate through subjects */
-    QList<squirrelSubject> subjects = GetAllSubjects();
+    QList<squirrelSubject> subjects = GetSubjectList();
     foreach (squirrelSubject sub, subjects) {
         qint64 subjectRowID = sub.GetObjectID();
         str += sub.PrintDetails();
 
         /* iterate through studies */
-        QList<squirrelStudy> studies = GetStudies(subjectRowID);
+        QList<squirrelStudy> studies = GetStudyList(subjectRowID);
         foreach (squirrelStudy study, studies) {
             qint64 studyRowID = study.GetObjectID();
             str += study.PrintStudy();
 
             /* iterate through series */
-            QList<squirrelSeries> serieses = GetSeries(studyRowID);
+            QList<squirrelSeries> serieses = GetSeriesList(studyRowID);
             foreach (squirrelSeries series, serieses) {
                 str += series.PrintSeries();
             }
 
             /* iterate through analyses */
-            QList<squirrelAnalysis> analyses = GetAnalyses(studyRowID);
+            QList<squirrelAnalysis> analyses = GetAnalysisList(studyRowID);
             foreach (squirrelAnalysis analysis, analyses) {
                 str += analysis.PrintAnalysis();
             }
         }
 
         /* iterate through observations */
-        QList<squirrelObservation> observations = GetObservations(subjectRowID);
+        QList<squirrelObservation> observations = GetObservationList(subjectRowID);
         foreach (squirrelObservation observation, observations) {
             str += observation.PrintObservation();
         }
 
         /* iterate through Interventions */
-        QList<squirrelIntervention> Interventions = GetInterventions(subjectRowID);
+        QList<squirrelIntervention> Interventions = GetInterventionList(subjectRowID);
         foreach (squirrelIntervention Intervention, Interventions) {
             str += Intervention.PrintIntervention();
         }
@@ -1388,7 +1388,7 @@ QHash<QString, QString> squirrel::ReadParamsFile(QString f) {
 QString squirrel::PrintSubjects(PrintingType printType) {
     QString str;
 
-    QList <squirrelSubject> subjects = GetAllSubjects();
+    QList <squirrelSubject> subjects = GetSubjectList();
     int count = subjects.size();
     if (count > 0) {
         if (printType == PrintingType::Details) {
@@ -1446,7 +1446,7 @@ QString squirrel::PrintSubjects(PrintingType printType) {
 QString squirrel::PrintStudies(qint64 subjectRowID, bool details) {
     QString str;
 
-    QList <squirrelStudy> studies = GetStudies(subjectRowID);
+    QList <squirrelStudy> studies = GetStudyList(subjectRowID);
     QStringList studyNumbers;
     foreach (squirrelStudy s, studies) {
         if (s.Get()) {
@@ -1475,7 +1475,7 @@ QString squirrel::PrintStudies(qint64 subjectRowID, bool details) {
 QString squirrel::PrintSeries(qint64 studyRowID, bool details) {
     QString str;
 
-    QList <squirrelSeries> series = GetSeries(studyRowID);
+    QList <squirrelSeries> series = GetSeriesList(studyRowID);
     QStringList seriesNumbers;
     foreach (squirrelSeries s, series) {
         if (s.Get()) {
@@ -1502,7 +1502,7 @@ QString squirrel::PrintSeries(qint64 studyRowID, bool details) {
 QString squirrel::PrintExperiments(bool details) {
     QString str;
 
-    QList <squirrelExperiment> exps = GetAllExperiments();
+    QList <squirrelExperiment> exps = GetExperimentList();
     QStringList experimentNames;
     foreach (squirrelExperiment e, exps) {
         if (e.Get()) {
@@ -1529,7 +1529,7 @@ QString squirrel::PrintExperiments(bool details) {
 QString squirrel::PrintPipelines(bool details) {
     QString str;
 
-    QList <squirrelPipeline> pipelines = GetAllPipelines();
+    QList <squirrelPipeline> pipelines = GetPipelineList();
     QStringList pipelineNames;
     foreach (squirrelPipeline p, pipelines) {
         if (p.Get()) {
@@ -1556,7 +1556,7 @@ QString squirrel::PrintPipelines(bool details) {
 QString squirrel::PrintGroupAnalyses(bool details) {
     QString str;
 
-    QList <squirrelGroupAnalysis> groupAnalyses = GetAllGroupAnalyses();
+    QList <squirrelGroupAnalysis> groupAnalyses = GetGroupAnalysisList();
     QStringList groupAnalysisNames;
     foreach (squirrelGroupAnalysis g, groupAnalyses) {
         if (g.Get()) {
@@ -1579,7 +1579,7 @@ QString squirrel::PrintGroupAnalyses(bool details) {
 QString squirrel::PrintDataDictionary(bool details) {
     QString str;
 
-    QList <squirrelDataDictionary> dataDictionaries = GetAllDataDictionaries();
+    QList <squirrelDataDictionary> dataDictionaries = GetDataDictionaryList();
     QStringList dataDictionaryNames;
     foreach (squirrelDataDictionary d, dataDictionaries) {
         if (d.Get()) {
@@ -1597,13 +1597,13 @@ QString squirrel::PrintDataDictionary(bool details) {
 
 
 /* ------------------------------------------------------------ */
-/* ----- GetAllExperiments ------------------------------------ */
+/* ----- GetExperimentList ------------------------------------ */
 /* ------------------------------------------------------------ */
 /**
- * @brief squirrel::GetAllExperiments
+ * @brief squirrel::GetExperimentList
  * @return list of all experiments
  */
-QList<squirrelExperiment> squirrel::GetAllExperiments() {
+QList<squirrelExperiment> squirrel::GetExperimentList() {
     QSqlQuery q(QSqlDatabase::database("squirrel"));
     QList<squirrelExperiment> list;
     q.prepare("select ExperimentRowID from Experiment");
@@ -1621,13 +1621,13 @@ QList<squirrelExperiment> squirrel::GetAllExperiments() {
 
 
 /* ------------------------------------------------------------ */
-/* ----- GetAllPipelines -------------------------------------- */
+/* ----- GetPipelineList -------------------------------------- */
 /* ------------------------------------------------------------ */
 /**
- * @brief squirrel::GetAllPipelines
+ * @brief squirrel::GetPipelineList
  * @return list of all pipelines
  */
-QList<squirrelPipeline> squirrel::GetAllPipelines() {
+QList<squirrelPipeline> squirrel::GetPipelineList() {
     QSqlQuery q(QSqlDatabase::database("squirrel"));
     QList<squirrelPipeline> list;
     q.prepare("select PipelineRowID from Pipeline");
@@ -1644,13 +1644,13 @@ QList<squirrelPipeline> squirrel::GetAllPipelines() {
 
 
 /* ------------------------------------------------------------ */
-/* ----- GetAllSubjects --------------------------------------- */
+/* ----- GetSubjectList --------------------------------------- */
 /* ------------------------------------------------------------ */
 /**
- * @brief squirrel::GetAllSubjects
+ * @brief Get a list of all subjects in the package
  * @return list of all subjects
  */
-QList<squirrelSubject> squirrel::GetAllSubjects() {
+QList<squirrelSubject> squirrel::GetSubjectList() {
     QSqlQuery q(QSqlDatabase::database("squirrel"));
     QList<squirrelSubject> list;
     q.prepare("select SubjectRowID from Subject order by ID asc, SequenceNumber asc");
@@ -1669,14 +1669,14 @@ QList<squirrelSubject> squirrel::GetAllSubjects() {
 
 
 /* ------------------------------------------------------------ */
-/* ----- GetStudies ------------------------------------------- */
+/* ----- GetStudyList ----------------------------------------- */
 /* ------------------------------------------------------------ */
 /**
- * @brief squirrel::GetStudies
+ * @brief Get a list of all studies for a specified subject
  * @param subjectRowID database row ID of the subject
  * @return list of studies
  */
-QList<squirrelStudy> squirrel::GetStudies(qint64 subjectRowID) {
+QList<squirrelStudy> squirrel::GetStudyList(qint64 subjectRowID) {
     QSqlQuery q(QSqlDatabase::database("squirrel"));
     QList<squirrelStudy> list;
     q.prepare("select StudyRowID from Study where SubjectRowID = :id order by StudyNumber asc, SequenceNumber asc");
@@ -1695,14 +1695,14 @@ QList<squirrelStudy> squirrel::GetStudies(qint64 subjectRowID) {
 
 
 /* ------------------------------------------------------------ */
-/* ----- GetSeries -------------------------------------------- */
+/* ----- GetSeriesList ---------------------------------------- */
 /* ------------------------------------------------------------ */
 /**
- * @brief squirrel::GetSeries Get all series for a study
+ * @brief squirrel::GetSeriesList Get all series for a study
  * @param studyRowID database row ID of the study
  * @return list of series
  */
-QList<squirrelSeries> squirrel::GetSeries(qint64 studyRowID) {
+QList<squirrelSeries> squirrel::GetSeriesList(qint64 studyRowID) {
     QSqlQuery q(QSqlDatabase::database("squirrel"));
     QList<squirrelSeries> list;
     q.prepare("select SeriesRowID from Series where StudyRowID = :id order by SeriesNumber asc, SequenceNumber");
@@ -1726,14 +1726,14 @@ QList<squirrelSeries> squirrel::GetSeries(qint64 studyRowID) {
 
 
 /* ------------------------------------------------------------ */
-/* ----- GetAnalyses ------------------------------------------ */
+/* ----- GetAnalysisList -------------------------------------- */
 /* ------------------------------------------------------------ */
 /**
  * @brief Get list of all Analysis objects for the specified studyRowID
  * @param studyRowID of the parent study
  * @return QList of squirrelAnalysis objects
  */
-QList<squirrelAnalysis> squirrel::GetAnalyses(qint64 studyRowID) {
+QList<squirrelAnalysis> squirrel::GetAnalysisList(qint64 studyRowID) {
     QSqlQuery q(QSqlDatabase::database("squirrel"));
     QList<squirrelAnalysis> list;
     q.prepare("select AnalysisRowID from Analysis where StudyRowID = :id");
@@ -1752,14 +1752,14 @@ QList<squirrelAnalysis> squirrel::GetAnalyses(qint64 studyRowID) {
 
 
 /* ------------------------------------------------------------ */
-/* ----- GetObservations ------------------------------------------ */
+/* ----- GetObservationList ----------------------------------- */
 /* ------------------------------------------------------------ */
 /**
  * @brief Get a list of all Observation objects for a subject
  * @param subjectRowID of the parent subject
  * @return QList of squirrelObservation objects
  */
-QList<squirrelObservation> squirrel::GetObservations(qint64 subjectRowID) {
+QList<squirrelObservation> squirrel::GetObservationList(qint64 subjectRowID) {
     QSqlQuery q(QSqlDatabase::database("squirrel"));
     QList<squirrelObservation> list;
     q.prepare("select ObservationRowID from Observation where SubjectRowID = :id");
@@ -1777,14 +1777,14 @@ QList<squirrelObservation> squirrel::GetObservations(qint64 subjectRowID) {
 
 
 /* ------------------------------------------------------------ */
-/* ----- GetInterventions --------------------------------------------- */
+/* ----- GetInterventionList ---------------------------------- */
 /* ------------------------------------------------------------ */
 /**
  * @brief Get a list of all Intervention objects
  * @param subjectRowID
  * @return list of all squirrelIntervention objects
  */
-QList<squirrelIntervention> squirrel::GetInterventions(qint64 subjectRowID) {
+QList<squirrelIntervention> squirrel::GetInterventionList(qint64 subjectRowID) {
     QSqlQuery q(QSqlDatabase::database("squirrel"));
     QList<squirrelIntervention> list;
     q.prepare("select InterventionRowID from Intervention where SubjectRowID = :id");
@@ -1802,13 +1802,13 @@ QList<squirrelIntervention> squirrel::GetInterventions(qint64 subjectRowID) {
 
 
 /* ------------------------------------------------------------ */
-/* ----- GetAllGroupAnalyses ---------------------------------- */
+/* ----- GetGroupAnalysisList --------------------------------- */
 /* ------------------------------------------------------------ */
 /**
  * @brief Get a list of all GroupAnalysis objects
  * @return list of all groupAnalysis objects
  */
-QList<squirrelGroupAnalysis> squirrel::GetAllGroupAnalyses() {
+QList<squirrelGroupAnalysis> squirrel::GetGroupAnalysisList() {
     QSqlQuery q(QSqlDatabase::database("squirrel"));
     QList<squirrelGroupAnalysis> list;
     q.prepare("select GroupAnalysisRowID from GroupAnalysis");
@@ -1825,13 +1825,13 @@ QList<squirrelGroupAnalysis> squirrel::GetAllGroupAnalyses() {
 
 
 /* ------------------------------------------------------------ */
-/* ----- GetAllDataDictionaries ------------------------------- */
+/* ----- GetDataDictionaryList -------------------------------- */
 /* ------------------------------------------------------------ */
 /**
  * @brief Get a list of all DataDictionary objects
  * @return list of all dataDictionary objects
  */
-QList<squirrelDataDictionary> squirrel::GetAllDataDictionaries() {
+QList<squirrelDataDictionary> squirrel::GetDataDictionaryList() {
     QSqlQuery q(QSqlDatabase::database("squirrel"));
     QList<squirrelDataDictionary> list;
     q.prepare("select DataDictionaryRowID from DataDictionary");
@@ -1844,6 +1844,176 @@ QList<squirrelDataDictionary> squirrel::GetAllDataDictionaries() {
         }
     }
     return list;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- GetSubject ------------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief squirrel::GetSubject
+ * @param subjectRowID
+ * @return
+ */
+squirrelSubject squirrel::GetSubject(qint64 subjectRowID) {
+    squirrelSubject s;
+    s.SetObjectID(subjectRowID);
+    s.Get();
+
+    return s;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- GetStudy --------------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief squirrel::GetStudy
+ * @param studyRowID
+ * @return
+ */
+squirrelStudy squirrel::GetStudy(qint64 studyRowID) {
+    squirrelStudy s;
+    s.SetObjectID(studyRowID);
+    s.Get();
+
+    return s;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- GetSeries -------------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief squirrel::GetSeries
+ * @param seriesRowID
+ * @return
+ */
+squirrelSeries squirrel::GetSeries(qint64 seriesRowID) {
+    squirrelSeries s;
+    s.SetObjectID(seriesRowID);
+    s.Get();
+
+    return s;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- GetAnalysis ------------------------------------------ */
+/* ------------------------------------------------------------ */
+/**
+ * @brief squirrel::GetAnalysis
+ * @param analysisRowID
+ * @return
+ */
+squirrelAnalysis squirrel::GetAnalysis(qint64 analysisRowID) {
+    squirrelAnalysis s;
+    s.SetObjectID(analysisRowID);
+    s.Get();
+
+    return s;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- GetIntervention -------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief squirrel::GetIntervention
+ * @param interventionRowID
+ * @return
+ */
+squirrelIntervention squirrel::GetIntervention(qint64 interventionRowID) {
+    squirrelIntervention s;
+    s.SetObjectID(interventionRowID);
+    s.Get();
+
+    return s;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- GetObservation --------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief squirrel::GetObservation
+ * @param observationRowID
+ * @return
+ */
+squirrelObservation squirrel::GetObservation(qint64 observationRowID) {
+    squirrelObservation s;
+    s.SetObjectID(observationRowID);
+    s.Get();
+
+    return s;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- GetGroupAnalysis ------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief squirrel::GetGroupAnalysis
+ * @param groupAnalysisRowID
+ * @return
+ */
+squirrelGroupAnalysis squirrel::GetGroupAnalysis(qint64 groupAnalysisRowID) {
+    squirrelGroupAnalysis s;
+    s.SetObjectID(groupAnalysisRowID);
+    s.Get();
+
+    return s;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- GetDataDictionary ------------------------------------ */
+/* ------------------------------------------------------------ */
+/**
+ * @brief squirrel::GetDataDictionary
+ * @param dataDictionaryRowID
+ * @return
+ */
+squirrelDataDictionary squirrel::GetDataDictionary(qint64 dataDictionaryRowID) {
+    squirrelDataDictionary s;
+    s.SetObjectID(dataDictionaryRowID);
+    s.Get();
+
+    return s;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- GetExperiment ---------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief squirrel::GetExperiment
+ * @param experimentRowID
+ * @return
+ */
+squirrelExperiment squirrel::GetExperiment(qint64 experimentRowID) {
+    squirrelExperiment s;
+    s.SetObjectID(experimentRowID);
+    s.Get();
+
+    return s;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- GetPipeline ------------------------------------------ */
+/* ------------------------------------------------------------ */
+/**
+ * @brief squirrel::GetPipeline
+ * @param pipelineRowID
+ * @return
+ */
+squirrelPipeline squirrel::GetPipeline(qint64 pipelineRowID) {
+    squirrelPipeline s;
+    s.SetObjectID(pipelineRowID);
+    s.Get();
+
+    return s;
 }
 
 
@@ -2085,7 +2255,7 @@ qint64 squirrel::FindDataDictionary(QString dataDictionaryName) {
  */
 void squirrel::ResequenceSubjects() {
 
-    QList<squirrelSubject> subjects = GetAllSubjects();
+    QList<squirrelSubject> subjects = GetSubjectList();
     int i = 1;
     foreach (squirrelSubject subject, subjects) {
         subject.SequenceNumber = i;
@@ -2104,7 +2274,7 @@ void squirrel::ResequenceSubjects() {
  */
 void squirrel::ResequenceStudies(qint64 subjectRowID) {
 
-    QList<squirrelStudy> studies = GetStudies(subjectRowID);
+    QList<squirrelStudy> studies = GetStudyList(subjectRowID);
     int i = 1;
     foreach (squirrelStudy study, studies) {
         study.SequenceNumber = i;
@@ -2123,7 +2293,7 @@ void squirrel::ResequenceStudies(qint64 subjectRowID) {
  */
 void squirrel::ResequenceSeries(qint64 studyRowID) {
 
-    QList<squirrelSeries> serieses = GetSeries(studyRowID);
+    QList<squirrelSeries> serieses = GetSeriesList(studyRowID);
     int i = 1;
     foreach (squirrelSeries series, serieses) {
         series.SequenceNumber = i;

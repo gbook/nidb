@@ -394,7 +394,7 @@ bool moduleUpload::ParseUploadedFiles(QMap<QString, QMap<QString, QMap<QString, 
             /* get the uploadstudy_id */
             int studyid(0);
             QString m;
-            studyid = InsertOrUpdateParsedStudy(-1, upload_studycriteria, subjectid, StudyDateTime, Modality, StudyInstanceUID, "", "", "", "", m);
+            studyid = InsertOrUpdateParsedStudy(-1, upload_studycriteria, subjectid, -1, StudyDateTime, Modality, StudyInstanceUID, "", "", "", "", m);
 
             /* ---------- iterate through the series ---------- */
             for(QMap<QString, QStringList>::iterator c = fs[subject][study].begin(); c != fs[subject][study].end(); ++c) {
@@ -458,7 +458,7 @@ bool moduleUpload::ParseUploadedFiles(QMap<QString, QMap<QString, QMap<QString, 
                 InsertOrUpdateParsedSubject(subjectid, upload_subjectcriteria, uploadRowID, PatientID, PatientName, PatientSex, PatientBirthDate, m);
 
                 /* update study details - we already know the studyRowID, so just update some of the other fields */
-                InsertOrUpdateParsedStudy(studyid, upload_studycriteria, subjectid, StudyDateTime, Modality, StudyInstanceUID, tags["StudyDescription"], tags["FileType"], tags["Manufacturer"] + " " + tags["ManufacturerModelName"], tags["OperatorsName"], m);
+                InsertOrUpdateParsedStudy(studyid, upload_studycriteria, subjectid, -1, StudyDateTime, Modality, StudyInstanceUID, tags["StudyDescription"], tags["FileType"], tags["Manufacturer"] + " " + tags["ManufacturerModelName"], tags["OperatorsName"], m);
 
                 /* update series details */
                 InsertOrUpdateParsedSeries(seriesid, "seriesnum", studyid, SeriesDateTime, SeriesNumber, SeriesInstanceUID, files, numfiles, tags["SeriesDescription"], tags["ProtocolName"], tags["RepetitionTime"], tags["EchoTime"], tags["SpacingBetweenSlices"], tags["SliceThickness"], tags["Rows"].toInt(), tags["Columns"].toInt(), m);
@@ -490,7 +490,7 @@ bool moduleUpload::ParseUploadedSquirrel(squirrel *sqrl, QString upload_subjectc
     /* load subjects, studies, series into the upload_* tables */
 
     /* iterate through the subjects */
-    QList<squirrelSubject> subjects = sqrl->GetAllSubjects();
+    QList<squirrelSubject> subjects = sqrl->GetSubjectList();
     foreach (squirrelSubject subject, subjects) {
         n->Log("Found subject [" + subject.ID + "]");
 
@@ -499,15 +499,15 @@ bool moduleUpload::ParseUploadedSquirrel(squirrel *sqrl, QString upload_subjectc
         InsertOrUpdateParsedSubject(subjectRowID, "patientid", uploadRowID, subject.ID, subject.ID, subject.Sex, subject.DateOfBirth.toString("yyyy-MM-dd"), m);
 
         /* get studies */
-        QList<squirrelStudy> studies = sqrl->GetStudies(subject.GetObjectID());
+        QList<squirrelStudy> studies = sqrl->GetStudyList(subject.GetObjectID());
         foreach (squirrelStudy study, studies) {
             n->Log(QString("Found study [%1]").arg(study.StudyNumber));
 
-            int studyRowID = InsertOrUpdateParsedStudy(-1, "modalitystudydate", subjectRowID, study.DateTime.toString("yyyy-MM-dd hh:mm:ss"), study.Modality, study.StudyUID, study.Description, sqrl->DataFormat, study.Equipment, "", m);
-            InsertOrUpdateParsedStudy(studyRowID, "modalitystudydate", subjectRowID, study.DateTime.toString("yyyy-MM-dd hh:mm:ss"), study.Modality, study.StudyUID, study.Description, sqrl->DataFormat, study.Equipment, "", m);
+            int studyRowID = InsertOrUpdateParsedStudy(-1, "modalitystudydate", subjectRowID, study.StudyNumber, study.DateTime.toString("yyyy-MM-dd hh:mm:ss"), study.Modality, study.StudyUID, study.Description, sqrl->DataFormat, study.Equipment, "", m);
+            InsertOrUpdateParsedStudy(studyRowID, "modalitystudydate", subjectRowID, study.StudyNumber, study.DateTime.toString("yyyy-MM-dd hh:mm:ss"), study.Modality, study.StudyUID, study.Description, sqrl->DataFormat, study.Equipment, "", m);
 
             /* get series */
-            QList<squirrelSeries> serieses = sqrl->GetSeries(study.GetObjectID());
+            QList<squirrelSeries> serieses = sqrl->GetSeriesList(study.GetObjectID());
             foreach (squirrelSeries series, serieses) {
                 n->Log(QString("Found series [%1]").arg(series.SeriesNumber));
 
@@ -636,7 +636,7 @@ bool moduleUpload::ArchiveSelectedFiles() {
 /* --------- ArchiveSelectedSquirrel ------------------------ */
 /* ---------------------------------------------------------- */
 /**
- * @brief Archive the series marked by the user based on specified upload criteria
+ * @brief Archive the series marked by the user for archiving, based on specified upload criteria
  * @return `true` if successful, `false` otherwise
  */
 bool moduleUpload::ArchiveSelectedSquirrel() {
@@ -678,11 +678,12 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
                 n->Log("Unable to find any squirrel files in path [" + upload_stagingpath + "]", __FUNCTION__);
                 continue;
             }
+            QString tmppath;
             squirrel *sqrl = new squirrel();
             sqrl->SetPackagePath(f);
             if (sqrl->Read()) {
                 /* extract the file to a temp directory */
-                QString tmppath = n->cfg["tmpdir"] + "/" + GenerateRandomString(20);
+                tmppath = n->cfg["tmpdir"] + "/" + GenerateRandomString(20);
                 if (!MakePath(tmppath,m)) {
                     n->Log("Error creating temp directory [" + tmppath + "] with error [" + m + "]", __FUNCTION__);
                     continue;
@@ -711,29 +712,82 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
                     if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); return false; }
 
                     ret = true;
-                    int uploadseries_id = q2.value("uploadseries_id").toInt();
+                    int uploadSeriesRowID = q2.value("uploadseries_id").toInt();
+                    int uploadSubjectRowID = q2.value("uploadsubject_id").toInt();
+                    QString uploadSubjectID = q2.value("uploadsubject_patientid").toString();
+                    QString uploadSubjectName = q2.value("uploadsubject_name").toString();
+                    QString uploadSubjectSex = q2.value("uploadsubject_sex").toString();
+                    QString uploadSubjectDOB = q2.value("uploadsubject_dob").toString();
 
-                    n->Log(QString("Working on series [%1]").arg(uploadseries_id));
+                    int uploadStudyNumber = q2.value("uploadstudy_number").toInt();
+                    QString uploadStudyDesc = q2.value("uploadstudy_desc").toString();
+                    QString uploadStudyDate = q2.value("uploadstudy_date").toString();
+                    QString uploadStudyModality = q2.value("uploadstudy_modality").toString();
+
+                    int uploadSeriesNumber = q2.value("uploadseries_num").toInt();
+                    QString uploadSeriesDesc = q2.value("uploadseries_desc").toString();
+                    QString uploadSeriesDate = q2.value("uploadseries_date").toString();
+
+                    /* get squirrel objects */
+                    squirrelSubject sqrlSubject = sqrl->GetSubject(sqrl->FindSubject(uploadSubjectID));
+                    squirrelStudy sqrlStudy = sqrl->GetStudy(sqrl->FindStudy(uploadSubjectID, uploadStudyNumber));
 
                     /* get any matching subject/study/series */
-                    int matchingsubjectid(-1), matchingstudyid(-1), matchingseriesid(-1);
-                    if (!q2.value("matchingsubjectid").isNull())
-                        matchingsubjectid = q2.value("matchingsubjectid").toInt();
-                    if (!q2.value("matchingstudyid").isNull())
-                        matchingstudyid = q2.value("matchingstudyid").toInt();
-                    if (!q2.value("matchingseriesid").isNull())
-                        matchingseriesid = q2.value("matchingseriesid").toInt();
-
-                    /* get information about this series to be imported */
-                    QStringList uploadseries_filelist = q2.value("uploadseries_filelist").toString().split(",");
-                    for(int i=0; i<uploadseries_filelist.size(); i++) {
-                        if (uploadseries_filelist[i].trimmed() != "")
-                            uploadseries_filelist[i] = upload_stagingpath + uploadseries_filelist[i];
+                    int subjectRowID(-1), studyRowID(-1), seriesRowID(-1);
+                    QString subjectUID;
+                    if (q2.value("matchingsubjectid").isNull()) {
+                        /* create subject */
+                        if (io->CreateSubject(uploadSubjectID, uploadSubjectName, uploadSubjectDOB, uploadSubjectSex, sqrlStudy.Weight, sqrlStudy.Height, subjectRowID, subjectUID))
+                            n->Log(QString("Successfully created subject with rowID [%1] and UID [%2]").arg(subjectRowID).arg(subjectUID), __FUNCTION__);
+                        else
+                            n->Log(QString("Error creating subject with uploadSubjectID [%1]").arg(uploadSubjectID), __FUNCTION__);
                     }
+                    else
+                        subjectRowID = q2.value("matchingsubjectid").toInt();
+
+                    int enrollmentRowID;
+                    io->GetOrCreateEnrollment(subjectRowID, upload_destprojectid, enrollmentRowID);
+
+                    int localStudyNumber(-1);
+                    if (q2.value("matchingstudyid").isNull()) {
+                        /* create study */
+                        if (io->CreateStudy(subjectRowID, enrollmentRowID, uploadStudyDate, sqrlStudy.StudyUID, uploadStudyModality, uploadSubjectID, sqrlStudy.AgeAtStudy, sqrlStudy.Height, sqrlStudy.Weight, sqrlStudy.Description, "operator", "", sqrlStudy.Equipment, "", "", studyRowID, localStudyNumber))
+                            n->Log(QString("Successfully created subject with rowID [%1] and UID [%2]").arg(subjectRowID).arg(subjectUID), __FUNCTION__);
+                        else
+                            n->Log(QString("Error creating subject with uploadSubjectID [%1]").arg(uploadSubjectID), __FUNCTION__);
+                    }
+                    else
+                        studyRowID = q2.value("matchingstudyid").toInt();
+
+                    if (!q2.value("matchingseriesid").isNull())
+                        seriesRowID = q2.value("matchingseriesid").toInt();
+
+                    /* get the squirrel path to the series, then get the list of files */
+                    QString squirrelSeriesPath = QString("%1/data/%2/%3/%4").arg(tmppath).arg(uploadSubjectID).arg(uploadStudyNumber).arg(uploadSeriesNumber);
+                    n->Log("squirrelSeriesPath is [" + squirrelSeriesPath + "]");
+
+                    QStringList files = FindAllFiles(squirrelSeriesPath, "*", false);
+                    //QStringList uploadseries_filelist = q2.value("uploadseries_filelist").toString().split(",");
+                    //for(int i=0; i<uploadseries_filelist.size(); i++) {
+                    //    if (uploadseries_filelist[i].trimmed() != "")
+                    //        uploadseries_filelist[i] = upload_stagingpath + uploadseries_filelist[i];
+                    //}
 
                     performanceMetric perf;
+                    QHash<QString, QString> tags;
+                    int seriesNumber = -1;
                     /* insert the series */
-                    io->ArchiveDICOMSeries(-1, matchingsubjectid, matchingstudyid, matchingseriesid, upload_subjectcriteria, upload_studycriteria, upload_seriescriteria, upload_destprojectid, upload_patientid, -1, "", "Uploaded to NiDB", uploadseries_filelist, perf);
+                    if (sqrl->DataFormat.startsWith("nifti", Qt::CaseInsensitive)) {
+                        n->Log("squirrel data format is [" + sqrl->DataFormat + "], calling ArchiveNiftiSeries()");
+                        io->ArchiveNiftiSeries(subjectRowID, studyRowID, seriesRowID, uploadSeriesNumber, tags, files);
+                    }
+                    else if ((sqrl->DataFormat == "dicom") || (sqrl->DataFormat == "orig") || (sqrl->DataFormat == "anon") || (sqrl->DataFormat == "anonfull")) {
+                        n->Log("squirrel data format is [" + sqrl->DataFormat + "], calling ArchiveDICOMSeries()");
+                        //io->ArchiveDICOMSeries();
+                    }
+                    else {
+                        n->Log("squirrel data format is [" + sqrl->DataFormat + "], unrecognized");
+                    }
 
                     i++;
                     double pct = static_cast<double>(i)/static_cast<double>(numSeries) * 100.0;
@@ -908,7 +962,7 @@ int moduleUpload::InsertOrUpdateParsedSubject(int parsedSubjectRowID, QString up
  * @param msg Any messages generated by the function
  * @return
  */
-int moduleUpload::InsertOrUpdateParsedStudy(int parsedStudyRowID, QString upload_studycriteria, int subjectRowID, QString StudyDateTime, QString Modality, QString StudyInstanceUID, QString StudyDescription, QString FileType, QString Equipment, QString Operator, QString &msg) {
+int moduleUpload::InsertOrUpdateParsedStudy(int parsedStudyRowID, QString upload_studycriteria, int subjectRowID, int StudyNumber, QString StudyDateTime, QString Modality, QString StudyInstanceUID, QString StudyDescription, QString FileType, QString Equipment, QString Operator, QString &msg) {
 
     QSqlQuery q;
 
@@ -955,8 +1009,9 @@ int moduleUpload::InsertOrUpdateParsedStudy(int parsedStudyRowID, QString upload
             }
             else {
                 /* ... otherwise create a new study */
-                q.prepare("insert into upload_studies (uploadsubject_id, uploadstudy_date, uploadstudy_modality) values (:subjectid, :studydatetime, :modality)");
+                q.prepare("insert into upload_studies (uploadsubject_id, uploadstudy_number, uploadstudy_date, uploadstudy_modality) values (:subjectid, :studyNumber, :studydatetime, :modality)");
                 q.bindValue(":subjectid", subjectRowID);
+                q.bindValue(":studyNumber", StudyNumber);
                 q.bindValue(":studydatetime", StudyDateTime);
                 q.bindValue(":modality", Modality);
                 n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -975,8 +1030,9 @@ int moduleUpload::InsertOrUpdateParsedStudy(int parsedStudyRowID, QString upload
             }
             else {
                 /* ... otherwise create a new study */
-                q.prepare("insert into upload_studies (uploadsubject_id, uploadstudy_instanceuid) values (:subjectid, :studyinstanceuid)");
+                q.prepare("insert into upload_studies (uploadsubject_id, uploadstudy_number, uploadstudy_instanceuid) values (:subjectid, :studyNumber, :studyinstanceuid)");
                 q.bindValue(":subjectid", subjectRowID);
+                q.bindValue(":studyNumber", StudyNumber);
                 q.bindValue(":studyinstanceuid", StudyInstanceUID);
                 n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
                 parsedStudyRowID = q.lastInsertId().toInt();

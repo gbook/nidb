@@ -86,44 +86,56 @@ public:
     QString SubjectDirFormat;   /*!< orig, seq */
 
     /* get list(s) of objects */
-    QList<squirrelExperiment> GetAllExperiments();
-    QList<squirrelPipeline> GetAllPipelines();
-    QList<squirrelSubject> GetAllSubjects();
-    QList<squirrelStudy> GetStudies(qint64 subjectRowID);
-    QList<squirrelSeries> GetSeries(qint64 studyRowID);
-    QList<squirrelAnalysis> GetAnalyses(qint64 studyRowID);
-    QList<squirrelObservation> GetObservations(qint64 subjectRowID);
-    QList<squirrelIntervention> GetInterventions(qint64 subjectRowID);
-    QList<squirrelGroupAnalysis> GetAllGroupAnalyses();
-    QList<squirrelDataDictionary> GetAllDataDictionaries();
+    QList<squirrelAnalysis> GetAnalysisList(qint64 studyRowID);
+    QList<squirrelDataDictionary> GetDataDictionaryList();
+    QList<squirrelExperiment> GetExperimentList();
+    QList<squirrelGroupAnalysis> GetGroupAnalysisList();
+    QList<squirrelIntervention> GetInterventionList(qint64 subjectRowID);
+    QList<squirrelObservation> GetObservationList(qint64 subjectRowID);
+    QList<squirrelPipeline> GetPipelineList();
+    QList<squirrelSeries> GetSeriesList(qint64 studyRowID);
+    QList<squirrelStudy> GetStudyList(qint64 subjectRowID);
+    QList<squirrelSubject> GetSubjectList();
+
+    /* get individual objects */
+    squirrelAnalysis GetAnalysis(qint64 analysisRowID);
+    squirrelDataDictionary GetDataDictionary(qint64 dataDictionaryRowID);
+    squirrelExperiment GetExperiment(qint64 experimentRowID);
+    squirrelGroupAnalysis GetGroupAnalysis(qint64 groupAnalysisRowID);
+    squirrelIntervention GetIntervention(qint64 interventionRowID);
+    squirrelObservation GetObservation(qint64 observationRowID);
+    squirrelPipeline GetPipeline(qint64 pipelineRowID);
+    squirrelSeries GetSeries(qint64 seriesRowID);
+    squirrelStudy GetStudy(qint64 studyRowID);
+    squirrelSubject GetSubject(qint64 subjectRowID);
 
     /* get numbers of objects */
     qint64 GetFileCount();
     qint64 GetObjectCount(QString object);
 
     /* find objects, return rowID */
-    qint64 FindSubject(QString id);
-    qint64 FindStudy(QString subjectID, int studyNum);
-    qint64 FindStudyByUID(QString studyUID);
+    qint64 FindAnalysis(QString subjectID, int studyNum, QString analysisName);
+    qint64 FindDataDictionary(QString dataDictionaryName);
+    qint64 FindExperiment(QString experimentName);
+    qint64 FindGroupAnalysis(QString groupAnalysisName);
+    qint64 FindPipeline(QString pipelineName);
     qint64 FindSeries(QString subjectID, int studyNum, int seriesNum);
     qint64 FindSeriesByUID(QString seriesUID);
-    qint64 FindAnalysis(QString subjectID, int studyNum, QString analysisName);
-    qint64 FindExperiment(QString experimentName);
-    qint64 FindPipeline(QString pipelineName);
-    qint64 FindGroupAnalysis(QString groupAnalysisName);
-    qint64 FindDataDictionary(QString dataDictionaryName);
+    qint64 FindStudy(QString subjectID, int studyNum);
+    qint64 FindStudyByUID(QString studyUID);
+    qint64 FindSubject(QString id);
 
     /* remove objects */
-    bool RemoveSubject(qint64 subjectRowID);
-    bool RemoveStudy(qint64 studyRowID);
-    bool RemoveSeries(qint64 seriesRowID);
-    bool RemoveObservation(qint64 observationRowID);
-    bool RemoveIntervention(qint64 InterventionRowID);
     bool RemoveAnalysis(qint64 analysisRowID);
-    bool RemoveExperiment(qint64 experimentRowID);
-    bool RemovePipeline(qint64 pipelineRowID);
-    bool RemoveGroupAnalysis(qint64 groupAnalysisRowID);
     bool RemoveDataDictionary(qint64 dataDictionaryRowID);
+    bool RemoveExperiment(qint64 experimentRowID);
+    bool RemoveGroupAnalysis(qint64 groupAnalysisRowID);
+    bool RemoveIntervention(qint64 InterventionRowID);
+    bool RemoveObservation(qint64 observationRowID);
+    bool RemovePipeline(qint64 pipelineRowID);
+    bool RemoveSeries(qint64 seriesRowID);
+    bool RemoveStudy(qint64 studyRowID);
+    bool RemoveSubject(qint64 subjectRowID);
 
     bool AddStagedFiles(QString objectType, qint64 rowid, QStringList files);
 
@@ -154,13 +166,13 @@ public:
 
     /* printing of information to console */
     QString PrintPackage();
-    QString PrintSubjects(PrintingType printType=PrintingType::IDList);
-    QString PrintStudies(qint64 subjectRowID, bool details=false);
-    QString PrintSeries(qint64 studyRowID, bool details=false);
-    QString PrintExperiments(bool details=false);
-    QString PrintPipelines(bool details=false);
-    QString PrintGroupAnalyses(bool details=false);
     QString PrintDataDictionary(bool details=false);
+    QString PrintExperiments(bool details=false);
+    QString PrintGroupAnalyses(bool details=false);
+    QString PrintPipelines(bool details=false);
+    QString PrintSeries(qint64 studyRowID, bool details=false);
+    QString PrintStudies(qint64 subjectRowID, bool details=false);
+    QString PrintSubjects(PrintingType printType=PrintingType::IDList);
 
     QSqlDatabase db;
 
