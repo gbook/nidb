@@ -296,6 +296,31 @@ bool MoveFile(QString f, QString dir, QString &m) {
 
 
 /* ---------------------------------------------------------- */
+/* --------- CopyFile --------------------------------------- */
+/* ---------------------------------------------------------- */
+bool CopyFile(QString f, QString dir, QString &m) {
+
+    QDir d;
+    if (d.exists(dir)) {
+        QString systemstring;
+        systemstring = QString("cp -u %1 %2/").arg(f).arg(dir);
+
+        QString output = SystemCommand(systemstring, false).trimmed();
+        if (output != "") {
+            m = output;
+            return false;
+        }
+    }
+    else {
+        m = QString("Directory [%1] does not exist").arg(dir);
+        return false;
+    }
+
+    return true;
+}
+
+
+/* ---------------------------------------------------------- */
 /* --------- RenameFile ------------------------------------- */
 /* ---------------------------------------------------------- */
 bool RenameFile(QString filepathorig, QString filepathnew, bool force) {

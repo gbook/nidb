@@ -878,6 +878,8 @@ bool archiveIO::ArchiveNiftiSeries(int subjectRowID, int studyRowID, int seriesR
     q.bindValue(":Columns", tags["Columns"]);
     q.bindValue(":zsize", tags["zsize"]);
     q.bindValue(":InversionTime", tags["InversionTime"]);
+    if (tags["InversionTime"] == "") q.bindValue(":InversionTime", QVariant(QMetaType::fromType<double>())); else q.bindValue(":InversionTime", tags["InversionTime"]); /* for null values */
+
     q.bindValue(":PercentSampling", tags["PercentSampling"]);
     q.bindValue(":PercentPhaseFieldOfView", tags["PercentPhaseFieldOfView"]);
     q.bindValue(":AcquisitionMatrix", tags["AcquisitionMatrix"]);
@@ -891,6 +893,15 @@ bool archiveIO::ArchiveNiftiSeries(int subjectRowID, int studyRowID, int seriesR
     q.bindValue(":importSeriesNotes", tags["seriesNotes"]);
     q.bindValue(":seriesRowID", seriesRowID);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+
+    /* copy the nifti files to the archive directory */
+    foreach (QString f, files) {
+        QString m;
+        MakePath(seriesPath, m);
+        n->Log(QString("Copying [%1] to [%2]").arg(f).arg(seriesPath));
+        if (!CopyFile(f, seriesPath, m))
+            n->Log(QString("Error copying file [%1] to directory [%2]. Message [%3]").arg(f).arg(seriesPath).arg(m));
+    }
 
     return true;
 }

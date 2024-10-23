@@ -63,27 +63,27 @@ struct BIDSMapping {
 };
 
 /* generic functions */
-void Print(QString s, bool n=true, bool pad=false);
+QList<double> SplitStringArrayToDouble(QStringList a);
+QList<int> SplitStringArrayToInt(QStringList a);
+QList<int> SplitStringToIntArray(QString a);
 QString CreateCurrentDateTime(int format=1);
 QString CreateLogDate();
-void AppendCustomLog(QString f, QString msg);
-QString SystemCommand(QString s, bool detail=true, bool truncate=false, bool bufferOutput=true);
-bool SandboxedSystemCommand(QString s, QString dir, QString &output, QString timeout="00:05:00", bool detail=true, bool truncate=false);
 QString GenerateRandomString(int n);
-void SortQStringListNaturally(QStringList &s);
-QString RemoveNonAlphaNumericChars(QString s);
+QString JoinIntArray(QList<int> a, QString glue);
 QString ParseDate(QString s);
 QString ParseTime(QString s);
-QString JoinIntArray(QList<int> a, QString glue);
-QList<int> SplitStringArrayToInt(QStringList a);
-QList<double> SplitStringArrayToDouble(QStringList a);
-QList<int> SplitStringToIntArray(QString a);
-QStringList ShellWords(QString s);
-bool IsInt(QString s);
-bool IsDouble(QString s);
-bool IsNumber(QString s);
+QString RemoveNonAlphaNumericChars(QString s);
+QString SystemCommand(QString s, bool detail=true, bool truncate=false, bool bufferOutput=true);
 QString WrapText(QString s, int col);
+QStringList ShellWords(QString s);
+bool IsDouble(QString s);
+bool IsInt(QString s);
+bool IsNumber(QString s);
 bool ParseCSV(QString csv, indexedHash &table, QStringList &columns, QString &msg);
+bool SandboxedSystemCommand(QString s, QString dir, QString &output, QString timeout="00:05:00", bool detail=true, bool truncate=false);
+void AppendCustomLog(QString f, QString msg);
+void Print(QString s, bool n=true, bool pad=false);
+void SortQStringListNaturally(QStringList &s);
 
 double GetPatientAge(QString PatientAgeStr, QString StudyDate, QString PatientBirthDate);
 
@@ -93,26 +93,27 @@ double Variance(QList<double> a);
 double StdDev(QList<double> a);
 
 /* file and directory operations */
-bool MakePath(QString p, QString &msg, bool perm777=true);
-bool RemoveDir(QString p, QString &msg);
-QStringList FindAllFiles(QString dir, QString pattern, bool recursive=false);
-QStringList FindAllDirs(QString dir, QString pattern, bool recursive=false, bool includepath=false);
-bool FindFirstFile(QString dir, QString pattern, QString &f, QString &msg, bool recursive=false);
-bool MoveAllFiles(QString indir, QString pattern, QString outdir, QString &msg);
-bool RenameFile(QString filepathorig, QString filepathnew, bool force=true);
-bool MoveFile(QString f, QString dir, QString &m);
-void GetDirSizeAndFileCount(QString dir, qint64 &c, qint64 &b, bool recurse=false);
 //void GetDirectoryListing(QString dir, QStringList &files, QList<int> &sizes, bool recurse=false);
 QByteArray GetFileChecksum(const QString &fileName, QCryptographicHash::Algorithm hashAlgorithm);
-bool chmod(QString f, QString perm);
 QString UnzipDirectory(QString dir, bool recurse=false);
-bool WriteTextFile(QString filepath, QString str, bool append=true);
+QStringList FindAllDirs(QString dir, QString pattern, bool recursive=false, bool includepath=false);
+QStringList FindAllFiles(QString dir, QString pattern, bool recursive=false);
 QStringList ReadTextFileIntoArray(QString filepath, bool ignoreEmptyLines=true);
-bool BatchRenameFiles(QString dir, QString seriesnum, QString studynum, QString uid, int &numfilesrenamed, QString &msg);
 bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession, BIDSMapping mapping, int &numfilesrenamed, QString &msg);
+bool BatchRenameFiles(QString dir, QString seriesnum, QString studynum, QString uid, int &numfilesrenamed, QString &msg);
+bool CopyFile(QString f, QString dir, QString &m);
 bool DirectoryExists(QString dir);
-bool FileExists(QString f);
 bool FileDirectoryExists(QString f);
+bool FileExists(QString f);
+bool FindFirstFile(QString dir, QString pattern, QString &f, QString &msg, bool recursive=false);
 bool GetZipFileDetails(QString zippath, qint64 &unzipsize, qint64 &zipsize, QString &compression, qint64 &numfiles, QString &filelisting);
+bool MakePath(QString p, QString &msg, bool perm777=true);
+bool MoveAllFiles(QString indir, QString pattern, QString outdir, QString &msg);
+bool MoveFile(QString f, QString dir, QString &m);
+bool RemoveDir(QString p, QString &msg);
+bool RenameFile(QString filepathorig, QString filepathnew, bool force=true);
+bool WriteTextFile(QString filepath, QString str, bool append=true);
+bool chmod(QString f, QString perm);
+void GetDirSizeAndFileCount(QString dir, qint64 &c, qint64 &b, bool recurse=false);
 
 #endif // UTILS_H

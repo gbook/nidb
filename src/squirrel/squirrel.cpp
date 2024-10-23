@@ -384,7 +384,7 @@ bool squirrel::Read() {
                 QJsonObject jsonSeries = c.toObject();
                 squirrelSeries sqrlSeries;
 
-                Log("jsonSeries[SeriesDatetime].toString: " + jsonSeries["SeriesDatetime"].toString(), __FUNCTION__);
+                //Log("jsonSeries[SeriesDatetime].toString: " + jsonSeries["SeriesDatetime"].toString(), __FUNCTION__);
 
                 sqrlSeries.BIDSEntity = jsonSeries["BIDSEntity"].toString();
                 sqrlSeries.BIDSPhaseEncodingDirection = jsonSeries["BIDSPhaseEncodingDirection"].toString();
@@ -402,7 +402,7 @@ bool squirrel::Read() {
                 sqrlSeries.Size = jsonSeries["Size"].toInteger();
                 sqrlSeries.studyRowID = studyRowID;
 
-                Log("Series.Datetime: " + sqrlSeries.DateTime.toString("yyyy-MM-dd hh:mm:ss"), __FUNCTION__);
+                //Log("Series.Datetime: " + sqrlSeries.DateTime.toString("yyyy-MM-dd hh:mm:ss"), __FUNCTION__);
                 Debug(QString("Reading series [%1][%2][%3]").arg(sqrlSubject.ID).arg(sqrlStudy.StudyNumber).arg(sqrlSeries.SeriesNumber), __FUNCTION__);
 
                 if (!quickRead) {
