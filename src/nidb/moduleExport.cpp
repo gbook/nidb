@@ -1825,9 +1825,9 @@ bool moduleExport::WriteNDARHeader(QString file, QString modality, QStringList &
             fs << "subjectkey,src_subject_id,interview_date,interview_age,gender,phenotype,experiment_id,comments_misc,experiment_validity,experiment_notes,experiment_terminated,expcond_validity,expcond_notes,data_file1,data_file1_type,data_file2,data_file2_type,data_file3,data_file3_type,data_file4,data_file4_type\n";
         }
         if (modality == "gsr") {
-            fs << "eda,1\n";
+            fs << "psychophys,1\n";
             //fs << "subjectkey,src_subject_id,interview_date,interview_age,gender,phenotype,experiment_id,comments_misc,experiment_validity,experiment_notes,experiment_terminated,expcond_validity,expcond_notes,data_file1,data_file1_type,data_file2,data_file2_type,data_file3,data_file3_type,data_file4,data_file4_type\n";
-            fs << "subjectkey,src_subject_id,interview_date,interview_age,sex,scl,nscr,ncttsk,overall_movement,desc_worklength,data_file1,site,timept,eseniteration,esentimehr,esentimemin,esentotmins,esenminmicros,esenmaxmicros,esenminmaxdiff,esensampletime,esensamplemicros,esenbase,esenintvstart,esenintvmax,esenintvmaxtp,esenintvend,esenscr,esenrise,esenhab1,esenhab2,data_file2,data_file2_type,data_file1_type,mpdat\n";
+            fs << "subjectkey,src_subject_id,interview_date,interview_age,sex,assessment_time,data_file1,data_file1_type,data_file2,data_file2_type,data_file2_description,comments_misc,experiment_description,hr_mav,hr_median,hr_p25,hr_p75,eda_mean,eda_minimum,eda_maximum,eda_stdev,eda_rms,eda_mad,eda_mav,eda_median,eda_p25,eda_p75,temp_mean,temp_minimum,temp_maximum,temp_stdev,temp_rms,temp_mad,timepoint_label,temp_mav,temp_median,temp_p25,temp_p75,window_type,hr_mean,hr_minimum,hr_maximum,hr_stdev,hr_rms,hr_mad\n";
         }
 
         f.close();
@@ -2068,7 +2068,7 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
             }
             else if (modality == "GSR") {
                 QString str;
-                QTextStream(&str) << guid << "," << uid << "," << studydatetime << "," << static_cast<int>(round(ageatscan)) << "," << gender << ",,," << seriesprotocol << ",,," << imagefile << ",,,,,,,,,,,,,,,,,,,,,,,,\n";
+                QTextStream(&str) << guid << "," << uid << "," << studydatetime << "," << static_cast<int>(round(ageatscan)) << "," << gender << ",," << imagefile << ",GSR,,,,," << seriesprotocol << ",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,";
                 fs << str;
             }
             else {
