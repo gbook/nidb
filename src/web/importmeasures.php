@@ -132,11 +132,9 @@
 		}
 
 		return $groupdata;
-
 //		print_r($gheader);
 //		print_r($groupdata);
 	}
-
 
 
 	/* -------------------------------------------- */
@@ -158,11 +156,8 @@
 		}
 
 //		print_r(array('header' => $pheader, 'data' => $projectinfo));
-
 //		echo "<br>";
-
 //		print_r($projectinfo);
-
 //		echo "<br>";
 
 

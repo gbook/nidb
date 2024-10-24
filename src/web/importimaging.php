@@ -143,7 +143,7 @@
 					<div class="thirteen wide column">
 						<select class="ui dropdown" name="filetype" required>
 							<option value="auto" selected>Imaging files</option>
-							<option value="squirrel">squirrel</option>
+							<option value="squirrel">squirrel (only one squirrel package at a time)</option>
 						</select>
 					</div>
 
