@@ -24,39 +24,94 @@ Create an object and read an existing squirrel package
 
 ```cpp
 squirrel *sqrl = new squirrel();
-
-/* read the squirrel package and check for success */
-if (sqrl->Read("/home/squirrel.zip"))
-    cout << "Successfuly read squirrel package. Log: " << m << endl;
+sqrl->SetPackagePath("/path/to/data.sqrl");
+if (sqrl->Read()) {
+    cout << "Successfuly read squirrel package" << endl;
 else
-    cout << "Error reading squirrel package. Log: " << m << endl;
+    cout << "Error reading squirrel package. Log [" << sqrl->GetLog() << "]" << endl;
 
 /* print the entire package */
 sqrl->Print();
 
 /* access individual package meta-data */
 cout << sqrl->name;
+
+/* delete squirrel object */
+delete sqrl;
 ```
 
-### Subject data
+### Iterating subject/study/series data
 
-All imaging data is stored in a Subject->Study(session)->Series hierarchy. Subjects are stored in the root of the squirrel object.
+Functions are provided to retrieve lists of objects.
 
 ```cpp
-/* iterate by list to access copies of the subjects (read only) */
-foreach (squirrelSubject subj, sqrl->subjectList) {
-    cout << subj.ID << endl;
-}
+/* iterate through the subjects */
+QList<squirrelSubject> subjects = sqrl->GetSubjectList();
+foreach (squirrelSubject subject, subjects) {
+    cout <<"Found subject [" + subject.ID + "]");
 
-/* iterate by index to change the original subject (read/write) */
-for (int i=0; i < sqrl->subjectList.size(); i++) {
-    sqrl->subjectList[i].ID = i;
-}
+    /* get studies */
+    QList<squirrelStudy> studies = sqrl->GetStudyList(subject.GetObjectID());
+    foreach (squirrelStudy study, studies) {
+        n->Log(QString("Found study [%1]").arg(study.StudyNumber));
 
-/* get a list of subjects (copy) */
-QList<squirrelSubject> subjects;
-if (sqrl->GetSubjectList(subjects))
-    cout << "Retrieved " << subjects.size() << " subjects" << endl;
+        /* get series */
+        QList<squirrelSeries> serieses = sqrl->GetSeriesList(study.GetObjectID());
+        foreach (squirrelSeries series, serieses) {
+            n->Log(QString("Found series [%1]").arg(series.SeriesNumber));
+            int numfiles = series.files.size();
+        }
+    }
+}
+```
+
+### Finding data
+
+How to get a **copy** of an object, for reading or searching a squirrel package.
+
+```cpp
+/* get a subject by ID, the returned object is read-only */
+qint64 subjectObjectID = FindSubject("12345");
+squirrelSubject subject = GetSubject(subjectObjectID);
+QString guid = subject.GUID;
+subject.PrintDetails();
+
+/* get a subject by SubjectUID (DICOM field) */
+squirrelStudy study = GetStudy(FindSubjectByUID("08.03.21-17:51:10-STD-1.3.12.2.1107.5.3.7.20207"));
+QString studyDesc = study.Description;
+study.PrintDetails();
+
+/* get study by subject ID, and study number */
+squirrelStudy study = GetStudy(FindStudy("12345", 2));
+QString studyEquipment = study.Equipment;
+study.PrintDetails();
+
+/* get series by seriesUID (DICOM field) */
+squirrelSeries series = GetStudy(FindSeriesByUID("09.03.21-17:51:10-STD-1.3.12.2.1107.5.3.7.20207"));
+QDateTime seriesDate = series.DateTime;
+series.PrintDetails();
+
+/* get series by subjectID 12345, study number 2, and series number 15 */
+squirrelSeries series = GetStudy(FindSeries("12345", 2, 15));
+QString seriesProtocol = series.Protocol;
+series.PrintDetails();
+
+/* get an analysis by subject ID 12345, study 2, and analysis 'freesurfer' */
+squirrelAnalysis GetAnalysis(FindAnalysis("12345", 2, "freesurfer"));
+
+/* get other objects by their names */
+squirrelDataDictionary dataDictionary = GetDataDictionary(FindDataDictionary("MyDataDict"));
+squirrelExperiment experiment = GetExperiment(FindExperiment("MyExperiment"));
+squirrelGroupAnalysis groupAnalysis = GetGroupAnalysis(FindGroupAnalysis("MyGroupAnalysis"));
+squirrelPipeline pipeline = GetPipeline(FindPipeline("MyPipeline"));
+
+```
+
+How to **modify** existing objects in a package.
+
+```cpp
+/* find a subject */
+
 ```
 
 ### Experiments and Pipelines
