@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Sep 18, 2024 at 04:51 PM
+-- Generation Time: Nov 04, 2024 at 08:08 PM
 -- Server version: 10.3.28-MariaDB
 -- PHP Version: 7.2.24
 
@@ -453,7 +453,8 @@ CREATE TABLE `bids_mapping` (
   `bidsIntendedForRun` text NOT NULL,
   `bidsIntendedForSuffix` text NOT NULL,
   `bidsIntendedForFileExtension` text NOT NULL,
-  `bidsTask` text NOT NULL
+  `bidsTask` text NOT NULL,
+  `bidsPEDirection` text NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='this table maps long protocol name(s) to short names';
 
 -- --------------------------------------------------------
@@ -1858,7 +1859,7 @@ CREATE TABLE `mr_series` (
   `series_num` int(11) DEFAULT NULL,
   `series_tr` double DEFAULT NULL COMMENT '(0018,0080)',
   `series_te` double DEFAULT NULL COMMENT '(0018,0081)',
-  `series_ti` double NOT NULL DEFAULT 0,
+  `series_ti` double DEFAULT NULL,
   `series_flip` double DEFAULT NULL COMMENT '(0018,1314)',
   `percent_sampling` double DEFAULT NULL,
   `percent_phaseFOV` double DEFAULT NULL,
@@ -1873,14 +1874,14 @@ CREATE TABLE `mr_series` (
   `img_rows` int(11) DEFAULT NULL COMMENT '(0028,0010)',
   `img_cols` int(11) DEFAULT NULL COMMENT '(0028,0011)',
   `img_slices` int(11) DEFAULT NULL COMMENT 'often derived from the number of dicom files',
-  `slicethickness` double NOT NULL DEFAULT 0,
+  `slicethickness` double DEFAULT 0,
   `slicespacing` double DEFAULT NULL,
   `dimN` int(11) NOT NULL DEFAULT 0 COMMENT 'from fslval dim0',
   `dimX` int(11) NOT NULL DEFAULT 0 COMMENT 'from fslval dim1',
   `dimY` int(11) NOT NULL DEFAULT 0 COMMENT 'from fslval dim2',
   `dimZ` int(11) NOT NULL DEFAULT 0 COMMENT 'from fslval dim3',
   `dimT` int(11) NOT NULL DEFAULT 0 COMMENT 'from fslval dim4',
-  `bandwidth` double NOT NULL DEFAULT 0,
+  `bandwidth` double DEFAULT 0,
   `image_type` varchar(250) DEFAULT NULL,
   `image_comments` varchar(250) DEFAULT NULL,
   `bold_reps` int(11) NOT NULL DEFAULT 0,
@@ -3355,6 +3356,7 @@ CREATE TABLE `uploads` (
   `upload_log` mediumtext DEFAULT NULL,
   `upload_originalfilelist` longtext DEFAULT NULL,
   `upload_source` enum('web','api','nfs','') DEFAULT NULL,
+  `upload_type` enum('dicom','squirrel','auto','') NOT NULL,
   `upload_datapath` mediumtext DEFAULT NULL,
   `upload_stagingpath` varchar(255) DEFAULT NULL,
   `upload_destprojectid` int(11) NOT NULL,
@@ -3414,6 +3416,7 @@ CREATE TABLE `upload_series` (
 CREATE TABLE `upload_studies` (
   `uploadstudy_id` int(11) NOT NULL,
   `uploadsubject_id` int(11) NOT NULL,
+  `uploadstudy_number` int(11) DEFAULT NULL,
   `uploadstudy_instanceuid` varchar(255) DEFAULT NULL,
   `uploadstudy_desc` varchar(255) DEFAULT NULL,
   `uploadstudy_date` datetime DEFAULT NULL,

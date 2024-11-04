@@ -40,19 +40,20 @@ public:
     void PrintSubjectInfo();
     squirrelSubject GetSquirrelObject();
 
-    int subjectRowID() { return _subjectid; }
+    QDate dob() { return _dob; }
+    QString GUID() { return _guid; }
+    QString ethnicity1() { return _ethnicity1; }
+    QString ethnicity2() { return _ethnicity2; }
+    QString handedness() { return _handedness; }
+    QString sex() { return _sex; }
     QString UID() { return _uid; }
-	QString GUID() { return _guid; }
-	QStringList altUIDs() { return _altuids; }
-	QDate dob() { return _dob; }
-	QString sex() { return _sex; }
-	QString ethnicity1() { return _ethnicity1; }
-	QString ethnicity2() { return _ethnicity2; }
-	QString handedness() { return _handedness; }
+    QString msg() { return _msg; }
     QString path() { return _subjectpath; }
+    QStringList GetAllAlternateIDs();
+    QString GetPrimaryAlternateID(int projectRowID);
     bool dataPathExists() { return _dataPathExists; }
     bool valid() { return _isValid; }
-    QString msg() { return _msg; }
+    int subjectRowID() { return _subjectid; }
 
 private:
     void LoadSubjectInfo();

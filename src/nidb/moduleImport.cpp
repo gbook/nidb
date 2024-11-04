@@ -583,7 +583,12 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
                 n->Log("Filetype is a .sqrl package");
 
                 QString m;
-                io->ArchiveSquirrelPackage(importid, file, "patientid", "modalitystudydate", "seriesnum", importProjectID, m);
+                UploadOptions options;
+                options.projectRowID = importProjectID;
+                options.subjectMatchCriteria = "patientid";
+                options.studyMatchCriteria = "modalitystudydate";
+                options.seriesMatchCriteria = "seriesnum";
+                io->ArchiveSquirrelPackage(options, file, m);
             }
             else if ((ext == "cnt") || (ext == "3dd") || (ext == "dat") || (ext == "edf") || (importModality == "eeg") || (importDatatype == "eeg") || (importModality == "et") || (ext == "et") ) {
                 n->Log("Filetype is an EEG or ET file");

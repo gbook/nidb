@@ -2068,7 +2068,7 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
             }
             else if (modality == "GSR") {
                 QString str;
-                QTextStream(&str) << guid << "," << uid << "," << studydatetime << "," << static_cast<int>(round(ageatscan)) << "," << gender << ",," << imagefile << ",GSR,,,,," << seriesprotocol << ",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,";
+                QTextStream(&str) << guid << "," << uid << "," << studydatetime << "," << static_cast<int>(round(ageatscan)) << "," << gender << ",," << imagefile << ",GSR,,,,," << seriesprotocol << ",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,\n";
                 fs << str;
             }
             else {

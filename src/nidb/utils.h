@@ -62,6 +62,27 @@ struct BIDSMapping {
     int run;
 };
 
+struct UploadOptions {
+    QDateTime uploadStartDate;
+    QDateTime uploadEndDate;
+    QString status;
+    double statusPercent;
+    QString log;
+    QString originalFileList;
+    QString source;
+    QString type;
+    QString dataPath;
+    QString stagingPath;
+    int projectRowID;
+    QString patientID;
+    QString modality;
+    bool guessModality;
+    QString subjectMatchCriteria;
+    QString studyMatchCriteria;
+    QString seriesMatchCriteria;
+};
+
+
 /* generic functions */
 QList<double> SplitStringArrayToDouble(QStringList a);
 QList<int> SplitStringArrayToInt(QStringList a);

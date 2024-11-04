@@ -127,24 +127,34 @@
 					
 					<div class="three wide column"><h3 class="ui grey right aligned header">Data Modality</h3></div>
 					<div class="thirteen wide column">
-						<select class="ui dropdown" name="modality" required>
-							<option value="auto" selected>Automatically detect (DICOM only)</option>
-							<?
-								$modalities = GetModalityList();
-								foreach ($modalities as $modality) {
-									?><option value="<?=$modality?>"><?=$modality?></option><?
-								}
-							?>
-							<option value="unknown">Unknown - Have NiDB try to guess the modality</option>
-						</select>
+						<div class="ui fluid selection dropdown">
+							<input type="hidden" name="modality" required>
+							<i class="dropdown icon"></i>
+							<div class="default text">Select modality</div>
+							<div class="menu">
+								<div class="item" data-value="auto"><b>Automatically detect</b> - DICOM only</div>
+								<?
+									$modalities = GetModalityList();
+									foreach ($modalities as $modality) {
+										?><div class="item" data-value="<?=$modality?>"><?=$modality?></div><?
+									}
+								?>
+								<div class="item" data-value="unknown"><b>Unknown</b> - Let NiDB guess the modality</div>
+							</div>
+						</div>
 					</div>
 
 					<div class="three wide column"><h3 class="ui grey right aligned header">File format</h3></div>
 					<div class="thirteen wide column">
-						<select class="ui dropdown" name="filetype" required>
-							<option value="auto" selected>Imaging files</option>
-							<option value="squirrel">squirrel (only one squirrel package at a time)</option>
-						</select>
+						<div class="ui fluid selection dropdown">
+							<input type="hidden" name="filetype" required>
+							<i class="dropdown icon"></i>
+							<div class="default text">Select file format</div>
+							<div class="menu">
+								<div class="item" data-value="auto"><b>Imaging file(s)</b></div>
+								<div class="item" data-value="squirrel"><b>squirrel</b> - only one squirrel package at a time</div>
+							</div>
+						</div>
 					</div>
 
 					<div class="three wide column"><h3 class="ui grey right aligned header">Destination Project</h3></div>

@@ -78,9 +78,9 @@
 	$analysisids = GetVariable("analysisids");
 	$pipelineids = GetVariable("pipelineids");
 	$datadictionaryids = GetVariable("datadictionaryids");
-	$drugids = GetVariable("drugids");
+	$interventionids = GetVariable("interventionids");
 	$observationids = GetVariable("observationids");
-	$includedrugs = GetVariable("includedrugs");
+	$includeinterventions = GetVariable("includeinterventions");
 	$includeobservations = GetVariable("includeobservations");
 	$includeexperiments = GetVariable("includeexperiments");
 	$includeanalysis = GetVariable("includeanalysis");
@@ -118,7 +118,7 @@
 			DisplayPackage($packageid);
 		}
 		elseif ($action == "addobjectstopackage") {
-			AddObjectsToPackage($packageid, $enrollmentids, $subjectids, $studyids, $seriesids, $modality, $experimentids, $analysisids, $pipelineids, $datadictionaryids, $drugids, $observationids, $includedrugs, $includeobservations, $includeexperiments, $includeanalysis, $includepipelines);
+			AddObjectsToPackage($packageid, $enrollmentids, $subjectids, $studyids, $seriesids, $modality, $experimentids, $analysisids, $pipelineids, $datadictionaryids, $interventionids, $observationids, $includeinterventions, $includeobservations, $includeexperiments, $includeanalysis, $includepipelines);
 			DisplayPackage($packageid);
 		}
 		elseif ($action == "removeobject") {
@@ -306,7 +306,7 @@
 					<br>
 					<? DisplayFormPipelines($pipelineids, false); ?>
 					<br>
-					<? DisplayFormDrugs($enrollmentids, false); ?>
+					<? DisplayFormInterventions($enrollmentids, false); ?>
 					<br>
 					<? DisplayFormObservations($enrollmentids, false); ?>
 				
@@ -425,7 +425,7 @@
 					<br>
 					<? DisplayFormPipelines($pipelineids, false); ?>
 					<br>
-					<? DisplayFormDrugs($enrollmentids, false); ?>
+					<? DisplayFormInterventions($enrollmentids, false); ?>
 					<br>
 					<? DisplayFormObservations($enrollmentids, false); ?>
 				
@@ -544,7 +544,7 @@
 					<br>
 					<? DisplayFormPipelines($pipelineids, false); ?>
 					<br>
-					<? DisplayFormDrugs($enrollmentids, false); ?>
+					<? DisplayFormInterventions($enrollmentids, false); ?>
 					<br>
 					<? DisplayFormObservations($enrollmentids, false); ?>
 				
@@ -1546,82 +1546,82 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- DisplayFormDrugs ------------------- */
+	/* ------- DisplayFormInterventions ----------- */
 	/* -------------------------------------------- */
-	function DisplayFormDrugs($enrollmentids, $required) {
+	function DisplayFormInterventions($enrollmentids, $required) {
 		
 		$enrollmentidstr = implode2(",", $enrollmentids);
 
 		$sqlstring = "select * from drugs a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join drugnames d on a.drugname_id = d.drugname_id where a.enrollment_id in (" . implode2(",", $enrollmentids) . ")";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$numdrugs = mysqli_num_rows($result);
+		$numinterventions = mysqli_num_rows($result);
 		
 		if ($required) {
 			$checkboxstr = " checked onClick='return false' onKeyDown='return false' ";
 			$checkboxreadonly = "read-only";
 			$checkboxstate = "checked";
 			$labelstr = "will be added";
-			$numselected = $numdrugs;
+			$numselected = $numinterventions;
 		}
 		else {
 			$labelstr = "selected";
 			$numselected = 0;
 		}
 
-		if ((count($enrollmentids) > 0) && ($numdrugs > 0)) {
+		if ((count($enrollmentids) > 0) && ($numinterventions > 0)) {
 			?>
 			<script type="text/javascript">
 				$(function() {
-					$("#selectalldrugs").click(function() {
+					$("#selectallinterventions").click(function() {
 						var checked_status = this.checked;
-						$(".alldrugs").find("input[type='checkbox']").each(function() {
+						$(".allinterventions").find("input[type='checkbox']").each(function() {
 							this.checked = checked_status;
 						});
 						if (this.checked)
-							document.getElementById('includedrugs').checked = true;
+							document.getElementById('includeinterventions').checked = true;
 					});
 				});
 
-				function SelectAllDrugs() {
-					var checked_status = document.getElementById('includedrugs').checked;
-					$(".alldrugs").find("input[type='checkbox']").each(function() {
+				function SelectAllInterventions() {
+					var checked_status = document.getElementById('includeinterventions').checked;
+					$(".allinterventions").find("input[type='checkbox']").each(function() {
 						this.checked = checked_status;
 					});
-					CheckSelectedDrugCount();
+					CheckSelectedInterventionCount();
 				}
 
-				function CheckSelectedDrugCount(e) {
-					var n = document.querySelectorAll('input[type="checkbox"].drugcheck:checked').length;
-					document.getElementById('numdrugsselected').innerHTML = n;
+				function CheckSelectedInterventionCount(e) {
+					var n = document.querySelectorAll('input[type="checkbox"].interventionscheck:checked').length;
+					document.getElementById('numinterventionsselected').innerHTML = n;
 
 					if (e.checked)
-						document.getElementById('includedrugs').checked = true;
+						document.getElementById('includeinterventions').checked = true;
 				}
 			</script>
 
 			<div class="ui grid">
 				<div class="ui four wide column">
-					<div class="ui toggle <?=$checkboxreadonly?> checkbox" onChange="SelectAllDrugs()">
-						<input type="checkbox" name="includedrugs" id="includesubjects" value="1" <?=$checkboxstate?>>
-						<label style="font-size:larger; font-weight: bold">Drugs</label>
+					<div class="ui toggle <?=$checkboxreadonly?> checkbox" onChange="SelectAllInterventions()">
+						<input type="checkbox" name="includeinterventions" id="includesubjects" value="1" <?=$checkboxstate?>>
+						<label style="font-size:larger; font-weight: bold">Interventions</label>
 					</div>
 				</div>
 				<div class="ui ten wide column">
-					<div class="ui left pointing red label"><span id="numdrugsselected"><?=$numselected?></span> of <?=$numdrugs?> drugs <?=$labelstr?></div>
+					<div class="ui left pointing red label"><span id="numinterventionsselected"><?=$numselected?></span> of <?=$numinterventions?> interventions <?=$labelstr?></div>
 				</div>
 			</div>
 
 			<div class="ui accordion">
 				<div class="title">
 					<i class="dropdown icon"></i>
-					View drugs
+					View interventions
 				</div>
 				<div class="content">
 					<table class="ui very compact table">
 						<thead>
-							<th><input type="checkbox" id="selectalldrugs"></th>
+							<th><input type="checkbox" id="selectallinterventions"></th>
 							<th>UID</th>
-							<th>Drug</th>
+							<th>Intervention</th>
 							<th>Dose desc</th>
 							<th>Date</th>
 						</thead>
@@ -1633,19 +1633,19 @@
 							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$uid = $row['uid'];
 								$subjectid = $row['subject_id'];
-								$drugdate = $row['drug_startdate'];
-								$drugid = $row['drug_id'];
+								$interventiondate = $row['drug_startdate'];
+								$interventionid = $row['drug_id'];
 								$dosedesc = $row['drug_dosedesc'];
-								$drugname = $row['drug_name'];
+								$interventionname = $row['drug_name'];
 								
-								$drugids[] = $drugid;
+								$interventionids[] = $interventionid;
 								?>
 									<tr>
-										<td class="alldrugs"><input type="checkbox" name="drugids[]" value="<?=$drugid?>" <?=$checkboxstr?> class="drugcheck" onClick="CheckSelectedDrugCount(this);"></td>
+										<td class="allinterventions"><input type="checkbox" name="interventionids[]" value="<?=$interventionid?>" <?=$checkboxstr?> class="interventioncheck" onClick="CheckSelectedInterventionCount(this);"></td>
 										<td><a href="subjects.php?subjectid=<?=$subjectid?>"><?=$uid?></a></td>
-										<td><?=$drug?></td>
-										<td><?=$drugdesc?></td>
-										<td><?=$drugdate?></td>
+										<td><?=$intervention?></td>
+										<td><?=$interventiondesc?></td>
+										<td><?=$interventiondate?></td>
 									</tr>
 								<?
 							}
@@ -1659,8 +1659,8 @@
 		else {
 			?>
 			<div class="ui toggle read-only checkbox">
-				<input type="checkbox" name="includedrugs" value="0">
-				<label style="font-size:larger; font-weight: bold">No drugs found</label>
+				<input type="checkbox" name="includeinterventions" value="0">
+				<label style="font-size:larger; font-weight: bold">No interventions found</label>
 			</div>
 			<br>
 			<?
@@ -1702,11 +1702,11 @@
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				Notice("Removed $numobjects observations");
 				break;
-			case "drug":
+			case "intervention":
 				$sqlstring = "delete from package_drugs where packagedrug_id in ($objectidstr)";
 				PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				Notice("Removed $numobjects drugs");
+				Notice("Removed $numobjects interventions");
 				break;
 			case "experiment":
 				$sqlstring = "delete from package_experiments where packageexperiment_id in ($objectidstr)";
@@ -1739,7 +1739,7 @@
 	/* -------------------------------------------- */
 	/* ------- AddObjectsToPackage ---------------- */
 	/* -------------------------------------------- */
-	function AddObjectsToPackage($packageid, $enrollmentids, $subjectids, $studyids, $seriesids, $modality, $experimentids, $analysisids, $pipelineids, $datadictionaryids, $drugids, $observationids, $includedrugs, $includeobservations, $includeexperiments, $includeanalysis, $includepipelines) {
+	function AddObjectsToPackage($packageid, $enrollmentids, $subjectids, $studyids, $seriesids, $modality, $experimentids, $analysisids, $pipelineids, $datadictionaryids, $interventionids, $observationids, $includeinterventions, $includeobservations, $includeexperiments, $includeanalysis, $includepipelines) {
 
 		/* perform data checks */
 		$packageid = mysqli_real_escape_string($GLOBALS['linki'], $packageid);
@@ -1752,9 +1752,9 @@
 		$analysisids = mysqli_real_escape_array($GLOBALS['linki'], $analysisids);
 		$pipelineids = mysqli_real_escape_array($GLOBALS['linki'], $pipelineids);
 		$datadictionaryids = mysqli_real_escape_array($GLOBALS['linki'], $datadictionaryids);
-		$drugids = mysqli_real_escape_array($GLOBALS['linki'], $drugids);
+		$interventionids = mysqli_real_escape_array($GLOBALS['linki'], $interventionids);
 		$observationids = mysqli_real_escape_array($GLOBALS['linki'], $observationids);
-		$includedrugs = mysqli_real_escape_string($GLOBALS['linki'], $includedrugs);
+		$includeinterventions = mysqli_real_escape_string($GLOBALS['linki'], $includeinterventions);
 		$includeobservations = mysqli_real_escape_string($GLOBALS['linki'], $includeobservations);
 		$includeexperiments = mysqli_real_escape_string($GLOBALS['linki'], $includeexperiments);
 		$includeanalysis = mysqli_real_escape_string($GLOBALS['linki'], $includeanalysis);
@@ -1813,14 +1813,14 @@
 			$msg .= "Added " . count($pipelineids) . " pipelines<br>";
 		}
 
-		/* add any drugs */
-		if ((count($drugids) > 0) && ($includedrugs) && (is_array($drugids))) {
-			foreach ($drugids as $drugid) {
-				$sqlstring = "insert ignore into package_drugs (package_id, drug_id) values ($packageid, $drugid)";
+		/* add any interventions */
+		if ((count($interventionids) > 0) && ($includeinterventions) && (is_array($interventionids))) {
+			foreach ($interventionids as $interventionid) {
+				$sqlstring = "insert ignore into package_drugs (package_id, drug_id) values ($packageid, $interventionid)";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
-			$numobjects += count($drugids);
-			$msg .= "Added " . count($drugids) . " drugs<br>";
+			$numobjects += count($interventionids);
+			$msg .= "Added " . count($interventionids) . " interventions<br>";
 		}
 		
 		/* add any observations */
@@ -1911,7 +1911,7 @@
 		/* declare variables */
 		$subjects = array();
 		$observations = array();
-		$drugs = array();
+		$interventions = array();
 		$analyses = array();
 		$experiments = array();
 		$pipelines = array();
@@ -1998,19 +1998,19 @@
 			$observations[$uid][$objectid]['startdate'] = $row['measure_startdate'];
 		}
 
-		MarkTime("Getting drug data");
-		/* get drugs */
+		MarkTime("Getting intervention data");
+		/* get interventions */
 		$sqlstring = "select * from package_drugs a left join drugs b on a.drug_id = b.drug_id left join drugnames c on b.drugname_id = c.drugname_id left join enrollment d on b.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.package_id = $packageid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$numdrugs = mysqli_num_rows($result);
+		$numinterventions = mysqli_num_rows($result);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$enrollmentid = $row['enrollment_id'];
 			$uid = $row['uid'];
 			//list($uid, $subjectid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
 			$objectid = $row['packagedrug_id'];
-			$drugs[$uid][$objectid]['drugid'] = $row['drug_id'];
-			$drugs[$uid][$objectid]['name'] = $row['drug_name'];
-			$drugs[$uid][$objectid]['startdate'] = $row['drug_startdate'];
+			$interventions[$uid][$objectid]['drugid'] = $row['drug_id'];
+			$interventions[$uid][$objectid]['name'] = $row['drug_name'];
+			$interventions[$uid][$objectid]['startdate'] = $row['drug_startdate'];
 		}
 		
 		MarkTime("Getting experiment data");
@@ -2080,7 +2080,7 @@
 		$numsubjects = count($subjects);
 		$numstudies = 0;
 		//$numobservations = 0;
-		//$numdrugs = 0;
+		//$numinterventions = 0;
 		$numdatadict = count($datadictionaries);
 		$numgroupanalyses = count($groupanalyses);
 
@@ -2169,7 +2169,7 @@
 					</div>
 					<div class="ui middle aligned right aligned column">
 						<h3>Operations</h3>
-						<a class="ui basic primary button" href="packages.php?action=splitmodality&packageid=<?=$packageid?>">Split by modality</a>
+						<!--<a class="ui basic primary button" href="packages.php?action=splitmodality&packageid=<?=$packageid?>">Split by modality</a>-->
 					</div>
 				</div>
 			</div>
@@ -2196,7 +2196,7 @@
 				<a class="active item item2" data-tab="overview"><i class="grey box open icon"></i>Package overview</a>
 				<a class="item item2" data-tab="subjects"><i class="grey user icon"></i> Subjects & Data</a>
 				<a class="item item2" data-tab="observations"><i class="grey clipboard icon"></i> Observations</a>
-				<a class="item item2" data-tab="drugs"><i class="grey pills icon"></i> Drugs</a>
+				<a class="item item2" data-tab="interventions"><i class="grey pills icon"></i> Interventions</a>
 				<a class="item item2" data-tab="analysis">Analysis</a>
 				<a class="item item2" data-tab="experiments">Experiments</a>
 				<a class="item item2" data-tab="pipelines">Pipelines</a>
@@ -2279,7 +2279,7 @@
 							if ($numanalysis > 0) { $analysiscolor = "fill:#FFFFCC,stroke:#444,stroke-width:1px"; $analysistext = "analysis ($numanalysis)"; } else { $analysiscolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:1px"; $analysistext = "analysis"; }
 							if ($numgroupanalyses > 0) { $groupanalysiscolor = "fill:#FFFFCC,stroke:#444,stroke-width:1px"; $groupanalysistext = "group-analysis ($numgroupanalyses)"; } else { $groupanalysiscolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:1px"; $groupanalysistext = "group-analysis"; }
 							if ($numobservations > 0) { $meascolor = "fill:#FFFFCC,stroke:#444,stroke-width:1px"; $meastext = "observations ($numobservations)"; } else { $meascolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:1px"; $meastext = "observations"; }
-							if ($numdrugs > 0) { $drugcolor = "fill:#FFFFCC,stroke:#444,stroke-width:1px"; $drugtext = "drugs ($numdrugs)"; } else { $drugcolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:1px"; $drugtext = "drugs"; }
+							if ($numinterventions > 0) { $interventioncolor = "fill:#FFFFCC,stroke:#444,stroke-width:1px"; $interventiontext = "interventions ($numinterventions)"; } else { $interventioncolor = "fill:#fff,stroke:#aaa,color:#999,stroke-width:1px"; $interventiontext = "interventions"; }
 							
 						?>
 						
@@ -2294,7 +2294,7 @@
 								data-->groupanalysis("<?=$groupanalysistext?>");
 								subjects-->studies("<?=$studtext?>");
 								subjects-->observations("<?=$meastext?>");
-								subjects-->drugs("<?=$drugtext?>");
+								subjects-->interventions("<?=$interventiontext?>");
 								studies-->series("<?=$sertext?>");
 								studies-->analysis("<?=$analysistext?>");
 								
@@ -2305,7 +2305,7 @@
 								%%style datadict <?=$dictcolor?>;
 								style groupanalysis <?=$groupanalysiscolor?>;
 								style observations <?=$meascolor?>;
-								style drugs <?=$drugcolor?>;
+								style interventions <?=$interventioncolor?>;
 								style analysis <?=$analysiscolor?>;
 								style subjects <?=$subjcolor?>;
 								style studies <?=$studcolor?>;
@@ -2593,24 +2593,24 @@
 				<? } ?>
 			</div>
 
-			<!-- drug tab -->
-			<div class="ui bottom attached tab raised segment" data-tab="drugs">
+			<!-- intervention tab -->
+			<div class="ui bottom attached tab raised segment" data-tab="interventions">
 
 				<div class="ui message">
 					<div class="content">
 						<div class="header">
 							Object summary
 						</div>
-						<?=$numdrugs?> drug records
+						<?=$numinterventions?> intervention records
 					</div>				
 				</div>
 				
-				<? if (count($drugs) > 0) { ?>
+				<? if (count($interventions) > 0) { ?>
 				<script type="text/javascript">
 					$(function() {
-						$("#selectalldrug").click(function() {
+						$("#selectallintervention").click(function() {
 							var checked_status = this.checked;
-							$(".alldrug").find("input[type='checkbox']").each(function() {
+							$(".allintervention").find("input[type='checkbox']").each(function() {
 								this.checked = checked_status;
 							});
 						});
@@ -2619,35 +2619,35 @@
 				
 				<form method="post" action="packages.php">
 				<input type="hidden" name="action" value="removeobject">
-				<input type="hidden" name="objecttype" value="drug">
+				<input type="hidden" name="objecttype" value="intervention">
 				<input type="hidden" name="packageid" value="<?=$packageid?>">
 				<table class="ui basic very compact table">
 					<thead>
-						<th><input type="checkbox" id="selectalldrug"></th>
+						<th><input type="checkbox" id="selectallintervention"></th>
 						<th>UID</th>
-						<th>Drug</th>
+						<th>Intervention</th>
 						<th>Date</th>
 					</thead>
 				<?
-				ksort($drugs, SORT_NATURAL);
-				foreach ($drugs as $uid => $objects) {
-					foreach ($objects as $objectid => $drug) {
-						$drugid = $drug['drugid'];
-						$drugname = $drug['name'];
-						$drugdate = $drug['startdate'];
+				ksort($interventions, SORT_NATURAL);
+				foreach ($interventions as $uid => $objects) {
+					foreach ($objects as $objectid => $intervention) {
+						$interventionid = $intervention['interventionid'];
+						$interventionname = $intervention['name'];
+						$interventiondate = $intervention['startdate'];
 						?>
 						<tr>
-							<td class="alldrug"><input type="checkbox" name="objectids[]" value="<?=$objectid?>"></td>
+							<td class="allintervention"><input type="checkbox" name="objectids[]" value="<?=$objectid?>"></td>
 							<td><?=$uid?></td>
-							<td><?=$drugname?></td>
-							<td><?=$drugdate?></td>
+							<td><?=$interventionname?></td>
+							<td><?=$interventiondate?></td>
 						</tr>
 						<?
 					}
 				}
 				?>
 				</table>
-				<button type="submit" class="ui orange button"><i class="trash icon"></i>Remove selected drugs</button>
+				<button type="submit" class="ui orange button"><i class="trash icon"></i>Remove selected interventions</button>
 				</form>
 				<? } ?>
 			</div>

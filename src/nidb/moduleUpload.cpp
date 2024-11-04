@@ -326,6 +326,36 @@ bool moduleUpload::ReadUploads() {
 
 
 /* ---------------------------------------------------------- */
+/* --------- GetUploadOptions ------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Poplate an UploadOptions structure
+ * @param uploadRowID The uploadRowID
+ * @return an UploadOptions structure
+ */
+UploadOptions moduleUpload::GetUploadOptions(int uploadRowID) {
+    UploadOptions options;
+    QSqlQuery q;
+
+    q.prepare("select * from uploads where upload_id = :uploadid");
+    q.bindValue(":uploadid", uploadRowID);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.size() > 0) {
+        options.dataPath = q.value("upload_datapath").toString();
+        options.modality = q.value("upload_modality").toString();
+        options.patientID = q.value("upload_patientid").toString();
+        options.projectRowID = q.value("upload_destprojectid").toInt();
+        options.seriesMatchCriteria = q.value("upload_seriescriteria").toString();
+        options.source = q.value("upload_source").toString();
+        options.studyMatchCriteria = q.value("upload_studycriteria").toString();
+        options.subjectMatchCriteria = q.value("upload_subjectcriteria").toString();
+        options.type = q.value("upload_type").toString();
+    }
+    return options;
+}
+
+
+/* ---------------------------------------------------------- */
 /* --------- ParseUploadedFiles ----------------------------- */
 /* ---------------------------------------------------------- */
 /**
@@ -660,11 +690,11 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
 
             //QString upload_status = q.value("upload_status").toString();
             int upload_destprojectid = q.value("upload_destprojectid").toInt();
-            QString upload_patientid = q.value("upload_patientid").toString();
+            //QString upload_patientid = q.value("upload_patientid").toString();
             QString upload_stagingpath = q.value("upload_stagingpath").toString();
-            QString upload_subjectcriteria = q.value("upload_subjectcriteria").toString();
-            QString upload_studycriteria = q.value("upload_studycriteria").toString();
-            QString upload_seriescriteria = q.value("upload_seriescriteria").toString();
+            //QString upload_subjectcriteria = q.value("upload_subjectcriteria").toString();
+            //QString upload_studycriteria = q.value("upload_studycriteria").toString();
+            //QString upload_seriescriteria = q.value("upload_seriescriteria").toString();
 
             io->AppendUploadLog(__FUNCTION__, QString("Beginning archiving of upload [%1] with upload_destprojectid of [%2]").arg(uploadRowID).arg(upload_destprojectid));
 
@@ -713,21 +743,21 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
                     if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); return false; }
 
                     ret = true;
-                    int uploadSeriesRowID = q2.value("uploadseries_id").toInt();
-                    int uploadSubjectRowID = q2.value("uploadsubject_id").toInt();
+                    //int uploadSeriesRowID = q2.value("uploadseries_id").toInt();
+                    //int uploadSubjectRowID = q2.value("uploadsubject_id").toInt();
                     QString uploadSubjectID = q2.value("uploadsubject_patientid").toString();
                     QString uploadSubjectName = q2.value("uploadsubject_name").toString();
                     QString uploadSubjectSex = q2.value("uploadsubject_sex").toString();
                     QString uploadSubjectDOB = q2.value("uploadsubject_dob").toString();
 
                     int uploadStudyNumber = q2.value("uploadstudy_number").toInt();
-                    QString uploadStudyDesc = q2.value("uploadstudy_desc").toString();
+                    //QString uploadStudyDesc = q2.value("uploadstudy_desc").toString();
                     QString uploadStudyDate = q2.value("uploadstudy_date").toString();
                     QString uploadStudyModality = q2.value("uploadstudy_modality").toString();
 
                     int uploadSeriesNumber = q2.value("uploadseries_num").toInt();
-                    QString uploadSeriesDesc = q2.value("uploadseries_desc").toString();
-                    QString uploadSeriesDate = q2.value("uploadseries_date").toString();
+                    //QString uploadSeriesDesc = q2.value("uploadseries_desc").toString();
+                    //QString uploadSeriesDate = q2.value("uploadseries_date").toString();
 
                     /* get squirrel objects */
                     squirrelSubject sqrlSubject = sqrl->GetSubject(sqrl->FindSubject(uploadSubjectID));
@@ -739,8 +769,8 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
                     QString subjectUID;
 
                     /* get or create subject */
-                    if (io->GetSubject("patientid", subjectRowID, upload_destprojectid, uploadSubjectID, uploadSubjectName, uploadSubjectSex, uploadSubjectDOB, subjectRowID, subjectUID)) {
-                        n->Debug(QString("Found existing subject UID [%1], subjectRowID [%2]").arg(subjectUID).arg(subjectRowID), __FUNCTION__);
+                    if (io->GetSubject("patientid", subjectRowID, upload_destprojectid, uploadSubjectID, uploadSubjectName, sqrlSubject.Sex, sqrlSubject.DateOfBirth.toString("yyyy-MM-dd"), subjectRowID, subjectUID)) {
+                        n->Log(QString("Found existing subject UID [%1], subjectRowID [%2]").arg(subjectUID).arg(subjectRowID), __FUNCTION__);
                     }
                     else {
                         /* create subject */
@@ -756,14 +786,14 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
                     /* get or create study */
                     int localStudyNumber(-1);
                     if (io->GetStudy("modalitystudydate", studyRowID, enrollmentRowID, uploadStudyDate, uploadStudyModality, sqrlStudy.StudyUID, studyRowID)) {
-                        n->Debug(QString("Found existing subject UID [%1], subjectRowID [%2]").arg(subjectUID).arg(subjectRowID), __FUNCTION__);
+                        n->Log(QString("Found existing study.  number [%1], studytRowID [%2]").arg(subjectUID).arg(subjectRowID), __FUNCTION__);
                     }
                     else {
                         /* create study */
                         if (io->CreateStudy(subjectRowID, enrollmentRowID, uploadStudyDate, sqrlStudy.StudyUID, uploadStudyModality, uploadSubjectID, sqrlStudy.AgeAtStudy, sqrlStudy.Height, sqrlStudy.Weight, sqrlStudy.Description, "operator", "", sqrlStudy.Equipment, "", "", studyRowID, localStudyNumber))
-                            n->Log(QString("Successfully created subject with rowID [%1] and UID [%2]").arg(subjectRowID).arg(subjectUID), __FUNCTION__);
+                            n->Log(QString("Successfully created study (date [%1]  modality [%2]) with studyRowID [%3] squirrelStudyNumber [%4] and localStudyNumber [%5]").arg(sqrlStudy.DateTime.toString("yyyy-MM-dd hh:mm:ss")).arg(sqrlStudy.Modality).arg(studyRowID).arg(sqrlStudy.StudyNumber).arg(localStudyNumber), __FUNCTION__);
                         else
-                            n->Log(QString("Error creating subject with uploadSubjectID [%1]").arg(uploadSubjectID), __FUNCTION__);
+                            n->Log(QString("Error creating study with uploadSubjectID [%1]").arg(uploadSubjectID), __FUNCTION__);
                     }
 
                     /* get the squirrel path to the series, then get the list of files */

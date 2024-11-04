@@ -864,11 +864,8 @@ bool archiveIO::ArchiveNiftiSeries(int subjectRowID, int studyRowID, int seriesR
     q.bindValue(":FlipAngle", tags["FlipAngle"]);
     q.bindValue(":InPlanePhaseEncodingDirection", tags["InPlanePhaseEncodingDirection"]);
 
-    if (tags["PhaseEncodeAngle"] == "") q.bindValue(":PhaseEncodeAngle", QVariant(QMetaType::fromType<double>())); /* for null values */
-    else q.bindValue(":PhaseEncodeAngle", tags["PhaseEncodeAngle"]);
-
-    if (tags["PhaseEncodingDirectionPositive"] == "") q.bindValue(":PhaseEncodingDirectionPositive", QVariant(QMetaType::fromType<int>())); /* for null values */
-    else q.bindValue(":PhaseEncodingDirectionPositive", tags["PhaseEncodingDirectionPositive"]);
+    if (tags["PhaseEncodeAngle"] == "") q.bindValue(":PhaseEncodeAngle", QVariant(QMetaType::fromType<double>())); else q.bindValue(":PhaseEncodeAngle", tags["PhaseEncodeAngle"]); /* for null values */
+    if (tags["PhaseEncodingDirectionPositive"] == "") q.bindValue(":PhaseEncodingDirectionPositive", QVariant(QMetaType::fromType<int>())); else q.bindValue(":PhaseEncodingDirectionPositive", tags["PhaseEncodingDirectionPositive"]); /* for null values */
 
     q.bindValue(":pixelX", tags["pixelX"]);
     q.bindValue(":pixelY", tags["pixelY"]);
@@ -877,13 +874,13 @@ bool archiveIO::ArchiveNiftiSeries(int subjectRowID, int studyRowID, int seriesR
     q.bindValue(":Rows", tags["Rows"]);
     q.bindValue(":Columns", tags["Columns"]);
     q.bindValue(":zsize", tags["zsize"]);
-    q.bindValue(":InversionTime", tags["InversionTime"]);
+    //q.bindValue(":InversionTime", tags["InversionTime"]);
     if (tags["InversionTime"] == "") q.bindValue(":InversionTime", QVariant(QMetaType::fromType<double>())); else q.bindValue(":InversionTime", tags["InversionTime"]); /* for null values */
-
     q.bindValue(":PercentSampling", tags["PercentSampling"]);
     q.bindValue(":PercentPhaseFieldOfView", tags["PercentPhaseFieldOfView"]);
     q.bindValue(":AcquisitionMatrix", tags["AcquisitionMatrix"]);
-    q.bindValue(":SliceThickness", tags["SliceThickness"]);
+    if (tags["SliceThickness"] == "") q.bindValue(":SliceThickness", QVariant(QMetaType::fromType<double>())); else q.bindValue(":SliceThickness", tags["SliceThickness"]); /* for null values */
+    //q.bindValue(":SliceThickness", tags["SliceThickness"]);
     q.bindValue(":SpacingBetweenSlices", tags["SpacingBetweenSlices"]);
     q.bindValue(":PixelBandwidth", tags["PixelBandwidth"]);
     q.bindValue(":ImageType", tags["ImageType"]);
@@ -1841,25 +1838,143 @@ bool archiveIO::ArchiveEEGSeries(int importRowID, QString file) {
 /* --------- ArchiveSquirrelPackage ------------------------- */
 /* ---------------------------------------------------------- */
 /**
- * @brief This function will archive a squirrel package.
+ * @brief This function will archive a squirrel package. Existing imaging and demographic data will be updated if they already exist.
  * @param importRowID importRowID, to get import options and give feedback on import progress
  * @param file Path to the squirrel package
- * @param subjectMatchCriteria Possible match criteria `patientid`, `specificpatientid`, `patientidfromdir`, `uid`, `uidoraltuid`, `namesexdob`
- * @param studyMatchCriteria Possible values `modalitystudydate`, `studyuid`
- * @param seriesMatchCriteria Possible values ...
- * @param destProjectID projectRowID into which this data should be imported
  * @param msg
  * @return
  */
-bool archiveIO::ArchiveSquirrelPackage(qint64 importRowID, QString file, QString subjectMatchCriteria, QString studyMatchCriteria, QString seriesMatchCriteria, int destProjectID, QString &msg) {
+bool archiveIO::ArchiveSquirrelPackage(UploadOptions options, QString file, QString &msg) {
     /* get import options */
+    //UploadOptions options = GetUploadOptions(importRowID);
 
     /* read the squirrel package */
+    QString m;
+    QString tmppath;
     squirrel *sqrl = new squirrel();
     sqrl->SetPackagePath(file);
     if (sqrl->Read()) {
-        n->Log("Successfully read squirrel package [" + file + "]", __FUNCTION__);
-        n->Log(sqrl->Print());
+        /* extract the file to a temp directory */
+        tmppath = n->cfg["tmpdir"] + "/" + GenerateRandomString(20);
+        if (!MakePath(tmppath,m)) {
+            n->Log("Error creating temp directory [" + tmppath + "] with error [" + m + "]", __FUNCTION__);
+        }
+
+        if (sqrl->Extract(tmppath, m)) {
+            n->Debug("Successfuly extract squirrel package [" + file + "] to directory [" + tmppath + "]", __FUNCTION__);
+
+            /* iterate through all subject/study/series */
+            QList<squirrelSubject> subjects = sqrl->GetSubjectList();
+            foreach (squirrelSubject subject, subjects) {
+                n->Log("Found subject [" + subject.ID + "]");
+
+                /* get any matching subject/study/series */
+                int subjectRowID(-1);
+                QString subjectUID;
+
+                /* get or create subject */
+                if (GetSubject("patientid", subjectRowID, options.projectRowID, subject.ID, subject.ID, subject.Sex, subject.DateOfBirth.toString("yyyy-MM-dd"), subjectRowID, subjectUID)) {
+                    n->Debug(QString("Found existing subject UID [%1], subjectRowID [%2]").arg(subjectUID).arg(subjectRowID), __FUNCTION__);
+                }
+                else {
+                    /* create subject */
+                    if (CreateSubject(subject.ID, subject.ID, subject.DateOfBirth.toString("yyyy-MM-dd"), subject.Sex, 0.0, 0.0, subjectRowID, subjectUID))
+                        n->Log(QString("Successfully created subject with rowID [%1] and UID [%2]").arg(subjectRowID).arg(subjectUID), __FUNCTION__);
+                    else
+                        n->Log(QString("Error creating subject [%1]").arg(subject.ID), __FUNCTION__);
+                }
+
+                int enrollmentRowID;
+                GetOrCreateEnrollment(subjectRowID, options.projectRowID, enrollmentRowID);
+
+                /* get studies */
+                QList<squirrelStudy> studies = sqrl->GetStudyList(subject.GetObjectID());
+                foreach (squirrelStudy study, studies) {
+                    n->Log(QString("Found study [%1]").arg(study.StudyNumber));
+
+                    /* get or create study */
+                    int studyRowID(-1);
+                    int localStudyNumber(-1);
+                    if (GetStudy("modalitystudydate", studyRowID, enrollmentRowID, study.DateTime.toString("yyyy-MM-dd hh:mm:ss"), study.Modality, study.StudyUID, studyRowID)) {
+                        n->Debug(QString("Found existing subject UID [%1], subjectRowID [%2]").arg(subjectUID).arg(subjectRowID), __FUNCTION__);
+                    }
+                    else {
+                        /* create study */
+                        if (CreateStudy(subjectRowID, enrollmentRowID, study.DateTime.toString("yyyy-MM-dd hh:mm:ss"), study.StudyUID, study.Modality, subject.ID, study.AgeAtStudy, study.Height, study.Weight, study.Description, "operator", "", study.Equipment, "", "", studyRowID, localStudyNumber))
+                            n->Log(QString("Successfully created subject with rowID [%1] and UID [%2]").arg(subjectRowID).arg(subjectUID), __FUNCTION__);
+                        else
+                            n->Log(QString("Error creating subject [%1]").arg(subject.ID), __FUNCTION__);
+                    }
+
+                    /* get series */
+                    QList<squirrelSeries> serieses = sqrl->GetSeriesList(study.GetObjectID());
+                    foreach (squirrelSeries series, serieses) {
+                        int seriesRowID(-1);
+                        n->Log(QString("Found series [%1]").arg(series.SeriesNumber));
+
+                        /* get the squirrel path to the series, then get the list of files */
+                        QString squirrelSeriesPath = QString("%1/data/%2/%3/%4").arg(tmppath).arg(subject.ID).arg(study.StudyNumber).arg(series.SeriesNumber);
+                        QStringList files = FindAllFiles(squirrelSeriesPath, "*", false);
+                        qint64 b(0),c(0);
+                        GetDirSizeAndFileCount(squirrelSeriesPath, c, b);
+                        n->Log(QString("squirrelSeriesPath is [%1]. It contains [%2] files with total size [%3] bytes").arg(squirrelSeriesPath).arg(c).arg(b));
+
+                        //performanceMetric perf;
+                        QHash<QString, QString> tags;
+                        tags["SeriesDescription"] = series.Description;
+                        tags["SeriesDateTime"] = series.DateTime.toString("yyyy-MM-dd hh:mm:ss");
+                        tags["ProtocolName"] = series.params["ProtocolName"];
+                        tags["SequenceName"] = series.params["SequenceName"];
+                        tags["RepetitionTime"] = series.params["RepetitionTime"];
+                        tags["EchoTime"] = series.params["EchoTime"];
+                        tags["FlipAngle"] = series.params["FlipAngle"];
+                        tags["InPlanePhaseEncodingDirection"] = series.params["InPlanePhaseEncodingDirection"];
+                        tags["PhaseEncodeAngle"] = series.params["PhaseEncodeAngle"];
+                        tags["PhaseEncodingDirectionPositive"] = series.params["PhaseEncodingDirectionPositive"];
+                        tags["pixelX"] = series.params["pixelX"];
+                        tags["pixelY"] = series.params["pixelY"];
+                        tags["SliceThickness"] = series.params["SliceThickness"];
+                        tags["MagneticFieldStrength"] = series.params["MagneticFieldStrength"];
+                        tags["Rows"] = series.params["Rows"];
+                        tags["Columns"] = series.params["Columns"];
+                        tags["zsize"] = series.params["zsize"];
+                        tags["InversionTime"] = series.params["InversionTime"];
+                        tags["PercentSampling"] = series.params["PercentSampling"];
+                        tags["PercentPhaseFieldOfView"] = series.params["PercentPhaseFieldOfView"];
+                        tags["AcquisitionMatrix"] = series.params["AcquisitionMatrix"];
+                        tags["SliceThickness"] = series.params["SliceThickness"];
+                        tags["SpacingBetweenSlices"] = series.params["SpacingBetweenSlices"];
+                        tags["PixelBandwidth"] = series.params["PixelBandwidth"];
+                        tags["ImageType"] = series.params["ImageType"];
+                        tags["ImageComments"] = series.params["ImageComments"];
+                        tags["boldreps"] = QString("%1").arg(series.FileCount);
+
+                        /* insert the series */
+                        if (sqrl->DataFormat.startsWith("nifti", Qt::CaseInsensitive)) {
+                            n->Debug("squirrel data format is [" + sqrl->DataFormat + "], calling ArchiveNiftiSeries()");
+                            ArchiveNiftiSeries(subjectRowID, studyRowID, seriesRowID, series.SeriesNumber, tags, files);
+                        }
+                        else if ((sqrl->DataFormat == "dicom") || (sqrl->DataFormat == "orig") || (sqrl->DataFormat == "anon") || (sqrl->DataFormat == "anonfull")) {
+                            n->Debug("squirrel data format is [" + sqrl->DataFormat + "], calling ArchiveDICOMSeries()");
+                            //io->ArchiveDICOMSeries();
+                        }
+                        else {
+                            n->Debug("squirrel data format is [" + sqrl->DataFormat + "], unrecognized");
+                        }
+                    }
+                }
+            }
+
+            /* import all interventions/observations */
+
+            /* delete the tmppath */
+            if (!RemoveDir(tmppath, m)) {
+                n->Log("Error removing temp directory [" + tmppath + "] with error [" + m + "]", __FUNCTION__);
+            }
+        }
+        else {
+            n->Log("Error extracting squirrel package [" + file + "] to directory [" + tmppath + "] with message [" + m + "]", __FUNCTION__);
+        }
     }
     else {
         msg = "Unable to read [" + file + "]";
@@ -2753,6 +2868,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
 
         /* create the squirrelSubject object */
         squirrelSubject sqrlSubject = subj.GetSquirrelObject();
+        sqrlSubject.AlternateIDs.append(subj.GetAllAlternateIDs());
         sqrlSubject.Store();
         int squirrelSubjectRowID = sqrlSubject.GetObjectID();
 
@@ -3163,6 +3279,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         if (sqrlSubjectRowID < 0) {
             /* ... create subject if necessary */
             sqrlSubject = subj.GetSquirrelObject();
+            sqrlSubject.AlternateIDs.append(subj.GetPrimaryAlternateID(ser.projectid));
             sqrlSubject.Store();
             sqrlSubjectRowID = sqrlSubject.GetObjectID();
             sqrl.ResequenceSubjects();
@@ -3211,6 +3328,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         if (sqrlSubjectRowID < 0) {
             /* ... create subject if necessary */
             sqrlSubject = subj.GetSquirrelObject();
+            sqrlSubject.AlternateIDs.append(subj.GetAllAlternateIDs());
             sqrlSubject.Store();
             sqrlSubjectRowID = sqrlSubject.GetObjectID();
             sqrl.ResequenceSubjects();
@@ -3255,6 +3373,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         if (sqrlSubjectRowID < 0) {
             /* ... create subject if necessary */
             sqrlSubject = subj.GetSquirrelObject();
+            sqrlSubject.AlternateIDs.append(subj.GetAllAlternateIDs());
             sqrlSubject.Store();
             sqrlSubjectRowID = sqrlSubject.GetObjectID();
             sqrl.ResequenceSubjects();
@@ -3288,6 +3407,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         if (sqrlSubjectRowID < 0) {
             /* ... create subject if necessary */
             sqrlSubject = subj.GetSquirrelObject();
+            sqrlSubject.AlternateIDs.append(subj.GetAllAlternateIDs());
             sqrlSubject.Store();
             sqrlSubjectRowID = sqrlSubject.GetObjectID();
         }

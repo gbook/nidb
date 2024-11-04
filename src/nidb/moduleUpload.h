@@ -50,6 +50,7 @@ private:
     int InsertOrUpdateParsedSubject(int parsedSubjectRowID, QString upload_subjectcriteria, int uploadRowID, QString PatientID, QString PatientName, QString PatientSex, QString PatientBirthDate, QString &m);
     int InsertOrUpdateParsedStudy(int parsedStudyRowID, QString upload_studycriteria, int subjectRowID, int StudyNumber, QString StudyDateTime, QString Modality, QString StudyInstanceUID, QString StudyDescription, QString FileType, QString Equipment, QString Operator, QString &msg);
     int InsertOrUpdateParsedSeries(int parsedSeriesRowID, QString upload_seriescriteria, int studyRowID, QString SeriesDateTime, int SeriesNumber, QString SeriesInstanceUID, QStringList &files, int &numfiles, QString SeriesDescription, QString ProtocolName, QString RepetitionTime, QString EchoTime, QString SpacingBetweenSlices, QString SliceThickness, int Rows, int Columns, QString &msg);
+    UploadOptions GetUploadOptions(int uploadRowID);
 };
 
 #endif // MODULEUPLOAD_H

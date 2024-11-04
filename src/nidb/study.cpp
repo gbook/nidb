@@ -60,6 +60,10 @@ study::study(int enrollmentRowID, QString studyDateTime, QString modality, nidb 
     n = a;
     searchCriteria = studydatetimemodality;
 
+    studyDateTime = studyDateTime.replace("T", " ");
+    if (studyDateTime.contains(".")) /* if it ends with a .millisecond */
+        studyDateTime.chop(4); /* remove last 4 characters */
+
     _enrollmentid = enrollmentRowID;
     _studydatetime = QDateTime::fromString(studyDateTime, "yyyy-MM-dd hh:mm:ss");
     _modality = modality;
