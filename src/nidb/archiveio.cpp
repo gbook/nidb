@@ -3229,7 +3229,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         return false;
     }
 
-    n->Log("libsquirrel: " + sqrl.GetLogBuffer());
+    n->Log("libsquirrel message buffer:\n" + sqrl.GetLogBuffer() + "\n");
     q.prepare("select * from packages where package_id = :packageid");
     q.bindValue(":packageid", packageid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
@@ -3251,7 +3251,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
     else {
         return 0;
     }
-    n->Log("libsquirrel: " + sqrl.GetLogBuffer());
+    n->Log("libsquirrel message buffer:\n" + sqrl.GetLogBuffer() + "\n");
 
     /* SERIES - add all series associated with this package, first */
     q.prepare("select * from package_series where package_id = :packageid");
@@ -3269,7 +3269,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
             continue;
         }
         else {
-            n->Log(QString("Adding series [%1,%2] to squirrel package").arg(seriesRowID).arg(modality));
+            n->Log(QString("Adding series [%1,%2] to squirrel package...").arg(seriesRowID).arg(modality));
         }
 
         /* get squirrel SUBJECT (create the object in the package if it doesn't already exist) */
@@ -3306,7 +3306,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         sqrl.ResequenceSeries(sqrlStudyRowID);
     }
     n->Log("Finished adding series to package");
-    n->Log("libsquirrel: " + sqrl.GetLogBuffer());
+    n->Log("libsquirrel message buffer:\n" + sqrl.GetLogBuffer() + "\n");
 
     /* ANALYSES - add all analysis associated with this package */
     q.prepare("select b.* from package_analyses a left join analysis b on a.analysis_id = b.analysis_id where a.package_id = :packageid");
@@ -3354,7 +3354,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         sqrlAnalysis.studyRowID = sqrlStudyRowID;
         sqrlAnalysis.Store();
     }
-    n->Log("libsquirrel: " + sqrl.GetLogBuffer());
+    n->Log("libsquirrel message buffer:\n" + sqrl.GetLogBuffer() + "\n");
 
     /* MEASURES - add all measures associated with this package */
     q.prepare("select b.measure_id, c.subject_id from package_measures a left join measures b on a.measure_id = b.measure_id left join enrollment c on b.enrollment_id = c.enrollment_id where a.package_id = :packageid");
@@ -3388,7 +3388,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         sqrlObservation.subjectRowID = sqrlSubjectRowID;
         sqrlObservation.Store();
     }
-    n->Log("libsquirrel: " + sqrl.GetLogBuffer());
+    n->Log("libsquirrel message buffer:\n" + sqrl.GetLogBuffer() + "\n");
 
     /* DRUGS - add all drugs associated with this package */
     q.prepare("select b.drug_id, c.subject_id from package_drugs a left join drugs b on a.drug_id = b.drug_id left join enrollment c on b.enrollment_id = c.enrollment_id where a.package_id = :packageid");
@@ -3421,7 +3421,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         sqrlIntervention.subjectRowID = sqrlSubjectRowID;
         sqrlIntervention.Store();
     }
-    n->Log("libsquirrel: " + sqrl.GetLogBuffer());
+    n->Log("libsquirrel message buffer:\n" + sqrl.GetLogBuffer() + "\n");
 
     /* PIPELINES - add all pipelines associated with this package */
     q.prepare("select * from package_pipelines where package_id = :packageid");
@@ -3438,7 +3438,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         sqrlPipeline = p.GetSquirrelObject();
         sqrlPipeline.Store();
     }
-    n->Log("libsquirrel: " + sqrl.GetLogBuffer());
+    n->Log("libsquirrel message buffer:\n" + sqrl.GetLogBuffer() + "\n");
 
     /* EXPERIMENTS - add all experiments associated with this package */
     q.prepare("select * from package_experiments where package_id = :packageid");
@@ -3466,7 +3466,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         sqrlExperiment.stagedFiles = stagedFileList;
         sqrlExperiment.Store();
     }
-    n->Log("libsquirrel: " + sqrl.GetLogBuffer());
+    n->Log("libsquirrel message buffer:\n" + sqrl.GetLogBuffer() + "\n");
 
     if (sqrl.Write(false)) {
         msg = sqrl.GetLog();

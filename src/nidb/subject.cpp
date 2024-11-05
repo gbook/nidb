@@ -206,7 +206,7 @@ QStringList subject::GetAllAlternateIDs() {
     QSqlQuery q;
     q.prepare("select * from subject_altuid where subject_id = :subjectid");
     q.bindValue(":subjectid", _subjectid);
-    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     while (q.next()) {
         altIDs.append(q.value("altuid").toString());
     }
@@ -225,8 +225,8 @@ QString subject::GetPrimaryAlternateID(int projectRowID) {
     q.prepare("select * from subject_altuid a left join enrollment b on a.enrollment_id = b.enrollment_id where a.subject_id = :subjectid and b.project_id = :projectid and a.isprimary = 1");
     q.bindValue(":subjectid", _subjectid);
     q.bindValue(":projectid", projectRowID);
-    n->Log(n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true));
-    n->Log(QString("Found [%1] alternate IDs for subjectRowID [%2] and projectRowID [%3]").arg(q.size()).arg(_subjectid).arg(projectRowID), __FUNCTION__);
+    n->Log(n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__));
+    //n->Log(QString("Found [%1] alternate IDs for subjectRowID [%2] and projectRowID [%3]").arg(q.size()).arg(_subjectid).arg(projectRowID), __FUNCTION__);
     if (q.size() > 0) {
         q.first();
         primaryAltID = q.value("altuid").toString();

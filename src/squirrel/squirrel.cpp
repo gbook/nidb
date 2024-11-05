@@ -2869,3 +2869,71 @@ bool squirrel::ExtractArchiveToDirectory(QString archivePath, QString destinatio
         return false;
     }
 }
+
+
+/* ------------------------------------------------------------ */
+/* ----- SetFileMode ------------------------------------------ */
+/* ------------------------------------------------------------ */
+/**
+ * @brief Sets the file mode when creating/writing packages. Either create a new package, or open an existing package for editing.
+ * @param m Either `FileMode::NewPackage` or `FileMode::ExistingPackage`
+ */
+//void squirrel::SetFileMode(FileMode m) {
+//    fileMode = m;
+
+    //if (fileMode == FileMode::NewPackage)
+//        Log("File mode set", __FUNCTION__);
+    //else
+    //    Log("File mode set to ExistingPackage", __FUNCTION__);
+//}
+
+
+/* ------------------------------------------------------------ */
+/* ----- SetDebugSQL ------------------------------------------ */
+/* ------------------------------------------------------------ */
+/**
+ * @brief Set the option to print SQL debugging statements
+ * @param d `true` to print debug statements, `false` otherwise
+ */
+void squirrel::SetDebugSQL(bool d) {
+    debugSQL = d;
+
+    if (debugSQL)
+        Log("DebugSQL set to ON", __FUNCTION__);
+    else
+        Log("DebugSQL set to OFF", __FUNCTION__);
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- SetOverwritePackage ---------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief Set the option to overwrite an existing package
+ * @param o `true` to overwrite an existing package, `false` otherwise
+ */
+void squirrel::SetOverwritePackage(bool o) {
+    overwritePackage = o;
+
+    if (overwritePackage)
+        Log("OverwritePackage set to ON", __FUNCTION__);
+    else
+        Log("OverwritePackage set to OFF", __FUNCTION__);
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- SetQuickRead ----------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief Set the option to do a quick read (*not* reading the params.json files) or not
+ * @param q `true` to perform a quick read, `false` otherwise
+ */
+void squirrel::SetQuickRead(bool q) {
+    quickRead = q;
+
+    if (quickRead)
+        Log("QuickRead set to ON (params.json files will be read)", __FUNCTION__);
+    else
+        Log("QuickRead set to OFF (params.json files will NOT be read)", __FUNCTION__);
+}

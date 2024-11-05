@@ -63,9 +63,9 @@ public:
     void SetPackagePath(QString p) { packagePath = p; }
     QString GetPackagePath();
     void SetFileMode(FileMode m) { fileMode = m; } /*!< Set the file mode to either NewPackage or ExistingPackage */
-    void SetDebugSQL(bool d) { debugSQL = d; }
-    void SetOverwritePackage(bool o) { overwritePackage = o; }
-    void SetQuickRead(bool q) { quickRead = q; }
+    void SetDebugSQL(bool d);
+    void SetOverwritePackage(bool o);
+    void SetQuickRead(bool q);
     bool Extract(QString destinationDir, QString &m);
 
     /* package JSON elements */
