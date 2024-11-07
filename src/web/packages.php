@@ -1762,9 +1762,9 @@
 		
 		/* add any enrollments */
 		if ((count($enrollmentids) > 0) && (is_array($enrollmentids))) {
-			//PrintVariable($enrollments);
 			foreach ($enrollmentids as $enrollmentid) {
-				$sqlstring = "insert ignore into package_enrollments (package_id, enrollment_id) values ($packageid, $enrollmentid)";
+				list($uid, $subjectid, $altuid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
+				$sqlstring = "insert ignore into package_enrollments (package_id, enrollment_id, package_subjectid) values ($packageid, $enrollmentid, '$altuid')";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
 			$numobjects += count($enrollmentids);
@@ -1934,27 +1934,27 @@
 		$pkg['notes'] = $row['package_notes'];
 		
 		MarkTime("Getting enrollment data");
+
+		$altIDMapping = array();
 		
 		/* get enrollment data */
 		$sqlstring = "select * from package_enrollments where package_id = $packageid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$packagesenrollmentid = $row['packageenrollment_id'];
+			$packageenrollmentid = $row['packageenrollment_id'];
 			$enrollmentid = $row['enrollment_id'];
 			$optionflags = $row['option_flags'];
-			$pkgsubjectid = $row['pkg_subjectid'];
+			$packagesubjectid = $row['package_subjectid'];
 			
-			//echo "enrollmentid [$enrollmentid] D<br>";
-			list($uid, $subjectid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
-			
+			list($uid, $subjectid, $altuid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
 			$subjects[$uid][$studynum][$modality][$seriesnum]['objectid'] = -1;
-			//if (contains($optionflags, 'DRUGS')) {
-			//	$drugs[$uid]['drugs'] = GetDrugsByEnrollment($enrollmentid);
-			//}
-			//if (contains($optionflags, 'MEASURES')) {
-			//	$measures[$uid]['measures'] = GetVitalsByEnrollment($enrollmentid);
-			//	$measures[$uid]['measures'] .= GetMeasuresByEnrollment($enrollmentid);
-			//}
+			
+			/* update the package_enrollment table with the alternate UID specific to this enrollment (this fixes packages before the primary alt uid was used) */
+			if ($altuid != "") {
+				$altIDMapping[$uid] = $altuid;
+				$sqlstringA = "update package_enrollments set package_subjectid = '$altuid' where enrollment_id = $enrollmentid";
+				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+			}
 		}
 		
 		MarkTime("Getting series data");
@@ -1979,6 +1979,16 @@
 				$subjects[$uid][$studynum][$modality][$seriesnum]['projectname'] = $projectname;
 				$totalbytes += $seriessize;
 				$totalfiles += $numfiles;
+				
+				if (!isset($altIDMapping[$uid]) || $altIDMapping[$uid] == "" || $altIDMapping[$uid] == $uid) {
+					/* update the package_enrollment table with the alternate UID specific to this enrollment (this fixes packages before the primary alt uid was used) */
+					list($uidA, $subjectidA, $altuid, $projectnameA, $projectidA) = GetEnrollmentInfo($enrollmentid);
+					if ($altuid != "") {
+						$altIDMapping[$uid] = $altuid;
+						$sqlstringA = "update package_enrollments set package_subjectid = '$altuid' where enrollment_id = $enrollmentid";
+						$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+					}
+				}
 			}
 		}
 
@@ -1990,12 +2000,22 @@
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$enrollmentid = $row['enrollment_id'];
 			$uid = $row['uid'];
-			//list($uid, $subjectid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
+			//list($uid, $subjectid, $altuid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
 			$objectid = $row['packagemeasure_id'];
 			$observations[$uid][$objectid]['observationid'] = $row['measure_id'];
 			$observations[$uid][$objectid]['name'] = $row['measure_name'];
 			$observations[$uid][$objectid]['value'] = $row['measure_value'];
 			$observations[$uid][$objectid]['startdate'] = $row['measure_startdate'];
+			
+			if (!isset($altIDMapping[$uid]) || $altIDMapping[$uid] == "" || $altIDMapping[$uid] == $uid) {
+				/* update the package_enrollment table with the alternate UID specific to this enrollment (this fixes packages before the primary alt uid was used) */
+				list($uidA, $subjectidA, $altuid, $projectnameA, $projectidA) = GetEnrollmentInfo($enrollmentid);
+				if ($altuid != "") {
+					$altIDMapping[$uid] = $altuid;
+					$sqlstringA = "update package_enrollments set package_subjectid = '$altuid' where enrollment_id = $enrollmentid";
+					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+				}
+			}
 		}
 
 		MarkTime("Getting intervention data");
@@ -2006,11 +2026,21 @@
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$enrollmentid = $row['enrollment_id'];
 			$uid = $row['uid'];
-			//list($uid, $subjectid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
+			//list($uid, $subjectid, $altuid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
 			$objectid = $row['packagedrug_id'];
 			$interventions[$uid][$objectid]['drugid'] = $row['drug_id'];
 			$interventions[$uid][$objectid]['name'] = $row['drug_name'];
 			$interventions[$uid][$objectid]['startdate'] = $row['drug_startdate'];
+
+			if (!isset($altIDMapping[$uid]) || $altIDMapping[$uid] == "" || $altIDMapping[$uid] == $uid) {
+				/* update the package_enrollment table with the alternate UID specific to this enrollment (this fixes packages before the primary alt uid was used) */
+				list($uidA, $subjectidA, $altuid, $projectnameA, $projectidA) = GetEnrollmentInfo($enrollmentid);
+				if ($altuid != "") {
+					$altIDMapping[$uid] = $altuid;
+					$sqlstringA = "update package_enrollments set package_subjectid = '$altuid' where enrollment_id = $enrollmentid";
+					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+				}
+			}
 		}
 		
 		MarkTime("Getting experiment data");
@@ -2074,8 +2104,20 @@
 			
 			$totalanalysisfiles += $row['analysis_numfiles'];
 			$totalanalysisbytes += $row['analysis_disksize'];
+			
+			if (!isset($altIDMapping[$uid]) || $altIDMapping[$uid] == "" || $altIDMapping[$uid] == $uid) {
+				/* update the package_enrollment table with the alternate UID specific to this enrollment (this fixes packages before the primary alt uid was used) */
+				list($uid, $subjectid, $altuid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
+				if ($altuid != "") {
+					$altIDMapping[$uid] = $altuid;
+					$sqlstringA = "update package_enrollments set package_subjectid = '$altuid' where enrollment_id = $enrollmentid";
+					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+				}
+			}
 		}
 
+		//PrintVariable($altIDMapping);
+		
 		/* get counts of all of the data objects */
 		$numsubjects = count($subjects);
 		$numstudies = 0;
@@ -2410,6 +2452,8 @@
 				foreach ($subjects as $uid =>$studies) {
 					if ($uid != "") {
 						
+						$altuid = $altIDMapping[$uid];
+						
 						ksort($studies, SORT_NATURAL);
 						foreach ($studies as $studynum => $modalities) {
 
@@ -2423,7 +2467,7 @@
 									$studydatetime = $ser['studydatetime'];
 									$projectname = $ser['projectname'];
 									
-									$seriesRowData[] = "{ id: $objectid, uid: \"$uid\", studynum: \"$studynum\", studydatetime: \"$studydatetime\", projectname: \"$projectname\", modality: \"$modality\", seriesnum: \"$seriesnum\" }";
+									$seriesRowData[] = "{ id: $objectid, uid: \"$uid\", altuid: \"$altuid\", studynum: \"$studynum\", studydatetime: \"$studydatetime\", projectname: \"$projectname\", modality: \"$modality\", seriesnum: \"$seriesnum\" }";
 								}
 							}
 						}
@@ -2460,7 +2504,8 @@
 						// each entry here represents one column
 						columnDefs: [
 							{ field: 'id', hide: true },
-							{ headerName: "UID", field: "uid", editable: false, headerCheckboxSelection: true, checkboxSelection: true },
+							{ headerName: "UID", field: "uid", editable: false },
+							{ headerName: "ID", field: "altuid", editable: false },
 							{ headerName: "Study Num", field: "studynum", editable: false },
 							{ headerName: "Series Num", field: "seriesnum", editable: false },
 							{ headerName: "Study Date", field: "studydatetime", editable: false },
@@ -2473,9 +2518,9 @@
 						// default col def properties get applied to all columns
 						defaultColDef: {sortable: true, filter: true, resizable: true},
 
-						rowSelection: 'multiple', // allow rows to be selected
+						rowSelection: { mode: 'multiRow', checkboxes: true, headerCheckbox: true, enableSelectionWithoutKeys: true }, // allow rows to be selected
 						animateRows: false, // have rows animate to new positions when sorted
-						rowMultiSelectWithClick: true,
+						//rowMultiSelectWithClick: true,
 						suppressMovableColumns: true
 					};
 
@@ -2563,7 +2608,7 @@
 						// each entry here represents one column
 						columnDefs: [
 							{ field: 'id', hide: true },
-							{ headerName: "UID", field: "uid", editable: false, headerCheckboxSelection: true, checkboxSelection: true },
+							{ headerName: "UID", field: "uid", editable: false },
 							{ headerName: "Name", field: "name", editable: false },
 							{ headerName: "Value", field: "value", editable: false },
 							{ headerName: "Date", field: "date", editable: false }
@@ -2574,9 +2619,9 @@
 						// default col def properties get applied to all columns
 						defaultColDef: {sortable: true, filter: true, resizable: true},
 
-						rowSelection: 'multiple', // allow rows to be selected
+						rowSelection: { mode: 'multiRow', checkboxes: true, headerCheckbox: true, enableSelectionWithoutKeys: true }, // allow rows to be selected
 						animateRows: false, // have rows animate to new positions when sorted
-						rowMultiSelectWithClick: true,
+						//rowMultiSelectWithClick: true,
 						suppressMovableColumns: true
 					};
 

@@ -3253,6 +3253,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
     }
     n->Log("libsquirrel message buffer:\n" + sqrl.GetLogBuffer() + "\n");
 
+    int lastProjectRowID = -1;
     /* SERIES - add all series associated with this package, first */
     q.prepare("select * from package_series where package_id = :packageid");
     q.bindValue(":packageid", packageid);
@@ -3271,11 +3272,15 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         else {
             n->Log(QString("Adding series [%1,%2] to squirrel package...").arg(seriesRowID).arg(modality));
         }
+        lastProjectRowID = ser.projectid;
 
         /* get squirrel SUBJECT (create the object in the package if it doesn't already exist) */
         squirrelSubject sqrlSubject;
         subject subj(ser.subjectid, n);
-        int sqrlSubjectRowID = sqrl.FindSubject(subj.UID());
+        QString subjectID = subj.GetPrimaryAlternateID(lastProjectRowID);
+        if (subjectID == "")
+            subjectID = subj.UID();
+        int sqrlSubjectRowID = sqrl.FindSubject(subjectID);
         if (sqrlSubjectRowID < 0) {
             /* ... create subject if necessary */
             sqrlSubject = subj.GetSquirrelObject();
@@ -3324,7 +3329,11 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
 
         /* get squirrel SUBJECT (create the object in the package if it doesn't already exist) */
         squirrelSubject sqrlSubject;
-        int sqrlSubjectRowID = sqrl.FindSubject(subj.UID());
+        subject subj(ser.subjectid, n);
+        QString subjectID = subj.GetPrimaryAlternateID(lastProjectRowID);
+        if (subjectID == "")
+            subjectID = subj.UID();
+        int sqrlSubjectRowID = sqrl.FindSubject(subjectID);
         if (sqrlSubjectRowID < 0) {
             /* ... create subject if necessary */
             sqrlSubject = subj.GetSquirrelObject();
@@ -3369,7 +3378,11 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
 
         /* get squirrel SUBJECT (create the object in the package if it doesn't already exist) */
         squirrelSubject sqrlSubject;
-        int sqrlSubjectRowID = sqrl.FindSubject(subj.UID());
+        subject subj(ser.subjectid, n);
+        QString subjectID = subj.GetPrimaryAlternateID(lastProjectRowID);
+        if (subjectID == "")
+            subjectID = subj.UID();
+        int sqrlSubjectRowID = sqrl.FindSubject(subjectID);
         if (sqrlSubjectRowID < 0) {
             /* ... create subject if necessary */
             sqrlSubject = subj.GetSquirrelObject();
@@ -3403,7 +3416,10 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
 
         /* get squirrel SUBJECT (create the object in the package if it doesn't already exist) */
         squirrelSubject sqrlSubject;
-        int sqrlSubjectRowID = sqrl.FindSubject(subj.UID());
+        QString subjectID = subj.GetPrimaryAlternateID(lastProjectRowID);
+        if (subjectID == "")
+            subjectID = subj.UID();
+        int sqrlSubjectRowID = sqrl.FindSubject(subjectID);
         if (sqrlSubjectRowID < 0) {
             /* ... create subject if necessary */
             sqrlSubject = subj.GetSquirrelObject();

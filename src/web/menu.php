@@ -144,7 +144,7 @@
 				<?
 			}
 			elseif (($enrollmentid != "") && ($page == "measures.php")) {
-				list($uid, $subjectid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
+				list($uid, $subjectid, $altuid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
 				?>
 				<a href="projects.php?action=displayprojectinfo&id=<?=$projectid?>" class="item"><?=$projectname?></a>
 				<a href="subjects.php?id=<?=$subjectid?>" class="item"><?=$uid?></a>
