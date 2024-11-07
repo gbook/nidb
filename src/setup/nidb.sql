@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Nov 04, 2024 at 08:08 PM
+-- Generation Time: Nov 07, 2024 at 08:15 PM
 -- Server version: 10.3.28-MariaDB
 -- PHP Version: 7.2.24
 
@@ -2086,7 +2086,7 @@ CREATE TABLE `package_enrollments` (
   `packageenrollment_id` int(11) NOT NULL,
   `package_id` int(11) NOT NULL,
   `enrollment_id` int(11) NOT NULL,
-  `pkg_subjectid` varchar(255) DEFAULT NULL COMMENT 'UID or other ID specific to this subject within the package'
+  `package_subjectid` varchar(255) DEFAULT NULL COMMENT 'UID or other ID specific to this subject within the package'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -2160,7 +2160,8 @@ CREATE TABLE `package_studies` (
 CREATE TABLE `package_subjects` (
   `packagesubject_id` int(11) NOT NULL,
   `package_id` int(11) NOT NULL,
-  `subject_id` int(11) NOT NULL
+  `subject_id` int(11) NOT NULL,
+  `subjectPrimaryID` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
