@@ -192,7 +192,7 @@ QJsonObject squirrelIntervention::ToJSON() {
 
 
 /* ------------------------------------------------------------ */
-/* ----- PrintIntervention -------------------------------------------- */
+/* ----- PrintIntervention ------------------------------------ */
 /* ------------------------------------------------------------ */
 /**
  * @brief squirrelIntervention::PrintIntervention

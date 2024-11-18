@@ -223,9 +223,9 @@ int main(int argc, char *argv[])
 
         /* command line flag options */
         p.addOption(QCommandLineOption(QStringList() << "d" << "debug", "Enable debugging"));
-        p.addOption(QCommandLineOption(QStringList() << "object", "List an object [package  subject  study  series  experiment  pipeline  groupanalysis  datadictionary].", "object"));
+        p.addOption(QCommandLineOption(QStringList() << "object", "List items for object [package  subject  study  series  observation  intervention  experiment  pipeline  groupanalysis  datadictionary].", "object"));
         p.addOption(QCommandLineOption(QStringList() << "subjectid", "Subject ID.", "subjectid"));
-        p.addOption(QCommandLineOption(QStringList() << "studynum", "Study Number\n  -subject-id must also be specified.", "studynum"));
+        p.addOption(QCommandLineOption(QStringList() << "studynum", "Study Number\n  --subjectid must also be specified.", "studynum"));
         p.addOption(QCommandLineOption(QStringList() << "details", "Include details when printing lists."));
         p.addOption(QCommandLineOption(QStringList() << "tree", "Display tree view of data."));
         p.addOption(QCommandLineOption(QStringList() << "csv", "Display csv output of data"));
@@ -250,7 +250,7 @@ int main(int argc, char *argv[])
         else if (tree)
             printType = PrintingType::Tree;
         else
-            printType = PrintingType::IDList;
+            printType = PrintingType::List;
 
         if (object == "")
             object = "package";
@@ -269,44 +269,62 @@ int main(int argc, char *argv[])
             sqrl->SetFileMode(FileMode::ExistingPackage);
             sqrl->SetQuickRead(true);
             sqrl->Read();
-
-            sqrl->Debug("Reading package...", __FUNCTION__);
-            if (object == "package") {
-                sqrl->PrintPackage();
-            }
-            else if (object == "subject") {
-                sqrl->PrintSubjects(printType);
-            }
-            else if (object == "study") {
-                qint64 subjectRowID = sqrl->FindSubject(subjectID);
-                if (subjectRowID < 0)
-                    utils::Print(QString("Subject not found. Searched for subject [%1]").arg(subjectID));
-                else
-                    sqrl->PrintStudies(subjectRowID, details);
-            }
-            else if (object == "series") {
-                qint64 subjectRowID = sqrl->FindSubject(subjectID);
-                if (subjectRowID < 0)
-                    utils::Print(QString("Subject not found. Searched for subject [%1]").arg(subjectID));
-                else {
-                    qint64 studyRowID = sqrl->FindStudy(subjectID, studyNum);
-                    if (studyRowID < 0)
-                        utils::Print(QString("Study not found. Searched for subject [%1] study [%2]").arg(subjectID).arg(studyNum));
+            if (sqrl->IsValid()) {
+                sqrl->Debug("Reading package...", __FUNCTION__);
+                if (object == "package") {
+                    sqrl->PrintPackage();
+                }
+                else if (object == "subject") {
+                    sqrl->PrintSubjects(printType);
+                }
+                else if (object == "study") {
+                    qint64 subjectRowID = sqrl->FindSubject(subjectID);
+                    if (subjectRowID < 0)
+                        utils::Print(QString("Subject [%1] was not found in this package").arg(subjectID));
                     else
-                        sqrl->PrintSeries(studyRowID, details);
+                        sqrl->PrintStudies(subjectRowID, details);
+                }
+                else if (object == "series") {
+                    qint64 subjectRowID = sqrl->FindSubject(subjectID);
+                    if (subjectRowID < 0)
+                        utils::Print(QString("Subject [%1] was not found in this package").arg(subjectID));
+                    else {
+                        qint64 studyRowID = sqrl->FindStudy(subjectID, studyNum);
+                        if (studyRowID < 0)
+                            utils::Print(QString("Study not found. Searched for subject [%1] study [%2]").arg(subjectID).arg(studyNum));
+                        else
+                            sqrl->PrintSeries(studyRowID, details);
+                    }
+                }
+                else if (object == "observation") {
+                    qint64 subjectRowID = sqrl->FindSubject(subjectID);
+                    if (subjectRowID < 0)
+                        utils::Print(QString("Subject [%1] was not found in this package").arg(subjectID));
+                    else
+                        sqrl->PrintObservations(subjectRowID, printType);
+                }
+                else if (object == "intervention") {
+                    qint64 subjectRowID = sqrl->FindSubject(subjectID);
+                    if (subjectRowID < 0)
+                        utils::Print(QString("Subject [%1] was not found in this package").arg(subjectID));
+                    else
+                        sqrl->PrintInterventions(subjectRowID, printType);
+                }
+                else if (object == "experiment") {
+                    sqrl->PrintExperiments(details);
+                }
+                else if (object == "pipeline") {
+                    sqrl->PrintPipelines(details);
+                }
+                else if (object == "groupanalysis") {
+                    sqrl->PrintGroupAnalyses(details);
+                }
+                else if (object == "datadictionary") {
+                    sqrl->PrintDataDictionary(details);
                 }
             }
-            else if (object == "experiment") {
-                sqrl->PrintExperiments(details);
-            }
-            else if (object == "pipeline") {
-                sqrl->PrintPipelines(details);
-            }
-            else if (object == "groupanalysis") {
-                sqrl->PrintGroupAnalyses(details);
-            }
-            else if (object == "datadictionary") {
-                sqrl->PrintDataDictionary(details);
+            else {
+                utils::Print("Squirrel library has not loaded correctly. See error messages above");
             }
 
             delete sqrl;

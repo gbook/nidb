@@ -57,7 +57,7 @@ subject::subject(QString uid, bool checkAltUID, nidb *a)
             /* check for alternate UID */
             q.prepare("select * from subjects a left join subject_altuid b on a.subject_id = b.subject_id left join enrollment c on a.subject_id = c.subject_id WHERE (a.uid = :altuid or a.uid = SHA1(:altuid) or b.altuid = :altuid or b.altuid = SHA1(:altuid))");
             q.bindValue(":altuid", uid);
-            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
             if (q.size() < 1) {
                 msgs << "Subject not found by AltUID [" + uid + "]. Subject could not be found";
 
@@ -225,12 +225,15 @@ QString subject::GetPrimaryAlternateID(int projectRowID) {
     q.prepare("select * from subject_altuid a left join enrollment b on a.enrollment_id = b.enrollment_id where a.subject_id = :subjectid and b.project_id = :projectid and a.isprimary = 1");
     q.bindValue(":subjectid", _subjectid);
     q.bindValue(":projectid", projectRowID);
-    n->Log(n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__));
-    //n->Log(QString("Found [%1] alternate IDs for subjectRowID [%2] and projectRowID [%3]").arg(q.size()).arg(_subjectid).arg(projectRowID), __FUNCTION__);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.size() > 0) {
         q.first();
         primaryAltID = q.value("altuid").toString();
+        //n->Log(QString("Found primary alternate ID [%1] for subjectRowID [%2] and projectRowID [%3]").arg(primaryAltID).arg(_subjectid).arg(projectRowID), __FUNCTION__);
     }
+    else
+        n->Log(QString("Unable to find primary alternate ID for subjectRowID [%1] and projectRowID [%2]").arg(_subjectid).arg(projectRowID), __FUNCTION__);
+
 
     return primaryAltID;
 }

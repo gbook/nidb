@@ -31,12 +31,13 @@
 
 qint64 totalbytes(0);
 double blocksize(0.0);
-double lastupdate(0.0);
+qint64 lastupdate(0);
 
 bool totalArchiveSizeCallback(qint64 val) {
-    utils::Print("Total package size is [" + utils::HumanReadableSize(val) + "]");
+    //utils::Print(QString("Total package size in bytes [%1]").arg(val));
+    //utils::Print("Total package size is [" + utils::HumanReadableSize(val) + "]");
     totalbytes = val;
-    blocksize = totalbytes/100.0;
+    blocksize = (double)totalbytes/100.0;
     return true;
 }
 
@@ -189,6 +190,7 @@ bool squirrel::InitializeDatabase() {
     QSqlQuery q(QSqlDatabase::database("squirrel"));
 
     /* NOTE - SQLite does not support multiple statements, so each table needs to be created individualy */
+
     q.prepare(tableAnalysis);
     if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error creating table [Analysis]", __FUNCTION__); utils::Print("Error creating table [Analysis]"); return false; }
 
@@ -320,7 +322,7 @@ bool squirrel::Read() {
     }
     else if (root.contains("subjects")) {
         jsonSubjects = root["subjects"].toArray();
-        Log(QString("NOTICE: Found [%1] subjects in the root of the JSON. (This is a slightly malformed squirrel file, but I'll accept it)").arg(numSubjects), __FUNCTION__);
+        Log(QString("NOTICE: Found [%1] subjects in the root of the JSON. (This is a slightly malformed squirrel file, but I'll accept it)").arg(jsonSubjects.size()), __FUNCTION__);
     }
     else {
         Log("root does not contain 'data' or 'subjects'", __FUNCTION__);
@@ -334,8 +336,8 @@ bool squirrel::Read() {
     qint64 i(0);
     for (auto a : jsonSubjects) {
         i++;
-        Log(QString("Reading subject %1 of %2").arg(i).arg(numSubjects), __FUNCTION__);
-        utils::Print(QString("Reading subject %1 of %2").arg(i).arg(numSubjects), __FUNCTION__);
+        Log(QString("Reading subject %1 of %2").arg(i).arg(jsonSubjects.size()), __FUNCTION__);
+        utils::Print(QString("Reading subject %1 of %2").arg(i).arg(jsonSubjects.size()), __FUNCTION__);
 
         QJsonObject jsonSubject = a.toObject();
 
@@ -964,7 +966,7 @@ QString squirrel::GetLogBuffer() {
 /**
  * @brief Print the details of a package, including all objects
  */
-QString squirrel::Print() {
+QString squirrel::Print(bool detail) {
     QString str;
 
     /* print package info */
@@ -997,15 +999,20 @@ QString squirrel::Print() {
 
         /* iterate through observations */
         QList<squirrelObservation> observations = GetObservationList(subjectRowID);
-        foreach (squirrelObservation observation, observations) {
-            str += observation.PrintObservation();
-        }
+        if (detail)
+            foreach (squirrelObservation observation, observations)
+                str += observation.PrintObservation();
+        else
+            str += QString("[%1 observations]").arg(observations.size());
 
         /* iterate through Interventions */
         QList<squirrelIntervention> Interventions = GetInterventionList(subjectRowID);
-        foreach (squirrelIntervention Intervention, Interventions) {
-            str += Intervention.PrintIntervention();
-        }
+        if (detail)
+            foreach (squirrelIntervention Intervention, Interventions)
+                str += Intervention.PrintIntervention();
+        else
+            str += QString("[%1 interventions]").arg(observations.size());
+
     }
 
     /* iterate through pipelines */
@@ -1487,6 +1494,62 @@ QString squirrel::PrintSeries(qint64 studyRowID, bool details) {
     }
     if (!details)
         str += utils::Print("Series: " + seriesNumbers.join(" "));
+
+    return str;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- PrintObservations ------------------------------------ */
+/* ------------------------------------------------------------ */
+/**
+ * @brief Print all of the observations for a given subjectRowID
+ * @param subjectRowID The subjectRowID
+ * @param printType One of the PrintingType enumerations
+ */
+QString squirrel::PrintObservations(qint64 subjectRowID, PrintingType printType) {
+    QString str;
+
+    QList <squirrelObservation> observations = GetObservationList(subjectRowID);
+    QStringList observationNames;
+    foreach (squirrelObservation o, observations) {
+        if (o.Get()) {
+            if (printType == PrintingType::Details)
+                str += o.PrintObservation();
+            else
+                observationNames.append(o.ObservationName);
+        }
+    }
+    if (printType == PrintingType::Details)
+        str += utils::Print("Observations: " + observationNames.join(" "));
+
+    return str;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- PrintInterventions ----------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief Print all of the interventions for a given subjectRowID
+ * @param subjectRowID The subjectRowID
+ * @param printType One of the PrintingType enumerations
+ */
+QString squirrel::PrintInterventions(qint64 subjectRowID, PrintingType printType) {
+    QString str;
+
+    QList <squirrelIntervention> interventions = GetInterventionList(subjectRowID);
+    QStringList interventionNames;
+    foreach (squirrelIntervention o, interventions) {
+        if (o.Get()) {
+            if (printType == PrintingType::Details)
+                str += o.PrintIntervention();
+            else
+                interventionNames.append(o.InterventionName);
+        }
+    }
+    if (printType == PrintingType::Details)
+        str += utils::Print("Interventions: " + interventionNames.join(" "));
 
     return str;
 }
@@ -2553,7 +2616,7 @@ bool squirrel::RemoveDataDictionary(qint64 dataDictionaryRowID) {
 
 
 /* ------------------------------------------------------------ */
-/* ----- RemoveIntervention ------------------------------------------- */
+/* ----- RemoveIntervention ----------------------------------- */
 /* ------------------------------------------------------------ */
 bool squirrel::RemoveIntervention(qint64 InterventionRowID) {
 
@@ -2567,7 +2630,7 @@ bool squirrel::RemoveIntervention(qint64 InterventionRowID) {
 
 
 /* ------------------------------------------------------------ */
-/* ----- RemoveObservation ---------------------------------------- */
+/* ----- RemoveObservation ------------------------------------ */
 /* ------------------------------------------------------------ */
 bool squirrel::RemoveObservation(qint64 observationRowID) {
 
@@ -2869,23 +2932,6 @@ bool squirrel::ExtractArchiveToDirectory(QString archivePath, QString destinatio
         return false;
     }
 }
-
-
-/* ------------------------------------------------------------ */
-/* ----- SetFileMode ------------------------------------------ */
-/* ------------------------------------------------------------ */
-/**
- * @brief Sets the file mode when creating/writing packages. Either create a new package, or open an existing package for editing.
- * @param m Either `FileMode::NewPackage` or `FileMode::ExistingPackage`
- */
-//void squirrel::SetFileMode(FileMode m) {
-//    fileMode = m;
-
-    //if (fileMode == FileMode::NewPackage)
-//        Log("File mode set", __FUNCTION__);
-    //else
-    //    Log("File mode set to ExistingPackage", __FUNCTION__);
-//}
 
 
 /* ------------------------------------------------------------ */

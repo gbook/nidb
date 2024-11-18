@@ -41,7 +41,7 @@
 #include "squirrelVersion.h"
 
 enum FileMode { NewPackage, ExistingPackage };
-enum PrintingType { IDList, Details, CSV, Tree };
+enum PrintingType { List, Details, CSV, Tree };
 typedef QPair<QString, QString> QStringPair;
 typedef QList<QStringPair> pairList;
 
@@ -59,7 +59,7 @@ public:
     bool Read();
     bool Write(bool writeLog);
     bool Validate();
-    QString Print();
+    QString Print(bool detail=false);
     void SetPackagePath(QString p) { packagePath = p; }
     QString GetPackagePath();
     void SetFileMode(FileMode m) { fileMode = m; } /*!< Set the file mode to either NewPackage or ExistingPackage */
@@ -165,14 +165,16 @@ public:
     bool quiet=false;
 
     /* printing of information to console */
-    QString PrintPackage();
     QString PrintDataDictionary(bool details=false);
     QString PrintExperiments(bool details=false);
     QString PrintGroupAnalyses(bool details=false);
+    QString PrintInterventions(qint64 subjectRowID, PrintingType printType=PrintingType::List);
+    QString PrintObservations(qint64 subjectRowID, PrintingType printType=PrintingType::List);
+    QString PrintPackage();
     QString PrintPipelines(bool details=false);
     QString PrintSeries(qint64 studyRowID, bool details=false);
     QString PrintStudies(qint64 subjectRowID, bool details=false);
-    QString PrintSubjects(PrintingType printType=PrintingType::IDList);
+    QString PrintSubjects(PrintingType printType=PrintingType::List);
 
     QSqlDatabase db;
 
