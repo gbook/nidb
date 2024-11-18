@@ -270,6 +270,7 @@ QString squirrel::GetPackagePath() {
 bool squirrel::Read() {
 
     Log(QString("Reading squirrel file [%1]").arg(GetPackagePath()), __FUNCTION__);
+    utils::Print(QString("Reading squirrel file [%1]").arg(GetPackagePath()), __FUNCTION__);
 
     /* check if file exists */
     if (!utils::FileExists(GetPackagePath())) {
@@ -278,6 +279,7 @@ bool squirrel::Read() {
         return false;
     }
 
+    utils::Print(QString("Before extracting squirrel.json [%1]").arg(QTime::currentTime().toString()));
     QString jsonstr;
     if (!ExtractFileFromArchive(GetPackagePath(), "squirrel.json", jsonstr)) {
         Log(QString("Error reading squirrel package. Unable to find squirrel.json"), __FUNCTION__);
@@ -287,6 +289,7 @@ bool squirrel::Read() {
     else {
         utils::Print(QString("Extracted package header [%1 bytes]").arg(jsonstr.size()));
     }
+    utils::Print(QString("After extracting squirrel.json [%1]").arg(QTime::currentTime().toString()));
 
     /* get the JSON document and root object */
     QJsonDocument d = QJsonDocument::fromJson(jsonstr.toUtf8());

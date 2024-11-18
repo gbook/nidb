@@ -30,6 +30,7 @@ mkdir -p %{buildroot}/var/www/html
 cp -f %{_sourcedir}/src/setup/rpm_post_install.sh %{buildroot}/nidb/setup/ # RPM post-install script
 cp -rf %{_sourcedir}/src/web/* %{buildroot}/var/www/html/ # copy web files to the end location
 cp -f %{_builddir}/bin/nidb/nidb %{buildroot}/nidb/bin/
+cp -f %{_builddir}/bin/squirrel/squirrel %{buildroot}/usr/bin/ # squirrel utilities
 cp -rf %{_sourcedir}/tools/* %{buildroot}/nidb/bin/
 #cp -rf %{_sourcedir}/src/qcmodules/* %{buildroot}/nidb/qcmodules/
 cp -f %{_sourcedir}/src/setup/* %{buildroot}/nidb/setup/
