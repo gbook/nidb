@@ -345,6 +345,7 @@ int main(int argc, char *argv[])
         p.addOption(QCommandLineOption(QStringList() << "q" << "quiet", "Quiet mode. No printing of headers and checks"));
         p.addOption(QCommandLineOption(QStringList() << "add", "Add object to the package.", "object"));
         p.addOption(QCommandLineOption(QStringList() << "remove", "Remove object (and all dependent objects) from the package.", "object"));
+        p.addOption(QCommandLineOption(QStringList() << "update", "Update object information.", "object"));
         p.addOption(QCommandLineOption(QStringList() << "datapath", "Path to new object data. Can include wildcard: /path/*.dcm", "path"));
         p.addOption(QCommandLineOption(QStringList() << "recursive", "Search the data path recursively"));
         p.addOption(QCommandLineOption(QStringList() << "objectid", "Existing object ID, name, or number to remove.", "id"));
@@ -357,6 +358,7 @@ int main(int argc, char *argv[])
 
         QString addObject = p.value("add").trimmed(); /* possible objects: subject study series observation intervention analysis experiment pipeline groupanalysis datadictionary */
         QString removeObject = p.value("remove").trimmed();
+        QString updateObject = p.value("update").trimmed(); /* possible objects: <all> */
         QString dataPath = p.value("datapath").trimmed();
         QString objectData = p.value("objectdata").trimmed();
         QString objectID = p.value("objectid").trimmed();
@@ -370,7 +372,7 @@ int main(int argc, char *argv[])
         if (variablelist != "") {
             mod.PrintVariables(variablelist);
         }
-        else if (!mod.DoModify(inputPath, addObject, removeObject, dataPath, recursive, objectData, objectID, subjectID, studyNum, m)) {
+        else if (!mod.DoModify(inputPath, addObject, removeObject, updateObject, dataPath, recursive, objectData, objectID, subjectID, studyNum, m)) {
             CommandLineError(p,m);
         }
     }

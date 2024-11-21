@@ -610,7 +610,7 @@ bool moduleUpload::ArchiveSelectedFiles() {
                     ret = true;
                     int uploadseries_id = q2.value("uploadseries_id").toInt();
 
-                    n->Log(QString("Working on series [%1]").arg(uploadseries_id));
+                    n->Log(QString("Working on uploadSeriesRowID [%1]").arg(uploadseries_id));
 
                     /* get any matching subject/study/series */
                     int matchingsubjectid(-1), matchingstudyid(-1), matchingseriesid(-1);
@@ -623,10 +623,10 @@ bool moduleUpload::ArchiveSelectedFiles() {
 
                     /* get information about this series to be imported */
                     QStringList uploadseries_filelist = q2.value("uploadseries_filelist").toString().split(",");
-                    for(int i=0; i<uploadseries_filelist.size(); i++) {
-                        if (uploadseries_filelist[i].trimmed() != "")
-                            uploadseries_filelist[i] = upload_stagingpath + uploadseries_filelist[i];
-                    }
+                    //for(int i=0; i<uploadseries_filelist.size(); i++) {
+                    //    if (uploadseries_filelist[i].trimmed() != "")
+                    //        uploadseries_filelist[i] = upload_stagingpath + uploadseries_filelist[i];
+                    //}
 
                     performanceMetric perf;
                     /* insert the series */

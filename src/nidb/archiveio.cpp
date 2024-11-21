@@ -99,7 +99,7 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
     /* check if the first file exists */
     if (!QFile::exists(files[0])) {
         AppendUploadLog(__FUNCTION__ , QString("File [%1] does not exist - check A!").arg(files[0]));
-        return 0;
+        //return 0;
     }
 
     SortQStringListNaturally(files);
@@ -107,7 +107,7 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
     /* check if the first file exists after sorting */
     if (!QFile::exists(files[0])) {
         AppendUploadLog(__FUNCTION__ , QString("File [%1] does not exist - check B!").arg(files[0]));
-        return 0;
+        //return 0;
     }
 
     perf.Start();

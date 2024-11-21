@@ -65,13 +65,16 @@ HEADERS += \
 
 # bit7z library (provides LZMA)
 win32: {
-    LZMABIN = ../../bit7z/lib/x64
+    LZMABIN = C:/squirrel/bit7z/lib/x64
     LZMAINCLUDE = ../../bit7z/include/bit7z
     *msvc*:CONFIG(release, debug|release): LIBS += -L$$LZMABIN/Release
     else:*msvc*:CONFIG(debug, debug|release): LIBS += -L$$LZMABIN/Debug
     INCLUDEPATH += $$LZMAINCLUDE
     HEADERS += $$LZMAINCLUDE/bit7z.hpp
     LIBS += -lbit7z
+
+    # gdcm library
+	GDCMBIN = C:/squirrel/bin/gdcm
 }
 linux: {
     LZMABIN = ../../bin/bit7z
@@ -79,10 +82,11 @@ linux: {
     LIBS += -L$$LZMABIN -lbit7z64 -ldl
     INCLUDEPATH += $$LZMAINCLUDE
     HEADERS += $$LZMAINCLUDE/bit7z.hpp
+
+    # gdcm library
+	GDCMBIN = ../../bin/gdcm
 }
 
-# gdcm library
-GDCMBIN = ../../bin/gdcm
 GDCMSRC = ../gdcm/Source
 *msvc*:CONFIG(release, debug|release): LIBS += -L$$GDCMBIN/bin/Release/
 else:*msvc*:CONFIG(debug, debug|release): LIBS += -L$$GDCMBIN/bin/Debug/

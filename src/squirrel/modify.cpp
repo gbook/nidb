@@ -22,6 +22,9 @@
 
 #include "modify.h"
 #include "utils.h"
+#include <iostream>
+#include <vector>
+#include <iomanip>
 
 modify::modify() {
 }
@@ -30,7 +33,7 @@ modify::modify() {
 /* ---------------------------------------------------------------------------- */
 /* ----- DoModify ------------------------------------------------------------- */
 /* ---------------------------------------------------------------------------- */
-bool modify::DoModify(QString packagePath, QString addObject, QString removeObject, QString dataPath, bool recursive, QString objectData, QString objectID, QString subjectID, int studyNum, QString &m) {
+bool modify::DoModify(QString packagePath, QString addObject, QString removeObject, QString updateObject, QString dataPath, bool recursive, QString objectData, QString objectID, QString subjectID, int studyNum, QString &m) {
 
     /* check if any operation was specified */
     if ((addObject == "") && (removeObject == "")) {
@@ -518,11 +521,219 @@ bool modify::DoModify(QString packagePath, QString addObject, QString removeObje
 /* ----- PrintVariables ------------------------------------------------------- */
 /* ---------------------------------------------------------------------------- */
 void modify::PrintVariables(QString object) {
+    using namespace std;
+    vector<vector<string>> data;
 
-    if (object == "subject")
-        utils::Print("ID\nAltIDs\nGUID\nDateOfBirth\nSex\nGender\nEthnicity1\nEthnicity2");
+    if (object == "package") {
+        data = {
+            {"Variable","Type","Default","Description"},
+            {"Changes","string","","Any CHANGE files"},
+            {"Datetime","datetime","*","Datetime the package was created"},
+            {"Description","string","","Longer description of the package"},
+            {"License","string","","Any sharing or license notes, or LICENSE files"},
+            {"Notes","JSON object","","See details below"},
+            {"PackageName","string","*","Short name of the package"},
+            {"Readme","string","","Any README files"}
+        };
+    }
 
-    if (object == "study")
-        utils::Print("StudyNumber\nDatetime\nAge\nHeight\nWeight\nModality\nDescription\nStudyUID\nVisitType\nDayNumber\nTimepoint\nEquipment");
+    if (object == "subject") {
+        data = {
+            {"Variable","Type","Required","Description"},
+            {"AlternateIDs","JSON array","","List of alternate IDs. Comma separated"},
+            {"DateOfBirth","date","*","Subject’s date of birth. Used to calculate age-at-server. Can be YYYY-00-00 to store year only, or YYYY-MM-00 to store year and month only"},
+            {"Gender","char","","Gender"},
+            {"GUID","string","","Globally unique identifier, from NDA"},
+            {"Ethnicity1","string","","NIH defined ethnicity: Usually hispanic, non-hispanic"},
+            {"Ethnicity2","string","","NIH defined race: americanindian, asian, black, hispanic, islander, white"},
+            {"Sex","char","*","Sex at birth (F,M,O,U)"},
+            {"SubjectID","string","*","Unique ID of this subject. Each subject ID must be unique within the package"}
+        };
+    }
+
+    if (object == "study") {
+        data = {
+            {"Variable","Type","Required","Description"},
+            {"AgeAtStudy","number","*","Subject's age in years at the time of the study"},
+            {"Datetime","datetime","*","Date of the study"},
+            {"DayNumber","number","","For repeated studies and clinical trials, this indicates the day number of this study in relation to time 0"},
+            {"Description","string","*","Study description"},
+            {"Equipment","string","","Equipment name, on which the imaging session was collected"},
+            {"Height","number","","Height in m of the subject at the time of the study"},
+            {"Modality","string","*","Defines the type of data. See table of supported modalities"},
+            {"StudyNumber","number","*","Study number. May be sequential or correspond to NiDB assigned study number"},
+            {"StudyUID","string","","DICOM field StudyUID"},
+            {"TimePoint","number","","Similar to day number, but this should be an ordinal number"},
+            {"VisitType","string","","Type of visit. ex: Pre, Post"},
+            {"Weight","number","","Weight in kg of the subject at the time of the study"}
+        };
+    }
+
+    if (object == "series") {
+        data = {
+            {"Variable","Type","Required","Description"},
+            {"BidsEntity","string","","BIDS entity (anat, fmri, dwi, etc)"},
+            {"BidsSuffix","string","","BIDS suffix"},
+            {"BIDSTask","string","","BIDS Task name"},
+            {"BIDSRun","number","","BIDS run number"},
+            {"BIDSPhaseEncodingDirection","string","","BIDS PE direction"},
+            {"Description","string","","Description of the series"},
+            {"ExperimentName","string","","Experiment name associated with this series. Experiments link to the experiments section of the squirrel package"},
+            {"Protocol","string","*","Protocol name"},
+            {"Run","number","","The run identifies order of acquisition in cases of multiple identical series"},
+            {"SeriesDatetime","date","*","Date of the series, usually taken from the DICOM header"},
+            {"SeriesNumber","number","*","Series number. May be sequential, correspond to NiDB assigned series number, or taken from DICOM header"},
+            {"SeriesUID","string","","From the SeriesUID DICOM tag"}
+        };
+    }
+
+    if (object == "analysis") {
+        data = {
+            {"Variable","Type","Required","Description"},
+            {"DateStart","date","*","Datetime of the start of the analysis"},
+            {"DateEnd","date","","Datetime of the end of the analysis"},
+            {"DateClusterStart","date","","Datetime the job began running on the cluster"},
+            {"DateClusterEnd","date","","Datetime the job finished running on the cluster"},
+            {"Hostname","string","","If run on a cluster, the hostname of the node on which the analysis run"},
+            {"PipelineName","string","*","Name of the pipeline used to generate these results"},
+            {"PipelineVersion","number","","Version of the pipeline used"},
+            {"RunTime","number","","Elapsed wall time, in seconds, to run the analysis after setup"},
+            {"SeriesCount","number","","Number of series downloaded/used to perform analysis"},
+            {"SetupTime","number","","Elapsed wall time, in seconds, to copy data and set up analysis"},
+            {"Status","string","","Status, should always be 'complete'"},
+            {"StatusMessage","string","","Last running status message"},
+            {"Successful","bool","","Analysis ran to completion without error and expected files were created"}
+        };
+    }
+
+    if (object == "observation") {
+        data = {
+            {"Variable","Type","Required","Description"},
+            {"DateEnd","datetime","","End datetime of the observation"},
+            {"DateRecordCreate","datetime","","Date the record was created in the current database. The original record may have been imported from another database"},
+            {"DateRecordEntry","datetime","","Date the record was first entered into a database"},
+            {"DateRecordModify","datetime","","Date the record was modified in the current database"},
+            {"DateStart","datetime","*","Start datetime of the observation"},
+            {"Description","string","","Longer description of the measure"},
+            {"Duration","number","","Duration of the measure in seconds, if known"},
+            {"InstrumentName","string","","Name of the instrument associated with this measure"},
+            {"ObservationName","string","*","Name of the observation"},
+            {"Notes","string","","Detailed notes"},
+            {"Rater","string","","Name of the rater"},
+            {"Value","string","*","Value (string or number)"}
+        };
+    }
+
+    if (object == "intervention") {
+        data = {
+            {"Variable","Type","Required","Description"},
+            {"AdministrationRoute","string","","Drug entry route (oral, IV, unknown, etc)"},
+            {"DateRecordCreate","string","","Date the record was created in the current database. The original record may have been imported from another database"},
+            {"DateRecordEntry","string","","Date the record was first entered into a database"},
+            {"DateRecordModify","string","","Date the record was modified in the current database"},
+            {"DateEnd","datetime","","Datetime the intervention was stopped"},
+            {"DateStart","datetime","*","Datetime the intervention was started"},
+            {"Description","string","","Longer description"},
+            {"DoseString","string","*","Full dosing string. Examples tylenol 325mg twice daily by mouth, or 5g marijuana inhaled by volcano"},
+            {"DoseAmount","number","","In combination with other dose variables, the quantity of the drug"},
+            {"DoseFrequency","string","","Description of the frequency of administration"},
+            {"DoseKey","string","","For clinical trials, the dose key"},
+            {"DoseUnit","string","","mg, g, ml, tablets, capsules, etc"},
+            {"InterventionClass","string","","Drug class"},
+            {"InterventionName","string","*","Name of the intervention"},
+            {"Notes","string","","Notes about drug"},
+            {"Rater","string","","Rater/experimenter name"}
+        };
+    }
+
+    if (object == "pipeline") {
+        data = {
+            {"Variable","Type","Required","Description"},
+            {"ClusterType","string","","Compute cluster engine (sge or slurm)"},
+            {"ClusterUser","string","","Submit username"},
+            {"ClusterQueue","string","","Queue to submit jobs"},
+            {"ClusterSubmitHost","string","","Hostname to submit jobs"},
+            {"CompleteFiles","JSON array","","JSON array of complete files, with relative paths to analysisroot"},
+            {"CreateDate","datetime","*","Date the pipeline was created"},
+            {"DataCopyMethod","string","","How the data is copied to the analysis directory: cp, softlink, hardlink"},
+            {"DependencyDirectory","string","",""},
+            {"DependencyLevel","string","",""},
+            {"DependencyLinkType","string","",""},
+            {"Description","string","","Longer pipeline description"},
+            {"DirectoryStructure","string","",""},
+            {"Directory","string","","Directory where the analyses for this pipeline will be stored. Leave blank to use the default location"},
+            {"Group","string","","ID or name of a group on which this pipeline will run"},
+            {"GroupType","string","","Either subject or study"},
+            {"Level","number","*","subject-level analysis (1) or group-level analysis (2)"},
+            {"MaxWallTime","number","","Maximum allowed clock (wall) time in minutes for the analysis to run"},
+            {"ClusterMemory","number","","Amount of memory in GB requested for a running job"},
+            {"PipelineName","string","*","Pipeline name"},
+            {"Notes","string","","Extended notes about the pipeline"},
+            {"NumberConcurrentAnalyses","number","1","Number of analyses allowed to run at the same time. This number if managed by NiDB and is different than grid engine queue size"},
+            {"ClusterNumberCores","number","1","Number of CPU cores requested for a running job"},
+            {"ParentPipelines","string","","Comma separated list of parent pipelines"},
+            {"ResultScript","string","","Executable script to be run at completion of the analysis to find and insert results back into NiDB"},
+            {"SubmitDelay","number","","Delay in hours, after the study datetime, to submit to the cluster. Allows time to upload behavioral data"},
+            {"TempDirectory","string","","The path to a temporary directory if it is used, on a compute node"},
+            {"UseProfile","bool","","true if using the profile option, false otherwise"},
+            {"UseTempDirectory","bool","","true if using a temporary directory, false otherwise"},
+            {"Version","number","1","Version of the pipeline"},
+            {"PrimaryScript","string","*","See details of pipeline scripts"},
+            {"SecondaryScript","string","","See details of pipeline scripts"}
+        };
+    }
+
+    if (object == "experiment") {
+        data = {
+            {"Variable","Type","Required","Description"},
+            {"ExperimentName","string","*","Unique name of the experiment"}
+        };
+    }
+
+    if (object == "data-dictionary") {
+        data = {
+            {"Variable","Type","Required","Description"},
+            {"DataDictionaryName","string","*","Name of this data dictionary"}
+        };
+    }
+
+    if (object == "data-dictionary-item") {
+        data = {
+            {"Variable","Type","Required","Description"},
+            {"VariableType","string","*","Type of variable"},
+            {"VariableName","string","*","Name of the variable"},
+            {"Description","string","","Description of the variable"},
+            {"KeyValueMapping","string","","List of possible key/value mappings in the format key1=value1, key2=value2. Example 1=Female, 2=Male"},
+            {"ExpectedTimepoints","number","","Number of expected timepoints. Example, the study is expected to have 5 records of a variable"},
+            {"RangeLow","number","","For numeric values, the lower limit"},
+            {"RangeHigh","number","","For numeric values, the upper limit"}
+        };
+    }
+
+    if (object == "group-analysis") {
+        data = {
+            {"Variable","Type","Required","Description"},
+            {"Datetime","datetime","","Datetime of the group analysis"},
+            {"Description","string","","Description"},
+            {"GroupAnalysisName","string","*","Name of this group analysis"},
+            {"Notes","string","","Notes about the group analysis"}
+        };
+    }
+
+    /* Find the maximum width of each column */
+    vector<int> columnWidths(data[0].size());
+    for (const auto &row : data) {
+        for (size_t i = 0; i < row.size(); ++i) {
+            columnWidths[i] = max(columnWidths[i], (int)row[i].size());
+        }
+    }
+
+    /* Print the table */
+    for (const auto &row : data) {
+        for (size_t i = 0; i < row.size(); ++i) {
+            cout << setw(columnWidths[i] + 2) << left << row[i] << " ";
+        }
+        cout << endl;
+    }
 
 }

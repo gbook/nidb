@@ -927,20 +927,16 @@ namespace utils {
     /* ---------------------------------------------------------- */
     QString HumanReadableSize(qint64 bytes)
     {
-        QStringList suffix = {"B", "KB", "MB", "GB", "TB"};
-        char length = sizeof(suffix) / sizeof(suffix[0]);
-
+        QStringList units = {"B", "KB", "MB", "GB", "TB"};
         int i = 0;
-        double dblBytes = (double)bytes;
+        double sizeD = double(bytes);
 
-        if (bytes > 1024) {
-            for (i = 0; (bytes / 1024) > 0 && i<length-1; i++, bytes /= 1024)
-                dblBytes = bytes / 1024.0;
+        while (sizeD >= 1024 && i < units.size() - 1) {
+            sizeD /= 1024;
+            i++;
         }
 
-        QString output = QString("%1 %2").arg(dblBytes, 0, 'g', 2).arg(suffix.at(i));
-
-        return output;
+        return QString::number(sizeD, 'f', 2) + " " + units[i];
     }
 
 
@@ -953,5 +949,7 @@ namespace utils {
         int rpad = PBWIDTH - lpad;
         printf("\r%3d%% [%.*s%*s]", val, lpad, PBSTR, rpad, "");
         fflush(stdout);
+        if (val >= 100)
+            printf("\n");
     }
 }

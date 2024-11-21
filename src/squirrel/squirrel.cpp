@@ -121,7 +121,7 @@ squirrel::~squirrel()
 /* ---------------------------------------------------------- */
 bool squirrel::Get7zipLibPath() {
 #ifdef Q_OS_WINDOWS
-    if (QFile::exists("/usr/libexec/p7zip/7z.so")) {
+    if (QFile::exists("C:/Program Files/7-Zip/7z.dll")) {
         p7zipLibPath = "C:/Program Files/7-Zip/7z.dll";
         Log("Found 7zip path C:/Program Files/7-Zip/7z.dll", __FUNCTION__);
         return true;
@@ -236,6 +236,12 @@ bool squirrel::InitializeDatabase() {
     q.prepare(tableStagedFiles);
     if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error creating table [StagedFiles]", __FUNCTION__); utils::Print("Error creating table [StagedFiles]"); return false; }
 
+    q.prepare("PRAGMA journal_mode=WAL");
+    if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error setting journal_mode=WAL", __FUNCTION__); utils::Print("Error setting journal_mode=WAL"); return false; }
+
+    q.prepare("PRAGMA synchronous=NORMAL");
+    if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error setting synchronous=NORMAL", __FUNCTION__); utils::Print("Error setting synchronous=NORMAL"); return false; }
+
     Log("Successfully initialized database tables", __FUNCTION__);
     return true;
 }
@@ -279,7 +285,6 @@ bool squirrel::Read() {
         return false;
     }
 
-    utils::Print(QString("Before extracting squirrel.json [%1]").arg(QTime::currentTime().toString()));
     QString jsonstr;
     if (!ExtractFileFromArchive(GetPackagePath(), "squirrel.json", jsonstr)) {
         Log(QString("Error reading squirrel package. Unable to find squirrel.json"), __FUNCTION__);
@@ -287,9 +292,8 @@ bool squirrel::Read() {
         return false;
     }
     else {
-        utils::Print(QString("Extracted package header [%1 bytes]").arg(jsonstr.size()));
+        Log(QString("Extracted package header [%1]").arg(utils::HumanReadableSize(jsonstr.size())), __FUNCTION__);
     }
-    utils::Print(QString("After extracting squirrel.json [%1]").arg(QTime::currentTime().toString()));
 
     /* get the JSON document and root object */
     QJsonDocument d = QJsonDocument::fromJson(jsonstr.toUtf8());
@@ -299,7 +303,7 @@ bool squirrel::Read() {
     QJsonObject pkgObj = root["package"].toObject();
     Changes = pkgObj["Changes"].toString();
     DataFormat = pkgObj["DataFormat"].toString();
-    Datetime = QDateTime::fromString(pkgObj["Datetime"].toString(), "yyyy-MM-dd hh:mm:ss");
+    Datetime = QDateTime::fromString(pkgObj["Datetime"].toString().replace(' ', '-') + "Z", Qt::ISODate);
     Description = pkgObj["Description"].toString();
     License = pkgObj["License"].toString();
     Notes = pkgObj["Notes"].toString();
@@ -328,24 +332,24 @@ bool squirrel::Read() {
         Log(QString("NOTICE: Found [%1] subjects in the root of the JSON. (This is a slightly malformed squirrel file, but I'll accept it)").arg(jsonSubjects.size()), __FUNCTION__);
     }
     else {
-        Log("root does not contain 'data' or 'subjects'", __FUNCTION__);
+        Log("root JSON object does not contain 'data' or 'subjects'", __FUNCTION__);
     }
 
     Debug(QString("TotalFileCount: [%1]").arg(root["TotalFileCount"].toInt()), __FUNCTION__);
     Debug(QString("TotalSize: [%1]").arg(root["TotalSize"].toInt()), __FUNCTION__);
 
     /* loop through and read any subjects */
-    utils::Print("\n");
+    utils::Print(QString("Reading %1 subjects...").arg(jsonSubjects.size()));
     qint64 i(0);
     for (auto a : jsonSubjects) {
         i++;
-        Log(QString("Reading subject %1 of %2").arg(i).arg(jsonSubjects.size()), __FUNCTION__);
-        utils::Print(QString("Reading subject %1 of %2").arg(i).arg(jsonSubjects.size()), __FUNCTION__);
+        Log(QString("Reading subject %1 of %2 - %3").arg(i).arg(jsonSubjects.size()).arg(QDateTime::currentDateTime().toString("yyyy/MM/dd hh:mm:ss.zzz")), __FUNCTION__);
+        //utils::Print(QString("Reading subject %1 of %2 - %3").arg(i).arg(jsonSubjects.size()).arg(QDateTime::currentDateTime().toString("yyyy/MM/dd hh:mm:ss.zzz")), __FUNCTION__);
+        utils::PrintProgress((double)i/(double)jsonSubjects.size());
 
         QJsonObject jsonSubject = a.toObject();
 
         squirrelSubject sqrlSubject;
-
         sqrlSubject.ID = jsonSubject["SubjectID"].toString();
         sqrlSubject.AlternateIDs = jsonSubject["AlternateIDs"].toVariant().toStringList();
         sqrlSubject.GUID = jsonSubject["GUID"].toString();
@@ -357,7 +361,7 @@ bool squirrel::Read() {
         sqrlSubject.Store();
         qint64 subjectRowID = sqrlSubject.GetObjectID();
 
-        Debug(QString("Reading subject [%1]").arg(sqrlSubject.ID), __FUNCTION__);
+        //Log(QString("Reading subject [%1]").arg(sqrlSubject.ID), __FUNCTION__);
 
         /* loop through and read all studies */
         QJsonArray jsonStudies = jsonSubject["studies"].toArray();
@@ -366,7 +370,7 @@ bool squirrel::Read() {
             squirrelStudy sqrlStudy;
 
             sqrlStudy.AgeAtStudy = jsonStudy["AgeAtStudy"].toDouble();
-            sqrlStudy.DateTime = QDateTime::fromString(jsonStudy["StudyDatetime"].toString(), "yyyy-MM-dd hh:mm:ss");
+            sqrlStudy.DateTime = QDateTime::fromString(jsonStudy["StudyDatetime"].toString().replace(' ', '-') + "Z", Qt::ISODate);
             sqrlStudy.DayNumber = jsonStudy["DayNumber"].toInt();
             sqrlStudy.Description = jsonStudy["Description"].toString();
             sqrlStudy.Equipment = jsonStudy["Equipment"].toString();
@@ -389,8 +393,6 @@ bool squirrel::Read() {
                 QJsonObject jsonSeries = c.toObject();
                 squirrelSeries sqrlSeries;
 
-                //Log("jsonSeries[SeriesDatetime].toString: " + jsonSeries["SeriesDatetime"].toString(), __FUNCTION__);
-
                 sqrlSeries.BIDSEntity = jsonSeries["BIDSEntity"].toString();
                 sqrlSeries.BIDSPhaseEncodingDirection = jsonSeries["BIDSPhaseEncodingDirection"].toString();
                 sqrlSeries.BIDSRun = jsonSeries["BIDSRun"].toString();
@@ -398,7 +400,7 @@ bool squirrel::Read() {
                 sqrlSeries.BIDSTask = jsonSeries["BIDSTask"].toString();
                 sqrlSeries.BehavioralFileCount = jsonSeries["BehavioralFileCount"].toInteger();
                 sqrlSeries.BehavioralSize = jsonSeries["BehavioralSize"].toInteger();
-                sqrlSeries.DateTime = QDateTime::fromString(jsonSeries["SeriesDatetime"].toString(), "yyyy-MM-dd HH:mm:ss");
+                sqrlSeries.DateTime = QDateTime::fromString(jsonSeries["SeriesDatetime"].toString().replace(' ', '-') + "Z", Qt::ISODate);
                 sqrlSeries.Description = jsonSeries["Description"].toString();
                 sqrlSeries.FileCount = jsonSeries["FileCount"].toInteger();
                 sqrlSeries.Protocol = jsonSeries["Protocol"].toString();
@@ -407,7 +409,6 @@ bool squirrel::Read() {
                 sqrlSeries.Size = jsonSeries["Size"].toInteger();
                 sqrlSeries.studyRowID = studyRowID;
 
-                //Log("Series.Datetime: " + sqrlSeries.DateTime.toString("yyyy-MM-dd hh:mm:ss"), __FUNCTION__);
                 Debug(QString("Reading series [%1][%2][%3]").arg(sqrlSubject.ID).arg(sqrlStudy.StudyNumber).arg(sqrlSeries.SeriesNumber), __FUNCTION__);
 
                 if (!quickRead) {
@@ -430,11 +431,10 @@ bool squirrel::Read() {
             for (auto d : jsonAnalyses) {
                 QJsonObject jsonAnalysis = d.toObject();
                 squirrelAnalysis sqrlAnalysis;
-
-                sqrlAnalysis.DateClusterEnd = QDateTime::fromString(jsonAnalysis["DateClusterEnd"].toString(), "yyyy-MM-dd hh:mm:ss");
-                sqrlAnalysis.DateClusterStart = QDateTime::fromString(jsonAnalysis["DateClusterStart"].toString(), "yyyy-MM-dd hh:mm:ss");
-                sqrlAnalysis.DateStart = QDateTime::fromString(jsonAnalysis["DateEnd"].toString(), "yyyy-MM-dd hh:mm:ss");
-                sqrlAnalysis.DateStart = QDateTime::fromString(jsonAnalysis["DateStart"].toString(), "yyyy-MM-dd hh:mm:ss");
+                sqrlAnalysis.DateClusterEnd = QDateTime::fromString(jsonAnalysis["DateClusterEnd"].toString().replace(' ', '-') + "Z", Qt::ISODate);
+                sqrlAnalysis.DateClusterStart = QDateTime::fromString(jsonAnalysis["DateClusterStart"].toString().replace(' ', '-') + "Z", Qt::ISODate);
+                sqrlAnalysis.DateStart = QDateTime::fromString(jsonAnalysis["DateEnd"].toString().replace(' ', '-') + "Z", Qt::ISODate);
+                sqrlAnalysis.DateStart = QDateTime::fromString(jsonAnalysis["DateStart"].toString().replace(' ', '-') + "Z", Qt::ISODate);
                 sqrlAnalysis.Hostname = jsonAnalysis["Hostname"].toString();
                 sqrlAnalysis.LastMessage = jsonAnalysis["StatusMessage"].toString();
                 sqrlAnalysis.PipelineName = jsonAnalysis["PipelineName"].toString();
@@ -453,16 +453,21 @@ bool squirrel::Read() {
         }
 
         /* read all observations */
+        QSqlQuery q1(QSqlDatabase::database("squirrel")); /* start a transaction to slightly improve SQL insert performance */
+        q1.prepare("begin transaction");
+        utils::SQLQuery(q1, __FUNCTION__, __FILE__, __LINE__);
+
         QJsonArray jsonObservations = jsonSubject["observations"].toArray();
         Debug(QString("Reading [%1] observations").arg(jsonObservations.size()), __FUNCTION__);
         for (auto e : jsonObservations) {
+
             QJsonObject jsonObservation = e.toObject();
             squirrelObservation sqrlObservation;
-            sqrlObservation.DateEnd = QDateTime::fromString(jsonObservation["DateEnd"].toString(), "yyyy-MM-dd hh:mm:ss");
-            sqrlObservation.DateStart = QDateTime::fromString(jsonObservation["DateStart"].toString(), "yyyy-MM-dd hh:mm:ss");
-            sqrlObservation.DateRecordCreate = QDateTime::fromString(jsonObservation["DateRecordCreate"].toString(), "yyyy-MM-dd hh:mm:ss");
-            sqrlObservation.DateRecordEntry = QDateTime::fromString(jsonObservation["DateRecordEntry"].toString(), "yyyy-MM-dd hh:mm:ss");
-            sqrlObservation.DateRecordModify = QDateTime::fromString(jsonObservation["DateRecordModify"].toString(), "yyyy-MM-dd hh:mm:ss");
+            sqrlObservation.DateEnd.fromString(jsonObservation["DateEnd"].toString().replace(' ', '-') + "Z", Qt::ISODate);
+            sqrlObservation.DateStart.fromString(jsonObservation["DateStart"].toString().replace(' ', '-') + "Z", Qt::ISODate);
+            sqrlObservation.DateRecordCreate.fromString(jsonObservation["DateRecordCreate"].toString().replace(' ', '-') + "Z", Qt::ISODate);
+            sqrlObservation.DateRecordEntry.fromString(jsonObservation["DateRecordEntry"].toString().replace(' ', '-') + "Z", Qt::ISODate);
+            sqrlObservation.DateRecordModify.fromString(jsonObservation["DateRecordModify"].toString().replace(' ', '-') + "Z", Qt::ISODate);
             sqrlObservation.Description = jsonObservation["Description"].toString();
             sqrlObservation.Duration = jsonObservation["Duration"].toDouble();
             sqrlObservation.InstrumentName = jsonObservation["InstrumentName"].toString();
@@ -474,17 +479,18 @@ bool squirrel::Read() {
             sqrlObservation.Store();
         }
 
+        q1.prepare("commit");
+        utils::SQLQuery(q1, __FUNCTION__, __FILE__, __LINE__);
+
         /* read all Interventions */
         QJsonArray jsonInterventions = jsonSubject["Interventions"].toArray();
         Debug(QString("Reading [%1] Interventions").arg(jsonInterventions.size()), __FUNCTION__);
         for (auto f : jsonInterventions) {
             QJsonObject jsonIntervention = f.toObject();
             squirrelIntervention sqrlIntervention;
-
-            sqrlIntervention.DateEnd = QDateTime::fromString(jsonIntervention["DateEnd"].toString(), "yyyy-MM-dd hh:mm:ss");
-            sqrlIntervention.DateRecordEntry = QDateTime::fromString(jsonIntervention["DateRecordEntry"].toString(), "yyyy-MM-dd hh:mm:ss");
-            sqrlIntervention.DateStart = QDateTime::fromString(jsonIntervention["DateStart"].toString(), "yyyy-MM-dd hh:mm:ss");
-            sqrlIntervention.Description = jsonIntervention["Description"].toString();
+            sqrlIntervention.DateEnd = QDateTime::fromString(jsonIntervention["DateEnd"].toString().replace(' ', '-') + "Z", Qt::ISODate);
+            sqrlIntervention.DateRecordEntry = QDateTime::fromString(jsonIntervention["DateRecordEntry"].toString().replace(' ', '-') + "Z", Qt::ISODate);
+            sqrlIntervention.DateStart = QDateTime::fromString(jsonIntervention["DateStart"].toString().replace(' ', '-') + "Z", Qt::ISODate);
             sqrlIntervention.DoseAmount = jsonIntervention["DoseAmount"].toDouble();
             sqrlIntervention.DoseFrequency = jsonIntervention["DoseFrequency"].toString();
             sqrlIntervention.DoseKey = jsonIntervention["DoseKey"].toString();
@@ -529,7 +535,7 @@ bool squirrel::Read() {
         sqrlPipeline.ClusterSubmitHost = jsonPipeline["ClusterSubmitHost"].toString();
         sqrlPipeline.ClusterType = jsonPipeline["ClusterType"].toString();
         sqrlPipeline.ClusterUser = jsonPipeline["ClusterUser"].toString();
-        sqrlPipeline.CreateDate = QDateTime::fromString(jsonPipeline["CreateDate"].toString(), "yyyy-MM-dd hh:mm:ss");
+        sqrlPipeline.CreateDate = QDateTime::fromString(jsonPipeline["CreateDate"].toString().replace(' ', '-') + "Z", Qt::ISODate);
         sqrlPipeline.DataCopyMethod = jsonPipeline["DataCopyMethod"].toString();
         sqrlPipeline.DependencyDirectory = jsonPipeline["DependencyDirectory"].toString();
         sqrlPipeline.DependencyLevel = jsonPipeline["DependencyLevel"].toString();
@@ -2664,14 +2670,14 @@ bool squirrel::ExtractFileFromArchive(QString archivePath, QString filePath, QSt
         Bit7zLibrary lib(p7zipLibPath.toStdString());
         if (archivePath.endsWith(".zip", Qt::CaseInsensitive)) {
             BitFileExtractor extractor(lib, BitFormat::Zip);
-            extractor.setProgressCallback(progressCallback);
-            extractor.setTotalCallback(totalArchiveSizeCallback);
+            //extractor.setProgressCallback(progressCallback);
+            //extractor.setTotalCallback(totalArchiveSizeCallback);
             extractor.extractMatching(archivePath.toStdString(), filePath.toStdString(), buffer);
         }
         else {
             BitFileExtractor extractor(lib, BitFormat::SevenZip);
-            extractor.setProgressCallback(progressCallback);
-            extractor.setTotalCallback(totalArchiveSizeCallback);
+            //extractor.setProgressCallback(progressCallback);
+            //extractor.setTotalCallback(totalArchiveSizeCallback);
             extractor.extractMatching(archivePath.toStdString(), filePath.toStdString(), buffer);
         }
         std::string str{buffer.begin(), buffer.end()};
