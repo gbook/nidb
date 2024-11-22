@@ -2921,22 +2921,26 @@ bool squirrel::ExtractArchiveToDirectory(QString archivePath, QString destinatio
         Bit7zLibrary lib(p7zipLibPath.toStdString());
 
         if (archivePath.endsWith(".zip", Qt::CaseInsensitive)) {
-            bit7z::BitArchiveReader archive(lib, archivePath.toStdString(), bit7z::BitFormat::Zip);
-            archive.extractTo(destinationPath.toStdString());
+            //bit7z::BitArchiveReader archive(lib, archivePath.toStdString(), bit7z::BitFormat::Zip);
+            //archive.setProgressCallback(progressCallback);
+            //archive.setTotalCallback(totalArchiveSizeCallback);
+            //archive.extractTo(destinationPath.toStdString());
 
-            //bit7z::BitFileExtractor extractor(lib, bit7z::BitFormat::Zip);
-            //extractor.setProgressCallback(progressCallback);
-            //extractor.setTotalCallback(totalArchiveSizeCallback);
-            //extractor.extract(archivePath.toStdString(), destinationPath.toStdString());
+            bit7z::BitFileExtractor extractor(lib, bit7z::BitFormat::Zip);
+            extractor.setProgressCallback(progressCallback);
+            extractor.setTotalCallback(totalArchiveSizeCallback);
+            extractor.extract(archivePath.toStdString(), destinationPath.toStdString());
         }
         else {
-            bit7z::BitArchiveReader archive(lib, archivePath.toStdString(), bit7z::BitFormat::Zip);
-            archive.extractTo(destinationPath.toStdString());
+            //bit7z::BitArchiveReader archive(lib, archivePath.toStdString(), bit7z::BitFormat::Zip);
+            //archive.setProgressCallback(progressCallback);
+            //archive.setTotalCallback(totalArchiveSizeCallback);
+            //archive.extractTo(destinationPath.toStdString());
 
-            //bit7z::BitFileExtractor extractor(lib, bit7z::BitFormat::SevenZip);
-            //extractor.setProgressCallback(progressCallback);
-            //extractor.setTotalCallback(totalArchiveSizeCallback);
-            //extractor.extract(archivePath.toStdString(), destinationPath.toStdString());
+            bit7z::BitFileExtractor extractor(lib, bit7z::BitFormat::SevenZip);
+            extractor.setProgressCallback(progressCallback);
+            extractor.setTotalCallback(totalArchiveSizeCallback);
+            extractor.extract(archivePath.toStdString(), destinationPath.toStdString());
         }
         m = "Successfully extracted archive [" + archivePath + "] to directory [" + destinationPath + "]";
         return true;
