@@ -20,6 +20,7 @@ NeuroInformatics Database (NiDB) is a full neuroimaging database system to store
 
 %install # This section installs the files to the BUILDROOT dir, which is basically a copy of what the user's computer will look like after the RPM installs
 mkdir -p %{buildroot}/usr/lib/sqldrivers
+mkdir -p %{buildroot}/usr/bin
 mkdir -p %{buildroot}/nidb/bin
 mkdir -p %{buildroot}/nidb/bin/sqldrivers
 mkdir -p %{buildroot}/nidb/lock
