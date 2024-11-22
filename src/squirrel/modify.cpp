@@ -207,7 +207,7 @@ bool modify::DoModify(QString packagePath, QString addObject, QString removeObje
 
                         /* if csv, read csv */
                         if (dataPath.endsWith(".csv", Qt::CaseInsensitive)) {
-                            if (utils::ParseTSV(dataPath, csv, cols, m)) {
+                            if (utils::ParseCSV(dataPath, csv, cols, m)) {
                             }
                         }
                         else if (dataPath.endsWith(".tsv", Qt::CaseInsensitive)) {

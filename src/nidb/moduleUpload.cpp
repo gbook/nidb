@@ -719,9 +719,12 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
                     n->Log("Error creating temp directory [" + tmppath + "] with error [" + m + "]", __FUNCTION__);
                     continue;
                 }
+                else {
+                    n->Log("Created temp directory [" + tmppath + "]. Now extracting squirrel package...", __FUNCTION__);
+                }
 
                 if (sqrl->Extract(tmppath, m)) {
-                    n->Debug("Successfuly extract squirrel package [" + f + "] to directory [" + tmppath + "]", __FUNCTION__);
+                    n->Log("Successfuly extract squirrel package [" + f + "] to directory [" + tmppath + "]", __FUNCTION__);
                 }
                 else {
                     n->Log("Error extracting squirrel package [" + f + "] to directory [" + tmppath + "] with message [" + m + "]", __FUNCTION__);
