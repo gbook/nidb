@@ -20,7 +20,7 @@ NeuroInformatics Database (NiDB) is a full neuroimaging database system to store
 
 %install # This section installs the files to the BUILDROOT dir, which is basically a copy of what the user's computer will look like after the RPM installs
 mkdir -p %{buildroot}/usr/lib/sqldrivers
-mkdir -p %{buildroot}/usr/bin
+mkdir -p %{buildroot}/usr/local/bin
 mkdir -p %{buildroot}/nidb/bin
 mkdir -p %{buildroot}/nidb/bin/sqldrivers
 mkdir -p %{buildroot}/nidb/lock
@@ -31,7 +31,7 @@ mkdir -p %{buildroot}/var/www/html
 cp -f %{_sourcedir}/src/setup/rpm_post_install.sh %{buildroot}/nidb/setup/ # RPM post-install script
 cp -rf %{_sourcedir}/src/web/* %{buildroot}/var/www/html/ # copy web files to the end location
 cp -f %{_builddir}/bin/nidb/nidb %{buildroot}/nidb/bin/
-cp -f %{_builddir}/bin/squirrel/squirrel %{buildroot}/usr/bin/ # squirrel utilities
+cp -f %{_builddir}/bin/squirrel/squirrel %{buildroot}/usr/local/bin/ # squirrel utilities
 cp -rf %{_sourcedir}/tools/* %{buildroot}/nidb/bin/
 #cp -rf %{_sourcedir}/src/qcmodules/* %{buildroot}/nidb/qcmodules/
 cp -f %{_sourcedir}/src/setup/* %{buildroot}/nidb/setup/
@@ -69,7 +69,7 @@ cp -f ~/Qt/6.6.3/gcc_64/plugins/sqldrivers/libqsqlite.so %{buildroot}/nidb/bin/s
 /nidb
 /var/www/html
 /usr/lib/*
-/usr/bin/*
+/usr/local/bin/*
 
 %post
 /nidb/setup/rpm_post_install.sh
