@@ -343,12 +343,14 @@ int main(int argc, char *argv[])
         /* command line flag options */
         p.addOption(QCommandLineOption(QStringList() << "d" << "debug", "Enable debugging"));
         p.addOption(QCommandLineOption(QStringList() << "q" << "quiet", "Quiet mode. No printing of headers and checks"));
-        p.addOption(QCommandLineOption(QStringList() << "add", "Add object to the package.", "object"));
-        p.addOption(QCommandLineOption(QStringList() << "remove", "Remove object (and all dependent objects) from the package.", "object"));
-        p.addOption(QCommandLineOption(QStringList() << "update", "Update object information.", "object"));
+        p.addOption(QCommandLineOption(QStringList() << "operation", "Operation to perform on the package [add  remove  update].", "operation"));
+        p.addOption(QCommandLineOption(QStringList() << "object", "Object type to perform operation on [package  subject  study  series  analysis  intervention  observation  experiment  pipeline  groupanalysis  datadictionary].", "object"));
+        //p.addOption(QCommandLineOption(QStringList() << "add", "Add object to the package.", "object"));
+        //p.addOption(QCommandLineOption(QStringList() << "remove", "Remove object (and all dependent objects) from the package.", "object"));
+        //p.addOption(QCommandLineOption(QStringList() << "update", "Update object information.", "object"));
         p.addOption(QCommandLineOption(QStringList() << "datapath", "Path to new object data. Can include wildcard: /path/*.dcm", "path"));
         p.addOption(QCommandLineOption(QStringList() << "recursive", "Search the data path recursively"));
-        p.addOption(QCommandLineOption(QStringList() << "objectid", "Existing object ID, name, or number to remove.", "id"));
+        p.addOption(QCommandLineOption(QStringList() << "objectid", "Existing object ID, name, or number to modify.", "id"));
         p.addOption(QCommandLineOption(QStringList() << "subjectid", "Parent subject ID. Used when adding a study, series, observation, intervention, or analysis object.", "id"));
         p.addOption(QCommandLineOption(QStringList() << "studynum", "Parent study number. Used when adding a series or analysis object (subjectid is also needed).", "num"));
         p.addOption(QCommandLineOption(QStringList() << "objectdata", "URL-style string specifying the new object meta-data.", "string"));
@@ -356,9 +358,10 @@ int main(int argc, char *argv[])
 
         p.process(a);
 
-        QString addObject = p.value("add").trimmed(); /* possible objects: subject study series observation intervention analysis experiment pipeline groupanalysis datadictionary */
-        QString removeObject = p.value("remove").trimmed();
-        QString updateObject = p.value("update").trimmed(); /* possible objects: <all> */
+        QString operation = p.value("operation").trimmed();
+        QString objectType = p.value("object").trimmed(); /* possible objects: subject study series observation intervention analysis experiment pipeline groupanalysis datadictionary */
+        //QString removeObject = p.value("remove").trimmed();
+        //QString updateObject = p.value("update").trimmed(); /* possible objects: <all> */
         QString dataPath = p.value("datapath").trimmed();
         QString objectData = p.value("objectdata").trimmed();
         QString objectID = p.value("objectid").trimmed();
@@ -372,7 +375,7 @@ int main(int argc, char *argv[])
         if (variablelist != "") {
             mod.PrintVariables(variablelist);
         }
-        else if (!mod.DoModify(inputPath, addObject, removeObject, updateObject, dataPath, recursive, objectData, objectID, subjectID, studyNum, m)) {
+        else if (!mod.DoModify(inputPath, operation, objectType, dataPath, recursive, objectData, objectID, subjectID, studyNum, m)) {
             CommandLineError(p,m);
         }
     }

@@ -952,4 +952,14 @@ namespace utils {
         if (val >= 100)
             printf("\n");
     }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- PrintProgress ---------------------------------- */
+    /* ---------------------------------------------------------- */
+    QDateTime StringToDatetime(QString datetime) {
+        datetime = datetime.replace(' ', 'T') + "Z";
+        return QDateTime::fromString(datetime, Qt::ISODate);
+    }
+
 }

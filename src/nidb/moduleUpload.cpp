@@ -515,7 +515,7 @@ bool moduleUpload::ParseUploadedFiles(QMap<QString, QMap<QString, QMap<QString, 
  * @return true
  */
 bool moduleUpload::ParseUploadedSquirrel(squirrel *sqrl, QString upload_subjectcriteria, QString upload_studycriteria, QString upload_seriescriteria, QString uploadstagingpath, int uploadRowID) {
-    n->Log(sqrl->Print());
+    n->Log(sqrl->PrintPackage());
 
     /* load subjects, studies, series into the upload_* tables */
 
@@ -713,6 +713,10 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
             sqrl->SetPackagePath(f);
             sqrl->SetQuickRead(false); /* it will take longer to read, but we will want the contents of all the params.json files */
             if (sqrl->Read()) {
+
+                n->Log("Successfully read squirrel package [" + f + "]", __FUNCTION__);
+                sqrl->PrintPackage();
+
                 /* extract the file to a temp directory */
                 tmppath = n->cfg["tmpdir"] + "/" + GenerateRandomString(20);
                 if (!MakePath(tmppath,m)) {
@@ -724,10 +728,11 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
                 }
 
                 if (sqrl->Extract(tmppath, m)) {
-                    n->Log("Successfuly extract squirrel package [" + f + "] to directory [" + tmppath + "]", __FUNCTION__);
+                    n->Log("Successfuly extracted squirrel package [" + f + "] to directory [" + tmppath + "]", __FUNCTION__);
                 }
                 else {
                     n->Log("Error extracting squirrel package [" + f + "] to directory [" + tmppath + "] with message [" + m + "]", __FUNCTION__);
+                    continue;
                 }
             }
 

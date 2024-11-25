@@ -61,6 +61,7 @@ namespace utils {
     QString CleanString(QString s);
     QString HumanReadableSize(qint64 bytes);
     void PrintProgress(double percentage);
+    QDateTime StringToDatetime(QString datetime);
 
     /* file and directory operations */
     bool CopyFile(QString f, QString dir);
