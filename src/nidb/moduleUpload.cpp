@@ -539,7 +539,7 @@ bool moduleUpload::ParseUploadedSquirrel(squirrel *sqrl, QString upload_subjectc
             /* get series */
             QList<squirrelSeries> serieses = sqrl->GetSeriesList(study.GetObjectID());
             foreach (squirrelSeries series, serieses) {
-                n->Log(series.PrintSeries());
+                //n->Log(series.PrintSeries());
                 n->Log(QString("Found series [%1]").arg(series.SeriesNumber));
 
                 int numfiles = series.files.size();
@@ -921,7 +921,7 @@ QString moduleUpload::GetUploadStatus(int uploadid) {
     QSqlQuery q;
     q.prepare("select upload_status from uploads where upload_id = :uploadid");
     q.bindValue(":uploadid", uploadid);
-    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.size() > 0) {
         q.first();
         status = q.value("upload_status").toString();
@@ -945,14 +945,14 @@ int moduleUpload::InsertOrUpdateParsedSubject(int parsedSubjectRowID, QString up
             q.bindValue(":sex", PatientSex);
             q.bindValue(":dob", PatientBirthDate);
             q.bindValue(":subjectid", parsedSubjectRowID);
-            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         }
         else if (upload_subjectcriteria == "namesexdob") {
             /* update all subject details except PatientName/Sex/BirthDate */
             q.prepare("update upload_subjects set uploadsubject_patientid = :patientid where uploadsubject_id = :subjectid");
             q.bindValue(":name", PatientID);
             q.bindValue(":subjectid", parsedSubjectRowID);
-            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         }
         else
             m = "Unspecified subject criteria [" + upload_subjectcriteria + "]";
@@ -965,7 +965,7 @@ int moduleUpload::InsertOrUpdateParsedSubject(int parsedSubjectRowID, QString up
             q.prepare("select uploadsubject_id from upload_subjects where upload_id = :uploadid and uploadsubject_patientid = :patientid");
             q.bindValue(":uploadid", uploadRowID);
             q.bindValue(":patientid", PatientID);
-            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
             if (q.size() > 0) {
                 q.first();
                 parsedSubjectRowID = q.value("uploadsubject_id").toInt();
@@ -975,7 +975,7 @@ int moduleUpload::InsertOrUpdateParsedSubject(int parsedSubjectRowID, QString up
                 q.prepare("insert into upload_subjects (upload_id, uploadsubject_patientid) values (:uploadid, :patientid)");
                 q.bindValue(":uploadid", uploadRowID);
                 q.bindValue(":patientid", PatientID);
-                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
                 parsedSubjectRowID = q.lastInsertId().toInt();
             }
         }
@@ -986,7 +986,7 @@ int moduleUpload::InsertOrUpdateParsedSubject(int parsedSubjectRowID, QString up
             q.bindValue(":patientname", PatientName);
             q.bindValue(":patientdob", PatientBirthDate);
             q.bindValue(":patientsex", PatientSex);
-            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
             if (q.size() > 0) {
                 q.first();
                 parsedSubjectRowID = q.value("uploadsubject_id").toInt();
@@ -998,7 +998,7 @@ int moduleUpload::InsertOrUpdateParsedSubject(int parsedSubjectRowID, QString up
                 q.bindValue(":patientname", PatientName);
                 q.bindValue(":patientdob", PatientBirthDate);
                 q.bindValue(":patientsex", PatientSex);
-                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
                 parsedSubjectRowID = q.lastInsertId().toInt();
             }
         }
@@ -1043,7 +1043,7 @@ int moduleUpload::InsertOrUpdateParsedStudy(int parsedStudyRowID, QString upload
             q.bindValue(":operator", Operator);
             q.bindValue(":studyinstanceuid", StudyInstanceUID);
             q.bindValue(":studyid", parsedStudyRowID);
-            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         }
         else if (upload_studycriteria == "studyuid") {
             /* update all study details except StudyInstanceUID */
@@ -1056,7 +1056,7 @@ int moduleUpload::InsertOrUpdateParsedStudy(int parsedStudyRowID, QString upload
             q.bindValue(":operator", Operator);
             q.bindValue(":studyinstanceuid", StudyInstanceUID);
             q.bindValue(":studyid", parsedStudyRowID);
-            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         }
         else
             msg = "Unspecified study criteria [" + upload_studycriteria + "]";
@@ -1068,7 +1068,7 @@ int moduleUpload::InsertOrUpdateParsedStudy(int parsedStudyRowID, QString upload
             q.bindValue(":subjectid", subjectRowID);
             q.bindValue(":studydatetime", StudyDateTime);
             q.bindValue(":modality", Modality);
-            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
             if (q.size() > 0) {
                 q.first();
                 parsedStudyRowID = q.value("uploadstudy_id").toInt();
@@ -1080,7 +1080,7 @@ int moduleUpload::InsertOrUpdateParsedStudy(int parsedStudyRowID, QString upload
                 q.bindValue(":studyNumber", StudyNumber);
                 q.bindValue(":studydatetime", StudyDateTime);
                 q.bindValue(":modality", Modality);
-                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
                 parsedStudyRowID = q.lastInsertId().toInt();
             }
         }
@@ -1089,7 +1089,7 @@ int moduleUpload::InsertOrUpdateParsedStudy(int parsedStudyRowID, QString upload
             q.prepare("select uploadstudy_id from upload_studies where uploadsubject_id = :subjectid and uploadstudy_instanceuid = :studyinstanceuid");
             q.bindValue(":subjectid", subjectRowID);
             q.bindValue(":studyinstanceuid", StudyInstanceUID);
-            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
             if (q.size() > 0) {
                 q.first();
                 parsedStudyRowID = q.value("uploadstudy_id").toInt();
@@ -1100,7 +1100,7 @@ int moduleUpload::InsertOrUpdateParsedStudy(int parsedStudyRowID, QString upload
                 q.bindValue(":subjectid", subjectRowID);
                 q.bindValue(":studyNumber", StudyNumber);
                 q.bindValue(":studyinstanceuid", StudyInstanceUID);
-                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
                 parsedStudyRowID = q.lastInsertId().toInt();
             }
         }
@@ -1156,7 +1156,7 @@ int moduleUpload::InsertOrUpdateParsedSeries(int parsedSeriesRowID, QString uplo
             q.bindValue(":seriesinstanceuid", SeriesInstanceUID);
             q.bindValue(":files", files.join(","));
             q.bindValue(":seriesid", parsedSeriesRowID);
-            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         }
         else if (upload_seriescriteria == "seriesdate") {
             /* update all series details except SeriesDateTime */
@@ -1174,7 +1174,7 @@ int moduleUpload::InsertOrUpdateParsedSeries(int parsedSeriesRowID, QString uplo
             q.bindValue(":seriesinstanceuid", SeriesInstanceUID);
             q.bindValue(":files", files.join(","));
             q.bindValue(":seriesid", parsedSeriesRowID);
-            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         }
         else if (upload_seriescriteria == "seriesuid") {
             /* update all series details except SeriesInstanceUID */
@@ -1192,7 +1192,7 @@ int moduleUpload::InsertOrUpdateParsedSeries(int parsedSeriesRowID, QString uplo
             q.bindValue(":cols", Columns);
             q.bindValue(":files", files.join(","));
             q.bindValue(":seriesid", parsedSeriesRowID);
-            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         }
         else
             msg = "Unspecified series criteria [" + upload_seriescriteria + "]";
@@ -1225,7 +1225,7 @@ int moduleUpload::InsertOrUpdateParsedSeries(int parsedSeriesRowID, QString uplo
                 q.prepare("insert into upload_series (uploadstudy_id, uploadseries_num) values (:studyid, :seriesnum)");
                 q.bindValue(":studyid", studyRowID);
                 q.bindValue(":seriesnum", SeriesNumber);
-                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
                 parsedSeriesRowID = q.lastInsertId().toInt();
             }
         }
@@ -1233,7 +1233,7 @@ int moduleUpload::InsertOrUpdateParsedSeries(int parsedSeriesRowID, QString uplo
             /* check if the seriesid already exists ... */
             q.prepare("select uploadseries_id, uploadseries_numfiles, uploadseries_filelist from upload_series where uploadstudy_id = :studyid and uploadseries_date = '" + SeriesDateTime + "'");
             q.bindValue(":studyid", studyRowID);
-            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
             if (q.size() > 0) {
                 q.first();
                 parsedSeriesRowID = q.value("uploadseries_id").toInt();
@@ -1253,7 +1253,7 @@ int moduleUpload::InsertOrUpdateParsedSeries(int parsedSeriesRowID, QString uplo
                 /* ... otherwise create a new series */
                 q.prepare("insert into upload_series (uploadstudy_id, uploadseries_date) values (:studyid, '" + SeriesDateTime + "')");
                 q.bindValue(":studyid", studyRowID);
-                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
                 parsedSeriesRowID = q.lastInsertId().toInt();
             }
         }
@@ -1265,7 +1265,7 @@ int moduleUpload::InsertOrUpdateParsedSeries(int parsedSeriesRowID, QString uplo
             q.prepare("select uploadseries_id, uploadseries_numfiles, uploadseries_filelist from upload_series where uploadstudy_id = :studyid and uploadseries_instanceuid = :seriesinstanceuid");
             q.bindValue(":studyid", studyRowID);
             q.bindValue(":seriesinstanceuid", SeriesInstanceUID);
-            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
             if (q.size() > 0) {
                 q.first();
                 parsedSeriesRowID = q.value("uploadseries_id").toInt();
@@ -1286,7 +1286,7 @@ int moduleUpload::InsertOrUpdateParsedSeries(int parsedSeriesRowID, QString uplo
                 q.prepare("insert into upload_series (uploadstudy_id, uploadseries_instanceuid) values (:studyid, :seriesinstanceuid)");
                 q.bindValue(":studyid", studyRowID);
                 q.bindValue(":seriesinstanceuid", SeriesInstanceUID);
-                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
                 parsedSeriesRowID = q.lastInsertId().toInt();
             }
         }
