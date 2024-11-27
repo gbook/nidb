@@ -955,11 +955,15 @@ namespace utils {
 
 
     /* ---------------------------------------------------------- */
-    /* --------- PrintProgress ---------------------------------- */
+    /* --------- StringToDatetime ------------------------------- */
     /* ---------------------------------------------------------- */
     QDateTime StringToDatetime(QString datetime) {
         datetime = datetime.replace(' ', 'T') + "Z";
-        return QDateTime::fromString(datetime, Qt::ISODate);
+
+        QDateTime qdt = QDateTime::fromString(datetime, Qt::ISODate);
+        qdt = qdt.toLocalTime();
+
+        return qdt;
     }
 
 }

@@ -401,7 +401,8 @@ bool squirrel::Read() {
                 sqrlSeries.BIDSTask = jsonSeries["BIDSTask"].toString();
                 sqrlSeries.BehavioralFileCount = jsonSeries["BehavioralFileCount"].toInteger();
                 sqrlSeries.BehavioralSize = jsonSeries["BehavioralSize"].toInteger();
-                sqrlSeries.DateTime = utils::StringToDatetime(jsonStudy["SeriesDatetime"].toString());
+                //sqrlSeries.DateTime = utils::StringToDatetime(jsonStudy["SeriesDatetime"].toString());
+                sqrlSeries.DateTime = QDateTime::fromString(jsonSubject["SeriesDatetime"].toString(), "yyyy-MM-dd hh:mm:ss");
                 sqrlSeries.Description = jsonSeries["Description"].toString();
                 sqrlSeries.FileCount = jsonSeries["FileCount"].toInteger();
                 sqrlSeries.Protocol = jsonSeries["Protocol"].toString();
