@@ -718,6 +718,8 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
                 n->Log("Successfully read squirrel package [" + f + "]", __FUNCTION__);
                 sqrl->PrintPackage();
 
+                n->Log(sqrl->GetLog());
+
                 /* extract the file to a temp directory */
                 tmppath = n->cfg["tmpdir"] + "/" + GenerateRandomString(20);
                 if (!MakePath(tmppath,m)) {
@@ -739,6 +741,8 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
                     continue;
                 }
             }
+
+            n->Log(sqrl->GetLog());
 
             /* get list of series which should be archived from this upload */
             QSqlQuery q2;
@@ -862,6 +866,8 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
                     i++;
                     double pct = static_cast<double>(i)/static_cast<double>(numSeries) * 100.0;
                     SetUploadStatus(uploadRowID, "archiving", pct);
+
+                    n->Log(sqrl->GetLog());
                 }
 
                 io->AppendUploadLog(__FUNCTION__, QString("Completed archiving of upload [%1]").arg(uploadRowID));
@@ -883,8 +889,12 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
                 else
                     io->AppendUploadLog(__FUNCTION__, QString("Error: No series found for upload [%1]").arg(uploadRowID));
             }
+
+            n->Log(sqrl->GetLog());
+            delete sqrl;
         }
     }
+
     return ret;
 }
 
