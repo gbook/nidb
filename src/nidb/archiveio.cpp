@@ -859,30 +859,30 @@ bool archiveIO::ArchiveNiftiSeries(int subjectRowID, int studyRowID, int seriesR
     q.bindValue(":SeriesDescription", tags["SeriesDescription"]);
     q.bindValue(":ProtocolName", tags["ProtocolName"]);
     q.bindValue(":SequenceName", tags["SequenceName"]);
-    q.bindValue(":RepetitionTime", tags["RepetitionTime"]);
-    q.bindValue(":EchoTime", tags["EchoTime"]);
-    q.bindValue(":FlipAngle", tags["FlipAngle"]);
+    if (tags["RepetitionTime"] == "") q.bindValue(":RepetitionTime", QVariant(QMetaType::fromType<double>())); else q.bindValue(":RepetitionTime", tags["RepetitionTime"]); /* for null values */
+    if (tags["EchoTime"] == "") q.bindValue(":EchoTime", QVariant(QMetaType::fromType<double>())); else q.bindValue(":EchoTime", tags["EchoTime"]); /* for null values */
+    if (tags["FlipAngle"] == "") q.bindValue(":FlipAngle", QVariant(QMetaType::fromType<double>())); else q.bindValue(":FlipAngle", tags["FlipAngle"]); /* for null values */
     q.bindValue(":InPlanePhaseEncodingDirection", tags["InPlanePhaseEncodingDirection"]);
-
     if (tags["PhaseEncodeAngle"] == "") q.bindValue(":PhaseEncodeAngle", QVariant(QMetaType::fromType<double>())); else q.bindValue(":PhaseEncodeAngle", tags["PhaseEncodeAngle"]); /* for null values */
     if (tags["PhaseEncodingDirectionPositive"] == "") q.bindValue(":PhaseEncodingDirectionPositive", QVariant(QMetaType::fromType<int>())); else q.bindValue(":PhaseEncodingDirectionPositive", tags["PhaseEncodingDirectionPositive"]); /* for null values */
-
     q.bindValue(":pixelX", tags["pixelX"]);
     q.bindValue(":pixelY", tags["pixelY"]);
     q.bindValue(":SliceThickness", tags["SliceThickness"]);
-    q.bindValue(":MagneticFieldStrength", tags["MagneticFieldStrength"]);
-    q.bindValue(":Rows", tags["Rows"]);
-    q.bindValue(":Columns", tags["Columns"]);
-    q.bindValue(":zsize", tags["zsize"]);
-    //q.bindValue(":InversionTime", tags["InversionTime"]);
+    //q.bindValue(":MagneticFieldStrength", tags["MagneticFieldStrength"]);
+    if (tags["MagneticFieldStrength"] == "") q.bindValue(":MagneticFieldStrength", QVariant(QMetaType::fromType<double>())); else q.bindValue(":MagneticFieldStrength", tags["MagneticFieldStrength"]); /* for null values */
+    q.bindValue(":Rows", tags["Rows"].toInt());
+    q.bindValue(":Columns", tags["Columns"].toInt());
+    q.bindValue(":zsize", tags["zsize"].toInt());
     if (tags["InversionTime"] == "") q.bindValue(":InversionTime", QVariant(QMetaType::fromType<double>())); else q.bindValue(":InversionTime", tags["InversionTime"]); /* for null values */
-    q.bindValue(":PercentSampling", tags["PercentSampling"]);
-    q.bindValue(":PercentPhaseFieldOfView", tags["PercentPhaseFieldOfView"]);
-    q.bindValue(":AcquisitionMatrix", tags["AcquisitionMatrix"]);
+    //q.bindValue(":PercentSampling", tags["PercentSampling"]);
+    if (tags["PercentSampling"] == "") q.bindValue(":PercentSampling", QVariant(QMetaType::fromType<double>())); else q.bindValue(":PercentSampling", tags["PercentSampling"]); /* for null values */
+    //q.bindValue(":PercentPhaseFieldOfView", tags["PercentPhaseFieldOfView"]);
+    if (tags["PercentPhaseFieldOfView"] == "") q.bindValue(":PercentPhaseFieldOfView", QVariant(QMetaType::fromType<double>())); else q.bindValue(":PercentPhaseFieldOfView", tags["PercentPhaseFieldOfView"]); /* for null values */
+    //q.bindValue(":AcquisitionMatrix", tags["AcquisitionMatrix"]);
     if (tags["SliceThickness"] == "") q.bindValue(":SliceThickness", QVariant(QMetaType::fromType<double>())); else q.bindValue(":SliceThickness", tags["SliceThickness"]); /* for null values */
-    //q.bindValue(":SliceThickness", tags["SliceThickness"]);
-    q.bindValue(":SpacingBetweenSlices", tags["SpacingBetweenSlices"]);
-    q.bindValue(":PixelBandwidth", tags["PixelBandwidth"]);
+    if (tags["SpacingBetweenSlices"] == "") q.bindValue(":SpacingBetweenSlices", QVariant(QMetaType::fromType<double>())); else q.bindValue(":SpacingBetweenSlices", tags["SpacingBetweenSlices"]); /* for null values */
+    //q.bindValue(":PixelBandwidth", tags["PixelBandwidth"]);
+    if (tags["PixelBandwidth"] == "") q.bindValue(":PixelBandwidth", QVariant(QMetaType::fromType<double>())); else q.bindValue(":PixelBandwidth", tags["PixelBandwidth"]); /* for null values */
     q.bindValue(":ImageType", tags["ImageType"]);
     q.bindValue(":ImageComments", tags["ImageComments"]);
     q.bindValue(":boldreps", tags["boldreps"]);

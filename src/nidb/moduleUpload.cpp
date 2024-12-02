@@ -729,7 +729,10 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
                 }
 
                 if (sqrl->Extract(tmppath, m)) {
-                    n->Log("Successfuly extracted squirrel package [" + f + "] to directory [" + tmppath + "]", __FUNCTION__);
+                    n->Log("Successfuly extracted squirrel package [" + f + "] to directory [" + tmppath + "] with message [" + m + "]", __FUNCTION__);
+                    qint64 c(0), b(0);
+                    GetDirSizeAndFileCount(tmppath, c, b);
+                    n->Log(QString("squirrelPath is [%1]. It contains [%2] files with total size [%3] bytes").arg(tmppath).arg(c).arg(b));
                 }
                 else {
                     n->Log("Error extracting squirrel package [" + f + "] to directory [" + tmppath + "] with message [" + m + "]", __FUNCTION__);
@@ -815,6 +818,7 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
                     //performanceMetric perf;
                     QHash<QString, QString> tags;
                     tags["SeriesDescription"] = sqrlSeries.Description;
+                    n->Log(QString("series.params.size [%1]").arg(sqrlSeries.params.size()), __FUNCTION__);
                     tags["SeriesDateTime"] = sqrlSeries.DateTime.toString("yyyy-MM-dd hh:mm:ss");
                     tags["ProtocolName"] = sqrlSeries.params["ProtocolName"];
                     tags["SequenceName"] = sqrlSeries.params["SequenceName"];
