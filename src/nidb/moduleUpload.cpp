@@ -540,7 +540,7 @@ bool moduleUpload::ParseUploadedSquirrel(squirrel *sqrl, QString upload_subjectc
             /* get series */
             QList<squirrelSeries> serieses = sqrl->GetSeriesList(study.GetObjectID());
             foreach (squirrelSeries series, serieses) {
-                n->Log(series.PrintSeries());
+                //n->Log(series.PrintSeries());
                 n->Log(QString("Found series [%1]").arg(series.SeriesNumber));
                 n->Log(QString("squirrelSeries fileCount [%1] files [%2]").arg(series.FileCount).arg(series.files.join(", ")));
 
