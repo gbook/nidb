@@ -404,7 +404,7 @@ bool squirrel::Read() {
                 //sqrlSeries.DateTime = utils::StringToDatetime(jsonSeries["SeriesDatetime"].toString());
                 sqrlSeries.DateTime = QDateTime::fromString(jsonSeries["SeriesDatetime"].toString(), "yyyy-MM-dd hh:mm:ss");
                 sqrlSeries.Description = jsonSeries["Description"].toString();
-                sqrlSeries.FileCount = jsonSeries["FileCount"].toInteger();
+                //sqrlSeries.FileCount = jsonSeries["FileCount"].toInteger();
                 sqrlSeries.Protocol = jsonSeries["Protocol"].toString();
                 sqrlSeries.SeriesNumber = jsonSeries["SeriesNumber"].toInteger();
                 sqrlSeries.SeriesUID = jsonSeries["SeriesUID"].toString();
@@ -416,14 +416,23 @@ bool squirrel::Read() {
                 if (!quickRead) {
                     /* read any params from the data/Subject/Study/Series/params.json file */
                     QString parms;
-                    QString paramsfilepath = QString("data/%2/%3/%4/params.json").arg(sqrlSubject.ID).arg(sqrlStudy.StudyNumber).arg(sqrlSeries.SeriesNumber);
+                    QString paramsfilepath = QString("data/%1/%2/%3/params.json").arg(sqrlSubject.ID).arg(sqrlStudy.StudyNumber).arg(sqrlSeries.SeriesNumber);
                     if (ExtractFileFromArchive(GetPackagePath(), paramsfilepath, parms)) {
                         sqrlSeries.params = ReadParamsFile(parms);
-                        //Log(QString("Read params file [%1]. series.params contains [%2] items").arg(paramsfilepath).arg(sqrlSeries.params.size()), __FUNCTION__);
+                        Log(QString("Read params file [%1]. series.params contains [%2] items").arg(paramsfilepath).arg(sqrlSeries.params.size()), __FUNCTION__);
                     }
                     else {
                         Log("Unable to read params file [" + paramsfilepath + "]", __FUNCTION__);
                     }
+
+                    /* get file listing */
+                    QString seriesPath = QString("data/%1/%2/%3").arg(sqrlSubject.ID).arg(sqrlStudy.StudyNumber).arg(sqrlSeries.SeriesNumber);
+                    QStringList files;
+                    QString m;
+                    GetFileListingFromArchive(GetPackagePath(), seriesPath, files, m);
+                    Log(QString("archiveSeriesPath [%1] found [%2] files [%3]").arg(seriesPath).arg(files.size()).arg(files.join(",")), __FUNCTION__);
+                    sqrlSeries.files = files;
+                    sqrlSeries.FileCount = files.size();
                 }
 
                 sqrlSeries.Store();
@@ -937,6 +946,7 @@ bool squirrel::Write(bool writeLog) {
 /* ----- Extract ---------------------------------------------- */
 /* ------------------------------------------------------------ */
 bool squirrel::Extract(QString destinationDir, QString &m) {
+    m = "Extracting [" + packagePath + "] to [" + destinationDir + "]";
     if (ExtractArchiveToDirectory(packagePath, destinationDir, m))
         return true;
     else
@@ -2921,12 +2931,17 @@ bool squirrel::UpdateMemoryFileToArchive(QString file, QString compressedFilePat
 bool squirrel::ExtractArchiveToDirectory(QString archivePath, QString destinationPath, QString &m) {
 
     QString systemstring = QString("7za x -y %1 -o%2").arg(archivePath).arg(destinationPath);
+    m += systemstring + "\n";
     Log(QString("Extracting %1 to %2").arg(archivePath).arg(destinationPath), __FUNCTION__);
     Log(utils::SystemCommand(systemstring), __FUNCTION__);
-    if (utils::FileExists(destinationPath))
+    if (utils::FileExists(destinationPath)) {
+        m += destinationPath + " exists\n";
         return true;
-    else
+    }
+    else {
+        m += destinationPath + " does not exist\n";
         return false;
+    }
 
     // try {
     //     using namespace bit7z;
@@ -2962,6 +2977,41 @@ bool squirrel::ExtractArchiveToDirectory(QString archivePath, QString destinatio
     //    m = "Unable to extract archive to directory using bit7z library [" + QString(ex.what()) + "]";
     //    return false;
     //}
+}
+
+
+bool squirrel::GetFileListingFromArchive(QString archivePath, QString subDir, QStringList &files, QString &m) {
+
+    try {
+        using namespace bit7z;
+        Bit7zLibrary lib(p7zipLibPath.toStdString());
+
+        if (archivePath.endsWith(".zip", Qt::CaseInsensitive)) {
+            BitArchiveReader reader(lib, archivePath.toStdString(), bit7z::BitFormat::Zip);
+            for (const auto& item : reader) {
+                QString archivedPath = QString::fromStdString(item.path());
+                if (archivedPath.startsWith(subDir)) {
+                    files.append(QString::fromStdString(item.path()));
+                }
+            }
+        }
+        else {
+            /* first, get the index of the directory to remove */
+            BitArchiveReader reader(lib, archivePath.toStdString(), bit7z::BitFormat::SevenZip);
+            for (const auto& item : reader) {
+                QString archivedPath = QString::fromStdString(item.path());
+                if (archivedPath.startsWith(subDir)) {
+                    files.append(QString::fromStdString(item.path()));
+                }
+            }
+        }
+        return true;
+    }
+    catch ( const bit7z::BitException& ex ) {
+        /* Do something with ex.what()...*/
+        m = "Unable to get subdirectory listing using bit7z library [" + QString(ex.what()) + "]";
+        return false;
+    }
 }
 
 

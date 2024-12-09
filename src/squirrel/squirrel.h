@@ -190,6 +190,7 @@ private:
     bool MakeTempDir(QString &dir);
     bool RemoveDirectoryFromArchive(QString compressedDirPath, QString archivePath, QString &m);
     bool UpdateMemoryFileToArchive(QString file, QString compressedFilePath, QString archivePath, QString &m);
+    bool GetFileListingFromArchive(QString archivePath, QString subDir, QStringList &files, QString &m);
 
     QString workingDir;
     QString logfile;

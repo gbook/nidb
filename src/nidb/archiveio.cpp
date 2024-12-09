@@ -811,7 +811,7 @@ bool archiveIO::ArchiveNiftiSeries(int subjectRowID, int studyRowID, int seriesR
 
     /* check if there are any files to archive */
     if (files.size() < 1) {
-        AppendUploadLog(__FUNCTION__ , "No Nifti files to archive");
+        AppendUploadLog(__FUNCTION__ , "***** No Nifti files to archive (files variable is empty) *****");
         return false;
     }
 
@@ -3161,7 +3161,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
 
     /* the squirrel object should be complete, so write it out */
     sqrl.Write(false);
-    msgs << n->Log(QString("%1() - squirrel.write() returned [\n" + sqrl.GetLog() + "\n]").arg(__FUNCTION__));
+    msgs << n->Log(QString("%1() - squirrel.write() returned [\n" + sqrl.GetLogBuffer() + "\n]").arg(__FUNCTION__));
 
     if (FileDirectoryExists(localTempDir))
         if (RemoveDir(localTempDir, m))
@@ -3224,7 +3224,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
     /* PACKAGE - get the details, and create package object */
     squirrel sqrl(n->debug);
     if (!sqrl.IsValid()) {
-        n->Log("Unable to initialize squirrel library [" + sqrl.GetLog() + "]");
+        n->Log("Unable to initialize squirrel library [" + sqrl.GetLogBuffer() + "]");
         return false;
     }
 
@@ -3488,7 +3488,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
     n->Log("libsquirrel message buffer [" + sqrl.GetLogBuffer() + "]");
 
     if (sqrl.Write(false)) {
-        msg = sqrl.GetLog();
+        msg = sqrl.GetLogBuffer();
 
         if (!n->debug) {
             if (FileDirectoryExists(localTempDir))
@@ -3503,7 +3503,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         return true;
     }
     else {
-        msg = sqrl.GetLog();
+        msg = sqrl.GetLogBuffer();
         return false;
     }
 }

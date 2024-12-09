@@ -185,9 +185,9 @@ bool moduleUpload::ReadUploads() {
                     sqrl->SetPackagePath(f);
                     sqrl->SetQuickRead(false); /* it will take longer to read, but we will want the contents of all the params.json files */
                     if (sqrl->Read()) {
-                        ParseUploadedSquirrel(sqrl, upload_subjectcriteria, upload_studycriteria, upload_seriescriteria, uploadstagingpath, uploadRowID);
                         n->Log("Successfully read squirrel file [" + f + "]");
                         n->Log(sqrl->GetLogBuffer());
+                        ParseUploadedSquirrel(sqrl, "patientid", upload_studycriteria, upload_seriescriteria, uploadstagingpath, uploadRowID);
                     }
                     else {
                         /* unable to read squirrel file */
@@ -542,6 +542,7 @@ bool moduleUpload::ParseUploadedSquirrel(squirrel *sqrl, QString upload_subjectc
             foreach (squirrelSeries series, serieses) {
                 n->Log(series.PrintSeries());
                 n->Log(QString("Found series [%1]").arg(series.SeriesNumber));
+                n->Log(QString("squirrelSeries fileCount [%1] files [%2]").arg(series.FileCount).arg(series.files.join(", ")));
 
                 int numfiles = series.FileCount;
                 int seriesRowID = InsertOrUpdateParsedSeries(-1, "seriesnum", studyRowID, series.DateTime.toString("yyyy-MM-dd hh:mm:ss"), series.SeriesNumber, series.SeriesUID, series.files, numfiles, series.Description, series.Protocol, "", "", "", "", 0, 0, m);
@@ -731,11 +732,18 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
                     n->Log("Created temp directory [" + tmppath + "]. Now extracting squirrel package...", __FUNCTION__);
                 }
 
+                m = "";
                 if (sqrl->Extract(tmppath, m)) {
                     n->Log("Successfuly extracted squirrel package [" + f + "] to directory [" + tmppath + "] with message [" + m + "]", __FUNCTION__);
                     qint64 c(0), b(0);
                     GetDirSizeAndFileCount(tmppath, c, b);
                     n->Log(QString("squirrelPath is [%1]. It contains [%2] files with total size [%3] bytes").arg(tmppath).arg(c).arg(b));
+                    QString systemstring = "ls " + tmppath;
+                    n->Log(SystemCommand(systemstring));
+                    systemstring = "ls -l " + tmppath;
+                    n->Log(SystemCommand(systemstring));
+                    systemstring = "cd " + tmppath + "/data; ls -l */*/*";
+                    n->Log(SystemCommand(systemstring));
                 }
                 else {
                     n->Log("Error extracting squirrel package [" + f + "] to directory [" + tmppath + "] with message [" + m + "]", __FUNCTION__);
@@ -803,7 +811,7 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
                     /* get or create study */
                     int localStudyNumber(-1);
                     if (io->GetStudy("modalitystudydate", studyRowID, enrollmentRowID, uploadStudyDate, uploadStudyModality, sqrlStudy.StudyUID, studyRowID)) {
-                        n->Log(QString("Found existing study.  number [%1], studytRowID [%2]").arg(subjectUID).arg(subjectRowID), __FUNCTION__);
+                        n->Log(QString("Found existing study.  number [%1], studyRowID [%2]").arg(subjectUID).arg(subjectRowID), __FUNCTION__);
                     }
                     else {
                         /* create study */
@@ -822,46 +830,46 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
 
                     //performanceMetric perf;
                     QHash<QString, QString> tags;
-                    tags["SeriesDescription"] = sqrlSeries.Description;
                     n->Log(QString("series.params.size [%1]").arg(sqrlSeries.params.size()), __FUNCTION__);
-                    tags["SeriesDateTime"] = sqrlSeries.DateTime.toString("yyyy-MM-dd hh:mm:ss");
-                    tags["ProtocolName"] = sqrlSeries.params["ProtocolName"];
-                    tags["SequenceName"] = sqrlSeries.params["SequenceName"];
-                    tags["RepetitionTime"] = sqrlSeries.params["RepetitionTime"];
+                    tags["AcquisitionMatrix"] = sqrlSeries.params["AcquisitionMatrix"];
+                    tags["Columns"] = sqrlSeries.params["Columns"];
                     tags["EchoTime"] = sqrlSeries.params["EchoTime"];
                     tags["FlipAngle"] = sqrlSeries.params["FlipAngle"];
+                    tags["ImageComments"] = sqrlSeries.params["ImageComments"];
+                    tags["ImageType"] = sqrlSeries.params["ImageType"];
                     tags["InPlanePhaseEncodingDirection"] = sqrlSeries.params["InPlanePhaseEncodingDirection"];
+                    tags["InversionTime"] = sqrlSeries.params["InversionTime"];
+                    tags["MagneticFieldStrength"] = sqrlSeries.params["MagneticFieldStrength"];
+                    tags["PercentPhaseFieldOfView"] = sqrlSeries.params["PercentPhaseFieldOfView"];
+                    tags["PercentSampling"] = sqrlSeries.params["PercentSampling"];
                     tags["PhaseEncodeAngle"] = sqrlSeries.params["PhaseEncodeAngle"];
                     tags["PhaseEncodingDirectionPositive"] = sqrlSeries.params["PhaseEncodingDirectionPositive"];
-                    tags["pixelX"] = sqrlSeries.params["pixelX"];
-                    tags["pixelY"] = sqrlSeries.params["pixelY"];
-                    tags["SliceThickness"] = sqrlSeries.params["SliceThickness"];
-                    tags["MagneticFieldStrength"] = sqrlSeries.params["MagneticFieldStrength"];
+                    tags["PixelBandwidth"] = sqrlSeries.params["PixelBandwidth"];
+                    tags["ProtocolName"] = sqrlSeries.params["ProtocolName"];
+                    tags["RepetitionTime"] = sqrlSeries.params["RepetitionTime"];
                     tags["Rows"] = sqrlSeries.params["Rows"];
-                    tags["Columns"] = sqrlSeries.params["Columns"];
-                    tags["zsize"] = sqrlSeries.params["zsize"];
-                    tags["InversionTime"] = sqrlSeries.params["InversionTime"];
-                    tags["PercentSampling"] = sqrlSeries.params["PercentSampling"];
-                    tags["PercentPhaseFieldOfView"] = sqrlSeries.params["PercentPhaseFieldOfView"];
-                    tags["AcquisitionMatrix"] = sqrlSeries.params["AcquisitionMatrix"];
+                    tags["SequenceName"] = sqrlSeries.params["SequenceName"];
+                    tags["SeriesDateTime"] = sqrlSeries.DateTime.toString("yyyy-MM-dd hh:mm:ss");
+                    tags["SeriesDescription"] = sqrlSeries.Description;
+                    tags["SliceThickness"] = sqrlSeries.params["SliceThickness"];
                     tags["SliceThickness"] = sqrlSeries.params["SliceThickness"];
                     tags["SpacingBetweenSlices"] = sqrlSeries.params["SpacingBetweenSlices"];
-                    tags["PixelBandwidth"] = sqrlSeries.params["PixelBandwidth"];
-                    tags["ImageType"] = sqrlSeries.params["ImageType"];
-                    tags["ImageComments"] = sqrlSeries.params["ImageComments"];
                     tags["boldreps"] = QString("%1").arg(sqrlSeries.FileCount);
+                    tags["pixelX"] = sqrlSeries.params["pixelX"];
+                    tags["pixelY"] = sqrlSeries.params["pixelY"];
+                    tags["zsize"] = sqrlSeries.params["zsize"];
 
                     /* insert the series */
-                    if (sqrl->DataFormat.startsWith("nifti", Qt::CaseInsensitive)) {
-                        n->Debug("squirrel data format is [" + sqrl->DataFormat + "], calling ArchiveNiftiSeries()");
+                    if ((sqrl->DataFormat.startsWith("nifti", Qt::CaseInsensitive)) && (sqrlStudy.Modality.toLower() == "mr")) {
+                        n->Log("squirrel data format is [" + sqrl->DataFormat + "], calling ArchiveNiftiSeries()");
                         io->ArchiveNiftiSeries(subjectRowID, studyRowID, seriesRowID, uploadSeriesNumber, tags, files);
                     }
                     else if ((sqrl->DataFormat == "dicom") || (sqrl->DataFormat == "orig") || (sqrl->DataFormat == "anon") || (sqrl->DataFormat == "anonfull")) {
-                        n->Debug("squirrel data format is [" + sqrl->DataFormat + "], calling ArchiveDICOMSeries()");
+                        n->Log("squirrel data format is [" + sqrl->DataFormat + "], calling ArchiveDICOMSeries()");
                         //io->ArchiveDICOMSeries();
                     }
                     else {
-                        n->Debug("squirrel data format is [" + sqrl->DataFormat + "], unrecognized");
+                        n->Log("Currently unsopported: squirrel data format is [" + sqrl->DataFormat + "] and modality is [" + sqrlStudy.Modality + "]");
                     }
 
                     i++;
@@ -1214,7 +1222,7 @@ int moduleUpload::InsertOrUpdateParsedSeries(int parsedSeriesRowID, QString uplo
     }
     else {
         if (upload_seriescriteria == "seriesnum") {
-            /* check if the studyid exists ... */
+            /* check if the seriesid exists ... */
             q.prepare("select uploadseries_id, uploadseries_numfiles, uploadseries_filelist from upload_series where uploadstudy_id = :studyid and uploadseries_num = :seriesnum");
             q.bindValue(":studyid", studyRowID);
             q.bindValue(":seriesnum", SeriesNumber);
