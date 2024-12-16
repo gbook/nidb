@@ -1509,14 +1509,14 @@
 							/* get subject info. there may be series from multiple subjects in this list */
 							//$sqlstring = "select * from measures a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join measurenames d on a.measurename_id = d.measurename_id where a.enrollment_id in (" . implode2(",", $enrollmentids) . ")";
 							//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-								$uid = $row['uid'];
-								$subjectid = $row['subject_id'];
-								$observationdate = $row['measure_startdate'];
-								$observationid = $row['measure_id'];
-								$observationname = $row['measure_name'];
+							//while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+							//	$uid = $row['uid'];
+							//	$subjectid = $row['subject_id'];
+							//	$observationdate = $row['measure_startdate'];
+							//	$observationid = $row['measure_id'];
+							//	$observationname = $row['measure_name'];
 								
-								$observationids[] = $observationid;
+							//	$observationids[] = $observationid;
 								?>
 									<tr>
 										<td class="allobservations"><input type="checkbox" name="observationids[]" value="<?=$observationid?>" <?=$checkboxstr?> class="observationcheck" onClick="CheckSelectedObservationCount(this);"></td>
@@ -1525,7 +1525,7 @@
 										<td><?=$observationdate?></td>
 									</tr>
 								<?
-							}
+							//}
 						?>
 						</tbody>
 					</table>
@@ -2165,9 +2165,9 @@
 		<!-- Include the JS for AG Grid -->
 		<script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.noStyle.js"></script>
 		<!-- Include the core CSS, this is needed by the grid -->
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-grid.css"/>
+		<!--<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-grid.css"/>-->
 		<!-- Include the theme CSS, only need to import the theme you are going to use -->
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-theme-alpine.css"/>
+		<!--<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-theme-alpine.css"/>-->
 
 		<? MarkTime("After including AGgrid"); ?>
 

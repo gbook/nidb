@@ -1224,6 +1224,9 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                     QString indir = QString("%1/%2/%3/%4/%5").arg(n->cfg["archivedir"]).arg(uid).arg(localstudynum).arg(seriesnum).arg(datatype);
                     QString behindir = QString("%1/%2/%3/%4/beh").arg(n->cfg["archivedir"]).arg(uid).arg(localstudynum).arg(seriesnum);
 
+                    if (!QFile::exists(indir))
+                        indir = QString("%1/%2/%3/%4").arg(n->cfg["archivedir"]).arg(uid).arg(localstudynum).arg(seriesnum);
+
                     /* start building the analysis path */
                     QString newanalysispath = analysispath + "/" + location;
 

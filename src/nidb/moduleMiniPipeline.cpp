@@ -124,7 +124,7 @@ int moduleMiniPipeline::Run() {
 
                 /* (1) create a temp space */
                 QString m;
-                QString tmpdir = "/tmp/" + GenerateRandomString(10);
+                QString tmpdir = n->cfg["tmpdir"] + "/" + GenerateRandomString(10);
                 if (!MakePath(tmpdir, m))
                     AppendMiniPipelineLog(n->Log("Error creating directory [" + tmpdir + "] error message [" + m + "]"), mpjobid);
                 else {

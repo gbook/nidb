@@ -1038,6 +1038,7 @@
 							$sqlstringC = "select * from upload_series where uploadstudy_id = $uploadstudyid order by uploadseries_num asc";
 							$resultC = MySQLiQuery($sqlstringC, __FILE__, __LINE__);
 							while ($rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC)) {
+								//PrintVariable($rowC);
 								$uploadseriesid = $rowC['uploadseries_id'];
 								$seriesinstanceuid = $rowC['uploadseries_instanceuid'];
 								$desc = $rowC['uploadseries_desc'];
@@ -1054,8 +1055,8 @@
 								$filelist = $rowC['uploadseries_filelist'];
 
 								if ($desc == "") $desc = "(blankSeriesDescription)";
-								if ($protocol == "") $desc = "(blankProtocol)";
-								if ($seriesnum == "") $desc = "(blankSeriesNum)";
+								if ($protocol == "") $protocol = $desc;
+								if ($seriesnum == "") $seriesnum = "(blankSeriesNum)";
 								
 								/* check for existing series using this specified criteria */
 								$seriesmatches = GetMatchingSeries($seriescriteria, $matchstudyid, $modality, $seriesdate, $seriesnum, $seriesinstanceuid);
