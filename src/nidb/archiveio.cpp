@@ -693,6 +693,76 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
 
     AppendUploadLog(__FUNCTION__ , QString(logmsg + "]  Done renaming [%1] new files").arg(filecnt));
 
+    /* check for sequential/continuous image numbers */
+    logmsg = "Checking for sequential image numbers... ";
+    QStringList dcms = FindAllFiles(outdir, "*.dcm");
+    SortQStringListNaturally(dcms);
+    qint64 numdcms = dcms.size();
+    QList<int> sliceNumbers;
+    QList<int> instanceNumbers;
+    int maxSliceNumber(0), maxInstanceNumber(0);
+    foreach (QString file, dcms) {
+        /* get the DICOM tags */
+        QHash<QString, QString> tags;
+        QString m;
+        QString binpath = n->cfg["nidbdir"] + "/bin";
+        if (!img->GetImageFileTags(file, binpath, false, tags, m)) {
+            logmsg += "?";
+            continue;
+        }
+
+        int SliceNumber = tags["AcquisitionNumber"].toInt();
+        int InstanceNumber = tags["InstanceNumber"].toInt();
+        sliceNumbers.append(SliceNumber);
+        instanceNumbers.append(InstanceNumber);
+
+        if (SliceNumber > maxSliceNumber)
+            maxSliceNumber = SliceNumber;
+        if (InstanceNumber > maxInstanceNumber)
+            maxInstanceNumber = InstanceNumber;
+    }
+    /* basic checks */
+    bool valid = true;
+    if (numdcms != sliceNumbers.size()) {
+        valid = false;
+        logmsg += QString(" (DICOM file count [%1] does NOT match SliceNumbers count [%2])").arg(numdcms).arg(sliceNumbers.size());
+    }
+    else
+        logmsg += QString(" (DICOM file count [%1] matches SliceNumbers count [%2])").arg(numdcms).arg(sliceNumbers.size());
+
+    if (numdcms != instanceNumbers.size()) {
+        valid = false;
+        logmsg += QString(" (DICOM file count [%1] does NOT match InstanceNumbers count [%2])").arg(numdcms).arg(instanceNumbers.size());
+    }
+    else
+        logmsg += QString(" (DICOM file count [%1] matches InstanceNumbers count [%2])").arg(numdcms).arg(instanceNumbers.size());
+
+    /* check all slice numbers for missing images */
+    for (int i=1; i<=maxSliceNumber; i++) {
+        if (!sliceNumbers.contains(i)) {
+            valid = false;
+            logmsg += QString(" (missing SliceNumber [%1])").arg(i);
+        }
+    }
+    /* check all instance numbers for missing images */
+    for (int i=1; i<=maxInstanceNumber; i++) {
+        if (!instanceNumbers.contains(i)) {
+            valid = false;
+            logmsg += QString(" (missing InstanceNumber [%1])").arg(i);
+        }
+    }
+
+    AppendUploadLog(__FUNCTION__ , logmsg);
+    /* update the validity check */
+    if (dbModality == "mr") {
+        QSqlQuery q;
+        q.prepare("update mr_series set is_valid = :valid, message = :message where mrseries_id = :seriesid");
+        q.bindValue(":valid", valid);
+        q.bindValue(":message", logmsg);
+        q.bindValue(":seriesid", seriesRowID);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    }
+
     /* get the size of the dicom files and update the DB */
     qint64 dirsize = 0;
     qint64 nfiles;

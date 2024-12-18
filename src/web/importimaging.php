@@ -44,6 +44,9 @@
 	//PrintVariable($_POST);
 	//PrintVariable($_GET);
 	//PrintVariable($_FILES);
+	$username = $_SESSION['username'];
+	$instanceid = $_SESSION['instanceid'];
+	session_write_close();
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
@@ -66,7 +69,7 @@
 	/* determine action */
 	switch ($action) {
 		case 'newimportform':
-			DisplayNewImportForm();
+			DisplayNewImportForm($username, $instanceid);
 			break;
 		case 'newimport':
 			NewImport($datalocation, $nfspath, $projectid, $modality, $filetype, $subjectcriteria, $studycriteria, $seriescriteria, $userspecifiedpatientid);
@@ -103,7 +106,7 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayNewImportForm --------------- */
 	/* -------------------------------------------- */
-	function DisplayNewImportForm() {
+	function DisplayNewImportForm($username, $instanceid) {
 		?>
 		<div class="ui container">
 			<div class="ui top attached grey segment">
@@ -162,7 +165,7 @@
 						<select name="projectid" required>
 							<option value="">Select project...</option>
 							<?
-								$sqlstring = "select * from projects a left join user_project b on a.project_id = b.project_id where b.user_id = (select user_id from users where username = '" . $_SESSION['username'] . "') and a.instance_id = '" . $_SESSION['instanceid'] . "' order by project_name";
+								$sqlstring = "select * from projects a left join user_project b on a.project_id = b.project_id where b.user_id = (select user_id from users where username = '$username') and a.instance_id = '$instanceid' order by project_name";
 								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 									$project_id = $row['project_id'];

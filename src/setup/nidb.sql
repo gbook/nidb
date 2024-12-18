@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Nov 07, 2024 at 08:15 PM
+-- Generation Time: Dec 18, 2024 at 05:08 PM
 -- Server version: 10.3.28-MariaDB
 -- PHP Version: 7.2.24
 
@@ -1897,7 +1897,9 @@ CREATE TABLE `mr_series` (
   `ishidden` tinyint(1) NOT NULL DEFAULT 0,
   `series_createdate` datetime DEFAULT NULL,
   `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `series_duration` bigint(20) DEFAULT NULL
+  `series_duration` bigint(20) DEFAULT NULL,
+  `is_valid` tinyint(1) NOT NULL DEFAULT 1,
+  `message` text DEFAULT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
