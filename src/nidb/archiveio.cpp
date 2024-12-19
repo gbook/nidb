@@ -727,30 +727,39 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
         valid = false;
         logmsg += QString(" (DICOM file count [%1] does NOT match SliceNumbers count [%2])").arg(numdcms).arg(sliceNumbers.size());
     }
-    else
-        logmsg += QString(" (DICOM file count [%1] matches SliceNumbers count [%2])").arg(numdcms).arg(sliceNumbers.size());
+    //else
+    //    logmsg += QString(" (DICOM file count [%1] matches SliceNumbers count [%2])").arg(numdcms).arg(sliceNumbers.size());
 
     if (numdcms != instanceNumbers.size()) {
         valid = false;
         logmsg += QString(" (DICOM file count [%1] does NOT match InstanceNumbers count [%2])").arg(numdcms).arg(instanceNumbers.size());
     }
-    else
-        logmsg += QString(" (DICOM file count [%1] matches InstanceNumbers count [%2])").arg(numdcms).arg(instanceNumbers.size());
+    //else
+    //    logmsg += QString(" (DICOM file count [%1] matches InstanceNumbers count [%2])").arg(numdcms).arg(instanceNumbers.size());
 
     /* check all slice numbers for missing images */
+    QList<int> missingSliceNumbers;
     for (int i=1; i<=maxSliceNumber; i++) {
         if (!sliceNumbers.contains(i)) {
             valid = false;
-            logmsg += QString(" (missing SliceNumber [%1])").arg(i);
+            missingSliceNumbers.append(i);
+            //logmsg += QString(" (missing SliceNumber [%1])").arg(i);
         }
     }
+    if (missingSliceNumbers.size() > 0)
+        logmsg += "Missing slice numbers [" + JoinIntArray(missingSliceNumbers, ",") + "]";
+
     /* check all instance numbers for missing images */
+    QList<int> missingInstanceNumbers;
     for (int i=1; i<=maxInstanceNumber; i++) {
         if (!instanceNumbers.contains(i)) {
             valid = false;
-            logmsg += QString(" (missing InstanceNumber [%1])").arg(i);
+            missingInstanceNumbers.append(i);
+            //logmsg += QString(" (missing InstanceNumber [%1])").arg(i);
         }
     }
+    if (missingInstanceNumbers.size() > 0)
+        logmsg += "Missing instance numbers [" + JoinIntArray(missingInstanceNumbers, ",") + "]";
 
     AppendUploadLog(__FUNCTION__ , logmsg);
     /* update the validity check */

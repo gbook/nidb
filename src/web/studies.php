@@ -2149,6 +2149,8 @@
 							$imagetype = $row['image_type'];
 							$image_comments = $row['image_comments'];
 							$ishidden = $row['ishidden'];
+							$isvalid = $row['is_valid'];
+							$validmessage = $row['message'];
 							
 							if ($series_num - $lastseriesnum > 1) {
 								$firstmissing = $lastseriesnum+1;
@@ -2447,7 +2449,7 @@
 							});
 							</script>
 							<tr style="color: <?=$rowcolor?>">
-								<td><?=$series_num?><span id="series<?=$series_num?>"></td>
+								<td><?=$series_num?> <? if (!$isvalid) { ?> <i class='ui large red exclamation circle icon' title='<?=$validmessage?>'></i><? } ?> <span id="series<?=$series_num?>"></span></td>
 								<td><span id="uploader<?=$mrseries_id?>"></span></td>
 								<td>
 									<a href="series.php?action=scanparams&seriesid=<?=$mrseries_id?>&modality=mr"><?=$series_desc?></a>&nbsp;<span id="thumbnail<?=$series_num?>"></span>
@@ -2466,7 +2468,7 @@
 											$color = "green";
 										}
 									?>
-									<a class="ui <?=$color?> compact basic button" href="studies.php?action=editbidsmapping&modality=mr&seriesid=<?=$mrseries_id?>" data-html="<?=$bidstitle?>" data-inverted="inverted" data-variation="multiline" data-variation="very wide"><?=$label?></a>
+									<a class="ui <?=$color?> compact tiny basic button" href="studies.php?action=editbidsmapping&modality=mr&seriesid=<?=$mrseries_id?>" data-html="<?=$bidstitle?>" data-inverted="inverted" data-variation="multiline" data-variation="very wide"><?=$label?></a>
 								</td>
 								<td style="font-size:8pt"><?=$series_datetime?></td>
 								<td style="font-size:8pt"><?=$series_notes;?></td>
