@@ -76,12 +76,12 @@ bool bids::Read(QString dir, squirrel *sqrl) {
  */
 bool bids::LoadToSquirrel(QString dir, squirrel *sqrl) {
 
-    sqrl->Log(QString("Loading BIDS from [%1]").arg(dir), __FUNCTION__);
+    sqrl->Log(QString("Loading BIDS from [%1]").arg(dir));
 
     /* check if BIDS directory exists */
     QDir d(dir);
     if (!d.exists()) {
-        sqrl->Log(QString("Error. Directory [%1] does not exist").arg(dir), __FUNCTION__);
+        sqrl->Log(QString("Error. Directory [%1] does not exist").arg(dir));
         return false;
     }
 
@@ -100,15 +100,15 @@ bool bids::LoadToSquirrel(QString dir, squirrel *sqrl) {
 
         QString ID = subjdir;
         /* load the subject */
-        squirrelSubject sqrlSubject;
+        squirrelSubject sqrlSubject(sqrl->GetDatabaseUUID());
         qint64 subjectRowID = sqrl->FindSubject(ID);
         if (subjectRowID < 0) {
             sqrlSubject.ID = ID;
             sqrlSubject.Store();
             subjectRowID = sqrlSubject.GetObjectID();
-            sqrl->Log(QString("Added subject [%1]").arg(ID), __FUNCTION__);
+            sqrl->Log(QString("Added subject [%1]").arg(ID));
         }
-        sqrl->Log(QString("Reading BIDS subject [%1] into squirrel subject [%2] with rowID [%3]").arg(ID).arg(sqrlSubject.ID).arg(subjectRowID), __FUNCTION__);
+        sqrl->Log(QString("Reading BIDS subject [%1] into squirrel subject [%2] with rowID [%3]").arg(ID).arg(sqrlSubject.ID).arg(subjectRowID));
 
         /* get all the FILES inside of the subject directory */
         QStringList subjfiles = utils::FindAllFiles(subjpath, "*", false);
@@ -163,7 +163,7 @@ bool bids::LoadToSquirrel(QString dir, squirrel *sqrl) {
  * @return true if successful, false if any errors
  */
 bool bids::LoadRootFiles(QStringList rootfiles, squirrel *sqrl) {
-    sqrl->Log(QString("Loading [%1] files from the BIDS root directory").arg(rootfiles.size()), __FUNCTION__);
+    sqrl->Log(QString("Loading [%1] files from the BIDS root directory").arg(rootfiles.size()));
 
     foreach (QString filePath, rootfiles) {
         QFileInfo fi(filePath);
@@ -207,7 +207,7 @@ bool bids::LoadRootFiles(QStringList rootfiles, squirrel *sqrl) {
             sqrl->Debug(QString("Reading squirrel->subject (demographics) from from %1 ...").arg(filePath), __FUNCTION__);
             /* this goes into the subjects object */
             if (!LoadParticipantsFile(filePath, sqrl)) {
-                sqrl->Log("Error loading participants.tsv", __FUNCTION__);
+                sqrl->Log("Error loading participants.tsv");
             }
         }
     }
@@ -227,7 +227,7 @@ bool bids::LoadRootFiles(QStringList rootfiles, squirrel *sqrl) {
  * @return true
  */
 bool bids::LoadSubjectFiles(QStringList subjfiles, QString ID, squirrel *sqrl) {
-    sqrl->Log(QString("Loading subject [%1] files for ID [%2]").arg(subjfiles.size()).arg(ID), __FUNCTION__);
+    sqrl->Log(QString("Loading subject [%1] files for ID [%2]").arg(subjfiles.size()).arg(ID));
 
     foreach (QString f, subjfiles) {
         QFileInfo fi(f);
@@ -246,7 +246,7 @@ bool bids::LoadSubjectFiles(QStringList subjfiles, QString ID, squirrel *sqrl) {
         if (filename.endsWith("_scans.tsv")) {
 
             /* get the subject */
-            squirrelSubject sqrlSubject;
+            squirrelSubject sqrlSubject(sqrl->GetDatabaseUUID());
             qint64 subjectRowID = sqrl->FindSubject(ID);
             if (subjectRowID < 0) {
                 sqrlSubject.ID = ID;
@@ -256,13 +256,13 @@ bool bids::LoadSubjectFiles(QStringList subjfiles, QString ID, squirrel *sqrl) {
 
             /* create a session/study and add it to the subject */
             int studyRowID;
-            squirrelStudy sqrlStudy;
+            squirrelStudy sqrlStudy(sqrl->GetDatabaseUUID());
             sqrlStudy.subjectRowID = subjectRowID;
             sqrlStudy.Store();
             studyRowID = sqrlStudy.GetObjectID();
 
             /* create an analysis */
-            squirrelAnalysis sqrlAnalysis;
+            squirrelAnalysis sqrlAnalysis(sqrl->GetDatabaseUUID());
             sqrlAnalysis.PipelineName = "analysis";
             sqrlAnalysis.LastMessage = "BIDS imported analysis file";
             sqrlAnalysis.studyRowID = studyRowID;
@@ -272,7 +272,7 @@ bool bids::LoadSubjectFiles(QStringList subjfiles, QString ID, squirrel *sqrl) {
             QStringList files;
             files.append(f);
             sqrl->AddStagedFiles("analysis", analysisRowID, files);
-            sqrl->Log(QString("Added [%1] files to analysis [%2]").arg(files.size()).arg("analysis"), __FUNCTION__);
+            sqrl->Log(QString("Added [%1] files to analysis [%2]").arg(files.size()).arg("analysis"));
 
         }
         else if (f.endsWith("_sessions.tsv")) {
@@ -312,16 +312,16 @@ bool bids::LoadSubjectFiles(QStringList subjfiles, QString ID, squirrel *sqrl) {
  * @return true
  */
 bool bids::LoadSessionDir(QString sesdir, qint64 subjectRowID, int studyNum, squirrel *sqrl) {
-    sqrl->Log(QString("Reading BIDS session directory [%1] --> into squirrel study [%2]").arg(sesdir).arg(studyNum), __FUNCTION__);
+    sqrl->Log(QString("Reading BIDS session directory [%1] --> into squirrel study [%2]").arg(sesdir).arg(studyNum));
 
     /* load the subject */
-    squirrelSubject subject;
+    squirrelSubject subject(sqrl->GetDatabaseUUID());
     subject.SetObjectID(subjectRowID);
     subject.Get();
 
     /* create a new study... */
     qint64 studyRowID = sqrl->FindStudy(subject.ID, studyNum);
-    squirrelStudy study;
+    squirrelStudy study(sqrl->GetDatabaseUUID());
     if (studyRowID < 0) {
         studyNum = subject.GetNextStudyNumber();
         study.StudyNumber = studyNum;
@@ -329,7 +329,7 @@ bool bids::LoadSessionDir(QString sesdir, qint64 subjectRowID, int studyNum, squ
         study.Modality = "MR";
         study.Store();
         studyRowID = study.GetObjectID();
-        sqrl->Log(QString(" Added study [%1]").arg(studyNum), __FUNCTION__);
+        sqrl->Log(QString(" Added study [%1]").arg(studyNum));
     }
     /* ... or load an existing study */
     else {
@@ -354,12 +354,12 @@ bool bids::LoadSessionDir(QString sesdir, qint64 subjectRowID, int studyNum, squ
 
     /* get list of all dirs in this sesdir */
     QStringList sesdirs = utils::FindAllDirs(sesdir, "*", false);
-    sqrl->Log(QString("Found [%1] directories in [%2/*]").arg(sesdirs.size()).arg(sesdir), __FUNCTION__);
+    sqrl->Log(QString("Found [%1] directories in [%2/*]").arg(sesdirs.size()).arg(sesdir));
     if (sesdirs.size() > 0) {
         foreach (QString dir, sesdirs) {
             QString datadir = QString("%1/%2").arg(sesdir).arg(dir);
             QStringList files = utils::FindAllFiles(datadir, "*", false);
-            sqrl->Log(QString("Found [%1] files in '%2'").arg(files.size()).arg(datadir), __FUNCTION__);
+            sqrl->Log(QString("Found [%1] files in '%2'").arg(files.size()).arg(datadir));
 
             /* now do something with the files, depending on what they are */
             if ((dir == "anat") || (dir == "fmap") || (dir == "perf")) {
@@ -376,13 +376,13 @@ bool bids::LoadSessionDir(QString sesdir, qint64 subjectRowID, int studyNum, squ
 
                     sqrl->Debug(QString("Checkpoint 1 - SubjectID [%1]  protocol [%2]  seriesNum [%3]").arg(subject.ID).arg(protocol).arg(seriesNum), __FUNCTION__);
 
-                    squirrelSeries series;
+                    squirrelSeries series(sqrl->GetDatabaseUUID());
                     series.SeriesNumber = seriesNum;
                     series.studyRowID = studyRowID;
                     series.Protocol = protocol;
                     series.Store();
                     qint64 seriesRowID = series.GetObjectID();
-                    sqrl->Log(QString("  Added series [%1] with seriesRowID [%2]").arg(seriesNum).arg(seriesRowID), __FUNCTION__);
+                    sqrl->Log(QString("  Added series [%1] with seriesRowID [%2]").arg(seriesNum).arg(seriesRowID));
 
                     /* now that the subject/study/series exist, add the file(s) */
                     QStringList files2;
@@ -409,13 +409,13 @@ bool bids::LoadSessionDir(QString sesdir, qint64 subjectRowID, int studyNum, squ
                     protocol += run;
                     qint64 seriesNum = study.GetNextSeriesNumber();
 
-                    squirrelSeries series;
+                    squirrelSeries series(sqrl->GetDatabaseUUID());
                     series.SeriesNumber = seriesNum;
                     series.studyRowID = studyRowID;
                     series.Protocol = protocol;
                     series.Store();
                     qint64 seriesRowID = series.GetObjectID();
-                    sqrl->Log(QString("  Added series [%1] with seriesRowID [%2]").arg(seriesNum).arg(seriesRowID), __FUNCTION__);
+                    sqrl->Log(QString("  Added series [%1] with seriesRowID [%2]").arg(seriesNum).arg(seriesRowID));
 
                     /* now that the subject/study/series exist, add the file(s) */
                     QStringList files2;
@@ -447,13 +447,13 @@ bool bids::LoadSessionDir(QString sesdir, qint64 subjectRowID, int studyNum, squ
                     qint64 seriesNum = study.GetNextSeriesNumber();
 
                     /* create a seriesRowID */
-                    squirrelSeries series;
+                    squirrelSeries series(sqrl->GetDatabaseUUID());
                     series.SeriesNumber = seriesNum;
                     series.studyRowID = studyRowID;
                     series.Protocol = protocol;
                     series.Store();
                     qint64 seriesRowID = series.GetObjectID();
-                    sqrl->Log(QString("  Added series [%1] with seriesRowID [%2]").arg(seriesNum).arg(seriesRowID), __FUNCTION__);
+                    sqrl->Log(QString("  Added series [%1] with seriesRowID [%2]").arg(seriesNum).arg(seriesRowID));
 
                     /* now that the subject/study/series exist, add the file(s) */
                     QStringList files2;
@@ -488,13 +488,13 @@ bool bids::LoadSessionDir(QString sesdir, qint64 subjectRowID, int studyNum, squ
                     qint64 seriesNum = study.GetNextSeriesNumber();
 
                     /* create a seriesRowID */
-                    squirrelSeries series;
+                    squirrelSeries series(sqrl->GetDatabaseUUID());
                     series.SeriesNumber = seriesNum;
                     series.studyRowID = studyRowID;
                     series.Protocol = protocol;
                     series.Store();
                     qint64 seriesRowID = series.GetObjectID();
-                    sqrl->Log(QString("  Added series [%1] with seriesRowID [%2]").arg(seriesNum).arg(seriesRowID), __FUNCTION__);
+                    sqrl->Log(QString("  Added series [%1] with seriesRowID [%2]").arg(seriesNum).arg(seriesRowID));
 
                     /* now that the subject/study/series exist, add the file(s) */
                     QStringList files2;
@@ -531,13 +531,13 @@ bool bids::LoadSessionDir(QString sesdir, qint64 subjectRowID, int studyNum, squ
                     qint64 seriesNum = study.GetNextSeriesNumber();
 
                     /* create a subjectRowID if it doesn't exist */
-                    squirrelSeries series;
+                    squirrelSeries series(sqrl->GetDatabaseUUID());
                     series.SeriesNumber = seriesNum;
                     series.studyRowID = studyRowID;
                     series.Protocol = protocol;
                     series.Store();
                     qint64 seriesRowID = series.GetObjectID();
-                    sqrl->Log(QString("  Added series [%1] with seriesRowID [%2]").arg(seriesNum).arg(seriesRowID), __FUNCTION__);
+                    sqrl->Log(QString("  Added series [%1] with seriesRowID [%2]").arg(seriesNum).arg(seriesRowID));
 
                     /* now that the subject/study/series exist, add the file(s) */
                     QStringList files2;
@@ -572,13 +572,13 @@ bool bids::LoadSessionDir(QString sesdir, qint64 subjectRowID, int studyNum, squ
                     qint64 seriesNum = study.GetNextSeriesNumber();
 
                     /* create a subjectRowID if it doesn't exist */
-                    squirrelSeries series;
+                    squirrelSeries series(sqrl->GetDatabaseUUID());
                     series.SeriesNumber = seriesNum;
                     series.studyRowID = studyRowID;
                     series.Protocol = protocol;
                     series.Store();
                     qint64 seriesRowID = series.GetObjectID();
-                    sqrl->Log(QString("  Added series [%1] with seriesRowID [%2]").arg(seriesNum).arg(seriesRowID), __FUNCTION__);
+                    sqrl->Log(QString("  Added series [%1] with seriesRowID [%2]").arg(seriesNum).arg(seriesRowID));
 
                     /* now that the subject/study/series exist, add the file(s) */
                     QStringList files2;
@@ -607,13 +607,13 @@ bool bids::LoadSessionDir(QString sesdir, qint64 subjectRowID, int studyNum, squ
                     qint64 seriesNum = study.GetNextSeriesNumber();
 
                     /* create a subjectRowID if it doesn't exist */
-                    squirrelSeries series;
+                    squirrelSeries series(sqrl->GetDatabaseUUID());
                     series.SeriesNumber = seriesNum;
                     series.studyRowID = studyRowID;
                     series.Protocol = protocol;
                     series.Store();
                     qint64 seriesRowID = series.GetObjectID();
-                    sqrl->Log(QString("  Added series [%1] with seriesRowID [%2]").arg(seriesNum).arg(seriesRowID), __FUNCTION__);
+                    sqrl->Log(QString("  Added series [%1] with seriesRowID [%2]").arg(seriesNum).arg(seriesRowID));
 
                     /* now that the subject/study/series exist, add the file(s) */
                     QStringList files2;
@@ -622,7 +622,7 @@ bool bids::LoadSessionDir(QString sesdir, qint64 subjectRowID, int studyNum, squ
                 }
             }
             else {
-                sqrl->Log(QString("Notice! modality directory [%1] not handled yet").arg(dir), __FUNCTION__);
+                sqrl->Log(QString("Notice! modality directory [%1] not handled yet").arg(dir));
             }
         }
     }
@@ -643,7 +643,7 @@ bool bids::LoadSessionDir(QString sesdir, qint64 subjectRowID, int studyNum, squ
 bool bids::LoadParticipantsFile(QString f, squirrel *sqrl) {
     /* do we need to read the .json file? There's not much in there that isn't already specified here */
 
-    sqrl->Log(QString("Reading participants file [%1]").arg(f), __FUNCTION__);
+    sqrl->Log(QString("Reading participants file [%1]").arg(f));
 
     QString file = utils::ReadTextFileToString(f);
 
@@ -662,7 +662,7 @@ bool bids::LoadParticipantsFile(QString f, squirrel *sqrl) {
             QString strain = tsv[i]["strain"];
 
             /* add a subject */
-            squirrelSubject sqrlSubj;
+            squirrelSubject sqrlSubj(sqrl->GetDatabaseUUID());
             sqrlSubj.ID = id;
             sqrlSubj.Sex = sex;
             sqrlSubj.Gender = sex;
@@ -670,28 +670,28 @@ bool bids::LoadParticipantsFile(QString f, squirrel *sqrl) {
             qint64 subjectRowID = sqrlSubj.GetObjectID();
 
             /* add handedness as a observation */
-            squirrelObservation sqrlObs;
+            squirrelObservation sqrlObs(sqrl->GetDatabaseUUID());
             sqrlObs.Description = "Handedness";
             sqrlObs.ObservationName = "Handedness";
             sqrlObs.Value = hand;
             sqrlObs.subjectRowID = subjectRowID;
             sqrlObs.Store();
 
-            squirrelObservation sqrlObs2;
+            squirrelObservation sqrlObs2(sqrl->GetDatabaseUUID());
             sqrlObs2.Description = "Species";
             sqrlObs2.ObservationName = "Species";
             sqrlObs2.Value = species;
             sqrlObs2.subjectRowID = subjectRowID;
             sqrlObs2.Store();
 
-            squirrelObservation sqrlObs3;
+            squirrelObservation sqrlObs3(sqrl->GetDatabaseUUID());
             sqrlObs3.Description = "Strain";
             sqrlObs3.ObservationName = "Strain";
             sqrlObs3.Value = strain;
             sqrlObs3.subjectRowID = subjectRowID;
             sqrlObs3.Store();
 
-            squirrelObservation sqrlObs4;
+            squirrelObservation sqrlObs4(sqrl->GetDatabaseUUID());
             sqrlObs4.Description = "age";
             sqrlObs4.ObservationName = "age";
             sqrlObs4.Value = age;
@@ -702,7 +702,7 @@ bool bids::LoadParticipantsFile(QString f, squirrel *sqrl) {
         }
     }
     else {
-        sqrl->Log(QString("Error: Unable to read .tsv file [%1] message [%2]").arg(f).arg(m), __FUNCTION__);
+        sqrl->Log(QString("Error: Unable to read .tsv file [%1] message [%2]").arg(f).arg(m));
     }
 
     return true;
@@ -720,7 +720,7 @@ bool bids::LoadParticipantsFile(QString f, squirrel *sqrl) {
  */
 bool bids::LoadTaskFile(QString f, squirrel *sqrl) {
 
-    sqrl->Log(QString("Reading task file [%1]").arg(f), __FUNCTION__);
+    sqrl->Log(QString("Reading task file [%1]").arg(f));
 
     QFileInfo fi(f);
     QString filename = fi.fileName();
@@ -739,7 +739,7 @@ bool bids::LoadTaskFile(QString f, squirrel *sqrl) {
 
     //double tr = root.value("RepetitionTime").toDouble();
 
-    squirrelExperiment exp;
+    squirrelExperiment exp(sqrl->GetDatabaseUUID());
     exp.ExperimentName = experimentName;
     //exp.virtualPath = QString("experiments/%1").arg(experimentName);
     exp.Store();

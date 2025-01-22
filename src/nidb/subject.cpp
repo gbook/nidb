@@ -258,8 +258,8 @@ void subject::PrintSubjectInfo() {
 /* ---------------------------------------------------------- */
 /* --------- GetSquirrelObject ------------------------------ */
 /* ---------------------------------------------------------- */
-squirrelSubject subject::GetSquirrelObject() {
-    squirrelSubject sqrl;
+squirrelSubject subject::GetSquirrelObject(QString databaseUUID) {
+    squirrelSubject sqrl(databaseUUID);
 
     sqrl.AlternateIDs = _altuids;
     sqrl.DateOfBirth = _dob;

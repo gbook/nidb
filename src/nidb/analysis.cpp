@@ -234,7 +234,7 @@ QJsonObject analysis::GetJSONObject() {
  * @return squirrelAnalysis object
  */
 squirrelAnalysis analysis::GetSquirrelObject() {
-    squirrelAnalysis s;
+    squirrelAnalysis s(databaseUUID);
 
     s.DateClusterEnd = clusterEndDate;
     s.DateClusterStart = clusterStartDate;

@@ -27,8 +27,10 @@
 /* ------------------------------------------------------------ */
 /* ----- subject ---------------------------------------------- */
 /* ------------------------------------------------------------ */
-squirrelSubject::squirrelSubject()
+squirrelSubject::squirrelSubject(QString dbID)
 {
+    databaseUUID = dbID;
+
     DateOfBirth = QDate(0,0,0);
     Gender = "U";
     Sex = "U";
@@ -57,7 +59,7 @@ bool squirrelSubject::Get() {
         return false;
     }
 
-    QSqlQuery q(QSqlDatabase::database("squirrel"));
+    QSqlQuery q(QSqlDatabase::database(databaseUUID));
     q.prepare("select * from Subject where SubjectRowID = :id");
     q.bindValue(":id", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -100,7 +102,7 @@ bool squirrelSubject::Get() {
  */
 bool squirrelSubject::Store() {
 
-    QSqlQuery q(QSqlDatabase::database("squirrel"));
+    QSqlQuery q(QSqlDatabase::database(databaseUUID));
     /* insert if the object doesn't exist ... */
     if (objectID < 0) {
         q.prepare("insert or ignore into Subject (ID, AltIDs, GUID, DateOfBirth, Sex, Gender, Ethnicity1, Ethnicity2, SequenceNumber, VirtualPath) values (:ID, :AltIDs, :GUID, :DateOfBirth, :Sex, :Gender, :Ethnicity1, :Ethnicity2, :SequenceNumber, :VirtualPath)");
@@ -158,6 +160,7 @@ QString squirrelSubject::PrintDetails() {
     str += utils::Print(QString("\t\tSubjectID: %1").arg(ID));
     str += utils::Print(QString("\t\tSubjectRowID: %1").arg(objectID));
     str += utils::Print(QString("\t\tVirtualPath: %1").arg(VirtualPath()));
+    str += utils::Print(QString("\t\tDatabaseUUID: %1").arg(databaseUUID));
 
     return str;
 }
@@ -173,12 +176,12 @@ QString squirrelSubject::PrintTree(bool isLast) {
     QString str;
 
     if (isLast)
-        str += utils::Print(QString("   └─── ID %1  AltIDs %2  DOB %3  Sex %4").arg(ID).arg(AlternateIDs.join(",")).arg(DateOfBirth.toString("yyyy-MM-dd")).arg(Sex));
+        str += utils::Print(QString("   +--- ID %1  AltIDs %2  DOB %3  Sex %4").arg(ID).arg(AlternateIDs.join(",")).arg(DateOfBirth.toString("yyyy-MM-dd")).arg(Sex));
     else
-        str += utils::Print(QString("   ├─── ID %1  AltIDs %2  DOB %3  Sex %4").arg(ID).arg(AlternateIDs.join(",")).arg(DateOfBirth.toString("yyyy-MM-dd")).arg(Sex));
+        str += utils::Print(QString("   |--- ID %1  AltIDs %2  DOB %3  Sex %4").arg(ID).arg(AlternateIDs.join(",")).arg(DateOfBirth.toString("yyyy-MM-dd")).arg(Sex));
 
     /* find all studies associated with this subject ... */
-    QSqlQuery q(QSqlDatabase::database("squirrel"));
+    QSqlQuery q(QSqlDatabase::database(databaseUUID));
 
     int count(0);
     q.prepare("select count(*) 'count' from Study where SubjectRowID = :subjectid");
@@ -193,7 +196,7 @@ QString squirrelSubject::PrintTree(bool isLast) {
     int i(0);
     while (q.next()) {
         qint64 studyRowID = q.value("StudyRowID").toLongLong();
-        squirrelStudy stud;
+        squirrelStudy stud(databaseUUID);
         stud.SetObjectID(studyRowID);
         if (stud.Get()) {
             i++;
@@ -235,7 +238,7 @@ QString squirrelSubject::CSVLine() {
 bool squirrelSubject::Remove() {
 
     /* find all studies associated with this subject ... */
-    QSqlQuery q(QSqlDatabase::database("squirrel"));
+    QSqlQuery q(QSqlDatabase::database(databaseUUID));
     q.prepare("select StudyRowID from Study where SubjectRowID = :subjectid");
     q.bindValue(":subjectid", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -243,10 +246,10 @@ bool squirrelSubject::Remove() {
         int studyRowID = q.value("StudyRowID").toInt();
 
         /* ... delete any staged Study files */
-        utils::RemoveStagedFileList(studyRowID, "study");
+        utils::RemoveStagedFileList(databaseUUID, studyRowID, "study");
 
         /* ... delete all staged Series files */
-        QSqlQuery q2(QSqlDatabase::database("squirrel"));
+        QSqlQuery q2(QSqlDatabase::database(databaseUUID));
         q2.prepare("select SeriesRowID from Series where StudyRowID = :studyid");
         q2.bindValue(":studyid", studyRowID);
         utils::SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
@@ -254,7 +257,7 @@ bool squirrelSubject::Remove() {
             int seriesRowID = q2.value("SeriesRowID").toInt();
 
             /* ... delete any staged Series files */
-            utils::RemoveStagedFileList(seriesRowID, "series");
+            utils::RemoveStagedFileList(databaseUUID, seriesRowID, "series");
         }
 
         /* ... delete all series for those studies */
@@ -273,7 +276,7 @@ bool squirrelSubject::Remove() {
     q.bindValue(":subjectid", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
-    utils::RemoveStagedFileList(objectID, "subject");
+    utils::RemoveStagedFileList(databaseUUID, objectID, "subject");
 
     /* in case anyone tries to use this object again */
     objectID = -1;
@@ -304,13 +307,13 @@ QJsonObject squirrelSubject::ToJSON() {
     json["VirtualPath"] = VirtualPath();
 
     /* add studies */
-    QSqlQuery q(QSqlDatabase::database("squirrel"));
+    QSqlQuery q(QSqlDatabase::database(databaseUUID));
     q.prepare("select StudyRowID from Study where SubjectRowID = :id");
     q.bindValue(":id", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     QJsonArray JSONstudies;
     while (q.next()) {
-        squirrelStudy s;
+        squirrelStudy s(databaseUUID);
         s.SetObjectID(q.value("StudyRowID").toLongLong());
         if (s.Get()) {
             JSONstudies.append(s.ToJSON());
@@ -327,10 +330,10 @@ QJsonObject squirrelSubject::ToJSON() {
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     QJsonArray JSONobservations;
     while (q.next()) {
-        squirrelObservation m;
-        m.SetObjectID(q.value("ObservationRowID").toLongLong());
-        if (m.Get()) {
-            JSONobservations.append(m.ToJSON());
+        squirrelObservation o(databaseUUID);
+        o.SetObjectID(q.value("ObservationRowID").toLongLong());
+        if (o.Get()) {
+            JSONobservations.append(o.ToJSON());
         }
     }
     if (JSONobservations.size() > 0) {
@@ -344,10 +347,10 @@ QJsonObject squirrelSubject::ToJSON() {
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     QJsonArray JSONinterventions;
     while (q.next()) {
-        squirrelIntervention d;
-        d.SetObjectID(q.value("InterventionRowID").toLongLong());
-        if (d.Get()) {
-            JSONinterventions.append(d.ToJSON());
+        squirrelIntervention i(databaseUUID);
+        i.SetObjectID(q.value("InterventionRowID").toLongLong());
+        if (i.Get()) {
+            JSONinterventions.append(i.ToJSON());
         }
     }
     if (JSONinterventions.size() > 0) {
@@ -387,12 +390,12 @@ QList<QPair<QString,QString>> squirrelSubject::GetStagedFileList() {
     QList<QPair<QString,QString>> stagedList;
 
     /* add all studies staged files */
-    QSqlQuery q(QSqlDatabase::database("squirrel"));
+    QSqlQuery q(QSqlDatabase::database(databaseUUID));
     q.prepare("select StudyRowID from Study where SubjectRowID = :id");
     q.bindValue(":id", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     while (q.next()) {
-        squirrelStudy s;
+        squirrelStudy s(databaseUUID);
         s.SetObjectID(q.value("StudyRowID").toLongLong());
         if (s.Get()) {
             stagedList += s.GetStagedFileList();
@@ -410,7 +413,7 @@ int squirrelSubject::GetNextStudyNumber() {
     int nextStudyNum = 1;
 
     /* get the next study number for this subject */
-    QSqlQuery q(QSqlDatabase::database("squirrel"));
+    QSqlQuery q(QSqlDatabase::database(databaseUUID));
     q.prepare("select max(StudyNumber) 'Max' from Study where SubjectRowID = :id");
     q.bindValue(":id", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);

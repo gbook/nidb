@@ -34,7 +34,7 @@ public:
     nidb *n;
 
     void PrintMeasureInfo();
-    squirrelObservation GetSquirrelObject();
+    squirrelObservation GetSquirrelObject(QString databaseUUID);
 
     QDateTime dateMeasureComplete;
     QDateTime dateMeasureEnd;

@@ -124,8 +124,8 @@ void measure::PrintMeasureInfo() {
 /* ---------------------------------------------------------- */
 /* --------- GetSquirrelObject ------------------------------ */
 /* ---------------------------------------------------------- */
-squirrelObservation measure::GetSquirrelObject() {
-    squirrelObservation sqrl;
+squirrelObservation measure::GetSquirrelObject(QString databaseUUID) {
+    squirrelObservation sqrl(databaseUUID);
 
     sqrl.DateEnd = dateMeasureEnd;
     sqrl.DateRecordCreate = dateRecordCreate;

@@ -34,7 +34,7 @@
 class squirrelObservation
 {
 public:
-    squirrelObservation();
+    squirrelObservation(QString dbID);
     QJsonObject ToJSON();
     QString PrintObservation();
     bool Get();             /* gets the object data from the database */
@@ -43,6 +43,8 @@ public:
     QString Error() { return err; }
     qint64 GetObjectID() { return objectID; }
     void SetObjectID(qint64 id) { objectID = id; }
+    QString GetDatabaseUUID() { return databaseUUID; }
+    void SetDatabaseUUID(QString dbID) { databaseUUID = dbID; }
 
     qint64 subjectRowID;
 
@@ -64,6 +66,7 @@ private:
     bool valid = false;
     QString err;
     qint64 objectID = -1;
+    QString databaseUUID;
 };
 
 #endif // SQUIRRELOBSERVATION_H

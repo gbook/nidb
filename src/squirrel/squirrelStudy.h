@@ -38,7 +38,7 @@
 class squirrelStudy
 {
 public:
-    squirrelStudy();
+    squirrelStudy(QString dbID);
     QString PrintStudy();
     QString PrintTree(bool isLast);
     QJsonObject ToJSON();
@@ -53,6 +53,8 @@ public:
     QString VirtualPath();
     QList<QPair<QString,QString>> GetStagedFileList();
     int GetNextSeriesNumber();
+    QString GetDatabaseUUID() { return databaseUUID; }
+    void SetDatabaseUUID(QString dbID) { databaseUUID = dbID; }
 
     qint64 subjectRowID;
 
@@ -81,6 +83,7 @@ private:
     qint64 objectID;
     QString subjectDirFormat;
     QString studyDirFormat;
+    QString databaseUUID;
 };
 
 #endif // SQUIRRELSTUDY_H

@@ -197,19 +197,19 @@ void study::PrintStudyInfo() {
 /* ---------------------------------------------------------- */
 /* --------- GetSquirrelObject ------------------------------ */
 /* ---------------------------------------------------------- */
-squirrelStudy study::GetSquirrelObject() {
-	squirrelStudy sqrl;
+squirrelStudy study::GetSquirrelObject(QString databaseUUID) {
+    squirrelStudy s(databaseUUID);
 
-    sqrl.DateTime = _studydatetime;
-    sqrl.DayNumber = _daynum.toInt();
-    sqrl.Description = _desc;
-    sqrl.Equipment = _equipment;
-    sqrl.Height = _height;
-    sqrl.Modality = _modality;
-    sqrl.StudyNumber = _studynum;
-    sqrl.TimePoint = _timepoint.toInt();
-    sqrl.VisitType = _studytype;
-    sqrl.Weight = _weight;
+    s.DateTime = _studydatetime;
+    s.DayNumber = _daynum.toInt();
+    s.Description = _desc;
+    s.Equipment = _equipment;
+    s.Height = _height;
+    s.Modality = _modality;
+    s.StudyNumber = _studynum;
+    s.TimePoint = _timepoint.toInt();
+    s.VisitType = _studytype;
+    s.Weight = _weight;
 
-	return sqrl;
+    return s;
 }

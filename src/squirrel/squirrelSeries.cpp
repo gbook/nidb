@@ -23,9 +23,9 @@
 #include "squirrelSeries.h"
 #include "utils.h"
 
-squirrelSeries::squirrelSeries()
+squirrelSeries::squirrelSeries(QString dbID)
 {
-
+    databaseUUID = dbID;
 }
 
 /* ------------------------------------------------------------ */
@@ -46,7 +46,7 @@ bool squirrelSeries::Get() {
         err = "objectID is not set";
         return false;
     }
-    QSqlQuery q(QSqlDatabase::database("squirrel"));
+    QSqlQuery q(QSqlDatabase::database(databaseUUID));
     q.prepare("select * from Series where SeriesRowID = :id");
     q.bindValue(":id", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -74,12 +74,12 @@ bool squirrelSeries::Get() {
         studyRowID = q.value("StudyRowID").toLongLong();
 
         /* get any params */
-        params = utils::GetParams(objectID);
+        params = utils::GetParams(databaseUUID, objectID);
 
         /* get any staged files */
         //utils::Print(QString("Series contains [%1] files before calling GetStagedFileList").arg(stagedFiles.size()));
-        stagedFiles = utils::GetStagedFileList(objectID, "series");
-        stagedBehFiles = utils::GetStagedFileList(objectID, "behseries");
+        stagedFiles = utils::GetStagedFileList(databaseUUID, objectID, "series");
+        stagedBehFiles = utils::GetStagedFileList(databaseUUID, objectID, "behseries");
         //utils::Print(QString("Series contains [%1] files AFTER calling GetStagedFileList").arg(stagedFiles.size()));
 
         valid = true;
@@ -107,7 +107,7 @@ bool squirrelSeries::Get() {
  */
 bool squirrelSeries::Store() {
 
-    QSqlQuery q(QSqlDatabase::database("squirrel"));
+    QSqlQuery q(QSqlDatabase::database(databaseUUID));
     /* insert if the object doesn't exist ... */
     if (objectID < 0) {
         q.prepare("insert or ignore into Series (StudyRowID, SeriesNumber, Datetime, SeriesUID, Description, Protocol, BIDSEntity, BIDSSuffix, BIDSTask, BIDSRun, BIDSPhaseEncodingDirection, Run, ExperimentRowID, Size, Files, FileCount, BehavioralSize, BehavioralFileCount, SequenceNumber, VirtualPath) values (:StudyRowID, :SeriesNumber, :Datetime, :SeriesUID, :Description, :Protocol, :BIDSEntity, :BIDSSuffix, :BIDSTask, :BIDSRun, :BIDSPhaseEncodingDirection, :Run, :ExperimentRowID, :Size, :Files, :FileCount, :BehavioralSize, :BehavioralFileCount, :SequenceNumber, :VirtualPath)");
@@ -164,12 +164,12 @@ bool squirrelSeries::Store() {
     }
 
     /* store any params */
-    utils::StoreParams(objectID, params);
+    utils::StoreParams(databaseUUID, objectID, params);
 
     /* store any staged filepaths */
     //utils::Print(QString("Series contains [%1] files before calling StoreStagedFileList").arg(stagedFiles.size()));
-    utils::StoreStagedFileList(objectID, "series", stagedFiles);
-    utils::StoreStagedFileList(objectID, "behseries", stagedBehFiles);
+    utils::StoreStagedFileList(databaseUUID, objectID, "series", stagedFiles);
+    utils::StoreStagedFileList(databaseUUID, objectID, "behseries", stagedBehFiles);
     //utils::Print(QString("Series contains [%1] files AFTER calling StoreStagedFileList").arg(stagedFiles.size()));
 
     return true;
@@ -181,10 +181,10 @@ bool squirrelSeries::Store() {
 /* ------------------------------------------------------------ */
 bool squirrelSeries::Remove() {
 
-    QSqlQuery q(QSqlDatabase::database("squirrel"));
+    QSqlQuery q(QSqlDatabase::database(databaseUUID));
 
     /* ... delete any staged Study files */
-    utils::RemoveStagedFileList(objectID, "series");
+    utils::RemoveStagedFileList(databaseUUID, objectID, "series");
 
     /* delete the series */
     q.prepare("delete from Series where SeriesRowID = :seriesid");
@@ -250,10 +250,20 @@ QString squirrelSeries::PrintSeries() {
 QString squirrelSeries::PrintTree(bool isLast) {
     QString str;
 
+    QString dateTime = DateTime.toString("yyyy-MM-dd HH:mm:ss");
+    QString protocol = Protocol.trimmed();
+    QString seriesDesc = seriesDesc.trimmed();
+    if (dateTime == "")
+        dateTime = "(blankDateTime)";
+    if (protocol == "")
+        protocol = "(blankProtocol)";
+    if (seriesDesc == "")
+        seriesDesc = "(blankSeriesDesc)";
+
     if (isLast)
-        str += utils::Print(QString("           └─── Series %1 - Datetime %2  Protocol %3").arg(SeriesNumber).arg(DateTime.toString("yyyy-MM-dd HH:mm:ss")).arg(Protocol));
+        str += utils::Print(QString("             +--- Series %1 - %2  %3  %4").arg(SeriesNumber).arg(dateTime).arg(protocol).arg(seriesDesc));
     else
-        str += utils::Print(QString("   │   │   ├─── Series %1 - Datetime %2  Protocol %3").arg(SeriesNumber).arg(DateTime.toString("yyyy-MM-dd HH:mm:ss")).arg(Protocol));
+        str += utils::Print(QString("   |    |    |--- Series %1 - %2  %3  %4").arg(SeriesNumber).arg(dateTime).arg(protocol).arg(seriesDesc));
 
     return str;
 }
@@ -323,7 +333,7 @@ QString squirrelSeries::VirtualPath() {
     int subjectRowID = -1;
 
     /* get the parent study directory */
-    QSqlQuery q(QSqlDatabase::database("squirrel"));
+    QSqlQuery q(QSqlDatabase::database(databaseUUID));
     q.prepare("select SubjectRowID, StudyNumber, SequenceNumber from Study where StudyRowID = :studyid");
     q.bindValue(":studyid", studyRowID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);

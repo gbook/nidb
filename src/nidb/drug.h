@@ -37,7 +37,7 @@ public:
     nidb *n;
 
     void PrintDrugInfo();
-    squirrelIntervention GetSquirrelObject();
+    squirrelIntervention GetSquirrelObject(QString databaseUUID);
 
     QDateTime dateDrugEnd;
     QDateTime dateDrugStart;

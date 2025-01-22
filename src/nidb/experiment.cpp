@@ -171,8 +171,8 @@ QJsonObject experiment::GetJSONObject(QString path) {
 /* ---------------------------------------------------------- */
 /* --------- GetSquirrelObject ------------------------------ */
 /* ---------------------------------------------------------- */
-squirrelExperiment experiment::GetSquirrelObject() {
-    squirrelExperiment s;
+squirrelExperiment experiment::GetSquirrelObject(QString databaseUUID) {
+    squirrelExperiment s(databaseUUID);
 
     s.ExperimentName = name;
     s.FileCount = files.size();

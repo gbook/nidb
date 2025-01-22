@@ -23,12 +23,12 @@
 #ifndef SQUIRREL_H
 #define SQUIRREL_H
 
-//#include <string>
 #include <QString>
 #include <QDate>
 #include <QDateTime>
 #include <QDebug>
 #include <QtSql>
+#include <QUuid>
 #include "squirrelSubject.h"
 #include "squirrelStudy.h"
 #include "squirrelSeries.h"
@@ -53,20 +53,31 @@ typedef QList<QStringPair> pairList;
 class squirrel
 {
 public:
+    /* constructors */
     squirrel(bool dbg=false, bool q=false);
     ~squirrel();
 
-    bool Read();
-    bool Write(bool writeLog);
-    bool Validate();
+    /* user-facing package operations */
     QString Print(bool detail=false);
-    void SetPackagePath(QString p) { packagePath = p; }
-    QString GetPackagePath();
-    void SetFileMode(FileMode m) { fileMode = m; } /*!< Set the file mode to either NewPackage or ExistingPackage */
-    void SetDebugSQL(bool d);
-    void SetOverwritePackage(bool o);
-    void SetQuickRead(bool q);
     bool Extract(QString destinationDir, QString &m);
+    bool Read();
+    bool Validate();
+    bool Write(bool writeLog);
+    bool ExtractArchiveFilesToDirectory(QString archivePath, QString filePattern, QString outDir, QString &m);
+
+    /* get/set options */
+    QString GetDatabaseUUID() { return databaseUUID; }
+    QString GetPackagePath();
+    QString GetSystemTempDir();
+    bool GetDebug() { return debug; }
+    bool GetDebugSQL() { return debugSQL; }
+    void SetDebug(bool d);
+    void SetDebugSQL(bool d);
+    void SetFileMode(FileMode m) { fileMode = m; } /*!< Set the file mode to either NewPackage or ExistingPackage */
+    void SetOverwritePackage(bool o);
+    void SetPackagePath(QString p) { packagePath = p; }
+    void SetQuickRead(bool q);
+    void SetSystemTempDir(QString tmpdir);
 
     /* package JSON elements */
     QDateTime Datetime;         /*!< datetime the package was created */
@@ -109,11 +120,7 @@ public:
     squirrelStudy GetStudy(qint64 studyRowID);
     squirrelSubject GetSubject(qint64 subjectRowID);
 
-    /* get numbers of objects */
-    qint64 GetFileCount();
-    qint64 GetObjectCount(QString object);
-
-    /* find objects, return rowID */
+    /* find objects, and return rowID */
     qint64 FindAnalysis(QString subjectID, int studyNum, QString analysisName);
     qint64 FindDataDictionary(QString dataDictionaryName);
     qint64 FindExperiment(QString experimentName);
@@ -145,6 +152,11 @@ public:
     void ResequenceSeries(qint64 studyRowID);
 
     /* package information */
+    bool GetJsonHeader(QJsonDocument &jdoc);
+    bool UpdateJsonHeader(QString json);
+    qint64 GetFileCount();
+    qint64 GetFreeDiskSpace(); /* this is not named GetDiskFreeSpace() because of collision with Windows API */
+    qint64 GetObjectCount(QString object);
     qint64 GetUnzipSize();
 
     /* validation functions */
@@ -156,12 +168,10 @@ public:
     QHash<QString, QString> ReadParamsFile(QString f);
 
     /* logging */
-    void Log(QString s, QString func);
+    void Log(QString s);
     void Debug(QString s, QString func="");
     QString GetLog() { return log; }
     QString GetLogBuffer();
-    bool GetDebug() { return debug; }
-    bool GetDebugSQL() { return debugSQL; }
     bool quiet=false;
 
     /* printing of information to console */
@@ -175,38 +185,45 @@ public:
     QString PrintSeries(qint64 studyRowID, bool details=false);
     QString PrintStudies(qint64 subjectRowID, bool details=false);
     QString PrintSubjects(PrintingType printType=PrintingType::List);
-
-    QSqlDatabase db;
+    QString PrintTree();
 
 private:
-    bool AddFilesToArchive(QStringList filePaths, QStringList compressedFilePaths, QString archivePath, QString &m);
-    bool CompressDirectoryToArchive(QString dir, QString archivePath, QString &m);
     bool DatabaseConnect();
     bool DeleteTempDir(QString dir);
-    bool ExtractArchiveToDirectory(QString archivePath, QString destinationPath, QString &m);
-    bool ExtractFileFromArchive(QString archivePath, QString filePath, QString &fileContents);
-    bool Get7zipLibPath();
     bool InitializeDatabase();
     bool MakeTempDir(QString &dir);
+
+    /* 7zip archive functions */
+    bool AddFilesToArchive(QStringList filePaths, QStringList compressedFilePaths, QString archivePath, QString &m);
+    bool CompressDirectoryToArchive(QString dir, QString archivePath, QString &m);
+    bool ExtractArchiveToDirectory(QString archivePath, QString destinationPath, QString &m);
+    bool ExtractArchiveFileToMemory(QString archivePath, QString filePath, QString &fileContents);
+    bool Get7zipLibPath();
+    bool GetArchiveFileListing(QString archivePath, QString subDir, QStringList &files, QString &m);
     bool RemoveDirectoryFromArchive(QString compressedDirPath, QString archivePath, QString &m);
     bool UpdateMemoryFileToArchive(QString file, QString compressedFilePath, QString archivePath, QString &m);
-    bool GetFileListingFromArchive(QString archivePath, QString subDir, QStringList &files, QString &m);
 
-    QString workingDir;
-    QString logfile;
-    QStringList msgs; /* squirrel messages to be passed back through the squirrel library */
     QString log;
     QString logBuffer;
-    QString packagePath;
+    QString logfile;
     QString p7zipLibPath;
+    QString packagePath;
+    QString systemTempDir;
+    QString workingDir;
+    QStringList msgs; /* squirrel messages to be passed back through the squirrel library */
 
     FileMode fileMode;
 
+    /* database */
+    QSqlDatabase db;
+    QString databaseUUID; /* necessary to create unique DB connections if more than one squirrel package is opened at a time */
+
+    /* flags */
     bool debug;
     bool debugSQL;
-    bool overwritePackage;
-    bool isValid;
     bool isOkToDelete;
+    bool isValid;
+    bool overwritePackage;
     bool quickRead; /* set true to skip reading of the params.json files */
 };
 

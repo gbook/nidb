@@ -2946,7 +2946,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
         double subjectAge = s[uid][0][0]["subjectage"].toDouble();
 
         /* create the squirrelSubject object */
-        squirrelSubject sqrlSubject = subj.GetSquirrelObject();
+        squirrelSubject sqrlSubject = subj.GetSquirrelObject(sqrl.GetDatabaseUUID());
         sqrlSubject.AlternateIDs.append(subj.GetAllAlternateIDs());
         sqrlSubject.Store();
         int squirrelSubjectRowID = sqrlSubject.GetObjectID();
@@ -2968,7 +2968,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
             study stdy(studyid, n);
 
             /* create the squirrelStudy object, and populate extra fields */
-            squirrelStudy sqrlStudy = stdy.GetSquirrelObject();
+            squirrelStudy sqrlStudy = stdy.GetSquirrelObject(sqrl.GetDatabaseUUID());
             sqrlStudy.AgeAtStudy = subjectAge;
             sqrlStudy.subjectRowID = squirrelSubjectRowID;
             sqrlStudy.Store();
@@ -3034,7 +3034,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                 bool datadirempty = s[uid][studynum][seriesnum]["datadirempty"].toInt();
 
                 series sers(seriesid, modality, n);
-                squirrelSeries sqrlSeries = sers.GetSquirrelObject();
+                squirrelSeries sqrlSeries = sers.GetSquirrelObject(sqrl.GetDatabaseUUID());
                 sqrlSeries.studyRowID = squirrelStudyRowID;
 
                 enrollmentIDs.append(enrollmentid);
@@ -3124,7 +3124,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                 n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
                 if (q2.size() > 0) {
                     while (q2.next()) {
-                        squirrelObservation sqrlObservation;
+                        squirrelObservation sqrlObservation(sqrl.GetDatabaseUUID());
                         sqrlObservation.DateEnd = q2.value("measure_enddate").toDateTime();
                         sqrlObservation.DateStart = q2.value("measure_startdate").toDateTime();
                         sqrlObservation.InstrumentName = q2.value("instrument_name").toString();
@@ -3151,7 +3151,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                 if (q2.size() > 0) {
                     //QJsonArray JSONdrugs;
                     while (q2.next()) {
-                        squirrelIntervention sqrlIntervention;
+                        squirrelIntervention sqrlIntervention(sqrl.GetDatabaseUUID());
                         sqrlIntervention.InterventionName = q2.value("drug_name").toString();
                         sqrlIntervention.InterventionClass = q2.value("drug_type").toString();
                         sqrlIntervention.DateStart = q2.value("drug_startdate").toDateTime();
@@ -3199,7 +3199,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
             for (int i=0; i<pipelineIDs.size(); i++) {
                 /* create and add each squirrelPipeline object */
                 pipeline p(pipelineIDs[i], n);
-                squirrelPipeline sqrlPipeline = p.GetSquirrelObject();
+                squirrelPipeline sqrlPipeline = p.GetSquirrelObject(sqrl.GetDatabaseUUID());
                 sqrlPipeline.Store();
             }
         }
@@ -3218,7 +3218,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                 else
                     n->Log(QString("Error writing experiment files [%1]").arg(m));
 
-                squirrelExperiment sqrlExperiment = e.GetSquirrelObject();
+                squirrelExperiment sqrlExperiment = e.GetSquirrelObject(sqrl.GetDatabaseUUID());
                 sqrlExperiment.stagedFiles = stagedFileList;
                 sqrlExperiment.Store();
             }
@@ -3353,7 +3353,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         lastProjectRowID = ser.projectid;
 
         /* get squirrel SUBJECT (create the object in the package if it doesn't already exist) */
-        squirrelSubject sqrlSubject;
+        squirrelSubject sqrlSubject(sqrl.GetDatabaseUUID());
         subject subj(ser.subjectid, n);
         QString subjectID = subj.GetPrimaryAlternateID(ser.projectid);
         if (subjectID == "")
@@ -3361,7 +3361,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         int sqrlSubjectRowID = sqrl.FindSubject(subjectID);
         if (sqrlSubjectRowID < 0) {
             /* ... create subject if necessary */
-            sqrlSubject = subj.GetSquirrelObject();
+            sqrlSubject = subj.GetSquirrelObject(sqrl.GetDatabaseUUID());
             sqrlSubject.AlternateIDs.append(subj.GetAllAlternateIDs());
             sqrlSubject.ID = subjectID;
             sqrlSubject.Store();
@@ -3370,12 +3370,12 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         }
 
         /* get squirrel STUDY (create the object in the package if it doesn't already exist) */
-        squirrelStudy sqrlStudy;
+        squirrelStudy sqrlStudy(sqrl.GetDatabaseUUID());
         study stud(ser.studyid, n);
         int sqrlStudyRowID = sqrl.FindStudy(subjectID, stud.studyNum());
         if (sqrlStudyRowID < 0) {
             /* ... create study if necessary */
-            sqrlStudy = stud.GetSquirrelObject();
+            sqrlStudy = stud.GetSquirrelObject(sqrl.GetDatabaseUUID());
             sqrlStudy.subjectRowID = sqrlSubjectRowID;
             sqrlStudy.Store();
             sqrlStudyRowID = sqrlStudy.GetObjectID();
@@ -3383,8 +3383,8 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         }
 
         /* create squirrel SERIES */
-        squirrelSeries sqrlSeries;
-        sqrlSeries = ser.GetSquirrelObject();
+        squirrelSeries sqrlSeries(sqrl.GetDatabaseUUID());
+        sqrlSeries = ser.GetSquirrelObject(sqrl.GetDatabaseUUID());
         sqrlSeries.studyRowID = sqrlStudyRowID;
         sqrlSeries.Store();
         sqrl.ResequenceSeries(sqrlStudyRowID);
@@ -3407,7 +3407,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         if (!subj.valid()) continue;
 
         /* get squirrel SUBJECT (create the object in the package if it doesn't already exist) */
-        squirrelSubject sqrlSubject;
+        squirrelSubject sqrlSubject(sqrl.GetDatabaseUUID());
         //subject subj(ser.subjectid, n);
         QString subjectID = subj.GetPrimaryAlternateID(lastProjectRowID);
         if (subjectID == "")
@@ -3415,7 +3415,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         int sqrlSubjectRowID = sqrl.FindSubject(subjectID);
         if (sqrlSubjectRowID < 0) {
             /* ... create subject if necessary */
-            sqrlSubject = subj.GetSquirrelObject();
+            sqrlSubject = subj.GetSquirrelObject(sqrl.GetDatabaseUUID());
             sqrlSubject.AlternateIDs.append(subj.GetAllAlternateIDs());
             sqrlSubject.ID = subjectID;
             sqrlSubject.Store();
@@ -3424,11 +3424,11 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         }
 
         /* get squirrel STUDY (create the object in the package if it doesn't already exist) */
-        squirrelStudy sqrlStudy;
+        squirrelStudy sqrlStudy(sqrl.GetDatabaseUUID());
         int sqrlStudyRowID = sqrl.FindStudy(subjectID, stud.studyNum());
         if (sqrlStudyRowID < 0) {
             /* ... create study if necessary */
-            sqrlStudy = stud.GetSquirrelObject();
+            sqrlStudy = stud.GetSquirrelObject(sqrl.GetDatabaseUUID());
             sqrlStudy.subjectRowID = sqrlSubjectRowID;
             sqrlStudy.Store();
             sqrlStudyRowID = sqrlStudy.GetObjectID();
@@ -3438,7 +3438,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         /* add the analysis to the package */
         analysis a(analysisRowID, n);
         if (!a.isValid) continue;
-        squirrelAnalysis sqrlAnalysis;
+        squirrelAnalysis sqrlAnalysis(sqrl.GetDatabaseUUID());
         sqrlAnalysis = a.GetSquirrelObject();
         sqrlAnalysis.studyRowID = sqrlStudyRowID;
         sqrlAnalysis.Store();
@@ -3457,7 +3457,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         if (!subj.valid()) continue;
 
         /* get squirrel SUBJECT (create the object in the package if it doesn't already exist) */
-        squirrelSubject sqrlSubject;
+        squirrelSubject sqrlSubject(sqrl.GetDatabaseUUID());
         //subject subj(ser.subjectid, n);
         QString subjectID = subj.GetPrimaryAlternateID(lastProjectRowID);
         if (subjectID == "")
@@ -3465,7 +3465,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         int sqrlSubjectRowID = sqrl.FindSubject(subjectID);
         if (sqrlSubjectRowID < 0) {
             /* ... create subject if necessary */
-            sqrlSubject = subj.GetSquirrelObject();
+            sqrlSubject = subj.GetSquirrelObject(sqrl.GetDatabaseUUID());
             sqrlSubject.AlternateIDs.append(subj.GetAllAlternateIDs());
             sqrlSubject.ID = subjectID;
             sqrlSubject.Store();
@@ -3477,8 +3477,8 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         measure m(measureRowID, n);
         if (!m.isValid) continue;
 
-        squirrelObservation sqrlObservation;
-        sqrlObservation = m.GetSquirrelObject();
+        squirrelObservation sqrlObservation(sqrl.GetDatabaseUUID());
+        sqrlObservation = m.GetSquirrelObject(sqrl.GetDatabaseUUID());
         sqrlObservation.subjectRowID = sqrlSubjectRowID;
         sqrlObservation.Store();
     }
@@ -3496,14 +3496,14 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         if (!subj.valid()) continue;
 
         /* get squirrel SUBJECT (create the object in the package if it doesn't already exist) */
-        squirrelSubject sqrlSubject;
+        squirrelSubject sqrlSubject(sqrl.GetDatabaseUUID());
         QString subjectID = subj.GetPrimaryAlternateID(lastProjectRowID);
         if (subjectID == "")
             subjectID = subj.UID();
         int sqrlSubjectRowID = sqrl.FindSubject(subjectID);
         if (sqrlSubjectRowID < 0) {
             /* ... create subject if necessary */
-            sqrlSubject = subj.GetSquirrelObject();
+            sqrlSubject = subj.GetSquirrelObject(sqrl.GetDatabaseUUID());
             sqrlSubject.AlternateIDs.append(subj.GetAllAlternateIDs());
             sqrlSubject.ID = subjectID;
             sqrlSubject.Store();
@@ -3514,8 +3514,8 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         drug d(drugRowID, n);
         if (!d.isValid) continue;
 
-        squirrelIntervention sqrlIntervention;
-        sqrlIntervention = d.GetSquirrelObject();
+        squirrelIntervention sqrlIntervention(sqrl.GetDatabaseUUID());
+        sqrlIntervention = d.GetSquirrelObject(sqrl.GetDatabaseUUID());
         sqrlIntervention.subjectRowID = sqrlSubjectRowID;
         sqrlIntervention.Store();
     }
@@ -3532,8 +3532,8 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         pipeline p(pipelineRowID, n);
         if (!p.isValid) continue;
 
-        squirrelPipeline sqrlPipeline;
-        sqrlPipeline = p.GetSquirrelObject();
+        squirrelPipeline sqrlPipeline(sqrl.GetDatabaseUUID());
+        sqrlPipeline = p.GetSquirrelObject(sqrl.GetDatabaseUUID());
         sqrlPipeline.Store();
     }
     n->Log("libsquirrel message buffer [" + sqrl.GetLogBuffer() + "]");
@@ -3560,7 +3560,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         else
             n->Log(QString("Error writing experiment files [%1]").arg(m));
 
-        squirrelExperiment sqrlExperiment = e.GetSquirrelObject();
+        squirrelExperiment sqrlExperiment = e.GetSquirrelObject(sqrl.GetDatabaseUUID());
         sqrlExperiment.stagedFiles = stagedFileList;
         sqrlExperiment.Store();
     }

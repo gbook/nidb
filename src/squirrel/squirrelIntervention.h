@@ -36,7 +36,7 @@
 class squirrelIntervention
 {
 public:
-    squirrelIntervention();
+    squirrelIntervention(QString dbID);
     QJsonObject ToJSON();
     QString PrintIntervention();
     bool Get();             /* gets the object data from the database */
@@ -45,6 +45,8 @@ public:
     QString Error() { return err; }
     qint64 GetObjectID() { return objectID; }
     void SetObjectID(qint64 id) { objectID = id; }
+    QString GetDatabaseUUID() { return databaseUUID; }
+    void SetDatabaseUUID(QString dbID) { databaseUUID = dbID; }
 
     /* squirrel database variables */
     qint64 subjectRowID;        /*!< database row ID of the parent object */
@@ -74,6 +76,7 @@ private:
     bool valid = false;
     QString err;
     qint64 objectID = -1;
+    QString databaseUUID;
 };
 
 #endif // SQUIRRELINTERVENTION_H

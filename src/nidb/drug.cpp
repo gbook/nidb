@@ -127,8 +127,8 @@ void drug::PrintDrugInfo() {
 /* ---------------------------------------------------------- */
 /* --------- GetSquirrelObject ------------------------------ */
 /* ---------------------------------------------------------- */
-squirrelIntervention drug::GetSquirrelObject() {
-    squirrelIntervention sqrl;
+squirrelIntervention drug::GetSquirrelObject(QString databaseUUID) {
+    squirrelIntervention sqrl(databaseUUID);
 
     sqrl.DateEnd = dateDrugEnd;
     sqrl.DateRecordEntry = dateRecordEntry;

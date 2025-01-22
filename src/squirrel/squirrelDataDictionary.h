@@ -47,7 +47,7 @@ struct dataDictionaryItem {
 class squirrelDataDictionary
 {
 public:
-    squirrelDataDictionary();
+    squirrelDataDictionary(QString dbID);
 
     QJsonObject ToJSON();
     QString PrintDataDictionary();
@@ -59,6 +59,8 @@ public:
     void SetObjectID(qint64 id) { objectID = id; }
     QString VirtualPath();
     QList<QPair<QString,QString>> GetStagedFileList();
+    QString GetDatabaseUUID() { return databaseUUID; }
+    void SetDatabaseUUID(QString dbID) { databaseUUID = dbID; }
 
     /* JSON elements */
     QList<dataDictionaryItem> dictItems;    /*!< List of data dictionary items */
@@ -73,6 +75,7 @@ private:
     bool valid = false;
     QString err;
     qint64 objectID = -1;
+    QString databaseUUID;
 };
 
 #endif // SQUIRRELDATADICTIONARY_H

@@ -23,9 +23,9 @@
 #include "squirrelIntervention.h"
 #include "utils.h"
 
-squirrelIntervention::squirrelIntervention()
+squirrelIntervention::squirrelIntervention(QString dbID)
 {
-
+    databaseUUID = dbID;
 }
 
 /* ------------------------------------------------------------ */
@@ -46,7 +46,7 @@ bool squirrelIntervention::Get() {
         err = "objectID is not set";
         return false;
     }
-    QSqlQuery q(QSqlDatabase::database("squirrel"));
+    QSqlQuery q(QSqlDatabase::database(databaseUUID));
     q.prepare("select * from Intervention where InterventionRowID = :id");
     q.bindValue(":id", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -100,7 +100,7 @@ bool squirrelIntervention::Get() {
  * Otherwise it will return false.
  */
 bool squirrelIntervention::Store() {
-    QSqlQuery q(QSqlDatabase::database("squirrel"));
+    QSqlQuery q(QSqlDatabase::database(databaseUUID));
 
     /* insert if the object doesn't exist ... */
     if (objectID < 0) {

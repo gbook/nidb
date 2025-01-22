@@ -86,7 +86,7 @@ public:
     int clusterMaxWallTime;
     int clusterNumCores;
 
-    squirrelPipeline GetSquirrelObject();
+    squirrelPipeline GetSquirrelObject(QString databaseUUID);
 
 private:
     void LoadPipelineInfo();

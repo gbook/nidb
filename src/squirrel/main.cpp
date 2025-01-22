@@ -223,7 +223,7 @@ int main(int argc, char *argv[])
 
         /* command line flag options */
         p.addOption(QCommandLineOption(QStringList() << "d" << "debug", "Enable debugging"));
-        p.addOption(QCommandLineOption(QStringList() << "object", "List items for object [package  subject  study  series  observation  intervention  experiment  pipeline  groupanalysis  datadictionary].", "object"));
+        p.addOption(QCommandLineOption(QStringList() << "object", "List items for object [all  package  subject  study  series  observation  intervention  experiment  pipeline  groupanalysis  datadictionary].", "object"));
         p.addOption(QCommandLineOption(QStringList() << "subjectid", "Subject ID.", "subjectid"));
         p.addOption(QCommandLineOption(QStringList() << "studynum", "Study Number\n  --subjectid must also be specified.", "studynum"));
         p.addOption(QCommandLineOption(QStringList() << "details", "Include details when printing lists."));
@@ -271,7 +271,11 @@ int main(int argc, char *argv[])
             sqrl->Read();
             if (sqrl->IsValid()) {
                 sqrl->Debug("Reading package...", __FUNCTION__);
-                if (object == "package") {
+                if (object == "all") {
+                    sqrl->PrintPackage();
+                    sqrl->PrintSubjects(PrintingType::Tree);
+                }
+                else if (object == "package") {
                     sqrl->PrintPackage();
                 }
                 else if (object == "subject") {
@@ -343,7 +347,7 @@ int main(int argc, char *argv[])
         /* command line flag options */
         p.addOption(QCommandLineOption(QStringList() << "d" << "debug", "Enable debugging"));
         p.addOption(QCommandLineOption(QStringList() << "q" << "quiet", "Quiet mode. No printing of headers and checks"));
-        p.addOption(QCommandLineOption(QStringList() << "operation", "Operation to perform on the package [add  remove  update].", "operation"));
+        p.addOption(QCommandLineOption(QStringList() << "operation", "Operation to perform on the package [add  remove  update  splitbymodality].", "operation"));
         p.addOption(QCommandLineOption(QStringList() << "object", "Object type to perform operation on [package  subject  study  series  analysis  intervention  observation  experiment  pipeline  groupanalysis  datadictionary].", "object"));
         //p.addOption(QCommandLineOption(QStringList() << "add", "Add object to the package.", "object"));
         //p.addOption(QCommandLineOption(QStringList() << "remove", "Remove object (and all dependent objects) from the package.", "object"));
@@ -403,10 +407,10 @@ int main(int argc, char *argv[])
         sqrl->SetPackagePath(inputPath);
         sqrl->SetFileMode(FileMode::ExistingPackage);
         if (sqrl->Read()) {
-            sqrl->Log("Valid squirrel file", __FUNCTION__);
+            sqrl->Log("Valid squirrel file");
         }
         else {
-            sqrl->Log("*** Invalid squirrel file ***", __FUNCTION__);
+            sqrl->Log("*** Invalid squirrel file ***");
         }
         delete sqrl;
     }

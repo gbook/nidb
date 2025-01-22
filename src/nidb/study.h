@@ -40,7 +40,7 @@ public:
     nidb *n;
 
     void PrintStudyInfo();
-	squirrelStudy GetSquirrelObject();
+    squirrelStudy GetSquirrelObject(QString databaseUUID);
 
     int studyRowID() { return _studyid; }
     int subjectRowID() { return _subjectid; }

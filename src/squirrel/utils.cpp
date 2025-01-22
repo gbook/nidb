@@ -47,7 +47,7 @@ namespace utils {
             return true;
         else {
             /* if we get to this point, there is a SQL error */
-            QString err = QString("SQL ERROR (Function: %1 File: %2 Line: %3)\n\nSQL (1) [%4]\n\nSQL (2) [%5]\n\nDatabase error [%7]\n\nDriver error [%8]").arg(function).arg(file).arg(line).arg(sql).arg(q.executedQuery()).arg(q.lastError().databaseText()).arg(q.lastError().driverText());
+            QString err = QString("SQL ERROR (Function: %1 File: %2 Line: %3)\n\nSQL (1) [%4]\n\nSQL (2) [%5]\n\nDatabase error [%6]\n\nDriver error [%7]").arg(function).arg(file).arg(line).arg(sql).arg(q.executedQuery()).arg(q.lastError().databaseText()).arg(q.lastError().driverText());
             qDebug() << err;
             qDebug() << q.lastError();
 
@@ -443,7 +443,7 @@ namespace utils {
             /* remove the last column if it was blank, because the file contained an extra trailing comma */
             if (cols.last() == "") {
                 cols.removeLast();
-                m << QString("Last column was blank, removing").arg(cols.size());
+                m << "Last column was blank, removing";
             }
 
             qint64 numcols = cols.size();
@@ -750,10 +750,10 @@ namespace utils {
     /* ---------------------------------------------------------- */
     /* --------- GetStagedFileList ------------------------------ */
     /* ---------------------------------------------------------- */
-    QStringList GetStagedFileList(qint64 objectID, QString objectType) {
+    QStringList GetStagedFileList(QString databaseUUID, qint64 objectID, QString objectType) {
         QStringList paths;
 
-        QSqlQuery q(QSqlDatabase::database("squirrel"));
+        QSqlQuery q(QSqlDatabase::database(databaseUUID));
         q.prepare("select * from StagedFiles where ObjectRowID = :id and ObjectType = :type");
         q.bindValue(":id", objectID);
         q.bindValue(":type", objectType);
@@ -769,9 +769,9 @@ namespace utils {
     /* ---------------------------------------------------------- */
     /* --------- StoreStagedFileList ---------------------------- */
     /* ---------------------------------------------------------- */
-    void StoreStagedFileList(qint64 objectID, QString objectType, QStringList paths) {
+    void StoreStagedFileList(QString databaseUUID, qint64 objectID, QString objectType, QStringList paths) {
 
-        QSqlQuery q(QSqlDatabase::database("squirrel"));
+        QSqlQuery q(QSqlDatabase::database(databaseUUID));
         if (objectID >= 0) {
             /* delete previously staged files from the database */
             q.prepare("delete from StagedFiles where ObjectRowID = :id and ObjectType = :type");
@@ -793,8 +793,8 @@ namespace utils {
     /* ---------------------------------------------------------- */
     /* --------- RemoveStagedFileList --------------------------- */
     /* ---------------------------------------------------------- */
-    void RemoveStagedFileList(qint64 objectID, QString objectType) {
-        QSqlQuery q(QSqlDatabase::database("squirrel"));
+    void RemoveStagedFileList(QString databaseUUID, qint64 objectID, QString objectType) {
+        QSqlQuery q(QSqlDatabase::database(databaseUUID));
         q.prepare("delete from StagedFiles where ObjectRowID = :id and ObjectType = :type");
         q.bindValue(":id", objectID);
         q.bindValue(":type", objectType);
@@ -805,10 +805,10 @@ namespace utils {
     /* ---------------------------------------------------------- */
     /* --------- GetParams -------------------------------------- */
     /* ---------------------------------------------------------- */
-    QHash<QString, QString> GetParams(qint64 seriesRowID) {
+    QHash<QString, QString> GetParams(QString databaseUUID, qint64 seriesRowID) {
         QHash<QString, QString> params;
 
-        QSqlQuery q(QSqlDatabase::database("squirrel"));
+        QSqlQuery q(QSqlDatabase::database(databaseUUID));
         q.prepare("select * from Params where SeriesRowID = :id");
         q.bindValue(":id", seriesRowID);
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -825,9 +825,9 @@ namespace utils {
     /* ---------------------------------------------------------- */
     /* --------- StoreParams ------------------------------------ */
     /* ---------------------------------------------------------- */
-    void StoreParams(qint64 seriesRowID, QHash<QString, QString> params) {
+    void StoreParams(QString databaseUUID, qint64 seriesRowID, QHash<QString, QString> params) {
 
-        QSqlQuery q(QSqlDatabase::database("squirrel"));
+        QSqlQuery q(QSqlDatabase::database(databaseUUID));
         if (seriesRowID >= 0) {
             /* delete previously staged files from the database */
             q.prepare("delete from Params where SeriesRowID = :id");

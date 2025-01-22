@@ -34,7 +34,7 @@
 class squirrelAnalysis
 {
 public:
-    squirrelAnalysis();
+    squirrelAnalysis(QString dbID);
     QJsonObject ToJSON();
     QString PrintAnalysis();
     bool Get();             /* gets the object data from the database */
@@ -46,6 +46,8 @@ public:
     void SetDirFormat(QString subject_DirFormat, QString study_DirFormat) {subjectDirFormat = subject_DirFormat; studyDirFormat = study_DirFormat; }
     QString VirtualPath();
     QList<QPair<QString,QString>> GetStagedFileList();
+    QString GetDatabaseUUID() { return databaseUUID; }
+    void SetDatabaseUUID(QString dbID) { databaseUUID = dbID; }
 
     /* squirrel database variables */
     qint64 studyRowID;          /*!< database row id of the parent study */
@@ -77,6 +79,7 @@ private:
     qint64 objectID = -1;
     QString subjectDirFormat = "orig";
     QString studyDirFormat = "orig";
+    QString databaseUUID;
 };
 
 #endif // SQUIRRELANALYSIS_H

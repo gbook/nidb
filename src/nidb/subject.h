@@ -38,7 +38,7 @@ public:
     nidb *n;
 
     void PrintSubjectInfo();
-    squirrelSubject GetSquirrelObject();
+    squirrelSubject GetSquirrelObject(QString databaseUUID);
 
     QDate dob() { return _dob; }
     QString GUID() { return _guid; }

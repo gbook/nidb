@@ -23,9 +23,9 @@
 #include "squirrelObservation.h"
 #include "utils.h"
 
-squirrelObservation::squirrelObservation()
+squirrelObservation::squirrelObservation(QString dbID)
 {
-
+    databaseUUID = dbID;
 }
 
 
@@ -47,7 +47,7 @@ bool squirrelObservation::Get() {
         err = "objectID is not set";
         return false;
     }
-    QSqlQuery q(QSqlDatabase::database("squirrel"));
+    QSqlQuery q(QSqlDatabase::database(databaseUUID));
     q.prepare("select * from Observation where ObservationRowID = :id");
     q.bindValue(":id", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -93,7 +93,7 @@ bool squirrelObservation::Get() {
  * Otherwise it will return false.
  */
 bool squirrelObservation::Store() {
-    QSqlQuery q(QSqlDatabase::database("squirrel"));
+    QSqlQuery q(QSqlDatabase::database(databaseUUID));
 
     /* insert if the object doesn't exist ... */
     if (objectID < 0) {

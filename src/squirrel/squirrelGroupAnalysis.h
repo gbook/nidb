@@ -34,7 +34,7 @@
 class squirrelGroupAnalysis
 {
 public:
-    squirrelGroupAnalysis();
+    squirrelGroupAnalysis(QString dbID);
     QJsonObject ToJSON();
     QString PrintGroupAnalysis();
     bool Get();             /* gets the object data from the database */
@@ -45,6 +45,8 @@ public:
     void SetObjectID(qint64 id) { objectID = id; }
     QString VirtualPath();
     QList<QPair<QString,QString>> GetStagedFileList();
+    QString GetDatabaseUUID() { return databaseUUID; }
+    void SetDatabaseUUID(QString dbID) { databaseUUID = dbID; }
 
     /* JSON elements */
     QString GroupAnalysisName;  /*!< name of the group analysis */
@@ -62,6 +64,7 @@ private:
     bool valid = false;
     QString err;
     qint64 objectID = -1;
+    QString databaseUUID;
 };
 
 #endif // SQUIRRELGROUPANALYSIS_H

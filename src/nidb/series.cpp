@@ -148,8 +148,8 @@ bool series::ChangeSeriesPath(int studyid, int newSeriesNum) {
 /* ---------------------------------------------------------- */
 /* --------- GetSquirrelObject ------------------------------ */
 /* ---------------------------------------------------------- */
-squirrelSeries series::GetSquirrelObject() {
-    squirrelSeries sqrl;
+squirrelSeries series::GetSquirrelObject(QString databaseUUID) {
+    squirrelSeries sqrl(databaseUUID);
 
     sqrl.DateTime = datetime;
     sqrl.Description = desc;

@@ -23,9 +23,9 @@
 #include "squirrelDataDictionary.h"
 #include "utils.h"
 
-squirrelDataDictionary::squirrelDataDictionary()
+squirrelDataDictionary::squirrelDataDictionary(QString dbID)
 {
-
+    databaseUUID = dbID;
 }
 
 
@@ -48,7 +48,7 @@ bool squirrelDataDictionary::Get() {
         return false;
     }
 
-    QSqlQuery q(QSqlDatabase::database("squirrel"));
+    QSqlQuery q(QSqlDatabase::database(databaseUUID));
     q.prepare("select * from DataDictionary where DataDictionaryRowID = :id");
     q.bindValue(":id", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -63,7 +63,7 @@ bool squirrelDataDictionary::Get() {
 
         /* get the DataDictionaryItems */
         dictItems.clear();
-        QSqlQuery q(QSqlDatabase::database("squirrel"));
+        QSqlQuery q(QSqlDatabase::database(databaseUUID));
         q.prepare("select * from DataDictionaryItems where DataDictionaryRowID = :id");
         q.bindValue(":id", objectID);
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -80,7 +80,7 @@ bool squirrelDataDictionary::Get() {
         }
 
         /* get any staged files */
-        stagedFiles = utils::GetStagedFileList(objectID, "datadictionary");
+        stagedFiles = utils::GetStagedFileList(databaseUUID, objectID, "datadictionary");
 
         valid = true;
         return true;
@@ -107,7 +107,7 @@ bool squirrelDataDictionary::Get() {
  */
 bool squirrelDataDictionary::Store() {
 
-    QSqlQuery q(QSqlDatabase::database("squirrel"));
+    QSqlQuery q(QSqlDatabase::database(databaseUUID));
     /* insert if the object doesn't exist ... */
     if (objectID < 0) {
         q.prepare("insert into DataDictionary (FileCount, Size, VirtualPath) values (:FileCount, :Size, :VirtualPath)");
@@ -146,7 +146,7 @@ bool squirrelDataDictionary::Store() {
     }
 
     /* store any staged filepaths */
-    utils::StoreStagedFileList(objectID, "datadictionary", stagedFiles);
+    utils::StoreStagedFileList(databaseUUID, objectID, "datadictionary", stagedFiles);
 
     return true;
 }

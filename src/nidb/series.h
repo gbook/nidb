@@ -34,7 +34,7 @@ public:
     nidb *n;
 
     void PrintSeriesInfo();
-	squirrelSeries GetSquirrelObject();
+    squirrelSeries GetSquirrelObject(QString databaseUUID);
 
     QString modality;
     QString uid;

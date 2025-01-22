@@ -59,7 +59,7 @@ public:
     QList<experimentFile> files;
 
     QJsonObject GetJSONObject(QString path);
-    squirrelExperiment GetSquirrelObject();
+    squirrelExperiment GetSquirrelObject(QString databaseUUID);
 private:
     void LoadExperimentInfo();
 

@@ -151,8 +151,8 @@ QStringList pipeline::GetParentList() {
 /* ---------------------------------------------------------- */
 /* --------- GetSquirrelObject ------------------------------ */
 /* ---------------------------------------------------------- */
-squirrelPipeline pipeline::GetSquirrelObject() {
-    squirrelPipeline s;
+squirrelPipeline pipeline::GetSquirrelObject(QString databaseUUID) {
+    squirrelPipeline s(databaseUUID);
 
     s.ClusterMaxWallTime = clusterMaxWallTime;
     s.ClusterMemory = clusterMemory;

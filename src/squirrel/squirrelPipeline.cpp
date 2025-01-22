@@ -29,9 +29,9 @@
 /* ---------------------------------------------------------- */
 /* --------- pipeline --------------------------------------- */
 /* ---------------------------------------------------------- */
-squirrelPipeline::squirrelPipeline()
+squirrelPipeline::squirrelPipeline(QString dbID)
 {
-
+    databaseUUID = dbID;
 }
 
 
@@ -53,7 +53,7 @@ bool squirrelPipeline::Get() {
         err = "objectID is not set";
         return false;
     }
-    QSqlQuery q(QSqlDatabase::database("squirrel"));
+    QSqlQuery q(QSqlDatabase::database(databaseUUID));
     q.prepare("select * from Pipeline where PipelineRowID = :id");
     q.bindValue(":id", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -94,7 +94,7 @@ bool squirrelPipeline::Get() {
         flags.UseTempDirectory = q.value("FlagUseTempDirectory").toBool();
 
         /* get any staged files */
-        stagedFiles = utils::GetStagedFileList(objectID, "pipeline");
+        stagedFiles = utils::GetStagedFileList(databaseUUID, objectID, "pipeline");
 
         valid = true;
         return true;
@@ -120,7 +120,7 @@ bool squirrelPipeline::Get() {
  * Otherwise it will return false.
  */
 bool squirrelPipeline::Store() {
-    QSqlQuery q(QSqlDatabase::database("squirrel"));
+    QSqlQuery q(QSqlDatabase::database(databaseUUID));
 
     //utils::Print(QString("squirrelPipeline has been asked to Store(%1, %2). Current objectID [%3]").arg(PipelineName).arg(Version).arg(objectID));
 
@@ -200,7 +200,7 @@ bool squirrelPipeline::Store() {
     }
 
     /* store any staged filepaths */
-    utils::StoreStagedFileList(objectID, "pipeline", stagedFiles);
+    utils::StoreStagedFileList(databaseUUID, objectID, "pipeline", stagedFiles);
 
     return true;
 }

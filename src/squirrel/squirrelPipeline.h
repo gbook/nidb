@@ -75,7 +75,7 @@ struct dataStep {
 class squirrelPipeline
 {
 public:
-    squirrelPipeline();
+    squirrelPipeline(QString dbID);
     QJsonObject ToJSON(QString path);
     QString PrintPipeline();
     bool Get();             /* gets the object data from the database */
@@ -86,6 +86,8 @@ public:
     void SetObjectID(qint64 id) { objectID = id; }
     QString VirtualPath();
     QList<QPair<QString,QString>> GetStagedFileList();
+    QString GetDatabaseUUID() { return databaseUUID; }
+    void SetDatabaseUUID(QString dbID) { databaseUUID = dbID; }
 
     /* JSON elements */
     QDateTime CreateDate;           /*!< date the pipeline was created */
@@ -132,6 +134,7 @@ private:
     bool valid = false;
     QString err;
     qint64 objectID = -1;
+    QString databaseUUID;
 };
 
 #endif // SQUIRRELPIPELINE_H

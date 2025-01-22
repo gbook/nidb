@@ -39,7 +39,7 @@
 class squirrelSubject
 {
 public:
-    squirrelSubject();
+    squirrelSubject(QString dbID);
 
     /* functions */
     QString PrintDetails();
@@ -57,6 +57,8 @@ public:
     QString VirtualPath();
     QList<QPair<QString,QString>> GetStagedFileList();
     int GetNextStudyNumber();
+    QString GetDatabaseUUID() { return databaseUUID; }
+    void SetDatabaseUUID(QString dbID) { databaseUUID = dbID; }
 
     /* JSON elements */
     QDate DateOfBirth;      /*!< Date of birth. Not required, but can be useful to calculate age during studies. Can also contain only year... or contain only year and month */
@@ -74,6 +76,7 @@ private:
     QString err;
     qint64 objectID;
     QString subjectDirFormat;
+    QString databaseUUID;
 };
 
 #endif // SQUIRRELSUBJECT_H

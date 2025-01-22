@@ -78,6 +78,8 @@ public:
 	/* export functions */
 	QJsonObject GetJSONObject();
 
+    QString databaseUUID;
+
 private:
 	void LoadAnalysisInfo();
 	bool useClusterPaths;
