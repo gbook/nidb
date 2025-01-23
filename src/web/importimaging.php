@@ -417,6 +417,9 @@
 		$dateend = mysqli_real_escape_string($GLOBALS['linki'], $dateend);
 		$keyword = mysqli_real_escape_string($GLOBALS['linki'], $keyword);
 		
+		$sqlstring = "delete from upload_logs where log_date < date_sub(now(), interval 180 day)";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		
 		$sqlstring = "select * from upload_logs where upload_id = 0";
 		if ($datestart != "")
 			$sqlstring .= " and log_date > '$datestart'";
