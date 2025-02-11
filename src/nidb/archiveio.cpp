@@ -2761,7 +2761,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 
                 QString seriesoutdir = QString("%1/%2/%3/%4").arg(outdir).arg(subjectdir).arg(sessiondir).arg(seriesdir);
 
-                QString m;
+                //QString m;
                 if (MakePath(seriesoutdir, m)) {
                     n->Log("Created seriesoutdir [" + seriesoutdir + "]");
                 }
@@ -2775,7 +2775,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
                 if (datadirexists) {
                     if (!datadirempty) {
                         QString tmpdir = n->cfg["tmpdir"] + "/" + GenerateRandomString(10);
-                        QString m;
+                        //QString m;
                         if (MakePath(tmpdir, m)) {
 
                             int numfilesconv(0), numfilesrenamed(0);
@@ -3783,6 +3783,7 @@ bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modal
 BIDSMapping archiveIO::GetBIDSMapping(int projectRowID, QString protocol, QString modality, QString imageType) {
     BIDSMapping mapping;
     mapping.bidsAutoNumberRuns = false;
+    mapping.bidsIncludeAcquisition = false;
     mapping.bidsEntity = "unknown";
     mapping.bidsPEDirection = "Unknown";
     mapping.bidsRun = 0;
@@ -3801,6 +3802,7 @@ BIDSMapping archiveIO::GetBIDSMapping(int projectRowID, QString protocol, QStrin
     if (q.size() > 0) {
         q.first();
         mapping.bidsAutoNumberRuns = q.value("bidsAutoNumberRuns").toBool();
+        mapping.bidsIncludeAcquisition = q.value("bidsIncludeAcquisition").toBool();
         mapping.bidsEntity = q.value("bidsEntity").toString();
         mapping.bidsIntendedForEntity = q.value("bidsIntendedForEntity").toString();
         mapping.bidsIntendedForFileExtension = q.value("bidsIntendedForFileExtension").toString();

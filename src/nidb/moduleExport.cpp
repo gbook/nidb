@@ -456,14 +456,14 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
         if (squirrelflags.contains("SQUIRREL_FORMAT_NIFTI3DGZ")) imageformat = "nifti3d";
 
         QString log;
-        ExportSquirrel(exportid, squirreltitle, squirreldesc, downloadflags, squirrelflags, exportstatus, tmpexportdir, squirrelfilepath, log);
+        ExportSquirrel(exportid, squirreltitle, squirreldesc, downloadflags, squirrelflags, exportstatus, tmpexportdir, log);
         n->Log(QString("ExportLocal() - After calling ExportSquirrel(): tmpexportdir [%1]   squirrelfilepath [%2]").arg(tmpexportdir).arg(squirrelfilepath));
         msgs << log;
     }
     /* squirrel */
     else if (filetype == "package") {
         QString log;
-        ExportPackage(exportid, exportstatus, squirrelfilepath, log);
+        ExportPackage(exportid, exportstatus, log);
         n->Log(QString("ExportLocal() - After calling ExportSquirrel(): tmpexportdir [%1]   squirrelfilepath [%2]").arg(tmpexportdir).arg(squirrelfilepath));
         msgs << log;
     }
@@ -484,15 +484,15 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
         if (niftiflags.contains("NIFTI_JSON")) json = true;
 
         /* iterate through the subjects (UIDs) */
-        for(QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>>::iterator a = s.begin(); a != s.end(); ++a) {
+        for(QMap<QString, QMap<int, QMap<int, QMap<QString, QString> > > >::iterator a = s.begin(); a != s.end(); ++a) {
             QString uid = a.key();
 
             /* iterate through the studies (studynums) */
-            for(QMap<int, QMap<int, QMap<QString, QString>>>::iterator b = s[uid].begin(); b != s[uid].end(); ++b) {
+            for(QMap<int, QMap<int, QMap<QString, QString> > >::iterator b = s[uid].begin(); b != s[uid].end(); ++b) {
                 int studynum = b.key();
 
                 /* iterate through the series (seriesnums) */
-                for(QMap<int, QMap<QString, QString>>::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
+                for(QMap<int, QMap<QString, QString> >::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
                     int seriesnum = c.key();
 
                     int exportseriesid = s[uid][studynum][seriesnum]["exportseriesid"].toInt();
@@ -1409,7 +1409,7 @@ bool moduleExport::ExportBIDS(int exportid, QString bidsreadme, QStringList bids
 /* ---------------------------------------------------------- */
 /* --------- ExportSquirrel --------------------------------- */
 /* ---------------------------------------------------------- */
-bool moduleExport::ExportSquirrel(int exportid, QString squirreltitle, QString squirreldesc, QStringList downloadflags, QStringList squirrelflags, QString &exportstatus, QString &outdir, QString &filepath, QString &msg) {
+bool moduleExport::ExportSquirrel(int exportid, QString squirreltitle, QString squirreldesc, QStringList downloadflags, QStringList squirrelflags, QString &exportstatus, QString &outdir, QString &msg) {
 
     n->Log(QString("%1() starting...").arg(__FUNCTION__));
     exportstatus = "complete";
@@ -1488,7 +1488,7 @@ bool moduleExport::ExportSquirrel(int exportid, QString squirreltitle, QString s
 /* ---------------------------------------------------------- */
 /* --------- ExportPackage ---------------------------------- */
 /* ---------------------------------------------------------- */
-bool moduleExport::ExportPackage(int exportid, QString &exportstatus, QString &filepath, QString &msg) {
+bool moduleExport::ExportPackage(int exportid, QString &exportstatus, QString &msg) {
 
     n->Log(QString("%1() starting...").arg(__FUNCTION__));
     exportstatus = "complete";
@@ -1655,7 +1655,7 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
                         int numfails = 0;
                         int error = 1;
                         //QString results;
-                        QString systemstring;
+                        //QString systemstring;
 
                         int numretry = 5;
                         if (n->cfg["numretry"].toInt() > 0)
@@ -1692,9 +1692,9 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
 
                             /* build the cURL string to send the actual data */
                             systemstring = QString("curl -gs -F 'action=UploadDICOM' -F 'u=%1' -F 'p=%2' -F 'transactionid=%3' -F 'instanceid=%4' -F 'projectid=%5' -F 'siteid=%6' -F 'dataformat=%7' -F 'modality=%8' -F 'seriesnotes=%9' -F 'altuids=%10' -F 'seriesnum=%11' ").arg(conn.username).arg(conn.password).arg(transactionid).arg(conn.instanceid).arg(conn.projectid).arg(conn.siteid).arg(datatype).arg(modality).arg(seriesnotes).arg(altuids).arg(seriesnum);
-                            int c = 0;
+                            //int c = 0;
                             foreach (QString f, dcmfiles) {
-                                c++;
+                                //c++;
                                 QString systemstringA = QString("cp -v '%1' %2/").arg(f).arg(tmpzipdir);
                                 QString output = SystemCommand(systemstringA);
                                 if ((output == "") || output.contains("error", Qt::CaseInsensitive))
@@ -1702,9 +1702,9 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
                             }
 
                             if (behdirexists && !behdirempty) {
-                                c = 0;
+                                //c = 0;
                                 foreach(QString f, behfiles) {
-                                    c++;
+                                    //c++;
                                     QString systemstringA = QString("cp '%1/%2' %3/beh/").arg(behindir).arg(f).arg(tmpzipdir);
                                     QString res = SystemCommand(systemstringA, false);
                                     if (res != "") {
@@ -2113,10 +2113,10 @@ int moduleExport::StartRemoteNiDBTransaction(QString remotenidbserver, QString r
         msgs << n->Log("Received response from server [" + str + "] attempting to connect to HTTPS instead");
 
         remotenidbserver.replace("http://", "https://");
-        QString systemstring = QString("curl -gs -F 'action=startTransaction' -F 'u=%1' -F 'p=%2' %3/api.php").arg(remotenidbusername).arg(remotenidbpassword).arg(remotenidbserver);
+        systemstring = QString("curl -gs -F 'action=startTransaction' -F 'u=%1' -F 'p=%2' %3/api.php").arg(remotenidbusername).arg(remotenidbpassword).arg(remotenidbserver);
         msgs << n->Log(QString("%1() Running [" + systemstring + "]").arg(__FUNCTION__));
 
-        QString str = SystemCommand(systemstring, false).simplified();
+        str = SystemCommand(systemstring, false).simplified();
         msgs << n->Log(QString("%1() Response [" + str + "]").arg(__FUNCTION__));
     }
 
@@ -2159,10 +2159,10 @@ void moduleExport::EndRemoteNiDBTransaction(int tid, QString remotenidbserver, Q
         msgs << n->Log("Received response from server [" + str + "] attempting to connect to HTTPS instead");
 
         remotenidbserver.replace("http://", "https://");
-        QString systemstring = QString("curl -gs -F 'action=startTransaction' -F 'u=%1' -F 'p=%2' %3/api.php").arg(remotenidbusername).arg(remotenidbpassword).arg(remotenidbserver);
+        systemstring = QString("curl -gs -F 'action=startTransaction' -F 'u=%1' -F 'p=%2' %3/api.php").arg(remotenidbusername).arg(remotenidbpassword).arg(remotenidbserver);
         msgs << n->Log(QString("%1() Running [" + systemstring + "]").arg(__FUNCTION__));
 
-        QString str = SystemCommand(systemstring, false).simplified();
+        str = SystemCommand(systemstring, false).simplified();
         msgs << n->Log(QString("%1() Response [" + str + "]").arg(__FUNCTION__));
     }
 

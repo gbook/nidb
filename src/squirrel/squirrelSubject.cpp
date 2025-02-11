@@ -385,6 +385,12 @@ QString squirrelSubject::VirtualPath() {
 /* ------------------------------------------------------------ */
 /* ----- GetStagedFileList ------------------------------------ */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Get a list of all staged files from all child studies and series.
+ * The list is a list of pairs of physical disk path & virtual path
+ * Example: "/path/to/file.txt" , "data/S1234/1/2/file.txt"
+ * @return Hash of staged files
+ */
 QList<QPair<QString,QString>> squirrelSubject::GetStagedFileList() {
 
     QList<QPair<QString,QString>> stagedList;
@@ -409,6 +415,10 @@ QList<QPair<QString,QString>> squirrelSubject::GetStagedFileList() {
 /* ------------------------------------------------------------ */
 /* ----- GetNextStudyNumber ----------------------------------- */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Determines what the next study number should be for this subject
+ * @return The next study number
+ */
 int squirrelSubject::GetNextStudyNumber() {
     int nextStudyNum = 1;
 

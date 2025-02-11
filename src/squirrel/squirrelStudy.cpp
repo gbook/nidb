@@ -168,9 +168,11 @@ bool squirrelStudy::Store() {
 /* ------------------------------------------------------------ */
 /* ----- Remove ----------------------------------------------- */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Remove this subject from the squirrel object in memory
+ * @return true if successful, false otherwise
+ */
 bool squirrelStudy::Remove() {
-
-
     /* ... delete any staged Study files */
     utils::RemoveStagedFileList(databaseUUID, objectID, "study");
 
@@ -275,7 +277,7 @@ QString squirrelStudy::PrintTree(bool isLast) {
 /* ------------------------------------------------------------ */
 /**
  * @brief Get a JSON object for this study
- * @return JSON object containing the study
+ * @return JSON object
  */
 QJsonObject squirrelStudy::ToJSON() {
 	QJsonObject json;
@@ -336,6 +338,10 @@ QJsonObject squirrelStudy::ToJSON() {
 /* ------------------------------------------------------------ */
 /* ----- VirtualPath ------------------------------------------ */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Get the virtual path for this subject within the squirrel package
+ * @return The virtual path
+ */
 QString squirrelStudy::VirtualPath() {
 
     QString vPath;
@@ -369,6 +375,12 @@ QString squirrelStudy::VirtualPath() {
 /* ------------------------------------------------------------ */
 /* ----- GetStagedFileList ------------------------------------ */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Get a list of all staged files from all child series.
+ * The list is a list of pairs of physical disk path & virtual path
+ * Example: "/path/to/file.txt" , "data/S1234/1/2/file.txt"
+ * @return Hash of staged files
+ */
 QList<QPair<QString,QString>> squirrelStudy::GetStagedFileList() {
 
     QList<QPair<QString,QString>> stagedList;

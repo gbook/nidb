@@ -40,7 +40,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 
-typedef QHash <int, QHash<QString, QString>> indexedHash;
+typedef QHash <int, QHash<QString, QString> > indexedHash;
 static const QRegularExpression REwhiteSpace("\\s*");
 static const QRegularExpression REnonAlphaNum("[^a-zA-Z0-9_-]");
 
@@ -58,6 +58,7 @@ struct BIDSMapping {
     QString phaseDir;
     QString protocol;
     bool bidsAutoNumberRuns;
+    bool bidsIncludeAcquisition;
     int bidsRun;
     int run;
 };
@@ -94,7 +95,7 @@ QString JoinIntArray(QList<int> a, QString glue);
 QString ParseDate(QString s);
 QString ParseTime(QString s);
 QString RemoveNonAlphaNumericChars(QString s);
-QString SystemCommand(QString s, bool detail=true, bool truncate=false, bool bufferOutput=true);
+QString SystemCommand(QString s, bool detail=true, bool truncate=false);
 QString WrapText(QString s, int col);
 QStringList ShellWords(QString s);
 bool IsDouble(QString s);

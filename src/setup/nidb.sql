@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Dec 18, 2024 at 05:08 PM
+-- Generation Time: Feb 11, 2025 at 07:45 PM
 -- Server version: 10.3.28-MariaDB
 -- PHP Version: 7.2.24
 
@@ -448,6 +448,7 @@ CREATE TABLE `bids_mapping` (
   `bidsSuffix` text NOT NULL,
   `bidsRun` int(11) NOT NULL,
   `bidsAutoNumberRuns` tinyint(1) NOT NULL,
+  `bidsIncludeAcquisition` tinyint(1) DEFAULT NULL,
   `bidsIntendedForEntity` text NOT NULL,
   `bidsIntendedForTask` text NOT NULL,
   `bidsIntendedForRun` text NOT NULL,
@@ -2194,6 +2195,7 @@ CREATE TABLE `pipelines` (
   `pipeline_projectid` longtext DEFAULT NULL,
   `pipeline_dynamicgroupid` int(11) DEFAULT NULL,
   `pipeline_outputbids` tinyint(1) DEFAULT NULL,
+  `pipeline_bidsoutputdir` varchar(255) DEFAULT NULL,
   `pipeline_status` varchar(20) DEFAULT NULL,
   `pipeline_statusmessage` varchar(255) DEFAULT NULL,
   `pipeline_laststart` datetime DEFAULT NULL,
@@ -2363,6 +2365,7 @@ CREATE TABLE `pipeline_options` (
   `pipeline_projectid` longtext DEFAULT NULL,
   `pipeline_dynamicgroupid` int(11) DEFAULT NULL,
   `pipeline_outputbids` tinyint(1) DEFAULT NULL,
+  `pipeline_bidsoutputdir` varchar(255) DEFAULT NULL,
   `pipeline_completefiles` longtext DEFAULT NULL,
   `pipeline_resultsscript` longtext DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;

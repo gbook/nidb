@@ -461,7 +461,7 @@ bool modify::RemoveObject(QString packagePath, QString objectType, QString dataP
         if (objectType == "subject") {
             qint64 subjectRowID = sqrl->FindSubject(objectID);
             if (subjectRowID < 0) {
-                sqrl->RemoveSubject(subjectRowID);
+                sqrl->RemoveObject("subject", subjectRowID);
                 sqrl->ResequenceSubjects();
             }
             else {
@@ -474,7 +474,7 @@ bool modify::RemoveObject(QString packagePath, QString objectType, QString dataP
             qint64 studyRowID = sqrl->FindStudy(subjectID, objectID.toInt());
             qint64 subjectRowID = sqrl->FindSubject(objectID);
             if (studyRowID < 0) {
-                sqrl->RemoveStudy(studyRowID);
+                sqrl->RemoveObject("study", studyRowID);
                 sqrl->ResequenceStudies(subjectRowID);
             }
             else {
@@ -487,7 +487,7 @@ bool modify::RemoveObject(QString packagePath, QString objectType, QString dataP
             qint64 seriesRowID = sqrl->FindSeries(subjectID, studyNum, objectID.toInt());
             qint64 studyRowID = sqrl->FindStudy(subjectID, studyNum);
             if (seriesRowID < 0) {
-                sqrl->RemoveSeries(seriesRowID);
+                sqrl->RemoveObject("series", seriesRowID);
                 sqrl->ResequenceSeries(studyRowID);
             }
             else {
@@ -499,7 +499,7 @@ bool modify::RemoveObject(QString packagePath, QString objectType, QString dataP
         else if (objectType == "experiment") {
             qint64 experimentRowID = sqrl->FindExperiment(objectID);
             if (experimentRowID < 0) {
-                sqrl->RemoveExperiment(experimentRowID);
+                sqrl->RemoveObject("experiment", experimentRowID);
             }
             else {
                 m = QString("Experiment with ExperimentName [%1] not found in package").arg(objectID);
@@ -510,7 +510,7 @@ bool modify::RemoveObject(QString packagePath, QString objectType, QString dataP
         else if (objectType == "pipeline") {
             qint64 pipelineRowID = sqrl->FindPipeline(objectID);
             if (pipelineRowID < 0) {
-                sqrl->RemovePipeline(pipelineRowID);
+                sqrl->RemoveObject("pipeline", pipelineRowID);
             }
             else {
                 m = QString("Pipeline with PipelineName [%1] not found in package").arg(objectID);
@@ -521,7 +521,7 @@ bool modify::RemoveObject(QString packagePath, QString objectType, QString dataP
         else if (objectType == "groupanalysis") {
             qint64 groupAnalysisRowID = sqrl->FindGroupAnalysis(objectID);
             if (groupAnalysisRowID < 0) {
-                sqrl->RemoveGroupAnalysis(groupAnalysisRowID);
+                sqrl->RemoveObject("groupanalysis", groupAnalysisRowID);
             }
             else {
                 m = QString("GroupAnalysis with GroupAnalysisName [%1] not found in package").arg(objectID);
@@ -532,7 +532,7 @@ bool modify::RemoveObject(QString packagePath, QString objectType, QString dataP
         else if (objectType == "datadictionary") {
             qint64 dataDictionaryRowID = sqrl->FindDataDictionary(objectID);
             if (dataDictionaryRowID < 0) {
-                sqrl->RemoveDataDictionary(dataDictionaryRowID);
+                sqrl->RemoveObject("datadictionary", dataDictionaryRowID);
             }
             else {
                 m = QString("DataDictionary with DataDictionaryName [%1] not found in package").arg(objectID);
@@ -716,6 +716,7 @@ bool modify::SplitByModality(QString packagePath, QString objectType, QString da
         sqrl2->SetFileMode(FileMode::NewPackage);
         sqrl2->SetPackagePath(newPackagePath);
         sqrl2->SetOverwritePackage(true);
+        sqrl2->DataFormat = "orig";
         QString newDbID = sqrl2->GetDatabaseUUID();
         //sqrl2->SetSystemTempDir();
 

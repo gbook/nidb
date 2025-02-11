@@ -27,6 +27,7 @@
 #include "dicom.h"
 #include "bids.h"
 #include "modify.h"
+#include "info.h"
 #include "squirrel.h"
 
 void CommandLineError(QCommandLineParser &p, QString m) {
@@ -232,9 +233,6 @@ int main(int argc, char *argv[])
         p.process(a);
 
         bool debug = p.isSet("d");
-        bool quiet = true;
-        if (debug)
-            quiet = false;
         QString object = p.value("object").trimmed();
         QString subjectID = p.value("subjectid").trimmed();
         int studyNum = p.value("studynum").toInt();
@@ -242,97 +240,25 @@ int main(int argc, char *argv[])
         bool tree = p.isSet("tree");
         bool csv = p.isSet("csv");
 
-        PrintingType printType;
+        PrintFormat printType;
         if (details)
-            printType = PrintingType::Details;
+            printType = PrintFormat::Details;
         else if (csv)
-            printType = PrintingType::CSV;
+            printType = PrintFormat::CSV;
         else if (tree)
-            printType = PrintingType::Tree;
+            printType = PrintFormat::Tree;
         else
-            printType = PrintingType::List;
+            printType = PrintFormat::List;
 
         if (object == "")
             object = "package";
 
-        /* check if the infile exists */
-        QFile infile(inputPath);
-        if (!infile.exists()) {
-            CommandLineError(p, "Missing path to squirrel package.");
-            PrintExampleUsage();
-            return 0;
+        QString m;
+        info information;
+        if (!information.DisplayInfo(inputPath, debug, object, subjectID, studyNum, printType, m)) {
+            CommandLineError(p,m);
         }
-        else {
-            squirrel *sqrl = new squirrel(debug, quiet);
-            sqrl->quiet = quiet;
-            sqrl->SetPackagePath(inputPath);
-            sqrl->SetFileMode(FileMode::ExistingPackage);
-            sqrl->SetQuickRead(true);
-            sqrl->Read();
-            if (sqrl->IsValid()) {
-                sqrl->Debug("Reading package...", __FUNCTION__);
-                if (object == "all") {
-                    sqrl->PrintPackage();
-                    sqrl->PrintSubjects(PrintingType::Tree);
-                }
-                else if (object == "package") {
-                    sqrl->PrintPackage();
-                }
-                else if (object == "subject") {
-                    sqrl->PrintSubjects(printType);
-                }
-                else if (object == "study") {
-                    qint64 subjectRowID = sqrl->FindSubject(subjectID);
-                    if (subjectRowID < 0)
-                        utils::Print(QString("Subject [%1] was not found in this package").arg(subjectID));
-                    else
-                        sqrl->PrintStudies(subjectRowID, details);
-                }
-                else if (object == "series") {
-                    qint64 subjectRowID = sqrl->FindSubject(subjectID);
-                    if (subjectRowID < 0)
-                        utils::Print(QString("Subject [%1] was not found in this package").arg(subjectID));
-                    else {
-                        qint64 studyRowID = sqrl->FindStudy(subjectID, studyNum);
-                        if (studyRowID < 0)
-                            utils::Print(QString("Study not found. Searched for subject [%1] study [%2]").arg(subjectID).arg(studyNum));
-                        else
-                            sqrl->PrintSeries(studyRowID, details);
-                    }
-                }
-                else if (object == "observation") {
-                    qint64 subjectRowID = sqrl->FindSubject(subjectID);
-                    if (subjectRowID < 0)
-                        utils::Print(QString("Subject [%1] was not found in this package").arg(subjectID));
-                    else
-                        sqrl->PrintObservations(subjectRowID, printType);
-                }
-                else if (object == "intervention") {
-                    qint64 subjectRowID = sqrl->FindSubject(subjectID);
-                    if (subjectRowID < 0)
-                        utils::Print(QString("Subject [%1] was not found in this package").arg(subjectID));
-                    else
-                        sqrl->PrintInterventions(subjectRowID, printType);
-                }
-                else if (object == "experiment") {
-                    sqrl->PrintExperiments(details);
-                }
-                else if (object == "pipeline") {
-                    sqrl->PrintPipelines(details);
-                }
-                else if (object == "groupanalysis") {
-                    sqrl->PrintGroupAnalyses(details);
-                }
-                else if (object == "datadictionary") {
-                    sqrl->PrintDataDictionary(details);
-                }
-            }
-            else {
-                utils::Print("Squirrel library has not loaded correctly. See error messages above");
-            }
 
-            delete sqrl;
-        }
     }
     else if (command == "modify") {
         p.clearPositionalArguments();
@@ -349,9 +275,6 @@ int main(int argc, char *argv[])
         p.addOption(QCommandLineOption(QStringList() << "q" << "quiet", "Quiet mode. No printing of headers and checks"));
         p.addOption(QCommandLineOption(QStringList() << "operation", "Operation to perform on the package [add  remove  update  splitbymodality].", "operation"));
         p.addOption(QCommandLineOption(QStringList() << "object", "Object type to perform operation on [package  subject  study  series  analysis  intervention  observation  experiment  pipeline  groupanalysis  datadictionary].", "object"));
-        //p.addOption(QCommandLineOption(QStringList() << "add", "Add object to the package.", "object"));
-        //p.addOption(QCommandLineOption(QStringList() << "remove", "Remove object (and all dependent objects) from the package.", "object"));
-        //p.addOption(QCommandLineOption(QStringList() << "update", "Update object information.", "object"));
         p.addOption(QCommandLineOption(QStringList() << "datapath", "Path to new object data. Can include wildcard: /path/*.dcm", "path"));
         p.addOption(QCommandLineOption(QStringList() << "recursive", "Search the data path recursively"));
         p.addOption(QCommandLineOption(QStringList() << "objectid", "Existing object ID, name, or number to modify.", "id"));
@@ -364,8 +287,6 @@ int main(int argc, char *argv[])
 
         QString operation = p.value("operation").trimmed();
         QString objectType = p.value("object").trimmed(); /* possible objects: subject study series observation intervention analysis experiment pipeline groupanalysis datadictionary */
-        //QString removeObject = p.value("remove").trimmed();
-        //QString updateObject = p.value("update").trimmed(); /* possible objects: <all> */
         QString dataPath = p.value("datapath").trimmed();
         QString objectData = p.value("objectdata").trimmed();
         QString objectID = p.value("objectid").trimmed();

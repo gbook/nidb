@@ -93,6 +93,7 @@
 	$ishidden = GetVariable("pipelineishidden");
 	$groupbysubject = GetVariable("groupbysubject");
 	$outputbids = GetVariable("outputbids");
+	$bidsoutputdir = GetVariable("bidsoutputdir");
 
 	$newname = GetVariable("newname");
 	$newuserid = GetVariable("newuserid");
@@ -136,7 +137,7 @@
 			DisplayPipelineForm("add", "", $returntab);
 			break;
 		case 'updatepipelineoptions':
-			UpdatePipelineOptions($id, $commandlist, $supplementcommandlist, $steporder, $dd_enabled, $dd_order, $dd_protocol, $dd_modality, $dd_datalevel, $dd_studyassoc, $dd_dataformat, $dd_imagetype, $dd_gzip, $dd_location, $dd_seriescriteria, $dd_numboldreps, $dd_behformat, $dd_behdir, $dd_useseriesdirs, $dd_optional, $dd_isprimary, $dd_preserveseries, $dd_usephasedir, $dd_behonly, $pipelineresultsscript, $completefiles, $deplevel, $depdir, $deplinktype, $groupid, $projectid, $dependency, $groupbysubject, $outputbids);
+			UpdatePipelineOptions($id, $commandlist, $supplementcommandlist, $steporder, $dd_enabled, $dd_order, $dd_protocol, $dd_modality, $dd_datalevel, $dd_studyassoc, $dd_dataformat, $dd_imagetype, $dd_gzip, $dd_location, $dd_seriescriteria, $dd_numboldreps, $dd_behformat, $dd_behdir, $dd_useseriesdirs, $dd_optional, $dd_isprimary, $dd_preserveseries, $dd_usephasedir, $dd_behonly, $pipelineresultsscript, $completefiles, $deplevel, $depdir, $deplinktype, $groupid, $projectid, $dependency, $groupbysubject, $outputbids, $bidsoutputdir);
 			DisplayPipelineForm("edit", $id, $returntab);
 			break;
 		case 'update':
@@ -144,7 +145,7 @@
 			DisplayPipelineForm("edit", $id, $returntab);
 			break;
 		case 'add':
-			$id = AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinesubmithostuser, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelinenumcores, $pipelinememory, $pipelineremovedata, $pipelinedirectory, $pipelinedirstructure, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $projectid, $level, $groupbysubject, $outputbids);
+			$id = AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinesubmithostuser, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelinenumcores, $pipelinememory, $pipelineremovedata, $pipelinedirectory, $pipelinedirstructure, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $projectid, $level, $groupbysubject, $outputbids, $bidsoutputdir);
 			DisplayPipelineForm("edit", $id, $returntab);
 			break;
 		case 'changeowner':
@@ -279,7 +280,7 @@
 	/* -------------------------------------------- */
 	/* this function CHANGES the version number     */
 	/* -------------------------------------------- */
-	function UpdatePipelineOptions($id, $commandlist, $supplementcommandlist, $steporder, $dd_enabled, $dd_order, $dd_protocol, $dd_modality, $dd_datalevel, $dd_studyassoc, $dd_dataformat, $dd_imagetype, $dd_gzip, $dd_location, $dd_seriescriteria, $dd_numboldreps, $dd_behformat, $dd_behdir, $dd_useseriesdirs, $dd_optional, $dd_isprimary, $dd_preserveseries, $dd_usephasedir, $dd_behonly, $pipelineresultsscript, $completefiles, $deplevel, $depdir, $deplinktype, $groupid, $projectid, $dependency, $groupbysubject, $outputbids) {
+	function UpdatePipelineOptions($id, $commandlist, $supplementcommandlist, $steporder, $dd_enabled, $dd_order, $dd_protocol, $dd_modality, $dd_datalevel, $dd_studyassoc, $dd_dataformat, $dd_imagetype, $dd_gzip, $dd_location, $dd_seriescriteria, $dd_numboldreps, $dd_behformat, $dd_behdir, $dd_useseriesdirs, $dd_optional, $dd_isprimary, $dd_preserveseries, $dd_usephasedir, $dd_behonly, $pipelineresultsscript, $completefiles, $deplevel, $depdir, $deplinktype, $groupid, $projectid, $dependency, $groupbysubject, $outputbids, $bidsoutputdir) {
 		
 		if (!ValidID($id,'Pipeline ID - C')) { return; }
 
@@ -311,6 +312,7 @@
 		$deplinktype = mysqli_real_escape_string($GLOBALS['linki'], $deplinktype);
 		$groupbysubject = mysqli_real_escape_string($GLOBALS['linki'], $groupbysubject) + 0;
 		$outputbids = mysqli_real_escape_string($GLOBALS['linki'], $outputbids) + 0;
+		$bidsoutputdir = mysqli_real_escape_string($GLOBALS['linki'], $bidsoutputdir);
 
 		if (is_array($dependency)) { $dependencies = implode(",",$dependency); }
 		else { $dependencies = $dependency; }
@@ -322,7 +324,7 @@
 		else { $projectids = $projectid; }
 
 		/* update the pipeline table */
-		$sqlstring = "update pipelines set pipeline_resultsscript = '$pipelineresultsscript', pipeline_completefiles = '$completefiles', pipeline_dependency = '$dependencies', pipeline_groupid = '$groupids', pipeline_projectid = '$projectids', pipeline_dependencylevel = '$deplevel', pipeline_dependencydir = '$depdir', pipeline_deplinktype = '$deplinktype', pipeline_groupbysubject = $groupbysubject, pipeline_outputbids = $outputbids where pipeline_id = $id";
+		$sqlstring = "update pipelines set pipeline_resultsscript = '$pipelineresultsscript', pipeline_completefiles = '$completefiles', pipeline_dependency = '$dependencies', pipeline_groupid = '$groupids', pipeline_projectid = '$projectids', pipeline_dependencylevel = '$deplevel', pipeline_dependencydir = '$depdir', pipeline_deplinktype = '$deplinktype', pipeline_groupbysubject = $groupbysubject, pipeline_outputbids = $outputbids, pipeline_bidsoutputdir = '$bidsoutputdir' where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$msg .= "<li>Updated pipelines table";
 		
@@ -349,7 +351,7 @@
 		}
 
 		/* add row to the pipeline_options table for the new version */
-		$sqlstring = "insert into pipeline_options (pipeline_id, pipeline_version, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_projectid, pipeline_groupbysubject, pipeline_outputbids, pipeline_completefiles, pipeline_resultsscript) values ($id, $newversion, '$dependencies', '$deplevel', '$depdir', '$deplinktype', '$groupids', '$projectids', '$groupbysubject', '$outputbids', '$completefiles', '$pipelineresultscript')";
+		$sqlstring = "insert into pipeline_options (pipeline_id, pipeline_version, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_projectid, pipeline_groupbysubject, pipeline_outputbids, pipeline_bidsoutputdir, pipeline_completefiles, pipeline_resultsscript) values ($id, $newversion, '$dependencies', '$deplevel', '$depdir', '$deplinktype', '$groupids', '$projectids', '$groupbysubject', '$outputbids', '$bidsoutputdir', '$completefiles', '$pipelineresultscript')";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$msg .= "<li>Updated pipeline_options table";
 		
@@ -548,7 +550,7 @@
 	/* -------------------------------------------- */
 	/* ------- AddPipeline ------------------------ */
 	/* -------------------------------------------- */
-	function AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinesubmithostuser, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelinenumcores, $pipelinememory, $pipelineremovedata, $pipelinedirectory, $pipelinedirstructure, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $projectid, $level, $groupbysubject, $outputbids) {
+	function AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinesubmithostuser, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelinenumcores, $pipelinememory, $pipelineremovedata, $pipelinedirectory, $pipelinedirstructure, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $projectid, $level, $groupbysubject, $outputbids, $bidsoutputdir) {
 		/* perform data checks */
 		$pipelinetitle = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinetitle));
 		$pipelinedesc = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinedesc));
@@ -574,6 +576,7 @@
 		$completefiles = mysqli_real_escape_string($GLOBALS['linki'], trim($completefiles));
 		$groupbysubject = mysqli_real_escape_string($GLOBALS['linki'], $groupbysubject) + 0;
 		$outputbids = mysqli_real_escape_string($GLOBALS['linki'], $outputbids) + 0;
+		$bidsoutputdir = mysqli_real_escape_string($GLOBALS['linki'], $bidsoutputdir);
 		$deplevel = mysqli_real_escape_string($GLOBALS['linki'], trim($deplevel));
 		$depdir = mysqli_real_escape_string($GLOBALS['linki'], trim($depdir));
 		$deplinktype = mysqli_real_escape_string($GLOBALS['linki'], trim($deplinktype));
@@ -610,7 +613,7 @@
 			$userid = $row['user_id'];
 			
 			/* insert the new form */
-			$sqlstring = "insert into pipelines (pipeline_name, pipeline_desc, pipeline_group, pipeline_admin, pipeline_createdate, pipeline_status, pipeline_numproc, pipeline_submithost, pipeline_submithostuser, pipeline_maxwalltime, pipeline_submitdelay, pipeline_datacopymethod, pipeline_queue, pipeline_numcores, pipeline_memory, pipeline_clustertype, pipeline_clusteruser, pipeline_removedata, pipeline_resultsscript, pipeline_completefiles, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_projectid, pipeline_level, pipeline_directory, pipeline_dirstructure, pipeline_usetmpdir, pipeline_tmpdir, pipeline_notes, pipeline_ishidden, pipeline_groupbysubject, pipeline_outputbids) values ('$pipelinetitle', '$pipelinedesc', '$pipelinegroup', '$userid', now(), 'stopped', '$pipelinenumproc', '$pipelinesubmithost', '$pipelinesubmithostuser', $pipelinemaxwalltime, $pipelinesubmitdelay, '$pipelinedatacopymethod', '$pipelinequeue', '$pipelinenumcores', '$pipelinememory', '$pipelineclustertype', '$pipelineclusteruser', $pipelineremovedata, '$pipelineresultsscript', '$completefiles', '$dependencies', '$deplevel', '$depdir', '$deplinktype', '$groupids', '$projectids', '$level', '$pipelinedirectory', '$pipelinedirstructure', $pipelineusetmpdir, '$pipelinetmpdir', '$pipelinenotes', 0, $groupbysubject, $outputbids)";
+			$sqlstring = "insert into pipelines (pipeline_name, pipeline_desc, pipeline_group, pipeline_admin, pipeline_createdate, pipeline_status, pipeline_numproc, pipeline_submithost, pipeline_submithostuser, pipeline_maxwalltime, pipeline_submitdelay, pipeline_datacopymethod, pipeline_queue, pipeline_numcores, pipeline_memory, pipeline_clustertype, pipeline_clusteruser, pipeline_removedata, pipeline_resultsscript, pipeline_completefiles, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_projectid, pipeline_level, pipeline_directory, pipeline_dirstructure, pipeline_usetmpdir, pipeline_tmpdir, pipeline_notes, pipeline_ishidden, pipeline_groupbysubject, pipeline_outputbids, pipeline_bidsoutputdir) values ('$pipelinetitle', '$pipelinedesc', '$pipelinegroup', '$userid', now(), 'stopped', '$pipelinenumproc', '$pipelinesubmithost', '$pipelinesubmithostuser', $pipelinemaxwalltime, $pipelinesubmitdelay, '$pipelinedatacopymethod', '$pipelinequeue', '$pipelinenumcores', '$pipelinememory', '$pipelineclustertype', '$pipelineclusteruser', $pipelineremovedata, '$pipelineresultsscript', '$completefiles', '$dependencies', '$deplevel', '$depdir', '$deplinktype', '$groupids', '$projectids', '$level', '$pipelinedirectory', '$pipelinedirstructure', $pipelineusetmpdir, '$pipelinetmpdir', '$pipelinenotes', 0, $groupbysubject, $outputbids, '$bidsoutputdir')";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			$pipelineid = mysqli_insert_id($GLOBALS['linki']);
 			
@@ -999,6 +1002,7 @@
 			$ishidden = $row['pipeline_ishidden'];
 			$groupbysubject = $row['pipeline_groupbysubject'];
 			$outputbids = $row['pipeline_outputbids'];
+			$bidsoutputdir = $row['pipeline_bidsoutputdir'];
 			$isenabled = $row['pipeline_enabled'];
 			$isdebug = $row['pipeline_debug'];
 			
@@ -2155,7 +2159,12 @@
 						<th>Order</th>
 						<th>Protocol</th>
 						<th>Modality</th>
-						<th>Output &nbsp; <input type="checkbox" name="outputbids" value="1" <? if ($outputbids) { echo "checked"; } ?>> BIDS<i class="grey question outline circle icon" title="If this option is checked, all data will be written in BIDS format. Output formats for individual data items will be ignored."></i></th>
+						<th>
+							Output &nbsp; <input type="checkbox" name="outputbids" value="1" <? if ($outputbids) { echo "checked"; } ?>> BIDS<i class="grey question outline circle icon" title="If this option is checked, all data will be written in BIDS format. Output formats for individual data items will be ignored."></i>
+							<div class="ui small input">
+								<input type="text" name="bidsoutputdir" value="<?=$bidsoutputdir?>" placeholder="BIDS output directory">
+							</div>
+						</th>
 					</thead>
 				<?
 				$neworder = 1;
@@ -3098,6 +3107,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 						$grouptype = $row['pipeline_grouptype'];
 						$groupbysubject = $row['pipeline_groupbysubject'];
 						$outputbids = $row['pipeline_outputbids'];
+						$bidsoutputdir = $row['pipeline_bidsoutputdir'];
 						$dynamicgroupid = $row['pipeline_dynamicgroupid'];
 						$completefiles = $row['pipeline_completefiles'];
 						$resultsscript = $row['pipeline_resultsscript'];
@@ -3136,6 +3146,10 @@ echo "#$ps_command     $logged $ps_desc\n";
 							<tr>
 								<td>Output BIDS</td>
 								<td><?=$outputbids?></td>
+							</tr>
+							<tr>
+								<td>BIDS output directory</td>
+								<td><?=$bidsoutputdir?></td>
 							</tr>
 							<tr>
 								<td>Dependency Dir</td>

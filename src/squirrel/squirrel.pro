@@ -19,6 +19,7 @@ DEFINES += SQUIRREL_BUILD
 
 SOURCES += \
 	bids.cpp \
+	info.cpp \
 	modify.cpp \
 	squirrelDataDictionary.cpp \
 	squirrelImageIO.cpp \
@@ -44,6 +45,7 @@ SOURCES += \
 
 HEADERS += \
 	bids.h \
+	info.h \
 	modify.h \
 	squirrel.sql.h \
 	squirrelDataDictionary.h \

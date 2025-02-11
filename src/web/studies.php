@@ -71,6 +71,7 @@
 	$bidsIntendedForFileExtension = GetVariable("bidsIntendedForFileExtension");
 	$bidsrun = GetVariable("bidsrun");
 	$bidsautonumberruns = GetVariable("bidsautonumberruns");
+	$bidsincludeacquisition = GetVariable("bidsincludeacquisition");
 	$bidstask = GetVariable("bidstask");
 	$bidspedirection = GetVariable("bidspedirection");
 	$series_datetime = GetVariable("series_datetime");
@@ -215,7 +216,7 @@
 			EditBIDSMapping($seriesid, $modality);
 			break;
 		case 'updatebidsmapping':
-			UpdateBIDSMapping($studyid, $seriesdesc, $imagetype, $bidsentitysuffix, $bidsIntendedForEntity, $bidsIntendedForTask, $bidsIntendedForRun, $bidsIntendedForSuffix, $bidsIntendedForFileExtension, $bidsrun, $bidsautonumberruns, $bidstask, $bidspedirection);
+			UpdateBIDSMapping($studyid, $seriesdesc, $imagetype, $bidsentitysuffix, $bidsIntendedForEntity, $bidsIntendedForTask, $bidsIntendedForRun, $bidsIntendedForSuffix, $bidsIntendedForFileExtension, $bidsrun, $bidsautonumberruns, $bidsincludeacquisition, $bidstask, $bidspedirection);
 			DisplayStudy($studyid);
 			break;
 		case 'displayfiles':
@@ -795,7 +796,7 @@
 	/* -------------------------------------------- */
 	/* ------- UpdateBIDSMapping ------------------ */
 	/* -------------------------------------------- */
-	function UpdateBIDSMapping($studyid, $seriesdesc, $imagetype, $bidsentitysuffix, $bidsIntendedForEntity, $bidsIntendedForTask, $bidsIntendedForRun, $bidsIntendedForSuffix, $bidsIntendedForFileExtension, $bidsrun, $bidsautonumberruns, $bidstask, $bidspedirection) {
+	function UpdateBIDSMapping($studyid, $seriesdesc, $imagetype, $bidsentitysuffix, $bidsIntendedForEntity, $bidsIntendedForTask, $bidsIntendedForRun, $bidsIntendedForSuffix, $bidsIntendedForFileExtension, $bidsrun, $bidsautonumberruns, $bidsincludeacquisition, $bidstask, $bidspedirection) {
 		$studyid = mysqli_real_escape_string($GLOBALS['linki'], $studyid);
 		$seriesdesc = mysqli_real_escape_string($GLOBALS['linki'], $seriesdesc);
 		$imagetype = mysqli_real_escape_string($GLOBALS['linki'], $imagetype);
@@ -807,6 +808,7 @@
 		$bidsIntendedForFileExtension = mysqli_real_escape_string($GLOBALS['linki'], $bidsIntendedForFileExtension);
 		$bidsrun = mysqli_real_escape_string($GLOBALS['linki'], $bidsrun);
 		$bidsautonumberruns = mysqli_real_escape_string($GLOBALS['linki'], $bidsautonumberruns);
+		$bidsincludeacquisition = mysqli_real_escape_string($GLOBALS['linki'], $bidsincludeacquisition);
 		$bidstask = mysqli_real_escape_string($GLOBALS['linki'], $bidstask);
 		$bidspedirection = mysqli_real_escape_string($GLOBALS['linki'], $bidspedirection);
 		
@@ -819,10 +821,13 @@
 		if ($bidsrun == "")
 			$bidsrun = 0;
 
+		if ($bidsincludeacquisition == "")
+			$bidsincludeacquisition = 0;
+
 		list($path, $uid, $studynum, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid) = GetStudyInfo($studyid);
 		$modality = strtolower($modality);
 		
-		$sqlstring = "insert ignore into bids_mapping (project_id, protocolname, imagetype, modality, bidsentity, bidssuffix, bidsrun, bidsAutoNumberRuns, bidsIntendedForEntity, bidsIntendedForTask, bidsIntendedForRun, bidsIntendedForSuffix, bidsIntendedForFileExtension, bidstask, bidspedirection) values ($projectid, '$seriesdesc', '$imagetype', '$modality', '$bidsentity', '$bidssuffix', $bidsrun, $bidsautonumberruns, '$bidsIntendedForEntity', '$bidsIntendedForTask', '$bidsIntendedForRun', '$bidsIntendedForSuffix', '$bidsIntendedForFileExtension', '$bidstask', '$bidspedirection') on duplicate key update bidsentity = '$bidsentity', bidssuffix = '$bidssuffix', bidsrun = $bidsrun, bidsAutoNumberRuns = $bidsautonumberruns, bidsIntendedForEntity = '$bidsIntendedForEntity', bidsIntendedForTask = '$bidsIntendedForTask', bidsIntendedForRun = '$bidsIntendedForRun', bidsIntendedForSuffix = '$bidsIntendedForSuffix', bidsIntendedForFileExtension = '$bidsIntendedForFileExtension', bidstask = '$bidstask', bidspedirection = '$bidspedirection'";
+		$sqlstring = "insert ignore into bids_mapping (project_id, protocolname, imagetype, modality, bidsentity, bidssuffix, bidsrun, bidsAutoNumberRuns, bidsIncludeAcquisition, bidsIntendedForEntity, bidsIntendedForTask, bidsIntendedForRun, bidsIntendedForSuffix, bidsIntendedForFileExtension, bidstask, bidspedirection) values ($projectid, '$seriesdesc', '$imagetype', '$modality', '$bidsentity', '$bidssuffix', $bidsrun, $bidsautonumberruns, $bidsincludeacquisition, '$bidsIntendedForEntity', '$bidsIntendedForTask', '$bidsIntendedForRun', '$bidsIntendedForSuffix', '$bidsIntendedForFileExtension', '$bidstask', '$bidspedirection') on duplicate key update bidsentity = '$bidsentity', bidssuffix = '$bidssuffix', bidsrun = $bidsrun, bidsAutoNumberRuns = $bidsautonumberruns, bidsIncludeAcquisition = $bidsincludeacquisition, bidsIntendedForEntity = '$bidsIntendedForEntity', bidsIntendedForTask = '$bidsIntendedForTask', bidsIntendedForRun = '$bidsIntendedForRun', bidsIntendedForSuffix = '$bidsIntendedForSuffix', bidsIntendedForFileExtension = '$bidsIntendedForFileExtension', bidstask = '$bidstask', bidspedirection = '$bidspedirection'";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		//PrintSQL($sqlstring);
 
@@ -861,6 +866,7 @@
 		$bidsIntendedForFileExtension = $row['bidsIntendedForFileExtension'];
 		$bidsrun = $row['bidsRun'];
 		$bidsautonumberruns = $row['bidsAutoNumberRuns'];
+		$bidsincludeacquisition = $row['bidsIncludeAcquisition'];
 		$bidstask = $row['bidsTask'];
 		$bidspedirection = $row['bidsPEDirection'];
 		
@@ -990,6 +996,14 @@
 					<div class="field">
 						<label>BIDS task <i class="question circle outline icon" title="BIDS 'task-' filename option"></i></label>
 						<input type="text" name="bidstask" value="<?=$bidstask?>" style="font-family:monospace">
+					</div>
+
+					<div class="field">
+						<label>Acquisition</label>
+						<div class="ui checkbox">
+							<input type="checkbox" name="bidsincludeacquisition" value="1" <? if ($bidsincludeacquisition == 1) { echo "checked"; } ?>>
+							<label data-html="<div class='header'>Hello</div>">Include acquisition in filename</label>
+						</div>
 					</div>
 
 					<div class="field">
@@ -2420,6 +2434,7 @@
 							$bidsIntendedForFileExtension = $row['bidsIntendedForFileExtension'];
 							$bidsrun = $row['bidsRun'];
 							$bidsautonumberruns = $row['bidsAutoNumberRuns'];
+							$bidsincludeacquisition = $row['bidsIncludeAcquisition'];
 							$bidstask = $row['bidsTask'];
 							$bidspedirection = $row['bidsPEDirection'];
 							

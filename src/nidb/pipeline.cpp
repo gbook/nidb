@@ -91,6 +91,7 @@ void pipeline::LoadPipelineInfo() {
     numConcurrentAnalysis = q.value("pipeline_numproc").toInt();
     ownerID = q.value("pipeline_admin").toInt();
     outputBIDS = q.value("pipeline_outputbids").toInt();
+    BIDSoutputDir = q.value("pipeline_bidsoutputdir").toString();
     removeData = q.value("pipeline_removedata").toBool();
     resultScript = q.value("pipeline_resultsscript").toString().trimmed();
     status = q.value("pipeline_status").toString().trimmed();

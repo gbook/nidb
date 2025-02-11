@@ -40,6 +40,8 @@ typedef QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>> subjectStudy
 
 #ifdef Q_OS_WINDOWS
 #pragma warning(disable : 5045)
+#pragma warning(disable : 4866)
+#pragma warning(disable : 4711)
 #endif
 
 /**

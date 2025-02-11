@@ -1450,7 +1450,7 @@
 				// default col def properties get applied to all columns
 				defaultColDef: {sortable: true, filter: true, resizable: true},
 
-				rowSelection: 'multiple', // allow rows to be selected
+				rowSelection: { mode: 'multiRow' }, // allow rows to be selected
 				animateRows: false, // have rows animate to new positions when sorted
 				//onFirstDataRendered: onFirstDataRendered,
 				stopEditingWhenCellsLoseFocus: true,
@@ -1673,7 +1673,7 @@
 				// default col def properties get applied to all columns
 				defaultColDef: {sortable: true, filter: true, resizable: true},
 
-				rowSelection: 'multiple', // allow rows to be selected
+				rowSelection: { mode: 'multiRow' }, // allow rows to be selected
 				animateRows: false, // have rows animate to new positions when sorted
 				//onFirstDataRendered: onFirstDataRendered,
 				stopEditingWhenCellsLoseFocus: true,
@@ -1925,7 +1925,7 @@
 					'rowhighlight': 'data.rowhighlight == 1',
 				},
 
-				rowSelection: 'multiple', // allow rows to be selected
+				rowSelection: { mode: 'multiRow' }, // allow rows to be selected
 				rowMultiSelectWithClick: true,
 				animateRows: false, // have rows animate to new positions when sorted
 				//onFirstDataRendered: onFirstDataRendered,

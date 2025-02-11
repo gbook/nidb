@@ -2,7 +2,9 @@ QT -= gui
 QT += sql
 QT += network
 
-CONFIG += c++17 cmdline
+CONFIG += c++11
+CONFIG += c++17
+CONFIG += cmdline
 CONFIG -= app_bundle
 CONFIG += silent
 
@@ -12,6 +14,11 @@ CONFIG += silent
 # deprecated API in order to know how to port your code away from it.
 DEFINES += QT_DEPRECATED_WARNINGS
 QMAKE_CXXFLAGS += -Wall
+win32: {
+    QMAKE_CXXFLAGS += /wd4711
+    QMAKE_CXXFLAGS += /wd4866
+    QMAKE_CXXFLAGS += /wd5045
+}
 
 # You can also make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -91,8 +98,8 @@ HEADERS += \
 
 # gdcm
 win32: {
-    GDCMBIN = C:/gdcmbin
-    GDCMSRC = C:/gdcm/Source
+    GDCMBIN = C:/squirrel/bin/gdcm
+    GDCMSRC = C:/squirrel/src/gdcm/Source
     win32:CONFIG(release, debug|release): LIBS += -L$$GDCMBIN/bin/Release/
     else:win32:CONFIG(debug, debug|release): LIBS += -L$$GDCMBIN/bin/Debug/
     INCLUDEPATH += $$GDCMSRC/Attribute

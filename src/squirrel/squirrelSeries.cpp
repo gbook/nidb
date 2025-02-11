@@ -324,6 +324,10 @@ QJsonObject squirrelSeries::ParamsToJSON() {
 /* ------------------------------------------------------------ */
 /* ----- VirtualPath ------------------------------------------ */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Get the virtual path for this series within the package
+ * @return The virtual path
+ */
 QString squirrelSeries::VirtualPath() {
 
     QString vPath;
@@ -371,6 +375,9 @@ QString squirrelSeries::VirtualPath() {
 /* ---------------------------------------------------------- */
 /* --------- AnonymizeParams -------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Remove selected fields from the series params that may contain PHI
+ */
 void squirrelSeries::AnonymizeParams() {
 
     QHash<QString, QString> p;
@@ -421,6 +428,12 @@ void squirrelSeries::AnonymizeParams() {
 /* ------------------------------------------------------------ */
 /* ----- GetStagedFileList ------------------------------------ */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Get a list of all staged files
+ * The list is a list of pairs of physical disk path & virtual path
+ * Example: "/path/to/file.txt" , "data/S1234/1/2/file.txt"
+ * @return Hash of staged files
+ */
 QList<QPair<QString,QString>> squirrelSeries::GetStagedFileList() {
 
     QList<QPair<QString,QString>> stagedList;

@@ -83,7 +83,7 @@ QString CreateLogDate() {
 /* ---------------------------------------------------------- */
 /* this function does not work in Windows                     */
 /* ---------------------------------------------------------- */
-QString SystemCommand(QString s, bool detail, bool truncate, bool bufferOutput) {
+QString SystemCommand(QString s, bool detail, bool truncate) {
 
     double starttime = double(QDateTime::currentMSecsSinceEpoch());
     QString ret;
@@ -1044,7 +1044,7 @@ bool BatchRenameFiles(QString dir, QString seriesnum, QString studynum, QString 
     QStringList exts;
     exts << "*.img" << "*.hdr" << "*.nii" << "*.nii.gz" << "*.json" << "*.bvec" << "*.bval";
     /* loop through all the extensions we want to rename/renumber */
-    foreach (QString ext, exts) {
+    for (QString ext : exts) {
         int i = 1;
         QFile f;
         QDirIterator it(dir, QStringList() << ext, QDir::Files);
@@ -1058,10 +1058,10 @@ bool BatchRenameFiles(QString dir, QString seriesnum, QString studynum, QString 
         SortQStringListNaturally(files);
 
         /* rename the files */
-        foreach (QString fname, files) {
+        for (const QString &fname : files) {
             f.setFileName(fname);
             QFileInfo fi(f);
-            QString newName = fi.path() + "/" + QString("%1_%2_%3_%4%5").arg(uid).arg(studynum).arg(seriesnum).arg(i,5,10,QChar('0')).arg(ext.replace("*",""));
+            QString newName = fi.path() + "/" + QString("%1_%2_%3_%4%5").arg(uid).arg(studynum).arg(seriesnum).arg(i,5,10,QChar('0')).arg(ext.replace("*", "", Qt::CaseInsensitive));
             msg += QString(fname + " --> " + newName);
             if (f.rename(newName))
                 numfilesrenamed++;
@@ -1090,8 +1090,8 @@ bool BatchRenameFiles(QString dir, QString seriesnum, QString studynum, QString 
  */
 bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession, BIDSMapping mapping, int &numfilesrenamed, QString &msg) {
 
-    QDir d;
-    if (!d.exists(dir)) {
+    QDir dd;
+    if (!dd.exists(dir)) {
         msg = "directory [" + dir + "] does not exist";
         return false;
     }
@@ -1136,7 +1136,7 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession,
             QString fileBaseName = QString("%1_%2").arg(bidsSubject).arg(bidsSession);
             if (mapping.bidsTask != "")
                 fileBaseName += QString("_task-%1").arg(mapping.bidsTask);
-            if (mapping.protocol != "")
+            if ((mapping.protocol != "") && (mapping.bidsIncludeAcquisition))
                 fileBaseName += QString("_acq-%1").arg(mapping.protocol);
             if (r > 0)
                 fileBaseName += QString("_run-%1").arg(r);
@@ -1151,7 +1151,7 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession,
                 fileBaseName = QString("%1_%2").arg(bidsSubject).arg(bidsSession);
                 if (mapping.bidsTask != "")
                     fileBaseName += QString("_task-%1").arg(mapping.bidsTask);
-                if (mapping.protocol != "")
+                if ((mapping.protocol != "") && (mapping.bidsIncludeAcquisition))
                     fileBaseName += QString("_acq-%1").arg(mapping.protocol);
                 if (r > 0)
                     fileBaseName += QString("_run-%1").arg(r);

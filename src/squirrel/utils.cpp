@@ -733,12 +733,13 @@ namespace utils {
 
 
     /* ---------------------------------------------------------- */
-    /* --------- CopyFile --------------------------------------- */
+    /* --------- CopyFileToDir ---------------------------------- */
     /* ---------------------------------------------------------- */
-    bool CopyFile(QString f, QString dir) {
+    bool CopyFileToDir(QString f, QString dir) {
         QFileInfo file(f);
 
         if (QFile::copy(f, QString("%1/%2").arg(dir).arg(file.fileName()))) {
+            Print(QString("Copied file. Old name [%1] to new name [%2/%3]").arg(f).arg(dir).arg(file.fileName()));
             return true;
         }
         else {

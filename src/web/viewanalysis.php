@@ -243,6 +243,10 @@
 					if (stristr(strtolower($file),'.txt') !== FALSE) { $filetype = 'text'; }
 					if (stristr(strtolower($file),'.log') !== FALSE) { $filetype = 'text'; }
 					if (stristr(strtolower($file),'.sh') !== FALSE) { $filetype = 'text'; }
+					if (stristr(strtolower($file),'.tsv') !== FALSE) { $filetype = 'text'; }
+					if (stristr(strtolower($file),'.json') !== FALSE) { $filetype = 'text'; }
+					if (stristr(strtolower($file),'.bval') !== FALSE) { $filetype = 'text'; }
+					if (stristr(strtolower($file),'.bvec') !== FALSE) { $filetype = 'text'; }
 					if (stristr(strtolower($file),'.job') !== FALSE) { $filetype = 'text'; }
 					if (stristr(strtolower($file),".o") !== FALSE) { $filetype = 'text'; }
 					if (stristr(strtolower($file),".e") !== FALSE) { $filetype = 'text'; }

@@ -340,7 +340,7 @@ bool moduleBackup::WriteTape(int tapeNum, char tapeLetter, int backupid) {
             systemstring = QString("cd %1; tar -cW --checkpoint=1000000 --totals -f %2 *").arg(backupStagingDir).arg(backupDevice);
         else
             systemstring = QString("ssh %1 \"cd %2; tar -cW --checkpoint=1000000 --totals -f %3 *\"").arg(backupServer).arg(backupStagingDir).arg(backupDevice);
-        output = SystemCommand(systemstring, false, false, true);
+        output = SystemCommand(systemstring, false, false);
         n->Log(output);
         if ((output.contains("fail",Qt::CaseInsensitive)) || (output.contains("error",Qt::CaseInsensitive))) {
             errorMsgs << "Error running [" + systemstring + "]. Skipping entire output because it might be huge. Here's the last 10000 bytes [" + output.right(10000) + "]";

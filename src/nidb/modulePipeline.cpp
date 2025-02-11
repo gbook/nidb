@@ -735,6 +735,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
     QStringList dlog;
     datalog = "";
     bool exportBIDS(false);
+    QString BIDSExportDir;
     QList<qint64> BIDSseriesids;
     QStringList BIDSmodalities;
 
@@ -751,6 +752,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
     if (p.clusterUser == "") clusteruser = n->cfg["clusteruser"];
     else clusteruser = n->cfg["pipeline_clusteruser"];
     exportBIDS = p.outputBIDS;
+    BIDSExportDir = p.BIDSoutputDir;
 
     /* get information about the study */
     study s(studyid, n);
@@ -758,11 +760,11 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
         n->Log("Study was not valid: [" + s.msg() + "]", __FUNCTION__);
         return false;
     }
-    QString modality = s.modality();
+    QString firstModality = s.modality();
     int studynum = s.studyNum();
     QString studytype = s.type();
 
-    dlog << QString("Working on study [%1%2]\nstudyid [%3]\nModality [%4]\n").arg(uid).arg(studynum).arg(studyid).arg(modality);
+    dlog << QString("Working on study [%1%2]\nstudyid [%3]\nModality [%4]\n").arg(uid).arg(studynum).arg(studyid).arg(firstModality);
     dlog << QString("********** Checking if all required data exists **********");
 
     /* ------------------------------------------------------------------------
@@ -1374,7 +1376,12 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
             archiveIO *io = new archiveIO(n);
             QStringList bidsflags = { "BIDS_SUBJECTDIR_UID", "BIDS_STUDYDIR_STUDYNUM" };
             QString m2;
-            io->WriteBIDS(BIDSseriesids, BIDSmodalities, analysispath, "BIDS Readme", bidsflags, m2);
+            QString BIDSpath;
+            if (BIDSExportDir == "")
+                BIDSpath = analysispath;
+            else
+                BIDSpath = analysispath + "/" + BIDSExportDir;
+            io->WriteBIDS(BIDSseriesids, BIDSmodalities, BIDSpath, "BIDS Readme", bidsflags, m2);
             dlog << n->Log(QString("Exporting in BIDS format. Message from WriteBIDS [%1]").arg(m2), __FUNCTION__);
             numdownloaded = BIDSseriesids.size();
         }
@@ -1951,7 +1958,7 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clusterty
 
         jobfile += "#SBATCH --nodes=1\n";
         jobfile += "#SBATCH --partition=" + queue + "\n";
-        jobfile += "#SBATCH -o " + analysispath + "/pipeline/%x.e%j\n";
+        jobfile += "#SBATCH -o " + analysispath + "/pipeline/%x.o%j\n";
         jobfile += "#SBATCH -e " + analysispath + "/pipeline/%x.e%j\n";
         jobfile += QString("#SBATCH --mem-per-cpu=%1G\n").arg(memory);
         jobfile += QString("#SBATCH --ntasks=1 --cpus-per-task=%1\n").arg(numcores);

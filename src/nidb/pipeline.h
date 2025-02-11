@@ -43,6 +43,7 @@ public:
     QDateTime lastStart;
     QList<int> groupIDs;
     QList<int> parentIDs;
+    QString BIDSoutputDir;
     QString dataCopyMethod;
     QString depDir;
     QString depLevel;
