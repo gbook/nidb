@@ -2,6 +2,7 @@ QT -= gui
 QT += sql
 QT += network
 
+CONFIG -= c++98
 CONFIG += c++11
 CONFIG += c++17
 CONFIG += cmdline
@@ -14,10 +15,11 @@ CONFIG += silent
 # deprecated API in order to know how to port your code away from it.
 DEFINES += QT_DEPRECATED_WARNINGS
 QMAKE_CXXFLAGS += -Wall
-win32: {
+win32: { # ignore warnings that show up in gdcm and Qt libs
     QMAKE_CXXFLAGS += /wd4711
     QMAKE_CXXFLAGS += /wd4866
     QMAKE_CXXFLAGS += /wd5045
+    QMAKE_CXXFLAGS += /wd4996
 }
 
 # You can also make your code fail to compile if it uses deprecated APIs.

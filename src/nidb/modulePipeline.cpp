@@ -89,7 +89,7 @@ int modulePipeline::Run() {
 //pipeline_loop: /* first time ever using goto */
 
         i++;
-        double percent = ((double)i/(double)numPipelines)*100.0;
+        double percent = (static_cast<double>(i)/static_cast<double>(numPipelines))*100.0;
         //QString percentStr = QString::number(percent, 'f', 1);
 
         n->ModuleRunningCheckIn();
@@ -143,7 +143,7 @@ int modulePipeline::Run() {
 
         /* check if there is enough space on the target drive */
         QStorageInfo storage = QStorageInfo(analysisdir);
-        double percentFree = ((double)storage.bytesAvailable()/(double)storage.bytesTotal())*100.0;
+        double percentFree = (static_cast<double>(storage.bytesAvailable())/static_cast<double>(storage.bytesTotal()))*100.0;
         if (percentFree < 1.0) {
             m = n->Log(QString("[%1] Less than 1% free space on target disk").arg(p.name), __FUNCTION__);
             InsertPipelineEvent(pipelineid, runnum, -1, "error_notenoughspace", m);
@@ -219,7 +219,7 @@ int modulePipeline::Run() {
             /* create the analysis path */
             QString analysispath = QString("%1/%3").arg(p.pipelineRootDir).arg(p.name);
             n->Log(QString("[%1] Creating path [" + analysispath + "/pipeline]").arg(p.name), __FUNCTION__);
-            QString m;
+            //QString m;
             if (!MakePath(analysispath + "/pipeline", m)) {
                 n->Log(QString("[%1] Error: unable to create directory [" + analysispath + "/pipeline] - A").arg(p.name), __FUNCTION__);
                 //UpdateAnalysisStatus(analysisid, "error", "Unable to create directory [" + analysispath + "/pipeline]", 0, -1, "", "", false, true, -1, -1);
@@ -272,7 +272,7 @@ int modulePipeline::Run() {
         else if (p.level == 1) {
 
             QString pipelinedirectory;
-            QSqlQuery q2;
+            //QSqlQuery q2;
 
             /* fix the directory if its not the default or blank */
             if (p.directory == "")
@@ -295,10 +295,10 @@ int modulePipeline::Run() {
             /* get the list of studies which meet the criteria for being processed through the pipeline */
             QList<int> studyids = GetStudyToDoList(pipelineid, modality, pipelinedep, JoinIntArray(p.groupIDs, ","), runnum);
 
-            int i = 0;
+            int ii = 0;
             int numsubmitted = 0;
             foreach (int sid, studyids) {
-                i++;
+                ii++;
                 qint64 analysisRowID = -1;
                 QStringList setuplog;
 
@@ -313,7 +313,7 @@ int modulePipeline::Run() {
                     continue;
                 }
 
-                n->Log(QString(" ---------- Working on study [%2%3] (%4 of %5) for pipeline [%1] ----------").arg(p.name).arg(s.UID()).arg(s.studyNum()).arg(i).arg(studyids.size()));
+                n->Log(QString(" ---------- Working on study [%2%3] (%4 of %5) for pipeline [%1] ----------").arg(p.name).arg(s.UID()).arg(s.studyNum()).arg(ii).arg(studyids.size()));
 
                 /* check if the number of concurrent jobs is reached. the function also checks if this pipeline module is enabled */
                 int filled;
@@ -508,7 +508,7 @@ int modulePipeline::Run() {
                             }
 
                             //QString analysispath = p.pipelineRootDir + "/" + p.name;
-                            QString m;
+                            //QString m;
                             if (!MakePath(analysispath + "/pipeline", m)) {
                                 n->Log("Error: unable to create directory [" + analysispath + "/pipeline] - B", __FUNCTION__);
                                 n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysiserror", "Unable to create directory [" + analysispath + "/pipeline]");
@@ -548,9 +548,9 @@ int modulePipeline::Run() {
 
                                 /* copy any parent pipelines */
                                 QString systemstring;
-                                if (p.depLinkType == "hardlink") systemstring = "cp -aulL "; /* L added to allow copying of softlinks */
-                                else if (p.depLinkType == "softlink") systemstring = "cp -aus ";
-                                else if (p.depLinkType == "regularcopy") systemstring = "cp -au ";
+                                if (p.depLinkType == "hardlink") systemstring = "time cp -aulL "; /* L added to allow copying of softlinks */
+                                else if (p.depLinkType == "softlink") systemstring = "time cp -aus ";
+                                else if (p.depLinkType == "regularcopy") systemstring = "time cp -au ";
                                 //if (p.depLinkType == "hardlink") systemstring = "rsync -aH "; /* try rsync to overcome cp bug in CentOS8 Stream (update, rsync doesn't create hardlinks with -H) */
                                 //else if (p.depLinkType == "softlink") systemstring = "cp -aus ";
                                 //else if (p.depLinkType == "regularcopy") systemstring = "cp -au ";
@@ -835,8 +835,8 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
         QString imagetypes;
         if (imagetype.contains(",")) {
             QStringList types = imagetype.split(QRegularExpression(",\\s*"));
-            for(int i=0; i<types.size(); i++)
-                types[i] = types[i].replace("\\", "\\\\");
+            for(int ii=0; ii<types.size(); ii++)
+                types[ii] = types[ii].replace("\\", "\\\\");
             imagetypes = "'" + types.join("','") + "'";
         }
         else
@@ -1004,8 +1004,8 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
         QString imagetypes;
         if (imagetype.contains(",")) {
             QStringList types = imagetype.split(QRegularExpression(",\\s*"));
-            for(int i=0; i<types.size(); i++)
-                types[i] = types[i].replace("\\", "\\\\");
+            for(int ii=0; ii<types.size(); ii++)
+                types[ii] = types[ii].replace("\\", "\\\\");
             imagetypes = "'" + types.join("','") + "'";
         }
         else
@@ -1274,7 +1274,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                         newanalysispath += "/" + phasedir;
                     }
 
-                    QString m;
+                    //QString m;
                     if (!MakePath(newanalysispath, m)) {
                         dlog << n->Log("Error: unable to create directory [" + newanalysispath + "] message [" + m + "]", __FUNCTION__);
                         UpdateAnalysisStatus(analysisid, "error", "Unable to create directory [" + newanalysispath + "]", 0, -1, "", "", false, true, -1, -1);
@@ -1291,7 +1291,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                             if (p.dataCopyMethod == "scp")
                                 systemstring = QString("scp %1/* %2\\@%3:%4").arg(indir).arg(n->cfg["clusteruser"]).arg(p.clusterSubmitHost).arg(newanalysispath);
                             else
-                                systemstring = QString("cp -v %1/* %2").arg(indir).arg(newanalysispath);
+                                systemstring = QString("time cp -v %1/* %2").arg(indir).arg(newanalysispath);
                             n->Debug(SystemCommand(systemstring, true, true));
 
                             dlog << n->Log(QString("Finished copying imaging data from [%1] to [%2]").arg(indir).arg(newanalysispath), __FUNCTION__);
@@ -1303,7 +1303,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                         }
                         else {
                             QString tmpdir = n->cfg["tmpdir"] + "/" + GenerateRandomString(10);
-                            QString m;
+                            m = "";
                             if (!MakePath(tmpdir, m)) {
                                 dlog << n->Log("Error: unable to create temp directory [" + tmpdir + "] message [" + m + "] for DICOM conversion", __FUNCTION__);
                                 UpdateAnalysisStatus(analysisid, "error", "Unable to create directory [" + newanalysispath + "]", 0, -1, "", "", false, true, -1, -1);
@@ -1343,7 +1343,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                     /* copy the beh data */
                     if (behformat != "behnone") {
                         dlog << "\tCopying behavioral data";
-                        QString m;
+                        //QString m;
                         if (!MakePath(behoutdir, m)) {
                             dlog << n->Log("Error: unable to create behavioral output directory [" + behoutdir + "] message [" + m + "] - F", __FUNCTION__);
                             UpdateAnalysisStatus(analysisid, "error", "Unable to create directory [" + newanalysispath + "]", 0, -1, "", "", false, true, -1, -1);
@@ -2217,7 +2217,7 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
         n->Debug(QString("This pipeline [%1] depends on [%2]").arg(pipelineid).arg(depend), __FUNCTION__);
 
         /* step 3a) get list of studies that have completed the dependency */
-        QList<int> list;
+        //QList<int> list;
         QSqlQuery q2;
         q2.prepare("select a.study_id, c.uid, a.study_num from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.subject_id in (select a.subject_id from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id where c.study_id in (select study_id from analysis where pipeline_id = :depend and analysis_status = 'complete' and (analysis_isbad <> 1 or analysis_isbad is null)) and (a.isactive = 1 or a.isactive is null))");
         q2.bindValue(":depend", depend);
@@ -2451,7 +2451,7 @@ void modulePipeline::ClearPipelineHistory() {
 /* ---------------------------------------------------------- */
 /**
  * @brief modulePipeline::GetAnalysisLocalPath - get the analysis path as seen by NiDB
- * @param dirStructure
+ * @param dirStructureCode
  * @return the path
  */
 QString modulePipeline::GetAnalysisLocalPath(QString dirStructureCode, QString pipelineName, QString UID, int studyNum) {

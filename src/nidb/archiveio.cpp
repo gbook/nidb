@@ -863,7 +863,7 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
             AppendUploadLog(__FUNCTION__ , "Unable to create backdir [" + backdir + "] because of error [" + m + "]");
     }
     AppendUploadLog(__FUNCTION__ , "Starting copy to the backup directory");
-    systemstring = QString("rsync -az %1/* %2").arg(outdir).arg(backdir);
+    systemstring = QString("rsync -az --stats %1/* %2").arg(outdir).arg(backdir);
     AppendUploadLog(__FUNCTION__ , SystemCommand(systemstring));
     AppendUploadLog(__FUNCTION__ , "Finished copying to the backup directory");
 
@@ -1569,7 +1569,7 @@ bool archiveIO::ArchiveParRecSeries(int importRowID, QString file) {
             AppendUploadLog(__FUNCTION__, "Finished creating ["+backdir+"]");
     }
     AppendUploadLog(__FUNCTION__, "About to copy to the backup directory");
-    systemstring = QString("rsync -az %1/* %2").arg(outdir).arg(backdir);
+    systemstring = QString("rsync -az --stats %1/* %2").arg(outdir).arg(backdir);
     QString output = SystemCommand(systemstring);
     AppendUploadLog(__FUNCTION__, output);
     AppendUploadLog(__FUNCTION__, "Finished copying to the backup directory");
@@ -1904,7 +1904,7 @@ bool archiveIO::ArchiveEEGSeries(int importRowID, QString file) {
             AppendUploadLog(__FUNCTION__, "Created backdir [" + backdir + "]");
     }
     AppendUploadLog(__FUNCTION__, "About to copy to the backup directory");
-    systemstring = QString("rsync -az %1/* %2").arg(outdir).arg(backdir);
+    systemstring = QString("rsync -az --stats %1/* %2").arg(outdir).arg(backdir);
     QString output = SystemCommand(systemstring);
     AppendUploadLog(__FUNCTION__, output);
     AppendUploadLog(__FUNCTION__, "Finished copying to the backup directory");
@@ -2785,7 +2785,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
                             else
                                 n->Log(m);
 
-                            QString systemstring = "rsync " + tmpdir + "/* " + seriesoutdir + "/";
+                            QString systemstring = "rsync --stats " + tmpdir + "/* " + seriesoutdir + "/";
                             n->Log(SystemCommand(systemstring));
                             RemoveDir(tmpdir,m);
                         }

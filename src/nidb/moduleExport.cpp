@@ -635,7 +635,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                                     /* output the correct file type */
                                     if ((modality != "mr") || (filetype == "dicom") || ((datatype != "dicom") && (datatype != "parrec"))) {
                                         // use rsync instead of cp because of the number of files limit
-                                        QString systemstring = QString("rsync %1/* %2/").arg(indir).arg(outdir);
+                                        QString systemstring = QString("rsync --stats %1/* %2/").arg(indir).arg(outdir);
                                         n->Log(SystemCommand(systemstring));
                                         msgs << "Copying raw data from [" + indir + "] to [" + outdir + "]";
                                     }
@@ -686,7 +686,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                                                 n->Log("Converted files successfully [" + m2 + "]");
 
                                             //n->WriteLog("About to copy files from " + tmpdir + " to " + outdir);
-                                            QString systemstring = "rsync " + tmpdir + "/* " + outdir + "/";
+                                            QString systemstring = "rsync --stats " + tmpdir + "/* " + outdir + "/";
                                             n->Log(SystemCommand(systemstring));
                                             //n->WriteLog("Done copying files...");
                                             QString m3;
@@ -1114,7 +1114,7 @@ bool moduleExport::ExportXNAT(int exportid, QString &exportstatus, QString &msg)
                             n->Log("Data directory is not empty");
                             /* we're only outputting DICOM data for XNAT */
                             // use rsync instead of cp because of the number of files limit
-                            QString systemstring = QString("rsync -v %1/* %2/").arg(indir).arg(outdir);
+                            QString systemstring = QString("rsync -v --stats %1/* %2/").arg(indir).arg(outdir);
                             n->Log(SystemCommand(systemstring));
                             msgs << "Copying raw data from [" + indir + "] to [" + outdir + "]";
                         }
@@ -1298,7 +1298,7 @@ bool moduleExport::ExportNDAR(int exportid, bool csvonly, QString &exportstatus,
                                 msgs << "ExportNDAR() " + n->Log(SystemCommand(systemstring, true));
                             }
                             else {
-                                systemstring = "rsync " + indir + "/* " + tmpdir + "/";
+                                systemstring = "rsync --stats " + indir + "/* " + tmpdir + "/";
                                 msgs << "ExportNDAR() " + n->Log(SystemCommand(systemstring, true));
                             }
 
@@ -1672,7 +1672,7 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
                             if (!MakePath(tmpzipdir + "/beh", m)) { msgs << "ERROR in creating tmpzipdir/beh [" + tmpzipdir + "/beh]"; continue; }
 
                             /* copy all the files from the data directory into a tmp directory */
-                            systemstring = "rsync " + indir + "/* " + tmpdir + "/";
+                            systemstring = "rsync --stats " + indir + "/* " + tmpdir + "/";
                             n->Log(SystemCommand(systemstring));
                             if (datatype == "dicom")
                                 img->AnonymizeDir(tmpdir,4,"Anonymous","0000-00-00",m);

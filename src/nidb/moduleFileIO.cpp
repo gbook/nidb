@@ -312,7 +312,7 @@ bool moduleFileIO::CopyAnalysis(qint64 analysisid, QString destination, QString 
 
     destination = QString("%1/%2%3").arg(destination).arg(a.uid).arg(a.studynum);
     if (MakePath(destination, msg)) {
-        QString systemstring = QString("rsync -az %1/* %2").arg(a.analysispath).arg(destination);
+        QString systemstring = QString("rsync -az --stats %1/* %2").arg(a.analysispath).arg(destination);
         n->Log(QString("About to run the following command[" + systemstring + "]"));
         n->Log(SystemCommand(systemstring));
         n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysiscopy", "Analysis copied");
@@ -911,7 +911,7 @@ bool moduleFileIO::MoveStudyToSubject(int studyid, QString newuid, int newsubjec
     if (!d.exists(oldpath)) msgs << "Error: oldpath [" + oldpath + "] does not exist";
 
     n->Log("Moving data within archive directory");
-    QString systemstring = QString("rsync -rtu %1/* %2").arg(oldpath).arg(newpath);
+    QString systemstring = QString("rsync -rtu  --stats %1/* %2").arg(oldpath).arg(newpath);
     msgs << n->Log(SystemCommand(systemstring));
 
     msg = msgs.join(" | ");

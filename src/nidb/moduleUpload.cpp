@@ -151,7 +151,7 @@ bool moduleUpload::ReadUploads() {
 
             /* copy in files from uploadtmp or nfs to the uploadstagingdir */
             io->AppendUploadLog(__FUNCTION__, QString("Beginning copy of data from original path [%1] to upload staging path [%2]").arg(upload_datapath).arg(uploadstagingpath));
-            QString systemstring = QString("rsync -a %1/ %2/").arg(upload_datapath).arg(uploadstagingpath);
+            QString systemstring = QString("rsync -a --stats %1/ %2/").arg(upload_datapath).arg(uploadstagingpath);
             io->AppendUploadLog(__FUNCTION__, SystemCommand(systemstring, true, true));
 
             /* remove the uploadtmp directory, if it was uploaded from the web */

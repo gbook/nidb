@@ -78,15 +78,15 @@ squirrel::squirrel(bool dbg, bool q)
     quickRead = true;
     quiet = q;
     databaseUUID = QUuid::createUuid().toString(QUuid::WithoutBraces);
-    Debug(QString("Generated UUID [%1]").arg(databaseUUID), __FUNCTION__);
+    Log(QString("Generated UUID [%1]").arg(databaseUUID));
 
-    if (DatabaseConnect()) {
+    if (!DatabaseConnect()) {
         Log("Error connecting to database. Unable to initilize squirrel library");
         isValid = false;
     }
 
     if (!InitializeDatabase()) {
-        Log("Error connecting to database. Unable to initilize squirrel library");
+        Log("Error initializing database");
         isValid = false;
     }
 
@@ -154,7 +154,10 @@ bool squirrel::Get7zipLibPath() {
 bool squirrel::DatabaseConnect() {
 
     db = QSqlDatabase::addDatabase("QSQLITE", databaseUUID);
-    if (!db.isValid()) {
+    if (db.isValid()) {
+        Log("Successfully initialized QSQLITE database");
+    }
+    else {
         Log(QString("Error initializing SQLite database (likely driver related) [%1]. Error [%2]").arg(db.databaseName()).arg(db.lastError().text()));
         utils::Print(QString("Error initializing SQLite database (likely driver related) [%1]. Error [%2]").arg(db.databaseName()).arg(db.lastError().text()));
         return false;
@@ -166,11 +169,11 @@ bool squirrel::DatabaseConnect() {
     }
     else {
         db.setDatabaseName(":memory:");
-        Debug("Set database name to :memory:");
+        Log("Set database name to :memory:");
     }
 
     if (db.open()) {
-        Debug(QString("Successfuly opened SQLite database [%1]").arg(db.databaseName()), __FUNCTION__);
+        Log(QString("Successfuly opened SQLite database [%1]").arg(db.databaseName()));
         return true;
     }
     else {
