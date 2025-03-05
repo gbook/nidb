@@ -55,6 +55,7 @@ SOURCES += \
 
 HEADERS += \
 	bids.h \
+	extract.h \
 	info.h \
 	squirrelDataDictionary.h \
 	squirrelImageIO.h \
