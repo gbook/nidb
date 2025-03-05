@@ -60,6 +60,7 @@ HEADERS += \
 	squirrelImageIO.h \
 	squirrelVersion.h \
 	squirrelGroupAnalysis.h \
+	squirrelTypes.h \
 	utils.h \
 	convert.h \
 	dicom.h \
