@@ -553,19 +553,26 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 
                     /* format the series number part of the output path */
                     switch (preserveseries) {
-                    case 0:
+                        case 0: {
                             if (laststudyid != studyid)
                                 newseriesnum = "1";
                             else
                                 newseriesnum = QString("%1").arg(newseriesnum.toInt() + 1);
-                        break;
-                    case 1:
+                            break;
+                        }
+                        case 1: {
                             newseriesnum = QString("%1").arg(seriesnum);
-                        break;
-                    case 2:
-                        QString seriesdir = seriesdesc;
-                        seriesdir.replace(QRegularExpression("[^a-zA-Z0-9_-]"), "_");
-                        newseriesnum = QString("%1_%2").arg(seriesnum).arg(seriesdir);
+                            break;
+                        }
+                        case 2: {
+                            QString seriesdir = seriesdesc;
+                            seriesdir.replace(QRegularExpression("[^a-zA-Z0-9_-]"), "_");
+                            newseriesnum = QString("%1_%2").arg(seriesnum).arg(seriesdir);
+                            break;
+                        }
+                        default: {
+                            newseriesnum = QString("%1").arg(seriesnum);
+                        }
                     }
 
                     /* format the base directory structure of the output path */
@@ -661,7 +668,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                                                     fields << r.fieldName(v);
 
                                                 q.first();
-                                                foreach (QString field, fields) {
+                                                for (const QString &field : fields) {
                                                     fs << QString("%1: %2").arg(field).arg(q.value(field).toString());
                                                 }
                                             }
@@ -994,10 +1001,6 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 /* ---------------------------------------------------------- */
 /**
  * @brief Export to XNAT format - BETA, unlikely to work
- * @param exportid
- * @param exportstatus
- * @param msg
- * @return
  */
 bool moduleExport::ExportXNAT(int exportid, QString &exportstatus, QString &msg) {
 
@@ -1016,15 +1019,15 @@ bool moduleExport::ExportXNAT(int exportid, QString &exportstatus, QString &msg)
     //QString newseriesnum = "1";
 
     /* iterate through the UIDs */
-    for(QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>>::iterator a = s.begin(); a != s.end(); ++a) {
+    for(QMap<QString, QMap<int, QMap<int, QMap<QString, QString> > > >::iterator a = s.begin(); a != s.end(); ++a) {
         QString uid = a.key();
 
         /* iterate through the studynums */
-        for(QMap<int, QMap<int, QMap<QString, QString>>>::iterator b = s[uid].begin(); b != s[uid].end(); ++b) {
+        for(QMap<int, QMap<int, QMap<QString, QString> > >::iterator b = s[uid].begin(); b != s[uid].end(); ++b) {
             int studynum = b.key();
 
             /* iterate through the seriesnums */
-            for(QMap<int, QMap<QString, QString>>::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
+            for(QMap<int, QMap<QString, QString> >::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
                 int seriesnum = c.key();
 
                 int exportseriesid = s[uid][studynum][seriesnum]["exportseriesid"].toInt();
@@ -1237,15 +1240,15 @@ bool moduleExport::ExportNDAR(int exportid, bool csvonly, QString &exportstatus,
 
     //QString systemstring;
     /* iterate through the UIDs */
-    for(QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>>::iterator a = s.begin(); a != s.end(); ++a) {
+    for(QMap<QString, QMap<int, QMap<int, QMap<QString, QString> > > >::iterator a = s.begin(); a != s.end(); ++a) {
         QString uid = a.key();
 
         /* iterate through the studynums */
-        for(QMap<int, QMap<int, QMap<QString, QString>>>::iterator b = s[uid].begin(); b != s[uid].end(); ++b) {
+        for(QMap<int, QMap<int, QMap<QString, QString> > >::iterator b = s[uid].begin(); b != s[uid].end(); ++b) {
             int studynum = b.key();
 
             /* iterate through the seriesnums */
-            for(QMap<int, QMap<QString, QString>>::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
+            for(QMap<int, QMap<QString, QString> >::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
                 int seriesnum = c.key();
 
                 qint64 exportseriesid = s[uid][studynum][seriesnum]["exportseriesid"].toLongLong();
@@ -1606,13 +1609,13 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
 
     exportstatus = "complete";
     /* iterate through the UIDs */
-    for(QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>>::iterator a = s.begin(); a != s.end(); ++a) {
+    for(QMap<QString, QMap<int, QMap<int, QMap<QString, QString> > > >::iterator a = s.begin(); a != s.end(); ++a) {
         QString uid = a.key();
         /* iterate through the studynums */
-        for(QMap<int, QMap<int, QMap<QString, QString>>>::iterator b = s[uid].begin(); b != s[uid].end(); ++b) {
+        for(QMap<int, QMap<int, QMap<QString, QString> > >::iterator b = s[uid].begin(); b != s[uid].end(); ++b) {
             int studynum = b.key();
             /* iterate through the seriesnums */
-            for(QMap<int, QMap<QString, QString>>::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
+            for(QMap<int, QMap<QString, QString> >::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
                 int seriesnum = c.key();
 
                 qint64 exportseriesid = s[uid][studynum][seriesnum]["exportseriesid"].toLongLong();
@@ -1662,17 +1665,17 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
                             numretry = n->cfg["numretry"].toInt();
 
                         while ((error == 1) && (numfails < numretry)) {
-                            QString indir = QString("%1/%2/%3/%4/%5").arg(n->cfg["archivedir"]).arg(uid).arg(studynum).arg(seriesnum).arg(datatype);
+                            QString inDirPath = QString("%1/%2/%3/%4/%5").arg(n->cfg["archivedir"]).arg(uid).arg(studynum).arg(seriesnum).arg(datatype);
                             QString behindir = QString("%1/%2/%3/%4/beh").arg(n->cfg["archivedir"]).arg(uid).arg(studynum).arg(seriesnum);
                             QString tmpdir = n->cfg["tmpdir"] + "/" + GenerateRandomString(10);
                             QString tmpzip = n->cfg["tmpdir"] + "/" + GenerateRandomString(12) + ".tar.gz";
                             QString tmpzipdir = n->cfg["tmpdir"] + "/" + GenerateRandomString(12);
-                            QString m;
+                            m = "";
                             if (!MakePath(tmpdir, m)) { msgs << "ERROR in creating tmpdir [" + tmpdir + "]"; continue; }
                             if (!MakePath(tmpzipdir + "/beh", m)) { msgs << "ERROR in creating tmpzipdir/beh [" + tmpzipdir + "/beh]"; continue; }
 
                             /* copy all the files from the data directory into a tmp directory */
-                            systemstring = "rsync --stats " + indir + "/* " + tmpdir + "/";
+                            systemstring = "rsync --stats " + inDirPath + "/* " + tmpdir + "/";
                             n->Log(SystemCommand(systemstring));
                             if (datatype == "dicom")
                                 img->AnonymizeDir(tmpdir,4,"Anonymous","0000-00-00",m);

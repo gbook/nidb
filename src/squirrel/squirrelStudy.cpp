@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   Squirrel study.cpp
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -24,6 +24,7 @@
 #include "utils.h"
 #include <iostream>
 #include <exception>
+#include "squirrel.h"
 
 /* ------------------------------------------------------------ */
 /* ----- study ------------------------------------------------ */
@@ -77,19 +78,20 @@ bool squirrelStudy::Get() {
         /* get the data */
         objectID = q.value("StudyRowID").toLongLong();
         subjectRowID = q.value("SubjectRowID").toLongLong();
-        StudyNumber = q.value("StudyNumber").toInt();
-        DateTime = q.value("Datetime").toDateTime();
         AgeAtStudy = q.value("Age").toDouble();
-        Height = q.value("Height").toDouble();
-        Weight = q.value("Weight").toDouble();
-        Modality = q.value("Modality").toString();
-        Description = q.value("Description").toString();
-        StudyUID = q.value("StudyUID").toString();
-        VisitType = q.value("VisitType").toString();
+        DateTime = q.value("Datetime").toDateTime();
         DayNumber = q.value("DayNumber").toInt();
-        TimePoint = q.value("TimePoint").toInt();
+        Description = q.value("Description").toString();
         Equipment = q.value("StudyRowID").toString();
+        Height = q.value("Height").toDouble();
+        Modality = q.value("Modality").toString();
+        Notes = q.value("Notes").toString();
         SequenceNumber = q.value("SequenceNumber").toInt();
+        StudyNumber = q.value("StudyNumber").toInt();
+        StudyUID = q.value("StudyUID").toString();
+        TimePoint = q.value("TimePoint").toInt();
+        VisitType = q.value("VisitType").toString();
+        Weight = q.value("Weight").toDouble();
 
         valid = true;
         return true;
@@ -120,7 +122,7 @@ bool squirrelStudy::Store() {
 
     /* insert if the object doesn't exist ... */
     if (objectID < 0) {
-        q.prepare("insert or ignore into Study (SubjectRowID, StudyNumber, Datetime, Age, Height, Weight, Modality, Description, StudyUID, VisitType, DayNumber, Timepoint, Equipment, SequenceNumber, VirtualPath) values (:SubjectRowID, :StudyNumber, :Datetime, :Age, :Height, :Weight, :Modality, :Description, :StudyUID, :VisitType, :DayNumber, :Timepoint, :Equipment, :SequenceNumber, :VirtualPath)");
+        q.prepare("insert or ignore into Study (SubjectRowID, StudyNumber, Datetime, Age, Height, Weight, Modality, Description, StudyUID, VisitType, DayNumber, Timepoint, Equipment, Notes, SequenceNumber, VirtualPath) values (:SubjectRowID, :StudyNumber, :Datetime, :Age, :Height, :Weight, :Modality, :Description, :StudyUID, :VisitType, :DayNumber, :Timepoint, :Equipment, :Notes, :SequenceNumber, :VirtualPath)");
         q.bindValue(":SubjectRowID", subjectRowID);
         q.bindValue(":StudyNumber", StudyNumber);
         q.bindValue(":Datetime", DateTime);
@@ -134,6 +136,7 @@ bool squirrelStudy::Store() {
         q.bindValue(":DayNumber", DayNumber);
         q.bindValue(":Timepoint", TimePoint);
         q.bindValue(":Equipment", Equipment);
+        q.bindValue(":Notes", Notes);
         q.bindValue(":SequenceNumber", SequenceNumber);
         q.bindValue(":VirtualPath", VirtualPath());
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -141,7 +144,7 @@ bool squirrelStudy::Store() {
     }
     /* ... otherwise update */
     else {
-        q.prepare("update Study set SubjectRowID = :SubjectRowID, StudyNumber = :StudyNumber, Datetime = :Datetime, Age = :Age, Height = :Height, Weight = :Weight, Modality = :Modality, Description = :Description, StudyUID = :StudyUID, VisitType = :VisitType, DayNumber = :DayNumber, Timepoint = :Timepoint, Equipment = :Equipment, SequenceNumber = :SequenceNumber, VirtualPath = :VirtualPath where StudyRowID = :id");
+        q.prepare("update Study set SubjectRowID = :SubjectRowID, StudyNumber = :StudyNumber, Datetime = :Datetime, Age = :Age, Height = :Height, Weight = :Weight, Modality = :Modality, Description = :Description, StudyUID = :StudyUID, VisitType = :VisitType, DayNumber = :DayNumber, Timepoint = :Timepoint, Equipment = :Equipment, Notes = :Notes, SequenceNumber = :SequenceNumber, VirtualPath = :VirtualPath where StudyRowID = :id");
         q.bindValue(":id", objectID);
         q.bindValue(":SubjectRowID", subjectRowID);
         q.bindValue(":StudyNumber", StudyNumber);
@@ -156,6 +159,7 @@ bool squirrelStudy::Store() {
         q.bindValue(":DayNumber", DayNumber);
         q.bindValue(":Timepoint", TimePoint);
         q.bindValue(":Equipment", Equipment);
+        q.bindValue(":Notes", Notes);
         q.bindValue(":SequenceNumber", SequenceNumber);
         q.bindValue(":VirtualPath", VirtualPath());
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -174,7 +178,7 @@ bool squirrelStudy::Store() {
  */
 bool squirrelStudy::Remove() {
     /* ... delete any staged Study files */
-    utils::RemoveStagedFileList(databaseUUID, objectID, "study");
+    utils::RemoveStagedFileList(databaseUUID, objectID, Study);
 
     /* ... delete all staged Series files */
     QSqlQuery q(QSqlDatabase::database(databaseUUID));
@@ -183,7 +187,7 @@ bool squirrelStudy::Remove() {
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     while (q.next()) {
         /* ... delete any staged Series files */
-        utils::RemoveStagedFileList(databaseUUID, q.value("SeriesRowID").toInt(), "series");
+        utils::RemoveStagedFileList(databaseUUID, q.value("SeriesRowID").toInt(), Series);
     }
 
     /* ... delete all series for those studies */
@@ -196,7 +200,7 @@ bool squirrelStudy::Remove() {
     q.bindValue(":subjectid", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
-    utils::RemoveStagedFileList(databaseUUID, objectID, "subject");
+    utils::RemoveStagedFileList(databaseUUID, objectID, Subject);
 
     /* in case anyone tries to use this object again */
     objectID = -1;
@@ -222,6 +226,7 @@ QString squirrelStudy::PrintStudy() {
     str += utils::Print(QString("\t\t\tEquipment: %1").arg(Equipment));
     str += utils::Print(QString("\t\t\tHeight: %1 m").arg(Height));
     str += utils::Print(QString("\t\t\tModality: %1").arg(Modality));
+    str += utils::Print(QString("\t\t\tNotes: %1").arg(Notes));
     str += utils::Print(QString("\t\t\tStudyDatetime: %1").arg(DateTime.toString("yyyy-MM-dd HH:mm:ss")));
     str += utils::Print(QString("\t\t\tStudyNumber: %1").arg(StudyNumber));
     str += utils::Print(QString("\t\t\tStudyRowID: %1").arg(objectID));
@@ -283,12 +288,13 @@ QJsonObject squirrelStudy::ToJSON() {
 	QJsonObject json;
 
     json["AgeAtStudy"] = AgeAtStudy;
-    json["StudyDatetime"] = DateTime.toString("yyyy-MM-dd HH:mm:ss");
     json["DayNumber"] = DayNumber;
     json["Description"] = Description;
     json["Equipment"] = Equipment;
     json["Height"] = Height;
     json["Modality"] = Modality;
+    json["Notes"] = Notes;
+    json["StudyDatetime"] = DateTime.toString("yyyy-MM-dd HH:mm:ss");
     json["StudyNumber"] = StudyNumber;
     json["StudyUID"] = StudyUID;
     json["TimePoint"] = TimePoint;

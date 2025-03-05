@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   Squirrel pipeline.cpp
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -24,6 +24,7 @@
 #include <QFile>
 #include <QTextStream>
 #include "utils.h"
+#include "squirrel.h"
 
 
 /* ---------------------------------------------------------- */
@@ -94,7 +95,7 @@ bool squirrelPipeline::Get() {
         flags.UseTempDirectory = q.value("FlagUseTempDirectory").toBool();
 
         /* get any staged files */
-        stagedFiles = utils::GetStagedFileList(databaseUUID, objectID, "pipeline");
+        stagedFiles = utils::GetStagedFileList(databaseUUID, objectID, Pipeline);
 
         valid = true;
         return true;
@@ -200,7 +201,7 @@ bool squirrelPipeline::Store() {
     }
 
     /* store any staged filepaths */
-    utils::StoreStagedFileList(databaseUUID, objectID, "pipeline", stagedFiles);
+    utils::StoreStagedFileList(databaseUUID, objectID, Pipeline, stagedFiles);
 
     return true;
 }

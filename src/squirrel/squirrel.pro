@@ -3,7 +3,8 @@
 QT -= gui
 QT += sql
 
-CONFIG += c++17 cmdline
+CONFIG += c++11
+CONFIG += cmdline
 CONFIG -= app_bundle
 CONFIG += silent
 
@@ -19,6 +20,7 @@ DEFINES += SQUIRREL_BUILD
 
 SOURCES += \
 	bids.cpp \
+	extract.cpp \
 	info.cpp \
 	modify.cpp \
 	squirrelDataDictionary.cpp \
@@ -45,6 +47,7 @@ SOURCES += \
 
 HEADERS += \
 	bids.h \
+	extract.h \
 	info.h \
 	modify.h \
 	squirrel.sql.h \
@@ -52,6 +55,7 @@ HEADERS += \
 	squirrelImageIO.h \
 	squirrelIntervention.h \
 	squirrelObservation.h \
+	squirrelTypes.h \
 	squirrelVersion.h \
 	squirrelGroupAnalysis.h \
 	utils.h \

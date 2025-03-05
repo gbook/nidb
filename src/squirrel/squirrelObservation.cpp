@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   Squirrel observation.cpp
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -22,6 +22,7 @@
 
 #include "squirrelObservation.h"
 #include "utils.h"
+#include "squirrel.h"
 
 squirrelObservation::squirrelObservation(QString dbID)
 {

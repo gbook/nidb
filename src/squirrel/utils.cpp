@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB utils.cpp
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -22,39 +22,9 @@
 
 #include "utils.h"
 #include "squirrelVersion.h"
+#include "squirrel.h"
 
 namespace utils {
-
-    /* ---------------------------------------------------------- */
-    /* --------- SQLQuery --------------------------------------- */
-    /* ---------------------------------------------------------- */
-    /* QSqlQuery object must already be prepared and bound before */
-    /* being passed in to this function                           */
-    bool SQLQuery(QSqlQuery &q, QString function, QString file, int line, bool d) {
-
-        /* get the SQL string that will be run */
-        QString sql = q.executedQuery();
-        QVariantList list = q.boundValues();
-        for (int i=0; i < list.size(); ++i) {
-            sql += QString(" [" + list.at(i).toString() + "]");
-        }
-
-        if (d)
-            Print(sql);
-
-        /* run the query */
-        if (q.exec())
-            return true;
-        else {
-            /* if we get to this point, there is a SQL error */
-            QString err = QString("SQL ERROR (Function: %1 File: %2 Line: %3)\n\nSQL (1) [%4]\n\nSQL (2) [%5]\n\nDatabase error [%6]\n\nDriver error [%7]").arg(function).arg(file).arg(line).arg(sql).arg(q.executedQuery()).arg(q.lastError().databaseText()).arg(q.lastError().driverText());
-            qDebug() << err;
-            qDebug() << q.lastError();
-
-            return false;
-        }
-    }
-
 
     /* ---------------------------------------------------------- */
     /* --------- Print ------------------------------------------ */
@@ -748,107 +718,6 @@ namespace utils {
     }
 
 
-    /* ---------------------------------------------------------- */
-    /* --------- GetStagedFileList ------------------------------ */
-    /* ---------------------------------------------------------- */
-    QStringList GetStagedFileList(QString databaseUUID, qint64 objectID, QString objectType) {
-        QStringList paths;
-
-        QSqlQuery q(QSqlDatabase::database(databaseUUID));
-        q.prepare("select * from StagedFiles where ObjectRowID = :id and ObjectType = :type");
-        q.bindValue(":id", objectID);
-        q.bindValue(":type", objectType);
-        utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-        while (q.next()) {
-            paths.append(q.value("StagedPath").toString());
-        }
-
-        return paths;
-    }
-
-
-    /* ---------------------------------------------------------- */
-    /* --------- StoreStagedFileList ---------------------------- */
-    /* ---------------------------------------------------------- */
-    void StoreStagedFileList(QString databaseUUID, qint64 objectID, QString objectType, QStringList paths) {
-
-        QSqlQuery q(QSqlDatabase::database(databaseUUID));
-        if (objectID >= 0) {
-            /* delete previously staged files from the database */
-            q.prepare("delete from StagedFiles where ObjectRowID = :id and ObjectType = :type");
-            q.bindValue(":id", objectID);
-            q.bindValue(":type", objectType);
-            utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-
-            foreach (QString path, paths) {
-                q.prepare("insert into StagedFiles (ObjectRowID, ObjectType, StagedPath) values (:id, :type, :path)");
-                q.bindValue(":id", objectID);
-                q.bindValue(":type", objectType);
-                q.bindValue(":path", path);
-                utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-            }
-        }
-    }
-
-
-    /* ---------------------------------------------------------- */
-    /* --------- RemoveStagedFileList --------------------------- */
-    /* ---------------------------------------------------------- */
-    void RemoveStagedFileList(QString databaseUUID, qint64 objectID, QString objectType) {
-        QSqlQuery q(QSqlDatabase::database(databaseUUID));
-        q.prepare("delete from StagedFiles where ObjectRowID = :id and ObjectType = :type");
-        q.bindValue(":id", objectID);
-        q.bindValue(":type", objectType);
-        utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    }
-
-
-    /* ---------------------------------------------------------- */
-    /* --------- GetParams -------------------------------------- */
-    /* ---------------------------------------------------------- */
-    QHash<QString, QString> GetParams(QString databaseUUID, qint64 seriesRowID) {
-        QHash<QString, QString> params;
-
-        QSqlQuery q(QSqlDatabase::database(databaseUUID));
-        q.prepare("select * from Params where SeriesRowID = :id");
-        q.bindValue(":id", seriesRowID);
-        utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-        while (q.next()) {
-            QString key = q.value("ParamKey").toString();
-            QString value = q.value("ParamValue").toString();
-            params[key] = value;
-        }
-
-        return params;
-    }
-
-
-    /* ---------------------------------------------------------- */
-    /* --------- StoreParams ------------------------------------ */
-    /* ---------------------------------------------------------- */
-    void StoreParams(QString databaseUUID, qint64 seriesRowID, QHash<QString, QString> params) {
-
-        QSqlQuery q(QSqlDatabase::database(databaseUUID));
-        if (seriesRowID >= 0) {
-            /* delete previously staged files from the database */
-            q.prepare("delete from Params where SeriesRowID = :id");
-            q.bindValue(":id", seriesRowID);
-            utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-
-            for(QHash<QString, QString>::iterator a = params.begin(); a != params.end(); ++a) {
-                QString key = a.key().trimmed();
-                QString value = a.value().trimmed();
-
-                if (key != "") {
-                    q.prepare("insert into Params (SeriesRowID, ParamKey, ParamValue) values (:id, :key, :value)");
-                    q.bindValue(":id", seriesRowID);
-                    q.bindValue(":key", key);
-                    q.bindValue(":value", value);
-                    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-                }
-            }
-        }
-    }
 
 
     /* ---------------------------------------------------------- */
@@ -859,6 +728,37 @@ namespace utils {
         s.simplified().remove(' ');
         s.remove(" ");
         return s;
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- SQLQuery --------------------------------------- */
+    /* ---------------------------------------------------------- */
+    /* QSqlQuery object must already be prepared and bound before */
+    /* being passed in to this function                           */
+    bool SQLQuery(QSqlQuery &q, QString function, QString file, int line, bool d) {
+
+        /* get the SQL string that will be run */
+        QString sql = q.executedQuery();
+        QVariantList list = q.boundValues();
+        for (int i=0; i < list.size(); ++i) {
+            sql += QString(" [" + list.at(i).toString() + "]");
+        }
+
+        if (d)
+            Print(sql);
+
+        /* run the query */
+        if (q.exec())
+            return true;
+        else {
+            /* if we get to this point, there is a SQL error */
+            QString err = QString("SQL ERROR (Function: %1 File: %2 Line: %3)\n\nSQL (1) [%4]\n\nSQL (2) [%5]\n\nDatabase error [%6]\n\nDriver error [%7]").arg(function).arg(file).arg(line).arg(sql).arg(q.executedQuery()).arg(q.lastError().databaseText()).arg(q.lastError().driverText());
+            qDebug() << err;
+            qDebug() << q.lastError();
+
+            return false;
+        }
     }
 
 
@@ -965,6 +865,109 @@ namespace utils {
         qdt = qdt.toLocalTime();
 
         return qdt;
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- GetStagedFileList ------------------------------ */
+    /* ---------------------------------------------------------- */
+    QStringList GetStagedFileList(QString databaseUUID, qint64 objectID, ObjectType object) {
+        QStringList paths;
+
+        QSqlQuery q(QSqlDatabase::database(databaseUUID));
+        q.prepare("select * from StagedFiles where ObjectRowID = :id and ObjectType = :type");
+        q.bindValue(":id", objectID);
+        q.bindValue(":type", squirrel::ObjectTypeToString(object));
+        utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        while (q.next()) {
+            paths.append(q.value("StagedPath").toString());
+        }
+
+        return paths;
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- StoreStagedFileList ---------------------------- */
+    /* ---------------------------------------------------------- */
+    void StoreStagedFileList(QString databaseUUID, qint64 objectID, ObjectType object, QStringList paths) {
+
+        QSqlQuery q(QSqlDatabase::database(databaseUUID));
+        if (objectID >= 0) {
+            /* delete previously staged files from the database */
+            q.prepare("delete from StagedFiles where ObjectRowID = :id and ObjectType = :type");
+            q.bindValue(":id", objectID);
+            q.bindValue(":type", squirrel::ObjectTypeToString(object));
+            utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+
+            foreach (QString path, paths) {
+                q.prepare("insert into StagedFiles (ObjectRowID, ObjectType, StagedPath) values (:id, :type, :path)");
+                q.bindValue(":id", objectID);
+                q.bindValue(":type", squirrel::ObjectTypeToString(object));
+                q.bindValue(":path", path);
+                utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+            }
+        }
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- RemoveStagedFileList --------------------------- */
+    /* ---------------------------------------------------------- */
+    void RemoveStagedFileList(QString databaseUUID, qint64 objectID, ObjectType object) {
+        QSqlQuery q(QSqlDatabase::database(databaseUUID));
+        q.prepare("delete from StagedFiles where ObjectRowID = :id and ObjectType = :type");
+        q.bindValue(":id", objectID);
+        q.bindValue(":type", squirrel::ObjectTypeToString(object));
+        utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- GetParams -------------------------------------- */
+    /* ---------------------------------------------------------- */
+    QHash<QString, QString> GetParams(QString databaseUUID, qint64 seriesRowID) {
+        QHash<QString, QString> params;
+
+        QSqlQuery q(QSqlDatabase::database(databaseUUID));
+        q.prepare("select * from Params where SeriesRowID = :id");
+        q.bindValue(":id", seriesRowID);
+        utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        while (q.next()) {
+            QString key = q.value("ParamKey").toString();
+            QString value = q.value("ParamValue").toString();
+            params[key] = value;
+        }
+
+        return params;
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- StoreParams ------------------------------------ */
+    /* ---------------------------------------------------------- */
+    void StoreParams(QString databaseUUID, qint64 seriesRowID, QHash<QString, QString> params) {
+
+        QSqlQuery q(QSqlDatabase::database(databaseUUID));
+        if (seriesRowID >= 0) {
+            /* delete previously staged files from the database */
+            q.prepare("delete from Params where SeriesRowID = :id");
+            q.bindValue(":id", seriesRowID);
+            utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+
+            for(QHash<QString, QString>::iterator a = params.begin(); a != params.end(); ++a) {
+                QString key = a.key().trimmed();
+                QString value = a.value().trimmed();
+
+                if (key != "") {
+                    q.prepare("insert into Params (SeriesRowID, ParamKey, ParamValue) values (:id, :key, :value)");
+                    q.bindValue(":id", seriesRowID);
+                    q.bindValue(":key", key);
+                    q.bindValue(":value", value);
+                    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+                }
+            }
+        }
     }
 
 }

@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   Squirrel experiment.cpp
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -22,6 +22,7 @@
 
 #include "squirrelExperiment.h"
 #include "utils.h"
+#include "squirrel.h"
 
 squirrelExperiment::squirrelExperiment(QString dbID)
 {
@@ -60,7 +61,7 @@ bool squirrelExperiment::Get() {
         Size = q.value("Size").toLongLong();
 
         /* get any staged files */
-        stagedFiles = utils::GetStagedFileList(databaseUUID, objectID, "experiment");
+        stagedFiles = utils::GetStagedFileList(databaseUUID, objectID, Experiment);
 
         valid = true;
         return true;
@@ -110,7 +111,7 @@ bool squirrelExperiment::Store() {
     }
 
     /* store any staged filepaths */
-    utils::StoreStagedFileList(databaseUUID, objectID, "experiment", stagedFiles);
+    utils::StoreStagedFileList(databaseUUID, objectID, Experiment, stagedFiles);
 
     return true;
 }

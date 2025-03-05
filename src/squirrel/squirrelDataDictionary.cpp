@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   Squirrel squirrelDataDictionary.cpp
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -22,6 +22,7 @@
 
 #include "squirrelDataDictionary.h"
 #include "utils.h"
+#include "squirrel.h"
 
 squirrelDataDictionary::squirrelDataDictionary(QString dbID)
 {
@@ -80,7 +81,7 @@ bool squirrelDataDictionary::Get() {
         }
 
         /* get any staged files */
-        stagedFiles = utils::GetStagedFileList(databaseUUID, objectID, "datadictionary");
+        stagedFiles = utils::GetStagedFileList(databaseUUID, objectID, DataDictionary);
 
         valid = true;
         return true;
@@ -146,7 +147,7 @@ bool squirrelDataDictionary::Store() {
     }
 
     /* store any staged filepaths */
-    utils::StoreStagedFileList(databaseUUID, objectID, "datadictionary", stagedFiles);
+    utils::StoreStagedFileList(databaseUUID, objectID, DataDictionary, stagedFiles);
 
     return true;
 }

@@ -371,7 +371,7 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
                 while (q3.next())
                     qcidlist << q3.value("qcmoduleseries_id").toString();
 
-                QString sqlstring = "delete from qc_results where qcmoduleseries_id in (" + qcidlist.join(",") + ")";
+                sqlstring = "delete from qc_results where qcmoduleseries_id in (" + qcidlist.join(",") + ")";
                 q3.prepare(sqlstring);
                 n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
             }
@@ -612,11 +612,11 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
             }
 
             /* need to rename it, get the DICOM tags */
-            QHash<QString, QString> tags;
-            QString m;
-            bool csa = false;
+            tags.clear();
+            m = "";
+            csa = false;
             if (n->cfg["enablecsa"] == "1") csa = true;
-            QString binpath = n->cfg["nidbdir"] + "/bin";
+            binpath = n->cfg["nidbdir"] + "/bin";
             if (!img->GetImageFileTags(file, binpath, csa, tags, m))
                 continue;
 
@@ -651,11 +651,11 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
     int filecnt = 0;
     foreach (QString file, files) {
         /* need to rename it, get the DICOM tags */
-        QHash<QString, QString> tags;
-        QString m;
-        bool csa = false;
+        tags.clear();
+        m = "";
+        csa = false;
         if (n->cfg["enablecsa"] == "1") csa = true;
-        QString binpath = n->cfg["nidbdir"] + "/bin";
+        binpath = n->cfg["nidbdir"] + "/bin";
         if (!img->GetImageFileTags(file, binpath, csa, tags, m)) {
             logmsg += "?";
             continue;
@@ -703,9 +703,9 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
     int maxSliceNumber(0), maxInstanceNumber(0);
     foreach (QString file, dcms) {
         /* get the DICOM tags */
-        QHash<QString, QString> tags;
-        QString m;
-        QString binpath = n->cfg["nidbdir"] + "/bin";
+        tags.clear();
+        m = "";
+        binpath = n->cfg["nidbdir"] + "/bin";
         if (!img->GetImageFileTags(file, binpath, false, tags, m)) {
             logmsg += "?";
             continue;
@@ -826,7 +826,7 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
         AppendUploadLog(__FUNCTION__ , "Checking for behavioral data in [" + inbehdir + "]");
         QDir bd(inbehdir);
         if (bd.exists()) {
-            QString m;
+            m = "";
             if (MakePath(outbehdir, m)) {
                 QString systemstring = "mv -v " + inbehdir + "/* " + outbehdir + "/";
                 AppendUploadLog(__FUNCTION__ , SystemCommand(systemstring));
@@ -858,7 +858,7 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
     QDir bda(backdir);
     if (!bda.exists()) {
         AppendUploadLog(__FUNCTION__ , "Backup directory [" + backdir + "] does not exist. About to create it...");
-        QString m;
+        m = "";
         if (!MakePath(backdir, m))
             AppendUploadLog(__FUNCTION__ , "Unable to create backdir [" + backdir + "] because of error [" + m + "]");
     }
@@ -922,7 +922,7 @@ bool archiveIO::ArchiveNiftiSeries(int subjectRowID, int studyRowID, int seriesR
         /* series doesn't exist, so we'll create it */
         AppendUploadLog(__FUNCTION__ , QString("MR series [%1] did not exist, creating").arg(seriesNumber));
         QString sqlstring = "insert ignore into mr_series (study_id, series_num, data_type, series_status, series_createdby, series_createdate) values (:studyRowID, :seriesNumber, 'nifti', 'archiving', 'import', now())";
-        QSqlQuery q;
+        //QSqlQuery q;
         q.prepare(sqlstring);
         q.bindValue(":studyRowID", studyRowID);
         q.bindValue(":seriesNumber", seriesNumber);
@@ -1265,7 +1265,7 @@ bool archiveIO::ArchiveParRecSeries(int importRowID, QString file) {
     }
     else {
         /* get the existing subject ID, and UID! (the PatientID may be an alternate UID) */
-        QString sqlstring = "SELECT a.subject_id, a.uid FROM subjects a left join subject_altuid b on a.subject_id = b.subject_id WHERE a.uid in (" + SQLIDs + ") or a.uid = SHA1(:patientid) or b.altuid in (" + SQLIDs + ") or b.altuid = SHA1(:patientid)";
+        sqlstring = "SELECT a.subject_id, a.uid FROM subjects a left join subject_altuid b on a.subject_id = b.subject_id WHERE a.uid in (" + SQLIDs + ") or a.uid = SHA1(:patientid) or b.altuid in (" + SQLIDs + ") or b.altuid = SHA1(:patientid)";
         QSqlQuery q2;
         q2.prepare(sqlstring);
         q2.bindValue(":patientid", PatientID);
@@ -1283,7 +1283,7 @@ bool archiveIO::ArchiveParRecSeries(int importRowID, QString file) {
         }
         /* insert the PatientID as an alternate UID */
         if (PatientID != "") {
-            QSqlQuery q2;
+            //QSqlQuery q2;
             q2.prepare("insert ignore into subject_altuid (subject_id, altuid) values (:subjectid, :patientid)");
             q2.bindValue(":subjectid", subjectRowID);
             q2.bindValue(":patientid", PatientID);
@@ -1314,7 +1314,7 @@ bool archiveIO::ArchiveParRecSeries(int importRowID, QString file) {
         AppendUploadLog(__FUNCTION__, "Subject is not part of family, creating a unique family UID");
         do {
             familyRealUID = n->CreateUID("F");
-            QSqlQuery q2;
+            //QSqlQuery q2;
             q2.prepare("SELECT * FROM `families` WHERE family_uid = :familyuid");
             q2.bindValue(":familyuid", familyRealUID);
             n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
@@ -1322,7 +1322,7 @@ bool archiveIO::ArchiveParRecSeries(int importRowID, QString file) {
         } while (count > 0);
 
         /* create familyRowID if it doesn't exist */
-        QSqlQuery q2;
+        //QSqlQuery q2;
         q2.prepare("insert into families (family_uid, family_createdate, family_name) values (:familyRealUID, now(), :familyname)");
         q2.bindValue(":familyuid", familyRealUID);
         q2.bindValue(":familyname", "Proband-" + subjectUID);
@@ -1534,7 +1534,7 @@ bool archiveIO::ArchiveParRecSeries(int importRowID, QString file) {
     }
 
     /* move the files into the outdir */
-    //QString m;
+    m = "";
     MoveFile(parfile, outdir, m);
     MoveFile(recfile, outdir, m);
 
@@ -1545,8 +1545,8 @@ bool archiveIO::ArchiveParRecSeries(int importRowID, QString file) {
 
     /* update the database with the correct number of files/BOLD reps */
     if (Modality == "mr") {
-        QString sqlstring = QString("update %1_series set series_size = :dirsize where %1series_id = :seriesid").arg(Modality.toLower());
-        QSqlQuery q2;
+        sqlstring = QString("update %1_series set series_size = :dirsize where %1series_id = :seriesid").arg(Modality.toLower());
+        //QSqlQuery q2;
         q2.prepare(sqlstring);
         q2.bindValue(":dirsize", dirsize);
         q2.bindValue(":seriesid", seriesRowID);
@@ -1562,7 +1562,7 @@ bool archiveIO::ArchiveParRecSeries(int importRowID, QString file) {
     QDir bda(backdir);
     if (!bda.exists()) {
         AppendUploadLog(__FUNCTION__, "Directory [" + backdir + "] does not exist. About to create it...");
-        QString m;
+        m = "";
         if (!MakePath(backdir, m))
             AppendUploadLog(__FUNCTION__, "Unable to create backdir [" + backdir + "] because of error [" + m + "]");
         else
@@ -1897,7 +1897,7 @@ bool archiveIO::ArchiveEEGSeries(int importRowID, QString file) {
     QDir bda(backdir);
     if (!bda.exists()) {
         AppendUploadLog(__FUNCTION__, "Directory [" + backdir + "] does not exist. About to create it...");
-        QString m;
+        m = "";
         if (!MakePath(backdir, m))
             AppendUploadLog(__FUNCTION__, "Unable to create backdir [" + backdir + "] because of error [" + m + "]");
         else
@@ -1920,8 +1920,8 @@ bool archiveIO::ArchiveEEGSeries(int importRowID, QString file) {
  * @brief This function will archive a squirrel package. Existing imaging and demographic data will be updated if they already exist.
  * @param importRowID importRowID, to get import options and give feedback on import progress
  * @param file Path to the squirrel package
- * @param msg
- * @return
+ * @param msg Messages generated from the function
+ * @return true if successful
  */
 bool archiveIO::ArchiveSquirrelPackage(UploadOptions options, QString file, QString &msg) {
     /* get import options */
@@ -2322,7 +2322,7 @@ void archiveIO::SetAlternateIDs(int subjectRowID, int enrollmentRowID, QStringLi
  * @param PatientID PatientID
  * @param PatientName PatientName
  * @param PatientSex PatientSex
- * @param PatientBirthDate
+ * @param PatientBirthDate PatientBirthDate
  * @param subjectRowID [returned] subjectRowID
  * @param subjectUID [returned] subject UID
  * @return true if subject was found, false otherwise
@@ -2394,7 +2394,7 @@ bool archiveIO::GetSubject(QString subjectMatchCriteria, int existingSubjectID, 
  * @param PatientSize Subject height in meters
  * @param subjectRowID [returned] subjectRowID
  * @param subjectUID [returned] subject UID
- * @return
+ * @return true if successful
  */
 bool archiveIO::CreateSubject(QString PatientID, QString PatientName, QString PatientBirthDate, QString PatientSex, double PatientWeight, double PatientSize, int &subjectRowID, QString &subjectUID) {
 
@@ -2428,7 +2428,7 @@ bool archiveIO::CreateSubject(QString PatientID, QString PatientName, QString Pa
 
     /* insert the PatientID as an alternate UID */
     if (PatientID != "") {
-        QSqlQuery q2;
+        //QSqlQuery q2;
         q2.prepare("insert ignore into subject_altuid (subject_id, altuid) values (:subjectid, :patientid)");
         q2.bindValue(":subjectid",subjectRowID);
         q2.bindValue(":patientid",PatientID);
@@ -2618,10 +2618,10 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
     root["Authors"] = authors;
     root["README"] = bidsreadme;
     root["Name"] = "NiDB exported BIDS dataset";
-    QByteArray j = QJsonDocument(root).toJson();
+    QByteArray jj = QJsonDocument(root).toJson();
     QFile fout(outdir + "/dataset_description.json");
     fout.open(QIODevice::WriteOnly);
-    fout.write(j);
+    fout.write(jj);
 
     /* write the participants.csv file */
     QString pfile = outdir + "/participants.tsv";
@@ -2629,7 +2629,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 
     int i = 1; /* the subject counter */
     /* iterate through the UIDs */
-    for(QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>>::iterator a = s.begin(); a != s.end(); ++a) {
+    for(QMap<QString, QMap<int, QMap<int, QMap<QString, QString> > > >::iterator a = s.begin(); a != s.end(); ++a) {
         QString uid = a.key();
         int j = 1; /* the session (study) counter */
 
@@ -2653,7 +2653,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
         if (!WriteTextFile(pfile, QString("%1\t%2\t%3\n").arg(bidsSubject).arg(subjectAge).arg(subjectSex), true)) n->Log("Error writing " + pfile);
 
         /* iterate through the studynums */
-        for(QMap<int, QMap<int, QMap<QString, QString>>>::iterator b = s[uid].begin(); b != s[uid].end(); ++b) {
+        for(QMap<int, QMap<int, QMap<QString, QString> > >::iterator b = s[uid].begin(); b != s[uid].end(); ++b) {
             int studynum = b.key();
 
             if (studynum == 0)
@@ -2662,7 +2662,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
             n->Log(QString("Working on [" + uid + "] and study [%1]").arg(studynum));
 
             /* iterate through the seriesnums */
-            for(QMap<int, QMap<QString, QString>>::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
+            for(QMap<int, QMap<QString, QString> >::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
                 int seriesnum = c.key();
 
                 /* skip the series that contained only a placeholder for the subject/study info */
@@ -2676,7 +2676,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 
                 int seriesid = s[uid][studynum][seriesnum]["seriesid"].toInt();
                 int projectRowID = s[uid][studynum][seriesnum]["projectid"].toInt();
-                QString primaryaltuid = s[uid][studynum][seriesnum]["primaryaltuid"];
+                primaryaltuid = s[uid][studynum][seriesnum]["primaryaltuid"];
 				QString studyaltid = s[uid][studynum][seriesnum]["studyaltid"];
                 QString modality = s[uid][studynum][seriesnum]["modality"];
                 QString seriesdesc = s[uid][studynum][seriesnum]["seriesdesc"];
@@ -2712,7 +2712,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 				   BIDS_SUBJECTDIR_UID
 				   BIDS_SUBJECTDIR_ALTUID */
 				QString subjectdir = "";
-                QString bidsSubject = "";
+                bidsSubject = "";
 				if (bidsflags.contains("BIDS_SUBJECTDIR_UID", Qt::CaseInsensitive)) {
 					subjectdir = QString("sub-%1").arg(uid);
                     bidsSubject = QString("sub-%1").arg(uid);
@@ -2761,7 +2761,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 
                 QString seriesoutdir = QString("%1/%2/%3/%4").arg(outdir).arg(subjectdir).arg(sessiondir).arg(seriesdir);
 
-                //QString m;
+                m = "";
                 if (MakePath(seriesoutdir, m)) {
                     n->Log("Created seriesoutdir [" + seriesoutdir + "]");
                 }
@@ -2775,7 +2775,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
                 if (datadirexists) {
                     if (!datadirempty) {
                         QString tmpdir = n->cfg["tmpdir"] + "/" + GenerateRandomString(10);
-                        //QString m;
+                        m = "";
                         if (MakePath(tmpdir, m)) {
 
                             int numfilesconv(0), numfilesrenamed(0);
@@ -2894,7 +2894,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     /* create squirrel object with default settings... */
     squirrel sqrl;
     sqrl.SetPackagePath(zipfilepath);
-    sqrl.SetFileMode(FileMode::NewPackage);
+    sqrl.SetFileMode(NewPackage);
     sqrl.PackageName = name;
     sqrl.Description = desc;
     sqrl.NiDBversion = n->GetVersion();
@@ -2949,7 +2949,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
         squirrelSubject sqrlSubject = subj.GetSquirrelObject(sqrl.GetDatabaseUUID());
         sqrlSubject.AlternateIDs.append(subj.GetAllAlternateIDs());
         sqrlSubject.Store();
-        int squirrelSubjectRowID = sqrlSubject.GetObjectID();
+        qint64 squirrelSubjectRowID = sqrlSubject.GetObjectID();
 
         n->Log(QString("%1() sqrlSubject.ID [" + sqrlSubject.ID + "]   subj.UID() [" + subj.UID() + "]").arg(__FUNCTION__));
 
@@ -2972,7 +2972,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
             sqrlStudy.AgeAtStudy = subjectAge;
             sqrlStudy.subjectRowID = squirrelSubjectRowID;
             sqrlStudy.Store();
-            int squirrelStudyRowID = sqrlStudy.GetObjectID();
+            qint64 squirrelStudyRowID = sqrlStudy.GetObjectID();
 
             /* export analyses (study level) */
             if (downloadflags.contains("DOWNLOAD_ANALYSIS", Qt::CaseInsensitive)) {
@@ -3046,7 +3046,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                         /* all we need to do here is tell the squirrel object the location of the raw data files */
                         sqrlSeries.stagedFiles = FindAllFiles(datadir, "*", true);
                         QHash<QString, QString> tags;
-                        QString m;
+                        m="";
                         QString bindir = QString("%1/bin").arg(n->cfg["nidbdir"]);
                         img->GetImageFileTags(sqrlSeries.stagedFiles[0], bindir, true, tags, m);
 
@@ -3054,7 +3054,8 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                         sqrlSeries.AnonymizeParams(); /* remove tags that might contain PHI */
                     }
                     else {
-                        seriesstatus = exportstatus = "error";
+                        seriesstatus = "error";
+                        exportstatus = "error";
                         msgs << n->Log(QString("%1() ERROR. Directory [" + datadir + "] is empty").arg(__FUNCTION__));
                     }
                 }
@@ -3267,7 +3268,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
  * @param exportid exportRowID, which contains a pointer to the packageRowID
  * @param zipfilepath Final path to the exported package
  * @param msg Any messages generated during package export
- * @return
+ * @return true if successful
  */
 bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString &msg) {
 
@@ -3324,7 +3325,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         sqrl.StudyDirFormat = q.value("package_studydirformat").toString();
         sqrl.SubjectDirFormat = q.value("package_subjectdirformat").toString();
         sqrl.SetPackagePath(zipfilepath);
-        sqrl.SetFileMode(FileMode::NewPackage);
+        sqrl.SetFileMode(NewPackage);
     }
     else {
         return 0;
@@ -3358,7 +3359,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         QString subjectID = subj.GetPrimaryAlternateID(ser.projectid);
         if (subjectID == "")
             subjectID = subj.UID();
-        int sqrlSubjectRowID = sqrl.FindSubject(subjectID);
+        qint64 sqrlSubjectRowID = sqrl.FindSubject(subjectID);
         if (sqrlSubjectRowID < 0) {
             /* ... create subject if necessary */
             sqrlSubject = subj.GetSquirrelObject(sqrl.GetDatabaseUUID());
@@ -3372,7 +3373,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         /* get squirrel STUDY (create the object in the package if it doesn't already exist) */
         squirrelStudy sqrlStudy(sqrl.GetDatabaseUUID());
         study stud(ser.studyid, n);
-        int sqrlStudyRowID = sqrl.FindStudy(subjectID, stud.studyNum());
+        qint64 sqrlStudyRowID = sqrl.FindStudy(subjectID, stud.studyNum());
         if (sqrlStudyRowID < 0) {
             /* ... create study if necessary */
             sqrlStudy = stud.GetSquirrelObject(sqrl.GetDatabaseUUID());
@@ -3412,7 +3413,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         QString subjectID = subj.GetPrimaryAlternateID(lastProjectRowID);
         if (subjectID == "")
             subjectID = subj.UID();
-        int sqrlSubjectRowID = sqrl.FindSubject(subjectID);
+        qint64 sqrlSubjectRowID = sqrl.FindSubject(subjectID);
         if (sqrlSubjectRowID < 0) {
             /* ... create subject if necessary */
             sqrlSubject = subj.GetSquirrelObject(sqrl.GetDatabaseUUID());
@@ -3425,7 +3426,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
 
         /* get squirrel STUDY (create the object in the package if it doesn't already exist) */
         squirrelStudy sqrlStudy(sqrl.GetDatabaseUUID());
-        int sqrlStudyRowID = sqrl.FindStudy(subjectID, stud.studyNum());
+        qint64 sqrlStudyRowID = sqrl.FindStudy(subjectID, stud.studyNum());
         if (sqrlStudyRowID < 0) {
             /* ... create study if necessary */
             sqrlStudy = stud.GetSquirrelObject(sqrl.GetDatabaseUUID());
@@ -3462,7 +3463,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         QString subjectID = subj.GetPrimaryAlternateID(lastProjectRowID);
         if (subjectID == "")
             subjectID = subj.UID();
-        int sqrlSubjectRowID = sqrl.FindSubject(subjectID);
+        qint64 sqrlSubjectRowID = sqrl.FindSubject(subjectID);
         if (sqrlSubjectRowID < 0) {
             /* ... create subject if necessary */
             sqrlSubject = subj.GetSquirrelObject(sqrl.GetDatabaseUUID());
@@ -3474,11 +3475,11 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         }
 
         /* add the analysis to the package */
-        measure m(measureRowID, n);
-        if (!m.isValid) continue;
+        measure mm(measureRowID, n);
+        if (!mm.isValid) continue;
 
         squirrelObservation sqrlObservation(sqrl.GetDatabaseUUID());
-        sqrlObservation = m.GetSquirrelObject(sqrl.GetDatabaseUUID());
+        sqrlObservation = mm.GetSquirrelObject(sqrl.GetDatabaseUUID());
         sqrlObservation.subjectRowID = sqrlSubjectRowID;
         sqrlObservation.Store();
     }
@@ -3500,7 +3501,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         QString subjectID = subj.GetPrimaryAlternateID(lastProjectRowID);
         if (subjectID == "")
             subjectID = subj.UID();
-        int sqrlSubjectRowID = sqrl.FindSubject(subjectID);
+        qint64 sqrlSubjectRowID = sqrl.FindSubject(subjectID);
         if (sqrlSubjectRowID < 0) {
             /* ... create subject if necessary */
             sqrlSubject = subj.GetSquirrelObject(sqrl.GetDatabaseUUID());
@@ -3549,7 +3550,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         experiment e(experimentRowID, n);
         if (!e.isValid) continue;
 
-        QString m;
+        m = "";
         if (!MakePath(localTempDir + "/" + e.name, m)) {
             n->Log(QString("Error create temp directory [%1] - message [%2]").arg(localTempDir + "/" + e.name).arg(m));
         }
@@ -3596,7 +3597,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
  * @param seriesids List of SeriesRowIDs
  * @param modalities List of Modalities
  * @param s Returns a hash s[uid][study][series]['attribute'] of type subjectStudySeriesContainer
- * @return
+ * @return true if successful
  */
 bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modalities, subjectStudySeriesContainer &s) {
 

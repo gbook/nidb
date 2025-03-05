@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Feb 11, 2025 at 07:45 PM
+-- Generation Time: Mar 05, 2025 at 05:20 PM
 -- Server version: 10.3.28-MariaDB
 -- PHP Version: 7.2.24
 
@@ -4361,7 +4361,8 @@ ALTER TABLE `ot_series`
 -- Indexes for table `packages`
 --
 ALTER TABLE `packages`
-  ADD PRIMARY KEY (`package_id`);
+  ADD PRIMARY KEY (`package_id`),
+  ADD UNIQUE KEY `user_id` (`user_id`,`package_name`);
 
 --
 -- Indexes for table `package_analyses`

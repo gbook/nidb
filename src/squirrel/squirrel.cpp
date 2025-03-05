@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   Squirrel squirrel.cpp
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -28,6 +28,7 @@
 #include "bitarchivewriter.hpp"
 #include "bitarchiveeditor.hpp"
 #include "bitfileextractor.hpp"
+#include "squirrelVersion.h"
 
 /* ----- bit7z progress callbacks ----- */
 qint64 totalbytes(0);
@@ -130,12 +131,17 @@ bool squirrel::Get7zipLibPath() {
 #else
     if (QFile::exists("/usr/libexec/p7zip/7z.so")) {
         p7zipLibPath = "/usr/libexec/p7zip/7z.so";
-        Debug("Found 7zip path /usr/libexec/p7zip/7z.so", __FUNCTION__);
+        Debug("Found 7zip library path /usr/libexec/p7zip/7z.so", __FUNCTION__);
         return true;
     }
     else if (QFile::exists("/usr/libexec/p7zip/7za.so")) {
         p7zipLibPath = "/usr/libexec/p7zip/7za.so";
-        Debug("Found 7zip path /usr/libexec/p7zip/7za.so", __FUNCTION__);
+        Debug("Found 7zip library path /usr/libexec/p7zip/7za.so", __FUNCTION__);
+        return true;
+    }
+    else if (QFile::exists("/usr/lib/7zip/7z.so")) {
+        p7zipLibPath = "/usr/lib/7zip/7z.so";
+        Debug("Found 7zip library path /usr/lib/7zip/7z.so", __FUNCTION__);
         return true;
     }
 #endif
@@ -206,8 +212,8 @@ bool squirrel::InitializeDatabase() {
     q.prepare(tableDataDictionary);
     if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error creating table [DataDictionary]"); utils::Print("Error creating table [DataDictionary]"); return false; }
 
-    q.prepare(tableDataDictionaryItems);
-    if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error creating table [DataDictionaryItems]"); utils::Print("Error creating table [DataDictionaryItems]"); return false; }
+    q.prepare(tableDataDictionaryItem);
+    if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error creating table [DataDictionaryItem]"); utils::Print("Error creating table [DataDictionaryItem]"); return false; }
 
     q.prepare(tableExperiment);
     if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error creating table [Experiment]"); utils::Print("Error creating table [Experiment]"); return false; }
@@ -364,6 +370,7 @@ bool squirrel::Read() {
         sqrlSubject.Gender = jsonSubject["Gender"].toString();
         sqrlSubject.Ethnicity1 = jsonSubject["Ethnicity1"].toString();
         sqrlSubject.Ethnicity2 = jsonSubject["Ethnicity2"].toString();
+        sqrlSubject.Notes = jsonSubject["Notes"].toString();
         sqrlSubject.Store();
         qint64 subjectRowID = sqrlSubject.GetObjectID();
 
@@ -382,6 +389,7 @@ bool squirrel::Read() {
             sqrlStudy.Equipment = jsonStudy["Equipment"].toString();
             sqrlStudy.Height = jsonStudy["Height"].toDouble();
             sqrlStudy.Modality = jsonStudy["Modality"].toString();
+            sqrlStudy.Notes = jsonStudy["Notes"].toString();
             sqrlStudy.StudyNumber = jsonStudy["StudyNumber"].toInt();
             sqrlStudy.StudyUID = jsonStudy["StudyUID"].toString();
             sqrlStudy.TimePoint = jsonStudy["TimePoint"].toInt();
@@ -674,7 +682,12 @@ bool squirrel::Write(bool writeLog) {
             Debug(QString("Writing [%1] series for [%2][%3]").arg(serieses.size()).arg(subject.ID).arg(study.StudyNumber));
             foreach (squirrelSeries series, serieses) {
                 QString m;
-                QString seriesPath = QString("%1/%2").arg(workingDir).arg(series.VirtualPath());
+                QString seriesPath;
+                #ifdef Q_OS_WINDOWS
+                    seriesPath = QString("%1\\%2").arg(workingDir).arg(series.VirtualPath());
+                #else
+                    seriesPath = QString("%1/%2").arg(workingDir).arg(series.VirtualPath());
+                #endif
 
                 if (fileMode == FileMode::NewPackage) {
                     utils::MakePath(seriesPath,m);
@@ -690,9 +703,6 @@ bool squirrel::Write(bool writeLog) {
                                 Debug(QString("  ... copying original files from %1 to %2").arg(f).arg(seriesPath));
                             else
                                 Log(QString("  ERROR copying original files from %1 to %2").arg(f).arg(seriesPath));
-
-                            //QString systemstring = QString("cp -uv %1 %2").arg(f).arg(seriesPath);
-                            //Debug(utils::SystemCommand(systemstring), __FUNCTION__);
                         }
                     }
                     else if (study.Modality.toUpper() != "MR") {
@@ -703,15 +713,6 @@ bool squirrel::Write(bool writeLog) {
                                 Debug(QString("  ... copying original files from %1 to %2").arg(f).arg(seriesPath));
                             else
                                 Log(QString("  ERROR copying original files from %1 to %2").arg(f).arg(seriesPath));
-
-                            //QString systemstring;
-                            //#ifdef Q_OS_WINDOWS
-                            //    systemstring = QString("copy %1 %2/").arg(f).arg(seriesPath);
-                            //#else
-                            //    systemstring = QString("cp -uv %1 %2/").arg(f).arg(seriesPath);
-                            //#endif
-                            //Log(QString("  ... copying files from %1 to %2").arg(f).arg(seriesPath));
-                            //Debug(utils::SystemCommand(systemstring), __FUNCTION__);
                         }
                     }
                     else if ((DataFormat == "anon") || (DataFormat == "anonfull")) {
@@ -725,9 +726,6 @@ bool squirrel::Write(bool writeLog) {
                                     Debug(QString("  ... copying original files from %1 to %2").arg(f).arg(td));
                                 else
                                     Log(QString("  ERROR copying original files from %1 to %2").arg(f).arg(td));
-
-                                //systemstring = QString("cp -uv %1 %2").arg(f).arg(td);
-                                //Debug(utils::SystemCommand(systemstring), __FUNCTION__);
                             }
 
                             /* anonymize the directory */
@@ -1223,23 +1221,25 @@ qint64 squirrel::GetFileCount() {
  * @param object the object to get a count of
  * @return the number of objects
  */
-qint64 squirrel::GetObjectCount(QString object) {
+qint64 squirrel::GetObjectCount(ObjectType object) {
     qint64 count(0);
     QString table;
 
     QSqlQuery q(QSqlDatabase::database(databaseUUID));
-    if (object == "subject") table = "Subject";
-    else if (object == "study") table = "Study";
-    else if (object == "series") table = "Series";
-    else if (object == "analysis") table = "Analysis";
-    else if (object == "datadictionary") table = "DataDictionary";
-    else if (object == "datadictionaryitem") table = "DataDictionaryItems";
-    else if (object == "Intervention") table = "Intervention";
-    else if (object == "observation") table = "Observation";
-    else if (object == "pipeline") table = "Pipeline";
-    else if (object == "groupanalysis") table = "GroupAnalysis";
-    else if (object == "experiment") table = "Experiment";
-    else { return -1; }
+    switch (object) {
+        case Analysis: table = "Analysis"; break;
+        case DataDictionary: table = "DataDictionary"; break;
+        case DataDictionaryItem: table = "DataDictionaryItem"; break;
+        case Experiment: table = "Experiment"; break;
+        case GroupAnalysis: table = "GroupAnalysis"; break;
+        case Intervention: table = "Intervention"; break;
+        case Observation: table = "Observation"; break;
+        case Pipeline: table = "Pipeline"; break;
+        case Series: table = "Series"; break;
+        case Study: table = "Study"; break;
+        case Subject: table = "Subject"; break;
+        default: return -1;
+    }
 
     q.prepare("select count(*) 'count' from " + table);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -1259,17 +1259,17 @@ qint64 squirrel::GetObjectCount(QString object) {
 QString squirrel::PrintPackage() {
     QString str;
 
-    qint64 numSubjects = GetObjectCount("subject");
-    qint64 numStudies = GetObjectCount("study");
-    qint64 numSeries = GetObjectCount("series");
-    qint64 numObservations = GetObjectCount("observation");
-    qint64 numInterventions = GetObjectCount("Intervention");
-    qint64 numAnalyses = GetObjectCount("analysis");
-    qint64 numExperiments = GetObjectCount("experiment");
-    qint64 numPipelines = GetObjectCount("pipeline");
-    qint64 numGroupAnalyses = GetObjectCount("groupanalysis");
-    qint64 numDataDictionaries = GetObjectCount("datadictionary");
-    //qint64 numDataDictionaryItems = GetObjectCount("datadictionaryitem");
+    qint64 numAnalyses = GetObjectCount(Analysis);
+    qint64 numDataDictionaries = GetObjectCount(DataDictionary);
+    qint64 numDataDictionaryItem = GetObjectCount(DataDictionaryItem);
+    qint64 numExperiments = GetObjectCount(Experiment);
+    qint64 numGroupAnalyses = GetObjectCount(GroupAnalysis);
+    qint64 numInterventions = GetObjectCount(Intervention);
+    qint64 numObservations = GetObjectCount(Observation);
+    qint64 numPipelines = GetObjectCount(Pipeline);
+    qint64 numSeries = GetObjectCount(Series);
+    qint64 numStudies = GetObjectCount(Study);
+    qint64 numSubjects = GetObjectCount(Subject);
 
     QString fileModeStr = "UnknownFileMode";
     if (fileMode == FileMode::NewPackage) fileModeStr = "NewPackage";
@@ -1346,25 +1346,25 @@ bool squirrel::DeleteTempDir(QString dir) {
 /**
  * @brief Add the paths of staged files to a specified object
  * These files will be copied when the package is written
- * @param objectType one of the object types
+ * @param object The object type to add
  * @param rowid the database row ID of the object
  * @param files the list of files to be staged
  * @return
  */
-bool squirrel::AddStagedFiles(QString objectType, qint64 rowid, QStringList files) {
+bool squirrel::AddStagedFiles(ObjectType object, qint64 rowid, QStringList files) {
 
     if (rowid < 0) return false;
     if (files.size() <= 0) return false;
 
-    utils::Print(QString("Adding [%1] files of type [%2] to rowID [%3]").arg(files.size()).arg(objectType).arg(rowid));
+    utils::Print(QString("Adding [%1] files of type [%2] to rowID [%3]").arg(files.size()).arg(ObjectTypeToString(object)).arg(rowid));
 
-    if (objectType == "series") {
+    if (object == Series) {
         squirrelSeries s(databaseUUID);
         s.SetObjectID(rowid);
         if (s.Get()) {
             foreach (QString f, files) {
                 s.stagedFiles.append(f);
-                Debug(QString("Appended file [%1] of type [%2] to rowID [%3]. Size is now [%4]").arg(files.size()).arg(objectType).arg(rowid).arg(s.stagedFiles.size()), __FUNCTION__);
+                Debug(QString("Appended file [%1] of type [%2] to rowID [%3]. Size is now [%4]").arg(files.size()).arg(ObjectTypeToString(object)).arg(rowid).arg(s.stagedFiles.size()), __FUNCTION__);
             }
             if (s.Store())
                 return true;
@@ -1374,7 +1374,7 @@ bool squirrel::AddStagedFiles(QString objectType, qint64 rowid, QStringList file
         }
     }
 
-    if (objectType == "experiment") {
+    if (object == Experiment) {
         squirrelExperiment e(databaseUUID);
         e.SetObjectID(rowid);
         if (e.Get()) {
@@ -1385,7 +1385,7 @@ bool squirrel::AddStagedFiles(QString objectType, qint64 rowid, QStringList file
         }
     }
 
-    if (objectType == "pipeline") {
+    if (object == Pipeline) {
         squirrelPipeline p(databaseUUID);
         p.SetObjectID(rowid);
         if (p.Get()) {
@@ -1396,7 +1396,7 @@ bool squirrel::AddStagedFiles(QString objectType, qint64 rowid, QStringList file
         }
     }
 
-    if (objectType == "analysis") {
+    if (object == Analysis) {
         squirrelAnalysis a(databaseUUID);
         a.SetObjectID(rowid);
         if (a.Get()) {
@@ -1505,7 +1505,7 @@ QString squirrel::PrintSubjects(PrintFormat printFormat) {
                 if (s.Get())
                     csvLines.append(s.CSVLine());
             }
-            str += utils::Print("ID, AlternateIDs, DateOfBirth, Ethnicity1, Ethnicity2, GUID, Gender, Sex");
+            str += utils::Print("ID, AlternateIDs, DateOfBirth, Ethnicity1, Ethnicity2, GUID, Gender, Sex, Notes");
             str += utils::Print(csvLines.join("\n"));
         }
         else if (printFormat == PrintFormat::Tree) {
@@ -2443,6 +2443,108 @@ qint64 squirrel::FindDataDictionary(QString dataDictionaryName) {
 
 
 /* ------------------------------------------------------------ */
+/* ----- ExtractSubject --------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief Extract an object from the archive into a directory on disk
+ * @param object The object type
+ * @param subjectRowID The object rowID
+ * @param outDir output directory
+ * @param recursive `true` if all data should be extracted, recursively (studies and series). This is the default
+ * @return `true` if successful, `false` otherwise
+ */
+bool squirrel::ExtractObject(ObjectType object, qint64 objectRowID, QString outDir, bool recursive) {
+    if (objectRowID < 0) {
+        Log("Invalid object ID []");
+        return false;
+    }
+
+    QString virtualPath;
+    QString jsonPath;
+    QString j;
+    if (object == Subject) {
+        squirrelSubject s = GetSubject(objectRowID);
+        virtualPath = s.VirtualPath();
+        jsonPath = outDir + "/subject.json";
+        QJsonDocument doc(s.ToJSON());
+        j = doc.toJson();
+    }
+    else if (object == Study) {
+        squirrelStudy s = GetStudy(objectRowID);
+        virtualPath = s.VirtualPath();
+        jsonPath = outDir + "/study.json";
+        QJsonDocument doc(s.ToJSON());
+        j = doc.toJson();
+    }
+    else if (object == Series) {
+        squirrelSeries s = GetSeries(objectRowID);
+        virtualPath = s.VirtualPath();
+        jsonPath = outDir + "/series.json";
+        QJsonDocument doc(s.ToJSON());
+        j = doc.toJson();
+    }
+    else if (object == Analysis) {
+        squirrelAnalysis a = GetAnalysis(objectRowID);
+        virtualPath = a.VirtualPath();
+        jsonPath = outDir + "/analysis.json";
+        QJsonDocument doc(a.ToJSON());
+        j = doc.toJson();
+    }
+    else if (object == Experiment) {
+        squirrelExperiment e = GetExperiment(objectRowID);
+        virtualPath = e.VirtualPath();
+        jsonPath = outDir + "/experiment.json";
+        QJsonDocument doc(e.ToJSON());
+        j = doc.toJson();
+    }
+    else if (object == Pipeline) {
+        squirrelPipeline p = GetPipeline(objectRowID);
+        virtualPath = p.VirtualPath();
+        jsonPath = outDir + "/pipeline.json";
+        QJsonDocument doc(p.ToJSON(jsonPath));
+        j = doc.toJson();
+    }
+    else if (object == GroupAnalysis) {
+        squirrelGroupAnalysis g = GetGroupAnalysis(objectRowID);
+        virtualPath = g.VirtualPath();
+        jsonPath = outDir + "/groupanalysis.json";
+        QJsonDocument doc(g.ToJSON());
+        j = doc.toJson();
+    }
+    else if (object == DataDictionary) {
+        squirrelDataDictionary d = GetDataDictionary(objectRowID);
+        virtualPath = d.VirtualPath();
+        jsonPath = outDir + "/datadictionary.json";
+        QJsonDocument doc(d.ToJSON());
+        j = doc.toJson();
+    }
+    else {
+        Log("Unknown object type [" + ObjectTypeToString(object) + "]");
+        return false;
+    }
+
+    /* do the extraction to disk */
+    #ifdef Q_OS_WINDOWS
+        virtualPath += "\\*";
+    #else
+        virtualPath += "/*";
+    #endif
+
+    QString m;
+    if (ExtractArchiveFilesToDirectory(packagePath, virtualPath, outDir, m)) {
+        /* write out the JSON to disk for this subject as well */
+        if (!utils::WriteTextFile(jsonPath, j))
+            Log("Error writing " + jsonPath);
+
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+
+/* ------------------------------------------------------------ */
 /* ----- ResequenceSubjects ----------------------------------- */
 /* ------------------------------------------------------------ */
 /**
@@ -2500,97 +2602,23 @@ void squirrel::ResequenceSeries(qint64 studyRowID) {
 
 
 /* ------------------------------------------------------------ */
-/* ----- RemoveSubject ---------------------------------------- */
-/* ------------------------------------------------------------ */
-//bool squirrel::RemoveSubject(qint64 subjectRowID) {
-//}
-
-
-/* ------------------------------------------------------------ */
-/* ----- RemoveStudy ------------------------------------------ */
-/* ------------------------------------------------------------ */
-//bool squirrel::RemoveStudy(qint64 studyRowID) {
-//}
-
-
-/* ------------------------------------------------------------ */
-/* ----- RemoveSeries ----------------------------------------- */
-/* ------------------------------------------------------------ */
-//bool squirrel::RemoveSeries(qint64 seriesRowID) {
-//}
-
-
-/* ------------------------------------------------------------ */
-/* ----- RemoveAnalysis --------------------------------------- */
-/* ------------------------------------------------------------ */
-//bool squirrel::RemoveAnalysis(qint64 analysisRowID) {
-//}
-
-
-/* ------------------------------------------------------------ */
-/* ----- RemoveExperiment ------------------------------------- */
-/* ------------------------------------------------------------ */
-//bool squirrel::RemoveExperiment(qint64 experimentRowID) {
-//}
-
-
-/* ------------------------------------------------------------ */
-/* ----- RemovePipeline --------------------------------------- */
-/* ------------------------------------------------------------ */
-//bool squirrel::RemovePipeline(qint64 pipelineRowID) {
-//}
-
-
-/* ------------------------------------------------------------ */
-/* ----- RemoveGroupAnalysis ---------------------------------- */
-/* ------------------------------------------------------------ */
-//bool squirrel::RemoveGroupAnalysis(qint64 groupAnalysisRowID) {
-//}
-
-
-/* ------------------------------------------------------------ */
-/* ----- RemoveDataDictionary --------------------------------- */
-/* ------------------------------------------------------------ */
-//bool squirrel::RemoveDataDictionary(qint64 dataDictionaryRowID) {
-//}
-
-
-/* ------------------------------------------------------------ */
-/* ----- RemoveIntervention ----------------------------------- */
-/* ------------------------------------------------------------ */
-//bool squirrel::RemoveIntervention(qint64 InterventionRowID) {
-//}
-
-
-/* ------------------------------------------------------------ */
-/* ----- RemoveObservation ------------------------------------ */
-/* ------------------------------------------------------------ */
-//bool squirrel::RemoveObservation(qint64 observationRowID) {
-//}
-
-
-/* ------------------------------------------------------------ */
 /* ----- RemoveObject ----------------------------------------- */
 /* ------------------------------------------------------------ */
 /**
  * @brief Remove an object and child objects from the package
- * @param objectType Possible object types `subject`, `study`, `series`, `analysis`, `experiment`, `intervention`, `observation`, `pipeline`, `datadictionary`, `groupanalysis`
+ * @param object Possible object types `subject`, `study`, `series`, `analysis`, `experiment`, `intervention`, `observation`, `pipeline`, `datadictionary`, `groupanalysis`
  * @param objectRowID object database rowID
  * @return true if successful, false otherwise
  */
-bool squirrel::RemoveObject(QString objectType, qint64 objectRowID) {
-    if (objectType == "") {
-        Debug("Blank object type");
-        return false;
-    }
-    else if (objectType == "subject") {
+bool squirrel::RemoveObject(ObjectType object, qint64 objectRowID) {
+    if (object == Subject) {
         /* get list of studies associated with this subject, and delete them */
         QSqlQuery q(QSqlDatabase::database(databaseUUID));
         q.prepare("select StudyRowID from Study where SubjectRowID = :subjectRowID");
         q.bindValue(":subjectRowID", objectRowID);
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         while (q.next()) {
-            if (!RemoveObject("study", q.value("StudyRowID").toLongLong()))
+            if (!RemoveObject(Study, q.value("StudyRowID").toLongLong()))
                 return false;
         }
 
@@ -2622,14 +2650,14 @@ bool squirrel::RemoveObject(QString objectType, qint64 objectRowID) {
 
         return true;
     }
-    else if (objectType == "study") {
+    else if (object == Study) {
         /* get list of studies associated with this subject, and delete them */
         QSqlQuery q(QSqlDatabase::database(databaseUUID));
         q.prepare("select SeriesRowID from Series where StudyRowID = :studyRowID");
         q.bindValue(":studyRowID", objectRowID);
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         while (q.next()) {
-            if (!RemoveObject("series", q.value("SeriesRowID").toLongLong()))
+            if (!RemoveObject(Series, q.value("SeriesRowID").toLongLong()))
                 return false;
         }
 
@@ -2638,7 +2666,7 @@ bool squirrel::RemoveObject(QString objectType, qint64 objectRowID) {
         q.bindValue(":studyRowID", objectRowID);
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         while (q.next()) {
-            if (!RemoveObject("analysis", q.value("AnalysisRowID").toLongLong()))
+            if (!RemoveObject(Analysis, q.value("AnalysisRowID").toLongLong()))
                 return false;
         }
 
@@ -2660,7 +2688,7 @@ bool squirrel::RemoveObject(QString objectType, qint64 objectRowID) {
 
         return true;
     }
-    else if (objectType == "series") {
+    else if (object == Series) {
         /* delete from database */
         QSqlQuery q(QSqlDatabase::database(databaseUUID));
         q.prepare("delete from Series where SeriesRowID = :seriesRowID");
@@ -2680,7 +2708,7 @@ bool squirrel::RemoveObject(QString objectType, qint64 objectRowID) {
 
         return true;
     }
-    else if (objectType == "analysis") {
+    else if (object == Analysis) {
         /* delete from database */
         QSqlQuery q(QSqlDatabase::database(databaseUUID));
         q.prepare("delete from Analysis where AnalysisRowID = :analysisRowID");
@@ -2700,21 +2728,21 @@ bool squirrel::RemoveObject(QString objectType, qint64 objectRowID) {
 
         return true;
     }
-    else if (objectType == "intervention") {
+    else if (object == Intervention) {
         QSqlQuery q(QSqlDatabase::database(databaseUUID));
         q.prepare("delete from Intervention where InterventionRowID = :InterventionRowID");
         q.bindValue(":InterventionRowID", objectRowID);
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         return true;
     }
-    else if (objectType == "observation") {
+    else if (object == Observation) {
         QSqlQuery q(QSqlDatabase::database(databaseUUID));
         q.prepare("delete from Observation where ObservationRowID = :observationRowID");
         q.bindValue(":observationRowID", objectRowID);
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         return true;
     }
-    else if (objectType == "analysis") {
+    else if (object == Analysis) {
         /* delete from database */
         QSqlQuery q(QSqlDatabase::database(databaseUUID));
         q.prepare("delete from Analysis where AnalysisRowID = :analysisRowID");
@@ -2734,7 +2762,7 @@ bool squirrel::RemoveObject(QString objectType, qint64 objectRowID) {
 
         return true;
     }
-    else if (objectType == "experiment") {
+    else if (object == Experiment) {
         /* delete from database */
         QSqlQuery q(QSqlDatabase::database(databaseUUID));
         q.prepare("delete from Experiment where ExperimentRowID = :experimentRowID");
@@ -2754,7 +2782,7 @@ bool squirrel::RemoveObject(QString objectType, qint64 objectRowID) {
 
         return true;
     }
-    else if (objectType == "pipeline") {
+    else if (object == Pipeline) {
         /* delete from database */
         QSqlQuery q(QSqlDatabase::database(databaseUUID));
         q.prepare("delete from Pipeline where PipelineRowID = :pipelineRowID");
@@ -2778,7 +2806,7 @@ bool squirrel::RemoveObject(QString objectType, qint64 objectRowID) {
 
         return true;
     }
-    else if (objectType == "groupanalysis") {
+    else if (object == GroupAnalysis) {
         /* delete from database */
         QSqlQuery q(QSqlDatabase::database(databaseUUID));
         q.prepare("delete from GroupAnalysis where GroupAnalysisRowID = :groupAnalysisRowID");
@@ -2798,7 +2826,7 @@ bool squirrel::RemoveObject(QString objectType, qint64 objectRowID) {
 
         return true;
     }
-    else if (objectType == "datadictionary") {
+    else if (object == DataDictionary) {
         /* delete from database */
         QSqlQuery q(QSqlDatabase::database(databaseUUID));
         q.prepare("delete from DataDictionary where DataDictionaryRowID = :dataDictionaryRowID");
@@ -2818,7 +2846,7 @@ bool squirrel::RemoveObject(QString objectType, qint64 objectRowID) {
         return true;
     }
     else {
-        Debug("Unknown object type [" + objectType + "]");
+        Debug("Unknown object type [" + ObjectTypeToString(object) + "]");
         return false;
     }
 }
@@ -2841,17 +2869,21 @@ bool squirrel::ExtractArchiveFileToMemory(QString archivePath, QString filePath,
         Bit7zLibrary lib(p7zipLibPath.toStdString());
         if (archivePath.endsWith(".zip", Qt::CaseInsensitive)) {
             BitFileExtractor extractor(lib, BitFormat::Zip);
-            //extractor.setProgressCallback(progressCallback);
-            //extractor.setTotalCallback(totalArchiveSizeCallback);
+            extractor.setProgressCallback(progressCallback);
+            extractor.setTotalCallback(totalArchiveSizeCallback);
             extractor.extractMatching(archivePath.toStdString(), filePath.toStdString(), buffer);
         }
         else {
             BitFileExtractor extractor(lib, BitFormat::SevenZip);
-            //extractor.setProgressCallback(progressCallback);
-            //extractor.setTotalCallback(totalArchiveSizeCallback);
+            extractor.setProgressCallback(progressCallback);
+            extractor.setTotalCallback(totalArchiveSizeCallback);
+            Debug("Before calling extractMatching()", __FUNCTION__);
             extractor.extractMatching(archivePath.toStdString(), filePath.toStdString(), buffer);
+            Debug(QString("After calling extractMatching() buffer size [%1] bytes").arg(buffer.size()), __FUNCTION__);
         }
+        Debug(QString("Copying buffer to std::string. Buffer size [%1] bytes").arg(buffer.size()), __FUNCTION__);
         std::string str{buffer.begin(), buffer.end()};
+        Debug(QString("Copying std::string to QString. string size [%1] bytes").arg(str.size()), __FUNCTION__);
         fileContents = QString::fromStdString(str);
         Debug(QString("Extracted file [%1]. File is [%2] bytes in length").arg(filePath).arg(fileContents.size()), __FUNCTION__);
         return true;
@@ -3334,6 +3366,7 @@ bool squirrel::UpdateJsonHeader(QString json) {
 /* ----- ExtractArchiveFilesToDirectory ----------------------- */
 /* ------------------------------------------------------------ */
 bool squirrel::ExtractArchiveFilesToDirectory(QString archivePath, QString filePattern, QString outDir, QString &m) {
+    utils::Print(QString("Attempting to extract files [%1] from archive [%2] to path [%3]").arg(filePattern).arg(archivePath).arg(outDir));
     try {
         using namespace bit7z;
         Bit7zLibrary lib(p7zipLibPath.toStdString());
@@ -3377,4 +3410,58 @@ qint64 squirrel::GetFreeDiskSpace() {
         return 0;
     else
         return storage.bytesAvailable();
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- ObjectTypeToString ----------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief Get the string object type from an enum
+ * @param object enum representation of the object type
+ * @return the `QString` object type
+ */
+QString squirrel::ObjectTypeToString(ObjectType object) {
+    switch (object) {
+        case Analysis: return "Analysis"; break;
+        case BehSeries: return "BehSeries"; break;
+        case DataDictionary: return "DataDictionary"; break;
+        case DataDictionaryItem: return "DataDictionaryItem"; break;
+        case Experiment: return "Experiment"; break;
+        case GroupAnalysis: return "GroupAnalysis"; break;
+        case Intervention: return "Intervention"; break;
+        case Observation: return "Observation"; break;
+        case Pipeline: return "Pipeline"; break;
+        case Series: return "Series"; break;
+        case Study: return "Study"; break;
+        case Subject: return "Subject"; break;
+        default: return "UnknownObjectType";
+    }
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- ObjectTypeToEnum ------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief Get the enum object type from a string
+ * @param object QString representation of the object type
+ * @return the `enum` object type
+ */
+ObjectType squirrel::ObjectTypeToEnum(QString object) {
+    object.replace("-", "");
+    if (object.toLower() == "analysis") { return Analysis; }
+    if (object.toLower() == "behseries") { return BehSeries; }
+    if (object.toLower() == "datadictionary") { return DataDictionary; }
+    if (object.toLower() == "datadictionaryitem") { return DataDictionaryItem; }
+    if (object.toLower() == "experiment") { return Experiment; }
+    if (object.toLower() == "groupanalysis") { return GroupAnalysis; }
+    if (object.toLower() == "intervention") { return Intervention; }
+    if (object.toLower() == "observation") { return Observation; }
+    if (object.toLower() == "pipeline") { return Pipeline; }
+    if (object.toLower() == "series") { return Series; }
+    if (object.toLower() == "study") { return Study; }
+    if (object.toLower() == "subject") { return Subject; }
+
+    return UnknownObjectType;
 }

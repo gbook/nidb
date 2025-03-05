@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB utils.h
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -37,7 +37,7 @@
 #include <QCollator>
 #include <QRegularExpression>
 #include <QCoreApplication>
-
+#include "squirrelTypes.h"
 
 #define PBSTR "------------------------------------------------------------"
 #define PBWIDTH 60
@@ -78,14 +78,13 @@ namespace utils {
     bool DirectoryExists(QString dir);
     bool FileExists(QString f);
 
-    /* database functions */
     bool SQLQuery(QSqlQuery &q, QString function, QString file, int line, bool d=false);
-    QStringList GetStagedFileList(QString databaseUUID, qint64 objectID, QString objectType);
-    void StoreStagedFileList(QString databaseUUID, qint64 objectID, QString objectType, QStringList paths);
-    void RemoveStagedFileList(QString databaseUUID, qint64 objectID, QString objectType);
+    QHash<QString, QString> AnonymizeParams(QHash<QString, QString> params);
+    QStringList GetStagedFileList(QString databaseUUID, qint64 objectID, ObjectType object);
+    void StoreStagedFileList(QString databaseUUID, qint64 objectID, ObjectType object, QStringList paths);
+    void RemoveStagedFileList(QString databaseUUID, qint64 objectID, ObjectType object);
     QHash<QString, QString> GetParams(QString databaseUUID, qint64 seriesRowID);
     void StoreParams(QString databaseUUID, qint64 seriesRowID, QHash<QString, QString> params);
-    QHash<QString, QString> AnonymizeParams(QHash<QString, QString> params);
 
 }
 #endif // UTILS_H

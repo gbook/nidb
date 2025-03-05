@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   Squirrel study.h
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -63,6 +63,7 @@ public:
     QString Description;    /*!< Description of the imaging study */
     QString Equipment;      /*!< Equipment the study was run on */
     QString Modality;       /*!< study modality */
+    QString Notes;
     QString StudyUID;       /*!< DICOM StudyInstanceUID */
     QString VisitType;      /*!< Description of the visit, eg. pre, post */
     double AgeAtStudy;      /*!< age in years at the time of the study */

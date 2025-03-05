@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   Squirrel series.cpp
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -22,6 +22,7 @@
 
 #include "squirrelSeries.h"
 #include "utils.h"
+#include "squirrel.h"
 
 squirrelSeries::squirrelSeries(QString dbID)
 {
@@ -78,8 +79,8 @@ bool squirrelSeries::Get() {
 
         /* get any staged files */
         //utils::Print(QString("Series contains [%1] files before calling GetStagedFileList").arg(stagedFiles.size()));
-        stagedFiles = utils::GetStagedFileList(databaseUUID, objectID, "series");
-        stagedBehFiles = utils::GetStagedFileList(databaseUUID, objectID, "behseries");
+        stagedFiles = utils::GetStagedFileList(databaseUUID, objectID, Series);
+        stagedBehFiles = utils::GetStagedFileList(databaseUUID, objectID, BehSeries);
         //utils::Print(QString("Series contains [%1] files AFTER calling GetStagedFileList").arg(stagedFiles.size()));
 
         valid = true;
@@ -168,8 +169,8 @@ bool squirrelSeries::Store() {
 
     /* store any staged filepaths */
     //utils::Print(QString("Series contains [%1] files before calling StoreStagedFileList").arg(stagedFiles.size()));
-    utils::StoreStagedFileList(databaseUUID, objectID, "series", stagedFiles);
-    utils::StoreStagedFileList(databaseUUID, objectID, "behseries", stagedBehFiles);
+    utils::StoreStagedFileList(databaseUUID, objectID, Series, stagedFiles);
+    utils::StoreStagedFileList(databaseUUID, objectID, BehSeries, stagedBehFiles);
     //utils::Print(QString("Series contains [%1] files AFTER calling StoreStagedFileList").arg(stagedFiles.size()));
 
     return true;
@@ -184,7 +185,7 @@ bool squirrelSeries::Remove() {
     QSqlQuery q(QSqlDatabase::database(databaseUUID));
 
     /* ... delete any staged Study files */
-    utils::RemoveStagedFileList(databaseUUID, objectID, "series");
+    utils::RemoveStagedFileList(databaseUUID, objectID, Series);
 
     /* delete the series */
     q.prepare("delete from Series where SeriesRowID = :seriesid");
@@ -252,7 +253,7 @@ QString squirrelSeries::PrintTree(bool isLast) {
 
     QString dateTime = DateTime.toString("yyyy-MM-dd HH:mm:ss");
     QString protocol = Protocol.trimmed();
-    QString seriesDesc = seriesDesc.trimmed();
+    QString seriesDesc = Description.trimmed();
     if (dateTime == "")
         dateTime = "(blankDateTime)";
     if (protocol == "")
@@ -288,7 +289,10 @@ QJsonObject squirrelSeries::ToJSON() {
     json["BehavioralSize"] = BehavioralSize;
     json["Description"] = Description;
     json["FileCount"] = FileCount;
-    json["Protocol"] = Protocol;
+    if (Protocol == "")
+        json["Protocol"] = Description;
+    else
+        json["Protocol"] = Protocol;
     json["Run"] = Run;
     json["SequenceNumber"] = SequenceNumber;
     json["SeriesDatetime"] = DateTime.toString("yyyy-MM-dd HH:mm:ss");

@@ -40,6 +40,10 @@
 	require "menu.php";
 	require "nanodicom.php";
 
+	$username = $_SESSION['username'];
+	$instanceid = $_SESSION['instanceid'];
+	session_write_close();
+
 	//PrintVariable($_POST);
 	//PrintVariable($_GET);
 	
@@ -1656,7 +1660,7 @@
 		$study_radreaddate = date("F j, Y g:ia",strtotime($study_radreaddate));
 
 		/* get privacy information */
-		$username = $_SESSION['username'];
+		$username = $_GLOBALS['username'];
 		$sqlstring = "select user_id from users where username = '$username'";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);

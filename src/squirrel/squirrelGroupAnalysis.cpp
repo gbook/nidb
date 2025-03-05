@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   Squirrel squirrelGroupAnalysis.cpp
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -22,6 +22,7 @@
 
 #include "squirrelGroupAnalysis.h"
 #include "utils.h"
+#include "squirrelTypes.h"
 
 squirrelGroupAnalysis::squirrelGroupAnalysis(QString dbID)
 {
@@ -64,7 +65,7 @@ bool squirrelGroupAnalysis::Get() {
         virtualPath = q.value("VirtualPath").toString();
 
         /* get any staged files */
-        stagedFiles = utils::GetStagedFileList(databaseUUID, objectID, "groupanalysis");
+        stagedFiles = utils::GetStagedFileList(databaseUUID, objectID, GroupAnalysis);
 
         valid = true;
         return true;
@@ -119,7 +120,7 @@ bool squirrelGroupAnalysis::Store() {
     }
 
     /* store any staged filepaths */
-    utils::StoreStagedFileList(databaseUUID, objectID, "groupanalysis", stagedFiles);
+    utils::StoreStagedFileList(databaseUUID, objectID, GroupAnalysis, stagedFiles);
 
     return true;
 }

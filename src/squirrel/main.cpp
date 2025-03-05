@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   Squirrel main.cpp
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -27,8 +27,10 @@
 #include "dicom.h"
 #include "bids.h"
 #include "modify.h"
+#include "extract.h"
 #include "info.h"
 #include "squirrel.h"
+#include "squirrelTypes.h"
 
 void CommandLineError(QCommandLineParser &p, QString m) {
     std::cout << p.helpText().toStdString().c_str();
@@ -61,7 +63,7 @@ int main(int argc, char *argv[])
     p.addVersionOption();
 
     /* setup and obtain the tool we're supposed to run */
-    p.addPositionalArgument("tool", "Available tools:\n   bids2squirrel - Converts BIDS to squirrel\n   dicom2squirrel - Convert DICOM to squirrel\n   info - Display information about a package or its contents\n   modify - Add/remove objects from a package\n   validate - Check if a package is valid");
+    p.addPositionalArgument("tool", "Available tools:\n   bids2squirrel - Converts BIDS to squirrel\n   dicom2squirrel - Convert DICOM to squirrel\n   info - Display information about a package or its contents\n   modify - Add/remove objects from a package\n   extract - Extract data from a package\n   validate - Check if a package is valid");
     p.parse(QCoreApplication::arguments());
     const QStringList args = p.positionalArguments();
     const QString command = args.isEmpty() ? QString() : args.first();
@@ -233,7 +235,7 @@ int main(int argc, char *argv[])
         p.process(a);
 
         bool debug = p.isSet("d");
-        QString object = p.value("object").trimmed();
+        ObjectType object = squirrel::ObjectTypeToEnum(p.value("object").trimmed());
         QString subjectID = p.value("subjectid").trimmed();
         int studyNum = p.value("studynum").toInt();
         bool details = p.isSet("details");
@@ -250,8 +252,8 @@ int main(int argc, char *argv[])
         else
             printType = PrintFormat::List;
 
-        if (object == "")
-            object = "package";
+        if (object == UnknownObjectType)
+            object = Package;
 
         QString m;
         info information;
@@ -276,7 +278,7 @@ int main(int argc, char *argv[])
         p.addOption(QCommandLineOption(QStringList() << "operation", "Operation to perform on the package [add  remove  update  splitbymodality].", "operation"));
         p.addOption(QCommandLineOption(QStringList() << "object", "Object type to perform operation on [package  subject  study  series  analysis  intervention  observation  experiment  pipeline  groupanalysis  datadictionary].", "object"));
         p.addOption(QCommandLineOption(QStringList() << "datapath", "Path to new object data. Can include wildcard: /path/*.dcm", "path"));
-        p.addOption(QCommandLineOption(QStringList() << "recursive", "Search the data path recursively"));
+        //p.addOption(QCommandLineOption(QStringList() << "recursive", "Search the data path recursively"));
         p.addOption(QCommandLineOption(QStringList() << "objectid", "Existing object ID, name, or number to modify.", "id"));
         p.addOption(QCommandLineOption(QStringList() << "subjectid", "Parent subject ID. Used when adding a study, series, observation, intervention, or analysis object.", "id"));
         p.addOption(QCommandLineOption(QStringList() << "studynum", "Parent study number. Used when adding a series or analysis object (subjectid is also needed).", "num"));
@@ -286,21 +288,56 @@ int main(int argc, char *argv[])
         p.process(a);
 
         QString operation = p.value("operation").trimmed();
-        QString objectType = p.value("object").trimmed(); /* possible objects: subject study series observation intervention analysis experiment pipeline groupanalysis datadictionary */
+        //QString object = p.value("object").trimmed(); /* possible objects: subject study series observation intervention analysis experiment pipeline groupanalysis datadictionary */
+        ObjectType object = squirrel::ObjectTypeToEnum(p.value("object").trimmed());
         QString dataPath = p.value("datapath").trimmed();
         QString objectData = p.value("objectdata").trimmed();
         QString objectID = p.value("objectid").trimmed();
         QString subjectID = p.value("subjectid").trimmed();
-        QString variablelist = p.value("variablelist").trimmed();
+        //QString variablelist = p.value("variablelist").trimmed();
+        ObjectType variableList = squirrel::ObjectTypeToEnum(p.value("variableList").trimmed());
         int studyNum = p.value("studynum").toInt();
-        bool recursive = p.isSet("recursive");
+        //bool recursive = p.isSet("recursive");
 
         QString m;
         modify mod;
-        if (variablelist != "") {
-            mod.PrintVariables(variablelist);
+        if (variableList != UnknownObjectType) {
+            mod.PrintVariables(variableList);
         }
-        else if (!mod.DoModify(inputPath, operation, objectType, dataPath, recursive, objectData, objectID, subjectID, studyNum, m)) {
+        else if (!mod.DoModify(inputPath, operation, object, dataPath, objectData, objectID, subjectID, studyNum, m)) {
+            CommandLineError(p,m);
+        }
+    }
+    else if (command == "extract") {
+        p.clearPositionalArguments();
+        p.addPositionalArgument("extract", "Extract objects to disk from a squirrel package.", "extract");
+        p.addPositionalArgument("package", "The squirrel package.", "package");
+        p.parse(QCoreApplication::arguments());
+        QStringList args = p.positionalArguments();
+        QString inputPath;
+        if (args.size() > 1)
+            inputPath = args[1];
+
+        /* command line flag options */
+        p.addOption(QCommandLineOption(QStringList() << "d" << "debug", "Enable debugging"));
+        p.addOption(QCommandLineOption(QStringList() << "q" << "quiet", "Quiet mode. No printing of headers and checks"));
+        p.addOption(QCommandLineOption(QStringList() << "object", "Object type to perform operation on [package  subject  study  series  analysis  intervention  observation  experiment  pipeline  groupanalysis  datadictionary].", "object"));
+        p.addOption(QCommandLineOption(QStringList() << "outdir", "Path to output directory", "outdir"));
+        p.addOption(QCommandLineOption(QStringList() << "objectid", "Existing object ID, name, or number to modify.", "identifer"));
+        p.addOption(QCommandLineOption(QStringList() << "subjectid", "Parent subject ID. Used when extracting a study, series, observation, intervention, or analysis object.", "id"));
+        p.addOption(QCommandLineOption(QStringList() << "studynum", "Parent study number. Used when extracting a series or analysis object (subjectid is also needed).", "num"));
+
+        p.process(a);
+
+        QString object = p.value("object").trimmed(); /* possible objects: subject study series observation intervention analysis experiment pipeline groupanalysis datadictionary */
+        QString outputPath = p.value("outdir").trimmed();
+        QString objectID = p.value("objectid").trimmed();
+        QString subjectID = p.value("subjectid").trimmed();
+        int studyNum = p.value("studynum").toInt();
+
+        QString m;
+        extract ext;
+        if (!ext.DoExtract(inputPath, outputPath, object, objectID, subjectID, studyNum, m)) {
             CommandLineError(p,m);
         }
     }

@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   Squirrel squirrel.h
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -38,12 +38,8 @@
 #include "squirrelIntervention.h"
 #include "squirrelGroupAnalysis.h"
 #include "squirrelDataDictionary.h"
-#include "squirrelVersion.h"
+#include "squirrelTypes.h"
 
-enum FileMode { NewPackage, ExistingPackage };
-enum PrintFormat { List, Details, CSV, Tree };
-typedef QPair<QString, QString> QStringPair;
-typedef QList<QStringPair> pairList;
 
 /**
  * @brief The squirrel class
@@ -132,20 +128,13 @@ public:
     qint64 FindStudyByUID(QString studyUID);
     qint64 FindSubject(QString id);
 
-    /* remove objects */
-    //bool RemoveAnalysis(qint64 analysisRowID);
-    //bool RemoveDataDictionary(qint64 dataDictionaryRowID);
-    //bool RemoveExperiment(qint64 experimentRowID);
-    //bool RemoveGroupAnalysis(qint64 groupAnalysisRowID);
-    //bool RemoveIntervention(qint64 InterventionRowID);
-    //bool RemoveObservation(qint64 observationRowID);
-    //bool RemovePipeline(qint64 pipelineRowID);
-    //bool RemoveSeries(qint64 seriesRowID);
-    //bool RemoveStudy(qint64 studyRowID);
-    //bool RemoveSubject(qint64 subjectRowID);
-    bool RemoveObject(QString objectType, qint64 objectRowID);
+    /* extract objects */
+    bool ExtractObject(ObjectType object, qint64 subjectRowID, QString outDir, bool recursive=false);
 
-    bool AddStagedFiles(QString objectType, qint64 rowid, QStringList files);
+    /* remove objects */
+    bool RemoveObject(ObjectType object, qint64 objectRowID);
+
+    bool AddStagedFiles(ObjectType object, qint64 rowid, QStringList files);
 
     /* requence the subject data */
     void ResequenceSubjects();
@@ -157,7 +146,7 @@ public:
     bool UpdateJsonHeader(QString json);
     qint64 GetFileCount();
     qint64 GetFreeDiskSpace(); /* this is not named GetDiskFreeSpace() because of collision with Windows API */
-    qint64 GetObjectCount(QString object);
+    qint64 GetObjectCount(ObjectType object);
     qint64 GetUnzipSize();
 
     /* validation functions */
@@ -177,18 +166,24 @@ public:
     bool quiet=false;
 
     /* printing of information to console */
-    QString PrintAnalyses(qint64 studyRowID, PrintFormat printFormat=PrintFormat::List);
-    QString PrintDataDictionary(PrintFormat printFormat=PrintFormat::List);
-    QString PrintExperiments(PrintFormat printFormat=PrintFormat::List);
-    QString PrintGroupAnalyses(PrintFormat printFormat=PrintFormat::List);
-    QString PrintInterventions(qint64 subjectRowID, PrintFormat printFormat=PrintFormat::List);
-    QString PrintObservations(qint64 subjectRowID, PrintFormat printFormat=PrintFormat::List);
+    QString PrintAnalyses(qint64 studyRowID, PrintFormat printFormat=List);
+    QString PrintDataDictionary(PrintFormat printFormat=List);
+    QString PrintExperiments(PrintFormat printFormat=List);
+    QString PrintGroupAnalyses(PrintFormat printFormat=List);
+    QString PrintInterventions(qint64 subjectRowID, PrintFormat printFormat=List);
+    QString PrintObservations(qint64 subjectRowID, PrintFormat printFormat=List);
     QString PrintPackage();
-    QString PrintPipelines(PrintFormat printFormat=PrintFormat::List);
-    QString PrintSeries(qint64 studyRowID, PrintFormat printFormat=PrintFormat::List);
-    QString PrintStudies(qint64 subjectRowID, PrintFormat printFormat=PrintFormat::List);
-    QString PrintSubjects(PrintFormat printFormat=PrintFormat::List);
+    QString PrintPipelines(PrintFormat printFormat=List);
+    QString PrintSeries(qint64 studyRowID, PrintFormat printFormat=List);
+    QString PrintStudies(qint64 subjectRowID, PrintFormat printFormat=List);
+    QString PrintSubjects(PrintFormat printFormat=List);
     QString PrintTree();
+
+    /* database and utility functions */
+
+    /* static functions */
+    static QString ObjectTypeToString(ObjectType object);
+    static ObjectType ObjectTypeToEnum(QString object);
 
 private:
     bool DatabaseConnect();

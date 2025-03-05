@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   Squirrel info.cpp
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -25,7 +25,7 @@
 
 info::info() {}
 
-bool info::DisplayInfo(QString packagePath, bool debug, QString object, QString subjectID, int studyNum, PrintFormat printFormat, QString &m) {
+bool info::DisplayInfo(QString packagePath, bool debug, ObjectType object, QString subjectID, int studyNum, PrintFormat printFormat, QString &m) {
 
     /* check if the infile exists */
     QFile infile(packagePath);
@@ -42,20 +42,20 @@ bool info::DisplayInfo(QString packagePath, bool debug, QString object, QString 
         sqrl->Read();
         if (sqrl->IsValid()) {
             sqrl->Debug("Reading package...", __FUNCTION__);
-            if (object == "package") {
+            if (object == Package) {
                 sqrl->PrintPackage();
             }
-            else if (object == "subject") {
+            else if (object == Subject) {
                 sqrl->PrintSubjects(printFormat);
             }
-            else if (object == "study") {
+            else if (object == Study) {
                 qint64 subjectRowID = sqrl->FindSubject(subjectID);
                 if (subjectRowID < 0)
                     utils::Print(QString("Subject [%1] was not found in this package").arg(subjectID));
                 else
                     sqrl->PrintStudies(subjectRowID, printFormat);
             }
-            else if (object == "series") {
+            else if (object == Series) {
                 qint64 subjectRowID = sqrl->FindSubject(subjectID);
                 if (subjectRowID < 0)
                     utils::Print(QString("Subject [%1] was not found in this package").arg(subjectID));
@@ -67,33 +67,33 @@ bool info::DisplayInfo(QString packagePath, bool debug, QString object, QString 
                         sqrl->PrintSeries(studyRowID, printFormat);
                 }
             }
-            else if (object == "observation") {
+            else if (object == Observation) {
                 qint64 subjectRowID = sqrl->FindSubject(subjectID);
                 if (subjectRowID < 0)
                     utils::Print(QString("Subject [%1] was not found in this package").arg(subjectID));
                 else
                     sqrl->PrintObservations(subjectRowID, printFormat);
             }
-            else if (object == "intervention") {
+            else if (object == Intervention) {
                 qint64 subjectRowID = sqrl->FindSubject(subjectID);
                 if (subjectRowID < 0)
                     utils::Print(QString("Subject [%1] was not found in this package").arg(subjectID));
                 else
                     sqrl->PrintInterventions(subjectRowID, printFormat);
             }
-            else if (object == "experiment") {
+            else if (object == Experiment) {
                 sqrl->PrintExperiments(printFormat);
             }
-            else if (object == "analysis") {
+            else if (object == Analysis) {
                 sqrl->PrintExperiments(printFormat);
             }
-            else if (object == "pipeline") {
+            else if (object == Pipeline) {
                 sqrl->PrintPipelines(printFormat);
             }
-            else if (object == "groupanalysis") {
+            else if (object == GroupAnalysis) {
                 sqrl->PrintGroupAnalyses(printFormat);
             }
-            else if (object == "datadictionary") {
+            else if (object == DataDictionary) {
                 sqrl->PrintDataDictionary(printFormat);
             }
             else {

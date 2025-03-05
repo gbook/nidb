@@ -2,8 +2,8 @@ QT -= gui
 QT += sql
 QT += network
 
-CONFIG -= c++98
-CONFIG += c++11
+#CONFIG -= c++98
+#CONFIG += c++11
 CONFIG += c++17
 CONFIG += cmdline
 CONFIG -= app_bundle
@@ -20,6 +20,11 @@ win32: { # ignore warnings that show up in gdcm and Qt libs
     QMAKE_CXXFLAGS += /wd4866
     QMAKE_CXXFLAGS += /wd5045
     QMAKE_CXXFLAGS += /wd4996
+    #QMAKE_CXXFLAGS += /wno-c++98-compat
+}
+win32-g++ {
+   QMAKE_CXXFLAGS_CXX17 = -std=c++17
+   QMAKE_CXXFLAGS_GNUCXX17 = -std=c++17
 }
 
 # You can also make your code fail to compile if it uses deprecated APIs.

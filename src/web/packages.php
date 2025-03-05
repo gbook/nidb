@@ -2211,7 +2211,7 @@
 					</div>
 					<div class="ui middle aligned right aligned column">
 						<h3>Operations</h3>
-						<!--<a class="ui basic primary button" href="packages.php?action=splitmodality&packageid=<?=$packageid?>">Split by modality</a>-->
+						<a class="ui basic primary button" href="packages.php?action=splitmodality&packageid=<?=$packageid?>">Split by modality</a>
 					</div>
 				</div>
 			</div>
@@ -3093,10 +3093,10 @@
 				<tbody>
 					<?
 						if ($_SESSION['isadmin']) {
-							$sqlstring = "select * from packages";
+							$sqlstring = "select * from packages order by package_name";
 						}
 						else {
-							$sqlstring = "select * from packages where user_id = " . $_SESSION['userid'];
+							$sqlstring = "select * from packages where user_id = " . $_SESSION['userid'] . " order by package_name";
 						}
 						
 						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -3143,15 +3143,15 @@
 							$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
 							$numobjects += $rowA['count'];
 							
-							$sqlstringA = "select count(*) 'count' from package_studies where package_id = $packageid";
-							$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-							$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-							$numobjects += $rowA['count'];
+							//$sqlstringA = "select count(*) 'count' from package_studies where package_id = $packageid";
+							//$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+							//$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+							//$numobjects += $rowA['count'];
 							
-							$sqlstringA = "select count(*) 'count' from package_subjects where package_id = $packageid";
-							$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-							$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-							$numobjects += $rowA['count'];
+							//$sqlstringA = "select count(*) 'count' from package_subjects where package_id = $packageid";
+							//$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+							//$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+							//$numobjects += $rowA['count'];
 							?>
 							<tr>
 								<td valign="top">
@@ -3214,22 +3214,37 @@
 		$notes = mysqli_real_escape_string($GLOBALS['linki'], $row['package_notes']);
 		
 		/* get list of modalities in this package */
+		$modalities = array();
 		$sqlstring = "select distinct(modality) 'modality' from package_series where package_id = $packageid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$modality = $row['modality'];
+			$modalities[] = $row['modality'];
+		}
+		
+		foreach ($modalities as $modality) {
 
 			//StartSQLTransaction();
 			/* create new package for each modality */
-			$name = $origname . " - " . strtoupper($modality);
+			$newPackageName = $origname . " - " . strtoupper($modality);
+			$newPackageID = -1;
 			
-			$sqlstring = "insert into packages (user_id, package_date, package_name, package_desc, package_subjectdirformat, package_studydirformat, package_seriesdirformat, package_dataformat, package_license, package_readme, package_changes, package_notes) values ($userid, '$createdate', '$name', '$desc', '$subjectDirFormat', '$studyDirFormat', '$seriesDirFormat', '$dataFormat', '$license', '$readme', '$changes', '$notes')";
+			$sqlstring = "select package_id from packages where user_id = $userid and package_name = '$newPackageName'";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			if (mysqli_num_rows($result) > 0) {
+				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+				$newPackageID = $row['package_id'];
+			}
+			else {
+				$sqlstring = "insert ignore into packages (user_id, package_date, package_name, package_desc, package_subjectdirformat, package_studydirformat, package_seriesdirformat, package_dataformat, package_license, package_readme, package_changes, package_notes) values ($userid, '$createdate', '$newPackageName', '$desc', '$subjectDirFormat', '$studyDirFormat', '$seriesDirFormat', '$dataFormat', '$license', '$readme', '$changes', '$notes')";
+				PrintSQL($sqlstring);
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$newPackageID = mysqli_insert_id($GLOBALS['linki']);
+			}
+
+			/* find all studies that contain this modality */
+			$sqlstring = "update package_series set package_id = $newPackageID where package_id = $packageid and modality = '$modality'";
 			PrintSQL($sqlstring);
-		
-			/* foreach subject id
-				- copy the enrollment to new package
-				- 
-			*/
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			
 			//CommitSQLTransaction();
 		}

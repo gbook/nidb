@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   Squirrel info.h
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -23,13 +23,14 @@
 #ifndef INFO_H
 #define INFO_H
 #include "squirrel.h"
+#include "squirrelTypes.h"
 
 class info
 {
 public:
     info();
 
-    bool DisplayInfo(QString packagePath, bool debug, QString object, QString subjectID, int studyNum, PrintFormat printFormat, QString &m);
+    bool DisplayInfo(QString packagePath, bool debug, ObjectType object, QString subjectID, int studyNum, PrintFormat printFormat, QString &m);
 
 };
 

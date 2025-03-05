@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   Squirrel squirrel.sql.h
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -68,7 +68,7 @@ const QString tableDataDictionary = QString("CREATE TABLE IF NOT EXISTS DataDict
     "Size INTEGER,"
     "VirtualPath TEXT)");
 
-const QString tableDataDictionaryItems = QString("CREATE TABLE IF NOT EXISTS DataDictionaryItems ("
+const QString tableDataDictionaryItem = QString("CREATE TABLE IF NOT EXISTS DataDictionaryItem ("
     "DataDictionaryItemRowID INTEGER PRIMARY KEY AUTOINCREMENT,"
     "DataDictionaryRowID INTEGER,"
     "VariableType TEXT,"
@@ -254,6 +254,7 @@ const QString tableStudy = QString("CREATE TABLE IF NOT EXISTS Study ("
     "DayNumber INTEGER DEFAULT 0,"
     "Timepoint INTEGER DEFAULT 0,"
     "Equipment TEXT,"
+    "Notes TEXT,"
     "SequenceNumber INTEGER,"
     "VirtualPath TEXT,"
     "UNIQUE(SubjectRowID, StudyNumber))");
@@ -268,5 +269,6 @@ const QString tableSubject = QString("CREATE TABLE IF NOT EXISTS Subject ("
     "Gender TEXT,"
     "Ethnicity1 TEXT,"
     "Ethnicity2 TEXT,"
+    "Notes TEXT,"
     "SequenceNumber INTEGER,"
     "VirtualPath TEXT)");
