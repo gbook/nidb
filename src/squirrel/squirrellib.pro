@@ -29,6 +29,7 @@ DEFINES += SQUIRREL_BUILD
 
 SOURCES += \
 	bids.cpp \
+	extract.cpp \
 	info.cpp \
 	squirrelDataDictionary.cpp \
 	squirrelImageIO.cpp \
