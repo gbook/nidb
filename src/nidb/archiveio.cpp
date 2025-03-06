@@ -3332,7 +3332,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
     }
     n->Log("libsquirrel message buffer [" + sqrl.GetLogBuffer() + "]");
 
-    int lastProjectRowID = -1;
+    //int lastProjectRowID = -1;
     /* SERIES - add all series associated with this package, first */
     q.prepare("select * from package_series where package_id = :packageid");
     q.bindValue(":packageid", packageid);
@@ -3351,7 +3351,8 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         else {
             n->Log(QString("Adding series [%1,%2] to squirrel package...").arg(seriesRowID).arg(modality));
         }
-        lastProjectRowID = ser.projectid;
+        //lastProjectRowID = ser.projectid;
+        //ser.PrintSeriesInfo();
 
         /* get squirrel SUBJECT (create the object in the package if it doesn't already exist) */
         squirrelSubject sqrlSubject(sqrl.GetDatabaseUUID());
@@ -3363,7 +3364,8 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         if (sqrlSubjectRowID < 0) {
             /* ... create subject if necessary */
             sqrlSubject = subj.GetSquirrelObject(sqrl.GetDatabaseUUID());
-            sqrlSubject.AlternateIDs.append(subj.GetAllAlternateIDs());
+            //sqrlSubject.AlternateIDs.append(subj.GetAllAlternateIDs());
+            sqrlSubject.DateOfBirth = QDate(0,0,0);
             sqrlSubject.ID = subjectID;
             sqrlSubject.Store();
             sqrlSubjectRowID = sqrlSubject.GetObjectID();
@@ -3394,12 +3396,13 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
     n->Log("libsquirrel message buffer [" + sqrl.GetLogBuffer() + "]");
 
     /* ANALYSES - add all analysis associated with this package */
-    q.prepare("select b.* from package_analyses a left join analysis b on a.analysis_id = b.analysis_id where a.package_id = :packageid");
+    q.prepare("select b.*, d.project_id from package_analyses a left join analysis b on a.analysis_id = b.analysis_id left join studies c on b.study_id = c.study_id left join enrollment d on c.enrollment_id = d.enrollment_id where a.package_id = :packageid");
     q.bindValue(":packageid", packageid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
     while (q.next()) {
         int analysisRowID = q.value("analysis_id").toInt();
         int studyRowID = q.value("study_id").toInt();
+        int projectRowID = q.value("project_id").toInt();
 
         study stud(studyRowID, n);
         if (!stud.valid()) continue;
@@ -3410,14 +3413,15 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         /* get squirrel SUBJECT (create the object in the package if it doesn't already exist) */
         squirrelSubject sqrlSubject(sqrl.GetDatabaseUUID());
         //subject subj(ser.subjectid, n);
-        QString subjectID = subj.GetPrimaryAlternateID(lastProjectRowID);
+        QString subjectID = subj.GetPrimaryAlternateID(projectRowID);
         if (subjectID == "")
             subjectID = subj.UID();
         qint64 sqrlSubjectRowID = sqrl.FindSubject(subjectID);
         if (sqrlSubjectRowID < 0) {
             /* ... create subject if necessary */
             sqrlSubject = subj.GetSquirrelObject(sqrl.GetDatabaseUUID());
-            sqrlSubject.AlternateIDs.append(subj.GetAllAlternateIDs());
+            //sqrlSubject.AlternateIDs.append(subj.GetAllAlternateIDs());
+            sqrlSubject.DateOfBirth = QDate(0,0,0);
             sqrlSubject.ID = subjectID;
             sqrlSubject.Store();
             sqrlSubjectRowID = sqrlSubject.GetObjectID();
@@ -3447,12 +3451,13 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
     n->Log("libsquirrel message buffer [" + sqrl.GetLogBuffer() + "]");
 
     /* MEASURES - add all measures associated with this package */
-    q.prepare("select b.measure_id, c.subject_id from package_measures a left join measures b on a.measure_id = b.measure_id left join enrollment c on b.enrollment_id = c.enrollment_id where a.package_id = :packageid");
+    q.prepare("select b.measure_id, c.subject_id, c.project_id from package_measures a left join measures b on a.measure_id = b.measure_id left join enrollment c on b.enrollment_id = c.enrollment_id where a.package_id = :packageid");
     q.bindValue(":packageid", packageid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
     while (q.next()) {
         int measureRowID = q.value("measure_id").toInt();
         int subjectRowID = q.value("subject_id").toInt();
+        int projectRowID = q.value("project_id").toInt();
 
         subject subj(subjectRowID, n);
         if (!subj.valid()) continue;
@@ -3460,15 +3465,16 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         /* get squirrel SUBJECT (create the object in the package if it doesn't already exist) */
         squirrelSubject sqrlSubject(sqrl.GetDatabaseUUID());
         //subject subj(ser.subjectid, n);
-        QString subjectID = subj.GetPrimaryAlternateID(lastProjectRowID);
+        QString subjectID = subj.GetPrimaryAlternateID(projectRowID);
         if (subjectID == "")
             subjectID = subj.UID();
         qint64 sqrlSubjectRowID = sqrl.FindSubject(subjectID);
         if (sqrlSubjectRowID < 0) {
             /* ... create subject if necessary */
             sqrlSubject = subj.GetSquirrelObject(sqrl.GetDatabaseUUID());
-            sqrlSubject.AlternateIDs.append(subj.GetAllAlternateIDs());
+            //sqrlSubject.AlternateIDs.append(subj.GetAllAlternateIDs());
             sqrlSubject.ID = subjectID;
+            sqrlSubject.DateOfBirth = QDate(0,0,0);
             sqrlSubject.Store();
             sqrlSubjectRowID = sqrlSubject.GetObjectID();
             sqrl.ResequenceSubjects();
@@ -3486,26 +3492,28 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
     n->Log("libsquirrel message buffer [" + sqrl.GetLogBuffer() + "]");
 
     /* DRUGS - add all drugs associated with this package */
-    q.prepare("select b.drug_id, c.subject_id from package_drugs a left join drugs b on a.drug_id = b.drug_id left join enrollment c on b.enrollment_id = c.enrollment_id where a.package_id = :packageid");
+    q.prepare("select b.drug_id, c.subject_id, c.project_id from package_drugs a left join drugs b on a.drug_id = b.drug_id left join enrollment c on b.enrollment_id = c.enrollment_id where a.package_id = :packageid");
     q.bindValue(":packageid", packageid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
     while (q.next()) {
         int drugRowID = q.value("drug_id").toInt();
         int subjectRowID = q.value("subject_id").toInt();
+        int projectRowID = q.value("project_id").toInt();
 
         subject subj(subjectRowID, n);
         if (!subj.valid()) continue;
 
         /* get squirrel SUBJECT (create the object in the package if it doesn't already exist) */
         squirrelSubject sqrlSubject(sqrl.GetDatabaseUUID());
-        QString subjectID = subj.GetPrimaryAlternateID(lastProjectRowID);
+        QString subjectID = subj.GetPrimaryAlternateID(projectRowID);
         if (subjectID == "")
             subjectID = subj.UID();
         qint64 sqrlSubjectRowID = sqrl.FindSubject(subjectID);
         if (sqrlSubjectRowID < 0) {
             /* ... create subject if necessary */
             sqrlSubject = subj.GetSquirrelObject(sqrl.GetDatabaseUUID());
-            sqrlSubject.AlternateIDs.append(subj.GetAllAlternateIDs());
+            //sqrlSubject.AlternateIDs.append(subj.GetAllAlternateIDs());
+            sqrlSubject.DateOfBirth = QDate(0,0,0);
             sqrlSubject.ID = subjectID;
             sqrlSubject.Store();
             sqrlSubjectRowID = sqrlSubject.GetObjectID();
