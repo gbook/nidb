@@ -4,8 +4,8 @@
 
 | Modality   | DICOM standard | NiDB support                                       | Description                        |
 | ---------- | -------------- | -------------------------------------------------- | ---------------------------------- |
-| ASSESSMENT | ✓              | Paper based assessment                             |                                    |
-| AU         | ✓              | Audio ECG                                          |                                    |
+| ASSESSMENT |                | ✓                                                  | Paper based assesment              |
+| AU         | ✓              |                                                    | Audio ECG                          |
 | AUDIO      | ✓              | Audio files                                        |                                    |
 | BI         | ✓              | Biomagnetic imaging                                |                                    |
 | CD         | ✓              | Color flow Doppler                                 |                                    |

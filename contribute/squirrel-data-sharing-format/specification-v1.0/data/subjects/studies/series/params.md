@@ -4,7 +4,7 @@ description: Separate JSON file - params.json
 
 # params
 
-Series collection parameters are stored in a separate JSON file called `params.json` stored in the series directory. The JSON object is an array of key-value pairs. This can be used for MRI sequence parameters.
+Series collection parameters are stored in a separate JSON file called `params.json` stored in the series directory. The JSON object is an array of key-value pairs. This can be used to store data collection parameters.
 
 All DICOM tags are acceptable parameters. See this list for available DICOM tags [https://exiftool.org/TagNames/DICOM.html](https://exiftool.org/TagNames/DICOM.html). Variable keys can be either the hexadecimal format (ID) or string format (Name). For example `0018:1030` or `ProtocolName`. The params object contains any number of key/value pairs.
 
