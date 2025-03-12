@@ -20,4 +20,4 @@ The series(s) will now be renamed.
 
 ### Renaming non-MR series
 
-Click the protocol name for the series, and an edit box will appear. Edit the protocol (series name) and press e_nter_.
+Click the protocol name for the series, and an edit box will appear. Edit the protocol (series name) and press &#x65;_&#x6E;ter_.

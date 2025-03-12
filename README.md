@@ -39,7 +39,7 @@ DICOM data can be automatically imported using the included `dcmrcv` DICOM recei
 
 ### Store any type of data
 
-Literally **any** type of imaging data: binary; assessment; paper based; genetics. See full list of [supported modalities](contribute/squirrel-data-sharing-format/modalities.md). All data is stored in a hierarchy: Subject --> Study --> Series. Data is searchable across project and across subject.
+Literally **any** type of imaging data: binary; assessment; paper based; genetics. See full list of [supported modalities](contribute/squirrel-data-sharing-format/specification-v1.0/modalities.md). All data is stored in a hierarchy: Subject --> Study --> Series. Data is searchable across project and across subject.
 
 <img src=".gitbook/assets/image (11) (2).png" alt="" data-size="original">![](<.gitbook/assets/image (6).png>)
 
@@ -103,15 +103,7 @@ From raw data to analyzed, and storing result values/images. Utilize a compute c
 
 Large number of automatically generated metrics. Metrics are exportable as .csv and tables.
 
-<div>
-
-<figure><img src=".gitbook/assets/image (17).png" alt="" width="563"><figcaption><p>Basic motion QC on the study view page</p></figcaption></figure>
-
- 
-
-<figure><img src=".gitbook/assets/image (16).png" alt="" width="375"><figcaption><p>Detailed QC</p></figcaption></figure>
-
-</div>
+<div><figure><img src=".gitbook/assets/image (17).png" alt="" width="563"><figcaption><p>Basic motion QC on the study view page</p></figcaption></figure> <figure><img src=".gitbook/assets/image (16).png" alt="" width="375"><figcaption><p>Detailed QC</p></figcaption></figure></div>
 
 ### Calendar
 
@@ -124,7 +116,7 @@ Fully featured calendar, running securely on your internal network. Repeating ap
 * Book GA, Anderson BM, Stevens MC, Glahn DC, Assaf M, Pearlson GD. Neuroinformatics Database (NiDB)--a modular, portable database for the storage, analysis, and sharing of neuroimaging data. Neuroinformatics. 2013 Oct;11(4):495-505. doi: 10.1007/s12021-013-9194-1. PMID: 23912507; PMCID: PMC3864015. https://pubmed.ncbi.nlm.nih.gov/23912507/
 * Book GA, Stevens MC, Assaf M, Glahn DC, Pearlson GD. Neuroimaging data sharing on the neuroinformatics database platform. Neuroimage. 2016 Jan 1;124(Pt B):1089-1092. doi: 10.1016/j.neuroimage.2015.04.022. Epub 2015 Apr 16. PMID: 25888923; PMCID: PMC4608854. https://pubmed.ncbi.nlm.nih.gov/25888923/
 
-**Outdated information** Watch an overview of the main features of NiDB (recorded 2015, so it's a little outdated): [Part 1](https://youtu.be/tOX7VamHGvM) | [Part 2](https://youtu.be/dX11HRj\_kEs) | [Part 3](https://youtu.be/aovrq-oKO-M)
+**Outdated information** Watch an overview of the main features of NiDB (recorded 2015, so it's a little outdated): [Part 1](https://youtu.be/tOX7VamHGvM) | [Part 2](https://youtu.be/dX11HRj_kEs) | [Part 3](https://youtu.be/aovrq-oKO-M)
 
 ## Documentation
 
