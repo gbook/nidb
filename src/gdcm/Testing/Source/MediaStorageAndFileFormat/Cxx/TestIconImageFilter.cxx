@@ -89,7 +89,7 @@ int TestIconImageFilterFunc(const char *filename, bool verbose = false)
     unsigned long len = icon.GetBufferLength();
     std::vector< char > vbuffer;
     vbuffer.resize( len );
-    char *buffer = &vbuffer[0];
+    char *buffer = vbuffer.data();
     bool res2 = icon.GetBuffer(buffer);
     if( !res2 )
       {
@@ -108,7 +108,7 @@ int TestIconImageFilterFunc(const char *filename, bool verbose = false)
       std::cerr << "Problem with : " << name << " missing md5= " << digest << std::endl;
       return 1;
       }
-    if( strcmp( refmd5, digest) )
+    if( strcmp( refmd5, digest) != 0 )
       {
       std::cerr << "Problem with : " << name << " " << refmd5 << " vs " << digest << std::endl;
       return 1;

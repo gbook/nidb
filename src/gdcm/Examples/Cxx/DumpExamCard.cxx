@@ -242,7 +242,7 @@ struct param
   void read( std::istream & is )
     {
     is.read( name, 32 + 1);
-    // This is always the same issue the string can contains garbarge from previous run,
+    // This is always the same issue the string can contains garbage from previous run,
     // we need to print only until the first \0 character:
     assert( strlen( name ) <= 32 );
     is.read( (char*)&boolean,1);
@@ -456,7 +456,7 @@ Wotsit ?
     {
     if( de1.IsEmpty() ) return false;
     const gdcm::ByteValue * bv1 = de1.GetByteValue();
-    gdcm::Element<gdcm::VR::SL,gdcm::VM::VM1> dlen = {{0l}};
+    gdcm::Element<gdcm::VR::SL,gdcm::VM::VM1> dlen = {{0L}};
     dlen.SetFromDataElement( de2 );
     std::string s1( bv1->GetPointer() , bv1->GetLength() );
 
@@ -528,7 +528,7 @@ Wotsit ?
       //fn += ".xml";
       std::ofstream csv( fn.c_str() );
 
-      // let's do some bookeeping:
+      // let's do some bookkeeping:
       uint32_t nfloats = 0;
       uint32_t nints = 0;
       uint32_t nstrings = 0;

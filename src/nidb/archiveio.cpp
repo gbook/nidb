@@ -3240,7 +3240,8 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     }
 
     /* the squirrel object should be complete, so write it out */
-    sqrl.Write(false);
+    sqrl.SetWriteLog(false);
+    sqrl.Write();
     msgs << n->Log(QString("%1() - squirrel.write() returned [\n" + sqrl.GetLogBuffer() + "\n]").arg(__FUNCTION__));
 
     if (FileDirectoryExists(localTempDir))
@@ -3575,7 +3576,8 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
     }
     n->Log("libsquirrel message buffer [" + sqrl.GetLogBuffer() + "]");
 
-    if (sqrl.Write(false)) {
+    sqrl.SetWriteLog(false);
+    if (sqrl.Write()) {
         msg = sqrl.GetLogBuffer();
 
         if (!n->debug) {

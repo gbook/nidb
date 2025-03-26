@@ -25,7 +25,7 @@
 
 info::info() {}
 
-bool info::DisplayInfo(QString packagePath, bool debug, ObjectType object, QString subjectID, int studyNum, PrintFormat printFormat, QString &m) {
+bool info::DisplayInfo(QString packagePath, bool debug, ObjectType object, QString subjectID, int studyNum, DatasetType dataset, PrintFormat printFormat, QString &m) {
 
     /* check if the infile exists */
     QFile infile(packagePath);
@@ -46,25 +46,38 @@ bool info::DisplayInfo(QString packagePath, bool debug, ObjectType object, QStri
                 sqrl->PrintPackage();
             }
             else if (object == Subject) {
-                sqrl->PrintSubjects(printFormat);
+                sqrl->PrintSubjects(dataset, printFormat);
             }
             else if (object == Study) {
-                qint64 subjectRowID = sqrl->FindSubject(subjectID);
-                if (subjectRowID < 0)
-                    utils::Print(QString("Subject [%1] was not found in this package").arg(subjectID));
-                else
-                    sqrl->PrintStudies(subjectRowID, printFormat);
+                /* if subjectID is blank, print all studies */
+                if (subjectID == "") {
+                    sqrl->PrintStudies(dataset, printFormat, -1);
+                }
+                else {
+                    /* just print the studies for a specified subect */
+                    qint64 subjectRowID = sqrl->FindSubject(subjectID);
+                    if (subjectRowID < 0)
+                        utils::Print(QString("Subject [%1] was not found in this package").arg(subjectID));
+                    else
+                        sqrl->PrintStudies(dataset, printFormat, subjectRowID);
+                }
             }
             else if (object == Series) {
-                qint64 subjectRowID = sqrl->FindSubject(subjectID);
-                if (subjectRowID < 0)
-                    utils::Print(QString("Subject [%1] was not found in this package").arg(subjectID));
+                if ((subjectID == "") && (studyNum < 1)) {
+                    /* print all series */
+                    sqrl->PrintSeries(-1, printFormat);
+                }
                 else {
-                    qint64 studyRowID = sqrl->FindStudy(subjectID, studyNum);
-                    if (studyRowID < 0)
-                        utils::Print(QString("Study not found. Searched for subject [%1] study [%2]").arg(subjectID).arg(studyNum));
-                    else
-                        sqrl->PrintSeries(studyRowID, printFormat);
+                    qint64 subjectRowID = sqrl->FindSubject(subjectID);
+                    if (subjectRowID < 0)
+                        utils::Print(QString("Subject [%1] was not found in this package").arg(subjectID));
+                    else {
+                        qint64 studyRowID = sqrl->FindStudy(subjectID, studyNum);
+                        if (studyRowID < 0)
+                            utils::Print(QString("Study not found. Searched for subject [%1] study [%2]").arg(subjectID).arg(studyNum));
+                        else
+                            sqrl->PrintSeries(studyRowID, printFormat);
+                    }
                 }
             }
             else if (object == Observation) {

@@ -46,22 +46,24 @@ namespace utils {
     typedef QHash <int, QHash<QString, QString>> indexedHash;
 
     /* generic functions */
-    QString Print(QString s, bool n=true, bool pad=false);
-    void PrintHeader();
+    QDateTime StringToDatetime(QString datetime);
+    QString CleanJSON(QString s);
+    QString CleanString(QString s);
     QString CreateCurrentDateTime(int format=1);
     QString CreateLogDate();
-    QString SystemCommand(QString s, bool detail=true, bool truncate=false);
     QString GenerateRandomString(int n);
+    QString HumanReadableSize(qint64 bytes);
     QString ParseDate(QString s);
     QString ParseTime(QString s);
+    QString Print(QString s, bool n=true, bool pad=false);
+    QString PrintData(PrintFormat p, QStringList keys, QList <QStringHash> rows);
+    QString SystemCommand(QString s, bool detail=true, bool truncate=false);
     bool ParseCSV(QString csv, indexedHash &table, QStringList &columns, QString &msg);
     bool ParseTSV(QString tsv, indexedHash &table, QStringList &columns, QString &msg);
-    QString CleanJSON(QString s);
     double GetPatientAge(QString PatientAgeStr, QString StudyDate, QString PatientBirthDate);
-    QString CleanString(QString s);
-    QString HumanReadableSize(qint64 bytes);
+    void PrintHeader();
     void PrintProgress(double percentage);
-    QDateTime StringToDatetime(QString datetime);
+    QStringHash MergeStringHash(QStringHash hash1, QStringHash hash2);
 
     /* file and directory operations */
     bool CopyFileToDir(QString f, QString dir);

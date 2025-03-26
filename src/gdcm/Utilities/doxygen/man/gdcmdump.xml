@@ -54,7 +54,7 @@ dcm_directory   DICOM input directory
      --csa-asl        print decoded SIEMENS CSA MR_ASL (base64).
      --csa-diffusion  print decoded SIEMENS CSA MRDiffusion (base64).
      --mrprotocol     print SIEMENS MrProtocol only (within ASCCONV BEGIN/END).
-                        either encapsulated in CSA or directly (syngo XA10)
+                      or Phoenix Meta Protocol (0021,19,SIEMENS MR SDS 01).
   -P --pdb            print GEMS Protocol Data Block (0025,1b,GEMS_SERS_01).
      --elscint        print ELSCINT Protocol Information (01f7,26,ELSCINT1).
      --vepro          print VEPRO Protocol Information (0055,20,VEPRO VIF 3.0 DATA).
@@ -62,7 +62,10 @@ dcm_directory   DICOM input directory
      --sds            print Philips MR Series Data Storage (1.3.46.670589.11.0.0.12.2) Information (2005,32,Philips MR Imaging DD 002).
      --ct3            print CT Private Data 2 (7005,10,TOSHIBA_MEC_CT3).
      --pmtf           print PMTF INFORMATION DATA sub-sequences (0029,01,PMTF INFORMATION DATA).
-     --mecmr3         print TOSHIBA_MEC_MR3 sub-sequences (0029,01,TOSHIBA_MEC_MR3).
+                      or TOSHIBA_MEC_MR3 sub-sequences (0029,01,TOSHIBA_MEC_MR3).
+                      or CANON_MEC_MR3 sub-sequences (0029,01,CANON_MEC_MR3)
+     --medcom         print MedCom History Information as UTF-8 (0029,20,SIEMENS MEDCOM HEADER).
+     --mr3            print Original Data as UTF-8 (700d,08,TOSHIBA_MEC_MR3).
   -A --asn1           print encapsulated ASN1 structure &gt;(0400,0520).
      --map-uid-names  map UID to names.
 </literallayout></para>

@@ -19,6 +19,8 @@
 
 int TestImageHelper(int, char *[])
 {
+  // Test written before DICOM CP 2330,
+  if( gdcm::ImageHelper::GetSecondaryCaptureImagePlaneModule() ) return 1;
 //  gdcm::ImageHelper sh;
   const double pos[] = { 0,0,0,
                          1,1,1};
@@ -93,7 +95,7 @@ int TestImageHelper(int, char *[])
   dircos.push_back( at.GetValue(3) );
   dircos.push_back( at.GetValue(4) );
   dircos.push_back( at.GetValue(5) );
-  gdcm::DirectionCosines dc( &dircos[0] );
+  gdcm::DirectionCosines dc( dircos.data() );
   if (!dc.IsValid()) return 1;
 
 

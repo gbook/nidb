@@ -196,7 +196,11 @@ public:
   const DataElement& operator() (uint16_t group, uint16_t element) const { return GetDataElement( Tag(group,element) ); }
 
   /// Return the private creator of the private tag 't':
+  /// or an empty string when not found
   std::string GetPrivateCreator(const Tag &t) const;
+
+  /// Return the private tag of the private tag 't', private creator will be set to empty if not found
+  PrivateTag GetPrivateTag(const Tag &t) const;
 
   /// Look up if private tag 't' is present in the dataset:
   bool FindDataElement(const PrivateTag &t) const;
@@ -205,13 +209,9 @@ public:
 
   // DUMB: this only search within the level of the current DataSet
   bool FindDataElement(const Tag &t) const {
-    const DataElement r(t);
-    //ConstIterator it = DES.find(r);
-    if( DES.find(r) != DES.end() )
-      {
-      return true;
-      }
-    return false;
+    const auto it = GetDataElement(t);
+    // Return if tag is found
+    return it != GetDEEnd();
     }
 
   // WARNING:
@@ -225,23 +225,10 @@ public:
     }
 
   /// Returns if the dataset is empty
-  bool IsEmpty() const { return DES.empty(); };
+  bool IsEmpty() const { return DES.empty(); }
 
   DataSet& operator=(DataSet const &)
   = default;
-
-/*
-  template <typename TOperation>
-  void ExecuteOperation(TOperation & operation) {
-    assert( !DES.empty() );
-    DataElementSet::iterator it = Begin();
-    for( ; it != End(); ++it)
-      {
-      DataElement &de = (DataElement&)*it;
-      operation( de );
-      }
-  }
-*/
 
   template <typename TDE, typename TSwap>
   std::istream &ReadNested(std::istream &is);

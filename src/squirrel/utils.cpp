@@ -970,4 +970,41 @@ namespace utils {
         }
     }
 
+
+    /* ---------------------------------------------------------- */
+    /* --------- PrintData -------------------------------------- */
+    /* ---------------------------------------------------------- */
+    QString PrintData(PrintFormat p, QStringList keys, QList <QStringHash> rows) {
+        /* print the data - rows might have different keys, so always print by key */
+        QStringList lines;
+        if (p == CSV)
+            lines += "\"" + keys.join("\",\"") + "\"";
+        else
+            lines += keys.join("\t");
+
+        for(auto row : rows) {
+            QStringList rowData;
+            for(auto key : keys) {
+                rowData.append(row[key]);
+            }
+            if (p == CSV)
+                lines += "\"" + rowData.join("\",\"") + "\"";
+            else
+                lines += rowData.join("\t");
+        }
+
+        return utils::Print(lines.join("\n"));
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- MergeStringHash -------------------------------- */
+    /* ---------------------------------------------------------- */
+    QStringHash MergeStringHash(QStringHash hash1, QStringHash hash2) {
+        for (auto it = hash2.constBegin(); it != hash2.constEnd(); ++it) {
+            hash1.insert(it.key(), it.value());
+        }
+        return hash1;
+    }
+
 }

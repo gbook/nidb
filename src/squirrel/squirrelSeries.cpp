@@ -22,11 +22,12 @@
 
 #include "squirrelSeries.h"
 #include "utils.h"
-#include "squirrel.h"
+//#include "squirrel.h"
 
 squirrelSeries::squirrelSeries(QString dbID)
 {
     databaseUUID = dbID;
+    debug = false;
 }
 
 /* ------------------------------------------------------------ */
@@ -206,36 +207,46 @@ bool squirrelSeries::Remove() {
 /**
  * @brief Print the series details
  */
-QString squirrelSeries::PrintSeries() {
+QString squirrelSeries::PrintSeries(PrintFormat p) {
     QString str;
 
-    str += utils::Print("\t\t\t\t----- SERIES -----");
-    str += utils::Print(QString("\t\t\t\tBIDSEntity: %1").arg(BIDSEntity));
-    str += utils::Print(QString("\t\t\t\tBIDSSuffix: %1").arg(BIDSSuffix));
-    str += utils::Print(QString("\t\t\t\tBIDSTask: %1").arg(BIDSTask));
-    str += utils::Print(QString("\t\t\t\tBIDSRun: %1").arg(BIDSRun));
-    str += utils::Print(QString("\t\t\t\tBIDSPhaseEncodingDirection: %1").arg(BIDSPhaseEncodingDirection));
-    str += utils::Print(QString("\t\t\t\tBehavioralFileCount: %1").arg(BehavioralFileCount));
-    str += utils::Print(QString("\t\t\t\tBehavioralSize: %1").arg(BehavioralSize));
-    str += utils::Print(QString("\t\t\t\tDatetime: %1").arg(DateTime.toString("yyyy-MM-dd HH:mm:ss")));
-    str += utils::Print(QString("\t\t\t\tDescription: %1").arg(Description));
-    str += utils::Print(QString("\t\t\t\tExperimentName: %1").arg(experimentRowID));
-    str += utils::Print(QString("\t\t\t\tFileCount: %1").arg(FileCount));
-    str += utils::Print(QString("\t\t\t\tFiles: %1").arg(files.join(", ")));
-    str += utils::Print(QString("\t\t\t\tProtocol: %1").arg(Protocol));
-    str += utils::Print(QString("\t\t\t\tRun: %1").arg(Run));
-    str += utils::Print(QString("\t\t\t\tSequenceNumber: %1").arg(SequenceNumber));
-    str += utils::Print(QString("\t\t\t\tSeriesNumber: %1").arg(SeriesNumber));
-    str += utils::Print(QString("\t\t\t\tSeriesRowID: %1").arg(objectID));
-    str += utils::Print(QString("\t\t\t\tSeriesUID: %1").arg(SeriesUID));
-    str += utils::Print(QString("\t\t\t\tSize: %1").arg(Size));
-    str += utils::Print(QString("\t\t\t\tVirtualPath: %1").arg(VirtualPath()));
-
-    foreach (QString f, stagedFiles) {
-        str += utils::Print(QString("\t\t\t\t\tFile: %1").arg(f));
+    if (p == BasicList) {
+        QString s = QString("%1\t%2\t%3\t%4\t%5").arg(SeriesNumber).arg(Protocol).arg(Description).arg(DateTime.toString("yyyy-MM-dd HH:mm:ss").arg(FileCount));
+        str += utils::Print(s);
     }
-    foreach (QString f, stagedBehFiles) {
-        str += utils::Print(QString("\t\t\t\t\tBehFile: %1").arg(f));
+    else if (p == FullList) {
+        QString s = QString("%1\t%2\t%3\t%4\t%5\t%6\t%7\t%8\t%9\t%10\t%11\t%12\t%13\t%14\t%15\t%16\t%17\t%18\t%19\t%20").arg(BIDSEntity).arg(BIDSSuffix).arg(BIDSTask).arg(BIDSRun).arg(BIDSPhaseEncodingDirection).arg(BehavioralFileCount).arg(BehavioralSize).arg(DateTime.toString("yyyy-MM-dd HH:mm:ss")).arg(Description).arg(experimentRowID).arg(FileCount).arg(files.join(", ")).arg(Protocol).arg(Run).arg(SequenceNumber).arg(SeriesNumber).arg(objectID).arg(SeriesUID).arg(Size).arg(VirtualPath());
+        str += utils::Print(s);
+    }
+    else {
+        str += utils::Print("\t\t\t\t----- SERIES -----");
+        str += utils::Print(QString("\t\t\t\tBIDSEntity: %1").arg(BIDSEntity));
+        str += utils::Print(QString("\t\t\t\tBIDSSuffix: %1").arg(BIDSSuffix));
+        str += utils::Print(QString("\t\t\t\tBIDSTask: %1").arg(BIDSTask));
+        str += utils::Print(QString("\t\t\t\tBIDSRun: %1").arg(BIDSRun));
+        str += utils::Print(QString("\t\t\t\tBIDSPhaseEncodingDirection: %1").arg(BIDSPhaseEncodingDirection));
+        str += utils::Print(QString("\t\t\t\tBehavioralFileCount: %1").arg(BehavioralFileCount));
+        str += utils::Print(QString("\t\t\t\tBehavioralSize: %1").arg(BehavioralSize));
+        str += utils::Print(QString("\t\t\t\tDatetime: %1").arg(DateTime.toString("yyyy-MM-dd HH:mm:ss")));
+        str += utils::Print(QString("\t\t\t\tDescription: %1").arg(Description));
+        str += utils::Print(QString("\t\t\t\tExperimentName: %1").arg(experimentRowID));
+        str += utils::Print(QString("\t\t\t\tFileCount: %1").arg(FileCount));
+        str += utils::Print(QString("\t\t\t\tFiles: %1").arg(files.join(", ")));
+        str += utils::Print(QString("\t\t\t\tProtocol: %1").arg(Protocol));
+        str += utils::Print(QString("\t\t\t\tRun: %1").arg(Run));
+        str += utils::Print(QString("\t\t\t\tSequenceNumber: %1").arg(SequenceNumber));
+        str += utils::Print(QString("\t\t\t\tSeriesNumber: %1").arg(SeriesNumber));
+        str += utils::Print(QString("\t\t\t\tSeriesRowID: %1").arg(objectID));
+        str += utils::Print(QString("\t\t\t\tSeriesUID: %1").arg(SeriesUID));
+        str += utils::Print(QString("\t\t\t\tSize: %1").arg(Size));
+        str += utils::Print(QString("\t\t\t\tVirtualPath: %1").arg(VirtualPath()));
+
+        foreach (QString f, stagedFiles) {
+            str += utils::Print(QString("\t\t\t\t\tFile: %1").arg(f));
+        }
+        foreach (QString f, stagedBehFiles) {
+            str += utils::Print(QString("\t\t\t\t\tBehFile: %1").arg(f));
+        }
     }
 
     return str;
@@ -452,4 +463,54 @@ QList<QPair<QString,QString>> squirrelSeries::GetStagedFileList() {
     }
 
     return stagedList;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- GetData ---------------------------------------------- */
+/* ------------------------------------------------------------ */
+QHash<QString, QString> squirrelSeries::GetData(DatasetType d) {
+
+    QHash<QString, QString> data;
+
+
+    switch (d) {
+    case DatasetID:
+        data["Series.Number"] = QString("%1").arg(SeriesNumber);
+        break;
+    case DatasetBasic:
+        data["Series.Datetime"] = DateTime.toString("yyyy-MM-dd HH:mm:ss");
+        data["Series.Description"] = Description;
+        data["Series.FileCount"] = QString("%1").arg(FileCount);
+        data["Series.Number"] = QString("%1").arg(SeriesNumber);
+        data["Series.Protocol"] = Protocol;
+        data["Series.Size"] = QString("%1").arg(Size);
+        break;
+    case DatasetFull:
+        data["Series.BIDSEntity"] = BIDSEntity;
+        data["Series.BIDSPhaseEncodingDirection"] = BIDSPhaseEncodingDirection;
+        data["Series.BIDSRun"] = BIDSRun;
+        data["Series.BIDSSuffix"] = BIDSSuffix;
+        data["Series.BIDSTask"] = BIDSTask;
+        data["Series.BehavioralFileCount"] = QString("%1").arg(BehavioralFileCount);
+        data["Series.BehavioralSize"] = QString("%1").arg(BehavioralSize);
+        data["Series.Datetime"] = DateTime.toString("yyyy-MM-dd HH:mm:ss");
+        data["Series.Description"] = Description;
+        data["Series.ExperimentName"] = QString("%1").arg(experimentRowID);
+        data["Series.FileCount"] = QString("%1").arg(FileCount);
+        data["Series.Files"] = files.join(", ");
+        data["Series.Number"] = QString("%1").arg(SeriesNumber);
+        data["Series.Protocol"] = Protocol;
+        data["Series.RowID"] = QString("%1").arg(objectID);
+        data["Series.Run"] = QString("%1").arg(Run);
+        data["Series.SequenceNumber"] = QString("%1").arg(SequenceNumber);
+        data["Series.SeriesUID"] = SeriesUID;
+        data["Series.Size"] = QString("%1").arg(Size);
+        data["Series.VirtualPath"] = VirtualPath();
+        break;
+    default:
+        break;
+    }
+
+    return data;
 }

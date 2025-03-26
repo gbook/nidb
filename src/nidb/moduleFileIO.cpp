@@ -472,14 +472,17 @@ bool moduleFileIO::DeleteSubject(int subjectid, QString username, QString &msg) 
 
     if (s.path() != "") {
         if (d.exists(s.path())) {
-            if (d.rename(s.path(), newpath)) {
-                msg = n->Log(QString("Moved [%1] to [%2]").arg(s.path()).arg(newpath));
-            }
-            else {
-                msg = QString("Error in moving [%1] to [%2]").arg(s.path()).arg(newpath);
-                n->Log(msg);
-                return false;
-            }
+            QString systemstring = QString("mv -v %1 %2").arg(s.path()).arg(newpath);
+            n->Log(SystemCommand(systemstring));
+
+            //if (d.rename(s.path(), newpath)) {
+            //    msg = n->Log(QString("Moved [%1] to [%2]").arg(s.path()).arg(newpath));
+            //}
+            //else {
+            //    msg = QString("Error in moving [%1] to [%2]").arg(s.path()).arg(newpath);
+            //    n->Log(msg);
+            //    return false;
+            //}
         }
         else {
             n->Log(QString("Subject path on disk [" + s.path() + "] does not exist"));
@@ -494,18 +497,22 @@ bool moduleFileIO::DeleteSubject(int subjectid, QString username, QString &msg) 
     q.prepare("delete from mostrecent where subject_id = :subjectid");
     q.bindValue(":subjectid", subjectid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    n->Log(QString("Deleted [%1] rows from mostrecent table").arg(q.numRowsAffected()));
 
     q.prepare("delete from family_members where subject_id = :subjectid");
     q.bindValue(":subjectid", subjectid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    n->Log(QString("Deleted [%1] rows from family_members table").arg(q.numRowsAffected()));
 
     q.prepare("delete from subject_relation where subjectid1 = :subjectid or subjectid2 = :subjectid");
     q.bindValue(":subjectid", subjectid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    n->Log(QString("Deleted [%1] rows from subject_relation table").arg(q.numRowsAffected()));
 
     q.prepare("delete from subject_altuid where subject_id = :subjectid");
     q.bindValue(":subjectid", subjectid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    n->Log(QString("Deleted [%1] rows from subject_altuid table").arg(q.numRowsAffected()));
 
     /* get enrollment_ids for the subject */
     q.prepare("select enrollment_id from enrollment where subject_id = :subjectid");
@@ -521,24 +528,29 @@ bool moduleFileIO::DeleteSubject(int subjectid, QString username, QString &msg) 
         q.prepare("delete from mr_series where study_id in (select study_id from studies where enrollment_id in (" + enrollmentIDs.join(",") + "))");
         q.bindValue(":subjectid", subjectid);
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        n->Log(QString("Deleted [%1] rows from mr_series table").arg(q.numRowsAffected()));
 
         q.prepare("delete from et_series where study_id in (select study_id from studies where enrollment_id in (" + enrollmentIDs.join(",") + "))");
         q.bindValue(":subjectid", subjectid);
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        n->Log(QString("Deleted [%1] rows from et_series table").arg(q.numRowsAffected()));
 
         q.prepare("delete from eeg_series where study_id in (select study_id from studies where enrollment_id in (" + enrollmentIDs.join(",") + "))");
         q.bindValue(":subjectid", subjectid);
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        n->Log(QString("Deleted [%1] rows from eeg_series table").arg(q.numRowsAffected()));
 
         /* delete all studies */
         q.prepare("delete from studies where enrollment_id in (" + enrollmentIDs.join(",") + ")");
         q.bindValue(":subjectid", subjectid);
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        n->Log(QString("Deleted [%1] rows from studies table").arg(q.numRowsAffected()));
 
         /* delete all enrollments */
         q.prepare("delete from enrollment where subject_id = :subjectid");
         q.bindValue(":subjectid", subjectid);
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        n->Log(QString("Deleted [%1] rows from enrollment table").arg(q.numRowsAffected()));
     }
     else {
         n->Log("No enrollments found");
@@ -548,6 +560,7 @@ bool moduleFileIO::DeleteSubject(int subjectid, QString username, QString &msg) 
     q.prepare("delete from subjects where subject_id = :subjectid");
     q.bindValue(":subjectid", subjectid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    n->Log(QString("Deleted [%1] rows from subjects table").arg(q.numRowsAffected()));
 
     n->InsertSubjectChangeLog(username, s.UID(), "", "obliterate", msg);
 

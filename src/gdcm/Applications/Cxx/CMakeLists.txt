@@ -46,6 +46,7 @@ set(GDCM_EXECUTABLE_NAME
   gdcmraw
   gdcmscanner
   gdcmanon
+  gdcmclean
   gdcmgendir
   #gdcmoverlay
   gdcmimg
@@ -162,6 +163,12 @@ if(GDCM_USE_SYSTEM_PAPYRUS3)
     )
 endif()
 
+if(NOT GDCM_USE_SYSTEM_ZLIB)
+  include_directories(
+    "${GDCM_BINARY_DIR}/Utilities/gdcmzlib"
+    )
+endif()
+
 foreach(exename ${GDCM_EXECUTABLE_NAME})
   if(${exename} STREQUAL "gdcminfo")
     add_executable(${exename} ${exename}.cxx puff.c)
@@ -181,6 +188,8 @@ foreach(exename ${GDCM_EXECUTABLE_NAME})
     endif()
   elseif(${exename} STREQUAL "gdcmstream")
     target_link_libraries(${exename} ${GDCM_OPENJPEG_LIBRARIES})
+  elseif(${exename} STREQUAL "gdcmdump")
+    target_link_libraries(${exename} ${GDCM_ZLIB_LIBRARIES})
   elseif(${exename} STREQUAL "gdcminfo")
     if(GDCM_USE_SYSTEM_POPPLER)
       target_link_libraries(${exename} ${POPPLER_LIBRARIES})

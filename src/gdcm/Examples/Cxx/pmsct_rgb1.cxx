@@ -55,7 +55,7 @@ void delta_decode(const unsigned char *data_in, size_t data_size,
   };
 
   const byte* src = (const byte*)data_in;
-  byte* dest = (byte*)&new_stream[0];
+  byte* dest = (byte*)new_stream.data();
   union { byte gray; byte rgb[3]; } pixel;
   pixel.rgb[0] = pixel.rgb[1] = pixel.rgb[2] = 0;
   // always start in grayscale mode
@@ -74,7 +74,7 @@ void delta_decode(const unsigned char *data_in, size_t data_size,
   size_t ps = plane_size;
 
   // The following is highly unoptimized as we have nested if statement in a while loop
-  // we need to switch from one algorithm to ther other (RGB <-> GRAY)
+  // we need to switch from one algorithm to the other (RGB <-> GRAY)
   while (ps)
     {
     // next byte:
@@ -130,7 +130,7 @@ void delta_decode(const unsigned char *data_in, size_t data_size,
         }
       break;
     case COLORMODE:
-      // We are swithing from one mode to the other. The stream contains an intermixed
+      // We are switching from one mode to the other. The stream contains an intermixed
       // compression of RGB codec and GRAY codec. Each one not knowing of the other
       // reset old value to 0.
       if (graymode)
@@ -222,7 +222,7 @@ int main(int argc, char *argv [])
 
   gdcm::DataElement pixeldata( gdcm::Tag(0x7fe0,0x0010) );
   pixeldata.SetVR( gdcm::VR::OW );
-  pixeldata.SetByteValue( (char*)&buffer[0], (uint32_t)buffer.size() );
+  pixeldata.SetByteValue( (char*)buffer.data(), (uint32_t)buffer.size() );
   // TODO we should check that decompress byte buffer match the expected size (row*col*...)
 
   // Add the pixel data element

@@ -58,7 +58,8 @@ public:
     bool Extract(QString destinationDir, QString &m);
     bool Read();
     bool Validate();
-    bool Write(bool writeLog);
+    bool Write();
+    bool WriteUpdate();
     bool ExtractArchiveFilesToDirectory(QString archivePath, QString filePattern, QString outDir, QString &m);
 
     /* get/set options */
@@ -74,6 +75,7 @@ public:
     void SetPackagePath(QString p) { packagePath = p; } /*!< Set the package path */
     void SetQuickRead(bool q);
     void SetSystemTempDir(QString tmpdir);
+    void SetWriteLog(bool w) { writeLog = w; }
 
     /* package JSON elements */
     QDateTime Datetime;         /*!< datetime the package was created */
@@ -175,8 +177,8 @@ public:
     QString PrintPackage();
     QString PrintPipelines(PrintFormat printFormat=List);
     QString PrintSeries(qint64 studyRowID, PrintFormat printFormat=List);
-    QString PrintStudies(qint64 subjectRowID, PrintFormat printFormat=List);
-    QString PrintSubjects(PrintFormat printFormat=List);
+    QString PrintStudies(DatasetType dataType, PrintFormat printFormat, qint64 subjectRowID);
+    QString PrintSubjects(DatasetType dataType, PrintFormat printFormat);
     QString PrintTree();
 
     /* database and utility functions */
@@ -223,6 +225,7 @@ private:
     bool isValid;
     bool overwritePackage;
     bool quickRead; /* set true to skip reading of the params.json files */
+    bool writeLog;
 };
 
 #endif // SQUIRREL_H

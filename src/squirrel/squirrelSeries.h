@@ -28,6 +28,7 @@
 #include <QList>
 #include <QJsonObject>
 #include <QJsonArray>
+#include "squirrelTypes.h"
 
 /**
  * @brief The series class
@@ -38,23 +39,26 @@ class squirrelSeries
 {
 public:
     squirrelSeries(QString dbID);
-    QString PrintSeries();
-    QString PrintTree(bool isLast);
-    QJsonObject ToJSON();
+
+    QHash<QString, QString> GetData(DatasetType d);
     QJsonObject ParamsToJSON();
-    bool Get();             /* gets the object data from the database */
-    bool Store();           /* saves the object data from this object into the database */
-    bool Remove();
-    bool isValid() { return valid; }
-    QString Error() { return err; }
-    qint64 GetObjectID() { return objectID; }
-    void SetObjectID(qint64 id) { objectID = id; }
-    void SetDirFormat(QString subject_DirFormat, QString study_DirFormat, QString series_DirFormat) {subjectDirFormat = subject_DirFormat; studyDirFormat = study_DirFormat; seriesDirFormat = series_DirFormat; }
-    QString VirtualPath();
-    void AnonymizeParams();
+    QJsonObject ToJSON();
     QList<QPair<QString,QString>> GetStagedFileList();
+    QString Error() { return err; }
     QString GetDatabaseUUID() { return databaseUUID; }
+    QString PrintSeries(PrintFormat p);
+    QString PrintTree(bool isLast);
+    QString VirtualPath();
+    bool Get();             /* gets the object data from the database */
+    bool Remove();
+    bool Store();           /* saves the object data from this object into the database */
+    bool isValid() { return valid; }
+    qint64 GetObjectID() { return objectID; }
+    void AnonymizeParams();
     void SetDatabaseUUID(QString dbID) { databaseUUID = dbID; }
+    void SetDebug(bool d) { debug = d; }
+    void SetDirFormat(QString subject_DirFormat, QString study_DirFormat, QString series_DirFormat) {subjectDirFormat = subject_DirFormat; studyDirFormat = study_DirFormat; seriesDirFormat = series_DirFormat; }
+    void SetObjectID(qint64 id) { objectID = id; }
 
     qint64 studyRowID;
     qint64 experimentRowID = -1;
@@ -87,6 +91,7 @@ public:
 
 private:
     bool valid = false;
+    bool debug;
     QString err;
     qint64 objectID = -1;
     QString subjectDirFormat = "orig";

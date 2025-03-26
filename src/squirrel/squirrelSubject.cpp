@@ -39,6 +39,7 @@ squirrelSubject::squirrelSubject(QString dbID)
     SequenceNumber = -1;
 
     valid = false;
+    debug = false;
     objectID = -1;
     subjectDirFormat = "orig";
 }
@@ -164,9 +165,11 @@ QString squirrelSubject::PrintDetails() {
     str += utils::Print(QString("\t\tNotes: %1").arg(Notes));
     str += utils::Print(QString("\t\tSex: %1").arg(Sex));
     str += utils::Print(QString("\t\tSubjectID: %1").arg(ID));
-    str += utils::Print(QString("\t\tSubjectRowID: %1").arg(objectID));
-    str += utils::Print(QString("\t\tVirtualPath: %1").arg(VirtualPath()));
-    str += utils::Print(QString("\t\tDatabaseUUID: %1").arg(databaseUUID));
+    if (debug) {
+        str += utils::Print(QString("\t\tDatabaseUUID: %1").arg(databaseUUID));
+        str += utils::Print(QString("\t\tSubjectRowID: %1").arg(objectID));
+        str += utils::Print(QString("\t\tVirtualPath: %1").arg(VirtualPath()));
+    }
 
     return str;
 }
@@ -236,6 +239,42 @@ QString squirrelSubject::CSVLine() {
     QString line = "\"" + data.join("\",\"") + "\"";
 
     return line;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- GetData ---------------------------------------------- */
+/* ------------------------------------------------------------ */
+QHash<QString, QString> squirrelSubject::GetData(DatasetType d) {
+    QHash<QString, QString> data;
+
+    switch (d) {
+        case DatasetID:
+            data["Subject.ID"] = ID;
+            break;
+        case DatasetBasic:
+            data["Subject.ID"] = ID;
+            data["Subject.AlternateIDs"] = AlternateIDs.join(",");
+            data["Subject.DateOfBirth"] = DateOfBirth.toString("yyyy-MM-dd");
+            data["Subject.Gender"] = Gender;
+            data["Subject.Sex"] = Sex;
+            break;
+        case DatasetFull:
+            data["Subject.ID"] = ID;
+            data["Subject.AlternateIDs"] = AlternateIDs.join(",");
+            data["Subject.DateOfBirth"] = DateOfBirth.toString("yyyy-MM-dd");
+            data["Subject.Ethnicity1"] = Ethnicity1;
+            data["Subject.Ethnicity2"] = Ethnicity2;
+            data["Subject.GUID"] = GUID;
+            data["Subject.Gender"] = Gender;
+            data["Subject.Sex"] = Sex;
+            data["Subject.Notes"] = Notes;
+            break;
+        default:
+            break;
+    }
+
+    return data;
 }
 
 

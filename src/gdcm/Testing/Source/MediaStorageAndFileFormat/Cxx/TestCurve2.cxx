@@ -122,7 +122,7 @@ static int TestCurve2Read(const char* filename, bool verbose = false)
         }
       std::vector<float> points;
       points.resize( 3 * npts );
-      curve.GetAsPoints( (float*)&points[0] );
+      curve.GetAsPoints( (float*)points.data() );
 #if 0
       for( size_t i = 0; i < npts; i += 3 )
         {
@@ -132,7 +132,7 @@ static int TestCurve2Read(const char* filename, bool verbose = false)
         }
 #endif
       char digest[33];
-      const char *buffer = (char*)&points[0];
+      const char *buffer = (char*)points.data();
       size_t len = sizeof(float) * 3 * npts;
       const char *ref = info[idx].datamd5;
       gdcm::Testing::ComputeMD5(buffer, len, digest);
@@ -148,7 +148,7 @@ static int TestCurve2Read(const char* filename, bool verbose = false)
         //assert(0);
         res = 1;
         }
-      else if( strcmp(digest, ref) )
+      else if( strcmp(digest, ref) != 0 )
         {
         std::cerr << "Problem reading image from: " << filename << std::endl;
         std::cerr << "Found " << digest << " instead of " << ref << std::endl;

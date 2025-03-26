@@ -21,8 +21,8 @@
 #include <iomanip>
 #include <iterator>
 
+#include <climits>
 #include <cstring>
-#include <limits.h>
 
 namespace gdcm
 {
@@ -157,14 +157,13 @@ assert(0); // Do not use this code !
   const unsigned char *a = copy + 0;
   const unsigned char *b = copy + size;
   const unsigned char *c = copy + size + size;
-  int R, G, B;
 
   unsigned char *p = (unsigned char*)dummy_buffer;
   for (unsigned long j = 0; j < size; ++j)
     {
-    R = 38142 *(*a-16) + 52298 *(*c -128);
-    G = 38142 *(*a-16) - 26640 *(*c -128) - 12845 *(*b -128);
-    B = 38142 *(*a-16) + 66093 *(*b -128);
+    int R = 38142 *(*a-16) + 52298 *(*c -128);
+    int G = 38142 *(*a-16) - 26640 *(*c -128) - 12845 *(*b -128);
+    int B = 38142 *(*a-16) + 66093 *(*b -128);
 
     R = (R+16384)>>15;
     G = (G+16384)>>15;
@@ -545,14 +544,14 @@ bool ImageCodec::DoOverlayCleanup(std::istream &is, std::ostream &os)
       std::vector<uint16_t> buffer(bufferSize);
       while (is)
         {
-        is.read((char *)&buffer[0], bufferSize * sizeof(uint16_t));
+        is.read((char *)buffer.data(), bufferSize * sizeof(uint16_t));
         std::streamsize bytesRead = is.gcount();
         std::vector<uint16_t>::iterator validBufferEnd = buffer.begin() + bytesRead / sizeof(uint16_t);
         for (std::vector<uint16_t>::iterator it = buffer.begin(); it != validBufferEnd; ++it)
           {
           *it = ((*it >> (PF.GetBitsStored() - PF.GetHighBit() - 1)) & pmask);
           }
-        os.write((char *)&buffer[0], bytesRead);
+        os.write((char *)buffer.data(), bytesRead);
         }
 #else
       //std::ostreambuf_iterator<char> end_of_stream_iterator;
@@ -676,6 +675,7 @@ bool ImageCodec::DecodeByStreams(std::istream &is, std::ostream &os)
 
   // Do the overlay cleanup (cleanup the unused bits)
   // must be the last operation (duh!)
+  bool copySuccess = false;
   if ( PF.GetBitsAllocated() != PF.GetBitsStored()
     && PF.GetBitsAllocated() != 8 )
     {
@@ -686,21 +686,23 @@ bool ImageCodec::DecodeByStreams(std::istream &is, std::ostream &os)
     // Sigh, I finally found someone not declaring that unused bits where not zero:
     // gdcmConformanceTests/dcm4chee_unusedbits_not_zero.dcm
     if( NeedOverlayCleanup )
-      DoOverlayCleanup(*cur_is,os);
+      {
+      copySuccess = DoOverlayCleanup(*cur_is, os);
+      }
     else
       {
       // Once the issue with IMAGES/JPLY/RG3_JPLY aka gdcmData/D_CLUNIE_RG3_JPLY.dcm is solved the previous
       // code will be replace with a simple call to:
-      DoSimpleCopy(*cur_is,os);
+      copySuccess = DoSimpleCopy(*cur_is, os);
       }
     }
   else
     {
     assert( PF.GetBitsAllocated() == PF.GetBitsStored() );
-    DoSimpleCopy(*cur_is,os);
+    copySuccess = DoSimpleCopy(*cur_is, os);
     }
 
-  return true;
+  return copySuccess;
 }
 
 bool ImageCodec::IsValid(PhotometricInterpretation const &)

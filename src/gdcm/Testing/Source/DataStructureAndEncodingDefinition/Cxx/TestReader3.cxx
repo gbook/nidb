@@ -18,15 +18,13 @@
 #include <fstream>
 #include <iostream>
 
-#include <string.h> // strstr
+#include <cstring> // strstr
 // fstat
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h> /* close */
 
 // open
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 
 // mmap
@@ -164,7 +162,7 @@ std::istream & DoTheMMapRead(std::istream &is)
 
 int TestRead3(const char *subdir, const char * filename)
 {
-/// FIXME Because GDCM is seeging back and forth in the DICOM file
+/// FIXME Because GDCM is seeking back and forth in the DICOM file
 // we cannot just apply mmap on any file, so let's clean them first:
 //
   gdcm::Reader r;

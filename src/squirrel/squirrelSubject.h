@@ -23,11 +23,11 @@
 #ifndef SQUIRRELSUBJECT_H
 #define SQUIRRELSUBJECT_H
 
-#include <QtSql>
 #include <QString>
 #include <QDate>
 #include <QJsonObject>
 #include <QJsonArray>
+#include "squirrelTypes.h"
 
 /**
  * @brief The subject class
@@ -38,25 +38,27 @@ class squirrelSubject
 {
 public:
     squirrelSubject(QString dbID);
+    void SetDebug(bool d) { debug = d; }
 
     /* functions */
+    QHash<QString, QString> GetData(DatasetType d);
+    QJsonObject ToJSON();
+    QList<QPair<QString,QString>> GetStagedFileList();
+    QString CSVLine();
+    QString Error() { return err; }
+    QString GetDatabaseUUID() { return databaseUUID; }
     QString PrintDetails();
     QString PrintTree(bool isLast);
-    QString CSVLine();
-    QJsonObject ToJSON();
-    bool Get();             /* gets the object data from the database */
-    bool Store();           /* saves the object data from this object into the database */
-    bool Remove();          /* remove the subject (and all child studies and series) from the database */
-    bool isValid() { return valid; }
-    QString Error() { return err; }
-    qint64 GetObjectID() { return objectID; }
-    void SetObjectID(qint64 id) { objectID = id; }
-    void SetDirFormat(QString subject_DirFormat) {subjectDirFormat = subject_DirFormat; }
     QString VirtualPath();
-    QList<QPair<QString,QString>> GetStagedFileList();
+    bool Get();             /* gets the object data from the database */
+    bool Remove();          /* remove the subject (and all child studies and series) from the database */
+    bool Store();           /* saves the object data from this object into the database */
+    bool isValid() { return valid; }
     int GetNextStudyNumber();
-    QString GetDatabaseUUID() { return databaseUUID; }
+    qint64 GetObjectID() { return objectID; }
     void SetDatabaseUUID(QString dbID) { databaseUUID = dbID; }
+    void SetDirFormat(QString subject_DirFormat) {subjectDirFormat = subject_DirFormat; }
+    void SetObjectID(qint64 id) { objectID = id; }
 
     /* JSON elements */
     QDate DateOfBirth;      /*!< Date of birth. Not required, but can be useful to calculate age during studies. Can also contain only year... or contain only year and month */
@@ -72,6 +74,7 @@ public:
 
 private:
     bool valid;
+    bool debug;
     QString err;
     qint64 objectID;
     QString subjectDirFormat;

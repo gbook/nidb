@@ -910,7 +910,8 @@ bool check_mapping(uint32_t syngodt, const char *vr)
 {
   static const unsigned int max = sizeof(mapping) / sizeof(equ);
   const equ *p = mapping;
-  assert( syngodt <= mapping[max-1].syngodt ); (void)max;
+  if( syngodt > mapping[max-1].syngodt ) return false;
+  assert( syngodt <= mapping[max-1].syngodt );
   while(p->syngodt < syngodt )
     {
     //std::cout << "mapping:" << p->vr << std::endl;
@@ -993,7 +994,7 @@ bool CSAHeader::LoadFromDataElement(DataElement const &de)
   // Some silly software consider the tag to be OW, therefore they byteswap it !!! sigh
   if( strcmp( signature, "VS01" ) == 0 )
   {
-    SwapperDoOp::SwapArray( (unsigned short*)(void*)&s[0], (s.size() + 1) / 2 );
+    SwapperDoOp::SwapArray( (unsigned short*)(void*)s.data(), (s.size() + 1) / 2 );
     ss.str( s );
     ss.read(signature, 4);
   }
@@ -1098,6 +1099,11 @@ bool CSAHeader::LoadFromDataElement(DataElement const &de)
     char vr[4];
     ss.read(vr, 4);
     // In dataset without magic signature (OLD FORMAT) vr[3] is garbage...
+    if( vr[2] != 0 )
+    {
+      gdcmErrorMacro( "Garbage data. Stopping CSA parsing." );
+      return false;
+    }
     assert( /*vr[3] == 0 &&*/ vr[2] == 0 );
     csael.SetVR( VR::GetVRTypeFromFile(vr) );
     //std::cout << "VR " << vr << ", ";
@@ -1116,6 +1122,7 @@ bool CSAHeader::LoadFromDataElement(DataElement const &de)
     ss.read((char*)&nitems, sizeof(nitems));
     SwapperNoOp::SwapArray(&nitems,1);
     csael.SetNoOfItems( nitems );
+    if( InternalType == SV10) { assert( nitems % 6 == 0 );}
     //std::cout << "NoOfItems " << nitems << ", ";
     uint32_t xx;
     ss.read((char*)&xx, sizeof(xx));
@@ -1130,8 +1137,10 @@ bool CSAHeader::LoadFromDataElement(DataElement const &de)
       uint32_t item_xx[4];
       ss.read((char*)&item_xx, 4*sizeof(uint32_t));
       SwapperNoOp::SwapArray(item_xx,4);
+      if( item_xx[2] != 77 && item_xx[2] != 205 ) return false;
       assert( item_xx[2] == 77 || item_xx[2] == 205 );
       uint32_t len = item_xx[1]; // 2nd element
+      if( item_xx[0] != item_xx[1] || item_xx[1] != item_xx[3] ) return false;
       assert( item_xx[0] == item_xx[1] && item_xx[1] == item_xx[3] );
       if( len )
         {
@@ -1167,7 +1176,7 @@ bool CSAHeader::LoadFromDataElement(DataElement const &de)
       }
     std::string str = os.str();
     if( !str.empty() )
-      csael.SetByteValue( &str[0], (uint32_t)str.size());
+      csael.SetByteValue( str.data(), (uint32_t)str.size());
     //std::cout << std::endl;
     InternalCSADataSet.insert( csael );
     }
@@ -1194,7 +1203,7 @@ void CSAHeader::Print(std::ostream &os) const
 
   for(; it != InternalCSADataSet.end(); ++it)
     {
-    std::cout << *it << std::endl;
+    os << *it << std::endl;
     }
 }
 
@@ -1236,15 +1245,15 @@ bool CSAHeader::FindCSAElementByName(const char *name)
 }
 
 static const char csaheader[] = "SIEMENS CSA HEADER";
-static const gdcm::PrivateTag t1(0x0029,0x0010,csaheader); // CSA Image Header Info
-static const gdcm::PrivateTag t2(0x0029,0x0020,csaheader); // CSA Series Header Info
+static const gdcm::PrivateTag t1(0x0029,0x10,csaheader); // CSA Image Header Info
+static const gdcm::PrivateTag t2(0x0029,0x20,csaheader); // CSA Series Header Info
 
 //static const char csaheader2[] = "SIEMENS MEDCOM HEADER2";
 //static const gdcm::PrivateTag t4(0x0029,0x0010,csaheader2); // CSA Image Header Info
 //static const gdcm::PrivateTag t5(0x0029,0x0020,csaheader2); // CSA Series Header Info
 
 static const char csanonimage[] = "SIEMENS CSA NON-IMAGE";
-static const gdcm::PrivateTag t3(0x0029,0x0010,csanonimage); // CSA Data Info
+static const gdcm::PrivateTag t3(0x0029,0x10,csanonimage); // CSA Data Info
 
 const PrivateTag & CSAHeader::GetCSAImageHeaderInfoTag()
 {

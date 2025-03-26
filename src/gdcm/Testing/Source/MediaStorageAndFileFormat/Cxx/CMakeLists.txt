@@ -2,6 +2,7 @@
 # MSFF
 set(MSFF_TEST_SRCS
   TestAnonymizer.cxx
+  TestAnonymizer4.cxx
   TestDataSetHelper.cxx
   TestEquipmentManufacturer.cxx
   TestFileChangeTransferSyntax1.cxx
@@ -34,9 +35,11 @@ set(MSFF_TEST_SRCS
   TestFileExplicitFilter.cxx
   TestImageFragmentSplitter.cxx
   TestTagPath.cxx
+  TestDPath.cxx
   TestOrientation.cxx
   TestIconImage.cxx
   TestImageHelper.cxx
+  TestImageHelper3.cxx
   TestImageToImageFilter.cxx
   TestImageChangeTransferSyntax1.cxx
   #TestImageChangePhotometricInterpretation.cxx
@@ -106,11 +109,19 @@ set(MSFF_TEST_SRCS
 if(GDCM_DATA_ROOT)
   set(MSFF_TEST_SRCS
     ${MSFF_TEST_SRCS}
+    TestCleaner1.cxx
+    TestCleaner2.cxx
+    TestCleaner3.cxx
+    TestCleaner4.cxx
     TestSplitMosaicFilter3.cxx
     TestStrictScanner1.cxx
+    TestStrictScanner2_1.cxx
     TestStrictScanner2.cxx
+    TestStrictScanner2_2.cxx
     TestScanner1.cxx
+    TestScanner2_1.cxx
     TestScanner2.cxx
+    TestScanner2_2.cxx
     TestImageHelper2.cxx
     TestPrinter2.cxx
     TestIPPSorter.cxx
@@ -253,6 +264,30 @@ foreach(filename ${gdcm_data_filenames_glob})
     endif()
   endif()
 endforeach()
+
+file(MAKE_DIRECTORY "${GDCM_TEMP_DIRECTORY}/TestImageChangeTransferSyntax2/dcmdjp2k/")
+
+foreach(filename ${gdcm_data_filenames_glob})
+  get_filename_component(filename_name ${filename} NAME)
+  string(REGEX MATCH ${filename_name} bad_dicom ${black_list_reader})
+  if(NOT bad_dicom)
+    if(GDCM_TEST_DCMTK)
+      if(DCMTK_DCMDJP2K_EXECUTABLE)
+        add_test(NAME "DCMDJP2K-${filename_name}" COMMAND ${DCMTK_DCMDJP2K_EXECUTABLE}
+          "${GDCM_TEMP_DIRECTORY}/TestImageChangeTransferSyntax2/${filename_name}"
+          "${GDCM_TEMP_DIRECTORY}/TestImageChangeTransferSyntax2/dcmdjp2k/${filename_name}")
+        # Special handling of the DICOMDIR files:
+        string(REGEX MATCH ${filename_name} is_dicomdir ${gdcm_data_dicomdir_filenames_glob})
+        if(is_dicomdir)
+          #message("IS DICOMDIR ${filename_name}")
+          set_tests_properties("DCMDJP2K-${filename_name}" PROPERTIES WILL_FAIL TRUE)
+        endif()
+        #
+      endif()
+    endif()
+  endif()
+endforeach()
+
 
 file(MAKE_DIRECTORY "${GDCM_TEMP_DIRECTORY}/TestImageChangeTransferSyntax3/dcmdrle/")
 

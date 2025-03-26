@@ -29,6 +29,7 @@
 #include <QJsonArray>
 #include "squirrelSeries.h"
 #include "squirrelAnalysis.h"
+#include "squirrelTypes.h"
 
 /**
  * @brief The study class
@@ -39,22 +40,25 @@ class squirrelStudy
 {
 public:
     squirrelStudy(QString dbID);
-    QString PrintStudy();
-    QString PrintTree(bool isLast);
+
+    QHash<QString, QString> GetData(DatasetType d);
     QJsonObject ToJSON();
-    bool Get();             /* gets the object data from the database */
-    bool Store();           /* saves the object data from this object into the database */
-    bool Remove();
-    bool isValid() { return valid; }
-    QString Error() { return err; }
-    qint64 GetObjectID() { return objectID; }
-    void SetObjectID(qint64 id) { objectID = id; }
-    void SetDirFormat(QString subject_DirFormat, QString study_DirFormat) {subjectDirFormat = subject_DirFormat; studyDirFormat = study_DirFormat; }
-    QString VirtualPath();
     QList<QPair<QString,QString>> GetStagedFileList();
-    int GetNextSeriesNumber();
+    QString Error() { return err; }
     QString GetDatabaseUUID() { return databaseUUID; }
+    QString PrintStudy(PrintFormat p);
+    QString PrintTree(bool isLast);
+    QString VirtualPath();
+    bool Get();             /* gets the object data from the database */
+    bool Remove();
+    bool Store();           /* saves the object data from this object into the database */
+    bool isValid() { return valid; }
+    int GetNextSeriesNumber();
+    qint64 GetObjectID() { return objectID; }
     void SetDatabaseUUID(QString dbID) { databaseUUID = dbID; }
+    void SetDebug(bool d) { debug = d; }
+    void SetDirFormat(QString subject_DirFormat, QString study_DirFormat) {subjectDirFormat = subject_DirFormat; studyDirFormat = study_DirFormat; }
+    void SetObjectID(qint64 id) { objectID = id; }
 
     qint64 subjectRowID;
 
@@ -79,12 +83,13 @@ public:
     QList<squirrelAnalysis> analysisList; /*!< List of analyses attached to this study */
 
 private:
-    bool valid;
-    QString err;
-    qint64 objectID;
-    QString subjectDirFormat;
-    QString studyDirFormat;
     QString databaseUUID;
+    QString err;
+    QString studyDirFormat;
+    QString subjectDirFormat;
+    bool debug;
+    bool valid;
+    qint64 objectID;
 };
 
 #endif // SQUIRRELSTUDY_H

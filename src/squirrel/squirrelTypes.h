@@ -5,7 +5,8 @@
 #include <QList>
 
 enum FileMode { NewPackage, ExistingPackage };
-enum PrintFormat { List, Details, CSV, Tree };
+enum PrintFormat { BasicList, FullList, List, Details, CSV, Tree };
+enum DatasetType { DatasetID, DatasetBasic, DatasetFull };
 enum ObjectType {
     Analysis,
     BehSeries,
@@ -25,5 +26,6 @@ enum ObjectType {
 
 typedef QPair<QString, QString> QStringPair;
 typedef QList<QStringPair> pairList;
+typedef QHash<QString, QString> QStringHash;
 
 #endif // SQUIRRELTYPES_H

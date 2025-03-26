@@ -83,7 +83,7 @@ void Bitmap::SetNumberOfDimensions(unsigned int dim)
 const unsigned int *Bitmap::GetDimensions() const
 {
   assert( NumberOfDimensions );
-  return &Dimensions[0];
+  return Dimensions.data();
 }
 
 unsigned int Bitmap::GetDimension(unsigned int idx) const
@@ -1006,7 +1006,6 @@ bool Bitmap::GetBufferInternal(char *buffer, bool &lossyflag) const
   //if( !success ) success = TryDeltaEncodingCodec(buffer);
   if( !success )
     {
-    buffer = nullptr;
     //throw Exception( "No codec found for this image");
     }
 
@@ -1023,7 +1022,6 @@ bool Bitmap::GetBuffer2(std::ostream &os) const
   //if( !success ) success = TryRLECodec2(buffer);
   if( !success )
     {
-    //buffer = 0;
     throw Exception( "No codec found for this image");
     }
 
@@ -1052,7 +1050,7 @@ void Bitmap::Print(std::ostream &os) const
   if( !IsEmpty() )
     {
     os << "NumberOfDimensions: " << NumberOfDimensions << "\n";
-    assert( Dimensions.size() );
+    assert( !Dimensions.empty() );
     os << "Dimensions: (";
     std::vector<unsigned int>::const_iterator it = Dimensions.begin();
     os << *it;

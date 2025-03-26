@@ -112,15 +112,13 @@ bool RAWCodec::DecodeBytes(const char* inBytes, size_t inBufferLength,
   if(!r) return false;
 
   std::string str = os.str();
-  //std::string::size_type check = str.size();//unused
 
-  
   if( this->GetPixelFormat() == PixelFormat::UINT12 ||
       this->GetPixelFormat() == PixelFormat::INT12 )
     {
     size_t len = str.size() * 16 / 12;
     char * copy = new char[len];
-    bool b = Unpacker12Bits::Unpack(copy, &str[0], str.size() ); (void)b;
+    bool b = Unpacker12Bits::Unpack(copy, str.data(), str.size() ); (void)b;
     assert( b );
     assert (len == inOutBufferLength);
     assert(inOutBufferLength == len);
@@ -135,7 +133,14 @@ bool RAWCodec::DecodeBytes(const char* inBytes, size_t inBufferLength,
     // DermaColorLossLess.dcm
     //assert (check == inOutBufferLength || check == inOutBufferLength + 1);
     // problem with: SIEMENS_GBS_III-16-ACR_NEMA_1.acr
-    memcpy(outBytes, str.c_str(), inOutBufferLength);
+    size_t len = str.size();
+    if( inOutBufferLength <= len )
+      memcpy(outBytes, str.c_str(), inOutBufferLength);
+    else
+    {
+      gdcmWarningMacro( "Requesting too much data. Truncating result" );
+      memcpy(outBytes, str.c_str(), len);
+    }
     }
 
   return r;
@@ -176,7 +181,7 @@ bool RAWCodec::Decode(DataElement const &in, DataElement &out)
     {
     size_t len = str.size() * 16 / 12;
     char * copy = new char[len];//why use an array, and not a vector?
-    bool b = Unpacker12Bits::Unpack(copy, &str[0], str.size() );
+    bool b = Unpacker12Bits::Unpack(copy, str.data(), str.size() );
     assert( b );
     (void)b;
     VL::Type lenSize = (VL::Type)len;
@@ -188,7 +193,7 @@ bool RAWCodec::Decode(DataElement const &in, DataElement &out)
   else
     {
       VL::Type strSize = (VL::Type) str.size();
-    out.SetByteValue( &str[0], strSize);
+    out.SetByteValue( str.data(), strSize);
     }
 
   return r;

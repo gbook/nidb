@@ -134,7 +134,8 @@ int main(int argc, char *argv[])
 
             /* 2) write the squirrel file */
             sqrl->SetPackagePath(outputPath);
-            sqrl->Write(true);
+            sqrl->SetWriteLog(true);
+            sqrl->Write();
 
             delete dcm;
             delete sqrl;
@@ -211,7 +212,8 @@ int main(int argc, char *argv[])
 
             /* save the squirrel object */
             sqrl->SetPackagePath(outputfile);
-            sqrl->Write(true);
+            sqrl->SetWriteLog(true);
+            sqrl->Write();
         }
     }
     else if (command == "info") {
@@ -229,35 +231,43 @@ int main(int argc, char *argv[])
         p.addOption(QCommandLineOption(QStringList() << "object", "List items for object [all  package  subject  study  series  observation  intervention  experiment  pipeline  groupanalysis  datadictionary].", "object"));
         p.addOption(QCommandLineOption(QStringList() << "subjectid", "Subject ID.", "subjectid"));
         p.addOption(QCommandLineOption(QStringList() << "studynum", "Study Number\n  --subjectid must also be specified.", "studynum"));
-        p.addOption(QCommandLineOption(QStringList() << "details", "Include details when printing lists."));
-        p.addOption(QCommandLineOption(QStringList() << "tree", "Display tree view of data."));
-        p.addOption(QCommandLineOption(QStringList() << "csv", "Display csv output of data"));
+        p.addOption(QCommandLineOption(QStringList() << "dataset", "Dataset type [id  basic  full]", "dataset"));
+        p.addOption(QCommandLineOption(QStringList() << "format", "Printing format [list  csv]", "format"));
+        //p.addOption(QCommandLineOption(QStringList() << "detail", "Include details when printing lists."));
+        //p.addOption(QCommandLineOption(QStringList() << "tree", "Display tree view of data."));
+        //p.addOption(QCommandLineOption(QStringList() << "csv", "Display csv output of data"));
         p.process(a);
 
         bool debug = p.isSet("d");
         ObjectType object = squirrel::ObjectTypeToEnum(p.value("object").trimmed());
         QString subjectID = p.value("subjectid").trimmed();
         int studyNum = p.value("studynum").toInt();
-        bool details = p.isSet("details");
-        bool tree = p.isSet("tree");
-        bool csv = p.isSet("csv");
+        //bool details = p.isSet("detail");
+        //bool tree = p.isSet("tree");
+        //bool csv = p.isSet("csv");
+        QString dataset = p.value("dataset").trimmed();
+        QString format = p.value("format").trimmed();
 
+        DatasetType datasetType;
         PrintFormat printType;
-        if (details)
-            printType = PrintFormat::Details;
-        else if (csv)
-            printType = PrintFormat::CSV;
-        else if (tree)
-            printType = PrintFormat::Tree;
+        if (dataset == "id")
+            datasetType = DatasetID;
+        else if (dataset == "basic")
+            datasetType = DatasetBasic;
         else
-            printType = PrintFormat::List;
+            datasetType = DatasetFull;
+
+        if (format == "list")
+            printType = List;
+        else
+            printType = CSV;
 
         if (object == UnknownObjectType)
             object = Package;
 
         QString m;
         info information;
-        if (!information.DisplayInfo(inputPath, debug, object, subjectID, studyNum, printType, m)) {
+        if (!information.DisplayInfo(inputPath, debug, object, subjectID, studyNum, datasetType, printType, m)) {
             CommandLineError(p,m);
         }
 
@@ -275,7 +285,7 @@ int main(int argc, char *argv[])
         /* command line flag options */
         p.addOption(QCommandLineOption(QStringList() << "d" << "debug", "Enable debugging"));
         p.addOption(QCommandLineOption(QStringList() << "q" << "quiet", "Quiet mode. No printing of headers and checks"));
-        p.addOption(QCommandLineOption(QStringList() << "operation", "Operation to perform on the package [add  remove  update  splitbymodality].", "operation"));
+        p.addOption(QCommandLineOption(QStringList() << "operation", "Operation to perform on the package [add  remove  update  splitbymodality  removephi].", "operation"));
         p.addOption(QCommandLineOption(QStringList() << "object", "Object type to perform operation on [package  subject  study  series  analysis  intervention  observation  experiment  pipeline  groupanalysis  datadictionary].", "object"));
         p.addOption(QCommandLineOption(QStringList() << "datapath", "Path to new object data. Can include wildcard: /path/*.dcm", "path"));
         //p.addOption(QCommandLineOption(QStringList() << "recursive", "Search the data path recursively"));

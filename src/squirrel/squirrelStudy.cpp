@@ -22,9 +22,7 @@
 
 #include "squirrelStudy.h"
 #include "utils.h"
-#include <iostream>
-#include <exception>
-#include "squirrel.h"
+//#include "squirrelSubject.h"
 
 /* ------------------------------------------------------------ */
 /* ----- study ------------------------------------------------ */
@@ -32,6 +30,12 @@
 squirrelStudy::squirrelStudy(QString dbID)
 {
     databaseUUID = dbID;
+
+    debug = false;
+    objectID = -1;
+    studyDirFormat = "orig";
+    subjectDirFormat = "orig";
+    valid = false;
 
     AgeAtStudy = 0.0;
     DateTime = QDateTime::currentDateTime();
@@ -42,11 +46,6 @@ squirrelStudy::squirrelStudy(QString dbID)
     StudyNumber = -1;
     TimePoint = 0;
     Weight = 0.0;
-
-    objectID = -1;
-    studyDirFormat = "orig";
-    subjectDirFormat = "orig";
-    valid = false;
 }
 
 
@@ -216,26 +215,61 @@ bool squirrelStudy::Remove() {
 /**
  * @brief Print study details
  */
-QString squirrelStudy::PrintStudy() {
+QString squirrelStudy::PrintStudy(PrintFormat p) {
     QString str;
 
-    str += utils::Print("\t\t\t----- STUDY -----");
-    str += utils::Print(QString("\t\t\tAgeAtStudy: %1").arg(AgeAtStudy));
-    str += utils::Print(QString("\t\t\tDayNumber: %1").arg(DayNumber));
-    str += utils::Print(QString("\t\t\tDescription: %1").arg(Description));
-    str += utils::Print(QString("\t\t\tEquipment: %1").arg(Equipment));
-    str += utils::Print(QString("\t\t\tHeight: %1 m").arg(Height));
-    str += utils::Print(QString("\t\t\tModality: %1").arg(Modality));
-    str += utils::Print(QString("\t\t\tNotes: %1").arg(Notes));
-    str += utils::Print(QString("\t\t\tStudyDatetime: %1").arg(DateTime.toString("yyyy-MM-dd HH:mm:ss")));
-    str += utils::Print(QString("\t\t\tStudyNumber: %1").arg(StudyNumber));
-    str += utils::Print(QString("\t\t\tStudyRowID: %1").arg(objectID));
-    str += utils::Print(QString("\t\t\tStudyUID: %1").arg(StudyUID));
-    str += utils::Print(QString("\t\t\tSubjectRowID: %1").arg(subjectRowID));
-    str += utils::Print(QString("\t\t\tTimePoint: %1").arg(TimePoint));
-    str += utils::Print(QString("\t\t\tVirtualPath: %1").arg(VirtualPath()));
-    str += utils::Print(QString("\t\t\tVisitType: %1").arg(VisitType));
-    str += utils::Print(QString("\t\t\tWeight: %1 kg").arg(Weight));
+    if (p == BasicList) {
+        QString s;
+
+        s += QString("\t%1").arg(StudyNumber);
+        s += QString("\t%1").arg(AgeAtStudy);
+        s += QString("\t%1").arg(Description);
+        s += QString("\t%1").arg(Modality);
+        s += QString("\t%1").arg(DateTime.toString("yyyy-MM-dd HH:mm:ss"));
+        str += utils::Print(s);
+    }
+    else if (p == FullList) {
+        QString s;
+
+        s += QString("%1").arg(AgeAtStudy);
+        s += QString("\t%1").arg(DayNumber);
+        s += QString("\t%1").arg(Description);
+        s += QString("\t%1").arg(Equipment);
+        s += QString("\t%1").arg(Height);
+        s += QString("\t%1").arg(Modality);
+        s += QString("\t%1").arg(Notes);
+        s += QString("\t%1").arg(DateTime.toString("yyyy-MM-dd HH:mm:ss"));
+        s += QString("\t%1").arg(StudyNumber);
+        s += QString("\t%1").arg(StudyUID);
+        s += QString("\t%1").arg(TimePoint);
+        s += QString("\t%1").arg(VirtualPath());
+        s += QString("\t%1").arg(VisitType);
+        s += QString("\t%1").arg(Weight);
+        if (debug) {
+            s += QString("\t%1").arg(objectID);
+            s += QString("\t%1").arg(subjectRowID);
+        }
+        str += utils::Print(s);
+    }
+    else {
+        str += utils::Print("\t\t\t----- STUDY -----");
+        str += utils::Print(QString("\t\t\tAgeAtStudy: %1").arg(AgeAtStudy));
+        str += utils::Print(QString("\t\t\tDayNumber: %1").arg(DayNumber));
+        str += utils::Print(QString("\t\t\tDescription: %1").arg(Description));
+        str += utils::Print(QString("\t\t\tEquipment: %1").arg(Equipment));
+        str += utils::Print(QString("\t\t\tHeight: %1 m").arg(Height));
+        str += utils::Print(QString("\t\t\tModality: %1").arg(Modality));
+        str += utils::Print(QString("\t\t\tNotes: %1").arg(Notes));
+        str += utils::Print(QString("\t\t\tStudyDatetime: %1").arg(DateTime.toString("yyyy-MM-dd HH:mm:ss")));
+        str += utils::Print(QString("\t\t\tStudyNumber: %1").arg(StudyNumber));
+        str += utils::Print(QString("\t\t\tStudyRowID: %1").arg(objectID));
+        str += utils::Print(QString("\t\t\tStudyUID: %1").arg(StudyUID));
+        str += utils::Print(QString("\t\t\tSubjectRowID: %1").arg(subjectRowID));
+        str += utils::Print(QString("\t\t\tTimePoint: %1").arg(TimePoint));
+        str += utils::Print(QString("\t\t\tVirtualPath: %1").arg(VirtualPath()));
+        str += utils::Print(QString("\t\t\tVisitType: %1").arg(VisitType));
+        str += utils::Print(QString("\t\t\tWeight: %1 kg").arg(Weight));
+    }
 
     return str;
 }
@@ -435,4 +469,46 @@ int squirrelStudy::GetNextSeriesNumber() {
         nextSeriesNum = q.value("Max").toInt() + 1;
 
     return nextSeriesNum;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- GetData ---------------------------------------------- */
+/* ------------------------------------------------------------ */
+QHash<QString, QString> squirrelStudy::GetData(DatasetType d) {
+
+    QHash<QString, QString> data;
+
+    switch (d) {
+        case DatasetID:
+            data["Study.Number"] = QString("%1").arg(StudyNumber);
+            break;
+        case DatasetBasic:
+            data["Study.AgeAtStudy"] = QString("%1").arg(AgeAtStudy);
+            data["Study.Description"] = Description;
+            data["Study.Modality"] = Modality;
+            data["Study.DateTime"] = DateTime.toString("yyyy-MM-dd HH:mm:ss");
+            data["Study.Number"] = QString("%1").arg(StudyNumber);
+            break;
+        case DatasetFull:
+            data["Study.AgeAtStudy"] = QString("%1").arg(AgeAtStudy);
+            data["Study.DateTime"] = DateTime.toString("yyyy-MM-dd HH:mm:ss");
+            data["Study.DayNumber"] = QString("%1").arg(DayNumber);
+            data["Study.Description"] = Description;
+            data["Study.Equipment"] = Equipment;
+            data["Study.Height"] = QString("%1").arg(Height);
+            data["Study.Modality"] = Modality;
+            data["Study.Notes"] = Notes;
+            data["Study.Number"] = QString("%1").arg(StudyNumber);
+            data["Study.StudyUID"] = StudyUID;
+            data["Study.TimePoint"] = QString("%1").arg(TimePoint);
+            data["Study.VirtualPath"] = VirtualPath();
+            data["Study.VisitType"] = VisitType;
+            data["Study.Weight"] = QString("%1").arg(Weight);
+            break;
+        default:
+            break;
+    }
+
+    return data;
 }

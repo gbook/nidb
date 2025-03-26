@@ -45,6 +45,7 @@
 #include "vtkGDCMImageReader.h"
 #include "vtkGDCMImageWriter.h"
 #include "vtkStringArray.h"
+#include "vtkVersion.h"
 
 #include "gdcmSystem.h"
 #include "gdcmDirectory.h"
@@ -365,7 +366,7 @@ int main( int argc, char *argv[] )
   ren1->SetViewport(0,0,0.58333,1);
   ren2->SetViewport(0.58333,0,1,1);
 
-  // Set the actors' postions
+  // Set the actors' positions
   //
   renWin->Render();
   //iren->SetEventPosition( 175,175);

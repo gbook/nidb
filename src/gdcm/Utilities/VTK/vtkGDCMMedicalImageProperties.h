@@ -23,6 +23,7 @@
 #ifndef VTKGDCMMEDICALIMAGEPROPERTIES_H
 #define VTKGDCMMEDICALIMAGEPROPERTIES_H
 
+#include "vtkgdcmModule.h"
 #include "vtkMedicalImageProperties.h"
 
 class vtkGDCMMedicalImagePropertiesInternals;
@@ -30,7 +31,7 @@ class vtkGDCMMedicalImagePropertiesInternals;
 namespace gdcm { class File; }
 //ETX
 
-class VTK_EXPORT vtkGDCMMedicalImageProperties : public vtkMedicalImageProperties
+class VTKGDCM_EXPORT vtkGDCMMedicalImageProperties : public vtkMedicalImageProperties
 {
 public:
   static vtkGDCMMedicalImageProperties *New();
@@ -120,14 +121,14 @@ public:
 
   // Description:
   // Study Time
-  // Format: hhmmss.frac (any trailing component(s) can be ommited)
+  // Format: hhmmss.frac (any trailing component(s) can be omitted)
   // For ex: DICOM (0008,0030) = 162552.0705 or 230012, or 0012
   vtkSetStringMacro(StudyTime);
   vtkGetStringMacro(StudyTime);
 
   // Description:
   // Acquisition time
-  // Format: hhmmss.frac (any trailing component(s) can be ommited)
+  // Format: hhmmss.frac (any trailing component(s) can be omitted)
   // For ex: DICOM (0008,0032) = 162552.0705 or 230012, or 0012
   vtkSetStringMacro(AcquisitionTime);
   vtkGetStringMacro(AcquisitionTime);
@@ -160,7 +161,7 @@ public:
 
   // Description:
   // Image Time
-  // Format: hhmmss.frac (any trailing component(s) can be ommited)
+  // Format: hhmmss.frac (any trailing component(s) can be omitted)
   // For ex: DICOM (0008,0033) = 162552.0705 or 230012, or 0012
   vtkSetStringMacro(ImageTime);
   vtkGetStringMacro(ImageTime);

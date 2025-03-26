@@ -30,7 +30,7 @@ class info
 public:
     info();
 
-    bool DisplayInfo(QString packagePath, bool debug, ObjectType object, QString subjectID, int studyNum, PrintFormat printFormat, QString &m);
+    bool DisplayInfo(QString packagePath, bool debug, ObjectType object, QString subjectID, int studyNum, DatasetType dataset, PrintFormat printFormat, QString &m);
 
 };
 

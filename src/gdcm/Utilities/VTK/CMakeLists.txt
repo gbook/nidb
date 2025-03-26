@@ -16,9 +16,14 @@ if(GDCM_HAVE_PTHREAD_H AND CMAKE_USE_PTHREADS)
   )
 endif()
 
-#if( ${VTK_VERSION_MAJOR} LESS 7 )
+if(VTK_VERSION VERSION_LESS 8.90)
   include(${VTK_USE_FILE})
-#endif()
+else()
+  if(VTK::RenderingCore IN_LIST VTK_LIBRARIES)
+    # VTK 5 used to export VTK_USE_RENDERING, now we set it ourselves
+    set(VTK_USE_RENDERING 1)
+  endif()
+endif()
 
 if( ${VTK_MAJOR_VERSION} GREATER 5 )
   list(APPEND vtkgdcm_SRCS
@@ -41,6 +46,7 @@ include_directories(
   ${GDCM_SOURCE_DIR}/Source/DataStructureAndEncodingDefinition
   ${GDCM_SOURCE_DIR}/Source/MediaStorageAndFileFormat
   ${GDCM_SOURCE_DIR}/Source/DataDictionary
+  ${GDCM_BINARY_DIR}/Utilities/VTK
   ${GDCM_SOURCE_DIR}/Utilities/VTK
   )
 
@@ -63,7 +69,7 @@ if("${VTK_MAJOR_VERSION}" LESS 6)
       vtkRendering
       )
   endif()
-else()
+elseif(VTK_VERSION VERSION_LESS 8.90)
   set(vtkgdcm_LIBS
     vtkCommonCore
     vtkImagingCore
@@ -92,13 +98,13 @@ else()
       endif()
     endforeach()
   endforeach()
+elseif() # (VTK_VERSION VERSION_LESS 8.90)
+  # for VTK 9, target dependencies are handled automatically
+  set(vtkgdcm_LIBS)
 endif()
 
 # Use wrapping hints for this project.
 #set(VTK_WRAP_HINTS "${PROJECT_SOURCE_DIR}/hints")
-
-set(VTKGDCM_NAME vtkgdcm CACHE STRING "vtk-gdcm lib name")
-mark_as_advanced(VTKGDCM_NAME)
 
 # Create the instantiator for these classes.
 # FIXME: Are instantiator really needed when only doing python wrapping ?
@@ -158,6 +164,8 @@ else()
   endif()
 endif()
 
+if(VTK_VERSION VERSION_LESS 8.90)
+
 #Hum... not sure why this is needed.
 #if(NOT VTK_BUILD_SHARED_LIBS AND GDCM_BUILD_SHARED_LIBS)
 #  add_library(vtkgdcm STATIC ${vtkgdcm_SRCS} ${vtkgdcmInstantiator_SRCS})
@@ -184,8 +192,12 @@ if(NOT GDCM_INSTALL_NO_LIBRARIES)
 #  endif()
 endif()
 
+# Generate the header file for VTKGDCM_EXPORT
+configure_file(vtkgdcmModule.h.in
+  "${CMAKE_CURRENT_BINARY_DIR}/vtkgdcmModule.h" COPYONLY)
+
 if(NOT GDCM_INSTALL_NO_DEVELOPMENT)
-  set(header_files_glob "*.h" "*.txx")
+  set(header_files_glob "${CMAKE_CURRENT_BINARY_DIR}/*.h" "*.h" "*.txx")
   if( "${VTK_MAJOR_VERSION}.${VTK_MINOR_VERSION}" LESS 4.5 )
     set(header_files_glob ${header_files_glob}
       "VTK4/*.h"
@@ -195,6 +207,20 @@ if(NOT GDCM_INSTALL_NO_DEVELOPMENT)
   install(FILES ${header_files}
     DESTINATION ${GDCM_INSTALL_INCLUDE_DIR} COMPONENT VTKHeaders
   )
+endif()
+
+elseif(DEFINED VTK_MODULE_ENABLE_GDCM_vtkgdcm)
+  # When building as a module for VTK 8.90 or later
+  set(vtkgdcm_SRC_HDRS)
+  foreach(_src ${vtkgdcm_SRCS})
+    get_filename_component(_base ${_src} NAME_WE)
+    list(APPEND vtkgdcm_SRC_HDRS ${_base}.h)
+  endforeach()
+  vtk_module_add_module(GDCM::vtkgdcm
+    SOURCES ${vtkgdcm_SRCS}
+    HEADERS ${vtkgdcm_SRC_HDRS} ${vtkgdcm_HDRS})
+  vtk_module_link(GDCM::vtkgdcm
+    PRIVATE gdcmMSFF)
 endif()
 
 if(GDCM_WRAP_PHP)
@@ -271,7 +297,7 @@ add_custom_target(VTKGDCMPHP ALL
 endif()
 endif()
 
-if(GDCM_WRAP_CSHARP)
+if(VTKGDCM_WRAP_CSHARP)
   if( "${VTK_MAJOR_VERSION}.${VTK_MINOR_VERSION}" LESS 4.5 )
     message(FATAL_ERROR "you need a newer VTK version >= 5.0")
   endif()
@@ -642,6 +668,8 @@ if(GDCM_WRAP_CSHARP)
 
 endif()
 
+if(VTK_VERSION VERSION_LESS 8.90)
+
 if( (GDCM_WRAP_JAVA AND VTK_WRAP_JAVA) OR
     (GDCM_WRAP_PYTHON AND VTK_WRAP_PYTHON) )
   if( ${VTK_MAJOR_VERSION} GREATER 7 )
@@ -679,7 +707,7 @@ if(GDCM_WRAP_JAVA)
     endif()
     if(EXISTS /usr/lib/jni/libvtkCommonJava.so)
       # http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=533198
-      message(STATUS "Implicitely adding debian package layout...")
+      message(STATUS "Implicitly adding debian package layout...")
       link_directories("/usr/lib/jni")
     endif()
     mark_as_advanced(GDCM_VTK_JAVA_JAR)
@@ -749,7 +777,7 @@ if(GDCM_WRAP_JAVA)
       message(WARNING "Could not find vtk.jar file, VTK_JAVA_JAR is wrong: ${VTK_JAVA_JAR}, please set proper GDCM_VTK_JAVA_JAR: ${GDCM_VTK_JAVA_JAR} replacement var")
     endif()
   else()
-    message(STATUS "GDCM_WRAP_JAVA canot be build without VTK_WRAP_JAVA")
+    message(STATUS "GDCM_WRAP_JAVA cannot be build without VTK_WRAP_JAVA")
   endif()
 endif()
 
@@ -825,13 +853,15 @@ if(GDCM_WRAP_PYTHON)
     endif()
 
   else()
-    message(STATUS "GDCM_WRAP_PYTHON canot be build without VTK_WRAP_PYTHON")
+    message(STATUS "GDCM_WRAP_PYTHON cannot be build without VTK_WRAP_PYTHON")
   endif()
 endif()
 
 if(BUILD_TESTING)
   add_subdirectory(Testing)
 endif()
+
+endif() #(VTK_VERSION VERSION_LESS 8.90)
 
 if(BUILD_APPLICATIONS)
   add_subdirectory(Applications)

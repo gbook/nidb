@@ -61,6 +61,12 @@ bool modify::DoModify(QString packagePath, QString operation, ObjectType object,
         else
             return false;
     }
+    else if (operation == "removephi") {
+        if (RemovePHI(packagePath, dataPath, m))
+            return true;
+        else
+            return false;
+    }
     else {
         m = "Invalid operation [" + operation + "] specified";
         return false;
@@ -108,6 +114,7 @@ bool modify::AddObject(QString packagePath, ObjectType object, QString dataPath,
     squirrel *sqrl = new squirrel();
     sqrl->SetFileMode(FileMode::ExistingPackage);
     sqrl->SetPackagePath(packagePath);
+    sqrl->SetWriteLog(true);
     if (!sqrl->Read()) {
         m = QString("Package unreadable [%1] already exists in package").arg(vars["ID"]);
         delete sqrl;
@@ -439,7 +446,7 @@ bool modify::AddObject(QString packagePath, ObjectType object, QString dataPath,
     }
 
     /* write the squirrel object */
-    sqrl->Write(true);
+    sqrl->Write();
 
     delete sqrl;
     return true;
@@ -451,106 +458,114 @@ bool modify::AddObject(QString packagePath, ObjectType object, QString dataPath,
 /* ---------------------------------------------------------------------------- */
 bool modify::RemoveObject(QString packagePath, ObjectType object, QString dataPath, QString objectData, QString objectID, QString subjectID, int studyNum, QString &m) {
 
-    //if (object != "") {
-        /* load the package */
-        squirrel *sqrl = new squirrel();
-        sqrl->SetFileMode(FileMode::ExistingPackage);
-        sqrl->SetPackagePath(packagePath);
-        if (!sqrl->Read()) {
-            m = QString("Package unreadable");
+    /* load the package */
+    squirrel *sqrl = new squirrel();
+    sqrl->SetFileMode(FileMode::ExistingPackage);
+    sqrl->SetPackagePath(packagePath);
+    sqrl->SetWriteLog(false);
+    if (!sqrl->Read()) {
+        m = QString("Package unreadable");
+        delete sqrl;
+        return false;
+    }
+
+    /* ----- subject ----- */
+    if (object == Subject) {
+        qint64 subjectRowID = sqrl->FindSubject(objectID);
+        if (subjectRowID < 0) {
+            m = QString("Subject with ID [%1] not found in package").arg(objectID);
             delete sqrl;
             return false;
         }
-
-        /* ----- subject ----- */
-        if (object == Subject) {
-            qint64 subjectRowID = sqrl->FindSubject(objectID);
-            if (subjectRowID < 0) {
-                sqrl->RemoveObject(Subject, subjectRowID);
-                sqrl->ResequenceSubjects();
-            }
-            else {
-                m = QString("Subject with ID [%1] not found in package").arg(objectID);
-                delete sqrl;
-                return false;
-            }
+        else {
+            sqrl->RemoveObject(Subject, subjectRowID);
+            sqrl->ResequenceSubjects();
         }
-        else if (object == Study) {
-            qint64 studyRowID = sqrl->FindStudy(subjectID, objectID.toInt());
-            qint64 subjectRowID = sqrl->FindSubject(objectID);
-            if (studyRowID < 0) {
-                sqrl->RemoveObject(Study, studyRowID);
-                sqrl->ResequenceStudies(subjectRowID);
-            }
-            else {
-                m = QString("Study with SubjectID [%1], StudyNum [%2] not found in package").arg(subjectID).arg(objectID);
-                delete sqrl;
-                return false;
-            }
-        }
-        else if (object == Series) {
-            qint64 seriesRowID = sqrl->FindSeries(subjectID, studyNum, objectID.toInt());
-            qint64 studyRowID = sqrl->FindStudy(subjectID, studyNum);
-            if (seriesRowID < 0) {
-                sqrl->RemoveObject(Series, seriesRowID);
-                sqrl->ResequenceSeries(studyRowID);
-            }
-            else {
-                m = QString("Series with SubjectID [%1], StudyNum [%2], SeriesNum [%3] not found in package").arg(subjectID).arg(studyNum).arg(objectID);
-                delete sqrl;
-                return false;
-            }
-        }
-        else if (object == Experiment) {
-            qint64 experimentRowID = sqrl->FindExperiment(objectID);
-            if (experimentRowID < 0) {
-                sqrl->RemoveObject(Experiment, experimentRowID);
-            }
-            else {
-                m = QString("Experiment with ExperimentName [%1] not found in package").arg(objectID);
-                delete sqrl;
-                return false;
-            }
-        }
-        else if (object == Pipeline) {
-            qint64 pipelineRowID = sqrl->FindPipeline(objectID);
-            if (pipelineRowID < 0) {
-                sqrl->RemoveObject(Pipeline, pipelineRowID);
-            }
-            else {
-                m = QString("Pipeline with PipelineName [%1] not found in package").arg(objectID);
-                delete sqrl;
-                return false;
-            }
-        }
-        else if (object == GroupAnalysis) {
-            qint64 groupAnalysisRowID = sqrl->FindGroupAnalysis(objectID);
-            if (groupAnalysisRowID < 0) {
-                sqrl->RemoveObject(GroupAnalysis, groupAnalysisRowID);
-            }
-            else {
-                m = QString("GroupAnalysis with GroupAnalysisName [%1] not found in package").arg(objectID);
-                delete sqrl;
-                return false;
-            }
-        }
-        else if (object == DataDictionary) {
-            qint64 dataDictionaryRowID = sqrl->FindDataDictionary(objectID);
-            if (dataDictionaryRowID < 0) {
-                sqrl->RemoveObject(DataDictionary, dataDictionaryRowID);
-            }
-            else {
-                m = QString("DataDictionary with DataDictionaryName [%1] not found in package").arg(objectID);
-                delete sqrl;
-                return false;
-            }
+    }
+    else if (object == Study) {
+        qint64 studyRowID = sqrl->FindStudy(subjectID, objectID.toInt());
+        qint64 subjectRowID = sqrl->FindSubject(objectID);
+        if (studyRowID < 0) {
+            sqrl->RemoveObject(Study, studyRowID);
+            sqrl->ResequenceStudies(subjectRowID);
         }
         else {
-            m = "Unknown object type";
+            m = QString("Study with SubjectID [%1], StudyNum [%2] not found in package").arg(subjectID).arg(objectID);
+            delete sqrl;
             return false;
         }
-    //}
-    return true;
+    }
+    else if (object == Series) {
+        qint64 seriesRowID = sqrl->FindSeries(subjectID, studyNum, objectID.toInt());
+        qint64 studyRowID = sqrl->FindStudy(subjectID, studyNum);
+        if (seriesRowID < 0) {
+            sqrl->RemoveObject(Series, seriesRowID);
+            sqrl->ResequenceSeries(studyRowID);
+        }
+        else {
+            m = QString("Series with SubjectID [%1], StudyNum [%2], SeriesNum [%3] not found in package").arg(subjectID).arg(studyNum).arg(objectID);
+            delete sqrl;
+            return false;
+        }
+    }
+    else if (object == Experiment) {
+        qint64 experimentRowID = sqrl->FindExperiment(objectID);
+        if (experimentRowID < 0) {
+            sqrl->RemoveObject(Experiment, experimentRowID);
+        }
+        else {
+            m = QString("Experiment with ExperimentName [%1] not found in package").arg(objectID);
+            delete sqrl;
+            return false;
+        }
+    }
+    else if (object == Pipeline) {
+        qint64 pipelineRowID = sqrl->FindPipeline(objectID);
+        if (pipelineRowID < 0) {
+            sqrl->RemoveObject(Pipeline, pipelineRowID);
+        }
+        else {
+            m = QString("Pipeline with PipelineName [%1] not found in package").arg(objectID);
+            delete sqrl;
+            return false;
+        }
+    }
+    else if (object == GroupAnalysis) {
+        qint64 groupAnalysisRowID = sqrl->FindGroupAnalysis(objectID);
+        if (groupAnalysisRowID < 0) {
+            sqrl->RemoveObject(GroupAnalysis, groupAnalysisRowID);
+        }
+        else {
+            m = QString("GroupAnalysis with GroupAnalysisName [%1] not found in package").arg(objectID);
+            delete sqrl;
+            return false;
+        }
+    }
+    else if (object == DataDictionary) {
+        qint64 dataDictionaryRowID = sqrl->FindDataDictionary(objectID);
+        if (dataDictionaryRowID < 0) {
+            sqrl->RemoveObject(DataDictionary, dataDictionaryRowID);
+        }
+        else {
+            m = QString("DataDictionary with DataDictionaryName [%1] not found in package").arg(objectID);
+            delete sqrl;
+            return false;
+        }
+    }
+    else {
+        m = "Unknown object type";
+        return false;
+    }
+
+    if (sqrl->Write()) {
+        m = "Successfully removed object and wrote squirrel package";
+        return true;
+    }
+    else {
+        m = "Unable to write squirrel package";
+        return false;
+    }
+
 }
 
 
@@ -725,6 +740,7 @@ bool modify::SplitByModality(QString packagePath, QString dataPath, QString obje
         sqrl2->SetPackagePath(newPackagePath);
         sqrl2->SetOverwritePackage(true);
         sqrl2->DataFormat = "orig";
+        sqrl2->SetWriteLog(true);
         QString newDbID = sqrl2->GetDatabaseUUID();
         //sqrl2->SetSystemTempDir();
 
@@ -814,7 +830,7 @@ bool modify::SplitByModality(QString packagePath, QString dataPath, QString obje
             }
         }
         //sqrl2->Print();
-        sqrl2->Write(true);
+        sqrl2->Write();
         delete sqrl2;
     }
 
@@ -826,11 +842,66 @@ bool modify::SplitByModality(QString packagePath, QString dataPath, QString obje
 
 
 /* ---------------------------------------------------------------------------- */
+/* ----- RemovePHI ------------------------------------------------------------ */
+/* ---------------------------------------------------------------------------- */
+bool modify::RemovePHI(QString packagePath, QString dataPath, QString &m) {
+
+    squirrel *sqrl = new squirrel();
+    sqrl->SetFileMode(FileMode::ExistingPackage);
+    sqrl->SetPackagePath(packagePath);
+    sqrl->SetQuickRead(true);
+
+    if (sqrl->Read()) {
+        utils::Print("Read package [" + packagePath + "] successfully");
+    }
+    else {
+        m = QString("Package unreadable [" + packagePath + "]");
+        m += QString("Log [" + sqrl->GetLog() + "]");
+        delete sqrl;
+        return false;
+    }
+
+    QSqlQuery q(QSqlDatabase::database(sqrl->GetDatabaseUUID()));
+
+    /* alphabetically by table ... */
+
+    /* remove intervention dates */
+    q.prepare("update Intervention set DateStart = '0000-00-00 00:00:00', DateEnd = '0000-00-00 00:00:00', DateRecordCreate = '0000-00-00 00:00:00', DateRecordEntry = '0000-00-00 00:00:00', DateRecordModify = '0000-00-00 00:00:00'");
+    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    sqrl->Log("Removed intervention dates");
+
+    /* remove observation dates */
+    q.prepare("update Intervention set DateStart = '0000-00-00 00:00:00', DateEnd = '0000-00-00 00:00:00', DateRecordCreate = '0000-00-00 00:00:00', DateRecordEntry = '0000-00-00 00:00:00', DateRecordModify = '0000-00-00 00:00:00'");
+    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    sqrl->Log("Removed observation dates");
+
+    /* remove series datetime */
+    q.prepare("update Series set Datetime = '0000-00-00 00:00:00'");
+    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    sqrl->Log("Removed series dates");
+
+    /* remove study datetime */
+    q.prepare("update Study set Datetime = '0000-00-00 00:00:00'");
+    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    sqrl->Log("Removed study dates");
+
+    /* remove subject dateOfBirth */
+    q.prepare("update Subject set DateOfBirth = '0000-00-00'");
+    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    sqrl->Log("Removed subject birthdates");
+
+    sqrl->WriteUpdate();
+
+    return true;
+}
+
+
+/* ---------------------------------------------------------------------------- */
 /* ----- PrintVariables ------------------------------------------------------- */
 /* ---------------------------------------------------------------------------- */
 void modify::PrintVariables(ObjectType object) {
     using namespace std;
-    vector<vector<string>> data;
+    vector<vector<string> > data;
 
     if (object == Package) {
         data = {

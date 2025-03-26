@@ -17,7 +17,7 @@
 // .SECTION TODO
 // Need to do the same job for DVH Sequence/DVH Data...
 // .SECTION Warning
-// When using vtkGDCMPolyDataReader in conjonction with vtkGDCMImageReader
+// When using vtkGDCMPolyDataReader in conjunction with vtkGDCMImageReader
 // it is *required* that FileLowerLeft is set to ON as coordinate system
 // would be inconsistent in between the two data structures.
 //
@@ -28,6 +28,7 @@
 #ifndef VTKGDCMPOLYDATAREADER_H
 #define VTKGDCMPOLYDATAREADER_H
 
+#include "vtkgdcmModule.h"
 #include "vtkPolyDataAlgorithm.h"
 
 class vtkMedicalImageProperties;
@@ -35,7 +36,7 @@ class vtkRTStructSetProperties;
 //BTX
 namespace gdcm { class Reader; }
 //ETX
-class VTK_EXPORT vtkGDCMPolyDataReader : public vtkPolyDataAlgorithm
+class VTKGDCM_EXPORT vtkGDCMPolyDataReader : public vtkPolyDataAlgorithm
 {
 public:
   static vtkGDCMPolyDataReader *New();

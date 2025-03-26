@@ -57,7 +57,7 @@ public:
   /// Return size of Preamble
   VL GetLength() const { return 128 + 4; }
 
-  Preamble(Preamble const &)
+  Preamble(Preamble const &):Internal(nullptr)
     {
     Create();
     }

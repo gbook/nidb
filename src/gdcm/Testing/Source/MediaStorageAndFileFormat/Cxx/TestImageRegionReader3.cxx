@@ -91,7 +91,7 @@ static int TestImageRegionRead(const char* filename, bool verbose = false)
       zlen = reader.ComputeBufferLength();
       assert( zlen );
       vbuffer.resize( zlen );
-      char* buffer = &vbuffer[0];
+      char* buffer = vbuffer.data();
       b = reader.ReadIntoBuffer(buffer, zlen);
       if( !b ) return 1;
       assert( zlen );
@@ -123,7 +123,7 @@ static int TestImageRegionRead(const char* filename, bool verbose = false)
     std::cout << "Missing md5 " << digest << " for: " << filename <<  std::endl;
     res = 1;
     }
-  else if( strcmp(digest, ref) )
+  else if( strcmp(digest, ref) != 0 )
     {
     std::cerr << "Problem reading image from: " << filename << std::endl;
     std::cerr << "Found " << digest << " instead of " << ref << std::endl;

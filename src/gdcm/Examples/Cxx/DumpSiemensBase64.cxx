@@ -22,7 +22,6 @@
 #include "gdcmBase64.h"
 #include "gdcmExplicitDataElement.h"
 #include "gdcmSwapper.h"
-#include "gdcmPrinter.h"
 
 #include <iostream>
 #include <fstream>
@@ -59,10 +58,10 @@ int main(int argc, char *argv[])
     size_t dl = gdcm::Base64::GetDecodeLength( str.c_str(), str.size() );
     std::vector<char> buf;
     buf.resize( dl );
-    size_t dl2 = gdcm::Base64::Decode( &buf[0], buf.size(), str.c_str(), str.size() );
+    size_t dl2 = gdcm::Base64::Decode( buf.data(), buf.size(), str.c_str(), str.size() );
     (void)dl2;
     std::stringstream ss;
-    ss.str( std::string(&buf[0], buf.size()) );
+    ss.str( std::string(buf.data(), buf.size()) );
     gdcm::File file;
     gdcm::DataSet &ds2 = file.GetDataSet();
     gdcm::DataElement xde;
