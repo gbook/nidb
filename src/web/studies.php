@@ -1943,10 +1943,11 @@
 					DisplayFileSeries($studypath, $studyid);
 				}
 				else {
-					if ($study_modality == "MR") {
-						DisplayMRSeries($studyid, $study_num, $uid);
+					$study_modality = strtolower($study_modality);
+					if (($study_modality == "mr") || ($study_modality == "pr")) {
+						DisplayMRSeries($studyid, $study_num, $uid, $study_modality);
 					}
-					elseif ($study_modality == "CT") {
+					elseif ($study_modality == "ct") {
 						DisplayCTSeries($studyid, $study_num, $uid);
 					}
 					else {
@@ -1963,7 +1964,7 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayMRSeries -------------------- */
 	/* -------------------------------------------- */
-	function DisplayMRSeries($studyid, $study_num, $uid) {
+	function DisplayMRSeries($studyid, $study_num, $uid, $modality) {
 		$uid = mysqli_real_escape_string($GLOBALS['linki'], $uid);
 		if (!ValidID($studyid,'Study ID')) { return; }
 		if (!ValidID($study_num,'Studynum')) { return; }
@@ -1994,71 +1995,44 @@
 			echo "$sqlstring<br>";
 		}
 
-		/* get the movement & SNR stats by sequence name */
-		$sqlstring2 = "SELECT b.series_sequencename, max(a.move_maxx) 'maxx', min(a.move_minx) 'minx', max(a.move_maxy) 'maxy', min(a.move_miny) 'miny', max(a.move_maxz) 'maxz', min(a.move_minz) 'minz', avg(a.pv_snr) 'avgpvsnr', avg(a.io_snr) 'avgiosnr', std(a.pv_snr) 'stdpvsnr', std(a.io_snr) 'stdiosnr', min(a.pv_snr) 'minpvsnr', min(a.io_snr) 'miniosnr', max(a.pv_snr) 'maxpvsnr', max(a.io_snr) 'maxiosnr', min(a.motion_rsq) 'minmotion', max(a.motion_rsq) 'maxmotion', avg(a.motion_rsq) 'avgmotion', std(a.motion_rsq) 'stdmotion' FROM mr_qa a left join mr_series b on a.mrseries_id = b.mrseries_id where a.io_snr > 0 group by b.series_sequencename";
-		//echo "$sqlstring2<br>";
-		$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);
-		while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
-			$sequence = $row2['series_sequencename'];
-			$pstats[$sequence]['rangex'] = abs($row2['minx']) + abs($row2['maxx']);
-			$pstats[$sequence]['rangey'] = abs($row2['miny']) + abs($row2['maxy']);
-			$pstats[$sequence]['rangez'] = abs($row2['minz']) + abs($row2['maxz']);
-			$pstats[$sequence]['avgpvsnr'] = $row2['avgpvsnr'];
-			$pstats[$sequence]['stdpvsnr'] = $row2['stdpvsnr'];
-			$pstats[$sequence]['minpvsnr'] = $row2['minpvsnr'];
-			$pstats[$sequence]['maxpvsnr'] = $row2['maxpvsnr'];
-			
-			$pstats[$sequence]['avgiosnr'] = $row2['avgiosnr'];
-			$pstats[$sequence]['stdiosnr'] = $row2['stdiosnr'];
-			$pstats[$sequence]['miniosnr'] = $row2['miniosnr'];
-			$pstats[$sequence]['maxiosnr'] = $row2['maxiosnr'];
+		if ($modality == "mr") {
+			/* get the movement & SNR stats by sequence name */
+			$sqlstring2 = "SELECT b.series_sequencename, max(a.move_maxx) 'maxx', min(a.move_minx) 'minx', max(a.move_maxy) 'maxy', min(a.move_miny) 'miny', max(a.move_maxz) 'maxz', min(a.move_minz) 'minz', avg(a.pv_snr) 'avgpvsnr', avg(a.io_snr) 'avgiosnr', std(a.pv_snr) 'stdpvsnr', std(a.io_snr) 'stdiosnr', min(a.pv_snr) 'minpvsnr', min(a.io_snr) 'miniosnr', max(a.pv_snr) 'maxpvsnr', max(a.io_snr) 'maxiosnr', min(a.motion_rsq) 'minmotion', max(a.motion_rsq) 'maxmotion', avg(a.motion_rsq) 'avgmotion', std(a.motion_rsq) 'stdmotion' FROM mr_qa a left join mr_series b on a.mrseries_id = b.mrseries_id where a.io_snr > 0 group by b.series_sequencename";
+			//echo "$sqlstring2<br>";
+			$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);
+			while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
+				$sequence = $row2['series_sequencename'];
+				$pstats[$sequence]['rangex'] = abs($row2['minx']) + abs($row2['maxx']);
+				$pstats[$sequence]['rangey'] = abs($row2['miny']) + abs($row2['maxy']);
+				$pstats[$sequence]['rangez'] = abs($row2['minz']) + abs($row2['maxz']);
+				$pstats[$sequence]['avgpvsnr'] = $row2['avgpvsnr'];
+				$pstats[$sequence]['stdpvsnr'] = $row2['stdpvsnr'];
+				$pstats[$sequence]['minpvsnr'] = $row2['minpvsnr'];
+				$pstats[$sequence]['maxpvsnr'] = $row2['maxpvsnr'];
+				
+				$pstats[$sequence]['avgiosnr'] = $row2['avgiosnr'];
+				$pstats[$sequence]['stdiosnr'] = $row2['stdiosnr'];
+				$pstats[$sequence]['miniosnr'] = $row2['miniosnr'];
+				$pstats[$sequence]['maxiosnr'] = $row2['maxiosnr'];
 
-			$pstats[$sequence]['avgmotion'] = $row2['avgmotion'];
-			$pstats[$sequence]['stdmotion'] = $row2['stdmotion'];
-			$pstats[$sequence]['minmotion'] = $row2['minmotion'];
-			$pstats[$sequence]['maxmotion'] = $row2['maxmotion'];
-			
-			if ($row2['stdiosnr'] != 0) {
-				$pstats[$sequence]['maxstdiosnr'] = ($row2['avgiosnr'] - $row2['miniosnr'])/$row2['stdiosnr'];
-			} else { $pstats[$sequence]['maxstdiosnr'] = 0; }
-			if ($row2['stdpvsnr'] != 0) {
-				$pstats[$sequence]['maxstdpvsnr'] = ($row2['avgpvsnr'] - $row2['minpvsnr'])/$row2['stdpvsnr'];
-			} else { $pstats[$sequence]['maxstdpvsnr'] = 0; }
-			if ($row2['stdmotion'] != 0) {
-				$pstats[$sequence]['maxstdmotion'] = ($row2['avgmotion'] - $row2['minmotion'])/$row2['stdmotion'];
-			} else { $pstats[$sequence]['maxstdmotion'] = 0; }
+				$pstats[$sequence]['avgmotion'] = $row2['avgmotion'];
+				$pstats[$sequence]['stdmotion'] = $row2['stdmotion'];
+				$pstats[$sequence]['minmotion'] = $row2['minmotion'];
+				$pstats[$sequence]['maxmotion'] = $row2['maxmotion'];
+				
+				if ($row2['stdiosnr'] != 0) {
+					$pstats[$sequence]['maxstdiosnr'] = ($row2['avgiosnr'] - $row2['miniosnr'])/$row2['stdiosnr'];
+				} else { $pstats[$sequence]['maxstdiosnr'] = 0; }
+				if ($row2['stdpvsnr'] != 0) {
+					$pstats[$sequence]['maxstdpvsnr'] = ($row2['avgpvsnr'] - $row2['minpvsnr'])/$row2['stdpvsnr'];
+				} else { $pstats[$sequence]['maxstdpvsnr'] = 0; }
+				if ($row2['stdmotion'] != 0) {
+					$pstats[$sequence]['maxstdmotion'] = ($row2['avgmotion'] - $row2['minmotion'])/$row2['stdmotion'];
+				} else { $pstats[$sequence]['maxstdmotion'] = 0; }
+			}
 		}
-		?>
-		
-		<style type="text/css">
-            /*.edit_inline { background-color: lightyellow; padding-left: 2pt; padding-right: 2pt; }*/
-            .edit_textarea { background-color: lightyellow; }
-			textarea.inplace_field { background-color: white; font-family: courier new; font-size: 8pt; border: 1pt solid gray; width: 800px;  }
-			input.inplace_field { background-color: white; font-size: 8pt; border: 1pt solid gray; width: 200px;  }
-		</style>
-		
-		<?
-		/* get the actual MR series info */
-		//$sqlstring = "select * from mr_series where study_id = $studyid order by series_num";
-		//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		//while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			//$mrseries_id = $row['mrseries_id'];
 			?>
-			<!--<script type="text/javascript">
-				$(document).ready(function(){
-					$(".edit_inline<? echo $mrseries_id; ?>").editInPlace({
-						url: "series_inlineupdate.php",
-						params: "action=editinplace&modality=MR&id=<? echo $mrseries_id; ?>",
-						default_text: "<i style='color:#AAAAAA'>Add notes...</i>",
-						bg_over: "white",
-						bg_out: "lightyellow",
-					});
-				});
-			</script>-->
-			<?
-		//}
-		?>
-
+		
 		<script type="text/javascript">
 		$(function() {
 			$("#seriesall").click(function() {
@@ -2073,7 +2047,7 @@
 		<input type="hidden" name="action" value="none">
 		<input type="hidden" name="studyid" value="<?=$studyid?>">
 		<input type="hidden" name="subjectid" value="<?=$subjectid?>">
-		<input type="hidden" name="modality" value="mr">
+		<input type="hidden" name="modality" value="<?=$modality?>">
 		<input type="hidden" name="objecttype" value="series">
 		<table class="ui top attached very compact small celled grey table" style="margin: 0px">
 			<thead>
@@ -2103,10 +2077,16 @@
 			<tbody>
 				<?
 					/* just get a list of MR series ids */
-					$sqlstring = "select mrseries_id from mr_series where study_id = $studyid order by series_num";
+					if ($modality == "mr") {
+						$sqlstring = "select mrseries_id from mr_series where study_id = $studyid order by series_num";
+					}
+					if ($modality == "pr") {
+						$sqlstring = "select prseries_id from pr_series where study_id = $studyid order by series_num";
+					}
+					
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-						$mrseriesids[] = $row['mrseries_id'];
+						$mrseriesids[] = $row[$modality . 'series_id'];
 					}
 				
 					/* get the rating information */
@@ -2118,8 +2098,7 @@
 						<?
 					}
 					else {
-						$sqlstring3 = "select * from ratings where rating_type = 'series' and data_modality = 'MR' and data_id in (" . implode(',',$mrseriesids) . ")";
-						
+						$sqlstring3 = "select * from ratings where rating_type = 'series' and data_modality = '$modality' and data_id in (" . implode(',',$mrseriesids) . ")";
 						$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
 						while ($row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC)) {
 							$ratingseriesid = $row3['data_id'];
@@ -2128,10 +2107,15 @@
 
 						/* get the actual MR series info */
 						mysqli_data_seek($result,0);
-						$sqlstring = "select * from mr_series where study_id = $studyid order by series_num";
+						if ($modality == "mr") {
+							$sqlstring = "select * from mr_series where study_id = $studyid order by series_num";
+						}
+						if ($modality == "pr") {
+							$sqlstring = "select * from pr_series where study_id = $studyid order by series_num";
+						}
 						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-							$mrseries_id = $row['mrseries_id'];
+							$mrseries_id = $row[$modality . 'series_id'];
 							$series_datetime = date('g:ia',strtotime($row['series_datetime']));
 							$protocol = $row['series_protocol'];
 							$series_desc = $row['series_desc'];
@@ -2199,7 +2183,12 @@
 									$beh_size += filesize($behfile);
 								}
 								if ($numfiles_beh > 0) {
-									$sqlstring5 = "update mr_series set beh_size = '$beh_size', numfiles_beh = '$numfiles_beh' where mrseries_id = $mrseries_id";
+									if ($modality == "mr") {
+										$sqlstring5 = "update mr_series set beh_size = '$beh_size', numfiles_beh = '$numfiles_beh' where mrseries_id = $mrseries_id";
+									}
+									if ($modality == "pr") {
+										$sqlstring5 = "update pr_series set beh_size = '$beh_size', numfiles_beh = '$numfiles_beh' where mrseries_id = $mrseries_id";
+									}
 									$result5 = MySQLiQuery($sqlstring5, __FILE__, __LINE__);
 								}
 							}
@@ -2256,129 +2245,131 @@
 							$gifthumbpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/thumb.gif";
 							$realignpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/MotionCorrection.txt";
 
-							$sqlstring2 = "select * from mr_qa where mrseries_id = $mrseries_id";
-							$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);
-							$row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC);
-							$iosnr = $row2['io_snr'];
-							$pvsnr = $row2['pv_snr'];
-							$move_minx = $row2['move_minx'];
-							$move_miny = $row2['move_miny'];
-							$move_minz = $row2['move_minz'];
-							$move_maxx = $row2['move_maxx'];
-							$move_maxy = $row2['move_maxy'];
-							$move_maxz = $row2['move_maxz'];
-							$acc_minx = $row2['acc_minx'];
-							$acc_miny = $row2['acc_miny'];
-							$acc_minz = $row2['acc_minz'];
-							$acc_maxx = $row2['acc_maxx'];
-							$acc_maxy = $row2['acc_maxy'];
-							$acc_maxz = $row2['acc_maxz'];
-							$motion_rsq = $row2['motion_rsq'];
-							$rangex = abs($move_minx) + abs($move_maxx);
-							$rangey = abs($move_miny) + abs($move_maxy);
-							$rangez = abs($move_minz) + abs($move_maxz);
-							$rangex2 = abs($acc_minx) + abs($acc_maxx);
-							$rangey2 = abs($acc_miny) + abs($acc_maxy);
-							$rangez2 = abs($acc_minz) + abs($acc_maxz);
-							$stdsmotion = 0;
+							if ($modality == "mr") {
+								$sqlstring2 = "select * from mr_qa where mrseries_id = $mrseries_id";
+								$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);
+								$row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC);
+								$iosnr = $row2['io_snr'];
+								$pvsnr = $row2['pv_snr'];
+								$move_minx = $row2['move_minx'];
+								$move_miny = $row2['move_miny'];
+								$move_minz = $row2['move_minz'];
+								$move_maxx = $row2['move_maxx'];
+								$move_maxy = $row2['move_maxy'];
+								$move_maxz = $row2['move_maxz'];
+								$acc_minx = $row2['acc_minx'];
+								$acc_miny = $row2['acc_miny'];
+								$acc_minz = $row2['acc_minz'];
+								$acc_maxx = $row2['acc_maxx'];
+								$acc_maxy = $row2['acc_maxy'];
+								$acc_maxz = $row2['acc_maxz'];
+								$motion_rsq = $row2['motion_rsq'];
+								$rangex = abs($move_minx) + abs($move_maxx);
+								$rangey = abs($move_miny) + abs($move_maxy);
+								$rangez = abs($move_minz) + abs($move_maxz);
+								$rangex2 = abs($acc_minx) + abs($acc_maxx);
+								$rangey2 = abs($acc_miny) + abs($acc_maxy);
+								$rangez2 = abs($acc_minz) + abs($acc_maxz);
+								$stdsmotion = 0;
 
-							/* calculate color based on voxel size... red (100) means more than 1 voxel displacement in that direction */
-							if ($series_spacingx > 0) {
-								$xindex = round(($rangex/$series_spacingx)*100); if ($xindex > 100) { $xindex = 100; }
-								$xindex2 = round(($rangex2/$series_spacingx)*100); if ($xindex2 > 100) { $xindex2 = 100; }
-							}
-							if ($series_spacingy > 0) {
-								$yindex = round(($rangey/$series_spacingy)*100); if ($yindex > 100) { $yindex = 100; }
-								$yindex2 = round(($rangey2/$series_spacingy)*100); if ($yindex2 > 100) { $yindex2 = 100; }
-							}
-							if ($series_spacingz > 0) {
-								$zindex = round(($rangez/$series_spacingz)*100); if ($zindex > 100) { $zindex = 100; }
-								$zindex2 = round(($rangez2/$series_spacingz)*100); if ($zindex2 > 100) { $zindex2 = 100; }
-							}
-							
-							/* get standard deviations from the mean for SNR */
-							if ($pstats[$sequence]['stdiosnr'] != 0) {
-								if ($iosnr > $pstats[$sequence]['avgiosnr']) {
-									$stdsiosnr = 0;
+								/* calculate color based on voxel size... red (100) means more than 1 voxel displacement in that direction */
+								if ($series_spacingx > 0) {
+									$xindex = round(($rangex/$series_spacingx)*100); if ($xindex > 100) { $xindex = 100; }
+									$xindex2 = round(($rangex2/$series_spacingx)*100); if ($xindex2 > 100) { $xindex2 = 100; }
 								}
-								else {
-									$stdsiosnr = (($iosnr - $pstats[$sequence]['avgiosnr'])/$pstats[$sequence]['stdiosnr']);
+								if ($series_spacingy > 0) {
+									$yindex = round(($rangey/$series_spacingy)*100); if ($yindex > 100) { $yindex = 100; }
+									$yindex2 = round(($rangey2/$series_spacingy)*100); if ($yindex2 > 100) { $yindex2 = 100; }
 								}
-							}
-							if ($pstats[$sequence]['stdpvsnr'] != 0) {
-								if ($pvsnr > $pstats[$sequence]['avgpvsnr']) {
-									$stdspvsnr = 0;
+								if ($series_spacingz > 0) {
+									$zindex = round(($rangez/$series_spacingz)*100); if ($zindex > 100) { $zindex = 100; }
+									$zindex2 = round(($rangez2/$series_spacingz)*100); if ($zindex2 > 100) { $zindex2 = 100; }
 								}
-								else {
-									$stdspvsnr = (($pvsnr - $pstats[$sequence]['avgpvsnr'])/$pstats[$sequence]['stdpvsnr']);
+								
+								/* get standard deviations from the mean for SNR */
+								if ($pstats[$sequence]['stdiosnr'] != 0) {
+									if ($iosnr > $pstats[$sequence]['avgiosnr']) {
+										$stdsiosnr = 0;
+									}
+									else {
+										$stdsiosnr = (($iosnr - $pstats[$sequence]['avgiosnr'])/$pstats[$sequence]['stdiosnr']);
+									}
 								}
-							}
-							if ($pstats[$sequence]['stdmotion'] != 0) {
-								if ($motion_rsq > $pstats[$sequence]['avgmotion']) {
-									$stdmotion = 0;
+								if ($pstats[$sequence]['stdpvsnr'] != 0) {
+									if ($pvsnr > $pstats[$sequence]['avgpvsnr']) {
+										$stdspvsnr = 0;
+									}
+									else {
+										$stdspvsnr = (($pvsnr - $pstats[$sequence]['avgpvsnr'])/$pstats[$sequence]['stdpvsnr']);
+									}
 								}
-								else {
-									$stdmotion = (($motion_rsq - $pstats[$sequence]['avgmotion'])/$pstats[$sequence]['stdmotion']);
+								if ($pstats[$sequence]['stdmotion'] != 0) {
+									if ($motion_rsq > $pstats[$sequence]['avgmotion']) {
+										$stdmotion = 0;
+									}
+									else {
+										$stdmotion = (($motion_rsq - $pstats[$sequence]['avgmotion'])/$pstats[$sequence]['stdmotion']);
+									}
 								}
-							}
-							
-							if ($pstats[$sequence]['maxstdpvsnr'] == 0) { $pvindex = 100; }
-							else { $pvindex = round(($stdspvsnr/$pstats[$sequence]['maxstdpvsnr'])*100); }
-							$pvindex = 100 + $pvindex;
-							if ($pvindex > 100) { $pvindex = 100; }
-							
-							if ($pstats[$sequence]['maxstdiosnr'] == 0) { $ioindex = 100; }
-							else { $ioindex = round(($stdsiosnr/$pstats[$sequence]['maxstdiosnr'])*100); }
-							$ioindex = 100 + $ioindex;
-							if ($ioindex > 100) { $ioindex = 100; }
-							if ($ioindex < 0) { $ioindex = 0; }
-							
-							if ($pstats[$sequence]['maxstdmotion'] == 0) { $motionindex = 100; }
-							else { $motionindex = round(($stdmotion/$pstats[$sequence]['maxstdmotion'])*100); }
-							$motionindex = 100 + $motionindex;
-							if ($motionindex > 100) { $motionindex = 100; }
-							if ($motionindex < 0) { $motionindex = 0; }
-							
-							$maxpvsnrcolor = $colors[100-$pvindex];
-							$maxiosnrcolor = $colors[100-$ioindex];
-							$maxmotioncolor = $colors[100-$motionindex];
-							if ($pvsnr <= 0.0001) { $pvsnr = "-"; $maxpvsnrcolor = ""; }
-							else { $pvsnr = number_format($pvsnr,2); }
-							if ($iosnr <= 0.0001) { $iosnr = "-"; $maxiosnrcolor = ""; }
-							else { $iosnr = number_format($iosnr,2); }
-							
-							/* setup movement colors */
-							$maxxcolor = $colors[$xindex];
-							$maxycolor = $colors[$yindex];
-							$maxzcolor = $colors[$zindex];
-							if ($rangex <= 0.0001) { $rangex = "-"; $maxxcolor = ""; }
-							else { $rangex = number_format($rangex,2); }
-							if ($rangey <= 0.0001) { $rangey = "-"; $maxycolor = ""; }
-							else { $rangey = number_format($rangey,2); }
-							if ($rangez <= 0.0001) { $rangez = "-"; $maxzcolor = ""; }
-							else { $rangez = number_format($rangez,2); }
+								
+								if ($pstats[$sequence]['maxstdpvsnr'] == 0) { $pvindex = 100; }
+								else { $pvindex = round(($stdspvsnr/$pstats[$sequence]['maxstdpvsnr'])*100); }
+								$pvindex = 100 + $pvindex;
+								if ($pvindex > 100) { $pvindex = 100; }
+								
+								if ($pstats[$sequence]['maxstdiosnr'] == 0) { $ioindex = 100; }
+								else { $ioindex = round(($stdsiosnr/$pstats[$sequence]['maxstdiosnr'])*100); }
+								$ioindex = 100 + $ioindex;
+								if ($ioindex > 100) { $ioindex = 100; }
+								if ($ioindex < 0) { $ioindex = 0; }
+								
+								if ($pstats[$sequence]['maxstdmotion'] == 0) { $motionindex = 100; }
+								else { $motionindex = round(($stdmotion/$pstats[$sequence]['maxstdmotion'])*100); }
+								$motionindex = 100 + $motionindex;
+								if ($motionindex > 100) { $motionindex = 100; }
+								if ($motionindex < 0) { $motionindex = 0; }
+								
+								$maxpvsnrcolor = $colors[100-$pvindex];
+								$maxiosnrcolor = $colors[100-$ioindex];
+								$maxmotioncolor = $colors[100-$motionindex];
+								if ($pvsnr <= 0.0001) { $pvsnr = "-"; $maxpvsnrcolor = ""; }
+								else { $pvsnr = number_format($pvsnr,2); }
+								if ($iosnr <= 0.0001) { $iosnr = "-"; $maxiosnrcolor = ""; }
+								else { $iosnr = number_format($iosnr,2); }
+								
+								/* setup movement colors */
+								$maxxcolor = $colors[$xindex];
+								$maxycolor = $colors[$yindex];
+								$maxzcolor = $colors[$zindex];
+								if ($rangex <= 0.0001) { $rangex = "-"; $maxxcolor = ""; }
+								else { $rangex = number_format($rangex,2); }
+								if ($rangey <= 0.0001) { $rangey = "-"; $maxycolor = ""; }
+								else { $rangey = number_format($rangey,2); }
+								if ($rangez <= 0.0001) { $rangez = "-"; $maxzcolor = ""; }
+								else { $rangez = number_format($rangez,2); }
 
-							/* setup acceleration colors */
-							$maxxcolor2 = $colors[$xindex2];
-							$maxycolor2 = $colors[$yindex2];
-							$maxzcolor2 = $colors[$zindex2];
-							if ($rangex2 <= 0.0001) { $rangex2 = "-"; $maxxcolor2 = ""; }
-							else { $rangex2 = number_format($rangex2,2); }
-							if ($rangey2 <= 0.0001) { $rangey2 = "-"; $maxycolor2 = ""; }
-							else { $rangey2 = number_format($rangey2,2); }
-							if ($rangez2 <= 0.0001) { $rangez2 = "-"; $maxzcolor2 = ""; }
-							else { $rangez2 = number_format($rangez2,2); }
-							
-							/* format the motion r^2 value */
-							if ($motion_rsq == 0) {
-								$motion_rsq = '-';
-								 $maxmotioncolor = "";
-							}
-							else {
-								$motion_rsq = number_format($motion_rsq,5);
+								/* setup acceleration colors */
+								$maxxcolor2 = $colors[$xindex2];
+								$maxycolor2 = $colors[$yindex2];
+								$maxzcolor2 = $colors[$zindex2];
+								if ($rangex2 <= 0.0001) { $rangex2 = "-"; $maxxcolor2 = ""; }
+								else { $rangex2 = number_format($rangex2,2); }
+								if ($rangey2 <= 0.0001) { $rangey2 = "-"; $maxycolor2 = ""; }
+								else { $rangey2 = number_format($rangey2,2); }
+								if ($rangez2 <= 0.0001) { $rangez2 = "-"; $maxzcolor2 = ""; }
+								else { $rangez2 = number_format($rangez2,2); }
+								
+								/* format the motion r^2 value */
+								if ($motion_rsq == 0) {
+									$motion_rsq = '-';
+									 $maxmotioncolor = "";
+								}
+								else {
+									$motion_rsq = number_format($motion_rsq,5);
+								}
 							}
 							/* get manually entered QA info */
-							$sqlstringC = "select avg(value) 'avgrating', count(value) 'count' from manual_qa where series_id = $mrseries_id and modality = 'MR'";
+							$sqlstringC = "select avg(value) 'avgrating', count(value) 'count' from manual_qa where series_id = $mrseries_id and modality = '$modality'";
 							$resultC = MySQLiQuery($sqlstringC, __FILE__, __LINE__);
 							$rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC);
 							$avgrating = $rowC['avgrating'];
@@ -2419,12 +2410,12 @@
 							if ($series_desc != "") {
 								$imagetype2 = $imagetype;
 								$imagetype2 = str_replace("\\", "\\\\", $imagetype2);
-								$sqlstring3 = "select * from bids_mapping where protocolname = '$series_desc' and imagetype = '$imagetype2' and modality = 'MR' and project_id = $projectid";
+								$sqlstring3 = "select * from bids_mapping where protocolname = '$series_desc' and imagetype = '$imagetype2' and modality = '$modality' and project_id = $projectid";
 							}
 							else {
 								$imagetype2 = $imagetype;
 								$imagetype2 = str_replace("\\", "\\\\", $imagetype2);
-								$sqlstring3 = "select * from bids_mapping where protocolname = '$protocol' and imagetype = '$imagetype2' and modality = 'MR' and project_id = $projectid";
+								$sqlstring3 = "select * from bids_mapping where protocolname = '$protocol' and imagetype = '$imagetype2' and modality = '$modality' and project_id = $projectid";
 							}
 							//PrintSQL($sqlstring3);
 							$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
@@ -2471,7 +2462,7 @@
 								<td><?=$series_num?> <? if (!$isvalid) { ?> <i class='ui large red exclamation circle icon' title='<?=$validmessage?>'></i><? } ?> <span id="series<?=$series_num?>"></span></td>
 								<td><span id="uploader<?=$mrseries_id?>"></span></td>
 								<td>
-									<a href="series.php?action=scanparams&seriesid=<?=$mrseries_id?>&modality=mr"><?=$series_desc?></a>&nbsp;<span id="thumbnail<?=$series_num?>"></span>
+									<a href="series.php?action=scanparams&seriesid=<?=$mrseries_id?>&modality=<?=$modality?>"><?=$series_desc?></a>&nbsp;<span id="thumbnail<?=$series_num?>"></span>
 									<? //if (($bold_reps < 2) && ($GLOBALS['cfg']['allowrawdicomexport'])) { ?>
 									<!--&nbsp;<a href="viewimage.php?modality=mr&type=dicom&seriesid=<?=$mrseries_id?>"><i class="cube icon"></i></a>-->
 									<? //} ?>
@@ -2675,12 +2666,6 @@
 	
 		?>
 		<!--<a href="studies.php?studyid=<?=$studyid?>&action=addseries&modality=CT">Add Series</a>-->
-		<style type="text/css">
-            .edit_inline { background-color: lightyellow; padding-left: 2pt; padding-right: 2pt; }
-            .edit_textarea { background-color: lightyellow; }
-			textarea.inplace_field { background-color: white; font-family: courier new; font-size: 8pt; border: 1pt solid gray; width: 800px;  }
-			input.inplace_field { background-color: white; font-size: 8pt; border: 1pt solid gray; width: 200px;  }
-		</style>
 		
 		<span class="tiny"><b>Upload file(s) by clicking the button or drag-and-drop (Firefox and Chrome only)</b><br>
 		DICOM files will only be associated with the study under which they were originally run... If you upload files from a different study, they won't show up here.</span>

@@ -28,7 +28,7 @@
 /* ---------------------------------------------------------- */
 /**
  * @brief Constructor
- * @param The nidb object
+ * @param a The nidb object
  */
 archiveIO::archiveIO(nidb *a)
 {
@@ -53,7 +53,7 @@ archiveIO::~archiveIO()
 /* ---------------------------------------------------------- */
 /**
  * @brief Set the upload ID
- * @param The uploadRowID
+ * @param upid The uploadRowID
  */
 void archiveIO::SetUploadID(int upid) {
     uploadid = upid;
@@ -69,17 +69,17 @@ void archiveIO::SetUploadID(int upid) {
  * @param existingSubjectID If an existing SubjectRowID is known
  * @param existingStudyID If an existing StudyRowID is known
  * @param existingSeriesID If an existing SeriesRowID is known
- * @param subjectMatchCriteria
- * @param studyMatchCriteria
- * @param seriesMatchCriteria
+ * @param subjectMatchCriteria Matching criteria for subject
+ * @param studyMatchCriteria Matching criteria for study
+ * @param seriesMatchCriteria Matching criteria for series
  * @param destProjectID Destination ProjectRowID
- * @param specificPatientID
+ * @param specificPatientID If a specific SubjectID/PatientID is required
  * @param destSiteID Destination SiteRowID
  * @param altUIDstr String with alternate UIDs
  * @param seriesNotes Series notes
  * @param files List of files to archive
  * @param perf Performance metric
- * @return
+ * @return `true` if successful, `false` otherwise
  */
 bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int existingStudyID, int existingSeriesID, QString subjectMatchCriteria, QString studyMatchCriteria, QString seriesMatchCriteria, int destProjectID, QString specificPatientID, int destSiteID, QString altUIDstr, QString seriesNotes, QStringList files, performanceMetric &perf) {
 

@@ -709,6 +709,8 @@
 		$subjectid = $row['subject_id'];
 		$studyid = $row['study_id'];
 		$datatype = $row['data_type'];
+		if ($modality == "pr")
+			$datatype = "dicom";
 		if ($datatype == "") {
 			$datatype = $modality;
 		}

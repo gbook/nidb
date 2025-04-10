@@ -333,6 +333,7 @@
 					</div>
 				</div>
 			</div>
+
 			<div class="ui bottom attached compact segment">
 				<div class="ui two column very compact grid">
 					<div class="column">
@@ -391,6 +392,7 @@
 	
 	/* --------------------------------------------------- */
 	/* ------- ViewExport -------------------------------- */
+	/* ---Contribution: Muhammad Asim Mubeen (Dec 2023)--- */
 	/* --------------------------------------------------- */
 	function ViewExport($exportid) {
 

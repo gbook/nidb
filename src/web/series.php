@@ -43,15 +43,16 @@
 
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
+	$modality = GetVariable("modality");
 	$mrseriesid = GetVariable("seriesid");
 	
 	/* determine action */
 	switch($action) {
 		case "scanparams":
-			DisplayScanParamaters($mrseriesid);
+			DisplayScanParamaters($mrseriesid, $modality);
 			break;
 		case "allscanparams":
-			DisplayAllScanParamaters($mrseriesid);
+			DisplayAllScanParamaters($mrseriesid, $modality);
 			break;
 		default:
 			break;
@@ -64,10 +65,12 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayScanParamaters -------------- */
 	/* -------------------------------------------- */
-	function DisplayScanParamaters($mrseriesid) {
+	function DisplayScanParamaters($mrseriesid, $modality) {
 		$mrseriesid = mysqli_real_escape_string($GLOBALS['linki'], $mrseriesid);
 		
-		list($path, $seriespath, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($mrseriesid, 'MR');
+		echo "seriesid [$mrseriesid] modality [$modality]<br>";
+		list($path, $seriespath, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($mrseriesid, $modality);
+		echo "$path, $seriespath, $qapath, $uid, $studynum, $studyid, $subjectid<br>";
 		
 		if (substr($path,-6) == "parrec") {
 			$files = glob("$path/*.par");
@@ -208,7 +211,7 @@
 						<br>Based on DICOM file [<?=$filename?>]</td>
 					</tr>
 				</table>
-				<a href="series.php?action=allscanparams&seriesid=<?=$mrseriesid?>&modality=mr" style="font-family:times new roman">&pi;</a>
+				<a href="series.php?action=allscanparams&seriesid=<?=$mrseriesid?>&modality=<?=$modality?>" style="font-family:times new roman">&pi;</a>
 			</div>
 			<?
 			
@@ -220,9 +223,9 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayAllScanParamaters ----------- */
 	/* -------------------------------------------- */
-	function DisplayAllScanParamaters($mrseriesid) {
+	function DisplayAllScanParamaters($mrseriesid, $modality) {
 		$mrseriesid = mysqli_real_escape_string($GLOBALS['linki'], $mrseriesid);
-		list($path, $seriespath, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($mrseriesid, 'MR');
+		list($path, $seriespath, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($mrseriesid, $modality);
 		$files = glob("$path/*.dcm");
 		$filename = $files[0];
 

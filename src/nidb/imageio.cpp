@@ -21,6 +21,7 @@
   ------------------------------------------------------------------------------ */
 
 #include "imageio.h"
+#include <QRegularExpression>
 
 
 /* ---------------------------------------------------------- */
@@ -571,7 +572,7 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
             tags["StudyTime"] = "00:00:00";
         }
         else {
-            if (tags["StudyTime"].size() == 13)
+            if ((tags["StudyTime"].size() >= 10) && (tags["StudyTime"].contains(".")))
                 tags["StudyTime"] = tags["StudyTime"].left(6);
 
             if (tags["StudyTime"].size() == 6) {
@@ -584,8 +585,14 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
         if (tags["SeriesTime"] == "")
             tags["SeriesTime"] = tags["StudyTime"];
         else {
-            if (tags["SeriesTime"].size() == 13)
+            if ((tags["SeriesTime"].size() >= 10) && (tags["SeriesTime"].contains("."))) {
+                Print("SeriesTime before [" + tags["SeriesTime"] + "]");
                 tags["SeriesTime"] = tags["SeriesTime"].left(6);
+                Print("SeriesTime after [" + tags["SeriesTime"] + "]");
+            }
+            else {
+                Print("SeriesTime is not 12 or 13 characters [" + tags["SeriesTime"] + "]");
+            }
 
             if (tags["SeriesTime"].size() == 6) {
                 tags["SeriesTime"].insert(4,':');
@@ -772,7 +779,24 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
         }
         else {
             /* unknown modality/filetype */
-            return false;
+            /* try one last time to read with EXIF tool */
+            QString systemstring = "exiftool " + f;
+            QString exifoutput = SystemCommand(systemstring, false);
+            QStringList lines = exifoutput.split(QRegularExpression("(\\n|\\r\\n|\\r)"), Qt::SkipEmptyParts);
+
+            foreach (QString line, lines) {
+                QString delimiter = ":";
+                qint64 index = line.indexOf(delimiter);
+
+                if (index != -1) {
+                    QString firstPart = line.mid(0, index).replace(" ", "");
+                    QString secondPart = line.mid(index + delimiter.length());
+                    tags[firstPart.trimmed()] = secondPart.trimmed();
+                }
+            }
+
+            if (tags["FileType"] != "DICOM")
+                return false;
         }
     }
 
