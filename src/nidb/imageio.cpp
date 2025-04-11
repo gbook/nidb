@@ -372,10 +372,13 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
     gdcm::Reader r;
     r.SetFileName(f.toStdString().c_str());
     if (r.Read()) {
+        msg += "GDCM successfuly read file [" + f + "]\n";
         /* ---------- it's a readable DICOM file ---------- */
         gdcm::StringFilter sf;
         sf = gdcm::StringFilter();
         sf.SetFile(r.GetFile());
+
+        msg += "GetImageFileTags() checkpoint A\n";
 
         tags["FileType"] = "DICOM";
 
@@ -389,6 +392,8 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
         tags["TransferSyntaxUID"] =					QString(sf.ToString(gdcm::Tag(0x0002,0x0010)).c_str()).trimmed(); /* TransferSyntaxUID */
         tags["ImplementationClassUID"] =			QString(sf.ToString(gdcm::Tag(0x0002,0x0012)).c_str()).trimmed(); /* ImplementationClassUID */
         tags["ImplementationVersionName"] =			QString(sf.ToString(gdcm::Tag(0x0002,0x0013)).c_str()).trimmed(); /* ImplementationVersionName */
+
+        msg += "GetImageFileTags() checkpoint A.1\n";
 
         tags["SpecificCharacterSet"] =				QString(sf.ToString(gdcm::Tag(0x0008,0x0005)).c_str()).trimmed(); /* SpecificCharacterSet */
         tags["ImageType"] =							QString(sf.ToString(gdcm::Tag(0x0008,0x0008)).c_str()).trimmed(); /* ImageType */
@@ -419,6 +424,8 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
         tags["ManufacturerModelName"] =				QString(sf.ToString(gdcm::Tag(0x0008,0x1090)).c_str()).trimmed(); /* ManufacturerModelName */
         tags["SourceImageSequence"] =				QString(sf.ToString(gdcm::Tag(0x0008,0x2112)).c_str()).trimmed(); /* SourceImageSequence */
 
+        msg += "GetImageFileTags() checkpoint A.2\n";
+
         tags["PatientName"] =						QString(sf.ToString(gdcm::Tag(0x0010,0x0010)).c_str()).trimmed(); /* PatientName */
         tags["PatientID"] =							QString(sf.ToString(gdcm::Tag(0x0010,0x0020)).c_str()).trimmed(); /* PatientID */
         tags["PatientBirthDate"] =					QString(sf.ToString(gdcm::Tag(0x0010,0x0030)).c_str()).trimmed(); /* PatientBirthDate */
@@ -426,6 +433,8 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
         tags["PatientAge"] =						QString(sf.ToString(gdcm::Tag(0x0010,0x1010)).c_str()).trimmed(); /* PatientAge */
         tags["PatientSize"] =						QString(sf.ToString(gdcm::Tag(0x0010,0x1020)).c_str()).trimmed(); /* PatientSize */
         tags["PatientWeight"] =						QString(sf.ToString(gdcm::Tag(0x0010,0x1030)).c_str()).trimmed(); /* PatientWeight */
+
+        msg += "GetImageFileTags() checkpoint A.3\n";
 
         tags["ContrastBolusAgent"] =				QString(sf.ToString(gdcm::Tag(0x0018,0x0010)).c_str()).trimmed(); /* ContrastBolusAgent */
         tags["KVP"] =								QString(sf.ToString(gdcm::Tag(0x0018,0x0060)).c_str()).trimmed(); /* KVP */
@@ -437,6 +446,8 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
         tags["FilterType"] =						QString(sf.ToString(gdcm::Tag(0x0018,0x1160)).c_str()).trimmed(); /* FilterType */
         tags["GeneratorPower"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x1170)).c_str()).trimmed(); /* GeneratorPower */
         tags["ConvolutionKernel"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x1210)).c_str()).trimmed(); /* ConvolutionKernel */
+
+        msg += "GetImageFileTags() checkpoint A.4\n";
 
         tags["BodyPartExamined"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x0015)).c_str()).trimmed(); /* BodyPartExamined */
         tags["ScanningSequence"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x0020)).c_str()).trimmed(); /* ScanningSequence */
@@ -472,6 +483,8 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
         tags["dBdt"] =								QString(sf.ToString(gdcm::Tag(0x0018,0x1318)).c_str()).trimmed(); /* dBdt */
         tags["PatientPosition"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x5100)).c_str()).trimmed(); /* PatientPosition */
 
+        msg += "GetImageFileTags() checkpoint A.5\n";
+
         tags["Unknown Tag & Data"] =				QString(sf.ToString(gdcm::Tag(0x0019,0x1009)).c_str()).trimmed(); /* Unknown Tag & Data */
         tags["NumberOfImagesInMosaic"] =			QString(sf.ToString(gdcm::Tag(0x0019,0x100A)).c_str()).trimmed(); /* NumberOfImagesInMosaic*/
         tags["SliceMeasurementDuration"] =			QString(sf.ToString(gdcm::Tag(0x0019,0x100B)).c_str()).trimmed(); /* SliceMeasurementDuration*/
@@ -493,6 +506,8 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
         tags["BandwidthPerPixelPhaseEncode"] =		QString(sf.ToString(gdcm::Tag(0x0019,0x1028)).c_str()).trimmed(); /* BandwidthPerPixelPhaseEncode*/
         tags["MosaicRefAcqTimes"] =					QString(sf.ToString(gdcm::Tag(0x0019,0x1029)).c_str()).trimmed(); /* MosaicRefAcqTimes*/
 
+        msg += "GetImageFileTags() checkpoint A.6\n";
+
         tags["StudyInstanceUID"] =					QString(sf.ToString(gdcm::Tag(0x0020,0x000D)).c_str()).trimmed(); /* StudyInstanceUID */
         tags["SeriesInstanceUID"] =					QString(sf.ToString(gdcm::Tag(0x0020,0x000E)).c_str()).trimmed(); /* SeriesInstanceUID */
         tags["StudyID"] =							QString(sf.ToString(gdcm::Tag(0x0020,0x0010)).c_str()).trimmed(); /* StudyID */
@@ -506,6 +521,8 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
         tags["ImagesInAcquisition"] =				QString(sf.ToString(gdcm::Tag(0x0020,0x0105)).c_str()).trimmed(); /* ImagesInAcquisition */
         tags["PositionReferenceIndicator"] =		QString(sf.ToString(gdcm::Tag(0x0020,0x1040)).c_str()).trimmed(); /* PositionReferenceIndicator */
         tags["SliceLocation"] =						QString(sf.ToString(gdcm::Tag(0x0020,0x1041)).c_str()).trimmed(); /* SliceLocation */
+
+        msg += "GetImageFileTags() checkpoint A.7\n";
 
         tags["SamplesPerPixel"] =					QString(sf.ToString(gdcm::Tag(0x0028,0x0002)).c_str()).trimmed(); /* SamplesPerPixel */
         tags["PhotometricInterpretation"] =			QString(sf.ToString(gdcm::Tag(0x0028,0x0004)).c_str()).trimmed(); /* PhotometricInterpretation */
@@ -522,14 +539,20 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
         tags["WindowWidth"] =						QString(sf.ToString(gdcm::Tag(0x0028,0x1051)).c_str()).trimmed(); /* WindowWidth */
         tags["WindowCenterWidthExplanation"] =		QString(sf.ToString(gdcm::Tag(0x0028,0x1055)).c_str()).trimmed(); /* WindowCenterWidthExplanation */
 
+        msg += "GetImageFileTags() checkpoint A.8\n";
+
         tags["RequestingPhysician"] =				QString(sf.ToString(gdcm::Tag(0x0032,0x1032)).c_str()).trimmed(); /* RequestingPhysician */
         tags["RequestedProcedureDescription"] =		QString(sf.ToString(gdcm::Tag(0x0032,0x1060)).c_str()).trimmed(); /* RequestedProcedureDescription */
+
+        msg += "GetImageFileTags() checkpoint A.9\n";
 
         tags["PerformedProcedureStepStartDate"] =	QString(sf.ToString(gdcm::Tag(0x0040,0x0244)).c_str()).trimmed(); /* PerformedProcedureStepStartDate */
         tags["PerformedProcedureStepStartTime"] =	QString(sf.ToString(gdcm::Tag(0x0040,0x0245)).c_str()).trimmed(); /* PerformedProcedureStepStartTime */
         tags["PerformedProcedureStepID"] =			QString(sf.ToString(gdcm::Tag(0x0040,0x0253)).c_str()).trimmed(); /* PerformedProcedureStepID */
         tags["PerformedProcedureStepDescription"] = QString(sf.ToString(gdcm::Tag(0x0040,0x0254)).c_str()).trimmed(); /* PerformedProcedureStepDescription */
         tags["CommentsOnThePerformedProcedureSte"] = QString(sf.ToString(gdcm::Tag(0x0040,0x0280)).c_str()).trimmed(); /* CommentsOnThePerformedProcedureSte */
+
+        msg += "GetImageFileTags() checkpoint A.10\n";
 
         tags["TimeOfAcquisition"] =					QString(sf.ToString(gdcm::Tag(0x0051,0x100A)).c_str()).trimmed(); /* TimeOfAcquisition*/
         tags["AcquisitionMatrixText"] =				QString(sf.ToString(gdcm::Tag(0x0051,0x100B)).c_str()).trimmed(); /* AcquisitionMatrixText*/
@@ -544,82 +567,7 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
         tags["SliceThicknessText"] =				QString(sf.ToString(gdcm::Tag(0x0051,0x1017)).c_str()).trimmed(); /* SliceThicknessText*/
         tags["ScanOptionsText"] =					QString(sf.ToString(gdcm::Tag(0x0051,0x1019)).c_str()).trimmed(); /* ScanOptionsText*/
 
-        /* fix the study date */
-        if (tags["StudyDate"] == "") {
-            tags["StudyDate"] = "0000-00-00";
-        }
-        else {
-            tags["StudyDate"].replace("/","-");
-            if (tags["StudyDate"].size() == 8) {
-                tags["StudyDate"].insert(6,'-');
-                tags["StudyDate"].insert(4,'-');
-            }
-        }
-
-        /* fix the series date */
-        if (tags["SeriesDate"] == "")
-            tags["SeriesDate"] = tags["StudyDate"];
-        else {
-            tags["SeriesDate"].replace("/","-");
-            if (tags["SeriesDate"].size() == 8) {
-                tags["SeriesDate"].insert(6,'-');
-                tags["SeriesDate"].insert(4,'-');
-            }
-        }
-
-        /* fix the study time */
-        if (tags["StudyTime"] == "") {
-            tags["StudyTime"] = "00:00:00";
-        }
-        else {
-            if ((tags["StudyTime"].size() >= 10) && (tags["StudyTime"].contains(".")))
-                tags["StudyTime"] = tags["StudyTime"].left(6);
-
-            if (tags["StudyTime"].size() == 6) {
-                tags["StudyTime"].insert(4,':');
-                tags["StudyTime"].insert(2,':');
-            }
-        }
-
-        /* some images may not have a series date/time, so substitute the studyDateTime for seriesDateTime */
-        if (tags["SeriesTime"] == "")
-            tags["SeriesTime"] = tags["StudyTime"];
-        else {
-            if ((tags["SeriesTime"].size() >= 10) && (tags["SeriesTime"].contains("."))) {
-                Print("SeriesTime before [" + tags["SeriesTime"] + "]");
-                tags["SeriesTime"] = tags["SeriesTime"].left(6);
-                Print("SeriesTime after [" + tags["SeriesTime"] + "]");
-            }
-            else {
-                Print("SeriesTime is not 12 or 13 characters [" + tags["SeriesTime"] + "]");
-            }
-
-            if (tags["SeriesTime"].size() == 6) {
-                tags["SeriesTime"].insert(4,':');
-                tags["SeriesTime"].insert(2,':');
-            }
-        }
-
-        tags["StudyDateTime"] = tags["StudyDate"] + " " + tags["StudyTime"];
-        tags["SeriesDateTime"] = tags["SeriesDate"] + " " + tags["SeriesTime"];
-
-        /* fix the birthdate */
-        if (tags["PatientBirthDate"] == "") tags["PatientBirthDate"] = "0001-01-01";
-        tags["PatientBirthDate"].replace("/","-");
-        if (tags["PatientBirthDate"].size() == 8) {
-            tags["PatientBirthDate"].insert(6,'-');
-            tags["PatientBirthDate"].insert(4,'-');
-        }
-
-        /* check for other undefined or blank fields */
-        if (tags["PatientSex"] == "") tags["PatientSex"] = 'U';
-        if (tags["StationName"] == "") tags["StationName"] = "Unknown";
-        if (tags["InstitutionName"] == "") tags["InstitutionName"] = "Unknown";
-        if (tags["SeriesNumber"] == "") {
-            QString timestamp = tags["SeriesTime"];
-            timestamp.remove(':').remove('-').remove(' ');
-            tags["SeriesNumber"] = timestamp;
-        }
+        msg += "GetImageFileTags() checkpoint B\n";
 
         QString uniqueseries = tags["InstitutionName"] + tags["StationName"] + tags["Modality"] + tags["PatientName"] + tags["PatientBirthDate"] + tags["PatientSex"] + tags["StudyDateTime"] + tags["SeriesNumber"];
         tags["UniqueSeriesString"] = uniqueseries;
@@ -668,6 +616,7 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
             }
             //WriteLog(QString("Found PhaseEncodingDirectionPositive of [%1]").arg(tags["PhaseEncodingDirectionPositive"]));
         }
+        msg += "GetImageFileTags() checkpoint C\n";
     }
     else {
         /* ---------- not a DICOM file, so see what other type of file it may be ---------- */
@@ -778,6 +727,7 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
             }
         }
         else {
+            msg += "GetImageFileTags() checkpoint D\n";
             /* unknown modality/filetype */
             /* try one last time to read with EXIF tool */
             QString systemstring = "exiftool " + f;
@@ -794,12 +744,14 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
                     tags[firstPart.trimmed()] = secondPart.trimmed();
                 }
             }
+            msg += "GetImageFileTags() checkpoint E\n";
 
             if (tags["FileType"] != "DICOM")
                 return false;
         }
     }
 
+    msg += "GetImageFileTags() checkpoint F\n";
 
     /* fix some of the fields to be amenable to the DB */
     if (tags["Modality"] == "")
@@ -809,8 +761,99 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
     //QString SeriesDate = ParseDate(tags["SeriesDate"]);
     //QString SeriesTime = ParseTime(tags["SeriesTime"]);
 
+    /* fix the study date */
+    tags["StudyDate"].replace(":", "-");
+    if (tags["StudyDate"] == "") {
+        tags["StudyDate"] = "0000-00-00";
+    }
+    else {
+        tags["StudyDate"].replace("/","-");
+        if (tags["StudyDate"].size() == 8) {
+            tags["StudyDate"].insert(6,'-');
+            tags["StudyDate"].insert(4,'-');
+        }
+    }
+
+    /* fix the series date */
+    tags["SeriesDate"].replace(":", "-");
+    if (tags["SeriesDate"] == "")
+        tags["SeriesDate"] = tags["StudyDate"];
+    else {
+        tags["SeriesDate"].replace("/","-");
+        if (tags["SeriesDate"].size() == 8) {
+            tags["SeriesDate"].insert(6,'-');
+            tags["SeriesDate"].insert(4,'-');
+        }
+    }
+
+    /* fix the study time */
+    if (tags["StudyTime"] == "") {
+        tags["StudyTime"] = "00:00:00";
+    }
+    else {
+        if (((tags["StudyTime"].size() == 12) || (tags["StudyTime"].size() == 13)) && (tags["StudyTime"].contains("."))) {
+            //Print("StudyTime before [" + tags["StudyTime"] + "]");
+            tags["StudyTime"] = tags["StudyTime"].left(6);
+            //Print("StudyTime after [" + tags["StudyTime"] + "]");
+        }
+        else if (((tags["StudyTime"].size() == 14) || (tags["StudyTime"].size() == 15)) && (tags["StudyTime"].contains(":"))) {
+            tags["StudyTime"] = tags["StudyTime"].left(8);
+        }
+        else {
+            Print("StudyTime is not 12, 13 or 15 characters [" + tags["StudyTime"] + "]");
+        }
+
+        if (tags["StudyTime"].size() == 6) {
+            tags["StudyTime"].insert(4,':');
+            tags["StudyTime"].insert(2,':');
+        }
+    }
+
+    /* some images may not have a series date/time, so substitute the studyDateTime for seriesDateTime */
+    if (tags["SeriesTime"] == "")
+        tags["SeriesTime"] = tags["StudyTime"];
+    else {
+        if (((tags["SeriesTime"].size() == 12) || (tags["SeriesTime"].size() == 13)) && (tags["SeriesTime"].contains("."))) {
+            //Print("SeriesTime before [" + tags["SeriesTime"] + "]");
+            tags["SeriesTime"] = tags["SeriesTime"].left(6);
+            //Print("SeriesTime after [" + tags["SeriesTime"] + "]");
+        }
+        else if (((tags["SeriesTime"].size() == 14) || (tags["SeriesTime"].size() == 15)) && (tags["SeriesTime"].contains(":"))) {
+            tags["SeriesTime"] = tags["SeriesTime"].left(8);
+        }
+        else {
+            Print("SeriesTime is not 12, 13 or 15 characters [" + tags["SeriesTime"] + "]");
+        }
+
+        if (tags["SeriesTime"].size() == 6) {
+            tags["SeriesTime"].insert(4,':');
+            tags["SeriesTime"].insert(2,':');
+        }
+    }
+
     tags["StudyDateTime"] = tags["StudyDate"] + " " + tags["StudyTime"];
     tags["SeriesDateTime"] = tags["SeriesDate"] + " " + tags["SeriesTime"];
+
+    /* fix the birthdate */
+    if (tags["PatientBirthDate"] == "") tags["PatientBirthDate"] = "0001-01-01";
+    tags["PatientBirthDate"].replace("/","-");
+    if (tags["PatientBirthDate"].size() == 8) {
+        tags["PatientBirthDate"].insert(6,'-');
+        tags["PatientBirthDate"].insert(4,'-');
+    }
+
+    /* check for other undefined or blank fields */
+    if (tags["PatientSex"] == "") tags["PatientSex"] = 'U';
+    if (tags["StationName"] == "") tags["StationName"] = "Unknown";
+    if (tags["InstitutionName"] == "") tags["InstitutionName"] = "Unknown";
+    if (tags["SeriesNumber"] == "") {
+        QString timestamp = tags["SeriesTime"];
+        timestamp.remove(':').remove('-').remove(' ');
+        tags["SeriesNumber"] = timestamp;
+    }
+
+    //tags["StudyDateTime"] = tags["StudyDate"] + " " + tags["StudyTime"];
+    //tags["SeriesDateTime"] = tags["SeriesDate"] + " " + tags["SeriesTime"];
     //QStringList pix = tags["PixelSpacing"].split("\\");
     //int pixelX(0);
     //int pixelY(0);
@@ -848,6 +891,8 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
     if (tags["PatientID"] == "")
         tags["PatientID"] = "(empty)";
 
+    msg += "GetImageFileTags() checkpoint G\n";
+
     /* get parent directory of this file */
     QFileInfo finfo(f);
     QDir d = finfo.dir();
@@ -862,6 +907,8 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
 
     if (tags["PatientSex"] == "")
         tags["PatientName"] = "U";
+
+    qDebug() << "Leaving GetImageFileTags()";
 
     return true;
 }

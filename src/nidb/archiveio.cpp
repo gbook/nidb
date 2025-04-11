@@ -141,6 +141,7 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
             return 0;
         }
     }
+    n->Log(m, __FUNCTION__);
 
     QString InstitutionName = tags["InstitutionName"];
     QString InstitutionAddress = tags["InstitutionAddress"];
@@ -617,8 +618,11 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
             csa = false;
             if (n->cfg["enablecsa"] == "1") csa = true;
             binpath = n->cfg["nidbdir"] + "/bin";
-            if (!img->GetImageFileTags(file, binpath, csa, tags, m))
+            if (!img->GetImageFileTags(file, binpath, csa, tags, m)) {
+                n->Log("GetImageFileTags() returned false");
+                n->Log(m, __FUNCTION__);
                 continue;
+            }
 
             int SliceNumber = tags["AcquisitionNumber"].toInt();
             int InstanceNumber = tags["InstanceNumber"].toInt();
@@ -657,6 +661,8 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
         if (n->cfg["enablecsa"] == "1") csa = true;
         binpath = n->cfg["nidbdir"] + "/bin";
         if (!img->GetImageFileTags(file, binpath, csa, tags, m)) {
+            n->Log("GetImageFileTags() returned false");
+            n->Log(m, __FUNCTION__);
             logmsg += "?";
             continue;
         }
@@ -707,6 +713,8 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
         m = "";
         binpath = n->cfg["nidbdir"] + "/bin";
         if (!img->GetImageFileTags(file, binpath, false, tags, m)) {
+            n->Log("GetImageFileTags() returned false");
+            n->Log(m, __FUNCTION__);
             logmsg += "?";
             continue;
         }
@@ -3049,6 +3057,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                         m="";
                         QString bindir = QString("%1/bin").arg(n->cfg["nidbdir"]);
                         img->GetImageFileTags(sqrlSeries.stagedFiles[0], bindir, true, tags, m);
+                        n->Log(m, __FUNCTION__);
 
                         sqrlSeries.params = tags;
                         sqrlSeries.AnonymizeParams(); /* remove tags that might contain PHI */
