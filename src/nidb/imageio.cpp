@@ -791,13 +791,13 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
         tags["StudyTime"] = "00:00:00";
     }
     else {
-        if (((tags["StudyTime"].size() == 12) || (tags["StudyTime"].size() == 13)) && (tags["StudyTime"].contains("."))) {
+        if (tags["StudyTime"].contains(":")) {
+            tags["StudyTime"] = tags["StudyTime"].left(8);
+        }
+        else if (((tags["StudyTime"].size() == 12) || (tags["StudyTime"].size() == 13)) && (tags["StudyTime"].contains("."))) {
             //Print("StudyTime before [" + tags["StudyTime"] + "]");
             tags["StudyTime"] = tags["StudyTime"].left(6);
             //Print("StudyTime after [" + tags["StudyTime"] + "]");
-        }
-        else if (((tags["StudyTime"].size() == 14) || (tags["StudyTime"].size() == 15)) && (tags["StudyTime"].contains(":"))) {
-            tags["StudyTime"] = tags["StudyTime"].left(8);
         }
         else {
             Print("StudyTime is not 12, 13 or 15 characters [" + tags["StudyTime"] + "]");
@@ -813,7 +813,12 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
     if (tags["SeriesTime"] == "")
         tags["SeriesTime"] = tags["StudyTime"];
     else {
-        if (((tags["SeriesTime"].size() == 12) || (tags["SeriesTime"].size() == 13)) && (tags["SeriesTime"].contains("."))) {
+        Print("SeriesTime before [" + tags["SeriesTime"] + "]");
+
+        if (tags["SeriesTime"].contains(":")) {
+            tags["SeriesTime"] = tags["SeriesTime"].left(8);
+        }
+        else if (((tags["SeriesTime"].size() == 12) || (tags["SeriesTime"].size() == 13)) && (tags["SeriesTime"].contains("."))) {
             //Print("SeriesTime before [" + tags["SeriesTime"] + "]");
             tags["SeriesTime"] = tags["SeriesTime"].left(6);
             //Print("SeriesTime after [" + tags["SeriesTime"] + "]");

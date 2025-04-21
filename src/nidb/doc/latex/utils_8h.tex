@@ -1,0 +1,464 @@
+\hypertarget{utils_8h}{}\doxysection{utils.\+h File Reference}
+\label{utils_8h}\index{utils.h@{utils.h}}
+{\ttfamily \#include $<$Q\+String$>$}\newline
+{\ttfamily \#include $<$Q\+File$>$}\newline
+{\ttfamily \#include $<$Q\+Dir$>$}\newline
+{\ttfamily \#include $<$Q\+List$>$}\newline
+{\ttfamily \#include $<$Q\+Hash$>$}\newline
+{\ttfamily \#include $<$Q\+Date$>$}\newline
+{\ttfamily \#include $<$Q\+Process$>$}\newline
+{\ttfamily \#include $<$Q\+Dir\+Iterator$>$}\newline
+{\ttfamily \#include $<$Q\+Cryptographic\+Hash$>$}\newline
+{\ttfamily \#include $<$Q\+Random\+Generator$>$}\newline
+{\ttfamily \#include $<$Q\+Collator$>$}\newline
+{\ttfamily \#include $<$Q\+Regular\+Expression$>$}\newline
+{\ttfamily \#include $<$Q\+Core\+Application$>$}\newline
+\doxysubsection*{Typedefs}
+\begin{DoxyCompactItemize}
+\item 
+typedef Q\+Hash$<$ int, Q\+Hash$<$ Q\+String, Q\+String $>$ $>$ \mbox{\hyperlink{utils_8h_a2d5839ec324ecf9a05d9586843fa616b}{indexed\+Hash}}
+\end{DoxyCompactItemize}
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \mbox{\hyperlink{utils_8h_a2621caa8cfb6a4e7ff2cb9c029014e3d}{Print}} (Q\+String s, bool n=true, bool pad=false)
+\item 
+Q\+String \mbox{\hyperlink{utils_8h_adf3242d5c47948e05c1604d144cdec30}{Create\+Current\+Date\+Time}} (int format=1)
+\item 
+Q\+String \mbox{\hyperlink{utils_8h_a9eb8f230108830901fcb90e35e98c8a8}{Create\+Log\+Date}} ()
+\item 
+void \mbox{\hyperlink{utils_8h_aef900cb1e3e0f3ed1e112988e6b5a514}{Append\+Custom\+Log}} (Q\+String f, Q\+String msg)
+\item 
+Q\+String \mbox{\hyperlink{utils_8h_a1774ea79114993c2e5404fd33401b4d0}{System\+Command}} (Q\+String s, bool detail=true, bool truncate=false, bool buffer\+Output=true)
+\item 
+bool \mbox{\hyperlink{utils_8h_aaa05908d3de168af1c5466306bc18d1f}{Sandboxed\+System\+Command}} (Q\+String s, Q\+String dir, Q\+String \&output, Q\+String timeout=\char`\"{}00\+:05\+:00\char`\"{}, bool detail=true, bool truncate=false)
+\item 
+Q\+String \mbox{\hyperlink{utils_8h_af06e38fafe7a6ee2b09fddf18ec80e16}{Generate\+Random\+String}} (int n)
+\item 
+void \mbox{\hyperlink{utils_8h_a7b2c90cf73c4580893768517d586efe7}{Sort\+Q\+String\+List\+Naturally}} (Q\+String\+List \&s)
+\item 
+Q\+String \mbox{\hyperlink{utils_8h_a16a4a7ffff539e223538f3b61a3f44e5}{Remove\+Non\+Alpha\+Numeric\+Chars}} (Q\+String s)
+\item 
+Q\+String \mbox{\hyperlink{utils_8h_ab5d2edcc4b1bd9031d57ddae16e12cfb}{Parse\+Date}} (Q\+String s)
+\item 
+Q\+String \mbox{\hyperlink{utils_8h_a4c2dce6728fd82e61a36ca9bad8a5854}{Parse\+Time}} (Q\+String s)
+\item 
+Q\+String \mbox{\hyperlink{utils_8h_abaed7ffad1ef492a1539f6de4db26823}{Join\+Int\+Array}} (Q\+List$<$ int $>$ a, Q\+String glue)
+\item 
+Q\+List$<$ int $>$ \mbox{\hyperlink{utils_8h_a33bb0238664ae8223536c8393822e9ca}{Split\+String\+Array\+To\+Int}} (Q\+String\+List a)
+\item 
+Q\+List$<$ double $>$ \mbox{\hyperlink{utils_8h_a76a354a2d831f0766c818d5ce9611d2b}{Split\+String\+Array\+To\+Double}} (Q\+String\+List a)
+\item 
+Q\+List$<$ int $>$ \mbox{\hyperlink{utils_8h_aee712803e9d0cc8c97433a9b62a296f1}{Split\+String\+To\+Int\+Array}} (Q\+String a)
+\item 
+Q\+String\+List \mbox{\hyperlink{utils_8h_a44eff3c770522377ece4c45dad6f7076}{Shell\+Words}} (Q\+String s)
+\item 
+bool \mbox{\hyperlink{utils_8h_a6f73952a79824ccd470efae7fdd38da9}{Is\+Int}} (Q\+String s)
+\item 
+bool \mbox{\hyperlink{utils_8h_a0c1fd981f7f06a74d85be684c5f2b263}{Is\+Double}} (Q\+String s)
+\item 
+bool \mbox{\hyperlink{utils_8h_ad5324c387a83172868d770c10f228043}{Is\+Number}} (Q\+String s)
+\item 
+Q\+String \mbox{\hyperlink{utils_8h_a5f47898fdb530475f657ed579b636043}{Wrap\+Text}} (Q\+String s, int col)
+\item 
+bool \mbox{\hyperlink{utils_8h_a52cca8339f0506ebbf4869606087ad01}{Parse\+C\+SV}} (Q\+String csv, \mbox{\hyperlink{utils_8h_a2d5839ec324ecf9a05d9586843fa616b}{indexed\+Hash}} \&table, Q\+String\+List \&columns, Q\+String \&msg)
+\item 
+double \mbox{\hyperlink{utils_8h_a8eee4c4233d14a30290a354ad0507155}{Get\+Patient\+Age}} (Q\+String Patient\+Age\+Str, Q\+String Study\+Date, Q\+String Patient\+Birth\+Date)
+\begin{DoxyCompactList}\small\item\em Get patient age at the time of the imaging study, in years. From D\+I\+C\+OM age string, or from Study\+Date/\+Patient\+Birthdate calculation. \end{DoxyCompactList}\item 
+double \mbox{\hyperlink{utils_8h_a1c2fc47710c8d25cdd5b86240105c568}{Mean}} (Q\+List$<$ double $>$ a)
+\item 
+double \mbox{\hyperlink{utils_8h_abf9f82d1208eaf5bc832aa2cb170f787}{Variance}} (Q\+List$<$ double $>$ a)
+\item 
+double \mbox{\hyperlink{utils_8h_ab94b812831f60db9fb1a8f0b973fed17}{Std\+Dev}} (Q\+List$<$ double $>$ a)
+\item 
+bool \mbox{\hyperlink{utils_8h_a5a1edcc9b8250008e1eaaa474e82285d}{Make\+Path}} (Q\+String p, Q\+String \&msg, bool perm777=true)
+\item 
+bool \mbox{\hyperlink{utils_8h_aa5735f044b13e039588e3c7244483812}{Remove\+Dir}} (Q\+String p, Q\+String \&msg)
+\item 
+Q\+String\+List \mbox{\hyperlink{utils_8h_abab7e68cd8a5561d24cfb470d942b932}{Find\+All\+Files}} (Q\+String dir, Q\+String pattern, bool recursive=false)
+\item 
+Q\+String\+List \mbox{\hyperlink{utils_8h_acc3406be9088cd41dc0cd5ede3e5994e}{Find\+All\+Dirs}} (Q\+String dir, Q\+String pattern, bool recursive=false, bool includepath=false)
+\item 
+bool \mbox{\hyperlink{utils_8h_a4bc5c87dab1c328269738efc5690914b}{Find\+First\+File}} (Q\+String dir, Q\+String pattern, Q\+String \&f, Q\+String \&msg, bool recursive=false)
+\item 
+bool \mbox{\hyperlink{utils_8h_a719eb4450fa7b42449c3b1c407677bfb}{Move\+All\+Files}} (Q\+String indir, Q\+String pattern, Q\+String outdir, Q\+String \&msg)
+\item 
+bool \mbox{\hyperlink{utils_8h_aa72f221d502230b65ce24056881198a0}{Rename\+File}} (Q\+String filepathorig, Q\+String filepathnew, bool force=true)
+\item 
+bool \mbox{\hyperlink{utils_8h_ac7d055a353b201ac7669e35aef102ab3}{Move\+File}} (Q\+String f, Q\+String dir, Q\+String \&m)
+\item 
+void \mbox{\hyperlink{utils_8h_af0dabb957f32b8c0d5b340d5d9f4b923}{Get\+Dir\+Size\+And\+File\+Count}} (Q\+String dir, qint64 \&c, qint64 \&b, bool recurse=false)
+\item 
+Q\+Byte\+Array \mbox{\hyperlink{utils_8h_a980badb16d6a431c97b9f14df8c3892c}{Get\+File\+Checksum}} (const Q\+String \&file\+Name, Q\+Cryptographic\+Hash\+::\+Algorithm hash\+Algorithm)
+\item 
+bool \mbox{\hyperlink{utils_8h_afef6264b247459dfe86fe819ee5557a3}{chmod}} (Q\+String f, Q\+String perm)
+\item 
+Q\+String \mbox{\hyperlink{utils_8h_a7849b083897f8c3776c869d25838c35d}{Unzip\+Directory}} (Q\+String dir, bool recurse=false)
+\item 
+bool \mbox{\hyperlink{utils_8h_ac9f3236630fe4145f5498335611cfe2b}{Write\+Text\+File}} (Q\+String filepath, Q\+String str, bool append=true)
+\item 
+Q\+String\+List \mbox{\hyperlink{utils_8h_ab172cd60b4f673f05879052ef7cd92d5}{Read\+Text\+File\+Into\+Array}} (Q\+String filepath, bool ignore\+Empty\+Lines=true)
+\item 
+bool \mbox{\hyperlink{utils_8h_aa3e9269a68ab350f6ec8e87b6271cd1c}{Batch\+Rename\+Files}} (Q\+String dir, Q\+String seriesnum, Q\+String studynum, Q\+String uid, int \&numfilesrenamed, Q\+String \&msg)
+\begin{DoxyCompactList}\small\item\em Batch rename a directory of files into the Ni\+DB archive filename format. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{utils_8h_ae05188cc0bf8244cdcedd62fc26dffd0}{Batch\+Rename\+B\+I\+D\+S\+Files}} (Q\+String dir, Q\+String bids\+Sub, Q\+String bids\+Ses, Q\+String protocol, Q\+String bids\+Suffix, int run, int \&numfilesrenamed, Q\+String \&msg)
+\begin{DoxyCompactList}\small\item\em Rename a directory of files into B\+I\+DS format. These files are likely already converted from D\+I\+C\+OM to Nifti. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{utils_8h_a1fc7888ab03b19209a2c69d1d1368857}{Directory\+Exists}} (Q\+String dir)
+\item 
+bool \mbox{\hyperlink{utils_8h_a854e874b7beddaed810e9c22f5cfb85a}{File\+Exists}} (Q\+String f)
+\item 
+bool \mbox{\hyperlink{utils_8h_a9f298e52495bf23438a571f10ea385a5}{File\+Directory\+Exists}} (Q\+String f)
+\item 
+bool \mbox{\hyperlink{utils_8h_a4eb1e5fdb6608d1f65c4dee250a98746}{Get\+Zip\+File\+Details}} (Q\+String zippath, qint64 \&unzipsize, qint64 \&zipsize, Q\+String \&compression, qint64 \&numfiles, Q\+String \&filelisting)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Typedef Documentation}
+\mbox{\Hypertarget{utils_8h_a2d5839ec324ecf9a05d9586843fa616b}\label{utils_8h_a2d5839ec324ecf9a05d9586843fa616b}} 
+\index{utils.h@{utils.h}!indexedHash@{indexedHash}}
+\index{indexedHash@{indexedHash}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{indexedHash}{indexedHash}}
+{\footnotesize\ttfamily typedef Q\+Hash$<$int, Q\+Hash$<$Q\+String, Q\+String$>$ $>$ \mbox{\hyperlink{utils_8h_a2d5839ec324ecf9a05d9586843fa616b}{indexed\+Hash}}}
+
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{utils_8h_aef900cb1e3e0f3ed1e112988e6b5a514}\label{utils_8h_aef900cb1e3e0f3ed1e112988e6b5a514}} 
+\index{utils.h@{utils.h}!AppendCustomLog@{AppendCustomLog}}
+\index{AppendCustomLog@{AppendCustomLog}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{AppendCustomLog()}{AppendCustomLog()}}
+{\footnotesize\ttfamily void Append\+Custom\+Log (\begin{DoxyParamCaption}\item[{Q\+String}]{f,  }\item[{Q\+String}]{msg }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_ae05188cc0bf8244cdcedd62fc26dffd0}\label{utils_8h_ae05188cc0bf8244cdcedd62fc26dffd0}} 
+\index{utils.h@{utils.h}!BatchRenameBIDSFiles@{BatchRenameBIDSFiles}}
+\index{BatchRenameBIDSFiles@{BatchRenameBIDSFiles}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{BatchRenameBIDSFiles()}{BatchRenameBIDSFiles()}}
+{\footnotesize\ttfamily bool Batch\+Rename\+B\+I\+D\+S\+Files (\begin{DoxyParamCaption}\item[{Q\+String}]{dir,  }\item[{Q\+String}]{bids\+Sub,  }\item[{Q\+String}]{bids\+Ses,  }\item[{Q\+String}]{protocol,  }\item[{Q\+String}]{bids\+Suffix,  }\item[{int}]{run,  }\item[{int \&}]{numfilesrenamed,  }\item[{Q\+String \&}]{msg }\end{DoxyParamCaption})}
+
+
+
+Rename a directory of files into B\+I\+DS format. These files are likely already converted from D\+I\+C\+OM to Nifti. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em dir} & Input directory \\
+\hline
+{\em bids\+Sub} & B\+I\+DS {\ttfamily sub-\/} label \\
+\hline
+{\em bids\+Ses} & B\+I\+DS {\ttfamily ses-\/} label \\
+\hline
+{\em protocol} & Protocol name \\
+\hline
+{\em bids\+Suffix} & B\+I\+DS suffix \\
+\hline
+{\em run} & B\+I\+DS run \\
+\hline
+{\em numfilesrenamed} & Number of files renamed \\
+\hline
+{\em msg} & Any messages about the renaming process \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+{\ttfamily true} if successful, {\ttfamily false} otherwise 
+\end{DoxyReturn}
+\mbox{\Hypertarget{utils_8h_aa3e9269a68ab350f6ec8e87b6271cd1c}\label{utils_8h_aa3e9269a68ab350f6ec8e87b6271cd1c}} 
+\index{utils.h@{utils.h}!BatchRenameFiles@{BatchRenameFiles}}
+\index{BatchRenameFiles@{BatchRenameFiles}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{BatchRenameFiles()}{BatchRenameFiles()}}
+{\footnotesize\ttfamily bool Batch\+Rename\+Files (\begin{DoxyParamCaption}\item[{Q\+String}]{dir,  }\item[{Q\+String}]{seriesnum,  }\item[{Q\+String}]{studynum,  }\item[{Q\+String}]{uid,  }\item[{int \&}]{numfilesrenamed,  }\item[{Q\+String \&}]{msg }\end{DoxyParamCaption})}
+
+
+
+Batch rename a directory of files into the Ni\+DB archive filename format. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em dir} & Directory containing the files \\
+\hline
+{\em seriesnum} & The series number \\
+\hline
+{\em studynum} & The study number \\
+\hline
+{\em uid} & The subject U\+ID \\
+\hline
+{\em numfilesrenamed} & Number of files renamed \\
+\hline
+{\em msg} & Any messages generated while renaiming \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+{\ttfamily true} if successful, {\ttfamily false} otherwise 
+\end{DoxyReturn}
+\mbox{\Hypertarget{utils_8h_afef6264b247459dfe86fe819ee5557a3}\label{utils_8h_afef6264b247459dfe86fe819ee5557a3}} 
+\index{utils.h@{utils.h}!chmod@{chmod}}
+\index{chmod@{chmod}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{chmod()}{chmod()}}
+{\footnotesize\ttfamily bool chmod (\begin{DoxyParamCaption}\item[{Q\+String}]{f,  }\item[{Q\+String}]{perm }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_adf3242d5c47948e05c1604d144cdec30}\label{utils_8h_adf3242d5c47948e05c1604d144cdec30}} 
+\index{utils.h@{utils.h}!CreateCurrentDateTime@{CreateCurrentDateTime}}
+\index{CreateCurrentDateTime@{CreateCurrentDateTime}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{CreateCurrentDateTime()}{CreateCurrentDateTime()}}
+{\footnotesize\ttfamily Q\+String Create\+Current\+Date\+Time (\begin{DoxyParamCaption}\item[{int}]{format = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_a9eb8f230108830901fcb90e35e98c8a8}\label{utils_8h_a9eb8f230108830901fcb90e35e98c8a8}} 
+\index{utils.h@{utils.h}!CreateLogDate@{CreateLogDate}}
+\index{CreateLogDate@{CreateLogDate}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{CreateLogDate()}{CreateLogDate()}}
+{\footnotesize\ttfamily Q\+String Create\+Log\+Date (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_a1fc7888ab03b19209a2c69d1d1368857}\label{utils_8h_a1fc7888ab03b19209a2c69d1d1368857}} 
+\index{utils.h@{utils.h}!DirectoryExists@{DirectoryExists}}
+\index{DirectoryExists@{DirectoryExists}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{DirectoryExists()}{DirectoryExists()}}
+{\footnotesize\ttfamily bool Directory\+Exists (\begin{DoxyParamCaption}\item[{Q\+String}]{dir }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_a9f298e52495bf23438a571f10ea385a5}\label{utils_8h_a9f298e52495bf23438a571f10ea385a5}} 
+\index{utils.h@{utils.h}!FileDirectoryExists@{FileDirectoryExists}}
+\index{FileDirectoryExists@{FileDirectoryExists}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{FileDirectoryExists()}{FileDirectoryExists()}}
+{\footnotesize\ttfamily bool File\+Directory\+Exists (\begin{DoxyParamCaption}\item[{Q\+String}]{f }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_a854e874b7beddaed810e9c22f5cfb85a}\label{utils_8h_a854e874b7beddaed810e9c22f5cfb85a}} 
+\index{utils.h@{utils.h}!FileExists@{FileExists}}
+\index{FileExists@{FileExists}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{FileExists()}{FileExists()}}
+{\footnotesize\ttfamily bool File\+Exists (\begin{DoxyParamCaption}\item[{Q\+String}]{f }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_acc3406be9088cd41dc0cd5ede3e5994e}\label{utils_8h_acc3406be9088cd41dc0cd5ede3e5994e}} 
+\index{utils.h@{utils.h}!FindAllDirs@{FindAllDirs}}
+\index{FindAllDirs@{FindAllDirs}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{FindAllDirs()}{FindAllDirs()}}
+{\footnotesize\ttfamily Q\+String\+List Find\+All\+Dirs (\begin{DoxyParamCaption}\item[{Q\+String}]{dir,  }\item[{Q\+String}]{pattern,  }\item[{bool}]{recursive = {\ttfamily false},  }\item[{bool}]{includepath = {\ttfamily false} }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_abab7e68cd8a5561d24cfb470d942b932}\label{utils_8h_abab7e68cd8a5561d24cfb470d942b932}} 
+\index{utils.h@{utils.h}!FindAllFiles@{FindAllFiles}}
+\index{FindAllFiles@{FindAllFiles}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{FindAllFiles()}{FindAllFiles()}}
+{\footnotesize\ttfamily Q\+String\+List Find\+All\+Files (\begin{DoxyParamCaption}\item[{Q\+String}]{dir,  }\item[{Q\+String}]{pattern,  }\item[{bool}]{recursive = {\ttfamily false} }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_a4bc5c87dab1c328269738efc5690914b}\label{utils_8h_a4bc5c87dab1c328269738efc5690914b}} 
+\index{utils.h@{utils.h}!FindFirstFile@{FindFirstFile}}
+\index{FindFirstFile@{FindFirstFile}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{FindFirstFile()}{FindFirstFile()}}
+{\footnotesize\ttfamily bool Find\+First\+File (\begin{DoxyParamCaption}\item[{Q\+String}]{dir,  }\item[{Q\+String}]{pattern,  }\item[{Q\+String \&}]{f,  }\item[{Q\+String \&}]{msg,  }\item[{bool}]{recursive = {\ttfamily false} }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_af06e38fafe7a6ee2b09fddf18ec80e16}\label{utils_8h_af06e38fafe7a6ee2b09fddf18ec80e16}} 
+\index{utils.h@{utils.h}!GenerateRandomString@{GenerateRandomString}}
+\index{GenerateRandomString@{GenerateRandomString}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{GenerateRandomString()}{GenerateRandomString()}}
+{\footnotesize\ttfamily Q\+String Generate\+Random\+String (\begin{DoxyParamCaption}\item[{int}]{n }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_af0dabb957f32b8c0d5b340d5d9f4b923}\label{utils_8h_af0dabb957f32b8c0d5b340d5d9f4b923}} 
+\index{utils.h@{utils.h}!GetDirSizeAndFileCount@{GetDirSizeAndFileCount}}
+\index{GetDirSizeAndFileCount@{GetDirSizeAndFileCount}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{GetDirSizeAndFileCount()}{GetDirSizeAndFileCount()}}
+{\footnotesize\ttfamily void Get\+Dir\+Size\+And\+File\+Count (\begin{DoxyParamCaption}\item[{Q\+String}]{dir,  }\item[{qint64 \&}]{c,  }\item[{qint64 \&}]{b,  }\item[{bool}]{recurse = {\ttfamily false} }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_a980badb16d6a431c97b9f14df8c3892c}\label{utils_8h_a980badb16d6a431c97b9f14df8c3892c}} 
+\index{utils.h@{utils.h}!GetFileChecksum@{GetFileChecksum}}
+\index{GetFileChecksum@{GetFileChecksum}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{GetFileChecksum()}{GetFileChecksum()}}
+{\footnotesize\ttfamily Q\+Byte\+Array Get\+File\+Checksum (\begin{DoxyParamCaption}\item[{const Q\+String \&}]{file\+Name,  }\item[{Q\+Cryptographic\+Hash\+::\+Algorithm}]{hash\+Algorithm }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_a8eee4c4233d14a30290a354ad0507155}\label{utils_8h_a8eee4c4233d14a30290a354ad0507155}} 
+\index{utils.h@{utils.h}!GetPatientAge@{GetPatientAge}}
+\index{GetPatientAge@{GetPatientAge}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{GetPatientAge()}{GetPatientAge()}}
+{\footnotesize\ttfamily double Get\+Patient\+Age (\begin{DoxyParamCaption}\item[{Q\+String}]{Patient\+Age\+Str,  }\item[{Q\+String}]{Study\+Date,  }\item[{Q\+String}]{Patient\+Birth\+Date }\end{DoxyParamCaption})}
+
+
+
+Get patient age at the time of the imaging study, in years. From D\+I\+C\+OM age string, or from Study\+Date/\+Patient\+Birthdate calculation. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em Patient\+Age\+Str} & D\+I\+C\+OM patient age string \\
+\hline
+{\em Study\+Date} & Study date \\
+\hline
+{\em Patient\+Birth\+Date} & Patient D\+OB, from D\+I\+C\+OM \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+the age in years of the patient 
+\end{DoxyReturn}
+\mbox{\Hypertarget{utils_8h_a4eb1e5fdb6608d1f65c4dee250a98746}\label{utils_8h_a4eb1e5fdb6608d1f65c4dee250a98746}} 
+\index{utils.h@{utils.h}!GetZipFileDetails@{GetZipFileDetails}}
+\index{GetZipFileDetails@{GetZipFileDetails}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{GetZipFileDetails()}{GetZipFileDetails()}}
+{\footnotesize\ttfamily bool Get\+Zip\+File\+Details (\begin{DoxyParamCaption}\item[{Q\+String}]{zippath,  }\item[{qint64 \&}]{unzipsize,  }\item[{qint64 \&}]{zipsize,  }\item[{Q\+String \&}]{compression,  }\item[{qint64 \&}]{numfiles,  }\item[{Q\+String \&}]{filelisting }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_a0c1fd981f7f06a74d85be684c5f2b263}\label{utils_8h_a0c1fd981f7f06a74d85be684c5f2b263}} 
+\index{utils.h@{utils.h}!IsDouble@{IsDouble}}
+\index{IsDouble@{IsDouble}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{IsDouble()}{IsDouble()}}
+{\footnotesize\ttfamily bool Is\+Double (\begin{DoxyParamCaption}\item[{Q\+String}]{s }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_a6f73952a79824ccd470efae7fdd38da9}\label{utils_8h_a6f73952a79824ccd470efae7fdd38da9}} 
+\index{utils.h@{utils.h}!IsInt@{IsInt}}
+\index{IsInt@{IsInt}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{IsInt()}{IsInt()}}
+{\footnotesize\ttfamily bool Is\+Int (\begin{DoxyParamCaption}\item[{Q\+String}]{s }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_ad5324c387a83172868d770c10f228043}\label{utils_8h_ad5324c387a83172868d770c10f228043}} 
+\index{utils.h@{utils.h}!IsNumber@{IsNumber}}
+\index{IsNumber@{IsNumber}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{IsNumber()}{IsNumber()}}
+{\footnotesize\ttfamily bool Is\+Number (\begin{DoxyParamCaption}\item[{Q\+String}]{s }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_abaed7ffad1ef492a1539f6de4db26823}\label{utils_8h_abaed7ffad1ef492a1539f6de4db26823}} 
+\index{utils.h@{utils.h}!JoinIntArray@{JoinIntArray}}
+\index{JoinIntArray@{JoinIntArray}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{JoinIntArray()}{JoinIntArray()}}
+{\footnotesize\ttfamily Q\+String Join\+Int\+Array (\begin{DoxyParamCaption}\item[{Q\+List$<$ int $>$}]{a,  }\item[{Q\+String}]{glue }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_a5a1edcc9b8250008e1eaaa474e82285d}\label{utils_8h_a5a1edcc9b8250008e1eaaa474e82285d}} 
+\index{utils.h@{utils.h}!MakePath@{MakePath}}
+\index{MakePath@{MakePath}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{MakePath()}{MakePath()}}
+{\footnotesize\ttfamily bool Make\+Path (\begin{DoxyParamCaption}\item[{Q\+String}]{p,  }\item[{Q\+String \&}]{msg,  }\item[{bool}]{perm777 = {\ttfamily true} }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_a1c2fc47710c8d25cdd5b86240105c568}\label{utils_8h_a1c2fc47710c8d25cdd5b86240105c568}} 
+\index{utils.h@{utils.h}!Mean@{Mean}}
+\index{Mean@{Mean}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{Mean()}{Mean()}}
+{\footnotesize\ttfamily double Mean (\begin{DoxyParamCaption}\item[{Q\+List$<$ double $>$}]{a }\end{DoxyParamCaption})}
+
+Calculates the mean value from a list of doubles 
+\begin{DoxyParams}{Parameters}
+{\em a} & array of doubles \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{utils_8h_a719eb4450fa7b42449c3b1c407677bfb}\label{utils_8h_a719eb4450fa7b42449c3b1c407677bfb}} 
+\index{utils.h@{utils.h}!MoveAllFiles@{MoveAllFiles}}
+\index{MoveAllFiles@{MoveAllFiles}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{MoveAllFiles()}{MoveAllFiles()}}
+{\footnotesize\ttfamily bool Move\+All\+Files (\begin{DoxyParamCaption}\item[{Q\+String}]{indir,  }\item[{Q\+String}]{pattern,  }\item[{Q\+String}]{outdir,  }\item[{Q\+String \&}]{msg }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_ac7d055a353b201ac7669e35aef102ab3}\label{utils_8h_ac7d055a353b201ac7669e35aef102ab3}} 
+\index{utils.h@{utils.h}!MoveFile@{MoveFile}}
+\index{MoveFile@{MoveFile}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{MoveFile()}{MoveFile()}}
+{\footnotesize\ttfamily bool Move\+File (\begin{DoxyParamCaption}\item[{Q\+String}]{f,  }\item[{Q\+String}]{dir,  }\item[{Q\+String \&}]{m }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_a52cca8339f0506ebbf4869606087ad01}\label{utils_8h_a52cca8339f0506ebbf4869606087ad01}} 
+\index{utils.h@{utils.h}!ParseCSV@{ParseCSV}}
+\index{ParseCSV@{ParseCSV}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{ParseCSV()}{ParseCSV()}}
+{\footnotesize\ttfamily bool Parse\+C\+SV (\begin{DoxyParamCaption}\item[{Q\+String}]{csv,  }\item[{\mbox{\hyperlink{utils_8h_a2d5839ec324ecf9a05d9586843fa616b}{indexed\+Hash}} \&}]{table,  }\item[{Q\+String\+List \&}]{columns,  }\item[{Q\+String \&}]{msg }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_ab5d2edcc4b1bd9031d57ddae16e12cfb}\label{utils_8h_ab5d2edcc4b1bd9031d57ddae16e12cfb}} 
+\index{utils.h@{utils.h}!ParseDate@{ParseDate}}
+\index{ParseDate@{ParseDate}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{ParseDate()}{ParseDate()}}
+{\footnotesize\ttfamily Q\+String Parse\+Date (\begin{DoxyParamCaption}\item[{Q\+String}]{s }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_a4c2dce6728fd82e61a36ca9bad8a5854}\label{utils_8h_a4c2dce6728fd82e61a36ca9bad8a5854}} 
+\index{utils.h@{utils.h}!ParseTime@{ParseTime}}
+\index{ParseTime@{ParseTime}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{ParseTime()}{ParseTime()}}
+{\footnotesize\ttfamily Q\+String Parse\+Time (\begin{DoxyParamCaption}\item[{Q\+String}]{s }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_a2621caa8cfb6a4e7ff2cb9c029014e3d}\label{utils_8h_a2621caa8cfb6a4e7ff2cb9c029014e3d}} 
+\index{utils.h@{utils.h}!Print@{Print}}
+\index{Print@{Print}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{Print()}{Print()}}
+{\footnotesize\ttfamily void Print (\begin{DoxyParamCaption}\item[{Q\+String}]{s,  }\item[{bool}]{n = {\ttfamily true},  }\item[{bool}]{pad = {\ttfamily false} }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_ab172cd60b4f673f05879052ef7cd92d5}\label{utils_8h_ab172cd60b4f673f05879052ef7cd92d5}} 
+\index{utils.h@{utils.h}!ReadTextFileIntoArray@{ReadTextFileIntoArray}}
+\index{ReadTextFileIntoArray@{ReadTextFileIntoArray}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{ReadTextFileIntoArray()}{ReadTextFileIntoArray()}}
+{\footnotesize\ttfamily Q\+String\+List Read\+Text\+File\+Into\+Array (\begin{DoxyParamCaption}\item[{Q\+String}]{filepath,  }\item[{bool}]{ignore\+Empty\+Lines = {\ttfamily true} }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_aa5735f044b13e039588e3c7244483812}\label{utils_8h_aa5735f044b13e039588e3c7244483812}} 
+\index{utils.h@{utils.h}!RemoveDir@{RemoveDir}}
+\index{RemoveDir@{RemoveDir}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{RemoveDir()}{RemoveDir()}}
+{\footnotesize\ttfamily bool Remove\+Dir (\begin{DoxyParamCaption}\item[{Q\+String}]{p,  }\item[{Q\+String \&}]{msg }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_a16a4a7ffff539e223538f3b61a3f44e5}\label{utils_8h_a16a4a7ffff539e223538f3b61a3f44e5}} 
+\index{utils.h@{utils.h}!RemoveNonAlphaNumericChars@{RemoveNonAlphaNumericChars}}
+\index{RemoveNonAlphaNumericChars@{RemoveNonAlphaNumericChars}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{RemoveNonAlphaNumericChars()}{RemoveNonAlphaNumericChars()}}
+{\footnotesize\ttfamily Q\+String Remove\+Non\+Alpha\+Numeric\+Chars (\begin{DoxyParamCaption}\item[{Q\+String}]{s }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_aa72f221d502230b65ce24056881198a0}\label{utils_8h_aa72f221d502230b65ce24056881198a0}} 
+\index{utils.h@{utils.h}!RenameFile@{RenameFile}}
+\index{RenameFile@{RenameFile}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{RenameFile()}{RenameFile()}}
+{\footnotesize\ttfamily bool Rename\+File (\begin{DoxyParamCaption}\item[{Q\+String}]{filepathorig,  }\item[{Q\+String}]{filepathnew,  }\item[{bool}]{force = {\ttfamily true} }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_aaa05908d3de168af1c5466306bc18d1f}\label{utils_8h_aaa05908d3de168af1c5466306bc18d1f}} 
+\index{utils.h@{utils.h}!SandboxedSystemCommand@{SandboxedSystemCommand}}
+\index{SandboxedSystemCommand@{SandboxedSystemCommand}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{SandboxedSystemCommand()}{SandboxedSystemCommand()}}
+{\footnotesize\ttfamily bool Sandboxed\+System\+Command (\begin{DoxyParamCaption}\item[{Q\+String}]{s,  }\item[{Q\+String}]{dir,  }\item[{Q\+String \&}]{output,  }\item[{Q\+String}]{timeout = {\ttfamily \char`\"{}00\+:05\+:00\char`\"{}},  }\item[{bool}]{detail = {\ttfamily true},  }\item[{bool}]{truncate = {\ttfamily false} }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_a44eff3c770522377ece4c45dad6f7076}\label{utils_8h_a44eff3c770522377ece4c45dad6f7076}} 
+\index{utils.h@{utils.h}!ShellWords@{ShellWords}}
+\index{ShellWords@{ShellWords}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{ShellWords()}{ShellWords()}}
+{\footnotesize\ttfamily Q\+String\+List Shell\+Words (\begin{DoxyParamCaption}\item[{Q\+String}]{s }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_a7b2c90cf73c4580893768517d586efe7}\label{utils_8h_a7b2c90cf73c4580893768517d586efe7}} 
+\index{utils.h@{utils.h}!SortQStringListNaturally@{SortQStringListNaturally}}
+\index{SortQStringListNaturally@{SortQStringListNaturally}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{SortQStringListNaturally()}{SortQStringListNaturally()}}
+{\footnotesize\ttfamily void Sort\+Q\+String\+List\+Naturally (\begin{DoxyParamCaption}\item[{Q\+String\+List \&}]{s }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_a76a354a2d831f0766c818d5ce9611d2b}\label{utils_8h_a76a354a2d831f0766c818d5ce9611d2b}} 
+\index{utils.h@{utils.h}!SplitStringArrayToDouble@{SplitStringArrayToDouble}}
+\index{SplitStringArrayToDouble@{SplitStringArrayToDouble}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{SplitStringArrayToDouble()}{SplitStringArrayToDouble()}}
+{\footnotesize\ttfamily Q\+List$<$double$>$ Split\+String\+Array\+To\+Double (\begin{DoxyParamCaption}\item[{Q\+String\+List}]{a }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_a33bb0238664ae8223536c8393822e9ca}\label{utils_8h_a33bb0238664ae8223536c8393822e9ca}} 
+\index{utils.h@{utils.h}!SplitStringArrayToInt@{SplitStringArrayToInt}}
+\index{SplitStringArrayToInt@{SplitStringArrayToInt}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{SplitStringArrayToInt()}{SplitStringArrayToInt()}}
+{\footnotesize\ttfamily Q\+List$<$int$>$ Split\+String\+Array\+To\+Int (\begin{DoxyParamCaption}\item[{Q\+String\+List}]{a }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_aee712803e9d0cc8c97433a9b62a296f1}\label{utils_8h_aee712803e9d0cc8c97433a9b62a296f1}} 
+\index{utils.h@{utils.h}!SplitStringToIntArray@{SplitStringToIntArray}}
+\index{SplitStringToIntArray@{SplitStringToIntArray}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{SplitStringToIntArray()}{SplitStringToIntArray()}}
+{\footnotesize\ttfamily Q\+List$<$int$>$ Split\+String\+To\+Int\+Array (\begin{DoxyParamCaption}\item[{Q\+String}]{a }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_ab94b812831f60db9fb1a8f0b973fed17}\label{utils_8h_ab94b812831f60db9fb1a8f0b973fed17}} 
+\index{utils.h@{utils.h}!StdDev@{StdDev}}
+\index{StdDev@{StdDev}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{StdDev()}{StdDev()}}
+{\footnotesize\ttfamily double Std\+Dev (\begin{DoxyParamCaption}\item[{Q\+List$<$ double $>$}]{a }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_a1774ea79114993c2e5404fd33401b4d0}\label{utils_8h_a1774ea79114993c2e5404fd33401b4d0}} 
+\index{utils.h@{utils.h}!SystemCommand@{SystemCommand}}
+\index{SystemCommand@{SystemCommand}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{SystemCommand()}{SystemCommand()}}
+{\footnotesize\ttfamily Q\+String System\+Command (\begin{DoxyParamCaption}\item[{Q\+String}]{s,  }\item[{bool}]{detail = {\ttfamily true},  }\item[{bool}]{truncate = {\ttfamily false},  }\item[{bool}]{buffer\+Output = {\ttfamily true} }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_a7849b083897f8c3776c869d25838c35d}\label{utils_8h_a7849b083897f8c3776c869d25838c35d}} 
+\index{utils.h@{utils.h}!UnzipDirectory@{UnzipDirectory}}
+\index{UnzipDirectory@{UnzipDirectory}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{UnzipDirectory()}{UnzipDirectory()}}
+{\footnotesize\ttfamily Q\+String Unzip\+Directory (\begin{DoxyParamCaption}\item[{Q\+String}]{dir,  }\item[{bool}]{recurse = {\ttfamily false} }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_abf9f82d1208eaf5bc832aa2cb170f787}\label{utils_8h_abf9f82d1208eaf5bc832aa2cb170f787}} 
+\index{utils.h@{utils.h}!Variance@{Variance}}
+\index{Variance@{Variance}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{Variance()}{Variance()}}
+{\footnotesize\ttfamily double Variance (\begin{DoxyParamCaption}\item[{Q\+List$<$ double $>$}]{a }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_a5f47898fdb530475f657ed579b636043}\label{utils_8h_a5f47898fdb530475f657ed579b636043}} 
+\index{utils.h@{utils.h}!WrapText@{WrapText}}
+\index{WrapText@{WrapText}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{WrapText()}{WrapText()}}
+{\footnotesize\ttfamily Q\+String Wrap\+Text (\begin{DoxyParamCaption}\item[{Q\+String}]{s,  }\item[{int}]{col }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{utils_8h_ac9f3236630fe4145f5498335611cfe2b}\label{utils_8h_ac9f3236630fe4145f5498335611cfe2b}} 
+\index{utils.h@{utils.h}!WriteTextFile@{WriteTextFile}}
+\index{WriteTextFile@{WriteTextFile}!utils.h@{utils.h}}
+\doxysubsubsection{\texorpdfstring{WriteTextFile()}{WriteTextFile()}}
+{\footnotesize\ttfamily bool Write\+Text\+File (\begin{DoxyParamCaption}\item[{Q\+String}]{filepath,  }\item[{Q\+String}]{str,  }\item[{bool}]{append = {\ttfamily true} }\end{DoxyParamCaption})}
+

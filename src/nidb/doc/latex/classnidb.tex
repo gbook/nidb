@@ -1,0 +1,580 @@
+\hypertarget{classnidb}{}\doxysection{nidb Class Reference}
+\label{classnidb}\index{nidb@{nidb}}
+
+
+The nidb class.  
+
+
+
+
+{\ttfamily \#include $<$nidb.\+h$>$}
+
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{classnidb_a1b8856fca8d48ac0d4b7c179ca07c6e7}{nidb}} ()
+\begin{DoxyCompactList}\small\item\em Default constructor. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{classnidb_ac105916017c7e027c20400c624406300}{nidb}} (Q\+String m, bool c=false)
+\begin{DoxyCompactList}\small\item\em \mbox{\hyperlink{classnidb_a1b8856fca8d48ac0d4b7c179ca07c6e7}{nidb\+::nidb}} \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{classnidb_a4834b96815a4efbb89bfe1eb3cecc900}{Load\+Config}} ()
+\begin{DoxyCompactList}\small\item\em Load the nidb config file. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{classnidb_ab17b3c4ae5af3e32a008551a36f3f4d5}{Database\+Connect}} (bool cluster=false)
+\begin{DoxyCompactList}\small\item\em Connect to a database. \end{DoxyCompactList}\item 
+Q\+String \mbox{\hyperlink{classnidb_a6d653218a3f4b3f8f85d83685a127c55}{Get\+Build\+String}} ()
+\begin{DoxyCompactList}\small\item\em \mbox{\hyperlink{classnidb_a6d653218a3f4b3f8f85d83685a127c55}{nidb\+::\+Get\+Build\+String}} \end{DoxyCompactList}\item 
+Q\+String \mbox{\hyperlink{classnidb_afdad61099e793553f8ff1a96dd66a189}{Get\+Version}} ()
+\begin{DoxyCompactList}\small\item\em \mbox{\hyperlink{classnidb_afdad61099e793553f8ff1a96dd66a189}{nidb\+::\+Get\+Version}} \end{DoxyCompactList}\item 
+qint64 \mbox{\hyperlink{classnidb_a17a9b3053e5b5d5a9db3c5fa6e7fd901}{Module\+Get\+Num\+Lock\+Files}} ()
+\begin{DoxyCompactList}\small\item\em Find the number of lock files for this module. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{classnidb_a937d0c8f33aae6ff6c7cb47de83e9915}{Module\+Create\+Lock\+File}} ()
+\begin{DoxyCompactList}\small\item\em Create a lock file for this module. Each lock file has a file extension with the current process\textquotesingle{}s P\+ID. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{classnidb_a9782fe5edd8e30b8d7a3dd8b2cd5dd5d}{Module\+Create\+Log\+File}} ()
+\begin{DoxyCompactList}\small\item\em Create a log file for this module. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{classnidb_a05e505984da877a24966ce8002546ba3}{Module\+Clear\+Lock\+Files}} ()
+\begin{DoxyCompactList}\small\item\em Remove all lock files for this module. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{classnidb_ac68c78cd6cd40e6b51e0fb433c268056}{Module\+Delete\+Lock\+File}} ()
+\begin{DoxyCompactList}\small\item\em Delete the lock file associated with this module. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{classnidb_ab300daa39c786de9148ab50a94acbee6}{Module\+Remove\+Log\+File}} (bool keep\+Log)
+\begin{DoxyCompactList}\small\item\em Delete the log file for this module. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{classnidb_a55ac56e274f72c9bb8c9147d42786f23}{Module\+Check\+If\+Active}} ()
+\begin{DoxyCompactList}\small\item\em Check if this module is enabled and should be running. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{classnidb_a4df61018ab9409b7e8b07e6218f0ae45}{Module\+D\+B\+Check\+In}} ()
+\begin{DoxyCompactList}\small\item\em Check this module into the database to let the system know it is running. This should be done when starting the module. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{classnidb_a194072e4c4396dd7dd0a5e52ca16de1a}{Module\+D\+B\+Check\+Out}} ()
+\begin{DoxyCompactList}\small\item\em Check this module out of the database. This should be done when exiting the module. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{classnidb_a3392b7e0e9d1b2f808ed779ae2312a8a}{Module\+Running\+Check\+In}} ()
+\begin{DoxyCompactList}\small\item\em This is a \char`\"{}deadman\textquotesingle{}s switch\char`\"{}. If the module doesn\textquotesingle{}t check in after a certain period of time, the module process is assumed to have died and is reset so it can start again. \end{DoxyCompactList}\item 
+int \mbox{\hyperlink{classnidb_a90e5ac64f6f220af93c7b2c9a4e49789}{Module\+Get\+Num\+Threads}} ()
+\begin{DoxyCompactList}\small\item\em Get the number of threads for the currently selected module. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{classnidb_aa4989a309c4f766d6697f3587948ecfb}{Is\+Running\+From\+Cluster}} ()
+\begin{DoxyCompactList}\small\item\em \mbox{\hyperlink{classnidb_aa4989a309c4f766d6697f3587948ecfb}{nidb\+::\+Is\+Running\+From\+Cluster}} \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{classnidb_afceae8e4b32d5dbe30e9a2146611cbfd}{Insert\+Analysis\+Event}} (qint64 analysisid, int pipelineid, int pipelineversion, int studyid, Q\+String event, Q\+String message)
+\begin{DoxyCompactList}\small\item\em Insert an analysis event in the analysis table. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{classnidb_a8c0d8dcdc8ad2f1ae2795773c830bfe6}{Insert\+Subject\+Change\+Log}} (Q\+String username, Q\+String uid, Q\+String newuid, Q\+String changetype, Q\+String log)
+\item 
+bool \mbox{\hyperlink{classnidb_a9db1198c88c339d099fa2611f119ee5d}{Set\+Export\+Series\+Status}} (qint64 exportseriesid, qint64 exportid, qint64 seriesid, Q\+String modality, Q\+String status, Q\+String msg=\char`\"{}\char`\"{})
+\item 
+Q\+String \mbox{\hyperlink{classnidb_a4034483c4f91a55b0e93be56677ce4e3}{Create\+U\+ID}} (Q\+String prefix, int numletters=3)
+\begin{DoxyCompactList}\small\item\em Create a unique ID (U\+ID) in the form S1234\+A\+BC. This is also used for project U\+I\+Ds. This function tries to avoid inappropriate words spelled out using the random letters. \end{DoxyCompactList}\item 
+Q\+String \mbox{\hyperlink{classnidb_a110b4444bfa2170f30c2c28874a090b8}{Get\+Primary\+Alternate\+U\+ID}} (qint64 subjectid, qint64 enrollmentid)
+\item 
+Q\+String \mbox{\hyperlink{classnidb_a0c9f386f87c415eeba5f0827a2970071}{Get\+Group\+Listing}} (int groupid)
+\item 
+bool \mbox{\hyperlink{classnidb_a323f823d383a668365610073d99e5ec4}{is\+Valid\+Ni\+D\+B\+Modality}} (Q\+String m)
+\begin{DoxyCompactList}\small\item\em Check if a specified modality is valid in Ni\+DB, meannig this modality has an existing $<$modality$>$\+\_\+series table. \end{DoxyCompactList}\item 
+Q\+String \mbox{\hyperlink{classnidb_af2f1a11418e2fb1b228d8de829dba409}{S\+Q\+L\+Query}} (Q\+Sql\+Query \&q, Q\+String function, Q\+String file, int line, bool d=false, bool batch=false)
+\begin{DoxyCompactList}\small\item\em Execute a S\+QL query and return the result. \end{DoxyCompactList}\item 
+Q\+String \mbox{\hyperlink{classnidb_ac7b4da25cb1682e804944c512367488f}{Log}} (Q\+String msg, Q\+String func=\char`\"{}\char`\"{}, int wrap=0, bool time\+Stamp=true)
+\begin{DoxyCompactList}\small\item\em Record a log message. \end{DoxyCompactList}\item 
+Q\+String \mbox{\hyperlink{classnidb_a21b75857ae9e98296000ce914eb185c1}{Debug}} (Q\+String msg, Q\+String func=\char`\"{}\char`\"{}, int wrap=0, bool time\+Stamp=true)
+\begin{DoxyCompactList}\small\item\em Similar to the \mbox{\hyperlink{classnidb_ac7b4da25cb1682e804944c512367488f}{Log()}} function, except this function only logs a message if the Ni\+DB is in debug mode. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{classnidb_a6e2e5d8d1f5a160ec0fb8b95088a7c92}{Send\+Email}} (Q\+String to, Q\+String \mbox{\hyperlink{classsubject}{subject}}, Q\+String body)
+\item 
+bool \mbox{\hyperlink{classnidb_a055cc365532deaab468210f4b205005e}{Get\+S\+Q\+L\+Comparison}} (Q\+String c, Q\+String \&comp, int \&num)
+\begin{DoxyCompactList}\small\item\em Validate and parse a comparison string like $<$=5 into a pair of tokens (comparison, number) for later use in a S\+QL statement. The string passed into this function was likely input by a user, and must be validated before including in a S\+QL statement. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{classnidb_a5cd0be5048523748d039897abaef9364}{Submit\+Cluster\+Job}} (Q\+String job\+File\+Path, Q\+String cluster\+Type, Q\+String submit\+Host, Q\+String submit\+User, Q\+String qsub, Q\+String cluster\+User, Q\+String cluster\+Queue, Q\+String \&msg, int \&jobid, Q\+String \&result)
+\begin{DoxyCompactList}\small\item\em Submit a pipeline analysis job to a cluster. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+Q\+Hash$<$ Q\+String, Q\+String $>$ \mbox{\hyperlink{classnidb_af6faa100be76bf8cca34b9a414d59a8b}{cfg}}
+\item 
+Q\+Sql\+Database \mbox{\hyperlink{classnidb_ae4083edd285cfc23ec8b367924efacbe}{db}}
+\item 
+bool \mbox{\hyperlink{classnidb_aae4dafebddca598f7b39964506c46226}{debug}}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+The nidb class. 
+
+The nidb class is the root class for creating, running, and managing nidb modules 
+
+\doxysubsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classnidb_a1b8856fca8d48ac0d4b7c179ca07c6e7}\label{classnidb_a1b8856fca8d48ac0d4b7c179ca07c6e7}} 
+\index{nidb@{nidb}!nidb@{nidb}}
+\index{nidb@{nidb}!nidb@{nidb}}
+\doxysubsubsection{\texorpdfstring{nidb()}{nidb()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily nidb\+::nidb (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Default constructor. 
+
+\mbox{\Hypertarget{classnidb_ac105916017c7e027c20400c624406300}\label{classnidb_ac105916017c7e027c20400c624406300}} 
+\index{nidb@{nidb}!nidb@{nidb}}
+\index{nidb@{nidb}!nidb@{nidb}}
+\doxysubsubsection{\texorpdfstring{nidb()}{nidb()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily nidb\+::nidb (\begin{DoxyParamCaption}\item[{Q\+String}]{m,  }\item[{bool}]{c = {\ttfamily false} }\end{DoxyParamCaption})}
+
+
+
+\mbox{\hyperlink{classnidb_a1b8856fca8d48ac0d4b7c179ca07c6e7}{nidb\+::nidb}} 
+
+
+\begin{DoxyParams}{Parameters}
+{\em m} & Module name \\
+\hline
+{\em c} & true if executable is being run from the cluster \\
+\hline
+\end{DoxyParams}
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{classnidb_a4034483c4f91a55b0e93be56677ce4e3}\label{classnidb_a4034483c4f91a55b0e93be56677ce4e3}} 
+\index{nidb@{nidb}!CreateUID@{CreateUID}}
+\index{CreateUID@{CreateUID}!nidb@{nidb}}
+\doxysubsubsection{\texorpdfstring{CreateUID()}{CreateUID()}}
+{\footnotesize\ttfamily Q\+String nidb\+::\+Create\+U\+ID (\begin{DoxyParamCaption}\item[{Q\+String}]{prefix,  }\item[{int}]{numletters = {\ttfamily 3} }\end{DoxyParamCaption})}
+
+
+
+Create a unique ID (U\+ID) in the form S1234\+A\+BC. This is also used for project U\+I\+Ds. This function tries to avoid inappropriate words spelled out using the random letters. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em prefix} & the letter prefix. Normally \textquotesingle{}S\textquotesingle{} \\
+\hline
+{\em numletters} & the number of letters in the U\+ID, normally 3 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+A valid U\+ID 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classnidb_ab17b3c4ae5af3e32a008551a36f3f4d5}\label{classnidb_ab17b3c4ae5af3e32a008551a36f3f4d5}} 
+\index{nidb@{nidb}!DatabaseConnect@{DatabaseConnect}}
+\index{DatabaseConnect@{DatabaseConnect}!nidb@{nidb}}
+\doxysubsubsection{\texorpdfstring{DatabaseConnect()}{DatabaseConnect()}}
+{\footnotesize\ttfamily bool nidb\+::\+Database\+Connect (\begin{DoxyParamCaption}\item[{bool}]{cluster = {\ttfamily false} }\end{DoxyParamCaption})}
+
+
+
+Connect to a database. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em cluster} & True if the executable is running on the cluster \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+true if successful, false otherwise 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classnidb_a21b75857ae9e98296000ce914eb185c1}\label{classnidb_a21b75857ae9e98296000ce914eb185c1}} 
+\index{nidb@{nidb}!Debug@{Debug}}
+\index{Debug@{Debug}!nidb@{nidb}}
+\doxysubsubsection{\texorpdfstring{Debug()}{Debug()}}
+{\footnotesize\ttfamily Q\+String nidb\+::\+Debug (\begin{DoxyParamCaption}\item[{Q\+String}]{msg,  }\item[{Q\+String}]{func = {\ttfamily \char`\"{}\char`\"{}},  }\item[{int}]{wrap = {\ttfamily 0},  }\item[{bool}]{time\+Stamp = {\ttfamily true} }\end{DoxyParamCaption})}
+
+
+
+Similar to the \mbox{\hyperlink{classnidb_ac7b4da25cb1682e804944c512367488f}{Log()}} function, except this function only logs a message if the Ni\+DB is in debug mode. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em msg} & \\
+\hline
+{\em func} & \\
+\hline
+{\em wrap} & \\
+\hline
+{\em time\+Stamp} & \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+
+\end{DoxyReturn}
+\mbox{\Hypertarget{classnidb_a6d653218a3f4b3f8f85d83685a127c55}\label{classnidb_a6d653218a3f4b3f8f85d83685a127c55}} 
+\index{nidb@{nidb}!GetBuildString@{GetBuildString}}
+\index{GetBuildString@{GetBuildString}!nidb@{nidb}}
+\doxysubsubsection{\texorpdfstring{GetBuildString()}{GetBuildString()}}
+{\footnotesize\ttfamily Q\+String nidb\+::\+Get\+Build\+String (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+\mbox{\hyperlink{classnidb_a6d653218a3f4b3f8f85d83685a127c55}{nidb\+::\+Get\+Build\+String}} 
+
+\begin{DoxyReturn}{Returns}
+The build string 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classnidb_a0c9f386f87c415eeba5f0827a2970071}\label{classnidb_a0c9f386f87c415eeba5f0827a2970071}} 
+\index{nidb@{nidb}!GetGroupListing@{GetGroupListing}}
+\index{GetGroupListing@{GetGroupListing}!nidb@{nidb}}
+\doxysubsubsection{\texorpdfstring{GetGroupListing()}{GetGroupListing()}}
+{\footnotesize\ttfamily Q\+String nidb\+::\+Get\+Group\+Listing (\begin{DoxyParamCaption}\item[{int}]{groupid }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classnidb_a110b4444bfa2170f30c2c28874a090b8}\label{classnidb_a110b4444bfa2170f30c2c28874a090b8}} 
+\index{nidb@{nidb}!GetPrimaryAlternateUID@{GetPrimaryAlternateUID}}
+\index{GetPrimaryAlternateUID@{GetPrimaryAlternateUID}!nidb@{nidb}}
+\doxysubsubsection{\texorpdfstring{GetPrimaryAlternateUID()}{GetPrimaryAlternateUID()}}
+{\footnotesize\ttfamily Q\+String nidb\+::\+Get\+Primary\+Alternate\+U\+ID (\begin{DoxyParamCaption}\item[{qint64}]{subjectid,  }\item[{qint64}]{enrollmentid }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classnidb_a055cc365532deaab468210f4b205005e}\label{classnidb_a055cc365532deaab468210f4b205005e}} 
+\index{nidb@{nidb}!GetSQLComparison@{GetSQLComparison}}
+\index{GetSQLComparison@{GetSQLComparison}!nidb@{nidb}}
+\doxysubsubsection{\texorpdfstring{GetSQLComparison()}{GetSQLComparison()}}
+{\footnotesize\ttfamily bool nidb\+::\+Get\+S\+Q\+L\+Comparison (\begin{DoxyParamCaption}\item[{Q\+String}]{c,  }\item[{Q\+String \&}]{comp,  }\item[{int \&}]{num }\end{DoxyParamCaption})}
+
+
+
+Validate and parse a comparison string like $<$=5 into a pair of tokens (comparison, number) for later use in a S\+QL statement. The string passed into this function was likely input by a user, and must be validated before including in a S\+QL statement. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em c} & The comparison string \\
+\hline
+{\em comp} & The comparison ($<$=, $>$=, $<$, $>$, $\sim$, =) \\
+\hline
+{\em num} & The number \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+true if successfully parsed, false otherwise 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classnidb_afdad61099e793553f8ff1a96dd66a189}\label{classnidb_afdad61099e793553f8ff1a96dd66a189}} 
+\index{nidb@{nidb}!GetVersion@{GetVersion}}
+\index{GetVersion@{GetVersion}!nidb@{nidb}}
+\doxysubsubsection{\texorpdfstring{GetVersion()}{GetVersion()}}
+{\footnotesize\ttfamily Q\+String nidb\+::\+Get\+Version (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+\mbox{\hyperlink{classnidb_afdad61099e793553f8ff1a96dd66a189}{nidb\+::\+Get\+Version}} 
+
+\begin{DoxyReturn}{Returns}
+The Ni\+DB version 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classnidb_afceae8e4b32d5dbe30e9a2146611cbfd}\label{classnidb_afceae8e4b32d5dbe30e9a2146611cbfd}} 
+\index{nidb@{nidb}!InsertAnalysisEvent@{InsertAnalysisEvent}}
+\index{InsertAnalysisEvent@{InsertAnalysisEvent}!nidb@{nidb}}
+\doxysubsubsection{\texorpdfstring{InsertAnalysisEvent()}{InsertAnalysisEvent()}}
+{\footnotesize\ttfamily void nidb\+::\+Insert\+Analysis\+Event (\begin{DoxyParamCaption}\item[{qint64}]{analysisid,  }\item[{int}]{pipelineid,  }\item[{int}]{pipelineversion,  }\item[{int}]{studyid,  }\item[{Q\+String}]{event,  }\item[{Q\+String}]{message }\end{DoxyParamCaption})}
+
+
+
+Insert an analysis event in the analysis table. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em analysisid} & Analysis\+Row\+ID \\
+\hline
+{\em pipelineid} & Pipeline\+Row\+ID \\
+\hline
+{\em pipelineversion} & pipeline version \\
+\hline
+{\em studyid} & Study\+Row\+ID \\
+\hline
+{\em event} & event code \\
+\hline
+{\em message} & Event message \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{classnidb_a8c0d8dcdc8ad2f1ae2795773c830bfe6}\label{classnidb_a8c0d8dcdc8ad2f1ae2795773c830bfe6}} 
+\index{nidb@{nidb}!InsertSubjectChangeLog@{InsertSubjectChangeLog}}
+\index{InsertSubjectChangeLog@{InsertSubjectChangeLog}!nidb@{nidb}}
+\doxysubsubsection{\texorpdfstring{InsertSubjectChangeLog()}{InsertSubjectChangeLog()}}
+{\footnotesize\ttfamily void nidb\+::\+Insert\+Subject\+Change\+Log (\begin{DoxyParamCaption}\item[{Q\+String}]{username,  }\item[{Q\+String}]{uid,  }\item[{Q\+String}]{newuid,  }\item[{Q\+String}]{changetype,  }\item[{Q\+String}]{log }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classnidb_aa4989a309c4f766d6697f3587948ecfb}\label{classnidb_aa4989a309c4f766d6697f3587948ecfb}} 
+\index{nidb@{nidb}!IsRunningFromCluster@{IsRunningFromCluster}}
+\index{IsRunningFromCluster@{IsRunningFromCluster}!nidb@{nidb}}
+\doxysubsubsection{\texorpdfstring{IsRunningFromCluster()}{IsRunningFromCluster()}}
+{\footnotesize\ttfamily bool nidb\+::\+Is\+Running\+From\+Cluster (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+\mbox{\hyperlink{classnidb_aa4989a309c4f766d6697f3587948ecfb}{nidb\+::\+Is\+Running\+From\+Cluster}} 
+
+\begin{DoxyReturn}{Returns}
+true if this instance if running from the cluster, false otherwise 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classnidb_a323f823d383a668365610073d99e5ec4}\label{classnidb_a323f823d383a668365610073d99e5ec4}} 
+\index{nidb@{nidb}!isValidNiDBModality@{isValidNiDBModality}}
+\index{isValidNiDBModality@{isValidNiDBModality}!nidb@{nidb}}
+\doxysubsubsection{\texorpdfstring{isValidNiDBModality()}{isValidNiDBModality()}}
+{\footnotesize\ttfamily bool nidb\+::is\+Valid\+Ni\+D\+B\+Modality (\begin{DoxyParamCaption}\item[{Q\+String}]{m }\end{DoxyParamCaption})}
+
+
+
+Check if a specified modality is valid in Ni\+DB, meannig this modality has an existing $<$modality$>$\+\_\+series table. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em m} & Modality to check \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+true if valid, false otherwise 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classnidb_a4834b96815a4efbb89bfe1eb3cecc900}\label{classnidb_a4834b96815a4efbb89bfe1eb3cecc900}} 
+\index{nidb@{nidb}!LoadConfig@{LoadConfig}}
+\index{LoadConfig@{LoadConfig}!nidb@{nidb}}
+\doxysubsubsection{\texorpdfstring{LoadConfig()}{LoadConfig()}}
+{\footnotesize\ttfamily bool nidb\+::\+Load\+Config (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Load the nidb config file. 
+
+\begin{DoxyReturn}{Returns}
+true if successful, false otherwise 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classnidb_ac7b4da25cb1682e804944c512367488f}\label{classnidb_ac7b4da25cb1682e804944c512367488f}} 
+\index{nidb@{nidb}!Log@{Log}}
+\index{Log@{Log}!nidb@{nidb}}
+\doxysubsubsection{\texorpdfstring{Log()}{Log()}}
+{\footnotesize\ttfamily Q\+String nidb\+::\+Log (\begin{DoxyParamCaption}\item[{Q\+String}]{msg,  }\item[{Q\+String}]{func = {\ttfamily \char`\"{}\char`\"{}},  }\item[{int}]{wrap = {\ttfamily 0},  }\item[{bool}]{time\+Stamp = {\ttfamily true} }\end{DoxyParamCaption})}
+
+
+
+Record a log message. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em msg} & The message \\
+\hline
+{\em func} & The function which called this \mbox{\hyperlink{classnidb_ac7b4da25cb1682e804944c512367488f}{Log()}} function (pass the {\bfseries{F\+U\+N\+C\+T\+I\+ON}} macro) \\
+\hline
+{\em wrap} & 0 for no text wrapping. An integer greater than 0 to wrap text at a specified column \\
+\hline
+{\em time\+Stamp} & true to include a timestampe in the Log, false otherwise \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+
+\end{DoxyReturn}
+\mbox{\Hypertarget{classnidb_a55ac56e274f72c9bb8c9147d42786f23}\label{classnidb_a55ac56e274f72c9bb8c9147d42786f23}} 
+\index{nidb@{nidb}!ModuleCheckIfActive@{ModuleCheckIfActive}}
+\index{ModuleCheckIfActive@{ModuleCheckIfActive}!nidb@{nidb}}
+\doxysubsubsection{\texorpdfstring{ModuleCheckIfActive()}{ModuleCheckIfActive()}}
+{\footnotesize\ttfamily bool nidb\+::\+Module\+Check\+If\+Active (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Check if this module is enabled and should be running. 
+
+\begin{DoxyReturn}{Returns}
+true if active, false otherwise 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classnidb_a05e505984da877a24966ce8002546ba3}\label{classnidb_a05e505984da877a24966ce8002546ba3}} 
+\index{nidb@{nidb}!ModuleClearLockFiles@{ModuleClearLockFiles}}
+\index{ModuleClearLockFiles@{ModuleClearLockFiles}!nidb@{nidb}}
+\doxysubsubsection{\texorpdfstring{ModuleClearLockFiles()}{ModuleClearLockFiles()}}
+{\footnotesize\ttfamily bool nidb\+::\+Module\+Clear\+Lock\+Files (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Remove all lock files for this module. 
+
+\begin{DoxyReturn}{Returns}
+true if successful, false otherwise 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classnidb_a937d0c8f33aae6ff6c7cb47de83e9915}\label{classnidb_a937d0c8f33aae6ff6c7cb47de83e9915}} 
+\index{nidb@{nidb}!ModuleCreateLockFile@{ModuleCreateLockFile}}
+\index{ModuleCreateLockFile@{ModuleCreateLockFile}!nidb@{nidb}}
+\doxysubsubsection{\texorpdfstring{ModuleCreateLockFile()}{ModuleCreateLockFile()}}
+{\footnotesize\ttfamily bool nidb\+::\+Module\+Create\+Lock\+File (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Create a lock file for this module. Each lock file has a file extension with the current process\textquotesingle{}s P\+ID. 
+
+\begin{DoxyReturn}{Returns}
+True if successful, false otherwise 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classnidb_a9782fe5edd8e30b8d7a3dd8b2cd5dd5d}\label{classnidb_a9782fe5edd8e30b8d7a3dd8b2cd5dd5d}} 
+\index{nidb@{nidb}!ModuleCreateLogFile@{ModuleCreateLogFile}}
+\index{ModuleCreateLogFile@{ModuleCreateLogFile}!nidb@{nidb}}
+\doxysubsubsection{\texorpdfstring{ModuleCreateLogFile()}{ModuleCreateLogFile()}}
+{\footnotesize\ttfamily bool nidb\+::\+Module\+Create\+Log\+File (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Create a log file for this module. 
+
+\begin{DoxyReturn}{Returns}
+true if successful, false otherwise 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classnidb_a4df61018ab9409b7e8b07e6218f0ae45}\label{classnidb_a4df61018ab9409b7e8b07e6218f0ae45}} 
+\index{nidb@{nidb}!ModuleDBCheckIn@{ModuleDBCheckIn}}
+\index{ModuleDBCheckIn@{ModuleDBCheckIn}!nidb@{nidb}}
+\doxysubsubsection{\texorpdfstring{ModuleDBCheckIn()}{ModuleDBCheckIn()}}
+{\footnotesize\ttfamily void nidb\+::\+Module\+D\+B\+Check\+In (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Check this module into the database to let the system know it is running. This should be done when starting the module. 
+
+\mbox{\Hypertarget{classnidb_a194072e4c4396dd7dd0a5e52ca16de1a}\label{classnidb_a194072e4c4396dd7dd0a5e52ca16de1a}} 
+\index{nidb@{nidb}!ModuleDBCheckOut@{ModuleDBCheckOut}}
+\index{ModuleDBCheckOut@{ModuleDBCheckOut}!nidb@{nidb}}
+\doxysubsubsection{\texorpdfstring{ModuleDBCheckOut()}{ModuleDBCheckOut()}}
+{\footnotesize\ttfamily void nidb\+::\+Module\+D\+B\+Check\+Out (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Check this module out of the database. This should be done when exiting the module. 
+
+\mbox{\Hypertarget{classnidb_ac68c78cd6cd40e6b51e0fb433c268056}\label{classnidb_ac68c78cd6cd40e6b51e0fb433c268056}} 
+\index{nidb@{nidb}!ModuleDeleteLockFile@{ModuleDeleteLockFile}}
+\index{ModuleDeleteLockFile@{ModuleDeleteLockFile}!nidb@{nidb}}
+\doxysubsubsection{\texorpdfstring{ModuleDeleteLockFile()}{ModuleDeleteLockFile()}}
+{\footnotesize\ttfamily void nidb\+::\+Module\+Delete\+Lock\+File (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Delete the lock file associated with this module. 
+
+\mbox{\Hypertarget{classnidb_a17a9b3053e5b5d5a9db3c5fa6e7fd901}\label{classnidb_a17a9b3053e5b5d5a9db3c5fa6e7fd901}} 
+\index{nidb@{nidb}!ModuleGetNumLockFiles@{ModuleGetNumLockFiles}}
+\index{ModuleGetNumLockFiles@{ModuleGetNumLockFiles}!nidb@{nidb}}
+\doxysubsubsection{\texorpdfstring{ModuleGetNumLockFiles()}{ModuleGetNumLockFiles()}}
+{\footnotesize\ttfamily qint64 nidb\+::\+Module\+Get\+Num\+Lock\+Files (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Find the number of lock files for this module. 
+
+\begin{DoxyReturn}{Returns}
+The number of existing lock files for this module 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classnidb_a90e5ac64f6f220af93c7b2c9a4e49789}\label{classnidb_a90e5ac64f6f220af93c7b2c9a4e49789}} 
+\index{nidb@{nidb}!ModuleGetNumThreads@{ModuleGetNumThreads}}
+\index{ModuleGetNumThreads@{ModuleGetNumThreads}!nidb@{nidb}}
+\doxysubsubsection{\texorpdfstring{ModuleGetNumThreads()}{ModuleGetNumThreads()}}
+{\footnotesize\ttfamily int nidb\+::\+Module\+Get\+Num\+Threads (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Get the number of threads for the currently selected module. 
+
+\begin{DoxyReturn}{Returns}
+The number of module threads 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classnidb_ab300daa39c786de9148ab50a94acbee6}\label{classnidb_ab300daa39c786de9148ab50a94acbee6}} 
+\index{nidb@{nidb}!ModuleRemoveLogFile@{ModuleRemoveLogFile}}
+\index{ModuleRemoveLogFile@{ModuleRemoveLogFile}!nidb@{nidb}}
+\doxysubsubsection{\texorpdfstring{ModuleRemoveLogFile()}{ModuleRemoveLogFile()}}
+{\footnotesize\ttfamily void nidb\+::\+Module\+Remove\+Log\+File (\begin{DoxyParamCaption}\item[{bool}]{keep\+Log }\end{DoxyParamCaption})}
+
+
+
+Delete the log file for this module. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em true} & if this log file should not be deleted \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{classnidb_a3392b7e0e9d1b2f808ed779ae2312a8a}\label{classnidb_a3392b7e0e9d1b2f808ed779ae2312a8a}} 
+\index{nidb@{nidb}!ModuleRunningCheckIn@{ModuleRunningCheckIn}}
+\index{ModuleRunningCheckIn@{ModuleRunningCheckIn}!nidb@{nidb}}
+\doxysubsubsection{\texorpdfstring{ModuleRunningCheckIn()}{ModuleRunningCheckIn()}}
+{\footnotesize\ttfamily void nidb\+::\+Module\+Running\+Check\+In (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+This is a \char`\"{}deadman\textquotesingle{}s switch\char`\"{}. If the module doesn\textquotesingle{}t check in after a certain period of time, the module process is assumed to have died and is reset so it can start again. 
+
+\mbox{\Hypertarget{classnidb_a6e2e5d8d1f5a160ec0fb8b95088a7c92}\label{classnidb_a6e2e5d8d1f5a160ec0fb8b95088a7c92}} 
+\index{nidb@{nidb}!SendEmail@{SendEmail}}
+\index{SendEmail@{SendEmail}!nidb@{nidb}}
+\doxysubsubsection{\texorpdfstring{SendEmail()}{SendEmail()}}
+{\footnotesize\ttfamily bool nidb\+::\+Send\+Email (\begin{DoxyParamCaption}\item[{Q\+String}]{to,  }\item[{Q\+String}]{subject,  }\item[{Q\+String}]{body }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classnidb_a9db1198c88c339d099fa2611f119ee5d}\label{classnidb_a9db1198c88c339d099fa2611f119ee5d}} 
+\index{nidb@{nidb}!SetExportSeriesStatus@{SetExportSeriesStatus}}
+\index{SetExportSeriesStatus@{SetExportSeriesStatus}!nidb@{nidb}}
+\doxysubsubsection{\texorpdfstring{SetExportSeriesStatus()}{SetExportSeriesStatus()}}
+{\footnotesize\ttfamily bool nidb\+::\+Set\+Export\+Series\+Status (\begin{DoxyParamCaption}\item[{qint64}]{exportseriesid,  }\item[{qint64}]{exportid,  }\item[{qint64}]{seriesid,  }\item[{Q\+String}]{modality,  }\item[{Q\+String}]{status,  }\item[{Q\+String}]{msg = {\ttfamily \char`\"{}\char`\"{}} }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classnidb_af2f1a11418e2fb1b228d8de829dba409}\label{classnidb_af2f1a11418e2fb1b228d8de829dba409}} 
+\index{nidb@{nidb}!SQLQuery@{SQLQuery}}
+\index{SQLQuery@{SQLQuery}!nidb@{nidb}}
+\doxysubsubsection{\texorpdfstring{SQLQuery()}{SQLQuery()}}
+{\footnotesize\ttfamily Q\+String nidb\+::\+S\+Q\+L\+Query (\begin{DoxyParamCaption}\item[{Q\+Sql\+Query \&}]{q,  }\item[{Q\+String}]{function,  }\item[{Q\+String}]{file,  }\item[{int}]{line,  }\item[{bool}]{d = {\ttfamily false},  }\item[{bool}]{batch = {\ttfamily false} }\end{DoxyParamCaption})}
+
+
+
+Execute a S\+QL query and return the result. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em q} & Q\+Sql\+Query object must already be prepared and bound before being passed to this function \\
+\hline
+{\em function} & C++ function which called this function (for debugging purposes in case the S\+QL query fails). Pass the macro {\bfseries{F\+U\+N\+C\+T\+I\+ON}} as a parameter \\
+\hline
+{\em file} & Source code file which called this function (for debugging purposes in case the S\+QL query fails). Pass the macro {\bfseries{F\+I\+LE}} as a parameter \\
+\hline
+{\em line} & Line in the source code file that called this function (for debugging purposes in case the S\+QL query fails). Pass the macro {\bfseries{L\+I\+NE}} as a parameter \\
+\hline
+{\em d} & true if debug (will write the executed statement to the Log file) \\
+\hline
+{\em batch} & true if running in batch mode \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+The Q\+String representation of the executed query 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classnidb_a5cd0be5048523748d039897abaef9364}\label{classnidb_a5cd0be5048523748d039897abaef9364}} 
+\index{nidb@{nidb}!SubmitClusterJob@{SubmitClusterJob}}
+\index{SubmitClusterJob@{SubmitClusterJob}!nidb@{nidb}}
+\doxysubsubsection{\texorpdfstring{SubmitClusterJob()}{SubmitClusterJob()}}
+{\footnotesize\ttfamily bool nidb\+::\+Submit\+Cluster\+Job (\begin{DoxyParamCaption}\item[{Q\+String}]{job\+File\+Path,  }\item[{Q\+String}]{cluster\+Type,  }\item[{Q\+String}]{submit\+Host,  }\item[{Q\+String}]{submit\+User,  }\item[{Q\+String}]{qsub,  }\item[{Q\+String}]{cluster\+User,  }\item[{Q\+String}]{cluster\+Queue,  }\item[{Q\+String \&}]{msg,  }\item[{int \&}]{jobid,  }\item[{Q\+String \&}]{result }\end{DoxyParamCaption})}
+
+
+
+Submit a pipeline analysis job to a cluster. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em job\+File\+Path} & Path to the job file \\
+\hline
+{\em cluster\+Type} & either \textquotesingle{}sge\textquotesingle{} or \textquotesingle{}slurm\textquotesingle{} \\
+\hline
+{\em submit\+Host} & Hostname to which the job will be sumitted \\
+\hline
+{\em submit\+User} & Username to login to the host to submit a job. User must be able to passwordless-\/ly ssh into the host \\
+\hline
+{\em qsub} & path to the qsub executable \\
+\hline
+{\em cluster\+User} & Username to run the job on the cluster \\
+\hline
+{\em cluster\+Queue} & Queue under which to run the job on the cluster \\
+\hline
+{\em msg} & Any messages generated during submission \\
+\hline
+{\em jobid} & The jobid of the submitted job \\
+\hline
+{\em result} & Message from the command line after submitting a job \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+true if successfully submitted, false otherwise 
+\end{DoxyReturn}
+
+
+\doxysubsection{Member Data Documentation}
+\mbox{\Hypertarget{classnidb_af6faa100be76bf8cca34b9a414d59a8b}\label{classnidb_af6faa100be76bf8cca34b9a414d59a8b}} 
+\index{nidb@{nidb}!cfg@{cfg}}
+\index{cfg@{cfg}!nidb@{nidb}}
+\doxysubsubsection{\texorpdfstring{cfg}{cfg}}
+{\footnotesize\ttfamily Q\+Hash$<$Q\+String, Q\+String$>$ nidb\+::cfg}
+
+configuration variables \mbox{\Hypertarget{classnidb_ae4083edd285cfc23ec8b367924efacbe}\label{classnidb_ae4083edd285cfc23ec8b367924efacbe}} 
+\index{nidb@{nidb}!db@{db}}
+\index{db@{db}!nidb@{nidb}}
+\doxysubsubsection{\texorpdfstring{db}{db}}
+{\footnotesize\ttfamily Q\+Sql\+Database nidb\+::db}
+
+database connection \mbox{\Hypertarget{classnidb_aae4dafebddca598f7b39964506c46226}\label{classnidb_aae4dafebddca598f7b39964506c46226}} 
+\index{nidb@{nidb}!debug@{debug}}
+\index{debug@{debug}!nidb@{nidb}}
+\doxysubsubsection{\texorpdfstring{debug}{debug}}
+{\footnotesize\ttfamily bool nidb\+::debug}
+
+true if module is in debugging mode 
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{nidb_8h}{nidb.\+h}}\item 
+\mbox{\hyperlink{nidb_8cpp}{nidb.\+cpp}}\end{DoxyCompactItemize}

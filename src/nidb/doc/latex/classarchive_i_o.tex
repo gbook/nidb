@@ -1,0 +1,582 @@
+\hypertarget{classarchive_i_o}{}\doxysection{archive\+IO Class Reference}
+\label{classarchive_i_o}\index{archiveIO@{archiveIO}}
+
+
+The \mbox{\hyperlink{classarchive_i_o}{archive\+IO}} class is responsible for interacting with the archive, such as adding subjects and archiving data.  
+
+
+
+
+{\ttfamily \#include $<$archiveio.\+h$>$}
+
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{classarchive_i_o_a1c0e0b70de72a6e41dc27345076cb63b}{archive\+IO}} ()
+\item 
+\mbox{\hyperlink{classarchive_i_o_ab27c71ba39aa1cefef5cb3f91438590c}{archive\+IO}} (\mbox{\hyperlink{classnidb}{nidb}} $\ast$n)
+\begin{DoxyCompactList}\small\item\em Constructor. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{classarchive_i_o_af41268e71f641837205a14597891b66b}{$\sim$archive\+IO}} ()
+\begin{DoxyCompactList}\small\item\em Default constructor. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{classarchive_i_o_ae6d7fc529222d9b287bd50ba851f296c}{Create\+Subject}} (Q\+String Patient\+ID, Q\+String Patient\+Name, Q\+String Patient\+Birth\+Date, Q\+String Patient\+Sex, double Patient\+Weight, double Patient\+Size, int \&subject\+Row\+ID, Q\+String \&subject\+Real\+U\+ID)
+\begin{DoxyCompactList}\small\item\em Create a subject in the database. Create the U\+ID. This function assumes that this subject does not already exist. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{classarchive_i_o_a370e5217102077baccba849058abf140}{Archive\+D\+I\+C\+O\+M\+Series}} (int importid, int existing\+Subject\+ID, int existing\+Study\+ID, int existing\+Series\+ID, Q\+String subject\+Match\+Criteria, Q\+String study\+Match\+Criteria, Q\+String series\+Match\+Criteria, int dest\+Project\+ID, Q\+String specific\+Patient\+ID, int dest\+Site\+ID, Q\+String alt\+U\+I\+Ds, Q\+String series\+Notes, Q\+String\+List files, \mbox{\hyperlink{classperformance_metric}{performance\+Metric}} \&perf)
+\begin{DoxyCompactList}\small\item\em Archive a D\+I\+C\+OM series. This function handles partial series as well. If half the files of a series are already archived, and the other half are passed into this function, this function will attempt to complete the series. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{classarchive_i_o_af5e718738b6f88bc99f297f5740e582f}{Insert\+Par\+Rec}} (int importid, Q\+String file)
+\begin{DoxyCompactList}\small\item\em Archive a par/rec file pair. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{classarchive_i_o_a1a1bd7d745eacb8979303b8e20a6f88a}{Insert\+E\+EG}} (int importid, Q\+String file)
+\begin{DoxyCompactList}\small\item\em Insert an E\+EG series into the database. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{classarchive_i_o_a1d83a987a43d319baf1195ce08b75f95}{Get\+Subject}} (Q\+String subject\+Match\+Criteria, int existing\+Subject\+ID, int project\+ID, Q\+String Patient\+ID, Q\+String Patient\+Name, Q\+String Patient\+Sex, Q\+String Patient\+Birth\+Date, int \&subject\+Row\+ID, Q\+String \&subject\+U\+ID)
+\begin{DoxyCompactList}\small\item\em Find a subject based on specified criteria. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{classarchive_i_o_a5c9d52a82ec2c0c22cffce9b3d32f64a}{Create\+Subject}} (Q\+String Patient\+ID, Q\+String Patient\+Name, Q\+String Patient\+Sex, Q\+String Patient\+Birth\+Date, double Patient\+Weight, double Patient\+Size, Q\+String S\+Q\+L\+I\+Ds, int \&subject\+Row\+ID, Q\+String \&subject\+U\+ID)
+\item 
+bool \mbox{\hyperlink{classarchive_i_o_a6827ffc1a16f1695b42015abba8b57b1}{Get\+Study}} (Q\+String study\+Match\+Criteria, int existing\+Study\+ID, int enrollment\+Row\+ID, Q\+String Study\+Date\+Time, Q\+String Modality, Q\+String Study\+Instance\+U\+ID, int \&study\+Row\+ID)
+\begin{DoxyCompactList}\small\item\em Search for an existing study. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{classarchive_i_o_a7cc0a729093263f155b771881a2dbb47}{Create\+Study}} (int subject\+Row\+ID, int enrollment\+Row\+ID, Q\+String Study\+Date\+Time, Q\+String study\+U\+ID, Q\+String Modality, Q\+String Patient\+ID, double Patient\+Age, double Patient\+Size, double Patient\+Weight, Q\+String Study\+Description, Q\+String Operators\+Name, Q\+String Performing\+Physicians\+Name, Q\+String Station\+Name, Q\+String Institution\+Name, Q\+String Institution\+Address, int \&study\+Row\+ID, int \&study\+Num)
+\item 
+bool \mbox{\hyperlink{classarchive_i_o_a96b07d2c13d6cf77daf9566fba8e74fa}{Write\+B\+I\+DS}} (Q\+List$<$ qint64 $>$ seriesids, Q\+String\+List modalities, Q\+String odir, Q\+String bidsreadme, Q\+String\+List bidsflags, Q\+String \&msg)
+\begin{DoxyCompactList}\small\item\em \mbox{\hyperlink{classarchive_i_o_a96b07d2c13d6cf77daf9566fba8e74fa}{archive\+I\+O\+::\+Write\+B\+I\+DS}} \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{classarchive_i_o_a37c7d9c366366524b9750de2994fa3c9}{Write\+Squirrel}} (qint64 exportid, Q\+String name, Q\+String desc, Q\+String\+List downloadflags, Q\+String\+List squirrelflags, Q\+List$<$ qint64 $>$ seriesids, Q\+String\+List modalities, Q\+String odir, Q\+String \&msg)
+\begin{DoxyCompactList}\small\item\em Write a squirrel package. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{classarchive_i_o_a5d7bb087bc9c56d80edf342b35216efd}{Write\+Package}} (qint64 exportid, Q\+String zipfilepath, Q\+String \&msg)
+\item 
+bool \mbox{\hyperlink{classarchive_i_o_a085082a56baa1e980935225ea8887fb9}{Get\+Series\+List\+Details}} (Q\+List$<$ qint64 $>$ seriesids, Q\+String\+List modalities, \mbox{\hyperlink{nidb_8h_abbea50e6b4c4599c8466663c17b73e3d}{subject\+Study\+Series\+Container}} \&s)
+\begin{DoxyCompactList}\small\item\em Search for and return series details in a multilevel hash. Series details are passed to other functions to actually do the archive operation. \end{DoxyCompactList}\item 
+Q\+String \mbox{\hyperlink{classarchive_i_o_ab45052b74f2a1cebbc707644dbf21adf}{Get\+Cost\+Center}} (Q\+String studydesc)
+\begin{DoxyCompactList}\small\item\em Attempt to extract the cost center or project number from a study description. This will attempt to extract the string of characters between a pair of parentheses. \end{DoxyCompactList}\item 
+Q\+String \mbox{\hyperlink{classarchive_i_o_a92169d2433600eaf25e3c4e17d9bfbf5}{Create\+I\+D\+Search\+List}} (Q\+String Patient\+ID, Q\+String altuids)
+\begin{DoxyCompactList}\small\item\em Given a list of Patient\+ID and alternate I\+Ds, return a sanitized S\+QL string to search for. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{classarchive_i_o_a6c344aa54694461a3c479b911f0f71fa}{Create\+Thumbnail}} (Q\+String f, Q\+String outdir)
+\begin{DoxyCompactList}\small\item\em Create a P\+NG thumbnail from an input file (D\+I\+C\+OM usually) using Image\+Magick. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{classarchive_i_o_a0b9c61d38ad2ac28dcd9b02bf37502a6}{Set\+Alternate\+I\+Ds}} (int subject\+Row\+ID, int enrollment\+Row\+ID, Q\+String\+List altuidlist)
+\begin{DoxyCompactList}\small\item\em Update a subject\textquotesingle{}s alternate U\+I\+Ds. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{classarchive_i_o_a4df393f2714b4588d4609580ed8930d3}{Get\+Family}} (int subject\+Row\+ID, Q\+String subject\+U\+ID, int \&family\+Row\+ID, Q\+String \&family\+U\+ID)
+\begin{DoxyCompactList}\small\item\em Get a family U\+ID for this subject. Create a family if one doesn\textquotesingle{}t already exist. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{classarchive_i_o_a0c5b3a21f956f163196e0a022f639984}{Get\+Project}} (int dest\+Project\+ID, Q\+String Study\+Description, int \&project\+Row\+ID)
+\begin{DoxyCompactList}\small\item\em Search for a project by costcenter/project number. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{classarchive_i_o_a2297eeb79230d77c06a48ef6d95a55b2}{Get\+Enrollment}} (int subject\+Row\+ID, int project\+Row\+ID, int \&enrollment\+Row\+ID)
+\begin{DoxyCompactList}\small\item\em Search for an existing enrollment, or create it if it doesn\textquotesingle{}t exist. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{classarchive_i_o_a5a234f2d56118eb426f8da602a17758b}{Append\+J\+S\+O\+N\+Measures}} (Q\+Json\+Object \&json\+Obj, Q\+List$<$ int $>$ enrollment\+I\+Ds)
+\item 
+bool \mbox{\hyperlink{classarchive_i_o_a0dd0c8b2563df9bb3276bf6a33a6cd19}{Append\+J\+S\+O\+N\+Drugs}} (Q\+Json\+Object \&json\+Obj, Q\+List$<$ int $>$ enrollment\+I\+Ds)
+\item 
+void \mbox{\hyperlink{classarchive_i_o_a4616de589a7cb0d2f50f64f135e4c61a}{Set\+Upload\+ID}} (int upid)
+\begin{DoxyCompactList}\small\item\em Set the upload ID. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{classarchive_i_o_a5d0974d1d70f0dde6d6bc61128d4c3db}{Append\+Upload\+Log}} (Q\+String func, Q\+String m)
+\begin{DoxyCompactList}\small\item\em Append a message to the upload log. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+The \mbox{\hyperlink{classarchive_i_o}{archive\+IO}} class is responsible for interacting with the archive, such as adding subjects and archiving data. 
+
+\doxysubsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classarchive_i_o_a1c0e0b70de72a6e41dc27345076cb63b}\label{classarchive_i_o_a1c0e0b70de72a6e41dc27345076cb63b}} 
+\index{archiveIO@{archiveIO}!archiveIO@{archiveIO}}
+\index{archiveIO@{archiveIO}!archiveIO@{archiveIO}}
+\doxysubsubsection{\texorpdfstring{archiveIO()}{archiveIO()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily archive\+I\+O\+::archive\+IO (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classarchive_i_o_ab27c71ba39aa1cefef5cb3f91438590c}\label{classarchive_i_o_ab27c71ba39aa1cefef5cb3f91438590c}} 
+\index{archiveIO@{archiveIO}!archiveIO@{archiveIO}}
+\index{archiveIO@{archiveIO}!archiveIO@{archiveIO}}
+\doxysubsubsection{\texorpdfstring{archiveIO()}{archiveIO()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily archive\+I\+O\+::archive\+IO (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{classnidb}{nidb}} $\ast$}]{a }\end{DoxyParamCaption})}
+
+
+
+Constructor. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em The} & nidb object \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{classarchive_i_o_af41268e71f641837205a14597891b66b}\label{classarchive_i_o_af41268e71f641837205a14597891b66b}} 
+\index{archiveIO@{archiveIO}!````~archiveIO@{$\sim$archiveIO}}
+\index{````~archiveIO@{$\sim$archiveIO}!archiveIO@{archiveIO}}
+\doxysubsubsection{\texorpdfstring{$\sim$archiveIO()}{~archiveIO()}}
+{\footnotesize\ttfamily archive\+I\+O\+::$\sim$archive\+IO (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Default constructor. 
+
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{classarchive_i_o_a0dd0c8b2563df9bb3276bf6a33a6cd19}\label{classarchive_i_o_a0dd0c8b2563df9bb3276bf6a33a6cd19}} 
+\index{archiveIO@{archiveIO}!AppendJSONDrugs@{AppendJSONDrugs}}
+\index{AppendJSONDrugs@{AppendJSONDrugs}!archiveIO@{archiveIO}}
+\doxysubsubsection{\texorpdfstring{AppendJSONDrugs()}{AppendJSONDrugs()}}
+{\footnotesize\ttfamily bool archive\+I\+O\+::\+Append\+J\+S\+O\+N\+Drugs (\begin{DoxyParamCaption}\item[{Q\+Json\+Object \&}]{json\+Obj,  }\item[{Q\+List$<$ int $>$}]{enrollment\+I\+Ds }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classarchive_i_o_a5a234f2d56118eb426f8da602a17758b}\label{classarchive_i_o_a5a234f2d56118eb426f8da602a17758b}} 
+\index{archiveIO@{archiveIO}!AppendJSONMeasures@{AppendJSONMeasures}}
+\index{AppendJSONMeasures@{AppendJSONMeasures}!archiveIO@{archiveIO}}
+\doxysubsubsection{\texorpdfstring{AppendJSONMeasures()}{AppendJSONMeasures()}}
+{\footnotesize\ttfamily bool archive\+I\+O\+::\+Append\+J\+S\+O\+N\+Measures (\begin{DoxyParamCaption}\item[{Q\+Json\+Object \&}]{json\+Obj,  }\item[{Q\+List$<$ int $>$}]{enrollment\+I\+Ds }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classarchive_i_o_a5d0974d1d70f0dde6d6bc61128d4c3db}\label{classarchive_i_o_a5d0974d1d70f0dde6d6bc61128d4c3db}} 
+\index{archiveIO@{archiveIO}!AppendUploadLog@{AppendUploadLog}}
+\index{AppendUploadLog@{AppendUploadLog}!archiveIO@{archiveIO}}
+\doxysubsubsection{\texorpdfstring{AppendUploadLog()}{AppendUploadLog()}}
+{\footnotesize\ttfamily void archive\+I\+O\+::\+Append\+Upload\+Log (\begin{DoxyParamCaption}\item[{Q\+String}]{func,  }\item[{Q\+String}]{m }\end{DoxyParamCaption})}
+
+
+
+Append a message to the upload log. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em func} & Function that called this function. Normally use the {\bfseries{F\+U\+N\+C\+T\+I\+ON}} macro \\
+\hline
+{\em m} & Message to append \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{classarchive_i_o_a370e5217102077baccba849058abf140}\label{classarchive_i_o_a370e5217102077baccba849058abf140}} 
+\index{archiveIO@{archiveIO}!ArchiveDICOMSeries@{ArchiveDICOMSeries}}
+\index{ArchiveDICOMSeries@{ArchiveDICOMSeries}!archiveIO@{archiveIO}}
+\doxysubsubsection{\texorpdfstring{ArchiveDICOMSeries()}{ArchiveDICOMSeries()}}
+{\footnotesize\ttfamily bool archive\+I\+O\+::\+Archive\+D\+I\+C\+O\+M\+Series (\begin{DoxyParamCaption}\item[{int}]{import\+Row\+ID,  }\item[{int}]{existing\+Subject\+ID,  }\item[{int}]{existing\+Study\+ID,  }\item[{int}]{existing\+Series\+ID,  }\item[{Q\+String}]{subject\+Match\+Criteria,  }\item[{Q\+String}]{study\+Match\+Criteria,  }\item[{Q\+String}]{series\+Match\+Criteria,  }\item[{int}]{dest\+Project\+ID,  }\item[{Q\+String}]{specific\+Patient\+ID,  }\item[{int}]{dest\+Site\+ID,  }\item[{Q\+String}]{alt\+U\+I\+Dstr,  }\item[{Q\+String}]{series\+Notes,  }\item[{Q\+String\+List}]{files,  }\item[{\mbox{\hyperlink{classperformance_metric}{performance\+Metric}} \&}]{perf }\end{DoxyParamCaption})}
+
+
+
+Archive a D\+I\+C\+OM series. This function handles partial series as well. If half the files of a series are already archived, and the other half are passed into this function, this function will attempt to complete the series. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em import\+Row\+ID} & If an Import\+Row\+ID exists \\
+\hline
+{\em existing\+Subject\+ID} & If an existing Subject\+Row\+ID is known \\
+\hline
+{\em existing\+Study\+ID} & If an existing Study\+Row\+ID is known \\
+\hline
+{\em existing\+Series\+ID} & If an existing Series\+Row\+ID is known \\
+\hline
+{\em subject\+Match\+Criteria} & \\
+\hline
+{\em study\+Match\+Criteria} & \\
+\hline
+{\em series\+Match\+Criteria} & \\
+\hline
+{\em dest\+Project\+ID} & Destination Project\+Row\+ID \\
+\hline
+{\em specific\+Patient\+ID} & \\
+\hline
+{\em dest\+Site\+ID} & Destination Site\+Row\+ID \\
+\hline
+{\em alt\+U\+I\+Dstr} & String with alternate U\+I\+Ds \\
+\hline
+{\em series\+Notes} & Series notes \\
+\hline
+{\em files} & List of files to archive \\
+\hline
+{\em perf} & Performance metric \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+
+\end{DoxyReturn}
+\mbox{\Hypertarget{classarchive_i_o_a92169d2433600eaf25e3c4e17d9bfbf5}\label{classarchive_i_o_a92169d2433600eaf25e3c4e17d9bfbf5}} 
+\index{archiveIO@{archiveIO}!CreateIDSearchList@{CreateIDSearchList}}
+\index{CreateIDSearchList@{CreateIDSearchList}!archiveIO@{archiveIO}}
+\doxysubsubsection{\texorpdfstring{CreateIDSearchList()}{CreateIDSearchList()}}
+{\footnotesize\ttfamily Q\+String archive\+I\+O\+::\+Create\+I\+D\+Search\+List (\begin{DoxyParamCaption}\item[{Q\+String}]{Patient\+ID,  }\item[{Q\+String}]{altuids }\end{DoxyParamCaption})}
+
+
+
+Given a list of Patient\+ID and alternate I\+Ds, return a sanitized S\+QL string to search for. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em Patient\+ID} & Likely from the D\+I\+C\+OM field, or other singular Patient\+I\+D/\+Subject\+ID \\
+\hline
+{\em altuids} & String containing a comma separated list of I\+Ds \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+S\+QL formatted string in the form \textquotesingle{}I\+D1\textquotesingle{},\textquotesingle{}I\+D\+\_\+2\textquotesingle{},\textquotesingle{}etc\textquotesingle{} 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classarchive_i_o_a7cc0a729093263f155b771881a2dbb47}\label{classarchive_i_o_a7cc0a729093263f155b771881a2dbb47}} 
+\index{archiveIO@{archiveIO}!CreateStudy@{CreateStudy}}
+\index{CreateStudy@{CreateStudy}!archiveIO@{archiveIO}}
+\doxysubsubsection{\texorpdfstring{CreateStudy()}{CreateStudy()}}
+{\footnotesize\ttfamily bool archive\+I\+O\+::\+Create\+Study (\begin{DoxyParamCaption}\item[{int}]{subject\+Row\+ID,  }\item[{int}]{enrollment\+Row\+ID,  }\item[{Q\+String}]{Study\+Date\+Time,  }\item[{Q\+String}]{study\+U\+ID,  }\item[{Q\+String}]{Modality,  }\item[{Q\+String}]{Patient\+ID,  }\item[{double}]{Patient\+Age,  }\item[{double}]{Patient\+Size,  }\item[{double}]{Patient\+Weight,  }\item[{Q\+String}]{Study\+Description,  }\item[{Q\+String}]{Operators\+Name,  }\item[{Q\+String}]{Performing\+Physicians\+Name,  }\item[{Q\+String}]{Station\+Name,  }\item[{Q\+String}]{Institution\+Name,  }\item[{Q\+String}]{Institution\+Address,  }\item[{int \&}]{study\+Row\+ID,  }\item[{int \&}]{study\+Num }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classarchive_i_o_ae6d7fc529222d9b287bd50ba851f296c}\label{classarchive_i_o_ae6d7fc529222d9b287bd50ba851f296c}} 
+\index{archiveIO@{archiveIO}!CreateSubject@{CreateSubject}}
+\index{CreateSubject@{CreateSubject}!archiveIO@{archiveIO}}
+\doxysubsubsection{\texorpdfstring{CreateSubject()}{CreateSubject()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily bool archive\+I\+O\+::\+Create\+Subject (\begin{DoxyParamCaption}\item[{Q\+String}]{Patient\+ID,  }\item[{Q\+String}]{Patient\+Name,  }\item[{Q\+String}]{Patient\+Birth\+Date,  }\item[{Q\+String}]{Patient\+Sex,  }\item[{double}]{Patient\+Weight,  }\item[{double}]{Patient\+Size,  }\item[{int \&}]{subject\+Row\+ID,  }\item[{Q\+String \&}]{subject\+U\+ID }\end{DoxyParamCaption})}
+
+
+
+Create a subject in the database. Create the U\+ID. This function assumes that this subject does not already exist. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em Patient\+ID} & Patient\+ID, this will become one of the alternate U\+I\+Ds \\
+\hline
+{\em Patient\+Name} & Subject name. Single string, not broken up into firstname/lastname \\
+\hline
+{\em Patient\+Birth\+Date} & Subject date of birth in the form {\ttfamily Y\+Y\+Y\+Y-\/\+M\+M-\/\+DD} \\
+\hline
+{\em Patient\+Sex} & Sex, either M,F,O,U \\
+\hline
+{\em Patient\+Weight} & Subject weight in kilograms \\
+\hline
+{\em Patient\+Size} & Subject height in meters \\
+\hline
+{\em subject\+Row\+ID} & \mbox{[}returned\mbox{]} subject\+Row\+ID \\
+\hline
+{\em subject\+U\+ID} & \mbox{[}returned\mbox{]} subject U\+ID \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+
+\end{DoxyReturn}
+\mbox{\Hypertarget{classarchive_i_o_a5c9d52a82ec2c0c22cffce9b3d32f64a}\label{classarchive_i_o_a5c9d52a82ec2c0c22cffce9b3d32f64a}} 
+\index{archiveIO@{archiveIO}!CreateSubject@{CreateSubject}}
+\index{CreateSubject@{CreateSubject}!archiveIO@{archiveIO}}
+\doxysubsubsection{\texorpdfstring{CreateSubject()}{CreateSubject()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily bool archive\+I\+O\+::\+Create\+Subject (\begin{DoxyParamCaption}\item[{Q\+String}]{Patient\+ID,  }\item[{Q\+String}]{Patient\+Name,  }\item[{Q\+String}]{Patient\+Sex,  }\item[{Q\+String}]{Patient\+Birth\+Date,  }\item[{double}]{Patient\+Weight,  }\item[{double}]{Patient\+Size,  }\item[{Q\+String}]{S\+Q\+L\+I\+Ds,  }\item[{int \&}]{subject\+Row\+ID,  }\item[{Q\+String \&}]{subject\+U\+ID }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classarchive_i_o_a6c344aa54694461a3c479b911f0f71fa}\label{classarchive_i_o_a6c344aa54694461a3c479b911f0f71fa}} 
+\index{archiveIO@{archiveIO}!CreateThumbnail@{CreateThumbnail}}
+\index{CreateThumbnail@{CreateThumbnail}!archiveIO@{archiveIO}}
+\doxysubsubsection{\texorpdfstring{CreateThumbnail()}{CreateThumbnail()}}
+{\footnotesize\ttfamily void archive\+I\+O\+::\+Create\+Thumbnail (\begin{DoxyParamCaption}\item[{Q\+String}]{f,  }\item[{Q\+String}]{outdir }\end{DoxyParamCaption})}
+
+
+
+Create a P\+NG thumbnail from an input file (D\+I\+C\+OM usually) using Image\+Magick. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em f} & Input file \\
+\hline
+{\em outdir} & Output directory for the thumbnail image \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{classarchive_i_o_ab45052b74f2a1cebbc707644dbf21adf}\label{classarchive_i_o_ab45052b74f2a1cebbc707644dbf21adf}} 
+\index{archiveIO@{archiveIO}!GetCostCenter@{GetCostCenter}}
+\index{GetCostCenter@{GetCostCenter}!archiveIO@{archiveIO}}
+\doxysubsubsection{\texorpdfstring{GetCostCenter()}{GetCostCenter()}}
+{\footnotesize\ttfamily Q\+String archive\+I\+O\+::\+Get\+Cost\+Center (\begin{DoxyParamCaption}\item[{Q\+String}]{studydesc }\end{DoxyParamCaption})}
+
+
+
+Attempt to extract the cost center or project number from a study description. This will attempt to extract the string of characters between a pair of parentheses. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em studydesc} & Study description. Example \textquotesingle{}My First Study (A1234)\textquotesingle{} \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+the found study number. Example A1234. This number should correspond to a cost\+\_\+center value from the projects table 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classarchive_i_o_a2297eeb79230d77c06a48ef6d95a55b2}\label{classarchive_i_o_a2297eeb79230d77c06a48ef6d95a55b2}} 
+\index{archiveIO@{archiveIO}!GetEnrollment@{GetEnrollment}}
+\index{GetEnrollment@{GetEnrollment}!archiveIO@{archiveIO}}
+\doxysubsubsection{\texorpdfstring{GetEnrollment()}{GetEnrollment()}}
+{\footnotesize\ttfamily bool archive\+I\+O\+::\+Get\+Enrollment (\begin{DoxyParamCaption}\item[{int}]{subject\+Row\+ID,  }\item[{int}]{project\+Row\+ID,  }\item[{int \&}]{enrollment\+Row\+ID }\end{DoxyParamCaption})}
+
+
+
+Search for an existing enrollment, or create it if it doesn\textquotesingle{}t exist. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em subject\+Row\+ID} & The subject\+Row\+ID \\
+\hline
+{\em project\+Row\+ID} & The project\+Row\+ID \\
+\hline
+{\em enrollment\+Row\+ID} & The found/created enrollment\+Row\+ID \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+true if successful, false otherwise 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classarchive_i_o_a4df393f2714b4588d4609580ed8930d3}\label{classarchive_i_o_a4df393f2714b4588d4609580ed8930d3}} 
+\index{archiveIO@{archiveIO}!GetFamily@{GetFamily}}
+\index{GetFamily@{GetFamily}!archiveIO@{archiveIO}}
+\doxysubsubsection{\texorpdfstring{GetFamily()}{GetFamily()}}
+{\footnotesize\ttfamily bool archive\+I\+O\+::\+Get\+Family (\begin{DoxyParamCaption}\item[{int}]{subject\+Row\+ID,  }\item[{Q\+String}]{subject\+U\+ID,  }\item[{int \&}]{family\+Row\+ID,  }\item[{Q\+String \&}]{family\+U\+ID }\end{DoxyParamCaption})}
+
+
+
+Get a family U\+ID for this subject. Create a family if one doesn\textquotesingle{}t already exist. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em subject\+Row\+ID} & the subject\+Row\+ID \\
+\hline
+{\em subject\+U\+ID} & The subject U\+ID \\
+\hline
+{\em family\+Row\+ID} & The family\+Row\+ID \\
+\hline
+{\em family\+U\+ID} & the family U\+ID \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+true if a family was created or an existing family was found. false otherwise 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classarchive_i_o_a0c5b3a21f956f163196e0a022f639984}\label{classarchive_i_o_a0c5b3a21f956f163196e0a022f639984}} 
+\index{archiveIO@{archiveIO}!GetProject@{GetProject}}
+\index{GetProject@{GetProject}!archiveIO@{archiveIO}}
+\doxysubsubsection{\texorpdfstring{GetProject()}{GetProject()}}
+{\footnotesize\ttfamily bool archive\+I\+O\+::\+Get\+Project (\begin{DoxyParamCaption}\item[{int}]{dest\+Project\+ID,  }\item[{Q\+String}]{Study\+Description,  }\item[{int \&}]{project\+Row\+ID }\end{DoxyParamCaption})}
+
+
+
+Search for a project by costcenter/project number. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em dest\+Project\+ID} & This value would be passed in from an upload/import, where the project\+Row\+ID is already known \\
+\hline
+{\em Study\+Description} & The study description which may contain the costcenter or project number \\
+\hline
+{\em project\+Row\+ID} & The project\+Row\+ID \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+true if successful, false otherwise 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classarchive_i_o_a085082a56baa1e980935225ea8887fb9}\label{classarchive_i_o_a085082a56baa1e980935225ea8887fb9}} 
+\index{archiveIO@{archiveIO}!GetSeriesListDetails@{GetSeriesListDetails}}
+\index{GetSeriesListDetails@{GetSeriesListDetails}!archiveIO@{archiveIO}}
+\doxysubsubsection{\texorpdfstring{GetSeriesListDetails()}{GetSeriesListDetails()}}
+{\footnotesize\ttfamily bool archive\+I\+O\+::\+Get\+Series\+List\+Details (\begin{DoxyParamCaption}\item[{Q\+List$<$ qint64 $>$}]{seriesids,  }\item[{Q\+String\+List}]{modalities,  }\item[{\mbox{\hyperlink{nidb_8h_abbea50e6b4c4599c8466663c17b73e3d}{subject\+Study\+Series\+Container}} \&}]{s }\end{DoxyParamCaption})}
+
+
+
+Search for and return series details in a multilevel hash. Series details are passed to other functions to actually do the archive operation. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em seriesids} & List of Series\+Row\+I\+Ds \\
+\hline
+{\em modalities} & List of Modalities \\
+\hline
+{\em s} & Returns a hash s\mbox{[}uid\mbox{]}\mbox{[}study\mbox{]}\mbox{[}series\mbox{]}\mbox{[}\textquotesingle{}attribute\textquotesingle{}\mbox{]} of type subject\+Study\+Series\+Container \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+
+\end{DoxyReturn}
+\mbox{\Hypertarget{classarchive_i_o_a6827ffc1a16f1695b42015abba8b57b1}\label{classarchive_i_o_a6827ffc1a16f1695b42015abba8b57b1}} 
+\index{archiveIO@{archiveIO}!GetStudy@{GetStudy}}
+\index{GetStudy@{GetStudy}!archiveIO@{archiveIO}}
+\doxysubsubsection{\texorpdfstring{GetStudy()}{GetStudy()}}
+{\footnotesize\ttfamily bool archive\+I\+O\+::\+Get\+Study (\begin{DoxyParamCaption}\item[{Q\+String}]{study\+Match\+Criteria,  }\item[{int}]{existing\+Study\+ID,  }\item[{int}]{enrollment\+Row\+ID,  }\item[{Q\+String}]{Study\+Date\+Time,  }\item[{Q\+String}]{Modality,  }\item[{Q\+String}]{Study\+Instance\+U\+ID,  }\item[{int \&}]{study\+Row\+ID }\end{DoxyParamCaption})}
+
+
+
+Search for an existing study. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em study\+Match\+Criteria} & Possible values {\ttfamily modalitystudydate}, {\ttfamily studyuid} \\
+\hline
+{\em existing\+Study\+ID} & Existing study\+Row\+ID \\
+\hline
+{\em enrollment\+Row\+ID} & enrollment\+Row\+ID \\
+\hline
+{\em Study\+Date\+Time} & Study datetime in the form {\ttfamily Y\+Y\+Y\+Y-\/\+M\+M-\/\+DD H\+H\+:\+MM\+:SS} \\
+\hline
+{\em Modality} & Modality \\
+\hline
+{\em Study\+Instance\+U\+ID} & Study\+Instance\+U\+ID from the D\+I\+C\+OM header \\
+\hline
+{\em study\+Row\+ID} & \mbox{[}returned\mbox{]} study\+Row\+ID \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+true if study was found, false otherwise 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classarchive_i_o_a1d83a987a43d319baf1195ce08b75f95}\label{classarchive_i_o_a1d83a987a43d319baf1195ce08b75f95}} 
+\index{archiveIO@{archiveIO}!GetSubject@{GetSubject}}
+\index{GetSubject@{GetSubject}!archiveIO@{archiveIO}}
+\doxysubsubsection{\texorpdfstring{GetSubject()}{GetSubject()}}
+{\footnotesize\ttfamily bool archive\+I\+O\+::\+Get\+Subject (\begin{DoxyParamCaption}\item[{Q\+String}]{subject\+Match\+Criteria,  }\item[{int}]{existing\+Subject\+ID,  }\item[{int}]{project\+ID,  }\item[{Q\+String}]{Patient\+ID,  }\item[{Q\+String}]{Patient\+Name,  }\item[{Q\+String}]{Patient\+Sex,  }\item[{Q\+String}]{Patient\+Birth\+Date,  }\item[{int \&}]{subject\+Row\+ID,  }\item[{Q\+String \&}]{subject\+U\+ID }\end{DoxyParamCaption})}
+
+
+
+Find a subject based on specified criteria. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em subject\+Match\+Criteria} & Possible match criteria {\ttfamily patientid}, {\ttfamily specificpatientid}, {\ttfamily patientidfromdir}, {\ttfamily uid}, {\ttfamily uidoraltuid}, {\ttfamily namesexdob} \\
+\hline
+{\em existing\+Subject\+ID} & If the existing subject\+Row\+ID is known, -\/1 otherwise \\
+\hline
+{\em project\+ID} & project\+Row\+ID \\
+\hline
+{\em Patient\+ID} & Patient\+ID \\
+\hline
+{\em Patient\+Name} & Patient\+Name \\
+\hline
+{\em Patient\+Sex} & Patient\+Sex \\
+\hline
+{\em Patient\+Birth\+Date} & \\
+\hline
+{\em subject\+Row\+ID} & \mbox{[}returned\mbox{]} subject\+Row\+ID \\
+\hline
+{\em subject\+U\+ID} & \mbox{[}returned\mbox{]} subject U\+ID \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+true if subject was found, false otherwise 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classarchive_i_o_a1a1bd7d745eacb8979303b8e20a6f88a}\label{classarchive_i_o_a1a1bd7d745eacb8979303b8e20a6f88a}} 
+\index{archiveIO@{archiveIO}!InsertEEG@{InsertEEG}}
+\index{InsertEEG@{InsertEEG}!archiveIO@{archiveIO}}
+\doxysubsubsection{\texorpdfstring{InsertEEG()}{InsertEEG()}}
+{\footnotesize\ttfamily bool archive\+I\+O\+::\+Insert\+E\+EG (\begin{DoxyParamCaption}\item[{int}]{import\+Row\+ID,  }\item[{Q\+String}]{file }\end{DoxyParamCaption})}
+
+
+
+Insert an E\+EG series into the database. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em import\+Row\+ID} & The import\+Row\+ID if this is part of an import, -\/1 otherwise \\
+\hline
+{\em file} & Filename to be inserted/archived \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+true if successful, false otherwise 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classarchive_i_o_af5e718738b6f88bc99f297f5740e582f}\label{classarchive_i_o_af5e718738b6f88bc99f297f5740e582f}} 
+\index{archiveIO@{archiveIO}!InsertParRec@{InsertParRec}}
+\index{InsertParRec@{InsertParRec}!archiveIO@{archiveIO}}
+\doxysubsubsection{\texorpdfstring{InsertParRec()}{InsertParRec()}}
+{\footnotesize\ttfamily bool archive\+I\+O\+::\+Insert\+Par\+Rec (\begin{DoxyParamCaption}\item[{int}]{import\+Row\+ID,  }\item[{Q\+String}]{file }\end{DoxyParamCaption})}
+
+
+
+Archive a par/rec file pair. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em import\+Row\+ID} & Use an existing Import\+Row\+ID. Pass -\/1 to this function otherwise \\
+\hline
+{\em file} & .par file to import (.rec file will automatically be searched for) \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+true if successful, false otherwise 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classarchive_i_o_a0b9c61d38ad2ac28dcd9b02bf37502a6}\label{classarchive_i_o_a0b9c61d38ad2ac28dcd9b02bf37502a6}} 
+\index{archiveIO@{archiveIO}!SetAlternateIDs@{SetAlternateIDs}}
+\index{SetAlternateIDs@{SetAlternateIDs}!archiveIO@{archiveIO}}
+\doxysubsubsection{\texorpdfstring{SetAlternateIDs()}{SetAlternateIDs()}}
+{\footnotesize\ttfamily void archive\+I\+O\+::\+Set\+Alternate\+I\+Ds (\begin{DoxyParamCaption}\item[{int}]{subject\+Row\+ID,  }\item[{int}]{enrollment\+Row\+ID,  }\item[{Q\+String\+List}]{altuidlist }\end{DoxyParamCaption})}
+
+
+
+Update a subject\textquotesingle{}s alternate U\+I\+Ds. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em subject\+Row\+ID} & The subject\+Row\+ID to update \\
+\hline
+{\em enrollment\+Row\+ID} & The enrollment the alternate U\+I\+Ds are associated with \\
+\hline
+{\em altuidlist} & The list of alternate U\+I\+Ds \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{classarchive_i_o_a4616de589a7cb0d2f50f64f135e4c61a}\label{classarchive_i_o_a4616de589a7cb0d2f50f64f135e4c61a}} 
+\index{archiveIO@{archiveIO}!SetUploadID@{SetUploadID}}
+\index{SetUploadID@{SetUploadID}!archiveIO@{archiveIO}}
+\doxysubsubsection{\texorpdfstring{SetUploadID()}{SetUploadID()}}
+{\footnotesize\ttfamily void archive\+I\+O\+::\+Set\+Upload\+ID (\begin{DoxyParamCaption}\item[{int}]{upid }\end{DoxyParamCaption})}
+
+
+
+Set the upload ID. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em The} & upload\+Row\+ID \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{classarchive_i_o_a96b07d2c13d6cf77daf9566fba8e74fa}\label{classarchive_i_o_a96b07d2c13d6cf77daf9566fba8e74fa}} 
+\index{archiveIO@{archiveIO}!WriteBIDS@{WriteBIDS}}
+\index{WriteBIDS@{WriteBIDS}!archiveIO@{archiveIO}}
+\doxysubsubsection{\texorpdfstring{WriteBIDS()}{WriteBIDS()}}
+{\footnotesize\ttfamily bool archive\+I\+O\+::\+Write\+B\+I\+DS (\begin{DoxyParamCaption}\item[{Q\+List$<$ qint64 $>$}]{seriesids,  }\item[{Q\+String\+List}]{modalities,  }\item[{Q\+String}]{odir,  }\item[{Q\+String}]{bidsreadme,  }\item[{Q\+String\+List}]{bidsflags,  }\item[{Q\+String \&}]{msg }\end{DoxyParamCaption})}
+
+
+
+\mbox{\hyperlink{classarchive_i_o_a96b07d2c13d6cf77daf9566fba8e74fa}{archive\+I\+O\+::\+Write\+B\+I\+DS}} 
+
+
+\begin{DoxyParams}{Parameters}
+{\em seriesids} & List of Series\+Row\+I\+Ds \\
+\hline
+{\em modalities} & List of modalities \\
+\hline
+{\em odir} & Final output directory \\
+\hline
+{\em bidsreadme} & B\+I\+DS readme \\
+\hline
+{\em bidsflags} & B\+I\+DS flags \\
+\hline
+{\em msg} & Returned msgs \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+true if successful, false otherwise 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classarchive_i_o_a5d7bb087bc9c56d80edf342b35216efd}\label{classarchive_i_o_a5d7bb087bc9c56d80edf342b35216efd}} 
+\index{archiveIO@{archiveIO}!WritePackage@{WritePackage}}
+\index{WritePackage@{WritePackage}!archiveIO@{archiveIO}}
+\doxysubsubsection{\texorpdfstring{WritePackage()}{WritePackage()}}
+{\footnotesize\ttfamily bool archive\+I\+O\+::\+Write\+Package (\begin{DoxyParamCaption}\item[{qint64}]{exportid,  }\item[{Q\+String}]{zipfilepath,  }\item[{Q\+String \&}]{msg }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classarchive_i_o_a37c7d9c366366524b9750de2994fa3c9}\label{classarchive_i_o_a37c7d9c366366524b9750de2994fa3c9}} 
+\index{archiveIO@{archiveIO}!WriteSquirrel@{WriteSquirrel}}
+\index{WriteSquirrel@{WriteSquirrel}!archiveIO@{archiveIO}}
+\doxysubsubsection{\texorpdfstring{WriteSquirrel()}{WriteSquirrel()}}
+{\footnotesize\ttfamily bool archive\+I\+O\+::\+Write\+Squirrel (\begin{DoxyParamCaption}\item[{qint64}]{exportid,  }\item[{Q\+String}]{name,  }\item[{Q\+String}]{desc,  }\item[{Q\+String\+List}]{downloadflags,  }\item[{Q\+String\+List}]{squirrelflags,  }\item[{Q\+List$<$ qint64 $>$}]{seriesids,  }\item[{Q\+String\+List}]{modalities,  }\item[{Q\+String}]{zipfilepath,  }\item[{Q\+String \&}]{msg }\end{DoxyParamCaption})}
+
+
+
+Write a squirrel package. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em exportid} & export\+Row\+ID \\
+\hline
+{\em name} & squirrel package name \\
+\hline
+{\em desc} & squirrel package description \\
+\hline
+{\em downloadflags} & which data to download \\
+\hline
+{\em squirrelflags} & squirrel package options \\
+\hline
+{\em seriesids} & list of series\+I\+Ds \\
+\hline
+{\em modalities} & list of modalities to be exported \\
+\hline
+{\em odir} & output directory \\
+\hline
+{\em filepath} & the final squirrel package path \\
+\hline
+{\em msg} & any messages generated during squirrel package writing \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+true if package was written, false otherwise 
+\end{DoxyReturn}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{archiveio_8h}{archiveio.\+h}}\item 
+\mbox{\hyperlink{archiveio_8cpp}{archiveio.\+cpp}}\end{DoxyCompactItemize}

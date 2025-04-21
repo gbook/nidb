@@ -1,0 +1,48 @@
+\hypertarget{main_8cpp}{}\doxysection{main.\+cpp File Reference}
+\label{main_8cpp}\index{main.cpp@{main.cpp}}
+{\ttfamily \#include $<$Q\+Core\+Application$>$}\newline
+{\ttfamily \#include $<$Q\+Debug$>$}\newline
+{\ttfamily \#include \char`\"{}nidb.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}utils.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}module\+File\+I\+O.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}module\+Export.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}module\+Manager.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}module\+Import.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}module\+Import\+Uploaded.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}module\+Upload.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}module\+M\+R\+I\+Q\+A.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}module\+Q\+C.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}module\+Pipeline.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}module\+Cluster.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}module\+Mini\+Pipeline.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}module\+Backup.\+h\char`\"{}}\newline
+{\ttfamily \#include $<$iostream$>$}\newline
+{\ttfamily \#include $<$Smtp\+Mime$>$}\newline
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \mbox{\hyperlink{main_8cpp_a0ddf1224851353fc92bfbff6f499fa97}{main}} (int argc, char $\ast$argv\mbox{[}$\,$\mbox{]})
+\begin{DoxyCompactList}\small\item\em main Entry point into the nidb executable. Only one module can be run at a time. Ni\+DB is designed to have any number of modules start and run simultaneously. The management of when to start those modules is normally left to {\ttfamily cron} \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{main_8cpp_a0ddf1224851353fc92bfbff6f499fa97}\label{main_8cpp_a0ddf1224851353fc92bfbff6f499fa97}} 
+\index{main.cpp@{main.cpp}!main@{main}}
+\index{main@{main}!main.cpp@{main.cpp}}
+\doxysubsubsection{\texorpdfstring{main()}{main()}}
+{\footnotesize\ttfamily int main (\begin{DoxyParamCaption}\item[{int}]{argc,  }\item[{char $\ast$}]{argv\mbox{[}$\,$\mbox{]} }\end{DoxyParamCaption})}
+
+
+
+main Entry point into the nidb executable. Only one module can be run at a time. Ni\+DB is designed to have any number of modules start and run simultaneously. The management of when to start those modules is normally left to {\ttfamily cron} 
+
+
+\begin{DoxyParams}{Parameters}
+{\em argc} & Argument count \\
+\hline
+{\em argv} & Argument variables \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+0 assuming success 
+\end{DoxyReturn}

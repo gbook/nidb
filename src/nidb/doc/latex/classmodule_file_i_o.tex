@@ -1,0 +1,173 @@
+\hypertarget{classmodule_file_i_o}{}\doxysection{module\+File\+IO Class Reference}
+\label{classmodule_file_i_o}\index{moduleFileIO@{moduleFileIO}}
+
+
+{\ttfamily \#include $<$module\+File\+I\+O.\+h$>$}
+
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{classmodule_file_i_o_a46987c368c2c7b786dbfc4218bb01f86}{module\+File\+IO}} (\mbox{\hyperlink{classnidb}{nidb}} $\ast$n)
+\item 
+\mbox{\hyperlink{classmodule_file_i_o_a74a409a8563a70e88aaa62488d39fa0f}{$\sim$module\+File\+IO}} ()
+\item 
+int \mbox{\hyperlink{classmodule_file_i_o_aee683400221df4327acf34070c72b6de}{Run}} ()
+\item 
+bool \mbox{\hyperlink{classmodule_file_i_o_a490c532bfd5669ed693e938ba0ce4ca8}{Recheck\+Success}} (qint64 analysisid, Q\+String \&msg)
+\item 
+bool \mbox{\hyperlink{classmodule_file_i_o_acad5e8c387f36bb42ac89175465985bc}{Create\+Links}} (qint64 analysisid, Q\+String destination, Q\+String \&msg)
+\item 
+Q\+String \mbox{\hyperlink{classmodule_file_i_o_a768ac59d599aae0c4daebdfa13c25049}{Get\+Analyis\+Root\+Path}} (qint64 analysisid, Q\+String \&msg)
+\item 
+bool \mbox{\hyperlink{classmodule_file_i_o_aa13edaa6cea9a8748a8710ab92b20190}{Copy\+Analysis}} (qint64 analysisid, Q\+String destination, Q\+String \&msg)
+\item 
+bool \mbox{\hyperlink{classmodule_file_i_o_a90a1228e9c36741d7bec89060f0f8f21}{Delete\+Analysis}} (qint64 analysisid, Q\+String \&msg)
+\item 
+bool \mbox{\hyperlink{classmodule_file_i_o_a7392ee7a7fe8515d1f08c02cc97e657e}{Delete\+Pipeline}} (int pipelineid, Q\+String \&msg)
+\item 
+bool \mbox{\hyperlink{classmodule_file_i_o_acaee14e2cf40d01e8a9981c889376217}{Delete\+Subject}} (int subjectid, Q\+String username, Q\+String \&msg)
+\item 
+bool \mbox{\hyperlink{classmodule_file_i_o_aa62fe352a74d880294a649fae9b11754}{Delete\+Study}} (int studyid, Q\+String \&msg)
+\item 
+bool \mbox{\hyperlink{classmodule_file_i_o_a5a6035473a61c14ddb28bbae0225ede4}{Delete\+Series}} (int seriesid, Q\+String modality, Q\+String \&msg)
+\item 
+bool \mbox{\hyperlink{classmodule_file_i_o_ac960227623d84caa027b6fe87cfe555c}{Rearchive\+Study}} (int studyid, bool matchidonly, Q\+String \&msg)
+\item 
+bool \mbox{\hyperlink{classmodule_file_i_o_a2f9150d8bca87823678fa4346435d861}{Rearchive\+Subject}} (int studyid, bool matchidonly, int projectid, Q\+String \&msg)
+\item 
+bool \mbox{\hyperlink{classmodule_file_i_o_a2b59ef2b668e1d60ccc2faa7d1254f80}{Move\+Study\+To\+Subject}} (int studyid, Q\+String newuid, int newsubjectid, Q\+String \&msg)
+\item 
+bool \mbox{\hyperlink{classmodule_file_i_o_a338fbee1022afdae6ba9c3b02fdbe255}{Merge\+Subjects}} (int subjectid, Q\+String merge\+I\+Ds, Q\+String merge\+Name, Q\+String merge\+D\+OB, Q\+String merge\+Sex, Q\+String merge\+Ethnicity1, Q\+String merge\+Ethnicity2, Q\+String merge\+G\+U\+ID, Q\+String merge\+Alt\+U\+I\+Ds, Q\+String \&msg)
+\item 
+bool \mbox{\hyperlink{classmodule_file_i_o_a7f65ba3a64dd5ac90f6b415bd874f8ae}{Merge\+Studies}} (int studyid, Q\+String merge\+I\+Ds, Q\+String merge\+Method, Q\+String \&msg)
+\item 
+Q\+String \mbox{\hyperlink{classmodule_file_i_o_a4808bb4295ebbfebbf358b1b9d6a0bc4}{Get\+I\+O\+Request\+Status}} (int requestid)
+\item 
+bool \mbox{\hyperlink{classmodule_file_i_o_a2034c1b7a1122cb8149bf9aa61859bd2}{Set\+I\+O\+Request\+Status}} (int requestid, Q\+String status, Q\+String msg=\char`\"{}\char`\"{})
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classmodule_file_i_o_a46987c368c2c7b786dbfc4218bb01f86}\label{classmodule_file_i_o_a46987c368c2c7b786dbfc4218bb01f86}} 
+\index{moduleFileIO@{moduleFileIO}!moduleFileIO@{moduleFileIO}}
+\index{moduleFileIO@{moduleFileIO}!moduleFileIO@{moduleFileIO}}
+\doxysubsubsection{\texorpdfstring{moduleFileIO()}{moduleFileIO()}}
+{\footnotesize\ttfamily module\+File\+I\+O\+::module\+File\+IO (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{classnidb}{nidb}} $\ast$}]{n }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_file_i_o_a74a409a8563a70e88aaa62488d39fa0f}\label{classmodule_file_i_o_a74a409a8563a70e88aaa62488d39fa0f}} 
+\index{moduleFileIO@{moduleFileIO}!````~moduleFileIO@{$\sim$moduleFileIO}}
+\index{````~moduleFileIO@{$\sim$moduleFileIO}!moduleFileIO@{moduleFileIO}}
+\doxysubsubsection{\texorpdfstring{$\sim$moduleFileIO()}{~moduleFileIO()}}
+{\footnotesize\ttfamily module\+File\+I\+O\+::$\sim$module\+File\+IO (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{classmodule_file_i_o_aa13edaa6cea9a8748a8710ab92b20190}\label{classmodule_file_i_o_aa13edaa6cea9a8748a8710ab92b20190}} 
+\index{moduleFileIO@{moduleFileIO}!CopyAnalysis@{CopyAnalysis}}
+\index{CopyAnalysis@{CopyAnalysis}!moduleFileIO@{moduleFileIO}}
+\doxysubsubsection{\texorpdfstring{CopyAnalysis()}{CopyAnalysis()}}
+{\footnotesize\ttfamily bool module\+File\+I\+O\+::\+Copy\+Analysis (\begin{DoxyParamCaption}\item[{qint64}]{analysisid,  }\item[{Q\+String}]{destination,  }\item[{Q\+String \&}]{msg }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_file_i_o_acad5e8c387f36bb42ac89175465985bc}\label{classmodule_file_i_o_acad5e8c387f36bb42ac89175465985bc}} 
+\index{moduleFileIO@{moduleFileIO}!CreateLinks@{CreateLinks}}
+\index{CreateLinks@{CreateLinks}!moduleFileIO@{moduleFileIO}}
+\doxysubsubsection{\texorpdfstring{CreateLinks()}{CreateLinks()}}
+{\footnotesize\ttfamily bool module\+File\+I\+O\+::\+Create\+Links (\begin{DoxyParamCaption}\item[{qint64}]{analysisid,  }\item[{Q\+String}]{destination,  }\item[{Q\+String \&}]{msg }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_file_i_o_a90a1228e9c36741d7bec89060f0f8f21}\label{classmodule_file_i_o_a90a1228e9c36741d7bec89060f0f8f21}} 
+\index{moduleFileIO@{moduleFileIO}!DeleteAnalysis@{DeleteAnalysis}}
+\index{DeleteAnalysis@{DeleteAnalysis}!moduleFileIO@{moduleFileIO}}
+\doxysubsubsection{\texorpdfstring{DeleteAnalysis()}{DeleteAnalysis()}}
+{\footnotesize\ttfamily bool module\+File\+I\+O\+::\+Delete\+Analysis (\begin{DoxyParamCaption}\item[{qint64}]{analysisid,  }\item[{Q\+String \&}]{msg }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_file_i_o_a7392ee7a7fe8515d1f08c02cc97e657e}\label{classmodule_file_i_o_a7392ee7a7fe8515d1f08c02cc97e657e}} 
+\index{moduleFileIO@{moduleFileIO}!DeletePipeline@{DeletePipeline}}
+\index{DeletePipeline@{DeletePipeline}!moduleFileIO@{moduleFileIO}}
+\doxysubsubsection{\texorpdfstring{DeletePipeline()}{DeletePipeline()}}
+{\footnotesize\ttfamily bool module\+File\+I\+O\+::\+Delete\+Pipeline (\begin{DoxyParamCaption}\item[{int}]{pipelineid,  }\item[{Q\+String \&}]{msg }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_file_i_o_a5a6035473a61c14ddb28bbae0225ede4}\label{classmodule_file_i_o_a5a6035473a61c14ddb28bbae0225ede4}} 
+\index{moduleFileIO@{moduleFileIO}!DeleteSeries@{DeleteSeries}}
+\index{DeleteSeries@{DeleteSeries}!moduleFileIO@{moduleFileIO}}
+\doxysubsubsection{\texorpdfstring{DeleteSeries()}{DeleteSeries()}}
+{\footnotesize\ttfamily bool module\+File\+I\+O\+::\+Delete\+Series (\begin{DoxyParamCaption}\item[{int}]{seriesid,  }\item[{Q\+String}]{modality,  }\item[{Q\+String \&}]{msg }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_file_i_o_aa62fe352a74d880294a649fae9b11754}\label{classmodule_file_i_o_aa62fe352a74d880294a649fae9b11754}} 
+\index{moduleFileIO@{moduleFileIO}!DeleteStudy@{DeleteStudy}}
+\index{DeleteStudy@{DeleteStudy}!moduleFileIO@{moduleFileIO}}
+\doxysubsubsection{\texorpdfstring{DeleteStudy()}{DeleteStudy()}}
+{\footnotesize\ttfamily bool module\+File\+I\+O\+::\+Delete\+Study (\begin{DoxyParamCaption}\item[{int}]{studyid,  }\item[{Q\+String \&}]{msg }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_file_i_o_acaee14e2cf40d01e8a9981c889376217}\label{classmodule_file_i_o_acaee14e2cf40d01e8a9981c889376217}} 
+\index{moduleFileIO@{moduleFileIO}!DeleteSubject@{DeleteSubject}}
+\index{DeleteSubject@{DeleteSubject}!moduleFileIO@{moduleFileIO}}
+\doxysubsubsection{\texorpdfstring{DeleteSubject()}{DeleteSubject()}}
+{\footnotesize\ttfamily bool module\+File\+I\+O\+::\+Delete\+Subject (\begin{DoxyParamCaption}\item[{int}]{subjectid,  }\item[{Q\+String}]{username,  }\item[{Q\+String \&}]{msg }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_file_i_o_a768ac59d599aae0c4daebdfa13c25049}\label{classmodule_file_i_o_a768ac59d599aae0c4daebdfa13c25049}} 
+\index{moduleFileIO@{moduleFileIO}!GetAnalyisRootPath@{GetAnalyisRootPath}}
+\index{GetAnalyisRootPath@{GetAnalyisRootPath}!moduleFileIO@{moduleFileIO}}
+\doxysubsubsection{\texorpdfstring{GetAnalyisRootPath()}{GetAnalyisRootPath()}}
+{\footnotesize\ttfamily Q\+String module\+File\+I\+O\+::\+Get\+Analyis\+Root\+Path (\begin{DoxyParamCaption}\item[{qint64}]{analysisid,  }\item[{Q\+String \&}]{msg }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_file_i_o_a4808bb4295ebbfebbf358b1b9d6a0bc4}\label{classmodule_file_i_o_a4808bb4295ebbfebbf358b1b9d6a0bc4}} 
+\index{moduleFileIO@{moduleFileIO}!GetIORequestStatus@{GetIORequestStatus}}
+\index{GetIORequestStatus@{GetIORequestStatus}!moduleFileIO@{moduleFileIO}}
+\doxysubsubsection{\texorpdfstring{GetIORequestStatus()}{GetIORequestStatus()}}
+{\footnotesize\ttfamily Q\+String module\+File\+I\+O\+::\+Get\+I\+O\+Request\+Status (\begin{DoxyParamCaption}\item[{int}]{requestid }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_file_i_o_a7f65ba3a64dd5ac90f6b415bd874f8ae}\label{classmodule_file_i_o_a7f65ba3a64dd5ac90f6b415bd874f8ae}} 
+\index{moduleFileIO@{moduleFileIO}!MergeStudies@{MergeStudies}}
+\index{MergeStudies@{MergeStudies}!moduleFileIO@{moduleFileIO}}
+\doxysubsubsection{\texorpdfstring{MergeStudies()}{MergeStudies()}}
+{\footnotesize\ttfamily bool module\+File\+I\+O\+::\+Merge\+Studies (\begin{DoxyParamCaption}\item[{int}]{studyid,  }\item[{Q\+String}]{merge\+I\+Ds,  }\item[{Q\+String}]{merge\+Method,  }\item[{Q\+String \&}]{msg }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_file_i_o_a338fbee1022afdae6ba9c3b02fdbe255}\label{classmodule_file_i_o_a338fbee1022afdae6ba9c3b02fdbe255}} 
+\index{moduleFileIO@{moduleFileIO}!MergeSubjects@{MergeSubjects}}
+\index{MergeSubjects@{MergeSubjects}!moduleFileIO@{moduleFileIO}}
+\doxysubsubsection{\texorpdfstring{MergeSubjects()}{MergeSubjects()}}
+{\footnotesize\ttfamily bool module\+File\+I\+O\+::\+Merge\+Subjects (\begin{DoxyParamCaption}\item[{int}]{subjectid,  }\item[{Q\+String}]{merge\+I\+Ds,  }\item[{Q\+String}]{merge\+Name,  }\item[{Q\+String}]{merge\+D\+OB,  }\item[{Q\+String}]{merge\+Sex,  }\item[{Q\+String}]{merge\+Ethnicity1,  }\item[{Q\+String}]{merge\+Ethnicity2,  }\item[{Q\+String}]{merge\+G\+U\+ID,  }\item[{Q\+String}]{merge\+Alt\+U\+I\+Ds,  }\item[{Q\+String \&}]{msg }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_file_i_o_a2b59ef2b668e1d60ccc2faa7d1254f80}\label{classmodule_file_i_o_a2b59ef2b668e1d60ccc2faa7d1254f80}} 
+\index{moduleFileIO@{moduleFileIO}!MoveStudyToSubject@{MoveStudyToSubject}}
+\index{MoveStudyToSubject@{MoveStudyToSubject}!moduleFileIO@{moduleFileIO}}
+\doxysubsubsection{\texorpdfstring{MoveStudyToSubject()}{MoveStudyToSubject()}}
+{\footnotesize\ttfamily bool module\+File\+I\+O\+::\+Move\+Study\+To\+Subject (\begin{DoxyParamCaption}\item[{int}]{studyid,  }\item[{Q\+String}]{newuid,  }\item[{int}]{newsubjectid,  }\item[{Q\+String \&}]{msg }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_file_i_o_ac960227623d84caa027b6fe87cfe555c}\label{classmodule_file_i_o_ac960227623d84caa027b6fe87cfe555c}} 
+\index{moduleFileIO@{moduleFileIO}!RearchiveStudy@{RearchiveStudy}}
+\index{RearchiveStudy@{RearchiveStudy}!moduleFileIO@{moduleFileIO}}
+\doxysubsubsection{\texorpdfstring{RearchiveStudy()}{RearchiveStudy()}}
+{\footnotesize\ttfamily bool module\+File\+I\+O\+::\+Rearchive\+Study (\begin{DoxyParamCaption}\item[{int}]{studyid,  }\item[{bool}]{matchidonly,  }\item[{Q\+String \&}]{msg }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_file_i_o_a2f9150d8bca87823678fa4346435d861}\label{classmodule_file_i_o_a2f9150d8bca87823678fa4346435d861}} 
+\index{moduleFileIO@{moduleFileIO}!RearchiveSubject@{RearchiveSubject}}
+\index{RearchiveSubject@{RearchiveSubject}!moduleFileIO@{moduleFileIO}}
+\doxysubsubsection{\texorpdfstring{RearchiveSubject()}{RearchiveSubject()}}
+{\footnotesize\ttfamily bool module\+File\+I\+O\+::\+Rearchive\+Subject (\begin{DoxyParamCaption}\item[{int}]{studyid,  }\item[{bool}]{matchidonly,  }\item[{int}]{projectid,  }\item[{Q\+String \&}]{msg }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_file_i_o_a490c532bfd5669ed693e938ba0ce4ca8}\label{classmodule_file_i_o_a490c532bfd5669ed693e938ba0ce4ca8}} 
+\index{moduleFileIO@{moduleFileIO}!RecheckSuccess@{RecheckSuccess}}
+\index{RecheckSuccess@{RecheckSuccess}!moduleFileIO@{moduleFileIO}}
+\doxysubsubsection{\texorpdfstring{RecheckSuccess()}{RecheckSuccess()}}
+{\footnotesize\ttfamily bool module\+File\+I\+O\+::\+Recheck\+Success (\begin{DoxyParamCaption}\item[{qint64}]{analysisid,  }\item[{Q\+String \&}]{msg }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_file_i_o_aee683400221df4327acf34070c72b6de}\label{classmodule_file_i_o_aee683400221df4327acf34070c72b6de}} 
+\index{moduleFileIO@{moduleFileIO}!Run@{Run}}
+\index{Run@{Run}!moduleFileIO@{moduleFileIO}}
+\doxysubsubsection{\texorpdfstring{Run()}{Run()}}
+{\footnotesize\ttfamily int module\+File\+I\+O\+::\+Run (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_file_i_o_a2034c1b7a1122cb8149bf9aa61859bd2}\label{classmodule_file_i_o_a2034c1b7a1122cb8149bf9aa61859bd2}} 
+\index{moduleFileIO@{moduleFileIO}!SetIORequestStatus@{SetIORequestStatus}}
+\index{SetIORequestStatus@{SetIORequestStatus}!moduleFileIO@{moduleFileIO}}
+\doxysubsubsection{\texorpdfstring{SetIORequestStatus()}{SetIORequestStatus()}}
+{\footnotesize\ttfamily bool module\+File\+I\+O\+::\+Set\+I\+O\+Request\+Status (\begin{DoxyParamCaption}\item[{int}]{requestid,  }\item[{Q\+String}]{status,  }\item[{Q\+String}]{msg = {\ttfamily \char`\"{}\char`\"{}} }\end{DoxyParamCaption})}
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{module_file_i_o_8h}{module\+File\+I\+O.\+h}}\item 
+\mbox{\hyperlink{module_file_i_o_8cpp}{module\+File\+I\+O.\+cpp}}\end{DoxyCompactItemize}

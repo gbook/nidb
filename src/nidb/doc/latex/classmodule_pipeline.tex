@@ -1,0 +1,285 @@
+\hypertarget{classmodule_pipeline}{}\doxysection{module\+Pipeline Class Reference}
+\label{classmodule_pipeline}\index{modulePipeline@{modulePipeline}}
+
+
+{\ttfamily \#include $<$module\+Pipeline.\+h$>$}
+
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{classmodule_pipeline_a05d03466f9c56a04ad1563bce61c2e40}{module\+Pipeline}} ()
+\item 
+\mbox{\hyperlink{classmodule_pipeline_a818eebc4180a9fc62d0dfabb5cbdf4ec}{module\+Pipeline}} (\mbox{\hyperlink{classnidb}{nidb}} $\ast$n)
+\item 
+\mbox{\hyperlink{classmodule_pipeline_a9d9067c8f5af7b7722b84284e3164b44}{$\sim$module\+Pipeline}} ()
+\item 
+int \mbox{\hyperlink{classmodule_pipeline_a7789b1faa9ca3a6978721a471a291b15}{Run}} ()
+\item 
+int \mbox{\hyperlink{classmodule_pipeline_ac9c4cf066364be5215a8c332f4174b07}{Is\+Queue\+Filled}} (int pid)
+\item 
+Q\+String\+List \mbox{\hyperlink{classmodule_pipeline_aed0feabc1416e180abf4822c457d02ff}{Get\+Group\+List}} (int pid)
+\item 
+Q\+List$<$ int $>$ \mbox{\hyperlink{classmodule_pipeline_af5b3ea06f56f0c5a14c20c2bca54113a}{Get\+Pipeline\+List}} ()
+\item 
+Q\+String \mbox{\hyperlink{classmodule_pipeline_a864fde78727201cd63a82c02de5cf023}{Check\+Dependency}} (int sid, int pipelinedep)
+\item 
+bool \mbox{\hyperlink{classmodule_pipeline_a611cbaa66b31ccbd8a51dd17a1a8bd35}{Is\+Pipeline\+Enabled}} (int pid)
+\item 
+void \mbox{\hyperlink{classmodule_pipeline_aefdc48a112a632a408b2a796bbeca8a5}{Set\+Pipeline\+Stopped}} (int pid, Q\+String msg)
+\item 
+void \mbox{\hyperlink{classmodule_pipeline_aef55dcde88a53638c70f3c4cf061aa09}{Set\+Pipeline\+Disabled}} (int pid)
+\item 
+void \mbox{\hyperlink{classmodule_pipeline_adc67efbc30b4bc7529307a5171cd7fb5}{Set\+Pipeline\+Running}} (int pid, Q\+String msg)
+\item 
+void \mbox{\hyperlink{classmodule_pipeline_ad0da73656df86b10f2160c957962791c}{Set\+Pipeline\+Status\+Message}} (int pid, Q\+String msg)
+\item 
+void \mbox{\hyperlink{classmodule_pipeline_a9580700075b9466be0bf4a2a46ed6bf1}{Set\+Pipeline\+Process\+Status}} (Q\+String status, int pipelineid, int studyid)
+\item 
+Q\+String\+List \mbox{\hyperlink{classmodule_pipeline_a0f1848ff902994cce303e0a4188a32f9}{Get\+U\+I\+D\+Study\+Num\+List\+By\+Group}} (Q\+String group)
+\item 
+Q\+List$<$ \mbox{\hyperlink{structpipeline_step}{pipeline\+Step}} $>$ \mbox{\hyperlink{classmodule_pipeline_a336b03bd41199a857b2cc062590a560c}{Get\+Pipeline\+Steps}} (int pipelineid, int version)
+\item 
+Q\+List$<$ \mbox{\hyperlink{structdata_definition_step}{data\+Definition\+Step}} $>$ \mbox{\hyperlink{classmodule_pipeline_aabd23954a3f282a3bec0108755ce409c}{Get\+Pipeline\+Data\+Def}} (int pipelineid, int version)
+\item 
+Q\+String \mbox{\hyperlink{classmodule_pipeline_a10706c21931339859d17367eaf951f8c}{Format\+Command}} (int pipelineid, Q\+String clusteranalysispath, Q\+String command, Q\+String analysispath, qint64 analysisid, Q\+String uid, int studynum, Q\+String studydatetime, Q\+String pipelinename, Q\+String workingdir, Q\+String description)
+\item 
+bool \mbox{\hyperlink{classmodule_pipeline_a0dddbf1d1d8bbe5983dc00e916f94abf}{Create\+Cluster\+Job\+File}} (Q\+String jobfilename, Q\+String clustertype, Q\+String queue, qint64 analysisid, Q\+String uid, int studynum, Q\+String analysispath, bool usetmpdir, Q\+String tmpdir, Q\+String studydatetime, Q\+String pipelinename, int pipelineid, Q\+String resultscript, int maxwalltime, int numcores, double memory, Q\+List$<$ \mbox{\hyperlink{structpipeline_step}{pipeline\+Step}} $>$ steps, bool runsupplement=false)
+\item 
+Q\+List$<$ int $>$ \mbox{\hyperlink{classmodule_pipeline_af2ec7291df213990a345d77f2461a06a}{Get\+Study\+To\+Do\+List}} (int pipelineid, Q\+String modality, int depend, Q\+String groupids, qint64 \&runnum)
+\item 
+bool \mbox{\hyperlink{classmodule_pipeline_a748a9fe78781ab9bb0df7b88e50b3465}{Get\+Data}} (int studyid, Q\+String analysispath, Q\+String uid, qint64 analysisid, int pipelineid, int pipelinedep, Q\+String deplevel, Q\+List$<$ \mbox{\hyperlink{structdata_definition_step}{data\+Definition\+Step}} $>$ datadef, int \&numdownloaded, Q\+String \&datalog)
+\item 
+Q\+String \mbox{\hyperlink{classmodule_pipeline_a6a0305a3b4f41aaafe1a0024f998aff3}{Get\+Beh\+Path}} (Q\+String behformat, Q\+String analysispath, Q\+String location, Q\+String behdir, int newseriesnum)
+\item 
+bool \mbox{\hyperlink{classmodule_pipeline_acf7450c4f3a193157547d9a32eeabc64}{Update\+Analysis\+Status}} (qint64 analysisid, Q\+String status, Q\+String statusmsg, int jobid, int numseries, Q\+String datalog, Q\+String datatable, bool current\+Start\+Date, bool current\+End\+Date, int supplement\+Flag, int rerun\+Flag)
+\item 
+qint64 \mbox{\hyperlink{classmodule_pipeline_ac642f9e1d4848c5501c6fd2dcabe2239}{Record\+Data\+Download}} (qint64 id, qint64 analysisid, Q\+String modality, int checked, int found, int seriesid, Q\+String downloadpath, int step, Q\+String msg)
+\item 
+void \mbox{\hyperlink{classmodule_pipeline_abc751d9903f118799eda7a3e2675686b}{Insert\+Pipeline\+Event}} (int pipelineid, qint64 \&runnum, qint64 analysisid, Q\+String event, Q\+String message)
+\item 
+Q\+String \mbox{\hyperlink{classmodule_pipeline_aefadaae3f594eec3d294f03316d948c5}{Get\+Pipeline\+Status}} (int pipelineid)
+\item 
+void \mbox{\hyperlink{classmodule_pipeline_a62d938a273dfd9947d1548009b292568}{Clear\+Pipeline\+History}} ()
+\item 
+Q\+String \mbox{\hyperlink{classmodule_pipeline_a943b49cbb06b23519c220e2c4cd58a2e}{Get\+Analysis\+Local\+Path}} (Q\+String dir\+Structure\+Code, Q\+String pipeline\+Name=\char`\"{}\char`\"{}, Q\+String U\+ID=\char`\"{}\char`\"{}, int study\+Num=-\/1)
+\begin{DoxyCompactList}\small\item\em \mbox{\hyperlink{classmodule_pipeline_a943b49cbb06b23519c220e2c4cd58a2e}{module\+Pipeline\+::\+Get\+Analysis\+Local\+Path}} -\/ get the analysis path as seen by Ni\+DB \end{DoxyCompactList}\item 
+Q\+String \mbox{\hyperlink{classmodule_pipeline_a470e1f8acfb1130cb0565e521cb59a85}{Get\+Analysis\+Cluster\+Path}} (Q\+String dir\+Structure\+Code, Q\+String pipeline\+Name=\char`\"{}\char`\"{}, Q\+String U\+ID=\char`\"{}\char`\"{}, int study\+Num=-\/1)
+\begin{DoxyCompactList}\small\item\em \mbox{\hyperlink{classmodule_pipeline_a470e1f8acfb1130cb0565e521cb59a85}{module\+Pipeline\+::\+Get\+Analysis\+Cluster\+Path}} -\/ get the analysis base path as see by the cluster \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{classmodule_pipeline_a3a9caee0f0fcefa9e934d7bebbd81969}{Disable\+Pipeline}} (int pipelineid)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classmodule_pipeline_a05d03466f9c56a04ad1563bce61c2e40}\label{classmodule_pipeline_a05d03466f9c56a04ad1563bce61c2e40}} 
+\index{modulePipeline@{modulePipeline}!modulePipeline@{modulePipeline}}
+\index{modulePipeline@{modulePipeline}!modulePipeline@{modulePipeline}}
+\doxysubsubsection{\texorpdfstring{modulePipeline()}{modulePipeline()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily module\+Pipeline\+::module\+Pipeline (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_pipeline_a818eebc4180a9fc62d0dfabb5cbdf4ec}\label{classmodule_pipeline_a818eebc4180a9fc62d0dfabb5cbdf4ec}} 
+\index{modulePipeline@{modulePipeline}!modulePipeline@{modulePipeline}}
+\index{modulePipeline@{modulePipeline}!modulePipeline@{modulePipeline}}
+\doxysubsubsection{\texorpdfstring{modulePipeline()}{modulePipeline()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily module\+Pipeline\+::module\+Pipeline (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{classnidb}{nidb}} $\ast$}]{n }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_pipeline_a9d9067c8f5af7b7722b84284e3164b44}\label{classmodule_pipeline_a9d9067c8f5af7b7722b84284e3164b44}} 
+\index{modulePipeline@{modulePipeline}!````~modulePipeline@{$\sim$modulePipeline}}
+\index{````~modulePipeline@{$\sim$modulePipeline}!modulePipeline@{modulePipeline}}
+\doxysubsubsection{\texorpdfstring{$\sim$modulePipeline()}{~modulePipeline()}}
+{\footnotesize\ttfamily module\+Pipeline\+::$\sim$module\+Pipeline (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{classmodule_pipeline_a864fde78727201cd63a82c02de5cf023}\label{classmodule_pipeline_a864fde78727201cd63a82c02de5cf023}} 
+\index{modulePipeline@{modulePipeline}!CheckDependency@{CheckDependency}}
+\index{CheckDependency@{CheckDependency}!modulePipeline@{modulePipeline}}
+\doxysubsubsection{\texorpdfstring{CheckDependency()}{CheckDependency()}}
+{\footnotesize\ttfamily Q\+String module\+Pipeline\+::\+Check\+Dependency (\begin{DoxyParamCaption}\item[{int}]{sid,  }\item[{int}]{pipelinedep }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_pipeline_a62d938a273dfd9947d1548009b292568}\label{classmodule_pipeline_a62d938a273dfd9947d1548009b292568}} 
+\index{modulePipeline@{modulePipeline}!ClearPipelineHistory@{ClearPipelineHistory}}
+\index{ClearPipelineHistory@{ClearPipelineHistory}!modulePipeline@{modulePipeline}}
+\doxysubsubsection{\texorpdfstring{ClearPipelineHistory()}{ClearPipelineHistory()}}
+{\footnotesize\ttfamily void module\+Pipeline\+::\+Clear\+Pipeline\+History (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_pipeline_a0dddbf1d1d8bbe5983dc00e916f94abf}\label{classmodule_pipeline_a0dddbf1d1d8bbe5983dc00e916f94abf}} 
+\index{modulePipeline@{modulePipeline}!CreateClusterJobFile@{CreateClusterJobFile}}
+\index{CreateClusterJobFile@{CreateClusterJobFile}!modulePipeline@{modulePipeline}}
+\doxysubsubsection{\texorpdfstring{CreateClusterJobFile()}{CreateClusterJobFile()}}
+{\footnotesize\ttfamily bool module\+Pipeline\+::\+Create\+Cluster\+Job\+File (\begin{DoxyParamCaption}\item[{Q\+String}]{jobfilename,  }\item[{Q\+String}]{clustertype,  }\item[{Q\+String}]{queue,  }\item[{qint64}]{analysisid,  }\item[{Q\+String}]{uid,  }\item[{int}]{studynum,  }\item[{Q\+String}]{analysispath,  }\item[{bool}]{usetmpdir,  }\item[{Q\+String}]{tmpdir,  }\item[{Q\+String}]{studydatetime,  }\item[{Q\+String}]{pipelinename,  }\item[{int}]{pipelineid,  }\item[{Q\+String}]{resultscript,  }\item[{int}]{maxwalltime,  }\item[{int}]{numcores,  }\item[{double}]{memory,  }\item[{Q\+List$<$ \mbox{\hyperlink{structpipeline_step}{pipeline\+Step}} $>$}]{steps,  }\item[{bool}]{runsupplement = {\ttfamily false} }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_pipeline_a3a9caee0f0fcefa9e934d7bebbd81969}\label{classmodule_pipeline_a3a9caee0f0fcefa9e934d7bebbd81969}} 
+\index{modulePipeline@{modulePipeline}!DisablePipeline@{DisablePipeline}}
+\index{DisablePipeline@{DisablePipeline}!modulePipeline@{modulePipeline}}
+\doxysubsubsection{\texorpdfstring{DisablePipeline()}{DisablePipeline()}}
+{\footnotesize\ttfamily void module\+Pipeline\+::\+Disable\+Pipeline (\begin{DoxyParamCaption}\item[{int}]{pipelineid }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_pipeline_a10706c21931339859d17367eaf951f8c}\label{classmodule_pipeline_a10706c21931339859d17367eaf951f8c}} 
+\index{modulePipeline@{modulePipeline}!FormatCommand@{FormatCommand}}
+\index{FormatCommand@{FormatCommand}!modulePipeline@{modulePipeline}}
+\doxysubsubsection{\texorpdfstring{FormatCommand()}{FormatCommand()}}
+{\footnotesize\ttfamily Q\+String module\+Pipeline\+::\+Format\+Command (\begin{DoxyParamCaption}\item[{int}]{pipelineid,  }\item[{Q\+String}]{clusteranalysispath,  }\item[{Q\+String}]{command,  }\item[{Q\+String}]{analysispath,  }\item[{qint64}]{analysisid,  }\item[{Q\+String}]{uid,  }\item[{int}]{studynum,  }\item[{Q\+String}]{studydatetime,  }\item[{Q\+String}]{pipelinename,  }\item[{Q\+String}]{workingdir,  }\item[{Q\+String}]{description }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_pipeline_a470e1f8acfb1130cb0565e521cb59a85}\label{classmodule_pipeline_a470e1f8acfb1130cb0565e521cb59a85}} 
+\index{modulePipeline@{modulePipeline}!GetAnalysisClusterPath@{GetAnalysisClusterPath}}
+\index{GetAnalysisClusterPath@{GetAnalysisClusterPath}!modulePipeline@{modulePipeline}}
+\doxysubsubsection{\texorpdfstring{GetAnalysisClusterPath()}{GetAnalysisClusterPath()}}
+{\footnotesize\ttfamily Q\+String module\+Pipeline\+::\+Get\+Analysis\+Cluster\+Path (\begin{DoxyParamCaption}\item[{Q\+String}]{dir\+Structure\+Code,  }\item[{Q\+String}]{pipeline\+Name = {\ttfamily \char`\"{}\char`\"{}},  }\item[{Q\+String}]{U\+ID = {\ttfamily \char`\"{}\char`\"{}},  }\item[{int}]{study\+Num = {\ttfamily -\/1} }\end{DoxyParamCaption})}
+
+
+
+\mbox{\hyperlink{classmodule_pipeline_a470e1f8acfb1130cb0565e521cb59a85}{module\+Pipeline\+::\+Get\+Analysis\+Cluster\+Path}} -\/ get the analysis base path as see by the cluster 
+
+
+\begin{DoxyParams}{Parameters}
+{\em dir\+Structure} & \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+the path 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classmodule_pipeline_a943b49cbb06b23519c220e2c4cd58a2e}\label{classmodule_pipeline_a943b49cbb06b23519c220e2c4cd58a2e}} 
+\index{modulePipeline@{modulePipeline}!GetAnalysisLocalPath@{GetAnalysisLocalPath}}
+\index{GetAnalysisLocalPath@{GetAnalysisLocalPath}!modulePipeline@{modulePipeline}}
+\doxysubsubsection{\texorpdfstring{GetAnalysisLocalPath()}{GetAnalysisLocalPath()}}
+{\footnotesize\ttfamily Q\+String module\+Pipeline\+::\+Get\+Analysis\+Local\+Path (\begin{DoxyParamCaption}\item[{Q\+String}]{dir\+Structure\+Code,  }\item[{Q\+String}]{pipeline\+Name = {\ttfamily \char`\"{}\char`\"{}},  }\item[{Q\+String}]{U\+ID = {\ttfamily \char`\"{}\char`\"{}},  }\item[{int}]{study\+Num = {\ttfamily -\/1} }\end{DoxyParamCaption})}
+
+
+
+\mbox{\hyperlink{classmodule_pipeline_a943b49cbb06b23519c220e2c4cd58a2e}{module\+Pipeline\+::\+Get\+Analysis\+Local\+Path}} -\/ get the analysis path as seen by Ni\+DB 
+
+
+\begin{DoxyParams}{Parameters}
+{\em dir\+Structure} & \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+the path 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classmodule_pipeline_a6a0305a3b4f41aaafe1a0024f998aff3}\label{classmodule_pipeline_a6a0305a3b4f41aaafe1a0024f998aff3}} 
+\index{modulePipeline@{modulePipeline}!GetBehPath@{GetBehPath}}
+\index{GetBehPath@{GetBehPath}!modulePipeline@{modulePipeline}}
+\doxysubsubsection{\texorpdfstring{GetBehPath()}{GetBehPath()}}
+{\footnotesize\ttfamily Q\+String module\+Pipeline\+::\+Get\+Beh\+Path (\begin{DoxyParamCaption}\item[{Q\+String}]{behformat,  }\item[{Q\+String}]{analysispath,  }\item[{Q\+String}]{location,  }\item[{Q\+String}]{behdir,  }\item[{int}]{newseriesnum }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_pipeline_a748a9fe78781ab9bb0df7b88e50b3465}\label{classmodule_pipeline_a748a9fe78781ab9bb0df7b88e50b3465}} 
+\index{modulePipeline@{modulePipeline}!GetData@{GetData}}
+\index{GetData@{GetData}!modulePipeline@{modulePipeline}}
+\doxysubsubsection{\texorpdfstring{GetData()}{GetData()}}
+{\footnotesize\ttfamily bool module\+Pipeline\+::\+Get\+Data (\begin{DoxyParamCaption}\item[{int}]{studyid,  }\item[{Q\+String}]{analysispath,  }\item[{Q\+String}]{uid,  }\item[{qint64}]{analysisid,  }\item[{int}]{pipelineid,  }\item[{int}]{pipelinedep,  }\item[{Q\+String}]{deplevel,  }\item[{Q\+List$<$ \mbox{\hyperlink{structdata_definition_step}{data\+Definition\+Step}} $>$}]{datadef,  }\item[{int \&}]{numdownloaded,  }\item[{Q\+String \&}]{datalog }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_pipeline_aed0feabc1416e180abf4822c457d02ff}\label{classmodule_pipeline_aed0feabc1416e180abf4822c457d02ff}} 
+\index{modulePipeline@{modulePipeline}!GetGroupList@{GetGroupList}}
+\index{GetGroupList@{GetGroupList}!modulePipeline@{modulePipeline}}
+\doxysubsubsection{\texorpdfstring{GetGroupList()}{GetGroupList()}}
+{\footnotesize\ttfamily Q\+String\+List module\+Pipeline\+::\+Get\+Group\+List (\begin{DoxyParamCaption}\item[{int}]{pid }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_pipeline_aabd23954a3f282a3bec0108755ce409c}\label{classmodule_pipeline_aabd23954a3f282a3bec0108755ce409c}} 
+\index{modulePipeline@{modulePipeline}!GetPipelineDataDef@{GetPipelineDataDef}}
+\index{GetPipelineDataDef@{GetPipelineDataDef}!modulePipeline@{modulePipeline}}
+\doxysubsubsection{\texorpdfstring{GetPipelineDataDef()}{GetPipelineDataDef()}}
+{\footnotesize\ttfamily Q\+List$<$ \mbox{\hyperlink{structdata_definition_step}{data\+Definition\+Step}} $>$ module\+Pipeline\+::\+Get\+Pipeline\+Data\+Def (\begin{DoxyParamCaption}\item[{int}]{pipelineid,  }\item[{int}]{version }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_pipeline_af5b3ea06f56f0c5a14c20c2bca54113a}\label{classmodule_pipeline_af5b3ea06f56f0c5a14c20c2bca54113a}} 
+\index{modulePipeline@{modulePipeline}!GetPipelineList@{GetPipelineList}}
+\index{GetPipelineList@{GetPipelineList}!modulePipeline@{modulePipeline}}
+\doxysubsubsection{\texorpdfstring{GetPipelineList()}{GetPipelineList()}}
+{\footnotesize\ttfamily Q\+List$<$ int $>$ module\+Pipeline\+::\+Get\+Pipeline\+List (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_pipeline_aefadaae3f594eec3d294f03316d948c5}\label{classmodule_pipeline_aefadaae3f594eec3d294f03316d948c5}} 
+\index{modulePipeline@{modulePipeline}!GetPipelineStatus@{GetPipelineStatus}}
+\index{GetPipelineStatus@{GetPipelineStatus}!modulePipeline@{modulePipeline}}
+\doxysubsubsection{\texorpdfstring{GetPipelineStatus()}{GetPipelineStatus()}}
+{\footnotesize\ttfamily Q\+String module\+Pipeline\+::\+Get\+Pipeline\+Status (\begin{DoxyParamCaption}\item[{int}]{pipelineid }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_pipeline_a336b03bd41199a857b2cc062590a560c}\label{classmodule_pipeline_a336b03bd41199a857b2cc062590a560c}} 
+\index{modulePipeline@{modulePipeline}!GetPipelineSteps@{GetPipelineSteps}}
+\index{GetPipelineSteps@{GetPipelineSteps}!modulePipeline@{modulePipeline}}
+\doxysubsubsection{\texorpdfstring{GetPipelineSteps()}{GetPipelineSteps()}}
+{\footnotesize\ttfamily Q\+List$<$ \mbox{\hyperlink{structpipeline_step}{pipeline\+Step}} $>$ module\+Pipeline\+::\+Get\+Pipeline\+Steps (\begin{DoxyParamCaption}\item[{int}]{pipelineid,  }\item[{int}]{version }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_pipeline_af2ec7291df213990a345d77f2461a06a}\label{classmodule_pipeline_af2ec7291df213990a345d77f2461a06a}} 
+\index{modulePipeline@{modulePipeline}!GetStudyToDoList@{GetStudyToDoList}}
+\index{GetStudyToDoList@{GetStudyToDoList}!modulePipeline@{modulePipeline}}
+\doxysubsubsection{\texorpdfstring{GetStudyToDoList()}{GetStudyToDoList()}}
+{\footnotesize\ttfamily Q\+List$<$ int $>$ module\+Pipeline\+::\+Get\+Study\+To\+Do\+List (\begin{DoxyParamCaption}\item[{int}]{pipelineid,  }\item[{Q\+String}]{modality,  }\item[{int}]{depend,  }\item[{Q\+String}]{groupids,  }\item[{qint64 \&}]{runnum }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_pipeline_a0f1848ff902994cce303e0a4188a32f9}\label{classmodule_pipeline_a0f1848ff902994cce303e0a4188a32f9}} 
+\index{modulePipeline@{modulePipeline}!GetUIDStudyNumListByGroup@{GetUIDStudyNumListByGroup}}
+\index{GetUIDStudyNumListByGroup@{GetUIDStudyNumListByGroup}!modulePipeline@{modulePipeline}}
+\doxysubsubsection{\texorpdfstring{GetUIDStudyNumListByGroup()}{GetUIDStudyNumListByGroup()}}
+{\footnotesize\ttfamily Q\+String\+List module\+Pipeline\+::\+Get\+U\+I\+D\+Study\+Num\+List\+By\+Group (\begin{DoxyParamCaption}\item[{Q\+String}]{group }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_pipeline_abc751d9903f118799eda7a3e2675686b}\label{classmodule_pipeline_abc751d9903f118799eda7a3e2675686b}} 
+\index{modulePipeline@{modulePipeline}!InsertPipelineEvent@{InsertPipelineEvent}}
+\index{InsertPipelineEvent@{InsertPipelineEvent}!modulePipeline@{modulePipeline}}
+\doxysubsubsection{\texorpdfstring{InsertPipelineEvent()}{InsertPipelineEvent()}}
+{\footnotesize\ttfamily void module\+Pipeline\+::\+Insert\+Pipeline\+Event (\begin{DoxyParamCaption}\item[{int}]{pipelineid,  }\item[{qint64 \&}]{runnum,  }\item[{qint64}]{analysisid,  }\item[{Q\+String}]{event,  }\item[{Q\+String}]{message }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_pipeline_a611cbaa66b31ccbd8a51dd17a1a8bd35}\label{classmodule_pipeline_a611cbaa66b31ccbd8a51dd17a1a8bd35}} 
+\index{modulePipeline@{modulePipeline}!IsPipelineEnabled@{IsPipelineEnabled}}
+\index{IsPipelineEnabled@{IsPipelineEnabled}!modulePipeline@{modulePipeline}}
+\doxysubsubsection{\texorpdfstring{IsPipelineEnabled()}{IsPipelineEnabled()}}
+{\footnotesize\ttfamily bool module\+Pipeline\+::\+Is\+Pipeline\+Enabled (\begin{DoxyParamCaption}\item[{int}]{pid }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_pipeline_ac9c4cf066364be5215a8c332f4174b07}\label{classmodule_pipeline_ac9c4cf066364be5215a8c332f4174b07}} 
+\index{modulePipeline@{modulePipeline}!IsQueueFilled@{IsQueueFilled}}
+\index{IsQueueFilled@{IsQueueFilled}!modulePipeline@{modulePipeline}}
+\doxysubsubsection{\texorpdfstring{IsQueueFilled()}{IsQueueFilled()}}
+{\footnotesize\ttfamily int module\+Pipeline\+::\+Is\+Queue\+Filled (\begin{DoxyParamCaption}\item[{int}]{pid }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_pipeline_ac642f9e1d4848c5501c6fd2dcabe2239}\label{classmodule_pipeline_ac642f9e1d4848c5501c6fd2dcabe2239}} 
+\index{modulePipeline@{modulePipeline}!RecordDataDownload@{RecordDataDownload}}
+\index{RecordDataDownload@{RecordDataDownload}!modulePipeline@{modulePipeline}}
+\doxysubsubsection{\texorpdfstring{RecordDataDownload()}{RecordDataDownload()}}
+{\footnotesize\ttfamily qint64 module\+Pipeline\+::\+Record\+Data\+Download (\begin{DoxyParamCaption}\item[{qint64}]{id,  }\item[{qint64}]{analysisid,  }\item[{Q\+String}]{modality,  }\item[{int}]{checked,  }\item[{int}]{found,  }\item[{int}]{seriesid,  }\item[{Q\+String}]{downloadpath,  }\item[{int}]{step,  }\item[{Q\+String}]{msg }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_pipeline_a7789b1faa9ca3a6978721a471a291b15}\label{classmodule_pipeline_a7789b1faa9ca3a6978721a471a291b15}} 
+\index{modulePipeline@{modulePipeline}!Run@{Run}}
+\index{Run@{Run}!modulePipeline@{modulePipeline}}
+\doxysubsubsection{\texorpdfstring{Run()}{Run()}}
+{\footnotesize\ttfamily int module\+Pipeline\+::\+Run (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_pipeline_aef55dcde88a53638c70f3c4cf061aa09}\label{classmodule_pipeline_aef55dcde88a53638c70f3c4cf061aa09}} 
+\index{modulePipeline@{modulePipeline}!SetPipelineDisabled@{SetPipelineDisabled}}
+\index{SetPipelineDisabled@{SetPipelineDisabled}!modulePipeline@{modulePipeline}}
+\doxysubsubsection{\texorpdfstring{SetPipelineDisabled()}{SetPipelineDisabled()}}
+{\footnotesize\ttfamily void module\+Pipeline\+::\+Set\+Pipeline\+Disabled (\begin{DoxyParamCaption}\item[{int}]{pid }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_pipeline_a9580700075b9466be0bf4a2a46ed6bf1}\label{classmodule_pipeline_a9580700075b9466be0bf4a2a46ed6bf1}} 
+\index{modulePipeline@{modulePipeline}!SetPipelineProcessStatus@{SetPipelineProcessStatus}}
+\index{SetPipelineProcessStatus@{SetPipelineProcessStatus}!modulePipeline@{modulePipeline}}
+\doxysubsubsection{\texorpdfstring{SetPipelineProcessStatus()}{SetPipelineProcessStatus()}}
+{\footnotesize\ttfamily void module\+Pipeline\+::\+Set\+Pipeline\+Process\+Status (\begin{DoxyParamCaption}\item[{Q\+String}]{status,  }\item[{int}]{pipelineid,  }\item[{int}]{studyid }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_pipeline_adc67efbc30b4bc7529307a5171cd7fb5}\label{classmodule_pipeline_adc67efbc30b4bc7529307a5171cd7fb5}} 
+\index{modulePipeline@{modulePipeline}!SetPipelineRunning@{SetPipelineRunning}}
+\index{SetPipelineRunning@{SetPipelineRunning}!modulePipeline@{modulePipeline}}
+\doxysubsubsection{\texorpdfstring{SetPipelineRunning()}{SetPipelineRunning()}}
+{\footnotesize\ttfamily void module\+Pipeline\+::\+Set\+Pipeline\+Running (\begin{DoxyParamCaption}\item[{int}]{pid,  }\item[{Q\+String}]{msg }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_pipeline_ad0da73656df86b10f2160c957962791c}\label{classmodule_pipeline_ad0da73656df86b10f2160c957962791c}} 
+\index{modulePipeline@{modulePipeline}!SetPipelineStatusMessage@{SetPipelineStatusMessage}}
+\index{SetPipelineStatusMessage@{SetPipelineStatusMessage}!modulePipeline@{modulePipeline}}
+\doxysubsubsection{\texorpdfstring{SetPipelineStatusMessage()}{SetPipelineStatusMessage()}}
+{\footnotesize\ttfamily void module\+Pipeline\+::\+Set\+Pipeline\+Status\+Message (\begin{DoxyParamCaption}\item[{int}]{pid,  }\item[{Q\+String}]{msg }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_pipeline_aefdc48a112a632a408b2a796bbeca8a5}\label{classmodule_pipeline_aefdc48a112a632a408b2a796bbeca8a5}} 
+\index{modulePipeline@{modulePipeline}!SetPipelineStopped@{SetPipelineStopped}}
+\index{SetPipelineStopped@{SetPipelineStopped}!modulePipeline@{modulePipeline}}
+\doxysubsubsection{\texorpdfstring{SetPipelineStopped()}{SetPipelineStopped()}}
+{\footnotesize\ttfamily void module\+Pipeline\+::\+Set\+Pipeline\+Stopped (\begin{DoxyParamCaption}\item[{int}]{pid,  }\item[{Q\+String}]{msg }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_pipeline_acf7450c4f3a193157547d9a32eeabc64}\label{classmodule_pipeline_acf7450c4f3a193157547d9a32eeabc64}} 
+\index{modulePipeline@{modulePipeline}!UpdateAnalysisStatus@{UpdateAnalysisStatus}}
+\index{UpdateAnalysisStatus@{UpdateAnalysisStatus}!modulePipeline@{modulePipeline}}
+\doxysubsubsection{\texorpdfstring{UpdateAnalysisStatus()}{UpdateAnalysisStatus()}}
+{\footnotesize\ttfamily bool module\+Pipeline\+::\+Update\+Analysis\+Status (\begin{DoxyParamCaption}\item[{qint64}]{analysisid,  }\item[{Q\+String}]{status,  }\item[{Q\+String}]{statusmsg,  }\item[{int}]{jobid,  }\item[{int}]{numseries,  }\item[{Q\+String}]{datalog,  }\item[{Q\+String}]{datatable,  }\item[{bool}]{current\+Start\+Date,  }\item[{bool}]{current\+End\+Date,  }\item[{int}]{supplement\+Flag,  }\item[{int}]{rerun\+Flag }\end{DoxyParamCaption})}
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{module_pipeline_8h}{module\+Pipeline.\+h}}\item 
+\mbox{\hyperlink{module_pipeline_8cpp}{module\+Pipeline.\+cpp}}\end{DoxyCompactItemize}

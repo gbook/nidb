@@ -487,8 +487,11 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
     bool okToDeleteDir = true;
 
     /* ----- parse all files in the directory ----- */
+    Print("Checkpoint ParseDirectory_1");
     QStringList files = FindAllFiles(dir, "*");
+    Print("Checkpoint ParseDirectory_2");
     qint64 numfiles = files.size();
+    Print("Checkpoint ParseDirectory_3");
     n->Log(QString("Found [%1] files in [%2]").arg(numfiles).arg(dir));
     int processedFileCount(0);
     foreach (QString file, files) {
@@ -565,7 +568,7 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
                     q.bindValue(":msg",m);
                     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
-                    QString m;
+                    m="";
                     if (!MoveFile(file, n->cfg["problemdir"], m))
                         n->Log(QString("Unable to move [%1] to [%2]").arg(file).arg(n->cfg["problemdir"]).arg(m));
 
@@ -631,7 +634,7 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
                     n->Log(QString("Unable to parse file [%1] (size [%2]) as a DICOM file. Moving to [%3]").arg(file).arg(fsize).arg(n->cfg["problemdir"]));
 
                     QSqlQuery q;
-                    QString m = "Not a DICOM file, moving to the problem directory";
+                    m = "Not a DICOM file, moving to the problem directory";
                     q.prepare("insert into importlogs (filename_orig, fileformat, importgroupid, importstartdate, result) values (:file, :datatype, :importid, now(), :msg)");
                     q.bindValue(":file", file);
                     q.bindValue(":datatype", importDatatype.toUpper());
@@ -660,11 +663,11 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
         QString seriesuid = a.key();
 
         n->Log(QString("Getting list of files for seriesuid [" + seriesuid + "] - number of files is [%1]").arg(dcmseries[seriesuid].size()));
-        QStringList files = dcmseries[seriesuid];
+        QStringList files2 = dcmseries[seriesuid];
 
         performanceMetric perf2;
         perf2.Start();
-        if (io->ArchiveDICOMSeries(importid, -1, -1, -1, subjectMatchCriteria, studyMatchCriteria, seriesMatchCriteria, importProjectID, "", importSiteID, importSeriesNotes, importAltUIDs, files, perf2))
+        if (io->ArchiveDICOMSeries(importid, -1, -1, -1, subjectMatchCriteria, studyMatchCriteria, seriesMatchCriteria, importProjectID, "", importSiteID, importSeriesNotes, importAltUIDs, files2, perf2))
             iscomplete = true;
         else
             iscomplete = false;

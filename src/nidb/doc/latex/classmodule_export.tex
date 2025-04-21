@@ -1,0 +1,352 @@
+\hypertarget{classmodule_export}{}\doxysection{module\+Export Class Reference}
+\label{classmodule_export}\index{moduleExport@{moduleExport}}
+
+
+The \mbox{\hyperlink{classmodule_export}{module\+Export}} class handles exports from the archive. This includes sending data to F\+TP, N\+FS, remote Ni\+DB and manages the writing of N\+DA, B\+I\+DS, and squirrel formats.  
+
+
+
+
+{\ttfamily \#include $<$module\+Export.\+h$>$}
+
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{classmodule_export_a3150e6bc519c61edc563f31a6439a152}{module\+Export}} (\mbox{\hyperlink{classnidb}{nidb}} $\ast$a)
+\begin{DoxyCompactList}\small\item\em Constructor. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{classmodule_export_ab053bb93265ef355c165d3eb5bdf2f6f}{$\sim$module\+Export}} ()
+\begin{DoxyCompactList}\small\item\em Destructor. \end{DoxyCompactList}\item 
+int \mbox{\hyperlink{classmodule_export_a1c7cbcdfb88aa406caf272e9a9356cd9}{Run}} ()
+\begin{DoxyCompactList}\small\item\em Entry point for this module. This function will perform any exports if they are queued. \end{DoxyCompactList}\item 
+Q\+String \mbox{\hyperlink{classmodule_export_a2512668915162e3f67e6dfab59b5b849}{Get\+Export\+Status}} (int exportid)
+\begin{DoxyCompactList}\small\item\em Get the status of an export. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{classmodule_export_aa2cdbc834d9e008f9c84e6eb945a5e27}{Set\+Export\+Status}} (int exportid, Q\+String status, Q\+String msg=\char`\"{}\char`\"{})
+\begin{DoxyCompactList}\small\item\em Set the status of an export. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{classmodule_export_a43bca47a55dd85bd2430f3a214787f63}{Get\+Export\+Series\+List}} (int exportid)
+\begin{DoxyCompactList}\small\item\em Obtain a list of series, given an export\+Row\+ID. Resulting list is stored in the private variable called \textquotesingle{}s\textquotesingle{}. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{classmodule_export_ae9a28dab8aacd33451a8a3c23b1ecb9a}{Export\+Local}} (int exportid, Q\+String exporttype, Q\+String nfsdir, int publicdownloadid, int publicdatasetdownloadid, Q\+String\+List downloadflags, Q\+String filetype, Q\+String dirformat, int preserveseries, bool gzip, int anonymize, Q\+String behformat, Q\+String behdirrootname, Q\+String behdirseriesname, Q\+String bidsreadme, Q\+String\+List niftiflags, Q\+String\+List bidsflags, Q\+String squirreltitle, Q\+String squirreldesc, Q\+String\+List squirrelflags, Q\+String \&status, Q\+String \&msg)
+\begin{DoxyCompactList}\small\item\em Export data locally, to N\+FS, web, F\+TP, or public dataset. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{classmodule_export_a948819b627fceb713a0067adf97ac9c5}{Export\+N\+D\+AR}} (int exportid, bool csvonly, Q\+String \&exportstatus, Q\+String \&msg)
+\item 
+bool \mbox{\hyperlink{classmodule_export_ae7890d6fc9e7a63b3ccb5a1cc799a9cc}{Export\+B\+I\+DS}} (int exportid, Q\+String bidsreadme, Q\+String\+List bidsflags, Q\+String \&outdir, Q\+String \&exportstatus, Q\+String \&msg)
+\item 
+bool \mbox{\hyperlink{classmodule_export_abbed3f663d250c9377dc966ff49e6e95}{Export\+To\+Remote\+Ni\+DB}} (int exportid, \mbox{\hyperlink{classremote_ni_d_b_connection}{remote\+Ni\+D\+B\+Connection}} \&conn, Q\+String \&exportstatus, Q\+String \&msg)
+\item 
+bool \mbox{\hyperlink{classmodule_export_a991e77419cf5513bc5cf970cfd671550}{Export\+To\+Remote\+F\+TP}} (int exportid, Q\+String remoteftpusername, Q\+String remoteftppassword, Q\+String remoteftpserver, int remoteftpport, Q\+String remoteftppath, Q\+String \&exportstatus, Q\+String \&msg)
+\item 
+bool \mbox{\hyperlink{classmodule_export_afde13bc415b968327b07457799da1367}{Export\+Squirrel}} (int exportid, Q\+String squirreltitle, Q\+String squirreldesc, Q\+String\+List downloadflags, Q\+String\+List squirrelflags, Q\+String \&exportstatus, Q\+String \&outdir, Q\+String \&filepath, Q\+String \&msg)
+\item 
+bool \mbox{\hyperlink{classmodule_export_a46de8151bcfeb2e20ac774a4c57298c2}{Export\+Package}} (int exportid, Q\+String \&exportstatus, Q\+String \&filepath, Q\+String \&msg)
+\item 
+bool \mbox{\hyperlink{classmodule_export_a2e4d47c2ebc817892a66d2cf80d7a742}{Export\+X\+N\+AT}} (int exportid, Q\+String \&exportstatus, Q\+String \&msg)
+\begin{DoxyCompactList}\small\item\em Export to X\+N\+AT format -\/ B\+E\+TA, unlikely to work. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{classmodule_export_a39616ecedb8e6749c307b95521c3e2dc}{Write\+N\+D\+A\+R\+Header}} (Q\+String headerfile, Q\+String modality, Q\+String\+List \&log)
+\item 
+bool \mbox{\hyperlink{classmodule_export_ad02d17e0e25f29d59efd2eaaaf45f0b1}{Write\+N\+D\+A\+R\+Series}} (Q\+String file, Q\+String imagefile, Q\+String behfile, Q\+String behdesc, qint64 seriesid, Q\+String modality, Q\+String indir, Q\+String\+List \&log)
+\item 
+int \mbox{\hyperlink{classmodule_export_a084a281c335658a04574c81c370ad35d}{Start\+Remote\+Ni\+D\+B\+Transaction}} (Q\+String remotenidbserver, Q\+String remotenidbusername, Q\+String remotenidbpassword, Q\+String \&m)
+\begin{DoxyCompactList}\small\item\em This will start a transaction when sending data to a remove Ni\+DB server. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{classmodule_export_aa067214f403f869861063c89fcee83eb}{End\+Remote\+Ni\+D\+B\+Transaction}} (int tid, Q\+String remotenidbserver, Q\+String remotenidbusername, Q\+String remotenidbpassword, Q\+String \&m)
+\begin{DoxyCompactList}\small\item\em \mbox{\hyperlink{classmodule_export_aa067214f403f869861063c89fcee83eb}{module\+Export\+::\+End\+Remote\+Ni\+D\+B\+Transaction}} \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+Q\+Map$<$ Q\+String, Q\+Map$<$ int, Q\+Map$<$ int, Q\+Map$<$ Q\+String, Q\+String $>$ $>$ $>$ $>$ \mbox{\hyperlink{classmodule_export_a1bebda5452815330442be444879dd8de}{s}}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+The \mbox{\hyperlink{classmodule_export}{module\+Export}} class handles exports from the archive. This includes sending data to F\+TP, N\+FS, remote Ni\+DB and manages the writing of N\+DA, B\+I\+DS, and squirrel formats. 
+
+\doxysubsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classmodule_export_a3150e6bc519c61edc563f31a6439a152}\label{classmodule_export_a3150e6bc519c61edc563f31a6439a152}} 
+\index{moduleExport@{moduleExport}!moduleExport@{moduleExport}}
+\index{moduleExport@{moduleExport}!moduleExport@{moduleExport}}
+\doxysubsubsection{\texorpdfstring{moduleExport()}{moduleExport()}}
+{\footnotesize\ttfamily module\+Export\+::module\+Export (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{classnidb}{nidb}} $\ast$}]{a }\end{DoxyParamCaption})}
+
+
+
+Constructor. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em a} & pointer to the nidb object \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{classmodule_export_ab053bb93265ef355c165d3eb5bdf2f6f}\label{classmodule_export_ab053bb93265ef355c165d3eb5bdf2f6f}} 
+\index{moduleExport@{moduleExport}!````~moduleExport@{$\sim$moduleExport}}
+\index{````~moduleExport@{$\sim$moduleExport}!moduleExport@{moduleExport}}
+\doxysubsubsection{\texorpdfstring{$\sim$moduleExport()}{~moduleExport()}}
+{\footnotesize\ttfamily module\+Export\+::$\sim$module\+Export (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Destructor. 
+
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{classmodule_export_aa067214f403f869861063c89fcee83eb}\label{classmodule_export_aa067214f403f869861063c89fcee83eb}} 
+\index{moduleExport@{moduleExport}!EndRemoteNiDBTransaction@{EndRemoteNiDBTransaction}}
+\index{EndRemoteNiDBTransaction@{EndRemoteNiDBTransaction}!moduleExport@{moduleExport}}
+\doxysubsubsection{\texorpdfstring{EndRemoteNiDBTransaction()}{EndRemoteNiDBTransaction()}}
+{\footnotesize\ttfamily void module\+Export\+::\+End\+Remote\+Ni\+D\+B\+Transaction (\begin{DoxyParamCaption}\item[{int}]{tid,  }\item[{Q\+String}]{remotenidbserver,  }\item[{Q\+String}]{remotenidbusername,  }\item[{Q\+String}]{remotenidbpassword,  }\item[{Q\+String \&}]{m }\end{DoxyParamCaption})}
+
+
+
+\mbox{\hyperlink{classmodule_export_aa067214f403f869861063c89fcee83eb}{module\+Export\+::\+End\+Remote\+Ni\+D\+B\+Transaction}} 
+
+
+\begin{DoxyParams}{Parameters}
+{\em tid} & The transaction ID \\
+\hline
+{\em remotenidbserver} & The remote Ni\+DB hostname or IP address \\
+\hline
+{\em remotenidbusername} & The remote Ni\+DB username \\
+\hline
+{\em remotenidbpassword} & The remote Ni\+DB password, likely encrypted in a S\+H\+A1 hash \\
+\hline
+{\em m} & Any messages generated while starting the transaction \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{classmodule_export_ae7890d6fc9e7a63b3ccb5a1cc799a9cc}\label{classmodule_export_ae7890d6fc9e7a63b3ccb5a1cc799a9cc}} 
+\index{moduleExport@{moduleExport}!ExportBIDS@{ExportBIDS}}
+\index{ExportBIDS@{ExportBIDS}!moduleExport@{moduleExport}}
+\doxysubsubsection{\texorpdfstring{ExportBIDS()}{ExportBIDS()}}
+{\footnotesize\ttfamily bool module\+Export\+::\+Export\+B\+I\+DS (\begin{DoxyParamCaption}\item[{int}]{exportid,  }\item[{Q\+String}]{bidsreadme,  }\item[{Q\+String\+List}]{bidsflags,  }\item[{Q\+String \&}]{outdir,  }\item[{Q\+String \&}]{exportstatus,  }\item[{Q\+String \&}]{msg }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_export_ae9a28dab8aacd33451a8a3c23b1ecb9a}\label{classmodule_export_ae9a28dab8aacd33451a8a3c23b1ecb9a}} 
+\index{moduleExport@{moduleExport}!ExportLocal@{ExportLocal}}
+\index{ExportLocal@{ExportLocal}!moduleExport@{moduleExport}}
+\doxysubsubsection{\texorpdfstring{ExportLocal()}{ExportLocal()}}
+{\footnotesize\ttfamily bool module\+Export\+::\+Export\+Local (\begin{DoxyParamCaption}\item[{int}]{exportid,  }\item[{Q\+String}]{exporttype,  }\item[{Q\+String}]{nfsdir,  }\item[{int}]{publicdownloadid,  }\item[{int}]{publicdatasetdownloadid,  }\item[{Q\+String\+List}]{downloadflags,  }\item[{Q\+String}]{filetype,  }\item[{Q\+String}]{dirformat,  }\item[{int}]{preserveseries,  }\item[{bool}]{gzip,  }\item[{int}]{anonlevel,  }\item[{Q\+String}]{behformat,  }\item[{Q\+String}]{behdirrootname,  }\item[{Q\+String}]{behdirseriesname,  }\item[{Q\+String}]{bidsreadme,  }\item[{Q\+String\+List}]{niftiflags,  }\item[{Q\+String\+List}]{bidsflags,  }\item[{Q\+String}]{squirreltitle,  }\item[{Q\+String}]{squirreldesc,  }\item[{Q\+String\+List}]{squirrelflags,  }\item[{Q\+String \&}]{exportstatus,  }\item[{Q\+String \&}]{msg }\end{DoxyParamCaption})}
+
+
+
+Export data locally, to N\+FS, web, F\+TP, or public dataset. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em exportid} & export\+Row\+ID \\
+\hline
+{\em exporttype} & Possible values {\ttfamily nfs}, {\ttfamily web}, {\ttfamily publicdownload} \\
+\hline
+{\em nfsdir} & N\+FS directory \\
+\hline
+{\em publicdownloadid} & publicdownload\+Row\+ID \\
+\hline
+{\em publicdatasetdownloadid} & \\
+\hline
+{\em downloadflags} & Any download flags \\
+\hline
+{\em filetype} & File type. P\+Ossible values {\ttfamily bids}, {\ttfamily squirrel}, {\ttfamily package} \\
+\hline
+{\em dirformat} & Directory format \\
+\hline
+{\em preserveseries} & true to preserve series numbers when exporting directories \\
+\hline
+{\em gzip} & true to gzip Nifti output \\
+\hline
+{\em anonlevel} & Anonymization level \\
+\hline
+{\em behformat} & Behavioral data directory format \\
+\hline
+{\em behdirrootname} & Behavioral data directory root name \\
+\hline
+{\em behdirseriesname} & Behavioral data directory series name \\
+\hline
+{\em bidsreadme} & B\+I\+DS readme \\
+\hline
+{\em niftiflags} & Nifti export formatting flags \\
+\hline
+{\em bidsflags} & B\+I\+DS export formatting flags \\
+\hline
+{\em squirreltitle} & squirrel package title \\
+\hline
+{\em squirreldesc} & squirrel package description \\
+\hline
+{\em squirrelflags} & squirrel export formatting flags \\
+\hline
+{\em exportstatus} & \mbox{[}return\mbox{]} export status \\
+\hline
+{\em msg} & \mbox{[}return\mbox{]} Export messages \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+
+\end{DoxyReturn}
+\mbox{\Hypertarget{classmodule_export_a948819b627fceb713a0067adf97ac9c5}\label{classmodule_export_a948819b627fceb713a0067adf97ac9c5}} 
+\index{moduleExport@{moduleExport}!ExportNDAR@{ExportNDAR}}
+\index{ExportNDAR@{ExportNDAR}!moduleExport@{moduleExport}}
+\doxysubsubsection{\texorpdfstring{ExportNDAR()}{ExportNDAR()}}
+{\footnotesize\ttfamily bool module\+Export\+::\+Export\+N\+D\+AR (\begin{DoxyParamCaption}\item[{int}]{exportid,  }\item[{bool}]{csvonly,  }\item[{Q\+String \&}]{exportstatus,  }\item[{Q\+String \&}]{msg }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_export_a46de8151bcfeb2e20ac774a4c57298c2}\label{classmodule_export_a46de8151bcfeb2e20ac774a4c57298c2}} 
+\index{moduleExport@{moduleExport}!ExportPackage@{ExportPackage}}
+\index{ExportPackage@{ExportPackage}!moduleExport@{moduleExport}}
+\doxysubsubsection{\texorpdfstring{ExportPackage()}{ExportPackage()}}
+{\footnotesize\ttfamily bool module\+Export\+::\+Export\+Package (\begin{DoxyParamCaption}\item[{int}]{exportid,  }\item[{Q\+String \&}]{exportstatus,  }\item[{Q\+String \&}]{filepath,  }\item[{Q\+String \&}]{msg }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_export_afde13bc415b968327b07457799da1367}\label{classmodule_export_afde13bc415b968327b07457799da1367}} 
+\index{moduleExport@{moduleExport}!ExportSquirrel@{ExportSquirrel}}
+\index{ExportSquirrel@{ExportSquirrel}!moduleExport@{moduleExport}}
+\doxysubsubsection{\texorpdfstring{ExportSquirrel()}{ExportSquirrel()}}
+{\footnotesize\ttfamily bool module\+Export\+::\+Export\+Squirrel (\begin{DoxyParamCaption}\item[{int}]{exportid,  }\item[{Q\+String}]{squirreltitle,  }\item[{Q\+String}]{squirreldesc,  }\item[{Q\+String\+List}]{downloadflags,  }\item[{Q\+String\+List}]{squirrelflags,  }\item[{Q\+String \&}]{exportstatus,  }\item[{Q\+String \&}]{outdir,  }\item[{Q\+String \&}]{filepath,  }\item[{Q\+String \&}]{msg }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_export_a991e77419cf5513bc5cf970cfd671550}\label{classmodule_export_a991e77419cf5513bc5cf970cfd671550}} 
+\index{moduleExport@{moduleExport}!ExportToRemoteFTP@{ExportToRemoteFTP}}
+\index{ExportToRemoteFTP@{ExportToRemoteFTP}!moduleExport@{moduleExport}}
+\doxysubsubsection{\texorpdfstring{ExportToRemoteFTP()}{ExportToRemoteFTP()}}
+{\footnotesize\ttfamily bool module\+Export\+::\+Export\+To\+Remote\+F\+TP (\begin{DoxyParamCaption}\item[{int}]{exportid,  }\item[{Q\+String}]{remoteftpusername,  }\item[{Q\+String}]{remoteftppassword,  }\item[{Q\+String}]{remoteftpserver,  }\item[{int}]{remoteftpport,  }\item[{Q\+String}]{remoteftppath,  }\item[{Q\+String \&}]{exportstatus,  }\item[{Q\+String \&}]{msg }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_export_abbed3f663d250c9377dc966ff49e6e95}\label{classmodule_export_abbed3f663d250c9377dc966ff49e6e95}} 
+\index{moduleExport@{moduleExport}!ExportToRemoteNiDB@{ExportToRemoteNiDB}}
+\index{ExportToRemoteNiDB@{ExportToRemoteNiDB}!moduleExport@{moduleExport}}
+\doxysubsubsection{\texorpdfstring{ExportToRemoteNiDB()}{ExportToRemoteNiDB()}}
+{\footnotesize\ttfamily bool module\+Export\+::\+Export\+To\+Remote\+Ni\+DB (\begin{DoxyParamCaption}\item[{int}]{exportid,  }\item[{\mbox{\hyperlink{classremote_ni_d_b_connection}{remote\+Ni\+D\+B\+Connection}} \&}]{conn,  }\item[{Q\+String \&}]{exportstatus,  }\item[{Q\+String \&}]{msg }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_export_a2e4d47c2ebc817892a66d2cf80d7a742}\label{classmodule_export_a2e4d47c2ebc817892a66d2cf80d7a742}} 
+\index{moduleExport@{moduleExport}!ExportXNAT@{ExportXNAT}}
+\index{ExportXNAT@{ExportXNAT}!moduleExport@{moduleExport}}
+\doxysubsubsection{\texorpdfstring{ExportXNAT()}{ExportXNAT()}}
+{\footnotesize\ttfamily bool module\+Export\+::\+Export\+X\+N\+AT (\begin{DoxyParamCaption}\item[{int}]{exportid,  }\item[{Q\+String \&}]{exportstatus,  }\item[{Q\+String \&}]{msg }\end{DoxyParamCaption})}
+
+
+
+Export to X\+N\+AT format -\/ B\+E\+TA, unlikely to work. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em exportid} & \\
+\hline
+{\em exportstatus} & \\
+\hline
+{\em msg} & \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+
+\end{DoxyReturn}
+\mbox{\Hypertarget{classmodule_export_a43bca47a55dd85bd2430f3a214787f63}\label{classmodule_export_a43bca47a55dd85bd2430f3a214787f63}} 
+\index{moduleExport@{moduleExport}!GetExportSeriesList@{GetExportSeriesList}}
+\index{GetExportSeriesList@{GetExportSeriesList}!moduleExport@{moduleExport}}
+\doxysubsubsection{\texorpdfstring{GetExportSeriesList()}{GetExportSeriesList()}}
+{\footnotesize\ttfamily bool module\+Export\+::\+Get\+Export\+Series\+List (\begin{DoxyParamCaption}\item[{int}]{exportid }\end{DoxyParamCaption})}
+
+
+
+Obtain a list of series, given an export\+Row\+ID. Resulting list is stored in the private variable called \textquotesingle{}s\textquotesingle{}. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em exportid} & export\+Row\+ID \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+true if a series list was created 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classmodule_export_a2512668915162e3f67e6dfab59b5b849}\label{classmodule_export_a2512668915162e3f67e6dfab59b5b849}} 
+\index{moduleExport@{moduleExport}!GetExportStatus@{GetExportStatus}}
+\index{GetExportStatus@{GetExportStatus}!moduleExport@{moduleExport}}
+\doxysubsubsection{\texorpdfstring{GetExportStatus()}{GetExportStatus()}}
+{\footnotesize\ttfamily Q\+String module\+Export\+::\+Get\+Export\+Status (\begin{DoxyParamCaption}\item[{int}]{exportid }\end{DoxyParamCaption})}
+
+
+
+Get the status of an export. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em exportid} & Export\+Row\+ID \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+The status 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classmodule_export_a1c7cbcdfb88aa406caf272e9a9356cd9}\label{classmodule_export_a1c7cbcdfb88aa406caf272e9a9356cd9}} 
+\index{moduleExport@{moduleExport}!Run@{Run}}
+\index{Run@{Run}!moduleExport@{moduleExport}}
+\doxysubsubsection{\texorpdfstring{Run()}{Run()}}
+{\footnotesize\ttfamily int module\+Export\+::\+Run (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Entry point for this module. This function will perform any exports if they are queued. 
+
+\begin{DoxyReturn}{Returns}
+The number of exports completed 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classmodule_export_aa2cdbc834d9e008f9c84e6eb945a5e27}\label{classmodule_export_aa2cdbc834d9e008f9c84e6eb945a5e27}} 
+\index{moduleExport@{moduleExport}!SetExportStatus@{SetExportStatus}}
+\index{SetExportStatus@{SetExportStatus}!moduleExport@{moduleExport}}
+\doxysubsubsection{\texorpdfstring{SetExportStatus()}{SetExportStatus()}}
+{\footnotesize\ttfamily bool module\+Export\+::\+Set\+Export\+Status (\begin{DoxyParamCaption}\item[{int}]{exportid,  }\item[{Q\+String}]{status,  }\item[{Q\+String}]{msg = {\ttfamily \char`\"{}\char`\"{}} }\end{DoxyParamCaption})}
+
+
+
+Set the status of an export. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em exportid} & Export\+Row\+ID \\
+\hline
+{\em status} & Possible values {\ttfamily pending}, {\ttfamily deleting}, {\ttfamily complete}, {\ttfamily error}, {\ttfamily processing}, {\ttfamily cancelled}, {\ttfamily canceled} \\
+\hline
+{\em msg} & Message. Not required \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+true if status was successfuly updated 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classmodule_export_a084a281c335658a04574c81c370ad35d}\label{classmodule_export_a084a281c335658a04574c81c370ad35d}} 
+\index{moduleExport@{moduleExport}!StartRemoteNiDBTransaction@{StartRemoteNiDBTransaction}}
+\index{StartRemoteNiDBTransaction@{StartRemoteNiDBTransaction}!moduleExport@{moduleExport}}
+\doxysubsubsection{\texorpdfstring{StartRemoteNiDBTransaction()}{StartRemoteNiDBTransaction()}}
+{\footnotesize\ttfamily int module\+Export\+::\+Start\+Remote\+Ni\+D\+B\+Transaction (\begin{DoxyParamCaption}\item[{Q\+String}]{remotenidbserver,  }\item[{Q\+String}]{remotenidbusername,  }\item[{Q\+String}]{remotenidbpassword,  }\item[{Q\+String \&}]{m }\end{DoxyParamCaption})}
+
+
+
+This will start a transaction when sending data to a remove Ni\+DB server. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em remotenidbserver} & The remote Ni\+DB hostname or IP address \\
+\hline
+{\em remotenidbusername} & The remote Ni\+DB username \\
+\hline
+{\em remotenidbpassword} & The remote Ni\+DB password, likely encrypted in a S\+H\+A1 hash \\
+\hline
+{\em m} & Any messages generated while starting the transaction \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+the transaction ID 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classmodule_export_a39616ecedb8e6749c307b95521c3e2dc}\label{classmodule_export_a39616ecedb8e6749c307b95521c3e2dc}} 
+\index{moduleExport@{moduleExport}!WriteNDARHeader@{WriteNDARHeader}}
+\index{WriteNDARHeader@{WriteNDARHeader}!moduleExport@{moduleExport}}
+\doxysubsubsection{\texorpdfstring{WriteNDARHeader()}{WriteNDARHeader()}}
+{\footnotesize\ttfamily bool module\+Export\+::\+Write\+N\+D\+A\+R\+Header (\begin{DoxyParamCaption}\item[{Q\+String}]{headerfile,  }\item[{Q\+String}]{modality,  }\item[{Q\+String\+List \&}]{log }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classmodule_export_ad02d17e0e25f29d59efd2eaaaf45f0b1}\label{classmodule_export_ad02d17e0e25f29d59efd2eaaaf45f0b1}} 
+\index{moduleExport@{moduleExport}!WriteNDARSeries@{WriteNDARSeries}}
+\index{WriteNDARSeries@{WriteNDARSeries}!moduleExport@{moduleExport}}
+\doxysubsubsection{\texorpdfstring{WriteNDARSeries()}{WriteNDARSeries()}}
+{\footnotesize\ttfamily bool module\+Export\+::\+Write\+N\+D\+A\+R\+Series (\begin{DoxyParamCaption}\item[{Q\+String}]{file,  }\item[{Q\+String}]{imagefile,  }\item[{Q\+String}]{behfile,  }\item[{Q\+String}]{behdesc,  }\item[{qint64}]{seriesid,  }\item[{Q\+String}]{modality,  }\item[{Q\+String}]{indir,  }\item[{Q\+String\+List \&}]{log }\end{DoxyParamCaption})}
+
+
+
+\doxysubsection{Member Data Documentation}
+\mbox{\Hypertarget{classmodule_export_a1bebda5452815330442be444879dd8de}\label{classmodule_export_a1bebda5452815330442be444879dd8de}} 
+\index{moduleExport@{moduleExport}!s@{s}}
+\index{s@{s}!moduleExport@{moduleExport}}
+\doxysubsubsection{\texorpdfstring{s}{s}}
+{\footnotesize\ttfamily Q\+Map$<$Q\+String, Q\+Map$<$int, Q\+Map$<$int, Q\+Map$<$Q\+String, Q\+String$>$ $>$ $>$ $>$ module\+Export\+::s}
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{module_export_8h}{module\+Export.\+h}}\item 
+\mbox{\hyperlink{module_export_8cpp}{module\+Export.\+cpp}}\end{DoxyCompactItemize}

@@ -1,0 +1,81 @@
+\hypertarget{structdata_definition_step_1_1flag}{}\doxysection{data\+Definition\+Step\+::flag Struct Reference}
+\label{structdata_definition_step_1_1flag}\index{dataDefinitionStep::flag@{dataDefinitionStep::flag}}
+
+
+{\ttfamily \#include $<$module\+Pipeline.\+h$>$}
+
+\doxysubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+bool \mbox{\hyperlink{structdata_definition_step_1_1flag_a95a54ae5740f8350f47ea6c3a37c84fa}{enabled}}
+\item 
+bool \mbox{\hyperlink{structdata_definition_step_1_1flag_a35de8f4b6751b8ea80f98618c88821d1}{optional}}
+\item 
+bool \mbox{\hyperlink{structdata_definition_step_1_1flag_a2aab79eea09d712fb5958e118667a269}{gzip}}
+\item 
+bool \mbox{\hyperlink{structdata_definition_step_1_1flag_a912cc59435980d2a7d9fe8fd02e67c8f}{preserve\+Series}}
+\item 
+bool \mbox{\hyperlink{structdata_definition_step_1_1flag_a00bb2324d60a63c50788091e8bea8510}{primary\+Protocol}}
+\item 
+bool \mbox{\hyperlink{structdata_definition_step_1_1flag_ab025b2ed9d97fa84b4fcad8906b4c134}{use\+Phase\+Dir}}
+\item 
+bool \mbox{\hyperlink{structdata_definition_step_1_1flag_a299023f02ac6633ab929b06f3ff17dc2}{use\+Series}}
+\item 
+bool \mbox{\hyperlink{structdata_definition_step_1_1flag_a0b7ec885078ef6129eea8d1d895a5260}{beh\+Only}}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Member Data Documentation}
+\mbox{\Hypertarget{structdata_definition_step_1_1flag_a0b7ec885078ef6129eea8d1d895a5260}\label{structdata_definition_step_1_1flag_a0b7ec885078ef6129eea8d1d895a5260}} 
+\index{dataDefinitionStep::flag@{dataDefinitionStep::flag}!behOnly@{behOnly}}
+\index{behOnly@{behOnly}!dataDefinitionStep::flag@{dataDefinitionStep::flag}}
+\doxysubsubsection{\texorpdfstring{behOnly}{behOnly}}
+{\footnotesize\ttfamily bool data\+Definition\+Step\+::flag\+::beh\+Only}
+
+\mbox{\Hypertarget{structdata_definition_step_1_1flag_a95a54ae5740f8350f47ea6c3a37c84fa}\label{structdata_definition_step_1_1flag_a95a54ae5740f8350f47ea6c3a37c84fa}} 
+\index{dataDefinitionStep::flag@{dataDefinitionStep::flag}!enabled@{enabled}}
+\index{enabled@{enabled}!dataDefinitionStep::flag@{dataDefinitionStep::flag}}
+\doxysubsubsection{\texorpdfstring{enabled}{enabled}}
+{\footnotesize\ttfamily bool data\+Definition\+Step\+::flag\+::enabled}
+
+whether this step is enabled \mbox{\Hypertarget{structdata_definition_step_1_1flag_a2aab79eea09d712fb5958e118667a269}\label{structdata_definition_step_1_1flag_a2aab79eea09d712fb5958e118667a269}} 
+\index{dataDefinitionStep::flag@{dataDefinitionStep::flag}!gzip@{gzip}}
+\index{gzip@{gzip}!dataDefinitionStep::flag@{dataDefinitionStep::flag}}
+\doxysubsubsection{\texorpdfstring{gzip}{gzip}}
+{\footnotesize\ttfamily bool data\+Definition\+Step\+::flag\+::gzip}
+
+whether Nifti data should be zipped (.nii.\+gz) \mbox{\Hypertarget{structdata_definition_step_1_1flag_a35de8f4b6751b8ea80f98618c88821d1}\label{structdata_definition_step_1_1flag_a35de8f4b6751b8ea80f98618c88821d1}} 
+\index{dataDefinitionStep::flag@{dataDefinitionStep::flag}!optional@{optional}}
+\index{optional@{optional}!dataDefinitionStep::flag@{dataDefinitionStep::flag}}
+\doxysubsubsection{\texorpdfstring{optional}{optional}}
+{\footnotesize\ttfamily bool data\+Definition\+Step\+::flag\+::optional}
+
+if the step is optional \mbox{\Hypertarget{structdata_definition_step_1_1flag_a912cc59435980d2a7d9fe8fd02e67c8f}\label{structdata_definition_step_1_1flag_a912cc59435980d2a7d9fe8fd02e67c8f}} 
+\index{dataDefinitionStep::flag@{dataDefinitionStep::flag}!preserveSeries@{preserveSeries}}
+\index{preserveSeries@{preserveSeries}!dataDefinitionStep::flag@{dataDefinitionStep::flag}}
+\doxysubsubsection{\texorpdfstring{preserveSeries}{preserveSeries}}
+{\footnotesize\ttfamily bool data\+Definition\+Step\+::flag\+::preserve\+Series}
+
+whether to preserve the series number, if writing series directories. Otherwise the series directories are generated sequentially starting at 1 \mbox{\Hypertarget{structdata_definition_step_1_1flag_a00bb2324d60a63c50788091e8bea8510}\label{structdata_definition_step_1_1flag_a00bb2324d60a63c50788091e8bea8510}} 
+\index{dataDefinitionStep::flag@{dataDefinitionStep::flag}!primaryProtocol@{primaryProtocol}}
+\index{primaryProtocol@{primaryProtocol}!dataDefinitionStep::flag@{dataDefinitionStep::flag}}
+\doxysubsubsection{\texorpdfstring{primaryProtocol}{primaryProtocol}}
+{\footnotesize\ttfamily bool data\+Definition\+Step\+::flag\+::primary\+Protocol}
+
+true if this is the primary protocol. this determines if this study will be used as the parent for child pipelines \mbox{\Hypertarget{structdata_definition_step_1_1flag_ab025b2ed9d97fa84b4fcad8906b4c134}\label{structdata_definition_step_1_1flag_ab025b2ed9d97fa84b4fcad8906b4c134}} 
+\index{dataDefinitionStep::flag@{dataDefinitionStep::flag}!usePhaseDir@{usePhaseDir}}
+\index{usePhaseDir@{usePhaseDir}!dataDefinitionStep::flag@{dataDefinitionStep::flag}}
+\doxysubsubsection{\texorpdfstring{usePhaseDir}{usePhaseDir}}
+{\footnotesize\ttfamily bool data\+Definition\+Step\+::flag\+::use\+Phase\+Dir}
+
+whether to place data into a sub-\/directory based on the phase-\/encoding direction \mbox{\Hypertarget{structdata_definition_step_1_1flag_a299023f02ac6633ab929b06f3ff17dc2}\label{structdata_definition_step_1_1flag_a299023f02ac6633ab929b06f3ff17dc2}} 
+\index{dataDefinitionStep::flag@{dataDefinitionStep::flag}!useSeries@{useSeries}}
+\index{useSeries@{useSeries}!dataDefinitionStep::flag@{dataDefinitionStep::flag}}
+\doxysubsubsection{\texorpdfstring{useSeries}{useSeries}}
+{\footnotesize\ttfamily bool data\+Definition\+Step\+::flag\+::use\+Series}
+
+true to write each series to an individually numbered directory, otherwise write it to the directory specified in \textquotesingle{}location\textquotesingle{} 
+
+The documentation for this struct was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{module_pipeline_8h}{module\+Pipeline.\+h}}\end{DoxyCompactItemize}

@@ -1,0 +1,149 @@
+\hypertarget{classimage_i_o}{}\doxysection{image\+IO Class Reference}
+\label{classimage_i_o}\index{imageIO@{imageIO}}
+
+
+The \mbox{\hyperlink{classimage_i_o}{image\+IO}} class.  
+
+
+
+
+{\ttfamily \#include $<$imageio.\+h$>$}
+
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{classimage_i_o_a8c3bea59218b3595f54e5e5dcb4d7698}{image\+IO}} ()
+\item 
+\mbox{\hyperlink{classimage_i_o_a06b7b906c29e8187deb04d1c1f3fdf90}{$\sim$image\+IO}} ()
+\item 
+bool \mbox{\hyperlink{classimage_i_o_abd64f25271d3f1b52b67d284867adac1}{Convert\+Dicom}} (Q\+String filetype, Q\+String indir, Q\+String outdir, Q\+String bindir, bool gzip, bool json, Q\+String uid, Q\+String studynum, Q\+String seriesnum, Q\+String bids\+Sub, Q\+String bids\+Ses, Q\+String protocol, Q\+String bids\+Suffix, int run, Q\+String datatype, int \&numfilesconv, int \&numfilesrenamed, Q\+String \&msg)
+\begin{DoxyCompactList}\small\item\em This function acts as a wrapper for dcm2niix to convert D\+I\+C\+OM to Nifti. The handles temporary directories and also renames files into Ni\+DB format filenames. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{classimage_i_o_a60b5272f591da2f4be6c8a69d937ee17}{Is\+D\+I\+C\+O\+M\+File}} (Q\+String f)
+\item 
+bool \mbox{\hyperlink{classimage_i_o_aada5d101b0aafa9f3f38c5ae3e6453f0}{Anonymize\+Dir}} (Q\+String dir, int anonlevel, Q\+String randstr1, Q\+String randstr2, Q\+String \&msg)
+\item 
+bool \mbox{\hyperlink{classimage_i_o_ad24a25e9f0b9f82c90fae8ef09484498}{Anonymize\+Dicom\+File}} (gdcm\+::\+Anonymizer \&anon, Q\+String infile, Q\+String outfile, std\+::vector$<$ gdcm\+::\+Tag $>$ const \&empty\+\_\+tags, std\+::vector$<$ gdcm\+::\+Tag $>$ const \&remove\+\_\+tags, std\+::vector$<$ std\+::pair$<$ gdcm\+::\+Tag, std\+::string $>$ $>$ const \&replace\+\_\+tags, Q\+String \&msg)
+\item 
+Q\+String \mbox{\hyperlink{classimage_i_o_a292fab955e654db5b2ed11fe3fe5b8ea}{Get\+Dicom\+Modality}} (Q\+String f)
+\item 
+void \mbox{\hyperlink{classimage_i_o_ae5b129815c1e709c0de9aee45feb7fd3}{Get\+File\+Type}} (Q\+String f, Q\+String \&file\+Type, Q\+String \&file\+Modality, Q\+String \&file\+Patient\+ID, Q\+String \&file\+Protocol)
+\item 
+bool \mbox{\hyperlink{classimage_i_o_a16f191362c47faff8443ac1e0cb4b5cf}{Get\+Image\+File\+Tags}} (Q\+String f, Q\+String bindir, bool enablecsa, Q\+Hash$<$ Q\+String, Q\+String $>$ \&tags, Q\+String \&msg)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+The \mbox{\hyperlink{classimage_i_o}{image\+IO}} class. 
+
+\mbox{\hyperlink{classimage_i_o}{image\+IO}} class provides functions to read image headers such as D\+I\+C\+OM, P\+A\+R/\+R\+EC, and other formats 
+
+\doxysubsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classimage_i_o_a8c3bea59218b3595f54e5e5dcb4d7698}\label{classimage_i_o_a8c3bea59218b3595f54e5e5dcb4d7698}} 
+\index{imageIO@{imageIO}!imageIO@{imageIO}}
+\index{imageIO@{imageIO}!imageIO@{imageIO}}
+\doxysubsubsection{\texorpdfstring{imageIO()}{imageIO()}}
+{\footnotesize\ttfamily image\+I\+O\+::image\+IO (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+\mbox{\hyperlink{classimage_i_o}{image\+IO}} constructor \mbox{\Hypertarget{classimage_i_o_a06b7b906c29e8187deb04d1c1f3fdf90}\label{classimage_i_o_a06b7b906c29e8187deb04d1c1f3fdf90}} 
+\index{imageIO@{imageIO}!````~imageIO@{$\sim$imageIO}}
+\index{````~imageIO@{$\sim$imageIO}!imageIO@{imageIO}}
+\doxysubsubsection{\texorpdfstring{$\sim$imageIO()}{~imageIO()}}
+{\footnotesize\ttfamily image\+I\+O\+::$\sim$image\+IO (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+\mbox{\hyperlink{classimage_i_o}{image\+IO}} destructor 
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{classimage_i_o_ad24a25e9f0b9f82c90fae8ef09484498}\label{classimage_i_o_ad24a25e9f0b9f82c90fae8ef09484498}} 
+\index{imageIO@{imageIO}!AnonymizeDicomFile@{AnonymizeDicomFile}}
+\index{AnonymizeDicomFile@{AnonymizeDicomFile}!imageIO@{imageIO}}
+\doxysubsubsection{\texorpdfstring{AnonymizeDicomFile()}{AnonymizeDicomFile()}}
+{\footnotesize\ttfamily bool image\+I\+O\+::\+Anonymize\+Dicom\+File (\begin{DoxyParamCaption}\item[{gdcm\+::\+Anonymizer \&}]{anon,  }\item[{Q\+String}]{infile,  }\item[{Q\+String}]{outfile,  }\item[{std\+::vector$<$ gdcm\+::\+Tag $>$ const \&}]{empty\+\_\+tags,  }\item[{std\+::vector$<$ gdcm\+::\+Tag $>$ const \&}]{remove\+\_\+tags,  }\item[{std\+::vector$<$ std\+::pair$<$ gdcm\+::\+Tag, std\+::string $>$ $>$ const \&}]{replace\+\_\+tags,  }\item[{Q\+String \&}]{msg }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classimage_i_o_aada5d101b0aafa9f3f38c5ae3e6453f0}\label{classimage_i_o_aada5d101b0aafa9f3f38c5ae3e6453f0}} 
+\index{imageIO@{imageIO}!AnonymizeDir@{AnonymizeDir}}
+\index{AnonymizeDir@{AnonymizeDir}!imageIO@{imageIO}}
+\doxysubsubsection{\texorpdfstring{AnonymizeDir()}{AnonymizeDir()}}
+{\footnotesize\ttfamily bool image\+I\+O\+::\+Anonymize\+Dir (\begin{DoxyParamCaption}\item[{Q\+String}]{dir,  }\item[{int}]{anonlevel,  }\item[{Q\+String}]{randstr1,  }\item[{Q\+String}]{randstr2,  }\item[{Q\+String \&}]{msg }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classimage_i_o_abd64f25271d3f1b52b67d284867adac1}\label{classimage_i_o_abd64f25271d3f1b52b67d284867adac1}} 
+\index{imageIO@{imageIO}!ConvertDicom@{ConvertDicom}}
+\index{ConvertDicom@{ConvertDicom}!imageIO@{imageIO}}
+\doxysubsubsection{\texorpdfstring{ConvertDicom()}{ConvertDicom()}}
+{\footnotesize\ttfamily bool image\+I\+O\+::\+Convert\+Dicom (\begin{DoxyParamCaption}\item[{Q\+String}]{filetype,  }\item[{Q\+String}]{indir,  }\item[{Q\+String}]{outdir,  }\item[{Q\+String}]{bindir,  }\item[{bool}]{gzip,  }\item[{bool}]{json,  }\item[{Q\+String}]{uid,  }\item[{Q\+String}]{studynum,  }\item[{Q\+String}]{seriesnum,  }\item[{Q\+String}]{bids\+Sub,  }\item[{Q\+String}]{bids\+Ses,  }\item[{Q\+String}]{protocol,  }\item[{Q\+String}]{bids\+Suffix,  }\item[{int}]{run,  }\item[{Q\+String}]{datatype,  }\item[{int \&}]{numfilesconv,  }\item[{int \&}]{numfilesrenamed,  }\item[{Q\+String \&}]{msg }\end{DoxyParamCaption})}
+
+
+
+This function acts as a wrapper for dcm2niix to convert D\+I\+C\+OM to Nifti. The handles temporary directories and also renames files into Ni\+DB format filenames. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em filetype} & Output file type\+: {\ttfamily niftime}, {\ttfamily nifti3d}, {\ttfamily nifti4d}, {\ttfamily bids} \\
+\hline
+{\em indir} & Input directory \\
+\hline
+{\em outdir} & Output directory \\
+\hline
+{\em bindir} & Directory containing the dcm2niix binary \\
+\hline
+{\em gzip} & true to gzip the files, false otherwise \\
+\hline
+{\em json} & true to output J\+S\+ON sidecar, false otherwise \\
+\hline
+{\em uid} & U\+ID of the images (used in renaming the files) \\
+\hline
+{\em studynum} & Study number of the images (used in renaming the files) \\
+\hline
+{\em seriesnum} & Series number of the images (used in renaming the files) \\
+\hline
+{\em bids\+Sub} & {\bfseries{B\+I\+DS}} B\+I\+DS subject label \\
+\hline
+{\em bids\+Ses} & {\bfseries{B\+I\+DS}} B\+I\+DS session label \\
+\hline
+{\em protocol} & {\bfseries{B\+I\+DS}} Protocol name \\
+\hline
+{\em bids\+Suffix} & {\bfseries{B\+I\+DS}} B\+I\+DS suffix \\
+\hline
+{\em bids\+Suffix} & {\bfseries{B\+I\+DS}} B\+I\+DS run \\
+\hline
+{\em datatype} & if \textquotesingle{}parrec\textquotesingle{}, this function will handle conversion slightly differently \\
+\hline
+{\em numfilesconv} & Number of files converted (doesn\textquotesingle{}t work correctly) \\
+\hline
+{\em numfilesrenamed} & Number of files renamed \\
+\hline
+{\em msg} & Any messages generated during converstion \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+{\ttfamily true} if successful, {\ttfamily false} otherwise 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classimage_i_o_a292fab955e654db5b2ed11fe3fe5b8ea}\label{classimage_i_o_a292fab955e654db5b2ed11fe3fe5b8ea}} 
+\index{imageIO@{imageIO}!GetDicomModality@{GetDicomModality}}
+\index{GetDicomModality@{GetDicomModality}!imageIO@{imageIO}}
+\doxysubsubsection{\texorpdfstring{GetDicomModality()}{GetDicomModality()}}
+{\footnotesize\ttfamily Q\+String image\+I\+O\+::\+Get\+Dicom\+Modality (\begin{DoxyParamCaption}\item[{Q\+String}]{f }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classimage_i_o_ae5b129815c1e709c0de9aee45feb7fd3}\label{classimage_i_o_ae5b129815c1e709c0de9aee45feb7fd3}} 
+\index{imageIO@{imageIO}!GetFileType@{GetFileType}}
+\index{GetFileType@{GetFileType}!imageIO@{imageIO}}
+\doxysubsubsection{\texorpdfstring{GetFileType()}{GetFileType()}}
+{\footnotesize\ttfamily void image\+I\+O\+::\+Get\+File\+Type (\begin{DoxyParamCaption}\item[{Q\+String}]{f,  }\item[{Q\+String \&}]{file\+Type,  }\item[{Q\+String \&}]{file\+Modality,  }\item[{Q\+String \&}]{file\+Patient\+ID,  }\item[{Q\+String \&}]{file\+Protocol }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classimage_i_o_a16f191362c47faff8443ac1e0cb4b5cf}\label{classimage_i_o_a16f191362c47faff8443ac1e0cb4b5cf}} 
+\index{imageIO@{imageIO}!GetImageFileTags@{GetImageFileTags}}
+\index{GetImageFileTags@{GetImageFileTags}!imageIO@{imageIO}}
+\doxysubsubsection{\texorpdfstring{GetImageFileTags()}{GetImageFileTags()}}
+{\footnotesize\ttfamily bool image\+I\+O\+::\+Get\+Image\+File\+Tags (\begin{DoxyParamCaption}\item[{Q\+String}]{f,  }\item[{Q\+String}]{bindir,  }\item[{bool}]{enablecsa,  }\item[{Q\+Hash$<$ Q\+String, Q\+String $>$ \&}]{tags,  }\item[{Q\+String \&}]{msg }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classimage_i_o_a60b5272f591da2f4be6c8a69d937ee17}\label{classimage_i_o_a60b5272f591da2f4be6c8a69d937ee17}} 
+\index{imageIO@{imageIO}!IsDICOMFile@{IsDICOMFile}}
+\index{IsDICOMFile@{IsDICOMFile}!imageIO@{imageIO}}
+\doxysubsubsection{\texorpdfstring{IsDICOMFile()}{IsDICOMFile()}}
+{\footnotesize\ttfamily bool image\+I\+O\+::\+Is\+D\+I\+C\+O\+M\+File (\begin{DoxyParamCaption}\item[{Q\+String}]{f }\end{DoxyParamCaption})}
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{imageio_8h}{imageio.\+h}}\item 
+\mbox{\hyperlink{imageio_8cpp}{imageio.\+cpp}}\end{DoxyCompactItemize}

@@ -1,0 +1,370 @@
+\hypertarget{classanalysis}{}\doxysection{analysis Class Reference}
+\label{classanalysis}\index{analysis@{analysis}}
+
+
+The analysis class.  
+
+
+
+
+{\ttfamily \#include $<$analysis.\+h$>$}
+
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{classanalysis_a3b60abe9ee94502efd459d1bc1ceb5f9}{analysis}} (qint64 id, \mbox{\hyperlink{classnidb}{nidb}} $\ast$a, bool c=false)
+\begin{DoxyCompactList}\small\item\em Constructor, find analysis by analysis row ID. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{classanalysis_adc2624ef5891735e8e1b298c9cee5d04}{analysis}} (int \mbox{\hyperlink{classanalysis_afe1367db99d8bdedaed4446487c155b0}{pipelineid}}, int \mbox{\hyperlink{classanalysis_a9302d51a668a1ba0cc3865c6c53550c8}{studyid}}, \mbox{\hyperlink{classnidb}{nidb}} $\ast$a, bool c=false)
+\begin{DoxyCompactList}\small\item\em Constructor, find analysis by pipeline and study. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{classanalysis_aa31bf3b7d931df0b7a20ce6292ed324f}{Print\+Analysis\+Info}} ()
+\begin{DoxyCompactList}\small\item\em Print a summary of the analysis object variables. \end{DoxyCompactList}\item 
+squirrel\+Analysis \mbox{\hyperlink{classanalysis_a52ca72b904ac5c3b333df05756055d11}{Get\+Squirrel\+Object}} ()
+\begin{DoxyCompactList}\small\item\em Get a squirrel analysis object. \end{DoxyCompactList}\item 
+Q\+Json\+Object \mbox{\hyperlink{classanalysis_ac5103c3f3103ea5d1815885d77398792}{Get\+J\+S\+O\+N\+Object}} ()
+\end{DoxyCompactItemize}
+\doxysubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{classnidb}{nidb}} $\ast$ \mbox{\hyperlink{classanalysis_a5099817929ac1c0d7f96f69c4f191cc7}{n}}
+\item 
+Q\+Date\+Time \mbox{\hyperlink{classanalysis_a0adf737ef0475e334e84c337627c9411}{cluster\+End\+Date}}
+\item 
+Q\+Date\+Time \mbox{\hyperlink{classanalysis_a0a9856ae7774265ac73e640b224429f0}{cluster\+Start\+Date}}
+\item 
+Q\+Date\+Time \mbox{\hyperlink{classanalysis_ac9e846cdccad920f8c2fa4e1f5736015}{end\+Date}}
+\item 
+Q\+Date\+Time \mbox{\hyperlink{classanalysis_ae5dac9e5995f7983f1080d650875ddcb}{start\+Date}}
+\item 
+Q\+String \mbox{\hyperlink{classanalysis_ad442f38088fcbfdbbc97ddf59d883ff7}{analysispath}}
+\item 
+Q\+String \mbox{\hyperlink{classanalysis_a4cdfabf461471e895fc84ae4d7839686}{hostname}}
+\item 
+Q\+String \mbox{\hyperlink{classanalysis_afc79db27298d50d875a0d3c551d35428}{notes}}
+\item 
+Q\+String \mbox{\hyperlink{classanalysis_aa3b5023e4f588367c44795b9299d65f1}{status}}
+\item 
+Q\+String \mbox{\hyperlink{classanalysis_a53f79e6c2e30bc5e90b9693d358fcd3c}{statusmessage}}
+\item 
+bool \mbox{\hyperlink{classanalysis_a5fef7147fe61a02ef92d5f78ec7c704a}{is\+Bad}}
+\item 
+bool \mbox{\hyperlink{classanalysis_a5a3ecbb66b6009812e04cb81bdd873d5}{is\+Complete}}
+\item 
+int \mbox{\hyperlink{classanalysis_a78714a45c6ead8dbe0b3de1a8e752a0e}{num\+Series}}
+\item 
+qint64 \mbox{\hyperlink{classanalysis_a34e2be90d0c9e0c094a53c4e8025ea30}{analysisid}} = -\/1
+\item 
+qint64 \mbox{\hyperlink{classanalysis_a159dd5ca3613048b4dbd3eec2bd06037}{disk\+Size}}
+\item 
+Q\+String \mbox{\hyperlink{classanalysis_ad58dfd2d6111951a19f11763ec083415}{study\+Date\+Time}}
+\item 
+Q\+String \mbox{\hyperlink{classanalysis_ad398b9c261a2ce36cc6c2e52f4bb031c}{uid}}
+\item 
+int \mbox{\hyperlink{classanalysis_a9302d51a668a1ba0cc3865c6c53550c8}{studyid}} = -\/1
+\item 
+int \mbox{\hyperlink{classanalysis_ab6fa451d518baefe763e67d50b8254e0}{studynum}} = -\/1
+\item 
+int \mbox{\hyperlink{classanalysis_aaf506e79387f26a2d2f61a70536d8c8e}{subjectid}} = -\/1
+\item 
+Q\+String \mbox{\hyperlink{classanalysis_aeca07cd417093f897736297f1f89a5dc}{msg}}
+\item 
+Q\+String \mbox{\hyperlink{classanalysis_ae0133f31c5b575c4559d8e97c33b2e7e}{pipelinedirectory}}
+\item 
+Q\+String \mbox{\hyperlink{classanalysis_a00dedbd1c3713df8b5951be3f251ec27}{pipelinedirstructure}}
+\item 
+Q\+String \mbox{\hyperlink{classanalysis_aa971a96622b0fb9c159883c47b83b182}{pipelinename}}
+\item 
+bool \mbox{\hyperlink{classanalysis_a8e89e10d27792e834b30614a405197ad}{exists}} = true
+\item 
+bool \mbox{\hyperlink{classanalysis_a35d7073612d6606fb7c6d8de6819c996}{is\+Valid}} = true
+\item 
+bool \mbox{\hyperlink{classanalysis_a5ce2c1b365cfca7f6cf6e086bd9c6e30}{rerun\+Results}} = false
+\item 
+bool \mbox{\hyperlink{classanalysis_a79bbeb1131e696d3028cb8413d6f351d}{run\+Supplement}} = false
+\item 
+int \mbox{\hyperlink{classanalysis_af6e644a047e77d998c693483cc18a984}{jobid}} = -\/1
+\item 
+int \mbox{\hyperlink{classanalysis_afe1367db99d8bdedaed4446487c155b0}{pipelineid}} = -\/1
+\item 
+int \mbox{\hyperlink{classanalysis_a2cabcd24926ffecb93819428606410ed}{pipelinelevel}} = -\/1
+\item 
+int \mbox{\hyperlink{classanalysis_a012cb2afd3d0deb70b0ba7aaf09e742b}{pipelineversion}} = -\/1
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+The analysis class. 
+
+\doxysubsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classanalysis_a3b60abe9ee94502efd459d1bc1ceb5f9}\label{classanalysis_a3b60abe9ee94502efd459d1bc1ceb5f9}} 
+\index{analysis@{analysis}!analysis@{analysis}}
+\index{analysis@{analysis}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{analysis()}{analysis()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily analysis\+::analysis (\begin{DoxyParamCaption}\item[{qint64}]{id,  }\item[{\mbox{\hyperlink{classnidb}{nidb}} $\ast$}]{a,  }\item[{bool}]{c = {\ttfamily false} }\end{DoxyParamCaption})}
+
+
+
+Constructor, find analysis by analysis row ID. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em id} & Analysis\+Row\+ID \\
+\hline
+{\em a} & pointer to Ni\+DB instance \\
+\hline
+{\em c} & true if this instance is running from a cluster, false otherwise \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{classanalysis_adc2624ef5891735e8e1b298c9cee5d04}\label{classanalysis_adc2624ef5891735e8e1b298c9cee5d04}} 
+\index{analysis@{analysis}!analysis@{analysis}}
+\index{analysis@{analysis}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{analysis()}{analysis()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily analysis\+::analysis (\begin{DoxyParamCaption}\item[{int}]{pipelineid,  }\item[{int}]{studyid,  }\item[{\mbox{\hyperlink{classnidb}{nidb}} $\ast$}]{a,  }\item[{bool}]{c = {\ttfamily false} }\end{DoxyParamCaption})}
+
+
+
+Constructor, find analysis by pipeline and study. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em pipelineid} & Pipeline\+Row\+ID \\
+\hline
+{\em studyid} & Study\+Row\+ID \\
+\hline
+{\em a} & pointer to Ni\+DB instance \\
+\hline
+{\em c} & true if this instance is running from a cluster, false otherwise \\
+\hline
+\end{DoxyParams}
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{classanalysis_ac5103c3f3103ea5d1815885d77398792}\label{classanalysis_ac5103c3f3103ea5d1815885d77398792}} 
+\index{analysis@{analysis}!GetJSONObject@{GetJSONObject}}
+\index{GetJSONObject@{GetJSONObject}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{GetJSONObject()}{GetJSONObject()}}
+{\footnotesize\ttfamily Q\+Json\+Object analysis\+::\+Get\+J\+S\+O\+N\+Object (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{classanalysis_a52ca72b904ac5c3b333df05756055d11}\label{classanalysis_a52ca72b904ac5c3b333df05756055d11}} 
+\index{analysis@{analysis}!GetSquirrelObject@{GetSquirrelObject}}
+\index{GetSquirrelObject@{GetSquirrelObject}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{GetSquirrelObject()}{GetSquirrelObject()}}
+{\footnotesize\ttfamily squirrel\+Analysis analysis\+::\+Get\+Squirrel\+Object (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Get a squirrel analysis object. 
+
+\begin{DoxyReturn}{Returns}
+squirrel\+Analysis object 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classanalysis_aa31bf3b7d931df0b7a20ce6292ed324f}\label{classanalysis_aa31bf3b7d931df0b7a20ce6292ed324f}} 
+\index{analysis@{analysis}!PrintAnalysisInfo@{PrintAnalysisInfo}}
+\index{PrintAnalysisInfo@{PrintAnalysisInfo}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{PrintAnalysisInfo()}{PrintAnalysisInfo()}}
+{\footnotesize\ttfamily void analysis\+::\+Print\+Analysis\+Info (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Print a summary of the analysis object variables. 
+
+
+
+\doxysubsection{Member Data Documentation}
+\mbox{\Hypertarget{classanalysis_a34e2be90d0c9e0c094a53c4e8025ea30}\label{classanalysis_a34e2be90d0c9e0c094a53c4e8025ea30}} 
+\index{analysis@{analysis}!analysisid@{analysisid}}
+\index{analysisid@{analysisid}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{analysisid}{analysisid}}
+{\footnotesize\ttfamily qint64 analysis\+::analysisid = -\/1}
+
+analysis Row\+ID \mbox{\Hypertarget{classanalysis_ad442f38088fcbfdbbc97ddf59d883ff7}\label{classanalysis_ad442f38088fcbfdbbc97ddf59d883ff7}} 
+\index{analysis@{analysis}!analysispath@{analysispath}}
+\index{analysispath@{analysispath}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{analysispath}{analysispath}}
+{\footnotesize\ttfamily Q\+String analysis\+::analysispath}
+
+disk path to the analysis \mbox{\Hypertarget{classanalysis_a0adf737ef0475e334e84c337627c9411}\label{classanalysis_a0adf737ef0475e334e84c337627c9411}} 
+\index{analysis@{analysis}!clusterEndDate@{clusterEndDate}}
+\index{clusterEndDate@{clusterEndDate}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{clusterEndDate}{clusterEndDate}}
+{\footnotesize\ttfamily Q\+Date\+Time analysis\+::cluster\+End\+Date}
+
+datetime the analysis finished running on the cluster \mbox{\Hypertarget{classanalysis_a0a9856ae7774265ac73e640b224429f0}\label{classanalysis_a0a9856ae7774265ac73e640b224429f0}} 
+\index{analysis@{analysis}!clusterStartDate@{clusterStartDate}}
+\index{clusterStartDate@{clusterStartDate}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{clusterStartDate}{clusterStartDate}}
+{\footnotesize\ttfamily Q\+Date\+Time analysis\+::cluster\+Start\+Date}
+
+datetime the analysis started running on the cluster \mbox{\Hypertarget{classanalysis_a159dd5ca3613048b4dbd3eec2bd06037}\label{classanalysis_a159dd5ca3613048b4dbd3eec2bd06037}} 
+\index{analysis@{analysis}!diskSize@{diskSize}}
+\index{diskSize@{diskSize}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{diskSize}{diskSize}}
+{\footnotesize\ttfamily qint64 analysis\+::disk\+Size}
+
+size on disk, in bytes \mbox{\Hypertarget{classanalysis_ac9e846cdccad920f8c2fa4e1f5736015}\label{classanalysis_ac9e846cdccad920f8c2fa4e1f5736015}} 
+\index{analysis@{analysis}!endDate@{endDate}}
+\index{endDate@{endDate}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{endDate}{endDate}}
+{\footnotesize\ttfamily Q\+Date\+Time analysis\+::end\+Date}
+
+datetime the analysis finished setup \mbox{\Hypertarget{classanalysis_a8e89e10d27792e834b30614a405197ad}\label{classanalysis_a8e89e10d27792e834b30614a405197ad}} 
+\index{analysis@{analysis}!exists@{exists}}
+\index{exists@{exists}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{exists}{exists}}
+{\footnotesize\ttfamily bool analysis\+::exists = true}
+
+\mbox{\Hypertarget{classanalysis_a4cdfabf461471e895fc84ae4d7839686}\label{classanalysis_a4cdfabf461471e895fc84ae4d7839686}} 
+\index{analysis@{analysis}!hostname@{hostname}}
+\index{hostname@{hostname}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{hostname}{hostname}}
+{\footnotesize\ttfamily Q\+String analysis\+::hostname}
+
+hostname on which the analysis was run \mbox{\Hypertarget{classanalysis_a5fef7147fe61a02ef92d5f78ec7c704a}\label{classanalysis_a5fef7147fe61a02ef92d5f78ec7c704a}} 
+\index{analysis@{analysis}!isBad@{isBad}}
+\index{isBad@{isBad}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{isBad}{isBad}}
+{\footnotesize\ttfamily bool analysis\+::is\+Bad}
+
+true if analysis is marked as bad \mbox{\Hypertarget{classanalysis_a5a3ecbb66b6009812e04cb81bdd873d5}\label{classanalysis_a5a3ecbb66b6009812e04cb81bdd873d5}} 
+\index{analysis@{analysis}!isComplete@{isComplete}}
+\index{isComplete@{isComplete}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{isComplete}{isComplete}}
+{\footnotesize\ttfamily bool analysis\+::is\+Complete}
+
+true if analysis is marked as complete \mbox{\Hypertarget{classanalysis_a35d7073612d6606fb7c6d8de6819c996}\label{classanalysis_a35d7073612d6606fb7c6d8de6819c996}} 
+\index{analysis@{analysis}!isValid@{isValid}}
+\index{isValid@{isValid}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{isValid}{isValid}}
+{\footnotesize\ttfamily bool analysis\+::is\+Valid = true}
+
+\mbox{\Hypertarget{classanalysis_af6e644a047e77d998c693483cc18a984}\label{classanalysis_af6e644a047e77d998c693483cc18a984}} 
+\index{analysis@{analysis}!jobid@{jobid}}
+\index{jobid@{jobid}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{jobid}{jobid}}
+{\footnotesize\ttfamily int analysis\+::jobid = -\/1}
+
+\mbox{\Hypertarget{classanalysis_aeca07cd417093f897736297f1f89a5dc}\label{classanalysis_aeca07cd417093f897736297f1f89a5dc}} 
+\index{analysis@{analysis}!msg@{msg}}
+\index{msg@{msg}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{msg}{msg}}
+{\footnotesize\ttfamily Q\+String analysis\+::msg}
+
+\mbox{\Hypertarget{classanalysis_a5099817929ac1c0d7f96f69c4f191cc7}\label{classanalysis_a5099817929ac1c0d7f96f69c4f191cc7}} 
+\index{analysis@{analysis}!n@{n}}
+\index{n@{n}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{n}{n}}
+{\footnotesize\ttfamily \mbox{\hyperlink{classnidb}{nidb}}$\ast$ analysis\+::n}
+
+\mbox{\Hypertarget{classanalysis_afc79db27298d50d875a0d3c551d35428}\label{classanalysis_afc79db27298d50d875a0d3c551d35428}} 
+\index{analysis@{analysis}!notes@{notes}}
+\index{notes@{notes}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{notes}{notes}}
+{\footnotesize\ttfamily Q\+String analysis\+::notes}
+
+user-\/specified notes \mbox{\Hypertarget{classanalysis_a78714a45c6ead8dbe0b3de1a8e752a0e}\label{classanalysis_a78714a45c6ead8dbe0b3de1a8e752a0e}} 
+\index{analysis@{analysis}!numSeries@{numSeries}}
+\index{numSeries@{numSeries}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{numSeries}{numSeries}}
+{\footnotesize\ttfamily int analysis\+::num\+Series}
+
+number of series downloaded \mbox{\Hypertarget{classanalysis_ae0133f31c5b575c4559d8e97c33b2e7e}\label{classanalysis_ae0133f31c5b575c4559d8e97c33b2e7e}} 
+\index{analysis@{analysis}!pipelinedirectory@{pipelinedirectory}}
+\index{pipelinedirectory@{pipelinedirectory}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{pipelinedirectory}{pipelinedirectory}}
+{\footnotesize\ttfamily Q\+String analysis\+::pipelinedirectory}
+
+\mbox{\Hypertarget{classanalysis_a00dedbd1c3713df8b5951be3f251ec27}\label{classanalysis_a00dedbd1c3713df8b5951be3f251ec27}} 
+\index{analysis@{analysis}!pipelinedirstructure@{pipelinedirstructure}}
+\index{pipelinedirstructure@{pipelinedirstructure}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{pipelinedirstructure}{pipelinedirstructure}}
+{\footnotesize\ttfamily Q\+String analysis\+::pipelinedirstructure}
+
+\mbox{\Hypertarget{classanalysis_afe1367db99d8bdedaed4446487c155b0}\label{classanalysis_afe1367db99d8bdedaed4446487c155b0}} 
+\index{analysis@{analysis}!pipelineid@{pipelineid}}
+\index{pipelineid@{pipelineid}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{pipelineid}{pipelineid}}
+{\footnotesize\ttfamily int analysis\+::pipelineid = -\/1}
+
+\mbox{\Hypertarget{classanalysis_a2cabcd24926ffecb93819428606410ed}\label{classanalysis_a2cabcd24926ffecb93819428606410ed}} 
+\index{analysis@{analysis}!pipelinelevel@{pipelinelevel}}
+\index{pipelinelevel@{pipelinelevel}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{pipelinelevel}{pipelinelevel}}
+{\footnotesize\ttfamily int analysis\+::pipelinelevel = -\/1}
+
+\mbox{\Hypertarget{classanalysis_aa971a96622b0fb9c159883c47b83b182}\label{classanalysis_aa971a96622b0fb9c159883c47b83b182}} 
+\index{analysis@{analysis}!pipelinename@{pipelinename}}
+\index{pipelinename@{pipelinename}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{pipelinename}{pipelinename}}
+{\footnotesize\ttfamily Q\+String analysis\+::pipelinename}
+
+\mbox{\Hypertarget{classanalysis_a012cb2afd3d0deb70b0ba7aaf09e742b}\label{classanalysis_a012cb2afd3d0deb70b0ba7aaf09e742b}} 
+\index{analysis@{analysis}!pipelineversion@{pipelineversion}}
+\index{pipelineversion@{pipelineversion}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{pipelineversion}{pipelineversion}}
+{\footnotesize\ttfamily int analysis\+::pipelineversion = -\/1}
+
+\mbox{\Hypertarget{classanalysis_a5ce2c1b365cfca7f6cf6e086bd9c6e30}\label{classanalysis_a5ce2c1b365cfca7f6cf6e086bd9c6e30}} 
+\index{analysis@{analysis}!rerunResults@{rerunResults}}
+\index{rerunResults@{rerunResults}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{rerunResults}{rerunResults}}
+{\footnotesize\ttfamily bool analysis\+::rerun\+Results = false}
+
+\mbox{\Hypertarget{classanalysis_a79bbeb1131e696d3028cb8413d6f351d}\label{classanalysis_a79bbeb1131e696d3028cb8413d6f351d}} 
+\index{analysis@{analysis}!runSupplement@{runSupplement}}
+\index{runSupplement@{runSupplement}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{runSupplement}{runSupplement}}
+{\footnotesize\ttfamily bool analysis\+::run\+Supplement = false}
+
+\mbox{\Hypertarget{classanalysis_ae5dac9e5995f7983f1080d650875ddcb}\label{classanalysis_ae5dac9e5995f7983f1080d650875ddcb}} 
+\index{analysis@{analysis}!startDate@{startDate}}
+\index{startDate@{startDate}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{startDate}{startDate}}
+{\footnotesize\ttfamily Q\+Date\+Time analysis\+::start\+Date}
+
+datetime the analysis started setup (copying data) \mbox{\Hypertarget{classanalysis_aa3b5023e4f588367c44795b9299d65f1}\label{classanalysis_aa3b5023e4f588367c44795b9299d65f1}} 
+\index{analysis@{analysis}!status@{status}}
+\index{status@{status}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{status}{status}}
+{\footnotesize\ttfamily Q\+String analysis\+::status}
+
+the last status \mbox{\Hypertarget{classanalysis_a53f79e6c2e30bc5e90b9693d358fcd3c}\label{classanalysis_a53f79e6c2e30bc5e90b9693d358fcd3c}} 
+\index{analysis@{analysis}!statusmessage@{statusmessage}}
+\index{statusmessage@{statusmessage}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{statusmessage}{statusmessage}}
+{\footnotesize\ttfamily Q\+String analysis\+::statusmessage}
+
+the last status message \mbox{\Hypertarget{classanalysis_ad58dfd2d6111951a19f11763ec083415}\label{classanalysis_ad58dfd2d6111951a19f11763ec083415}} 
+\index{analysis@{analysis}!studyDateTime@{studyDateTime}}
+\index{studyDateTime@{studyDateTime}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{studyDateTime}{studyDateTime}}
+{\footnotesize\ttfamily Q\+String analysis\+::study\+Date\+Time}
+
+study datetime \mbox{\Hypertarget{classanalysis_a9302d51a668a1ba0cc3865c6c53550c8}\label{classanalysis_a9302d51a668a1ba0cc3865c6c53550c8}} 
+\index{analysis@{analysis}!studyid@{studyid}}
+\index{studyid@{studyid}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{studyid}{studyid}}
+{\footnotesize\ttfamily int analysis\+::studyid = -\/1}
+
+study Row\+ID \mbox{\Hypertarget{classanalysis_ab6fa451d518baefe763e67d50b8254e0}\label{classanalysis_ab6fa451d518baefe763e67d50b8254e0}} 
+\index{analysis@{analysis}!studynum@{studynum}}
+\index{studynum@{studynum}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{studynum}{studynum}}
+{\footnotesize\ttfamily int analysis\+::studynum = -\/1}
+
+study number \mbox{\Hypertarget{classanalysis_aaf506e79387f26a2d2f61a70536d8c8e}\label{classanalysis_aaf506e79387f26a2d2f61a70536d8c8e}} 
+\index{analysis@{analysis}!subjectid@{subjectid}}
+\index{subjectid@{subjectid}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{subjectid}{subjectid}}
+{\footnotesize\ttfamily int analysis\+::subjectid = -\/1}
+
+subject Row\+ID \mbox{\Hypertarget{classanalysis_ad398b9c261a2ce36cc6c2e52f4bb031c}\label{classanalysis_ad398b9c261a2ce36cc6c2e52f4bb031c}} 
+\index{analysis@{analysis}!uid@{uid}}
+\index{uid@{uid}!analysis@{analysis}}
+\doxysubsubsection{\texorpdfstring{uid}{uid}}
+{\footnotesize\ttfamily Q\+String analysis\+::uid}
+
+analysis U\+ID 
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{analysis_8h}{analysis.\+h}}\item 
+\mbox{\hyperlink{analysis_8cpp}{analysis.\+cpp}}\end{DoxyCompactItemize}

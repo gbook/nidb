@@ -1,0 +1,163 @@
+\hypertarget{class_text_table}{}\doxysection{Text\+Table Class Reference}
+\label{class_text_table}\index{TextTable@{TextTable}}
+
+
+{\ttfamily \#include $<$Text\+Table.\+h$>$}
+
+\doxysubsection*{Public Types}
+\begin{DoxyCompactItemize}
+\item 
+enum \mbox{\hyperlink{class_text_table_a3921e381a9bfdd728619b6e48968d190}{Alignment}} \{ \mbox{\hyperlink{class_text_table_a3921e381a9bfdd728619b6e48968d190a684d325a7303f52e64011467ff5c5758}{Alignment\+::\+L\+E\+FT}}, 
+\mbox{\hyperlink{class_text_table_a3921e381a9bfdd728619b6e48968d190a21507b40c80068eda19865706fdc2403}{Alignment\+::\+R\+I\+G\+HT}}
+ \}
+\item 
+typedef std\+::vector$<$ std\+::string $>$ \mbox{\hyperlink{class_text_table_a28c4e9f705f83a254c98d2cc54e19f19}{Row}}
+\end{DoxyCompactItemize}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{class_text_table_af7385f5a5a6800d8a8c8b5457eee0efd}{Text\+Table}} (char \mbox{\hyperlink{class_text_table_ad6770e6a7ac6a1138da214dbcb9ec4cd}{horizontal}}=\textquotesingle{}-\/\textquotesingle{}, char \mbox{\hyperlink{class_text_table_ac4e5f6c6afcaa47d839fa98c81400248}{vertical}}=\textquotesingle{}$\vert$\textquotesingle{}, char corner=\textquotesingle{}+\textquotesingle{})
+\item 
+void \mbox{\hyperlink{class_text_table_a185c3b20536bb11bb4928272cd1e3902}{set\+Alignment}} (unsigned i, \mbox{\hyperlink{class_text_table_a3921e381a9bfdd728619b6e48968d190}{Alignment}} \mbox{\hyperlink{class_text_table_a9712e5bc77ac1b65b1fdf6120dba74eb}{alignment}})
+\item 
+\mbox{\hyperlink{class_text_table_a3921e381a9bfdd728619b6e48968d190}{Alignment}} \mbox{\hyperlink{class_text_table_a9712e5bc77ac1b65b1fdf6120dba74eb}{alignment}} (unsigned i) const
+\item 
+char \mbox{\hyperlink{class_text_table_ac4e5f6c6afcaa47d839fa98c81400248}{vertical}} () const
+\item 
+char \mbox{\hyperlink{class_text_table_ad6770e6a7ac6a1138da214dbcb9ec4cd}{horizontal}} () const
+\item 
+void \mbox{\hyperlink{class_text_table_adcb12fff145ebe7153ed0f69201d2b62}{add}} (std\+::string const \&content)
+\item 
+void \mbox{\hyperlink{class_text_table_a7916848a5d1e82047115f00ff8b86ad8}{end\+Of\+Row}} ()
+\item 
+{\footnotesize template$<$typename Iterator $>$ }\\void \mbox{\hyperlink{class_text_table_a7cd2de95bab3275d6a611e7a3443c746}{add\+Row}} (Iterator begin, Iterator end)
+\item 
+{\footnotesize template$<$typename Container $>$ }\\void \mbox{\hyperlink{class_text_table_a0a27c7f13cfd9c28fa08014fe03ac409}{add\+Row}} (Container const \&container)
+\item 
+const std\+::vector$<$ \mbox{\hyperlink{class_text_table_a28c4e9f705f83a254c98d2cc54e19f19}{Row}} $>$ \& \mbox{\hyperlink{class_text_table_a874c7e47f27c16acbaad1bd43fb9d0b9}{rows}} () const
+\item 
+void \mbox{\hyperlink{class_text_table_a85a77368f0ab509066b8299abddd3545}{setup}} () const
+\item 
+std\+::string \mbox{\hyperlink{class_text_table_afc5e9e3705e36a32b80ba62b30331476}{ruler}} () const
+\item 
+int \mbox{\hyperlink{class_text_table_ad29f49525b33b5f69deb7ad85b705854}{width}} (unsigned i) const
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Member Typedef Documentation}
+\mbox{\Hypertarget{class_text_table_a28c4e9f705f83a254c98d2cc54e19f19}\label{class_text_table_a28c4e9f705f83a254c98d2cc54e19f19}} 
+\index{TextTable@{TextTable}!Row@{Row}}
+\index{Row@{Row}!TextTable@{TextTable}}
+\doxysubsubsection{\texorpdfstring{Row}{Row}}
+{\footnotesize\ttfamily typedef std\+::vector$<$ std\+::string $>$ \mbox{\hyperlink{class_text_table_a28c4e9f705f83a254c98d2cc54e19f19}{Text\+Table\+::\+Row}}}
+
+
+
+\doxysubsection{Member Enumeration Documentation}
+\mbox{\Hypertarget{class_text_table_a3921e381a9bfdd728619b6e48968d190}\label{class_text_table_a3921e381a9bfdd728619b6e48968d190}} 
+\index{TextTable@{TextTable}!Alignment@{Alignment}}
+\index{Alignment@{Alignment}!TextTable@{TextTable}}
+\doxysubsubsection{\texorpdfstring{Alignment}{Alignment}}
+{\footnotesize\ttfamily enum \mbox{\hyperlink{class_text_table_a3921e381a9bfdd728619b6e48968d190}{Text\+Table\+::\+Alignment}}\hspace{0.3cm}{\ttfamily [strong]}}
+
+\begin{DoxyEnumFields}{Enumerator}
+\raisebox{\heightof{T}}[0pt][0pt]{\index{LEFT@{LEFT}!TextTable@{TextTable}}\index{TextTable@{TextTable}!LEFT@{LEFT}}}\mbox{\Hypertarget{class_text_table_a3921e381a9bfdd728619b6e48968d190a684d325a7303f52e64011467ff5c5758}\label{class_text_table_a3921e381a9bfdd728619b6e48968d190a684d325a7303f52e64011467ff5c5758}} 
+L\+E\+FT&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{RIGHT@{RIGHT}!TextTable@{TextTable}}\index{TextTable@{TextTable}!RIGHT@{RIGHT}}}\mbox{\Hypertarget{class_text_table_a3921e381a9bfdd728619b6e48968d190a21507b40c80068eda19865706fdc2403}\label{class_text_table_a3921e381a9bfdd728619b6e48968d190a21507b40c80068eda19865706fdc2403}} 
+R\+I\+G\+HT&\\
+\hline
+
+\end{DoxyEnumFields}
+
+
+\doxysubsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{class_text_table_af7385f5a5a6800d8a8c8b5457eee0efd}\label{class_text_table_af7385f5a5a6800d8a8c8b5457eee0efd}} 
+\index{TextTable@{TextTable}!TextTable@{TextTable}}
+\index{TextTable@{TextTable}!TextTable@{TextTable}}
+\doxysubsubsection{\texorpdfstring{TextTable()}{TextTable()}}
+{\footnotesize\ttfamily Text\+Table\+::\+Text\+Table (\begin{DoxyParamCaption}\item[{char}]{horizontal = {\ttfamily \textquotesingle{}-\/\textquotesingle{}},  }\item[{char}]{vertical = {\ttfamily \textquotesingle{}$\vert$\textquotesingle{}},  }\item[{char}]{corner = {\ttfamily \textquotesingle{}+\textquotesingle{}} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{class_text_table_adcb12fff145ebe7153ed0f69201d2b62}\label{class_text_table_adcb12fff145ebe7153ed0f69201d2b62}} 
+\index{TextTable@{TextTable}!add@{add}}
+\index{add@{add}!TextTable@{TextTable}}
+\doxysubsubsection{\texorpdfstring{add()}{add()}}
+{\footnotesize\ttfamily void Text\+Table\+::add (\begin{DoxyParamCaption}\item[{std\+::string const \&}]{content }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{class_text_table_a0a27c7f13cfd9c28fa08014fe03ac409}\label{class_text_table_a0a27c7f13cfd9c28fa08014fe03ac409}} 
+\index{TextTable@{TextTable}!addRow@{addRow}}
+\index{addRow@{addRow}!TextTable@{TextTable}}
+\doxysubsubsection{\texorpdfstring{addRow()}{addRow()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily template$<$typename Container $>$ \\
+void Text\+Table\+::add\+Row (\begin{DoxyParamCaption}\item[{Container const \&}]{container }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{class_text_table_a7cd2de95bab3275d6a611e7a3443c746}\label{class_text_table_a7cd2de95bab3275d6a611e7a3443c746}} 
+\index{TextTable@{TextTable}!addRow@{addRow}}
+\index{addRow@{addRow}!TextTable@{TextTable}}
+\doxysubsubsection{\texorpdfstring{addRow()}{addRow()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily template$<$typename Iterator $>$ \\
+void Text\+Table\+::add\+Row (\begin{DoxyParamCaption}\item[{Iterator}]{begin,  }\item[{Iterator}]{end }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{class_text_table_a9712e5bc77ac1b65b1fdf6120dba74eb}\label{class_text_table_a9712e5bc77ac1b65b1fdf6120dba74eb}} 
+\index{TextTable@{TextTable}!alignment@{alignment}}
+\index{alignment@{alignment}!TextTable@{TextTable}}
+\doxysubsubsection{\texorpdfstring{alignment()}{alignment()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{class_text_table_a3921e381a9bfdd728619b6e48968d190}{Alignment}} Text\+Table\+::alignment (\begin{DoxyParamCaption}\item[{unsigned}]{i }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{class_text_table_a7916848a5d1e82047115f00ff8b86ad8}\label{class_text_table_a7916848a5d1e82047115f00ff8b86ad8}} 
+\index{TextTable@{TextTable}!endOfRow@{endOfRow}}
+\index{endOfRow@{endOfRow}!TextTable@{TextTable}}
+\doxysubsubsection{\texorpdfstring{endOfRow()}{endOfRow()}}
+{\footnotesize\ttfamily void Text\+Table\+::end\+Of\+Row (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{class_text_table_ad6770e6a7ac6a1138da214dbcb9ec4cd}\label{class_text_table_ad6770e6a7ac6a1138da214dbcb9ec4cd}} 
+\index{TextTable@{TextTable}!horizontal@{horizontal}}
+\index{horizontal@{horizontal}!TextTable@{TextTable}}
+\doxysubsubsection{\texorpdfstring{horizontal()}{horizontal()}}
+{\footnotesize\ttfamily char Text\+Table\+::horizontal (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{class_text_table_a874c7e47f27c16acbaad1bd43fb9d0b9}\label{class_text_table_a874c7e47f27c16acbaad1bd43fb9d0b9}} 
+\index{TextTable@{TextTable}!rows@{rows}}
+\index{rows@{rows}!TextTable@{TextTable}}
+\doxysubsubsection{\texorpdfstring{rows()}{rows()}}
+{\footnotesize\ttfamily const std\+::vector$<$ \mbox{\hyperlink{class_text_table_a28c4e9f705f83a254c98d2cc54e19f19}{Row}} $>$\& Text\+Table\+::rows (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{class_text_table_afc5e9e3705e36a32b80ba62b30331476}\label{class_text_table_afc5e9e3705e36a32b80ba62b30331476}} 
+\index{TextTable@{TextTable}!ruler@{ruler}}
+\index{ruler@{ruler}!TextTable@{TextTable}}
+\doxysubsubsection{\texorpdfstring{ruler()}{ruler()}}
+{\footnotesize\ttfamily std\+::string Text\+Table\+::ruler (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{class_text_table_a185c3b20536bb11bb4928272cd1e3902}\label{class_text_table_a185c3b20536bb11bb4928272cd1e3902}} 
+\index{TextTable@{TextTable}!setAlignment@{setAlignment}}
+\index{setAlignment@{setAlignment}!TextTable@{TextTable}}
+\doxysubsubsection{\texorpdfstring{setAlignment()}{setAlignment()}}
+{\footnotesize\ttfamily void Text\+Table\+::set\+Alignment (\begin{DoxyParamCaption}\item[{unsigned}]{i,  }\item[{\mbox{\hyperlink{class_text_table_a3921e381a9bfdd728619b6e48968d190}{Alignment}}}]{alignment }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{class_text_table_a85a77368f0ab509066b8299abddd3545}\label{class_text_table_a85a77368f0ab509066b8299abddd3545}} 
+\index{TextTable@{TextTable}!setup@{setup}}
+\index{setup@{setup}!TextTable@{TextTable}}
+\doxysubsubsection{\texorpdfstring{setup()}{setup()}}
+{\footnotesize\ttfamily void Text\+Table\+::setup (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{class_text_table_ac4e5f6c6afcaa47d839fa98c81400248}\label{class_text_table_ac4e5f6c6afcaa47d839fa98c81400248}} 
+\index{TextTable@{TextTable}!vertical@{vertical}}
+\index{vertical@{vertical}!TextTable@{TextTable}}
+\doxysubsubsection{\texorpdfstring{vertical()}{vertical()}}
+{\footnotesize\ttfamily char Text\+Table\+::vertical (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{class_text_table_ad29f49525b33b5f69deb7ad85b705854}\label{class_text_table_ad29f49525b33b5f69deb7ad85b705854}} 
+\index{TextTable@{TextTable}!width@{width}}
+\index{width@{width}!TextTable@{TextTable}}
+\doxysubsubsection{\texorpdfstring{width()}{width()}}
+{\footnotesize\ttfamily int Text\+Table\+::width (\begin{DoxyParamCaption}\item[{unsigned}]{i }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{_text_table_8h}{Text\+Table.\+h}}\end{DoxyCompactItemize}

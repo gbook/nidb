@@ -588,12 +588,15 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
     AppendUploadLog(__FUNCTION__ , "Checking for existing files in outdir [" + outdir + "]");
     QStringList existingdcms = FindAllFiles(outdir, "*.dcm");
     qint64 numexistingdcms = existingdcms.size();
+    AppendUploadLog(__FUNCTION__ , QString("Done checking for existing files in outdir [" + outdir + "]. Found [%1] files").arg(existingdcms.size()));
 
     /* rename **** EXISTING **** files in the output directory */
     if (numexistingdcms > 0) {
         /* check all files to see if its the same study datetime, patient name, dob, gender, series #
          * 1) if anything is different, move the file to a UID/Study/Series/dicom/existing directory
          * 2) if they're all the same, consolidate the files into one list of new and old, remove duplicates */
+
+        AppendUploadLog(__FUNCTION__ , "First file [" + existingdcms[0] + "]");
 
         QString logmsg = QString("There are [%1] existing files in [%2]. Beginning renaming of existing files [").arg(numexistingdcms).arg(outdir);
 
@@ -646,9 +649,12 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
         }
         AppendUploadLog(__FUNCTION__ , QString(logmsg + "]  Done renaming existings [%1] files").arg(filecnt));
     }
+    AppendUploadLog(__FUNCTION__ , "Checkpoint archiveIO [1]");
 
     /* create a thumbnail of the middle slice in the dicom directory (after getting the size, so the thumbnail isn't included in the size) */
     CreateThumbnail(files[files.size()/2], thumbdir);
+
+    AppendUploadLog(__FUNCTION__ , "Checkpoint archiveIO [2]");
 
     /* renumber the **** NEWLY **** added files to make them unique */
     QString logmsg = "Renaming new files [";
