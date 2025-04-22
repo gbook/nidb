@@ -40,12 +40,30 @@ sudo rpm -i firejail-x.y.z.rpm
 
 ## Install NiDB rpm
 
-Download the latest .rpm package from http://github.com/gbook/nidb
+Download the latest .rpm package from http://github.com/gbook/nidb and run the following commands
 
+{% tabs %}
+{% tab title="RHEL9" %}
+Run the following commands
+
+{% code fullWidth="false" %}
 ```bash
-sudo yum install epel-release
+# add repository to install OpenSSL 1.0
+curl -JLo /etc/yum.repos.d/mroche-vfx-compatibility.repo "https://copr.fedorainfracloud.org/coprs/mroche/vfx-compatibility/repo/epel-9/mroche-vfx-compatibility-epel-9.repo"
+
+sudo dnf install epel-release # for ImageMagick
+sudo dnf install mysql-libs --enablerepo=devel # for libmysql2.1
 sudo yum --nogpgcheck localinstall nidb-xxxx.xx.xx-1.el8.x86_64.rpm
 ```
+{% endcode %}
+{% endtab %}
+
+{% tab title="RHEL8" %}
+
+{% endtab %}
+{% endtabs %}
+
+
 
 Secure the MariaDB installation by running `mysql_secure_installation` as root and using the following responses. The MariaDB root password is already set to `password`.
 
