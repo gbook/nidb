@@ -15,6 +15,8 @@ CONFIG += silent
 # deprecated API in order to know how to port your code away from it.
 DEFINES += QT_DEPRECATED_WARNINGS
 QMAKE_CXXFLAGS += -Wall
+#QMAKE_CXXFLAGS += -Wextra
+#QMAKE_CXXFLAGS += -Wno-c++98-compat
 win32: { # ignore warnings that show up in gdcm and Qt libs
     QMAKE_CXXFLAGS += /wd4711
     QMAKE_CXXFLAGS += /wd4866
