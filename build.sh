@@ -116,7 +116,9 @@ cd $ORIGDIR
 echo -e "\nCopying libsquirrel to /lib"
 sudo cp -uv bin/squirrel/libsquirrel* /lib/
 sudo cp -uv bin/squirrel/libsquirrel* /lib/x86_64-linux-gnu/
+sudo cp -uv bin/gdcm/bin/libgdcm* /lib/
 sudo cp -uv bin/gdcm/bin/libgdcm* /lib/x86_64-linux-gnu/
+sudo cp -uv bin/smtp/libSMTPEmail* /lib/
 sudo cp -uv bin/smtp/libSMTPEmail* /lib/x86_64-linux-gnu/
 
 echo -e "\nCopying nidb to /nidb/bin"
