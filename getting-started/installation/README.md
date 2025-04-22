@@ -53,17 +53,21 @@ curl -JLo /etc/yum.repos.d/mroche-vfx-compatibility.repo "https://copr.fedorainf
 
 sudo dnf install epel-release # for ImageMagick
 sudo dnf install mysql-libs --enablerepo=devel # for libmysql2.1
-sudo yum --nogpgcheck localinstall nidb-xxxx.xx.xx-1.el8.x86_64.rpm
+sudo yum --nogpgcheck localinstall nidb-xxxx.xx.xx-1.el9.x86_64.rpm
 ```
 {% endcode %}
 {% endtab %}
 
 {% tab title="RHEL8" %}
+```bash
+sudo dnf install epel-release # for ImageMagick
+sudo yum --nogpgcheck localinstall nidb-xxxx.xx.xx-1.el8.x86_64.rpm
+```
 
+sudo dnf install epel-release # for ImageMagick\
+sudo yum --nogpgcheck localinstall nidb-xxxx.xx.xx-1.el8.x86\_64.rpm
 {% endtab %}
 {% endtabs %}
-
-
 
 Secure the MariaDB installation by running `mysql_secure_installation` as root and using the following responses. The MariaDB root password is already set to `password`.
 
