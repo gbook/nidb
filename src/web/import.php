@@ -1489,7 +1489,7 @@ question_num, question_text, datatype, values, comment</div>
 				//PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 				//echo "[" . mysqli_affected_rows() . "]<br>";
-				$numupdated += mysqli_affected_rows();
+				$numupdated += mysqli_affected_rows($GLOBALS['linki']);
 			}
 			
 			$c++;
@@ -1657,7 +1657,7 @@ question_num, question_text, datatype, values, comment</div>
 				PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 				echo "[" . mysqli_affected_rows() . "]<br>";
-				$numupdated += mysqli_affected_rows();
+				$numupdated += mysqli_affected_rows($GLOBALS['linki']);
 			}
 			
 			$c++;

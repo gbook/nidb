@@ -203,7 +203,7 @@
 			foreach ($val_dates as $formfieldid => $value) {
 				if (is_array($value)) $value = implode(",", $value);
 				$value = mysqli_real_escape_string($GLOBALS['linki'], trim($value));
-				if ($value==NULL){$value=date('Y-m-d');}	
+				if ($value==NULL) { $value=date('Y-m-d'); }
 				$sqlstring = "insert into assessment_data (formfield_id, experiment_id, value_date, update_username) values ($formfieldid, $experimentid, '$value', '$username')";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}

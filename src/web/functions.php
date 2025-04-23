@@ -77,7 +77,7 @@
 			if ((substr($line,0,1) != '#') && (trim($line) != "")) {
 				list($var, $value) = explode(' = ', trim($line));
 				$var = str_replace(array('[',']'),'',$var);
-				$cfg{$var} = $value;
+				$cfg[$var] = $value;
 			}
 		}
 		return $cfg;
@@ -1033,6 +1033,8 @@
 	/* special implode which checks for empty array */
 	function implode2($chr, $arr) {
 		//$arr = array_filter($arr);
+		if (is_null($arr))
+			return "";
 		
 		if (count($arr) > 1) {
 			return implode($chr,$arr);
@@ -1225,6 +1227,9 @@
 		$perms = array();
 		$userid = $_SESSION['userid'];
 		
+		if (is_null($projectids))
+			return array();
+			
 		$projectids = array_filter($projectids);
 		$projectidlist = implode2(',', $projectids);
 		
@@ -1366,13 +1371,13 @@
 	{
 		$chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890_';
 		$chars_length = (strlen($chars) - 1);
-		$string = $chars{rand(0, $chars_length)};
+		$string = $chars[rand(0, $chars_length)];
 		
 		// Generate random string
 		for ($i = 1; $i < $length; $i = strlen($string))
 		{
 			// Grab a random character from our list
-			$r = $chars{rand(0, $chars_length)};
+			$r = $chars[rand(0, $chars_length)];
 			$string .=  $r;
 		}
 		
@@ -2023,7 +2028,7 @@
 		foreach($root as $value) 
 		{ 
 			if($value === '.' || $value === '..') {continue;} 
-			if(is_file("$dir/$value")) {$result[]="$dir/$value";continue;}
+			if(is_file("$dir/$value")) { $result[]="$dir/$value"; continue; }
 			if (is_array(find_all_files("$dir/$value"))) {
 				foreach(find_all_files("$dir/$value") as $value)
 				{

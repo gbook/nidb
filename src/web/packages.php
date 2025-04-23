@@ -87,6 +87,11 @@
 	$includepipelines = GetVariable("includepipelines");
 
 	//PrintVariable($objectids);
+	
+	if (is_null($seriesids))
+		$seriesids = array();
+	if (is_null($seriesid))
+		$seriesid = array();
 
 	if (count($seriesids) > 0)
 		$objectids = $seriesids;

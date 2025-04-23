@@ -922,7 +922,7 @@
 		if (($encrypt) && ($type != 'update')) {
 			$fullname = strtolower(preg_replace('/[^A-Za-z0-9]/', '', $lastname) . '^' . preg_replace('/[^A-Za-z0-9]/', '', $firstname));
 			$encname = strtoupper(sha1($fullname));
-			$altuids = preg_replace('/[^A-Za-z0-9\_\-]/', '', split(',',$altuid));
+			$altuids = preg_replace('/[^A-Za-z0-9\_\-]/', '', explode(',', $altuid));
 			foreach ($altuids as $alt) {
 				$encids[] = strtoupper(sha1($alt));
 				$encuids[$alt] = strtoupper(sha1($alt));

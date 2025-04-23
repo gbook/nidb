@@ -441,11 +441,11 @@
 					$numweight++;
 					$weights[] = $weight;
 				}
-				$genders{$gender}++;
-				$educations{$education}++;
-				$ethnicity1s{$ethnicity1}++;
-				$ethnicity2s{$ethnicity2}++;
-				$handednesses{$handedness}++;
+				$genders[$gender]++;
+				$educations[$education]++;
+				$ethnicity1s[$ethnicity1]++;
+				$ethnicity2s[$ethnicity2]++;
+				$handednesses[$handedness]++;
 			}
 		}
 		/* calculate some stats */
@@ -574,10 +574,10 @@
 						<td><?=$birthdate?></td>
 						<td><?=$studyAge?></td>
 						<td><?=$calcStudyAge?></td>
-						<? if (!in_array(strtoupper($gender),array('M','F','O'))) {$color = "red";} else {$color="black";} ?>
+						<? if (!in_array(strtoupper($gender),array('M','F','O'))) { $color = "red"; } else { $color="black"; } ?>
 						<td style="color:<?=$color?>"><?=$gender?></td>
 						<td style="font-size:8pt"><?=$subgroup?></td>
-						<? if ($weight <= 0) {$color = "red";} else {$color="black";} ?>
+						<? if ($weight <= 0) { $color = "red"; } else { $color="black"; } ?>
 						<td style="color:<?=$color?>"><?=number_format($weight,1)?>kg</td>
 						<td style="font-size:8pt"><?=implode2(', ',$altuids)?></td>
 						<td><a href="studies.php?id=<?=$studyid?>"><?=$uid?><?=$studynum?></a></td>
@@ -650,11 +650,11 @@
 				$numweight++;
 				$weights[] = $weight;
 			}
-			$genders{$gender}++;
-			$educations{$education}++;
-			$ethnicity1s{$ethnicity1}++;
-			$ethnicity2s{$ethnicity2}++;
-			$handednesses{$handedness}++;
+			$genders[$gender]++;
+			$educations[$education]++;
+			$ethnicity1s[$ethnicity1]++;
+			$ethnicity2s[$ethnicity2]++;
+			$handednesses[$handedness]++;
 		}
 		if ($numage > 0) { $avgage = $totalage/$numage; } else { $avgage = 0; }
 		if (count($ages) > 0) { $varage = sd($ages); } else { $varage = 0; }
@@ -787,11 +787,11 @@
 				$numweight++;
 				$weights[] = $weight;
 			}
-			$genders{$gender}++;
-			$educations{$education}++;
-			$ethnicity1s{$ethnicity1}++;
-			$ethnicity2s{$ethnicity2}++;
-			$handednesses{$handedness}++;
+			$genders[$gender]++;
+			$educations[$education]++;
+			$ethnicity1s[$ethnicity1]++;
+			$ethnicity2s[$ethnicity2]++;
+			$handednesses[$handedness]++;
 		}
 		if ($numage > 0) { $avgage = $totalage/$numage; } else { $avgage = 0; }
 		if (count($ages) > 0) { $varage = sd($ages); } else { $varage = 0; }
@@ -992,12 +992,12 @@
 											<td><?=$studydatetime?></td>
 											<td><?=$studyAge?></td>
 											<td><?=$calcStudyAge?></td>
-											<? if (!in_array(strtoupper($gender),array('M','F','O'))) {$color = "red";} else {$color="black";} ?>
+											<? if (!in_array(strtoupper($gender),array('M','F','O'))) { $color = "red"; } else { $color="black"; } ?>
 											<td style="color:<?=$color?>"><?=$gender?></td>
 											<td style="font-size:8pt"><?=$ethnicity1?> <?=$ethnicity2?></td>
 											<td style="font-size:8pt"><?=$subgroup?></td>
 											<td style="font-size:8pt"><?=$studyvisittype?></td>
-											<? if ($studyweight <= 0) {$color = "red";} else {$color="black";} ?>
+											<? if ($studyweight <= 0) { $color = "red"; } else { $color="black"; } ?>
 											<td style="color:<?=$color?>"><?=number_format($studyweight,1)?>kg</td>
 											<td><?=$handedness?></td>
 											<td><?=$education?></td>
@@ -1129,11 +1129,11 @@
 				$numweight++;
 				$weights[] = $weight;
 			}
-			$genders{$gender}++;
-			$educations{$education}++;
-			$ethnicity1s{$ethnicity1}++;
-			$ethnicity2s{$ethnicity2}++;
-			$handednesses{$handedness}++;
+			$genders[$gender]++;
+			$educations[$education]++;
+			$ethnicity1s[$ethnicity1]++;
+			$ethnicity2s[$ethnicity2]++;
+			$handednesses[$handedness]++;
 		}
 		if ($numage > 0) { $avgage = $totalage/$numage; } else { $avgage = 0; }
 		if (count($ages) > 0) { $varage = sd($ages); } else { $varage = 0; }
@@ -1203,9 +1203,9 @@
 							<td>
 								<a href="subjects.php?id=<?=$subjectid?>" style="font-family: monospace; font-size: larger;"><?=$uid?></a>
 							</td>
-							<? if ($age <= 0) {$color = "red";} else {$color="black";} ?>
+							<? if ($age <= 0) { $color = "red"; } else { $color="black"; } ?>
 							<td style="color:<?=$color?>"><?=number_format($age,1)?>Y</td>
-							<? if (!in_array(strtoupper($gender),array('M','F','O'))) {$color = "red";} else {$color="black";} ?>
+							<? if (!in_array(strtoupper($gender),array('M','F','O'))) { $color = "red"; } else { $color="black"; } ?>
 							<td style="color:<?=$color?>"><?=$gender?></td>
 							<td><?=$ethnicitiy1?></td>
 							<td><?=$ethnicitiy1?></td>

@@ -347,13 +347,13 @@
 		$fri_hol_date = date('Y-m-d', strtotime(date('Y-m-d',$first_day) . " +$dayofweek5 days"));
 		$sat_hol_date = date('Y-m-d', strtotime(date('Y-m-d',$first_day) . " +$dayofweek6 days"));
 		
-		list($sun{'y'}, $sun{'m'}, $sun{'d'}) = explode('-', $sun_hol_date);
-		list($mon{'y'}, $mon{'m'}, $mon{'d'}) = explode('-', $mon_hol_date);
-		list($tue{'y'}, $tue{'m'}, $tue{'d'}) = explode('-', $tue_hol_date);
-		list($wed{'y'}, $wed{'m'}, $wed{'d'}) = explode('-', $wed_hol_date);
-		list($thu{'y'}, $thu{'m'}, $thu{'d'}) = explode('-', $thu_hol_date);
-		list($fri{'y'}, $fri{'m'}, $fri{'d'}) = explode('-', $fri_hol_date);
-		list($sat{'y'}, $sat{'m'}, $sat{'d'}) = explode('-', $sat_hol_date);
+		list($sun['y'], $sun['m'], $sun['d']) = explode('-', $sun_hol_date);
+		list($mon['y'], $mon['m'], $mon['d']) = explode('-', $mon_hol_date);
+		list($tue['y'], $tue['m'], $tue['d']) = explode('-', $tue_hol_date);
+		list($wed['y'], $wed['m'], $wed['d']) = explode('-', $wed_hol_date);
+		list($thu['y'], $thu['m'], $thu['d']) = explode('-', $thu_hol_date);
+		list($fri['y'], $fri['m'], $fri['d']) = explode('-', $fri_hol_date);
+		list($sat['y'], $sat['m'], $sat['d']) = explode('-', $sat_hol_date);
 		
 		$prevyear = date('Y', strtotime(date('Y-m-d',$first_day) . " -7 days"));
 		$prevmonth = date('m', strtotime(date('Y-m-d',$first_day) . " -7 days"));
@@ -387,7 +387,7 @@
 									<h3 class="ui <?=$inverted?> header">
 										Sunday
 										<div class="<?=$inverted?> sub header">
-											<a style="<?=$style?>" href="calendar.php?action=day&year=<?=$sun{'y'}?>&month=<?=$sun{'m'}?>&day=<?=$sun{'d'}?>"><?=$sun_date?></a>
+											<a style="<?=$style?>" href="calendar.php?action=day&year=<?=$sun['y']?>&month=<?=$sun['m']?>&day=<?=$sun['d']?>"><?=$sun_date?></a>
 										</div>
 									</h3>
 								</div>
@@ -406,7 +406,7 @@
 									<h3 class="ui <?=$inverted?> header">
 										Monday
 										<div class="<?=$inverted?> sub header">
-											<a style="<?=$style?>" href="calendar.php?action=day&year=<?=$mon{'y'}?>&month=<?=$mon{'m'}?>&day=<?=$mon{'d'}?>"><?=$mon_date?></a>
+											<a style="<?=$style?>" href="calendar.php?action=day&year=<?=$mon['y']?>&month=<?=$mon['m']?>&day=<?=$mon['d']?>"><?=$mon_date?></a>
 										</div>
 									</h3>
 								</div>
@@ -425,7 +425,7 @@
 									<h3 class="ui <?=$inverted?> header">
 										Tuesday
 										<div class="<?=$inverted?> sub header">
-											<a style="<?=$style?>" href="calendar.php?action=day&year=<?=$tue{'y'}?>&month=<?=$tue{'m'}?>&day=<?=$tue{'d'}?>"><?=$tue_date?></a>
+											<a style="<?=$style?>" href="calendar.php?action=day&year=<?=$tue['y']?>&month=<?=$tue['m']?>&day=<?=$tue['d']?>"><?=$tue_date?></a>
 										</div>
 									</h3>
 								</div>
@@ -444,7 +444,7 @@
 									<h3 class="ui <?=$inverted?> header">
 										Wednesday
 										<div class="<?=$inverted?> sub header">
-											<a style="<?=$style?>" href="calendar.php?action=day&year=<?=$wed{'y'}?>&month=<?=$wed{'m'}?>&day=<?=$wed{'d'}?>"><?=$wed_date?></a>
+											<a style="<?=$style?>" href="calendar.php?action=day&year=<?=$wed['y']?>&month=<?=$wed['m']?>&day=<?=$wed['d']?>"><?=$wed_date?></a>
 										</div>
 									</h3>
 								</div>
@@ -463,7 +463,7 @@
 									<h3 class="ui <?=$inverted?> header">
 										Thursday
 										<div class="<?=$inverted?> sub header">
-											<a style="<?=$style?>" href="calendar.php?action=day&year=<?=$thu{'y'}?>&month=<?=$thu{'m'}?>&day=<?=$thu{'d'}?>"><?=$thu_date?></a>
+											<a style="<?=$style?>" href="calendar.php?action=day&year=<?=$thu['y']?>&month=<?=$thu['m']?>&day=<?=$thu['d']?>"><?=$thu_date?></a>
 										</div>
 									</h3>
 								</div>
@@ -482,7 +482,7 @@
 									<h3 class="ui <?=$inverted?> header">
 										Friday
 										<div class="<?=$inverted?> sub header">
-											<a style="<?=$style?>" href="calendar.php?action=day&year=<?=$fri{'y'}?>&month=<?=$fri{'m'}?>&day=<?=$fri{'d'}?>"><?=$fri_date?></a>
+											<a style="<?=$style?>" href="calendar.php?action=day&year=<?=$fri['y']?>&month=<?=$fri['m']?>&day=<?=$fri['d']?>"><?=$fri_date?></a>
 										</div>
 									</h3>
 								</div>
@@ -501,7 +501,7 @@
 									<h3 class="ui <?=$inverted?> header">
 										Saturday
 										<div class="<?=$inverted?> sub header">
-											<a style="<?=$style?>" href="calendar.php?action=day&year=<?=$sat{'y'}?>&month=<?=$sat{'m'}?>&day=<?=$sat{'d'}?>"><?=$sat_date?></a>
+											<a style="<?=$style?>" href="calendar.php?action=day&year=<?=$sat['y']?>&month=<?=$sat['m']?>&day=<?=$sat['d']?>"><?=$sat_date?></a>
 										</div>
 									</h3>
 								</div>

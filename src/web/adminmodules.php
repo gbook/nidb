@@ -154,39 +154,55 @@
 				<div class="ui styled segment">
 					<div class="ui accordion">
 						<?
-						chdir($GLOBALS['cfg']['logdir']);
-						$files = glob("$modulename"."2*.log");
-						usort($files, create_function('$b,$a', 'return filemtime($a) - filemtime($b);'));
-						foreach ($files as $filename) {
-							$filesize = filesize($filename);
-							$filedate = date ("F d Y H:i:s", filemtime($filename));
-							?>
-							<div class="ui title">
-								<div class="ui header">
-									<div class="content">
-										<i class="dropdown icon"></i>
-										<?=$filename?>
-										<div class="sub header"><?=$filedate?> - <?=number_format($filesize,0)?> bytes</div>
+						$systemstring = "ls -t " . $GLOBALS['cfg']['logdir'] . "/$modulename" . "*.log";
+						//PrintVariable($systemstring);
+						$filelisting = shell_exec($systemstring);
+						$files = explode("\n", $filelisting);
+						
+						//chdir($GLOBALS['cfg']['logdir']);
+						//$files = glob("$modulename"."2*.log");
+						//usort($files, create_function('$b,$a', 'return filemtime($a) - filemtime($b);'));
+						
+						if (count($files) > 0) {
+							foreach ($files as $filename) {
+								if (trim($filename) == "")
+									continue;
+								
+								$filesize = filesize($filename);
+								$filedate = date ("F d Y H:i:s", filemtime($filename));
+								?>
+								<div class="ui title">
+									<div class="ui header">
+										<div class="content">
+											<i class="dropdown icon"></i>
+											<?=$filename?>
+											<div class="sub header"><?=$filedate?> - <?=number_format($filesize,0)?> bytes</div>
+										</div>
 									</div>
 								</div>
-							</div>
-							<div class="content">
-							<? if ($filesize < 1000000) {?>
-							<pre style="border: 1px solid #aaa; background-color: #eee; padding:5px; white-space: pre-wrap;"><?=htmlspecialchars(file_get_contents($filename))?></pre>
-							<? } else { ?>
-								File larger than 1MB, showing the first 500,000 bytes and the last 500,000 bytes<br><pre style="border: 1px solid #aaa; background-color: #eee; padding:5px">
-<?=htmlspecialchars(file_get_contents($filename, null,null,0,500000))?>
-								
-								
-		... ... ...
-								
-								
-<?=htmlspecialchars(file_get_contents($filename, null,null,$filesize-500000))?>
-							</pre>
-							<? } ?>
+								<div class="content">
+								<? if ($filesize < 1000000) {?>
+								<pre style="border: 1px solid #aaa; background-color: #eee; padding:5px; white-space: pre-wrap;"><?=htmlspecialchars(file_get_contents($filename))?></pre>
+								<? } else { ?>
+									File larger than 1MB, showing the first 500,000 bytes and the last 500,000 bytes<br><pre style="border: 1px solid #aaa; background-color: #eee; padding:5px">
+	<?=htmlspecialchars(file_get_contents($filename, null,null,0,500000))?>
+									
+									
+			... ... ...
+									
+									
+	<?=htmlspecialchars(file_get_contents($filename, null,null,$filesize-500000))?>
+								</pre>
+								<?
+								}
+							?>
 							</div>
 							<br>
 							<?
+							}
+						}
+						else {
+							echo "No $modulename files found<br>";
 						}
 						?>
 					</div>

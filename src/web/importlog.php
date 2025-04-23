@@ -232,12 +232,12 @@
 		/* delete any transactions older than 21 days */
 		$sqlstring = "delete from import_transactions where transaction_startdate < date_sub(now(), interval 21 day)";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		$numdeleted1 = mysqli_affected_rows();
+		$numdeleted1 = mysqli_affected_rows($GLOBALS['linki']);
 		
 		/* delete import_requests that are not in the transaction table */
 		$sqlstring = "delete from import_requests where import_transactionid not in (select importtrans_id from import_transactions)";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		$numdeleted2 = mysqli_affected_rows();
+		$numdeleted2 = mysqli_affected_rows($GLOBALS['linki']);
 		
 		if (($numdeleted1 > 0) || ($numdeleted2 > 0)) {
 		?>

@@ -464,18 +464,23 @@
 								Projects
 							</div>
 							<div class="twelve wide column">
+								<?
+									if (is_null($s['s_projectids']))
+										$searchProjectIDs = array();
+								?>
 
 								<select name="s_projectids[]" multiple class="ui fluid dropdown importantfield" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 									<option value=""></option>
 									<option value="all">All Projects</option>
 									<?
+										
 										$sqlstring = "select * from projects where instance_id = '" . $_SESSION['instanceid'] . "' order by project_name";
 										$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 										while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 											$project_id = $row['project_id'];
 											$project_name = $row['project_name'];
 											$project_costcenter = $row['project_costcenter'];
-											if (in_array($project_id, $s['s_projectids'])) { $selected = "selected"; } else { $selected = ""; }
+											if (in_array($project_id, $searchProjectIDs)) { $selected = "selected"; } else { $selected = ""; }
 											
 											$perms = GetCurrentUserProjectPermissions(array($project_id));
 											if (GetPerm($perms, 'viewdata', $project_id)) { $disabled = ""; } else { $disabled="disabled"; }

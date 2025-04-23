@@ -375,7 +375,10 @@
 			$enrollment[$uid]['enroll_subgroup'] = $row['enroll_subgroup'];
 
 		}
-		$numenrollments = count($enrollment);
+		if (is_null($enrollment))
+			$numenrollments = 0;
+		else
+			$numenrollments = count($enrollment);
 
 		?>
 		<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/se/dt-1.10.24/datatables.min.css"/>

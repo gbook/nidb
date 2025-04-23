@@ -270,6 +270,7 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$modality = strtolower($row['mod_code']);
 
+		$rows = array();
 		?>
 		<div align="center" style="font-weight: bold" width="100%">Protocol Groups for <span style="color:darkblue"><?=strtoupper($modality)?></span></div>
 		<br>

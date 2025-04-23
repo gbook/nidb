@@ -58,7 +58,9 @@
 	$viewhidden = GetVariable("viewhidden");
 	$viewall = GetVariable("viewall");
 	$viewuserid = GetVariable("viewuserid");
-	
+	if ($viewuserid != "")
+		$_SESSION['viewuserid'] = $viewuserid;
+
 	$pipelinetitle = GetVariable("pipelinetitle");
 	$pipelinedesc = GetVariable("pipelinedesc");
 	$pipelinegroup = GetVariable("pipelinegroup");
@@ -928,11 +930,11 @@
 		
 		$sqlstring = "delete from analysis_data where analysis_id in (select analysis_id from analysis where pipeline_id = $id and analysis_status in ('NoMatchingStudies', 'NoMatchingSeries'))";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		?><div align="center"><span class="message">Reset analyses: <?echo mysqli_affected_rows(); ?> analysis <b>data</b> rows deleted</span></div><?
+		?><div align="center"><span class="message">Reset analyses: <?echo mysqli_affected_rows($GLOBALS['linki']); ?> analysis <b>data</b> rows deleted</span></div><?
 	
 		$sqlstring = "delete from analysis where analysis_status in ('NoMatchingStudies', 'NoMatchingSeries') and pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		?><div align="center"><span class="message">Reset analyses: <?echo mysqli_affected_rows(); ?> analysis rows deleted</span></div><?
+		?><div align="center"><span class="message">Reset analyses: <?echo mysqli_affected_rows($GLOBALS['linki']); ?> analysis rows deleted</span></div><?
 	}	
 
 
@@ -3361,6 +3363,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 		//NavigationBar("Pipelines", $urllist);
 		
 		$username = $GLOBALS['username'];
+		$viewuserid = $_SESSION['viewuserid'];
 		
 		if ($viewuserid != "all") {
 			if (($viewuserid == "") || ($viewuserid < 0)) {
@@ -3412,9 +3415,15 @@ echo "#$ps_command     $logged $ps_desc\n";
 		<br><br>
 		<h3 class="ui header">View pipelines owned by</h3>
 		<?
+			$viewuserid = $_SESSION['viewuserid'];
 			$i = 0;
 			foreach ($userids as $userid => $username) {
-				if ($i == 0) $buttoncolor = "blue"; else $buttoncolor = "";
+				if ($i == 0)
+					$buttoncolor = "green";
+				else if ($userid == $viewuserid)
+					$buttoncolor = "blue";
+				else
+					$buttoncolor = "";
 				?> <a href="pipelines.php?viewuserid=<?=$userid?>" class="ui <?=$buttoncolor?> button"><i class="user icon"></i> <?=$username?></a><?
 				$i++;
 			}
@@ -3433,39 +3442,12 @@ echo "#$ps_command     $logged $ps_desc\n";
 				if (trim($username) == "") { $username = "(blank)"; }
 				?>
 				<br><br>
-				<!--
-				<table width="100%" style="border: 1px solid #ddd" cellspacing="0">
-					<tr>
-						<td style="background-color: #DDD; padding:5px">
-				<b style="color: #00008B;font-size:14pt"><?=$username?></b> &nbsp; &nbsp; <input id="pipelinenamefilter<?=$username?>" type="text" placeholder="Filter by pipeline name"/>
-				-->
-				<script type="text/javascript">
-					function filterTable(event) {
-						var filter = event.target.value.toUpperCase();
-						var rows = document.querySelector("#pipelinetable<?=$username?> tbody").rows;
-						
-						for (var i = 0; i < rows.length; i++) {
-							var firstCol = rows[i].cells[0].textContent.toUpperCase();
-							var secondCol = rows[i].cells[1].textContent.toUpperCase();
-							if (firstCol.indexOf(filter) > -1 || secondCol.indexOf(filter) > -1) {
-								rows[i].style.display = "";
-							} else {
-								rows[i].style.display = "none";
-							}      
-						}
-					}
-
-					document.querySelector('#pipelinenamefilter<?=$username?>').addEventListener('keyup', filterTable, false);
-				</script>
-				<!--		</td>
-					</tr>
-				</table>-->
 				<a href="pipelines.php?viewhidden=1">View hidden pipelines</a>
 				<table class="ui single line selectable table" id="pipelinetable<?=$username?>" width="100%">
 					<thead>
 						<tr style="vertical-align: top;text-align:left">
 							<th style="font-size:12pt">Pipeline Group</th>
-							<th style="font-size:12pt">Name <input id="pipelinenamefilter<?=$username?>" type="text" placeholder="Filter by pipeline name"/></th>
+							<th style="font-size:12pt">Name <input id="pipelinenamefilter<?=$username?>" type="text" class="ui input" placeholder="Filter by pipeline name"/></th>
 							<th style="font-size:12pt" align="right">Level</th>
 							<th style="font-size:12pt">Owner<br></th>
 							<th style="font-size:12pt">Status</th>
@@ -3475,6 +3457,24 @@ echo "#$ps_command     $logged $ps_desc\n";
 							<th style="font-size:12pt">Queue</th>-->
 						</tr>
 					</thead>
+					<script type="text/javascript">
+						function filterTable(event) {
+							var filter = event.target.value.toUpperCase();
+							var rows = document.querySelector("#pipelinetable<?=$username?> tbody").rows;
+							
+							for (var i = 0; i < rows.length; i++) {
+								var firstCol = rows[i].cells[0].textContent.toUpperCase();
+								var secondCol = rows[i].cells[1].textContent.toUpperCase();
+								if (firstCol.indexOf(filter) > -1 || secondCol.indexOf(filter) > -1) {
+									rows[i].style.display = "";
+								} else {
+									rows[i].style.display = "none";
+								}      
+							}
+						}
+
+						document.querySelector("#pipelinenamefilter<?=$username?>").addEventListener('keyup', filterTable, false);
+					</script>
 					<tbody>
 						<?
 							PrintTree($pipelinetree,0);
@@ -3578,14 +3578,17 @@ echo "#$ps_command     $logged $ps_desc\n";
 	/* -------------------------------------------- */
 	function PrintTree($tree, $level) {
 		MarkTime("PrintTree()");
-		if(!is_null($tree) && count($tree) > 0) {
-			$level++;
-			foreach($tree as $node) {
-				PrintPipelineRow($GLOBALS['info'][$node['pipeline_id']], $level);
-				$level = PrintTree($node['child_id'], $level);
-			}
-			$level--;
+
+		if (is_null($tree) || $tree < 1)
+			return $level;
+		
+		$level++;
+		foreach($tree as $node) {
+			PrintPipelineRow($GLOBALS['info'][$node['pipeline_id']], $level);
+			$level = PrintTree($node['child_id'], $level);
 		}
+		$level--;
+
 		return $level;
 	}	
 
@@ -3594,14 +3597,16 @@ echo "#$ps_command     $logged $ps_desc\n";
 	/* -------------------------------------------- */
 	function PrintUsageTree($tree, $level, $parentusage, $maxsize) {
 		MarkTime("PrintUsageTree()");
-		if(!is_null($tree) && count($tree) > 0) {
-			$level++;
-			foreach($tree as $node) {
-				$usage = PrintUsageRow($GLOBALS['info'][$node['pipeline_id']], $level, $parentusage, $maxsize);
-				$level = PrintUsageTree($node['child_id'], $level, $usage, $maxsize);
-			}
-			$level--;
+		if (is_null($tree) || $tree < 1)
+			return $level;
+
+		$level++;
+		foreach($tree as $node) {
+			$usage = PrintUsageRow($GLOBALS['info'][$node['pipeline_id']], $level, $parentusage, $maxsize);
+			$level = PrintUsageTree($node['child_id'], $level, $usage, $maxsize);
 		}
+		$level--;
+
 		return $level;
 	}	
 	

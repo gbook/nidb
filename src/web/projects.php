@@ -675,7 +675,7 @@
 						$sqlstringA = "update $modality" . "_series set series_altdesc = '$newname' where (series_desc = '$oldname' or (series_protocol = '$oldname' and (series_desc = '' or series_desc is null))) and study_id = '$studyid'";
 						$numupdates = 0;
 						$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-						$numupdates = mysqli_affected_rows();
+						$numupdates = mysqli_affected_rows($GLOBALS['linki']);
 						$numrowsaffected += $numupdates;
 						if ($numupdates > 0) {
 							//echo "[$sqlstringA]<br>";
@@ -1175,6 +1175,8 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$name = $row['project_name'];
 		
+		$rowdata = array();
+		
 		/* get all subjects, and their enrollment info, associated with the project */
 		$sqlstring = "select * from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = $id and a.isactive = '$isactive' order by a.uid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -1243,9 +1245,10 @@
 
 			$rowdata[] = "{ id: $subjectid, enrollmentid: $subjectid, uid: \"$uid\", globalaltuids: \"$globalaltuidlist\", altuids: \"$projectaltuidlist\", guid: \"$guid\", dob: \"$birthdate\", sex: \"$sex\", gender: \"$gender\", ethnicity1: \"$ethnicity1\", ethnicity2: \"$ethnicity2\", handedness: \"$handedness\", education: \"$education\", marital: \"$maritalstatus\", smoking: \"$smokingstatus\", enrollgroup: \"$enrollsubgroup\" }";
 		}
+		$data = "";
+		if (count($rowdata) > 0)
+			$data = implode(",", $rowdata);
 		
-		$data = implode(",", $rowdata);
-		//PrintVariable($data);
 		?>
 		
 		<!-- Include the JS for AG Grid -->
@@ -1516,6 +1519,8 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$name = $row['project_name'];
 		
+		$rowdata = array();
+		
 		/* get all subjects, and their enrollment info, associated with the project */
 		$sqlstring = "select * from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = $id and a.isactive = '$isactive' order by a.uid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -1565,7 +1570,9 @@
 			$rowdata[] = "{ id: $subjectid, uid: \"$uid\", globalaltuids: \"$globalaltuidlist\", altuids: \"$altuidlist\", guid: \"$guid\", dob: \"$birthdate\", sex: \"$sex\", gender: \"$gender\", enrollgroup: \"$enrollsubgroup\" }";
 		}
 		
-		$data = implode(",", $rowdata);
+		$data = "";
+		if (count($rowdata) > 0)
+			$data = implode(",", $rowdata);
 		?>
 		
 		<!-- Include the JS for AG Grid -->
@@ -1734,6 +1741,8 @@
 	function DisplayStudiesTable2($id, $isactive=1) {
 		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 		if (!isInteger($id)) { echo "Invalid project ID [$id]"; return; }
+
+		$rowdata = array();
 		
 		/* get all subjects, and their enrollment info, associated with the project */
 		/* display studies associated with this project */
@@ -1800,7 +1809,9 @@
 			$lastuid = $uid;
 		}
 		
-		$data = implode(",", $rowdata);
+		$data = "";
+		if (count($rowdata) > 0)
+			$data = implode(",", $rowdata);
 		?>
 		
 		<!-- Include the JS for AG Grid -->
@@ -2709,6 +2720,7 @@
 		/* get some stats about the project */
 		$siteids = array();
 		$ages = array();
+		$studydates = array();
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$uid = $row['uid'];
 			$siteids[] = $row['study_nidbsite'];
@@ -2731,8 +2743,14 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$numsubjects = $row['numsubjects'];
 		
-		$lowdate = min($studydates);
-		$highdate = max($studydates);
+		if (count($studydates) > 0) {
+			$lowdate = min($studydates);
+			$highdate = max($studydates);
+		}
+		else {
+			$lowdate = "";
+			$highdate = "";
+		}
 		
 		/* get instance ID */
 		$sqlstring = "select instance_id from projects where project_id = $id";
