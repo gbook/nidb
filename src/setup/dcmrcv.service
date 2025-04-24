@@ -7,7 +7,7 @@ StartLimitIntervalSec=0
 Type=simple
 Restart=Always
 RestartSec=1
-User=nidb
+User=root
 ExecStart=/nidb/bin/dcm4che/bin/./dcmrcv NIDB:104 -dest /nidb/data/dicomincoming > /dev/null 2>&1 &
 
 [Install]

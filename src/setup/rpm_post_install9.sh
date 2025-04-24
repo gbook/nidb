@@ -75,7 +75,8 @@ mysql -uroot -ppassword -e "CREATE USER IF NOT EXISTS 'nidb'@'%' IDENTIFIED BY '
 
 # add dcmrcv service at boot
 echo 'Setting up dcmrcv...'
-cp /nidb/setup/dcmrcv.service /etc/systemd/systen/  # copy the dcmrcv init script
+cp /nidb/setup/dcmrcv.service /etc/systemd/system/  # copy the dcmrcv init script
+systemctl enable dcmrcv
 systemctl start dcmrcv
 #chmod 755 /etc/init.d/dcmrcv # change permissions of the script
 #chkconfig --add dcmrcv       # add the script to start at boot
