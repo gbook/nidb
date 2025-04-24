@@ -353,35 +353,35 @@ bool RenameFile(QString filepathorig, QString filepathnew, bool force) {
 QStringList FindAllFiles(QString dir, QString pattern, bool recursive) {
     //if (cfg["debug"] == "1") WriteLog("Finding all files in ["+dir+"] with pattern ["+pattern+"]");
 
-    QString systemstring;
-    if (recursive)
-        systemstring = QString("find %1/ -name '%2' -type f").arg(dir).arg(pattern);
-    else
-        systemstring = QString("find %1/ -maxdepth 1 -name '%2' -type f").arg(dir).arg(pattern);
+    //QString systemstring;
+    //if (recursive)
+    //    systemstring = QString("find %1/ -name '%2' -type f").arg(dir).arg(pattern);
+    //else
+    //    systemstring = QString("find %1/ -maxdepth 1 -name '%2' -type f").arg(dir).arg(pattern);
 
-    Print("Checkpoint A1");
-    Print(systemstring);
-    QString output = SystemCommand(systemstring, false);
-    Print("Checkpoint A2");
-    Print(output);
-    Print("Checkpoint A3");
-    output.remove(QRegularExpression("[^\\x20-\\x7E]"));
-    Print("Checkpoint A4");
+    //Print("Checkpoint A1");
+    //Print(systemstring);
+    //QString output = SystemCommand(systemstring, false);
+    //Print("Checkpoint A2");
+    //Print(output);
+    //Print("Checkpoint A3");
+    //output.remove(QRegularExpression("[^\\x20-\\x7E]"));
+    //Print("Checkpoint A4");
     QStringList files;
-    Print("Checkpoint A5");
-    files = output.split(QRegularExpression("\n|\r\n|\r"), Qt::SkipEmptyParts);
-    Print("Checkpoint A6");
+    //Print("Checkpoint A5");
+    //files = output.split(QRegularExpression("\n|\r\n|\r"), Qt::SkipEmptyParts);
+    //Print("Checkpoint A6");
 
-    //if (recursive) {
-    //    QDirIterator it(dir, QStringList() << pattern, QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks, QDirIterator::Subdirectories);
-    //    while (it.hasNext())
-    //        files << it.next();
-    //}
-    //else {
-    //    QDirIterator it(dir, QStringList() << pattern, QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks, QDirIterator::NoIteratorFlags);
-    //    while (it.hasNext())
-    //        files << it.next();
-    //}
+    if (recursive) {
+        QDirIterator it(dir, QStringList() << pattern, QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks, QDirIterator::Subdirectories);
+        while (it.hasNext())
+            files << it.next();
+    }
+    else {
+        QDirIterator it(dir, QStringList() << pattern, QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks, QDirIterator::NoIteratorFlags);
+        while (it.hasNext())
+            files << it.next();
+    }
 
     return files;
 }
