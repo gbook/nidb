@@ -68,4 +68,4 @@ cp -f ~/Qt/6.9.0/gcc_64/plugins/sqldrivers/libqsqlite.so %{buildroot}/nidb/bin/s
 /usr/lib/*
 
 %post
-/nidb/setup/rpm_post_install.sh
+/nidb/setup/rpm_post_install9.sh

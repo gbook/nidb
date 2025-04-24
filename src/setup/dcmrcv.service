@@ -1,0 +1,14 @@
+[Unit]
+Description=DICOM receiver
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=Always
+RestartSec=1
+User=nidb
+ExecStart=/nidb/bin/dcm4che/bin/./dcmrcv NIDB:104 -dest /nidb/data/dicomincoming > /dev/null 2>&1 &
+
+[Install]
+WantedBy=multi-user.target
