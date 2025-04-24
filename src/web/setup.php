@@ -639,6 +639,7 @@
 			$database = $GLOBALS['cfg']['mysqldatabase'];
 		}
 		
+		$ignoredtables = array();
 		?>
 		<?=DisplaySetupMenu("database2")?>
 		<br><br><br><br><br>

@@ -1550,6 +1550,7 @@
 			$globalaltids = array_unique($globalaltids);
 			$globalaltuidlist = implode2(", ",$globalaltids);
 			$globalaltids = array();
+			$altids = array();
 
 			$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' and enrollment_id = $enrollmentid order by isprimary desc";
 			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
