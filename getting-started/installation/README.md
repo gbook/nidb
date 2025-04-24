@@ -40,7 +40,7 @@ sudo rpm -i firejail-x.y.z.rpm
 
 ## Install NiDB rpm
 
-Download the latest .rpm package from http://github.com/gbook/nidb and run the following commands
+Download the latest .rpm package from [https://github.com/gbook/nidb/release](https://github.com/gbook/nidb/releases) and run the following commands
 
 {% tabs %}
 {% tab title="RHEL9" %}
@@ -49,11 +49,13 @@ Run the following commands
 {% code fullWidth="false" %}
 ```bash
 # add repository to install OpenSSL 1.0
-curl -JLo /etc/yum.repos.d/mroche-vfx-compatibility.repo "https://copr.fedorainfracloud.org/coprs/mroche/vfx-compatibility/repo/epel-9/mroche-vfx-compatibility-epel-9.repo"
+sudo curl -JLo /etc/yum.repos.d/mroche-vfx-compatibility.repo "https://copr.fedorainfracloud.org/coprs/mroche/vfx-compatibility/repo/epel-9/mroche-vfx-compatibility-epel-9.repo"
 
 sudo dnf install epel-release # for ImageMagick
 sudo dnf install mysql-libs --enablerepo=devel # for libmysql2.1
 sudo yum --nogpgcheck localinstall nidb-xxxx.xx.xx-1.el9.x86_64.rpm
+
+reboot # you must reboot to ensure SELinux is disabled before continuing
 ```
 {% endcode %}
 {% endtab %}
