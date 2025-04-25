@@ -5500,6 +5500,8 @@
 	/* ------- BuildSQLString --------------------- */
 	/* -------------------------------------------- */
 	function BuildSQLString($s) {
+
+		$s_projectids = array();
 		
 		Debug(__FILE__, __LINE__, "<pre>" . print_r($s,true) . "</pre>");
 		
