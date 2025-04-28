@@ -111,7 +111,7 @@
 
       	          $result = MySQLiQuery($sqlstring, __FILE__, __LINE__); }
 
-        	  ?><div align="center"><span class="message"><?=$formtitle?> Copied </span></div><br><br><?
+        	  ?><div align="center"><span class="message"><? =$formtitle?> Copied </span></div><br><br><?
 	
 	}
 
@@ -131,7 +131,7 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 
-		?><div align="center"><span class="message"><?=$formtitle?> updated</span></div><br><br><?
+		?><div align="center"><span class="message"><? =$formtitle?> updated</span></div><br><br><?
 	}
 
 
@@ -151,7 +151,7 @@
 		$sqlstring = "insert into assessment_forms (project_id, form_title, form_desc, form_creator, form_createdate) values ('$projectid', '$formtitle', '$formdesc', '$username', now())";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		?><div align="center"><span class="message"><?=$formtitle?> added</span></div><br><br><?
+		?><div align="center"><span class="message"><? =$formtitle?> added</span></div><br><br><?
 	}
 
 	
@@ -185,7 +185,7 @@
 			}
 		}
 		
-		?><div align="center"><span class="message"><?=$formtitle?> updated</span></div><br><br><?
+		?><div align="center"><span class="message"><? =$formtitle?> updated</span></div><br><br><?
 	}
 	
 
@@ -195,7 +195,7 @@
 	function DeleteForm($formid) {
 		$sqlstring = "delete from assessment_forms where form_id = $formid and project_id = $projectid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		?><div align="center"><span class="message"><?=$formid?> deleted</span></div><br><br><?
+		?><div align="center"><span class="message"><? =$formid?> deleted</span></div><br><br><?
 	}	
 
 
@@ -205,7 +205,7 @@
 	function PublishForm($formid,$projectid) {
 		$sqlstring = "update assessment_forms set form_ispublished = 1 where form_id = $formid and project_id =$projectid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		?><div align="center"><span class="message"><?=$formid?> published</span></div><br><br><?
+		?><div align="center"><span class="message"><? =$formid?> published</span></div><br><br><?
 	}	
 	
 	
@@ -246,26 +246,26 @@
 		<div align="center">
 		<table class="entrytable">
 			<form method="post" action="projectassessments.php">
-			<input type="hidden" name="action" value="<?=$formaction?>">
-			<input type="hidden" name="formid" value="<?=$formid?>">
-			<input type="hidden" name="projectid" value="<?=$projectid?>">
+			<input type="hidden" name="action" value="<? =$formaction?>">
+			<input type="hidden" name="formid" value="<? =$formid?>">
+			<input type="hidden" name="projectid" value="<? =$projectid?>">
 
 			<tr>
 				<td colspan="2" align="center">
-					<b><?=$formtitle?></b>
+					<b><? =$formtitle?></b>
 				</td>
 			</tr>
 			<tr>
 				<td>Title</td>
-				<td><input type="text" name="formtitle" value="<?=$title?>" required></td> <td align = "right"><font color="red">Required Field</font></td>
+				<td><input type="text" name="formtitle" value="<? =$title?>" required></td> <td align = "right"><font color="red">Required Field</font></td>
 			</tr>
 			<tr>
 				<td>Description</td>
-				<td><input type="text" name="formdesc" value="<?=$desc?>" size="50" required></td> <td align = "right"><font color="red">Required Field</font></td>
+				<td><input type="text" name="formdesc" value="<? =$desc?>" size="50" required></td> <td align = "right"><font color="red">Required Field</font></td>
 			</tr>
 			<tr>
 				<td colspan="2" align="center">
-					<input type="submit" value="<?=$submitbuttonlabel?>">
+					<input type="submit" value="<? =$submitbuttonlabel?>">
 				</td>
 			</tr>
 			</form>
@@ -288,8 +288,8 @@
 			<tbody>
 				<form method="post" action="projectassessments.php">
 				<input type="hidden" name="action" value="updatefields">
-				<input type="hidden" name="formid" value="<?=$formid?>">
-				<input type="hidden" name="projectid" value="<?=$projectid?>">
+				<input type="hidden" name="formid" value="<? =$formid?>">
+				<input type="hidden" name="projectid" value="<? =$projectid?>">
 				<?
 					$neworder = 1;
 					/* display all other rows, sorted by order */
@@ -305,10 +305,10 @@
 						$formfield_haslinebreak = $row['formfield_haslinebreak'];
 						?>
 						<tr>
-							<td><input type="text" name="order[<?=$neworder?>]" size="2" maxlength="5" value="<?=$neworder?>"></td>
-							<td><input type="text" name="field[<?=$neworder?>]" size="50" value="<?=$formfield_desc?>"></td>
+							<td><input type="text" name="order[<? =$neworder?>]" size="2" maxlength="5" value="<? =$neworder?>"></td>
+							<td><input type="text" name="field[<? =$neworder?>]" size="50" value="<? =$formfield_desc?>"></td>
 							<td>
-							<select name="datatype[<?=$neworder?>]">
+							<select name="datatype[<? =$neworder?>]">
 								<option value="string" <? if ($formfield_datatype == "string") { echo "selected"; } ?>>String</option>
 								<option value="number" <? if ($formfield_datatype == "number") { echo "selected"; } ?>>Number</option>
 								<option value="multichoice" <? if ($formfield_datatype == "multichoice") { echo "selected"; } ?>>Multi-choice</option>
@@ -319,9 +319,9 @@
 								<option value="header" <? if ($formfield_datatype == "header") { echo "selected"; } ?>>Section header</option>
 							</select>
 							</td>
-							<td><input type="text" name="values[<?=$neworder?>]" size="40" value="<?=$formfield_values?>"></td>
-							<td><input type="checkbox" name="linebreaks[<?=$neworder?>]" <? if ($formfield_haslinebreak) {echo "checked";} ?> value="1"></td>
-							<td><input type="checkbox" name="scored[<?=$neworder?>]" <? if ($formfield_scored) {echo "checked";} ?> value="1"></td>
+							<td><input type="text" name="values[<? =$neworder?>]" size="40" value="<? =$formfield_values?>"></td>
+							<td><input type="checkbox" name="linebreaks[<? =$neworder?>]" <? if ($formfield_haslinebreak) {echo "checked";} ?> value="1"></td>
+							<td><input type="checkbox" name="scored[<? =$neworder?>]" <? if ($formfield_scored) {echo "checked";} ?> value="1"></td>
 						</tr>
 						<?
 						$neworder++;
@@ -330,10 +330,10 @@
 				for ($i=0;$i<5;$i++) {
 				?>
 				<tr>
-					<td><input type="text" name="order[<?=$neworder?>]" size="2" maxlength="5" value="<?=$neworder?>"></td>
-					<td><input type="text" name="field[<?=$neworder?>]" size="50"></td>
+					<td><input type="text" name="order[<? =$neworder?>]" size="2" maxlength="5" value="<? =$neworder?>"></td>
+					<td><input type="text" name="field[<? =$neworder?>]" size="50"></td>
 					<td>
-					<select name="datatype[<?=$neworder?>]">
+					<select name="datatype[<? =$neworder?>]">
 						<option value="string">String</option>
 						<option value="number">Number</option>
 						<option value="multichoice">Multi-choice</option>
@@ -344,9 +344,9 @@
 						<option value="header">Section header</option>
 					</select>
 					</td>
-					<td><input type="text" name="values[<?=$neworder?>]" size="40"></td>
-					<td><input type="checkbox" name="linebreaks[<?=$neworder?>]" value="1"></td>
-					<td><input type="checkbox" name="scored[<?=$neworder?>]" value="1"></td>
+					<td><input type="text" name="values[<? =$neworder?>]" size="40"></td>
+					<td><input type="checkbox" name="linebreaks[<? =$neworder?>]" value="1"></td>
+					<td><input type="checkbox" name="scored[<? =$neworder?>]" value="1"></td>
 					<? $neworder++; ?>
 				</tr>
 				<? } ?>
@@ -358,12 +358,12 @@
 		</table>
 
 		 <div align="right">
-                 <button><h3> <b> <a class="ui button" href="projectassessments.php?action=viewform&formid=<?=$formid?>&projectid=<?=$projectid?>"> Preview Form </a></b></h3></button>
+                 <button><h3> <b> <a class="ui button" href="projectassessments.php?action=viewform&formid=<? =$formid?>&projectid=<? =$projectid?>"> Preview Form </a></b></h3></button>
 
 		 <div align="center">	
 		<br><br>
 		<div style="border: 1px solid #DDDDDD; padding: 10px">
-			<a href="projectassessments.php?formid=<?=$formid?>&projectid=<?=$projectid?>&action=publish" style="color:darkred; font-weight: bold; font-size: 14pt; background-color: #FFDDDD; padding: 3px">Publish</a>
+			<a href="projectassessments.php?formid=<? =$formid?>&projectid=<? =$projectid?>&action=publish" style="color:darkred; font-weight: bold; font-size: 14pt; background-color: #FFDDDD; padding: 3px">Publish</a>
 			<br><br>
 			<span style="color: #666666; font-size:15pt">This cannot be undone. Once it is published, people may start using it.</span>
 		</div>
@@ -406,10 +406,10 @@
 
 		<table class="formentrytable">
 			<tr>
-				<td  class="title" colspan="2"><?=$title?></td>
+				<td  class="title" colspan="2"><? =$title?></td>
 			</tr>
 			<tr>
-				<td  class="desc" colspan="2"><?=$desc?></td>
+				<td  class="desc" colspan="2"><? =$desc?></td>
 			</tr>
 			<tr>
                                 <td style="font-size:12pt; color: blue">Title</td>
@@ -431,22 +431,22 @@
 					?>
 					<tr>
 						<? if ($formfield_datatype == "header") { ?>
-							<td colspan="2" class="sectionheader"><?=$formfield_desc?></td>
+							<td colspan="2" class="sectionheader"><? =$formfield_desc?></td>
 						<? } else { ?>
-							<td class="field"><?=$formfield_desc?></td>
+							<td class="field"><? =$formfield_desc?></td>
 							<td class="value">
 							<?
 								switch ($formfield_datatype) {
 									case "binary": ?><input type="file" name="value[]"><? break;
 									case "multichoice": ?>
-										<select multiple name="<?=$formfield_id?>-multichoice" style="height: 150px">
+										<select multiple name="<? =$formfield_id?>-multichoice" style="height: 150px">
 											<?
 												$values = explode(",", $formfield_values);
 												natsort($values);
 												foreach ($values as $value) {
 													$value = trim($value);
 												?>
-													<option value="<?=$value?>"><?=$value?></option>
+													<option value="<? =$value?>"><? =$value?></option>
 												<?
 												}
 											?>
@@ -461,16 +461,16 @@
 												foreach ($values as $value) {
 													$value = trim($value);
 												?>
-													<input type="radio"  name="<?=$formfield_id?>-singlechoice" value="<?=$value?>"><?=$value?>
+													<input type="radio"  name="<? =$formfield_id?>-singlechoice" value="<? =$value?>"><? =$value?>
 												<?
 													if ($formfield_haslinebreak) { echo "<br>"; } else { echo "&nbsp;"; }
 												}
 											?>
 									<? break;
-									case "date": ?><input type="date" name="<?=$formfield_id?>-date"><? break;
-									case "number": ?><input type="number" name="<?=$formfield_id?>-number"><? break;
-									case "string": ?><input type="text" name="<?=$formfield_id?>-string"><? break;
-									case "text": ?><textarea name="<?=$formfield_id?>-text"></textarea><? break;
+									case "date": ?><input type="date" name="<? =$formfield_id?>-date"><? break;
+									case "number": ?><input type="number" name="<? =$formfield_id?>-number"><? break;
+									case "string": ?><input type="text" name="<? =$formfield_id?>-string"><? break;
+									case "text": ?><textarea name="<? =$formfield_id?>-text"></textarea><? break;
 								}
 							?>
 						<? } ?>
@@ -481,11 +481,11 @@
 		</table>
 		
 		<div align="left"> 
-		<h4>Number of current assessments stored in <?=$title?>=   <?=$Cnt?> </h4>
+		<h4>Number of current assessments stored in <? =$title?>=   <? =$Cnt?> </h4>
 		<? if (($formpublish==0) || ($Cnt==0)) { ?>
 			<br>
 	 		<div align="right">
-                	<button disabled ><h3> <b> <a class="ui button" href="projectassessments.php?action=editform&formid=<?=$formid?>&projectid=<?=$projectid?>"> Edit Form </a></b></h3></button>
+                	<button disabled ><h3> <b> <a class="ui button" href="projectassessments.php?action=editform&formid=<? =$formid?>&projectid=<? =$projectid?>"> Edit Form </a></b></h3></button>
 		<? } else  {?>
 			<br><br><br>
 			<div align="center">
@@ -557,13 +557,13 @@
 			<tr>
 				<td>
 					<? if ($ispublished) { ?>
-					<a href="projectassessments.php?action=viewform&formid=<?=$formid?>&projectid=<?=$projectid?>"><?=$title?></a>
+					<a href="projectassessments.php?action=viewform&formid=<? =$formid?>&projectid=<? =$projectid?>"><? =$title?></a>
 					<? } else { ?>
-					<a href="projectassessments.php?action=editform&formid=<?=$formid?>&projectid=<?=$projectid?>"><?=$title?></a>
+					<a href="projectassessments.php?action=editform&formid=<? =$formid?>&projectid=<? =$projectid?>"><? =$title?></a>
 					<? } ?>
 				</td>
-				<td><?=$desc?></td>
-				<td><?=$createdate?></td>
+				<td><? =$desc?></td>
+				<td><? =$createdate?></td>
 				<td align="center"><? if ($ispublished) { echo "&#10004;"; } ?></td>
 			</tr>
 			<? 
@@ -573,7 +573,7 @@
 	</table>
 	<br>
 	<div align="center">
-	<h3> <b> <a href="projectassessments.php?action=addform&projectid=<?=$projectid?>"> Add Form </a></b></h3>
+	<h3> <b> <a href="projectassessments.php?action=addform&projectid=<? =$projectid?>"> Add Form </a></b></h3>
 	<?
 	}
 
@@ -630,7 +630,7 @@
 
 		<thead>
 			<tr>
-				<th align="left">Form Title  <font><?=" -   "?> </font>  Project Name</th>
+				<th align="left">Form Title  <font><? =" -   "?> </font>  Project Name</th>
 				<th align="left">Description</th>
 				<th>Form Id</th>
 				<th align="left">Create Date</th>
@@ -642,8 +642,8 @@
 
  			<form method="post" action="projectassessments.php">
                         <input type="hidden" name="action" value="link">
-                        <input type="hidden" name="formid" value="<?=$formid?>">
-                        <input type="hidden" name="projectid" value="<?=$projectid?>">
+                        <input type="hidden" name="formid" value="<? =$formid?>">
+                        <input type="hidden" name="projectid" value="<? =$projectid?>">
 			
 
 			<?
@@ -665,12 +665,12 @@
 			                $projname = $row['project_name'];
 			?>
 			<tr>
-			 	<td><a href="projectassessments.php?action=viewform&formid=<?=$formid?>&projectid=<?=$projectid?>"><?=$title?><font><?=" -   "?> </font><b><?=$projname?></b></a></td>
-				<td align=""><?=$desc?></td>	
-				<td align="center"><?=$formid?></td>
-				<td><?=$createdate?></td>
+			 	<td><a href="projectassessments.php?action=viewform&formid=<? =$formid?>&projectid=<? =$projectid?>"><? =$title?><font><? =" -   "?> </font><b><? =$projname?></b></a></td>
+				<td align=""><? =$desc?></td>	
+				<td align="center"><? =$formid?></td>
+				<td><? =$createdate?></td>
 				<td align="center"><? if ($ispublished) { echo "&#10004;"; } ?></td>
-				<td align="center"><input type="checkbox" name="Link[]"  value=<?=$formid?>></td>
+				<td align="center"><input type="checkbox" name="Link[]"  value=<? =$formid?>></td>
 
 			</tr>
 

@@ -208,7 +208,7 @@
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
 		}
-		 ?><div align="center"><span class="message"><?=$formtitle?> updated</span></div><br><br><?
+		 ?><div align="center"><span class="message"><? =$formtitle?> updated</span></div><br><br><?
 	}
 	
 	/* -------------------------------------------- */
@@ -238,19 +238,19 @@
 		<div align="center">
 		<br><br>
 		<form action="assessments.php" method="post">
-		<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
-		<input type="hidden" name="formid" value="<?=$formid?>">
-		<input type="hidden" name="projectid" value="<?=$projectid?>">
+		<input type="hidden" name="enrollmentid" value="<? =$enrollmentid?>">
+		<input type="hidden" name="formid" value="<? =$formid?>">
+		<input type="hidden" name="projectid" value="<? =$projectid?>">
 		<input type="hidden" name="action" value="save">
 		
 		<table>
 			<tr>
 				<td align="right" style="font-weight: bold; font-size: 11pt; color: #444444">Experimentor</td>
-				<td><input type="text" name="experimentor" value="<?=$username?>"></td>
+				<td><input type="text" name="experimentor" value="<? =$username?>"></td>
 			</tr>
 			<tr>
 				<td align="right" style="font-weight: bold; font-size: 11pt; color: #444444">Experiment date</td>
-				<td><input type="text" name="experimentdate" value="<?=date("Y-m-d");?>"></td>
+				<td><input type="text" name="experimentdate" value="<? =date("Y-m-d");?>"></td>
 			</tr>
 			<tr>
 				<td align="right" style="font-weight: bold; font-size: 11pt; color: #444444">Label</td>
@@ -266,10 +266,10 @@
 		<!--
 		<table class="formentrytable">
 			<tr>
-				<td class="title" colspan="3"><?=$title?></td>
+				<td class="title" colspan="3"><? =$title?></td>
 			</tr>
 			<tr>
-				<td class="desc" colspan="3"><?=$desc?></td>
+				<td class="desc" colspan="3"><? =$desc?></td>
 			</tr>
 			<tr>
 				<td colspan="3">&nbsp;</td>
@@ -291,22 +291,22 @@
 						?>
 						<tr>
 							<? if ($formfield_datatype == "header") { ?>
-								<td colspan="2" class="sectionheader"><?=$formfield_desc?></td>
+								<td colspan="2" class="sectionheader"><? =$formfield_desc?></td>
 							<? } else { ?>
-								<td class="field"><?=$formfield_desc?></td>
+								<td class="field"><? =$formfield_desc?></td>
 								<td class="value">
 								<?
 									switch ($formfield_datatype) {
-										case "binary": ?><input type="file" name="file-<?=$formfield_id?>[]"><? break;
+										case "binary": ?><input type="file" name="file-<? =$formfield_id?>[]"><? break;
 										case "multichoice": ?>
-											<select multiple name="text-<?=$formfield_id?>[]" style="height:150px">
+											<select multiple name="text-<? =$formfield_id?>[]" style="height:150px">
 												<?
 													$values = explode(",", $formfield_values);
 													natsort($values);
 													foreach ($values as $value) {
 														$value = trim($value);
 													?>
-														<option value="<?=$value?>"><?=$value?></option>
+														<option value="<? =$value?>"><? =$value?></option>
 													<?
 													}
 												?>
@@ -319,16 +319,16 @@
 													foreach ($values as $value) {
 														$value = trim($value);
 													?>
-														<input type="radio"  name="text-<?=$formfield_id?>[]" value="<?=$value?>"><?=$value?>
+														<input type="radio"  name="text-<? =$formfield_id?>[]" value="<? =$value?>"><? =$value?>
 													<?
 														if ($formfield_haslinebreak) { echo "<br>"; } else { echo "&nbsp;"; }
 													}
 												?>
 										<? break;
-										case "date": ?><input type="date" name="date-<?=$formfield_id?>[]"><span class="tiny">date</span><? break;
-										case "number": ?><input type="text" name="number-<?=$formfield_id?>[]"><span class="tiny">number</span><? break;
-										case "string": ?><input type="text" name="string-<?=$formfield_id?>[]"><span class="tiny">string</span><? break;
-										case "text": ?><textarea name="text-<?=$formfield_id?>[]"></textarea><? break;
+										case "date": ?><input type="date" name="date-<? =$formfield_id?>[]"><span class="tiny">date</span><? break;
+										case "number": ?><input type="text" name="number-<? =$formfield_id?>[]"><span class="tiny">number</span><? break;
+										case "string": ?><input type="text" name="string-<? =$formfield_id?>[]"><span class="tiny">string</span><? break;
+										case "text": ?><textarea name="text-<? =$formfield_id?>[]"></textarea><? break;
 									}
 								?>
 							<? } ?>
@@ -336,7 +336,7 @@
 							<? if ($formfield_scored) {?>
 							<td><input type="text" size="2"></td>
 							<? } ?>
-							<td class="order"><?=$formfield_order?></td>
+							<td class="order"><? =$formfield_order?></td>
 						</tr>
 						<?
 					}
@@ -406,38 +406,38 @@
 		<div align="center">
 		<br><br>
 		<form action="assessments.php" method="post">
-		<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
-		<input type="hidden" name="formid" value="<?=$formid?>">
-		<input type="hidden" name="experimentid" value="<?=$experimentid?>">
+		<input type="hidden" name="enrollmentid" value="<? =$enrollmentid?>">
+		<input type="hidden" name="formid" value="<? =$formid?>">
+		<input type="hidden" name="experimentid" value="<? =$experimentid?>">
 		<input type="hidden" name="action" value="update">
 		
 		<table>
 			<tr>
 				<td align="right" style="font-weight: bold; font-size: 11pt; color: #444444">Experimentor</td>
-				<td><input type="text" name="experimentor" value="<?=$experimentor?>" <?=$readonly?>></td>
+				<td><input type="text" name="experimentor" value="<? =$experimentor?>" <? =$readonly?>></td>
 			</tr>
 			<tr>
 				<td align="right" style="font-weight: bold; font-size: 11pt; color: #444444">Experiment date</td>
-				<td><input type="text" name="experimentdate" value="<?=$exp_admindate?>" <?=$readonly?>></td>
+				<td><input type="text" name="experimentdate" value="<? =$exp_admindate?>" <? =$readonly?>></td>
 			</tr>
 			<tr>
 				<td align="right" style="font-weight: bold; font-size: 11pt; color: #444444">Label</td>
-				<td><input type="text" name="label" value="<?=$label?>"></td>
+				<td><input type="text" name="label" value="<? =$label?>"></td>
 			</tr>
 			<tr>
 				<td align="right" style="font-weight: bold; font-size: 11pt; color: #444444">Notes</td>
-				<td><textarea name="notes"><?=$notes?></textarea></td>
+				<td><textarea name="notes"><? =$notes?></textarea></td>
 			</tr>
 		</table>
 		<br><br>
 		
 		<table class="formentrytable">
 			<tr>
-				<td class="title" colspan="2"><?=$title?></td>
-				<td rowspan="2"><div class="<?=$formstatusclass?>"><?=$formstatus?><br><span style="font-size:8pt; font-weight: normal"><?=$lastupdate?></span></div></td>
+				<td class="title" colspan="2"><? =$title?></td>
+				<td rowspan="2"><div class="<? =$formstatusclass?>"><? =$formstatus?><br><span style="font-size:8pt; font-weight: normal"><? =$lastupdate?></span></div></td>
 			</tr>
 			<tr>
-				<td class="desc" colspan="2"><?=$desc?></td>
+				<td class="desc" colspan="2"><? =$desc?></td>
 			</tr>
 			<tr>
 				<td colspan="2">&nbsp;</td>
@@ -477,23 +477,23 @@
 					?>
 					<tr>
 						<? if ($formfield_datatype == "header") { ?>
-							<td colspan="2" class="sectionheader"><?=$formfield_desc?></td>
+							<td colspan="2" class="sectionheader"><? =$formfield_desc?></td>
 						<? } else { ?>
 							<td class="field">
-								<?=$formfield_order?> <?=$formfield_desc?>
+								<? =$formfield_order?> <? =$formfield_desc?>
 							</td>
 							<td class="value">
 							<?
 								switch ($formfield_datatype) {
-									case "binary": ?><input type="file" name="file-<?=$formfield_id?>[]" <?=$readonly?>><? break;
+									case "binary": ?><input type="file" name="file-<? =$formfield_id?>[]" <? =$readonly?>><? break;
 									case "multichoice":
 										if ($viewtype == "print") {
 											echo str_replace(",", "<br>", $value_text);
 										}
 										else {
 										?>
-											<!--<select multiple="multiple" name="text[<?=$formfield_id?>]" id="multiselect">-->
-											<select multiple="multiple" name="text-<?=$formfield_id?>[]" <?=$readonly?> style="height:150px">
+											<!--<select multiple="multiple" name="text[<? =$formfield_id?>]" id="multiselect">-->
+											<select multiple="multiple" name="text-<? =$formfield_id?>[]" <? =$readonly?> style="height:150px">
 												<?
 													$formvalues = explode(",", $formfield_values);
 													$experimentvalues = explode(",", $value_text);
@@ -505,7 +505,7 @@
 															if ($value == $expvalue) { $selected = "selected"; }
 														}
 													?>
-														<option value="<?=$value?>" <?=$selected?>><?=$value?></option>
+														<option value="<? =$value?>" <? =$selected?>><? =$value?></option>
 													<?
 													}
 												?>
@@ -528,7 +528,7 @@
 											foreach ($values as $value) {
 												$value = trim($value);
 												if ($value == $value_text) {
-													?>&nbsp; <span style="background-color:lightyellow;padding:2px;border:1px solid orange;border-radius:5px"><?=$value?></span>
+													?>&nbsp; <span style="background-color:lightyellow;padding:2px;border:1px solid orange;border-radius:5px"><? =$value?></span>
 													<?
 												} else {
 													echo "&nbsp; <span style='color:#AAA'>$value</span>";
@@ -544,7 +544,7 @@
 												$value = trim($value);
 												if ($value == $value_text) { $checked = "checked"; } else { $checked = "";}
 												?>
-												<input type="radio"  name="text-<?=$formfield_id?>[]" value="<?=$value?>" <?=$checked?> <?=$readonly?>><?=$value?>
+												<input type="radio"  name="text-<? =$formfield_id?>[]" value="<? =$value?>" <? =$checked?> <? =$readonly?>><? =$value?>
 												<?
 												if ($formfield_haslinebreak) { echo "<br>"; } else { echo "&nbsp;"; }
 											}
@@ -553,25 +553,25 @@
 									case "date":
 										if ($viewtype == "print") { echo $value_date; }
 										else {
-											?><input type="date" name="date-<?=$formfield_id?>[]" value="<?=$value_date?>" <?=$readonly?>><span class="tiny">Current date is default value</span><?
+											?><input type="date" name="date-<? =$formfield_id?>[]" value="<? =$value_date?>" <? =$readonly?>><span class="tiny">Current date is default value</span><?
 										}
 										break;
 									case "number":
 										if ($viewtype == "print") { echo $value_number; }
 										else {
-											?><input type="text" placeholder="Enter a number" name="number-<?=$formfield_id?>[]" value="<?=$value_number?>" <?=$readonly?>><?
+											?><input type="text" placeholder="Enter a number" name="number-<? =$formfield_id?>[]" value="<? =$value_number?>" <? =$readonly?>><?
 										}
 										break;
 									case "string":
 										if ($viewtype == "print") { echo $value_string; }
 										else {
-											?><input type="text" placeholder="Enter a string" name="string-<?=$formfield_id?>[]" value="<?=$value_string?>" <?=$readonly?>><?
+											?><input type="text" placeholder="Enter a string" name="string-<? =$formfield_id?>[]" value="<? =$value_string?>" <? =$readonly?>><?
 										}
 										break;
 									case "text":
 										if ($viewtype == "print") { echo $value_text; }
 										else {
-											?><textarea name="text-<?=$formfield_id?>[]" <?=$readonly?>><?=$value_text?></textarea><?
+											?><textarea name="text-<? =$formfield_id?>[]" <? =$readonly?>><? =$value_text?></textarea><?
 										}
 										break;
 								}
@@ -581,8 +581,8 @@
 						<? if ($formfield_scored) {?>
 						<td><input type="text" size="2"></td>
 						<? } ?>
-						<!--<td class="order"><?=$formfield_order?></td>-->
-						<!--<td class="rater"><?=$update_username?></td>-->
+						<!--<td class="order"><? =$formfield_order?></td>-->
+						<!--<td class="rater"><? =$update_username?></td>-->
 					</tr>
 					<?
 				}
@@ -590,7 +590,7 @@
 				if (!$iscomplete and $viewtype!="print") {
 			?>
 			<tr>
-				<input type="hidden" name="projectid" value="<?=$projectid?>">
+				<input type="hidden" name="projectid" value="<? =$projectid?>">
 				<td colspan="3" align="center">
 					<input type="submit" value="Update">
 				</td>
@@ -656,22 +656,22 @@
 		<table>
 			<tr>
 				<td align="right" style="font-weight: bold; font-size: 11pt; color: #444444">Experimentor</td>
-				<td><?=$experimentor?></td>
+				<td><? =$experimentor?></td>
 			</tr>
 			<tr>
 				<td align="right" style="font-weight: bold; font-size: 11pt; color: #444444">Experiment date</td>
-				<td><?=$exp_admindate?></td>
+				<td><? =$exp_admindate?></td>
 			</tr>
 		</table>
 		<br><br>
 		
 		<table class="formentrytable">
 			<tr>
-				<td class="title" colspan="3"><?=$title?></td>
-				<td rowspan="2"><div class="<?=$formstatusclass?>"><?=$formstatus?><br><span style="font-size:8pt; font-weight: normal"><?=$lastupdate?></span></div></td>
+				<td class="title" colspan="3"><? =$title?></td>
+				<td rowspan="2"><div class="<? =$formstatusclass?>"><? =$formstatus?><br><span style="font-size:8pt; font-weight: normal"><? =$lastupdate?></span></div></td>
 			</tr>
 			<tr>
-				<td class="desc" colspan="3"><?=$desc?></td>
+				<td class="desc" colspan="3"><? =$desc?></td>
 			</tr>
 			<tr>
 				<td colspan="3">&nbsp;</td>
@@ -701,13 +701,13 @@
 					?>
 					<tr>
 						<? if ($formfield_datatype == "header") { ?>
-							<td colspan="2" class="sectionheader"><?=$formfield_desc?></td>
+							<td colspan="2" class="sectionheader"><? =$formfield_desc?></td>
 						<? } else { ?>
-							<td class="field"><?=$formfield_desc?></td>
+							<td class="field"><? =$formfield_desc?></td>
 							<td class="value">
 							<?
 								switch ($formfield_datatype) {
-									case "binary": ?><input type="file" name="file-<?=$formfield_id?>[]" <?=$readonly?>><? break;
+									case "binary": ?><input type="file" name="file-<? =$formfield_id?>[]" <? =$readonly?>><? break;
 									case "multichoice":
 										echo str_replace(",", "<br>", $value_text);
 										break;
@@ -720,7 +720,7 @@
 											foreach ($values as $value) {
 												if ($value == $value_string) { $checked = "checked"; } else { $checked = "";}
 												?>
-												<input type="radio"  name="text-<?=$formfield_id?>[]" value="<?=$value?>" <?=$checked?> <?=$readonly?>><?=$value?> &nbsp;
+												<input type="radio"  name="text-<? =$formfield_id?>[]" value="<? =$value?>" <? =$checked?> <? =$readonly?>><? =$value?> &nbsp;
 												<?
 											}
 										}
@@ -731,7 +731,7 @@
 										}
 										else {
 										?>
-											<input type="date" name="date-<?=$formfield_id?>[]" value="<?=$value_date?>" <?=$readonly?>><span class="tiny">date</span>
+											<input type="date" name="date-<? =$formfield_id?>[]" value="<? =$value_date?>" <? =$readonly?>><span class="tiny">date</span>
 										<?
 										}
 										break;
@@ -741,7 +741,7 @@
 										}
 										else {
 										?>
-											<input type="text" name="number-<?=$formfield_id?>[]" value="<?=$value_number?>" <?=$readonly?>><span class="tiny">number</span>
+											<input type="text" name="number-<? =$formfield_id?>[]" value="<? =$value_number?>" <? =$readonly?>><span class="tiny">number</span>
 										<?
 										}
 										break;
@@ -751,7 +751,7 @@
 										}
 										else {
 										?>
-											<input type="text" name="string-<?=$formfield_id?>[]" value="<?=$value_string?>" <?=$readonly?>><span class="tiny">string</span>
+											<input type="text" name="string-<? =$formfield_id?>[]" value="<? =$value_string?>" <? =$readonly?>><span class="tiny">string</span>
 										<?
 										}
 										break;
@@ -761,7 +761,7 @@
 										}
 										else {
 										?>
-											<textarea name="text-<?=$formfield_id?>[]" <?=$readonly?>><?=$value_text?></textarea>
+											<textarea name="text-<? =$formfield_id?>[]" <? =$readonly?>><? =$value_text?></textarea>
 										<?
 										}
 										break;
@@ -772,8 +772,8 @@
 						<? if ($formfield_scored) {?>
 						<td><input type="text" size="2"></td>
 						<? } ?>
-						<td class="order"><?=$formfield_order?></td>
-						<td class="rater"><?=$update_username?></td>
+						<td class="order"><? =$formfield_order?></td>
+						<td class="rater"><? =$update_username?></td>
 					</tr>
 					<?
 				}

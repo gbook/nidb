@@ -423,8 +423,8 @@
 					<h2 class="ui header">MR scan quality control</h2>
 				</div>
 				<div class="right aligned column">
-					<a class="ui primary button" href="mrqcchecklist.php?action=editmrparams&id=<?=$id?>"><i class="edit icon"></i> Edit expected MR parameters</a>
-					<a class="ui primary button" href="mrqcchecklist.php?action=editqcparams&id=<?=$id?>"><i class="edit icon"></i> Edit QC criteria</a>
+					<a class="ui primary button" href="mrqcchecklist.php?action=editmrparams&id=<? =$id?>"><i class="edit icon"></i> Edit expected MR parameters</a>
+					<a class="ui primary button" href="mrqcchecklist.php?action=editqcparams&id=<? =$id?>"><i class="edit icon"></i> Edit QC criteria</a>
 				</div>
 			</div>
 			<table class="ui small celled selectable grey very compact table">
@@ -432,8 +432,8 @@
 					<th colspan="5">
 					<form action="mrqcchecklist.php" action="post">
 					<input type="hidden" name="action" value="viewqcparams">
-					<input type="hidden" name="id" value="<?=$id?>">
-					Filter by protocol name <input type="input" name="protocolfilter" value="<?=$protocolfilter?>" list="protocollist"> <input type="submit" value="Filter">
+					<input type="hidden" name="id" value="<? =$id?>">
+					Filter by protocol name <input type="input" name="protocolfilter" value="<? =$protocolfilter?>" list="protocollist"> <input type="submit" value="Filter">
 					</form>
 					</th>
 				</thead>
@@ -465,7 +465,7 @@
 						
 						?>
 							<tr>
-								<td><a href="studies.php?id=<?=$studyid?>"><b><?=$uid?><?=$studynum?></b></a> &nbsp;Primary alt UID: &nbsp; <b style="background-color: darkred; color: white; padding: 2px 8px"><?=$altuid?></b></td>
+								<td><a href="studies.php?id=<? =$studyid?>"><b><? =$uid?><? =$studynum?></b></a> &nbsp;Primary alt UID: &nbsp; <b style="background-color: darkred; color: white; padding: 2px 8px"><? =$altuid?></b></td>
 								<td><b>Params</b></td>
 								<td><b>Files on disk</b></td>
 								<td><b>Avg Rating</b></td>
@@ -501,9 +501,9 @@
 							?>
 							<tr>
 								<td>
-									 &nbsp; <?=$seriesnum?> - <?=$p1?>
+									 &nbsp; <? =$seriesnum?> - <? =$p1?>
 									<? if (file_exists($thumbpath)) { ?>
-									<a href="preview.php?image=<?=$thumbpath?>" class="preview"><img src="images/preview.gif" border="0"></a>
+									<a href="preview.php?image=<? =$thumbpath?>" class="preview"><img src="images/preview.gif" border="0"></a>
 									&nbsp;
 									<? } ?>
 								</td>
@@ -621,7 +621,7 @@
 								<details>
 								<summary>out of spec</summary>
 								<ul>
-								<li><?=implode2('<li>',$msgs)?>
+								<li><? =implode2('<li>',$msgs)?>
 								</ul>
 								</details>
 								</td>
@@ -636,10 +636,10 @@
 								?><td style="padding-left: 8px; background-color: #cbf7be"> </td><?
 							}
 							elseif ($fcount == 0) {
-								?><td style="padding-left: 8px; background-color: #ffddd1;" title="No files on disk in [<?=$datapath?>]"> </td><?
+								?><td style="padding-left: 8px; background-color: #ffddd1;" title="No files on disk in [<? =$datapath?>]"> </td><?
 							}
 							else {
-								?><td style="padding-left: 8px; background-color: lightyellow;" title="Filecount in database [<?=$numfiles?>] does not match that on disk [<?=$fcount?>] from [<?=$datapath?>]">&#9898;</td><?
+								?><td style="padding-left: 8px; background-color: lightyellow;" title="Filecount in database [<? =$numfiles?>] does not match that on disk [<? =$fcount?>] from [<? =$datapath?>]">&#9898;</td><?
 							}
 
 							/* check user ratings */
@@ -679,7 +679,7 @@
 							if ($isbadseries) { $cellcolor = "red"; }
 							if ($istestseries) { $cellcolor = "#aaa"; }
 							
-							?><td style="padding-left: 8px;"><span style="color: <?=$cellcolor?>"><?=$ratingavg?></span> <? if ($ratingavg != "") { ?><span class="tiny">(<?=$ratingcount2?>)</span><? } ?></td><?
+							?><td style="padding-left: 8px;"><span style="color: <? =$cellcolor?>"><? =$ratingavg?></span> <? if ($ratingavg != "") { ?><span class="tiny">(<? =$ratingcount2?>)</span><? } ?></td><?
 							
 							/* check basic QC */
 							$sqlstringB = "select (move_maxx-move_minx) 'movex', (move_maxy-move_miny) 'movey', (move_maxz-move_minz) 'movez', io_snr, pv_snr from mr_qa where mrseries_id = '$seriesid'";
@@ -722,7 +722,7 @@
 									<details>
 									<summary>out of spec</summary>
 									<ul>
-									<li><?=implode2('<li>',$msgs)?>
+									<li><? =implode2('<li>',$msgs)?>
 									</ul>
 									</details>
 									</td>
@@ -816,7 +816,7 @@
 		<br><br>
 		<form action="mrqcchecklist.php" method="post">
 		<input type="hidden" name="action" value="updateqcparams">
-		<input type="hidden" name="id" value="<?=$projectid?>">
+		<input type="hidden" name="id" value="<? =$projectid?>">
 		<table class="ui small celled selectable grey very compact table">
 			<thead>
 				<tr>
@@ -837,13 +837,13 @@
 	/* -------------------------------------------- */
 	function DisplayQCParamLine($rowid="", $protocol="", $x_max="", $y_max="", $z_max="", $iosnr_min="", $iosnr_max="", $pvsnr_min="", $pvsnr_max="") {
 		?><tr>
-			<input type="hidden" name="param_rowid[]" value="<?=$rowid?>">
-			<td><input type="text" name="param_protocol[]" value="<?=$protocol?>" list="protocollist"></td>
-			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_x_max[]" value="<?=$x_max?>"></td>
-			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_y_max[]" value="<?=$y_max?>"></td>
-			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_z_max[]" value="<?=$z_max?>"></td>
-			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_iosnr_min[]" value="<?=$iosnr_min?>">&nbsp;<input type="text" style="width: 45px" maxlength="8" name="param_iosnr_max[]" value="<?=$iosnr_max?>"></td>
-			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_pvsnr_min[]" value="<?=$pvsnr_min?>">&nbsp;<input type="text" style="width: 45px" maxlength="8" name="param_pvsnr_max[]" value="<?=$pvsnr_max?>"></td>
+			<input type="hidden" name="param_rowid[]" value="<? =$rowid?>">
+			<td><input type="text" name="param_protocol[]" value="<? =$protocol?>" list="protocollist"></td>
+			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_x_max[]" value="<? =$x_max?>"></td>
+			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_y_max[]" value="<? =$y_max?>"></td>
+			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_z_max[]" value="<? =$z_max?>"></td>
+			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_iosnr_min[]" value="<? =$iosnr_min?>">&nbsp;<input type="text" style="width: 45px" maxlength="8" name="param_iosnr_max[]" value="<? =$iosnr_max?>"></td>
+			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_pvsnr_min[]" value="<? =$pvsnr_min?>">&nbsp;<input type="text" style="width: 45px" maxlength="8" name="param_pvsnr_max[]" value="<? =$pvsnr_max?>"></td>
 		</tr><?
 	}
 	
@@ -864,7 +864,7 @@
 		$sqlstring = "select * from mr_scanparams where project_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		if (mysqli_num_rows($result) < 1){
-			?>No MR parameters specified for this project. Add them <a href="projects.php?action=editmrparams&id=<?=$id?>">here</a>.<?
+			?>No MR parameters specified for this project. Add them <a href="projects.php?action=editmrparams&id=<? =$id?>">here</a>.<?
 			return;
 		}
 		else {
@@ -915,7 +915,7 @@
 						?>
 						<table width="100%">
 							<tr>
-								<td colspan="2" style="background-color: #444; color: white; padding: 3px 6px; border-radius:4px; margin-top: 10px; margin-bottom:5px"><b>Checking <?=$uid?><?=$studynum?>...</td>
+								<td colspan="2" style="background-color: #444; color: white; padding: 3px 6px; border-radius:4px; margin-top: 10px; margin-bottom:5px"><b>Checking <? =$uid?><? =$studynum?>...</td>
 							</tr>
 						<?
 						while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
@@ -969,13 +969,13 @@
 								?>
 								<tr style="font-size: 9pt">
 									<td style="width: 30px"></td>
-									<td style="color: green">Series <?=$seriesnum?> [<?=$protocol1?>] <b>OK</b></td>
+									<td style="color: green">Series <? =$seriesnum?> [<? =$protocol1?>] <b>OK</b></td>
 								</tr><?
 							}
 							else {
 								?><tr>
 									<td style="width: 30px"></td>
-									<td style="padding-left: 30px"><span style="color: red; font-size:9pt">Series <?=$seriesnum?> [<?=$protocol1?>] did NOT match. Nearest matches:
+									<td style="padding-left: 30px"><span style="color: red; font-size:9pt">Series <? =$seriesnum?> [<? =$protocol1?>] did NOT match. Nearest matches:
 								<?
 								$min = min($nummismatch);
 								$idx = array_keys($nummismatch, $min);
@@ -1000,20 +1000,20 @@
 										</tr>
 									</thead>
 									<tr style="font-weight: bold">
-										<td><?=$protocol1?></td>
-										<td><?=$sequence?></td>
-										<td><?=$tr?></td>
-										<td><?=$te?></td>
-										<td><?=$ti?></td>
-										<td><?=$flip?></td>
-										<td><?=$dimx?></td>
-										<td><?=$dimy?></td>
-										<td><?=$dimz?></td>
-										<td><?=$dimt?></td>
-										<td><?=$slicethickness?></td>
-										<td><?=$slicespacing?></td>
-										<td><?=$bandwidth?></td>
-										<td><a href="projects.php?id=<?=$id?>&action=loadmrparams&existingstudy=<?="$uid$studynum"?>&existingseries=<?=$seriesnum?>">Add to QA list</a></td>
+										<td><? =$protocol1?></td>
+										<td><? =$sequence?></td>
+										<td><? =$tr?></td>
+										<td><? =$te?></td>
+										<td><? =$ti?></td>
+										<td><? =$flip?></td>
+										<td><? =$dimx?></td>
+										<td><? =$dimy?></td>
+										<td><? =$dimz?></td>
+										<td><? =$dimt?></td>
+										<td><? =$slicethickness?></td>
+										<td><? =$slicespacing?></td>
+										<td><? =$bandwidth?></td>
+										<td><a href="projects.php?id=<? =$id?>&action=loadmrparams&existingstudy=<? ="$uid$studynum"?>&existingseries=<? =$seriesnum?>">Add to QA list</a></td>
 									</tr>
 								<?
 								?></table>
@@ -1109,7 +1109,7 @@
 			<legend>Add scan parameters from existing study</legend>
 			<form>
 			<input type="hidden" name="action" value="loadmrparams">
-			<input type="hidden" name="id" value="<?=$projectid?>">
+			<input type="hidden" name="id" value="<? =$projectid?>">
 			<input type="text" name="existingstudy"> &nbsp; <input type="submit" value="Load Parameters"><br>
 			<span class="tiny">Enter study ID in the format <u>S1234ABC5</u></span>
 			</form>
@@ -1117,7 +1117,7 @@
 		<br><br>
 		<form action="mrqcchecklist.php" method="post">
 		<input type="hidden" name="action" value="updatemrparams">
-		<input type="hidden" name="id" value="<?=$projectid?>">
+		<input type="hidden" name="id" value="<? =$projectid?>">
 		<table class="ui small celled selectable grey very compact table">
 			<thead>
 				<th>Protocol<br><span class="tiny">Leave blank to remove the row</span></th>
@@ -1143,20 +1143,20 @@
 	/* -------------------------------------------- */
 	function DisplayMRScanParamLine($rowid="", $protocol="", $sequence="", $tr_min="", $tr_max="", $te_min="", $te_max="", $ti_min="", $ti_max="", $flip_min="", $flip_max="", $xdim_min="", $xdim_max="", $ydim_min="", $ydim_max="", $zdim_min="", $zdim_max="", $tdim_min="", $tdim_max="", $slicethickness_min="", $slicethickness_max="", $slicespacing_min="", $slicespacing_max="", $bandwidth_min="", $bandwidth_max="") {
 		?><tr>
-			<input type="hidden" name="param_rowid[]" value="<?=$rowid?>">
-			<td><input type="text" name="param_protocol[]" value="<?=$protocol?>"></td>
-			<td><input type="text" name="param_sequence[]" value="<?=$sequence?>"></td>
-			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_tr_min[]" value="<?=$tr_min?>">&nbsp;<input type="text" style="width: 45px" maxlength="8" name="param_tr_max[]" value="<?=$tr_max?>"></td>
-			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_te_min[]" value="<?=$te_min?>">&nbsp;<input type="text" style="width: 45px" maxlength="8" name="param_te_max[]" value="<?=$te_max?>"></td>
-			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_ti_min[]" value="<?=$ti_min?>">&nbsp;<input type="text" style="width: 45px" maxlength="8" name="param_ti_max[]" value="<?=$ti_max?>"></td>
-			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_flip_min[]" value="<?=$flip_min?>">&nbsp;<input type="text" style="width: 45px" maxlength="8" name="param_flip_max[]" value="<?=$flip_max?>"></td>
-			<td style="padding: 2px 15px"><input type="number" style="width: 55px" name="param_xdim_min[]" value="<?=$xdim_min?>">&nbsp;<input type="number" style="width: 55px" name="param_xdim_max[]" value="<?=$xdim_max?>"></td>
-			<td style="padding: 2px 15px"><input type="number" style="width: 55px" name="param_ydim_min[]" value="<?=$ydim_min?>">&nbsp;<input type="number" style="width: 55px" name="param_ydim_max[]" value="<?=$ydim_max?>"></td>
-			<td style="padding: 2px 15px"><input type="number" style="width: 55px" name="param_zdim_min[]" value="<?=$zdim_min?>">&nbsp;<input type="number" style="width: 55px" name="param_zdim_max[]" value="<?=$zdim_max?>"></td>
-			<td style="padding: 2px 15px"><input type="number" style="width: 55px" name="param_tdim_min[]" value="<?=$tdim_min?>">&nbsp;<input type="number" style="width: 55px" name="param_tdim_max[]" value="<?=$tdim_max?>"></td>
-			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_slicethickness_min[]" value="<?=$slicethickness_min?>">&nbsp;<input type="text" style="width: 45px" maxlength="8" name="param_slicethickness_max[]" value="<?=$slicethickness_max?>"></td>
-			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_slicespacing_min[]" value="<?=$slicespacing_min?>">&nbsp;<input type="text" style="width: 45px" maxlength="8" name="param_slicespacing_max[]" value="<?=$slicespacing_max?>"></td>
-			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_bandwidth_min[]" value="<?=$bandwidth_min?>">&nbsp;<input type="text" style="width: 45px" maxlength="8" name="param_bandwidth_max[]" value="<?=$bandwidth_max?>"></td>
+			<input type="hidden" name="param_rowid[]" value="<? =$rowid?>">
+			<td><input type="text" name="param_protocol[]" value="<? =$protocol?>"></td>
+			<td><input type="text" name="param_sequence[]" value="<? =$sequence?>"></td>
+			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_tr_min[]" value="<? =$tr_min?>">&nbsp;<input type="text" style="width: 45px" maxlength="8" name="param_tr_max[]" value="<? =$tr_max?>"></td>
+			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_te_min[]" value="<? =$te_min?>">&nbsp;<input type="text" style="width: 45px" maxlength="8" name="param_te_max[]" value="<? =$te_max?>"></td>
+			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_ti_min[]" value="<? =$ti_min?>">&nbsp;<input type="text" style="width: 45px" maxlength="8" name="param_ti_max[]" value="<? =$ti_max?>"></td>
+			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_flip_min[]" value="<? =$flip_min?>">&nbsp;<input type="text" style="width: 45px" maxlength="8" name="param_flip_max[]" value="<? =$flip_max?>"></td>
+			<td style="padding: 2px 15px"><input type="number" style="width: 55px" name="param_xdim_min[]" value="<? =$xdim_min?>">&nbsp;<input type="number" style="width: 55px" name="param_xdim_max[]" value="<? =$xdim_max?>"></td>
+			<td style="padding: 2px 15px"><input type="number" style="width: 55px" name="param_ydim_min[]" value="<? =$ydim_min?>">&nbsp;<input type="number" style="width: 55px" name="param_ydim_max[]" value="<? =$ydim_max?>"></td>
+			<td style="padding: 2px 15px"><input type="number" style="width: 55px" name="param_zdim_min[]" value="<? =$zdim_min?>">&nbsp;<input type="number" style="width: 55px" name="param_zdim_max[]" value="<? =$zdim_max?>"></td>
+			<td style="padding: 2px 15px"><input type="number" style="width: 55px" name="param_tdim_min[]" value="<? =$tdim_min?>">&nbsp;<input type="number" style="width: 55px" name="param_tdim_max[]" value="<? =$tdim_max?>"></td>
+			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_slicethickness_min[]" value="<? =$slicethickness_min?>">&nbsp;<input type="text" style="width: 45px" maxlength="8" name="param_slicethickness_max[]" value="<? =$slicethickness_max?>"></td>
+			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_slicespacing_min[]" value="<? =$slicespacing_min?>">&nbsp;<input type="text" style="width: 45px" maxlength="8" name="param_slicespacing_max[]" value="<? =$slicespacing_max?>"></td>
+			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_bandwidth_min[]" value="<? =$bandwidth_min?>">&nbsp;<input type="text" style="width: 45px" maxlength="8" name="param_bandwidth_max[]" value="<? =$bandwidth_max?>"></td>
 		</tr><?
 	}
 
@@ -1221,9 +1221,9 @@
 	function DisplayProtocolDataListForProject($projectid, $datalistid) {
 		$sqlstring = "select distinct(a.series_desc) from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid order by a.series_desc";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		?><datalist id="<?=$datalistid?>"><?
+		?><datalist id="<? =$datalistid?>"><?
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			?><option value="<?=$row['series_desc']?>"><?
+			?><option value="<? =$row['series_desc']?>"><?
 		}
 		?></datalist><?
 	}

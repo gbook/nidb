@@ -133,12 +133,12 @@
 							$tapesizeC = $row['backup_tapesizeC'];
 							?>
 							<tr>
-								<td><?=$tapenumber?></td>
-								<td><?=$startdateA?></td>
-								<td><?=$status?></td>
+								<td><? =$tapenumber?></td>
+								<td><? =$startdateA?></td>
+								<td><? =$status?></td>
 								<td></td>
-								<td>Backup staging size<br><?=$tapesizeA?></td>
-								<td><?=$enddate?></td>
+								<td>Backup staging size<br><? =$tapesizeA?></td>
+								<td><? =$enddate?></td>
 							</tr>
 							<?
 						}
@@ -169,8 +169,8 @@
 
 				?>
 				<tr>
-					<td class="top aligned"><?=$tapenum?></td>
-					<td class="top aligned"><?=$startdateA?></td>
+					<td class="top aligned"><? =$tapenum?></td>
+					<td class="top aligned"><? =$startdateA?></td>
 					<td class="top aligned">
 						<? $action = DisplayStatus($status, $tapenumber, $errormsg); ?>
 					</td>
@@ -178,38 +178,38 @@
 						<?
 							if ($action == "marktapeAinserted") {
 								?>
-								<a href="backup.php?action=marktapeAinserted&backupid=<?=$backupid?>" class="ui small orange button" title="Insert tape A<?=$tapenumber?> in the tape drive, then mark as inserted here">Mark Tape A<?=$tapenumber?> as Inserted</a>
+								<a href="backup.php?action=marktapeAinserted&backupid=<? =$backupid?>" class="ui small orange button" title="Insert tape A<? =$tapenumber?> in the tape drive, then mark as inserted here">Mark Tape A<? =$tapenumber?> as Inserted</a>
 								<?
 							}
 							elseif ($action == "marktapeBinserted") {
 								?>
-								<a href="backup.php?action=marktapeBinserted&backupid=<?=$backupid?>" class="ui small orange button" title="Insert tape B<?=$tapenumber?> in the tape drive, then mark as inserted here">Mark Tape B<?=$tapenumber?> as Inserted</a>
+								<a href="backup.php?action=marktapeBinserted&backupid=<? =$backupid?>" class="ui small orange button" title="Insert tape B<? =$tapenumber?> in the tape drive, then mark as inserted here">Mark Tape B<? =$tapenumber?> as Inserted</a>
 								<?
 							}
 							elseif ($action == "marktapeCinserted") {
 								?>
-								<a href="backup.php?action=marktapeCinserted&backupid=<?=$backupid?>" class="ui small orange button" title="Insert tape C<?=$tapenumber?> in the tape drive, then mark as inserted here">Mark Tape C<?=$tapenumber?> as Inserted</a>
+								<a href="backup.php?action=marktapeCinserted&backupid=<? =$backupid?>" class="ui small orange button" title="Insert tape C<? =$tapenumber?> in the tape drive, then mark as inserted here">Mark Tape C<? =$tapenumber?> as Inserted</a>
 								<?
 							}
 							elseif ($status == "errorTapeA") {
 								?>
-								<a href="backup.php?action=marktapeAinserted&backupid=<?=$backupid?>" class="ui small orange button" title="Reset tape A<?=$tapenumber?>">Reset Tape A<?=$tapenumber?></a>
+								<a href="backup.php?action=marktapeAinserted&backupid=<? =$backupid?>" class="ui small orange button" title="Reset tape A<? =$tapenumber?>">Reset Tape A<? =$tapenumber?></a>
 								<?
 							}
 							elseif ($status == "errorTapeB") {
 								?>
-								<a href="backup.php?action=marktapeBinserted&backupid=<?=$backupid?>" class="ui small orange button" title="Reset tape B<?=$tapenumber?>">Reset Tape B<?=$tapenumber?></a>
+								<a href="backup.php?action=marktapeBinserted&backupid=<? =$backupid?>" class="ui small orange button" title="Reset tape B<? =$tapenumber?>">Reset Tape B<? =$tapenumber?></a>
 								<?
 							}
 							elseif ($status == "errorTapeC") {
 								?>
-								<a href="backup.php?action=marktapeCinserted&backupid=<?=$backupid?>" class="ui small orange button" title="Reset tape C<?=$tapenumber?>">Reset Tape C<?=$tapenumber?></a>
+								<a href="backup.php?action=marktapeCinserted&backupid=<? =$backupid?>" class="ui small orange button" title="Reset tape C<? =$tapenumber?>">Reset Tape C<? =$tapenumber?></a>
 								<?
 							}
 						?>
 					</td>
-					<td class="top aligned"><?=$tapesizeA?></td>
-					<td class="top aligned"><?=$enddateC?></td>
+					<td class="top aligned"><? =$tapesizeA?></td>
+					<td class="top aligned"><? =$enddateC?></td>
 				</tr>
 				<?
 			}
@@ -420,50 +420,50 @@
 		
 		?>
 		<div class="ui top attached fluid steps">
-			<div class="<?=$step1_state?> step" style="padding: 10px">
+			<div class="<? =$step1_state?> step" style="padding: 10px">
 				<div class="content">
-					<div class="title"><?=$step1_title?></div>
+					<div class="title"><? =$step1_title?></div>
 				</div>
 			</div>
-			<div class="<?=$step2_state?> step" style="padding: 10px">
+			<div class="<? =$step2_state?> step" style="padding: 10px">
 				<div class="content">
-					<div class="title"><?=$step2_title?></div>
+					<div class="title"><? =$step2_title?></div>
 				</div>
 			</div>
-			<div class="<?=$step3_state?> step" style="padding: 10px">
+			<div class="<? =$step3_state?> step" style="padding: 10px">
 				<div class="content">
-					<div class="title"><?=$step3_title?></div>
+					<div class="title"><? =$step3_title?></div>
 				</div>
 			</div>
-			<div class="<?=$step4_state?> step" style="padding: 10px">
+			<div class="<? =$step4_state?> step" style="padding: 10px">
 				<div class="content">
-					<div class="title"><?=$step4_title?></div>
+					<div class="title"><? =$step4_title?></div>
 				</div>
 			</div>
-			<div class="<?=$step5_state?> step" style="padding: 10px">
+			<div class="<? =$step5_state?> step" style="padding: 10px">
 				<div class="content">
-					<div class="title"><?=$step5_title?></div>
+					<div class="title"><? =$step5_title?></div>
 				</div>
 			</div>
-			<div class="<?=$step6_state?> step" style="padding: 10px">
+			<div class="<? =$step6_state?> step" style="padding: 10px">
 				<div class="content">
-					<div class="title"><?=$step6_title?></div>
+					<div class="title"><? =$step6_title?></div>
 				</div>
 			</div>
-			<div class="<?=$step7_state?> step" style="padding: 10px">
+			<div class="<? =$step7_state?> step" style="padding: 10px">
 				<div class="content">
-					<div class="title"><?=$step7_title?></div>
+					<div class="title"><? =$step7_title?></div>
 				</div>
 			</div>
-			<div class="<?=$step8_state?> step" style="padding: 10px">
+			<div class="<? =$step8_state?> step" style="padding: 10px">
 				<div class="content">
-					<div class="title"><?=$step8_title?></div>
+					<div class="title"><? =$step8_title?></div>
 				</div>
 			</div>
 		</div>
-		<div class="ui small bottom attached <?=$color?> message">
-			<div class="header"><?=$desc_header?></div>
-			<?=$desc?>
+		<div class="ui small bottom attached <? =$color?> message">
+			<div class="header"><? =$desc_header?></div>
+			<? =$desc?>
 		</div>
 		<?
 		

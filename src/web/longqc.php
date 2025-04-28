@@ -98,10 +98,10 @@
 					$count = $row2['count'];
 			?>
 			<tr>
-				<td><a href="longqc.php?action=viewprotocols&groupid=<?=$id?>"><?=$name?></a></td>
-				<td><?=$grouptype?></td>
-				<td><?=$ownerusername?></td>
-				<td><?=$count?></td>
+				<td><a href="longqc.php?action=viewprotocols&groupid=<? =$id?>"><? =$name?></a></td>
+				<td><? =$grouptype?></td>
+				<td><? =$ownerusername?></td>
+				<td><? =$count?></td>
 			</tr>
 			<? 
 				}
@@ -154,10 +154,10 @@
 					$sequencename = $row['series_sequencename'];
 					?>
 					<tr>
-						<td><a href="longqc.php?action=viewlongqc&groupid=<?=$groupid?>&protocol=<?=$desc?>"><?=$desc?></a></td>
-						<td><?=$altdesc?></td>
-						<td><?=$protocol?></td>
-						<td><?=$sequencename?></td>
+						<td><a href="longqc.php?action=viewlongqc&groupid=<? =$groupid?>&protocol=<? =$desc?>"><? =$desc?></a></td>
+						<td><? =$altdesc?></td>
+						<td><? =$protocol?></td>
+						<td><? =$sequencename?></td>
 					</tr>
 					<?
 				}
@@ -252,7 +252,7 @@
 		?>
 			<table class="grayrounded" width="100%">
 				<tr>
-					<td class="title"><?=$label?></td>
+					<td class="title"><? =$label?></td>
 				</tr>
 				<tr>
 					<td class="body">
@@ -260,7 +260,7 @@
 							$(function() {
 									var data = [
 										{
-										label: "<?=$label?>",
+										label: "<? =$label?>",
 										hoverable: true,
 										clickable: true,
 										data: [<?
@@ -272,7 +272,7 @@
 												#$jsonstrings[] .= "['$date', " . number_format($value,1,'.','') . "]";
 											}
 										}
-									?><?=implode2(',',$jsonstrings)?>]
+									?><? =implode2(',',$jsonstrings)?>]
 										}
 								];
 							
@@ -286,11 +286,11 @@
 									yaxis: { min: 0, tickDecimals: 1 },
 									selection: { mode: "x" },
 								};
-								var placeholder = $("#placeholder<?=$id?>");
+								var placeholder = $("#placeholder<? =$id?>");
 								var plot = $.plot(placeholder, data, options);									
 							});
 						</script>
-						<div id="placeholder<?=$id?>" style="height:<?=$height?>px;" align="center"></div>
+						<div id="placeholder<? =$id?>" style="height:<? =$height?>px;" align="center"></div>
 					</td>
 				</tr>
 				<tr>
@@ -328,10 +328,10 @@
 								$date = date("D, d M Y", $date);
 								?>
 								<tr>
-									<td><?=$date?></td>
-									<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
-									<td><a href="subjects.php?id=<?=$studyid?>"><?=$uid?><?=$studynum?></a></td>
-									<td align="right" bgcolor="<?=$colors[$cindex];?>"><tt><?=$value?><tt></td>
+									<td><? =$date?></td>
+									<td><a href="subjects.php?id=<? =$subjectid?>"><? =$uid?></a></td>
+									<td><a href="subjects.php?id=<? =$studyid?>"><? =$uid?><? =$studynum?></a></td>
+									<td align="right" bgcolor="<? =$colors[$cindex];?>"><tt><? =$value?><tt></td>
 								</tr>
 								<?
 							}

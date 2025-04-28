@@ -115,7 +115,7 @@
 	function maptransfer($projectid){
 	
 	if ((trim($projectid) == "") || ($projectid < 0)) {
-			?>Invalid or blank project ID [<?=$projectid?>]<?
+			?>Invalid or blank project ID [<? =$projectid?>]<?
 			return;
 		}
 	
@@ -130,7 +130,7 @@
 ?>		
 
 		<h1 class="ui header" align="left"> NiDB ===> Redcap (Mapping \  Transfer) 
-			<div class="sub header"> Project: <?=$projectname?> &nbsp; &nbsp; Redcap Server: <?=$redcapurl?></div>
+			<div class="sub header"> Project: <? =$projectname?> &nbsp; &nbsp; Redcap Server: <? =$redcapurl?></div>
 		</h1>
 
 	<div class="ui placeholder segment">
@@ -138,14 +138,14 @@
 	    <div class="column">
 		<form class"=ui form" action="redcapmapping.php" method="post">
 		  <input type="hidden" name="action" value="displaymapping">
-		  <input type="hidden" name="projectid" value="<?=$projectid?>">
+		  <input type="hidden" name="projectid" value="<? =$projectid?>">
 		  <button class="ui floated huge primary button"  type="submit"><i class="map icon"></i>Edit Mapping</button>
 		</form>	
 	    </div>
 	    <div class="middle aligned column">
 		<form class"=ui form" action="redcapmapping.php" method="post">
                   <input type="hidden" name="action" value="settransferdata">
-                  <input type="hidden" name="projectid" value="<?=$projectid?>">
+                  <input type="hidden" name="projectid" value="<? =$projectid?>">
                   <button class="ui floated huge primary button"  type="submit"><i class="level down alternate icon"></i>Transfer Data</button>
                 </form>
 	    </div>
@@ -163,7 +163,7 @@
 	/*---------------------------------------------*/
 	function gettransfervals($projectid){
 	if ((trim($projectid) == "") || ($projectid < 0)) {
-			?>Invalid or blank project ID [<?=$projectid?>]<?
+			?>Invalid or blank project ID [<? =$projectid?>]<?
 			return;
 		}
 	
@@ -184,7 +184,7 @@
 
 ?>		
 	<h1 class="ui header" align="left"> Redcap ===> NiDB Data Transfer  
-			<div class="sub header"> Project: <?=$projectname?> &nbsp; &nbsp; Redcap Server: <?=$redcapurl?></div>
+			<div class="sub header"> Project: <? =$projectname?> &nbsp; &nbsp; Redcap Server: <? =$redcapurl?></div>
 	</h1>
 
 	<div class="ui grid">
@@ -193,10 +193,10 @@
 	<div class="three column row" align="center">
 	<form  class="ui form" action="redcapmapping.php">
 	<input type="hidden" name="action" value="transferdata">
-        <input type="hidden" name="projectid" value="<?=$projectid?>">
-        <input type="hidden" name="rcmainevent" value="<?=$rcmainevent?>">
-        <input type="hidden" name="uid" value="<?=$uid?>">
-        <input type="hidden" name="nidbinstrument" value="<?=$nidbinstrument?>">
+        <input type="hidden" name="projectid" value="<? =$projectid?>">
+        <input type="hidden" name="rcmainevent" value="<? =$rcmainevent?>">
+        <input type="hidden" name="uid" value="<? =$uid?>">
+        <input type="hidden" name="nidbinstrument" value="<? =$nidbinstrument?>">
 		
 		<table class="ui basic table">
 
@@ -209,7 +209,7 @@
 				                $resultnidbinst = MySQLiQuery($sqlnidbinst, __FILE__, __LINE__);
 						while ($row = mysqli_fetch_array($resultnidbinst, MYSQLI_ASSOC)) {
 							$nidbinst=$row['NIDBinst'];?>
-							<option value=<?=$nidbinst?>> <?=$nidbinst?> </option>
+							<option value=<? =$nidbinst?>> <? =$nidbinst?> </option>
 						<?}?>	
 					</select>
 					<script type="text/javascript"> document.getElementById('nidbinstrument').value = "<?php echo $_GET['nidbinstrument'];?>";</script>
@@ -221,14 +221,14 @@
 						   <option value=''></option>
 						   <?
 						      for($Eve=0;$Eve < count($Event_s); $Eve++){ ?>
-                                                      <option value=<?=$Event_s[$Eve]?>> <?=$Event_s[$Eve]?> </option>
+                                                      <option value=<? =$Event_s[$Eve]?>> <? =$Event_s[$Eve]?> </option>
                                                    <?}?>
 						</select>
 					<script type="text/javascript"> document.getElementById('rcmainevent').value = "<?php echo $_GET['rcmainevent'];?>";</script>
                                 </td>
 				<td>
                                         <h4> UIds  <i class="small blue question circle outline icon" title="List of UIDs separated by commas start with 'S'. OR Redcap IDs separated by commas."></i></h4>
-					<input type="text"  name="uid"  id="uid" value="<?=$uid?>" size=59>
+					<input type="text"  name="uid"  id="uid" value="<? =$uid?>" size=59>
 
 				</td>
 				<td valign='bottom'>
@@ -243,7 +243,7 @@
 
 	<form>
                 <input type="hidden" name="action" value="default">
-                <input type="hidden" name="projectid" value="<?=$projectid?>">
+                <input type="hidden" name="projectid" value="<? =$projectid?>">
                 <button class="ui right floated large primary button"  type="submit"><i class="map icon"></i> Mapping / <i class="level down alternate icon"></i> Transfer</button>
 	</form>
 	
@@ -420,7 +420,7 @@
 
 	function projectinfo($projectid){
 	if ((trim($projectid) == "") || ($projectid < 0)) {
-			?>Invalid or blank project ID [<?=$projectid?>]<?
+			?>Invalid or blank project ID [<? =$projectid?>]<?
 			return;
 		}
 	
@@ -436,14 +436,14 @@
 
 	<div class="ui grid">
 		<h1 class="ui header" align="left"> NiDB ===> Redcap Mapping 
-			<div class="sub header"> Project: <?=$projectname?> &nbsp; &nbsp; Redcap Server: <?=$redcapurl?></div>
+			<div class="sub header"> Project: <? =$projectname?> &nbsp; &nbsp; Redcap Server: <? =$redcapurl?></div>
 		</h1>
 
 
 	<div class="three column row" align="center">
 	<form  class="ui form" action="redcapmapping.php">
         <input type="hidden" name="action" value="displaymapping">
-        <input type="hidden" name="projectid" value="<?=$projectid?>">
+        <input type="hidden" name="projectid" value="<? =$projectid?>">
 		
 		<table class="ui basic table">
 
@@ -462,7 +462,7 @@
 					<h4>Redcap Form <i class="small blue question circle outline icon" title="Select a Redcap Form to map"></i></h4>
 					  <select  name="inst" id="inst" required onchange="this.form.submit()">
 						 <?for($In=0;$In < count($In_Name); $In++){ ?>
-						     <option value=<?=$In_Name[$In]?>> <?=$In_Name[$In]?> </option>
+						     <option value=<? =$In_Name[$In]?>> <? =$In_Name[$In]?> </option>
                                                <?}?>
 					</select>
 					<script type="text/javascript"> document.getElementById('inst').value = "<?php echo $_GET['inst'];?>";</script>
@@ -484,7 +484,7 @@
 		
 		        
                 if ((trim($projectid) == "") || ($projectid < 0)) {
-                        ?>Invalid or blank project ID [<?=$projectid?>]<?
+                        ?>Invalid or blank project ID [<? =$projectid?>]<?
                         return;
                 }
                 
@@ -503,9 +503,9 @@
                 
                 <form class="ui form" action="redcapmapping.php" method="post">
                 <input type="hidden" name="action" value="updatemapping">
-                <input type="hidden" name="projectid" value="<?=$projectid?>">
-		<input type="hidden" name="inst" value="<?=$inst?>">
-		<input type="hidden" name="nidbdatatype" value="<?=$nidbdatatype?>">
+                <input type="hidden" name="projectid" value="<? =$projectid?>">
+		<input type="hidden" name="inst" value="<? =$inst?>">
+		<input type="hidden" name="nidbdatatype" value="<? =$nidbdatatype?>">
 
 <?
 		/* Updating for number of columns based on type (drug, measure, Vital) */
@@ -517,15 +517,15 @@
 ?>
 
 
-	<div class="ui <?=$Cols?> wide column" style="overflow: auto; padding:0px">
+	<div class="ui <? =$Cols?> wide column" style="overflow: auto; padding:0px">
 
-	   <h3 class="ui top attached header" align="left"> Mapping variables for "<?=ucfirst($inst)?>" as "<?=$tp?>"<h3>
+	   <h3 class="ui top attached header" align="left"> Mapping variables for "<? =ucfirst($inst)?>" as "<? =$tp?>"<h3>
                 <table class="ui graydisplaytable">
                         <thead>
                                 <tr>
                                         <th style="text-align: center; border-right: 1px solid #bdbdbd" colspan="2">NiDB</th>
                                         <th rowspan="2" style="text-align: center; vertical-align: middle; font-size: 20pt; border-right: 1px solid #bdbdbd; padding: 0px 30px">&#10132;</th>
-					<th style="text-align: center" colspan="<?=$ColSp?>" >Redcap</th>
+					<th style="text-align: center" colspan="<? =$ColSp?>" >Redcap</th>
                                 </tr>
                                 <tr>
                                         <th>Variable</th>
@@ -546,14 +546,14 @@
 					
 
                                         <td><input type="text" name="nidbvariablename" id="nidbvariablename"></td>
-					<td style="border-right: 1px solid #bdbdbd"><input type="text" name="nidbinstrumentname" value=<?=$inst?>></td>
+					<td style="border-right: 1px solid #bdbdbd"><input type="text" name="nidbinstrumentname" value=<? =$inst?>></td>
 					
 					<td style="border-right: 1px solid #bdbdbd; text-align: center">&#10132;</td>
 
 					<td>
 						<select name="redcapevent[]"  multiple required size="3">
 			                           <?for($Eve=0;$Eve < count($Event_s); $Eve++){ ?>
-			                              <option value=<?=$Event_s[$Eve]?>> <?=$Event_s[$Eve]?> </option>
+			                              <option value=<? =$Event_s[$Eve]?>> <? =$Event_s[$Eve]?> </option>
  				                   <?}?>	
                                                 </select>
                                         </td>
@@ -564,7 +564,7 @@
 						<select name="redcapfieldval" required  onchange="document.getElementById('nidbvariablename').value=this.options[this.selectedIndex].text;">
 						    <option value=''> </option>
 						   <?for($Fi=0;$Fi < count($V_names); $Fi++){?> 
-                                                       <option value=<?=$V_names[$Fi]?>> <?=$V_names[$Fi]?> </option>
+                                                       <option value=<? =$V_names[$Fi]?>> <? =$V_names[$Fi]?> </option>
 						   
                                                    <?}?>
                                                 </select>
@@ -574,7 +574,7 @@
                                                 <select name="redcapfielddate" >
                                                        <option value=''> </option>
                                                    <?for($Fi=0;$Fi < count($V_names); $Fi++){?>
-                                                       <option value=<?=$V_names[$Fi]?>> <?=$V_names[$Fi]?> </option>
+                                                       <option value=<? =$V_names[$Fi]?>> <? =$V_names[$Fi]?> </option>
 
                                                    <?}?>
                                                 </select>
@@ -584,7 +584,7 @@
                                                 <select name="redcapfieldrater" >
                                                        <option value=''> </option>
                                                    <?for($Fi=0;$Fi < count($V_names); $Fi++){?>
-                                                       <option value=<?=$V_names[$Fi]?>> <?=$V_names[$Fi]?> </option>
+                                                       <option value=<? =$V_names[$Fi]?>> <? =$V_names[$Fi]?> </option>
                                                    <?}?>
                                                 </select>
 					</td>
@@ -593,7 +593,7 @@
                                                 <select name="redcapfieldnotes" >
                                                        <option value=''> </option>
                                                    <?for($Fi=0;$Fi < count($V_names); $Fi++){?>
-                                                       <option value=<?=$V_names[$Fi]?>> <?=$V_names[$Fi]?> </option>
+                                                       <option value=<? =$V_names[$Fi]?>> <? =$V_names[$Fi]?> </option>
 
                                                    <?}?>
                                                 </select>
@@ -603,7 +603,7 @@
                                                 <select name="redcapfieldStime">
                                                       <option value=''> </option>
                                                    <?for($Fi=0;$Fi < count($V_names); $Fi++){?>
-                                                       <option value=<?=$V_names[$Fi]?>> <?=$V_names[$Fi]?> </option>
+                                                       <option value=<? =$V_names[$Fi]?>> <? =$V_names[$Fi]?> </option>
 
                                                    <?}?>
                                                 </select>
@@ -612,7 +612,7 @@
 						<select name="redcapfieldEtime">
 						      <option value=''> </option>
                                                    <?for($Fi=0;$Fi < count($V_names); $Fi++){?>
-                                                       <option value=<?=$V_names[$Fi]?>> <?=$V_names[$Fi]?> </option>
+                                                       <option value=<? =$V_names[$Fi]?>> <? =$V_names[$Fi]?> </option>
 
                                                    <?}?>
                                                 </select>
@@ -640,17 +640,17 @@
 						 }
                                                 ?>
 						<tr>
-                                                        <td><?=$variable?></td>
-							<td style="border-right: 1px solid #bdbdbd"><?=$nidbinstrument?></td>
+                                                        <td><? =$variable?></td>
+							<td style="border-right: 1px solid #bdbdbd"><? =$nidbinstrument?></td>
 							<td style="border-right: 1px solid #bdbdbd; text-align: center">&#10132;</td>
-                                                        <td><?=$event?></td>
-                                                        <td><?=$form?></td>
-							<td> <?=$fields?></td>
+                                                        <td><? =$event?></td>
+                                                        <td><? =$form?></td>
+							<td> <? =$fields?></td>
 							<td> </td>
 							<td> </td>
 							<td> </td>
-                                                        <td style="border-right: 1px solid #bdbdbd"><?=$fieldtype?></td>
-							<td title="Delete mapping"><a href="redcapmapping.php?action=deletemapping&mappingid=<?=$formmapid?>&projectid=<?=$projectid?>&inst=<?=$inst?>&uinst=<?=$uinst?>&nidbdatatype=<?=$nidbdatatype?>&jointid=<?=$jointid?>" class="redlinkbutton" style="font-size: smaller">X</a></td>
+                                                        <td style="border-right: 1px solid #bdbdbd"><? =$fieldtype?></td>
+							<td title="Delete mapping"><a href="redcapmapping.php?action=deletemapping&mappingid=<? =$formmapid?>&projectid=<? =$projectid?>&inst=<? =$inst?>&uinst=<? =$uinst?>&nidbdatatype=<? =$nidbdatatype?>&jointid=<? =$jointid?>" class="redlinkbutton" style="font-size: smaller">X</a></td>
                                                 </tr>
                                         <?
                                         }
@@ -672,9 +672,9 @@
 ?>
 
 
-	<div class="ui <?=$Cols?> wide column" style="overflow: auto; padding:0px">
+	<div class="ui <? =$Cols?> wide column" style="overflow: auto; padding:0px">
 
-	   <h3 class="ui top attached header" align="left"> Mapping variables for "<?=ucfirst($inst)?>" as "<?=$tp?>"<h3>
+	   <h3 class="ui top attached header" align="left"> Mapping variables for "<? =ucfirst($inst)?>" as "<? =$tp?>"<h3>
                 <table class="ui graydisplaytable">
                         <thead>
                                 <tr>
@@ -711,19 +711,19 @@
 							
 						
 						  ?>
-						  <option value=<?=$colsname?>> <?=$opt?> </option>
+						  <option value=<? =$colsname?>> <? =$opt?> </option>
 						  <?}}?>
                                                 </select>
 					</td>
 
-					<td style="border-right: 1px solid #bdbdbd"><input type="text" name="nidbinstrumentname" value=<?=$inst?>></td>
+					<td style="border-right: 1px solid #bdbdbd"><input type="text" name="nidbinstrumentname" value=<? =$inst?>></td>
 					
 					<td style="border-right: 1px solid #bdbdbd; text-align: center">&#10132;</td>
 
 					<td>
 						<select name="redcapevent[]"  multiple required size="3">
 			                           <?for($Eve=0;$Eve < count($Event_s); $Eve++){ ?>
-			                              <option value=<?=$Event_s[$Eve]?>> <?=$Event_s[$Eve]?> </option>
+			                              <option value=<? =$Event_s[$Eve]?>> <? =$Event_s[$Eve]?> </option>
  				                   <?}?>	
                                                 </select>
                                         </td>
@@ -734,7 +734,7 @@
 						<select name="redcapfieldname" required >
 						    <option value=''> </option>
 						   <?for($Fi=0;$Fi < count($V_names); $Fi++){?> 
-                                                       <option value=<?=$V_names[$Fi]?>> <?=$V_names[$Fi]?> </option>
+                                                       <option value=<? =$V_names[$Fi]?>> <? =$V_names[$Fi]?> </option>
 						   
                                                    <?}?>
                                                 </select>
@@ -774,13 +774,13 @@
 						 }
                                                 ?>
 						<tr>
-                                                        <td><?=$variable?></td>
-							<td style="border-right: 1px solid #bdbdbd"><?=$nidbinstrument?></td>
+                                                        <td><? =$variable?></td>
+							<td style="border-right: 1px solid #bdbdbd"><? =$nidbinstrument?></td>
 							<td style="border-right: 1px solid #bdbdbd; text-align: center">&#10132;</td>
-                                                        <td><?=$event?></td>
-							<td> <?=$fields?></td>
-                                                        <td style="border-right: 1px solid #bdbdbd"><?=$fieldtype?></td>
-                                                        <td title="Delete mapping"><a href="redcapmapping.php?action=deletemapping&mappingid=<?=$formmapid?>&projectid=<?=$projectid?>&inst=<?=$inst?>&uinst=<?=$uinst?>&nidbdatatype=<?=$nidbdatatype?>&jointid=<?=$jointid?>" class="redlinkbutton" style="font-size: smaller">X</a></td>
+                                                        <td><? =$event?></td>
+							<td> <? =$fields?></td>
+                                                        <td style="border-right: 1px solid #bdbdbd"><? =$fieldtype?></td>
+                                                        <td title="Delete mapping"><a href="redcapmapping.php?action=deletemapping&mappingid=<? =$formmapid?>&projectid=<? =$projectid?>&inst=<? =$inst?>&uinst=<? =$uinst?>&nidbdatatype=<? =$nidbdatatype?>&jointid=<? =$jointid?>" class="redlinkbutton" style="font-size: smaller">X</a></td>
                                                 </tr>
                                         <?
                                         }
@@ -799,14 +799,14 @@
 
 ?>
 
-	<div class="ui <?=$Cols?> wide column" style="overflow: auto; padding:0px">
-	   <h3 class="ui top attached header" align="left"> Mapping variables for "<?=ucfirst($inst)?>" as "<?=$tp?>"<h3>
+	<div class="ui <? =$Cols?> wide column" style="overflow: auto; padding:0px">
+	   <h3 class="ui top attached header" align="left"> Mapping variables for "<? =ucfirst($inst)?>" as "<? =$tp?>"<h3>
                 <table class="ui graydisplaytable">
                         <thead>
                                 <tr>
                                         <th style="text-align: center; border-right: 1px solid #bdbdbd" colspan="2">NiDB</th>
                                         <th rowspan="2" style="text-align: center; vertical-align: middle; font-size: 20pt; border-right: 1px solid #bdbdbd; padding: 0px 30px">&#10132;</th>
-					<th style="text-align: center" colspan="<?=$ColSp?>" >Redcap</th>
+					<th style="text-align: center" colspan="<? =$ColSp?>" >Redcap</th>
                                 </tr>
                                 <tr>
                                         <th>Variable</th>
@@ -827,14 +827,14 @@
 					
 
                                         <td><input type="text" name="nidbvariablename" id="nidbvariablename"></td>
-					<td style="border-right: 1px solid #bdbdbd"><input type="text" name="nidbinstrumentname" value=<?=$inst?>></td>
+					<td style="border-right: 1px solid #bdbdbd"><input type="text" name="nidbinstrumentname" value=<? =$inst?>></td>
 					
 					<td style="border-right: 1px solid #bdbdbd; text-align: center">&#10132;</td>
 
 					<td>
 						<select name="redcapevent[]"  multiple required size="3">
 			                           <?for($Eve=0;$Eve < count($Event_s); $Eve++){ ?>
-			                              <option value=<?=$Event_s[$Eve]?>> <?=$Event_s[$Eve]?> </option>
+			                              <option value=<? =$Event_s[$Eve]?>> <? =$Event_s[$Eve]?> </option>
  				                   <?}?>	
                                                 </select>
                                         </td>
@@ -847,7 +847,7 @@
 						<select name="redcapfieldval" required  onchange="document.getElementById('nidbvariablename').value=this.options[this.selectedIndex].text;">
 						    <option value=''> </option>
 						   <?for($Fi=0;$Fi < count($V_names); $Fi++){?> 
-                                                       <option value=<?=$V_names[$Fi]?>> <?=$V_names[$Fi]?> </option>
+                                                       <option value=<? =$V_names[$Fi]?>> <? =$V_names[$Fi]?> </option>
 						   
                                                    <?}?>
                                                 </select>
@@ -857,7 +857,7 @@
                                                 <select name="redcapfielddate" >
                                                        <option value=''> </option>
                                                    <?for($Fi=0;$Fi < count($V_names); $Fi++){?>
-                                                       <option value=<?=$V_names[$Fi]?>> <?=$V_names[$Fi]?> </option>
+                                                       <option value=<? =$V_names[$Fi]?>> <? =$V_names[$Fi]?> </option>
 
                                                    <?}?>
                                                 </select>
@@ -867,7 +867,7 @@
                                                 <select name="redcapfieldrater" >
                                                        <option value=''> </option>
                                                    <?for($Fi=0;$Fi < count($V_names); $Fi++){?>
-                                                       <option value=<?=$V_names[$Fi]?>> <?=$V_names[$Fi]?> </option>
+                                                       <option value=<? =$V_names[$Fi]?>> <? =$V_names[$Fi]?> </option>
                                                    <?}?>
                                                 </select>
 					</td>
@@ -876,7 +876,7 @@
                                                 <select name="redcapfieldnotes" >
                                                        <option value=''> </option>
                                                    <?for($Fi=0;$Fi < count($V_names); $Fi++){?>
-                                                       <option value=<?=$V_names[$Fi]?>> <?=$V_names[$Fi]?> </option>
+                                                       <option value=<? =$V_names[$Fi]?>> <? =$V_names[$Fi]?> </option>
 
                                                    <?}?>
                                                 </select>
@@ -886,7 +886,7 @@
                                                 <select name="redcapfieldStime">
                                                       <option value=''> </option>
                                                    <?for($Fi=0;$Fi < count($V_names); $Fi++){?>
-                                                       <option value=<?=$V_names[$Fi]?>> <?=$V_names[$Fi]?> </option>
+                                                       <option value=<? =$V_names[$Fi]?>> <? =$V_names[$Fi]?> </option>
 
                                                    <?}?>
                                                 </select>
@@ -895,7 +895,7 @@
 						<select name="redcapfieldEtime">
 						      <option value=''> </option>
                                                    <?for($Fi=0;$Fi < count($V_names); $Fi++){?>
-                                                       <option value=<?=$V_names[$Fi]?>> <?=$V_names[$Fi]?> </option>
+                                                       <option value=<? =$V_names[$Fi]?>> <? =$V_names[$Fi]?> </option>
 
                                                    <?}?>
                                                 </select>
@@ -923,17 +923,17 @@
 						 }
                                                 ?>
 						<tr>
-                                                        <td><?=$variable?></td>
-							<td style="border-right: 1px solid #bdbdbd"><?=$nidbinstrument?></td>
+                                                        <td><? =$variable?></td>
+							<td style="border-right: 1px solid #bdbdbd"><? =$nidbinstrument?></td>
 							<td style="border-right: 1px solid #bdbdbd; text-align: center">&#10132;</td>
-                                                        <td><?=$event?></td>
-                                                        <td><?=$form?></td>
-							<td> <?=$fields?></td>
+                                                        <td><? =$event?></td>
+                                                        <td><? =$form?></td>
+							<td> <? =$fields?></td>
 							<td> </td>
 							<td> </td>
 							<td> </td>
-                                                        <td style="border-right: 1px solid #bdbdbd"><?=$fieldtype?></td>
-                                                        <td title="Delete mapping"><a href="redcapmapping.php?action=deletemapping&mappingid=<?=$formmapid?>&projectid=<?=$projectid?>&inst=<?=$inst?>&uinst=<?=$uinst?>&nidbdatatype=<?=$nidbdatatype?>&jointid=<?=$jointid?>" class="redlinkbutton" style="font-size: smaller">X</a></td>
+                                                        <td style="border-right: 1px solid #bdbdbd"><? =$fieldtype?></td>
+                                                        <td title="Delete mapping"><a href="redcapmapping.php?action=deletemapping&mappingid=<? =$formmapid?>&projectid=<? =$projectid?>&inst=<? =$inst?>&uinst=<? =$uinst?>&nidbdatatype=<? =$nidbdatatype?>&jointid=<? =$jointid?>" class="redlinkbutton" style="font-size: smaller">X</a></td>
                                                 </tr>
                                         <?
                                         }
@@ -950,7 +950,7 @@
 	<form class"=ui form" action="redcapmapping.php" method="post">
 
                 <input type="hidden" name="action" value="default">
-                <input type="hidden" name="projectid" value="<?=$projectid?>">
+                <input type="hidden" name="projectid" value="<? =$projectid?>">
 		<br>
 
 		<button class="ui right floated large primary button"  type="submit"><i class="map icon"></i> Mapping / <i class="level down alternate icon"></i> Transfer</button>
@@ -1272,7 +1272,7 @@
 		
 	 ?> 	      <form>
                                 <input type="hidden" name="action" value="default">
-                                <input type="hidden" name="projectid" value="<?=$projectid?>">
+                                <input type="hidden" name="projectid" value="<? =$projectid?>">
                                 <button class="ui right floated large primary button"  type="submit"><i class="map icon"></i> Mapping / <i class="level down alternate icon"></i> Transfer</button>
                      </form> <?
 

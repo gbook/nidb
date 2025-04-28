@@ -481,7 +481,7 @@
 	function CreateStudyGroupFromTemplate($modality, $enrollmentid, $subjectid, $grouptemplateid) {
 		
 		if (!isInteger($grouptemplateid)) {
-			?><span class="staticmessage">Invalid grouptemplateid [<?=$grouptemplateid?>]</span><?
+			?><span class="staticmessage">Invalid grouptemplateid [<? =$grouptemplateid?>]</span><?
 			return;
 		}
 		
@@ -749,7 +749,7 @@
 				</h2>
 			</div>
 				
-			<div class="ui center aligned blue raised top attached segment"><span style="font-size:24pt; font-weight: bold"><?=$uid?></span></div>
+			<div class="ui center aligned blue raised top attached segment"><span style="font-size:24pt; font-weight: bold"><? =$uid?></span></div>
 			
 			<div class="ui attached raised segment">
 				<h3 class="ui header">Demographics</h3>
@@ -757,59 +757,59 @@
 				<table class="ui very compact very simple table">
 					<tr>
 						<td>Subject initials</td>
-						<td><?=$name?></td>
+						<td><? =$name?></td>
 					</tr>
 					<tr>
 						<td>Alternate UID 1</td>
-						<td><?=implode2(', ',$altuids)?></td>
+						<td><? =implode2(', ',$altuids)?></td>
 					</tr>
 					<tr>
 						<td>Date of birth</td>
-						<td><span <? if (!ValidDOB($dob)) { echo "class='invalid' title='Invalid birthdate'"; } ?> ><?=$dob?></span></td>
+						<td><span <? if (!ValidDOB($dob)) { echo "class='invalid' title='Invalid birthdate'"; } ?> ><? =$dob?></span></td>
 					</tr>
 					<tr>
 						<td>Gender</td>
-						<td><?=$gender?></td>
+						<td><? =$gender?></td>
 					</tr>
 					<tr>
 						<td>Ethnicity1&2</td>
-						<td><?=$ethnicity1?>, <?=$ethnicity2?></td>
+						<td><? =$ethnicity1?>, <? =$ethnicity2?></td>
 					</tr>
 					<tr>
 						<td>Handedness</td>
-						<td><?=$handedness?></td>
+						<td><? =$handedness?></td>
 					</tr>
 					<tr>
 						<td>Education</td>
-						<td><?=$education?></td>
+						<td><? =$education?></td>
 					</tr>
 					<tr>
 						<td>Phone</td>
-						<td><?=$phone?></td>
+						<td><? =$phone?></td>
 					</tr>
 					<tr>
 						<td>E-mail</td>
-						<td><?=$email?></td>
+						<td><? =$email?></td>
 					</tr>
 					<tr>
 						<td>Marital Status</td>
-						<td><?=$maritalstatus?></td>
+						<td><? =$maritalstatus?></td>
 					</tr>
 					<tr>
 						<td>Smoking Status</td>
-						<td><?=$smokingstatus?></td>
+						<td><? =$smokingstatus?></td>
 					</tr>
 					<tr>
 						<td>GUID</td>
-						<td><?=$guid?></td>
+						<td><? =$guid?></td>
 					</tr>
 					<tr>
 						<td>Can contact?</td>
-						<td><?=$cancontact?></td>
+						<td><? =$cancontact?></td>
 					</tr>
 					<tr>
 						<td>Tags</td>
-						<td><?=implode2(', ',$tags)?></td>
+						<td><? =implode2(', ',$tags)?></td>
 					</tr>
 				</table>
 			</div>
@@ -831,10 +831,10 @@
 				else { $irb = "N"; }
 				?>
 				<div class="ui gray segment">
-					<?=$project_name?> (<?=$costcenter?>)<br><br>
-					Enroll date: <?=$enroll_startdate?><br>
-					Un-enroll date: <?=$enroll_enddate?><br>
-					Project end date: <?=$project_enddate;?>
+					<? =$project_name?> (<? =$costcenter?>)<br><br>
+					Enroll date: <? =$enroll_startdate?><br>
+					Un-enroll date: <? =$enroll_enddate?><br>
+					Project end date: <? =$project_enddate;?>
 					Imaging Studies
 					<table class="ui small very compact basic table">
 						<thead>
@@ -864,14 +864,14 @@
 								
 								?>
 								<tr>
-									<td><?=$study_num?></td>
-									<td><?=$study_modality?></td>
-									<td><?=$study_datetime?></td>
-									<td><?=$study_performingphysician?></td>
-									<td><?=$study_operator?></td>
-									<td><?=$study_site?></td>
-									<td><?=$study_status?></td>
-									<td><tt><?=$uid?><?=$study_num?></tt></td>
+									<td><? =$study_num?></td>
+									<td><? =$study_modality?></td>
+									<td><? =$study_datetime?></td>
+									<td><? =$study_performingphysician?></td>
+									<td><? =$study_operator?></td>
+									<td><? =$study_site?></td>
+									<td><? =$study_status?></td>
+									<td><tt><? =$uid?><? =$study_num?></tt></td>
 								</tr>
 								<?
 							}
@@ -897,13 +897,13 @@
 			<div class="ui two column grid">
 
 				<div class="ui column">
-					<a href="subjects.php?id=<?=$id?>" class="ui button">Cancel</a>
+					<a href="subjects.php?id=<? =$id?>" class="ui button">Cancel</a>
 				</div>
 				
 				<div class="ui right aligned column">
 					<form method="post" action="subjects.php">
 						<input type="hidden" name="action" value="delete">
-						<input type="hidden" name="id" value="<?=$id?>">
+						<input type="hidden" name="id" value="<? =$id?>">
 						<input type="submit" class="ui red button" value="Yes, delete it">
 					</form>
 				</div>
@@ -934,7 +934,7 @@
 		}
 
 		if ($type == "update") { ?>
-		<?=$uid?><br><br>
+		<? =$uid?><br><br>
 		<? } ?>
 		
 		<div class="ui text container">
@@ -942,8 +942,8 @@
 			<? if (($encrypt) && ($type != 'update')) { ?>
 			<tr>
 				<td colspan="2" style="color:#444; border: orange solid 1px">This subject's information will be encrypted. <b>You will only be able to search for this subject using the bolded values below.</b> Print this page or record the UID on the following page<br><br>
-					[NAME] <?=$firstname?> <?=$lastname?> &rarr; <b><?=$fullname?></b> &rarr; <b><?=$encname;?></b><br>
-					[DOB] <?=$dob?> &rarr; <b><?=$encdob?></b><br>
+					[NAME] <? =$firstname?> <? =$lastname?> &rarr; <b><? =$fullname?></b> &rarr; <b><? =$encname;?></b><br>
+					[DOB] <? =$dob?> &rarr; <b><? =$encdob?></b><br>
 					<?
 					$i=1;
 					foreach ($encuids as $id => $encid) {
@@ -957,19 +957,19 @@
 			<? } ?>
 			<tr>
 				<td class="label">First name</td>
-				<td class="value"><?=$firstname?></td>
+				<td class="value"><? =$firstname?></td>
 			</tr>
 			<tr>
 				<td class="label">Last name</td>
-				<td class="value"><?=$lastname?></td>
+				<td class="value"><? =$lastname?></td>
 			</tr>
 			<tr>
 				<td class="label">Date of birth</td>
-				<td class="value"><span <? if (!ValidDOB($dob)) { echo "class='invalid' title='Invalid birthdate'"; } ?> ><?=$dob?></span></td>
+				<td class="value"><span <? if (!ValidDOB($dob)) { echo "class='invalid' title='Invalid birthdate'"; } ?> ><? =$dob?></span></td>
 			</tr>
 			<tr>
 				<td class="label">Gender</td>
-				<td class="value"><?=$gender?></td>
+				<td class="value"><? =$gender?></td>
 			</tr>
 			<tr>
 				<td class="label">IDs</td>
@@ -981,43 +981,43 @@
 			</tr>
 			<tr>
 				<td class="label">Ethnicity1&2</td>
-				<td class="value"><?=$ethnicity1?>, <?=$ethnicity2?></td>
+				<td class="value"><? =$ethnicity1?>, <? =$ethnicity2?></td>
 			</tr>
 			<tr>
 				<td class="label">Handedness</td>
-				<td class="value"><?=$handedness?></td>
+				<td class="value"><? =$handedness?></td>
 			</tr>
 			<tr>
 				<td class="label">Education</td>
-				<td class="value"><?=$education?></td>
+				<td class="value"><? =$education?></td>
 			</tr>
 			<tr>
 				<td class="label">Phone</td>
-				<td class="value"><?=$phone?></td>
+				<td class="value"><? =$phone?></td>
 			</tr>
 			<tr>
 				<td class="label">E-mail</td>
-				<td class="value"><?=$email?></td>
+				<td class="value"><? =$email?></td>
 			</tr>
 			<tr>
 				<td class="label">Marital Status</td>
-				<td class="value"><?=$maritalstatus?></td>
+				<td class="value"><? =$maritalstatus?></td>
 			</tr>
 			<tr>
 				<td class="label">Smoking Status</td>
-				<td class="value"><?=$smokingstatus?></td>
+				<td class="value"><? =$smokingstatus?></td>
 			</tr>
 			<tr>
 				<td class="label">GUID</td>
-				<td class="value"><?=$guid?></td>
+				<td class="value"><? =$guid?></td>
 			</tr>
 			<tr>
 				<td class="label">Can contact?</td>
-				<td class="value"><?=$cancontact?></td>
+				<td class="value"><? =$cancontact?></td>
 			</tr>
 			<tr>
 				<td class="label">Tags</td>
-				<td class="value"><?=$tags?></td>
+				<td class="value"><? =$tags?></td>
 			</tr>
 			<tr>
 				<td colspan="2" align="center">
@@ -1030,34 +1030,34 @@
 				<td align="left"><button class="ui button" OnClick="history.go(-1)">Back</button></td>
 				
 				<form method="post" action="subjects.php">
-				<input type="hidden" name="action" value="<?=$type?>">
-				<input type="hidden" name="id" value="<?=$id?>">
-				<input type="hidden" name="encrypt" value="<?=$encrypt?>">
-				<input type="hidden" name="lastname" value="<?=$lastname?>">
-				<input type="hidden" name="firstname" value="<?=$firstname?>">
-				<input type="hidden" name="fullname" value="<?=$encname?>">
-				<input type="hidden" name="dob" value="<?=$encdob?>">
-				<input type="hidden" name="gender" value="<?=$gender?>">
-				<input type="hidden" name="ethnicity1" value="<?=$ethnicity1?>">
-				<input type="hidden" name="ethnicity2" value="<?=$ethnicity2?>">
-				<input type="hidden" name="handedness" value="<?=$handedness?>">
-				<input type="hidden" name="education" value="<?=$education?>">
-				<input type="hidden" name="phone" value="<?=$phone?>">
-				<input type="hidden" name="email" value="<?=$email?>">
-				<input type="hidden" name="maritalstatus" value="<?=$maritalstatus?>">
-				<input type="hidden" name="smokingstatus" value="<?=$smokingstatus?>">
-				<input type="hidden" name="cancontact" value="<?=$cancontact?>">
-				<input type="hidden" name="tags" value="<?=$tags?>">
-				<input type="hidden" name="uid" value="<?=$uid?>">
+				<input type="hidden" name="action" value="<? =$type?>">
+				<input type="hidden" name="id" value="<? =$id?>">
+				<input type="hidden" name="encrypt" value="<? =$encrypt?>">
+				<input type="hidden" name="lastname" value="<? =$lastname?>">
+				<input type="hidden" name="firstname" value="<? =$firstname?>">
+				<input type="hidden" name="fullname" value="<? =$encname?>">
+				<input type="hidden" name="dob" value="<? =$encdob?>">
+				<input type="hidden" name="gender" value="<? =$gender?>">
+				<input type="hidden" name="ethnicity1" value="<? =$ethnicity1?>">
+				<input type="hidden" name="ethnicity2" value="<? =$ethnicity2?>">
+				<input type="hidden" name="handedness" value="<? =$handedness?>">
+				<input type="hidden" name="education" value="<? =$education?>">
+				<input type="hidden" name="phone" value="<? =$phone?>">
+				<input type="hidden" name="email" value="<? =$email?>">
+				<input type="hidden" name="maritalstatus" value="<? =$maritalstatus?>">
+				<input type="hidden" name="smokingstatus" value="<? =$smokingstatus?>">
+				<input type="hidden" name="cancontact" value="<? =$cancontact?>">
+				<input type="hidden" name="tags" value="<? =$tags?>">
+				<input type="hidden" name="uid" value="<? =$uid?>">
 				<? foreach ($altuids as $altuid) { ?>
-				<input type="hidden" name="altuids[]" value="<?=$altuid?>">
+				<input type="hidden" name="altuids[]" value="<? =$altuid?>">
 				<? } ?>
 				<? foreach ($enrollmentids as $enrollmentid) { ?>
-				<input type="hidden" name="enrollmentids[]" value="<?=$enrollmentid?>">
+				<input type="hidden" name="enrollmentids[]" value="<? =$enrollmentid?>">
 				<? } ?>
-				<input type="hidden" name="guid" value="<?=$guid?>">
+				<input type="hidden" name="guid" value="<? =$guid?>">
 				<input type="hidden" name="returnpage" value="subject">
-				<td align="right"><input type="submit" class="ui primary button" value="Yes, <?=$type?> it"</td>
+				<td align="right"><input type="submit" class="ui primary button" value="Yes, <? =$type?> it"</td>
 				</form>
 			</tr>
 		</table>
@@ -1198,7 +1198,7 @@
 		<div class="ui grid">
 			<div class="four wide column">
 				<h1 class="ui top attached header center aligned black segment" style="background-color: #ffffaa">
-					<span class="tt"><?=$uid?></span>
+					<span class="tt"><? =$uid?></span>
 				</h1>
 				<div class="ui bottom attached styled segment">
 					<div class="ui accordion">
@@ -1211,15 +1211,15 @@
 							<table class="ui very basic celled collapsing very compact table">
 								<tr>
 									<td class="right aligned"><b>Subject initials</b></td>
-									<td><?=$name?></td>
+									<td><? =$name?></td>
 								</tr>
 								<tr>
 									<td class="right aligned"><b>Date of birth</b></td>
-									<td><span <? if (!ValidDOB($dob)) { echo "class='invalid' title='Invalid birthdate'"; } ?> ><?=$dob?></span></td>
+									<td><span <? if (!ValidDOB($dob)) { echo "class='invalid' title='Invalid birthdate'"; } ?> ><? =$dob?></span></td>
 								</tr>
 								<tr>
 									<td class="right aligned"><b>Gender</b></td>
-									<td><?=$gender?></td>
+									<td><? =$gender?></td>
 								</tr>
 								<tr>
 									<td class="right aligned"><b style="white-space:nowrap;">Alternate UIDs</b></td>
@@ -1238,33 +1238,33 @@
 								</tr>
 								<tr>
 									<td class="right aligned"><b>Ethnicity 1,2</b> </td>
-									<td><?=$ethnicity1?>, <?=$ethnicity2?></td>
+									<td><? =$ethnicity1?>, <? =$ethnicity2?></td>
 								</tr>
 								<tr>
 									<td class="right aligned"><b>Handedness</b></td>
-									<td><?=$handedness?></td>
+									<td><? =$handedness?></td>
 								</tr>
 								<tr>
 									<td class="right aligned"><b>Education</b></td>
-									<td><?=$education?></td>
+									<td><? =$education?></td>
 								</tr>
 								<tr>
 									<td class="right aligned"><b>GUID</b></td>
-									<td><?=$guid?></td>
+									<td><? =$guid?></td>
 								</tr>
 								<tr>
 									<td class="right aligned"><b>Can contact?</b></td>
-									<td><?=$cancontact?></td>
+									<td><? =$cancontact?></td>
 								</tr>
 								<tr>
 									<td class="right aligned"><b>Subject tags</b></td>
-									<td><?=DisplayTags($tags, '', 'subject')?></td>
+									<td><? =DisplayTags($tags, '', 'subject')?></td>
 								</tr>
 							</table>
-							<button class="ui primary button" onClick="window.location.href='subjects.php?action=editform&id=<?=$id?>'; return false;" style="width: 200px"> <i class="edit icon"></i>Edit subject</button>
+							<button class="ui primary button" onClick="window.location.href='subjects.php?action=editform&id=<? =$id?>'; return false;" style="width: 200px"> <i class="edit icon"></i>Edit subject</button>
 						</div>
 					
-						<!--<a href="packages.php?action=addobject&objecttype=subject&objectids[]=<?=$id?>" class="ui basic brown button" style="width: 200px"><img src="images/squirrel-icon-64.png" height="15"></img> &nbsp; Add to Package</a>-->
+						<!--<a href="packages.php?action=addobject&objecttype=subject&objectids[]=<? =$id?>" class="ui basic brown button" style="width: 200px"><img src="images/squirrel-icon-64.png" height="15"></img> &nbsp; Add to Package</a>-->
 
 						<div class="title">
 							<h3 class="ui header"><i class="dropdown icon"></i>Family</h3>
@@ -1290,16 +1290,16 @@
 									
 									?>
 									<tr>
-										<td><?=$uid?> is the <b><?=$relation?></b> of <a href="subjects.php?id=<?=$subjectid2?>"><?=$uid2?></a></td>
+										<td><? =$uid?> is the <b><? =$relation?></b> of <a href="subjects.php?id=<? =$subjectid2?>"><? =$uid2?></a></td>
 									</tr>
 									<?
 								}
 							?>
 								<form action="subjects.php" method="post">
-									<input type="hidden" name="id" value="<?=$id?>">
+									<input type="hidden" name="id" value="<? =$id?>">
 									<input type="hidden" name="action" value="addrelation">
 									<input type="hidden" name="makesymmetric" value="1">
-									<?=$uid?> is the
+									<? =$uid?> is the
 									<select class="ui selection dropdown" name="relation" id="relation">
 										<option value="siblingm">Half-sibling (same mother)</option>
 										<option value="siblingf">Half-sibling (same father)</option>
@@ -1319,11 +1319,11 @@
 							<table class="ui very basic celled collapsing very compact table">
 								<tr>
 									<td class="right aligned"><b>Family UID</b></td>
-									<td class="value"><?=$familyuid?></td>
+									<td class="value"><? =$familyuid?></td>
 								</tr>
 								<tr>
 									<td class="right aligned">Family name</td>
-									<td class="value"><?=$familyname?></td>
+									<td class="value"><? =$familyname?></td>
 								</tr>
 							</table>
 						</div>
@@ -1333,15 +1333,15 @@
 						<div class="content">
 							<? if (GetPerm($perms, 'modifyphi', $projectid)) { ?>
 								<div style="padding:5px; font-size:11pt">
-								<button class="ui primary button" onClick="window.location.href='merge.php?action=mergesubjectform&subjectuid=<?=$uid?>'; return false;">Merge with...</button>
+								<button class="ui primary button" onClick="window.location.href='merge.php?action=mergesubjectform&subjectuid=<? =$uid?>'; return false;">Merge with...</button>
 								<br><br><br>
 								<?
 									if ($GLOBALS['isadmin']) {
 										if ($isactive) {
 										?>
-											<a class="ui red button" href="subjects.php?action=deleteconfirm&id=<?=$id?>" onclick="return confirm('Are you sure you want to delete this subject?')">Delete</a>
+											<a class="ui red button" href="subjects.php?action=deleteconfirm&id=<? =$id?>" onclick="return confirm('Are you sure you want to delete this subject?')">Delete</a>
 										<? } else { ?>
-											<a class="ui red button" href="subjects.php?action=undelete&id=<?=$id?>" onclick="return confirm('Are you sure you want to undelete this subject?')">Undelete</a>
+											<a class="ui red button" href="subjects.php?action=undelete&id=<? =$id?>" onclick="return confirm('Are you sure you want to undelete this subject?')">Undelete</a>
 										<?
 										}
 									}
@@ -1365,7 +1365,7 @@
 						</div>
 						<div class="right aligned column">
 							<form class="ui" action="subjects.php" method="post">
-							<input type="hidden" name="id" value="<?=$id?>">
+							<input type="hidden" name="id" value="<? =$id?>">
 							<input type="hidden" name="action" value="enroll">
 							<div class="ui labeled action input">
 							<label for="projectid" class="ui label grey">Enroll in Project</label>
@@ -1384,7 +1384,7 @@
 									$perms = GetCurrentUserProjectPermissions(array($projectid));
 									if (GetPerm($perms, 'modifyphi', $projectid)) { $disabled = ""; } else { $disabled="disabled"; }
 									?>
-									<option value="<?=$projectid?>" <?=$disabled?>><?=$project_name?> (<?=$project_costcenter?>)</option>
+									<option value="<? =$projectid?>" <? =$disabled?>><? =$project_name?> (<? =$project_costcenter?>)</option>
 									<?
 								}
 							?>
@@ -1453,16 +1453,16 @@
 							<div class="ui grid">
 								<div class="three wide column">
 									<? if ($viewdata) { ?>
-									<a class="ui large black labeled icon button" href="projects.php?id=<?=$projectid?>"><i class="external alternate icon"></i> <?=$project_name?> (<?=$costcenter?>)</a>
+									<a class="ui large black labeled icon button" href="projects.php?id=<? =$projectid?>"><i class="external alternate icon"></i> <? =$project_name?> (<? =$costcenter?>)</a>
 									<? } else { ?>
-									<a class="ui large grey labeled icon button" href="projects.php?id=<?=$projectid?>"><i class="external alternate icon"></i> <?=$project_name?> (<?=$costcenter?>)</a>
+									<a class="ui large grey labeled icon button" href="projects.php?id=<? =$projectid?>"><i class="external alternate icon"></i> <? =$project_name?> (<? =$costcenter?>)</a>
 									<? } ?>
 									<br>
 									<div style="padding: 10px;">
 										<table class="ui very basic celled compact table">
 											<tr>
 												<td class="right aligned"><b>ID(s)</b></td>
-												<td><div class="ui yellow label"><?=$subjectaltids?></div></td>
+												<td><div class="ui yellow label"><? =$subjectaltids?></div></td>
 											</tr>
 											<tr>
 												<td class="right aligned"><b>Group</b></td>
@@ -1470,25 +1470,25 @@
 											</tr>
 											<tr>
 												<td class="right aligned"><b>Enroll date</b></td>
-												<td><?=$enrolldate?></td>
+												<td><? =$enrolldate?></td>
 											</tr>
 											<tr>
 												<td class="right aligned"><b>Tags</b></td>
-												<td><?=DisplayTags(GetTags('enrollment','dx',$enrollmentid),'dx', 'enrollment')?></td>
+												<td><? =DisplayTags(GetTags('enrollment','dx',$enrollmentid),'dx', 'enrollment')?></td>
 											</tr>
 											<? if (($enroll_enddate != "0000-00-00 00:00:00") && ($enroll_enddate != "")) { ?>
 											<tr>
 												<td class="right aligned" style="color: darkred"><b>Un-enroll date</b></td>
-												<td style="color: darkred"><?=$enroll_enddate?></td>
+												<td style="color: darkred"><? =$enroll_enddate?></td>
 											</tr>
 											<? } ?>
 										</table>
 										
-										<a class="ui fluid primary button" href="enrollment.php?enrollmentid=<?=$enrollmentid?>"><i class="newspaper icon"></i> Edit Enrollment</a>
+										<a class="ui fluid primary button" href="enrollment.php?enrollmentid=<? =$enrollmentid?>"><i class="newspaper icon"></i> Edit Enrollment</a>
 										<br>
-										<a href="packages.php?action=addobject&objecttype=enrollment&objectids[]=<?=$enrollmentid?>" class="ui basic fluid brown button"><img src="images/squirrel-icon-64.png" height="15"></img> &nbsp; Add to Package</a>
-										<a class="ui fluid basic button" href="timeline.php?enrollmentid=<?=$enrollmentid?>"><i class="clock icon"></i> View Timeline</a>
-										<a class="ui fluid basic button" href="subjects.php?action=print&id=<?=$id?>&enrollmentid=<?=$enrollmentid?>"><i class="clipboard list icon"></i> View Imaging Summary</a>
+										<a href="packages.php?action=addobject&objecttype=enrollment&objectids[]=<? =$enrollmentid?>" class="ui basic fluid brown button"><img src="images/squirrel-icon-64.png" height="15"></img> &nbsp; Add to Package</a>
+										<a class="ui fluid basic button" href="timeline.php?enrollmentid=<? =$enrollmentid?>"><i class="clock icon"></i> View Timeline</a>
+										<a class="ui fluid basic button" href="subjects.php?action=print&id=<? =$id?>&enrollmentid=<? =$enrollmentid?>"><i class="clipboard list icon"></i> View Imaging Summary</a>
 										<br><br>
 										<?
 										if ($viewphi) {
@@ -1500,9 +1500,9 @@
 												</div>
 												<div class="content">
 													<form action="subjects.php" method="post" style="margin:0px; padding:0px; display:inline;">
-													<input type="hidden" name="id" value="<?=$id?>">
+													<input type="hidden" name="id" value="<? =$id?>">
 													<input type="hidden" name="action" value="changeproject">
-													<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
+													<input type="hidden" name="enrollmentid" value="<? =$enrollmentid?>">
 													<br>
 														Un-enroll subject from this project and enroll in this project. Moves all imaging, observations, and interventions.
 														<select class="ui dropdown" name="newprojectid" required>
@@ -1521,7 +1521,7 @@
 																if (GetPerm($perms, 'modifyphi', $pid)) { $disabled = ""; } else { $disabled = "disabled"; }
 																
 																?>
-																<option value="<?=$pid?>" <?=$disabled?>><?=$project_name?> (<?=$project_costcenter?>)</option>
+																<option value="<? =$pid?>" <? =$disabled?>><? =$project_name?> (<? =$project_costcenter?>)</option>
 																<?
 															}
 														?>
@@ -1564,8 +1564,8 @@
 															</div>
 															<div class="content">
 																<form action="subjects.php" method="post">
-																<input type="hidden" name="id" value="<?=$id?>">
-																<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
+																<input type="hidden" name="id" value="<? =$id?>">
+																<input type="hidden" name="enrollmentid" value="<? =$enrollmentid?>">
 																<input type="hidden" name="action" value="newstudy">
 																<div class="ui small labeled action input">
 																	<label for="modality" class="ui label grey">New <u>empty</u> study</label>
@@ -1578,7 +1578,7 @@
 																			$mod_code = $row['mod_code'];
 																			$mod_desc = $row['mod_desc'];
 																			?>
-																			<option value="<?=$mod_code?>"><b><?=$mod_code?></b> <?=$mod_desc?></option>
+																			<option value="<? =$mod_code?>"><b><? =$mod_code?></b> <? =$mod_desc?></option>
 																			<?
 																		}
 																	?>
@@ -1588,8 +1588,8 @@
 																</form>
 
 																<form action="subjects.php" method="post">
-																<input type="hidden" name="id" value="<?=$id?>">
-																<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
+																<input type="hidden" name="id" value="<? =$id?>">
+																<input type="hidden" name="enrollmentid" value="<? =$enrollmentid?>">
 																<input type="hidden" name="action" value="newstudyfromtemplate">
 																<div class="ui small labeled action input">
 																	<label for="templateid" class="ui label grey">New study from <u>template</u></label>
@@ -1603,7 +1603,7 @@
 																			$templatename = $row['template_name'];
 																			$templatemodality = $row['template_modality'];
 																			?>
-																			<option value="<?=$templateid?>"><?=$templatename?> (<?=$templatemodality?>)</option>
+																			<option value="<? =$templateid?>"><? =$templatename?> (<? =$templatemodality?>)</option>
 																			<?
 																		}
 																	?>
@@ -1613,8 +1613,8 @@
 																</form>
 
 																<form action="subjects.php" method="post">
-																<input type="hidden" name="id" value="<?=$id?>">
-																<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
+																<input type="hidden" name="id" value="<? =$id?>">
+																<input type="hidden" name="enrollmentid" value="<? =$enrollmentid?>">
 																<input type="hidden" name="action" value="newstudygroupfromtemplate">
 																<div class="ui small labeled action input">
 																	<label for="grouptemplateid" class="ui label grey">New study group from <u>template</u></label>
@@ -1639,7 +1639,7 @@
 																			$numseries = $rowC['count'];
 																			
 																			?>
-																			<option value="<?=$ptid?>"><?=$templatename?> (<?=$numstudies?> studies, <?=$numseries?> total series)</option>
+																			<option value="<? =$ptid?>"><? =$templatename?> (<? =$numstudies?> studies, <? =$numseries?> total series)</option>
 																			<?
 																		}
 																	?>
@@ -1713,22 +1713,22 @@
 														}
 													}
 													?>
-													<tr onMouseOver="this.style.backgroundColor='#9EBDFF'; this.style.cursor='pointer';" onMouseOut="this.style.backgroundColor=''; this.style.cursor='auto';" onClick="window.location='studies.php?id=<?=$study_id?>'">
-														<td style="text-align: center;"><a href="studies.php?id=<?=$study_id?>" style="font-size: larger; font-weight: bold"><?=$study_num?></a></td>
+													<tr onMouseOver="this.style.backgroundColor='#9EBDFF'; this.style.cursor='pointer';" onMouseOut="this.style.backgroundColor=''; this.style.cursor='auto';" onClick="window.location='studies.php?id=<? =$study_id?>'">
+														<td style="text-align: center;"><a href="studies.php?id=<? =$study_id?>" style="font-size: larger; font-weight: bold"><? =$study_num?></a></td>
 														<td><?
 														 if ($study_modality == "") { ?><div class="ui tiny basic red label">Blank</div><? }
 														 else { echo $study_modality; }
 														?></td>
-														<td><?=$study_datetime?></td>
-														<td><?=$seriescount?></td>
-														<td><?=number_format($age,1)?> <span class="tiny">&nbsp;y</span></td>
-														<td><?=$study_site?></td>
-														<td><tt><?=$uid?><?=$study_num?></tt></td>
-														<td><?=$study_type?></td>
-														<td><?=$study_daynum?></td>
-														<td><?=$study_timepoint?></td>
+														<td><? =$study_datetime?></td>
+														<td><? =$seriescount?></td>
+														<td><? =number_format($age,1)?> <span class="tiny">&nbsp;y</span></td>
+														<td><? =$study_site?></td>
+														<td><tt><? =$uid?><? =$study_num?></tt></td>
+														<td><? =$study_type?></td>
+														<td><? =$study_daynum?></td>
+														<td><? =$study_timepoint?></td>
 														<td><? if ($study_doradread) { echo "&#x2713;"; } ?></td>
-														<!--<? if ($projectadmin) { ?><td><input type="checkbox" name="studyids[]" value="<?=$study_id?>"></td><? } ?>-->
+														<!--<? if ($projectadmin) { ?><td><input type="checkbox" name="studyids[]" value="<? =$study_id?>"></td><? } ?>-->
 													</tr>
 													<?
 												}
@@ -1768,13 +1768,13 @@
 															<div class="content">
 																<? //if (!$enrolled) { $disabled = "disabled"; } else { $disabled = ""; } ?>
 																<form action="assessments.php" method="post">
-																<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
-																<input type="hidden" name="projectid" value="<?=$projectid?>">
+																<input type="hidden" name="enrollmentid" value="<? =$enrollmentid?>">
+																<input type="hidden" name="projectid" value="<? =$projectid?>">
 																<input type="hidden" name="action" value="create">
 																
 																<div class="ui small labeled action input">
 																	<label for="formid" class="ui label grey" style="width: 150px">Add Assessment</label>
-																	<select class="ui selection dropdown" name="formid" <?=$disabled?> required>
+																	<select class="ui selection dropdown" name="formid" <? =$disabled?> required>
 																		<option value="">(Select assessment)</option>
 																		<?
 																			//$sqlstringB = "select * from assessment_forms where form_ispublished = 1 and project_id = $projectid order by form_title";
@@ -1784,12 +1784,12 @@
 																				//$form_title = $rowB['form_title'];
 																				//$projectid = $rowB['project_id'];
 																				?>
-																				<option value="<?=$form_id?>" style="<?=$style?>"><?=$form_title?></option>
+																				<option value="<? =$form_id?>" style="<? =$style?>"><? =$form_title?></option>
 																				<?
 																			//}
 																		?>
 																	</select>
-																	<button class="ui small primary button" type="submit" value="Enroll" <?=$disabled?>>Create</button>
+																	<button class="ui small primary button" type="submit" value="Enroll" <? =$disabled?>>Create</button>
 																</div>
 																</form>
 															</div>
@@ -1824,16 +1824,16 @@
 															//if ($iscomplete) { $action = "view"; } else { $action = "edit"; }
 															?>
 															<tr>
-																<td><a href="assessments.php?action=<?=$action?>&experimentid=<?=$experiment_id?>&projectid=<?=$projectid?>"><?=$form_title?></a></td>
-																<td><?=$exp_admindate?></td>
-																<td><?=$experimentor?></td>
-																<td><?=$rater_username?></td>
+																<td><a href="assessments.php?action=<? =$action?>&experimentid=<? =$experiment_id?>&projectid=<? =$projectid?>"><? =$form_title?></a></td>
+																<td><? =$exp_admindate?></td>
+																<td><? =$experimentor?></td>
+																<td><? =$rater_username?></td>
 																<td>
 																	<?
 																	//if ($iscomplete) { echo "&#10004;"; }
 																	//else {
 																		?>
-																		<a href="assessments.php?action=completed&experimentid=<?=$experiment_id?>&projectid=<?=$projectid?>">Mark as complete</a>
+																		<a href="assessments.php?action=completed&experimentid=<? =$experiment_id?>&projectid=<? =$projectid?>">Mark as complete</a>
 																		<?
 																	//}
 																	?>
@@ -1865,7 +1865,7 @@
 														<h3 class="header"><i class="clipboard list icon"></i> Phenotypic measures</h3>
 													</div>
 													<div class="right aligned column">
-														<a class="ui basic button" href="measures.php?enrollmentid=<?=$enrollmentid?>"><i class="edit icon"></i> Edit measures</a>
+														<a class="ui basic button" href="measures.php?enrollmentid=<? =$enrollmentid?>"><i class="edit icon"></i> Edit measures</a>
 													</div>
 												</div>
 											</div>
@@ -1876,7 +1876,7 @@
 													//$row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC);
 													//$numrows = $row3['count'];
 													//if ($numrows > 0) {
-														?><span style="font-size: larger;"><b><?=$numrows?></b> measures</span><?
+														?><span style="font-size: larger;"><b><? =$numrows?></b> measures</span><?
 													//}
 													//else {
 														?>
@@ -1901,7 +1901,7 @@
 														$row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC);
 														$numrows = $row3['count'];
 														if ($numrows > 0) {
-															?><span style="font-size: larger;"><b><?=$numrows?></b> measures</span><?
+															?><span style="font-size: larger;"><b><? =$numrows?></b> measures</span><?
 														}
 														else {
 															?>
@@ -1911,7 +1911,7 @@
 													?>
 													</div>
 													<div class="left aligned column">
-														<a class="ui basic button" href="measures.php?enrollmentid=<?=$enrollmentid?>"><i class="edit icon"></i> Edit measures</a>
+														<a class="ui basic button" href="measures.php?enrollmentid=<? =$enrollmentid?>"><i class="edit icon"></i> Edit measures</a>
 													</div>
 												</div>
 
@@ -1923,7 +1923,7 @@
 														$row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC);
 														$numrows = $row3['count'];
 														if ($numrows > 0) {
-															?><span style="font-size: larger;"><b><?=$numrows?></b> vitals</span><?
+															?><span style="font-size: larger;"><b><? =$numrows?></b> vitals</span><?
 														}
 														else {
 															?>
@@ -1933,7 +1933,7 @@
 													?>
 													</div>
 													<div class="left aligned column">
-														<a class="ui basic button" href="measures.php?enrollmentid=<?=$enrollmentid?>"><i class="edit icon"></i> Edit measures</a>
+														<a class="ui basic button" href="measures.php?enrollmentid=<? =$enrollmentid?>"><i class="edit icon"></i> Edit measures</a>
 													</div>
 												</div>
 
@@ -1965,16 +1965,16 @@
 																	if ($iscomplete) { $action = "view"; } else { $action = "edit"; }
 																	?>
 																	<tr>
-																		<td><a href="assessments.php?action=<?=$action?>&experimentid=<?=$experiment_id?>&projectid=<?=$projectid?>"><?=$form_title?></a></td>
-																		<td><?=$exp_admindate?></td>
-																		<td><?=$experimentor?></td>
-																		<td><?=$rater_username?></td>
+																		<td><a href="assessments.php?action=<? =$action?>&experimentid=<? =$experiment_id?>&projectid=<? =$projectid?>"><? =$form_title?></a></td>
+																		<td><? =$exp_admindate?></td>
+																		<td><? =$experimentor?></td>
+																		<td><? =$rater_username?></td>
 																		<td>
 																			<?
 																			if ($iscomplete) { echo "&#10004;"; }
 																			else {
 																				?>
-																				<a href="assessments.php?action=completed&experimentid=<?=$experiment_id?>&projectid=<?=$projectid?>">Mark as complete</a>
+																				<a href="assessments.php?action=completed&experimentid=<? =$experiment_id?>&projectid=<? =$projectid?>">Mark as complete</a>
 																				<?
 																			}
 																			?>
@@ -2001,13 +2001,13 @@
 
 															<? if (!$enrolled) { $disabled = "disabled"; } else { $disabled = ""; } ?>
 															<form action="assessments.php" method="post">
-															<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
-															<input type="hidden" name="projectid" value="<?=$projectid?>">
+															<input type="hidden" name="enrollmentid" value="<? =$enrollmentid?>">
+															<input type="hidden" name="projectid" value="<? =$projectid?>">
 															<input type="hidden" name="action" value="create">
 															
 															<div class="ui small labeled action input">
 																<label for="formid" class="ui label grey" style="width: 150px">Add Assessment</label>
-																<select class="ui selection dropdown" name="formid" <?=$disabled?> required>
+																<select class="ui selection dropdown" name="formid" <? =$disabled?> required>
 																	<option value="">(Select assessment)</option>
 																	<?
 																		$sqlstringB = "select * from assessment_forms where form_ispublished = 1 and project_id = $projectid order by form_title";
@@ -2017,12 +2017,12 @@
 																			$form_title = $rowB['form_title'];
 																			$projectid = $rowB['project_id'];
 																			?>
-																			<option value="<?=$form_id?>" style="<?=$style?>"><?=$form_title?></option>
+																			<option value="<? =$form_id?>" style="<? =$style?>"><? =$form_title?></option>
 																			<?
 																		}
 																	?>
 																</select>
-																<button class="ui small primary button" type="submit" value="Enroll" <?=$disabled?>>Create</button>
+																<button class="ui small primary button" type="submit" value="Enroll" <? =$disabled?>>Create</button>
 															</div>
 															</form>
 														<? } ?>
@@ -2039,7 +2039,7 @@
 														<h3 class="header"><i class="pills icon"></i> Interventions</h3>
 													</div>
 													<div class="right aligned column">
-														<a class="ui basic button" href="drugs.php?enrollmentid=<?=$enrollmentid?>"><i class="edit icon"></i> Interventions</a>
+														<a class="ui basic button" href="drugs.php?enrollmentid=<? =$enrollmentid?>"><i class="edit icon"></i> Interventions</a>
 													</div>
 												</div>
 											</div>
@@ -2076,11 +2076,11 @@
 
 															?>
 															<tr>
-																<td><?=$drug_name?></td>
-																<td><?=$drug_type?></td>
-																<td><?=$drug_route?></td>
-																<td><?=$drug_dose?> / <?=$drug_dosefreq?></td>
-																<td><?=$startdate?> - <?=$enddate?></td>
+																<td><? =$drug_name?></td>
+																<td><? =$drug_type?></td>
+																<td><? =$drug_route?></td>
+																<td><? =$drug_dose?> / <? =$drug_dosefreq?></td>
+																<td><? =$startdate?> - <? =$enddate?></td>
 															</tr>
 															<?
 														}
@@ -2106,7 +2106,7 @@
 														<h3 class="header"><i class="stethoscope icon"></i> Vitals</h3>
 													</div>
 													<div class="right aligned column">
-														<a class="ui basic button" href="vitals.php?enrollmentid=<?=$enrollmentid?>"><i class="edit icon"></i> Edit vitals</a>
+														<a class="ui basic button" href="vitals.php?enrollmentid=<? =$enrollmentid?>"><i class="edit icon"></i> Edit vitals</a>
 													</div>
 												</div>
 											</div>
@@ -2138,11 +2138,11 @@
 															//$vital_type = $row4['vital_type'];
 															?>
 															<tr>
-																<td size="15"><?=$vital_name?></td>
-																<td size="15"><?=$vital_type?></td>
-																<td size="15"><?=$vital_value?></td>
-																<td size="15"><?=$vital_notes?></td>
-																<td size="15"><?=$vdate?></td>
+																<td size="15"><? =$vital_name?></td>
+																<td size="15"><? =$vital_type?></td>
+																<td size="15"><? =$vital_value?></td>
+																<td size="15"><? =$vital_notes?></td>
+																<td size="15"><? =$vdate?></td>
 															</tr>
 															<?
 														//}
@@ -2166,7 +2166,7 @@
 					} /* end while loop for enrollments */
 				?>
 				<div class="ui bottom attached styled blue segment">
-					Displayed <?=$numenrollments?> enrollments
+					Displayed <? =$numenrollments?> enrollments
 				</div>
 			</div> <!-- end the 12-wide right column (list of enrollments) -->
 		</div> <!-- end the overall grid -->
@@ -2238,15 +2238,15 @@
 				
 				?>
 				<tr>
-					<td><b><?=$study_num?></b></td>
+					<td><b><? =$study_num?></b></td>
 					<td><?
 					 if ($study_modality == "") { ?><span style="color: white; background-color: red">&nbsp;blank&nbsp;</span><? }
 					 else { echo $study_modality; }
 					?></td>
-					<td><?=$study_datetime?></td>
-					<td><?=number_format($age,1)?></td>
-					<td><?=$study_site?></td>
-					<td><?=$study_type?></td>
+					<td><? =$study_datetime?></td>
+					<td><? =number_format($age,1)?></td>
+					<td><? =$study_site?></td>
+					<td><? =$study_type?></td>
 				</tr>
 				<tr>
 					<td colspan="6" style="padding-left: 15px">
@@ -2370,12 +2370,12 @@
 		</script>
 		<div class="ui text container">
 			<div class="ui attached visible message">
-				<div class="header"><?=$formtitle?></div>
+				<div class="header"><? =$formtitle?></div>
 			</div>
 			<form method="post" action="subjects.php" class="ui form attached fluid segment">
-			<input type="hidden" name="action" value="<?=$formaction?>">
-			<input type="hidden" name="id" value="<?=$id?>">
-			<input type="hidden" name="uid" value="<?=$uid?>">
+			<input type="hidden" name="action" value="<? =$formaction?>">
+			<input type="hidden" name="id" value="<? =$id?>">
+			<input type="hidden" name="uid" value="<? =$uid?>">
 			<? if ($type == "add") { ?>
 			<!--<tr title="This will encrypt the name and alternate UIDs.<br>It will also change the DOB to year only (ex. 1980-00-00)">
 				<td class="label">Encrypt</td>
@@ -2389,7 +2389,7 @@
 					<label>First name</label>
 					<div class="field">
 						<? if ($modifyphi) { ?>
-						<input class="ui input focus" type="text" name="firstname" value="<?=$firstname?>">
+						<input class="ui input focus" type="text" name="firstname" value="<? =$firstname?>">
 						<? } else { ?>
 						<input type="text" name="" value="" disabled>
 						<? } ?>
@@ -2400,7 +2400,7 @@
 					<label>Last name</label>
 					<div class="field">
 						<? if ($modifyphi) { ?>
-						<input type="text" name="lastname" value="<?=$lastname?>" required>
+						<input type="text" name="lastname" value="<? =$lastname?>" required>
 						<? } else { ?>
 						<input type="text" name="" value="" disabled>
 						<? } ?>
@@ -2426,7 +2426,7 @@
 					<label>Date of Birth</label>
 					<div class="field">
 						<? if ($modifyphi) { ?>
-						<input type="date" name="dob" value="<?=$dob?>" required>
+						<input type="date" name="dob" value="<? =$dob?>" required>
 						<? } else { ?>
 						<input type="text" name="" value="" disabled>
 						<? } ?>
@@ -2446,7 +2446,7 @@
 						</thead>
 						<tr>
 							<td>All projects</td>
-							<td><input type="text" size="50" name="altuids[]" value="<?=implode2(', ',GetAlternateUIDs($id,0))?>"></td>
+							<td><input type="text" size="50" name="altuids[]" value="<? =implode2(', ',GetAlternateUIDs($id,0))?>"></td>
 							<input type="hidden" name="enrollmentids[]" value="">
 						</tr>
 						<?
@@ -2458,11 +2458,11 @@
 								$projectname = $row['project_name'];
 								?>
 								<tr>
-									<td><?=$projectname?></td>
+									<td><? =$projectname?></td>
 									<td>
-										<div class="ui input"><input type="text" size="50" name="altuids[]" value="<?=implode2(', ',GetAlternateUIDs($id,$enrollmentid))?>"></div>
+										<div class="ui input"><input type="text" size="50" name="altuids[]" value="<? =implode2(', ',GetAlternateUIDs($id,$enrollmentid))?>"></div>
 									</td>
-									<input type="hidden" name="enrollmentids[]" value="<?=$enrollmentid?>">
+									<input type="hidden" name="enrollmentids[]" value="<? =$enrollmentid?>">
 								</tr>
 								<?
 							}
@@ -2473,7 +2473,7 @@
 				<div class="field">
 					<label>GUID</label>
 					<div class="field">
-						<input type="text" name="guid" value="<?=$guid?>">
+						<input type="text" name="guid" value="<? =$guid?>">
 					</div>
 				</div>
 			</div>
@@ -2563,7 +2563,7 @@
 					<label>Phone</label>
 					<div class="field">
 						<? if ($modifyphi) { ?>
-						<input type="tel" name="phone" value="<?=$phone1?>"> <?=$phone1?>
+						<input type="tel" name="phone" value="<? =$phone1?>"> <? =$phone1?>
 						<? } else { ?>
 						<input type="tel" name="" value="" disabled>
 						<? } ?>
@@ -2573,7 +2573,7 @@
 					<label>Email</label>
 					<div class="field">
 						<? if ($modifyphi) { ?>
-						<input type="email" name="email" value="<?=$email?>">
+						<input type="email" name="email" value="<? =$email?>">
 						<? } else { ?>
 						<input type="email" name="" value="" disabled>
 						<? } ?>
@@ -2590,14 +2590,14 @@
 			<div class="field">
 				<label>Tags</label>
 				<div class="field">
-					<input type="text" size="50" name="tags" value="<?=implode2(', ',GetTags('subject','',$id))?>" placeholder="comma separated list">
+					<input type="text" size="50" name="tags" value="<? =implode2(', ',GetTags('subject','',$id))?>" placeholder="comma separated list">
 				</div>
 			</div>
 			
 			<br><br>
 			<div class="column" align="right">
-				<button class="ui button" onClick="window.location.href='subjects.php?id=<?=$id?>'; return false;">Cancel</button>
-				<input class="ui primary button" type="submit" id="submit" value="<?=$submitbuttonlabel?>">
+				<button class="ui button" onClick="window.location.href='subjects.php?id=<? =$id?>'; return false;">Cancel</button>
+				<input class="ui primary button" type="submit" id="submit" value="<? =$submitbuttonlabel?>">
 			</div>
 
 			</form>
@@ -2676,27 +2676,27 @@
 				<td>&nbsp;</td>
 				<td>
 					<div class="ui fluid input">
-						<input type="text" placeholder="UID" name="searchuid" id="searchuid" value="<?=$searchuid?>" autofocus="autofocus">
+						<input type="text" placeholder="UID" name="searchuid" id="searchuid" value="<? =$searchuid?>" autofocus="autofocus">
 					</div>
 				</td>
 				<td>
 					<div class="ui fluid input">
-						<input type="text" placeholder="Alternate UID" name="searchaltuid" value="<?=$searchaltuid?>">
+						<input type="text" placeholder="Alternate UID" name="searchaltuid" value="<? =$searchaltuid?>">
 					</div>
 				</td>
 				<td>
 					<div class="ui fluid input">
-						<input type="text" placeholder="Name" name="searchname" value="<?=$searchname?>">
+						<input type="text" placeholder="Name" name="searchname" value="<? =$searchname?>">
 					</div>
 				</td>
 				<td>
 					<div class="ui input">
-						<input type="text" placeholder="Sex" name="searchgender" value="<?=$searchgender?>" size="2" maxlength="2">
+						<input type="text" placeholder="Sex" name="searchgender" value="<? =$searchgender?>" size="2" maxlength="2">
 					</div>
 				</td>
 				<td>
 					<div class="ui input">
-						<input type="text" placeholder="YYYY-MM-DD" name="searchdob" value="<?=$searchdob?>">
+						<input type="text" placeholder="YYYY-MM-DD" name="searchdob" value="<? =$searchdob?>">
 					</div>
 				</td>
 				<td> - </td>
@@ -2776,13 +2776,13 @@
 							
 							if ($isactive == 0) { ?><tr style="background-image:url('images/deleted.png')"><? } else { ?><tr><? } ?>
 							
-								<td style="background-color: lightyellow"><input type="checkbox" name="uids[]" value="<?=$uid?>"></td>
-								<!--<input type="hidden" name="uidids[]" value="<?=$id?>">-->
-								<td><a href="subjects.php?action=display&id=<?=$id?>"><?=$uid?></a></td>
-								<td><?=implode2(', ',$altuids)?></td>
-								<td><?=$name?></td>
-								<td><?=$gender?></td>
-								<td><?=$dob?></td>
+								<td style="background-color: lightyellow"><input type="checkbox" name="uids[]" value="<? =$uid?>"></td>
+								<!--<input type="hidden" name="uidids[]" value="<? =$id?>">-->
+								<td><a href="subjects.php?action=display&id=<? =$id?>"><? =$uid?></a></td>
+								<td><? =implode2(', ',$altuids)?></td>
+								<td><? =$name?></td>
+								<td><? =$gender?></td>
+								<td><? =$dob?></td>
 								<td>
 									<? if (count($enrolllist) > 0) { ?>
 									<details style="font-size:8pt; color: gray">
@@ -2798,10 +2798,10 @@
 												$viewphi = $rowA['view_phi'];
 											}
 											if ($viewphi) {
-												?><span style="color:#238217; white-space:nowrap;" title="You have access to <?=$val?>">&#8226; <?=$val?></span><br><?
+												?><span style="color:#238217; white-space:nowrap;" title="You have access to <? =$val?>">&#8226; <? =$val?></span><br><?
 											}
 											else {
-												?><span style="color:#8b0000; white-space:nowrap;" title="You <b>do not</b> have access to <?=$val?>">&#8226; <?=$val?></span><br><?
+												?><span style="color:#8b0000; white-space:nowrap;" title="You <b>do not</b> have access to <? =$val?>">&#8226; <? =$val?></span><br><?
 											}
 										}
 									?>
@@ -2813,15 +2813,15 @@
 									}
 									?>
 								</td>
-								<td><?=$isactivecheck?></td>
-								<td><?=$lastupdate?></td>
+								<td><? =$isactivecheck?></td>
+								<td><? =$lastupdate?></td>
 								<? if ($GLOBALS['isadmin']) { ?>
-								<!--<td><a href="subjects.php?action=deleteconfirm&id=<?=$id?>"><div class="ui red button" style="padding: 0px; margin; 0px;">X</div></a></td>-->
+								<!--<td><a href="subjects.php?action=deleteconfirm&id=<? =$id?>"><div class="ui red button" style="padding: 0px; margin; 0px;">X</div></a></td>-->
 								<? } ?>
 								<td></td>
 								<? if ($GLOBALS['issiteadmin']) { ?>
 								<td style="background-color: Lavender">
-									<input type="checkbox" name="ids[]" value="<?=$id?>">
+									<input type="checkbox" name="ids[]" value="<? =$id?>">
 								</td>
 								<? } ?>
 							</tr>
@@ -2854,8 +2854,8 @@
 								$groupid = $row['group_id'];
 								$groupname = $row['group_name'];
 								?>
-								<!--<option value="<?=$groupid?>"><?=$groupname?>-->
-								<div class="item" data-value="<?=$groupid?>"><?=$groupname?></div>
+								<!--<option value="<? =$groupid?>"><? =$groupname?>-->
+								<div class="item" data-value="<? =$groupid?>"><? =$groupname?></div>
 								<?
 							}
 						?>

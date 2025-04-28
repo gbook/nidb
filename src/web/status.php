@@ -101,7 +101,7 @@
 			<table class="ui celled table">
 				<tr>
 					<td><h3 class="header">NiDB version</h3></td>
-					<td><?=GetNiDBVersion();?></td>
+					<td><? =GetNiDBVersion();?></td>
 				</tr>
 				<tr>
 					<td><h3 class="header">NiDB checks</h3></td>
@@ -113,22 +113,22 @@
 				</tr>
 				<tr>
 					<td><h3 class="header">Uptime</h3></td>
-					<td><pre><?=trim(`uptime`)?></pre></td>
+					<td><pre><? =trim(`uptime`)?></pre></td>
 				</tr>
 				<tr>
 					<td><h3 class="header">Memory</h3></td>
-					<td><pre><?=trim(`free -h`)?></pre></td>
+					<td><pre><? =trim(`free -h`)?></pre></td>
 				</tr>
 				<tr>
 					<td><h3 class="header">CPU cores</h3></td>
-					<td><pre><?=trim(`nproc`)?></pre></td>
+					<td><pre><? =trim(`nproc`)?></pre></td>
 				</tr>
 				<tr>
 					<td><h3 class="header">Disk usage</h3></td>
-					<td><pre><?=trim(`df -Th`)?></pre></td>
+					<td><pre><? =trim(`df -Th`)?></pre></td>
 				</tr>
 				<tr>
-					<td><h3 class="header">Crontab for <tt><?=system('whoami')?></tt></h3></td>
+					<td><h3 class="header">Crontab for <tt><? =system('whoami')?></tt></h3></td>
 					<td>
 						<?
 							$crontab = trim(`crontab -l`);
@@ -144,7 +144,7 @@
 							if (!contains($crontab, "nidb qc")) Error("qc module is not listed in crontab", false);
 							if (!contains($crontab, "nidb upload")) Error("upload module is not listed in crontab", false);
 						?>
-						<pre><?=$crontab?></pre>
+						<pre><? =$crontab?></pre>
 					</td>
 				</tr>
 				<tr>
@@ -167,11 +167,11 @@
 						<table class="ui basic table">
 							<tr>
 								<td><b>Application Entity (AE):port</b></td>
-								<td><?=$aeport?></td>
+								<td><? =$aeport?></td>
 							</tr>
 							<tr>
 								<td><b>Destination Directory</b></td>
-								<td><?=$dest?>
+								<td><? =$dest?>
 								<?
 									if (!is_dir($dest))
 										Error("dcmrcv points to direcory [$dest] which does not exist", false);
@@ -183,7 +183,7 @@
 							<tr>
 								<td><tt>ps -ef</tt> output</td>
 								<td>
-									<?=$dcmrcvline?>
+									<? =$dcmrcvline?>
 									<?
 										if ($dcmrcvline == "")
 											Error("dcmrcv is not running. Images will be archived");
@@ -205,7 +205,7 @@
 						$numrows = $rowA['Rows'];
 						$tablesize = $rowA['Data_length'];
 						$indexsize = $rowA['Index_length'];
-						?><b><?=$table?></b>&#9;<?=number_format(($tablesize + $indexsize),0)?> bytes   <span class="tiny">(<?=number_format($numrows,0)?> rows)</span><br><?
+						?><b><? =$table?></b>&#9;<? =number_format(($tablesize + $indexsize),0)?> bytes   <span class="tiny">(<? =number_format($numrows,0)?> rows)</span><br><?
 					}
 					?></pre>
 					</td>
@@ -213,10 +213,10 @@
 				<tr>
 					<td><h3 class="header">Software versions</h3></td>
 					<td>
-						<b>OS</b> <tt><?=php_uname()?></tt><br>
-						<b>PHP</b> <tt><?=phpversion()?></tt><br>
-						<b>MySQL</b> <tt><?=trim(`mysql -V`)?></tt><br>
-						<b>ImageMagick</b> <tt><?=trim(`convert --version`)?></tt><br>
+						<b>OS</b> <tt><? =php_uname()?></tt><br>
+						<b>PHP</b> <tt><? =phpversion()?></tt><br>
+						<b>MySQL</b> <tt><? =trim(`mysql -V`)?></tt><br>
+						<b>ImageMagick</b> <tt><? =trim(`convert --version`)?></tt><br>
 					</td>
 				</tr>
 				<tr>
@@ -284,12 +284,12 @@
 										$module_laststop = date("D M j, Y H:i:s",strtotime($module_laststop));
 								?>
 								<tr>
-									<td><b><?=$module_name?></b></td>
-									<td><a href="adminmodules.php?action=viewlogs&modulename=<?=$module_name?>">view logs</a></td>
-									<td style="color: <?=$color?>"><?=$module_status?></td>
-									<td><?=$module_numrunning?></td>
-									<td><?=$module_laststop?></td>
-									<td><?=$runtime?></td>
+									<td><b><? =$module_name?></b></td>
+									<td><a href="adminmodules.php?action=viewlogs&modulename=<? =$module_name?>">view logs</a></td>
+									<td style="color: <? =$color?>"><? =$module_status?></td>
+									<td><? =$module_numrunning?></td>
+									<td><? =$module_laststop?></td>
+									<td><? =$runtime?></td>
 									<td>
 										<?
 											if ($module_isactive) {
@@ -311,22 +311,22 @@
 					</td>
 				</tr>
 				<tr>
-					<td><h3 class="header"><a href="adminmodules.php?action=viewlogs&modulename=import" title="View import logs">Import module</a><br><span class="tiny"><?=$GLOBALS['cfg']['incomingdir']?></span></h3></td>
+					<td><h3 class="header"><a href="adminmodules.php?action=viewlogs&modulename=import" title="View import logs">Import module</a><br><span class="tiny"><? =$GLOBALS['cfg']['incomingdir']?></span></h3></td>
 					<td>
-						<?=$numdicomfiles?> queued files<br>
-						<?=$numdicomdirs?> queued directories<br>
+						<? =$numdicomfiles?> queued files<br>
+						<? =$numdicomdirs?> queued directories<br>
 					</td>
 				</tr>
 				<tr>
-					<td><h3 class="header"><a href="adminmodules.php?action=viewlogs&modulename=importuploaded" title="View importuploaded.pl logs">Import Uploads module</a><br><span class="tiny"><?=$GLOBALS['cfg']['uploadeddir']?></span></h3></td>
+					<td><h3 class="header"><a href="adminmodules.php?action=viewlogs&modulename=importuploaded" title="View importuploaded.pl logs">Import Uploads module</a><br><span class="tiny"><? =$GLOBALS['cfg']['uploadeddir']?></span></h3></td>
 					<td>
-						<?=$numimportpending?> requests pending<br>
-						<?=$numimportdirs?> queued directories<br>
+						<? =$numimportpending?> requests pending<br>
+						<? =$numimportdirs?> queued directories<br>
 					</td>
 				</tr>
 				<tr>
 					<td><h3 class="header"><a href="adminmodules.php?action=viewlogs&modulename=fileio" title="View fileio.pl logs">File IO module</a></h3></td>
-					<td><?=$numiopending?> operations pending</td>
+					<td><? =$numiopending?> operations pending</td>
 				</tr>
 				<tr>
 					<td><h3 class="header"><a href="adminmodules.php?action=viewlogs&modulename=pipeline" title="View pipeline.pl logs">Pipeline module</a></h3></td>
@@ -357,12 +357,12 @@
 								$pp_currentstudy = $row['pp_currentstudy'];
 								?>
 								<tr>
-									<td><?=$pp_processid?></td>
-									<td><?=$pp_status?></td>
-									<td><?=$pp_startdate?></td>
-									<td><?=$pp_lastcheckin?></td>
-									<td><?=$pipelinename?></td>
-									<td><?=$pp_currentstudy?></td>
+									<td><? =$pp_processid?></td>
+									<td><? =$pp_status?></td>
+									<td><? =$pp_startdate?></td>
+									<td><? =$pp_lastcheckin?></td>
+									<td><? =$pipelinename?></td>
+									<td><? =$pp_currentstudy?></td>
 								</tr>
 								<?
 							}

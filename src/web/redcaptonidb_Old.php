@@ -93,7 +93,7 @@
 function getprojectinfo($projectid)
 {
 	if ((trim($projectid) == "") || ($projectid < 0)) {
-			?>Invalid or blank project ID [<?=$projectid?>]<?
+			?>Invalid or blank project ID [<? =$projectid?>]<?
 			return;
 		}
 	
@@ -111,7 +111,7 @@ function getprojectinfo($projectid)
 	<div class="ui four column centered container">
 		<form action="redcaptonidb.php" method="post">
 		<input type="hidden" name="action" value="updateconnection">
-		<input type="hidden" name="projectid" value="<?=$projectid?>">
+		<input type="hidden" name="projectid" value="<? =$projectid?>">
 		
 		<h2 class="ui top attached inverted header" align="center"> Redcap ===> NiDB Transfer </h2>
 		<br> 
@@ -122,7 +122,7 @@ function getprojectinfo($projectid)
                           <div class="ui  label">
                             *Redcap Server
                           </div>
-                          <input type="text"  name="redcapurl" value="<?=$redcapurl?>"  size="50" required>
+                          <input type="text"  name="redcapurl" value="<? =$redcapurl?>"  size="50" required>
                         </div>
 
                         <br>
@@ -130,7 +130,7 @@ function getprojectinfo($projectid)
                           <div class="ui  label">
                             *Redcap Token  
                           </div>
-                                <input type="text" name="redcaptoken" value="<?=$redcaptoken?>" size="50" required>
+                                <input type="text" name="redcaptoken" value="<? =$redcaptoken?>" size="50" required>
                         </div>
 
 		</div>
@@ -142,7 +142,7 @@ function getprojectinfo($projectid)
 		</form>
 	</div>
 	<br><br>
-	<div onclick="window.location.href='redcaptonidb.php?action=showrcinfo&projectid=<?=$projectid?>'" class="ui bottom attached button">Show Project Info</div> 
+	<div onclick="window.location.href='redcaptonidb.php?action=showrcinfo&projectid=<? =$projectid?>'" class="ui bottom attached button">Show Project Info</div> 
 
 <?}
 
@@ -157,7 +157,7 @@ function setprojectinfo($projectid, $redcapurl, $redcaptoken)
 	$redcaptoken = mysqli_real_escape_string($GLOBALS['linki'], $redcaptoken);
 		
 	if ((trim($projectid) == "") || ($projectid < 0)) {
-	?><b> Invalid or blank project ID [<?=$projectid?>]<?
+	?><b> Invalid or blank project ID [<? =$projectid?>]<?
 	return;
 	}
 	
@@ -204,7 +204,7 @@ function Showprojectinfo($projectid)
 
 	<br>
 	
-	<div onclick="window.location.href='redcaptonidb.php?action=default&projectid=<?=$projectid?>'" class="ui bottom attached button">Hide Project Info</div>
+	<div onclick="window.location.href='redcaptonidb.php?action=default&projectid=<? =$projectid?>'" class="ui bottom attached button">Hide Project Info</div>
 	<br><br>
 
 
@@ -212,7 +212,7 @@ function Showprojectinfo($projectid)
 	<br><br>
 
 
-	<button class="ui primary right floated button" onclick="window.location.href='redcapmaping.php?action=default&projectid=<?=$projectid?>'">
+	<button class="ui primary right floated button" onclick="window.location.href='redcapmaping.php?action=default&projectid=<? =$projectid?>'">
           <i class="map icon"></i>
             Map This Project
         </button>

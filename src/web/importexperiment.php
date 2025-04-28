@@ -64,7 +64,7 @@
 		$groupid = 0;
 		foreach($lines as $line) {
 			?>
-			<div style="color:darkred"><?=$line?></div>
+			<div style="color:darkred"><? =$line?></div>
 			<?
 			list($subjectid, $costcenter, $formid, $questionid, $filegroupid, $value, $rater, $datetime, $notes, $visit) = explode(',', $line);
 			if ($subjectid == "") {

@@ -85,7 +85,7 @@
 ?>
 
 
-Viewing file <?=$filename?>
+Viewing file <? =$filename?>
 <br>
 <canvas id="gl" width="700" height="700"></canvas>
 
@@ -93,7 +93,7 @@ Viewing file <?=$filename?>
 
 <script>
 	var volumeList = [
-		{url: "getfile.php?action=download&file=<?=$filename?>", colorMap:"gray"},
+		{url: "getfile.php?action=download&file=<? =$filename?>", colorMap:"gray"},
 	]
 	var nv = new niivue.Niivue({isResizeCanvas: false})
 	nv.attachTo("gl") 

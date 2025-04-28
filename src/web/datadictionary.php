@@ -122,7 +122,7 @@
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
-		?><div align="center"><span class="message"><?=$varname?> added</span></div><br><br><?
+		?><div align="center"><span class="message"><? =$varname?> added</span></div><br><br><?
 	}
 
 
@@ -202,7 +202,7 @@
 			$sqlstring = "insert ignore into data_dictionary (datadict_type, project_id, datadict_varname, datadict_desc, datadict_expectedtimepoints, datadict_rangelow, datadict_rangehigh) values ('$type', $projectid, '$varname', '$desc', $expectedcount, $rangelow, $rangehigh) on duplicate key update datadict_desc = '$desc', datadict_type = '$type', datadict_expectedtimepoints = $expectedcount, datadict_rangelow = $rangelow, datadict_rangehigh = $rangehigh";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
-			?><div align="center"><span class="message"><?=$varname?> added</span></div><br><br><?
+			?><div align="center"><span class="message"><? =$varname?> added</span></div><br><br><?
 		}
 	}
 
@@ -260,6 +260,7 @@
 	function DisplayVariables($projectid) {
 		if (!ValidID($projectid)) { return; }
 		
+		$datadictitems = array();
 		/* get all items from data_dictionary table */
 		$sqlstring = "select * from data_dictionary where project_id = $projectid order by datadict_varname";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -281,7 +282,7 @@
 		</tr>
 		<form method="post" action="datadictionary.php">
 		<input type="hidden" name="action" value="addvariable">
-		<input type="hidden" name="projectid" value="<?=$projectid?>">
+		<input type="hidden" name="projectid" value="<? =$projectid?>">
 		<tr>
 			<td style="border-bottom: solid #888 2px; padding: 6px;"><input type="text" name="varname" required></td>
 			<td style="border-bottom: solid #888 2px; padding: 6px;">
@@ -304,7 +305,7 @@
 		
 		<form method="post" action="datadictionary.php">
 		<input type="hidden" name="action" value="addcsv">
-		<input type="hidden" name="projectid" value="<?=$projectid?>">
+		<input type="hidden" name="projectid" value="<? =$projectid?>">
 		<tr>
 			<td colspan="8" style="border-bottom: solid #888 2px; padding: 6px;">
 				<details>
@@ -331,7 +332,7 @@ variable_2, drug, "Important Variable 1 - no keys", </div>
 		
 		<form method="post" action="datadictionary.php">
 			<input type="hidden" name="action" value="updatevariables">
-			<input type="hidden" name="projectid" value="<?=$projectid?>">
+			<input type="hidden" name="projectid" value="<? =$projectid?>">
 		<?
 		/* display the table rows */
 		foreach($datadictitems as $varname => $details) {
@@ -387,9 +388,9 @@ variable_2, drug, "Important Variable 1 - no keys", </div>
 			
 			?>
 			<tr>
-				<td><?=$varname?></td>
+				<td><? =$varname?></td>
 				<td>
-					<select name="type[<?=$id?>]">
+					<select name="type[<? =$id?>]">
 						<option value="" <? if (!in_array($type, array("measure", "vital", "drug", "other"))) { echo "selected"; } ?> >(Select type)
 						<option value="measure" <? if ($type == "measure") { echo "selected"; } ?> >Measure
 						<option value="vital" <? if ($type == "vital") { echo "selected"; } ?> >Vital
@@ -397,15 +398,15 @@ variable_2, drug, "Important Variable 1 - no keys", </div>
 						<option value="other" <? if ($type == "other") { echo "selected"; } ?> >Other
 					</select>
 				</td>
-				<td><input type="text" name="desc[<?=$id?>]" value="<?=$desc?>"></td>
-				<!--<td><input type="text" name="rangelow" style="width:80px" value="<?=$rangelow?>"> - <input type="text" name="rangehigh" style="width:80px" value="<?=$rangehigh?>"></td>-->
-				<td><?=$count?></td>
+				<td><input type="text" name="desc[<? =$id?>]" value="<? =$desc?>"></td>
+				<!--<td><input type="text" name="rangelow" style="width:80px" value="<? =$rangelow?>"> - <input type="text" name="rangehigh" style="width:80px" value="<? =$rangehigh?>"></td>-->
+				<td><? =$count?></td>
 				<td>
 				<?
 					if (count($errors) > 0) {
 						?>
 						<details style="font-size: smaller">
-						<summary><?=count($errors)?> issue(s)</summary>
+						<summary><? =count($errors)?> issue(s)</summary>
 							<ul>
 							<?
 								foreach ($errors as $err) {
@@ -420,7 +421,7 @@ variable_2, drug, "Important Variable 1 - no keys", </div>
 					}
 				?>
 				</td>
-				<td><input name="deleteids[]" type="checkbox" value="<?=$id?>"></td>
+				<td><input name="deleteids[]" type="checkbox" value="<? =$id?>"></td>
 				<td></td>
 			</tr>
 			<?
@@ -475,8 +476,8 @@ variable_2, drug, "Important Variable 1 - no keys", </div>
 		</tr>
 		<form method="post" action="datadictionary.php">
 		<input type="hidden" name="action" value="addvariables">
-		<input type="hidden" name="datadictid" value="<?=$id?>">
-		<input type="hidden" name="projectid" value="<?=$projectid?>">
+		<input type="hidden" name="datadictid" value="<? =$id?>">
+		<input type="hidden" name="projectid" value="<? =$projectid?>">
 		<?
 		$rownum = 0;
 		foreach($dbitems as $varname => $details) {
@@ -489,13 +490,13 @@ variable_2, drug, "Important Variable 1 - no keys", </div>
 			if (!in_array($varname, array_keys($datadictitems))) {
 			?>
 			<tr>
-				<td><input type="hidden" name="varname[<?=$rownum?>]" value="<?=$varname?>"><?=$varname?></td>
-				<td><input type="hidden" name="type[<?=$rownum?>]" value="<?=$type?>"><?=$type?></td>
-				<td><input type="text" name="desc[<?=$rownum?>]" value="<?=$desc?>"></td>
-				<!--<td><input type="text" name="rangelow[<?=$rownum?>]" style="width:80px" value="<?=$rangelow?>"> - <input type="text" name="rangehigh[<?=$rownum?>]" style="width:80px" value="<?=$rangehigh?>"></td>-->
-				<td><?=$count?></td>
+				<td><input type="hidden" name="varname[<? =$rownum?>]" value="<? =$varname?>"><? =$varname?></td>
+				<td><input type="hidden" name="type[<? =$rownum?>]" value="<? =$type?>"><? =$type?></td>
+				<td><input type="text" name="desc[<? =$rownum?>]" value="<? =$desc?>"></td>
+				<!--<td><input type="text" name="rangelow[<? =$rownum?>]" style="width:80px" value="<? =$rangelow?>"> - <input type="text" name="rangehigh[<? =$rownum?>]" style="width:80px" value="<? =$rangehigh?>"></td>-->
+				<td><? =$count?></td>
 				<!--<td></td>-->
-				<td><input name="itemids[]" type="checkbox" value="<?=$rownum?>"></td>
+				<td><input name="itemids[]" type="checkbox" value="<? =$rownum?>"></td>
 			</tr>
 			<?
 			$rownum++;

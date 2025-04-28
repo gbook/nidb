@@ -90,7 +90,7 @@
 		$sqlstring = "update qc_modules set qcm_name = '$qcmname', modality_desc = '$modalitydesc', modality_admin = '$admin' where modality_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		?><div align="center"><span class="message"><?=$qcmname?> updated</span></div><br><br><?
+		?><div align="center"><span class="message"><? =$qcmname?> updated</span></div><br><br><?
 	}
 
 
@@ -106,7 +106,7 @@
 		$sqlstring = "insert into qc_modules (qcm_name, qcm_modality) values ('$modulename', '$modality')";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		?><div align="center"><span class="message"><?=$modulename?> added</span></div><br><br><?
+		?><div align="center"><span class="message"><? =$modulename?> added</span></div><br><br><?
 	}
 
 	
@@ -157,7 +157,7 @@
 					<?
 						$modalities = GetModalityList();
 						foreach ($modalities as $modality) {
-							?><option value="<?=$modality?>"><?=$modality?></option><?
+							?><option value="<? =$modality?>"><? =$modality?></option><?
 						}
 					?>
 					</select>
@@ -179,16 +179,16 @@
 					else { $color = "darkblue"; }
 
 					?>
-					<tr style="color: <?=$color?>">
-						<td><?=$name?></td>
-						<td><?=$modality?></td>
+					<tr style="color: <? =$color?>">
+						<td><? =$name?></td>
+						<td><? =$modality?></td>
 						<td>
 							<?
 								if ($enabled) {
-									?><a href="adminqc.php?action=disable&id=<?=$id?>"><img src="images/checkedbox16.png"></a><?
+									?><a href="adminqc.php?action=disable&id=<? =$id?>"><img src="images/checkedbox16.png"></a><?
 								}
 								else {
-									?><a href="adminqc.php?action=enable&id=<?=$id?>"><img src="images/uncheckedbox16.png"></a><?
+									?><a href="adminqc.php?action=enable&id=<? =$id?>"><img src="images/uncheckedbox16.png"></a><?
 								}
 							?>
 						</td>

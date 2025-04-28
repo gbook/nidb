@@ -139,7 +139,7 @@
 								<?
 									$modalities = GetModalityList();
 									foreach ($modalities as $modality) {
-										?><div class="item" data-value="<?=$modality?>"><?=$modality?></div><?
+										?><div class="item" data-value="<? =$modality?>"><? =$modality?></div><?
 									}
 								?>
 								<div class="item" data-value="unknown"><b>Unknown</b> - Let NiDB guess the modality</div>
@@ -172,7 +172,7 @@
 									$project_name = $row['project_name'];
 									$project_costcenter = $row['project_costcenter'];
 									?>
-									<option value="<?=$project_id?>"><?=$project_name?> (<?=$project_costcenter?>)</option>
+									<option value="<? =$project_id?>"><? =$project_name?> (<? =$project_costcenter?>)</option>
 									<?
 								}
 							?>
@@ -437,17 +437,17 @@
 		<table class="entrytable">
 			<tr>
 				<td>Date</td>
-				<td><input type="date" name="datestart" value="<?=$datestart?>"> - <input type="date" name="dateend" value="<?=$dateend?>"></td>
+				<td><input type="date" name="datestart" value="<? =$datestart?>"> - <input type="date" name="dateend" value="<? =$dateend?>"></td>
 			</tr>
 			<tr>
 				<td>Keyword</td>
-				<td><input type="text" name="keyword" value="<?=$keyword?>"></td>
+				<td><input type="text" name="keyword" value="<? =$keyword?>"></td>
 			</tr>
 		</table>
 		<input type="submit" value="Update">
 		</form>
 		
-		<?=mysqli_num_rows($result)?> entries</span>
+		<? =mysqli_num_rows($result)?> entries</span>
 		<tt><pre><?
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$date = $row['log_date'];
@@ -549,10 +549,10 @@
 				
 				?>
 				<p>
-				<div class="ui top attached <?=$statuscolor?> segment">
-					<?=$label?>
-					<a class="ui <?=$buttoncolor?> button" href="importimaging.php?action=displayimport&uploadid=<?=$uploadid?>"><?=$buttonlabel?></a>
-					<span style="font-size: larger;">Importing <b><?=$filecount?> files</b> into <b><?=$projectname?></b> Started <?=date("r", strtotime($startdate))?></span>
+				<div class="ui top attached <? =$statuscolor?> segment">
+					<? =$label?>
+					<a class="ui <? =$buttoncolor?> button" href="importimaging.php?action=displayimport&uploadid=<? =$uploadid?>"><? =$buttonlabel?></a>
+					<span style="font-size: larger;">Importing <b><? =$filecount?> files</b> into <b><? =$projectname?></b> Started <? =date("r", strtotime($startdate))?></span>
 				</div>
 				
 				<!--
@@ -568,7 +568,7 @@
 									$sqlstringA = "select * from upload_logs where upload_id = $uploadid";
 									$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 								?>
-								<summary>View Log <span class="tiny"><?=mysqli_num_rows($resultA)?> entries</span></summary>
+								<summary>View Log <span class="tiny"><? =mysqli_num_rows($resultA)?> entries</span></summary>
 								<tt><pre><?
 									while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 										$date = $rowA['log_date'];
@@ -583,25 +583,25 @@
 							<td>Uploaded files</td>
 							<td>
 								<details>
-								<summary>File list (<?=count($filelist);?> files)</summary>
-									<tt style="font-size:8pt"><?=implode2("<br>", $filelist)?></tt>
+								<summary>File list (<? =count($filelist);?> files)</summary>
+									<tt style="font-size:8pt"><? =implode2("<br>", $filelist)?></tt>
 								</details>
 							</td>
 						</tr>
 						<tr>
 							<td>Source</td>
-							<td><?=$source?></td>
+							<td><? =$source?></td>
 						</tr>
 						<tr>
 							<td>Source Data path</td>
-							<td><tt><?=$datapath?></tt></td>
+							<td><tt><? =$datapath?></tt></td>
 						</tr>
 						<tr>
 							<td>Matching Criteria</td>
 							<td>
-								Subject: <?=$subjectcriteria?><br>
-								Study: <?=$studycriteria?><br>
-								Series: <?=$seriescriteria?>
+								Subject: <? =$subjectcriteria?><br>
+								Study: <? =$studycriteria?><br>
+								Series: <? =$seriescriteria?>
 							</td>
 						</tr>
 					</table>
@@ -764,7 +764,7 @@
 						<a class="ui primary button" href="importimaging.php"><i class="arrow alternate circle left icon"></i> Back</a>
 					</div>
 					<div class="right aligned column">
-						<a class="ui primary button" href="importimaging.php?action=displayimport&uploadid=<?=$uploadid?>"><i class="refresh icon"></i> Refresh</a>
+						<a class="ui primary button" href="importimaging.php?action=displayimport&uploadid=<? =$uploadid?>"><i class="refresh icon"></i> Refresh</a>
 					</div>
 				</div>
 				<br><br>
@@ -773,10 +773,10 @@
 					<tr>
 						<td class="right aligned"><h4 class="header">Status</h4></td>
 						<td>
-							<div class="ui top attached <?=$statuscolor?> message">
-								<?=$statusmsg?>
+							<div class="ui top attached <? =$statuscolor?> message">
+								<? =$statusmsg?>
 								<? if ($percent != "") { ?>
-									<div class="ui basic label"><?=number_format($percent, 1)?>%</div>
+									<div class="ui basic label"><? =number_format($percent, 1)?>%</div>
 								<? } ?>								
 							</div>
 							<?DisplayStatusSteps($status, "mini", "bottom");?>
@@ -793,7 +793,7 @@
 								<div class="ui accordion">
 									<div class="title">
 										<i class="dropdown icon"></i>
-										View Log <span class="tiny"><?=mysqli_num_rows($result)?> entries</span>
+										View Log <span class="tiny"><? =mysqli_num_rows($result)?> entries</span>
 									</div>
 									<div class="content">
 										<tt><pre><?
@@ -814,10 +814,10 @@
 							<div class="ui accordion">
 								<div class="title">
 									<i class="dropdown icon"></i>
-									Original file list (<?=count($filelist);?> files)
+									Original file list (<? =count($filelist);?> files)
 								</div>
 								<div class="content">
-									<tt><?=implode2("<br>", $filelist)?></tt>
+									<tt><? =implode2("<br>", $filelist)?></tt>
 								</div>
 								<?
 									$sqlstringA = "SELECT * FROM upload_subjects a LEFT JOIN upload_studies b on a.uploadsubject_id = b.uploadsubject_id LEFT JOIN upload_series c on b.uploadstudy_id = c.uploadstudy_id WHERE a.upload_id = 33 and (uploadsubject_patientid = 'unreadable' or uploadsubject_patientid = 'NiDBunreadable')";
@@ -831,10 +831,10 @@
 										<div class="ui accordion">
 											<div class="title">
 												<i class="dropdown icon"></i>
-												Unreadable (<?=count($filelist);?> files)
+												Unreadable (<? =count($filelist);?> files)
 											</div>
 											<div class="content">
-												<tt><?=implode2("<br>", $errorfiles)?></tt>
+												<tt><? =implode2("<br>", $errorfiles)?></tt>
 											</div>
 										</div>
 										<?
@@ -845,35 +845,35 @@
 					</tr>
 					<tr>
 						<td class="right aligned"><h4 class="header">Source</h4></td>
-						<td><?=$source?></td>
+						<td><? =$source?></td>
 					</tr>
 					<tr>
 						<td class="right aligned"><h4 class="header">File format</h4></td>
-						<td><?=$filetype?></td>
+						<td><? =$filetype?></td>
 					</tr>
 					<tr>
 						<td class="right aligned"><h4 class="header">Source Data Path</h4></td>
-						<td><tt><?=$datapath?></tt></td>
+						<td><tt><? =$datapath?></tt></td>
 					</tr>
 					<tr>
 						<td class="right aligned"><h4 class="header">Matching Criteria</h4></td>
 						<td>
-							Subject: <b><?=$subjectcriteria?></b><br>
-							Study: <b><?=$studycriteria?></b><br>
-							Series: <b><?=$seriescriteria?></b>
+							Subject: <b><? =$subjectcriteria?></b><br>
+							Study: <b><? =$studycriteria?></b><br>
+							Series: <b><? =$seriescriteria?></b>
 						</td>
 					</tr>
 				</table>
 				<h3 class="ui attached inverted header">Operations</h3>
 				<div class="ui bottom attached segment">
-					<a class="ui red button" title="Cancel the upload" href="importimaging.php?action=cancel&uploadid=<?=$uploadid?>">Cancel Import</a>
+					<a class="ui red button" title="Cancel the upload" href="importimaging.php?action=cancel&uploadid=<? =$uploadid?>">Cancel Import</a>
 				</div>
 				<!--
 				<h3 class="ui top attached inverted header">Reparse</h3>
 				<div class="ui bottom attached segment">
 					<form class="ui form" method="post" action="importimaging.php" name="reparseform">
 					<input type="hidden" name="action" value="reparse">
-					<input type="hidden" name="uploadid" value="<?=$uploadid?>">
+					<input type="hidden" name="uploadid" value="<? =$uploadid?>">
 					<div class="field">
 						<label>Subject Matching Criteria</label>
 						<select class="ui dropdown" name="subjectcriteria">
@@ -920,7 +920,7 @@
 			<? if ($status == "parsingcomplete") { ?>
 			<form method="post" action="importimaging.php">
 			<input type="hidden" name="action" value="queueforarchive">
-			<input type="hidden" name="uploadid" value="<?=$uploadid?>">
+			<input type="hidden" name="uploadid" value="<? =$uploadid?>">
 			Select series for archiving. (All series are selected by default) &nbsp; &nbsp; <input type="submit" class="ui primary button" value="Archive">
 			<? } ?>
 			
@@ -932,7 +932,7 @@
 			elseif ($numsubjects == 1) { $smsg = "$numsubjects subject"; }
 			elseif ($numsubjects > 1) { $smsg = "$numsubjects subjects"; }
 			?>
-			<h3 class="inverted header"><?=$smsg?></h3>
+			<h3 class="inverted header"><? =$smsg?></h3>
 			<?
 			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 				$uploadsubjectid = $rowA['uploadsubject_id'];
@@ -959,11 +959,11 @@
 							<div class="column">
 								<i class="dropdown icon"></i>
 								<div class="ui large blue label">
-									<?=$patientid?>
+									<? =$patientid?>
 								</div>
 								<div class="ui large image label">
 									Name
-									<div class="detail"><?=$name?></div>
+									<div class="detail"><? =$name?></div>
 								</div>
 							</div>
 							<div class="right aligned column">
@@ -972,7 +972,7 @@
 										<div class="ui small yellow button">
 											<i class="clipboard check icon"></i> Matched existing subject
 										</div>
-										<a href="subjects.php?subjectid=<?=$matchsubjectid?>" class="ui yellow label" target="_blank"><?=$matchsubjectuid?></a>
+										<a href="subjects.php?subjectid=<? =$matchsubjectid?>" class="ui yellow label" target="_blank"><? =$matchsubjectuid?></a>
 									</div>
 								<? } ?>
 							</div>
@@ -1012,19 +1012,19 @@
 									<div class="column">
 										<i class="dropdown icon"></i>
 										<div class="ui large blue label">
-											<?=$desc?>
+											<? =$desc?>
 										</div>
 										<div class="ui large image label">
 											Date
-											<div class="detail"><?=$studydate?></div>
+											<div class="detail"><? =$studydate?></div>
 										</div>
 										<div class="ui large image label">
 											Modality
-											<div class="detail"><?=$modality?></div>
+											<div class="detail"><? =$modality?></div>
 										</div>
 										<div class="ui large image label">
 											Datatype
-											<div class="detail"><?=$datatype?></div>
+											<div class="detail"><? =$datatype?></div>
 										</div>
 									</div>
 									<div class="right aligned column">
@@ -1033,7 +1033,7 @@
 												<div class="ui small yellow button">
 													<i class="clipboard check icon"></i> Matched existing study
 												</div>
-												<a href="studies.php?studyid=<?=$matchstudyid?>" target="_blank" class="ui yellow label"><?=$matchsubjectuid?><?=$matchstudynum?></a>
+												<a href="studies.php?studyid=<? =$matchstudyid?>" target="_blank" class="ui yellow label"><? =$matchsubjectuid?><? =$matchstudynum?></a>
 											</div>
 										<? } ?>
 									</div>
@@ -1074,28 +1074,28 @@
 										<div class="ui two column grid">
 											<div class="column">
 												<i class="dropdown icon"></i>
-												<? if ($status == "parsingcomplete") { ?><input type="checkbox" name="uploadseriesid[]" value="<?=$uploadseriesid?>" checked><?}?>
+												<? if ($status == "parsingcomplete") { ?><input type="checkbox" name="uploadseriesid[]" value="<? =$uploadseriesid?>" checked><?}?>
 												<div class="ui large blue label">
-													<?=$seriesnum?>
+													<? =$seriesnum?>
 												</div>
 												<div class="ui large label">
-													<?=$desc?>
+													<? =$desc?>
 												</div>
 												<div class="ui large image label">
 													Protocol
-													<div class="detail"><?=$protocol?></div>
+													<div class="detail"><? =$protocol?></div>
 												</div>
 												<div class="ui large image label">
 													Date
-													<div class="detail"><?=$seriesdate?></div>
+													<div class="detail"><? =$seriesdate?></div>
 												</div>
 												<div class="ui large image label">
 													Img
-													<div class="detail"><?=$cols?>x<?=$rows?></div>
+													<div class="detail"><? =$cols?>x<? =$rows?></div>
 												</div>
 											</div>
 											<div class="right aligned column">
-												<i>Matched <?=count($seriesmatches);?> series</i>
+												<i>Matched <? =count($seriesmatches);?> series</i>
 											</div>
 										</div>
 									</div>
@@ -1103,7 +1103,7 @@
 									<?
 										$files = explode(",", $filelist);
 										?>
-										<b><?=count($files)?> files</b><br>
+										<b><? =count($files)?> files</b><br>
 										<tt style="font-size: 8pt">
 										<?
 										foreach ($files as $f) {
@@ -1431,39 +1431,39 @@
 				$('.ui .progress').progress();
 			});
 		</script>		
-			<div class="ui <?=$attachment?> attached five <?=$size?> steps">
-				<div class="<?=$step1_state?> step">
+			<div class="ui <? =$attachment?> attached five <? =$size?> steps">
+				<div class="<? =$step1_state?> step">
 					<div class="content">
-						<div class="title"><?=$step1_title?></div>
-						<div class="description"><?=$step1_desc?></div>
+						<div class="title"><? =$step1_title?></div>
+						<div class="description"><? =$step1_desc?></div>
 					</div>
 				</div>
-				<div class="<?=$step2_state?> step">
+				<div class="<? =$step2_state?> step">
 					<i class="cloud upload icon"></i>
 					<div class="content">
-						<div class="green title"><?=$step2_title?></div>
-						<div class="description"><?=$step2_desc?></div>
+						<div class="green title"><? =$step2_title?></div>
+						<div class="description"><? =$step2_desc?></div>
 					</div>
 				</div>
-				<div class="<?=$step3_state?> step">
-					<i class="<?=$step3_icon?> icon"></i>
+				<div class="<? =$step3_state?> step">
+					<i class="<? =$step3_icon?> icon"></i>
 					<div class="content">
-						<div class="title"><?=$step3_title?></div>
-						<div class="description"><?=$step3_desc?></div>
+						<div class="title"><? =$step3_title?></div>
+						<div class="description"><? =$step3_desc?></div>
 					</div>
 				</div>
-				<div class="<?=$step4_state?> step">
+				<div class="<? =$step4_state?> step">
 					<i class="archive icon"></i>
 					<div class="content">
-						<div class="title"><?=$step4_title?></div>
-						<div class="description"><?=$step4_desc?></div>
+						<div class="title"><? =$step4_title?></div>
+						<div class="description"><? =$step4_desc?></div>
 					</div>
 				</div>
-				<div class="<?=$step5_state?> step">
+				<div class="<? =$step5_state?> step">
 					<i class="check icon"></i>
 					<div class="content">
-						<div class="title"><?=$step5_title?></div>
-						<div class="description"><?=$step5_desc?></div>
+						<div class="title"><? =$step5_title?></div>
+						<div class="description"><? =$step5_desc?></div>
 					</div>
 				</div>
 			</div>

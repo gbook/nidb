@@ -85,14 +85,14 @@
 	foreach ($groups as $groupName => $files) {
 	  if (!empty($files)){		// Ensures the groups are not Empty
 ?>		<tr>
-		<td><?=$groupName?></td>
+		<td><? =$groupName?></td>
 		<td>
 		<div class="ui list">
 <?
 		// Display Files for each group
 		foreach ($files as $file) {
 ?>			
-			<div class='item'><a href="<?=$datapath?><?=$file?>" download><?=$file?></a></div>
+			<div class='item'><a href="<? =$datapath?><? =$file?>" download><? =$file?></a></div>
 <?		}
 ?>
 		</div>

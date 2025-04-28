@@ -119,7 +119,7 @@
 		/* check if the path exists */
 		if (file_exists($path)) {
 			?>
-			Showing log files from <b><?=$path?></b>
+			Showing log files from <b><? =$path?></b>
 			<br><br>
 			<?
 			$files = scandir($path);
@@ -138,9 +138,9 @@
 				
 				?>
 				<details>
-					<summary><?="<b>$log</b>"?> <span class="tiny"><?=number_format($size)?> bytes - <?=$filedate?></span> &nbsp; <div class="ui basic label"><tt><?=$command?></tt></div> <div class="ui green label"><?=$desc?></div></summary>
+					<summary><? ="<b>$log</b>"?> <span class="tiny"><? =number_format($size)?> bytes - <? =$filedate?></span> &nbsp; <div class="ui basic label"><tt><? =$command?></tt></div> <div class="ui green label"><? =$desc?></div></summary>
 					<pre style="font-size:9pt; background-color: #EEEEEE; padding: 6px">
-<?=$file?>
+<? =$file?>
 					</pre>
 				</details>
 				<?
@@ -194,7 +194,7 @@
 		if ((!file_exists($origfileslog)) || ($fileviewtype == "filesystem")) {
 			$files = find_all_files($path);
 			?>
-			Showing files from <b><?=$path?></b> (<?=count($files)?> files) <span class="tiny">Reading from filesystem</span>
+			Showing files from <b><? =$path?></b> (<? =count($files)?> files) <span class="tiny">Reading from filesystem</span>
 			<br><br>
 			<table cellspacing="0" cellpadding="2">
 				<tr>
@@ -279,33 +279,33 @@
 				}
 				?>
 				<tr>
-					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD; color:<?=$filecolor?>; font-weight: <?=$fileweight?>">
+					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD; color:<? =$filecolor?>; font-weight: <? =$fileweight?>">
 					<?
 						switch ($filetype) {
 							case 'text':
 					?>
-					<a href="viewfile.php?file=<?="$file"?>"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
+					<a href="viewfile.php?file=<? ="$file"?>"><span style="color:<? =$filecolor?>; font-weight: <? =$fileweight?>"><? =$displayfile?></span></a>
 					<?
 								break;
 							case 'image':
 					?>
-					<a href="viewimagefile.php?file=<?="$file"?>"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
+					<a href="viewimagefile.php?file=<? ="$file"?>"><span style="color:<? =$filecolor?>; font-weight: <? =$fileweight?>"><? =$displayfile?></span></a>
 					<?
 								break;
 							case 'nifti':
 							case 'mesh':
 					?>
-					<a href="niiview.php?type=<?=$filetype?>&filename=<?="$file"?>"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
+					<a href="niiview.php?type=<? =$filetype?>&filename=<? ="$file"?>"><span style="color:<? =$filecolor?>; font-weight: <? =$fileweight?>"><? =$displayfile?></span></a>
 					<?
 								break;
 							default:
 					?>
-					<?=$displayfile?>
+					<? =$displayfile?>
 					<? } ?>
 					</td>
-					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=date("M j, Y H:i:s",$timestamp2)?></span></td>
-					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=$displayperms?></td>
-					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=number_format($size2)?></td>
+					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><? =date("M j, Y H:i:s",$timestamp2)?></span></td>
+					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><? =$displayperms?></td>
+					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><? =number_format($size2)?></td>
 				</tr>
 				<?
 			}
@@ -315,7 +315,7 @@
 			
 			$files = explode("\n",trim($origfiles));
 			?>
-			Showing files from <b><?=$path?></b> (<?=count($files)?> files) <span class="tiny">Reading from origfiles.log</span> Read from <a href="pipelines.php?action=viewfiles&analysisid=<?=$analysisid?>&fileviewtype=filesystem">filesystem</a>
+			Showing files from <b><? =$path?></b> (<? =count($files)?> files) <span class="tiny">Reading from origfiles.log</span> Read from <a href="pipelines.php?action=viewfiles&analysisid=<? =$analysisid?>&fileviewtype=filesystem">filesystem</a>
 			<br><br>
 			<table cellspacing="0" cellpadding="2">
 				<tr>
@@ -386,34 +386,34 @@
 				}
 				?>
 				<tr>
-					<td style="font-size:9pt; border-bottom: solid 1px #DDDDDD; color:<?=$filecolor?>; font-weight: <?=$fileweight?>">
+					<td style="font-size:9pt; border-bottom: solid 1px #DDDDDD; color:<? =$filecolor?>; font-weight: <? =$fileweight?>">
 					<?
 						$fullpath = $GLOBALS['cfg']['mountdir'] . "/$file";
 						switch ($filetype) {
 							case 'text':
 					?>
-					<a href="viewfile.php?file=<?=$fullpath?>"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
+					<a href="viewfile.php?file=<? =$fullpath?>"><span style="color:<? =$filecolor?>; font-weight: <? =$fileweight?>"><? =$displayfile?></span></a>
 					<?
 								break;
 							case 'image':
 					?>
-					<a href="viewimagefile.php?file=<?=$fullpath?>"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
+					<a href="viewimagefile.php?file=<? =$fullpath?>"><span style="color:<? =$filecolor?>; font-weight: <? =$fileweight?>"><? =$displayfile?></span></a>
 					<?
 								break;
 							case 'nifti':
 							case 'mesh':
 					?>
-					<a href="viewimage.php?type=<?=$filetype?>&filename=<?=$fullpath?>"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
+					<a href="viewimage.php?type=<? =$filetype?>&filename=<? =$fullpath?>"><span style="color:<? =$filecolor?>; font-weight: <? =$fileweight?>"><? =$displayfile?></span></a>
 					<?
 								break;
 							default:
 					?>
-					<?=$displayfile?>
+					<? =$displayfile?>
 					<? } ?>
 					</td>
-					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=date("M j, Y H:i:s",$timestamp1)?><? //if ($timestamp1 != $timestamp2) { echo "&nbsp;<span class='smalldiff'>$timestamp2</span>"; } ?></span></td>
-					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=$displayperms1?><? //if ($perm1 != $perm2) { echo "&nbsp;<span class='smalldiff'>$perm2</span>"; } ?></td>
-					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=number_format($size1)?><? //if ($size1 != $size2) { echo "&nbsp;<span class='smalldiff'>" . number_format($size2) . "</span>"; } ?></td>
+					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><? =date("M j, Y H:i:s",$timestamp1)?><? //if ($timestamp1 != $timestamp2) { echo "&nbsp;<span class='smalldiff'>$timestamp2</span>"; } ?></span></td>
+					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><? =$displayperms1?><? //if ($perm1 != $perm2) { echo "&nbsp;<span class='smalldiff'>$perm2</span>"; } ?></td>
+					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><? =number_format($size1)?><? //if ($size1 != $size2) { echo "&nbsp;<span class='smalldiff'>" . number_format($size2) . "</span>"; } ?></td>
 				</tr>
 				<?
 			}
@@ -448,7 +448,7 @@
 		<div class="ui top attached raised segment">
 			<div class="ui two column grid">
 				<div class="ui column">
-					<b>Results for</b> <code><?=$analysispath?></code>
+					<b>Results for</b> <code><? =$analysispath?></code>
 				</div>
 
 				<div class="ui column">
@@ -514,8 +514,8 @@
 				}
 				if ($important) { $bold = 'bold'; } else { $bold = 'normal'; }
 				?>
-				<tr style="font-weight: <?=$bold?>">
-					<td><?=$name?></td>
+				<tr style="font-weight: <? =$bold?>">
+					<td><? =$name?></td>
 					<td align="right">
 						<?
 							switch($type) {
@@ -533,16 +533,16 @@
 									break;
 								case "i":
 									?>
-									<img src="preview.php?image=<?=$filename?>" style="max-width:400px">
+									<img src="preview.php?image=<? =$filename?>" style="max-width:400px">
 									<?
 									break;
 							}
 						?>
 					</td>
-					<td style="padding-left:0px"><?=$units?></td>
-					<!--<td><?=$size?></td>-->
-					<td><?=$swversion?></td>
-					<td nowrap><?=$lastupdate?></td>
+					<td style="padding-left:0px"><? =$units?></td>
+					<!--<td><? =$size?></td>-->
+					<td><? =$swversion?></td>
+					<td nowrap><? =$lastupdate?></td>
 				</tr>
 				<?
 			}
@@ -551,7 +551,7 @@
 			</table>
 		</div>
 		<div class="ui bottom attached inverted vertically fitted raised segment">
-			Found <?=$numresults?> results
+			Found <? =$numresults?> results
 		</div>
 		<?
 	}	
@@ -589,11 +589,11 @@
 		?>
 		<tr>
 			<td>0</td>
-			<td nowrap><?=$event_datetime?></td>
-			<td><?=$pipeline_version?></td>
-			<td><?=$analysis_hostname?></td>
-			<td><?=$analysis_event?></td>
-			<td><?=$event_message?></td>
+			<td nowrap><? =$event_datetime?></td>
+			<td><? =$pipeline_version?></td>
+			<td><? =$analysis_hostname?></td>
+			<td><? =$analysis_event?></td>
+			<td><? =$event_message?></td>
 		</tr>
 		<?
 		/* continue on with the rest of the events */
@@ -606,12 +606,12 @@
 			$cumtime = FormatCountdown($event_datetime - $startdatetime);
 			?>
 			<tr>
-				<td><?=$cumtime?></td>
-				<td nowrap"><?=date('D, Y-m-d H:i:s',$event_datetime)?></td>
-				<td><?=$pipeline_version?></td>
-				<td><?=$analysis_hostname?></td>
-				<td><?=$analysis_event?></td>
-				<td><?=$event_message?></td>
+				<td><? =$cumtime?></td>
+				<td nowrap"><? =date('D, Y-m-d H:i:s',$event_datetime)?></td>
+				<td><? =$pipeline_version?></td>
+				<td><? =$analysis_hostname?></td>
+				<td><? =$analysis_event?></td>
+				<td><? =$event_message?></td>
 			</tr>
 			<?
 		}
@@ -785,19 +785,19 @@
 							<h3 class="ui header"><i class="dropdown icon"></i>Search criteria</h3>
 						</div>
 						<div class="content" style="height: 400px; overflow: auto">
-							<?=$datasearchtable?>
+							<? =$datasearchtable?>
 						</div>
 						<div class="title">
 							<h3 class="ui header"><i class="dropdown icon"></i>Download summary</h3>
 						</div>
 						<div class="content" style="height: 400px; overflow: auto">
-							<?=DataDownloadTable($studyid, strtolower($pdd_modality), $analysisid); ?>
+							<? =DataDownloadTable($studyid, strtolower($pdd_modality), $analysisid); ?>
 						</div>
 						<div class="title">
 							<h3 class="ui header"><i class="dropdown icon"></i>Detailed log</h3>
 						</div>
 						<div class="content" style="height: 400px; overflow: auto">
-							<?=$datatable?>
+							<? =$datatable?>
 						</div>
 					</div>
 				</div>
@@ -811,12 +811,12 @@
 				<div class="ui segment" style="height:100%;">
 					<div class="ui header">
 						<div class="content">Parent pipeline(s)
-							<div class="sub header"><?=$dependencylist?></div>
+							<div class="sub header"><? =$dependencylist?></div>
 						</div>
 					</div>
 					<div class="ui header">
 						<div class="content">Groups
-							<div class="sub header"><?=$grouplist?></div>
+							<div class="sub header"><? =$grouplist?></div>
 						</div>
 					</div>
 				</div>
@@ -835,7 +835,7 @@
 			</div>
 			<div class="eleven wide column">
 				<div class="ui grey segment" style="height:100%;">
-					<img border=1 src="data:image/png;base64,<?=$imgdata?>">
+					<img border=1 src="data:image/png;base64,<? =$imgdata?>">
 				</div>
 			</div>
 
@@ -881,11 +881,11 @@
 							?>
 							<tr>
 								<td>0</td>
-								<td nowrap><?=$event_datetime?></td>
-								<td><?=$pipeline_version?></td>
-								<td><?=$analysis_hostname?></td>
-								<td><?=$analysis_event?></td>
-								<td><?=$event_message?></td>
+								<td nowrap><? =$event_datetime?></td>
+								<td><? =$pipeline_version?></td>
+								<td><? =$analysis_hostname?></td>
+								<td><? =$analysis_event?></td>
+								<td><? =$event_message?></td>
 							</tr>
 							<?
 							/* continue on with the rest of the events */
@@ -899,12 +899,12 @@
 								
 								?>
 								<tr>
-									<td><?=$cumtime?></td>
-									<td nowrap"><?=date('D, Y-m-d H:i:s',$event_datetime)?></td>
-									<td><?=$pipeline_version?></td>
-									<td><?=$analysis_hostname?></td>
-									<td><?=$analysis_event?></td>
-									<td><?=$event_message?></td>
+									<td><? =$cumtime?></td>
+									<td nowrap"><? =date('D, Y-m-d H:i:s',$event_datetime)?></td>
+									<td><? =$pipeline_version?></td>
+									<td><? =$analysis_hostname?></td>
+									<td><? =$analysis_event?></td>
+									<td><? =$event_message?></td>
 								</tr>
 								<?
 							}
@@ -957,27 +957,27 @@
 					<table class="ui very compact collapsing very basic table">
 						<tr>
 							<td>Values</td>
-							<td><?=$numvalue?></td>
+							<td><? =$numvalue?></td>
 						</tr>
 						<tr>
 							<td>Images</td>
-							<td><?=$numimage?></td>
+							<td><? =$numimage?></td>
 						</tr>
 						<tr>
 							<td>Files</td>
-							<td><?=$numfile?></td>
+							<td><? =$numfile?></td>
 						</tr>
 						<tr>
 							<td>Text</td>
-							<td><?=$numtext?></td>
+							<td><? =$numtext?></td>
 						</tr>
 						<tr>
 							<td>HTML</td>
-							<td><?=$numhtml?></td>
+							<td><? =$numhtml?></td>
 						</tr>
 					</table>
-					<a class="ui basic button" href="viewanalysis.php?action=viewresults&analysisid=<?=$analysisid?>&studyid=<?=$studyid?>" target="_viewresults" title="View analysis results"><em data-emoji=":bar_chart:"></em> View all results</a>
-					<a class="ui basic button" href="viewanalysis.php?action=viewfiles&analysisid=<?=$analysisid?>" target="_viewfiles" title="View file listing"><i class="folder open outline icon"></i> View all files</a>
+					<a class="ui basic button" href="viewanalysis.php?action=viewresults&analysisid=<? =$analysisid?>&studyid=<? =$studyid?>" target="_viewresults" title="View analysis results"><em data-emoji=":bar_chart:"></em> View all results</a>
+					<a class="ui basic button" href="viewanalysis.php?action=viewfiles&analysisid=<? =$analysisid?>" target="_viewfiles" title="View file listing"><i class="folder open outline icon"></i> View all files</a>
 				</div>
 			</div>
 		</div>
@@ -1147,10 +1147,10 @@
 			
 			?>
 			<tr>
-				<td><?=$seriesnum?></td>
-				<td><?=$protocol?></td>
-				<td><?=$imagetype?></td>
-				<td><?=$boldreps?></td>
+				<td><? =$seriesnum?></td>
+				<td><? =$protocol?></td>
+				<td><? =$imagetype?></td>
+				<td><? =$boldreps?></td>
 			<?
 			$displayed = false;
 			foreach ($dd as $order => $val) {
@@ -1163,8 +1163,8 @@
 					?>
 					<td><? if ($checked) echo "&#10004;"; ?></td>
 					<td><? if ($found) echo "&#10004;"; ?></td>
-					<td><?=$path?></td>
-					<td><?=$msg?></td>
+					<td><? =$path?></td>
+					<td><? =$msg?></td>
 					<?
 					$displayed = true;
 				}

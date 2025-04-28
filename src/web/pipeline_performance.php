@@ -199,23 +199,23 @@
 								</thead>
 								<tr>
 									<td>Completed</td>
-									<td><?=$numcomplete?></td>
+									<td><? =$numcomplete?></td>
 								</tr>
 								<tr>
 									<td class="left green marked">Completed successfully</td>
-									<td class="right green marked"><?=$numcompletesuccess?></td>
+									<td class="right green marked"><? =$numcompletesuccess?></td>
 								</tr>
 								<tr>
 									<td>Processing</td>
-									<td><?=$numprocessing?></td>
+									<td><? =$numprocessing?></td>
 								</tr>
 								<tr>
 									<td>Pending</td>
-									<td><?=$numpending?></td>
+									<td><? =$numpending?></td>
 								</tr>
 								<tr>
 									<td>Error</td>
-									<td><?=$numerror?></td>
+									<td><? =$numerror?></td>
 								</tr>
 							</table>
 						</div>
@@ -227,7 +227,7 @@
 						<div class="header">Compute performance</div>
 						<div class="meta">Analysis compute time per cluster node</div>
 						<div class="description">
-							<div class="ui big basic label">Total CPU time <?=$totaltime?> hrs</div>
+							<div class="ui big basic label">Total CPU time <? =$totaltime?> hrs</div>
 							<br>
 							<table class="ui very compact very small collapsing celled table">
 								<thead>
@@ -247,9 +247,9 @@
 									$hostname = $row['hostname'];
 									?>
 									<tr>
-										<td><?=$hostname?></td>
-										<td><?=$cpuhrs?></td>
-										<td class="right aligned"><?=$count?></td>
+										<td><? =$hostname?></td>
+										<td><? =$cpuhrs?></td>
+										<td class="right aligned"><? =$count?></td>
 									</tr>
 									<?
 								}
@@ -270,7 +270,7 @@
 								$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 								$totaldiskusage = $row['disksize'];
 							?>
-							<div class="ui big basic label"><?=HumanReadableFilesize($totaldiskusage);?></div>
+							<div class="ui big basic label"><? =HumanReadableFilesize($totaldiskusage);?></div>
 						</div>
 					</div>
 				</div>
@@ -345,14 +345,14 @@
 				sankey-beta
 
 				%% source,target,value
-				All,Cluster,<?="$numCluster\n"?>
-				Cluster,Complete,<?="$numComplete\n"?>
-				Complete,Successful,<?="$numSuccess\n"?>
-				Complete,Other status,<?="$numNotSuccess\n"?>
-				Cluster,Running,<?="$numRunning\n"?>
-				Cluster,Error,<?="$numError\n"?>
-				All,No matching data found,<?="$numNoMatch\n"?>
-				All,Dependency issue,<?="$numDepIssue\n"?>
+				All,Cluster,<? ="$numCluster\n"?>
+				Cluster,Complete,<? ="$numComplete\n"?>
+				Complete,Successful,<? ="$numSuccess\n"?>
+				Complete,Other status,<? ="$numNotSuccess\n"?>
+				Cluster,Running,<? ="$numRunning\n"?>
+				Cluster,Error,<? ="$numError\n"?>
+				All,No matching data found,<? ="$numNoMatch\n"?>
+				All,Dependency issue,<? ="$numDepIssue\n"?>
 			</pre>
 			
 			<br><br>
@@ -363,7 +363,7 @@
 
 				function drawChart() {
 					var data = google.visualization.arrayToDataTable([
-						<?=$dataset?>
+						<? =$dataset?>
 					]);
 
 					var options = {

@@ -147,13 +147,13 @@
 			<tbody>
 				<form action="prescriptions.php" method="post">
 				<input type="hidden" name="action" value="addrx">
-				<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
+				<input type="hidden" name="enrollmentid" value="<? =$enrollmentid?>">
 				<tr>
 					<td><input type="text" name="rx_name" size="15" placeholder="Prescription"></td>
 					<td><input type="text" name="rx_dose" placeholder="Dose"> <input type="text" name="rx_freq" placeholder="Dose frequency"></td>
 					<td><input type="text" name="rx_route" placeholder="Route"></td>
 					<td><input type="date" name="rx_datestart"> to <input type="date" name="rx_dateend"></td>
-					<td><input type="text" name="rx_rater" value="<?=$GLOBALS['username']?>"></td>
+					<td><input type="text" name="rx_rater" value="<? =$GLOBALS['username']?>"></td>
 					<td><input type="submit" value="Add"></td>
 				</tr>
 				</form>
@@ -171,11 +171,11 @@
 						
 						?>
 						<tr>
-							<td><?=$rx_name?></td>
-							<td><?=$rx_route?><br><?=$rx_dateentered2?></td>
-							<td><?=$rx_rater?><br><?=$rx_rater2?></td>
+							<td><? =$rx_name?></td>
+							<td><? =$rx_route?><br><? =$rx_dateentered2?></td>
+							<td><? =$rx_rater?><br><? =$rx_rater2?></td>
 							<td align="right">
-								<a class="ui red button" href="prescriptions.php?action=deleterx&rxid=<?=$rxid?>&enrollmentid=<?=$enrollmentid?>" onclick="return confirm('Are you sure?')"><i class="trash icon"></i></a>
+								<a class="ui red button" href="prescriptions.php?action=deleterx&rxid=<? =$rxid?>&enrollmentid=<? =$enrollmentid?>" onclick="return confirm('Are you sure?')"><i class="trash icon"></i></a>
 							</td>
 						</tr>
 					<?

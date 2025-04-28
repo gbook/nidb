@@ -37,8 +37,8 @@
 
 <!-- ****************** top menu ****************** -->
 <div class="ui attached inverted menu" style="!important; overflow: auto">
-	<div class="item" style="background-color: <?=$GLOBALS['cfg']['sitecolor']?>">
-		<?=$GLOBALS['cfg']['sitename']?>
+	<div class="item" style="background-color: <? =$GLOBALS['cfg']['sitecolor']?>">
+		<? =$GLOBALS['cfg']['sitename']?>
 	</div>
 	<?
 		/* home */
@@ -69,7 +69,7 @@
 				?><a href="admin.php" class="<? if ((substr($page,0,5) == "admin") || ($page == "settings.php") || ($page == "status.php") || ($page == "reports.php") || ($page == "cleanup.php") || ($page == "stats.php") || ($page == "status.php") || ($page == "longqc.php") || ($page == "backup.php")) { echo "active"; } ?> item"><i class="cog <? if (file_exists("/nidb/setup/dbupgrade")) { echo "yellow loading"; } ?> icon"></i>Admin</a><?
 			}
 			/* user options */
-			?><a href="users.php" class="<? if ($page=="users.php" || $page=="remoteconnections.php") { echo "active"; } ?> item">My Account <div class="ui mini label"><?=$GLOBALS['username']?></div></a><?
+			?><a href="users.php" class="<? if ($page=="users.php" || $page=="remoteconnections.php") { echo "active"; } ?> item">My Account <div class="ui mini label"><? =$GLOBALS['username']?></div></a><?
 		?>
 		<a href="login.php?action=logout" class="item">Logout <i class="sign out alternate icon inverted"></i></a>
 	</div>	
@@ -78,7 +78,7 @@
 <!-- ****************** bottom menu ****************** -->
 <div class="ui bottom attached grey inverted menu">
 	<div class="ui dropdown item">
-		<span title="Switch instance..."><?=$_SESSION['instancename']?></span>
+		<span title="Switch instance..."><? =$_SESSION['instancename']?></span>
 		<i class="dropdown icon"></i>
 		<div class="menu">
 			<?
@@ -88,7 +88,7 @@
 					$instance_id = $row['instance_id'];
 					$instance_name = $row['instance_name'];
 					?>
-					<a class="item" href="index.php?action=switchinstance&instanceid=<?=$instance_id?>"><?=$instance_name?></a>
+					<a class="item" href="index.php?action=switchinstance&instanceid=<? =$instance_id?>"><? =$instance_name?></a>
 					<?
 				}
 			?>
@@ -130,24 +130,24 @@
 			if (($seriesid != "") && ($modality != "")) {
 				list($path1, $uid, $studynum, $seriesnum, $seriesdesc, $imagetype, $seriessize, $numfiles, $studyid, $subjectid, $modality1, $studytype1, $studydatetime1, $enrollmentid1, $projectname, $projectid) = GetSeriesInfo($seriesid, $modality);
 				?>
-				<a href="projects.php?action=displayprojectinfo&id=<?=$projectid?>" class="item"><?=$projectname?></a>
-				<a href="subjects.php?id=<?=$subjectid?>" class="item"><?=$uid?></a>
-				<a href="studies.php?id=<?=$studyid?>" class="active item">Study <?=$studynum?></a>
+				<a href="projects.php?action=displayprojectinfo&id=<? =$projectid?>" class="item"><? =$projectname?></a>
+				<a href="subjects.php?id=<? =$subjectid?>" class="item"><? =$uid?></a>
+				<a href="studies.php?id=<? =$studyid?>" class="active item">Study <? =$studynum?></a>
 				<?
 			}
 			elseif ($studyid != "") {
 				list($path1, $uid, $studynum, $studyid, $subjectid, $modality1, $studytype1, $studydatetime1, $enrollmentid1, $projectname, $projectid) = GetStudyInfo($studyid);
 				?>
-				<a href="projects.php?action=displayprojectinfo&id=<?=$projectid?>" class="item"><?=$projectname?></a>
-				<a href="subjects.php?id=<?=$subjectid?>" class="item"><?=$uid?></a>
-				<a href="studies.php?id=<?=$studyid?>" class="active item">Study <?=$studynum?></a>
+				<a href="projects.php?action=displayprojectinfo&id=<? =$projectid?>" class="item"><? =$projectname?></a>
+				<a href="subjects.php?id=<? =$subjectid?>" class="item"><? =$uid?></a>
+				<a href="studies.php?id=<? =$studyid?>" class="active item">Study <? =$studynum?></a>
 				<?
 			}
 			elseif (($enrollmentid != "") && ($page == "measures.php")) {
 				list($uid, $subjectid, $altuid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
 				?>
-				<a href="projects.php?action=displayprojectinfo&id=<?=$projectid?>" class="item"><?=$projectname?></a>
-				<a href="subjects.php?id=<?=$subjectid?>" class="item"><?=$uid?></a>
+				<a href="projects.php?action=displayprojectinfo&id=<? =$projectid?>" class="item"><? =$projectname?></a>
+				<a href="subjects.php?id=<? =$subjectid?>" class="item"><? =$uid?></a>
 				<?
 			}
 		}
@@ -170,46 +170,46 @@
 				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 				$name = $row['project_name'];
 				?>
-				<a href="projects.php?action=displayprojectinfo&id=<?=$projectid?>" class="active blue item"><?=$name?></a>
+				<a href="projects.php?action=displayprojectinfo&id=<? =$projectid?>" class="active blue item"><? =$name?></a>
 				<div class="ui dropdown item">
 					<div class="text">View Data</div>
 					<i class="dropdown icon"></i>
 					<div class="menu">
-						<a class="item" href="projects.php?action=editsubjects&id=<?=$projectid?>" style="color: #222">
-							<span class="description"><?=$numsubjects?></span>
+						<a class="item" href="projects.php?action=editsubjects&id=<? =$projectid?>" style="color: #222">
+							<span class="description"><? =$numsubjects?></span>
 							<i class="user friends icon"></i> Subjects
 						</a>
-						<a class="item" href="projects.php?action=displaystudies&id=<?=$projectid?>" style="color: #222">
-							<span class="description"><?=$numstudies?></span>
+						<a class="item" href="projects.php?action=displaystudies&id=<? =$projectid?>" style="color: #222">
+							<span class="description"><? =$numstudies?></span>
 							<i class="project diagram icon"></i> Studies
 						</a>
-						<a class="item" title="Checklist of expected data items" href="projectchecklist.php?projectid=<?=$projectid?>" style="color: #222"><i class="clipboard list icon"></i> Checklist</a>
-						<a class="item" href="mrqcchecklist.php?action=viewqcparams&id=<?=$projectid?>" style="color: #222"><i class="clipboard check icon"></i> MR scan QC</a>
+						<a class="item" title="Checklist of expected data items" href="projectchecklist.php?projectid=<? =$projectid?>" style="color: #222"><i class="clipboard list icon"></i> Checklist</a>
+						<a class="item" href="mrqcchecklist.php?action=viewqcparams&id=<? =$projectid?>" style="color: #222"><i class="clipboard check icon"></i> MR scan QC</a>
 					</div>
 				</div>
 				<div class="ui dropdown item">
 					<div class="text">Tools</div>
 					<i class="dropdown icon"></i>
 					<div class="menu">
-						<a class="item" href="datadictionary.php?projectid=<?=$projectid?>" style="color: #222"><i class="database icon"></i> Data dictionary</a>
-						<a class="item" href="analysisbuilder.php?action=viewanalysissummary&projectid=<?=$projectid?>" style="color: #222"><i class="list alternate outline icon"></i> Analysis builder</a>
-						<a class="item" href="templates.php?action=displaystudytemplatelist&projectid=<?=$projectid?>" style="color: #222"><i class="clone outline icon"></i> Study templates</a>
-						<a class="item" href="minipipeline.php?projectid=<?=$projectid?>" style="color: #222"><i class="cogs icon"></i> Mini-pipelines</a>
-						<a class="item" href="experiment.php?projectid=<?=$projectid?>" style="color: #222"><i class="clipboard icon"></i> Experiments</a>
-						<a class="item" href="projects.php?action=editbidsmapping&id=<?=$projectid?>" style="color: #222"><i class="tasks icon"></i> BIDS protocol mapping</a>
-						<a class="item" href="projects.php?action=editndamapping&id=<?=$projectid?>" style="color: #222"><i class="tasks icon"></i> NDA experiment ID mapping</a>
-						<a class="item" href="projects.php?action=editexperimentmapping&id=<?=$projectid?>" style="color: #222"><i class="tasks icon"></i> Experiment &harr; protocol mapping</a>
-						<a class="item" href="ndarequests.php?action=default&projectid=<?=$projectid?>" style="color: #222"><i class="history icon"></i> NDA request history</a>
+						<a class="item" href="datadictionary.php?projectid=<? =$projectid?>" style="color: #222"><i class="database icon"></i> Data dictionary</a>
+						<a class="item" href="analysisbuilder.php?action=viewanalysissummary&projectid=<? =$projectid?>" style="color: #222"><i class="list alternate outline icon"></i> Analysis builder</a>
+						<a class="item" href="templates.php?action=displaystudytemplatelist&projectid=<? =$projectid?>" style="color: #222"><i class="clone outline icon"></i> Study templates</a>
+						<a class="item" href="minipipeline.php?projectid=<? =$projectid?>" style="color: #222"><i class="cogs icon"></i> Mini-pipelines</a>
+						<a class="item" href="experiment.php?projectid=<? =$projectid?>" style="color: #222"><i class="clipboard icon"></i> Experiments</a>
+						<a class="item" href="projects.php?action=editbidsmapping&id=<? =$projectid?>" style="color: #222"><i class="tasks icon"></i> BIDS protocol mapping</a>
+						<a class="item" href="projects.php?action=editndamapping&id=<? =$projectid?>" style="color: #222"><i class="tasks icon"></i> NDA experiment ID mapping</a>
+						<a class="item" href="projects.php?action=editexperimentmapping&id=<? =$projectid?>" style="color: #222"><i class="tasks icon"></i> Experiment &harr; protocol mapping</a>
+						<a class="item" href="ndarequests.php?action=default&projectid=<? =$projectid?>" style="color: #222"><i class="history icon"></i> NDA request history</a>
 					</div>
 				</div>
 				<div class="ui dropdown item">
 					<div class="text">Import Data</div>
 					<i class="dropdown icon"></i>
 					<div class="menu">
-						<a class="item" href="importimaging.php?action=newimportform&projectid=<?=$projectid?>" style="color: #222"><i class="file import icon"></i> Import imaging</a>
-						<a class="item" href="redcapimport.php?action=importsettings&projectid=<?=$projectid?>" style="color: #222"><i class="red redhat icon"></i> Global Redcap settings</a>
-						<a class="item" href="redcapimportsubjects.php?action=default&projectid=<?=$projectid?>" style="color: #222"><i class="red redhat icon"></i> Redcap subject import</a>
-						<a class="item" href="redcaptonidb.php?action=default&projectid=<?=$projectid?>" style="color: #222"><i class="red redhat icon"></i> Import from Redcap</a>
+						<a class="item" href="importimaging.php?action=newimportform&projectid=<? =$projectid?>" style="color: #222"><i class="file import icon"></i> Import imaging</a>
+						<a class="item" href="redcapimport.php?action=importsettings&projectid=<? =$projectid?>" style="color: #222"><i class="red redhat icon"></i> Global Redcap settings</a>
+						<a class="item" href="redcapimportsubjects.php?action=default&projectid=<? =$projectid?>" style="color: #222"><i class="red redhat icon"></i> Redcap subject import</a>
+						<a class="item" href="redcaptonidb.php?action=default&projectid=<? =$projectid?>" style="color: #222"><i class="red redhat icon"></i> Import from Redcap</a>
 					</div>
 				</div>
 
@@ -218,25 +218,25 @@
 					<i class="dropdown icon"></i>
 					<div class="menu">
 						<? if ($GLOBALS['isadmin']) { ?>
-							<a class="item" class="item" href="projects.php?action=resetqa&id=<?=$projectid?>"><i class="red sync icon"></i> Reset MRI QA</a>
+							<a class="item" class="item" href="projects.php?action=resetqa&id=<? =$projectid?>"><i class="red sync icon"></i> Reset MRI QA</a>
 						<? } ?>
 						<div class="item"><b>Remote connection params</b><br>
-							Project ID: <?=$projectid?><br>
-							Instance ID: <?=$instanceid?><br>
-							Site IDs: <?=implode2(",",$siteids)?><br>
+							Project ID: <? =$projectid?><br>
+							Instance ID: <? =$instanceid?><br>
+							Site IDs: <? =implode2(",",$siteids)?><br>
 						</div>
 					</div>
 				</div>
 				<!--
-				<a href="datadictionary.php?projectid=<?=$projectid?>" class="<? if ($page=="datadictionary.php"){ echo "active"; } ?> item">Data Dictionary</a>
-				<a href="projectassessments.php?projectid=<?=$projectid?>" class="<? if ($page=="projectassessments.php"){ echo "active"; } ?> item">Assessments</a>
-				<a href="projects.php?action=editsubjects&id=<?=$projectid?>" class="<? if (($page=="projects.php") && ($action == "editsubjects")) { echo "active"; } ?> item">Subjects</a>
-				<a href="projects.php?action=displaystudies&id=<?=$projectid?>" class="<? if (($page=="projects.php") && ($action == "displaystudies")) { echo "active"; } ?> item">Studies</a>
-				<a href="projectchecklist.php?projectid=<?=$projectid?>" class="<? if ($page=="projectchecklist.php"){ echo "active"; } ?> item">Checklist</a>
-				<a href="mrqcchecklist.php?action=viewqcparams&id=<?=$projectid?>" class="<? if ($page=="mrqcchecklist.php"){ echo "active"; } ?> item">MR Scan QC</a>
-				<a href="minipipeline.php?projectid=<?=$projectid?>" class="<? if ($page=="minipipeline.php"){ echo "active"; } ?> item">Behavioral pipelines</a>
-				<a href="templates.php?projectid=<?=$projectid?>" class="<? if ($page=="templates.php"){ echo "active"; } ?> item">Templates</a>
-				<a href="experiment.php?projectid=<?=$projectid?>" class="<? if ($page=="experiment.php"){ echo "active"; } ?> item">Experiments</a>
+				<a href="datadictionary.php?projectid=<? =$projectid?>" class="<? if ($page=="datadictionary.php"){ echo "active"; } ?> item">Data Dictionary</a>
+				<a href="projectassessments.php?projectid=<? =$projectid?>" class="<? if ($page=="projectassessments.php"){ echo "active"; } ?> item">Assessments</a>
+				<a href="projects.php?action=editsubjects&id=<? =$projectid?>" class="<? if (($page=="projects.php") && ($action == "editsubjects")) { echo "active"; } ?> item">Subjects</a>
+				<a href="projects.php?action=displaystudies&id=<? =$projectid?>" class="<? if (($page=="projects.php") && ($action == "displaystudies")) { echo "active"; } ?> item">Studies</a>
+				<a href="projectchecklist.php?projectid=<? =$projectid?>" class="<? if ($page=="projectchecklist.php"){ echo "active"; } ?> item">Checklist</a>
+				<a href="mrqcchecklist.php?action=viewqcparams&id=<? =$projectid?>" class="<? if ($page=="mrqcchecklist.php"){ echo "active"; } ?> item">MR Scan QC</a>
+				<a href="minipipeline.php?projectid=<? =$projectid?>" class="<? if ($page=="minipipeline.php"){ echo "active"; } ?> item">Behavioral pipelines</a>
+				<a href="templates.php?projectid=<? =$projectid?>" class="<? if ($page=="templates.php"){ echo "active"; } ?> item">Templates</a>
+				<a href="experiment.php?projectid=<? =$projectid?>" class="<? if ($page=="experiment.php"){ echo "active"; } ?> item">Experiments</a>
 				-->
 				<?
 			}
@@ -259,9 +259,9 @@
 
 					?><a href="pipelines.php" class="item">Pipelines</a><?
 					
-					?><a href="pipelines.php?action=editpipeline&id=<?=$pipelineid?>" class="<? if (($page=="pipelines.php") && ($action == "editpipeline")) { echo "active"; } ?> item"><?=$name?></a><?
+					?><a href="pipelines.php?action=editpipeline&id=<? =$pipelineid?>" class="<? if (($page=="pipelines.php") && ($action == "editpipeline")) { echo "active"; } ?> item"><? =$name?></a><?
 
-					?><a href="analysis.php?action=viewanalyses&id=<?=$pipelineid?>" class="<? if ($page=="analysis.php"){ echo "active"; } ?> item">Analyses</a><?
+					?><a href="analysis.php?action=viewanalyses&id=<? =$pipelineid?>" class="<? if ($page=="analysis.php"){ echo "active"; } ?> item">Analyses</a><?
 				}
 			}
 		}
@@ -350,7 +350,7 @@
 		-->
 	</div>
 </div>
-<?=RunSystemChecks()?>
+<? =RunSystemChecks()?>
 
 <?
 /* check for system status messages */
@@ -367,7 +367,7 @@
 			$message = $row['message'];
 			$message_date = $row['message_date'];
 		?>
-		<li><?=$message_date?> - <?=$message?>
+		<li><? =$message_date?> - <? =$message?>
 		<? } ?>
 		</ul>
 	</div>

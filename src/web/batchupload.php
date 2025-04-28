@@ -128,11 +128,11 @@
 			<?
 				foreach ($seriesids as $seriesid) {
 				?>
-				<input name="seriesid[]" type="hidden" value="<?=$seriesid?>">
+				<input name="seriesid[]" type="hidden" value="<? =$seriesid?>">
 				<?
 				}
 			?>
-			<input name="modality" type="hidden" value="<?=$modality?>">
+			<input name="modality" type="hidden" value="<? =$modality?>">
 			<input type="submit" value="Refresh Page" title="Refresh to view uploaded files" style="font-size: 14pt" class="ui primary button">
 		</form>
 		<br>
@@ -199,12 +199,12 @@
 							$tdclass = "";
 						}
 						?>
-						<tr class="<?=$tdclass?>">
+						<tr class="<? =$tdclass?>">
 							<td>
 								<script>
 								// Note that the name "myDropzone" is the camelized
 								// id of the form.
-								Dropzone.options.dropzone<?=$seriesid?> = {
+								Dropzone.options.dropzone<? =$seriesid?> = {
 									// Note: using "function()" here to bind `this` to
 									// the Dropzone instance.
 									parallelUploads:10,
@@ -231,24 +231,24 @@
 									}
 								};
 								</script>
-								<form action="batchupload.php" class="dropzone" id="dropzone<?=$seriesid?>">
+								<form action="batchupload.php" class="dropzone" id="dropzone<? =$seriesid?>">
 									<input name="action" type="hidden" value="upload">
-									<input name="seriesid" type="hidden" value="<?=$seriesid?>">
-									<input name="modality" type="hidden" value="<?=$modality?>">
+									<input name="seriesid" type="hidden" value="<? =$seriesid?>">
+									<input name="modality" type="hidden" value="<? =$modality?>">
 									<div class="fallback">
 										<input name="file[]" type="file" multiple />
 									</div>
 								</form>
 							</td>
-							<td><?=$uid?></td>
-							<td><?=$studyAge?></td>
-							<td><?=$calcStudyAge?></td>
-							<td><a href="studies.php?studyid=<?=$studyid?>"><?="$uid$studynum"?></a></td>
-							<td><?=strtoupper($modality)?></td>
-							<td><?=$studydate?></td>
-							<td><?=$seriesnum?></td>
-							<td><?=$seriesdate?></td>
-							<td><?=$seriesdesc?></td>
+							<td><? =$uid?></td>
+							<td><? =$studyAge?></td>
+							<td><? =$calcStudyAge?></td>
+							<td><a href="studies.php?studyid=<? =$studyid?>"><? ="$uid$studynum"?></a></td>
+							<td><? =strtoupper($modality)?></td>
+							<td><? =$studydate?></td>
+							<td><? =$seriesnum?></td>
+							<td><? =$seriesdate?></td>
+							<td><? =$seriesdesc?></td>
 							<td>
 								<span class="tiny">
 								<?

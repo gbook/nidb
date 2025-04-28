@@ -271,7 +271,7 @@
 		$projectcount = $row['count'];
 		
 		?>
-		<span class="tiny">I have permissions to <?=$projectcount?> projects!<br><br></span>
+		<span class="tiny">I have permissions to <? =$projectcount?> projects!<br><br></span>
 		<script type="text/javascript">
 			$(document).ready(function() {
 				/* check the matching passwords */
@@ -311,26 +311,26 @@
 			<div class="three fields">
 				<div class="required seven wide field">
 					<label>First</label>
-					<input type="text" name="firstname" id="firstname" maxlength="50" required autofocus="autofocus" value="<?=$firstname?>" placeholder="First" required>
+					<input type="text" name="firstname" id="firstname" maxlength="50" required autofocus="autofocus" value="<? =$firstname?>" placeholder="First" required>
 				</div>
 				<div class="two wide field">
 					<label>Middle</label>
-					<input type="text" name="midname" id="midname" maxlength="1" required value="<?=$midname?>">
+					<input type="text" name="midname" id="midname" maxlength="1" required value="<? =$midname?>">
 				</div>
 				<div class="required seven wide field">
 					<label>Last</label>
-					<input type="text" name="lastname" id="lastname" maxlength="50" required value="<?=$lastname?>" required>
+					<input type="text" name="lastname" id="lastname" maxlength="50" required value="<? =$lastname?>" required>
 				</div>
 			</div>
 
 			<div class="two fields">
 				<div class="required field">
 					<label>Email</label>
-					<input type="text" name="email1" value="<?=$email1?>" placeholder="primary email" class="required">
+					<input type="text" name="email1" value="<? =$email1?>" placeholder="primary email" class="required">
 				</div>
 				<div class="field">
 					<label>Secondary email</label>
-					<input type="text" name="email2" value="<?=$email2?>" placeholder="secondary email">
+					<input type="text" name="email2" value="<? =$email2?>" placeholder="secondary email">
 				</div>
 			</div>
 			
@@ -338,13 +338,13 @@
 				<div class="field">
 					<label>Phone</label>
 					<div class="field">
-						<input type="text" name="phone1" value="<?=$phone1?>">
+						<input type="text" name="phone1" value="<? =$phone1?>">
 					</div>
 				</div>
 				<div class="field">
 					<label>Alternate phone</label>
 					<div class="field">
-						<input type="text" name="phone2" value="<?=$phone2?>">
+						<input type="text" name="phone2" value="<? =$phone2?>">
 					</div>
 				</div>
 			</div>
@@ -352,19 +352,19 @@
 			<div class="field">
 				<label>Address</label>
 				<div class="field">
-					<input type="text" name="address1" value="<?=$address1?>" placeholder="Address line 1"><br>
-					<input type="text" name="address2" value="<?=$address2?>" placeholder="Address line 2">
+					<input type="text" name="address1" value="<? =$address1?>" placeholder="Address line 1"><br>
+					<input type="text" name="address2" value="<? =$address2?>" placeholder="Address line 2">
 				</div>
 			</div>
 			
 			<div class="three fields">
 				<div class="seven wide field">
 					<label>City</label>
-					<input type="text" name="city" value="<?=$city?>">
+					<input type="text" name="city" value="<? =$city?>">
 				</div>
 				<script>
 					$(document).ready(function() {
-						$("#state option[value='<?=$state?>']").attr("selected","selected");
+						$("#state option[value='<? =$state?>']").attr("selected","selected");
 					});
 				</script>
 				<div class="seven wide field">
@@ -432,13 +432,13 @@
 				</div>
 				<div class="two wide field">
 					<label>Zip</label>
-					<input type="text" name="zip" value="<?=$zip?>">
+					<input type="text" name="zip" value="<? =$zip?>">
 				</div>
 			</div>
 
 			<script>
 				$(document).ready(function() {
-					$("#country option[value='<?=$country?>']").attr("selected","selected");
+					$("#country option[value='<? =$country?>']").attr("selected","selected");
 				});
 			</script>
 			<div class="field">
@@ -697,21 +697,21 @@
 			<div class="field">
 				<label>Institution</label>
 				<div class="field">
-					<input type="text" name="institution" value="<?=$institution?>">
+					<input type="text" name="institution" value="<? =$institution?>">
 				</div>
 			</div>
 			
 			<div class="field">
 				<label>Department</label>
 				<div class="field">
-					<input type="text" name="dept" value="<?=$dept?>">
+					<input type="text" name="dept" value="<? =$dept?>">
 				</div>
 			</div>
 			
 			<div class="field">
 				<label>Website</label>
 				<div class="field">
-					<input type="text" name="website" value="<?=$website?>">
+					<input type="text" name="website" value="<? =$website?>">
 				</div>
 			</div>
 			
@@ -768,7 +768,7 @@
 								?>
 								<tr>
 									<td valign="top">
-										<div title="<?=$notificationdesc?>"><input type="checkbox" <?=$notifenabled?> name="notification[]" value="<?=$notificationid?>"> <b><?=$notificationname?></b></div>
+										<div title="<? =$notificationdesc?>"><input type="checkbox" <? =$notifenabled?> name="notification[]" value="<? =$notificationid?>"> <b><? =$notificationname?></b></div>
 									</td>
 									<? if ($notificationneedproject == 1) { ?>
 									<td valign="top"><? DisplayProjectSelectBox(0,"projectid-$notificationid"."[]",'','',1,$projectids); ?></td>
@@ -785,14 +785,14 @@
 				<div class="field">
 					<label>Daily MR summary</label>
 					<div class="field">
-						<input type="checkbox" name="sendmail_dailysummary" <?=$dailycheck?> value="1">
+						<input type="checkbox" name="sendmail_dailysummary" <? =$dailycheck?> value="1">
 					</div>
 				</div>
 				
 				<div class="field">
 					<label>Enable beta features</label>
 					<div class="field">
-						<input type="checkbox" name="enablebeta" <?=$enablebeta?> value="1">
+						<input type="checkbox" name="enablebeta" <? =$enablebeta?> value="1">
 					</div>
 				</div>
 			</div>
@@ -823,9 +823,9 @@
 					$ownername = $row['username'];
 					
 					if ($owner == $userid) {
-						?><tr><td><a href="instance.php?instanceid=<?=$instanceid?>"><?=$name?></a></td><?
+						?><tr><td><a href="instance.php?instanceid=<? =$instanceid?>"><? =$name?></a></td><?
 					} else {
-						?><tr><td><?=$name?></td><?
+						?><tr><td><? =$name?></td><?
 					}
 					
 					$sqlstringA = "select * from user_instance where user_id = (select user_id from users where username = '$username') and instance_id = $instanceid";
@@ -842,7 +842,7 @@
 					}
 					else {
 						?>
-						<td><a href="users.php?action=joininstance&instanceid=<?=$instanceid?>">Request to Join</a></td></tr>
+						<td><a href="users.php?action=joininstance&instanceid=<? =$instanceid?>">Request to Join</a></td></tr>
 						<?
 					}
 					?>

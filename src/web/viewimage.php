@@ -116,7 +116,7 @@
 		window.onload = function() {
 
 			//exit(0);
-			var dicomfiles = <?=$filearray?>;
+			var dicomfiles = <? =$filearray?>;
 			//
 			// try to create the 3D renderer
 			//
@@ -156,7 +156,7 @@
 			// create a X.volume
 			volume = new X.volume();
 			volume.file = dicomfiles.sort().map(function(f) {
-				return 'http://<?=$_SERVER['HTTP_HOST']?>/getfile.php?action=download&file=' + f + '&.<?=$ext?>';
+				return 'http://<? =$_SERVER['HTTP_HOST']?>/getfile.php?action=download&file=' + f + '&.<? =$ext?>';
 			});
 			volume.color = [0.0, 0.1, 0.0];
 			volume.windowHigh = volume.max/4;
@@ -228,7 +228,7 @@
 		// create the left hemisphere mesh
 		var lh = new X.mesh();
 		// .. attach a Freesurfer .smoothwm mesh
-		lh.file = 'http://<?=$_SERVER['HTTP_HOST']?>/getfile.php?action=download&file=<?=$filename?>&.<?=$ext?>';
+		lh.file = 'http://<? =$_SERVER['HTTP_HOST']?>/getfile.php?action=download&file=<? =$filename?>&.<? =$ext?>';
 		// change the color to a smooth red
 		lh.color = [0.7, 0.2, 0.2];
 		// add some transparency

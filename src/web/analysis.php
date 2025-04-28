@@ -160,7 +160,7 @@
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		//PrintSQL($sqlstring);
 		
-		?><div align="center"><span class="message">Analysis [<?=$id?>] notes updated</span></div><?
+		?><div align="center"><span class="message">Analysis [<? =$id?>] notes updated</span></div><?
 	}
 	
 
@@ -236,7 +236,7 @@
 			$sqlstring = "insert into fileio_requests (fileio_operation, group_id, data_type, data_id, data_destination, username, requestdate) values ('copy', $groupid, 'analysis', $analysisid, '$destination', '" . $GLOBALS['username'] . "', now())";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			
-			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> queued for copy to <?=$destination?></span><br><?
+			?><span class="codelisting"><? =GetAnalysisPath($analysisid)?> queued for copy to <? =$destination?></span><br><?
 			
 		}
 	}
@@ -261,7 +261,7 @@
 			$sqlstring = "insert into fileio_requests (fileio_operation, group_id, data_type, data_id, data_destination, username, requestdate) values ('createlinks', $groupid, 'analysis', $analysisid, '$destination', '" . $GLOBALS['username'] . "', now())";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			
-			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> queued for link creation in <?=$destination?></span><br><?
+			?><span class="codelisting"><? =GetAnalysisPath($analysisid)?> queued for link creation in <? =$destination?></span><br><?
 			
 		}
 	}
@@ -279,7 +279,7 @@
 			$sqlstring = "update analysis set analysis_statusmessage = 'Results queued for rerun', analysis_rerunresults = 1 where analysis_id = $analysisid";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			
-			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> results queued to be rerun</span><br><?
+			?><span class="codelisting"><? =GetAnalysisPath($analysisid)?> results queued to be rerun</span><br><?
 		}
 	}
 
@@ -296,7 +296,7 @@
 			$sqlstring = "update analysis set analysis_statusmessage = 'Queued for supplement run', analysis_runsupplement = 1 where analysis_id = $analysisid";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			
-			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> analysis queued for supplement run</span><br><?
+			?><span class="codelisting"><? =GetAnalysisPath($analysisid)?> analysis queued for supplement run</span><br><?
 		}
 	}
 	
@@ -320,7 +320,7 @@
 			}
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			
-			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> marked as <?=$mark?></span><br><?
+			?><span class="codelisting"><? =GetAnalysisPath($analysisid)?> marked as <? =$mark?></span><br><?
 		}
 	}
 
@@ -337,7 +337,7 @@
 			$sqlstring = "update analysis set analysis_status = 'complete', analysis_statusmessage = 'Marked as complete', analysis_rerunresults = 0, analysis_runsupplement = 0 where analysis_id = $analysisid";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			
-			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> marked as complete</span><br><?
+			?><span class="codelisting"><? =GetAnalysisPath($analysisid)?> marked as complete</span><br><?
 		}
 	}
 
@@ -354,7 +354,7 @@
 			$sqlstring = "update analysis set analysis_iscomplete = 1 where analysis_id = $analysisid";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			
-			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> marked as successful</span><br><?
+			?><span class="codelisting"><? =GetAnalysisPath($analysisid)?> marked as successful</span><br><?
 		}
 	}
 
@@ -371,7 +371,7 @@
 			$sqlstring = "update analysis set analysis_iscomplete = 0 where analysis_id = $analysisid";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			
-			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> marked as unsuccessful</span><br><?
+			?><span class="codelisting"><? =GetAnalysisPath($analysisid)?> marked as unsuccessful</span><br><?
 		}
 	}
 	
@@ -393,7 +393,7 @@
 			$sqlstring = "insert into fileio_requests (fileio_operation, group_id, data_type, data_id, username, requestdate) values ('rechecksuccess', $groupid, 'analysis', $analysisid, '" . $GLOBALS['username'] . "', now())";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			
-			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> to be rechecked for successful file(s)</span><br><?
+			?><span class="codelisting"><? =GetAnalysisPath($analysisid)?> to be rechecked for successful file(s)</span><br><?
 		}
 	}
 
@@ -531,16 +531,16 @@
 		<table width="100%" class="tablepage">
 			<form method="post" action="analysis.php" id="numperpageform" class="ui form">
 			<input type="hidden" name="action" value="viewanalyses">
-			<input type="hidden" name="id" value="<?=$id?>">
-			<input type="hidden" name="searchuid" value="<?=$searchuid?>">
-			<input type="hidden" name="searchstatus" value="<?=$searchstatus?>">
-			<input type="hidden" name="searchsuccess" value="<?=$searchsuccess?>">
-			<input type="hidden" name="sortby" value="<?=$sortby?>">
-			<input type="hidden" name="sortorder" value="<?=$sortorder?>">
+			<input type="hidden" name="id" value="<? =$id?>">
+			<input type="hidden" name="searchuid" value="<? =$searchuid?>">
+			<input type="hidden" name="searchstatus" value="<? =$searchstatus?>">
+			<input type="hidden" name="searchsuccess" value="<? =$searchsuccess?>">
+			<input type="hidden" name="sortby" value="<? =$sortby?>">
+			<input type="hidden" name="sortorder" value="<? =$sortorder?>">
 			<tr>
-				<td class="label"><?=$numrows?> analyses <? if (($searchuid != "") || ($searchstatus != "") || ($searchsuccess != "")) { echo "found"; } ?></td>
+				<td class="label"><? =$numrows?> analyses <? if (($searchuid != "") || ($searchstatus != "") || ($searchsuccess != "")) { echo "found"; } ?></td>
 				<td class="pagenum">
-					Page <?=$pagenum?> of <?=$numpages?> <span class="tiny">(<?=$numperpage?>/page)</span>
+					Page <? =$pagenum?> of <? =$numpages?> <span class="tiny">(<? =$numperpage?>/page)</span>
 					<select name="numperpage" title="Change number per page" onChange="numperpageform.submit()" class="ui dropdown">
 						<option value="100" <?if ($numperpage == 100) { echo "selected"; } ?>>100
 						<option value="500" <?if ($numperpage == 500) { echo "selected"; } ?>>500
@@ -553,15 +553,15 @@
 				</td>
 				<td style="text-align: right">
 					<div class="ui buttons">
-						<a class="ui button" title="First page" href="analysis.php?action=viewanalyses&id=<?=$id?>&numperpage=<?=$numperpage?>&pagenum=1&searchuid=<?=$searchuid?>&searchstatus=<?=$searchstatus?>&searchsuccess=<?=$searchsuccess?>&sortby=<?=$sortby?>&sortorder=<?=$sortorder?>"><i class="step backward icon"></i></a>
+						<a class="ui button" title="First page" href="analysis.php?action=viewanalyses&id=<? =$id?>&numperpage=<? =$numperpage?>&pagenum=1&searchuid=<? =$searchuid?>&searchstatus=<? =$searchstatus?>&searchsuccess=<? =$searchsuccess?>&sortby=<? =$sortby?>&sortorder=<? =$sortorder?>"><i class="step backward icon"></i></a>
 				
-						<a class="ui button" title="Previous page" href="analysis.php?action=viewanalyses&id=<?=$id?>&numperpage=<?=$numperpage?>&pagenum=<?=($pagenum-1)?>&searchuid=<?=$searchuid?>&searchstatus=<?=$searchstatus?>&searchsuccess=<?=$searchsuccess?>&sortby=<?=$sortby?>&sortorder=<?=$sortorder?>"><i class="angle left icon"></i></a>
+						<a class="ui button" title="Previous page" href="analysis.php?action=viewanalyses&id=<? =$id?>&numperpage=<? =$numperpage?>&pagenum=<? =($pagenum-1)?>&searchuid=<? =$searchuid?>&searchstatus=<? =$searchstatus?>&searchsuccess=<? =$searchsuccess?>&sortby=<? =$sortby?>&sortorder=<? =$sortorder?>"><i class="angle left icon"></i></a>
 						
 						<a class="ui button" title="Reresh" href=""><i class="redo icon"></i></a>
 				
-						<a class="ui button" title="Next page" href="analysis.php?action=viewanalyses&id=<?=$id?>&numperpage=<?=$numperpage?>&pagenum=<?=($pagenum+1)?>&searchuid=<?=$searchuid?>&searchstatus=<?=$searchstatus?>&searchsuccess=<?=$searchsuccess?>&sortby=<?=$sortby?>&sortorder=<?=$sortorder?>"><i class="angle right icon"></i></a>
+						<a class="ui button" title="Next page" href="analysis.php?action=viewanalyses&id=<? =$id?>&numperpage=<? =$numperpage?>&pagenum=<? =($pagenum+1)?>&searchuid=<? =$searchuid?>&searchstatus=<? =$searchstatus?>&searchsuccess=<? =$searchsuccess?>&sortby=<? =$sortby?>&sortorder=<? =$sortorder?>"><i class="angle right icon"></i></a>
 				
-						<a class="ui button" title="Last page" href="analysis.php?action=viewanalyses&id=<?=$id?>&numperpage=<?=$numperpage?>&pagenum=<?=$numpages?>&searchuid=<?=$searchuid?>&searchstatus=<?=$searchstatus?>&searchsuccess=<?=$searchsuccess?>&sortby=<?=$sortby?>&sortorder=<?=$sortorder?>"><i class="step forward icon"></i></a>
+						<a class="ui button" title="Last page" href="analysis.php?action=viewanalyses&id=<? =$id?>&numperpage=<? =$numperpage?>&pagenum=<? =$numpages?>&searchuid=<? =$searchuid?>&searchstatus=<? =$searchstatus?>&searchsuccess=<? =$searchsuccess?>&sortby=<? =$sortby?>&sortorder=<? =$sortorder?>"><i class="step forward icon"></i></a>
 					</div>
 				</td>
 			</tr>
@@ -584,39 +584,39 @@
 		<table id="analysistable" class="ui very compact small celled grey selectable top attached table">
 			<form method="post" name="filteranalysis" id="filteranalysis" action="analysis.php" class="ui form">
 			<input type="hidden" name="action" value="viewanalyses">
-			<input type="hidden" name="id" value="<?=$id?>">
-			<input type="hidden" name="numperpage" value="<?=$numperpage?>">
-			<input type="hidden" name="pagenum" value="<?=$pagenum?>">
-			<input type="hidden" name="searchuid" value="<?=$searchuid?>">
-			<input type="hidden" name="searchstatus" value="<?=$searchstatus?>">
-			<input type="hidden" name="searchsuccess" value="<?=$searchsuccess?>">
-			<input type="hidden" name="sortby" value="<?=$sortby?>">
-			<input type="hidden" name="sortorder" value="<?=$sortorder?>">
+			<input type="hidden" name="id" value="<? =$id?>">
+			<input type="hidden" name="numperpage" value="<? =$numperpage?>">
+			<input type="hidden" name="pagenum" value="<? =$pagenum?>">
+			<input type="hidden" name="searchuid" value="<? =$searchuid?>">
+			<input type="hidden" name="searchstatus" value="<? =$searchstatus?>">
+			<input type="hidden" name="searchsuccess" value="<? =$searchsuccess?>">
+			<input type="hidden" name="sortby" value="<? =$sortby?>">
+			<input type="hidden" name="sortorder" value="<? =$sortorder?>">
 			<thead>
 				<tr>
 					<th align="left" <? if ($sortby == "studynum") { echo "style='background-color: #fff'"; } ?>>
 						<input type="checkbox" id="studiesall">
-						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=studynum&sortorder=<?=$newsortorder?>">Study</a> <? if ($sortby == "studynum") { echo $sortarrow; } ?>
+						<a href="analysis.php?action=viewanalyses&id=<? =$id?>&sortby=studynum&sortorder=<? =$newsortorder?>">Study</a> <? if ($sortby == "studynum") { echo $sortarrow; } ?>
 					</th>
 					<th align="left" <? if ($sortby == "visit") { echo "style='background-color: #fff'"; } ?>>
-						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=visit&sortorder=<?=$newsortorder?>">Visit</a> <? if ($sortby == "visit") { echo $sortarrow; } ?>
+						<a href="analysis.php?action=viewanalyses&id=<? =$id?>&sortby=visit&sortorder=<? =$newsortorder?>">Visit</a> <? if ($sortby == "visit") { echo $sortarrow; } ?>
 					</th>
 					<th align="left" <? if ($sortby == "pipelineversion") { echo "style='background-color: #fff'"; } ?>>
-						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=pipelineversion&sortorder=<?=$newsortorder?>">Pipeline<br>version</a>  <? if ($sortby == "pipelineversion") { echo $sortarrow; } ?>
+						<a href="analysis.php?action=viewanalyses&id=<? =$id?>&sortby=pipelineversion&sortorder=<? =$newsortorder?>">Pipeline<br>version</a>  <? if ($sortby == "pipelineversion") { echo $sortarrow; } ?>
 					</th>
 					<? if ($pipeline_level == 1) { ?>
 					<th align="left" <? if ($sortby == "studydate") { echo "style='background-color: #fff'"; } ?>>
-						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=studydate&sortorder=<?=$newsortorder?>">Study date</a> <? if ($sortby == "studydate") { echo $sortarrow; } ?>
+						<a href="analysis.php?action=viewanalyses&id=<? =$id?>&sortby=studydate&sortorder=<? =$newsortorder?>">Study date</a> <? if ($sortby == "studydate") { echo $sortarrow; } ?>
 					</th>
 					<th align="left" <? if ($sortby == "numseries") { echo "style='background-color: #fff'"; } ?>>
-						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=numseries&sortorder=<?=$newsortorder?>"># series</a> <? if ($sortby == "numseries") { echo $sortarrow; } ?>
+						<a href="analysis.php?action=viewanalyses&id=<? =$id?>&sortby=numseries&sortorder=<? =$newsortorder?>"># series</a> <? if ($sortby == "numseries") { echo $sortarrow; } ?>
 					</th>
 					<? } ?>
 					<th align="left" <? if ($sortby == "status") { echo "style='background-color: #fff'"; } ?>>
-						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=status&sortorder=<?=$newsortorder?>">Status</a> <? if ($sortby == "status") { echo $sortarrow; } ?><br><span class="tiny">flags</span>
+						<a href="analysis.php?action=viewanalyses&id=<? =$id?>&sortby=status&sortorder=<? =$newsortorder?>">Status</a> <? if ($sortby == "status") { echo $sortarrow; } ?><br><span class="tiny">flags</span>
 					</th>
 					<th align="left" <? if ($sortby == "successful") { echo "style='background-color: #fff'"; } ?>>
-						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=successful&sortorder=<?=$newsortorder?>">Successful</a> <? if ($sortby == "successful") { echo $sortarrow; } ?>
+						<a href="analysis.php?action=viewanalyses&id=<? =$id?>&sortby=successful&sortorder=<? =$newsortorder?>">Successful</a> <? if ($sortby == "successful") { echo $sortarrow; } ?>
 					</th>
 					<th align="left">Details</th>
 					<!--<th align="left">Logs</th>
@@ -625,21 +625,21 @@
 					<th align="left">Results</th>-->
 					<th align="left">Notes</th>
 					<th align="left" <? if ($sortby == "message") { echo "style='background-color: #fff'"; } ?>>
-						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=message&sortorder=<?=$newsortorder?>">Message</a> <? if ($sortby == "message") { echo $sortarrow; } ?>
+						<a href="analysis.php?action=viewanalyses&id=<? =$id?>&sortby=message&sortorder=<? =$newsortorder?>">Message</a> <? if ($sortby == "message") { echo $sortarrow; } ?>
 					</th>
 					<th align="left" <? if ($sortby == "size") { echo "style='background-color: #fff'"; } ?>>
-						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=size&sortorder=<?=$newsortorder?>">Size</a> <? if ($sortby == "size") { echo $sortarrow; } ?><br><span class="tiny">bytes</span>
+						<a href="analysis.php?action=viewanalyses&id=<? =$id?>&sortby=size&sortorder=<? =$newsortorder?>">Size</a> <? if ($sortby == "size") { echo $sortarrow; } ?><br><span class="tiny">bytes</span>
 					</th>
 					<th align="left" <? if ($sortby == "hostname") { echo "style='background-color: #fff'"; } ?>>
-						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=hostname&sortorder=<?=$newsortorder?>">Hostname</a> <? if ($sortby == "hostname") { echo $sortarrow; } ?>
+						<a href="analysis.php?action=viewanalyses&id=<? =$id?>&sortby=hostname&sortorder=<? =$newsortorder?>">Hostname</a> <? if ($sortby == "hostname") { echo $sortarrow; } ?>
 					</th>
 					<th align="left" <? if (($sortby == "setuptime") || ($sorty == "setupcompletedate")) { echo "style='background-color: #fff'"; } ?>>
-						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=setuptime&sortorder=<?=$newsortorder?>">Setup time</a> <? if ($sortby == "setuptime") { echo $sortarrow; } ?><br>
-						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=setupcompletedate&sortorder=<?=$newsortorder?>"><span class="tiny">completed date</span></a> <? if ($sortby == "setupcompletedate") { echo $sortarrow; } ?>
+						<a href="analysis.php?action=viewanalyses&id=<? =$id?>&sortby=setuptime&sortorder=<? =$newsortorder?>">Setup time</a> <? if ($sortby == "setuptime") { echo $sortarrow; } ?><br>
+						<a href="analysis.php?action=viewanalyses&id=<? =$id?>&sortby=setupcompletedate&sortorder=<? =$newsortorder?>"><span class="tiny">completed date</span></a> <? if ($sortby == "setupcompletedate") { echo $sortarrow; } ?>
 					</th>
 					<th align="left" <? if (($sortby == "clustertime") || ($sortby == "clustercompletedate")) { echo "style='background-color: #fff'"; } ?>>
-						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=clustertime&sortorder=<?=$newsortorder?>">Cluster time</a> <? if ($sortby == "clustertime") { echo $sortarrow; } ?><br>
-						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=clustercompletedate&sortorder=<?=$newsortorder?>"><span class="tiny">completed date</span></a> <? if ($sortby == "clustercompletedate") { echo $sortarrow; } ?>
+						<a href="analysis.php?action=viewanalyses&id=<? =$id?>&sortby=clustertime&sortorder=<? =$newsortorder?>">Cluster time</a> <? if ($sortby == "clustertime") { echo $sortarrow; } ?><br>
+						<a href="analysis.php?action=viewanalyses&id=<? =$id?>&sortby=clustercompletedate&sortorder=<? =$newsortorder?>"><span class="tiny">completed date</span></a> <? if ($sortby == "clustercompletedate") { echo $sortarrow; } ?>
 					</th>
 					<th align="left" style="background-color: Lavender">Operations<br><input type="checkbox" id="analysesall"><span class="tiny">Select All</span></th>
 				</tr>
@@ -648,7 +648,7 @@
 				<tr>
 					<td align="left">
 						<div class="ui input">
-							<input type="text" name="searchuid" placeholder="UID..." value="<?=$searchuid?>">
+							<input type="text" name="searchuid" placeholder="UID..." value="<? =$searchuid?>">
 						</div>
 					</td>
 					<td></td>
@@ -687,7 +687,7 @@
 			<input type="hidden" name="destination" value="" id="studieslistdestination">
 			<input type="hidden" name="analysisnotes" value="">
 			<input type="hidden" name="analysisid" id="analysisid" value="">
-			<input type="hidden" name="id" value="<?=$id?>">
+			<input type="hidden" name="id" value="<? =$id?>">
 				<?
 					if (($searchuid == "") && ($searchstatus == "") && ($searchsuccess == "")) {
 						$sqlstring = "select *, timediff(analysis_enddate, analysis_startdate) 'analysis_time', timediff(analysis_clusterenddate, analysis_clusterstartdate) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and a.analysis_status not in ('NoMatchingSeries','NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency')";
@@ -848,20 +848,20 @@
 							}
 							else { $sizecolor = "#fff"; }
 					?>
-					<tr bgcolor="<?=$rowcolor?>">
-						<td class="allstudies" style="text-align:left"><input type="checkbox" name="studyid[]" value="<?=$study_id?>">
-							<a href="studies.php?id=<?=$study_id?>"><?=$uid?><?=$study_num?></a></td>
-						<td><?=$visittype?></td>
-						<td><?=$pipeline_version?></td>
+					<tr bgcolor="<? =$rowcolor?>">
+						<td class="allstudies" style="text-align:left"><input type="checkbox" name="studyid[]" value="<? =$study_id?>">
+							<a href="studies.php?id=<? =$study_id?>"><? =$uid?><? =$study_num?></a></td>
+						<td><? =$visittype?></td>
+						<td><? =$pipeline_version?></td>
 						<? if ($pipeline_level == 1) { ?>
-						<td class="tiny"><?=$study_datetime?></td>
-						<td><?=$analysis_numseries?></td>
+						<td class="tiny"><? =$study_datetime?></td>
+						<td><? =$analysis_numseries?></td>
 						<? } ?>
 						<td>
 							<?
 								if (($analysis_status == 'processing') && ($analysis_qsubid != 0)) {
 									?>
-									<a href="<?=$GLOBALS['cfg']['siteurl']?>/analysis.php?action=viewjob&id=<?=$analysis_qsubid?>" title="Click to view SGE status">processing</a>
+									<a href="<? =$GLOBALS['cfg']['siteurl']?>/analysis.php?action=viewjob&id=<? =$analysis_qsubid?>" title="Click to view SGE status">processing</a>
 									<?
 								}
 								else {
@@ -880,7 +880,7 @@
 												$tip = "An unspecified error has occured";
 												break;
 										}
-										?><span style="text-decoration: underline; text-decoration-style: dashed; text-decoration-color: #aaa" title="<?=$tip?>"><?=$analysis_status?></span><?
+										?><span style="text-decoration: underline; text-decoration-style: dashed; text-decoration-color: #aaa" title="<? =$tip?>"><? =$analysis_status?></span><?
 									}
 								}
 								
@@ -893,13 +893,13 @@
 						</td>
 						<? if ($analysis_status != "") { ?>
 						<td class="center aligned">
-							<a href="viewanalysis.php?action=viewgraph&analysisid=<?=$analysis_id?>&studyid=<?=$study_id?>&pipelineid=<?=$id?>&pipelineversion=<?=$pipeline_version?>" target="_viewgraph" title="View analysis information"><i class="large grey info circle icon"></i></a>
+							<a href="viewanalysis.php?action=viewgraph&analysisid=<? =$analysis_id?>&studyid=<? =$study_id?>&pipelineid=<? =$id?>&pipelineversion=<? =$pipeline_version?>" target="_viewgraph" title="View analysis information"><i class="large grey info circle icon"></i></a>
 						</td>
 						<? } else { ?>
 						<td></td>
 						<? } ?>
 						<td class="center aligned">
-							<span onClick="GetAnalysisNotes(<?=$id?>, <?=$analysis_id?>);" title="<?=$notestitle?>"><i class="large <?=$notescolor?> pencil alternate icon"></i></span>
+							<span onClick="GetAnalysisNotes(<? =$id?>, <? =$analysis_id?>);" title="<? =$notestitle?>"><i class="large <? =$notescolor?> pencil alternate icon"></i></span>
 						</td>
 						<td style="font-size:9pt; white-space:nowrap">
 							<? if (strlen($analysis_statusmessage) > 50) { echo "<span title='$analysis_statusmessage'>" . substr($analysis_statusmessage, 0, 50) . "...</span>"; } else { echo $analysis_statusmessage; } ?><br>
@@ -909,22 +909,22 @@
 									$stepnum = $parts[2];
 									$steptotal = $parts[4];
 							?>
-							<img src="horizontalchart.php?b=no&w=150&h=3&v=<?=$stepnum?>,<?=($steptotal-$stepnum)?>&c=666666,DDDDDD" style="margin:2px"><br>
+							<img src="horizontalchart.php?b=no&w=150&h=3&v=<? =$stepnum?>,<? =($steptotal-$stepnum)?>&c=666666,DDDDDD" style="margin:2px"><br>
 							<? } ?>
-							<span class="tiny"><?=$analysis_statusdatetime?></span>
+							<span class="tiny"><? =$analysis_statusdatetime?></span>
 						</td>
-						<td align="right" style="font-size:8pt; border-bottom: 5px solid <?=$sizecolor?>; margin-bottom:0px; padding-bottom:0px" valign="bottom">
-							<?=number_format($analysis_size,0)?>
+						<td align="right" style="font-size:8pt; border-bottom: 5px solid <? =$sizecolor?>; margin-bottom:0px; padding-bottom:0px" valign="bottom">
+							<? =number_format($analysis_size,0)?>
 							<table cellspacing="0" cellpadding="0" border="0" width="100%" height="5px" style="margin-top:5px">
 								<tr>
-									<td width="100%" height="5px" style="background-color: <?=$sizecolor?>; height:5px; font-size: 1pt; border: 0px">&nbsp;</td>
+									<td width="100%" height="5px" style="background-color: <? =$sizecolor?>; height:5px; font-size: 1pt; border: 0px">&nbsp;</td>
 								</tr>
 							</table>
 						</td>
-						<td><?=$analysis_hostname?></td>
-						<td><?=$analysis_time?><br><span class="tiny"><?=$analysis_enddate?></span></td>
-						<td><?=$cluster_time?><br><span class="tiny"><?=$analysis_clusterenddate?></span></td>
-						<td class="allanalyses" style="background-color: Lavender; text-align: center"><input type="checkbox" name="analysisids[]" value="<?=$analysis_id?>"></td>
+						<td><? =$analysis_hostname?></td>
+						<td><? =$analysis_time?><br><span class="tiny"><? =$analysis_enddate?></span></td>
+						<td><? =$cluster_time?><br><span class="tiny"><? =$analysis_clusterenddate?></span></td>
+						<td class="allanalyses" style="background-color: Lavender; text-align: center"><input type="checkbox" name="analysisids[]" value="<? =$analysis_id?>"></td>
 					</tr>
 					<? 
 						}
@@ -940,7 +940,7 @@
 				?>
 				<script>
 				function GetDestination(){
-					var destination = prompt("Please enter a valid destination for the selected analyses","/home/<?=$GLOBALS['username']?>");
+					var destination = prompt("Please enter a valid destination for the selected analyses","/home/<? =$GLOBALS['username']?>");
 					if (destination != null){
 					  document.studieslist.action='analysis.php';
 					  $("#studieslistaction").attr("value", "copyanalyses");
@@ -949,7 +949,7 @@
 				   }
 				}
 				function GetDestination2(){
-					var destination = prompt("Please enter a valid directory in which to create the 'data' directory and links","/home/<?=$GLOBALS['username']?>");
+					var destination = prompt("Please enter a valid directory in which to create the 'data' directory and links","/home/<? =$GLOBALS['username']?>");
 					if (destination != null){
 					  document.studieslist.action='analysis.php';
 					  $("#studieslistaction").attr("value", "createlinks");
@@ -982,7 +982,7 @@
 			});
 		</script>
 		<div class="ui bottom attached menu">
-			<div class="item" href="studies.php?studyid=<?=$studyid?>&action=displayfiles">
+			<div class="item" href="studies.php?studyid=<? =$studyid?>&action=displayfiles">
 				<div class="ui action input">
 					<select name="studygroupid" class="ui selection dropdown">
 						<option value="">Add to study group...
@@ -993,7 +993,7 @@
 								$groupid = $row['group_id'];
 								$groupname = $row['group_name'];
 								?>
-								<option value="<?=$groupid?>"><?=$groupname?>
+								<option value="<? =$groupid?>"><? =$groupname?>
 								<?
 							}
 						?>
@@ -1139,14 +1139,14 @@
 		</script>
 		<table class="tablepage" width="100%">
 			<tr>
-				<td class="label"><?=$numrows?> items</td>
-				<td class="pagenum">Page <?=$pagenum?> of <?=$numpages?> <span class="tiny">(<?=$numperpage?>/page)</span></td>
+				<td class="label"><? =$numrows?> items</td>
+				<td class="pagenum">Page <? =$pagenum?> of <? =$numpages?> <span class="tiny">(<? =$numperpage?>/page)</span></td>
 				<td class="middle">&nbsp;</td>
-				<td class="firstpage" title="First page"><a href="analysis.php?action=viewanalyses&id=<?=$id?>&numperpage=<?=$numperpage?>&pagenum=1">&#171;</a></td>
-				<td class="previouspage" title="Previous page"><a href="analysis.php?action=viewanalyses&id=<?=$id?>&numperpage=<?=$numperpage?>&pagenum=<?=($pagenum-1)?>">&lsaquo;</a></td>
+				<td class="firstpage" title="First page"><a href="analysis.php?action=viewanalyses&id=<? =$id?>&numperpage=<? =$numperpage?>&pagenum=1">&#171;</a></td>
+				<td class="previouspage" title="Previous page"><a href="analysis.php?action=viewanalyses&id=<? =$id?>&numperpage=<? =$numperpage?>&pagenum=<? =($pagenum-1)?>">&lsaquo;</a></td>
 				<td title="Refresh page"><a href="" style="margin-left:20px; margin-right:20px; font-size:14pt">&#10227;</a></td>
-				<td class="nextpage" title="Next page"><a href="analysis.php?action=viewanalyses&id=<?=$id?>&numperpage=<?=$numperpage?>&pagenum=<?=($pagenum+1)?>">&rsaquo;</a></td>
-				<td class="lastpage" title="Last page"><a href="analysis.php?action=viewanalyses&id=<?=$id?>&numperpage=<?=$numperpage?>&pagenum=<?=$numpages?>">&#187;</a></td>
+				<td class="nextpage" title="Next page"><a href="analysis.php?action=viewanalyses&id=<? =$id?>&numperpage=<? =$numperpage?>&pagenum=<? =($pagenum+1)?>">&rsaquo;</a></td>
+				<td class="lastpage" title="Last page"><a href="analysis.php?action=viewanalyses&id=<? =$id?>&numperpage=<? =$numperpage?>&pagenum=<? =$numpages?>">&#187;</a></td>
 			</tr>
 		</table>
 		<form method="post" name="studieslist" action="analysis.php">
@@ -1154,7 +1154,7 @@
 		<input type="hidden" name="destination" value="" id="studieslistdestination">
 		<input type="hidden" name="analysisnotes" value="">
 		<input type="hidden" name="analysisid" value="">
-		<input type="hidden" name="id" value="<?=$id?>">
+		<input type="hidden" name="id" value="<? =$id?>">
 		
 		<table id="analysistable" class="ui very compact small celled grey table">
 			<thead>
@@ -1196,15 +1196,15 @@
 						$pipeline_dep_name = $rowA['pipeline_name'];
 				?>
 				<tr>
-					<td class="allstudies" style="text-align:left"><input type="checkbox" name="studyid[]" value="<?=$study_id?>"><a href="studies.php?id=<?=$study_id?>"><?=$uid?><?=$study_num?></a></td>
+					<td class="allstudies" style="text-align:left"><input type="checkbox" name="studyid[]" value="<? =$study_id?>"><a href="studies.php?id=<? =$study_id?>"><? =$uid?><? =$study_num?></a></td>
 					<? if ($pipeline_level == 1) { ?>
-					<td class="tiny"><?=$study_datetime?></td>
+					<td class="tiny"><? =$study_datetime?></td>
 					<? } ?>
-					<td><?=$analysis_status;?></td>
+					<td><? =$analysis_status;?></td>
 					<td>
-						<a href="viewanalysis.php?action=viewgraph&analysisid=<?=$analysis_id?>&studyid=<?=$study_id?>&pipelineid=<?=$id?>&pipelineversion=<?=$pipeline_version?>" target="_viewgraph" title="View analysis graph">View log</a>
+						<a href="viewanalysis.php?action=viewgraph&analysisid=<? =$analysis_id?>&studyid=<? =$study_id?>&pipelineid=<? =$id?>&pipelineversion=<? =$pipeline_version?>" target="_viewgraph" title="View analysis graph">View log</a>
 					</td>
-					<td class="allanalyses" align="right"><input type="checkbox" name="analysisids[]" value="<?=$analysis_id?>"></td>
+					<td class="allanalyses" align="right"><input type="checkbox" name="analysisids[]" value="<? =$analysis_id?>"></td>
 				</tr>
 				<? 
 					}
@@ -1225,7 +1225,7 @@
 											$groupid = $row['group_id'];
 											$groupname = $row['group_name'];
 											?>
-											<option value="<?=$groupid?>"><?=$groupname?>
+											<option value="<? =$groupid?>"><? =$groupname?>
 											<?
 										}
 									?>
@@ -1312,7 +1312,7 @@
 		/* check if the path exists */
 		if (file_exists($path)) {
 			?>
-			Showing log files from <b><?=$path?></b>
+			Showing log files from <b><? =$path?></b>
 			<br><br>
 			<?
 			$files = scandir($path);
@@ -1342,9 +1342,9 @@
 				}
 				?>
 				<details>
-					<summary><?="<b>$log</b>"?> <span class="tiny"><?=number_format($size)?> bytes - <?=$filedate?></style> &nbsp; <span style="color: darkred;"><?=$desc?></span></span></summary>
+					<summary><? ="<b>$log</b>"?> <span class="tiny"><? =number_format($size)?> bytes - <? =$filedate?></style> &nbsp; <span style="color: darkred;"><? =$desc?></span></span></summary>
 					<pre style="font-size:9pt; background-color: #EEEEEE">
-<?=$file?>
+<? =$file?>
 					</pre>
 				</details>
 				<?
@@ -1405,7 +1405,7 @@
 			$files = find_all_files($path);
 			//print_r($files);
 			?>
-			Showing files from <b><?=$path?></b> (<?=count($files)?> files) <span class="tiny">Reading from filesystem</span>
+			Showing files from <b><? =$path?></b> (<? =count($files)?> files) <span class="tiny">Reading from filesystem</span>
 			<br><br>
 			<table cellspacing="0" cellpadding="2">
 				<tr>
@@ -1482,34 +1482,34 @@
 				}
 				?>
 				<tr>
-					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD; color:<?=$filecolor?>; font-weight: <?=$fileweight?>">
+					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD; color:<? =$filecolor?>; font-weight: <? =$fileweight?>">
 					<?
 						$fullpath = $GLOBALS['cfg']['mountdir'] . "/$file";
 						switch ($filetype) {
 							case 'text':
 					?>
-					<a href="viewfile.php?file=<?=$fullpath?>"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
+					<a href="viewfile.php?file=<? =$fullpath?>"><span style="color:<? =$filecolor?>; font-weight: <? =$fileweight?>"><? =$displayfile?></span></a>
 					<?
 								break;
 							case 'image':
 					?>
-					<a href="viewimagefile.php?file=<?=$fullpath?>"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
+					<a href="viewimagefile.php?file=<? =$fullpath?>"><span style="color:<? =$filecolor?>; font-weight: <? =$fileweight?>"><? =$displayfile?></span></a>
 					<?
 								break;
 							case 'nifti':
 							case 'mesh':
 					?>
-					<a href="viewimage.php?type=<?=$filetype?>&filename=<?=$fullpath?>"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
+					<a href="viewimage.php?type=<? =$filetype?>&filename=<? =$fullpath?>"><span style="color:<? =$filecolor?>; font-weight: <? =$fileweight?>"><? =$displayfile?></span></a>
 					<?
 								break;
 							default:
 					?>
-					<?=$displayfile?>
+					<? =$displayfile?>
 					<? } ?>
 					</td>
-					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=date("M j, Y H:i:s",$timestamp2)?></span></td>
-					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=$displayperms?></td>
-					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=number_format($size2)?></td>
+					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><? =date("M j, Y H:i:s",$timestamp2)?></span></td>
+					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><? =$displayperms?></td>
+					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><? =number_format($size2)?></td>
 				</tr>
 				<?
 			}
@@ -1519,7 +1519,7 @@
 			
 			$files = explode("\n",trim($origfiles));
 			?>
-			Showing files from <b><?=$path?></b> (<?=count($files)?> files) <span class="tiny">Reading from origfiles.log</span> Read from <a href="analysis.php?action=viewfiles&analysisid=<?=$analysisid?>&fileviewtype=filesystem">filesystem</a>
+			Showing files from <b><? =$path?></b> (<? =count($files)?> files) <span class="tiny">Reading from origfiles.log</span> Read from <a href="analysis.php?action=viewfiles&analysisid=<? =$analysisid?>&fileviewtype=filesystem">filesystem</a>
 			<br><br>
 			<table cellspacing="0" cellpadding="2">
 				<tr>
@@ -1590,34 +1590,34 @@
 				}
 				?>
 				<tr>
-					<td style="font-size:9pt; border-bottom: solid 1px #DDDDDD; color:<?=$filecolor?>; font-weight: <?=$fileweight?>">
+					<td style="font-size:9pt; border-bottom: solid 1px #DDDDDD; color:<? =$filecolor?>; font-weight: <? =$fileweight?>">
 					<?
 						$fullpath = $GLOBALS['cfg']['mountdir'] . "/$file";
 						switch ($filetype) {
 							case 'text':
 					?>
-					<a href="viewfile.php?file=<?=$fullpath?>"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
+					<a href="viewfile.php?file=<? =$fullpath?>"><span style="color:<? =$filecolor?>; font-weight: <? =$fileweight?>"><? =$displayfile?></span></a>
 					<?
 								break;
 							case 'image':
 					?>
-					<a href="viewimagefile.php?file=<?=$fullpath?>"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
+					<a href="viewimagefile.php?file=<? =$fullpath?>"><span style="color:<? =$filecolor?>; font-weight: <? =$fileweight?>"><? =$displayfile?></span></a>
 					<?
 								break;
 							case 'nifti':
 							case 'mesh':
 					?>
-					<a href="viewimage.php?type=<?=$filetype?>&filename=<?=$fullpath?>"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
+					<a href="viewimage.php?type=<? =$filetype?>&filename=<? =$fullpath?>"><span style="color:<? =$filecolor?>; font-weight: <? =$fileweight?>"><? =$displayfile?></span></a>
 					<?
 								break;
 							default:
 					?>
-					<?=$displayfile?>
+					<? =$displayfile?>
 					<? } ?>
 					</td>
-					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=date("M j, Y H:i:s",$timestamp1)?><? //if ($timestamp1 != $timestamp2) { echo "&nbsp;<span class='smalldiff'>$timestamp2</span>"; } ?></span></td>
-					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=$displayperms1?><? //if ($perm1 != $perm2) { echo "&nbsp;<span class='smalldiff'>$perm2</span>"; } ?></td>
-					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=number_format($size1)?><? //if ($size1 != $size2) { echo "&nbsp;<span class='smalldiff'>" . number_format($size2) . "</span>"; } ?></td>
+					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><? =date("M j, Y H:i:s",$timestamp1)?><? //if ($timestamp1 != $timestamp2) { echo "&nbsp;<span class='smalldiff'>$timestamp2</span>"; } ?></span></td>
+					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><? =$displayperms1?><? //if ($perm1 != $perm2) { echo "&nbsp;<span class='smalldiff'>$perm2</span>"; } ?></td>
+					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><? =number_format($size1)?><? //if ($size1 != $size2) { echo "&nbsp;<span class='smalldiff'>" . number_format($size2) . "</span>"; } ?></td>
 				</tr>
 				<?
 			}

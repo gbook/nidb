@@ -301,11 +301,11 @@
 			foreach ($report1 as $block => $info) {
 				?>
 				<tr>
-					<td><?=$block?></td>
-					<td><?=$info['import_startdate']?></td>
-					<td><?=$info['import_enddate']?></td>
-					<td><?=$info['import_status']?></td>
-					<td><?=$info['import_message']?></td>
+					<td><? =$block?></td>
+					<td><? =$info['import_startdate']?></td>
+					<td><? =$info['import_enddate']?></td>
+					<td><? =$info['import_status']?></td>
+					<td><? =$info['import_message']?></td>
 				</tr>
 				<?
 			}
@@ -341,13 +341,13 @@
 				$numfiles = $info['numfiles'];
 				?>
 				<tr>
-					<td><?=$patientid_orig?></td>
-					<td><?="$subject_uid/$study_num"?></td>
-					<td><?=$studydatetime_orig?></td>
-					<td><?=$modality_orig?></td>
-					<td><?=$stationname_orig?></td>
-					<td><?=$seriesdesc_orig?></td>
-					<td><?=$numfiles?></td>
+					<td><? =$patientid_orig?></td>
+					<td><? ="$subject_uid/$study_num"?></td>
+					<td><? =$studydatetime_orig?></td>
+					<td><? =$modality_orig?></td>
+					<td><? =$stationname_orig?></td>
+					<td><? =$seriesdesc_orig?></td>
+					<td><? =$numfiles?></td>
 				</tr>
 				<?
 			}
@@ -383,9 +383,9 @@
 
 			?>
 			<span style="font-size: 11pt">
-			<img src="horizontalchart.php?b=yes&w=400&h=15&v=<?=$numsuccess?>,<?=$numprocessing?>,<?=$numfail?>,<?=($total-$numtotal)?>&c=<?=$completecolor?>,<?=$processingcolor?>,<?=$errorcolor?>,<?=$othercolor?>"> <?=number_format(($numsuccess/$total)*100,1)?>% received <span style="font-size:8pt;color:gray">(<?=number_format($numsuccess)?> of <?=number_format($total)?> blocks)</span>
+			<img src="horizontalchart.php?b=yes&w=400&h=15&v=<? =$numsuccess?>,<? =$numprocessing?>,<? =$numfail?>,<? =($total-$numtotal)?>&c=<? =$completecolor?>,<? =$processingcolor?>,<? =$errorcolor?>,<? =$othercolor?>"> <? =number_format(($numsuccess/$total)*100,1)?>% received <span style="font-size:8pt;color:gray">(<? =number_format($numsuccess)?> of <? =number_format($total)?> blocks)</span>
 			<br>
-			<img src="horizontalchart.php?b=yes&w=400&h=15&v=<?=$archivesuccess?>,<?=$archiveerror?>,<?=($total-$archivesuccess-$archiveerror)?>&c=<?=$completecolor?>,<?=$errorcolor?>,<?=$othercolor?>"> <?=number_format(($archivesuccess/$total)*100,1)?>% archived <span style="font-size:8pt;color:gray">(<?=number_format($archivesuccess)?> of <?=number_format($total)?> blocks)</span>
+			<img src="horizontalchart.php?b=yes&w=400&h=15&v=<? =$archivesuccess?>,<? =$archiveerror?>,<? =($total-$archivesuccess-$archiveerror)?>&c=<? =$completecolor?>,<? =$errorcolor?>,<? =$othercolor?>"> <? =number_format(($archivesuccess/$total)*100,1)?>% archived <span style="font-size:8pt;color:gray">(<? =number_format($archivesuccess)?> of <? =number_format($total)?> blocks)</span>
 			</span>
 			<?
 		}
@@ -750,11 +750,11 @@
 			$cummatch = number_format($cummatch,0);
 		
 		?>
-		<tr style="<?=$bold?>">
-			<td style="<?=$indent?> <?=$gray?>" <?=$title?>><?=$criteria?></td>
-			<td style="<?=$gray?>"><?=$value?></td>
-			<td style="<?=$gray?>"><?=$nummatch?></td>
-			<td style="<?=$gray?>"><?=$cummatch?></td>
+		<tr style="<? =$bold?>">
+			<td style="<? =$indent?> <? =$gray?>" <? =$title?>><? =$criteria?></td>
+			<td style="<? =$gray?>"><? =$value?></td>
+			<td style="<? =$gray?>"><? =$nummatch?></td>
+			<td style="<? =$gray?>"><? =$cummatch?></td>
 		</tr>
 		<?
 	}

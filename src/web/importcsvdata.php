@@ -90,7 +90,7 @@
                         	                $project_name = $row['project_name'];
                                 	        $project_costcenter = $row['project_costcenter'];
 ?>
-                        	                         <div class="item" data-value="<?=$project_id?>"> <?=$project_name?> (<?=$project_costcenter?>) </div>
+                        	                         <div class="item" data-value="<? =$project_id?>"> <? =$project_name?> (<? =$project_costcenter?>) </div>
 <?
                                         }
 ?>					

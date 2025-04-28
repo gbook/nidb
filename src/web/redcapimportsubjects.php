@@ -86,7 +86,7 @@
 function getredcapinfo($projectid)
 {
 	if ((trim($projectid) == "") || ($projectid < 0)) {
-			?>Invalid or blank project ID [<?=$projectid?>]<?
+			?>Invalid or blank project ID [<? =$projectid?>]<?
 			return;
 		}
 	
@@ -105,11 +105,11 @@ function getredcapinfo($projectid)
 	 <div class="ui grid container">
 		<form  action="redcapimportsubjects.php" method="post">
 		<input type="hidden" name="action" value="showrcinfo">
-		<input type="hidden" name="redcapurl" value="<?=$redcapurl?>">
-		<input type="hidden" name="redcaptoken" value="<?=$redcaptoken?>">
-		<input type="hidden" name="redcapevent" value="<?=$redcapevent?>">
-		<input type="hidden" name="projectid" value="<?=$projectid?>">
-		<input type="hidden" name="redcapfields" value="<?=$redcapfields?>">
+		<input type="hidden" name="redcapurl" value="<? =$redcapurl?>">
+		<input type="hidden" name="redcaptoken" value="<? =$redcaptoken?>">
+		<input type="hidden" name="redcapevent" value="<? =$redcapevent?>">
+		<input type="hidden" name="projectid" value="<? =$projectid?>">
+		<input type="hidden" name="redcapfields" value="<? =$redcapfields?>">
 
 		<h2 class="ui top attached inverted header" align="center"> Importing Subjects from Redcap </h2>
 
@@ -135,7 +135,7 @@ function getredcapinfo($projectid)
                                                                                 else
                                                                                         $selected = "";
                                                                                 ?>
-                                                                                <option value="<?=$project_id?>" <?=$selected?>><?=$project_name?> (<?=$project_costcenter?>)</option>
+                                                                                <option value="<? =$project_id?>" <? =$selected?>><? =$project_name?> (<? =$project_costcenter?>)</option>
                                                                                 <?
                                                                         }
                                                                 ?>
@@ -149,7 +149,7 @@ function getredcapinfo($projectid)
 			  <div class="ui label">
 			    *Redcap Server
 			  </div>
-			  <input type="text"  name="redcapurl" value="<?=$redcapurl?>"  required>
+			  <input type="text"  name="redcapurl" value="<? =$redcapurl?>"  required>
 			</div>
 
 			<br>
@@ -157,7 +157,7 @@ function getredcapinfo($projectid)
                           <div class="ui label">
                             *Redcap Token
                           </div>
-				<input type="text" name="redcaptoken" value="<?=$redcaptoken?>" required>
+				<input type="text" name="redcaptoken" value="<? =$redcaptoken?>" required>
 			</div>
 
 			 <br>
@@ -165,7 +165,7 @@ function getredcapinfo($projectid)
                           <div class="ui label">
                             *Redcap Event
                           </div>
-                                <input type="text" name="redcapevent" value="<?=$redcapevent?>" required>
+                                <input type="text" name="redcapevent" value="<? =$redcapevent?>" required>
                         </div>
 
 		</div>
@@ -179,7 +179,7 @@ function getredcapinfo($projectid)
                             *Record ID
                           </div>
 
-                                  <input type="text"  name="redcaprid" value="<?=$redcaprid?>" required>
+                                  <input type="text"  name="redcaprid" value="<? =$redcaprid?>" required>
                         </div>
 
 			 <br>
@@ -189,7 +189,7 @@ function getredcapinfo($projectid)
                             Alternate ID
                           </div>
 
-                                  <input type="text"  name="redcapaltid" value="<?=$redcapaltid?>" >
+                                  <input type="text"  name="redcapaltid" value="<? =$redcapaltid?>" >
                         </div>
 
 			 <br>
@@ -199,7 +199,7 @@ function getredcapinfo($projectid)
                            *First Name
                           </div>
 
-                                  <input type="text"  name="redcapfname" value="<?=$redcapfname?>" required>
+                                  <input type="text"  name="redcapfname" value="<? =$redcapfname?>" required>
                         </div>
 
 			<br>
@@ -209,7 +209,7 @@ function getredcapinfo($projectid)
                            *Last Name
                           </div>
 
-                                  <input type="text"  name="redcaplname" value="<?=$redcaplname?>" required>
+                                  <input type="text"  name="redcaplname" value="<? =$redcaplname?>" required>
                         </div>			
 
 			 <br>
@@ -219,7 +219,7 @@ function getredcapinfo($projectid)
                            *Birthdate
                           </div>
 
-                                  <input type="text"  name="redcapdob" value="<?=$redcapdob?>" required>
+                                  <input type="text"  name="redcapdob" value="<? =$redcapdob?>" required>
                         </div>
 			
 
@@ -230,7 +230,7 @@ function getredcapinfo($projectid)
                            *Sex
                           </div>
 
-				  <input type="text"  name="redcapgender" value="<?=$redcapgender?>" required>
+				  <input type="text"  name="redcapgender" value="<? =$redcapgender?>" required>
 			</div>
 			
 
@@ -238,19 +238,19 @@ function getredcapinfo($projectid)
 			<div class="fields">
 			  <div class="one wide field">
 			      <label align="center" >*M</label>
-			      <input type="text" placeholder="1" name="redcapgenderm" value="<?=$redcapgenderm?>" required>
+			      <input type="text" placeholder="1" name="redcapgenderm" value="<? =$redcapgenderm?>" required>
 			  </div>
 			  <div class="one wide field">
 			      <label align="center" >*F</label>
-			      <input type="text" placeholder="2" name="redcapgenderf" value="<?=$redcapgenderf?>" required>
+			      <input type="text" placeholder="2" name="redcapgenderf" value="<? =$redcapgenderf?>" required>
 			  </div>
 			  <div class="one wide field">
 			      <label align="center" >O</label>
-			      <input type="text" placeholder="3" name="redcapgendero" value="<?=$redcapgendero?>">
+			      <input type="text" placeholder="3" name="redcapgendero" value="<? =$redcapgendero?>">
 			  </div>
 			   <div class="one wide field">
 			      <label align="center" >U</label>
-                              <input type="text" placeholder="4" name="redcapgenderu" value="<?=$redcapgenderu?>">
+                              <input type="text" placeholder="4" name="redcapgenderu" value="<? =$redcapgenderu?>">
 			  </div>
 			 <label>Provide Sex Data Coding</label>
 			</div>
@@ -296,7 +296,7 @@ function getrcsubjectinfo($projectid,$redcapfields,$redcapurl,$redcaptoken,$redc
 //	var_dump($namedata);
 //	echo $namedata[0]["redcap_event_name"]; 
 	if ($namedata["error"]!=""){ 	
-		?><div align="center"><span class="message"><?=$namedata["error"]?></span></div><br><br><?}
+		?><div align="center"><span class="message"><? =$namedata["error"]?></span></div><br><br><?}
 	
 	else {
 ?>
@@ -313,7 +313,7 @@ function getrcsubjectinfo($projectid,$redcapfields,$redcapurl,$redcaptoken,$redc
 
 <form action="redcapimportsubjects.php" method="post">
 <input type="hidden" name="action" value="addsubjs">
-<input type="hidden" name="projectid" value="<?=$projectid?>">
+<input type="hidden" name="projectid" value="<? =$projectid?>">
 
 
 <table class="ui compact celled definition table">
@@ -360,17 +360,17 @@ function getrcsubjectinfo($projectid,$redcapfields,$redcapurl,$redcaptoken,$redc
                 $clr='green';}
         ?>
 	
-    <tr class="<?=$clr?>">
+    <tr class="<? =$clr?>">
       <td class="ui collapsing">
         <div class="ui toggle checkbox">
 	   <? if ($flg[0]!="" and $clr=='olive') {
-		   ?> <input type="checkbox" name="addsub[]" value="<?=$info[$redcapfields[0]]?>"> <label></label><?}
+		   ?> <input type="checkbox" name="addsub[]" value="<? =$info[$redcapfields[0]]?>"> <label></label><?}
 	       elseif ($flg[0]!="" and $clr=='grey') {
-	           ?> <input type="checkbox"  name="addsub[]"  value="<?=$info[$redcapfields[0]]?>" disabled> <label></label><?}
+	           ?> <input type="checkbox"  name="addsub[]"  value="<? =$info[$redcapfields[0]]?>" disabled> <label></label><?}
 	      elseif ($flg[1]!="") {
-              	  ?> <input type="checkbox"  name="addsub[]"  value="<?=$info[$redcapfields[0]]?>" disabled> <label></label><?}
+              	  ?> <input type="checkbox"  name="addsub[]"  value="<? =$info[$redcapfields[0]]?>" disabled> <label></label><?}
               else {
-               	 ?> <input type="checkbox"  name="addsub[]"  value="<?=$info[$redcapfields[0]]?>" checked> <label></label><?}
+               	 ?> <input type="checkbox"  name="addsub[]"  value="<? =$info[$redcapfields[0]]?>" checked> <label></label><?}
         ?>
         </div>
       </td>
@@ -402,20 +402,20 @@ function getrcsubjectinfo($projectid,$redcapfields,$redcapurl,$redcaptoken,$redc
 	?>
 
 	
-      <td><?=$valfield?>
+      <td><? =$valfield?>
 
 <?      if ($Fd==0) {?>
-                <input type="hidden" name="redcaprid[]" value="<?=$valfield?>">
+                <input type="hidden" name="redcaprid[]" value="<? =$valfield?>">
 <?}     if ($Fd==1) {?>
-                <input type="hidden" name="redcapfname[]" value="<?=$valfield?>">
+                <input type="hidden" name="redcapfname[]" value="<? =$valfield?>">
 <?}     if ($Fd==2) {?>
-                <input type="hidden" name="redcaplname[]" value="<?=$valfield?>">
+                <input type="hidden" name="redcaplname[]" value="<? =$valfield?>">
 <?}     if ($Fd==3) {?>
-                <input type="hidden" name="redcapdob[]" value="<?=$valfield?>">
+                <input type="hidden" name="redcapdob[]" value="<? =$valfield?>">
 <?}     if ($Fd==4) {?>
-		<input type="hidden" name="redcapgender[]" value="<?=$valfield?>">
+		<input type="hidden" name="redcapgender[]" value="<? =$valfield?>">
 <?}     if ($Fd==5) {?>
-                <input type="hidden" name="redcapaltid[]" value="<?=$valfield?>">
+                <input type="hidden" name="redcapaltid[]" value="<? =$valfield?>">
 <?}?>
 	
 

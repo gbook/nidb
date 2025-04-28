@@ -143,7 +143,7 @@
 			<tbody>
 				<form action="vitals.php" method="post">
 				<input type="hidden" name="action" value="addvital">
-				<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
+				<input type="hidden" name="enrollmentid" value="<? =$enrollmentid?>">
 				<tr>
 					<td><input type="text" name="vital_name" size="15" placeholder="Vital" required></td>
 					<td><input type="text" name="vital_type" list="ls_type" size="15" placeholder="Type">
@@ -193,13 +193,13 @@
 				<tbody>
 						<tr><br></tr>	
 						<tr>
-							<td><?=$vital_name?></td>
-							<td><?=$vital_type?></td>
-							<td><?=$vital_value?></td>
-							<td><?=$vital_notes?></td>
-							<td><?=$vital_date?></td>
+							<td><? =$vital_name?></td>
+							<td><? =$vital_type?></td>
+							<td><? =$vital_value?></td>
+							<td><? =$vital_notes?></td>
+							<td><? =$vital_date?></td>
 							<td align="right">
-								<a class="ui red button" href="javascript:decision('Are you sure you want to delete this vital?', 'vitals.php?action=deletevital&vitalid=<?=$vitalid?>&enrollmentid=<?=$enrollmentid?>')"><i class="trash icon"></i></a>
+								<a class="ui red button" href="javascript:decision('Are you sure you want to delete this vital?', 'vitals.php?action=deletevital&vitalid=<? =$vitalid?>&enrollmentid=<? =$enrollmentid?>')"><i class="trash icon"></i></a>
 							</td>
 						</tr>
 					<?

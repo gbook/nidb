@@ -371,12 +371,12 @@
 		<div class="ui text container">
 			<div class="ui top attached raised segment">
 				<i class="user plus icon"></i>
-				<?=$formtitle?>
+				<? =$formtitle?>
 			</div>
 			
 			<form method="post" action="adminusers.php" autocomplete="off" class="ui form raised bottom attached segment">
-			<input type="hidden" name="action" value="<?=$formaction?>">
-			<input type="hidden" name="id" value="<?=$id?>">
+			<input type="hidden" name="action" value="<? =$formaction?>">
+			<input type="hidden" name="id" value="<? =$id?>">
 
 			<h3 class="ui header">User Information</h3>
 			
@@ -398,7 +398,7 @@
 			<div class="field">
 				<label>Username</label>
 				<div class="field">
-					<input type="text" name="username" id="username" onKeyUp="CheckUserExists()" value="<?=$username?>" required placeholder="Username or email address">
+					<input type="text" name="username" id="username" onKeyUp="CheckUserExists()" value="<? =$username?>" required placeholder="Username or email address">
 					<span id="usercheckresult"></span>
 				</div>
 			</div>
@@ -407,7 +407,7 @@
 			<div class="field">
 				<label>Full name</label>
 				<div class="field">
-					<input type="text" name="fullname" value="<?=$fullname?>" required placeholder="Full name">
+					<input type="text" name="fullname" value="<? =$fullname?>" required placeholder="Full name">
 				</div>
 			</div>
 			<? if (($login_type == "Standard") || ($type == "add")) { ?>
@@ -430,18 +430,18 @@
 			<div class="field">
 				<label>Email</label>
 				<div class="field">
-					<input type="text" name="email" value="<?=$email?>" required placeholder="Email">
+					<input type="text" name="email" value="<? =$email?>" required placeholder="Email">
 				</div>
 			</div>
 			<div class="field">
 				<div class="ui checkbox">
-					<input type="checkbox" name="enabled" value="1" <?=$enabledcheck?>>
+					<input type="checkbox" name="enabled" value="1" <? =$enabledcheck?>>
 					<label>Enabled</label>
 				</div>
 			</div>
 			<div class="field">
 				<div class="ui checkbox">
-					<input type="checkbox" name="isadmin" value="1" <?=$isadmincheck?>>
+					<input type="checkbox" name="isadmin" value="1" <? =$isadmincheck?>>
 					<label>NiDB admin</label>
 				</div>
 			</div>
@@ -529,6 +529,7 @@
 				</thead>
 				<tbody>
 				<?
+					$instanceids = array();
 					$sqlstring = "select * from user_instance where user_id = '$id'";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -556,7 +557,7 @@
 						}
 						?>
 						<tr>
-							<td colspan="7"><label><input type="checkbox" value="<?=$instance_id?>" name="instanceid[]" class="instances" id="instance<?=$instance_id;?>" <?=$checked?>> <b><?=$instance_name?></b></label></td>
+							<td colspan="7"><label><input type="checkbox" value="<? =$instance_id?>" name="instanceid[]" class="instances" id="instance<? =$instance_id;?>" <? =$checked?>> <b><? =$instance_name?></b></label></td>
 						</tr>
 						<?
 							$bgcolor = "#EEFFEE";
@@ -591,29 +592,29 @@
 								?>
 								<script type="text/javascript">
 								$(document).ready(function() {
-									$(".projectadmin<?=$project_id?>").click(function() {
+									$(".projectadmin<? =$project_id?>").click(function() {
 										var checked_status = this.checked;
-										$(".project<?=$project_id?>").prop("checked", checked_status);
+										$(".project<? =$project_id?>").prop("checked", checked_status);
 										});
 									});
 								</script>
 
-								<tr style="color: darkblue; font-size:11pt;" class="projects<?=$instance_id?>">
-									<td><?=$project_name?> (<tt><?=$project_costcenter?></tt>)</td>
+								<tr style="color: darkblue; font-size:11pt;" class="projects<? =$instance_id?>">
+									<td><? =$project_name?> (<tt><? =$project_costcenter?></tt>)</td>
 									<td class="projectadmin checkcell right aligned">
-										<label><input type="checkbox" class="chkInstance<?=$instance_id?> projectadmin<?=$project_id?>" name="projectadmin[]" value="<?=$project_id?>" <?if ($project_admin) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?>></label>
+										<label><input type="checkbox" class="chkInstance<? =$instance_id?> projectadmin<? =$project_id?>" name="projectadmin[]" value="<? =$project_id?>" <?if ($project_admin) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?>></label>
 									</td>
 									<td class="modifydata checkcell right aligned">
-										<label><input type="checkbox" class="chkInstance<?=$instance_id?> project<?=$project_id?>" name="modifydata[]" value="<?=$project_id?>" <?if ($write_data) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?>></label>
+										<label><input type="checkbox" class="chkInstance<? =$instance_id?> project<? =$project_id?>" name="modifydata[]" value="<? =$project_id?>" <?if ($write_data) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?>></label>
 									</td>
 									<td class="viewdata checkcell right aligned">
-										<label><input type="checkbox" class="chkInstance<?=$instance_id?> project<?=$project_id?>" name="viewdata[]" value="<?=$project_id?>" <?if ($view_data) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?>></label>
+										<label><input type="checkbox" class="chkInstance<? =$instance_id?> project<? =$project_id?>" name="viewdata[]" value="<? =$project_id?>" <?if ($view_data) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?>></label>
 									</td>
 									<td class="modifyphi checkcell right aligned">
-										<label><input type="checkbox" class="chkInstance<?=$instance_id?> project<?=$project_id?>" name="modifyphi[]" value="<?=$project_id?>" <?if ($write_phi) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?>></label>
+										<label><input type="checkbox" class="chkInstance<? =$instance_id?> project<? =$project_id?>" name="modifyphi[]" value="<? =$project_id?>" <?if ($write_phi) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?>></label>
 									</td>
 									<td class="viewphi checkcell right aligned">
-										<label><input type="checkbox" class="chkInstance<?=$instance_id?> project<?=$project_id?>" name="viewphi[]" value="<?=$project_id?>" <?if ($view_phi) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?>></label>
+										<label><input type="checkbox" class="chkInstance<? =$instance_id?> project<? =$project_id?>" name="viewphi[]" value="<? =$project_id?>" <?if ($view_phi) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?>></label>
 									</td>
 								</tr>
 								<?
@@ -628,13 +629,13 @@
 			<div class="ui two column grid">
 				<div class="column">
 					<? if ($type == 'edit') { ?>
-						<input type="hidden" name="username" value="<?=$username?>">
-						<a class="ui red button" href="adminusers.php?action=delete&id=<?=$id?>" onclick="return confirm('Are you sure you want to delete this user?')"><i class="trash icon"></i>Delete User</a>
+						<input type="hidden" name="username" value="<? =$username?>">
+						<a class="ui red button" href="adminusers.php?action=delete&id=<? =$id?>" onclick="return confirm('Are you sure you want to delete this user?')"><i class="trash icon"></i>Delete User</a>
 					<? } ?>
 				</div>
 				<div class="column" align="right">
 					<a class="ui button" href="adminusers.php">Cancel</a>
-					<input class="ui primary button" type="submit" id="submit" value="<?=$submitbuttonlabel?>">
+					<input class="ui primary button" type="submit" id="submit" value="<? =$submitbuttonlabel?>">
 				</div>
 			</div>
 			</form>
@@ -660,7 +661,7 @@
 	<br><br>
 	
 	<div class="ui top attached tabular menu large">
-		<a class="item active" data-tab="first">Users in the <?=$_SESSION['instancename']?> Instance</a>
+		<a class="item active" data-tab="first">Users in the <? =$_SESSION['instancename']?> Instance</a>
 		<a class="item" data-tab="second">All Other Users</a>
 		<a class="item" data-tab="third">Deleted Users</a>
 	</div>
@@ -693,19 +694,19 @@
 							$username = "(blank)";
 				?>
 				<tr>
-					<td><a href="adminusers.php?action=editform&id=<?=$id?>"><?=$username?></td>
-					<td><?=$fullname?></td>
-					<td><?=$email?></td>
-					<td><?=$login_type?></td>
-					<td><?=$lastlogin?></td>
-					<td><?=$logincount?></td>
+					<td><a href="adminusers.php?action=editform&id=<? =$id?>"><? =$username?></td>
+					<td><? =$fullname?></td>
+					<td><? =$email?></td>
+					<td><? =$login_type?></td>
+					<td><? =$lastlogin?></td>
+					<td><? =$logincount?></td>
 					<td>
 						<?
 							if ($enabled) {
-								?><a href="adminusers.php?action=disable&id=<?=$id?>" title="<b>Enabled.</b> Click to disable"><i class="large green toggle on icon"></i></a><?
+								?><a href="adminusers.php?action=disable&id=<? =$id?>" title="<b>Enabled.</b> Click to disable"><i class="large green toggle on icon"></i></a><?
 							}
 							else {
-								?><a href="adminusers.php?action=enable&id=<?=$id?>" title="<b>Disabled.</b> Click to enable"><i class="large red toggle off icon"></i></a><?
+								?><a href="adminusers.php?action=enable&id=<? =$id?>" title="<b>Disabled.</b> Click to enable"><i class="large red toggle off icon"></i></a><?
 							}
 						?>
 					</td>
@@ -743,19 +744,19 @@
 							$username = "(blank)";
 				?>
 				<tr>
-					<td><a href="adminusers.php?action=editform&id=<?=$id?>"><?=$username?></td>
-					<td><?=$fullname?></td>
-					<td><?=$email?></td>
-					<td><?=$login_type?></td>
-					<td><?=$lastlogin?></td>
-					<td><?=$logincount?></td>
+					<td><a href="adminusers.php?action=editform&id=<? =$id?>"><? =$username?></td>
+					<td><? =$fullname?></td>
+					<td><? =$email?></td>
+					<td><? =$login_type?></td>
+					<td><? =$lastlogin?></td>
+					<td><? =$logincount?></td>
 					<td>
 						<?
 							if ($enabled) {
-								?><a href="adminusers.php?action=disable&id=<?=$id?>" title="<b>Enabled.</b> Click to disable"><i class="large green toggle on icon"></i></a><?
+								?><a href="adminusers.php?action=disable&id=<? =$id?>" title="<b>Enabled.</b> Click to disable"><i class="large green toggle on icon"></i></a><?
 							}
 							else {
-								?><a href="adminusers.php?action=enable&id=<?=$id?>" title="<b>Disabled.</b> Click to enable"><i class="large red toggle off icon"></i></a><?
+								?><a href="adminusers.php?action=enable&id=<? =$id?>" title="<b>Disabled.</b> Click to enable"><i class="large red toggle off icon"></i></a><?
 							}
 						?>
 					</td>
@@ -793,19 +794,19 @@
 							$username = "(blank)";
 				?>
 				<tr>
-					<td><a href="adminusers.php?action=editform&id=<?=$id?>"><?=$username?></td>
-					<td><?=$fullname?></td>
-					<td><?=$email?></td>
-					<td><?=$login_type?></td>
-					<td><?=$lastlogin?></td>
-					<td><?=$logincount?></td>
+					<td><a href="adminusers.php?action=editform&id=<? =$id?>"><? =$username?></td>
+					<td><? =$fullname?></td>
+					<td><? =$email?></td>
+					<td><? =$login_type?></td>
+					<td><? =$lastlogin?></td>
+					<td><? =$logincount?></td>
 					<td>
 						<?
 							if ($enabled) {
-								?><a href="adminusers.php?action=disable&id=<?=$id?>" title="<b>Enabled.</b> Click to disable"><i class="large green toggle on icon"></i></a><?
+								?><a href="adminusers.php?action=disable&id=<? =$id?>" title="<b>Enabled.</b> Click to disable"><i class="large green toggle on icon"></i></a><?
 							}
 							else {
-								?><a href="adminusers.php?action=enable&id=<?=$id?>" title="<b>Disabled.</b> Click to enable"><i class="large red toggle off icon"></i></a><?
+								?><a href="adminusers.php?action=enable&id=<? =$id?>" title="<b>Disabled.</b> Click to enable"><i class="large red toggle off icon"></i></a><?
 							}
 						?>
 					</td>

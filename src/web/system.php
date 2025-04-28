@@ -270,7 +270,7 @@
 								$messageid = $row['message_id'];
 								$messagedate = $row['message_date'];
 								$message = $row['message'];
-								?><br><?=$messagedate?> - <b><?=$message?></b> <a class="ui red button" href="system.php?action=deletesystemmessage&messageid=<?=$messageid?>" onclick="return confirm('Are you sure you want to delete the message?')">Delete</a><br><?
+								?><br><? =$messagedate?> - <b><? =$message?></b> <a class="ui red button" href="system.php?action=deletesystemmessage&messageid=<? =$messageid?>" onclick="return confirm('Are you sure you want to delete the message?')">Delete</a><br><?
 							}
 						}
 						else {

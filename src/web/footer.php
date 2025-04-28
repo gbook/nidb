@@ -97,18 +97,18 @@
 <!-- footer -->
 <div class="ui mini inverted menu" style="!important; overflow: auto; position:absolute; bottom:0; left:0;" id="footer">
 	<div class="item" style="font-size: larger">
-		<em data-emoji=":chipmunk:"></em>&nbsp; <a href="neuroinfodb.org"><b>NiDB</b> v<?=$GLOBALS['cfg']['version']?></a>
+		<em data-emoji=":chipmunk:"></em>&nbsp; <a href="neuroinfodb.org"><b>NiDB</b> v<? =$GLOBALS['cfg']['version']?></a>
 	</div>
 	<div class="item">
-		Page generated: <? echo date("D M j, Y g:i a T"); ?> in <?=$pagetotaltime?> sec
+		Page generated: <? echo date("D M j, Y g:i a T"); ?> in <? =$pagetotaltime?> sec
 	</div>
 	<div class="item">
-		System status: <b>CPU</b> <?=$percentLoad?>% (on <?=$cpuCoreNo?> cores) &nbsp; &nbsp; &nbsp; <b>Module status:</b> 
-		<div class="ui mini <?=$moduleinfo['import']['color']?> label" title="Status: <?=$moduleinfo['import']['status']?>">import</div> 
-		<div class="ui mini <?=$moduleinfo['fileio']['color']?> label" title="Status: <?=$moduleinfo['fileio']['status']?>">fileio</div> 
-		<div class="ui mini <?=$moduleinfo['pipeline']['color']?> label" title="Status: <?=$moduleinfo['pipeline']['status']?>">pipeline</div>
-		<div class="ui mini <?=$moduleinfo['export']['color']?> label" title="Status: <?=$moduleinfo['export']['status']?>">export</div>
-		<div class="ui mini <?=$moduleinfo['mriqa']['color']?> label" title="Status: <?=$moduleinfo['mriqa']['status']?>">mriqa</div>
+		System status: <b>CPU</b> <? =$percentLoad?>% (on <? =$cpuCoreNo?> cores) &nbsp; &nbsp; &nbsp; <b>Module status:</b> 
+		<div class="ui mini <? =$moduleinfo['import']['color']?> label" title="Status: <? =$moduleinfo['import']['status']?>">import</div> 
+		<div class="ui mini <? =$moduleinfo['fileio']['color']?> label" title="Status: <? =$moduleinfo['fileio']['status']?>">fileio</div> 
+		<div class="ui mini <? =$moduleinfo['pipeline']['color']?> label" title="Status: <? =$moduleinfo['pipeline']['status']?>">pipeline</div>
+		<div class="ui mini <? =$moduleinfo['export']['color']?> label" title="Status: <? =$moduleinfo['export']['status']?>">export</div>
+		<div class="ui mini <? =$moduleinfo['mriqa']['color']?> label" title="Status: <? =$moduleinfo['mriqa']['status']?>">mriqa</div>
 	</div>
 	<div class="right menu">
 		<div class="item">

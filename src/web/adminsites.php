@@ -91,7 +91,7 @@
 		$sqlstring = "update nidb_sites set site_name = '$sitename', site_contact = '$sitecontact', site_address = '$siteaddress' where site_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		?><div align="center"><span class="message"><?=$sitename?> updated</span></div><br><br><?
+		?><div align="center"><span class="message"><? =$sitename?> updated</span></div><br><br><?
 	}
 
 
@@ -110,7 +110,7 @@
 		$sqlstring = "insert into nidb_sites (site_uid, site_uuid, site_name, site_address, site_contact) values ('$siteuid', uuid(), '$sitename', '$siteaddress', '$sitecontact')";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		?><div align="center"><span class="message"><?=$sitename?> added</span></div><br><br><?
+		?><div align="center"><span class="message"><? =$sitename?> added</span></div><br><br><?
 	}
 
 
@@ -158,38 +158,38 @@
 		<div align="center">
 		<table class="entrytable">
 			<form method="post" action="adminsites.php">
-			<input type="hidden" name="action" value="<?=$formaction?>">
-			<input type="hidden" name="id" value="<?=$id?>">
+			<input type="hidden" name="action" value="<? =$formaction?>">
+			<input type="hidden" name="id" value="<? =$id?>">
 			<tr>
 				<td colspan="2" align="center">
-					<b><?=$formtitle?></b>
+					<b><? =$formtitle?></b>
 				</td>
 			</tr>
 			<tr>
 				<td>Name</td>
-				<td><input type="text" name="sitename" value="<?=$name?>"></td>
+				<td><input type="text" name="sitename" value="<? =$name?>"></td>
 			</tr>
 			<tr>
 				<td>Address</td>
-				<td><textarea name="siteaddress"><?=$address?></textarea></td>
+				<td><textarea name="siteaddress"><? =$address?></textarea></td>
 			</tr>
 			<tr>
 				<td>Contact Info</td>
-				<td><textarea name="sitecontact"><?=$contact?></textarea></td>
+				<td><textarea name="sitecontact"><? =$contact?></textarea></td>
 			</tr>
 			<? if ($type == 'edit') { ?>
 			<tr>
 				<td>Site UUID</td>
-				<td class="tiny"><?=strtoupper($uuid)?></td>
+				<td class="tiny"><? =strtoupper($uuid)?></td>
 			</tr>
 			<tr>
 				<td>Site ID</td>
-				<td class="tiny"><?=$siteid?></td>
+				<td class="tiny"><? =$siteid?></td>
 			</tr>
 			<? } ?>
 			<tr>
 				<td colspan="2" align="center">
-					<input type="submit" value="<?=$submitbuttonlabel?>" class="ui primary button">
+					<input type="submit" value="<? =$submitbuttonlabel?>" class="ui primary button">
 				</td>
 			</tr>
 			</form>
@@ -234,11 +234,11 @@
 						$contact = $row['site_contact'];
 				?>
 				<tr>
-					<td><a href="adminsites.php?action=editform&id=<?=$id?>"><?=$name?></td>
-					<td><?=$id?></td>
-					<td><?=$address?></td>
-					<td><?=$contact?></td>
-					<td class="tiny"><?=strtoupper($uuid)?></td>
+					<td><a href="adminsites.php?action=editform&id=<? =$id?>"><? =$name?></td>
+					<td><? =$id?></td>
+					<td><? =$address?></td>
+					<td><? =$contact?></td>
+					<td class="tiny"><? =strtoupper($uuid)?></td>
 				</tr>
 				<? 
 					}

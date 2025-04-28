@@ -111,7 +111,7 @@
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 		
-		?><div align="center"><span class="message"><?=$instancename?> updated</span></div><br><br><?
+		?><div align="center"><span class="message"><? =$instancename?> updated</span></div><br><br><?
 	}
 
 
@@ -139,7 +139,7 @@
 		$sqlstring = "insert into instance (instance_uid, instance_name, instance_ownerid) values ('$instanceuid', '$instancename', '$ownerid')";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		?><div align="center"><span class="message"><?=$instancename?> added</span></div><?
+		?><div align="center"><span class="message"><? =$instancename?> added</span></div><?
 	}
 
 
@@ -217,21 +217,21 @@
 		<div align="center">
 		<table class="entrytable">
 			<form method="post" action="admininstances.php">
-			<input type="hidden" name="action" value="<?=$formaction?>">
-			<input type="hidden" name="id" value="<?=$id?>">
+			<input type="hidden" name="action" value="<? =$formaction?>">
+			<input type="hidden" name="id" value="<? =$id?>">
 			<tr>
 				<td colspan="2" align="center">
-					<b><?=$formtitle?></b>
+					<b><? =$formtitle?></b>
 				</td>
 			</tr>
 			<tr>
 				<td>Name</td>
-				<td><input type="text" name="instancename" maxlength="50" size="35" value="<?=$name?>"></td>
+				<td><input type="text" name="instancename" maxlength="50" size="35" value="<? =$name?>"></td>
 			</tr>
 			<? if ($type == 'edit') { ?>
 			<tr>
 				<td>Instance UID</td>
-				<td class="tiny"><?=strtoupper($uid)?></td>
+				<td class="tiny"><? =strtoupper($uid)?></td>
 			</tr>
 			<tr>
 				<script type="text/javascript">
@@ -257,6 +257,7 @@
 						<td>Select/unselect all<br><br></td>
 					</tr>
 					<?
+						$userids = array();
 						$sqlstring = "select user_id from user_instance where instance_id = $id";
 						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -278,9 +279,9 @@
 								}
 							}
 							?>
-							<tr style="color: darkblue; font-size:11pt; /*background-color: <?=$bgcolor?>*/">
-								<td class="users"><input type="checkbox" name="users[]" value="<?=$user_id?>" <?=$checked?>>
-								<td><tt><?=$username?></tt> - <?=$user_fullname?></td>
+							<tr style="color: darkblue; font-size:11pt; /*background-color: <? =$bgcolor?>*/">
+								<td class="users"><input type="checkbox" name="users[]" value="<? =$user_id?>" <? =$checked?>>
+								<td><tt><? =$username?></tt> - <? =$user_fullname?></td>
 							</tr>
 							<?
 							if ($bgcolor == "#EEFFEE") { $bgcolor = "#FFFFFF"; }
@@ -293,7 +294,7 @@
 			<? } ?>
 			<tr>
 				<td colspan="2" align="center">
-					<input type="submit" value="<?=$submitbuttonlabel?>" class="ui primary button">
+					<input type="submit" value="<? =$submitbuttonlabel?>" class="ui primary button">
 				</td>
 			</tr>
 			</form>
@@ -340,10 +341,10 @@
 					if ($default) { $checked = "checked"; } else { $checked = ""; }
 			?>
 			<tr>
-				<td><?=$uid?></td>
-				<td><a href="admininstances.php?action=editform&id=<?=$id?>"><?=$name?></td>
-				<td><a href="adminusers.php?action=editform&id=<?=$owner?>"><?=$ownername?></a></td>
-				<td><input type="radio" name="defaultinstanceid" value="<?=$id?>" <?=$checked?>></td>
+				<td><? =$uid?></td>
+				<td><a href="admininstances.php?action=editform&id=<? =$id?>"><? =$name?></td>
+				<td><a href="adminusers.php?action=editform&id=<? =$owner?>"><? =$ownername?></a></td>
+				<td><input type="radio" name="defaultinstanceid" value="<? =$id?>" <? =$checked?>></td>
 			</tr>
 			<? 
 				}
@@ -381,10 +382,10 @@
 					if ($default) { $checked = "checked"; } else { $checked = ""; }
 			?>
 			<tr>
-				<td><?=$name?></td>
-				<td><?=$userfullname?> &lt;<?=$useremail?>&gt;</td>
-				<td><a href="admininstances.php?action=acceptjoin&userinstanceid=<?=$id?>">Accept</td>
-				<td><a href="admininstances.php?action=rejectjoin&userinstanceid=<?=$id?>">Reject</td>
+				<td><? =$name?></td>
+				<td><? =$userfullname?> &lt;<? =$useremail?>&gt;</td>
+				<td><a href="admininstances.php?action=acceptjoin&userinstanceid=<? =$id?>">Accept</td>
+				<td><a href="admininstances.php?action=rejectjoin&userinstanceid=<? =$id?>">Reject</td>
 			</tr>
 			<? 
 				}

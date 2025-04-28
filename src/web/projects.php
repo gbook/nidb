@@ -359,7 +359,7 @@
 					foreach ($taglist as $tag) {
 						$sqlstringA = "insert ignore into tags (tagtype, enrollment_id, tag) values ('dx', $enrollmentid, '$tag')";
 						$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-						?><div class="message">Applied tag [<?=$tag?>] to enrollmentid [<?=$enrollmentid?>]</div><?
+						?><div class="message">Applied tag [<? =$tag?>] to enrollmentid [<? =$enrollmentid?>]</div><?
 					}
 				}
 			}
@@ -399,10 +399,10 @@
 		<div class="ui text container">
 			<form method="post" action="projects.php" class="ui form">
 				<input type="hidden" name="action" value="savexnat">
-				<input type="hidden" name="id" value="<?=$id?>">
+				<input type="hidden" name="id" value="<? =$id?>">
 				<div class="field">
 					<label>XNAT hostname</label>
-					<input type="text" name="xnathost" value="<?=$xnathost?>" placeholder="Full hostname, ex. http://hostname...">
+					<input type="text" name="xnathost" value="<? =$xnathost?>" placeholder="Full hostname, ex. http://hostname...">
 				</div>
 				<input type="submit" class="ui button" value="Save">
 			</form>
@@ -490,7 +490,7 @@
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 		?>
-		<div align="center" class="message">Subjects [<?=implode(', ',$uids)?>] queued for obliteration</div>
+		<div align="center" class="message">Subjects [<? =implode(', ',$uids)?>] queued for obliteration</div>
 		<?
 	}
 	
@@ -508,7 +508,7 @@
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 		?>
-		<div align="center" class="message">Studies [<?=implode2(', ',$studyids)?>] queued for obliteration</div>
+		<div align="center" class="message">Studies [<? =implode2(', ',$studyids)?>] queued for obliteration</div>
 		<?
 	}
 
@@ -560,7 +560,7 @@
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 		?>
-		<div align="center" class="message">Subjects [<?=implode(', ',$uids)?>] queued for re-archiving</div>
+		<div align="center" class="message">Subjects [<? =implode(', ',$uids)?>] queued for re-archiving</div>
 		<?
 	}
 	
@@ -593,7 +593,7 @@
 			if (mysqli_num_rows($result) > 0){
 				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 				$enrollmentRowID = $row['enrollment_id'];
-				?><span style="color:green">[<?=$subjectRowID?>] is already enrolled in [<?=$projectRowID?>] with enrollment [<?=$enrollmentRowID?>]</span><br><?
+				?><span style="color:green">[<? =$subjectRowID?>] is already enrolled in [<? =$projectRowID?>] with enrollment [<? =$enrollmentRowID?>]</span><br><?
 			}
 			else {
 				/* if they're not enrolled, create the enrollment, with the enrollment date of the 'scandate' */
@@ -609,7 +609,7 @@
 			if (mysqli_num_rows($result) > 0){
 				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 				$enrollmentRowID = $row['enrollment_id'];
-				?><span style="color:green">Study [<?=$studyRowID?>] is already part of enrollment [<?=$enrollmentRowID?>]</span><br><?
+				?><span style="color:green">Study [<? =$studyRowID?>] is already part of enrollment [<? =$enrollmentRowID?>]</span><br><?
 			}
 			else {
 				/* if the study is not associated with the enrollment, associate it */
@@ -796,10 +796,10 @@
 			if (!$problem) {
 				?>
 				<tr>
-					<td><a href="studies.php?id=<?=$studyid?>"><?="$uid$studynum"?></a></td>
-					<td><?=$study_datetime?></td>
-					<td><?=$numseries?></td>
-					<td><?=$modality?></td>
+					<td><a href="studies.php?id=<? =$studyid?>"><? ="$uid$studynum"?></a></td>
+					<td><? =$study_datetime?></td>
+					<td><? =$numseries?></td>
+					<td><? =$modality?></td>
 					<td><span style="color: green">&#10004;</span></td>
 				</tr>
 				<?
@@ -807,17 +807,17 @@
 			else {
 				?>
 				<tr style="font-weight: bold">
-					<td style="border-top: 1px solid red; background-color: #ffd1d1"><a href="studies.php?id=<?=$studyid?>"><?="$uid$studynum"?></a></td>
-					<td style="border-top: 1px solid red; background-color: #ffd1d1"><?=$study_datetime?></td>
-					<td style="border-top: 1px solid red; background-color: #ffd1d1"><?=$numseries?></td>
-					<td style="border-top: 1px solid red; background-color: #ffd1d1"><?=$modality?></td>
+					<td style="border-top: 1px solid red; background-color: #ffd1d1"><a href="studies.php?id=<? =$studyid?>"><? ="$uid$studynum"?></a></td>
+					<td style="border-top: 1px solid red; background-color: #ffd1d1"><? =$study_datetime?></td>
+					<td style="border-top: 1px solid red; background-color: #ffd1d1"><? =$numseries?></td>
+					<td style="border-top: 1px solid red; background-color: #ffd1d1"><? =$modality?></td>
 					<td style="border-top: 1px solid red; background-color: #ffd1d1"><span style="color: red">&#10006;</span></td>
 				</tr>
 				<tr>
 					<td colspan="5" style="padding-left: 20px; border-bottom: 1px solid red; background-color: #ffd1d1">
 						<?
 						foreach ($problems as $prob) {
-							?><?=$prob?><br><?
+							?><? =$prob?><br><?
 						}
 						?>
 
@@ -848,10 +848,10 @@
 		<br><br>
 		<table class="formentrytable">
 			<tr>
-				<td class="title" colspan="3"><?=$title?></td>
+				<td class="title" colspan="3"><? =$title?></td>
 			</tr>
 			<tr>
-				<td class="desc" colspan="3"><?=$desc?></td>
+				<td class="desc" colspan="3"><? =$desc?></td>
 			</tr>
 			<tr>
 				<td colspan="2">&nbsp;</td>
@@ -874,22 +874,22 @@
 					?>
 					<tr>
 						<? if ($formfield_datatype == "header") { ?>
-							<td colspan="2" class="sectionheader"><?=$formfield_desc?></td>
+							<td colspan="2" class="sectionheader"><? =$formfield_desc?></td>
 						<? } else { ?>
-							<td class="field"><?=$formfield_desc?></td>
+							<td class="field"><? =$formfield_desc?></td>
 							<td class="value">
 							<?
 								switch ($formfield_datatype) {
 									case "binary": ?><input type="file" name="value[]"><? break;
 									case "multichoice": ?>
-										<select multiple name="<?=$formfield_id?>-multichoice" style="height: 150px">
+										<select multiple name="<? =$formfield_id?>-multichoice" style="height: 150px">
 											<?
 												$values = explode(",", $formfield_values);
 												natsort($values);
 												foreach ($values as $value) {
 													$value = trim($value);
 												?>
-													<option value="<?=$value?>"><?=$value?></option>
+													<option value="<? =$value?>"><? =$value?></option>
 												<?
 												}
 											?>
@@ -904,16 +904,16 @@
 												foreach ($values as $value) {
 													$value = trim($value);
 												?>
-													<input type="radio"  name="<?=$formfield_id?>-singlechoice" value="<?=$value?>"><?=$value?>
+													<input type="radio"  name="<? =$formfield_id?>-singlechoice" value="<? =$value?>"><? =$value?>
 												<?
 													if ($formfield_haslinebreak) { echo "<br>"; } else { echo "&nbsp;"; }
 												}
 											?>
 									<? break;
-									case "date": ?><input type="date" name="<?=$formfield_id?>-date"><? break;
-									case "number": ?><input type="number" name="<?=$formfield_id?>-number"><? break;
-									case "string": ?><input type="text" name="<?=$formfield_id?>-string"><? break;
-									case "text": ?><textarea name="<?=$formfield_id?>-text"></textarea><? break;
+									case "date": ?><input type="date" name="<? =$formfield_id?>-date"><? break;
+									case "number": ?><input type="number" name="<? =$formfield_id?>-number"><? break;
+									case "string": ?><input type="text" name="<? =$formfield_id?>-string"><? break;
+									case "text": ?><textarea name="<? =$formfield_id?>-text"></textarea><? break;
 								}
 							?>
 						<? } ?>
@@ -921,8 +921,8 @@
 						<? if ($formfield_scored) {?>
 						<td><input type="text" size="2"></td>
 						<? } ?>
-						<td class="order"><?=$formfield_order?></td>
-						<td class="order"><?=$formfield_id?></td>
+						<td class="order"><? =$formfield_order?></td>
+						<td class="order"><? =$formfield_id?></td>
 					</tr>
 					<?
 				}
@@ -977,14 +977,14 @@
 			<tr>
 				<td>
 					<? if ($ispublished) { ?>
-					<a href="adminassessmentforms.php?action=viewform&id=<?=$id?>"><?=$title?></a>
+					<a href="adminassessmentforms.php?action=viewform&id=<? =$id?>"><? =$title?></a>
 					<? } else { ?>
-					<a href="adminassessmentforms.php?action=editform&id=<?=$id?>"><?=$title?></a>
+					<a href="adminassessmentforms.php?action=editform&id=<? =$id?>"><? =$title?></a>
 					<? } ?>
 				</td>
-				<td><?=$desc?></td>
-				<td><?=$creatorfullname?></td>
-				<td><?=$createdate?></td>
+				<td><? =$desc?></td>
+				<td><? =$creatorfullname?></td>
+				<td><? =$createdate?></td>
 				<td><? if ($ispublished) { echo "&#10004;"; } ?></td>
 			</tr>
 			<? 
@@ -1018,7 +1018,7 @@
 		?>
 		<form method="post" action="projects.php">
 		<input type="hidden" name="action" value="compareserieslists">
-		<input type="hidden" name="id" value="<?=$id?>">
+		<input type="hidden" name="id" value="<? =$id?>">
 		Series list from this server<br>
 		<textarea style="width: 100%; height: 300px" name="serieslist1" readonly><?
 		/* get all series associated with this project (MR only for now) */
@@ -1144,14 +1144,14 @@
 				$sp = explode(",", $localseries);
 				?>
 				<tr>
-					<td><?=$localuid?></td>
-					<td><?=$sp[0]?></td>
-					<td><?=$sp[1]?></td>
-					<td><?=$sp[2]?></td>
-					<td><?=$sp[3]?></td>
-					<td><?=$sp[4]?></td>
-					<td><?=$sp[5]?></td>
-					<td><?=$sp[6]?></td>
+					<td><? =$localuid?></td>
+					<td><? =$sp[0]?></td>
+					<td><? =$sp[1]?></td>
+					<td><? =$sp[2]?></td>
+					<td><? =$sp[3]?></td>
+					<td><? =$sp[4]?></td>
+					<td><? =$sp[5]?></td>
+					<td><? =$sp[6]?></td>
 				</tr>
 				<?
 			}
@@ -1270,7 +1270,7 @@
 				<div class="eight wide column">
 					<h2 class="ui header">
 						Subjects
-						<div class="sub header">Displaying <?=$numsubjects?> subjects</div>
+						<div class="sub header">Displaying <? =$numsubjects?> subjects</div>
 					</h2>
 				</div>
 				<div class="right aligned seven wide column">
@@ -1284,7 +1284,7 @@
 			<div class="content">
 				<form action="projects.php" method="post" class="ui form">
 					<input type="hidden" name="action" value="batchupdatesubject">
-					<input type="hidden" name="projectid" value="<?=$id?>">
+					<input type="hidden" name="projectid" value="<? =$id?>">
 					<div class="field">
 						<label>Paste .csv formatted data</label>
 						<textarea name="csv" style="font-family:monospace"></textarea>
@@ -1448,7 +1448,7 @@
 					{ headerName: "Enroll Sub-group", field: "enrollgroup", editable: true },
 				],
 
-				rowData: [ <?=$data?> ],
+				rowData: [ <? =$data?> ],
 				
 				// default col def properties get applied to all columns
 				defaultColDef: {sortable: true, filter: true, resizable: true},
@@ -1461,7 +1461,7 @@
 				suppressMovableColumns: true,
 				onCellEditingStopped: (event) => {
 
-					url = "ajaxapi.php?action=updatesubjectdetails&projectid=<?=$id?>&subjectid=" + event.data.id + "&enrollmentid=" + event.data.enrollmentid + "&column=" + event.column.getColDef().field + "&value=" + event.value;
+					url = "ajaxapi.php?action=updatesubjectdetails&projectid=<? =$id?>&subjectid=" + event.data.id + "&enrollmentid=" + event.data.enrollmentid + "&column=" + event.column.getColDef().field + "&value=" + event.value;
 					//console.log(url);
 					var xhttp = new XMLHttpRequest();
 					xhttp.onreadystatechange = function() {
@@ -1595,7 +1595,7 @@
 				<div class="eight wide column">
 					<h2 class="ui header">
 						Subjects
-						<div class="sub header">Displaying <?=$numsubjects?> subjects</div>
+						<div class="sub header">Displaying <? =$numsubjects?> subjects</div>
 					</h2>
 				</div>
 				<div class="right aligned seven wide column">
@@ -1676,7 +1676,7 @@
 					{ headerName: "Enroll Sub-group", field: "enrollgroup", editable: true },
 				],
 
-				rowData: [ <?=$data?> ],
+				rowData: [ <? =$data?> ],
 				
 				// default col def properties get applied to all columns
 				defaultColDef: {sortable: true, filter: true, resizable: true},
@@ -1690,7 +1690,7 @@
 				autoSizeStrategy: { type: 'fitCellContents' },
 				onCellEditingStopped: (event) => {
 
-					url = "ajaxapi.php?action=updatesubjectdetails&projectid=<?=$id?>&subjectid=" + event.data.id + "&column=" + event.column.getColDef().field + "&value=" + event.value;
+					url = "ajaxapi.php?action=updatesubjectdetails&projectid=<? =$id?>&subjectid=" + event.data.id + "&column=" + event.column.getColDef().field + "&value=" + event.value;
 					//console.log(url);
 					var xhttp = new XMLHttpRequest();
 					xhttp.onreadystatechange = function() {
@@ -1834,11 +1834,11 @@
 				<div class="eight wide column">
 					<h2 class="ui header">
 						Studies
-						<div class="sub header">Displaying <?=$numstudies?> studies</div>
+						<div class="sub header">Displaying <? =$numstudies?> studies</div>
 					</h2>
 				</div>
 				<div class="right aligned seven wide column">
-					<a href="projects.php?action=updatestudyage&id=<?=$id?>" class="ui small basic primary compact button" title="Set StudyAge to CalcStudyAge for all studies">Update StudyAge</a>
+					<a href="projects.php?action=updatestudyage&id=<? =$id?>" class="ui small basic primary compact button" title="Set StudyAge to CalcStudyAge for all studies">Update StudyAge</a>
 					<div class="ui small basic primary compact button" onClick="onBtnExport()"><i class="file excel outline icon"></i> Export table as .csv</div> &nbsp;
 				</div>
 			</div>
@@ -1928,7 +1928,7 @@
 					{ headerName: "Site", field: "site", editable: false },
 				],
 
-				rowData: [ <?=$data?> ],
+				rowData: [ <? =$data?> ],
 				
 				// default col def properties get applied to all columns
 				defaultColDef: {sortable: true, filter: true, resizable: true},
@@ -2018,7 +2018,7 @@
 								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 									$tag = $row['tag'];
 									?>
-									<option value="<?=$tag?>">
+									<option value="<? =$tag?>">
 									<?
 								}
 							?>
@@ -2045,7 +2045,7 @@
 									
 									if (strtotime($project_enddate) < strtotime("now")) { $style="color: gray"; } else { $style = ""; }
 									?>
-									<option value="<?=$project_id?>" style="<?=$style?>"><?=$project_name?> (<?=$project_costcenter?>)</option>
+									<option value="<? =$project_id?>" style="<? =$style?>"><? =$project_name?> (<? =$project_costcenter?>)</option>
 									<?
 								}
 							?>
@@ -2082,7 +2082,7 @@
 				<td align="right" valign="top">
 					<!-- save the form -->
 					<form method="post" action="projects.php" id="savetableform">
-					<input type="hidden" name="id" value="<?=$id?>">
+					<input type="hidden" name="id" value="<? =$id?>">
 					<input type="hidden" name="action" value="updatestudytable">
 					<input type="hidden" name="studytable" id="studytable">
 					<div align="right"><input class="ui primary button" type="submit" value="Save Studies Table"></div>
@@ -2141,7 +2141,7 @@
 		<br><br>
 		<form action="projects.php" method="post">
 		<input type="hidden" name="action" value="changealternatenames">
-		<input type="hidden" name="id" value="<?=$id?>">
+		<input type="hidden" name="id" value="<? =$id?>">
 		Click <b>Update</b> below to apply these changes to all studies associated with this project
 		<br><br>
 		<table class="ui very compact celled grey table">
@@ -2161,10 +2161,10 @@
 				$currentaltdesc = $altdesc[$series][$modality];
 				?>
 				<tr>
-					<td><?=strtoupper($modality)?></td>
-					<td><tt><?=$series?></tt></td>
-					<td><?=$count?></td>
-					<td><input type="hidden" name="modalities[<?=$i?>]" value="<?=strtolower($modality)?>"><input type="hidden" name="oldname[<?=$i?>]" value="<?=$series?>"><input type="text" name="newname[<?=$i?>]" value="<?=$currentaltdesc?>"></td>
+					<td><? =strtoupper($modality)?></td>
+					<td><tt><? =$series?></tt></td>
+					<td><? =$count?></td>
+					<td><input type="hidden" name="modalities[<? =$i?>]" value="<? =strtolower($modality)?>"><input type="hidden" name="oldname[<? =$i?>]" value="<? =$series?>"><input type="text" name="newname[<? =$i?>]" value="<? =$currentaltdesc?>"></td>
 				</tr>
 				<?
 				$i++;
@@ -2246,14 +2246,14 @@
 		foreach ($seriesdescs as $uid => $modalities) {
 			?>
 			<tr>
-				<td><?=$uid?></td>
+				<td><? =$uid?></td>
 				<?
 				foreach ($uniqueseries as $modality => $series) {
 					foreach ($series as $ser => $count) {
 						$localcount = $seriesdescs[$uid][$modality][$ser];
 						if ($localcount > 0) { $bgcolor = "#CAFFC4"; } else { $bgcolor = ""; $localcount = "-"; }
 						?>
-							<td style="background-color: <?=$bgcolor?>"><?=$localcount?></td>
+							<td style="background-color: <? =$bgcolor?>"><? =$localcount?></td>
 						<?
 					}
 				}
@@ -2321,7 +2321,7 @@
 		<div class="ui text container grid">
 		<form action="projects.php" method="post">
 		<input type="hidden" name="action" value="updatebidsmapping">
-		<input type="hidden" name="id" value="<?=$projectid?>">
+		<input type="hidden" name="id" value="<? =$projectid?>">
 		<b>BIDS mapping</b>
 		<br>
 		This mapping is used in exporting of BIDS format. This can also be used to group protocol names together: for example, protocols named <tt>AXMPRAGE</tt> and <tt>T1w</tt> are both <tt>anat</tt>.
@@ -2345,13 +2345,13 @@
 				$shortname = $mapping[$modality][$series];
 				?>
 				<tr>
-					<td><?=strtoupper($modality)?></td>
-					<td><tt><?=$series?></tt></td>
+					<td><? =strtoupper($modality)?></td>
+					<td><tt><? =$series?></tt></td>
 					<td>
-						<input type="hidden" name="modalities[<?=$i?>]" value="<?=strtolower($modality)?>">
-						<input type="hidden" name="oldname[<?=$i?>]" value="<?=$series?>">
+						<input type="hidden" name="modalities[<? =$i?>]" value="<? =strtolower($modality)?>">
+						<input type="hidden" name="oldname[<? =$i?>]" value="<? =$series?>">
 						<div class="ui fluid input">
-							<input type="text" name="newname[<?=$i?>]" value="<?=$shortname?>">
+							<input type="text" name="newname[<? =$i?>]" value="<? =$shortname?>">
 						</div>
 					</td>
 				</tr>
@@ -2363,7 +2363,7 @@
 			<tr>
 				<td colspan="3" align="right">
 					<div class="column" align="right">
-						<button class="ui button" onClick="window.location.href='projects.php?id=<?=$projectid?>'; return false;">Cancel</button>
+						<button class="ui button" onClick="window.location.href='projects.php?id=<? =$projectid?>'; return false;">Cancel</button>
 						<input class="ui primary button" type="submit" id="submit" value="Update">
 					</div>
 				</td>
@@ -2457,7 +2457,7 @@
 		<div class="ui text container grid">
 		<form action="projects.php" method="post">
 		<input type="hidden" name="action" value="updatendamapping">
-		<input type="hidden" name="id" value="<?=$projectid?>">
+		<input type="hidden" name="id" value="<? =$projectid?>">
 		<b>NDA mapping</b>
 		<br>
 		This mapping is used in exporting of NDA format
@@ -2482,12 +2482,12 @@
 				$experiment_id = $mapping[$modality][$series];
 				?>
 				<tr>
-					<td><?=strtoupper($modality)?></td>
-					<td><tt><?=$series?></tt></td>
+					<td><? =strtoupper($modality)?></td>
+					<td><tt><? =$series?></tt></td>
 					<td>
-						<input type="hidden" name="modalities[<?=$i?>]" value="<?=strtolower($modality)?>"><input type="hidden" name="protocolname[<?=$i?>]" value="<?=$series?>">
+						<input type="hidden" name="modalities[<? =$i?>]" value="<? =strtolower($modality)?>"><input type="hidden" name="protocolname[<? =$i?>]" value="<? =$series?>">
 						<div class="ui input">
-							<input type="text" name="experimentid[<?=$i?>]" value="<?=$experiment_id?>">
+							<input type="text" name="experimentid[<? =$i?>]" value="<? =$experiment_id?>">
 						</div>
 					</td>
 				</tr>
@@ -2499,7 +2499,7 @@
 			<tr>
 				<td colspan="3">
 				<div class="column" align="right">
-					<button class="ui button" onClick="window.location.href='projects.php?id=<?=$projectid?>'; return false;">Cancel</button>
+					<button class="ui button" onClick="window.location.href='projects.php?id=<? =$projectid?>'; return false;">Cancel</button>
 					<input class="ui primary button" type="submit" id="submit" value="Update">
 				</div>
 				</td>
@@ -2591,10 +2591,10 @@
 		<div class="ui text container grid">
 		<form action="projects.php" method="post">
 		<input type="hidden" name="action" value="updateexperimentmapping">
-		<input type="hidden" name="id" value="<?=$projectid?>">
+		<input type="hidden" name="id" value="<? =$projectid?>">
 		<b>Experiment mapping</b>
 		<br>
-		This mapping associates <a href="experiment.php?projectid=<?=$projectid?>">experiments</a> with protocol names.
+		This mapping associates <a href="experiment.php?projectid=<? =$projectid?>">experiments</a> with protocol names.
 		<br><br>
 		<table class="ui small celled selectable grey compact table">
 			<thead>
@@ -2621,12 +2621,12 @@
 		
 				?>
 				<tr>
-					<td><?=strtoupper($modality)?></td>
-					<td><tt><?=$series?></tt></td>
+					<td><? =strtoupper($modality)?></td>
+					<td><tt><? =$series?></tt></td>
 					<td>
-						<input type="hidden" name="modalities[<?=$i?>]" value="<?=strtolower($modality)?>"><input type="hidden" name="protocolname[<?=$i?>]" value="<?=$series?>">
-						<!--<input type="text" name="experimentid[<?=$i?>]" value="<?=$experiment_id?>">-->
-						<select class="ui selection dropdown" name="experimentid[<?=$i?>]">
+						<input type="hidden" name="modalities[<? =$i?>]" value="<? =strtolower($modality)?>"><input type="hidden" name="protocolname[<? =$i?>]" value="<? =$series?>">
+						<!--<input type="text" name="experimentid[<? =$i?>]" value="<? =$experiment_id?>">-->
+						<select class="ui selection dropdown" name="experimentid[<? =$i?>]">
 							<option value="">Select experiment...</option>
 						<?
 							foreach ($experiments as $expid => $name) {
@@ -2645,7 +2645,7 @@
 			<tr>
 				<td colspan="3">
 				<div class="column" align="right">
-					<button class="ui button" onClick="window.location.href='projects.php?id=<?=$projectid?>'; return false;">Cancel</button>
+					<button class="ui button" onClick="window.location.href='projects.php?id=<? =$projectid?>'; return false;">Cancel</button>
 					<input class="ui primary button" type="submit" id="submit" value="Update">
 				</div>
 				</td>
@@ -2768,20 +2768,20 @@
 			<div class="ui grid">
 				<div class="six wide column">
 					<h1 class="ui header">
-						<?=$name?>
+						<? =$name?>
 						<? if ($favorite) { ?>
-						<a href="projects.php?action=unsetfavorite&id=<?=$id?>"><i class="yellow star icon" title="Click to remove this project from your favorites"></i></a>
+						<a href="projects.php?action=unsetfavorite&id=<? =$id?>"><i class="yellow star icon" title="Click to remove this project from your favorites"></i></a>
 						<? } else { ?>
-						<a href="projects.php?action=setfavorite&id=<?=$id?>"><i class="grey star outline icon" title="Click to add this project to your favorites"></i></a><br>
+						<a href="projects.php?action=setfavorite&id=<? =$id?>"><i class="grey star outline icon" title="Click to add this project to your favorites"></i></a><br>
 						<? } ?>
-						<div class="sub header"><?=$numsubjects?> subjects &nbsp; &nbsp; <?=$numstudies?> studies</div>
+						<div class="sub header"><? =$numsubjects?> subjects &nbsp; &nbsp; <? =$numstudies?> studies</div>
 					</h1>
 				</div>
 				<div class="ten wide column">
-					<a class="ui green button" href="projects.php?action=editsubjects&id=<?=$id?>">
+					<a class="ui green button" href="projects.php?action=editsubjects&id=<? =$id?>">
 						<i class="user friends icon"></i> Subjects
 					</a>
-					<a class="ui green button" href="projects.php?action=displaystudies&id=<?=$id?>">
+					<a class="ui green button" href="projects.php?action=displaystudies&id=<? =$id?>">
 						<i class="project diagram icon"></i> Studies
 					</a>
 				</div>
@@ -2922,11 +2922,11 @@
 			$project = $seriesdescs[$uid]['project'];
 			?>
 			<tr>
-				<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
-				<td><?=$altuid?></td>
-				<td><?=$age?></td>
-				<td><?=$dob?></td>
-				<td><?=$project?></td>
+				<td><a href="subjects.php?id=<? =$subjectid?>"><? =$uid?></a></td>
+				<td><? =$altuid?></td>
+				<td><? =$age?></td>
+				<td><? =$dob?></td>
+				<td><? =$project?></td>
 				<?
 				foreach ($uniqueseries as $modality => $series) {
 					foreach ($series as $ser => $count) {
@@ -2934,7 +2934,7 @@
 						if ($localcount > 0) { $bgcolor = "#CAFFC4"; } else { $bgcolor = ""; $localcount = "-"; }
 						#if ($localcount > 0) { $bgcolor = "green"; } else { $bgcolor = "";}
 						?>
-							<td style="background-color: <?=$bgcolor?>"><?=$localcount?></td>
+							<td style="background-color: <? =$bgcolor?>"><? =$localcount?></td>
 						<?
 					}
 				}
@@ -3048,18 +3048,18 @@
 							?>
 							<tr valign="top">
 								<td>
-									<b><a href="projects.php?id=<?=$id?>"><?=$name?></b>
+									<b><a href="projects.php?id=<? =$id?>"><? =$name?></b>
 									<? if ($favorite) { ?>
-									<a href="projects.php?action=unsetfavorite&id=<?=$id?>"><i class="yellow star icon" title="Click to remove this project from your favorites"></i></a>
+									<a href="projects.php?action=unsetfavorite&id=<? =$id?>"><i class="yellow star icon" title="Click to remove this project from your favorites"></i></a>
 									<? } else { ?>
-									<a href="projects.php?action=setfavorite&id=<?=$id?>"><i class="grey star outline icon" title="Click to add this project to your favorites"></i></a><br>
+									<a href="projects.php?action=setfavorite&id=<? =$id?>"><i class="grey star outline icon" title="Click to add this project to your favorites"></i></a><br>
 									<? } ?>
 									
 								</td>
-								<td><?=$projectuid?></td>
-								<td><?=$costcenter?></td>
-								<td><?=$adminfullname?></td>
-								<td><?=$pifullname?></td>
+								<td><? =$projectuid?></td>
+								<td><? =$costcenter?></td>
+								<td><? =$adminfullname?></td>
+								<td><? =$pifullname?></td>
 								<?
 								$totalstudies = 0;
 								$totalsize = 0.0;
@@ -3087,8 +3087,8 @@
 								}
 								$studydetail = "<ul>$studydetail<ul>";
 								?>
-								<td align="left" title="<?=$studydetail?>">
-									<?=$totalstudies?>
+								<td align="left" title="<? =$studydetail?>">
+									<? =$totalstudies?>
 								</td>
 							</tr>
 							<?
@@ -3096,7 +3096,7 @@
 						else {
 						?>
 							<tr>
-								<td style="color: #999; padding-left: 20px">No access to <b><?=$name?></b></td>
+								<td style="color: #999; padding-left: 20px">No access to <b><? =$name?></b></td>
 								<td></td>
 								<td></td>
 								<td></td>
@@ -3148,8 +3148,8 @@
 				<div class="ui styled segment">
 					<h2 class="ui header">
 						<i class="blue user icon"></i>
-						<?=$pifullname?>
-						<div class="sub header"><?=$piusername?></div>
+						<? =$pifullname?>
+						<div class="sub header"><? =$piusername?></div>
 					</h2>
 					<table class="ui scrolling table">
 						<thead>
@@ -3175,16 +3175,16 @@
 				?>
 				<tr valign="top">
 					<td>
-						<b><a href="projects.php?id=<?=$id?>"><?=$name?></b>
+						<b><a href="projects.php?id=<? =$id?>"><? =$name?></b>
 						<? if ($favorite) { ?>
-						<a href="projects.php?action=unsetfavorite&id=<?=$id?>"><i class="yellow star icon" title="Click to remove this project from your favorites"></i></a>
+						<a href="projects.php?action=unsetfavorite&id=<? =$id?>"><i class="yellow star icon" title="Click to remove this project from your favorites"></i></a>
 						<? } else { ?>
-						<a href="projects.php?action=setfavorite&id=<?=$id?>"><i class="grey star outline icon" title="Click to add this project to your favorites"></i></a><br>
+						<a href="projects.php?action=setfavorite&id=<? =$id?>"><i class="grey star outline icon" title="Click to add this project to your favorites"></i></a><br>
 						<? } ?>
 					</td>
-					<td><?=$projectuid?></td>
-					<td><?=$costcenter?></td>
-					<td><?=$adminfullname?></td>
+					<td><? =$projectuid?></td>
+					<td><? =$costcenter?></td>
+					<td><? =$adminfullname?></td>
 					<?
 					$totalstudies = 0;
 					$totalsize = 0.0;
@@ -3212,8 +3212,8 @@
 					}
 					$studydetail = "<ul>$studydetail<ul>";
 					?>
-					<td align="left" title="<?=$studydetail?>">
-						<?=$totalstudies?>
+					<td align="left" title="<? =$studydetail?>">
+						<? =$totalstudies?>
 					</td>
 				</tr>
 				<?
@@ -3221,7 +3221,7 @@
 			else {
 			?>
 				<tr>
-					<td colspan="5">No access to <b><?=$name?></b></td>
+					<td colspan="5">No access to <b><? =$name?></b></td>
 				</tr>
 			<?
 			}
@@ -3270,8 +3270,8 @@
 				<div class="ui styled segment">
 					<h2 class="ui header">
 						<i class="blue user icon"></i>
-						<?=$adminfullname?>
-						<div class="sub header"><?=$adminusername?></div>
+						<? =$adminfullname?>
+						<div class="sub header"><? =$adminusername?></div>
 					</h2>
 					<table class="ui scrolling table">
 						<thead>
@@ -3297,16 +3297,16 @@
 				?>
 				<tr valign="top">
 					<td>
-						<b><a href="projects.php?id=<?=$id?>"><?=$name?></b>
+						<b><a href="projects.php?id=<? =$id?>"><? =$name?></b>
 						<? if ($favorite) { ?>
-						<a href="projects.php?action=unsetfavorite&id=<?=$id?>"><i class="yellow star icon" title="Click to remove this project from your favorites"></i></a>
+						<a href="projects.php?action=unsetfavorite&id=<? =$id?>"><i class="yellow star icon" title="Click to remove this project from your favorites"></i></a>
 						<? } else { ?>
-						<a href="projects.php?action=setfavorite&id=<?=$id?>"><i class="grey star outline icon" title="Click to add this project to your favorites"></i></a><br>
+						<a href="projects.php?action=setfavorite&id=<? =$id?>"><i class="grey star outline icon" title="Click to add this project to your favorites"></i></a><br>
 						<? } ?>
 					</td>
-					<td><?=$projectuid?></td>
-					<td><?=$costcenter?></td>
-					<td><?=$pifullname?></td>
+					<td><? =$projectuid?></td>
+					<td><? =$costcenter?></td>
+					<td><? =$pifullname?></td>
 					<?
 					$totalstudies = 0;
 					$totalsize = 0.0;
@@ -3334,8 +3334,8 @@
 					}
 					$studydetail = "<ul>$studydetail<ul>";
 					?>
-					<td align="left" title="<?=$studydetail?>">
-						<?=$totalstudies?>
+					<td align="left" title="<? =$studydetail?>">
+						<? =$totalstudies?>
 					</td>
 				</tr>
 				<?
@@ -3343,7 +3343,7 @@
 			else {
 			?>
 				<tr>
-					<td colspan="5">No access to <b><?=$name?></b></td>
+					<td colspan="5">No access to <b><? =$name?></b></td>
 				</tr>
 			<?
 			}
@@ -3375,8 +3375,8 @@
 							$subject = $row2['label'];
 		?>
 				  <tr>	
-					<td><?=$subject?></td>
-					<td><?=$series?></td> 
+					<td><? =$subject?></td>
+					<td><? =$series?></td> 
 				  </tr>
 		<?
 		}

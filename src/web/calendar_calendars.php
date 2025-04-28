@@ -108,11 +108,11 @@
 					$location = $row['calendar_location'];
 					?>
 					<tr>
-						<td><a href="calendar_calendars.php?action=editform&id=<?=$id?>" class="ui button"><i class="edit icon"></i><?=$name?></a></td>
-						<td><?=$description?></td>
-						<td><?=$location?></td>
+						<td><a href="calendar_calendars.php?action=editform&id=<? =$id?>" class="ui button"><i class="edit icon"></i><? =$name?></a></td>
+						<td><? =$description?></td>
+						<td><? =$location?></td>
 						<td class="center aligned">
-							<a href="calendar_calendars.php?action=delete&id=<?=$id?>" onclick="return confirm('Are you sure?')"><i class="ui red alternate trash icon"></i></a>
+							<a href="calendar_calendars.php?action=delete&id=<? =$id?>" onclick="return confirm('Are you sure?')"><i class="ui red alternate trash icon"></i></a>
 						</td>
 					</tr>
 					<?
@@ -190,19 +190,19 @@
 				<td colspan="3" style="color: darkblue; font-size: 14pt; text-align:center; font-weight: bold">Add Calendar</td>
 			</tr>
 			<tr>
-				<td colspan="2" align="center" style="color:red"><?=$message?></td>
+				<td colspan="2" align="center" style="color:red"><? =$message?></td>
 			</tr>
 			<tr>
 				<td class="label">Calendar Name<br><span class="tiny">short name</span></td>
-				<td class="rightvalue"><input type="text" name="name" class="required" value="<?=$name?>"></td>
+				<td class="rightvalue"><input type="text" name="name" class="required" value="<? =$name?>"></td>
 			</tr>
 			<tr>
 				<td class="label">Description</td>
-				<td class="rightvalue"><input type="text" name="description" class="required" size="50" value="<?=$description?>"></td>
+				<td class="rightvalue"><input type="text" name="description" class="required" size="50" value="<? =$description?>"></td>
 			</tr>
 			<tr>
 				<td class="label">Location</td>
-				<td class="rightvalue"><input type="text" name="location" class="required" value="<?=$location?>"></td>
+				<td class="rightvalue"><input type="text" name="location" class="required" value="<? =$location?>"></td>
 			</tr>
 		</table>
 		<p><input type="submit" value="Add" name="submit"></p>
@@ -227,26 +227,26 @@
 		
 		<form action="calendar_calendars.php" method="post" id="form1">
 		<input type="hidden" name="action" value="edit">
-		<input type="hidden" name="id" value="<?=$id?>">
+		<input type="hidden" name="id" value="<? =$id?>">
 		
 		<table cellspacing="0" cellpadding="5" class="editor">
 			<tr>
 				<td colspan="3" style="color: darkblue; font-size: 14pt; text-align:center; font-weight: bold">Edit Calendar</td>
 			</tr>
 			<tr>
-				<td colspan="2" align="center" style="color:red"><?=$message?></td>
+				<td colspan="2" align="center" style="color:red"><? =$message?></td>
 			</tr>
 			<tr>
 				<td class="label">Calendar Name<br><span class="tiny">short name</span></td>
-				<td class="rightvalue"><input type="text" name="name" class="required" value="<?=$name?>"></td>
+				<td class="rightvalue"><input type="text" name="name" class="required" value="<? =$name?>"></td>
 			</tr>
 			<tr>
 				<td class="label">Description</td>
-				<td class="rightvalue"><input type="text" name="description" class="required" size="50" value="<?=$description?>"></td>
+				<td class="rightvalue"><input type="text" name="description" class="required" size="50" value="<? =$description?>"></td>
 			</tr>
 			<tr>
 				<td class="label">Location</td>
-				<td class="rightvalue"><input type="text" name="location" class="required" value="<?=$location?>"></td>
+				<td class="rightvalue"><input type="text" name="location" class="required" value="<? =$location?>"></td>
 			</tr>
 		</table>
 		<p><input type="submit" value="Save" name="submit"></p>

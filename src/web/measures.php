@@ -134,7 +134,7 @@
 	function DisplayMeasureList($enrollmentid) {
 		
 		if ((trim($enrollmentid) == "") || ($enrollment_id < 0)) {
-			?>Invalid or blank enrollment ID [<?=$enrollment_id?>]<?
+			?>Invalid or blank enrollment ID [<? =$enrollment_id?>]<?
 			return;
 		}
 		
@@ -178,7 +178,7 @@
 		<div class="ui segment">		
 			<form action="measures.php" method="post" class="ui form">
 				<input type="hidden" name="action" value="addmeasure">
-				<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
+				<input type="hidden" name="enrollmentid" value="<? =$enrollmentid?>">
 				
 				<div class="eight fields">
 					<div class="field">
@@ -195,7 +195,7 @@
 					</div>
 					<div class="field">
 						<label>Rater</label>
-						<input type="text" name="measure_rater" size="15" value="<?=$GLOBALS['username']?>">
+						<input type="text" name="measure_rater" size="15" value="<? =$GLOBALS['username']?>">
 					</div>
 					<div class="field">
 						<label>Start date</label>
@@ -312,19 +312,19 @@
 							});
 						</script>
 						<tr>
-							<td><?=$measure_name?></td>
-							<td><?=$instrument_name?></td>
-							<td><?=$measure_value?></td>
-							<!--<td><?=$measure_notes?></td>-->
-							<td><?=$series?></td>
-							<td style="font-size: 9pt"><?=$measure_rater?></td>
-							<td><?=$measure_startdate?></td>
-							<td><?=$measure_duration?></td>
-							<td><?=$measure_enddate?></td>
+							<td><? =$measure_name?></td>
+							<td><? =$instrument_name?></td>
+							<td><? =$measure_value?></td>
+							<!--<td><? =$measure_notes?></td>-->
+							<td><? =$series?></td>
+							<td style="font-size: 9pt"><? =$measure_rater?></td>
+							<td><? =$measure_startdate?></td>
+							<td><? =$measure_duration?></td>
+							<td><? =$measure_enddate?></td>
 							<td class="center aligned" style="border-right: 1px solid #666">
-								<a href="measures.php?action=deletemeasure&measureid=<?=$measureid?>&enrollmentid=<?=$enrollmentid?>" title="Delete this variable" onClick="return confirm('Are you sure you want to delete this record?')"><i class="red alternate trash icon"></i></a>
+								<a href="measures.php?action=deletemeasure&measureid=<? =$measureid?>&enrollmentid=<? =$enrollmentid?>" title="Delete this variable" onClick="return confirm('Are you sure you want to delete this record?')"><i class="red alternate trash icon"></i></a>
 							</td>
-							<td title="<b>Entry</b> <?=$measure_entrydate?><br><b>Create</b> <?=$measure_createdate?><br><b>Modify</b> <?=$measure_modifydate?>">
+							<td title="<b>Entry</b> <? =$measure_entrydate?><br><b>Create</b> <? =$measure_createdate?><br><b>Modify</b> <? =$measure_modifydate?>">
 							<i class="calendar alternate outline icon"></i>
 							</td>
 						</tr>

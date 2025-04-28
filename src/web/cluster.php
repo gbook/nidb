@@ -82,7 +82,7 @@
 		//PrintVariable($statsoutput);
 
 		$hostname = $queue = "";
-		$hostnames = $queues = null;
+		$hostnames = $queues = array();
 
 		foreach ($statsoutput as $line) {
 			$line = trim($line);
@@ -227,13 +227,13 @@ echo "$line\n";
 						
 						?>
 						<tr>
-							<td><?=$hostname?></td>
-							<td><?=$arch?></td>
-							<td><?=$states?></td>
-							<td><?=$load?></td>
-							<td><?=$slotsavailable?></td>
+							<td><? =$hostname?></td>
+							<td><? =$arch?></td>
+							<td><? =$states?></td>
+							<td><? =$load?></td>
+							<td><? =$slotsavailable?></td>
 							
-							<td><img src="horizontalchart.php?b=yes&w=200&h=10&v=<?=$slotsused?>,<?=($slotsavailable-$slotsused)?>&c=<?=$slotsusedcolor?>,<?=$slotsunusedcolor?>"> &nbsp; <span class="tiny"><?=$slotsused?> of <?=$slotsavailable?></span></td>
+							<td><img src="horizontalchart.php?b=yes&w=200&h=10&v=<? =$slotsused?>,<? =($slotsavailable-$slotsused)?>&c=<? =$slotsusedcolor?>,<? =$slotsunusedcolor?>"> &nbsp; <span class="tiny"><? =$slotsused?> of <? =$slotsavailable?></span></td>
 						</tr>
 						<?
 					}
@@ -244,8 +244,8 @@ echo "$line\n";
 					<td></td>
 					<td></td>
 					<td></td>
-					<td><?=$totalClusterSlotsAvailable?></td>
-					<td><img src="horizontalchart.php?b=yes&w=200&h=10&v=<?=$totalClusterSlotsUsed?>,<?=($totalClusterSlotsAvailable-$totalClusterSlotsUsed)?>&c=darkred,<?=$slotsunusedcolor?>"> &nbsp; <?=$totalClusterSlotsUsed?> of <?=$totalClusterSlotsAvailable?></td>
+					<td><? =$totalClusterSlotsAvailable?></td>
+					<td><img src="horizontalchart.php?b=yes&w=200&h=10&v=<? =$totalClusterSlotsUsed?>,<? =($totalClusterSlotsAvailable-$totalClusterSlotsUsed)?>&c=darkred,<? =$slotsunusedcolor?>"> &nbsp; <? =$totalClusterSlotsUsed?> of <? =$totalClusterSlotsAvailable?></td>
 				</tr>
 				</tfoot>
 			</table>
@@ -294,9 +294,9 @@ echo "$line\n";
 									}
 									?>
 									<tr>
-										<td><b><?=$queue?></b> &nbsp;</td>
+										<td><b><? =$queue?></b> &nbsp;</td>
 										<td>
-											<img src="horizontalchart.php?b=yes&w=600&h=25&v=<?=$slotsused?>,<?=($slotsunused-$slotsused)?>&c=<?=$slotsusedcolor?>,<?=$slotsunusedcolor?>">
+											<img src="horizontalchart.php?b=yes&w=600&h=25&v=<? =$slotsused?>,<? =($slotsunused-$slotsused)?>&c=<? =$slotsusedcolor?>,<? =$slotsunusedcolor?>">
 											<? if (($slotsused == 0) && ($slotsunused == 0)) { echo "Idle"; } else { echo "$slotsused of $slotsunused"; } ?>
 										</td>
 									</tr>

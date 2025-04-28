@@ -71,7 +71,7 @@
 			$description = $row['calendar_description'];
 			$location = $row['calendar_location'];
 			?>
-			<a href="calendar_select.php?action=set&currentcal=<?=$id?>"><b><?=$name?></b></a> - <?=$location?><br>
+			<a href="calendar_select.php?action=set&currentcal=<? =$id?>"><b><? =$name?></b></a> - <? =$location?><br>
 			<?
 		}
 		?>

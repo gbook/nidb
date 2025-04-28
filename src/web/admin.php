@@ -106,8 +106,8 @@
 						<i class="cloud download alternate icon"></i>
 						<div class="content">
 							<div class="header">Update available</div>
-							Current version [v<?=GetNiDBVersion();?>]<br>
-							Latest version [v<?=$latestnidb;?>]<br>
+							Current version [v<? =GetNiDBVersion();?>]<br>
+							Latest version [v<? =$latestnidb;?>]<br>
 							<br>
 							To upgrade, install .rpm from <a href="http://github.com/gbook/nidb"><i class="github icon"></i> github</a>, then return here to <a href="setup.php" class="ui basic button"><i class="wrench icon"></i> Setup/Upgrade</a>
 						</div>
@@ -121,7 +121,7 @@
 						<i class="check circle icon"></i>
 						<div class="content">
 							<div class="header">NiDB is up to date</div>
-							Current NiDB version <b>v<?=GetNiDBVersion();?></b><br>
+							Current NiDB version <b>v<? =GetNiDBVersion();?></b><br>
 							<br>
 						</div>
 					</div>
@@ -214,10 +214,10 @@
 				$linkdesc = $row['link_desc'];
 				?>
 				<div class="item">
-					<div class="right floated content"><a href="admin.php?action=deletelink&linkid=<?=$linkid?>"><i class="red trash icon"></i></div>
+					<div class="right floated content"><a href="admin.php?action=deletelink&linkid=<? =$linkid?>"><i class="red trash icon"></i></div>
 					<div class="content">
-						<h3 class="header"><a href="<?=$linkurl?>"><?=$linktext?></a></h3>
-						<div class="description"><?=$linkdesc?></div>
+						<h3 class="header"><a href="<? =$linkurl?>"><? =$linktext?></a></h3>
+						<div class="description"><? =$linkdesc?></div>
 					</div>
 				</div>
 				<?

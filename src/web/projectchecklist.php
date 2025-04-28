@@ -165,15 +165,15 @@
 			<legend><b>Enter reason for missing data</b></legend>
 			<form>
 				<input type="hidden" name="action" value="setmissingdatareason">
-				<input type="hidden" name="missingdataid" value="<?=$missingdataid?>">
-				<input type="hidden" name="projectid" value="<?=$projectid?>">
-				<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
-				<input type="hidden" name="projectchecklistid" value="<?=$projectchecklistid?>">
-				<input type="text" name="reason" style="border: 1px solid #888" value="<?=$reason?>">
+				<input type="hidden" name="missingdataid" value="<? =$missingdataid?>">
+				<input type="hidden" name="projectid" value="<? =$projectid?>">
+				<input type="hidden" name="enrollmentid" value="<? =$enrollmentid?>">
+				<input type="hidden" name="projectchecklistid" value="<? =$projectchecklistid?>">
+				<input type="text" name="reason" style="border: 1px solid #888" value="<? =$reason?>">
 				<input type="submit" value="Save">
 			</form>
 			<br><br><br>
-			<a href="projectchecklist.php?action=deletemissingdatareason&projectid=<?=$projectid?>&enrollmentid=<?=$enrollmentid?>&missingdataid=<?=$missingdataid?>">Delete</a> this missing data reason
+			<a href="projectchecklist.php?action=deletemissingdatareason&projectid=<? =$projectid?>&enrollmentid=<? =$enrollmentid?>&missingdataid=<? =$missingdataid?>">Delete</a> this missing data reason
 			</fieldset>
 		</div>
 		<?
@@ -239,7 +239,7 @@
 		$neworder = 1;
 
 	?>
-	<!--<a href="projectchecklist.php?action=editchecklist&projectid=<?=$projectid?>" class="ui primary basic button">Edit checklist</a>-->
+	<!--<a href="projectchecklist.php?action=editchecklist&projectid=<? =$projectid?>" class="ui primary basic button">Edit checklist</a>-->
 
 	<datalist id="modalitylist">
 		<?
@@ -247,7 +247,7 @@
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$modcode = $row['mod_code'];
-				?><option value="<?=$modcode?>"><?
+				?><option value="<? =$modcode?>"><?
 			}
 		?>
 	</datalist>
@@ -256,7 +256,7 @@
 		<h2 class="ui header">List of expected <u>imaging</u> items for this project</h2>
 		<form method="POST" action="projectchecklist.php">
 		<input type="hidden" name="action" value="updateprojectchecklist">
-		<input type="hidden" name="projectid" value="<?=$projectid?>">
+		<input type="hidden" name="projectid" value="<? =$projectid?>">
 		<table class="ui small very compact table">
 			<thead>
 				<tr>
@@ -284,30 +284,30 @@
 						//frequency_unit	enum('hour', 'day', 'week', 'month', 'year')					
 						
 				?>
-				<input type="hidden" name="itemid[<?=$neworder?>]" value="<?=$id?>">
+				<input type="hidden" name="itemid[<? =$neworder?>]" value="<? =$id?>">
 				<tr>
-					<td><div class="ui input"><input type="number" name="itemorder[<?=$neworder?>]" value="<?=$neworder?>" style="width:40px"></div></td>
-					<td><div class="ui input"><input type="text" name="itemname[<?=$neworder?>]" value="<?=$itemname?>" size="50"></div></td>
-					<td><div class="ui input"><input type="text" name="modality[<?=$neworder?>]" value="<?=$modality?>" list="modalitylist"></div></td>
-					<td><div class="ui input"><input type="text" name="protocol[<?=$neworder?>]" value="<?=$protocol?>" size="50"></div></td>
-					<td><div class="ui input"><input type="number" name="itemcount[<?=$neworder?>]" value="<?=$itemcount?>" style="width:40px"></div></td>
-					<!--<td><input type="text" name="frequency[<?=$neworder?>]" value="<?=$frequency?>"></td>-->
-					<!--<td><input type="text" name="frequencyunit[<?=$neworder?>]" value="<?=$frequencyunit?>"></td>-->
+					<td><div class="ui input"><input type="number" name="itemorder[<? =$neworder?>]" value="<? =$neworder?>" style="width:40px"></div></td>
+					<td><div class="ui input"><input type="text" name="itemname[<? =$neworder?>]" value="<? =$itemname?>" size="50"></div></td>
+					<td><div class="ui input"><input type="text" name="modality[<? =$neworder?>]" value="<? =$modality?>" list="modalitylist"></div></td>
+					<td><div class="ui input"><input type="text" name="protocol[<? =$neworder?>]" value="<? =$protocol?>" size="50"></div></td>
+					<td><div class="ui input"><input type="number" name="itemcount[<? =$neworder?>]" value="<? =$itemcount?>" style="width:40px"></div></td>
+					<!--<td><input type="text" name="frequency[<? =$neworder?>]" value="<? =$frequency?>"></td>-->
+					<!--<td><input type="text" name="frequencyunit[<? =$neworder?>]" value="<? =$frequencyunit?>"></td>-->
 				</tr>
 				<? 
 						$neworder++;
 					}
 					for ($i=0;$i<5;$i++) {
 				?>
-				<input type="hidden" name="itemid[<?=$neworder?>]" value="">
+				<input type="hidden" name="itemid[<? =$neworder?>]" value="">
 				<tr>
-					<td><div class="ui input"><input type="number" name="itemorder[<?=$neworder?>]" value="<?=$neworder?>" style="width:80px"></div></td>
-					<td><div class="ui input"><input type="text" name="itemname[<?=$neworder?>]" size="50"></div></td>
-					<td><div class="ui input"><input type="text" name="modality[<?=$neworder?>]" list="modalitylist"></div></td>
-					<td><div class="ui input"><input type="text" name="protocol[<?=$neworder?>]" size="50"></div></td>
-					<td><div class="ui input"><input type="number" name="itemcount[<?=$neworder?>]" style="width:80px" value="1"></div></td>
-					<!--<td><input type="text" name="frequency[<?=$neworder?>]"></td>-->
-					<!--<td><input type="text" name="frequencyunit[<?=$neworder?>]"></td>-->
+					<td><div class="ui input"><input type="number" name="itemorder[<? =$neworder?>]" value="<? =$neworder?>" style="width:80px"></div></td>
+					<td><div class="ui input"><input type="text" name="itemname[<? =$neworder?>]" size="50"></div></td>
+					<td><div class="ui input"><input type="text" name="modality[<? =$neworder?>]" list="modalitylist"></div></td>
+					<td><div class="ui input"><input type="text" name="protocol[<? =$neworder?>]" size="50"></div></td>
+					<td><div class="ui input"><input type="number" name="itemcount[<? =$neworder?>]" style="width:80px" value="1"></div></td>
+					<!--<td><input type="text" name="frequency[<? =$neworder?>]"></td>-->
+					<!--<td><input type="text" name="frequencyunit[<? =$neworder?>]"></td>-->
 				</tr>
 				<?
 						$neworder++;
@@ -392,11 +392,11 @@
 		
 		<div class="ui two column grid">
 			<div class="column">
-				<h2 class="ui header"><?=$projectname?> Checklist</h2>
-				Displaying <b><?=$numenrollments?> enrollments</b>
+				<h2 class="ui header"><? =$projectname?> Checklist</h2>
+				Displaying <b><? =$numenrollments?> enrollments</b>
 			</div>
 			<div class="right aligned column">
-				<a href="projectchecklist.php?action=editchecklist&projectid=<?=$projectid?>" class="ui primary basic button">Edit checklist</a>
+				<a href="projectchecklist.php?action=editchecklist&projectid=<? =$projectid?>" class="ui primary basic button">Edit checklist</a>
 			</div>
 		</div>
 		<table class="ui celled very compact selectable black table" id="maintable">
@@ -418,7 +418,7 @@
 			$modality = $item['modality'];
 			$protocol = $item['protocol'];
 			?>
-			<th data-sort="string-ins" title="<b>Modality</b> <?=$modality?><br><b>Protocol</b> <?=$protocol?><br><b>Description</b> <?=$desc?>"  style="background-color: #444; color: #fff"><?=$name?><br><span class="tiny" style="color: #fff"><?=$modality?></span></th>
+			<th data-sort="string-ins" title="<b>Modality</b> <? =$modality?><br><b>Protocol</b> <? =$protocol?><br><b>Description</b> <? =$desc?>"  style="background-color: #444; color: #fff"><? =$name?><br><span class="tiny" style="color: #fff"><? =$modality?></span></th>
 			<?
 			$totals[$ii] = 0;
 			$ii++;
@@ -480,13 +480,13 @@
 			
 			?>
 			<tr>
-				<!--<td><input type="checkbox" name="uids[]" value="<?=$uid?>"></td>-->
-				<td style="<?=$customidstyle?>" class="tt"><?=$customidtext?></td>
-				<td class="tt"><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a> <?=$deleted?></td>
-				<td><?=$guid?></td>
-				<td><a href="enrollment.php?id=<?=$enrollmentid?>"><?=$enrolldate?></a></td>
-				<td><?=count($studyids)?></td>
-				<td><?=$enrollsubgroup?></td>
+				<!--<td><input type="checkbox" name="uids[]" value="<? =$uid?>"></td>-->
+				<td style="<? =$customidstyle?>" class="tt"><? =$customidtext?></td>
+				<td class="tt"><a href="subjects.php?id=<? =$subjectid?>"><? =$uid?></a> <? =$deleted?></td>
+				<td><? =$guid?></td>
+				<td><a href="enrollment.php?id=<? =$enrollmentid?>"><? =$enrolldate?></a></td>
+				<td><? =count($studyids)?></td>
+				<td><? =$enrollsubgroup?></td>
 			<?
 			$ii = 5;
 			/* check if they have any studies */
@@ -549,14 +549,14 @@
 							$missingdataid = $row['missingdata_id'];
 							$reason = $row['missing_reason'];
 							$date = $row['missingreason_date'];
-							?><td style="background-image: repeating-linear-gradient(-45deg, transparent, transparent 5px, #ddd 5px, #ddd 10px);" title="<b><?=$reason?></b> - <?=$date?>"><a href="projectchecklist.php?action=setmissingdatareasonform&missingdataid=<?=$missingdataid?>&projectid=<?=$projectid?>&enrollmentid=<?=$enrollmentid?>&projectchecklistid=<?=$itemid?>&reason=<?=$reason?>">&#10006;</a></td><?
+							?><td style="background-image: repeating-linear-gradient(-45deg, transparent, transparent 5px, #ddd 5px, #ddd 10px);" title="<b><? =$reason?></b> - <? =$date?>"><a href="projectchecklist.php?action=setmissingdatareasonform&missingdataid=<? =$missingdataid?>&projectid=<? =$projectid?>&enrollmentid=<? =$enrollmentid?>&projectchecklistid=<? =$itemid?>&reason=<? =$reason?>">&#10006;</a></td><?
 						}
 						else {
-							?><td style="border-left: 1px solid #ffd699; background-image: repeating-linear-gradient(45deg, transparent, transparent 5px, #ffe0b3 5px, #ffe0b3 10px);" title="Click to set reason for missing data"><a href="projectchecklist.php?action=setmissingdatareasonform&projectid=<?=$projectid?>&enrollmentid=<?=$enrollmentid?>&projectchecklistid=<?=$itemid?>">?</a></td><?
+							?><td style="border-left: 1px solid #ffd699; background-image: repeating-linear-gradient(45deg, transparent, transparent 5px, #ffe0b3 5px, #ffe0b3 10px);" title="Click to set reason for missing data"><a href="projectchecklist.php?action=setmissingdatareasonform&projectid=<? =$projectid?>&enrollmentid=<? =$enrollmentid?>&projectchecklistid=<? =$itemid?>">?</a></td><?
 						}
 					}
 					else {
-						?><td><?=$msg?></td><?
+						?><td><? =$msg?></td><?
 					}
 					$ii++;
 				}
@@ -566,11 +566,11 @@
 					$totals[$ii]++;
 				}
 				else {
-					?><td style="border-left: 1px solid #ccc; text-align: center; font-size:8pt">Nope. Only <?=$rowtotal?> of <?=count($checklist)?></td><?
+					?><td style="border-left: 1px solid #ccc; text-align: center; font-size:8pt">Nope. Only <? =$rowtotal?> of <? =count($checklist)?></td><?
 				}
 			}
 			else {
-				?><td colspan="<?=count($checklist)?>" align="center" style="border-left: 1px solid #ccc">No studies</td><?
+				?><td colspan="<? =count($checklist)?>" align="center" style="border-left: 1px solid #ccc">No studies</td><?
 			}
 			?>
 			</tr>
@@ -583,7 +583,7 @@
 				<th>Totals </th>
 				<?
 				foreach ($totals as $i => $num) {
-					?><th><?=$num?></th><?
+					?><th><? =$num?></th><?
 				}
 				?>
 			</tr>
@@ -606,7 +606,7 @@
 		}
 
 		?>
-		<b>Options:</b> <a href="projectchecklist.php?action=editchecklist&projectid=<?=$projectid?>" style="font-weight: normal">Edit checklist</a>
+		<b>Options:</b> <a href="projectchecklist.php?action=editchecklist&projectid=<? =$projectid?>" style="font-weight: normal">Edit checklist</a>
 		<br><br>
 		<span style="font-size: 16pt; font-weight: bold">Analysis Summary Builder</span>
 		
@@ -615,7 +615,7 @@
 				<td width="15%" valign="top">
 					<form method="post" action="projectchecklist.php">
 					<input type="hidden" name="action" value="viewanalysissummary">
-					<input type="hidden" name="projectid" value="<?=$projectid?>">
+					<input type="hidden" name="projectid" value="<? =$projectid?>">
 					<table width="100%">
 						<tr>
 							<td style="background-color: #526FAA; font-weight: bold; color: #fff; padding: 5px" align="center">
@@ -645,7 +645,7 @@
 										
 										$seriesdesc = str_replace("<", "&lt;", $seriesdesc);
 										$seriesdesc = str_replace(">", "&gt;", $seriesdesc);
-										?><option value="<?=$seriesdesc?>" <?=$selected?>><?=$seriesdesc?><?
+										?><option value="<? =$seriesdesc?>" <? =$selected?>><? =$seriesdesc?><?
 									}
 									?>
 								</select>
@@ -668,7 +668,7 @@
 										
 										$seriesdesc = str_replace("<", "&lt;", $seriesdesc);
 										$seriesdesc = str_replace(">", "&gt;", $seriesdesc);
-										?><option value="<?=$seriesdesc?>" <?=$selected?>><?=$seriesdesc?><?
+										?><option value="<? =$seriesdesc?>" <? =$selected?>><? =$seriesdesc?><?
 									}
 									?>
 								</select>
@@ -690,7 +690,7 @@
 										
 										$seriesdesc = str_replace("<", "&lt;", $seriesdesc);
 										$seriesdesc = str_replace(">", "&gt;", $seriesdesc);
-										?><option value="<?=$seriesdesc?>" <?=$selected?>><?=$seriesdesc?><?
+										?><option value="<? =$seriesdesc?>" <? =$selected?>><? =$seriesdesc?><?
 									}
 									?>
 								</select>
@@ -748,7 +748,7 @@
 				</td>
 				<td valign="top">
 					<div style="overflow: auto; height: 100%; width: 100%">
-					<?=DisplayAnalysisTable($projectid, $a)?>
+					<? =DisplayAnalysisTable($projectid, $a)?>
 					</div>
 				</td>
 			</tr>
@@ -978,7 +978,7 @@
 				foreach ($h as $header => $section) {
 					$ncols = count($section);
 					?>
-					<th colspan="<?=$ncols?>"><?=$header?></th>
+					<th colspan="<? =$ncols?>"><? =$header?></th>
 					<?
 				}
 				?>
@@ -987,7 +987,7 @@
 				<?
 				foreach ($h as $header => $section) {
 					foreach ($section as $col => $vals) {
-						?><th><?=$col?></th><?
+						?><th><? =$col?></th><?
 					}
 				}
 				?>
@@ -1005,7 +1005,7 @@
 								$disp = number_format($t[$id][$header][$col], 3);
 							else
 								$disp = $t[$id][$header][$col];
-							?><td><?=$disp?></td><?
+							?><td><? =$disp?></td><?
 						}
 					}
 					?>

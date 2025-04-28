@@ -207,24 +207,24 @@
 		<div align="center">
 		<table class="entrytable">
 			<form method="post" action="adminassessmentforms.php">
-			<input type="hidden" name="action" value="<?=$formaction?>">
-			<input type="hidden" name="id" value="<?=$id?>">
+			<input type="hidden" name="action" value="<? =$formaction?>">
+			<input type="hidden" name="id" value="<? =$id?>">
 			<tr>
 				<td colspan="2" align="center">
-					<b><?=$formtitle?></b>
+					<b><? =$formtitle?></b>
 				</td>
 			</tr>
 			<tr>
 				<td>Title</td>
-				<td><input type="text" name="formtitle" value="<?=$title?>"></td>
+				<td><input type="text" name="formtitle" value="<? =$title?>"></td>
 			</tr>
 			<tr>
 				<td>Description</td>
-				<td><input type="text" name="formdesc" value="<?=$desc?>" size="50"></td>
+				<td><input type="text" name="formdesc" value="<? =$desc?>" size="50"></td>
 			</tr>
 			<tr>
 				<td colspan="2" align="center">
-					<input type="submit" value="<?=$submitbuttonlabel?>" class="ui primary button">
+					<input type="submit" value="<? =$submitbuttonlabel?>" class="ui primary button">
 				</td>
 			</tr>
 			</form>
@@ -247,7 +247,7 @@
 			<tbody>
 				<form method="post" action="adminassessmentforms.php">
 				<input type="hidden" name="action" value="updatefields">
-				<input type="hidden" name="id" value="<?=$id?>">
+				<input type="hidden" name="id" value="<? =$id?>">
 				<?
 					$neworder = 1;
 					/* display all other rows, sorted by order */
@@ -263,10 +263,10 @@
 						$formfield_haslinebreak = $row['formfield_haslinebreak'];
 						?>
 						<tr>
-							<td><input type="text" name="order[<?=$neworder?>]" size="2" maxlength="5" value="<?=$neworder?>"></td>
-							<td><input type="text" name="field[<?=$neworder?>]" size="50" value="<?=$formfield_desc?>"></td>
+							<td><input type="text" name="order[<? =$neworder?>]" size="2" maxlength="5" value="<? =$neworder?>"></td>
+							<td><input type="text" name="field[<? =$neworder?>]" size="50" value="<? =$formfield_desc?>"></td>
 							<td>
-							<select name="datatype[<?=$neworder?>]">
+							<select name="datatype[<? =$neworder?>]">
 								<option value="string" <? if ($formfield_datatype == "string") { echo "selected"; } ?>>String</option>
 								<option value="number" <? if ($formfield_datatype == "number") { echo "selected"; } ?>>Number</option>
 								<option value="multichoice" <? if ($formfield_datatype == "multichoice") { echo "selected"; } ?>>Multi-choice</option>
@@ -277,9 +277,9 @@
 								<option value="header" <? if ($formfield_datatype == "header") { echo "selected"; } ?>>Section header</option>
 							</select>
 							</td>
-							<td><input type="text" name="values[<?=$neworder?>]" size="40" value="<?=$formfield_values?>"></td>
-							<td><input type="checkbox" name="linebreaks[<?=$neworder?>]" <? if ($formfield_haslinebreak) {echo "checked";} ?> value="1"></td>
-							<td><input type="checkbox" name="scored[<?=$neworder?>]" <? if ($formfield_scored) {echo "checked";} ?> value="1"></td>
+							<td><input type="text" name="values[<? =$neworder?>]" size="40" value="<? =$formfield_values?>"></td>
+							<td><input type="checkbox" name="linebreaks[<? =$neworder?>]" <? if ($formfield_haslinebreak) {echo "checked";} ?> value="1"></td>
+							<td><input type="checkbox" name="scored[<? =$neworder?>]" <? if ($formfield_scored) {echo "checked";} ?> value="1"></td>
 						</tr>
 						<?
 						$neworder++;
@@ -288,10 +288,10 @@
 				for ($i=0;$i<5;$i++) {
 				?>
 				<tr>
-					<td><input type="text" name="order[<?=$neworder?>]" size="2" maxlength="5" value="<?=$neworder?>"></td>
-					<td><input type="text" name="field[<?=$neworder?>]" size="50"></td>
+					<td><input type="text" name="order[<? =$neworder?>]" size="2" maxlength="5" value="<? =$neworder?>"></td>
+					<td><input type="text" name="field[<? =$neworder?>]" size="50"></td>
 					<td>
-					<select name="datatype[<?=$neworder?>]">
+					<select name="datatype[<? =$neworder?>]">
 						<option value="string">String</option>
 						<option value="number">Number</option>
 						<option value="multichoice">Multi-choice</option>
@@ -302,9 +302,9 @@
 						<option value="header">Section header</option>
 					</select>
 					</td>
-					<td><input type="text" name="values[<?=$neworder?>]" size="40"></td>
-					<td><input type="checkbox" name="linebreaks[<?=$neworder?>]" value="1"></td>
-					<td><input type="checkbox" name="scored[<?=$neworder?>]" value="1"></td>
+					<td><input type="text" name="values[<? =$neworder?>]" size="40"></td>
+					<td><input type="checkbox" name="linebreaks[<? =$neworder?>]" value="1"></td>
+					<td><input type="checkbox" name="scored[<? =$neworder?>]" value="1"></td>
 					<? $neworder++; ?>
 				</tr>
 				<? } ?>
@@ -317,7 +317,7 @@
 		<br><br>
 		
 		<div style="border: 1px solid #DDDDDD; padding: 10px">
-			<a href="adminassessmentforms.php?id=<?=$id?>&action=publish" style="color:darkred; font-weight: bold; font-size: 14pt; background-color: #FFDDDD; padding: 3px">Publish</a>
+			<a href="adminassessmentforms.php?id=<? =$id?>&action=publish" style="color:darkred; font-weight: bold; font-size: 14pt; background-color: #FFDDDD; padding: 3px">Publish</a>
 			<br><br>
 			<span style="color: #666666; font-size:10pt">This cannot be undone. Once it is published, people may start using it, so you can't go mucking with it</span>
 		</div>
@@ -352,10 +352,10 @@
 		<br><br>
 		<table class="formentrytable">
 			<tr>
-				<td class="title" colspan="3"><?=$title?></td>
+				<td class="title" colspan="3"><? =$title?></td>
 			</tr>
 			<tr>
-				<td class="desc" colspan="3"><?=$desc?></td>
+				<td class="desc" colspan="3"><? =$desc?></td>
 			</tr>
 			<tr>
 				<td colspan="2">&nbsp;</td>
@@ -378,22 +378,22 @@
 					?>
 					<tr>
 						<? if ($formfield_datatype == "header") { ?>
-							<td colspan="2" class="sectionheader"><?=$formfield_desc?></td>
+							<td colspan="2" class="sectionheader"><? =$formfield_desc?></td>
 						<? } else { ?>
-							<td class="field"><?=$formfield_desc?></td>
+							<td class="field"><? =$formfield_desc?></td>
 							<td class="value">
 							<?
 								switch ($formfield_datatype) {
 									case "binary": ?><input type="file" name="value[]"><? break;
 									case "multichoice": ?>
-										<select multiple name="<?=$formfield_id?>-multichoice" style="height: 150px">
+										<select multiple name="<? =$formfield_id?>-multichoice" style="height: 150px">
 											<?
 												$values = explode(",", $formfield_values);
 												natsort($values);
 												foreach ($values as $value) {
 													$value = trim($value);
 												?>
-													<option value="<?=$value?>"><?=$value?></option>
+													<option value="<? =$value?>"><? =$value?></option>
 												<?
 												}
 											?>
@@ -408,16 +408,16 @@
 												foreach ($values as $value) {
 													$value = trim($value);
 												?>
-													<input type="radio"  name="<?=$formfield_id?>-singlechoice" value="<?=$value?>"><?=$value?>
+													<input type="radio"  name="<? =$formfield_id?>-singlechoice" value="<? =$value?>"><? =$value?>
 												<?
 													if ($formfield_haslinebreak) { echo "<br>"; } else { echo "&nbsp;"; }
 												}
 											?>
 									<? break;
-									case "date": ?><input type="date" name="<?=$formfield_id?>-date"><? break;
-									case "number": ?><input type="number" name="<?=$formfield_id?>-number"><? break;
-									case "string": ?><input type="text" name="<?=$formfield_id?>-string"><? break;
-									case "text": ?><textarea name="<?=$formfield_id?>-text"></textarea><? break;
+									case "date": ?><input type="date" name="<? =$formfield_id?>-date"><? break;
+									case "number": ?><input type="number" name="<? =$formfield_id?>-number"><? break;
+									case "string": ?><input type="text" name="<? =$formfield_id?>-string"><? break;
+									case "text": ?><textarea name="<? =$formfield_id?>-text"></textarea><? break;
 								}
 							?>
 						<? } ?>
@@ -425,8 +425,8 @@
 						<? if ($formfield_scored) {?>
 						<td><input type="text" size="2"></td>
 						<? } ?>
-						<td class="order"><?=$formfield_order?></td>
-						<td class="order"><?=$formfield_id?></td>
+						<td class="order"><? =$formfield_order?></td>
+						<td class="order"><? =$formfield_id?></td>
 					</tr>
 					<?
 				}
@@ -477,14 +477,14 @@
 			<tr>
 				<td>
 					<? if ($ispublished) { ?>
-					<a href="adminassessmentforms.php?action=viewform&id=<?=$id?>"><?=$title?></a>
+					<a href="adminassessmentforms.php?action=viewform&id=<? =$id?>"><? =$title?></a>
 					<? } else { ?>
-					<a href="adminassessmentforms.php?action=editform&id=<?=$id?>"><?=$title?></a>
+					<a href="adminassessmentforms.php?action=editform&id=<? =$id?>"><? =$title?></a>
 					<? } ?>
 				</td>
-				<td><?=$desc?></td>
-				<td><?=$creatorfullname?></td>
-				<td><?=$createdate?></td>
+				<td><? =$desc?></td>
+				<td><? =$creatorfullname?></td>
+				<td><? =$createdate?></td>
 				<td><? if ($ispublished) { echo "&#10004;"; } ?></td>
 			</tr>
 			<? 

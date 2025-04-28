@@ -55,7 +55,7 @@
 						<? if ($_SESSION['username'] == "") { ?>
 							<a href="signup.php">Create</a> an account or <a href="login.php">Sign in</a>
 						<? } else {?>
-							You are logged into NiDB as <?=$_SESSION['username'];?><br>
+							You are logged into NiDB as <? =$_SESSION['username'];?><br>
 							Go to your <a href="index.php">home</a> page
 						<? } ?>
 						</div>
@@ -136,13 +136,13 @@
 		<div class="ui segment">
 			<div class="ui two column grid">
 				<div class="column">
-					<h1 class="ui header"><?=$desc?></h1>
-					<b>Created</b> <?=$createdate?><br>
-					<b>Total size</b> <?=HumanReadableFilesize($unzipsize)?><br>
-					<b>Views</b> <?=number_format($numdownloads, 0)?>
+					<h1 class="ui header"><? =$desc?></h1>
+					<b>Created</b> <? =$createdate?><br>
+					<b>Total size</b> <? =HumanReadableFilesize($unzipsize)?><br>
+					<b>Views</b> <? =number_format($numdownloads, 0)?>
 					<br><br>
 					<? if ($createdate != $expiredate) { ?>
-					<b>Download expires</b> <?=$expiredate?>
+					<b>Download expires</b> <? =$expiredate?>
 					<? } ?>
 				</div>
 				<div class="middle aligned center aligned column">
@@ -154,7 +154,7 @@
 						<div class="ui labeled button">
 							<a href="" class="ui big grey button"><i class="cloud download alternate icon"></i>Download</a>
 							<div class="ui left pointing grey basic label">
-								<?=HumanReadableFilesize($zipsize)?>
+								<? =HumanReadableFilesize($zipsize)?>
 							</div>
 						</div>
 						<?
@@ -162,9 +162,9 @@
 					else {
 						?>
 						<div class="ui labeled button">
-							<a href="download/<?="$newlink.zip";?>" class="ui big orange button"><i class="cloud download alternate icon"></i>Download</a>
+							<a href="download/<? ="$newlink.zip";?>" class="ui big orange button"><i class="cloud download alternate icon"></i>Download</a>
 							<div class="ui left pointing basic label">
-								<?=HumanReadableFilesize($zipsize)?>
+								<? =HumanReadableFilesize($zipsize)?>
 							</div>
 						</div>
 						<?
@@ -182,7 +182,7 @@
 				</div>
 				<div class="content">
 					<div class="ui segment" style="border: solid 1px gray; background-color: #eee; margin:10px; padding:8px">
-<tt><?=$releasenotes?></tt>
+<tt><? =$releasenotes?></tt>
 					</div>
 				</div>
 			</div>
@@ -194,7 +194,7 @@
 				</div>
 				<div class="content">
 					<div class="ui segment" style="border: solid 1px gray; background-color: #eee; margin:10px; padding:8px">
-<pre><?=$filecontents?></pre>
+<pre><? =$filecontents?></pre>
 					</div>
 				</div>
 			</div>

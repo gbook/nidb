@@ -181,7 +181,7 @@
 			$sqlstring = "select distinct(enroll_subgroup) from enrollment order by enroll_subgroup";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				?><option value="<?=$row['enroll_subgroup']?>"><?
+				?><option value="<? =$row['enroll_subgroup']?>"><?
 			}
 		?>
 		</datalist>
@@ -189,16 +189,16 @@
 		<div class="ui container">
 			<form method="post" action="enrollment.php" class="ui form">
 			<input type="hidden" name="action" value="update">
-			<input type="hidden" name="id" value="<?=$enrollmentid?>">
+			<input type="hidden" name="id" value="<? =$enrollmentid?>">
 		
 			<div class="ui top attached inverted segment header">
 				<div class="ui two column grid">
 					<div class="column">
-						<a class="ui inverted large button" href="projects.php?id=<?=$projectid?>"><i class="external alternate icon"></i> <?=$projectname?> (<?=$projectnumber?>)</a>
+						<a class="ui inverted large button" href="projects.php?id=<? =$projectid?>"><i class="external alternate icon"></i> <? =$projectname?> (<? =$projectnumber?>)</a>
 					</div>
 					<div class="right aligned inverted column">
-						<span style="font-size: 22pt; font-weight: bold;" class="tt"><?=$uid?></span><br><br>
-						<span style="font-size: 12pt; font-weight: bold" class="tt"><?=implode2('<br>', $altuids)?></span>
+						<span style="font-size: 22pt; font-weight: bold;" class="tt"><? =$uid?></span><br><br>
+						<span style="font-size: 12pt; font-weight: bold" class="tt"><? =implode2('<br>', $altuids)?></span>
 					</div>
 				</div>
 			</div>
@@ -207,11 +207,11 @@
 				<table class="ui very basic celled table">
 					<tr>
 						<td class="right aligned"><b>Enrollment date</b></td>
-						<td><?=$enroll_startdate?></b></td>
+						<td><? =$enroll_startdate?></b></td>
 					</tr>
 					<tr>
 						<td class="right aligned"><b>Enrollment group</b></td>
-						<td><input type="text" name="enrollgroup" list="enrollsubgroup" value="<?=$enrollgroup?>"></td>
+						<td><input type="text" name="enrollgroup" list="enrollsubgroup" value="<? =$enrollgroup?>"></td>
 					</tr>
 					<tr>
 						<td class="right aligned"><b>Enrollment status</b></td>
@@ -226,7 +226,7 @@
 					</tr>
 					<tr>
 						<td class="right aligned"><b>Tags</b></td>
-						<td><input type="text" name="tags" value="<?=implode2(', ', $tags)?>"></td>
+						<td><input type="text" name="tags" value="<? =implode2(', ', $tags)?>"></td>
 					</tr>
 				<table>
 				<table class="ui very compact celled selectable table">
@@ -280,10 +280,10 @@
 									}
 									?>
 									<tr>
-										<td><?=$name?></td>
-										<td><input type="checkbox" <?=$checked?> disabled></td>
-										<td><?=$completedate?></td>
-										<td><?=$experimenter?></td>
+										<td><? =$name?></td>
+										<td><input type="checkbox" <? =$checked?> disabled></td>
+										<td><? =$completedate?></td>
+										<td><? =$experimenter?></td>
 									</tr>
 									<?
 								}
@@ -301,10 +301,10 @@
 									}
 									?>
 									<tr>
-										<td><?=$name?></td>
-										<td><input type="checkbox" name="completed[]" value="<?=$itemid?>" <?=$checked?>></td>
-										<td><?=$completedate?></td>
-										<td><?=$experimenter?></td>
+										<td><? =$name?></td>
+										<td><input type="checkbox" name="completed[]" value="<? =$itemid?>" <? =$checked?>></td>
+										<td><? =$completedate?></td>
+										<td><? =$experimenter?></td>
 									</tr>
 									<?
 								}
@@ -323,7 +323,7 @@
 			</div>
 
 			<div class="ui bottom attached right aligned segment">
-				<a href="subjects.php?subjectid=<?=$subjectid?>" class="ui button">Back to <?=$uid?></a>
+				<a href="subjects.php?subjectid=<? =$subjectid?>" class="ui button">Back to <? =$uid?></a>
 				<input class="ui primary button" type="submit" value="Save">
 			</div>
 			

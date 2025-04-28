@@ -76,7 +76,7 @@
 		$redcaptoken = mysqli_real_escape_string($GLOBALS['linki'], $redcaptoken);
 		
 		if ((trim($projectid) == "") || ($projectid < 0)) {
-			?>Invalid or blank project ID [<?=$projectid?>]<?
+			?>Invalid or blank project ID [<? =$projectid?>]<?
 			return;
 		}
 		
@@ -91,7 +91,7 @@
 	function DisplayRedCapSettings($projectid) {
 		
 		if ((trim($projectid) == "") || ($projectid < 0)) {
-			?>Invalid or blank project ID [<?=$projectid?>]<?
+			?>Invalid or blank project ID [<? =$projectid?>]<?
 			return;
 		}
 		
@@ -109,7 +109,7 @@
 	<div class="ui four column centered container">
 		<form action="redcapimport.php" method="post">
 		<input type="hidden" name="action" value="updateconnection">
-		<input type="hidden" name="projectid" value="<?=$projectid?>">
+		<input type="hidden" name="projectid" value="<? =$projectid?>">
 		
 		<br><br>
 		<h2 class="ui top attached inverted header" align="center"> Setup Redcap Connection </h2>
@@ -122,14 +122,14 @@
                           <div class="ui  label">
                             *Redcap Server
                           </div>
-                          <input type="text"  name="redcapurl" value="<?=$redcapurl?>"  size="55" required>
+                          <input type="text"  name="redcapurl" value="<? =$redcapurl?>"  size="55" required>
                         </div>
 
                          <div class="ui labeled input">
                           <div class="ui  label">
                             *Redcap Token  
                           </div>
-                                <input type="text" name="redcaptoken" value="<?=$redcaptoken?>" size="52" required>
+                                <input type="text" name="redcaptoken" value="<? =$redcaptoken?>" size="52" required>
 			</div>
 
 		   </div>
@@ -140,14 +140,14 @@
                           <div class="ui  label">
                             *Redcap Unique Id <i class="small blue question circle outline icon" title="Provide the name of Redcap field containng Unique Record Id"></i>
                           </div>
-                          <input type="text"  name="redcapidfield" value="<?=$redcapidfield?>"  size="49" required>
+                          <input type="text"  name="redcapidfield" value="<? =$redcapidfield?>"  size="49" required>
                         </div>
 
                          <div class="ui labeled input">
                           <div class="ui  label">
                             *Redcap-NiDB Id  <i class="small blue question circle outline icon" title="Provide the name of Redcap field containng NiDB Subject Id"></i>
                           </div>
-                                <input type="text" name="redcapnidbidfield" value="<?=$redcapnidbidfield?>" size="47" required>
+                                <input type="text" name="redcapnidbidfield" value="<? =$redcapnidbidfield?>" size="47" required>
                         </div>
 		   </div>
 		</div>

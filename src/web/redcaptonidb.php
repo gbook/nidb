@@ -93,7 +93,7 @@
 function getprojectinfo($projectid)
 {
 	if ((trim($projectid) == "") || ($projectid < 0)) {
-			?>Invalid or blank project ID [<?=$projectid?>]<?
+			?>Invalid or blank project ID [<? =$projectid?>]<?
 			return;
 		}
 	
@@ -109,11 +109,11 @@ function getprojectinfo($projectid)
 		?>
 
 	<h1 class="ui header" align="left"> Redcap ===> NiDB Transfer 
-			<div class="sub header"> Project: <?=$projectname?> &nbsp; &nbsp; Redcap Server: <?=$redcapurl?></div>
+			<div class="sub header"> Project: <? =$projectname?> &nbsp; &nbsp; Redcap Server: <? =$redcapurl?></div>
 	</h1>
 
 	<br><br>
-	<div onclick="window.location.href='redcaptonidb.php?action=showrcinfo&projectid=<?=$projectid?>'" class="ui right floated button">Connect To Redcap</div> 
+	<div onclick="window.location.href='redcaptonidb.php?action=showrcinfo&projectid=<? =$projectid?>'" class="ui right floated button">Connect To Redcap</div> 
 
 <?}
 
@@ -128,7 +128,7 @@ function setprojectinfo($projectid, $redcapurl, $redcaptoken)
 	$redcaptoken = mysqli_real_escape_string($GLOBALS['linki'], $redcaptoken);
 		
 	if ((trim($projectid) == "") || ($projectid < 0)) {
-	?><b> Invalid or blank project ID [<?=$projectid?>]<?
+	?><b> Invalid or blank project ID [<? =$projectid?>]<?
 	return;
 	}
 	
@@ -185,12 +185,12 @@ function Showprojectinfo($projectid)
 
 	<br>
 	
-	<div onclick="window.location.href='redcaptonidb.php?action=default&projectid=<?=$projectid?>'" class="ui right floated button">Disconnect From Redcap</div>
+	<div onclick="window.location.href='redcaptonidb.php?action=default&projectid=<? =$projectid?>'" class="ui right floated button">Disconnect From Redcap</div>
 	<br><br><br>
 
 
 
-	<button class="ui primary right floated large button" onclick="window.location.href='redcapmapping.php?action=default&projectid=<?=$projectid?>'">
+	<button class="ui primary right floated large button" onclick="window.location.href='redcapmapping.php?action=default&projectid=<? =$projectid?>'">
           <i class="map icon"></i>
             Mapping / <i class="level down alternate icon"></i> Transfer
         </button>

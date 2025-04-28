@@ -187,27 +187,27 @@
 			if ($overwroteexisting) { $overwroteexisting = "&#x2713;"; } else { $overwroteexisting = ""; }
 			?>
 			<tr>
-				<td><?=$displayname?></td>
-				<td title="PatientID (from file)"><?=$patientid?></td>
-				<!--<td style="font-size:8pt"><?=$institution?></td>-->
-				<td style="font-size:8pt"><?=$equipment?></td>
-				<td><?=$modality?></td>
-				<td title="Study date/time" style="font-size:8pt; white-space: nowrap;"><?=$studydatetime?></td>
-				<td title="Series date/time" style="font-size:8pt; white-space: nowrap;"><?=$seriesdatetime?></td>
-				<td title="Series number"><?=$seriesnum?></td>
-				<td title="Number of files"><?=$numfiles?></td>
+				<td><? =$displayname?></td>
+				<td title="PatientID (from file)"><? =$patientid?></td>
+				<!--<td style="font-size:8pt"><? =$institution?></td>-->
+				<td style="font-size:8pt"><? =$equipment?></td>
+				<td><? =$modality?></td>
+				<td title="Study date/time" style="font-size:8pt; white-space: nowrap;"><? =$studydatetime?></td>
+				<td title="Series date/time" style="font-size:8pt; white-space: nowrap;"><? =$seriesdatetime?></td>
+				<td title="Series number"><? =$seriesnum?></td>
+				<td title="Number of files"><? =$numfiles?></td>
 				<td style="font-size:16pt; padding-left:20px; padding-right:20px; color:darkred; -webkit-transform:scale(1.5,1);">&#10137;</td>
-				<td><a href="subjects.php?id=<?=$subjectid?>"><?=$newuid?></a></td>
-				<td title="Study number"><?=$newstudynum?></td>
-				<td title="Project number"><?=$project?></td>
-				<td title="Import time" style="font-size:8pt;"><?=$importtime?></td>
-				<td title="Import completed date/time" style="font-size:8pt;"><?=$maximportdatetime?></td>
-				<td title="Subject created"><?=$subjectcreated?></td>
-				<td title="Family created"><?=$familycreated?></td>
-				<td title="Enrollment created"><?=$enrollmentcreated?></td>
-				<td title="Study created"><?=$studycreated?></td>
-				<td title="Series created"><?=$seriescreated?></td>
-				<td title="Overwrote existing"><?=$overwroteexisting?></td>
+				<td><a href="subjects.php?id=<? =$subjectid?>"><? =$newuid?></a></td>
+				<td title="Study number"><? =$newstudynum?></td>
+				<td title="Project number"><? =$project?></td>
+				<td title="Import time" style="font-size:8pt;"><? =$importtime?></td>
+				<td title="Import completed date/time" style="font-size:8pt;"><? =$maximportdatetime?></td>
+				<td title="Subject created"><? =$subjectcreated?></td>
+				<td title="Family created"><? =$familycreated?></td>
+				<td title="Enrollment created"><? =$enrollmentcreated?></td>
+				<td title="Study created"><? =$studycreated?></td>
+				<td title="Series created"><? =$seriescreated?></td>
+				<td title="Overwrote existing"><? =$overwroteexisting?></td>
 			</tr>
 			<?
 		}
@@ -241,7 +241,7 @@
 		
 		if (($numdeleted1 > 0) || ($numdeleted2 > 0)) {
 		?>
-		<span class="tiny">Cleanup import logs older than 21 days - Removed [<?=$numdeleted1?>] entries from import_transactions and [<?=$numdeleted2?>] entries from import_requests</span>
+		<span class="tiny">Cleanup import logs older than 21 days - Removed [<? =$numdeleted1?>] entries from import_transactions and [<? =$numdeleted2?>] entries from import_requests</span>
 		<?
 		}
 		?>
@@ -328,13 +328,13 @@
 				<div align="center">
 				<table width="90%" cellspacing="0" cellpadding="4" style="border: solid 2px #333">
 					<tr>
-						<td align="center" style="background-color: <?=$statuscolor?>; color: #fff" width="5%"><?=$statusicon?></td>
-						<td class="darkheader"><span style="font-size: 8pt" width="20%">User</span><br><b><?=$transaction_username?></b></td>
-						<td class="darkheader"><span style="font-size: 8pt" width="20%">Transaction ID</span><br><?=$transactionid?></td>
-						<td class="darkheader"><span style="font-size: 8pt">Upload started</span><br><b><?=date('M j, Y g:ia',strtotime($transaction_startdate))?></b></td>
+						<td align="center" style="background-color: <? =$statuscolor?>; color: #fff" width="5%"><? =$statusicon?></td>
+						<td class="darkheader"><span style="font-size: 8pt" width="20%">User</span><br><b><? =$transaction_username?></b></td>
+						<td class="darkheader"><span style="font-size: 8pt" width="20%">Transaction ID</span><br><? =$transactionid?></td>
+						<td class="darkheader"><span style="font-size: 8pt">Upload started</span><br><b><? =date('M j, Y g:ia',strtotime($transaction_startdate))?></b></td>
 						<td class="darkheader" align="left" width="30%">
 							<span style="font-size: 8pt">Archived blocks</span><br>
-							<img src="horizontalchart.php?b=yes&w=200&h=15&v=<?=$numarchived?>,<?=$numblocks-$numarchived?>&c=888888,EEEEEE"> <?=number_format(((double)($numarchived+$numblank)/$numblocks)*100.0,1)?>% (<?=$numarchived?> of <?=$numblocks?>)
+							<img src="horizontalchart.php?b=yes&w=200&h=15&v=<? =$numarchived?>,<? =$numblocks-$numarchived?>&c=888888,EEEEEE"> <? =number_format(((double)($numarchived+$numblank)/$numblocks)*100.0,1)?>% (<? =$numarchived?> of <? =$numblocks?>)
 						</td>
 					</tr>
 					<tr>
@@ -521,32 +521,32 @@
 			if ($import_fileisseries) { $import_fileisseries = "&#x2713;"; } else { $import_fileisseries = ""; }
 			?>
 			<tr>
-				<td align="center" style="background-color: <?=$statuscolor?>; color: #fff"><?=$statusicon?></td>
-				<td valign="top"><?=$importrequestid?></td>
-				<td valign="top"><?=$import_datatype?></td>
-				<td valign="top"><?=$numfilestotal?>/<?=$numfilessuccess?>/<? if ($numfilesfail > 0) { echo "<span style='color: red; font-weight: bold'>$numfilesfail</span>"; } else { echo $numfilesfail; }?></td>
-				<td valign="top" style="font-size:8pt"><?=$import_startdate?></td>
+				<td align="center" style="background-color: <? =$statuscolor?>; color: #fff"><? =$statusicon?></td>
+				<td valign="top"><? =$importrequestid?></td>
+				<td valign="top"><? =$import_datatype?></td>
+				<td valign="top"><? =$numfilestotal?>/<? =$numfilessuccess?>/<? if ($numfilesfail > 0) { echo "<span style='color: red; font-weight: bold'>$numfilesfail</span>"; } else { echo $numfilesfail; }?></td>
+				<td valign="top" style="font-size:8pt"><? =$import_startdate?></td>
 				<td valign="top" style="font-size:8pt">
-					<span title="uploading &rarr; pending<br>api.php" class="highlighted"><span style="color: <?=$step1color?>; font-weight: <?=$step1weight?>">Uploading</span>&nbsp;&rarr;&nbsp;<span style="color: <?=$step2color?>; font-weight: <?=$step2weight?>">Uploaded</span></span>&nbsp;&rarr;&nbsp;
-					<span title="receiving &rarr; received<br>importuploaded.pl" class="highlighted"><span style="color: <?=$step3color?>; font-weight: <?=$step3weight?>">Checking</span>&nbsp;&rarr;&nbsp;<span style="color: <?=$step4color?>; font-weight: <?=$step4weight?>">Checked</span></span>&nbsp;&rarr;&nbsp;
-					<span title="archiving &rarr; archived<br>parsedicom.pl" class="highlighted"><span style="color: <?=$step5color?>; font-weight: <?=$step5weight?>">Archiving</span>&nbsp;&rarr;&nbsp;<span style="color: <?=$step6color?>; font-weight: <?=$step6weight?>">Archived</span></span>&nbsp;&nbsp;&nbsp;
-					<span style="color: <?=$step7color?>; font-weight: <?=$step7weight?>">Error</span>
+					<span title="uploading &rarr; pending<br>api.php" class="highlighted"><span style="color: <? =$step1color?>; font-weight: <? =$step1weight?>">Uploading</span>&nbsp;&rarr;&nbsp;<span style="color: <? =$step2color?>; font-weight: <? =$step2weight?>">Uploaded</span></span>&nbsp;&rarr;&nbsp;
+					<span title="receiving &rarr; received<br>importuploaded.pl" class="highlighted"><span style="color: <? =$step3color?>; font-weight: <? =$step3weight?>">Checking</span>&nbsp;&rarr;&nbsp;<span style="color: <? =$step4color?>; font-weight: <? =$step4weight?>">Checked</span></span>&nbsp;&rarr;&nbsp;
+					<span title="archiving &rarr; archived<br>parsedicom.pl" class="highlighted"><span style="color: <? =$step5color?>; font-weight: <? =$step5weight?>">Archiving</span>&nbsp;&rarr;&nbsp;<span style="color: <? =$step6color?>; font-weight: <? =$step6weight?>">Archived</span></span>&nbsp;&nbsp;&nbsp;
+					<span style="color: <? =$step7color?>; font-weight: <? =$step7weight?>">Error</span>
 				</td>
-				<td valign="top"><?=$import_message?></td>
-				<td valign="top" style="font-size:8pt"><?=$import_enddate?></td>
-				<td valign="top" style="font-size:8pt"><?=$sitename?></td>
-				<td valign="top" style="font-size:8pt"><?=$projectname?></td>
-				<td valign="top" style="font-size:8pt"><?=$instancename?></td>
+				<td valign="top"><? =$import_message?></td>
+				<td valign="top" style="font-size:8pt"><? =$import_enddate?></td>
+				<td valign="top" style="font-size:8pt"><? =$sitename?></td>
+				<td valign="top" style="font-size:8pt"><? =$projectname?></td>
+				<td valign="top" style="font-size:8pt"><? =$instancename?></td>
 				<td valign="top" style="font-size:8pt">
 					<details>
 					<summary>Upload report</summary>
-					<pre><?=$uploadreport?></pre>
+					<pre><? =$uploadreport?></pre>
 					</details>
 				</td>
 				<td valign="top" style="font-size:8pt">
 					<details>
 					<summary>Archive report</summary>
-					<pre><?=$archivereport?></pre>
+					<pre><? =$archivereport?></pre>
 					</details>
 				</td>
 			</tr>
@@ -675,27 +675,27 @@
 			if ($overwroteexisting) { $overwroteexisting = "&#x2713;"; } else { $overwroteexisting = ""; }
 			?>
 			<tr>
-				<td><?=$displayname?></td>
-				<td title="PatientID (from file)"><?=$patientid?></td>
-				<!--<td style="font-size:8pt"><?=$institution?></td>-->
-				<td style="font-size:8pt"><?=$equipment?></td>
-				<td><?=$modality?></td>
-				<td title="Study date/time" style="font-size:8pt; white-space: nowrap;"><?=$studydatetime?></td>
-				<td title="Series date/time" style="font-size:8pt; white-space: nowrap;"><?=$seriesdatetime?></td>
-				<td title="Series number"><?=$seriesnum?></td>
-				<td title="Number of files"><?=$numfiles?></td>
+				<td><? =$displayname?></td>
+				<td title="PatientID (from file)"><? =$patientid?></td>
+				<!--<td style="font-size:8pt"><? =$institution?></td>-->
+				<td style="font-size:8pt"><? =$equipment?></td>
+				<td><? =$modality?></td>
+				<td title="Study date/time" style="font-size:8pt; white-space: nowrap;"><? =$studydatetime?></td>
+				<td title="Series date/time" style="font-size:8pt; white-space: nowrap;"><? =$seriesdatetime?></td>
+				<td title="Series number"><? =$seriesnum?></td>
+				<td title="Number of files"><? =$numfiles?></td>
 				<td style="font-size:16pt; padding-left:20px; padding-right:20px; color:darkred; -webkit-transform:scale(1.5,1);">&#10137;</td>
-				<td><a href="subjects.php?id=<?=$subjectid?>"><?=$newuid?></a></td>
-				<td title="Study number"><?=$newstudynum?></td>
-				<td title="Project number"><?=$project?></td>
-				<td title="Import time" style="font-size:8pt;"><?=$importtime?></td>
-				<td title="Import completed date/time" style="font-size:8pt;"><?=$maximportdatetime?></td>
-				<td title="Subject created"><?=$subjectcreated?></td>
-				<td title="Family created"><?=$familycreated?></td>
-				<td title="Enrollment created"><?=$enrollmentcreated?></td>
-				<td title="Study created"><?=$studycreated?></td>
-				<td title="Series created"><?=$seriescreated?></td>
-				<td title="Overwrote existing"><?=$overwroteexisting?></td>
+				<td><a href="subjects.php?id=<? =$subjectid?>"><? =$newuid?></a></td>
+				<td title="Study number"><? =$newstudynum?></td>
+				<td title="Project number"><? =$project?></td>
+				<td title="Import time" style="font-size:8pt;"><? =$importtime?></td>
+				<td title="Import completed date/time" style="font-size:8pt;"><? =$maximportdatetime?></td>
+				<td title="Subject created"><? =$subjectcreated?></td>
+				<td title="Family created"><? =$familycreated?></td>
+				<td title="Enrollment created"><? =$enrollmentcreated?></td>
+				<td title="Study created"><? =$studycreated?></td>
+				<td title="Series created"><? =$seriescreated?></td>
+				<td title="Overwrote existing"><? =$overwroteexisting?></td>
 			</tr>
 			<?
 		}

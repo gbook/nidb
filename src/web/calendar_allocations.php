@@ -116,11 +116,11 @@
 			
 			?>
 			<tr>
-				<td><?=$projectname?></td>
-				<td><?=$calendarname?></td>
-				<td><?=$amount?> hours per <?=$timeperiod?> days</td>
+				<td><? =$projectname?></td>
+				<td><? =$calendarname?></td>
+				<td><? =$amount?> hours per <? =$timeperiod?> days</td>
 				<td align="center">
-					<a class="ui red button" href="calendar_allocations.php?action=delete&id=<?=$id?>" ><i class="trash icon"></i></a>
+					<a class="ui red button" href="calendar_allocations.php?action=delete&id=<? =$id?>" ><i class="trash icon"></i></a>
 				</td>
 			</tr>
 			<?
@@ -190,7 +190,7 @@
 				<td colspan="3" style="color: darkblue; font-size: 14pt; text-align:center; font-weight: bold">Add Allocation</td>
 			</tr>
 			<tr>
-				<td colspan="2" align="center" style="color:red"><?=$message?></td>
+				<td colspan="2" align="center" style="color:red"><? =$message?></td>
 			</tr>
 			<tr>
 				<td class="label">Allocation per time period<br><span class="tiny">ex: 10 hours per month</span></td>
@@ -215,7 +215,7 @@
 							$id = $row['calendar_id'];
 							$name = $row['calendar_name'];
 					?>
-						<option value="<?=$id?>"><?=$name?>
+						<option value="<? =$id?>"><? =$name?>
 					<?
 						}
 					?>
@@ -233,7 +233,7 @@
 							$id = $row['project_id'];
 							$name = $row['project_name'];
 					?>
-						<option value="<?=$id?>"><?=$name?>
+						<option value="<? =$id?>"><? =$name?>
 					<?
 						}
 					?>
@@ -263,26 +263,26 @@
 		
 		<form action="calendar_allocations.php" method="post" id="form1">
 		<input type="hidden" name="action" value="edit">
-		<input type="hidden" name="id" value="<?=$id?>">
+		<input type="hidden" name="id" value="<? =$id?>">
 		
 		<table cellspacing="0" cellpadding="5" class="editor">
 			<tr>
 				<td colspan="3" style="color: darkblue; font-size: 14pt; text-align:center; font-weight: bold">Edit Calendar</td>
 			</tr>
 			<tr>
-				<td colspan="2" align="center" style="color:red"><?=$message?></td>
+				<td colspan="2" align="center" style="color:red"><? =$message?></td>
 			</tr>
 			<tr>
 				<td class="label">Calendar Name<br><span class="tiny">short name</span></td>
-				<td class="rightvalue"><input type="text" name="name" class="required" value="<?=$name?>"></td>
+				<td class="rightvalue"><input type="text" name="name" class="required" value="<? =$name?>"></td>
 			</tr>
 			<tr>
 				<td class="label">Description</td>
-				<td class="rightvalue"><input type="text" name="description" class="required" size="50" value="<?=$description?>"></td>
+				<td class="rightvalue"><input type="text" name="description" class="required" size="50" value="<? =$description?>"></td>
 			</tr>
 			<tr>
 				<td class="label">Location</td>
-				<td class="rightvalue"><input type="text" name="location" class="required" value="<?=$location?>"></td>
+				<td class="rightvalue"><input type="text" name="location" class="required" value="<? =$location?>"></td>
 			</tr>
 		</table>
 		<p><input type="submit" value="Save" name="submit"></p>

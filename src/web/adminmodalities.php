@@ -100,7 +100,7 @@
 		$sqlstring = "update modalities set modality_name = '$modalityname', modality_desc = '$modalitydesc', modality_admin = '$admin' where modality_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
-		?><div align="center"><span class="message"><?=$modalityname?> updated</span></div><br><br><?
+		?><div align="center"><span class="message"><? =$modalityname?> updated</span></div><br><br><?
 	}
 
 
@@ -117,7 +117,7 @@
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
-		?><div align="center"><span class="message"><?=$modalityname?> added</span></div><br><br><?
+		?><div align="center"><span class="message"><? =$modalityname?> added</span></div><br><br><?
 	}
 
 	
@@ -140,7 +140,7 @@
 		<div class="ui container">
 			<div class="ui two column grid">
 				<div class="column">
-					<h2 class="ui header"><tt><?=$modality?>_series</tt> SQL Schema</h2>
+					<h2 class="ui header"><tt><? =$modality?>_series</tt> SQL Schema</h2>
 				</div>
 				<div class="column" style="text-align: right">
 					<button class="ui button primary" onClick="window.location.href='adminmodalities.php'; return false;">Back</button>
@@ -156,7 +156,7 @@
 			$field = mysqli_fetch_field($result);
 			$fieldname = $field->name;
 			?>
-			<th><?=$fieldname?></th>
+			<th><? =$fieldname?></th>
 			<?
 		}
 		?>
@@ -173,7 +173,7 @@
 				//print_r($row);
 				foreach($row as $cell)
 					if ($row[3] == "PRI") {	?>
-						<td style="color:gray"><?=$cell?></td>
+						<td style="color:gray"><? =$cell?></td>
 					<? }
 					else {
 						echo "<td>$cell</td>";
@@ -272,14 +272,14 @@
 
 		$rows = array();
 		?>
-		<div align="center" style="font-weight: bold" width="100%">Protocol Groups for <span style="color:darkblue"><?=strtoupper($modality)?></span></div>
+		<div align="center" style="font-weight: bold" width="100%">Protocol Groups for <span style="color:darkblue"><? =strtoupper($modality)?></span></div>
 		<br>
 		<table>
 			<tr>
 				<td valign="top">
 					<form action="adminmodalities.php" method="post">
 					<input type="hidden" name="action" value="updateprotocolgroup">
-					<input type="hidden" name="modality" value="<?=$modality?>">
+					<input type="hidden" name="modality" value="<? =$modality?>">
 					<table class="ui very compact celled grey table">
 						<thead>
 							<tr>
@@ -295,7 +295,7 @@
 							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$group = $row['group'];
-								?><option value="<?=$group?>"><?
+								?><option value="<? =$group?>"><?
 							}
 							?>
 							</datalist>
@@ -320,9 +320,9 @@
 						foreach ($rows as $series => $count) {
 							?>
 							<tr>
-								<td><?=$series?></td>
-								<td><?=$count?></td>
-								<td><input type="checkbox" name="protocols[]" value="<?=$series?>"></td>
+								<td><? =$series?></td>
+								<td><? =$count?></td>
+								<td><input type="checkbox" name="protocols[]" value="<? =$series?>"></td>
 							</tr>
 							<?
 						}
@@ -355,17 +355,17 @@
 							$count = mysqli_num_rows($resultA);
 							?>
 							<tr>
-								<td><?=$groupname?></td>
+								<td><? =$groupname?></td>
 								<td>
 									<details>
-										<summary style="font-size:9pt"><?=$count?> protocols</summary>
+										<summary style="font-size:9pt"><? =$count?> protocols</summary>
 										<table class="ui very small very compact celled selectable grey table">
 										<?
 											while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 												$p = $rowA['pgitem_protocol'];
 												$pgitemid = $rowA['pgitem_id'];
 												?>
-													<tr><td><?=$p?></td><td><a class="ui red button" href="adminmodalities.php?action=deleteprotocolgroupitem&pgitemid=<?=$pgitemid?>&modality=<?=$modality?>" style="color:darkred;" title="Remove <b><?=$p?></b> from group" onclick="return confirm('Are you sure you want to delete this?')"><i class="trash icon"></i></a></td></tr>
+													<tr><td><? =$p?></td><td><a class="ui red button" href="adminmodalities.php?action=deleteprotocolgroupitem&pgitemid=<? =$pgitemid?>&modality=<? =$modality?>" style="color:darkred;" title="Remove <b><? =$p?></b> from group" onclick="return confirm('Are you sure you want to delete this?')"><i class="trash icon"></i></a></td></tr>
 												<?
 											}
 										?>
@@ -434,19 +434,19 @@
 					//$grouprowcount = $rowB['count'];
 					
 					?>
-					<tr style="color: <?=$color?>">
-						<td><a href="adminmodalities.php?action=edit&id=<?=$id?>"><?=$name?></a></td>
-						<td><i class="sitemap icon"></i> <a href="adminmodalities.php?action=editprotocolgroups&id=<?=$id?>">View</a></td>
-						<td><?=$desc?></td>
-						<td align="right"><?=number_format($rows,0)?></td>
-						<td align="right"><?=number_format($tablesize+$indexsize)?></td>
+					<tr style="color: <? =$color?>">
+						<td><a href="adminmodalities.php?action=edit&id=<? =$id?>"><? =$name?></a></td>
+						<td><i class="sitemap icon"></i> <a href="adminmodalities.php?action=editprotocolgroups&id=<? =$id?>">View</a></td>
+						<td><? =$desc?></td>
+						<td align="right"><? =number_format($rows,0)?></td>
+						<td align="right"><? =number_format($tablesize+$indexsize)?></td>
 						<td>
 							<?
 								if ($enabled) {
-									?><a href="adminmodalities.php?action=disable&id=<?=$id?>" title="<b>Enabled.</b> Click to disable"><i class="large green toggle on icon"></i></a><?
+									?><a href="adminmodalities.php?action=disable&id=<? =$id?>" title="<b>Enabled.</b> Click to disable"><i class="large green toggle on icon"></i></a><?
 								}
 								else {
-									?><a href="adminmodalities.php?action=enable&id=<?=$id?>" title="<b>Disabled.</b> Click to enable"><i class="large red toggle off icon"></i></a><?
+									?><a href="adminmodalities.php?action=enable&id=<? =$id?>" title="<b>Disabled.</b> Click to enable"><i class="large red toggle off icon"></i></a><?
 								}
 							?>
 						</td>

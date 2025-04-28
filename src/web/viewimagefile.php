@@ -28,12 +28,12 @@ if ($file != "") {
 		?>
 		<body bgcolor="#DDD">
 <div style="border: 1px solid #BBB; margin:10px; padding:10px; background-color: white; font-family: monospace; white-space: pre;">
-<div style="padding:5px; background-color: 393939; color:white; font-size:11pt"><?=$file?></div>
+<div style="padding:5px; background-color: 393939; color:white; font-size:11pt"><? =$file?></div>
 <?
 $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
 $imgdata = base64_encode(file_get_contents($file));
 ?>
-<img border="1" src="data:image/<?=$ext?>;base64,<?=$imgdata?>">
+<img border="1" src="data:image/<? =$ext?>;base64,<? =$imgdata?>">
 </div>
 		<?
 	}

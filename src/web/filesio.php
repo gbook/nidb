@@ -146,12 +146,12 @@
 			?>                        
 
 			<tr>
-				<!--<td><?=$fileioid?></td>-->
-				<td><?=$rquser?></td>
-				<td><?=$rtime?></td>
-				<td><?=ucfirst($iooperation)?> <?=$iotype?></td>
-				<td class="ui <?=$color?> cell"><?=$iostatus?></td>
-				<td><?=$iomessage?></td>
+				<!--<td><? =$fileioid?></td>-->
+				<td><? =$rquser?></td>
+				<td><? =$rtime?></td>
+				<td><? =ucfirst($iooperation)?> <? =$iotype?></td>
+				<td class="ui <? =$color?> cell"><? =$iostatus?></td>
+				<td><? =$iomessage?></td>
 				<?
 				$now = strtotime($rtime);
 				$Five_minutes = $now + (5 * 60);
@@ -167,15 +167,15 @@
 					$Ttime = 2;
 				}
 				?>
-				<td><?=$endDate?></td>
+				<td><? =$endDate?></td>
 				<? if ($iostatus=='pending'){ ?>
 				<td align="center" class="cancel">
-					<a class="ui small compact red button" href="filesio.php?action=cancelfileio&fileioid=<?=$fileioid?>" onclick="return confirm('Are you sure?')">Cancel Operation</a>
+					<a class="ui small compact red button" href="filesio.php?action=cancelfileio&fileioid=<? =$fileioid?>" onclick="return confirm('Are you sure?')">Cancel Operation</a>
 				</td>
 				<? }?>
 				<? if ($iostatus=='error' || $iostatus=='cancelled'){ ?>
 				<td>
-					<a class="ui small compact red button" href="filesio.php?action=deletefileio&fileioid=<?=$fileioid?>" onclick="return confirm('Are you sure?')">Remove</a>
+					<a class="ui small compact red button" href="filesio.php?action=deletefileio&fileioid=<? =$fileioid?>" onclick="return confirm('Are you sure?')">Remove</a>
 				</td>
 				<? } ?>
 

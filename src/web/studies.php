@@ -558,7 +558,7 @@
 			$oldpathrenamed = $GLOBALS['cfg']['archivedir'] . "/$uid/$oldstudynum/$seriesnum-" . GenerateRandomString(10);
 			
 			if (!file_exists($oldpath)) {
-				?><li><b style="color: red">The original path [<?=$oldpath?>] does not exist</b><?
+				?><li><b style="color: red">The original path [<? =$oldpath?>] does not exist</b><?
 				$logmsg .= "Original path [$oldpath] does not exist\n";
 				return;
 			}
@@ -569,7 +569,7 @@
 			$logmsg .= "Command [$systemstring] Output [$copyresults]\n";
 			
 			if (!file_exists($newpath)) {
-				?><li><b style="color: red">The new path [<?=$newpath?>] does not exist</b><?
+				?><li><b style="color: red">The new path [<? =$newpath?>] does not exist</b><?
 				$logmsg .= "New path [$newpath] does not exist! [$copyresults]\n";
 				return;
 			}
@@ -636,7 +636,7 @@
 		?>
 		<form method="post" action="studies.php">
 		<input type="hidden" name="action" value="renameseries">
-		<input type="hidden" name="studyid" value="<?=$studyid?>">
+		<input type="hidden" name="studyid" value="<? =$studyid?>">
 		<table class="ui very compact celled collapsing grey table">
 			<thead>
 				<tr>
@@ -664,18 +664,18 @@
 					$seriesprotocol = $row['series_protocol'];
 					?>
 					<tr>
-						<td><?=$seriesnum?></td>
-						<td class="tt"><?=$seriesdesc?></td>
-						<td style="border-right: 1px solid #aaa" class="tt"><?=$seriesprotocol?></td>
-						<td><input type="text" name="newseriesdesc[<?=$seriesid?>]" value="<?=$seriesdesc?>" style="font-family: monospace;"></td>
-						<td><input type="text" name="newseriesprotocol[<?=$seriesid?>]" value="<?=$seriesprotocol?>" style="font-family: monospace;"></td>
+						<td><? =$seriesnum?></td>
+						<td class="tt"><? =$seriesdesc?></td>
+						<td style="border-right: 1px solid #aaa" class="tt"><? =$seriesprotocol?></td>
+						<td><input type="text" name="newseriesdesc[<? =$seriesid?>]" value="<? =$seriesdesc?>" style="font-family: monospace;"></td>
+						<td><input type="text" name="newseriesprotocol[<? =$seriesid?>]" value="<? =$seriesprotocol?>" style="font-family: monospace;"></td>
 					</tr>
 					<?
 				}
 				else {
 					?>
 					<tr>
-						<td colspan="5">Invalid <?=$modality?> series [<?=$seriesid?>]</td>
+						<td colspan="5">Invalid <? =$modality?> series [<? =$seriesid?>]</td>
 					</tr>
 					<?
 				}
@@ -730,7 +730,7 @@
 		<div class="ui text container">
 			<form method="post" action="studies.php" class="ui form">
 			<input type="hidden" name="action" value="updateseriesnotes">
-			<input type="hidden" name="studyid" value="<?=$studyid?>">
+			<input type="hidden" name="studyid" value="<? =$studyid?>">
 			<table class="ui celled top attached grey table">
 				<thead>
 					<tr>
@@ -751,16 +751,16 @@
 						$seriesnote = $row['series_notes'];
 						?>
 						<tr>
-							<td><?=$seriesnum?></td>
-							<td class="tt"><?=$seriesdesc?></td>
-							<td><input type="text" name="seriesnotes[<?=$seriesid?>]" value="<?=$seriesnote?>" style="font-family: monospace;"></td>
+							<td><? =$seriesnum?></td>
+							<td class="tt"><? =$seriesdesc?></td>
+							<td><input type="text" name="seriesnotes[<? =$seriesid?>]" value="<? =$seriesnote?>" style="font-family: monospace;"></td>
 						</tr>
 						<?
 					}
 					else {
 						?>
 						<tr>
-							<td colspan="5">Invalid <?=$modality?> series [<?=$seriesid?>]</td>
+							<td colspan="5">Invalid <? =$modality?> series [<? =$seriesid?>]</td>
 						</tr>
 						<?
 					}
@@ -768,7 +768,7 @@
 			?>
 			</table>
 				<div class="ui bottom attached segment">
-					<a href="studies.php?id=<?=$studyid?>" class="ui button">Cancel</a>
+					<a href="studies.php?id=<? =$studyid?>" class="ui button">Cancel</a>
 					<input type="submit" value="Save notes" class="ui primary button">
 				</div>
 			</form>
@@ -881,15 +881,15 @@
 				<table class="ui blue table">
 					<tr>
 						<td><b>Series description</b></td>
-						<td><tt><?=$seriesdesc?></tt></td>
+						<td><tt><? =$seriesdesc?></tt></td>
 					</tr>
 					<tr>
 						<td><b>Image Type</b></td>
-						<td><tt><?=$imagetype?></tt></td>
+						<td><tt><? =$imagetype?></tt></td>
 					</tr>
 					<tr>
 						<td><b>Project</b></td>
-						<td><tt><?=$projectname?></tt></td>
+						<td><tt><? =$projectname?></tt></td>
 					</tr>
 				</table>
 			
@@ -899,14 +899,14 @@
 			
 				<form method="post" action="studies.php" class="ui form" style="overflow:visible">
 					<input type="hidden" name="action" value="updatebidsmapping">
-					<input type="hidden" name="studyid" value="<?=$studyid?>">
-					<input type="hidden" name="seriesdesc" value="<?=$seriesdesc?>">
-					<input type="hidden" name="imagetype" value="<?=$imagetype?>">
+					<input type="hidden" name="studyid" value="<? =$studyid?>">
+					<input type="hidden" name="seriesdesc" value="<? =$seriesdesc?>">
+					<input type="hidden" name="imagetype" value="<? =$imagetype?>">
 				
 					<div class="field">
 						<label>BIDS entity : suffix</label>
 						<div class="ui selection dropdown">
-							<input type="hidden" name="bidsentitysuffix" value="<?=$bidsentity?>:<?=$bidssuffix?>">
+							<input type="hidden" name="bidsentitysuffix" value="<? =$bidsentity?>:<? =$bidssuffix?>">
 							<i class="dropdown icon"></i>
 							<div class="default text">Select Entity:Suffix</div>
 							<div class="scrollhint menu">
@@ -916,7 +916,7 @@
 										sort($suff);
 										foreach ($suff as $suffix) {
 											?>
-											<div class="item" data-value="<?=$entity?>:<?=$suffix?>"><tt><?=$entity?> : <?=$suffix?></tt></div>
+											<div class="item" data-value="<? =$entity?>:<? =$suffix?>"><tt><? =$entity?> : <? =$suffix?></tt></div>
 											<?
 										}
 									}
@@ -929,23 +929,23 @@
 					<div class="fields">
 						<div class="field">
 							<label>Entity</label>
-							<input type="text" name="bidsIntendedForEntity" value="<?=$bidsIntendedForEntity?>" style="font-family:monospace">
+							<input type="text" name="bidsIntendedForEntity" value="<? =$bidsIntendedForEntity?>" style="font-family:monospace">
 						</div>
 						<div class="field">
 							<label>Task</label>
-							<input type="text" name="bidsIntendedForTask" value="<?=$bidsIntendedForTask?>" style="font-family:monospace">
+							<input type="text" name="bidsIntendedForTask" value="<? =$bidsIntendedForTask?>" style="font-family:monospace">
 						</div>
 						<div class="field">
 							<label>Run</label>
-							<input type="text" name="bidsIntendedForRun" value="<?=$bidsIntendedForRun?>" style="font-family:monospace">
+							<input type="text" name="bidsIntendedForRun" value="<? =$bidsIntendedForRun?>" style="font-family:monospace">
 						</div>
 						<div class="field">
 							<label>Suffix</label>
-							<input type="text" name="bidsIntendedForSuffix" value="<?=$bidsIntendedForSuffix?>" style="font-family:monospace">
+							<input type="text" name="bidsIntendedForSuffix" value="<? =$bidsIntendedForSuffix?>" style="font-family:monospace">
 						</div>
 						<div class="field">
 							<label>FileExtension</label>
-							<input type="text" name="bidsIntendedForFileExtension" value="<?=$bidsIntendedForFileExtension?>" style="font-family:monospace">
+							<input type="text" name="bidsIntendedForFileExtension" value="<? =$bidsIntendedForFileExtension?>" style="font-family:monospace">
 						</div>
 					</div>
 					<div class="ui segment">
@@ -987,7 +987,7 @@
 
 					<div class="field">
 						<label>BIDS run number <i class="question circle outline icon" title="This BIDS series will always be labeled 'run-#'"></i></label>
-						<input type="number" name="bidsrun" value="<?=$bidsrun?>">
+						<input type="number" name="bidsrun" value="<? =$bidsrun?>">
 					</div>
 
 					<div class="field">
@@ -999,7 +999,7 @@
 
 					<div class="field">
 						<label>BIDS task <i class="question circle outline icon" title="BIDS 'task-' filename option"></i></label>
-						<input type="text" name="bidstask" value="<?=$bidstask?>" style="font-family:monospace">
+						<input type="text" name="bidstask" value="<? =$bidstask?>" style="font-family:monospace">
 					</div>
 
 					<div class="field">
@@ -1012,7 +1012,7 @@
 
 					<div class="field">
 						<label>BIDS phase encoding direction <i class="question circle outline icon" title="BIDS 'dir-' filename option. Can be: AP, PA, LR, RL"></i></label>
-						<input type="text" name="bidspedirection" value="<?=$bidspedirection?>" style="font-family:monospace">
+						<input type="text" name="bidspedirection" value="<? =$bidspedirection?>" style="font-family:monospace">
 					</div>
 				
 					<input type="submit" value="Update" class="ui primary button">
@@ -1037,7 +1037,7 @@
 				?><div align="center"><span class="message">Series hidden</span></div><?
 			}
 			else {
-				?><div align="center"><span class="message">Invalid <?=$modality?> series</span></div><?
+				?><div align="center"><span class="message">Invalid <? =$modality?> series</span></div><?
 			}
 		}
 	}
@@ -1057,7 +1057,7 @@
 				?><div align="center"><span class="message">Series unhidden</span></div><?
 			}
 			else {
-				?><div align="center"><span class="message">Invalid <?=$modality?> series</span></div><?
+				?><div align="center"><span class="message">Invalid <? =$modality?> series</span></div><?
 			}
 		}
 	}
@@ -1096,14 +1096,14 @@
 		<div align="center" class="message">
 		<b>Are you absolutely sure you want to delete this study?</b><img src="images/chili24.png">
 		<br><br>
-		<span><?=$uid?><?=$study_num?></span> collected on <?=$study_datetime?>
+		<span><? =$uid?><? =$study_num?></span> collected on <? =$study_datetime?>
 		<br><br>
 		<table width="100%">
 			<tr>
 				<td align="center" width="50%"><FORM><INPUT TYPE="BUTTON" VALUE="Back" ONCLICK="history.go(-1)"></FORM></td>
 				<form method="post" action="studies.php">
 				<input type="hidden" name="action" value="delete">
-				<input type="hidden" name="studyid" value="<?=$studyid?>">
+				<input type="hidden" name="studyid" value="<? =$studyid?>">
 				<td align="center"><input type="submit" value="Yes, delete it" class="ui primary button"></td>
 				</form>
 			</tr>
@@ -1310,8 +1310,8 @@
 		?>
 		<form method="post" action="studies.php">
 		<input type="hidden" name="action" value="submitminipipelines">
-		<input type="hidden" name="studyid" value="<?=$studyid?>">
-		<input type="hidden" name="modality" value="<?=$modality?>">
+		<input type="hidden" name="studyid" value="<? =$studyid?>">
+		<input type="hidden" name="modality" value="<? =$modality?>">
 		<table class="ui very compact celled grey table">
 			<thead>
 				<th>Series</th>
@@ -1332,10 +1332,10 @@
 					$seriesdesc = $row['series_protocol'];
 				?>
 				<tr>
-					<input type="hidden" name="seriesids[]" value="<?=$seriesid?>">
-					<td><?=$seriesnum?></td>
-					<td><?=$seriesdesc?></td>
-					<td><?=$mpselectbox?></td>
+					<input type="hidden" name="seriesids[]" value="<? =$seriesid?>">
+					<td><? =$seriesnum?></td>
+					<td><? =$seriesdesc?></td>
+					<td><? =$mpselectbox?></td>
 				</tr>
 				<?
 			}
@@ -1404,11 +1404,11 @@
 	?>
 		<div class="ui center aligned container">
 			<div class="ui massive breadcrumb">
-				<a href="projects.php?id=<?=$projectid?>" class="section"><?=$projectname?></a>
+				<a href="projects.php?id=<? =$projectid?>" class="section"><? =$projectname?></a>
 				<i class="right angle icon divider"></i>
-				<a href="subjects.php?id=<?=$subjectid?>" class="section"><?=$uid?></a>
+				<a href="subjects.php?id=<? =$subjectid?>" class="section"><? =$uid?></a>
 				<i class="right angle icon divider"></i>
-				<a href="studies.php?id=<?=$studyid?>" class="active section">Study <?=$study_num?></a>
+				<a href="studies.php?id=<? =$studyid?>" class="active section">Study <? =$study_num?></a>
 			</div>
 			<? DisplayPermissions($perms); ?>
 		</div>
@@ -1416,12 +1416,12 @@
 		<br><br>
 		<div class="ui text container">
 			<div class="ui top attached secondary segment">
-				<h3 class="ui header"><?=$formtitle?></h3>
+				<h3 class="ui header"><? =$formtitle?></h3>
 			</div>
 			<div class="ui bottom attached segment">
 				<form method="post" action="studies.php" class="ui form">
-				<input type="hidden" name="action" value="<?=$formaction?>">
-				<input type="hidden" name="studyid" value="<?=$studyid?>">
+				<input type="hidden" name="action" value="<? =$formaction?>">
+				<input type="hidden" name="studyid" value="<? =$studyid?>">
 				<div class="two fields">
 					<div class="field">
 						<label>Modality</label>
@@ -1433,14 +1433,14 @@
 								$mod_code = $row['mod_code'];
 								$mod_desc = $row['mod_desc'];
 								if ($mod_code == $study_modality) { $selected = "selected"; } else { $selected = ""; }
-								?><option value="<?=$mod_code?>" <?=$selected?>><?=$mod_desc?></option><?
+								?><option value="<? =$mod_code?>" <? =$selected?>><? =$mod_desc?></option><?
 							}
 						?>
 						</select>					
 					</div>
 					<div class="field">
 						<label>Date/time</label>
-						<input type="text" name="studydatetime" value="<?=$study_datetime?>" required>
+						<input type="text" name="studydatetime" value="<? =$study_datetime?>" required>
 					</div>
 				</div>
 
@@ -1448,21 +1448,21 @@
 					<div class="field">
 						<label>Age</label>
 						<div class="ui right labeled input">
-							<input type="text" name="studyageatscan" value="<?=$study_ageatscan?>">
+							<input type="text" name="studyageatscan" value="<? =$study_ageatscan?>">
 						    <div class="ui label">years</div>
 						</div>
 					</div>
 					<div class="field" title="Height in <b>Meters</b>">
 						<label>Height</label>
 						<div class="ui right labeled input">
-							<input type="text" name="studyheight" value="<?=$study_height?>" size="4">
+							<input type="text" name="studyheight" value="<? =$study_height?>" size="4">
 						    <div class="ui yellow label">m</div>
 						</div>
 					</div>
 					<div class="field" title="Weight in <b>Kilograms</b>">
 						<label>Weight</label>
 						<div class="ui right labeled input">
-							<input type="text" name="studyweight" value="<?=$study_weight?>" size="4">
+							<input type="text" name="studyweight" value="<? =$study_weight?>" size="4">
 						    <div class="ui yellow label">kg</div>
 						</div>
 					</div>
@@ -1476,15 +1476,15 @@
 					<div class="ui three fields">
 						<div class="field">
 							<label>Visit type</label>
-							<input type="text" name="studytype" value="<?=$study_type?>">
+							<input type="text" name="studytype" value="<? =$study_type?>">
 						</div>
 						<div class="field">
 							<label>Day number</label>
-							<input type="text" name="studydaynum" value="<?=$study_daynum?>">
+							<input type="text" name="studydaynum" value="<? =$study_daynum?>">
 						</div>
 						<div class="field">
 							<label>Time number</label>
-							<input type="text" name="studytimepoint" value="<?=$study_timepoint?>">
+							<input type="text" name="studytimepoint" value="<? =$study_timepoint?>">
 						</div>
 					</div>
 				</div>
@@ -1492,21 +1492,21 @@
 				<div class="ui three fields">
 					<div class="field">
 						<label>Operator</label>
-						<input type="text" name="studyoperator" value="<?=$study_operator?>">
+						<input type="text" name="studyoperator" value="<? =$study_operator?>">
 					</div>
 					<div class="field">
 						<label>Performing physician</label>
-						<input type="text" name="studyphysician" value="<?=$study_physician?>">
+						<input type="text" name="studyphysician" value="<? =$study_physician?>">
 					</div>
 					<div class="field">
 						<label>Site</label>
-						<input type="text" name="studysite" value="<?=$study_site?>">
+						<input type="text" name="studysite" value="<? =$study_site?>">
 					</div>
 				</div>
 
 				<div class="field">
 					<label>Notes</label>
-					<textarea name="studynotes" cols="30" rows="5"><?=$study_notes?></textarea>
+					<textarea name="studynotes" cols="30" rows="5"><? =$study_notes?></textarea>
 				</div>
 
 				<? if (strtolower($study_modality) == "mr") { ?>
@@ -1517,39 +1517,39 @@
 						</div>
 						<div class="field">
 							<label>Radiological read date</label>
-							<input type="text" name="studyradreaddate" value="<?=$study_radreaddate?>">
+							<input type="text" name="studyradreaddate" value="<? =$study_radreaddate?>">
 						</div>
 						<div class="field">
 							<label>Radiological read findings</label>
-							<input type="text" name="studyradreadfindings" value="<?=$study_radreadfindings?>">
+							<input type="text" name="studyradreadfindings" value="<? =$study_radreadfindings?>">
 						</div>
 					</div>
 				<? } elseif (strtolower($study_modality) == "et") { ?>
 					<div class="ui three fields">
 						<div class="field">
 							<label>Snellen chart</label>
-							<input type="text" size="8" name="studyetsnellchart" value="<?=$study_etsnellenchart?>">
+							<input type="text" size="8" name="studyetsnellchart" value="<? =$study_etsnellenchart?>">
 						</div>
 						<div class="field">
 							<label>Vergence</label>
-							<input type="text" name="studyetvergence" value="<?=$study_etvergence?>">
+							<input type="text" name="studyetvergence" value="<? =$study_etvergence?>">
 						</div>
 						<div class="field">
 							<label>Tracking</label>
-							<input type="text" name="studyettracking" value="<?=$study_ettracking?>">
+							<input type="text" name="studyettracking" value="<? =$study_ettracking?>">
 						</div>
 					</div>
 				<? } elseif (strtolower($study_modality) == "snp") { ?>
 					<div class="field">
 						<label>SNP chip</label>
-						<input type="text" size="35" name="studysnpchip" value="<?=$study_snpchip?>">
+						<input type="text" size="35" name="studysnpchip" value="<? =$study_snpchip?>">
 					</div>
 				<? } ?>
 
 				<div class="two fields">
 					<div class="field">
 						<label>Alternate ID</label>
-						<input type="text" name="studyaltid" value="<?=$study_alternateid?>">
+						<input type="text" name="studyaltid" value="<? =$study_alternateid?>">
 					</div>
 					<div class="field">
 						<label>Experimenter</label>
@@ -1562,7 +1562,7 @@
 					</div>
 					<div class="right aligned column">
 						<button class="ui button">Cancel</button>
-						<input type="submit" class="ui primary button" value="<?=$submitbuttonlabel?>">
+						<input type="submit" class="ui primary button" value="<? =$submitbuttonlabel?>">
 					</div>
 				</div>
 				
@@ -1691,11 +1691,11 @@
 		
 		<div class="ui center aligned container">
 			<div class="ui massive breadcrumb">
-				<a href="projects.php?id=<?=$projectid?>" class="section"><?=$project_name?></a>
+				<a href="projects.php?id=<? =$projectid?>" class="section"><? =$project_name?></a>
 				<i class="right angle icon divider"></i>
-				<a href="subjects.php?id=<?=$subjectid?>" class="section"><?=$uid?></a>
+				<a href="subjects.php?id=<? =$subjectid?>" class="section"><? =$uid?></a>
 				<i class="right angle icon divider"></i>
-				<a href="studies.php?id=<?=$studyid?>" class="active section">Study <?=$study_num?></a>
+				<a href="studies.php?id=<? =$studyid?>" class="active section">Study <? =$study_num?></a>
 			</div>
 			<? DisplayPermissions($perms); ?>
 		</div>
@@ -1713,39 +1713,39 @@
 					<table class="ui very basic very compact celled table" width="100%">
 						<tr>
 							<td class="right aligned"><b>Study number</td>
-							<td><?=$study_num?></td>
+							<td><? =$study_num?></td>
 						</tr>
 						<tr>
 							<td class="right aligned"><b>Study ID</td>
-							<td class="tt"><?=$uid?><?=$study_num?></td>
+							<td class="tt"><? =$uid?><? =$study_num?></td>
 						</tr>
 						<tr>
 							<td class="right aligned"><b>Alternate Study ID</td>
-							<td class="tt"><?=$study_alternateid?></td>
+							<td class="tt"><? =$study_alternateid?></td>
 						</tr>
 						<tr>
 							<td class="right aligned"><b>Modality</td>
-							<td class="<?=$class?>"><?=$study_modality?></td>
+							<td class="<? =$class?>"><? =$study_modality?></td>
 						</tr>
 					<? if (strtolower($study_modality) == "mr") { ?>
 						<tr>
 							<td class="right aligned"><b>Date/time</td>
-							<td><?=$study_datetime?></td>
+							<td><? =$study_datetime?></td>
 						</tr>
 						<tr>
 							<td class="right aligned"><b>Visit type</td>
-							<td><?=$study_type?></td>
+							<td><? =$study_type?></td>
 						</tr>
 					<? } else { ?>
 						<tr>
 							<td colspan="2">
 								<div class="ui styled segment">
-									<form id="Sform" action="studies.php?action=saveme&studyid=<?=$studyid?>" method="post" class="ui form">
+									<form id="Sform" action="studies.php?action=saveme&studyid=<? =$studyid?>" method="post" class="ui form">
 									<input type="hidden" name="subme">
-									<input type="hidden" name="stmod" value="<?=$study_modality?>">
+									<input type="hidden" name="stmod" value="<? =$study_modality?>">
 									<div class="inline field">
 										<label>Date/time</label>
-										<input type="datetime-local" value="<?=$dbstudydatetime;?>" name="studydatetime" required>
+										<input type="datetime-local" value="<? =$dbstudydatetime;?>" name="studydatetime" required>
 									</div>
 									<div class="inline field">
 										<div class="ui checkbox">
@@ -1755,15 +1755,15 @@
 									</div>
 									<div class="inline field">
 										<label>Visit type</label>
-										<input type="text" class="ui input" name="studytype" value="<?=$study_type?>" size="30" placeholder="Visit type">
+										<input type="text" class="ui input" name="studytype" value="<? =$study_type?>" size="30" placeholder="Visit type">
 									</div>
 									<div class="inline field">
 										<label>Visit number</label>
-										<input type="text" class="ui input" name="studydaynum" value="<?=$study_daynum?>" size="30" placeholder="Day number">
+										<input type="text" class="ui input" name="studydaynum" value="<? =$study_daynum?>" size="30" placeholder="Day number">
 									</div>
 									<div class="inline field">
 										<label>Visit time point</label>
-										<input type="text" class="ui input" name="studytimepoint" value="<?=$study_timepoint?>" size="30" placeholder="Time point">
+										<input type="text" class="ui input" name="studytimepoint" value="<? =$study_timepoint?>" size="30" placeholder="Time point">
 									</div>
 									<input type="submit" class="ui small basic blue button" value="Quick Update">
 									</form>
@@ -1773,51 +1773,51 @@
 					<? } ?>
 						<tr>
 							<td class="right aligned"><b>Day</td>
-							<td class="right marked orange"><?=$study_daynum?></td>
+							<td class="right marked orange"><? =$study_daynum?></td>
 						</tr>
 						<tr>
 							<td class="right aligned"><b>Timepoint</td>
-							<td class="right marked orange"><?=$study_timepoint?></td>
+							<td class="right marked orange"><? =$study_timepoint?></td>
 						</tr>
 						<tr>
 							<td class="right aligned"><b>Age at scan</td>
-							<td><?=number_format($study_ageatscan,1)?> y</td>
+							<td><? =number_format($study_ageatscan,1)?> y</td>
 						</tr>
 						<tr>
 							<td class="right aligned"><b>Height</td>
-							<td><?=number_format($study_height,2)?> m <span class="tiny">(<?=$study_heightft?>)</span></td>
+							<td><? =number_format($study_height,2)?> m <span class="tiny">(<? =$study_heightft?>)</span></td>
 						</tr>
 						<tr>
 							<td class="right aligned"><b>Weight</td>
-							<td><?=number_format($study_weight,1)?> kg <span class="tiny">(<?=number_format($study_weight*2.20462,1)?> lbs)</span></td>
+							<td><? =number_format($study_weight,1)?> kg <span class="tiny">(<? =number_format($study_weight*2.20462,1)?> lbs)</span></td>
 						</tr>
 						<tr>
 							<td class="right aligned"><b>BMI</td>
-							<td><?=number_format($bmi,1)?> <span class="tiny">kg/m<sup>2</sup></span></td>
+							<td><? =number_format($bmi,1)?> <span class="tiny">kg/m<sup>2</sup></span></td>
 						</tr>
 						<tr>
 							<td class="right aligned"><b>Visit type</td>
-							<td><?=$study_type?></td>
+							<td><? =$study_type?></td>
 						</tr>
 						<tr>
 							<td class="right aligned"><b>Description</td>
-							<td><?=$study_desc?></td>
+							<td><? =$study_desc?></td>
 						</tr>
 						<tr>
 							<td class="right aligned"><b>Operator</td>
-							<td><?=$study_operator?></td>
+							<td><? =$study_operator?></td>
 						</tr>
 						<tr>
 							<td class="right aligned"><b>Performing physician</td>
-							<td><?=$study_physician?></td>
+							<td><? =$study_physician?></td>
 						</tr>
 						<tr>
 							<td class="right aligned"><b>Site</td>
-							<td><?=$study_site?></td>
+							<td><? =$study_site?></td>
 						</tr>
 						<tr>
 							<td class="right aligned"><b>Notes</td>
-							<td><?=$study_notes?></td>
+							<td><? =$study_notes?></td>
 						</tr>
 						<? if (strtolower($study_modality) == "mr") { ?>
 							<tr>
@@ -1826,52 +1826,52 @@
 							</tr>
 							<tr>
 								<td class="right aligned"><b>Rad. read date</td>
-								<td><?=$study_radreaddate?></td>
+								<td><? =$study_radreaddate?></td>
 							</tr>
 							<tr>
 								<td class="right aligned"><b>Rad. read findings</td>
-								<td><?=$study_radreadfindings?></td>
+								<td><? =$study_radreadfindings?></td>
 							</tr>
 						<? } elseif (strtolower($study_modality) == "et") { ?>
 							<tr>
 								<td class="right aligned"><b>Snellen chart</td>
-								<td><?=$study_etsnellenchart?></td>
+								<td><? =$study_etsnellenchart?></td>
 							</tr>
 							<tr>
 								<td class="right aligned"><b>Vergence</td>
-								<td><?=$study_etvergence?></td>
+								<td><? =$study_etvergence?></td>
 							</tr>
 							<tr>
 								<td class="right aligned"><b>Tracking</td>
-								<td><?=$study_ettracking?></td>
+								<td><? =$study_ettracking?></td>
 							</tr>
 						<? } elseif (strtolower($study_modality) == "snp") { ?>
 							<tr>
 								<td class="right aligned"><b>SNP chip</td>
-								<td><?=$study_snpchip?></td>
+								<td><? =$study_snpchip?></td>
 							</tr>
 						<? } ?>
 						<tr>
 							<td class="right aligned"><b>Status</b></td>
-							<td><?=$study_status?></td>
+							<td><? =$study_status?></td>
 						</tr>
 						<tr>
 							<td class="right aligned"><b>Created by</td>
-							<td><?=$study_createdby?></td>
+							<td><? =$study_createdby?></td>
 						</tr>
 						<tr>
 							<td class="right aligned"><b>Import/upload date</td>
-							<td><?=$study_createdate?></td>
+							<td><? =$study_createdate?></td>
 						</tr>
 						<tr>
 							<td class="right aligned"><b>Experimenter</td>
-							<td><?=$study_experimenter?></td>
+							<td><? =$study_experimenter?></td>
 						</tr>
 					</table>
 
-					<a href="studies.php?action=editform&studyid=<?=$studyid?>" class="ui primary basic fluid button"><i class="edit icon"></i> Edit study</a>
+					<a href="studies.php?action=editform&studyid=<? =$studyid?>" class="ui primary basic fluid button"><i class="edit icon"></i> Edit study</a>
 					<br>
-					<a href="packages.php?action=addobject&objecttype=study&objectids[]=<?=$studyid?>" class="ui primary basic brown fluid button"><em data-emoji=":chipmunk:"></em> Add to Package</a>
+					<a href="packages.php?action=addobject&objecttype=study&objectids[]=<? =$studyid?>" class="ui primary basic brown fluid button"><em data-emoji=":chipmunk:"></em> Add to Package</a>
 
 					<? if ($GLOBALS['isadmin']) { ?>
 						<script>
@@ -1887,14 +1887,14 @@
 						<div class="ui fluid basic red button" id="popupbutton1"><i class="tools icon"></i> Operations...</div>
 						
 						<div class="ui wide popup" id="popupmenu1" style="width: 400px">
-							<a href="merge.php?action=mergestudyform&studyid=<?=$studyid?>" class="ui fluid primary button"><i class="random icon"></i> Merge study with...</a>
+							<a href="merge.php?action=mergestudyform&studyid=<? =$studyid?>" class="ui fluid primary button"><i class="random icon"></i> Merge study with...</a>
 							
 							<br>
 							
 							<form action="studies.php" method="post">
-								<input type="hidden" name="studyid" value="<?=$study_id?>">
+								<input type="hidden" name="studyid" value="<? =$study_id?>">
 								<input type="hidden" name="action" value="movestudytosubject">
-								<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
+								<input type="hidden" name="enrollmentid" value="<? =$enrollmentid?>">
 								<b>Move study to existing UID...</b>
 								<div class="ui fluid inline action input">
 									<input type="text" size="10" name="newuid" id="newuid" placeholder="existing UID" required>
@@ -1903,10 +1903,10 @@
 							</form>
 							
 							<form action="studies.php" method="post">
-								<input type="hidden" name="studyid" value="<?=$study_id?>">
+								<input type="hidden" name="studyid" value="<? =$study_id?>">
 								<input type="hidden" name="action" value="movestudytoproject">
-								<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
-								<input type="hidden" name="subjectid" value="<?=$subjectid?>">
+								<input type="hidden" name="enrollmentid" value="<? =$enrollmentid?>">
+								<input type="hidden" name="subjectid" value="<? =$subjectid?>">
 								<b>Move study to new project...</b>
 								<div class="ui fluid labeled inline action input">
 									<select name="newprojectid" class="ui fluid selection dropdown" required>
@@ -1920,7 +1920,7 @@
 											$project_name = $rowB['project_name'];
 											$project_costcenter = $rowB['project_costcenter'];
 											?>
-											<option value="<?=$project_id?>"><?=$project_name?> (<?=$project_costcenter?>)</option>
+											<option value="<? =$project_id?>"><? =$project_name?> (<? =$project_costcenter?>)</option>
 											<?
 										}
 									?>
@@ -1931,7 +1931,7 @@
 							
 							<br><br>
 							
-							<a href="studies.php?action=deleteconfirm&studyid=<?=$studyid?>" class="ui fluid red button" onclick="return confirm('Are you sure you want to delete this study?')"><i class="trash icon"></i> Delete</a>
+							<a href="studies.php?action=deleteconfirm&studyid=<? =$studyid?>" class="ui fluid red button" onclick="return confirm('Are you sure you want to delete this study?')"><i class="trash icon"></i> Delete</a>
 						</div>
 					<? } ?>
 				</div> <!-- end bottom attached segment -->
@@ -2045,9 +2045,9 @@
 		</script>
 		<form method="post" name="serieslist" id="serieslist" action="studies.php">
 		<input type="hidden" name="action" value="none">
-		<input type="hidden" name="studyid" value="<?=$studyid?>">
-		<input type="hidden" name="subjectid" value="<?=$subjectid?>">
-		<input type="hidden" name="modality" value="<?=$modality?>">
+		<input type="hidden" name="studyid" value="<? =$studyid?>">
+		<input type="hidden" name="subjectid" value="<? =$subjectid?>">
+		<input type="hidden" name="modality" value="<? =$modality?>">
 		<input type="hidden" name="objecttype" value="series">
 		<table class="ui top attached very compact small celled grey table" style="margin: 0px">
 			<thead>
@@ -2167,7 +2167,7 @@
 								<tr>
 									<td colspan="24" align="center" style="border-top: solid 3px #FF7F7F; border-bottom: solid 3px #FF7F7F; padding:5px">
 									<h4 class="ui center aligned header">
-										Non-consecutive series numbers. Missing series <?=$missingmsg?>
+										Non-consecutive series numbers. Missing series <? =$missingmsg?>
 									</h4>
 									</td>
 								</tr>
@@ -2445,28 +2445,28 @@
 							$(document).ready(function() {
 								const xhttp = new XMLHttpRequest();
 								xhttp.onload = function() {
-									document.getElementById("series<?=$series_num?>").innerHTML = this.responseText;
+									document.getElementById("series<? =$series_num?>").innerHTML = this.responseText;
 								}
-								xhttp.open("GET", "objectexists.php?action=series&modality=mr&seriesid=<?=$mrseries_id?>&datatype=<?=$data_type?>", true);
+								xhttp.open("GET", "objectexists.php?action=series&modality=mr&seriesid=<? =$mrseries_id?>&datatype=<? =$data_type?>", true);
 								xhttp.send();
 								
 								const xhttp2 = new XMLHttpRequest();
 								xhttp2.onload = function() {
-									document.getElementById("thumbnail<?=$series_num?>").innerHTML = this.responseText;
+									document.getElementById("thumbnail<? =$series_num?>").innerHTML = this.responseText;
 								}
-								xhttp2.open("GET", "objectexists.php?action=thumbnail&modality=mr&seriesid=<?=$mrseries_id?>&datatype=<?=$data_type?>", true);
+								xhttp2.open("GET", "objectexists.php?action=thumbnail&modality=mr&seriesid=<? =$mrseries_id?>&datatype=<? =$data_type?>", true);
 								xhttp2.send();
 							});
 							</script>
-							<tr style="color: <?=$rowcolor?>">
-								<td><?=$series_num?> <? if (!$isvalid) { ?> <i class='ui large red exclamation circle icon' title='<?=$validmessage?>'></i><? } ?> <span id="series<?=$series_num?>"></span></td>
-								<td><span id="uploader<?=$mrseries_id?>"></span></td>
+							<tr style="color: <? =$rowcolor?>">
+								<td><? =$series_num?> <? if (!$isvalid) { ?> <i class='ui large red exclamation circle icon' title='<? =$validmessage?>'></i><? } ?> <span id="series<? =$series_num?>"></span></td>
+								<td><span id="uploader<? =$mrseries_id?>"></span></td>
 								<td>
-									<a href="series.php?action=scanparams&seriesid=<?=$mrseries_id?>&modality=<?=$modality?>"><?=$series_desc?></a>&nbsp;<span id="thumbnail<?=$series_num?>"></span>
+									<a href="series.php?action=scanparams&seriesid=<? =$mrseries_id?>&modality=<? =$modality?>"><? =$series_desc?></a>&nbsp;<span id="thumbnail<? =$series_num?>"></span>
 									<? //if (($bold_reps < 2) && ($GLOBALS['cfg']['allowrawdicomexport'])) { ?>
-									<!--&nbsp;<a href="viewimage.php?modality=mr&type=dicom&seriesid=<?=$mrseries_id?>"><i class="cube icon"></i></a>-->
+									<!--&nbsp;<a href="viewimage.php?modality=mr&type=dicom&seriesid=<? =$mrseries_id?>"><i class="cube icon"></i></a>-->
 									<? //} ?>
-									<span data-tooltip="Series Description - <?=$series_desc?>&#10;Protocol - <?=$protocol?>&#10;Sequence Description - <?=$sequence?>&#10;TE - <?=$series_te?>ms&#10;Magnet - <?=$series_fieldstrength?>T&#10;Flip angle - <?=$series_flip?>&deg;&#10;Image type - <?=$imagetype?>&#10;Image comment - <?=$image_comments?>&#10;Phase encoding - <?=$phase?>" data-inverted="" data-variation="multiline"><i class="ui info circle icon"></i></span>
+									<span data-tooltip="Series Description - <? =$series_desc?>&#10;Protocol - <? =$protocol?>&#10;Sequence Description - <? =$sequence?>&#10;TE - <? =$series_te?>ms&#10;Magnet - <? =$series_fieldstrength?>T&#10;Flip angle - <? =$series_flip?>&deg;&#10;Image type - <? =$imagetype?>&#10;Image comment - <? =$image_comments?>&#10;Phase encoding - <? =$phase?>" data-inverted="" data-variation="multiline"><i class="ui info circle icon"></i></span>
 									
 									<?
 										if ($bidsentity == "") {
@@ -2478,75 +2478,75 @@
 											$color = "green";
 										}
 									?>
-									<a class="ui <?=$color?> compact tiny basic button" href="studies.php?action=editbidsmapping&modality=mr&seriesid=<?=$mrseries_id?>" data-html="<?=$bidstitle?>" data-inverted="inverted" data-variation="multiline" data-variation="very wide"><?=$label?></a>
+									<a class="ui <? =$color?> compact tiny basic button" href="studies.php?action=editbidsmapping&modality=mr&seriesid=<? =$mrseries_id?>" data-html="<? =$bidstitle?>" data-inverted="inverted" data-variation="multiline" data-variation="very wide"><? =$label?></a>
 								</td>
-								<td style="font-size:8pt"><?=$series_datetime?></td>
-								<td style="font-size:8pt"><?=$series_notes;?></td>
+								<td style="font-size:8pt"><? =$series_datetime?></td>
+								<td style="font-size:8pt"><? =$series_notes;?></td>
 								<td class="seriesrow" style="padding: 0px 5px;">
-									<a href="JavaScript:newPopup('mrseriesqa.php?id=<?=$mrseries_id?>');"><i class="chart bar icon" title="View QA results, including movement correction"></i></a>
+									<a href="JavaScript:newPopup('mrseriesqa.php?id=<? =$mrseries_id?>');"><i class="chart bar icon" title="View QA results, including movement correction"></i></a>
 								</td>
 								<td class="seriesrow" style="padding: 0px 5px;">
-									<span style="font-size:7pt"><?=$ratingavg;?></span>
+									<span style="font-size:7pt"><? =$ratingavg;?></span>
 									<div id="popup" style="display:none; min-width:800px; min-height:400px"></div>
 									<? if ($hasratings) { $image = "red"; } else { $image = "grey"; } ?>
-									<a href="JavaScript:newPopup('ratings.php?id=<?=$mrseries_id?>&type=series&modality=mr');"><i class="<?=$image?> comment dots icon" title="View ratings"></i></a>
+									<a href="JavaScript:newPopup('ratings.php?id=<? =$mrseries_id?>&type=series&modality=mr');"><i class="<? =$image?> comment dots icon" title="View ratings"></i></a>
 								</td>
 								<td class="seriesrow" align="right" style="padding:0px;margin:0px;">
 									<table cellspacing="0" cellpadding="1" height="100%" width="100%" class="movementsubtable">
-										<tr><td title="Total X displacement" class="mainval" style="background-color: <?=$maxxcolor?>;"><?=$rangex;?></td></tr>
-										<tr><td title="Total X velocity" class="subval" style="background-color: <?=$maxxcolor2?>;"><?=$rangex2;?></td></tr>
+										<tr><td title="Total X displacement" class="mainval" style="background-color: <? =$maxxcolor?>;"><? =$rangex;?></td></tr>
+										<tr><td title="Total X velocity" class="subval" style="background-color: <? =$maxxcolor2?>;"><? =$rangex2;?></td></tr>
 									</table>
 								</td>
 								<td class="seriesrow" align="right" style="padding:0px;margin:0px;">
 									<table cellspacing="0" cellpadding="1" height="100%" width="100%" class="movementsubtable">
-										<tr><td title="Total Y displacement" class="mainval" style="background-color: <?=$maxycolor?>;"><?=$rangey;?></td></tr>
-										<tr><td title="Total Y velocity" class="subval" style="background-color: <?=$maxycolor2?>;"><?=$rangey2;?></td></tr>
+										<tr><td title="Total Y displacement" class="mainval" style="background-color: <? =$maxycolor?>;"><? =$rangey;?></td></tr>
+										<tr><td title="Total Y velocity" class="subval" style="background-color: <? =$maxycolor2?>;"><? =$rangey2;?></td></tr>
 									</table>
 								</td>
 								<td class="seriesrow" align="right" style="padding:0px; margin:0px;">
 									<table cellspacing="0" cellpadding="1" height="100%" width="100%" class="movementsubtable">
-										<tr><td title="Total Z displacement" class="mainval" style="background-color: <?=$maxzcolor?>;"><?=$rangez;?></td></tr>
-										<tr><td title="Total Z velocity" class="subval" style="background-color: <?=$maxzcolor2?>;"><?=$rangez2;?></td></tr>
+										<tr><td title="Total Z displacement" class="mainval" style="background-color: <? =$maxzcolor?>;"><? =$rangez;?></td></tr>
+										<tr><td title="Total Z velocity" class="subval" style="background-color: <? =$maxzcolor2?>;"><? =$rangez2;?></td></tr>
 									</table>
 								</td>
-								<td class="seriesrow" align="right" style="background-color: <?=$maxpvsnrcolor?>; font-size:8pt">
-									<a href="stddevchart.php?h=40&w=450&min=<?=$pstats[$sequence]['minpvsnr']?>&max=<?=$pstats[$sequence]['maxpvsnr']?>&mean=<?=$pstats[$sequence]['avgpvsnr']?>&std=<?=$pstats[$sequence]['stdpvsnr']?>&i=<?=$pvsnr?>&b=yes" class="preview" style="color: black; text-decoration: none"><?=$pvsnr;?></a> 
+								<td class="seriesrow" align="right" style="background-color: <? =$maxpvsnrcolor?>; font-size:8pt">
+									<a href="stddevchart.php?h=40&w=450&min=<? =$pstats[$sequence]['minpvsnr']?>&max=<? =$pstats[$sequence]['maxpvsnr']?>&mean=<? =$pstats[$sequence]['avgpvsnr']?>&std=<? =$pstats[$sequence]['stdpvsnr']?>&i=<? =$pvsnr?>&b=yes" class="preview" style="color: black; text-decoration: none"><? =$pvsnr;?></a> 
 								</td>
-								<td class="seriesrow" align="right" style="background-color: <?=$maxiosnrcolor?>; font-size:8pt">
-									<a href="stddevchart.php?h=40&w=450&min=<?=$pstats[$sequence]['miniosnr']?>&max=<?=$pstats[$sequence]['maxiosnr']?>&mean=<?=$pstats[$sequence]['avgiosnr']?>&std=<?=$pstats[$sequence]['stdiosnr']?>&i=<?=$iosnr?>&b=yes" class="preview" style="color: black; text-decoration: none"><?=$iosnr;?></a>
+								<td class="seriesrow" align="right" style="background-color: <? =$maxiosnrcolor?>; font-size:8pt">
+									<a href="stddevchart.php?h=40&w=450&min=<? =$pstats[$sequence]['miniosnr']?>&max=<? =$pstats[$sequence]['maxiosnr']?>&mean=<? =$pstats[$sequence]['avgiosnr']?>&std=<? =$pstats[$sequence]['stdiosnr']?>&i=<? =$iosnr?>&b=yes" class="preview" style="color: black; text-decoration: none"><? =$iosnr;?></a>
 								</td>
-								<td><?=$sequence?></td>
-								<td style="font-size:8pt"><?=$scanlength?></td>
-								<td align="right" style="font-size:8pt"><?=$series_tr?></td>
-								<td style="font-size:8pt;white-space: nowrap;">(<?=number_format($series_spacingx,1)?>, <?=number_format($series_spacingy,1)?>, <?=number_format($series_spacingz,1)?>)</td>
-								<td style="font-size:8pt;white-space: nowrap;">(<?=$dimX?>, <?=$dimY?>, <?=$dimZ?><? if ($dimT > 1) { echo ", <big><b>$dimT</b></big>"; } ?>)</td>
+								<td><? =$sequence?></td>
+								<td style="font-size:8pt"><? =$scanlength?></td>
+								<td align="right" style="font-size:8pt"><? =$series_tr?></td>
+								<td style="font-size:8pt;white-space: nowrap;">(<? =number_format($series_spacingx,1)?>, <? =number_format($series_spacingy,1)?>, <? =number_format($series_spacingz,1)?>)</td>
+								<td style="font-size:8pt;white-space: nowrap;">(<? =$dimX?>, <? =$dimY?>, <? =$dimZ?><? if ($dimT > 1) { echo ", <big><b>$dimT</b></big>"; } ?>)</td>
 								<td nowrap style="font-size:8pt">
 									<? if ($series_size > 0) { ?>
-									<?=$numfiles?> (<?=HumanReadableFilesize($series_size)?>)
+									<? =$numfiles?> (<? =HumanReadableFilesize($series_size)?>)
 									<? if ($GLOBALS['cfg']['allowrawdicomexport']) { ?>
-									<a href="download.php?modality=mr&type=dicom&seriesid=<?=$mrseries_id?>" border="0"><i class="download icon" title="Download <?=$data_type?> data"></i></a>
+									<a href="download.php?modality=mr&type=dicom&seriesid=<? =$mrseries_id?>" border="0"><i class="download icon" title="Download <? =$data_type?> data"></i></a>
 									<? 	}
 									}
 									?>
 								</td>
-								<td nowrap bgcolor="<?=$behcolor?>" align="center">
+								<td nowrap bgcolor="<? =$behcolor?>" align="center">
 									<? if ($numfiles_beh != "-") { ?>
-									<a href="managefiles.php?seriesid=<?=$mrseries_id?>&modality=mr&datatype=beh"><?=$numfiles_beh?></a>
+									<a href="managefiles.php?seriesid=<? =$mrseries_id?>&modality=mr&datatype=beh"><? =$numfiles_beh?></a>
 									<? } else { ?>
-									<?=$numfiles_beh?>
+									<? =$numfiles_beh?>
 									<? } ?>
 									<span class="tiny">
 									<?
 										if ($numfiles_beh > 0) {
 											echo "(" . HumanReadableFilesize($beh_size) . ")";
 											?>
-											&nbsp;<a href="download.php?modality=mr&type=beh&seriesid=<?=$mrseries_id?>" border="0"><i class="download icon" title="Download behavioral data"></i></a>
+											&nbsp;<a href="download.php?modality=mr&type=beh&seriesid=<? =$mrseries_id?>" border="0"><i class="download icon" title="Download behavioral data"></i></a>
 											<?
 										}
 									?>
 									</span>
 								</td>
-								<td class="allseries center aligned" align="center" style="background-color: Lavender"><input type="checkbox" name="seriesids[]" value="<?=$mrseries_id?>"></td>
+								<td class="allseries center aligned" align="center" style="background-color: Lavender"><input type="checkbox" name="seriesids[]" value="<? =$mrseries_id?>"></td>
 							</tr>
 							<?
 							$lastseriesnum = $series_num;
@@ -2561,10 +2561,10 @@
 							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$mrseries_id = $row['mrseries_id'];
 								?>
-								var uploader<?=$mrseries_id?> = new qq.FileUploader({
-									element: document.getElementById('uploader<?=$mrseries_id?>'),
+								var uploader<? =$mrseries_id?> = new qq.FileUploader({
+									element: document.getElementById('uploader<? =$mrseries_id?>'),
 									action: 'upload.php',
-									params: {modality: 'MRBEH', studyid: '<?=$studyid?>', seriesid: <?=$mrseries_id?>},
+									params: {modality: 'MRBEH', studyid: '<? =$studyid?>', seriesid: <? =$mrseries_id?>},
 									debug: true
 								});
 								<?
@@ -2589,7 +2589,7 @@
 			});*/
 		</script>
 		<div class="ui bottom attached menu">
-			<a class="item" href="studies.php?studyid=<?=$studyid?>&action=displayfiles"><i class="file alternate icon"></i> View file list</a>
+			<a class="item" href="studies.php?studyid=<? =$studyid?>&action=displayfiles"><i class="file alternate icon"></i> View file list</a>
 			<div class="right menu" id="popupbutton2">
 				<div class="right menu">
 					<div class="ui icon bottom left pointing dropdown button" style="background-color: lavender; margin-right: 0px">
@@ -2611,7 +2611,7 @@
 							
 							<div class="ui item" onclick="document.serieslist.action='packages.php';document.serieslist.action.value='addobject';document.serieslist.submit();"><em data-emoji=":chipmunk:"></em>&nbsp; Add to Package</div>
 							
-							<div class="ui item" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='deleteseries';document.serieslist.submit();" title="Delete the selected series. The series will be moved to the <span class='tt'><?=$GLOBALS['cfg']['deleteddir']?></span> directory and will not appear anywhere on the website"><i class="red trash alternate icon"></i>Delete</div>
+							<div class="ui item" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='deleteseries';document.serieslist.submit();" title="Delete the selected series. The series will be moved to the <span class='tt'><? =$GLOBALS['cfg']['deleteddir']?></span> directory and will not appear anywhere on the website"><i class="red trash alternate icon"></i>Delete</div>
 						</div>
 					</div>
 				</div>
@@ -2633,7 +2633,7 @@
 				<br>
 				<button class="ui fluid button" name="resetqa" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='resetqa';document.serieslist.submit();" title="Reset the QA results for this series. New QA results will be re-generated"><i class="redo alternate icon"></i> Reset QC</button>
 				<br><br>
-				<button class="ui fluid red button" name="deleteseries" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='deleteseries';document.serieslist.submit();" title="Delete the selected series. The series will be moved to the <span class='tt'><?=$GLOBALS['cfg']['deleteddir']?></span> directory and will not appear anywhere on the website"><i class="trash alternate icon"></i>Delete</button>
+				<button class="ui fluid red button" name="deleteseries" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='deleteseries';document.serieslist.submit();" title="Delete the selected series. The series will be moved to the <span class='tt'><? =$GLOBALS['cfg']['deleteddir']?></span> directory and will not appear anywhere on the website"><i class="trash alternate icon"></i>Delete</button>
 			<? } ?>
 		</div>-->
 		
@@ -2665,7 +2665,7 @@
 		}
 	
 		?>
-		<!--<a href="studies.php?studyid=<?=$studyid?>&action=addseries&modality=CT">Add Series</a>-->
+		<!--<a href="studies.php?studyid=<? =$studyid?>&action=addseries&modality=CT">Add Series</a>-->
 		
 		<span class="tiny"><b>Upload file(s) by clicking the button or drag-and-drop (Firefox and Chrome only)</b><br>
 		DICOM files will only be associated with the study under which they were originally run... If you upload files from a different study, they won't show up here.</span>
@@ -2758,27 +2758,27 @@
 							});
 						</script>
 						<tr>
-							<td><?=$series_num?></td>
-							<td><?=$series_desc?></td>
-							<td><?=$protocol?> <a href="preview.php?image=<?=$thumbpath?>" class="preview"><i class="image icon"></i></a></td>
-							<td><?=$series_datetime?></td>
+							<td><? =$series_num?></td>
+							<td><? =$series_desc?></td>
+							<td><? =$protocol?> <a href="preview.php?image=<? =$thumbpath?>" class="preview"><i class="image icon"></i></a></td>
+							<td><? =$series_datetime?></td>
 							<td><span id="series_notes" class="edit_inline<? echo $ctseries_id; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 8pt;"><? echo $series_notes; ?></span></td>
-							<td><?=$series_contrastbolusagent?></td>
-							<td><?=$series_bodypartexamined?></td>
-							<td><?=$series_scanoptions?></td>
-							<td><?=$series_kvp?><span class="tiny">V</span></td>
-							<td><?=$series_datacollectiondiameter?><span class="tiny">mm</span></td>
-							<td><?=$series_contrastbolusroute?></td>
-							<td><?=$series_rotationdirection?></td>
-							<td><?=$series_exposuretime?><span class="tiny">ms</span></td>
-							<td><?=$series_xraytubecurrent?><span class="tiny">mA</span></td>
-							<td><?=$series_filtertype?></td>
-							<td><?=$series_generatorpower?><span class="tiny">V</span></td>
-							<td><?=$series_convolutionkernel?></td>
-							<td><?=number_format($series_spacingx,1)?> &times; <?=number_format($series_spacingy,1)?> &times; <?=number_format($series_spacingz,1)?></td>
-							<td><?=$img_cols?> &times; <?=$img_rows?> &times; <?=$img_slices?></td>
-							<td><?=$numfiles?></td>
-							<td nowrap><?=HumanReadableFilesize($series_size)?> <a href="download.php?modality=ct&type=dicom&seriesid=<?=$ctseries_id?>" border="0"><img src="images/download16.png" title="Download <?=$data_type?> data"></a></td>
+							<td><? =$series_contrastbolusagent?></td>
+							<td><? =$series_bodypartexamined?></td>
+							<td><? =$series_scanoptions?></td>
+							<td><? =$series_kvp?><span class="tiny">V</span></td>
+							<td><? =$series_datacollectiondiameter?><span class="tiny">mm</span></td>
+							<td><? =$series_contrastbolusroute?></td>
+							<td><? =$series_rotationdirection?></td>
+							<td><? =$series_exposuretime?><span class="tiny">ms</span></td>
+							<td><? =$series_xraytubecurrent?><span class="tiny">mA</span></td>
+							<td><? =$series_filtertype?></td>
+							<td><? =$series_generatorpower?><span class="tiny">V</span></td>
+							<td><? =$series_convolutionkernel?></td>
+							<td><? =number_format($series_spacingx,1)?> &times; <? =number_format($series_spacingy,1)?> &times; <? =number_format($series_spacingz,1)?></td>
+							<td><? =$img_cols?> &times; <? =$img_rows?> &times; <? =$img_slices?></td>
+							<td><? =$numfiles?></td>
+							<td nowrap><? =HumanReadableFilesize($series_size)?> <a href="download.php?modality=ct&type=dicom&seriesid=<? =$ctseries_id?>" border="0"><img src="images/download16.png" title="Download <? =$data_type?> data"></a></td>
 						</tr>
 						<?
 					}
@@ -2867,11 +2867,11 @@
 		<table class="entrytable">
 			<form method="post" action="studies.php">
 			<input type="hidden" name="action" value="updateseries">
-			<input type="hidden" name="seriesid" value="<?=$seriesid?>">
-			<input type="hidden" name="modality" value="<?=$modality?>">
+			<input type="hidden" name="seriesid" value="<? =$seriesid?>">
+			<input type="hidden" name="modality" value="<? =$modality?>">
 			<tr>
 				<td class="heading" colspan="2" align="center">
-					<b>Series <?=$series_num?></b>
+					<b>Series <? =$series_num?></b>
 				</td>
 			</tr>
 			<tr>
@@ -2900,7 +2900,7 @@
 						
 						foreach ($protocols as $protocolB) {
 							?>
-							<option value="<?=$protocolB?>" <? if ($protocolA == $protocolB) { echo "selected"; } ?>><?=$protocolB?></option>
+							<option value="<? =$protocolB?>" <? if ($protocolA == $protocolB) { echo "selected"; } ?>><? =$protocolB?></option>
 							<?
 						}
 					?>
@@ -2909,11 +2909,11 @@
 			</tr>
 			<tr>
 				<td class="label">Date/time<br><span class="tiny">24 hour clock</span></td>
-				<td><input type="text" name="series_datetime" value="<?=$series_datetime?>"></td>
+				<td><input type="text" name="series_datetime" value="<? =$series_datetime?>"></td>
 			</tr>
 			<tr>
 				<td class="label">Notes</td>
-				<td><input type="text" size="70" name="notes" value="<?=$notes?>"></td>
+				<td><input type="text" size="70" name="notes" value="<? =$notes?>"></td>
 			</tr>
 			<tr>
 				<td colspan="2" align="center">
@@ -2971,14 +2971,14 @@
 					<th>Notes</th>
 					<th>Files</th>
 					<th>Size</th>
-					<th>Upload <?=strtoupper($modality)?> files <span class="tiny" style="font-weight: normal">(Drag & Drop)</span></th>
+					<th>Upload <? =strtoupper($modality)?> files <span class="tiny" style="font-weight: normal">(Drag & Drop)</span></th>
 					<th>Download</th>
 					<th align="left">Operations <input type="checkbox" id="seriesall"><span class="tiny" style="font-weight: normal"> Select All</span></th>
 				</tr>
 			</thead>
 			<form method="post" name="serieslist" id="serieslist" action="studies.php" class="ui form">
 			<input type="hidden" name="action" value="" id="serieslistaction">
-			<input type="hidden" name="studyid" value="<?=$id?>">
+			<input type="hidden" name="studyid" value="<? =$id?>">
 			<tbody>
 				<?
 					$firstdate = "";
@@ -3019,7 +3019,7 @@
 								$(document).ready(function(){
 									$(".edit_inline<? echo $series_id; ?>").editInPlace({
 										url: "series_inlineupdate.php",
-										params: "action=editinplace&modality=<?=$modality?>&id=<? echo $series_id; ?>",
+										params: "action=editinplace&modality=<? =$modality?>&id=<? echo $series_id; ?>",
 										default_text: "<i style='color:#AAAAAA'>Add notes...</i>",
 										bg_over: "white",
 										bg_out: "lightyellow",
@@ -3027,23 +3027,23 @@
 								});
 							</script>
 							<tr>
-								<td style="text-align: center;"><a href="studies.php?action=editseries&seriesid=<?=$series_id?>&modality=<?=strtolower($modality)?>" style="font-weight: bold; font-size: larger;"><?=$series_num?></a></td>
+								<td style="text-align: center;"><a href="studies.php?action=editseries&seriesid=<? =$series_id?>&modality=<? =strtolower($modality)?>" style="font-weight: bold; font-size: larger;"><? =$series_num?></a></td>
 								<td><span id="series_protocol" class="edit_inline<? echo $series_id; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 11pt;"><? echo $protocol; ?></span></td>
-								<td class="<?=$datecolor?>"><?=$datemsg;?><span id="series_datetime" class="edit_inline<? echo $series_id; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 11pt;"><? echo $series_datetime; ?></span></td>
+								<td class="<? =$datecolor?>"><? =$datemsg;?><span id="series_datetime" class="edit_inline<? echo $series_id; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 11pt;"><? echo $series_datetime; ?></span></td>
 								<td><span id="series_notes" class="edit_inline<? echo $series_id; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 11pt;"><? echo $notes; ?></span></td>
 								<td>
-									<a class="ui tiny basic blue button <? if ($numfiles < 1) echo "disabled"; ?>" href="managefiles.php?seriesid=<?=$series_id?>&modality=<?=$modality?>&datatype=<?=$modality?>"><i class="file outline icon"></i> Manage <?=$numfiles?> file(s)</a>
+									<a class="ui tiny basic blue button <? if ($numfiles < 1) echo "disabled"; ?>" href="managefiles.php?seriesid=<? =$series_id?>&modality=<? =$modality?>&datatype=<? =$modality?>"><i class="file outline icon"></i> Manage <? =$numfiles?> file(s)</a>
 								</td>
-								<td><?=$series_size?></td>
+								<td><? =$series_size?></td>
 								<td>
-								<span id="uploader<?=$series_id?>"></span>
+								<span id="uploader<? =$series_id?>"></span>
 								</td>
 								<td nowrap>
 									<? if ($series_size != "-") { ?>
-										<a class="ui tiny basic blue button" href="download.php?modality=<?=$modality?>&seriesid=<?=$series_id?>"><i class="download icon" title="Download <?=$modality?> data"></i> Download (<?=$series_size?>)</a>
+										<a class="ui tiny basic blue button" href="download.php?modality=<? =$modality?>&seriesid=<? =$series_id?>"><i class="download icon" title="Download <? =$modality?> data"></i> Download (<? =$series_size?>)</a>
 									<? } ?>
 								</td>
-								<td class="allseries" ><input type="checkbox" name="seriesids[]" value="<?=$series_id?>"></td>
+								<td class="allseries" ><input type="checkbox" name="seriesids[]" value="<? =$series_id?>"></td>
 							</tr>
 						<?
 						}
@@ -3052,7 +3052,7 @@
 						?>
 						<tr>
 							<td colspan="1">
-								<span style="color: red">Invalid modality [<?=$modality?>]</span>
+								<span style="color: red">Invalid modality [<? =$modality?>]</span>
 							</td>
 						</tr>
 						<?
@@ -3067,10 +3067,10 @@
 							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$series_id = $row[strtolower($modality) . "series_id"];
 								?>
-									var uploader<?=$series_id?> = new qq.FileUploader({
-										element: document.getElementById('uploader<?=$series_id?>'),
+									var uploader<? =$series_id?> = new qq.FileUploader({
+										element: document.getElementById('uploader<? =$series_id?>'),
 										action: 'upload.php',
-										params: {modality: '<?=strtoupper($modality)?>', studyid: '<?=$id?>', seriesid: <?=$series_id?>},
+										params: {modality: '<? =strtoupper($modality)?>', studyid: '<? =$id?>', seriesid: <? =$series_id?>},
 										debug: true
 									});
 								<?
@@ -3083,12 +3083,12 @@
 					</script>
 				<!--<form action="studies.php" method="post">
 				<input type="hidden" name="action" value="addseries">-->
-				<input type="hidden" name="modality" value="<?=strtoupper($modality)?>">
-				<!--<input type="hidden" name="id" value="<?=$id?>">-->
+				<input type="hidden" name="modality" value="<? =strtoupper($modality)?>">
+				<!--<input type="hidden" name="id" value="<? =$id?>">-->
 				<tr>
 					<td>
 						<div class="ui input">
-							<input type="text" name="series_num" size="3" maxlength="10" value="<?=($max_seriesnum + 1)?>" required>
+							<input type="text" name="series_num" size="3" maxlength="10" value="<? =($max_seriesnum + 1)?>" required>
 						</div>
 					</td>
 					<td><div class="ui input">
@@ -3101,13 +3101,13 @@
 							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$protocol = $row['protocol'];
 								?>
-									<option value=" <?=$protocol?>"><?=$protocol?></option>
+									<option value=" <? =$protocol?>"><? =$protocol?></option>
 								<?
 							}
 						?>
 						</datalist>
 					</td>
-					<td title="Time should be formatted as a 24-hour clock"><div class="ui input"><input type="text" name="series_datetime" value="<?=date('Y-m-d H:i:s')?>" required></td>
+					<td title="Time should be formatted as a 24-hour clock"><div class="ui input"><input type="text" name="series_datetime" value="<? =date('Y-m-d H:i:s')?>" required></td>
 					<td><div class="ui input"><input type="text" name="notes"></div></td>
 					<td colspan="5">
 						<button type="submit" class="ui button" value="Create" onClick="document.serieslist.action.value='addseries'; document.serieslist.action.submit()"><i class="arrow alternate circle left icon"></i> Create series</button>
@@ -3117,7 +3117,7 @@
 		</table>
 		<div class="ui two column grid">
 			<div class="column">
-				<a class="ui basic button" href="studies.php?studyid=<?=$id?>&action=displayfiles"><i class="file alternate icon"></i> View file list</a>
+				<a class="ui basic button" href="studies.php?studyid=<? =$id?>&action=displayfiles"><i class="file alternate icon"></i> View file list</a>
 			</div>
 			<div class="right aligned column">
 				<b>With Selected</b> &nbsp; &nbsp; <br>
@@ -3141,7 +3141,7 @@
 			$files = find_all_files($path);
 
 			?>
-			<a class="ui basic button" href="studies.php?studyid=<?=$studyid?>">Normal View</a> Showing (<?=count($files)?> files) from <code><?=$path?></code>
+			<a class="ui basic button" href="studies.php?studyid=<? =$studyid?>">Normal View</a> Showing (<? =count($files)?> files) from <code><? =$path?></code>
 			<table class="ui very compact small celled table">
 				<thead>
 					<tr>
@@ -3217,33 +3217,33 @@
 				}
 				?>
 				<tr>
-					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD; color:<?=$filecolor?>; font-weight: <?=$fileweight?>">
+					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD; color:<? =$filecolor?>; font-weight: <? =$fileweight?>">
 					<?
 						switch ($filetype) {
 							case 'text':
 					?>
-					<a href="viewfile.php?file=<?="$file"?>" target="_blank"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
+					<a href="viewfile.php?file=<? ="$file"?>" target="_blank"><span style="color:<? =$filecolor?>; font-weight: <? =$fileweight?>"><? =$displayfile?></span></a>
 					<?
 								break;
 							case 'image':
 					?>
-					<a href="viewimagefile.php?file=<?="$file"?>" target="_blank"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
+					<a href="viewimagefile.php?file=<? ="$file"?>" target="_blank"><span style="color:<? =$filecolor?>; font-weight: <? =$fileweight?>"><? =$displayfile?></span></a>
 					<?
 								break;
 							case 'nifti':
 							case 'mesh':
 					?>
-					<a href="viewimage.php?type=<?=$filetype?>&filename=<?="$file"?>" target="_blank"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
+					<a href="viewimage.php?type=<? =$filetype?>&filename=<? ="$file"?>" target="_blank"><span style="color:<? =$filecolor?>; font-weight: <? =$fileweight?>"><? =$displayfile?></span></a>
 					<?
 								break;
 							default:
 					?>
-					<?=$displayfile?>
+					<? =$displayfile?>
 					<? } ?>
 					</td>
-					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=date("M j, Y H:i:s",$timestamp2)?></span></td>
-					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=$displayperms?></td>
-					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=number_format($size2)?></td>
+					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><? =date("M j, Y H:i:s",$timestamp2)?></span></td>
+					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><? =$displayperms?></td>
+					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><? =number_format($size2)?></td>
 				</tr>
 				<?
 			}
@@ -3317,7 +3317,7 @@
 				$analysis_iscomplete = $row['analysis_iscomplete'];
 				?>
 				<details>
-				<summary><?=$pipelinename?> v<?=$pipelineversion?> <span class="tiny"><?=$analysis_statusmessage?></style> &nbsp; <span style="color: darkred;"><?=$analysis_statusdatetime?></span></span></summary>
+				<summary><? =$pipelinename?> v<? =$pipelineversion?> <span class="tiny"><? =$analysis_statusmessage?></style> &nbsp; <span style="color: darkred;"><? =$analysis_statusdatetime?></span></span></summary>
 				<?
 					$sqlstring2 = "select a.*, d.result_name from analysis_results a left join analysis b on a.analysis_id = b.analysis_id left join pipelines c on b.pipeline_id = c.pipeline_id left join analysis_resultnames d on d.resultname_id = a.result_nameid where b.study_id = $studyid and a.analysis_id = $analysis_id order by d.result_name";
 				?>
@@ -3344,9 +3344,9 @@
 							}
 							if ($important) { $bold = 'bold'; } else { $bold = 'normal'; }
 							?>
-							<tr style="font-weight: <?=$bold?>">
-								<td><b><?=$pipelinename?></b></td>
-								<td><?=$name?></td>
+							<tr style="font-weight: <? =$bold?>">
+								<td><b><? =$pipelinename?></b></td>
+								<td><? =$name?></td>
 								<td align="right">
 									<?
 										switch($type) {
@@ -3364,16 +3364,16 @@
 												break;
 											case "i":
 												?>
-												<a href="preview.php?image=<?=$GLOBALS['cfg']['mountdir']?>/<?=$filename?>" class="preview"><i class="image icon"></i></a>
+												<a href="preview.php?image=<? =$GLOBALS['cfg']['mountdir']?>/<? =$filename?>" class="preview"><i class="image icon"></i></a>
 												<?
 												break;
 										}
 									?>
 								</td>
-								<td style="padding-left:0px"><?=$units?></td>
-								<!--<td><?=$size?></td>-->
-								<td><?=$swversion?></td>
-								<td nowrap><?=$lastupdate?></td>
+								<td style="padding-left:0px"><? =$units?></td>
+								<!--<td><? =$size?></td>-->
+								<td><? =$swversion?></td>
+								<td nowrap><? =$lastupdate?></td>
 							</tr>
 							<?
 						}
@@ -3394,7 +3394,7 @@
 		<b>Analyses</b><br><br>
 		<table class="smalldisplaytable">
 			<form method="post" action="studies.php">
-			<input type="hidden" name="id" value="<?=$studyid?>">
+			<input type="hidden" name="id" value="<? =$studyid?>">
 			<thead>
 				<tr>
 					<th valign="top" align="left">
@@ -3407,13 +3407,13 @@
 								$pipelineid = $row2['pipeline_id'];
 								$pipelinename = $row2['pipeline_name'];
 								?>
-								<option value="<?=$pipelineid?>" <? if ($search_pipelineid == $pipelineid) { echo "selected"; } ?>><?=$pipelinename?></option>
+								<option value="<? =$pipelineid?>" <? if ($search_pipelineid == $pipelineid) { echo "selected"; } ?>><? =$pipelinename?></option>
 								<?
 							}
 						?>
 						</select>
 					</th>
-					<th valign="top" align="left">Name<br><input type="text" name="search_name" value="<?=$search_name?>" class="smallsearchbox">
+					<th valign="top" align="left">Name<br><input type="text" name="search_name" value="<? =$search_name?>" class="smallsearchbox">
 					</th>
 					<th colspan="2" valign="top" align="left">Result<br>
 					<select name="search_compare">
@@ -3423,7 +3423,7 @@
 						<option value="<" <? if ($search_compare == '<') { echo "selected"; } ?>>&lt;
 						<option value="<=" <? if ($search_compare == '<=') { echo "selected"; } ?>>&lt;=
 					</select>
-					<input type="text" name="search_value" value="<?=$search_value?>" size="15" class="smallsearchbox"><br>
+					<input type="text" name="search_value" value="<? =$search_value?>" size="15" class="smallsearchbox"><br>
 					<select name="search_type">
 						<option value="" <? if ($search_type == '') { echo "selected"; } ?>>Select type
 						<option value="v" <? if ($search_type == 'v') { echo "selected"; } ?>>value
@@ -3437,13 +3437,13 @@
 						<?
 						for($i=1;$i<=20;$i++) {
 							?>
-							<option value="<?=$i?>" <? if ($imgperline == $i) { echo "selected"; } ?>><?=$i?>
+							<option value="<? =$i?>" <? if ($imgperline == $i) { echo "selected"; } ?>><? =$i?>
 						<? } ?>
 					</select>
 
 					</th>
 					<!--<th valign="top" align="left">Size</th>-->
-					<th valign="top" align="left">SW version<br><input type="text" name="search_swversion" value="<?=$search_swversion?>" class="smallsearchbox"></th>
+					<th valign="top" align="left">SW version<br><input type="text" name="search_swversion" value="<? =$search_swversion?>" class="smallsearchbox"></th>
 					<th valign="top" align="left">Date added<br><input type="submit" value="Search" style="font-size:9pt"></th>
 				</tr>
 			</thead>
@@ -3473,16 +3473,16 @@
 						$filesize = number_format(filesize($GLOBALS['cfg']['mountdir'] . "/$filename")/1000) . " kB";
 						?>
 							<td>
-								<a href="preview.php?image=<?=$GLOBALS['cfg']['mountdir']?>/<?=$filename?>"><img src="preview.php?image=<?=$GLOBALS['cfg']['mountdir']?>/<?=$filename?>" width="<?=$maximgwidth?>px"></a>
-								<table width="<?=$maximgwidth?>px">
+								<a href="preview.php?image=<? =$GLOBALS['cfg']['mountdir']?>/<? =$filename?>"><img src="preview.php?image=<? =$GLOBALS['cfg']['mountdir']?>/<? =$filename?>" width="<? =$maximgwidth?>px"></a>
+								<table width="<? =$maximgwidth?>px">
 									<tr>
 										<td style="font-size:9pt">
-											<b><?=$name?></b><br>
-											<?=$swversion?><br>
-											<?=$lastupdate?>
+											<b><? =$name?></b><br>
+											<? =$swversion?><br>
+											<? =$lastupdate?>
 										</td>
 										<td align="right" valign="top">
-											<span class="tiny"><?=$width?>x<?=$height?><br><?=$filesize?></span>
+											<span class="tiny"><? =$width?>x<? =$height?><br><? =$filesize?></span>
 										</td>
 									</tr>
 								</table>
@@ -3522,9 +3522,9 @@
 						}
 						if ($important) { $bold = 'bold'; } else { $bold = 'normal'; }
 						?>
-						<tr style="font-weight: <?=$bold?>">
-							<td><b><?=$pipelinename?></b></td>
-							<td><?=$name?></td>
+						<tr style="font-weight: <? =$bold?>">
+							<td><b><? =$pipelinename?></b></td>
+							<td><? =$name?></td>
 							<td align="right">
 								<?
 									switch($type) {
@@ -3542,16 +3542,16 @@
 											break;
 										case "i":
 											?>
-											<a href="preview.php?image=<?=$GLOBALS['cfg']['mountdir']?>/<?=$filename?>" class="preview"><i class="image icon"></i></a>
+											<a href="preview.php?image=<? =$GLOBALS['cfg']['mountdir']?>/<? =$filename?>" class="preview"><i class="image icon"></i></a>
 											<?
 											break;
 									}
 								?>
 							</td>
-							<td style="padding-left:0px"><?=$units?></td>
-							<!--<td><?=$size?></td>-->
-							<td><?=$swversion?></td>
-							<td nowrap><?=$lastupdate?></td>
+							<td style="padding-left:0px"><? =$units?></td>
+							<!--<td><? =$size?></td>-->
+							<td><? =$swversion?></td>
+							<td nowrap><? =$lastupdate?></td>
 						</tr>
 						<?
 					}

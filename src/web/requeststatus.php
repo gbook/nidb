@@ -286,24 +286,24 @@
 			<div class="ui styled black top attached segment">
 				<div class="ui two column very compact grid">
 					<div class="column">
-						<div class="ui header"><?=date("D M j, Y h:ia",strtotime($submitdate))?></div>
+						<div class="ui header"><? =date("D M j, Y h:ia",strtotime($submitdate))?></div>
 						<div class="ui meta">
-							<?=$deststr?> &nbsp; &nbsp; <?=$numseries?> objects &nbsp; &nbsp; <?=HumanReadableFilesize($totalbytes)?>
-							<p>Requested by <?=$username?></p>
+							<? =$deststr?> &nbsp; &nbsp; <? =$numseries?> objects &nbsp; &nbsp; <? =HumanReadableFilesize($totalbytes)?>
+							<p>Requested by <? =$username?></p>
 							<? if ($numahead > 0) {
 								echo "<p>$numahead exports queued ahead of this export</p>";
 							} ?>
 						</div>
 						<div class="ui description">
 							<? if (($destinationtype == "remotenidb") && ($connectionid != "") && ($transactionid != "")) { ?>
-							<br><iframe src="ajaxapi.php?action=remoteexportstatus&connectionid=<?=$connectionid?>&transactionid=<?=$transactionid?>&detail=0&total=<?=$total?>" width="650px" height="50px" style="border: 0px">Checking with remote server...</iframe>
+							<br><iframe src="ajaxapi.php?action=remoteexportstatus&connectionid=<? =$connectionid?>&transactionid=<? =$transactionid?>&detail=0&total=<? =$total?>" width="650px" height="50px" style="border: 0px">Checking with remote server...</iframe>
 							<? }
 							
 							if ((($totals['complete']/$total)*100) < 100) {
 							?>
 							<div class="ui orange image label">
-								Exporting object <?=number_format($totals['complete'])?> of <?=number_format($total)?>
-								<div class="detail"><?=number_format(($totals['complete']/$total)*100, 1)?>%</div>
+								Exporting object <? =number_format($totals['complete'])?> of <? =number_format($total)?>
+								<div class="detail"><? =number_format(($totals['complete']/$total)*100, 1)?>%</div>
 							</div>
 							<?
 							}
@@ -316,17 +316,17 @@
 					<div class="right aligned column">
 						<script>
 							$(document).ready(function() {
-								$('#popupbutton<?=$exportid?>').popup({ popup : $('#popupmenu<?=$exportid?>'), on : 'click'	});
+								$('#popupbutton<? =$exportid?>').popup({ popup : $('#popupmenu<? =$exportid?>'), on : 'click'	});
 							});
 						</script>
 						<div class="ui vertical labeled spaced buttons">
-							<a href="requeststatus.php?action=viewexport&exportid=<?=$exportid?>" title="View status" class="ui basic compact button"><i class="list alternate outline icon"></i> View Details</a>
+							<a href="requeststatus.php?action=viewexport&exportid=<? =$exportid?>" title="View status" class="ui basic compact button"><i class="list alternate outline icon"></i> View Details</a>
 							<? if ($exportstatus == "error") { ?>
-							<a href="requeststatus.php?action=resetexport&exportid=<?=$exportid?>" title="Retry failed series" class="ui basic compact button"><i class="sync alternate icon"></i> Retry</a>
+							<a href="requeststatus.php?action=resetexport&exportid=<? =$exportid?>" title="Retry failed series" class="ui basic compact button"><i class="sync alternate icon"></i> Retry</a>
 							<? } elseif (($exportstatus == "complete") || ($exportstatus == "cancelled")) { ?>
-							<a href="requeststatus.php?action=resetexport&exportid=<?=$exportid?>" title="Resend all series" class="ui basic compact button"><i class="file import icon"></i> Resend</a>
+							<a href="requeststatus.php?action=resetexport&exportid=<? =$exportid?>" title="Resend all series" class="ui basic compact button"><i class="file import icon"></i> Resend</a>
 							<? } elseif (($exportstatus == "submitted") || ($exportstatus == "processing")) { ?>
-							<a href="requeststatus.php?action=cancelexport&exportid=<?=$exportid?>" title="Cancel the remaining series" class="ui basic red compact button"><i class="times circle icon"></i> Cancel</a>
+							<a href="requeststatus.php?action=cancelexport&exportid=<? =$exportid?>" title="Cancel the remaining series" class="ui basic red compact button"><i class="times circle icon"></i> Cancel</a>
 							<? } ?>
 							<br>
 						</div>
@@ -337,7 +337,7 @@
 			<div class="ui bottom attached compact segment">
 				<div class="ui two column very compact grid">
 					<div class="column">
-						<b><?=$statusstr?></b> <?=$witherrors?>						
+						<b><? =$statusstr?></b> <? =$witherrors?>						
 					</div>
 					<div class="right aligned column">
 						<?
@@ -368,7 +368,7 @@
 									}
 									else {
 										?>
-											<a class="ui blue button" href="download/<?=$zipfilename?>" title="Download zip file"><i class="download icon"></i> Download <span style="font-size: smaller"><?=HumanReadableFilesize($filesize)?></span></a>
+											<a class="ui blue button" href="download/<? =$zipfilename?>" title="Download zip file"><i class="download icon"></i> Download <span style="font-size: smaller"><? =HumanReadableFilesize($filesize)?></span></a>
 											<br>
 										<?
 									}
@@ -496,29 +496,29 @@
 			<div class="ui top attached segment">
 				<div class="image" style="text-align: left">
 					<i class="big grey archive icon"></i>
-					<?=$statusstr?> <?=$witherrors?>
+					<? =$statusstr?> <? =$witherrors?>
 				</div>
 				<div class="ui content">
-					<div class="ui header"><?=date("D M j, Y h:ia",strtotime($submitdate))?></div>
+					<div class="ui header"><? =date("D M j, Y h:ia",strtotime($submitdate))?></div>
 					<div class="ui meta">
-						<?=$deststr?> &nbsp; &nbsp; <?=$numseries?> series &nbsp; &nbsp; <?=HumanReadableFilesize($totalbytes)?>
-						<p>Requested by <?=$username?></p>
+						<? =$deststr?> &nbsp; &nbsp; <? =$numseries?> series &nbsp; &nbsp; <? =HumanReadableFilesize($totalbytes)?>
+						<p>Requested by <? =$username?></p>
 						<? if ($numahead > 0) {
 							echo "<p>$numahead exports queued ahead of this export</p>";
 						} ?>
 					</div>
 					<div class="ui description">
 						<? if (($destinationtype == "remotenidb") && ($connectionid != "") && ($transactionid != "")) { ?>
-						<br><iframe src="ajaxapi.php?action=remoteexportstatus&connectionid=<?=$connectionid?>&transactionid=<?=$transactionid?>&detail=0&total=<?=$total?>" width="650px" height="50px" style="border: 0px">Checking with remote server...</iframe>
+						<br><iframe src="ajaxapi.php?action=remoteexportstatus&connectionid=<? =$connectionid?>&transactionid=<? =$transactionid?>&detail=0&total=<? =$total?>" width="650px" height="50px" style="border: 0px">Checking with remote server...</iframe>
 						<? }
 						
 						if ((($totals['complete']/$total)*100) < 100) {
 						?>
-						<div class="ui small progress <?=$error?>" data-percent="<?=($totals['complete']/$total)*100?>">
+						<div class="ui small progress <? =$error?>" data-percent="<? =($totals['complete']/$total)*100?>">
 							<div class="bar">
 								<div class="centered progress"></div>
 							</div>
-							<div class="label" style="font-size: smaller; font-weight: normal">Exporting series (<?=number_format($totals['complete'])?> of <?=number_format($total)?>)</div>
+							<div class="label" style="font-size: smaller; font-weight: normal">Exporting series (<? =number_format($totals['complete'])?> of <? =number_format($total)?>)</div>
 						</div>
 						<?
 						}
@@ -532,17 +532,17 @@
 							<div class="column">
 								<script>
 									$(document).ready(function() {
-										$('#popupbutton<?=$exportid?>').popup({ popup : $('#popupmenu<?=$exportid?>'), on : 'click'	});
+										$('#popupbutton<? =$exportid?>').popup({ popup : $('#popupmenu<? =$exportid?>'), on : 'click'	});
 									});
 								</script>
-								<div class="ui small basic compact button" id="popupbutton<?=$exportid?>"><i class="cog icon"></i> Options</div>
-								<div class="ui popup" id="popupmenu<?=$exportid?>" style="width: 400px">
+								<div class="ui small basic compact button" id="popupbutton<? =$exportid?>"><i class="cog icon"></i> Options</div>
+								<div class="ui popup" id="popupmenu<? =$exportid?>" style="width: 400px">
 									<? if ($exportstatus == "error") { ?>
-									<a href="requeststatus.php?action=resetexport&exportid=<?=$exportid?>" title="Retry failed series" class="ui fluid button"><i class="sync alternate icon"></i> Retry</a>
+									<a href="requeststatus.php?action=resetexport&exportid=<? =$exportid?>" title="Retry failed series" class="ui fluid button"><i class="sync alternate icon"></i> Retry</a>
 									<? } elseif (($exportstatus == "complete") || ($exportstatus == "cancelled")) { ?>
-									<a href="requeststatus.php?action=resetexport&exportid=<?=$exportid?>" title="Resend all series" class="ui fluid button"><i class="file import icon"></i> Resend</a>
+									<a href="requeststatus.php?action=resetexport&exportid=<? =$exportid?>" title="Resend all series" class="ui fluid button"><i class="file import icon"></i> Resend</a>
 									<? } elseif (($exportstatus == "submitted") || ($exportstatus == "processing")) { ?>
-									<a href="requeststatus.php?action=cancelexport&exportid=<?=$exportid?>" title="Cancel the remaining series" class="ui fluid red button"><i class="times circle icon"></i> Cancel</a>
+									<a href="requeststatus.php?action=cancelexport&exportid=<? =$exportid?>" title="Cancel the remaining series" class="ui fluid red button"><i class="times circle icon"></i> Cancel</a>
 									<? } ?>
 								</div>
 							</div>
@@ -576,8 +576,8 @@
 											else {
 												?>
 													<div class="ui labeled button">
-														<a class="ui blue button" href="download/<?=$zipfilename?>" title="Download zip file"><i class="download icon"></i> Download</a>
-														<div class="ui basic label" style="font-weight: normal; font-size: smaller"><?=HumanReadableFilesize($filesize)?></div>
+														<a class="ui blue button" href="download/<? =$zipfilename?>" title="Download zip file"><i class="download icon"></i> Download</a>
+														<div class="ui basic label" style="font-weight: normal; font-size: smaller"><? =HumanReadableFilesize($filesize)?></div>
 													</div>
 												<?
 											}
@@ -600,7 +600,7 @@
 						View Export Log
 					</div>
 					<div class="content">
-						<tt><pre><?=$log?></pre></tt>
+						<tt><pre><? =$log?></pre></tt>
 					</div>
 				</div>
 			</div>
@@ -661,12 +661,12 @@
 				}
 				?>
 				<tr>
-					<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
-					<td><a href="studies.php?id=<?=$studyid?>"><?="$uid$studynum"?></a></td>
-					<td><?=$seriesnum?> - <?=$seriesdesc?></td>
-					<td class="right aligned"><?=number_format($seriessize)?></td>
-					<td class="<?=$class?>"> <?=ucfirst($status)?></td>
-					<td><?=$statusmessage?></td>
+					<td><a href="subjects.php?id=<? =$subjectid?>"><? =$uid?></a></td>
+					<td><a href="studies.php?id=<? =$studyid?>"><? ="$uid$studynum"?></a></td>
+					<td><? =$seriesnum?> - <? =$seriesdesc?></td>
+					<td class="right aligned"><? =number_format($seriessize)?></td>
+					<td class="<? =$class?>"> <? =ucfirst($status)?></td>
+					<td><? =$statusmessage?></td>
 				</tr>
 				<?
 			}
@@ -685,7 +685,7 @@
 				</h2>
 			</div>
 			<div class="bottom attached segment">
-				<iframe src="ajaxapi.php?action=remoteexportstatus&connectionid=<?=$connectionid?>&transactionid=<?=$transactionid?>&detail=1&total=<?=$total?>" width="100%" height="600px" style="border: 0px">No iframes available?</iframe>
+				<iframe src="ajaxapi.php?action=remoteexportstatus&connectionid=<? =$connectionid?>&transactionid=<? =$transactionid?>&detail=1&total=<? =$total?>" width="100%" height="600px" style="border: 0px">No iframes available?</iframe>
 			</div>
 			<? } ?>
 		</div>
