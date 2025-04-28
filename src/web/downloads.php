@@ -47,7 +47,7 @@
 					<h1 class="ui inverted header">
 						<div class="content">
 							Publicly Available Datasets
-							<div class="sub header">Datasets available from <? =$GLOBALS['cfg']['sitename']?></div>
+							<div class="sub header">Datasets available from <?=$GLOBALS['cfg']['sitename']?></div>
 						</div>
 					</h1>
 				</div>
@@ -56,7 +56,7 @@
 						<? if ($_SESSION['username'] == "") { ?>
 						<a href="signup.php">Create</a> an account | <a href="login.php">Sign in</a>
 						<? } else {?>
-						You are logged into NiDB as <? =$_SESSION['username'];?><br>
+						You are logged into NiDB as <?=$_SESSION['username'];?><br>
 						<? } ?>
 					</div>
 				</div>
@@ -119,12 +119,12 @@
 						<div class="ui content">
 							<div class="ui two column grid">
 								<div class="ui column">
-									<a class="ui header"><? =$name?></a>
+									<a class="ui header"><?=$name?></a>
 									<div class="meta">
-										<span class="cinema">Created <? =$createdate?></span>
+										<span class="cinema">Created <?=$createdate?></span>
 									</div>
 									<div class="description">
-										<p><? =$desc?></p>
+										<p><?=$desc?></p>
 									</div>
 									<div class="extra">
 										<? if (in_array("REQUIRES_REGISTRATION", $flags)) { ?><div class="ui basic orange label" title="Registration on this NiDB instance is required to download this dataset">Registration required</div><? } ?>
@@ -133,9 +133,9 @@
 								</div>
 								<div class="right aligned column">
 									<? if (isAdmin()) { ?>
-									<a class="ui button" href="publicdatasets.php?action=form&id=<? =$id?>"><i class="pencil alternate icon"></i> Edit</a>
+									<a class="ui button" href="publicdatasets.php?action=form&id=<?=$id?>"><i class="pencil alternate icon"></i> Edit</a>
 									<?} ?>
-									<a class="ui button" href="publicdatasets.php?action=view&id=<? =$id?>"><i class="eye icon"></i> View Dataset</a>
+									<a class="ui button" href="publicdatasets.php?action=view&id=<?=$id?>"><i class="eye icon"></i> View Dataset</a>
 								</div>
 							</div>
 							<div class="ui segment">

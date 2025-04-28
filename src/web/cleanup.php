@@ -142,7 +142,7 @@
 
 		<div class="ui container">
 		
-		Found <? =$numrows?> duplicate study numbers
+		Found <?=$numrows?> duplicate study numbers
 		<table class="ui very small very compact celled selectable grey table">
 			<thead>
 				<tr>
@@ -188,13 +188,13 @@
 				else { $deleted = ""; }
 				?>
 				<tr>
-					<td><a href="subjects.php?id=<? =$subjectid?>"><? =$uid?></a> <? =$deleted?></td>
-					<td><a href="studies.php?id=<? =$studyid?>"><? =$uid?><? =$studynum?></a> <span class="tiny">(<? =$studyid?>)</span></td>
-					<td><? =$studydate?></td>
-					<td><tt><? =$archivepath?></tt></td>
-					<td><? =$modality?></td>
-					<td><? =$numdbseries?></td>
-					<td><? =$numdiskseries?></td>
+					<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a> <?=$deleted?></td>
+					<td><a href="studies.php?id=<?=$studyid?>"><?=$uid?><?=$studynum?></a> <span class="tiny">(<?=$studyid?>)</span></td>
+					<td><?=$studydate?></td>
+					<td><tt><?=$archivepath?></tt></td>
+					<td><?=$modality?></td>
+					<td><?=$numdbseries?></td>
+					<td><?=$numdiskseries?></td>
 				</tr>
 				<?
 			}
@@ -223,7 +223,7 @@
 		
 		<div class="ui container">
 		
-		Found <? =$numrows?> duplicate study datetimes
+		Found <?=$numrows?> duplicate study datetimes
 		<table class="ui very small very compact celled selectable grey table">
 			<thead>
 				<tr>
@@ -273,13 +273,13 @@
 				else { $deleted = ""; }
 				?>
 				<tr>
-					<td><a href="subjects.php?id=<? =$subjectid?>"><? =$uid?></a> <? =$deleted?></td>
-					<td><a href="studies.php?id=<? =$studyid?>"><? =$uid?><? =$studynum?></a> <span class="tiny">(<? =$studyid?>)</span></td>
-					<td><? =$studydate?></td>
-					<td><tt><? =$archivepath?></tt></td>
-					<td><? =$modality?></td>
-					<td><? =$numdbseries?></td>
-					<td><? =$numdiskseries?></td>
+					<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a> <?=$deleted?></td>
+					<td><a href="studies.php?id=<?=$studyid?>"><?=$uid?><?=$studynum?></a> <span class="tiny">(<?=$studyid?>)</span></td>
+					<td><?=$studydate?></td>
+					<td><tt><?=$archivepath?></tt></td>
+					<td><?=$modality?></td>
+					<td><?=$numdbseries?></td>
+					<td><?=$numdiskseries?></td>
 				</tr>
 				<?
 			}
@@ -310,7 +310,7 @@
 
 		<form action="cleanup.php" method="post" name="theform">
 		<input type="hidden" name="action" value="deactivatesubjects">
-		Found <? =$numrows?> empty subjects
+		Found <?=$numrows?> empty subjects
 		<table class="ui very small very compact celled selectable grey table">
 			<thead>
 				<tr>
@@ -347,13 +347,13 @@
 			if (!$isactive) { $isactive = "&#x2714;"; } else { $isactive = ""; }
 			?>
 			<tr>
-				<td><a href="subjects.php?id=<? =$subject_id?>"><? =$uid?></a></td>
-				<td><? =$name?></td>
-				<td><? =$birthdate?></td>
-				<td><? =$gender?></td>
-				<td><? =$lastupdate?></td>
-				<td><? =$isactive?></td>
-				<td class="allcheck"><input type='checkbox' name="subjectids[]" value="<? =$subject_id?>"></td>
+				<td><a href="subjects.php?id=<?=$subject_id?>"><?=$uid?></a></td>
+				<td><?=$name?></td>
+				<td><?=$birthdate?></td>
+				<td><?=$gender?></td>
+				<td><?=$lastupdate?></td>
+				<td><?=$isactive?></td>
+				<td class="allcheck"><input type='checkbox' name="subjectids[]" value="<?=$subject_id?>"></td>
 			</tr>
 			<?
 		}
@@ -382,7 +382,7 @@
 		
 		<form action="cleanup.php" method="post" name="theform">
 		<input type="hidden" name="action" value="deleteenrollments">
-		Found <? =$numrows?> empty enrollments
+		Found <?=$numrows?> empty enrollments
 		<table class="ui very small very compact celled selectable grey table">
 			<thead>
 				<tr>
@@ -421,14 +421,14 @@
 			if (!$isactive) { $deleted = "(deleted)"; } else { $deleted = ""; }
 			?>
 			<tr>
-				<td><? =$enrollment_id?></td>
-				<td><? =$project_name?></td>
-				<td><a href="subjects.php?id=<? =$subject_id?>"><? =$uid?></a> <? =$deleted?></td>
-				<td><? =$enroll_subgroup?></td>
-				<td><? =$enroll_startdate?></td>
-				<td><? =$enroll_enddate?></td>
-				<td><? =$lastupdate?></td>
-				<td class="allcheck"><input type='checkbox' name="enrollmentids[]" value="<? =$enrollment_id?>"></td>
+				<td><?=$enrollment_id?></td>
+				<td><?=$project_name?></td>
+				<td><a href="subjects.php?id=<?=$subject_id?>"><?=$uid?></a> <?=$deleted?></td>
+				<td><?=$enroll_subgroup?></td>
+				<td><?=$enroll_startdate?></td>
+				<td><?=$enroll_enddate?></td>
+				<td><?=$lastupdate?></td>
+				<td class="allcheck"><input type='checkbox' name="enrollmentids[]" value="<?=$enrollment_id?>"></td>
 			</tr>
 			<?
 		}
@@ -457,8 +457,8 @@
 		<div class="ui container">
 		<form action="cleanup.php" method="post" name="theform">
 		<input type="hidden" name="action" value="deletestudies">
-		<input type="hidden" name="modality" value="<? =$modality?>">
-		Found <? =$numrows?> empty studies
+		<input type="hidden" name="modality" value="<?=$modality?>">
+		Found <?=$numrows?> empty studies
 		<table class="ui very small very compact celled selectable grey table">
 			<thead>
 				<tr>
@@ -496,14 +496,14 @@
 			$lastupdate = $row['lastupdate'];
 			?>
 			<tr>
-				<td><? =$enrollment_id?></td>
-				<td><? =$project_name?></td>
-				<td><a href="subjects.php?id=<? =$subject_id?>"><? =$uid?></a></td>
-				<td><? =$enroll_subgroup?></td>
-				<td><? =$enroll_startdate?></td>
-				<td><? =$enroll_enddate?></td>
-				<td><? =$lastupdate?></td>
-				<td class="allcheck"><input type='checkbox' name="studyids[]" value="<? =$study_id?>"></td>
+				<td><?=$enrollment_id?></td>
+				<td><?=$project_name?></td>
+				<td><a href="subjects.php?id=<?=$subject_id?>"><?=$uid?></a></td>
+				<td><?=$enroll_subgroup?></td>
+				<td><?=$enroll_startdate?></td>
+				<td><?=$enroll_enddate?></td>
+				<td><?=$lastupdate?></td>
+				<td class="allcheck"><input type='checkbox' name="studyids[]" value="<?=$study_id?>"></td>
 			</tr>
 			<?
 		}
@@ -534,7 +534,7 @@
 		<form action="cleanup.php" method="post" name="theform">
 		<input type="hidden" name="action" value="deletestudies">
 		-->
-		Found <? =$numrows?> orphaned studies
+		Found <?=$numrows?> orphaned studies
 		<table class="ui very small very compact celled selectable grey table">
 			<thead>
 				<tr>
@@ -571,14 +571,14 @@
 			$lastupdate = $row['lastupdate'];
 			?>
 			<tr>
-				<td><? =$enrollment_id?></td>
-				<td><? =$project_name?></td>
-				<td><a href="subjects.php?id=<? =$subject_id?>"><? =$uid?></a></td>
-				<td><? =$enroll_subgroup?></td>
-				<td><? =$enroll_startdate?></td>
-				<td><? =$enroll_enddate?></td>
-				<td><? =$lastupdate?></td>
-				<td class="allcheck"><input type='checkbox' name="enrollmentids[]" value="<? =$enrollment_id?>"></td>
+				<td><?=$enrollment_id?></td>
+				<td><?=$project_name?></td>
+				<td><a href="subjects.php?id=<?=$subject_id?>"><?=$uid?></a></td>
+				<td><?=$enroll_subgroup?></td>
+				<td><?=$enroll_startdate?></td>
+				<td><?=$enroll_enddate?></td>
+				<td><?=$lastupdate?></td>
+				<td class="allcheck"><input type='checkbox' name="enrollmentids[]" value="<?=$enrollment_id?>"></td>
 			</tr>
 			<?
 		}

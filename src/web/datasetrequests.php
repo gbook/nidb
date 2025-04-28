@@ -207,22 +207,22 @@
 			  <p>Fill out the form to submit a new request. Include as much information as possible, but do not include passwords.</p>
 			</div>
 			<form method="post" action="datasetrequests.php" autocomplete="off" class="ui form attached fluid segment">
-			<input type="hidden" name="action" value="<? =$formaction?>">
-			<input type="hidden" name="datasetrequestid" value="<? =$id?>">
-			<h3 class="ui dividing header"><? =$formtitle?></h3>
+			<input type="hidden" name="action" value="<?=$formaction?>">
+			<input type="hidden" name="datasetrequestid" value="<?=$id?>">
+			<h3 class="ui dividing header"><?=$formtitle?></h3>
 			
 			<div class="two fields">
 				<div class="field">
 					<label>Email</label>
 					<div class="field">
-						<input type="email" name="email" value="<? =$email?>" maxlength="255" required>
+						<input type="email" name="email" value="<?=$email?>" maxlength="255" required>
 					</div>
 				</div>
 				
 				<div class="field">
 					<label>Institution</label>
 					<div class="field">
-						<input type="text" name="institution" value="<? =$institution?>" maxlength="255" required>
+						<input type="text" name="institution" value="<?=$institution?>" maxlength="255" required>
 					</div>
 				</div>
 			</div>
@@ -230,38 +230,38 @@
 			<div class="field">
 				<label>Short name</label>
 				<div class="field">
-					<input type="text" name="shortname" value="<? =$shortname?>" maxlength="255" required>
+					<input type="text" name="shortname" value="<?=$shortname?>" maxlength="255" required>
 				</div>
 			</div>
 
 			<div class="field">
 				<label>Data Requested <i class="question circle outline icon" title="IDs/project(s) and data protocol names"></i></label>
 				<div class="field">
-					<textarea name="idlist" rows="4" required><? =$idlist?></textarea>
+					<textarea name="idlist" rows="4" required><?=$idlist?></textarea>
 				</div>
 			</div>
 
 			<div class="field">
 				<label>Data Format <i class="question circle outline icon" title="BIDS, Nifti, anonymized DICOM, directory structure, etc"></i></label>
 				<div class="field">
-					<textarea name="dataformat" rows="4" required><? =$dataformat?></textarea>
+					<textarea name="dataformat" rows="4" required><?=$dataformat?></textarea>
 				</div>
 			</div>
 
 			<div class="field">
 				<label>Delivery Method <i class="question circle outline icon" title="include all details of how to get the data to you. Email passwords separately"></i></label>
 				<div class="field">
-					<textarea name="deliverymethod" rows="4" required><? =$deliverymethod?></textarea>
+					<textarea name="deliverymethod" rows="4" required><?=$deliverymethod?></textarea>
 				</div>
 			</div>
 
 			<div class="field">
 				<label>Notes</label>
 				<div class="field">
-					<textarea name="notes" rows="4" required><? =$notes?></textarea>
+					<textarea name="notes" rows="4" required><?=$notes?></textarea>
 				</div>
 			</div>
-			<input type="submit" class="ui primary button" value="<? =$submitbuttonlabel?>">
+			<input type="submit" class="ui primary button" value="<?=$submitbuttonlabel?>">
 			</form>
 		</div>
 	<?
@@ -323,16 +323,16 @@
 					if ($shortname == "") { $shortname = "(blank)"; }
 					?>
 					<tr>
-						<td><a href="datasetrequests.php?action=editform&datasetrequestid=<? =$datasetrequestid?>"><? =$shortname?></a></td>
-						<td><? =$request_submitdate?></td>
-						<td><? =$admin_username?></td>
-						<td class="<? =$statustd?>"><? =ucfirst($status)?></td>
-						<td><? =$request_startdate?></td>
-						<td><? =$request_completedate?></td>
-						<td><? =$idlist?></td>
-						<td><? =$dataformat?></td>
-						<td><? =$deliverymethod?></td>
-						<td><a href="datasetrequests.php?action=cancel&datasetrequestid=<? =$datasetrequestid?>" style="color: red">Cancel</a></td>
+						<td><a href="datasetrequests.php?action=editform&datasetrequestid=<?=$datasetrequestid?>"><?=$shortname?></a></td>
+						<td><?=$request_submitdate?></td>
+						<td><?=$admin_username?></td>
+						<td class="<?=$statustd?>"><?=ucfirst($status)?></td>
+						<td><?=$request_startdate?></td>
+						<td><?=$request_completedate?></td>
+						<td><?=$idlist?></td>
+						<td><?=$dataformat?></td>
+						<td><?=$deliverymethod?></td>
+						<td><a href="datasetrequests.php?action=cancel&datasetrequestid=<?=$datasetrequestid?>" style="color: red">Cancel</a></td>
 					</tr>
 					<? 
 				}
@@ -389,16 +389,16 @@
 					if ($shortname == "") { $shortname = "(shortname is blank)"; }
 					?>
 					<tr>
-						<td><a href="datasetrequests.php?action=editform&datasetrequestid=<? =$datasetrequestid?>"><? =$shortname?></a></td>
-						<td><? =$request_submitdate?></td>
-						<td><? =$username?></td>
-						<td class="<? =$statustd?>"><? =ucfirst($status)?></td>
-						<td><? =$request_startdate?></td>
-						<td><? =$request_completedate?></td>
-						<td><? =$idlist?></td>	
-						<td><? =$dataformat?></td>
-						<td><? =$deliverymethod?></td>
-						<td><a href="datasetrequests.php?action=markcomplete&datasetrequestid=<? =$datasetrequestid?>" style="color: red">Mark as complete</a></td>
+						<td><a href="datasetrequests.php?action=editform&datasetrequestid=<?=$datasetrequestid?>"><?=$shortname?></a></td>
+						<td><?=$request_submitdate?></td>
+						<td><?=$username?></td>
+						<td class="<?=$statustd?>"><?=ucfirst($status)?></td>
+						<td><?=$request_startdate?></td>
+						<td><?=$request_completedate?></td>
+						<td><?=$idlist?></td>	
+						<td><?=$dataformat?></td>
+						<td><?=$deliverymethod?></td>
+						<td><a href="datasetrequests.php?action=markcomplete&datasetrequestid=<?=$datasetrequestid?>" style="color: red">Mark as complete</a></td>
 					</tr>
 					<? 
 				}
@@ -452,16 +452,16 @@
 					if ($shortname == "") { $shortname = "(blank)"; }
 					?>
 					<tr>
-						<td><a href="datasetrequests.php?action=editform&datasetrequestid=<? =$datasetrequestid?>"><? =$shortname?></a></td>
-						<td><? =$request_submitdate?></td>
-						<td><? =$username?></td>
-						<td class="<? =$statustd?>"><? =ucfirst($status)?></td>
-						<td><? =$request_startdate?></td>
-						<td><? =$request_completedate?></td>
-						<td><? =$idlist?></td>
-						<td><? =$dataformat?></td>
-						<td><? =$deliverymethod?></td>
-						<td><a href="datasetrequests.php?action=takeownership&datasetrequestid=<? =$datasetrequestid?>" style="color: red">Take ownership</a></td>
+						<td><a href="datasetrequests.php?action=editform&datasetrequestid=<?=$datasetrequestid?>"><?=$shortname?></a></td>
+						<td><?=$request_submitdate?></td>
+						<td><?=$username?></td>
+						<td class="<?=$statustd?>"><?=ucfirst($status)?></td>
+						<td><?=$request_startdate?></td>
+						<td><?=$request_completedate?></td>
+						<td><?=$idlist?></td>
+						<td><?=$dataformat?></td>
+						<td><?=$deliverymethod?></td>
+						<td><a href="datasetrequests.php?action=takeownership&datasetrequestid=<?=$datasetrequestid?>" style="color: red">Take ownership</a></td>
 					</tr>
 					<? 
 				}

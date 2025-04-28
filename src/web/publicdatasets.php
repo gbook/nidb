@@ -100,12 +100,12 @@
 		?>
 		<div class="ui text container">
 			<h1 class="ui header">
-				<? =$name?>
+				<?=$name?>
 				<div class="sub header">
-				<? =$desc?>
+				<?=$desc?>
 				</div>
 			</h1>
-			Available <? =$startdate?> to <? =$enddate?>
+			Available <?=$startdate?> to <?=$enddate?>
 			<br>
 			<? if (in_array("REQUIRES_REGISTRATION", $flags)) { ?><div class="ui label" title="Registration on this NiDB instance is required to download this dataset">Registration required</div><? } ?>
 			<? if (in_array("REQUIRES_APPROVFAL", $flags)) { ?><div class="ui label" title="An application must be submitted and approved to access this dataset">Application required</div><? } ?>
@@ -118,7 +118,7 @@
 		if ($numdownloads > 0) {
 			?>
 			<div class="ui top attached blue segment">
-				This dataset has <? =$numdownloads?> downloads available
+				This dataset has <?=$numdownloads?> downloads available
 			</div>
 			<div class="ui bottom attached segment">
 				<div class="ui compact fluid accordion"><?
@@ -136,16 +136,16 @@
 					?>
 						<div class="title">
 							<i class="dropdown icon"></i>
-							<? =$downloadname?>
+							<?=$downloadname?>
 						</div>
 						<div class="content">
 							<table class="ui compact table">
-								<tr><td><b>Description</b></td><td><? =$downloaddesc?></td></tr>
-								<tr><td><b>Zip size</b></td><td><? =HumanReadableFileSize($downloadzipsize)?></td></tr>
-								<tr><td><b>Unzip size</b></td><td><? =HumanReadableFileSize($downloadunzipsize)?></td></tr>
-								<tr><td><b>Number of files in package</b></td><td><? =number_format($downloadnumfiles)?></td></tr>
-								<tr><td><b>Package format</b></td><td><? =$downloadpackageformat?></td></tr>
-								<tr><td><b>Image format</b></td><td><? =$downloadimageformat?></td></tr>
+								<tr><td><b>Description</b></td><td><?=$downloaddesc?></td></tr>
+								<tr><td><b>Zip size</b></td><td><?=HumanReadableFileSize($downloadzipsize)?></td></tr>
+								<tr><td><b>Unzip size</b></td><td><?=HumanReadableFileSize($downloadunzipsize)?></td></tr>
+								<tr><td><b>Number of files in package</b></td><td><?=number_format($downloadnumfiles)?></td></tr>
+								<tr><td><b>Package format</b></td><td><?=$downloadpackageformat?></td></tr>
+								<tr><td><b>Image format</b></td><td><?=$downloadimageformat?></td></tr>
 							</table>
 						</div>
 					<?
@@ -230,12 +230,12 @@
 						<div class="ui content">
 							<div class="ui two column grid">
 								<div class="ui column">
-									<a class="ui header"><? =$name?></a>
+									<a class="ui header"><?=$name?></a>
 									<div class="meta">
-										<span class="cinema">Created <? =$createdate?></span>
+										<span class="cinema">Created <?=$createdate?></span>
 									</div>
 									<div class="description">
-										<p><? =$desc?></p>
+										<p><?=$desc?></p>
 									</div>
 									<div class="extra">
 										<? if (in_array("REQUIRES_REGISTRATION", $flags)) { ?><div class="ui label" title="Registration on this NiDB instance is required to download this dataset">Registration required</div><? } ?>
@@ -244,9 +244,9 @@
 								</div>
 								<div class="right aligned column">
 									<? if (isAdmin()) { ?>
-									<a class="ui button" href="publicdatasets.php?action=form&id=<? =$id?>"><i class="pencil alternate icon"></i> Edit</a>
+									<a class="ui button" href="publicdatasets.php?action=form&id=<?=$id?>"><i class="pencil alternate icon"></i> Edit</a>
 									<?} ?>
-									<a class="ui button" href="publicdatasets.php?action=view&id=<? =$id?>"><i class="eye icon"></i> View Dataset</a>
+									<a class="ui button" href="publicdatasets.php?action=view&id=<?=$id?>"><i class="eye icon"></i> View Dataset</a>
 								</div>
 							</div>
 							<div class="ui fitted segment">

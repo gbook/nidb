@@ -163,30 +163,30 @@
 	?>
 		<div class="ui text container">
 			<form method="post" action="pipelinesettings.php" class="ui form">
-			<input type="hidden" name="action" value="<? =$formaction?>">
-			<input type="hidden" name="analysisdirid" value="<? =$id?>">
+			<input type="hidden" name="action" value="<?=$formaction?>">
+			<input type="hidden" name="analysisdirid" value="<?=$id?>">
 
-			<h2 class="ui dividing header"><? =$formtitle?></h2>
+			<h2 class="ui dividing header"><?=$formtitle?></h2>
 
 			<div class="field">
 				<label>Name</label>
-				<input name="shortname" value="<? =$shortname?>">
+				<input name="shortname" value="<?=$shortname?>">
 			</div>
 
 			<div class="field">
 				<label>NiDB path <i class="question circle outline icon" title="As the path appears on the NiDB server"></i></label>
-				<input type="text" id="nidbpath" name="nidbpath" value="<? =$nidbpath?>" style="font-family: monospace">
+				<input type="text" id="nidbpath" name="nidbpath" value="<?=$nidbpath?>" style="font-family: monospace">
 			</div>
 			
 			<div class="field">
 				<label>Cluster path <i class="question circle outline icon" title="As the path appears on the compute cluster"></i></label>
-				<input name="clusterpath" value="<? =$clusterpath?>" style="font-family: monospace">
+				<input name="clusterpath" value="<?=$clusterpath?>" style="font-family: monospace">
 			</div>
 
 			<div class="field">
 				<label>Directory structure</label>
 				<div class="ui selection dropdown">
-					<input type="hidden" name="dirformat" value="<? =$dirformat?>">
+					<input type="hidden" name="dirformat" value="<?=$dirformat?>">
 					<i class="dropdown icon"></i>
 					<div class="default text">Dir format</div>
 					<div class="scrollhint menu">
@@ -201,7 +201,7 @@
 					<a href="pipelinesettings.php" class="ui button">Cancel</a>
 				</div>
 				<div class="right aligned column">
-					<input type="submit" value="<? =$submitbuttonlabel?>" class="ui primary button">
+					<input type="submit" value="<?=$submitbuttonlabel?>" class="ui primary button">
 				</div>
 			</form>
 		</div>
@@ -243,10 +243,10 @@
 						$dirformat = $row['dirformat'];
 				?>
 				<tr>
-					<td><a href="pipelinesettings.php?action=editform&analysisdirid=<? =$id?>"><? =$shortname?></td>
-					<td><tt><? =$nidbpath?></tt></td>
-					<td><tt><? =$clusterpath?></tt></td>
-					<td><? =$dirformat?></td>
+					<td><a href="pipelinesettings.php?action=editform&analysisdirid=<?=$id?>"><?=$shortname?></td>
+					<td><tt><?=$nidbpath?></tt></td>
+					<td><tt><?=$clusterpath?></tt></td>
+					<td><?=$dirformat?></td>
 				</tr>
 				<? 
 					}

@@ -331,7 +331,7 @@
 					foreach ($taglist as $tag) {
 						$sqlstringA = "insert ignore into tags (tagtype, enrollment_id, tag) values ('dx', $enrollmentid, '$tag')";
 						$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-						?><div class="message">Applied tag [<? =$tag?>] to enrollmentid [<? =$enrollmentid?>]</div><?
+						?><div class="message">Applied tag [<?=$tag?>] to enrollmentid [<?=$enrollmentid?>]</div><?
 					}
 				}
 			}
@@ -371,10 +371,10 @@
 		<div class="ui text container">
 			<form method="post" action="projects.php" class="ui form">
 				<input type="hidden" name="action" value="savexnat">
-				<input type="hidden" name="id" value="<? =$id?>">
+				<input type="hidden" name="id" value="<?=$id?>">
 				<div class="field">
 					<label>XNAT hostname</label>
-					<input type="text" name="xnathost" value="<? =$xnathost?>" placeholder="Full hostname, ex. http://hostname...">
+					<input type="text" name="xnathost" value="<?=$xnathost?>" placeholder="Full hostname, ex. http://hostname...">
 				</div>
 				<input type="submit" class="ui button" value="Save">
 			</form>
@@ -765,7 +765,7 @@
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 		?>
-		<div align="center" class="message">Subjects [<? =implode(', ',$uids)?>] queued for obliteration</div>
+		<div align="center" class="message">Subjects [<?=implode(', ',$uids)?>] queued for obliteration</div>
 		<?
 	}
 	
@@ -783,7 +783,7 @@
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 		?>
-		<div align="center" class="message">Studies [<? =implode2(', ',$studyids)?>] queued for obliteration</div>
+		<div align="center" class="message">Studies [<?=implode2(', ',$studyids)?>] queued for obliteration</div>
 		<?
 	}
 
@@ -835,7 +835,7 @@
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 		?>
-		<div align="center" class="message">Subjects [<? =implode(', ',$uids)?>] queued for re-archiving</div>
+		<div align="center" class="message">Subjects [<?=implode(', ',$uids)?>] queued for re-archiving</div>
 		<?
 	}
 	
@@ -868,7 +868,7 @@
 			if (mysqli_num_rows($result) > 0){
 				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 				$enrollmentRowID = $row['enrollment_id'];
-				?><span style="color:green">[<? =$subjectRowID?>] is already enrolled in [<? =$projectRowID?>] with enrollment [<? =$enrollmentRowID?>]</span><br><?
+				?><span style="color:green">[<?=$subjectRowID?>] is already enrolled in [<?=$projectRowID?>] with enrollment [<?=$enrollmentRowID?>]</span><br><?
 			}
 			else {
 				/* if they're not enrolled, create the enrollment, with the enrollment date of the 'scandate' */
@@ -884,7 +884,7 @@
 			if (mysqli_num_rows($result) > 0){
 				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 				$enrollmentRowID = $row['enrollment_id'];
-				?><span style="color:green">Study [<? =$studyRowID?>] is already part of enrollment [<? =$enrollmentRowID?>]</span><br><?
+				?><span style="color:green">Study [<?=$studyRowID?>] is already part of enrollment [<?=$enrollmentRowID?>]</span><br><?
 			}
 			else {
 				/* if the study is not associated with the enrollment, associate it */
@@ -1071,10 +1071,10 @@
 			if (!$problem) {
 				?>
 				<tr>
-					<td><a href="studies.php?id=<? =$studyid?>"><? ="$uid$studynum"?></a></td>
-					<td><? =$study_datetime?></td>
-					<td><? =$numseries?></td>
-					<td><? =$modality?></td>
+					<td><a href="studies.php?id=<?=$studyid?>"><?="$uid$studynum"?></a></td>
+					<td><?=$study_datetime?></td>
+					<td><?=$numseries?></td>
+					<td><?=$modality?></td>
 					<td><span style="color: green">&#10004;</span></td>
 				</tr>
 				<?
@@ -1082,17 +1082,17 @@
 			else {
 				?>
 				<tr style="font-weight: bold">
-					<td style="border-top: 1px solid red; background-color: #ffd1d1"><a href="studies.php?id=<? =$studyid?>"><? ="$uid$studynum"?></a></td>
-					<td style="border-top: 1px solid red; background-color: #ffd1d1"><? =$study_datetime?></td>
-					<td style="border-top: 1px solid red; background-color: #ffd1d1"><? =$numseries?></td>
-					<td style="border-top: 1px solid red; background-color: #ffd1d1"><? =$modality?></td>
+					<td style="border-top: 1px solid red; background-color: #ffd1d1"><a href="studies.php?id=<?=$studyid?>"><?="$uid$studynum"?></a></td>
+					<td style="border-top: 1px solid red; background-color: #ffd1d1"><?=$study_datetime?></td>
+					<td style="border-top: 1px solid red; background-color: #ffd1d1"><?=$numseries?></td>
+					<td style="border-top: 1px solid red; background-color: #ffd1d1"><?=$modality?></td>
 					<td style="border-top: 1px solid red; background-color: #ffd1d1"><span style="color: red">&#10006;</span></td>
 				</tr>
 				<tr>
 					<td colspan="5" style="padding-left: 20px; border-bottom: 1px solid red; background-color: #ffd1d1">
 						<?
 						foreach ($problems as $prob) {
-							?><? =$prob?><br><?
+							?><?=$prob?><br><?
 						}
 						?>
 
@@ -1123,10 +1123,10 @@
 		<br><br>
 		<table class="formentrytable">
 			<tr>
-				<td class="title" colspan="3"><? =$title?></td>
+				<td class="title" colspan="3"><?=$title?></td>
 			</tr>
 			<tr>
-				<td class="desc" colspan="3"><? =$desc?></td>
+				<td class="desc" colspan="3"><?=$desc?></td>
 			</tr>
 			<tr>
 				<td colspan="2">&nbsp;</td>
@@ -1149,22 +1149,22 @@
 					?>
 					<tr>
 						<? if ($formfield_datatype == "header") { ?>
-							<td colspan="2" class="sectionheader"><? =$formfield_desc?></td>
+							<td colspan="2" class="sectionheader"><?=$formfield_desc?></td>
 						<? } else { ?>
-							<td class="field"><? =$formfield_desc?></td>
+							<td class="field"><?=$formfield_desc?></td>
 							<td class="value">
 							<?
 								switch ($formfield_datatype) {
 									case "binary": ?><input type="file" name="value[]"><? break;
 									case "multichoice": ?>
-										<select multiple name="<? =$formfield_id?>-multichoice" style="height: 150px">
+										<select multiple name="<?=$formfield_id?>-multichoice" style="height: 150px">
 											<?
 												$values = explode(",", $formfield_values);
 												natsort($values);
 												foreach ($values as $value) {
 													$value = trim($value);
 												?>
-													<option value="<? =$value?>"><? =$value?></option>
+													<option value="<?=$value?>"><?=$value?></option>
 												<?
 												}
 											?>
@@ -1179,16 +1179,16 @@
 												foreach ($values as $value) {
 													$value = trim($value);
 												?>
-													<input type="radio"  name="<? =$formfield_id?>-singlechoice" value="<? =$value?>"><? =$value?>
+													<input type="radio"  name="<?=$formfield_id?>-singlechoice" value="<?=$value?>"><?=$value?>
 												<?
 													if ($formfield_haslinebreak) { echo "<br>"; } else { echo "&nbsp;"; }
 												}
 											?>
 									<? break;
-									case "date": ?><input type="date" name="<? =$formfield_id?>-date"><? break;
-									case "number": ?><input type="number" name="<? =$formfield_id?>-number"><? break;
-									case "string": ?><input type="text" name="<? =$formfield_id?>-string"><? break;
-									case "text": ?><textarea name="<? =$formfield_id?>-text"></textarea><? break;
+									case "date": ?><input type="date" name="<?=$formfield_id?>-date"><? break;
+									case "number": ?><input type="number" name="<?=$formfield_id?>-number"><? break;
+									case "string": ?><input type="text" name="<?=$formfield_id?>-string"><? break;
+									case "text": ?><textarea name="<?=$formfield_id?>-text"></textarea><? break;
 								}
 							?>
 						<? } ?>
@@ -1196,8 +1196,8 @@
 						<? if ($formfield_scored) {?>
 						<td><input type="text" size="2"></td>
 						<? } ?>
-						<td class="order"><? =$formfield_order?></td>
-						<td class="order"><? =$formfield_id?></td>
+						<td class="order"><?=$formfield_order?></td>
+						<td class="order"><?=$formfield_id?></td>
 					</tr>
 					<?
 				}
@@ -1252,14 +1252,14 @@
 			<tr>
 				<td>
 					<? if ($ispublished) { ?>
-					<a href="adminassessmentforms.php?action=viewform&id=<? =$id?>"><? =$title?></a>
+					<a href="adminassessmentforms.php?action=viewform&id=<?=$id?>"><?=$title?></a>
 					<? } else { ?>
-					<a href="adminassessmentforms.php?action=editform&id=<? =$id?>"><? =$title?></a>
+					<a href="adminassessmentforms.php?action=editform&id=<?=$id?>"><?=$title?></a>
 					<? } ?>
 				</td>
-				<td><? =$desc?></td>
-				<td><? =$creatorfullname?></td>
-				<td><? =$createdate?></td>
+				<td><?=$desc?></td>
+				<td><?=$creatorfullname?></td>
+				<td><?=$createdate?></td>
 				<td><? if ($ispublished) { echo "&#10004;"; } ?></td>
 			</tr>
 			<? 
@@ -1342,7 +1342,7 @@
 		<? if ($GLOBALS['issiteadmin']) { ?>
 		<form action="projects.php" method="post" name="theform" id="theform">
 		<input type="hidden" name="action" value="changeproject">
-		<input type="hidden" name="id" value="<? =$id?>">
+		<input type="hidden" name="id" value="<?=$id?>">
 		<? } ?>
 
 		<script>
@@ -1379,7 +1379,7 @@
 		<div align="center">
 		<b>This table is editable</b>. Edit the <span style="background-color: lightyellow; border: 1px solid skyblue; padding:5px">Highlighted</span> fields by single-clicking the cell. Use tab to navigate the table, and make sure to <b>hit enter when editing a cell before saving</b>. Click <b>Save</b> when done editing<br>
 		<br>
-		Displaying <? =$numstudies?> studies
+		Displaying <?=$numstudies?> studies
 		</div>
 		<br>
 		<script type="text/javascript">
@@ -1392,7 +1392,7 @@
 		</script>
 		<? if ($GLOBALS['issiteadmin']) { ?>
 		<div style="text-align: right">
-			<a href="projects.php?action=updatestudyage&id=<? =$id?>" class="ui small button" title="Set StudyAge to CalcStudyAge for all studies">Update StudyAge</a>
+			<a href="projects.php?action=updatestudyage&id=<?=$id?>" class="ui small button" title="Set StudyAge to CalcStudyAge for all studies">Update StudyAge</a>
 		</div>
 		<? } ?>
 		
@@ -1488,42 +1488,42 @@
 				}
 
 				?>
-				<tr id="R<? =$i?>">
+				<tr id="R<?=$i?>">
 					<? if ($lastuid != $uid) { ?>
-						<td style="<? =$rowstyle?>; font-size: 6pt;"><? =$study_id?></td>
-						<td style="<? =$rowstyle?>; font-size: 6pt;"><? =$subjectid?></td>
-						<td style="<? =$rowstyle?>">
-							<a class="ui large compact primary button" href="subjects.php?id=<? =$subjectid?>"><span class="tt"><? =$uid;?></span></a>
+						<td style="<?=$rowstyle?>; font-size: 6pt;"><?=$study_id?></td>
+						<td style="<?=$rowstyle?>; font-size: 6pt;"><?=$subjectid?></td>
+						<td style="<?=$rowstyle?>">
+							<a class="ui large compact primary button" href="subjects.php?id=<?=$subjectid?>"><span class="tt"><?=$uid;?></span></a>
 						</td>
-						<td style="<? =$rowstyle?>" class="editable"><? =$sex?></td>
-						<td style="<? =$rowstyle?>" class="editable tt"><? =$altuidlist?></td>
+						<td style="<?=$rowstyle?>" class="editable"><?=$sex?></td>
+						<td style="<?=$rowstyle?>" class="editable tt"><?=$altuidlist?></td>
 						<?
 					}
 					else {
 						?>
-						<td style="<? =$rowstyle?>; font-size: 6pt;"><? =$study_id?></td>
-						<td style="<? =$rowstyle?>; font-size: 6pt;"><? =$subjectid?></td>
-						<td style="<? =$rowstyle?>"></td>
-						<td style="<? =$rowstyle?>"></td>
-						<td style="<? =$rowstyle?>"></td>
+						<td style="<?=$rowstyle?>; font-size: 6pt;"><?=$study_id?></td>
+						<td style="<?=$rowstyle?>; font-size: 6pt;"><?=$subjectid?></td>
+						<td style="<?=$rowstyle?>"></td>
+						<td style="<?=$rowstyle?>"></td>
+						<td style="<?=$rowstyle?>"></td>
 						<?
 					}
 					?>
-					<td style="<? =$rowstyle?>" class="tt">
-						<a class="ui basic large compact primary button" href="studies.php?id=<? =$study_id?>"><span class="tt"><span style="color: gray"><? =$uid;?></span><b><? =$study_num;?></b></span></a>
+					<td style="<?=$rowstyle?>" class="tt">
+						<a class="ui basic large compact primary button" href="studies.php?id=<?=$study_id?>"><span class="tt"><span style="color: gray"><?=$uid;?></span><b><?=$study_num;?></b></span></a>
 					</td>
-					<td style="<? =$rowstyle?>" class="editable"><? =$study_visit?></td>
-					<td style="<? =$rowstyle?>"><? if ($isactive) { echo "<i class='check green icon'></i>"; } ?></td>
-					<td style="<? =$rowstyle?>"><? =$study_datetime?></td>
-					<td style="<? =$rowstyle?>" class="editable"><? =$studyAge?></td>
-					<td style="<? =$rowstyle?>"><? =$calcStudyAge?></td>
-					<td style="<? =$rowstyle?>"><? =$modality?></td>
-					<td style="<? =$rowstyle?>"><? =$study_desc?></td>
-					<td style="<? =$rowstyle?>" class="tt"><? =$study_altid?></td>
+					<td style="<?=$rowstyle?>" class="editable"><?=$study_visit?></td>
+					<td style="<?=$rowstyle?>"><? if ($isactive) { echo "<i class='check green icon'></i>"; } ?></td>
+					<td style="<?=$rowstyle?>"><?=$study_datetime?></td>
+					<td style="<?=$rowstyle?>" class="editable"><?=$studyAge?></td>
+					<td style="<?=$rowstyle?>"><?=$calcStudyAge?></td>
+					<td style="<?=$rowstyle?>"><?=$modality?></td>
+					<td style="<?=$rowstyle?>"><?=$study_desc?></td>
+					<td style="<?=$rowstyle?>" class="tt"><?=$study_altid?></td>
 					<? if ($GLOBALS['issiteadmin']) { ?>
-					<td class="allcheck" style="background-color: #FFFF99; border-left: 1px solid #4C4C1F; border-right: 1px solid #4C4C1F;" <? =$rowstyle?>><input type='checkbox' name="studyids[]" value="<? =$study_id?>"></td>
+					<td class="allcheck" style="background-color: #FFFF99; border-left: 1px solid #4C4C1F; border-right: 1px solid #4C4C1F;" <?=$rowstyle?>><input type='checkbox' name="studyids[]" value="<?=$study_id?>"></td>
 					<? } ?>
-					<td style="<? =$rowstyle?>" class="editable"><? =$study_site?></td>
+					<td style="<?=$rowstyle?>" class="editable"><?=$study_site?></td>
 				</tr>
 				<?
 				$lastuid = $uid;
@@ -1572,7 +1572,7 @@
 								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 									$tag = $row['tag'];
 									?>
-									<option value="<? =$tag?>">
+									<option value="<?=$tag?>">
 									<?
 								}
 							?>
@@ -1599,7 +1599,7 @@
 									
 									if (strtotime($project_enddate) < strtotime("now")) { $style="color: gray"; } else { $style = ""; }
 									?>
-									<option value="<? =$project_id?>" style="<? =$style?>"><? =$project_name?> (<? =$project_costcenter?>)</option>
+									<option value="<?=$project_id?>" style="<?=$style?>"><?=$project_name?> (<?=$project_costcenter?>)</option>
 									<?
 								}
 							?>
@@ -1637,7 +1637,7 @@
 				<td align="right" valign="top">
 					<!-- save the form -->
 					<form method="post" action="projects.php" id="savetableform">
-					<input type="hidden" name="id" value="<? =$id?>">
+					<input type="hidden" name="id" value="<?=$id?>">
 					<input type="hidden" name="action" value="updatestudytable">
 					<input type="hidden" name="studytable" id="studytable">
 					<div align="right"><input class="ui primary button" type="submit" value="Save Studies Table" onMouseDown="ConvertToCSV();" style="font-size: 14pt; font-weight: bold"></div>
@@ -1669,7 +1669,7 @@
 		?>
 		<form method="post" action="projects.php">
 		<input type="hidden" name="action" value="compareserieslists">
-		<input type="hidden" name="id" value="<? =$id?>">
+		<input type="hidden" name="id" value="<?=$id?>">
 		Series list from this server<br>
 		<textarea style="width: 100%; height: 300px" name="serieslist1" readonly><?
 		/* get all series associated with this project (MR only for now) */
@@ -1795,14 +1795,14 @@
 				$sp = explode(",", $localseries);
 				?>
 				<tr>
-					<td><? =$localuid?></td>
-					<td><? =$sp[0]?></td>
-					<td><? =$sp[1]?></td>
-					<td><? =$sp[2]?></td>
-					<td><? =$sp[3]?></td>
-					<td><? =$sp[4]?></td>
-					<td><? =$sp[5]?></td>
-					<td><? =$sp[6]?></td>
+					<td><?=$localuid?></td>
+					<td><?=$sp[0]?></td>
+					<td><?=$sp[1]?></td>
+					<td><?=$sp[2]?></td>
+					<td><?=$sp[3]?></td>
+					<td><?=$sp[4]?></td>
+					<td><?=$sp[5]?></td>
+					<td><?=$sp[6]?></td>
 				</tr>
 				<?
 			}
@@ -1880,7 +1880,7 @@
 
 				// use autocomplete on enrollgroup
 				editableGrid.setCellEditor("enrollgroup", new AutocompleteCellEditor({
-					suggestions: [<? =implode(",",$enrollgroupautocomplete)?>]
+					suggestions: [<?=implode(",",$enrollgroupautocomplete)?>]
 				}));
 		
 				// then we attach to the HTML table and render it
@@ -1888,7 +1888,7 @@
 				editableGrid.renderGrid();
 			} 
 		</script>
-		<!--<a href="projects.php?action=displaydemographics&id=<? =$id?>" class="ui button">View table</a>-->
+		<!--<a href="projects.php?action=displaydemographics&id=<?=$id?>" class="ui button">View table</a>-->
 		<?
 			/* get all subjects, and their enrollment info, associated with the project */
 			$sqlstring = "select * from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = $id and a.isactive = 1 order by a.uid";
@@ -1898,7 +1898,7 @@
 		<div class="ui message">
 			<b style="font-size:16pt">This table is editable &nbsp; &nbsp;</b> Edit the <span style="background-color: lightyellow; border: 1px solid skyblue; padding:5px">Highlighted</span> fields by single-clicking the cell. Use tab to navigate the table, and make sure to <b>hit enter when editing a cell before saving</b>. Click <b>Save</b> when done editing<br>
 			<br>
-			Displaying <? =mysqli_num_rows($result)?> enrollments
+			Displaying <?=mysqli_num_rows($result)?> enrollments
 		</div>
 
 		<form class="ui form">
@@ -1972,21 +1972,21 @@
 				$customidstyle = "";
 			}
 			?>
-			<tr id="R<? =$i?>">
-				<td class="tiny"><? =$subjectid?></td>
-				<td style="font-weight: bold; font-size:12pt;"><? =$uid?> <? =$deleted?></td>
-				<td style="<? =$customidstyle?>"><? =$primaryaltuid?></td>
-				<td class="editable"><? =$altuidlist?></td>
-				<td class="editable"><? =$guid?></td>
-				<td class="editable"><? =$birthdate?></td>
-				<td class="editable"><? =$gender?></td>
-				<td class="editable"><? =$ethnicity1?></td>
-				<td class="editable"><? =$ethnicity2?></td>
-				<td class="editable"><? =$education?></td>
-				<td class="editable"><? =$handedness?></td>
-				<td class="editable"><? =$maritalstatus?></td>
-				<td class="editable"><? =$smokingstatus?></td>
-				<td class="editable"><? =$enrollsubgroup?></td>
+			<tr id="R<?=$i?>">
+				<td class="tiny"><?=$subjectid?></td>
+				<td style="font-weight: bold; font-size:12pt;"><?=$uid?> <?=$deleted?></td>
+				<td style="<?=$customidstyle?>"><?=$primaryaltuid?></td>
+				<td class="editable"><?=$altuidlist?></td>
+				<td class="editable"><?=$guid?></td>
+				<td class="editable"><?=$birthdate?></td>
+				<td class="editable"><?=$gender?></td>
+				<td class="editable"><?=$ethnicity1?></td>
+				<td class="editable"><?=$ethnicity2?></td>
+				<td class="editable"><?=$education?></td>
+				<td class="editable"><?=$handedness?></td>
+				<td class="editable"><?=$maritalstatus?></td>
+				<td class="editable"><?=$smokingstatus?></td>
+				<td class="editable"><?=$enrollsubgroup?></td>
 			</tr>
 			<?
 			$i++;
@@ -2009,7 +2009,7 @@
 			//});
 		</script>
 		<form method="post" action="projects.php" id="savetableform">
-		<input type="hidden" name="id" value="<? =$id?>">
+		<input type="hidden" name="id" value="<?=$id?>">
 		<input type="hidden" name="action" value="updatesubjecttable">
 		<input type="hidden" name="subjecttable" id="subjecttable">
 		<div align="right"><input type="submit" value="Save" onMouseDown="ConvertToCSV();"></div>
@@ -2031,7 +2031,7 @@
 		$name = $row['project_name'];
 		
 		?>
-		<b>Options:</b> <a href="projects.php?action=displaydemographics&id=<? =$id?>" style="font-weight: normal">View table</a>
+		<b>Options:</b> <a href="projects.php?action=displaydemographics&id=<?=$id?>" style="font-weight: normal">View table</a>
 		<div align="center">
 		<br>
 		<table class="ui very compact celled grey table">
@@ -2120,18 +2120,18 @@
 			
 			?>
 			<tr>
-				<td style="font-weight: bold; font-size:12pt"><tt><? =$uid?></tt></td>
-				<td><? =$altuidlist?></td>
-				<td><? =$guid?></td>
-				<td><? =$birthdate?></td>
-				<td><? =$gender?></td>
-				<td><? =$ethnicity1?></td>
-				<td><? =$ethnicity2?></td>
-				<td><? =$handedness?></td>
-				<td><? =$education?></td>
-				<td><? =$maritalstatus?></td>
-				<td><? =$smokingstatus?></td>
-				<td><? =$enrollsubgroup?></td>
+				<td style="font-weight: bold; font-size:12pt"><tt><?=$uid?></tt></td>
+				<td><?=$altuidlist?></td>
+				<td><?=$guid?></td>
+				<td><?=$birthdate?></td>
+				<td><?=$gender?></td>
+				<td><?=$ethnicity1?></td>
+				<td><?=$ethnicity2?></td>
+				<td><?=$handedness?></td>
+				<td><?=$education?></td>
+				<td><?=$maritalstatus?></td>
+				<td><?=$smokingstatus?></td>
+				<td><?=$enrollsubgroup?></td>
 			</tr>
 			<?
 		}
@@ -2188,7 +2188,7 @@
 		<br><br>
 		<form action="projects.php" method="post">
 		<input type="hidden" name="action" value="changealternatenames">
-		<input type="hidden" name="id" value="<? =$id?>">
+		<input type="hidden" name="id" value="<?=$id?>">
 		Click <b>Update</b> below to apply these changes to all studies associated with this project
 		<br><br>
 		<table class="ui very compact celled grey table">
@@ -2208,10 +2208,10 @@
 				$currentaltdesc = $altdesc[$series][$modality];
 				?>
 				<tr>
-					<td><? =strtoupper($modality)?></td>
-					<td><tt><? =$series?></tt></td>
-					<td><? =$count?></td>
-					<td><input type="hidden" name="modalities[<? =$i?>]" value="<? =strtolower($modality)?>"><input type="hidden" name="oldname[<? =$i?>]" value="<? =$series?>"><input type="text" name="newname[<? =$i?>]" value="<? =$currentaltdesc?>"></td>
+					<td><?=strtoupper($modality)?></td>
+					<td><tt><?=$series?></tt></td>
+					<td><?=$count?></td>
+					<td><input type="hidden" name="modalities[<?=$i?>]" value="<?=strtolower($modality)?>"><input type="hidden" name="oldname[<?=$i?>]" value="<?=$series?>"><input type="text" name="newname[<?=$i?>]" value="<?=$currentaltdesc?>"></td>
 				</tr>
 				<?
 				$i++;
@@ -2293,14 +2293,14 @@
 		foreach ($seriesdescs as $uid => $modalities) {
 			?>
 			<tr>
-				<td><? =$uid?></td>
+				<td><?=$uid?></td>
 				<?
 				foreach ($uniqueseries as $modality => $series) {
 					foreach ($series as $ser => $count) {
 						$localcount = $seriesdescs[$uid][$modality][$ser];
 						if ($localcount > 0) { $bgcolor = "#CAFFC4"; } else { $bgcolor = ""; $localcount = "-"; }
 						?>
-							<td style="background-color: <? =$bgcolor?>"><? =$localcount?></td>
+							<td style="background-color: <?=$bgcolor?>"><?=$localcount?></td>
 						<?
 					}
 				}
@@ -2368,7 +2368,7 @@
 		<div class="ui text container grid">
 		<form action="projects.php" method="post">
 		<input type="hidden" name="action" value="updatebidsmapping">
-		<input type="hidden" name="id" value="<? =$projectid?>">
+		<input type="hidden" name="id" value="<?=$projectid?>">
 		<b>BIDS mapping</b>
 		<br>
 		This mapping is used in exporting of BIDS format. This can also be used to group protocol names together: for example, protocols named <tt>AXMPRAGE</tt> and <tt>T1w</tt> are both <tt>anat</tt>.
@@ -2392,9 +2392,9 @@
 				$shortname = $mapping[$modality][$series];
 				?>
 				<tr>
-					<td><? =strtoupper($modality)?></td>
-					<td><tt><? =$series?></tt></td>
-					<td><input type="hidden" name="modalities[<? =$i?>]" value="<? =strtolower($modality)?>"><input type="hidden" name="oldname[<? =$i?>]" value="<? =$series?>"><input type="text" name="newname[<? =$i?>]" value="<? =$shortname?>"></td>
+					<td><?=strtoupper($modality)?></td>
+					<td><tt><?=$series?></tt></td>
+					<td><input type="hidden" name="modalities[<?=$i?>]" value="<?=strtolower($modality)?>"><input type="hidden" name="oldname[<?=$i?>]" value="<?=$series?>"><input type="text" name="newname[<?=$i?>]" value="<?=$shortname?>"></td>
 				</tr>
 				<?
 				$i++;
@@ -2404,7 +2404,7 @@
 			<tr>
 				<td colspan="3" align="right">
 					<div class="column" align="right">
-						<button class="ui button" onClick="window.location.href='projects.php?id=<? =$projectid?>'; return false;">Cancel</button>
+						<button class="ui button" onClick="window.location.href='projects.php?id=<?=$projectid?>'; return false;">Cancel</button>
 						<input class="ui primary button" type="submit" id="submit" value="Update">
 					</div>
 				</td>
@@ -2498,7 +2498,7 @@
 		<div class="ui text container grid">
 		<form action="projects.php" method="post">
 		<input type="hidden" name="action" value="updatendamapping">
-		<input type="hidden" name="id" value="<? =$projectid?>">
+		<input type="hidden" name="id" value="<?=$projectid?>">
 		<b>NDA mapping</b>
 		<br>
 		This mapping is used in exporting of NDA format
@@ -2523,11 +2523,11 @@
 				$experiment_id = $mapping[$modality][$series];
 				?>
 				<tr>
-					<td><? =strtoupper($modality)?></td>
-					<td><tt><? =$series?></tt></td>
+					<td><?=strtoupper($modality)?></td>
+					<td><tt><?=$series?></tt></td>
 					<td>
-						<input type="hidden" name="modalities[<? =$i?>]" value="<? =strtolower($modality)?>"><input type="hidden" name="protocolname[<? =$i?>]" value="<? =$series?>">
-						<input type="text" name="experimentid[<? =$i?>]" value="<? =$experiment_id?>">
+						<input type="hidden" name="modalities[<?=$i?>]" value="<?=strtolower($modality)?>"><input type="hidden" name="protocolname[<?=$i?>]" value="<?=$series?>">
+						<input type="text" name="experimentid[<?=$i?>]" value="<?=$experiment_id?>">
 					</td>
 				</tr>
 				<?
@@ -2538,7 +2538,7 @@
 			<tr>
 				<td colspan="3">
 				<div class="column" align="right">
-					<button class="ui button" onClick="window.location.href='projects.php?id=<? =$projectid?>'; return false;">Cancel</button>
+					<button class="ui button" onClick="window.location.href='projects.php?id=<?=$projectid?>'; return false;">Cancel</button>
 					<input class="ui primary button" type="submit" id="submit" value="Update">
 				</div>
 				</td>
@@ -2630,10 +2630,10 @@
 		<div class="ui text container grid">
 		<form action="projects.php" method="post">
 		<input type="hidden" name="action" value="updateexperimentmapping">
-		<input type="hidden" name="id" value="<? =$projectid?>">
+		<input type="hidden" name="id" value="<?=$projectid?>">
 		<b>Experiment mapping</b>
 		<br>
-		This mapping associates <a href="experiment.php?projectid=<? =$projectid?>">experiments</a> with protocol names.
+		This mapping associates <a href="experiment.php?projectid=<?=$projectid?>">experiments</a> with protocol names.
 		<br><br>
 		<table class="ui small celled selectable grey compact table">
 			<thead>
@@ -2660,12 +2660,12 @@
 		
 				?>
 				<tr>
-					<td><? =strtoupper($modality)?></td>
-					<td><tt><? =$series?></tt></td>
+					<td><?=strtoupper($modality)?></td>
+					<td><tt><?=$series?></tt></td>
 					<td>
-						<input type="hidden" name="modalities[<? =$i?>]" value="<? =strtolower($modality)?>"><input type="hidden" name="protocolname[<? =$i?>]" value="<? =$series?>">
-						<!--<input type="text" name="experimentid[<? =$i?>]" value="<? =$experiment_id?>">-->
-						<select class="ui selection dropdown" name="experimentid[<? =$i?>]">
+						<input type="hidden" name="modalities[<?=$i?>]" value="<?=strtolower($modality)?>"><input type="hidden" name="protocolname[<?=$i?>]" value="<?=$series?>">
+						<!--<input type="text" name="experimentid[<?=$i?>]" value="<?=$experiment_id?>">-->
+						<select class="ui selection dropdown" name="experimentid[<?=$i?>]">
 							<option value="">Select experiment...</option>
 						<?
 							foreach ($experiments as $expid => $name) {
@@ -2684,7 +2684,7 @@
 			<tr>
 				<td colspan="3">
 				<div class="column" align="right">
-					<button class="ui button" onClick="window.location.href='projects.php?id=<? =$projectid?>'; return false;">Cancel</button>
+					<button class="ui button" onClick="window.location.href='projects.php?id=<?=$projectid?>'; return false;">Cancel</button>
 					<input class="ui primary button" type="submit" id="submit" value="Update">
 				</div>
 				</td>
@@ -2793,15 +2793,15 @@
 			<div class="ui two column grid">
 				<div class="column">
 					<h2 class="ui header">
-						<? =$name?>
-						<div class="sub header"><? =count($uids)?> subjects &nbsp; &nbsp; <? =$numstudies?> studies</div>
+						<?=$name?>
+						<div class="sub header"><?=count($uids)?> subjects &nbsp; &nbsp; <?=$numstudies?> studies</div>
 					</h2>
 				</div>
 				<div class="right aligned column">
 					<? if ($favorite) { ?>
-					<a href="projects.php?action=unsetfavorite&id=<? =$id?>"><i class="large yellow star icon" title="Click to remove this project from your favorites"></i></a>
+					<a href="projects.php?action=unsetfavorite&id=<?=$id?>"><i class="large yellow star icon" title="Click to remove this project from your favorites"></i></a>
 					<? } else { ?>
-					<a href="projects.php?action=setfavorite&id=<? =$id?>"><i class="large grey star outline icon" title="Click to add this project to your favorites"></i></a><br>
+					<a href="projects.php?action=setfavorite&id=<?=$id?>"><i class="large grey star outline icon" title="Click to add this project to your favorites"></i></a><br>
 					<? } ?>
 				</div>
 			</div>
@@ -2821,12 +2821,12 @@
 						<div class="ui segment">
 							<div class="ui two column grid">
 								<div class="column">
-									<h3 class="ui header"><? =$numnewstudies?> new studies
-										<div class="sub header">Since <? =$lastview?></div>
+									<h3 class="ui header"><?=$numnewstudies?> new studies
+										<div class="sub header">Since <?=$lastview?></div>
 									</h3>
 								</div>
 								<div class="right aligned column">
-									<a href="projects.php?action=dismissnewstudies&id=<? =$id?>" class="ui button"><i class="times icon"></i> Dismiss</a>
+									<a href="projects.php?action=dismissnewstudies&id=<?=$id?>" class="ui button"><i class="times icon"></i> Dismiss</a>
 								</div>
 							</div>
 							<div class="ui accordion">
@@ -2851,12 +2851,12 @@
 										?>
 										<div class="item">
 											<div class="content">
-												<a class="ui large yellow image label" href="studies.php?studyid=<? =$studyid?>">
+												<a class="ui large yellow image label" href="studies.php?studyid=<?=$studyid?>">
 													<i class="external alternate icon"></i>
-													<? =$uid?>
-													<div class="detail"><? =$studynum?></div>
+													<?=$uid?>
+													<div class="detail"><?=$studynum?></div>
 												</a>
-												<div class="description"><? =$gender?> <? =$age?>Y - <? =$studydate?></div>
+												<div class="description"><?=$gender?> <?=$age?>Y - <?=$studydate?></div>
 											</div>
 										</div>
 										<?
@@ -2871,10 +2871,10 @@
 				<div class="ui four wide column">
 					<h3 class="ui header"><i class="binoculars icon"></i> Data Views</h3>
 					<div class="ui blue inverted big vertical fluid menu">
-						<a class="item" href="projects.php?action=editsubjects&id=<? =$id?>"><i class="users icon"></i> Subjects</a>
-						<a class="item" href="projects.php?action=displaystudies&id=<? =$id?>"><i class="sitemap icon"></i> Studies</a>
-						<a class="item" href="projectchecklist.php?projectid=<? =$id?>"><i class="clipboard list icon"></i> Checklist</a>
-						<a class="item" href="mrqcchecklist.php?action=viewqcparams&id=<? =$id?>"><i class="clipboard list icon"></i> MR scan QC</a>
+						<a class="item" href="projects.php?action=editsubjects&id=<?=$id?>"><i class="users icon"></i> Subjects</a>
+						<a class="item" href="projects.php?action=displaystudies&id=<?=$id?>"><i class="sitemap icon"></i> Studies</a>
+						<a class="item" href="projectchecklist.php?projectid=<?=$id?>"><i class="clipboard list icon"></i> Checklist</a>
+						<a class="item" href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>"><i class="clipboard list icon"></i> MR scan QC</a>
 					</div>
 				</div>
 				<div class="ui four wide column">
@@ -2882,23 +2882,23 @@
 						<div class="item">
 							<div class="header">Tools</div>
 							<div class="menu">
-								<a class="item" href="datadictionary.php?projectid=<? =$id?>">
+								<a class="item" href="datadictionary.php?projectid=<?=$id?>">
 									Data dictionary
 									<i class="right floating database icon"></i>
 								</a>
-								<a class="item" href="analysisbuilder.php?action=viewanalysissummary&projectid=<? =$id?>">
+								<a class="item" href="analysisbuilder.php?action=viewanalysissummary&projectid=<?=$id?>">
 									Analysis builder
 									<i class="list alternate outline icon"></i>
 								</a>
-								<a class="item" href="templates.php?action=displaystudytemplatelist&projectid=<? =$id?>">
+								<a class="item" href="templates.php?action=displaystudytemplatelist&projectid=<?=$id?>">
 									Study templates
 									<i class="clone outline icon"></i>
 								</a>
-								<a class="item" href="minipipeline.php?projectid=<? =$id?>">
+								<a class="item" href="minipipeline.php?projectid=<?=$id?>">
 									Mini-pipelines
 									<i class="cogs icon"></i>
 								</a>
-								<a class="item" href="experiment.php?projectid=<? =$id?>">
+								<a class="item" href="experiment.php?projectid=<?=$id?>">
 									Experiments
 									<i class="clipboard icon"></i>
 								</a>
@@ -2908,19 +2908,19 @@
 						<div class="item">
 							<div class="header">Data Transfer</div>
 							<div class="menu">
-								<a class="item" href="redcapimport.php?action=importsettings&projectid=<? =$id?>">
+								<a class="item" href="redcapimport.php?action=importsettings&projectid=<?=$id?>">
 									Global Redcap settings
 									<i class="red redhat icon"></i>
 								</a>
-								<a class="item" href="redcapimportsubjects.php?action=default&projectid=<? =$id?>">
+								<a class="item" href="redcapimportsubjects.php?action=default&projectid=<?=$id?>">
 									Redcap Subject Import
 									<i class="red redhat icon"></i>
 								</a>
-								<a class="item" href="redcaptonidb.php?action=default&projectid=<? =$id?>">
+								<a class="item" href="redcaptonidb.php?action=default&projectid=<?=$id?>">
 									Import from Redcap
 									<i class="red redhat icon"></i>
 								</a>
-								<a class="item" href="projects.php?action=editxnat&id=<? =$id?>">
+								<a class="item" href="projects.php?action=editxnat&id=<?=$id?>">
 									Export to XNAT
 									<i class="times circle outline icon"></i>
 								</a>
@@ -2929,15 +2929,15 @@
 						<div class="item">
 							<div class="header">Mapping</div>
 							<div class="menu">
-								<a class="item" href="projects.php?action=editbidsmapping&id=<? =$id?>">
+								<a class="item" href="projects.php?action=editbidsmapping&id=<?=$id?>">
 									BIDS protocol mapping
 									<i class="tasks icon"></i>
 								</a>
-								<a class="item" href="projects.php?action=editndamapping&id=<? =$id?>">
+								<a class="item" href="projects.php?action=editndamapping&id=<?=$id?>">
 									NDA mapping
 									<i class="tasks icon"></i>
 								</a>
-								<a class="item" href="projects.php?action=editexperimentmapping&id=<? =$id?>">
+								<a class="item" href="projects.php?action=editexperimentmapping&id=<?=$id?>">
 									Experiment mapping
 									<i class="tasks icon"></i>
 								</a>
@@ -2947,7 +2947,7 @@
 						<div class="item">
 							<div class="header">Admin</div>
 							<div class="menu">
-								<a class="item" href="projects.php?action=resetqa&id=<? =$id?>">
+								<a class="item" href="projects.php?action=resetqa&id=<?=$id?>">
 									Reset MRI QA
 									<i class="red sync icon"></i>
 								</a>
@@ -2955,9 +2955,9 @@
 						</div>
 						<? } ?>
 						<div class="item">Remote connection params<br>
-							Project ID: <? =$id?><br>
-							Instance ID: <? =$instanceid?><br>
-							Site IDs: <? =implode2(",",$siteids)?><br>
+							Project ID: <?=$id?><br>
+							Instance ID: <?=$instanceid?><br>
+							Site IDs: <?=implode2(",",$siteids)?><br>
 						</div>
 						
 					</div>
@@ -2972,7 +2972,7 @@
 				$numsubjects = mysqli_num_rows($result);
 			?>
 			<div class="ui header">
-				<? =$numsubjects?> subjects
+				<?=$numsubjects?> subjects
 			</div>
 			
 			<table class="ui very compact celled grey table">
@@ -3012,13 +3012,13 @@
 				
 				?>
 				<tr>
-					<td><a class="ui very compact large blue button" href="subjects.php?id=<? =$subjectid?>"><i class="small external alternate icon"></i> <tt><? =$uid?></tt></a></td>
-					<td><? =$altuidlist?></td>
-					<td><? =$guid?></td>
-					<td><? =$birthdate?></td>
-					<td><? =$gender?></td>
-					<td><? =$enrollsubgroup?></td>
-					<td><? =$enrollstatus?></td>
+					<td><a class="ui very compact large blue button" href="subjects.php?id=<?=$subjectid?>"><i class="small external alternate icon"></i> <tt><?=$uid?></tt></a></td>
+					<td><?=$altuidlist?></td>
+					<td><?=$guid?></td>
+					<td><?=$birthdate?></td>
+					<td><?=$gender?></td>
+					<td><?=$enrollsubgroup?></td>
+					<td><?=$enrollstatus?></td>
 				</tr>
 				<?
 			}
@@ -3158,11 +3158,11 @@
 			$project = $seriesdescs[$uid]['project'];
 			?>
 			<tr>
-				<td><a href="subjects.php?id=<? =$subjectid?>"><? =$uid?></a></td>
-				<td><? =$altuid?></td>
-				<td><? =$age?></td>
-				<td><? =$dob?></td>
-				<td><? =$project?></td>
+				<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
+				<td><?=$altuid?></td>
+				<td><?=$age?></td>
+				<td><?=$dob?></td>
+				<td><?=$project?></td>
 				<?
 				foreach ($uniqueseries as $modality => $series) {
 					foreach ($series as $ser => $count) {
@@ -3170,7 +3170,7 @@
 						if ($localcount > 0) { $bgcolor = "#CAFFC4"; } else { $bgcolor = ""; $localcount = "-"; }
 						#if ($localcount > 0) { $bgcolor = "green"; } else { $bgcolor = "";}
 						?>
-							<td style="background-color: <? =$bgcolor?>"><? =$localcount?></td>
+							<td style="background-color: <?=$bgcolor?>"><?=$localcount?></td>
 						<?
 					}
 				}
@@ -3284,18 +3284,18 @@
 							?>
 							<tr valign="top">
 								<td>
-									<b><a href="projects.php?id=<? =$id?>"><? =$name?></b>
+									<b><a href="projects.php?id=<?=$id?>"><?=$name?></b>
 									<? if ($favorite) { ?>
-									<a href="projects.php?action=unsetfavorite&id=<? =$id?>"><i class="yellow star icon" title="Click to remove this project from your favorites"></i></a>
+									<a href="projects.php?action=unsetfavorite&id=<?=$id?>"><i class="yellow star icon" title="Click to remove this project from your favorites"></i></a>
 									<? } else { ?>
-									<a href="projects.php?action=setfavorite&id=<? =$id?>"><i class="grey star outline icon" title="Click to add this project to your favorites"></i></a><br>
+									<a href="projects.php?action=setfavorite&id=<?=$id?>"><i class="grey star outline icon" title="Click to add this project to your favorites"></i></a><br>
 									<? } ?>
 									
 								</td>
-								<td><? =$projectuid?></td>
-								<td><? =$costcenter?></td>
-								<td><? =$adminfullname?></td>
-								<td><? =$pifullname?></td>
+								<td><?=$projectuid?></td>
+								<td><?=$costcenter?></td>
+								<td><?=$adminfullname?></td>
+								<td><?=$pifullname?></td>
 								<?
 								$totalstudies = 0;
 								$totalsize = 0.0;
@@ -3323,8 +3323,8 @@
 								}
 								$studydetail = "<ul>$studydetail<ul>";
 								?>
-								<td align="left" title="<? =$studydetail?>">
-									<? =$totalstudies?>
+								<td align="left" title="<?=$studydetail?>">
+									<?=$totalstudies?>
 								</td>
 							</tr>
 							<?
@@ -3332,7 +3332,7 @@
 						else {
 						?>
 							<tr>
-								<td style="color: #999; padding-left: 20px">No access to <b><? =$name?></b></td>
+								<td style="color: #999; padding-left: 20px">No access to <b><?=$name?></b></td>
 								<td></td>
 								<td></td>
 								<td></td>
@@ -3384,8 +3384,8 @@
 				<div class="ui styled segment">
 					<h2 class="ui header">
 						<i class="blue user icon"></i>
-						<? =$pifullname?>
-						<div class="sub header"><? =$piusername?></div>
+						<?=$pifullname?>
+						<div class="sub header"><?=$piusername?></div>
 					</h2>
 					<table class="ui scrolling table">
 						<thead>
@@ -3411,16 +3411,16 @@
 				?>
 				<tr valign="top">
 					<td>
-						<b><a href="projects.php?id=<? =$id?>"><? =$name?></b>
+						<b><a href="projects.php?id=<?=$id?>"><?=$name?></b>
 						<? if ($favorite) { ?>
-						<a href="projects.php?action=unsetfavorite&id=<? =$id?>"><i class="yellow star icon" title="Click to remove this project from your favorites"></i></a>
+						<a href="projects.php?action=unsetfavorite&id=<?=$id?>"><i class="yellow star icon" title="Click to remove this project from your favorites"></i></a>
 						<? } else { ?>
-						<a href="projects.php?action=setfavorite&id=<? =$id?>"><i class="grey star outline icon" title="Click to add this project to your favorites"></i></a><br>
+						<a href="projects.php?action=setfavorite&id=<?=$id?>"><i class="grey star outline icon" title="Click to add this project to your favorites"></i></a><br>
 						<? } ?>
 					</td>
-					<td><? =$projectuid?></td>
-					<td><? =$costcenter?></td>
-					<td><? =$adminfullname?></td>
+					<td><?=$projectuid?></td>
+					<td><?=$costcenter?></td>
+					<td><?=$adminfullname?></td>
 					<?
 					$totalstudies = 0;
 					$totalsize = 0.0;
@@ -3448,8 +3448,8 @@
 					}
 					$studydetail = "<ul>$studydetail<ul>";
 					?>
-					<td align="left" title="<? =$studydetail?>">
-						<? =$totalstudies?>
+					<td align="left" title="<?=$studydetail?>">
+						<?=$totalstudies?>
 					</td>
 				</tr>
 				<?
@@ -3457,7 +3457,7 @@
 			else {
 			?>
 				<tr>
-					<td colspan="5">No access to <b><? =$name?></b></td>
+					<td colspan="5">No access to <b><?=$name?></b></td>
 				</tr>
 			<?
 			}
@@ -3506,8 +3506,8 @@
 				<div class="ui styled segment">
 					<h2 class="ui header">
 						<i class="blue user icon"></i>
-						<? =$adminfullname?>
-						<div class="sub header"><? =$adminusername?></div>
+						<?=$adminfullname?>
+						<div class="sub header"><?=$adminusername?></div>
 					</h2>
 					<table class="ui scrolling table">
 						<thead>
@@ -3533,16 +3533,16 @@
 				?>
 				<tr valign="top">
 					<td>
-						<b><a href="projects.php?id=<? =$id?>"><? =$name?></b>
+						<b><a href="projects.php?id=<?=$id?>"><?=$name?></b>
 						<? if ($favorite) { ?>
-						<a href="projects.php?action=unsetfavorite&id=<? =$id?>"><i class="yellow star icon" title="Click to remove this project from your favorites"></i></a>
+						<a href="projects.php?action=unsetfavorite&id=<?=$id?>"><i class="yellow star icon" title="Click to remove this project from your favorites"></i></a>
 						<? } else { ?>
-						<a href="projects.php?action=setfavorite&id=<? =$id?>"><i class="grey star outline icon" title="Click to add this project to your favorites"></i></a><br>
+						<a href="projects.php?action=setfavorite&id=<?=$id?>"><i class="grey star outline icon" title="Click to add this project to your favorites"></i></a><br>
 						<? } ?>
 					</td>
-					<td><? =$projectuid?></td>
-					<td><? =$costcenter?></td>
-					<td><? =$pifullname?></td>
+					<td><?=$projectuid?></td>
+					<td><?=$costcenter?></td>
+					<td><?=$pifullname?></td>
 					<?
 					$totalstudies = 0;
 					$totalsize = 0.0;
@@ -3570,8 +3570,8 @@
 					}
 					$studydetail = "<ul>$studydetail<ul>";
 					?>
-					<td align="left" title="<? =$studydetail?>">
-						<? =$totalstudies?>
+					<td align="left" title="<?=$studydetail?>">
+						<?=$totalstudies?>
 					</td>
 				</tr>
 				<?
@@ -3579,7 +3579,7 @@
 			else {
 			?>
 				<tr>
-					<td colspan="5">No access to <b><? =$name?></b></td>
+					<td colspan="5">No access to <b><?=$name?></b></td>
 				</tr>
 			<?
 			}
@@ -3611,8 +3611,8 @@
 							$subject = $row2['label'];
 		?>
 				  <tr>	
-					<td><? =$subject?></td>
-					<td><? =$series?></td> 
+					<td><?=$subject?></td>
+					<td><?=$series?></td> 
 				  </tr>
 		<?
 		}

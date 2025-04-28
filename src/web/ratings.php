@@ -106,11 +106,11 @@
 			<tbody>
 				<form action="ratings.php" method="post">
 				<input type="hidden" name="action" value="addrating">
-				<input type="hidden" name="id" value="<? =$id?>">
-				<input type="hidden" name="type" value="<? =$type?>">
-				<input type="hidden" name="modality" value="<? =$modality?>">
+				<input type="hidden" name="id" value="<?=$id?>">
+				<input type="hidden" name="type" value="<?=$type?>">
+				<input type="hidden" name="modality" value="<?=$modality?>">
 				<tr>
-				<td><? =$username?></td>
+				<td><?=$username?></td>
 				<td></td>
 				<td>
 					<select name="rating_value" required>
@@ -153,11 +153,11 @@
 					}
 					?>
 					<tr>
-						<td><? =$username?></td>
-						<td><? =$rating_date?></td>
-						<td style="color: <? =$rating_fcolor;?>; background-color: <? =$rating_bcolor;?>"><? =$rating_value?></td>
-						<td><? =$rating_notes?></td>
-						<td><a href="ratings.php?action=delete&ratingid=<? =$rating_id?>&id=<? =$id?>&type=<? =$type?>&modality=<? =$modality?>" style="color: red"><i class="trash icon"></i></a></td>
+						<td><?=$username?></td>
+						<td><?=$rating_date?></td>
+						<td style="color: <?=$rating_fcolor;?>; background-color: <?=$rating_bcolor;?>"><?=$rating_value?></td>
+						<td><?=$rating_notes?></td>
+						<td><a href="ratings.php?action=delete&ratingid=<?=$rating_id?>&id=<?=$id?>&type=<?=$type?>&modality=<?=$modality?>" style="color: red"><i class="trash icon"></i></a></td>
 					</tr>
 					<?
 				}

@@ -100,7 +100,7 @@
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		?><div align="center"><span class="message"><? =$sitename?> added</span></div><br><br><?
+		?><div align="center"><span class="message"><?=$sitename?> added</span></div><br><br><?
 	}
 
 	
@@ -122,7 +122,7 @@
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		?><div align="center"><span class="message"><? =$sitename?> added</span></div><br><br><?
+		?><div align="center"><span class="message"><?=$sitename?> added</span></div><br><br><?
 	}
 	
 
@@ -133,7 +133,7 @@
 		$sqlstring = "delete from remote_connections where remoteconn_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		?><div align="center"><span class="message">Connection <? =$id?> deleted</span></div><br><br><?
+		?><div align="center"><span class="message">Connection <?=$id?> deleted</span></div><br><br><?
 	}	
 	
 	
@@ -169,24 +169,24 @@
 		<div align="center">
 		<table class="entrytable">
 			<form method="post" action="remoteconnections.php" autocomplete="off">
-			<input type="hidden" name="action" value="<? =$formaction?>">
-			<input type="hidden" name="id" value="<? =$id?>">
+			<input type="hidden" name="action" value="<?=$formaction?>">
+			<input type="hidden" name="id" value="<?=$id?>">
 			<tr>
 				<td colspan="2" align="center">
-					<b><? =$formtitle?></b>
+					<b><?=$formtitle?></b>
 				</td>
 			</tr>
 			<tr>
 				<td>Name</td>
-				<td><input type="text" name="connname" value="<? =$connname?>" maxlength="255" required></td>
+				<td><input type="text" name="connname" value="<?=$connname?>" maxlength="255" required></td>
 			</tr>
 			<tr>
 				<td>Server</td>
-				<td><input type="url" name="remoteserver" required value="<? =$remoteserver?>"></td>
+				<td><input type="url" name="remoteserver" required value="<?=$remoteserver?>"></td>
 			</tr>
 			<tr>
 				<td>Remote username</td>
-				<td><input type="text" name="remoteusername" autocomplete="off" required value="<? =$remoteusername?>"></td>
+				<td><input type="text" name="remoteusername" autocomplete="off" required value="<?=$remoteusername?>"></td>
 			</tr>
 			<tr>
 				<td>Remote password</td>
@@ -194,19 +194,19 @@
 			</tr>
 			<tr>
 				<td>Remote instance</td>
-				<td><input type="text" name="remoteinstanceid" required value="<? =$remoteinstanceid?>"></td>
+				<td><input type="text" name="remoteinstanceid" required value="<?=$remoteinstanceid?>"></td>
 			</tr>
 			<tr>
 				<td>Remote project</td>
-				<td><input type="text" name="remoteprojectid" required value="<? =$remoteprojectid?>"></td>
+				<td><input type="text" name="remoteprojectid" required value="<?=$remoteprojectid?>"></td>
 			</tr>
 			<tr>
 				<td>Remote site</td>
-				<td><input type="text" name="remotesiteid" required value="<? =$remotesiteid?>"></td>
+				<td><input type="text" name="remotesiteid" required value="<?=$remotesiteid?>"></td>
 			</tr>
 			<tr>
 				<td colspan="2" align="center">
-					<input type="submit" value="<? =$submitbuttonlabel?>" class="ui primary button">
+					<input type="submit" value="<?=$submitbuttonlabel?>" class="ui primary button">
 				</td>
 			</tr>
 			</form>
@@ -251,14 +251,14 @@
 						$remotesiteid = $row['remote_siteid'];
 				?>
 				<tr>
-					<td><a href="remoteconnections.php?action=editform&id=<? =$id?>"><? =$connname?></a></td>
-					<td><? =$remoteserver?></td>
-					<td><? =$remoteusername?></td>
-					<td style="font-size:10pt"><? =strtoupper($remotepassword)?></td>
-					<td><? =$remoteinstanceid?></td>
-					<td><? =$remoteprojectid?></td>
-					<td><? =$remotesiteid?></td>
-					<td><a class="ui red button" href="remoteconnections.php?action=delete&id=<? =$id?>" onclick="return confirm('Are you sure you want to delete this connection?')"><i class="trash icon"></i></a></td>
+					<td><a href="remoteconnections.php?action=editform&id=<?=$id?>"><?=$connname?></a></td>
+					<td><?=$remoteserver?></td>
+					<td><?=$remoteusername?></td>
+					<td style="font-size:10pt"><?=strtoupper($remotepassword)?></td>
+					<td><?=$remoteinstanceid?></td>
+					<td><?=$remoteprojectid?></td>
+					<td><?=$remotesiteid?></td>
+					<td><a class="ui red button" href="remoteconnections.php?action=delete&id=<?=$id?>" onclick="return confirm('Are you sure you want to delete this connection?')"><i class="trash icon"></i></a></td>
 				</tr>
 				<? 
 					}

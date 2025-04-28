@@ -71,7 +71,7 @@
 		$sqlstring = "update public_downloads set pd_password = '$pwd' where pd_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		?><div align="center"><span class="message"><? =$id?> updated</span></div><br><br><?
+		?><div align="center"><span class="message"><?=$id?> updated</span></div><br><br><?
 	}
 
 
@@ -145,19 +145,19 @@
 					$key = strtoupper($row['pd_key']);
 			?>
 			<tr>
-				<td><? =$desc?></td>
-				<td><? =$status?></td>
-				<td style="font-size:9pt"><? =$createdate?></td>
-				<td style="font-size:9pt"><? =$expiredate?></td>
-				<td><i class="sticky note outline icon" title="<? =$notes?>"></i></td>
-				<td style="font-size:9pt" align="right"><? =HumanReadableFilesize($zipsize)?></td>
-				<td style="font-size:9pt" align="right"><? =HumanReadableFilesize($unzipsize)?></td>
-				<td><? =$createdby?></td>
-				<td style="font-size:8pt"><tt><? =$password?></tt></td>
+				<td><?=$desc?></td>
+				<td><?=$status?></td>
+				<td style="font-size:9pt"><?=$createdate?></td>
+				<td style="font-size:9pt"><?=$expiredate?></td>
+				<td><i class="sticky note outline icon" title="<?=$notes?>"></i></td>
+				<td style="font-size:9pt" align="right"><?=HumanReadableFilesize($zipsize)?></td>
+				<td style="font-size:9pt" align="right"><?=HumanReadableFilesize($unzipsize)?></td>
+				<td><?=$createdby?></td>
+				<td style="font-size:8pt"><tt><?=$password?></tt></td>
 				<td>
 					<div class="ui action input">
-						<input type="text" size="80" id="linktext<? =$id?>" value="<? =$GLOBALS['cfg']['siteurl'] . "/pd.php?k=$key"?>">
-						<button class="ui button" onClick="CopyToClipboard('linktext<? =$id?>')" title="Copy only works when HTTPS is enabled :("><i class="copy icon"></i> Copy</button>
+						<input type="text" size="80" id="linktext<?=$id?>" value="<?=$GLOBALS['cfg']['siteurl'] . "/pd.php?k=$key"?>">
+						<button class="ui button" onClick="CopyToClipboard('linktext<?=$id?>')" title="Copy only works when HTTPS is enabled :("><i class="copy icon"></i> Copy</button>
 					</div>
 				</td>
 			</tr>

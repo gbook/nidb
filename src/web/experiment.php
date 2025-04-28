@@ -218,24 +218,24 @@ file_modifydate, file_createdate) values($expid, '$fileFilename', '$fileData', $
 	?>
 		<div class="ui container">
 			<div class="ui attached visible message">
-				<div class="header"><? =$formtitle?></div>
+				<div class="header"><?=$formtitle?></div>
 			</div>
 			<form method="post" action="experiment.php" enctype="multipart/form-data" class="ui form attached fluid raised segment">
-			<input type="hidden" name="action" value="<? =$formaction?>">
-			<input type="hidden" name="expid" value="<? =$expid?>">
-			<input type="hidden" name="projectid" value="<? =$projectid?>">
+			<input type="hidden" name="action" value="<?=$formaction?>">
+			<input type="hidden" name="expid" value="<?=$expid?>">
+			<input type="hidden" name="projectid" value="<?=$projectid?>">
 
 			<div class="field">
 				<label>Name</label>
 				<div class="field">
-					<input type="text" name="experimentname" value="<? =$name?>" maxlength="255" required>
+					<input type="text" name="experimentname" value="<?=$name?>" maxlength="255" required>
 				</div>
 			</div>
 
 			<div class="field">
 				<label>Description (Task instructions, README, how to analyze, etc)</label>
 				<div class="field">
-					<textarea name="experimentdesc"><? =$desc?></textarea>
+					<textarea name="experimentdesc"><?=$desc?></textarea>
 				</div>
 			</div>
 			
@@ -262,11 +262,11 @@ file_modifydate, file_createdate) values($expid, '$fileFilename', '$fileData', $
 							$modifydate = date('M j, Y h:ia',strtotime($row['file_modifydate']));
 							?>
 							<tr>
-								<td><tt style="font-size: larger"><a href="experiment.php?action=viewfile&projectid=<? =$projectid?>&fileid=<? =$fileid?>"><? =$file?></a></tt></td>
-								<td><? =$filesize?></td>
-								<td style="font-size: smaller"><? =$createdate?></td>
-								<td style="font-size: smaller"><? =$modifydate?></td>
-								<td><input type="checkbox" name="filedeleteids[]" value="<? =$fileid?>"></td>
+								<td><tt style="font-size: larger"><a href="experiment.php?action=viewfile&projectid=<?=$projectid?>&fileid=<?=$fileid?>"><?=$file?></a></tt></td>
+								<td><?=$filesize?></td>
+								<td style="font-size: smaller"><?=$createdate?></td>
+								<td style="font-size: smaller"><?=$modifydate?></td>
+								<td><input type="checkbox" name="filedeleteids[]" value="<?=$fileid?>"></td>
 							</tr>
 							<?
 						}
@@ -283,8 +283,8 @@ file_modifydate, file_createdate) values($expid, '$fileFilename', '$fileData', $
 					<a class="ui red button" href="experiment.php?expid=1&projectid=1&action=delete" onclick="return confirm('Are you sure you want to delete?')"><i class="trash icon"></i>Delete</a>
 				</div>
 				<div class="column" align="right">
-					<a class="ui button" href="experiment.php?projectid=<? =$projectid?>">Cancel</a>
-					<input type="submit" class="ui primary button" value="<? =$submitbuttonlabel?>">
+					<a class="ui button" href="experiment.php?projectid=<?=$projectid?>">Cancel</a>
+					<input type="submit" class="ui primary button" value="<?=$submitbuttonlabel?>">
 				</div>
 			</form>
 		</div>
@@ -300,7 +300,7 @@ file_modifydate, file_createdate) values($expid, '$fileFilename', '$fileData', $
 		
 		?>
 		<div class="ui container">
-			<button class="ui primary large button" onClick="window.location.href='experiment.php?projectid=<? =$projectid?>&action=addform'; return false;"><i class="plus square outline icon"></i> Create experiment</button>
+			<button class="ui primary large button" onClick="window.location.href='experiment.php?projectid=<?=$projectid?>&action=addform'; return false;"><i class="plus square outline icon"></i> Create experiment</button>
 			<br><br>
 			<table class="ui celled selectable grey compact table">
 				<thead>
@@ -328,7 +328,7 @@ file_modifydate, file_createdate) values($expid, '$fileFilename', '$fileData', $
 							?>
 							<tr>
 								<td valign="top">
-									<a href="experiment.php?action=editform&expid=<? =$expid?>&projectid=<? =$projectid?>"><b><? =$name?></b></a>
+									<a href="experiment.php?action=editform&expid=<?=$expid?>&projectid=<?=$projectid?>"><b><?=$name?></b></a>
 								</td>
 								<td valign="top" align="center">
 								<?
@@ -346,11 +346,11 @@ file_modifydate, file_createdate) values($expid, '$fileFilename', '$fileData', $
 									}
 									?>
 								</td>
-								<td valign="top" class="ui center aligned"><a href="experiment.php?action=download&expid=<? =$expid?>" title="Download <? =$name?> experiment"><i class="large download icon"></i></a></td>
-								<td valign="top"><? =$version?></td>
-								<td valign="top"><? =$createdate?></td>
-								<td valign="top"><? =$modifydate?></td>
-								<td valign="top" class="ui center aligned"><a href="packages.php?action=addobject&objecttype=experiment&objectids[]=<? =$expid?>"><img src="images/squirrel-icon-64.png" height="24"></img></a></td>
+								<td valign="top" class="ui center aligned"><a href="experiment.php?action=download&expid=<?=$expid?>" title="Download <?=$name?> experiment"><i class="large download icon"></i></a></td>
+								<td valign="top"><?=$version?></td>
+								<td valign="top"><?=$createdate?></td>
+								<td valign="top"><?=$modifydate?></td>
+								<td valign="top" class="ui center aligned"><a href="packages.php?action=addobject&objecttype=experiment&objectids[]=<?=$expid?>"><img src="images/squirrel-icon-64.png" height="24"></img></a></td>
 							</tr>
 							<?
 						}
@@ -388,30 +388,30 @@ file_modifydate, file_createdate) values($expid, '$fileFilename', '$fileData', $
 			?>
 			
 			<div class="ui text container">
-				<a href="experiment.php?action=editform&expid=<? =$expid?>&projectid=<? =$projectid?>" class="ui primary button"><b><i class="arrow alternate circle left icon"></i> Back</b></a>
+				<a href="experiment.php?action=editform&expid=<?=$expid?>&projectid=<?=$projectid?>" class="ui primary button"><b><i class="arrow alternate circle left icon"></i> Back</b></a>
 				<br>
 				<table class="ui very simple very compact small celled table">
 					<tr>
 						<td>File name</td>
-						<td><h3 class="ui header"><? =$filename?></h3></td>
+						<td><h3 class="ui header"><?=$filename?></h3></td>
 					</tr>
 					<tr>
 						<td>File size</td>
-						<td><? =$filesize?> <span class="tiny">bytes</span></td>
+						<td><?=$filesize?> <span class="tiny">bytes</span></td>
 					</tr>
 					<tr>
 						<td>Create date</td>
-						<td><? =$createdate?></td>
+						<td><?=$createdate?></td>
 					</tr>
 					<tr>
 						<td>Modify date</td>
-						<td><? =$modifydate?></td>
+						<td><?=$modifydate?></td>
 					</tr>
 				</table>
 			</div>
 			<div style="padding: 20px">
 				Displaying entire file
-				<tt><pre style="text-align: left; padding: 15px; border: 1px solid gray"><? =$contents?></pre></tt>
+				<tt><pre style="text-align: left; padding: 15px; border: 1px solid gray"><?=$contents?></pre></tt>
 			</div>
 			<?
 		}

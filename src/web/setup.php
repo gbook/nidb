@@ -284,7 +284,7 @@
 		}
 		
 		?>
-		<? =DisplaySetupMenu("welcome")?>
+		<?=DisplaySetupMenu("welcome")?>
 		<br><br><br><br>
 		<script>
 			function CopyToClipboard(id) {
@@ -323,16 +323,16 @@
 				<div class="ui message">
 					<h3>Perform the following before continuing with the setup</h3>
 					
-					<div class="ui <? =$color1?> message">
+					<div class="ui <?=$color1?> message">
 						<i class="large exclamation circle icon"></i> <b>Disable access to NiDB during the upgrade</b>
-						<p style="color: black">This can be done by setting the config file <code><? =$GLOBALS['cfg']['cfgpath']?></code> variable <code>[offline] = 1</code>. Change it back to 0 to enable NiDB.</p>
+						<p style="color: black">This can be done by setting the config file <code><?=$GLOBALS['cfg']['cfgpath']?></code> variable <code>[offline] = 1</code>. Change it back to 0 to enable NiDB.</p>
 					</div>
 						
-					<div class="ui <? =$color2?> message" style="text-align: left">
-						<i class="large <? =$icon2?> icon"></i> <b>Backup your database</b>
-						<p style="color: black"> Upgrade cannot continue until the backup <code><? =$backupfile?></code> exists (yes, even during the initial install. This will make sure you are familiar with the database backup process). Use the following command to backup your database. Replace PASSWORD with the <tt>nidb</tt> account password. This will be <tt>password</tt> for the initial install.</p>
+					<div class="ui <?=$color2?> message" style="text-align: left">
+						<i class="large <?=$icon2?> icon"></i> <b>Backup your database</b>
+						<p style="color: black"> Upgrade cannot continue until the backup <code><?=$backupfile?></code> exists (yes, even during the initial install. This will make sure you are familiar with the database backup process). Use the following command to backup your database. Replace PASSWORD with the <tt>nidb</tt> account password. This will be <tt>password</tt> for the initial install.</p>
 						<div class="ui fluid action input">
-							<input type="text" value="mysqldump --max_allowed_packet=1G --single-transaction --compact -u<? =$GLOBALS['cfg']['mysqluser']?> -pPASSWORD <? =$GLOBALS['cfg']['mysqldatabase']?> &gt; <? =$backupfile?>" style="font-family: monospace" id="backuptxt">
+							<input type="text" value="mysqldump --max_allowed_packet=1G --single-transaction --compact -u<?=$GLOBALS['cfg']['mysqluser']?> -pPASSWORD <?=$GLOBALS['cfg']['mysqldatabase']?> &gt; <?=$backupfile?>" style="font-family: monospace" id="backuptxt">
 							<button class="ui button" onClick="CopyToClipboard('backuptxt')" title="Copy only works when HTTPS is enabled :("><i class="copy icon"></i> Copy</button>
 						</div>
 						<p style="color: black">Run the above command, then come back to this page and refresh.</p>
@@ -352,7 +352,7 @@
 						Click Next to continue
 						<? } ?>
 					</div>
-					<a class="ui inverted <? =$disabled?> huge button" href="setup.php?step=systemcheck">Next <i class="arrow alternate circle right icon"></i></a>
+					<a class="ui inverted <?=$disabled?> huge button" href="setup.php?step=systemcheck">Next <i class="arrow alternate circle right icon"></i></a>
 				</div>
 			</div>
 		</div>
@@ -367,7 +367,7 @@
 	function DisplaySystemCheckPage() {
 		
 		?>
-		<? =DisplaySetupMenu("systemcheck")?>
+		<?=DisplaySetupMenu("systemcheck")?>
 		<br><br><br><br><br>
 		<div class="ui container">
 			<div class="ui segment" style="border: 2px solid #222">
@@ -417,31 +417,31 @@
 				<table cellpadding="5">
 					<tr>
 						<td align="right">OS</td>
-						<td><? =php_uname();?></td>
+						<td><?=php_uname();?></td>
 					</tr>
 					<tr>
 						<td align="right">CPU Cores</td>
-						<td><? =$cores;?></td>
+						<td><?=$cores;?></td>
 					</tr>
 					<tr>
 						<td align="right">System memory</td>
-						<td><? =$memory;?> GB</td>
+						<td><?=$memory;?> GB</td>
 					</tr>
 					<tr>
 						<td align="right">Apache&nbsp;(httpd)</td>
-						<td><b><? =$httpdver?></b> &nbsp; <span class="tiny"><? =$httpd?></span></td>
+						<td><b><?=$httpdver?></b> &nbsp; <span class="tiny"><?=$httpd?></span></td>
 					</tr>
 					<tr>
 						<td align="right">MariaDB&nbsp;(mysql)</td>
-						<td><b><? =$mariadbver?></b> &nbsp; <span class="tiny"><? =$mariadb?></span></td>
+						<td><b><?=$mariadbver?></b> &nbsp; <span class="tiny"><?=$mariadb?></span></td>
 					</tr>
 					<tr>
 						<td align="right">PHP</td>
-						<td><b><? =$phpver?></b></td>
+						<td><b><?=$phpver?></b></td>
 					</tr>
 					<tr>
 						<td align="right">ImageMagick</td>
-						<td><b><? =$imagemagickver?></b> &nbsp; <span class="tiny"><? =$imagemagick?></span></td>
+						<td><b><?=$imagemagickver?></b> &nbsp; <span class="tiny"><?=$imagemagick?></span></td>
 					</tr>
 				</table>
 				<br><br>
@@ -459,7 +459,7 @@
 					else {
 						if (file_exists($GLOBALS['cfg']['nidbdir'])) {
 							?>
-							An existing NiDB installation was found at <code><? =$GLOBALS['cfg']['nidbdir']?></code> and valid config file was found at <code><? =$GLOBALS['cfg']['cfgpath']?></code>
+							An existing NiDB installation was found at <code><?=$GLOBALS['cfg']['nidbdir']?></code> and valid config file was found at <code><?=$GLOBALS['cfg']['cfgpath']?></code>
 							<br><br>
 							<div class="ui orange message"><h3 class="ui header">The existing installation will be upgraded</h3></div>
 							<?
@@ -507,7 +507,7 @@
 	/* -------------------------------------------- */
 	function DisplayDatabase1Page() {
 		?>
-		<? =DisplaySetupMenu("database1")?>
+		<?=DisplaySetupMenu("database1")?>
 		<br><br><br><br><br>
 		<div class="ui container">
 			<div class="ui segment" style="border: 2px solid #222">
@@ -523,7 +523,7 @@
 							<? if ( ($GLOBALS['cfg']['mysqlhost'] == "") || ($GLOBALS['cfg']['mysqlhost'] == null) ) { ?>
 							localhost
 							<? } else { ?>
-							<span style="color: darkred; font-weight: bold"><? =$GLOBALS['cfg']['mysqlhost']?></span><br>
+							<span style="color: darkred; font-weight: bold"><?=$GLOBALS['cfg']['mysqlhost']?></span><br>
 							<span class="tiny">Loaded from config file</span>
 							<? }?>
 						</td>
@@ -534,7 +534,7 @@
 							<? if ( ($GLOBALS['cfg']['mysqldatabase'] == "") || ($GLOBALS['cfg']['mysqldatabase'] == null) ) { ?>
 							nidb
 							<? } else { ?>
-							<span style="color: darkred; font-weight: bold"><? =$GLOBALS['cfg']['mysqldatabase']?></span><br>
+							<span style="color: darkred; font-weight: bold"><?=$GLOBALS['cfg']['mysqldatabase']?></span><br>
 							<span class="tiny">Loaded from config file</span>
 							<? }?>
 						</td>
@@ -548,7 +548,7 @@
 								$len = strlen($GLOBALS['cfg']['mysqlpassword']);
 								$pwstars = str_repeat("*",$len);
 								?>
-							<span style="color: darkred; font-weight: bold"><? =$pwstars?></span><br>
+							<span style="color: darkred; font-weight: bold"><?=$pwstars?></span><br>
 							<span class="tiny">Loaded from config file</span>
 							<? } ?>
 						</td>
@@ -559,7 +559,7 @@
 							<? if ( ($GLOBALS['cfg']['mysqluser'] == "") || ($GLOBALS['cfg']['mysqluser'] == null) ) { ?>
 							nidb
 							<? } else { ?>
-							<span style="color: darkred; font-weight: bold"><? =$GLOBALS['cfg']['mysqluser']?></span><br>
+							<span style="color: darkred; font-weight: bold"><?=$GLOBALS['cfg']['mysqluser']?></span><br>
 							<span class="tiny">Loaded from config file</span>
 							<? }?>
 						</td>
@@ -589,7 +589,7 @@
 					?>
 					<br><br>
 					<div class="ui warning message">
-					<code>nidb.sql</code> not found in <code>/nidb</code> or <code>/nidb/setup</code>... <b><? =$GLOBALS['installtype']?> cannot proceed</b>
+					<code>nidb.sql</code> not found in <code>/nidb</code> or <code>/nidb/setup</code>... <b><?=$GLOBALS['installtype']?> cannot proceed</b>
 					</div>
 					<br><br>
 					<?
@@ -598,7 +598,7 @@
 				else {
 					?>
 					<div class="ui message">
-					Found SQL schema <code><? =$schemafile?></code> with file date of <? =date('Y-m-d H:i:s', filemtime($schemafile))?>
+					Found SQL schema <code><?=$schemafile?></code> with file date of <?=date('Y-m-d H:i:s', filemtime($schemafile))?>
 					</div>
 					<?
 				}
@@ -641,7 +641,7 @@
 		
 		$ignoredtables = array();
 		?>
-		<? =DisplaySetupMenu("database2")?>
+		<?=DisplaySetupMenu("database2")?>
 		<br><br><br><br><br>
 		<div class="ui container">
 			<div class="ui segment" style="border: 2px solid #222; overflow: auto;">
@@ -667,8 +667,8 @@
 						?>
 						<div class="ui error message"><h3>Unable to connect to database</h3>
 							<p>
-							Error number: <? =mysqli_connect_errno()?><br>
-							Error message: <? =mysqli_connect_error()?>
+							Error number: <?=mysqli_connect_errno()?><br>
+							Error message: <?=mysqli_connect_error()?>
 							</p>
 						</div>
 						<?
@@ -682,14 +682,14 @@
 						$sqlstring = "show databases like '$database'";
 						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 						if (mysqli_num_rows($result) > 0) {
-							?><div class="ui success message"><i class="check circle icon"></i> Database '<? =$database?>' exists</div><?
+							?><div class="ui success message"><i class="check circle icon"></i> Database '<?=$database?>' exists</div><?
 							
 							/* check if there are any tables */
 							$sqlstring = "SELECT COUNT(DISTINCT `table_name`) FROM `information_schema`.`columns` WHERE `table_schema` = '$database'";
 							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 							if (mysqli_num_rows($result) > 0) {
 								?>
-								<div class="ui success message"><i class="check circle icon"></i> Existing tables found in '<? =$database?>' database. Upgrading SQL schema</div>
+								<div class="ui success message"><i class="check circle icon"></i> Existing tables found in '<?=$database?>' database. Upgrading SQL schema</div>
 								<?
 								list($ignoredtables, $errors) = UpgradeDatabase($GLOBALS['linki'], $database, $schemafile, $rowlimit, $debugonly);
 								//PrintVariable($errors);
@@ -730,11 +730,11 @@
 									shell_exec($systemstring);
 								}
 								else {
-									?><div class="ui error message"><code><? =$sqldatafile?></code> not found. This file should have been provided by the installer</div><?
+									?><div class="ui error message"><code><?=$sqldatafile?></code> not found. This file should have been provided by the installer</div><?
 								}
 							}
 							else {
-								?><li>No tables found in '<? =$database?>' database. Running full SQL script<?
+								?><li>No tables found in '<?=$database?>' database. Running full SQL script<?
 								/* load the sql file(s) */
 								if (file_exists($schemafile)) {
 									$systemstring = "mysql -uroot -p$rootpassword $database < $schemafile";
@@ -745,11 +745,11 @@
 										shell_exec($systemstring);
 									}
 									else {
-										?><div class="ui error message"><code><? =$sqldatafile?></code> not found. This file should have been provided by the installer</div><?
+										?><div class="ui error message"><code><?=$sqldatafile?></code> not found. This file should have been provided by the installer</div><?
 									}
 								}
 								else {
-									?><div class="ui error message"><code><? =$schemafile?></code> not found. This file should have been provided by the installer</div><?
+									?><div class="ui error message"><code><?=$schemafile?></code> not found. This file should have been provided by the installer</div><?
 								}
 
 							}
@@ -757,7 +757,7 @@
 						else {
 							$sqlstring = "create database `$database`";
 							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-							?><div class="ui success message">Created database '<? =$database?>'</div><?
+							?><div class="ui success message">Created database '<?=$database?>'</div><?
 							
 							/* load the sql file(s) */
 							if (file_exists($schemafile)) {
@@ -769,11 +769,11 @@
 									shell_exec($systemstring);
 								}
 								else {
-									?><div class="ui error message"><code><? =$sqldatafile?></code> not found. This file should have been provided by the installer</div><?
+									?><div class="ui error message"><code><?=$sqldatafile?></code> not found. This file should have been provided by the installer</div><?
 								}
 							}
 							else {
-								?><div class="ui error message"><code><? =$schemafile?></code> not found. This file should have been provided by the installer</div><?
+								?><div class="ui error message"><code><?=$schemafile?></code> not found. This file should have been provided by the installer</div><?
 							}
 						}
 					}
@@ -813,7 +813,7 @@
 	function DisplayConfigPage() {
 		
 		?>
-		<? =DisplaySetupMenu("config")?>
+		<?=DisplaySetupMenu("config")?>
 		<br><br><br><br><br>
 		<div class="ui container">
 			<? DisplaySettings("setup"); ?>
@@ -842,7 +842,7 @@
 	function DisplaySetupCompletePage() {
 		
 		?>
-		<? =DisplaySetupMenu("config")?>
+		<?=DisplaySetupMenu("config")?>
 
 		<br><br><br><br><br>
 

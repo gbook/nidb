@@ -149,7 +149,7 @@
 
 	function projectinfo($projectid){
 	if ((trim($projectid) == "") || ($projectid < 0)) {
-			?>Invalid or blank project ID [<? =$projectid?>]<?
+			?>Invalid or blank project ID [<?=$projectid?>]<?
 			return;
 		}
 	
@@ -167,13 +167,13 @@
 		<table>
                         <tr>
                                 <td>Project Name: </td>
-                                <td> <b> <? =$projectname?> </td>
+                                <td> <b> <?=$projectname?> </td>
                         </tr>
                         <tr></tr> <tr></tr>
 
                         <tr>
                                 <td>RedCap Server: </td>
-                                <td> <b><? =$redcapurl?> </td>
+                                <td> <b><?=$redcapurl?> </td>
                         </tr>
                         <tr></tr> <tr></tr>
 
@@ -196,12 +196,12 @@
 
 		<form action="redcapmaping.php" >
 		<input type="hidden" name="action" value="displaymapping">
-                <input type="hidden" name="projectid" value="<? =$projectid?>">
+                <input type="hidden" name="projectid" value="<?=$projectid?>">
 	
 		 <label for="redcapform">Choose a Redcap Form:</label>
 		  <select name="inst" id="inst">
 		    <?for($In=0;$In < count($In_Name); $In++){ ?>
-			<option value=<? =$In_Name[$In]?>> <? =$In_Name[$In]?> </option> 
+			<option value=<?=$In_Name[$In]?>> <?=$In_Name[$In]?> </option> 
 		    <?}?>
 		 </select>
 		 <input type="submit" value="Submit">		
@@ -220,7 +220,7 @@
 		
 		        
                 if ((trim($projectid) == "") || ($projectid < 0)) {
-                        ?>Invalid or blank project ID [<? =$projectid?>]<?
+                        ?>Invalid or blank project ID [<?=$projectid?>]<?
                         return;
                 }
                 
@@ -240,8 +240,8 @@
                 
                 <form action="redcapmaping.php" method="post">
                 <input type="hidden" name="action" value="updatemapping">
-                <input type="hidden" name="projectid" value="<? =$projectid?>">
-		<input type="hidden" name="inst" value="<? =$inst?>">
+                <input type="hidden" name="projectid" value="<?=$projectid?>">
+		<input type="hidden" name="inst" value="<?=$inst?>">
                 
                 <span>Map the variable in the RedCap system to the NiDB variable type</span>
                 <br>
@@ -268,11 +268,11 @@
 					<td>
 						<select name="redcapevent[]"  multiple required size="3">
 			                           <?for($Eve=0;$Eve < count($Event_s); $Eve++){ ?>
-			                              <option value=<? =$Event_s[$Eve]?>> <? =$Event_s[$Eve]?> </option>
+			                              <option value=<?=$Event_s[$Eve]?>> <?=$Event_s[$Eve]?> </option>
  				                   <?}?>	
                                                 </select>
                                         </td>
-                                        <td><input type="text" name="inst" value=<? =$inst?>></td>
+                                        <td><input type="text" name="inst" value=<?=$inst?>></td>
 				
 					<? $V_names=getrcvariables($projectid,$inst,$redcapevent);?>
 
@@ -280,9 +280,9 @@
                                                 <select name="redcapfields" required  onchange="document.getElementById('nidbvariablename').value=this.options[this.selectedIndex].text;">
                                                    <?for($Fi=0;$Fi < count($V_names); $Fi++){ 
 						      if ($Fi==0){?>
-						        <option value=<? =$V_names[$Fi]?> selected> <? =$V_names[$Fi]?> </option>	 <?}
+						        <option value=<?=$V_names[$Fi]?> selected> <?=$V_names[$Fi]?> </option>	 <?}
 						else {?>
-                                                       <option value=<? =$V_names[$Fi]?>> <? =$V_names[$Fi]?> </option>
+                                                       <option value=<?=$V_names[$Fi]?>> <?=$V_names[$Fi]?> </option>
 						   
                                                    <?}}?>
                                                 </select>
@@ -302,7 +302,7 @@
                                                 </select>
                                         </td>
                                         <td><input type="text" name="nidbvariablename" id="nidbvariablename"></td>
-                                        <td><input type="text" name="nidbinstrumentname" value=<? =$inst?>></td>
+                                        <td><input type="text" name="nidbinstrumentname" value=<?=$inst?>></td>
                                         <td title="Save mapping"><input type="submit" value="Add"> </td>
                                 </tr>
                                 <?
@@ -325,15 +325,15 @@
 						 }
                                                 ?>
                                                 <tr>
-                                                        <td><? =$event?></td>
-                                                        <td><? =$form?></td>
-							<td> <? =$fields?></td>
-                                                        <td style="border-right: 1px solid #bdbdbd"><? =$fieldtype?></td>
+                                                        <td><?=$event?></td>
+                                                        <td><?=$form?></td>
+							<td> <?=$fields?></td>
+                                                        <td style="border-right: 1px solid #bdbdbd"><?=$fieldtype?></td>
                                                         <td style="border-right: 1px solid #bdbdbd; text-align: center">&#10132;</td>
-                                                        <td><? =$typeStr?></td>
-                                                        <td><? =$variable?></td>
-                                                        <td><? =$instrument?></td>
-                                                        <td title="Delete mapping"><a href="redcapmaping.php?action=deletemapping&mappingid=<? =$formmapid?>&projectid=<? =$projectid?>&inst=<? =$inst?>" class="redlinkbutton" style="font-size: smaller">X</a></td>
+                                                        <td><?=$typeStr?></td>
+                                                        <td><?=$variable?></td>
+                                                        <td><?=$instrument?></td>
+                                                        <td title="Delete mapping"><a href="redcapmaping.php?action=deletemapping&mappingid=<?=$formmapid?>&projectid=<?=$projectid?>&inst=<?=$inst?>" class="redlinkbutton" style="font-size: smaller">X</a></td>
                                                 </tr>
                                         <?
                                         }
@@ -346,19 +346,19 @@
 		
 		<form action="redcapmaping.php" method="post">
                 <input type="hidden" name="action" value="transferdata">
-                <input type="hidden" name="projectid" value="<? =$projectid?>">
-                <input type="hidden" name="inst" value="<? =$inst?>">
+                <input type="hidden" name="projectid" value="<?=$projectid?>">
+                <input type="hidden" name="inst" value="<?=$inst?>">
 
 
 		<label> Enter the Redcap Field name containing a unique ID to join Redcap and NiDB</label>
-		<input type="text" name="jointid" value="<? =$jointid?>">
+		<input type="text" name="jointid" value="<?=$jointid?>">
 		<br>
 		<style>
 		.button { border: none; background-color: #4CAF50; color: white; padding: 15px 32px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 4px 2px; cursor: pointer;}		
 
 	       </style>
 		
-		<button class="button" onclick="window.location.href='redcapmaping.php?action=transferdata&projectid=<? =$projectid?>&jointid=<? =$jointid?>'" style="float:left">Start Transfer ---></button>
+		<button class="button" onclick="window.location.href='redcapmaping.php?action=transferdata&projectid=<?=$projectid?>&jointid=<?=$jointid?>'" style="float:left">Start Transfer ---></button>
 		</form>
 
 <?

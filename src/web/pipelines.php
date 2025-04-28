@@ -893,7 +893,7 @@
 		$sqlstring = "update pipelines set pipeline_admin = $newuserid where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
-		?><div align="center"><span class="message">Owner of pipeline [<? =$id?>] updated</span></div><?
+		?><div align="center"><span class="message">Owner of pipeline [<?=$id?>] updated</span></div><?
 	}
 
 
@@ -918,7 +918,7 @@
 		$sqlstring = "update pipelines set pipeline_statusmessage = 'Queued for deletion' where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
-		?><div align="center"><span class="message"><? =$id?> queued for deletion</span></div><?
+		?><div align="center"><span class="message"><?=$id?> queued for deletion</span></div><?
 	}	
 
 	
@@ -1159,29 +1159,29 @@
 		<div class="ui container">
 			<div class="ui top attached tabular menu">
 				<? if ($type != "add") { ?>
-				<a class="<? =$tab_oneactive?> item item2" data-tab="first">Information</a>
+				<a class="<?=$tab_oneactive?> item item2" data-tab="first">Information</a>
 				<? } ?>
-				<a class="<? =$tab_twoactive?> item item2" data-tab="second"><i class="cog icon"></i> Settings</a>
+				<a class="<?=$tab_twoactive?> item item2" data-tab="second"><i class="cog icon"></i> Settings</a>
 				<? if ($type != "add") { ?>
-				<a class="<? =$tab_threeactive?> item item2" data-tab="third"><i class="file alternate icon"></i> Data & Scripts</a>
-				<a class="<? =$tab_fouractive?> item item2" data-tab="fourth"><i class="wrench icon"></i> Operations</a>
-				<a class="<? =$tab_fiveactive?> item item2" data-tab="fifth" id="checkTabTitle"><i class="check icon"></i> Checks</a>
+				<a class="<?=$tab_threeactive?> item item2" data-tab="third"><i class="file alternate icon"></i> Data & Scripts</a>
+				<a class="<?=$tab_fouractive?> item item2" data-tab="fourth"><i class="wrench icon"></i> Operations</a>
+				<a class="<?=$tab_fiveactive?> item item2" data-tab="fifth" id="checkTabTitle"><i class="check icon"></i> Checks</a>
 				<? } ?>
 			</div>
 
 		<!-- -------------------- Information tab -------------------- -->
 
 		<? if ($type != "add") { ?>
-		<div class="ui bottom attached <? =$tab_oneactive?> tab raised segment" data-tab="first">
+		<div class="ui bottom attached <?=$tab_oneactive?> tab raised segment" data-tab="first">
 			<table class="entrytable" style="border:0px">
 				<tr>
 					<td><h3 class="ui header">View</h3></td>
 					<td valign="top" style="padding-bottom: 10pt">
-						<p><a href="analysis.php?action=viewanalyses&id=<? =$id?>" class="ui green button" style="width:170px">Analyses</a> View running and completed analyses</p>
+						<p><a href="analysis.php?action=viewanalyses&id=<?=$id?>" class="ui green button" style="width:170px">Analyses</a> View running and completed analyses</p>
 
-						<p><a href="analysis.php?action=viewfailedanalyses&id=<? =$id?>" class="ui basic green button" style="width:170px">Ignored studies</a> View studies that did not meet criteria to be analyzed (<b>Helpful for debugging</b>)</p>
+						<p><a href="analysis.php?action=viewfailedanalyses&id=<?=$id?>" class="ui basic green button" style="width:170px">Ignored studies</a> View studies that did not meet criteria to be analyzed (<b>Helpful for debugging</b>)</p>
 						
-						<p><a href="pipelines.php?action=viewversion&id=<? =$id?>" class="ui basic green button" style="width:170px"><i class="ui code branch icon"></i>Pipeline versions</a></p>
+						<p><a href="pipelines.php?action=viewversion&id=<?=$id?>" class="ui basic green button" style="width:170px"><i class="ui code branch icon"></i>Pipeline versions</a></p>
 					</td>
 				</tr>
 				<tr>
@@ -1224,16 +1224,16 @@
 							?>
 							<div class="ui mini statistics">
 								<div class="ui statistic">
-									<div class="value"><? =$numcomplete?></div>
+									<div class="value"><?=$numcomplete?></div>
 									<div class="label" style="font-size: smaller">Completed</div>
 								</div>
 								<div class="ui grey statistic">
-									<div class="value"><? =$totaltime?> hr</div>
+									<div class="value"><?=$totaltime?> hr</div>
 									<div class="label" style="font-size: smaller">Total CPU Time</div>
 								</div>
 							</div>
 							<br>
-							<a href="pipeline_performance.php?pipelineid=<? =$id?>">Pipeline performance</a>
+							<a href="pipeline_performance.php?pipelineid=<?=$id?>">Pipeline performance</a>
 						</div>
 					</td>
 				</tr>
@@ -1268,7 +1268,7 @@
 								<?
 									if (count($parents) > 0) {
 										foreach ($parents as $parentid => $info) {
-											?><a href="pipelines.php?action=editpipeline&id=<? =$parentid?>" title="<? =$info['desc']?><br><br><? =$info['notes']?>"><? =$info['name']?></a><?
+											?><a href="pipelines.php?action=editpipeline&id=<?=$parentid?>" title="<?=$info['desc']?><br><br><?=$info['notes']?>"><?=$info['name']?></a><?
 										}
 									}
 									else {
@@ -1282,7 +1282,7 @@
 
 							<div class="four wide column"></div>
 							<div class="twelve wide center aligned column">
-								<span class="ui big red text"><? =$title?></span>
+								<span class="ui big red text"><?=$title?></span>
 							</div>
 
 							<div class="four wide column">&nbsp;</div>
@@ -1294,7 +1294,7 @@
 									if (count($children) > 0) {
 										foreach ($children as $child => $info) {
 											?>
-												&rdsh; <a href="pipelines.php?action=editpipeline&id=<? =$child?>" title="<? =$info['desc']?><br><br><? =$info['notes']?>"><? =$info['name']?></a>
+												&rdsh; <a href="pipelines.php?action=editpipeline&id=<?=$child?>" title="<?=$info['desc']?><br><br><?=$info['notes']?>"><?=$info['name']?></a>
 												<br>
 											<?
 										}
@@ -1387,15 +1387,15 @@
 						<table class="ui very basic compact collapsing table">
 							<tr>
 								<td>Cluster <i class="question circle outline icon" title="The path as seen by the cluster"></i></td>
-								<td><tt><? =$clusterpath?></tt></td>
+								<td><tt><?=$clusterpath?></tt></td>
 							</tr>
 							<tr class="disabled">
 								<td>NiDB <i class="question circle outline icon" title="The path as seen by NiDB"></i></td>
-								<td><tt><? =$nidbpath?></tt></td>
+								<td><tt><?=$nidbpath?></tt></td>
 							</tr>
 							<tr>
 								<td>Disk free space</td>
-								<td><div class="ui <? =$diskcolor?> basic label"><i class="<? =$diskicon?>"></i> <? =$diskmsg?></div></td>
+								<td><div class="ui <?=$diskcolor?> basic label"><i class="<?=$diskicon?>"></i> <?=$diskmsg?></div></td>
 							</tr>
 						</table>
 					</td>
@@ -1421,7 +1421,7 @@
 											<li>Check the criteria for the data. To specify the number of BOLD reps, the criteria must be set to "Use size criteria below"
 										</ul>
 									<li><b>Groups</b> - If you select a group, only the studies in that group will be checked if they match the pipeline's data criteria
-									<li><b>Dependencies</b> - If you use dependencies, the study being processed in this pipeline must have already been processed <i>successfully</i> in the parent pipeline. Check the <a href="analysis.php?action=viewfailedanalyses&id=<? =$id?>">ignored studies</a> to see if any have been ignored because of a missing dependency. To retry those studies, click the "Reprocess ignored studies" link.
+									<li><b>Dependencies</b> - If you use dependencies, the study being processed in this pipeline must have already been processed <i>successfully</i> in the parent pipeline. Check the <a href="analysis.php?action=viewfailedanalyses&id=<?=$id?>">ignored studies</a> to see if any have been ignored because of a missing dependency. To retry those studies, click the "Reprocess ignored studies" link.
 									<li><b>Pipeline state</b> - When the pipeline is enabled, there is a background process that launches every few minutes to check to see which pipelines need to be run. Once your pipeline is running, it will have a status of "running". Otherwise the status will be "stopped". While running, the pipeline is doing two things: 1) checking what studies need to run, and 2) submitting those that need to run. Once all of the studies have been submitted, the pipeline will be "stopped". Cluster jobs may still be running even though the status is "stopped".
 									<li><b>Pipeline script</b> - If there are any errors in the pipeline script, even minor things like trying to cd into a non-existent directory will stop the cluster job entirely and put it in an error state. Currently there is no indicator that has happened on the pipeline web page. Check the individual analysis logs to see what's up
 									<li><b>Pipeline manager has died</b> - In very rare circumstances, the background manager that was handling your pipeline may die. If that happens, your pipeline's status may be stuck on "running" for a couple days, even though you know it hasn't actually done anything. You can click the "reset" next to the pipeline status.
@@ -1471,7 +1471,7 @@
 			}
 		</script>
 		
-		<div class="ui bottom attached <? =$tab_twoactive?> tab raised segment" data-tab="second">
+		<div class="ui bottom attached <?=$tab_twoactive?> tab raised segment" data-tab="second">
 			<div class="ui right close rail">
 				<div class="ui segment">
 					<div class="ui accordion">
@@ -1541,14 +1541,14 @@
 			</div>
 			<table class="entrytable" width="100%">
 				<form method="post" action="pipelines.php">
-				<input type="hidden" name="action" value="<? =$formaction?>">
-				<input type="hidden" name="id" value="<? =$id?>">
+				<input type="hidden" name="action" value="<?=$formaction?>">
+				<input type="hidden" name="id" value="<?=$id?>">
 				<input type="hidden" name="returntab" value="settings">
 				<tr>
 					<td class="label" valign="top" align="right">Name</td>
 					<td valign="top">
 						<div class="ui input">
-							<input type="text" name="pipelinetitle" required value="<? =$title?>" maxlength="50" size="60" onKeyPress="return AlphaNumeric(event)" <? if ($type == "edit") { echo "readonly style='background-color: #EEE;"; } ?>>
+							<input type="text" name="pipelinetitle" required value="<?=$title?>" maxlength="50" size="60" onKeyPress="return AlphaNumeric(event)" <? if ($type == "edit") { echo "readonly style='background-color: #EEE;"; } ?>>
 						</div>
 					</td>
 				</tr>
@@ -1556,7 +1556,7 @@
 					<td class="label" valign="top" align="right">Description</td>
 					<td valign="top">
 						<div class="ui input">
-							<input type="text" <? =$disabled?> name="pipelinedesc" value="<? =$desc?>" size="60">
+							<input type="text" <?=$disabled?> name="pipelinedesc" value="<?=$desc?>" size="60">
 						</div>
 					</td>
 				</tr>
@@ -1565,13 +1565,13 @@
 					<td valign="top">
 						<div class="field">
 							<div class="ui radio checkbox">
-								<input type="radio" name="level" id="level1" value="1" <? =$disabled?> <? if ($level == 1) echo "checked"; ?>>
+								<input type="radio" name="level" id="level1" value="1" <?=$disabled?> <? if ($level == 1) echo "checked"; ?>>
 								<label>First <span class="tiny">subject level</span></label>
 							</div>
 						</div>
 						<div class="field">
 							<div class="ui radio checkbox">
-								<input type="radio" name="level" id="level2" value="2" <? =$disabled?> <? if ($level == 2) echo "checked"; ?>>
+								<input type="radio" name="level" id="level2" value="2" <?=$disabled?> <? if ($level == 2) echo "checked"; ?>>
 								<label>Second <span class="tiny">group level</span></label>
 							</div>
 						</div>
@@ -1581,7 +1581,7 @@
 					<td class="label" valign="top" align="right">Directory</td>
 					<td valign="top">
 						<div class="ui input">
-							<input type="text" name="pipelinedirectory" <? =$disabled?> value="<? =$directory?>" maxlength="255" size="60" <? if ($type == "edit") { echo "readonly style='background-color: #EEE;"; } ?> >
+							<input type="text" name="pipelinedirectory" <?=$disabled?> value="<?=$directory?>" maxlength="255" size="60" <? if ($type == "edit") { echo "readonly style='background-color: #EEE;"; } ?> >
 						</div>
 					</td>
 				</tr>
@@ -1589,12 +1589,12 @@
 					<td class="label" valign="top" align="right">Directory structure</td>
 					<td valign="top">
 						<div class="ui fluid selection dropdown">
-							<input type="hidden" name="pipelinedirstructure" value="<? =$dirstructure?>">
+							<input type="hidden" name="pipelinedirstructure" value="<?=$dirstructure?>">
 							<i class="dropdown icon"></i>
 							<div class="default text">Directory...</div>
 							<div class="scrollhint menu">
-								<div class="item" data-value="a"><tt><? =$GLOBALS['cfg']['analysisdir']?></tt> <div class="ui label">/S1234ABC/1/<b>ThePipeline</b></div></div>
-								<div class="item" data-value="b"><tt><? =$GLOBALS['cfg']['analysisdirb']?></tt> <div class="ui label">/<b>ThePipeline</b>/S1234ABC/1</div></div>
+								<div class="item" data-value="a"><tt><?=$GLOBALS['cfg']['analysisdir']?></tt> <div class="ui label">/S1234ABC/1/<b>ThePipeline</b></div></div>
+								<div class="item" data-value="b"><tt><?=$GLOBALS['cfg']['analysisdirb']?></tt> <div class="ui label">/<b>ThePipeline</b>/S1234ABC/1</div></div>
 								<?
 									$sqlstring = "select * from analysisdirs order by shortname";
 									$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -1611,7 +1611,7 @@
 											$dispformat = "/<b>ThePipeline</b>/S1234ABC/1";
 										}
 										?>
-										<div class="item" data-value="<? =$analysisdirid?>"><tt><? =$clusterpath?></tt> <div class="ui label"><? =$dispformat?></div></div>
+										<div class="item" data-value="<?=$analysisdirid?>"><tt><?=$clusterpath?></tt> <div class="ui label"><?=$dispformat?></div></div>
 										<?
 									}
 								?>
@@ -1623,7 +1623,7 @@
 					<td class="label" valign="top" align="right">Pipeline group</td>
 					<td valign="top">
 						<div class="ui input">
-							<input type="text" name="pipelinegroup" list="grouplist" <? =$disabled?> value="<? =$pipelinegroup?>" maxlength="255" size="60">
+							<input type="text" name="pipelinegroup" list="grouplist" <?=$disabled?> value="<?=$pipelinegroup?>" maxlength="255" size="60">
 						</div>
 					</td>
 					<datalist id="grouplist">
@@ -1641,7 +1641,7 @@
 					<td class="label" valign="top" align="right">Notes</td>
 					<td valign="top">
 						<div class="ui input">
-							<textarea name="pipelinenotes" <? =$disabled?> rows="8" cols="60"><? =$pipelinenotes?></textarea>
+							<textarea name="pipelinenotes" <?=$disabled?> rows="8" cols="60"><?=$pipelinenotes?></textarea>
 						</div>
 					</td>
 				</tr>
@@ -1650,13 +1650,13 @@
 					<td valign="top">
 						<div class="field">
 							<div class="ui radio checkbox">
-								<input type="radio" name="pipelinedatacopymethod" id="datacopymethod1" value="nfs" <? =$disabled?> <? if (($datacopymethod == "nfs") || ($datacopymethod == "")) echo "checked"; ?>>
+								<input type="radio" name="pipelinedatacopymethod" id="datacopymethod1" value="nfs" <?=$disabled?> <? if (($datacopymethod == "nfs") || ($datacopymethod == "")) echo "checked"; ?>>
 								<label>NFS <span class="tiny">default</span></label>
 							</div>
 						</div>
 						<div class="field">
 							<div class="ui radio checkbox">
-								<input type="radio" name="pipelinedatacopymethod" id="datacopymethod2" value="scp" <? =$disabled?> <? if ($datacopymethod == "scp") echo "checked"; ?>>
+								<input type="radio" name="pipelinedatacopymethod" id="datacopymethod2" value="scp" <?=$disabled?> <? if ($datacopymethod == "scp") echo "checked"; ?>>
 								<label>scp <span class="tiny">requires passwordless ssh</span></label>
 							</div>
 						</div>
@@ -1666,7 +1666,7 @@
 					<td class="label" valign="top" align="right">Concurrent processes</td>
 					<td valign="top">
 						<div class="ui input">
-							<input type="number" name="pipelinenumproc" <? =$disabled?> value="<? =$numproc?>" min="1" max="350">
+							<input type="number" name="pipelinenumproc" <?=$disabled?> value="<?=$numproc?>" min="1" max="350">
 						</div>
 						<?
 							if ($numproc > 1) {
@@ -1686,10 +1686,10 @@
 					<td class="label" valign="top" align="right">Use temporary directory<br><span class="tiny">Usually <tt>/tmp</tt>. Check with your sysadmin</span></td>
 					<td valign="top">
 						<div class="ui checkbox">
-							<input type="checkbox" name="pipelineusetmpdir" <? =$disabled?> value="1" <? if ($usetmpdir == "1") { echo "checked"; } ?>>
+							<input type="checkbox" name="pipelineusetmpdir" <?=$disabled?> value="1" <? if ($usetmpdir == "1") { echo "checked"; } ?>>
 						</div>
 						<div class="ui input">
-							<input type="text" name="pipelinetmpdir" <? =$disabled?> value="<? =$tmpdir?>" size="60" placeholder="/path/to/tmp/dir">
+							<input type="text" name="pipelinetmpdir" <?=$disabled?> value="<?=$tmpdir?>" size="60" placeholder="/path/to/tmp/dir">
 						</div>
 					</td>
 				</tr>
@@ -1713,7 +1713,7 @@
 					<td class="label" valign="top" align="right">Cluster type</td>
 					<td valign="top">
 						<div class="ui selection dropdown">
-							<input type="hidden" name="pipelineclustertype" id="pipelineclustertype" <? =$disabled?> value="<? =$clustertype?>" onChange="CheckHostnameStatus()">
+							<input type="hidden" name="pipelineclustertype" id="pipelineclustertype" <?=$disabled?> value="<?=$clustertype?>" onChange="CheckHostnameStatus()">
 							<i class="dropdown icon"></i>
 							<div class="default text">Cluster...</div>
 							<div class="scrollhint menu">
@@ -1783,7 +1783,7 @@
 					<td class="label" valign="top" align="right">Cluster user</td>
 					<td valign="top">
 						<div class="ui input">
-							<input type="text" name="pipelineclusteruser" <? =$disabled?> value="<? =$clusteruser?>" id="pipelineclusteruser" onChange="CheckHostnameStatus()">
+							<input type="text" name="pipelineclusteruser" <?=$disabled?> value="<?=$clusteruser?>" id="pipelineclusteruser" onChange="CheckHostnameStatus()">
 						</div>
 					</td>
 				</tr>
@@ -1791,7 +1791,7 @@
 					<td class="label" valign="top" align="right">Submit hostname</td>
 					<td valign="top">
 						<div class="ui error input" id="pipelinesubmithostinput">
-							<input type="text" name="pipelinesubmithost" id="pipelinesubmithost" <? =$disabled?> value="<? =$submithost?>" onChange="CheckHostnameStatus()" onLoad="CheckHostnameStatus()">
+							<input type="text" name="pipelinesubmithost" id="pipelinesubmithost" <?=$disabled?> value="<?=$submithost?>" onChange="CheckHostnameStatus()" onLoad="CheckHostnameStatus()">
 							<div id="hostup"></div>
 						</div>
 					</td>
@@ -1800,7 +1800,7 @@
 					<td class="label" valign="top" align="right">Submit host username</td>
 					<td valign="top">
 						<div class="ui input">
-							<input type="text" name="pipelinesubmithostuser" <? =$disabled?> value="<? =$submithostuser?>" id="pipelinesubmithostuser" onChange="CheckHostnameStatus()">
+							<input type="text" name="pipelinesubmithostuser" <?=$disabled?> value="<?=$submithostuser?>" id="pipelinesubmithostuser" onChange="CheckHostnameStatus()">
 						</div>
 					</td>
 				</tr>
@@ -1808,7 +1808,7 @@
 					<td class="label" valign="top" align="right">Queue(s)<br><span class="tiny">Comma separated list</span></td>
 					<td valign="top">
 						<div class="ui input">
-							<input type="text" name="pipelinequeue" <? =$disabled?> value="<? =$queue?>" required>
+							<input type="text" name="pipelinequeue" <?=$disabled?> value="<?=$queue?>" required>
 						</div>
 					</td>
 				</tr>
@@ -1816,7 +1816,7 @@
 					<td class="label" valign="top" align="right">Number of cores per job</td>
 					<td valign="top">
 						<div class="ui right labeled input">
-							<input type="number" name="pipelinenumcores" <? =$disabled?> value="<? =$numcores?>">
+							<input type="number" name="pipelinenumcores" <?=$disabled?> value="<?=$numcores?>">
 							<div class="ui basic label">cores</div>
 						</div>
 					</td>
@@ -1825,7 +1825,7 @@
 					<td class="label" valign="top" align="right">Memory</td>
 					<td valign="top">
 						<div class="ui right labeled input">
-							<input type="number" name="pipelinememory" step="0.1" <? =$disabled?> value="<? =$memory?>">
+							<input type="number" name="pipelinememory" step="0.1" <?=$disabled?> value="<?=$memory?>">
 							<div class="ui basic label">GB</div>
 						</div>
 					</td>
@@ -1834,7 +1834,7 @@
 					<td class="label" valign="top" align="right">Max wall time</td>
 					<td valign="top">
 						<div class="ui right labeled input">
-							<input type="number" name="pipelinemaxwalltime" <? =$disabled?> value="<? =$maxwalltime?>">
+							<input type="number" name="pipelinemaxwalltime" <?=$disabled?> value="<?=$maxwalltime?>">
 							<div class="ui basic label">mins</div>
 						</div>
 					</td>
@@ -1843,7 +1843,7 @@
 					<td class="label" valign="top" align="right">Submit delay</td>
 					<td valign="top">
 						<div class="ui right labeled input">
-							<input type="number" name="pipelinesubmitdelay" <? =$disabled?> value="<? =$submitdelay?>">
+							<input type="number" name="pipelinesubmitdelay" <?=$disabled?> value="<?=$submitdelay?>">
 							<div class="ui basic label">hrs</div>
 						</div>
 					</td>
@@ -1852,7 +1852,7 @@
 				<tr>
 					<td colspan="2" align="right">
 						<br>
-						<button class="ui primary button" type="submit" <? =$disabled?>><? =$submitbuttonlabel?></button>
+						<button class="ui primary button" type="submit" <?=$disabled?>><?=$submitbuttonlabel?></button>
 					</td>
 				</tr>
 				</form>
@@ -1862,10 +1862,10 @@
 		<!-- -------------------- Data & Scripts tab -------------------- -->
 		
 		<? if ($type != "add") { ?>
-		<div class="ui bottom attached <? =$tab_threeactive?> tab raised segment" data-tab="third">
+		<div class="ui bottom attached <?=$tab_threeactive?> tab raised segment" data-tab="third">
 			<form method="post" action="pipelines.php" name="stepsform" id="stepsform" class="ui form">
 			<input type="hidden" name="action" value="updatepipelineoptions">
-			<input type="hidden" name="id" value="<? =$id?>">
+			<input type="hidden" name="id" value="<?=$id?>">
 			<input type="hidden" name="returntab" value="datascripts">
 			<?
 				//if (($level == 1) || (($level == 2) && ($dependency == ''))) {
@@ -1881,7 +1881,7 @@
 							Successful files <i class="grey question outline circle icon" title="<b>Successful files</b><br><br>The analysis is marked as successful if ALL of the files specified exist at the end of the analysis. If left blank, the analysis will always be marked as successful.<br>Example: <tt>analysis/T1w/T1w_acpc_dc_restore_brain.nii.gz</tt>"></i>
 						</td>
 						<td valign="top">
-							<textarea name="completefiles" <? =$disabled?> rows="4" cols="60"><? =$completefiles?></textarea><br>
+							<textarea name="completefiles" <?=$disabled?> rows="4" cols="60"><?=$completefiles?></textarea><br>
 							<span class="tiny">Comma seperated list of files (relative paths)</span>
 						</td>
 					</tr>
@@ -1890,7 +1890,7 @@
 							Results script <i class="grey question outline circle icon" title="<b>Results script</b><br><br>This script will be executed last and can be re-run separate from the analysis pipeline. The results script would often be used to create thumbnails of images and parse text files, and reinsert those results back into the database. The same pipeline variables available in the script command section below are available here to be passed as parameters to the results script"></i>
 						</td>
 						<td valign="top">
-							<textarea name="pipelineresultsscript" rows="3" cols="60"><? =$resultscript?></textarea>
+							<textarea name="pipelineresultsscript" rows="3" cols="60"><?=$resultscript?></textarea>
 						</td>
 					</tr>
 					<tr class="level1">
@@ -1901,7 +1901,7 @@
 								<tr>
 									<td valign="top" align="right" style="font-size:10pt; font-weight:bold;color: #555;">This pipeline depends on<br><span class="tiny">it is a child pipeline of...</span></td>
 									<td valign="top">
-										<select name="dependency[]" id="dependency" <? =$disabled?> multiple="multiple" class="ui dropdown">
+										<select name="dependency[]" id="dependency" <?=$disabled?> multiple="multiple" class="ui dropdown">
 											<option value="" <? if ($dependency == "") { echo "selected"; } ?>>(Select dependency)</option>
 											<?
 												$sqlstring = "select * from pipelines order by pipeline_name";
@@ -1920,7 +1920,7 @@
 														
 														if ($id != $d_id) {
 															?>
-															<option value="<? =$d_id?>" <? =$selected?>><? =$d_name?></option>
+															<option value="<?=$d_id?>" <?=$selected?>><?=$d_name?></option>
 															<?
 														}
 													}
@@ -1933,12 +1933,12 @@
 									<td valign="top" align="right" style="font-size:10pt; font-weight:bold;color: #555;">Criteria</td>
 									<td valign="top">
 										<div class="ui radio checkbox">
-											<input type="radio" name="deplevel" id="deplevel" value="study" <? =$disabled?> <? if (($deplevel == "study") || ($deplevel == "")) { echo "checked"; } ?>>
+											<input type="radio" name="deplevel" id="deplevel" value="study" <?=$disabled?> <? if (($deplevel == "study") || ($deplevel == "")) { echo "checked"; } ?>>
 											<label>study <i class="question circle icon" title="Use dependencies from same study (RECOMMENDED)"></i></label>
 										</div>
 										<br>
 										<div class="ui radio checkbox">
-											<input type="radio" name="deplevel" id="deplevel" value="subject" <? =$disabled?> <? if ($deplevel == "subject") { echo "checked"; } ?>>
+											<input type="radio" name="deplevel" id="deplevel" value="subject" <?=$disabled?> <? if ($deplevel == "subject") { echo "checked"; } ?>>
 											<label>subject <i class="question circle icon" title="Use dependencies from same subject (other studies)"></i></label>
 										</div>
 									</td>
@@ -1947,12 +1947,12 @@
 									<td valign="top" align="right" style="font-size:10pt; font-weight:bold;color: #555;">Directory</td>
 									<td valign="top">
 										<div class="ui radio checkbox">
-											<input type="radio" name="depdir" value="root" <? =$disabled?> <? if (($depdir == "root") || ($depdir == "")) { echo "checked"; } ?>>
+											<input type="radio" name="depdir" value="root" <?=$disabled?> <? if (($depdir == "root") || ($depdir == "")) { echo "checked"; } ?>>
 											<label>root directory <i class="question circle icon" title="copies all files into the analysis root directory <tt>{analysisrootdir}/*</tt>"></i></label>
 										</div>
 										<br>
 										<div class="ui radio checkbox">
-											<input type="radio" name="depdir" value="subdir" <? =$disabled?> <? if ($depdir == "subdir") { echo "checked"; } ?>>
+											<input type="radio" name="depdir" value="subdir" <?=$disabled?> <? if ($depdir == "subdir") { echo "checked"; } ?>>
 											<label>sub-directory <i class="question circle icon" title="copies dependency into a subdirectory of the analysis <tt>{analysisrootdir}/<i>DependencyName</i>/*</tt>"></i></label>
 										</div>
 									</td>
@@ -1961,17 +1961,17 @@
 									<td valign="top" align="right" style="font-size:10pt; font-weight:bold;color: #555;">File linking type</td>
 									<td valign="top">
 										<div class="ui radio checkbox">
-											<input type="radio" name="deplinktype" value="hardlink" <? =$disabled?> <? if (($deplinktype == "hardlink") || ($deplinktype == "")) { echo "checked"; } ?>>
+											<input type="radio" name="deplinktype" value="hardlink" <?=$disabled?> <? if (($deplinktype == "hardlink") || ($deplinktype == "")) { echo "checked"; } ?>>
 											<label>hard link</label>
 										</div>
 										<br>
 										<div class="ui radio checkbox">
-											<input type="radio" name="deplinktype" value="softlink" <? =$disabled?> <? if ($deplinktype == "softlink") { echo "checked"; } ?>>
+											<input type="radio" name="deplinktype" value="softlink" <?=$disabled?> <? if ($deplinktype == "softlink") { echo "checked"; } ?>>
 											<label>soft link</label>
 										</div>
 										<br>
 										<div class="ui radio checkbox">
-											<input type="radio" name="deplinktype" value="regularcopy" <? =$disabled?> <? if ($deplinktype == "regularcopy") { echo "checked"; } ?>>
+											<input type="radio" name="deplinktype" value="regularcopy" <?=$disabled?> <? if ($deplinktype == "regularcopy") { echo "checked"; } ?>>
 											<label>Regular copy</label>
 										</div>
 									</td>
@@ -1985,7 +1985,7 @@
 							<span class="level2" style="color:darkred; font-size:8pt; font-weight:normal"> Second level must have<br> at least one group.<br>Group(s) must be identical to<br>first level <b>dependency's</b> group(s)</span>
 						</td>
 						<td valign="top">
-							<select name="groupid[]" id="groupid" <? =$disabled?> multiple="multiple" class="ui dropdown">
+							<select name="groupid[]" id="groupid" <?=$disabled?> multiple="multiple" class="ui dropdown">
 								<option value="" <? if ($groupid == "") { echo "selected"; } ?>>(Select group)</option>
 								<?
 									$sqlstring = "select * from groups where group_type = 'study' order by group_name";
@@ -2003,7 +2003,7 @@
 										if (in_array($g_id, explode(",",$groupid))) { $selected = "selected"; }
 										else { $selected = ""; }
 										?>
-										<option value="<? =$g_id?>" <? =$selected?>><? =$g_name?>  [<? =$nummembers?>]</option>
+										<option value="<?=$g_id?>" <?=$selected?>><?=$g_name?>  [<?=$nummembers?>]</option>
 										<?
 									}
 								?>
@@ -2013,7 +2013,7 @@
 					<tr class="level1">
 						<td class="label" valign="top">Project(s) <i class="grey question outline circle icon" title="Perform this analysis ONLY<br>on the studies in the specified project(s)"></i></td>
 						<td valign="top">
-							<select name="projectid[]" id="projectid" <? =$disabled?> multiple="multiple" class="ui dropdown">
+							<select name="projectid[]" id="projectid" <?=$disabled?> multiple="multiple" class="ui dropdown">
 								<option value="" <? if ($projectid == "") { echo "selected"; } ?>>(Select project)</option>
 								<?
 									$sqlstring = "select * from projects order by project_name";
@@ -2025,7 +2025,7 @@
 										if (in_array($p_id, explode(",",$projectid))) { $selected = "selected"; }
 										else { $selected = ""; }
 										?>
-										<option value="<? =$p_id?>" <? =$selected?>><? =$p_name?></option>
+										<option value="<?=$p_id?>" <?=$selected?>><?=$p_name?></option>
 										<?
 									}
 								?>
@@ -2055,7 +2055,7 @@
 									<i class="dropdown icon"></i> Data Graph
 								</div>
 								<div class="content">
-									<? =GetDataGraph($id, $version, $dependencies)?>
+									<?=GetDataGraph($id, $version, $dependencies)?>
 								</div>
 							</div>
 						</td>
@@ -2075,7 +2075,7 @@
 									};
 									
 									/* create the XML http request */
-									var pipelineid = <? =$id?>;
+									var pipelineid = <?=$id?>;
 									var dependency = $('#dependency').val().join();
 									var deplevel = $('#deplevel').val();
 									var groupid = $('#groupid').val().join();
@@ -2164,7 +2164,7 @@
 						<th>
 							Output &nbsp; <input type="checkbox" name="outputbids" value="1" <? if ($outputbids) { echo "checked"; } ?>> BIDS<i class="grey question outline circle icon" title="If this option is checked, all data will be written in BIDS format. Output formats for individual data items will be ignored."></i>
 							<div class="ui small input">
-								<input type="text" name="bidsoutputdir" value="<? =$bidsoutputdir?>" placeholder="BIDS output directory">
+								<input type="text" name="bidsoutputdir" value="<?=$bidsoutputdir?>" placeholder="BIDS output directory">
 							</div>
 						</th>
 					</thead>
@@ -2227,30 +2227,30 @@
 					<style>
 						.row1 { background-color: lightyellow; }
 					</style>
-					<tr class="row<? =$neworder?> ui top aligned">
+					<tr class="row<?=$neworder?> ui top aligned">
 						<td style="border-top: 2px solid #999;" class="center aligned middle aligned">
 							<div class="ui checkbox">
-								<input type="checkbox" name="dd_enabled[<? =$neworder?>]" value="1" <? if ($dd_enabled) {echo "checked";} ?>><label></label>
+								<input type="checkbox" name="dd_enabled[<?=$neworder?>]" value="1" <? if ($dd_enabled) {echo "checked";} ?>><label></label>
 							</div>
 						</td>
 						<td style="border-top: 2px solid #999;" class="center aligned middle aligned">
 							<div class="ui checkbox">
-								<input type="checkbox" name="dd_optional[<? =$neworder?>]" value="1" <? if ($dd_optional) { echo "checked"; } ?>><label></label>
+								<input type="checkbox" name="dd_optional[<?=$neworder?>]" value="1" <? if ($dd_optional) { echo "checked"; } ?>><label></label>
 							</div>
 						</td>
 						<td style="border-top: 2px solid #999;" class="center aligned middle aligned">
 							<div class="ui radio checkbox">
-								<input type="radio" name="dd_isprimary" value="<? =$neworder?>" <? if ($dd_isprimaryprotocol) { echo "checked"; } ?>><label></label>
+								<input type="radio" name="dd_isprimary" value="<?=$neworder?>" <? if ($dd_isprimaryprotocol) { echo "checked"; } ?>><label></label>
 							</div>
 						</td>
 						<td style="border-top: 2px solid #999;" class="center aligned middle aligned">
-							<input type="text" name="dd_order[<? =$neworder?>]" size="2" maxlength="3" value="<? =$neworder?>">
+							<input type="text" name="dd_order[<?=$neworder?>]" size="2" maxlength="3" value="<?=$neworder?>">
 						</td>
 						<td style="border-top: 2px solid #999;" class="center aligned middle aligned">
-							<input type="text" name="dd_protocol[<? =$neworder?>]" size="50" value='<? =$dd_protocol?>' title='Enter exact protocol name(s). Use quotes if entering a protocol with spaces or entering more than one protocol: "Task1" "Task 2" "Etc". Use multiple protocol names ONLY if you do not expect the protocols to occur in the same study'>
+							<input type="text" name="dd_protocol[<?=$neworder?>]" size="50" value='<?=$dd_protocol?>' title='Enter exact protocol name(s). Use quotes if entering a protocol with spaces or entering more than one protocol: "Task1" "Task 2" "Etc". Use multiple protocol names ONLY if you do not expect the protocols to occur in the same study'>
 						</td>
-						<td id="row<? =$neworder?>" style="border-top: 2px solid #999;">
-							<select class="ui fluid dropdown" name="dd_modality[<? =$neworder?>]">
+						<td id="row<?=$neworder?>" style="border-top: 2px solid #999;">
+							<select class="ui fluid dropdown" name="dd_modality[<?=$neworder?>]">
 								<option value="">Modality...</option>
 							<?
 								$sqlstringA = "select * from modalities order by mod_desc";
@@ -2272,14 +2272,14 @@
 											$selected = "";
 										}
 										?>
-										<option value="<? =$mod_code?>" <? =$selected?>><? =$mod_code?></option>
+										<option value="<?=$mod_code?>" <?=$selected?>><?=$mod_code?></option>
 										<?
 									}
 								}
 							?>
 							</select>
 						</td>
-						<td style="border-top: 2px solid #999; border-bottom: 0px" class="left aligned optionToggler" data-prod-row="<? =$neworder?>">
+						<td style="border-top: 2px solid #999; border-bottom: 0px" class="left aligned optionToggler" data-prod-row="<?=$neworder?>">
 							<div class="ui accordion">
 								<div class="title">
 									<i class="dropdown icon"></i> Options
@@ -2289,44 +2289,44 @@
 							</div>
 						</td>
 					</tr>
-					<tr class="optionRow<? =$neworder?>" style="display:none">
+					<tr class="optionRow<?=$neworder?>" style="display:none">
 						
 						<script>
 							$(document).ready(function() {
-								$('#studycriteria<? =$neworder?>').hide();
-								$('#numboldreps<? =$neworder?>').hide();
-								$('#behdirname<? =$neworder?>').hide();
+								$('#studycriteria<?=$neworder?>').hide();
+								$('#numboldreps<?=$neworder?>').hide();
+								$('#behdirname<?=$neworder?>').hide();
 								
-								ShowHideOptions<? =$neworder?>();
+								ShowHideOptions<?=$neworder?>();
 							});
 							
-							function ShowHideOptions<? =$neworder?>() {
+							function ShowHideOptions<?=$neworder?>() {
 								
 								/* study criteria */
-								var element = document.getElementById('dd_datalevel<? =$neworder?>');
+								var element = document.getElementById('dd_datalevel<?=$neworder?>');
 								if (element.value == "subject") {
-									$('#studycriteria<? =$neworder?>').show();
+									$('#studycriteria<?=$neworder?>').show();
 								}
 								else {
-									$('#studycriteria<? =$neworder?>').hide();
+									$('#studycriteria<?=$neworder?>').hide();
 								}
 
 								/* num bold reps */
-								var element2 = document.getElementById('dd_seriescriteria<? =$neworder?>');
+								var element2 = document.getElementById('dd_seriescriteria<?=$neworder?>');
 								if (element2.value == "usesizecriteria") {
-									$('#numboldreps<? =$neworder?>').show();
+									$('#numboldreps<?=$neworder?>').show();
 								}
 								else {
-									$('#numboldreps<? =$neworder?>').hide();
+									$('#numboldreps<?=$neworder?>').hide();
 								}
 								
 								/* beh directory */
-								var element3 = document.getElementById('dd_behformat<? =$neworder?>');
+								var element3 = document.getElementById('dd_behformat<?=$neworder?>');
 								if (element3.value == "behrootdir" || element3.value == "behseriesdir") {
-									$('#behdirname<? =$neworder?>').show();
+									$('#behdirname<?=$neworder?>').show();
 								}
 								else {
-									$('#behdirname<? =$neworder?>').hide();
+									$('#behdirname<?=$neworder?>').hide();
 								}
 							}
 						</script>
@@ -2340,7 +2340,7 @@
 										<div class="field">
 											<label>Data source <i class="grey question outline circle icon" title="<b>Data Source - Should we search only within this study or search within the entire subject?</b><br>Analyses are run on the <u>study</u> level. If you want data from this <u>subject</u>, but the data was collected in a different study, select the Subject data level. For example, the subject has been scanned on three different dates but only one of them has a T1."></i></label>
 											<div class="ui fluid search selection dropdown">
-												<input type="hidden" name="dd_datalevel[<? =$neworder?>]" id="dd_datalevel<? =$neworder?>" onChange="ShowHideOptions<? =$neworder?>()" value="<? =$dd_datalevel?>" onLoad="ShowHideOptions<? =$neworder?>()">
+												<input type="hidden" name="dd_datalevel[<?=$neworder?>]" id="dd_datalevel<?=$neworder?>" onChange="ShowHideOptions<?=$neworder?>()" value="<?=$dd_datalevel?>" onLoad="ShowHideOptions<?=$neworder?>()">
 												<div class="default text">Where to search for data?</div>
 												<i class="dropdown icon"></i>
 												<div class="menu">
@@ -2350,10 +2350,10 @@
 											</div>
 										</div>
 										
-										<div class="field" id="studycriteria<? =$neworder?>">
+										<div class="field" id="studycriteria<?=$neworder?>">
 											<label>Study criteria <i class="grey question outline circle icon" title="<b>Data Level</b><br>Only use this option to search for your data in another study (same subject)"></i></label>
 											<div class="ui fluid search selection dropdown">
-												<input type="hidden" name="dd_studyassoc[<? =$neworder?>]" value="<? =$dd_assoctype?>">
+												<input type="hidden" name="dd_studyassoc[<?=$neworder?>]" value="<?=$dd_assoctype?>">
 												<div class="default text">Which studies to search?</div>
 												<i class="dropdown icon"></i>
 												<div class="menu">
@@ -2366,12 +2366,12 @@
 									</div>
 									<div class="field">
 										<label>Image type <i class="grey question outline circle icon" title="Comma separated list of image types. Useful to differentiate intensity normalized vs non-normalized data on Siemens MRIs. For example <tt>ORIGINALPRIMARYMND</tt> or <tt>ORIGINAL/PRIMARY/M/ND/NORM</tt>"></i></label>
-										<input type="text" name="dd_imagetype[<? =$neworder?>]" value="<? =$dd_imagetype?>">
+										<input type="text" name="dd_imagetype[<?=$neworder?>]" value="<?=$dd_imagetype?>">
 									</div>
 									<div class="two fields">
 										<div class="field">
 											<label>Series criteria <i class="grey question outline circle icon" title="<b>All</b> - All matching series will be downloaded<br><b>First</b> - Only the lowest numbered series will be downloaded<br><b>Last</b> - Only the highest numbered series will be downloaded<br><b>Largest</b> - Only one series with the most number of volumes or slices will be downloaded<br><b>Smallest</b> - Only one series with the least number of volumes or slices will be downloaded"></i></label>
-											<select name="dd_seriescriteria[<? =$neworder?>]" class="ui dropdown" id="dd_seriescriteria<? =$neworder?>" onChange="ShowHideOptions<? =$neworder?>()">
+											<select name="dd_seriescriteria[<?=$neworder?>]" class="ui dropdown" id="dd_seriescriteria<?=$neworder?>" onChange="ShowHideOptions<?=$neworder?>()">
 												<option value="all" <? if ($dd_seriescriteria == "all") { echo "selected"; } ?>>All</option>
 												<option value="first" <? if ($dd_seriescriteria == "first") { echo "selected"; } ?>>First</option>
 												<option value="last" <? if ($dd_seriescriteria == "last") { echo "selected"; } ?>>Last</option>
@@ -2380,9 +2380,9 @@
 												<option value="usesizecriteria" <? if ($dd_seriescriteria == "usesizecriteria") { echo "selected"; } ?>>Use num BOLD reps criteria</option>
 											</select>
 										</div>
-										<div class="field" id="numboldreps<? =$neworder?>">
+										<div class="field" id="numboldreps<?=$neworder?>">
 											<label>Number of BOLD reps <i class="grey question outline circle icon" title="<b>Must be an integer or a criteria:</b><ul><li><i>N</i> (exactly N)<li>> <i>N</i> (greater than)<li>>= <i>N</i> (greater than or equal to)<li>< <i>N</i> (less than)<li><= <i>N</i> (less than or equal to)<li>~ <i>N</i> (not)</ul>"></i></label>
-											<input type="text" name="dd_numboldreps[<? =$neworder?>]" value="<? =$dd_numboldreps?>">
+											<input type="text" name="dd_numboldreps[<?=$neworder?>]" value="<?=$dd_numboldreps?>">
 										</div>
 									</div>
 								</div>
@@ -2391,11 +2391,11 @@
 
 									<div class="field">
 										<label>Directory <i class="grey question outline circle icon" title="<b>Tip:</b> choose a directory called 'data/<i>taskname</i>'. If converting data or putting into a new directory structure, this data directory can be used as a staging area and can then be deleted later in your script"></i> <span class="tiny">Relative to analysis root</span></label>
-										<input type="text" name="dd_location[<? =$neworder?>]" size="30" value="<? =$dd_location?>">
+										<input type="text" name="dd_location[<?=$neworder?>]" size="30" value="<?=$dd_location?>">
 									</div>
 									<div class="field">
 										<label>Data format</label>
-										<select name="dd_dataformat[<? =$neworder?>]" class="ui fluid dropdown">
+										<select name="dd_dataformat[<?=$neworder?>]" class="ui fluid dropdown">
 											<option value="native" <? if ($dd_dataformat == "native") { echo "selected"; } ?>>Native</option>
 											<option value="dicom" <? if ($dd_dataformat == "dicom") { echo "selected"; } ?>>DICOM</option>
 											<option value="nifti3d" <? if ($dd_dataformat == "nifti3d") { echo "selected"; } ?>>Nifti 3D</option>
@@ -2407,38 +2407,38 @@
 									</div>
 									<div class="field">
 										<div class="ui checkbox">
-											<input type="checkbox" name="dd_gzip[<? =$neworder?>]" value="1" <? if ($dd_gzip) {echo "checked";} ?>>
+											<input type="checkbox" name="dd_gzip[<?=$neworder?>]" value="1" <? if ($dd_gzip) {echo "checked";} ?>>
 											<label>g-zip</label>
 										</div>
 									</div>
 									<div class="field">
 										<div class="ui checkbox">
-											<input type="checkbox" name="dd_useseriesdirs[<? =$neworder?>]" value="1" <? if ($dd_useseries) {echo "checked";} ?>>
+											<input type="checkbox" name="dd_useseriesdirs[<?=$neworder?>]" value="1" <? if ($dd_useseries) {echo "checked";} ?>>
 											<label>Use series directories <i class="grey question outline circle icon" title="<b>Tip:</b> If you plan to download multiple series with the same name, you will want to use series directories. This option will place each series into its own directory (data/task/1, data/task/2, etc)"></i></label>
 										</div>
 									</div>
 									<div class="field">
 										<div class="ui checkbox">
-											<input type="checkbox" name="dd_preserveseries[<? =$neworder?>]" value="1" <? if ($dd_preserveseries) {echo "checked";} ?>>
+											<input type="checkbox" name="dd_preserveseries[<?=$neworder?>]" value="1" <? if ($dd_preserveseries) {echo "checked";} ?>>
 											<label>Preserve series numbers <i class="grey question outline circle icon" title="If data is placed in a series directory, check this box to preserve the original series number. Otherwise the series number directories will be sequential starting at 1, regardless of the orignal series number"></i></label>
 										</div>
 									</div>
 									<div class="field">
 										<div class="ui checkbox">
-											<input type="checkbox" name="dd_usephasedir[<? =$neworder?>]" value="1" <? if ($dd_usephasedir) {echo "checked";} ?>>
+											<input type="checkbox" name="dd_usephasedir[<?=$neworder?>]" value="1" <? if ($dd_usephasedir) {echo "checked";} ?>>
 											<label>Phase encoding direction <i class="grey question outline circle icon" title="<b>Phase Encoding Direction</b> If selected, it will write the data to a subdirectory corresponding to the acquired phase encoding direction: AP, PA, RL, LR, COL, ROW, unknownPE"></i></label>
 										</div>
 									</div>
 									<div class="field">
 										<div class="ui checkbox">
-											<input type="checkbox" name="dd_behonly[<? =$neworder?>]" value="1" <? if ($dd_behonly) {echo "checked";} ?>>
+											<input type="checkbox" name="dd_behonly[<?=$neworder?>]" value="1" <? if ($dd_behonly) {echo "checked";} ?>>
 											<label>Download behavioral data only</label>
 										</div>
 									</div>
 									<div class="two fields">
 										<div class="field">
 											<label>Behavioral data directory format</label>
-											<select name="dd_behformat[<? =$neworder?>]" class="ui fluid dropdown" id="dd_behformat<? =$neworder?>" onChange="ShowHideOptions<? =$neworder?>()">
+											<select name="dd_behformat[<?=$neworder?>]" class="ui fluid dropdown" id="dd_behformat<?=$neworder?>" onChange="ShowHideOptions<?=$neworder?>()">
 												<option value="behnone" <? if ($dd_behformat == "behnone") { echo "selected"; } ?>>Don't download behavioral data</option>
 												<option value="behroot" <? if ($dd_behformat == "behroot") { echo "selected"; } ?>>Place in root (file.log)</option>
 												<option value="behrootdir" <? if ($dd_behformat == "behrootdir") { echo "selected"; } ?>>Place in directory in root (beh/file.log)</option>
@@ -2446,9 +2446,9 @@
 												<option value="behseriesdir" <? if ($dd_behformat == "behseriesdir") { echo "selected"; } ?>>Place in directory in series (2/beh/file.log)</option>
 											</select>
 										</div>
-										<div class="field" id="behdirname<? =$neworder?>">
+										<div class="field" id="behdirname<?=$neworder?>">
 											<label>Behavioral data directory name</label>
-											<input type="text" name="dd_behdir[<? =$neworder?>]" value="<? =$dd_behdir?>">
+											<input type="text" name="dd_behdir[<?=$neworder?>]" value="<?=$dd_behdir?>">
 										</div>
 									</div>
 								</div>
@@ -2460,30 +2460,30 @@
 				}
 				for ($ii=0;$ii<5;$ii++) {
 				?>
-					<tr class="row<? =$neworder?> ui top aligned">
+					<tr class="row<?=$neworder?> ui top aligned">
 						<td style="border-top: 2px solid #999;" class="center aligned middle aligned">
 							<div class="ui checkbox">
-								<input type="checkbox" name="dd_enabled[<? =$neworder?>]" value="1"><label></label>
+								<input type="checkbox" name="dd_enabled[<?=$neworder?>]" value="1"><label></label>
 							</div>
 						</td>
 						<td style="border-top: 2px solid #999;" class="center aligned middle aligned">
 							<div class="ui checkbox">
-								<input type="checkbox" name="dd_optional[<? =$neworder?>]" value="1"><label></label>
+								<input type="checkbox" name="dd_optional[<?=$neworder?>]" value="1"><label></label>
 							</div>
 						</td>
 						<td style="border-top: 2px solid #999;" class="center aligned middle aligned">
 							<div class="ui radio checkbox">
-								<input type="radio" name="dd_isprimary" value="<? =$neworder?>"><label></label>
+								<input type="radio" name="dd_isprimary" value="<?=$neworder?>"><label></label>
 							</div>
 						</td>
 						<td style="border-top: 2px solid #999;">
-							<input type="text" name="dd_order[<? =$neworder?>]" value="<? =$neworder?>" size="2" maxlength="3">
+							<input type="text" name="dd_order[<?=$neworder?>]" value="<?=$neworder?>" size="2" maxlength="3">
 						</td>
 						<td style="border-top: 2px solid #999;">
-							<input type="text" name="dd_protocol[<? =$neworder?>]" size="50" title='Enter exact protocol name(s). Use quotes if entering a protocol with spaces or entering more than one protocol: "Task1" "Task 2" "Etc". Use multiple protocol names ONLY if you do not expect the protocols to occur in the same study'>
+							<input type="text" name="dd_protocol[<?=$neworder?>]" size="50" title='Enter exact protocol name(s). Use quotes if entering a protocol with spaces or entering more than one protocol: "Task1" "Task 2" "Etc". Use multiple protocol names ONLY if you do not expect the protocols to occur in the same study'>
 						</td>
-						<td id="row<? =$neworder?>" style="border-top: 2px solid #999;">
-							<select class="ui fluid dropdown" name="dd_modality[<? =$neworder?>]">
+						<td id="row<?=$neworder?>" style="border-top: 2px solid #999;">
+							<select class="ui fluid dropdown" name="dd_modality[<?=$neworder?>]">
 								<option value="">Modality...</option>
 							<?
 								$sqlstringA = "select * from modalities order by mod_desc";
@@ -2497,14 +2497,14 @@
 									$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
 									if (mysqli_num_rows($result2) > 0) {
 										?>
-										<option value="<? =$mod_code?>"><? =$mod_code?></option>
+										<option value="<?=$mod_code?>"><?=$mod_code?></option>
 										<?
 									}
 								}
 							?>
 							</select>
 						</td>
-						<td style="border-top: 2px solid #999; border-bottom: 0px" class="left aligned optionToggler" data-prod-row="<? =$neworder?>">
+						<td style="border-top: 2px solid #999; border-bottom: 0px" class="left aligned optionToggler" data-prod-row="<?=$neworder?>">
 							<div class="ui accordion">
 								<div class="title">
 									<i class="dropdown icon"></i> Options
@@ -2514,42 +2514,42 @@
 							</div>
 						</td>
 					</tr>
-					<tr class="optionRow<? =$neworder?>" style="display:none">
+					<tr class="optionRow<?=$neworder?>" style="display:none">
 						
 						<script>
 							$(document).ready(function() {
-								$('#studycriteria<? =$neworder?>').hide();
-								$('#numboldreps<? =$neworder?>').hide();
-								$('#behdirname<? =$neworder?>').hide();
+								$('#studycriteria<?=$neworder?>').hide();
+								$('#numboldreps<?=$neworder?>').hide();
+								$('#behdirname<?=$neworder?>').hide();
 							});
 							
-							function ShowHideOptions<? =$neworder?>() {
+							function ShowHideOptions<?=$neworder?>() {
 								
 								/* study criteria */
-								var element = document.getElementById('dd_datalevel<? =$neworder?>');
+								var element = document.getElementById('dd_datalevel<?=$neworder?>');
 								if (element.value == "subject") {
-									$('#studycriteria<? =$neworder?>').show();
+									$('#studycriteria<?=$neworder?>').show();
 								}
 								else {
-									$('#studycriteria<? =$neworder?>').hide();
+									$('#studycriteria<?=$neworder?>').hide();
 								}
 
 								/* num bold reps */
-								var element2 = document.getElementById('dd_seriescriteria<? =$neworder?>');
+								var element2 = document.getElementById('dd_seriescriteria<?=$neworder?>');
 								if (element2.value == "usesizecriteria") {
-									$('#numboldreps<? =$neworder?>').show();
+									$('#numboldreps<?=$neworder?>').show();
 								}
 								else {
-									$('#numboldreps<? =$neworder?>').hide();
+									$('#numboldreps<?=$neworder?>').hide();
 								}
 								
 								/* beh directory */
-								var element3 = document.getElementById('dd_behformat<? =$neworder?>');
+								var element3 = document.getElementById('dd_behformat<?=$neworder?>');
 								if (element3.value == "behrootdir" || element3.value == "behseriesdir") {
-									$('#behdirname<? =$neworder?>').show();
+									$('#behdirname<?=$neworder?>').show();
 								}
 								else {
-									$('#behdirname<? =$neworder?>').hide();
+									$('#behdirname<?=$neworder?>').hide();
 								}
 							}
 						</script>
@@ -2563,7 +2563,7 @@
 										<div class="field">
 											<label>Data source <i class="grey question outline circle icon" title="<b>Data Source - Should we search only within this study or search within the entire subject?</b><br>Analyses are run on the <u>study</u> level. If you want data from this <u>subject</u>, but the data was collected in a different study, select the Subject data level. For example, the subject has been scanned on three different dates but only one of them has a T1."></i></label>
 											<div class="ui fluid search selection dropdown">
-												<input type="hidden" name="dd_datalevel[<? =$neworder?>]" id="dd_datalevel<? =$neworder?>" onChange="ShowHideOptions<? =$neworder?>()">
+												<input type="hidden" name="dd_datalevel[<?=$neworder?>]" id="dd_datalevel<?=$neworder?>" onChange="ShowHideOptions<?=$neworder?>()">
 												<div class="default text">Where to search for data?</div>
 												<i class="dropdown icon"></i>
 												<div class="menu">
@@ -2573,10 +2573,10 @@
 											</div>
 										</div>
 										
-										<div class="field" id="studycriteria<? =$neworder?>">
+										<div class="field" id="studycriteria<?=$neworder?>">
 											<label>Study criteria <i class="grey question outline circle icon" title="<b>Data Level</b><br>Only use this option to search for your data in another study (same subject)"></i></label>
 											<div class="ui fluid search selection dropdown">
-												<input type="hidden" name="dd_studyassoc[<? =$neworder?>]">
+												<input type="hidden" name="dd_studyassoc[<?=$neworder?>]">
 												<div class="default text">Which studies to search?</div>
 												<i class="dropdown icon"></i>
 												<div class="menu">
@@ -2589,12 +2589,12 @@
 									</div>
 									<div class="field">
 										<label>Image type <i class="grey question outline circle icon" title="Comma separated list of image types. Useful to differentiate intensity normalized vs non-normalized data on Siemens MRIs. For example <tt>ORIGINALPRIMARYMND</tt> or <tt>ORIGINAL/PRIMARY/M/ND/NORM</tt>"></i></label>
-										<input type="text" name="dd_imagetype[<? =$neworder?>]">
+										<input type="text" name="dd_imagetype[<?=$neworder?>]">
 									</div>
 									<div class="two fields">
 										<div class="field">
 											<label>Series criteria <i class="grey question outline circle icon" title="<b>All</b> - All matching series will be downloaded<br><b>First</b> - Only the lowest numbered series will be downloaded<br><b>Last</b> - Only the highest numbered series will be downloaded<br><b>Largest</b> - Only one series with the most number of volumes or slices will be downloaded<br><b>Smallest</b> - Only one series with the least number of volumes or slices will be downloaded"></i></label>
-											<select name="dd_seriescriteria[<? =$neworder?>]" class="ui dropdown" id="dd_seriescriteria<? =$neworder?>" onChange="ShowHideOptions<? =$neworder?>()">
+											<select name="dd_seriescriteria[<?=$neworder?>]" class="ui dropdown" id="dd_seriescriteria<?=$neworder?>" onChange="ShowHideOptions<?=$neworder?>()">
 												<option value="all">All</option>
 												<option value="first">First</option>
 												<option value="last">Last</option>
@@ -2603,9 +2603,9 @@
 												<option value="usesizecriteria">Use num BOLD reps criteria</option>
 											</select>
 										</div>
-										<div class="field" id="numboldreps<? =$neworder?>">
+										<div class="field" id="numboldreps<?=$neworder?>">
 											<label>Number of BOLD reps <i class="grey question outline circle icon" title="<b>Must be an integer or a criteria:</b><ul><li><i>N</i> (exactly N)<li>> <i>N</i> (greater than)<li>>= <i>N</i> (greater than or equal to)<li>< <i>N</i> (less than)<li><= <i>N</i> (less than or equal to)<li>~ <i>N</i> (not)</ul>"></i></label>
-											<input type="text" name="dd_numboldreps[<? =$neworder?>]">
+											<input type="text" name="dd_numboldreps[<?=$neworder?>]">
 										</div>
 									</div>
 								</div>
@@ -2614,11 +2614,11 @@
 
 									<div class="field">
 										<label>Directory <i class="grey question outline circle icon" title="<b>Tip:</b> choose a directory called 'data/<i>taskname</i>'. If converting data or putting into a new directory structure, this data directory can be used as a staging area and can then be deleted later in your script"></i> <span class="tiny">Relative to analysis root</span></label>
-										<input type="text" name="dd_location[<? =$neworder?>]" size="30">
+										<input type="text" name="dd_location[<?=$neworder?>]" size="30">
 									</div>
 									<div class="field">
 										<label>Data format</label>
-										<select name="dd_dataformat[<? =$neworder?>]" class="ui fluid dropdown">
+										<select name="dd_dataformat[<?=$neworder?>]" class="ui fluid dropdown">
 											<option value="native">Native</option>
 											<option value="dicom">DICOM</option>
 											<option value="nifti3d">Nifti 3D</option>
@@ -2630,38 +2630,38 @@
 									</div>
 									<div class="field">
 										<div class="ui checkbox">
-											<input type="checkbox" name="dd_gzip[<? =$neworder?>]" value="1">
+											<input type="checkbox" name="dd_gzip[<?=$neworder?>]" value="1">
 											<label>g-zip</label>
 										</div>
 									</div>
 									<div class="field">
 										<div class="ui checkbox">
-											<input type="checkbox" name="dd_useseriesdirs[<? =$neworder?>]" value="1">
+											<input type="checkbox" name="dd_useseriesdirs[<?=$neworder?>]" value="1">
 											<label>Use series directories <i class="grey question outline circle icon" title="<b>Tip:</b> If you plan to download multiple series with the same name, you will want to use series directories. This option will place each series into its own directory (data/task/1, data/task/2, etc)"></i></label>
 										</div>
 									</div>
 									<div class="field">
 										<div class="ui checkbox">
-											<input type="checkbox" name="dd_preserveseries[<? =$neworder?>]" value="1">
+											<input type="checkbox" name="dd_preserveseries[<?=$neworder?>]" value="1">
 											<label>Preserve series numbers <i class="grey question outline circle icon" title="If data is placed in a series directory, check this box to preserve the original series number. Otherwise the series number directories will be sequential starting at 1, regardless of the orignal series number"></i></label>
 										</div>
 									</div>
 									<div class="field">
 										<div class="ui checkbox">
-											<input type="checkbox" name="dd_usephasedir[<? =$neworder?>]" value="1">
+											<input type="checkbox" name="dd_usephasedir[<?=$neworder?>]" value="1">
 											<label>Phase encoding direction <i class="grey question outline circle icon" title="<b>Phase Encoding Direction</b> If selected, it will write the data to a subdirectory corresponding to the acquired phase encoding direction: AP, PA, RL, LR, COL, ROW, unknownPE"></i></label>
 										</div>
 									</div>
 									<div class="field">
 										<div class="ui checkbox">
-											<input type="checkbox" name="dd_behonly[<? =$neworder?>]" value="1">
+											<input type="checkbox" name="dd_behonly[<?=$neworder?>]" value="1">
 											<label>Download behavioral data only</label>
 										</div>
 									</div>
 									<div class="two fields">
 										<div class="field">
 											<label>Behavioral data directory format</label>
-											<select name="dd_behformat[<? =$neworder?>]" class="ui fluid dropdown" id="dd_behformat<? =$neworder?>" onChange="ShowHideOptions<? =$neworder?>()">
+											<select name="dd_behformat[<?=$neworder?>]" class="ui fluid dropdown" id="dd_behformat<?=$neworder?>" onChange="ShowHideOptions<?=$neworder?>()">
 												<option value="behnone">Don't download behavioral data</option>
 												<option value="behroot">Place in root (file.log)</option>
 												<option value="behrootdir">Place in directory in root (beh/file.log)</option>
@@ -2669,9 +2669,9 @@
 												<option value="behseriesdir">Place in directory in series (2/beh/file.log)</option>
 											</select>
 										</div>
-										<div class="field" id="behdirname<? =$neworder?>">
+										<div class="field" id="behdirname<?=$neworder?>">
 											<label>Behavioral data directory name</label>
-											<input type="text" name="dd_behdir[<? =$neworder?>]">
+											<input type="text" name="dd_behdir[<?=$neworder?>]">
 										</div>
 									</div>
 								</div>
@@ -2728,7 +2728,7 @@
 							<tr><td class="pipelinevariable" onclick="insertText('{subjectuid}');" title="Example: S1234ABC">{subjectuid}</td></tr>
 							<tr><td class="pipelinevariable" onclick="insertText('{studynum}');" title="Example: 1">{studynum}</td></tr>
 							<tr><td class="pipelinevariable" onclick="insertText('{uidstudynum}');" title="Example: S1234ABC1">{uidstudynum}</td></tr>
-							<tr><td class="pipelinevariable" onclick="insertText('{pipelinename}');" title="<? =$title?>">{pipelinename}</td></tr>
+							<tr><td class="pipelinevariable" onclick="insertText('{pipelinename}');" title="<?=$title?>">{pipelinename}</td></tr>
 							<tr><td class="pipelinevariable" onclick="insertText('{studydatetime}');" title="YYYYMMDDHHMMSS">{studydatetime}</td></tr>
 							<tr><td class="pipelinevariable" onclick="insertText('{first_ext_file}');" title="Expands to first file found with extenstion. Replace ext with the extension">{first_ext_file}</td></tr>
 							<tr><td class="pipelinevariable" onclick="insertText('{first_n_ext_files}');" title="Finds first file with extension">{first_n_ext_files}</td></tr>
@@ -2847,7 +2847,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 				?></textarea>
 			</div>
 			<div class="ui bottom attached segment">
-				<input class="ui primary button" type="submit" <? =$disabled?> value="Save Pipeline Details">
+				<input class="ui primary button" type="submit" <?=$disabled?> value="Save Pipeline Details">
 			</div>
 			</form>
 			<!--<script src="scripts/aceeditor/ace.js" type="text/javascript" charset="utf-8"></script>-->
@@ -2921,15 +2921,15 @@ echo "#$ps_command     $logged $ps_desc\n";
 		
 		<!-- ---------- operations tab ---------- -->
 		
-		<div class="ui bottom attached <? =$tab_fouractive?> tab raised segment" data-tab="fourth">
-			<p><a class="ui button" href="pipelines.php?action=resetanalyses&id=<? =$id?>&returntab=operations" style="width:250px" onclick="return confirm('Are you sure you want to reset the analyses for this pipeline?')" title="This will remove any entries in the database for studies which were not analyzed. If you change your data specification, you will want to reset the analyses. This option does not remove existing analyses, it only removes the flag set for studies that indicates the study has been checked for the specified data"><i class="redo alternate icon"></i> Reset ignored studies</a>
+		<div class="ui bottom attached <?=$tab_fouractive?> tab raised segment" data-tab="fourth">
+			<p><a class="ui button" href="pipelines.php?action=resetanalyses&id=<?=$id?>&returntab=operations" style="width:250px" onclick="return confirm('Are you sure you want to reset the analyses for this pipeline?')" title="This will remove any entries in the database for studies which were not analyzed. If you change your data specification, you will want to reset the analyses. This option does not remove existing analyses, it only removes the flag set for studies that indicates the study has been checked for the specified data"><i class="redo alternate icon"></i> Reset ignored studies</a>
 			</p>
 			<p><a href="#" class="ui button" style="width:250px" onClick="GetNewPipelineName();"><i class="copy icon"></i> Copy to new pipeline...</a></p>
 			<? if (!$readonly) { ?>
 			<p>
 			<form action="pipelines.php" method="post">
 			<input type="hidden" name="action" value="changeowner">
-			<input type="hidden" name="id" value="<? =$id?>">
+			<input type="hidden" name="id" value="<?=$id?>">
 			<input type="hidden" name="returntab" value="operations">
 			<div class="ui labeled action input">
 				<label for="modality" class="ui label grey"><i class="exchange alternate icon"></i> New pipeline owner</label>
@@ -2946,7 +2946,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 							if ($userfullname != "") {
 								$userfullname = "[$userfullname]";
 							}
-							?><option value="<? =$userid?>"><? =$username?> <? =$userfullname?></option><?
+							?><option value="<?=$userid?>"><?=$username?> <?=$userfullname?></option><?
 						}
 					}
 				?>
@@ -2956,18 +2956,18 @@ echo "#$ps_command     $logged $ps_desc\n";
 			</form>
 			</p>
 			<br>
-			<p><a href="pipelines.php?action=exportpipeline&id=<? =$id?>&returntab=operations" class="ui button" style="width:250px" title="This pipeline will be exported in squirrel format as a web download"><i class="file export icon"></i> Export pipeline</a></p>
+			<p><a href="pipelines.php?action=exportpipeline&id=<?=$id?>&returntab=operations" class="ui button" style="width:250px" title="This pipeline will be exported in squirrel format as a web download"><i class="file export icon"></i> Export pipeline</a></p>
 			<br>
-			<a href="packages.php?action=addobject&objecttype=pipeline&objectids[]=<? =$id?>" class="ui primary brown button" style="width:250px"><img src="images/squirrel-icon-bw-64.png" height="15" style="filter:invert(1)"></img> &nbsp; Add to Package</a>
+			<a href="packages.php?action=addobject&objecttype=pipeline&objectids[]=<?=$id?>" class="ui primary brown button" style="width:250px"><img src="images/squirrel-icon-bw-64.png" height="15" style="filter:invert(1)"></img> &nbsp; Add to Package</a>
 			<br><br>
-			<p><a href="pipelines.php?action=detach&id=<? =$id?>&returntab=operations" class="ui disabled red button" style="width:250px" onclick="return confirm('Are you sure you want to completely detach this pipeline?')" title="This will completely inactivate the pipeline and remove all analyses from the pipeline control. Since the data will no longer be under pipeline control, all analysis results will be deleted. All analysis data will be moved to the directory you specify"><i class="unlock alternate icon"></i> Detach pipeline</a></p>
-			<p><a href="pipelines.php?action=delete&id=<? =$id?>&returntab=operations" class="ui red button" style="width:250px" onclick="return confirm('Are you sure you want to delete this pipeline?')"><i class="trash alternate icon"></i> Delete this pipeline</a></p>
+			<p><a href="pipelines.php?action=detach&id=<?=$id?>&returntab=operations" class="ui disabled red button" style="width:250px" onclick="return confirm('Are you sure you want to completely detach this pipeline?')" title="This will completely inactivate the pipeline and remove all analyses from the pipeline control. Since the data will no longer be under pipeline control, all analysis results will be deleted. All analysis data will be moved to the directory you specify"><i class="unlock alternate icon"></i> Detach pipeline</a></p>
+			<p><a href="pipelines.php?action=delete&id=<?=$id?>&returntab=operations" class="ui red button" style="width:250px" onclick="return confirm('Are you sure you want to delete this pipeline?')"><i class="trash alternate icon"></i> Delete this pipeline</a></p>
 			<? } ?>
 		</div>
 
 		<!-- ---------- checks tab ---------- -->
 		
-		<div class="ui bottom attached <? =$tab_fiveactive?> tab raised segment" data-tab="fifth">
+		<div class="ui bottom attached <?=$tab_fiveactive?> tab raised segment" data-tab="fifth">
 			<table class="ui table">
 				<thead>
 					<th width="20%">Check</th>
@@ -2992,16 +2992,16 @@ echo "#$ps_command     $logged $ps_desc\n";
 						?>
 						<tr>
 							<td>
-								<div class="ui large fluid <? =$color?> label">
-									<i class="<? =$icon?> icon"></i>
-									<? =$check?>
+								<div class="ui large fluid <?=$color?> label">
+									<i class="<?=$icon?> icon"></i>
+									<?=$check?>
 								</div>
 							</td>
 							<td>
-								<? =$value['message']?>
+								<?=$value['message']?>
 							</td>
 							<td>
-								<? =$value['description']?>
+								<?=$value['description']?>
 							</td>
 						<?
 					}
@@ -3014,7 +3014,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 		<? if ($formaction == "update") { ?>
 			<script>
 				function GetNewPipelineName(){
-					var newname = prompt("Please enter a name for the new pipeline","<? =$title?>");
+					var newname = prompt("Please enter a name for the new pipeline","<?=$title?>");
 					if (newname != null){
 					  $("#newname").attr("value", newname);
 					  document.copypipeline.submit();
@@ -3023,8 +3023,8 @@ echo "#$ps_command     $logged $ps_desc\n";
 			</script>
 			<form action="pipelines.php" method="post" name="copypipeline">
 			<input type="hidden" name="action" value="copy">
-			<input type="hidden" name="id" value="<? =$id?>">
-			<input type="hidden" name="newname" id="newname" value="<? =$id?>">
+			<input type="hidden" name="id" value="<?=$id?>">
+			<input type="hidden" name="newname" id="newname" value="<?=$id?>">
 			</form>
 		<? } ?>
 
@@ -3065,7 +3065,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 		?>
 		<form method="post" action="pipelines.php" name="versionform">
 		<input type="hidden" name="action" value="viewversion">
-		<input type="hidden" name="id" value="<? =$id?>">
+		<input type="hidden" name="id" value="<?=$id?>">
 		<b>View previous version</b>
 		<select name="version" onchange='versionform.submit()'>
 			<option value="">(select version)</option>
@@ -3077,7 +3077,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 			$versiondatetime = date("M n, Y H:i:s", strtotime($row['version_datetime']));
 			$versionnotes = $row['version_notes'];
 			?>
-			<option value="<? =$versionnumber?>"><b><? =$versionnumber?></b> - <? =$versiondatetime?>
+			<option value="<?=$versionnumber?>"><b><?=$versionnumber?></b> - <?=$versiondatetime?>
 			<?
 		}
 		?>
@@ -3088,9 +3088,9 @@ echo "#$ps_command     $logged $ps_desc\n";
 			<tr>
 				<td class="label">Pipeline</td>
 				<td>
-					<? =$title?> version <? =$version?>
+					<?=$title?> version <?=$version?>
 					<br>
-					<? =$desc?>
+					<?=$desc?>
 				</td>
 			</tr>
 			<tr>
@@ -3119,47 +3119,47 @@ echo "#$ps_command     $logged $ps_desc\n";
 						<table class="twocoltable">
 							<tr>
 								<td>Dependency<br><span class="tiny">parent pipeline</span></td>
-								<td><? =$parentname?></td>
+								<td><?=$parentname?></td>
 							</tr>
 							<tr>
 								<td>Dependency matching criteria</td>
-								<td><? =$dependencylevel?></td>
+								<td><?=$dependencylevel?></td>
 							</tr>
 							<tr>
 								<td>Dependency Dir</td>
-								<td><? =$dependencydir?></td>
+								<td><?=$dependencydir?></td>
 							</tr>
 							<tr>
 								<td>Dependency Copy method</td>
-								<td><? =$deplinktype?></td>
+								<td><?=$deplinktype?></td>
 							</tr>
 							<tr>
 								<td>Group</td>
-								<td><? =$groupname?></td>
+								<td><?=$groupname?></td>
 							</tr>
 							<tr>
 								<td>Group type</td>
-								<td><? =$grouptype?></td>
+								<td><?=$grouptype?></td>
 							</tr>
 							<tr>
 								<td>Group by subject</td>
-								<td><? =$groupbysubject?></td>
+								<td><?=$groupbysubject?></td>
 							</tr>
 							<tr>
 								<td>Output BIDS</td>
-								<td><? =$outputbids?></td>
+								<td><?=$outputbids?></td>
 							</tr>
 							<tr>
 								<td>BIDS output directory</td>
-								<td><? =$bidsoutputdir?></td>
+								<td><?=$bidsoutputdir?></td>
 							</tr>
 							<tr>
 								<td>Dependency Dir</td>
-								<td><? =$completefiles?></td>
+								<td><?=$completefiles?></td>
 							</tr>
 							<tr>
 								<td>Results script</td>
-								<td><? =$resultsscript?></td>
+								<td><?=$resultsscript?></td>
 							</tr>
 						</table>
 						<?
@@ -3223,27 +3223,27 @@ echo "#$ps_command     $logged $ps_desc\n";
 							$pdd_numboldreps = $row['pdd_numboldreps'];
 							?>
 							<tr style="color:<? if (!$pdd_enabled) { echo "#BBBBBB"; } else { echo "#000000"; } ?>">
-								<td><? =$pdd_order?></td>
+								<td><?=$pdd_order?></td>
 								<td><? if ($pdd_enabled) { echo "&#10003"; } ?></td>
 								<td><? if ($pdd_optional) { echo "&#10003"; } ?></td>
 								<td><? if ($pdd_isprimaryprotocol) { echo "&#10003"; } ?></td>
-								<td><b><? =$pdd_protocol?></b></td>
-								<td><? =$pdd_modality?></td>
-								<td><tt><? =$pdd_imagetype?></tt></td>
-								<td><? =$pdd_dataformat?></td>
-								<td><? =$pdd_seriescriteria?></td>
-								<td><? =$pdd_type?></td>
-								<td><? =$pdd_level?></td>
-								<td><? =$pdd_assoctype?></td>
-								<td><? =$pdd_numboldreps?></td>
+								<td><b><?=$pdd_protocol?></b></td>
+								<td><?=$pdd_modality?></td>
+								<td><tt><?=$pdd_imagetype?></tt></td>
+								<td><?=$pdd_dataformat?></td>
+								<td><?=$pdd_seriescriteria?></td>
+								<td><?=$pdd_type?></td>
+								<td><?=$pdd_level?></td>
+								<td><?=$pdd_assoctype?></td>
+								<td><?=$pdd_numboldreps?></td>
 								<td><? if ($pdd_gzip) { echo "&#10003"; } ?></td>
-								<td><tt><? =$pdd_location?></tt></td>
+								<td><tt><?=$pdd_location?></tt></td>
 								<td><? if ($pdd_useseries) { echo "&#10003"; } ?></td>
 								<td><? if ($pdd_preserveseries) { echo "&#10003"; } ?></td>
 								<td><? if ($pdd_usephasedir) { echo "&#10003"; } ?></td>
 								<td><? if ($pdd_behonly) { echo "&#10003"; } ?></td>
-								<td><? =$pdd_behformat?></td>
-								<td><tt><? =$pdd_behdir?></tt></td>
+								<td><?=$pdd_behformat?></td>
+								<td><tt><?=$pdd_behdir?></tt></td>
 							</tr>
 							<?
 						}
@@ -3270,7 +3270,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 							$ps_workingdir = $row['ps_workingdir'];
 							$ps_enabled = $row['ps_enabled'];
 							$ps_logged = $row['ps_logged'];
-							?><li class="code"><? =$ps_command?> <span style="color:green"># <? =$ps_desc?></span><?
+							?><li class="code"><?=$ps_command?> <span style="color:green"># <?=$ps_desc?></span><?
 						}
 					?></ol>
 				</td>
@@ -3310,9 +3310,9 @@ echo "#$ps_command     $logged $ps_desc\n";
 		</style>
 		<span style="font-size: 10pt">
 			<b>My usage</b><br>
-			<b>Disk</b> <? =number_format(($myusage['totaldisk']/1024/1024/1024),1) . '&nbsp;GB';?><br>
-			<b># running</b> <? =$myusage['totalrunning']?><br>
-			<b># complete</b> <? =$myusage['totalcomplete']?><br>
+			<b>Disk</b> <?=number_format(($myusage['totaldisk']/1024/1024/1024),1) . '&nbsp;GB';?><br>
+			<b># running</b> <?=$myusage['totalrunning']?><br>
+			<b># complete</b> <?=$myusage['totalcomplete']?><br>
 		</span>
 		<br>
 		<span style="font-size:10pt">View: <a href="pipelines.php?viewall=1">All</a> | <a href="pipelines.php?viewall=1" title="Does not display hidden pipelines">Normal</a></span>
@@ -3395,9 +3395,9 @@ echo "#$ps_command     $logged $ps_desc\n";
 	?>
 	<!--<span style="font-size: 10pt">
 		<b>My usage</b><br>
-		<b>Disk</b> <? =number_format(($myusage['totaldisk']/1024/1024/1024),1) . '&nbsp;GB';?><br>
-		<b># running</b> <? =$myusage['totalrunning']?><br>
-		<b># complete</b> <? =$myusage['totalcomplete']?><br>
+		<b>Disk</b> <?=number_format(($myusage['totaldisk']/1024/1024/1024),1) . '&nbsp;GB';?><br>
+		<b># running</b> <?=$myusage['totalrunning']?><br>
+		<b># complete</b> <?=$myusage['totalcomplete']?><br>
 	</span>-->
 	<div class="ui container">
 		<div class="ui two column grid">
@@ -3424,7 +3424,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 					$buttoncolor = "blue";
 				else
 					$buttoncolor = "";
-				?> <a href="pipelines.php?viewuserid=<? =$userid?>" class="ui <? =$buttoncolor?> button"><i class="user icon"></i> <? =$username?></a><?
+				?> <a href="pipelines.php?viewuserid=<?=$userid?>" class="ui <?=$buttoncolor?> button"><i class="user icon"></i> <?=$username?></a><?
 				$i++;
 			}
 
@@ -3443,11 +3443,11 @@ echo "#$ps_command     $logged $ps_desc\n";
 				?>
 				<br><br>
 				<a href="pipelines.php?viewhidden=1">View hidden pipelines</a>
-				<table class="ui single line selectable table" id="pipelinetable<? =$username?>" width="100%">
+				<table class="ui single line selectable table" id="pipelinetable<?=$username?>" width="100%">
 					<thead>
 						<tr style="vertical-align: top;text-align:left">
 							<th style="font-size:12pt">Pipeline Group</th>
-							<th style="font-size:12pt">Name <input id="pipelinenamefilter<? =$username?>" type="text" class="ui input" placeholder="Filter by pipeline name"/></th>
+							<th style="font-size:12pt">Name <input id="pipelinenamefilter<?=$username?>" type="text" class="ui input" placeholder="Filter by pipeline name"/></th>
 							<th style="font-size:12pt" align="right">Level</th>
 							<th style="font-size:12pt">Owner<br></th>
 							<th style="font-size:12pt">Status</th>
@@ -3460,7 +3460,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 					<script type="text/javascript">
 						function filterTable(event) {
 							var filter = event.target.value.toUpperCase();
-							var rows = document.querySelector("#pipelinetable<? =$username?> tbody").rows;
+							var rows = document.querySelector("#pipelinetable<?=$username?> tbody").rows;
 							
 							for (var i = 0; i < rows.length; i++) {
 								var firstCol = rows[i].cells[0].textContent.toUpperCase();
@@ -3473,7 +3473,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 							}
 						}
 
-						document.querySelector("#pipelinenamefilter<? =$username?>").addEventListener('keyup', filterTable, false);
+						document.querySelector("#pipelinenamefilter<?=$username?>").addEventListener('keyup', filterTable, false);
 					</script>
 					<tbody>
 						<?
@@ -3645,34 +3645,34 @@ echo "#$ps_command     $logged $ps_desc\n";
 		
 		$imgdata = $GLOBALS['imgdata'];
 		?>
-		<tr style="color: <? =$fontcolor?>">
+		<tr style="color: <?=$fontcolor?>">
 			<? if (($info['pipelinegroup'] == '') || ($level > 1)) { ?>
-			<td valign="top" align="left" class="<? =$class?>">&nbsp;</td>
+			<td valign="top" align="left" class="<?=$class?>">&nbsp;</td>
 			<? } else { ?>
-			<td valign="top" align="left" class="<? =$class?>" title="<img border=1 src='data:image/png;base64,<? =$imgdata[$info['pipelinegroup']]?>'>"><? =$info['pipelinegroup']?></td>
+			<td valign="top" align="left" class="<?=$class?>" title="<img border=1 src='data:image/png;base64,<?=$imgdata[$info['pipelinegroup']]?>'>"><?=$info['pipelinegroup']?></td>
 			<? } ?>
-			<td valign="top" style="padding-left: <? =($level-1)*10?>;" class="<? =$class?>" title="<b><? =$info['title']?></b> &nbsp; <? =$info['desc']?>"><? if ($level > 1) { echo "<i class='clockwise rotated grey level up alternate icon'></i>"; } ?><a href="pipelines.php?action=editpipeline&id=<? =$info['id']?>" style="font-size:11pt"><? =$info['title']?></a> &nbsp; <span class="tiny">v<? =$info['version']?></span></td>
-			<td valign="top" align="right"><? =$info['level']?></td>
-			<td valign="top"><? =$info['creatorusername']?></td>
-			<td valign="top" align="left" style="background-color: <? =$bgcolor?>; <? if (!$info['isenabled']) echo "color: gray"; ?>">
+			<td valign="top" style="padding-left: <?=($level-1)*10?>;" class="<?=$class?>" title="<b><?=$info['title']?></b> &nbsp; <?=$info['desc']?>"><? if ($level > 1) { echo "<i class='clockwise rotated grey level up alternate icon'></i>"; } ?><a href="pipelines.php?action=editpipeline&id=<?=$info['id']?>" style="font-size:11pt"><?=$info['title']?></a> &nbsp; <span class="tiny">v<?=$info['version']?></span></td>
+			<td valign="top" align="right"><?=$info['level']?></td>
+			<td valign="top"><?=$info['creatorusername']?></td>
+			<td valign="top" align="left" style="background-color: <?=$bgcolor?>; <? if (!$info['isenabled']) echo "color: gray"; ?>">
 				<?
 					if ($info['isenabled']) {
-						?><a href="pipelines.php?action=disable&returnpage=home&id=<? =$info['id']?>"><i class="green toggle on icon" title="Enabled. Click to disable"></i></a><?
+						?><a href="pipelines.php?action=disable&returnpage=home&id=<?=$info['id']?>"><i class="green toggle on icon" title="Enabled. Click to disable"></i></a><?
 					}
 					else {
-						?><a href="pipelines.php?action=enable&returnpage=home&id=<? =$info['id']?>"><i class="red toggle off icon" title="Disabled. Click to enable"></i></a><?
+						?><a href="pipelines.php?action=enable&returnpage=home&id=<?=$info['id']?>"><i class="red toggle off icon" title="Disabled. Click to enable"></i></a><?
 					}
 				?>
-				<span title="<b>Last message:</b> <? =$info['message']?><br><b>Last check:</b> <? =$info['lastcheck']?>">
-				<? if ($info['status'] == 'running') { ?><b>Running</b> &nbsp; <a href="pipelines.php?action=reset&id=<? =$info['id']?>" class="ui orange basic small button">reset</a><? } else { echo $dispstatus; }  ?>
+				<span title="<b>Last message:</b> <?=$info['message']?><br><b>Last check:</b> <?=$info['lastcheck']?>">
+				<? if ($info['status'] == 'running') { ?><b>Running</b> &nbsp; <a href="pipelines.php?action=reset&id=<?=$info['id']?>" class="ui orange basic small button">reset</a><? } else { echo $dispstatus; }  ?>
 				</span>
 			</td>
 			<!--<td valign="top" align="right" style="font-size: 8pt; white-space:nowrap;" title="processing / complete">
-				<? =$info['numprocessing']?> / <b><? =$info['numcomplete']?></b> &nbsp; <a href="analysis.php?action=viewanalyses&id=<? =$info['id']?>"><img src="images/preview.gif" title="View analysis list"></a>
+				<?=$info['numprocessing']?> / <b><?=$info['numcomplete']?></b> &nbsp; <a href="analysis.php?action=viewanalyses&id=<?=$info['id']?>"><img src="images/preview.gif" title="View analysis list"></a>
 			</td>
 			<td valign="top" align="right" style="font-size:8pt"><? if ($info['disksize'] > 0) { echo number_format(($info['disksize']/1024/1024/1024),1) . '&nbsp;GB'; } ?></td>
 			<? if (strlen($info['directory']) > 40) {
-				?><td valign="top" align="left" title="<? =$info['directory']?>" style="font-size:8pt"><tt><?
+				?><td valign="top" align="left" title="<?=$info['directory']?>" style="font-size:8pt"><tt><?
 				echo substr($info['directory'],0,40) . "...";
 				?></tt></td><?
 			}
@@ -3682,7 +3682,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 				?></tt></td><?
 			}
 			?>
-			<td valign="top"><? =$info['queue']?></td>-->
+			<td valign="top"><?=$info['queue']?></td>-->
 		</tr>
 		<?
 	}
@@ -3737,15 +3737,15 @@ echo "#$ps_command     $logged $ps_desc\n";
 		else { $netcolor = ""; }
 		
 		?>
-		<tr style="color: <? =$fontcolor?>">
-			<td valign="top" style="padding-left: <? =($level-1)*20?>;" class="<? =$class?>" title="<b><? =$info['title']?></b> &nbsp; <? =$info['desc']?>"><? if ($level > 1) { echo "&#9495;&nbsp;"; } ?><a href="pipelines.php?action=editpipeline&id=<? =$info['id']?>" style="font-size:11pt"><? =$info['title']?></a> &nbsp; <span class="tiny">v<? =$info['version']?></span></td>
-			<td valign="top"><? =$info['creatorusername']?>
+		<tr style="color: <?=$fontcolor?>">
+			<td valign="top" style="padding-left: <?=($level-1)*20?>;" class="<?=$class?>" title="<b><?=$info['title']?></b> &nbsp; <?=$info['desc']?>"><? if ($level > 1) { echo "&#9495;&nbsp;"; } ?><a href="pipelines.php?action=editpipeline&id=<?=$info['id']?>" style="font-size:11pt"><?=$info['title']?></a> &nbsp; <span class="tiny">v<?=$info['version']?></span></td>
+			<td valign="top"><?=$info['creatorusername']?>
 			<!--<td valign="top" align="right" style="font-size: 8pt; white-space:nowrap;" title="processing / complete">
-				<? =$info['numprocessing']?> / <b><? =$info['numcomplete']?></b> &nbsp; <a href="analysis.php?action=viewanalyses&id=<? =$info['id']?>"><img src="images/preview.gif" title="View analysis list"></a>
+				<?=$info['numprocessing']?> / <b><?=$info['numcomplete']?></b> &nbsp; <a href="analysis.php?action=viewanalyses&id=<?=$info['id']?>"><img src="images/preview.gif" title="View analysis list"></a>
 			</td>-->
-			<td valign="top" align="right" style="font-size:8pt; background-color: <? =$usagecolor?>"><? =$usage_f?></td>
-			<!--<td valign="top" align="right" style="font-size:8pt; background-color: <? =$parentcolor?>"><? =$parentusage_f?></td>-->
-			<td valign="top" align="right" style="font-size:8pt; background-color: <? =$netcolor?>; border: 1px solid #666"><? =$netusage_f?></td>
+			<td valign="top" align="right" style="font-size:8pt; background-color: <?=$usagecolor?>"><?=$usage_f?></td>
+			<!--<td valign="top" align="right" style="font-size:8pt; background-color: <?=$parentcolor?>"><?=$parentusage_f?></td>-->
+			<td valign="top" align="right" style="font-size:8pt; background-color: <?=$netcolor?>; border: 1px solid #666"><?=$netusage_f?></td>
 		</tr>
 		<?
 		
@@ -4059,7 +4059,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 		foreach ($dependencies as $depname) {
 			?>
 			<tr>
-				<td><? =$depname?></td>
+				<td><?=$depname?></td>
 			</tr>
 			<?
 		}
@@ -4072,7 +4072,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 		?>
 		<table width="50%" style="background-color: #93a9d6; border: 4px solid orange; box-shadow: 5px 5px 10px orange" cellpadding="8" cellspacing="0" title="This is the study that will be the primary focus of the analysis">
 			<tr>
-				<td align="center" style="background-color: #3b5998; color: #fff"><b>This study - <? =$data['modality']?></b></td>
+				<td align="center" style="background-color: #3b5998; color: #fff"><b>This study - <?=$data['modality']?></b></td>
 			</tr>
 			<?
 			foreach ($study as $step => $data) {
@@ -4085,7 +4085,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 				
 				?>
 				<tr>
-					<td style="font-size: smaller; color: <? =$color?>; background-color: <? =$bgcolor?>"><? =$data['protocol']?></td>
+					<td style="font-size: smaller; color: <?=$color?>; background-color: <?=$bgcolor?>"><?=$data['protocol']?></td>
 				</tr>
 				<?
 			}
@@ -4103,10 +4103,10 @@ echo "#$ps_command     $logged $ps_desc\n";
 							?>
 							<table cellspacing="0" cellpadding="5" class="start" style="background-color: #9bc193; box-shadow: 5px 5px 10px #333" width="100%" >
 								<tr>
-									<td style="color: #fff"><b><? =$data['modality']?></b> study</td>
+									<td style="color: #fff"><b><?=$data['modality']?></b> study</td>
 								</tr>
 								<tr>
-									<td style="background-color: #fff"><? =$data['protocol']?></td>
+									<td style="background-color: #fff"><?=$data['protocol']?></td>
 								</tr>
 							</table>
 							<span style="font-size: 20pt; font-weight: bold">&darr;</span>

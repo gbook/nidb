@@ -179,7 +179,7 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 			}
 		}
 		
-		?><div align="center"><span class="message"><? =$minipipelinename?> updated</span></div><br><br><?
+		?><div align="center"><span class="message"><?=$minipipelinename?> updated</span></div><br><br><?
 		return true;
 	}
 
@@ -190,7 +190,7 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 		$sqlstring = "select a.*, b.mp_name from minipipeline_jobs a left join minipipelines b on a.minipipeline_id = b.minipipeline_id where a.minipipeline_id = $mpid order by a.mp_queuedate desc";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		?>
-		<a class="ui primary button" href="minipipeline.php?projectid=<? =$projectid?>"><i class="arrow alternate circle left icon"></i> Back</a>
+		<a class="ui primary button" href="minipipeline.php?projectid=<?=$projectid?>"><i class="arrow alternate circle left icon"></i> Back</a>
 		<table class="ui celled selectable grey compact table">
 			<thead>
 				<th>Mini-pipeline</th>
@@ -223,33 +223,33 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 			
 			list($path, $seriespath, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, $modality)
 			?>
-			<div class="ui scrolling modal" id="modal<? =$i?>">
+			<div class="ui scrolling modal" id="modal<?=$i?>">
 				<i class="close icon"></i>
 				<div class="header">
 					Viewing log file
 				</div>
 				<div class="scrolling content" style="overflow: auto">
-					<pre class="tt" style="white-space: pre-wrap;"><? =$logs?></pre>
+					<pre class="tt" style="white-space: pre-wrap;"><?=$logs?></pre>
 				</div>
 				<div class="actions">
 					<div class="ui approve button">Close</div>
 				</div>
 			</div>
 			<tr class="<? if (($status == "error") or ($numinserts < 1)) { echo "negative"; } ?>">
-				<td valign="top"><? =$mpname?></td>
-				<td valign="top"><? =$queuedate?></td>
-				<td valign="top"><? =$startdate?></td>
-				<td valign="top"><? =$enddate?></td>
-				<td valign="top"><? =$status?></td>
+				<td valign="top"><?=$mpname?></td>
+				<td valign="top"><?=$queuedate?></td>
+				<td valign="top"><?=$startdate?></td>
+				<td valign="top"><?=$enddate?></td>
+				<td valign="top"><?=$status?></td>
 				<td valign="top" class="scrolling content">
-					<button class="ui compact basic button" id="viewlog<? =$i?>" onClick="$('#modal<? =$i?>').modal('show');"><i class="file alternate icon"></i> View Logs</button>
+					<button class="ui compact basic button" id="viewlog<?=$i?>" onClick="$('#modal<?=$i?>').modal('show');"><i class="file alternate icon"></i> View Logs</button>
 				</td>
-				<td valign="top"><a href="studies.php?studyid=<? =$studyid?>"><? =$uid?><? =$studynum?></a></td>
-				<td valign="top"><? =$modality?></td>
-				<td valign="top"><? =$numinserts?></td>
+				<td valign="top"><a href="studies.php?studyid=<?=$studyid?>"><?=$uid?><?=$studynum?></a></td>
+				<td valign="top"><?=$modality?></td>
+				<td valign="top"><?=$numinserts?></td>
 				<td valign="top">
 					<? if ($status != "pending") { ?>
-					<a class="ui very compact button" href="minipipeline.php?action=rerunjob&mpjobid=<? =$mpjobid?>&projectid=<? =$projectid?>&mpid=<? =$mpid?>">Rerun</a>
+					<a class="ui very compact button" href="minipipeline.php?action=rerunjob&mpjobid=<?=$mpjobid?>&projectid=<?=$projectid?>&mpid=<?=$mpid?>">Rerun</a>
 					<? } ?>
 				</td>
 			</tr>
@@ -292,7 +292,7 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 			}
 		}
 
-		?><div align="center"><span class="message"><? =$minipipelinename?> added</span></div><br><br><?
+		?><div align="center"><span class="message"><?=$minipipelinename?> added</span></div><br><br><?
 	}
 
 
@@ -341,17 +341,17 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 	?>
 		<div class="ui container">
 			<div class="ui attached visible message">
-				<div class="header"><? =$formtitle?></div>
+				<div class="header"><?=$formtitle?></div>
 			</div>
 			<form method="post" action="minipipeline.php" enctype="multipart/form-data" class="ui form attached fluid segment">
-			<input type="hidden" name="action" value="<? =$formaction?>">
-			<input type="hidden" name="mpid" value="<? =$mpid?>">
-			<input type="hidden" name="projectid" value="<? =$projectid?>">
+			<input type="hidden" name="action" value="<?=$formaction?>">
+			<input type="hidden" name="mpid" value="<?=$mpid?>">
+			<input type="hidden" name="projectid" value="<?=$projectid?>">
 
 			<div class="field">
 				<label>Name</label>
 				<div class="field">
-					<input type="text" name="minipipelinename" value="<? =$name?>" maxlength="255" required>
+					<input type="text" name="minipipelinename" value="<?=$name?>" maxlength="255" required>
 				</div>
 			</div>
 			
@@ -382,13 +382,13 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 							$modifydate = date('M j, Y h:ia',strtotime($row['mp_scriptmodifydate']));
 							?>
 							<tr>
-								<td><tt style="font-size: larger"><a href="minipipeline.php?action=viewscript&projectid=<? =$projectid?>&scriptid=<? =$scriptid?>"><? =$script?></a></tt></td>
-								<td><? =$scriptsize?></td>
-								<td><input type="checkbox" name="scriptexecutableids[]" value="<? =$scriptid?>" <? if ($executable) { echo "checked"; }?>></td>
-								<td><input type="radio" name="scriptentrypointid" value="<? =$scriptid?>" <? if ($entrypoint) { echo "checked"; }?>></td>
-								<td style="font-size: smaller"><? =$createdate?></td>
-								<td style="font-size: smaller"><? =$modifydate?></td>
-								<td><input type="checkbox" name="scriptdeleteids[]" value="<? =$scriptid?>"></td>
+								<td><tt style="font-size: larger"><a href="minipipeline.php?action=viewscript&projectid=<?=$projectid?>&scriptid=<?=$scriptid?>"><?=$script?></a></tt></td>
+								<td><?=$scriptsize?></td>
+								<td><input type="checkbox" name="scriptexecutableids[]" value="<?=$scriptid?>" <? if ($executable) { echo "checked"; }?>></td>
+								<td><input type="radio" name="scriptentrypointid" value="<?=$scriptid?>" <? if ($entrypoint) { echo "checked"; }?>></td>
+								<td style="font-size: smaller"><?=$createdate?></td>
+								<td style="font-size: smaller"><?=$modifydate?></td>
+								<td><input type="checkbox" name="scriptdeleteids[]" value="<?=$scriptid?>"></td>
 							</tr>
 							<?
 						}
@@ -405,8 +405,8 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 					<a class="ui red button" href="minipipeline.php?mpid=1&projectid=1&action=delete" onclick="return confirm('Are you sure you want to delete?')"><i class="trash icon"></i>Delete</a>
 				</div>
 				<div class="column" align="right">
-					<a class="ui button" href="minipipeline.php?projectid=<? =$projectid?>">Cancel</a>
-					<input type="submit" class="ui primary button" value="<? =$submitbuttonlabel?>">
+					<a class="ui button" href="minipipeline.php?projectid=<?=$projectid?>">Cancel</a>
+					<input type="submit" class="ui primary button" value="<?=$submitbuttonlabel?>">
 				</div>
 			</form>
 			<div class="ui attached segment">
@@ -454,7 +454,7 @@ drug, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine",
 		
 		?>
 		<div class="ui container">
-			<button class="ui primary large button" onClick="window.location.href='minipipeline.php?projectid=<? =$projectid?>&action=addform'; return false;"><i class="plus square outline icon"></i> Create mini-pipeline</button>
+			<button class="ui primary large button" onClick="window.location.href='minipipeline.php?projectid=<?=$projectid?>&action=addform'; return false;"><i class="plus square outline icon"></i> Create mini-pipeline</button>
 			<br><br>
 			<table class="ui celled selectable grey compact table">
 				<thead>
@@ -481,11 +481,11 @@ drug, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine",
 							
 							?>
 							<tr>
-								<td valign="top"><a class="ui primary compact button" href="minipipeline.php?action=editform&mpid=<? =$mpid?>&projectid=<? =$projectid?>"><i class="edit icon"></i> <? =$name?></td>
-								<td valign="top"><a class="ui compact basic button" href="minipipeline.php?action=viewjobs&mpid=<? =$mpid?>&projectid=<? =$projectid?>"><i class="file alternate icon"></i> View Jobs</td>
-								<td valign="top"><? =$version?></td>
-								<td valign="top"><? =$mpcreatedate?></td>
-								<td valign="top"><? =$mpmodifydate?></td>
+								<td valign="top"><a class="ui primary compact button" href="minipipeline.php?action=editform&mpid=<?=$mpid?>&projectid=<?=$projectid?>"><i class="edit icon"></i> <?=$name?></td>
+								<td valign="top"><a class="ui compact basic button" href="minipipeline.php?action=viewjobs&mpid=<?=$mpid?>&projectid=<?=$projectid?>"><i class="file alternate icon"></i> View Jobs</td>
+								<td valign="top"><?=$version?></td>
+								<td valign="top"><?=$mpcreatedate?></td>
+								<td valign="top"><?=$mpmodifydate?></td>
 								<td valign="top" align="center">
 								<?
 									$sqlstringA = "select * from minipipeline_scripts where minipipeline_id = $mpid order by mp_script asc";
@@ -512,8 +512,8 @@ drug, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine",
 										$modifydate = date('M j, Y h:ia',strtotime($rowA['mp_scriptmodifydate']));
 										?>
 										<tr>
-											<td><tt><? =$script?> <i><? =$params?></i></tt></td>
-											<td><? =$scriptsize?></td>
+											<td><tt><?=$script?> <i><?=$params?></i></tt></td>
+											<td><?=$scriptsize?></td>
 											<td><? if ($executable) { echo "&#10004;"; }?></td>
 											<td><? if ($entrypoint) { echo "&#10004;"; }?></td>
 										</tr>
@@ -528,7 +528,7 @@ drug, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine",
 									}
 									?>
 								</td>
-								<!--<td valign="top" align="center"><a href="minipipeline.php?mpid=<? =$mpid?>&projectid=<? =$projectid?>&action=delete" class="ui red button" onclick="return confirm('********** STOP!! **********\n<? =$GLOBALS['username']?>, are you sure you want to COMPLETELY DELETE this mini-pipeline? Click Ok ONLY if you want to DELETE the mini-pipeline. This cannot be undone. But any variables created using this pipeline will remain in the database.')"><i class="trash alternate icon"></i></a></td>-->
+								<!--<td valign="top" align="center"><a href="minipipeline.php?mpid=<?=$mpid?>&projectid=<?=$projectid?>&action=delete" class="ui red button" onclick="return confirm('********** STOP!! **********\n<?=$GLOBALS['username']?>, are you sure you want to COMPLETELY DELETE this mini-pipeline? Click Ok ONLY if you want to DELETE the mini-pipeline. This cannot be undone. But any variables created using this pipeline will remain in the database.')"><i class="trash alternate icon"></i></a></td>-->
 							</tr>
 							<?
 						}
@@ -568,12 +568,12 @@ drug, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine",
 			?>
 			
 			<div class="ui text container">
-				<a href="minipipeline.php?action=editform&mpid=<? =$mpid?>&projectid=<? =$projectid?>" class="ui primary button"><b><i class="arrow alternate circle left icon"></i> Back</b></a>
+				<a href="minipipeline.php?action=editform&mpid=<?=$mpid?>&projectid=<?=$projectid?>" class="ui primary button"><b><i class="arrow alternate circle left icon"></i> Back</b></a>
 				<br>
 				<table class="ui very simple very compact small celled table">
 					<tr>
 						<td>Script name</td>
-						<td><h3 class="ui header"><? =$scriptname?></h3></td>
+						<td><h3 class="ui header"><?=$scriptname?></h3></td>
 					</tr>
 					<tr>
 						<td>Executable?</td>
@@ -585,21 +585,21 @@ drug, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine",
 					</tr>
 					<tr>
 						<td>Script size</td>
-						<td><? =$scriptsize?> <span class="tiny">bytes</span></td>
+						<td><?=$scriptsize?> <span class="tiny">bytes</span></td>
 					</tr>
 					<tr>
 						<td>Create date</td>
-						<td><? =$createdate?></td>
+						<td><?=$createdate?></td>
 					</tr>
 					<tr>
 						<td>Modify date</td>
-						<td><? =$modifydate?></td>
+						<td><?=$modifydate?></td>
 					</tr>
 				</table>
 			</div>
 			<div style="padding: 20px">
 				Displaying entire file
-				<tt><pre style="text-align: left; padding: 15px; border: 1px solid gray"><? =$contents?></pre></tt>
+				<tt><pre style="text-align: left; padding: 15px; border: 1px solid gray"><?=$contents?></pre></tt>
 			</div>
 			<?
 		}

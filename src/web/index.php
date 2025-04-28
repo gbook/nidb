@@ -29,7 +29,7 @@
 <html>
 	<head>
 		<link rel="icon" type="image/png" href="images/squirrel.png">
-		<title><? =$_SERVER['HTTP_HOST']?> - NiDB</title>
+		<title><?=$_SERVER['HTTP_HOST']?> - NiDB</title>
 	</head>
 
 <body>
@@ -115,15 +115,15 @@
 					<img class="ui image" src="images/NIDB_logo.png" width="300px">
 					<div class="ui tiny statistics">
 						<div class="statistic">
-							<div class="value"><? =number_format($numsubjects)?></div>
+							<div class="value"><?=number_format($numsubjects)?></div>
 							<div class="label">Subjects</div>
 						</div>
 						<div class="statistic">
-							<div class="value"><? =number_format($numstudies)?></div>
+							<div class="value"><?=number_format($numstudies)?></div>
 							<div class="label">Studies</div>
 						</div>
 						<div class="statistic">
-							<div class="value"><? =number_format($totalseries)?></div>
+							<div class="value"><?=number_format($totalseries)?></div>
 							<div class="label">Series</div>
 						</div>
 					</div>
@@ -142,7 +142,7 @@
 			<div class="ui header">
 				<div class="content">
 					<i class="clock outline icon"></i> New Studies
-					<div class="sub header">Imaging studies collected in past <? =$numrecentdays?> days</div>
+					<div class="sub header">Imaging studies collected in past <?=$numrecentdays?> days</div>
 				</div>
 			</div>
 			<table class="ui small celled selectable grey very compact table">
@@ -181,25 +181,25 @@
 						$seriescount = $rowA['seriescount'];
 						?>
 						<tr>
-							<td class="tt"><a href="subjects.php?id=<? =$subject_id?>"><? =$uid;?></a></td>
-							<td class="tt"><a href="studies.php?id=<? =$study_id?>"><? =$study_num;?></a></td>
-							<td style="font-size:8pt; white-space: nowrap"><? =$study_datetime?></td>
-							<td style="font-size:8pt"><? =$modality?></td>
-							<td style="font-size:8pt"><? =$study_site?></td>
-							<td style="font-size:8pt"><? =$seriescount?></td>
-							<td style="font-size:8pt"><? =$project_name?> (<? =$project_costcenter?>)</td>
+							<td class="tt"><a href="subjects.php?id=<?=$subject_id?>"><?=$uid;?></a></td>
+							<td class="tt"><a href="studies.php?id=<?=$study_id?>"><?=$study_num;?></a></td>
+							<td style="font-size:8pt; white-space: nowrap"><?=$study_datetime?></td>
+							<td style="font-size:8pt"><?=$modality?></td>
+							<td style="font-size:8pt"><?=$study_site?></td>
+							<td style="font-size:8pt"><?=$seriescount?></td>
+							<td style="font-size:8pt"><?=$project_name?> (<?=$project_costcenter?>)</td>
 						</tr>
 						<?
 					}
 					else {
 						?>
 						<tr>
-							<td class="tt"><a href="subjects.php?id=<? =$subject_id?>"><? =$uid;?></a></td>
-							<td class="tt"><a href="studies.php?id=<? =$study_id?>"><? =$study_num;?></a></td>
-							<td style="font-size:8pt; white-space: nowrap"><? =$study_datetime?></td>
-							<td style="font-size:8pt"><? =$modality?></td>
-							<td style="font-size:8pt"><? =$study_site?></td>
-							<td style="font-size:8pt" colspan="2">No permissions for <? =$project_name?> (<? =$project_costcenter?>)</td>
+							<td class="tt"><a href="subjects.php?id=<?=$subject_id?>"><?=$uid;?></a></td>
+							<td class="tt"><a href="studies.php?id=<?=$study_id?>"><?=$study_num;?></a></td>
+							<td style="font-size:8pt; white-space: nowrap"><?=$study_datetime?></td>
+							<td style="font-size:8pt"><?=$modality?></td>
+							<td style="font-size:8pt"><?=$study_site?></td>
+							<td style="font-size:8pt" colspan="2">No permissions for <?=$project_name?> (<?=$project_costcenter?>)</td>
 						</tr>
 						<?
 					}
@@ -232,9 +232,9 @@
 					?>
 					<div class="item">
 						<div class="content">
-							<a href="projects.php?id=<? =$projectid?>" style="font-size: 150%;"><? =$projectname?></a>
+							<a href="projects.php?id=<?=$projectid?>" style="font-size: 150%;"><?=$projectname?></a>
 							<div class="description">
-							<? =$numsubjects?> subjects
+							<?=$numsubjects?> subjects
 							</div>
 						</div>
 					</div>
@@ -265,8 +265,8 @@
 						$projectname = $row['project_name'];
 						?>
 						<tr>
-							<td><a href="projects.php?id=<? =$projectid?>"><b><? =$projectname?></b></a></td>
-							<td><? =$date?></td>
+							<td><a href="projects.php?id=<?=$projectid?>"><b><?=$projectname?></b></a></td>
+							<td><?=$date?></td>
 						</tr>
 						<?
 					}
@@ -299,10 +299,10 @@
 						$sex = $row['gender'];
 						?>
 						<tr>
-							<td class="tt"><a href="subjects.php?id=<? =$subjectid?>"><? =$uid?></a></td>
-							<td><? =$sex?></td>
-							<td><? =$dob?></td>
-							<td><? =$date?></td>
+							<td class="tt"><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
+							<td><?=$sex?></td>
+							<td><?=$dob?></td>
+							<td><?=$date?></td>
 						</tr>
 						<?
 					}
@@ -342,11 +342,11 @@
 						$site = $row['study_site'];
 						?>
 						<tr>
-							<td class="tt"><a href="studies.php?id=<? =$studyid?>"><? =$uid?><? =$studynum?></a></td>
-							<td><? =$studydate?></td>
-							<td><? =$modality?></td>
-							<td><? =$site?></td>
-							<td><? =$date?></td>
+							<td class="tt"><a href="studies.php?id=<?=$studyid?>"><?=$uid?><?=$studynum?></a></td>
+							<td><?=$studydate?></td>
+							<td><?=$modality?></td>
+							<td><?=$site?></td>
+							<td><?=$date?></td>
 						</tr>
 						<?
 					}

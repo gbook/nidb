@@ -48,7 +48,7 @@
 					?><!-- <i class="green check icon"></i>--><?
 				}
 				else {
-					?> <i class="red exclamation circle icon" title="Files missing from disk [<? =$path?>]"></i><?
+					?> <i class="red exclamation circle icon" title="Files missing from disk [<?=$path?>]"></i><?
 				}
 			}
 			elseif ($datatype == "parrec") {
@@ -58,7 +58,7 @@
 					?><!-- <i class="green check icon"></i>--><?
 				}
 				else {
-					?> <i class="red exclamation circle icon" title="Files missing from disk [<? =$path?>]"></i><?
+					?> <i class="red exclamation circle icon" title="Files missing from disk [<?=$path?>]"></i><?
 				}
 			} else {
 				echo $series_desc;
@@ -80,7 +80,7 @@
 					}
 				</style>
 
-				<a href="preview.php?image=<? =$thumbpath?>" class="preview"><i class="photo video icon"></i></a>
+				<a href="preview.php?image=<?=$thumbpath?>" class="preview"><i class="photo video icon"></i></a>
 				<?
 			}
 			//else {

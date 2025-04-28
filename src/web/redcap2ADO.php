@@ -115,7 +115,7 @@ function ShowProjects(){
 	$project_costcenter = $row['project_costcenter'];
         if ($selected_choice==$project_id) { $selected = "selected"; } else { $selected = ""; }
         ?>
-        <option value="<? =$project_id?>"<? =$selected?>> <? =$project_name?> (<? =$project_costcenter?>)</option>
+        <option value="<?=$project_id?>"<?=$selected?>> <?=$project_name?> (<?=$project_costcenter?>)</option>
         <?
         }
 
@@ -336,7 +336,7 @@ function DispForm($Form_name,$INSTR){
 
         $Sp = ' ';?>
 
-	<h2 align="left"><? =ucfirst($Form_name[0])?></h2>
+	<h2 align="left"><?=ucfirst($Form_name[0])?></h2>
 	
 	<table class="smalldisplaytable">
 	 <thead align ="left">

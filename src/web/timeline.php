@@ -326,19 +326,19 @@
 					foreach ($series as $key => $tr) {
 						?>
 						<tr>
-							<td><? =$tr['studynum']?></td>
-							<td><? =$tr['seriesnum']?></td>
+							<td><?=$tr['studynum']?></td>
+							<td><?=$tr['seriesnum']?></td>
 							<td><?
 							 if ($tr['modality'] == "") { ?><span style="color: white; background-color: red">&nbsp;blank&nbsp;</span><? }
 							 else { echo $tr['modality']; }
 							?></td>
-							<td><? =$tr['studydate']?></td>
-							<td><? =$tr['seriesdate']?></td>
-							<td><? =$tr['protocol']?></td>
-							<td><? =number_format($tr['age'],1)?></td>
-							<td><? =$tr['studysite']?></td>
-							<td><? =$tr['studytype']?></td>
-							<td><? =$tr['duration']?></td>
+							<td><?=$tr['studydate']?></td>
+							<td><?=$tr['seriesdate']?></td>
+							<td><?=$tr['protocol']?></td>
+							<td><?=number_format($tr['age'],1)?></td>
+							<td><?=$tr['studysite']?></td>
+							<td><?=$tr['studytype']?></td>
+							<td><?=$tr['duration']?></td>
 						</tr>
 						<?
 					}
@@ -373,7 +373,7 @@
 		
 		<form method="post" id="form1" action="timeline.php">
 		<input type="hidden" name="action" value="displaytimeline">
-		<input type="hidden" name="enrollmentid" value="<? =$enrollmentid?>">
+		<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
 		<b>Protocols</b>
 		<table style="font-size: smaller;">
 			<tr>
@@ -386,22 +386,22 @@
 				?>
 				<script>
 					$(document).ready(function() {
-						$("#<? =$parentCheckID?>").click(function() {
-							$(".<? =$childCheckClass?>").prop("checked", this.checked);
+						$("#<?=$parentCheckID?>").click(function() {
+							$(".<?=$childCheckClass?>").prop("checked", this.checked);
 						});
 
-						$('.<? =$childCheckClass?>').click(function() {
-						if ($('.<? =$childCheckClass?>:checked').length == $('.<? =$childCheckClass?>').length) {
-							$('#<? =$parentCheckID?>').prop('checked', true);
+						$('.<?=$childCheckClass?>').click(function() {
+						if ($('.<?=$childCheckClass?>:checked').length == $('.<?=$childCheckClass?>').length) {
+							$('#<?=$parentCheckID?>').prop('checked', true);
 							} else {
-								$('#<? =$parentCheckID?>').prop('checked', false);
+								$('#<?=$parentCheckID?>').prop('checked', false);
 							}
 						});
 					});
 				</script>
 				
 				<td valign="top" style="border-right: 1px solid #aaa; padding: 8px">
-				<b style="font-size: larger;"><? =$modality?></b> &nbsp; <label style="color: #666;"><input type="checkbox" id="<? =$parentCheckID?>"> Select all</label>
+				<b style="font-size: larger;"><?=$modality?></b> &nbsp; <label style="color: #666;"><input type="checkbox" id="<?=$parentCheckID?>"> Select all</label>
 				<br><br>
 				<div style="column-count: 2; column-fill: auto;">
 				<?
@@ -413,7 +413,7 @@
 						$checked = "";
 					}
 					?>
-					<label><input type="checkbox" class="all child-<? =$modality?>" name="selectedprotocols[]" value="<? =$modality?>:<? =$protocol?>" <? =$checked?>> <? =$protocol?></label><br>
+					<label><input type="checkbox" class="all child-<?=$modality?>" name="selectedprotocols[]" value="<?=$modality?>:<?=$protocol?>" <?=$checked?>> <?=$protocol?></label><br>
 					<?
 				}
 				?>
@@ -429,8 +429,8 @@
 		<input type="checkbox" name="allmeasures" value="1" <? if ($allmeasures) { echo "checked"; } ?>> Include all measures
 		<hr>
 		<b>Series Date</b><br>
-		Data range <? =$mindate?> to <? =$maxdate?><br>
-		<input type="datetime-local" name="startdatetime" value="<? =str_replace(" ", "T", $startdatetime)?>"> to <input type="datetime-local" name="enddatetime" value="<? =str_replace(" ", "T", $enddatetime)?>">
+		Data range <?=$mindate?> to <?=$maxdate?><br>
+		<input type="datetime-local" name="startdatetime" value="<?=str_replace(" ", "T", $startdatetime)?>"> to <input type="datetime-local" name="enddatetime" value="<?=str_replace(" ", "T", $enddatetime)?>">
 		
 		<br><br><br>
 		<input type="submit" value="Update" class="ui primary button">

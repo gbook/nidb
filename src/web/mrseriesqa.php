@@ -110,7 +110,7 @@
 					?>
 				</td>
 				<td valign="top" class="name">
-					<? =$resultname?>
+					<?=$resultname?>
 				</td>
 				<td class="value">
 				<?
@@ -128,7 +128,7 @@
 				elseif (trim($file) != "") {
 					$filepath = "$qapath/$file";
 					?>
-					<img style="border: solid 1px #666666; " src="data:image/png;base64,<? =base64_encode(file_get_contents("$filepath"))?>">
+					<img style="border: solid 1px #666666; " src="data:image/png;base64,<?=base64_encode(file_get_contents("$filepath"))?>">
 					<?
 				}
 				?>
@@ -216,18 +216,18 @@
 					</tr>
 					<tr>
 						<td><b>X</b></td>
-						<td style="background-color:#EFEFEF; padding: 3px 10px"><? =number_format($minx,2)?> &emsp;<? =number_format($maxx,2)?></td>
-						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><? =number_format($rangex,2)?></b> &plusmn;<? =number_format($stdx,2)?></td>
+						<td style="background-color:#EFEFEF; padding: 3px 10px"><?=number_format($minx,2)?> &emsp;<?=number_format($maxx,2)?></td>
+						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><?=number_format($rangex,2)?></b> &plusmn;<?=number_format($stdx,2)?></td>
 					</tr>
 					<tr>
 						<td><b>Y</b></td>
-						<td style="background-color:#EFEFEF; padding: 3px 10px"><? =number_format($miny,2)?> &emsp;<? =number_format($maxy,2)?></td>
-						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><? =number_format($rangey,2)?></b> &plusmn;<? =number_format($stdy,2)?></td>
+						<td style="background-color:#EFEFEF; padding: 3px 10px"><?=number_format($miny,2)?> &emsp;<?=number_format($maxy,2)?></td>
+						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><?=number_format($rangey,2)?></b> &plusmn;<?=number_format($stdy,2)?></td>
 					</tr>
 					<tr>
 						<td><b>Z</b></td>
-						<td style="background-color:#EFEFEF; padding: 3px 10px"><? =number_format($minz,2)?> &emsp;<? =number_format($maxz,2)?></td>
-						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><? =number_format($rangez,2)?></b> &plusmn;<? =number_format($stdz,2)?></td>
+						<td style="background-color:#EFEFEF; padding: 3px 10px"><?=number_format($minz,2)?> &emsp;<?=number_format($maxz,2)?></td>
+						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><?=number_format($rangez,2)?></b> &plusmn;<?=number_format($stdz,2)?></td>
 					</tr>
 				</table>
 			</td>
@@ -249,18 +249,18 @@
 					</tr>
 					<tr>
 						<td><b>Pitch</b></td>
-						<td style="background-color:#EFEFEF; padding: 3px 10px"><? =number_format($minpitch,2)?>&deg; &emsp;<? =number_format($maxpitch,2)?>&deg;</td>
-						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><? =number_format($rangepitch,2)?></b> &plusmn;<? =number_format($stdpitch,2)?></td>
+						<td style="background-color:#EFEFEF; padding: 3px 10px"><?=number_format($minpitch,2)?>&deg; &emsp;<?=number_format($maxpitch,2)?>&deg;</td>
+						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><?=number_format($rangepitch,2)?></b> &plusmn;<?=number_format($stdpitch,2)?></td>
 					</tr>
 					<tr>
 						<td><b>Roll</b></td>
-						<td style="background-color:#EFEFEF; padding: 3px 10px"><? =number_format($minroll,2)?>&deg; &emsp;<? =number_format($maxroll,2)?>&deg;</td>
-						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><? =number_format($rangeroll,2)?></b> &plusmn;<? =number_format($stdroll,2)?></td>
+						<td style="background-color:#EFEFEF; padding: 3px 10px"><?=number_format($minroll,2)?>&deg; &emsp;<?=number_format($maxroll,2)?>&deg;</td>
+						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><?=number_format($rangeroll,2)?></b> &plusmn;<?=number_format($stdroll,2)?></td>
 					</tr>
 					<tr>
 						<td><b>Yaw</b></td>
-						<td style="background-color:#EFEFEF; padding: 3px 10px"><? =number_format($minyaw,2)?>&deg; &emsp;<? =number_format($maxyaw,2)?>&deg;</td>
-						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><? =number_format($rangeyaw,2)?></b> &plusmn;<? =number_format($stdyaw,2)?></td>
+						<td style="background-color:#EFEFEF; padding: 3px 10px"><?=number_format($minyaw,2)?>&deg; &emsp;<?=number_format($maxyaw,2)?>&deg;</td>
+						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><?=number_format($rangeyaw,2)?></b> &plusmn;<?=number_format($stdyaw,2)?></td>
 					</tr>
 				</table>
 			</td>
@@ -324,18 +324,18 @@
 					</tr>
 					<tr>
 						<td><b>X</b></td>
-						<td style="background-color:#EFEFEF; padding: 3px 10px"><? =number_format($minax,2)?> &emsp;<? =number_format($maxax,2)?></td>
-						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><? =number_format($rangeax,2)?></b> &plusmn;<? =number_format($stdax,2)?></td>
+						<td style="background-color:#EFEFEF; padding: 3px 10px"><?=number_format($minax,2)?> &emsp;<?=number_format($maxax,2)?></td>
+						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><?=number_format($rangeax,2)?></b> &plusmn;<?=number_format($stdax,2)?></td>
 					</tr>
 					<tr>
 						<td><b>Y</b></td>
-						<td style="background-color:#EFEFEF; padding: 3px 10px"><? =number_format($minay,2)?> &emsp;<? =number_format($maxay,2)?></td>
-						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><? =number_format($rangeay,2)?></b> &plusmn;<? =number_format($stday,2)?></td>
+						<td style="background-color:#EFEFEF; padding: 3px 10px"><?=number_format($minay,2)?> &emsp;<?=number_format($maxay,2)?></td>
+						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><?=number_format($rangeay,2)?></b> &plusmn;<?=number_format($stday,2)?></td>
 					</tr>
 					<tr>
 						<td><b>Z</b></td>
-						<td style="background-color:#EFEFEF; padding: 3px 10px"><? =number_format($minaz,2)?> &emsp;<? =number_format($maxaz,2)?></td>
-						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><? =number_format($rangeaz,2)?></b> &plusmn;<? =number_format($stdaz,2)?></td>
+						<td style="background-color:#EFEFEF; padding: 3px 10px"><?=number_format($minaz,2)?> &emsp;<?=number_format($maxaz,2)?></td>
+						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><?=number_format($rangeaz,2)?></b> &plusmn;<?=number_format($stdaz,2)?></td>
 					</tr>
 				</table>
 			</td>
@@ -394,14 +394,14 @@
 					</tr>
 					<tr>
 						<td><b>Mean Intensity</b></td>
-						<td style="background-color:#EFEFEF; padding: 3px 10px"><? =number_format($minmint,2)?> &emsp;<? =number_format($maxmint,2)?></td>
-						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><? =number_format($rangemint,2)?></b> &plusmn;<? =number_format($stdmint,2)?></td>
+						<td style="background-color:#EFEFEF; padding: 3px 10px"><?=number_format($minmint,2)?> &emsp;<?=number_format($maxmint,2)?></td>
+						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><?=number_format($rangemint,2)?></b> &plusmn;<?=number_format($stdmint,2)?></td>
 					</tr>
 					<!--
 					<tr>
 						<td><b>Mean Intensity</b></td>
-						<td style="background-color:#EFEFEF; padding: 3px 10px"><? =number_format($minsint,2)?> &emsp;<? =number_format($maxsint,2)?></td>
-						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><? =number_format($rangesint,2)?></b> &plusmn;<? =number_format($stdsint,2)?></td>
+						<td style="background-color:#EFEFEF; padding: 3px 10px"><?=number_format($minsint,2)?> &emsp;<?=number_format($maxsint,2)?></td>
+						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><?=number_format($rangesint,2)?></b> &plusmn;<?=number_format($stdsint,2)?></td>
 					</tr>
 					-->
 				</table>
@@ -443,8 +443,8 @@
 					</tr>
 					<tr>
 						<td><b>Location</b></td>
-						<td style="background-color:#EFEFEF; padding: 3px 10px"><? =number_format($mincogmm,2)?> &emsp;<? =number_format($maxcogmm,2)?></td>
-						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><? =number_format($rangecogmm,2)?></b> &plusmn;<? =number_format($stdcogmm,2)?></td>
+						<td style="background-color:#EFEFEF; padding: 3px 10px"><?=number_format($mincogmm,2)?> &emsp;<?=number_format($maxcogmm,2)?></td>
+						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><?=number_format($rangecogmm,2)?></b> &plusmn;<?=number_format($stdcogmm,2)?></td>
 					</tr>
 				</table>
 			</td>
@@ -492,7 +492,7 @@
 			<div class="ui card">
 				<div class="image">
 					<? if (file_exists($thumbpath)) { ?>
-					<img style="border: solid 1px #666666; max-width:400" src="data:image/png;base64,<? =base64_encode(file_get_contents("$thumbpath"))?>">
+					<img style="border: solid 1px #666666; max-width:400" src="data:image/png;base64,<?=base64_encode(file_get_contents("$thumbpath"))?>">
 					<? } else { ?>
 					<i class="ui huge disabled grey image icon"></i>
 					<? } ?>
@@ -500,7 +500,7 @@
 				<div class="content">
 					<div class="header">Middle slice</div>
 					<div class="meta">
-						<? =$thumbpath?>
+						<?=$thumbpath?>
 					</div>
 					<div class="description">
 						<? if (!file_exists($thumbpath)) { ?>
@@ -515,7 +515,7 @@
 			<div class="ui card">
 				<div class="image">
 					<? if (file_exists("$qapath/thumb_fft.png")) { ?>
-					<img style="border: solid 1px #666666; max-width:400" src="data:image/png;base64,<? =base64_encode(file_get_contents("$qapath/thumb_fft.png"))?>">
+					<img style="border: solid 1px #666666; max-width:400" src="data:image/png;base64,<?=base64_encode(file_get_contents("$qapath/thumb_fft.png"))?>">
 					<? } else { ?>
 					<i class="ui huge disabled grey image icon"></i>
 					<? } ?>
@@ -523,7 +523,7 @@
 				<div class="content">
 					<div class="header">FFT (single slice)</div>
 					<div class="meta">
-						<? ="$qapath/thumb_fft.png"?>
+						<?="$qapath/thumb_fft.png"?>
 					</div>
 					<div class="description">
 						<? if (!file_exists("$qapath/thumb_fft.png")) { ?>
@@ -538,7 +538,7 @@
 			<div class="ui card">
 				<div class="image">
 					<? if (file_exists("$qapath/histogram.png")) { ?>
-					<img style="border: solid 1px #666666; max-width:400" src="data:image/png;base64,<? =base64_encode(file_get_contents("$qapath/histogram.png"))?>">
+					<img style="border: solid 1px #666666; max-width:400" src="data:image/png;base64,<?=base64_encode(file_get_contents("$qapath/histogram.png"))?>">
 					<? } else { ?>
 					<i class="ui huge disabled grey image icon"></i>
 					<? } ?>
@@ -546,7 +546,7 @@
 				<div class="content">
 					<div class="header">Radial average of FFT</div>
 					<div class="meta">
-						<? ="$qapath/histogram.png"?>
+						<?="$qapath/histogram.png"?>
 					</div>
 					<div class="description">
 						<? if (!file_exists("$qapath/histogram.png")) { ?>
@@ -561,7 +561,7 @@
 			<div class="ui card">
 				<div class="image">
 					<? if (file_exists("$qapath/thumb_fft_1d.png")) { ?>
-					<img style="border: solid 1px #666666; max-width:400" src="data:image/png;base64,<? =base64_encode(file_get_contents("$qapath/thumb_fft_1d.png"))?>">
+					<img style="border: solid 1px #666666; max-width:400" src="data:image/png;base64,<?=base64_encode(file_get_contents("$qapath/thumb_fft_1d.png"))?>">
 					<? } else { ?>
 					<i class="ui huge disabled grey image icon"></i>
 					<? } ?>
@@ -569,7 +569,7 @@
 				<div class="content">
 					<div class="header">FFT 1D</div>
 					<div class="meta">
-						<? ="$qapath/thumb_fft_1d.png"?>
+						<?="$qapath/thumb_fft_1d.png"?>
 					</div>
 					<div class="description">
 						<? if (!file_exists("$qapath/thumb_fft_1d.png")) { ?>
@@ -614,7 +614,7 @@
 			<div class="ui card">
 				<div class="image">
 					<? if (file_exists("$qapath/Tmean.png")) { ?>
-					<img style="border: solid 1px #666666; max-width:400" src="data:image/png;base64,<? =base64_encode(file_get_contents("$qapath/Tmean.png"))?>">
+					<img style="border: solid 1px #666666; max-width:400" src="data:image/png;base64,<?=base64_encode(file_get_contents("$qapath/Tmean.png"))?>">
 					<? } else { ?>
 					<i class="ui huge disabled grey image icon"></i>
 					<? } ?>
@@ -622,10 +622,10 @@
 				<div class="content">
 					<div class="header">Mean</div>
 					<div class="meta">
-						<? ="$qapath/Tmean.png"?>
+						<?="$qapath/Tmean.png"?>
 					</div>
 					<div class="description">
-						Voxel intensity: <? =number_format($minMean,1)?> to <? =number_format($maxMean,1)?>
+						Voxel intensity: <?=number_format($minMean,1)?> to <?=number_format($maxMean,1)?>
 					</div>
 				</div>
 			</div>
@@ -638,7 +638,7 @@
 			<div class="ui card">
 				<div class="image">
 					<? if (file_exists("$qapath/Tsigma.png")) { ?>
-					<img style="border: solid 1px #666666; max-width:400" src="data:image/png;base64,<? =base64_encode(file_get_contents("$qapath/Tsigma.png"))?>">
+					<img style="border: solid 1px #666666; max-width:400" src="data:image/png;base64,<?=base64_encode(file_get_contents("$qapath/Tsigma.png"))?>">
 					<? } else { ?>
 					<i class="ui huge disabled grey image icon"></i>
 					<? } ?>
@@ -646,10 +646,10 @@
 				<div class="content">
 					<div class="header">Stddev</div>
 					<div class="meta">
-						<? ="$qapath/Tsigma.png"?>
+						<?="$qapath/Tsigma.png"?>
 					</div>
 					<div class="description">
-						Voxel intensity: <? =number_format($minSigma,1)?> to <? =number_format($maxSigma,1)?>
+						Voxel intensity: <?=number_format($minSigma,1)?> to <?=number_format($maxSigma,1)?>
 					</div>
 				</div>
 			</div>
@@ -662,7 +662,7 @@
 			<div class="ui card">
 				<div class="image">
 					<? if (file_exists("$qapath/Tvariance.png")) { ?>
-					<img style="border: solid 1px #666666; max-width:400" src="data:image/png;base64,<? =base64_encode(file_get_contents("$qapath/Tvariance.png"))?>">
+					<img style="border: solid 1px #666666; max-width:400" src="data:image/png;base64,<?=base64_encode(file_get_contents("$qapath/Tvariance.png"))?>">
 					<? } else { ?>
 					<i class="ui huge disabled grey image icon"></i>
 					<? } ?>
@@ -670,10 +670,10 @@
 				<div class="content">
 					<div class="header">Variance</div>
 					<div class="meta">
-						<? ="$qapath/Tvariance.png"?>
+						<?="$qapath/Tvariance.png"?>
 					</div>
 					<div class="description">
-						Voxel intensity: <? =number_format($minVariance,1)?> to <? =number_format($maxVariance,1)?>
+						Voxel intensity: <?=number_format($minVariance,1)?> to <?=number_format($maxVariance,1)?>
 					</div>
 				</div>
 			</div>
@@ -732,34 +732,34 @@ function DisplayGraph($text,$resultname,$units,$label,$graphnum)	{
 	<script id="source" language="javascript" type="text/javascript">
 		$(function () {
 			<? for ($i=0;$i<$numcols;$i++) { ?>
-			var col<? =$i?> = [<? echo implode(', ',$col[$i]); ?>];
+			var col<?=$i?> = [<? echo implode(', ',$col[$i]); ?>];
 			<?
 				$opts[$i] = "{ label: '$labels[$i] ($units)', data: col$i }";
 			} ?>
-			$.plot($("#movementgraph<? =$graphnum?>"), [ <? =implode(', ',$opts);?> ]);
+			$.plot($("#movementgraph<?=$graphnum?>"), [ <?=implode(', ',$opts);?> ]);
 		});
 	</script>
 
 	<table>
 		<tr>
 			<td align="center">
-				<b><? =$resultname?></b>
-				<div id="movementgraph<? =$graphnum?>" style="width:600px;height:180px;"></div>
+				<b><?=$resultname?></b>
+				<div id="movementgraph<?=$graphnum?>" style="width:600px;height:180px;"></div>
 			</td>
 			<td>
 				<table style="font-size:10pt">
 					<tr style="font-weight: bold">
 						<td align="center"></td>
-						<td align="center">Range <span style="font-weight: normal; font-size: 8pt; color: gray"><? =$units?></span></td>
-						<td align="center">Total <span style="font-weight: normal; font-size: 8pt; color: gray"><? =$units?></span></td>
+						<td align="center">Range <span style="font-weight: normal; font-size: 8pt; color: gray"><?=$units?></span></td>
+						<td align="center">Total <span style="font-weight: normal; font-size: 8pt; color: gray"><?=$units?></span></td>
 					</tr>
 					<?
 					for ($i=0;$i<$numcols;$i++) {
 					?>
 					<tr>
-						<td><b><? =$labels[$i]?></b></td>
-						<td style="background-color:#EFEFEF; padding: 3px 10px"><? =number_format($mins[$i],2)?> &emsp;<? =number_format($maxs[$i],2)?></td>
-						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><? =number_format($ranges[$i],2)?></b> &plusmn;<? =number_format($stdevs[$i],2)?></td>
+						<td><b><?=$labels[$i]?></b></td>
+						<td style="background-color:#EFEFEF; padding: 3px 10px"><?=number_format($mins[$i],2)?> &emsp;<?=number_format($maxs[$i],2)?></td>
+						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><?=number_format($ranges[$i],2)?></b> &plusmn;<?=number_format($stdevs[$i],2)?></td>
 					</tr>
 					<?
 					}
@@ -785,7 +785,7 @@ function DisplayHistogram($text,$resultname,$units,$label) {
 function DisplayMinMax($text,$resultname,$units,$label) {
 	list($min,$max) = preg_split('/\s+/', trim($text));
 	?>
-		<? =number_format($min,2)?> <span class="tiny"><? =$units?></span> - <? =number_format($max,2)?> <span class="tiny"><? =$units?></span>
+		<?=number_format($min,2)?> <span class="tiny"><?=$units?></span> - <?=number_format($max,2)?> <span class="tiny"><?=$units?></span>
 	<?
 }
 

@@ -484,7 +484,7 @@
 										$selected = "";
 									}
 									?>
-									<option value="<? =$savedsearchid?>" <? =$selected?>><? =$savedname?>
+									<option value="<?=$savedsearchid?>" <?=$selected?>><?=$savedname?>
 									<?
 								}
 								?>
@@ -508,7 +508,7 @@
 					<div class="ui styled segment">
 						<form method="post" name="analysisbuilder" action="analysisbuilder.php" class="ui small form">
 						<input type="hidden" name="action" value="viewanalysissummary">
-						<input type="hidden" name="projectid" value="<? =$projectid?>">
+						<input type="hidden" name="projectid" value="<?=$projectid?>">
 
 						<div class="ui fluid labeled input">
 							<div class="ui label">
@@ -530,7 +530,7 @@
 										else
 											$selected = "";
 										?>
-										<option value="<? =$project_id?>" <? =$selected?>><? =$project_name?> (<? =$project_costcenter?>)</option>
+										<option value="<?=$project_id?>" <?=$selected?>><?=$project_name?> (<?=$project_costcenter?>)</option>
 										<?
 									}
 								?>
@@ -580,7 +580,7 @@
 											
 											$seriesdesc = str_replace("<", "&lt;", $seriesdesc);
 											$seriesdesc = str_replace(">", "&gt;", $seriesdesc);
-											?><option value="<? =$seriesdesc?>" <? =$selected?>><? =$seriesdesc?><?
+											?><option value="<?=$seriesdesc?>" <?=$selected?>><?=$seriesdesc?><?
 										}
 										?>
 									</select>
@@ -614,7 +614,7 @@
 											
 											$seriesdesc = str_replace("<", "&lt;", $seriesdesc);
 											$seriesdesc = str_replace(">", "&gt;", $seriesdesc);
-											?><option value="<? =$seriesdesc?>" <? =$selected?>><? =$seriesdesc?><?
+											?><option value="<?=$seriesdesc?>" <?=$selected?>><?=$seriesdesc?><?
 										}
 										?>
 									</select>
@@ -648,7 +648,7 @@
 											
 											$seriesdesc = str_replace("<", "&lt;", $seriesdesc);
 											$seriesdesc = str_replace(">", "&gt;", $seriesdesc);
-											?><option value="<? =$seriesdesc?>" <? =$selected?>><? =$seriesdesc?><?
+											?><option value="<?=$seriesdesc?>" <?=$selected?>><?=$seriesdesc?><?
 										}
 										?>
 									</select>
@@ -679,7 +679,7 @@
 											if (trim($pipelineid) == trim($a['pipelineid']))
 												$selected = "selected";
 											?>
-											<option value="<? =$pipelineid?>" <? =$selected?>><? =$pipelinename?></option>
+											<option value="<?=$pipelineid?>" <?=$selected?>><?=$pipelinename?></option>
 											<?
 										}
 									?>
@@ -687,11 +687,11 @@
 								</div>
 								<div class="ui field">
 									Result name <i class="small blue question circle outline icon" title="For all text fields: Use * as a wildcard. Enclose strings in 'apostrophes' to search for exact match (or to match the * character). Separate multiple names with commas"></i>
-									<input type="text" name="pipelineresultname" id="pipelineresultname" value="<? =$a['pipelineresultname']?>" onChange="CheckForPipelineCriteria()">
+									<input type="text" name="pipelineresultname" id="pipelineresultname" value="<?=$a['pipelineresultname']?>" onChange="CheckForPipelineCriteria()">
 								</div>
 								<div class="ui field">
 									Get Datetime from Series. Enter series description <i class="small blue question circle outline icon" title="Try to obtain the date/time of the pipeline result from the series matching this value, instead of the StudyDateTime. Use * as a wildcard. Enclose strings in 'apostrophes' to search for exact match (or to match the * character). Separate multiple names with commas"></i>
-									<input type="text" name="pipelineseriesdatetime" id="pipelineseriesdatetime" value="<? =$a['pipelineseriesdatetime']?>" onChange="CheckForPipelineCriteria()" placeholder="Series description...">
+									<input type="text" name="pipelineseriesdatetime" id="pipelineseriesdatetime" value="<?=$a['pipelineseriesdatetime']?>" onChange="CheckForPipelineCriteria()" placeholder="Series description...">
 								</div>
 							</div>
 							
@@ -717,7 +717,7 @@
 														$selected = "selected";
 												if (trim($measurename) == trim($a['measurename']))
 													$selected = "selected";
-												?><option value="<? =$measurename?>" <? =$selected?>><? =$measurename?><?
+												?><option value="<?=$measurename?>" <?=$selected?>><?=$measurename?><?
 											}
 										}
 									?>
@@ -749,7 +749,7 @@
 													$selected = "selected";
 											if (trim($vitalname) == trim($a['vitalname']))
 												$selected = "selected";
-											?><option value="<? =$vitalname?>" <? =$selected?>><? =$vitalname?><?
+											?><option value="<?=$vitalname?>" <?=$selected?>><?=$vitalname?><?
 										}
 									?>
 									</select>
@@ -782,7 +782,7 @@
 													$selected = "selected";
 											if (trim($drugname) == trim($a['drugname']))
 												$selected = "selected";
-											?><option value="<? =$drugname?>" <? =$selected?>><? =$drugname?><?
+											?><option value="<?=$drugname?>" <?=$selected?>><?=$drugname?><?
 										}
 									?>
 									</select>
@@ -819,7 +819,7 @@
 														$selected = "selected";
 												if (trim($drugname) == trim($a['dosevariable']))
 													$selected = "selected";
-												?><option value="<? =$drugname?>" <? =$selected?>><? =$drugname?><?
+												?><option value="<?=$drugname?>" <?=$selected?>><?=$drugname?><?
 											}
 										?>
 										</select>
@@ -852,24 +852,24 @@
 						<h4 class="ui dividing blue header">Timeline Correlation</h4>
 						<div class="ui field">
 							<label>Pinned variable <i class="small blue question circle outline icon" title="From the selected variables above, this is the variable from which distance-in-time to all other selected variables will be calculated"></i></label>
-							<input name="pinnedvariable" value="<? =$a['pinnedvariable']?>">
+							<input name="pinnedvariable" value="<?=$a['pinnedvariable']?>">
 						</div>
 						<div class="ui field">
 							<label>Distance variable <i class="small blue question circle outline icon" title="From the selected variables above, this is the variable to which distance-in-time from the pinned variable will be calculated"></i></label>
-							<input name="distancevariable" value="<? =$a['distancevariable']?>">
+							<input name="distancevariable" value="<?=$a['distancevariable']?>">
 						</div>
 						
 						<h4 class="ui dividing blue header">Grouping Options</h4>
 						<div class="ui checkbox">
 							<input type="checkbox" name="groupbydate" value="1" <? if ($a['groupbydate']) echo "checked"; ?>>
-							<label>Group by event DATE <i class="small blue question circle outline icon" title="Group output rows by UID, then <i>date</i> [<? =date('Y-m-d')?>], not date<u>time</u> [<? =date('Y-m-d H:i:s')?>]."></i></label>
+							<label>Group by event DATE <i class="small blue question circle outline icon" title="Group output rows by UID, then <i>date</i> [<?=date('Y-m-d')?>], not date<u>time</u> [<?=date('Y-m-d H:i:s')?>]."></i></label>
 						</div>
 						<div class="ui inline fields">
 							<div class="ui checkbox">
 								<input type="checkbox" name="collapsevariables" value="1" <? if ($a['collapsevariables']) echo "checked"; ?>>
 								<label>Collapse variables <i class="small blue question circle outline icon" title="Expression to match a grouping, <i>by day</i>. For example, to collapse <tt>var1_xyz</tt>, <tt>var1_abc</tt>, <tt>var1_a</tt>, into 1 row and 3 columns, use <code style='color: #000'>var#_*</code>. <tt>#</tt> represents any integer number, and <tt>*</tt> represents any string."></i></label>
 							</div>
-							<input type="text" name="collapsebyexpression" value="<? =$a['collapsebyexpression']?>" placeholder="Collapse by expression...">
+							<input type="text" name="collapsebyexpression" value="<?=$a['collapsebyexpression']?>" placeholder="Collapse by expression...">
 						</div>
 
 						<h4 class="ui dividing blue header">Output Options</h4>
@@ -880,11 +880,11 @@
 						<br>
 						<div class="ui field">
 							<label>Blank value string <i class="small blue question circle outline icon" title="If a value exists, but the value is blank, display this string instead"></i></label>
-							<input name="blankvalueplaceholder" value="<? =$a['blankvalueplaceholder']?>" required>
+							<input name="blankvalueplaceholder" value="<?=$a['blankvalueplaceholder']?>" required>
 						</div>
 						<div class="ui field">
 							<label>Missing value string <i class="small blue question circle outline icon" title="If a value is missing, display this string instead"></i></label>
-							<input name="missingvalueplaceholder" value="<? =$a['missingvalueplaceholder']?>" placeholder="Missing value placeholder...">
+							<input name="missingvalueplaceholder" value="<?=$a['missingvalueplaceholder']?>" placeholder="Missing value placeholder...">
 						</div>
 						<div class="ui checkbox">
 							<input type="checkbox" name="includeduration" value="1" <? if ($a['includeduration']) echo "checked"; ?>>
@@ -934,7 +934,7 @@
 						<button class="ui fluid primary button" onClick="document.analysisbuilder.action.value='viewanalysissummary'; return;"><i class="search icon"></i>Update Summary</button>
 						<br><br>
 						<div class="ui fluid action input">
-							<input type="text" name="savedsearchname" placeholder="Saved search name..." value="<? =$a['savedsearchname']?>">
+							<input type="text" name="savedsearchname" placeholder="Saved search name..." value="<?=$a['savedsearchname']?>">
 							<button class="ui basic compact button" onClick="document.analysisbuilder.action.value='savesearch'; return;"><i class="save icon"></i> Save search</button>
 						</div>
 						</form>
@@ -962,7 +962,7 @@
 									<i class="dropdown icon"></i>Debug notes
 								</div>
 								<div class="content">
-									<pre class="tt" style="font-size: smaller"><? =$n?></pre>
+									<pre class="tt" style="font-size: smaller"><?=$n?></pre>
 								</div>
 							</div>
 							<?
@@ -2060,14 +2060,14 @@
 		}
 		
 		?>
-		<span style="padding-left: 15px">Displaying <b><? =$numrows?></b> rows by <b><? =$numcols?></b> columns</span>
+		<span style="padding-left: 15px">Displaying <b><?=$numrows?></b> rows by <b><?=$numcols?></b> columns</span>
 		<br><br>
 		<table class="summarytable">
 			<thead>
 				<tr>
 				<?
 				foreach ($h as $col) {
-					?><th><? =$col?></th><?
+					?><th><?=$col?></th><?
 				}
 				?>
 				</tr>
@@ -2086,7 +2086,7 @@
 									$disp = $a['missingvalueplaceholder'];
 								else
 									$disp = $t[$id][$col];
-							?><td><? =$disp?></td><?
+							?><td><?=$disp?></td><?
 						}
 					?>
 					</tr>

@@ -137,12 +137,12 @@
 			<h2 class="ui header">
 				<i class="puzzle piece icon"></i>
 				<div class="content">
-					<? =$modulename?>
+					<?=$modulename?>
 					<div class="sub header">
 					<? if ($module_isactive) {?>
-					<a href="adminmodules.php?action=disable&id=<? =$id?>" title="<b>Module is currently enabled.</b> Click to disable">Disable</a>
+					<a href="adminmodules.php?action=disable&id=<?=$id?>" title="<b>Module is currently enabled.</b> Click to disable">Disable</a>
 					<? } else { ?>
-					<a href="adminmodules.php?action=enable&id=<? =$id?>" title="<b>Module is currently disabled.</b> Click to enable">Enable</a>
+					<a href="adminmodules.php?action=enable&id=<?=$id?>" title="<b>Module is currently disabled.</b> Click to enable">Enable</a>
 					<? } ?>
 					</div>
 				</div>
@@ -175,23 +175,23 @@
 									<div class="ui header">
 										<div class="content">
 											<i class="dropdown icon"></i>
-											<? =$filename?>
-											<div class="sub header"><? =$filedate?> - <? =number_format($filesize,0)?> bytes</div>
+											<?=$filename?>
+											<div class="sub header"><?=$filedate?> - <?=number_format($filesize,0)?> bytes</div>
 										</div>
 									</div>
 								</div>
 								<div class="content">
 								<? if ($filesize < 1000000) {?>
-								<pre style="border: 1px solid #aaa; background-color: #eee; padding:5px; white-space: pre-wrap;"><? =htmlspecialchars(file_get_contents($filename))?></pre>
+								<pre style="border: 1px solid #aaa; background-color: #eee; padding:5px; white-space: pre-wrap;"><?=htmlspecialchars(file_get_contents($filename))?></pre>
 								<? } else { ?>
 									File larger than 1MB, showing the first 500,000 bytes and the last 500,000 bytes<br><pre style="border: 1px solid #aaa; background-color: #eee; padding:5px">
-	<? =htmlspecialchars(file_get_contents($filename, null,null,0,500000))?>
+	<?=htmlspecialchars(file_get_contents($filename, null,null,0,500000))?>
 									
 									
 			... ... ...
 									
 									
-	<? =htmlspecialchars(file_get_contents($filename, null,null,$filesize-500000))?>
+	<?=htmlspecialchars(file_get_contents($filename, null,null,$filesize-500000))?>
 								</pre>
 								<?
 								}
@@ -355,31 +355,31 @@
 						if (!$module_isactive) { $rowclass = ""; } else { $rowclass = "positive"; }
 				?>
 				<tr>
-					<td class="<? =$rowclass?>"><h3 class="header"><? =$module_name?></h3></td>
-					<td><a href="adminmodules.php?action=viewlogs&modulename=<? =$module_name?>" class="ui button"><i class="file alternate outline icon"></i> View logs</a></td>
-					<td style="color: <? =$color?>">
-						<? =$module_status?> <? if (($module_status == "running") || ($module_numrunning != 0)) { ?> <a href="adminmodules.php?action=reset&id=<? =$id?>" class="ui small yellow button">reset</a> <? } ?>
+					<td class="<?=$rowclass?>"><h3 class="header"><?=$module_name?></h3></td>
+					<td><a href="adminmodules.php?action=viewlogs&modulename=<?=$module_name?>" class="ui button"><i class="file alternate outline icon"></i> View logs</a></td>
+					<td style="color: <?=$color?>">
+						<?=$module_status?> <? if (($module_status == "running") || ($module_numrunning != 0)) { ?> <a href="adminmodules.php?action=reset&id=<?=$id?>" class="ui small yellow button">reset</a> <? } ?>
 					</td>
-					<td><? =$module_numrunning?></td>
-					<td><? =$module_laststop?></td>
-					<td><? =$runtime?></td>
+					<td><?=$module_numrunning?></td>
+					<td><?=$module_laststop?></td>
+					<td><?=$runtime?></td>
 					<td>
 						<?
 							if ($module_isactive) {
-								?><a href="adminmodules.php?action=disable&id=<? =$id?>" title="<b>Enabled.</b> Click to disable"><i class="big green toggle on icon"></i></a><?
+								?><a href="adminmodules.php?action=disable&id=<?=$id?>" title="<b>Enabled.</b> Click to disable"><i class="big green toggle on icon"></i></a><?
 							}
 							else {
-								?><a href="adminmodules.php?action=enable&id=<? =$id?>" title="<b>Disabled.</b> Click to enable"><i class="big grey horizontally flipped toggle on icon"></i></a><?
+								?><a href="adminmodules.php?action=enable&id=<?=$id?>" title="<b>Disabled.</b> Click to enable"><i class="big grey horizontally flipped toggle on icon"></i></a><?
 							}
 						?>
 					</td>
 					<td>
 						<?
 							if ($module_debug) {
-								?><a href="adminmodules.php?action=nodebug&id=<? =$id?>" title="<b>Enabled.</b> Click to disable"><i class="big green toggle on icon"></i></a><?
+								?><a href="adminmodules.php?action=nodebug&id=<?=$id?>" title="<b>Enabled.</b> Click to disable"><i class="big green toggle on icon"></i></a><?
 							}
 							else {
-								?><a href="adminmodules.php?action=debug&id=<? =$id?>" title="<b>Disabled.</b> Click to enable"><i class="big grey horizontally flipped toggle on icon"></i></a><?
+								?><a href="adminmodules.php?action=debug&id=<?=$id?>" title="<b>Disabled.</b> Click to enable"><i class="big grey horizontally flipped toggle on icon"></i></a><?
 							}
 						?>
 					</td>
@@ -402,8 +402,8 @@
 							
 							?>
 							<tr style="font-size: 9pt">
-								<td colspan="4"> &nbsp; &nbsp; &nbsp;<? =$module_name?>:<? =$pid?></td>
-								<td colspan="3" style="background-color: <? =$timecolor?>">Checked in <? =$lastcheckin?> &nbsp; (<? =$timediff2?> ago)</td>
+								<td colspan="4"> &nbsp; &nbsp; &nbsp;<?=$module_name?>:<?=$pid?></td>
+								<td colspan="3" style="background-color: <?=$timecolor?>">Checked in <?=$lastcheckin?> &nbsp; (<?=$timediff2?> ago)</td>
 							</tr>
 							<?
 						}

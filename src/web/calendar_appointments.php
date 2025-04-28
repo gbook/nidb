@@ -300,7 +300,7 @@
 					// if ($total > $alloc_hours) {
 						// ?>
 						<!-- <div align="center" style="border:orange 1px solid; background: lightyellow">
-						// This appointment exceeds the allocation of <? =$alloc_hours?> hours per <? =$alloc_days?> for this project. Before adding this appointment, the project is using <? =$total?> hours within a <? =$alloc_days?> day span of time centered at <? =$startdatetime?>
+						// This appointment exceeds the allocation of <?=$alloc_hours?> hours per <?=$alloc_days?> for this project. Before adding this appointment, the project is using <?=$total?> hours within a <?=$alloc_days?> day span of time centered at <?=$startdatetime?>
 						</div> -->
 						<?
 					// }
@@ -550,22 +550,22 @@
 		<a href="calendar.php" class="ui button"><i class="arrow alternate circle left icon"></i> Back to calendar</a><br>
 		
 		<form action="calendar_appointments.php" method="post" id="form1" name="form1">
-		<input type="hidden" name="action" value="<? =$type?>">
-		<input type="hidden" name="id" value="<? =$id?>">
-		<input type="hidden" name="groupid" value="<? =$groupid?>">
+		<input type="hidden" name="action" value="<?=$type?>">
+		<input type="hidden" name="id" value="<?=$id?>">
+		<input type="hidden" name="groupid" value="<?=$groupid?>">
 		
 		<table cellspacing="0" cellpadding="5" class="editor">
 			<tr>
-				<td colspan="3" style="color: darkblue; font-size: 14pt; text-align:center; font-weight: bold"><? =$pagetitle?></td>
+				<td colspan="3" style="color: darkblue; font-size: 14pt; text-align:center; font-weight: bold"><?=$pagetitle?></td>
 			</tr>
 			<tr>
-				<td colspan="2" align="center" style="color:red"><? =$message?><? if ($message != "") { ?><br><br><img src="images/ruhroh.gif" width="20%"><? } ?></td>
+				<td colspan="2" align="center" style="color:red"><?=$message?><? if ($message != "") { ?><br><br><img src="images/ruhroh.gif" width="20%"><? } ?></td>
 			</tr>
 			<tr>
 				<td class="label">Title</td>
 				<td class="rightvalue">
 					<div class="ui input">
-						<input type="text" name="title" size="47" value="<? =$title?>">
+						<input type="text" name="title" size="47" value="<?=$title?>">
 					</div>
 				</td>
 			</tr>
@@ -576,36 +576,36 @@
 						<tr>
 							<td>
 								<div class="ui input">
-									<input type="text" name="startdate" size="12" value="<? =$startdate?>" <? if ($repeats) { echo "disabled"; } ?>>
+									<input type="text" name="startdate" size="12" value="<?=$startdate?>" <? if ($repeats) { echo "disabled"; } ?>>
 								</div>
 							</td>
 							<td>
-								<!--<input type="text" name="starttime" size="10" value="<? =$starttime?>" <? if ($repeats) { echo "disabled"; } ?>>-->
+								<!--<input type="text" name="starttime" size="10" value="<?=$starttime?>" <? if ($repeats) { echo "disabled"; } ?>>-->
 								<select class="ui dropdown" name="starttime" style="width: 100px" <? if ($repeats) { echo "disabled"; } ?>>
 									<?
 										$hours = array(12,1,2,3,4,5,6,7,8,9,10,11);
 										foreach ($hours as $hr) {
 											if ($starttime == "$hr:00am") { $selected = "selected"; } else { $selected = "";}
 											?>
-											<option value="<? ="$hr:00am"?>" style="color: black; background-color: lightyellow" <? =$selected?>><? ="$hr:00am"?></option>
+											<option value="<?="$hr:00am"?>" style="color: black; background-color: lightyellow" <?=$selected?>><?="$hr:00am"?></option>
 											<? if ($starttime == "$hr:15am") { $selected = "selected"; } else { $selected = "";} ?>
-											<option value="<? ="$hr:15am"?>" style="color: gray" <? =$selected?>><? ="$hr:15am"?></option>
+											<option value="<?="$hr:15am"?>" style="color: gray" <?=$selected?>><?="$hr:15am"?></option>
 											<? if ($starttime == "$hr:30am") { $selected = "selected"; } else { $selected = "";} ?>
-											<option value="<? ="$hr:30am"?>" style="color: gray" <? =$selected?>><? ="$hr:30am"?></option>
+											<option value="<?="$hr:30am"?>" style="color: gray" <?=$selected?>><?="$hr:30am"?></option>
 											<? if ($starttime == "$hr:45am") { $selected = "selected"; } else { $selected = "";} ?>
-											<option value="<? ="$hr:45am"?>" style="color: gray" <? =$selected?>><? ="$hr:45am"?></option>
+											<option value="<?="$hr:45am"?>" style="color: gray" <?=$selected?>><?="$hr:45am"?></option>
 											<?
 										}
 										foreach ($hours as $hr) {
 											if ($starttime == "$hr:00pm") { $selected = "selected"; } else { $selected = "";}
 											?>
-											<option value="<? ="$hr:00pm"?>" style="color: black; background-color: lightyellow" <? =$selected?>><? ="$hr:00pm"?></option>
+											<option value="<?="$hr:00pm"?>" style="color: black; background-color: lightyellow" <?=$selected?>><?="$hr:00pm"?></option>
 											<? if ($starttime == "$hr:15pm") { $selected = "selected"; } else { $selected = "";} ?>
-											<option value="<? ="$hr:15pm"?>" style="color: gray" <? =$selected?>><? ="$hr:15pm"?></option>
+											<option value="<?="$hr:15pm"?>" style="color: gray" <?=$selected?>><?="$hr:15pm"?></option>
 											<? if ($starttime == "$hr:30pm") { $selected = "selected"; } else { $selected = "";} ?>
-											<option value="<? ="$hr:30pm"?>" style="color: gray" <? =$selected?>><? ="$hr:30pm"?></option>
+											<option value="<?="$hr:30pm"?>" style="color: gray" <?=$selected?>><?="$hr:30pm"?></option>
 											<? if ($starttime == "$hr:45pm") { $selected = "selected"; } else { $selected = "";} ?>
-											<option value="<? ="$hr:45pm"?>" style="color: gray" <? =$selected?>><? ="$hr:45pm"?></option>
+											<option value="<?="$hr:45pm"?>" style="color: gray" <?=$selected?>><?="$hr:45pm"?></option>
 											<?
 										}
 									?>
@@ -630,36 +630,36 @@
 						<tr>
 							<td>
 								<div class="ui input">
-									<input type="text" name="enddate" size="12" value="<? =$enddate?>" <? if ($repeats) { echo "disabled"; } ?>>
+									<input type="text" name="enddate" size="12" value="<?=$enddate?>" <? if ($repeats) { echo "disabled"; } ?>>
 								</div>
 							</td>
 							<td>
-								<!--<input type="text" name="endtime" size="10" value="<? =$endtime?>" <? if ($repeats) { echo "disabled"; } ?>>-->
+								<!--<input type="text" name="endtime" size="10" value="<?=$endtime?>" <? if ($repeats) { echo "disabled"; } ?>>-->
 								<select class="ui dropdown" name="endtime" style="width: 100px" <? if ($repeats) { echo "disabled"; } ?>>
 									<?
 										$hours = array(12,1,2,3,4,5,6,7,8,9,10,11);
 										foreach ($hours as $hr) {
 											if ($endtime == "$hr:00am") { $selected = "selected"; } else { $selected = "";}
 											?>
-											<option value="<? ="$hr:00am"?>" style="color: black; background-color: lightyellow" <? =$selected?>><? ="$hr:00am"?></option>
+											<option value="<?="$hr:00am"?>" style="color: black; background-color: lightyellow" <?=$selected?>><?="$hr:00am"?></option>
 											<? if ($endtime == "$hr:15am") { $selected = "selected"; } else { $selected = "";} ?>
-											<option value="<? ="$hr:15am"?>" style="color: gray" <? =$selected?>><? ="$hr:15am"?></option>
+											<option value="<?="$hr:15am"?>" style="color: gray" <?=$selected?>><?="$hr:15am"?></option>
 											<? if ($endtime == "$hr:30am") { $selected = "selected"; } else { $selected = "";} ?>
-											<option value="<? ="$hr:30am"?>" style="color: gray" <? =$selected?>><? ="$hr:30am"?></option>
+											<option value="<?="$hr:30am"?>" style="color: gray" <?=$selected?>><?="$hr:30am"?></option>
 											<? if ($endtime == "$hr:45am") { $selected = "selected"; } else { $selected = "";} ?>
-											<option value="<? ="$hr:45am"?>" style="color: gray" <? =$selected?>><? ="$hr:45am"?></option>
+											<option value="<?="$hr:45am"?>" style="color: gray" <?=$selected?>><?="$hr:45am"?></option>
 											<?
 										}
 										foreach ($hours as $hr) {
 											if ($endtime == "$hr:00pm") { $selected = "selected"; } else { $selected = "";}
 											?>
-											<option value="<? ="$hr:00pm"?>" style="color: black; background-color: lightyellow" <? =$selected?>><? ="$hr:00pm"?></option>
+											<option value="<?="$hr:00pm"?>" style="color: black; background-color: lightyellow" <?=$selected?>><?="$hr:00pm"?></option>
 											<? if ($endtime == "$hr:15pm") { $selected = "selected"; } else { $selected = "";} ?>
-											<option value="<? ="$hr:15pm"?>" style="color: gray" <? =$selected?>><? ="$hr:15pm"?></option>
+											<option value="<?="$hr:15pm"?>" style="color: gray" <?=$selected?>><?="$hr:15pm"?></option>
 											<? if ($endtime == "$hr:30pm") { $selected = "selected"; } else { $selected = "";} ?>
-											<option value="<? ="$hr:30pm"?>" style="color: gray" <? =$selected?>><? ="$hr:30pm"?></option>
+											<option value="<?="$hr:30pm"?>" style="color: gray" <?=$selected?>><?="$hr:30pm"?></option>
 											<? if ($endtime == "$hr:45pm") { $selected = "selected"; } else { $selected = "";} ?>
-											<option value="<? ="$hr:45pm"?>" style="color: gray" <? =$selected?>><? ="$hr:45pm"?></option>
+											<option value="<?="$hr:45pm"?>" style="color: gray" <?=$selected?>><?="$hr:45pm"?></option>
 											<?
 										}
 									?>
@@ -689,7 +689,7 @@
 							$name = $row['calendar_name'];
 							if ($calid == $calendarid) { $selected = "selected"; } else { $selected = ""; }
 					?>
-						<option value="<? =$calid?>" <? =$selected?>><? =$name?>
+						<option value="<?=$calid?>" <?=$selected?>><?=$name?>
 					<?
 						}
 					?>
@@ -708,7 +708,7 @@
 							$name = $row['project_name'];
 							if ($prjid == $projectid) { $selected = "selected"; } else { $selected = ""; }
 					?>
-						<option value="<? =$prjid?>" <? =$selected?>><? =$name?>
+						<option value="<?=$prjid?>" <?=$selected?>><?=$name?>
 					<?
 						}
 					?>
@@ -719,18 +719,18 @@
 				<td class="label">Options</td>
 				<td class="rightvalue">
 					<div class="ui checkbox" style="margin-bottom: 5px">
-						<input type="checkbox" name="isalldayevent" value="yes" <? =$isalldayeventcheck?>><label>All day event</label>
+						<input type="checkbox" name="isalldayevent" value="yes" <?=$isalldayeventcheck?>><label>All day event</label>
 					</div>
 					<br>
 					<div class="ui checkbox">
-						<input type="checkbox" name="istimerequest" value="yes" <? =$istimerequestcheck?>><label>Time Request ONLY</label>
+						<input type="checkbox" name="istimerequest" value="yes" <?=$istimerequestcheck?>><label>Time Request ONLY</label>
 					</div>
 				</td>
 			</tr>
 			<tr>
 				<td class="label">Details</td>
 				<td class="rightvalue">
-					<textarea name="details" cols="35" rows="4"><? =$details?></textarea>
+					<textarea name="details" cols="35" rows="4"><?=$details?></textarea>
 				</td>
 			</tr>
 			<? if ($type == "add") { ?>
@@ -738,7 +738,7 @@
 				<td class="label">Recurring appointment</td>
 				<td class="rightvalue">
 					<div class="ui checkbox">
-						<input type="checkbox" name="repeats" value="yes" <? =$apptrepeatscheck?>><label>Appointment repeats?</label><br>
+						<input type="checkbox" name="repeats" value="yes" <?=$apptrepeatscheck?>><label>Appointment repeats?</label><br>
 					</div>
 					<table class="editor" style="padding-left: 20px">
 						<tr>
@@ -791,7 +791,7 @@
 							<td><select name="repeatdayofmonth" class="ui dropdown">
 							<?
 								for ($i=1;$i<=31;$i++) {
-									?><option value="<? =$i?>"><? =$i?><?
+									?><option value="<?=$i?>"><?=$i?><?
 								}
 							?>
 							</select> of each month
@@ -802,7 +802,7 @@
 								<br><br>
 								<b style="color:darkblue">Until</b> &nbsp;
 								<div class="ui input">
-									<input type="text" name="repeatenddate" size="12" value="<? =$enddate?>">
+									<input type="text" name="repeatenddate" size="12" value="<?=$enddate?>">
 								</div>
 								<span class="tiny">YYYY-MM-DD</span>
 							</td>
@@ -817,7 +817,7 @@
 			<input type="submit" value="Update this only" name="submit" onClick="document.form1.action.value = 'edit';" class="ui primary button">
 			<input type="submit" value="Update series" name="submit" onClick="document.form1.action.value = 'editall';" class="ui primary button">
 		<?	} else { ?>
-			<input type="submit" value="<? =$submitbutton?>" name="submit" class="ui primary button">
+			<input type="submit" value="<?=$submitbutton?>" name="submit" class="ui primary button">
 		<?	} ?>
 		</p>
 		</form>
@@ -839,7 +839,7 @@
 				<tr>
 					<form action="calendar_appointments.php" method="post" id="form2">
 					<input type="hidden" name="action" value="cancel">
-					<input type="hidden" name="id" value="<? =$id?>">
+					<input type="hidden" name="id" value="<?=$id?>">
 					<td>
 						<input type="submit" value="Cancel this only" onClick="return confirm('You\'re sure you want to cancel this appointment?');" class="ui red button">
 					</td>
@@ -848,7 +848,7 @@
 					<?	if ($repeats) { ?>
 					<form action="calendar_appointments.php" method="post" id="form3">
 					<input type="hidden" name="action" value="cancelall">
-					<input type="hidden" name="id" value="<? =$id?>">
+					<input type="hidden" name="id" value="<?=$id?>">
 					<td>
 						<input type="submit" value="Cancel series" onClick="return confirm('You\'re sure you want to cancel this recurring appointment?');" class="ui red button">
 					</td>
@@ -864,7 +864,7 @@
 					
 					<form action="calendar_appointments.php" method="post" id="form4">
 					<input type="hidden" name="action" value="delete">
-					<input type="hidden" name="id" value="<? =$id?>">
+					<input type="hidden" name="id" value="<?=$id?>">
 					<td class="rightvalue">
 						<input type="submit" value="Delete this only" onClick="return confirm('You\'re for serious. You want to delete this appointment?');" class="ui red button">
 					</td>
@@ -873,7 +873,7 @@
 					<?	if ($repeats) { ?>
 					<form action="calendar_appointments.php" method="post" id="form5">
 					<input type="hidden" name="action" value="deleteall">
-					<input type="hidden" name="groupid" value="<? =$id?>">
+					<input type="hidden" name="groupid" value="<?=$id?>">
 					<td class="rightvalue">
 						<input type="submit" value="Delete series" onClick="return confirm('You\'re for serious. You want to delete this recurring appointment?');" class="ui red button">
 					</td>

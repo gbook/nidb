@@ -140,7 +140,7 @@
 				<div class="ten wide column" align="right">
 					<form action="templates.php" method="post" name="theform" id="theform">
 					<input type="hidden" name="action" value="createstudytemplate">
-					<input type="hidden" name="projectid" value="<? =$projectid?>">
+					<input type="hidden" name="projectid" value="<?=$projectid?>">
 					<div class="ui labeled action input">
 						<input type="text" name="newtemplatename" placeholder="New template name" required>
 						<select name="newtemplatemodality" class="ui selection dropdown" required>
@@ -148,7 +148,7 @@
 						<?
 							$modalities = GetModalityList();
 							foreach ($modalities as $modality) {
-								?><option value="<? =$modality?>"><? =$modality?></option><?
+								?><option value="<?=$modality?>"><?=$modality?></option><?
 							}
 						?>
 						</select>
@@ -178,8 +178,8 @@
 					$templatemodality = "(blank)";
 				?>
 				<tr>
-					<td><a href="templates.php?action=editstudytemplate&projectid=<? =$projectid?>&templateid=<? =$templateid?>"><? =$templatename?></td>
-					<td><? =$templatemodality?></td>
+					<td><a href="templates.php?action=editstudytemplate&projectid=<?=$projectid?>&templateid=<?=$templateid?>"><?=$templatename?></td>
+					<td><?=$templatemodality?></td>
 				</tr>
 				<?
 			}
@@ -214,7 +214,7 @@
 				<div class="column" align="right">
 					<form action="templates.php" method="post" name="theform" id="theform">
 					<input type="hidden" name="action" value="createprojecttemplate">
-					<input type="hidden" name="projectid" value="<? =$projectid?>">
+					<input type="hidden" name="projectid" value="<?=$projectid?>">
 					<div class="ui labeled action input">
 						<input type="text" name="newtemplatename" placeholder="New template name" required>
 						<button type="submit" value="Create Project Template" class="ui button primary"><i class="plus square outline icon"></i> Create Project Template</button>
@@ -261,11 +261,11 @@
 				
 				?>
 				<tr>
-					<td><a href="templates.php?action=editprojecttemplate&projectid=<? =$projectid?>&ptid=<? =$ptid?>"><? =$name?></td>
-					<td><? =$numstudies?></td>
-					<td><? =$numseries?></td>
-					<td><? =$createdate?></td>
-					<td><? =$modifydate?></td>
+					<td><a href="templates.php?action=editprojecttemplate&projectid=<?=$projectid?>&ptid=<?=$ptid?>"><?=$name?></td>
+					<td><?=$numstudies?></td>
+					<td><?=$numseries?></td>
+					<td><?=$createdate?></td>
+					<td><?=$modifydate?></td>
 				</tr>
 				<?
 			}
@@ -322,12 +322,12 @@
 		
 		<div class="ui text container">
 			<div class="ui attached visible message">
-				<div class="header"><b><? =$templatename?></b> - <? =$templatemodality?></div>
+				<div class="header"><b><?=$templatename?></b> - <?=$templatemodality?></div>
 			</div>
 			<form action="templates.php" method="post" name="theform" id="theform" class="ui form attached fluid segment">
 			<input type="hidden" name="action" value="updatestudytemplate">
-			<input type="hidden" name="projectid" value="<? =$projectid?>">
-			<input type="hidden" name="templateid" value="<? =$templateid?>">
+			<input type="hidden" name="projectid" value="<?=$projectid?>">
+			<input type="hidden" name="templateid" value="<?=$templateid?>">
 			<span class="tiny">Leave protocol blank to delete</span>
 			<table class="ui selectable grey compact table">
 				<thead>
@@ -345,8 +345,8 @@
 				$itemprotocol = $row['item_protocol'];
 				?>
 				<tr>
-					<td><? =$n++?></td>
-					<td><input type="text" name="itemprotocol[]" value="<? =$itemprotocol?>" size="50"></td>
+					<td><?=$n++?></td>
+					<td><input type="text" name="itemprotocol[]" value="<?=$itemprotocol?>" size="50"></td>
 				</tr>
 				<?
 			}
@@ -354,7 +354,7 @@
 			for($i=0;$i<5;$i++) {
 				?>
 				<tr>
-					<td><? =$n++?></td>
+					<td><?=$n++?></td>
 					<td><input type="text" name="itemprotocol[]" value="" size="50"></td>
 				</tr>
 				<?
@@ -364,11 +364,11 @@
 			
 			<div class="ui two column grid">
 				<div class="column">
-					<input type="hidden" name="username" value="<? =$username?>">
-					<a class="ui red button" href="templates.php?action=deletestudytemplate&projectid=<? =$projectid?>&templateid=<? =$templateid?>"><i class="trash icon"></i>Delete</a>
+					<input type="hidden" name="username" value="<?=$username?>">
+					<a class="ui red button" href="templates.php?action=deletestudytemplate&projectid=<?=$projectid?>&templateid=<?=$templateid?>"><i class="trash icon"></i>Delete</a>
 				</div>
 				<div class="column" align="right">
-					<a class="ui button" href="templates.php?projectid=<? =$projectid?>">Back</a>
+					<a class="ui button" href="templates.php?projectid=<?=$projectid?>">Back</a>
 					<input type="submit" value="Save" class="ui button primary">
 				</div>
 			</div>
@@ -407,13 +407,13 @@
 		
 		<div class="ui container">
 			<div class="ui top attached visible message">
-			  <div class="header"><? =$templatename?></div>
+			  <div class="header"><?=$templatename?></div>
 			</div>
 
 		<form action="templates.php" method="post" name="theform" id="theform" class="ui form attached fluid segment">
 		<input type="hidden" name="action" value="updateprojecttemplate">
-		<input type="hidden" name="projectid" value="<? =$projectid?>">
-		<input type="hidden" name="ptid" value="<? =$ptid?>">
+		<input type="hidden" name="projectid" value="<?=$projectid?>">
+		<input type="hidden" name="ptid" value="<?=$ptid?>">
 		<span class="tiny">Leave protocol blank to delete</span>
 		<table class="ui selectable grey very compact table">
 			<thead>
@@ -443,7 +443,7 @@
 			$pts_notes = $row['pts_notes'];
 			?>
 			<tr>
-				<td><input type="text" name="visittype[]" value="<? =$pts_visittype?>"></td>
+				<td><input type="text" name="visittype[]" value="<?=$pts_visittype?>"></td>
 				<td>
 					<select name="modality[]">
 						<option value="">Select modality</option>
@@ -451,7 +451,7 @@
 							$modalities = GetModalityList();
 							foreach ($modalities as $modality) {
 								if ($modality == $pts_modality) { $checked = "selected"; } else { $checked = ""; }
-								?><option value="<? =$modality?>" <? =$checked?>><? =$modality?></option><?
+								?><option value="<?=$modality?>" <?=$checked?>><?=$modality?></option><?
 							}
 						?>
 					</select>
@@ -468,13 +468,13 @@
 						}
 						$str = implode2(", ", $p);
 					?>
-					<input type="text" name="protocols[]" value="<? =$str?>" size="60">
+					<input type="text" name="protocols[]" value="<?=$str?>" size="60">
 				</td>
-				<td><input type="text" name="studydesc[]" value="<? =$pts_desc?>"></td>
-				<td><input type="text" name="studyoperator[]" value="<? =$pts_operator?>"></td>
-				<td><input type="text" name="studyphysician[]" value="<? =$pts_physician?>"></td>
-				<td><input type="text" name="studysite[]" value="<? =$pts_site?>"></td>
-				<td><input type="text" name="studynotes[]" value="<? =$pts_notes?>"></td>
+				<td><input type="text" name="studydesc[]" value="<?=$pts_desc?>"></td>
+				<td><input type="text" name="studyoperator[]" value="<?=$pts_operator?>"></td>
+				<td><input type="text" name="studyphysician[]" value="<?=$pts_physician?>"></td>
+				<td><input type="text" name="studysite[]" value="<?=$pts_site?>"></td>
+				<td><input type="text" name="studynotes[]" value="<?=$pts_notes?>"></td>
 			</tr>
 			<?
 		}
@@ -488,7 +488,7 @@
 					<?
 						$modalities = GetModalityList();
 						foreach ($modalities as $modality) {
-							?><option value="<? =$modality?>"><? =$modality?></option><?
+							?><option value="<?=$modality?>"><?=$modality?></option><?
 						}
 					?>
 					</select>
@@ -508,11 +508,11 @@
 		</table>
 			<div class="ui two column grid">
 				<div class="column">
-					<input type="hidden" name="username" value="<? =$username?>">
-					<a class="ui red button" href="templates.php?action=deleteprojecttemplate&projectid=<? =$projectid?>&ptid=<? =$ptid?>" onclick="return confirm('Are you sure you want to delete this template?')"><i class="trash icon"></i>Delete</a>
+					<input type="hidden" name="username" value="<?=$username?>">
+					<a class="ui red button" href="templates.php?action=deleteprojecttemplate&projectid=<?=$projectid?>&ptid=<?=$ptid?>" onclick="return confirm('Are you sure you want to delete this template?')"><i class="trash icon"></i>Delete</a>
 				</div>
 				<div class="column" align="right">
-					<a class="ui button" href="templates.php?projectid=<? =$projectid?>">Back</a>
+					<a class="ui button" href="templates.php?projectid=<?=$projectid?>">Back</a>
 					<input type="submit" value="Save" class="ui button primary">
 				</div>
 			</div>

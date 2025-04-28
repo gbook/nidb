@@ -125,14 +125,14 @@
 	<input type="hidden" name="action" value="saveoptions">
 	<table class="editor">
 		<tr>
-			<td colspan="2" align="center" style="font-size: 12pt; border-bottom: 1px solid gray">User options for <b><? =$username?></b></td>
+			<td colspan="2" align="center" style="font-size: 12pt; border-bottom: 1px solid gray">User options for <b><?=$username?></b></td>
 		</tr>
 		<tr>
 			<td colspan="2">&nbsp;</td>
 		</tr>
 		<tr>
 			<td class="label">Email</td>
-			<td class="value"><input type="text" name="email" value="<? =$email?>"></td>
+			<td class="value"><input type="text" name="email" value="<?=$email?>"></td>
 		</tr>
 		<tr>
 			<td class="label">&nbsp;</td>
@@ -163,7 +163,7 @@
 						}
 					}
 					?>
-					<small><input type="checkbox" name="calendar_ids[]" value="<? =$calendar_id?>" <? =$checked?>> <b><? =$calendar_name?></b> - <? =$calendar_desc?> (<? =$calendar_loc?>)</small><br>
+					<small><input type="checkbox" name="calendar_ids[]" value="<?=$calendar_id?>" <?=$checked?>> <b><?=$calendar_name?></b> - <?=$calendar_desc?> (<?=$calendar_loc?>)</small><br>
 					<?
 				}
 			?>
@@ -198,7 +198,7 @@
 						}
 					}
 					?>
-					<small><input type="checkbox" name="project_ids[]" value="<? =$project_id?>" <? =$checked?>> <b><? =$project_name?></b> - <? =$project_desc?> (<? =$project_admin?>)</small><br>
+					<small><input type="checkbox" name="project_ids[]" value="<?=$project_id?>" <?=$checked?>> <b><?=$project_name?></b> - <?=$project_desc?> (<?=$project_admin?>)</small><br>
 					<?
 				}
 			?>

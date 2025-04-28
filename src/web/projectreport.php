@@ -119,7 +119,7 @@
 			
 			?>
 			<tr>
-				<td valign="top"><? =$modality?> - <? =$name?></td>
+				<td valign="top"><?=$modality?> - <?=$name?></td>
 			<?
 			$found = 0;
 			$foundinenroll = 0;
@@ -210,7 +210,7 @@
 			$name = $row2['protocolgroup_name'];
 			$modality = strtoupper($row2['protocolgroup_modality']);
 			?>
-			<th valign="top" align="left"><? =$name?> <span style="font-weight:normal;font-size:8pt;color:gray"><? =$modality?></span></th>
+			<th valign="top" align="left"><?=$name?> <span style="font-weight:normal;font-size:8pt;color:gray"><?=$modality?></span></th>
 			<?
 		}
 		?>
@@ -228,7 +228,7 @@
 			
 			?>
 				<tr>
-					<td class="label"><a href="subjects.php?id=<? =$subjectid?>"><? =$uid?></a></td>
+					<td class="label"><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
 			<?
 			/* get enrollment information */
 			$sqlstring1 = "select a.project_id 'projectid', a.*, b.*, c.*, enroll_startdate, enroll_enddate from enrollment a left join projects b on a.project_id = b.project_id left join subjects c on a.subject_id = c.subject_id where a.enrollment_id = $enrollmentid";
@@ -271,7 +271,7 @@
 				$modality = strtoupper($row2['protocolgroup_modality']);
 				
 				?>
-					<!--<td valign="top"><? =$modality?> - <? =$name?></td>-->
+					<!--<td valign="top"><?=$modality?> - <?=$name?></td>-->
 				<?
 				$found = 0;
 				$foundinenroll = 0;
@@ -311,14 +311,14 @@
 					if (($rowcount < $numtotal) && ($foundinenroll)) {
 						?>
 						<td valign="top" align="left" style="border-left: solid 1px #ddd; background-color: lightyellow">
-						<span style="color:#D57100"><? =$rowcount?></span>
+						<span style="color:#D57100"><?=$rowcount?></span>
 						</td>
 						<?
 					}
 					elseif ($foundinenroll) {
 						?>
 						<td valign="top" align="left" style="border-left: solid 1px #ddd; background-color: #E3F7E6">
-						<span style="color:green"><? =$rowcount?></span>
+						<span style="color:green"><?=$rowcount?></span>
 						</td>
 						<?
 					}
@@ -330,7 +330,7 @@
 								<span style="font-size:9pt">
 							<?
 								foreach ($foundlocations as $p => $enrollid) {
-									?><? =$p?> - <? =$foundlocations['projectname']?> <a href="studies.php?id=<? =$studyid?>"><? =$uid?><? =$studynum?></a><?
+									?><?=$p?> - <?=$foundlocations['projectname']?> <a href="studies.php?id=<?=$studyid?>"><?=$uid?><?=$studynum?></a><?
 								}
 							?>
 								</span>

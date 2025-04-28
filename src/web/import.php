@@ -61,7 +61,7 @@
 <html>
 	<head>
 		<link rel="icon" type="image/png" href="images/squirrel.png">
-		<title><? =$_SERVER['HTTP_HOST']?> - NiDB Import Data</title>
+		<title><?=$_SERVER['HTTP_HOST']?> - NiDB Import Data</title>
 	</head>
 
 <body>
@@ -294,7 +294,7 @@
 								$project_costcenter = $row['project_costcenter'];
 								if ($project_id == $searchvars['s_projectid']) { $selected = "selected"; } else { $selected = ""; }
 								?>
-								<option value="<? =$project_id?>" <? =$selected?>><? =$project_name?> (<? =$project_costcenter?>)</option>
+								<option value="<?=$project_id?>" <?=$selected?>><?=$project_name?> (<?=$project_costcenter?>)</option>
 								<?
 							}
 						?>
@@ -305,7 +305,7 @@
 				<td>
 					<div class="ui checkbox">
 						<input type="checkbox" value="1" name="searchthisinstance">
-						<label>Search only this instance (<? =$_SESSION['instancename']?>)</label>
+						<label>Search only this instance (<?=$_SESSION['instancename']?>)</label>
 					</div>
 					<br>
 					<div class="ui checkbox">
@@ -397,23 +397,23 @@
 						if ($subjectid == "") {
 							?>
 							<tr>
-								<td style="<? =$style?>; background-color: <? =$bgcolor?>; border-right: solid 1px #888"><? =$altid?></td>
-								<td style="<? =$style?>; background-color: <? =$bgcolor?>; border-right: solid 1px #888"><? =$deleted?></td>
-								<td style="<? =$style?>; background-color: <? =$bgcolor?>; border-right: solid 1px #888"><? =$altuid?></td>
-								<td style="<? =$style?>; background-color: <? =$bgcolor?>; border-right: solid 1px #888"></td>
-								<td colspan="2" style="<? =$style?>; background-color: <? =$bgcolor?>; border-right: solid 1px #888">Subject ID was blank [<? =$subjectid?>]</td>
+								<td style="<?=$style?>; background-color: <?=$bgcolor?>; border-right: solid 1px #888"><?=$altid?></td>
+								<td style="<?=$style?>; background-color: <?=$bgcolor?>; border-right: solid 1px #888"><?=$deleted?></td>
+								<td style="<?=$style?>; background-color: <?=$bgcolor?>; border-right: solid 1px #888"><?=$altuid?></td>
+								<td style="<?=$style?>; background-color: <?=$bgcolor?>; border-right: solid 1px #888"></td>
+								<td colspan="2" style="<?=$style?>; background-color: <?=$bgcolor?>; border-right: solid 1px #888">Subject ID was blank [<?=$subjectid?>]</td>
 							</tr>
 							<?
 						}
 						else {
 							?>
 							<tr>
-								<td style="<? =$style?>; background-color: <? =$bgcolor?>; border-right: solid 1px #888"><? =$altid?></td>
-								<td style="<? =$style?>; background-color: <? =$bgcolor?>; border-right: solid 1px #888"><? =$deleted?></td>
-								<td style="<? =$style?>; background-color: <? =$bgcolor?>; border-right: solid 1px #888"><? =$altuid?></td>
-								<td style="<? =$style?>; background-color: <? =$bgcolor?>; border-right: solid 1px #888"></td>
-								<td style="<? =$style?>; background-color: <? =$bgcolor?>; border-right: solid 1px #888"><a href="subjects.php?id=<? =$subjectid?>"><? =$uid?></a></td>
-								<td style="<? =$style?>; background-color: <? =$bgcolor?>; border-right: solid 1px #888"><? =$projectname?></td>
+								<td style="<?=$style?>; background-color: <?=$bgcolor?>; border-right: solid 1px #888"><?=$altid?></td>
+								<td style="<?=$style?>; background-color: <?=$bgcolor?>; border-right: solid 1px #888"><?=$deleted?></td>
+								<td style="<?=$style?>; background-color: <?=$bgcolor?>; border-right: solid 1px #888"><?=$altuid?></td>
+								<td style="<?=$style?>; background-color: <?=$bgcolor?>; border-right: solid 1px #888"></td>
+								<td style="<?=$style?>; background-color: <?=$bgcolor?>; border-right: solid 1px #888"><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
+								<td style="<?=$style?>; background-color: <?=$bgcolor?>; border-right: solid 1px #888"><?=$projectname?></td>
 							</tr>
 							<?
 						}
@@ -448,12 +448,12 @@
 							
 							?>
 							<tr>
-								<td style="<? =$style?>; background-color: <? =$bgcolor?>; border-right: solid 1px #888"><? =$altid?></td>
-								<td style="<? =$style?>; background-color: <? =$bgcolor?>; border-right: solid 1px #888"><? =$deleted?></td>
-								<td style="<? =$style?>; background-color: <? =$bgcolor?>; border-right: solid 1px #888"></td>
-								<td style="color:red; <? =$style?>; background-color: <? =$bgcolor?>; border-right: solid 1px #888"><? =$altuid?></td>
-								<td style="<? =$style?>; background-color: <? =$bgcolor?>; border-right: solid 1px #888"><a href="subjects.php?id=<? =$subjectid?>"><? =$uid?></a></td>
-								<td style="<? =$style?>; background-color: <? =$bgcolor?>; border-right: solid 1px #888"><? =$projectname?></td>
+								<td style="<?=$style?>; background-color: <?=$bgcolor?>; border-right: solid 1px #888"><?=$altid?></td>
+								<td style="<?=$style?>; background-color: <?=$bgcolor?>; border-right: solid 1px #888"><?=$deleted?></td>
+								<td style="<?=$style?>; background-color: <?=$bgcolor?>; border-right: solid 1px #888"></td>
+								<td style="color:red; <?=$style?>; background-color: <?=$bgcolor?>; border-right: solid 1px #888"><?=$altuid?></td>
+								<td style="<?=$style?>; background-color: <?=$bgcolor?>; border-right: solid 1px #888"><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
+								<td style="<?=$style?>; background-color: <?=$bgcolor?>; border-right: solid 1px #888"><?=$projectname?></td>
 							</tr>
 							<?
 							$newid = 0;
@@ -483,12 +483,12 @@
 							
 							?>
 							<tr>
-								<td style="border-top: solid 1pt #888; border-right: solid 1px #888"><? =$altid?></td>
-								<td style="border-top: solid 1pt #888; border-right: solid 1px #888"><? =$deleted?></td>
+								<td style="border-top: solid 1pt #888; border-right: solid 1px #888"><?=$altid?></td>
+								<td style="border-top: solid 1pt #888; border-right: solid 1px #888"><?=$deleted?></td>
 								<td style="color:green; border-top: solid 1pt #888; border-right: solid 1px #888"> </td>
 								<td style="color:green; border-top: solid 1pt #888; border-right: solid 1px #888"> </td>
-								<td style="border-top: solid 1pt #888; border-right: solid 1px #888"><a href="subjects.php?id=<? =$subjectid?>"><? =$uid?></a></td>
-								<td style="<? =$style?>; background-color: <? =$bgcolor?>; border-right: solid 1px #888"><? =$enrollcount?></td>
+								<td style="border-top: solid 1pt #888; border-right: solid 1px #888"><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
+								<td style="<?=$style?>; background-color: <?=$bgcolor?>; border-right: solid 1px #888"><?=$enrollcount?></td>
 							</tr>
 							<?
 						}
@@ -497,7 +497,7 @@
 							if (!$displayonlymatches) {
 								?>
 								<tr>
-									<td style="border-top: solid 1pt #888; border-right: solid 1px #888"><? =$altid?></td>
+									<td style="border-top: solid 1pt #888; border-right: solid 1px #888"><?=$altid?></td>
 									<td style="border-top: solid 1pt #888; border-right: solid 1px #888" colspan="5" align="center"> </td>
 								</tr>
 								<?
@@ -510,7 +510,7 @@
 		?>
 		</table>
 		<br>
-		Found <? =$numFound?> of <? =$numNotFound+$numFound?>
+		Found <?=$numFound?> of <?=$numNotFound+$numFound?>
 		<?
 	}
 
@@ -548,7 +548,7 @@
 			}
 		</script>
 		
-		<span style="color:#444">Uploading data to the <b><? =$GLOBALS['instancename']?></b> instance</span>
+		<span style="color:#444">Uploading data to the <b><?=$GLOBALS['instancename']?></b> instance</span>
 		<br>
 		<br>
 		<br>
@@ -572,7 +572,7 @@
 										<option value="">Select site...</option>
 										<?
 											$s = GetSiteList();
-											foreach ($s as $site) { ?><option value="<? =$site['id']?>"><? =$site['name']?></option><? }
+											foreach ($s as $site) { ?><option value="<?=$site['id']?>"><?=$site['name']?></option><? }
 										?>
 									</select>
 								</td>
@@ -584,7 +584,7 @@
 										<option value="">Select project...</option>
 										<?
 											$projects = GetProjectList();
-											foreach ($projects as $p) { ?><option value="<? =$p['projectid']?>"><? =$p['name']?> (<? =$p['costcenter']?>)</option><? }
+											foreach ($projects as $p) { ?><option value="<?=$p['projectid']?>"><?=$p['name']?> (<?=$p['costcenter']?>)</option><? }
 										?>
 									</select>
 								</td>
@@ -660,7 +660,7 @@
 		
 		<? //if ($_SESSION['enablebeta']) { ?>
 		<details>
-			<summary>Import non-DICOM Image Data <? =PrintBeta();?></summary>
+			<summary>Import non-DICOM Image Data <?=PrintBeta();?></summary>
 			<form action="import.php" id="nondicomform" method="post">
 			<input type="hidden" name="apiaction" value="uploadnondicom">
 			<div style="margin-left: 20px; padding:8px; border: 1px solid #ccc; border-radius:5px">
@@ -675,7 +675,7 @@
 										<option value="">Select site...</option>
 										<?
 											$s = GetSiteList();
-											foreach ($s as $site) { ?><option value="<? =$site['id']?>"><? =$site['name']?></option><? }
+											foreach ($s as $site) { ?><option value="<?=$site['id']?>"><?=$site['name']?></option><? }
 										?>
 									</select>
 								</td>
@@ -687,7 +687,7 @@
 										<option value="">Select project...</option>
 										<?
 											$projects = GetProjectList();
-											foreach ($projects as $p) { ?><option value="<? =$p['projectid']?>"><? =$p['name']?> (<? =$p['costcenter']?>)</option><? }
+											foreach ($projects as $p) { ?><option value="<?=$p['projectid']?>"><?=$p['name']?> (<?=$p['costcenter']?>)</option><? }
 										?>
 									</select>
 								</td>
@@ -881,7 +881,7 @@ question_num, question_text, datatype, values, comment</div>
 
 		<? if ($_SESSION['enablebeta']) { ?>
 		<details>
-			<summary>Import Assessment Data <? =PrintBeta();?></summary>
+			<summary>Import Assessment Data <?=PrintBeta();?></summary>
 			<div style="margin-left: 20px; padding:8px; border: 1px solid #ccc; border-radius:5px">
 			<table width="100%">
 				<tr>
@@ -899,7 +899,7 @@ question_num, question_text, datatype, values, comment</div>
 										<option value="">Select site...</option>
 										<?
 											$s = GetSiteList();
-											foreach ($s as $site) { ?><option value="<? =$site['id']?>"><? =$site['name']?></option><? }
+											foreach ($s as $site) { ?><option value="<?=$site['id']?>"><?=$site['name']?></option><? }
 										?>
 									</select>
 								</td>
@@ -911,7 +911,7 @@ question_num, question_text, datatype, values, comment</div>
 										<option value="">Select project...</option>
 										<?
 											$projects = GetProjectList();
-											foreach ($projects as $p) { ?><option value="<? =$p['projectid']?>"><? =$p['name']?> (<? =$p['costcenter']?>)</option><? }
+											foreach ($projects as $p) { ?><option value="<?=$p['projectid']?>"><?=$p['name']?> (<?=$p['costcenter']?>)</option><? }
 										?>
 									</select>
 								</td>
@@ -934,7 +934,7 @@ question_num, question_text, datatype, values, comment</div>
 		<? } ?>
 		
 		<details>
-			<summary>Import Measures (name/value pairs only) <? =PrintBeta();?></summary>
+			<summary>Import Measures (name/value pairs only) <?=PrintBeta();?></summary>
 			<div style="margin-left: 20px; padding:8px; border: 1px solid #ccc; border-radius:5px">
 			<table width="100%">
 				<tr>
@@ -949,7 +949,7 @@ question_num, question_text, datatype, values, comment</div>
 										<option value="">Select site...</option>
 										<?
 											$s = GetSiteList();
-											foreach ($s as $site) { ?><option value="<? =$site['id']?>"><? =$site['name']?></option><? }
+											foreach ($s as $site) { ?><option value="<?=$site['id']?>"><?=$site['name']?></option><? }
 										?>
 									</select>
 								</td>
@@ -961,7 +961,7 @@ question_num, question_text, datatype, values, comment</div>
 										<option value="">Select project...</option>
 										<?
 											$projects = GetProjectList();
-											foreach ($projects as $p) { ?><option value="<? =$p['projectid']?>"><? =$p['name']?> (<? =$p['costcenter']?>)</option><? }
+											foreach ($projects as $p) { ?><option value="<?=$p['projectid']?>"><?=$p['name']?> (<?=$p['costcenter']?>)</option><? }
 										?>
 									</select>
 								</td>
@@ -1122,11 +1122,11 @@ question_num, question_text, datatype, values, comment</div>
 			$createdate = $row['form_createdate'];
 			?>
 			<tr>
-				<td><a href="import.php?action=viewassessmentform&formid=<? =$id?>"><? =$title?></a></td>
-				<td><? =$desc?></td>
-				<td><? =$creator?></td>
-				<td><? =$createdate?></td>
-				<td><a href="import.php?action=viewassessmentformtemplate&formid=<? =$id?>">.csv</a></td>
+				<td><a href="import.php?action=viewassessmentform&formid=<?=$id?>"><?=$title?></a></td>
+				<td><?=$desc?></td>
+				<td><?=$creator?></td>
+				<td><?=$createdate?></td>
+				<td><a href="import.php?action=viewassessmentformtemplate&formid=<?=$id?>">.csv</a></td>
 			</tr>
 			<?
 		}
@@ -1495,7 +1495,7 @@ question_num, question_text, datatype, values, comment</div>
 			$c++;
 		}
 		?>
-		<li><span style="color: darkblue">Updated <? =$numupdated?> of <? =$c?> demographic rows</span> <span class="tiny">Some rows may already have been up to date</span>
+		<li><span style="color: darkblue">Updated <?=$numupdated?> of <?=$c?> demographic rows</span> <span class="tiny">Some rows may already have been up to date</span>
 		<?
 	}
 
@@ -1663,7 +1663,7 @@ question_num, question_text, datatype, values, comment</div>
 			$c++;
 		}
 		?>
-		<li><span style="color: darkblue">Updated <? =$numupdated?> of <? =$c?> demographic rows</span> <span class="tiny">Some rows may already have been up to date</span>
+		<li><span style="color: darkblue">Updated <?=$numupdated?> of <?=$c?> demographic rows</span> <span class="tiny">Some rows may already have been up to date</span>
 		<?
 	}
 	
@@ -1872,7 +1872,7 @@ question_num, question_text, datatype, values, comment</div>
 			}
 		}
 		?>
-		<li><span style="color: darkblue">Inserted <? =$c?> measure values</span>
+		<li><span style="color: darkblue">Inserted <?=$c?> measure values</span>
 		<?
 	}
 	
@@ -2065,10 +2065,10 @@ question_num, question_text, datatype, values, comment</div>
 		}
 		$csv .= "subjectUID, " . implode(', ',$orders) . "\n";
 		?>
-		Below is the .csv template for <b><? =$title?></b><br>
-		<span class="tiny"><? =$desc?></span><Br>
+		Below is the .csv template for <b><?=$title?></b><br>
+		<span class="tiny"><?=$desc?></span><Br>
 		
-		<textarea rows="35" cols="90"><? =$csv?></textarea>
+		<textarea rows="35" cols="90"><?=$csv?></textarea>
 		<?
 	}
 	
@@ -2095,10 +2095,10 @@ question_num, question_text, datatype, values, comment</div>
 		<br><br>
 		<table class="formentrytable">
 			<tr>
-				<td class="title" colspan="3"><? =$title?></td>
+				<td class="title" colspan="3"><?=$title?></td>
 			</tr>
 			<tr>
-				<td class="desc" colspan="3"><? =$desc?></td>
+				<td class="desc" colspan="3"><?=$desc?></td>
 			</tr>
 			<tr>
 				<td colspan="2">&nbsp;</td>
@@ -2121,22 +2121,22 @@ question_num, question_text, datatype, values, comment</div>
 					?>
 					<tr>
 						<? if ($formfield_datatype == "header") { ?>
-							<td colspan="2" class="sectionheader"><? =$formfield_desc?></td>
+							<td colspan="2" class="sectionheader"><?=$formfield_desc?></td>
 						<? } else { ?>
-							<td class="field"><? =$formfield_desc?></td>
+							<td class="field"><?=$formfield_desc?></td>
 							<td class="value">
 							<?
 								switch ($formfield_datatype) {
 									case "binary": ?><input type="file" name="value[]"><? break;
 									case "multichoice": ?>
-										<select multiple name="<? =$formfield_id?>-multichoice" style="height: 150px">
+										<select multiple name="<?=$formfield_id?>-multichoice" style="height: 150px">
 											<?
 												$values = explode(",", $formfield_values);
 												natsort($values);
 												foreach ($values as $value) {
 													$value = trim($value);
 												?>
-													<option value="<? =$value?>"><? =$value?></option>
+													<option value="<?=$value?>"><?=$value?></option>
 												<?
 												}
 											?>
@@ -2151,16 +2151,16 @@ question_num, question_text, datatype, values, comment</div>
 												foreach ($values as $value) {
 													$value = trim($value);
 												?>
-													<input type="radio"  name="<? =$formfield_id?>-singlechoice" value="<? =$value?>"><? =$value?>
+													<input type="radio"  name="<?=$formfield_id?>-singlechoice" value="<?=$value?>"><?=$value?>
 												<?
 													if ($formfield_haslinebreak) { echo "<br>"; } else { echo "&nbsp;"; }
 												}
 											?>
 									<? break;
-									case "date": ?><input type="date" name="<? =$formfield_id?>-date"><? break;
-									case "number": ?><input type="number" name="<? =$formfield_id?>-number"><? break;
-									case "string": ?><input type="text" name="<? =$formfield_id?>-string"><? break;
-									case "text": ?><textarea name="<? =$formfield_id?>-text"></textarea><? break;
+									case "date": ?><input type="date" name="<?=$formfield_id?>-date"><? break;
+									case "number": ?><input type="number" name="<?=$formfield_id?>-number"><? break;
+									case "string": ?><input type="text" name="<?=$formfield_id?>-string"><? break;
+									case "text": ?><textarea name="<?=$formfield_id?>-text"></textarea><? break;
 								}
 							?>
 						<? } ?>
@@ -2168,8 +2168,8 @@ question_num, question_text, datatype, values, comment</div>
 						<? if ($formfield_scored) {?>
 						<td><input type="text" size="2"></td>
 						<? } ?>
-						<td class="order"><? =$formfield_order?></td>
-						<!--<td class="order"><? =$formfield_id?></td>-->
+						<td class="order"><?=$formfield_order?></td>
+						<!--<td class="order"><?=$formfield_id?></td>-->
 					</tr>
 					<?
 				}

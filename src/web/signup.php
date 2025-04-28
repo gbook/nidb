@@ -93,7 +93,7 @@
 		<div align="center">
 		<br><br>
 		<b>Thank you for signing up</b><br><br>
-		An email has been sent to &lt;<? =$email?>&gt; with a link to activate your account.
+		An email has been sent to &lt;<?=$email?>&gt; with a link to activate your account.
 		</div>
 		<?
 	}
@@ -235,40 +235,40 @@
 							<tr>
 								<td colspan="2" align="center" style="font-size:10pt; color: #444">
 								<? if ($GLOBALS['cfg']['sitetype'] == "commercial") { ?>
-								<? =$GLOBALS['cfg']['sitename']?> is transitioning to an automated hosting service. In the meantime, instances must still be created manually. If you want to create a new instance, and therefore a new billing account, contact the site administrator after you create an NiDB login.
+								<?=$GLOBALS['cfg']['sitename']?> is transitioning to an automated hosting service. In the meantime, instances must still be created manually. If you want to create a new instance, and therefore a new billing account, contact the site administrator after you create an NiDB login.
 								<? } else { ?>
 								Fill out the information below. You will receive an email with a link to activate your account
 								<? } ?>
-								&nbsp;<small style="color: red"><? =$message?></small>
+								&nbsp;<small style="color: red"><?=$message?></small>
 								</td>
 							</tr>
 							<tr>
 								<td class="label">Name</td>
 								<td>
-									<input type="text" name="firstname" maxlength="50" required autofocus="autofocus" value="<? =$name?>" placeholder="First">&nbsp;<input type="text" name="midname" maxlength="1" style="width:20px" value="<? =$name?>" placeholder="M">&nbsp;<input type="text" name="lastname" maxlength="50" required value="<? =$name?>" placeholder="Last">
+									<input type="text" name="firstname" maxlength="50" required autofocus="autofocus" value="<?=$name?>" placeholder="First">&nbsp;<input type="text" name="midname" maxlength="1" style="width:20px" value="<?=$name?>" placeholder="M">&nbsp;<input type="text" name="lastname" maxlength="50" required value="<?=$name?>" placeholder="Last">
 								</td>
 							</tr>
 							<tr>
 								<td class="label">Email</td>
 								<td>
-									<input type="email" name="email" maxlength="50" size="50" required value="<? =$email?>">
+									<input type="email" name="email" maxlength="50" size="50" required value="<?=$email?>">
 								</td>
 							</tr>
 							<tr>
 								<td class="label">Institution</td>
 								<td>
-									<input type="text" name="institution" maxlength="50" size="50" required value="<? =$institution?>">
+									<input type="text" name="institution" maxlength="50" size="50" required value="<?=$institution?>">
 								</td>
 							</tr>
 							<tr>
 								<td class="label">Country</td>
 								<script>
 									$(document).ready(function() {
-										$("#country option[value='<? =$country?>']").attr("selected","selected");
+										$("#country option[value='<?=$country?>']").attr("selected","selected");
 									});
 								</script>
 								<td>
-									<!--<input type="text" name="country" maxlength="50" required value="<? =$country?>">-->
+									<!--<input type="text" name="country" maxlength="50" required value="<?=$country?>">-->
 									<select id="country" name="country">
 									<option value="AF">Afghanistan</option>
 									<option value="AX">Åland Islands</option>
@@ -575,7 +575,7 @@
 			<div align="center">
 			<table style="border: 1px solid #ccc; padding:5px">
 				<tr>
-					<td align="center" style="color: darkred"><? =$msg?></td>
+					<td align="center" style="color: darkred"><?=$msg?></td>
 					<td align="center" style="color: #555; font-size: 10pt">
 						<img id="captcha" src="scripts/securimage/securimage_show.php" alt="CAPTCHA Image" />
 						<br>

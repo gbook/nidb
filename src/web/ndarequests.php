@@ -83,7 +83,7 @@
 function showndauploads($projectid)
 {
 	if ((trim($projectid) == "") || ($projectid < 0)) {
-		?>Invalid or blank Project ID [<? =$projectid?>]<?
+		?>Invalid or blank Project ID [<?=$projectid?>]<?
 		return;
 	}
 ?>
@@ -111,10 +111,10 @@ function showndauploads($projectid)
 		<div class="ui black top attached segment">
 			<div class="ui two column very compact grid">
 				<div class="column">
-					<div class="ui header"><? =date("D M j, Y h:ia",strtotime($submitdate))?></div>
+					<div class="ui header"><?=date("D M j, Y h:ia",strtotime($submitdate))?></div>
 					<div class="ui meta">
-						<p><b>Requested By:</b> <? =$username?></p>
-						<button class="circular ui icon button"  id='<? =$b_name?>'>
+						<p><b>Requested By:</b> <?=$username?></p>
+						<button class="circular ui icon button"  id='<?=$b_name?>'>
 						  <i class="angle double down icon"></i>
 						</button>
 					</div>
@@ -129,15 +129,15 @@ function showndauploads($projectid)
 ?>
 					<form class="ui form" action="ndarequests.php" enctype="multipart/form-data" method="POST">
 						<input type="hidden" name="action" value="updatendainfo">
-						<input type="hidden" name="projectid" value="<? =$projectid?>">
-						<input type="hidden" name="exportid" value="<? =$exportid?>">
+						<input type="hidden" name="projectid" value="<?=$projectid?>">
+						<input type="hidden" name="exportid" value="<?=$exportid?>">
 						<div class="inline field">
 							<label><b>NDA Project Number:</b></label>
-							<input type="text" name="ndaprojectnumber" value="<? =$ndaprojectnumber?>">
+							<input type="text" name="ndaprojectnumber" value="<?=$ndaprojectnumber?>">
 						</div>
                 	                	<div class="inline field">
 						<label><b>NDA Submission Id:</b></label>
-	                                       		<input type="text"  name="ndasubmissionid" value="<? =$ndasubmissionid?>">
+	                                       		<input type="text"  name="ndasubmissionid" value="<?=$ndasubmissionid?>">
 						</div>
 <?                                      $sqlstrcsv = "SELECT csv_file  FROM project_nda_uploads WHERE project_id=$projectid and export_id=$exportid";
 					$resultcsv = MySQLiQuery($sqlstrcsv, __FILE__, __LINE__);
@@ -155,7 +155,7 @@ function showndauploads($projectid)
 						</div>
 						<div class="inline field">
 							 <label><b>Download existing NDA CSV File:</b></label>
-							<a href="ndarequests.php?action=downloadcsv&projectid=<? =$projectid?>&exportid=<? =$exportid?>">
+							<a href="ndarequests.php?action=downloadcsv&projectid=<?=$projectid?>&exportid=<?=$exportid?>">
 							Download >>><i class="download icon"></i>
 							</a>
 						</div>
@@ -176,7 +176,7 @@ function showndauploads($projectid)
                                 </div>
 			</div>
 		</div>
-		<table class="ui bottom attached celled grey table" id='<? =$t_name?>' hidden>
+		<table class="ui bottom attached celled grey table" id='<?=$t_name?>' hidden>
                   <thead>
                       <th align="left">Subject ID</th>
                       <th align="left">Study ID</th>
@@ -221,24 +221,24 @@ function showndauploads($projectid)
 				}
 ?>
                           <tr>
-                            <td><? =$uid?></td>
-			    <td><? ="$uid$studynum"?></td>
-                            <td><? =$seriesnum?> - <? =$seriesdesc?></td>
-                            <td class="right aligned"><? =number_format($seriessize)?></td>
-                            <td class="<? =$class?>"> <? =ucfirst($status)?></td>
+                            <td><?=$uid?></td>
+			    <td><?="$uid$studynum"?></td>
+                            <td><?=$seriesnum?> - <?=$seriesdesc?></td>
+                            <td class="right aligned"><?=number_format($seriessize)?></td>
+                            <td class="<?=$class?>"> <?=ucfirst($status)?></td>
                           </tr>
 			 <?}?>			
 		</table>
 			<script>
 			        // JavaScript for toggling the table
-			        const <? =$b_name?> = document.getElementById('<? =$b_name?>');
-			        const <? =$t_name?>= document.getElementById('<? =$t_name?>');
+			        const <?=$b_name?> = document.getElementById('<?=$b_name?>');
+			        const <?=$t_name?>= document.getElementById('<?=$t_name?>');
 
-			        <? =$b_name?>.addEventListener('click', function() {
-			            if (<? =$t_name?>.style.display === 'none' || <? =$t_name?>.style.display === '') {
-					<? =$t_name?>.style.display = 'table'; // Show the table
+			        <?=$b_name?>.addEventListener('click', function() {
+			            if (<?=$t_name?>.style.display === 'none' || <?=$t_name?>.style.display === '') {
+					<?=$t_name?>.style.display = 'table'; // Show the table
 			            } else {
-			                <? =$t_name?>.style.display = 'none'; // Hide the table
+			                <?=$t_name?>.style.display = 'none'; // Hide the table
 			            }
 				});
 
@@ -256,7 +256,7 @@ function showndauploads($projectid)
 function UpdateNdaSubmission($projectid,$exportid,$ndaprojectnumber,$ndasubmissionid,$file)
 {
 	if ((trim($projectid) == "") || ($projectid < 0)) {
-                ?>Invalid or blank Project ID [<? =$projectid?>]<?
+                ?>Invalid or blank Project ID [<?=$projectid?>]<?
                 return;
 	}
 
@@ -356,7 +356,7 @@ function getexportid($projectid,$desttype)
 {
 
 	if ((trim($projectid) == "") || ($projectid < 0)) {
-		?>Invalid or blank Project ID [<? =$projectid?>]<?
+		?>Invalid or blank Project ID [<?=$projectid?>]<?
 		return;
 	}
 

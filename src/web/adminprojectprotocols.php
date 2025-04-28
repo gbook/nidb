@@ -118,7 +118,7 @@
 		<tbody>
 			<form action="adminprojectprotocols.php" method="post">
 			<input type="hidden" name="action" value="addprotocol">
-			<input type="hidden" name="projectid" value="<? =$projectid?>">
+			<input type="hidden" name="projectid" value="<?=$projectid?>">
 			<tr>
 				<td style="border-bottom: solid 2px gray"><select name="protocolgroupid" required>
 					<option value="">(Select protocol group)</option>
@@ -157,12 +157,12 @@
 					$name = $row['protocolgroup_name'];
 					$modality = strtoupper($row['protocolgroup_modality']);
 				?>
-				<tr style="<? =$style?>">
-					<td><a href="adminmodalities.php?action=editprotocolgroups&id=<? =$protocolgroupid?>" target="_top"><? =$modality?></a> - <? =$name?></td>
-					<td><? =$criteria?></td>
-					<td><? =$numpersession?></td>
-					<td><? =$numtotal?></td>
-					<td><a class="ui red button" href="adminprojectprotocols.php?action=deleteprotocol&projectprotocolid=<? =$projectprotocolid?>&projectid=<? =$projectid?>" style="color: darkred" onclick="return confirm('Are you sure you want to delete this?')"><i class="trash icon"></i></a></td>
+				<tr style="<?=$style?>">
+					<td><a href="adminmodalities.php?action=editprotocolgroups&id=<?=$protocolgroupid?>" target="_top"><?=$modality?></a> - <?=$name?></td>
+					<td><?=$criteria?></td>
+					<td><?=$numpersession?></td>
+					<td><?=$numtotal?></td>
+					<td><a class="ui red button" href="adminprojectprotocols.php?action=deleteprotocol&projectprotocolid=<?=$projectprotocolid?>&projectid=<?=$projectid?>" style="color: darkred" onclick="return confirm('Are you sure you want to delete this?')"><i class="trash icon"></i></a></td>
 				</tr>
 				<? 
 				}

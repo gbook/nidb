@@ -87,7 +87,7 @@
 					
 					?>
 					<tr>
-						<td align="right" class="left"><? =$modality?></td>
+						<td align="right" class="left"><?=$modality?></td>
 					<?
 					$years = array();
 					/* get the range of years that studies have occured */
@@ -98,7 +98,7 @@
 					}
 					foreach ($years as $year) {
 					?>
-						<td class="right"><a href="reports.php?action=yearstudy&year=<? =$year?>&modality=<? =$modality?>"><? =$year?></a></td>
+						<td class="right"><a href="reports.php?action=yearstudy&year=<?=$year?>&modality=<?=$modality?>"><?=$year?></a></td>
 					<? } ?>
 					</tr>
 					<?
@@ -123,7 +123,7 @@
 					
 					?>
 					<tr>
-						<td align="right" class="left"><? =$studysite?></td>
+						<td align="right" class="left"><?=$studysite?></td>
 					<?
 					$years = array();
 					/* get the range of years that studies have occured */
@@ -134,7 +134,7 @@
 					}
 					foreach ($years as $year) {
 					?>
-						<td class="right"><a href="reports.php?action=yearstudy&year=<? =$year?>&studysite=<? =$studysite?>"><? =$year?></a></td>
+						<td class="right"><a href="reports.php?action=yearstudy&year=<?=$year?>&studysite=<?=$studysite?>"><?=$year?></a></td>
 					<? } ?>
 					</tr>
 					<?
@@ -196,7 +196,7 @@
 		?>
 		<br><br>
 		<h2 class="ui header">
-			Select Report for <? =$year?>
+			Select Report for <?=$year?>
 			<div class="sub header">
 				View by month or day
 			</div>
@@ -270,7 +270,7 @@
 		?>
 		<table class="calendar" cellpadding="0" cellspacing="0" width="100%">
 			<tr><td colspan=7 class="heading">
-				<a href="reports.php?action=viewreport&datestart=<? =$datestart?>&dateend=<? =$dateend?>&modality=<? =$modality?>&studysite=<? =$studysite?>" style="color: darkblue;"><? =$title?> <? =$year?></a>
+				<a href="reports.php?action=viewreport&datestart=<?=$datestart?>&dateend=<?=$dateend?>&modality=<?=$modality?>&studysite=<?=$studysite?>" style="color: darkblue;"><?=$title?> <?=$year?></a>
 			</td></tr>
 			<tr>
 				<td width="14.28%" class="days">S</td>
@@ -326,13 +326,13 @@
 			$datestart = "$year-$month-$day_num 00:00:00";
 			$dateend = "$year-$month-$day_num 23:59:59";
 			?>
-			<td class="day" style="background-color: <? =$color?>">
-				<span style="color: #555555;"> <? =$day_num?>&nbsp;</span><br>
+			<td class="day" style="background-color: <?=$color?>">
+				<span style="color: #555555;"> <?=$day_num?>&nbsp;</span><br>
 				<div align="right" style="color: black; font-size:10pt;">
 				<? if ($numstudies < 1) { ?>
 					&nbsp;
 				<? } else { ?>
-				<a href="reports.php?action=viewreport&datestart=<? =$datestart?>&dateend=<? =$dateend?>&modality=<? =$modality?>&studysite=<? =$studysite?>" style="color: blue;"><? =$numstudies?></a>
+				<a href="reports.php?action=viewreport&datestart=<?=$datestart?>&dateend=<?=$dateend?>&modality=<?=$modality?>&studysite=<?=$studysite?>" style="color: blue;"><?=$numstudies?></a>
 				&nbsp;</div>
 				<? } ?>
 			</td>
@@ -372,9 +372,9 @@
 		?>
 		<div class="ui container">
 			<h3 class="ui header">
-				<? =$modality?> studies collected on <? =$studysite?>
+				<?=$modality?> studies collected on <?=$studysite?>
 				<div class="sub header">
-					Collected between <? =$datestart?> to <? =$dateend?>
+					Collected between <?=$datestart?> to <?=$dateend?>
 				</div>
 			</h3>
 			<table class="ui very compact celled grey table">
@@ -407,16 +407,16 @@
 				$project = $row['project_name'] . " (" . $row['project_costcenter'] . ")";
 				?>
 				<tr>
-					<td><a href="subjects.php?id=<? =$subjectid?>"><? =$uid?></a></td>
-					<td><a href="studies.php?id=<? =$studyid?>"><? =$uid?><? =$studynum?></a></td>
-					<td><? =$gender?></td>
-					<td><? =$subjectdob?></td>
-					<td><? =$studydesc?></td>
-					<td><? =$project?></td>
-					<td><? =$studydatetime?></td>
-					<td><? =$studyradreaddone?></td>
-					<td><? =$studyradreaddate?></td>
-					<td><? =$studyradreadfindings?></td>
+					<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
+					<td><a href="studies.php?id=<?=$studyid?>"><?=$uid?><?=$studynum?></a></td>
+					<td><?=$gender?></td>
+					<td><?=$subjectdob?></td>
+					<td><?=$studydesc?></td>
+					<td><?=$project?></td>
+					<td><?=$studydatetime?></td>
+					<td><?=$studyradreaddone?></td>
+					<td><?=$studyradreaddate?></td>
+					<td><?=$studyradreadfindings?></td>
 				</tr>
 				<?
 			}
@@ -458,7 +458,7 @@
 			$seriesnotes = $row['seriesnotes'];
 			$serieslastupdate = $row['serieslastupdate'];
 			?>
-			<a href="viewsubject.php?studyid=<? =$studyid?>"><span style="color: darkblue; text-decoration:underline">[<? =$seriesnumber;?>] <? =$seriesdesc?></span></a> - <? =$series_datetime?> - <? =$img_format?><br>
+			<a href="viewsubject.php?studyid=<?=$studyid?>"><span style="color: darkblue; text-decoration:underline">[<?=$seriesnumber;?>] <?=$seriesdesc?></span></a> - <?=$series_datetime?> - <?=$img_format?><br>
 			<?
 		}
 	}
