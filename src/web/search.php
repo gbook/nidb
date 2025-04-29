@@ -1382,9 +1382,9 @@
 		/* make modality lower case to conform with table names... MySQL table names are case sensitive when using the 'show tables' command */
 		$s_studymodality = strtolower($s_studymodality);
 
-		list($numrows, $numsubjects, $numstudies, $totalbytes, $missinguids, $missingaltuids, $misingstudynums) = GetResultMetrics($result, $sqlstring, $s);
+		list($numrows, $numsubjects, $numstudies, $totalbytes, $missinguids, $missingaltuids, $missingstudynums) = GetResultMetrics($result, $sqlstring, $s);
 		
-		DisplayResultMetrics($numrows, $numsubjects, $numstudies, $totalbytes, $missinguids, $missingaltuids, $misingstudynums, $restrictedprojectnames, $querytime, $sqlstring, $s);
+		DisplayResultMetrics($numrows, $numsubjects, $numstudies, $totalbytes, $missinguids, $missingaltuids, $missingstudynums, $restrictedprojectnames, $querytime, $sqlstring, $s);
 		
 		if (($numrows > 100000) && ($s_resultoutput != "pipelinecsv"))
 			return;
@@ -1464,7 +1464,7 @@
 		$numresults = 0;
 		$missinguids = array();
 		$missingaltuids = array();
-		$misingstudynums = array();
+		$missingstudynums = array();
 		
 		/* ----- get number of results ----- */
 		$numresults = mysqli_num_rows($result);
@@ -1589,22 +1589,13 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayResultMetrics --------------- */
 	/* -------------------------------------------- */
-	function DisplayResultMetrics($numrows, $numsubjects, $numstudies, $totalbytes, $missinguids, $missingaltuids, $misingstudynums, $restrictedprojectnames, $querytime, $sqlstring, $s) {
+	function DisplayResultMetrics($numrows, $numsubjects, $numstudies, $totalbytes, $missinguids, $missingaltuids, $missingstudynums, $restrictedprojectnames, $querytime, $sqlstring, $s) {
 		?>
 		<div class="ui container">
 		<div class="ui top attached blue large segment">
 			Found <b><?=$numsubjects?> subjects</b> in <b><?=$numstudies?> studies</b> with <b><?=number_format($numrows,0)?> series</b> matching your query (<?=HumanReadableFilesize($totalbytes);?> data)
 		</div>
 		<?
-			if ((mysqli_num_rows($result) > 100000) && ($s['s_resultoutput'] != "pipelinecsv")) {
-				?>
-				<div class="ui attached red message">
-				<b>Your search returned <? echo number_format(mysqli_num_rows($result),0); ?> results... which is a lot</b>
-				<br>
-				Try changing the search criteria to return fewer results or select a .csv format
-				</div>
-				<?
-			}
 
 			if (count($missinguids) > 0) {
 			?>
@@ -5565,7 +5556,7 @@
 		if ($s_ageatscanmax != "") { $sqlwhere .= " and `studies`.study_ageatscan <= '$s_ageatscanmax'"; }
 		if ($s_subjectgender != "") { $sqlwhere .= " and `subjects`.gender = '$s_subjectgender'"; }
 		//PrintVariable($s_projectids);
-		if ((!in_array("all", $s_projectids) && (count($s_projectids) != 0))) {
+		if (isset($s_projectids) && (!in_array("all", $s_projectids) && (count($s_projectids) > 0))) {
 			$sqlwhere .= " and `projects`.project_id in (" . implode2(",", $s_projectids) . ")";
 		}
 		else {
