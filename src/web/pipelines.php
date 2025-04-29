@@ -1450,7 +1450,7 @@
 				xhttp.onreadystatechange = function() {
 					if (this.readyState == 4 && this.status == 200) {
 						var clustertype = document.getElementById("pipelineclustertype").value;
-						console.log(this.responseText);
+						//console.log(this.responseText);
 						var retCode = this.responseText.charAt(0);
 						if (retCode == "1") {
 							document.getElementById("hostup").innerHTML = "<div class='ui left pointing basic label'><i class='ui green check circle icon'></i> Valid submit host</div>";

@@ -976,7 +976,7 @@ question_num, question_text, datatype, values, comment</div>
 									<table cellspacing="0" cellpadding="0">
 										<tr>
 											<td valign="top">
-												<input type="radio" name="fileformat" value="short" required>Short rows <img src="images/help.gif" title="One row for each measure/value pair, no header">
+												<input type="radio" name="fileformat" value="short" required>Short rows <i class="small blue question circle outline icon" title="One row for each measure/value pair, no header"></i>
 											</td>
 											<td valign="top">
 												<details><summary class="tiny">File format example</summary><pre style="font-size:10pt; border: 1px solid #aaa; border-radius:3px; padding: 5px">S1234ABC, instrument1, measure1, value<br>S1234ABC, instrument1, measure2, value<br>S1234ABC, instrument2, measure1, value<br>S1234ABC, instrument2, measure3, value</pre></details>
@@ -984,7 +984,7 @@ question_num, question_text, datatype, values, comment</div>
 										</tr>
 										<tr>
 											<td valign="top">
-												<input type="radio" name="fileformat" value="long" required>Long rows <img src="images/help.gif" title="One row for each subject, with header">
+												<input type="radio" name="fileformat" value="long" required>Long rows <i class="small blue question circle outline icon" title="One row for each subject, with header"></i>
 											</td>
 											<td valign="top">
 												<details><summary class="tiny">File format example</summary><pre style="font-size:10pt; border: 1px solid #aaa; border-radius:3px; padding: 5px">-,        instrument1, instrument1, instrument2, instrument2, etc<br>UID,      measure1,    measure2,    measure1,    measure3,    etc<br>S1234ABC, value1,      value2,      value3,      value4,      etc<br>S5678LMN, value1,      value2,      value3,      value4,      etc<br>S9292XYZ, value1,      value2,      value3,      value4,      etc</pre></details>

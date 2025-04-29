@@ -369,7 +369,7 @@
 			});
 
 			window.onload = function exampleFunction() { 
-				console.log('The Script will load now.');
+				//console.log('The Script will load now.');
 				CheckForDrugCriteria();
 				CheckForEEGCriteria();
 				CheckForETCriteria();

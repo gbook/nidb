@@ -345,13 +345,15 @@
 		<div class="ui bottom fixed inverted huge menu">
 			<div class="ui inverted huge right menu">
 				<div class="item">
+					<? if ($disabled == "disabled") { ?>
 					<div class="ui huge right pointing orange label">
-						<? if ($disabled == "disabled") { ?>
 						Cannot continue upgrade until database is backed up
-						<? } else { ?>
-						Click Next to continue
-						<? } ?>
 					</div>
+					<? } else { ?>
+					<div class="ui huge right pointing green label">
+						Click Next to continue
+					</div>
+					<? } ?>
 					<a class="ui inverted <?=$disabled?> huge button" href="setup.php?step=systemcheck">Next <i class="arrow alternate circle right icon"></i></a>
 				</div>
 			</div>
@@ -543,7 +545,7 @@
 						<td>MariaDB root password<br><span class="tiny" style="font-weight: normal">root access to DB required to setup tables</span></td>
 						<td>
 							<? if ( ($GLOBALS['cfg']['mysqlpassword'] == "") || ($GLOBALS['cfg']['mysqlpassword'] == null) || ($GLOBALS['cfg']['mysqluser'] != 'root') ) { ?>
-							<input type="password" required name="rootpassword"><br><span class="tiny">Password is <tt>password</tt> if this is the <u>first</u> NiDB installation.<br>Otherwise enter the current MariaDB root password</span>
+							<input class="ui input" type="password" required name="rootpassword"><br><span class="tiny">Password is <tt>password</tt> if this is the <u>first</u> NiDB installation.<br>Otherwise enter the current MariaDB root password</span>
 							<? } else {
 								$len = strlen($GLOBALS['cfg']['mysqlpassword']);
 								$pwstars = str_repeat("*",$len);
@@ -569,11 +571,11 @@
 					</tr>
 					<tr>
 						<td>Row Limit<br><span class="tiny" style="font-weight: normal">Do not update tables with more than N rows.<br>Leave at 0 to update all tables</span></td>
-						<td><input type="number" value="0" name="rowlimit"></td>
+						<td><input class="ui input" type="number" value="0" name="rowlimit"></td>
 					</tr>
 					<tr>
 						<td>Debug Only<br><span class="tiny" style="font-weight: normal">This will not update the database</span></td>
-						<td><input type="checkbox" value="1" name="debugonly"></td>
+						<td><input class="ui input" type="checkbox" value="1" name="debugonly"></td>
 					</tr>
 				</table>
 				</form>

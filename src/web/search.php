@@ -297,7 +297,7 @@
 		/* this function is called from onChange, onInput, and onBlur events
 		   because some Semantic UI inputs fire different events */
 		function inputColor(i) {
-			console.log("checkInput has been fired");
+			//console.log("checkInput has been fired");
 			
 			if (i.value == "")
 				i.style.backgroundColor='';
@@ -465,8 +465,9 @@
 							</div>
 							<div class="twelve wide column">
 								<?
-									if (is_null($s['s_projectids']))
-										$searchProjectIDs = array();
+									$searchProjectIDs = array();
+									if (!is_null($s['s_projectids']))
+										$searchProjectIDs = $s['s_projectids'];
 								?>
 
 								<select name="s_projectids[]" multiple class="ui fluid dropdown importantfield" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
@@ -4542,7 +4543,7 @@
 				function CheckDestination() {
 					
 					var dest = $("[name='destination']:checked").val();
-					console.log(dest);
+					//console.log(dest);
 
 					/* hide everything first */
 					$('.format').hide();
@@ -4831,7 +4832,7 @@
 								</div>
 
 								<div class="field">
-									Password <img src="images/help.gif" title="Set a password for the download link, otherwise anyone with the link can download the data. Leave blank for no password">
+									Password <i class="small blue question circle outline icon" title="Set a password for the download link, otherwise anyone with the link can download the data. Leave blank for no password"></i>
 									<input type="password" name="publicdownloadpassword">
 								</div>
 
