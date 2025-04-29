@@ -5503,6 +5503,8 @@
 		
 		Debug(__FILE__, __LINE__, "<pre>" . print_r($s,true) . "</pre>");
 		
+		$s_projectids = array();
+		
 		/* escape all the variables and put them back into meaningful variable names */
 		foreach ($s as $key => $value) {
 			if (is_array($value)) {
