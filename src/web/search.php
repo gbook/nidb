@@ -1382,7 +1382,7 @@
 		/* make modality lower case to conform with table names... MySQL table names are case sensitive when using the 'show tables' command */
 		$s_studymodality = strtolower($s_studymodality);
 
-		list($numrows, $numsubjects, $numstudies, $totalbytes, $missinguids, $missingaltuids, $missingstudynums) = GetResultMetrics($result, $sqlstring, $s);
+		list($numrows, $numsubjects, $numstudies, $totalbytes, $missinguids, $missingaltuids, $missingstudynums, $restrictedprojectnames) = GetResultMetrics($result, $sqlstring, $s);
 		
 		DisplayResultMetrics($numrows, $numsubjects, $numstudies, $totalbytes, $missinguids, $missingaltuids, $missingstudynums, $restrictedprojectnames, $querytime, $sqlstring, $s);
 		
@@ -1465,6 +1465,7 @@
 		$missinguids = array();
 		$missingaltuids = array();
 		$missingstudynums = array();
+		$restrictedprojectnames = array();
 		
 		/* ----- get number of results ----- */
 		$numresults = mysqli_num_rows($result);
@@ -1476,7 +1477,8 @@
 		$sqlstringC = "select a.project_id 'projectid', b.project_name 'projectname' from user_project a left join projects b on a.project_id = b.project_id where a.user_id = '" . $_SESSION['userid'] . "' and (a.view_data = 1 or a.view_phi = 1)";
 		$resultC = MySQLiQuery($sqlstringC,__FILE__,__LINE__);
 		while ($rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC)) {
-			$restrictedprojectids[] = $rowC['projectid'];
+			$allowedprojectids[] = $rowC['projectid'];
+			$allowedprojectnames[] = $rowC['projectname'];
 		}
 		
 		/* ----- get list of unique subjects/studies/series ----- */
@@ -1580,9 +1582,9 @@
 		$missinguids = array_filter($missinguids);
 		$missingaltuids = array_filter($missingaltuids);
 		$missingstudynums = array_filter($missingstudynums);
-		$restrictedprojectnames = array_filter($restrictedprojectnames);
+		$restrictedprojectnames = array_unique($restrictedprojectnames);
 		
-		return array($numresults, $numsubjects, $numstudies, $totalbytes, $missinguids, $missingaltuids, $misingstudynums, $restrictedprojectnames);
+		return array($numresults, $numsubjects, $numstudies, $totalbytes, $missinguids, $missingaltuids, $missingstudynums, $restrictedprojectnames);
 	}
 
 
@@ -1781,6 +1783,7 @@
 		}
 		
 		/* get a list of previously downloaded series and their dates */
+		$downloadhistory = array();
 		$sqlstring3 = "select req_seriesid, req_completedate, req_destinationtype from data_requests where req_username = '" . $_SESSION['username'] ."' and req_modality = '$s_studymodality'";
 		$result3 = MySQLiQuery($sqlstring3,__FILE__,__LINE__);
 		while ($row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC)) {
@@ -1861,6 +1864,8 @@
 		$headeradded = 0;
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 
+			$measurenames = array();
+			
 			$project_id = $row['project_id'];
 			/* if the user doesn't have view access to this project, skip to the next record */
 			if (($projectids == null) || (!in_array($project_id, $projectids))) {
