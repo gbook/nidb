@@ -5590,7 +5590,7 @@
 				/* first 8 characters are UID, remaining number(s) are studynum */
 				//PrintVariable($sid);
 				$uid = substr($sid,0,8);
-				$studynum = substr($sid,8) + 0; // convert to integer
+				$studynum = intval(substr($sid,8)) + 0; // convert to integer
 				$s1[] = "(`subjects`.uid = '$uid' and `studies`.study_num = $studynum)";
 			}
 			$s2 = implode2(' or ', $s1);
