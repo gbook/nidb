@@ -3485,7 +3485,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 							<td class="right aligned tt">enablerdoc</td>
 							<td><input type="checkbox" name="enablerdoc" value="1" <? if ($GLOBALS['cfg']['enablerdoc']) { echo "checked"; } ?>></td>
 							<td></td>
-							<td>Enable RDoCdb features</td>
+							<td>Enable RDoCdb (NIMH Data Archive - NDA) features</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">enablepublicdownloads</td>
@@ -3497,7 +3497,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 							<td class="right aligned tt">enablewebexport</td>
 							<td><input type="checkbox" name="enablewebexport" value="1" <? if ($GLOBALS['cfg']['enablewebexport']) { echo "checked"; } ?>></td>
 							<td></td>
-							<td>Allow this server to send data to remote NiDB servers</td>
+							<td>Allow this server to export data to downloadable web links</td>
 						</tr>
 
 						<tr>

@@ -4543,7 +4543,7 @@
 				function CheckDestination() {
 					
 					var dest = $("[name='destination']:checked").val();
-					//console.log(dest);
+					console.log(dest);
 
 					/* hide everything first */
 					$('.format').hide();
@@ -4702,91 +4702,96 @@
 					<div class="ui grid">
 						<div class="four wide stretched left attached column">
 							<div class="ui vertical fluid tabular menu">
-								<? if ($GLOBALS['cfg']['enablewebexport']) { ?>
-									<a class="active item item2" data-tab="tab-web" onClick="radio_web.checked=true">
-										<div class="ui radio checkbox">
-											<input type="radio" name="destination" id="radio_web" value="web" checked onChange="CheckDestination()">
-											<label>Web</label>
-										</div>
-									</a>
-									<a class="item item2" data-tab="tab-nfs" onClick="radio_nfs.checked=true">
-										<div class="ui radio checkbox">
-											<input type="radio" name="destination" id="radio_nfs" value="nfs" onChange="CheckDestination()">
-											<label>NFS share</label>
-										</div>
-									</a>
 								<?
-								}
-								if (($GLOBALS['isadmin']) && ($GLOBALS['cfg']['enablepublicdownloads'])) { ?>
-									<a class="item item2" data-tab="tab-publicdownload" onClick="radio_publicdownload.checked=true">
-										<div class="ui radio checkbox">
-											<input type="radio" name="destination" id="radio_publicdownload" value="publicdownload" onChange="CheckDestination()">
-											<label>Public Download</label>
-										</div>
-									</a>
-									<a class="item item2" data-tab="tab-publicdataset" onClick="radio_publicdataset.checked=true">
-										<div class="ui radio checkbox">
-											<input type="radio" name="destination" id="radio_publicdataset" value="publicdataset" onChange="CheckDestination()">
-											<label>Add to Public Dataset</label>
-										</div>
-									</a>
-								<?
-								}
-								if ($s_resultoutput != 'subject') {
-									if (!$GLOBALS['cfg']['ispublic']) { ?>
-									<!--
-										<a class="item item2" data-tab="tab-localftp" onClick="radio_localftp.checked=true">
+									$exportDefined = false;
+									$activeTab = "";
+									
+									if ($GLOBALS['cfg']['enablewebexport']) {
+										$exportDefined = true;
+										$activeTab = "web";
+										?>
+											<a class="active item item2" data-tab="tab-web" onClick="radio_web.checked=true">
+												<div class="ui radio checkbox">
+													<input type="radio" name="destination" id="radio_web" value="web" checked onChange="CheckDestination()">
+													<label>Web</label>
+												</div>
+											</a>
+										<?
+									}
+									if ($GLOBALS['cfg']['enablenfs']) {
+										?>
+											<a class="<? if (!$exportDefined) { echo "active"; } ?> item item2" data-tab="tab-nfs" onClick="radio_nfs.checked=true">
+												<div class="ui radio checkbox">
+													<input type="radio" name="destination" id="radio_nfs" value="nfs" <? if (!$exportDefined) { echo "checked"; } ?> onChange="CheckDestination()">
+													<label>NFS share</label>
+												</div>
+											</a>
+										<?
+										$exportDefined = true;
+										if ($activeTab == "")
+											$activeTab = "nfs";
+									}
+									
+									if (($GLOBALS['isadmin']) && ($GLOBALS['cfg']['enablepublicdownloads'])) {
+										?>
+										<a class="<? if (!$exportDefined) { echo "active"; } ?> item item2" data-tab="tab-publicdownload" onClick="radio_publicdownload.checked=true">
 											<div class="ui radio checkbox">
-												<input type="radio" name="destination" id="radio_localftp" value="localftp" <? if ($GLOBALS['isguest']) { echo "checked"; } ?> onChange="CheckDestination()">
-												<label>Local FTP/scp</label>
+												<input type="radio" name="destination" id="radio_publicdownload" value="publicdownload" <? if (!$exportDefined) { echo "checked"; } ?> onChange="CheckDestination()">
+												<label>Public Download</label>
 											</div>
 										</a>
-										-->
-									<?
-									}
-									if ($GLOBALS['cfg']['enablerdoc']) { ?>
-										<a class="item item2" data-tab="tab-nda" onClick="radio_ndar.checked=true">
+										<a class="item item2" data-tab="tab-publicdataset" onClick="radio_publicdataset.checked=true">
 											<div class="ui radio checkbox">
-												<input type="radio" name="destination" id="radio_ndar" value="ndar" onChange="CheckDestination()">
-												<label>NDA submission</label>
+												<input type="radio" name="destination" id="radio_publicdataset" value="publicdataset" onChange="CheckDestination()">
+												<label>Add to Public Dataset</label>
 											</div>
 										</a>
-										<a class="item item2" data-tab="tab-ndacsv" onClick="radio_ndarcsv.checked=true">
-											<div class="ui radio checkbox">
-												<input type="radio" name="destination" id="radio_ndarcsv" value="ndarcsv" onChange="CheckDestination()">
-												<label>NDA submission <span class="tiny">.csv</span></label>
-											</div>
-										</a>
-									<?
+										<?
+										$exportDefined = true;
+										if ($activeTab == "")
+											$activeTab = "public";
 									}
-								}
-								if ($s_resultoutput != 'subject') {
-									?>
-									<!--
-									<a class="item item2" data-tab="tab-xnat" onClick="radio_xnat.checked=true">
-										<div class="ui radio checkbox">
-											<input type="radio" name="destination" id="radio_xnat" value="xnat" onChange="CheckDestination()">
-											<label>Remote XNAT</label>
-										</div>
-									</a> -->
-									<!--
-									<a class="item" data-tab="tab-remoteftp">
-										<div class="ui radio checkbox" onChange="CheckDestination()">
-											<input type="radio" name="destination" id="radio_remoteftp" value="remoteftp">
-											<label>Remote FTP site</label>
-										</div>
-									</a>
-									-->
-									<? if ($GLOBALS['cfg']['enableremoteconn']) { ?>
-									<a class="item item2" data-tab="tab-remotenidb" onClick="radio_remotenidb.checked=true">
-										<div class="ui radio checkbox">
-											<input type="radio" name="destination" id="radio_remotenidb" value="remotenidb" onChange="CheckDestination()">
-											<label>Remote NiDB site</label>
-										</div>
-									</a>
-									<?
+									
+									if ($s_resultoutput != 'subject') {
+										if ($GLOBALS['cfg']['enablerdoc']) {
+											?>
+											<a class="<? if (!$exportDefined) { echo "active"; } ?> item item2" data-tab="tab-nda" onClick="radio_ndar.checked=true">
+												<div class="ui radio checkbox">
+													<input type="radio" name="destination" id="radio_ndar" value="ndar" <? if (!$exportDefined) { echo "checked"; } ?> onChange="CheckDestination()">
+													<label>NDA submission</label>
+												</div>
+											</a>
+											<a class="item item2" data-tab="tab-ndacsv" onClick="radio_ndarcsv.checked=true">
+												<div class="ui radio checkbox">
+													<input type="radio" name="destination" id="radio_ndarcsv" value="ndarcsv" onChange="CheckDestination()">
+													<label>NDA submission <span class="tiny">.csv</span></label>
+												</div>
+											</a>
+											<?
+											$exportDefined = true;
+											if ($activeTab == "")
+												$activeTab = "nda";
+										}
+
+										if ($GLOBALS['cfg']['enableremoteconn']) {
+											?>
+											<a class="<? if (!$exportDefined) { echo "active"; } ?> item item2" data-tab="tab-remotenidb" onClick="radio_remotenidb.checked=true">
+												<div class="ui radio checkbox">
+													<input type="radio" name="destination" id="radio_remotenidb" value="remotenidb" <? if (!$exportDefined) { echo "checked"; } ?> onChange="CheckDestination()">
+													<label>Remote NiDB site</label>
+												</div>
+											</a>
+											<?
+											$exportDefined = true;
+											if ($activeTab == "")
+												$activeTab = "remotenidb";
+										}
 									}
-								}
+									
+									//PrintVariable($exportDefined);
+									if (!$exportDefined) {
+										?><div class="ui red inverted segment">No export methods available. Please contact NiDB admin to enable export methods</div><?
+									}
 								?>
 							</div>
 						</div>
@@ -4795,7 +4800,8 @@
 						<div class="ui twelve wide stretched right attached column">
 							
 							<!-- web download tab -->
-							<div class="ui active tab seamless right attached segment" data-tab="tab-web" style="background-color: #EBF5FB">
+							<? if ($GLOBALS['cfg']['enablewebexport']) { ?>
+							<div class="ui <? if ($activeTab == "web") { echo "active"; } ?> tab seamless right attached segment" data-tab="tab-web" style="background-color: #EBF5FB">
 								<div class="ui message">
 									<div class="content">
 										<div class="header">
@@ -4805,10 +4811,11 @@
 									</div>
 								</div>
 							</div>
+							<? } ?>
 							
 							<? if (($GLOBALS['isadmin']) && ($GLOBALS['cfg']['enablepublicdownloads'])) { ?>
 							<!-- public download tab -->
-							<div class="ui tab seamless right attached segment" data-tab="tab-publicdownload" style="background-color: #EBF5FB">
+							<div class="ui <? if ($activeTab == "public") { echo "active"; } ?> tab seamless right attached segment" data-tab="tab-publicdownload" style="background-color: #EBF5FB">
 								<div class="ui message">
 									<div class="content">
 										<div class="header">
@@ -4915,7 +4922,7 @@
 							<? } ?>
 							
 							<!-- local FTP tab -->
-							<div class="ui tab seamless right attached segment" data-tab="tab-localftp" style="background-color: #EBF5FB">
+							<div class="ui <? if ($activeTab == "ftp") { echo "active"; } ?> tab seamless right attached segment" data-tab="tab-localftp" style="background-color: #EBF5FB">
 								<div class="ui message">
 									<div class="content">
 										<div class="header">
@@ -4927,7 +4934,7 @@
 							</div>
 							
 							<!-- NDA tab -->
-							<div class="ui tab seamless right attached segment" data-tab="tab-nda" style="background-color: #EBF5FB">
+							<div class="ui <? if ($activeTab == "nda") { echo "active"; } ?> tab seamless right attached segment" data-tab="tab-nda" style="background-color: #EBF5FB">
 								<div class="ui message">
 									<div class="content">
 										<div class="header">
@@ -4951,7 +4958,7 @@
 							</div>
 							
 							<!-- NFS tab -->
-							<div class="ui tab seamless right attached segment" data-tab="tab-nfs" style="background-color: #EBF5FB">
+							<div class="ui <? if ($activeTab == "nfs") { echo "active"; } ?> tab seamless right attached segment" data-tab="tab-nfs" style="background-color: #EBF5FB">
 								<script>
 									function CheckNFSPath() {
 										var xhttp = new XMLHttpRequest();
@@ -4978,7 +4985,7 @@
 							</div>
 							
 							<!-- Remote FTP tab -->
-							<div class="ui tab seamless right attached segment" data-tab="tab-remoteftp" style="background-color: #EBF5FB">
+							<div class="ui <? if ($activeTab == "remoteftp") { echo "active"; } ?> tab seamless right attached segment" data-tab="tab-remoteftp" style="background-color: #EBF5FB">
 								<p style="text-align: center">Remote FTP settings (this option is deprecated)</p>
 								<table class="remoteftp" style="margin-left:40px; border:1px solid gray">
 									<tr><td align="right" width="30%" style="font-size:10pt">Remote FTP Server</td><td><input type="text" name="remoteftpserver"></td></tr>
@@ -4990,7 +4997,7 @@
 							</div>
 							
 							<!-- Remote NiDB tab -->
-							<div class="ui tab seamless right attached segment" data-tab="tab-remotenidb" style="background-color: #EBF5FB">
+							<div class="ui <? if ($activeTab == "remotenidb") { echo "active"; } ?> tab seamless right attached segment" data-tab="tab-remotenidb" style="background-color: #EBF5FB">
 								<div class="ui message">
 									<div class="content">
 										<div class="header">
