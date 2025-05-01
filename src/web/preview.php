@@ -4,8 +4,13 @@
 	
 	session_start();
 
-if ($_POST["image"] == "") { $image = $_GET["image"]; } else { $image = $_POST["image"]; }
-if ($_POST["movement"] == "") { $movement = $_GET["movement"]; } else { $movement = $_POST["movement"]; }
+	require "functions.php";
+
+	$image = GetVariable("image");
+	$movement = GetVariable("movement");
+
+//if ($_POST["image"] == "") { $image = $_GET["image"]; } else { $image = $_POST["image"]; }
+//if ($_POST["movement"] == "") { $movement = $_GET["movement"]; } else { $movement = $_POST["movement"]; }
 
 if ($image != "") {
 	if (file_exists($image)) {

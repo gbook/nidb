@@ -66,7 +66,7 @@
 		}
 		elseif ($action == "thumbnail") {
 			list($path, $seriespath, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, $modality);
-			$thumbpath = "$path/../thumb.png";
+			$thumbpath = "$seriespath/thumb.png";
 			if (file_exists($thumbpath)) {
 				?>
 				<style>
