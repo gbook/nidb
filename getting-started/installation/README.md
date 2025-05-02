@@ -56,6 +56,27 @@ reboot # you must reboot to ensure SELinux is disabled before continuing
 {% endcode %}
 {% endtab %}
 
+{% tab title="Rocky Linux 9" %}
+```bash
+sudo dnf install almalinux-release-devel
+```
+{% endtab %}
+
+{% tab title="AlmaLinux 9" %}
+Alma Linux
+
+```bash
+# add repository to install OpenSSL 1.0
+sudo curl -JLo /etc/yum.repos.d/mroche-vfx-compatibility.repo "https://copr.fedorainfracloud.org/coprs/mroche/vfx-compatibility/repo/epel-9/mroche-vfx-compatibility-epel-9.repo"
+
+sudo dnf install epel-release # for ImageMagick
+sudo dnf install mysql-libs --enablerepo=crb # for libmysql2.1
+sudo yum --nogpgcheck localinstall nidb-xxxx.xx.xx-1.el9.x86_64.rpm
+
+reboot # you must reboot to ensure SELinux is disabled before continuing
+```
+{% endtab %}
+
 {% tab title="RHEL 8" %}
 ```bash
 sudo dnf install epel-release # for ImageMagick
