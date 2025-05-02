@@ -252,7 +252,7 @@
 								$frequency = $item['frequency'];
 								$frequencyunit = $item['frequencyunit'];
 
-								$completedates = "";
+								$completedates = array();
 								$completedate = "";
 								$experimenter = "";
 								

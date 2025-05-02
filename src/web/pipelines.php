@@ -3497,6 +3497,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 		MarkTime("GetPipelineTree($viewall, $userid)");
 		
 		//PrintVariable($viewhidden);
+		$arr = array();
 		
 		/* get list of pipelines owned by this username */
 		if ($viewall) {
@@ -3877,6 +3878,8 @@ echo "#$ps_command     $logged $ps_desc\n";
 		MarkTime("CreatePipelineGraph($g)");
 		$dotfile = tempnam("/tmp",'DOTDOT');
 		$pngfile = tempnam("/tmp",'DOTPNG');
+		
+		$d = array();
 		
 		$d[] = "digraph G {";
 		$sqlstring = "select * from pipelines where pipeline_group = '$g'";

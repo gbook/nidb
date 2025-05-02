@@ -353,6 +353,7 @@
 		$name = $row['project_name'];
 		
 		/* get all of the MR params for this project */
+		$parms = array();
 		$sqlstring = "select * from mr_scanparams where project_id = $id order by protocol_name";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		//PrintSQLTable($result);
@@ -395,6 +396,7 @@
 		}
 		//PrintVariable($parms);
 		
+		$qcparms = array();
 		$sqlstring = "select * from mr_qcparams where project_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		if (mysqli_num_rows($result) > 0) {
@@ -440,23 +442,23 @@
 					</th>
 
 				<?$ray=array();	 	?>
-				 <tr>
-				       <th><b>UID</b></th>
-				       <th><b>Primary alt UID</b></th>
-                                       <th><b>Study No.</b></th>
-                                       <th><b>Series No.</b></th>
-                                       <th><b>Series Desc.</b></th>
-                                       <th><b>Params good?</b></th>
-                                       <th><b>Files on disk?</b></th>
-                                       <th><b>Num Files</b></th>
-                                       <th><b>Avg Rating</b></th>
-                                       <th><b>Basic QC?</b></th>
-                                       <th title="Displacement (X,Y,Z), Velocity in (X,Y,Z) direction, Rotation (Pitch,Roll,Yaw)"><b>Disp(X,Y,Z), Mot(X,Y,Z), Rot(P,R,Y)</b></th>
-                                       <th><b>SNR</b></th>
-                                       <th><b>FD</b></th>
-                                       <th><b>DVARS</b></th>
-                                       <!--<th style="border: 1px solid black">Advanced QC</th>-->
-                               </tr>
+				<tr>
+				   <th><b>UID</b></th>
+				   <th><b>Primary alt UID</b></th>
+				   <th><b>Study No.</b></th>
+				   <th><b>Series No.</b></th>
+				   <th><b>Series Desc.</b></th>
+				   <th><b>Params good?</b></th>
+				   <th><b>Files on disk?</b></th>
+				   <th><b>Num Files</b></th>
+				   <th><b>Avg Rating</b></th>
+				   <th><b>Basic QC?</b></th>
+				   <th title="Displacement (X,Y,Z), Velocity in (X,Y,Z) direction, Rotation (Pitch,Roll,Yaw)"><b>Disp(X,Y,Z), Mot(X,Y,Z), Rot(P,R,Y)</b></th>
+				   <th><b>SNR</b></th>
+				   <th><b>FD</b></th>
+				   <th><b>DVARS</b></th>
+				   <!--<th style="border: 1px solid black">Advanced QC</th>-->
+				</tr>
 
 				</thead>
 				<tbody>
@@ -1087,6 +1089,7 @@
 							
 							$matched = false;
 							$mismatch = "";
+							$nummismatch = array();
 							/* check if the params in this study match with any of the rows in the QA params table */
 							for ($i=0;$i<$numparms;$i++) {
 								$rowmatch = true;

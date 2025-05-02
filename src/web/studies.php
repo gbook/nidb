@@ -2879,7 +2879,7 @@
 				<td>
 					<select name="protocol">
 					<?
-						unset($protocols);
+						$protocols = array();
 						
 						$sqlstring = "select protocol from modality_protocol where modality = '$modality'";
 						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);

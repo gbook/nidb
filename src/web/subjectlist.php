@@ -26,6 +26,7 @@
 	$term = GetVariable("term");
 
 	$returnarray = array();
+	$arr = array();
 	
 	$sqlstring = "select uid from subjects where uid like '%$term%'";
 	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);

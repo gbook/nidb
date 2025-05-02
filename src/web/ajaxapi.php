@@ -506,6 +506,14 @@
 			</thead>
 			<tbody>
 			<?
+			$studyids_existing = array();
+			$studyids = array();
+			$studyids_completedparent = array();
+			$studyids_groups = array();
+			$studyids_valid = array();
+			$studyids_remaining = array();
+			$studyids_step = array();
+			
 			/* ---------- LINE 1 - existing (already processed) studies for this pipeline ---------- */
 			$sqlstring = "select study_id, analysis_status from analysis where pipeline_id = $pipelineid";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);

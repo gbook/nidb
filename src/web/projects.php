@@ -1197,6 +1197,7 @@
 			$smokingstatus = $row['smoking_status'];
 			$enrollsubgroup = $row['enroll_subgroup'];
 			
+			$globalaltids = array();
 			$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' order by isprimary desc";
 			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
@@ -1211,9 +1212,8 @@
 			}
 			$globalaltids = array_unique($globalaltids);
 			$globalaltuidlist = implode2(", ",$globalaltids);
-			$globalaltids = array();
-			$projectaltids = array();
 			
+			$projectaltids = array();
 			$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' and enrollment_id = $enrollmentid order by isprimary desc";
 			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
@@ -1536,6 +1536,7 @@
 			$birthdate = $row['birthdate'];
 			$enrollsubgroup = $row['enroll_subgroup'];
 			
+			$globalaltids = array();
 			$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' order by isprimary desc";
 			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
@@ -1550,9 +1551,8 @@
 			}
 			$globalaltids = array_unique($globalaltids);
 			$globalaltuidlist = implode2(", ",$globalaltids);
-			$globalaltids = array();
-			$altids = array();
 
+			$altids = array();
 			$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' and enrollment_id = $enrollmentid order by isprimary desc";
 			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
