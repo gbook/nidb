@@ -6,21 +6,17 @@ description: Detailed installation instructions
 
 ## Prerequisites
 
+**Hardware** - There are no minimum specifications. Hardware must be able to run Linux.
+
+**Operating system** - NiDB runs RHEL 8, RHEL 9 compatible OSes. NiDB does not run on Fedora or CentOS Stream.
+
 {% hint style="danger" %}
 NiDB will not run correctly on Fedora, CentOS Stream 8, or RHEL/Rocky 8.6 as they contain a kernel bug. If you have already updated to this version, you can downgrade the kernel or boot into the previous kernel. Kernel `4.18.0-348.12.2.el8_5.x86_64` is known to work correctly.
 {% endhint %}
 
-**Hardware** - There are no minimum specifications. If the hardware can run Linux, then it should be able to run NiDB.
-
-**RHEL8.5/Rocky8.5/CentOS 8** - NiDB runs only on RHEL 8 compatible OSes. NiDB does not run on Fedora or CentOS Stream.
-
 #### FSL
 
-{% hint style="info" %}
-FSL requires at least 20GB of **free** disk space to install correctly
-{% endhint %}
-
-Download FSL from [https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation) and follow the installation instructions. After installation, note the location of FSL, usually `/usr/local/fsl`.
+FSL is required for MRI QC modules. FSL requires at least 20GB free disk space to install. Download FSL from [https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation) and follow the installation instructions. After installation, note the location of FSL, usually `/usr/local/fsl`.
 
 Alternatively, try these commands to install FSL
 
@@ -43,7 +39,7 @@ sudo rpm -i firejail-x.y.z.rpm
 Download the latest .rpm package from [https://github.com/gbook/nidb/release](https://github.com/gbook/nidb/releases) and run the following commands
 
 {% tabs %}
-{% tab title="RHEL9" %}
+{% tab title="RHEL 9" %}
 Run the following commands
 
 {% code fullWidth="false" %}
@@ -60,14 +56,11 @@ reboot # you must reboot to ensure SELinux is disabled before continuing
 {% endcode %}
 {% endtab %}
 
-{% tab title="RHEL8" %}
+{% tab title="RHEL 8" %}
 ```bash
 sudo dnf install epel-release # for ImageMagick
 sudo yum --nogpgcheck localinstall nidb-xxxx.xx.xx-1.el8.x86_64.rpm
 ```
-
-sudo dnf install epel-release # for ImageMagick\
-sudo yum --nogpgcheck localinstall nidb-xxxx.xx.xx-1.el8.x86\_64.rpm
 {% endtab %}
 {% endtabs %}
 
