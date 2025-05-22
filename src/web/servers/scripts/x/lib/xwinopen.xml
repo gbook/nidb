@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xWinOpen'>
+
+<sources>
+  <src><file>xwinopen.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Window</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[A simple alternative to xWindow.]]></description>
+
+<syntax>xWinOpen(sUrl)</syntax>
+
+<parameters>
+  <par>
+    <name>sUrl</name>
+    <note><![CDATA[string]]></note>
+  </par>
+</parameters>
+
+<return>false</return>
+
+<demos>
+  <demo>
+    <url>http://cross-browser.com/x/examples/xwindow.php</url>
+    <note><![CDATA[demos]]></note>
+  </demo>
+</demos>
+
+<comments>
+  <comment>
+    <date>31Mar04</date>
+    <author>mf</author>
+    <note><![CDATA[Creates a global var: xChildWindow]]></note>
+  </comment>
+</comments>
+
+<revisions>
+  <rev>
+    <num>1</num>
+    <date>31Mar04</date>
+    <author>mf</author>
+    <note><![CDATA[put in it's own file for use with XC]]></note>
+  </rev>
+</revisions>
+
+</x_symbol>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xName'>
+
+<sources>
+  <src><file>xname.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Debug</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[Debugging utility.]]></description>
+
+<syntax>xName(e)</syntax>
+
+<parameters>
+  <par>
+    <name>e</name>
+    <note><![CDATA[]]></note>
+  </par>
+</parameters>
+
+<return>string</return>
+
+<demos>
+  <demo>
+    <url>http://cross-browser.com/toys/</url>
+    <note><![CDATA[Index of all X demos.]]></note>
+  </demo>
+</demos>
+
+</x_symbol>

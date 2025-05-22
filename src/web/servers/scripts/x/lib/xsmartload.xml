@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xSmartLoad'>
+
+<sources>
+  <src><sym>xSmartLoad</sym><file>xsmartload.js</file><note><![CDATA[Default implementation.]]></note></src>
+  <src><sym>xSmartLoad2</sym><file>xsmartload2.js</file><note><![CDATA[Supports multiple URLs.]]></note></src>
+</sources>
+
+<groups>
+  <grp>DOM</grp>
+</groups>
+
+<type>Function</type>
+
+<description><![CDATA[Load script or style sheet if not loaded before.]]></description>
+
+<syntax>xSmartLoad(what, url)</syntax>
+
+<parameters>
+  <par><name>what</name><note><![CDATA['link' or 'script']]></note></par>
+  <par><name>url</name><note><![CDATA[file to load from server]]></note></par>
+</parameters>
+
+<return><![CDATA[Returns script or link DOM node if found or added, null if it couldn't be added.]]></return>
+
+<revisions>
+  <rev><num>1</num><date>2Jul07</date><author></author><note><![CDATA[initial release]]></note></rev>
+</revisions>
+
+</x_symbol>

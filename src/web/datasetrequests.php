@@ -51,7 +51,10 @@
 	$deliverymethod = GetVariable("deliverymethod");
 	$notes = GetVariable("notes");
 	
+	//PrintVariable($_FILES);
 	//PrintVariable($_POST);
+	
+	//exit(0);
 	
 	/* determine action */
 	if ($action == "editform") {
@@ -100,9 +103,19 @@
 		$dataformat = mysqli_real_escape_string($GLOBALS['linki'], $dataformat);
 		$deliverymethod = mysqli_real_escape_string($GLOBALS['linki'], $deliverymethod);
 		$notes = mysqli_real_escape_string($GLOBALS['linki'], $notes);
+
+		if (($_FILES["duafile"]["error"] == 0) && ($_FILES["duafile"]["name"] != "")) {
+			$fileblob = base64_encode(file_get_contents($_FILES["duafile"]["tmp_name"]));
+			$filename = $_FILES["duafile"]["name"];
+			$filecontenttype = $_FILES["duafile"]["type"];
+			$filesize = $_FILES["duafile"]["size"];
+			
+			$fileid = StoreFileToSQL($filename, $filecontenttype, $fileblob, $filesize);
+		}
 		
 		/* insert the new site */
-		$sqlstring = "insert into dataset_requests (username, email, institution, shortname, idlist, dataformat, deliverymethod, notes, request_submitdate, request_status) values ('" . $GLOBALS['username'] . "', '$email', '$institution', '$shortname', '$idlist', '$dataformat', '$deliverymethod', '$notes', now(), 'submitted')";
+		$sqlstring = "insert into dataset_requests (username, email, institution, shortname, idlist, dataformat, deliverymethod, notes, dua_fileid, request_submitdate, request_status) values ('" . $GLOBALS['username'] . "', '$email', '$institution', '$shortname', '$idlist', '$dataformat', '$deliverymethod', '$notes', nullif('$fileid', ''), now(), 'submitted')";
+		PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		Notice("$shortname submitted");
@@ -123,8 +136,24 @@
 		$deliverymethod = mysqli_real_escape_string($GLOBALS['linki'], $deliverymethod);
 		$notes = mysqli_real_escape_string($GLOBALS['linki'], $notes);
 
-		/* insert the new site */
-		$sqlstring = "update dataset_requests set email = '$email', institution = '$institution', shortname = '$shortname', idlist = '$idlist', dataformat = '$dataformat', deliverymethod = '$delivermethod', notes = '$notes' where datasetrequest_id = $datasetrequestid";
+		$sqlstring = "select dua_fileid from dataset_requests where datasetrequest_id = $datasetrequestid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$duafileid = $row['dua_fileid'];
+
+		if (($_FILES["duafile"]["error"] == 0) && ($_FILES["duafile"]["name"] != "")) {
+			$fileblob = base64_encode(file_get_contents($_FILES["duafile"]["tmp_name"]));
+			$filename = $_FILES["duafile"]["name"];
+			$filecontenttype = $_FILES["duafile"]["type"];
+			$filesize = $_FILES["duafile"]["size"];
+			
+			$fileid = StoreFileToSQL($filename, $filecontenttype, $fileblob, $filesize);
+			
+			DeleteFileFromSQL($duafileid);
+		}
+
+		/* insert the new dataset request */
+		$sqlstring = "update dataset_requests set email = '$email', institution = '$institution', shortname = '$shortname', idlist = '$idlist', dataformat = '$dataformat', deliverymethod = '$delivermethod', notes = '$notes', dua_fileid = nullif('$fileid', '') where datasetrequest_id = $datasetrequestid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		Notice("$shortname updated");
@@ -182,7 +211,10 @@
 			$dataformat = $row['dataformat'];
 			$deliverymethod = $row['deliverymethod'];
 			$notes = $row['notes'];
+			$fileid = $row['dua_fileid'];
 
+			list($filename, $filecontenttype, $filesize, $filedate) = GetFileInfoFromSQL($fileid);
+			
 			$formaction = "update";
 			$formtitle = "Updating $sitename";
 			$submitbuttonlabel = "Update";
@@ -206,7 +238,7 @@
 			  <div class="header">Submit a new data request</div>
 			  <p>Fill out the form to submit a new request. Include as much information as possible, but do not include passwords.</p>
 			</div>
-			<form method="post" action="datasetrequests.php" autocomplete="off" class="ui form attached fluid segment">
+			<form method="post" action="datasetrequests.php" autocomplete="off" class="ui form attached fluid segment" enctype="multipart/form-data">
 			<input type="hidden" name="action" value="<?=$formaction?>">
 			<input type="hidden" name="datasetrequestid" value="<?=$id?>">
 			<h3 class="ui dividing header"><?=$formtitle?></h3>
@@ -261,6 +293,15 @@
 					<textarea name="notes" rows="4" required><?=$notes?></textarea>
 				</div>
 			</div>
+			<div class="field">
+				<label>Data Use Agreement (DUA). Upload new file to replace original file</label>
+				<div class="ui file input">
+					<input type="file" name="duafile">
+				</div>
+				<? if ($filename != "") { ?>
+					<small>Existing file: <tt><?=$filename?></tt>, <?=$filesize?> bytes, <?=$filedate?></small>
+				<? } ?>
+			</div>
 			<input type="submit" class="ui primary button" value="<?=$submitbuttonlabel?>">
 			</form>
 		</div>
@@ -290,6 +331,7 @@
 				<th>ID List</th>
 				<th>Data Format</th>
 				<th>Delivery Method</th>
+				<th>DUA</th>
 				<th>Cancel</th>
 			</tr>
 		</thead>
@@ -312,6 +354,7 @@
 					$request_completedate = $row['request_completedate'];
 					$status = $row['request_status'];
 					$admin_username = $row['admin_username'];
+					$duafileid = $row['dua_fileid'];
 
 					switch ($status) {
 						case 'complete': $statustd = "positive"; break;
@@ -332,6 +375,7 @@
 						<td><?=$idlist?></td>
 						<td><?=$dataformat?></td>
 						<td><?=$deliverymethod?></td>
+						<td><? if ($duafileid != "") { ?><a href="f.php?action=download&fileid=<?=$duafileid?>"><i class="file alternate icon"></i></a> <? } ?></td>
 						<td><a href="datasetrequests.php?action=cancel&datasetrequestid=<?=$datasetrequestid?>" style="color: red">Cancel</a></td>
 					</tr>
 					<? 

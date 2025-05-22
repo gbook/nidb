@@ -1,0 +1,50 @@
+# depslib dependency file v1.0
+1237762916 source:c:\documents and settings\mike\my documents\www\cross-browser.com\x\xc\util.c
+	"util.h"
+
+1236669578 
+
+1237759942 c:\documents and settings\mike\my documents\www\cross-browser.com\x\xc\util.h
+	<string.h>
+	<ctype.h>
+
+1236671339 source:c:\documents and settings\mike\my documents\www\cross-browser.com\x\xc\xag.c
+	"xag.h"
+	"util.h"
+
+1236669578 c:\documents and settings\mike\my documents\www\cross-browser.com\x\xc\xag.h
+	<stdlib.h>
+	<stdio.h>
+	<string.h>
+	<time.h>
+	<ctype.h>
+	<dirent.h>
+	<dir.h>
+
+1265917117 source:c:\documents and settings\mike\my documents\www\cross-browser.com\x\tools\prj\util.c
+	"util.h"
+
+1265917113 c:\documents and settings\mike\my documents\www\cross-browser.com\x\tools\prj\util.h
+	<string.h>
+	<ctype.h>
+
+1265871543 source:/home/mike/Documents/xtools/util.c
+	"util.h"
+
+1237763542 /home/mike/Documents/xtools/util.h
+	<string.h>
+	<ctype.h>
+
+1265930065 source:c:\documents and settings\mike\my documents\www\cross-browser.com\x\tools\prj\xag.c
+	"xag.h"
+	"util.h"
+
+1265934650 c:\documents and settings\mike\my documents\www\cross-browser.com\x\tools\prj\xag.h
+	<stdlib.h>
+	<stdio.h>
+	<string.h>
+	<time.h>
+	<ctype.h>
+	<dirent.h>
+	<dir.h>
+

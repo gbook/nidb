@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xDragInFence'>
+
+<sources>
+  <src><file>xdraginfence.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Event</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[Enable dragging for the element. Optionally, dragging can be limited to a rectangular area. If fnDrag is not provided then this code will provide basic dragging. If fnDrag is provided then it must implement the dragging. See xEnableDrag for more info.]]></description>
+
+<syntax>xDragInFence(ele[, fnDragStart[, fnDrag[, fnDragEnd[, x1, y1, x2, y2]]]])</syntax>
+
+<parameters>
+  <par>
+    <name>ele</name><note><![CDATA[id string or element object reference.]]></note>
+  </par>
+  <par>
+    <name>fnDragStart</name><note><![CDATA[Function - will be called on mousedown on ele. fnDragStart(ele, mouseX, mouseY, xEventObj)]]></note>
+  </par>
+  <par>
+    <name>fnDrag</name><note><![CDATA[Function - will be called on each mousemove during dragging. fnDrag(ele, mouseDX, mouseDY, bWithinRect, xEventObj)]]></note>
+  </par>
+  <par>
+    <name>fnDragEnd</name><note><![CDATA[Function - will be called on mouseup on ele. fnDragEnd(ele, mouseX, mouseY, xEventObj)]]></note>
+  </par>
+  <par>
+    <name>x1, y1</name><note><![CDATA[Integers - the absolute position of the upper left corner of a rectangle to which dragging will be limited.]]></note>
+  </par>
+  <par>
+    <name>x2, y2</name><note><![CDATA[Integers - the absolute position of the lower right corner of a rectangle to which dragging will be limited.]]></note>
+  </par>
+  <par>
+    <name>limits element</name><note><![CDATA[id string or element reference - Instead of passing the 4 coordinates just pass an element id or ref in place of x1. The drag limits will adjust to the current size of the limits element.]]></note>
+  </par>
+</parameters>
+
+<dependencies>
+  <dep>xEnableDrag</dep>
+  <dep>xGetElementById</dep>
+  <dep>xPageX</dep>
+  <dep>xPageY</dep>
+</dependencies>
+
+<demos>
+  <demo><url>http://cross-browser.com/x/examples/drag4.html</url><note><![CDATA[A test page for xDragInFence and xEnableDrop.]]></note></demo>
+</demos>
+
+<revisions>
+  <rev><num>2</num><date>24Nov10</date><author>mf</author><note><![CDATA[Renamed from xEnableDrag2 to xDragInFence.]]></note></rev>
+  <rev><num>1</num><date>9Jul07</date><author>mf</author><note><![CDATA[Initial release. This function is backwards compatible with rev 6 of xEnableDrag.]]></note></rev>
+</revisions>
+
+</x_symbol>

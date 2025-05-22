@@ -1,0 +1,19 @@
+X Tools
+
+xag 1.0
+xpp 1.0
+
+date:     11Feb10
+author:   Mike Foster
+license:  GNU LGPL
+home:     http://cross-browser.com/
+
+Windows (XP SP3)
+
+ide:      Code::Blocks 8.02
+compiler: gcc 3.4.5 (MinGW)
+
+Linux (Ubuntu 9.10)
+
+ide:      Code::Blocks 8.02
+compiler: gcc 4.4.1

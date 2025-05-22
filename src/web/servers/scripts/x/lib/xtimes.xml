@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xTimes'>
+
+<sources>
+  <src><file>xtimes.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Iteration</grp>
+</groups>
+
+<type>Function</type>
+
+<description><![CDATA[Call a function n times.]]></description>
+
+<syntax>xTimes(n, f, s)</syntax>
+
+<parameters>
+  <par><name>n</name><note><![CDATA[Int  - Number of times f is called]]></note></par>
+  <par><name>f</name><note><![CDATA[Func - Function to execute (can accept an index value from 0 to n-1)]]></note></par>
+  <par><name>s</name><note><![CDATA[Int  - Start index (0 if null or not present)]]></note></par>
+</parameters>
+
+<demos>
+  <demo><url>http://cross-browser.com/toys/</url><note><![CDATA[Index of all X demos.]]></note></demo>
+</demos>
+
+<revisions>
+  <rev><num>2</num><date>9Sep2006</date><author>mf</author><note><![CDATA[I put 's' as the last param, similar to Daniel's other iteration functions.]]></note></rev>
+  <rev><num>1</num><date>8Sep2006</date><author>df</author><note><![CDATA[Initial release.]]></note></rev>
+</revisions>
+
+</x_symbol>

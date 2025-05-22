@@ -511,10 +511,11 @@
 			$file = mysqli_real_escape_string($GLOBALS['linki'], $file);
 			$msg = mysqli_real_escape_string($GLOBALS['linki'], $body);
 			
-			$sqlstring = "insert into error_log (error_hostname, error_type, error_source, error_module, error_date, error_message) values ('localhost', 'sql', 'web', '$file', now(), '$msg')";
-			$result = mysqli_query($GLOBALS['linki'], $sqlstring);
+			$sqlstringA = "insert into error_log (error_hostname, error_type, error_source, error_module, error_date, error_message) values ('localhost', 'sql', 'web', '$file', now(), '$msg')";
+			$resultA = mysqli_query($GLOBALS['linki'], $sqlstringA);
 			
-			if (($GLOBALS['cfg']['hideerrors']) && ($continue == false)) {
+			//if (($GLOBALS['cfg']['hideerrors']) && ($continue == false)) {
+			if ($continue == false) {
 				die("<div width='100%' style='border:1px solid red; background-color: #FFC; margin:10px; padding:10px; border-radius:5px; text-align: center'><b>Internal NiDB error.</b><br>The site administrator has been notified. Contact the administrator &lt;".$GLOBALS['cfg']['adminemail']."&gt; if you can provide additional information that may have led to the error<br><br><img src='images/topmen.png'></div>");
 			}
 			else {
@@ -532,7 +533,7 @@
 							<div class="four wide right aligned column">
 								<h3 class="header">Query</h3>
 							</div>
-							<div class="twelve wide column"> <code><?=$file?></code> (line <tt><?=$line?></tt>)</div>
+							<div class="twelve wide column"> <code><?=$file?></code> (line <tt><?=$line?></tt>)<br><br> <?=$origsql?></div>
 							
 							<div class="four wide right aligned column">
 								<h3 class="header">Datetime</h3>
@@ -3086,6 +3087,62 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		$s = str_replace(':', '\\:', $s);
 		$s = str_replace('-', '\\-', $s);
 		return $s;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- StoreFileToSQL --------------------- */
+	/* -------------------------------------------- */
+	function StoreFileToSQL($filename, $filecontenttype, $fileblob, $filesize) {
+		$sqlstring = "insert into files (file_name, file_contenttype, file_blob, file_size, file_date) values ('$filename', '$filecontenttype', '$fileblob', $filesize, now())";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$fileid = mysqli_insert_id($GLOBALS['linki']);
+		
+		return $fileid;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DeleteFileFromSQL ------------------ */
+	/* -------------------------------------------- */
+	function DeleteFileFromSQL($fileid) {
+		$sqlstring = "delete from files where file_id = $fileid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetFileInfoFromSQL ----------------- */
+	/* -------------------------------------------- */
+	function GetFileInfoFromSQL($fileid) {
+		$sqlstring = "select file_name, file_contenttype, file_size, file_date from files where file_id = $fileid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$filename = $row['file_name'];
+		$filecontenttype = $row['file_contenttype'];
+		$filesize = $row['file_size'];
+		$filedate = $row['file_date'];
+
+		return array($filename, $filecontenttype, $filesize, $filedate);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetFileFromSQL --------------------- */
+	/* -------------------------------------------- */
+	function GetFileFromSQL($fileid) {
+		$sqlstring = "select * from files where file_id = $fileid";
+		//PrintSQL($sqlstring);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		//echo "Checkpoint A";
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$filename = $row['file_name'];
+		$filecontenttype = $row['file_contenttype'];
+		$fileblob = base64_decode($row['file_blob']);
+		$filesize = $row['file_size'];
+		$filedate = $row['file_date'];
+
+		return array($filename, $filecontenttype, $fileblob, $filesize, $filedate);
 	}
 
 

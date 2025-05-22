@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xEnableDrag'>
+
+<sources>
+  <src><file>xenabledrag.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Event</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[Enable dragging for the element. If fnDrag is not provided then this code will provide basic dragging. If fnDrag is provided then it must implement the dragging.]]></description>
+
+<syntax>xEnableDrag(ele[, fnDragStart[, fnDrag[, fnDragEnd]]])</syntax>
+
+<parameters>
+  <par>
+    <name>ele</name><note><![CDATA[id string or element object reference.]]></note>
+  </par>
+  <par>
+    <name>fnDragStart</name><note><![CDATA[Function - will be called on mousedown on ele. fnDragStart(ele, mouseX, mouseY, xEventObj)]]></note>
+  </par>
+  <par>
+    <name>fnDrag</name><note><![CDATA[Function - will be called on each mousemove during dragging. fnDrag(ele, mouseDX, mouseDY, xEventObj)]]></note>
+  </par>
+  <par>
+    <name>fnDragEnd</name><note><![CDATA[Function - will be called on mouseup on ele. fnDragEnd(ele, mouseX, mouseY, xEventObj)]]></note>
+  </par>
+</parameters>
+
+<dependencies>
+  <dep>xGetElementById</dep>
+  <dep>xAddEventListener</dep>
+  <dep>xRemoveEventListener</dep>
+  <dep>xEvent</dep>
+  <dep>xMoveTo</dep>
+  <dep>xPreventDefault</dep>
+  <dep>xLeft</dep>
+  <dep>xTop</dep>
+</dependencies>
+
+<demos>
+  <demo>
+    <url>http://cross-browser.com/x/examples/xfenster.php</url>
+    <note><![CDATA[xFenster demos.]]></note>
+  </demo>
+  <demo>
+    <url>http://cross-browser.com/x/examples/drag4.html</url>
+    <note><![CDATA[A test page for xDragInFence, xEnableDrag and xEnableDrop.]]></note>
+  </demo>
+</demos>
+
+<revisions>
+  <rev>
+    <num>8</num><date>8Aug07</date><author>mf</author><note><![CDATA[Went back to using xLeft/xTop instead of offsetLeft/offsetTop. This should better support dragging relatively positioned elements. This needs more testing.]]></note>
+  </rev>
+  <rev>
+    <num>7</num><date>9Jul07</date><author>mf</author><note><![CDATA[Reimplemented (see http://cross-browser.com/forums/viewtopic.php?id=62). Note that "this" is now invalid in the callback functions. Removed "limits" feature (see xDragInFence).]]></note>
+  </rev>
+  <rev>
+    <num>6</num><date>5Jun07</date><author>mf</author><note><![CDATA[Removed use of xParent.]]></note>
+  </rev>
+  <rev>
+    <num>5</num><date>28May07</date><author>mf</author><note><![CDATA[I commented-out the line added in rev 2, restricting the drag to the left mouse button, because I'm still uncertain about the values assigned to event.button by Safair/WebKit.]]></note>
+  </rev>
+  <rev>
+    <num>4</num><date>16Apr07</date><author>mf</author><note><![CDATA[Added xEvent object as last argument in calls to callback functions.]]></note>
+  </rev>
+  <rev>
+    <num>3</num><date>26Jan07</date><author>mf</author><note><![CDATA[Added support for a bounding rectangle and improved the documentation in this file.]]></note>
+  </rev>
+  <rev>
+    <num>2</num><date>20Jan07</date><author>mf</author><note><![CDATA[Mark submitted a fix/improvement for xEnableDrag. It now only drags on a "left" click. Thanks!]]></note>
+  </rev>
+  <rev>
+    <num>1</num><date>16Mar05</date><author>mf</author><note><![CDATA[Reduced 426 bytes! Renamed event listeners, variables and parameters. Calling xPreventDefault instead of inline code.]]></note>
+  </rev>
+</revisions>
+
+</x_symbol>

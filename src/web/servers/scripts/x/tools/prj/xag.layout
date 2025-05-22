@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_layout_file>
+	<ActiveTarget name="Release" />
+	<File name="util.c" open="1" top="0" tabpos="5">
+		<Cursor position="0" topLine="0" />
+	</File>
+	<File name="util.h" open="1" top="0" tabpos="6">
+		<Cursor position="978" topLine="0" />
+	</File>
+	<File name="xag.c" open="1" top="0" tabpos="1">
+		<Cursor position="4036" topLine="79" />
+	</File>
+	<File name="xag.h" open="1" top="0" tabpos="2">
+		<Cursor position="2469" topLine="42" />
+	</File>
+</CodeBlocks_layout_file>

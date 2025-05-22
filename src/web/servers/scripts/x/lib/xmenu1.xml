@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xMenu1'>
+
+<sources>
+  <src><file>xmenu1.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>UI</grp>
+</groups>
+<type>Object</type>
+
+<description><![CDATA[xMenu1 Object Prototype]]></description>
+
+<syntax>new xMenu1(triggerId, menuId, mouseMargin, openEvent)</syntax>
+
+<parameters>
+  <par>
+    <name>triggerId</name>
+    <note><![CDATA[id string of trigger element.]]></note>
+  </par>
+  <par>
+    <name>menuId</name>
+    <note><![CDATA[id string of menu.]]></note>
+  </par>
+  <par>
+    <name>mouseMargin</name>
+    <note><![CDATA[integer margin around menu; when mouse is outside this margin the menu is hid.]]></note>
+  </par>
+  <par>
+    <name>openEvent</name>
+    <note><![CDATA[string name of event on which to open menu ('click', 'mouseover', etc).]]></note>
+  </par>
+</parameters>
+
+<dependencies>
+  <dep>xgetelementbyid</dep>
+  <dep>xaddeventlistener</dep>
+  <dep>xmoveto</dep>
+  <dep>xpagex</dep>
+  <dep>xpagey</dep>
+  <dep>xheight</dep>
+  <dep>xevent</dep>
+  <dep>xhaspoint</dep>
+  <dep>xremoveeventlistener</dep>
+</dependencies>
+
+<demos>
+  <demo>
+    <url>http://cross-browser.com/x/menus/xmenu1.php</url>
+    <note><![CDATA[simple menus with plenty of potential]]></note>
+  </demo>
+</demos>
+
+</x_symbol>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xFindAfterByClassName'>
+
+<sources>
+  <src><file>xfindafterbyclassname.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Style</grp>
+</groups>
+
+<type>Function</type>
+
+<description><![CDATA[Finds the first element after the given one that is from a given class.]]></description>
+
+<syntax>xFindAfterByClassName( ele, clsName )</syntax>
+
+<parameters>
+  <par><name>ele</name><note><![CDATA[]]></note></par>
+  <par><name>clsName</name><note><![CDATA[]]></note></par>
+</parameters>
+
+<return><![CDATA[Returns the element found.]]></return>
+
+<dependencies>
+  <dep>xWalkToLast</dep>
+</dependencies>
+
+<demos>
+  <demo><url>http://cross-browser.com/toys/</url><note><![CDATA[Index of all X demos.]]></note></demo>
+</demos>
+
+<comments>
+  <comment><date>9Oct06</date><author>mf</author><note><![CDATA[Thanks very much to Olivier!]]></note></comment>
+</comments>
+
+<revisions>
+  <rev><num>1</num><date>2005</date><author>mf</author><note><![CDATA[Initial release.]]></note></rev>
+</revisions>
+
+</x_symbol>

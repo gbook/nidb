@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xGetComputedStyle'>
+
+<sources>
+  <src><file>xgetcomputedstyle.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Style</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[A safe wrapper for getComputedStyle and currentStyle.]]></description>
+
+<syntax>xGetComputedStyle(ele, sProp[, bInt])</syntax>
+
+<parameters>
+  <par>
+    <name>ele</name>
+    <note><![CDATA[element object reference or id string]]></note>
+  </par>
+  <par>
+    <name>sProp</name>
+    <note><![CDATA[css property name]]></note>
+  </par>
+  <par>
+    <name>bInt</name>
+    <note><![CDATA[if true, return value is an integer]]></note>
+  </par>
+</parameters>
+
+<return>String, or integer if bInt is true.</return>
+
+<dependencies>
+  <dep>xGetElementById</dep>
+  <dep>xCamelize</dep>
+</dependencies>
+
+<demos>
+  <demo>
+    <url>http://cross-browser.com/toys/</url>
+    <note><![CDATA[This function is used by xLeft, xTop, xWidth and xHeight.]]></note>
+  </demo>
+</demos>
+
+<comments>
+  <comment>
+    <date></date>
+    <author>mf</author>
+    <note><![CDATA[For sProp use the css property name, not the object property name.
+For finding width this works in Moz and Op, but in IE this only works if padding and border use pixel units in the CSS.]]></note>
+  </comment>
+</comments>
+
+<revisions>
+  <rev>
+    <num>7</num><date>11Apr07</date><author>mf</author>
+    <note><![CDATA[ele could only be an object but now it can be an obj or id string. Also now using xCamelize instead of inline code.]]></note>
+  </rev>
+  <rev>
+    <num>6</num><date>26Oct06</date><author>mf</author>
+    <note><![CDATA[The variable 'c' was global, but should have been local. Thanks very much to Nicolas Le for spotting this.]]></note>
+  </rev>
+  <rev>
+    <num>5</num><date>14Mar05</date><author>mf</author>
+    <note><![CDATA[reduced by about 20 bytes]]></note>
+  </rev>
+  <rev>
+    <num>4</num><date>12Mar05</date><author>mf</author>
+    <note><![CDATA[return null on error]]></note>
+  </rev>
+  <rev>
+    <num>3</num><date></date><author>mf</author>
+    <note><![CDATA[added some error checking]]></note>
+  </rev>
+  <rev>
+    <num>2</num><date>23Aug04</date><author>mf</author>
+    <note><![CDATA[option to parseInt or return string]]></note>
+  </rev>
+  <rev>
+    <num>1</num><date>31Mar04</date><author>mf</author>
+    <note><![CDATA[put in it's own file for use with XC]]></note>
+  </rev>
+</revisions>
+
+</x_symbol>

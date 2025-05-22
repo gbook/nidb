@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xTooltipGroup'>
+
+<sources>
+  <src><file>xtooltipgroup.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>UI</grp>
+</groups>
+<type>Object</type>
+
+<description><![CDATA[Different tooltips applied to groups of elements.]]></description>
+
+<syntax>xTooltipGroup(grpClassOrIdList, tipClass, origin, xOffset, yOffset, hideDelay, sticky, textList)</syntax>
+
+<parameters>
+  <par>
+    <name>grpClassOrIdList</name><note><![CDATA[The css class name which you add to any element you want to trigger a tooltip - Or - an array of id strings.]]></note>
+  </par>
+  <par>
+    <name>tipClass</name><note><![CDATA[The css class name applied to the tooltip triggered by elements with the grpClass class name (or elements whose id is in the IdList).]]></note>
+  </par>
+  <par>
+    <name>origin</name><note><![CDATA[One of 'right', 'top', or 'mouse'. For 'right' or 'top', the tooltip is positioned to the right (or top) of the trigger element. For 'mouse' the tooltip will follow the mouse. In all three cases the following offsets are applied.]]></note>
+  </par>
+  <par>
+    <name>xOffset/yOffset</name><note><![CDATA[The tooltip is positioned relative to the above origin, offset by these amounts.]]></note>
+  </par>
+  <par>
+    <name>hideDelay</name><note><![CDATA[After the mouse moves off of the trigger, this delay (in ms) will elapse before hiding the tip.]]></note>
+  </par>
+  <par>
+    <name>sticky</name><note><![CDATA[If true the tip will not be hidden until there is a click on the tip or a mouseover on some other trigger.]]></note>
+  </par>
+  <par>
+    <name>textList</name><note><![CDATA[If grpClassOrIdList is an array of IDs, then textList provides the tooltip text for the corresponding array index. If grpClassOrIdList is a class name then textList is not needed (tooltip text is taken from the element's TITLE attribute).]]></note>
+  </par>
+</parameters>
+
+<properties>
+</properties>
+
+<dependencies>
+  <dep>xStr</dep>
+  <dep>xGetElementsByClassName</dep>
+  <dep>xGetElementById</dep>
+  <dep>xAddEventListener</dep>
+  <dep>xPageX</dep>
+  <dep>xWidth</dep>
+  <dep>xPageY</dep>
+  <dep>xHeight</dep>
+  <dep>xMoveTo</dep>
+  <dep>xEvent</dep>
+  <dep>xClientWidth</dep>
+</dependencies>
+
+<demos>
+  <demo>
+    <url>http://cross-browser.com/x/examples/tooltips3.html</url>
+    <note><![CDATA[tooltips demo]]></note>
+  </demo>
+</demos>
+
+<revisions>
+  <rev>
+    <num>11</num><date>5Jun07</date><author>mf</author>
+    <note><![CDATA[Removed use of xParent and xShow.]]></note>
+  </rev>
+  <rev>
+    <num>10</num><date>23Apr07</date><author>mf</author>
+    <note><![CDATA[I've made a change based on an awesome 'tip' ;-) from Michael Hodgins. If grpClassOrIdList is a class then all trigger elements' titles are saved in the element's xTooltipText property. The element's title attribute is then set to "" so it will not cause a system tooltip. Thanks, Michael!]]></note>
+  </rev>
+  <rev>
+    <num>9</num><date>17Feb07</date><author>mf</author>
+    <note><![CDATA[Re-implemented docOnMousemove so that a trigger's child elements do not cause the tip to close. Also, not using 'setAttribute' after creating the tooltip element - just assign an ID and rely on css. Also added sticky and hideDelay features.]]></note>
+  </rev>
+  <rev>
+    <num>8</num><date>1Nov06</date><author>mf</author>
+    <note><![CDATA[It now uses createElement to create the tooltip element.]]></note>
+  </rev>
+  <rev>
+    <num>7</num><date>29Oct06</date><author>mf</author>
+    <note><![CDATA[Fawn found a major bug. this.t should have been static. Thanks, Fawn!]]></note>
+  </rev>
+  <rev>
+    <num>6</num><date>17May04</date><author>mf</author>
+    <note><![CDATA[removed closures]]></note>
+  </rev>
+  <rev>
+    <num>5</num><date>31Mar04</date><author>mf</author>
+    <note><![CDATA[put in it's own file for use with XC]]></note>
+  </rev>
+  <rev>
+    <num>4</num><date>1Mar04</date><author>mf</author>
+    <note><![CDATA[Now works in IE 4 and 5. Used document.write instead of document.createElement.]]></note>
+  </rev>
+  <rev>
+    <num>3</num><date>13Dec03</date><author>mf</author>
+    <note><![CDATA[Almost completely rewritten. Now supports html for tooltip text instead of using the title attribute.]]></note>
+  </rev>
+  <rev>
+    <num>2</num><date>12Dec03</date><author>mf</author>
+    <note><![CDATA[Correction for when the mouse moves directly from one trigger element to another.]]></note>
+  </rev>
+  <rev>
+    <num>1</num><date>11Dec03</date><author>mf</author>
+    <note><![CDATA[Initial release.]]></note>
+  </rev>
+</revisions>
+
+</x_symbol>

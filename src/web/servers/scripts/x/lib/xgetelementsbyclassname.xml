@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xGetElementsByClassName'>
+
+<sources>
+  <src><file>xgetelementsbyclassname.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>DOM</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[Returns an array of elements which are descendants of parentEle and have tagName and clsName. If parentEle is null or not present, document will be used. If tagName is null or not present, "*" will be used.]]></description>
+
+<syntax>xGetElementsByClassName(sClsName[, oParentEle[, sTagName[, fnCallback]]])</syntax>
+
+<parameters>
+  <par>
+    <name>sClsName</name><note><![CDATA[String. A className. This can also be a regular expression.]]></note>
+  </par>
+  <par>
+    <name>oParentEle</name><note><![CDATA[Element reference. If omitted "document" will be used. This can be an ID string if this function uses xGetElementsByTagName.]]></note>
+  </par>
+  <par>
+    <name>sTagName</name><note><![CDATA[String. An HTML tagName. If omitted "*" will be used.]]></note>
+  </par>
+  <par>
+    <name>fnCallback</name>
+    <note><![CDATA[Callback function, iterates thru the list of found elements. Is passed a reference to each Element object found.]]></note>
+  </par>
+</parameters>
+
+<return>Always returns an array but it may have zero length.</return>
+
+<dependencies>
+  <dep>xGetElementsByTagName</dep>
+</dependencies>
+
+<demos>
+  <demo>
+    <url>http://cross-browser.com/toys/</url>
+    <note><![CDATA[Index of all X demos.]]></note>
+  </demo>
+</demos>
+
+<comments>
+
+  <comment>
+    <date>23Mar07</date><author>mf</author>
+    <note><![CDATA[Here's an experimental version that uses XPath if available (ref: http://cross-browser.com/x/test/xpath_test.html):
+[code]function xGetElementsByClassName2(c,p,f) // test implementation
+{
+  var e, i, r = new Array();
+  if (!p) p = document;
+  if (document.evaluate) {
+    var x = document.evaluate(".//*[contains(concat(' ', @class, ' '), ' " + c + " ')]", p, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+    for (i = 0; i < x.snapshotLength; i++) {
+      r[r.length] = x.snapshotItem(i);
+      if (f) f(x.snapshotItem(i));
+    }
+  }
+/*
+  else if (p.getElementsByClassName) { // FF3 ?
+    r = p.getElementsByClassName(c);
+  }
+*/
+  else {
+    var re = new RegExp("(^|\\s)"+c+"(\\s|$)");
+    e = p.getElementsByTagName('*'); // not for IE5
+    for (i = 0; i < e.length; ++i) {
+      if (re.test(e[i].className)) {
+        r[r.length] = e[i];
+        if (f) f(e[i]);
+      }
+    }
+  }
+  return r;
+}[/code]
+    ]]></note>
+  </comment>
+  <comment>
+    <date>3Nov06</date><author>mf</author>
+    <note><![CDATA[
+    If you don't need IE4 support and don't ever pass a '*' for tagName then you
+    can use "p.getElementsByTagName(t)" instead of "xGetElementsByTagName(t, p)".
+    It will then be up to you to take the precautions normally taken by xGetElementsByTagName,
+    for example: p=p||document, t=t||'*', and handling the IE5 '*' bug.
+    ]]></note>
+  </comment>
+</comments>
+
+<revisions>
+  <rev><num>7</num><date>14May11</date><author>mf</author><note><![CDATA[Cache e.length.]]></note></rev>
+  <rev>
+    <rev><num>6</num><date>6Mar09</date><author>mf</author><note><![CDATA[Combined multiple var statements into one and use array literal instead of new Array.]]></note></rev>
+    <num>5</num><date>19Nov06</date><author>mf</author>
+    <note><![CDATA[
+    Thanks very much to Kravvitz at SPF who pointed out this:
+    http://www.robertnyman.com/2005/11/07/the-ultimate-getelementsbyclassname/
+    which shows that my RE did not handle hyphenated words. Kravvitz also
+    correctly pointed out that I should not be using the 'ignore case' flag.
+    ]]></note>
+  </rev>
+  <rev><num>4</num><date>15Mar05</date><author>mf</author><note><![CDATA[Reduced 46 bytes.]]></note></rev>
+  <rev><num>3</num><date>7Mar05</date><author>mf</author><note><![CDATA[Bug-fix from Daniel FAIVRE.]]></note></rev>
+  <rev><num>2</num><date>15May04</date><author>mf</author><note><![CDATA[added callback fn]]></note></rev>
+  <rev><num>1</num><date>31Mar04</date><author>mf</author><note><![CDATA[put in it's own file for use with XC]]></note></rev>
+</revisions>
+
+</x_symbol>

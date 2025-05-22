@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xParentN'>
+
+<sources>
+  <src><file>xparentn.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>DOM</grp>
+</groups>
+
+<type>Function</type>
+
+<description><![CDATA[Returns e when n == 0, e.parentNode when n == 1, e.parentNode.parentNode when n == 2, etc.]]></description>
+
+<syntax>xParentN(e, n)</syntax>
+
+<parameters>
+  <par><name>e</name><note><![CDATA[element object]]></note></par>
+  <par><name>n</name><note><![CDATA[integer >= 0]]></note></par>
+</parameters>
+
+<return><![CDATA[Returns the indicated parent node.]]></return>
+
+<demos>
+  <demo><url>http://cross-browser.com/toys/</url><note><![CDATA[Index of all X demos.]]></note></demo>
+</demos>
+
+<comments>
+  <comment><date>9Oct06</date><author>mf</author><note><![CDATA[Thanks very much to Olivier!]]></note></comment>
+</comments>
+
+<revisions>
+  <rev><num>2</num><date>27Jan10</date><author>mf</author><note><![CDATA[Renamed from xParentNode to xParentN.]]></note></rev>
+  <rev><num>1</num><date>2005</date><author>mf</author><note><![CDATA[Initial release.]]></note></rev>
+</revisions>
+
+</x_symbol>

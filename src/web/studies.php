@@ -802,19 +802,19 @@
 	/* -------------------------------------------- */
 	function UpdateBIDSMapping($studyid, $seriesdesc, $imagetype, $bidsentitysuffix, $bidsIntendedForEntity, $bidsIntendedForTask, $bidsIntendedForRun, $bidsIntendedForSuffix, $bidsIntendedForFileExtension, $bidsrun, $bidsautonumberruns, $bidsincludeacquisition, $bidstask, $bidspedirection) {
 		$studyid = mysqli_real_escape_string($GLOBALS['linki'], $studyid);
-		$seriesdesc = mysqli_real_escape_string($GLOBALS['linki'], $seriesdesc);
-		$imagetype = mysqli_real_escape_string($GLOBALS['linki'], $imagetype);
-		$bidsentitysuffix = mysqli_real_escape_string($GLOBALS['linki'], $bidsentitysuffix);
-		$bidsIntendedForEntity = mysqli_real_escape_string($GLOBALS['linki'], $bidsIntendedForEntity);
-		$bidsIntendedForTask = mysqli_real_escape_string($GLOBALS['linki'], $bidsIntendedForTask);
-		$bidsIntendedForRun = mysqli_real_escape_string($GLOBALS['linki'], $bidsIntendedForRun);
-		$bidsIntendedForSuffix = mysqli_real_escape_string($GLOBALS['linki'], $bidsIntendedForSuffix);
-		$bidsIntendedForFileExtension = mysqli_real_escape_string($GLOBALS['linki'], $bidsIntendedForFileExtension);
+		$seriesdesc = mysqli_real_escape_string($GLOBALS['linki'], trim($seriesdesc));
+		$imagetype = mysqli_real_escape_string($GLOBALS['linki'], trim($imagetype));
+		$bidsentitysuffix = mysqli_real_escape_string($GLOBALS['linki'], trim($bidsentitysuffix));
+		$bidsIntendedForEntity = mysqli_real_escape_string($GLOBALS['linki'], trim($bidsIntendedForEntity));
+		$bidsIntendedForTask = mysqli_real_escape_string($GLOBALS['linki'], trim($bidsIntendedForTask));
+		$bidsIntendedForRun = mysqli_real_escape_string($GLOBALS['linki'], trim($bidsIntendedForRun));
+		$bidsIntendedForSuffix = mysqli_real_escape_string($GLOBALS['linki'], trim($bidsIntendedForSuffix));
+		$bidsIntendedForFileExtension = mysqli_real_escape_string($GLOBALS['linki'], trim($bidsIntendedForFileExtension));
 		$bidsrun = mysqli_real_escape_string($GLOBALS['linki'], $bidsrun);
 		$bidsautonumberruns = mysqli_real_escape_string($GLOBALS['linki'], $bidsautonumberruns);
 		$bidsincludeacquisition = mysqli_real_escape_string($GLOBALS['linki'], $bidsincludeacquisition);
-		$bidstask = mysqli_real_escape_string($GLOBALS['linki'], $bidstask);
-		$bidspedirection = mysqli_real_escape_string($GLOBALS['linki'], $bidspedirection);
+		$bidstask = mysqli_real_escape_string($GLOBALS['linki'], trim($bidstask));
+		$bidspedirection = mysqli_real_escape_string($GLOBALS['linki'], trim($bidspedirection));
 		
 		list($bidsentity, $bidssuffix) = explode(":", $bidsentitysuffix);
 		if ($bidsautonumberruns == "1")

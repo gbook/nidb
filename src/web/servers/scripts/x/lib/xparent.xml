@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xParent'>
+
+<sources>
+  <src><file>xparent.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>DOM</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[Returns the nearest ancestor of ele whose nodeName == name. Assumes name is lowercase. Omit name to get the first ancestor.]]></description>
+
+<syntax>xParent(ele, name)</syntax>
+
+<parameters>
+  <par>
+    <name>ele</name>
+    <note><![CDATA[id string or object reference]]></note>
+  </par>
+  <par>
+    <name>name</name>
+    <note><![CDATA[optional nodeName of parent to return]]></note>
+  </par>
+</parameters>
+
+<return>Element reference or null.</return>
+
+<dependencies>
+  <dep>xGetElementById</dep>
+</dependencies>
+
+<demos>
+  <demo>
+    <url>http://cross-browser.com/toys/</url>
+    <note><![CDATA[Index of all X demos.]]></note>
+  </demo>
+</demos>
+
+<revisions>
+  <rev>
+    <num>1</num><date>27Jan10</date><author>mf</author><note><![CDATA[rewritten]]></note>
+    <num>1</num><date>31Mar04</date><author>mf</author><note><![CDATA[put in it's own file for use with XC]]></note>
+  </rev>
+</revisions>
+
+</x_symbol>

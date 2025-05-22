@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xAniWH'>
+
+<sources>
+  <src><file>xaniwh.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Animation</grp>
+</groups>
+
+<type>Function</type>
+
+<description><![CDATA[Animate an element's size. This is a minimal, time-based implementation - only supports constant velocity.]]></description>
+
+<syntax>xAniWH(e, w, h, t);</syntax>
+
+<parameters>
+  <par><name>e</name><note><![CDATA[An Element object reference or an id string.]]></note></par>
+  <par><name>w</name><note><![CDATA[The target width (integer).]]></note></par>
+  <par><name>h</name><note><![CDATA[The target height (integer).]]></note></par>
+  <par><name>t</name><note><![CDATA[The total time for the animation, in milliseconds.]]></note></par>
+</parameters>
+
+<dependencies>
+  <dep>xGetElementById</dep>
+  <dep>xWidth</dep>
+  <dep>xHeight</dep>
+</dependencies>
+
+<demos>
+  <demo><url>http://cross-browser.com/x/examples/xanimation.html</url><note><![CDATA[Start page of all xAnimation demos.]]></note></demo>
+</demos>
+
+<revisions>
+  <rev><num>1</num><date>10Oct08</date><author>Nabab</author><note><![CDATA[Initial inclusion in X.]]></note></rev>
+</revisions>
+
+</x_symbol>

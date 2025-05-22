@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xEllipse'>
+
+<sources>
+  <src><file>xellipse.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Animation</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[Animate an element along an elliptical path.]]></description>
+
+<syntax>xEllipse(ele, xRadius, yRadius, radiusInc, totalTime, startAngle, stopAngle)</syntax>
+
+<parameters>
+  <par>
+    <name>ele</name>
+    <note><![CDATA[id string or element reference]]></note>
+  </par>
+  <par>
+    <name>xRadius</name>
+    <note><![CDATA[unsigned integer. The horizontal radius of the ellipse. Must be > 0]]></note>
+  </par>
+  <par>
+    <name>yRadius</name>
+    <note><![CDATA[unsigned integer. The vertical radius of the ellipse. Must be > 0]]></note>
+  </par>
+  <par>
+    <name>radiusInc</name>
+    <note><![CDATA[integer. The integer change in radius per iteration. Can be negative. Provides for some interesting effects.]]></note>
+  </par>
+  <par>
+    <name>totalTime</name>
+    <note><![CDATA[unsigned integer. The total duration of the animation in milliseconds. Must be > 0]]></note>
+  </par>
+  <par>
+    <name>startAngle</name>
+    <note><![CDATA[integer. The start angle in degrees.]]></note>
+  </par>
+  <par>
+    <name>stopAngle</name>
+    <note><![CDATA[integer. The stop angle in degrees. If (stopAngle - startAngle) is positive then the animation will be clockwise. if it is negative then the animation will be counter-clockwise. (stopAngle - startAngle) must be non-zero.]]></note>
+  </par>
+</parameters>
+
+<properties>
+  <prop>
+    <name>stop</name>
+    <note><![CDATA[read/write - the stop property on the element itself, when true, will stop animation]]></note>
+  </prop>
+  <prop>
+    <name>moving</name>
+    <note><![CDATA[read-only - the moving property on the element itself, when true, indicates animation is active]]></note>
+  </prop>
+  <prop>
+    <name>timeout</name>
+    <note><![CDATA[read/write - the timeout property on the element itself, determines frequency of iterations, default is 25]]></note>
+  </prop>
+  <prop>
+    <name>onslideend</name>
+    <note><![CDATA[read/write - the onslideend property on the element itself, if defined, will be called at the end of the slide. It does not get called if ele.stop becomes true. It is not reset - the listener can set this.onslideend=null for a 'one-shot'. In the slideEnd listener 'this' points to ele, and you have access to the properties listed here.]]></note>
+  </prop>
+</properties>
+
+<dependencies>
+  <dep>xGetElementById</dep>
+  <dep>xLeft</dep>
+  <dep>xTop</dep>
+  <dep>xMoveTo</dep>
+</dependencies>
+
+<demos>
+  <demo>
+    <url>http://cross-browser.com/x/examples/xellipse.php</url>
+    <note><![CDATA[]]></note>
+  </demo>
+</demos>
+
+<revisions>
+  <rev>
+    <num>2</num>
+    <date>31May05</date>
+    <author>mf</author>
+    <note><![CDATA[Added support for onslideend event]]></note>
+  </rev>
+  <rev>
+    <num>1</num>
+    <date>21Jun04</date>
+    <author>mf</author>
+    <note><![CDATA[Ported from CBE to X]]></note>
+  </rev>
+</revisions>
+
+</x_symbol>
