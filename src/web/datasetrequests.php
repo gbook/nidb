@@ -213,10 +213,12 @@
 			$notes = $row['notes'];
 			$fileid = $row['dua_fileid'];
 
-			list($filename, $filecontenttype, $filesize, $filedate) = GetFileInfoFromSQL($fileid);
+			if ($fileid > 0) {
+				list($filename, $filecontenttype, $filesize, $filedate) = GetFileInfoFromSQL($fileid);
+			}
 			
 			$formaction = "update";
-			$formtitle = "Updating $sitename";
+			$formtitle = "Updating $shortname";
 			$submitbuttonlabel = "Update";
 		}
 		else {
@@ -235,8 +237,8 @@
 	?>
 		<div class="ui text container">
 			<div class="ui attached visible message">
-			  <div class="header">Submit a new data request</div>
-			  <p>Fill out the form to submit a new request. Include as much information as possible, but do not include passwords.</p>
+			  <div class="header">Manage dataset requests</div>
+			  <p>Include as much information as possible, but do not include passwords.</p>
 			</div>
 			<form method="post" action="datasetrequests.php" autocomplete="off" class="ui form attached fluid segment" enctype="multipart/form-data">
 			<input type="hidden" name="action" value="<?=$formaction?>">
@@ -299,7 +301,7 @@
 					<input type="file" name="duafile">
 				</div>
 				<? if ($filename != "") { ?>
-					<small>Existing file: <tt><?=$filename?></tt>, <?=$filesize?> bytes, <?=$filedate?></small>
+					<small>Existing file: <tt><a href="f.php?action=download&fileid=<?=$fileid?>"><?=$filename?></a></tt>, <?=$filesize?> bytes, <?=$filedate?></small>
 				<? } ?>
 			</div>
 			<input type="submit" class="ui primary button" value="<?=$submitbuttonlabel?>">
@@ -315,7 +317,7 @@
 	?>
 
 	<div style="padding: 0px 50px">
-	<button class="ui primary large button" onClick="window.location.href='datasetrequests.php?action=addform'; return false;">Submit New Dataset Request</button>
+	<button class="ui primary large button" onClick="window.location.href='datasetrequests.php?action=addform'; return false;">New Dataset Request</button>
 	<br><br><br>
 	
 	<h3 class="ui header">My Requests</h3>
@@ -356,6 +358,10 @@
 					$admin_username = $row['admin_username'];
 					$duafileid = $row['dua_fileid'];
 
+					if (strlen($idlist) > 200) { $idlist = substr($idlist, 0, 200) . "..."; }
+					if (strlen($dataformat) > 200) { $dataformat = substr($dataformat, 0, 200) . "..."; }
+					if (strlen($deliverymethod) > 200) { $deliverymethod = substr($deliverymethod, 0, 200) . "..."; }
+					
 					switch ($status) {
 						case 'complete': $statustd = "positive"; break;
 						case 'submitted': $statustd = "warning"; break;
@@ -372,9 +378,9 @@
 						<td class="<?=$statustd?>"><?=ucfirst($status)?></td>
 						<td><?=$request_startdate?></td>
 						<td><?=$request_completedate?></td>
-						<td><?=$idlist?></td>
-						<td><?=$dataformat?></td>
-						<td><?=$deliverymethod?></td>
+						<td><pre><?=$idlist?></pre></td>
+						<td><pre><?=$dataformat?></pre></td>
+						<td><pre><?=$deliverymethod?></pre></td>
 						<td><? if ($duafileid != "") { ?><a href="f.php?action=download&fileid=<?=$duafileid?>"><i class="file alternate icon"></i></a> <? } ?></td>
 						<td><a href="datasetrequests.php?action=cancel&datasetrequestid=<?=$datasetrequestid?>" style="color: red">Cancel</a></td>
 					</tr>
@@ -423,6 +429,10 @@
 					$request_completedate = $row['request_completedate'];
 					$status = $row['request_status'];
 
+					if (strlen($idlist) > 200) { $idlist = substr($idlist, 0, 200) . "..."; }
+					if (strlen($dataformat) > 200) { $dataformat = substr($dataformat, 0, 200) . "..."; }
+					if (strlen($deliverymethod) > 200) { $deliverymethod = substr($deliverymethod, 0, 200) . "..."; }
+
 					switch ($status) {
 						case 'complete': $statustd = "positive"; break;
 						case 'submitted': $statustd = "warning"; break;
@@ -439,9 +449,9 @@
 						<td class="<?=$statustd?>"><?=ucfirst($status)?></td>
 						<td><?=$request_startdate?></td>
 						<td><?=$request_completedate?></td>
-						<td><?=$idlist?></td>	
-						<td><?=$dataformat?></td>
-						<td><?=$deliverymethod?></td>
+						<td><pre><?=$idlist?></pre></td>
+						<td><pre><?=$dataformat?></pre></td>
+						<td><pre><?=$deliverymethod?></pre></td>
 						<td><a href="datasetrequests.php?action=markcomplete&datasetrequestid=<?=$datasetrequestid?>" style="color: red">Mark as complete</a></td>
 					</tr>
 					<? 
@@ -486,6 +496,10 @@
 					$request_completedate = $row['request_completedate'];
 					$status = $row['request_status'];
 
+					if (strlen($idlist) > 200) { $idlist = substr($idlist, 0, 200) . "..."; }
+					if (strlen($dataformat) > 200) { $dataformat = substr($dataformat, 0, 200) . "..."; }
+					if (strlen($deliverymethod) > 200) { $deliverymethod = substr($deliverymethod, 0, 200) . "..."; }
+
 					switch ($status) {
 						case 'complete': $statustd = "positive"; break;
 						case 'submitted': $statustd = "warning"; break;
@@ -502,9 +516,9 @@
 						<td class="<?=$statustd?>"><?=ucfirst($status)?></td>
 						<td><?=$request_startdate?></td>
 						<td><?=$request_completedate?></td>
-						<td><?=$idlist?></td>
-						<td><?=$dataformat?></td>
-						<td><?=$deliverymethod?></td>
+						<td><pre><?=$idlist?></pre></td>
+						<td><pre><?=$dataformat?></pre></td>
+						<td><pre><?=$deliverymethod?></pre></td>
 						<td><a href="datasetrequests.php?action=takeownership&datasetrequestid=<?=$datasetrequestid?>" style="color: red">Take ownership</a></td>
 					</tr>
 					<? 

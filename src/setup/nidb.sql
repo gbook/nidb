@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Apr 10, 2025 at 06:25 PM
+-- Generation Time: May 23, 2025 at 04:49 PM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -762,10 +762,11 @@ CREATE TABLE `dataset_requests` (
   `email` varchar(255) DEFAULT NULL,
   `institution` varchar(255) DEFAULT NULL,
   `shortname` varchar(255) NOT NULL,
-  `idlist` longtext NOT NULL,
-  `dataformat` longtext NOT NULL,
-  `deliverymethod` longtext NOT NULL,
-  `notes` longtext NOT NULL,
+  `idlist` longtext DEFAULT NULL,
+  `dataformat` longtext DEFAULT NULL,
+  `deliverymethod` longtext DEFAULT NULL,
+  `notes` longtext DEFAULT NULL,
+  `dua_fileid` int(11) DEFAULT NULL,
   `request_submitdate` datetime NOT NULL,
   `request_startdate` datetime DEFAULT NULL,
   `request_completedate` datetime DEFAULT NULL,
@@ -1219,6 +1220,21 @@ CREATE TABLE `fileio_requests` (
   `merge_enrollgroup` longtext DEFAULT NULL,
   `merge_altuids` longtext DEFAULT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `files`
+--
+
+CREATE TABLE `files` (
+  `file_id` int(11) NOT NULL,
+  `file_name` varchar(255) NOT NULL,
+  `file_contenttype` varchar(255) NOT NULL,
+  `file_blob` longblob NOT NULL,
+  `file_size` bigint(20) NOT NULL DEFAULT 0,
+  `file_date` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -4080,6 +4096,12 @@ ALTER TABLE `fileio_requests`
   ADD PRIMARY KEY (`fileiorequest_id`);
 
 --
+-- Indexes for table `files`
+--
+ALTER TABLE `files`
+  ADD PRIMARY KEY (`file_id`);
+
+--
 -- Indexes for table `groups`
 --
 ALTER TABLE `groups`
@@ -5273,6 +5295,12 @@ ALTER TABLE `family_members`
 --
 ALTER TABLE `fileio_requests`
   MODIFY `fileiorequest_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `files`
+--
+ALTER TABLE `files`
+  MODIFY `file_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `groups`
