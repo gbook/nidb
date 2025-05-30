@@ -1159,7 +1159,7 @@
 		<div class="ui container">
 			<div class="ui top attached tabular menu">
 				<? if ($type != "add") { ?>
-				<a class="<?=$tab_oneactive?> item item2" data-tab="first">Information</a>
+				<a class="<?=$tab_oneactive?> item item2" data-tab="first"><i class="info circle icon"></i> Information</a>
 				<? } ?>
 				<a class="<?=$tab_twoactive?> item item2" data-tab="second"><i class="cog icon"></i> Settings</a>
 				<? if ($type != "add") { ?>
@@ -1178,6 +1178,8 @@
 					<td><h3 class="ui header">View</h3></td>
 					<td valign="top" style="padding-bottom: 10pt">
 						<p><a href="analysis.php?action=viewanalyses&id=<?=$id?>" class="ui green button" style="width:170px">Analyses</a> View running and completed analyses</p>
+
+						<p><a href="pipeline_history.php?pipelineid=<?=$id?>" class="ui green button" style="width:170px">History</a> View pipeline event history</p>
 
 						<p><a href="analysis.php?action=viewfailedanalyses&id=<?=$id?>" class="ui basic green button" style="width:170px">Ignored studies</a> View studies that did not meet criteria to be analyzed (<b>Helpful for debugging</b>)</p>
 						
