@@ -159,6 +159,19 @@
 		$submithostuser = trim($submithostuser);
 		$submithostuser = preg_replace("/[^A-Za-z0-9 ]/", '', $submithostuser);
 
+		if ($hostname == "") {
+			echo "Hostname is blank";
+			return false;
+		}
+		if ($clustertype == "") {
+			echo "Cluster type is blank";
+			return false;
+		}
+		if ($submithostuser == "") {
+			echo "Submit host username is blank";
+			return false;
+		}
+		
 		if ($clustertype == "slurm") {
 			exec("ssh $submithostuser@'$hostname' which sbatch", $output, $result);
 			$clustercommand = "sbatch";
@@ -175,7 +188,7 @@
 		}
 		else {
 			/* error */
-			echo "0";
+			//echo "0";
 
 			exec("ping -c 1 '$hostname'", $output, $result);
 			

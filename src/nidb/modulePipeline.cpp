@@ -2226,7 +2226,7 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
             studyIDToDoList.append(studyRowID);
         }
     }
-    m = QString("Found %1 valid studies, older than 6 hours, that do not have an existing analysis").arg(studyIDToDoList.size());
+    m = QString("Found %1 global, valid, studies, older than 6 hours, that do not have an existing analysis for this pipeline").arg(studyIDToDoList.size());
     n->Log(m, __FUNCTION__);
     InsertPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", m);
 
@@ -2250,7 +2250,7 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
         QSet<int> set2(groupStudyRowIDs.begin(), groupStudyRowIDs.end());
         QSet<int> intersection = set1.intersect(set2);
 
-        m = QString("Global studyID list contains %1 studies. Group(s) contains %2 studies. Intersection of sets yields %3 studies to be analyzed").arg(studyIDToDoList.size()).arg(groupStudyRowIDs.size()).arg(intersection.size());
+        m = QString("Global studyID list contains %1 studies and group(s) list contains %2 studies. Intersection of these sets yields %3 studies to be analyzed").arg(studyIDToDoList.size()).arg(groupStudyRowIDs.size()).arg(intersection.size());
         n->Log(m, __FUNCTION__);
         InsertPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", m);
 
@@ -2263,7 +2263,7 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
     /* A2 - find studies in the specified parent dependency */
     if (depend >= 0) {
         QList<int> dependencyStudyRowIDs;
-        q.prepare("select a.study_id from analysis a left join studies b on a.study_id = b.study_id where (a.pipeline_id = :depend and a.analysis_status = 'complete' and (a.analysis_isbad <> 1 or a.analysis_isbad is null)) and (b.isactive = 1 or b.isactive is null)");
+        q.prepare("select a.study_id from analysis a left join studies b on a.study_id = b.study_id where (a.pipeline_id = :depend and a.analysis_status = 'complete' and (a.analysis_isbad <> 1 or a.analysis_isbad is null))");
         q.bindValue(":depend", depend);
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         if (q.size() > 0) {
@@ -2272,7 +2272,8 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
                 dependencyStudyRowIDs.append(studyRowID);
             }
         }
-        m = n->Log(QString("Found %1 studies in the specified dependency").arg(dependencyStudyRowIDs.size()), __FUNCTION__);
+        m = QString("Found %1 studies in the specified dependency").arg(dependencyStudyRowIDs.size());
+        n->Log(m, __FUNCTION__);
         InsertPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", m);
 
         /* find an intersection between the lists */
@@ -2280,7 +2281,8 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
         QSet<int> set2(dependencyStudyRowIDs.begin(), dependencyStudyRowIDs.end());
         QSet<int> intersection = set1.intersect(set2);
 
-        m = n->Log(QString("Global studyID list contains %1 studies. Dependency contains %2 studies. Intersection of sets yields %3 studies to be analyzed").arg(studyIDToDoList.size()).arg(dependencyStudyRowIDs.size()).arg(intersection.size()), __FUNCTION__);
+        m = QString("Global studyID list contains %1 studies and dependency list contains %2 studies. The intersection of these sets yields %3 studies to be analyzed").arg(studyIDToDoList.size()).arg(dependencyStudyRowIDs.size()).arg(intersection.size());
+        n->Log(m, __FUNCTION__);
         InsertPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", m);
 
         studyIDToDoList = QList<int>(intersection.begin(), intersection.end());

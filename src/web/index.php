@@ -138,6 +138,9 @@
 			<?
 				if ($GLOBALS['cfg']['displayrecentstudies']) {
 					$numrecentdays = $GLOBALS['cfg']['displayrecentstudydays'];
+					if ($numrecentdays == "") {
+						$numrecentdays = 5;
+					}
 			?>
 			<div class="ui header">
 				<div class="content">

@@ -90,7 +90,7 @@
 		$sqlstring = "update qc_modules set qcm_name = '$qcmname', modality_desc = '$modalitydesc', modality_admin = '$admin' where modality_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		?><div align="center"><span class="message"><?=$qcmname?> updated</span></div><br><br><?
+		Notice ("$qcmname updated");
 	}
 
 
@@ -106,7 +106,7 @@
 		$sqlstring = "insert into qc_modules (qcm_name, qcm_modality) values ('$modulename', '$modality')";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		?><div align="center"><span class="message"><?=$modulename?> added</span></div><br><br><?
+		Notice("$modulename added");
 	}
 
 	
@@ -139,65 +139,71 @@
 		
 	?>
 
-	<table class="graydisplaytable">
-		<thead>
-			<tr>
-				<th>Module name</th>
-				<th>Modality</th>
-				<th>Enable/Disable</th>
-			</tr>
-		</thead>
-		<tbody>
-			<form action="adminqc.php" method="post">
-			<input type="hidden" name="action" value="addmodule">
-			<tr>
-				<td><input type="text" name="modulename"></td>
-				<td>
-					<select name="modality">
-					<?
-						$modalities = GetModalityList();
-						foreach ($modalities as $modality) {
-							?><option value="<?=$modality?>"><?=$modality?></option><?
-						}
-					?>
-					</select>
-				</td>
-				<td><input type="submit" value="Add"></td>
-				</form>
-			</tr>
-			<?
-				$sqlstring = "select * from qc_modules order by qcm_name";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-					$id = $row['qcmodule_id'];
-					$modality = $row['qcm_modality'];
-					$name = $row['qcm_name'];
-					$enabled = $row['qcm_isenabled'];
+	<div class="ui text container">
+		<table class="ui table">
+			<thead>
+				<tr>
+					<th>Module name</th>
+					<th>Modality</th>
+					<th>Enable/Disable</th>
+				</tr>
+			</thead>
+			<tbody>
+				<form action="adminqc.php" method="post">
+				<input type="hidden" name="action" value="addmodule">
+				<tr>
+					<td>
+						<div class="ui input">
+							<input type="text" name="modulename" size="40">
+						</div>
+					</td>
+					<td>
+						<select name="modality" class="ui dropdown">
+						<?
+							$modalities = GetModalityList();
+							foreach ($modalities as $modality) {
+								?><option value="<?=$modality?>"><?=$modality?></option><?
+							}
+						?>
+						</select>
+					</td>
+					<td><input type="submit" value="Add" class="ui primary button"></td>
+					</form>
+				</tr>
+				<?
+					$sqlstring = "select * from qc_modules order by qcm_name";
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+						$id = $row['qcmodule_id'];
+						$modality = $row['qcm_modality'];
+						$name = $row['qcm_name'];
+						$enabled = $row['qcm_isenabled'];
 
-					/* calculate the status color */
-					if (!$enabled) { $color = "gray"; }
-					else { $color = "darkblue"; }
+						/* calculate the status color */
+						if (!$enabled) { $color = "gray"; }
+						else { $color = "darkblue"; }
 
-					?>
-					<tr style="color: <?=$color?>">
-						<td><?=$name?></td>
-						<td><?=$modality?></td>
-						<td>
-							<?
-								if ($enabled) {
-									?><a href="adminqc.php?action=disable&id=<?=$id?>"><img src="images/checkedbox16.png"></a><?
-								}
-								else {
-									?><a href="adminqc.php?action=enable&id=<?=$id?>"><img src="images/uncheckedbox16.png"></a><?
-								}
-							?>
-						</td>
-					</tr>
-					<? 
-				}
-			?>
-		</tbody>
-	</table>
+						?>
+						<tr style="color: <?=$color?>">
+							<td><?=$name?></td>
+							<td><?=$modality?></td>
+							<td>
+								<?
+									if ($enabled) {
+										?><a href="adminqc.php?action=disable&id=<?=$id?>" title="<b>Enabled.</b> Click to disable"><i class="big green toggle on icon"></i></a><?
+									}
+									else {
+										?><a href="adminqc.php?action=enable&id=<?=$id?>" title="<b>Disabled.</b> Click to enable"><i class="big grey horizontally flipped toggle on icon"></i></a><?
+									}
+								?>
+							</td>
+						</tr>
+						<? 
+					}
+				?>
+			</tbody>
+		</table>
+	</div>
 	<?
 	}
 ?>

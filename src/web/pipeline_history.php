@@ -73,7 +73,7 @@
 		
 		<a href="pipelines.php?action=editpipeline&id=<?=$pipelineid?>" class="ui green button">Back</a>
 		
-		<h1 class="ui header">Pipeline performance</h1>
+		<h1 class="ui header">Pipeline history</h1>
 		<br><br>
 		
 		<div class="ui text container pageloading">
@@ -99,7 +99,7 @@
 				<div class="ui blue top attached segment">
 					<?=$runDatetime?>
 				</div>
-				<table class="ui table bottom attached table">
+				<table class="ui very compact bottom attached table">
 					<thead>
 						<th>Pipeline version</th>
 						<th>analysis ID</th>
