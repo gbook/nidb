@@ -52,12 +52,24 @@
 	$id = GetVariable("id");
 	$modulename = GetVariable("modulename");
 	$modality = GetVariable("modality");
+	$clusterid = GetVariable("clusterid");
+	$datatype = GetVariable("datatype");
+	$entrypoint = GetVariable("entrypoint");
+
+	PrintVariable($_POST);
 	
 	/* determine action */
 	switch ($action) {
 		case 'addmodule':
-			AddQCModule($modulename,$modality);
+			AddQCModule($modulename, $modality, $clusterid, $datatype, $entrypoint);
 			DisplayQCModuleList();
+			break;
+		case 'updatemodule':
+			UpdateQCModule($id, $modulename, $modality, $clusterid, $datatype, $entrypoint);
+			DisplayQCModuleList();
+			break;
+		case 'editmodule':
+			DisplayQCModuleForm('edit', $id);
 			break;
 		case 'disable':
 			DisableQCModule($id);
@@ -79,31 +91,43 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- UpdateQCModule ---------------------- */
+	/* ------- UpdateQCModule --------------------- */
 	/* -------------------------------------------- */
-	function UpdateQCModule($id, $qcmname, $modalitydesc, $admin) {
+	function UpdateQCModule($id, $modulename, $modality, $clusterid, $datatype, $entrypoint) {
+
 		/* perform data checks */
-		$qcmname = mysqli_real_escape_string($GLOBALS['linki'], $qcmname);
-		$modalitydesc = mysqli_real_escape_string($GLOBALS['linki'], $modalitydesc);
+		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
+		$modulename = mysqli_real_escape_string($GLOBALS['linki'], $modulename);
+		$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
+		$datatype = mysqli_real_escape_string($GLOBALS['linki'], $datatype);
+		$entrypoint = mysqli_real_escape_string($GLOBALS['linki'], $entrypoint);
+		$datatype = mysqli_real_escape_string($GLOBALS['linki'], $datatype);
+		$clusterid = mysqli_real_escape_string($GLOBALS['linki'], $clusterid);
 		
 		/* update the modality */
-		$sqlstring = "update qc_modules set qcm_name = '$qcmname', modality_desc = '$modalitydesc', modality_admin = '$admin' where modality_id = $id";
+		$sqlstring = "update qc_modules set module_name = '$modulename', modality = '$modality', cluster_id = nullif('$clusterid', ''), datatype = '$datatype', entrypoint = '$entrypoint' where qcmodule_id = $id";
+		PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		Notice ("$qcmname updated");
+		Notice ("$modulename updated");
 	}
 
 
 	/* -------------------------------------------- */
 	/* ------- AddQCmodule ------------------------ */
 	/* -------------------------------------------- */
-	function AddQCmodule($modulename,$modality) {
+	function AddQCmodule($modulename, $modality, $clusterid, $datatype, $entrypoint) {
+
 		/* perform data checks */
 		$modulename = mysqli_real_escape_string($GLOBALS['linki'], $modulename);
 		$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
+		$datatype = mysqli_real_escape_string($GLOBALS['linki'], $datatype);
+		$entrypoint = mysqli_real_escape_string($GLOBALS['linki'], $entrypoint);
+		$datatype = mysqli_real_escape_string($GLOBALS['linki'], $datatype);
+		$clusterid = mysqli_real_escape_string($GLOBALS['linki'], $clusterid);
 		
 		/* insert the new modality */
-		$sqlstring = "insert into qc_modules (qcm_name, qcm_modality) values ('$modulename', '$modality')";
+		$sqlstring = "insert into qc_modules (module_name, modality, cluster_id, datatype, entrypoint) values ('$modulename', '$modality', nullif('$clusterid', ''), '$datatype', '$entrypoint')";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		Notice("$modulename added");
@@ -127,16 +151,120 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}
 
+
+	/* -------------------------------------------- */
+	/* ------- EditQCModuleForm ------------------- */
+	/* -------------------------------------------- */
+	function DisplayQCModuleForm($type, $id) {
+	
+		/* populate the fields if this is an edit */
+		if ($type == "edit") {
+			$sqlstring = "select * from qc_modules where qcmodule_id = $id";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			$modality = $row['modality'];
+			$name = $row['module_name'];
+			$clusterid = $row['cluster_id'];
+			$datatype = $row['datatype'];
+			$entrypoint = $row['entrypoint'];
+		
+			$formaction = "updatemodule";
+			$formtitle = "Updating $name";
+			$submitbuttonlabel = "Update";
+		}
+		else {
+			$formaction = "addmodule";
+			$formtitle = "Add new QC module";
+			$submitbuttonlabel = "Add";
+		}
+		
+	?>
+	<div class="ui text container">
+		<form method="post" action="adminqc.php">
+		<input type="hidden" name="action" value="<?=$formaction?>">
+		<input type="hidden" name="id" value="<?=$id?>">
+		<table class="ui top attached table" width="100%">
+			<tr>
+				<td colspan="2" align="center">
+					<b><?=$formtitle?></b>
+				</td>
+			</tr>
+			<tr>
+				<td>Name</td>
+				<td>
+					<div class="ui fluid input">
+						<input type="text" name="modulename" value="<?=$name?>">
+					</div>
+				</td>
+			</tr>
+			<tr>
+				<td>Modality</td>
+				<td>
+					<select name="modality" class="ui fluid dropdown">
+					<?
+						$modalities = GetModalityList();
+						foreach ($modalities as $mod) {
+							?><option value="<?=$mod?>" <? if ($mod == $modality) { echo "selected"; } ?>><?=$mod?></option><?
+						}
+					?>
+					</select>
+				</td>
+			</tr>
+			<tr>
+				<td>Cluster</td>
+				<td>
+					<select name="clusterid" class="ui fluid dropdown">
+					<?
+						list ($clusterids, $names, $descs) = GetClusterList();
+						$i = 0;
+						foreach ($clusterids as $cluster_id) {
+							?><option value="<?=$cluster_id?>" <? if ($cluster_id == $clusterid) { echo "selected"; } ?>><?=$names[$i]?> - <?=$descs[$i]?></option><?
+							$i++;
+						}
+					?>
+					</select>
+				</td>
+			</tr>
+			<tr>
+				<td>Data format</td>
+				<td>
+					<select name="datatype" class="ui fluid dropdown">
+						<option value="dicom">DICOM</option>
+						<option value="bids">BIDS</option>
+						<option value="nifti4dgz">Nifti 4D .gz</option>
+					</select>
+				</td>
+			</tr>
+			<tr>
+				<td>Entry point<br><span class="tiny">This should be bash script, accessible from the compute cluster. This script will be executed and one parameter passed, which is the directory containing the series.</span></td>
+				<td>
+					<div class="ui fluid input">
+						<textarea name="entrypoint" cols=60><?=$entrypoint?></textarea>
+					</div>
+				</td>
+			</tr>
+		</table>
+		<div class="ui bottom attached segment">
+			<div class="ui two column grid">
+				<div class="left aligned column">
+					<a href="adminqc.php" class="ui button">Cancel</a>
+				</div>
+				<div class="right aligned column">
+					<input type="submit" value="<?=$submitbuttonlabel?>" class="ui primary button">
+				</div>
+			</div>
+		</div>
+		</form>
+	</div>
+	<?
+	}
+
 	
 	/* -------------------------------------------- */
 	/* ------- DisplayQCModuleList ---------------- */
 	/* -------------------------------------------- */
 	function DisplayQCModuleList() {
 	
-		//$urllist['Administration'] = "admin.php";
-		//$urllist['QC Modules'] = "adminqc.php";
-		//NavigationBar("Admin", $urllist);
-		
 	?>
 
 	<div class="ui text container">
@@ -171,13 +299,13 @@
 					</form>
 				</tr>
 				<?
-					$sqlstring = "select * from qc_modules order by qcm_name";
+					$sqlstring = "select * from qc_modules order by module_name";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$id = $row['qcmodule_id'];
-						$modality = $row['qcm_modality'];
-						$name = $row['qcm_name'];
-						$enabled = $row['qcm_isenabled'];
+						$modality = $row['modality'];
+						$name = $row['module_name'];
+						$enabled = $row['isenabled'];
 
 						/* calculate the status color */
 						if (!$enabled) { $color = "gray"; }
@@ -185,7 +313,7 @@
 
 						?>
 						<tr style="color: <?=$color?>">
-							<td><?=$name?></td>
+							<td><a href="adminqc.php?action=editmodule&id=<?=$id?>"><?=$name?></a></td>
 							<td><?=$modality?></td>
 							<td>
 								<?

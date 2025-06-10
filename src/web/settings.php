@@ -103,6 +103,8 @@
     $c['qsubpath'] = GetVariable("qsubpath");
     $c['clusteruser'] = GetVariable("clusteruser");
     $c['clusternidbpath'] = GetVariable("clusternidbpath");
+    $c['qcpath'] = GetVariable("qcpath");
+    $c['clusterqcpath'] = GetVariable("clusterqcpath");
 
     $c['version'] = GetVariable("version");
     $c['sitename'] = GetVariable("sitename");

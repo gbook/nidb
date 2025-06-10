@@ -35,9 +35,12 @@ public:
     int Run();
     bool QC(int moduleid, int seriesid, QString modality);
     QString CreateSGEJobFile(QString modulename, int qcmoduleseriesid, QString qcpath);
+    bool WriteClusterJobFile(QString jobfilename, int clusterid, QString datapath, QString entrypoint);
 
 private:
     nidb *n;
+
+    computeCluster GetClusterInfo(int clusterRowID);
 };
 
 #endif // MODULEQC_H

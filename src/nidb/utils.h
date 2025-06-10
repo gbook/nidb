@@ -83,6 +83,16 @@ struct UploadOptions {
     QString seriesMatchCriteria;
 };
 
+struct computeCluster {
+    QString name;
+    QString description;
+    QString type;
+    QString submitHostname;
+    QString submitHostUsername;
+    QString clusterUsername;
+    QString queue;
+};
+
 
 /* generic functions */
 QList<double> SplitStringArrayToDouble(QStringList a);

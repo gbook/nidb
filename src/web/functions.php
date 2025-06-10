@@ -961,6 +961,22 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- GetClusterList --------------------- */
+	/* -------------------------------------------- */
+	function GetClusterList() {
+		$sqlstring = "select * from compute_cluster order by cluster_name";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$clusterids[] = $row['computecluster_id'];
+			$names[] = $row['cluster_name'];
+			$descs[] = $row['cluster_desc'];
+		}
+			
+		return array($clusterids, $names, $descs);
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- IsNiDBModality --------------------- */
 	/* -------------------------------------------- */
 	function IsNiDBModality($modality) {
@@ -3716,6 +3732,18 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 							<td></td>
 							<td>Path to the directory containing the <i>nidb</i> executable (relative to the cluster itself) on the cluster</td>
 						</tr>
+						<tr>
+							<td class="right aligned tt">qcpath</td>
+							<td><input type="text" name="qcpath" value="<?=$GLOBALS['cfg']['qcpath']?>"></td>
+							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['qcpath'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
+							<td>Path to be used for QC module processing, as seen by NiDB</td>
+						</tr>
+						<tr>
+							<td class="right aligned tt">clusterqcpath</td>
+							<td><input type="text" name="clusterqcpath" value="<?=$GLOBALS['cfg']['clusterqcpath']?>"></td>
+							<td></td>
+							<td>Path to be used for QC module processing, as seen by the cluster</td>
+						</tr>
 
 						<tr>
 							<td colspan="4" class="active"><h3>CAS Authentication</h3></td>
@@ -4188,6 +4216,8 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 [qsubpath] = $qsubpath
 [clusteruser] = $clusteruser
 [clusternidbpath] = $clusternidbpath
+[qcpath] = $qcpath
+[clusterqcpath] = $clusterqcpath
 
 # ----- CAS authentication -----
 [enablecas] = $enablecas

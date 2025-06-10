@@ -56,19 +56,19 @@ int moduleQC::Run() {
 
     /* get list of active modules */
     QSqlQuery q;
-    q.prepare("select * from qc_modules where qcm_isenabled = 1");
+    q.prepare("select * from qc_modules where isenabled = 1");
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.size() > 0) {
         int numdone = 0;
         while (q.next()) {
             int moduleid = q.value("qcmodule_id").toInt();
-            QString modality = q.value("qcm_modality").toString().toLower();
+            QString modality = q.value("modality").toString().toLower();
 
             n->Log(QString("*********************** Working on module [%1][%2] ***********************").arg(moduleid).arg(modality));
 
             /* look through DB for all series (of this modality) that don't have an associated QCdata row */
             QSqlQuery q2;
-            q2.prepare(QString("SELECT %1series_id 'seriesid' FROM %1_series where %1series_id not in (select series_id from qc_moduleseries where qcmodule_id = :moduleid) order by series_datetime desc").arg(modality));
+            q2.prepare(QString("select %1series_id 'seriesid' from %1_series where %1series_id not in (select series_id from qc_moduleseries where qcmodule_id = :moduleid) order by series_datetime desc").arg(modality));
             q2.bindValue(":moduleid", moduleid);
             n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__,true);
             if (q2.size() > 0) {
@@ -132,12 +132,12 @@ bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
     QString modulename;
 
     QSqlQuery q;
-    q.prepare("select qcm_name from qc_modules where qcmodule_id = :moduleid");
+    q.prepare("select module_name from qc_modules where qcmodule_id = :moduleid");
     q.bindValue(":moduleid",moduleid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.size() > 0) {
         q.first();
-        modulename = q.value("qcm_name").toString();
+        modulename = q.value("module_name").toString();
     }
     else
         return false;
@@ -267,4 +267,122 @@ QString moduleQC::CreateSGEJobFile(QString modulename, int qcmoduleseriesid, QSt
     n->Log("CreateSGEJobFile() - F");
 
     return jobfilename;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- WriteClusterJobFile ---------------------------- */
+/* ---------------------------------------------------------- */
+bool moduleQC::WriteClusterJobFile(QString jobfilename, int clusterid, QString datapath, QString entrypoint) {
+
+    QString jobfile;
+    QString clusteranalysispath = analysispath;
+    QString localanalysispath = QString("%1/%2-%3").arg(tmpdir).arg(pipelinename).arg(analysisid);
+
+    /* get cluster info */
+    computeCluster cluster = GetClusterInfo(clusterid);
+
+    n->Log("Cluster analysis path [" + analysispath + "]");
+    n->Log("Local analysis path (temp directory) [" + localanalysispath + "]");
+
+    /* check if any of the variables might be blank */
+    if (analysispath == "") {
+        n->Log("analysispath was blank", __FUNCTION__);
+        return false;
+    }
+    if (localanalysispath == "") {
+        n->Log("localanalysispath was blank", __FUNCTION__);
+        return false;
+    }
+
+    /* different submission parameters for slurm */
+    if (cluster.type == "slurm") {
+        jobfile += "#!/bin/bash -l\n";
+        jobfile += "#SBATCH -J " + pipelinename + "\n";
+        jobfile += "#SBATCH --nodes=1\n";
+        jobfile += "#SBATCH --partition=" + queue + "\n";
+        jobfile += "#SBATCH -o " + analysispath + "/pipeline/%x.o%j\n";
+        jobfile += "#SBATCH -e " + analysispath + "/pipeline/%x.e%j\n";
+        jobfile += QString("#SBATCH --mem-per-cpu=%1G\n").arg(memory);
+        jobfile += QString("#SBATCH --ntasks=1 --cpus-per-task=%1\n").arg(numcores);
+        if (maxwalltime > 0) {
+            int hours = int(floor(maxwalltime/60));
+            int min = maxwalltime % 60;
+
+            if (min < 10)
+                jobfile += QString("#SBATCH -t %1:0%2:00\n").arg(hours).arg(min);
+            else
+                jobfile += QString("#SBATCH -t %1:%2:00\n").arg(hours).arg(min);
+        }
+    }
+    else { /* assume SGE otherwise */
+        jobfile += "#!/bin/sh\n";
+        jobfile += "#$ -N "+pipelinename+"\n";
+        jobfile += "#$ -S /bin/bash\n";
+        jobfile += "#$ -j y\n";
+        jobfile += "#$ -o "+analysispath+"/pipeline/\n";
+        jobfile += "#$ -V\n";
+        jobfile += "#$ -u " + n->cfg["queueuser"] + "\n";
+        if (maxwalltime > 0) {
+            int hours = int(floor(maxwalltime/60));
+            int min = maxwalltime % 60;
+
+            if (min < 10)
+                jobfile += QString("#$ -l h_rt=%1:0%2:00\n").arg(hours).arg(min);
+            else
+                jobfile += QString("#$ -l h_rt=%1:%2:00\n").arg(hours).arg(min);
+        }
+        /* add the library path SO the cluster version of the nidb executable to run, and diagnostic echos */
+        jobfile += "LD_LIBRARY_PATH=" + n->cfg["clusternidbpath"] + "/; export LD_LIBRARY_PATH;\n";
+    }
+
+    jobfile += "echo Hostname: `hostname`\n";
+    jobfile += "echo Username: `whoami`\n\n";
+
+    jobfile += QString("%1/nidb cluster -u pipelinecheckin -a %2 -s started -m 'Beginning data copy to /tmp'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
+    jobfile += "mkdir -pv " + localanalysispath + "\n";
+    jobfile += "cp -Rv " + analysispath + "/* " + localanalysispath + "/\n";
+    jobfile += QString("%1/nidb cluster -u pipelinecheckin -a %2 -s started -m 'Done copying data to /tmp'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
+
+    QDir::setCurrent(clusteranalysispath);
+
+    /* write out the file */
+    QFile f(jobfilename);
+    if (f.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QTextStream fs(&f);
+        fs << jobfile;
+        f.close();
+        n->Log("Wrote job file [" + jobfilename + "]", __FUNCTION__);
+        return true;
+    }
+    else {
+        n->Log("Could not write the file [" + jobfilename + "]", __FUNCTION__);
+        return false;
+    }
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetClusterInfo --------------------------------- */
+/* ---------------------------------------------------------- */
+computeCluster moduleQC::GetClusterInfo(int clusterRowID) {
+
+    computeCluster cluster;
+
+    QSqlQuery q;
+    q.prepare("select * from compute_cluster where computecluster_id = :clusterid");
+    q.bindValue(":clusterid", clusterRowID);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.size() > 0) {
+        q.first();
+        cluster.name = q.value("cluster_name").toString();
+        cluster.description = q.value("cluster_name").toString();
+        cluster.type = q.value("cluster_name").toString();
+        cluster.submitHostname = q.value("cluster_name").toString();
+        cluster.submitHostUsername = q.value("cluster_name").toString();
+        cluster.clusterUsername = q.value("cluster_name").toString();
+        cluster.queue = q.value("cluster_name").toString();
+    }
+
+    return cluster;
 }
