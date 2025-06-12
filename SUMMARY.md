@@ -81,6 +81,7 @@
     * [experiments](contribute/squirrel-data-sharing-format/specification-v1.0/experiments.md)
     * [data-dictionary](contribute/squirrel-data-sharing-format/specification-v1.0/data-dictionary.md)
     * [Modalities](contribute/squirrel-data-sharing-format/specification-v1.0/modalities.md)
+    * [JSON full listing](contribute/squirrel-data-sharing-format/specification-v1.0/json-full-listing.md)
   * [Building squirrel library and utils](contribute/squirrel-data-sharing-format/building-squirrel-library-and-utils.md)
     * [Building Python Wrapper](contribute/squirrel-data-sharing-format/building-squirrel-library-and-utils/building-python-wrapper.md)
 * [Building NiDB](contribute/building-nidb.md)
