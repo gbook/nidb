@@ -36,7 +36,7 @@ Run these commands as root (or sudo) based on your distribution
 dnf group install 'Development Tools'
 dnf install cmake3
 dnf install rpmdevtools
-dnf install xcb*
+dnf install xcb-util-wm xcb-util-cursor xcb-util-keysyms
 dnf install libxcb*
 dnf install git
 ```
