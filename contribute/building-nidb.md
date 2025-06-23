@@ -37,7 +37,7 @@ dnf group install 'Development Tools'
 dnf install cmake3
 dnf install rpmdevtools
 dnf install xcb-util-wm xcb-util-cursor xcb-util-keysyms
-dnf install libxcb*
+dnf install libxkbcommon-x11
 dnf install git
 ```
 {% endtab %}
@@ -79,6 +79,7 @@ apt install build-essential make cmake git
 apt install libxcb* libxkb* libX11-xcb*
 apt install libdbus-1*
 apt install libzstd-dev
+apt install libglib2.0-dev
 apt install wget   # if needed
 ```
 {% endtab %}
