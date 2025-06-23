@@ -31,6 +31,17 @@ The following OS configurations have been tested to build nidb. It may be possib
 Run these commands as root (or sudo) based on your distribution
 
 {% tabs %}
+{% tab title="RHEL 10" %}
+```bash
+dnf group install 'Development Tools'
+dnf install cmake3
+dnf install rpmdevtools
+dnf install xcb-util-wm xcb-util-cursor xcb-util-keysyms
+dnf install libxkbcommon-x11 libxcb-devel
+dnf install libX11-xcb
+```
+{% endtab %}
+
 {% tab title="RHEL 9" %}
 ```bash
 dnf group install 'Development Tools'
