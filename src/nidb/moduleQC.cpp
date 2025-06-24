@@ -190,7 +190,8 @@ bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
     if (n->cfg["usecluster"].toInt()) {
         /* submit this module to the cluster. first create the SGE job file */
         n->Log("About to create the SGE job file");
-        QString sgebatchfile = CreateSGEJobFile(modulename, qcmoduleseriesid, qcpath);
+        QString clusterJobFilename;
+        WriteClusterJobFile(clusterJobFilename, jobName, clusterRowID, localDataPath, clusterDataPath, entryPoint);
         n->Log("Created SGE job file");
 
         /* submit the SGE job */
@@ -229,85 +230,94 @@ bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
 /* ---------------------------------------------------------- */
 /* --------- CreateSGEJobFile ------------------------------- */
 /* ---------------------------------------------------------- */
-QString moduleQC::CreateSGEJobFile(QString modulename, int qcmoduleseriesid, QString qcpath) {
+// QString moduleQC::CreateSGEJobFile(QString modulename, int qcmoduleseriesid, QString qcpath) {
 
-    QString jobfilename;
+//     QString jobfilename;
 
-    n->Log("CreateSGEJobFile() - A");
+//     n->Log("CreateSGEJobFile() - A");
 
-    /* check if any of the variables might be blank */
-    if ((modulename == "") || (qcmoduleseriesid < 1)) {
-        n->Log("CreateSGEJobFile() - B");
-        return jobfilename;
-    }
+//     /* check if any of the variables might be blank */
+//     if ((modulename == "") || (qcmoduleseriesid < 1)) {
+//         n->Log("CreateSGEJobFile() - B");
+//         return jobfilename;
+//     }
 
-    QString jobfile;
-    n->Log("CreateSGEJobFile() - C");
+//     QString jobfile;
+//     n->Log("CreateSGEJobFile() - C");
 
-    jobfile += "#!/bin/sh\n";
-    jobfile += QString("#$ -N NIDB-QC-%1\n").arg(modulename);
-    jobfile += "#$ -S /bin/sh\n";
-    jobfile += "#$ -j y\n";
-    jobfile += "#$ -V\n";
-    jobfile += QString("#$ -o %1\n").arg(qcpath);
-    jobfile += QString("#$ -u %1\n\n").arg(n->cfg["queueuser"]);
-    jobfile += QString("cd %1/%2\n").arg(n->cfg["qcmoduledir"]).arg(modulename);
-    jobfile += QString("%1/%2/./%2.sh %3\n").arg(n->cfg["qcmoduledir"]).arg(modulename).arg(qcmoduleseriesid);
-    n->Log("CreateSGEJobFile() - D");
+//     jobfile += "#!/bin/sh\n";
+//     jobfile += QString("#$ -N NIDB-QC-%1\n").arg(modulename);
+//     jobfile += "#$ -S /bin/sh\n";
+//     jobfile += "#$ -j y\n";
+//     jobfile += "#$ -V\n";
+//     jobfile += QString("#$ -o %1\n").arg(qcpath);
+//     jobfile += QString("#$ -u %1\n\n").arg(n->cfg["queueuser"]);
+//     jobfile += QString("cd %1/%2\n").arg(n->cfg["qcmoduledir"]).arg(modulename);
+//     jobfile += QString("%1/%2/./%2.sh %3\n").arg(n->cfg["qcmoduledir"]).arg(modulename).arg(qcmoduleseriesid);
+//     n->Log("CreateSGEJobFile() - D");
 
-    jobfilename = QString("%1/sge-%2.job").arg(qcpath).arg(GenerateRandomString(10));
-    QFile f(jobfilename);
-    if (f.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        QTextStream fs(&f);
-        fs << jobfile;
-        f.close();
-    }
-    n->Log("CreateSGEJobFile() - E");
-    n->Log(SystemCommand("chmod 777 " + jobfilename));
-    n->Log("CreateSGEJobFile() - F");
+//     jobfilename = QString("%1/sge-%2.job").arg(qcpath).arg(GenerateRandomString(10));
+//     QFile f(jobfilename);
+//     if (f.open(QIODevice::WriteOnly | QIODevice::Text)) {
+//         QTextStream fs(&f);
+//         fs << jobfile;
+//         f.close();
+//     }
+//     n->Log("CreateSGEJobFile() - E");
+//     n->Log(SystemCommand("chmod 777 " + jobfilename));
+//     n->Log("CreateSGEJobFile() - F");
 
-    return jobfilename;
-}
+//     return jobfilename;
+// }
 
 
 /* ---------------------------------------------------------- */
 /* --------- WriteClusterJobFile ---------------------------- */
 /* ---------------------------------------------------------- */
-bool moduleQC::WriteClusterJobFile(QString jobfilename, int clusterid, QString datapath, QString entrypoint) {
+/**
+ * @brief Build, and write to disk, the cluster job file, prior to submission to the cluster
+ * @param jobFileName The job filename
+ * @param clusterRowID Database clusterRowID of the cluster configuration
+ * @param localDataPath Path to the data, as seen by the local nidb program
+ * @param clusterDataPath Path to the data, as seen by the cluster
+ * @param entryPoint Entrypoint script that will be executed, with the datapath passed as a parameter
+ * @return `true` if successfully submitted, `false` otherwise
+ */
+bool moduleQC::WriteClusterJobFile(QString jobFileName, QString jobName, int clusterRowID, QString localDataPath, QString clusterDataPath, QString entryPoint) {
 
     QString jobfile;
-    QString clusteranalysispath = analysispath;
-    QString localanalysispath = QString("%1/%2-%3").arg(tmpdir).arg(pipelinename).arg(analysisid);
+    //QString clusterPath = analysispath;
+    //QString localanalysispath = QString("%1/%2-%3").arg(tmpdir).arg(pipelinename).arg(analysisid);
 
     /* get cluster info */
-    computeCluster cluster = GetClusterInfo(clusterid);
+    computeCluster cluster = GetClusterInfo(clusterRowID);
 
-    n->Log("Cluster analysis path [" + analysispath + "]");
-    n->Log("Local analysis path (temp directory) [" + localanalysispath + "]");
+    n->Log("Cluster data path [" + clusterDataPath + "]");
+    n->Log("Local data path [" + localDataPath + "]");
 
     /* check if any of the variables might be blank */
-    if (analysispath == "") {
-        n->Log("analysispath was blank", __FUNCTION__);
+    if (localDataPath == "") {
+        n->Log("localDataPath was blank", __FUNCTION__);
         return false;
     }
-    if (localanalysispath == "") {
-        n->Log("localanalysispath was blank", __FUNCTION__);
+    if (clusterDataPath == "") {
+        n->Log("clusterDataPath was blank", __FUNCTION__);
         return false;
     }
 
     /* different submission parameters for slurm */
     if (cluster.type == "slurm") {
         jobfile += "#!/bin/bash -l\n";
-        jobfile += "#SBATCH -J " + pipelinename + "\n";
+        jobfile += "#SBATCH -J " + jobName + "\n";
         jobfile += "#SBATCH --nodes=1\n";
-        jobfile += "#SBATCH --partition=" + queue + "\n";
-        jobfile += "#SBATCH -o " + analysispath + "/pipeline/%x.o%j\n";
-        jobfile += "#SBATCH -e " + analysispath + "/pipeline/%x.e%j\n";
-        jobfile += QString("#SBATCH --mem-per-cpu=%1G\n").arg(memory);
-        jobfile += QString("#SBATCH --ntasks=1 --cpus-per-task=%1\n").arg(numcores);
-        if (maxwalltime > 0) {
-            int hours = int(floor(maxwalltime/60));
-            int min = maxwalltime % 60;
+        jobfile += "#SBATCH --partition=" + cluster.queue + "\n";
+        jobfile += "#SBATCH -o " + clusterDataPath + "/%x.o%j\n";
+        jobfile += "#SBATCH -e " + clusterDataPath + "/%x.e%j\n";
+        jobfile += QString("#SBATCH --mem-per-cpu=%1G\n").arg(cluster.memory);
+        jobfile += QString("#SBATCH --ntasks=1 --cpus-per-task=%1\n").arg(cluster.numCores);
+        if (cluster.maxWallTime > 0) {
+            int hours = int(floor(cluster.maxWallTime/60));
+            int min = cluster.maxWallTime % 60;
 
             if (min < 10)
                 jobfile += QString("#SBATCH -t %1:0%2:00\n").arg(hours).arg(min);
@@ -317,15 +327,15 @@ bool moduleQC::WriteClusterJobFile(QString jobfilename, int clusterid, QString d
     }
     else { /* assume SGE otherwise */
         jobfile += "#!/bin/sh\n";
-        jobfile += "#$ -N "+pipelinename+"\n";
+        jobfile += "#$ -N " + jobName + "\n";
         jobfile += "#$ -S /bin/bash\n";
         jobfile += "#$ -j y\n";
-        jobfile += "#$ -o "+analysispath+"/pipeline/\n";
+        jobfile += "#$ -o " + clusterDataPath + "/\n";
         jobfile += "#$ -V\n";
         jobfile += "#$ -u " + n->cfg["queueuser"] + "\n";
-        if (maxwalltime > 0) {
-            int hours = int(floor(maxwalltime/60));
-            int min = maxwalltime % 60;
+        if (cluster.maxWallTime > 0) {
+            int hours = int(floor(cluster.maxWallTime/60));
+            int min = cluster.maxWallTime % 60;
 
             if (min < 10)
                 jobfile += QString("#$ -l h_rt=%1:0%2:00\n").arg(hours).arg(min);
@@ -339,24 +349,22 @@ bool moduleQC::WriteClusterJobFile(QString jobfilename, int clusterid, QString d
     jobfile += "echo Hostname: `hostname`\n";
     jobfile += "echo Username: `whoami`\n\n";
 
-    jobfile += QString("%1/nidb cluster -u pipelinecheckin -a %2 -s started -m 'Beginning data copy to /tmp'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
-    jobfile += "mkdir -pv " + localanalysispath + "\n";
-    jobfile += "cp -Rv " + analysispath + "/* " + localanalysispath + "/\n";
-    jobfile += QString("%1/nidb cluster -u pipelinecheckin -a %2 -s started -m 'Done copying data to /tmp'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
+    //jobfile += "cd " + localanalysispath + "\n";
+    jobfile += "./" + entryPoint + "/ \n";
 
-    QDir::setCurrent(clusteranalysispath);
+    QDir::setCurrent(localDataPath);
 
     /* write out the file */
-    QFile f(jobfilename);
+    QFile f(jobFileName);
     if (f.open(QIODevice::WriteOnly | QIODevice::Text)) {
         QTextStream fs(&f);
         fs << jobfile;
         f.close();
-        n->Log("Wrote job file [" + jobfilename + "]", __FUNCTION__);
+        n->Log("Wrote job file [" + jobFileName + "]", __FUNCTION__);
         return true;
     }
     else {
-        n->Log("Could not write the file [" + jobfilename + "]", __FUNCTION__);
+        n->Log("Could not write the file [" + jobFileName + "]", __FUNCTION__);
         return false;
     }
 }
@@ -376,12 +384,15 @@ computeCluster moduleQC::GetClusterInfo(int clusterRowID) {
     if (q.size() > 0) {
         q.first();
         cluster.name = q.value("cluster_name").toString();
-        cluster.description = q.value("cluster_name").toString();
-        cluster.type = q.value("cluster_name").toString();
-        cluster.submitHostname = q.value("cluster_name").toString();
-        cluster.submitHostUsername = q.value("cluster_name").toString();
-        cluster.clusterUsername = q.value("cluster_name").toString();
+        cluster.description = q.value("cluster_desc").toString();
+        cluster.type = q.value("cluster_type").toString();
+        cluster.submitHostname = q.value("submit_hostname").toString();
+        cluster.submitHostUsername = q.value("submithost_username").toString();
+        cluster.clusterUsername = q.value("cluster_username").toString();
         cluster.queue = q.value("cluster_name").toString();
+        cluster.maxWallTime = q.value("cluster_maxwalltime").toLongLong();
+        cluster.memory = q.value("cluster_memory").toLongLong();
+        cluster.numCores = q.value("cluster_numcores").toLongLong();
     }
 
     return cluster;

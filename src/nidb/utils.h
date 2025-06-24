@@ -91,6 +91,9 @@ struct computeCluster {
     QString submitHostUsername;
     QString clusterUsername;
     QString queue;
+    qint64 maxWallTime = -1;
+    qint64 memory = 1;
+    qint64 numCores = 1;
 };
 
 

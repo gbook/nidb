@@ -34,8 +34,8 @@ public:
 
     int Run();
     bool QC(int moduleid, int seriesid, QString modality);
-    QString CreateSGEJobFile(QString modulename, int qcmoduleseriesid, QString qcpath);
-    bool WriteClusterJobFile(QString jobfilename, int clusterid, QString datapath, QString entrypoint);
+    //QString CreateSGEJobFile(QString modulename, int qcmoduleseriesid, QString qcpath);
+    bool WriteClusterJobFile(QString jobFileName, QString jobName, int clusterRowID, QString localDataPath, QString clusterDataPath, QString entryPoint);
 
 private:
     nidb *n;
