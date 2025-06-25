@@ -175,3 +175,44 @@ QString squirrelObservation::PrintObservation() {
 
     return str;
 }
+
+
+/* ------------------------------------------------------------ */
+/* ----- GetData ---------------------------------------------- */
+/* ------------------------------------------------------------ */
+QHash<QString, QString> squirrelObservation::GetData(DatasetType d) {
+
+    QHash<QString, QString> data;
+
+
+    switch (d) {
+    case DatasetID:
+        data["Observation.Name"] = ObservationName;
+        break;
+    case DatasetBasic:
+        data["Observation.DateEnd"] = DateEnd.toString("yyyy-MM-dd HH:mm:ss");
+        data["Observation.Duration"] = QString("%1").arg(Duration);
+        data["Observation.InstrumentName"] = InstrumentName;
+        data["Observation.ObservationName"] = ObservationName;
+        data["Observation.Value"] = Value;
+        break;
+    case DatasetFull:
+        data["Observation.DateEnd"] = DateEnd.toString("yyyy-MM-dd HH:mm:ss");
+        data["Observation.DateRecordCreate"] = DateRecordCreate.toString("yyyy-MM-dd HH:mm:ss");
+        data["Observation.DateRecordEntry"] = DateRecordEntry.toString("yyyy-MM-dd HH:mm:ss");
+        data["Observation.DateRecordModify"] = DateRecordModify.toString("yyyy-MM-dd HH:mm:ss");
+        data["Observation.DateStart"] = DateStart.toString("yyyy-MM-dd HH:mm:ss");
+        data["Observation.Description"] = Description;
+        data["Observation.Duration"] = QString("%1").arg(Duration);
+        data["Observation.InstrumentName"] = InstrumentName;
+        data["Observation.ObservationName"] = ObservationName;
+        data["Observation.Notes"] = Notes;
+        data["Observation.Rater"] = Rater;
+        data["Observation.Value"] = Value;
+        break;
+    default:
+        break;
+    }
+
+    return data;
+}

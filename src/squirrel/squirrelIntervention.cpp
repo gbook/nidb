@@ -73,10 +73,6 @@ bool squirrelIntervention::Get() {
         objectID = q.value("InterventionRowID").toLongLong();
         subjectRowID = q.value("SubjectRowID").toLongLong();
 
-        //FrequencyModifier = q.value("FrequencyModifier").toString();
-        //FrequencyUnit = q.value("FrequencyUnit").toString();
-        //FrequencyValue = q.value("FrequencyValue").toDouble();
-
         valid = true;
         return true;
     }
@@ -121,9 +117,6 @@ bool squirrelIntervention::Store() {
         q.bindValue(":InterventionClass", InterventionClass);
         q.bindValue(":DoseKey", DoseKey);
         q.bindValue(":DoseUnit", DoseUnit);
-        //q.bindValue(":FrequencyModifer", frequencyModifier);
-        //q.bindValue(":FrequencyValue", frequencyValue);
-        //q.bindValue(":FrequencyUnit", frequencyUnit);
         q.bindValue(":Description", Description);
         q.bindValue(":Rater", Rater);
         q.bindValue(":Notes", Notes);
@@ -149,9 +142,6 @@ bool squirrelIntervention::Store() {
         q.bindValue(":InterventionClass", InterventionClass);
         q.bindValue(":DoseKey", DoseKey);
         q.bindValue(":DoseUnit", DoseUnit);
-        //q.bindValue(":FrequencyModifer", frequencyModifier);
-        //q.bindValue(":FrequencyValue", frequencyValue);
-        //q.bindValue(":FrequencyUnit", frequencyUnit);
         q.bindValue(":Description", Description);
         q.bindValue(":Rater", Rater);
         q.bindValue(":Notes", Notes);
@@ -182,9 +172,6 @@ QJsonObject squirrelIntervention::ToJSON() {
     json["InterventionClass"] = InterventionClass;
     json["InterventionDescription"] = Description;
     json["InterventionName"] = InterventionName;
-    //json["FrequencyModifier"] = frequencyModifier;
-    //json["FrequencyUnit"] = frequencyUnit;
-    //json["FrequencyValue"] = frequencyValue;
     json["Notes"] = Notes;
     json["Rater"] = Rater;
 
@@ -215,11 +202,54 @@ QString squirrelIntervention::PrintIntervention() {
     str += utils::Print(QString("\t\t\tDoseUnit: %1").arg(DoseUnit));
     str += utils::Print(QString("\t\t\tInterventionClass: %1").arg(InterventionClass));
     str += utils::Print(QString("\t\t\tInterventionName: %1").arg(InterventionName));
-    //utils::Print(QString("\t\t\tFrequencyModifier: %1").arg(frequencyModifier));
-    //utils::Print(QString("\t\t\tFrequencyUnit: %1").arg(frequencyUnit));
-    //utils::Print(QString("\t\t\tFrequencyValue: %1").arg(frequencyValue));
     str += utils::Print(QString("\t\t\tNotes: %1").arg(Notes));
     str += utils::Print(QString("\t\t\tRater: %1").arg(Rater));
 
     return str;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- GetData ---------------------------------------------- */
+/* ------------------------------------------------------------ */
+QHash<QString, QString> squirrelIntervention::GetData(DatasetType d) {
+
+    QHash<QString, QString> data;
+
+
+    switch (d) {
+    case DatasetID:
+        data["Intervention.InterventionName"] = InterventionName;
+        break;
+    case DatasetBasic:
+        data["Intervention.AdministrationRoute"] = AdministrationRoute;
+        data["Intervention.DateInterventionEnd"] = DateEnd.toString("yyyy-MM-dd HH:mm:ss");
+        data["Intervention.DateInterventionStart"] = DateStart.toString("yyyy-MM-dd HH:mm:ss");
+        data["Intervention.DoseAmount"] = QString("%1").arg(DoseAmount);
+        data["Intervention.DoseString"] = DoseString;
+        data["Intervention.InterventionName"] = InterventionName;
+        break;
+    case DatasetFull:
+        data["Intervention.AdministrationRoute"] = AdministrationRoute;
+        data["Intervention.DateInterventionEnd"] = DateEnd.toString("yyyy-MM-dd HH:mm:ss");
+        data["Intervention.DateInterventionStart"] = DateStart.toString("yyyy-MM-dd HH:mm:ss");
+        data["Intervention.DateRecordCreate"] = DateRecordCreate.toString("yyyy-MM-dd HH:mm:ss");
+        data["Intervention.DateRecordEntry"] = DateRecordEntry.toString("yyyy-MM-dd HH:mm:ss");
+        data["Intervention.DateRecordModify"] = DateRecordModify.toString("yyyy-MM-dd HH:mm:ss");
+        data["Intervention.DoseAmount"] = QString("%1").arg(DoseAmount);
+        data["Intervention.DoseFrequency"] = DoseFrequency;
+        data["Intervention.DoseKey"] = DoseKey;
+        data["Intervention.DoseString"] = DoseString;
+        data["Intervention.DoseUnit"] = DoseUnit;
+        data["Intervention.InterventionClass"] = InterventionClass;
+        data["Intervention.InterventionDescription"] = Description;
+        data["Intervention.InterventionName"] = InterventionName;
+        data["Intervention.Notes"] = Notes;
+        data["Intervention.Rater"] = Rater;
+        break;
+    default:
+        break;
+    }
+
+    return data;
 }

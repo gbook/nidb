@@ -27,6 +27,7 @@
 #include <QDateTime>
 #include <QJsonObject>
 #include <QJsonArray>
+#include "squirrelTypes.h"
 
 /**
  * @brief The observation class
@@ -35,16 +36,18 @@ class squirrelObservation
 {
 public:
     squirrelObservation(QString dbID);
+
+    QHash<QString, QString> GetData(DatasetType d);
     QJsonObject ToJSON();
+    QString Error() { return err; }
+    QString GetDatabaseUUID() { return databaseUUID; }
     QString PrintObservation();
     bool Get();             /* gets the object data from the database */
     bool Store();           /* saves the object data from this object into the database */
     bool isValid() { return valid; }
-    QString Error() { return err; }
     qint64 GetObjectID() { return objectID; }
-    void SetObjectID(qint64 id) { objectID = id; }
-    QString GetDatabaseUUID() { return databaseUUID; }
     void SetDatabaseUUID(QString dbID) { databaseUUID = dbID; }
+    void SetObjectID(qint64 id) { objectID = id; }
 
     qint64 subjectRowID;
 

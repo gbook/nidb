@@ -27,6 +27,7 @@
 #include <QString>
 #include <QJsonObject>
 #include <QJsonArray>
+#include "squirrelTypes.h"
 
 /**
  * @brief The Intervention class
@@ -37,6 +38,8 @@ class squirrelIntervention
 {
 public:
     squirrelIntervention(QString dbID);
+
+    QHash<QString, QString> GetData(DatasetType d);
     QJsonObject ToJSON();
     QString PrintIntervention();
     bool Get();             /* gets the object data from the database */
@@ -68,9 +71,6 @@ public:
     QString Notes;               /*!< freeform field for notes */
     QString Rater;               /*!< rater/experimenter/prescriber */
     double DoseAmount;           /*!< dose amount (required) */
-    //QString frequencyModifier;  /*!< 'every' or 'times' */
-    //QString frequencyUnit;      /*!< the time of the frequency: bolus, dose, second, minute, hour, day, week, month, year */
-    //double frequencyValue;      /*!< the frequency as a number */
 
 private:
     bool valid = false;

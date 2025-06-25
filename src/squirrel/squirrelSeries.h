@@ -60,8 +60,9 @@ public:
     void SetDirFormat(QString subject_DirFormat, QString study_DirFormat, QString series_DirFormat) {subjectDirFormat = subject_DirFormat; studyDirFormat = study_DirFormat; seriesDirFormat = series_DirFormat; }
     void SetObjectID(qint64 id) { objectID = id; }
 
-    qint64 studyRowID;
     qint64 experimentRowID = -1;
+    qint64 studyRowID = -1;
+    qint64 subjectRowID = -1;
 
     /* JSON elements */
     QDateTime DateTime;             /*!< Series datetime */
@@ -91,7 +92,7 @@ public:
 
 private:
     bool valid = false;
-    bool debug;
+    bool debug = false;
     QString err;
     qint64 objectID = -1;
     QString subjectDirFormat = "orig";
