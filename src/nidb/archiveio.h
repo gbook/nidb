@@ -25,7 +25,6 @@
 #include "nidb.h"
 #include "imageio.h"
 #include "performanceMetric.h"
-#include "squirrel.h"
 #include "series.h"
 #include "subject.h"
 #include "study.h"
@@ -35,6 +34,7 @@
 #include "experiment.h"
 #include "measure.h"
 #include "drug.h"
+#include "squirrel.h"
 
 /**
  * @brief The archiveIO class is responsible for interacting with the archive, such as adding subjects and archiving data

@@ -24,6 +24,8 @@
 #define MODULEQC_H
 #include "nidb.h"
 #include "series.h"
+#include "imageio.h"
+#include "archiveio.h"
 
 class moduleQC
 {
@@ -34,13 +36,13 @@ public:
 
     int Run();
     bool QC(int moduleid, int seriesid, QString modality);
-    //QString CreateSGEJobFile(QString modulename, int qcmoduleseriesid, QString qcpath);
-    bool WriteClusterJobFile(QString jobFileName, QString jobName, int clusterRowID, QString localDataPath, QString clusterDataPath, QString entryPoint);
+    bool WriteClusterJobFile(QString jobFileName, QString jobName, qint64 clusterRowID, QString localDataPath, QString clusterDataPath, QString entryPoint);
 
 private:
     nidb *n;
 
-    computeCluster GetClusterInfo(int clusterRowID);
+    computeCluster GetClusterInfo(qint64 clusterRowID);
+    bool ExportSeries(qint64 seriesRowID, QString modality, ExportFormat format, QString outputDir);
 };
 
 #endif // MODULEQC_H

@@ -1,6 +1,7 @@
 QT -= gui
 QT += sql
 QT += network
+QT += core
 
 #CONFIG -= c++98
 #CONFIG += c++11
@@ -137,37 +138,38 @@ win32: {
 	-lsocketxx
 
     # Location of SMTP Library
-	SMTPBIN = ../../bin/smtp-win
+    SMTPBIN = ../../bin/smtp-win
     LIBS += -L$$SMTPBIN/release -lSMTPEmail
-	INCLUDEPATH += ../smtp
+    INCLUDEPATH += ../smtp
     DEPENDPATH += $$SMTPBIN
     *msvc* { # visual studio spec filter
 	QMAKE_CXXFLAGS += -MP
     }
 
     # Location of squirrel Library
-	SQUIRRELBIN = ../../bin/squirrel-win
-	LIBS += -L$$SQUIRRELBIN/release -lsquirrel
-	INCLUDEPATH += ../squirrel
-	DEPENDPATH += $$SQUIRRELBIN
-	*msvc* { # visual studio spec filter
+    SQUIRRELBIN = ../../bin/squirrel-win
+    LIBS += -L$$SQUIRRELBIN/release -lsquirrel
+    INCLUDEPATH += ../squirrel
+    INCLUDEPATH += ../../squirrel
+    DEPENDPATH += $$SQUIRRELBIN
+    *msvc* { # visual studio spec filter
 	QMAKE_CXXFLAGS += -MP
-	}
+    }
 }
 unix: {
     # Location of SMTP Library and header
-	INCLUDEPATH += ../smtp
+    INCLUDEPATH += ../smtp
     SMTPBIN = ../../bin/smtp
-	LIBS += -L$$SMTPBIN/ -lSMTPEmail
+    LIBS += -L$$SMTPBIN/ -lSMTPEmail
     INCLUDEPATH += $$SMTPBIN
     DEPENDPATH += $$SMTPBIN
 
     # Location of squirrel Library and header
-	INCLUDEPATH += ../squirrel
-	SQUIRRELBIN = ../../bin/squirrel
-	LIBS += -L$$SQUIRRELBIN/ -lsquirrel
-	INCLUDEPATH += $$SQUIRRELBIN
-	DEPENDPATH += $$SQUIRRELBIN
+    INCLUDEPATH += ../squirrel
+    SQUIRRELBIN = ../../bin/squirrel
+    LIBS += -L$$SQUIRRELBIN/ -lsquirrel
+    INCLUDEPATH += $$SQUIRRELBIN
+    DEPENDPATH += $$SQUIRRELBIN
 
     # GDCM library
     GDCMBIN = ../../bin/gdcm

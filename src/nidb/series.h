@@ -36,23 +36,25 @@ public:
     void PrintSeriesInfo();
     squirrelSeries GetSquirrelObject(QString databaseUUID);
 
-    QString modality;
-    QString uid;
-    int studynum;
-    int seriesnum;
-	QString desc;
-	QString protocol;
-	QDateTime datetime;
-    int subjectid;
-    int studyid;
-    qint64 seriesid;
-    QString seriespath;
-    QString datapath;
+    QDateTime datetime;
+    QString desc;
+    QString protocol;
+    BIDSMapping bidsMapping;
     QString behpath;
+    QString datapath;
     QString datatype;
+    QString imagetype;
+    QString modality;
+    QString seriespath;
+    QString uid;
+    bool isderived;
     int enrollmentid;
     int projectid;
-    bool isderived;
+    int seriesnum;
+    int studyid;
+    int studynum;
+    int subjectid;
+    qint64 seriesid;
 
     bool isValid = true;
     QString msg;

@@ -23,6 +23,7 @@
 #include "series.h"
 #include "study.h"
 #include "imageio.h"
+#include "archiveio.h"
 #include <QSqlQuery>
 
 
@@ -74,6 +75,7 @@ void series::LoadSeriesInfo() {
             if (modality == "mr") {
                 datatype = q.value("data_type").toString().trimmed();
                 isderived = q.value("is_derived").toBool();
+                imagetype = q.value("image_type").toString().trimmed();
             }
 
             /* check to see if anything isn't valid or is blank */
@@ -96,6 +98,9 @@ void series::LoadSeriesInfo() {
                 msgs << QString("Invalid series path [%1]").arg(seriespath);
                 isValid = false;
             }
+
+            archiveIO io;
+            bidsMapping = io.GetBIDSMapping(projectid,desc,modality,imagetype);
         }
         isValid = true;
     }

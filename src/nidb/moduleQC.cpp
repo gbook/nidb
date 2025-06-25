@@ -129,14 +129,20 @@ bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
 
     QElapsedTimer timer;
 
+    QString datatype;
+    QString entryPoint;
     QString modulename;
+    qint64 clusterRowID;
 
     QSqlQuery q;
-    q.prepare("select module_name from qc_modules where qcmodule_id = :moduleid");
+    q.prepare("select * from qc_modules where qcmodule_id = :moduleid");
     q.bindValue(":moduleid",moduleid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.size() > 0) {
         q.first();
+        clusterRowID = q.value("cluster_id").toLongLong();
+        datatype = q.value("datatype").toString();
+        entryPoint = q.value("entrypoint").toString();
         modulename = q.value("module_name").toString();
     }
     else
@@ -179,31 +185,48 @@ bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
         qcmoduleseriesid = q2.lastInsertId().toInt();
     }
 
-    QString qcpath = QString("%1/%2/%3/%4/qa").arg(n->cfg["archivedir"]).arg(uid).arg(studynum).arg(seriesnum);
+    QString qcpath = QString("%1/%2/%3/%4/qc/%5").arg(n->cfg["archivedir"]).arg(uid).arg(studynum).arg(seriesnum).arg(modulename);
     QString m;
     if (!MakePath(qcpath, m)) {
         n->Log("Unable to create directory ["+qcpath+"] because of error ["+m+"]");
         return false;
     }
-    n->Log("Working on ["+qcpath+"]");
+    n->Log("Working on [" + qcpath + "]");
 
     if (n->cfg["usecluster"].toInt()) {
         /* submit this module to the cluster. first create the SGE job file */
         n->Log("About to create the SGE job file");
-        QString clusterJobFilename;
-        WriteClusterJobFile(clusterJobFilename, jobName, clusterRowID, localDataPath, clusterDataPath, entryPoint);
+        QString localJobFilePath = QString("%1/%2.job").arg(qcpath).arg(modulename);
+        QString clusterDataPath = QString("%1").arg(n->cfg["qsubpath"]);
+        WriteClusterJobFile(localJobFilePath, modulename, clusterRowID, qcpath, clusterDataPath, entryPoint);
         n->Log("Created SGE job file");
 
         /* submit the SGE job */
-        QString systemstring = QString("ssh %1 %2 -u %3 -q %4 \"%5\"").arg(n->cfg["clustersubmithost"]).arg(n->cfg["qsubpath"]).arg(n->cfg["queueuser"]).arg(n->cfg["queuename"]).arg(sgebatchfile);
-        n->Log("About to submit SGE job file");
-        n->Log(SystemCommand(systemstring));
-        n->Log("Submitted SGE job file");
+        //QString systemstring = QString("ssh %1 %2 -u %3 -q %4 \"%5\"").arg(n->cfg["clustersubmithost"]).arg(n->cfg["qsubpath"]).arg(n->cfg["queueuser"]).arg(n->cfg["queuename"]).arg(localJobFilePath);
+        //n->Log("About to submit SGE job file");
+        //n->Log(SystemCommand(systemstring));
+        //n->Log("Submitted SGE job file");
+
+        /* get cluster info */
+        computeCluster cluster = GetClusterInfo(clusterRowID);
+        int jobID;
+        QString qResult;
+        if (n->SubmitClusterJob(localJobFilePath, cluster.type, cluster.submitHostname, cluster.submitHostUsername, n->cfg["qsubpath"], cluster.clusterUsername, cluster.queue, m, jobID, qResult)) {
+            n->Log(QString("[%1] Successfully submitted QC job to cluster [" + qResult + "]").arg(modulename), __FUNCTION__);
+        }
+        else {
+            n->Log(QString("[%1] Error submitting job to cluster [" + qResult + "]").arg(modulename), __FUNCTION__);
+        }
+
     }
     else {
         n->Log("About to run the QC module locally");
-        QDir::setCurrent(n->cfg["qcmoduledir"] + "/" + modulename);
-        QString systemstring = QString("%1/%2/./%2.sh %3").arg(n->cfg["qcmoduledir"]).arg(modulename).arg(qcmoduleseriesid);
+
+        /* download the data to qcpath */
+        ExportSeries(seriesid, modality, BIDS, qcpath);
+
+        //QDir::setCurrent(n->cfg["qcmoduledir"] + "/" + modulename);
+        QString systemstring = QString("./%1 %2 %3").arg(entryPoint).arg(qcpath).arg(qcpath);
         n->Log(SystemCommand(systemstring));
         n->Log("Finished running the QC module locally");
     }
@@ -276,18 +299,16 @@ bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
 /* ---------------------------------------------------------- */
 /**
  * @brief Build, and write to disk, the cluster job file, prior to submission to the cluster
- * @param jobFileName The job filename
+ * @param jobFilePath The job filename
  * @param clusterRowID Database clusterRowID of the cluster configuration
  * @param localDataPath Path to the data, as seen by the local nidb program
  * @param clusterDataPath Path to the data, as seen by the cluster
  * @param entryPoint Entrypoint script that will be executed, with the datapath passed as a parameter
  * @return `true` if successfully submitted, `false` otherwise
  */
-bool moduleQC::WriteClusterJobFile(QString jobFileName, QString jobName, int clusterRowID, QString localDataPath, QString clusterDataPath, QString entryPoint) {
+bool moduleQC::WriteClusterJobFile(QString jobFilePath, QString jobName, qint64 clusterRowID, QString localDataPath, QString clusterDataPath, QString entryPoint) {
 
     QString jobfile;
-    //QString clusterPath = analysispath;
-    //QString localanalysispath = QString("%1/%2-%3").arg(tmpdir).arg(pipelinename).arg(analysisid);
 
     /* get cluster info */
     computeCluster cluster = GetClusterInfo(clusterRowID);
@@ -355,16 +376,16 @@ bool moduleQC::WriteClusterJobFile(QString jobFileName, QString jobName, int clu
     QDir::setCurrent(localDataPath);
 
     /* write out the file */
-    QFile f(jobFileName);
+    QFile f(jobFilePath);
     if (f.open(QIODevice::WriteOnly | QIODevice::Text)) {
         QTextStream fs(&f);
         fs << jobfile;
         f.close();
-        n->Log("Wrote job file [" + jobFileName + "]", __FUNCTION__);
+        n->Log("Wrote job file [" + jobFilePath + "]", __FUNCTION__);
         return true;
     }
     else {
-        n->Log("Could not write the file [" + jobFileName + "]", __FUNCTION__);
+        n->Log("Could not write the file [" + jobFilePath + "]", __FUNCTION__);
         return false;
     }
 }
@@ -373,7 +394,7 @@ bool moduleQC::WriteClusterJobFile(QString jobFileName, QString jobName, int clu
 /* ---------------------------------------------------------- */
 /* --------- GetClusterInfo --------------------------------- */
 /* ---------------------------------------------------------- */
-computeCluster moduleQC::GetClusterInfo(int clusterRowID) {
+computeCluster moduleQC::GetClusterInfo(qint64 clusterRowID) {
 
     computeCluster cluster;
 
@@ -396,4 +417,104 @@ computeCluster moduleQC::GetClusterInfo(int clusterRowID) {
     }
 
     return cluster;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- ExportSeries ----------------------------------- */
+/* ---------------------------------------------------------- */
+bool moduleQC::ExportSeries(qint64 seriesRowID, QString modality, ExportFormat format, QString outputDir) {
+
+    /* get series details */
+    series s(seriesRowID, modality.toUpper(), n);
+    if (!s.isValid) {
+        n->Log("Series was not valid: [" + s.msg + "]");
+        return false;
+    }
+
+    QString tmpdir = n->cfg["tmpdir"] + "/" + GenerateRandomString(10);
+    QString m;
+    int numFilesConverted(0), numFilesRenamed(0);
+    QString binpath = n->cfg["nidbdir"] + "/bin";
+    QString studyNumStr = QString("%1").arg(s.studynum);
+    QString seriesNumStr = QString("%1").arg(s.seriesnum);
+    QList<qint64> seriesRowIDs;
+    QStringList seriesModalities;
+
+    seriesRowIDs.append(seriesRowID);
+    seriesModalities.append(modality);
+
+    switch (format) {
+        case Original:
+        case Dicom: {
+            /* copy the data */
+            break;
+        }
+        case DicomLite: {
+            /* copy the data */
+            break;
+        }
+        case DicomFull: {
+            /* copy the data */
+            break;
+        }
+        case Nifti3d: {
+            if (MakePath(tmpdir, m)) {
+                imageIO img;
+                if (!img.ConvertDicom("nifti3d", s.datapath, tmpdir, binpath, false, false, s.uid, studyNumStr, seriesNumStr, "", "", s.bidsMapping, s.datatype, numFilesConverted, numFilesRenamed, m)) {
+                    n->Log("Error exporting series. Message [" + m + "]");
+                }
+            }
+            break;
+        }
+        case Nifti3dgz: {
+            if (MakePath(tmpdir, m)) {
+                imageIO img;
+                if (!img.ConvertDicom("nifti3d", s.datapath, tmpdir, binpath, true, false, s.uid, studyNumStr, seriesNumStr, "", "", s.bidsMapping, s.datatype, numFilesConverted, numFilesRenamed, m)) {
+                    n->Log("Error exporting series. Message [" + m + "]");
+                }
+            }
+            break;
+        }
+        case Nifti4d: {
+            if (MakePath(tmpdir, m)) {
+                imageIO img;
+                if (!img.ConvertDicom("nifti4d", s.datapath, tmpdir, binpath, false, false, s.uid, studyNumStr, seriesNumStr, "", "", s.bidsMapping, s.datatype, numFilesConverted, numFilesRenamed, m)) {
+                    n->Log("Error exporting series. Message [" + m + "]");
+                }
+            }
+            break;
+        }
+        case Nifti4dgz: {
+            if (MakePath(tmpdir, m)) {
+                imageIO img;
+                if (!img.ConvertDicom("nifti4d", s.datapath, tmpdir, binpath, true, false, s.uid, studyNumStr, seriesNumStr, "", "", s.bidsMapping, s.datatype, numFilesConverted, numFilesRenamed, m)) {
+                    n->Log("Error exporting series. Message [" + m + "]");
+                }
+            }
+            break;
+        }
+        case NiftiMe: {
+            if (MakePath(tmpdir, m)) {
+                imageIO img;
+                if (!img.ConvertDicom("niftime", s.datapath, tmpdir, binpath, true, false, s.uid, studyNumStr, seriesNumStr, "", "", s.bidsMapping, s.datatype, numFilesConverted, numFilesRenamed, m)) {
+                    n->Log("Error exporting series. Message [" + m + "]");
+                }
+            }
+            break;
+        }
+        case BIDS: {
+            if (MakePath(tmpdir, m)) {
+                archiveIO io;
+                QStringList bidsFlags = { "BIDS_SUBJECTDIR_UID", "BIDS_STUDYDIR_STUDYNUM"};
+                io.WriteBIDS(seriesRowIDs, seriesModalities, outputDir, "Readme", bidsFlags, m);
+            }
+            break;
+        }
+        case Squirrel: {
+            break;
+        }
+    }
+
+    return true;
 }
