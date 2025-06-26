@@ -55,13 +55,15 @@ dnf install git
 
 {% tab title="RHEL 8" %}
 ```bash
-yum group install 'Development Tools'
-yum install cmake3
-yum install rpmdevtools
-yum install xcb*
-yum install libxcb*
-yum install gcc-toolset-10
-yum install git
+dnf group install 'Development Tools'
+dnf install cmake3 wget
+dnf install rpmdevtools
+dnf install xcb-util-wm xcb-util-keysyms
+dnf install libxkbcommon-x11
+dnf install gcc-toolset-10
+dnf install libxcb-devel
+dnf install libX11-xcb
+dnf install xcb-util-cursor xcb-util-cursor-devel
 ```
 {% endtab %}
 
