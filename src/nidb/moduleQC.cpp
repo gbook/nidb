@@ -223,7 +223,7 @@ bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
         n->Log("About to run the QC module locally");
 
         /* download the data to qcpath */
-        ExportSeries(seriesid, modality, BIDS, qcpath);
+        ExportSeries(seriesid, modality, ExportFormat::BIDS, qcpath);
 
         //QDir::setCurrent(n->cfg["qcmoduledir"] + "/" + modulename);
         QString systemstring = QString("./%1 %2 %3").arg(entryPoint).arg(qcpath).arg(qcpath);
