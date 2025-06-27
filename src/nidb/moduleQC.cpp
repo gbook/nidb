@@ -22,6 +22,7 @@
 
 #include "moduleQC.h"
 #include <QSqlQuery>
+#include "archiveio.h"
 
 moduleQC::moduleQC()
 {
@@ -79,11 +80,11 @@ int moduleQC::Run() {
                     n->ModuleRunningCheckIn();
 
                     /* check if this series has an mr_qa row */
-                    QSqlQuery q3;
-                    q3.prepare("select mrseries_id from mr_qa where mrseries_id = :seriesid");
-                    q3.bindValue(":seriesid", seriesid);
-                    n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
-                    if (q3.size() > 0) {
+                    //QSqlQuery q3;
+                    //q3.prepare("select mrseries_id from mr_qa where mrseries_id = :seriesid");
+                    //q3.bindValue(":seriesid", seriesid);
+                    //n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
+                    //if (q3.size() > 0) {
                         QC(moduleid, seriesid, modality);
                         numdone++;
 
@@ -98,10 +99,10 @@ int moduleQC::Run() {
                             break;
 
                         QThread::sleep(1); // sleep for 1 sec
-                    }
-                    else {
-                        n->Log(QString("Skipping this MR series [%1] because it does not have an mr_qa row yet... QC needs the 3D/4D information from the mr_qa script first").arg(seriesid));
-                    }
+                    //}
+                    //else {
+                    //    n->Log(QString("Skipping this MR series [%1] because it does not have an mr_qa row yet... QC needs the 3D/4D information from the mr_qa script first").arg(seriesid));
+                    //}
                 }
                 n->Log("Finished checking for MR series that dont have a QC row");
             }
@@ -128,6 +129,7 @@ int moduleQC::Run() {
 bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
 
     QElapsedTimer timer;
+    timer.start();
 
     QString datatype;
     QString entryPoint;
@@ -186,6 +188,7 @@ bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
     }
 
     QString qcpath = QString("%1/%2/%3/%4/qc/%5").arg(n->cfg["archivedir"]).arg(uid).arg(studynum).arg(seriesnum).arg(modulename);
+    QString outputPath = qcpath + "/output";
     QString m;
     if (!MakePath(qcpath, m)) {
         n->Log("Unable to create directory ["+qcpath+"] because of error ["+m+"]");
@@ -223,12 +226,35 @@ bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
         n->Log("About to run the QC module locally");
 
         /* download the data to qcpath */
-        ExportSeries(seriesid, modality, ExportFormat::BIDS, qcpath);
-
-        //QDir::setCurrent(n->cfg["qcmoduledir"] + "/" + modulename);
-        QString systemstring = QString("./%1 %2 %3").arg(entryPoint).arg(qcpath).arg(qcpath);
+        ExportSeries(seriesid, modality, ExportFormat::BIDS, qcpath + "/data");
+        MakePath(outputPath, m);
+        QString systemstring = QString("%1 %2/data %3/output %4").arg(entryPoint).arg(qcpath).arg(qcpath).arg(uid);
         n->Log(SystemCommand(systemstring));
         n->Log("Finished running the QC module locally");
+
+        /* parse the mriqc results */
+        /* example path: /nidb/data/archive/S5479BEK/12/18/qc/mriqc_docker/output/sub-S5479BEK/ses-12/anat/sub-S5479BEK_ses-12_T1w.json */
+        QString resultsJsonPath = QString("%1/output/sub-%2/ses-%3/%4/sub-%2_ses-%3_%5.json").arg(qcpath).arg(uid).arg(studynum).arg(s.bidsMapping.bidsEntity).arg(s.bidsMapping.bidsSuffix);
+
+        QFile file(resultsJsonPath);
+        if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            n->Log("Could not open file:" + file.errorString());
+        }
+        QString jsonStr = file.readAll();
+        file.close();
+
+        QJsonDocument d = QJsonDocument::fromJson(jsonStr.toUtf8());
+
+        QJsonObject json = d.object();
+        foreach(const QString& key, json.keys()) {
+            QJsonValue value = json.value(key);
+            qDebug() << "Key = " << key << ", Value = " << value.toDouble();
+        }
+
+        /* remove /data directory */
+        if (!RemoveDir(qcpath + "/data", m)) {
+            n->Log("Error removing directory [" + qcpath + "/data]  error message [" + m + "]");
+        }
     }
 
     /* calculate the total time running */
@@ -236,7 +262,7 @@ bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
 
     q.prepare("update qc_moduleseries set cpu_time = :cputime where qcmoduleseries_id = :qcmoduleseriesid");
     q.bindValue(":cputime",cputime);
-    q.bindValue(":qcmoduleseriesid",qcmoduleseriesid);
+    q.bindValue(":qcmoduleseriesid", qcmoduleseriesid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
     // only process 10 before exiting the script. Since the script always starts with the newest when it first runs,
@@ -444,6 +470,8 @@ bool moduleQC::ExportSeries(qint64 seriesRowID, QString modality, ExportFormat f
     seriesRowIDs.append(seriesRowID);
     seriesModalities.append(modality);
 
+    n->Log(QString("Exporting series [%1] [%2] [%3] to [%4]").arg(seriesRowID).arg(modality).arg(ExportFormatStrings[format]).arg(outputDir));
+
     switch (format) {
         case Original:
         case Dicom: {
@@ -505,9 +533,10 @@ bool moduleQC::ExportSeries(qint64 seriesRowID, QString modality, ExportFormat f
         }
         case BIDS: {
             if (MakePath(tmpdir, m)) {
-                archiveIO io;
+                archiveIO *io = new archiveIO(n);
                 QStringList bidsFlags = { "BIDS_SUBJECTDIR_UID", "BIDS_STUDYDIR_STUDYNUM"};
-                io.WriteBIDS(seriesRowIDs, seriesModalities, outputDir, "Readme", bidsFlags, m);
+                io->WriteBIDS(seriesRowIDs, seriesModalities, outputDir, "Readme", bidsFlags, m);
+                delete io;
             }
             break;
         }

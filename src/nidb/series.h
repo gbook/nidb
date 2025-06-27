@@ -25,6 +25,7 @@
 #include <QString>
 #include "nidb.h"
 #include "squirrelSeries.h"
+#include "archiveio.h"
 
 class series
 {

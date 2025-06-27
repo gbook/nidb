@@ -25,7 +25,6 @@
 #include "nidb.h"
 #include "series.h"
 #include "imageio.h"
-#include "archiveio.h"
 
 class moduleQC
 {

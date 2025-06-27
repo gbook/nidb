@@ -33,7 +33,7 @@ cp -rf %{_sourcedir}/src/web/* %{buildroot}/var/www/html/ # copy web files to th
 cp -f %{_builddir}/bin/nidb/nidb %{buildroot}/nidb/bin/
 cp -f %{_builddir}/bin/squirrel/squirrel %{buildroot}/usr/local/bin/ # squirrel utilities
 cp -rf %{_sourcedir}/tools/* %{buildroot}/nidb/bin/
-#cp -rf %{_sourcedir}/src/qcmodules/* %{buildroot}/nidb/qcmodules/
+cp -rf %{_sourcedir}/src/qcmodules/* %{buildroot}/nidb/qcmodules/
 cp -f %{_sourcedir}/src/setup/* %{buildroot}/nidb/setup/
 cp -f %{_builddir}/bin/smtp/libSMTPEmail.so.1 %{buildroot}/usr/lib/ # copy SMTP libs
 cp -f %{_builddir}/bin/bit7z/libbit7z64.a %{buildroot}/usr/lib/ # copy bit7z lib

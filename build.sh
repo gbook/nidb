@@ -1,5 +1,12 @@
 #!/bin/sh
 
+if grep -q -i "release 8" /etc/redhat-release
+then
+	echo "RHEL 8 detected. Enabling gcc 10"
+	#scl enable gcc-toolset-10 bash || true
+	source /opt/rh/gcc-toolset-10/enable
+fi
+
 # global build variables
 if [ -z "$1" ]; then
 	QMAKEBIN=~/Qt/6.9.1/gcc_64/bin/qmake

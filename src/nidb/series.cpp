@@ -23,7 +23,6 @@
 #include "series.h"
 #include "study.h"
 #include "imageio.h"
-#include "archiveio.h"
 #include <QSqlQuery>
 
 
@@ -99,8 +98,9 @@ void series::LoadSeriesInfo() {
                 isValid = false;
             }
 
-            archiveIO io;
-            bidsMapping = io.GetBIDSMapping(projectid,desc,modality,imagetype);
+            archiveIO *aio = new archiveIO(n);
+            bidsMapping = aio->GetBIDSMapping(projectid,desc,modality,imagetype);
+            delete aio;
         }
         isValid = true;
     }
