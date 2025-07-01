@@ -1,6 +1,7 @@
 #!/bin/sh
 
-scl enable gcc-toolset-10 bash
+#scl enable gcc-toolset-10 bash
+source /opt/rh/gcc-toolset-10/enable
 
 # global build variables
 if [ -z "$1" ]; then
