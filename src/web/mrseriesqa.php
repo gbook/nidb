@@ -61,87 +61,7 @@
 	$qapath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/qa";
 	$thumbinfo = getimagesize("$qapath/thumb_lut.png");
 	$thumbheight = $thumbinfo[1];
-?>
-	<h3 class="ui orange horizontal divider header"><i class="grey puzzle piece icon"></i> QC Modules</h3>
-	<br>
-	
-	<table class="ui collapsing celled compact table">
-		<thead>
-			<tr>
-				<th>QC Module</th>
-				<th>Result</th>
-				<th>Value</th>
-			</tr>
-		</thead>
-	<?
-		$sqlstring = "select *, uncompress(qcresults_valuetext) 'valuetext' from qc_moduleseries a left join qc_results b on a.qcmoduleseries_id = b.qcmoduleseries_id left join qc_modules c on a.qcmodule_id = c.qcmodule_id where a.series_id = $id and a.modality = 'mr' order by a.qcmodule_id";
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$graphnum = 0;
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			//PrintVariable($row,'row');
-			$number = $row['qcresults_valuenumber'];
-			$text = $row['valuetext'];
-			$file = $row['qcresults_valuefile'];
-			$moduleid = $row['qcmodule_id'];
-			$modulename = $row['qcm_name'];
-			$cputime = $row['cpu_time'];
-			$resultnameid = $row['qcresultname_id'];
-			
-			/* get the result name */
-			$sqlstringA = "select * from qc_resultnames where qcresultname_id = '$resultnameid'";
-			//PrintSQL($sqlstringA);
-			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-			$resultname = $rowA['qcresult_name'];
-			$resulttype = $rowA['qcresult_type'];
-			$units = $rowA['qcresult_units'];
-			$labels = $rowA['qcresult_labels'];
-			
-			if ($resultname == "") { $resultname = $file; }
-			
-			?>
-			<tr>
-				<td valign="top">
-					<?
-					if ($moduleid != $lastmoduleid) {
-						echo "$modulename";
-					}
-					?>
-				</td>
-				<td valign="top" class="name">
-					<?=$resultname?>
-				</td>
-				<td class="value">
-				<?
-				if (trim($number) != "") {
-					echo "$number <span class='tiny'>$units</span>";
-				}
-				elseif (trim($text) != "") {
-					switch ($resulttype) {
-						case 'graph': DisplayGraph($text,$resultname,$units,$labels,$graphnum); $graphnum++; break;
-						case 'histogram': DisplayHistogram($text,$resultname,$units,$labels); break;
-						case 'minmax': DisplayMinMax($text,$resultname,$units,$labels); break;
-					}
-					//echo $text;
-				}
-				elseif (trim($file) != "") {
-					$filepath = "$qapath/$file";
-					?>
-					<img style="border: solid 1px #666666; " src="data:image/png;base64,<?=base64_encode(file_get_contents("$filepath"))?>">
-					<?
-				}
-				?>
-				</td>
-			</tr>
-			<?
-			
-			$lastmoduleid = $moduleid;
-		}
-	?>
-	</table>
-	
-	<?
+
 	$motionfile = "$qapath/MotionCorrection.txt";
 	if (file_exists($motionfile)) {
 		$filecontents = file($motionfile);
@@ -679,7 +599,87 @@
 			</div>
 		</div>
 		<? } ?>
-	</div>	
+	</div>
+	
+	<h3 class="ui orange horizontal divider header"><i class="grey puzzle piece icon"></i> QC Modules</h3>
+	<br>
+	
+	<table class="ui collapsing celled compact table">
+		<thead>
+			<tr>
+				<th>QC Module</th>
+				<th>Result</th>
+				<th>Value</th>
+			</tr>
+		</thead>
+	<?
+		$sqlstring = "select * from qc_results a left join qc_moduleseries b on a.qcmoduleseries_id = b.qcmoduleseries_id left join qc_modules c on b.qcmodule_id = c.qcmodule_id where b.series_id = $id and b.modality = 'mr' order by b.qcmodule_id";
+		//PrintSQL($sqlstring);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$graphnum = 0;
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			//PrintVariable($row,'row');
+			$number = $row['qcresults_valuenumber'];
+			$text = $row['valuetext'];
+			$file = $row['qcresults_valuefile'];
+			$moduleid = $row['qcmodule_id'];
+			$modulename = $row['module_name'];
+			$cputime = $row['cpu_time'];
+			$resultnameid = $row['qcresultname_id'];
+			
+			/* get the result name */
+			$sqlstringA = "select * from qc_resultnames where qcresultname_id = '$resultnameid'";
+			//PrintSQL($sqlstringA);
+			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+			$resultname = $rowA['qcresult_name'];
+			$resulttype = $rowA['qcresult_type'];
+			$units = $rowA['qcresult_units'];
+			$labels = $rowA['qcresult_labels'];
+			
+			if ($resultname == "") { $resultname = $file; }
+			
+			?>
+			<tr>
+				<td valign="top">
+					<?
+					if ($moduleid != $lastmoduleid) {
+						echo "$modulename";
+					}
+					?>
+				</td>
+				<td valign="top" class="name">
+					<?=$resultname?>
+				</td>
+				<td class="value">
+				<?
+				if (trim($number) != "") {
+					echo "$number <span class='tiny'>$units</span>";
+				}
+				elseif (trim($text) != "") {
+					switch ($resulttype) {
+						case 'graph': DisplayGraph($text,$resultname,$units,$labels,$graphnum); $graphnum++; break;
+						case 'histogram': DisplayHistogram($text,$resultname,$units,$labels); break;
+						case 'minmax': DisplayMinMax($text,$resultname,$units,$labels); break;
+					}
+					//echo $text;
+				}
+				elseif (trim($file) != "") {
+					$filepath = "$qapath/$file";
+					?>
+					<img style="border: solid 1px #666666; " src="data:image/png;base64,<?=base64_encode(file_get_contents("$filepath"))?>">
+					<?
+				}
+				?>
+				</td>
+			</tr>
+			<?
+			
+			$lastmoduleid = $moduleid;
+		}
+	?>
+	</table>
+	
 	</body>
 	</html>
 	<?

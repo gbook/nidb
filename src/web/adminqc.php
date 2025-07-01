@@ -236,11 +236,12 @@
 				</td>
 			</tr>
 			<tr>
-				<td>Entry point<br><span class="tiny">This should be bash script, accessible from the compute cluster. This script will be executed and one parameter passed, which is the directory containing the series.</span></td>
+				<td>Entry point (full script path)<br><span class="tiny">This must be an executable script that accepts input and output parameters.</span></td>
 				<td>
 					<div class="ui fluid input">
 						<textarea name="entrypoint" cols=60><?=$entrypoint?></textarea>
 					</div>
+					Example: <code>./&lt;qcscript&gt; /path/to/input /path/to/output UID</code>
 				</td>
 			</tr>
 		</table>

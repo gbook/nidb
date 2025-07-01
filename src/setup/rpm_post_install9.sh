@@ -49,6 +49,10 @@ systemctl start php-fpm.service
 # make sure port 80 is accessible through the firewall
 echo 'Add port 80 to firewall...'
 firewall-cmd --permanent --add-port=80/tcp
+firewall-cmd --permanent --add-port=104/tcp
+firewall-cmd --permanent --add-port=104/udp
+firewall-cmd --permanent --add-port=8104/tcp
+firewall-cmd --permanent --add-port=8104/udp
 firewall-cmd --reload
 
 # create nidb user if it does not exist, add nidb to the apache group, and apache to the nidb group

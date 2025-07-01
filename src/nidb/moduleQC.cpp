@@ -169,22 +169,26 @@ bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
     n->Log(QString("============== Working on [%1-%2-%3] ==============").arg(uid).arg(studynum).arg(seriesnum));
     // check if this qc_moduleseries row exists
     q.prepare("select * from qc_moduleseries where series_id = :seriesid and modality = :modality and qcmodule_id = :moduleid");
-    q.bindValue(":seriesid",seriesid);
-    q.bindValue(":modality",modality);
-    q.bindValue(":moduleid",moduleid);
+    q.bindValue(":seriesid", seriesid);
+    q.bindValue(":modality", modality);
+    q.bindValue(":moduleid", moduleid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    if (q.size() > 0)
+    if (q.size() > 0) {
         /* another row exists */
+        n->Log(QString("This series already has a row in the qc_moduleseries table [%1, %2]").arg(moduleid).arg(seriesid));
         return false;
+    }
     else {
         /* insert a blank row for this qc_moduleseries and get the row ID */
         QSqlQuery q2;
         q2.prepare("insert ignore into qc_moduleseries (qcmodule_id, series_id, modality) values (:moduleid, :seriesid, :modality)");
-        q2.bindValue(":seriesid",seriesid);
-        q2.bindValue(":modality",modality);
-        q2.bindValue(":moduleid",moduleid);
+        q2.bindValue(":seriesid", seriesid);
+        q2.bindValue(":modality", modality);
+        q2.bindValue(":moduleid", moduleid);
         n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
         qcmoduleseriesid = q2.lastInsertId().toInt();
+
+        n->Log(QString("This series did not have a row in the module/series table [%1, %2]. New moduleseries row created [%3]").arg(moduleid).arg(seriesid).arg(qcmoduleseriesid));
     }
 
     QString qcpath = QString("%1/%2/%3/%4/qc/%5").arg(n->cfg["archivedir"]).arg(uid).arg(studynum).arg(seriesnum).arg(modulename);
@@ -229,6 +233,7 @@ bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
         ExportSeries(seriesid, modality, ExportFormat::BIDS, qcpath + "/data");
         MakePath(outputPath, m);
         QString systemstring = QString("%1 %2/data %3/output %4").arg(entryPoint).arg(qcpath).arg(qcpath).arg(uid);
+        n->Log("Running the QC module [" + systemstring + "]");
         n->Log(SystemCommand(systemstring));
         n->Log("Finished running the QC module locally");
 
@@ -248,7 +253,49 @@ bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
         QJsonObject json = d.object();
         foreach(const QString& key, json.keys()) {
             QJsonValue value = json.value(key);
-            qDebug() << "Key = " << key << ", Value = " << value.toDouble();
+
+            QString valType;
+            if (value.isDouble())
+                valType = "number";
+            else if (value.isString())
+                valType = "text";
+            else
+                continue;
+
+            /* insert qc name */
+            int qcNameRowID(-1);
+            q.prepare("select qcresultname_id from qc_resultnames where qcresult_name = :name");
+            q.bindValue(":name", key);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+            if (q.size() > 0) {
+                q.first();
+                qcNameRowID = q.value("qcresultname_id").toInt();
+            }
+            else {
+                q.finish();
+                q.prepare("insert ignore into qc_resultnames (qcresult_name, qcresult_type) values (:name, :type)");
+                q.bindValue(":name", key);
+                q.bindValue(":type", valType);
+                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+                qcNameRowID = q.lastInsertId().toInt();
+            }
+
+            if (value.isDouble()) {
+                q.finish();
+                q.prepare("insert ignore into qc_results (qcmoduleseries_id, qcresultname_id, qcresults_valuenumber) values (:qcmoduleseriesid, :resultnameid, :value)");
+                q.bindValue(":qcmoduleseriesid", qcmoduleseriesid);
+                q.bindValue(":resultnameid", qcNameRowID);
+                q.bindValue(":value", value.toDouble());
+                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+            }
+            else {
+                q.finish();
+                q.prepare("insert ignore into qc_results (qcmoduleseries_id, qcresultname_id, qcresults_valuetext) values (:qcmoduleseriesid, :resultnameid, :value)");
+                q.bindValue(":qcmoduleseriesid", qcmoduleseriesid);
+                q.bindValue(":resultnameid", qcNameRowID);
+                q.bindValue(":value", value.toString());
+                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+            }
         }
 
         /* remove /data directory */

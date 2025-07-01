@@ -185,6 +185,7 @@
 						</a>
 						<a class="item" title="Checklist of expected data items" href="projectchecklist.php?projectid=<?=$projectid?>" style="color: #222"><i class="clipboard list icon"></i> Checklist</a>
 						<a class="item" href="mrqcchecklist.php?action=viewqcparams&id=<?=$projectid?>" style="color: #222"><i class="clipboard check icon"></i> MR scan QC</a>
+						<a class="item" href="mriqc.php?action=viewmriqc&projectid=<?=$projectid?>" style="color: #222"><i class="clipboard check icon"></i> Advanced mriqc</a>
 					</div>
 				</div>
 				<div class="ui dropdown item">
