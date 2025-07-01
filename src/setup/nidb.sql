@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: May 30, 2025 at 04:24 PM
+-- Generation Time: Jul 01, 2025 at 08:16 PM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -633,6 +633,26 @@ CREATE TABLE `common` (
   `common_file` varchar(255) DEFAULT NULL,
   `common_size` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `compute_cluster`
+--
+
+CREATE TABLE `compute_cluster` (
+  `computecluster_id` int(11) NOT NULL,
+  `cluster_name` varchar(255) NOT NULL,
+  `cluster_desc` text NOT NULL,
+  `cluster_type` varchar(255) DEFAULT NULL COMMENT 'sge, slurm',
+  `submit_hostname` varchar(255) DEFAULT NULL,
+  `submithost_username` varchar(255) DEFAULT NULL COMMENT 'username to login to submit node',
+  `cluster_username` varchar(255) DEFAULT NULL COMMENT 'username when run on cluster compute nodes',
+  `queues` text NOT NULL COMMENT 'queues on SGE, partitions on slurm',
+  `cluster_maxwalltime` int(11) NOT NULL DEFAULT -1,
+  `cluster_memory` int(11) NOT NULL DEFAULT 1,
+  `cluster_numcores` int(11) NOT NULL DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -2771,9 +2791,12 @@ CREATE TABLE `public_downloads2` (
 
 CREATE TABLE `qc_modules` (
   `qcmodule_id` int(11) NOT NULL,
-  `qcm_modality` varchar(20) NOT NULL,
-  `qcm_name` varchar(250) NOT NULL COMMENT 'full name of the module in the qcmodules directory',
-  `qcm_isenabled` tinyint(1) NOT NULL DEFAULT 1
+  `modality` varchar(20) NOT NULL,
+  `module_name` varchar(250) NOT NULL COMMENT 'full name of the module in the qcmodules directory',
+  `cluster_id` int(11) DEFAULT NULL,
+  `entrypoint` text DEFAULT NULL,
+  `datatype` varchar(255) NOT NULL DEFAULT 'dicom',
+  `isenabled` tinyint(1) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
@@ -2799,8 +2822,8 @@ CREATE TABLE `qc_moduleseries` (
 CREATE TABLE `qc_resultnames` (
   `qcresultname_id` int(11) NOT NULL,
   `qcresult_name` varchar(255) NOT NULL DEFAULT '',
-  `qcresult_type` enum('graph','image','histogram','minmax','number','textfile') NOT NULL DEFAULT 'number',
-  `qcresult_units` varchar(255) NOT NULL DEFAULT 'unitless',
+  `qcresult_type` enum('graph','image','histogram','minmax','number','textfile','text') NOT NULL DEFAULT 'number',
+  `qcresult_units` varchar(255) NOT NULL DEFAULT 'nounit',
   `qcresult_labels` varchar(255) NOT NULL DEFAULT ''
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
@@ -3917,6 +3940,12 @@ ALTER TABLE `changelog_subject`
 ALTER TABLE `common`
   ADD PRIMARY KEY (`common_id`),
   ADD UNIQUE KEY `common_group` (`common_group`,`common_name`);
+
+--
+-- Indexes for table `compute_cluster`
+--
+ALTER TABLE `compute_cluster`
+  ADD PRIMARY KEY (`computecluster_id`);
 
 --
 -- Indexes for table `consent_series`
@@ -5145,6 +5174,12 @@ ALTER TABLE `changelog_subject`
 --
 ALTER TABLE `common`
   MODIFY `common_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `compute_cluster`
+--
+ALTER TABLE `compute_cluster`
+  MODIFY `computecluster_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `consent_series`
