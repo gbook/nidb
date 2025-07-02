@@ -56,9 +56,9 @@ cp -f %{_builddir}/bin/gdcm/bin/libsocketxx.so.1.2 %{buildroot}/usr/lib/ # copy 
 cp -f ~/Qt/6.9.1/gcc_64/lib/libQt6Core.so.6 %{buildroot}/usr/lib/ # copy Qt libs
 cp -f ~/Qt/6.9.1/gcc_64/lib/libQt6Network.so.6 %{buildroot}/usr/lib/ # copy Qt libs
 cp -f ~/Qt/6.9.1/gcc_64/lib/libQt6Sql.so.6 %{buildroot}/usr/lib/ # copy Qt libs
-cp -f ~/Qt/6.9.1/gcc_64/lib/libicudata.so.56 %{buildroot}/usr/lib/ # copy Qt libs
-cp -f ~/Qt/6.9.1/gcc_64/lib/libicui18n.so.56 %{buildroot}/usr/lib/ # copy Qt libs
-cp -f ~/Qt/6.9.1/gcc_64/lib/libicuuc.so.56 %{buildroot}/usr/lib/ # copy Qt libs
+cp -f ~/Qt/6.9.1/gcc_64/lib/libicudata.so.73 %{buildroot}/usr/lib/ # copy Qt libs
+cp -f ~/Qt/6.9.1/gcc_64/lib/libicui18n.so.73 %{buildroot}/usr/lib/ # copy Qt libs
+cp -f ~/Qt/6.9.1/gcc_64/lib/libicuuc.so.73 %{buildroot}/usr/lib/ # copy Qt libs
 cp -f ~/Qt/6.9.1/gcc_64/plugins/sqldrivers/libqsqlmysql.so %{buildroot}/usr/lib/sqldrivers/ # copy Qt MySQL lib
 cp -f ~/Qt/6.9.1/gcc_64/plugins/sqldrivers/libqsqlmysql.so %{buildroot}/nidb/bin/sqldrivers/ # copy Qt MySQL lib to here also... sometimes the binary only checks this location for the lib
 cp -f ~/Qt/6.9.1/gcc_64/plugins/sqldrivers/libqsqlite.so %{buildroot}/usr/lib/sqldrivers/ # copy Qt MySQL lib
