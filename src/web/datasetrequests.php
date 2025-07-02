@@ -51,7 +51,10 @@
 	$deliverymethod = GetVariable("deliverymethod");
 	$notes = GetVariable("notes");
 	
+	//PrintVariable($_FILES);
 	//PrintVariable($_POST);
+	
+	//exit(0);
 	
 	/* determine action */
 	if ($action == "editform") {
@@ -100,9 +103,19 @@
 		$dataformat = mysqli_real_escape_string($GLOBALS['linki'], $dataformat);
 		$deliverymethod = mysqli_real_escape_string($GLOBALS['linki'], $deliverymethod);
 		$notes = mysqli_real_escape_string($GLOBALS['linki'], $notes);
+
+		if (($_FILES["duafile"]["error"] == 0) && ($_FILES["duafile"]["name"] != "")) {
+			$fileblob = base64_encode(file_get_contents($_FILES["duafile"]["tmp_name"]));
+			$filename = $_FILES["duafile"]["name"];
+			$filecontenttype = $_FILES["duafile"]["type"];
+			$filesize = $_FILES["duafile"]["size"];
+			
+			$fileid = StoreFileToSQL($filename, $filecontenttype, $fileblob, $filesize);
+		}
 		
 		/* insert the new site */
-		$sqlstring = "insert into dataset_requests (username, email, institution, shortname, idlist, dataformat, deliverymethod, notes, request_submitdate, request_status) values ('" . $GLOBALS['username'] . "', '$email', '$institution', '$shortname', '$idlist', '$dataformat', '$deliverymethod', '$notes', now(), 'submitted')";
+		$sqlstring = "insert into dataset_requests (username, email, institution, shortname, idlist, dataformat, deliverymethod, notes, dua_fileid, request_submitdate, request_status) values ('" . $GLOBALS['username'] . "', '$email', '$institution', '$shortname', '$idlist', '$dataformat', '$deliverymethod', '$notes', nullif('$fileid', ''), now(), 'submitted')";
+		PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		Notice("$shortname submitted");
@@ -123,8 +136,24 @@
 		$deliverymethod = mysqli_real_escape_string($GLOBALS['linki'], $deliverymethod);
 		$notes = mysqli_real_escape_string($GLOBALS['linki'], $notes);
 
-		/* insert the new site */
-		$sqlstring = "update dataset_requests set email = '$email', institution = '$institution', shortname = '$shortname', idlist = '$idlist', dataformat = '$dataformat', deliverymethod = '$delivermethod', notes = '$notes' where datasetrequest_id = $datasetrequestid";
+		$sqlstring = "select dua_fileid from dataset_requests where datasetrequest_id = $datasetrequestid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$duafileid = $row['dua_fileid'];
+
+		if (($_FILES["duafile"]["error"] == 0) && ($_FILES["duafile"]["name"] != "")) {
+			$fileblob = base64_encode(file_get_contents($_FILES["duafile"]["tmp_name"]));
+			$filename = $_FILES["duafile"]["name"];
+			$filecontenttype = $_FILES["duafile"]["type"];
+			$filesize = $_FILES["duafile"]["size"];
+			
+			$fileid = StoreFileToSQL($filename, $filecontenttype, $fileblob, $filesize);
+			
+			DeleteFileFromSQL($duafileid);
+		}
+
+		/* insert the new dataset request */
+		$sqlstring = "update dataset_requests set email = '$email', institution = '$institution', shortname = '$shortname', idlist = '$idlist', dataformat = '$dataformat', deliverymethod = '$delivermethod', notes = '$notes', dua_fileid = nullif('$fileid', '') where datasetrequest_id = $datasetrequestid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		Notice("$shortname updated");
@@ -182,9 +211,14 @@
 			$dataformat = $row['dataformat'];
 			$deliverymethod = $row['deliverymethod'];
 			$notes = $row['notes'];
+			$fileid = $row['dua_fileid'];
 
+			if ($fileid > 0) {
+				list($filename, $filecontenttype, $filesize, $filedate) = GetFileInfoFromSQL($fileid);
+			}
+			
 			$formaction = "update";
-			$formtitle = "Updating $sitename";
+			$formtitle = "Updating $shortname";
 			$submitbuttonlabel = "Update";
 		}
 		else {
@@ -203,26 +237,26 @@
 	?>
 		<div class="ui text container">
 			<div class="ui attached visible message">
-			  <div class="header">Submit a new data request</div>
-			  <p>Fill out the form to submit a new request. Include as much information as possible, but do not include passwords.</p>
+			  <div class="header">Manage dataset requests</div>
+			  <p>Include as much information as possible, but do not include passwords.</p>
 			</div>
-			<form method="post" action="datasetrequests.php" autocomplete="off" class="ui form attached fluid segment">
-			<input type="hidden" name="action" value="<? =$formaction?>">
-			<input type="hidden" name="datasetrequestid" value="<? =$id?>">
-			<h3 class="ui dividing header"><? =$formtitle?></h3>
+			<form method="post" action="datasetrequests.php" autocomplete="off" class="ui form attached fluid segment" enctype="multipart/form-data">
+			<input type="hidden" name="action" value="<?=$formaction?>">
+			<input type="hidden" name="datasetrequestid" value="<?=$id?>">
+			<h3 class="ui dividing header"><?=$formtitle?></h3>
 			
 			<div class="two fields">
 				<div class="field">
 					<label>Email</label>
 					<div class="field">
-						<input type="email" name="email" value="<? =$email?>" maxlength="255" required>
+						<input type="email" name="email" value="<?=$email?>" maxlength="255" required>
 					</div>
 				</div>
 				
 				<div class="field">
 					<label>Institution</label>
 					<div class="field">
-						<input type="text" name="institution" value="<? =$institution?>" maxlength="255" required>
+						<input type="text" name="institution" value="<?=$institution?>" maxlength="255" required>
 					</div>
 				</div>
 			</div>
@@ -230,38 +264,47 @@
 			<div class="field">
 				<label>Short name</label>
 				<div class="field">
-					<input type="text" name="shortname" value="<? =$shortname?>" maxlength="255" required>
+					<input type="text" name="shortname" value="<?=$shortname?>" maxlength="255" required>
 				</div>
 			</div>
 
 			<div class="field">
 				<label>Data Requested <i class="question circle outline icon" title="IDs/project(s) and data protocol names"></i></label>
 				<div class="field">
-					<textarea name="idlist" rows="4" required><? =$idlist?></textarea>
+					<textarea name="idlist" rows="4" required><?=$idlist?></textarea>
 				</div>
 			</div>
 
 			<div class="field">
 				<label>Data Format <i class="question circle outline icon" title="BIDS, Nifti, anonymized DICOM, directory structure, etc"></i></label>
 				<div class="field">
-					<textarea name="dataformat" rows="4" required><? =$dataformat?></textarea>
+					<textarea name="dataformat" rows="4" required><?=$dataformat?></textarea>
 				</div>
 			</div>
 
 			<div class="field">
 				<label>Delivery Method <i class="question circle outline icon" title="include all details of how to get the data to you. Email passwords separately"></i></label>
 				<div class="field">
-					<textarea name="deliverymethod" rows="4" required><? =$deliverymethod?></textarea>
+					<textarea name="deliverymethod" rows="4" required><?=$deliverymethod?></textarea>
 				</div>
 			</div>
 
 			<div class="field">
 				<label>Notes</label>
 				<div class="field">
-					<textarea name="notes" rows="4" required><? =$notes?></textarea>
+					<textarea name="notes" rows="4" required><?=$notes?></textarea>
 				</div>
 			</div>
-			<input type="submit" class="ui primary button" value="<? =$submitbuttonlabel?>">
+			<div class="field">
+				<label>Data Use Agreement (DUA). Upload new file to replace original file</label>
+				<div class="ui file input">
+					<input type="file" name="duafile">
+				</div>
+				<? if ($filename != "") { ?>
+					<small>Existing file: <tt><a href="f.php?action=download&fileid=<?=$fileid?>"><?=$filename?></a></tt>, <?=$filesize?> bytes, <?=$filedate?></small>
+				<? } ?>
+			</div>
+			<input type="submit" class="ui primary button" value="<?=$submitbuttonlabel?>">
 			</form>
 		</div>
 	<?
@@ -274,7 +317,7 @@
 	?>
 
 	<div style="padding: 0px 50px">
-	<button class="ui primary large button" onClick="window.location.href='datasetrequests.php?action=addform'; return false;">Submit New Dataset Request</button>
+	<button class="ui primary large button" onClick="window.location.href='datasetrequests.php?action=addform'; return false;">New Dataset Request</button>
 	<br><br><br>
 	
 	<h3 class="ui header">My Requests</h3>
@@ -290,6 +333,7 @@
 				<th>ID List</th>
 				<th>Data Format</th>
 				<th>Delivery Method</th>
+				<th>DUA</th>
 				<th>Cancel</th>
 			</tr>
 		</thead>
@@ -312,7 +356,12 @@
 					$request_completedate = $row['request_completedate'];
 					$status = $row['request_status'];
 					$admin_username = $row['admin_username'];
+					$duafileid = $row['dua_fileid'];
 
+					if (strlen($idlist) > 200) { $idlist = substr($idlist, 0, 200) . "..."; }
+					if (strlen($dataformat) > 200) { $dataformat = substr($dataformat, 0, 200) . "..."; }
+					if (strlen($deliverymethod) > 200) { $deliverymethod = substr($deliverymethod, 0, 200) . "..."; }
+					
 					switch ($status) {
 						case 'complete': $statustd = "positive"; break;
 						case 'submitted': $statustd = "warning"; break;
@@ -323,16 +372,17 @@
 					if ($shortname == "") { $shortname = "(blank)"; }
 					?>
 					<tr>
-						<td><a href="datasetrequests.php?action=editform&datasetrequestid=<? =$datasetrequestid?>"><? =$shortname?></a></td>
-						<td><? =$request_submitdate?></td>
-						<td><? =$admin_username?></td>
-						<td class="<? =$statustd?>"><? =ucfirst($status)?></td>
-						<td><? =$request_startdate?></td>
-						<td><? =$request_completedate?></td>
-						<td><? =$idlist?></td>
-						<td><? =$dataformat?></td>
-						<td><? =$deliverymethod?></td>
-						<td><a href="datasetrequests.php?action=cancel&datasetrequestid=<? =$datasetrequestid?>" style="color: red">Cancel</a></td>
+						<td><a href="datasetrequests.php?action=editform&datasetrequestid=<?=$datasetrequestid?>"><?=$shortname?></a></td>
+						<td><?=$request_submitdate?></td>
+						<td><?=$admin_username?></td>
+						<td class="<?=$statustd?>"><?=ucfirst($status)?></td>
+						<td><?=$request_startdate?></td>
+						<td><?=$request_completedate?></td>
+						<td><pre><?=$idlist?></pre></td>
+						<td><pre><?=$dataformat?></pre></td>
+						<td><pre><?=$deliverymethod?></pre></td>
+						<td><? if ($duafileid != "") { ?><a href="f.php?action=download&fileid=<?=$duafileid?>"><i class="file alternate icon"></i></a> <? } ?></td>
+						<td><a href="datasetrequests.php?action=cancel&datasetrequestid=<?=$datasetrequestid?>" style="color: red">Cancel</a></td>
 					</tr>
 					<? 
 				}
@@ -379,6 +429,10 @@
 					$request_completedate = $row['request_completedate'];
 					$status = $row['request_status'];
 
+					if (strlen($idlist) > 200) { $idlist = substr($idlist, 0, 200) . "..."; }
+					if (strlen($dataformat) > 200) { $dataformat = substr($dataformat, 0, 200) . "..."; }
+					if (strlen($deliverymethod) > 200) { $deliverymethod = substr($deliverymethod, 0, 200) . "..."; }
+
 					switch ($status) {
 						case 'complete': $statustd = "positive"; break;
 						case 'submitted': $statustd = "warning"; break;
@@ -389,16 +443,16 @@
 					if ($shortname == "") { $shortname = "(shortname is blank)"; }
 					?>
 					<tr>
-						<td><a href="datasetrequests.php?action=editform&datasetrequestid=<? =$datasetrequestid?>"><? =$shortname?></a></td>
-						<td><? =$request_submitdate?></td>
-						<td><? =$username?></td>
-						<td class="<? =$statustd?>"><? =ucfirst($status)?></td>
-						<td><? =$request_startdate?></td>
-						<td><? =$request_completedate?></td>
-						<td><? =$idlist?></td>	
-						<td><? =$dataformat?></td>
-						<td><? =$deliverymethod?></td>
-						<td><a href="datasetrequests.php?action=markcomplete&datasetrequestid=<? =$datasetrequestid?>" style="color: red">Mark as complete</a></td>
+						<td><a href="datasetrequests.php?action=editform&datasetrequestid=<?=$datasetrequestid?>"><?=$shortname?></a></td>
+						<td><?=$request_submitdate?></td>
+						<td><?=$username?></td>
+						<td class="<?=$statustd?>"><?=ucfirst($status)?></td>
+						<td><?=$request_startdate?></td>
+						<td><?=$request_completedate?></td>
+						<td><pre><?=$idlist?></pre></td>
+						<td><pre><?=$dataformat?></pre></td>
+						<td><pre><?=$deliverymethod?></pre></td>
+						<td><a href="datasetrequests.php?action=markcomplete&datasetrequestid=<?=$datasetrequestid?>" style="color: red">Mark as complete</a></td>
 					</tr>
 					<? 
 				}
@@ -442,6 +496,10 @@
 					$request_completedate = $row['request_completedate'];
 					$status = $row['request_status'];
 
+					if (strlen($idlist) > 200) { $idlist = substr($idlist, 0, 200) . "..."; }
+					if (strlen($dataformat) > 200) { $dataformat = substr($dataformat, 0, 200) . "..."; }
+					if (strlen($deliverymethod) > 200) { $deliverymethod = substr($deliverymethod, 0, 200) . "..."; }
+
 					switch ($status) {
 						case 'complete': $statustd = "positive"; break;
 						case 'submitted': $statustd = "warning"; break;
@@ -452,16 +510,16 @@
 					if ($shortname == "") { $shortname = "(blank)"; }
 					?>
 					<tr>
-						<td><a href="datasetrequests.php?action=editform&datasetrequestid=<? =$datasetrequestid?>"><? =$shortname?></a></td>
-						<td><? =$request_submitdate?></td>
-						<td><? =$username?></td>
-						<td class="<? =$statustd?>"><? =ucfirst($status)?></td>
-						<td><? =$request_startdate?></td>
-						<td><? =$request_completedate?></td>
-						<td><? =$idlist?></td>
-						<td><? =$dataformat?></td>
-						<td><? =$deliverymethod?></td>
-						<td><a href="datasetrequests.php?action=takeownership&datasetrequestid=<? =$datasetrequestid?>" style="color: red">Take ownership</a></td>
+						<td><a href="datasetrequests.php?action=editform&datasetrequestid=<?=$datasetrequestid?>"><?=$shortname?></a></td>
+						<td><?=$request_submitdate?></td>
+						<td><?=$username?></td>
+						<td class="<?=$statustd?>"><?=ucfirst($status)?></td>
+						<td><?=$request_startdate?></td>
+						<td><?=$request_completedate?></td>
+						<td><pre><?=$idlist?></pre></td>
+						<td><pre><?=$dataformat?></pre></td>
+						<td><pre><?=$deliverymethod?></pre></td>
+						<td><a href="datasetrequests.php?action=takeownership&datasetrequestid=<?=$datasetrequestid?>" style="color: red">Take ownership</a></td>
 					</tr>
 					<? 
 				}

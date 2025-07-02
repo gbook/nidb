@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xOffset'>
+
+<sources>
+  <src><file>xoffset.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Position</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[Return an object with x and y properties giving the offset position of child relative to parent.]]></description>
+
+<syntax>xOffset(c, p)</syntax>
+
+<parameters>
+  <par>
+    <name>c</name><note><![CDATA[id string or object reference of child element]]></note>
+    <name>p</name><note><![CDATA[id string or object reference of parent element]]></note>
+  </par>
+</parameters>
+
+<return>An object with x and y properties.</return>
+
+<dependencies>
+  <dep>xGetElementById</dep>
+</dependencies>
+
+<demos>
+  <demo>
+    <url>http://cross-browser.com/toys/</url><note><![CDATA[Index of all X demos.]]></note>
+  </demo>
+</demos>
+
+<comments>
+</comments>
+
+<revisions>
+  <rev><num>1</num><date>27Nov09</date><author>mf</author><note><![CDATA[initial release]]></note></rev>
+</revisions>
+
+</x_symbol>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xEditable'>
+
+<sources>
+  <src><file>xeditable.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Debug</grp>
+</groups>
+
+<type>Function</type>
+
+<description><![CDATA[A simple function to allow in-line editing.]]></description>
+
+<syntax>xEditable(container, trigger)</syntax>
+
+<parameters>
+  <par><name>container</name><note><![CDATA[element reference or id string]]></note></par>
+  <par><name>trigger</name><note><![CDATA[element reference or id string]]></note></par>
+</parameters>
+
+<dependencies>
+  <dep>xGetElementById</dep>
+  <dep>xAddEventListener</dep>
+  <dep>xEvent</dep>
+</dependencies>
+
+<demos>
+  <demo><url>http://cross-browser.com/toys/</url><note><![CDATA[Index of all X demos.]]></note></demo>
+</demos>
+
+<comments>
+  <comment><date>10Oct06</date><author>mf</author><note><![CDATA[Thanks very much, Jerod!]]></note></comment>
+</comments>
+
+<revisions>
+  <rev><num>3</num><date>6Jun07</date><author>mf</author><note><![CDATA[Removed use of xCreateElement.]]></note></rev>
+  <rev><num>2</num><date>20Jan07</date><author>mf</author><note><![CDATA[HFT member ohvayha submitted a bug fix; line 10. Thanks!]]></note></rev>
+  <rev><num>1</num><date>26Oct05</date><author>mf</author><note><![CDATA[Initial release.]]></note></rev>
+</revisions>
+
+</x_symbol>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xHasClass'>
+
+<sources>
+  <src><file>xhasclass.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Style</grp>
+</groups>
+
+<type>Function</type>
+
+<description><![CDATA[Returns true if an element has a specified class name]]></description>
+
+<syntax>xHasClass(e, c)</syntax>
+
+<parameters>
+  <par><name>e</name><note><![CDATA[Str/Obj - Element id or object]]></note></par>
+  <par><name>c</name><note><![CDATA[Class name]]></note></par>
+</parameters>
+
+<return><![CDATA[Bool - true if found, false otherwise]]></return>
+
+<dependencies>
+  <dep>xGetElementById</dep>
+</dependencies>
+
+<demos>
+  <demo><url>http://cross-browser.com/x/examples/table_cursors.html</url><note><![CDATA[Demo that uses xAddClass.]]></note></demo>
+  <demo><url>http://cross-browser.com/x/examples/xtablecursor.html</url><note><![CDATA[Demo that uses xAddClass.]]></note></demo>
+</demos>
+
+<revisions>
+  <rev><num>3</num><date>21Feb07</date><author>mf</author><note><![CDATA[Bug fixes]]></note></rev>
+  <rev><num>2</num><date>8Sep2006</date><author>df</author><note><![CDATA[Updated]]></note></rev>
+  <rev><num>1</num><date>11Oct2005</date><author>df</author><note><![CDATA[Initial release.]]></note></rev>
+</revisions>
+
+</x_symbol>

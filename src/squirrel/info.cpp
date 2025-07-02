@@ -65,7 +65,7 @@ bool info::DisplayInfo(QString packagePath, bool debug, ObjectType object, QStri
             else if (object == Series) {
                 if ((subjectID == "") && (studyNum < 1)) {
                     /* print all series */
-                    sqrl->PrintSeries(-1, printFormat);
+                    sqrl->PrintSeries(dataset, printFormat, -1);
                 }
                 else {
                     qint64 subjectRowID = sqrl->FindSubject(subjectID);
@@ -76,29 +76,34 @@ bool info::DisplayInfo(QString packagePath, bool debug, ObjectType object, QStri
                         if (studyRowID < 0)
                             utils::Print(QString("Study not found. Searched for subject [%1] study [%2]").arg(subjectID).arg(studyNum));
                         else
-                            sqrl->PrintSeries(studyRowID, printFormat);
+                            sqrl->PrintSeries(dataset, printFormat, studyRowID);
                     }
                 }
             }
             else if (object == Observation) {
-                qint64 subjectRowID = sqrl->FindSubject(subjectID);
-                if (subjectRowID < 0)
-                    utils::Print(QString("Subject [%1] was not found in this package").arg(subjectID));
-                else
-                    sqrl->PrintObservations(subjectRowID, printFormat);
+                if (subjectID == "") {
+                    sqrl->PrintObservations(dataset, printFormat, -1);
+                }
+                else {
+                    qint64 subjectRowID = sqrl->FindSubject(subjectID);
+                    if (subjectRowID < 0)
+                        utils::Print(QString("Subject [%1] was not found in this package").arg(subjectID));
+                    else
+                        sqrl->PrintObservations(dataset, printFormat, subjectRowID);
+                }
             }
             else if (object == Intervention) {
                 qint64 subjectRowID = sqrl->FindSubject(subjectID);
                 if (subjectRowID < 0)
                     utils::Print(QString("Subject [%1] was not found in this package").arg(subjectID));
                 else
-                    sqrl->PrintInterventions(subjectRowID, printFormat);
+                    sqrl->PrintInterventions(dataset, printFormat, subjectRowID);
             }
             else if (object == Experiment) {
                 sqrl->PrintExperiments(printFormat);
             }
             else if (object == Analysis) {
-                sqrl->PrintExperiments(printFormat);
+                sqrl->PrintAnalyses(printFormat);
             }
             else if (object == Pipeline) {
                 sqrl->PrintPipelines(printFormat);

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xLoadLink'>
+
+<sources>
+  <src><file>xloadlink.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>DOM</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[Dynamically create a LINK element and append it to the HEAD.]]></description>
+
+<syntax>xLoadLink(url, rel, typ, med)</syntax>
+
+<parameters>
+  <par><name>url</name><note><![CDATA[address of css file]]></note></par>
+  <par><name>rel</name><note><![CDATA[optionally for link.rel, default is 'stylesheet']]></note></par>
+  <par><name>typ</name><note><![CDATA[optionally for link.type, default is 'text/css']]></note></par>
+  <par><name>med</name><note><![CDATA[optionally for link.media, default is 'all']]></note></par>
+</parameters>
+
+<return><![CDATA[null on error else a reference to the LINK object.]]></return>
+
+<demos>
+  <demo><url>http://cross-browser.com/toys/</url><note><![CDATA[Index of all X demos.]]></note></demo>
+</demos>
+
+<revisions>
+  <rev><num>1</num><date>7Aug07</date><author>mf</author><note><![CDATA[Initial release.]]></note></rev>
+</revisions>
+
+</x_symbol>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id="xFlWrite">
+
+<sources>
+  <src><file>xflwrite.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>DOM</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[Write Flash HTML into the document.]]></description>
+
+<syntax>xFlWrite(id, w, h, swf, par)</syntax>
+
+<parameters>
+  <par><name>id</name><note><![CDATA[id string]]></note></par>
+  <par><name>w</name><note><![CDATA[width]]></note></par>
+  <par><name>h</name><note><![CDATA[height]]></note></par>
+  <par><name>swf</name><note><![CDATA[swf file pathname]]></note></par>
+  <par><name>par</name><note><![CDATA[parameters object; optional]]></note></par>
+</parameters>
+
+<revisions>
+  <rev><num>1</num><date>14Mar2011</date><author>mf</author><note><![CDATA[been using something like this for a long time]]></note></rev>
+</revisions>
+
+</x_symbol>

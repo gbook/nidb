@@ -78,10 +78,10 @@
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$problemtype = $row['problem'];
 			if ($p == $problemtype) {
-				?> | <a href="adminaudits.php?problemtype=<? =$problemtype?>" style="border: 1px solid orange; border-radius: 3px; padding: 3px"><? =$problemtype?></a><?
+				?> | <a href="adminaudits.php?problemtype=<?=$problemtype?>" style="border: 1px solid orange; border-radius: 3px; padding: 3px"><?=$problemtype?></a><?
 			}
 			else {
-				?> | <a href="adminaudits.php?problemtype=<? =$problemtype?>"><? =$problemtype?></a><?
+				?> | <a href="adminaudits.php?problemtype=<?=$problemtype?>"><?=$problemtype?></a><?
 			}
 		}
 		

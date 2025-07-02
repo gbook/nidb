@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xWinScrollTo'>
+
+<sources>
+  <src><file>xwinscrollto.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Animation</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[Scroll a window to a point with sinusoidal or linear rate.]]></description>
+
+<syntax>xWinScrollTo(win, x, y, uTime)</syntax>
+
+<parameters>
+  <par>
+    <name>win</name>
+    <note><![CDATA[window reference]]></note>
+  </par>
+  <par>
+    <name>x,y</name>
+    <note><![CDATA[integers]]></note>
+  </par>
+  <par>
+    <name>uTime</name>
+    <note><![CDATA[unsigned integer]]></note>
+  </par>
+</parameters>
+
+<properties>
+  <prop>
+    <name>stop</name>
+    <note><![CDATA[read/write - the stop property on the element itself, when true, will stop animation]]></note>
+  </prop>
+  <prop>
+    <name>moving</name>
+    <note><![CDATA[read-only - the moving property on the element itself, when true, indicates animation is active]]></note>
+  </prop>
+  <prop>
+    <name>timeout</name>
+    <note><![CDATA[read/write - the timeout property on the element itself, determines frequency of iterations, default is 25]]></note>
+  </prop>
+  <prop>
+    <name>slideLinear</name>
+    <note><![CDATA[read/write - the slideLinear property on the element itself, if true, results in a linear rate instead of sinusoidal.]]></note>
+  </prop>
+  <prop>
+    <name>onslideend</name>
+    <note><![CDATA[read/write - the onslideend property on the element itself, if defined, will be called at the end of the slide. It does not get called if ele.stop becomes true. It is not reset - the listener can set this.onslideend=null for a 'one-shot'. In the slideEnd listener 'this' points to ele, and you have access to the properties listed here.]]></note>
+  </prop>
+</properties>
+
+<dependencies>
+  <dep>xscrolltop</dep>
+  <dep>xscrollleft</dep>
+</dependencies>
+
+<demos>
+  <demo>
+    <url>http://cross-browser.com/x/examples/xwinscrollto.php</url>
+    <note><![CDATA[demo]]></note>
+  </demo>
+</demos>
+
+<comments>
+  <comment>
+    <date>23May05</date>
+    <author>mf</author>
+    <note><![CDATA[I never got around to doing it, but the sinusoidal position generators in xSlideTo, xEllipse, xWinScrollto, xParaEq, etc. are all (almost) the same. It could possibly be abstracted out of those functions. *Edit: I finally did: <a href='view.php?s=xAnimation'>xAnimation</a>.]]></note>
+  </comment>
+</comments>
+
+<revisions>
+  <rev>
+    <num>3</num>
+    <date>31May05</date>
+    <author>mf</author>
+    <note><![CDATA[Added support for onslideend event. Added support for linear rate.]]></note>
+  </rev>
+  <rev>
+    <num>2</num>
+    <date>11Mar05</date>
+    <author>mf</author>
+    <note><![CDATA[renamed the timer listener to be consistent with similar X functions.]]></note>
+  </rev>
+  <rev>
+    <num>1</num>
+    <date>29Apr04</date>
+    <author>mf</author>
+    <note><![CDATA[put in it's own file for use with XC]]></note>
+  </rev>
+</revisions>
+
+</x_symbol>

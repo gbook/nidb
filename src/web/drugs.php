@@ -154,7 +154,7 @@
 			<tbody>
 				<form action="drugs.php" method="post">
 				<input type="hidden" name="action" value="adddrug">
-				<input type="hidden" name="enrollmentid" value="<? =$enrollmentid?>">
+				<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
 				<tr>
 					<td><input type="text" name="drug_name" size="15" placeholder="Drug" required></td>
 					<td><input type="text" name="drug_type" list="ls_type" size="15" placeholder="Type">
@@ -222,13 +222,13 @@
 				<tbody>
 						<tr><br></tr>	
 						<tr>
-							<td><? =$drug_name?></td>
-							<td><? =$drug_type?></td>
-							<td><? =$drug_dose?> / <? =$drug_dosefreq?></td>
-							<td><? =$drug_route?></td>
-							<td><? =$drug_startdate?> to <? =$drug_enddate?></td>
+							<td><?=$drug_name?></td>
+							<td><?=$drug_type?></td>
+							<td><?=$drug_dose?> / <?=$drug_dosefreq?></td>
+							<td><?=$drug_route?></td>
+							<td><?=$drug_startdate?> to <?=$drug_enddate?></td>
 							<td>
-								<a class="ui red button" href="drugs.php?action=deletedrug&drugid=<? =$drugid?>&enrollmentid=<? =$enrollmentid?>" onclick="return confirm('Are you sure?')"><i class="trash icon"></i></a>
+								<a class="ui red button" href="drugs.php?action=deletedrug&drugid=<?=$drugid?>&enrollmentid=<?=$enrollmentid?>" onclick="return confirm('Are you sure?')"><i class="trash icon"></i></a>
 							</td>
 						</tr>
 					<?

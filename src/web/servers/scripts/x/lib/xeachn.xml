@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xEachN'>
+
+<sources>
+  <src><file>xeachn.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Iteration</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[Iterate over all elements with the same sIdPrefix and a sequential, numeric suffix beginning with iStart. fnCallback is called for each element and passed the element, its numeric suffix and oData.]]></description>
+
+<syntax>xEachN(sIdPrefix, iStart, oData, fnCallback)</syntax>
+
+<parameters>
+  <par>
+    <name>sIdPrefix</name><note><![CDATA[String.]]></note>
+  </par>
+  <par>
+    <name>iStart</name><note><![CDATA[Integer.]]></note>
+  </par>
+  <par>
+    <name>oData</name><note><![CDATA[Any literal, variable or object.]]></note>
+  </par>
+  <par>
+    <name>fnCallback</name>
+    <note><![CDATA[Callback function, passed these arguments: (element, numericSuffix, oData)]]></note>
+  </par>
+</parameters>
+
+<dependencies>
+  <dep>xGetElementById</dep>
+</dependencies>
+
+<demos>
+  <demo>
+    <url>http://cross-browser.com/x/examples/layout8.html</url><note><![CDATA[The demo where xIterate originated.]]></note>
+  </demo>
+</demos>
+
+<revisions>
+  <rev><num>2</num><date>27Jan10</date><author>mf</author><note><![CDATA[Renamed from xEachNum to xEachN.]]></note></rev>
+  <rev><num>1</num><date>16Feb09</date><author>mf</author><note><![CDATA[Initial implementation as xIterate on 9Aug07.]]></note></rev>
+</revisions>
+
+</x_symbol>
+

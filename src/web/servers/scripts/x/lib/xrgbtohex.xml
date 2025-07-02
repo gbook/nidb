@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xRgbToHex'>
+
+<sources>
+  <src><file>xrgbtohex.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>String</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[Converts three numbers (representing RGB colors) to a hex string in the form "#RRGGBB".]]></description>
+
+<syntax>xRgbToHex(r, g, b)</syntax>
+
+<parameters>
+  <par>
+    <name>r</name>
+    <note><![CDATA[unsigned integer 0..255 - The red value.]]></note>
+  </par>
+  <par>
+    <name>g</name>
+    <note><![CDATA[unsigned integer 0..255 - The green value.]]></note>
+  </par>
+  <par>
+    <name>b</name>
+    <note><![CDATA[unsigned integer 0..255 - The blue value.]]></note>
+  </par>
+</parameters>
+
+<return>string</return>
+
+<demos>
+  <demo>
+    <url>http://cross-browser.com/x/examples/animation_tech.html</url><note><![CDATA[Animation techniques article and demos.]]></note>
+  </demo>
+</demos>
+
+<revisions>
+  <rev>
+    <num>1</num><date>24Mar07</date><author>mf</author><note><![CDATA[initial release]]></note>
+  </rev>
+</revisions>
+
+</x_symbol>

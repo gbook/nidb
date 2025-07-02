@@ -90,7 +90,7 @@
 		$sqlstring = "update pipelines set pipeline_name = '$pipelinename', pipeline_desc = '$pipelinedesc', pipeline_admin = '$admin' where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		?><div align="center"><span class="message"><? =$pipelinename?> updated</span></div><br><br><?
+		?><div align="center"><span class="message"><?=$pipelinename?> updated</span></div><br><br><?
 	}
 
 
@@ -106,7 +106,7 @@
 		$sqlstring = "insert into pipelines (pipeline_name, pipeline_desc, pipeline_admin, pipeline_createdate, pipeline_status) values ('$pipelinename', '$pipelinedesc', '$admin', now(), 'active')";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		?><div align="center"><span class="message"><? =$pipelinename?> added</span></div><br><br><?
+		?><div align="center"><span class="message"><?=$pipelinename?> added</span></div><br><br><?
 	}
 
 
@@ -153,20 +153,20 @@
 		<div align="center">
 		<table class="entrytable">
 			<form method="post" action="adminpipelines.php">
-			<input type="hidden" name="action" value="<? =$formaction?>">
-			<input type="hidden" name="id" value="<? =$id?>">
+			<input type="hidden" name="action" value="<?=$formaction?>">
+			<input type="hidden" name="id" value="<?=$id?>">
 			<tr>
 				<td colspan="2" align="center">
-					<b><? =$formtitle?></b>
+					<b><?=$formtitle?></b>
 				</td>
 			</tr>
 			<tr>
 				<td>Name</td>
-				<td><input type="text" name="pipelinename" value="<? =$name?>"></td>
+				<td><input type="text" name="pipelinename" value="<?=$name?>"></td>
 			</tr>
 			<tr>
 				<td>Description</td>
-				<td><textarea name="pipelinedesc"><? =$desc?></textarea></td>
+				<td><textarea name="pipelinedesc"><?=$desc?></textarea></td>
 			</tr>
 			<tr>
 				<td>Administrator</td>
@@ -182,7 +182,7 @@
 								//echo "[$userid:$admin]";
 								if ($userid == $admin) { $selected = "selected"; } else { $selected = ""; }
 								?>
-								<option value="<? =$userid?>" <? =$selected?>><? =$fullname?></option>
+								<option value="<?=$userid?>" <?=$selected?>><?=$fullname?></option>
 								<?
 							}
 						?>
@@ -191,7 +191,7 @@
 			</tr>
 			<tr>
 				<td colspan="2" align="center">
-					<input type="submit" value="<? =$submitbuttonlabel?>" class="ui primary button">
+					<input type="submit" value="<?=$submitbuttonlabel?>" class="ui primary button">
 				</td>
 			</tr>
 			</form>
@@ -232,9 +232,9 @@
 					$pipeline_createdate = $row['pipeline_createdate'];
 			?>
 			<tr>
-				<td><a href="adminpipelines.php?action=editform&id=<? =$id?>"><? =$name?></td>
-				<td><? =$adminfullname?></td>
-				<td><? =$pipeline_createdate?></td>
+				<td><a href="adminpipelines.php?action=editform&id=<?=$id?>"><?=$name?></td>
+				<td><?=$adminfullname?></td>
+				<td><?=$pipeline_createdate?></td>
 			</tr>
 			<? 
 				}

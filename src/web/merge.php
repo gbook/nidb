@@ -164,10 +164,10 @@
 						<div class="ui item">
 							<div class="content">
 								<h2 class="header">
-									<i class="user icon"></i> <? =$finaluid?>
+									<i class="user icon"></i> <?=$finaluid?>
 								</h2>
 								<div class="meta">
-									<? =$name?><br><? =$dob?><br><? =$gender?>
+									<?=$name?><br><?=$dob?><br><?=$gender?>
 								</div>
 							</div>
 						</div>
@@ -221,11 +221,11 @@
 		$modality = $row['study_modality'];
 
 		?>
-		Select studies that you <i>want to merge</i> (only <? =$modality?> modality for this enrollment are displayed). Then <i>select the final study</i> they will be merged into
+		Select studies that you <i>want to merge</i> (only <?=$modality?> modality for this enrollment are displayed). Then <i>select the final study</i> they will be merged into
 		<br><br>
 		<form action="merge.php" method="post" class="ui form">
 		<input type="hidden" name="action" value="submitmergestudies">
-		<input type="hidden" name="returnpage" value="<? =$returnpage?>">
+		<input type="hidden" name="returnpage" value="<?=$returnpage?>">
 		<table class="ui very compact celled collapsing grey table">
 			<thead>
 				<th></th>
@@ -254,19 +254,19 @@
 			?>
 			<tr>
 				<td>
-					<input type="checkbox" name="studyids[]" value="<? =$sid?>" checked>
+					<input type="checkbox" name="studyids[]" value="<?=$sid?>" checked>
 				</td>
 				<td>
-					<? =$uid?><? =$studynum?>
+					<?=$uid?><?=$studynum?>
 				</td>
 				<td>
-					<? =$studydate?>
+					<?=$studydate?>
 				</td>
 				<td>
-					<? =$numseries?>
+					<?=$numseries?>
 				</td>
 				<td>
-					<input type="radio" name="selectedstudyid" value="<? =$studyid?>" <? =$checked?>>
+					<input type="radio" name="selectedstudyid" value="<?=$studyid?>" <?=$checked?>>
 				</td>
 			</tr>
 			<?
@@ -428,7 +428,7 @@
 		
 		<form action="merge.php" method="post" class="ui form">
 			<input type="hidden" name="action" value="submitmerge">
-			<input type="hidden" name="returnpage" value="<? =$returnpage?>">
+			<input type="hidden" name="returnpage" value="<?=$returnpage?>">
 			<?
 			for ($i=0;$i<count($subjects);$i++) {
 				echo "<input type='hidden' name='subjectids[" . $i . "]' value='" . $subjects[$i]['id'] . "'>\n";
@@ -436,7 +436,7 @@
 		?>
 		
 		<div class="ui compact grid">
-			<div class="radio-toolbar2 <? =$numcolstr?> column row">
+			<div class="radio-toolbar2 <?=$numcolstr?> column row">
 				<div class="right aligned column">
 					<h3 class="header">UID</h3>
 				</div>
@@ -444,16 +444,16 @@
 					for ($i=0;$i<count($subjects);$i++) {
 						?>
 							<div class="ui column uid">
-								<div class="ui fitted inverted <? if ($i == 0) { echo "yellow"; } else { echo "secondary"; } ?> segment" id="label<? =$i?>" name="labeldiv">
+								<div class="ui fitted inverted <? if ($i == 0) { echo "yellow"; } else { echo "secondary"; } ?> segment" id="label<?=$i?>" name="labeldiv">
 									<div class="ui two column compact grid">
 										<div class="column">
 											<div class="ui radio checkbox" style="padding: 10px;">
-												<input type="radio" id="uid<? =$i?>" name="selectedid" value="<? =$subjects[$i]['id']?>" <? if ($i == 0) { echo "checked"; } ?> onChange="highlight('label<? =$i?>');">
-												<label style="font-size: x-large; font-weight: bold"><? =$subjects[$i]['uid']?></label>
+												<input type="radio" id="uid<?=$i?>" name="selectedid" value="<?=$subjects[$i]['id']?>" <? if ($i == 0) { echo "checked"; } ?> onChange="highlight('label<?=$i?>');">
+												<label style="font-size: x-large; font-weight: bold"><?=$subjects[$i]['uid']?></label>
 											</div>
 										</div>
 										<div class=" right aligned column">
-											<a name="removeid" class="ui small inverted button" style="margin-right: 10px;" onclick="document.removeidform.idtoremove.value='<? =$subjects[$i]['id']?>';document.removeidform.submit();"><i class="trash alternate icon"></i> Remove UID</a>
+											<a name="removeid" class="ui small inverted button" style="margin-right: 10px;" onclick="document.removeidform.idtoremove.value='<?=$subjects[$i]['id']?>';document.removeidform.submit();"><i class="trash alternate icon"></i> Remove UID</a>
 										</div>
 									</div>
 								</div>
@@ -464,7 +464,7 @@
 				<div class="column">
 				</div>
 			</div>
-			<div class="<? =$numcolstr?> column row">
+			<div class="<?=$numcolstr?> column row">
 				<div class="right aligned column">
 					<h3 class="header">Name</h3>
 				</div>
@@ -472,8 +472,8 @@
 					for ($i=0;$i<count($subjects);$i++) {
 						if ($subjects[$i]['name'] != $subjects[0]['name']) { $class = "bodyhighlighted"; } else { $class = "bodynormal"; }
 						?>
-							<div class="column <? =$class?>">
-								<input type="text" name="name[<? =$subjects[$i]['id']?>]" value="<? =$subjects[$i]['name']?>">
+							<div class="column <?=$class?>">
+								<input type="text" name="name[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['name']?>">
 							</div>
 						<?
 					}
@@ -482,7 +482,7 @@
 				</div>
 			</div>
 
-			<div class="<? =$numcolstr?> column row">
+			<div class="<?=$numcolstr?> column row">
 				<div class="right aligned column">
 					<h3 class="header">DOB</h3>
 				</div>
@@ -490,13 +490,13 @@
 					for ($i=0;$i<count($subjects);$i++) {
 						if ($subjects[$i]['dob'] != $subjects[0]['dob']) { $class = "bodyhighlighted"; } else { $class = "bodynormal"; }
 						?>
-							<div class="column <? =$class?>"><input type="text" name="dob[<? =$subjects[$i]['id']?>]" value="<? =$subjects[$i]['dob'];?>"></div>
+							<div class="column <?=$class?>"><input type="text" name="dob[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['dob'];?>"></div>
 						<?
 					}
 				?>
 			</div>
 
-			<div class="<? =$numcolstr?> column row">
+			<div class="<?=$numcolstr?> column row">
 				<div class="right aligned column">
 					<h3 class="header">Sex</h3>
 				</div>
@@ -504,56 +504,56 @@
 					for ($i=0;$i<count($subjects);$i++) {
 						if ($subjects[$i]['gender'] != $subjects[0]['gender']) { $class = "bodyhighlighted"; } else { $class = "bodynormal"; }
 						?>
-							<div class="column <? =$class?>"><input type="text" name="gender[<? =$subjects[$i]['id']?>]" value="<? =$subjects[$i]['gender'];?>"></div>
+							<div class="column <?=$class?>"><input type="text" name="gender[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['gender'];?>"></div>
 						<?
 					}
 				?>
 			</div>
-			<div class="<? =$numcolstr?> column row">
+			<div class="<?=$numcolstr?> column row">
 				<div class="right aligned column">
 					<h3 class="header">Ethnicity 1</h3>
 				</div>
 				<?
 					for ($i=0;$i<count($subjects);$i++) {
 						if ($subjects[$i]['ethnicity1'] != $subjects[0]['ethnicity1']) { $class = "bodyhighlighted"; } else { $class = "bodynormal"; }
-						?><div class="column <? =$class?>"><input type="text" name="ethnicity1[<? =$subjects[$i]['id']?>]" value="<? =$subjects[$i]['ethnicity1'];?>"></div><?
+						?><div class="column <?=$class?>"><input type="text" name="ethnicity1[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['ethnicity1'];?>"></div><?
 					}
 				?>
 			</div>
-			<div class="<? =$numcolstr?> column row">
+			<div class="<?=$numcolstr?> column row">
 				<div class="right aligned column">
 					<h3 class="header">Ethnicity 2</h3>
 				</div>
 				<?
 					for ($i=0;$i<count($subjects);$i++) {
 						if ($subjects[$i]['ethnicity2'] != $subjects[0]['ethnicity2']) { $class = "bodyhighlighted"; } else { $class = "bodynormal"; }
-						?><div class="column <? =$class?>"><input type="text" name="ethnicity2[<? =$subjects[$i]['id']?>]" value="<? =$subjects[$i]['ethnicity2'];?>"></div><?
+						?><div class="column <?=$class?>"><input type="text" name="ethnicity2[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['ethnicity2'];?>"></div><?
 					}
 				?>
 			</div>
-			<div class="<? =$numcolstr?> column row">
+			<div class="<?=$numcolstr?> column row">
 				<div class="right aligned column">
 					<h3 class="header">GUID</h3>
 				</div>
 				<?
 					for ($i=0;$i<count($subjects);$i++) {
 						if ($subjects[$i]['guid'] != $subjects[0]['guid']) { $class = "bodyhighlighted"; } else { $class = "bodynormal"; }
-						?><div class="column <? =$class?>"><input type="text" name="guid[<? =$subjects[$i]['id']?>]" value="<? =$subjects[$i]['guid'];?>"></div><?
+						?><div class="column <?=$class?>"><input type="text" name="guid[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['guid'];?>"></div><?
 					}
 				?>
 			</div>
-			<div class="<? =$numcolstr?> column row">
+			<div class="<?=$numcolstr?> column row">
 				<div class="right aligned column">
 					<h3 class="header">Alternate Subject IDs</h3>
 				</div>
 				<?
 					for ($i=0;$i<count($subjects);$i++) {
 						if ($subjects[$i]['altuid'] != $subjects[0]['altuid']) { $class = "bodyhighlighted"; } else { $class = "bodynormal"; }
-						?><div class="column <? =$class?>"><input type="text" name="altuids[<? =$subjects[$i]['id']?>]" value="<? =$subjects[$i]['altuid'];?>"></div><?
+						?><div class="column <?=$class?>"><input type="text" name="altuids[<?=$subjects[$i]['id']?>]" value="<?=$subjects[$i]['altuid'];?>"></div><?
 					}
 				?>
 			</div>
-			<div class="<? =$numcolstr?> column row">
+			<div class="<?=$numcolstr?> column row">
 				<div class="right aligned column">
 					<h3 class="header">Studies (w/enrollment group)</h3>
 				</div>
@@ -579,9 +579,9 @@
 									<td colspan="4" style="font-size:9pt; background-color:#eee; padding: 4px">
 										<table cellpadding="0" cellspacing="0" width="100%">
 											<tr>
-												<td><b><? =$project_name?></b> (<? =$costcenter?>)
+												<td><b><?=$project_name?></b> (<?=$costcenter?>)
 												<br>
-												<input type="text" name="enrollgroup[<? =$enrollmentid?>]" value="<? =$enrollgroup?>" placeholder="Enrollment group">
+												<input type="text" name="enrollgroup[<?=$enrollmentid?>]" value="<?=$enrollgroup?>" placeholder="Enrollment group">
 												</td>
 											</tr>
 										</table>
@@ -603,10 +603,10 @@
 											
 											?>
 											<tr>
-												<td><? =$study_num?></td>
-												<td><? =$study_modality?></td>
-												<td><? =$study_datetime?></td>
-												<td><? =$study_site?></td>
+												<td><?=$study_num?></td>
+												<td><?=$study_modality?></td>
+												<td><?=$study_datetime?></td>
+												<td><?=$study_site?></td>
 											</tr>
 											<?
 										}

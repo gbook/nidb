@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xEvent'>
+
+<sources>
+  <src><file>xevent.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Event</grp>
+</groups>
+<type>Object</type>
+
+<description><![CDATA[Resolve browser differences for event properties. This is an object prototype. Create an instance with the 'new' operator.]]></description>
+
+<syntax>new xEvent(oEvent)</syntax>
+
+<parameters>
+  <par>
+    <name>oEvent</name>
+    <note><![CDATA[the native event object passed to your event listener]]></note>
+  </par>
+</parameters>
+
+<properties>
+  <prop>
+    <name>type</name>
+    <note><![CDATA[string - event type]]></note>
+  </prop>
+  <prop>
+    <name>target</name>
+    <note><![CDATA[element - target of event]]></note>
+  </prop>
+  <prop>
+    <name>relatedTarget</name>
+    <note><![CDATA[element - 'from' or 'to' target on mouseover or mouseout]]></note>
+  </prop>
+  <prop>
+    <name>pageX</name>
+    <note><![CDATA[integer - absolute X coordinate of mouse]]></note>
+  </prop>
+  <prop>
+    <name>pageY</name>
+    <note><![CDATA[integer - absolute Y coordinate of mouse]]></note>
+  </prop>
+  <prop>
+    <name>offsetX</name>
+    <note><![CDATA[integer - target-relative X coordinate of mouse]]></note>
+  </prop>
+  <prop>
+    <name>offsetY</name>
+    <note><![CDATA[integer - target-relative Y coordinate of mouse]]></note>
+  </prop>
+  <prop>
+    <name>keyCode</name>
+    <note><![CDATA[unsigned integer]]></note>
+  </prop>
+  <prop>
+    <name>shiftKey</name>
+    <note><![CDATA[boolean]]></note>
+  </prop>
+  <prop>
+    <name>ctrlKey</name>
+    <note><![CDATA[boolean]]></note>
+  </prop>
+  <prop>
+    <name>altKey</name>
+    <note><![CDATA[boolean]]></note>
+  </prop>
+  <prop>
+    <name>button</name>
+    <note><![CDATA[unsigned integer - 0=left, 1=middle, 2=right, undefined=non-mouse event]]></note>
+  </prop>
+</properties>
+
+<dependencies>
+  <dep>xDef</dep>
+  <dep>xScrollLeft</dep>
+  <dep>xScrollTop</dep>
+  <dep>xPageX</dep>
+  <dep>xPageY</dep>
+</dependencies>
+
+<demos>
+<demo><url>http://cross-browser.com/x/examples/property_viewer.html</url><note><![CDATA[A good example of usage as well as a good page for testing xEvent.]]></note></demo>
+<demo><url>http://cross-browser.com/toys/</url><note><![CDATA[xEvent is used in many of the demos.]]></note></demo>
+</demos>
+
+<tests>
+  <test><date>23May07</date><author>mf</author><url>http://cross-browser.com/forums/viewtopic.php?id=22</url><note><![CDATA[Forum discussion on "xEvent.button".]]></note></test>
+</tests>
+
+<comments>
+  <comment>
+    <date>29Mar07</date><author>mf</author>
+    <note><![CDATA[The following is revision 9:
+[code]
+function xEvent(evt) // object prototype
+{
+  var e = evt || window.event;
+  if(!e) return;
+  if(e.type) this.type = e.type;
+  if(e.target) this.target = e.target;
+  else if(e.srcElement) this.target = e.srcElement;
+  if (e.relatedTarget) this.relatedTarget = e.relatedTarget;
+  else if (e.type == 'mouseover' && e.fromElement) this.relatedTarget = e.fromElement;
+  else if (e.type == 'mouseout') this.relatedTarget = e.toElement;
+  if(xDef(e.pageX,e.pageY)) { this.pageX = e.pageX; this.pageY = e.pageY; }
+  else if(xDef(e.clientX,e.clientY)) { this.pageX = e.clientX + xScrollLeft(); this.pageY = e.clientY + xScrollTop(); }
+  if (xDef(e.offsetX,e.offsetY)) {
+    this.offsetX = e.offsetX;
+    this.offsetY = e.offsetY;
+  }
+  else if (xDef(e.layerX,e.layerY)) {
+    this.offsetX = e.layerX;
+    this.offsetY = e.layerY;
+  }
+  else {
+    this.offsetX = this.pageX - xPageX(this.target);
+    this.offsetY = this.pageY - xPageY(this.target);
+  }
+  this.keyCode = e.keyCode || e.which || 0;
+  this.shiftKey = e.shiftKey;
+  this.ctrlKey = e.ctrlKey;
+  this.altKey = e.altKey;
+  // rev8
+  this.button = null; // 0=left, 1=middle, 2=right, null=none-mouse event
+  if (e.type.indexOf('click') != -1) this.button = 0;
+  else if (e.type.indexOf('mouse') != -1) {
+    var ie = 0, v = navigator.vendor;
+    /*@cc_on ie = 1; @*/
+    if (ie || (v && v.indexOf('Apple') != -1)) { // IE or Safari
+      if (e.button & 1) this.button = 0;
+      else if (e.button & 2) this.button = 2;
+      else if (e.button & 4) this.button = 1;
+    }
+    else this.button = e.button;
+  }
+}
+[/code]
+    ]]></note>
+  </comment>
+  <comment>
+    <date>20Jan07</date><author>mf</author>
+    <note><![CDATA[The W3C spec for the 'button' property should have specified the bit-mapped values used by IE. It's the only logical choice.]]></note>
+  </comment>
+  <comment>
+    <date>2002</date><author>mf</author>
+    <note><![CDATA[I always thought I should have made this a function instead of an object prototype ;-)]]></note>
+  </comment>
+</comments>
+
+<revisions>
+  <rev>
+    <num>11</num><date>3Jul07</date><author>mf</author>
+    <note><![CDATA[Erik Kangas discovered a strange situation where e.type does not exist (as reported by FF). So I added "if (typeof e.type == 'string')". Thanks, Erik!]]></note>
+  </rev>
+  <rev>
+    <num>10</num><date>29Mar07</date><author>mf</author>
+    <note><![CDATA[Reduced size by 322 bytes but retained same functionality except for: The button property is only valid for W3C-compliant browsers and IE (currently the button property is invalid for Safari/WebKit). The button property is 'undefined' for non-mouse events.]]></note>
+  </rev>
+  <rev>
+    <num>9</num><date>26Mar07</date><author>mf</author>
+    <note><![CDATA[I forgot to remove " @end" from the rev 8 change. It was causing a syntax error in IE.]]></note>
+  </rev>
+  <rev>
+    <num>8</num><date>23Mar07</date><author>mf</author>
+    <note><![CDATA[I don't like adding a sniff but I don't know of any other way to support the button property for Safari.]]></note>
+  </rev>
+  <rev>
+    <num>7</num><date>17Mar07</date><author>mf</author>
+    <note><![CDATA[Set button=null for non-mouse event - was 3.]]></note>
+  </rev>
+  <rev>
+    <num>6</num><date>20Jan07</date><author>mf</author>
+    <note><![CDATA[Added the 'button' property. Supports all IEs, Opera8+ and other W3C-compatible browsers (FF, O9, Safari, etc).]]></note>
+  </rev>
+  <rev>
+    <num>5</num><date>3Oct06</date><author>mf</author>
+    <note><![CDATA[Removed sniffer xOp6Dn and Op6 logic. Implemented optimization noted in 2Oct06 comments. Reduced size by 197 bytes.]]></note>
+  </rev>
+  <rev>
+    <num>4</num>
+    <date>2May05</date>
+    <author>mf</author>
+    <note><![CDATA[Removed one sniffer (xIE4Up). Thanks very much to Hallvord (hallvord.com).]]></note>
+  </rev>
+  <rev>
+    <num>3</num>
+    <date>25Apr05</date>
+    <author>mf</author>
+    <note><![CDATA[use xOp6Dn instead of xOp5or6.]]></note>
+  </rev>
+  <rev>
+    <num>2</num>
+    <date>24Mar05</date>
+    <author>mf</author>
+    <note><![CDATA[Added shiftKey, ctrlKey and altKey.]]></note>
+  </rev>
+  <rev>
+    <num>1</num>
+    <date>31Mar04</date>
+    <author>mf</author>
+    <note><![CDATA[put in it's own file for use with XC]]></note>
+  </rev>
+</revisions>
+
+</x_symbol>

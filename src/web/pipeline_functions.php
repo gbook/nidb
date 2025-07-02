@@ -81,8 +81,8 @@
 						<h1 class="ui header">
 							<!--<i class="small grey settings icon"></i>-->
 							<div class="content">
-								<a href="pipelines.php?action=editpipeline&id=<? =$id?>"><span style="font-size: larger"><? =$pipelinename?><span></a>
-								<div class="sub header"><? =$pipelinedesc?></div>
+								<a href="pipelines.php?action=editpipeline&id=<?=$id?>"><span style="font-size: larger"><?=$pipelinename?><span></a>
+								<div class="sub header"><?=$pipelinedesc?></div>
 							</div>
 						</h1>
 					</div>
@@ -93,20 +93,20 @@
 							//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 							//$diskusage = $row['disksize'];
 						?>
-						Disk usage <? =HumanReadableFilesize($diskusage)?> <i class="question circle outline icon" title="Disk usage may not be accurate if this pipeline depends on other pipelines and hard links are used.
+						Disk usage <?=HumanReadableFilesize($diskusage)?> <i class="question circle outline icon" title="Disk usage may not be accurate if this pipeline depends on other pipelines and hard links are used.
 						<p>Check the parent pipeline for its usage</p>"></i>
 					</div> -->
 					<div class="right aligned column">
 						<? if ($isenabled) { ?>
-							Enable <a href="<? =$returnpage?>.php?action=disable&returnpage=<? =$returnpage?>&id=<? =$id?>"><i class="big green toggle on icon" title="Pipeline enabled, click to disable"></i></a>
+							Enable <a href="<?=$returnpage?>.php?action=disable&returnpage=<?=$returnpage?>&id=<?=$id?>"><i class="big green toggle on icon" title="Pipeline enabled, click to disable"></i></a>
 						<? } else { ?>
-							Enable <a href="<? =$returnpage?>.php?action=enable&returnpage=<? =$returnpage?>&id=<? =$id?>"><i class="big grey flipped toggle on icon" title="Pipeline disabled, click to enable"></i></a>
+							Enable <a href="<?=$returnpage?>.php?action=enable&returnpage=<?=$returnpage?>&id=<?=$id?>"><i class="big grey flipped toggle on icon" title="Pipeline disabled, click to enable"></i></a>
 						<? } ?>
 						<br>
 						<? if ($isdebug) { ?>
-							Debug <a href="<? =$returnpage?>.php?action=disabledebug&returnpage=<? =$returnpage?>&id=<? =$id?>"><i class="big green toggle on icon" title="Pipeline in debug mode, click to return to normal mode"></i></a>
+							Debug <a href="<?=$returnpage?>.php?action=disabledebug&returnpage=<?=$returnpage?>&id=<?=$id?>"><i class="big green toggle on icon" title="Pipeline in debug mode, click to return to normal mode"></i></a>
 						<? } else { ?>
-							Debug <a href="<? =$returnpage?>.php?action=enabledebug&returnpage=<? =$returnpage?>&id=<? =$id?>"><i class="big grey flipped toggle on icon" title="Pipeline in normal mode, click to enter debug mode"></i></a>
+							Debug <a href="<?=$returnpage?>.php?action=enabledebug&returnpage=<?=$returnpage?>&id=<?=$id?>"><i class="big grey flipped toggle on icon" title="Pipeline in normal mode, click to enter debug mode"></i></a>
 						<? } ?>
 					</div>
 				</div>
@@ -152,12 +152,12 @@
 									$rowstyle = "color: red";
 								}
 								?>
-								<tr style="<? =$rowstyle?>">
-									<td><? =$version?></td>
-									<td><? =$analysisid?></td>
-									<td class="<? =$cellclass?>"><? =$event?></td>
-									<td><? =$date?></td>
-									<td><? =$msg?></td>
+								<tr style="<?=$rowstyle?>">
+									<td><?=$version?></td>
+									<td><?=$analysisid?></td>
+									<td class="<?=$cellclass?>"><?=$event?></td>
+									<td><?=$date?></td>
+									<td><?=$msg?></td>
 								</tr>
 								<?
 							}
@@ -171,15 +171,15 @@
 				<div class="step" style="padding: 5px">
 					<div class="content">
 						<div class="title">Start</div>
-						<div class="description">Started <? =$pipeline_laststart?></div>
+						<div class="description">Started <?=$pipeline_laststart?></div>
 					</div>
 				</div>
 				<div class="active step" style="padding: 5px">
 					<div class="content">
 						<div class="title">Running</div>
-						<div class="description">Checked in <? =$pipeline_lastcheck?></div>
-						<? =$pipeline_statusmessage?>
-						<a href="pipelines.php?action=reset&id=<? =$id?>" class="ui orange basic small button">reset</a>
+						<div class="description">Checked in <?=$pipeline_lastcheck?></div>
+						<?=$pipeline_statusmessage?>
+						<a href="pipelines.php?action=reset&id=<?=$id?>" class="ui orange basic small button">reset</a>
 					</div>
 				</div>
 				<div class="disabled step" style="padding: 5px">
@@ -199,19 +199,19 @@
 				<div class="disabled step" style="padding: 5px">
 					<div class="content">
 						<div class="title">Start</div>
-						<span style="font-size: smaller">Last start <? =$pipeline_laststart?></span>
+						<span style="font-size: smaller">Last start <?=$pipeline_laststart?></span>
 					</div>
 				</div>
 				<div class="disabled step" style="padding: 5px">
 					<div class="content">
 						<div class="title">Running</div>
-						<span style="font-size: smaller">Last check-in <? =$pipeline_lastcheck?></span>
+						<span style="font-size: smaller">Last check-in <?=$pipeline_lastcheck?></span>
 					</div>
 				</div>
 				<div class="disabled step" style="padding: 5px">
 					<div class="content">
 						<div class="title">Finish</div>
-						<span style="font-size: smaller">Last finish <? =$pipeline_lastfinish?></span>
+						<span style="font-size: smaller">Last finish <?=$pipeline_lastfinish?></span>
 					</div>
 				</div>
 			</div>

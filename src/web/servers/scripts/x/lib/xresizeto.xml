@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xResizeTo'>
+
+<sources>
+  <src><file>xresizeto.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Size</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[Resize an element.]]></description>
+
+<syntax>xResizeTo(e, uW, uH)</syntax>
+
+<parameters>
+  <par>
+    <name>e</name>
+    <note><![CDATA[id string or element reference]]></note>
+  </par>
+  <par>
+    <name>uW</name>
+    <note><![CDATA[unsigned integer]]></note>
+  </par>
+  <par>
+    <name>uH</name>
+    <note><![CDATA[unsigned integer]]></note>
+  </par>
+</parameters>
+
+<return><![CDATA[Returns an object with 'w' and 'h' properties giving the current width and height of the element.]]></return>
+
+<dependencies>
+  <dep>xwidth</dep>
+  <dep>xheight</dep>
+</dependencies>
+
+<demos>
+  <demo>
+    <url>http://cross-browser.com/toys/</url>
+    <note><![CDATA[Index of all X demos.]]></note>
+  </demo>
+</demos>
+
+<comments>
+  <comment>
+    <date></date>
+    <author>mf</author>
+    <note><![CDATA[Simply calls xLeft and xTop.]]></note>
+  </comment>
+</comments>
+
+<revisions>
+  <rev><num>2</num><date>19May09</date><author>mf</author><note><![CDATA[now returns an object with w and h properties. Thanks, Vic!]]></note></rev>
+  <rev><num>1</num><date>11Mar05</date><author>mf</author><note><![CDATA[put in it's own file for use with XC]]></note></rev>
+</revisions>
+
+</x_symbol>

@@ -169,7 +169,7 @@
 	$maxnumvars = ini_get('max_input_vars');
 	if ($numpostvars >= $maxnumvars) {
 		?>
-		<div class="ui orange message">PHP has an inherent limit [<? =$maxnumvars?>] for the number of items you can request. You have requested [<? =$numpostvars?>] items. PHP will truncate the number of items to match its limit <b>with no warning</b>. To prevent you from receiving less data than you are expecting, this page will not process your transfer request. Please go back to the search page and transfer less than [<? =$maxnumvars?>] data items.</div>
+		<div class="ui orange message">PHP has an inherent limit [<?=$maxnumvars?>] for the number of items you can request. You have requested [<?=$numpostvars?>] items. PHP will truncate the number of items to match its limit <b>with no warning</b>. To prevent you from receiving less data than you are expecting, this page will not process your transfer request. Please go back to the search page and transfer less than [<?=$maxnumvars?>] data items.</div>
 		<?
 		exit(0);
 	}
@@ -297,7 +297,7 @@
 		/* this function is called from onChange, onInput, and onBlur events
 		   because some Semantic UI inputs fire different events */
 		function inputColor(i) {
-			console.log("checkInput has been fired");
+			//console.log("checkInput has been fired");
 			
 			if (i.value == "")
 				i.style.backgroundColor='';
@@ -347,21 +347,21 @@
 								UIDs <i class="small blue question circle outline icon" title="<b>Subject UID(s)</b><br><br>Can be a list of UIDs, separated by commas, spaces, semi-colons, tabs, or Copy & Paste from Excel"></i>
 							</div>
 							<div class="twelve wide column">
-								<input type="text" name="s_subjectuid" value="<? =$s['s_subjectuid'];?>" class="ui input importantfield <? echo (!isEmpty($s['s_subjectuid'])) ? 'hasdata' : '';?>" placeholder="UIDs" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+								<input type="text" name="s_subjectuid" value="<?=$s['s_subjectuid'];?>" class="ui input importantfield <? echo (!isEmpty($s['s_subjectuid'])) ? 'hasdata' : '';?>" placeholder="UIDs" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 							</div>
 
 							<div class="four wide right aligned middle aligned column slabel">
 								Alternate UIDs <i class="small blue question circle outline icon" title="<b>Alternate Subject UID(s)</b><br><br>Can be a list of UIDs, separated by commas, spaces, semi-colons, tabs, or Copy&Paste from Excel"></i>
 							</div>
 							<div class="twelve wide column">
-								<input type="text" name="s_subjectaltuid" value="<? =$s['s_subjectaltuid'];?>" class="importantfield <? echo (!isEmpty($s['s_subjectaltuid'])) ? 'hasdata' : '';?>" placeholder="Alternate UIDs" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+								<input type="text" name="s_subjectaltuid" value="<?=$s['s_subjectaltuid'];?>" class="importantfield <? echo (!isEmpty($s['s_subjectaltuid'])) ? 'hasdata' : '';?>" placeholder="Alternate UIDs" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 							</div>
 
 							<div class="four wide right aligned middle aligned column slabel">
 								Name
 							</div>
 							<div class="twelve wide column">
-								<input type="text" name="s_subjectname" value="<? =$s['s_subjectname'];?>" class="importantfield <? echo (!isEmpty($s['s_subjectname'])) ? 'hasdata' : '';?>" placeholder="Name" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+								<input type="text" name="s_subjectname" value="<?=$s['s_subjectname'];?>" class="importantfield <? echo (!isEmpty($s['s_subjectname'])) ? 'hasdata' : '';?>" placeholder="Name" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 							</div>
 						</div>
 						
@@ -377,14 +377,14 @@
 									<div class="ui calendar custom_format_calendar">
 										<div class="ui small input left icon">
 											<i class="calendar icon"></i>
-											<input type="text" name="s_subjectdobstart" value="<? =$s['s_subjectdobstart'];?>" placeholder="start" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+											<input type="text" name="s_subjectdobstart" value="<?=$s['s_subjectdobstart'];?>" placeholder="start" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 										</div>
 									</div>
 									<i class="arrows alternate horizontal icon"></i> &nbsp;
 									<div class="ui calendar custom_format_calendar">
 										<div class="ui small input left icon">
 											<i class="calendar icon"></i>
-											<input type="text" name="s_subjectdobend" value="<? =$s['s_subjectdobend'];?>" placeholder="end" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+											<input type="text" name="s_subjectdobend" value="<?=$s['s_subjectdobend'];?>" placeholder="end" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 										</div>
 									</div>
 								</div>
@@ -395,14 +395,14 @@
 							</div>
 							<div class="twelve wide left aligned column">
 								<div class="ui small right labeled input">
-									<input type="number" name="s_ageatscanmin" value="<? =$s['s_ageatscanmin'];?>" maxlength="3" style="width: 80px" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<input type="number" name="s_ageatscanmin" value="<?=$s['s_ageatscanmin'];?>" maxlength="3" style="width: 80px" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 									<div class="ui label">
 										years
 									</div>
 								</div>
 								<i class="arrows alternate horizontal icon"></i>
 								<div class="ui small right labeled input">
-									<input type="number" name="s_ageatscanmax" value="<? =$s['s_ageatscanmax'];?>" maxlength="3" style="width: 80px" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<input type="number" name="s_ageatscanmax" value="<?=$s['s_ageatscanmax'];?>" maxlength="3" style="width: 80px" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 									<div class="ui label">
 										years
 									</div>
@@ -414,7 +414,7 @@
 							</div>
 							<div class="twelve wide left aligned column">
 								<div class="ui small input">
-									<input type="text" name="s_subjectgender" size="1" maxlength="1" value="<? =$s['s_subjectgender']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<input type="text" name="s_subjectgender" size="1" maxlength="1" value="<?=$s['s_subjectgender']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 								</div>
 								<span class="tiny">&nbsp;F, M, O, U</span>
 							</div>
@@ -441,7 +441,7 @@
 											$selected = "";
 										}
 										?>
-										<option value="<? =$groupid?>" <? =$selected?>><? =$groupname?></option>
+										<option value="<?=$groupid?>" <?=$selected?>><?=$groupname?></option>
 										<?
 									}
 								?>
@@ -465,8 +465,9 @@
 							</div>
 							<div class="twelve wide column">
 								<?
-									if (is_null($s['s_projectids']))
-										$searchProjectIDs = array();
+									$searchProjectIDs = array();
+									if (!is_null($s['s_projectids']))
+										$searchProjectIDs = $s['s_projectids'];
 								?>
 
 								<select name="s_projectids[]" multiple class="ui fluid dropdown importantfield" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
@@ -485,7 +486,7 @@
 											$perms = GetCurrentUserProjectPermissions(array($project_id));
 											if (GetPerm($perms, 'viewdata', $project_id)) { $disabled = ""; } else { $disabled="disabled"; }
 											?>
-											<option value="<? =$project_id?>" <? =$selected?>  <? =$disabled?>><? =$project_name?> (<? =$project_costcenter?>)</option>
+											<option value="<?=$project_id?>" <?=$selected?>  <?=$disabled?>><?=$project_name?> (<?=$project_costcenter?>)</option>
 											<?
 										}
 									?>
@@ -500,14 +501,14 @@
 							</div>
 							<div class="twelve wide left aligned column">
 								<div class="ui small fluid input">
-									<input type="text" name="s_enrollsubgroup" id="s_enrollsubgroup" list="s_enrollsubgroup" value="<? =$s['s_enrollsubgroup']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<input type="text" name="s_enrollsubgroup" id="s_enrollsubgroup" list="s_enrollsubgroup" value="<?=$s['s_enrollsubgroup']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 								</div>
 								<datalist id="s_enrollsubgroup">
 								<?
 									$sqlstring = "select distinct(enroll_subgroup) from enrollment order by enroll_subgroup";
 									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-										?><option value="<? =$row['enroll_subgroup']?>"><?
+										?><option value="<?=$row['enroll_subgroup']?>"><?
 									}
 								?>
 								</datalist>
@@ -529,14 +530,14 @@
 								Study IDs
 							</div>
 							<div class="twelve wide column">
-								<input type="text" name="s_studyid" value="<? =$s['s_studyid']?>" class="importantfield" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+								<input type="text" name="s_studyid" value="<?=$s['s_studyid']?>" class="importantfield" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 							</div>
 
 							<div class="four wide right aligned middle aligned column slabel">
 								Alternate Scan IDs
 							</div>
 							<div class="twelve wide column">
-								<input type="text" name="s_studyaltscanid" value="<? =$s['s_studyaltscanid']?>" size="50" class="importantfield" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+								<input type="text" name="s_studyaltscanid" value="<?=$s['s_studyaltscanid']?>" size="50" class="importantfield" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 							</div>
 
 							<div class="four wide right aligned middle aligned column slabel">
@@ -547,14 +548,14 @@
 									<div class="ui calendar custom_format_calendar">
 										<div class="ui input left icon">
 											<i class="calendar icon"></i>
-											<input type="text" name="s_studydatestart" value="<? =$s['s_studydatestart'];?>" placeholder="start" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+											<input type="text" name="s_studydatestart" value="<?=$s['s_studydatestart'];?>" placeholder="start" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 										</div>
 									</div>
 									&nbsp; <i class="arrows alternate horizontal icon"></i> &nbsp;
 									<div class="ui calendar custom_format_calendar">
 										<div class="ui input left icon">
 											<i class="calendar icon"></i>
-											<input type="text" name="s_studydateend" value="<? =$s['s_studydateend'];?>" placeholder="end" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+											<input type="text" name="s_studydateend" value="<?=$s['s_studydateend'];?>" placeholder="end" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 										</div>
 									</div>
 								</div>
@@ -590,7 +591,7 @@
 												}
 											}
 											?>
-											<option value="<? =$mod_code?>" <? =$selected?>><? =$mod_desc?></option>
+											<option value="<?=$mod_code?>" <?=$selected?>><?=$mod_desc?></option>
 											<?
 										}
 									}
@@ -609,14 +610,14 @@
 							</div>
 							<div class="twelve wide column">
 								<div class="ui small fluid input">
-									<input type="text" name="s_studyinstitution" id="s_studyinstitution" list="s_studyinstitution" value="<? =$s['s_studyinstitution']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<input type="text" name="s_studyinstitution" id="s_studyinstitution" list="s_studyinstitution" value="<?=$s['s_studyinstitution']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 								</div>
 								<datalist id="s_studyinstitution">
 								<?
 									$sqlstring = "select distinct(study_institution) from studies order by study_institution";
 									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-										?><option value="<? =$row['study_institution']?>"><?
+										?><option value="<?=$row['study_institution']?>"><?
 									}
 								?>
 								</datalist>
@@ -643,7 +644,7 @@
 												$selected = "";
 											}
 											?>
-											<option value="<? =$study_site?>" <? =$selected?>><? =$study_site?></option>
+											<option value="<?=$study_site?>" <?=$selected?>><?=$study_site?></option>
 											<?
 										}
 									}
@@ -656,14 +657,14 @@
 							</div>
 							<div class="twelve wide column">
 								<div class="ui small fluid input">
-									<input type="text" name="s_studydesc" list="s_studydesc" value="<? =$s['s_studydesc']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<input type="text" name="s_studydesc" list="s_studydesc" value="<?=$s['s_studydesc']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 								</div>
 								<datalist id="s_studydesc">
 								<?
 									$sqlstring = "select distinct(study_desc) from studies where study_desc <> '' order by study_desc";
 									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-										?><option value="<? =trim($row['study_desc'])?>"><?
+										?><option value="<?=trim($row['study_desc'])?>"><?
 									}
 								?>
 								</datalist>
@@ -674,14 +675,14 @@
 							</div>
 							<div class="twelve wide column">
 								<div class="ui small fluid input">
-									<input type="text" name="s_studyphysician" list="s_studyphysician" value="<? =$s['s_studyphysician']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<input type="text" name="s_studyphysician" list="s_studyphysician" value="<?=$s['s_studyphysician']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 								</div>
 								<datalist id="s_studyphysician">
 								<?
 									$sqlstring = "select distinct(study_performingphysician) from studies where study_performingphysician <> '' order by study_performingphysician";
 									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-										?><option value="<? =trim($row['study_performingphysician'])?>"><?
+										?><option value="<?=trim($row['study_performingphysician'])?>"><?
 									}
 								?>
 								</datalist>
@@ -692,14 +693,14 @@
 							</div>
 							<div class="twelve wide column">
 								<div class="ui small fluid input">
-									<input type="text" name="s_studyoperator" list="s_studyoperator" value="<? =$s['s_studyoperator']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<input type="text" name="s_studyoperator" list="s_studyoperator" value="<?=$s['s_studyoperator']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 								</div>
 								<datalist id="s_studyoperator">
 								<?
 									$sqlstring = "select distinct(study_operator) from studies where study_operator <> '' order by study_operator";
 									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-										?><option value="<? =trim($row['study_operator'])?>"><?
+										?><option value="<?=trim($row['study_operator'])?>"><?
 									}
 								?>
 								</datalist>
@@ -710,14 +711,14 @@
 							</div>
 							<div class="twelve wide column">
 								<div class="ui small fluid input">
-									<input type="text" name="s_studytype" list="s_studytype" value="<? =$s['s_studytype']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<input type="text" name="s_studytype" list="s_studytype" value="<?=$s['s_studytype']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 								</div>
 								<datalist id="s_studytype">
 								<?
 									$sqlstring = "select distinct(study_type) from studies where study_type <> '' order by study_type";
 									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-										?><option value="<? =trim($row['study_type'])?>"><?
+										?><option value="<?=trim($row['study_type'])?>"><?
 									}
 								?>
 								</datalist>
@@ -744,7 +745,7 @@
 											$selected = "";
 										}
 										?>
-										<option value="<? =$groupid?>" <? =$selected?>><? =$groupname?></option>
+										<option value="<?=$groupid?>" <?=$selected?>><?=$groupname?></option>
 										<?
 									}
 								?>
@@ -769,7 +770,7 @@
 							</div>
 							<div class="twelve wide column">
 								<div class="ui fluid input">
-									<input type="text" name="s_seriesdesc" value="<? =$s['s_seriesdesc']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<input type="text" name="s_seriesdesc" value="<?=$s['s_seriesdesc']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 								</div>
 							</div>
 							
@@ -795,7 +796,7 @@
 							</div>
 							<div class="twelve wide column">
 								<div class="ui small fluid input">
-									<input type="text" name="s_seriessequence" value="<? =$s['s_seriessequence']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<input type="text" name="s_seriessequence" value="<?=$s['s_seriessequence']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 								</div>
 							</div>
 							
@@ -804,7 +805,7 @@
 							</div>
 							<div class="twelve wide column">
 								<div class="ui small fluid input">
-									<input type="text" name="s_seriesimagetype" value="<? =$s['s_seriesimagetype']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<input type="text" name="s_seriesimagetype" value="<?=$s['s_seriesimagetype']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 								</div>
 							</div>
 							
@@ -813,7 +814,7 @@
 							</div>
 							<div class="twelve wide column">
 								<div class="ui small fluid input">
-									<input type="text" name="s_seriesimagecomments" value="<? =$s['s_seriesimagecomments']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<input type="text" name="s_seriesimagecomments" value="<?=$s['s_seriesimagecomments']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 								</div>
 							</div>
 
@@ -822,7 +823,7 @@
 							</div>
 							<div class="twelve wide column">
 								<div class="ui small right labeled input">
-									<input type="text" name="s_seriestr" value="<? =$s['s_seriestr']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<input type="text" name="s_seriestr" value="<?=$s['s_seriestr']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 									<div class="ui label">ms</div>
 								</div>
 							</div>
@@ -832,7 +833,7 @@
 							</div>
 							<div class="twelve wide column">
 								<div class="ui small input">
-									<input type="text" name="s_seriesnum" value="<? =$s['s_seriesnum']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<input type="text" name="s_seriesnum" value="<?=$s['s_seriesnum']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 								</div>
 							</div>
 							
@@ -841,7 +842,7 @@
 							</div>
 							<div class="twelve wide column">
 								<div class="ui small input">
-									<input type="text" name="s_seriesnumfiles" value="<? =$s['s_seriesnumfiles']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<input type="text" name="s_seriesnumfiles" value="<?=$s['s_seriesnumfiles']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 								</div>
 							</div>
 
@@ -866,7 +867,7 @@
 											$selected = "";
 										}
 										?>
-										<option value="<? =$groupid?>" <? =$selected?>><? =$groupname?></option>
+										<option value="<?=$groupid?>" <?=$selected?>><?=$groupname?></option>
 										<?
 									}
 								?>
@@ -896,19 +897,19 @@
 							<div class="ui grouped fields">
 								<div class="ui radio checkbox">
 									<? if (($s['s_resultoutput'] == "study") || ($action == "")) { $checked = "checked"; } else { $checked = ""; }?>
-									<input type="radio" name="s_resultoutput" id="downloadstudy" value="study" <? =$checked?>>
+									<input type="radio" name="s_resultoutput" id="downloadstudy" value="study" <?=$checked?>>
 									<label>Group by study</label>
 								</div>
 								<br>
 								<div class="ui radio checkbox">
 									<? if ($s['s_resultoutput'] == "series") { $checked = "checked"; } else { $checked = ""; }?>
-									<input type="radio" name="s_resultoutput" id="downloadseries" value="series" <? =$checked?>>
+									<input type="radio" name="s_resultoutput" id="downloadseries" value="series" <?=$checked?>>
 									<label>Display all series (use for "Select All")</label>
 								</div>
 								<br>
 								<div class="ui radio checkbox">
 									<? if ($s['s_resultoutput'] == "long") { $checked = "checked"; } else { $checked = ""; }?>
-									<input type="radio" name="s_resultoutput" id="viewlong" value="long" <? =$checked?>>
+									<input type="radio" name="s_resultoutput" id="viewlong" value="long" <?=$checked?>>
 									<label>Longitudinal</label>
 								</div>
 							</div>
@@ -917,31 +918,31 @@
 						<div class="ui bottom attached tab segment" data-tab="second">
 							<div class="ui radio checkbox">
 								<? if ($s['s_resultoutput'] == "table") { $checked = "checked"; } else { $checked = ""; }?>
-								<input type="radio" name="s_resultoutput" id="viewtable" value="table" <? =$checked?>>
+								<input type="radio" name="s_resultoutput" id="viewtable" value="table" <?=$checked?>>
 								<label>Table</label>
 							</div>
 							<br>
 							<div class="ui radio checkbox">
 								<? if ($s['s_resultoutput'] == "csv") { $checked = "checked"; } else { $checked = ""; }?>
-								<input type="radio" name="s_resultoutput" id="viewcsv" value="csv" <? =$checked?>>
+								<input type="radio" name="s_resultoutput" id="viewcsv" value="csv" <?=$checked?>>
 								<label>Spreadsheet <span class="tiny">.csv</span></label>
 							</div>
 							<br>
 							<div class="ui radio checkbox">
 								<? if ($s['s_resultoutput'] == "subject") { $checked = "checked"; } else { $checked = ""; }?>
-								<input type="radio" name="s_resultoutput" id="downloadsubject" value="subject" <? =$checked?>>
+								<input type="radio" name="s_resultoutput" id="downloadsubject" value="subject" <?=$checked?>>
 								<label>Enrollment List</label>
 							</div>
 							<br>
 							<div class="ui radio checkbox">
 								<? if ($s['s_resultoutput'] == "uniquesubject") { $checked = "checked"; } else { $checked = ""; }?>
-								<input type="radio" name="s_resultoutput" id="downloaduniquesubject" value="uniquesubject" <? =$checked?>>
+								<input type="radio" name="s_resultoutput" id="downloaduniquesubject" value="uniquesubject" <?=$checked?>>
 								<label>Subject List</label>
 							</div>
 							<br>
 							<div class="ui radio checkbox">
 								<? if ($s['s_resultoutput'] == "thumbnails") { $checked = "checked"; } else { $checked = ""; }?>
-								<input type="radio" name="s_resultoutput" id="viewthumbnails" value="thumbnails" <? =$checked?>>
+								<input type="radio" name="s_resultoutput" id="viewthumbnails" value="thumbnails" <?=$checked?>>
 								<label>Thumbnails</label>
 							</div>
 						</div>
@@ -960,7 +961,7 @@
 											$pipelineid = $row2['pipeline_id'];
 											$pipelinename = $row2['pipeline_name'];
 											?>
-											<option value="<? =$pipelineid?>" <? if ($s['s_pipelineid'] == $pipelineid) { echo "selected"; } ?>><? =$pipelinename?></option>
+											<option value="<?=$pipelineid?>" <? if ($s['s_pipelineid'] == $pipelineid) { echo "selected"; } ?>><?=$pipelinename?></option>
 											<?
 										}
 									?>
@@ -969,11 +970,11 @@
 								</tr>
 								<tr>
 									<td class="fieldlabel" width="150px">Result name</td>
-									<td><input type="text" name="s_pipelineresultname" onClick="SwitchOption('viewpipeline')" value="<? =$s['s_pipelineresultname']?>" size="50" class="importantfield"></td>
+									<td><input type="text" name="s_pipelineresultname" onClick="SwitchOption('viewpipeline')" value="<?=$s['s_pipelineresultname']?>" size="50" class="importantfield"></td>
 								</tr>
 								<tr>
 									<td class="fieldlabel" width="150px">Result unit</td>
-									<td><input type="text" name="s_pipelineresultunit" onClick="SwitchOption('viewpipeline')" value="<? =$s['s_pipelineresultunit']?>" size="20" maxsize="20" class="importantfield"></td>
+									<td><input type="text" name="s_pipelineresultunit" onClick="SwitchOption('viewpipeline')" value="<?=$s['s_pipelineresultunit']?>" size="20" maxsize="20" class="importantfield"></td>
 								</tr>
 								<tr>
 									<td class="fieldlabel" width="150px">Result type</td>
@@ -1015,7 +1016,7 @@
 												<option value="<" <? if ($s['s_pipelineresultcompare'] == '<') { echo "selected"; } ?>>&lt;
 												<option value="<=" <? if ($s['s_pipelineresultcompare'] == '<=') { echo "selected"; } ?>>&lt;=
 											</select>
-											<input type="text" name="s_pipelineresultvalue" onClick="SwitchOption('viewpipeline')" value="<? =$s['s_pipelineresultvalue']?>" size="15" class="smallsearchbox">
+											<input type="text" name="s_pipelineresultvalue" onClick="SwitchOption('viewpipeline')" value="<?=$s['s_pipelineresultvalue']?>" size="15" class="smallsearchbox">
 										</div>
 										<div class="ui checkbox">
 											<input type="checkbox" name="s_pipelinecolorize" onClick="SwitchOption('viewpipeline')" value="1" <? if ($s['s_pipelinecolorize'] == 1) { echo "checked"; } ?>>
@@ -1035,28 +1036,28 @@
 						
 							<? if ($s['s_resultoutput'] == "pipeline") { $checked = "checked"; } else { $checked = ""; }?>
 							<div class="ui radio checkbox">
-								<input type="radio" name="s_resultoutput" id="viewpipeline" value="pipeline" <? =$checked?>>
+								<input type="radio" name="s_resultoutput" id="viewpipeline" value="pipeline" <?=$checked?>>
 								<label>Pipeline results</label>
 							</div>
 							<br>
 							
 							<? if ($s['s_resultoutput'] == "pipelinecsv") { $checked = "checked"; } else { $checked = ""; }?>
 							<div class="ui radio checkbox">
-								<input type="radio" name="s_resultoutput" id="viewpipelinecsv" value="pipelinecsv" <? =$checked?>>
+								<input type="radio" name="s_resultoutput" id="viewpipelinecsv" value="pipelinecsv" <?=$checked?>>
 								<label>Pipeline results <span class="tiny">.csv</span></label>
 							</div>
 							<br>
 							
 							<? if ($s['s_resultoutput'] == "pipelinelong") { $checked = "checked"; } else { $checked = ""; }?>
 							<div class="ui radio checkbox">
-								<input type="radio" name="s_resultoutput" id="pipelinelong" value="pipelinelong" <? =$checked?>>
+								<input type="radio" name="s_resultoutput" id="pipelinelong" value="pipelinelong" <?=$checked?>>
 								<label>Longitudinal results <span class="tiny">bin by month</span></label>
 							</div>
 							<br>
 							
 							<? if ($s['s_resultoutput'] == "pipelinelongyear") { $checked = "checked"; } else { $checked = ""; }?>
 							<div class="ui radio checkbox">
-								<input type="radio" name="s_resultoutput" id="pipelinelongyear" value="pipelinelongyear" <? =$checked?>>
+								<input type="radio" name="s_resultoutput" id="pipelinelongyear" value="pipelinelongyear" <?=$checked?>>
 								<label>Longitudinal results <span class="tiny">bin by year</span></label>
 							</div>
 							<br>
@@ -1084,7 +1085,7 @@
 										$qcresultname = $row2['qcresult_name'];
 										$qcresultunits = $row2['qcresult_units'];
 										?>
-										<option value="<? =$qcresultnameid?>" <? if ($s['s_qcvariableid'] == $qcresultnameid) { echo "selected"; } ?>><? =$qcresultname?> [<? =$qcresultunits?>]</option>
+										<option value="<?=$qcresultnameid?>" <? if ($s['s_qcvariableid'] == $qcresultnameid) { echo "selected"; } ?>><?=$qcresultname?> [<?=$qcresultunits?>]</option>
 										<?
 									}
 									
@@ -1093,14 +1094,14 @@
 							<br><br>
 							<? if ($s['s_resultoutput'] == "qcchart") { $checked = "checked"; } else { $checked = ""; }?>
 							<div class="ui radio checkbox">
-								<input type="radio" name="s_resultoutput" id="qcchart" value="qcchart" <? =$checked?>>
+								<input type="radio" name="s_resultoutput" id="qcchart" value="qcchart" <?=$checked?>>
 								<label>Chart</label>
 							</div>
 							<br>
 							
 							<? if ($s['s_resultoutput'] == "qctable") { $checked = "checked"; } else { $checked = ""; }?>
 							<div class="ui radio checkbox">
-								<input type="radio" name="s_resultoutput" id="qctable" value="qctable" <? =$checked?>>
+								<input type="radio" name="s_resultoutput" id="qctable" value="qctable" <?=$checked?>>
 								<label>Table</label>
 							</div>
 							<br>
@@ -1109,7 +1110,7 @@
 						<div class="ui bottom attached tab segment" data-tab="fifth">
 							<? if ($s['s_resultoutput'] == "debug") { $checked = "checked"; } else { $checked = ""; }?>
 							<div class="ui radio checkbox">
-								<input type="radio" name="s_resultoutput" id="viewdebug" value="debug" <? =$checked?>>
+								<input type="radio" name="s_resultoutput" id="viewdebug" value="debug" <?=$checked?>>
 								<label>Debug <span class="tiny">SQL</span></label>
 							</div>
 							<br>
@@ -1117,7 +1118,7 @@
 							<? if ($GLOBALS['isadmin']) { ?>
 							<? if ($s['s_resultoutput'] == "operations") { $checked = "checked"; } else { $checked = ""; }?>
 							<div class="ui radio checkbox">
-								<input type="radio" name="s_resultoutput" id="viewoperations" value="operations" <? =$checked?>>
+								<input type="radio" name="s_resultoutput" id="viewoperations" value="operations" <?=$checked?>>
 								<label>File operations</label>
 							</div>
 							<? } ?>
@@ -1125,7 +1126,7 @@
 							
 							<? if ($s['s_audit'] == "1") { $checked = "checked"; } else { $checked = ""; }?>
 							<div class="ui checkbox">
-								<input type="checkbox" name="s_audit" value="1" <? =$checked?>>
+								<input type="checkbox" name="s_audit" value="1" <?=$checked?>>
 								<label>Audit <span class="tiny">files</span></label>
 							</div>
 						</div>
@@ -1324,8 +1325,8 @@
 								<div class="item">
 									<i class="sticky note outline icon"></i>
 									<div class="content">
-										<a href="search.php?s_searchhistoryid=<? =$searchhistoryid?>" class="header"><? =$searchterms?></a>
-										<div class="description"><? =$date_added?></div>
+										<a href="search.php?s_searchhistoryid=<?=$searchhistoryid?>" class="header"><?=$searchterms?></a>
+										<div class="description"><?=$date_added?></div>
 									</div>
 								</div>
 							<?
@@ -1382,9 +1383,9 @@
 		/* make modality lower case to conform with table names... MySQL table names are case sensitive when using the 'show tables' command */
 		$s_studymodality = strtolower($s_studymodality);
 
-		list($numrows, $numsubjects, $numstudies, $totalbytes, $missinguids, $missingaltuids, $misingstudynums) = GetResultMetrics($result, $sqlstring, $s);
+		list($numrows, $numsubjects, $numstudies, $totalbytes, $missinguids, $missingaltuids, $missingstudynums, $restrictedprojectnames) = GetResultMetrics($result, $sqlstring, $s);
 		
-		DisplayResultMetrics($numrows, $numsubjects, $numstudies, $totalbytes, $missinguids, $missingaltuids, $misingstudynums, $restrictedprojectnames, $querytime, $sqlstring, $s);
+		DisplayResultMetrics($numrows, $numsubjects, $numstudies, $totalbytes, $missinguids, $missingaltuids, $missingstudynums, $restrictedprojectnames, $querytime, $sqlstring, $s);
 		
 		if (($numrows > 100000) && ($s_resultoutput != "pipelinecsv"))
 			return;
@@ -1464,7 +1465,8 @@
 		$numresults = 0;
 		$missinguids = array();
 		$missingaltuids = array();
-		$misingstudynums = array();
+		$missingstudynums = array();
+		$restrictedprojectnames = array();
 		
 		/* ----- get number of results ----- */
 		$numresults = mysqli_num_rows($result);
@@ -1476,7 +1478,8 @@
 		$sqlstringC = "select a.project_id 'projectid', b.project_name 'projectname' from user_project a left join projects b on a.project_id = b.project_id where a.user_id = '" . $_SESSION['userid'] . "' and (a.view_data = 1 or a.view_phi = 1)";
 		$resultC = MySQLiQuery($sqlstringC,__FILE__,__LINE__);
 		while ($rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC)) {
-			$restrictedprojectids[] = $rowC['projectid'];
+			$allowedprojectids[] = $rowC['projectid'];
+			$allowedprojectnames[] = $rowC['projectname'];
 		}
 		
 		/* ----- get list of unique subjects/studies/series ----- */
@@ -1580,31 +1583,22 @@
 		$missinguids = array_filter($missinguids);
 		$missingaltuids = array_filter($missingaltuids);
 		$missingstudynums = array_filter($missingstudynums);
-		$restrictedprojectnames = array_filter($restrictedprojectnames);
+		$restrictedprojectnames = array_unique($restrictedprojectnames);
 		
-		return array($numresults, $numsubjects, $numstudies, $totalbytes, $missinguids, $missingaltuids, $misingstudynums, $restrictedprojectnames);
+		return array($numresults, $numsubjects, $numstudies, $totalbytes, $missinguids, $missingaltuids, $missingstudynums, $restrictedprojectnames);
 	}
 
 
 	/* -------------------------------------------- */
 	/* ------- DisplayResultMetrics --------------- */
 	/* -------------------------------------------- */
-	function DisplayResultMetrics($numrows, $numsubjects, $numstudies, $totalbytes, $missinguids, $missingaltuids, $misingstudynums, $restrictedprojectnames, $querytime, $sqlstring, $s) {
+	function DisplayResultMetrics($numrows, $numsubjects, $numstudies, $totalbytes, $missinguids, $missingaltuids, $missingstudynums, $restrictedprojectnames, $querytime, $sqlstring, $s) {
 		?>
 		<div class="ui container">
 		<div class="ui top attached blue large segment">
-			Found <b><? =$numsubjects?> subjects</b> in <b><? =$numstudies?> studies</b> with <b><? =number_format($numrows,0)?> series</b> matching your query (<? =HumanReadableFilesize($totalbytes);?> data)
+			Found <b><?=$numsubjects?> subjects</b> in <b><?=$numstudies?> studies</b> with <b><?=number_format($numrows,0)?> series</b> matching your query (<?=HumanReadableFilesize($totalbytes);?> data)
 		</div>
 		<?
-			if ((mysqli_num_rows($result) > 100000) && ($s['s_resultoutput'] != "pipelinecsv")) {
-				?>
-				<div class="ui attached red message">
-				<b>Your search returned <? echo number_format(mysqli_num_rows($result),0); ?> results... which is a lot</b>
-				<br>
-				Try changing the search criteria to return fewer results or select a .csv format
-				</div>
-				<?
-			}
 
 			if (count($missinguids) > 0) {
 			?>
@@ -1612,10 +1606,10 @@
 					<div class="ui inverted accordion">
 						<div class="inverted title" style="padding-top:5px; padding-bottom:5px">
 							<i class="dropdown icon"></i>
-							<? =count($missinguids)?> UIDs not found
+							<?=count($missinguids)?> UIDs not found
 						</div>
 						<div class="content">
-							<? =implode('<br>',$missinguids)?>
+							<?=implode('<br>',$missinguids)?>
 						</div>
 					</div>
 				</div>
@@ -1633,10 +1627,10 @@
 					<div class="ui accordion">
 						<div class="title" style="padding-top:5px; padding-bottom:5px">
 							<i class="dropdown icon"></i>
-							<? =count($missingaltuids)?> alternate UIDs not found
+							<?=count($missingaltuids)?> alternate UIDs not found
 						</div>
 						<div class="content">
-							<? =implode('<br>',$missingaltuids)?>
+							<?=implode('<br>',$missingaltuids)?>
 						</div>
 					</div>
 				</div>
@@ -1654,10 +1648,10 @@
 					<div class="ui accordion">
 						<div class="title">
 							<i class="dropdown icon"></i>
-							<? =count($missingstudynums)?> Studies not found
+							<?=count($missingstudynums)?> Studies not found
 						</div>
 						<div class="content">
-							<? =implode('<br>',$missingstudynums)?>
+							<?=implode('<br>',$missingstudynums)?>
 						</div>
 					</div>
 				</div>
@@ -1684,14 +1678,14 @@
 		
 		?>
 			<div class="ui <? if ($numrows > 0) { echo "bottom"; } ?> attached segment" style="padding-top:5px; padding-bottom:5px; font-size: smaller">
-				Query returned <? echo number_format($numrows,0); ?> rows in <? =number_format($querytime, 4)?> sec</span>
+				Query returned <? echo number_format($numrows,0); ?> rows in <?=number_format($querytime, 4)?> sec</span>
 				<div class="ui accordion" style="padding-top:5px; padding-bottom:5px">
 					<div class="title" style="padding-top:5px; padding-bottom:5px">
 						<i class="dropdown icon"></i>
 						View SQL query
 					</div>
 					<div class="content" style="padding-top:5px; padding-bottom:5px">
-						<div class="ui segment"><span class="tt"><? =getFormattedSQL($sqlstring)?></span></div>
+						<div class="ui segment"><span class="tt"><?=getFormattedSQL($sqlstring)?></span></div>
 					</div>
 				</div>
 			</div>
@@ -1752,7 +1746,7 @@
 		?>
 		<br><br>
 		<form name="subjectlist" method="post" action="search.php" class="ui form">
-		<input type="hidden" name="modality" value="<? =$s_studymodality?>">
+		<input type="hidden" name="modality" value="<?=$s_studymodality?>">
 		<input type="hidden" name="action" value="submit">
 		<input type="hidden" name="objecttype" value="series">
 		<?
@@ -1790,6 +1784,7 @@
 		}
 		
 		/* get a list of previously downloaded series and their dates */
+		$downloadhistory = array();
 		$sqlstring3 = "select req_seriesid, req_completedate, req_destinationtype from data_requests where req_username = '" . $_SESSION['username'] ."' and req_modality = '$s_studymodality'";
 		$result3 = MySQLiQuery($sqlstring3,__FILE__,__LINE__);
 		while ($row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC)) {
@@ -1870,6 +1865,8 @@
 		$headeradded = 0;
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 
+			$measurenames = array();
+			
 			$project_id = $row['project_id'];
 			/* if the user doesn't have view access to this project, skip to the next record */
 			if (($projectids == null) || (!in_array($project_id, $projectids))) {
@@ -2132,9 +2129,9 @@
 					?>
 					<script type="text/javascript">
 					$(document).ready(function() {
-						$("#study<? =$study_id?>").click(function() {
+						$("#study<?=$study_id?>").click(function() {
 							var checked_status = this.checked;
-							$(".tr<? =$study_id?>").find("input[type='checkbox']").each(function() {
+							$(".tr<?=$study_id?>").find("input[type='checkbox']").each(function() {
 								this.checked = checked_status;
 							});
 						});
@@ -2146,31 +2143,31 @@
 							<table class="ui very compact yellow celled selectable table" width="100%">
 								<tr>
 									<td class="one wide yellow segment">
-										<span style="color: #222; font-size: larger; font-weight: bold"><? =$name?></span>
+										<span style="color: #222; font-size: larger; font-weight: bold"><?=$name?></span>
 									</td>
 									<td class="two wide yellow segment middle aligned tt">
-										<a href="subjects.php?id=<? =$subject_id?>" style="color: <? =$displayidcolor?>; font-weight: bold" class="ui compact blue button"><? =$displayid?> &nbsp; <i class="external alternate icon"></i></a>
+										<a href="subjects.php?id=<?=$subject_id?>" style="color: <?=$displayidcolor?>; font-weight: bold" class="ui compact blue button"><?=$displayid?> &nbsp; <i class="external alternate icon"></i></a>
 									</td>
 									<td class="two wide yellow"><span class="tt" style="color: #222">
 										<?
 										if (strlen($altuidlist) > 30) {
-											?><span title="<? =$altuidlist?>"><? =substr($altuidlist,0,30)?>&hellip;</span><?
+											?><span title="<?=$altuidlist?>"><?=substr($altuidlist,0,30)?>&hellip;</span><?
 										}
 										else {
 											echo "$altuidlist";
 										}
 									?></span></td>
 									<td class="two wide yellow segment">
-										<a href="studies.php?id=<? =$study_id?>" class="ui large image blue label"><? =$uid?><div class="detail"><? =$study_num?></div></a>
+										<a href="studies.php?id=<?=$study_id?>" class="ui large image blue label"><?=$uid?><div class="detail"><?=$study_num?></div></a>
 									</td>
-									<td class="two wide yellow segment"><span style="color: #222; font-size: larger; white-space: nowrap;"><? =$project_name?> (<? =$project_costcenter?>)</span></td>
-									<td class="one wide yellow segment"><span style="color: #222; font-size: larger; white-space: nowrap;"><? =$study_datetime?></span></td>
-									<td class="one wide yellow segment"><span style="color: #222; font-size: larger;"><? =$enrollsubgroup?></span></td>
-									<td class="one wide yellow segment"><span style="color: #222; font-size: larger;"><? =number_format($studyAge,1)?>Y , <? =number_format($calcStudyAge,1)?>Y</span></td>
-									<td class="one wide yellow segment"><span style="color: #222; font-size: larger;"><? =$gender?></span></td>
-									<td class="one wide yellow segment" title="<? =$study_alternateid?>"><span class="tt" style="color: #222; white-space: nowrap;"><? =substr($study_alternateid,0,20)?><?if (strlen($study_alternateid) > 20) { echo "&hellip;"; } ?></span></td>
-									<td class="one wide yellow segment"><span style="color: #222; font-size: larger;"><? =$study_type?></span></td>
-									<td class="one wide yellow segment"><span style="color: #222; font-size: larger;"><? =$study_site?></span></td>
+									<td class="two wide yellow segment"><span style="color: #222; font-size: larger; white-space: nowrap;"><?=$project_name?> (<?=$project_costcenter?>)</span></td>
+									<td class="one wide yellow segment"><span style="color: #222; font-size: larger; white-space: nowrap;"><?=$study_datetime?></span></td>
+									<td class="one wide yellow segment"><span style="color: #222; font-size: larger;"><?=$enrollsubgroup?></span></td>
+									<td class="one wide yellow segment"><span style="color: #222; font-size: larger;"><?=number_format($studyAge,1)?>Y , <?=number_format($calcStudyAge,1)?>Y</span></td>
+									<td class="one wide yellow segment"><span style="color: #222; font-size: larger;"><?=$gender?></span></td>
+									<td class="one wide yellow segment" title="<?=$study_alternateid?>"><span class="tt" style="color: #222; white-space: nowrap;"><?=substr($study_alternateid,0,20)?><?if (strlen($study_alternateid) > 20) { echo "&hellip;"; } ?></span></td>
+									<td class="one wide yellow segment"><span style="color: #222; font-size: larger;"><?=$study_type?></span></td>
+									<td class="one wide yellow segment"><span style="color: #222; font-size: larger;"><?=$study_site?></span></td>
 								</tr>
 							</table>
 						</td>
@@ -2233,42 +2230,42 @@
 				}
 				else {
 					?>
-					<tr class="tr<? =$study_id?> allseries" style="color: <? =$rowcolor?>; white-space: nowrap">
+					<tr class="tr<?=$study_id?> allseries" style="color: <?=$rowcolor?>; white-space: nowrap">
 						<? if ($s_resultoutput != "table") { ?>
-							<td class="<? =$rowstyle?>">
-								<input type="checkbox" name="seriesid[]" value="<? =$series_id?>">
+							<td class="<?=$rowstyle?>">
+								<input type="checkbox" name="seriesid[]" value="<?=$series_id?>">
 							</td>
 						<? } ?>
-						<td class="<? =$rowstyle?>"><b><? =$series_num?></b><? if ($downloadmsg != "") { ?>&nbsp;&nbsp;<img src="images/downloaded.png" title="<? =$downloadmsg?>"><?} ?>
+						<td class="<?=$rowstyle?>"><b><?=$series_num?></b><? if ($downloadmsg != "") { ?>&nbsp;&nbsp;<img src="images/downloaded.png" title="<?=$downloadmsg?>"><?} ?>
 						</td>
-						<td class="<? =$rowstyle?>">
+						<td class="<?=$rowstyle?>">
 							<span><? if ($s_usealtseriesdesc) { echo $series_altdesc; } else { echo $series_desc; } ?></span></a>
-							&nbsp;<a href="preview.php?image=<? =$thumbpath?>" class="preview"><i class="image icon"></i></a>
+							&nbsp;<a href="preview.php?image=<?=$thumbpath?>" class="preview"><i class="image icon"></i></a>
 						</td>
 						<? if (($s_resultoutput == "series") || ($s_resultoutput == "table") || ($s_resultoutput == "operations")) { ?>
-							<td class="<? =$rowstyle?>"><a href="subjects.php?id=<? =$subject_id?>"><tt style="color: <? =$displayidcolor?>;"><? =$displayid?></tt></a></td>
-							<td class="<? =$rowstyle?>"><? =$gender?></td>
-							<td class="<? =$rowstyle?>"><? =number_format($ageatscan,1)?>Y</td>
-							<td class="<? =$rowstyle?>"><a href="subjects.php?id=<? =$subject_id?>"><tt><? if (count($altuids) > 0) { echo implode2(', ',$altuids); } ?></tt></a></td>
-							<td class="<? =$rowstyle?>"><a href="studies.php?id=<? =$study_id?>"><? =$newstudyid?></a></td>
-							<td class="<? =$rowstyle?>"><a href="studies.php?id=<? =$study_id?>"><? =$study_alternateid?></a></td>
-							<!--<td class="<? =$rowstyle?>"><a href="studies.php?id=<? =$study_id?>"><? =$study_type?></a></td>-->
-							<td class="<? =$rowstyle?>"><a href="studies.php?id=<? =$study_id?>"><? =$study_num?></a></td>
-							<td class="<? =$rowstyle?>"><? =$study_site?></td>
-							<td class="<? =$rowstyle?>"><? =$study_datetime?></td>
-							<td class="<? =$rowstyle?>"><? =$series_datetime?></td>
+							<td class="<?=$rowstyle?>"><a href="subjects.php?id=<?=$subject_id?>"><tt style="color: <?=$displayidcolor?>;"><?=$displayid?></tt></a></td>
+							<td class="<?=$rowstyle?>"><?=$gender?></td>
+							<td class="<?=$rowstyle?>"><?=number_format($ageatscan,1)?>Y</td>
+							<td class="<?=$rowstyle?>"><a href="subjects.php?id=<?=$subject_id?>"><tt><? if (count($altuids) > 0) { echo implode2(', ',$altuids); } ?></tt></a></td>
+							<td class="<?=$rowstyle?>"><a href="studies.php?id=<?=$study_id?>"><?=$newstudyid?></a></td>
+							<td class="<?=$rowstyle?>"><a href="studies.php?id=<?=$study_id?>"><?=$study_alternateid?></a></td>
+							<!--<td class="<?=$rowstyle?>"><a href="studies.php?id=<?=$study_id?>"><?=$study_type?></a></td>-->
+							<td class="<?=$rowstyle?>"><a href="studies.php?id=<?=$study_id?>"><?=$study_num?></a></td>
+							<td class="<?=$rowstyle?>"><?=$study_site?></td>
+							<td class="<?=$rowstyle?>"><?=$study_datetime?></td>
+							<td class="<?=$rowstyle?>"><?=$series_datetime?></td>
 						<? } else { ?>
-							<td class="<? =$rowstyle?>"><? =$series_datetime?></td>
+							<td class="<?=$rowstyle?>"><?=$series_datetime?></td>
 						<? } ?>
-						<td class="<? =$rowstyle?>" align="right" style="background-color: <? =$maxxcolor?>;"><? =$rangex;?></td>
-						<td class="<? =$rowstyle?>" align="right" style="background-color: <? =$maxycolor?>;"><? =$rangey;?></td>
-						<td class="<? =$rowstyle?>" align="right" style="background-color: <? =$maxzcolor?>;"><? =$rangez;?></td>
+						<td class="<?=$rowstyle?>" align="right" style="background-color: <?=$maxxcolor?>;"><?=$rangex;?></td>
+						<td class="<?=$rowstyle?>" align="right" style="background-color: <?=$maxycolor?>;"><?=$rangey;?></td>
+						<td class="<?=$rowstyle?>" align="right" style="background-color: <?=$maxzcolor?>;"><?=$rangez;?></td>
 						<? if ($s_resultoutput != "table") { ?>
-						<td class="<? =$rowstyle?>" style="padding: 0px 5px;">
-							<a href="JavaScript:newPopup('mrseriesqa.php?id=<? =$series_id?>');"><i class="chart line icon"></i></a>
+						<td class="<?=$rowstyle?>" style="padding: 0px 5px;">
+							<a href="JavaScript:newPopup('mrseriesqa.php?id=<?=$series_id?>');"><i class="chart line icon"></i></a>
 						</td>
-						<td class="<? =$rowstyle?>" style="padding: 0px 5px;">
-							<a href="JavaScript:newPopup('ratings.php?id=<? =$series_id?>&type=series&modality=mr');">
+						<td class="<?=$rowstyle?>" style="padding: 0px 5px;">
+							<a href="JavaScript:newPopup('ratings.php?id=<?=$series_id?>&type=series&modality=mr');">
 							<?
 								if ($hasratings) {
 									?><i class="red file outline icon" title="View/edit ratings"></i><?
@@ -2277,44 +2274,44 @@
 								}
 							?>
 							</a>
-							<span style="font-size:7pt" title="Scale of 1 to 5, where<br>1 = good<br>5 = bad"><? =$ratingavg;?></span>
+							<span style="font-size:7pt" title="Scale of 1 to 5, where<br>1 = good<br>5 = bad"><?=$ratingavg;?></span>
 						</td>
-						<td class="<? =$rowstyle?>">
+						<td class="<?=$rowstyle?>">
 							<? if (trim($series_notes) != "") { ?>
-							<i class="pencil alternate icon" title="<? =$series_notes?>"></i>
+							<i class="pencil alternate icon" title="<?=$series_notes?>"></i>
 							<? } ?>
 						</td>
 						<? } ?>
-						<td class="<? =$rowstyle?>" align="right" style="background-color: <? =$maxpvsnrcolor?>;">
-							<a href="stddevchart.php?h=40&w=450&min=<? =$pstats[$sequence]['minpvsnr']?>&max=<? =$pstats[$sequence]['maxpvsnr']?>&mean=<? =$pstats[$sequence]['avgpvsnr']?>&std=<? =$pstats[$sequence]['stdpvsnr']?>&i=<? =$pvsnr?>&b=yes" class="preview" style="color: black; text-decoration: none"><? =$pvsnr;?></a> 
+						<td class="<?=$rowstyle?>" align="right" style="background-color: <?=$maxpvsnrcolor?>;">
+							<a href="stddevchart.php?h=40&w=450&min=<?=$pstats[$sequence]['minpvsnr']?>&max=<?=$pstats[$sequence]['maxpvsnr']?>&mean=<?=$pstats[$sequence]['avgpvsnr']?>&std=<?=$pstats[$sequence]['stdpvsnr']?>&i=<?=$pvsnr?>&b=yes" class="preview" style="color: black; text-decoration: none"><?=$pvsnr;?></a> 
 						</td>
-						<td class="<? =$rowstyle?>" align="right" style="background-color: <? =$maxiosnrcolor?>;">
-							<a href="stddevchart.php?h=40&w=450&min=<? =$pstats[$sequence]['miniosnr']?>&max=<? =$pstats[$sequence]['maxiosnr']?>&mean=<? =$pstats[$sequence]['avgiosnr']?>&std=<? =$pstats[$sequence]['stdiosnr']?>&i=<? =$iosnr?>&b=yes" class="preview" style="color: black; text-decoration: none"><? =$iosnr;?></a>
+						<td class="<?=$rowstyle?>" align="right" style="background-color: <?=$maxiosnrcolor?>;">
+							<a href="stddevchart.php?h=40&w=450&min=<?=$pstats[$sequence]['miniosnr']?>&max=<?=$pstats[$sequence]['maxiosnr']?>&mean=<?=$pstats[$sequence]['avgiosnr']?>&std=<?=$pstats[$sequence]['stdiosnr']?>&i=<?=$iosnr?>&b=yes" class="preview" style="color: black; text-decoration: none"><?=$iosnr;?></a>
 						</td>
-						<td class="<? =$rowstyle?>" align="right" style="background-color: <? =$maxmotioncolor?>; font-size:8pt">
-							<a href="stddevchart.php?h=40&w=450&min=<? =$pstats[$sequence]['minmotion']?>&max=<? =$pstats[$sequence]['maxmotion']?>&mean=<? =$pstats[$sequence]['avgmotion']?>&std=<? =$pstats[$sequence]['stdmotion']?>&i=<? =$motion_rsq?>&b=yes" class="preview" style="color: black; text-decoration: none"><? =$motion_rsq;?></a>
+						<td class="<?=$rowstyle?>" align="right" style="background-color: <?=$maxmotioncolor?>; font-size:8pt">
+							<a href="stddevchart.php?h=40&w=450&min=<?=$pstats[$sequence]['minmotion']?>&max=<?=$pstats[$sequence]['maxmotion']?>&mean=<?=$pstats[$sequence]['avgmotion']?>&std=<?=$pstats[$sequence]['stdmotion']?>&i=<?=$motion_rsq?>&b=yes" class="preview" style="color: black; text-decoration: none"><?=$motion_rsq;?></a>
 						</td>
-						<td class="<? =$rowstyle?>"><? =$img_cols?>&times;<? =$img_rows?></td>
-						<td class="<? =$rowstyle?>">
-							<? =$numfiles?>
+						<td class="<?=$rowstyle?>"><?=$img_cols?>&times;<?=$img_rows?></td>
+						<td class="<?=$rowstyle?>">
+							<?=$numfiles?>
 							<?
 								if ($s_audit) {
 									$files = glob($GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/dicom/*.dcm");
 									//print_r($files);
-									if (count($files) != $numfiles) { ?><span style="color: white; background-color: red; padding: 1px 5px; font-weight: bold"><? =count($files)?></span> <? }
+									if (count($files) != $numfiles) { ?><span style="color: white; background-color: red; padding: 1px 5px; font-weight: bold"><?=count($files)?></span> <? }
 								}
 							?>
 						</td>
-						<td class="<? =$rowstyle?>"><? =$series_size?></td>
-						<td class="<? =$rowstyle?>"><? =$sequence?></td>
-						<td class="<? =$rowstyle?>"><? =$series_tr?></td>
+						<td class="<?=$rowstyle?>"><?=$series_size?></td>
+						<td class="<?=$rowstyle?>"><?=$sequence?></td>
+						<td class="<?=$rowstyle?>"><?=$series_tr?></td>
 						<? if ($s_resultoutput != "table") { ?>
-						<td class="<? =$rowstyle?>" bgcolor="<? =$behcolor?>"><? =$numfiles_beh?> <span class="tiny">(<? =$beh_size?>)</span></td>
+						<td class="<?=$rowstyle?>" bgcolor="<?=$behcolor?>"><?=$numfiles_beh?> <span class="tiny">(<?=$beh_size?>)</span></td>
 						<? }
 							if (count($measurenames) > 0) {
 								foreach ($measurenames as $measure) {
 								?>
-								<td class="<? =$rowstyle?>"><? =$measuredata[$subject_id][$measure]['value']?></td>
+								<td class="<?=$rowstyle?>"><?=$measuredata[$subject_id][$measure]['value']?></td>
 								<?
 								}
 							}
@@ -2325,24 +2322,24 @@
 			}
 			else {
 				?>
-				<tr class="tr<? =$study_id?> allseries">
+				<tr class="tr<?=$study_id?> allseries">
 					<? if ($s_resultoutput != "table") { ?>
-						<td class="<? =$rowstyle?>"><input type="checkbox" name="seriesid[]" value="<? =$series_id?>"></td>
+						<td class="<?=$rowstyle?>"><input type="checkbox" name="seriesid[]" value="<?=$series_id?>"></td>
 					<? } ?>
-					<td class="<? =$rowstyle?>"><b><? =$series_num?></b></td>
-					<td class="<? =$rowstyle?>"><? =$series_protocol;?></td>
+					<td class="<?=$rowstyle?>"><b><?=$series_num?></b></td>
+					<td class="<?=$rowstyle?>"><?=$series_protocol;?></td>
 					<? if (($s_resultoutput == "series") || ($s_resultoutput == "table") || ($s_resultoutput == "operations")) { ?>
-						<td class="<? =$rowstyle?>"><tt><? =$uid?></tt></td>
-						<td class="<? =$rowstyle?>"><a href="subjects.php?id=<? =$subject_id?>"><tt><? =implode2(', ',$altuids)?></tt></a></td>
-						<td class="<? =$rowstyle?>"><a href="studies.php?id=<? =$study_id?>"><? =$study_num?></a></td>
-						<td class="<? =$rowstyle?>"><? =$study_datetime?></td>
-						<td class="<? =$rowstyle?>"><? =$series_datetime?></td>
+						<td class="<?=$rowstyle?>"><tt><?=$uid?></tt></td>
+						<td class="<?=$rowstyle?>"><a href="subjects.php?id=<?=$subject_id?>"><tt><?=implode2(', ',$altuids)?></tt></a></td>
+						<td class="<?=$rowstyle?>"><a href="studies.php?id=<?=$study_id?>"><?=$study_num?></a></td>
+						<td class="<?=$rowstyle?>"><?=$study_datetime?></td>
+						<td class="<?=$rowstyle?>"><?=$series_datetime?></td>
 					<? } else { ?>
-						<td class="<? =$rowstyle?>"><? =$series_datetime?></td>
+						<td class="<?=$rowstyle?>"><?=$series_datetime?></td>
 					<? } ?>
-					<td class="<? =$rowstyle?>"><? =$series_numfiles?></td>
-					<td class="<? =$rowstyle?>"><? =$series_size?></td>
-					<td class="<? =$rowstyle?>"><? =$series_notes?></td>
+					<td class="<?=$rowstyle?>"><?=$series_numfiles?></td>
+					<td class="<?=$rowstyle?>"><?=$series_size?></td>
+					<td class="<?=$rowstyle?>"><?=$series_notes?></td>
 				</tr>
 				<?
 			}
@@ -2357,7 +2354,7 @@
 			file_put_contents("/tmp/" . $filename, $csv);
 			?>
 			<div width="50%" align="center" style="background-color: #FAF8CC; padding: 5px;">
-			Download .csv file <a href="download.php?type=file&filename=<? ="/tmp/$filename";?>"><img src="images/download16.png"></a>
+			Download .csv file <a href="download.php?type=file&filename=<?="/tmp/$filename";?>"><img src="images/download16.png"></a>
 			</div>
 			<?
 		}
@@ -2665,39 +2662,39 @@
 			if ($s_resultoutput != "csv") {
 			?>
 			<tr>
-				<td><? =$series_num?></td>
-				<td><? =$series_desc?></td>
-				<td><? =$uid?></td>
-				<td><? =$gender?></td>
-				<td><? =$studyAge?></td>
-				<td><? =$calcStudyAge?></td>
-				<td><? =$project_name?></td>
-				<td><? =$study_desc?></td>
-				<td><? =$study_height?></td>
-				<td><? =$study_weight?></td>
+				<td><?=$series_num?></td>
+				<td><?=$series_desc?></td>
+				<td><?=$uid?></td>
+				<td><?=$gender?></td>
+				<td><?=$studyAge?></td>
+				<td><?=$calcStudyAge?></td>
+				<td><?=$project_name?></td>
+				<td><?=$study_desc?></td>
+				<td><?=$study_height?></td>
+				<td><?=$study_weight?></td>
 				<td><? echo implode2('|',$altuids);?></td>
-				<td><? =$uid?><? =$studynum?></td>
-				<td><? =$study_alternateid?></td>
-				<td><? =$studynum?></td>
-				<td><? =$study_site?></td>
-				<td><? =$study_type?></td>
-				<td><? =$study_datetime?></td>
-				<td><? =$series_datetime?></td>
-				<td><? =$range['x']?></td>
-				<td><? =$range['y']?></td>
-				<td><? =$range['z']?></td>
-				<td><? =$ratingavg?></td>
-				<td><? =$pvsnr?></td>
-				<td><? =$iosnr?></td>
-				<td><? =$motion_rsq?></td>
-				<td><? =$img_cols?></td>
-				<td><? =$img_rows?></td>
-				<td><? =$numfiles?></td>
-				<td><? =$series_size?></td>
-				<td><? =$sequence?></td>
-				<td><? =$series_tr?></td>
-				<td><? =$numfiles_beh?></td>
-				<td><? =$beh_size?></td>
+				<td><?=$uid?><?=$studynum?></td>
+				<td><?=$study_alternateid?></td>
+				<td><?=$studynum?></td>
+				<td><?=$study_site?></td>
+				<td><?=$study_type?></td>
+				<td><?=$study_datetime?></td>
+				<td><?=$series_datetime?></td>
+				<td><?=$range['x']?></td>
+				<td><?=$range['y']?></td>
+				<td><?=$range['z']?></td>
+				<td><?=$ratingavg?></td>
+				<td><?=$pvsnr?></td>
+				<td><?=$iosnr?></td>
+				<td><?=$motion_rsq?></td>
+				<td><?=$img_cols?></td>
+				<td><?=$img_rows?></td>
+				<td><?=$numfiles?></td>
+				<td><?=$series_size?></td>
+				<td><?=$sequence?></td>
+				<td><?=$series_tr?></td>
+				<td><?=$numfiles_beh?></td>
+				<td><?=$beh_size?></td>
 			</tr>
 			<?
 			}
@@ -2729,7 +2726,7 @@
 			?>
 			<div class="ui container">
 				<div class="ui center aligned segment">
-					<a class="ui orange button" href="download.php?type=file&filename=<? ="/tmp/$filename";?>"><i class="ui download icon"></i>Download .csv file</a>
+					<a class="ui orange button" href="download.php?type=file&filename=<?="/tmp/$filename";?>"><i class="ui download icon"></i>Download .csv file</a>
 				</div>
 			</div>
 			<?
@@ -2959,7 +2956,7 @@
 					<?
 					foreach ($names as $name => $blah) {
 						?>
-						<th align="center" style="font-size:9pt"><? =$name?></th>
+						<th align="center" style="font-size:9pt"><?=$name?></th>
 						<?
 					}
 				?>
@@ -2971,9 +2968,9 @@
 					if ($maximgwidth < 100) { $maximgwidth = 100; }
 					foreach ($tables as $uid => $valuepair) {
 						?>
-						<tr style="font-weight: <? =$bold?>">
+						<tr style="font-weight: <?=$bold?>">
 							<td>
-								<a href="studies.php?id=<? =$tables[$uid]['studyid']?>"><b><? =$uid?></b></a>
+								<a href="studies.php?id=<?=$tables[$uid]['studyid']?>"><b><?=$uid?></b></a>
 							</td>
 							<?
 							foreach ($names as $name => $blah) {
@@ -2982,18 +2979,18 @@
 								list($width, $height, $type, $attr) = getimagesize($GLOBALS['cfg']['mountdir'] . "/$filename");
 							?>
 								<!--<td style="padding:2px">
-									<a href="preview.php?image=<? =$GLOBALS['cfg']['mountdir']?>/<? =$dispval?>" class="preview">
-										<img src="preview.php?image=<? =$GLOBALS['cfg']['mountdir']?>/<? =$dispval?>" style="max-width: <? =$maximgwidth?>px">
+									<a href="preview.php?image=<?=$GLOBALS['cfg']['mountdir']?>/<?=$dispval?>" class="preview">
+										<img src="preview.php?image=<?=$GLOBALS['cfg']['mountdir']?>/<?=$dispval?>" style="max-width: <?=$maximgwidth?>px">
 									</a>
 								</td>-->
 								
 								<td>
 									<div class="ui card">
 										<div class="content">
-											<div class="header"><a href="studies.php?id=<? =$studyid?>"><? ="$uid$studynum"?></a></div>
-											<div class="meta"><? =$dispval?></div>
+											<div class="header"><a href="studies.php?id=<?=$studyid?>"><?="$uid$studynum"?></a></div>
+											<div class="meta"><?=$dispval?></div>
 											<div class="description">
-												<a href="preview.php?image=<? =$GLOBALS['cfg']['mountdir']?>/<? =$dispval?>" class="preview"><img class="ui fluid image" src="preview.php?image=<? =$GLOBALS['cfg']['mountdir']?>/<? =$dispval?>"></a>
+												<a href="preview.php?image=<?=$GLOBALS['cfg']['mountdir']?>/<?=$dispval?>" class="preview"><img class="ui fluid image" src="preview.php?image=<?=$GLOBALS['cfg']['mountdir']?>/<?=$dispval?>"></a>
 											</div>
 										</div>
 									</div>
@@ -3066,7 +3063,7 @@
 					case "h": $thevalue = $filename; break;
 					case "i":
 						?>
-						<a href="preview.php?image=<? =$GLOBALS['cfg']['mountdir']?>/<? =$filename?>" class="preview"><img src="images/preview.gif" border="0"></a>
+						<a href="preview.php?image=<?=$GLOBALS['cfg']['mountdir']?>/<?=$filename?>" class="preview"><img src="images/preview.gif" border="0"></a>
 						<?
 						break;
 				}
@@ -3111,7 +3108,7 @@
 				?>
 				<br><br>
 				<div width="50%" align="center" style="background-color: #FAF8CC; padding: 5px;">
-				Download .csv file <a href="download.php?type=file&filename=<? ="/tmp/$filename";?>"><img src="images/download16.png"></a>
+				Download .csv file <a href="download.php?type=file&filename=<?="/tmp/$filename";?>"><img src="images/download16.png"></a>
 				</div>
 				<?
 			}
@@ -3136,7 +3133,7 @@
 					foreach ($names as $name => $blah) {
 						$csv .= ",$name";
 						?>
-						<td style="max-width:25px;"><span style="padding-left: 8px; font-size:10pt; white-space:nowrap; display: block; -webkit-transform: rotate(-70deg) translate3d(0,0,0); -moz-transform: rotate(-70deg);"><? =$name?></span></td>
+						<td style="max-width:25px;"><span style="padding-left: 8px; font-size:10pt; white-space:nowrap; display: block; -webkit-transform: rotate(-70deg) translate3d(0,0,0); -moz-transform: rotate(-70deg);"><?=$name?></span></td>
 						<?
 					}
 					$csv .= "\n";
@@ -3145,12 +3142,12 @@
 				<?
 					foreach ($tables as $uid => $valuepair) {
 						?>
-						<tr style="font-weight: <? =$bold?>" class="rowhover">
-							<td><a href="studies.php?id=<? =$tables[$uid]['studyid']?>"><b><? =$uid?></b></a></td>
-							<td style="border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:9pt; padding:2px;"><? =$tables[$uid]['studydate']?></td>
-							<td style="border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:9pt; padding:2px;"><? =$tables[$uid]['gender']?></td>
-							<td style="border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:9pt; padding:2px;"><? =$tables[$uid]['age']?></td>
-							<td style="border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:9pt; padding:2px;"><? =$tables[$uid]['visittype']?></td>
+						<tr style="font-weight: <?=$bold?>" class="rowhover">
+							<td><a href="studies.php?id=<?=$tables[$uid]['studyid']?>"><b><?=$uid?></b></a></td>
+							<td style="border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:9pt; padding:2px;"><?=$tables[$uid]['studydate']?></td>
+							<td style="border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:9pt; padding:2px;"><?=$tables[$uid]['gender']?></td>
+							<td style="border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:9pt; padding:2px;"><?=$tables[$uid]['age']?></td>
+							<td style="border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:9pt; padding:2px;"><?=$tables[$uid]['visittype']?></td>
 							<?
 							$stats[0][$tables[$uid]['gender']]++;
 							$stats[1][] = $tables[$uid]['age'];
@@ -3180,7 +3177,7 @@
 									else { $dispval = number_format($dispval,4); }
 								}
 							?>
-								<td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px; background-color: <? if ($s_pipelinecolorize) { if (trim($dispval) == '-') { echo "#EEE"; } else { echo $colors[$cindex]; } } ?>"><? =$dispval;?></td>
+								<td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px; background-color: <? if ($s_pipelinecolorize) { if (trim($dispval) == '-') { echo "#EEE"; } else { echo $colors[$cindex]; } } ?>"><?=$dispval;?></td>
 							<?
 								$i++;
 							}
@@ -3201,7 +3198,7 @@
 							<?
 							for($i=1;$i<count($stats);$i++) {
 								$count = count($stats[$i]);
-								?><td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px;"><? =$count?></td><?
+								?><td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px;"><?=$count?></td><?
 							}
 							?>
 						</tr>
@@ -3211,7 +3208,7 @@
 							<?
 							for($i=1;$i<count($stats);$i++) {
 								$min = min($stats[$i]);
-								?><td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px;"><? =$min?></td><?
+								?><td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px;"><?=$min?></td><?
 							}
 							?>
 						</tr>
@@ -3221,7 +3218,7 @@
 							<?
 							for($i=1;$i<count($stats);$i++) {
 								$max = max($stats[$i]);
-								?><td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px;"><? =$max?></td><?
+								?><td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px;"><?=$max?></td><?
 							}
 							?>
 						</tr>
@@ -3231,7 +3228,7 @@
 							<?
 							for($i=1;$i<count($stats);$i++) {
 								$avg = number_format(array_sum($stats[$i])/count($stats[$i]),2);
-								?><td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px;"><? =$avg?></td><?
+								?><td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px;"><?=$avg?></td><?
 							}
 							?>
 						</tr>
@@ -3241,7 +3238,7 @@
 							<?
 							for($i=1;$i<count($stats);$i++) {
 								$median = number_format(median($stats[$i]),2);
-								?><td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px;"><? =$median?></td><?
+								?><td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px;"><?=$median?></td><?
 							}
 							?>
 						</tr>
@@ -3251,7 +3248,7 @@
 							<?
 							for($i=1;$i<count($stats);$i++) {
 								$stdev = number_format(sd($stats[$i]),2);
-								?><td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px;"><? =$stdev?></td><?
+								?><td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px;"><?=$stdev?></td><?
 							}
 							?>
 						</tr>
@@ -3280,7 +3277,7 @@
 				<tr>
 					<td>&nbsp;</td>
 					<? foreach ($lists as $label => $vals1) { ?>
-					<td style="max-width:25px;"><span style="padding-left: 8px; font-size:10pt; white-space:nowrap; display: block; -webkit-transform: rotate(-70deg) translate3d(0,0,0); -moz-transform: rotate(-70deg);"><? =$label?></span></td>
+					<td style="max-width:25px;"><span style="padding-left: 8px; font-size:10pt; white-space:nowrap; display: block; -webkit-transform: rotate(-70deg) translate3d(0,0,0); -moz-transform: rotate(-70deg);"><?=$label?></span></td>
 					<? } ?>
 				</tr>
 				<?
@@ -3291,7 +3288,7 @@
 						}
 						?>
 						<tr class="rowhover">
-							<td align="right" style="font-size:10pt"><? =$label?></td>
+							<td align="right" style="font-size:10pt"><?=$label?></td>
 						<?
 						foreach ($lists as $label => $vals2) {
 							$starttime1 = microtime(true);
@@ -3308,7 +3305,7 @@
 							if ($cindex > 100) { $cindex = 100; }
 							// display correlation coefficient
 							?>
-							<td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px; background-color: <? =$colors2[$cindex]?>"><? =number_format($coeff,3);?></td>
+							<td class="tdhover" style="text-align: right; border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:8pt; padding:2px; background-color: <?=$colors2[$cindex]?>"><?=number_format($coeff,3);?></td>
 							<?
 							flush();
 						}
@@ -3456,13 +3453,13 @@
 			}
 		}
 		?>
-		Found <b><? =count($subjects)?> subjects</b> in <b><? =count($studies)?> studies</b> with <b><? =mysqli_num_rows($result)?> series</b> matching your query
+		Found <b><?=count($subjects)?> subjects</b> in <b><?=count($studies)?> studies</b> with <b><?=mysqli_num_rows($result)?> series</b> matching your query
 		<?
 			if (count($missinguids) > 0) {
 			?>
 				<details>
-				<summary style="font-size:9pt; background-color: orangered; color: white;"><? =count($missinguids)?> UIDs not found</summary>
-				<span style="font-size:9pt"><? =implode('<br>',$missinguids)?></span>
+				<summary style="font-size:9pt; background-color: orangered; color: white;"><?=count($missinguids)?> UIDs not found</summary>
+				<span style="font-size:9pt"><?=implode('<br>',$missinguids)?></span>
 				</details>
 			<?
 			}
@@ -3475,8 +3472,8 @@
 			if (count($missingaltuids) > 0) {
 			?>
 				<details>
-				<summary style="font-size:9pt; background-color: orangered; color: white;"><? =count($missingaltuids)?> alternate UIDs not found</summary>
-				<span style="font-size:9pt"><? =implode('<br>',$missingaltuids)?></span>
+				<summary style="font-size:9pt; background-color: orangered; color: white;"><?=count($missingaltuids)?> alternate UIDs not found</summary>
+				<span style="font-size:9pt"><?=implode('<br>',$missingaltuids)?></span>
 				</details>
 			<?
 			}
@@ -3489,8 +3486,8 @@
 			if (count($missingstudynums) > 0) {
 			?>
 				<details>
-				<summary style="font-size:9pt; background-color: orangered; color: white;"><? =count($missingstudynums)?> Studies not found</summary>
-				<span style="font-size:9pt"><? =implode('<br>',$missingstudynums)?></span>
+				<summary style="font-size:9pt; background-color: orangered; color: white;"><?=count($missingstudynums)?> Studies not found</summary>
+				<span style="font-size:9pt"><?=implode('<br>',$missingstudynums)?></span>
 				</details>
 			<?
 			}
@@ -3542,10 +3539,10 @@
 				<!--<div class="ui center aligned column">-->
 					<div class="ui card">
 						<div class="content">
-							<div class="header"><a href="studies.php?id=<? =$studyid?>"><? ="$uid$studynum"?></a> series <? =$seriesnum?></div>
-							<div class="meta"><? =$seriesdesc?></div>
+							<div class="header"><a href="studies.php?id=<?=$studyid?>"><?="$uid$studynum"?></a> series <?=$seriesnum?></div>
+							<div class="meta"><?=$seriesdesc?></div>
 							<div class="description">
-								<a href="preview.php?image=<? =$thumbpath?>" class="preview"><img class="ui fluid image" src="preview.php?image=<? =$thumbpath?>"></a>
+								<a href="preview.php?image=<?=$thumbpath?>" class="preview"><img class="ui fluid image" src="preview.php?image=<?=$thumbpath?>"></a>
 							</div>
 						</div>
 					</div>
@@ -3589,10 +3586,10 @@
 
 			?>
 			<tr>
-				<td><a href="subjects.php?id=<? =$subject_id?>"><? =$uid?></a></td>
-				<td style="border-right:1px solid #444"><? =implode2(', ',$altuids)?></td>
-				<td><a href="studies.php?id=<? =$study_id?>"><? =$uid?><? =$study_num?></a></td>
-				<td><? =$study_alternateid?></td>
+				<td><a href="subjects.php?id=<?=$subject_id?>"><?=$uid?></a></td>
+				<td style="border-right:1px solid #444"><?=implode2(', ',$altuids)?></td>
+				<td><a href="studies.php?id=<?=$study_id?>"><?=$uid?><?=$study_num?></a></td>
+				<td><?=$study_alternateid?></td>
 			</tr>
 			<?
 		}
@@ -3664,16 +3661,16 @@
 			//if ($handedness == '') { $handedness = '-'; }
 			?>
 			<tr>
-				<!--<td><input type="checkbox" name="enrollmentid[]" value="<? =$enrollment_id?>"></td>-->
-				<td><a href="subjects.php?id=<? =$subject_id?>"><? =$uid?></a></td>
-				<td><? =$project_name?></td>
-				<td><? =$birthdate?></td>
-				<td><? =$gender?></td>
-				<td><? =$ethnicity1?> <? =$ethnicity2?></td>
-				<td><? =$education?></td>
-				<td><? =$handedness?></td>
-				<td class="tiny"><? =$uuid?></td>
-				<td><? =implode2(', ',$altuids)?></td>
+				<!--<td><input type="checkbox" name="enrollmentid[]" value="<?=$enrollment_id?>"></td>-->
+				<td><a href="subjects.php?id=<?=$subject_id?>"><?=$uid?></a></td>
+				<td><?=$project_name?></td>
+				<td><?=$birthdate?></td>
+				<td><?=$gender?></td>
+				<td><?=$ethnicity1?> <?=$ethnicity2?></td>
+				<td><?=$education?></td>
+				<td><?=$handedness?></td>
+				<td class="tiny"><?=$uuid?></td>
+				<td><?=implode2(', ',$altuids)?></td>
 			</tr>
 			<?
 		}
@@ -3732,7 +3729,7 @@
 		}
 		?>
 		<form name="subjectlist" method="post" action="search.php">
-		<input type="hidden" name="modality" value="<? =$modality?>">
+		<input type="hidden" name="modality" value="<?=$modality?>">
 		<input type="hidden" name="action" value="submit">
 		<style>
 			.darkblue { color: darkblue; font-weight: bold; }
@@ -3740,7 +3737,7 @@
 			td.tdhover:hover { background-color: yellow; }
 		</style>
 		<br>
-		Longitudinal series were found in <span class="darkblue"><? =count($subjects2)?> subjects</span>, <span class="darkblue"><? =count($studies2)?> studies</span>, <span class="darkblue"><? =count($series2)?> series</span><br><br>
+		Longitudinal series were found in <span class="darkblue"><?=count($subjects2)?> subjects</span>, <span class="darkblue"><?=count($studies2)?> studies</span>, <span class="darkblue"><?=count($series2)?> series</span><br><br>
 		<?
 
 		$csv1 = "uid, protocol";
@@ -3757,20 +3754,20 @@
 						?>
 						<script type="text/javascript">
 						$(document).ready(function() {
-							$("#col<? =$col?>").click(function() {
+							$("#col<?=$col?>").click(function() {
 								var checked_status = this.checked;
-								$(".col<? =$col?>").find("input[type='checkbox']").each(function() {
+								$(".col<?=$col?>").find("input[type='checkbox']").each(function() {
 									this.checked = checked_status;
 								});
 							});
 						});
 						</script>						
-						<td align="right" style="color:darkblue"><b>Time <? =$col?> <input type="checkbox" name="col<? =$col?>" id="col<? =$col?>"> </b></td>
+						<td align="right" style="color:darkblue"><b>Time <?=$col?> <input type="checkbox" name="col<?=$col?>" id="col<?=$col?>"> </b></td>
 						<td class="tiny" align="center">&nbsp;</td>
 						<?
 					}
 				?>
-				<td align="right" style="color:darkblue"><b>Time <? =$maxcol?> <input type="checkbox" name="" onclick=""> </b></td>
+				<td align="right" style="color:darkblue"><b>Time <?=$maxcol?> <input type="checkbox" name="" onclick=""> </b></td>
 			</tr>
 		<?
 		$csv1 .= "\n";
@@ -3786,7 +3783,7 @@
 				if (count($value2) > 1) {
 					if ($firstline) { $borderstyle = "border-top: 2px solid #AAAAAA"; $firstline = false; }
 					else { $borderstyle = ""; }
-					?><tr class="rowhover" style="<? =$borderstyle?>"><?
+					?><tr class="rowhover" style="<?=$borderstyle?>"><?
 					if ($printeduid != true) {
 						/* get a list of alternate UIDs */
 						$altuids = null;
@@ -3796,15 +3793,15 @@
 							$altuids[] = $rowC['altuid'];
 						}
 						?>
-						<td valign="top" style="border-top: solid black 1pt; padding: 1px 5px;"><b><? =$uid?></b><br>
-						<span class="tiny">(<? =implode(', ', $altuids)?>)</span></td>
+						<td valign="top" style="border-top: solid black 1pt; padding: 1px 5px;"><b><?=$uid?></b><br>
+						<span class="tiny">(<?=implode(', ', $altuids)?>)</span></td>
 						<?
 						$printeduid = true;
 					}
 					else {
 						?><td></td><?
 					}
-					?><td valign="top" style="border-left: 1px solid #DDDDDD; border-right: 2px solid #aaa; white-space: nowrap; font-size:11pt; padding: 1px 5px"><? =$seriesdesc?></td><?
+					?><td valign="top" style="border-left: 1px solid #DDDDDD; border-right: 2px solid #aaa; white-space: nowrap; font-size:11pt; padding: 1px 5px"><?=$seriesdesc?></td><?
 					$lastdate = "";
 					$tspan = "";
 					$csv1 .= "$uid,$seriesdesc";
@@ -3831,13 +3828,13 @@
 							if ($tspan != "") {
 								$numcolsdisplayed++;
 						?>
-						<td class="tdhover" valign="top" align="center" style="font-size:8pt; white-space: nowrap; border-left: 1px solid #DDDDDD; border-right: 1px solid #DDDDDD; padding: 2px 5px;">&larr; <b><? =$tspan?></b> &rarr;</td>
+						<td class="tdhover" valign="top" align="center" style="font-size:8pt; white-space: nowrap; border-left: 1px solid #DDDDDD; border-right: 1px solid #DDDDDD; padding: 2px 5px;">&larr; <b><?=$tspan?></b> &rarr;</td>
 						<?
 							}
 							$numcolsdisplayed++;
 						?>
-						<td class="tdhover col<? =ceil($numcolsdisplayed/2);?>" align="right" valign="top" style="font-size:8pt; white-space: nowrap; border-left: 1px solid #DDDDDD; border-right: 1px solid #DDDDDD; padding: 1px 5px;">
-						<a href="studies.php?id=<? =$studyid?>"><? =$studydate?></a> [<? =$studynum?>]
+						<td class="tdhover col<?=ceil($numcolsdisplayed/2);?>" align="right" valign="top" style="font-size:8pt; white-space: nowrap; border-left: 1px solid #DDDDDD; border-right: 1px solid #DDDDDD; padding: 1px 5px;">
+						<a href="studies.php?id=<?=$studyid?>"><?=$studydate?></a> [<?=$studynum?>]
 						<?
 						foreach ($seriesids as $ser) {
 							list($seriesid,$studyid,$studynum) = explode(',',$ser);
@@ -3866,8 +3863,8 @@
 							$series_status = $row['series_status'];
 							$is_derived = $row['is_derived'];
 							$title = "<b style='color:darkblue'><big>$protocol</big></b><br><br><b>Num files:</b> $numfiles<br><b>Date:</b> $seriesdate<br><b>Image dimensions (pixels):</b> $img_rows x $img_cols x $img_slices<br><b>Voxel Spacing (mm):</b> $series_spacingx x $series_spacingy x $series_spacingz";
-							?><br><span title="<? =$title?>"><? =$seriesnum?> <input type="checkbox" name="seriesid[]" value="<? =$seriesid?>"></span>
-							<input type="hidden" name="timepoints[<? =$seriesid?>]" value="<? =($numcolsdisplayed+1)/2?>"><!--<? =($numcolsdisplayed+1)/2?>--><?
+							?><br><span title="<?=$title?>"><?=$seriesnum?> <input type="checkbox" name="seriesid[]" value="<?=$seriesid?>"></span>
+							<input type="hidden" name="timepoints[<?=$seriesid?>]" value="<?=($numcolsdisplayed+1)/2?>"><!--<?=($numcolsdisplayed+1)/2?>--><?
 						}
 						?>
 						</td><?
@@ -3886,10 +3883,10 @@
 		}
 		?></table>
 		.csv file with scan dates<br>
-		<textarea rows="8" cols="150"><? =$csv1?></textarea>
+		<textarea rows="8" cols="150"><?=$csv1?></textarea>
 		<br><br>
 		.csv file with study numbers<br>
-		<textarea rows="8" cols="150"><? =$csv2?></textarea>
+		<textarea rows="8" cols="150"><?=$csv2?></textarea>
 		<?
 		DisplayDownloadBox(strtolower($modality), 'long', $projectids);
 	}
@@ -3988,7 +3985,7 @@
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$resultname = $row['result_name'];
 			?>
-			<? =$resultname?> [<? =$resultid?>]<br>
+			<?=$resultname?> [<?=$resultid?>]<br>
 			<table cellspacing="0" style="font-size: 8pt" border="1">
 				<tr>
 					<td>Bin (months)</td>
@@ -4007,12 +4004,12 @@
 						$stdev = $values[$resultid]['stdev'];
 						?>
 						<tr>
-							<td align="right" style="color:darkblue"><? =$bin?></td>
-							<td align="right" style="color:darkblue"><? =$count?></td>
-							<td align="right" style="color:darkblue"><? =$min?></td>
-							<td align="right" style="color:darkblue"><? =$max?></td>
-							<td align="right" style="color:darkblue"><? =$stdev?></td>
-							<td align="right" style="color:darkblue"><? =$mean?></td>
+							<td align="right" style="color:darkblue"><?=$bin?></td>
+							<td align="right" style="color:darkblue"><?=$count?></td>
+							<td align="right" style="color:darkblue"><?=$min?></td>
+							<td align="right" style="color:darkblue"><?=$max?></td>
+							<td align="right" style="color:darkblue"><?=$stdev?></td>
+							<td align="right" style="color:darkblue"><?=$mean?></td>
 						</tr>
 						<?
 						}
@@ -4037,7 +4034,7 @@
 		
 		<br>
 		Full table .csv (collapsed by UID)<br>
-		<textarea rows="8" cols="150"><? =$csv?></textarea>
+		<textarea rows="8" cols="150"><?=$csv?></textarea>
 		
 		
 		<?
@@ -4065,7 +4062,7 @@
 		
 		<br>
 		Full table .csv (one UID per row, with ICV)<br>
-		<textarea rows="8" cols="150"><? =$csv3?></textarea>
+		<textarea rows="8" cols="150"><?=$csv3?></textarea>
 
 		<?
 		$csv2 = "ID, age, sex, value\n";
@@ -4078,7 +4075,7 @@
 		?>
 		<br>
 		Full table .csv (collapsed by UID, and combined regions: eg. right + left = total volume)<br>
-		<textarea rows="8" cols="150"><? =$csv2?></textarea>
+		<textarea rows="8" cols="150"><?=$csv2?></textarea>
 		<?
 	}
 
@@ -4144,7 +4141,7 @@
 			<br>
 			<table width="100%" style="border: 1px solid #888; border-spacing: 0px;">
 				<tr>
-					<td style="background-color: lightblue; padding: 5px;" colspan="4">Charts for <b><? =$series?></b></td>
+					<td style="background-color: lightblue; padding: 5px;" colspan="4">Charts for <b><?=$series?></b></td>
 				</tr>
 				<tr>
 					<?
@@ -4179,7 +4176,7 @@
 							
 							?>
 							<td valign="top">
-							<img src='xygraph.php?h=200&w=420&t=<? =$chartname?>&x=<? =$x?>&y=<? =$y?>&xtype=dat&ytype=lin'>
+							<img src='xygraph.php?h=200&w=420&t=<?=$chartname?>&x=<?=$x?>&y=<?=$y?>&xtype=dat&ytype=lin'>
 							<details>
 							<summary>Data</summary>
 							<table class="ui very compact small celled table">
@@ -4192,9 +4189,9 @@
 								foreach ($xs as $i => $blah) {
 									?>
 									<tr>
-										<td><a href="studies.php?id=<? =$studyids[$i]?>"><? =$studynums[$i]?></a></td>
-										<td><? =$xs[$i]?></td>
-										<td><? =$ys[$i]?></td>
+										<td><a href="studies.php?id=<?=$studyids[$i]?>"><?=$studynums[$i]?></a></td>
+										<td><?=$xs[$i]?></td>
+										<td><?=$ys[$i]?></td>
 									</tr>
 									<?
 								}
@@ -4240,7 +4237,7 @@
 		?>
 			<table class="smallgrayrounded" width="100%">
 				<tr>
-					<td class="title"><? =$title?></td>
+					<td class="title"><?=$title?></td>
 				</tr>
 				<tr>
 					<td class="body">
@@ -4253,7 +4250,7 @@
 												if (($date > 0) && ($value > 0)) {
 													$jsonstrings[] .= "['$date', $value]";
 												}
-											}?><? =implode2(',',$jsonstrings)?>];
+											}?><?=implode2(',',$jsonstrings)?>];
 									<? if ($label2 != "") { ?>var data2 = [<?
 											$jsonstrings = "";
 											foreach ($data2 as $date => $item) {
@@ -4262,7 +4259,7 @@
 												if (($date > 0) && ($value > 0)) {
 													$jsonstrings[] .= "['$date', $value]";
 												}
-											}?><? =implode2(',',$jsonstrings)?>];
+											}?><?=implode2(',',$jsonstrings)?>];
 									<? } ?>
 									<? if ($label3 != "") { ?>var data3 = [<?
 											$jsonstrings = "";
@@ -4272,7 +4269,7 @@
 												if (($date > 0) && ($value > 0)) {
 													$jsonstrings[] .= "['$date', $value]";
 												}
-											}?><? =implode2(',',$jsonstrings)?>];
+											}?><?=implode2(',',$jsonstrings)?>];
 									<? } ?>
 							
 								var options = {
@@ -4289,12 +4286,12 @@
 									yaxis: { min: 0, tickDecimals: 1 },
 									selection: { mode: "x" },
 								};
-								var placeholder = $("#placeholder<? =$id?>");
+								var placeholder = $("#placeholder<?=$id?>");
 								var plot = $.plot(placeholder, [
-								{ label: "<? =$label1?>", color: '#F00', data: data1}<? if ($label2 != "") { ?>, { label: "<? =$label2?>", color: '#4B4', data: data2} <? } ?><? if ($label3 != "") { ?>, { label: "<? =$label3?>", color: '#00F', data: data3} <? } ?> ],options);
+								{ label: "<?=$label1?>", color: '#F00', data: data1}<? if ($label2 != "") { ?>, { label: "<?=$label2?>", color: '#4B4', data: data2} <? } ?><? if ($label3 != "") { ?>, { label: "<?=$label3?>", color: '#00F', data: data3} <? } ?> ],options);
 							});
 						</script>
-						<div id="placeholder<? =$id?>" style="height:<? =$height?>px;" align="center"></div>
+						<div id="placeholder<?=$id?>" style="height:<?=$height?>px;" align="center"></div>
 					</td>
 				</tr>
 				<? if ($disptable) { ?>
@@ -4333,10 +4330,10 @@
 								$date = date("D, d M Y", $date);
 								?>
 								<tr>
-									<td><? =$date?></td>
-									<td><a href="subjects.php?id=<? =$subjectid?>"><? =$uid?></a></td>
-									<td><a href="subjects.php?id=<? =$studyid?>"><? =$uid?><? =$studynum?></a></td>
-									<td align="right" bgcolor="<? =$colors[$cindex];?>"><tt><? =$value?><tt></td>
+									<td><?=$date?></td>
+									<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
+									<td><a href="subjects.php?id=<?=$studyid?>"><?=$uid?><?=$studynum?></a></td>
+									<td align="right" bgcolor="<?=$colors[$cindex];?>"><tt><?=$value?><tt></td>
 								</tr>
 								<?
 							}
@@ -4612,7 +4609,7 @@
 								$groupid = $row['group_id'];
 								$groupname = $row['group_name'];
 								?>
-								<option value="<? =$groupid?>"><? =$groupname?>
+								<option value="<?=$groupid?>"><?=$groupname?>
 								<?
 							}
 						?>
@@ -4630,7 +4627,7 @@
 								$groupid = $row['group_id'];
 								$groupname = $row['group_name'];
 								?>
-								<option value="<? =$groupid?>"><? =$groupname?>
+								<option value="<?=$groupid?>"><?=$groupname?>
 								<?
 							}
 						?>
@@ -4648,7 +4645,7 @@
 								$groupid = $row['group_id'];
 								$groupname = $row['group_name'];
 								?>
-								<option value="<? =$groupid?>"><? =$groupname?>
+								<option value="<?=$groupid?>"><?=$groupname?>
 								<?
 							}
 						?>
@@ -4675,7 +4672,7 @@
 								$mpselectbox .= "</select>";
 							}
 						?>
-						<? =$mpselectbox?>
+						<?=$mpselectbox?>
 						<div class="ui primary button" onclick="document.subjectlist.action='studies.php';document.subjectlist.action.value='submitminipipelines';document.subjectlist.submit();">Run</div>
 					</div>
 					<div class="ui horizontal left aligned divider">Batch Upload Data</div>
@@ -4705,91 +4702,96 @@
 					<div class="ui grid">
 						<div class="four wide stretched left attached column">
 							<div class="ui vertical fluid tabular menu">
-								<? if ($GLOBALS['cfg']['enablewebexport']) { ?>
-									<a class="active item item2" data-tab="tab-web" onClick="radio_web.checked=true">
-										<div class="ui radio checkbox">
-											<input type="radio" name="destination" id="radio_web" value="web" checked onChange="CheckDestination()">
-											<label>Web</label>
-										</div>
-									</a>
-									<a class="item item2" data-tab="tab-nfs" onClick="radio_nfs.checked=true">
-										<div class="ui radio checkbox">
-											<input type="radio" name="destination" id="radio_nfs" value="nfs" onChange="CheckDestination()">
-											<label>NFS share</label>
-										</div>
-									</a>
 								<?
-								}
-								if (($GLOBALS['isadmin']) && ($GLOBALS['cfg']['enablepublicdownloads'])) { ?>
-									<a class="item item2" data-tab="tab-publicdownload" onClick="radio_publicdownload.checked=true">
-										<div class="ui radio checkbox">
-											<input type="radio" name="destination" id="radio_publicdownload" value="publicdownload" onChange="CheckDestination()">
-											<label>Public Download</label>
-										</div>
-									</a>
-									<a class="item item2" data-tab="tab-publicdataset" onClick="radio_publicdataset.checked=true">
-										<div class="ui radio checkbox">
-											<input type="radio" name="destination" id="radio_publicdataset" value="publicdataset" onChange="CheckDestination()">
-											<label>Add to Public Dataset</label>
-										</div>
-									</a>
-								<?
-								}
-								if ($s_resultoutput != 'subject') {
-									if (!$GLOBALS['cfg']['ispublic']) { ?>
-									<!--
-										<a class="item item2" data-tab="tab-localftp" onClick="radio_localftp.checked=true">
+									$exportDefined = false;
+									$activeTab = "";
+									
+									if ($GLOBALS['cfg']['enablewebexport']) {
+										$exportDefined = true;
+										$activeTab = "web";
+										?>
+											<a class="active item item2" data-tab="tab-web" onClick="radio_web.checked=true">
+												<div class="ui radio checkbox">
+													<input type="radio" name="destination" id="radio_web" value="web" checked onChange="CheckDestination()">
+													<label>Web</label>
+												</div>
+											</a>
+										<?
+									}
+									if ($GLOBALS['cfg']['enablenfs']) {
+										?>
+											<a class="<? if (!$exportDefined) { echo "active"; } ?> item item2" data-tab="tab-nfs" onClick="radio_nfs.checked=true">
+												<div class="ui radio checkbox">
+													<input type="radio" name="destination" id="radio_nfs" value="nfs" <? if (!$exportDefined) { echo "checked"; } ?> onChange="CheckDestination()">
+													<label>NFS share</label>
+												</div>
+											</a>
+										<?
+										$exportDefined = true;
+										if ($activeTab == "")
+											$activeTab = "nfs";
+									}
+									
+									if (($GLOBALS['isadmin']) && ($GLOBALS['cfg']['enablepublicdownloads'])) {
+										?>
+										<a class="<? if (!$exportDefined) { echo "active"; } ?> item item2" data-tab="tab-publicdownload" onClick="radio_publicdownload.checked=true">
 											<div class="ui radio checkbox">
-												<input type="radio" name="destination" id="radio_localftp" value="localftp" <? if ($GLOBALS['isguest']) { echo "checked"; } ?> onChange="CheckDestination()">
-												<label>Local FTP/scp</label>
+												<input type="radio" name="destination" id="radio_publicdownload" value="publicdownload" <? if (!$exportDefined) { echo "checked"; } ?> onChange="CheckDestination()">
+												<label>Public Download</label>
 											</div>
 										</a>
-										-->
-									<?
-									}
-									if ($GLOBALS['cfg']['enablerdoc']) { ?>
-										<a class="item item2" data-tab="tab-nda" onClick="radio_ndar.checked=true">
+										<a class="item item2" data-tab="tab-publicdataset" onClick="radio_publicdataset.checked=true">
 											<div class="ui radio checkbox">
-												<input type="radio" name="destination" id="radio_ndar" value="ndar" onChange="CheckDestination()">
-												<label>NDA submission</label>
+												<input type="radio" name="destination" id="radio_publicdataset" value="publicdataset" onChange="CheckDestination()">
+												<label>Add to Public Dataset</label>
 											</div>
 										</a>
-										<a class="item item2" data-tab="tab-ndacsv" onClick="radio_ndarcsv.checked=true">
-											<div class="ui radio checkbox">
-												<input type="radio" name="destination" id="radio_ndarcsv" value="ndarcsv" onChange="CheckDestination()">
-												<label>NDA submission <span class="tiny">.csv</span></label>
-											</div>
-										</a>
-									<?
+										<?
+										$exportDefined = true;
+										if ($activeTab == "")
+											$activeTab = "public";
 									}
-								}
-								if ($s_resultoutput != 'subject') {
-									?>
-									<!--
-									<a class="item item2" data-tab="tab-xnat" onClick="radio_xnat.checked=true">
-										<div class="ui radio checkbox">
-											<input type="radio" name="destination" id="radio_xnat" value="xnat" onChange="CheckDestination()">
-											<label>Remote XNAT</label>
-										</div>
-									</a> -->
-									<!--
-									<a class="item" data-tab="tab-remoteftp">
-										<div class="ui radio checkbox" onChange="CheckDestination()">
-											<input type="radio" name="destination" id="radio_remoteftp" value="remoteftp">
-											<label>Remote FTP site</label>
-										</div>
-									</a>
-									-->
-									<? if ($GLOBALS['cfg']['enableremoteconn']) { ?>
-									<a class="item item2" data-tab="tab-remotenidb" onClick="radio_remotenidb.checked=true">
-										<div class="ui radio checkbox">
-											<input type="radio" name="destination" id="radio_remotenidb" value="remotenidb" onChange="CheckDestination()">
-											<label>Remote NiDB site</label>
-										</div>
-									</a>
-									<?
+									
+									if ($s_resultoutput != 'subject') {
+										if ($GLOBALS['cfg']['enablerdoc']) {
+											?>
+											<a class="<? if (!$exportDefined) { echo "active"; } ?> item item2" data-tab="tab-nda" onClick="radio_ndar.checked=true">
+												<div class="ui radio checkbox">
+													<input type="radio" name="destination" id="radio_ndar" value="ndar" <? if (!$exportDefined) { echo "checked"; } ?> onChange="CheckDestination()">
+													<label>NDA submission</label>
+												</div>
+											</a>
+											<a class="item item2" data-tab="tab-ndacsv" onClick="radio_ndarcsv.checked=true">
+												<div class="ui radio checkbox">
+													<input type="radio" name="destination" id="radio_ndarcsv" value="ndarcsv" onChange="CheckDestination()">
+													<label>NDA submission <span class="tiny">.csv</span></label>
+												</div>
+											</a>
+											<?
+											$exportDefined = true;
+											if ($activeTab == "")
+												$activeTab = "nda";
+										}
+
+										if ($GLOBALS['cfg']['enableremoteconn']) {
+											?>
+											<a class="<? if (!$exportDefined) { echo "active"; } ?> item item2" data-tab="tab-remotenidb" onClick="radio_remotenidb.checked=true">
+												<div class="ui radio checkbox">
+													<input type="radio" name="destination" id="radio_remotenidb" value="remotenidb" <? if (!$exportDefined) { echo "checked"; } ?> onChange="CheckDestination()">
+													<label>Remote NiDB site</label>
+												</div>
+											</a>
+											<?
+											$exportDefined = true;
+											if ($activeTab == "")
+												$activeTab = "remotenidb";
+										}
 									}
-								}
+									
+									//PrintVariable($exportDefined);
+									if (!$exportDefined) {
+										?><div class="ui red inverted segment">No export methods available. Please contact NiDB admin to enable export methods</div><?
+									}
 								?>
 							</div>
 						</div>
@@ -4798,26 +4800,28 @@
 						<div class="ui twelve wide stretched right attached column">
 							
 							<!-- web download tab -->
-							<div class="ui active tab seamless right attached segment" data-tab="tab-web" style="background-color: #EBF5FB">
+							<? if ($GLOBALS['cfg']['enablewebexport']) { ?>
+							<div class="ui <? if ($activeTab == "web") { echo "active"; } ?> tab seamless right attached segment" data-tab="tab-web" style="background-color: #EBF5FB">
 								<div class="ui message">
 									<div class="content">
 										<div class="header">
 											Web download
 										</div>
-										<p>A .zip file will be written to <code><? =$GLOBALS['cfg']['downloaddir']?></code> and will be available to download on the <b>Search</b> &rarr; <b>Export Status</b> page after export is complete</p>
+										<p>A .zip file will be written to <code><?=$GLOBALS['cfg']['downloaddir']?></code> and will be available to download on the <b>Search</b> &rarr; <b>Export Status</b> page after export is complete</p>
 									</div>
 								</div>
 							</div>
+							<? } ?>
 							
 							<? if (($GLOBALS['isadmin']) && ($GLOBALS['cfg']['enablepublicdownloads'])) { ?>
 							<!-- public download tab -->
-							<div class="ui tab seamless right attached segment" data-tab="tab-publicdownload" style="background-color: #EBF5FB">
+							<div class="ui <? if ($activeTab == "public") { echo "active"; } ?> tab seamless right attached segment" data-tab="tab-publicdownload" style="background-color: #EBF5FB">
 								<div class="ui message">
 									<div class="content">
 										<div class="header">
 											Public download. Anyone with the link can download the dataset.
 										</div>
-										<p>A .zip file named NIDB-<i>####</i> will be written to <code><? =$GLOBALS['cfg']['webdownloaddir']?></code>. A shareable download link will be available on the <b>Data &rarr; Exports &rarr; Public Downloads</b> page</p>
+										<p>A .zip file named NIDB-<i>####</i> will be written to <code><?=$GLOBALS['cfg']['webdownloaddir']?></code>. A shareable download link will be available on the <b>Data &rarr; Exports &rarr; Public Downloads</b> page</p>
 									</div>
 								</div>
 								
@@ -4835,7 +4839,7 @@
 								</div>
 
 								<div class="field">
-									Password <img src="images/help.gif" title="Set a password for the download link, otherwise anyone with the link can download the data. Leave blank for no password">
+									Password <i class="small blue question circle outline icon" title="Set a password for the download link, otherwise anyone with the link can download the data. Leave blank for no password"></i>
 									<input type="password" name="publicdownloadpassword">
 								</div>
 
@@ -4886,7 +4890,7 @@
 										<div class="header">
 											Add this export to an existing public dataset.
 										</div>
-										<p>A .zip file named NiDB-<i>####</i> will be written to <code><? =$GLOBALS['cfg']['publicdownloaddir']?></code>. The download will be available on the <b>Data &rarr; Exports &rarr; Public Datasets</b> page</p>
+										<p>A .zip file named NiDB-<i>####</i> will be written to <code><?=$GLOBALS['cfg']['publicdownloaddir']?></code>. The download will be available on the <b>Data &rarr; Exports &rarr; Public Datasets</b> page</p>
 									</div>
 								</div>
 								<br>
@@ -4918,25 +4922,25 @@
 							<? } ?>
 							
 							<!-- local FTP tab -->
-							<div class="ui tab seamless right attached segment" data-tab="tab-localftp" style="background-color: #EBF5FB">
+							<div class="ui <? if ($activeTab == "ftp") { echo "active"; } ?> tab seamless right attached segment" data-tab="tab-localftp" style="background-color: #EBF5FB">
 								<div class="ui message">
 									<div class="content">
 										<div class="header">
 											FTP download
 										</div>
-										<p>A .zip file will be written to <code><? =$GLOBALS['cfg']['ftpdir']?></code></p>
+										<p>A .zip file will be written to <code><?=$GLOBALS['cfg']['ftpdir']?></code></p>
 									</div>
 								</div>
 							</div>
 							
 							<!-- NDA tab -->
-							<div class="ui tab seamless right attached segment" data-tab="tab-nda" style="background-color: #EBF5FB">
+							<div class="ui <? if ($activeTab == "nda") { echo "active"; } ?> tab seamless right attached segment" data-tab="tab-nda" style="background-color: #EBF5FB">
 								<div class="ui message">
 									<div class="content">
 										<div class="header">
 											NDA (NIMH data archive) format
 										</div>
-										<p>A directory named NIDB-NDAR-<i>YYYYMMDDHHMISS</i> will be written to <code><? =$GLOBALS['cfg']['ftpdir']?></code> which contains a complete package ready to upload to the NDA</p>
+										<p>A directory named NIDB-NDAR-<i>YYYYMMDDHHMISS</i> will be written to <code><?=$GLOBALS['cfg']['ftpdir']?></code> which contains a complete package ready to upload to the NDA</p>
 									</div>
 								</div>
 							</div>
@@ -4948,13 +4952,13 @@
 										<div class="header">
 											NDA (NIMH data archive) format
 										</div>
-										<p>A directory named NIDB-NDAR-<i>YYYYMMDDHHMISS</i> will be written to <code><? =$GLOBALS['cfg']['ftpdir']?></code> which <u>contains only the .csv file</u>. No imaging data is included in this export.</p>
+										<p>A directory named NIDB-NDAR-<i>YYYYMMDDHHMISS</i> will be written to <code><?=$GLOBALS['cfg']['ftpdir']?></code> which <u>contains only the .csv file</u>. No imaging data is included in this export.</p>
 									</div>
 								</div>
 							</div>
 							
 							<!-- NFS tab -->
-							<div class="ui tab seamless right attached segment" data-tab="tab-nfs" style="background-color: #EBF5FB">
+							<div class="ui <? if ($activeTab == "nfs") { echo "active"; } ?> tab seamless right attached segment" data-tab="tab-nfs" style="background-color: #EBF5FB">
 								<script>
 									function CheckNFSPath() {
 										var xhttp = new XMLHttpRequest();
@@ -4981,7 +4985,7 @@
 							</div>
 							
 							<!-- Remote FTP tab -->
-							<div class="ui tab seamless right attached segment" data-tab="tab-remoteftp" style="background-color: #EBF5FB">
+							<div class="ui <? if ($activeTab == "remoteftp") { echo "active"; } ?> tab seamless right attached segment" data-tab="tab-remoteftp" style="background-color: #EBF5FB">
 								<p style="text-align: center">Remote FTP settings (this option is deprecated)</p>
 								<table class="remoteftp" style="margin-left:40px; border:1px solid gray">
 									<tr><td align="right" width="30%" style="font-size:10pt">Remote FTP Server</td><td><input type="text" name="remoteftpserver"></td></tr>
@@ -4993,7 +4997,7 @@
 							</div>
 							
 							<!-- Remote NiDB tab -->
-							<div class="ui tab seamless right attached segment" data-tab="tab-remotenidb" style="background-color: #EBF5FB">
+							<div class="ui <? if ($activeTab == "remotenidb") { echo "active"; } ?> tab seamless right attached segment" data-tab="tab-remotenidb" style="background-color: #EBF5FB">
 								<div class="ui message">
 									<div class="content">
 										<div class="header">
@@ -5017,7 +5021,7 @@
 											$remoteprojectid = $row['remote_projectid'];
 											$remotesiteid = $row['remote_siteid'];
 											?>
-											<option value="<? =$connid?>"><? =$connname?> - [<? =$remoteusername?>@<? =$remoteserver?> Project: <? =$remoteprojectid?>]
+											<option value="<?=$connid?>"><?=$connname?> - [<?=$remoteusername?>@<?=$remoteserver?> Project: <?=$remoteprojectid?>]
 											<?
 										}
 									?>
@@ -5505,6 +5509,8 @@
 		
 		Debug(__FILE__, __LINE__, "<pre>" . print_r($s,true) . "</pre>");
 		
+		$s_projectids = array();
+		
 		/* escape all the variables and put them back into meaningful variable names */
 		foreach ($s as $key => $value) {
 			if (is_array($value)) {
@@ -5530,7 +5536,7 @@
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		if (mysqli_num_rows($result) < 1) {
 			?>
-			<? =$modality?>_series table does not exist. Unable to query information about <? =$modality?> series
+			<?=$modality?>_series table does not exist. Unable to query information about <?=$modality?> series
 			<?
 			return "";
 		}
@@ -5565,7 +5571,7 @@
 		if ($s_ageatscanmax != "") { $sqlwhere .= " and `studies`.study_ageatscan <= '$s_ageatscanmax'"; }
 		if ($s_subjectgender != "") { $sqlwhere .= " and `subjects`.gender = '$s_subjectgender'"; }
 		//PrintVariable($s_projectids);
-		if ((!in_array("all", $s_projectids) && (count($s_projectids) != 0))) {
+		if (isset($s_projectids) && (!in_array("all", $s_projectids) && (count($s_projectids) > 0))) {
 			$sqlwhere .= " and `projects`.project_id in (" . implode2(",", $s_projectids) . ")";
 		}
 		else {
@@ -5594,7 +5600,7 @@
 				/* first 8 characters are UID, remaining number(s) are studynum */
 				//PrintVariable($sid);
 				$uid = substr($sid,0,8);
-				$studynum = substr($sid,8) + 0; // convert to integer
+				$studynum = intval(substr($sid,8)) + 0; // convert to integer
 				$s1[] = "(`subjects`.uid = '$uid' and `studies`.study_num = $studynum)";
 			}
 			$s2 = implode2(' or ', $s1);
@@ -5956,7 +5962,7 @@
 		if ($display) {
 			?>
 			<tr>
-				<td class="seriesheader"><input type="checkbox" id="study<? =$study_id?>"></td>
+				<td class="seriesheader"><input type="checkbox" id="study<?=$study_id?>"></td>
 				<td class="seriesheader"><b>Series #</b></td>
 				<td class="seriesheader">Protocol</td>
 				<td class="seriesheader" title="Time of the start of the series acquisition">Time</td>
@@ -5979,7 +5985,7 @@
 					if (count($measures) > 0) {
 						foreach ($measures as $measure) {
 						?>
-						<td class="seriesheader"><? =$measure?></td>
+						<td class="seriesheader"><?=$measure?></td>
 						<?
 						}
 					}
@@ -6034,7 +6040,7 @@
 				if (count($measures) > 0) {
 					foreach ($measures as $measure) {
 					?>
-					<td class="seriesheader"><? =$measure?></td>
+					<td class="seriesheader"><?=$measure?></td>
 					<?
 					}
 				}
@@ -6050,7 +6056,7 @@
 	function DisplayGenericStudyHeader($study_id) {
 		?>
 		<tr>
-			<td class="seriesheader"><input type="checkbox" id="study<? =$study_id?>"></td>
+			<td class="seriesheader"><input type="checkbox" id="study<?=$study_id?>"></td>
 			<td class="seriesheader"><b>Series #</b></td>
 			<td class="seriesheader">Protocol</td>
 			<td class="seriesheader">Time</td>
@@ -6359,7 +6365,7 @@
 		<div class="ui text container">
 			<div class="ui message">
 				<div class="header">
-					Your data export, with <? =$numseries?> series, has been submitted
+					Your data export, with <?=$numseries?> series, has been submitted
 				</div>
 				<br>
 				<a href="requeststatus.php" class="ui primary button"><i class="external alternate icon"></i> View export status</a>
@@ -6372,9 +6378,9 @@
 				<table><tr><td style="border: solid yellow 1pt; background-color:lightyellow">
 				Use the following information to login to the FTP server and transfer your data:<br>
 				<pre>
-			Server/Host: <? =$GLOBALS['cfg']['localftphostname'];?>
-			Login: <? =$GLOBALS['cfg']['localftpusername'];?>
-			Password: <? =$GLOBALS['cfg']['localftppassword'];?>
+			Server/Host: <?=$GLOBALS['cfg']['localftphostname'];?>
+			Login: <?=$GLOBALS['cfg']['localftpusername'];?>
+			Password: <?=$GLOBALS['cfg']['localftppassword'];?>
 			Port: 21
 				</pre>
 				</td></tr></table></div>

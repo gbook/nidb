@@ -172,11 +172,11 @@ public:
     QString PrintDataDictionary(PrintFormat printFormat=List);
     QString PrintExperiments(PrintFormat printFormat=List);
     QString PrintGroupAnalyses(PrintFormat printFormat=List);
-    QString PrintInterventions(qint64 subjectRowID, PrintFormat printFormat=List);
-    QString PrintObservations(qint64 subjectRowID, PrintFormat printFormat=List);
+    QString PrintInterventions(DatasetType dataType, PrintFormat printFormat, qint64 subjectRowID);
+    QString PrintObservations(DatasetType dataType, PrintFormat printFormat, qint64 subjectRowID);
     QString PrintPackage();
     QString PrintPipelines(PrintFormat printFormat=List);
-    QString PrintSeries(qint64 studyRowID, PrintFormat printFormat=List);
+    QString PrintSeries(DatasetType dataType, PrintFormat printFormat, qint64 studyRowID);
     QString PrintStudies(DatasetType dataType, PrintFormat printFormat, qint64 subjectRowID);
     QString PrintSubjects(DatasetType dataType, PrintFormat printFormat);
     QString PrintTree();

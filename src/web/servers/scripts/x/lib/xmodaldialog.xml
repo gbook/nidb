@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xModalDialog'>
+
+<sources>
+  <src><file>xmodaldialog.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>UI</grp>
+</groups>
+
+<type>Object</type>
+
+<description><![CDATA[A simple modal dialog box object.]]></description>
+
+<syntax>xModalDialog(sDialogId)</syntax>
+
+<parameters>
+  <par><name>sDialogId</name><note><![CDATA[ID string or element reference of the outer container of the "dialog box".]]></note></par>
+</parameters>
+
+<methods>
+  <meth><name>show</name><note><![CDATA[Displays the "grey" element and then displays the dialog on top of it and in the center of the window.]]></note></meth>
+  <meth><name>hide(dialogOnly)</name><note><![CDATA[Hides both the dialog and the "grey" elements by positioning them "off-screen". if dialogOnly is true then the grey element will not be hidden, but it will return to its previous z-index.]]></note></meth>
+</methods>
+
+<dependencies>
+ <dep>xGetElementById</dep>
+ <dep>xMoveTo</dep>
+ <dep>xResizeTo</dep>
+ <dep>xScrollLeft</dep>
+ <dep>xScrollTop</dep>
+ <dep>xClientWidth</dep>
+ <dep>xClientHeight</dep>
+ <dep>xGetComputedStyle</dep>
+</dependencies>
+
+<demos>
+  <demo><url>http://cross-browser.com/x/examples/xmodaldialog.php</url><note><![CDATA[xModalDialog demo.]]></note></demo>
+</demos>
+
+<revisions>
+  <rev><num>2</num><date>13Jul07</date><author>mf</author><note><![CDATA[Made some changes to support having a Confirm dialog (see the demo). Please note that this object is likely to get re-implemented at some time.]]></note></rev>
+  <rev><num>1</num><date>11Jul07</date><author>mf</author><note><![CDATA[Initial release. Derived from the page-grey demo.]]></note></rev>
+</revisions>
+
+</x_symbol>

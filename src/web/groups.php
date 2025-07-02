@@ -323,7 +323,7 @@
 		foreach ($itemid as $item) {
 			$sqlstring = "delete from group_data where subjectgroup_id = $item";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			?><div align="center"><span class="message">Item <? =$item?> deleted</span></div><?
+			?><div align="center"><span class="message">Item <?=$item?> deleted</span></div><?
 		}
 		return;
 	}
@@ -458,7 +458,7 @@
 		<div class="ui top attached grey segment">
 			<div class="ui two column grid">
 				<div class="ui column">
-					<h2 class="ui header"><? =$groupname?></h2>
+					<h2 class="ui header"><?=$groupname?></h2>
 				</div>
 				<div class="ui right aligned column">
 					<button class="ui tiny red button">Delete Group</button>
@@ -477,7 +477,7 @@
 							SQL
 						</div>
 						<div class="content">
-							<tt><? =PrintSQL($sqlstring)?></tt>
+							<tt><?=PrintSQL($sqlstring)?></tt>
 						</div>
 					</div>
 				</div>
@@ -489,7 +489,7 @@
 					<h3 class="ui header">Group members</h3>
 					
 					<form class="ui form" action="groups.php" method="get">
-						<textarea><? =$serieslist?></textarea>
+						<textarea><?=$serieslist?></textarea>
 						<br><br>
 						<div align="right">
 							<button class="ui primary button">Save</button>
@@ -569,23 +569,23 @@
 					$name = substr($parts[1],0,1) . substr($parts[0],0,1);
 					?>
 					<tr>
-						<td><? =$name?></td>
-						<td><a href="subjects.php?id=<? =$subjectid?>"><? =$uid?></a></td>
-						<td><? =$birthdate?></td>
-						<td><? =$studyAge?></td>
-						<td><? =$calcStudyAge?></td>
+						<td><?=$name?></td>
+						<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
+						<td><?=$birthdate?></td>
+						<td><?=$studyAge?></td>
+						<td><?=$calcStudyAge?></td>
 						<? if (!in_array(strtoupper($gender),array('M','F','O'))) { $color = "red"; } else { $color="black"; } ?>
-						<td style="color:<? =$color?>"><? =$gender?></td>
-						<td style="font-size:8pt"><? =$subgroup?></td>
+						<td style="color:<?=$color?>"><?=$gender?></td>
+						<td style="font-size:8pt"><?=$subgroup?></td>
 						<? if ($weight <= 0) { $color = "red"; } else { $color="black"; } ?>
-						<td style="color:<? =$color?>"><? =number_format($weight,1)?>kg</td>
-						<td style="font-size:8pt"><? =implode2(', ',$altuids)?></td>
-						<td><a href="studies.php?id=<? =$studyid?>"><? =$uid?><? =$studynum?></a></td>
-						<td style="font-size:8pt"><? =$seriesdesc?> <? =$seriesprotocol?></td>
-						<td><? =$seriesmodality?></td>
-						<td style="font-size:8pt"><? =$seriesdatetime?></td>
-						<td><? =$seriesnum?></td>
-						<td align="center"><a href="groups.php?action=removegroupitem&itemid=<? =$itemid?>&id=<? =$id?>" style="color:red"><i class="trash icon"></i></a></td>
+						<td style="color:<?=$color?>"><?=number_format($weight,1)?>kg</td>
+						<td style="font-size:8pt"><?=implode2(', ',$altuids)?></td>
+						<td><a href="studies.php?id=<?=$studyid?>"><?=$uid?><?=$studynum?></a></td>
+						<td style="font-size:8pt"><?=$seriesdesc?> <?=$seriesprotocol?></td>
+						<td><?=$seriesmodality?></td>
+						<td style="font-size:8pt"><?=$seriesdatetime?></td>
+						<td><?=$seriesnum?></td>
+						<td align="center"><a href="groups.php?action=removegroupitem&itemid=<?=$itemid?>&id=<?=$id?>" style="color:red"><i class="trash icon"></i></a></td>
 					</tr>
 					<?
 				}
@@ -665,7 +665,7 @@
 		<div class="ui top attached grey segment">
 			<div class="ui two column grid">
 				<div class="ui column">
-					<h2 class="ui header"><? =$groupname?></h2>
+					<h2 class="ui header"><?=$groupname?></h2>
 				</div>
 				<div class="ui right aligned column">
 					<button class="ui tiny red button">Delete Group</button>
@@ -677,7 +677,7 @@
 					<div class="ui styled accordion">
 						<div class="active title">
 							<i class="dropdown icon"></i>
-							Group contains <b><? =$n?></b> studies
+							Group contains <b><?=$n?></b> studies
 						</div>
 						<div class="active content">
 							<?DisplayDemographicsTable($n,$numage,$avgage,$varage,$genders,$ethnicity1s,$ethnicity2s,$educations,$handednesses,$avgweight,$varweight);?>
@@ -687,7 +687,7 @@
 							SQL
 						</div>
 						<div class="content">
-							<tt><? =PrintSQL($sqlstring)?></tt>
+							<tt><?=PrintSQL($sqlstring)?></tt>
 						</div>
 						<div class="title">
 							<i class="dropdown icon"></i>
@@ -702,17 +702,17 @@
 				</div>
 				<div class="ui five wide column">
 					<h3 class="ui header">Options</h3>
-					<a href="groups.php?action=viewimagingsummary&id=<? =$id?>">Imaging Summary</a><br>
+					<a href="groups.php?action=viewimagingsummary&id=<?=$id?>">Imaging Summary</a><br>
 					<br>
-					<a href="groups.php?action=viewgroup&id=<? =$id?>&measures=all">Include measures</a><br>
-					<a href="groups.php?action=viewgroup&id=<? =$id?>&measures=all&columns=min">Include measures and only UID</a><br>
-					<a href="groups.php?action=viewgroup&id=<? =$id?>&measures=all&columns=min&groupmeasures=byvalue">Include measures and only UID and group measures by value</a>
+					<a href="groups.php?action=viewgroup&id=<?=$id?>&measures=all">Include measures</a><br>
+					<a href="groups.php?action=viewgroup&id=<?=$id?>&measures=all&columns=min">Include measures and only UID</a><br>
+					<a href="groups.php?action=viewgroup&id=<?=$id?>&measures=all&columns=min&groupmeasures=byvalue">Include measures and only UID and group measures by value</a>
 				</div>
 				<div class="ui six wide column">
 					<h3 class="ui header">Edit group members</h3>
 					<form action="groups.php" method="post" class="ui form">
 					<input type="hidden" name="action" value="updatestudygroup">
-					<input type="hidden" name="id" value="<? =$id?>">
+					<input type="hidden" name="id" value="<?=$id?>">
 					<?
 						$studies = "";
 						$sqlstring = "select a.subjectgroup_id, d.uid, b.study_num from group_data a left join studies b on a.data_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.group_id = $id order by d.uid,b.study_num";
@@ -723,7 +723,7 @@
 							$studies .=  $uid . $studynum . "\n";
 						}
 						?>
-						<textarea name='studylist' style="font-family: monospace; font-size: larger;"><? =$studies?></textarea>
+						<textarea name='studylist' style="font-family: monospace; font-size: larger;"><?=$studies?></textarea>
 						<br><br>
 						<div align="right">
 							<button class="ui primary button" type="submit">Update</button>
@@ -876,7 +876,7 @@
 						<span class="tiny">Click columns to sort. May be slow for large tables</span>
 
 						<form action="groups.php" method="post">
-							<input type="hidden" name="id" value="<? =$id?>">
+							<input type="hidden" name="id" value="<?=$id?>">
 							<input type="hidden" name="action" value="removegroupitem">
 
 							<table id="studytable" class="ui small celled selectable grey very compact table">
@@ -984,31 +984,31 @@
 									?>
 									<tr>
 										<? if ($columns != "min") { ?>
-											<td><? =$name?></td>
+											<td><?=$name?></td>
 										<? } ?>
-										<td class="tt"><a href="subjects.php?id=<? =$subjectid?>"><? =$uid?></a></td>
+										<td class="tt"><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
 										<? if ($columns != "min") { ?>
-											<td><? =$birthdate?></td>
-											<td><? =$studydatetime?></td>
-											<td><? =$studyAge?></td>
-											<td><? =$calcStudyAge?></td>
+											<td><?=$birthdate?></td>
+											<td><?=$studydatetime?></td>
+											<td><?=$studyAge?></td>
+											<td><?=$calcStudyAge?></td>
 											<? if (!in_array(strtoupper($gender),array('M','F','O'))) { $color = "red"; } else { $color="black"; } ?>
-											<td style="color:<? =$color?>"><? =$gender?></td>
-											<td style="font-size:8pt"><? =$ethnicity1?> <? =$ethnicity2?></td>
-											<td style="font-size:8pt"><? =$subgroup?></td>
-											<td style="font-size:8pt"><? =$studyvisittype?></td>
+											<td style="color:<?=$color?>"><?=$gender?></td>
+											<td style="font-size:8pt"><?=$ethnicity1?> <?=$ethnicity2?></td>
+											<td style="font-size:8pt"><?=$subgroup?></td>
+											<td style="font-size:8pt"><?=$studyvisittype?></td>
 											<? if ($studyweight <= 0) { $color = "red"; } else { $color="black"; } ?>
-											<td style="color:<? =$color?>"><? =number_format($studyweight,1)?>kg</td>
-											<td><? =$handedness?></td>
-											<td><? =$education?></td>
-											<td style="font-size:8pt"><? =implode2(', ',$altuids)?></td>
-											<td><a href="studies.php?id=<? =$studyid?>"><? =$uid?><? =$studynum?></a></td>
-											<td style="font-size:8pt"><? =$studydesc?></td>
-											<td><? =$studyalternateid?></td>
-											<td><? =$studymodality?></td>
-											<td><? =$studyoperator?></td>
-											<td><? =$studyperformingphysician?></td>
-											<td style="font-size:8pt"><? =$studysite?></td>
+											<td style="color:<?=$color?>"><?=number_format($studyweight,1)?>kg</td>
+											<td><?=$handedness?></td>
+											<td><?=$education?></td>
+											<td style="font-size:8pt"><?=implode2(', ',$altuids)?></td>
+											<td><a href="studies.php?id=<?=$studyid?>"><?=$uid?><?=$studynum?></a></td>
+											<td style="font-size:8pt"><?=$studydesc?></td>
+											<td><?=$studyalternateid?></td>
+											<td><?=$studymodality?></td>
+											<td><?=$studyoperator?></td>
+											<td><?=$studyperformingphysician?></td>
+											<td style="font-size:8pt"><?=$studysite?></td>
 										<? } ?>
 										<?
 										if (count($measurenames) > 0) {
@@ -1044,8 +1044,8 @@
 											}
 										}
 										?>
-										<!--<td><a href="groups.php?action=removegroupitem&itemid=<? =$itemid?>&id=<? =$id?>" style="color:red"><i class="trash icon"></i></a></td>-->
-										<td><input type="checkbox" name="itemid[]" value="<? =$itemid?>"></td>
+										<!--<td><a href="groups.php?action=removegroupitem&itemid=<?=$itemid?>&id=<?=$id?>" style="color:red"><i class="trash icon"></i></a></td>-->
+										<td><input type="checkbox" name="itemid[]" value="<?=$itemid?>"></td>
 									</tr>
 									<?
 								}
@@ -1068,7 +1068,7 @@
 			file_put_contents("/tmp/" . $filename, $csv);
 			?>
 			<div width="50%" align="center" style="background-color: #FAF8CC; padding: 5px;">
-				Download .csv file <a href="download.php?type=file&filename=<? ="/tmp/$filename";?>"><img src="images/download16.png"></a>
+				Download .csv file <a href="download.php?type=file&filename=<?="/tmp/$filename";?>"><img src="images/download16.png"></a>
 			</div>
 		</div>
 		<?
@@ -1146,7 +1146,7 @@
 				<h1 class="ui header">
 					<i class="user friends icon"></i>
 					<div class="content">
-						<? =$groupname?>
+						<?=$groupname?>
 						<div class="sub header">Subject group</div>
 					</div>
 				</h1>
@@ -1159,7 +1159,7 @@
 		
 		<div class="ui segment">
 			<form action="groups.php" method="post">
-				<input type="hidden" name="id" value="<? =$id?>">
+				<input type="hidden" name="id" value="<?=$id?>">
 				<input type="hidden" name="action" value="removegroupitem">
 				<table class="ui celled selectable grey very compact table">
 					<thead>
@@ -1199,21 +1199,21 @@
 						$name = substr($parts[1],0,1) . substr($parts[0],0,1);
 						?>
 						<tr>
-							<td><? =$name?></td>
+							<td><?=$name?></td>
 							<td>
-								<a href="subjects.php?id=<? =$subjectid?>" style="font-family: monospace; font-size: larger;"><? =$uid?></a>
+								<a href="subjects.php?id=<?=$subjectid?>" style="font-family: monospace; font-size: larger;"><?=$uid?></a>
 							</td>
 							<? if ($age <= 0) { $color = "red"; } else { $color="black"; } ?>
-							<td style="color:<? =$color?>"><? =number_format($age,1)?>Y</td>
+							<td style="color:<?=$color?>"><?=number_format($age,1)?>Y</td>
 							<? if (!in_array(strtoupper($gender),array('M','F','O'))) { $color = "red"; } else { $color="black"; } ?>
-							<td style="color:<? =$color?>"><? =$gender?></td>
-							<td><? =$ethnicitiy1?></td>
-							<td><? =$ethnicitiy1?></td>
-							<td><? =number_format($weight,1)?>kg</td>
-							<td><? =$handedness?></td>
-							<td><? =$education?></td>
-							<td><span style="font-family: monospace; font-size: larger;"><? =implode(', ',$altuids)?></span></td>
-							<td><input type="checkbox" name="itemid[]" value="<? =$itemid?>"></td>
+							<td style="color:<?=$color?>"><?=$gender?></td>
+							<td><?=$ethnicitiy1?></td>
+							<td><?=$ethnicitiy1?></td>
+							<td><?=number_format($weight,1)?>kg</td>
+							<td><?=$handedness?></td>
+							<td><?=$education?></td>
+							<td><span style="font-family: monospace; font-size: larger;"><?=implode(', ',$altuids)?></span></td>
+							<td><input type="checkbox" name="itemid[]" value="<?=$itemid?>"></td>
 						</tr>
 						<?
 					}
@@ -1280,19 +1280,19 @@
 					$count = $row['count'];
 					?>
 					<tr>
-						<td><? =$seriesdesc?></td>
-						<td><? =$series_tr?></td>
-						<td><? =$series_te?></td>
-						<td><? =$series_flip?></td>
-						<td><? =$phaseencodedir?></td>
-						<td><? =$PhaseEncodingDirectionPositive?></td>
-						<td><? =$series_spacingx?></td>
-						<td><? =$series_spacingy?></td>
-						<td><? =$series_spacingz?></td>
-						<td><? =$img_rows?></td>
-						<td><? =$img_cols?></td>
-						<td><? =$img_slices?></td>
-						<td><? =$count?></td>
+						<td><?=$seriesdesc?></td>
+						<td><?=$series_tr?></td>
+						<td><?=$series_te?></td>
+						<td><?=$series_flip?></td>
+						<td><?=$phaseencodedir?></td>
+						<td><?=$PhaseEncodingDirectionPositive?></td>
+						<td><?=$series_spacingx?></td>
+						<td><?=$series_spacingy?></td>
+						<td><?=$series_spacingz?></td>
+						<td><?=$img_rows?></td>
+						<td><?=$img_cols?></td>
+						<td><?=$img_slices?></td>
+						<td><?=$count?></td>
 					</tr>
 					<?
 				}
@@ -1310,11 +1310,11 @@
 		<table class="ui very basic very compact collapsing table">
 			<tr>
 				<td class="right aligned">N</td>
-				<td><? =$n?></td>
+				<td><?=$n?></td>
 			</tr>
 			<tr>
-				<td class="right aligned">Age<br><span class="tiny">computed from<br><? =$numage?> non-zero ages</span></td>
-				<td><? =number_format($avgage,1)?>Y <span class="small">&plusmn;<? =number_format($varage,1)?>Y</span></td>
+				<td class="right aligned">Age<br><span class="tiny">computed from<br><?=$numage?> non-zero ages</span></td>
+				<td><?=number_format($avgage,1)?>Y <span class="small">&plusmn;<?=number_format($varage,1)?>Y</span></td>
 			</tr>
 			<tr>
 				<td class="right aligned">Sex</td>
@@ -1417,7 +1417,7 @@
 			</tr>
 			<tr>
 				<td>Weight<br><span class="tiny">computed from<br>non-zero weights</span></td>
-				<td><? =number_format($avgweight,1)?>kg <span class="small">&plusmn;<? =number_format($varweight,1)?>kg</span></td>
+				<td><?=number_format($avgweight,1)?>kg <span class="small">&plusmn;<?=number_format($varweight,1)?>kg</span></td>
 			</tr>-->
 		</table>
 		<?
@@ -1477,14 +1477,14 @@
 					$row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC);
 					$count = $row2['count'];
 					?>
-					<tr style="<? =$style?>">
-						<td><a href="groups.php?action=viewgroup&id=<? =$id?>"><? =$name?></a></td>
-						<td><? =$grouptype?></td>
-						<td><? =$ownerusername?></td>
-						<td><? =$count?></td>
+					<tr style="<?=$style?>">
+						<td><a href="groups.php?action=viewgroup&id=<?=$id?>"><?=$name?></a></td>
+						<td><?=$grouptype?></td>
+						<td><?=$ownerusername?></td>
+						<td><?=$count?></td>
 						<td align="right">
 							<? if ($ownerusername == $GLOBALS['username']) { ?>
-								<a href="groups.php?action=delete&id=<? =$id?>" style="color:red"><i class="trash icon"></i></a>
+								<a href="groups.php?action=delete&id=<?=$id?>" style="color:red"><i class="trash icon"></i></a>
 							<? } ?>
 						</td>
 					</tr>
@@ -1539,7 +1539,7 @@
 				<th>CalcAge</th>
 				<?
 				foreach ($protocols as $prot => $val) {
-					?><th><? =$prot?></th><?
+					?><th><?=$prot?></th><?
 				}
 				?>
 			</thead>
@@ -1547,13 +1547,13 @@
 		foreach ($studies as $studyid => $study) {
 			?>
 			<tr>
-				<td><? =$study['uid']?></td>
-				<td><? =$study['sex']?></td>
-				<td><? =number_format($study['studyage'], 1)?></td>
-				<td><? =number_format($study['calcstudyage'], 1)?></td>
+				<td><?=$study['uid']?></td>
+				<td><?=$study['sex']?></td>
+				<td><?=number_format($study['studyage'], 1)?></td>
+				<td><?=number_format($study['calcstudyage'], 1)?></td>
 				<?
 				foreach ($protocols as $prot => $val) {
-					?><td><? =$study['protocols'][$prot]?></td><?
+					?><td><?=$study['protocols'][$prot]?></td><?
 				}
 				?>
 			</tr>

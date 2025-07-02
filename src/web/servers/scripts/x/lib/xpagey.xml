@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xPageY'>
+
+<sources>
+  <src><file>xpagey.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Position</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[Get the page-relative Y position of the element.]]></description>
+
+<syntax>xPageY(ele)</syntax>
+
+<parameters>
+  <par>
+    <name>ele</name>
+    <note><![CDATA[id string or object reference]]></note>
+  </par>
+</parameters>
+
+<return>the page relative Y position of ele</return>
+
+<dependencies>
+  <dep>xGetElementById</dep>
+  <dep>xDef</dep>
+</dependencies>
+
+<demos>
+  <demo>
+    <url>http://cross-browser.com/toys/</url>
+    <note><![CDATA[Index of all X demos.]]></note>
+  </demo>
+</demos>
+
+<comments>
+  <comment>
+    <date></date>
+    <author>mf</author>
+    <note><![CDATA[Iterates up the offsetParent chain summing offsetTop. This is highly dependent on the html structure and the setting of ancestors' position property.]]></note>
+  </comment>
+</comments>
+
+<revisions>
+  <rev><num>4</num><date>10Jan07</date><author>mf</author><note><![CDATA[Removed uneeded 'return'.]]></note></rev>
+  <rev>
+    <num>3</num>
+    <date>3Oct06</date>
+    <author>mf</author>
+    <note><![CDATA[Removed the following line, which was commented-out: "//  if (xOp7Up) return y - document.body.offsetTop; // v3.14, temporary hack for opera bug 130324 (reported 1nov03)"]]></note>
+  </rev>
+  <rev>
+    <num>2</num>
+    <date>25Apr05</date>
+    <author>mf</author>
+    <note><![CDATA[use xOp7Up instead of xOp7, even tho that line is commented-out]]></note>
+  </rev>
+  <rev>
+    <num>1</num>
+    <date>31Mar04</date>
+    <author>mf</author>
+    <note><![CDATA[put in it's own file for use with XC]]></note>
+  </rev>
+</revisions>
+
+</x_symbol>

@@ -1,5 +1,5 @@
 Name:           nidb
-Version:        2025.4.1223
+Version:        2025.7.1260
 Release:        1%{?dist}
 Summary:        NeuroInformatics Database
 
@@ -16,7 +16,7 @@ Requires:       php, php-mysqlnd, php-gd, php-cli, php-process, php-pear, php-mb
 NeuroInformatics Database (NiDB) is a full neuroimaging database system to store, retrieve, analyze, and distribute neuroscience data.
 
 %build # This section does the building. all the binary files will end up in %{builddir}
-%{_sourcedir}/build-rpm.sh ~/Qt/6.6.3/gcc_64/bin/qmake %{_sourcedir}/src %{_builddir}/bin
+%{_sourcedir}/build-rpm8.sh ~/Qt/6.9.1/gcc_64/bin/qmake %{_sourcedir}/src %{_builddir}/bin
 
 %install # This section installs the files to the BUILDROOT dir, which is basically a copy of what the user's computer will look like after the RPM installs
 mkdir -p %{buildroot}/usr/lib/sqldrivers
@@ -33,7 +33,7 @@ cp -rf %{_sourcedir}/src/web/* %{buildroot}/var/www/html/ # copy web files to th
 cp -f %{_builddir}/bin/nidb/nidb %{buildroot}/nidb/bin/
 cp -f %{_builddir}/bin/squirrel/squirrel %{buildroot}/usr/local/bin/ # squirrel utilities
 cp -rf %{_sourcedir}/tools/* %{buildroot}/nidb/bin/
-#cp -rf %{_sourcedir}/src/qcmodules/* %{buildroot}/nidb/qcmodules/
+cp -rf %{_sourcedir}/src/qcmodules/* %{buildroot}/nidb/qcmodules/
 cp -f %{_sourcedir}/src/setup/* %{buildroot}/nidb/setup/
 cp -f %{_builddir}/bin/smtp/libSMTPEmail.so.1 %{buildroot}/usr/lib/ # copy SMTP libs
 cp -f %{_builddir}/bin/bit7z/libbit7z64.a %{buildroot}/usr/lib/ # copy bit7z lib
@@ -53,16 +53,16 @@ cp -f %{_builddir}/bin/gdcm/bin/libgdcmjpeg12.so.3.0 %{buildroot}/usr/lib/ # cop
 cp -f %{_builddir}/bin/gdcm/bin/libgdcmjpeg16.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
 cp -f %{_builddir}/bin/gdcm/bin/libgdcmMEXD.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
 cp -f %{_builddir}/bin/gdcm/bin/libsocketxx.so.1.2 %{buildroot}/usr/lib/ # copy GDCM libs
-cp -f ~/Qt/6.6.3/gcc_64/lib/libQt6Core.so.6 %{buildroot}/usr/lib/ # copy Qt libs
-cp -f ~/Qt/6.6.3/gcc_64/lib/libQt6Network.so.6 %{buildroot}/usr/lib/ # copy Qt libs
-cp -f ~/Qt/6.6.3/gcc_64/lib/libQt6Sql.so.6 %{buildroot}/usr/lib/ # copy Qt libs
-cp -f ~/Qt/6.6.3/gcc_64/lib/libicudata.so.56 %{buildroot}/usr/lib/ # copy Qt libs
-cp -f ~/Qt/6.6.3/gcc_64/lib/libicui18n.so.56 %{buildroot}/usr/lib/ # copy Qt libs
-cp -f ~/Qt/6.6.3/gcc_64/lib/libicuuc.so.56 %{buildroot}/usr/lib/ # copy Qt libs
-cp -f ~/Qt/6.6.3/gcc_64/plugins/sqldrivers/libqsqlmysql.so %{buildroot}/usr/lib/sqldrivers/ # copy Qt MySQL lib
-cp -f ~/Qt/6.6.3/gcc_64/plugins/sqldrivers/libqsqlmysql.so %{buildroot}/nidb/bin/sqldrivers/ # copy Qt MySQL lib to here also... sometimes the binary only checks this location for the lib
-cp -f ~/Qt/6.6.3/gcc_64/plugins/sqldrivers/libqsqlite.so %{buildroot}/usr/lib/sqldrivers/ # copy Qt MySQL lib
-cp -f ~/Qt/6.6.3/gcc_64/plugins/sqldrivers/libqsqlite.so %{buildroot}/nidb/bin/sqldrivers/ # copy Qt MySQL lib to here also... sometimes the binary only checks this location for the lib
+cp -f ~/Qt/6.9.1/gcc_64/lib/libQt6Core.so.6 %{buildroot}/usr/lib/ # copy Qt libs
+cp -f ~/Qt/6.9.1/gcc_64/lib/libQt6Network.so.6 %{buildroot}/usr/lib/ # copy Qt libs
+cp -f ~/Qt/6.9.1/gcc_64/lib/libQt6Sql.so.6 %{buildroot}/usr/lib/ # copy Qt libs
+cp -f ~/Qt/6.9.1/gcc_64/lib/libicudata.so.73 %{buildroot}/usr/lib/ # copy Qt libs
+cp -f ~/Qt/6.9.1/gcc_64/lib/libicui18n.so.73 %{buildroot}/usr/lib/ # copy Qt libs
+cp -f ~/Qt/6.9.1/gcc_64/lib/libicuuc.so.73 %{buildroot}/usr/lib/ # copy Qt libs
+cp -f ~/Qt/6.9.1/gcc_64/plugins/sqldrivers/libqsqlmysql.so %{buildroot}/usr/lib/sqldrivers/ # copy Qt MySQL lib
+cp -f ~/Qt/6.9.1/gcc_64/plugins/sqldrivers/libqsqlmysql.so %{buildroot}/nidb/bin/sqldrivers/ # copy Qt MySQL lib to here also... sometimes the binary only checks this location for the lib
+cp -f ~/Qt/6.9.1/gcc_64/plugins/sqldrivers/libqsqlite.so %{buildroot}/usr/lib/sqldrivers/ # copy Qt MySQL lib
+cp -f ~/Qt/6.9.1/gcc_64/plugins/sqldrivers/libqsqlite.so %{buildroot}/nidb/bin/sqldrivers/ # copy Qt MySQL lib to here also... sometimes the binary only checks this location for the lib
 
 # This section LISTS the files that are available once everything is installed, but this is NOT the specification for what files will be installed...
 %files

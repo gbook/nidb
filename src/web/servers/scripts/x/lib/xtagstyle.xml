@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xTagStyle'>
+
+<sources>
+  <src><file>xtagstyle.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Style</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[Set any style property for any number of tags.]]></description>
+
+<syntax>xTagStyle(sProp, sVal, t1, t2, t3, etc)</syntax>
+
+<parameters>
+  <par>
+    <name>sProp</name><note><![CDATA[string - any valid style object property identifier. For example, "zIndex" and not "z-index".]]></note>
+  </par>
+  <par>
+    <name>sVal</name><note><![CDATA[string - a value to assign to sProp.]]></note>
+  </par>
+  <par>
+    <name>t</name><note><![CDATA[Tag. For example, "td".]]></note>
+  </par>
+</parameters>
+
+<return>none</return>
+
+<dependencies>
+  <dep>xGetElementsByTagName</dep>
+</dependencies>
+
+<demos>
+  <demo>
+    <url>http://cross-browser.com/toys/</url><note><![CDATA[Index of all X demos.]]></note>
+  </demo>
+</demos>
+
+<comments>
+  <comment><date>20Jul09</date><author>mf</author><note><![CDATA[See http://cross-browser.com/forums/viewtopic.php?id=597]]></note></comment>
+</comments>
+
+<revisions>
+  <rev>
+    <num>1</num><date>20Jul09</date><author>mf</author><note><![CDATA[Initial release.]]></note>
+  </rev>
+</revisions>
+
+</x_symbol>

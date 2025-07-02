@@ -106,10 +106,10 @@
 			$description = $row['project_description'];
 			?>
 			<tr>
-				<td><a href="calendar_projects.php?action=editform&id=<? =$id?>" class="ui button"><? =$name?></a></td>
-				<td><? =$description?></td>
-				<td><? =$admin?></td>
-				<td align="center"><a href="calendar_projects.php?action=delete&id=<? =$id?>" style="color: red; text-decoration: underline"><i class="trash icon"></i></a></td>
+				<td><a href="calendar_projects.php?action=editform&id=<?=$id?>" class="ui button"><?=$name?></a></td>
+				<td><?=$description?></td>
+				<td><?=$admin?></td>
+				<td align="center"><a href="calendar_projects.php?action=delete&id=<?=$id?>" style="color: red; text-decoration: underline"><i class="trash icon"></i></a></td>
 			</tr>
 			<?
 		}
@@ -188,19 +188,19 @@
 				<td colspan="3" style="color: darkblue; font-size: 14pt; text-align:center; font-weight: bold">Add Project</td>
 			</tr>
 			<tr>
-				<td colspan="2" align="center" style="color:red"><? =$message?></td>
+				<td colspan="2" align="center" style="color:red"><?=$message?></td>
 			</tr>
 			<tr>
 				<td class="label">Project Name<br><span class="tiny">short name</span></td>
-				<td class="rightvalue"><input type="text" name="name" class="required" value="<? =$name?>"></td>
+				<td class="rightvalue"><input type="text" name="name" class="required" value="<?=$name?>"></td>
 			</tr>
 			<tr>
 				<td class="label">Description</td>
-				<td class="rightvalue"><input type="text" name="description" class="required" size="50" value="<? =$description?>"></td>
+				<td class="rightvalue"><input type="text" name="description" class="required" size="50" value="<?=$description?>"></td>
 			</tr>
 			<tr>
 				<td class="label">Admin Username</td>
-				<td class="rightvalue"><input type="text" name="admin" class="required" value="<? =$admin?>"></td>
+				<td class="rightvalue"><input type="text" name="admin" class="required" value="<?=$admin?>"></td>
 			</tr>
 		</table>
 		<p><input type="submit" value="Add" name="submit"></p>
@@ -225,26 +225,26 @@
 		
 		<form action="calendar_projects.php" method="post" id="form1">
 		<input type="hidden" name="action" value="edit">
-		<input type="hidden" name="id" value="<? =$id?>">
+		<input type="hidden" name="id" value="<?=$id?>">
 		
 		<table cellspacing="0" cellpadding="5" class="editor">
 			<tr>
 				<td colspan="3" style="color: darkblue; font-size: 14pt; text-align:center; font-weight: bold">Edit Project</td>
 			</tr>
 			<tr>
-				<td colspan="2" align="center" style="color:red"><? =$message?></td>
+				<td colspan="2" align="center" style="color:red"><?=$message?></td>
 			</tr>
 			<tr>
 				<td class="label">Project Name<br><span class="tiny">short name</span></td>
-				<td class="rightvalue"><input type="text" name="name" class="required" value="<? =$name?>"></td>
+				<td class="rightvalue"><input type="text" name="name" class="required" value="<?=$name?>"></td>
 			</tr>
 			<tr>
 				<td class="label">Description</td>
-				<td class="rightvalue"><input type="text" name="description" class="required" size="50" value="<? =$description?>"></td>
+				<td class="rightvalue"><input type="text" name="description" class="required" size="50" value="<?=$description?>"></td>
 			</tr>
 			<tr>
 				<td class="label">Admin Username</td>
-				<td class="rightvalue"><input type="text" name="admin" class="required" value="<? =$admin?>"></td>
+				<td class="rightvalue"><input type="text" name="admin" class="required" value="<?=$admin?>"></td>
 			</tr>
 		</table>
 		<p><input type="submit" value="Save" name="submit"></p>

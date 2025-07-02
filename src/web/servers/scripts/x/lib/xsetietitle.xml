@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xSetIETitle'>
+
+<sources>
+  <src><file>xsetietitle.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Debug</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[Debugging utility for running multiple versions of IE. Prepend browser version to document title.]]></description>
+
+<syntax>xSetIETitle()</syntax>
+
+<demos>
+  <demo>
+    <url>http://cross-browser.com/toys/</url>
+    <note><![CDATA[Index of all X demos.]]></note>
+  </demo>
+</demos>
+
+<revisions>
+  <rev>
+    <num>3</num>
+    <date>11Mar05</date>
+    <author>mf</author>
+    <note><![CDATA[Made a function out of this]]></note>
+  </rev>
+  <rev>
+    <num>2</num>
+    <date>17May04</date>
+    <author>mf</author>
+    <note><![CDATA[Rewrote IE title code]]></note>
+  </rev>
+</revisions>
+
+</x_symbol>

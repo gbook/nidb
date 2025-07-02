@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xTriStateImage'>
+
+<sources>
+  <src><file>xtristateimage.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Image</grp>
+</groups>
+<type>Object</type>
+
+<description><![CDATA[Image rollover with a third state - mousedown.]]></description>
+
+<syntax>new xTriStateImage(idOut, urlOver, urlDown, fnUp)</syntax>
+
+<parameters>
+  <par>
+    <name>idOut</name>
+    <note><![CDATA[]]></note>
+  </par>
+  <par>
+    <name>urlOver</name>
+    <note><![CDATA[]]></note>
+  </par>
+  <par>
+    <name>urlDown</name>
+    <note><![CDATA[]]></note>
+  </par>
+  <par>
+    <name>fnUp</name>
+    <note><![CDATA[]]></note>
+  </par>
+</parameters>
+
+<demos>
+  <demo>
+    <url>http://cross-browser.com/x/examples/xtristateimage.php</url>
+    <note><![CDATA[3 state image rollovers]]></note>
+  </demo>
+</demos>
+
+<revisions>
+  <rev>
+    <num>4</num>
+    <date>19Oct06</date>
+    <author>mf</author>
+    <note><![CDATA[Removed xIE4Up sniffer]]></note>
+  </rev>
+  <rev>
+    <num>3</num>
+    <date>11May05</date>
+    <author>mf</author>
+    <note><![CDATA[Add xIE4Up conditional to unload method (still unsure about this)]]></note>
+  </rev>
+  <rev>
+    <num>2</num>
+    <date>6Apr05</date>
+    <author>mf</author>
+    <note><![CDATA[Added missing semicolons to support XC compression]]></note>
+  </rev>
+  <rev>
+    <num>1</num>
+    <date>11Mar05</date>
+    <author>mf</author>
+    <note><![CDATA[put in it's own file for use with XC]]></note>
+  </rev>
+</revisions>
+
+</x_symbol>

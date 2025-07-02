@@ -208,7 +208,7 @@
 		
 		?>
 		<div class="ui message">
-			<h2 class="ui header">Copying settings from <div class="ui big blue label"><? =$sourceprojectname?></div> to <div class="ui big blue label"><? =$destprojectname?></div></h2>
+			<h2 class="ui header">Copying settings from <div class="ui big blue label"><?=$sourceprojectname?></div> to <div class="ui big blue label"><?=$destprojectname?></div></h2>
 			
 			<ul>
 				<li>
@@ -225,7 +225,7 @@
 							DuplicateSQLRow('project_checklist', 'projectchecklist_id', $rowid, $newvals);
 						}
 						?>
-						<div class="sub header">copied <? =$numrows?> rows</div>
+						<div class="sub header">copied <?=$numrows?> rows</div>
 					</h3>
 				<li>
 					<h3 class="ui header">BIDS mapping
@@ -241,7 +241,7 @@
 							DuplicateSQLRow('bids_mapping', 'protocolmapping_id', $rowid, $newvals);
 						}
 						?>
-						<div class="sub header">copied <? =$numrows?> rows</div>
+						<div class="sub header">copied <?=$numrows?> rows</div>
 					</h3>
 				<li>
 					<h3 class="ui header">Study templates
@@ -267,7 +267,7 @@
 							}
 						}
 						?>
-						<div class="sub header">copied <? =$numrows?> rows</div>
+						<div class="sub header">copied <?=$numrows?> rows</div>
 					</h3>
 			</ul>
 		</div>
@@ -318,24 +318,24 @@
 	?>
 		<div class="ui text container">
 			<div class="ui attached visible message">
-				<div class="header"><? =$formtitle?></div>
+				<div class="header"><?=$formtitle?></div>
 			</div>
 			<form method="post" action="adminprojects.php" class="ui form attached fluid segment">
-			<input type="hidden" name="action" value="<? =$formaction?>">
-			<input type="hidden" name="id" value="<? =$id?>">
+			<input type="hidden" name="action" value="<?=$formaction?>">
+			<input type="hidden" name="id" value="<?=$id?>">
 
 			<div class="two fields">
 				<div class="field">
 					<label>Name</label>
 					<div class="field">
-						<input type="text" name="projectname" value="<? =$name?>" maxlength="255" required>
+						<input type="text" name="projectname" value="<?=$name?>" maxlength="255" required>
 					</div>
 				</div>
 				
 				<div class="field">
 					<label>Project number</label>
 					<div class="field">
-						<input type="text" name="costcenter" value="<? =$costcenter?>" maxlength="255" required placeholder="6 digit cost center">
+						<input type="text" name="costcenter" value="<?=$costcenter?>" maxlength="255" required placeholder="6 digit cost center">
 					</div>
 				</div>
 			</div>
@@ -360,7 +360,7 @@
 							$instance_uid = $row['instance_uid'];
 							$instance_name = $row['instance_name'];
 							if ($instanceid == $instance_id) { $selected = "selected"; } else { $selected = ''; }
-							?><option value="<? =$instance_id?>" <? =$selected?>><? =$instance_name?></option><?
+							?><option value="<?=$instance_id?>" <?=$selected?>><?=$instance_name?></option><?
 						}
 					?>
 					</select>
@@ -381,7 +381,7 @@
 								$fullname = $row['user_fullname'];
 								if ($userid == $pi) { $selected = "selected"; } else { $selected = ""; }
 								?>
-								<option value="<? =$userid?>" <? =$selected?>><? =$fullname?> (<? =$username?>)</option>
+								<option value="<?=$userid?>" <?=$selected?>><?=$fullname?> (<?=$username?>)</option>
 								<?
 							}
 						?>
@@ -402,7 +402,7 @@
 								$fullname = $row['user_fullname'];
 								if ($userid == $admin) { $selected = "selected"; } else { $selected = ""; }
 								?>
-								<option value="<? =$userid?>" <? =$selected?>><? =$fullname?> (<? =$username?>)</option>
+								<option value="<?=$userid?>" <?=$selected?>><?=$fullname?> (<?=$username?>)</option>
 								<?
 							
 							}
@@ -413,13 +413,13 @@
 			<div class="field">
 				<label>Start Date</label>
 				<div class="field">
-					<input type="text" name="startdate" value="<? =$startdate?>">
+					<input type="text" name="startdate" value="<?=$startdate?>">
 				</div>
 			</div>
 			<div class="field">
 				<label>End Date</label>
 				<div class="field">
-					<input type="text" name="enddate" value="<? =$enddate?>">
+					<input type="text" name="enddate" value="<?=$enddate?>">
 				</div>
 			</div>
 			<div class="ui two column grid">
@@ -428,14 +428,14 @@
 				</div>
 				<div class="right aligned column">
 					<button class="ui button" onClick="window.location.href='adminprojects.php'; return false;">Cancel</button>
-					<input type="submit" class="ui primary button" value="<? =$submitbuttonlabel?>">
+					<input type="submit" class="ui primary button" value="<?=$submitbuttonlabel?>">
 				</div>
 			</div>
 			</form>
 			<div class="ui bottom attached grey segment">
 				<form method="post" action="adminprojects.php" class="ui form">
 					<input type="hidden" name="action" value="copysettings">
-					<input type="hidden" name="projectid" value="<? =$id?>">
+					<input type="hidden" name="projectid" value="<?=$id?>">
 					Copy settings from existing project <i class="question circle icon" title="Copy the following settings from an existing project<br><ul><li>Templates<li>Data dictionary<li>BIDS mapping<li>Checklists<li>Mini-pipelines<li>Redcap Settings</ul>"></i><br>
 					<select name="copyfromprojectid" class="ui compact selection dropdown">
 						<option value="">Select project...</option>
@@ -448,7 +448,7 @@
 							$project_name = $rowB['project_name'];
 							$project_costcenter = $rowB['project_costcenter'];
 							?>
-							<option value="<? =$project_id?>"><? =$project_name?> (<? =$project_costcenter?>)</option>
+							<option value="<?=$project_id?>"><?=$project_name?> (<?=$project_costcenter?>)</option>
 							<?
 						}
 					?>
@@ -525,10 +525,10 @@
 						}
 
 						?>
-						<tr style="color: darkblue; font-size:11pt; /*background-color: <? =$bgcolor?>*/">
-							<td class="datausers"><input type="checkbox" name="datausers[]" value="<? =$user_id?>" <?if ($view_data) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?>></td>
-							<td class="phiusers"><input type="checkbox" name="phiusers[]" value="<? =$user_id?>" <?if ($view_phi) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?>></td>
-							<td><tt><? =$username?></tt> - <? =$user_fullname?></td>
+						<tr style="color: darkblue; font-size:11pt; /*background-color: <?=$bgcolor?>*/">
+							<td class="datausers"><input type="checkbox" name="datausers[]" value="<?=$user_id?>" <?if ($view_data) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?>></td>
+							<td class="phiusers"><input type="checkbox" name="phiusers[]" value="<?=$user_id?>" <?if ($view_phi) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?>></td>
+							<td><tt><?=$username?></tt> - <?=$user_fullname?></td>
 						</tr>
 						<?
 						if ($bgcolor == "#EEFFEE") { $bgcolor = "#FFFFFF"; }
@@ -548,7 +548,7 @@
 			<div class="ui container">
 				<div class="ui segment">
 					Required protocols<br><br>
-					<iframe src="adminprojectprotocols.php?projectid=<? =$id?>" width="100%" height="400px" frameborder="0"></iframe>
+					<iframe src="adminprojectprotocols.php?projectid=<?=$id?>" width="100%" height="400px" frameborder="0"></iframe>
 					<?
 						$sqlstring = "select * from project_protocol where project_id = $id";
 						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -613,16 +613,16 @@
 					
 					if (strtotime($enddate) < strtotime("now")) { $style="color: #666666"; } else { $style = ""; }
 			?>
-			<tr style="<? =$style?>">
-				<td><a href="adminprojects.php?action=editform&id=<? =$id?>"><? =$name?></td>
-				<? if ($GLOBALS['issiteadmin']) { ?><td class="tiny"><? =$instancename?></td><? } ?>
-				<td><? =$projectuid?></td>
-				<td><? =$costcenter?></td>
-				<td><? =$adminfullname?></td>
-				<td><? =$pifullname?></td>
-				<td><? =$startdate?></td>
-				<td><? =$enddate?></td>
-				<td><? =$status?></td>
+			<tr style="<?=$style?>">
+				<td><a href="adminprojects.php?action=editform&id=<?=$id?>"><?=$name?></td>
+				<? if ($GLOBALS['issiteadmin']) { ?><td class="tiny"><?=$instancename?></td><? } ?>
+				<td><?=$projectuid?></td>
+				<td><?=$costcenter?></td>
+				<td><?=$adminfullname?></td>
+				<td><?=$pifullname?></td>
+				<td><?=$startdate?></td>
+				<td><?=$enddate?></td>
+				<td><?=$status?></td>
 			</tr>
 			<? 
 				}

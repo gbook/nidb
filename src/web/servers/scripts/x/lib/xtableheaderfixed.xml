@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xTableHeaderFixed'>
+
+<sources>
+  <src><sym>xTableHeaderFixed</sym><file>xtableheaderfixed.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Table</grp>
+</groups>
+
+<type>Object</type>
+
+<description><![CDATA[xTableHeaderFixed is an unobtrusive table enhancement. It makes a copy of a table's THEAD section. While the table is visible in its container the THEAD copy will be fixed to the top of the container, so you can scroll up and down in a long table and the header will always be visible. The container can be a window or a scrollable element. The position and size of the THEAD copy will be adjusted when the window is resized. The THEAD copy is clipped to its container's inner width. You only need to instantiate one xTableHeaderFixed object for each group of tables that have the same styling - and so those tables should have a common className, which you pass to the constructor. You must assign all of the table's styles relative to this className so that the THEAD copy will be styled just like it. It takes the widths of all THs (not TDs) in the THEAD and assigns them to the corresponding THs in the THEAD copy. When instantiating, you do not have to keep a reference to the object - it keeps a reference to itself, but if you plan on calling the 'init' or 'paint' methods later then you'll need to keep a reference to the object.]]></description>
+
+<syntax>new xTableHeaderFixed([tableClass, container[, yOffset]])</syntax>
+
+<parameters>
+  <par><name>tableClass</name><note><![CDATA[The enhancement will be applied to all tables having this className.]]></note></par>
+  <par><name>container</name><note><![CDATA[A window object, or a scrollable element's ID string or object reference.]]></note></par>
+<par><name>yOffset</name><note><![CDATA[If isWin then set this to be a Y offset for the header table, or omit. If yOffset === 0 the thead copy will be positioned directly on top of the thead original. If !isWin and yOffset===0 the thead copy will never be hidden.]]></note></par>
+</parameters>
+
+<methods>
+  <meth><name>init(tableClass, container, yOffset)</name><note><![CDATA[If you did not pass arguments on instantiation then use this method to initialize the object - or you can call this method to re-initialize the object, with different arguments, any number of times.]]></note></meth>
+  <meth><name>paint()</name><note><![CDATA[Redraw the object by simulating a "resize" event.]]></note></meth>
+<meth><name>clean()</name><note><![CDATA[This method calls the private "_dtor" method, which causes the object to clean itself up: remove its event listeners, delete its thead copies, etc., but it does not delete its own xTableHeaderFixed instance object.]]></note></meth>
+</methods>
+
+<dependencies>
+  <dep>xGetElementById</dep>
+  <dep>xPageX</dep>
+  <dep>xPageY</dep>
+  <dep>xScrollLeft</dep>
+  <dep>xScrollTop</dep>
+  <dep>xGetComputedStyle</dep>
+  <dep>xGetElementsByTagName</dep>
+  <dep>xGetElementsByClassName</dep>
+  <dep>xAddEventListener</dep>
+  <dep>xRemoveEventListener</dep>
+</dependencies>
+
+<demos>
+  <demo><url>http://cross-browser.com/x/examples/xthf1.php</url><note><![CDATA[This is the first of several xTableHeaderFixed demos.]]></note></demo>
+</demos>
+
+<comments>
+<comment><date>08Nov10</date><author>mf</author><note><![CDATA[Tips: 1. So far, the best results across browsers are with using the "separate borders with no cellspacing" technique as opposed to the "collapsed borders" technique. 2. When the header is wide, it is clipped properly but it may cause a horizontal scrollbar on the window. A work-around is to use "body{overflow-x:hidden;}", altho it's not supported in IE7. 3. Using captions is supported but sometimes problematic.]]></note></comment>
+<comment><date>08Jul10</date><author>mf</author><note><![CDATA[This object is in good shape altho not perfect. It has been one of the tougher cross-browser nuts to crack. If you plan to implement this then be sure to browse the many forum threads on this object.]]></note></comment>
+</comments>
+
+<revisions>
+  <rev><num>12</num><date>05May11</date><author>mf</author><note><![CDATA[Added the "clean" method.]]></note></rev>
+<rev><num>11</num><date>07Nov10</date><author>mf</author><note><![CDATA[
+Remove isWin argument.
+Clip the header to the table's container.
+If yOfs===0 do not hide the header.
+Use column-width code ideas from theseeker. Remove use of xWidth.
+Use code ideas from chris.fewtrell. No longer need CSS classes xthf-fix-tbl and xthf-abs-tbl, implemented in JS. The "hide" position changed from -2000 to -10000.
+]]></note></rev>
+  <rev><num>10</num><date>09Jul10</date><author>mf</author><note><![CDATA[When yofs === 0 the thead copy is positioned directly on top of the thead original.]]></note></rev>
+  <rev><num>9</num><date>08Jul10</date><author>mf</author><note><![CDATA[Added public method 'paint'. Added constructor argument 'yofs' (a Y offset when isWin). Removed use of xLeft and xTop and write to style property directly.]]></note></rev>
+  <rev><num>8</num><date>27Jan10</date><author>mf</author><note><![CDATA[Improved support for "border-collapse:collapse", and other improvements.]]></note></rev>
+  <rev><num>7</num><date>17Dec09</date><author>mf</author><note><![CDATA[It has been adapted to work with Ajax apps.]]></note></rev>
+  <rev><num>6</num><date>12Nov09</date><author>mf</author><note><![CDATA[Rev 6 is in the works.]]></note></rev>
+  <rev><num>5</num><date>08Nov09</date><author>mf</author><note><![CDATA[I ended up with three different variations of this object, so now I've combined them into one. The original "catfish" version is still available: "http://cross-browser.com/x/examples/xthf0.html".]]></note></rev>
+  <rev><num>-</num><date>25Sep09</date><author>mf</author><note><![CDATA[See xTableHeaderFixed2 which implements this in a scrollable container.]]></note></rev>
+  <rev><num>4</num><date>27Jul09</date><author>mf</author><note><![CDATA[No longer adding tableBorder and thBorder (I don't know why I thought that was needed in the first place). These parameters are now not needed, but I'll leave them for now, to be backwards-compatible.]]></note></rev>
+  <rev><num>3</num><date>03Apr09</date><author>mf</author><note><![CDATA[Let each table have different styling. Found a bug while doing this: the generated id of fixed table was not unique with multiple xTableHeaderFixed objects on a page.]]></note></rev>
+  <rev><num>2</num><date>21May07</date><author>mf</author><note><![CDATA[The loop adding tables to the 'tables' array was starting on the wrong index. Thanks very much to Thiago for finding this bug and submitting a fix.]]></note></rev>
+  <rev><num>-</num><date>15Feb07</date><author>mf</author><note><![CDATA[added a "@media print" rule so the fixed container will not print. Thanks to bunsen!]]></note></rev>
+  <rev><num>1</num><date>30Jan07</date><author>mf</author><note><![CDATA[Initial inclusion in X.]]></note></rev>
+</revisions>
+
+</x_symbol>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xClientWidth'>
+
+<sources>
+  <src><file>xclientwidth.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Size</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[The inner width of the window not including any scrollbar - that is, the "viewport".]]></description>
+
+<syntax>xClientWidth()</syntax>
+
+<return>Integer</return>
+
+<dependencies>
+  <dep>xDef</dep>
+</dependencies>
+
+<demos>
+  <demo><url>http://cross-browser.com/toys/</url><note><![CDATA[Index of all X demos.]]></note></demo>
+</demos>
+
+<revisions>
+  <rev><num>5</num><date>31May07</date><author>mf</author><note><![CDATA[This change was just to match the same change in xClientHeight. See the docs for xClientHeight.]]></note></rev>
+  <rev><num>4</num><date>3Oct06</date><author>mf</author><note><![CDATA[Fawn pointed out that my last change, w=window, introduced 2 vars named 'w'. Thanks very much, Fawn!]]></note></rev>
+  <rev><num>4</num><date>3Oct06</date><author>mf</author><note><![CDATA[Removed sniffer xOp6Dn as well as Op6 logic. Used "var d=document,w=window" and reduced size by 105 bytes.]]></note></rev>
+  <rev><num>3</num><date>25Apr05</date><author>mf</author><note><![CDATA[use xOp6Dn instead of xOp5or6.]]></note></rev>
+  <rev><num>2</num><date>27Jan05</date><author>mf</author><note><![CDATA[Moz update for xClientWidth/xClientHeight, check for 'CSS1Compat' (experimental?).]]></note></rev>
+  <rev><num>1</num><date>31Mar04</date><author>mf</author><note><![CDATA[put in it's own file for use with XC]]></note></rev>
+</revisions>
+
+</x_symbol>

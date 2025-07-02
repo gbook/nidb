@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xHasPoint'>
+
+<sources>
+  <src><file>xhaspoint.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<name>xHasPoint</name>
+
+<groups>
+  <grp>Position</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[Determines if an element contains an absolute point. The element's boundary is extended (negative clip), or contracted (positive clip) by the clipping parameters.]]></description>
+
+<syntax>xHasPoint(ele, iLeft, iTop[, iClpT[, iClpR[, iClpB[, iClpL]]]])</syntax>
+
+<parameters>
+  <par>
+    <name>ele</name>
+    <note><![CDATA[An ID string or object reference.]]></note>
+  </par>
+  <par>
+    <name>iLeft,iTop</name>
+    <note><![CDATA[An absolute point.]]></note>
+  </par>
+  <par>
+    <name>iClpT</name>
+    <note><![CDATA[Clip top. If not of type 'number' (if only 3 arguments) then t=r=b=l=0;]]></note>
+  </par>
+  <par>
+    <name>iClpR</name>
+    <note><![CDATA[Clip right. If not of type 'number' (if only 4 arguments) then r=b=l=t;]]></note>
+  </par>
+  <par>
+    <name>iClpB</name>
+    <note><![CDATA[Clip bottom. If not of type 'number' (if only 5 arguments) then l=r; b=t;]]></note>
+  </par>
+  <par>
+    <name>iClpL</name>
+    <note><![CDATA[Clip left.]]></note>
+  </par>
+</parameters>
+
+<return>True if iLeft,iTop is contained within the clipped area of ele.</return>
+
+<dependencies>
+  <dep>xNum</dep>
+  <dep>xPageX</dep>
+  <dep>xPageY</dep>
+  <dep>xWidth</dep>
+  <dep>xHeight</dep>
+</dependencies>
+
+<demos>
+  <demo>
+    <url>http://cross-browser.com/toys/</url>
+    <note><![CDATA[Index of all X demos.]]></note>
+  </demo>
+</demos>
+
+<revisions>
+  <rev>
+    <num>2</num>
+    <date>16Mar05</date>
+    <author>mf</author>
+    <note><![CDATA[Reduced 146 bytes!]]></note>
+  </rev>
+  <rev>
+    <num>1</num>
+    <date>31Mar04</date>
+    <author>mf</author>
+    <note><![CDATA[put in it's own file for use with XC]]></note>
+  </rev>
+</revisions>
+
+</x_symbol>

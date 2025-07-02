@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xIntersection'>
+
+<sources>
+  <src><file>xintersection.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Position</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[Determine if two elements intersect and if so determine the intersecting rectangle.]]></description>
+
+<syntax>xIntersection(ele1, ele2[, obj])</syntax>
+
+<parameters>
+  <par>
+    <name>ele1</name><note><![CDATA[Element object or id string.]]></note>
+  </par>
+  <par>
+    <name>ele2</name><note><![CDATA[Element object or id string.]]></note>
+  </par>
+  <par>
+    <name>obj</name><note><![CDATA[Optional. If provided, obj will have the following properties assigned: x, y, w and h. They describe the intersected rectangle.]]></note>
+  </par>
+</parameters>
+
+<return>Returns true if the two elements intersect and assigns properties to obj which describe the intersected rectangle: x, y, w, and h.</return>
+
+<dependencies>
+  <dep>xPageX</dep>
+  <dep>xWidth</dep>
+  <dep>xPageY</dep>
+  <dep>xHeight</dep>
+</dependencies>
+
+<demos>
+  <demo>
+    <url>http://cross-browser.com/toys/</url>
+    <note><![CDATA[Index of all X demos.]]></note>
+  </demo>
+</demos>
+
+<revisions>
+  <rev>
+    <num>2</num>
+    <date>21Apr04</date>
+    <author>mf</author>
+    <note><![CDATA[finished porting to X ;-) thanks Nick]]></note>
+  </rev>
+  <rev>
+    <num>1</num>
+    <date>31Mar04</date>
+    <author>mf</author>
+    <note><![CDATA[put in it's own file for use with XC]]></note>
+  </rev>
+</revisions>
+
+</x_symbol>

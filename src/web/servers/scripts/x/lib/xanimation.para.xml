@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xAnimation.para'>
+
+<sources>
+  <src><file>xanimation.para.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Animation</grp>
+</groups>
+
+<type>Method</type>
+
+<description><![CDATA[Animate an element's position over parametric equations. This is an xAnimation method.]]></description>
+
+<syntax>xa.para(e, xe, ye, inc, t[, oe]);</syntax>
+
+<parameters>
+  <par><name>xa</name><note><![CDATA[An xAnimation object.]]></note></par>
+  <par><name>e</name><note><![CDATA[An Element object reference or an id string.]]></note></par>
+  <par><name>xe, ye</name><note><![CDATA[X and Y expression strings.]]></note></par>
+  <par><name>inc</name><note><![CDATA[Parameter increment (real).]]></note></par>
+  <par><name>t</name><note><![CDATA[The total time for the animation, in milliseconds. Specify 0 for no time limit.]]></note></par>
+  <par><name>oe</name><note><![CDATA[The onEnd handler. It can be a function reference or a string. It will be executed at the completion of the animation. The handler will receive the xAnimation object as an argument and the handler's "this" also points to the xAnimation object. If the handler returns or evaluates true then the animation will be repeated. This is optional.]]></note></par>
+</parameters>
+
+<dependencies>
+  <dep>xAnimation</dep>
+  <dep>xWidth</dep>
+  <dep>xHeight</dep>
+  <dep>xScrollLeft</dep>
+  <dep>xScrollTop</dep>
+</dependencies>
+
+<demos>
+  <demo><url>http://cross-browser.com/x/examples/xanimation.php</url><note><![CDATA[Start page of all xAnimation demos.]]></note></demo>
+</demos>
+
+<revisions>
+  <rev><num>4</num><date>23Nov10</date><author>mf</author><note><![CDATA[Adapted to xAnimation rev 5. This method needs testing.]]></note></rev>
+  <rev><num>3</num><date>5Jun07</date><author>mf</author><note><![CDATA[Removed use of xParent.]]></note></rev>
+  <rev><num>2</num><date>15Apr07</date><author>mf</author><note><![CDATA[xAnimation object re-implemented.]]></note></rev>
+  <rev><num>1</num><date>25Sep06</date><author>mf</author><note><![CDATA[Initial release.]]></note></rev>
+</revisions>
+
+</x_symbol>

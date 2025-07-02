@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xCalendar'>
+
+<sources><src><sym>xCalendar</sym><file>xcalendar.js</file><note><![CDATA[]]></note></src></sources>
+
+<groups><grp>UI</grp></groups>
+<type>Object</type>
+
+<description><![CDATA[xCalendar is a popup date-picker. It restricts selection to a range of Dates. Days outside the range are greyed-out. Only days in-range have a mouseover effect and can be selected. If you don't set a range it will default to the current year. When the user selects a date, a date string will be assigned to the input element you specify with the 'setInput' method. When the calendar is shown, it is positioned just to the right of this element. While displayed, the user can cancel the calendar by pressing ESCape or clicking anywhere outside the calendar. If you call xCalendar's 'show' method from a click listener then you should call xStopPropagation to prevent xCalendar from being canceled immediately.]]></description>
+
+<syntax>new xCalendar(idPrefix[, isSelected[, dateFormatCode]])</syntax>
+
+<parameters>
+  <par><name>idPrefix</name><note><![CDATA[Certain elements in the generated HTML have standard IDs to which idPrefix is prepended. Required.]]></note></par>
+  <par><name>isSelected</name><note><![CDATA[If true, the current date will be 'selected'. Optional. Default is false.]]></note></par>
+  <par><name>dateFormatCode</name><note><![CDATA[A numeric code indicating one of the following formats. Optional. default is 4.
+[code]
+1 = 2-29-2000
+2 = 2/29/2000
+3 = February 29, 2000 (default)
+4 = Feb 29, 2000
+5 = 29 Feb 2000
+[/code]]]></note></par>
+</parameters>
+
+<methods>
+  <meth><name>setInput(inputEle)</name><note><![CDATA[Set the input element which will receive the selected date. It can be an ID string or an element reference. If it is an input element the selected date will be assigned to its 'value' property, else the date will be assigned to the 'innerHTML' property of the element.]]></note></meth>
+  <meth><name>setFormat(dateFormatCode)</name><note><![CDATA[Set the date format code. See the description for the constructor parameter, above, for the supported format codes.]]></note></meth>
+  <meth><name>setRange(dateLow, dateHigh, retainSelected)</name><note><![CDATA[Set the low and high ends of the allowable range from which the user can select. Both dateLow and dateHigh should be Date objects. Pass true for retainSelected to keep the existing selected date. This method returns: 0=ok, 1=low > high, 2=retainSelected was true but selected date is outside new range so selected was set false.]]></note></meth>
+  <meth><name>show()</name><note><![CDATA[xCalendar will be positioned and made visible to the right of the input element. If a date has been selected, that month will be displayed, else the month from the low end of the range will be displayed.]]></note></meth>
+  <meth><name>select(date)</name><note><![CDATA[Make the date of the given Date object the 'selected' date.]]></note></meth>
+  <meth><name>toString()</name><note><![CDATA[Get the date string for the currently selected date.]]></note></meth>
+</methods>
+
+<dependencies>
+  <dep>xAddEventListener</dep>
+  <dep>xAddClass</dep>
+  <dep>xEvent</dep>
+  <dep>xGetElementById</dep>
+  <dep>xHasClass</dep>
+  <dep>xLeft</dep>
+  <dep>xPageX</dep>
+  <dep>xPageY</dep>
+  <dep>xParent</dep>
+  <dep>xRemoveClass</dep>
+  <dep>xRemoveEventListener</dep>
+  <dep>xStrRepeat</dep>
+  <dep>xTop</dep>
+  <dep>xWidth</dep>
+</dependencies>
+
+<demos>
+  <demo><url>http://cross-browser.com/x/examples/xcalendar.php</url><note><![CDATA[A simple demo for xCalendar.]]></note></demo>
+</demos>
+
+<comments>
+  <comment><date>17Aug2010</date><author>mf</author><note><![CDATA[
+ A big hat-tip goes out to Cyrillus for his original cssCalendar based on X!
+[code]
+ The following IDs and class names are used in the generated HTML, for use in CSS (see the demo for an example). In the following, 'X' is replaced with ID prefix.
+ IDs:
+  X-con = container div
+  X-tbl = calendar table
+  X-hr1 = first tr in thead
+  X-hr2 = second tr in thead
+  X-prv = previous button td
+  X-nxt = next button td
+  X-ttl = title (month and year)
+  X-bod = tbody
+ Class names:
+  X-day = day td
+  X-dir = day in range
+  X-dor = day out of range
+  X-ovr = mouseover in range day
+  X-sel = selected in range day
+  X-pir = previous button in range
+  X-por = previous button out of range
+  X-nir = next button in range
+  X-nor = next button out of range
+
+ HTML generated:
+  <div id='X-con'>
+  <table id='X-tbl'>
+  <thead>
+  <tr id='X-hr1'><th id='X-prv'>&lt;</th><th id='X-ttl' colspan='5'></th><th id='X-nxt'>&gt;</th></tr>
+  <tr id='X-hr2'><th>Su</th><th>Mo</th><th>Tu</th><th>We</th><th>Th</th><th>Fr</th><th>Sa</th></tr>
+  </thead>
+  <tbody id='X-bod'>
+  <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  </tbody>
+  </table>
+  </div>
+[/code]
+]]></note></comment>
+</comments>
+
+<revisions>
+  <rev><num>4</num><date>6Oct2010</date><author>mf</author><note><![CDATA[Added select and toString methods.]]></note></rev>
+  <rev><num>3</num><date></date><author>mf</author><note><![CDATA[Oops. I forgot to document this rev.]]></note></rev>
+  <rev><num>2</num><date>18Aug2010</date><author>mf</author><note><![CDATA[Improvements and new features.]]></note></rev>
+  <rev><num>1</num><date>17Aug2010</date><author>mf</author><note><![CDATA[Initial release.]]></note></rev>
+</revisions>
+
+</x_symbol>

@@ -161,8 +161,8 @@
 							<td class="body">
 								<span style="font-size:10pt;">
 								<b>Available Data:</b><br>
-								<? =$numsubjects;?> subjects<br>
-								<? =number_format($numstudies);?> studies<br>
+								<?=$numsubjects;?> subjects<br>
+								<?=number_format($numstudies);?> studies<br>
 								<br>
 								<table class="smalldisplaytable">
 									<tr>
@@ -174,17 +174,17 @@
 									foreach ($seriescounts as $modality => $count) {
 										?>
 										<tr>
-											<td><? =strtoupper($modality)?></td>
-											<td align="right"><? =$count?></td>
-											<td align="right"><? =$seriessize[$modality]?></td>
+											<td><?=strtoupper($modality)?></td>
+											<td align="right"><?=$count?></td>
+											<td align="right"><?=$seriessize[$modality]?></td>
 										</tr>
 										<?
 									}
 								?>
 									<tr style="color: #5882FA; font-weight: bold">
 										<td>Total</td>
-										<td align="right"><? =number_format($totalseries)?></td>
-										<td align="right"><? =HumanReadableFilesize($totalsize)?></td>
+										<td align="right"><?=number_format($totalseries)?></td>
+										<td align="right"><?=HumanReadableFilesize($totalsize)?></td>
 									</tr>
 								</table>
 								</span>
@@ -201,12 +201,12 @@
 						<tr>
 							<td class="body">
 								<span class="header">Uptime</span><br>
-								<? =$uptime;?>
+								<?=$uptime;?>
 								<br><bR>
 								<span class="header">Data Requests</span><br>
-								<b>CPU time:</b> <? =$totalrequestcpu?><br>
-								<b>Mean request time:</b> <? =$avgrequesttime?><br>
-								<b>Median request time:</b> <? =$medianrequesttime?><br>
+								<b>CPU time:</b> <?=$totalrequestcpu?><br>
+								<b>Mean request time:</b> <?=$avgrequesttime?><br>
+								<b>Median request time:</b> <?=$medianrequesttime?><br>
 							</td>
 						</tr>
 					</table>
@@ -222,23 +222,23 @@
 								<table class="reviewtable">
 									<tr>
 										<td class="label"># females</td>
-										<td class="value"><? =$numfemales?> (<? =number_format(($numfemales/$numtotalsubjects)*100,1)?>%)</td>
+										<td class="value"><?=$numfemales?> (<?=number_format(($numfemales/$numtotalsubjects)*100,1)?>%)</td>
 									</tr>
 									<tr>
 										<td class="label"># males</td>
-										<td class="value"><? =$nummales?> (<? =number_format(($nummales/$numtotalsubjects)*100,1)?>%)</td>
+										<td class="value"><?=$nummales?> (<?=number_format(($nummales/$numtotalsubjects)*100,1)?>%)</td>
 									</tr>
 									<tr>
 										<td class="label"># other</td>
-										<td class="value"><? =$numother?> (<? =number_format(($numother/$numtotalsubjects)*100,1)?>%)</td>
+										<td class="value"><?=$numother?> (<?=number_format(($numother/$numtotalsubjects)*100,1)?>%)</td>
 									</tr>
 									<tr>
 										<td class="label"># unknown</td>
-										<td class="value"><? =$numunknown?> (<? =number_format(($numunknown/$numtotalsubjects)*100,1)?>%)</td>
+										<td class="value"><?=$numunknown?> (<?=number_format(($numunknown/$numtotalsubjects)*100,1)?>%)</td>
 									</tr>
 									<tr>
 										<td class="label"># not specified</td>
-										<td class="value"><? =$numnotspec?> (<? =number_format(($numnotspec/$numtotalsubjects)*100,1)?>%)</td>
+										<td class="value"><?=$numnotspec?> (<?=number_format(($numnotspec/$numtotalsubjects)*100,1)?>%)</td>
 									</tr>
 								</table>
 							</td>
@@ -253,8 +253,8 @@
 						<tr>
 							<td class="body">
 								<span class="header">CPU time</span><br>
-								<b>Total series QA CPU time:</b> <? =$totalseriesqacpu?><br>
-								<b>Total study QA CPU time:</b> <? =$totalstudyqacpu?><br>
+								<b>Total series QA CPU time:</b> <?=$totalseriesqacpu?><br>
+								<b>Total study QA CPU time:</b> <?=$totalstudyqacpu?><br>
 							</td>
 						</tr>
 						<tr>
@@ -275,14 +275,14 @@
 												}
 												else {
 													if ($hour < 12) {
-														?><td align="center" style="border-right: solid 1px #CCCCCC;"><? =$hour?></td><?
+														?><td align="center" style="border-right: solid 1px #CCCCCC;"><?=$hour?></td><?
 													}
 													else {
 														$hr = $hour;
 														if ($hour != 12) {
 															$hr = $hr - 12;
 														}
-														?><td align="center" style="border-right: solid 1px #CCCCCC;"><? =$hr?></td><?
+														?><td align="center" style="border-right: solid 1px #CCCCCC;"><?=$hr?></td><?
 													}
 												}
 											}
@@ -349,7 +349,7 @@
 										?>
 										<tr>
 											<td>
-												<a href="reports.php?action=yearstudy&year=<? =$year?>&modality=MR"><b><? =$year?></b></a>
+												<a href="reports.php?action=yearstudy&year=<?=$year?>&modality=MR"><b><?=$year?></b></a>
 											</td>
 										<?
 										for ($month=1;$month<=12;$month++) {
@@ -401,7 +401,7 @@
 								$chartfilename = DrawScatterPlot(600,400,$x,$y,$c);
 							?>
 							<b>Age vs movement</b><br>
-							<img src="data:image/png;base64,<? =base64_encode(file_get_contents($chartfilename))?>">
+							<img src="data:image/png;base64,<?=base64_encode(file_get_contents($chartfilename))?>">
 							<?
 								/* image data should've been sent to the browser, so delete the temp image */
 								unlink($chartfilename);

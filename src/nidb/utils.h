@@ -83,6 +83,22 @@ struct UploadOptions {
     QString seriesMatchCriteria;
 };
 
+struct computeCluster {
+    QString name;
+    QString description;
+    QString type;
+    QString submitHostname;
+    QString submitHostUsername;
+    QString clusterUsername;
+    QString queue;
+    qint64 maxWallTime = -1;
+    qint64 memory = 1;
+    qint64 numCores = 1;
+};
+
+enum ExportFormat { Original, Dicom, DicomLite, DicomFull, Nifti4dgz, Nifti4d, Nifti3dgz, Nifti3d, NiftiMe, BIDS, Squirrel };
+static const char * ExportFormatStrings[] = { "Original", "Dicom", "DicomLite", "DicomFull", "Nifti4dgz", "Nifti4d", "Nifti3dgz", "Nifti3d", "NiftiMe", "BIDS", "Squirrel" };
+
 
 /* generic functions */
 QList<double> SplitStringArrayToDouble(QStringList a);

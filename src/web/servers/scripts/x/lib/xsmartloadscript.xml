@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xSmartLoadScript'>
+
+<sources>
+  <src><file>xsmartloadscript.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>DOM</grp>
+</groups>
+
+<type>Function</type>
+
+<description><![CDATA[Maintains an array of loaded urls to prevent the same Url being loaded twice.]]></description>
+
+<syntax>xSmartLoadScript(url)</syntax>
+
+<parameters>
+  <par><name>url</name><note><![CDATA[string]]></note></par>
+</parameters>
+
+<demos>
+  <demo><url>http://cross-browser.com/toys/</url><note><![CDATA[Index of all X demos.]]></note></demo>
+</demos>
+
+<comments>
+  <comment><date>10Oct06</date><author>mf</author><note><![CDATA[This function creates the global variable xLoadedList.]]></note></comment>
+  <comment><date>9Oct06</date><author>mf</author><note><![CDATA[Thanks, Brendan!]]></note></comment>
+</comments>
+
+<revisions>
+  <rev><num>2</num><date>2Jul07</date><author>mf</author><note><![CDATA[Now it just calls xSmartLoad.]]></note></rev>
+  <rev><num>1</num><date>14Nov05</date><author>mf</author><note><![CDATA[Initial release.]]></note></rev>
+</revisions>
+
+</x_symbol>

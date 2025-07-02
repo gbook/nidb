@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xTable'>
+
+<sources>
+  <src><sym>xTable</sym><file>xtable.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Table</grp>
+</groups>
+
+<type>Object</type>
+
+<description><![CDATA[This is an unobtrusive table enhancement. It freezes the table's first row (or THEAD) and first column while the rest of the table is scrollable. If the table has a CAPTION it is removed and inserted above the frozen header.]]></description>
+
+<syntax>new xTable(sTableId, sRoot, sCC, sFR, sFRI, sRCell, sFC, sFCI, sCCell, sTC, sCellT)</syntax>
+
+<parameters>
+  <par><name>sTableId</name><note><![CDATA[The original table's ID or Element object reference.]]></note></par>
+  <par><name>sRoot</name><note><![CDATA[Classname for the overall container.]]></note></par>
+  <par><name>sCC</name><note><![CDATA[Classname for the caption container.]]></note></par>
+  <par><name>sFR</name><note><![CDATA[Classname for the frozen-row container.]]></note></par>
+  <par><name>sFRI</name><note><![CDATA[Classname for the frozen-row inner container, for column headings.]]></note></par>
+  <par><name>sRCell</name><note><![CDATA[Classname for each fr cell (column heading) container.]]></note></par>
+  <par><name>sFC</name><note><![CDATA[Classname for the frozen-column container.]]></note></par>
+  <par><name>sFCI</name><note><![CDATA[Classname for the frozen-column inner container, for row headings.]]></note></par>
+  <par><name>sCCell</name><note><![CDATA[Classname for each fc cell (row heading) container.]]></note></par>
+  <par><name>sTC</name><note><![CDATA[Classname for table container.]]></note></par>
+  <par><name>sCellT</name><note><![CDATA[Classname for the table in each fr or fc cell.]]></note></par>
+</parameters>
+
+<dependencies>
+  <dep>xGetElementById</dep>
+  <dep>xWidth</dep>
+  <dep>xHeight</dep>
+  <dep>xAddEventListener</dep>
+  <dep>xLeft</dep>
+  <dep>xTop</dep>
+  <dep>xMoveTo</dep>
+  <dep>xResizeTo</dep>
+  <dep>xFirstChild</dep>
+  <dep>xNextSib</dep>
+</dependencies>
+
+<demos>
+  <demo><url>http://cross-browser.com/x/examples/xtable.php</url><note><![CDATA[xTable demo.]]></note></demo>
+</demos>
+
+<comments>
+  <comment><date>30Jan07</date><author>mf</author><note><![CDATA[Refer to the demo for usage.]]></note></comment>
+</comments>
+
+<revisions>
+  <rev><num>1</num><date>30Jan07</date><author>mf</author><note><![CDATA[Initial inclusion in X.]]></note></rev>
+</revisions>
+
+</x_symbol>

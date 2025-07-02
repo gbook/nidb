@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xTraverseDocumentStyleSheets'>
+
+<sources>
+  <src><file>xtraversedocumentstylesheets.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Style</grp>
+</groups>
+
+<type>Function</type>
+
+<description><![CDATA[Traverses all stylesheets attached to a document (linked as well as internal).]]></description>
+
+<syntax>xTraverseDocumentStyleSheets(cb)</syntax>
+
+<parameters>
+  <par><name>cb</name><note><![CDATA[callback function]]></note></par>
+</parameters>
+
+<return><![CDATA[boolean]]></return>
+
+<dependencies>
+  <dep>xTraverseStyleSheet</dep>
+</dependencies>
+
+<revisions>
+  <rev><num>1</num><date>12Aug06</date><author>ip</author><note><![CDATA[Initial release]]></note></rev>
+</revisions>
+
+</x_symbol>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xTrim'>
+
+<sources>
+  <src><file>xtrim.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>String</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[Removes leading and trailing white-space from a string.]]></description>
+
+<syntax>xTrim(s)</syntax>
+
+<parameters>
+  <par>
+    <name>s</name><note><![CDATA[String]]></note>
+  </par>
+</parameters>
+
+<return>string</return>
+
+<revisions>
+  <rev><num>2</num><date>28Sep10</date><author>mf</author><note><![CDATA[See: http://blog.stevenlevithan.com/archives/faster-trim-javascript]]></note></rev>
+  <rev><num>1</num><date>10Feb07</date><author>mf</author><note><![CDATA[Initial release.]]></note></rev>
+</revisions>
+
+</x_symbol>

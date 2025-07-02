@@ -81,7 +81,7 @@
 	/* -------------------------------------------- */
 	function DisplayTagList($tagtype, $idtype, $tag) {
 		if ($tag == "") {
-			?><div class="staticmessage">Tag [<? =$tag?>] blank</div><?
+			?><div class="staticmessage">Tag [<?=$tag?>] blank</div><?
 			return;
 		}
 		

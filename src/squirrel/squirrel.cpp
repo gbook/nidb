@@ -1640,48 +1640,6 @@ QString squirrel::PrintSubjects(DatasetType dataType, PrintFormat printFormat) {
         keys.sort();
 
         str = utils::PrintData(printFormat, keys, rows);
-
-        // if (printFormat == Details) {
-        //     foreach (squirrelSubject s, subjects) {
-        //         if (s.Get())
-        //             str += s.PrintDetails();
-        //     }
-        // }
-        // else if (printFormat == CSV) {
-        //     QStringList csvLines;
-        //     foreach (squirrelSubject s, subjects) {
-        //         if (s.Get())
-        //             csvLines.append(s.CSVLine());
-        //     }
-        //     str += utils::Print("ID, AlternateIDs, DateOfBirth, Ethnicity1, Ethnicity2, GUID, Gender, Sex, Notes");
-        //     str += utils::Print(csvLines.join("\n"));
-        // }
-        // else if (printFormat == Tree) {
-        //     str += utils::Print("Subjects");
-        //     int i = 0;
-        //     foreach (squirrelSubject s, subjects) {
-        //         if (s.Get()) {
-        //             i++;
-        //             if (count == i)
-        //                 str += s.PrintTree(true);
-        //             else
-        //                 str += s.PrintTree(false);
-
-        //             /* get intervention/observation list */
-        //             QList<squirrelObservation> observations = GetObservationList(s.GetObjectID());
-        //             QList<squirrelIntervention> interventions = GetInterventionList(s.GetObjectID());
-        //             str += utils::Print(QString("        +--- %1 observations   %2 interventions").arg(observations.size()).arg(interventions.size()));
-        //         }
-        //     }
-        // }
-        // else {
-        //     QStringList subjectIDs;
-        //     foreach (squirrelSubject s, subjects) {
-        //         if (s.Get())
-        //             subjectIDs.append(s.ID);
-        //     }
-        //     str += utils::Print("Subjects: " + subjectIDs.join(" "));
-        // }
     }
     else
         str += utils::Print("No subjects in this package");
@@ -1745,21 +1703,45 @@ QString squirrel::PrintStudies(DatasetType dataType, PrintFormat printFormat, qi
  * @param studyNum the study number
  * @param details true to print details, false to print list of series numbers
  */
-QString squirrel::PrintSeries(qint64 studyRowID, PrintFormat printFormat) {
+QString squirrel::PrintSeries(DatasetType dataType, PrintFormat printFormat, qint64 seriesRowID) {
     QString str;
 
-    QList <squirrelSeries> series = GetSeriesList(studyRowID);
-    QStringList seriesNumbers;
-    foreach (squirrelSeries s, series) {
-        if (s.Get()) {
-            if (printFormat == PrintFormat::Details)
-                str += s.PrintSeries(Details);
-            else if (printFormat == PrintFormat::List)
-                seriesNumbers.append(QString("%1").arg(s.SeriesNumber));
+    QList <squirrelSeries> series = GetSeriesList(seriesRowID);
+    int count = series.size();
+    if (count > 0) {
+
+        /* get the data */
+        QList <QStringHash> rows;
+        QStringList keys;
+        foreach (squirrelSeries s, series) {
+            if (s.Get()) {
+                QStringHash row = s.GetData(dataType);
+
+                /* add in subject information */
+                squirrelStudy stud = GetStudy(s.studyRowID);
+                stud.Get();
+                QStringHash row2 = stud.GetData(DatasetBasic);
+                row = utils::MergeStringHash(row, row2);
+
+                /* add in subject information */
+                squirrelSubject subj = GetSubject(s.subjectRowID);
+                subj.Get();
+                QStringHash row3 = subj.GetData(DatasetBasic);
+                row = utils::MergeStringHash(row, row3);
+
+                rows.append(row);
+
+                /* get the keys */
+                keys.append(row.keys());
+            }
         }
+        keys.removeDuplicates();
+        keys.sort();
+
+        str = utils::PrintData(printFormat, keys, rows);
     }
-    if (printFormat == PrintFormat::List)
-        str += utils::Print("Series: " + seriesNumbers.join(" "));
+    else
+        str = utils::Print("No studies found");
 
     return str;
 }
@@ -1773,21 +1755,39 @@ QString squirrel::PrintSeries(qint64 studyRowID, PrintFormat printFormat) {
  * @param subjectRowID The subjectRowID
  * @param printFormat One of the PrintFormat enumerations
  */
-QString squirrel::PrintObservations(qint64 subjectRowID, PrintFormat printFormat) {
+QString squirrel::PrintObservations(DatasetType dataType, PrintFormat printFormat, qint64 subjectRowID) {
     QString str;
 
     QList <squirrelObservation> observations = GetObservationList(subjectRowID);
-    QStringList observationNames;
-    foreach (squirrelObservation o, observations) {
-        if (o.Get()) {
-            if (printFormat == PrintFormat::Details)
-                str += o.PrintObservation();
-            else
-                observationNames.append(o.ObservationName);
+    int count = observations.size();
+    if (count > 0) {
+
+        /* get the data */
+        QList <QStringHash> rows;
+        QStringList keys;
+        foreach (squirrelObservation o, observations) {
+            if (o.Get()) {
+                QStringHash row = o.GetData(dataType);
+
+                /* add in subject information */
+                squirrelSubject subj = GetSubject(o.subjectRowID);
+                subj.Get();
+                QStringHash row2 = subj.GetData(DatasetBasic);
+                row = utils::MergeStringHash(row, row2);
+
+                rows.append(row);
+
+                /* get the keys */
+                keys.append(row.keys());
+            }
         }
+        keys.removeDuplicates();
+        keys.sort();
+
+        str = utils::PrintData(printFormat, keys, rows);
     }
-    if (printFormat == PrintFormat::Details)
-        str += utils::Print("Observations: " + observationNames.join(" "));
+    else
+        str += utils::Print("No subjects in this package");
 
     return str;
 }
@@ -1801,23 +1801,59 @@ QString squirrel::PrintObservations(qint64 subjectRowID, PrintFormat printFormat
  * @param subjectRowID The subjectRowID
  * @param printFormat One of the PrintFormat enumerations
  */
-QString squirrel::PrintInterventions(qint64 subjectRowID, PrintFormat printFormat) {
+QString squirrel::PrintInterventions(DatasetType dataType, PrintFormat printFormat, qint64 subjectRowID) {
     QString str;
 
     QList <squirrelIntervention> interventions = GetInterventionList(subjectRowID);
-    QStringList interventionNames;
-    foreach (squirrelIntervention o, interventions) {
-        if (o.Get()) {
-            if (printFormat == PrintFormat::Details)
-                str += o.PrintIntervention();
-            else
-                interventionNames.append(o.InterventionName);
+    int count = interventions.size();
+    if (count > 0) {
+
+        /* get the data */
+        QList <QStringHash> rows;
+        QStringList keys;
+        foreach (squirrelIntervention i, interventions) {
+            if (i.Get()) {
+                QStringHash row = i.GetData(dataType);
+
+                /* add in subject information */
+                squirrelSubject subj = GetSubject(i.subjectRowID);
+                subj.Get();
+                QStringHash row2 = subj.GetData(DatasetBasic);
+                row = utils::MergeStringHash(row, row2);
+
+                rows.append(row);
+
+                /* get the keys */
+                keys.append(row.keys());
+            }
         }
+        keys.removeDuplicates();
+        keys.sort();
+
+        str = utils::PrintData(printFormat, keys, rows);
     }
-    if (printFormat == PrintFormat::Details)
-        str += utils::Print("Interventions: " + interventionNames.join(" "));
+    else
+        str += utils::Print("No subjects in this package");
 
     return str;
+
+
+    // QString str;
+
+    // QList <squirrelIntervention> interventions = GetInterventionList(subjectRowID);
+    // QStringList interventionNames;
+    // foreach (squirrelIntervention o, interventions) {
+    //     if (o.Get()) {
+    //         if (printFormat == PrintFormat::Details)
+    //             str += o.PrintIntervention();
+    //         else
+    //             interventionNames.append(o.InterventionName);
+    //     }
+    // }
+    // if (printFormat == PrintFormat::Details)
+    //     str += utils::Print("Interventions: " + interventionNames.join(" "));
+
+    // return str;
 }
 
 
@@ -2134,8 +2170,13 @@ QList<squirrelAnalysis> squirrel::GetAnalysisList(qint64 studyRowID) {
 QList<squirrelObservation> squirrel::GetObservationList(qint64 subjectRowID) {
     QSqlQuery q(QSqlDatabase::database(databaseUUID));
     QList<squirrelObservation> list;
-    q.prepare("select ObservationRowID from Observation where SubjectRowID = :id");
-    q.bindValue(":id", subjectRowID);
+    if (subjectRowID < 0) {
+        q.prepare("select ObservationRowID from Observation order by InstrumentName asc, ObservationName asc");
+    }
+    else {
+        q.prepare("select ObservationRowID from Observation where SubjectRowID = :id");
+        q.bindValue(":id", subjectRowID);
+    }
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     while (q.next()) {
         squirrelObservation m(databaseUUID);

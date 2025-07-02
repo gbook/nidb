@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xRound'>
+
+<sources>
+  <src><file>xround.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Misc</grp>
+</groups>
+
+<type>Function</type>
+
+<description><![CDATA[Rounds a number to the specified number of decimal digits.]]></description>
+
+<syntax>xRound(value, digits)</syntax>
+
+<parameters>
+  <par><name>value</name><note><![CDATA[A Real number.]]></note></par>
+  <par><name>digits</name><note><![CDATA[Number of decimal digits to which to round value.]]></note></par>
+</parameters>
+
+<return><![CDATA[Return value after rounding to the specified number of decimal digits.]]></return>
+
+<revisions>
+  <rev><num>1</num><date>25Jul07</date><author>mf</author><note><![CDATA[Initial release. Suggested by ChrisNelson.]]></note></rev>
+</revisions>
+
+</x_symbol>

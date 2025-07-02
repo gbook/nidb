@@ -457,7 +457,7 @@ bool moduleUpload::ParseUploadedFiles(QMap<QString, QMap<QString, QMap<QString, 
                 int seriesid(0);
 
                 QStringList files = fs[subject][study][series];
-                int numfiles = files.size();
+                qint64 numfiles = files.size();
                 //io->AppendUploadLog(__FUNCTION__, QString("numfiles [%1]   numfiles [%2]").arg(files.size()).arg(numfiles));
                 seriesid = InsertOrUpdateParsedSeries(-1, upload_seriescriteria, studyid, SeriesDateTime, SeriesNumber, SeriesInstanceUID, files, numfiles, "", "", "", "", "", "", 0, 0, m);
 
@@ -544,8 +544,8 @@ bool moduleUpload::ParseUploadedSquirrel(squirrel *sqrl, QString upload_subjectc
                 n->Log(QString("Found series [%1]").arg(series.SeriesNumber));
                 n->Log(QString("squirrelSeries fileCount [%1] files [%2]").arg(series.FileCount).arg(series.files.join(", ")));
 
-                int numfiles = series.FileCount;
-                int seriesRowID = InsertOrUpdateParsedSeries(-1, "seriesnum", studyRowID, series.DateTime.toString("yyyy-MM-dd hh:mm:ss"), series.SeriesNumber, series.SeriesUID, series.files, numfiles, series.Description, series.Protocol, "", "", "", "", 0, 0, m);
+                qint64 numfiles = series.FileCount;
+                qint64 seriesRowID = InsertOrUpdateParsedSeries(-1, "seriesnum", studyRowID, series.DateTime.toString("yyyy-MM-dd hh:mm:ss"), series.SeriesNumber, series.SeriesUID, series.files, numfiles, series.Description, series.Protocol, "", "", "", "", 0, 0, m);
                 InsertOrUpdateParsedSeries(seriesRowID, "seriesnum", studyRowID, series.DateTime.toString("yyyy-MM-dd hh:mm:ss"), series.SeriesNumber, series.SeriesUID, series.files, numfiles, series.Description, series.Protocol, "", "", "", "", 0, 0, m);
             }
         }
@@ -1159,7 +1159,7 @@ int moduleUpload::InsertOrUpdateParsedStudy(int parsedStudyRowID, QString upload
  * @param msg Any messages generated
  * @return
  */
-int moduleUpload::InsertOrUpdateParsedSeries(int parsedSeriesRowID, QString upload_seriescriteria, int studyRowID, QString SeriesDateTime, int SeriesNumber, QString SeriesInstanceUID, QStringList &files, int &numfiles, QString SeriesDescription, QString ProtocolName, QString RepetitionTime, QString EchoTime, QString SpacingBetweenSlices, QString SliceThickness, int Rows, int Columns, QString &msg) {
+int moduleUpload::InsertOrUpdateParsedSeries(qint64 parsedSeriesRowID, QString upload_seriescriteria, qint64 studyRowID, QString SeriesDateTime, qint64 SeriesNumber, QString SeriesInstanceUID, QStringList &files, qint64 &numfiles, QString SeriesDescription, QString ProtocolName, QString RepetitionTime, QString EchoTime, QString SpacingBetweenSlices, QString SliceThickness, int Rows, int Columns, QString &msg) {
     QSqlQuery q;
 
     if (parsedSeriesRowID >= 0) {

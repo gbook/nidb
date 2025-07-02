@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xNextSib'>
+
+<sources>
+  <src><file>xnextsib.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>DOM</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[Get an element's next sibling which has a specific tagName.]]></description>
+
+<syntax>xNextSib(ele[, tag])</syntax>
+
+<parameters>
+  <par>
+    <name>ele</name>
+    <note><![CDATA[id string or element reference]]></note>
+  </par>
+  <par>
+    <name>tag</name>
+    <note><![CDATA[tagName string - optional. Case-insensitive.]]></note>
+  </par>
+</parameters>
+
+<return>Returns ele's next sibling with nodeName == tag (if tag is defined), else with nodeType == 1.</return>
+
+<demos>
+  <demo>
+    <url>http://cross-browser.com/toys/</url>
+    <note><![CDATA[Index of all X demos.]]></note>
+  </demo>
+</demos>
+
+<revisions>
+  <rev>
+    <num>4</num><date>1Dec06</date><author>mf</author>
+    <note><![CDATA[Re-written to be smaller and more robust.]]></note>
+  </rev>
+  <rev>
+    <num>3</num><date>31Oct06</date><author>mf</author>
+    <note><![CDATA[The tag comparison is now case-insensitive. xGetElementById is now called for e so the first argument can be an element or id string.]]></note>
+  </rev>
+  <rev>
+    <num>2</num><date>11Mar05</date><author>mf</author>
+    <note><![CDATA[put in it's own file for use with XC]]></note>
+  </rev>
+  <rev>
+    <num>1</num><date>27Jan05</date><author>mf</author>
+    <note><![CDATA[Implemented xPrevSib, xNextSib and xFirstChild (need optimizing)]]></note>
+  </rev>
+</revisions>
+
+</x_symbol>

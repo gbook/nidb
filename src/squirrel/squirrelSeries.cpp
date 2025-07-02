@@ -49,7 +49,7 @@ bool squirrelSeries::Get() {
         return false;
     }
     QSqlQuery q(QSqlDatabase::database(databaseUUID));
-    q.prepare("select * from Series where SeriesRowID = :id");
+    q.prepare("select * from Series left join Study on Series.StudyRowID = Study.StudyRowID where Series.SeriesRowID = :id");
     q.bindValue(":id", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.next()) {
@@ -74,6 +74,7 @@ bool squirrelSeries::Get() {
         experimentRowID = q.value("ExperimentRowID").toInt();
         objectID = q.value("SeriesRowID").toLongLong();
         studyRowID = q.value("StudyRowID").toLongLong();
+        subjectRowID = q.value("SubjectRowID").toLongLong();
 
         /* get any params */
         params = utils::GetParams(databaseUUID, objectID);

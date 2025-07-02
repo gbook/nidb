@@ -159,6 +159,19 @@
 		$submithostuser = trim($submithostuser);
 		$submithostuser = preg_replace("/[^A-Za-z0-9 ]/", '', $submithostuser);
 
+		if ($hostname == "") {
+			echo "Hostname is blank";
+			return false;
+		}
+		if ($clustertype == "") {
+			echo "Cluster type is blank";
+			return false;
+		}
+		if ($submithostuser == "") {
+			echo "Submit host username is blank";
+			return false;
+		}
+		
 		if ($clustertype == "slurm") {
 			exec("ssh $submithostuser@'$hostname' which sbatch", $output, $result);
 			$clustercommand = "sbatch";
@@ -175,7 +188,7 @@
 		}
 		else {
 			/* error */
-			echo "0";
+			//echo "0";
 
 			exec("ping -c 1 '$hostname'", $output, $result);
 			
@@ -301,11 +314,11 @@
 			foreach ($report1 as $block => $info) {
 				?>
 				<tr>
-					<td><? =$block?></td>
-					<td><? =$info['import_startdate']?></td>
-					<td><? =$info['import_enddate']?></td>
-					<td><? =$info['import_status']?></td>
-					<td><? =$info['import_message']?></td>
+					<td><?=$block?></td>
+					<td><?=$info['import_startdate']?></td>
+					<td><?=$info['import_enddate']?></td>
+					<td><?=$info['import_status']?></td>
+					<td><?=$info['import_message']?></td>
 				</tr>
 				<?
 			}
@@ -341,13 +354,13 @@
 				$numfiles = $info['numfiles'];
 				?>
 				<tr>
-					<td><? =$patientid_orig?></td>
-					<td><? ="$subject_uid/$study_num"?></td>
-					<td><? =$studydatetime_orig?></td>
-					<td><? =$modality_orig?></td>
-					<td><? =$stationname_orig?></td>
-					<td><? =$seriesdesc_orig?></td>
-					<td><? =$numfiles?></td>
+					<td><?=$patientid_orig?></td>
+					<td><?="$subject_uid/$study_num"?></td>
+					<td><?=$studydatetime_orig?></td>
+					<td><?=$modality_orig?></td>
+					<td><?=$stationname_orig?></td>
+					<td><?=$seriesdesc_orig?></td>
+					<td><?=$numfiles?></td>
 				</tr>
 				<?
 			}
@@ -383,9 +396,9 @@
 
 			?>
 			<span style="font-size: 11pt">
-			<img src="horizontalchart.php?b=yes&w=400&h=15&v=<? =$numsuccess?>,<? =$numprocessing?>,<? =$numfail?>,<? =($total-$numtotal)?>&c=<? =$completecolor?>,<? =$processingcolor?>,<? =$errorcolor?>,<? =$othercolor?>"> <? =number_format(($numsuccess/$total)*100,1)?>% received <span style="font-size:8pt;color:gray">(<? =number_format($numsuccess)?> of <? =number_format($total)?> blocks)</span>
+			<img src="horizontalchart.php?b=yes&w=400&h=15&v=<?=$numsuccess?>,<?=$numprocessing?>,<?=$numfail?>,<?=($total-$numtotal)?>&c=<?=$completecolor?>,<?=$processingcolor?>,<?=$errorcolor?>,<?=$othercolor?>"> <?=number_format(($numsuccess/$total)*100,1)?>% received <span style="font-size:8pt;color:gray">(<?=number_format($numsuccess)?> of <?=number_format($total)?> blocks)</span>
 			<br>
-			<img src="horizontalchart.php?b=yes&w=400&h=15&v=<? =$archivesuccess?>,<? =$archiveerror?>,<? =($total-$archivesuccess-$archiveerror)?>&c=<? =$completecolor?>,<? =$errorcolor?>,<? =$othercolor?>"> <? =number_format(($archivesuccess/$total)*100,1)?>% archived <span style="font-size:8pt;color:gray">(<? =number_format($archivesuccess)?> of <? =number_format($total)?> blocks)</span>
+			<img src="horizontalchart.php?b=yes&w=400&h=15&v=<?=$archivesuccess?>,<?=$archiveerror?>,<?=($total-$archivesuccess-$archiveerror)?>&c=<?=$completecolor?>,<?=$errorcolor?>,<?=$othercolor?>"> <?=number_format(($archivesuccess/$total)*100,1)?>% archived <span style="font-size:8pt;color:gray">(<?=number_format($archivesuccess)?> of <?=number_format($total)?> blocks)</span>
 			</span>
 			<?
 		}
@@ -506,6 +519,14 @@
 			</thead>
 			<tbody>
 			<?
+			$studyids_existing = array();
+			$studyids = array();
+			$studyids_completedparent = array();
+			$studyids_groups = array();
+			$studyids_valid = array();
+			$studyids_remaining = array();
+			$studyids_step = array();
+			
 			/* ---------- LINE 1 - existing (already processed) studies for this pipeline ---------- */
 			$sqlstring = "select study_id, analysis_status from analysis where pipeline_id = $pipelineid";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -750,11 +771,11 @@
 			$cummatch = number_format($cummatch,0);
 		
 		?>
-		<tr style="<? =$bold?>">
-			<td style="<? =$indent?> <? =$gray?>" <? =$title?>><? =$criteria?></td>
-			<td style="<? =$gray?>"><? =$value?></td>
-			<td style="<? =$gray?>"><? =$nummatch?></td>
-			<td style="<? =$gray?>"><? =$cummatch?></td>
+		<tr style="<?=$bold?>">
+			<td style="<?=$indent?> <?=$gray?>" <?=$title?>><?=$criteria?></td>
+			<td style="<?=$gray?>"><?=$value?></td>
+			<td style="<?=$gray?>"><?=$nummatch?></td>
+			<td style="<?=$gray?>"><?=$cummatch?></td>
 		</tr>
 		<?
 	}

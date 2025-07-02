@@ -95,18 +95,18 @@
 						$message = $row['error_message'];
 				?>
 				<tr>
-					<td class="top aligned"><? =$date?></td>
-					<td class="top aligned"><? =$module?></td>
-					<td class="top aligned"><? =$type?></td>
-					<td class="top aligned"><? =$source?></td>
-					<td class="top aligned"><? =$hostname?></td>
+					<td class="top aligned"><?=$date?></td>
+					<td class="top aligned"><?=$module?></td>
+					<td class="top aligned"><?=$type?></td>
+					<td class="top aligned"><?=$source?></td>
+					<td class="top aligned"><?=$hostname?></td>
 					<td class="top aligned">
 						<div class="ui styled fluid accordion">
 							<div class="title">
 								<i class="dropdown icon"></i>Error text...
 							</div>
 							<div class="content">
-								<pre><? =$message?></pre>
+								<pre><?=$message?></pre>
 							</div>
 						</div>
 					</td>

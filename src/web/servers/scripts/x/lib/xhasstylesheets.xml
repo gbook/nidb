@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xHasStyleSheets'>
+
+<sources>
+  <src><file>xhasstylesheets.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Style</grp>
+</groups>
+
+<type>Function</type>
+
+<description><![CDATA[Checks browser support for stylesheet related objects (IE or DOM compliant).]]></description>
+
+<syntax>xHasStyleSheets()</syntax>
+
+<return><![CDATA[boolean]]></return>
+
+<revisions>
+  <rev><num>1</num><date>12Aug06</date><author>ip</author><note><![CDATA[Initial release]]></note></rev>
+</revisions>
+
+</x_symbol>

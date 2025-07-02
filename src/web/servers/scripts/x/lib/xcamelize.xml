@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xCamelize'>
+
+<sources>
+  <src><file>xcamelize.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>String</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[Converts a CSS property name string (dash-separated) to a camel-cased string (style object property name).]]></description>
+
+<syntax>xCamelize(cssPropStr)</syntax>
+
+<parameters>
+  <par><name>cssPropStr</name><note><![CDATA[A dash-separated string such as a CSS property name. If it has no dashes then cssPropStr will be returned.]]></note></par>
+</parameters>
+
+<return>Returns a camel-cased string.</return>
+
+<demos>
+  <demo><url>http://cross-browser.com/x/examples/animation_tech.html</url><note><![CDATA[animation techniques article and demos]]></note></demo>
+</demos>
+
+<revisions>
+  <rev><num>2</num><date>6Mar09</date><author>mf</author><note><![CDATA[Combined multiple var statements into one.]]></note></rev>
+  <rev><num>1</num><date>17Mar07</date><author>mf</author><note><![CDATA[Initial release.]]></note></rev>
+</revisions>
+
+</x_symbol>

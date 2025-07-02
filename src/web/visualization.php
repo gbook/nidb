@@ -137,7 +137,7 @@
 				<input type="hidden" name="type" value="ica">
 				<div class="field">
 					<label>Path to file(s)</label>
-					<input type="text" name="filepath" id="filepath" value="<? =$filepath?>" onKeyUp="CheckNFSPath()"> <span id="pathcheckresult"></span>
+					<input type="text" name="filepath" id="filepath" value="<?=$filepath?>" onKeyUp="CheckNFSPath()"> <span id="pathcheckresult"></span>
 				</div>
 		<?
 		
@@ -176,7 +176,7 @@
 							<?
 							foreach ($feats as $f) {
 								if ($f == $featurenum) { $selected = "selected"; } else { $selected = ""; }
-								?><option value="<? =$f?>" <? =$selected?>><? =$f?><?
+								?><option value="<?=$f?>" <?=$selected?>><?=$f?><?
 							}
 							?>
 						</select>
@@ -187,7 +187,7 @@
 							<?
 							foreach ($comps as $c) {
 								if ($c == $componentnum) { $selected = "selected"; } else { $selected = ""; }
-								?><option value="<? =$c?>" <? =$selected?>><? =$c?><?
+								?><option value="<?=$c?>" <?=$selected?>><?=$c?><?
 							}
 							?>
 						</select>
@@ -276,7 +276,7 @@
 						width = 1500 - margin3.left - margin3.right,
 						height = 400 - margin3.top - margin3.bottom;
 					
-					var data3 = [<? =$datum?>];
+					var data3 = [<?=$datum?>];
 
 					x = d3.scaleLinear()
 						.domain(d3.extent(data3, d => d.x)).nice()

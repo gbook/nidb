@@ -701,7 +701,7 @@
 				$desc = $row['package_desc'];
 				$createdate = date('M j, Y h:ia',strtotime($row['package_date']));
 				?>
-				<option value="<? =$packageid?>"><? =$name?></option>
+				<option value="<?=$packageid?>"><?=$name?></option>
 				<?
 			}
 		?>
@@ -769,13 +769,13 @@
 
 			<div class="ui grid">
 				<div class="ui four wide column">
-					<div class="ui toggle <? =$checkboxreadonly?> checkbox" onChange="SelectAllSubjects()">
-						<input type="checkbox" name="includesubjects" id="includesubjects" value="1" <? =$checkboxstate?>>
+					<div class="ui toggle <?=$checkboxreadonly?> checkbox" onChange="SelectAllSubjects()">
+						<input type="checkbox" name="includesubjects" id="includesubjects" value="1" <?=$checkboxstate?>>
 						<label style="font-size:larger; font-weight: bold">Subjects</label>
 					</div>
 				</div>
 				<div class="ui ten wide column">
-					<div class="ui left pointing red label"><span id="numsubjectsselected"><? =$numselected?></span> of <? =$numsubjects?> subjects <? =$labelstr?></div>
+					<div class="ui left pointing red label"><span id="numsubjectsselected"><?=$numselected?></span> of <?=$numsubjects?> subjects <?=$labelstr?></div>
 				</div>
 			</div>
 
@@ -808,10 +808,10 @@
 								
 								?>
 									<tr>
-										<td class="allsubjects"><input type="checkbox" name="enrollmentids[]" value="<? =$enrollmentid?>" <? =$checkboxstr?> class="subjectcheck" onClick="CheckSelectedSubjectCount(this);"></td>
-										<td><a href="subjects.php?id=<? =$subjectid?>"><? =$uid?></a></td>
-										<td><? =$sex?></td>
-										<td><? =$projectname?></td>
+										<td class="allsubjects"><input type="checkbox" name="enrollmentids[]" value="<?=$enrollmentid?>" <?=$checkboxstr?> class="subjectcheck" onClick="CheckSelectedSubjectCount(this);"></td>
+										<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
+										<td><?=$sex?></td>
+										<td><?=$projectname?></td>
 									</tr>
 								<?
 							}
@@ -886,13 +886,13 @@
 
 			<div class="ui grid">
 				<div class="ui four wide column">
-					<div class="ui toggle <? =$checkboxreadonly?> checkbox" onChange="SelectAllStudies()">
-						<input type="checkbox" name="includestudies" id="includestudies" value="1" <? =$checkboxstate?>>
+					<div class="ui toggle <?=$checkboxreadonly?> checkbox" onChange="SelectAllStudies()">
+						<input type="checkbox" name="includestudies" id="includestudies" value="1" <?=$checkboxstate?>>
 						<label style="font-size:larger; font-weight: bold">Studies</label>
 					</div>
 				</div>
 				<div class="ui ten wide column">
-					<div class="ui left pointing red label"><span id="numstudiesselected"><? =$numselected?></span> of <? =$numstudies?> studies <? =$labelstr?></div>
+					<div class="ui left pointing red label"><span id="numstudiesselected"><?=$numselected?></span> of <?=$numstudies?> studies <?=$labelstr?></div>
 				</div>
 			</div>
 			
@@ -925,10 +925,10 @@
 								
 								?>
 									<tr>
-										<td class="allstudies"><input type="checkbox" name="studyids[]" value="<? =$studyid?>" <? =$checkboxstr?> class="studycheck" onClick="CheckSelectedStudyCount(this)"></td>
-										<td><a href="studies.php?id=<? =$studyid?>"><? =$uid?><? =$studynum?></a></td>
-										<td><? =$studydate?></td>
-										<td><? =$visit?></td>
+										<td class="allstudies"><input type="checkbox" name="studyids[]" value="<?=$studyid?>" <?=$checkboxstr?> class="studycheck" onClick="CheckSelectedStudyCount(this)"></td>
+										<td><a href="studies.php?id=<?=$studyid?>"><?=$uid?><?=$studynum?></a></td>
+										<td><?=$studydate?></td>
+										<td><?=$visit?></td>
 									</tr>
 								<?
 							}
@@ -1017,13 +1017,13 @@
 
 			<div class="ui grid">
 				<div class="ui four wide column">
-					<div class="ui toggle <? =$checkboxreadonly?> checkbox" onChange="SelectAllSeries()">
-						<input type="checkbox" name="includeseries" id="includeseries" value="1" <? =$checkboxstate?>>
+					<div class="ui toggle <?=$checkboxreadonly?> checkbox" onChange="SelectAllSeries()">
+						<input type="checkbox" name="includeseries" id="includeseries" value="1" <?=$checkboxstate?>>
 						<label style="font-size:larger; font-weight: bold">Series</label>
 					</div>
 				</div>
 				<div class="ui ten wide column">
-					<div class="ui left pointing red label"><span id="numseriesselected"><? =$numselected?></span> of <? =$numseries?> series <? =$labelstr?></div> &nbsp; <? if ($msg != "") { echo $msg; } ?>
+					<div class="ui left pointing red label"><span id="numseriesselected"><?=$numselected?></span> of <?=$numseries?> series <?=$labelstr?></div> &nbsp; <? if ($msg != "") { echo $msg; } ?>
 				</div>
 			</div>
 
@@ -1063,14 +1063,14 @@
 									
 									?>
 										<tr>
-											<td class="allseries"><input type="checkbox" name="seriesids[]" value="<? =$modality?>-<? =$seriesid?>" <? =$checkboxstr?> class="seriescheck" onClick="CheckSelectedSeriesCount(this);"></td>
-											<td><? =$uid?></td>
-											<td><? =$studynum?></td>
-											<td><? =$seriesnum?></td>
-											<td><? =$studydesc?></td>
-											<td><? =$seriesdesc?></td>
-											<td><? =$seriessize?></td>
-											<td><? =$seriesnumfiles?></td>
+											<td class="allseries"><input type="checkbox" name="seriesids[]" value="<?=$modality?>-<?=$seriesid?>" <?=$checkboxstr?> class="seriescheck" onClick="CheckSelectedSeriesCount(this);"></td>
+											<td><?=$uid?></td>
+											<td><?=$studynum?></td>
+											<td><?=$seriesnum?></td>
+											<td><?=$studydesc?></td>
+											<td><?=$seriesdesc?></td>
+											<td><?=$seriessize?></td>
+											<td><?=$seriesnumfiles?></td>
 										</tr>
 									<?
 								}
@@ -1080,7 +1080,7 @@
 					</table>
 				</div>
 			</div>
-			<input type="hidden" name="modality" value="<? =$modality?>">
+			<input type="hidden" name="modality" value="<?=$modality?>">
 			<?
 		}
 		else {
@@ -1148,13 +1148,13 @@
 
 			<div class="ui grid">
 				<div class="ui four wide column">
-					<div class="ui toggle <? =$checkboxreadonly?> checkbox" onChange="SelectAllExperiments()">
-						<input type="checkbox" name="includeexperiments" id="includeexperiments" value="1" <? =$checkboxstate?>>
+					<div class="ui toggle <?=$checkboxreadonly?> checkbox" onChange="SelectAllExperiments()">
+						<input type="checkbox" name="includeexperiments" id="includeexperiments" value="1" <?=$checkboxstate?>>
 						<label style="font-size:larger; font-weight: bold">Experiments</label>
 					</div>
 				</div>
 				<div class="ui ten wide column">
-					<div class="ui left pointing red label"><span id="numexperimentsselected"><? =$numselected?></span> of <? =$numexperiments?> experiments <? =$labelstr?></div>
+					<div class="ui left pointing red label"><span id="numexperimentsselected"><?=$numselected?></span> of <?=$numexperiments?> experiments <?=$labelstr?></div>
 				</div>
 			</div>
 
@@ -1182,9 +1182,9 @@
 
 								?>
 									<tr>
-										<td class="allexperiments"><input type="checkbox" name="experimentids[]" value="<? =$experimentid?>" <? =$checkboxstr?> class="experimentcheck" onClick="CheckSelectedExperimentCount(this);"></td>
-										<td><a href="experiments.php?id=<? =$experimentid?>"><? =$expname?></a></td>
-										<td><? =$expdate?></td>
+										<td class="allexperiments"><input type="checkbox" name="experimentids[]" value="<?=$experimentid?>" <?=$checkboxstr?> class="experimentcheck" onClick="CheckSelectedExperimentCount(this);"></td>
+										<td><a href="experiments.php?id=<?=$experimentid?>"><?=$expname?></a></td>
+										<td><?=$expdate?></td>
 									</tr>
 								<?
 							}
@@ -1260,13 +1260,13 @@
 
 			<div class="ui grid">
 				<div class="ui four wide column">
-					<div class="ui toggle <? =$checkboxreadonly?> checkbox" onChange="SelectAllAnalysis()">
-						<input type="checkbox" name="includeanalysis" id="includeanalysis" value="1" <? =$checkboxstate?>>
+					<div class="ui toggle <?=$checkboxreadonly?> checkbox" onChange="SelectAllAnalysis()">
+						<input type="checkbox" name="includeanalysis" id="includeanalysis" value="1" <?=$checkboxstate?>>
 						<label style="font-size:larger; font-weight: bold">Analyses</label>
 					</div>
 				</div>
 				<div class="ui ten wide column">
-					<div class="ui left pointing red label"><span id="numanalysisselected"><? =$numselected?></span> of <? =$numanalysis?> analyses <? =$labelstr?></div>
+					<div class="ui left pointing red label"><span id="numanalysisselected"><?=$numselected?></span> of <?=$numanalysis?> analyses <?=$labelstr?></div>
 				</div>
 			</div>
 
@@ -1295,10 +1295,10 @@
 								$analysisstatus = $row['analysis_status'];
 								?>
 									<tr>
-										<td class="allanalysis"><input type="checkbox" name="analysisids[]" value="<? =$analysisid?>" class="analysischeck" <? =$checkboxstr?> onClick="CheckSelectedAnalysisCount(this);"></td>
-										<td><a href="analysis.php?analysisid=<? =$analysisid?>"><? =$analysisid?></a></td>
-										<td><? =$analysisdate?></td>
-										<td><? =$analysisstatus?></td>
+										<td class="allanalysis"><input type="checkbox" name="analysisids[]" value="<?=$analysisid?>" class="analysischeck" <?=$checkboxstr?> onClick="CheckSelectedAnalysisCount(this);"></td>
+										<td><a href="analysis.php?analysisid=<?=$analysisid?>"><?=$analysisid?></a></td>
+										<td><?=$analysisdate?></td>
+										<td><?=$analysisstatus?></td>
 									</tr>
 								<?
 							}
@@ -1374,13 +1374,13 @@
 
 			<div class="ui grid">
 				<div class="ui four wide column">
-					<div class="ui toggle <? =$checkboxreadonly?> checkbox" onChange="SelectAllPipelines()">
-						<input type="checkbox" name="includepipelines" id="includepipelines" value="1" <? =$checkboxstate?>>
+					<div class="ui toggle <?=$checkboxreadonly?> checkbox" onChange="SelectAllPipelines()">
+						<input type="checkbox" name="includepipelines" id="includepipelines" value="1" <?=$checkboxstate?>>
 						<label style="font-size:larger; font-weight: bold">Pipelines</label>
 					</div>
 				</div>
 				<div class="ui ten wide column">
-					<div class="ui left pointing red label"><span id="numpipelinesselected"><? =$numselected?></span> of <? =$numpipelines?> pipelines <? =$labelstr?></div>
+					<div class="ui left pointing red label"><span id="numpipelinesselected"><?=$numselected?></span> of <?=$numpipelines?> pipelines <?=$labelstr?></div>
 				</div>
 			</div>
 
@@ -1406,8 +1406,8 @@
 
 								?>
 									<tr>
-										<td class="allpipelines"><input type="checkbox" name="pipelineids[]" value="<? =$pipelineid?>" class="pipelinecheck" <? =$checkboxstr?> onClick="CheckSelectedPipelineCount(this);"></td>
-										<td><a href="pipelines.php?pipelineid=<? =$pipelineid?>"><? =$pipelinename?></a></td>
+										<td class="allpipelines"><input type="checkbox" name="pipelineids[]" value="<?=$pipelineid?>" class="pipelinecheck" <?=$checkboxstr?> onClick="CheckSelectedPipelineCount(this);"></td>
+										<td><a href="pipelines.php?pipelineid=<?=$pipelineid?>"><?=$pipelinename?></a></td>
 									</tr>
 								<?
 							}
@@ -1486,13 +1486,13 @@
 
 			<div class="ui grid">
 				<div class="ui four wide column">
-					<div class="ui toggle <? =$checkboxreadonly?> checkbox" onChange="SelectAllObservations()">
-						<input type="checkbox" name="includeobservations" id="includeobservations" value="1" <? =$checkboxstate?>>
+					<div class="ui toggle <?=$checkboxreadonly?> checkbox" onChange="SelectAllObservations()">
+						<input type="checkbox" name="includeobservations" id="includeobservations" value="1" <?=$checkboxstate?>>
 						<label style="font-size:larger; font-weight: bold">Observations</label>
 					</div>
 				</div>
 				<div class="ui ten wide column">
-					<div class="ui left pointing red label"><span id="numobservationsselected"><? =$numselected?></span> of <? =$numobservations?> observations <? =$labelstr?></div>
+					<div class="ui left pointing red label"><span id="numobservationsselected"><?=$numselected?></span> of <?=$numobservations?> observations <?=$labelstr?></div>
 				</div>
 			</div>
 
@@ -1524,10 +1524,10 @@
 							//	$observationids[] = $observationid;
 								?>
 									<tr>
-										<td class="allobservations"><input type="checkbox" name="observationids[]" value="<? =$observationid?>" <? =$checkboxstr?> class="observationcheck" onClick="CheckSelectedObservationCount(this);"></td>
-										<td><a href="subjects.php?subjectid=<? =$subjectid?>"><? =$uid?></a></td>
-										<td><? =$observationname?></td>
-										<td><? =$observationdate?></td>
+										<td class="allobservations"><input type="checkbox" name="observationids[]" value="<?=$observationid?>" <?=$checkboxstr?> class="observationcheck" onClick="CheckSelectedObservationCount(this);"></td>
+										<td><a href="subjects.php?subjectid=<?=$subjectid?>"><?=$uid?></a></td>
+										<td><?=$observationname?></td>
+										<td><?=$observationdate?></td>
 									</tr>
 								<?
 							//}
@@ -1606,13 +1606,13 @@
 
 			<div class="ui grid">
 				<div class="ui four wide column">
-					<div class="ui toggle <? =$checkboxreadonly?> checkbox" onChange="SelectAllInterventions()">
-						<input type="checkbox" name="includeinterventions" id="includesubjects" value="1" <? =$checkboxstate?>>
+					<div class="ui toggle <?=$checkboxreadonly?> checkbox" onChange="SelectAllInterventions()">
+						<input type="checkbox" name="includeinterventions" id="includesubjects" value="1" <?=$checkboxstate?>>
 						<label style="font-size:larger; font-weight: bold">Interventions</label>
 					</div>
 				</div>
 				<div class="ui ten wide column">
-					<div class="ui left pointing red label"><span id="numinterventionsselected"><? =$numselected?></span> of <? =$numinterventions?> interventions <? =$labelstr?></div>
+					<div class="ui left pointing red label"><span id="numinterventionsselected"><?=$numselected?></span> of <?=$numinterventions?> interventions <?=$labelstr?></div>
 				</div>
 			</div>
 
@@ -1646,11 +1646,11 @@
 								$interventionids[] = $interventionid;
 								?>
 									<tr>
-										<td class="allinterventions"><input type="checkbox" name="interventionids[]" value="<? =$interventionid?>" <? =$checkboxstr?> class="interventioncheck" onClick="CheckSelectedInterventionCount(this);"></td>
-										<td><a href="subjects.php?subjectid=<? =$subjectid?>"><? =$uid?></a></td>
-										<td><? =$intervention?></td>
-										<td><? =$interventiondesc?></td>
-										<td><? =$interventiondate?></td>
+										<td class="allinterventions"><input type="checkbox" name="interventionids[]" value="<?=$interventionid?>" <?=$checkboxstr?> class="interventioncheck" onClick="CheckSelectedInterventionCount(this);"></td>
+										<td><a href="subjects.php?subjectid=<?=$subjectid?>"><?=$uid?></a></td>
+										<td><?=$intervention?></td>
+										<td><?=$interventiondesc?></td>
+										<td><?=$interventiondate?></td>
 									</tr>
 								<?
 							}
@@ -2182,12 +2182,12 @@
 					<div class="column">
 						<div class="ui header">
 							<img src="images/squirrel-icon-64.png"></img>
-							<h2 class="content"><? =$pkg['name']?></h2>
-							<div class="sub header"><? =$pkg['desc']?></div>
+							<h2 class="content"><?=$pkg['name']?></h2>
+							<div class="sub header"><?=$pkg['desc']?></div>
 						</div>
 					</div>
 					<div class="ui middle aligned right aligned column">
-						<a href="packages.php?action=export&packageid=<? =$packageid?>" class="ui huge green button"><i class="box open icon"></i>Export Package</a>
+						<a href="packages.php?action=export&packageid=<?=$packageid?>" class="ui huge green button"><i class="box open icon"></i>Export Package</a>
 						<div class="ui accordion">
 							<div class="title">
 								<i class="dropdown icon"></i>
@@ -2206,7 +2206,7 @@
 										$completeddate = $row['completeddate'];
 										$status = $row['status'];
 										?>
-										<li><b>Submitted</b> <? =$submitdate?> - <b>Status</b> <? =$status?>
+										<li><b>Submitted</b> <?=$submitdate?> - <b>Status</b> <?=$status?>
 										<?
 									}
 								?>
@@ -2216,7 +2216,7 @@
 					</div>
 					<div class="ui middle aligned right aligned column">
 						<h3>Operations</h3>
-						<a class="ui basic primary button" href="packages.php?action=splitmodality&packageid=<? =$packageid?>">Split by modality</a>
+						<a class="ui basic primary button" href="packages.php?action=splitmodality&packageid=<?=$packageid?>">Split by modality</a>
 					</div>
 				</div>
 			</div>
@@ -2260,54 +2260,54 @@
 									<b>Package details</b>
 								</div>
 								<div class="ui right aligned column">
-									<a href="packages.php?action=editform&packageid=<? =$packageid?>"><i class="pen icon"></i>Edit</a>
+									<a href="packages.php?action=editform&packageid=<?=$packageid?>"><i class="pen icon"></i>Edit</a>
 								</div>
 							</div>
 						</div>
 						<table class="ui bottom attached table">
 							<tr>
 								<td class="a">Name</td>
-								<td><? =$pkg['name']?></td>
+								<td><?=$pkg['name']?></td>
 							</tr>
 							<tr>
 								<td class="a">Description</td>
-								<td><? =$pkg['desc']?></td>
+								<td><?=$pkg['desc']?></td>
 							</tr>
 							<tr>
 								<td class="a">Date</td>
-								<td><? =$pkg['createdate']?></td>
+								<td><?=$pkg['createdate']?></td>
 							</tr>
 							<tr>
 								<td class="a">Subject dir format</td>
-								<td><? =$pkg['subjectDirFormat']?></td>
+								<td><?=$pkg['subjectDirFormat']?></td>
 							</tr>
 							<tr>
 								<td class="a">Study dir format</td>
-								<td><? =$pkg['studyDirFormat']?></td>
+								<td><?=$pkg['studyDirFormat']?></td>
 							</tr>
 							<tr>
 								<td class="a">Series dir format</td>
-								<td><? =$pkg['seriesDirFormat']?></td>
+								<td><?=$pkg['seriesDirFormat']?></td>
 							</tr>
 							<tr>
 								<td class="a">Data format</td>
-								<td><? =$pkg['dataFormat']?></td>
+								<td><?=$pkg['dataFormat']?></td>
 							</tr>
 							<tr>
 								<td class="a">License</td>
-								<td class="b"><? =$pkg['license']?></td>
+								<td class="b"><?=$pkg['license']?></td>
 							</tr>
 							<tr>
 								<td class="a">Readme</td>
-								<td class="b"><? =$pkg['readme']?></td>
+								<td class="b"><?=$pkg['readme']?></td>
 							</tr>
 							<tr>
 								<td class="a">Changes</td>
-								<td class="b"><? =$pkg['changes']?></td>
+								<td class="b"><?=$pkg['changes']?></td>
 							</tr>
 							<tr>
 								<td class="a">Notes</td>
-								<td class="b"><? =$pkg['notes']?></td>
+								<td class="b"><?=$pkg['notes']?></td>
 							</tr>
 						</table>
 					</div>
@@ -2333,30 +2333,30 @@
 						<pre class="mermaid">
 							graph LR
 								%%root-->package(details);
-								data-->subjects("<? =$subjtext?>");
-								root-->pipelines("<? =$pipetext?>");
-								root-->experiments("<? =$exptext?>");
-								%%root-->datadict("<? =$dicttext?>");
+								data-->subjects("<?=$subjtext?>");
+								root-->pipelines("<?=$pipetext?>");
+								root-->experiments("<?=$exptext?>");
+								%%root-->datadict("<?=$dicttext?>");
 								root(package)-->data(data);
-								data-->groupanalysis("<? =$groupanalysistext?>");
-								subjects-->studies("<? =$studtext?>");
-								subjects-->observations("<? =$meastext?>");
-								subjects-->interventions("<? =$interventiontext?>");
-								studies-->series("<? =$sertext?>");
-								studies-->analysis("<? =$analysistext?>");
+								data-->groupanalysis("<?=$groupanalysistext?>");
+								subjects-->studies("<?=$studtext?>");
+								subjects-->observations("<?=$meastext?>");
+								subjects-->interventions("<?=$interventiontext?>");
+								studies-->series("<?=$sertext?>");
+								studies-->analysis("<?=$analysistext?>");
 								
-								click root href "packages.php?action=editform&packageid=<? =$packageid?>"
+								click root href "packages.php?action=editform&packageid=<?=$packageid?>"
 								
-								style pipelines <? =$pipecolor?>;
-								style experiments <? =$expcolor?>;
-								%%style datadict <? =$dictcolor?>;
-								style groupanalysis <? =$groupanalysiscolor?>;
-								style observations <? =$meascolor?>;
-								style interventions <? =$interventioncolor?>;
-								style analysis <? =$analysiscolor?>;
-								style subjects <? =$subjcolor?>;
-								style studies <? =$studcolor?>;
-								style series <? =$sercolor?>;
+								style pipelines <?=$pipecolor?>;
+								style experiments <?=$expcolor?>;
+								%%style datadict <?=$dictcolor?>;
+								style groupanalysis <?=$groupanalysiscolor?>;
+								style observations <?=$meascolor?>;
+								style interventions <?=$interventioncolor?>;
+								style analysis <?=$analysiscolor?>;
+								style subjects <?=$subjcolor?>;
+								style studies <?=$studcolor?>;
+								style series <?=$sercolor?>;
 								style root fill:#fff, stroke:#666;
 								%%style package fill:#fff, stroke:#666;
 								style data fill:#fff, stroke:#666;
@@ -2373,8 +2373,8 @@
 						<div class="header">
 							Object summary
 						</div>
-						<? =$numsubjects?> Subjects, <? =$numstudies?> Studies, <? =$numseries?> Series<br>
-						<? =$totalfiles?> files, <? =HumanReadableFileSize($totalbytes)?>
+						<?=$numsubjects?> Subjects, <?=$numstudies?> Studies, <?=$numseries?> Series<br>
+						<?=$totalfiles?> files, <?=HumanReadableFileSize($totalbytes)?>
 					</div>				
 				</div>
 				
@@ -2388,21 +2388,21 @@
 					if ($uid != "") {
 						?><li>
 							<details>
-								<summary><? =$uid?></summary>
+								<summary><?=$uid?></summary>
 								<ul><?
 						
 						ksort($studies, SORT_NATURAL);
 						foreach ($studies as $studynum => $modalities) {
 							?><li>
 								<details>
-									<summary><? =$studynum?></summary>
+									<summary><?=$studynum?></summary>
 									<ul><?
 
 							ksort($modalities, SORT_NATURAL);
 							foreach ($modalities as $modality => $series) {
 								?><li>
 									<details>
-										<summary><? =$modality?></summary>
+										<summary><?=$modality?></summary>
 										<ul><?
 								
 								ksort($series, SORT_NATURAL);
@@ -2418,10 +2418,10 @@
 										foreach ($series as $seriesnum => $seriesid) {
 											?>
 											<tr>
-												<td><? =$uid?></td>
-												<td><? =$studynum?></td>
-												<td><? =$modality?></td>
-												<td><? =$seriesnum?></td>
+												<td><?=$uid?></td>
+												<td><?=$studynum?></td>
+												<td><?=$modality?></td>
+												<td><?=$seriesnum?></td>
 											</tr>
 											<?
 										}
@@ -2451,7 +2451,7 @@
 				<form method="post" action="packages.php">
 				<input type="hidden" name="action" value="removeobject">
 				<input type="hidden" name="objecttype" value="series">
-				<input type="hidden" name="packageid" value="<? =$packageid?>">
+				<input type="hidden" name="packageid" value="<?=$packageid?>">
 				<?
 				ksort($subjects, SORT_NATURAL);
 				foreach ($subjects as $uid =>$studies) {
@@ -2518,7 +2518,7 @@
 							{ headerName: "Project", field: "projectname", editable: false }
 						],
 
-						rowData: [ <? =$seriesData?> ],
+						rowData: [ <?=$seriesData?> ],
 						
 						// default col def properties get applied to all columns
 						defaultColDef: {sortable: true, filter: true, resizable: true},
@@ -2548,7 +2548,7 @@
 						<div class="header">
 							Object summary
 						</div>
-						<? =$numobservations?> Observations
+						<?=$numobservations?> Observations
 					</div>				
 				</div>
 			
@@ -2567,7 +2567,7 @@
 				<form method="post" action="packages.php">
 				<input type="hidden" name="action" value="removeobject">
 				<input type="hidden" name="objecttype" value="observation">
-				<input type="hidden" name="packageid" value="<? =$packageid?>">
+				<input type="hidden" name="packageid" value="<?=$packageid?>">
 				<?
 				ksort($observations, SORT_NATURAL);
 				foreach ($observations as $uid => $objects) {
@@ -2619,7 +2619,7 @@
 							{ headerName: "Date", field: "date", editable: false }
 						],
 
-						rowData: [ <? =$observationData?> ],
+						rowData: [ <?=$observationData?> ],
 						
 						// default col def properties get applied to all columns
 						defaultColDef: {sortable: true, filter: true, resizable: true},
@@ -2651,7 +2651,7 @@
 						<div class="header">
 							Object summary
 						</div>
-						<? =$numinterventions?> intervention records
+						<?=$numinterventions?> intervention records
 					</div>				
 				</div>
 				
@@ -2670,7 +2670,7 @@
 				<form method="post" action="packages.php">
 				<input type="hidden" name="action" value="removeobject">
 				<input type="hidden" name="objecttype" value="intervention">
-				<input type="hidden" name="packageid" value="<? =$packageid?>">
+				<input type="hidden" name="packageid" value="<?=$packageid?>">
 				<table class="ui basic very compact table">
 					<thead>
 						<th><input type="checkbox" id="selectallintervention"></th>
@@ -2687,10 +2687,10 @@
 						$interventiondate = $intervention['startdate'];
 						?>
 						<tr>
-							<td class="allintervention"><input type="checkbox" name="objectids[]" value="<? =$objectid?>"></td>
-							<td><? =$uid?></td>
-							<td><? =$interventionname?></td>
-							<td><? =$interventiondate?></td>
+							<td class="allintervention"><input type="checkbox" name="objectids[]" value="<?=$objectid?>"></td>
+							<td><?=$uid?></td>
+							<td><?=$interventionname?></td>
+							<td><?=$interventiondate?></td>
 						</tr>
 						<?
 					}
@@ -2710,8 +2710,8 @@
 						<div class="header">
 							Object summary
 						</div>
-						<? =$numanalysis?> analyses<br>
-						<? =$totalanalysisfiles?> files, <? =HumanReadableFileSize($totalanalysisbytes)?>
+						<?=$numanalysis?> analyses<br>
+						<?=$totalanalysisfiles?> files, <?=HumanReadableFileSize($totalanalysisbytes)?>
 					</div>				
 				</div>
 			
@@ -2730,7 +2730,7 @@
 				<form method="post" action="packages.php">
 				<input type="hidden" name="action" value="removeobject">
 				<input type="hidden" name="objecttype" value="analysis">
-				<input type="hidden" name="packageid" value="<? =$packageid?>">
+				<input type="hidden" name="packageid" value="<?=$packageid?>">
 				<table class="ui basic very compact table">
 					<thead>
 						<th><input type="checkbox" id="selectallanalysis"></th>
@@ -2750,13 +2750,13 @@
 						if (!$exists) { $trclass = "class='error left red marked'"; }
 						else $trclass = "";
 						?>
-						<tr <? =$trclass?>>
-							<td class="allanalysis"><input type="checkbox" name="objectids[]" value="<? =$objectid?>"></td>
-							<td><? =$uid?></td>
-							<td><? =$analysis['studynum']?></td>
-							<td><? =$analysis['name']?></td>
-							<td><? =$analysis['date']?></td>
-							<td><? =$analysis['status']?></td>
+						<tr <?=$trclass?>>
+							<td class="allanalysis"><input type="checkbox" name="objectids[]" value="<?=$objectid?>"></td>
+							<td><?=$uid?></td>
+							<td><?=$analysis['studynum']?></td>
+							<td><?=$analysis['name']?></td>
+							<td><?=$analysis['date']?></td>
+							<td><?=$analysis['status']?></td>
 						</tr>
 						<?
 					}
@@ -2778,7 +2778,7 @@
 						<div class="header">
 							Object summary
 						</div>
-						<? =$numexperiments?> experiments
+						<?=$numexperiments?> experiments
 					</div>				
 				</div>
 			
@@ -2797,7 +2797,7 @@
 				<form method="post" action="packages.php">
 				<input type="hidden" name="action" value="removeobject">
 				<input type="hidden" name="objecttype" value="experiment">
-				<input type="hidden" name="packageid" value="<? =$packageid?>">
+				<input type="hidden" name="packageid" value="<?=$packageid?>">
 				<table class="ui basic very compact table">
 					<thead>
 						<th><input type="checkbox" id="selectallexperiment"></th>
@@ -2811,12 +2811,12 @@
 				foreach ($experiments as $experimentid => $experiment) {
 					?>
 					<tr>
-						<td class="allexperiment"><input type="checkbox" name="objectids[]" value="<? =$experiment['objectid']?>"></td>
-						<td><? =$experiment['name']?></td>
-						<td><? =$experiment['version']?></td>
-						<td><? =$experiment['desc']?></td>
-						<td><? =$experiment['createdate']?></td>
-						<td><? =$experiment['creator']?></td>
+						<td class="allexperiment"><input type="checkbox" name="objectids[]" value="<?=$experiment['objectid']?>"></td>
+						<td><?=$experiment['name']?></td>
+						<td><?=$experiment['version']?></td>
+						<td><?=$experiment['desc']?></td>
+						<td><?=$experiment['createdate']?></td>
+						<td><?=$experiment['creator']?></td>
 					</tr>
 					<?
 				}
@@ -2839,7 +2839,7 @@
 						<div class="header">
 							Object summary
 						</div>
-						<? =$numpipelines?> pipelines
+						<?=$numpipelines?> pipelines
 					</div>				
 				</div>
 			
@@ -2858,7 +2858,7 @@
 				<form method="post" action="packages.php">
 				<input type="hidden" name="action" value="removeobject">
 				<input type="hidden" name="objecttype" value="pipeline">
-				<input type="hidden" name="packageid" value="<? =$packageid?>">
+				<input type="hidden" name="packageid" value="<?=$packageid?>">
 				<table class="ui basic very compact table">
 					<thead>
 						<th><input type="checkbox" id="selectallpipeline"></th>
@@ -2871,11 +2871,11 @@
 				foreach ($pipelines as $pipelineid => $pipeline) {
 					?>
 					<tr>
-						<td class="allpipeline"><input type="checkbox" name="objectids[]" value="<? =$pipeline['objectid']?>"></td>
-						<td><? =$pipeline['name']?></td>
-						<td><? =$pipeline['version']?></td>
-						<td><? =$pipeline['desc']?></td>
-						<td><? =$pipeline['createdate']?></td>
+						<td class="allpipeline"><input type="checkbox" name="objectids[]" value="<?=$pipeline['objectid']?>"></td>
+						<td><?=$pipeline['name']?></td>
+						<td><?=$pipeline['version']?></td>
+						<td><?=$pipeline['desc']?></td>
+						<td><?=$pipeline['createdate']?></td>
 					</tr>
 					<?
 				}
@@ -2934,23 +2934,23 @@
 	?>
 		<div class="ui container">
 			<div class="ui attached raised tertiary segment">
-				<h2 class="header" style="color: #000"><? =$formtitle?></h2>
+				<h2 class="header" style="color: #000"><?=$formtitle?></h2>
 			</div>
 			<form method="post" action="packages.php" class="ui form attached fluid raised segment">
-			<input type="hidden" name="action" value="<? =$formaction?>">
-			<input type="hidden" name="packageid" value="<? =$packageid?>">
+			<input type="hidden" name="action" value="<?=$formaction?>">
+			<input type="hidden" name="packageid" value="<?=$packageid?>">
 
 			<div class="field">
 				<label>Name</label>
 				<div class="field">
-					<input type="text" name="packagename" value="<? =$name?>" maxlength="255" required>
+					<input type="text" name="packagename" value="<?=$name?>" maxlength="255" required>
 				</div>
 			</div>
 
 			<div class="field">
 				<label>Description</label>
 				<div class="field">
-					<textarea name="packagedesc" rows="4"><? =$desc?></textarea>
+					<textarea name="packagedesc" rows="4"><?=$desc?></textarea>
 				</div>
 			</div>
 			<div class="ui grid">
@@ -2958,7 +2958,7 @@
 					<div class="field">
 						<label>Package data format</label>
 						<div class="ui selection dropdown">
-							<input type="hidden" name="packageformat" value="<? =$dataFormat?>">
+							<input type="hidden" name="packageformat" value="<?=$dataFormat?>">
 							<i class="dropdown icon"></i>
 							<div class="default text">Package Data Format</div>
 							<div class="scrollhint menu">
@@ -2977,7 +2977,7 @@
 					<div class="field">
 						<label>Subject directory format</label>
 						<div class="ui selection dropdown">
-							<input type="hidden" name="subjectdirformat" value="<? =$subjectDirFormat?>">
+							<input type="hidden" name="subjectdirformat" value="<?=$subjectDirFormat?>">
 							<i class="dropdown icon"></i>
 							<div class="default text">Subject directory name</div>
 							<div class="scrollhint menu">
@@ -2991,7 +2991,7 @@
 					<div class="field">
 						<label>Study directory format</label>
 						<div class="ui selection dropdown">
-							<input type="hidden" name="studydirformat" value="<? =$studyDirFormat?>">
+							<input type="hidden" name="studydirformat" value="<?=$studyDirFormat?>">
 							<i class="dropdown icon"></i>
 							<div class="default text">Study directory name</div>
 							<div class="scrollhint menu">
@@ -3005,7 +3005,7 @@
 					<div class="field">
 						<label>Series directory format</label>
 						<div class="ui selection dropdown">
-							<input type="hidden" name="seriesdirformat" value="<? =$seriesDirFormat?>">
+							<input type="hidden" name="seriesdirformat" value="<?=$seriesDirFormat?>">
 							<i class="dropdown icon"></i>
 							<div class="default text">Series directory name</div>
 							<div class="scrollhint menu">
@@ -3031,27 +3031,27 @@
 				<a class="item" data-tab="changes">Changes</a>
 			</div>
 			<div class="ui bottom attached active tab segment" data-tab="readme">
-				<textarea name="readme"><? =$readme?></textarea>
+				<textarea name="readme"><?=$readme?></textarea>
 			</div>
 			<div class="ui bottom attached tab segment" data-tab="notes">
-				<textarea name="notes"><? =$notes?></textarea>
+				<textarea name="notes"><?=$notes?></textarea>
 			</div>
 			<div class="ui bottom attached tab segment" data-tab="license">
-				<textarea name="license"><? =$license?></textarea>
+				<textarea name="license"><?=$license?></textarea>
 			</div>
 			<div class="ui bottom attached tab segment" data-tab="changes">
-				<textarea name="changes"><? =$changes?></textarea>
+				<textarea name="changes"><?=$changes?></textarea>
 			</div>
 			
 			<div class="ui two column grid">
 				<div class="column">
 					<? if ($type == "edit") { ?>
-					<a class="ui red button" href="packages.php?packageid=<? =$packageid?>&action=delete" onclick="return confirm('Are you sure you want to delete this package?')"><i class="trash icon"></i>Delete</a>
+					<a class="ui red button" href="packages.php?packageid=<?=$packageid?>&action=delete" onclick="return confirm('Are you sure you want to delete this package?')"><i class="trash icon"></i>Delete</a>
 					<? } ?>
 				</div>
 				<div class="column" align="right">
-					<a class="ui button" href="packages.php?projectid=<? =$projectid?>">Cancel</a>
-					<input type="submit" class="ui primary button" value="<? =$submitbuttonlabel?>">
+					<a class="ui button" href="packages.php?projectid=<?=$projectid?>">Cancel</a>
+					<input type="submit" class="ui primary button" value="<?=$submitbuttonlabel?>">
 				</div>
 			</div>
 		</form>
@@ -3160,14 +3160,14 @@
 							?>
 							<tr>
 								<td valign="top">
-									<a href="packages.php?action=displaypackage&packageid=<? =$packageid?>"><b><? =$name?></b></a>
+									<a href="packages.php?action=displaypackage&packageid=<?=$packageid?>"><b><?=$name?></b></a>
 								</td>
 								<!--<td valign="top">
-									<a href="packages.php?action=editform&packageid=<? =$packageid?>"><i class="pen icon"></i> Edit</a>
+									<a href="packages.php?action=editform&packageid=<?=$packageid?>"><i class="pen icon"></i> Edit</a>
 								</td>-->
-								<td valign="top"><? =$desc?></td>
-								<td valign="top"><? =$createdate?></td>
-								<td valign="top"><? =$numobjects?></td>
+								<td valign="top"><?=$desc?></td>
+								<td valign="top"><?=$createdate?></td>
+								<td valign="top"><?=$numobjects?></td>
 							</tr>
 							<?
 						}

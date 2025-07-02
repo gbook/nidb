@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xDialog'>
+
+<sources>
+  <src><file>xdialog.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<license>Part of X, a Cross-Browser Javascript Library, Distributed under the terms of the GNU LGPL</license>
+
+<groups>
+  <grp>UI</grp>
+</groups>
+
+<type>Object</type>
+
+<description><![CDATA[Provides a dialog box framework.]]></description>
+
+<syntax>new xDialog(sPos1, sPos2, sPos3, sStyle, sId, sUrl, bHidden)</syntax>
+
+<parameters>
+  <par><name>sPos1</name><note><![CDATA[]]></note></par>
+  <par><name>sPos2</name><note><![CDATA[]]></note></par>
+  <par><name>sPos3</name><note><![CDATA[]]></note></par>
+  <par><name>sStyle</name><note><![CDATA[]]></note></par>
+  <par><name>sId</name><note><![CDATA[]]></note></par>
+  <par><name>sUrl</name><note><![CDATA[]]></note></par>
+  <par><name>bHidden</name><note><![CDATA[]]></note></par>
+</parameters>
+
+<properties>
+</properties>
+
+<methods>
+  <meth><name>show()</name><note><![CDATA[]]></note></meth>
+  <meth><name>hide()</name><note><![CDATA[]]></note></meth>
+  <meth><name>setUrl(sUrl)</name><note><![CDATA[]]></note></meth>
+  <meth><name>resize(w, h)</name><note><![CDATA[]]></note></meth>
+</methods>
+
+<dependencies>
+  <dep>xCardinalPosition</dep>
+  <dep>xMoveTo</dep>
+  <dep>xSlideTo</dep>
+  <dep>xResizeTo</dep>
+</dependencies>
+
+<demos>
+  <demo><url>http://cross-browser.com/toys/</url><note><![CDATA[Index of all X demos.]]></note></demo>
+</demos>
+
+<revisions>
+  <rev><num>2</num><date>21Nov06</date><author>mf</author><note><![CDATA[Update.]]></note></rev>
+  <rev><num>1</num><date>15Feb06</date><author>mf</author><note><![CDATA[Initial contribution by Aaron Throckmorton. Thanks, Aaron!]]></note></rev>
+</revisions>
+
+</x_symbol>

@@ -182,11 +182,11 @@
 		<b>Displaying files for</b>
 		<br><br>
 		<div style="padding: 1px 10px">
-		<b>Subject ID:</b> <? =$uid?><br>
-		<b>Study #:</b> <? =$study_num?><br>
-		<b>Series #:</b> <? =$series_num?><br>
-		<b>Datatype:</b> <? =$datatype?><br>
-		<b>Protocol:</b> <? =$protocol?>
+		<b>Subject ID:</b> <?=$uid?><br>
+		<b>Study #:</b> <?=$study_num?><br>
+		<b>Series #:</b> <?=$series_num?><br>
+		<b>Datatype:</b> <?=$datatype?><br>
+		<b>Protocol:</b> <?=$protocol?>
 		</div>
 		<br><br>
 		<table class="ui very compact celled grey table">
@@ -233,7 +233,7 @@
 							
 							?>
 							<tr style="font-size: 10pt">
-								<td><a href="getfile.php?action=download&file=<? echo "$datadir/$file"; ?>" style="color: darkblue; font-weight: bold"><? =$file?></a>
+								<td><a href="getfile.php?action=download&file=<? echo "$datadir/$file"; ?>" style="color: darkblue; font-weight: bold"><?=$file?></a>
 								<?
 									if ($datatype == "VIDEO") {
 										if ($filetype == "Flash Video") {
@@ -257,19 +257,19 @@
 								</td>
 								<form action="managefiles.php" class="ui form">
 									<input type="hidden" name="action" value="rename">
-									<input type="hidden" name="seriesid" value="<? =$seriesid?>">
-									<input type="hidden" name="modality" value="<? =$modality?>">
-									<input type="hidden" name="datatype" value="<? =$datatype?>">
-									<input type="hidden" name="filename" value="<? =$file?>">
-									<td><div class="ui fluid input"><input type="text" maxlength="255" name="newfilename" value="<? =$file?>"></div></td>
+									<input type="hidden" name="seriesid" value="<?=$seriesid?>">
+									<input type="hidden" name="modality" value="<?=$modality?>">
+									<input type="hidden" name="datatype" value="<?=$datatype?>">
+									<input type="hidden" name="filename" value="<?=$file?>">
+									<td><div class="ui fluid input"><input type="text" maxlength="255" name="newfilename" value="<?=$file?>"></div></td>
 									<input type="submit" style="display:none">
 								</form>
-								<td><? =$filetype?></td>
-								<td><? =$size?></td>
-								<td><? =$ctime?></td>
-								<td><? =$atime?></td>
-								<td><? =$mtime?></td>
-								<td><a href="managefiles.php?action=delete&seriesid=<? =$seriesid?>&modality=<? =$modality?>&datatype=<? =$datatype?>&filename=<? =$file?>"><i class="ui large red trash alternate icon"></i></a></td>
+								<td><?=$filetype?></td>
+								<td><?=$size?></td>
+								<td><?=$ctime?></td>
+								<td><?=$atime?></td>
+								<td><?=$mtime?></td>
+								<td><a href="managefiles.php?action=delete&seriesid=<?=$seriesid?>&modality=<?=$modality?>&datatype=<?=$datatype?>&filename=<?=$file?>"><i class="ui large red trash alternate icon"></i></a></td>
 							</tr>
 							<?
 						}

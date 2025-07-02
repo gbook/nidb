@@ -1,6 +1,6 @@
 #!/bin/sh
 
-PACKAGE=nidb_2024.4.1085
+PACKAGE=nidb_2025.7.1260
 LIBDIR=$PACKAGE/lib/x86_64-linux-gnu/
 BINDIR=$PACKAGE/usr/local/bin/
 DEBDIR=$PACKAGE/DEBIAN
@@ -13,13 +13,13 @@ mkdir -p $DEBDIR
 cp -uv bin/squirrel/libsquirrel* $LIBDIR
 cp -uv bin/gdcm/bin/libgdcm* $LIBDIR
 cp -uv bin/smtp/libSMTPEmail* $LIBDIR
-cp -uv ~/Qt/6.9.0/gcc_64/lib/libQt6Sql.so* ~/Qt/6.9.0/gcc_64/lib/libQt6Network.so* ~/Qt/6.9.0/gcc_64/lib/libQt6Core.so* $LIBDIR
-cp -uv ~/Qt/6.9.0/gcc_64/lib/libicu* $LIBDIR
+cp -uv ~/Qt/6.9.1/gcc_64/lib/libQt6Sql.so* ~/Qt/6.9.1/gcc_64/lib/libQt6Network.so* ~/Qt/6.9.1/gcc_64/lib/libQt6Core.so* $LIBDIR
+cp -uv ~/Qt/6.9.1/gcc_64/lib/libicu* $LIBDIR
 
 cp -uv bin/nidb/nidb $BINDIR
 
 echo "Package: nidb
-Version: 2024.4.1085
+Version: 2025.7.1260
 Section: base
 Priority: optional
 Architecture: amd64

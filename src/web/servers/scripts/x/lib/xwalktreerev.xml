@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xWalkTreeRev'>
+
+<sources>
+  <src><file>xwalktreerev.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Iteration</grp>
+</groups>
+
+<type>Function</type>
+
+<description><![CDATA[Traverse a sub-tree in reverse.]]></description>
+
+<syntax>xWalkTreeRev( oNode, fnVisit, skip, data )</syntax>
+
+<parameters>
+  <par><name>oNode</name><note><![CDATA[]]></note></par>
+  <par><name>fnVisit</name><note><![CDATA[]]></note></par>
+  <par><name>skip</name><note><![CDATA[]]></note></par>
+  <par><name>data</name><note><![CDATA[]]></note></par>
+</parameters>
+
+<return><![CDATA[Returns the return from fnVisit.]]></return>
+
+<demos>
+  <demo><url>http://cross-browser.com/toys/</url><note><![CDATA[Index of all X demos.]]></note></demo>
+</demos>
+
+<comments>
+  <comment><date>9Oct06</date><author>mf</author><note><![CDATA[Thanks very much to Olivier!]]></note></comment>
+</comments>
+
+<revisions>
+  <rev><num>2</num><date>27Oct06</date><author>mf</author><note><![CDATA[Fixed a typo that was causing a syntax error. Thanks very much to Setemkia (Fawn) FallingTree.]]></note></rev>
+  <rev><num>1</num><date>2005</date><author>mf</author><note><![CDATA[Initial release.]]></note></rev>
+</revisions>
+
+</x_symbol>

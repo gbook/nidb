@@ -109,7 +109,7 @@
 		$sqlstring = "update contacts set contact_fullname = '$contactfullname', contact_title = '$contacttitle', contact_address1 = '$contactaddress1', contact_address2 = '$contactaddress2', contact_address3 = '$contactaddress3', contact_city = '$contactcity', contact_state = '$contactstate', contact_country = '$contactcountry', contact_phone1 = '$contactphone1', contact_phone2 = '$contactphone1', contact_phone3 = '$contactphone3', contact_email1 = '$contactemail1', contact_email2 = '$contactemail2', contact_email3 = '$contactemail3', contact_website = '$contactwebsite', contact_company = '$contactcompany', contact_department = '$contactdepartment'";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		?><div align="center"><span class="message"><? =$username?> updated</span></div><br><br><?
+		?><div align="center"><span class="message"><?=$username?> updated</span></div><br><br><?
 	}
 
 
@@ -145,7 +145,7 @@
 		$sqlstring = "insert into instance_contact (instance_id, contact_id) values ($id, $contactid)";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		?><div align="center"><span class="message"><? =$contactfullname?> added</span></div><br><br><?
+		?><div align="center"><span class="message"><?=$contactfullname?> added</span></div><br><br><?
 	}
 
 
@@ -210,33 +210,33 @@
 		<div align="center">
 		<table class="entrytable">
 			<form method="post" action="instance.php">
-			<input type="hidden" name="action" value="<? =$formaction?>">
-			<input type="hidden" name="contactid" value="<? =$contactid?>">
-			<input type="hidden" name="id" value="<? =$id?>">
+			<input type="hidden" name="action" value="<?=$formaction?>">
+			<input type="hidden" name="contactid" value="<?=$contactid?>">
+			<input type="hidden" name="id" value="<?=$id?>">
 			<tr>
 				<td class="heading" colspan="2" align="center">
-					<b><? =$formtitle?></b>
+					<b><?=$formtitle?></b>
 				</td>
 			</tr>
 			<tr>
 				<td class="label">Title</td>
-				<td><input type="text" name="contacttitle" value="<? =$contacttitle?>" size="6"></td>
+				<td><input type="text" name="contacttitle" value="<?=$contacttitle?>" size="6"></td>
 			</tr>
 			<tr>
 				<td class="label">Full name <span style="color:red">*</span></td>
-				<td><input type="text" name="contactfullname" value="<? =$contactfullname?>" size="40" required></td>
+				<td><input type="text" name="contactfullname" value="<?=$contactfullname?>" size="40" required></td>
 			</tr>
 			<tr>
 				<td class="label">Address <span style="color:red">*</span></td>
 				<td>
-					<input type="text" name="contactaddress1" value="<? =$contactaddress1?>" size="40" required maxlength="255"><br>
-					<input type="text" name="contactaddress2" value="<? =$contactaddress2?>" size="40" maxlength="255"><br>
-					<input type="text" name="contactaddress3" value="<? =$contactaddress3?>" size="40" maxlength="255">
+					<input type="text" name="contactaddress1" value="<?=$contactaddress1?>" size="40" required maxlength="255"><br>
+					<input type="text" name="contactaddress2" value="<?=$contactaddress2?>" size="40" maxlength="255"><br>
+					<input type="text" name="contactaddress3" value="<?=$contactaddress3?>" size="40" maxlength="255">
 				</td>
 			</tr>
 			<tr>
 				<td class="label">City <span style="color:red">*</span></td>
-				<td><input type="text" name="contactcity" value="<? =$contactcity?>" size="40" required maxlength="255"></td>
+				<td><input type="text" name="contactcity" value="<?=$contactcity?>" size="40" required maxlength="255"></td>
 			</tr>
 			<tr>
 				<td class="label">State</td>
@@ -581,34 +581,34 @@
 			<tr>
 				<td class="label">Phone <span style="color:red">*</span></td>
 				<td>
-					<input type="tel" name="contactphone1" value="<? =$contactphone1?>" size="40" required maxlength="255"><br>
-					<input type="tel" name="contactphone2" value="<? =$contactphone2?>" size="40" maxlength="255"><br>
-					<input type="tel" name="contactphone3" value="<? =$contactphone3?>" size="40" maxlength="255">
+					<input type="tel" name="contactphone1" value="<?=$contactphone1?>" size="40" required maxlength="255"><br>
+					<input type="tel" name="contactphone2" value="<?=$contactphone2?>" size="40" maxlength="255"><br>
+					<input type="tel" name="contactphone3" value="<?=$contactphone3?>" size="40" maxlength="255">
 				</td>
 			</tr>
 			<tr>
 				<td class="label">Email <span style="color:red">*</span></td>
 				<td>
-					<input type="email" name="contactemail1" value="<? =$contactemail1?>" size="40" required maxlength="255"><br>
-					<input type="email" name="contactemail2" value="<? =$contactemail2?>" size="40" maxlength="255"><br>
-					<input type="email" name="contactemail3" value="<? =$contactemail3?>" size="40" maxlength="255">
+					<input type="email" name="contactemail1" value="<?=$contactemail1?>" size="40" required maxlength="255"><br>
+					<input type="email" name="contactemail2" value="<?=$contactemail2?>" size="40" maxlength="255"><br>
+					<input type="email" name="contactemail3" value="<?=$contactemail3?>" size="40" maxlength="255">
 				</td>
 			</tr>
 			<tr>
 				<td class="label">Website</td>
-				<td><input type="text" name="contactwebsite" value="<? =$contactwebsite?>" size="40" maxlength="255"></td>
+				<td><input type="text" name="contactwebsite" value="<?=$contactwebsite?>" size="40" maxlength="255"></td>
 			</tr>
 			<tr>
 				<td class="label">Company</td>
-				<td><input type="text" name="contactcompany" value="<? =$contactcompany?>" size="40" maxlength="255"></td>
+				<td><input type="text" name="contactcompany" value="<?=$contactcompany?>" size="40" maxlength="255"></td>
 			</tr>
 			<tr>
 				<td class="label">Department</td>
-				<td><input type="text" name="contactdepartment" value="<? =$contactdepartment?>" size="40" maxlength="255"></td>
+				<td><input type="text" name="contactdepartment" value="<?=$contactdepartment?>" size="40" maxlength="255"></td>
 			</tr>
 			<tr>
 				<td colspan="2" align="center">
-					<input type="submit" id="submit" value="<? =$submitbuttonlabel?>">
+					<input type="submit" id="submit" value="<?=$submitbuttonlabel?>">
 				</td>
 			</tr>
 			</form>
@@ -649,7 +649,7 @@
 					$ownername = $row['username'];
 					
 					?>
-					<tr><td><a href="instance.php?instanceid=<? =$instanceid?>"><? =$name?></a></td>
+					<tr><td><a href="instance.php?instanceid=<?=$instanceid?>"><?=$name?></a></td>
 					<?
 				}
 				?>
@@ -679,8 +679,8 @@
 						$email = $row['contact_email1'];
 						?>
 						<tr>
-							<td><a href="instance.php?action=editcontactform&contactid=<? =$contactid?>"><? =$name?></a></td>
-							<td><? =$email?></td>
+							<td><a href="instance.php?action=editcontactform&contactid=<?=$contactid?>"><?=$name?></a></td>
+							<td><?=$email?></td>
 						</tr>
 						<?
 					}
@@ -694,7 +694,7 @@
 				}
 			?>
 		</table>
-		<a href="instance.php?action=addcontactform&instanceid=<? =$id?>">Add contact</a>
+		<a href="instance.php?action=addcontactform&instanceid=<?=$id?>">Add contact</a>
 	</details>
 	
 	<br>
@@ -734,19 +734,19 @@
 						$price = $row['pricing_price'];
 						?>
 						<tr>
-							<td valign="top"><? =$item?></td>
-							<td valign="top"><? =$unit?></td>
-							<td class="tiny" style="width:150px" valign="top"><? =$notes?></td>
-							<td valign="top">$<? =$price?></td>
+							<td valign="top"><?=$item?></td>
+							<td valign="top"><?=$unit?></td>
+							<td class="tiny" style="width:150px" valign="top"><?=$notes?></td>
+							<td valign="top">$<?=$price?></td>
 							<script>
-								function Calc<? =$priceid?>() {
-									var subtotal = <? =$price?> * document.getElementById('qty<? =$priceid?>').value;
-									document.getElementById('total<? =$priceid?>').value = subtotal.toFixed(2);
+								function Calc<?=$priceid?>() {
+									var subtotal = <?=$price?> * document.getElementById('qty<?=$priceid?>').value;
+									document.getElementById('total<?=$priceid?>').value = subtotal.toFixed(2);
 									CalcTotal();
 								}
 							</script>
 							<td valign="top">
-								<input type="text" id="qty<? =$priceid?>" placeholder="quantity" size="10" onChange="Calc<? =$priceid?>()"> $<input type="text" class="txt" size="10" readonly id="total<? =$priceid?>" value="0.00">
+								<input type="text" id="qty<?=$priceid?>" placeholder="quantity" size="10" onChange="Calc<?=$priceid?>()"> $<input type="text" class="txt" size="10" readonly id="total<?=$priceid?>" value="0.00">
 							</td>
 						</tr>
 						<?
@@ -799,12 +799,12 @@
 						$total = $price*$usageamount;
 						?>
 						<tr>
-							<td><? =$usagedate?></td>
-							<td><? =$item?></td>
-							<td><? =$unit?></td>
-							<td align="right">$<? =number_format($price,2)?></td>
-							<td align="right"><? =number_format($usageamount,3)?></td>
-							<td align="right">$<? =number_format($total,2)?></td>
+							<td><?=$usagedate?></td>
+							<td><?=$item?></td>
+							<td><?=$unit?></td>
+							<td align="right">$<?=number_format($price,2)?></td>
+							<td align="right"><?=number_format($usageamount,3)?></td>
+							<td align="right">$<?=number_format($total,2)?></td>
 						</tr>
 						<?
 					}

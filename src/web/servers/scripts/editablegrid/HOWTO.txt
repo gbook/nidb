@@ -1,0 +1,9 @@
+These are just some ideas that should go into the website FAQ...
+
+*/ Make columns/rows/cells read-only
+   - cf. github et mails
+   - code snippet qui illustre ces explications
+*/ Make headers editable
+*/ Use custom row attributes
+*/ Use option label in a custom renderer
+*/ ...

@@ -332,7 +332,7 @@ window.onload = AreCookiesEnabled;
 				<div class="ui raised compact segment">
 					<? if ($message != "") { ?>
 					<div class="ui center aligned inverted tertiary red segment">
-						<? =$message?>
+						<?=$message?>
 					</div>
 					<? } ?>
 						<img class="ui medium centered image" src="images/NIDB_logo.png">
@@ -412,7 +412,7 @@ window.onload = AreCookiesEnabled;
 			<table width="100%" cellspacing="0" cellpadding="6">
 				<tr>
 					<td align="left" style="font-size:8pt; color: #555">
-						NiDB v<? =$GLOBALS['cfg']['version']?> on <? =$_SERVER['HTTP_HOST']?>
+						NiDB v<?=$GLOBALS['cfg']['version']?> on <?=$_SERVER['HTTP_HOST']?>
 					</td>
 				</tr>
 			</table>

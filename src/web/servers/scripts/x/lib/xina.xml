@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x_symbol id='xInA'>
+
+<sources>
+  <src><file>xina.js</file><note><![CDATA[]]></note></src>
+</sources>
+
+<groups>
+  <grp>Misc</grp>
+</groups>
+<type>Function</type>
+
+<description><![CDATA[Return the array index of the element which is === v, else return false if v is not in a.]]></description>
+
+<syntax>xInA(a, v)</syntax>
+
+<parameters>
+  <par><name>a</name><note><![CDATA[an array]]></note></par>
+  <par><name>v</name><note><![CDATA[value to search for in a]]></note></par>
+</parameters>
+
+<revisions>
+  <rev><num>1</num><date>15Mar2011</date><author>mf</author><note><![CDATA[been using something like this for a while]]></note>
+  </rev>
+</revisions>
+
+</x_symbol>

@@ -47,7 +47,7 @@
 	<html>
 	<head>
 		<link rel="icon" type="image/png" href="images/squirrel.png">
-		<title>QA for <? =$uid?> study <? =$study_num?> series <? =$series_num?></title>
+		<title>QA for <?=$uid?> study <?=$study_num?> series <?=$series_num?></title>
 		<script type="text/javascript" src="scripts/jquery-1.3.2.min.js"></script>
 		<script type="text/javascript" src="scripts/jquery.flot.js"></script>
 	</head>
@@ -56,24 +56,24 @@
 	<table width="100%">
 		<tr>
 			<td align="center">
-				<img style="border: solid 1px #666666" src="data:image/png;base64,<? =base64_encode(file_get_contents("$thumbpath"))?>"><br>
+				<img style="border: solid 1px #666666" src="data:image/png;base64,<?=base64_encode(file_get_contents("$thumbpath"))?>"><br>
 				Middle slice
 			</td>
 			<td align="center">
 				<table>
 					<tr>
 						<td>
-							<img style="border: solid 1px #666666" src="data:image/png;base64,<? =base64_encode(file_get_contents("$qapath/thumb_lut.png"))?>">
+							<img style="border: solid 1px #666666" src="data:image/png;base64,<?=base64_encode(file_get_contents("$qapath/thumb_lut.png"))?>">
 						</td>
 						<td>
-							<img width="15" height="<? =$thumbheight?>" style="border: solid 1px #666666" src="data:image/png;base64,<? =base64_encode(file_get_contents("$qapath/gradient.png"))?>">
+							<img width="15" height="<?=$thumbheight?>" style="border: solid 1px #666666" src="data:image/png;base64,<?=base64_encode(file_get_contents("$qapath/gradient.png"))?>">
 						</td>
 					</tr>
 				</table>
 				Color-mapped
 			</td>
 			<td align="center">
-				<img src="data:image/png;base64,<? =base64_encode(file_get_contents("$qapath/thumb_fft.png"))?>"><br>
+				<img src="data:image/png;base64,<?=base64_encode(file_get_contents("$qapath/thumb_fft.png"))?>"><br>
 				FFT
 			</td>
 		</tr>
@@ -164,18 +164,18 @@
 					</tr>
 					<tr>
 						<td><b>X</b></td>
-						<td style="background-color:#EFEFEF; padding: 3px 10px"><? =number_format($minx,2)?> &emsp;<? =number_format($maxx,2)?></td>
-						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><? =number_format($rangex,2)?></b> &plusmn;<? =number_format($stdx,2)?></td>
+						<td style="background-color:#EFEFEF; padding: 3px 10px"><?=number_format($minx,2)?> &emsp;<?=number_format($maxx,2)?></td>
+						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><?=number_format($rangex,2)?></b> &plusmn;<?=number_format($stdx,2)?></td>
 					</tr>
 					<tr>
 						<td><b>Y</b></td>
-						<td style="background-color:#EFEFEF; padding: 3px 10px"><? =number_format($miny,2)?> &emsp;<? =number_format($maxy,2)?></td>
-						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><? =number_format($rangey,2)?></b> &plusmn;<? =number_format($stdy,2)?></td>
+						<td style="background-color:#EFEFEF; padding: 3px 10px"><?=number_format($miny,2)?> &emsp;<?=number_format($maxy,2)?></td>
+						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><?=number_format($rangey,2)?></b> &plusmn;<?=number_format($stdy,2)?></td>
 					</tr>
 					<tr>
 						<td><b>Z</b></td>
-						<td style="background-color:#EFEFEF; padding: 3px 10px"><? =number_format($minz,2)?> &emsp;<? =number_format($maxz,2)?></td>
-						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><? =number_format($rangez,2)?></b> &plusmn;<? =number_format($stdz,2)?></td>
+						<td style="background-color:#EFEFEF; padding: 3px 10px"><?=number_format($minz,2)?> &emsp;<?=number_format($maxz,2)?></td>
+						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><?=number_format($rangez,2)?></b> &plusmn;<?=number_format($stdz,2)?></td>
 					</tr>
 				</table>
 			</td>
@@ -198,18 +198,18 @@
 					</tr>
 					<tr>
 						<td><b>Pitch</b></td>
-						<td style="background-color:#EFEFEF; padding: 3px 10px"><? =number_format($minpitch,2)?>&deg; &emsp;<? =number_format($maxpitch,2)?>&deg;</td>
-						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><? =number_format($rangepitch,2)?></b> &plusmn;<? =number_format($stdpitch,2)?></td>
+						<td style="background-color:#EFEFEF; padding: 3px 10px"><?=number_format($minpitch,2)?>&deg; &emsp;<?=number_format($maxpitch,2)?>&deg;</td>
+						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><?=number_format($rangepitch,2)?></b> &plusmn;<?=number_format($stdpitch,2)?></td>
 					</tr>
 					<tr>
 						<td><b>Roll</b></td>
-						<td style="background-color:#EFEFEF; padding: 3px 10px"><? =number_format($minroll,2)?>&deg; &emsp;<? =number_format($maxroll,2)?>&deg;</td>
-						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><? =number_format($rangeroll,2)?></b> &plusmn;<? =number_format($stdroll,2)?></td>
+						<td style="background-color:#EFEFEF; padding: 3px 10px"><?=number_format($minroll,2)?>&deg; &emsp;<?=number_format($maxroll,2)?>&deg;</td>
+						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><?=number_format($rangeroll,2)?></b> &plusmn;<?=number_format($stdroll,2)?></td>
 					</tr>
 					<tr>
 						<td><b>Yaw</b></td>
-						<td style="background-color:#EFEFEF; padding: 3px 10px"><? =number_format($minyaw,2)?>&deg; &emsp;<? =number_format($maxyaw,2)?>&deg;</td>
-						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><? =number_format($rangeyaw,2)?></b> &plusmn;<? =number_format($stdyaw,2)?></td>
+						<td style="background-color:#EFEFEF; padding: 3px 10px"><?=number_format($minyaw,2)?>&deg; &emsp;<?=number_format($maxyaw,2)?>&deg;</td>
+						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><?=number_format($rangeyaw,2)?></b> &plusmn;<?=number_format($stdyaw,2)?></td>
 					</tr>
 				</table>
 			</td>

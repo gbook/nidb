@@ -235,11 +235,12 @@ bool imageIO::AnonymizeDir(QString dir,int anonlevel, QString randstr1, QString 
     gdcm::Tag tag;
 
     switch (anonlevel) {
-        case 0:
+        case 0: {
             msg += "No anonymization requested. Leaving files unchanged.";
             return 0;
+        }
         case 1:
-        case 3:
+        case 3: {
             /* remove referring physician name */
             tag.ReadFromCommaSeparatedString("0008, 0090"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
             tag.ReadFromCommaSeparatedString("0008, 1050"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
@@ -247,7 +248,8 @@ bool imageIO::AnonymizeDir(QString dir,int anonlevel, QString randstr1, QString 
             tag.ReadFromCommaSeparatedString("0010, 0010"); replace_tags.push_back( std::make_pair(tag, QString("Anonymous" + randstr1).toStdString().c_str()) );
             tag.ReadFromCommaSeparatedString("0010, 0030"); replace_tags.push_back( std::make_pair(tag, QString("Anonymous" + randstr2).toStdString().c_str()) );
             break;
-        case 2:
+        }
+        case 2: {
             /* Full anonymization. remove all names, dates, locations. ANYTHING identifiable */
             tag.ReadFromCommaSeparatedString("0008,0012"); replace_tags.push_back( std::make_pair(tag, "19000101") ); // InstanceCreationDate
             tag.ReadFromCommaSeparatedString("0008,0013"); replace_tags.push_back( std::make_pair(tag, "19000101") ); // InstanceCreationTime
@@ -307,9 +309,14 @@ bool imageIO::AnonymizeDir(QString dir,int anonlevel, QString randstr1, QString 
             tag.ReadFromCommaSeparatedString("0040,A123"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PersonName
 
             break;
-        case 4:
+        }
+        case 4: {
             tag.ReadFromCommaSeparatedString("0010, 0010"); replace_tags.push_back( std::make_pair(tag, QString("Anonymous" + randstr1).toStdString().c_str()) );
             break;
+        }
+        default: {
+            break;
+        }
     }
 
     /* recursively loop through the directory and anonymize the .dcm files */
