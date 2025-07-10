@@ -256,9 +256,15 @@ window.onload = AreCookiesEnabled;
 			$password_hash = $pwent["passwd"];
 
 			if (trim(shell_exec("command -v ypmatch")) != "") {
-					
+				
+				//echo "Checkpoint A<br>";
+				
 				$autharray = explode(":",`ypmatch $username passwd`);
+				//echo "autharray <br>";
+				//PrintVariable($autharray);
 				if ($autharray[0] != $username) {
+					//echo "Checkpoint B<br>";
+					
 					return false;
 				}
 				

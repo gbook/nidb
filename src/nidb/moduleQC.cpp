@@ -195,7 +195,7 @@ bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
     QString outputPath = qcpath + "/output";
     QString m;
     if (!MakePath(qcpath, m)) {
-        n->Log("Unable to create directory ["+qcpath+"] because of error ["+m+"]");
+        n->Log("Unable to create directory [" + qcpath + "] because of error [" + m + "]");
         return false;
     }
     n->Log("Working on [" + qcpath + "]");
@@ -229,78 +229,89 @@ bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
     else {
         n->Log("About to run the QC module locally");
 
-        /* download the data to qcpath */
-        ExportSeries(seriesid, modality, ExportFormat::BIDS, qcpath + "/data");
-        MakePath(outputPath, m);
-        QString systemstring = QString("%1 %2/data %3/output %4").arg(entryPoint).arg(qcpath).arg(qcpath).arg(uid);
-        n->Log("Running the QC module [" + systemstring + "]");
-        n->Log(SystemCommand(systemstring));
-        n->Log("Finished running the QC module locally");
-
-        /* parse the mriqc results */
-        /* example path: /nidb/data/archive/S5479BEK/12/18/qc/mriqc_docker/output/sub-S5479BEK/ses-12/anat/sub-S5479BEK_ses-12_T1w.json */
-        QString resultsJsonPath = QString("%1/output/sub-%2/ses-%3/%4/sub-%2_ses-%3_%5.json").arg(qcpath).arg(uid).arg(studynum).arg(s.bidsMapping.bidsEntity).arg(s.bidsMapping.bidsSuffix);
-
-        QFile file(resultsJsonPath);
-        if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            n->Log("Could not open file:" + file.errorString());
+        if ((s.bidsMapping.bidsEntity == "unknown") || (s.bidsMapping.bidsSuffix == "unknown")) {
+            n->Log("BIDS mapping not specified, not running this QC module on this series");
         }
-        QString jsonStr = file.readAll();
-        file.close();
+        else {
+            /* download the data to qcpath */
+            ExportSeries(seriesid, modality, ExportFormat::BIDS, qcpath + "/data");
+            MakePath(outputPath, m);
+            QString systemstring = QString("%1 %2/data %3/output %4").arg(entryPoint).arg(qcpath).arg(qcpath).arg(uid);
+            n->Log("Running the QC module [" + systemstring + "]");
+            n->Log(SystemCommand(systemstring));
+            n->Log("Finished running the QC module locally");
 
-        QJsonDocument d = QJsonDocument::fromJson(jsonStr.toUtf8());
+            /* parse the mriqc results */
+            /* example path: /nidb/data/archive/S5479BEK/12/18/qc/mriqc_docker/output/sub-S5479BEK/ses-12/anat/sub-S5479BEK_ses-12_T1w.json */
+            QString resultsJsonPath = QString("%1/output/sub-%2/ses-%3/%4/sub-%2_ses-%3_%5.json").arg(qcpath).arg(uid).arg(studynum).arg(s.bidsMapping.bidsEntity).arg(s.bidsMapping.bidsSuffix);
 
-        QJsonObject json = d.object();
-        foreach(const QString& key, json.keys()) {
-            QJsonValue value = json.value(key);
-
-            QString valType;
-            if (value.isDouble())
-                valType = "number";
-            else if (value.isString())
-                valType = "text";
-            else
-                continue;
-
-            /* insert qc name */
-            int qcNameRowID(-1);
-            q.prepare("select qcresultname_id from qc_resultnames where qcresult_name = :name");
-            q.bindValue(":name", key);
-            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-            if (q.size() > 0) {
-                q.first();
-                qcNameRowID = q.value("qcresultname_id").toInt();
+            QFile file(resultsJsonPath);
+            if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+                n->Log("Could not open file:" + file.errorString());
             }
-            else {
-                q.finish();
-                q.prepare("insert ignore into qc_resultnames (qcresult_name, qcresult_type) values (:name, :type)");
+            QString jsonStr = file.readAll();
+            file.close();
+
+            QJsonDocument d = QJsonDocument::fromJson(jsonStr.toUtf8());
+
+            QJsonObject json = d.object();
+            foreach(const QString& key, json.keys()) {
+                QJsonValue value = json.value(key);
+
+                QString valType;
+                if (value.isDouble()) {
+                    valType = "number";
+                    n->Log(QString("%1 -> %2").arg(key).arg(value.toDouble()));
+                }
+                else if (value.isString()) {
+                    valType = "text";
+                    n->Log(QString("%1 -> %2").arg(key).arg(value.toString()));
+                }
+                else {
+                    n->Log(QString("Unrecognized value type for %1").arg(key));
+                    continue;
+                }
+
+                /* insert qc name */
+                int qcNameRowID(-1);
+                q.prepare("select qcresultname_id from qc_resultnames where qcresult_name = :name");
                 q.bindValue(":name", key);
-                q.bindValue(":type", valType);
                 n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-                qcNameRowID = q.lastInsertId().toInt();
+                if (q.size() > 0) {
+                    q.first();
+                    qcNameRowID = q.value("qcresultname_id").toInt();
+                }
+                else {
+                    q.finish();
+                    q.prepare("insert ignore into qc_resultnames (qcresult_name, qcresult_type) values (:name, :type)");
+                    q.bindValue(":name", key);
+                    q.bindValue(":type", valType);
+                    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+                    qcNameRowID = q.lastInsertId().toInt();
+                }
+
+                if (value.isDouble()) {
+                    q.finish();
+                    q.prepare("insert ignore into qc_results (qcmoduleseries_id, qcresultname_id, qcresults_valuenumber) values (:qcmoduleseriesid, :resultnameid, :value)");
+                    q.bindValue(":qcmoduleseriesid", qcmoduleseriesid);
+                    q.bindValue(":resultnameid", qcNameRowID);
+                    q.bindValue(":value", value.toDouble());
+                    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+                }
+                else {
+                    q.finish();
+                    q.prepare("insert ignore into qc_results (qcmoduleseries_id, qcresultname_id, qcresults_valuetext) values (:qcmoduleseriesid, :resultnameid, :value)");
+                    q.bindValue(":qcmoduleseriesid", qcmoduleseriesid);
+                    q.bindValue(":resultnameid", qcNameRowID);
+                    q.bindValue(":value", value.toString());
+                    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+                }
             }
 
-            if (value.isDouble()) {
-                q.finish();
-                q.prepare("insert ignore into qc_results (qcmoduleseries_id, qcresultname_id, qcresults_valuenumber) values (:qcmoduleseriesid, :resultnameid, :value)");
-                q.bindValue(":qcmoduleseriesid", qcmoduleseriesid);
-                q.bindValue(":resultnameid", qcNameRowID);
-                q.bindValue(":value", value.toDouble());
-                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+            /* remove /data directory */
+            if (!RemoveDir(qcpath + "/data", m)) {
+                n->Log("Error removing directory [" + qcpath + "/data]  error message [" + m + "]");
             }
-            else {
-                q.finish();
-                q.prepare("insert ignore into qc_results (qcmoduleseries_id, qcresultname_id, qcresults_valuetext) values (:qcmoduleseriesid, :resultnameid, :value)");
-                q.bindValue(":qcmoduleseriesid", qcmoduleseriesid);
-                q.bindValue(":resultnameid", qcNameRowID);
-                q.bindValue(":value", value.toString());
-                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-            }
-        }
-
-        /* remove /data directory */
-        if (!RemoveDir(qcpath + "/data", m)) {
-            n->Log("Error removing directory [" + qcpath + "/data]  error message [" + m + "]");
         }
     }
 
@@ -517,7 +528,7 @@ bool moduleQC::ExportSeries(qint64 seriesRowID, QString modality, ExportFormat f
     seriesRowIDs.append(seriesRowID);
     seriesModalities.append(modality);
 
-    n->Log(QString("Exporting series [%1] [%2] [%3] to [%4]").arg(seriesRowID).arg(modality).arg(ExportFormatStrings[format]).arg(outputDir));
+    n->Log(QString("Exporting series [%1] [%2] [%3] to [%4]").arg(seriesRowID).arg(modality).arg(format).arg(outputDir));
 
     switch (format) {
         case Original:

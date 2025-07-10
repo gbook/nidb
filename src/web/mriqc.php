@@ -58,7 +58,7 @@
 	/* ------------------------------------ functions ------------------------------------ */
 	
 	/* -------------------------------------------- */
-	/* ------- LoadQCParams ----------------------- */
+	/* ------- Viewmriqc -------------------------- */
 	/* -------------------------------------------- */
 	function Viewmriqc($projectid) {
 		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
@@ -67,7 +67,7 @@
 
 		/* get list of qc metrics */
 		$resultNames = array();
-		$sqlstring = "select distinct(g.qcresult_name) from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join qc_moduleseries e on a.mrseries_id = e.series_id join qc_results f on e.qcmoduleseries_id = f.qcmoduleseries_id left join qc_resultnames g on f.qcresultname_id = g.qcresultname_id where c.project_id = $projectid and e.modality = 'mr';";
+		$sqlstring = "select distinct(g.qcresult_name) from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join qc_moduleseries e on a.mrseries_id = e.series_id join qc_results f on e.qcmoduleseries_id = f.qcmoduleseries_id left join qc_resultnames g on f.qcresultname_id = g.qcresultname_id where c.project_id = $projectid and e.modality = 'mr' and g.qcresult_type = 'number'";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		if (mysqli_num_rows($result) > 0){
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -101,7 +101,7 @@
 			}
 		}
 		
-		$sqlstring = "select a.*, b.study_num, d.uid, d.subject_id, e.*, f.*, g.* from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join qc_moduleseries e on a.mrseries_id = e.series_id join qc_results f on e.qcmoduleseries_id = f.qcmoduleseries_id left join qc_resultnames g on f.qcresultname_id = g.qcresultname_id where c.project_id = $projectid and e.modality = 'mr';";
+		$sqlstring = "select a.*, b.study_num, d.uid, d.subject_id, e.*, f.*, g.* from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join qc_moduleseries e on a.mrseries_id = e.series_id join qc_results f on e.qcmoduleseries_id = f.qcmoduleseries_id left join qc_resultnames g on f.qcresultname_id = g.qcresultname_id where c.project_id = $projectid and e.modality = 'mr' and g.qcresult_type = 'number'";
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		if (mysqli_num_rows($result) > 0){
@@ -140,6 +140,7 @@
 						foreach ($resultNames as $metric) {
 							$value = $alldata[$uid][$studynum][$seriesnum][$metric];
 							if (is_numeric($value)) { $value = number_format($value, 3); }
+							$metric = str_replace("-", "_", $metric);
 							$rowstr .= ", $metric: \"$value\"";
 						}
 						$rowstr .= " }";
@@ -183,6 +184,14 @@
 				}
 			</style>
 			<script type="text/javascript">
+				const myTheme = agGrid.themeQuartz.withParams({
+					borderColor: "#ccc",
+					wrapperBorder: false,
+					headerRowBorder: false,
+					rowBorder: { style: "solid" },
+					columnBorder: { style: "solid" },
+				});
+			
 				let gridApi;
 
 				// Function to demonstrate calling grid's API
@@ -196,6 +205,7 @@
 
 				// Grid Options are properties passed to the grid
 				const gridOptions = {
+					theme: myTheme,
 
 					// each entry here represents one column
 					columnDefs: [
@@ -216,7 +226,7 @@
 						{ headerName: "SeriesDesc", field: "seriesdesc", editable: false },
 						<?
 							foreach ($resultNames as $metric) {
-								echo "{ headerName: \"$metric\", field: \"$metric\", editable: false },";
+								echo "{ headerName: \"$metric\", field: \"$metric\", editable: false, cellStyle: {fontFamily: 'monospace'}, type: 'rightAligned' },";
 							}
 						?>
 					],
@@ -224,7 +234,7 @@
 					rowData: [ <?=$data?> ],
 					
 					// default col def properties get applied to all columns
-					defaultColDef: {sortable: true, filter: true, resizable: true},
+					defaultColDef: {sortable: true, filter: true, resizable: true, cellStyle: {fontSize: '12px'}},
 					rowClassRules: {
 						// row style expression
 						'rowhighlight': 'data.rowhighlight == 1',
@@ -261,6 +271,10 @@
 					//gridOptions.columnApi.autoSizeColumns(allColumnIds, skipHeader);
 					gridApi.autoSizeColumns(allColumnIds, skipHeader);
 				}
+
+				/* condense the spacing */
+				document.documentElement.style.setProperty("--ag-spacing", `2.0px`);
+				document.getElementById("spacing").innerText = "2.0";
 				
 			</script>
 			<?

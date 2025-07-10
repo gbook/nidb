@@ -179,6 +179,10 @@
 			ResetProjectQA($id);
 			DisplayStudiesTable2($id);
 			break;
+		case 'resetmriqc':
+			ResetProjectMRIQC($id);
+			DisplayStudiesTable2($id);
+			break;
 		case 'show_rdoc_list':
 			DisplayRDoCList($rdoc_label);
 			break;
@@ -466,6 +470,26 @@
 			$seriesid = $row['mrseries_id'];
 			echo "$seriesid<br>";
 			ResetQA($seriesid);
+		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ResetProjectMRIQC ------------------ */
+	/* -------------------------------------------- */
+	function ResetProjectMRIQC($id) {
+		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
+		if ($id == "") {
+			Error("Invalid project ID");
+		}
+		
+		/* get list of series associated with this project */
+		$sqlstring = "select mrseries_id from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $id";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$seriesid = $row['mrseries_id'];
+			echo "$seriesid<br>";
+			ResetMRIQC($seriesid);
 		}
 	}
 

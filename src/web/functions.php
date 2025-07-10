@@ -871,12 +871,12 @@
 	function GetAlternateUIDs($subjectid, $enrollmentid) {
 
 		//echo "<br><br>GetAlternateUIDs($subjectid, $enrollmentid)<br><br>";
+		$altuids = array();
 		
 		if ($subjectid == "") {
-			return "";
+			return $altuids;
 		}
 	
-		$altuids = array();
 		/* need the type equality too because '' evaluates to 0... */
 		if ($enrollmentid === '') {
 			$sqlstring = "select * from subject_altuid where subject_id = '$subjectid' order by altuid";
@@ -1053,6 +1053,9 @@
 		if (is_null($arr))
 			return "";
 		
+		if (!is_array($arr))
+			return "";
+		
 		if (count($arr) > 1) {
 			return implode($chr,$arr);
 		}
@@ -1124,12 +1127,56 @@
 				/* delete from the mr_qa table */
 				$sqlstring = "delete from mr_qa where mrseries_id = $seriesid";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			}
+			else {
+				$errormsgs[] = "Invalid MR series ID";
+			}
+		}
+
+		if (count($errormsgs) > 0) {
+			$errormsg = "<ul>";
+			foreach ($errormsgs as $m) {
+				$errormsg .= "<li>" . $m;
+			}
+			$errormsg .= "</ul>";
+			Error($errormsg);
+		}
+		
+		if (count($noticemsgs) > 0) {
+			$noticemsg = "<ul>";
+			foreach ($noticemsgs as $m) {
+				$noticemsg .= "<li>" . $m;
+			}
+			$noticemsg .= "</ul>";
+			Notice($noticemsg);
+		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ResetMRIQC ------------------------- */
+	/* -------------------------------------------- */
+	function ResetMRIQC($seriesids) {
+		
+		if (is_array($seriesids)) {
+			$seriesids = mysqli_real_escape_array($GLOBALS['linki'], $seriesids);
+		}
+		else {
+			$seriesids = array(mysqli_real_escape_string($GLOBALS['linki'], $seriesids));
+		}
+		
+		$errormsgs = array();
+		$noticemsgs = array();
+		
+		foreach ($seriesids as $seriesid) {
+			if ((is_numeric($seriesid)) && ($seriesid != "")) {
 				
 				/* delete from the qc* tables */
-				$sqlstring = "select qcmoduleseries_id from qc_moduleseries where series_id = $seriesid and modality = 'mr'";
+				$sqlstring = "select * from from qc_moduleseries a left join qc_modules b on a.qcmodule_id = b.qcmodule_id where a.series_id = $seriesid and a.modality = 'mr'";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$qcmoduleseriesid = $row['qcmoduleseries_id'];
+					$modulename = $row['module_name'];
 
 					if ($qcmoduleseriesid != "") {
 						$sqlstringA = "delete from qc_results where qcmoduleseries_id = $qcmoduleseriesid";
@@ -1139,21 +1186,20 @@
 						$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
 						
 						/* delete the qa directory */
-						//list($path, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid,'mr');
 						list($path, $seriespath, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid,'mr');
 						
-						//$qapath = "$path/qa";
+						$qcpath = "$path/$modulename";
 						if (($uid == "") || ($studynum == "") || ($studyid == "") || ($subjectid == "")) {
 							$errormsgs[] = "Could not delete QA data. One of the following is blank uid[$uid] studynum[$studynum] studyid[$studyid] subjectid[$subjectid]";
 						}
 						else {
 							/* check if the path is valid */
-							if (file_exists($qapath)) {
-								$systemstring = "rm -rv $qapath";
-								$noticemsgs[] = "Deleted <code>$qapath</code>";
+							if (file_exists($qcpath) && (strlen($qcpath) > 10)) {
+								$systemstring = "rm -rv $qcpath";
+								$noticemsgs[] = "Deleted <code>$qcpath</code>";
 							}
 							else {
-								$noticemsgs[] = "<code>$qapath</code> does not exist";
+								$noticemsgs[] = "<code>$qcpath</code> does not exist";
 							}
 						}
 						
