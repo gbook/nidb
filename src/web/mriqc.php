@@ -139,7 +139,14 @@
 						$rowstr = "{ uid: \"$uid\", studynum: \"$studynum\", seriesnum: \"$seriesnum\", seriesdesc: \"$seriesdesc\"";
 						foreach ($resultNames as $metric) {
 							$value = $alldata[$uid][$studynum][$seriesnum][$metric];
-							if (is_numeric($value)) { $value = number_format($value, 3); }
+							
+							if ((!is_null($value)) && ($value != ""))
+								$vals[$metric][] = $value;
+
+							//if ($value > ($stats[$metric]['max'] + 0.0))
+							//	$stats[$metric]['max'] = $value;
+							
+							if (is_numeric($value)) { $value = number_format($value, 3, '.', ''); }
 							$metric = str_replace("-", "_", $metric);
 							$rowstr .= ", $metric: \"$value\"";
 						}
@@ -153,7 +160,7 @@
 			if (count($rowdata) > 0)
 				$data = implode(",\n", $rowdata);
 			
-			//PrintVariable($data);
+			//PrintVariable($vals);
 			
 			?>
 			<!-- Include the JS for AG Grid -->
@@ -226,7 +233,45 @@
 						{ headerName: "SeriesDesc", field: "seriesdesc", editable: false },
 						<?
 							foreach ($resultNames as $metric) {
-								echo "{ headerName: \"$metric\", field: \"$metric\", editable: false, cellStyle: {fontFamily: 'monospace'}, type: 'rightAligned' },";
+								$min = min($vals[$metric]);
+								$max = max($vals[$metric]);
+								echo "{
+									headerName: \"$metric\",
+									field: \"$metric\",
+									editable: false,
+									type: 'rightAligned',
+									cellStyle: function(params) {
+										/* weight is 0 when min; weight is 1 when max */
+										let weight = (params.value - $min)/($max - $min);
+
+										let startRed = 255;
+										let startGreen = 255;
+										let startBlue = 102;
+										let endRed = 102;
+										let endGreen = 255;
+										let endBlue = 102;
+										
+										if (weight >= 0.5) {
+											startRed = 255;
+											startGreen = 102;
+											startBlue = 102;
+											endRed = 255;
+											endGreen = 255;
+											endBlue = 102;
+										}
+
+										let colorRed = (weight)*startRed + (1-(weight))*endRed;
+										let colorGreen = (weight)*startGreen + (1-(weight))*endGreen;
+										let colorBlue = (weight)*startBlue + (1-(weight))*endBlue;
+
+										if (params.value == '') {
+											return { backgroundColor: `rgb(255, 255, 255)` };
+										}
+										else {
+											return { backgroundColor: `rgb(\${colorRed}, \${colorGreen}, \${colorBlue})` };
+										}
+									}
+								},";
 							}
 						?>
 					],
