@@ -8,7 +8,7 @@ The Neuroinformatics Database (NiDB) is designed to store, retrieve, analyze, an
 
 #### Features
 
-* .rpm based installation for CentOS 8, RHEL 8, Rocky Linux 8 (not for CentOS Stream)
+* .rpm based installation for RHEL 8 and RHEL 9 compatible (not for CentOS Stream)
 * Store any neuroimaging data, including MR, CT, EEG, ET, Video, Task, GSR, Consent, MEG, TMS, and more
 * Store any assessment data (paper-based tasks)
 * Store clinical trial information (manage data across multiple days & dose times, etc)
