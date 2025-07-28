@@ -63,9 +63,10 @@ int moduleQC::Run() {
         int numdone = 0;
         while (q.next()) {
             int moduleid = q.value("qcmodule_id").toInt();
+            QString qcmodulename = q.value("module_name").toString();
             QString modality = q.value("modality").toString().toLower();
 
-            n->Log(QString("*********************** Working on module [%1][%2] ***********************").arg(moduleid).arg(modality));
+            n->Log(QString("*** Finding all series for QC module [%1][%2] ***").arg(qcmodulename).arg(modality));
 
             /* look through DB for all series (of this modality) that don't have an associated QCdata row */
             QSqlQuery q2;
@@ -95,7 +96,7 @@ int moduleQC::Run() {
                         }
 
                         /* give this thing a break every so often */
-                        if (numdone >= 100)
+                        if (numdone >= 5)
                             break;
 
                         QThread::sleep(1); // sleep for 1 sec
@@ -110,7 +111,7 @@ int moduleQC::Run() {
                 n->Log("Nothing to do");
             }
 
-            n->Log(QString("*********************** Finished module [%1][%2] ***********************").arg(moduleid).arg(modality));
+            n->Log(QString("*** Finished module [%1][%2] ***").arg(qcmodulename).arg(modality));
 
         }
         n->Log("Finished all modules");
@@ -162,11 +163,9 @@ bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
     QString uid = s.uid;
     //QString datatype = s.datatype;
 
-    n->Log(QString("-------------- Running %1 on %2 series %3 --------------").arg(moduleid).arg(modality).arg(seriesid));
-
     int qcmoduleseriesid(0);
 
-    n->Log(QString("============== Working on [%1-%2-%3] ==============").arg(uid).arg(studynum).arg(seriesnum));
+    n->Log(QString("-------------- Working on series [%1-%2-%3] for QC module [%4] --------------").arg(uid).arg(studynum).arg(seriesnum).arg(modulename));
     // check if this qc_moduleseries row exists
     q.prepare("select * from qc_moduleseries where series_id = :seriesid and modality = :modality and qcmodule_id = :moduleid");
     q.bindValue(":seriesid", seriesid);
@@ -198,11 +197,11 @@ bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
         n->Log("Unable to create directory [" + qcpath + "] because of error [" + m + "]");
         return false;
     }
-    n->Log("Working on [" + qcpath + "]");
+    n->Log("Created qc path [" + qcpath + "]");
 
     if (n->cfg["usecluster"].toInt()) {
         /* submit this module to the cluster. first create the SGE job file */
-        n->Log("About to create the SGE job file");
+        n->Log("Creating SGE job file...");
         QString localJobFilePath = QString("%1/%2.job").arg(qcpath).arg(modulename);
         QString clusterDataPath = QString("%1").arg(n->cfg["qsubpath"]);
         WriteClusterJobFile(localJobFilePath, modulename, clusterRowID, qcpath, clusterDataPath, entryPoint);
@@ -227,16 +226,24 @@ bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
 
     }
     else {
-        n->Log("About to run the QC module locally");
+        n->Log("Running QC module locally (not on cluster)");
 
         if ((s.bidsMapping.bidsEntity == "unknown") || (s.bidsMapping.bidsSuffix == "unknown")) {
-            n->Log("BIDS mapping not specified, not running this QC module on this series");
+            n->Log(QString("BIDS mapping not specified, not running QC module %1 on series %2-%3-%4").arg(modulename).arg(uid).arg(studynum).arg(seriesnum));
         }
         else {
+
             /* example path: /nidb/data/archive/S5479BEK/12/18/qc/mriqc_docker/output/sub-S5479BEK/ses-12/anat/sub-S5479BEK_ses-12_T1w.json */
-            QString resultsJsonPath = QString("%1/output/sub-%2/ses-%3/%4/sub-%2_ses-%3_%5.json").arg(qcpath).arg(uid).arg(studynum).arg(s.bidsMapping.bidsEntity).arg(s.bidsMapping.bidsSuffix);
+            QString resultsJsonPath;
+            if (s.bidsMapping.bidsTask == "") {
+                resultsJsonPath = QString("%1/output/sub-%2/ses-%3/%4/sub-%2_ses-%3_%5.json").arg(qcpath).arg(uid).arg(studynum).arg(s.bidsMapping.bidsEntity).arg(s.bidsMapping.bidsSuffix);
+            }
+            else {
+                resultsJsonPath = QString("%1/output/sub-%2/ses-%3/%4/sub-%2_ses-%3_task-%6_%5.json").arg(qcpath).arg(uid).arg(studynum).arg(s.bidsMapping.bidsEntity).arg(s.bidsMapping.bidsSuffix).arg(s.bidsMapping.bidsTask);
+            }
 
             /* check if the JSON file already exists */
+            n->Log("Checking for existing JSON file [" + resultsJsonPath + "]");
             if (QFile::exists(resultsJsonPath)) {
                 n->Log(QString("JSON file [%1] already exists, not running mriqc again").arg(resultsJsonPath));
             }
@@ -265,21 +272,22 @@ bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
             QJsonDocument d = QJsonDocument::fromJson(jsonStr.toUtf8());
 
             QJsonObject json = d.object();
-            n->Log(QString("Found JSON object with %1 keys").arg(json.keys().size()));
+            n->Log(QString("JSON file contains %1 keys").arg(json.keys().size()));
+            int numMetricsInserted(0);
             foreach(const QString& key, json.keys()) {
                 QJsonValue value = json.value(key);
 
                 QString valType;
                 if (value.isDouble()) {
                     valType = "number";
-                    n->Log(QString("%1 -> %2").arg(key).arg(value.toDouble()));
+                    n->Debug(QString("%1 -> %2").arg(key).arg(value.toDouble()));
                 }
                 else if (value.isString()) {
                     valType = "text";
-                    n->Log(QString("%1 -> %2").arg(key).arg(value.toString()));
+                    n->Debug(QString("%1 -> %2").arg(key).arg(value.toString()));
                 }
                 else {
-                    n->Log(QString("Unrecognized value type for %1").arg(key));
+                    n->Debug(QString("Unrecognized value type for %1").arg(key));
                     continue;
                 }
 
@@ -308,6 +316,7 @@ bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
                     q.bindValue(":resultnameid", qcNameRowID);
                     q.bindValue(":value", value.toDouble());
                     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+                    numMetricsInserted++;
                 }
                 else {
                     q.finish();
@@ -316,8 +325,10 @@ bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
                     q.bindValue(":resultnameid", qcNameRowID);
                     q.bindValue(":value", value.toString());
                     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+                    numMetricsInserted++;
                 }
             }
+            n->Log(QString("%1 metrics from JSON file inserted into database").arg(numMetricsInserted));
 
             /* remove /data directory */
             if (!RemoveDir(qcpath + "/data", m)) {
@@ -339,7 +350,7 @@ bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
     //numProcessed++;
 
     //QThread::sleep(1);
-    n->Log(QString("-------------- Finished %1 on %2 series %3 --------------").arg(moduleid).arg(modality).arg(seriesid));
+    n->Log(QString("Finished %1 on %2 series %3").arg(modulename).arg(modality).arg(seriesid));
 
     return true;
 }

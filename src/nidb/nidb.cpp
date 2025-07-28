@@ -553,6 +553,7 @@ void nidb::ModuleDBCheckOut() {
     q.bindValue(":pid", pid);
     SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
+    Log("Module checked out of database");
     Print("Module checked out of database");
 }
 
@@ -568,6 +569,7 @@ void nidb::ModuleDBCheckOut() {
 void nidb::ModuleRunningCheckIn() {
 
     Print(".",false);
+    Log("ModuleRunningCheckIn() called");
 
     QSqlQuery q;
     if (!checkedin) {
@@ -641,7 +643,7 @@ QString nidb::Log(QString msg, QString func, int wrap, bool timeStamp) {
                 Print("Unable to write to log file!");
         }
         else {
-            Print("Unable to write to log file. Maybe the logfile hasn't been created yet? Tried to write [" + msg + "] to [" + log.fileName() + "]");
+            Print("Unable to write to log file. Logfile may not exist yet? Tried to write [" + msg + "] to [" + log.fileName() + "]");
         }
     }
 

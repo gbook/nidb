@@ -2648,7 +2648,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
         QString uid = a.key();
         int j = 1; /* the session (study) counter */
 
-        n->Log("Working on [" + uid + "]");
+        //n->Log("Working on [" + uid + "]");
         QString subjectSex = s[uid][0][0]["subjectsex"];
         double subjectAge = s[uid][0][0]["subjectage"].toDouble();
         //QString primaryaltuid = s[uid][1][1]["primaryaltuid"];
@@ -2674,7 +2674,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
             if (studynum == 0)
                 continue;
 
-            n->Log(QString("Working on [" + uid + "] and study [%1]").arg(studynum));
+            //n->Log(QString("Working on [" + uid + "] and study [%1]").arg(studynum));
 
             /* iterate through the seriesnums */
             for(QMap<int, QMap<QString, QString> >::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
@@ -2684,7 +2684,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
                 if (seriesnum == 0)
                     continue;
 
-                n->Log(QString("Working on [" + uid + "] and study [%1] and series [%2]").arg(studynum).arg(seriesnum));
+                n->Log(QString("Working on subject [" + uid + "]  study [%1]  series [%2]").arg(studynum).arg(seriesnum));
 
                 QString seriesstatus = "complete";
                 QString statusmessage;
@@ -2709,15 +2709,15 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 
                 /* check which run- to use */
                 if (mapping.bidsRun > 0) {
-                    n->Log(QString("mapping.bidsRun is 0. Setting run = %1").arg(mapping.bidsRun));
+                    n->Debug(QString("mapping.bidsRun is 0. Setting run = %1").arg(mapping.bidsRun));
                     run = mapping.bidsRun;
                 }
                 else if (mapping.bidsAutoNumberRuns == false) {
-                    n->Log(QString("mapping.bidsAutoNumberRuns is [%1]. Setting run = 0").arg(mapping.bidsAutoNumberRuns));
+                    n->Debug(QString("mapping.bidsAutoNumberRuns is [%1]. Setting run = 0").arg(mapping.bidsAutoNumberRuns));
                     run = 0;
                 }
                 else {
-                    n->Log(QString("No condition met: mapping.bidsRun [%1]   mapping.bidsAutoNumberRuns [%2]   run [%3]").arg(mapping.bidsRun).arg(mapping.bidsAutoNumberRuns).arg(run));
+                    n->Debug(QString("No condition met: mapping.bidsRun [%1]   mapping.bidsAutoNumberRuns [%2]   run [%3]").arg(mapping.bidsRun).arg(mapping.bidsAutoNumberRuns).arg(run));
                 }
                 mapping.run = run;
                 mapping.phaseDir = phasedir;
@@ -2778,7 +2778,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 
                 m = "";
                 if (MakePath(seriesoutdir, m)) {
-                    n->Log("Created seriesoutdir [" + seriesoutdir + "]");
+                    n->Log("Created BIDS output directory [" + seriesoutdir + "]");
                 }
                 else {
                     exportstatus = "error";
@@ -2800,7 +2800,11 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
                             else
                                 n->Log(m);
 
-                            QString systemstring = "rsync --stats " + tmpdir + "/* " + seriesoutdir + "/";
+                            QString systemstring;
+                            if (n->debug)
+                                systemstring = "rsync --stats " + tmpdir + "/* " + seriesoutdir + "/";
+                            else
+                                systemstring = "rsync " + tmpdir + "/* " + seriesoutdir + "/";
                             n->Log(SystemCommand(systemstring));
                             RemoveDir(tmpdir,m);
                         }
@@ -3628,7 +3632,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
 bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modalities, subjectStudySeriesContainer &s) {
 
     QSqlQuery q;
-    n->Log(QString("seriesids size [%1]").arg(seriesids.size()));
+    //n->Log(QString("seriesids size [%1]").arg(seriesids.size()));
     QStringList seriesDescEncountered;
     QHash<QString, int> runs;
     int lastStudyRowID(0);
@@ -3641,7 +3645,7 @@ bool archiveIO::GetSeriesListDetails(QList <qint64> seriesids, QStringList modal
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
         if (q.size() > 0) {
-            n->Log(QString("%1() Found [%2] rows").arg(__FUNCTION__).arg(q.size()));
+            //n->Log(QString("%1() Found [%2] rows").arg(__FUNCTION__).arg(q.size()));
 
             while (q.next()) {
                 QString uid = q.value("uid").toString().replace('\u0000', "");
