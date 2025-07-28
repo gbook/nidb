@@ -233,21 +233,31 @@ bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
             n->Log("BIDS mapping not specified, not running this QC module on this series");
         }
         else {
-            /* download the data to qcpath */
-            ExportSeries(seriesid, modality, ExportFormat::BIDS, qcpath + "/data");
-            MakePath(outputPath, m);
-            QString systemstring = QString("%1 %2/data %3/output %4").arg(entryPoint).arg(qcpath).arg(qcpath).arg(uid);
-            n->Log("Running the QC module [" + systemstring + "]");
-            n->Log(SystemCommand(systemstring));
-            n->Log("Finished running the QC module locally");
-
-            /* parse the mriqc results */
             /* example path: /nidb/data/archive/S5479BEK/12/18/qc/mriqc_docker/output/sub-S5479BEK/ses-12/anat/sub-S5479BEK_ses-12_T1w.json */
             QString resultsJsonPath = QString("%1/output/sub-%2/ses-%3/%4/sub-%2_ses-%3_%5.json").arg(qcpath).arg(uid).arg(studynum).arg(s.bidsMapping.bidsEntity).arg(s.bidsMapping.bidsSuffix);
 
+            /* check if the JSON file already exists */
+            if (QFile::exists(resultsJsonPath)) {
+                n->Log(QString("JSON file [%1] already exists, not running mriqc again").arg(resultsJsonPath));
+            }
+            else {
+                n->Log(QString("JSON file [%1] does not exist. Running mriqc").arg(resultsJsonPath));
+                /* download the data to qcpath */
+                ExportSeries(seriesid, modality, ExportFormat::BIDS, qcpath + "/data");
+                MakePath(outputPath, m);
+                QString systemstring = QString("%1 %2/data %3/output %4").arg(entryPoint).arg(qcpath).arg(qcpath).arg(uid);
+                n->Log("Running the QC module [" + systemstring + "]");
+                n->Log(SystemCommand(systemstring));
+                n->Log("Finished running the QC module locally");
+            }
+
+            /* parse the mriqc results */
             QFile file(resultsJsonPath);
             if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
                 n->Log("Could not open file:" + file.errorString());
+            }
+            else {
+                n->Log("Reading output file [" + resultsJsonPath + "]");
             }
             QString jsonStr = file.readAll();
             file.close();
@@ -255,6 +265,7 @@ bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
             QJsonDocument d = QJsonDocument::fromJson(jsonStr.toUtf8());
 
             QJsonObject json = d.object();
+            n->Log(QString("Found JSON object with %1 keys").arg(json.keys().size()));
             foreach(const QString& key, json.keys()) {
                 QJsonValue value = json.value(key);
 
