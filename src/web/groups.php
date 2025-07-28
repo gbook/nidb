@@ -1100,6 +1100,8 @@
 		$totalweight = 0;
 		$numweight = 0;
 		$n = 0;
+		$ages = array();
+		$weights = array();
 
 		/* get the actual group data (subject level) */
 		$sqlstring = "select a.subjectgroup_id, b.*, (datediff(now(), birthdate)/365.25) 'age' from group_data a left join subjects b on a.data_id = b.subject_id where a.group_id = $id";

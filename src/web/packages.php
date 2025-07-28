@@ -1921,6 +1921,7 @@
 		$experiments = array();
 		$pipelines = array();
 		$datadictionaries = array();
+		$groupanalyses = array();
 		
 		/* get package details */
 		$sqlstring = "select * from packages where package_id = $packageid";

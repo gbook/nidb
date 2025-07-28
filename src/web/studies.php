@@ -3282,6 +3282,10 @@
 					if (stristr(strtolower($file),".e") !== FALSE) { $filetype = 'text'; }
 					if (stristr(strtolower($file),".par") !== FALSE) { $filetype = 'text'; }
 					if (stristr(strtolower($file),".mat") !== FALSE) { $filetype = 'text'; }
+					if (stristr(strtolower($file),".bidsignore") !== FALSE) { $filetype = 'text'; }
+					if (stristr(strtolower($file),".json") !== FALSE) { $filetype = 'text'; }
+					if (stristr(strtolower($file),".tsv") !== FALSE) { $filetype = 'text'; }
+					if (stristr(strtolower($file),".html") !== FALSE) { $filetype = 'text'; }
 					if ($istext) { $filetype = "text"; }
 					//echo "[$file $filetype]";
 				}

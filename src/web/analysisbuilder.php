@@ -303,48 +303,50 @@
 	function LoadSavedSearch($savedsearchid) {
 		$savedsearchid = mysqli_real_escape_string($GLOBALS['linki'], $savedsearchid);
 		
-		$sqlstring = "select * from saved_search where savedsearch_id = $savedsearchid";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$a = array();
+		
+		if ($savedsearchid != "") {
+			$sqlstring = "select * from saved_search where savedsearch_id = $savedsearchid";
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 
-		$a['projectid'] = $row['search_projectid'];
-		$a['mr_protocols'] = explode(",", $row['search_mrprotocol']);
-		$a['eeg_protocols'] = explode(",", $row['search_eegprotocol']);
-		$a['et_protocols'] = explode(",", $row['search_etprotocol']);
-		$a['pipelineid'] = $row['search_pipelineid'];
-		$a['pipelineresultname'] = $row['search_pipelineresultname'];
-		$a['pipelineseriesdatetime'] = $row['search_pipelineseries'];
-		$a['includeprotocolparms'] = $row['search_mrincludeprotocolparams'];
-		$a['includemrqa'] = $row['search_mrincludeqa'];
-		$a['groupmrbyvisittype'] = $row['search_groupmrbyvisittype'];
-		$a['includeallmeasures'] = $row['search_includeallmeasures'];
-		$a['measurename'] = $row['search_measurename'];
-		$a['includeallvitals'] = $row['search_includeallvitals'];
-		$a['vitalname'] = $row['search_vitalname'];
-		$a['includealldrugs'] = $row['search_includealldrugs'];
-		$a['includedrugdetails'] = $row['search_includedrugdetails'];
-		$a['drugname'] = $row['search_drugname'];
-		$a['includetimesincedose'] = $row['search_includetimesincedose'];
-		$a['dosevariable'] = $row['search_dosevariable'];
-		$a['dosetimerange'] = $row['search_groupdosetime'];
-		$a['dosedisplaytime'] = $row['search_displaytime'];
-		$a['groupbydate'] = $row['search_groupbyeventdate'];
-		$a['includeemptysubjects'] = $row['search_includeemptysubjects'];
-		$a['reportformat'] = $row['search_reportformat'];
-		$a['outputformat'] = $row['search_outputformat'];
-		$a['collapsevariables'] = $row['search_collapsevariables'];
-		$a['collapsebyexpression'] = $row['search_collapseexpression'];
-		$a['blankvalueplaceholder'] = $row['search_blankvalue'];
-		$a['missingvalueplaceholder'] = $row['search_missingvalue'];
-		$a['savedsearchname'] = $row['saved_name'];
+			$a['projectid'] = $row['search_projectid'];
+			$a['mr_protocols'] = explode(",", $row['search_mrprotocol']);
+			$a['eeg_protocols'] = explode(",", $row['search_eegprotocol']);
+			$a['et_protocols'] = explode(",", $row['search_etprotocol']);
+			$a['pipelineid'] = $row['search_pipelineid'];
+			$a['pipelineresultname'] = $row['search_pipelineresultname'];
+			$a['pipelineseriesdatetime'] = $row['search_pipelineseries'];
+			$a['includeprotocolparms'] = $row['search_mrincludeprotocolparams'];
+			$a['includemrqa'] = $row['search_mrincludeqa'];
+			$a['groupmrbyvisittype'] = $row['search_groupmrbyvisittype'];
+			$a['includeallmeasures'] = $row['search_includeallmeasures'];
+			$a['measurename'] = $row['search_measurename'];
+			$a['includeallvitals'] = $row['search_includeallvitals'];
+			$a['vitalname'] = $row['search_vitalname'];
+			$a['includealldrugs'] = $row['search_includealldrugs'];
+			$a['includedrugdetails'] = $row['search_includedrugdetails'];
+			$a['drugname'] = $row['search_drugname'];
+			$a['includetimesincedose'] = $row['search_includetimesincedose'];
+			$a['dosevariable'] = $row['search_dosevariable'];
+			$a['dosetimerange'] = $row['search_groupdosetime'];
+			$a['dosedisplaytime'] = $row['search_displaytime'];
+			$a['groupbydate'] = $row['search_groupbyeventdate'];
+			$a['includeemptysubjects'] = $row['search_includeemptysubjects'];
+			$a['reportformat'] = $row['search_reportformat'];
+			$a['outputformat'] = $row['search_outputformat'];
+			$a['collapsevariables'] = $row['search_collapsevariables'];
+			$a['collapsebyexpression'] = $row['search_collapseexpression'];
+			$a['blankvalueplaceholder'] = $row['search_blankvalue'];
+			$a['missingvalueplaceholder'] = $row['search_missingvalue'];
+			$a['savedsearchname'] = $row['saved_name'];
+			
+			$a['includeduration'] = $row['search_includeeventduration'];
+			$a['includeenddate'] = $row['search_includeendate'];
+			$a['includeheightweight'] = $row['search_includeheightweight'];
+			$a['includedob'] = $row['search_includedob'];
+		}
 		
-		$a['includeduration'] = $row['search_includeeventduration'];
-		$a['includeenddate'] = $row['search_includeendate'];
-		$a['includeheightweight'] = $row['search_includeheightweight'];
-		$a['includedob'] = $row['search_includedob'];
-		
-		
-		//PrintVariable($a);
 		return $a;
 	}
 	
@@ -561,7 +563,7 @@
 								<div class="ui inline field">
 									<label>Protocol(s)</label>
 									<select name="mr_protocols[]" id="mr_protocols" multiple class="ui search fluid dropdown" onChange="CheckForMRICriteria()">
-										<option value="" <? if (in_array("NONE", $a['mr_protocols']) || ($a['mr_protocols'] == "")) echo "selected"; ?>>Select MRI protocol(s)...
+										<option value="" <? if (!is_null($a) && (in_array("NONE", $a['mr_protocols']) || ($a['mr_protocols'] == ""))) echo "selected"; ?>>Select MRI protocol(s)...
 										<option value="ALLPROTOCOLS" <? if (in_array("ALLPROTOCOLS", $a['mr_protocols'])) echo "selected"; ?>>(ALL protocols)
 										<?
 										/* get unique list of MR protocols from this project */

@@ -1172,7 +1172,7 @@
 			if ((is_numeric($seriesid)) && ($seriesid != "")) {
 				
 				/* delete from the qc* tables */
-				$sqlstring = "select * from from qc_moduleseries a left join qc_modules b on a.qcmodule_id = b.qcmodule_id where a.series_id = $seriesid and a.modality = 'mr'";
+				$sqlstring = "select * from qc_moduleseries a left join qc_modules b on a.qcmodule_id = b.qcmodule_id where a.series_id = $seriesid and a.modality = 'mr'";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$qcmoduleseriesid = $row['qcmoduleseries_id'];
@@ -1195,7 +1195,7 @@
 						else {
 							/* check if the path is valid */
 							if (file_exists($qcpath) && (strlen($qcpath) > 10)) {
-								$systemstring = "rm -rv $qcpath";
+								//$systemstring = "rm -rv $qcpath";
 								$noticemsgs[] = "Deleted <code>$qcpath</code>";
 							}
 							else {

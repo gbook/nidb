@@ -241,28 +241,36 @@
 									editable: false,
 									type: 'rightAligned',
 									cellStyle: function(params) {
-										/* weight is 0 when min; weight is 1 when max */
+										/* weight is 0 when min (green); weight is 1 when max (red) */
 										let weight = (params.value - $min)/($max - $min);
 
-										let startRed = 255;
-										let startGreen = 255;
-										let startBlue = 102;
-										let endRed = 102;
-										let endGreen = 255;
-										let endBlue = 102;
+										/* start at Green, end at Yellow */
+										let startRed = 102.0;
+										let startGreen = 255.0;
+										let startBlue = 102.0;
 										
+										let endRed = 255.0;
+										let endGreen = 255.0;
+										let endBlue = 102.0;
+										
+										let scaledWeight = 1.0 - ((weight - 0.0)/(0.5 - 0.0));
+										
+										/* start at Yellow, end at Red */
 										if (weight >= 0.5) {
-											startRed = 255;
-											startGreen = 102;
-											startBlue = 102;
-											endRed = 255;
-											endGreen = 255;
-											endBlue = 102;
+											startRed = 255.0;
+											startGreen = 255.0;
+											startBlue = 102.0;
+											
+											endRed = 255.0;
+											endGreen = 102.0;
+											endBlue = 102.0;
+											
+											scaledWeight = 1.0 - ((weight - 0.5)/(1.0 - 0.5));
 										}
 
-										let colorRed = (weight)*startRed + (1-(weight))*endRed;
-										let colorGreen = (weight)*startGreen + (1-(weight))*endGreen;
-										let colorBlue = (weight)*startBlue + (1-(weight))*endBlue;
+										let colorRed = (scaledWeight)*startRed + (1.0 - scaledWeight)*endRed;
+										let colorGreen = (scaledWeight)*startGreen + (1.0 - scaledWeight)*endGreen;
+										let colorBlue = (scaledWeight)*startBlue + (1.0 - scaledWeight)*endBlue;
 
 										if (params.value == '') {
 											return { backgroundColor: `rgb(255, 255, 255)` };
