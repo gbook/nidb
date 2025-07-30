@@ -98,18 +98,18 @@ apt install wget   # if needed
 {% endtab %}
 {% endtabs %}
 
-#### Step 2 - Install Qt 6.6.x
+#### Step 2 - Install Qt 6.9.1
 
 1. Download Qt open-source from [https://www.qt.io/download-open-source](https://www.qt.io/download-open-source)
 2. Make the installer executable `chmod 777 qt-unified-linux-x64-x.x.x-online.run`
 3. Run `./qt-unified-linux-x64-x.x.x-online.run`
 4. The Qt Maintenance Tool will start. An account is required to download Qt open source
-5. On the components screen, select the checkbox for **Qt 6.6.x → Desktop gcc 64-bit**
-6. **(Optional for building MySQL/MariaDB driver)** On the components screen, select the checkbox for **Qt 6.6.x → Sources**
+5. On the components screen, select the checkbox for **Qt 6.9.1 → Desktop gcc 64-bit**
+6. **(Optional for building MySQL/MariaDB driver)** On the components screen, select the checkbox for **Qt 6.9.1 → Sources**
 
 #### Step 3 - (Optional) Build MySQL/MariaDB driver for Qt
 
-Sometimes the MySQL/MariaDB driver supplied with Qt will not work correctly, and needs to be built manually. This happens on Debian 12, for example. If building is successful, the path to the driver should eventually be `~/Qt/6.6.3/gcc_64/plugins/sqldrivers/libqsqlmysql.so`
+Sometimes the MySQL/MariaDB driver supplied with Qt will not work correctly, and needs to be built manually. This happens on Debian 12, for example. If building is successful, the path to the driver should eventually be `~/Qt/6.9.1/gcc_64/plugins/sqldrivers/libqsqlmysql.so`
 
 {% tabs %}
 {% tab title="RHEL 9" %}
@@ -122,7 +122,7 @@ sudo apt install libglib2*
 cd ~
 mkdir build-sqldrivers
 cd build-sqldrivers
-~/Qt/6.6.3/gcc_64/bin/qt-cmake -G Ninja ~/Qt/6.6.3/Src/qtbase/src/plugins/sqldrivers -DCMAKE_INSTALL_PREFIX=~/Qt/6.6.3/gcc_64 -DMySQL_INCLUDE_DIR="/usr/include/mariadb" -DMySQL_LIBRARY="/usr/lib/x86_64-linux-gnu/libmariadbclient.so"
+~/Qt/6.9.1/gcc_64/bin/qt-cmake -G Ninja ~/Qt/6.9.1/Src/qtbase/src/plugins/sqldrivers -DCMAKE_INSTALL_PREFIX=~/Qt/6.9.1/gcc_64 -DMySQL_INCLUDE_DIR="/usr/include/mariadb" -DMySQL_LIBRARY="/usr/lib/x86_64-linux-gnu/libmariadbclient.so"
 cmake --build .
 cmake --install .
 ```
@@ -136,7 +136,7 @@ sudo apt install libglib2*
 cd ~
 mkdir build-sqldrivers
 cd build-sqldrivers
-~/Qt/6.6.3/gcc_64/bin/qt-cmake -G Ninja ~/Qt/6.6.3/Src/qtbase/src/plugins/sqldrivers -DCMAKE_INSTALL_PREFIX=~/Qt/6.6.3/gcc_64 -DMySQL_INCLUDE_DIR="/usr/include/mariadb" -DMySQL_LIBRARY="/usr/lib/x86_64-linux-gnu/libmariadbclient.so"
+~/Qt/6.9.1/gcc_64/bin/qt-cmake -G Ninja ~/Qt/6.9.1/Src/qtbase/src/plugins/sqldrivers -DCMAKE_INSTALL_PREFIX=~/Qt/6.9.1/gcc_64 -DMySQL_INCLUDE_DIR="/usr/include/mariadb" -DMySQL_LIBRARY="/usr/lib/x86_64-linux-gnu/libmariadbclient.so"
 cmake --build .
 cmake --install .
 ```
