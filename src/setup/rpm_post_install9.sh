@@ -120,6 +120,8 @@ find /var/www -type f -exec chmod 644 {} \;
 
 touch /nidb/setup/dbupgrade
 
-echo "*******************************************************************************"
-echo "IMPORTANT!!  go to http://localhost/setup.php to finish the upgrade process  !!"
-echo "*******************************************************************************"
+echo "*****************************************************************************************"
+echo "  IMPORTANT!!"
+echo "  - Go to http://localhost/setup.php to finish the upgrade process!!"
+echo "  - Edit /etc/systemd/system/dcmrcv.service to reflect the correct dicomingincoming path \n"
+echo "*****************************************************************************************"

@@ -164,8 +164,29 @@ bool imageIO::IsDICOMFile(QString f) {
     r.SetFileName(f.toStdString().c_str());
     if (r.Read())
         return true;
-    else
-        return false;
+    else {
+        /* try reading with exiftool */
+        QHash<QString, QString> tags;
+        QString systemstring = "exiftool " + f;
+        QString exifoutput = SystemCommand(systemstring, false);
+        QStringList lines = exifoutput.split(QRegularExpression("(\\n|\\r\\n|\\r)"), Qt::SkipEmptyParts);
+
+        foreach (QString line, lines) {
+            QString delimiter = ":";
+            qint64 index = line.indexOf(delimiter);
+
+            if (index != -1) {
+                QString firstPart = line.mid(0, index).replace(" ", "");
+                QString secondPart = line.mid(index + delimiter.length());
+                tags[firstPart.trimmed()] = secondPart.trimmed();
+            }
+        }
+
+        if (tags["FileType"] != "DICOM")
+            return false;
+        else
+            return false;
+    }
 }
 
 
