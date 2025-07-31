@@ -300,7 +300,6 @@ bool moduleImport::SetImportRequestStatus(int importid, QString status, QString 
 }
 
 
-
 /* ---------------------------------------------------------- */
 /* --------- ArchiveLocal ----------------------------------- */
 /* ---------------------------------------------------------- */
@@ -633,6 +632,8 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
                 else {
                     qint64 fsize = QFileInfo(file).size();
                     n->Log(QString("Unable to parse file [%1] (size [%2]) as a DICOM file. Moving to [%3]").arg(file).arg(fsize).arg(n->cfg["problemdir"]));
+
+                    n->Log(m);
 
                     QSqlQuery q;
                     m = "Not a DICOM file, moving to the problem directory";
