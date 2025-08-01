@@ -626,7 +626,7 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
                 if (n->cfg["enablecsa"] == "1") csa = true;
                 QString binpath = n->cfg["nidbdir"] + "/bin";
                 if (img->GetImageFileTags(file, binpath, csa, tags, m)) {
-                    n->Log(m);
+                    //n->Log(m);
                     dcmseries[tags["SeriesInstanceUID"]].append(file);
                 }
                 else {
