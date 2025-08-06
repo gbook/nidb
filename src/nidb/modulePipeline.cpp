@@ -2213,7 +2213,7 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
      * B1) Studies that need results re-run
      * B2) Studies that need supplement run
      *
-     * Yes, this could all be done in SQL with joins, but this method is easier to debug and
+     * This could all be done in SQL with joins, but this method is easier to debug and
      * gives the row counts at each step. It's easier for the user to interpret
      */
 
