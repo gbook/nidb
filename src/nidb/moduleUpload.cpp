@@ -810,7 +810,7 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
 
                     /* get or create study */
                     int localStudyNumber(-1);
-                    if (io->GetStudy("modalitystudydate", studyRowID, enrollmentRowID, uploadStudyDate, uploadStudyModality, sqrlStudy.StudyUID, studyRowID)) {
+                    if (io->GetStudy("modalitystudydate", studyRowID, enrollmentRowID, uploadStudyDate, uploadStudyModality, sqrlStudy.StudyUID, studyRowID, localStudyNumber)) {
                         n->Log(QString("Found existing study.  number [%1], studyRowID [%2]").arg(subjectUID).arg(subjectRowID), __FUNCTION__);
                     }
                     else {

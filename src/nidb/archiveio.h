@@ -58,7 +58,7 @@ public:
     bool CreateSubject(QString PatientID, QString PatientName, QString PatientBirthDate, QString PatientSex, double PatientWeight, double PatientSize, int &subjectRowID, QString &subjectRealUID);
     //bool CreateSubject(QString PatientID, QString PatientName, QString PatientSex, QString PatientBirthDate, double PatientWeight, double PatientSize, QString SQLIDs, int &subjectRowID, QString &subjectUID);
     bool GetSeriesListDetails(QList <qint64> seriesids, QStringList modalities, subjectStudySeriesContainer &s);
-    bool GetStudy(QString studyMatchCriteria, int existingStudyID, int enrollmentRowID, QString StudyDateTime, QString Modality, QString StudyInstanceUID, int &studyRowID);
+    bool GetStudy(QString studyMatchCriteria, int existingStudyID, int enrollmentRowID, QString StudyDateTime, QString Modality, QString StudyInstanceUID, int &studyRowID, int &studyNumber);
     bool GetSubject(QString subjectMatchCriteria, int existingSubjectID, int projectID, QString PatientID, QString PatientName, QString PatientSex, QString PatientBirthDate, int &subjectRowID, QString &subjectUID);
     bool WriteBIDS(QList<qint64> seriesids, QStringList modalities, QString odir, QString bidsreadme, QStringList bidsflags, QString &msg);
     bool WriteExportPackage(qint64 exportid, QString zipfilepath, QString &msg);
@@ -70,7 +70,7 @@ public:
     bool GetOrCreateEnrollment(int subjectRowID, int projectRowID, int &enrollmentRowID);
     bool GetFamily(int subjectRowID, QString subjectUID, int &familyRowID, QString &familyUID);
     bool GetProject(int destProjectID, QString StudyDescription, int &projectRowID);
-    void CreateThumbnail(QString f, QString outdir);
+    bool CreateThumbnail(QString f, QString outdir);
     void SetAlternateIDs(int subjectRowID, int enrollmentRowID, QStringList altuidlist);
 
     /* object helper functions */

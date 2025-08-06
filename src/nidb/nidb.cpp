@@ -569,7 +569,7 @@ void nidb::ModuleDBCheckOut() {
 void nidb::ModuleRunningCheckIn() {
 
     Print(".",false);
-    Log("ModuleRunningCheckIn() called");
+    Log("Module running check-in");
 
     QSqlQuery q;
     if (!checkedin) {

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jul 01, 2025 at 08:16 PM
+-- Generation Time: Aug 06, 2025 at 05:13 PM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -1372,6 +1372,32 @@ CREATE TABLE `importlogs` (
   `enrollment_created` tinyint(1) DEFAULT NULL,
   `overwrote_existing` tinyint(1) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=COMPRESSED;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `import_file_log`
+--
+
+CREATE TABLE `import_file_log` (
+  `importfilelog_id` int(11) NOT NULL,
+  `importfile_datetime` datetime NOT NULL,
+  `filename` text NOT NULL,
+  `file_datetime` datetime NOT NULL,
+  `file_size` int(11) NOT NULL,
+  `file_type` varchar(255) DEFAULT NULL,
+  `Modality` varchar(255) DEFAULT NULL,
+  `PatientID` text DEFAULT NULL,
+  `StudyUID` text DEFAULT NULL,
+  `StudyDescription` text DEFAULT NULL,
+  `StudyDateTime` datetime DEFAULT NULL,
+  `SeriesUID` text DEFAULT NULL,
+  `SeriesDescription` text DEFAULT NULL,
+  `SeriesDatetime` datetime DEFAULT NULL,
+  `SeriesNumber` int(11) DEFAULT NULL,
+  `AcquisitionNumber` int(11) DEFAULT NULL,
+  `InstanceNumber` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -4163,6 +4189,12 @@ ALTER TABLE `importlogs`
   ADD KEY `studydatetime_orig` (`studydatetime_orig`);
 
 --
+-- Indexes for table `import_file_log`
+--
+ALTER TABLE `import_file_log`
+  ADD PRIMARY KEY (`importfilelog_id`);
+
+--
 -- Indexes for table `import_requestdirs`
 --
 ALTER TABLE `import_requestdirs`
@@ -5360,6 +5392,12 @@ ALTER TABLE `gsr_series`
 --
 ALTER TABLE `importlogs`
   MODIFY `importlog_id` bigint(20) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `import_file_log`
+--
+ALTER TABLE `import_file_log`
+  MODIFY `importfilelog_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `import_requests`
