@@ -113,8 +113,6 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
 
     AppendUploadLog(__FUNCTION__ , QString("Archiving [%1] files").arg(files.size()));
 
-    //perf.Start();
-
     int subjectRowID(-1);
     QString subjectUID;
     QString familyUID;
@@ -162,20 +160,14 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
     double PatientAge(0.0);
     QString PerformingPhysiciansName = tags["PerformingPhysicianName"];
     QString ProtocolName = tags["ProtocolName"];
-    //QString SeriesDate = tags["SeriesDate"];
     int SeriesNumber = tags["SeriesNumber"].toInt();
-    //QString SeriesTime = tags["SeriesTime"];
-    //QString StudyDate = tags["StudyDate"];
     QString SeriesDateTime = tags["SeriesDateTime"];
     QString StudyDescription = tags["StudyDescription"];
     QString SeriesDescription = tags["SeriesDescription"];
-    //QString StudyTime = tags["StudyTime"];
     QString StudyDateTime = tags["StudyDateTime"];
     int Rows = tags["Rows"].toInt();
     int Columns = tags["Columns"].toInt();
-    //int AccessionNumber = tags["AccessionNumber"].toInt();
     double SliceThickness = tags["SliceThickness"].toDouble();
-    //QString PixelSpacing = tags["PixelSpacing"];
     int NumberOfTemporalPositions = tags["NumberOfTemporalPositions"].toInt();
     int ImagesInAcquisition = tags["ImagesInAcquisition"].toInt();
     QString SequenceName = tags["SequenceName"];
@@ -223,7 +215,6 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
 
 
     /* get the ID search string */
-    //QString SQLIDs = CreateIDSearchList(PatientID, altUIDstr);
     QStringList altuidlist;
     if (altUIDstr != "")
         altuidlist = altUIDstr.split(",");
@@ -329,7 +320,6 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
             q3.bindValue(":FlipAngle", FlipAngle);
             q3.bindValue(":InPlanePhaseEncodingDirection", InPlanePhaseEncodingDirection);
 
-            //QVariant nullDouble = QMetaType::Double;
             if (PhaseEncodeAngle == "") q3.bindValue(":PhaseEncodeAngle", QVariant(QMetaType::fromType<double>())); /* for null values */
             else q3.bindValue(":PhaseEncodeAngle", PhaseEncodeAngle);
 
@@ -364,8 +354,6 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
             q3.bindValue(0,seriesRowID);
             n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
             numQCRowsDeleted += q3.numRowsAffected();
-
-            //AppendUploadLog(__FUNCTION__ , "Deleted from mr_qa table, now deleting from qc_results");
 
             /* delete the qc module rows */
             q3.prepare("select qcmoduleseries_id from qc_moduleseries where series_id = :seriesid and modality = 'mr'");
@@ -573,8 +561,6 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
     }
 
     /* copy the file to the archive, update db info */
-    //AppendUploadLog(__FUNCTION__ , QString("SeriesRowID: [%1]").arg(seriesRowID));
-
     study *s = nullptr;
     s = new study(studyRowID, n);
     if ((s == nullptr) || (!s->valid())) {
@@ -587,14 +573,12 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
     QString outdir = QString("%1/%2/dicom").arg(s->path()).arg(SeriesNumber);
     QString thumbdir = QString("%1/%4").arg(s->path()).arg(SeriesNumber);
 
-    //QString m;
     if (!MakePath(outdir, m))
         AppendUploadLog(__FUNCTION__ , "Unable to create output direcrory [" + outdir + "] because of error [" + m + "]");
     else
         AppendUploadLog(__FUNCTION__ , "Created archive directory [" + outdir + "]");
 
     /* check if there are .dcm files already in the archive (outdir) */
-    //AppendUploadLog(__FUNCTION__ , "Checking for existing files in outdir [" + outdir + "]");
     QStringList existingdcms = FindAllFiles(outdir, "*.dcm");
     qint64 numexistingdcms = existingdcms.size();
     AppendUploadLog(__FUNCTION__ , QString("Found %1 existing files in archive directory [" + outdir + "]").arg(existingdcms.size()));
@@ -658,15 +642,12 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
         }
         AppendUploadLog(__FUNCTION__ , QString(logmsg + "]  Done renaming existings [%1] files").arg(filecnt));
     }
-    //AppendUploadLog(__FUNCTION__ , "Checkpoint archiveIO [1]");
 
     /* create a thumbnail of the middle slice in the dicom directory (after getting the size, so the thumbnail isn't included in the size) */
     if (CreateThumbnail(files[files.size()/2], thumbdir))
         n->Log(QString("Created thumbnail " + thumbdir + "/thumb.png"));
     else
         n->Log(QString("Error creating thumbnail " + thumbdir + "/thumb.png"));
-
-    //AppendUploadLog(__FUNCTION__ , "Checkpoint archiveIO [2]");
 
     /* renumber the **** NEWLY **** added files to make them unique */
     QString logmsg = "Renaming new files [";
@@ -753,15 +734,11 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
         valid = false;
         logmsg += QString(" (DICOM file count [%1] does NOT match SliceNumbers count [%2])").arg(numdcms).arg(sliceNumbers.size());
     }
-    //else
-    //    logmsg += QString(" (DICOM file count [%1] matches SliceNumbers count [%2])").arg(numdcms).arg(sliceNumbers.size());
 
     if (numdcms != instanceNumbers.size()) {
         valid = false;
         logmsg += QString(" (DICOM file count [%1] does NOT match InstanceNumbers count [%2])").arg(numdcms).arg(instanceNumbers.size());
     }
-    //else
-    //    logmsg += QString(" (DICOM file count [%1] matches InstanceNumbers count [%2])").arg(numdcms).arg(instanceNumbers.size());
 
     /* check all slice numbers for missing images */
     QList<int> missingSliceNumbers;
@@ -889,12 +866,9 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
         else
             AppendUploadLog(__FUNCTION__ , "Unable to create backdir [" + backdir + "] because of error [" + m + "]");
     }
-    //AppendUploadLog(__FUNCTION__ , "Starting copy to the backup directory");
+
     systemstring = QString("rsync -az %1/* %2").arg(outdir).arg(backdir);
     AppendUploadLog(__FUNCTION__ , SystemCommand(systemstring));
-    //AppendUploadLog(__FUNCTION__ , "Finished copying to the backup directory");
-
-    //perf.End();
 
     return 1;
 }
@@ -2183,7 +2157,6 @@ bool archiveIO::CreateThumbnail(QString f, QString outdir) {
  * @return true if a family was created or an existing family was found. false otherwise
  */
 bool archiveIO::GetFamily(int subjectRowID, QString subjectUID, int &familyRowID, QString &familyUID) {
-    //AppendUploadLog(__FUNCTION__, "Entering GetFamily()");
 
     /* check if the subject is part of a family, if not create a family for it */
     QSqlQuery q;
@@ -2223,8 +2196,6 @@ bool archiveIO::GetFamily(int subjectRowID, QString subjectUID, int &familyRowID
         n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
 
     }
-
-    //AppendUploadLog(__FUNCTION__, "Leaving GetFamily()");
 
     return true;
 }
@@ -2434,9 +2405,8 @@ bool archiveIO::GetSubject(QString subjectMatchCriteria, int existingSubjectID, 
 bool archiveIO::CreateSubject(QString PatientID, QString PatientName, QString PatientBirthDate, QString PatientSex, double PatientWeight, double PatientSize, int &subjectRowID, QString &subjectUID) {
 
     subjectRowID = -1;
-
     int count(0);
-    //AppendUploadLog(__FUNCTION__, "Creating a new subject. Searching for an unused UID");
+
     /* create a new subjectUID */
     do {
         subjectUID = n->CreateUID("S",3);
@@ -2463,7 +2433,6 @@ bool archiveIO::CreateSubject(QString PatientID, QString PatientName, QString Pa
 
     /* insert the PatientID as an alternate UID */
     if (PatientID != "") {
-        //QSqlQuery q2;
         q2.prepare("insert ignore into subject_altuid (subject_id, altuid) values (:subjectid, :patientid)");
         q2.bindValue(":subjectid",subjectRowID);
         q2.bindValue(":patientid",PatientID);
