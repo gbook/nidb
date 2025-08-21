@@ -2881,17 +2881,19 @@
 					}
 				}
 				
-				/* get the measures */
-				$sqlstringA = "select c.instrument_name, b.measure_name, a.* from measures a left join measurenames b on a.measurename_id = b.measurename_id left join measureinstruments c on a.instrumentname_id = c.measureinstrument_id where a.enrollment_id = '$enrollmentid'";
+				/* get the observations */
+				$sqlstringA = "select c.instrument_name, b.observation_name, a.* from observations a left join observationnames b on a.observationname_id = b.observationname_id left join observationinstruments c on a.instrumentname_id = c.observationinstrument_id where a.enrollment_id = '$enrollmentid'";
 				//PrintSQL($sqlstringA);
 				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-					$measurename = "[" . $rowA['instrument_name'] . "] - " . $rowA['measure_name'];
-					if ($rowA['measure_type'] == 's') {	$measurevalue = $rowA['measure_valuestring']; }
-					else { $measurevalue = $rowA['measure_valuenum']; }
+					$observationname = "[" . $rowA['instrument_name'] . "] - " . $rowA['observation_name'];
+					$observationvalue = $rowA['observation_value'];
+					
+					//if ($rowA['observation_type'] == 's') {	$observationvalue = $rowA['observation_valuestring']; }
+					//else { $observationvalue = $rowA['observation_valuenum']; }
 					if ($seriesaltdesc != "") {
-						$seriesdescs[$uid]['measures'][$measurename] = $measurevalue;
-						$uniqueseries['measures'][$measurename]++;
+						$seriesdescs[$uid]['observations'][$observationname] = $observationvalue;
+						$uniqueseries['observations'][$observationname]++;
 					}
 				}
 			}

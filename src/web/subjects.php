@@ -1748,7 +1748,7 @@
 											
 											
 											<!-- -------------------------------------------------------------- -->
-											<!-- -------- Observation (Assessment, measure, vitals) section --- -->
+											<!-- -------- Observation (Assessment, observation, vitals) section --- -->
 											<!-- -------------------------------------------------------------- -->
 											<!--<div class="ui top attached blue segment">
 												<div class="ui two column grid">
@@ -1857,30 +1857,30 @@
 											-->
 											
 											<!-- ----------------------------------------------------- -->
-											<!-- -------------------- Measures ----------------------- -->
+											<!-- -------------------- Observations ----------------------- -->
 											<!-- ----------------------------------------------------- -->
 											<!--<div class="ui top attached blue segment">
 												<div class="ui two column grid">
 													<div class="column">
-														<h3 class="header"><i class="clipboard list icon"></i> Phenotypic measures</h3>
+														<h3 class="header"><i class="clipboard list icon"></i> Phenotypic observations</h3>
 													</div>
 													<div class="right aligned column">
-														<a class="ui basic button" href="measures.php?enrollmentid=<?=$enrollmentid?>"><i class="edit icon"></i> Edit measures</a>
+														<a class="ui basic button" href="observations.php?enrollmentid=<?=$enrollmentid?>"><i class="edit icon"></i> Edit observations</a>
 													</div>
 												</div>
 											</div>
 											<div class="ui bottom attached center aligned segment">
 												<?
-													//$sqlstring3 = "select count(*) 'count' from measures a left join measurenames b on a.measurename_id = b.measurename_id where enrollment_id = $enrollmentid";
+													//$sqlstring3 = "select count(*) 'count' from observations a left join observationnames b on a.observationname_id = b.observationname_id where enrollment_id = $enrollmentid";
 													//$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
 													//$row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC);
 													//$numrows = $row3['count'];
 													//if ($numrows > 0) {
-														?><span style="font-size: larger;"><b><?=$numrows?></b> measures</span><?
+														?><span style="font-size: larger;"><b><?=$numrows?></b> observations</span><?
 													//}
 													//else {
 														?>
-														No measures
+														No observations
 														<?
 													//}
 												?>
@@ -1890,28 +1890,28 @@
 											<!-- -------------------- Observations ------------------- -->
 											<!-- ----------------------------------------------------- -->
 											<div class="ui top attached blue segment">
-												<h3 class="header"><i class="clipboard list icon"></i> Observations (measures, vitals, assessments)</h3>
+												<h3 class="header"><i class="clipboard list icon"></i> Observations (observations, vitals, assessments)</h3>
 											</div>
 											<div class="ui bottom attached center aligned segment">
 												<div class="ui two column grid">
 													<div class="right aligned column">
 													<?
-														$sqlstring3 = "select count(*) 'count' from measures a left join measurenames b on a.measurename_id = b.measurename_id where enrollment_id = $enrollmentid";
+														$sqlstring3 = "select count(*) 'count' from observations a left join observationnames b on a.observationname_id = b.observationname_id where enrollment_id = $enrollmentid";
 														$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
 														$row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC);
 														$numrows = $row3['count'];
 														if ($numrows > 0) {
-															?><span style="font-size: larger;"><b><?=$numrows?></b> measures</span><?
+															?><span style="font-size: larger;"><b><?=$numrows?></b> observations</span><?
 														}
 														else {
 															?>
-															No measures
+															No observations
 															<?
 														}
 													?>
 													</div>
 													<div class="left aligned column">
-														<a class="ui basic button" href="measures.php?enrollmentid=<?=$enrollmentid?>"><i class="edit icon"></i> Edit measures</a>
+														<a class="ui basic button" href="observations.php?enrollmentid=<?=$enrollmentid?>"><i class="edit icon"></i> Edit observations</a>
 													</div>
 												</div>
 
@@ -1933,7 +1933,7 @@
 													?>
 													</div>
 													<div class="left aligned column">
-														<a class="ui basic button" href="measures.php?enrollmentid=<?=$enrollmentid?>"><i class="edit icon"></i> Edit measures</a>
+														<a class="ui basic button" href="observations.php?enrollmentid=<?=$enrollmentid?>"><i class="edit icon"></i> Edit observations</a>
 													</div>
 												</div>
 

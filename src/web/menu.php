@@ -48,7 +48,7 @@
 		/* subjects */
 		?><a href="subjects.php" class="<? if ($page=="subjects.php" || $page=="groups.php" || $page == "series") { echo "active"; } ?> item">Subjects</a><?
 		/* projects */
-		?><a href="projects.php" class="<? if ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="studies.php" || $page=="measures.php" || $page=="minipipeline.php" || $page=="templates.php" || $page == "experiment.php" || $page == "mriqc.php") { echo "active"; } ?> item">Projects</a><?
+		?><a href="projects.php" class="<? if ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="studies.php" || $page=="observations.php" || $page=="minipipeline.php" || $page=="templates.php" || $page == "experiment.php" || $page == "mriqc.php") { echo "active"; } ?> item">Projects</a><?
 		/* pipelines */
 		if ($GLOBALS['cfg']['enablepipelines']) {
 			?><a href="pipelines.php" class="<? if ($page=="pipelines.php" || $page=="analysis.php") { echo "active"; } ?> item">Pipelines</a><?
@@ -113,11 +113,11 @@
 		elseif ($page=="subjects.php" || $page=="groups.php") {
 			?><a href="subjects.php" class="<? if ($page=="subjects.php"){ echo "active"; } ?> item">Subjects</a><?
 			?><a href="groups.php" class="<? if ($page=="groups.php"){ echo "active"; } ?> item">Groups</a><?
-			?><a href="measures.php" class="<? if ($page=="measures.php"){ echo "active"; } ?> item">Measures</a><?
+			?><a href="observations.php" class="<? if ($page=="observations.php"){ echo "active"; } ?> item">Observations</a><?
 		}
 		
 		/* studies, which are displayed under the projects menu */
-		elseif ($page == "studies.php" || $page=="measures.php" || $page == "managefiles.php" || $page == "series.php") {
+		elseif ($page == "studies.php" || $page=="observations.php" || $page == "managefiles.php" || $page == "series.php") {
 			$studyid = GetVariable("id");
 			$seriesid = GetVariable("seriesid");
 			$modality = GetVariable("modality");
@@ -143,7 +143,7 @@
 				<a href="studies.php?id=<?=$studyid?>" class="active item">Study <?=$studynum?></a>
 				<?
 			}
-			elseif (($enrollmentid != "") && ($page == "measures.php")) {
+			elseif (($enrollmentid != "") && ($page == "observations.php")) {
 				list($uid, $subjectid, $altuid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
 				?>
 				<a href="projects.php?action=displayprojectinfo&id=<?=$projectid?>" class="item"><?=$projectname?></a>

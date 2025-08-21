@@ -89,8 +89,8 @@
 		case 'importassessmentdata':
 			ImportAssessmentData($siteid,$projectid);
 			break;
-		case 'importmeasures':
-			ImportMeasures($siteid,$projectid,$fileformat);
+		case 'importobservations':
+			ImportObservations($siteid,$projectid,$fileformat);
 			break;
 		case 'updatedemographics':
 			UpdateDemographics();
@@ -946,14 +946,14 @@ question_num, question_text, datatype, values, comment</div>
 		<? } ?>
 		
 		<details>
-			<summary>Import Measures (name/value pairs only) <?=PrintBeta();?></summary>
+			<summary>Import Observations (name/value pairs only) <?=PrintBeta();?></summary>
 			<div style="margin-left: 20px; padding:8px; border: 1px solid #ccc; border-radius:5px">
 			<table width="100%">
 				<tr>
 					<td>
 						<table class="entrytable">
 							<form action="import.php" method="post" enctype="multipart/form-data">
-							<input type="hidden" name="action" value="importmeasures">
+							<input type="hidden" name="action" value="importobservations">
 							<tr>
 								<td class="label">Site</td>
 								<td>
@@ -988,10 +988,10 @@ question_num, question_text, datatype, values, comment</div>
 									<table cellspacing="0" cellpadding="0">
 										<tr>
 											<td valign="top">
-												<input type="radio" name="fileformat" value="short" required>Short rows <i class="small blue question circle outline icon" title="One row for each measure/value pair, no header"></i>
+												<input type="radio" name="fileformat" value="short" required>Short rows <i class="small blue question circle outline icon" title="One row for each observation/value pair, no header"></i>
 											</td>
 											<td valign="top">
-												<details><summary class="tiny">File format example</summary><pre style="font-size:10pt; border: 1px solid #aaa; border-radius:3px; padding: 5px">S1234ABC, instrument1, measure1, value<br>S1234ABC, instrument1, measure2, value<br>S1234ABC, instrument2, measure1, value<br>S1234ABC, instrument2, measure3, value</pre></details>
+												<details><summary class="tiny">File format example</summary><pre style="font-size:10pt; border: 1px solid #aaa; border-radius:3px; padding: 5px">S1234ABC, instrument1, observation1, value<br>S1234ABC, instrument1, observation2, value<br>S1234ABC, instrument2, observation1, value<br>S1234ABC, instrument2, observation3, value</pre></details>
 											</td>
 										</tr>
 										<tr>
@@ -999,14 +999,14 @@ question_num, question_text, datatype, values, comment</div>
 												<input type="radio" name="fileformat" value="long" required>Long rows <i class="small blue question circle outline icon" title="One row for each subject, with header"></i>
 											</td>
 											<td valign="top">
-												<details><summary class="tiny">File format example</summary><pre style="font-size:10pt; border: 1px solid #aaa; border-radius:3px; padding: 5px">-,        instrument1, instrument1, instrument2, instrument2, etc<br>UID,      measure1,    measure2,    measure1,    measure3,    etc<br>S1234ABC, value1,      value2,      value3,      value4,      etc<br>S5678LMN, value1,      value2,      value3,      value4,      etc<br>S9292XYZ, value1,      value2,      value3,      value4,      etc</pre></details>
+												<details><summary class="tiny">File format example</summary><pre style="font-size:10pt; border: 1px solid #aaa; border-radius:3px; padding: 5px">-,        instrument1, instrument1, instrument2, instrument2, etc<br>UID,      observation1,    observation2,    observation1,    observation3,    etc<br>S1234ABC, value1,      value2,      value3,      value4,      etc<br>S5678LMN, value1,      value2,      value3,      value4,      etc<br>S9292XYZ, value1,      value2,      value3,      value4,      etc</pre></details>
 											</td>
 										</tr>
 									</table>
 								</td>
 							</tr>
 							<tr>
-								<td colspan="2"><input type="submit" value="Import Measures"></td>
+								<td colspan="2"><input type="submit" value="Import Observations"></td>
 							</tr>
 							</form>
 						</table>
@@ -1149,9 +1149,9 @@ question_num, question_text, datatype, values, comment</div>
 
 	
 	/* -------------------------------------------- */
-	/* ------- ImportMeasures --------------------- */
+	/* ------- ImportObservations --------------------- */
 	/* -------------------------------------------- */
-	function ImportMeasures($siteid, $projectid, $fileformat) {
+	function ImportObservations($siteid, $projectid, $fileformat) {
 	
 		$instanceid = $_SESSION['instanceid'];
 	
@@ -1168,12 +1168,12 @@ question_num, question_text, datatype, values, comment</div>
 			if (move_uploaded_file($_FILES['files']['tmp_name'][$i], "$savepath/$name")) {
 				echo "<li>Received [$name] - " . number_format($_FILES['files']['size'][$i]) . " bytes<br>";
 				chmod("$savepath/$name", 0777);
-				if (ValidateMeasures("$savepath/$name", $fileformat)) {
-					echo "<li>Measures file [$name] is valid, inserting into database...";
-					InsertMeasures("$savepath/$name", $projectid, $fileformat);
+				if (ValidateObservations("$savepath/$name", $fileformat)) {
+					echo "<li>Observations file [$name] is valid, inserting into database...";
+					InsertObservations("$savepath/$name", $projectid, $fileformat);
 				}
 				else {
-					echo "<li>Measures file [$name] is not valid. See errors above.";
+					echo "<li>Observations file [$name] is not valid. See errors above.";
 				}
 			}
 			else {
@@ -1186,9 +1186,9 @@ question_num, question_text, datatype, values, comment</div>
 	
 	
 	/* -------------------------------------------- */
-	/* ------- ValidateMeasures ------------------- */
+	/* ------- ValidateObservations ------------------- */
 	/* -------------------------------------------- */
-	function ValidateMeasures($f, $fileformat) {
+	function ValidateObservations($f, $fileformat) {
 	
 		/* open the file and check some fields */
 		$lines = file($f);
@@ -1216,7 +1216,7 @@ question_num, question_text, datatype, values, comment</div>
 				/* separate out the columns */
 				$uid = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[0]));
 				$instrument = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[1]));
-				$measure = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[2]));
+				$observation = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[2]));
 				$value = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[3]));
 				
 				/* ----- check each column ----- */
@@ -1246,17 +1246,17 @@ question_num, question_text, datatype, values, comment</div>
 					echo "Row $L, Column 1 (UID) is blank<br>";
 					$numErrors++;
 				}
-				if ($measure == "") {
+				if ($observation == "") {
 					echo "Row $L, Column 2 (Instrument name) is blank<br>";
 					$numErrors++;
 				}
-				if ($measure == "") {
-					echo "Row $L, Column 3 (Measure name) is blank<br>";
+				if ($observation == "") {
+					echo "Row $L, Column 3 (Observation name) is blank<br>";
 					$numErrors++;
 				}
 				/* blank values are OK, don't check for them */
 				if ($value == "") {
-					//echo "Warning (not an error) column 4 (Measure value) is blank. Line $L<br>";
+					//echo "Warning (not an error) column 4 (Observation value) is blank. Line $L<br>";
 					//$numErrors++;
 				}
 				
@@ -1283,8 +1283,8 @@ question_num, question_text, datatype, values, comment</div>
 					$instruments = mysqli_real_escape_string($GLOBALS['linki'], array_shift($parts));
 				}
 				elseif ($i == 1) {
-					/* get the second line, the measures */
-					$measures = mysqli_real_escape_string($GLOBALS['linki'], array_shift($parts));
+					/* get the second line, the observations */
+					$observations = mysqli_real_escape_string($GLOBALS['linki'], array_shift($parts));
 				}
 				else {
 					/* otherwise, it should be a real line... with data */
@@ -1307,10 +1307,10 @@ question_num, question_text, datatype, values, comment</div>
 						}
 						else {
 							$instrument = $instruments[$col];
-							$measure = $measures[$col];
+							$observation = $observations[$col];
 							/* check for blank entries in other columns */
 							if ($value == "") {
-								//echo "Warning (not an error) column $col (Measure value) is blank. Line $L<br>";
+								//echo "Warning (not an error) column $col (Observation value) is blank. Line $L<br>";
 								//$numErrors++;
 							}
 						}
@@ -1356,11 +1356,11 @@ question_num, question_text, datatype, values, comment</div>
 				echo "<li>Received [$name] - " . number_format($_FILES['files']['size'][$i]) . " bytes<br>";
 				chmod("$savepath/$name", 0777);
 				if (ValidateDemographics("$savepath/$name")) {
-					echo "<li>Measures file [$name] is valid, inserting into database...";
+					echo "<li>Observations file [$name] is valid, inserting into database...";
 					InsertDemographics("$savepath/$name");
 				}
 				else {
-					echo "<li>Measures file [$name] is not valid. See errors above.";
+					echo "<li>Observations file [$name] is not valid. See errors above.";
 				}
 			}
 			else {
@@ -1735,160 +1735,44 @@ question_num, question_text, datatype, values, comment</div>
 	/* ------- InsertInstrumentName --------------- */
 	/* -------------------------------------------- */
 	function InsertInstrumentName($instrument) {
-		$sqlstring = "select measureinstrument_id from measureinstruments where instrument_name = '$instrument'";
+		$sqlstring = "select observationinstrument_id from observationinstruments where instrument_name = '$instrument'";
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		if (mysqli_num_rows($result) > 0) {
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$measureinstrumentnameid = $row['measureinstrument_id'];
+			$observationinstrumentnameid = $row['observationinstrument_id'];
 		}
 		else {
-			$sqlstring = "insert into measureinstruments (instrument_name) values ('$instrument')";
+			$sqlstring = "insert into observationinstruments (instrument_name) values ('$instrument')";
 			//PrintSQL($sqlstring);
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			$measureinstrumentnameid = mysqli_insert_id($GLOBALS['linki']);
+			$observationinstrumentnameid = mysqli_insert_id($GLOBALS['linki']);
 		}
-		return $measureinstrumentnameid;
+		return $observationinstrumentnameid;
 	}
 
 	
 	/* -------------------------------------------- */
-	/* ------- InsertMeasureName ------------------ */
+	/* ------- Insertobservationname ------------------ */
 	/* -------------------------------------------- */
-	function InsertMeasureName($measure) {
-		$sqlstring = "select measurename_id from measurenames where measure_name = '$measure'";
+	function Insertobservationname($observation) {
+		$sqlstring = "select observationname_id from observationnames where observation_name = '$observation'";
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		if (mysqli_num_rows($result) > 0) {
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$measurenameid = $row['measurename_id'];
+			$observationnameid = $row['observationname_id'];
 		}
 		else {
-			$sqlstring = "insert into measurenames (measure_name) values ('$measure')";
+			$sqlstring = "insert into observationnames (observation_name) values ('$observation')";
 			//PrintSQL($sqlstring);
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			$measurenameid = mysqli_insert_id($GLOBALS['linki']);
+			$observationnameid = mysqli_insert_id($GLOBALS['linki']);
 		}
-		return $measurenameid;
+		return $observationnameid;
 	}
 
 
-	/* -------------------------------------------- */
-	/* ------- InsertMeasures --------------------- */
-	/* -------------------------------------------- */
-	function InsertMeasures($f, $projectRowID, $fileformat) {
-	
-		/* open the file and check some fields */
-		$lines = file($f);
-
-		$c=0;
-		/* check if its the short format */
-		if ($fileformat == "short") {
-			for ($i=0;$i<count($lines);$i++) {
-				$line = $lines[$i];
-				$parts = str_getcsv($line);
-				
-				/* separate out the columns */
-				$uid = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[0]));
-				$instrument = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[1]));
-				$measure = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[2]));
-				$value = mysqli_real_escape_string($GLOBALS['linki'], trim($parts[3]));
-				
-				/* ----- check each column ----- */
-				/* get subjectID */
-				$subjectRowID = GetSubjectRowID($uid);
-				
-				/* check if this enrollment exists, and if not, create it */
-				$enrollmentRowID = EnrollSubject($subjectRowID, $projectRowID);
-				
-				$instrumentnameid = InsertInstrumentName($instrument);
-				$measurenameid = InsertMeasureName($measure);
-				
-				$sqlstring = "insert ignore into measures (enrollment_id, measure_dateentered, measure_dateentered2, instrumentname_id, measurename_id, measure_type, measure_valuestring, measure_valuenum, measure_rater, measure_rater2, measure_isdoubleentered, measure_datecomplete) values ($enrollmentRowID, now(), now(), '$instrumentnameid', '$measurenameid', '$type', '$valuestring','$valuenum', 'Imported', 'Imported', 1, now())";
-				//PrintSQL($sqlstring);
-				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-				
-				$c++;
-			}
-		}
-		/* otherwise its the long format */
-		else {
-			for ($i=0;$i<count($lines);$i++) {
-				$line = $lines[$i];
-				$parts = str_getcsv($line);
-				
-				//echo "<pre> PARTS:";
-				//print_r($parts);
-				//echo "</pre>";
-				if ($i == 0) {
-					/* get the first line, the instruments */
-					$instruments = $parts;
-					//array_shift($instruments);
-					//echo "<pre> instruments:";
-					//print_r($instruments);
-					//echo "</pre>";
-				}
-				elseif ($i == 1) {
-					/* get the second line, the measures */
-					$measures = $parts;
-					//array_shift($measures);
-					//echo "<pre> measures:";
-					//print_r($measures);
-					//echo "</pre>";
-				}
-				else {
-					/* otherwise, it should be a real line... with data */
-					//echo "This is real data!";
-					
-					/* separate out the columns */
-					$col=0;
-					foreach ($parts as $part) {
-						$value = mysqli_real_escape_string($GLOBALS['linki'], trim($part));
-						
-						//echo "Working on column $col<br>";
-						if ($col == 0) {
-							$uid = $value;
-							/* get subjectID */
-							$subjectRowID = GetSubjectRowID($uid);
-							
-							/* check if this enrollment exists, and if not, create it */
-							$enrollmentRowID = EnrollSubject($subjectRowID, $projectRowID);
-						}
-						else {
-							$instrument = $instruments[$col];
-							$measure = $measures[$col];
-							
-							/* create the measures SQL string */
-							if (is_numeric($value)) {
-								$type = 'n';
-								$valuestring = '';
-								$valuenum = $value;
-							}
-							else {
-								$type = 's';
-								$valuestring = $value;
-								$valuenum = '';
-							}
-							
-							$instrumentnameid = InsertInstrumentName($instrument);
-							$measurenameid = InsertMeasureName($measure);
-							
-							$sqlstring = "insert ignore into measures (enrollment_id, measure_dateentered, measure_dateentered2, instrumentname_id, measurename_id, measure_type, measure_valuestring, measure_valuenum, measure_rater, measure_rater2, measure_isdoubleentered, measure_datecomplete) values ($enrollmentRowID, now(), now(), '$instrumentnameid', '$measurenameid', '$type', '$valuestring','$valuenum', 'Imported', 'Imported', 1, now())";
-							//PrintSQL($sqlstring);
-							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-							$c++;
-						}
-						$col++;
-					}
-				}
-			}
-		}
-		?>
-		<li><span style="color: darkblue">Inserted <?=$c?> measure values</span>
-		<?
-	}
-	
-	
 	/* -------------------------------------------- */
 	/* ------- ImportAssessmentForm --------------- */
 	/* -------------------------------------------- */

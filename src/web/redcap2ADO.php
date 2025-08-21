@@ -47,14 +47,14 @@
 	$action = GetVariable("action");
 	$subjectid = GetVariable("subject_id");
 	$projectid = GetVariable("project_id");
-	$measurename= GetVariable("measure_name");
-	$measurevalue = GetVariable("measure_value");
-	$instid = GetVariable("measureinstrument_id");
-	$measurenotes = GetVariable("measure_notes");
-	$measurerater = GetVariable("measure_rater");
-	$measurestdate = GetVariable("measure_startdate");
-	$measureenddate = GetVariable("measure_enddata");
-	$measureentrydate = GetVariable("measure_entrydate");
+	$observationname= GetVariable("observation_name");
+	$observationvalue = GetVariable("observation_value");
+	$instid = GetVariable("observationinstrument_id");
+	$observationnotes = GetVariable("observation_notes");
+	$observationrater = GetVariable("observation_rater");
+	$observationstdate = GetVariable("observation_startdate");
+	$observationenddate = GetVariable("observation_enddata");
+	$observationentrydate = GetVariable("observation_entrydate");
 	$vitalid = GetVariable("vitalid");
         $enrollmentid = GetVariable("enrollmentid");
         $vitalname = GetVariable('vital_name');
@@ -428,29 +428,29 @@ function TransferData($Form_name,$INSTR,$projectid){
 		if ($info[$Var_Names[1]]=='screening_day_arm_1'){
 			$Runner = $Runner +1;	
 			$subjectid[$Runner] = $info['scan_id'];}
-		$measurestdate = $info[$Var_Names[3]];
-		$measureenddate = $info[$Var_Names[3]];
-		$measurerater = $info[$Var_Names[4]];
-		$measurenotes = $info[$Var_Names[5]];
+		$observationstdate = $info[$Var_Names[3]];
+		$observationenddate = $info[$Var_Names[3]];
+		$observationrater = $info[$Var_Names[4]];
+		$observationnotes = $info[$Var_Names[5]];
 
 		
-		/* Inserting measures*/
+		/* Inserting observations*/
 		
 		if (($Form_name[0] == 'discharge_checklist')  &&  $subjectid[$Runner]!='' && $INSTR[1] != 'screening_day_arm_1')
 		{
 			
-			$measurestdate = $info[$Var_Names[4]];
-                        $measureenddate = $info[$Var_Names[4]];
-                        $measurerater = $info[$Var_Names[5]];
-                        $measurenotes = $info[$Var_Names[6]];
-			$measuredesc = '';
+			$observationstdate = $info[$Var_Names[4]];
+                        $observationenddate = $info[$Var_Names[4]];
+                        $observationrater = $info[$Var_Names[5]];
+                        $observationnotes = $info[$Var_Names[6]];
+			$observationdesc = '';
 			$strt = 7;
-			$instid = MeasureInstr($Form_name[0]);
+			$instid = ObservationInstr($Form_name[0]);
 
 			for ($jay=$strt; $jay < count($Var_Names)-1;$jay++){
 				if ( $Var_Names[$jay]== 'discharge_dose')
                                 {
-					$measuredesc = $info[$Var_Names[$jay]];
+					$observationdesc = $info[$Var_Names[$jay]];
 					$jay = $jay +1;
 					$Mname = $Var_Names[$jay];
                                 	$MVal = $info[$Var_Names[$jay]];
@@ -460,10 +460,10 @@ function TransferData($Form_name,$INSTR,$projectid){
                                 	$Mname = $Var_Names[$jay];
 					$MVal = $info[$Var_Names[$jay]];
 					$jay = $jay+1;
-					$measuredesc = $info[$Var_Names[$jay]];
+					$observationdesc = $info[$Var_Names[$jay]];
 				}
 
-                        Addmeasures($subjectid[$Runner],$projectid,$Mname,$MVal,$Form_name[0],$instid,$measurenotes, $measurerater, $measurestdate,$measureenddate,$measuredesc);}
+                        Addobservations($subjectid[$Runner],$projectid,$Mname,$MVal,$Form_name[0],$instid,$observationnotes, $observationrater, $observationstdate,$observationenddate,$observationdesc);}
 
 
 
@@ -472,77 +472,77 @@ function TransferData($Form_name,$INSTR,$projectid){
 		
 		if (($Form_name[0] == 'audit' || $Form_name[0] == 'cuditr' ||  $Form_name[0] =='neuropsychology_data' ||  $Form_name[0] == 'scid_diagnoses' || $Form_name[0] == 'antisocial_personality_disorder' || $Form_name[0] == 'timeline_of_mj_use' || $Form_name[0] == 'dfaqcu_inventory' || $Form_name[0] == 'brief_marijuana_consequences_questionnaire_bmacq' || $Form_name[0] == 'protective_behavioral_strategies_for_marijuana_sca' || $Form_name[0] == 'sensation_seeking_scale' || $Form_name[0] == 'scl90' || $Form_name[0] =='handedness_questionnaire' || $Form_name[0] == 'asionrc_health_questionnaire') &&  $subjectid[$Runner]!='' && $INSTR[0] == 'screening_day_arm_1')
 		{
-			$measurestdate = $info[$Var_Names[3]];
-	                $measureenddate = $info[$Var_Names[3]];
-        	        $measurerater = $info[$Var_Names[4]];
-                	$measurenotes = $info[$Var_Names[5]];
-			$measuredesc = '';
+			$observationstdate = $info[$Var_Names[3]];
+	                $observationenddate = $info[$Var_Names[3]];
+        	        $observationrater = $info[$Var_Names[4]];
+                	$observationnotes = $info[$Var_Names[5]];
+			$observationdesc = '';
 
 
 			if ($Form_name[0] == 'audit')
 			{
 				$strt = 6;
-				$instid = MeasureInstr($Form_name[0]);
+				$instid = ObservationInstr($Form_name[0]);
 			} 
 			else if ($Form_name[0] == 'cuditr')
 			{ 
 				$strt = 7;
-				$instid = MeasureInstr($Form_name[0]);
+				$instid = ObservationInstr($Form_name[0]);
 			}
 			else if ($Form_name[0] == 'neuropsychology_data' )
                         {
                                 $strt = 6;
-				$instid = MeasureInstr($Form_name[0]);
+				$instid = ObservationInstr($Form_name[0]);
                         }
 			else if ($Form_name[0] == 'scid_diagnoses' )
                         {
                                 $strt = 6;
-				$instid = MeasureInstr($Form_name[0]);
+				$instid = ObservationInstr($Form_name[0]);
                         }
 			else if ($Form_name[0] == 'antisocial_personality_disorder' )
                         {
                                 $strt = 6;
-				$instid = MeasureInstr($Form_name[0]);
+				$instid = ObservationInstr($Form_name[0]);
                         }
 			else if ($Form_name[0] == 'timeline_of_mj_use' )
                         {
                                 $strt = 6;
-				$instid = MeasureInstr($Form_name[0]);
+				$instid = ObservationInstr($Form_name[0]);
                         }
 			else if ($Form_name[0] == 'dfaqcu_inventory' )
                         {
                                 $strt = 6;
-                                $instid = MeasureInstr($Form_name[0]);
+                                $instid = ObservationInstr($Form_name[0]);
                         }
 			else if ($Form_name[0] == 'brief_marijuana_consequences_questionnaire_bmacq' )
                         {
                                 $strt = 6;
-                                $instid = MeasureInstr($Form_name[0]);
+                                $instid = ObservationInstr($Form_name[0]);
                         }
 			else if ($Form_name[0] == 'protective_behavioral_strategies_for_marijuana_sca' )
                         {
                                 $strt = 6;
-                                $instid = MeasureInstr($Form_name[0]);
+                                $instid = ObservationInstr($Form_name[0]);
                         }
 			else if ($Form_name[0] == 'sensation_seeking_scale' )
                         {
                                 $strt = 6;
-                                $instid = MeasureInstr($Form_name[0]);
+                                $instid = ObservationInstr($Form_name[0]);
                         }
 			else if ($Form_name[0] == 'scl90' )
                         {
                                 $strt = 6;
-                                $instid = MeasureInstr($Form_name[0]);
+                                $instid = ObservationInstr($Form_name[0]);
                         }
 			else if ($Form_name[0] == 'handedness_questionnaire' )
                         {
                                 $strt = 5;
-                                $instid = MeasureInstr($Form_name[0]);
+                                $instid = ObservationInstr($Form_name[0]);
                         }
 			else if ($Form_name[0] == 'asionrc_health_questionnaire' )
                         {
                                 $strt = 6;
-                                $instid = MeasureInstr($Form_name[0]);
+                                $instid = ObservationInstr($Form_name[0]);
                         }
 
 
@@ -550,7 +550,7 @@ function TransferData($Form_name,$INSTR,$projectid){
 				$Mname = $Var_Names[$jay];
 				if (strstr($Mname,'notes'))
 				{
-				   $measurenotes = $info[$Var_Names[$jay]];
+				   $observationnotes = $info[$Var_Names[$jay]];
 				   $jay = $jay+1;
 				   $Mname = $Var_Names[$jay];
 				}
@@ -560,7 +560,7 @@ function TransferData($Form_name,$INSTR,$projectid){
 				echo substr($Mname,0,-4);				
 				echo "<br>"; }*/
 
-		  	Addmeasures($subjectid[$Runner],$projectid,$Mname,$info[$Var_Names[$jay]],$Form_name[0],$instid,$measurenotes, $measurerater, $measurestdate,$measureenddate,$measuredesc);}
+		  	Addobservations($subjectid[$Runner],$projectid,$Mname,$info[$Var_Names[$jay]],$Form_name[0],$instid,$observationnotes, $observationrater, $observationstdate,$observationenddate,$observationdesc);}
 		}
 		/* Inserting Dose informationm*/	
 		 /* var_dump($info[$Var_Names[1]]);*/
@@ -847,10 +847,10 @@ function TransferData($Form_name,$INSTR,$projectid){
 
 
 	/* -------------------------------------------- */
-        /* ---- Transfering measures into ADO --------- */
+        /* ---- Transfering observations into ADO --------- */
         /* -------------------------------------------- */
 
-        function Addmeasures($subjectid,$projectid, $measurename, $measurevalue,$Form_name, $instid, $measurenotes, $measurerater, $measurestdate,$measureenddate,$measuredesc) {
+        function Addobservations($subjectid,$projectid, $observationname, $observationvalue,$Form_name, $instid, $observationnotes, $observationrater, $observationstdate,$observationenddate,$observationdesc) {
 		
 		$sqlstringEn = "SELECT enrollment_id FROM `enrollment` WHERE subject_id in (select subject_id from subjects where subjects.uid = '$subjectid' ) and project_id = '$projectid' ";
 		
@@ -859,28 +859,28 @@ function TransferData($Form_name,$INSTR,$projectid){
                 $rowEn = mysqli_fetch_array($resultEn, MYSQLI_ASSOC);
                 $enrollmentid = $rowEn['enrollment_id'];
 
-                $sqlstringA = "select measurename_id from measurenames where measure_name = '$measurename'";
+                $sqlstringA = "select observationname_id from observationnames where observation_name = '$observationname'";
                 //echo "$sqlstringA\n";
                 $resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
                 if (mysqli_num_rows($resultA) > 0) {
                         $rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-                        $measurenameid = $rowA['measurename_id'];
+                        $observationnameid = $rowA['observationname_id'];
                 }
                 else {
-                        $sqlstringA = "insert into measurenames (measure_name) values ('$measurename')";
+                        $sqlstringA = "insert into observationnames (observation_name) values ('$observationname')";
                         //echo "$sqlstringA\n";
                         $resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-                        $measurenameid = mysqli_insert_id($GLOBALS['linki']);
+                        $observationnameid = mysqli_insert_id($GLOBALS['linki']);
                 }
 		
-		 $measurenotes = str_replace("'","''",$measurenotes);
-		 $measurenotes = str_replace('"',"''",$measurenotes);
-		 $measuredesc =  str_replace("'","''",$measuredesc);
-		 $measuredesc =  str_replace('"',"''",$measuredesc);
+		 $observationnotes = str_replace("'","''",$observationnotes);
+		 $observationnotes = str_replace('"',"''",$observationnotes);
+		 $observationdesc =  str_replace("'","''",$observationdesc);
+		 $observationdesc =  str_replace('"',"''",$observationdesc);
 		 
 		
 		 if ($enrollmentid!=''){
-                $sqlstring = "insert ignore into measures (enrollment_id, measure_dateentered,instrumentname_id, measurename_id, measure_notes,measure_desc,  measure_rater,measure_value,measure_startdate,measure_enddate,measure_entrydate,measure_createdate,measure_modifydate) values ($enrollmentid, now(),$instid,$measurenameid, '$measurenotes','$measuredesc','$measurerater','$measurevalue',NULLIF('$measurestdate',''),NULLIF('$measureenddate',''),now(),now(),now()) on duplicate key update measure_value='$measurevalue', measure_modifydate=now()";
+                $sqlstring = "insert ignore into observations (enrollment_id, observation_entrydate,instrumentname_id, observationname_id, observation_notes,observation_desc,  observation_rater,observation_value,observation_startdate,observation_enddate,observation_entrydate,observation_createdate,observation_modifydate) values ($enrollmentid, now(),$instid,$observationnameid, '$observationnotes','$observationdesc','$observationrater','$observationvalue',NULLIF('$observationstdate',''),NULLIF('$observationenddate',''),now(),now(),now()) on duplicate key update observation_value='$observationvalue', observation_modifydate=now()";
                 $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);}
 		else {echo 'Subject '.$subjectid.' was not found in ADO';} 
         }
@@ -924,16 +924,16 @@ function TransferData($Form_name,$INSTR,$projectid){
 	}
 
 
-	function MeasureInstr($Formname){
+	function ObservationInstr($Formname){
 
-		 $sqlstringinst = "SELECT measureinstrument_id FROM measureinstruments WHERE instrument_name ='$Formname'";
+		 $sqlstringinst = "SELECT observationinstrument_id FROM observationinstruments WHERE instrument_name ='$Formname'";
                  $resultinst = MySQLiQuery($sqlstringinst,__FILE__,__LINE__);
                  if (mysqli_num_rows($resultinst) > 0) {
                            $row = mysqli_fetch_array($resultinst, MYSQLI_ASSOC);
-                           $instid = $row['measureinstrument_id'];
+                           $instid = $row['observationinstrument_id'];
                  }
                  else {
-                           $sqlstringinst = "insert ignore into measureinstruments (instrument_name) values ('$Formname')";
+                           $sqlstringinst = "insert ignore into observationinstruments (instrument_name) values ('$Formname')";
                            $result = MySQLiQuery($sqlstringinst, __FILE__, __LINE__);
                            $instid = mysqli_insert_id($GLOBALS['linki']);
                               }

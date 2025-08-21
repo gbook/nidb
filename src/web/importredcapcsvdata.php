@@ -322,15 +322,15 @@
 	
 									// Defining the variables
 									$subjectid = $filteredRow['nidbid'];
-									$measurename = $colName;
-									$measurevalue = $mrow[$index];
-									$measurenotes = $filteredRow['notes'];
-									$measurerater = $filteredRow['rater'];
-									$measurestdate = $filteredRow['date'];
+									$observationname = $colName;
+									$observationvalue = $mrow[$index];
+									$observationnotes = $filteredRow['notes'];
+									$observationrater = $filteredRow['rater'];
+									$observationstdate = $filteredRow['date'];
 	
-									echo $subjectid.",".$projectid.",".$measurename.",".$measurevalue.",".$measurenotes.",".$measurerater.",".$measurestdate."<br>";
+									echo $subjectid.",".$projectid.",".$observationname.",".$observationvalue.",".$observationnotes.",".$observationrater.",".$observationstdate."<br>";
 
-									Addmeasures($subjectid,$projectid, $measurename, $measurevalue, $measurenotes, $measurerater, $measurestdate,$measureenddate); 
+									Addobservations($subjectid,$projectid, $observationname, $observationvalue, $observationnotes, $observationrater, $observationstdate,$observationenddate); 
 								}
 							}
 						
@@ -515,7 +515,7 @@
         /* ---------------- TRANSFERING MEASURES DATA ------------*/
         /*--------------------------------------------------------*/
 
-        function Addmeasures($subjectid,$projectid, $measurename, $measurevalue, $measurenotes, $measurerater, $measurestdate) {
+        function Addobservations($subjectid,$projectid, $observationname, $observationvalue, $observationnotes, $observationrater, $observationstdate) {
 
                 $sqlstringEn = "SELECT enrollment_id FROM `enrollment` WHERE subject_id in (select subject_id from subjects where subjects.uid = '$subjectid' ) and project_id = '$projectid' ";
 
@@ -524,33 +524,33 @@
                 $rowEn = mysqli_fetch_array($resultEn, MYSQLI_ASSOC);
                 $enrollmentid = $rowEn['enrollment_id'];
 
-                $sqlstringA = "select measurename_id from measurenames where measure_name = '$measurename'";
+                $sqlstringA = "select observationname_id from observationnames where observation_name = '$observationname'";
 
 
                 $resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
                 if (mysqli_num_rows($resultA) > 0) {
                         $rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-                        $measurenameid = $rowA['measurename_id'];
+                        $observationnameid = $rowA['observationname_id'];
                 }
                 else {
-                        $sqlstringA = "insert into measurenames (measure_name) values ('$measurename')";
+                        $sqlstringA = "insert into observationnames (observation_name) values ('$observationname')";
                         //echo "$sqlstringA\n";
                         $resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-                        $measurenameid = mysqli_insert_id($GLOBALS['linki']);
+                        $observationnameid = mysqli_insert_id($GLOBALS['linki']);
 		}
 
 
-                 $measurenotes = str_replace("'","''",$measurenotes);
-                 $measurenotes = str_replace('"',"''",$measurenotes);
+                 $observationnotes = str_replace("'","''",$observationnotes);
+                 $observationnotes = str_replace('"',"''",$observationnotes);
 		 
 		 // Dealing with no date values
 		
-		 $msttime = strtotime($measurestdate);
+		 $msttime = strtotime($observationstdate);
 		 $mstdate = ($msttime === false) ? '0000-00-00' : date('Y-m-d', $msttime);
 //		 echo $mstdate;
 
                  if ($enrollmentid!=''){
-                $sqlstring = "insert ignore into measures (enrollment_id, measure_dateentered, measurename_id, measure_notes, measure_rater,measure_value,measure_startdate,measure_entrydate,measure_createdate,measure_modifydate) values ($enrollmentid, now(),$measurenameid, '$measurenotes','$measurerater','$measurevalue',NULLIF('$mstdate',''),now(),now(),now()) on duplicate key update measure_value='$measurevalue', measure_modifydate=now()";
+                $sqlstring = "insert ignore into observations (enrollment_id, observation_entrydate, observationname_id, observation_notes, observation_rater,observation_value,observation_startdate,observation_entrydate,observation_createdate,observation_modifydate) values ($enrollmentid, now(),$observationnameid, '$observationnotes','$observationrater','$observationvalue',NULLIF('$mstdate',''),now(),now(),now()) on duplicate key update observation_value='$observationvalue', observation_modifydate=now()";
                 $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
                  return 1;}
                  else{  return 0;}

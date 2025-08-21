@@ -62,8 +62,8 @@
     $searchvars['s_ageatscanmax'] = GetVariable("s_ageatscanmax");
     $searchvars['s_subjectgender'] = GetVariable("s_subjectgender");
     $searchvars['s_subjectgroupid'] = GetVariable("s_subjectgroupid");
-    $searchvars['s_measuresearch'] = GetVariable("s_measuresearch");
-    $searchvars['s_measurelist'] = GetVariable("s_measurelist");
+    $searchvars['s_observationsearch'] = GetVariable("s_observationsearch");
+    $searchvars['s_observationlist'] = GetVariable("s_observationlist");
     $searchvars['s_studyinstitution'] = GetVariable("s_studyinstitution");
     $searchvars['s_studyequipment'] = GetVariable("s_studyequipment");
     $searchvars['s_studyid'] = GetVariable("s_studyid");
@@ -211,8 +211,8 @@
 			$s['s_subjectgroupid'] = $row['subjectgroupid'];
 			$s['s_projectids'] = $row['projectids'];
 			$s['s_enrollsubgroup'] = $row['enrollsubgroup'];
-			$s['s_measuresearch'] = $row['measuresearch'];
-			$s['s_measurelist'] = $row['measurelist'];
+			$s['s_observationsearch'] = $row['observationsearch'];
+			$s['s_observationlist'] = $row['observationlist'];
 			$s['s_studyinstitution'] = $row['studyinstitution'];
 			$s['s_studyequipment'] = $row['studyequipment'];
 			$s['s_studyid'] = $row['studyid'];
@@ -1190,8 +1190,8 @@
 		if (($s_projectids == '') || ($s_projectids == 'all')) { $projectid = "null"; } else { $projectid = "'" . implode2(",", $s_projectids) . "'"; }
 		
 		$s_enrollsubgroup = ($s_enrollsubgroup == '') ? "null" : "'$s_enrollsubgroup'";
-		$s_measuresearch = ($s_measuresearch == '') ? "null" : "'$s_measuresearch'";
-		$s_measurelist = ($s_measurelist == '') ? "null" : "'$s_measurelist'";
+		$s_observationsearch = ($s_observationsearch == '') ? "null" : "'$s_observationsearch'";
+		$s_observationlist = ($s_observationlist == '') ? "null" : "'$s_observationlist'";
 		$s_studyinstitution = ($s_studyinstitution == '') ? "null" : "'$s_studyinstitution'";
 		$s_studyequipment = ($s_studyequipment == '') ? "null" : "'$s_studyequipment'";
 		$s_studyid = ($s_studyid == '') ? "null" : "'$s_studyid'";
@@ -1231,7 +1231,7 @@
 		$s_qcbuiltinvariable = ($s_qcbuiltinvariable == '') ? "null" : "'$s_qcbuiltinvariable'";
 		$s_qcvariableid = ($s_qcvariableid == '') ? "null" : "'$s_qcvariableid'";
 
-		$sqlstring = "insert into search_history (user_id, date_added, saved_name, subjectuid, subjectaltuid, subjectname, subjectdobstart, subjectdobend, ageatscanmin, ageatscanmax, subjectgender, subjectgroupid, projectids, enrollsubgroup, measuresearch, measurelist, studyinstitution, studyequipment, studyid, studyaltscanid, studydatestart, studydateend, studydesc, studyphysician, studyoperator, studytype, studymodality, studygroupid, seriesdesc, usealtseriesdesc, seriessequence, seriesimagetype, seriestr, seriesimagecomments, seriesnum, seriesnumfiles, seriesgroupid, pipelineid, pipelineresultname, pipelineresultunit, pipelineresultvalue, pipelineresultcompare, pipelineresulttype, pipelinecolorize, pipelinecormatrix, pipelineresultstats, resultorder, formid, formfieldid, formcriteria, formvalue, audit, qcbuiltinvariable, qcvariableid) values ($userid, now(), '', $s_subjectuid, $s_subjectaltuid, $s_subjectname, $s_subjectdobstart, $s_subjectdobend, $s_ageatscanmin, $s_ageatscanmax, $s_subjectgender, $s_subjectgroupid, $projectid, $s_enrollsubgroup, $s_measuresearch, $s_measurelist, $s_studyinstitution, $s_studyequipment, $s_studyid, $s_studyaltscanid, $s_studydatestart, $s_studydateend, $s_studydesc, $s_studyphysician, $s_studyoperator, $s_studytype, $s_studymodality, $s_studygroupid, $s_seriesdesc, $s_usealtseriesdesc, $s_seriessequence, $s_seriesimagetype, $s_seriestr, $s_seriesimagecomments, $s_seriesnum, $s_seriesnumfiles, $s_seriesgroupid, $s_pipelineid, $s_pipelineresultname, $s_pipelineresultunit, $s_pipelineresultvalue, $s_pipelineresultcompare, $s_pipelineresulttype, $s_pipelinecolorize, $s_pipelinecormatrix, $s_pipelineresultstats, $s_resultoutput, $s_formid, $s_formfieldid, $s_formcriteria, $s_formvalue, $s_audit, $s_qcbuiltinvariable, $s_qcvariableid)";
+		$sqlstring = "insert into search_history (user_id, date_added, saved_name, subjectuid, subjectaltuid, subjectname, subjectdobstart, subjectdobend, ageatscanmin, ageatscanmax, subjectgender, subjectgroupid, projectids, enrollsubgroup, observationsearch, observationlist, studyinstitution, studyequipment, studyid, studyaltscanid, studydatestart, studydateend, studydesc, studyphysician, studyoperator, studytype, studymodality, studygroupid, seriesdesc, usealtseriesdesc, seriessequence, seriesimagetype, seriestr, seriesimagecomments, seriesnum, seriesnumfiles, seriesgroupid, pipelineid, pipelineresultname, pipelineresultunit, pipelineresultvalue, pipelineresultcompare, pipelineresulttype, pipelinecolorize, pipelinecormatrix, pipelineresultstats, resultorder, formid, formfieldid, formcriteria, formvalue, audit, qcbuiltinvariable, qcvariableid) values ($userid, now(), '', $s_subjectuid, $s_subjectaltuid, $s_subjectname, $s_subjectdobstart, $s_subjectdobend, $s_ageatscanmin, $s_ageatscanmax, $s_subjectgender, $s_subjectgroupid, $projectid, $s_enrollsubgroup, $s_observationsearch, $s_observationlist, $s_studyinstitution, $s_studyequipment, $s_studyid, $s_studyaltscanid, $s_studydatestart, $s_studydateend, $s_studydesc, $s_studyphysician, $s_studyoperator, $s_studytype, $s_studymodality, $s_studygroupid, $s_seriesdesc, $s_usealtseriesdesc, $s_seriessequence, $s_seriesimagetype, $s_seriestr, $s_seriesimagecomments, $s_seriesnum, $s_seriesnumfiles, $s_seriesgroupid, $s_pipelineid, $s_pipelineresultname, $s_pipelineresultunit, $s_pipelineresultvalue, $s_pipelineresultcompare, $s_pipelineresulttype, $s_pipelinecolorize, $s_pipelinecormatrix, $s_pipelineresultstats, $s_resultoutput, $s_formid, $s_formfieldid, $s_formcriteria, $s_formvalue, $s_audit, $s_qcbuiltinvariable, $s_qcvariableid)";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 	}
 
@@ -1280,8 +1280,8 @@
 							$s['Subject Group ID'] = $row['subjectgroupid'];
 							$s['Project ID'] = $row['projectid'];
 							$s['Enroll Subgroup'] = $row['enrollsubgroup'];
-							$s['Measure Search'] = $row['measuresearch'];
-							$s['Measure List'] = $row['measurelist'];
+							$s['Observation Search'] = $row['observationsearch'];
+							$s['Observation List'] = $row['observationlist'];
 							$s['Institution'] = $row['studyinstitution'];
 							$s['Equipment'] = $row['studyequipment'];
 							$s['Study ID'] = $row['studyid'];
@@ -1865,7 +1865,7 @@
 		$headeradded = 0;
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 
-			$measurenames = array();
+			$observationnames = array();
 			
 			$project_id = $row['project_id'];
 			/* if the user doesn't have view access to this project, skip to the next record */
@@ -2177,18 +2177,18 @@
 				/* display the series header only once */
 				if ($study_modality == "mr") {
 					if (($laststudy_id == "") && ($s_resultoutput != "study") && ($s_resultoutput != "export") && ($s_resultoutput != "csv")) {
-						DisplayMRSeriesHeader($s_resultoutput, $measurenames);
+						DisplayMRSeriesHeader($s_resultoutput, $observationnames);
 					}
 					if (($s_resultoutput == "study") || ($s_resultoutput == "export")) {
-						DisplayMRStudyHeader($study_id, true, $measurenames);
+						DisplayMRStudyHeader($study_id, true, $observationnames);
 					}
 					if ($s_resultoutput == "csv") {
 						if (!$headeradded) {
-							$header = DisplayMRStudyHeader($study_id, false, $measurenames);
+							$header = DisplayMRStudyHeader($study_id, false, $observationnames);
 							$csv .= "$header";
-							if (count($measurenames) > 0) {
-								foreach ($measurenames as $measurename) {
-									$csv .= ",$measurename";
+							if (count($observationnames) > 0) {
+								foreach ($observationnames as $observationname) {
+									$csv .= ",$observationname";
 								}
 							}
 							$csv .= "\n";
@@ -2221,9 +2221,9 @@
 					else {
 						$csv .= "$uid, $series_num, $series_desc, $series_protocol, $gender, $studyAge, $calcStudyAge, " . implode2(' ',$altuids) . ", $newstudyid, $study_alternateid, $study_num, $study_datetime, $study_type, $project_name($project_costcenter), $study_height, $study_weight, $study_bmi, $series_datetime, $move_minx, $move_miny, $move_minz, $move_maxx, $move_maxy, $move_maxz, $rangex, $rangey, $rangez, $rangePitch, $rangeRoll, $rangeYaw, $pvsnr, $iosnr, $dimn, $dimx, $dimy, $dimz, $dimt, $numfiles, $series_size, $sequence, $imagetype, $imagecomment, $series_tr, $numfiles_beh, $beh_size";
 					}
-					if (count($measurenames) > 0) {
-						foreach ($measurenames as $measure) {
-							$csv .= "," . $measuredata[$subject_id][$measure]['value'];
+					if (count($observationnames) > 0) {
+						foreach ($observationnames as $observation) {
+							$csv .= "," . $observationdata[$subject_id][$observation]['value'];
 						}
 					}
 					$csv .= "\n";
@@ -2308,10 +2308,10 @@
 						<? if ($s_resultoutput != "table") { ?>
 						<td class="<?=$rowstyle?>" bgcolor="<?=$behcolor?>"><?=$numfiles_beh?> <span class="tiny">(<?=$beh_size?>)</span></td>
 						<? }
-							if (count($measurenames) > 0) {
-								foreach ($measurenames as $measure) {
+							if (count($observationnames) > 0) {
+								foreach ($observationnames as $observation) {
 								?>
-								<td class="<?=$rowstyle?>"><?=$measuredata[$subject_id][$measure]['value']?></td>
+								<td class="<?=$rowstyle?>"><?=$observationdata[$subject_id][$observation]['value']?></td>
 								<?
 								}
 							}
@@ -5728,28 +5728,28 @@
 				$sqlwhere .= " and `$modalitytable`.numfiles = '$s_seriesnumfiles'";
 			}
 		}
-		if ($s_measuresearch != "") {
-			$tmpsqlstring = "select measurename_id from measurenames where measure_name = '$s_measures'";
+		if ($s_observationsearch != "") {
+			$tmpsqlstring = "select observationname_id from observationnames where observation_name = '$s_observations'";
 			$tmpresult = MySQLiQuery($tmpsqlstring,__FILE__,__LINE__);
 			$tmprow = mysqli_fetch_array($tmpresult, MYSQLI_ASSOC);
-			$measurenameid = $tmprow['measurename_id'];
+			$observationnameid = $tmprow['observationname_id'];
 			
-			if (is_numeric($measurevalue)) {
-				$valtype = "measure_valuenum";
+			if (is_numeric($observationvalue)) {
+				$valtype = "observation_valuenum";
 			}
 			else {
-				$valtype = "measure_valuestring";
+				$valtype = "observation_valuestring";
 			}
-			switch ($s_measurecriteria) {
-				case "contains": $val = " like '%$s_measurevalue%'"; break;
-				case "eq": $val = " = '$s_measurevalue'"; break;
-				case "gt": $val = " > '$s_measurevalue'"; break;
-				case "lt": $val = " < '$s_measurevalue'"; break;
+			switch ($s_observationcriteria) {
+				case "contains": $val = " like '%$s_observationvalue%'"; break;
+				case "eq": $val = " = '$s_observationvalue'"; break;
+				case "gt": $val = " > '$s_observationvalue'"; break;
+				case "lt": $val = " < '$s_observationvalue'"; break;
 			}
 			
-			$measuresearch = ParseMeasureSearchList($s_measuresearch);
-			if ($measuresearch != "") {
-				$sqlwhere .= " and " . $measuresearch;
+			$observationsearch = ParseObservationSearchList($s_observationsearch);
+			if ($observationsearch != "") {
+				$sqlwhere .= " and " . $observationsearch;
 			}
 			
 		}
@@ -5871,9 +5871,9 @@
 		else {
 			$sqlstring = "select *";
 		}
-		/* check if the measures should be returned as well */
-		if ($s_measuresearch != ""){
-			$sqlstring .= ", measures.*, measurenames.measure_name";
+		/* check if the observations should be returned as well */
+		if ($s_observationsearch != ""){
+			$sqlstring .= ", observations.*, observationnames.observation_name";
 		}
 		
 		if ($s_pipelineid == "") {
@@ -5892,9 +5892,9 @@
 		if ($s_pipelineid == ""){
 			$sqlstring .= " join `$modalitytable` on `$modalitytable`.study_id = `studies`.study_id";
 		}
-		if ($s_measuresearch != ""){
-			/* join in the measure table if there is a measure to search for */
-			$sqlstring .= " left join `measures` on `measures`.enrollment_id = `enrollment`.enrollment_id left join `measurenames` on `measures`.measurename_id = `measurenames`.measurename_id";
+		if ($s_observationsearch != ""){
+			/* join in the observation table if there is a observation to search for */
+			$sqlstring .= " left join `observations` on `observations`.enrollment_id = `enrollment`.enrollment_id left join `observationnames` on `observations`.observationname_id = `observationnames`.observationname_id";
 		}
 		if ($s_formvalue[0] != ""){
 			/* join in the form tables if there is formfield criteria to search for */
@@ -5956,7 +5956,7 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayMRStudyHeader --------------- */
 	/* -------------------------------------------- */
-	function DisplayMRStudyHeader($study_id, $display, $measures) {
+	function DisplayMRStudyHeader($study_id, $display, $observations) {
 		if ($display) {
 			?>
 			<tr>
@@ -5980,10 +5980,10 @@
 				<td class="seriesheader">TR</td>
 				<td class="seriesheader"># beh <span class="tiny">(size)</span></td>
 				<?
-					if (count($measures) > 0) {
-						foreach ($measures as $measure) {
+					if (count($observations) > 0) {
+						foreach ($observations as $observation) {
 						?>
-						<td class="seriesheader"><?=$measure?></td>
+						<td class="seriesheader"><?=$observation?></td>
 						<?
 						}
 					}
@@ -5999,7 +5999,7 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayMRSeriesHeader -------------- */
 	/* -------------------------------------------- */
-	function DisplayMRSeriesHeader($s_resultoutput, $measures) {
+	function DisplayMRSeriesHeader($s_resultoutput, $observations) {
 		?>
 		<tr>
 			<? if (($s_resultoutput == "series") || ($s_resultoutput == "operations")) { ?>
@@ -6035,10 +6035,10 @@
 			<? if ($s_resultoutput != "table") { ?>
 			<td class="seriesheader"># beh <span class="tiny">(size)</span></td>
 			<? }
-				if (count($measures) > 0) {
-					foreach ($measures as $measure) {
+				if (count($observations) > 0) {
+					foreach ($observations as $observation) {
 					?>
-					<td class="seriesheader"><?=$measure?></td>
+					<td class="seriesheader"><?=$observation?></td>
 					<?
 					}
 				}
@@ -6406,38 +6406,38 @@
 	
 	
 	/* -------------------------------------------- */
-	/* ------- ParseMeasureSearchList ------------- */
+	/* ------- ParseObservationSearchList ------------- */
 	/* -------------------------------------------- */
-	function ParseMeasureSearchList($str) {
+	function ParseObservationSearchList($str) {
 
 		$parts = explode(',',$str);
 		foreach ($parts as $part) {
 			if (strpos($part,'=') !== false) {
 				$subparts = explode('=',$part);
-				$measurename = $subparts[0];
-				$measurevalue = $subparts[1];
-				$part = "(measurenames.measure_name = '$measurename' and (measures.measure_valuestring = '$measurevalue' or measures.measure_valuenum = '$measurevalue'))";
+				$observationname = $subparts[0];
+				$observationvalue = $subparts[1];
+				$part = "(observationnames.observation_name = '$observationname' and (observations.observation_valuestring = '$observationvalue' or observations.observation_valuenum = '$observationvalue'))";
 				$newparts[] = $part;
 			}
 			if (strpos($part,'>') !== false) {
 				$subparts = explode('>',$part);
-				$measurename = $subparts[0];
-				$measurevalue = $subparts[1];
-				$part = "(measurenames.measure_name = '$measurename' and (measures.measure_valuestring > '$measurevalue' or measures.measure_valuenum > '$measurevalue'))";
+				$observationname = $subparts[0];
+				$observationvalue = $subparts[1];
+				$part = "(observationnames.observation_name = '$observationname' and (observations.observation_valuestring > '$observationvalue' or observations.observation_valuenum > '$observationvalue'))";
 				$newparts[] = $part;
 			}
 			if (strpos($part,'<') !== false) {
 				$subparts = explode('<',$part);
-				$measurename = $subparts[0];
-				$measurevalue = $subparts[1];
-				$part = "(measurenames.measure_name = '$measurename' and (measures.measure_valuestring < '$measurevalue' or measures.measure_valuenum < '$measurevalue'))";
+				$observationname = $subparts[0];
+				$observationvalue = $subparts[1];
+				$part = "(observationnames.observation_name = '$observationname' and (observations.observation_valuestring < '$observationvalue' or observations.observation_valuenum < '$observationvalue'))";
 				$newparts[] = $part;
 			}
 			if (strpos($part,'~') !== false) {
 				$subparts = explode('~',$part);
-				$measurename = $subparts[0];
-				$measurevalue = $subparts[1];
-				$part = "(measurenames.measure_name = '$measurename' and (measures.measure_valuestring like '%$measurevalue%' or measures.measure_valuenum like '%$measurevalue%'))";
+				$observationname = $subparts[0];
+				$observationvalue = $subparts[1];
+				$part = "(observationnames.observation_name = '$observationname' and (observations.observation_valuestring like '%$observationvalue%' or observations.observation_valuenum like '%$observationvalue%'))";
 				$newparts[] = $part;
 			}
 		}
@@ -6452,9 +6452,9 @@
 
 	
 	/* -------------------------------------------- */
-	/* ------- ParseMeasureResultList ------------- */
+	/* ------- ParseObservationResultList ------------- */
 	/* -------------------------------------------- */
-	function ParseMeasureResultList($str, $field) {
+	function ParseObservationResultList($str, $field) {
 
 		$parts = explode(',',$str);
 		foreach ($parts as $part) {

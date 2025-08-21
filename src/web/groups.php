@@ -55,9 +55,9 @@
 	$studyids = GetVariable("studyid");
 	$modality = GetVariable("modality");
 	$itemid = GetVariable("itemid");
-	$measures = GetVariable("measures");
+	$observations = GetVariable("observations");
 	$columns = GetVariable("columns");
-	$groupmeasures = GetVariable("groupmeasures");
+	$groupobservations = GetVariable("groupobservations");
 	$studylist = GetVariable("studylist");
 
 	/* determine action */
@@ -69,29 +69,29 @@
 		case 'delete': DeleteGroup($id); break;
 		case 'addsubjectstogroup':
 			AddSubjectsToGroup($subjectgroupid, $uids, $seriesids, $modality);
-			ViewGroup($subjectgroupid, $measures, $columns, $groupmeasures);
+			ViewGroup($subjectgroupid, $observations, $columns, $groupobservations);
 			break;
 		case 'addstudiestogroup':
 			AddStudiesToGroup($studygroupid, $seriesids, $studyids, $modality);
-			ViewGroup($studygroupid, $measures, $columns, $groupmeasures);
+			ViewGroup($studygroupid, $observations, $columns, $groupobservations);
 			break;
 		case 'addseriestogroup':
 			AddSeriesToGroup($seriesgroupid, $seriesids, $modality);
-			ViewGroup($seriesgroupid, $measures, $columns, $groupmeasures);
+			ViewGroup($seriesgroupid, $observations, $columns, $groupobservations);
 			break;
 		case 'viewimagingsummary':
 			ViewImagingSummary($id);
 			break;
 		case 'removegroupitem':
 			RemoveGroupItem($itemid);
-			ViewGroup($id, $measures, $columns, $groupmeasures);
+			ViewGroup($id, $observations, $columns, $groupobservations);
 			break;
 		case 'viewgroup':
-			ViewGroup($id, $measures, $columns, $groupmeasures);
+			ViewGroup($id, $observations, $columns, $groupobservations);
 			break;
 		case 'updatestudygroup':
 			UpdateStudyGroup($id, $studylist);
-			ViewGroup($id, $measures, $columns, $groupmeasures);
+			ViewGroup($id, $observations, $columns, $groupobservations);
 			break;
 		default:
 			DisplayGroupList();
@@ -341,7 +341,7 @@
 	/* -------------------------------------------- */
 	/* ------- ViewGroup -------------------------- */
 	/* -------------------------------------------- */
-	function ViewGroup($id, $measures, $columns, $groupmeasures) {
+	function ViewGroup($id, $observations, $columns, $groupobservations) {
 
 		/* get the general group information */
 		$sqlstring = "select * from groups where group_id = '$id'";
@@ -354,18 +354,18 @@
 		//PrintVariable($grouptype);
 		
 		if ($grouptype == 'series')
-			ViewSeriesGroup($id, $groupname, $measures, $columns, $groupmeasures);
+			ViewSeriesGroup($id, $groupname, $observations, $columns, $groupobservations);
 		if ($grouptype == 'study')
-			ViewStudyGroup($id, $groupname, $measures, $columns, $groupmeasures);
+			ViewStudyGroup($id, $groupname, $observations, $columns, $groupobservations);
 		if ($grouptype == 'subject')
-			ViewSubjectGroup($id, $groupname, $measures, $columns, $groupmeasures);
+			ViewSubjectGroup($id, $groupname, $observations, $columns, $groupobservations);
 	}
 	
 	
 	/* -------------------------------------------- */
 	/* ------- ViewSeriesGroup -------------------- */
 	/* -------------------------------------------- */
-	function ViewSeriesGroup($id, $groupname, $measures, $columns, $groupmeasures) {
+	function ViewSeriesGroup($id, $groupname, $observations, $columns, $groupobservations) {
 
 		/* get the general group information */
 		$sqlstring = "select * from groups where group_id = '$id'";
@@ -600,7 +600,7 @@
 	/* -------------------------------------------- */
 	/* ------- ViewStudyGroup --------------------- */
 	/* -------------------------------------------- */
-	function ViewStudyGroup($id, $groupname, $measures, $columns, $groupmeasures) {
+	function ViewStudyGroup($id, $groupname, $observations, $columns, $groupobservations) {
 
 		/* get the general group information */
 		$sqlstring = "select * from groups where group_id = '$id'";
@@ -704,9 +704,9 @@
 					<h3 class="ui header">Options</h3>
 					<a href="groups.php?action=viewimagingsummary&id=<?=$id?>">Imaging Summary</a><br>
 					<br>
-					<a href="groups.php?action=viewgroup&id=<?=$id?>&measures=all">Include measures</a><br>
-					<a href="groups.php?action=viewgroup&id=<?=$id?>&measures=all&columns=min">Include measures and only UID</a><br>
-					<a href="groups.php?action=viewgroup&id=<?=$id?>&measures=all&columns=min&groupmeasures=byvalue">Include measures and only UID and group measures by value</a>
+					<a href="groups.php?action=viewgroup&id=<?=$id?>&observations=all">Include observations</a><br>
+					<a href="groups.php?action=viewgroup&id=<?=$id?>&observations=all&columns=min">Include observations and only UID</a><br>
+					<a href="groups.php?action=viewgroup&id=<?=$id?>&observations=all&columns=min&groupobservations=byvalue">Include observations and only UID and group observations by value</a>
 				</div>
 				<div class="ui six wide column">
 					<h3 class="ui header">Edit group members</h3>
@@ -798,22 +798,23 @@
 		if ($numweight > 0) { $avgweight = $totalweight/$numweight; } else { $avgweight = 0; }
 		if (count($weights) > 0) { $varweight = sd($weights); } else { $varweight = 0; }
 
-		if ($measures == "all") {
-			$sqlstringD = "select a.subject_id, b.enrollment_id, c.*, d.measure_name from measures c join measurenames d on c.measurename_id = d.measurename_id left join enrollment b on c.enrollment_id = b.enrollment_id join subjects a on a.subject_id = b.subject_id where a.subject_id in (" . implode2(",", $subjectids) . ")";
+		if ($observations == "all") {
+			$sqlstringD = "select a.subject_id, b.enrollment_id, c.*, d.observation_name from observations c join observationnames d on c.observationname_id = d.observationname_id left join enrollment b on c.enrollment_id = b.enrollment_id join subjects a on a.subject_id = b.subject_id where a.subject_id in (" . implode2(",", $subjectids) . ")";
 			$resultD = MySQLiQuery($sqlstringD,__FILE__,__LINE__);
 
-			if ($groupmeasures == "byvalue") {
+			if ($groupobservations == "byvalue") {
 				$mnames = array('ANTDX','AVDDX','AX1Com1_Code','AX1Com2_Code','AX1Com3_Code','AX1Com4_Code','AX1Com5_Code','AX1Com6_Code','AX1Com7_Code','AX1Pri_Code','AXIIDX','BRDDX','DPNDX','DSM-Axis','DSM-Axis1','DSM-Axis2','DSM-Axis295.3','DSM-Axis304.3','DSM-AxisV71.09','DSM_IV_TR','DXGROUP_1','DX_GROUP','MiniDxn','MiniDxnFollowUp','NARDX','OBCDX','PARDX','ProbandGroup','Psychosis','relnm1','SAsubtype','SCZDX','status','SubjectType','SZTDX');
 				while ($rowD = mysqli_fetch_array($resultD, MYSQLI_ASSOC)) {
 					$subjectid = $rowD['subject_id'];
-					$measurename = $rowD['measure_name'];
-					if (in_array($measurename,$mnames)) {
-						if ($rowD['measure_type'] == 's') {
-							$value = strtolower(trim($rowD['measure_valuestring']));
-						}
-						else {
-							$value = strtolower(trim($rowD['measure_valuenum']));
-						}
+					$observationname = $rowD['observation_name'];
+					if (in_array($observationname,$mnames)) {
+						//if ($rowD['observation_type'] == 's') {
+						//	$value = strtolower(trim($rowD['observation_valuestring']));
+						//}
+						//else {
+						//	$value = strtolower(trim($rowD['observation_valuenum']));
+						//}
+						$value = strtolower(trim($rowD['observation_value']));
 
 						if (is_numeric(substr($value,0,6))) {
 							$value = substr($value,0,6);
@@ -834,26 +835,26 @@
 							$value = "xxx";
 						}
 
-						$measuredata[$subjectid][$value] = 1;
-						$measurenames[] = $value;
+						$observationdata[$subjectid][$value] = 1;
+						$observationnames[] = $value;
 					}
 				}
-				$measurenames = array_unique($measurenames);
-				natsort($measurenames);
+				$observationnames = array_unique($observationnames);
+				natsort($observationnames);
 			}
 			else {
 				while ($rowD = mysqli_fetch_array($resultD, MYSQLI_ASSOC)) {
-					if ($rowD['measure_type'] == 's') {
-						$measuredata[$rowD['subject_id']][$rowD['measure_name']]['value'][] = $rowD['measure_valuestring'];
+					if ($rowD['observation_type'] == 's') {
+						$observationdata[$rowD['subject_id']][$rowD['observation_name']]['value'][] = $rowD['observation_valuestring'];
 					}
 					else {
-						$measuredata[$rowD['subject_id']][$rowD['measure_name']]['value'][] = $rowD['measure_valuenum'];
+						$observationdata[$rowD['subject_id']][$rowD['observation_name']]['value'][] = $rowD['observation_valuenum'];
 					}
-					$measuredata[$rowD['subject_id']][$rowD['measure_name']]['notes'][] = $rowD['measure_notes'];
-					$measurenames[] = $rowD['measure_name'];
+					$observationdata[$rowD['subject_id']][$rowD['observation_name']]['notes'][] = $rowD['observation_notes'];
+					$observationnames[] = $rowD['observation_name'];
 				}
-				$measurenames = array_unique($measurenames);
-				natcasesort($measurenames);
+				$observationnames = array_unique($observationnames);
+				natcasesort($observationnames);
 			}
 		}
 
@@ -908,10 +909,10 @@
 										<th>Site</th>
 									<? } ?>
 									<?
-									if (count($measurenames) > 0) {
-										foreach ($measurenames as $measurename) {
-											echo "<th>$measurename</th>";
-											$csv .= ",\"$measurename\"";
+									if (count($observationnames) > 0) {
+										foreach ($observationnames as $observationname) {
+											echo "<th>$observationname</th>";
+											$csv .= ",\"$observationname\"";
 										}
 									}
 									?>
@@ -1011,15 +1012,15 @@
 											<td style="font-size:8pt"><?=$studysite?></td>
 										<? } ?>
 										<?
-										if (count($measurenames) > 0) {
-											if ($groupmeasures == "byvalue") {
-												foreach ($measurenames as $measurename) {
-													$csv .= ",\"" . $measuredata[$subjectid][$measurename] . "\"";
+										if (count($observationnames) > 0) {
+											if ($groupobservations == "byvalue") {
+												foreach ($observationnames as $observationname) {
+													$csv .= ",\"" . $observationdata[$subjectid][$observationname] . "\"";
 													?>
 													<td class="seriesrow">
 														<?
-														if (isset($measuredata[$subjectid][$measurename])) {
-															echo $measuredata[$subjectid][$measurename];
+														if (isset($observationdata[$subjectid][$observationname])) {
+															echo $observationdata[$subjectid][$observationname];
 														}
 														?>
 													</td>
@@ -1027,13 +1028,13 @@
 												}
 											}
 											else {
-												foreach ($measurenames as $measure) {
-													$csv .= ",\"" . $measuredata[$subjectid][$measure]['value'] . "\"";
+												foreach ($observationnames as $observation) {
+													$csv .= ",\"" . $observationdata[$subjectid][$observation]['value'] . "\"";
 													?>
 													<td class="seriesrow">
 														<?
-														if (isset($measuredata[$subjectid][$measure]['value'])) {
-															foreach ($measuredata[$subjectid][$measure]['value'] as $value) {
+														if (isset($observationdata[$subjectid][$observation]['value'])) {
+															foreach ($observationdata[$subjectid][$observation]['value'] as $value) {
 																echo "$value<br>";
 															}
 														}
@@ -1079,7 +1080,7 @@
 	/* -------------------------------------------- */
 	/* ------- ViewSubjectGroup ------------------- */
 	/* -------------------------------------------- */
-	function ViewSubjectGroup($id, $groupname, $measures, $columns, $groupmeasures) {
+	function ViewSubjectGroup($id, $groupname, $observations, $columns, $groupobservations) {
 
 		/* get the general group information */
 		$sqlstring = "select * from groups where group_id = '$id'";

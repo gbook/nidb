@@ -72,14 +72,14 @@ void measure::LoadMeasureInfo() {
             instrumentNameID = q.value("instrumentname_id").toInt();
             measureName = q.value("measure_name").toString();
             measureNameID = q.value("measurename_id").toInt();
-            measureType = q.value("measure_type").toChar().toLatin1();
+            //measureType = q.value("measure_type").toChar().toLatin1();
             notes = q.value("measure_notes").toString();
             rater = q.value("measure_rater").toString();
             subjectid = q.value("subject_id").toInt();
             uid = q.value("UID").toString();
             value = q.value("measure_value").toString();
-            valueNumber = q.value("measure_valuenum").toDouble();
-            valueString = q.value("measure_valuestring").toString();
+            //valueNumber = q.value("measure_valuenum").toDouble();
+            //valueString = q.value("measure_valuestring").toString();
 
         }
         isValid = true;

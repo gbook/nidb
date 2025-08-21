@@ -366,7 +366,7 @@
 
 
 	/* -------------------------------------------- */
-        /* ---- Transfering measures into ADO --------- */
+        /* ---- Transfering observations into ADO --------- */
         /* -------------------------------------------- */
 
 	function TransferData($inst,$projectid,$jointid)
@@ -453,7 +453,7 @@
 						echo "<br>";
 					
 						$instid = MeasureInstr($inst);
-						Addmeasures($subjectid[$Flg],$projectid, $redcapfields, $info[$redcapfields],$inst, $instid, $info[$mvdNotes], $info[$mvdRater], $info[$mvdDate],$info[$mvdDate],'');
+						Addobservations($subjectid[$Flg],$projectid, $redcapfields, $info[$redcapfields],$inst, $instid, $info[$mvdNotes], $info[$mvdRater], $info[$mvdDate],$info[$mvdDate],'');
 						
 						$Flg = $Flg +1;
 					
@@ -541,7 +541,7 @@
 	/* ---------------- TRANSFERING MEASURE'S DATA -----------*/
 	/*--------------------------------------------------------*/
 
-        function Addmeasures($subjectid,$projectid, $measurename, $measurevalue,$Form_name, $instid, $measurenotes, $measurerater, $measurestdate,$measureenddate,$measuredesc) {
+        function Addobservations($subjectid,$projectid, $observationname, $observationvalue,$Form_name, $instid, $observationnotes, $observationrater, $observationstdate,$observationenddate,$observationdesc) {
 
                 $sqlstringEn = "SELECT enrollment_id FROM `enrollment` WHERE subject_id in (select subject_id from subjects where subjects.uid = '$subjectid' ) and project_id = '$projectid' ";
 
@@ -550,28 +550,28 @@
                 $rowEn = mysqli_fetch_array($resultEn, MYSQLI_ASSOC);
                 $enrollmentid = $rowEn['enrollment_id'];
 
-                $sqlstringA = "select measurename_id from measurenames where measure_name = '$measurename'";
+                $sqlstringA = "select observationname_id from observationnames where observation_name = '$observationname'";
                 //echo "$sqlstringA\n";
                 $resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
                 if (mysqli_num_rows($resultA) > 0) {
                         $rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-                        $measurenameid = $rowA['measurename_id'];
+                        $observationnameid = $rowA['observationname_id'];
                 }
                 else {
-                        $sqlstringA = "insert into measurenames (measure_name) values ('$measurename')";
+                        $sqlstringA = "insert into observationnames (observation_name) values ('$observationname')";
                         //echo "$sqlstringA\n";
                         $resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-                        $measurenameid = mysqli_insert_id($GLOBALS['linki']);
+                        $observationnameid = mysqli_insert_id($GLOBALS['linki']);
                 }
 
-                 $measurenotes = str_replace("'","''",$measurenotes);
-                 $measurenotes = str_replace('"',"''",$measurenotes);
-                 $measuredesc =  str_replace("'","''",$measuredesc);
-                 $measuredesc =  str_replace('"',"''",$measuredesc);
+                 $observationnotes = str_replace("'","''",$observationnotes);
+                 $observationnotes = str_replace('"',"''",$observationnotes);
+                 $observationdesc =  str_replace("'","''",$observationdesc);
+                 $observationdesc =  str_replace('"',"''",$observationdesc);
 
 
                  if ($enrollmentid!=''){
-                $sqlstring = "insert ignore into measures (enrollment_id, measure_dateentered,instrumentname_id, measurename_id, measure_notes,measure_desc,  measure_rater,measure_value,measure_startdate,measure_enddate,measure_entrydate,measure_createdate,measure_modifydate) values ($enrollmentid, now(),$instid,$measurenameid, '$measurenotes','$measuredesc','$measurerater','$measurevalue',NULLIF('$measurestdate',''),NULLIF('$measureenddate',''),now(),now(),now()) on duplicate key update measure_value='$measurevalue', measure_modifydate=now()";
+                $sqlstring = "insert ignore into observations (enrollment_id, observation_entrydate,instrumentname_id, observationname_id, observation_notes,observation_desc,  observation_rater,observation_value,observation_startdate,observation_enddate,observation_entrydate,observation_createdate,observation_modifydate) values ($enrollmentid, now(),$instid,$observationnameid, '$observationnotes','$observationdesc','$observationrater','$observationvalue',NULLIF('$observationstdate',''),NULLIF('$observationenddate',''),now(),now(),now()) on duplicate key update observation_value='$observationvalue', observation_modifydate=now()";
                 $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);}
                 else {echo 'Subject '.$subjectid.' was not found in ADO';}
         }
@@ -667,14 +667,14 @@
 
 	function MeasureInstr($Formname){
 
-                 $sqlstringinst = "SELECT measureinstrument_id FROM measureinstruments WHERE instrument_name ='$Formname'";
+                 $sqlstringinst = "SELECT observationinstrument_id FROM observationinstruments WHERE instrument_name ='$Formname'";
                  $resultinst = MySQLiQuery($sqlstringinst,__FILE__,__LINE__);
                  if (mysqli_num_rows($resultinst) > 0) {
                            $row = mysqli_fetch_array($resultinst, MYSQLI_ASSOC);
-                           $instid = $row['measureinstrument_id'];
+                           $instid = $row['observationinstrument_id'];
                  }
                  else {
-                           $sqlstringinst = "insert ignore into measureinstruments (instrument_name) values ('$Formname')";
+                           $sqlstringinst = "insert ignore into observationinstruments (instrument_name) values ('$Formname')";
                            $result = MySQLiQuery($sqlstringinst, __FILE__, __LINE__);
                            $instid = mysqli_insert_id($GLOBALS['linki']);
                               }

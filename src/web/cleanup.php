@@ -374,7 +374,7 @@
 	/* -------------------------------------------- */
 	function DisplayEmptyEnrollments() {
 
-		$sqlstring = "select a.*, b.uid, b.subject_id, b.isactive, c.project_name from enrollment a left join subjects b on a.subject_id = b.subject_id left join projects c on a.project_id = c.project_id where a.enrollment_id not in (select enrollment_id from studies) and a.enrollment_id not in (select enrollment_id from assessments) and a.enrollment_id not in (select enrollment_id from measures) and a.enrollment_id not in (select enrollment_id from drugs) order by a.lastupdate";
+		$sqlstring = "select a.*, b.uid, b.subject_id, b.isactive, c.project_name from enrollment a left join subjects b on a.subject_id = b.subject_id left join projects c on a.project_id = c.project_id where a.enrollment_id not in (select enrollment_id from studies) and a.enrollment_id not in (select enrollment_id from assessments) and a.enrollment_id not in (select enrollment_id from observations) and a.enrollment_id not in (select enrollment_id from drugs) order by a.lastupdate";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$numrows = mysqli_num_rows($result)
 		?>

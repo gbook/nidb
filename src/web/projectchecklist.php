@@ -62,7 +62,7 @@
     $a['pipelines'] = GetVariable("pipelines");
     $a['includeprotocolparms'] = GetVariable("includeprotocolparms");
     $a['includemrqa'] = GetVariable("includemrqa");
-    $a['includeallmeasures'] = GetVariable("includeallmeasures");
+    $a['includeallobservations'] = GetVariable("includeallobservations");
     $a['includeallvitals'] = GetVariable("includeallvitals");
     $a['includealldrugs'] = GetVariable("includealldrugs");
     $a['includeemptysubjects'] = GetVariable("includeemptysubjects");
@@ -703,7 +703,7 @@
 						</tr>
 						<tr>
 							<td style="padding-left: 15px">
-								<input type="checkbox" name="includeallmeasures" value="1" <? if ($a['includeallmeasures']) echo "checked"; ?>>Include all measures<br>
+								<input type="checkbox" name="includeallobservations" value="1" <? if ($a['includeallobservations']) echo "checked"; ?>>Include all observations<br>
 							</td>
 						</tr>
 						<tr>
@@ -795,23 +795,25 @@
 			$altuids = GetAlternateUIDs($subjectid, $enrollmentid);
 			$t[$id]['IDs']['AltUIDs'] = implode2(",", $altuids);
 			
-			/* add measures (key/value) if necessary */
-			if ($a['includeallmeasures']) {
-				$sqlstringA = "select a.*, b.measure_name from measures a left join measurenames b on a.measurename_id = b.measurename_id where enrollment_id = $enrollmentid";
+			/* add observations (key/value) if necessary */
+			if ($a['includeallobservations']) {
+				$sqlstringA = "select a.*, b.observation_name from observations a left join observationnames b on a.observationname_id = b.observationname_id where enrollment_id = $enrollmentid";
 				$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
 				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-					$measurename = $rowA['measure_name'];
-					if ($rowA['measure_type'] == "n")
-						$value = $rowA['measure_valuenum'];
-					else
-						$value = $rowA['measure_valuestring'];
+					$observationname = $rowA['observation_name'];
+					//if ($rowA['observation_type'] == "n")
+					//	$value = $rowA['observation_valuenum'];
+					//else
+					//	$value = $rowA['observation_valuestring'];
 					
-					$t[$id]['Measures'][$measurename] = $value;
+					$value = $rowA['observation_value'];
+					
+					$t[$id]['Measures'][$observationname] = $value;
 				}
 			}
 			
 			/* add vitals if necessary */
-			if ($a['includeallmeasures']) {
+			if ($a['includeallobservations']) {
 				$sqlstringA = "select a.*, b.vital_name from vitals a left join vitalnames b on a.vitalname_id = b.vitalname_id where a.enrollment_id = $enrollmentid";
 				$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
 				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {

@@ -1437,7 +1437,7 @@
 
 		$enrollmentidstr = implode2(",", $enrollmentids);
 
-		$sqlstring = "select * from measures a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join measurenames d on a.measurename_id = d.measurename_id where a.enrollment_id in (" . implode2(",", $enrollmentids) . ")";
+		$sqlstring = "select * from observations a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join observationnames d on a.observationname_id = d.observationname_id where a.enrollment_id in (" . implode2(",", $enrollmentids) . ")";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$numobservations = mysqli_num_rows($result);
 		
@@ -1512,14 +1512,14 @@
 						<tbody>
 						<?
 							/* get subject info. there may be series from multiple subjects in this list */
-							//$sqlstring = "select * from measures a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join measurenames d on a.measurename_id = d.measurename_id where a.enrollment_id in (" . implode2(",", $enrollmentids) . ")";
+							//$sqlstring = "select * from observations a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join observationnames d on a.observationname_id = d.observationname_id where a.enrollment_id in (" . implode2(",", $enrollmentids) . ")";
 							//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 							//while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							//	$uid = $row['uid'];
 							//	$subjectid = $row['subject_id'];
-							//	$observationdate = $row['measure_startdate'];
-							//	$observationid = $row['measure_id'];
-							//	$observationname = $row['measure_name'];
+							//	$observationdate = $row['observation_startdate'];
+							//	$observationid = $row['observation_id'];
+							//	$observationname = $row['observation_name'];
 								
 							//	$observationids[] = $observationid;
 								?>
@@ -1702,7 +1702,7 @@
 				Notice("Removed $numobjects series");
 				break;
 			case "observation":
-				$sqlstring = "delete from package_measures where packagemeasure_id in ($objectidstr)";
+				$sqlstring = "delete from package_observations where packageobservation_id in ($objectidstr)";
 				PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				Notice("Removed $numobjects observations");
@@ -1831,7 +1831,7 @@
 		/* add any observations */
 		if ((count($observationids) > 0) && ($includeobservations) && (is_array($observationids))) {
 			foreach ($observationids as $observationid) {
-				$sqlstring = "insert ignore into package_measures (package_id, measure_id) values ($packageid, $observationid)";
+				$sqlstring = "insert ignore into package_observations (package_id, observation_id) values ($packageid, $observationid)";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
 			$numobjects += count($observationids);
@@ -2000,18 +2000,18 @@
 
 		MarkTime("Getting observation data");
 		/* get observations */
-		$sqlstring = "select * from package_measures a left join measures b on a.measure_id = b.measure_id left join measurenames c on b.measurename_id = c.measurename_id left join enrollment d on b.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.package_id = $packageid";
+		$sqlstring = "select * from package_observations a left join observations b on a.observation_id = b.observation_id left join observationnames c on b.observationname_id = c.observationname_id left join enrollment d on b.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.package_id = $packageid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$numobservations = mysqli_num_rows($result);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$enrollmentid = $row['enrollment_id'];
 			$uid = $row['uid'];
 			//list($uid, $subjectid, $altuid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
-			$objectid = $row['packagemeasure_id'];
-			$observations[$uid][$objectid]['observationid'] = $row['measure_id'];
-			$observations[$uid][$objectid]['name'] = $row['measure_name'];
-			$observations[$uid][$objectid]['value'] = $row['measure_value'];
-			$observations[$uid][$objectid]['startdate'] = $row['measure_startdate'];
+			$objectid = $row['packageobservation_id'];
+			$observations[$uid][$objectid]['observationid'] = $row['observation_id'];
+			$observations[$uid][$objectid]['name'] = $row['observation_name'];
+			$observations[$uid][$objectid]['value'] = $row['observation_value'];
+			$observations[$uid][$objectid]['startdate'] = $row['observation_startdate'];
 			
 			if (!isset($altIDMapping[$uid]) || $altIDMapping[$uid] == "" || $altIDMapping[$uid] == $uid) {
 				/* update the package_enrollment table with the alternate UID specific to this enrollment (this fixes packages before the primary alt uid was used) */
@@ -3129,7 +3129,7 @@
 							$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
 							$numobjects += $rowA['count'];
 
-							$sqlstringA = "select count(*) 'count' from package_measures where package_id = $packageid";
+							$sqlstringA = "select count(*) 'count' from package_observations where package_id = $packageid";
 							$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 							$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
 							$numobjects += $rowA['count'];
