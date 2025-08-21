@@ -3138,28 +3138,29 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
             if (enrollmentIDs.size() > 0) {
                 QString enrollmentIDstr = JoinIntArray(enrollmentIDs, ",");
 
-                /* get measures */
+                /* get observations */
                 QSqlQuery q2;
-                q2.prepare("select * from measures a left join measureinstruments b on a.instrumentname_id = b.measureinstrument_id left join measurenames c on a.measurename_id = c.measurename_id where a.enrollment_id in (" + enrollmentIDstr + ")");
+                q2.prepare("select * from observations a left join observationinstruments b on a.instrumentname_id = b.observationinstrument_id left join observationnames c on a.observationname_id = c.observationname_id where a.enrollment_id in (" + enrollmentIDstr + ")");
                 n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
                 if (q2.size() > 0) {
                     while (q2.next()) {
                         squirrelObservation sqrlObservation(sqrl.GetDatabaseUUID());
-                        sqrlObservation.DateEnd = q2.value("measure_enddate").toDateTime();
-                        sqrlObservation.DateStart = q2.value("measure_startdate").toDateTime();
+                        sqrlObservation.DateEnd = q2.value("observation_enddate").toDateTime();
+                        sqrlObservation.DateStart = q2.value("observation_startdate").toDateTime();
                         sqrlObservation.InstrumentName = q2.value("instrument_name").toString();
-                        sqrlObservation.ObservationName = q2.value("measure_name").toString();
-                        sqrlObservation.Notes = q2.value("measure_notes").toString();
-                        sqrlObservation.Rater = q2.value("measure_rater").toString();
+                        sqrlObservation.ObservationName = q2.value("observation_name").toString();
+                        sqrlObservation.Notes = q2.value("observation_notes").toString();
+                        sqrlObservation.Rater = q2.value("observation_rater").toString();
 
-                        QChar measuretype = q2.value("measure_type").toChar();
-                        if (measuretype == 's') { sqrlObservation.Value = q2.value("measure_valuestring").toString(); }
-                        else { sqrlObservation.Value = q2.value("measure_valuenum").toString(); }
+                        sqrlObservation.Value = q2.value("observation_value").toString();
+                        //QChar observationtype = q2.value("observation_type").toChar();
+                        //if (observationtype == 's') { sqrlObservation.Value = q2.value("observation_valuestring").toString(); }
+                        //else { sqrlObservation.Value = q2.value("observation_valuenum").toString(); }
 
-                        sqrlObservation.Duration = q2.value("measure_duration").toDouble();
-                        sqrlObservation.DateRecordEntry = q2.value("measure_entrydate").toDateTime();
-                        sqrlObservation.DateRecordCreate = q2.value("measure_createdate").toDateTime();
-                        sqrlObservation.DateRecordModify = q2.value("measure_modifydate").toDateTime();
+                        sqrlObservation.Duration = q2.value("observation_duration").toDouble();
+                        sqrlObservation.DateRecordEntry = q2.value("observation_entrydate").toDateTime();
+                        sqrlObservation.DateRecordCreate = q2.value("observation_createdate").toDateTime();
+                        sqrlObservation.DateRecordModify = q2.value("observation_modifydate").toDateTime();
                         sqrlObservation.subjectRowID = squirrelSubjectRowID;
                         sqrlObservation.Store();
                     }
@@ -3184,11 +3185,11 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                         //sqrlIntervention.FrequencyModifier = q2.value("drug_frequencymodifier").toString();
                         //sqrlIntervention.FrequencyValue = q2.value("drug_frequencyvalue").toDouble();
                         //sqrlIntervention.FrequencyUnit = q2.value("drug_frequencyunit").toString();
-                        sqrlIntervention.Rater = q2.value("measure_rater").toString();
-                        sqrlIntervention.Notes = q2.value("measure_notes").toString();
-                        sqrlIntervention.DateRecordEntry = q2.value("measure_entrydate").toDateTime();
-                        sqrlIntervention.DateRecordCreate = q2.value("measure_createdate").toDateTime();
-                        sqrlIntervention.DateRecordModify = q2.value("measure_modifydate").toDateTime();
+                        sqrlIntervention.Rater = q2.value("observation_rater").toString();
+                        sqrlIntervention.Notes = q2.value("observation_notes").toString();
+                        sqrlIntervention.DateRecordEntry = q2.value("observation_entrydate").toDateTime();
+                        sqrlIntervention.DateRecordCreate = q2.value("observation_createdate").toDateTime();
+                        sqrlIntervention.DateRecordModify = q2.value("observation_modifydate").toDateTime();
                         sqrlIntervention.subjectRowID = squirrelSubjectRowID;
                         sqrlIntervention.Store();
                     }
@@ -3470,12 +3471,12 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
     }
     n->Log("libsquirrel message buffer [" + sqrl.GetLogBuffer() + "]");
 
-    /* MEASURES - add all measures associated with this package */
-    q.prepare("select b.measure_id, c.subject_id, c.project_id from package_measures a left join measures b on a.measure_id = b.measure_id left join enrollment c on b.enrollment_id = c.enrollment_id where a.package_id = :packageid");
+    /* MEASURES - add all observations associated with this package */
+    q.prepare("select b.observation_id, c.subject_id, c.project_id from package_observations a left join observations b on a.observation_id = b.observation_id left join enrollment c on b.enrollment_id = c.enrollment_id where a.package_id = :packageid");
     q.bindValue(":packageid", packageid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
     while (q.next()) {
-        int measureRowID = q.value("measure_id").toInt();
+        int observationRowID = q.value("observation_id").toInt();
         int subjectRowID = q.value("subject_id").toInt();
         int projectRowID = q.value("project_id").toInt();
 
@@ -3501,7 +3502,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         }
 
         /* add the analysis to the package */
-        measure mm(measureRowID, n);
+        observation mm(observationRowID, n);
         if (!mm.isValid) continue;
 
         squirrelObservation sqrlObservation(sqrl.GetDatabaseUUID());

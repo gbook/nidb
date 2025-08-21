@@ -249,10 +249,10 @@ int moduleMiniPipeline::Run() {
 
                                     /* insert the value */
                                     //QSqlQuery q2;
-                                    if (csvType == "measure") {
+                                    if (csvType == "observation") {
                                         int n=0;
                                         QString m;
-                                        if (!InsertMeasure(enrollmentID, s.studyid, s.seriesid, csvVariableName, csvValue, csvInstrument, startDate, endDate, csvDuration.toInt(), "minipipeline-" + mp.name, n, m))
+                                        if (!InsertObservation(enrollmentID, s.studyid, s.seriesid, csvVariableName, csvValue, csvInstrument, startDate, endDate, csvDuration.toInt(), "minipipeline-" + mp.name, n, m))
                                             AppendMiniPipelineLog(m, mpjobid);
                                         else
                                             numInserts += n;
@@ -382,9 +382,9 @@ qint64 moduleMiniPipeline::CopyAllSeriesData(QString modality, qint64 seriesid, 
 
 
 /* ---------------------------------------------------------- */
-/* --------- InsertMeasure ---------------------------------- */
+/* --------- InsertObservation ---------------------------------- */
 /* ---------------------------------------------------------- */
-bool moduleMiniPipeline::InsertMeasure(qint64 enrollmentid, qint64 studyid, qint64 seriesid, QString measureName, QString value, QString instrument, QDateTime startDate, QDateTime endDate, int duration, QString rater, int &numInserts, QString &msg) {
+bool moduleMiniPipeline::InsertObservation(qint64 enrollmentid, qint64 studyid, qint64 seriesid, QString observationName, QString value, QString instrument, QDateTime startDate, QDateTime endDate, int duration, QString rater, int &numInserts, QString &msg) {
 
     QSqlQuery q;
     numInserts = 0;
@@ -395,45 +395,45 @@ bool moduleMiniPipeline::InsertMeasure(qint64 enrollmentid, qint64 studyid, qint
         return false;
     }
 
-    /* get the measure name ID */
-    int measureNameID;
-    q.prepare("select measurename_id from measurenames where measure_name = :measurename");
-    q.bindValue(":measurename", measureName);
+    /* get the observation name ID */
+    int observationNameID;
+    q.prepare("select observationname_id from observationnames where observation_name = :observationname");
+    q.bindValue(":observationname", observationName);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.size() > 0) {
         q.first();
-        measureNameID = q.value("measurename_id").toInt();
+        observationNameID = q.value("observationname_id").toInt();
     }
     else {
-        q.prepare("insert into measurenames (measure_name) values (:measurename)");
-        q.bindValue(":measurename", measureName);
+        q.prepare("insert into observationnames (observation_name) values (:observationname)");
+        q.bindValue(":observationname", observationName);
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-        measureNameID = q.lastInsertId().toInt();
+        observationNameID = q.lastInsertId().toInt();
     }
 
     /* get the instrument name ID */
     int instrumentNameID;
-    q.prepare("select measureinstrument_id from measureinstruments where instrument_name = :instrument");
+    q.prepare("select observationinstrument_id from observationinstruments where instrument_name = :instrument");
     q.bindValue(":instrument", instrument);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.size() > 0) {
         q.first();
-        instrumentNameID = q.value("measureinstrument_id").toInt();
+        instrumentNameID = q.value("observationinstrument_id").toInt();
     }
     else {
-        q.prepare("insert into measureinstruments (instrument_name) values (:instrument)");
+        q.prepare("insert into observationinstruments (instrument_name) values (:instrument)");
         q.bindValue(":instrument", instrument);
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         instrumentNameID = q.lastInsertId().toInt();
     }
 
-    q.prepare("insert ignore into measures (enrollment_id, study_id, series_id, instrumentname_id, measurename_id, measure_value, measure_rater, measure_startdate, measure_enddate, measure_duration, measure_entrydate, measure_createdate, measure_modifydate) values (:enrollmentid, :studyid, :seriesid, :instrumentnameid, :measurenameid, :value, :measurerater, :startdate, :enddate, :duration, now(), now(), now()) on duplicate key update study_id = :studyid, series_id = :seriesid, measurename_id = :measurenameid, measure_value = :value, instrumentname_id = :instrumentnameid, measure_startdate = :startdate, measure_enddate = :enddate, measure_modifydate = now()");
+    q.prepare("insert ignore into observations (enrollment_id, study_id, series_id, instrumentname_id, observationname_id, observation_value, observation_rater, observation_startdate, observation_enddate, observation_duration, observation_entrydate, observation_createdate, observation_modifydate) values (:enrollmentid, :studyid, :seriesid, :instrumentnameid, :observationnameid, :value, :observationrater, :startdate, :enddate, :duration, now(), now(), now()) on duplicate key update study_id = :studyid, series_id = :seriesid, observationname_id = :observationnameid, observation_value = :value, instrumentname_id = :instrumentnameid, observation_startdate = :startdate, observation_enddate = :enddate, observation_modifydate = now()");
     q.bindValue(":enrollmentid", enrollmentid);
     q.bindValue(":studyid", studyid);
     q.bindValue(":seriesid", seriesid);
-    q.bindValue(":measurenameid", measureNameID);
+    q.bindValue(":observationnameid", observationNameID);
     q.bindValue(":value", value);
-    q.bindValue(":measurerater", rater);
+    q.bindValue(":observationrater", rater);
     q.bindValue(":instrumentnameid", instrumentNameID);
     q.bindValue(":startdate", startDate.toString(Qt::ISODate));
     q.bindValue(":enddate", endDate.toString(Qt::ISODate));
