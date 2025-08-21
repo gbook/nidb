@@ -74,12 +74,12 @@ int modulePipeline::Run() {
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     int numPipelines = q.size();
     if (numPipelines < 1) {
-        n->Log("No pipelines need to be run. Exiting module.", __FUNCTION__);
+        n->Log("No pipelines need to be run. Exiting module.");
         SetPipelineProcessStatus("complete",0,0);
         return false;
     }
     else {
-        n->Log(QString("Found %1 active pipelines").arg(numPipelines), __FUNCTION__);
+        n->Log(QString("Found %1 active pipelines").arg(numPipelines));
     }
 
     /* get the list of pipelines to be run */
@@ -2228,7 +2228,7 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
             studyIDToDoList.append(studyRowID);
         }
     }
-    m = QString("Found %1 global, valid, studies, older than 6 hours, that do not have an existing analysis for this pipeline").arg(studyIDToDoList.size());
+    m = QString("Step A0 - Found %1 global studies (Valid, older than 6 hours, and do not have an existing analysis for this pipeline)").arg(studyIDToDoList.size());
     n->Log(m, __FUNCTION__);
     InsertPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", m);
 
@@ -2243,7 +2243,7 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
                 groupStudyRowIDs.append(studyRowID);
             }
         }
-        m = QString("Found %1 studies that in the specified group(s)").arg(groupStudyRowIDs.size());
+        m = QString("Step A1 - Found %1 studies from the specified group(s)").arg(groupStudyRowIDs.size());
         n->Log(m, __FUNCTION__);
         InsertPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", m);
 
@@ -2252,13 +2252,14 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
         QSet<int> set2(groupStudyRowIDs.begin(), groupStudyRowIDs.end());
         QSet<int> intersection = set1.intersect(set2);
 
-        m = QString("Global studyID list contains %1 studies and group(s) list contains %2 studies. Intersection of these sets yields %3 studies to be analyzed").arg(studyIDToDoList.size()).arg(groupStudyRowIDs.size()).arg(intersection.size());
+        m = QString("Global studyID list (step A0) contains %1 studies, and group(s) list (step A1) contains %2 studies. Intersection of these sets yields %3 studies to be analyzed").arg(studyIDToDoList.size()).arg(groupStudyRowIDs.size()).arg(intersection.size());
         n->Log(m, __FUNCTION__);
         InsertPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", m);
 
         studyIDToDoList = QList<int>(intersection.begin(), intersection.end());
     }
     else {
+        n->Log("Step A1 - No groups defined", __FUNCTION__);
         InsertPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", "No groups defined");
     }
 
@@ -2274,7 +2275,7 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
                 dependencyStudyRowIDs.append(studyRowID);
             }
         }
-        m = QString("Found %1 studies in the specified dependency").arg(dependencyStudyRowIDs.size());
+        m = QString("Step A2 - Found %1 studies in the specified dependency").arg(dependencyStudyRowIDs.size());
         n->Log(m, __FUNCTION__);
         InsertPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", m);
 
@@ -2283,143 +2284,54 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
         QSet<int> set2(dependencyStudyRowIDs.begin(), dependencyStudyRowIDs.end());
         QSet<int> intersection = set1.intersect(set2);
 
-        m = QString("Global studyID list contains %1 studies and dependency list contains %2 studies. The intersection of these sets yields %3 studies to be analyzed").arg(studyIDToDoList.size()).arg(dependencyStudyRowIDs.size()).arg(intersection.size());
+        m = QString("Global studyID list (step A0) contains %1 studies, and dependency list (step A2) contains %2 studies. The intersection of these sets yields %3 studies to be analyzed").arg(studyIDToDoList.size()).arg(dependencyStudyRowIDs.size()).arg(intersection.size());
         n->Log(m, __FUNCTION__);
         InsertPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", m);
 
         studyIDToDoList = QList<int>(intersection.begin(), intersection.end());
     }
     else {
+        n->Log("Step A2 - No parent pipelines defined", __FUNCTION__);
         InsertPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", "No parent pipelines (dependencies) defined");
     }
 
     numInitial = studyIDToDoList.size();
 
     /* step B1 - get only the studies that need to have their results rerun */
-    //int addedStudies = 0;
     q.prepare("select study_id from studies where study_id in (select study_id from analysis where pipeline_id = :pipelineid and analysis_rerunresults = 1 and analysis_status = 'complete' and (analysis_isbad <> 1 or analysis_isbad is null)) order by study_datetime desc");
     q.bindValue(":pipelineid", pipelineid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.size() > 0) {
         while (q.next()) {
             int studyid = q.value("study_id").toInt();
-            n->Log(QString("Found study (results rerun) [%1]").arg(studyid), __FUNCTION__);
             studyIDToDoList.append(studyid);
             rerunStudyList << QString("%1%2").arg(q.value("uid").toString().replace('\u0000', "")).arg(q.value("study_num").toString());
             numRerun++;
         }
+        m = n->Log(QString("Step B1 - Found %1 studies marked to have results re-run").arg(numRerun), __FUNCTION__);
         InsertPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", QString("Found %1 studies to have results rerun [" + rerunStudyList.join(", ") + "]").arg(rerunStudyList.size()));
     }
-    //numRerun = addedStudies;
+    else
+        n->Log("Step B1 - No studies marked to have results rerun", __FUNCTION__);
 
     /* step B2 - get only the studies that need to have their supplements run */
-    //addedStudies = 0;
     q.prepare("select study_id from studies where study_id in (select study_id from analysis where pipeline_id = :pipelineid and analysis_runsupplement = 1 and analysis_status = 'complete' and (analysis_isbad <> 1 or analysis_isbad is null)) order by study_datetime desc");
     q.bindValue(":pipelineid", pipelineid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.size() > 0) {
         while (q.next()) {
             int studyid = q.value("study_id").toInt();
-            n->Log(QString("Found study (needs supplement run) [%1]").arg(studyid), __FUNCTION__);
             studyIDToDoList.append(studyid);
             supplementStudyList << QString("%1%2").arg(q.value("uid").toString().replace('\u0000', "")).arg(q.value("study_num").toString());
             numSupplement++;
         }
+        n->Log(QString("Step B2 - Found %1 studies marked to have supplement commands run").arg(numSupplement), __FUNCTION__);
         InsertPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", QString("Found %1 studies to have supplement scripts run [" + supplementStudyList.join(", ") + "]").arg(supplementStudyList.size()));
     }
-    //numSupplement = addedStudies;
+    else
+        n->Log("Step B2 - No studies marked to have supplment run", __FUNCTION__);
 
-    // /* step 3 - get list of studies which do not have an entry in the analysis table for this pipeline */
-    // if (depend >= 0) {
-    //     /* there is a dependency. need to check if ANY of the subject's studies have the dependency... */
-    //     n->Debug(QString("This pipeline [%1] depends on [%2]").arg(pipelineid).arg(depend), __FUNCTION__);
-
-    //     /* step 3a) get list of studies that have completed the dependency */
-    //     //QList<int> list;
-    //     QSqlQuery q2;
-    //     q2.prepare("select a.study_id, c.uid, a.study_num from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.subject_id in (select a.subject_id from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id where c.study_id in (select study_id from analysis where pipeline_id = :depend and analysis_status = 'complete' and (analysis_isbad <> 1 or analysis_isbad is null)) and (a.isactive = 1 or a.isactive is null))");
-    //     q2.bindValue(":depend", depend);
-    //     n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
-    //     if (q2.size() > 0) {
-    //         while (q2.next()) {
-    //             studyIDToDoList.append(q2.value("study_id").toInt());
-    //             normalStudyList << QString("%1%2").arg(q2.value("uid").toString().replace('\u0000', "")).arg(q2.value("study_num").toString());
-    //         }
-    //     }
-    //     QString studyidlist = JoinIntArray(studyIDToDoList, ", ");
-
-    //     if (studyidlist == "")
-    //         studyidlist = "-1";
-
-    //     if ((n->cfg["debug"].toInt()) || (debug)) {
-    //         if (groupids != "") {
-    //             QStringList gids = groupids.split(",");
-    //             foreach (QString gid, gids) {
-    //                 n->Log(n->GetGroupListing(gid.toInt()), __FUNCTION__, 250);
-    //             }
-    //         }
-    //     }
-
-    //     /* step 3b) then find all studies that have completed and have not already been processed by this pipeline */
-    //     if (groupids == "") {
-    //         /* NO groupids */
-    //         q.prepare("select study_id from studies where study_id not in (select study_id from analysis where pipeline_id = :pipelineid) and study_id in (" + studyidlist + ") and (study_datetime < date_sub(now(), interval 6 hour)) order by study_datetime desc");
-    //         q.bindValue(":pipelineid", pipelineid);
-    //         m = n->Log(QString("Pipeline has a dependency [%1] and NO groups. Found %2 studies that have completed the dependency").arg(depend).arg(studyIDToDoList.size()), __FUNCTION__);
-    //         InsertPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", m);
-    //     }
-    //     else {
-    //         /* with groupids */
-    //         q.prepare("select a.study_id from studies a left join group_data b on a.study_id = b.data_id where (a.study_id not in (select study_id from analysis where pipeline_id = :pipelineid) and a.study_id in (" + studyidlist + ") and (a.study_datetime < date_sub(now(), interval 6 hour))) and b.group_id in (" + groupids + ") order by a.study_datetime desc");
-    //         q.bindValue(":pipelineid", pipelineid);
-    //         m = n->Log(QString("Pipeline HAS a dependency [%1] and group(s) [%2]. Found %3 studies that have completed the dependency").arg(depend).arg(groupids).arg(studyIDToDoList.size()), __FUNCTION__);
-    //         InsertPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", m);
-    //     }
-    // }
-    // else {
-    //     /* NO dependency */
-    //     if (groupids == "") {
-    //         /* NO groupids */
-    //         q.prepare("select a.study_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id not in (select study_id from analysis where pipeline_id = :pipelineid) and (a.study_datetime < date_sub(now(), interval 6 hour)) and a.study_modality = :modality and c.isactive = 1 order by a.study_datetime desc");
-    //         q.bindValue(":pipelineid", pipelineid);
-    //         q.bindValue(":modality", modality);
-    //         m = n->Log("Pipeline has NO dependency and NO groups", __FUNCTION__);
-    //         InsertPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", m);
-    //     }
-    //     else {
-    //         /* WITH groupids */
-    //         q.prepare("SELECT a.study_id FROM studies a left join group_data b on a.study_id = b.data_id left join enrollment c on a.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id WHERE a.study_id NOT IN (SELECT study_id FROM analysis WHERE pipeline_id = :pipelineid) AND ( a.study_datetime < DATE_SUB( NOW( ) , INTERVAL 6 hour )) AND a.study_modality = :modality and b.group_id in (" + groupids + ") and d.isactive = 1 ORDER BY a.study_datetime DESC");
-    //         q.bindValue(":pipelineid", pipelineid);
-    //         q.bindValue(":modality", modality);
-    //         m = n->Log(QString("Pipeline has NO dependency and HAS groups [%1]").arg(groupids), __FUNCTION__);
-    //         InsertPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", m);
-    //     }
-    // }
-
-    // /* run the query from the previous section to get the study details */
-    // n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    // if (q.size() > 0) {
-    //     while (q.next()) {
-    //         int studyid = q.value("study_id").toInt();
-
-    //         QSqlQuery q2;
-    //         q2.prepare("select b.study_num, c.uid from enrollment a left join studies b on a.enrollment_id = b.enrollment_id left join subjects c on a.subject_id = c.subject_id where b.study_id = :studyid and c.isactive = 1");
-    //         q2.bindValue(":studyid", studyid);
-    //         n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
-    //         if (q2.size() > 0) {
-    //             q2.first();
-    //             //QString uidstudynum;
-    //             //uidstudynum = QString("%1%2").arg(q2.value("uid").toString()).arg(q2.value("study_num").toInt());
-    //             normalStudyList << QString("%1%2").arg(q2.value("uid").toString().replace('\u0000', "")).arg(q2.value("study_num").toString());
-    //         }
-    //         studyIDToDoList.append(studyid);
-
-    //         numInitial++;
-    //     }
-    // }
-    // InsertPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", QString("Found %1 unprocessed studies that meet criteria [" + normalStudyList.join(", ") + "]").arg(normalStudyList.size()));
-
-    m = QString("Found %1 studies that met criteria to be analyzed (%2 not yet analyzed,   %3 flagged to be rerun,   %4 flagged for supplement run)").arg(studyIDToDoList.size()).arg(numInitial).arg(numRerun).arg(numSupplement);
+    m = QString("Step C - Found %1 studies that met criteria to be analyzed (%2 not yet analyzed,   %3 flagged to be rerun,   %4 flagged for supplement run)").arg(studyIDToDoList.size()).arg(numInitial).arg(numRerun).arg(numSupplement);
     n->Log(m, __FUNCTION__);
     InsertPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", m);
 

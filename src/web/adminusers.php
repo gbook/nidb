@@ -114,8 +114,8 @@
 		$fullname = mysqli_real_escape_string($GLOBALS['linki'], $fullname);
 		$email = mysqli_real_escape_string($GLOBALS['linki'], $email);
 		$password = mysqli_real_escape_string($GLOBALS['linki'], $password);
-		$isadmin = mysqli_real_escape_string($GLOBALS['linki'], $isadmin) + 0;
-		$enabled = mysqli_real_escape_string($GLOBALS['linki'], $enabled) + 0;
+		$isadmin = (int)mysqli_real_escape_string($GLOBALS['linki'], $isadmin);
+		$enabled = (int)mysqli_real_escape_string($GLOBALS['linki'], $enabled);
 
 		/* start a transaction */
 		$sqlstring = "start transaction";
@@ -246,8 +246,8 @@
 		$fullname = mysqli_real_escape_string($GLOBALS['linki'], $fullname);
 		$email = mysqli_real_escape_string($GLOBALS['linki'], $email);
 		$password = mysqli_real_escape_string($GLOBALS['linki'], $password);
-		$enabled = mysqli_real_escape_string($GLOBALS['linki'], $enabled) + 0;
-		$isadmin = mysqli_real_escape_string($GLOBALS['linki'], $isadmin) + 0;
+		$enabled = (bool)mysqli_real_escape_string($GLOBALS['linki'], $enabled);
+		$isadmin = (bool)mysqli_real_escape_string($GLOBALS['linki'], $isadmin);
 		
 		/* determine their current login type */
 		$logintype = "Standard";

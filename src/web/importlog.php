@@ -296,15 +296,15 @@
 				$status_message = "An upload transaction has been completed. Data have been received by NiDB and are being checked, but may not yet be archived or available for download";
 			}
 
-			$numuploading = $counts['uploading'] + 0;
-			$numpending = $counts['pending'] + 0;
-			$numreceiving = $counts['receiving'] + 0;
-			$numreceived = $counts['received'] + 0;
-			$numarchiving = $counts['archiving'] + 0;
-			$numarchived = $counts['archived'] + 0;
-			$numblank = $counts[''] + 0;
-			$numerror = $counts['error'] + 0;
-			$numnull = $counts['null'] + 0;
+			$numuploading = (int)$counts['uploading'];
+			$numpending = (int)$counts['pending'];
+			$numreceiving = (int)$counts['receiving'];
+			$numreceived = (int)$counts['received'];
+			$numarchiving = (int)$counts['archiving'];
+			$numarchived = (int)$counts['archived'];
+			$numblank = (int)$counts[''];
+			$numerror = (int)$counts['error'];
+			$numnull = (int)$counts['null'];
 
 			if (($numerror > 0) || ($numfilesfail > 0)) {
 				$statusicon = "&#9940;";

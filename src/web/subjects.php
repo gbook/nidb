@@ -198,7 +198,7 @@
 		$email = mysqli_real_escape_string($GLOBALS['linki'], $email);
 		$maritalstatus = mysqli_real_escape_string($GLOBALS['linki'], $maritalstatus);
 		$smokingstatus = mysqli_real_escape_string($GLOBALS['linki'], $smokingstatus);
-		$cancontact = mysqli_real_escape_string($GLOBALS['linki'], $cancontact) + 0;
+		$cancontact = (bool)mysqli_real_escape_string($GLOBALS['linki'], $cancontact);
 		$tags = mysqli_real_escape_string($GLOBALS['linki'], $tags);
 		$altuidlist = $altuids;
 		$guid = mysqli_real_escape_string($GLOBALS['linki'], $guid);
@@ -546,7 +546,7 @@
 			$sqlstring = "SELECT max(a.study_num) 'max' FROM studies a left join enrollment b on a.enrollment_id = b.enrollment_id  WHERE b.subject_id = $subjectid";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$oldstudynum = $row['max'] + 0;
+			$oldstudynum = (int)$row['max'];
 			$studynum = $oldstudynum + 1;
 			
 			$sqlstring = "insert into studies (enrollment_id, study_num, study_modality, study_type, study_datetime, study_desc, study_operator, study_performingphysician, study_site, study_notes, study_status, study_createdby, study_createdate) values ($enrollmentid, $studynum, upper('$modality'), '$visit', now(), '$desc' , '$operator', '$physician', '$site', '$notes', 'complete', '" . $_SESSION['username'] . "', now())";

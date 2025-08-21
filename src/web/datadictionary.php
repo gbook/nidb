@@ -346,17 +346,17 @@ variable_2, drug, "Important Variable 1 - no keys", </div>
 			$sqlstring = "select count(c.measurename_id) 'count' from measures a left join enrollment b on a.enrollment_id = b.enrollment_id left join measurenames c on a.measurename_id = c.measurename_id where b.project_id = $projectid and c.measure_name = '$varname'";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$measurecount = $row['count'] + 0;
+			$measurecount = (int)$row['count'];
 
 			$sqlstring = "select count(c.vitalname_id) 'count' from vitals a left join enrollment b on a.enrollment_id = b.enrollment_id left join vitalnames c on a.vitalname_id = c.vitalname_id where b.project_id = $projectid and c.vital_name = '$varname'";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$vitalcount = $row['count'] + 0;
+			$vitalcount = (int)$row['count'];
 
 			$sqlstring = "select count(c.drugname_id) 'count' from drugs a left join enrollment b on a.enrollment_id = b.enrollment_id left join drugnames c on a.drugname_id = c.drugname_id where b.project_id = $projectid and c.drug_name = '$varname'";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$drugcount = $row['count'] + 0;
+			$drugcount = (int)$row['count'];
 
 			$errors = array();
 			switch ($type) {

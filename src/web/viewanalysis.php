@@ -632,7 +632,7 @@
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$pipelineid = $row['pipeline_id'];
-		$pipelineversion = $row['pipeline_version'] + 0;
+		$pipelineversion = (int)$row['pipeline_version'];
 		$pipelinedependency = $row['pipeline_dependency'];
 		$studyid = $row['study_id'];
 		$datalog = $row['analysis_datalog'];

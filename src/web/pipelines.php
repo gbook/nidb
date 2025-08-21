@@ -253,19 +253,19 @@
 		$pipelineclusteruser = mysqli_real_escape_string($GLOBALS['linki'], $pipelineclusteruser);
 		$pipelinesubmithost = mysqli_real_escape_string($GLOBALS['linki'], $pipelinesubmithost);
 		$pipelinesubmithostuser = mysqli_real_escape_string($GLOBALS['linki'], $pipelinesubmithostuser);
-		$pipelinemaxwalltime = mysqli_real_escape_string($GLOBALS['linki'], $pipelinemaxwalltime) + 0;
-		$pipelinesubmitdelay = mysqli_real_escape_string($GLOBALS['linki'], $pipelinesubmitdelay) + 0;
+		$pipelinemaxwalltime = (int)mysqli_real_escape_string($GLOBALS['linki'], $pipelinemaxwalltime);
+		$pipelinesubmitdelay = (int)mysqli_real_escape_string($GLOBALS['linki'], $pipelinesubmitdelay);
 		$pipelinedatacopymethod = mysqli_real_escape_string($GLOBALS['linki'], $pipelinedatacopymethod);
 		$pipelinequeue = mysqli_real_escape_string($GLOBALS['linki'], $pipelinequeue);
 		$pipelinenumcores = mysqli_real_escape_string($GLOBALS['linki'], $pipelinenumcores);
 		$pipelinememory = mysqli_real_escape_string($GLOBALS['linki'], $pipelinememory);
-		$pipelineremovedata = mysqli_real_escape_string($GLOBALS['linki'], $pipelineremovedata) + 0;
+		$pipelineremovedata = (int)mysqli_real_escape_string($GLOBALS['linki'], $pipelineremovedata);
 		$pipelinedirectory = mysqli_real_escape_string($GLOBALS['linki'], $pipelinedirectory);
 		$pipelinedirstructure = mysqli_real_escape_string($GLOBALS['linki'], $pipelinedirstructure);
-		$pipelineusetmpdir = mysqli_real_escape_string($GLOBALS['linki'], $pipelineusetmpdir) + 0;
+		$pipelineusetmpdir = (int)mysqli_real_escape_string($GLOBALS['linki'], $pipelineusetmpdir);
 		$pipelinetmpdir = mysqli_real_escape_string($GLOBALS['linki'], $pipelinetmpdir);
 		$pipelinenotes = mysqli_real_escape_string($GLOBALS['linki'], $pipelinenotes);
-		$ishidden = mysqli_real_escape_string($GLOBALS['linki'], $ishidden) + 0;
+		$ishidden = (int)mysqli_real_escape_string($GLOBALS['linki'], $ishidden);
 		$pipelinequeue = preg_replace('/\s+/', '', trim($pipelinequeue));
 		
 		/* update the pipeline */
@@ -312,8 +312,8 @@
 		$deplevel = mysqli_real_escape_string($GLOBALS['linki'], $deplevel);
 		$depdir = mysqli_real_escape_string($GLOBALS['linki'], $depdir);
 		$deplinktype = mysqli_real_escape_string($GLOBALS['linki'], $deplinktype);
-		$groupbysubject = mysqli_real_escape_string($GLOBALS['linki'], $groupbysubject) + 0;
-		$outputbids = mysqli_real_escape_string($GLOBALS['linki'], $outputbids) + 0;
+		$groupbysubject = (bool)mysqli_real_escape_string($GLOBALS['linki'], $groupbysubject);
+		$outputbids = (bool)mysqli_real_escape_string($GLOBALS['linki'], $outputbids);
 		$bidsoutputdir = mysqli_real_escape_string($GLOBALS['linki'], $bidsoutputdir);
 
 		if (is_array($dependency)) { $dependencies = implode(",",$dependency); }
@@ -503,7 +503,7 @@
 		for($i=0; $i<=count($dd_protocol); $i++) {
 			if (trim($dd_protocol[$i]) != "") {
 				/* perform data checks */
-				$dd_enabled[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_enabled[$i]) + 0;
+				$dd_enabled[$i] = (bool)mysqli_real_escape_string($GLOBALS['linki'], $dd_enabled[$i]);
 				$dd_order[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_order[$i]);
 				$dd_protocol[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_protocol[$i]);
 				$dd_modality[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_modality[$i]);
@@ -511,18 +511,18 @@
 				$dd_studyassoc[$i] = trim(mysqli_real_escape_string($GLOBALS['linki'], $dd_studyassoc[$i]));
 				$dd_dataformat[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_dataformat[$i]);
 				$dd_imagetype[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_imagetype[$i]);
-				$dd_gzip[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_gzip[$i]) + 0;
+				$dd_gzip[$i] = (bool)mysqli_real_escape_string($GLOBALS['linki'], $dd_gzip[$i]);
 				$dd_location[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_location[$i]);
 				$dd_seriescriteria[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_seriescriteria[$i]);
 				$dd_numboldreps[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_numboldreps[$i]);
 				$dd_behformat[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_behformat[$i]);
 				$dd_behdir[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_behdir[$i]);
-				$dd_useseriesdirs[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_useseriesdirs[$i]) + 0;
-				$dd_optional[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_optional[$i]) + 0;
+				$dd_useseriesdirs[$i] = (bool)mysqli_real_escape_string($GLOBALS['linki'], $dd_useseriesdirs[$i]);
+				$dd_optional[$i] = (bool)mysqli_real_escape_string($GLOBALS['linki'], $dd_optional[$i]);
 				//$dd_primary[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_primary[$i]) + 0;
-				$dd_preserveseries[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_preserveseries[$i]) + 0;
-				$dd_usephasedir[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_usephasedir[$i]) + 0;
-				$dd_behonly[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_behonly[$i]) + 0;
+				$dd_preserveseries[$i] = (bool)mysqli_real_escape_string($GLOBALS['linki'], $dd_preserveseries[$i]);
+				$dd_usephasedir[$i] = (bool)mysqli_real_escape_string($GLOBALS['linki'], $dd_usephasedir[$i]);
+				$dd_behonly[$i] = (bool)mysqli_real_escape_string($GLOBALS['linki'], $dd_behonly[$i]);
 				
 				if ($dd_isprimary == $dd_order[$i]) { $primary = "1"; } else { $primary = "0"; }
 				
@@ -576,8 +576,8 @@
 		$pipelinetmpdir = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinetmpdir));
 		$pipelinenotes = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinenotes));
 		$completefiles = mysqli_real_escape_string($GLOBALS['linki'], trim($completefiles));
-		$groupbysubject = mysqli_real_escape_string($GLOBALS['linki'], $groupbysubject) + 0;
-		$outputbids = mysqli_real_escape_string($GLOBALS['linki'], $outputbids) + 0;
+		$groupbysubject = (bool)mysqli_real_escape_string($GLOBALS['linki'], $groupbysubject);
+		$outputbids = (bool)mysqli_real_escape_string($GLOBALS['linki'], $outputbids);
 		$bidsoutputdir = mysqli_real_escape_string($GLOBALS['linki'], $bidsoutputdir);
 		$deplevel = mysqli_real_escape_string($GLOBALS['linki'], trim($deplevel));
 		$depdir = mysqli_real_escape_string($GLOBALS['linki'], trim($depdir));

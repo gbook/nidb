@@ -165,6 +165,18 @@
 
 				<div class="ui card">
 					<div class="content">
+						<div class="header">Import non-imaging</div>
+					</div>
+					<div class="content">
+						Import observations and interventions.<br><br>
+					</div>
+					<div class="center aligned extra content">
+						<a href="importnonimaging.php" class="ui button">Import</a>
+					</div>
+				</div>
+
+				<div class="ui card">
+					<div class="content">
 						<div class="header">Import Logs</div>
 					</div>
 					<div class="content">

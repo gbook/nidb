@@ -491,13 +491,11 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
     bool okToDeleteDir = true;
 
     /* ----- parse all files in the directory ----- */
-    //Print("Checkpoint ParseDirectory_1");
     QStringList files = FindAllFiles(dir, "*");
-    //Print("Checkpoint ParseDirectory_2");
     qint64 numfiles = files.size();
-    //Print("Checkpoint ParseDirectory_3");
-    n->Log(QString("Found [%1] files in [%2]").arg(numfiles).arg(dir));
+    n->Log(QString("Found %1 total files in path [%2]").arg(numfiles).arg(dir));
     int processedFileCount(0);
+    int numFilesTooYoung(0);
     foreach (QString file, files) {
 
         perf.numFilesRead++;
@@ -526,7 +524,9 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
         QDateTime now = QDateTime::currentDateTime();
         qint64 fileAgeInSec = now.secsTo(QFileInfo(file).lastModified());
         if (fileAgeInSec > -60) {
-            n->Log(QString("File [%1] has an age of [%2] sec").arg(file).arg(fileAgeInSec));
+            n->Debug(QString("File [%1] has an age of [%2] sec").arg(file).arg(fileAgeInSec));
+            numFilesTooYoung++;
+            perf.numFilesIgnored++;
             okToDeleteDir = false;
             continue;
         }
@@ -686,13 +686,15 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
         }
     }
 
+    n->Log(QString("Ignoring %1 files that are less than 60 seconds old").arg(numFilesTooYoung));
+
     //n->Log(QString("dcmseries contains [%1] entries").arg(dcmseries.size()));
     /* done reading all of the files in the directory (more may show up, but we'll get to those later)
      * now archive them */
     for(QMap<QString, QStringList>::iterator a = dcmseries.begin(); a != dcmseries.end(); ++a) {
         QString seriesuid = a.key();
 
-        n->Log(QString("Found %1 files for SeriesUID [" + seriesuid + "]").arg(dcmseries[seriesuid].size()));
+        n->Log(QString("Archiving %1 files for SeriesUID [" + seriesuid + "]").arg(dcmseries[seriesuid].size()));
         QStringList files2 = dcmseries[seriesuid];
 
         performanceMetric perf2;

@@ -84,7 +84,9 @@ void archiveIO::SetUploadID(int upid) {
  */
 bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int existingStudyID, int existingSeriesID, QString subjectMatchCriteria, QString studyMatchCriteria, QString seriesMatchCriteria, int destProjectID, QString specificPatientID, int destSiteID, QString altUIDstr, QString seriesNotes, QStringList files, performanceMetric &perf) {
 
-    AppendUploadLog(__FUNCTION__ , QString("Beginning to archive this DICOM series (%1, %2, %3, %4, %5, %6, %7, %8, %9, %10, %11, %12)").arg(importRowID).arg(existingSubjectID).arg(existingStudyID).arg(existingSeriesID).arg(subjectMatchCriteria).arg(studyMatchCriteria).arg(seriesMatchCriteria).arg(destProjectID).arg(specificPatientID).arg(destSiteID).arg(altUIDstr).arg(seriesNotes));
+    if (n->debug) {
+        AppendUploadLog(__FUNCTION__ , QString("Beginning to archive this DICOM series (%1, %2, %3, %4, %5, %6, %7, %8, %9, %10, %11, %12)").arg(importRowID).arg(existingSubjectID).arg(existingStudyID).arg(existingSeriesID).arg(subjectMatchCriteria).arg(studyMatchCriteria).arg(seriesMatchCriteria).arg(destProjectID).arg(specificPatientID).arg(destSiteID).arg(altUIDstr).arg(seriesNotes));
+    }
 
     /* in case this function is called with capitalized criteria */
     subjectMatchCriteria = subjectMatchCriteria.toLower();
@@ -100,7 +102,7 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
     /* check if the first file exists */
     if (!QFile::exists(files[0])) {
         AppendUploadLog(__FUNCTION__ , QString("File [%1] does not exist - check A!").arg(files[0]));
-        //return 0;
+        //return false;
     }
 
     SortQStringListNaturally(files);
@@ -108,10 +110,10 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
     /* check if the first file exists after sorting */
     if (!QFile::exists(files[0])) {
         AppendUploadLog(__FUNCTION__ , QString("File [%1] does not exist - check B!").arg(files[0]));
-        //return 0;
+        //return false;
     }
 
-    AppendUploadLog(__FUNCTION__ , QString("Archiving [%1] files").arg(files.size()));
+    AppendUploadLog(__FUNCTION__ , QString("Archiving %1 DICOM files").arg(files.size()));
 
     int subjectRowID(-1);
     QString subjectUID;
@@ -129,7 +131,7 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
 
     if (!QFile::exists(f)) {
         AppendUploadLog(__FUNCTION__ , QString("File [%1] does not exist - check C!").arg(f));
-        return 0;
+        return false;
     }
 
     QString m;
@@ -139,7 +141,7 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
     if (img->GetImageFileTags(f, binpath, csa, tags, m)) {
         if (!QFile::exists(f)) {
             AppendUploadLog(__FUNCTION__ , QString("File [%1] does not exist - check D!").arg(f));
-            return 0;
+            return false;
         }
     }
     n->Debug(m, __FUNCTION__);
@@ -193,6 +195,8 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
     double SpacingBetweenSlices = tags["SpacingBetweenSlices"].toDouble();
     QString PhaseEncodeAngle = tags["PhaseEncodeAngle"];
     QString PhaseEncodingDirectionPositive = tags["PhaseEncodingDirectionPositive"];
+
+    /* Siemens Extended DICOM tags */
 
     /* CT specific tags */
     QString ContrastBolusAgent = tags["ContrastBolusAgent"];
@@ -252,7 +256,7 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
 
     /* ----- get/create studyID ----- */
     if (GetStudy(studyMatchCriteria, existingStudyID, enrollmentRowID, StudyDateTime, Modality, StudyInstanceUID, studyRowID, studynum))
-        AppendUploadLog(__FUNCTION__, QString("Found existing study %1-%2 studyRowID [%3] found").arg(subjectUID).arg(studynum).arg(studyRowID));
+        AppendUploadLog(__FUNCTION__, QString("Found existing study %1-%2 studyRowID [%3]").arg(subjectUID).arg(studynum).arg(studyRowID));
     else
         CreateStudy(subjectRowID, enrollmentRowID, StudyDateTime, StudyInstanceUID, Modality, PatientID, PatientAge, PatientSize, PatientWeight, StudyDescription, OperatorsName, PerformingPhysiciansName, StationName, InstitutionName, InstitutionAddress, studyRowID, studynum);
 
@@ -699,7 +703,7 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
     AppendUploadLog(__FUNCTION__ , QString(logmsg + "]  Done renaming [%1] new files").arg(filecnt));
 
     /* check for sequential/continuous image numbers */
-    logmsg = "Checking for sequential image numbers... ";
+    logmsg = "Checking for sequential image numbers ";
     QStringList dcms = FindAllFiles(outdir, "*.dcm");
     SortQStringListNaturally(dcms);
     qint64 numdcms = dcms.size();
@@ -750,7 +754,7 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
         }
     }
     if (missingSliceNumbers.size() > 0)
-        logmsg += "Missing slice numbers [" + JoinIntArray(missingSliceNumbers, ",") + "]";
+        logmsg += " Missing slice numbers [" + JoinIntArray(missingSliceNumbers, ",") + "].";
 
     /* check all instance numbers for missing images */
     QList<int> missingInstanceNumbers;
@@ -762,7 +766,7 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
         }
     }
     if (missingInstanceNumbers.size() > 0)
-        logmsg += "Missing instance numbers [" + JoinIntArray(missingInstanceNumbers, ",") + "]";
+        logmsg += " Missing instance numbers [" + JoinIntArray(missingInstanceNumbers, ",") + "].";
 
     AppendUploadLog(__FUNCTION__ , logmsg);
     /* update the validity check */
@@ -2214,6 +2218,7 @@ bool archiveIO::GetFamily(int subjectRowID, QString subjectUID, int &familyRowID
 bool archiveIO::GetProject(int destProjectID, QString StudyDescription, int &projectRowID) {
     QSqlQuery q;
 
+    QString projectName;
 
     /* get the projectRowID */
     if (destProjectID >= 0) {
@@ -2224,13 +2229,14 @@ bool archiveIO::GetProject(int destProjectID, QString StudyDescription, int &pro
         /* get the costcenter */
         QString costcenter = GetCostCenter(StudyDescription);
 
-        q.prepare("select project_id from projects where project_costcenter = :costcenter");
+        q.prepare("select * from projects where project_costcenter = :costcenter");
         q.bindValue(":costcenter", costcenter);
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         if (q.size() > 0) {
             q.first();
             projectRowID = q.value("project_id").toInt();
-            AppendUploadLog(__FUNCTION__, QString("Found project [" + costcenter + "] with id [%1]").arg(projectRowID));
+            projectName = q.value("project_name").toString();
+            AppendUploadLog(__FUNCTION__, QString("Found project [" + projectName + "] with projectRowID [%1]").arg(projectRowID));
         }
         else {
             AppendUploadLog(__FUNCTION__, QString("Project with cost center [" + costcenter + "] not found, using Generic Project instead"));
@@ -2564,7 +2570,8 @@ bool archiveIO::CreateStudy(int subjectRowID, int enrollmentRowID, QString Study
  */
 void archiveIO::AppendUploadLog(QString func, QString m) {
     if ((uploadid >= 0) && (m.trimmed() != "")) {
-        QString str = func + "() " + m;
+        //QString str = func + "() " + m;
+        QString str = m;
 
         QSqlQuery q;
         q.prepare("insert ignore into upload_logs (upload_id, log_date, log_msg) values (:uploadid, now(), :msg)");

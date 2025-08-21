@@ -98,6 +98,8 @@
 				
 				//$alldata[$uid][$studynum][$seriesnum][''] = "";
 				$alldata[$uid][$studynum][$seriesnum]['desc'] = $desc;
+				$alldata[$uid][$studynum][$seriesnum]['subjectid'] = $subjectRowID;
+				$alldata[$uid][$studynum][$seriesnum]['studyid'] = $studyRowID;
 			}
 		}
 		
@@ -136,7 +138,10 @@
 				foreach ($studies as $studynum => $series) {
 					foreach ($series as $seriesnum => $metrics) {
 						$seriesdesc = $alldata[$uid][$studynum][$seriesnum]['desc'];
-						$rowstr = "{ uid: \"$uid\", studynum: \"$studynum\", seriesnum: \"$seriesnum\", seriesdesc: \"$seriesdesc\"";
+						$subjectRowID = $alldata[$uid][$studynum][$seriesnum]['subjectid'];
+						$studyRowID = $alldata[$uid][$studynum][$seriesnum]['studyid'];
+						
+						$rowstr = "{ subjectid: \"$subjectRowID\", studyid: \"$studyRowID\", uid: \"$uid\", studynum: \"$studynum\", seriesnum: \"$seriesnum\", seriesdesc: \"$seriesdesc\"";
 						foreach ($resultNames as $metric) {
 							$value = $alldata[$uid][$studynum][$seriesnum][$metric];
 							
@@ -228,7 +233,14 @@
 								return '<a href="subjects.php?id=' + params.data.subjectid + '">' + params.value + '</a>'
 							}
 						},
-						{ headerName: "Study", field: "studynum", editable: false },
+						{
+							headerName: "Study",
+							field: "studynum",
+							editable: false,
+							cellRenderer: function(params) {
+								return '<a href="studies.php?id=' + params.data.studyid + '">' + params.value + '</a>'
+							}
+						},
 						{ headerName: "Series", field: "seriesnum", editable: false },
 						{ headerName: "SeriesDesc", field: "seriesdesc", editable: false },
 						<?

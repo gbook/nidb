@@ -1638,7 +1638,7 @@
 			}
 			
 			function onBtnExport() {
-				gridOptions.api.exportDataAsCsv( {allColumns: false} );
+				gridApi.exportDataAsCsv();
 			}			
 
 			// Grid Options are properties passed to the grid
@@ -1883,7 +1883,7 @@
 			}
 			
 			function onBtnExport() {
-				gridOptions.api.exportDataAsCsv( {allColumns: false} );
+				gridApi.exportDataAsCsv();
 			}			
 
 			// Grid Options are properties passed to the grid
@@ -1940,8 +1940,8 @@
 						cellRenderer: function(params) {
 							return '<a href="studies.php?id=' + params.data.studyid + '"><b>' + params.value + '</b></a>'
 						},
-						headerCheckboxSelection: true,
-						checkboxSelection: true
+						//headerCheckboxSelection: true,
+						//checkboxSelection: true
 					},
 					{ headerName: "Visit", field: "visit", editable: true },
 					{ headerName: "Study Datetime", field: "studydate", editable: false },
@@ -1962,8 +1962,12 @@
 					'rowhighlight': 'data.rowhighlight == 1',
 				},
 
-				rowSelection: { mode: 'multiRow' }, // allow rows to be selected
-				rowMultiSelectWithClick: true,
+				rowSelection: {
+					mode: 'multiRow',
+					enableSelectionWithoutKeys: true,
+					headerCheckbox: true,
+					checkboxes: true
+				}, // allow rows to be selected
 				animateRows: false, // have rows animate to new positions when sorted
 				//onFirstDataRendered: onFirstDataRendered,
 				stopEditingWhenCellsLoseFocus: true,

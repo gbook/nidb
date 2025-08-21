@@ -1303,11 +1303,11 @@
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$projectid = $row['project_id'];
 					$perms[$projectid]['projectname'] = $row['project_name'];
-					$perms[$projectid]['projectadmin'] = $row['project_admin'] + 0;
-					$perms[$projectid]['viewdata'] = $row['view_data'] + 0;
-					$perms[$projectid]['viewphi'] = $row['view_phi'] + 0;
-					$perms[$projectid]['modifydata'] = $row['write_data'] + 0;
-					$perms[$projectid]['modifyphi'] = $row['write_phi'] + 0;
+					$perms[$projectid]['projectadmin'] = (bool)$row['project_admin'];
+					$perms[$projectid]['viewdata'] = (bool)$row['view_data'];
+					$perms[$projectid]['viewphi'] = (bool)$row['view_phi'];
+					$perms[$projectid]['modifydata'] = (bool)$row['write_data'];
+					$perms[$projectid]['modifyphi'] = (bool)$row['write_phi'];
 					
 					/* fill in the implied permissions */
 					if ($perms[$projectid]['projectadmin']) {
@@ -2451,7 +2451,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	/* -------------------------------------------- */
 	/* ------- GetStyledDiff ---------------------- */
 	/* -------------------------------------------- */
-	function GetStyledDiff($old, $new){
+	function GetStyledDiff($old, $new) {
 		$ret = '';
 		$diff = diff(preg_split("/[\s]+/", $old), preg_split("/[\s]+/", $new));
 		foreach($diff as $k){
@@ -2461,6 +2461,21 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 			else $ret .= $k . ' ';
 		}
 		return $ret;
+	}
+	
+	
+	/* -------------------------------------------- */
+	/* ------- GetSubjectRowIDByProject ----------- */
+	/* -------------------------------------------- */
+	function GetSubjectRowIDByProject($id, $projectid) {
+		$sqlstring = "select b.* from subject_altuid a left join subjects b on a.subject_id = b.subject_id left join enrollment c on b.subject_id = c.subject_id where c.project_id = $projectid and (a.altuid = '$id' or b.uid = '$id') and b.isactive = 1";
+		//PrintSQL($sqlstring);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$uid = $row['uid'];
+		$subjectid = $row['subject_id'];
+		
+		return array($subjectid, $uid);
 	}
 	
 

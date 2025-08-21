@@ -686,11 +686,11 @@
 							//PrintSQL($sqlstringB);
 							$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
 							$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
-							$movex = $rowB['movex'] + 0.0;
-							$movey = $rowB['movey'] + 0.0;
-							$movez = $rowB['movez'] + 0.0;
-							$iosnr = $rowB['io_snr'] + 0.0;
-							$pvsnr = $rowB['pv_snr'] + 0.0;
+							$movex = (double)$rowB['movex'];
+							$movey = (double)$rowB['movey'];
+							$movez = (double)$rowB['movez'];
+							$iosnr = (double)$rowB['io_snr'];
+							$pvsnr = (double)$rowB['pv_snr'];
 							
 							$msgs = array();
 							if (array_key_exists($p1, $qcparms)) {

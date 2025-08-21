@@ -411,7 +411,7 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
         tags["FileType"] = "DICOM";
 
         /* get all of the DICOM tags...
-         * we're not using an iterator because we want to know exactly what tags we have and dont have */
+         * we're not using an iterator because we want to know exactly what tags we have, or don't have */
 
         tags["FileMetaInformationGroupLength"] =	QString(sf.ToString(gdcm::Tag(0x0002,0x0000)).c_str()).trimmed(); /* FileMetaInformationGroupLength */
         tags["FileMetaInformationVersion"] =		QString(sf.ToString(gdcm::Tag(0x0002,0x0001)).c_str()).trimmed(); /* FileMetaInformationVersion */
@@ -600,10 +600,11 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
         QString uniqueseries = tags["InstitutionName"] + tags["StationName"] + tags["Modality"] + tags["PatientName"] + tags["PatientBirthDate"] + tags["PatientSex"] + tags["StudyDateTime"] + tags["SeriesNumber"];
         tags["UniqueSeriesString"] = uniqueseries;
 
-        /* attempt to get the Siemens CSA header info */
+        /* attempt to get the Siemens CSA header info, but not if this is a Siemens enhanced DICOM */
         tags["PhaseEncodeAngle"] = "";
         tags["PhaseEncodingDirectionPositive"] = "";
-        if (enablecsa) {
+
+        if ((enablecsa) && (tags["SOPClassUID"] != "Enhanced MR Image Storage")) {
             /* attempt to get the phase encode angle (In Plane Rotation) from the siemens CSA header */
             QFile df(f);
 
