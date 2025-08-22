@@ -343,15 +343,15 @@ variable_2, drug, "Important Variable 1 - no keys", </div>
 			$rangelow = $details['rangelow'];
 			$rangehigh = $details['rangehigh'];
 			
-			$sqlstring = "select count(c.observationname_id) 'count' from observations a left join enrollment b on a.enrollment_id = b.enrollment_id left join observationnames c on a.observationname_id = c.observationname_id where b.project_id = $projectid and c.observation_name = '$varname'";
+			$sqlstring = "select count(b.observation_name) 'count' from observations a left join enrollment b on a.enrollment_id = b.enrollment_id where b.project_id = $projectid and b.observation_name = '$varname'";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$observationcount = (int)$row['count'];
 
-			$sqlstring = "select count(c.vitalname_id) 'count' from vitals a left join enrollment b on a.enrollment_id = b.enrollment_id left join vitalnames c on a.vitalname_id = c.vitalname_id where b.project_id = $projectid and c.vital_name = '$varname'";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$vitalcount = (int)$row['count'];
+			//$sqlstring = "select count(c.vitalname_id) 'count' from vitals a left join enrollment b on a.enrollment_id = b.enrollment_id left join vitalnames c on a.vitalname_id = c.vitalname_id where b.project_id = $projectid and c.vital_name = '$varname'";
+			//$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			//$vitalcount = (int)$row['count'];
 
 			$sqlstring = "select count(c.drugname_id) 'count' from drugs a left join enrollment b on a.enrollment_id = b.enrollment_id left join drugnames c on a.drugname_id = c.drugname_id where b.project_id = $projectid and c.drug_name = '$varname'";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -440,7 +440,7 @@ variable_2, drug, "Important Variable 1 - no keys", </div>
 		<?
 		
 		/* get all observation variables */
-		$sqlstring = "select c.observation_name, count(c.observationname_id) 'count' from observations a left join enrollment b on a.enrollment_id = b.enrollment_id left join observationnames c on a.observationname_id = c.observationname_id where b.project_id = $projectid group by c.observation_name order by c.observation_name";
+		$sqlstring = "select a.observation_name, count(a.observationname_id) 'count' from observations a left join enrollment b on a.enrollment_id = b.enrollment_id where b.project_id = $projectid group by a.observation_name order by a.observation_name";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$observationname = $row['observation_name'];

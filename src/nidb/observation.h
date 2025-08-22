@@ -49,13 +49,13 @@ public:
     QString rater;
     QString uid;
     QString value;
-    QString valueString;
-    char observationType;
-    double valueNumber;
+    //QString valueString;
+    //char observationType;
+    //double valueNumber;
     int duration;
     int enrollmentid;
-    int instrumentNameID;
-    int observationNameID;
+    //int instrumentNameID;
+    //int observationNameID;
     int observationid;
     int subjectid;
 

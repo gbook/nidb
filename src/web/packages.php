@@ -1437,7 +1437,7 @@
 
 		$enrollmentidstr = implode2(",", $enrollmentids);
 
-		$sqlstring = "select * from observations a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join observationnames d on a.observationname_id = d.observationname_id where a.enrollment_id in (" . implode2(",", $enrollmentids) . ")";
+		$sqlstring = "select * from observations a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.enrollment_id in (" . implode2(",", $enrollmentids) . ")";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$numobservations = mysqli_num_rows($result);
 		
@@ -2000,7 +2000,7 @@
 
 		MarkTime("Getting observation data");
 		/* get observations */
-		$sqlstring = "select * from package_observations a left join observations b on a.observation_id = b.observation_id left join observationnames c on b.observationname_id = c.observationname_id left join enrollment d on b.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.package_id = $packageid";
+		$sqlstring = "select * from package_observations a left join observations b on a.observation_id = b.observation_id left join enrollment d on b.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.package_id = $packageid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$numobservations = mysqli_num_rows($result);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {

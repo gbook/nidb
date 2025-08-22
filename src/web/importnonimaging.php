@@ -474,6 +474,8 @@
 	/* ------- SubmitNewImport -------------------- */
 	/* -------------------------------------------- */
 	function SubmitNewImport($csv, $projectid, $skipblankvalue, $createmissingsubject) {
+
+		$startTime = microtime(true);
 		
 		/* these inserts could take a long time, so extend the execution timeout */
 		set_time_limit(180);
@@ -488,10 +490,12 @@
 		
 		?>
 		<div class="ui segment">
-			Import options
+			<h2 class="ui header">
+				Import options
+			</h2>
 			<ul>
-				<li><? if ($skipblankvalue) { echo "Cells with empty values will not be imported"; } else { echo "Empty cells will be imported as blank values"; } ?>
-				<li><? if ($createmissingsubject) { echo "Missing subjects will be created"; } else { echo "Missing subjects will not be created"; } ?>
+				<li>Import empty cells <? if ($skipblankvalue) { echo "<i class='gray large toggle off icon' title='Cells with empty values will not be imported'></i>"; } else { echo "<i class='green large toggle on icon' title='Empty cells will be imported as blank values'></i>"; } ?>
+				<li>Create missing subjects <? if ($createmissingsubject) { echo "<i class='green large toggle on icon' title='Missing subjects will be created'></i>"; } else { echo "<i class='gray large toggle off icon' title='Missing subjects will not be created'></i>"; } ?>
 			</ul>
 		</div>
 		<?
@@ -515,11 +519,14 @@
 		$cells = count($csvdata, COUNT_RECURSIVE);
 		?>
 		<div class="ui segment">
-			<p>Submitted csv contains <?=$rows?> rows x <?=$cols?> columns = <?=$cells?> cells</p>
-			<p>Importing <?=$rows?> data items</p>
+			<h2 class="ui header">
+				Data characteristics
+			</h2>
+			<p>Submitted dataset contains <?=number_format($rows)?> rows x <?=number_format($cols)?> columns = <?=number_format($cells)?> cells</p>
+			<p>Importing <?=number_format($rows)?> data items</p>
 		</div>
-		<tt>
-		<pre>
+		<!--<tt>
+		<pre>-->
 		<?
 		//return;
 
@@ -632,24 +639,24 @@
 				//}
 				
 				/* get the observationNameRowID (check the cache first) */
-				if (isset($observationNameCache[$variablename])) {
-					$observationNameRowID = $observationNameCache[$variablename];
-				}
-				else {
-					$sqlstringA = "select observationname_id from observationnames where observation_name = '$variablename'";
-					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-					if (mysqli_num_rows($resultA) > 0) {
-						$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-						$observationNameRowID = $rowA['observationname_id'];
-					}
-					else {
-						$sqlstringA = "insert into observationnames (observation_name) values ('$variablename')";
-						$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-						$observationNameRowID = mysqli_insert_id($GLOBALS['linki']);
-					}
-					/* update the observation name cache */
-					$observationNameCache[$variablename] = $observationNameRowID;
-				}
+				// if (isset($observationNameCache[$variablename])) {
+					// $observationNameRowID = $observationNameCache[$variablename];
+				// }
+				// else {
+					// $sqlstringA = "select observationname_id from observationnames where observation_name = '$variablename'";
+					// $resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+					// if (mysqli_num_rows($resultA) > 0) {
+						// $rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+						// $observationNameRowID = $rowA['observationname_id'];
+					// }
+					// else {
+						// $sqlstringA = "insert into observationnames (observation_name) values ('$variablename')";
+						// $resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+						// $observationNameRowID = mysqli_insert_id($GLOBALS['linki']);
+					// }
+					// /* update the observation name cache */
+					// $observationNameCache[$variablename] = $observationNameRowID;
+				// }
 				
 				/* fix any missing fields */
 				if (trim($rater) == "") $rater = "null";
@@ -665,11 +672,11 @@
 				else $startdate = "'" . trim($startdate) . "'";
 				
 				/* add to batch insert */
-				$inserts[] = "($enrollmentRowID, now(), $observationNameRowID, '$value', $rater, $instrument, $startdate, $enddate)";
+				$inserts[] = "($enrollmentRowID, now(), '$variablename', '$value', $rater, $instrument, $startdate, $enddate)";
 				$numObservationsAdded++;
 				
 				if (count($inserts) >= 100) {
-					$sqlstring = "insert ignore into observations (enrollment_id, observation_entrydate, observationname_id, observation_value, observation_rater, observation_instrument, observation_startdate, observation_enddate) values " . implode(",", $inserts);
+					$sqlstring = "insert ignore into observations (enrollment_id, observation_entrydate, observation_name, observation_value, observation_rater, observation_instrument, observation_startdate, observation_enddate) values " . implode(",", $inserts);
 					//PrintSQL($sqlstring);
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 					$inserts = array();
@@ -690,22 +697,29 @@
 		//PrintVariable($subjectsCreated, "subjectsCreated");
 		//PrintVariable($subjectsIgnored, "subjectsIgnored");
 		
+		$endTime = microtime(true);
+		$elapsedTime = $endTime - $startTime;
+
 		?>
-		</pre>
-		</tt>
+		<!--</pre>
+		</tt>-->
 		<div class="ui segment">
-			Import results
+			<h2 class="ui header">
+				Import results
+			</h2>
 			<ul>
-				<li><?=$numObservationsAdded?> observation values added (or already existing)
-				<li><?=$numObservationsIgnored?> observation values ignored
+				<li><?=number_format($numObservationsAdded)?> observation values added (or already existing)
+				<li><?=number_format($numObservationsIgnored)?> observation values ignored
 				<li><?=count($observationNameCache)?> unique observation variables
 				<br><br>
-				<li><?=$numInterventionsAdded?> intervention values added (or already existing)
-				<li><?=$numInterventionsIgnored?> intervention values ignored
+				<li><?=number_format($numInterventionsAdded)?> intervention values added (or already existing)
+				<li><?=number_format($numInterventionsIgnored)?> intervention values ignored
 				<li><?=count($interventionNameCache)?> unique intervention variables
 				<br><br>
 				<li><?=count($subjectsCreated)?> subjects added
 				<li><?=count($subjectsNotFound)?> subjects not found
+				<br><br>
+				<li>Import took <?=number_format($elapsedTime,1)?> seconds
 			</ul>
 		</div>
 		<?

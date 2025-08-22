@@ -2882,7 +2882,7 @@
 				}
 				
 				/* get the observations */
-				$sqlstringA = "select c.instrument_name, b.observation_name, a.* from observations a left join observationnames b on a.observationname_id = b.observationname_id left join observationinstruments c on a.instrumentname_id = c.observationinstrument_id where a.enrollment_id = '$enrollmentid'";
+				$sqlstringA = "select * from observations where enrollment_id = '$enrollmentid'";
 				//PrintSQL($sqlstringA);
 				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {

@@ -26,7 +26,7 @@
 
 
 /* ---------------------------------------------------------- */
-/* --------- observation ---------------------------------------- */
+/* --------- observation ------------------------------------ */
 /* ---------------------------------------------------------- */
 observation::observation(qint64 id, nidb *a)
 {
@@ -37,7 +37,7 @@ observation::observation(qint64 id, nidb *a)
 
 
 /* ---------------------------------------------------------- */
-/* --------- LoadObservationInfo -------------------------------- */
+/* --------- LoadObservationInfo ---------------------------- */
 /* ---------------------------------------------------------- */
 void observation::LoadObservationInfo() {
 
@@ -59,7 +59,7 @@ void observation::LoadObservationInfo() {
         else {
             q.first();
 
-            dateObservationComplete = q.value("observation_datecomplete").toDateTime();
+            //dateObservationComplete = q.value("observation_datecomplete").toDateTime();
             dateObservationEnd = q.value("observation_enddate").toDateTime();
             dateObservationStart = q.value("observation_startdate").toDateTime();
             dateRecordCreate = q.value("observation_createdate").toDateTime();
@@ -69,9 +69,9 @@ void observation::LoadObservationInfo() {
             duration = q.value("observation_duration").toInt();
             enrollmentid = q.value("enrollment_id").toInt();
             instrumentName = q.value("instrument_name").toString();
-            instrumentNameID = q.value("instrumentname_id").toInt();
+            //instrumentNameID = q.value("instrumentname_id").toInt();
             observationName = q.value("observation_name").toString();
-            observationNameID = q.value("observationname_id").toInt();
+            //observationNameID = q.value("observationname_id").toInt();
             //observationType = q.value("observation_type").toChar().toLatin1();
             notes = q.value("observation_notes").toString();
             rater = q.value("observation_rater").toString();
@@ -89,12 +89,12 @@ void observation::LoadObservationInfo() {
 
 
 /* ---------------------------------------------------------- */
-/* --------- PrintObservationInfo -------------------------------- */
+/* --------- PrintObservationInfo --------------------------- */
 /* ---------------------------------------------------------- */
 void observation::PrintObservationInfo() {
     QString	output = QString("***** Observation - [%1] *****\n").arg(observationid);
 
-    output += QString("   dateObservationComplete: [%1]\n").arg(dateObservationComplete.toString());
+    //output += QString("   dateObservationComplete: [%1]\n").arg(dateObservationComplete.toString());
     output += QString("   dateObservationEnd: [%1]\n").arg(dateObservationEnd.toString());
     output += QString("   dateObservationStart: [%1]\n").arg(dateObservationStart.toString());
     output += QString("   dateRecordCreate: [%1]\n").arg(dateRecordCreate.toString());
@@ -104,18 +104,18 @@ void observation::PrintObservationInfo() {
     output += QString("   duration: [%1]\n").arg(duration);
     output += QString("   enrollmentid: [%1]\n").arg(enrollmentid);
     output += QString("   instrumentName: [%1]\n").arg(instrumentName);
-    output += QString("   instrumentNameID: [%1]\n").arg(instrumentNameID);
+    //output += QString("   instrumentNameID: [%1]\n").arg(instrumentNameID);
     output += QString("   observationName: [%1]\n").arg(observationName);
-    output += QString("   observationNameID: [%1]\n").arg(observationNameID);
-    output += QString("   observationType: [%1]\n").arg(observationType);
+    //output += QString("   observationNameID: [%1]\n").arg(observationNameID);
+    //output += QString("   observationType: [%1]\n").arg(observationType);
     output += QString("   observationid: [%1]\n").arg(observationid);
     output += QString("   notes: [%1]\n").arg(notes);
     output += QString("   rater: [%1]\n").arg(rater);
     output += QString("   subjectid: [%1]\n").arg(subjectid);
     output += QString("   uid: [%1]\n").arg(uid);
     output += QString("   value: [%1]\n").arg(value);
-    output += QString("   valueNumber: [%1]\n").arg(valueNumber);
-    output += QString("   valueString: [%1]\n").arg(valueString);
+    //output += QString("   valueNumber: [%1]\n").arg(valueNumber);
+    //output += QString("   valueString: [%1]\n").arg(valueString);
 
     n->Log(output);
 }
@@ -139,12 +139,12 @@ squirrelObservation observation::GetSquirrelObject(QString databaseUUID) {
     sqrl.Notes = notes;
     sqrl.Rater = rater;
 
-    if (value != "")
+    //if (value != "")
         sqrl.Value = value;
-    else if (observationType == 'n')
-        sqrl.Value = QString("%1").arg(valueNumber);
-    else
-        sqrl.Value = valueString;
+    //else if (observationType == 'n')
+    //    sqrl.Value = QString("%1").arg(valueNumber);
+    //else
+    //    sqrl.Value = valueString;
 
     return sqrl;
 }

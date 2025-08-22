@@ -5729,10 +5729,10 @@
 			}
 		}
 		if ($s_observationsearch != "") {
-			$tmpsqlstring = "select observationname_id from observationnames where observation_name = '$s_observations'";
-			$tmpresult = MySQLiQuery($tmpsqlstring,__FILE__,__LINE__);
-			$tmprow = mysqli_fetch_array($tmpresult, MYSQLI_ASSOC);
-			$observationnameid = $tmprow['observationname_id'];
+			//$tmpsqlstring = "select observationname_id from observationnames where observation_name = '$s_observations'";
+			//$tmpresult = MySQLiQuery($tmpsqlstring,__FILE__,__LINE__);
+			//$tmprow = mysqli_fetch_array($tmpresult, MYSQLI_ASSOC);
+			//$observationnameid = $tmprow['observationname_id'];
 			
 			if (is_numeric($observationvalue)) {
 				$valtype = "observation_valuenum";

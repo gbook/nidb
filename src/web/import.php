@@ -1734,43 +1734,43 @@ question_num, question_text, datatype, values, comment</div>
 	/* -------------------------------------------- */
 	/* ------- InsertInstrumentName --------------- */
 	/* -------------------------------------------- */
-	function InsertInstrumentName($instrument) {
-		$sqlstring = "select observationinstrument_id from observationinstruments where instrument_name = '$instrument'";
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		if (mysqli_num_rows($result) > 0) {
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$observationinstrumentnameid = $row['observationinstrument_id'];
-		}
-		else {
-			$sqlstring = "insert into observationinstruments (instrument_name) values ('$instrument')";
-			//PrintSQL($sqlstring);
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			$observationinstrumentnameid = mysqli_insert_id($GLOBALS['linki']);
-		}
-		return $observationinstrumentnameid;
-	}
+	//function InsertInstrumentName($instrument) {
+	//	$sqlstring = "select observationinstrument_id from observationinstruments where instrument_name = '$instrument'";
+	//	//PrintSQL($sqlstring);
+	//	$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+	//	if (mysqli_num_rows($result) > 0) {
+	//		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+	//		$observationinstrumentnameid = $row['observationinstrument_id'];
+	//	}
+	//	else {
+	//		$sqlstring = "insert into observationinstruments (instrument_name) values ('$instrument')";
+	//		//PrintSQL($sqlstring);
+	//		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+	//		$observationinstrumentnameid = mysqli_insert_id($GLOBALS['linki']);
+	//	}
+	//	return $observationinstrumentnameid;
+	//}
 
 	
 	/* -------------------------------------------- */
-	/* ------- Insertobservationname ------------------ */
+	/* ------- Insertobservationname -------------- */
 	/* -------------------------------------------- */
-	function Insertobservationname($observation) {
-		$sqlstring = "select observationname_id from observationnames where observation_name = '$observation'";
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		if (mysqli_num_rows($result) > 0) {
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$observationnameid = $row['observationname_id'];
-		}
-		else {
-			$sqlstring = "insert into observationnames (observation_name) values ('$observation')";
-			//PrintSQL($sqlstring);
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			$observationnameid = mysqli_insert_id($GLOBALS['linki']);
-		}
-		return $observationnameid;
-	}
+	//function Insertobservationname($observation) {
+	//	$sqlstring = "select observationname_id from observationnames where observation_name = '$observation'";
+	//	//PrintSQL($sqlstring);
+	//	$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+	//	if (mysqli_num_rows($result) > 0) {
+	//		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+	//		$observationnameid = $row['observationname_id'];
+	//	}
+	//	else {
+	//		$sqlstring = "insert into observationnames (observation_name) values ('$observation')";
+	//		//PrintSQL($sqlstring);
+	//		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+	//		$observationnameid = mysqli_insert_id($GLOBALS['linki']);
+	//	}
+	//	return $observationnameid;
+	//}
 
 
 	/* -------------------------------------------- */

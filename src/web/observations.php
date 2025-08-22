@@ -71,7 +71,7 @@
 
 	
 	/* -------------------------------------------- */
-	/* ------- AddObservation ------------------------- */
+	/* ------- AddObservation --------------------- */
 	/* -------------------------------------------- */
 	function AddObservation($enrollmentid, $observationname, $observationvalue, $observationdatecompleted, $observationrater, $observationinstrument) {
 		$observationname = mysqli_real_escape_string($GLOBALS['linki'], $observationname);
@@ -80,28 +80,28 @@
 		$observationrater = mysqli_real_escape_string($GLOBALS['linki'], $observationrater);
 		$observationinstrument = mysqli_real_escape_string($GLOBALS['linki'], $observationinstrument);
 
-		if (is_numeric($observationvalue)) {
-			$observationtype = 'n';
-			$valuestring = '';
-			$valuenum = $observationvalue;
-		}
-		else {
-			$observationtype = 's';
-			$valuestring = $observationvalue;
-			$valuenum = '';
-		}
+		//if (is_numeric($observationvalue)) {
+		//	$observationtype = 'n';
+		//	$valuestring = '';
+		//	$valuenum = $observationvalue;
+		//}
+		//else {
+		//	$observationtype = 's';
+		//	$valuestring = $observationvalue;
+		//	$valuenum = '';
+		//}
 		
-		$sqlstringA = "select observationname_id from observationnames where observation_name = '$observationname'";
-		$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-		if (mysqli_num_rows($resultA) > 0) {
-			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-			$observationnameid = $rowA['observationname_id'];
-		}
-		else {
-			$sqlstringA = "insert into observationnames (observation_name) values ('$observationname')";
-			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-			$observationnameid = mysqli_insert_id($GLOBALS['linki']);
-		}
+		//$sqlstringA = "select observationname_id from observationnames where observation_name = '$observationname'";
+		//$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+		//if (mysqli_num_rows($resultA) > 0) {
+		//	$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+		//	$observationnameid = $rowA['observationname_id'];
+		//}
+		//else {
+		//	$sqlstringA = "insert into observationnames (observation_name) values ('$observationname')";
+		//	$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+		//	$observationnameid = mysqli_insert_id($GLOBALS['linki']);
+		//}
 		if (trim($observationrater) == "") $observationrater = "null";
 		else $observationrater = "'" . trim($observationrater) . "'";
 
@@ -111,7 +111,7 @@
 		if (trim($observationdatecompleted) == "") $observationdatecompleted = "null";
 		else $observationdatecompleted = "'" . trim($observationdatecompleted) . "'";
 		
-		$sqlstring = "insert ignore into observations (enrollment_id, observation_entrydate, observationname_id, observation_type, observation_valuestring, observation_valuenum, observation_rater, observation_instrument, observation_enddate) values ($enrollmentid, now(), $observationnameid, '$observationtype', '$valuestring', '$valuenum', $observationrater, $observationinstrument, $observationdatecompleted)";
+		$sqlstring = "insert ignore into observations (enrollment_id, observation_entrydate, observation_name, observation_value, observation_rater, observation_instrument, observation_enddate) values ($enrollmentid, now(), $observationname, '$observationvalue', $observationrater, $observationinstrument, $observationdatecompleted)";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);	
 	}
 
