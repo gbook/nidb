@@ -461,7 +461,7 @@ QString nidb::SQLQuery(QSqlQuery &q, QString function, QString file, int line, b
 
     /* if we get to this point, there is a SQL error */
     QString err = QString("SQL ERROR (Module: %1 Function: %2 File: %3 Line: %4)\n\nSQL (1) [%5]\n\nSQL (2) [%6]\n\nDatabase error [%7]\n\nDriver error [%8]").arg(module).arg(function).arg(file).arg(line).arg(sql).arg(q.executedQuery()).arg(q.lastError().databaseText()).arg(q.lastError().driverText());
-    SendEmail(cfg["adminemail"], "SQL error", err);
+    //SendEmail(cfg["adminemail"], "SQL error", err);
     qDebug() << err;
     qDebug() << q.lastError();
     Log(err);

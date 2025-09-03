@@ -456,15 +456,28 @@
 
 		</script>
 		<div class="ui segment">
-			<form method="post" action="importnonimaging.php" name="importform" enctype="multipart/form-data">
-				<input type="hidden" name="action" value="submitnewimport">
-				<input type="hidden" name="projectid" value="<?=$projectid?>">
-				<input type="hidden" name="skipblankvalue" value="<?=(int)$skipblankvalue?>">
-				<input type="hidden" name="createmissingsubject" value="<?=(int)$createmissingsubject?>">
-				<input type="hidden" name="csv" value="">
-				
-				<input type="submit" class="ui primary button" onClick="this.disabled = true; this.value = 'Submitting...'; importform.csv.value = gridApi.getDataAsCsv(); importform.submit();";>
-			</form>
+			<div class="ui grid">
+				<div class="two wide column">
+					<form method="post" action="importnonimaging.php" name="importform" enctype="multipart/form-data">
+						<input type="hidden" name="action" value="submitnewimport">
+						<input type="hidden" name="projectid" value="<?=$projectid?>">
+						<input type="hidden" name="skipblankvalue" value="<?=(int)$skipblankvalue?>">
+						<input type="hidden" name="createmissingsubject" value="<?=(int)$createmissingsubject?>">
+						<input type="hidden" name="csv" value="">
+						
+						<input type="submit" class="ui primary button" onClick="this.disabled = true; this.value = 'Submitting...'; importform.csv.value = gridApi.getDataAsCsv(); importform.submit();";>
+					</form>
+				</div>
+				<div class="fourteen wide column">
+					<div class="ui warning message">
+						<div class="header">
+							After clicking Submit, you may see a <b>Gateway timeout error</b>
+						</div>
+						
+						<p>This can happen when importing very large files (more than 100,000 variables).<br>The webpage may show an error, but the data is still importing in the background. Don't click the back button; instead type the NiDB address in the searchbar again</p>
+					</div>
+				</div>
+			</div>
 		</div>
 		<?
 	}
@@ -699,7 +712,18 @@
 		
 		$endTime = microtime(true);
 		$elapsedTime = $endTime - $startTime;
+		
+		$numSubjectsCreated = count($subjectsCreated);
+		$numSubjectsNotFound = count($subjectsNotFound);
+		$numUniqueObservationVariables = count($observationNameCache);
+		$numUniqueInterventionVariables = count($interventionNameCache);
+		$flagIgnoreEmptyCells = (int)$skipblankvalue;
+		$flagCreateMissingSubjects = (int)$createmissingsubject;
+		$importMessage = "Import complete";
 
+		$sqlstring = "insert into nonimagingimports (project_id, importDatetime, numObservationsImported, numObservationsSkipped, numInterventionsImported, numInterventionsSkipped, flagIgnoreEmptyCells, flagCreateMissingSubjects, numSubjectsCreated, numSubjectsNotFound, numUniqueObservationVariables, numUniqueInterventionVariables, importMessage) values ($projectid, now(), $numObservationsAdded, $numObservationsIgnored, $numInterventionsAdded, $numInterventionsIgnored, $flagIgnoreEmptyCells, $flagCreateMissingSubjects, $numSubjectsCreated, $numSubjectsNotFound, $numUniqueObservationVariables, $numUniqueInterventionVariables, '$importMessage')";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		
 		?>
 		<!--</pre>
 		</tt>-->
@@ -709,11 +733,11 @@
 			</h2>
 			<ul>
 				<li><?=number_format($numObservationsAdded)?> observation values added (or already existing)
-				<li><?=number_format($numObservationsIgnored)?> observation values ignored
+				<li><?=number_format($numObservationsIgnored)?> observation values skipped
 				<li><?=count($observationNameCache)?> unique observation variables
 				<br><br>
 				<li><?=number_format($numInterventionsAdded)?> intervention values added (or already existing)
-				<li><?=number_format($numInterventionsIgnored)?> intervention values ignored
+				<li><?=number_format($numInterventionsIgnored)?> intervention values skipped
 				<li><?=count($interventionNameCache)?> unique intervention variables
 				<br><br>
 				<li><?=count($subjectsCreated)?> subjects added
@@ -833,41 +857,60 @@
 				<thead>
 					<th>Date</th>
 					<th>Project</th>
-					<th>Observations imported</th>
-					<th>Interventions imported</th>
-					<th>Observations skipped</th>
-					<th>Interventions skipped</th>
-					<th>Messages</th>
+					<th>Observations Imported</th>
+					<th>Interventions Imported</th>
+					<th>Observations Skipped</th>
+					<th>Interventions Skipped</th>
+					<th>Ignore Empty Cells</th>
+					<th>Create Missing Subjects</th>
+					<th>Subjects Created</th>
+					<th>Subjects Not Found</th>
+					<th>Unique Observation Variables</th>
+					<th>Unique Intervention Variables</th>
+					<th>Message</th>
 				</thead>
 		<?
 		
 		if ($displayall == "1") {
-			$sqlstring = "select * from nonimagingimports a left join projects b on a.project_id = b.project_id order by import_datetime desc";
+			$sqlstring = "select * from nonimagingimports a left join projects b on a.project_id = b.project_id order by importDatetime desc";
 		}
 		else {
-			$sqlstring = "select * from nonimagingimports a left join projects b on a.project_id = b.project_id order by import_datetime desc limit 10";
+			$sqlstring = "select * from nonimagingimports a left join projects b on a.project_id = b.project_id order by importDatetime desc limit 10";
 		}
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		if (mysqli_num_rows($result) > 0){
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$importid = $row['nonimagingimport_id'];
-				$importdate = $row['import_datetime'];
+				$importdate = $row['importDatetime'];
 				$projectid = $row['project_id'];
 				$projectname = $row['project_name'];
 				$projectnumber = $row['project_costcenter'];
-				$numobservations_imported = $row['numobservations_imported'];
-				$numobservations_skipped = $row['numobservations_skipped'];
-				$numinterventions_imported = $row['numinterventions_imported'];
-				$numinterventions_skipped = $row['numinterventions_skipped'];
+				$numObservationsImported = $row['numObservationsImported'];
+				$numObservationsSkipped = $row['numObservationsSkipped'];
+				$numInterventionsImported = $row['numInterventionsImported'];
+				$numInterventionsSkipped = $row['numInterventionsSkipped'];
+				$flagIgnoreEmptyCells = $row['flagIgnoreEmptyCells'];
+				$flagCreateMissingSubjects = $row['flagCreateMissingSubjects'];
+				$numSubjectsCreated = $row['numSubjectsCreated'];
+				$numSubjectsNotFound = $row['numSubjectsNotFound'];
+				$numUniqueObservationVariables = $row['numUniqueObservationVariables'];
+				$numUniqueInterventionVariables = $row['numUniqueInterventionVariables'];
+				$importMessage = $row['importMessage'];
 				?>
 				<tr>
 					<td><?=$importdate?></td>
 					<td><?=$projectname?></td>
-					<td><?=$numobservations_imported?></td>
-					<td><?=$numinterventions_imported?></td>
-					<td><?=$numobservations_skipped?></td>
-					<td><?=$numinterventions_skipped?></td>
-					<td><?=$import_message?></td>
+					<td><?=$numObservationsImported?></td>
+					<td><?=$numInterventionsImported?></td>
+					<td><?=$numObservationsSkipped?></td>
+					<td><?=$numInterventionsSkipped?></td>
+					<td><?=$flagIgnoreEmptyCells?></td>
+					<td><?=$flagCreateMissingSubjects?></td>
+					<td><?=$numSubjectsCreated?></td>
+					<td><?=$numSubjectsNotFound?></td>
+					<td><?=$numUniqueObservationVariables?></td>
+					<td><?=$numUniqueInterventionVariables?></td>
+					<td><?=$importMessage?></td>
 				</tr>
 				<?
 			}

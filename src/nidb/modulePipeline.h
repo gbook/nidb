@@ -53,16 +53,10 @@ struct dataDefinitionStep {
     QString modality;
     QString dataformat;
     QString imagetype;
-	//bool gzip;
     QString location;
-	//bool useseries;
-	//bool preserveseries;
-	//bool usephasedir;
     QString behformat;
     QString behdir;
-	//bool enabled;
-	//bool optional;
-    QString numboldreps; /* this is stored as a comparison */
+    QString numboldreps; /* this is stored as a string comparison */
     QString level;
     qint64 datadownloadid;
 	struct flag {
@@ -86,32 +80,39 @@ public:
 
     int Run();
 
-    int IsQueueFilled(int pid);
-    QStringList GetGroupList(int pid);
-    QList<int> GetPipelineList();
-    QString CheckDependency(int sid, int pipelinedep);
-    bool IsPipelineEnabled(int pid);
-    void SetPipelineStopped(int pid, QString msg);
-    void SetPipelineDisabled(int pid);
-    void SetPipelineRunning(int pid, QString msg);
-    void SetPipelineStatusMessage(int pid, QString msg);
-    void SetPipelineProcessStatus(QString status, int pipelineid, int studyid);
-    QStringList GetUIDStudyNumListByGroup(QString group);
-    QList<pipelineStep> GetPipelineSteps(int pipelineid, int version);
     QList<dataDefinitionStep> GetPipelineDataDef(int pipelineid, int version);
+    QList<int> GetPipelineList();
+    QList<int> GetStudyToDoList(int pipelineid, QString modality, int depend, QString groupids, qint64 &runnum);
+    QList<pipelineStep> GetPipelineSteps(int pipelineid, int version);
+    QString CheckDependency(int sid, int pipelinedep);
     QString FormatCommand(int pipelineid, QString clusteranalysispath, QString command, QString analysispath, qint64 analysisid, QString uid, int studynum, QString studydatetime, QString pipelinename, QString workingdir, QString description);
     bool CreateClusterJobFile(QString jobfilename, QString clustertype, QString queue, qint64 analysisid, QString uid, int studynum, QString analysispath, bool usetmpdir, QString tmpdir, QString studydatetime, QString pipelinename, int pipelineid, QString resultscript, int maxwalltime, int numcores, double memory, QList<pipelineStep> steps, bool runsupplement = false);
-    QList<int> GetStudyToDoList(int pipelineid, QString modality, int depend, QString groupids, qint64 &runnum);
     bool GetData(int studyid, QString analysispath, QString uid, qint64 analysisid, int pipelineid, int pipelinedep, QString deplevel, QList<dataDefinitionStep> datadef, int &numdownloaded, QString &datalog);
-    QString GetBehPath(QString behformat, QString analysispath, QString location, QString behdir, int newseriesnum);
+
+    /* logging and record-keeping */
     bool UpdateAnalysisStatus(qint64 analysisid, QString status, QString statusmsg, int jobid, int numseries, QString datalog, QString datatable, bool currentStartDate, bool currentEndDate, int supplementFlag, int rerunFlag);
     qint64 RecordDataDownload(qint64 id, qint64 analysisid, QString modality, int checked, int found, int seriesid, QString downloadpath, int step, QString msg);
-    void InsertPipelineEvent(int pipelineid, qint64 &runnum, qint64 analysisid, QString event, QString message);
-    QString GetPipelineStatus(int pipelineid);
     void ClearPipelineHistory();
-    QString GetAnalysisLocalPath(QString dirStructureCode, QString pipelineName="", QString UID="", int studyNum=-1);
+    void RecordPipelineEvent(int pipelineid, qint64 &runnum, qint64 analysisid, QString event, QString message);
+
+    /* information */
     QString GetAnalysisClusterPath(QString dirStructureCode, QString pipelineName="", QString UID="", int studyNum=-1);
+    QString GetAnalysisLocalPath(QString dirStructureCode, QString pipelineName="", QString UID="", int studyNum=-1);
+    QString GetBehPath(QString behformat, QString analysispath, QString location, QString behdir, int newseriesnum);
+    QString GetPipelineStatus(int pipelineid);
+    QStringList GetGroupList(int pid);
+    QStringList GetUIDStudyNumListByGroup(QString group);
+    QStringList GetUIDStudyNumListByStudyIDs(QList<int> studyRowIDs);
+    bool IsPipelineEnabled(int pid);
+    int IsQueueFilled(int pid);
+
+    /* simple actions */
     void DisablePipeline(int pipelineid);
+    void SetPipelineDisabled(int pid);
+    void SetPipelineProcessStatus(QString status, int pipelineid, int studyid);
+    void SetPipelineRunning(int pid, QString msg);
+    void SetPipelineStatusMessage(int pid, QString msg);
+    void SetPipelineStopped(int pid, QString msg);
 
 private:
     nidb *n;
