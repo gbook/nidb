@@ -2251,7 +2251,7 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
             studyIDToDoList.append(studyRowID);
         }
     }
-    m = QString("Step A0 - Found %1 global studies (Valid, older than 6 hours, and do not have an existing analysis for this pipeline)").arg(studyIDToDoList.size());
+    m = QString("Step A0 - Found %1 global studies (valid AND older than 6 hours AND do not have an existing analysis for this pipeline)").arg(studyIDToDoList.size());
     RecordPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", n->Log(m, __FUNCTION__));
 
     /* A1 - find studies in the specified parent dependency */
@@ -2260,7 +2260,7 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
         if (p.depLevel == "subject") {
 
             /* need list of all studies that have a SUBJECT who has completed at least one analysis for the parent pipeline... */
-            /* this option must be used with a group, to further narrow down the number of analysed studies */
+            /* *** this option must be used with a group *** to further narrow down the number of analyzed studies */
 
             /* this function just needs to determine "Is there is a completed parent pipeline within this subject?", if yes, then this study is valid to analyze
              *  and the actual parent study to be copied will be determined later */

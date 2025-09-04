@@ -705,9 +705,9 @@
 									Observation name(s)
 									<select class="ui search dropdown" name="observationname[]" id="observationname" onChange="CheckForObservationCriteria()" multiple="multiple" style="width: 100%"><?
 										if ($projectid == "")
-											$sqlstringA = "SELECT distinct(c.observation_name) from observations a left join enrollment b on a.enrollment_id = b.enrollment_id left join observationnames c on a.observationname_id = c.observationname_id order by c.observation_name";
+											$sqlstringA = "SELECT distinct(observation_name) from observations order by c.observation_name";
 										else
-											$sqlstringA = "SELECT distinct(c.observation_name) from observations a left join enrollment b on a.enrollment_id = b.enrollment_id left join observationnames c on a.observationname_id = c.observationname_id where b.project_id = $projectid order by c.observation_name";
+											$sqlstringA = "SELECT distinct(a.observation_name) from observations a left join enrollment b on a.enrollment_id = b.enrollment_id where b.project_id = $projectid order by c.observation_name";
 											
 										$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
 										while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
@@ -1211,10 +1211,10 @@
 			/* ---------- Observations ---------- */
 			if (($a['includeallobservations']) || ($a['observationname'] != "")) {
 				if ($a['includeallobservations']) {
-					$sqlstringA = "select a.*, b.observation_name from observations a left join observationnames b on a.observationname_id = b.observationname_id where enrollment_id = $enrollmentid";
+					$sqlstringA = "select * from observations where enrollment_id = $enrollmentid";
 				}
 				else {
-					$sqlstringA = "select a.*, b.observation_name from observations a left join observationnames b on a.observationname_id = b.observationname_id where a.enrollment_id = $enrollmentid and (" . CreateSQLSearchString("b.observation_name", $a['observationname']) . ")";
+					$sqlstringA = "select observation_name from observations where enrollment_id = $enrollmentid and (" . CreateSQLSearchString("observation_name", $a['observationname']) . ")";
 				}
 				$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
 				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {

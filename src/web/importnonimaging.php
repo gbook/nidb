@@ -845,7 +845,7 @@
 		<div class="ui container">
 			<div class="ui two column grid">
 				<div class="column">
-					<h1 class="ui header">Imaging Import</h1>
+					<h1 class="ui header">Non-imaging Import</h1>
 					Displaying 10 most recent imports. <a href="importnonimaging.php?displayall=1">View all</a>
 				</div>
 				<div class="right aligned column">
@@ -853,21 +853,36 @@
 				</div>
 			</div>
 			
-			<table class="ui table">
+			<table class="ui celled structured table">
 				<thead>
-					<th>Date</th>
-					<th>Project</th>
-					<th>Observations Imported</th>
-					<th>Interventions Imported</th>
-					<th>Observations Skipped</th>
-					<th>Interventions Skipped</th>
-					<th>Ignore Empty Cells</th>
-					<th>Create Missing Subjects</th>
-					<th>Subjects Created</th>
-					<th>Subjects Not Found</th>
-					<th>Unique Observation Variables</th>
-					<th>Unique Intervention Variables</th>
-					<th>Message</th>
+					<tr>
+						<th colspan="2"></th>
+						<th colspan="2">Options</th>
+						<th colspan="3">Observations</th>
+						<th colspan="3">Interventions</th>
+						<th colspan="2">Subjects</th>
+						<th></th>
+					</tr>
+					<tr>
+						<th>Date</th>
+						<th>Project</th>
+
+						<th>Ignore Empty Cells</th>
+						<th>Create Missing Subjects</th>
+
+						<th>Imported</th>
+						<th>Skipped</th>
+						<th>Unique Variables</th>
+						
+						<th>Imported</th>
+						<th>Skipped</th>
+						<th>Unique Variables</th>
+
+						<th>Created</th>
+						<th>Not Found</th>
+						
+						<th>Message</th>
+					</tr>
 				</thead>
 		<?
 		
@@ -889,27 +904,34 @@
 				$numObservationsSkipped = $row['numObservationsSkipped'];
 				$numInterventionsImported = $row['numInterventionsImported'];
 				$numInterventionsSkipped = $row['numInterventionsSkipped'];
-				$flagIgnoreEmptyCells = $row['flagIgnoreEmptyCells'];
-				$flagCreateMissingSubjects = $row['flagCreateMissingSubjects'];
 				$numSubjectsCreated = $row['numSubjectsCreated'];
 				$numSubjectsNotFound = $row['numSubjectsNotFound'];
 				$numUniqueObservationVariables = $row['numUniqueObservationVariables'];
 				$numUniqueInterventionVariables = $row['numUniqueInterventionVariables'];
 				$importMessage = $row['importMessage'];
+				
+				if ($row['flagIgnoreEmptyCells']) { $flagIgnoreEmptyCells = "<i class='green large toggle on icon'></i>"; } else { $flagIgnoreEmptyCells = "<i class='gray large toggle off icon'></i>"; }
+				if ($row['flagCreateMissingSubjects']) { $flagCreateMissingSubjects = "<i class='green large toggle on icon'></i>"; } else { $flagCreateMissingSubjects = "<i class='gray large toggle off icon'></i>"; }
+				
 				?>
 				<tr>
 					<td><?=$importdate?></td>
 					<td><?=$projectname?></td>
-					<td><?=$numObservationsImported?></td>
-					<td><?=$numInterventionsImported?></td>
-					<td><?=$numObservationsSkipped?></td>
-					<td><?=$numInterventionsSkipped?></td>
+					
 					<td><?=$flagIgnoreEmptyCells?></td>
 					<td><?=$flagCreateMissingSubjects?></td>
-					<td><?=$numSubjectsCreated?></td>
-					<td><?=$numSubjectsNotFound?></td>
-					<td><?=$numUniqueObservationVariables?></td>
-					<td><?=$numUniqueInterventionVariables?></td>
+					
+					<td><?=number_format($numObservationsImported)?></td>
+					<td><?=number_format($numObservationsSkipped)?></td>
+					<td><?=number_format($numUniqueObservationVariables)?></td>
+					
+					<td><?=number_format($numInterventionsImported)?></td>
+					<td><?=number_format($numInterventionsSkipped)?></td>
+					<td><?=number_format($numUniqueInterventionVariables)?></td>
+
+					<td><?=number_format($numSubjectsCreated)?></td>
+					<td><?=number_format($numSubjectsNotFound)?></td>
+					
 					<td><?=$importMessage?></td>
 				</tr>
 				<?

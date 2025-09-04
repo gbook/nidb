@@ -1932,16 +1932,16 @@
 									</td>
 								</tr>
 								<tr>
-									<td valign="top" align="right" style="font-size:10pt; font-weight:bold;color: #555;">Criteria</td>
+									<td valign="top" align="right" style="font-size:10pt; font-weight:bold;color: #555;">Matching criteria</td>
 									<td valign="top">
 										<div class="ui radio checkbox">
 											<input type="radio" name="deplevel" id="deplevel" value="study" <?=$disabled?> <? if (($deplevel == "study") || ($deplevel == "")) { echo "checked"; } ?>>
-											<label>study <i class="question circle icon" title="Use dependencies from same study (RECOMMENDED)"></i></label>
+											<label>study (Recommended)<i class="question circle icon" title="Use dependencies from same study (RECOMMENDED)"></i></label>
 										</div>
 										<br>
 										<div class="ui radio checkbox">
 											<input type="radio" name="deplevel" id="deplevel" value="subject" <?=$disabled?> <? if ($deplevel == "subject") { echo "checked"; } ?>>
-											<label>subject <i class="question circle icon" title="Use dependencies from same subject (other studies)"></i></label>
+											<label>subject (Must be used with group option)<i class="question circle icon" title="Use dependencies from same subject (other studies). ** This option should be used with groups **"></i></label>
 										</div>
 									</td>
 								</tr>
