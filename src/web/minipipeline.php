@@ -424,14 +424,14 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 						<tt><pre>Type, VariableName, StartDate, EndDate, Duration, Value, Units, Notes, Instrument
 observation, EyeContact, 2012-10-22, , 3000, 34.9, , "Sneezed at minute 3", ADOS
 vital, BloodPressure, 2019-11-06 09:23, , , "122/70", , ,
-drug, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine", 
+intervention, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine", 
 ... </pre></tt>
 						</div>
 						<p>Notes about the output formats
 						<ul>
 							<li>Format must be in .csv, blank values still need a comma even if no values
 							<li>Header must be on the first row
-							<li>Possible types are <b>observation</b>, <b>vital</b>, <b>drug</b>
+							<li>Possible types are <b>observation</b>, <b>vital</b>, <b>intervention</b>
 							<li>Dates must be in <tt>YYYY-MM-DD</tt> format, with leading zeros (ex, <tt>03</tt> for March)
 							<li>Dates can include times, but time must be 24hr format, with leading zeros (<tt>14:03</tt>), with or without seconds (<tt>12:45:11</tt>)
 							<li>Duration is in seconds

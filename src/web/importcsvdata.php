@@ -142,7 +142,7 @@
 				<br>
                                 <b>Sample drugs.csv file format</b>
                                 <div style="font-family:monospace; padding:8px; background-color: #eee; border: 1px dashed #aaa">
-                                        nidbid,drugname,drug_startdate,drug_enddate,drug_doseamount,drug_dosefrequency,drug_route,drug_type,drug_dosekey,drug_doseunit,drug_rater,<br>drug_notes <br>
+                                        nidbid,interventionname,startdate,enddate,doseamount,dosefrequency,administration_route,intervention_type,dosekey,doseunit,drug_rater,<br>drug_notes <br>
                                         S1234ABC,11_Hydroxy-THC,06/23/2023 17:02:33, ,10,1 per day,vapor,Placebo,111-222-333,mg,AM,Dose administered 2 minutes late
                                 </div>
 				<div class="ui blue attached message">
@@ -150,7 +150,7 @@
                                     CSV Data File
                                   </div>
                                   <ul class="list">
-                                    <li>should contain these three columns (nidbid, observationname / vitalname / drugname, and observation_startdate / vital_startdate / drug_startdate).</li>
+                                    <li>should contain these three columns (nidbid, observationname / vitalname / interventionname, and observation_startdate / vital_startdate / startdate).</li>
                                     <li>should use the same column names.</li>
                                   </ul>
                                 </div>
@@ -338,9 +338,9 @@
 //      Adding Drugs information
 		if ($dtype === 'd'){
 
-			$requiredColumns = ['nidbid', 'drugname', 'drug_startdate']; // Mandatory columns
+			$requiredColumns = ['nidbid', 'interventionname', 'startdate']; // Mandatory columns
 //			print_r($requiredColumns)."<br>";
-			$optionalColumns = ['drug_enddate', 'drug_doseamount', 'drug_dosefrequency', 'drug_route', 'drug_type', 'drug_dosekey', 'drug_doseunit', 'drug_rater', 'drug_notes']; //Optional Columns
+			$optionalColumns = ['enddate', 'doseamount', 'dosefrequency', 'administration_route', 'intervention_type', 'dosekey', 'doseunit', 'drug_rater', 'drug_notes']; //Optional Columns
 
 			if (($inshandle = fopen($dfile,"r")) !== FALSE) {
 				$insheader =  fgetcsv($inshandle, 3000, ","); //Reading the first row (Header of the CSV file
@@ -395,15 +395,15 @@
 					// Preparing data for inserting to the NiDB
 					// Defining the variables
                                         $subjectid = $entry['nidbid'];
-                                        $drugName =  $entry['drugname'];
-                                        $drugStdate = $entry['drug_startdate'];
-                                        $drugenddate = $entry['drug_enddate'];
-                                        $drugamount = $entry['drug_doseamount'];
-                                        $drugfreq = $entry['drug_dosefrequency'];
-					$drugroute = $entry['drug_route'];
-					$drugtype = $entry['drug_type'];
-                                        $drugkey = $entry['drug_dosekey'];
-                                        $drugunit = $entry['drug_doseunit'];
+                                        $drugName =  $entry['interventionname'];
+                                        $drugStdate = $entry['startdate'];
+                                        $drugenddate = $entry['enddate'];
+                                        $drugamount = $entry['doseamount'];
+                                        $drugfreq = $entry['dosefrequency'];
+					$drugroute = $entry['administration_route'];
+					$drugtype = $entry['intervention_type'];
+                                        $drugkey = $entry['dosekey'];
+                                        $drugunit = $entry['doseunit'];
                                         $drugrater = $entry['drug_rater'];
                                         $drugnotes = $entry['drug_notes'];
 
@@ -533,7 +533,7 @@
         /* ----- Transferring Drugs data into NiDB------ */
         /* --------------------------------------------- */
 
-   function  Adddrugs($subjectid,$projectid, $drugname, $drugnotes, $drugrater, $drugStdate, $drugamount,  $drugfreq, $drugroute, $drugkey, $drugunit, $drugtype,$drugenddate){
+   function  Adddrugs($subjectid,$projectid, $interventionname, $drugnotes, $drugrater, $drugStdate, $drugamount,  $drugfreq, $drugroute, $drugkey, $drugunit, $drugtype,$drugenddate){
 
            // Decompacting variables
 //                extract($drugdose, EXTR_OVERWRITE);
@@ -547,19 +547,19 @@
                 $rowEn = mysqli_fetch_array($resultEn, MYSQLI_ASSOC);
                 $enrollmentid = $rowEn['enrollment_id'];
 
-                $sqlstringA = "select drugname_id from drugnames where drug_name = '$drugname'";
+                $sqlstringA = "select interventionname_id from interventionnames where intervention_name = '$interventionname'";
                 //echo "$sqlstringA\n";
                 $resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
                 if (mysqli_num_rows($resultA) > 0) {
                         $rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-                        $drugname_id = $rowA['drugname_id'];
+                        $interventionname_id = $rowA['interventionname_id'];
                 }
                 else {
-                         $sqlstringA = "insert into drugnames (drug_name) values ('$drugname')";
+                         $sqlstringA = "insert into interventionnames (intervention_name) values ('$interventionname')";
                         //echo "$sqlstringA\n";
                         $resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-                        $drugname_id = mysqli_insert_id($GLOBALS['linki']);
-                        echo 'A new drugname added!';?><br><?
+                        $interventionname_id = mysqli_insert_id($GLOBALS['linki']);
+                        echo 'A new interventionname added!';?><br><?
                 }
 
 
@@ -573,7 +573,7 @@
 		$denddate = ($dendtime === false) ? '0000-00-00' : date('Y-m-d H:i:s', $dendtime);
 
 		if ($enrollmentid!=''){
-                        $sqlstring = "insert ignore into drugs (enrollment_id, drug_startdate, drug_enddate, drug_doseamount, drug_dosefrequency, drug_route, drugname_id, drug_type, drug_dosekey, drug_doseunit, drug_rater, drug_notes, drug_entrydate, drug_recordcreatedate, drug_recordmodifydate) values ($enrollmentid,'$dstdate',NULLIF('$denddate',''), NULLIF('$drugamount',''), NULLIF('$drugfreq',''),NULLIF('$drugroute',''), '$drugname_id', NULLIF('$drugtype',''), NULLIF('$drugkey',''), NULLIF('$drugunit',''), NULLIF('$drug_rater',''), NULLIF('$drug_notes',''),'$dstdate',now(),now()) on duplicate key update drug_doseunit = '$drugunit', drug_recordmodifydate = now()";
+                        $sqlstring = "insert ignore into drugs (enrollment_id, startdate, enddate, doseamount, dosefrequency, administration_route, interventionname_id, intervention_type, dosekey, doseunit, drug_rater, drug_notes, drug_entrydate, drug_recordcreatedate, drug_recordmodifydate) values ($enrollmentid,'$dstdate',NULLIF('$denddate',''), NULLIF('$drugamount',''), NULLIF('$drugfreq',''),NULLIF('$drugroute',''), '$interventionname_id', NULLIF('$drugtype',''), NULLIF('$drugkey',''), NULLIF('$drugunit',''), NULLIF('$drug_rater',''), NULLIF('$drug_notes',''),'$dstdate',now(),now()) on duplicate key update doseunit = '$drugunit', drug_recordmodifydate = now()";
                 //      PrintSQL($sqlstring);
                         $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			return 1;

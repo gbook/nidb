@@ -209,7 +209,7 @@
 
                                 while (($grow = fgetcsv($ghandle, 3000, ",")) !== FALSE) {
 
-                                        $drugname = $grow[0];
+                                        $interventionname = $grow[0];
                                         $nidbID = $grow[1];
                                         $altID = $grow[2];
                                         $StdateCol = $grow[3];
@@ -226,13 +226,13 @@
 
 
 
-                                        $strdata[$drugname] = array(
+                                        $strdata[$interventionname] = array(
                                                 'nidbid' => $nidbID,
                                                 'altid' => $altID,
                                                 'Stdate' => $StdateCol,
                                                 'rater' => $raterCol,
 						'notes' => $notesCol,
-						'drugName' => $drugname,
+						'drugName' => $interventionname,
 						'drugamount' => $drugamount,
 						'drugfreq' => $drugfreq,
 						'drugroute' => $drugroute,
@@ -409,7 +409,7 @@
 	
 									// Defining the variables
 									$subjectid = $filteredRow['nidbid'];
-									$drugname =  $filteredRow['drugName'];
+									$interventionname =  $filteredRow['drugName'];
 									$drugnotes = $filteredRow['notes'];
 									$drugrater = $filteredRow['rater'];
 									$drugStdate = $filteredRow['Stdate'];
@@ -421,9 +421,9 @@
 									$drugtype = $filteredRow['drugamount'];
 									$drugenddate = $filteredRow['Enddate'];
 	
-									echo $subjectid.",".$projectid.",".$drugname.",".$drugStdate.",".$drugnotes.",".$drugrater.",".$drugamount.",".$drugfreq.",".$drugroute."<br>";
+									echo $subjectid.",".$projectid.",".$interventionname.",".$drugStdate.",".$drugnotes.",".$drugrater.",".$drugamount.",".$drugfreq.",".$drugroute."<br>";
 
-									Adddrugs($subjectid,$projectid, $drugname, $drugnotes, $drugrater, $drugStdate, $drugamount,  $drugfreq, $drugroute, $drugkey, $drugunit, $drugtype,$drugenddate); 
+									Adddrugs($subjectid,$projectid, $interventionname, $drugnotes, $drugrater, $drugStdate, $drugamount,  $drugfreq, $drugroute, $drugkey, $drugunit, $drugtype,$drugenddate); 
 						
 //						print_r($filteredRow);
 //						echo $filteredRow['altid'].",".$filteredRow['nidbid'].",".$filteredRow['date'].",".$filteredRow['rater'].",".$filteredRow['notes'];
@@ -562,7 +562,7 @@
         /* ------ Transferring Drugs data into NiDB------ */
         /* -------------------------------------------- */
 
-   function  Adddrugs($subjectid,$projectid, $drugname, $drugnotes, $drugrater, $drugStdate, $drugamount,  $drugfreq, $drugroute, $drugkey, $drugunit, $drugtype,$drugenddate){
+   function  Adddrugs($subjectid,$projectid, $interventionname, $drugnotes, $drugrater, $drugStdate, $drugamount,  $drugfreq, $drugroute, $drugkey, $drugunit, $drugtype,$drugenddate){
 
            // Decompacting variables
 //                extract($drugdose, EXTR_OVERWRITE);
@@ -576,19 +576,19 @@
                 $rowEn = mysqli_fetch_array($resultEn, MYSQLI_ASSOC);
                 $enrollmentid = $rowEn['enrollment_id'];
 
-                $sqlstringA = "select drugname_id from drugnames where drug_name = '$drugname'";
+                $sqlstringA = "select interventionname_id from interventionnames where intervention_name = '$interventionname'";
                 //echo "$sqlstringA\n";
                 $resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
                 if (mysqli_num_rows($resultA) > 0) {
                         $rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-                        $drugname_id = $rowA['drugname_id'];
+                        $interventionname_id = $rowA['interventionname_id'];
                 }
                 else {
-                         $sqlstringA = "insert into drugnames (drug_name) values ('$drugname')";
+                         $sqlstringA = "insert into interventionnames (intervention_name) values ('$interventionname')";
                         //echo "$sqlstringA\n";
                         $resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-                        $drugname_id = mysqli_insert_id($GLOBALS['linki']);
-                        echo 'A new drugname added!';?><br><?
+                        $interventionname_id = mysqli_insert_id($GLOBALS['linki']);
+                        echo 'A new interventionname added!';?><br><?
                 }
 
 
@@ -601,7 +601,7 @@
 		$dendtime = strtotime($drugenddate);
                 $denddate = ($dendtime === false) ? '0000-00-00' : date('Y-m-d', $dendtime);
 
-                        $sqlstring = "insert ignore into drugs (enrollment_id, drug_startdate, drug_enddate, drug_doseamount, drug_dosefrequency, drug_route, drugname_id, drug_type, drug_dosekey, drug_doseunit, drug_rater, drug_notes, drug_entrydate, drug_recordcreatedate, drug_recordmodifydate) values ($enrollmentid,'$dstdate',NULLIF('$denddate',''), NULLIF('$drugamount',''), NULLIF('$drugfreq',''),NULLIF('$drugroute',''), '$drugname_id', NULLIF('$drugtype',''), NULLIF('$drugkey',''), NULLIF('$drugunit',''), NULLIF('$drug_rater',''), NULLIF('$drug_notes',''),'$dstdate',now(),now()) on duplicate key update drug_doseunit = '$drugdoseunit', drug_recordmodifydate = now()";
+                        $sqlstring = "insert ignore into drugs (enrollment_id, startdate, enddate, doseamount, dosefrequency, administration_route, interventionname_id, intervention_type, dosekey, doseunit, drug_rater, drug_notes, drug_entrydate, drug_recordcreatedate, drug_recordmodifydate) values ($enrollmentid,'$dstdate',NULLIF('$denddate',''), NULLIF('$drugamount',''), NULLIF('$drugfreq',''),NULLIF('$drugroute',''), '$interventionname_id', NULLIF('$drugtype',''), NULLIF('$drugkey',''), NULLIF('$drugunit',''), NULLIF('$drug_rater',''), NULLIF('$drug_notes',''),'$dstdate',now(),now()) on duplicate key update doseunit = '$drugdoseunit', drug_recordmodifydate = now()";
                 //      PrintSQL($sqlstring);
                         $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 

@@ -697,7 +697,7 @@
 					
 					<td>
 						<select name="nidbvariablename" required>
-						  <option value='drugname'> Drugname</option>
+						  <option value='interventionname'> Drugname</option>
 						  <? while ($row = mysqli_fetch_array($resultcols, MYSQLI_ASSOC)) {
 						  $colsname=$row['COLUMN_NAME'];
 						  if (strpos($colsname, "_id") == false){
@@ -1350,19 +1350,19 @@
                 $rowEn = mysqli_fetch_array($resultEn, MYSQLI_ASSOC);
                 $enrollmentid = $rowEn['enrollment_id'];
 
-                $sqlstringA = "select drugname_id from drugnames where drug_name = '$drugname'";
+                $sqlstringA = "select interventionname_id from interventionnames where intervention_name = '$interventionname'";
                 //echo "$sqlstringA\n";
                 $resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
                 if (mysqli_num_rows($resultA) > 0) {
                         $rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-                        $drugname_id = $rowA['drugname_id'];
+                        $interventionname_id = $rowA['interventionname_id'];
                 }
 		else {
-			 $sqlstringA = "insert into drugnames (drug_name) values ('$drugname')";
+			 $sqlstringA = "insert into interventionnames (intervention_name) values ('$interventionname')";
                         //echo "$sqlstringA\n";
                         $resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-                        $drugname_id = mysqli_insert_id($GLOBALS['linki']);
-                        echo 'A new drugname added!';?><br><?
+                        $interventionname_id = mysqli_insert_id($GLOBALS['linki']);
+                        echo 'A new interventionname added!';?><br><?
                 }
 
 
@@ -1370,7 +1370,7 @@
 		$drug_notes = str_replace('"',"''",$drug_notes);
 
 		if ($enrollmentid!=''){
-			$sqlstring = "insert ignore into drugs (enrollment_id, drug_startdate, drug_enddate, drug_doseamount, drug_dosefrequency, drug_route, drugname_id, drug_type, drug_dosekey, drug_doseunit, drug_frequencymodifier, drug_frequencyvalue, drug_frequencyunit, drug_dosedesc, drug_rater, drug_notes, drug_entrydate, drug_recordcreatedate, drug_recordmodifydate) values ($enrollmentid,'$drug_startdate',NULLIF('$drug_enddate',''), NULLIF('$drug_doseamount',''), NULLIF('$drug_dosefrequency',''),NULLIF('$drug_route',''), '$drugname_id', NULLIF('$drug_type',''), NULLIF('$drug_dosekey',''), NULLIF('$drug_doseunit',''), NULLIF('$drug_frequencymodifier',''), NULLIF('$drug_frequencyvalue',''), NULLIF('$drug_frequencyunit',''), NULLIF('$drug_dosedesc',''), NULLIF('$drug_rater',''), NULLIF('$drug_notes',''),'$drug_entrydate',now(),now()) on duplicate key update drug_doseunit = '$drug_doseunit', drug_recordmodifydate = now()";
+			$sqlstring = "insert ignore into drugs (enrollment_id, startdate, enddate, doseamount, dosefrequency, administration_route, interventionname_id, intervention_type, dosekey, doseunit, drug_frequencymodifier, drug_frequencyvalue, drug_frequencyunit, dosedesc, drug_rater, drug_notes, drug_entrydate, drug_recordcreatedate, drug_recordmodifydate) values ($enrollmentid,'$startdate',NULLIF('$enddate',''), NULLIF('$doseamount',''), NULLIF('$dosefrequency',''),NULLIF('$administration_route',''), '$interventionname_id', NULLIF('$intervention_type',''), NULLIF('$dosekey',''), NULLIF('$doseunit',''), NULLIF('$drug_frequencymodifier',''), NULLIF('$drug_frequencyvalue',''), NULLIF('$drug_frequencyunit',''), NULLIF('$dosedesc',''), NULLIF('$drug_rater',''), NULLIF('$drug_notes',''),'$drug_entrydate',now(),now()) on duplicate key update doseunit = '$doseunit', drug_recordmodifydate = now()";
 		//	PrintSQL($sqlstring);	
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);}
            	else { 

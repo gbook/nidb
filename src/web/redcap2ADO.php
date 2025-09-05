@@ -901,12 +901,12 @@ function TransferData($Form_name,$INSTR,$projectid){
                 $rowEn = mysqli_fetch_array($resultEn, MYSQLI_ASSOC);
                 $enrollmentid = $rowEn['enrollment_id'];
 
-                $sqlstringA = "select drugname_id from drugnames where drug_name = '$dosename'";
+                $sqlstringA = "select interventionname_id from interventionnames where intervention_name = '$dosename'";
                 //echo "$sqlstringA\n";
                 $resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
                 if (mysqli_num_rows($resultA) > 0) {
                         $rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-                        $dosenameid = $rowA['drugname_id'];
+                        $dosenameid = $rowA['interventionname_id'];
                 }
                 else {
 			echo 'Drugname not found!';
@@ -916,7 +916,7 @@ function TransferData($Form_name,$INSTR,$projectid){
 		$dosenotes = str_replace("'","''",$dosenotes);	
 		$dosenotes = str_replace('"',"''",$dosenotes);	
 	   if ($enrollmentid!=''){
-                $sqlstring = "insert ignore into drugs (enrollment_id, drug_startdate, drug_enddate, drug_doseamount, drugname_id, drug_dosekey, drug_dosedesc, drug_rater, drug_notes, drug_entrydate, drug_recordcreatedate, drug_recordmodifydate) values ($enrollmentid, '$dosestdate', '$doseenddate','$dosedelivered','$dosenameid','$dosekey','$doseinhaled','$doserater','$dosenotes',now(),now(),now() ) on duplicate key update drug_dosedesc = '$doseinhaled', drug_recordmodifydate = now()";
+                $sqlstring = "insert ignore into interventions (enrollment_id, startdate, enddate, doseamount, interventionname_id, dosekey, dosedesc, rater, notes, entrydate, recordcreatedate, recordmodifydate) values ($enrollmentid, '$dosestdate', '$doseenddate','$dosedelivered','$dosenameid','$dosekey','$doseinhaled','$doserater','$dosenotes',now(),now(),now() ) on duplicate key update dosedesc = '$doseinhaled', recordmodifydate = now()";
                 $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);}
 	   else { echo 'Subject '.$subjectid.' was not found in ADO';} 
 

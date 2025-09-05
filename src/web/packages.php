@@ -1557,7 +1557,7 @@
 		
 		$enrollmentidstr = implode2(",", $enrollmentids);
 
-		$sqlstring = "select * from drugs a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join drugnames d on a.drugname_id = d.drugname_id where a.enrollment_id in (" . implode2(",", $enrollmentids) . ")";
+		$sqlstring = "select * from interventions a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join interventionnames d on a.interventionname_id = d.interventionname_id where a.enrollment_id in (" . implode2(",", $enrollmentids) . ")";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$numinterventions = mysqli_num_rows($result);
 		
@@ -1633,15 +1633,15 @@
 						<tbody>
 						<?
 							/* get subject info. there may be series from multiple subjects in this list */
-							//$sqlstring = "select * from drugs a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join drugnames d on a.drugname_id = d.drugname_id where a.enrollment_id in (" . implode2(",", $enrollmentids) . ")";
+							//$sqlstring = "select * from interventions a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join interventionnames d on a.interventionname_id = d.interventionname_id where a.enrollment_id in (" . implode2(",", $enrollmentids) . ")";
 							//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$uid = $row['uid'];
 								$subjectid = $row['subject_id'];
-								$interventiondate = $row['drug_startdate'];
-								$interventionid = $row['drug_id'];
-								$dosedesc = $row['drug_dosedesc'];
-								$interventionname = $row['drug_name'];
+								$interventiondate = $row['startdate'];
+								$interventionid = $row['intervention_id'];
+								$dosedesc = $row['dosedesc'];
+								$interventionname = $row['intervention_name'];
 								
 								$interventionids[] = $interventionid;
 								?>
@@ -1708,7 +1708,7 @@
 				Notice("Removed $numobjects observations");
 				break;
 			case "intervention":
-				$sqlstring = "delete from package_drugs where packagedrug_id in ($objectidstr)";
+				$sqlstring = "delete from package_interventions where packageintervention_id in ($objectidstr)";
 				PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				Notice("Removed $numobjects interventions");
@@ -1821,7 +1821,7 @@
 		/* add any interventions */
 		if ((count($interventionids) > 0) && ($includeinterventions) && (is_array($interventionids))) {
 			foreach ($interventionids as $interventionid) {
-				$sqlstring = "insert ignore into package_drugs (package_id, drug_id) values ($packageid, $interventionid)";
+				$sqlstring = "insert ignore into package_interventions (package_id, intervention_id) values ($packageid, $interventionid)";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
 			$numobjects += count($interventionids);
@@ -2026,17 +2026,17 @@
 
 		MarkTime("Getting intervention data");
 		/* get interventions */
-		$sqlstring = "select * from package_drugs a left join drugs b on a.drug_id = b.drug_id left join drugnames c on b.drugname_id = c.drugname_id left join enrollment d on b.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.package_id = $packageid";
+		$sqlstring = "select * from package_interventions a left join interventions b on a.intervention_id = b.intervention_id left join enrollment d on b.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.package_id = $packageid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$numinterventions = mysqli_num_rows($result);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$enrollmentid = $row['enrollment_id'];
 			$uid = $row['uid'];
 			//list($uid, $subjectid, $altuid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
-			$objectid = $row['packagedrug_id'];
-			$interventions[$uid][$objectid]['drugid'] = $row['drug_id'];
-			$interventions[$uid][$objectid]['name'] = $row['drug_name'];
-			$interventions[$uid][$objectid]['startdate'] = $row['drug_startdate'];
+			$objectid = $row['packageintervention_id'];
+			$interventions[$uid][$objectid]['interventionid'] = $row['intervention_id'];
+			$interventions[$uid][$objectid]['name'] = $row['intervention_name'];
+			$interventions[$uid][$objectid]['startdate'] = $row['startdate'];
 
 			if (!isset($altIDMapping[$uid]) || $altIDMapping[$uid] == "" || $altIDMapping[$uid] == $uid) {
 				/* update the package_enrollment table with the alternate UID specific to this enrollment (this fixes packages before the primary alt uid was used) */
@@ -3119,7 +3119,7 @@
 							$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
 							$numobjects += $rowA['count'];
 
-							$sqlstringA = "select count(*) 'count' from package_drugs where package_id = $packageid";
+							$sqlstringA = "select count(*) 'count' from package_interventions where package_id = $packageid";
 							$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 							$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
 							$numobjects += $rowA['count'];

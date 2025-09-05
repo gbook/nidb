@@ -988,7 +988,7 @@ bool moduleFileIO::MergeSubjects(int targetSubjectID, QString mergeIDs, QString 
             q.bindValue(":subjectid", sourceSubjectID.toInt());
             n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
             if (q.size() > 0) {
-                n->Log(QString("Moving observations and drugs to target subject. Found [%1] enrollments for subject [%2]").arg(q.size()).arg(sourceSubject.UID()));
+                n->Log(QString("Moving observations and intreventions to target subject. Found [%1] enrollments for subject [%2]").arg(q.size()).arg(sourceSubject.UID()));
                 while (q.next()) {
                     /* foreach enrollment, get the project_id */
                     int sourceProjectID = q.value("project_id").toInt();
@@ -1028,17 +1028,17 @@ bool moduleFileIO::MergeSubjects(int targetSubjectID, QString mergeIDs, QString 
                     n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
                     n->Log(QString("Moved [%1] observations from [%2] to [%3]").arg(q2.numRowsAffected()).arg(sourceSubject.UID()).arg(targetSubject.UID()));
 
-                    /* move all of the drugs from the source enrollment to the target subject's enrollment */
-                    q2.prepare("select * from drugs where enrollment_id = :sourceenrollmentid");
+                    /* move all of the interventions from the source enrollment to the target subject's enrollment */
+                    q2.prepare("select * from interventions where enrollment_id = :sourceenrollmentid");
                     q2.bindValue(":sourceenrollmentid", sourceEnrollmentID);
                     n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
-                    n->Log(QString("Found [%1] drugs for subject [%2]").arg(q2.size()).arg(sourceSubject.UID()));
+                    n->Log(QString("Found [%1] interventions for subject [%2]").arg(q2.size()).arg(sourceSubject.UID()));
 
-                    q2.prepare("update drugs set enrollment_id = :targetenrollmentid where enrollment_id = :sourceenrollmentid");
+                    q2.prepare("update interventions set enrollment_id = :targetenrollmentid where enrollment_id = :sourceenrollmentid");
                     q2.bindValue(":targetenrollmentid", targetEnrollmentID);
                     q2.bindValue(":sourceenrollmentid", sourceEnrollmentID);
                     n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
-                    n->Log(QString("Moved [%1] drugs from [%2] to [%3]").arg(q2.numRowsAffected()).arg(sourceSubject.UID()).arg(targetSubject.UID()));
+                    n->Log(QString("Moved [%1] interventions from [%2] to [%3]").arg(q2.numRowsAffected()).arg(sourceSubject.UID()).arg(targetSubject.UID()));
                 }
             }
 

@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------------------
-  NIDB drug.cpp
+  NIDB intervention.cpp
   Copyright (C) 2004 - 2024
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
@@ -20,67 +20,66 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
   ------------------------------------------------------------------------------ */
 
-#include "drug.h"
+#include "intervention.h"
 #include "study.h"
 #include <QSqlQuery>
 
 
 /* ---------------------------------------------------------- */
-/* --------- drug ---------------------------------------- */
+/* --------- intervention ----------------------------------- */
 /* ---------------------------------------------------------- */
-drug::drug(qint64 id, nidb *a)
+intervention::intervention(qint64 id, nidb *a)
 {
     n = a;
-    drugid = id;
-    LoadDrugInfo();
+    interventionRowID = id;
+    LoadInterventionInfo();
 }
 
 
 /* ---------------------------------------------------------- */
-/* --------- LoadDrugInfo -------------------------------- */
+/* --------- LoadInterventionInfo --------------------------- */
 /* ---------------------------------------------------------- */
-void drug::LoadDrugInfo() {
+void intervention::LoadInterventionInfo() {
 
     QStringList msgs;
 
-    if (drugid < 1) {
-        msgs << "Invalid drug ID";
+    if (interventionRowID < 1) {
+        msgs << "Invalid intervention ID";
         isValid = false;
     }
     else {
         QSqlQuery q;
-        q.prepare("select * from drugs a left join drugnames b on a.drugname_id = b.drugname_id left join enrollment d on a.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.drug_id = :drugid");
-        q.bindValue(":drugid", drugid);
+        q.prepare("select * from interventions a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.intervention_id = :interventionid");
+        q.bindValue(":interventionid", interventionRowID);
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         if (q.size() < 1) {
-            msgs << "Query returned no results. Possibly invalid drug ID or recently deleted?";
+            msgs << "Query returned no results. Possibly invalid intervention ID or recently deleted?";
             isValid = false;
         }
         else {
             q.first();
 
-            dateDrugEnd = q.value("drug_enddate").toDateTime();
-            dateDrugStart = q.value("drug_startdate").toDateTime();
-            dateRecordCreate = q.value("drug_createdate").toDateTime();
-            dateRecordEntry = q.value("drug_entrydate").toDateTime();
-            dateRecordModify = q.value("drug_modifydate").toDateTime();
-            doseAmount = q.value("drug_doseamount").toString();
-            doseDesc = q.value("drug_dosedesc").toString();
-            doseFrequency = q.value("drug_dosefrequency").toString();
-            doseKey = q.value("drug_dosekey").toString();
-            doseUnit = q.value("drug_doseunit").toString();
-            drugName = q.value("drug_name").toString();
-            drugNameID = q.value("drugname_id").toInt();
-            drugType = q.value("drug_type").toChar().toLatin1();
-            drugid = q.value("drug_id").toInt();
-            enrollmentid = q.value("enrollment_id").toInt();
-            frequencyModifier = q.value("drug_frequencymodifier").toString();
-            frequencyUnit = q.value("drug_frequencyunit").toString();
-            frequencyValue = q.value("drug_frequencyvalue").toString();
-            notes = q.value("drug_notes").toString();
-            rater = q.value("drug_rater").toString();
-            route = q.value("drug_route").toString();
-            subjectid = q.value("subject_id").toInt();
+            dateEnd = q.value("enddate").toDateTime();
+            dateStart = q.value("startdate").toDateTime();
+            dateRecordCreate = q.value("createdate").toDateTime();
+            dateRecordEntry = q.value("entrydate").toDateTime();
+            dateRecordModify = q.value("modifydate").toDateTime();
+            doseAmount = q.value("doseamount").toString();
+            doseDesc = q.value("dosedesc").toString();
+            doseFrequency = q.value("dosefrequency").toString();
+            doseKey = q.value("dosekey").toString();
+            doseUnit = q.value("doseunit").toString();
+            interventionName = q.value("intervention_name").toString();
+            interventionType = q.value("intervention_type").toChar().toLatin1();
+            interventionRowID = q.value("intervention_id").toInt();
+            enrollmentRowID = q.value("enrollment_id").toInt();
+            frequencyModifier = q.value("frequencymodifier").toString();
+            frequencyUnit = q.value("frequencyunit").toString();
+            frequencyValue = q.value("frequencyvalue").toString();
+            notes = q.value("notes").toString();
+            rater = q.value("rater").toString();
+            route = q.value("administration_route").toString();
+            subjectRowID = q.value("subject_id").toInt();
             uid = q.value("UID").toString();
 
         }
@@ -91,13 +90,13 @@ void drug::LoadDrugInfo() {
 
 
 /* ---------------------------------------------------------- */
-/* --------- PrintDrugInfo -------------------------------- */
+/* --------- PrintInterventionInfo -------------------------- */
 /* ---------------------------------------------------------- */
-void drug::PrintDrugInfo() {
-    QString	output = QString("***** Drug - [%1] *****\n").arg(drugid);
+void intervention::PrintInterventionInfo() {
+    QString	output = QString("***** Intervention - [%1] *****\n").arg(interventionRowID);
 
-    output += QString("   dateDrugEnd: [%1]\n").arg(dateDrugEnd.toString());
-    output += QString("   dateDrugStart: [%1]\n").arg(dateDrugStart.toString());
+    output += QString("   dateEnd: [%1]\n").arg(dateEnd.toString());
+    output += QString("   dateStart: [%1]\n").arg(dateStart.toString());
     output += QString("   dateRecordCreate: [%1]\n").arg(dateRecordCreate.toString());
     output += QString("   dateRecordEntry: [%1]\n").arg(dateRecordEntry.toString());
     output += QString("   dateRecordModify: [%1]\n").arg(dateRecordModify.toString());
@@ -106,18 +105,17 @@ void drug::PrintDrugInfo() {
     output += QString("   doseFrequency: [%1]\n").arg(doseFrequency);
     output += QString("   doseKey: [%1]\n").arg(doseKey);
     output += QString("   doseUnit: [%1]\n").arg(doseUnit);
-    output += QString("   drugName: [%1]\n").arg(drugName);
-    output += QString("   drugNameID: [%1]\n").arg(drugNameID);
-    output += QString("   drugType: [%1]\n").arg(drugType);
-    output += QString("   drugid: [%1]\n").arg(drugid);
-    output += QString("   enrollmentid: [%1]\n").arg(enrollmentid);
+    output += QString("   interventionName: [%1]\n").arg(interventionName);
+    output += QString("   interventionType: [%1]\n").arg(interventionType);
+    output += QString("   interventionRowID: [%1]\n").arg(interventionRowID);
+    output += QString("   enrollmentRowID: [%1]\n").arg(enrollmentRowID);
     output += QString("   frequencyModifier: [%1]\n").arg(frequencyModifier);
     output += QString("   frequencyUnit: [%1]\n").arg(frequencyUnit);
     output += QString("   frequencyValue: [%1]\n").arg(frequencyValue);
     output += QString("   notes: [%1]\n").arg(notes);
     output += QString("   rater: [%1]\n").arg(rater);
     output += QString("   route: [%1]\n").arg(route);
-    output += QString("   subjectid: [%1]\n").arg(subjectid);
+    output += QString("   subjectRowID: [%1]\n").arg(subjectRowID);
     output += QString("   uid: [%1]\n").arg(uid);
 
     n->Log(output);
@@ -127,23 +125,20 @@ void drug::PrintDrugInfo() {
 /* ---------------------------------------------------------- */
 /* --------- GetSquirrelObject ------------------------------ */
 /* ---------------------------------------------------------- */
-squirrelIntervention drug::GetSquirrelObject(QString databaseUUID) {
+squirrelIntervention intervention::GetSquirrelObject(QString databaseUUID) {
     squirrelIntervention sqrl(databaseUUID);
 
-    sqrl.DateEnd = dateDrugEnd;
+    sqrl.DateEnd = dateEnd;
     sqrl.DateRecordEntry = dateRecordEntry;
-    sqrl.DateStart = dateDrugStart;
+    sqrl.DateStart = dateStart;
     sqrl.Description = doseDesc;
     sqrl.DoseAmount = doseAmount.toDouble();
     sqrl.DoseFrequency = doseFrequency;
     sqrl.DoseKey = doseKey;
     sqrl.DoseString = doseDesc;
     sqrl.DoseUnit = doseUnit;
-    sqrl.InterventionClass = drugType;
-    sqrl.InterventionName = drugName;
-    //sqrl.frequencyModifier = frequencyModifier;
-    //sqrl.frequencyUnit = frequencyUnit;
-    //sqrl.frequencyValue = frequencyValue.toDouble();
+    sqrl.InterventionClass = interventionType;
+    sqrl.InterventionName = interventionName;
     sqrl.Notes = notes;
     sqrl.Rater = rater;
     sqrl.AdministrationRoute = route;

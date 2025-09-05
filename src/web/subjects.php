@@ -1857,36 +1857,6 @@
 											-->
 											
 											<!-- ----------------------------------------------------- -->
-											<!-- -------------------- Observations ----------------------- -->
-											<!-- ----------------------------------------------------- -->
-											<!--<div class="ui top attached blue segment">
-												<div class="ui two column grid">
-													<div class="column">
-														<h3 class="header"><i class="clipboard list icon"></i> Phenotypic observations</h3>
-													</div>
-													<div class="right aligned column">
-														<a class="ui basic button" href="observations.php?enrollmentid=<?=$enrollmentid?>"><i class="edit icon"></i> Edit observations</a>
-													</div>
-												</div>
-											</div>
-											<div class="ui bottom attached center aligned segment">
-												<?
-													//$sqlstring3 = "select count(*) 'count' from observations a left join observationnames b on a.observationname_id = b.observationname_id where enrollment_id = $enrollmentid";
-													//$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
-													//$row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC);
-													//$numrows = $row3['count'];
-													//if ($numrows > 0) {
-														?><span style="font-size: larger;"><b><?=$numrows?></b> observations</span><?
-													//}
-													//else {
-														?>
-														No observations
-														<?
-													//}
-												?>
-											</div> -->
-
-											<!-- ----------------------------------------------------- -->
 											<!-- -------------------- Observations ------------------- -->
 											<!-- ----------------------------------------------------- -->
 											<div class="ui top attached blue segment">
@@ -1896,7 +1866,7 @@
 												<div class="ui two column grid">
 													<div class="right aligned column">
 													<?
-														$sqlstring3 = "select count(*) 'count' from observations a left join observationnames b on a.observationname_id = b.observationname_id where enrollment_id = $enrollmentid";
+														$sqlstring3 = "select count(*) 'count' from observations where enrollment_id = $enrollmentid";
 														$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
 														$row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC);
 														$numrows = $row3['count'];
@@ -1925,13 +1895,13 @@
 														<h3 class="header"><i class="pills icon"></i> Interventions</h3>
 													</div>
 													<div class="right aligned column">
-														<a class="ui basic button" href="drugs.php?enrollmentid=<?=$enrollmentid?>"><i class="edit icon"></i> Interventions</a>
+														<a class="ui basic button" href="interventions.php?enrollmentid=<?=$enrollmentid?>"><i class="edit icon"></i> Interventions</a>
 													</div>
 												</div>
 											</div>
 											<div class="ui bottom attached center aligned segment">
 												<?
-													$sqlstring3 = "select a.*,b.*,  date_format(a.drug_startdate,'%m-%d-%Y; %r') 'startdate', date_format(a.drug_enddate,'%m-%d-%Y; %r') 'enddate' from drugs a left join drugnames b on a.drugname_id = b.drugname_id where enrollment_id = $enrollmentid";
+													$sqlstring3 = "select *, date_format(a.startdate,'%m-%d-%Y; %r') 'startdate', date_format(a.enddate,'%m-%d-%Y; %r') 'enddate' from interventions where enrollment_id = $enrollmentid";
 													$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
 													$numrows = mysqli_num_rows($result3);
 													if ($numrows > 0) {
@@ -1947,14 +1917,14 @@
 														<tbody>
 														<?
 														while ($row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC)) {
-															$drug_id = $row3['drug_id'];
+															$intervention_id = $row3['intervention_id'];
 															$startdate = $row3['startdate'];
 															$enddate = $row3['enddate'];
-															$drug_dose = $row3['drug_doseamount'];
-															$drug_dosefreq = $row3['drug_dosefrequency'];
-															$drug_route = $row3['drug_route'];
-															$drug_name = $row3['drug_name'];
-															$drug_type = $row3['drug_type'];
+															$dose = $row3['doseamount'];
+															$dosefreq = $row3['dosefrequency'];
+															$administration_route = $row3['administration_route'];
+															$intervention_name = $row3['intervention_name'];
+															$intervention_type = $row3['intervention_type'];
 
 															if ($enddate=='')  {
 																$enddate = 'TO-DATE';
@@ -1962,10 +1932,10 @@
 
 															?>
 															<tr>
-																<td><?=$drug_name?></td>
-																<td><?=$drug_type?></td>
-																<td><?=$drug_route?></td>
-																<td><?=$drug_dose?> / <?=$drug_dosefreq?></td>
+																<td><?=$intervention_name?></td>
+																<td><?=$intervention_type?></td>
+																<td><?=$administration_route?></td>
+																<td><?=$dose?> / <?=$dosefreq?></td>
 																<td><?=$startdate?> - <?=$enddate?></td>
 															</tr>
 															<?
@@ -1983,67 +1953,6 @@
 												?>
 											</div>
 											
-											<!-- ----------------------------------------------------- -->
-											<!-- -------------------- Vitals ------------------------- -->
-											<!-- ----------------------------------------------------- -->
-											<!--<div class="ui top attached blue segment">
-												<div class="ui two column grid">
-													<div class="column">
-														<h3 class="header"><i class="stethoscope icon"></i> Vitals</h3>
-													</div>
-													<div class="right aligned column">
-														<a class="ui basic button" href="vitals.php?enrollmentid=<?=$enrollmentid?>"><i class="edit icon"></i> Edit vitals</a>
-													</div>
-												</div>
-											</div>
-											<div class="ui bottom attached center aligned segment">
-												<?
-													//$sqlstring4 = "select a.*,b.*,  date_format(a.vital_startdate,'%m-%d-%Y; %r') 'vdate' from vitals a left join vitalnames b on a.vitalname_id = b.vitalname_id where enrollment_id = $enrollmentid";
-													//$result4 = MySQLiQuery($sqlstring4, __FILE__, __LINE__);
-													//$numrows = mysqli_num_rows($result4);
-													//if ($numrows > 0) {
-														?>
-														<details>
-														<summary>List of Vitals</summary>
-														<table width="100%" class="smalldisplaytable" style="background-color: #FFFFFF; border-radius: 8px; width: 100%; padding:5px">
-															<thead align="left">
-																<th>Vitals</th>
-																<th>Type</th>
-																<th>Value</th>
-																<th>Notes</th>
-																<th>Date (mm/dd/yyyy; hh:mm:ss AM/PM)</th>
-															</thead>
-															<tbody>
-														<?
-														//while ($row4 = mysqli_fetch_array($result4, MYSQLI_ASSOC)) {
-															//$drug_id = $row4['vital_id'];
-															//$vdate = $row4['vdate'];
-															//$vital_value = $row4['vital_value'];
-															//$vital_notes = $row4['vital_notes'];
-															//$vital_name = $row4['vital_name'];
-															//$vital_type = $row4['vital_type'];
-															?>
-															<tr>
-																<td size="15"><?=$vital_name?></td>
-																<td size="15"><?=$vital_type?></td>
-																<td size="15"><?=$vital_value?></td>
-																<td size="15"><?=$vital_notes?></td>
-																<td size="15"><?=$vdate?></td>
-															</tr>
-															<?
-														//}
-														?>
-															</tbody>
-														</table>
-														<?
-													//}
-													//else {
-														?>
-														No vitals
-														<?
-													//}
-												?>
-											</div> -->
 										</div>
 								</div> <!-- end the layout grid within the enrollment -->
 							<? } ?>

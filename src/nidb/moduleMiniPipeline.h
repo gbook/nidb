@@ -19,7 +19,7 @@ private:
     qint64 CopyAllSeriesData(QString modality, qint64 seriesid, QString destination, QString &msg, bool createDestDir=true, bool rwPerms=true);
     bool InsertObservation(qint64 enrollmentid, qint64 studyid, qint64 seriesid, QString observationName, QString value, QString instrument, QDateTime startDate, QDateTime endDate, int duration, QString rater, int &numInserts, QString &msg);
     int InsertVital(qint64 enrollmentID, QString vitalName, QString value, QString notes, QString vitalType, QDateTime vitalStartDate, QDateTime vitalEndDate, int duration);
-    int InsertDrug(qint64 enrollmentID, QDateTime startDate, QDateTime endDate, QString doseAmount, QString doseFreq, QString route, QString drugName, QString drugType, QString doseUnit, QString doseFreqModifier, double doseFreqValue, QString doseFreqUnit);
+    int InsertIntervention(qint64 enrollmentID, QDateTime startDate, QDateTime endDate, QString doseAmount, QString doseFreq, QString route, QString interventionName, QString interventionType, QString doseUnit, QString doseFreqModifier, double doseFreqValue, QString doseFreqUnit);
     void AppendMiniPipelineLog(QString log, int jobid);
 };
 

@@ -799,7 +799,7 @@
 		if (count($weights) > 0) { $varweight = sd($weights); } else { $varweight = 0; }
 
 		if ($observations == "all") {
-			$sqlstringD = "select a.subject_id, b.enrollment_id, c.*, d.observation_name from observations c join observationnames d on c.observationname_id = d.observationname_id left join enrollment b on c.enrollment_id = b.enrollment_id join subjects a on a.subject_id = b.subject_id where a.subject_id in (" . implode2(",", $subjectids) . ")";
+			$sqlstringD = "select a.subject_id, b.enrollment_id, c.* from observations c left join enrollment b on c.enrollment_id = b.enrollment_id join subjects a on a.subject_id = b.subject_id where a.subject_id in (" . implode2(",", $subjectids) . ")";
 			$resultD = MySQLiQuery($sqlstringD,__FILE__,__LINE__);
 
 			if ($groupobservations == "byvalue") {

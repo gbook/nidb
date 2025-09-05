@@ -33,7 +33,7 @@
 #include "minipipeline.h"
 #include "experiment.h"
 #include "observation.h"
-#include "drug.h"
+#include "intervention.h"
 #include "squirrel.h"
 
 /**

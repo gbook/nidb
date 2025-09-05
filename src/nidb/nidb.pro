@@ -38,9 +38,9 @@ win32-g++ {
 SOURCES += \
     analysis.cpp \
     archiveio.cpp \
-    drug.cpp \
     experiment.cpp \
     imageio.cpp \
+    intervention.cpp \
     main.cpp \
     minipipeline.cpp \
     moduleBackup.cpp \
@@ -80,9 +80,9 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 HEADERS += \
     analysis.h \
     archiveio.h \
-    drug.h \
     experiment.h \
     imageio.h \
+    intervention.h \
     minipipeline.h \
     moduleBackup.h \
     moduleCluster.h \

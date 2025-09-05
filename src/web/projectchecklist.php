@@ -63,8 +63,8 @@
     $a['includeprotocolparms'] = GetVariable("includeprotocolparms");
     $a['includemrqa'] = GetVariable("includemrqa");
     $a['includeallobservations'] = GetVariable("includeallobservations");
-    $a['includeallvitals'] = GetVariable("includeallvitals");
-    $a['includealldrugs'] = GetVariable("includealldrugs");
+    //$a['includeallvitals'] = GetVariable("includeallvitals");
+    $a['includeallinterventions'] = GetVariable("includeallinterventions");
     $a['includeemptysubjects'] = GetVariable("includeemptysubjects");
     $a['grouprowsby'] = GetVariable("grouprowsby");
 	
@@ -706,7 +706,7 @@
 								<input type="checkbox" name="includeallobservations" value="1" <? if ($a['includeallobservations']) echo "checked"; ?>>Include all observations<br>
 							</td>
 						</tr>
-						<tr>
+						<!--<tr>
 							<td style="background-color: #526FAA; font-weight: bold; color: #fff; padding: 5px" align="center">
 								Vitals
 							</td>
@@ -715,15 +715,15 @@
 							<td style="padding-left: 15px">
 								<input type="checkbox" name="includeallvitals" value="1" <? if ($a['includeallvitals']) echo "checked"; ?>>Include all vitals<br>
 							</td>
-						</tr>
+						</tr>-->
 						<tr>
 							<td style="background-color: #526FAA; font-weight: bold; color: #fff; padding: 5px" align="center">
-								Drugs/dosing
+								Interventions/dosing
 							</td>
 						</tr>
 						<tr>
 							<td style="padding-left: 15px">
-								<input type="checkbox" name="includealldrugs" value="1" <? if ($a['includealldrugs']) echo "checked"; ?>>Include all drugs/dosing<br>
+								<input type="checkbox" name="includeallinterventions" value="1" <? if ($a['includeallinterventions']) echo "checked"; ?>>Include all interventions/dosing<br>
 							</td>
 						</tr>
 						<tr>
@@ -797,7 +797,7 @@
 			
 			/* add observations (key/value) if necessary */
 			if ($a['includeallobservations']) {
-				$sqlstringA = "select a.*, b.observation_name from observations a left join observationnames b on a.observationname_id = b.observationname_id where enrollment_id = $enrollmentid";
+				$sqlstringA = "select * from observations where enrollment_id = $enrollmentid";
 				$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
 				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 					$observationname = $rowA['observation_name'];
@@ -813,16 +813,16 @@
 			}
 			
 			/* add vitals if necessary */
-			if ($a['includeallobservations']) {
-				$sqlstringA = "select a.*, b.vital_name from vitals a left join vitalnames b on a.vitalname_id = b.vitalname_id where a.enrollment_id = $enrollmentid";
-				$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-					$vitalname = $rowA['vital_name'];
-					$value = $rowA['vital_value'];
+			//if ($a['includeallobservations']) {
+			//	$sqlstringA = "select a.*, b.vital_name from vitals a left join vitalnames b on a.vitalname_id = b.vitalname_id where a.enrollment_id = $enrollmentid";
+			//	$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+			//	while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+			//		$vitalname = $rowA['vital_name'];
+			//		$value = $rowA['vital_value'];
 					
-					$t[$id]['Vitals'][$vitalname] = $value;
-				}
-			}
+			//		$t[$id]['Vitals'][$vitalname] = $value;
+			//	}
+			//}
 			
 			if (($a['grouprowsby'] == "study") && ($studyid == "")) {
 				continue;

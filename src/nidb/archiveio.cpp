@@ -3166,30 +3166,27 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                     }
                 }
 
-                /* get drugs */
-                q2.prepare("select * from drugs a left join drugnames b on a.drugname_id = b.drugname_id where a.enrollment_id in (" + enrollmentIDstr + ")");
+                /* get interventions */
+                q2.prepare("select * from interventions where enrollment_id in (" + enrollmentIDstr + ")");
                 n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
                 if (q2.size() > 0) {
-                    //QJsonArray JSONdrugs;
+
                     while (q2.next()) {
                         squirrelIntervention sqrlIntervention(sqrl.GetDatabaseUUID());
-                        sqrlIntervention.InterventionName = q2.value("drug_name").toString();
-                        sqrlIntervention.InterventionClass = q2.value("drug_type").toString();
-                        sqrlIntervention.DateStart = q2.value("drug_startdate").toDateTime();
-                        sqrlIntervention.DateEnd = q2.value("drug_enddate").toDateTime();
-                        sqrlIntervention.DoseAmount = q2.value("drug_doseamount").toDouble();
-                        sqrlIntervention.DoseFrequency = q2.value("drug_dosefrequency").toString();
-                        sqrlIntervention.AdministrationRoute = q2.value("drug_route").toString();
-                        sqrlIntervention.DoseKey = q2.value("drug_dosekey").toString();
-                        sqrlIntervention.DoseUnit = q2.value("drug_doseunit").toString();
-                        //sqrlIntervention.FrequencyModifier = q2.value("drug_frequencymodifier").toString();
-                        //sqrlIntervention.FrequencyValue = q2.value("drug_frequencyvalue").toDouble();
-                        //sqrlIntervention.FrequencyUnit = q2.value("drug_frequencyunit").toString();
-                        sqrlIntervention.Rater = q2.value("observation_rater").toString();
+                        sqrlIntervention.AdministrationRoute = q2.value("administration_route").toString();
+                        sqrlIntervention.DateEnd = q2.value("enddate").toDateTime();
+                        sqrlIntervention.DateRecordCreate = q2.value("createdate").toDateTime();
+                        sqrlIntervention.DateRecordEntry = q2.value("entrydate").toDateTime();
+                        sqrlIntervention.DateRecordModify = q2.value("modifydate").toDateTime();
+                        sqrlIntervention.DateStart = q2.value("startdate").toDateTime();
+                        sqrlIntervention.DoseAmount = q2.value("doseamount").toDouble();
+                        sqrlIntervention.DoseFrequency = q2.value("dosefrequency").toString();
+                        sqrlIntervention.DoseKey = q2.value("dosekey").toString();
+                        sqrlIntervention.DoseUnit = q2.value("doseunit").toString();
+                        sqrlIntervention.InterventionClass = q2.value("intervention_type").toString();
+                        sqrlIntervention.InterventionName = q2.value("intervention_name").toString();
                         sqrlIntervention.Notes = q2.value("observation_notes").toString();
-                        sqrlIntervention.DateRecordEntry = q2.value("observation_entrydate").toDateTime();
-                        sqrlIntervention.DateRecordCreate = q2.value("observation_createdate").toDateTime();
-                        sqrlIntervention.DateRecordModify = q2.value("observation_modifydate").toDateTime();
+                        sqrlIntervention.Rater = q2.value("observation_rater").toString();
                         sqrlIntervention.subjectRowID = squirrelSubjectRowID;
                         sqrlIntervention.Store();
                     }
@@ -3512,12 +3509,12 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
     }
     n->Log("libsquirrel message buffer [" + sqrl.GetLogBuffer() + "]");
 
-    /* DRUGS - add all drugs associated with this package */
-    q.prepare("select b.drug_id, c.subject_id, c.project_id from package_drugs a left join drugs b on a.drug_id = b.drug_id left join enrollment c on b.enrollment_id = c.enrollment_id where a.package_id = :packageid");
+    /* INTERVENTIONS - add all interventions associated with this package */
+    q.prepare("select b.intervention_id, c.subject_id, c.project_id from package_interventions a left join interventions b on a.intervention_id = b.intervention_id left join enrollment c on b.enrollment_id = c.enrollment_id where a.package_id = :packageid");
     q.bindValue(":packageid", packageid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
     while (q.next()) {
-        int drugRowID = q.value("drug_id").toInt();
+        int interventionRowID = q.value("intervention_id").toInt();
         int subjectRowID = q.value("subject_id").toInt();
         int projectRowID = q.value("project_id").toInt();
 
@@ -3540,8 +3537,8 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
             sqrlSubjectRowID = sqrlSubject.GetObjectID();
         }
 
-        /* add the drug to the package */
-        drug d(drugRowID, n);
+        /* add the intervention to the package */
+        intervention d(interventionRowID, n);
         if (!d.isValid) continue;
 
         squirrelIntervention sqrlIntervention(sqrl.GetDatabaseUUID());
