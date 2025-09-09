@@ -46,7 +46,7 @@ public:
     QString BIDSoutputDir;
     QString dataCopyMethod;
     QString depDir;
-    QString depLevel;
+    QString depLevel; /* study (default) or subject */
     QString depLinkType;
     QString desc;
     QString dirStructure;

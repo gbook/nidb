@@ -508,7 +508,7 @@
 		<input type="hidden" name="nidbdatatype" value="<?=$nidbdatatype?>">
 
 <?
-		/* Updating for number of columns based on type (drug, measure, Vital) */
+		/* Updating for number of columns based on type (drug, observation, Vital) */
 
 		if ($nidbdatatype == 'm') {
 			$Cols = "eleven";
@@ -697,7 +697,7 @@
 					
 					<td>
 						<select name="nidbvariablename" required>
-						  <option value='drugname'> Drugname</option>
+						  <option value='interventionname'> Drugname</option>
 						  <? while ($row = mysqli_fetch_array($resultcols, MYSQLI_ASSOC)) {
 						  $colsname=$row['COLUMN_NAME'];
 						  if (strpos($colsname, "_id") == false){
@@ -1033,7 +1033,7 @@
                         	$Flg = $Flg + 1;}
 			}
 
-	// Find the nidb data type (measure, vitals and dose/drug)
+	// Find the nidb data type (observation, vitals and dose/drug)
 	$sqlstringType = "SELECT DISTINCT(nidb_datatype) as D_Type FROM redcap_import_mapping WHERE project_id = '$projectid'and nidb_instrumentname='$nidbinstrument'";
 	$resultType = MySQLiQuery($sqlstringType, __FILE__, __LINE__);
 	$rowType = mysqli_fetch_array($resultType, MYSQLI_ASSOC);
@@ -1112,7 +1112,7 @@
 	
 
 			
-	// Find the nidb data type (measure, vitals and dose/drug)
+	// Find the nidb data type (observation, vitals and dose/drug)
 			//	$sqlstringType = "SELECT DISTINCT(nidb_datatype) as D_Type FROM redcap_import_mapping WHERE redcap_form = '$inst' and project_id = '$projectid'and nidb_instrumentname='$nidbinstrument' and redcap_fieldtype='value' and `redcap_event`='$redcapevent'";
 	$sqlstringType ="SELECT DISTINCT(nidb_datatype) as D_Type FROM redcap_import_mapping WHERE project_id = '$projectid'and nidb_instrumentname='$nidbinstrument'";
 	$resultType = MySQLiQuery($sqlstringType, __FILE__, __LINE__);
@@ -1235,7 +1235,7 @@
 					$instid = MeasureInstr($inst);
 					if ($RCtime == ''){ $mdate = $info[$RCdate];} else{
 						$mdate = $info[$RCdate].' '.$info[$RCtime];}
-                                                $Reg = Addmeasures($subjectid[$Flg],$projectid, $redcapfield, $info[$redcapfield],$inst, $instid, $info[$RCnotes], $info[$RCrater], $mdate,$mdate,'');
+                                                $Reg = Addobservations($subjectid[$Flg],$projectid, $redcapfield, $info[$redcapfield],$inst, $instid, $info[$RCnotes], $info[$RCrater], $mdate,$mdate,'');
 
 						if ($Reg == 0){
 							array_push($CID ,$subjectid[$Flg]);
@@ -1286,7 +1286,7 @@
 	/* ---------------- TRANSFERING MEASURE'S DATA -----------*/
 	/*--------------------------------------------------------*/
 
-        function Addmeasures($subjectid,$projectid, $measurename, $measurevalue,$Form_name, $instid, $measurenotes, $measurerater, $measurestdate,$measureenddate,$measuredesc) {
+        function Addobservations($subjectid,$projectid, $observationname, $observationvalue,$Form_name, $instid, $observationnotes, $observationrater, $observationstdate,$observationenddate,$observationdesc) {
 
                 $sqlstringEn = "SELECT enrollment_id FROM `enrollment` WHERE subject_id in (select subject_id from subjects where subjects.uid = '$subjectid' ) and project_id = '$projectid' ";
 
@@ -1295,37 +1295,37 @@
                 $rowEn = mysqli_fetch_array($resultEn, MYSQLI_ASSOC);
                 $enrollmentid = $rowEn['enrollment_id'];
 
-                $sqlstringA = "select measurename_id from measurenames where measure_name = '$measurename'";
+                $sqlstringA = "select observationname_id from observationnames where observation_name = '$observationname'";
 		
 
                 $resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
                 if (mysqli_num_rows($resultA) > 0) {
                         $rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-                        $measurenameid = $rowA['measurename_id'];
+                        $observationnameid = $rowA['observationname_id'];
                 }
                 else {
 			// Getting the redcap field description from redcap corresponding project
-			$rcfielddesc=  getrclabels($projectid,$measurename);
+			$rcfielddesc=  getrclabels($projectid,$observationname);
 	//		echo $rcfielddesc."<br>";
 
         	        $rcfielddesc =  str_replace("'","''",$rcfielddesc);
                 	$rcfielddesc =  str_replace('"',"''",$rcfielddesc);
 
 
-			$sqlstringA = "insert into measurenames (measure_name, measure_desc) values ('$measurename','$rcfielddesc')";
+			$sqlstringA = "insert into observationnames (observation_name, observation_desc) values ('$observationname','$rcfielddesc')";
                         //echo "$sqlstringA\n";
                         $resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-                        $measurenameid = mysqli_insert_id($GLOBALS['linki']);
+                        $observationnameid = mysqli_insert_id($GLOBALS['linki']);
                 }
 
-                 $measurenotes = str_replace("'","''",$measurenotes);
-                 $measurenotes = str_replace('"',"''",$measurenotes);
-                 $measuredesc =  str_replace("'","''",$measuredesc);
-                 $measuredesc =  str_replace('"',"''",$measuredesc);
+                 $observationnotes = str_replace("'","''",$observationnotes);
+                 $observationnotes = str_replace('"',"''",$observationnotes);
+                 $observationdesc =  str_replace("'","''",$observationdesc);
+                 $observationdesc =  str_replace('"',"''",$observationdesc);
 
 
                  if ($enrollmentid!=''){
-                $sqlstring = "insert ignore into measures (enrollment_id, measure_dateentered,instrumentname_id, measurename_id, measure_notes,measure_desc,  measure_rater,measure_value,measure_startdate,measure_enddate,measure_entrydate,measure_createdate,measure_modifydate) values ($enrollmentid, now(),$instid,$measurenameid, '$measurenotes','$measuredesc','$measurerater','$measurevalue',NULLIF('$measurestdate',''),NULLIF('$measureenddate',''),now(),now(),now()) on duplicate key update measure_value='$measurevalue', measure_modifydate=now()";
+                $sqlstring = "insert ignore into observations (enrollment_id, observation_entrydate,instrumentname_id, observationname_id, observation_notes,observation_desc,  observation_rater,observation_value,observation_startdate,observation_enddate,observation_entrydate,observation_createdate,observation_modifydate) values ($enrollmentid, now(),$instid,$observationnameid, '$observationnotes','$observationdesc','$observationrater','$observationvalue',NULLIF('$observationstdate',''),NULLIF('$observationenddate',''),now(),now(),now()) on duplicate key update observation_value='$observationvalue', observation_modifydate=now()";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		 return 1;}
 		 else{  return 0;}
@@ -1350,19 +1350,19 @@
                 $rowEn = mysqli_fetch_array($resultEn, MYSQLI_ASSOC);
                 $enrollmentid = $rowEn['enrollment_id'];
 
-                $sqlstringA = "select drugname_id from drugnames where drug_name = '$drugname'";
+                $sqlstringA = "select interventionname_id from interventionnames where intervention_name = '$interventionname'";
                 //echo "$sqlstringA\n";
                 $resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
                 if (mysqli_num_rows($resultA) > 0) {
                         $rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-                        $drugname_id = $rowA['drugname_id'];
+                        $interventionname_id = $rowA['interventionname_id'];
                 }
 		else {
-			 $sqlstringA = "insert into drugnames (drug_name) values ('$drugname')";
+			 $sqlstringA = "insert into interventionnames (intervention_name) values ('$interventionname')";
                         //echo "$sqlstringA\n";
                         $resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-                        $drugname_id = mysqli_insert_id($GLOBALS['linki']);
-                        echo 'A new drugname added!';?><br><?
+                        $interventionname_id = mysqli_insert_id($GLOBALS['linki']);
+                        echo 'A new interventionname added!';?><br><?
                 }
 
 
@@ -1370,7 +1370,7 @@
 		$drug_notes = str_replace('"',"''",$drug_notes);
 
 		if ($enrollmentid!=''){
-			$sqlstring = "insert ignore into drugs (enrollment_id, drug_startdate, drug_enddate, drug_doseamount, drug_dosefrequency, drug_route, drugname_id, drug_type, drug_dosekey, drug_doseunit, drug_frequencymodifier, drug_frequencyvalue, drug_frequencyunit, drug_dosedesc, drug_rater, drug_notes, drug_entrydate, drug_recordcreatedate, drug_recordmodifydate) values ($enrollmentid,'$drug_startdate',NULLIF('$drug_enddate',''), NULLIF('$drug_doseamount',''), NULLIF('$drug_dosefrequency',''),NULLIF('$drug_route',''), '$drugname_id', NULLIF('$drug_type',''), NULLIF('$drug_dosekey',''), NULLIF('$drug_doseunit',''), NULLIF('$drug_frequencymodifier',''), NULLIF('$drug_frequencyvalue',''), NULLIF('$drug_frequencyunit',''), NULLIF('$drug_dosedesc',''), NULLIF('$drug_rater',''), NULLIF('$drug_notes',''),'$drug_entrydate',now(),now()) on duplicate key update drug_doseunit = '$drug_doseunit', drug_recordmodifydate = now()";
+			$sqlstring = "insert ignore into drugs (enrollment_id, startdate, enddate, doseamount, dosefrequency, administration_route, interventionname_id, intervention_type, dosekey, doseunit, drug_frequencymodifier, drug_frequencyvalue, drug_frequencyunit, dosedesc, drug_rater, drug_notes, drug_entrydate, drug_recordcreatedate, drug_recordmodifydate) values ($enrollmentid,'$startdate',NULLIF('$enddate',''), NULLIF('$doseamount',''), NULLIF('$dosefrequency',''),NULLIF('$administration_route',''), '$interventionname_id', NULLIF('$intervention_type',''), NULLIF('$dosekey',''), NULLIF('$doseunit',''), NULLIF('$drug_frequencymodifier',''), NULLIF('$drug_frequencyvalue',''), NULLIF('$drug_frequencyunit',''), NULLIF('$dosedesc',''), NULLIF('$drug_rater',''), NULLIF('$drug_notes',''),'$drug_entrydate',now(),now()) on duplicate key update doseunit = '$doseunit', drug_recordmodifydate = now()";
 		//	PrintSQL($sqlstring);	
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);}
            	else { 
@@ -1441,14 +1441,14 @@
 
 	function MeasureInstr($Formname){
 
-                 $sqlstringinst = "SELECT measureinstrument_id FROM measureinstruments WHERE instrument_name ='$Formname'";
+                 $sqlstringinst = "SELECT observationinstrument_id FROM observationinstruments WHERE instrument_name ='$Formname'";
                  $resultinst = MySQLiQuery($sqlstringinst,__FILE__,__LINE__);
                  if (mysqli_num_rows($resultinst) > 0) {
                            $row = mysqli_fetch_array($resultinst, MYSQLI_ASSOC);
-                           $instid = $row['measureinstrument_id'];
+                           $instid = $row['observationinstrument_id'];
                  }
                  else {
-                           $sqlstringinst = "insert ignore into measureinstruments (instrument_name) values ('$Formname')";
+                           $sqlstringinst = "insert ignore into observationinstruments (instrument_name) values ('$Formname')";
                            $result = MySQLiQuery($sqlstringinst, __FILE__, __LINE__);
                            $instid = mysqli_insert_id($GLOBALS['linki']);
                               }

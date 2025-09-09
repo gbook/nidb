@@ -249,10 +249,10 @@ int moduleMiniPipeline::Run() {
 
                                     /* insert the value */
                                     //QSqlQuery q2;
-                                    if (csvType == "measure") {
+                                    if (csvType == "observation") {
                                         int n=0;
                                         QString m;
-                                        if (!InsertMeasure(enrollmentID, s.studyid, s.seriesid, csvVariableName, csvValue, csvInstrument, startDate, endDate, csvDuration.toInt(), "minipipeline-" + mp.name, n, m))
+                                        if (!InsertObservation(enrollmentID, s.studyid, s.seriesid, csvVariableName, csvValue, csvInstrument, startDate, endDate, csvDuration.toInt(), "minipipeline-" + mp.name, n, m))
                                             AppendMiniPipelineLog(m, mpjobid);
                                         else
                                             numInserts += n;
@@ -260,8 +260,8 @@ int moduleMiniPipeline::Run() {
                                     else if (csvType == "vital") {
                                         numInserts += InsertVital(enrollmentID, csvVariableName, csvValue, csvNotes, csvInstrument, startDate, endDate, csvDuration.toInt());
                                     }
-                                    else if (csvType == "drug") {
-                                        numInserts += InsertDrug(enrollmentID, startDate, endDate, csvValue, "", "", "", "", "", "", 0.0, "");
+                                    else if (csvType == "intervention") {
+                                        numInserts += InsertIntervention(enrollmentID, startDate, endDate, csvValue, "", "", "", "", "", "", 0.0, "");
                                     }
                                     else {
                                         AppendMiniPipelineLog(n->Log("Error. Invalid value type [" + csvType + "]"), mpjobid);
@@ -382,9 +382,9 @@ qint64 moduleMiniPipeline::CopyAllSeriesData(QString modality, qint64 seriesid, 
 
 
 /* ---------------------------------------------------------- */
-/* --------- InsertMeasure ---------------------------------- */
+/* --------- InsertObservation ---------------------------------- */
 /* ---------------------------------------------------------- */
-bool moduleMiniPipeline::InsertMeasure(qint64 enrollmentid, qint64 studyid, qint64 seriesid, QString measureName, QString value, QString instrument, QDateTime startDate, QDateTime endDate, int duration, QString rater, int &numInserts, QString &msg) {
+bool moduleMiniPipeline::InsertObservation(qint64 enrollmentid, qint64 studyid, qint64 seriesid, QString observationName, QString value, QString instrument, QDateTime startDate, QDateTime endDate, int duration, QString rater, int &numInserts, QString &msg) {
 
     QSqlQuery q;
     numInserts = 0;
@@ -395,45 +395,45 @@ bool moduleMiniPipeline::InsertMeasure(qint64 enrollmentid, qint64 studyid, qint
         return false;
     }
 
-    /* get the measure name ID */
-    int measureNameID;
-    q.prepare("select measurename_id from measurenames where measure_name = :measurename");
-    q.bindValue(":measurename", measureName);
+    /* get the observation name ID */
+    int observationNameID;
+    q.prepare("select observationname_id from observationnames where observation_name = :observationname");
+    q.bindValue(":observationname", observationName);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.size() > 0) {
         q.first();
-        measureNameID = q.value("measurename_id").toInt();
+        observationNameID = q.value("observationname_id").toInt();
     }
     else {
-        q.prepare("insert into measurenames (measure_name) values (:measurename)");
-        q.bindValue(":measurename", measureName);
+        q.prepare("insert into observationnames (observation_name) values (:observationname)");
+        q.bindValue(":observationname", observationName);
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-        measureNameID = q.lastInsertId().toInt();
+        observationNameID = q.lastInsertId().toInt();
     }
 
     /* get the instrument name ID */
     int instrumentNameID;
-    q.prepare("select measureinstrument_id from measureinstruments where instrument_name = :instrument");
+    q.prepare("select observationinstrument_id from observationinstruments where instrument_name = :instrument");
     q.bindValue(":instrument", instrument);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.size() > 0) {
         q.first();
-        instrumentNameID = q.value("measureinstrument_id").toInt();
+        instrumentNameID = q.value("observationinstrument_id").toInt();
     }
     else {
-        q.prepare("insert into measureinstruments (instrument_name) values (:instrument)");
+        q.prepare("insert into observationinstruments (instrument_name) values (:instrument)");
         q.bindValue(":instrument", instrument);
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         instrumentNameID = q.lastInsertId().toInt();
     }
 
-    q.prepare("insert ignore into measures (enrollment_id, study_id, series_id, instrumentname_id, measurename_id, measure_value, measure_rater, measure_startdate, measure_enddate, measure_duration, measure_entrydate, measure_createdate, measure_modifydate) values (:enrollmentid, :studyid, :seriesid, :instrumentnameid, :measurenameid, :value, :measurerater, :startdate, :enddate, :duration, now(), now(), now()) on duplicate key update study_id = :studyid, series_id = :seriesid, measurename_id = :measurenameid, measure_value = :value, instrumentname_id = :instrumentnameid, measure_startdate = :startdate, measure_enddate = :enddate, measure_modifydate = now()");
+    q.prepare("insert ignore into observations (enrollment_id, study_id, series_id, instrumentname_id, observationname_id, observation_value, observation_rater, observation_startdate, observation_enddate, observation_duration, observation_entrydate, observation_createdate, observation_modifydate) values (:enrollmentid, :studyid, :seriesid, :instrumentnameid, :observationnameid, :value, :observationrater, :startdate, :enddate, :duration, now(), now(), now()) on duplicate key update study_id = :studyid, series_id = :seriesid, observationname_id = :observationnameid, observation_value = :value, instrumentname_id = :instrumentnameid, observation_startdate = :startdate, observation_enddate = :enddate, observation_modifydate = now()");
     q.bindValue(":enrollmentid", enrollmentid);
     q.bindValue(":studyid", studyid);
     q.bindValue(":seriesid", seriesid);
-    q.bindValue(":measurenameid", measureNameID);
+    q.bindValue(":observationnameid", observationNameID);
     q.bindValue(":value", value);
-    q.bindValue(":measurerater", rater);
+    q.bindValue(":observationrater", rater);
     q.bindValue(":instrumentnameid", instrumentNameID);
     q.bindValue(":startdate", startDate.toString(Qt::ISODate));
     q.bindValue(":enddate", endDate.toString(Qt::ISODate));
@@ -487,38 +487,22 @@ int moduleMiniPipeline::InsertVital(qint64 enrollmentID, QString vitalName, QStr
 
 
 /* ---------------------------------------------------------- */
-/* --------- InsertDrug ------------------------------------- */
+/* --------- InsertIntervention ----------------------------- */
 /* ---------------------------------------------------------- */
-int moduleMiniPipeline::InsertDrug(qint64 enrollmentID, QDateTime startDate, QDateTime endDate, QString doseAmount, QString doseFreq, QString route, QString drugName, QString drugType, QString doseUnit, QString doseFreqModifier, double doseFreqValue, QString doseFreqUnit) {
+int moduleMiniPipeline::InsertIntervention(qint64 enrollmentID, QDateTime startDate, QDateTime endDate, QString doseAmount, QString doseFreq, QString route, QString interventionName, QString interventionType, QString doseUnit, QString doseFreqModifier, double doseFreqValue, QString doseFreqUnit) {
 
     doseFreq = "";
 
     QSqlQuery q;
 
-    /* get the drug name ID */
-    int drugNameID;
-    q.prepare("select vitalname_id from vitalnames where vital_name = :vitalname");
-    q.bindValue(":vitalname", drugName);
-    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    if (q.size() > 0) {
-        q.first();
-        drugNameID = q.value("vitalname_id").toInt();
-    }
-    else {
-        q.prepare("insert into vitalnames (vital_name) values (:vitalname)");
-        q.bindValue(":vitalname", drugName);
-        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
-        drugNameID = q.lastInsertId().toInt();
-    }
-
-    q.prepare("insert ignore into drugs (enrollment_id, drug_startdate, drug_enddate, drug_doseamount, drug_route, drugname_id, drug_type, drug_doseunit, drug_frequencymodifier, drug_frequencyvalue, drug_frequencyunit, vital_createdate, vital_modifydate) values (:enrollmentid, :startdate, :enddate, :doseamount, :route, :drugnameid, :drugtype, :doseunit, :freqmodifier, :freqvalue, :frequnit, now(), now()) on duplicate key update drugname_id = :drugnameid, drug_startdate = :startdate, drug_enddate = :enddate, drug_doseamount = :doseamount, drug_route = :route, drug_type = :drugtype, drug_doseunit = :doseunit, drug_frequencymodifier = :freqmodifier, drug_frequencyvalue = :freqvalue, drug_frequencyunit = :frequnit, drug_modifydate = now()");
+    q.prepare("insert ignore into interventions (enrollment_id, startdate, enddate, doseamount, administration_route, intervention_name, intervention_type, doseunit, frequencymodifier, frequencyvalue, frequencyunit, createdate, modifydate) values (:enrollmentid, :startdate, :enddate, :doseamount, :route, :interventionname, :interventiontype, :doseunit, :freqmodifier, :freqvalue, :frequnit, now(), now()) on duplicate key update intervention_name = :interventionname, startdate = :startdate, enddate = :enddate, doseamount = :doseamount, administration_route = :route, type = :interventiontype, doseunit = :doseunit, frequencymodifier = :freqmodifier, frequencyvalue = :freqvalue, frequencyunit = :frequnit, modifydate = now()");
     q.bindValue(":enrollmentid", enrollmentID);
     q.bindValue(":startdate", startDate);
     q.bindValue(":enddate", endDate);
     q.bindValue(":doseamount", doseAmount);
     q.bindValue(":route", route);
-    q.bindValue(":drugnameid", drugNameID);
-    q.bindValue(":drugtype", drugType);
+    q.bindValue(":interventionname", interventionName);
+    q.bindValue(":interventiontype", interventionType);
     q.bindValue(":doseunit", doseUnit);
     q.bindValue(":freqmodifier", doseFreqModifier);
     q.bindValue(":freqvalue", doseFreqValue);

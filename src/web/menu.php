@@ -48,14 +48,14 @@
 		/* subjects */
 		?><a href="subjects.php" class="<? if ($page=="subjects.php" || $page=="groups.php" || $page == "series") { echo "active"; } ?> item">Subjects</a><?
 		/* projects */
-		?><a href="projects.php" class="<? if ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="studies.php" || $page=="measures.php" || $page=="minipipeline.php" || $page=="templates.php" || $page == "experiment.php") { echo "active"; } ?> item">Projects</a><?
+		?><a href="projects.php" class="<? if ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="studies.php" || $page=="observations.php" || $page=="minipipeline.php" || $page=="templates.php" || $page == "experiment.php" || $page == "mriqc.php") { echo "active"; } ?> item">Projects</a><?
 		/* pipelines */
 		if ($GLOBALS['cfg']['enablepipelines']) {
 			?><a href="pipelines.php" class="<? if ($page=="pipelines.php" || $page=="analysis.php") { echo "active"; } ?> item">Pipelines</a><?
 		}
 		/* data */
 		if ($GLOBALS['cfg']['enabledatamenu']) {
-			?><a href="import.php" class="<? if ($page=="import.php" || $page=="importimaging.php" || $page=="importlog.php" || $page=="publicdownloads.php" || $page=="downloads.php" || $page=="datasetrequests.php") { echo "active"; } ?> item">Data</a><?
+			?><a href="import.php" class="<? if ($page=="import.php" || $page=="importimaging.php" || $page=="importnonimaging.php" || $page=="importlog.php" || $page=="publicdownloads.php" || $page=="downloads.php" || $page=="datasetrequests.php") { echo "active"; } ?> item">Data</a><?
 		}
 		/* calendar */
 		if ($GLOBALS['cfg']['enablecalendar']) {
@@ -113,11 +113,11 @@
 		elseif ($page=="subjects.php" || $page=="groups.php") {
 			?><a href="subjects.php" class="<? if ($page=="subjects.php"){ echo "active"; } ?> item">Subjects</a><?
 			?><a href="groups.php" class="<? if ($page=="groups.php"){ echo "active"; } ?> item">Groups</a><?
-			?><a href="measures.php" class="<? if ($page=="measures.php"){ echo "active"; } ?> item">Measures</a><?
+			?><a href="observations.php" class="<? if ($page=="observations.php"){ echo "active"; } ?> item">Observations</a><?
 		}
 		
 		/* studies, which are displayed under the projects menu */
-		elseif ($page == "studies.php" || $page=="measures.php" || $page == "managefiles.php" || $page == "series.php") {
+		elseif ($page == "studies.php" || $page=="observations.php" || $page == "managefiles.php" || $page == "series.php") {
 			$studyid = GetVariable("id");
 			$seriesid = GetVariable("seriesid");
 			$modality = GetVariable("modality");
@@ -143,7 +143,7 @@
 				<a href="studies.php?id=<?=$studyid?>" class="active item">Study <?=$studynum?></a>
 				<?
 			}
-			elseif (($enrollmentid != "") && ($page == "measures.php")) {
+			elseif (($enrollmentid != "") && ($page == "observations.php")) {
 				list($uid, $subjectid, $altuid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
 				?>
 				<a href="projects.php?action=displayprojectinfo&id=<?=$projectid?>" class="item"><?=$projectname?></a>
@@ -153,7 +153,7 @@
 		}
 		
 		/* projects sub-menu */
-		elseif ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="projectassessments.php" || $page=="studies.php" || $page=="minipipeline.php" || $page=="templates.php" || $page=="datadictionary.php" || $page == "experiment.php") {
+		elseif ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="projectassessments.php" || $page=="studies.php" || $page=="minipipeline.php" || $page=="templates.php" || $page=="datadictionary.php" || $page == "experiment.php" || $page == "mriqc.php") {
 			
 			//if ($page=="projectchecklist.php" || $page=="projectassessments.php" || $page=="minipipeline.php" || $page=="templates.php" || $page=="datadictionary.php" || $page == "experiment.php") {
 			$projectid = GetVariable("projectid");
@@ -208,6 +208,7 @@
 					<i class="dropdown icon"></i>
 					<div class="menu">
 						<a class="item" href="importimaging.php?action=newimportform&projectid=<?=$projectid?>" style="color: #222"><i class="file import icon"></i> Import imaging</a>
+						<a class="item" href="importnonimaging.php?action=newimportform&projectid=<?=$projectid?>" style="color: #222"><i class="file import icon"></i> Import Non-imaging</a>
 						<a class="item" href="redcapimport.php?action=importsettings&projectid=<?=$projectid?>" style="color: #222"><i class="red redhat icon"></i> Global Redcap settings</a>
 						<a class="item" href="redcapimportsubjects.php?action=default&projectid=<?=$projectid?>" style="color: #222"><i class="red redhat icon"></i> Redcap subject import</a>
 						<a class="item" href="redcaptonidb.php?action=default&projectid=<?=$projectid?>" style="color: #222"><i class="red redhat icon"></i> Import from Redcap</a>
@@ -215,11 +216,12 @@
 				</div>
 
 				<div class="ui dropdown item">
-					<div class="text"><i class="cog icon"></i>Admin</div>
+					<div class="text"><i class="cog icon"></i>Project admin</div>
 					<i class="dropdown icon"></i>
 					<div class="menu">
 						<? if ($GLOBALS['isadmin']) { ?>
-							<a class="item" class="item" href="projects.php?action=resetqa&id=<?=$projectid?>"><i class="red sync icon"></i> Reset MRI QA</a>
+							<a class="item" class="item" href="projects.php?action=resetqa&id=<?=$projectid?>"><i class="red sync icon"></i> Reset basic QA</a>
+							<a class="item" class="item" href="projects.php?action=resetmriqc&id=<?=$projectid?>"><i class="red sync icon"></i> Reset advanced mriqc</a>
 						<? } ?>
 						<div class="item"><b>Remote connection params</b><br>
 							Project ID: <?=$projectid?><br>
@@ -268,12 +270,13 @@
 		}
 		
 		/* data sub-menu */
-		elseif ($page=="import.php" || $page=="importimaging.php" || $page=="importlog.php" || $page=="publicdownloads.php" || $page=="publicdatasets.php" || $page=="downloads.php" || $page=="datasetrequests.php" || $page=="packages.php") {
+		elseif ($page=="import.php" || $page=="importimaging.php" || $page=="importnonimaging.php" || $page=="importlog.php" || $page=="publicdownloads.php" || $page=="publicdatasets.php" || $page=="downloads.php" || $page=="datasetrequests.php" || $page=="packages.php") {
 			
 			if ($GLOBALS['cfg']['enabledatamenu']) {
 				?><a href="import.php" class="<? if (($page == "import.php") && ($action != "idmapper")) { echo "active"; } ?> blue item">Import</a><?
 				?><a href="packages.php" class="<? if ($page == "packages.php") { echo "active"; } ?> blue item">Packages</a><?
 				?><a href="importimaging.php" class="<? if ($page == "importimaging.php") { echo "active"; } ?> blue item">Import Imaging</a><?
+				?><a href="importnonimaging.php" class="<? if ($page == "importnonimaging.php") { echo "active"; } ?> blue item">Import Non-imaging</a><?
 				?><a href="import.php?action=idmapper" class="<? if (($page == "import.php") && ($action == "idmapper")) { echo "active"; } ?> blue item">ID mapper</a><?
 				?><a href="importlog.php" class="<? if ($page == "importlog.php") { echo "active"; } ?> blue item">Import Log</a><?
 				?><a href="publicdownloads.php" class="<? if ($page == "publicdownloads.php") { echo "active"; } ?> blue item">Public Downloads</a><?

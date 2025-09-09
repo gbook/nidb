@@ -38,11 +38,10 @@ win32-g++ {
 SOURCES += \
     analysis.cpp \
     archiveio.cpp \
-    drug.cpp \
     experiment.cpp \
     imageio.cpp \
+    intervention.cpp \
     main.cpp \
-    measure.cpp \
     minipipeline.cpp \
     moduleBackup.cpp \
     moduleCluster.cpp \
@@ -56,6 +55,7 @@ SOURCES += \
     moduleQC.cpp \
     moduleUpload.cpp \
     nidb.cpp \
+    observation.cpp \
     performanceMetric.cpp \
     pipeline.cpp \
     remotenidbconnection.cpp \
@@ -80,10 +80,9 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 HEADERS += \
     analysis.h \
     archiveio.h \
-    drug.h \
     experiment.h \
     imageio.h \
-    measure.h \
+    intervention.h \
     minipipeline.h \
     moduleBackup.h \
     moduleCluster.h \
@@ -97,6 +96,7 @@ HEADERS += \
     moduleQC.h \
     moduleUpload.h \
     nidb.h \
+    observation.h \
     performanceMetric.h \
     pipeline.h \
     remotenidbconnection.h \

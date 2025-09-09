@@ -181,17 +181,28 @@
 									</div>
 								</div>
 								<div class="content">
-								<? if ($filesize < 1000000) {?>
-								<pre style="border: 1px solid #aaa; background-color: #eee; padding:5px; white-space: pre-wrap;"><?=htmlspecialchars(file_get_contents($filename))?></pre>
-								<? } else { ?>
+								<?
+									if ($filesize < 1000000) {
+										$contents = file_get_contents($filename);
+										if ($contents === false) {
+											$error = error_get_last();
+											echo "Error getting file contents: $error<br>";
+										}
+										else {
+											$contents = htmlspecialchars($contents, ENT_SUBSTITUTE);
+											?>
+											<pre style="border: 1px solid #aaa; background-color: #eee; padding:5px; white-space: pre-wrap;"><?=$contents?></pre>
+											<?
+										}
+									} else { ?>
 									File larger than 1MB, showing the first 500,000 bytes and the last 500,000 bytes<br><pre style="border: 1px solid #aaa; background-color: #eee; padding:5px">
-	<?=htmlspecialchars(file_get_contents($filename, null,null,0,500000))?>
+	<?=preg_replace('/\x1B/', '', htmlspecialchars(file_get_contents($filename, null,null,0,500000), ENT_SUBSTITUTE))?>
 									
 									
 			... ... ...
 									
 									
-	<?=htmlspecialchars(file_get_contents($filename, null,null,$filesize-500000))?>
+	<?=preg_replace('/\x1B/', '', htmlspecialchars(file_get_contents($filename, null,null,$filesize-500000), ENT_SUBSTITUTE))?>
 								</pre>
 								<?
 								}

@@ -461,7 +461,7 @@ QString nidb::SQLQuery(QSqlQuery &q, QString function, QString file, int line, b
 
     /* if we get to this point, there is a SQL error */
     QString err = QString("SQL ERROR (Module: %1 Function: %2 File: %3 Line: %4)\n\nSQL (1) [%5]\n\nSQL (2) [%6]\n\nDatabase error [%7]\n\nDriver error [%8]").arg(module).arg(function).arg(file).arg(line).arg(sql).arg(q.executedQuery()).arg(q.lastError().databaseText()).arg(q.lastError().driverText());
-    SendEmail(cfg["adminemail"], "SQL error", err);
+    //SendEmail(cfg["adminemail"], "SQL error", err);
     qDebug() << err;
     qDebug() << q.lastError();
     Log(err);
@@ -553,6 +553,7 @@ void nidb::ModuleDBCheckOut() {
     q.bindValue(":pid", pid);
     SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
+    Log("Module checked out of database");
     Print("Module checked out of database");
 }
 
@@ -568,6 +569,7 @@ void nidb::ModuleDBCheckOut() {
 void nidb::ModuleRunningCheckIn() {
 
     Print(".",false);
+    Log("Module running check-in");
 
     QSqlQuery q;
     if (!checkedin) {
@@ -641,7 +643,7 @@ QString nidb::Log(QString msg, QString func, int wrap, bool timeStamp) {
                 Print("Unable to write to log file!");
         }
         else {
-            Print("Unable to write to log file. Maybe the logfile hasn't been created yet? Tried to write [" + msg + "] to [" + log.fileName() + "]");
+            Print("Unable to write to log file. Logfile may not exist yet? Tried to write [" + msg + "] to [" + log.fileName() + "]");
         }
     }
 

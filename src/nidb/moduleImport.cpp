@@ -60,7 +60,7 @@ bool moduleImport::Run() {
     /* parse remotely imported data */
     ret |= ParseRemotelyImportedData();
 
-    n->Log("Leaving the upload module");
+    n->Log("Leaving the import module");
     return ret;
 
 }
@@ -300,7 +300,6 @@ bool moduleImport::SetImportRequestStatus(int importid, QString status, QString 
 }
 
 
-
 /* ---------------------------------------------------------- */
 /* --------- ArchiveLocal ----------------------------------- */
 /* ---------------------------------------------------------- */
@@ -309,12 +308,15 @@ bool moduleImport::SetImportRequestStatus(int importid, QString status, QString 
  * @return true if any data processed, false otherwise
  */
 bool moduleImport::ArchiveLocal() {
-    n->Log("Entering the import module");
+    //n->Log("Entering the import module");
 
     bool ret(false);
 
-    /* before archiving the directory, delete any rows older than 4 days from the importlogs table */
-    QSqlQuery q("delete from importlogs where importstartdate < date_sub(now(), interval 4 day)");
+    /* before archiving the directory, delete any rows older than 14 days from the importlogs table */
+    QSqlQuery q("delete from importlogs where importstartdate < date_sub(now(), interval 14 day)");
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+
+    q.prepare("delete from import_file_log where importfile_datetime < date_sub(now(), interval 14 day)");
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
     io->SetUploadID(0);
@@ -327,34 +329,36 @@ bool moduleImport::ArchiveLocal() {
      * which contains additional information about the files being imported, such as project and site
     */
     QStringList dirs = FindAllDirs(n->cfg["incomingdir"],"",false, false);
-    n->Log(QString("Found [%1] directories in [%2]").arg(dirs.size()).arg(n->cfg["incomingdir"]));
-    n->Log("Directories found: " + dirs.join("|"));
-    foreach (QString dir, dirs) {
-        n->Log("Found dir ["+dir+"]");
-        QString fulldir = QString("%1/%2").arg(n->cfg["incomingdir"]).arg(dir);
-        if (ParseDirectory(fulldir, dir.toInt())) {
-            /* check if the directrory is empty */
-            if (QDir(fulldir).entryInfoList(QDir::NoDotAndDotDot|QDir::AllEntries).count() == 0) {
-                QString m;
-                if (RemoveDir(fulldir, m))
-                    n->Log("Removed directory [" + fulldir + "]");
-                else
-                    n->Log("Error removing directory [" + fulldir + "] [" + m + "]");
+    if (dirs.size() > 0) {
+        n->Log(QString("incomingdir [%2] contains [%1] sub-directories").arg(dirs.size()).arg(n->cfg["incomingdir"]));
+        n->Log("Directories found: " + dirs.join("|"));
+        foreach (QString dir, dirs) {
+            n->Log("Found dir ["+dir+"]");
+            QString fulldir = QString("%1/%2").arg(n->cfg["incomingdir"]).arg(dir);
+            if (ParseDirectory(fulldir, dir.toInt())) {
+                /* check if the directrory is empty */
+                if (QDir(fulldir).entryInfoList(QDir::NoDotAndDotDot|QDir::AllEntries).count() == 0) {
+                    QString m;
+                    if (RemoveDir(fulldir, m))
+                        n->Log("Removed directory [" + fulldir + "]");
+                    else
+                        n->Log("Error removing directory [" + fulldir + "] [" + m + "]");
 
-                ret = ret | true;
+                    ret = ret | true;
+                }
             }
-        }
-        else
-            n->Log(QString("ParseDirectory(%1,%2) returned false").arg(fulldir).arg(dir.toInt()));
+            else
+                n->Log(QString("ParseDirectory(%1,%2) returned false").arg(fulldir).arg(dir.toInt()));
 
-        n->ModuleRunningCheckIn();
-        if (!n->ModuleCheckIfActive()) {
-            n->Log("Module is now inactive, stopping the module");
-            return ret;
+            n->ModuleRunningCheckIn();
+            if (!n->ModuleCheckIfActive()) {
+                n->Log("Module disabled. Stopping module.");
+                return ret;
+            }
         }
     }
 
-    n->Log("Leaving the import module");
+    //n->Log("Leaving the import module");
 
     return ret;
 }
@@ -487,13 +491,11 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
     bool okToDeleteDir = true;
 
     /* ----- parse all files in the directory ----- */
-    Print("Checkpoint ParseDirectory_1");
     QStringList files = FindAllFiles(dir, "*");
-    Print("Checkpoint ParseDirectory_2");
     qint64 numfiles = files.size();
-    Print("Checkpoint ParseDirectory_3");
-    n->Log(QString("Found [%1] files in [%2]").arg(numfiles).arg(dir));
+    n->Log(QString("Found %1 total files in path [%2]").arg(numfiles).arg(dir));
     int processedFileCount(0);
+    int numFilesTooYoung(0);
     foreach (QString file, files) {
 
         perf.numFilesRead++;
@@ -505,6 +507,7 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
             if (fsize < 1) {
                 n->Log(QString("File [%1] - size [%2] is 0 bytes!").arg(file).arg(fsize));
                 SetImportStatus(importid, "error", "File has size of 0 bytes", QString("File [" + file + "] is empty"), true);
+                perf.numFilesError++;
                 QString m;
                 if (!MoveFile(file, n->cfg["problemdir"], m))
                     n->Log(QString("Unable to move [%1] to [%2], with error [%3]").arg(file).arg(n->cfg["problemdir"]).arg(m));
@@ -521,7 +524,9 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
         QDateTime now = QDateTime::currentDateTime();
         qint64 fileAgeInSec = now.secsTo(QFileInfo(file).lastModified());
         if (fileAgeInSec > -60) {
-            n->Log(QString("File [%1] has an age of [%2] sec").arg(file).arg(fileAgeInSec));
+            n->Debug(QString("File [%1] has an age of [%2] sec").arg(file).arg(fileAgeInSec));
+            numFilesTooYoung++;
+            perf.numFilesIgnored++;
             okToDeleteDir = false;
             continue;
         }
@@ -533,7 +538,7 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
             n->Log(QString("Processed %1 files...").arg(processedFileCount));
             n->ModuleRunningCheckIn();
             if (!n->ModuleCheckIfActive()) {
-                n->Log("Module is now inactive, stopping the module");
+                n->Log("Module disabled. Stopping module.");
                 //okToDeleteDir = false;
                 n->Log(perf.End());
                 return true;
@@ -627,11 +632,36 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
                 if (n->cfg["enablecsa"] == "1") csa = true;
                 QString binpath = n->cfg["nidbdir"] + "/bin";
                 if (img->GetImageFileTags(file, binpath, csa, tags, m)) {
+
                     dcmseries[tags["SeriesInstanceUID"]].append(file);
+
+                    QFileInfo fi(file);
+                    fi.lastModified();
+
+                    QSqlQuery q;
+                    q.prepare("insert into import_file_log (filename, importfile_datetime, file_datetime, file_size, file_type, Modality, PatientID, StudyUID, SeriesUID, StudyDescription, SeriesDescription, SeriesNumber, AcquisitionNumber, InstanceNumber) values (:fileName, now(), :fileDatetime, :fileSize, :fileType, :Modality, :PatientID, :StudyUID, :SeriesUID, :StudyDescription, :SeriesDescription, :SeriesNumber, :AcquisitionNumber, :InstanceNumber)");
+                    q.bindValue(":fileName", file);
+                    q.bindValue(":fileDatetime", fi.lastModified());
+                    q.bindValue(":fileSize", fi.size());
+                    q.bindValue(":fileType", "DICOM");
+                    q.bindValue(":Modality", tags["Modality"]);
+                    q.bindValue(":PatientID", tags["PatientID"]);
+                    q.bindValue(":StudyUID", tags["StudyUID"]);
+                    q.bindValue(":SeriesUID", tags["SeriesUID"]);
+                    q.bindValue(":StudyDescription", tags["StudyDescription"]);
+                    q.bindValue(":SeriesDescription", tags["SeriesDescription"]);
+                    q.bindValue(":SeriesNumber", tags["SeriesNumber"]);
+                    q.bindValue(":AcquisitionNumber", tags["AcquisitionNumber"]);
+                    q.bindValue(":InstanceNumber", tags["InstanceNumber"]);
+
+                    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+
                 }
                 else {
                     qint64 fsize = QFileInfo(file).size();
                     n->Log(QString("Unable to parse file [%1] (size [%2]) as a DICOM file. Moving to [%3]").arg(file).arg(fsize).arg(n->cfg["problemdir"]));
+
+                    n->Log(m);
 
                     QSqlQuery q;
                     m = "Not a DICOM file, moving to the problem directory";
@@ -656,13 +686,15 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
         }
     }
 
-    n->Log(QString("dcmseries contains [%1] entries").arg(dcmseries.size()));
+    n->Log(QString("Ignoring %1 files that are less than 60 seconds old").arg(numFilesTooYoung));
+
+    //n->Log(QString("dcmseries contains [%1] entries").arg(dcmseries.size()));
     /* done reading all of the files in the directory (more may show up, but we'll get to those later)
      * now archive them */
     for(QMap<QString, QStringList>::iterator a = dcmseries.begin(); a != dcmseries.end(); ++a) {
         QString seriesuid = a.key();
 
-        n->Log(QString("Getting list of files for seriesuid [" + seriesuid + "] - number of files is [%1]").arg(dcmseries[seriesuid].size()));
+        n->Log(QString("Archiving %1 files for SeriesUID [" + seriesuid + "]").arg(dcmseries[seriesuid].size()));
         QStringList files2 = dcmseries[seriesuid];
 
         performanceMetric perf2;
@@ -676,7 +708,7 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
         n->ModuleRunningCheckIn();
         /* check if this module should be running now or not */
         if (!n->ModuleCheckIfActive()) {
-            n->Log("Not supposed to be running right now");
+            n->Log("Module disabled. Stopping module.");
             /* cleanup so this import can continue another time */
             QSqlQuery q;
             q.prepare("update import_requests set import_status = '', import_enddate = now(), archivereport = :archivereport where importrequest_id = :importid");

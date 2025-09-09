@@ -40,11 +40,11 @@ QString performanceMetric::End() {
 	double t = static_cast<double>(elapsedTime) + 0.0000001;
     double bytesReadPerSec = n/t;
 
-    QString str = QString("Performance metrics\nElapsed time: %1s").arg(elapsedTime);
+    QString str = QString("Performance metrics  -  Elapsed time: %1s").arg(elapsedTime);
 
-    str += QString("\nSubjects [%1]  Studies [%2]  Series [%3]").arg(numSubjects).arg(numStudies).arg(numSeries);
-    str += QString("\nFilesRead [%1]  FilesArchived [%2]  FilesIgnored [%3]  FilesError [%4]").arg(numFilesRead).arg(numFilesArchived).arg(numFilesIgnored).arg(numFilesError);
-    str += QString("\nRead rate: Bytes/Sec [%1]").arg(bytesReadPerSec);
+    str += QString("  Subjects [%1]  Studies [%2]  Series [%3]").arg(numSubjects).arg(numStudies).arg(numSeries);
+    str += QString("  FilesRead [%1]  FilesArchived [%2]  FilesIgnored [%3]  FilesError [%4]").arg(numFilesRead).arg(numFilesArchived).arg(numFilesIgnored).arg(numFilesError);
+    str += QString("  Read rate: Bytes/Sec [%1]").arg(bytesReadPerSec);
 
     return str;
 }

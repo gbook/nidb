@@ -179,6 +179,10 @@
 			ResetProjectQA($id);
 			DisplayStudiesTable2($id);
 			break;
+		case 'resetmriqc':
+			ResetProjectMRIQC($id);
+			DisplayStudiesTable2($id);
+			break;
 		case 'show_rdoc_list':
 			DisplayRDoCList($rdoc_label);
 			break;
@@ -466,6 +470,26 @@
 			$seriesid = $row['mrseries_id'];
 			echo "$seriesid<br>";
 			ResetQA($seriesid);
+		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ResetProjectMRIQC ------------------ */
+	/* -------------------------------------------- */
+	function ResetProjectMRIQC($id) {
+		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
+		if ($id == "") {
+			Error("Invalid project ID");
+		}
+		
+		/* get list of series associated with this project */
+		$sqlstring = "select mrseries_id from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $id";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$seriesid = $row['mrseries_id'];
+			echo "$seriesid<br>";
+			ResetMRIQC($seriesid);
 		}
 	}
 
@@ -1614,7 +1638,7 @@
 			}
 			
 			function onBtnExport() {
-				gridOptions.api.exportDataAsCsv( {allColumns: false} );
+				gridApi.exportDataAsCsv();
 			}			
 
 			// Grid Options are properties passed to the grid
@@ -1859,7 +1883,7 @@
 			}
 			
 			function onBtnExport() {
-				gridOptions.api.exportDataAsCsv( {allColumns: false} );
+				gridApi.exportDataAsCsv();
 			}			
 
 			// Grid Options are properties passed to the grid
@@ -1916,8 +1940,8 @@
 						cellRenderer: function(params) {
 							return '<a href="studies.php?id=' + params.data.studyid + '"><b>' + params.value + '</b></a>'
 						},
-						headerCheckboxSelection: true,
-						checkboxSelection: true
+						//headerCheckboxSelection: true,
+						//checkboxSelection: true
 					},
 					{ headerName: "Visit", field: "visit", editable: true },
 					{ headerName: "Study Datetime", field: "studydate", editable: false },
@@ -1938,8 +1962,12 @@
 					'rowhighlight': 'data.rowhighlight == 1',
 				},
 
-				rowSelection: { mode: 'multiRow' }, // allow rows to be selected
-				rowMultiSelectWithClick: true,
+				rowSelection: {
+					mode: 'multiRow',
+					enableSelectionWithoutKeys: true,
+					headerCheckbox: true,
+					checkboxes: true
+				}, // allow rows to be selected
 				animateRows: false, // have rows animate to new positions when sorted
 				//onFirstDataRendered: onFirstDataRendered,
 				stopEditingWhenCellsLoseFocus: true,
@@ -2853,17 +2881,19 @@
 					}
 				}
 				
-				/* get the measures */
-				$sqlstringA = "select c.instrument_name, b.measure_name, a.* from measures a left join measurenames b on a.measurename_id = b.measurename_id left join measureinstruments c on a.instrumentname_id = c.measureinstrument_id where a.enrollment_id = '$enrollmentid'";
+				/* get the observations */
+				$sqlstringA = "select * from observations where enrollment_id = '$enrollmentid'";
 				//PrintSQL($sqlstringA);
 				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-					$measurename = "[" . $rowA['instrument_name'] . "] - " . $rowA['measure_name'];
-					if ($rowA['measure_type'] == 's') {	$measurevalue = $rowA['measure_valuestring']; }
-					else { $measurevalue = $rowA['measure_valuenum']; }
+					$observationname = "[" . $rowA['instrument_name'] . "] - " . $rowA['observation_name'];
+					$observationvalue = $rowA['observation_value'];
+					
+					//if ($rowA['observation_type'] == 's') {	$observationvalue = $rowA['observation_valuestring']; }
+					//else { $observationvalue = $rowA['observation_valuenum']; }
 					if ($seriesaltdesc != "") {
-						$seriesdescs[$uid]['measures'][$measurename] = $measurevalue;
-						$uniqueseries['measures'][$measurename]++;
+						$seriesdescs[$uid]['observations'][$observationname] = $observationvalue;
+						$uniqueseries['observations'][$observationname]++;
 					}
 				}
 			}

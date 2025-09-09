@@ -68,9 +68,11 @@ int main(int argc, char *argv[])
     QCommandLineOption optDebug(QStringList() << "d" << "debug", "Enable debugging");
     QCommandLineOption optQuiet(QStringList() << "q" << "quiet", "Dont print headers and checks");
     QCommandLineOption optReset(QStringList() << "r" << "reset", "Reset, and then run, the specified module");
+    QCommandLineOption optKeepLog(QStringList() << "l" << "log", "Keep log, even if nothing done");
     p.addOption(optDebug);
     p.addOption(optQuiet);
     p.addOption(optReset);
+    p.addOption(optKeepLog);
 
     /* command line options that take values */
     QCommandLineOption optSubModule(QStringList() << "u" <<"submodule", "For running on cluster. Sub-modules [ resultinsert, pipelinecheckin, updateanalysis, checkcompleteanalysis ]", "submodule");
@@ -100,7 +102,7 @@ int main(int argc, char *argv[])
     p.process(a);
 
     QString module;
-    bool debug, quiet, reset;
+    bool debug, quiet, reset, cmdKeepLog;
 
     const QStringList args = p.positionalArguments();
     if (args.size() > 0)
@@ -109,6 +111,7 @@ int main(int argc, char *argv[])
     debug = p.isSet(optDebug);
     quiet = p.isSet(optQuiet);
     reset = p.isSet(optReset);
+    cmdKeepLog = p.isSet(optKeepLog);
     QString paramSubModule = p.value(optSubModule).trimmed();
     QString paramAnalysisID = p.value(optAnalysisID).trimmed();
     QString paramStatus = p.value(optStatus).trimmed();
@@ -258,8 +261,8 @@ int main(int argc, char *argv[])
                         else
                             Print("Unrecognized module [" + module + "]");
 
-                        /* always keep the logfile in debug mode */
-                        if ((n->cfg["debug"].toInt()) || (keepLog))
+                        /* always keep the logfile in debug mode, or if keepLog command line option is set */
+                        if ((n->cfg["debug"].toInt()) || keepLog || cmdKeepLog)
                             keepLog = true;
 
                         n->ModuleRemoveLogFile(keepLog);

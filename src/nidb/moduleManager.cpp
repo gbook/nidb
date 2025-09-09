@@ -47,9 +47,9 @@ moduleManager::~moduleManager()
 int moduleManager::Run() {
     n->Log("Entering the fileio module");
 
-    /* get list of modules with a last checkin older than 1 hours, ignore the backup module because writing tapes can take days, and ignore the export module because large exports can take many hours with no checkin */
+    /* get list of modules with a last checkin older than 3 hours, ignore the backup module because writing tapes can take days, and ignore the export module because large exports can take many hours with no checkin */
     QSqlQuery q;
-    q.prepare("select * from module_procs where last_checkin < date_sub(now(), interval 1 hour) or last_checkin is null and module_name not in ('backup', 'export')");
+    q.prepare("select * from module_procs where last_checkin < date_sub(now(), interval 3 hour) or last_checkin is null and module_name not in ('backup', 'export')");
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
     if (q.size() > 0) {

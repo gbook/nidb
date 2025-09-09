@@ -198,7 +198,7 @@
 		$email = mysqli_real_escape_string($GLOBALS['linki'], $email);
 		$maritalstatus = mysqli_real_escape_string($GLOBALS['linki'], $maritalstatus);
 		$smokingstatus = mysqli_real_escape_string($GLOBALS['linki'], $smokingstatus);
-		$cancontact = mysqli_real_escape_string($GLOBALS['linki'], $cancontact) + 0;
+		$cancontact = (bool)mysqli_real_escape_string($GLOBALS['linki'], $cancontact);
 		$tags = mysqli_real_escape_string($GLOBALS['linki'], $tags);
 		$altuidlist = $altuids;
 		$guid = mysqli_real_escape_string($GLOBALS['linki'], $guid);
@@ -211,7 +211,7 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		/* update the tags */
-		SetTags('subject','',$id,$tags);
+		SetTags('subject', $id, $tags);
 		
 		StartSQLTransaction();
 		
@@ -308,7 +308,7 @@
 		if ($GLOBALS['debug']) { PrintSQL($sqlstring3); }
 		$result3 = MySQLiQuery($sqlstring3,__FILE__,__LINE__);
 		
-		SetTags('subject','',$SubjectRowID,$tags);
+		SetTags('subject', $SubjectRowID, $tags);
 		
 		foreach ($altuids as $altuid) {
 			$altuid = trim($altuid);
@@ -546,7 +546,7 @@
 			$sqlstring = "SELECT max(a.study_num) 'max' FROM studies a left join enrollment b on a.enrollment_id = b.enrollment_id  WHERE b.subject_id = $subjectid";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$oldstudynum = $row['max'] + 0;
+			$oldstudynum = (int)$row['max'];
 			$studynum = $oldstudynum + 1;
 			
 			$sqlstring = "insert into studies (enrollment_id, study_num, study_modality, study_type, study_datetime, study_desc, study_operator, study_performingphysician, study_site, study_notes, study_status, study_createdby, study_createdate) values ($enrollmentid, $studynum, upper('$modality'), '$visit', now(), '$desc' , '$operator', '$physician', '$site', '$notes', 'complete', '" . $_SESSION['username'] . "', now())";
@@ -727,7 +727,7 @@
 		$guid = $row['guid'];
 		$cancontact = $row['cancontact'];
 
-		$tags = GetTags('subject', 'dx', $id);
+		$tags = GetTags('subject', $id);
 		$altuids = GetAlternateUIDs($id,0);
 		
 		list($lastname, $firstname) = explode("^",$name);
@@ -1121,7 +1121,7 @@
 		$cancontact = $row['cancontact'];
 		$isactive = $row['isactive'];
 
-		$tags = GetTags('subject', '', $id);
+		$tags = GetTags('subject', $id);
 		
 		/* get the family UID */
 		$sqlstring = "select b.family_uid, b.family_name from family_members a left join families b on a.family_id = b.family_id where a.subject_id = $id";
@@ -1258,7 +1258,7 @@
 								</tr>
 								<tr>
 									<td class="right aligned"><b>Subject tags</b></td>
-									<td><?=DisplayTags($tags, '', 'subject')?></td>
+									<td><?=DisplayTags($tags, 'subject')?></td>
 								</tr>
 							</table>
 							<button class="ui primary button" onClick="window.location.href='subjects.php?action=editform&id=<?=$id?>'; return false;" style="width: 200px"> <i class="edit icon"></i>Edit subject</button>
@@ -1474,7 +1474,7 @@
 											</tr>
 											<tr>
 												<td class="right aligned"><b>Tags</b></td>
-												<td><?=DisplayTags(GetTags('enrollment','dx',$enrollmentid),'dx', 'enrollment')?></td>
+												<td><?=DisplayTags(GetTags('enrollment', $enrollmentid), 'enrollment')?></td>
 											</tr>
 											<? if (($enroll_enddate != "0000-00-00 00:00:00") && ($enroll_enddate != "")) { ?>
 											<tr>
@@ -1748,7 +1748,7 @@
 											
 											
 											<!-- -------------------------------------------------------------- -->
-											<!-- -------- Observation (Assessment, measure, vitals) section --- -->
+											<!-- -------- Observation (Assessment, observation, vitals) section --- -->
 											<!-- -------------------------------------------------------------- -->
 											<!--<div class="ui top attached blue segment">
 												<div class="ui two column grid">
@@ -1857,175 +1857,31 @@
 											-->
 											
 											<!-- ----------------------------------------------------- -->
-											<!-- -------------------- Measures ----------------------- -->
-											<!-- ----------------------------------------------------- -->
-											<!--<div class="ui top attached blue segment">
-												<div class="ui two column grid">
-													<div class="column">
-														<h3 class="header"><i class="clipboard list icon"></i> Phenotypic measures</h3>
-													</div>
-													<div class="right aligned column">
-														<a class="ui basic button" href="measures.php?enrollmentid=<?=$enrollmentid?>"><i class="edit icon"></i> Edit measures</a>
-													</div>
-												</div>
-											</div>
-											<div class="ui bottom attached center aligned segment">
-												<?
-													//$sqlstring3 = "select count(*) 'count' from measures a left join measurenames b on a.measurename_id = b.measurename_id where enrollment_id = $enrollmentid";
-													//$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
-													//$row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC);
-													//$numrows = $row3['count'];
-													//if ($numrows > 0) {
-														?><span style="font-size: larger;"><b><?=$numrows?></b> measures</span><?
-													//}
-													//else {
-														?>
-														No measures
-														<?
-													//}
-												?>
-											</div> -->
-
-											<!-- ----------------------------------------------------- -->
 											<!-- -------------------- Observations ------------------- -->
 											<!-- ----------------------------------------------------- -->
 											<div class="ui top attached blue segment">
-												<h3 class="header"><i class="clipboard list icon"></i> Observations (measures, vitals, assessments)</h3>
+												<h3 class="header"><i class="clipboard list icon"></i> Observations (observations, vitals, assessments)</h3>
 											</div>
 											<div class="ui bottom attached center aligned segment">
 												<div class="ui two column grid">
 													<div class="right aligned column">
 													<?
-														$sqlstring3 = "select count(*) 'count' from measures a left join measurenames b on a.measurename_id = b.measurename_id where enrollment_id = $enrollmentid";
+														$sqlstring3 = "select count(*) 'count' from observations where enrollment_id = $enrollmentid";
 														$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
 														$row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC);
 														$numrows = $row3['count'];
 														if ($numrows > 0) {
-															?><span style="font-size: larger;"><b><?=$numrows?></b> measures</span><?
+															?><span style="font-size: larger;"><b><?=$numrows?></b> observations</span><?
 														}
 														else {
 															?>
-															No measures
+															No observations
 															<?
 														}
 													?>
 													</div>
 													<div class="left aligned column">
-														<a class="ui basic button" href="measures.php?enrollmentid=<?=$enrollmentid?>"><i class="edit icon"></i> Edit measures</a>
-													</div>
-												</div>
-
-												<div class="ui two column grid">
-													<div class="right aligned column">
-													<?
-														$sqlstring3 = "select count(*) 'count' from vitals a left join vitalnames b on a.vitalname_id = b.vitalname_id where enrollment_id = $enrollmentid";
-														$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
-														$row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC);
-														$numrows = $row3['count'];
-														if ($numrows > 0) {
-															?><span style="font-size: larger;"><b><?=$numrows?></b> vitals</span><?
-														}
-														else {
-															?>
-															No vitals
-															<?
-														}
-													?>
-													</div>
-													<div class="left aligned column">
-														<a class="ui basic button" href="measures.php?enrollmentid=<?=$enrollmentid?>"><i class="edit icon"></i> Edit measures</a>
-													</div>
-												</div>
-
-												<div class="ui two column grid">
-													<div class="right aligned column">
-													<?
-														$sqlstring3 = "select a.*, b.form_title from assessments a left join assessment_forms b on a.form_id = b.form_id where a.enrollment_id = $enrollmentid and b.project_id = $projectid";
-														$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
-													
-														if (mysqli_num_rows($result3) > 0) {
-														?>
-															<table width="100%" class="ui very compact small selectable celled table" style="background-color: #FFFFFF; border-radius: 8px; width: 100%; padding:5px">
-																<thead>
-																	<th>Instrument</th>
-																	<th>Date</th>
-																	<th>Experimentor</th>
-																	<th>Rater</th>
-																	<th>Complete?</th>
-																</thead>
-																<tbody>
-																<?
-																while ($row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC)) {
-																	$experiment_id = $row3['experiment_id'];
-																	$form_title = $row3['form_title'];
-																	$exp_admindate = $row3['exp_admindate'];
-																	$experimentor = $row3['experimentor'];
-																	$rater_username = $row3['rater_username'];
-																	$iscomplete = $row3['iscomplete'];
-																	if ($iscomplete) { $action = "view"; } else { $action = "edit"; }
-																	?>
-																	<tr>
-																		<td><a href="assessments.php?action=<?=$action?>&experimentid=<?=$experiment_id?>&projectid=<?=$projectid?>"><?=$form_title?></a></td>
-																		<td><?=$exp_admindate?></td>
-																		<td><?=$experimentor?></td>
-																		<td><?=$rater_username?></td>
-																		<td>
-																			<?
-																			if ($iscomplete) { echo "&#10004;"; }
-																			else {
-																				?>
-																				<a href="assessments.php?action=completed&experimentid=<?=$experiment_id?>&projectid=<?=$projectid?>">Mark as complete</a>
-																				<?
-																			}
-																			?>
-																		</td>
-																	</tr>
-																	<?
-																}
-																?>
-																</tbody>
-															</table>
-														<?
-														}
-														else {
-															?>
-															No assessments
-															<?
-														}
-													?>
-													</div>
-													<div class="left aligned column">
-														<? if (!$enrolled) { ?>
-														<span style="color: #666">Subject is un-enrolled. Cannot create new studies</span>
-														<? } else { ?>
-
-															<? if (!$enrolled) { $disabled = "disabled"; } else { $disabled = ""; } ?>
-															<form action="assessments.php" method="post">
-															<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
-															<input type="hidden" name="projectid" value="<?=$projectid?>">
-															<input type="hidden" name="action" value="create">
-															
-															<div class="ui small labeled action input">
-																<label for="formid" class="ui label grey" style="width: 150px">Add Assessment</label>
-																<select class="ui selection dropdown" name="formid" <?=$disabled?> required>
-																	<option value="">(Select assessment)</option>
-																	<?
-																		$sqlstringB = "select * from assessment_forms where form_ispublished = 1 and project_id = $projectid order by form_title";
-																		$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
-																		while ($rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC)) {
-																			$form_id = $rowB['form_id'];
-																			$form_title = $rowB['form_title'];
-																			$projectid = $rowB['project_id'];
-																			?>
-																			<option value="<?=$form_id?>" style="<?=$style?>"><?=$form_title?></option>
-																			<?
-																		}
-																	?>
-																</select>
-																<button class="ui small primary button" type="submit" value="Enroll" <?=$disabled?>>Create</button>
-															</div>
-															</form>
-														<? } ?>
+														<a class="ui basic button" href="observations.php?enrollmentid=<?=$enrollmentid?>"><i class="edit icon"></i> Edit observations</a>
 													</div>
 												</div>
 											</div>
@@ -2039,13 +1895,13 @@
 														<h3 class="header"><i class="pills icon"></i> Interventions</h3>
 													</div>
 													<div class="right aligned column">
-														<a class="ui basic button" href="drugs.php?enrollmentid=<?=$enrollmentid?>"><i class="edit icon"></i> Interventions</a>
+														<a class="ui basic button" href="interventions.php?enrollmentid=<?=$enrollmentid?>"><i class="edit icon"></i> Interventions</a>
 													</div>
 												</div>
 											</div>
 											<div class="ui bottom attached center aligned segment">
 												<?
-													$sqlstring3 = "select a.*,b.*,  date_format(a.drug_startdate,'%m-%d-%Y; %r') 'startdate', date_format(a.drug_enddate,'%m-%d-%Y; %r') 'enddate' from drugs a left join drugnames b on a.drugname_id = b.drugname_id where enrollment_id = $enrollmentid";
+													$sqlstring3 = "select *, date_format(startdate,'%m-%d-%Y; %r') 'startdate', date_format(enddate,'%m-%d-%Y; %r') 'enddate' from interventions where enrollment_id = $enrollmentid";
 													$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
 													$numrows = mysqli_num_rows($result3);
 													if ($numrows > 0) {
@@ -2061,14 +1917,14 @@
 														<tbody>
 														<?
 														while ($row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC)) {
-															$drug_id = $row3['drug_id'];
+															$intervention_id = $row3['intervention_id'];
 															$startdate = $row3['startdate'];
 															$enddate = $row3['enddate'];
-															$drug_dose = $row3['drug_doseamount'];
-															$drug_dosefreq = $row3['drug_dosefrequency'];
-															$drug_route = $row3['drug_route'];
-															$drug_name = $row3['drug_name'];
-															$drug_type = $row3['drug_type'];
+															$dose = $row3['doseamount'];
+															$dosefreq = $row3['dosefrequency'];
+															$administration_route = $row3['administration_route'];
+															$intervention_name = $row3['intervention_name'];
+															$intervention_type = $row3['intervention_type'];
 
 															if ($enddate=='')  {
 																$enddate = 'TO-DATE';
@@ -2076,10 +1932,10 @@
 
 															?>
 															<tr>
-																<td><?=$drug_name?></td>
-																<td><?=$drug_type?></td>
-																<td><?=$drug_route?></td>
-																<td><?=$drug_dose?> / <?=$drug_dosefreq?></td>
+																<td><?=$intervention_name?></td>
+																<td><?=$intervention_type?></td>
+																<td><?=$administration_route?></td>
+																<td><?=$dose?> / <?=$dosefreq?></td>
 																<td><?=$startdate?> - <?=$enddate?></td>
 															</tr>
 															<?
@@ -2097,67 +1953,6 @@
 												?>
 											</div>
 											
-											<!-- ----------------------------------------------------- -->
-											<!-- -------------------- Vitals ------------------------- -->
-											<!-- ----------------------------------------------------- -->
-											<!--<div class="ui top attached blue segment">
-												<div class="ui two column grid">
-													<div class="column">
-														<h3 class="header"><i class="stethoscope icon"></i> Vitals</h3>
-													</div>
-													<div class="right aligned column">
-														<a class="ui basic button" href="vitals.php?enrollmentid=<?=$enrollmentid?>"><i class="edit icon"></i> Edit vitals</a>
-													</div>
-												</div>
-											</div>
-											<div class="ui bottom attached center aligned segment">
-												<?
-													//$sqlstring4 = "select a.*,b.*,  date_format(a.vital_startdate,'%m-%d-%Y; %r') 'vdate' from vitals a left join vitalnames b on a.vitalname_id = b.vitalname_id where enrollment_id = $enrollmentid";
-													//$result4 = MySQLiQuery($sqlstring4, __FILE__, __LINE__);
-													//$numrows = mysqli_num_rows($result4);
-													//if ($numrows > 0) {
-														?>
-														<details>
-														<summary>List of Vitals</summary>
-														<table width="100%" class="smalldisplaytable" style="background-color: #FFFFFF; border-radius: 8px; width: 100%; padding:5px">
-															<thead align="left">
-																<th>Vitals</th>
-																<th>Type</th>
-																<th>Value</th>
-																<th>Notes</th>
-																<th>Date (mm/dd/yyyy; hh:mm:ss AM/PM)</th>
-															</thead>
-															<tbody>
-														<?
-														//while ($row4 = mysqli_fetch_array($result4, MYSQLI_ASSOC)) {
-															//$drug_id = $row4['vital_id'];
-															//$vdate = $row4['vdate'];
-															//$vital_value = $row4['vital_value'];
-															//$vital_notes = $row4['vital_notes'];
-															//$vital_name = $row4['vital_name'];
-															//$vital_type = $row4['vital_type'];
-															?>
-															<tr>
-																<td size="15"><?=$vital_name?></td>
-																<td size="15"><?=$vital_type?></td>
-																<td size="15"><?=$vital_value?></td>
-																<td size="15"><?=$vital_notes?></td>
-																<td size="15"><?=$vdate?></td>
-															</tr>
-															<?
-														//}
-														?>
-															</tbody>
-														</table>
-														<?
-													//}
-													//else {
-														?>
-														No vitals
-														<?
-													//}
-												?>
-											</div> -->
 										</div>
 								</div> <!-- end the layout grid within the enrollment -->
 							<? } ?>
@@ -2317,7 +2112,7 @@
 			$guid = $row['guid'];
 			$cancontact = $row['cancontact'];
 			
-			$tags = GetTags('subject','dx',$id);
+			$tags = GetTags('subject', $id);
 			list($lastname, $firstname) = explode("^",$name);
 		
 			/* get privacy information */
@@ -2590,7 +2385,7 @@
 			<div class="field">
 				<label>Tags</label>
 				<div class="field">
-					<input type="text" size="50" name="tags" value="<?=implode2(', ',GetTags('subject','',$id))?>" placeholder="comma separated list">
+					<input type="text" size="50" name="tags" value="<?=implode2(', ',GetTags('subject', $id))?>" placeholder="comma separated list">
 				</div>
 			</div>
 			

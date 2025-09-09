@@ -50,7 +50,7 @@
 	$enddatetime = GetVariable("enddatetime");
 	$resolution = GetVariable("resolution");
 	$selectedprotocols = GetVariable("selectedprotocols");
-	$allmeasures = GetVariable("allmeasures");
+	$allobservations = GetVariable("allobservations");
 
 	if (is_null($enrollmentid) || trim($enrollmentid) == "")
 		$enrollmentid = $id;
@@ -64,10 +64,10 @@
 	/* determine action */
 	switch ($action) {
 		case 'displaytimeline':
-			DisplayTimeline($enrollmentid, $startdatetime, $enddatetime, $resolution, $selectedprotocols, $allmeasures);
+			DisplayTimeline($enrollmentid, $startdatetime, $enddatetime, $resolution, $selectedprotocols, $allobservations);
 			break;
 		default:
-			DisplayTimeline($enrollmentid, $startdatetime, $enddatetime, $resolution, $selectedprotocols, $allmeasures);
+			DisplayTimeline($enrollmentid, $startdatetime, $enddatetime, $resolution, $selectedprotocols, $allobservations);
 	}
 	
 	
@@ -77,7 +77,7 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayTimeline -------------------- */
 	/* -------------------------------------------- */
-	function DisplayTimeline($enrollmentid, $startdatetime, $enddatetime, $resolution, $selectedprotocols, $allmeasures) {
+	function DisplayTimeline($enrollmentid, $startdatetime, $enddatetime, $resolution, $selectedprotocols, $allobservations) {
 		
 		if ((is_null($enrollmentid)) || ($enrollmentid < 0) || ($enrollmentid == "")) {
 			?><span class="error">Invalid enrollment ID</div><?
@@ -245,35 +245,35 @@
 				}
 			}
 			
-			/* get measures */
-			if ($allmeasures) {
-				$sqlstringA = "select a.*, b.*, c.* from measures a left join measurenames b on a.measurename_id = b.measurename_id left join measureinstruments c on a.instrumentname_id = c.measureinstrument_id where a.enrollment_id = $enrollmentid order by b.measure_name";
+			/* get observations */
+			if ($allobservations) {
+				$sqlstringA = "select a.*, b.*, c.* from observations a left join observationnames b on a.observationname_id = b.observationname_id left join observationinstruments c on a.instrumentname_id = c.observationinstrument_id where a.enrollment_id = $enrollmentid order by b.observation_name";
 				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-					$measure_name = $rowA['measure_name'];
+					$observation_name = $rowA['observation_name'];
 					$instrument_name = $rowA['instrument_name'];
-					$measure_value = $rowA['measure_value'];
-					$measure_startdate = $rowA['measure_startdate'];
-					$measure_enddate = $rowA['measure_enddate'];
-					$measure_duration = $rowA['measure_duration'];
+					$observation_value = $rowA['observation_value'];
+					$observation_startdate = $rowA['observation_startdate'];
+					$observation_enddate = $rowA['observation_enddate'];
+					$observation_duration = $rowA['observation_duration'];
 					
 					$series[$i]['studynum'] = '';
 					$series[$i]['seriesnum'] = '';
 					$series[$i]['modality'] = 'Measure';
-					$series[$i]['studydate'] = $measure_startdate;
-					$series[$i]['seriesdate'] = $measure_startdate;
-					$series[$i]['protocol'] = $measure_name;
+					$series[$i]['studydate'] = $observation_startdate;
+					$series[$i]['seriesdate'] = $observation_startdate;
+					$series[$i]['protocol'] = $observation_name;
 					$series[$i]['age'] = 0;
 					$series[$i]['studysite'] = '';
 					$series[$i]['studytype'] = $instrument_name;
-					$series[$i]['duration'] = $measure_duration;
+					$series[$i]['duration'] = $observation_duration;
 					$i++;
 				}
 			}
 			
 			$modalities = array_unique($modalities);
 			
-			DisplayOptionsTable($protocols, $modalities, $enrollmentid, $selectedprotocols, $allmeasures, $startdatetime, $enddatetime, $mindate, $maxdate);
+			DisplayOptionsTable($protocols, $modalities, $enrollmentid, $selectedprotocols, $allobservations, $startdatetime, $enddatetime, $mindate, $maxdate);
 			
 			$series = array_msort($series, array('seriesdate'=>SORT_ASC, 'seriesnum'=>SORT_ASC, 'modality'=>SORT_DESC));
 			?>
@@ -356,7 +356,7 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayOptionsTable ---------------- */
 	/* -------------------------------------------- */
-	function DisplayOptionsTable($protocols, $modalities, $enrollmentid, $selectedprotocols, $allmeasures, $startdatetime, $enddatetime, $mindate, $maxdate) {
+	function DisplayOptionsTable($protocols, $modalities, $enrollmentid, $selectedprotocols, $allobservations, $startdatetime, $enddatetime, $mindate, $maxdate) {
 		
 		natsort($modalities);
 		
@@ -426,7 +426,7 @@
 		</table>
 		<hr>
 		<b>Measures</b>
-		<input type="checkbox" name="allmeasures" value="1" <? if ($allmeasures) { echo "checked"; } ?>> Include all measures
+		<input type="checkbox" name="allobservations" value="1" <? if ($allobservations) { echo "checked"; } ?>> Include all observations
 		<hr>
 		<b>Series Date</b><br>
 		Data range <?=$mindate?> to <?=$maxdate?><br>

@@ -365,7 +365,7 @@
 	/* ------- MakeSQLList ------------------------ */
 	/* -------------------------------------------- */
 	function MakeSQLList($str) {
-		$parts = preg_split('/[\^,;\-\'\s\t\n\f\r]+/', $str);
+		$parts = preg_split('/[\^,;\'\s\t\n\f\r]+/', $str);
 		foreach ($parts as $part) {
 			$newparts[] = "'" . trim($part) . "'";
 		}
@@ -871,12 +871,12 @@
 	function GetAlternateUIDs($subjectid, $enrollmentid) {
 
 		//echo "<br><br>GetAlternateUIDs($subjectid, $enrollmentid)<br><br>";
+		$altuids = array();
 		
 		if ($subjectid == "") {
-			return "";
+			return $altuids;
 		}
 	
-		$altuids = array();
 		/* need the type equality too because '' evaluates to 0... */
 		if ($enrollmentid === '') {
 			$sqlstring = "select * from subject_altuid where subject_id = '$subjectid' order by altuid";
@@ -1053,6 +1053,9 @@
 		if (is_null($arr))
 			return "";
 		
+		if (!is_array($arr))
+			return "";
+		
 		if (count($arr) > 1) {
 			return implode($chr,$arr);
 		}
@@ -1124,12 +1127,56 @@
 				/* delete from the mr_qa table */
 				$sqlstring = "delete from mr_qa where mrseries_id = $seriesid";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			}
+			else {
+				$errormsgs[] = "Invalid MR series ID";
+			}
+		}
+
+		if (count($errormsgs) > 0) {
+			$errormsg = "<ul>";
+			foreach ($errormsgs as $m) {
+				$errormsg .= "<li>" . $m;
+			}
+			$errormsg .= "</ul>";
+			Error($errormsg);
+		}
+		
+		if (count($noticemsgs) > 0) {
+			$noticemsg = "<ul>";
+			foreach ($noticemsgs as $m) {
+				$noticemsg .= "<li>" . $m;
+			}
+			$noticemsg .= "</ul>";
+			Notice($noticemsg);
+		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ResetMRIQC ------------------------- */
+	/* -------------------------------------------- */
+	function ResetMRIQC($seriesids) {
+		
+		if (is_array($seriesids)) {
+			$seriesids = mysqli_real_escape_array($GLOBALS['linki'], $seriesids);
+		}
+		else {
+			$seriesids = array(mysqli_real_escape_string($GLOBALS['linki'], $seriesids));
+		}
+		
+		$errormsgs = array();
+		$noticemsgs = array();
+		
+		foreach ($seriesids as $seriesid) {
+			if ((is_numeric($seriesid)) && ($seriesid != "")) {
 				
 				/* delete from the qc* tables */
-				$sqlstring = "select qcmoduleseries_id from qc_moduleseries where series_id = $seriesid and modality = 'mr'";
+				$sqlstring = "select * from qc_moduleseries a left join qc_modules b on a.qcmodule_id = b.qcmodule_id where a.series_id = $seriesid and a.modality = 'mr'";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$qcmoduleseriesid = $row['qcmoduleseries_id'];
+					$modulename = $row['module_name'];
 
 					if ($qcmoduleseriesid != "") {
 						$sqlstringA = "delete from qc_results where qcmoduleseries_id = $qcmoduleseriesid";
@@ -1139,21 +1186,20 @@
 						$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
 						
 						/* delete the qa directory */
-						//list($path, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid,'mr');
 						list($path, $seriespath, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid,'mr');
 						
-						//$qapath = "$path/qa";
+						$qcpath = "$path/$modulename";
 						if (($uid == "") || ($studynum == "") || ($studyid == "") || ($subjectid == "")) {
 							$errormsgs[] = "Could not delete QA data. One of the following is blank uid[$uid] studynum[$studynum] studyid[$studyid] subjectid[$subjectid]";
 						}
 						else {
 							/* check if the path is valid */
-							if (file_exists($qapath)) {
-								$systemstring = "rm -rv $qapath";
-								$noticemsgs[] = "Deleted <code>$qapath</code>";
+							if (file_exists($qcpath) && (strlen($qcpath) > 10)) {
+								//$systemstring = "rm -rv $qcpath";
+								$noticemsgs[] = "Deleted <code>$qcpath</code>";
 							}
 							else {
-								$noticemsgs[] = "<code>$qapath</code> does not exist";
+								$noticemsgs[] = "<code>$qcpath</code> does not exist";
 							}
 						}
 						
@@ -1257,11 +1303,11 @@
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$projectid = $row['project_id'];
 					$perms[$projectid]['projectname'] = $row['project_name'];
-					$perms[$projectid]['projectadmin'] = $row['project_admin'] + 0;
-					$perms[$projectid]['viewdata'] = $row['view_data'] + 0;
-					$perms[$projectid]['viewphi'] = $row['view_phi'] + 0;
-					$perms[$projectid]['modifydata'] = $row['write_data'] + 0;
-					$perms[$projectid]['modifyphi'] = $row['write_phi'] + 0;
+					$perms[$projectid]['projectadmin'] = (bool)$row['project_admin'];
+					$perms[$projectid]['viewdata'] = (bool)$row['view_data'];
+					$perms[$projectid]['viewphi'] = (bool)$row['view_phi'];
+					$perms[$projectid]['modifydata'] = (bool)$row['write_data'];
+					$perms[$projectid]['modifyphi'] = (bool)$row['write_phi'];
 					
 					/* fill in the implied permissions */
 					if ($perms[$projectid]['projectadmin']) {
@@ -1715,18 +1761,18 @@
 	/* -------------------------------------------- */
 	/* ------- GetTags ---------------------------- */
 	/* -------------------------------------------- */
-	function GetTags($idtype, $tagtype, $id, $modality='') {
+	function GetTags($idtype, $id, $modality='') {
 		
 		$sqlstring = "";
 		$tags = array();
 		
 		switch ($idtype) {
-			case 'series': $sqlstring = "select tag from tags where series_id = '$id' and modality = '$modality' and tagtype = '$tagtype'"; break;
-			case 'study': $sqlstring = "select tag from tags where study_id = '$id' and tagtype = '$tagtype'"; break;
-			case 'enrollment': $sqlstring = "select tag from tags where enrollment_id = '$id' and tagtype = '$tagtype'"; break;
-			case 'subject': $sqlstring = "select tag from tags where subject_id = '$id' and tagtype = '$tagtype'"; break;
-			case 'analysis': $sqlstring = "select tag from tags where analysis_id = '$id' and tagtype = '$tagtype'"; break;
-			case 'pipeline': $sqlstring = "select tag from tags where pipeline_id = '$id' and tagtype = '$tagtype'"; break;
+			case 'series': $sqlstring = "select tag from tags where series_id = '$id' and modality = '$modality'"; break;
+			case 'study': $sqlstring = "select tag from tags where study_id = '$id'"; break;
+			case 'enrollment': $sqlstring = "select tag from tags where enrollment_id = '$id'"; break;
+			case 'subject': $sqlstring = "select tag from tags where subject_id = '$id'"; break;
+			case 'analysis': $sqlstring = "select tag from tags where analysis_id = '$id'"; break;
+			case 'pipeline': $sqlstring = "select tag from tags where pipeline_id = '$id'"; break;
 		}
 		
 		//PrintSQL($sqlstring);
@@ -1743,7 +1789,7 @@
 	/* -------------------------------------------- */
 	/* ------- SetTags ---------------------------- */
 	/* -------------------------------------------- */
-	function SetTags($idtype, $tagtype, $id, $tags, $modality='') {
+	function SetTags($idtype, $id, $tags, $modality='') {
 		
 		if (count($tags) > 1) {
 			/* trim all the tags */
@@ -1762,12 +1808,12 @@
 		
 		/* delete any old tags */
 		switch ($idtype) {
-			case 'series': $sqlstring = "delete from tags where series_id = '$id' and modality = '$modality' and tagtype = '$tagtype'"; break;
-			case 'study': $sqlstring = "delete from tags where study_id = '$id' and tagtype = '$tagtype'"; break;
-			case 'enrollment': $sqlstring = "delete from tags where enrollment_id = '$id' and tagtype = '$tagtype'"; break;
-			case 'subject': $sqlstring = "delete from tags where subject_id = '$id' and tagtype = '$tagtype'"; break;
-			case 'analysis': $sqlstring = "delete from tags where analysis_id = '$id' and tagtype = '$tagtype'"; break;
-			case 'pipeline': $sqlstring = "delete from tags where pipeline_id = '$id' and tagtype = '$tagtype'"; break;
+			case 'series': $sqlstring = "delete from tags where series_id = '$id' and modality = '$modality'"; break;
+			case 'study': $sqlstring = "delete from tags where study_id = '$id'"; break;
+			case 'enrollment': $sqlstring = "delete from tags where enrollment_id = '$id'"; break;
+			case 'subject': $sqlstring = "delete from tags where subject_id = '$id'"; break;
+			case 'analysis': $sqlstring = "delete from tags where analysis_id = '$id'"; break;
+			case 'pipeline': $sqlstring = "delete from tags where pipeline_id = '$id'"; break;
 		}
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -1775,12 +1821,12 @@
 		foreach ($tags as $tag) {
 			$tag = mysqli_real_escape_string($GLOBALS['linki'], $tag);
 			switch ($idtype) {
-				case 'series': $sqlstring = "insert ignore into tags (tagtype, series_id, modality, tag) values ('$tagtype', '$id', '$modality', '$tag')"; break;
-				case 'study': $sqlstring = "insert ignore into tags (tagtype, study_id, tag) values ('$tagtype', '$id', '$tag')"; break;
-				case 'enrollment': $sqlstring = "insert ignore into tags (tagtype, enrollment_id, tag) values ('$tagtype', '$id', '$tag')"; break;
-				case 'subject': $sqlstring = "insert ignore into tags (tagtype, subject_id, tag) values ('$tagtype', '$id', '$tag')"; break;
-				case 'analysis': $sqlstring = "insert ignore into tags (tagtype, analysis_id, tag) values ('$tagtype', '$id', '$tag')"; break;
-				case 'pipeline': $sqlstring = "insert ignore into tags (tagtype, pipeline_id, tag) values ('$tagtype', '$id', '$tag')"; break;
+				case 'series': $sqlstring = "insert ignore into tags (series_id, modality, tag) values ('$id', '$modality', '$tag')"; break;
+				case 'study': $sqlstring = "insert ignore into tags (study_id, tag) values ('$id', '$tag')"; break;
+				case 'enrollment': $sqlstring = "insert ignore into tags (enrollment_id, tag) values ('$id', '$tag')"; break;
+				case 'subject': $sqlstring = "insert ignore into tags (subject_id, tag) values ('$id', '$tag')"; break;
+				case 'analysis': $sqlstring = "insert ignore into tags (analysis_id, tag) values ('$id', '$tag')"; break;
+				case 'pipeline': $sqlstring = "insert ignore into tags (pipeline_id, tag) values ('$id', '$tag')"; break;
 			}
 			//PrintSQL($sqlstring);
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -1795,10 +1841,10 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayTags ------------------------ */
 	/* -------------------------------------------- */
-	function DisplayTags($tags, $idtype, $tagtype) {
+	function DisplayTags($tags, $idtype) {
 		$html = "";
 		foreach ($tags as $tag) {
-			$html .= "<a href='tags.php?action=displaytag&idtype=$idtype&tagtype=$tagtype&tag=$tag' class='ui small basic yellow label' title='Show all $idtype"."s with the <i>$tag</i> tag and are [$tagtype]'>$tag</a></span>";
+			$html .= "<a href='tags.php?action=displaytag&idtype=$idtype&tag=$tag' class='ui small basic yellow label' title='Show all $idtype"."s with the <i>$tag</i> tag'>$tag</a></span>";
 		}
 		return $html;
 	}
@@ -2405,7 +2451,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	/* -------------------------------------------- */
 	/* ------- GetStyledDiff ---------------------- */
 	/* -------------------------------------------- */
-	function GetStyledDiff($old, $new){
+	function GetStyledDiff($old, $new) {
 		$ret = '';
 		$diff = diff(preg_split("/[\s]+/", $old), preg_split("/[\s]+/", $new));
 		foreach($diff as $k){
@@ -2415,6 +2461,21 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 			else $ret .= $k . ' ';
 		}
 		return $ret;
+	}
+	
+	
+	/* -------------------------------------------- */
+	/* ------- GetSubjectRowIDByProject ----------- */
+	/* -------------------------------------------- */
+	function GetSubjectRowIDByProject($id, $projectid) {
+		$sqlstring = "select b.* from subject_altuid a left join subjects b on a.subject_id = b.subject_id left join enrollment c on b.subject_id = c.subject_id where c.project_id = $projectid and (a.altuid = '$id' or b.uid = '$id') and b.isactive = 1";
+		//PrintSQL($sqlstring);
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$uid = $row['uid'];
+		$subjectid = $row['subject_id'];
+		
+		return array($subjectid, $uid);
 	}
 	
 

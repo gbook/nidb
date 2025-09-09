@@ -288,9 +288,9 @@
 			<td style="border-bottom: solid #888 2px; padding: 6px;">
 				<select name="type" required>
 					<option value="">(Select type)
-					<option value="measure">Measure
-					<option value="vital">Vital
-					<option value="drug">Drug
+					<option value="observation">Observation
+					<!--<option value="vital">Vital-->
+					<option value="intervention">Intervention
 					<option value="other">Other
 				</select>
 			</td>
@@ -313,14 +313,14 @@
 					<ul>
 						<li>This text must contain a header with 4 columns: <code>variablename, type, description, valuekey</code>
 						<li><code>variablename</code> - Can only contain letters, numbers, underscore. No spaces or other punctuation. (required)
-						<li><code>type</code> - possible values <code>measure</code>, <code>vital</code>, <code>drug</code>. (required)
+						<li><code>type</code> - possible values <code>observation</code>, <code>intervention</code>. (required)
 						<li><code>description</code> - Open text field. Must be enclosed in double quotes <code>"</code>, but string cannot contain double quotes. (required)
 						<li><code>valuekey</code> - list of possible keys and their meaning (value). Pairs should be separated with the pipe character <code>|</code>. (optional)
 					</ul>
 					<br>
 					<div class="code" style="background-color: #fff"><b>variablename, type, description, valuekey</b><br>
-variable_1, measure, "Important Variable 1 - w/value keys", 1=abc|2=xyz|3=mno<br>
-variable_2, drug, "Important Variable 1 - no keys", </div>
+variable_1, observation, "Important Variable 1 - w/value keys", 1=abc|2=xyz|3=mno<br>
+variable_2, intervention, "Important Variable 1 - no keys", </div>
 				</details>
 				<br><br>
 				<span style="color: #444">Paste .csv (comma separated values) here</span><br>
@@ -343,46 +343,46 @@ variable_2, drug, "Important Variable 1 - no keys", </div>
 			$rangelow = $details['rangelow'];
 			$rangehigh = $details['rangehigh'];
 			
-			$sqlstring = "select count(c.measurename_id) 'count' from measures a left join enrollment b on a.enrollment_id = b.enrollment_id left join measurenames c on a.measurename_id = c.measurename_id where b.project_id = $projectid and c.measure_name = '$varname'";
+			$sqlstring = "select count(b.observation_name) 'count' from observations a left join enrollment b on a.enrollment_id = b.enrollment_id where b.project_id = $projectid and b.observation_name = '$varname'";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$measurecount = $row['count'] + 0;
+			$observationcount = (int)$row['count'];
 
-			$sqlstring = "select count(c.vitalname_id) 'count' from vitals a left join enrollment b on a.enrollment_id = b.enrollment_id left join vitalnames c on a.vitalname_id = c.vitalname_id where b.project_id = $projectid and c.vital_name = '$varname'";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$vitalcount = $row['count'] + 0;
+			//$sqlstring = "select count(c.vitalname_id) 'count' from vitals a left join enrollment b on a.enrollment_id = b.enrollment_id left join vitalnames c on a.vitalname_id = c.vitalname_id where b.project_id = $projectid and c.vital_name = '$varname'";
+			//$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			//$vitalcount = (int)$row['count'];
 
-			$sqlstring = "select count(c.drugname_id) 'count' from drugs a left join enrollment b on a.enrollment_id = b.enrollment_id left join drugnames c on a.drugname_id = c.drugname_id where b.project_id = $projectid and c.drug_name = '$varname'";
+			$sqlstring = "select count(a.intervention_name) 'count' from interventions a left join enrollment b on a.enrollment_id = b.enrollment_id where b.project_id = $projectid and c.intervention_name = '$varname'";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$drugcount = $row['count'] + 0;
+			$interventioncount = (int)$row['count'];
 
 			$errors = array();
 			switch ($type) {
-				case "measure":
+				case "observation":
 					if ($vitalcount > 0)
 						$errors[] = "Data dictionary variable has $vitalcount entries mis-classified as vital";
-					if ($drugcount > 0)
-						$errors[] = "Data dictionary variable has $drugcount entries mis-classified as drug";
+					if ($interventioncount > 0)
+						$errors[] = "Data dictionary variable has $interventioncount entries mis-classified as intervention";
 					
-					$count = $measurecount;
+					$count = $observationcount;
 					break;
 				case "vital":
-					if ($measurecount > 0)
-						$errors[] = "Data dictionary variable has $measurecount entries mis-classified as measure";
-					if ($drugcount > 0)
-						$errors[] = "Data dictionary variable has $drugcount entries mis-classified as drug";
+					if ($observationcount > 0)
+						$errors[] = "Data dictionary variable has $observationcount entries mis-classified as observation";
+					if ($interventioncount > 0)
+						$errors[] = "Data dictionary variable has $interventioncount entries mis-classified as intervention";
 					
 					$count = $vitalcount;
 					break;
-				case "drug":
-					if ($measurecount > 0)
-						$errors[] = "Data dictionary variable has $measurecount entries mis-classified as measure";
+				case "intervention":
+					if ($observationcount > 0)
+						$errors[] = "Data dictionary variable has $observationcount entries mis-classified as observation";
 					if ($vitalcount > 0)
 						$errors[] = "Data dictionary variable has $vitalcount entries mis-classified as vital";
 					
-					$count = $drugcount;
+					$count = $interventioncount;
 					break;
 			}
 			
@@ -391,10 +391,10 @@ variable_2, drug, "Important Variable 1 - no keys", </div>
 				<td><?=$varname?></td>
 				<td>
 					<select name="type[<?=$id?>]">
-						<option value="" <? if (!in_array($type, array("measure", "vital", "drug", "other"))) { echo "selected"; } ?> >(Select type)
-						<option value="measure" <? if ($type == "measure") { echo "selected"; } ?> >Measure
+						<option value="" <? if (!in_array($type, array("observation", "vital", "intervention", "other"))) { echo "selected"; } ?> >(Select type)
+						<option value="observation" <? if ($type == "observation") { echo "selected"; } ?> >Observation
 						<option value="vital" <? if ($type == "vital") { echo "selected"; } ?> >Vital
-						<option value="drug" <? if ($type == "drug") { echo "selected"; } ?> >Drug
+						<option value="intervention" <? if ($type == "intervention") { echo "selected"; } ?> >Intervention
 						<option value="other" <? if ($type == "other") { echo "selected"; } ?> >Other
 					</select>
 				</td>
@@ -439,13 +439,13 @@ variable_2, drug, "Important Variable 1 - no keys", </div>
 		<br>
 		<?
 		
-		/* get all measure variables */
-		$sqlstring = "select c.measure_name, count(c.measurename_id) 'count' from measures a left join enrollment b on a.enrollment_id = b.enrollment_id left join measurenames c on a.measurename_id = c.measurename_id where b.project_id = $projectid group by c.measure_name order by c.measure_name";
+		/* get all observation variables */
+		$sqlstring = "select a.observation_name, count(a.observationname_id) 'count' from observations a left join enrollment b on a.enrollment_id = b.enrollment_id where b.project_id = $projectid group by a.observation_name order by a.observation_name";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$measurename = $row['measure_name'];
-			$dbitems[$measurename]['type'] = 'measure';
-			$dbitems[$measurename]['count'] = $row['count'];
+			$observationname = $row['observation_name'];
+			$dbitems[$observationname]['type'] = 'observation';
+			$dbitems[$observationname]['count'] = $row['count'];
 		}
 
 		
@@ -458,13 +458,13 @@ variable_2, drug, "Important Variable 1 - no keys", </div>
 			$dbitems[$vitalname]['count'] = $row['count'];
 		}
 
-		/* get all drug variables */
-		$sqlstring = "select c.drug_name, count(c.drugname_id) 'count' from drugs a left join enrollment b on a.enrollment_id = b.enrollment_id left join drugnames c on a.drugname_id = c.drugname_id where b.project_id = $projectid group by c.drug_name order by c.drug_name";
+		/* get all intervention variables */
+		$sqlstring = "select a.intervention_name, count(a.intervention_name) 'count' from interventions a left join enrollment b on a.enrollment_id = b.enrollment_id where b.project_id = $projectid group by a.intervention_name order by a.intervention_name";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$drugname = $row['drug_name'];
-			$dbitems[$drugname]['type'] = 'drug';
-			$dbitems[$drugname]['count'] = $row['count'];
+			$interventionname = $row['intervention_name'];
+			$dbitems[$interventionname]['type'] = 'intervention';
+			$dbitems[$interventionname]['count'] = $row['count'];
 		}
 		
 		ksort($dbitems);
