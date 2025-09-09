@@ -345,7 +345,7 @@
 	function MapIDs($idlist, $projectid, $displayonlymatches, $searchthisinstance, $ignoredeleted) {
 
 		$idlist = preg_replace('~(*BSR_ANYCRLF)\R~', "\n", $idlist);
-		$parts = preg_split('/[\^,;\-\'\s\t\n\f\r]+/', $idlist);
+		$parts = preg_split('/[\^,;\'\s\t\n\f\r]+/', $idlist);
 		foreach ($parts as $part) {
 			$ids[] = mysqli_real_escape_string($GLOBALS['linki'], trim($part));
 		}

@@ -197,7 +197,7 @@
 	                        </thead>
 
 				<?
-					$sqlstring = "select a.*, date_format(a.startdate,'%m-%d-%Y; %r') 'startdate', date_format(enddate,'%m-%d-%Y; %r') 'enddate' from interventions where enrollment_id = $enrollmentid order by intervention_name";
+					$sqlstring = "select *, date_format(startdate,'%m-%d-%Y; %r') 'startdate', date_format(enddate,'%m-%d-%Y; %r') 'enddate' from interventions where enrollment_id = $enrollmentid order by intervention_name";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$interventionid = $row['intervention_id'];

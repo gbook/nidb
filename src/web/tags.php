@@ -45,12 +45,12 @@
 	$id = GetVariable("id");
 	$tag = GetVariable("tag");
 	$idtype = GetVariable("idtype");
-	$tagtype = GetVariable("tagtype");
+	//$tagtype = GetVariable("tagtype");
 
 	/* determine action */
 	switch ($action) {
 		case 'displaytag':
-			DisplayTagList($idtype, $tagtype, $tag);
+			DisplayTagList($idtype, $tag);
 			break;
 		default:
 			DisplayTagMenu();
@@ -64,41 +64,128 @@
 	/* ------- DisplayTagMenu --------------------- */
 	/* -------------------------------------------- */
 	function DisplayTagMenu() {
-		$sqlstring = "select distinct(tag) 'tag' from tags";
-		//PrintSQL($sqlstring);
+		/* Series tags */
+		$tags = array();
+		$sqlstring = "select distinct(tag) 'tag' from tags where series_id is not null";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		//PrintSQLTable($result);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$tags[] = $row['tag'];
 		}
-		//PrintVariable($tags);
-		echo DisplayTags($tags,'dx','enrollment');
+		?>
+		<h2 class="ui header">Series</h2>
+			<p>
+		<?
+		echo DisplayTags($tags, 'series');
+		?>
+		</p>
+		<?
+		
+		/* Study tags */
+		$tags = array();
+		$sqlstring = "select distinct(tag) 'tag' from tags where study_id is not null";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$tags[] = $row['tag'];
+		}
+		?>
+		<h2 class="ui header">Study</h2>
+			<p>
+		<?
+		echo DisplayTags($tags, 'study');
+		?>
+		</p>
+		<?
+
+		/* Subject tags */
+		$tags = array();
+		$sqlstring = "select distinct(tag) 'tag' from tags where subject_id is not null";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$tags[] = $row['tag'];
+		}
+		?>
+		<h2 class="ui header">Subject</h2>
+			<p>
+		<?
+		echo DisplayTags($tags, 'subject');
+		?>
+		</p>
+		<?
+
+		/* Enrollment tags */
+		$tags = array();
+		$sqlstring = "select distinct(tag) 'tag' from tags where enrollment_id is not null";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$tags[] = $row['tag'];
+		}
+		?>
+		<h2 class="ui header">Enrollment</h2>
+			<p>
+		<?
+		echo DisplayTags($tags, 'enrollment');
+		?>
+		</p>
+		<?
+		
+		/* Analysis tags */
+		$tags = array();
+		$sqlstring = "select distinct(tag) 'tag' from tags where analysis_id is not null";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$tags[] = $row['tag'];
+		}
+		?>
+		<h2 class="ui header">Analysis</h2>
+			<p>
+		<?
+		echo DisplayTags($tags, 'analysis');
+		?>
+		</p>
+		<?
+
+		/* Pipeline tags */
+		$tags = array();
+		$sqlstring = "select distinct(tag) 'tag' from tags where pipeline_id is not null";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$tags[] = $row['tag'];
+		}
+		?>
+		<h2 class="ui header">Pipeline</h2>
+			<p>
+		<?
+		echo DisplayTags($tags, 'pipeline');
+		?>
+		</p>
+		<?
+		
 	}
 	
 	
 	/* -------------------------------------------- */
 	/* ------- DisplayTagList --------------------- */
 	/* -------------------------------------------- */
-	function DisplayTagList($tagtype, $idtype, $tag) {
+	function DisplayTagList($idtype, $tag) {
 		if ($tag == "") {
 			?><div class="staticmessage">Tag [<?=$tag?>] blank</div><?
 			return;
 		}
 		
 		if ($idtype == "") {
-			?><div class="staticmessage">Tag type blank</div><?
+			?><div class="staticmessage">ID type blank</div><?
 			return;
 		}
 		
 		$tag = mysqli_real_escape_string($GLOBALS['linki'], $tag);
 		
 		switch ($idtype) {
-			case 'series': DisplaySeriesTags($tagtype, $tag); break;
-			case 'study': DisplayStudyTags($tagtype, $tag); break;
-			case 'enrollment': DisplayEnrollmentTags($tagtype, $tag); break;
-			case 'subject': DisplaySubjectTags($tagtype, $tag); break;
-			case 'analysis': DisplayAnalysisTags($tagtype, $tag); break;
-			case 'pipeline': DisplayPipelineTags($tagtype, $tag); break;
+			case 'series': DisplaySeriesTags($tag); break;
+			case 'study': DisplayStudyTags($tag); break;
+			case 'enrollment': DisplayEnrollmentTags($tag); break;
+			case 'subject': DisplaySubjectTags($tag); break;
+			case 'analysis': DisplayAnalysisTags($tag); break;
+			case 'pipeline': DisplayPipelineTags($tag); break;
 		}
 	}
 
@@ -106,8 +193,8 @@
 	/* -------------------------------------------- */
 	/* ------- DisplaySeriesTags ------------------ */
 	/* -------------------------------------------- */
-	function DisplaySeriesTags($tagtype, $tag, $modality) {
-		$sqlstring = "select * from $modality"."_series a left join tags b on a.$modality"."series_id = b.series_id where b.tag = '$tag' and b.tagtype = '$tagtype'";
+	function DisplaySeriesTags($tag, $modality) {
+		$sqlstring = "select * from $modality"."_series a left join tags b on a.$modality"."series_id = b.series_id where b.tag = '$tag'";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		PrintSQLTable($result);
 	}
@@ -116,8 +203,8 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayStudyTags ------------------- */
 	/* -------------------------------------------- */
-	function DisplayStudyTags($tagtype, $tag) {
-		$sqlstring = "select * from studies a left join tags b on a.study_id = b.study_id where b.tag = '$tag' and b.tagtype = '$tagtype' and b.tagtype = '$tagtype'";
+	function DisplayStudyTags($tag) {
+		$sqlstring = "select * from studies a left join tags b on a.study_id = b.study_id where b.tag = '$tag'";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		PrintSQLTable($result);
 	}
@@ -126,18 +213,19 @@
 	/* -------------------------------------------- */
 	/* ------- DisplaySubjectTags ----------------- */
 	/* -------------------------------------------- */
-	function DisplaySubjectTags($tagtype, $tag) {
-		$sqlstring = "select * from subjects a left join tags b on a.subject_id = b.subject_id where b.tag = '$tag' and b.tagtype = '$tagtype'";
+	function DisplaySubjectTags($tag) {
+		$sqlstring = "select * from subjects a left join tags b on a.subject_id = b.subject_id where b.tag = '$tag'";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		PrintSQLTable($result);
+		PrintVariable($sqlstring);
+		PrintVariable($result);
 	}
 	
 	
 	/* -------------------------------------------- */
 	/* ------- DisplayEnrollmentTags -------------- */
 	/* -------------------------------------------- */
-	function DisplayEnrollmentTags($tagtype, $tag) {
-		$sqlstring = "select * from enrollment a left join tags b on a.enrollment_id = b.enrollment_id where b.tag = '$tag' and b.tagtype = '$tagtype'";
+	function DisplayEnrollmentTags($tag) {
+		$sqlstring = "select * from enrollment a left join tags b on a.enrollment_id = b.enrollment_id where b.tag = '$tag'";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		PrintSQLTable($result);
 	}
@@ -146,8 +234,8 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayAnalysisTags ---------------- */
 	/* -------------------------------------------- */
-	function DisplayAnalysisTags($tagtype, $tag) {
-		$sqlstring = "select * from analysis a left join tags b on a.analysis_id = b.analysis_id where b.tag = '$tag' and b.tagtype = '$tagtype'";
+	function DisplayAnalysisTags($tag) {
+		$sqlstring = "select * from analysis a left join tags b on a.analysis_id = b.analysis_id where b.tag = '$tag'";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		PrintSQLTable($result);
 	}
@@ -156,8 +244,8 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayPipelineTags ---------------- */
 	/* -------------------------------------------- */
-	function DisplayPipelineTags($tagtype, $tag) {
-		$sqlstring = "select * from pipelines a left join tags b on a.pipeline_id = b.pipeline_id where b.tag = '$tag' and b.tagtype = '$tagtype'";
+	function DisplayPipelineTags($tag) {
+		$sqlstring = "select * from pipelines a left join tags b on a.pipeline_id = b.pipeline_id where b.tag = '$tag'";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		PrintSQLTable($result);
 	}

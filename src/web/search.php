@@ -178,7 +178,7 @@
 	switch ($action) {
 		case 'searchform': DisplaySearchForm($searchvars, $action); break;
 		case 'search':
-			UpdateSearchHistory($searchvars);
+			//UpdateSearchHistory($searchvars);
 			DisplaySearchForm($searchvars, $action);
 			Search($searchvars);
 			break;
@@ -5546,7 +5546,7 @@
 				$sqlwhere .= " and `subjects`.subject_id in (" . $ids . ")";
 			}
 			else {
-				if (preg_match('/[\^\,;\-\'\s]/', $s_subjectuid) == 0) {
+				if (preg_match('/[\^\,;\'\s]/', $s_subjectuid) == 0) {
 					$sqlwhere .= " and `subjects`.uid = '$s_subjectuid'";
 				}
 				else {
@@ -5555,7 +5555,7 @@
 			}
 		}
 		if ($s_subjectaltuid != "") {
-			if (preg_match('/[\^\,;\-\'\s]/', $s_subjectaltuid) == 0) {
+			if (preg_match('/[\^\,;\'\s]/', $s_subjectaltuid) == 0) {
 				$sqlwhere .= "and `subject_altuid`.altuid like '%$s_subjectaltuid%'";
 			}
 			else {
@@ -5605,7 +5605,7 @@
 			$sqlwhere .= " and ($s2)";
 		}
 		if ($s_studyaltscanid != "") {
-			if (preg_match('/[\^\,;\-\'\s]/', $s_studyaltscanid) == 0) {
+			if (preg_match('/[\^\,;\'\s]/', $s_studyaltscanid) == 0) {
 				$sqlwhere .= " and `studies`.study_alternateid like '%$s_studyaltscanid%'";
 			}
 			else {
@@ -6406,7 +6406,7 @@
 	
 	
 	/* -------------------------------------------- */
-	/* ------- ParseObservationSearchList ------------- */
+	/* ------- ParseObservationSearchList --------- */
 	/* -------------------------------------------- */
 	function ParseObservationSearchList($str) {
 

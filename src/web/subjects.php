@@ -211,7 +211,7 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		/* update the tags */
-		SetTags('subject','',$id,$tags);
+		SetTags('subject', $id, $tags);
 		
 		StartSQLTransaction();
 		
@@ -308,7 +308,7 @@
 		if ($GLOBALS['debug']) { PrintSQL($sqlstring3); }
 		$result3 = MySQLiQuery($sqlstring3,__FILE__,__LINE__);
 		
-		SetTags('subject','',$SubjectRowID,$tags);
+		SetTags('subject', $SubjectRowID, $tags);
 		
 		foreach ($altuids as $altuid) {
 			$altuid = trim($altuid);
@@ -727,7 +727,7 @@
 		$guid = $row['guid'];
 		$cancontact = $row['cancontact'];
 
-		$tags = GetTags('subject', 'dx', $id);
+		$tags = GetTags('subject', $id);
 		$altuids = GetAlternateUIDs($id,0);
 		
 		list($lastname, $firstname) = explode("^",$name);
@@ -1121,7 +1121,7 @@
 		$cancontact = $row['cancontact'];
 		$isactive = $row['isactive'];
 
-		$tags = GetTags('subject', '', $id);
+		$tags = GetTags('subject', $id);
 		
 		/* get the family UID */
 		$sqlstring = "select b.family_uid, b.family_name from family_members a left join families b on a.family_id = b.family_id where a.subject_id = $id";
@@ -1258,7 +1258,7 @@
 								</tr>
 								<tr>
 									<td class="right aligned"><b>Subject tags</b></td>
-									<td><?=DisplayTags($tags, '', 'subject')?></td>
+									<td><?=DisplayTags($tags, 'subject')?></td>
 								</tr>
 							</table>
 							<button class="ui primary button" onClick="window.location.href='subjects.php?action=editform&id=<?=$id?>'; return false;" style="width: 200px"> <i class="edit icon"></i>Edit subject</button>
@@ -1474,7 +1474,7 @@
 											</tr>
 											<tr>
 												<td class="right aligned"><b>Tags</b></td>
-												<td><?=DisplayTags(GetTags('enrollment','dx',$enrollmentid),'dx', 'enrollment')?></td>
+												<td><?=DisplayTags(GetTags('enrollment', $enrollmentid), 'enrollment')?></td>
 											</tr>
 											<? if (($enroll_enddate != "0000-00-00 00:00:00") && ($enroll_enddate != "")) { ?>
 											<tr>
@@ -1901,7 +1901,7 @@
 											</div>
 											<div class="ui bottom attached center aligned segment">
 												<?
-													$sqlstring3 = "select *, date_format(a.startdate,'%m-%d-%Y; %r') 'startdate', date_format(a.enddate,'%m-%d-%Y; %r') 'enddate' from interventions where enrollment_id = $enrollmentid";
+													$sqlstring3 = "select *, date_format(startdate,'%m-%d-%Y; %r') 'startdate', date_format(enddate,'%m-%d-%Y; %r') 'enddate' from interventions where enrollment_id = $enrollmentid";
 													$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
 													$numrows = mysqli_num_rows($result3);
 													if ($numrows > 0) {
@@ -2112,7 +2112,7 @@
 			$guid = $row['guid'];
 			$cancontact = $row['cancontact'];
 			
-			$tags = GetTags('subject','dx',$id);
+			$tags = GetTags('subject', $id);
 			list($lastname, $firstname) = explode("^",$name);
 		
 			/* get privacy information */
@@ -2385,7 +2385,7 @@
 			<div class="field">
 				<label>Tags</label>
 				<div class="field">
-					<input type="text" size="50" name="tags" value="<?=implode2(', ',GetTags('subject','',$id))?>" placeholder="comma separated list">
+					<input type="text" size="50" name="tags" value="<?=implode2(', ',GetTags('subject', $id))?>" placeholder="comma separated list">
 				</div>
 			</div>
 			

@@ -107,7 +107,7 @@
 		
 		/* update the tags (outside of the above transaction) */
 		$taglist = explode(',',$tags);
-		SetTags('enrollment', 'dx', $id, $taglist);
+		SetTags('enrollment', $id, $taglist);
 		
 		Notice("Enrollment updated");
 	}
@@ -139,7 +139,7 @@
 		$enrollgroup = $row['enroll_subgroup'];
 		$enrollstatus = $row['enroll_status'];
 		
-		$tags = GetTags('enrollment','dx',$id);
+		$tags = GetTags('enrollment', $id);
 
 		//$urllist[$projectname] = "projects.php?id=$projectid";
 		//$urllist[$uid] = "subjects.php?id=$subjectid";

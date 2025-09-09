@@ -365,7 +365,7 @@
 	/* ------- MakeSQLList ------------------------ */
 	/* -------------------------------------------- */
 	function MakeSQLList($str) {
-		$parts = preg_split('/[\^,;\-\'\s\t\n\f\r]+/', $str);
+		$parts = preg_split('/[\^,;\'\s\t\n\f\r]+/', $str);
 		foreach ($parts as $part) {
 			$newparts[] = "'" . trim($part) . "'";
 		}
@@ -1761,18 +1761,18 @@
 	/* -------------------------------------------- */
 	/* ------- GetTags ---------------------------- */
 	/* -------------------------------------------- */
-	function GetTags($idtype, $tagtype, $id, $modality='') {
+	function GetTags($idtype, $id, $modality='') {
 		
 		$sqlstring = "";
 		$tags = array();
 		
 		switch ($idtype) {
-			case 'series': $sqlstring = "select tag from tags where series_id = '$id' and modality = '$modality' and tagtype = '$tagtype'"; break;
-			case 'study': $sqlstring = "select tag from tags where study_id = '$id' and tagtype = '$tagtype'"; break;
-			case 'enrollment': $sqlstring = "select tag from tags where enrollment_id = '$id' and tagtype = '$tagtype'"; break;
-			case 'subject': $sqlstring = "select tag from tags where subject_id = '$id' and tagtype = '$tagtype'"; break;
-			case 'analysis': $sqlstring = "select tag from tags where analysis_id = '$id' and tagtype = '$tagtype'"; break;
-			case 'pipeline': $sqlstring = "select tag from tags where pipeline_id = '$id' and tagtype = '$tagtype'"; break;
+			case 'series': $sqlstring = "select tag from tags where series_id = '$id' and modality = '$modality'"; break;
+			case 'study': $sqlstring = "select tag from tags where study_id = '$id'"; break;
+			case 'enrollment': $sqlstring = "select tag from tags where enrollment_id = '$id'"; break;
+			case 'subject': $sqlstring = "select tag from tags where subject_id = '$id'"; break;
+			case 'analysis': $sqlstring = "select tag from tags where analysis_id = '$id'"; break;
+			case 'pipeline': $sqlstring = "select tag from tags where pipeline_id = '$id'"; break;
 		}
 		
 		//PrintSQL($sqlstring);
@@ -1789,7 +1789,7 @@
 	/* -------------------------------------------- */
 	/* ------- SetTags ---------------------------- */
 	/* -------------------------------------------- */
-	function SetTags($idtype, $tagtype, $id, $tags, $modality='') {
+	function SetTags($idtype, $id, $tags, $modality='') {
 		
 		if (count($tags) > 1) {
 			/* trim all the tags */
@@ -1808,12 +1808,12 @@
 		
 		/* delete any old tags */
 		switch ($idtype) {
-			case 'series': $sqlstring = "delete from tags where series_id = '$id' and modality = '$modality' and tagtype = '$tagtype'"; break;
-			case 'study': $sqlstring = "delete from tags where study_id = '$id' and tagtype = '$tagtype'"; break;
-			case 'enrollment': $sqlstring = "delete from tags where enrollment_id = '$id' and tagtype = '$tagtype'"; break;
-			case 'subject': $sqlstring = "delete from tags where subject_id = '$id' and tagtype = '$tagtype'"; break;
-			case 'analysis': $sqlstring = "delete from tags where analysis_id = '$id' and tagtype = '$tagtype'"; break;
-			case 'pipeline': $sqlstring = "delete from tags where pipeline_id = '$id' and tagtype = '$tagtype'"; break;
+			case 'series': $sqlstring = "delete from tags where series_id = '$id' and modality = '$modality'"; break;
+			case 'study': $sqlstring = "delete from tags where study_id = '$id'"; break;
+			case 'enrollment': $sqlstring = "delete from tags where enrollment_id = '$id'"; break;
+			case 'subject': $sqlstring = "delete from tags where subject_id = '$id'"; break;
+			case 'analysis': $sqlstring = "delete from tags where analysis_id = '$id'"; break;
+			case 'pipeline': $sqlstring = "delete from tags where pipeline_id = '$id'"; break;
 		}
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -1821,12 +1821,12 @@
 		foreach ($tags as $tag) {
 			$tag = mysqli_real_escape_string($GLOBALS['linki'], $tag);
 			switch ($idtype) {
-				case 'series': $sqlstring = "insert ignore into tags (tagtype, series_id, modality, tag) values ('$tagtype', '$id', '$modality', '$tag')"; break;
-				case 'study': $sqlstring = "insert ignore into tags (tagtype, study_id, tag) values ('$tagtype', '$id', '$tag')"; break;
-				case 'enrollment': $sqlstring = "insert ignore into tags (tagtype, enrollment_id, tag) values ('$tagtype', '$id', '$tag')"; break;
-				case 'subject': $sqlstring = "insert ignore into tags (tagtype, subject_id, tag) values ('$tagtype', '$id', '$tag')"; break;
-				case 'analysis': $sqlstring = "insert ignore into tags (tagtype, analysis_id, tag) values ('$tagtype', '$id', '$tag')"; break;
-				case 'pipeline': $sqlstring = "insert ignore into tags (tagtype, pipeline_id, tag) values ('$tagtype', '$id', '$tag')"; break;
+				case 'series': $sqlstring = "insert ignore into tags (series_id, modality, tag) values ('$id', '$modality', '$tag')"; break;
+				case 'study': $sqlstring = "insert ignore into tags (study_id, tag) values ('$id', '$tag')"; break;
+				case 'enrollment': $sqlstring = "insert ignore into tags (enrollment_id, tag) values ('$id', '$tag')"; break;
+				case 'subject': $sqlstring = "insert ignore into tags (subject_id, tag) values ('$id', '$tag')"; break;
+				case 'analysis': $sqlstring = "insert ignore into tags (analysis_id, tag) values ('$id', '$tag')"; break;
+				case 'pipeline': $sqlstring = "insert ignore into tags (pipeline_id, tag) values ('$id', '$tag')"; break;
 			}
 			//PrintSQL($sqlstring);
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -1841,10 +1841,10 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayTags ------------------------ */
 	/* -------------------------------------------- */
-	function DisplayTags($tags, $idtype, $tagtype) {
+	function DisplayTags($tags, $idtype) {
 		$html = "";
 		foreach ($tags as $tag) {
-			$html .= "<a href='tags.php?action=displaytag&idtype=$idtype&tagtype=$tagtype&tag=$tag' class='ui small basic yellow label' title='Show all $idtype"."s with the <i>$tag</i> tag and are [$tagtype]'>$tag</a></span>";
+			$html .= "<a href='tags.php?action=displaytag&idtype=$idtype&tag=$tag' class='ui small basic yellow label' title='Show all $idtype"."s with the <i>$tag</i> tag'>$tag</a></span>";
 		}
 		return $html;
 	}
