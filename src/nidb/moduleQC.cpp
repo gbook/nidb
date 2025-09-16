@@ -261,7 +261,7 @@ bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
             /* parse the mriqc results */
             QFile file(resultsJsonPath);
             if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-                n->Log("Could not open file:" + file.errorString());
+                n->Log("Could not open file [" + resultsJsonPath + "]. Error: " + file.errorString());
             }
             else {
                 n->Log("Reading output file [" + resultsJsonPath + "]");
@@ -331,9 +331,9 @@ bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
             n->Log(QString("%1 metrics from JSON file inserted into database").arg(numMetricsInserted));
 
             /* remove /data directory */
-            if (!RemoveDir(qcpath + "/data", m)) {
-                n->Log("Error removing directory [" + qcpath + "/data]  error message [" + m + "]");
-            }
+            //if (!RemoveDir(qcpath + "/data", m)) {
+            //    n->Log("Error removing directory [" + qcpath + "/data]  error message [" + m + "]");
+            //}
         }
     }
 

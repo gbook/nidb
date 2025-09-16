@@ -343,15 +343,16 @@
 	/* -------------------------------------------- */
 	/* ------- ApplyTags -------------------------- */
 	/* -------------------------------------------- */
-	function ApplyTags($id, $studyids, $tags) {
+	function ApplyTags($projectRowID, $studyids, $tags) {
 		/* prepare the fields for SQL */
-		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
+		$projectRowID = mysqli_real_escape_string($GLOBALS['linki'], $projectRowID);
 		$studyids = mysqli_real_escape_array($GLOBALS['linki'], $studyids);
 		$tags = mysqli_real_escape_string($GLOBALS['linki'], $tags);
 		$taglist = explode(',', $tags);
 		
 		$studyids = implode2(",", $studyids);
 		
+		$uids = array();
 		if (count($studyids) > 0) {
 			/* get list of enrollments from these studies */
 			$sqlstring = "select enrollment_id from studies where study_id in ($studyids)";
@@ -360,10 +361,11 @@
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$enrollmentid = $row['enrollment_id'];
 
+					list($uid, $subjectid, $altuid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
+					$uids[] = $uid;
 					foreach ($taglist as $tag) {
-						$sqlstringA = "insert ignore into tags (tagtype, enrollment_id, tag) values ('dx', $enrollmentid, '$tag')";
+						$sqlstringA = "insert ignore into tags (enrollment_id, tag) values ($enrollmentid, '$tag')";
 						$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-						?><div class="message">Applied tag [<?=$tag?>] to enrollmentid [<?=$enrollmentid?>]</div><?
 					}
 				}
 			}
@@ -371,6 +373,17 @@
 		else {
 			Notice("No studies selected");
 		}
+		?>
+		<div class="ui text container">
+			<div class="ui message">
+				<h2 class="ui header">
+					Applying tags '<?=implode2(", ", $taglist)?>' to studies in project <?=$projectName?>
+				</h2>
+				Applied to subjects <?=implode2(", ", $uids)?>
+			</div>
+		</div>
+		<?
+		
 	}
 
 
@@ -595,19 +608,15 @@
 	function ChangeProject($projectRowID, $studyids) {
 		$projectRowID = mysqli_real_escape_string($GLOBALS['linki'], $projectRowID);
 	
+		$msgs = array();
+		
 		foreach ($studyids as $studyRowID) {
 			$studyRowID = mysqli_real_escape_string($GLOBALS['linki'], $studyRowID);
 			
-			/* get the subject ID */
-			$sqlstring = "select a.subject_id, b.enrollment_id from enrollment a left join studies b on a.enrollment_id = b.enrollment_id where b.study_id = $studyRowID";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			if (mysqli_num_rows($result) > 0){
-				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-				$subjectRowID = $row['subject_id'];
-				$existingEnrollmentRowID = $row['enrollment_id'];
-			}
-			else {
-				echo "This study is not part of an enrollment...<br>";
+			list($path, $subjectUID, $studyNumber, $studyRowID, $subjectRowID, $modality, $type, $studyDateTime, $existingEnrollmentRowID, $projectName, $existingProjectRowID) = GetStudyInfo($studyRowID);
+			
+			if ($existingEnrollmentRowID == "") {
+				$msgs[] = "<span class='ui red text'>This studyRowID [$studyRowID] is not part of an enrollment... <b>skipping</b></span>";
 				continue;
 			}
 		
@@ -616,33 +625,51 @@
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			if (mysqli_num_rows($result) > 0){
 				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-				$enrollmentRowID = $row['enrollment_id'];
-				?><span style="color:green">[<?=$subjectRowID?>] is already enrolled in [<?=$projectRowID?>] with enrollment [<?=$enrollmentRowID?>]</span><br><?
+				
+				$msgs[] = "Subject $subjectUID is already enrolled in project $projectName";
 			}
 			else {
 				/* if they're not enrolled, create the enrollment, with the enrollment date of the 'scandate' */
 				$sqlstring = "insert into enrollment (project_id, subject_id, enroll_startdate) values ($projectRowID, $subjectRowID, now())";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				echo "Creating enrollment [$sqlstring]<br>";
-				$enrollmentRowID = mysqli_insert_id($GLOBALS['linki']);
+				$newEnrollmentRowID = mysqli_insert_id($GLOBALS['linki']);
+				
+				$msgs[] = "Enrolled subject <b>$subjectUID</b> in project <b>$projectName</b>";
 			}
 			
 			/* check if the study is already associated with the enrollment, and if not, move the study to the enrollment */
-			$sqlstring = "select * from studies where enrollment_id = $enrollmentRowID and study_id = $studyRowID";
+			$sqlstring = "select * from studies where enrollment_id = $existingEnrollmentRowID and study_id = $studyRowID";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			if (mysqli_num_rows($result) > 0){
 				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 				$enrollmentRowID = $row['enrollment_id'];
-				?><span style="color:green">Study [<?=$studyRowID?>] is already part of enrollment [<?=$enrollmentRowID?>]</span><br><?
+				$studyNumber = $row['study_num'];
+				$msgs[] = "Study $subjectUID$studyNumber is already part of enrollment in project $projectName";
 			}
 			else {
 				/* if the study is not associated with the enrollment, associate it */
 				$sqlstring = "update studies set enrollment_id = $enrollmentRowID where study_id = $studyRowID";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				echo "Moved study from enrollment $existingEnrollmentRowID to $enrollmentRowID<br>";
-				//exit(0);
+				$msgs[] = "Moved study <b>$subjectUID$studyNumber</b> to project <b>$projectRowID</b>";
 			}
 		}
+		?>
+		<div class="ui text container">
+			<div class="ui scrolling segment">
+				<h2 class="ui header">
+					Moving studies to <?=$projectName?>
+				</h2>
+				<ul>
+				<?
+				foreach ($msgs as $msg) {
+					?><li><?=$msg?><?
+				}
+				?>
+				</ul>
+			</div>
+		</div>
+		<?
 	}
 
 
@@ -1481,10 +1508,10 @@
 				rowSelection: { mode: 'multiRow' }, // allow rows to be selected
 				animateRows: false, // have rows animate to new positions when sorted
 				//onFirstDataRendered: onFirstDataRendered,
-				stopEditingWhenCellsLoseFocus: true,
+				//stopEditingWhenCellsLoseFocus: true,
 				undoRedoCellEditing: true,
 				suppressMovableColumns: true,
-				onCellEditingStopped: (event) => {
+				onCellValueChanged: (event) => {
 
 					url = "ajaxapi.php?action=updatesubjectdetails&projectid=<?=$id?>&subjectid=" + event.data.id + "&enrollmentid=" + event.data.enrollmentid + "&column=" + event.column.getColDef().field + "&value=" + event.value;
 					//console.log(url);
@@ -1709,11 +1736,11 @@
 				rowSelection: { mode: 'multiRow' }, // allow rows to be selected
 				animateRows: false, // have rows animate to new positions when sorted
 				//onFirstDataRendered: onFirstDataRendered,
-				stopEditingWhenCellsLoseFocus: true,
+				//stopEditingWhenCellsLoseFocus: true,
 				undoRedoCellEditing: true,
 				suppressMovableColumns: true,
 				autoSizeStrategy: { type: 'fitCellContents' },
-				onCellEditingStopped: (event) => {
+				onCellValueChanged: (event) => {
 
 					url = "ajaxapi.php?action=updatesubjectdetails&projectid=<?=$id?>&subjectid=" + event.data.id + "&column=" + event.column.getColDef().field + "&value=" + event.value;
 					//console.log(url);
@@ -1868,6 +1895,13 @@
 				</div>
 			</div>
 		</div>
+		
+		<!--<form method="post" action="projects.php" id="theform" name="theform" onSubmit="return onSubmitForm();">-->
+		<form method="post" action="projects.php" id="theform" name="theform" onSubmit="return onSubmitForm();">
+		<input type="hidden" name="id" value="<?=$id?>">
+		<input type="hidden" name="action" value="">
+		<input type="hidden" name="selectedStudyRowIDs" id="selectedStudyRowIDs">
+		
 		<div id="myGrid" class="ag-theme-alpine" style="height: 60vh"></div>
 		<style>
 			.rowhighlight {
@@ -1904,6 +1938,14 @@
 						}
 					},
 					{
+						headerName: "Study",
+						field: "uidstudynum",
+						pinned: 'left',
+						cellRenderer: function(params) {
+							return '<a href="studies.php?id=' + params.data.studyid + '"><b>' + params.value + '</b></a>'
+						},
+					},
+					{
 						headerName: "Sex",
 						field: "sex",
 						editable: true,
@@ -1933,16 +1975,6 @@
 						},
 						
 					},
-					{
-						headerName: "Study",
-						field: "uidstudynum",
-						pinned: 'left',
-						cellRenderer: function(params) {
-							return '<a href="studies.php?id=' + params.data.studyid + '"><b>' + params.value + '</b></a>'
-						},
-						//headerCheckboxSelection: true,
-						//checkboxSelection: true
-					},
 					{ headerName: "Visit", field: "visit", editable: true },
 					{ headerName: "Study Datetime", field: "studydate", editable: false },
 					{ headerName: "StudyAge", field: "studyage", editable: true },
@@ -1964,17 +1996,17 @@
 
 				rowSelection: {
 					mode: 'multiRow',
-					enableSelectionWithoutKeys: true,
+					//enableSelectionWithoutKeys: true,
 					headerCheckbox: true,
 					checkboxes: true
 				}, // allow rows to be selected
 				animateRows: false, // have rows animate to new positions when sorted
 				//onFirstDataRendered: onFirstDataRendered,
-				stopEditingWhenCellsLoseFocus: true,
+				//stopEditingWhenCellsLoseFocus: true,
 				undoRedoCellEditing: true,
 				suppressMovableColumns: true,
 				autoSizeStrategy: { type: 'fitCellContents' },
-				onCellEditingStopped: (event) => {
+				onCellValueChanged: (event) => {
 
 					url = "ajaxapi.php?action=updatestudydetails&subjectid=" + event.data.subjectid + "&studyid=" + event.data.studyid + "&column=" + event.column.getColDef().field + "&value=" + event.value;
 					//console.log(url);
@@ -2018,8 +2050,32 @@
 				gridApi.autoSizeColumns(allColumnIds, skipHeader);
 			}
 			
+			function onSubmitForm() {
+				//alert(gridOptions.api.getSelectedRows());
+				const selectedRows = gridApi.getSelectedRows();
+				//console.log(selectedRows);
+				
+				let studyIDs = [];
+				for (let i=0; i < selectedRows.length; i++) {
+					//studyIDs.push(selectedRows[i].studyid);
+					let inputStr = "<input type='hidden' name='studyids[]' value='" + selectedRows[i].studyid + "'>";
+					document.theform.insertAdjacentHTML('beforeend', inputStr);
+					//document.theform.selectedStudyRowIDs[i].value = selectedRows[i].studyid;
+				}
+				
+				//console.log(studyIDs);
+				
+				//document.theform.selectedStudyRowIDs.value = studyIDs.join(",");
+				
+				//alert("testing");
+				
+				//return false;
+			}
+			
 		</script>
 		
+			<!--<input type="button" onClick="onSubmitForm();">-->
+			<!--<input type="submit">-->
 		<table width="100%">
 			<tr>
 				<? if ($GLOBALS['issiteadmin']) { ?>
@@ -2108,15 +2164,10 @@
 				</td>
 				<? } ?>
 
-				<td align="right" valign="top">
-					<!-- save the form -->
-					<form method="post" action="projects.php" id="savetableform">
-					<input type="hidden" name="id" value="<?=$id?>">
-					<input type="hidden" name="action" value="updatestudytable">
-					<input type="hidden" name="studytable" id="studytable">
+				<!--<td align="right" valign="top">
 					<div align="right"><input class="ui primary button" type="submit" value="Save Studies Table"></div>
-					</form>
-				</td>
+				</td>-->
+				</form>
 			</tr>
 		</table>
 		

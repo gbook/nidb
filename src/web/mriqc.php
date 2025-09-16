@@ -309,7 +309,7 @@
 					//rowMultiSelectWithClick: true,
 					animateRows: false, // have rows animate to new positions when sorted
 					//onFirstDataRendered: onFirstDataRendered,
-					stopEditingWhenCellsLoseFocus: true,
+					//stopEditingWhenCellsLoseFocus: true,
 					undoRedoCellEditing: true,
 					suppressMovableColumns: true,
 					autoSizeStrategy: { type: 'fitCellContents' }

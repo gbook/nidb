@@ -198,7 +198,7 @@
 		$email = mysqli_real_escape_string($GLOBALS['linki'], $email);
 		$maritalstatus = mysqli_real_escape_string($GLOBALS['linki'], $maritalstatus);
 		$smokingstatus = mysqli_real_escape_string($GLOBALS['linki'], $smokingstatus);
-		$cancontact = (bool)mysqli_real_escape_string($GLOBALS['linki'], $cancontact);
+		$cancontact = (bool)mysqli_real_escape_string($GLOBALS['linki'], $cancontact) + 0;
 		$tags = mysqli_real_escape_string($GLOBALS['linki'], $tags);
 		$altuidlist = $altuids;
 		$guid = mysqli_real_escape_string($GLOBALS['linki'], $guid);
@@ -206,7 +206,7 @@
 		$tags = explode(',',$tags);
 		
 		/* update the subject */
-		$sqlstring = "update subjects set name = '$name', birthdate = '$dob', gender = '$gender', ethnicity1 = '$ethnicity1', ethnicity2 = '$ethnicity2', handedness = '$handedness', education = '$education', phone1 = '$phone', email = '$email', marital_status = '$maritalstatus', smoking_status = '$smokingstatus', guid = '$guid', cancontact = $cancontact where subject_id = $id";
+		$sqlstring = "update subjects set name = '$name', birthdate = '$dob', gender = '$gender', ethnicity1 = '$ethnicity1', ethnicity2 = '$ethnicity2', handedness = '$handedness', education = '$education', phone1 = '$phone', email = '$email', marital_status = '$maritalstatus', smoking_status = '$smokingstatus', guid = '$guid', cancontact = '$cancontact' where subject_id = $id";
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		

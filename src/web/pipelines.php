@@ -326,7 +326,7 @@
 		else { $projectids = $projectid; }
 
 		/* update the pipeline table */
-		$sqlstring = "update pipelines set pipeline_resultsscript = '$pipelineresultsscript', pipeline_completefiles = '$completefiles', pipeline_dependency = '$dependencies', pipeline_groupid = '$groupids', pipeline_projectid = '$projectids', pipeline_dependencylevel = '$deplevel', pipeline_dependencydir = '$depdir', pipeline_deplinktype = '$deplinktype', pipeline_groupbysubject = $groupbysubject, pipeline_outputbids = $outputbids, pipeline_bidsoutputdir = '$bidsoutputdir' where pipeline_id = $id";
+		$sqlstring = "update pipelines set pipeline_resultsscript = '$pipelineresultsscript', pipeline_completefiles = '$completefiles', pipeline_dependency = '$dependencies', pipeline_groupid = '$groupids', pipeline_projectid = '$projectids', pipeline_dependencylevel = '$deplevel', pipeline_dependencydir = '$depdir', pipeline_deplinktype = '$deplinktype', pipeline_groupbysubject = '$groupbysubject', pipeline_outputbids = '$outputbids', pipeline_bidsoutputdir = '$bidsoutputdir' where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$msg .= "<li>Updated pipelines table";
 		
