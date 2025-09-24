@@ -159,7 +159,7 @@
 						Upload imaging data and track existing uploads.<br><br>
 					</div>
 					<div class="center aligned extra content">
-						<a href="importimaging.php" class="ui button">Import</a>
+						<a href="importimaging.php" class="ui button">Import imaging</a>
 					</div>
 				</div>
 
@@ -171,7 +171,7 @@
 						Import observations and interventions.<br><br>
 					</div>
 					<div class="center aligned extra content">
-						<a href="importnonimaging.php" class="ui button">Import</a>
+						<a href="importnonimaging.php" class="ui button">Import non-imaging</a>
 					</div>
 				</div>
 

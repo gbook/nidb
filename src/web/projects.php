@@ -82,18 +82,18 @@
 	/* determine action */
 	switch ($action) {
 		case 'displaystudies':
-			DisplayStudiesTable2($id);
+			DisplayStudiesTable($id);
 			break;
 		case 'updatestudyage':
 			UpdateStudyAge($id);
-			DisplayStudiesTable2($id);
+			DisplayStudiesTable($id);
 			break;
 		case 'auditstudies':
 			AuditStudies($id);
 			break;
 		case 'changeproject':
 			ChangeProject($newprojectid, $studyids);
-			DisplayStudiesTable2($id);
+			DisplayStudiesTable($id);
 			break;
 		case 'editbidsdatatypes':
 			EditBIDSDatatypes($id);
@@ -144,7 +144,7 @@
 			break;
 		case 'applytags':
 			ApplyTags($id, $studyids, $tags);
-			DisplayStudiesTable2($id);
+			DisplayStudiesTable($id);
 			break;
 		case 'displaycompleteprojecttable':
 			DisplayCompleteProjectTable($id);
@@ -177,11 +177,11 @@
 			break;
 		case 'resetqa':
 			ResetProjectQA($id);
-			DisplayStudiesTable2($id);
+			DisplayStudiesTable($id);
 			break;
 		case 'resetmriqc':
 			ResetProjectMRIQC($id);
-			DisplayStudiesTable2($id);
+			DisplayStudiesTable($id);
 			break;
 		case 'show_rdoc_list':
 			DisplayRDoCList($rdoc_label);
@@ -200,6 +200,9 @@
 		case 'batchupdatesubject':
 			BatchUpdateSubject($id, $csv);
 			DisplaySubjectsTable($id);
+			break;
+		case 'displaynonimaging':
+			DisplayNonImagingTable($id);
 			break;
 		default:
 			if ($id == '') {
@@ -1630,11 +1633,6 @@
 		
 		<!-- Include the JS for AG Grid -->
 		<script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.noStyle.js"></script>
-		<!-- Include the core CSS, this is needed by the grid -->
-		<!--<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-grid.css"/>-->
-		<!-- Include the theme CSS, only need to import the theme you are going to use -->
-		<!--<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-theme-alpine.css"/>-->
-		<!--<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-theme-balham.css"/>-->
 
 		<br>
 		<div class="ui text container">
@@ -1789,9 +1787,9 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- DisplayStudiesTable2 --------------- */
+	/* ------- DisplayStudiesTable ---------------- */
 	/* -------------------------------------------- */
-	function DisplayStudiesTable2($id, $isactive=1) {
+	function DisplayStudiesTable($id, $isactive=1) {
 		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 		if (!isInteger($id)) { echo "Invalid project ID [$id]"; return; }
 
@@ -1869,11 +1867,6 @@
 		
 		<!-- Include the JS for AG Grid -->
 		<script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.noStyle.js"></script>
-		<!-- Include the core CSS, this is needed by the grid -->
-		<!--<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-grid.css"/>-->
-		<!-- Include the theme CSS, only need to import the theme you are going to use -->
-		<!--<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-theme-alpine.css"/>-->
-		<!--<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-theme-balham.css"/>-->
 
 		<br>
 		<div class="ui text container">
@@ -2171,6 +2164,346 @@
 			</tr>
 		</table>
 		
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayNonImagingTable ------------- */
+	/* -------------------------------------------- */
+	function DisplayNonImagingTable($id, $isactive=1) {
+		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
+		if (!isInteger($id)) { echo "Invalid project ID [$id]"; return; }
+		
+		$sqlstring = "select * from projects where project_id = $id";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$name = $row['project_name'];
+		
+		$rowdata = array();
+		
+		/* get all subjects, and their enrollment info, associated with the project */
+		$sqlstring = "select * from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = $id and a.isactive = '$isactive' order by a.uid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$numsubjects = mysqli_num_rows($result);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$subjectid = $row['subject_id'];
+			$enrollmentid = $row['enrollment_id'];
+			$uid = $row['uid'];
+			$guid = $row['guid'];
+			$sex = $row['sex'];
+			$gender = $row['gender'];
+			$birthdate = $row['birthdate'];
+			$ethnicity1 = $row['ethnicity1'];
+			$ethnicity2 = $row['ethnicity2'];
+			$handedness = $row['handedness'];
+			$education = $row['education'];
+			$maritalstatus = $row['marital_status'];
+			$smokingstatus = $row['smoking_status'];
+			$enrollsubgroup = $row['enroll_subgroup'];
+			
+			$globalaltids = array();
+			$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' order by isprimary desc";
+			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+				$isprimary = $rowA['isprimary'];
+				$altid = $rowA['altuid'];
+				if ($isprimary) {
+					$globalaltids[] = "*" . $altid;
+				}
+				else {
+					$globalaltids[] = $altid;
+				}
+			}
+			$globalaltids = array_unique($globalaltids);
+			$globalaltuidlist = implode2(", ",$globalaltids);
+			
+			$projectaltids = array();
+			$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' and enrollment_id = $enrollmentid order by isprimary desc";
+			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+				$isprimary = $rowA['isprimary'];
+				$altid = $rowA['altuid'];
+				if ($isprimary) {
+					$projectaltids[] = "*" . $altid;
+				}
+				else {
+					$projectaltids[] = $altid;
+				}
+			}
+			$projectaltids = array_unique($projectaltids);
+			$projectaltuidlist = implode2(", ",$projectaltids);
+			//PrintVariable($projectaltids);
+			$projectaltids = array();
+			
+			switch ($education) {
+				case "": $education = "-"; break;
+				case 0: $education = "Unknown"; break;
+				case 1: $education = "Grade School"; break;
+				case 2: $education = "Middle School"; break;
+				case 3: $education = "High School/GED"; break;
+				case 4: $education = "Trade School"; break;
+				case 5: $education = "Associates Degree"; break;
+				case 6: $education = "Bachelors Degree"; break;
+				case 7: $education = "Masters Degree"; break;
+				case 8: $education = "Doctoral Degree"; break;
+			}
+
+			$rowdata[] = "{ id: $subjectid, enrollmentid: $subjectid, uid: \"$uid\", globalaltuids: \"$globalaltuidlist\", altuids: \"$projectaltuidlist\", guid: \"$guid\", dob: \"$birthdate\", sex: \"$sex\", gender: \"$gender\", ethnicity1: \"$ethnicity1\", ethnicity2: \"$ethnicity2\", handedness: \"$handedness\", education: \"$education\", marital: \"$maritalstatus\", smoking: \"$smokingstatus\", enrollgroup: \"$enrollsubgroup\" }";
+		}
+		$data = "";
+		if (count($rowdata) > 0)
+			$data = implode(",", $rowdata);
+		
+		?>
+		
+		<!-- Include the JS for AG Grid -->
+		<script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.noStyle.js"></script>
+
+		<br>
+		<div class="ui text container">
+			<span id="updateresult"></span>
+		</div>
+	  
+		<div class="ui top attached yellow segment">
+			<div class="ui red right corner label" title="This table is editable. Changes are permanent after editing each cell."><i class="exclamation circle icon"></i></div>
+			<div class="ui grid">
+				<div class="eight wide column">
+					<h2 class="ui header">
+						Subjects
+						<div class="sub header">Displaying <?=$numsubjects?> subjects</div>
+					</h2>
+				</div>
+				<div class="right aligned seven wide column">
+					<button class="ui small basic primary compact button" id="batchsubjectupdatebutton"> Batch update...</button> &nbsp;
+					<div class="ui small basic primary compact button" onClick="onBtnExport()"><i class="file excel outline icon"></i> Export table as .csv</div> &nbsp;
+				</div>
+			</div>
+		</div>
+		<div class="ui modal" id="batchmodal">
+			<div class="header">Batch Update Subject Information</div>
+			<div class="content">
+				<form action="projects.php" method="post" class="ui form">
+					<input type="hidden" name="action" value="batchupdatesubject">
+					<input type="hidden" name="projectid" value="<?=$id?>">
+					<div class="field">
+						<label>Paste .csv formatted data</label>
+						<textarea name="csv" style="font-family:monospace"></textarea>
+					</div>
+					<i class="blue question circle icon"></i> <b>Formatting Guide</b><br>
+					Available columns (csv must always contain at least <b>uid</b>)
+					<ul>
+						<li><tt>uid</tt> - The UID of the subject
+						<li><tt>altuids</tt> - space delimited list of alternate UIDs with asterisk indicating primary alternate ID. Example <code>*1234 AB539 ID2054</code>
+						<li><tt>guid</tt>
+						<li><tt>birthdate</tt> - format <code>YYYY-MM-DD</code>
+						<li><tt>sex</tt> - Possible values: F, M, O, U
+						<li><tt>gender</tt> - Possible values: F, M, O, U
+						<li><tt>ethnicity1</tt> - Possible values: hispanic, nothispanic
+						<li><tt>ethnicity2</tt> - Possible values: unknown, asian, black, white, indian, islander, mixed, other
+						<li><tt>handedness</tt> - Possible values: R, L, A, U
+						<li><tt>education</tt> - Possible values:  0 (Unknown), 1 (Grade School), 2 (Middle School), 3 (High School/GED), 4 (Trade School), 5 (Associates Degree), 6 (Bachelors Degree), 7 (Masters Degree), 8 (Doctoral Degree)
+						<li><tt>marital</tt> - Possible values: unknown, married, single, divorced, separated, civilunion, cohabitating, widowed
+						<li><tt>smoking</tt> - Possible values: unknown, never, current, past
+						<li><tt>enrollgroup</tt>
+					</ul>
+					<b>Sample .csv format</b>
+					<div style="font-family:monospace; padding:8px; background-color: #eee; border: 1px dashed #aaa">
+						uid, guid, sex, enrollgroup<br>
+						S1234ABC, NDA23548239, F, control
+					</div>
+				</div>
+			<div class="actions">
+				<input type="submit" class="ui approve button" value="Update">
+				<div class="ui cancel button">Cancel</div>
+				</form>
+			</div>
+		</div>
+		<div id="myGrid" class="ag-theme-alpine" style="height: 60vh"></div>
+		<script type="text/javascript">
+			let gridApi;
+
+			$(document).ready(function(){
+				$('#batchsubjectupdatebutton').click(function(){
+					$('#batchmodal').modal('show');
+				});
+			});
+			
+			// Function to demonstrate calling grid's API
+			function deselect(){
+				gridOptions.api.deselectAll()
+			}
+			
+			function onBtnExport() {
+				gridApi.exportDataAsCsv( {allColumns: false} );
+			}			
+
+			// Grid Options are properties passed to the grid
+			//import { themeBalham } from 'ag-grid-community';
+			const gridOptions = {
+				theme: agGrid.themeBalham,
+
+				// each entry here represents one column
+				columnDefs: [
+					{ field: 'id', hide: true },
+					{ field: 'enrollmentid', hide: true },
+					{
+						headerName: "UID",
+						field: "uid",
+						pinned: 'left',
+						width: 150,
+						cellRenderer: function(params) {
+							return '<a href="subjects.php?id=' + params.data.id + '">' + params.value + '</a>'
+						}
+					},
+					{ 
+						headerName: "Global Alt UIDs",
+						field: "globalaltuids",
+						editable: false,
+						cellEditor: 'agLargeTextCellEditor',
+						cellRenderer: function(params) {
+							return '<tt>' + params.value + '</tt>'
+						},
+						
+					},
+					{ 
+						headerName: "Project Alt UIDs",
+						field: "altuids",
+						editable: true,
+						cellEditor: 'agLargeTextCellEditor',
+						cellRenderer: function(params) {
+							return '<tt>' + params.value + '</tt>'
+						},
+						
+					},
+					{ headerName: "GUID", field: "guid", editable: true },
+					{ headerName: "Birthdate", field: "dob", editable: true, cellDataType: 'dateString' },
+					{
+						headerName: "Sex",
+						field: "sex",
+						editable: true,
+						cellEditor: 'agSelectCellEditor',
+						cellEditorParams: {
+							values: ['', 'F', 'M', 'O', 'U'],
+							valueListGap: 0
+						}
+					},
+					{
+						headerName: "Gender",
+						field: "gender",
+						editable: true,
+						cellEditor: 'agSelectCellEditor',
+						cellEditorParams: {
+							values: ['', 'F', 'M', 'O', 'U'],
+							valueListGap: 0
+						}
+					},
+					{
+						headerName: "Ethnicity1",
+						field: "ethnicity1",
+						editable: true,
+						cellEditor: 'agSelectCellEditor',
+						cellEditorParams: {
+							values: ['', 'hispanic', 'nothispanic'],
+							valueListGap: 0
+						}
+					},
+					{ 
+						headerName: "Ethnicity2",
+						field: "ethnicity2",
+						editable: true,
+						cellEditor: 'agSelectCellEditor',
+						cellEditorParams: {
+							values: ['unknown','','asian','black','white','indian','islander','mixed','other'],
+							valueListGap: 0
+						}
+					},
+					{
+						headerName: "Handedness",
+						field: "handedness",
+						editable: true,
+						cellEditor: 'agSelectCellEditor',
+						cellEditorParams: {	values: ['', 'R', 'L', 'U', 'A'], valueListGap: 0 }
+					},
+					{
+						headerName: "Education",
+						field: "education",
+						editable: true,
+						cellEditor: 'agSelectCellEditor',
+						cellEditorParams: {	values: ['Unknown', '', 'Grade School', 'Middle School', 'High School/GED', 'Trade School', 'Associates Degree', 'Bachelors Degree', 'Masters Degree', 'Doctoral Degree'], valueListGap: 0 }
+					},
+					{
+						headerName: "Marital Status",
+						field: "marital",
+						editable: true,
+						cellEditor: 'agSelectCellEditor',
+						cellEditorParams: {	values: ['unknown', '', 'married', 'single', 'divorced', 'separated', 'civilunion', 'cohabitating', 'widowed'], valueListGap: 0 }
+					},
+					{
+						headerName: "Smoking Status",
+						field: "smoking",
+						editable: true,
+						cellEditor: 'agSelectCellEditor',
+						cellEditorParams: {	values: ['unknown', '', 'never', 'current', 'past'], valueListGap: 0 }
+					},
+					{ headerName: "Enroll Sub-group", field: "enrollgroup", editable: true },
+				],
+
+				rowData: [ <?=$data?> ],
+				
+				// default col def properties get applied to all columns
+				defaultColDef: {sortable: true, filter: true, resizable: true},
+
+				rowSelection: { mode: 'multiRow' }, // allow rows to be selected
+				animateRows: false, // have rows animate to new positions when sorted
+				//onFirstDataRendered: onFirstDataRendered,
+				//stopEditingWhenCellsLoseFocus: true,
+				undoRedoCellEditing: true,
+				suppressMovableColumns: true,
+				onCellValueChanged: (event) => {
+
+					url = "ajaxapi.php?action=updatesubjectdetails&projectid=<?=$id?>&subjectid=" + event.data.id + "&enrollmentid=" + event.data.enrollmentid + "&column=" + event.column.getColDef().field + "&value=" + event.value;
+					//console.log(url);
+					var xhttp = new XMLHttpRequest();
+					xhttp.onreadystatechange = function() {
+						if (this.readyState == 4 && this.status == 200) {
+							console.log(this.responseText);
+							if (this.responseText == "success") {
+								document.getElementById("updateresult").innerHTML = '<div class="ui success message" style="transition: opacity 3s ease-in-out, opacity 1; !important">Success updating <b>' + event.column.getColDef().field + '</b> to \'' + event.value + '\'</div>';
+							}
+							else {
+								document.getElementById("updateresult").innerHTML = '<div class="ui error message">Error updating ' + event.column.getColDef().field + ' to ' + event.value + '</div>';
+							}
+						}
+					};
+					xhttp.open("GET", url, true);
+					xhttp.send();
+					
+				},				
+			};
+
+			$( document ).ready(function() {
+				// get div to host the grid
+				const eGridDiv = document.getElementById("myGrid");
+				// new grid instance, passing in the hosting DIV and Grid Options
+				//new agGrid.Grid(eGridDiv, gridOptions);
+				gridApi = agGrid.createGrid(eGridDiv, gridOptions);
+				
+				autoSizeAll(false);
+			});
+			
+			function autoSizeAll(skipHeader) {
+				const allColumnIds = [];
+				//gridOptions.columnApi.getColumns().forEach((column) => {
+				gridApi.getColumns().forEach((column) => {
+					allColumnIds.push(column.getId());
+				});
+
+				//gridOptions.columnApi.autoSizeColumns(allColumnIds, skipHeader);
+				gridApi.autoSizeColumns(allColumnIds, skipHeader);
+			}
+
+		</script>
 		<?
 	}
 
@@ -2862,7 +3195,10 @@
 						<i class="user friends icon"></i> Subjects
 					</a>
 					<a class="ui green button" href="projects.php?action=displaystudies&id=<?=$id?>">
-						<i class="project diagram icon"></i> Studies
+						<i class="project diagram icon"></i> Imaging studies
+					</a>
+					<a class="ui green button" href="projects.php?action=displaynonimaging&id=<?=$id?>">
+						<i class="project diagram icon"></i> Non-imaging data
 					</a>
 				</div>
 			</div>
