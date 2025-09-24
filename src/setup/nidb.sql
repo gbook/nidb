@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Sep 09, 2025 at 04:30 PM
+-- Generation Time: Sep 24, 2025 at 03:56 PM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -4452,7 +4452,9 @@ ALTER TABLE `notification_user`
 ALTER TABLE `observations`
   ADD PRIMARY KEY (`observation_id`),
   ADD UNIQUE KEY `enrollment_id` (`enrollment_id`,`observation_name`,`observation_startdate`),
-  ADD KEY `observation_name` (`observation_name`);
+  ADD KEY `observation_name` (`observation_name`),
+  ADD KEY `enrollment_id_2` (`enrollment_id`),
+  ADD KEY `observation_startdate` (`observation_startdate`);
 
 --
 -- Indexes for table `ot_series`
