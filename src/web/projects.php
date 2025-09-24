@@ -2183,71 +2183,58 @@
 		$rowdata = array();
 		
 		/* get all subjects, and their enrollment info, associated with the project */
-		$sqlstring = "select * from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = $id and a.isactive = '$isactive' order by a.uid";
+		$sqlstring = "select * from observations a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.project_id = $id and a.isactive = '$isactive' order by c.uid, a.observation_name";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$numsubjects = mysqli_num_rows($result);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$subjectid = $row['subject_id'];
 			$enrollmentid = $row['enrollment_id'];
 			$uid = $row['uid'];
-			$guid = $row['guid'];
+			//$guid = $row['guid'];
 			$sex = $row['sex'];
 			$gender = $row['gender'];
-			$birthdate = $row['birthdate'];
-			$ethnicity1 = $row['ethnicity1'];
-			$ethnicity2 = $row['ethnicity2'];
-			$handedness = $row['handedness'];
-			$education = $row['education'];
-			$maritalstatus = $row['marital_status'];
-			$smokingstatus = $row['smoking_status'];
-			$enrollsubgroup = $row['enroll_subgroup'];
+			//$birthdate = $row['birthdate'];
+			//$ethnicity1 = $row['ethnicity1'];
+			//$ethnicity2 = $row['ethnicity2'];
+			//$handedness = $row['handedness'];
+			//$education = $row['education'];
+			//$maritalstatus = $row['marital_status'];
+			//$smokingstatus = $row['smoking_status'];
+			//$enrollsubgroup = $row['enroll_subgroup'];
 			
-			$globalaltids = array();
-			$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' order by isprimary desc";
-			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-				$isprimary = $rowA['isprimary'];
-				$altid = $rowA['altuid'];
-				if ($isprimary) {
-					$globalaltids[] = "*" . $altid;
-				}
-				else {
-					$globalaltids[] = $altid;
-				}
-			}
-			$globalaltids = array_unique($globalaltids);
-			$globalaltuidlist = implode2(", ",$globalaltids);
+			//$globalaltids = array();
+			//$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' order by isprimary desc";
+			//$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+			//while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+			//	$isprimary = $rowA['isprimary'];
+			//	$altid = $rowA['altuid'];
+			//	if ($isprimary) {
+			//		$globalaltids[] = "*" . $altid;
+			//	}
+			//	else {
+			//		$globalaltids[] = $altid;
+			//	}
+			//}
+			//$globalaltids = array_unique($globalaltids);
+			//$globalaltuidlist = implode2(", ",$globalaltids);
 			
-			$projectaltids = array();
-			$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' and enrollment_id = $enrollmentid order by isprimary desc";
-			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-				$isprimary = $rowA['isprimary'];
-				$altid = $rowA['altuid'];
-				if ($isprimary) {
-					$projectaltids[] = "*" . $altid;
-				}
-				else {
-					$projectaltids[] = $altid;
-				}
-			}
-			$projectaltids = array_unique($projectaltids);
-			$projectaltuidlist = implode2(", ",$projectaltids);
+			//$projectaltids = array();
+			//$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' and enrollment_id = $enrollmentid order by isprimary desc";
+			//$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+			//while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+			//	$isprimary = $rowA['isprimary'];
+			//	$altid = $rowA['altuid'];
+			//	if ($isprimary) {
+			//		$projectaltids[] = "*" . $altid;
+			//	}
+			//	else {
+			//		$projectaltids[] = $altid;
+			//	}
+			//}
+			//$projectaltids = array_unique($projectaltids);
+			//$projectaltuidlist = implode2(", ",$projectaltids);
 			//PrintVariable($projectaltids);
-			$projectaltids = array();
-			
-			switch ($education) {
-				case "": $education = "-"; break;
-				case 0: $education = "Unknown"; break;
-				case 1: $education = "Grade School"; break;
-				case 2: $education = "Middle School"; break;
-				case 3: $education = "High School/GED"; break;
-				case 4: $education = "Trade School"; break;
-				case 5: $education = "Associates Degree"; break;
-				case 6: $education = "Bachelors Degree"; break;
-				case 7: $education = "Masters Degree"; break;
-				case 8: $education = "Doctoral Degree"; break;
-			}
+			//$projectaltids = array();
 
 			$rowdata[] = "{ id: $subjectid, enrollmentid: $subjectid, uid: \"$uid\", globalaltuids: \"$globalaltuidlist\", altuids: \"$projectaltuidlist\", guid: \"$guid\", dob: \"$birthdate\", sex: \"$sex\", gender: \"$gender\", ethnicity1: \"$ethnicity1\", ethnicity2: \"$ethnicity2\", handedness: \"$handedness\", education: \"$education\", marital: \"$maritalstatus\", smoking: \"$smokingstatus\", enrollgroup: \"$enrollsubgroup\" }";
 		}

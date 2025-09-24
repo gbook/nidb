@@ -263,7 +263,7 @@
 			</thead>
 			<tbody>
 				<?
-					$sqlstring = "select a.*, b.*, c.*, e.uid from observations a left join observationnames b on a.observationname_id = b.observationname_id left join observationinstruments c on a.instrumentname_id = c.observationinstrument_id left join enrollment d on a.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.enrollment_id = $enrollmentid order by b.observation_name";
+					$sqlstring = "select a.*, e.uid from observations a left join enrollment d on a.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.enrollment_id = $enrollmentid order by a.observation_name";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$observationid = $row['observation_id'];

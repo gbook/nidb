@@ -685,9 +685,6 @@
 		$flagCreateMissingSubjects = (int)$createmissingsubject;
 		$importMessage = "Import complete";
 
-		if ($numSubjectsCreated == 0) { $numSubjectsCreated = "-"; }
-		if ($numSubjectsNotFound == 0) { $numSubjectsNotFound = "-"; }
-		
 		$sqlstring = "insert into nonimagingimports (project_id, importDatetime, numObservationsImported, numObservationsSkipped, numInterventionsImported, numInterventionsSkipped, flagIgnoreEmptyCells, flagCreateMissingSubjects, numSubjectsCreated, numSubjectsNotFound, numUniqueObservationVariables, numUniqueInterventionVariables, importMessage) values ($projectid, now(), $numObservationsAdded, $numObservationsIgnored, $numInterventionsAdded, $numInterventionsIgnored, $flagIgnoreEmptyCells, $flagCreateMissingSubjects, $numSubjectsCreated, $numSubjectsNotFound, $numUniqueObservationVariables, $numUniqueInterventionVariables, '$importMessage')";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
