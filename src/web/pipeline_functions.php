@@ -100,6 +100,7 @@
 						<? if ($isenabled) { ?>
 							Enable <a href="<?=$returnpage?>.php?action=disable&returnpage=<?=$returnpage?>&id=<?=$id?>"><i class="big green toggle on icon" title="Pipeline enabled, click to disable"></i></a>
 						<? } else { ?>
+							<i class="question circle icon" title="Why is my pipeline disabled? Pipelines are automatically disabled if they have not successfully run a study in the last 60 days."></i>
 							Enable <a href="<?=$returnpage?>.php?action=enable&returnpage=<?=$returnpage?>&id=<?=$id?>"><i class="big grey flipped toggle on icon" title="Pipeline disabled, click to enable"></i></a>
 						<? } ?>
 						<br>

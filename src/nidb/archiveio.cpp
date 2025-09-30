@@ -3140,7 +3140,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
 
                 /* get observations */
                 QSqlQuery q2;
-                q2.prepare("select * from observations a left join observationinstruments b on a.instrumentname_id = b.observationinstrument_id left join observationnames c on a.observationname_id = c.observationname_id where a.enrollment_id in (" + enrollmentIDstr + ")");
+                q2.prepare("select * from observations where enrollment_id in (" + enrollmentIDstr + ")");
                 n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
                 if (q2.size() > 0) {
                     while (q2.next()) {

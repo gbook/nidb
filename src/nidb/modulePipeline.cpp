@@ -292,6 +292,13 @@ int modulePipeline::Run() {
             if (dataSteps.size() > 0)
                 modality = dataSteps[0].modality;
 
+            for (int i = 0; i < dataSteps.size(); i++) {
+                if (dataSteps[i].flags.primaryProtocol) {
+                    modality = dataSteps[i].modality;
+                    break;
+                }
+            }
+
             /* get the list of studies which meet the criteria for being processed through the pipeline */
             QList<int> studyids = GetStudyToDoList(pipelineid, modality, pipelinedep, JoinIntArray(p.groupIDs, ","), runnum);
 
@@ -2224,13 +2231,21 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
     QString m;
 
     pipeline p(pipelineid, n);
-    bool debug = p.debug;
+    //bool debug = p.debug;
+
+    /* run some checks first */
+    if (modality.trimmed() == "") {
+        m = QString("Pipeline modality was blank. Cannot run pipeline without a primary modality in the data specification");
+        RecordPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", n->Log(m, __FUNCTION__));
+
+        return studyIDToDoList;
+    }
 
     /*
      * Subtractive search (list is narrowed down at each step, only remaining studies are analyzed)
-     * A0) All studies that do not have an entry in the analysis table
-     * A1) Studies with a parent dependency
-     * A2) Studies in the group(s)
+     * A1) All studies that do not have an entry in the analysis table
+     * A2) Studies with a parent dependency
+     * A3) Studies in the group(s)
 
      * Additive search (analysis will always run if found):
      * B1) Studies that need results re-run
@@ -2240,21 +2255,32 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
      * gives the row counts at each step. It's easier for the user to interpret
      */
 
-    /* A0 - all studies that do not have an entry in the analysis table */
+    /* A1 - all studies that do not have an entry in the analysis table */
     q.prepare("select a.study_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id not in (select study_id from analysis where pipeline_id = :pipelineid) and (a.study_datetime < date_sub(now(), interval 6 hour)) and a.study_modality = :modality and c.isactive = 1 order by a.study_datetime desc");
     q.bindValue(":pipelineid", pipelineid);
     q.bindValue(":modality", modality);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    m = QString("Step A1 - SQL returned %1 studies").arg(q.size());
+    RecordPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", n->Log(m, __FUNCTION__));
+
     if (q.size() > 0) {
         while (q.next()) {
             int studyRowID = q.value("study_id").toInt();
             studyIDToDoList.append(studyRowID);
         }
     }
-    m = QString("Step A0 - Found %1 global studies (valid AND older than 6 hours AND do not have an existing analysis for this pipeline)").arg(studyIDToDoList.size());
+    m = QString("Step A1 - Found %1 global studies (valid study *and* older than 6 hours *and* does not have an existing analysis for this pipeline). Study list [" + GetUIDStudyNumListByStudyIDs(studyIDToDoList).join(", ") + "]").arg(studyIDToDoList.size());
     RecordPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", n->Log(m, __FUNCTION__));
 
-    /* A1 - find studies in the specified parent dependency */
+    if (q.size() > 500) {
+        m = QString("Step A1 - Study list [greater than 500, not displaying full list of studies]");
+    }
+    else {
+        m = QString("Step A1 - Study list [" + GetUIDStudyNumListByStudyIDs(studyIDToDoList).join(", ") + "]").arg(studyIDToDoList.size());
+    }
+    RecordPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", n->Log(m, __FUNCTION__));
+
+    /* A2 - find studies in the specified parent dependency */
     if (depend >= 0) {
         QList<int> dependencyStudyRowIDs;
         if (p.depLevel == "subject") {
@@ -2299,10 +2325,10 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
             }
         }
 
-        m = QString("Step A1 - Found %1 studies in the specified dependency (%2 level)").arg(dependencyStudyRowIDs.size()).arg(p.depLevel);
+        m = QString("Step A2 - Found %1 studies in the specified dependency (matching on the %2 level)").arg(dependencyStudyRowIDs.size()).arg(p.depLevel);
         RecordPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", n->Log(m, __FUNCTION__));
 
-        m = QString("Studies at the beginning of step A1 [" + GetUIDStudyNumListByStudyIDs(dependencyStudyRowIDs).join(", ") + "]");
+        m = QString("Studies at the beginning of step A2 [" + GetUIDStudyNumListByStudyIDs(dependencyStudyRowIDs).join(", ") + "]");
         RecordPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", n->Log(m, __FUNCTION__));
 
         /* find an intersection between the lists */
@@ -2310,20 +2336,20 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
         QSet<int> set2(dependencyStudyRowIDs.begin(), dependencyStudyRowIDs.end());
         QSet<int> intersection = set1.intersect(set2);
 
-        m = QString("Global studyID list (step A0) contains %1 studies, and dependency list (step A1) contains %2 studies. The intersection of these sets yields %3 studies to be analyzed").arg(studyIDToDoList.size()).arg(dependencyStudyRowIDs.size()).arg(intersection.size());
+        m = QString("Global studyID list (step A1) contains %1 studies, and dependency list (step A2) contains %2 studies. The intersection of these sets yields %3 studies to be analyzed").arg(studyIDToDoList.size()).arg(dependencyStudyRowIDs.size()).arg(intersection.size());
         RecordPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", n->Log(m, __FUNCTION__));
 
         studyIDToDoList = QList<int>(intersection.begin(), intersection.end());
 
-        m = QString("Studies at the end of step A1 [" + GetUIDStudyNumListByStudyIDs(studyIDToDoList).join(", ") + "]");
+        m = QString("Studies at the end of step A2 [" + GetUIDStudyNumListByStudyIDs(studyIDToDoList).join(", ") + "]");
         RecordPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", n->Log(m, __FUNCTION__));
     }
     else {
-        m = "Step A1 - No parent pipelines (dependencies) defined";
+        m = "Step A2 - No parent pipelines (dependencies) defined";
         RecordPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", n->Log(m, __FUNCTION__));
     }
 
-    /* A2 - find studies from above that match the specified group(s) */
+    /* A3 - find studies from above that match the specified group(s) */
     if (groupids != "") {
         QList<int> groupStudyRowIDs;
         q.prepare("select data_id from group_data where group_id in (" + groupids + ")");
@@ -2334,10 +2360,10 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
                 groupStudyRowIDs.append(studyRowID);
             }
         }
-        m = QString("Step A2 - Found %1 studies from the specified group(s)").arg(groupStudyRowIDs.size());
+        m = QString("Step A3 - Found %1 studies from the specified group(s)").arg(groupStudyRowIDs.size());
         RecordPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", n->Log(m, __FUNCTION__));
 
-        m = QString("Studies at the beginning of step A2 [" + GetUIDStudyNumListByStudyIDs(groupStudyRowIDs).join(", ") + "]");
+        m = QString("Studies at the beginning of step A3 [" + GetUIDStudyNumListByStudyIDs(groupStudyRowIDs).join(", ") + "]");
         RecordPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", n->Log(m, __FUNCTION__));
 
         /* find an intersection between the lists */
@@ -2345,16 +2371,16 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
         QSet<int> set2(groupStudyRowIDs.begin(), groupStudyRowIDs.end());
         QSet<int> intersection = set1.intersect(set2);
 
-        m = QString("Global studyID list (step A0 and A1) contains %1 studies, and group(s) list (step A2) contains %2 studies. Intersection of these sets yields %3 studies to be analyzed").arg(studyIDToDoList.size()).arg(groupStudyRowIDs.size()).arg(intersection.size());
+        m = QString("Global studyID list (step A1 and A2) contains %1 studies, and group(s) list (step A3) contains %2 studies. Intersection of these sets yields %3 studies to be analyzed").arg(studyIDToDoList.size()).arg(groupStudyRowIDs.size()).arg(intersection.size());
         RecordPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", n->Log(m, __FUNCTION__));
 
         studyIDToDoList = QList<int>(intersection.begin(), intersection.end());
 
-        m = QString("Studies at the end of step A2 [" + GetUIDStudyNumListByStudyIDs(studyIDToDoList).join(", ") + "]");
+        m = QString("Studies at the end of step A3 [" + GetUIDStudyNumListByStudyIDs(studyIDToDoList).join(", ") + "]");
         RecordPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", n->Log(m, __FUNCTION__));
     }
     else {
-        m = "Step A2 - No groups defined";
+        m = "Step A3 - No groups defined";
         RecordPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", n->Log(m, __FUNCTION__));
     }
 

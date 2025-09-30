@@ -175,14 +175,9 @@
 					<div class="text">View Data</div>
 					<i class="dropdown icon"></i>
 					<div class="menu">
-						<a class="item" href="projects.php?action=editsubjects&id=<?=$projectid?>" style="color: #222">
-							<span class="description"><?=$numsubjects?></span>
-							<i class="user friends icon"></i> Subjects
-						</a>
-						<a class="item" href="projects.php?action=displaystudies&id=<?=$projectid?>" style="color: #222">
-							<span class="description"><?=$numstudies?></span>
-							<i class="project diagram icon"></i> Studies
-						</a>
+						<a class="item" href="projects.php?action=editsubjects&id=<?=$projectid?>" style="color: #222"><i class="user friends icon"></i> Subjects</a>
+						<a class="item" href="projects.php?action=displaystudies&id=<?=$projectid?>" style="color: #222"><i class="project diagram icon"></i> Studies</a>
+						<a class="item" href="projects.php?action=displaynonimaging&id=<?=$projectid?>" style="color: #222"><i class="clipboard icon"></i> Non-imaging</a>
 						<a class="item" title="Checklist of expected data items" href="projectchecklist.php?projectid=<?=$projectid?>" style="color: #222"><i class="clipboard list icon"></i> Checklist</a>
 						<a class="item" href="mrqcchecklist.php?action=viewqcparams&id=<?=$projectid?>" style="color: #222"><i class="clipboard check icon"></i> MR scan QC</a>
 						<a class="item" href="mriqc.php?action=viewmriqc&projectid=<?=$projectid?>" style="color: #222"><i class="clipboard check icon"></i> Advanced mriqc</a>

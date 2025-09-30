@@ -312,8 +312,8 @@
 		$deplevel = mysqli_real_escape_string($GLOBALS['linki'], $deplevel);
 		$depdir = mysqli_real_escape_string($GLOBALS['linki'], $depdir);
 		$deplinktype = mysqli_real_escape_string($GLOBALS['linki'], $deplinktype);
-		$groupbysubject = (bool)mysqli_real_escape_string($GLOBALS['linki'], $groupbysubject);
-		$outputbids = (bool)mysqli_real_escape_string($GLOBALS['linki'], $outputbids);
+		$groupbysubject = ((bool)mysqli_real_escape_string($GLOBALS['linki'], $groupbysubject)) + 0;
+		$outputbids = ((bool)mysqli_real_escape_string($GLOBALS['linki'], $outputbids)) + 0;
 		$bidsoutputdir = mysqli_real_escape_string($GLOBALS['linki'], $bidsoutputdir);
 
 		if (is_array($dependency)) { $dependencies = implode(",",$dependency); }
@@ -326,7 +326,7 @@
 		else { $projectids = $projectid; }
 
 		/* update the pipeline table */
-		$sqlstring = "update pipelines set pipeline_resultsscript = '$pipelineresultsscript', pipeline_completefiles = '$completefiles', pipeline_dependency = '$dependencies', pipeline_groupid = '$groupids', pipeline_projectid = '$projectids', pipeline_dependencylevel = '$deplevel', pipeline_dependencydir = '$depdir', pipeline_deplinktype = '$deplinktype', pipeline_groupbysubject = '$groupbysubject', pipeline_outputbids = '$outputbids', pipeline_bidsoutputdir = '$bidsoutputdir' where pipeline_id = $id";
+		$sqlstring = "update pipelines set pipeline_resultsscript = '$pipelineresultsscript', pipeline_completefiles = '$completefiles', pipeline_dependency = '$dependencies', pipeline_groupid = '$groupids', pipeline_projectid = '$projectids', pipeline_dependencylevel = '$deplevel', pipeline_dependencydir = '$depdir', pipeline_deplinktype = '$deplinktype', pipeline_groupbysubject = $groupbysubject, pipeline_outputbids = $outputbids, pipeline_bidsoutputdir = '$bidsoutputdir' where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$msg .= "<li>Updated pipelines table";
 		
@@ -503,30 +503,30 @@
 		for($i=0; $i<=count($dd_protocol); $i++) {
 			if (trim($dd_protocol[$i]) != "") {
 				/* perform data checks */
-				$dd_enabled[$i] = (bool)mysqli_real_escape_string($GLOBALS['linki'], $dd_enabled[$i]);
+				$dd_enabled[$i] = ((bool)mysqli_real_escape_string($GLOBALS['linki'], $dd_enabled[$i])) + 0;
 				$dd_order[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_order[$i]);
 				$dd_protocol[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_protocol[$i]);
 				$dd_modality[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_modality[$i]);
-				$dd_datalevel[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_datalevel[$i]);
+				$dd_datalevel[$i] = ((int)mysqli_real_escape_string($GLOBALS['linki'], $dd_datalevel[$i])) + 0;
 				$dd_studyassoc[$i] = trim(mysqli_real_escape_string($GLOBALS['linki'], $dd_studyassoc[$i]));
 				$dd_dataformat[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_dataformat[$i]);
 				$dd_imagetype[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_imagetype[$i]);
-				$dd_gzip[$i] = (bool)mysqli_real_escape_string($GLOBALS['linki'], $dd_gzip[$i]);
+				$dd_gzip[$i] = ((bool)mysqli_real_escape_string($GLOBALS['linki'], $dd_gzip[$i])) + 0;
 				$dd_location[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_location[$i]);
 				$dd_seriescriteria[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_seriescriteria[$i]);
 				$dd_numboldreps[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_numboldreps[$i]);
 				$dd_behformat[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_behformat[$i]);
 				$dd_behdir[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_behdir[$i]);
-				$dd_useseriesdirs[$i] = (bool)mysqli_real_escape_string($GLOBALS['linki'], $dd_useseriesdirs[$i]);
-				$dd_optional[$i] = (bool)mysqli_real_escape_string($GLOBALS['linki'], $dd_optional[$i]);
+				$dd_useseriesdirs[$i] = ((bool)mysqli_real_escape_string($GLOBALS['linki'], $dd_useseriesdirs[$i])) + 0;
+				$dd_optional[$i] = ((bool)mysqli_real_escape_string($GLOBALS['linki'], $dd_optional[$i])) + 0;
 				//$dd_primary[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_primary[$i]) + 0;
-				$dd_preserveseries[$i] = (bool)mysqli_real_escape_string($GLOBALS['linki'], $dd_preserveseries[$i]);
-				$dd_usephasedir[$i] = (bool)mysqli_real_escape_string($GLOBALS['linki'], $dd_usephasedir[$i]);
-				$dd_behonly[$i] = (bool)mysqli_real_escape_string($GLOBALS['linki'], $dd_behonly[$i]);
+				$dd_preserveseries[$i] = ((bool)mysqli_real_escape_string($GLOBALS['linki'], $dd_preserveseries[$i])) + 0;
+				$dd_usephasedir[$i] = ((bool)mysqli_real_escape_string($GLOBALS['linki'], $dd_usephasedir[$i])) + 0;
+				$dd_behonly[$i] = ((bool)mysqli_real_escape_string($GLOBALS['linki'], $dd_behonly[$i])) + 0;
 				
 				if ($dd_isprimary == $dd_order[$i]) { $primary = "1"; } else { $primary = "0"; }
 				
-				$sqlstring = "insert into pipeline_data_def (pipeline_id, pipeline_version, pdd_isprimaryprotocol, pdd_order, pdd_seriescriteria, pdd_protocol, pdd_modality, pdd_dataformat, pdd_imagetype, pdd_gzip, pdd_location, pdd_useseries, pdd_preserveseries, pdd_usephasedir, pdd_behonly, pdd_behformat, pdd_behdir, pdd_enabled, pdd_optional, pdd_numboldreps, pdd_level, pdd_assoctype) values ($id, $newversion, $primary, '$dd_order[$i]', '$dd_seriescriteria[$i]', '$dd_protocol[$i]', '$dd_modality[$i]', '$dd_dataformat[$i]', '$dd_imagetype[$i]', '$dd_gzip[$i]', '$dd_location[$i]', '$dd_useseriesdirs[$i]', '$dd_preserveseries[$i]', '$dd_usephasedir[$i]', '$dd_behonly[$i]', '$dd_behformat[$i]', '$dd_behdir[$i]', $dd_enabled[$i], '$dd_optional[$i]', '$dd_numboldreps[$i]', '$dd_datalevel[$i]', '$dd_studyassoc[$i]')";
+				$sqlstring = "insert into pipeline_data_def (pipeline_id, pipeline_version, pdd_isprimaryprotocol, pdd_order, pdd_seriescriteria, pdd_protocol, pdd_modality, pdd_dataformat, pdd_imagetype, pdd_gzip, pdd_location, pdd_useseries, pdd_preserveseries, pdd_usephasedir, pdd_behonly, pdd_behformat, pdd_behdir, pdd_enabled, pdd_optional, pdd_numboldreps, pdd_level, pdd_assoctype) values ($id, $newversion, $primary, '$dd_order[$i]', '$dd_seriescriteria[$i]', '$dd_protocol[$i]', '$dd_modality[$i]', '$dd_dataformat[$i]', '$dd_imagetype[$i]', $dd_gzip[$i], '$dd_location[$i]', $dd_useseriesdirs[$i], $dd_preserveseries[$i], $dd_usephasedir[$i], $dd_behonly[$i], '$dd_behformat[$i]', '$dd_behdir[$i]', $dd_enabled[$i], $dd_optional[$i], '$dd_numboldreps[$i]', '$dd_datalevel[$i]', '$dd_studyassoc[$i]')";
 				//PrintSQL($sqlstring);
 				$msg .= "<li>Inserted data definition [$dd_protocol[$i]]";
 				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -576,8 +576,8 @@
 		$pipelinetmpdir = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinetmpdir));
 		$pipelinenotes = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinenotes));
 		$completefiles = mysqli_real_escape_string($GLOBALS['linki'], trim($completefiles));
-		$groupbysubject = (bool)mysqli_real_escape_string($GLOBALS['linki'], $groupbysubject);
-		$outputbids = (bool)mysqli_real_escape_string($GLOBALS['linki'], $outputbids);
+		$groupbysubject = ((bool)mysqli_real_escape_string($GLOBALS['linki'], $groupbysubject)) + 0;
+		$outputbids = ((bool)mysqli_real_escape_string($GLOBALS['linki'], $outputbids)) + 0;
 		$bidsoutputdir = mysqli_real_escape_string($GLOBALS['linki'], $bidsoutputdir);
 		$deplevel = mysqli_real_escape_string($GLOBALS['linki'], trim($deplevel));
 		$depdir = mysqli_real_escape_string($GLOBALS['linki'], trim($depdir));
@@ -1044,16 +1044,22 @@
 		
 		if ($numproc == "") { $numproc = 1; }
 		
-		//$urllist['Pipelines'] = "pipelines.php";
-		//$urllist[$title] = "pipelines.php?action=editpipeline&id=$id";
-		//NavigationBar("", $urllist);
+		/* perform validity checks on the pipeline */
+		if (($deplevel == "subject") && ($dependency != "") && ($groupid == "")) {
+			$checks['Dependency criteria']['level'] = 'error';
+			$checks['Dependency criteria']['message'] = "Subject dependency without group specified";
+			$checks['Dependency criteria']['description'] = "When using the Data & Scripts &rarr; Pipeline dependency &rarr; Matching criteria &rarr; subject, a group must be specified. Matching dependencies based on subject may result in far more analyses than expected, and thus a group must be specified to narrow down the matches";
+		}
+		else {
+			$checks['Dependency criteria']['level'] = 'ok';
+		}
+		
 	?>
 	
 		<script type="text/javascript">
 		
 			$(document).ready(function() {
 
-				//$('.menu .item').tab();
 				$('.tabular.menu .item').tab();
 				
 				$('.pageloading').hide();
@@ -1672,14 +1678,14 @@
 						</div>
 						<?
 							if ($numproc > 1) {
-								$checks['Concurrent&nbsp;jobs']['level'] = 'ok';
-								$checks['Concurrent&nbsp;jobs']['message'] = "More than 1 concurrent process";
-								$checks['Concurrent&nbsp;jobs']['description'] = "Jobs will run in parallel";
+								$checks['Concurrent jobs']['level'] = 'ok';
+								$checks['Concurrent jobs']['message'] = "More than 1 concurrent process";
+								$checks['Concurrent jobs']['description'] = "Jobs will run in parallel";
 							}
 							else {
-								$checks['Concurrent&nbsp;jobs']['level'] = 'warning';
-								$checks['Concurrent&nbsp;jobs']['message'] = "Only 1 concurrent process allowed";
-								$checks['Concurrent&nbsp;jobs']['description'] = "Setting <tt>concurrent processes</tt> to 1 will only allow one cluster job to run at a time. Each job must finish before another can start. If a job errors or gets stuck, no other jobs will run.";
+								$checks['Concurrent jobs']['level'] = 'warning';
+								$checks['Concurrent jobs']['message'] = "Only 1 concurrent process allowed";
+								$checks['Concurrent jobs']['description'] = "Setting <tt>concurrent processes</tt> to 1 will only allow one cluster job to run at a time. Each job must finish before another can start. If a job errors or gets stuck, no other jobs will run.";
 							}
 						?>
 					</td>
@@ -2696,6 +2702,7 @@
 				}
 				else {
 					$checks['Primary data item']['level'] = 'ok';
+					$checks['Primary data item']['description'] = "A primary data item must be specified. This determines the root imaging study from which other data can be associated and downloaded.";
 				}
 				
 				if ($blankmodality == true) {
@@ -2705,6 +2712,7 @@
 				}
 				else {
 					$checks['Blank modality']['level'] = 'ok';
+					$checks['Blank modality']['description'] = "Modality must be specified for all data items";
 				}
 				
 			?>
@@ -2977,6 +2985,8 @@ echo "#$ps_command     $logged $ps_desc\n";
 					<th>Description</th>
 				</thead>
 				<?
+					$pipelineErrors = 0;
+					ksort($checks);
 					foreach ($checks as $check => $value) {
 						if ($value['level'] == 'ok') {
 							$color = "green";
@@ -2989,6 +2999,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 						else {
 							$color = "red";
 							$icon = "exclamation circle";
+							$pipelineErrors++;
 						}
 						
 						?>
@@ -3009,6 +3020,20 @@ echo "#$ps_command     $logged $ps_desc\n";
 					}
 				?>
 			</table>
+			<?
+				if ($pipelineErrors > 0) {
+					?>
+					<script type="text/javascript">
+						const checksTab = document.getElementById('checkTabTitle');
+
+						checksTab.style.backgroundColor = '#F00';
+						checksTab.style.color = '#FFF';
+						checksTab.style.borderRadius = '0.28571429rem 0.28571429rem 0 0';
+						checksTab.innerHTML = '<i class="exclamation triangle icon"></i> <?=$pipelineErrors?> error(s)';
+					</script>
+					<?
+				}
+			?>
 		</div>
 		
 		<? } ?>

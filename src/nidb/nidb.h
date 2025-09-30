@@ -33,7 +33,7 @@
 #include <QMetaType>
 #include <QVariant>
 #include "version.h"
-#include "SmtpMime"
+//#include "SmtpMime"
 #include "utils.h"
 
 typedef QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>> subjectStudySeriesContainer;

@@ -661,7 +661,7 @@
 		}
 		
 		/* finish up the insert buffer */
-		if (count($inserts) >= 100) {
+		if (count($inserts) > 0) {
 			$sqlstring = "insert ignore into observations (enrollment_id, observation_entrydate, observation_name, observation_value, observation_rater, observation_instrument, observation_startdate, observation_enddate) values " . implode(",", $inserts);
 			//PrintSQL($sqlstring);
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);

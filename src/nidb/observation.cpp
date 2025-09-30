@@ -49,7 +49,7 @@ void observation::LoadObservationInfo() {
     }
     else {
         QSqlQuery q;
-        q.prepare("select * from observations a left join observationnames b on a.observationname_id = b.observationname_id left join observationinstruments c on a.instrumentname_id = c.observationinstrument_id left join enrollment d on a.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.observation_id = :observationid");
+        q.prepare("select * from observations a left join enrollment d on a.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.observation_id = :observationid");
         q.bindValue(":observationid", observationid);
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         if (q.size() < 1) {

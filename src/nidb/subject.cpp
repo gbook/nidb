@@ -232,7 +232,7 @@ QString subject::GetPrimaryAlternateID(int projectRowID) {
         n->Debug(QString("Found primary alternate ID [%1] for subjectRowID [%2] and projectRowID [%3]").arg(primaryAltID).arg(_subjectid).arg(projectRowID), __FUNCTION__);
     }
     else
-        n->Log(QString("Unable to find primary alternate ID for subjectRowID [%1] and projectRowID [%2]").arg(_subjectid).arg(projectRowID), __FUNCTION__);
+        n->Debug(QString("Unable to find primary alternate ID for subjectRowID [%1] and projectRowID [%2]").arg(_subjectid).arg(projectRowID), __FUNCTION__);
 
 
     return primaryAltID;

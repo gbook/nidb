@@ -138,13 +138,13 @@ win32: {
 	-lsocketxx
 
     # Location of SMTP Library
-    SMTPBIN = ../../bin/smtp-win
-    LIBS += -L$$SMTPBIN/release -lSMTPEmail
-    INCLUDEPATH += ../smtp
-    DEPENDPATH += $$SMTPBIN
-    *msvc* { # visual studio spec filter
-	QMAKE_CXXFLAGS += -MP
-    }
+    #SMTPBIN = ../../bin/smtp-win
+    #LIBS += -L$$SMTPBIN/release -lSMTPEmail
+    #INCLUDEPATH += ../smtp
+    #DEPENDPATH += $$SMTPBIN
+    #*msvc* { # visual studio spec filter
+#	QMAKE_CXXFLAGS += -MP
+    #}
 
     # Location of squirrel Library
     SQUIRRELBIN = ../../bin/squirrel-win
@@ -158,11 +158,11 @@ win32: {
 }
 unix: {
     # Location of SMTP Library and header
-    INCLUDEPATH += ../smtp
-    SMTPBIN = ../../bin/smtp
-    LIBS += -L$$SMTPBIN/ -lSMTPEmail
-    INCLUDEPATH += $$SMTPBIN
-    DEPENDPATH += $$SMTPBIN
+    #INCLUDEPATH += ../smtp
+    #SMTPBIN = ../../bin/smtp
+    #LIBS += -L$$SMTPBIN/ -lSMTPEmail
+    #INCLUDEPATH += $$SMTPBIN
+    #DEPENDPATH += $$SMTPBIN
 
     # Location of squirrel Library and header
     INCLUDEPATH += ../squirrel

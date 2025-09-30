@@ -50,6 +50,10 @@
 		$selfcall = true;
 	else
 		$selfcall = false;
+
+	//$username = $_SESSION['username'];
+	//$instanceid = $_SESSION['instanceid'];
+	//session_write_close();
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
@@ -101,7 +105,20 @@
 		$objectids = explode(",", $objectIDsToDelete);
 	}
 	
-	//PrintVariable($objectids);
+	?>
+	<div class="ui text container">
+		<div class="ui yellow message" align="center" id="pageloading">
+			<h2 class="ui header">
+				<em data-emoji=":chipmunk:" class="loading"></em> Working...
+			</h2>
+		</div>
+	</div>
+	<script>
+		$(document).ready(function(){
+			$('#pageloading').hide();
+		});
+	</script>
+	<?
 	
 	/* determine action */
 	if ($selfcall) {
@@ -1557,7 +1574,7 @@
 		
 		$enrollmentidstr = implode2(",", $enrollmentids);
 
-		$sqlstring = "select * from interventions a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join interventionnames d on a.interventionname_id = d.interventionname_id where a.enrollment_id in (" . implode2(",", $enrollmentids) . ")";
+		$sqlstring = "select * from interventions a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.enrollment_id in (" . implode2(",", $enrollmentids) . ")";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$numinterventions = mysqli_num_rows($result);
 		
@@ -1828,11 +1845,33 @@
 			$msg .= "Added " . count($interventionids) . " interventions<br>";
 		}
 		
-		/* add any observations */
-		if ((count($observationids) > 0) && ($includeobservations) && (is_array($observationids))) {
-			foreach ($observationids as $observationid) {
-				$sqlstring = "insert ignore into package_observations (package_id, observation_id) values ($packageid, $observationid)";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		/* add ALL observations if selected */
+		if ($includeobservations) {
+			
+			$observationids = array();
+			$inserts = array();
+			
+			$sqlstring = "select * from observations a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.enrollment_id in (" . implode2(",", $enrollmentids) . ")";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$observationid = $row['observation_id'];
+				$observationids[] = $observationid;
+			
+				$inserts[] = "($packageid, $observationid)";
+			
+				if (count($inserts) >= 100) {
+					$sqlstringA = "insert ignore into package_observations (package_id, observation_id) values " . implode(",", $inserts);
+					//PrintSQL($sqlstringA);
+					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+					$inserts = array();
+				}
+			}
+			/* insert the remaining items */
+			if (count($inserts) > 0) {
+				$sqlstringA = "insert ignore into package_observations (package_id, observation_id) values " . implode(",", $inserts);
+				//PrintSQL($sqlstringA);
+				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+				$inserts = array();
 			}
 			$numobjects += count($observationids);
 			$msg .= "Added " . count($observationids) . " observations<br>";
@@ -2000,29 +2039,32 @@
 
 		MarkTime("Getting observation data");
 		/* get observations */
-		$sqlstring = "select * from package_observations a left join observations b on a.observation_id = b.observation_id left join enrollment d on b.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.package_id = $packageid";
+		//$sqlstring = "select * from package_observations a left join observations b on a.observation_id = b.observation_id left join enrollment d on b.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.package_id = $packageid";
+		$sqlstring = "select count(*) 'count' from package_observations where package_id = $packageid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$numobservations = mysqli_num_rows($result);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$enrollmentid = $row['enrollment_id'];
-			$uid = $row['uid'];
-			//list($uid, $subjectid, $altuid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
-			$objectid = $row['packageobservation_id'];
-			$observations[$uid][$objectid]['observationid'] = $row['observation_id'];
-			$observations[$uid][$objectid]['name'] = $row['observation_name'];
-			$observations[$uid][$objectid]['value'] = $row['observation_value'];
-			$observations[$uid][$objectid]['startdate'] = $row['observation_startdate'];
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$numobservations = $row['count'];
+		//$numobservations = mysqli_num_rows($result);
+		//while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+		//	$enrollmentid = $row['enrollment_id'];
+		//	$uid = $row['uid'];
+		//	//list($uid, $subjectid, $altuid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
+		//	$objectid = $row['packageobservation_id'];
+		//	$observations[$uid][$objectid]['observationid'] = $row['observation_id'];
+		//	$observations[$uid][$objectid]['name'] = $row['observation_name'];
+		//	$observations[$uid][$objectid]['value'] = $row['observation_value'];
+		//	$observations[$uid][$objectid]['startdate'] = $row['observation_startdate'];
 			
-			if (!isset($altIDMapping[$uid]) || $altIDMapping[$uid] == "" || $altIDMapping[$uid] == $uid) {
-				/* update the package_enrollment table with the alternate UID specific to this enrollment (this fixes packages before the primary alt uid was used) */
-				list($uidA, $subjectidA, $altuid, $projectnameA, $projectidA) = GetEnrollmentInfo($enrollmentid);
-				if ($altuid != "") {
-					$altIDMapping[$uid] = $altuid;
-					$sqlstringA = "update package_enrollments set package_subjectid = '$altuid' where enrollment_id = $enrollmentid";
-					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-				}
-			}
-		}
+		//	if (!isset($altIDMapping[$uid]) || $altIDMapping[$uid] == "" || $altIDMapping[$uid] == $uid) {
+		//		/* update the package_enrollment table with the alternate UID specific to this enrollment (this fixes packages before the primary alt uid was used) */
+		//		list($uidA, $subjectidA, $altuid, $projectnameA, $projectidA) = GetEnrollmentInfo($enrollmentid);
+		//		if ($altuid != "") {
+		//			$altIDMapping[$uid] = $altuid;
+		//			$sqlstringA = "update package_enrollments set package_subjectid = '$altuid' where enrollment_id = $enrollmentid";
+		//			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+		//		}
+		//	}
+		//}
 
 		MarkTime("Getting intervention data");
 		/* get interventions */
