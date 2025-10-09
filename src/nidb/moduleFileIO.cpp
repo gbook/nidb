@@ -253,7 +253,13 @@ bool moduleFileIO::RecheckSuccess(qint64 analysisid, QString &msg) {
         }
     }
 
-    q.prepare("update analysis set analysis_iscomplete = :iscomplete where analysis_id = :analysisid");
+    qint64 c;
+    qint64 b;
+    GetDirSizeAndFileCount(a.analysispath, c, b, true);
+
+    q.prepare("update analysis set analysis_disksize = :disksize, analysis_numfiles = :numfiles, analysis_iscomplete = :iscomplete where analysis_id = :analysisid");
+    q.bindValue(":disksize", b);
+    q.bindValue(":numfiles", c);
     q.bindValue(":iscomplete", iscomplete);
     q.bindValue(":analysisid", analysisid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);

@@ -830,7 +830,10 @@
 		}
 		elseif ($column == "enrollgroup") {
 			$sqlstring = "update enrollment set enroll_subgroup = '$value' where project_id = $projectid and subject_id = $subjectid";
-			//PrintVariable($sqlstring);
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		}
+		elseif ($column == "enrollstatus") {
+			$sqlstring = "update enrollment set enroll_status = '$value' where project_id = $projectid and subject_id = $subjectid";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		}
 		else {

@@ -4980,9 +4980,9 @@
 							</div>
 							
 							<!-- Remote XNAT tab -->
-							<div class="ui tab seamless right attached segment" data-tab="tab-xnat" style="background-color: #EBF5FB">
+							<!--<div class="ui tab seamless right attached segment" data-tab="tab-xnat" style="background-color: #EBF5FB">
 								<p style="text-align: center">XNAT transfer settings are taken from the project</p>
-							</div>
+							</div>-->
 							
 							<!-- Remote FTP tab -->
 							<div class="ui <? if ($activeTab == "remoteftp") { echo "active"; } ?> tab seamless right attached segment" data-tab="tab-remoteftp" style="background-color: #EBF5FB">

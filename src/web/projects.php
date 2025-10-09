@@ -77,7 +77,7 @@
 	
 	$rdoc_label = GetVariable("rdoc_label");
 	$itemprotocol = GetVariable("itemprotocol");
-	$xnathost = GetVariable("xnathost");
+	//$xnathost = GetVariable("xnathost");
 
 	/* determine action */
 	switch ($action) {
@@ -101,13 +101,13 @@
 		case 'viewbidsdatatypes':
 			ViewBIDSDatatypes($id);
 			break;
-		case 'editxnat':
-			EditXNAT($id);
-			break;
-		case 'savexnat':
-			SaveXNAT($id, $xnathost);
-			DisplayProject($id);
-			break;
+		//case 'editxnat':
+		//	EditXNAT($id);
+		//	break;
+		//case 'savexnat':
+		//	SaveXNAT($id, $xnathost);
+		//	DisplayProject($id);
+		//	break;
 		case 'dismissnewstudies':
 			DismissNewStudies($id);
 			DisplayProject($id);
@@ -406,17 +406,17 @@
 	/* -------------------------------------------- */
 	/* ------- EditXNAT --------------------------- */
 	/* -------------------------------------------- */
-	function EditXNAT($id) {
+	//function EditXNAT($id) {
 		/* prepare the fields for SQL */
-		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
+	//	$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 		
-		$sqlstring = "select xnat_hostname from projects where project_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$xnathost = $row['xnat_hostname'];
+	//	$sqlstring = "select xnat_hostname from projects where project_id = $id";
+	//	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+	//	$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+	//	$xnathost = $row['xnat_hostname'];
 		
 		?>
-		<div class="ui text container">
+		<!--<div class="ui text container">
 			<form method="post" action="projects.php" class="ui form">
 				<input type="hidden" name="action" value="savexnat">
 				<input type="hidden" name="id" value="<?=$id?>">
@@ -426,24 +426,24 @@
 				</div>
 				<input type="submit" class="ui button" value="Save">
 			</form>
-		</div>
+		</div>-->
 		<?
-	}
+	//}
 
 
 	/* -------------------------------------------- */
 	/* ------- SaveXNAT --------------------------- */
 	/* -------------------------------------------- */
-	function SaveXNAT($id, $xnathost) {
+	//function SaveXNAT($id, $xnathost) {
 		/* prepare the fields for SQL */
-		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
-		$xnathost = mysqli_real_escape_string($GLOBALS['linki'], $xnathost);
+	//	$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
+	//	$xnathost = mysqli_real_escape_string($GLOBALS['linki'], $xnathost);
 		
-		$sqlstring = "update projects set xnat_hostname = '$xnathost' where project_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+	//	$sqlstring = "update projects set xnat_hostname = '$xnathost' where project_id = $id";
+	//	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
-		Notice("XNAT hostname '$xnathost' saved");
-	}
+	//	Notice("XNAT hostname '$xnathost' saved");
+	//}
 
 
 	/* -------------------------------------------- */
@@ -1250,6 +1250,7 @@
 			$maritalstatus = $row['marital_status'];
 			$smokingstatus = $row['smoking_status'];
 			$enrollsubgroup = $row['enroll_subgroup'];
+			$enrollstatus = $row['enroll_status'];
 			
 			$globalaltids = array();
 			$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' order by isprimary desc";
@@ -1298,7 +1299,7 @@
 				case 8: $education = "Doctoral Degree"; break;
 			}
 
-			$rowdata[] = "{ id: $subjectid, enrollmentid: $subjectid, uid: \"$uid\", globalaltuids: \"$globalaltuidlist\", altuids: \"$projectaltuidlist\", guid: \"$guid\", dob: \"$birthdate\", sex: \"$sex\", gender: \"$gender\", ethnicity1: \"$ethnicity1\", ethnicity2: \"$ethnicity2\", handedness: \"$handedness\", education: \"$education\", marital: \"$maritalstatus\", smoking: \"$smokingstatus\", enrollgroup: \"$enrollsubgroup\" }";
+			$rowdata[] = "{ id: $subjectid, enrollmentid: $subjectid, uid: \"$uid\", globalaltuids: \"$globalaltuidlist\", altuids: \"$projectaltuidlist\", guid: \"$guid\", dob: \"$birthdate\", sex: \"$sex\", gender: \"$gender\", ethnicity1: \"$ethnicity1\", ethnicity2: \"$ethnicity2\", handedness: \"$handedness\", education: \"$education\", marital: \"$maritalstatus\", smoking: \"$smokingstatus\", enrollgroup: \"$enrollsubgroup\", enrollstatus: \"$enrollstatus\" }";
 		}
 		$data = "";
 		if (count($rowdata) > 0)
@@ -1369,6 +1370,10 @@
 			</div>
 		</div>
 		<div id="myGrid" class="ag-theme-alpine" style="height: 60vh"></div>
+		<style>
+			.completed { background-color: #bfb; }
+			.excluded { background-color: #eee; color: #444; }
+		</style>
 		<script type="text/javascript">
 			let gridApi;
 
@@ -1402,6 +1407,16 @@
 						width: 150,
 						cellRenderer: function(params) {
 							return '<a href="subjects.php?id=' + params.data.id + '">' + params.value + '</a>'
+						}
+					},
+					{
+						headerName: "Status",
+						field: "enrollstatus",
+						editable: true,
+						cellEditor: 'agSelectCellEditor',
+						cellEditorParams: {
+							values: ['', 'consented', 'excluded', 'completed'],
+							valueListGap: 0
 						}
 					},
 					{ 
@@ -1498,6 +1513,11 @@
 				],
 
 				rowData: [ <?=$data?> ],
+
+				rowClassRules: {
+					"completed": "data.enrollstatus == 'completed'",
+					"excluded": "data.enrollstatus == 'excluded'",
+				},
 				
 				// default col def properties get applied to all columns
 				defaultColDef: {sortable: true, filter: true, resizable: true},
@@ -1599,6 +1619,7 @@
 			$gender = $row['gender'];
 			$birthdate = $row['birthdate'];
 			$enrollsubgroup = $row['enroll_subgroup'];
+			$enrollstatus = $row['enroll_status'];
 			
 			$globalaltids = array();
 			$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' order by isprimary desc";
@@ -1633,7 +1654,7 @@
 			$altuidlist = implode2(", ",$altids);
 			$altids = array();
 			
-			$rowdata[] = "{ id: $subjectid, uid: \"$uid\", globalaltuids: \"$globalaltuidlist\", altuids: \"$altuidlist\", guid: \"$guid\", dob: \"$birthdate\", sex: \"$sex\", gender: \"$gender\", enrollgroup: \"$enrollsubgroup\" }";
+			$rowdata[] = "{ id: $subjectid, uid: \"$uid\", globalaltuids: \"$globalaltuidlist\", altuids: \"$altuidlist\", guid: \"$guid\", dob: \"$birthdate\", sex: \"$sex\", gender: \"$gender\", enrollgroup: \"$enrollsubgroup\", enrollstatus: \"$enrollstatus\" }";
 		}
 		
 		$data = "";
@@ -1664,6 +1685,10 @@
 			</div>
 		</div>
 		<div id="myGrid" class="ag-theme-alpine" style="height: 60vh"></div>
+		<style>
+			.completed { background-color: #bfb; }
+			.excluded { background-color: #eee; color: #444; }
+		</style>
 		<script type="text/javascript">
 			let gridApi;
 
@@ -1689,6 +1714,16 @@
 						width: 150,
 						cellRenderer: function(params) {
 							return '<a href="subjects.php?id=' + params.data.id + '">' + params.value + '</a>'
+						}
+					},
+					{
+						headerName: "Status",
+						field: "enrollstatus",
+						editable: true,
+						cellEditor: 'agSelectCellEditor',
+						cellEditorParams: {
+							values: ['', 'consented', 'excluded', 'completed'],
+							valueListGap: 0
 						}
 					},
 					{ 
@@ -1738,6 +1773,10 @@
 
 				rowData: [ <?=$data?> ],
 				
+				rowClassRules: {
+					"completed": "data.enrollstatus == 'completed'",
+					"excluded": "data.enrollstatus == 'excluded'",
+				},
 				// default col def properties get applied to all columns
 				defaultColDef: {sortable: true, filter: true, resizable: true},
 
