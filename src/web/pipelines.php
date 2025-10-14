@@ -226,6 +226,10 @@
 			ExportPipeline($id);
 			DisplayPipelineForm("edit", $id, $returntab);
 			break;
+		case 'exportanalysisresults':
+			ExportAnalysisResults($id);
+			DisplayPipelineForm("edit", $id, $returntab);
+			break;
 		default:
 			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewhidden, $viewuserid);
 	}
@@ -2967,8 +2971,9 @@ echo "#$ps_command     $logged $ps_desc\n";
 			</p>
 			<br>
 			<p><a href="pipelines.php?action=exportpipeline&id=<?=$id?>&returntab=operations" class="ui button" style="width:250px" title="This pipeline will be exported in squirrel format as a web download"><i class="file export icon"></i> Export pipeline</a></p>
+			<p><a href="pipelines.php?action=exportanalysisresults&id=<?=$id?>&returntab=operations" class="ui button" style="width:250px" title="Export all analysis results as a web download"><i class="file export icon"></i> Export analysis results</a></p>
 			<br>
-			<a href="packages.php?action=addobject&objecttype=pipeline&objectids[]=<?=$id?>" class="ui primary brown button" style="width:250px"><img src="images/squirrel-icon-bw-64.png" height="15" style="filter:invert(1)"></img> &nbsp; Add to Package</a>
+			<a href="packages.php?action=addobject&objecttype=pipeline&objectids[]=<?=$id?>" class="ui primary basic brown button" style="width:250px"><em data-emoji=":chipmunk:"></em> &nbsp; Add to Package</a>
 			<br><br>
 			<p><a href="pipelines.php?action=detach&id=<?=$id?>&returntab=operations" class="ui disabled red button" style="width:250px" onclick="return confirm('Are you sure you want to completely detach this pipeline?')" title="This will completely inactivate the pipeline and remove all analyses from the pipeline control. Since the data will no longer be under pipeline control, all analysis results will be deleted. All analysis data will be moved to the directory you specify"><i class="unlock alternate icon"></i> Detach pipeline</a></p>
 			<p><a href="pipelines.php?action=delete&id=<?=$id?>&returntab=operations" class="ui red button" style="width:250px" onclick="return confirm('Are you sure you want to delete this pipeline?')"><i class="trash alternate icon"></i> Delete this pipeline</a></p>
@@ -4217,6 +4222,49 @@ echo "#$ps_command     $logged $ps_desc\n";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
 		Notice("Pipeline queued for export. Download squirrel file from the <a href='requeststatus.php'>Exports</a> page");
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ExportAnalysisResults -------------- */
+	/* -------------------------------------------- */
+	function ExportAnalysisResults($id) {
+		/* web, squirrel, pipeline only */
+
+		$ip = getenv('REMOTE_ADDR');
+		$username = $_SESSION['username'];
+		
+		/* collect the download flags */
+		//$downloadflags = array();
+		//$downloadflags[] = "DOWNLOAD_PIPELINES";
+		//if (count($downloadflags) > 0)
+		//	$downloadflagstr = "('" . implode2(",",$downloadflags) . "')";
+		//else
+		//	$downloadflagstr = "null";
+		
+		/* collect the squirrel flags */
+		//$squirrelflags = array();
+		//if (count($squirrelflags) > 0)
+		//	$squirrelflagstr = "('" . implode2(",",$squirrelflags) . "')";
+		//else
+		//	$squirrelflagstr = "null";
+		
+		/* get pipeline details */
+		$sqlstring = "select * from pipelines where pipeline_id = $id";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$pipelinename = $row['pipeline_name'];
+		//$pipelinedesc = $row['pipeline_desc'];
+		
+		$pipelinename = mysqli_real_escape_string($GLOBALS['linki'], $pipelinename);
+		//$pipelinedesc = mysqli_real_escape_string($GLOBALS['linki'], $pipelinedesc);
+		
+		$sqlstring = "insert into export_nonimaging (username, ip, export_type, pipeline_id, export_destinationtype, export_status, export_statusmessage, export_startdate) values ('$username', '$ip', 'analysisresults', $id, 'web', 'submitted', 'Submitted analysis results export for $pipelinename', now())";
+		//PrintSQL($sqlstring);
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$exportid = mysqli_insert_id($GLOBALS['linki']);
+		
+		Notice("Analysis results queued for export. Download from this page.");
 	}
 	
 ?>

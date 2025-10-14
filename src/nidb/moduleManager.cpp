@@ -73,6 +73,9 @@ int moduleManager::Run() {
             q2.bindValue(":modulename", modulename);
             q2.bindValue(":pid", pid);
             n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+
+            //QString message = QString("The %1 module was listed as running for more than 3 hours, and the following lock file was removed\n\n%2").arg(modulename).arg(lockfile);
+            //n->SendEmail(n->cfg["adminemail"], "NiDB module manager (terminated module)", message);
         }
     }
     else {

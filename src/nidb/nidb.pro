@@ -46,6 +46,7 @@ SOURCES += \
     moduleBackup.cpp \
     moduleCluster.cpp \
     moduleExport.cpp \
+    moduleExportNonImaging.cpp \
     moduleFileIO.cpp \
     moduleImport.cpp \
     moduleMRIQA.cpp \
@@ -87,6 +88,7 @@ HEADERS += \
     moduleBackup.h \
     moduleCluster.h \
     moduleExport.h \
+    moduleExportNonImaging.h \
     moduleFileIO.h \
     moduleImport.h \
     moduleMRIQA.h \

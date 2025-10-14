@@ -70,11 +70,9 @@ int moduleExport::Run() {
             n->ModuleRunningCheckIn();
             if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); return 0; }
             bool found = false;
-            //QString msg;
             i++;
 
             int exportid = q.value("export_id").toInt();
-            //QString username = q.value("username").toString().trimmed();
             QString exporttype = q.value("destinationtype").toString().trimmed();
             QStringList downloadflags = q.value("download_flags").toString().trimmed().split(",");
             QString nfsdir = q.value("nfsdir").toString().trimmed();

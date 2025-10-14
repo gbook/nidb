@@ -738,6 +738,45 @@ QString nidb::Debug(QString msg, QString func, int wrap, bool timeStamp) {
 
 
 /* ---------------------------------------------------------- */
+/* --------- SendEmail -------------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Send email using curl, from the command line
+ * @param to To email
+ * @param subject Subject line
+ * @param body Body of the message
+ * @return
+ */
+bool nidb::SendEmail(QString to, QString subject, QString body) {
+
+    /* get email config variables */
+    QString smtpServer = cfg["emailserver"].replace("tls://","");
+    int smtpPort = cfg["emailport"].toInt();
+    QString fromEmail = cfg["emailfrom"];
+    QString smtpUsername = cfg["emailusername"];
+    QString smtpPassword = cfg["emailpassword"];
+    QString siteName = cfg["sitename"];
+    QString tmpMailFilePath = "/tmp/" + GenerateRandomString(15) + ".txt";
+
+    /* create the curl command */
+    QString curlCmd = QString("curl smtp://%1 --mail-from %2 --mail-rcpt %3 --upload-file %4").arg(smtpServer).arg(fromEmail).arg(to).arg(tmpMailFilePath);
+    QString message = QString("From: NiDB (%1) <%2>\nTo: %3\nSubject: %4\nDate: %5\nContent-Type: text/html; charset=\"utf-8\"\n\n").arg(siteName).arg(fromEmail).arg(to).arg(subject).arg(QDateTime::currentDateTime().toString(Qt::RFC2822Date));
+    message += body;
+    message += "\r\n.\r\n";
+
+    WriteTextFile(tmpMailFilePath, message, false);
+
+    /* send the email */
+    QString result = SystemCommand(curlCmd, true).trimmed();
+    Print(result);
+
+    //QFile::remove(tmpMailFilePath);
+
+    return true;
+}
+
+
+/* ---------------------------------------------------------- */
 /* --------- InsertSubjectChangeLog ------------------------- */
 /* ---------------------------------------------------------- */
 void nidb::InsertSubjectChangeLog(QString username, QString uid, QString newuid, QString changetype, QString log) {
