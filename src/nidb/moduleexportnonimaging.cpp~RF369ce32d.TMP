@@ -1,0 +1,110 @@
+/* ------------------------------------------------------------------------------
+  NIDB moduleExportNonImaging.cpp
+  Copyright (C) 2004 - 2025
+  Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
+  Olin Neuropsychiatry Research Center, Hartford Hospital
+  ------------------------------------------------------------------------------
+  GPLv3 License:
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  ------------------------------------------------------------------------------ */
+
+#include "moduleExportNonImaging.h"
+
+
+/* ---------------------------------------------------------- */
+/* --------- moduleExportNonImaging ------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Constructor
+ * @param a pointer to the nidb object
+ */
+moduleExportNonImaging::moduleExportNonImaging(nidb *a)
+{
+    n = a;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- ~moduleExportNonImaging ------------------------ */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Destructor
+ */
+moduleExportNonImaging::~moduleExportNonImaging()
+{
+
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- Run -------------------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Entry point for this module. This function will perform any exports if they are queued
+ * @return The number of exports completed
+ */
+int moduleExportNonImaging::Run() {
+    n->Log("Entering the exportnonimaging module");
+
+    /* get list of things to export */
+    QSqlQuery q("select * from export_nonimaging where export_status = 'submitted' or export_status = 'pending'");
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+
+    if (q.size() > 0) {
+        int i = 0;
+        while (q.next()) {
+            n->ModuleRunningCheckIn();
+            if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); return 0; }
+            bool found = false;
+            i++;
+
+            int exportid = q.value("export_id").toInt();
+            QString exporttype = q.value("destinationtype").toString().trimmed();
+            QStringList downloadflags = q.value("download_flags").toString().trimmed().split(",");
+
+            /* remove a trailing slash if it exists */
+            if (nfsdir.right(1) == "/")
+                nfsdir.chop(1);
+
+            /* get the current status of this fileio request, make sure no one else is processing it, and mark it as being processed if not */
+            QString status = GetExportStatus(exportid);
+            if (status == "submitted") {
+                /* set the status. if something is wrong, skip this request */
+                if (!SetExportStatus(exportid, "processing")) {
+                    n->Log(QString("Unable to set export status to [%1]").arg(status));
+                    continue;
+                }
+            }
+            else {
+                /* skip this IO request... the status was changed outside of this instance of the program */
+                n->Log(QString("The status for this export [%1] has been changed from [submitted] to [%2]. Skipping.").arg(exportid).arg(status));
+                continue;
+            }
+
+            n->Log(QString(" ---------- Export operation (%1 of %2) ---------- ").arg(i).arg(q.size()));
+
+            QString log;
+
+            n->Log(QString("Found [%1] exports").arg(found));
+        }
+        n->Log("Finished performing exports");
+    }
+    else {
+        n->Log("Nothing to do");
+        return 0;
+    }
+
+    return 1;
+}

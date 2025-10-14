@@ -1,0 +1,11 @@
+#ifndef MODULEEXPORTNONIMAGING_H
+#define MODULEEXPORTNONIMAGING_H
+
+
+class moduleExportNonImaging
+{
+public:
+    moduleExportNonImaging();
+};
+
+#endif // MODULEEXPORTNONIMAGING_H

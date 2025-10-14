@@ -1,0 +1,7 @@
+#include "moduleexportnonimaging.h"
+
+
+moduleExportNonImaging::moduleExportNonImaging()
+{
+
+}
