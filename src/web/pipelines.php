@@ -511,7 +511,7 @@
 				$dd_order[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_order[$i]);
 				$dd_protocol[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_protocol[$i]);
 				$dd_modality[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_modality[$i]);
-				$dd_datalevel[$i] = ((int)mysqli_real_escape_string($GLOBALS['linki'], $dd_datalevel[$i])) + 0;
+				$dd_datalevel[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_datalevel[$i]);
 				$dd_studyassoc[$i] = trim(mysqli_real_escape_string($GLOBALS['linki'], $dd_studyassoc[$i]));
 				$dd_dataformat[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_dataformat[$i]);
 				$dd_imagetype[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_imagetype[$i]);

@@ -156,7 +156,7 @@
     $c['backupdir'] = GetVariable("backupdir");
     $c['deleteddir'] = GetVariable("deleteddir");
     $c['downloaddir'] = GetVariable("downloaddir");
-    $c['ftpdir'] = GetVariable("ftpdir");
+    $c['exportdir'] = GetVariable("exportdir");
     $c['groupanalysisdir'] = GetVariable("groupanalysisdir");
     $c['importdir'] = GetVariable("importdir");
     $c['incoming2dir'] = GetVariable("incoming2dir");

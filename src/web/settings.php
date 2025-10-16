@@ -70,16 +70,17 @@
     $c['mysqlclusteruser'] = GetVariable("mysqlclusteruser");
     $c['mysqlclusterpassword'] = GetVariable("mysqlclusterpassword");
 
-    $c['modulefileiothreads'] = GetVariable("modulefileiothreads");
+    $c['modulebackupthreads'] = GetVariable("modulebackupthreads");
+    $c['moduleexportnonimagingthreads'] = GetVariable("moduleexportnonimagingthreads");
     $c['moduleexportthreads'] = GetVariable("moduleexportthreads");
+    $c['modulefileiothreads'] = GetVariable("modulefileiothreads");
     $c['moduleimportthreads'] = GetVariable("moduleimportthreads");
+    $c['moduleimportuploadedthreads'] = GetVariable("moduleimportuploadedthreads");
+    $c['moduleminipipelinethreads'] = GetVariable("moduleminipipelinethreads");
     $c['modulemriqathreads'] = GetVariable("modulemriqathreads");
     $c['modulepipelinethreads'] = GetVariable("modulepipelinethreads");
-    $c['moduleimportuploadedthreads'] = GetVariable("moduleimportuploadedthreads");
     $c['moduleqcthreads'] = GetVariable("moduleqcthreads");
     $c['moduleuploadthreads'] = GetVariable("moduleuploadthreads");
-    $c['modulebackupthreads'] = GetVariable("modulebackupthreads");
-    $c['moduleminipipelinethreads'] = GetVariable("moduleminipipelinethreads");
 	
     $c['emaillib'] = GetVariable("emaillib");
     $c['emailusername'] = GetVariable("emailusername");
@@ -160,7 +161,7 @@
     $c['backupdir'] = GetVariable("backupdir");
     $c['deleteddir'] = GetVariable("deleteddir");
     $c['downloaddir'] = GetVariable("downloaddir");
-    $c['ftpdir'] = GetVariable("ftpdir");
+    $c['exportdir'] = GetVariable("exportdir");
     $c['groupanalysisdir'] = GetVariable("groupanalysisdir");
     $c['importdir'] = GetVariable("importdir");
     $c['incoming2dir'] = GetVariable("incoming2dir");

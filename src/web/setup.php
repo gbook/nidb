@@ -184,7 +184,7 @@
 	$c['archivedir'] = GetVariable("archivedir");
 	$c['backupdir'] = GetVariable("backupdir");
 	$c['backupstagingdir'] = GetVariable("backupstagingdir");
-	$c['ftpdir'] = GetVariable("ftpdir");
+	$c['exportdir'] = GetVariable("exportdir");
 	$c['importdir'] = GetVariable("importdir");
 	$c['incomingdir'] = GetVariable("incomingdir");
 	$c['incoming2dir'] = GetVariable("incoming2dir");

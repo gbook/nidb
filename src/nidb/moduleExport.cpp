@@ -435,7 +435,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
         else if ((exporttype == "web") || (exporttype == "publicdownload"))
             bidsDirPath = QString("%1").arg(tmpexportdir);
         else
-            bidsDirPath = QString("%1/NiDB-%2").arg(n->cfg["ftpdir"]).arg(exportid);
+            bidsDirPath = QString("%1/NiDB-%2").arg(n->cfg["exportdir"]).arg(exportid);
 
         packageformat = "bids";
         QString log;
@@ -582,7 +582,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                     else if ((exporttype == "web") || (exporttype == "publicdownload"))
                         rootoutdir = QString("%1/%2").arg(tmpexportdir).arg(subjectdir);
                     else if (exporttype == "localftp")
-                        rootoutdir = QString("%1/NiDB-%2/%3").arg(n->cfg["ftpdir"]).arg(exportid).arg(subjectdir);
+                        rootoutdir = QString("%1/NiDB-%2/%3").arg(n->cfg["exportdir"]).arg(exportid).arg(subjectdir);
                     else
                         rootoutdir = QString("%1/%2").arg(tmpexportdir).arg(subjectdir);
 
@@ -793,7 +793,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
     if (exporttype == "web") {
         if (filetype == "squirrel") {
             /* move the created .zip file to the web download directory */
-            QString zipfile = QString("%1/NiDB-Squirrel-%2.zip").arg(n->cfg["ftpdir"]).arg(exportid);
+            QString zipfile = QString("%1/NiDB-Squirrel-%2.zip").arg(n->cfg["exportdir"]).arg(exportid);
             QString m;
             if (MoveFile(zipfile, n->cfg["webdownloaddir"], m)) {
                 n->Log(QString("Success moving [%1] to [%2]").arg(zipfile).arg(n->cfg["webdownloaddir"]));
@@ -1220,7 +1220,7 @@ bool moduleExport::ExportNDAR(int exportid, bool csvonly, QString &exportstatus,
         return false;
     }
 
-    QString rootoutdir = n->cfg["ftpdir"] + "/NiDB-NDAR-" + CreateLogDate();
+    QString rootoutdir = n->cfg["exportdir"] + "/NiDB-NDAR-" + CreateLogDate();
     QString headerfile = rootoutdir + "/ndar.csv";
 
     msgs << "ExportNDAR() rootoutdir [" + rootoutdir + "]";
@@ -1374,7 +1374,7 @@ bool moduleExport::ExportBIDS(int exportid, QString bidsreadme, QStringList bids
         //n->WriteLog( QString("seriesids contains [%1] items    modalities contains [%2] items").arg(seriesids.size()).arg(modalities.size()) );
 
         if (outdir == "")
-            outdir = n->cfg["ftpdir"] + "/NiDB-BIDS-" + CreateLogDate();
+            outdir = n->cfg["exportdir"] + "/NiDB-BIDS-" + CreateLogDate();
         else
             outdir += "/BIDS-" + CreateLogDate();
 
@@ -1441,7 +1441,7 @@ bool moduleExport::ExportSquirrel(int exportid, QString squirreltitle, QString s
         n->Log(QString("%1() No series found. But this might be ok if only a pipeline is being exported for example").arg(__FUNCTION__));
     }
 
-    QString rootoutdir = QString("%1/NiDB-Squirrel-%2").arg(n->cfg["ftpdir"]).arg(exportid);
+    QString rootoutdir = QString("%1/NiDB-Squirrel-%2").arg(n->cfg["exportdir"]).arg(exportid);
     outdir = rootoutdir;
 
     QString m;
@@ -1518,7 +1518,7 @@ bool moduleExport::ExportPackage(int exportid, QString &exportstatus, QString &m
         n->Log(QString("%1() No series found. But this might be ok if only a pipeline is being exported for example").arg(__FUNCTION__));
     }
 
-    QString rootoutdir = QString("%1/NiDB-Squirrel-%2").arg(n->cfg["ftpdir"]).arg(exportid);
+    QString rootoutdir = QString("%1/NiDB-Squirrel-%2").arg(n->cfg["exportdir"]).arg(exportid);
     //outdir = rootoutdir;
 
     QString m;

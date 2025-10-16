@@ -4928,7 +4928,7 @@
 										<div class="header">
 											FTP download
 										</div>
-										<p>A .zip file will be written to <code><?=$GLOBALS['cfg']['ftpdir']?></code></p>
+										<p>A .zip file will be written to <code><?=$GLOBALS['cfg']['exportdir']?></code></p>
 									</div>
 								</div>
 							</div>
@@ -4940,7 +4940,7 @@
 										<div class="header">
 											NDA (NIMH data archive) format
 										</div>
-										<p>A directory named NIDB-NDAR-<i>YYYYMMDDHHMISS</i> will be written to <code><?=$GLOBALS['cfg']['ftpdir']?></code> which contains a complete package ready to upload to the NDA</p>
+										<p>A directory named NIDB-NDAR-<i>YYYYMMDDHHMISS</i> will be written to <code><?=$GLOBALS['cfg']['exportdir']?></code> which contains a complete package ready to upload to the NDA</p>
 									</div>
 								</div>
 							</div>
@@ -4952,7 +4952,7 @@
 										<div class="header">
 											NDA (NIMH data archive) format
 										</div>
-										<p>A directory named NIDB-NDAR-<i>YYYYMMDDHHMISS</i> will be written to <code><?=$GLOBALS['cfg']['ftpdir']?></code> which <u>contains only the .csv file</u>. No imaging data is included in this export.</p>
+										<p>A directory named NIDB-NDAR-<i>YYYYMMDDHHMISS</i> will be written to <code><?=$GLOBALS['cfg']['exportdir']?></code> which <u>contains only the .csv file</u>. No imaging data is included in this export.</p>
 									</div>
 								</div>
 							</div>

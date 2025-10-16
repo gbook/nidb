@@ -3246,21 +3246,22 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		}
 		
 		/* set default values if they're not set in the config */
-		if (($GLOBALS['cfg']['mysqlhost'] != "") && (isset($GLOBALS['cfg']['mysqlhost']))) { $mysqlhost = $GLOBALS['cfg']['mysqlhost']; } else { $mysqlhost = "localhost"; }
-		if (($GLOBALS['cfg']['mysqluser'] != "") && (isset($GLOBALS['cfg']['mysqluser']))) { $mysqluser = $GLOBALS['cfg']['mysqluser']; } else { $mysqluser = "nidb"; }
-		if (($GLOBALS['cfg']['mysqlpassword'] != "") && (isset($GLOBALS['cfg']['mysqlpassword']))) { $mysqlpassword = $GLOBALS['cfg']['mysqlpassword']; } else { $mysqlpassword = "password"; }
-		if (($GLOBALS['cfg']['mysqldatabase'] != "") && (isset($GLOBALS['cfg']['mysqldatabase']))) { $mysqldatabase = $GLOBALS['cfg']['mysqldatabase']; } else { $mysqldatabase = "nidb"; }
 
-		if (($GLOBALS['cfg']['modulefileiothreads'] != "") && (isset($GLOBALS['cfg']['modulefileiothreads']))) { $modulefileiothreads = $GLOBALS['cfg']['modulefileiothreads']; } else { $modulefileiothreads = "1"; }
+		if (($GLOBALS['cfg']['modulebackupthreads'] != "") && (isset($GLOBALS['cfg']['modulebackupthreads']))) { $modulebackupthreads = $GLOBALS['cfg']['modulebackupthreads']; } else { $modulebackupthreads = "1"; }
+		if (($GLOBALS['cfg']['moduleexportnonimagingthreads'] != "") && (isset($GLOBALS['cfg']['moduleexportnonimagingthreads']))) { $moduleexportnonimagingthreads = $GLOBALS['cfg']['moduleexportnonimagingthreads']; } else { $moduleexportnonimagingthreads = "1"; }
 		if (($GLOBALS['cfg']['moduleexportthreads'] != "") && (isset($GLOBALS['cfg']['moduleexportthreads']))) { $moduleexportthreads = $GLOBALS['cfg']['moduleexportthreads']; } else { $moduleexportthreads = "2"; }
+		if (($GLOBALS['cfg']['modulefileiothreads'] != "") && (isset($GLOBALS['cfg']['modulefileiothreads']))) { $modulefileiothreads = $GLOBALS['cfg']['modulefileiothreads']; } else { $modulefileiothreads = "1"; }
 		if (($GLOBALS['cfg']['moduleimportthreads'] != "") && (isset($GLOBALS['cfg']['moduleimportthreads']))) { $moduleimportthreads = $GLOBALS['cfg']['moduleimportthreads']; } else { $moduleimportthreads = "1"; }
+		if (($GLOBALS['cfg']['moduleimportuploadedthreads'] != "") && (isset($GLOBALS['cfg']['moduleimportuploadedthreads']))) { $moduleimportuploadedthreads = $GLOBALS['cfg']['moduleimportuploadedthreads']; } else { $moduleimportuploadedthreads = "1"; }
+		if (($GLOBALS['cfg']['moduleminipipelinethreads'] != "") && (isset($GLOBALS['cfg']['moduleminipipelinethreads']))) { $moduleminipipelinethreads = $GLOBALS['cfg']['moduleminipipelinethreads']; } else { $moduleminipipelinethreads = "4"; }
 		if (($GLOBALS['cfg']['modulemriqathreads'] != "") && (isset($GLOBALS['cfg']['modulemriqathreads']))) { $modulemriqathreads = $GLOBALS['cfg']['modulemriqathreads']; } else { $modulemriqathreads = "4"; }
 		if (($GLOBALS['cfg']['modulepipelinethreads'] != "") && (isset($GLOBALS['cfg']['modulepipelinethreads']))) { $modulepipelinethreads = $GLOBALS['cfg']['modulepipelinethreads']; } else { $modulepipelinethreads = "4"; }
-		if (($GLOBALS['cfg']['moduleimportuploadedthreads'] != "") && (isset($GLOBALS['cfg']['moduleimportuploadedthreads']))) { $moduleimportuploadedthreads = $GLOBALS['cfg']['moduleimportuploadedthreads']; } else { $moduleimportuploadedthreads = "1"; }
 		if (($GLOBALS['cfg']['moduleqcthreads'] != "") && (isset($GLOBALS['cfg']['moduleqcthreads']))) { $moduleqcthreads = $GLOBALS['cfg']['moduleqcthreads']; } else { $moduleqcthreads = "2"; }
 		if (($GLOBALS['cfg']['moduleuploadthreads'] != "") && (isset($GLOBALS['cfg']['moduleuploadthreads']))) { $moduleuploadthreads = $GLOBALS['cfg']['moduleuploadthreads']; } else { $moduleuploadthreads = "1"; }
-		if (($GLOBALS['cfg']['modulebackupthreads'] != "") && (isset($GLOBALS['cfg']['modulebackupthreads']))) { $modulebackupthreads = $GLOBALS['cfg']['modulebackupthreads']; } else { $modulebackupthreads = "1"; }
-		if (($GLOBALS['cfg']['moduleminipipelinethreads'] != "") && (isset($GLOBALS['cfg']['moduleminipipelinethreads']))) { $moduleminipipelinethreads = $GLOBALS['cfg']['moduleminipipelinethreads']; } else { $moduleminipipelinethreads = "4"; }
+		if (($GLOBALS['cfg']['mysqldatabase'] != "") && (isset($GLOBALS['cfg']['mysqldatabase']))) { $mysqldatabase = $GLOBALS['cfg']['mysqldatabase']; } else { $mysqldatabase = "nidb"; }
+		if (($GLOBALS['cfg']['mysqlhost'] != "") && (isset($GLOBALS['cfg']['mysqlhost']))) { $mysqlhost = $GLOBALS['cfg']['mysqlhost']; } else { $mysqlhost = "localhost"; }
+		if (($GLOBALS['cfg']['mysqlpassword'] != "") && (isset($GLOBALS['cfg']['mysqlpassword']))) { $mysqlpassword = $GLOBALS['cfg']['mysqlpassword']; } else { $mysqlpassword = "password"; }
+		if (($GLOBALS['cfg']['mysqluser'] != "") && (isset($GLOBALS['cfg']['mysqluser']))) { $mysqluser = $GLOBALS['cfg']['mysqluser']; } else { $mysqluser = "nidb"; }
 
 		if (($GLOBALS['cfg']['analysisdir'] != "") && (isset($GLOBALS['cfg']['analysisdir']))) { $analysisdir = $GLOBALS['cfg']['analysisdir']; } else { $analysisdir = "/nidb/data/pipeline"; }
 		if (($GLOBALS['cfg']['analysisdirb'] != "") && (isset($GLOBALS['cfg']['analysisdirb']))) { $analysisdirb = $GLOBALS['cfg']['analysisdirb']; } else { $analysisdirb = "/nidb/data/pipelineb"; }
@@ -3270,7 +3271,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		if (($GLOBALS['cfg']['clusteranalysisdirb'] != "") && (isset($GLOBALS['cfg']['clusteranalysisdirb']))) { $clusteranalysisdirb = $GLOBALS['cfg']['clusteranalysisdirb']; } else { $clusteranalysisdirb = "/nidb/data/pipelineb"; }
 		if (($GLOBALS['cfg']['deleteddir'] != "") && (isset($GLOBALS['cfg']['deleteddir']))) { $deleteddir = $GLOBALS['cfg']['deleteddir']; } else { $deleteddir = "/nidb/data/deleted"; }
 		if (($GLOBALS['cfg']['downloaddir'] != "") && (isset($GLOBALS['cfg']['downloaddir']))) { $downloaddir = $GLOBALS['cfg']['downloaddir']; } else { $downloaddir = "/nidb/data/download"; }
-		if (($GLOBALS['cfg']['ftpdir'] != "") && (isset($GLOBALS['cfg']['ftpdir']))) { $ftpdir = $GLOBALS['cfg']['ftpdir']; } else { $ftpdir = "/nidb/data/ftp"; }
+		if (($GLOBALS['cfg']['exportdir'] != "") && (isset($GLOBALS['cfg']['exportdir']))) { $exportdir = $GLOBALS['cfg']['exportdir']; } else { $exportdir = "/nidb/data/ftp"; }
 		if (($GLOBALS['cfg']['groupanalysisdir'] != "") && (isset($GLOBALS['cfg']['groupanalysisdir']))) { $groupanalysisdir = $GLOBALS['cfg']['groupanalysisdir']; } else { $groupanalysisdir = "/nidb/data/pipelinegroup"; }
 		if (($GLOBALS['cfg']['importdir'] != "") && (isset($GLOBALS['cfg']['importdir']))) { $importdir = $GLOBALS['cfg']['importdir']; } else { $importdir = "/nidb/data/import"; }
 		if (($GLOBALS['cfg']['incoming2dir'] != "") && (isset($GLOBALS['cfg']['incoming2dir']))) { $incoming2dir = $GLOBALS['cfg']['incoming2dir']; } else { $incoming2dir = "/nidb/data/dicomincoming2"; }
@@ -3412,6 +3413,12 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 							<td><input type="number" name="moduleexportthreads" value="<?=$moduleexportthreads?>"></td>
 							<td></td>
 							<td><b>export</b> module. Recommended is 2</td>
+						</tr>
+						<tr>
+							<td class="right aligned tt">moduleexportnonimagingthreads</td>
+							<td><input type="number" name="moduleexportnonimagingthreads" value="<?=$moduleexportnonimagingthreads?>"></td>
+							<td></td>
+							<td><b>exportnonimaging</b> module. Recommended is 1</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">moduleimportthreads</td>
@@ -3913,9 +3920,9 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 							<td>All data is copied to this directory at the same time it is added to the archive directory. This can be useful if you want to use a tape backup and only copy out newer files from this directory to fill up a tape.</td>
 						</tr>
 						<tr>
-							<td class="right aligned tt">ftpdir</td>
-							<td><input type="text" name="ftpdir" value="<?=$ftpdir?>"></td>
-							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['ftpdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
+							<td class="right aligned tt">exportdir</td>
+							<td><input type="text" name="exportdir" value="<?=$exportdir?>"></td>
+							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['exportdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Downloaded data to be retreived by FTP is stored here</td>
 						</tr>
 						<tr>
@@ -4134,7 +4141,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		if ($clusteranalysisdirb == "") { $clusteranalysisdirb = "/nidb/data/pipelineb"; }
 		if ($deleteddir == "") { $deleteddir = "/nidb/data/deleted"; }
 		if ($downloaddir == "") { $downloaddir = "/nidb/data/download"; }
-		if ($ftpdir == "") { $ftpdir = "/nidb/data/ftp"; }
+		if ($exportdir == "") { $exportdir = "/nidb/data/ftp"; }
 		if ($groupanalysisdir == "") { $groupanalysisdir = "/nidb/data/pipelinegroup"; }
 		if ($importdir == "") { $importdir = "/nidb/data/import"; }
 		if ($incoming2dir == "") { $incoming2dir = "/nidb/data/dicomincoming2"; }
@@ -4300,7 +4307,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 [clusteranalysisdirb] = $clusteranalysisdirb
 [deleteddir] = $deleteddir
 [downloaddir] = $downloaddir
-[ftpdir] = $ftpdir
+[exportdir] = $exportdir
 [groupanalysisdir] = $groupanalysisdir
 [importdir] = $importdir
 [incoming2dir] = $incoming2dir
