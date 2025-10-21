@@ -166,15 +166,25 @@
 		$startdate = mysqli_real_escape_string($GLOBALS['linki'], trim($startdate));
 		$enddate = mysqli_real_escape_string($GLOBALS['linki'], trim($enddate));
 		
+		echo "Checkpoint A<br>";
+		
 		if ($startdate == "") { $startdate = "0000-00-00"; }
 		if ($enddate == "") { $enddate = "0000-00-00"; }
+		echo "Checkpoint B<br>";
 		
 		$projectuid = NIDB\CreateUID('P',4);
+		echo "Checkpoint C<br>";
 	
 		// echo "project_admin: $admin, PI $pi";	
 		/* insert the new project */
 		$sqlstring = "insert into projects (project_uid, project_name, project_usecustomid, project_admin, project_pi, instance_id, project_sharing, project_costcenter, project_startdate, project_enddate, project_status) values ('$projectuid', '$projectname', '$usecustomid', '$admin', '$pi', '$instanceid', '$sharing', '$costcenter', '$startdate', '$enddate', 'active')";
+		PrintSQL($sqlstring);
+		echo "Checkpoint D<br>";
+		//exit(0);
+		
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+		echo "Checkpoint E<br>";
 		
 		Notice("title", "$projectname added");
 	}
