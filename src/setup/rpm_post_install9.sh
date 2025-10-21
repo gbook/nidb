@@ -94,7 +94,7 @@ mkdir -p /nidb/data/backupstaging
 mkdir -p /nidb/data/deleted
 mkdir -p /nidb/data/dicomincoming
 mkdir -p /nidb/data/download
-mkdir -p /nidb/data/ftp
+mkdir -p /nidb/data/export
 mkdir -p /nidb/data/problem
 mkdir -p /nidb/data/tmp
 mkdir -p /nidb/data/upload
@@ -106,7 +106,7 @@ echo 'Change ownership of /nidb contents...'
 chown -R nidb:nidb /nidb/bin /nidb/lock /nidb/logs /nidb/qcmodules /nidb/setup # change ownership of the install directory
 chown nidb:nidb /nidb/*  # change ownership of the install directory
 chown nidb:nidb /nidb/data  # change ownership of the data directory
-chown nidb:nidb /nidb/data/archive /nidb/data/backup /nidb/data/backupstaging /nidb/data/deleted /nidb/data/dicomincoming /nidb/data/ftp /nidb/data/problem /nidb/data/tmp /nidb/data/upload /nidb/data/uploaded /nidb/data/uploadstaging  # change ownership of the data directories
+chown nidb:nidb /nidb/data/archive /nidb/data/backup /nidb/data/backupstaging /nidb/data/deleted /nidb/data/dicomincoming /nidb/data/ftp /nidb/data/export /nidb/data/problem /nidb/data/tmp /nidb/data/upload /nidb/data/uploaded /nidb/data/uploadstaging  # change ownership of the data directories
 echo 'Change permissions of /nidb...'
 chmod -R g+w /nidb/bin /nidb/lock /nidb/logs /nidb/qcmodules /nidb/setup # change permissions of the install directorys contents
 chmod g+w /nidb/* # change permissions of the install directorys contents

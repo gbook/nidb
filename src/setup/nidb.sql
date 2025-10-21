@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Sep 24, 2025 at 03:56 PM
+-- Generation Time: Oct 21, 2025 at 06:32 PM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -981,7 +981,7 @@ CREATE TABLE `enrollment` (
   `enroll_subgroup` varchar(50) DEFAULT NULL,
   `enroll_startdate` datetime DEFAULT NULL,
   `enroll_enddate` datetime DEFAULT NULL,
-  `enroll_status` enum('enrolled','completed','excluded','') NOT NULL DEFAULT '',
+  `enroll_status` enum('consented','enrolled','completed','excluded','') NOT NULL DEFAULT '',
   `irb_consent` blob DEFAULT NULL COMMENT 'scanned image of the IRB consent form',
   `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
@@ -1172,6 +1172,31 @@ CREATE TABLE `exportseries` (
   `status` enum('','error','processing','complete','submitted','cancelled') NOT NULL DEFAULT '',
   `statusmessage` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `export_nonimaging`
+--
+
+CREATE TABLE `export_nonimaging` (
+  `exportnonimaging_id` int(11) NOT NULL,
+  `username` varchar(50) DEFAULT NULL,
+  `ip` varchar(40) DEFAULT NULL,
+  `export_type` enum('analysisresults','observations','interventions') NOT NULL,
+  `pipeline_id` int(11) DEFAULT NULL,
+  `project_id` int(11) DEFAULT NULL,
+  `export_destinationtype` enum('web','nfs') NOT NULL,
+  `export_destinationnfsdir` text DEFAULT NULL,
+  `export_status` enum('submitted','processing','complete','error','expired') NOT NULL,
+  `export_statusmessage` text DEFAULT NULL,
+  `export_startdate` datetime NOT NULL DEFAULT current_timestamp(),
+  `export_enddate` datetime DEFAULT NULL,
+  `export_deletedate` datetime DEFAULT NULL,
+  `export_size` bigint(20) DEFAULT NULL,
+  `export_filepath` text DEFAULT NULL,
+  `export_log` mediumtext DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -2060,8 +2085,6 @@ CREATE TABLE `notification_user` (
 CREATE TABLE `observations` (
   `observation_id` int(11) NOT NULL,
   `enrollment_id` int(11) NOT NULL,
-  `instrumentname_id` int(11) DEFAULT NULL,
-  `observationname_id` int(11) NOT NULL,
   `observation_name` varchar(255) NOT NULL,
   `observation_notes` mediumtext DEFAULT NULL,
   `observation_instrument` varchar(250) DEFAULT NULL,
@@ -2131,7 +2154,7 @@ CREATE TABLE `packages` (
   `package_readme` text DEFAULT NULL,
   `package_changes` text DEFAULT NULL,
   `package_notes` text DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -2143,7 +2166,7 @@ CREATE TABLE `package_analyses` (
   `packageanalysis_id` int(11) NOT NULL,
   `package_id` int(11) NOT NULL,
   `analysis_id` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -2156,7 +2179,7 @@ CREATE TABLE `package_enrollments` (
   `package_id` int(11) NOT NULL,
   `enrollment_id` int(11) NOT NULL,
   `package_subjectid` varchar(255) DEFAULT NULL COMMENT 'UID or other ID specific to this subject within the package'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -2168,7 +2191,7 @@ CREATE TABLE `package_experiments` (
   `packageexperiment_id` int(11) NOT NULL,
   `package_id` int(11) NOT NULL,
   `experiment_id` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -2180,7 +2203,7 @@ CREATE TABLE `package_interventions` (
   `packageintervention_id` int(11) NOT NULL,
   `package_id` int(11) NOT NULL,
   `intervention_id` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -2192,7 +2215,7 @@ CREATE TABLE `package_observations` (
   `packageobservation_id` int(11) NOT NULL,
   `package_id` int(11) NOT NULL,
   `observation_id` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -2205,7 +2228,7 @@ CREATE TABLE `package_pipelines` (
   `package_id` int(11) NOT NULL,
   `pipeline_id` int(11) NOT NULL,
   `include_analyses` tinyint(1) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -2218,7 +2241,7 @@ CREATE TABLE `package_series` (
   `package_id` int(11) NOT NULL,
   `modality` varchar(255) NOT NULL,
   `series_id` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -2230,7 +2253,7 @@ CREATE TABLE `package_studies` (
   `packagestudy_id` int(11) NOT NULL,
   `package_id` int(11) NOT NULL,
   `study_id` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -2243,7 +2266,7 @@ CREATE TABLE `package_subjects` (
   `package_id` int(11) NOT NULL,
   `subject_id` int(11) NOT NULL,
   `subjectPrimaryID` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -4156,6 +4179,12 @@ ALTER TABLE `exportseries`
   ADD PRIMARY KEY (`exportseries_id`);
 
 --
+-- Indexes for table `export_nonimaging`
+--
+ALTER TABLE `export_nonimaging`
+  ADD PRIMARY KEY (`exportnonimaging_id`);
+
+--
 -- Indexes for table `families`
 --
 ALTER TABLE `families`
@@ -4505,7 +4534,8 @@ ALTER TABLE `package_interventions`
 --
 ALTER TABLE `package_observations`
   ADD PRIMARY KEY (`packageobservation_id`),
-  ADD UNIQUE KEY `package_id` (`package_id`,`observation_id`);
+  ADD UNIQUE KEY `package_id` (`package_id`,`observation_id`),
+  ADD KEY `package_id_2` (`package_id`);
 
 --
 -- Indexes for table `package_pipelines`
@@ -4862,7 +4892,8 @@ ALTER TABLE `subjects`
   ADD PRIMARY KEY (`subject_id`),
   ADD UNIQUE KEY `uid` (`uid`),
   ADD KEY `isactive` (`isactive`),
-  ADD KEY `name` (`name`,`birthdate`,`gender`,`isactive`);
+  ADD KEY `name` (`name`,`birthdate`,`gender`,`isactive`),
+  ADD KEY `uid_2` (`uid`);
 
 --
 -- Indexes for table `subjectsimport_pending`
@@ -5375,6 +5406,12 @@ ALTER TABLE `exports`
 --
 ALTER TABLE `exportseries`
   MODIFY `exportseries_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `export_nonimaging`
+--
+ALTER TABLE `export_nonimaging`
+  MODIFY `exportnonimaging_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `families`
