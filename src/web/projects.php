@@ -2,7 +2,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB projects.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2025
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -1978,6 +1978,7 @@
 						cellRenderer: function(params) {
 							return '<a href="studies.php?id=' + params.data.studyid + '"><b>' + params.value + '</b></a>'
 						},
+						<? if ($GLOBALS['issiteadmin']) { ?> checkboxSelection: true, cellStyle: { 'background-color': '#ff9' } <? } ?>
 					},
 					{
 						headerName: "Sex",
@@ -1987,7 +1988,7 @@
 						cellEditorParams: {
 							values: ['', 'F', 'M', 'O', 'U'],
 							valueListGap: 0
-						}
+						},
 					},
 					{
 						headerName: "Gender",
@@ -2028,11 +2029,13 @@
 					'rowhighlight': 'data.rowhighlight == 1',
 				},
 
+				<? if ($GLOBALS['issiteadmin']) { ?>
 				rowSelection: {
 					mode: 'multiRow',
-					headerCheckbox: true,
-					checkboxes: true
+					//headerCheckbox: true,
+					checkboxes: true,
 				}, // allow rows to be selected
+				<? } ?>
 				animateRows: false,
 				undoRedoCellEditing: true,
 				suppressMovableColumns: true,
@@ -2088,100 +2091,96 @@
 			
 		</script>
 		
-		<table width="100%">
-			<tr>
-				<? if ($GLOBALS['issiteadmin']) { ?>
-				<td style="background-color: #FFFF99; border: 1px solid #4C4C1F; border-radius:5px; padding:8px;" width="70%">
+		<? if ($GLOBALS['issiteadmin']) { ?>
+		<div class="ui compact yellow segment" style="background-color: #FFFF99">
 
-					<h2 class="ui header">
-						<i class="tools icon"></i>
-						<div class="content">
-							Powerful Tools
-							<div class="sub header">Perform operations on the selected studies</div>
-						</div>
-					</h2>
+			<h2 class="ui header">
+				<i class="tools icon"></i>
+				<div class="content">
+					Powerful Tools
+					<div class="sub header">Perform operations on the selected studies</div>
+				</div>
+			</h2>
 
-					<div class="ui segment">
-						<h3 class="ui header">
-							Apply enrollment tag(s)
-							<div class="sub header">Comma separated list</div>
-						</h3>
-						<div class="ui action input">
-							<input type="text" name="tags" id="tags" list="taglist" multiple>
-							<datalist id="taglist">
-							<?
-								$sqlstring = "select distinct(tag) 'tag' from tags where enrollment_id is not null and enrollment_id <> 0 and enrollment_id <> ''";
-								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-									$tag = $row['tag'];
-									?>
-									<option value="<?=$tag?>">
-									<?
-								}
+			<div class="ui segment">
+				<h3 class="ui header">
+					Apply enrollment tag(s)
+					<div class="sub header">Comma separated list</div>
+				</h3>
+				<div class="ui action input">
+					<input type="text" name="tags" id="tags" list="taglist" multiple>
+					<datalist id="taglist">
+					<?
+						$sqlstring = "select distinct(tag) 'tag' from tags where enrollment_id is not null and enrollment_id <> 0 and enrollment_id <> ''";
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+							$tag = $row['tag'];
 							?>
-							</datalist>
-							<button class="ui button" title="Applies the tags to the selected studies" onclick="document.theform.action='projects.php'; document.theform.action.value='applytags'; document.theform.submit()">Apply tags</button>
-						</div>
-					</div>
-
-					<div class="ui segment">
-						<h3 class="ui header">
-							Move studies to new project
-						</h3>
-						<div class="ui action input">
-							<select name="newprojectid" id="newprojectid" class="ui dropdown">
+							<option value="<?=$tag?>">
 							<?
-								$sqlstring = "select a.*, b.user_fullname from projects a left join users b on a.project_pi = b.user_id where a.project_status = 'active' order by a.project_name";
-								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-									$project_id = $row['project_id'];
-									$project_name = $row['project_name'];
-									$project_costcenter = $row['project_costcenter'];
-									$project_enddate = $row['project_enddate'];
-									$user_fullname = $row['user_fullname'];
-									
-									if (strtotime($project_enddate) < strtotime("now")) { $style="color: gray"; } else { $style = ""; }
-									?>
-									<option value="<?=$project_id?>" style="<?=$style?>"><?=$project_name?> (<?=$project_costcenter?>)</option>
-									<?
-								}
+						}
+					?>
+					</datalist>
+					<button class="ui button" title="Applies the tags to the selected studies" onclick="document.theform.action='projects.php'; document.theform.action.value='applytags'; document.theform.submit()">Apply tags</button>
+				</div>
+			</div>
+
+			<div class="ui segment">
+				<h3 class="ui header">
+					Move studies to new project
+				</h3>
+				<div class="ui action input">
+					<select name="newprojectid" id="newprojectid" class="ui dropdown">
+					<?
+						$sqlstring = "select a.*, b.user_fullname from projects a left join users b on a.project_pi = b.user_id where a.project_status = 'active' order by a.project_name";
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+							$project_id = $row['project_id'];
+							$project_name = $row['project_name'];
+							$project_costcenter = $row['project_costcenter'];
+							$project_enddate = $row['project_enddate'];
+							$user_fullname = $row['user_fullname'];
+							
+							if (strtotime($project_enddate) < strtotime("now")) { $style="color: gray"; } else { $style = ""; }
 							?>
-							</select>
-							<button class="ui button" title="Moves the imaging studies from this project to the selected project" onclick="document.theform.action='projects.php'; document.theform.action.value='changeproject'; document.theform.submit()">Move studies</button>
-						</div>
-					</div>
-					
-					<div class="ui segment">
-						<h3 class="ui header">
-							Rearchive
-						</h3>
+							<option value="<?=$project_id?>" style="<?=$style?>"><?=$project_name?> (<?=$project_costcenter?>)</option>
+							<?
+						}
+					?>
+					</select>
+					<button class="ui button" title="Moves the imaging studies from this project to the selected project" onclick="document.theform.action='projects.php'; document.theform.action.value='changeproject'; document.theform.submit()">Move studies</button>
+				</div>
+			</div>
+			
+			<div class="ui segment">
+				<h3 class="ui header">
+					Rearchive
+				</h3>
 
-						<div class="ui checkbox" title="When re-archiving, only match existing subjects by ID. Do not use the Patient ID, DOB, or Sex fields to match subjects">
-							<input type="checkbox" name="matchidonly" value="1" checked>
-							<label>Match by ID only</label>
-						</div>
-						&nbsp; &nbsp;
-						<button class="ui orange button" title="Moves all DICOM files back into the incoming directory to be parsed again. Useful if there was an archiving error and too many subjects are in the wrong place." onclick="document.theform.action='projects.php'; document.theform.action.value='rearchivestudies'; document.theform.submit()">Re-archive DICOM studies</button>
-						&nbsp; &nbsp;
-						<button class="ui orange button" title="Moves all DICOM files from this SUBJECT into the incoming directory, and deletes the subject" onclick="document.theform.action='projects.php'; document.theform.action.value='rearchivesubjects'; document.theform.submit()">Re-archive Subjects</button>
-					</div>
-					
-					<div class="ui segment">
-						<h3 class="ui header">
-							Obliterate
-						</h3>
-						<button class="ui red button" title="Delete the subject permanently" onclick="document.theform.action='projects.php';document.theform.action.value='obliteratesubject'; document.theform.submit()"><i class="bomb icon"></i> Obliterate Subjects</button> &nbsp; &nbsp;
-						<button class="ui red button" title="Delete the studies permanently" onclick="document.theform.action='projects.php';document.theform.action.value='obliteratestudy'; document.theform.submit()"><i class="bomb icon"></i> Obliterate Studies</button>
-					</div>
-				</td>
-				<? } ?>
+				<div class="ui checkbox" title="When re-archiving, only match existing subjects by ID. Do not use the Patient ID, DOB, or Sex fields to match subjects">
+					<input type="checkbox" name="matchidonly" value="1" checked>
+					<label>Match by ID only</label>
+				</div>
+				&nbsp; &nbsp;
+				<button class="ui orange button" title="Moves all DICOM files back into the incoming directory to be parsed again. Useful if there was an archiving error and too many subjects are in the wrong place." onclick="document.theform.action='projects.php'; document.theform.action.value='rearchivestudies'; document.theform.submit()">Re-archive DICOM studies</button>
+				&nbsp; &nbsp;
+				<button class="ui orange button" title="Moves all DICOM files from this SUBJECT into the incoming directory, and deletes the subject" onclick="document.theform.action='projects.php'; document.theform.action.value='rearchivesubjects'; document.theform.submit()">Re-archive Subjects</button>
+			</div>
+			
+			<div class="ui segment">
+				<h3 class="ui header">
+					Obliterate
+				</h3>
+				<button class="ui red button" title="Delete the subject permanently" onclick="document.theform.action='projects.php';document.theform.action.value='obliteratesubject'; document.theform.submit()"><i class="bomb icon"></i> Obliterate Subjects</button> &nbsp; &nbsp;
+				<button class="ui red button" title="Delete the studies permanently" onclick="document.theform.action='projects.php';document.theform.action.value='obliteratestudy'; document.theform.submit()"><i class="bomb icon"></i> Obliterate Studies</button>
+			</div>
+		</div>
+		<? } ?>
 
-				<!--<td align="right" valign="top">
-					<div align="right"><input class="ui primary button" type="submit" value="Save Studies Table"></div>
-				</td>-->
-				</form>
-			</tr>
-		</table>
+		<!--<td align="right" valign="top">
+			<div align="right"><input class="ui primary button" type="submit" value="Save Studies Table"></div>
+		</td>-->
+		</form>
 		
 		<?
 	}

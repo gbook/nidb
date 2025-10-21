@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB timeline.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2025
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -247,7 +247,7 @@
 			
 			/* get observations */
 			if ($allobservations) {
-				$sqlstringA = "select a.*, b.*, c.* from observations a left join observationnames b on a.observationname_id = b.observationname_id left join observationinstruments c on a.instrumentname_id = c.observationinstrument_id where a.enrollment_id = $enrollmentid order by b.observation_name";
+				$sqlstringA = "select * from observations where enrollment_id = $enrollmentid order by observation_name";
 				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 					$observation_name = $rowA['observation_name'];
