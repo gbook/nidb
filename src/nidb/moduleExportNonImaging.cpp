@@ -61,7 +61,7 @@ int moduleExportNonImaging::Run() {
     QSqlQuery q;
 
     /* delete any exports older than 30 days */
-    q.prepare("select * from export_nonimaging where export_dateend < NOW() - INTERVAL 30 DAY");
+    q.prepare("select * from export_nonimaging where export_enddate < NOW() - INTERVAL 30 DAY");
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.size() > 0) {
         while (q.next()) {
@@ -77,7 +77,7 @@ int moduleExportNonImaging::Run() {
             }
 
             /* update the export_nonimaging row */
-            q.prepare("update export_nonimaging set export_datedeleted = now(), export_status = 'expired', export_statusmessage = 'Export expired after 30 days' where exportnonimaging_id = :exportid");
+            q.prepare("update export_nonimaging set export_deletedate = now(), export_status = 'expired', export_statusmessage = 'Export expired after 30 days' where exportnonimaging_id = :exportid");
             q.bindValue(":exportid", exportRowID);
             n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         }
@@ -203,7 +203,7 @@ int moduleExportNonImaging::Run() {
                 qint64 fileSize = fi.size();
 
                 QSqlQuery q4;
-                q4.prepare("update export_nonimaging set export_dateend = now(), export_status = :status, export_statusmessage = :statusmessage, export_size = :filesize, export_filepath = :filepath where exportnonimaging_id = :exportid");
+                q4.prepare("update export_nonimaging set export_enddate = now(), export_status = :status, export_statusmessage = :statusmessage, export_size = :filesize, export_filepath = :filepath where exportnonimaging_id = :exportid");
                 q4.bindValue(":status", status);
                 q4.bindValue(":statusmessage", statusMessage);
                 q4.bindValue(":filesize", fileSize);

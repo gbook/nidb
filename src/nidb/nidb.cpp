@@ -239,6 +239,10 @@ int nidb::ModuleGetNumThreads() {
         if (cfg["moduleexportthreads"] == "") numThreads = 1;
         else numThreads = cfg["moduleexportthreads"].toInt();
     }
+    else if (module == "exportnonimaging") {
+        if (cfg["moduleexportnonimagingthreads"] == "") numThreads = 1;
+        else numThreads = cfg["moduleexportnonimagingthreads"].toInt();
+    }
     else if ((module == "parsedicom") || (module == "import")) {
         numThreads = 1;
     }
