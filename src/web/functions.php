@@ -4124,6 +4124,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		/* fill in missing values with defaults */
 		if ($modulefileiothreads == "") { $modulefileiothreads = 1; }
 		if ($moduleexportthreads == "") { $moduleexportthreads = 2; }
+		if ($moduleexportnonimagingthreads == "") { $moduleexportnonimagingthreads = 2; }
 		if ($moduleimportthreads == "") { $moduleimportthreads = 1; }
 		if ($modulemriqathreads == "") { $modulemriqathreads = 4; }
 		if ($modulepipelinethreads == "") { $modulepipelinethreads = 4; }
@@ -4210,6 +4211,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 # ----- modules -----
 [modulefileiothreads] = $modulefileiothreads
 [moduleexportthreads] = $moduleexportthreads
+[moduleexportnonimagingthreads] = $moduleexportnonimagingthreads
 [moduleimportthreads] = $moduleimportthreads
 [modulemriqathreads] = $modulemriqathreads
 [modulepipelinethreads] = $modulepipelinethreads
