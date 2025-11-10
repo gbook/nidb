@@ -68,6 +68,7 @@ public:
     QString GetSystemTempDir();
     bool GetDebug() { return debug; } /*!< true if debugging is enabled */
     bool GetDebugSQL() { return debugSQL; } /*!< true if SQL debugging is enabled */
+    void SetCommandLineExecution(bool c) { cmdLineExec = c; }
     void SetDebug(bool d);
     void SetDebugSQL(bool d);
     void SetFileMode(FileMode m) { fileMode = m; } /*!< Set the file mode to either NewPackage or ExistingPackage */
@@ -219,6 +220,7 @@ private:
     QString databaseUUID; /* necessary to create unique DB connections if more than one squirrel package is opened at a time */
 
     /* flags */
+    bool cmdLineExec; /* true if running from command line, false if running from library */
     bool debug;
     bool debugSQL;
     bool isOkToDelete;

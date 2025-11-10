@@ -778,7 +778,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 
                     QString m;
                     if (filetype == "dicom")
-                        img->AnonymizeDir(outdir,anonlevel,"Anonymous","Anonymous",m);
+                        img->AnonymizeDir(indir, outdir, anonlevel, m);
 
                     n->SetExportSeriesStatus(exportseriesid, -1, -1, "", seriesstatus, statusmessage);
                     msgs << QString("Series [%1%2-%3 (%4)] complete").arg(uid).arg(studynum).arg(seriesnum).arg(seriesdesc);
@@ -1142,7 +1142,7 @@ bool moduleExport::ExportXNAT(int exportid, QString &exportstatus, QString &msg)
 
                 QString m;
                 /* always anonymize the DICOM data */
-                img->AnonymizeDir(outdir,2,"Anonymous","Anonymous",m);
+                img->AnonymizeDir(indir, outdir, 2, m);
 
                 n->SetExportSeriesStatus(exportseriesid, -1, -1, "", seriesstatus,statusmessage);
                 msgs << QString("Series [%1%2-%3 (%4)] complete").arg(uid).arg(studynum).arg(seriesnum).arg(seriesdesc);
@@ -1288,9 +1288,9 @@ bool moduleExport::ExportNDAR(int exportid, bool csvonly, QString &exportstatus,
                         if (MakePath(tmpdir, m)) {
                             QString systemstring;
                             if ((modality == "mr") && (datatype == "dicom")) {
-                                systemstring = "find " + indir + " -iname '*.dcm' -exec cp {} " + tmpdir + " \\;";
-                                msgs << "ExportNDAR() " + n->Log(SystemCommand(systemstring, true));
-                                img->AnonymizeDir(tmpdir,2,"","",m);
+                                //systemstring = "find " + indir + " -iname '*.dcm' -exec cp {} " + tmpdir + " \\;";
+                                //msgs << "ExportNDAR() " + n->Log(SystemCommand(systemstring, true));
+                                img->AnonymizeDir(indir, tmpdir, 2, m);
                             }
                             else if ((modality == "mr") && (datatype == "parrec")) {
                                 systemstring = "find " + indir + " -iname '*.par' -exec cp {} " + tmpdir + " \\;";
@@ -1673,10 +1673,13 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
                             if (!MakePath(tmpzipdir + "/beh", m)) { msgs << "ERROR in creating tmpzipdir/beh [" + tmpzipdir + "/beh]"; continue; }
 
                             /* copy all the files from the data directory into a tmp directory */
-                            systemstring = "rsync --stats " + inDirPath + "/* " + tmpdir + "/";
-                            n->Log(SystemCommand(systemstring));
-                            if (datatype == "dicom")
-                                img->AnonymizeDir(tmpdir,4,"Anonymous","0000-00-00",m);
+                            if (datatype == "dicom") {
+                                img->AnonymizeDir(inDirPath, tmpdir, 4, m);
+                            }
+                            else {
+                                systemstring = "rsync --stats " + inDirPath + "/* " + tmpdir + "/";
+                                n->Log(SystemCommand(systemstring));
+                            }
 
                             /* get the list of DICOM files */
                             QStringList dcmfiles = FindAllFiles(tmpdir, "*");

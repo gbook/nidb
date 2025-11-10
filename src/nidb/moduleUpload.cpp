@@ -182,6 +182,8 @@ bool moduleUpload::ReadUploads() {
                 QStringList files = FindAllFiles(uploadstagingpath, "*", true);
                 foreach (QString f, files) {
                     squirrel *sqrl = new squirrel();
+                    sqrl->SetCommandLineExecution(false);
+                    sqrl->SetSystemTempDir(n->cfg["tmpdir"]);
                     sqrl->SetPackagePath(f);
                     sqrl->SetQuickRead(false); /* it will take longer to read, but we will want the contents of all the params.json files */
                     if (sqrl->Read()) {
@@ -713,6 +715,8 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
             }
             QString tmppath;
             squirrel *sqrl = new squirrel();
+            sqrl->SetCommandLineExecution(false);
+            sqrl->SetSystemTempDir(n->cfg["tmpdir"]);
             sqrl->SetPackagePath(f);
             sqrl->SetQuickRead(false); /* it will take longer to read, but we will want the contents of all the params.json files */
             if (sqrl->Read()) {

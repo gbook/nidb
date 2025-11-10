@@ -858,13 +858,32 @@ namespace utils {
     /* ---------------------------------------------------------- */
     /* --------- StringToDatetime ------------------------------- */
     /* ---------------------------------------------------------- */
-    QDateTime StringToDatetime(QString datetime) {
-        datetime = datetime.replace(' ', 'T') + "Z";
+    QDateTime StringToDatetime(QString dt) {
+        //dt = dt.trimmed();
 
-        QDateTime qdt = QDateTime::fromString(datetime, Qt::ISODate);
-        qdt = qdt.toLocalTime();
+        if (dt == "") { return QDateTime(); }
 
-        return qdt;
+        //dt = dt.replace(' ', 'T') + "Z";
+
+        //2025-09-26T18:14:20Z
+
+        //QDate date = QDate(dt.mid(0,4).toInt(), dt.mid(5,2).toInt(), dt.mid(8,2).toInt());
+        //QTime time = QTime(dt.mid(11,2).toInt(), dt.mid(14,2).toInt(), dt.mid(17,2).toInt());
+
+        //QDateTime qdt = QDateTime::fromString(datetime, Qt::ISODate);
+        //QDateTime qdt = QDateTime(date, time);
+        //qdt = qdt.toLocalTime();
+
+        /* thank you to the internet for this very efficient datetime conversion (https://forum.qt.io/topic/139690) */
+        auto DateTimeParser = [](const QStringView string) -> QDateTime {
+            const QDate date(string.left(4).toInt(), string.mid(4, 2).toInt(), string.mid(6, 2).toInt());
+            const QTime time(string.mid(9, 2).toInt(), string.mid(11, 2).toInt(), string.mid(13, 2).toInt(), string.mid(15, 3).toInt());
+            QDateTime dt(date, time);
+            return dt;
+        };
+
+
+        return DateTimeParser(dt);
     }
 
 

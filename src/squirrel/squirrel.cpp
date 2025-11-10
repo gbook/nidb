@@ -250,11 +250,14 @@ bool squirrel::InitializeDatabase() {
     q.prepare(tableStagedFiles);
     if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error creating table [StagedFiles]"); utils::Print("Error creating table [StagedFiles]"); return false; }
 
-    q.prepare("PRAGMA journal_mode=WAL");
-    if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error setting journal_mode=WAL"); utils::Print("Error setting journal_mode=WAL"); return false; }
+    q.prepare("PRAGMA journal_mode=OFF");
+    if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error setting journal_mode=OFF"); utils::Print("Error setting journal_mode=OFF"); return false; }
 
     q.prepare("PRAGMA synchronous=NORMAL");
     if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error setting synchronous=NORMAL"); utils::Print("Error setting synchronous=NORMAL"); return false; }
+
+    q.prepare("PRAGMA page_size=65536");
+    if (!utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__)) { Log("Error setting page_size=65536"); utils::Print("Error setting page_size=65536"); return false; }
 
     Debug("Successfully initialized database tables", __FUNCTION__);
     return true;
@@ -299,7 +302,11 @@ bool squirrel::Read() {
         return false;
     }
 
+    QElapsedTimer timer;
+    timer.start();
+
     QString jsonstr;
+    utils::Print("Extracting squirrel package header...");
     if (!ExtractArchiveFileToMemory(GetPackagePath(), "squirrel.json", jsonstr)) {
         Log(QString("Error reading squirrel package. Unable to find squirrel.json"));
         utils::Print(QString("Error reading squirrel package. Unable to find squirrel.json"));
@@ -308,6 +315,11 @@ bool squirrel::Read() {
     else {
         Debug(QString("Extracted package header [%1]").arg(utils::HumanReadableSize(jsonstr.size())), __FUNCTION__);
     }
+
+    double elapsedSec = static_cast<double>(timer.elapsed())/1000.0;
+    utils::Print(QString("Extracted package header in %1 sec").arg(elapsedSec, 0, 'f', 2));
+
+    timer.restart();
 
     /* get the JSON document and root object */
     QJsonDocument d = QJsonDocument::fromJson(jsonstr.toUtf8());
@@ -353,7 +365,7 @@ bool squirrel::Read() {
     Debug(QString("TotalSize: [%1]").arg(root["TotalSize"].toInt()), __FUNCTION__);
 
     /* loop through and read any subjects */
-    utils::Print(QString("Reading %1 subjects...").arg(jsonSubjects.size()));
+    utils::Print(QString("\nReading %1 subjects...").arg(jsonSubjects.size()));
     qint64 i(0);
     for (auto a : jsonSubjects) {
         i++;
@@ -497,24 +509,42 @@ bool squirrel::Read() {
 
         QJsonArray jsonObservations = jsonSubject["observations"].toArray();
         Debug(QString("Reading [%1] observations").arg(jsonObservations.size()), __FUNCTION__);
+        QElapsedTimer timerA;
+        timerA.start();
         for (auto e : jsonObservations) {
-
+            //utils::Print(QString("Checkpoint A - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
             QJsonObject jsonObservation = e.toObject();
+            //utils::Print(QString("Checkpoint B - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
             squirrelObservation sqrlObservation(databaseUUID);
+            //utils::Print(QString("Checkpoint C - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
             sqrlObservation.DateEnd = utils::StringToDatetime(jsonObservation["DateEnd"].toString());
+            //utils::Print(QString("Checkpoint D - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
             sqrlObservation.DateStart = utils::StringToDatetime(jsonObservation["DateStart"].toString());
+            //utils::Print(QString("Checkpoint E - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
             sqrlObservation.DateRecordCreate = utils::StringToDatetime(jsonObservation["DateRecordCreate"].toString());
+            //utils::Print(QString("Checkpoint F - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
             sqrlObservation.DateRecordEntry = utils::StringToDatetime(jsonObservation["DateRecordEntry"].toString());
+            //utils::Print(QString("Checkpoint G - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
             sqrlObservation.DateRecordModify = utils::StringToDatetime(jsonObservation["DateRecordModify"].toString());
+            //utils::Print(QString("Checkpoint H - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
             sqrlObservation.Description = jsonObservation["Description"].toString();
+            //utils::Print(QString("Checkpoint I - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
             sqrlObservation.Duration = jsonObservation["Duration"].toDouble();
+            //utils::Print(QString("Checkpoint J - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
             sqrlObservation.InstrumentName = jsonObservation["InstrumentName"].toString();
+            //utils::Print(QString("Checkpoint K - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
             sqrlObservation.ObservationName = jsonObservation["ObservationName"].toString();
+            //utils::Print(QString("Checkpoint L - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
             sqrlObservation.Notes = jsonObservation["Notes"].toString();
+            //utils::Print(QString("Checkpoint M - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
             sqrlObservation.Rater = jsonObservation["Rater"].toString();
+            //utils::Print(QString("Checkpoint N - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
             sqrlObservation.Value = jsonObservation["Value"].toString();
+            //utils::Print(QString("Checkpoint O - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
             sqrlObservation.subjectRowID = subjectRowID;
+            //utils::Print(QString("Checkpoint P - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
             sqrlObservation.Store();
+            //utils::Print(QString("Checkpoint Q - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
         }
 
         q1.prepare("commit");
@@ -634,6 +664,9 @@ bool squirrel::Read() {
         }
         sqrlPipeline.Store();
     }
+
+    elapsedSec = static_cast<double>(timer.elapsed())/1000.0;
+    utils::Print(QString("Reading package took %1 sec").arg(elapsedSec, 0, 'f', 2));
 
     return true;
 }
@@ -1431,11 +1464,10 @@ QString squirrel::PrintPackage() {
 bool squirrel::MakeTempDir(QString &dir) {
 
     QString d;
-    //#ifdef Q_OS_WINDOWS
-    //    d = QString("C:/tmp/%1").arg(utils::GenerateRandomString(20));
-    //#else
-    d = QString(QDir::tempPath() + "/%1").arg(utils::GenerateRandomString(20));
-    //#endif
+    if (cmdLineExec)
+        d = QString(QDir::tempPath() + "/%1").arg(utils::GenerateRandomString(20));
+    else
+        d = QString(systemTempDir + "/%1").arg(utils::GenerateRandomString(20));
 
     QString m;
     if (utils::MakePath(d, m)) {
@@ -2446,7 +2478,7 @@ qint64 squirrel::FindSubject(QString id) {
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.next()) {
         rowid = q.value("SubjectRowID").toLongLong();
-        Log(QString("Searched for SubjectID [%1] and found SubjectRowID [%2]").arg(id).arg(rowid));
+        Debug(QString("Searched for SubjectID [%1] and found SubjectRowID [%2]").arg(id).arg(rowid));
     }
     else {
         Log(QString("Could not find SubjectID [%1]").arg(id));
@@ -2473,10 +2505,10 @@ qint64 squirrel::FindStudy(QString subjectID, int studyNum) {
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.next()) {
         rowid = q.value("StudyRowID").toLongLong();
-        Debug(QString("Searched for SubjectID, StudyNumber [%1], [%2] and found StudyRowID [%3]").arg(subjectID).arg(studyNum).arg(rowid), __FUNCTION__);
+        Debug(QString("Searched for study using SubjectID, StudyNumber [%1], [%2] and found StudyRowID [%3]").arg(subjectID).arg(studyNum).arg(rowid), __FUNCTION__);
     }
     else {
-        Debug(QString("Could not find SubjectID, StudyNumber [%1], [%2]").arg(subjectID).arg(studyNum), __FUNCTION__);
+        Debug(QString("Could not find study, using SubjectID, StudyNumber [%1], [%2]").arg(subjectID).arg(studyNum), __FUNCTION__);
     }
     return rowid;
 }

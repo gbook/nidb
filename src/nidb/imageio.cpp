@@ -247,7 +247,14 @@ bool imageIO::AnonymizeDicomFile(gdcm::Anonymizer &anon, QString infile, QString
 /* ---------------------------------------------------------- */
 /* --------- AnonymizeDir ----------------------------------- */
 /* ---------------------------------------------------------- */
-bool imageIO::AnonymizeDir(QString dir,int anonlevel, QString randstr1, QString randstr2, QString &msg) {
+bool imageIO::AnonymizeDir(QString indir, QString outdir, int anonlevel, QString &msg) {
+
+
+    // gdcmanon --dumb -i /path/to/dicom --replace 10,10=Anonymous -o /path/to/output/ <-- output will be created if it doesn't exist
+
+    QString anonStr = "Anon";
+    QString anonDate = "19000101";
+    QString anonTime = "000000.000000";
 
     std::vector<gdcm::Tag> empty_tags;
     std::vector<gdcm::Tag> remove_tags;
@@ -262,12 +269,17 @@ bool imageIO::AnonymizeDir(QString dir,int anonlevel, QString randstr1, QString 
         }
         case 1:
         case 3: {
-            /* remove referring physician name */
-            tag.ReadFromCommaSeparatedString("0008, 0090"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
-            tag.ReadFromCommaSeparatedString("0008, 1050"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
-            tag.ReadFromCommaSeparatedString("0008, 1070"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
-            tag.ReadFromCommaSeparatedString("0010, 0010"); replace_tags.push_back( std::make_pair(tag, QString("Anonymous" + randstr1).toStdString().c_str()) );
-            tag.ReadFromCommaSeparatedString("0010, 0030"); replace_tags.push_back( std::make_pair(tag, QString("Anonymous" + randstr2).toStdString().c_str()) );
+            /* partial anonmymization - remove the obvious stuff like name and DOB */
+
+            QString systemstring = QString("gdcmanon --dumb -i %1 -o %2/ --replace 8,90='%3' --replace 8,1050='%3' --replace 8,1070='%3' --replace 10,10='%3' --replace 10,30='%3'").arg(indir).arg(outdir).arg(anonStr).arg(anonDate).arg(anonTime);
+
+            //tag.ReadFromCommaSeparatedString("0008, 0090"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
+            //tag.ReadFromCommaSeparatedString("0008, 1050"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
+            //tag.ReadFromCommaSeparatedString("0008, 1070"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
+            //tag.ReadFromCommaSeparatedString("0010, 0010"); replace_tags.push_back( std::make_pair(tag, QString("Anonymous" + randstr1).toStdString().c_str()) );
+            //tag.ReadFromCommaSeparatedString("0010, 0030"); replace_tags.push_back( std::make_pair(tag, QString("Anonymous" + randstr2).toStdString().c_str()) );
+            QString output = SystemCommand(systemstring, false);
+            msg += output;
             break;
         }
         case 2: {
@@ -332,7 +344,7 @@ bool imageIO::AnonymizeDir(QString dir,int anonlevel, QString randstr1, QString 
             break;
         }
         case 4: {
-            tag.ReadFromCommaSeparatedString("0010, 0010"); replace_tags.push_back( std::make_pair(tag, QString("Anonymous" + randstr1).toStdString().c_str()) );
+            tag.ReadFromCommaSeparatedString("0010, 0010"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
             break;
         }
         default: {
@@ -341,12 +353,12 @@ bool imageIO::AnonymizeDir(QString dir,int anonlevel, QString randstr1, QString 
     }
 
     /* recursively loop through the directory and anonymize the .dcm files */
-    gdcm::Anonymizer anon;
-    QDirIterator it(dir, QStringList() << "*.dcm", QDir::Files, QDirIterator::Subdirectories);
-    while (it.hasNext()) {
-        QString dcmfile = it.next();
-        AnonymizeDicomFile(anon, dcmfile, dcmfile, empty_tags, remove_tags, replace_tags, msg);
-    }
+    //gdcm::Anonymizer anon;
+    //QDirIterator it(dir, QStringList() << "*.dcm", QDir::Files, QDirIterator::Subdirectories);
+    //while (it.hasNext()) {
+    //    QString dcmfile = it.next();
+    //    AnonymizeDicomFile(anon, dcmfile, dcmfile, empty_tags, remove_tags, replace_tags, msg);
+    //}
 
     return true;
 }

@@ -1936,6 +1936,8 @@ bool archiveIO::ArchiveSquirrelPackage(UploadOptions options, QString file, QStr
     QString m;
     QString tmppath;
     squirrel *sqrl = new squirrel();
+    sqrl->SetCommandLineExecution(false);
+    sqrl->SetSystemTempDir(n->cfg["tmpdir"]);
     sqrl->SetPackagePath(file);
     if (sqrl->Read()) {
         /* extract the file to a temp directory */
@@ -2912,6 +2914,8 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     /* create squirrel object with default settings... */
     squirrel sqrl;
     sqrl.SetPackagePath(zipfilepath);
+    sqrl.SetCommandLineExecution(false);
+    sqrl.SetSystemTempDir(n->cfg["tmpdir"]);
     sqrl.SetFileMode(NewPackage);
     sqrl.PackageName = name;
     sqrl.Description = desc;
@@ -3344,6 +3348,8 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         sqrl.SubjectDirFormat = q.value("package_subjectdirformat").toString();
         sqrl.SetPackagePath(zipfilepath);
         sqrl.SetFileMode(NewPackage);
+        sqrl.SetCommandLineExecution(false);
+        sqrl.SetSystemTempDir(n->cfg["tmpdir"]);
     }
     else {
         return 0;

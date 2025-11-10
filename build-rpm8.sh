@@ -5,7 +5,7 @@ source /opt/rh/gcc-toolset-10/enable
 
 # global build variables
 if [ -z "$1" ]; then
-	QMAKEBIN=~/Qt/6.9.1/gcc_64/bin/qmake
+	QMAKEBIN=~/Qt/6.9.3/gcc_64/bin/qmake
 else
 	QMAKEBIN=$1
 fi
