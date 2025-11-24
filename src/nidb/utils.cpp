@@ -1108,21 +1108,30 @@ bool BatchRenameFiles(QString dir, QString seriesnum, QString studynum, QString 
  */
 bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession, BIDSMapping mapping, int &numfilesrenamed, QString &msg) {
 
+    //Print("Checkpoing BIDS A");
     QDir dd;
     if (!dd.exists(dir)) {
         msg = "directory [" + dir + "] does not exist";
         return false;
     }
 
+    //Print("Checkpoing BIDS B");
+
     mapping.protocol.replace(QRegularExpression("[^a-zA-Z0-9]"), "");
+    //Print("Checkpoing BIDS C");
 
     numfilesrenamed = 0;
     QStringList exts;
+    //Print("Checkpoing BIDS D");
+
     exts << "*.img" << "*.hdr" << "*.nii" << "*.nii.gz" << "*.json" << "*.bvec" << "*.bval";
+    //Print("Checkpoing BIDS E");
+
     /* loop through all the extensions we want to rename/renumber */
     foreach (QString ext, exts) {
         QFile f;
         QDirIterator it(dir, QStringList() << ext, QDir::Files);
+        //Print("Checkpoing BIDS F");
 
         /* get a list of files */
         QStringList files;
@@ -1131,6 +1140,7 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession,
         }
         /* sort the files */
         SortQStringListNaturally(files);
+        //Print("Checkpoing BIDS G");
 
         /* rename the files */
         int r = mapping.run;
@@ -1179,19 +1189,25 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession,
                 newName = fi.path() + "/" + QString("%1_%2%3").arg(fileBaseName).arg(bidsSuf).arg(ext.replace("*",""));
             }
 
+            //Print("Checkpoing BIDS H");
+
             msg += QString("\n" + fname + " --> " + newName);
             if (f.rename(newName))
                 numfilesrenamed++;
             else
                 msg += QString("\nError renaming file [" + fname + "] to [" + newName + "]\n");
 
+            //Print("Checkpoing BIDS H 1");
+
             /* add IntendedFor entry to JSON file if needed */
             if (ext.endsWith(".json") && mapping.bidsIntendedForEntity != "") {
+                //Print("Checkpoing BIDS H 2");
                 QStringList intendedForEntityList = mapping.bidsIntendedForEntity.split(",");
                 QStringList intendedForFileExtensionList = mapping.bidsIntendedForFileExtension.split(",");
                 QStringList intendedForRunList = mapping.bidsIntendedForRun.split(",");
                 QStringList intendedForSuffixList = mapping.bidsIntendedForSuffix.split(",");
                 QStringList intendedForTaskList = mapping.bidsIntendedForTask.split(",");
+                //Print("Checkpoing BIDS H 3");
 
                 QJsonArray jsonIntendedFor;
                 for (int i=0; i<intendedForEntityList.size(); i++) {
@@ -1202,15 +1218,18 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession,
                         intendedForStr = QString("bids::%1/%2/%3/%1_%2_task-%4_%5.%6").arg(bidsSubject).arg(bidsSession).arg(intendedForEntityList[i]).arg(intendedForTaskList[i]).arg(intendedForSuffixList[i]).arg(intendedForFileExtensionList[i]);
                     jsonIntendedFor.append(intendedForStr);
                 }
+                //Print("Checkpoing BIDS H 4");
 
                 /* open existing JSON file */
                 QFile jsonFile;
                 jsonFile.setFileName(newName);
                 jsonFile.open(QIODevice::ReadOnly);
                 QByteArray jsonData = jsonFile.readAll();
+                //Print("Checkpoing BIDS H 5");
 
                 QJsonDocument d = QJsonDocument::fromJson(jsonData);
                 QJsonObject root = d.object();
+                //Print("Checkpoing BIDS H 6");
 
                 /* add IntendedFor section */
                 root["IntendedFor"] = jsonIntendedFor;
@@ -1220,7 +1239,9 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession,
                 if (!WriteTextFile(newName, j, false))
                     msg += "Error writing [" + newName + "]";
 
+                //Print("Checkpoing BIDS H 7");
             }
+            //Print("Checkpoing BIDS I");
 
             /* add a TaskName field to the JSON file if needed */
             if (ext.endsWith(".json") && mapping.bidsSuffix == "bold") {
@@ -1245,6 +1266,7 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession,
             }
         }
     }
+    //Print("Checkpoing BIDS J");
 
     return true;
 }

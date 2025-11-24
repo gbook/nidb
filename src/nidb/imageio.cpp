@@ -73,6 +73,7 @@ imageIO::~imageIO()
  */
 bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QString bindir, bool gzip, bool json, QString uid, QString studynum, QString seriesnum, QString bidsSubject, QString bidsSession, BIDSMapping bidsMapping, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg) {
 
+    //Print("Checkpoing A");
     QStringList msgs;
 
     QString pwd = QDir::currentPath();
@@ -80,6 +81,8 @@ bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QStr
     QString gzipstr;
     if (gzip) gzipstr = "-z y";
     else gzipstr = "-z n";
+
+    //Print("Checkpoing B");
 
     QString jsonstr;
     if (json) jsonstr = "y";
@@ -89,6 +92,8 @@ bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QStr
 
     msgs << QString("Working on [" + indir + "] and filetype [" + filetype + "]");
 
+    //Print("Checkpoing C");
+
     /* in case of par/rec, the argument list to dcm2niix is a file instead of a directory */
     QString fileext = "";
     if (datatype == "parrec")
@@ -97,19 +102,29 @@ bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QStr
     /* do the conversion */
     QString systemstring;
     QDir::setCurrent(indir);
-    if (filetype == "nifti4dme")
+    if (filetype == "nifti4dme") {
+        //Print("Checkpoing D-1");
         systemstring = QString("%1/./dcm2niixme %2 -o '%3' %4").arg(bindir).arg(gzipstr).arg(outdir).arg(indir);
-    else if (filetype == "nifti4d")
+    }
+    else if (filetype == "nifti4d") {
+        //Print("Checkpoing D-2");
         systemstring = QString("%1/./dcm2niix -1 -b %6 %2 -o '%3' %4%5").arg(bindir).arg(gzipstr).arg(outdir).arg(indir).arg(fileext).arg(jsonstr);
-    else if (filetype == "nifti3d")
+    }
+    else if (filetype == "nifti3d") {
+        //Print("Checkpoing D-3");
         systemstring = QString("%1/./dcm2niix -1 -b %5 -z 3 -o '%2' %3%4").arg(bindir).arg(outdir).arg(indir).arg(fileext).arg(jsonstr);
-    else if (filetype == "bids")
+    }
+    else if (filetype == "bids") {
+        //Print("Checkpoing D-4");
         systemstring = QString("%1/./dcm2niix -1 -b y -z y -o '%2' %3%4").arg(bindir).arg(outdir).arg(indir).arg(fileext);
+    }
     else {
         msgs << "Invalid export filetype [" + filetype + "]";
         msg = msgs.join("\n");
         return false;
     }
+
+    //Print("Checkpoing E");
 
     /* create the output directory */
     QString m;
@@ -118,6 +133,8 @@ bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QStr
         msg = msgs.join("\n");
         return false;
     }
+
+    //Print("Checkpoing F");
 
     /* remove any files that may already be in the output directory.. for example, an incomplete series was put in the output directory */
     if ((outdir != "") && (outdir != "/") ) {
@@ -133,6 +150,8 @@ bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QStr
         return false;
     }
 
+    //Print("Checkpoing G");
+
     /* conversion should be done, so check if it actually gzipped the file */
     if ((gzip) && (filetype != "bids")) {
         systemstring = "cd " + outdir + "; gzip *.nii";
@@ -141,11 +160,16 @@ bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QStr
 
     /* rename the files into something meaningful */
     m = "";
-    if (filetype == "bids")
+    if (filetype == "bids") {
+        //Print("Checkpoing H");
         BatchRenameBIDSFiles(outdir, bidsSubject, bidsSession, bidsMapping, numfilesrenamed, m);
-    else
+    }
+    else {
+        //Print("Checkpoing I");
         BatchRenameFiles(outdir, seriesnum, studynum, uid, numfilesrenamed, m);
+    }
     msgs << "Renamed output files [" + m + "]";
+    //Print("Checkpoing J");
 
     /* change back to original directory before leaving */
     QDir::setCurrent(pwd);

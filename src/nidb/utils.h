@@ -61,6 +61,9 @@ struct BIDSMapping {
     bool bidsIncludeAcquisition;
     int bidsRun;
     int run;
+
+    QString mappingMessage;
+    bool isValid;
 };
 
 struct UploadOptions {

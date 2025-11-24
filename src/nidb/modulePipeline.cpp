@@ -1789,7 +1789,7 @@ QStringList modulePipeline::GetUIDStudyNumListByStudyIDs(QList<int> studyRowIDs)
         /* get list of groups associated with this pipeline */
         QSqlQuery q;
         q.prepare("select concat(c.uid,cast(a.study_num as char)) 'uidstudynum' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id in (" + JoinIntArray(studyRowIDs, ",") + ") order by uidstudynum");
-        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         if (q.size() > 0) {
             while (q.next()) {
                 QString uidstudynum = q.value("uidstudynum").toString().trimmed();
@@ -2269,14 +2269,14 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
             studyIDToDoList.append(studyRowID);
         }
     }
-    m = QString("Step A1 - Found %1 global studies (valid study *and* older than 6 hours *and* does not have an existing analysis for this pipeline). Study list [" + GetUIDStudyNumListByStudyIDs(studyIDToDoList).join(", ") + "]").arg(studyIDToDoList.size());
+    m = QString("Step A1 - Found %1 global studies (valid study *and* older than 6 hours *and* does not have an existing analysis for this pipeline)").arg(studyIDToDoList.size());
     RecordPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", n->Log(m, __FUNCTION__));
 
-    if (q.size() > 500) {
-        m = QString("Step A1 - Study list [greater than 500, not displaying full list of studies]");
+    if (studyIDToDoList.size() > 100) {
+        m = QString("Step A1 - Study list [greater than 100, not displaying full list of studies]");
     }
     else {
-        m = QString("Step A1 - Study list [" + GetUIDStudyNumListByStudyIDs(studyIDToDoList).join(", ") + "]").arg(studyIDToDoList.size());
+        m = QString("Step A1 - Study list [" + GetUIDStudyNumListByStudyIDs(studyIDToDoList).join(", ") + "]");
     }
     RecordPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", n->Log(m, __FUNCTION__));
 
@@ -2328,7 +2328,13 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
         m = QString("Step A2 - Found %1 studies in the specified dependency (matching on the %2 level)").arg(dependencyStudyRowIDs.size()).arg(p.depLevel);
         RecordPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", n->Log(m, __FUNCTION__));
 
-        m = QString("Studies at the beginning of step A2 [" + GetUIDStudyNumListByStudyIDs(dependencyStudyRowIDs).join(", ") + "]");
+        if (dependencyStudyRowIDs.size() > 100) {
+            m = QString("Studies at the beginning of step A2 - [study list greater than 100, not displaying full list of studies]");
+        }
+        else {
+            m = QString("Studies at the beginning of step A2 [" + GetUIDStudyNumListByStudyIDs(dependencyStudyRowIDs).join(", ") + "]");
+        }
+
         RecordPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", n->Log(m, __FUNCTION__));
 
         /* find an intersection between the lists */
@@ -2341,7 +2347,13 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
 
         studyIDToDoList = QList<int>(intersection.begin(), intersection.end());
 
-        m = QString("Studies at the end of step A2 [" + GetUIDStudyNumListByStudyIDs(studyIDToDoList).join(", ") + "]");
+        if (studyIDToDoList.size() > 100) {
+            m = QString("Studies at the end of step A2 - [study list greater than 100, not displaying full list of studies]");
+        }
+        else {
+            m = QString("Studies at the end of step A2 [" + GetUIDStudyNumListByStudyIDs(studyIDToDoList).join(", ") + "]");
+        }
+
         RecordPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", n->Log(m, __FUNCTION__));
     }
     else {

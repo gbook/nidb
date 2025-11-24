@@ -2708,6 +2708,11 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 
                 BIDSMapping mapping = GetBIDSMapping(projectRowID,seriesdesc,modality,imagetype);
 
+                if (!mapping.isValid) {
+                    n->Log(QString("BIDS mapping is not valid for %1%2 - message [%3]").arg(uid).arg(studynum).arg(mapping.mappingMessage));
+                    continue;
+                }
+
                 /* check which run- to use */
                 if (mapping.bidsRun > 0) {
                     n->Debug(QString("mapping.bidsRun is 0. Setting run = %1").arg(mapping.bidsRun));
@@ -2789,10 +2794,12 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
                 }
 
                 if (datadirexists) {
+                    n->Log("Data directory [" + datadir + "] exists");
                     if (!datadirempty) {
                         QString tmpdir = n->cfg["tmpdir"] + "/" + GenerateRandomString(10);
                         m = "";
                         if (MakePath(tmpdir, m)) {
+                            n->Log("Created temp directory [" + tmpdir + "]");
 
                             int numfilesconv(0), numfilesrenamed(0);
                             QString binpath = n->cfg["nidbdir"] + "/bin";
@@ -3824,6 +3831,7 @@ BIDSMapping archiveIO::GetBIDSMapping(int projectRowID, QString protocol, QStrin
     mapping.bidsSuffix = "unknown";
     mapping.imageType = imageType;
     mapping.protocol = protocol;
+    mapping.isValid = true;
 
     QSqlQuery q;
     q.prepare("select * from bids_mapping where project_id = :projectid and protocolname = :protocol and imagetype = :imagetype and modality = :modality");
@@ -3849,17 +3857,30 @@ BIDSMapping archiveIO::GetBIDSMapping(int projectRowID, QString protocol, QStrin
         mapping.bidsTask = q.value("bidsTask").toString();
     }
 
-    // n->Log(QString("bidsAutoNumberRuns: %1").arg(mapping.bidsAutoNumberRuns));
-    // n->Log(QString("bidsEntity: %1").arg(mapping.bidsEntity));
-    // n->Log(QString("bidsIntendedForEntity: %1").arg(mapping.bidsIntendedForEntity));
-    // n->Log(QString("bidsIntendedForFileExtension: %1").arg(mapping.bidsIntendedForFileExtension));
-    // n->Log(QString("bidsIntendedForRun: %1").arg(mapping.bidsIntendedForRun));
-    // n->Log(QString("bidsIntendedForSuffix: %1").arg(mapping.bidsIntendedForSuffix));
-    // n->Log(QString("bidsIntendedForTask: %1").arg(mapping.bidsIntendedForTask));
-    // n->Log(QString("bidsPEDirection: %1").arg(mapping.bidsPEDirection));
-    // n->Log(QString("bidsRun: %1").arg(mapping.bidsRun));
-    // n->Log(QString("bidsSuffix: %1").arg(mapping.bidsSuffix));
-    // n->Log(QString("bidsTask: %1").arg(mapping.bidsTask));
+    // Do some checking
+    int intendedForEntitySize = mapping.bidsIntendedForEntity.split(",").size();
+    int intendedForFileExtensionSize = mapping.bidsIntendedForFileExtension.split(",").size();
+    int intendedForRunSize = mapping.bidsIntendedForRun.split(",").size();
+    int intendedForSuffixSize = mapping.bidsIntendedForSuffix.split(",").size();
+    int intendedForTaskSize = mapping.bidsIntendedForTask.split(",").size();
+
+    if ( (intendedForEntitySize != intendedForFileExtensionSize) || (intendedForEntitySize != intendedForRunSize) || (intendedForEntitySize != intendedForSuffixSize) || (intendedForEntitySize != intendedForTaskSize) ) {
+        n->Log(QString("bidsAutoNumberRuns: %1").arg(mapping.bidsAutoNumberRuns));
+        mapping.isValid = false;
+        mapping.mappingMessage = "IntendedFor mapping variables have different numbers of items. All IntendFor variables must have the same number of items";
+    }
+
+    n->Log(QString("bidsAutoNumberRuns: %1").arg(mapping.bidsAutoNumberRuns));
+    n->Log(QString("bidsEntity: %1").arg(mapping.bidsEntity));
+    n->Log(QString("bidsIntendedForEntity: %1").arg(mapping.bidsIntendedForEntity));
+    n->Log(QString("bidsIntendedForFileExtension: %1").arg(mapping.bidsIntendedForFileExtension));
+    n->Log(QString("bidsIntendedForRun: %1").arg(mapping.bidsIntendedForRun));
+    n->Log(QString("bidsIntendedForSuffix: %1").arg(mapping.bidsIntendedForSuffix));
+    n->Log(QString("bidsIntendedForTask: %1").arg(mapping.bidsIntendedForTask));
+    n->Log(QString("bidsPEDirection: %1").arg(mapping.bidsPEDirection));
+    n->Log(QString("bidsRun: %1").arg(mapping.bidsRun));
+    n->Log(QString("bidsSuffix: %1").arg(mapping.bidsSuffix));
+    n->Log(QString("bidsTask: %1").arg(mapping.bidsTask));
 
     return mapping;
 }
