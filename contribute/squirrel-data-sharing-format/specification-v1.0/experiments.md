@@ -14,7 +14,7 @@ Experiments describe how data was collected from the participant. In other words
 :red\_circle: Required\
 :yellow\_circle: Computed (squirrel writer/reader should handle these variables)
 
-{% include "../../../.gitbook/includes/experiments.md" %}
+<table data-full-width="true"><thead><tr><th width="198" align="right">Variable</th><th width="98.00000000000003">Type</th><th width="93">Default</th><th>Description</th></tr></thead><tbody><tr><td align="right"><code>ExperimentName</code></td><td>string</td><td><span data-gb-custom-inline data-tag="emoji" data-code="1f534">🔴</span> <span data-gb-custom-inline data-tag="emoji" data-code="1f535">🔵</span></td><td>Unique name of the experiment.</td></tr><tr><td align="right"><code>FileCount</code></td><td>number</td><td><span data-gb-custom-inline data-tag="emoji" data-code="1f7e1">🟡</span></td><td>Number of files contained in the experiment.</td></tr><tr><td align="right"><code>Size</code></td><td>number</td><td><span data-gb-custom-inline data-tag="emoji" data-code="1f7e1">🟡</span></td><td>Size, in bytes, of the experiment files.</td></tr><tr><td align="right"><code>VirtualPath</code></td><td>string</td><td><span data-gb-custom-inline data-tag="emoji" data-code="1f7e1">🟡</span></td><td>Path to the experiment within the squirrel package.</td></tr></tbody></table>
 
 ### Directory structure
 
