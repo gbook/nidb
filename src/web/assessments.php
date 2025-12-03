@@ -230,10 +230,6 @@
 		$uid = $row['uid'];
 		$id = $row['subject_id'];
 		
-		//$urllist['Subject List'] = "subjects.php";
-		//$urllist[$uid] = "subjects.php?action=display&id=$id";
-		//NavigationBar("Subjects", $urllist);
-		
 	?>
 		<div align="center">
 		<br><br>
@@ -383,10 +379,6 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$uid = $row['uid'];
 		$id = $row['subject_id'];
-		
-		//$urllist['Subject List'] = "subjects.php";
-		//$urllist[$uid] = "subjects.php?action=display&id=$id";
-		//NavigationBar("Subjects", $urllist);
 		
 		if ($viewtype == "view") {
 			$readonly = "readonly";
@@ -631,10 +623,6 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$uid = $row['uid'];
 		$id = $row['subject_id'];
-		
-		//$urllist['Subject List'] = "subjects.php";
-		//$urllist[$uid] = "subjects.php?action=display&id=$id";
-		//NavigationBar("Subjects", $urllist);
 		
 		if ($viewtype == "view") {
 			$readonly = "readonly";

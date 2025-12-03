@@ -165,10 +165,6 @@
 	/* ------- DisplayImportForm ------------------ */
 	/* -------------------------------------------- */
 	function DisplayImportForm() {
-	
-		//$urllist['Home'] = "index.php";
-		//$urllist['About'] = "about.php";
-		//NavigationBar("About", $urllist);
 
 		//$str1 = "$subjectids,999999,$formid,$dsmquestionid,$groupid,$code,$rater,$date,$notes,$visit";
 

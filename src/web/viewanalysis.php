@@ -252,6 +252,8 @@
 					if (stristr(strtolower($file),".e") !== FALSE) { $filetype = 'text'; }
 					if (stristr(strtolower($file),".par") !== FALSE) { $filetype = 'text'; }
 					if (stristr(strtolower($file),".mat") !== FALSE) { $filetype = 'text'; }
+					if (stristr(strtolower($file),".m") !== FALSE) { $filetype = 'text'; }
+					if (stristr(strtolower($file),".css") !== FALSE) { $filetype = 'text'; }
 					if ($istext) { $filetype = "text"; }
 					//echo "[$file $filetype]";
 				}

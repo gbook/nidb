@@ -144,11 +144,6 @@
 			$submitbuttonlabel = "Add";
 		}
 		
-		//$urllist['Administration'] = "admin.php";
-		//$urllist['Pipelines'] = "adminpipelines.php";
-		//$urllist[$name] = "adminpipelines.php?action=editform&id=$id";
-		//NavigationBar("Admin", $urllist);
-		
 	?>
 		<div align="center">
 		<table class="entrytable">
@@ -204,12 +199,6 @@
 	/* ------- DisplayPipelineList ----------------- */
 	/* -------------------------------------------- */
 	function DisplayPipelineList() {
-	
-		//$urllist['Administration'] = "admin.php";
-		//$urllist['Pipelines'] = "adminpipelines.php";
-		//$urllist['Add Pipeline'] = "adminpipelines.php?action=addform";
-		//NavigationBar("Admin", $urllist);
-		
 	?>
 
 	<table class="graydisplaytable">

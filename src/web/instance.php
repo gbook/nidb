@@ -201,11 +201,6 @@
 			$submitbuttonlabel = "Add";
 		}
 		
-		//$urllist['Administration'] = "admin.php";
-		//$urllist['Instance Control Panel'] = "instance.php";
-		//$urllist[$contact_fullname] = "instance.php?action=editcontactform&contactid=$contactid";
-		//NavigationBar("Admin", $urllist);
-		
 	?>
 		<div align="center">
 		<table class="entrytable">
@@ -622,9 +617,6 @@
 	/* ------- DisplayInstanceControlPanel -------- */
 	/* -------------------------------------------- */
 	function DisplayInstanceControlPanel($id) {
-	
-		$urllist['Instance Control Panel'] = "instance.php";
-		NavigationBar("Admin", $urllist);
 		
 		/* if the instance ID is blank, display a list of instances that they own */
 		if ($id == "") {

@@ -771,9 +771,9 @@
 									<select class="ui search dropdown" name="interventionname[]" id="interventionname" onChange="CheckForInterventionCriteria()" multiple="multiple" style="width: 100%">
 									<?
 										if ($projectid == "")
-											$sqlstringA = "SELECT distinct(c.intervention_name) FROM interventions a left join enrollment b on a.enrollment_id = b.enrollment_id left join interventionnames c on a.interventionname_id = c.interventionname_id order by c.intervention_name";
+											$sqlstringA = "SELECT distinct(a.intervention_name) FROM interventions a left join enrollment b on a.enrollment_id = b.enrollment_id order by a.intervention_name";
 										else
-											$sqlstringA = "SELECT distinct(c.intervention_name) FROM interventions a left join enrollment b on a.enrollment_id = b.enrollment_id left join interventionnames c on a.interventionname_id = c.interventionname_id where b.project_id = $projectid order by c.intervention_name";
+											$sqlstringA = "SELECT distinct(a.intervention_name) FROM interventions a left join enrollment b on a.enrollment_id = b.enrollment_id where b.project_id = $projectid order by a.intervention_name";
 											
 										$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
 										while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
@@ -809,9 +809,9 @@
 										<select class="ui search dropdown" name="dosevariable[]" id="dosevariable" onChange="CheckForInterventionCriteria()" multiple="multiple">
 										<?
 											if ($projectid == "")
-												$sqlstringA = "SELECT distinct(c.intervention_name) FROM interventions a left join enrollment b on a.enrollment_id = b.enrollment_id left join interventionnames c on a.interventionname_id = c.interventionname_id order by c.intervention_name";
+												$sqlstringA = "SELECT distinct(intervention_name) FROM interventions order by intervention_name";
 											else
-												$sqlstringA = "SELECT distinct(c.intervention_name) FROM interventions a left join enrollment b on a.enrollment_id = b.enrollment_id left join interventionnames c on a.interventionname_id = c.interventionname_id where b.project_id = $projectid order by c.intervention_name";
+												$sqlstringA = "SELECT distinct(a.intervention_name) FROM interventions a left join enrollment b on a.enrollment_id = b.enrollment_id where b.project_id = $projectid order by a.intervention_name";
 											$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
 											while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 												$interventionname = $rowA['intervention_name'];
@@ -1047,7 +1047,7 @@
 			$interventiondoses = array();
 			if ($a['includetimesincedose']) {
 				if ($doseVariable != "") {
-					$sqlstringA = "select a.*, b.intervention_name from interventions a left join interventionnames b on a.interventionname_id = b.interventionname_id where a.enrollment_id = $enrollmentid and (" . CreateSQLSearchString("b.intervention_name", $a['dosevariable']) . ")";
+					$sqlstringA = "select * from interventions where enrollment_id = $enrollmentid and (" . CreateSQLSearchString("intervention_name", $a['dosevariable']) . ")";
 					$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
 					$i=0;
 					while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
@@ -1392,7 +1392,7 @@
 			if (($a['includeallinterventions']) || ($a['interventionname'] != "") || ($a['includeinterventiondetails']) || ($a['dosevariable'] != "")) {
 				
 				if ($a['includeallinterventions']) {
-					$sqlstringA = "select a.*, b.intervention_name from interventions a left join interventionnames b on a.interventionname_id = b.interventionname_id where enrollment_id = $enrollmentid";
+					$sqlstringA = "select * from interventions where enrollment_id = $enrollmentid";
 				}
 				else {
 					$interventionarray = array();
@@ -1404,12 +1404,12 @@
 						
 					$interventionarray = array_unique($interventionarray);
 
-					$interventionstr = CreateSQLSearchString("b.intervention_name", $interventionarray);
+					$interventionstr = CreateSQLSearchString("intervention_name", $interventionarray);
 					if ($interventionstr == "") {
-						$sqlstringA = "select a.*, b.intervention_name from interventions a left join interventionnames b on a.interventionname_id = b.interventionname_id where a.enrollment_id = $enrollmentid";
+						$sqlstringA = "select * from interventions where enrollment_id = $enrollmentid";
 					}
 					else {
-						$sqlstringA = "select a.*, b.intervention_name from interventions a left join interventionnames b on a.interventionname_id = b.interventionname_id where a.enrollment_id = $enrollmentid and ($interventionstr)";
+						$sqlstringA = "select * from interventions where enrollment_id = $enrollmentid and ($interventionstr)";
 					}
 				}
 				if (count($interventionarray) > 0) {
@@ -1746,7 +1746,7 @@
 			$interventiondoses = array();
 			if ($a['includetimesincedose']) {
 				if ($doseVariable != "") {
-					$sqlstringA = "select a.*, b.intervention_name from interventions a left join interventionnames b on a.interventionname_id = b.interventionname_id where a.enrollment_id = $enrollmentid and (" . CreateSQLSearchString("b.intervention_name", $a['dosevariable']) . ")";
+					$sqlstringA = "select * from interventions where enrollment_id = $enrollmentid and (" . CreateSQLSearchString("intervention_name", $a['dosevariable']) . ")";
 					$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
 					$i=0;
 					while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
@@ -1876,7 +1876,7 @@
 			if (($a['includeallinterventions']) || ($a['interventionname'] != "") || ($a['includeinterventiondetails']) || ($a['dosevariable'] != "")) {
 				
 				if ($a['includeallinterventions']) {
-					$sqlstringA = "select a.*, b.intervention_name from interventions a left join interventionnames b on a.interventionname_id = b.interventionname_id where enrollment_id = $enrollmentid";
+					$sqlstringA = "select * from interventions where enrollment_id = $enrollmentid";
 				}
 				else {
 					$interventionarray = array();
@@ -1888,12 +1888,12 @@
 						
 					$interventionarray = array_unique($interventionarray);
 
-					$interventionstr = CreateSQLSearchString("b.intervention_name", $interventionarray);
+					$interventionstr = CreateSQLSearchString("intervention_name", $interventionarray);
 					if ($interventionstr == "") {
-						$sqlstringA = "select a.*, b.intervention_name from interventions a left join interventionnames b on a.interventionname_id = b.interventionname_id where a.enrollment_id = $enrollmentid";
+						$sqlstringA = "select * from interventions where enrollment_id = $enrollmentid";
 					}
 					else {
-						$sqlstringA = "select a.*, b.intervention_name from interventions a left join interventionnames b on a.interventionname_id = b.interventionname_id where a.enrollment_id = $enrollmentid and ($interventionstr)";
+						$sqlstringA = "select * from interventions where enrollment_id = $enrollmentid and ($interventionstr)";
 					}
 				}
 				if (count($interventionarray) > 0) {

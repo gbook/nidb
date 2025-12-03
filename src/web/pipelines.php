@@ -2935,51 +2935,191 @@ echo "#$ps_command     $logged $ps_desc\n";
 		
 		<!-- ---------- operations tab ---------- -->
 		
-		<div class="ui bottom attached <?=$tab_fouractive?> tab raised segment" data-tab="fourth">
-			<p><a class="ui button" href="pipelines.php?action=resetanalyses&id=<?=$id?>&returntab=operations" style="width:250px" onclick="return confirm('Are you sure you want to reset the analyses for this pipeline?')" title="This will remove any entries in the database for studies which were not analyzed. If you change your data specification, you will want to reset the analyses. This option does not remove existing analyses, it only removes the flag set for studies that indicates the study has been checked for the specified data"><i class="redo alternate icon"></i> Reset ignored studies</a>
-			</p>
-			<p><a href="#" class="ui button" style="width:250px" onClick="GetNewPipelineName();"><i class="copy icon"></i> Copy to new pipeline...</a></p>
-			<? if (!$readonly) { ?>
-			<p>
-			<form action="pipelines.php" method="post">
-			<input type="hidden" name="action" value="changeowner">
-			<input type="hidden" name="id" value="<?=$id?>">
-			<input type="hidden" name="returntab" value="operations">
-			<div class="ui labeled action input">
-				<label for="modality" class="ui label grey"><i class="exchange alternate icon"></i> New pipeline owner</label>
-				<select class="ui selection dropdown" name="newuserid" id="newuserid" required>
-				<option value="">(Select new owner)</option>
-				<?
-					$sqlstring="select * from users where user_enabled = 1 order by username";
-					$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-						$userid = $row['user_id'];
-						$username = $row['username'];
-						$userfullname = $row['user_fullname'];
-						if ($username != "") {
-							if ($userfullname != "") {
-								$userfullname = "[$userfullname]";
-							}
-							?><option value="<?=$userid?>"><?=$username?> <?=$userfullname?></option><?
-						}
-					}
-				?>
-				</select>
-				<button class="ui button" type="submit">Change</button>
+		<div class="ui bottom attached <?=$tab_fouractive?> tab centered very padded raised segment" data-tab="fourth">
+		
+		<div class="ui centered cards">
+		
+			<div class="raised card">
+				<div class="content">
+					<div class="header">
+						<i class="redo alternate icon"></i>
+						Reset ignored studies
+					</div>
+					<div class="description">
+						<p>All studies in NiDB are 'checked' if they match criteria for this pipeline, otherwise they are flagged so they are not checked again. This will reset those flags so previously ignored studies will be checked again.</p>
+					</div>
+				</div>
+				<a class="ui primary button" href="pipelines.php?action=resetanalyses&id=<?=$id?>&returntab=operations" onclick="return confirm('Are you sure you want to reset the analyses for this pipeline?')">Reset</a>
 			</div>
-			</form>
-			</p>
-			<br>
-			<p><a href="pipelines.php?action=exportpipeline&id=<?=$id?>&returntab=operations" class="ui button" style="width:250px" title="This pipeline will be exported in squirrel format as a web download"><i class="file export icon"></i> Export pipeline</a></p>
-			<p><a href="pipelines.php?action=exportanalysisresults&id=<?=$id?>&returntab=operations" class="ui button" style="width:250px" title="Export all analysis results as a web download"><i class="file export icon"></i> Export analysis results</a></p>
-			<br>
-			<a href="packages.php?action=addobject&objecttype=pipeline&objectids[]=<?=$id?>" class="ui primary basic brown button" style="width:250px"><em data-emoji=":chipmunk:"></em> &nbsp; Add to Package</a>
-			<br><br>
-			<p><a href="pipelines.php?action=detach&id=<?=$id?>&returntab=operations" class="ui disabled red button" style="width:250px" onclick="return confirm('Are you sure you want to completely detach this pipeline?')" title="This will completely inactivate the pipeline and remove all analyses from the pipeline control. Since the data will no longer be under pipeline control, all analysis results will be deleted. All analysis data will be moved to the directory you specify"><i class="unlock alternate icon"></i> Detach pipeline</a></p>
-			<p><a href="pipelines.php?action=delete&id=<?=$id?>&returntab=operations" class="ui red button" style="width:250px" onclick="return confirm('Are you sure you want to delete this pipeline?')"><i class="trash alternate icon"></i> Delete this pipeline</a></p>
+			
+			<div class="raised card">
+				<div class="content">
+					<div class="header">
+						<i class="copy icon"></i>
+						Copy to new pipeline
+					</div>
+					<div class="description">
+						Create a new pipeline using this pipeline as a template
+					</div>
+				</div>
+				<div class="ui primary button" onClick="GetNewPipelineName();">
+					Copy...
+				</div>
+			</div>
+			
+			<? if (!$readonly) { ?>
+			<div class="raised card">
+				<div class="content">
+					<div class="header">
+						<i class="exchange alternate icon"></i>
+						Change pipeline owner
+					</div>
+					<div class="description">
+						Change the owner of this pipeline
+						<p>
+							<form action="pipelines.php" method="post" name="changeOwnerForm">
+							<input type="hidden" name="action" value="changeowner">
+							<input type="hidden" name="id" value="<?=$id?>">
+							<input type="hidden" name="returntab" value="operations">
+							<select class="ui selection dropdown" name="newuserid" id="newuserid" required>
+							<option value="">(Select new owner)</option>
+							<?
+								$sqlstring="select * from users where user_enabled = 1 order by username";
+								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+									$userid = $row['user_id'];
+									$username = $row['username'];
+									$userfullname = $row['user_fullname'];
+									if ($username != "") {
+										if ($userfullname != "") {
+											$userfullname = "[$userfullname]";
+										}
+										?><option value="<?=$userid?>"><?=$username?> <?=$userfullname?></option><?
+									}
+								}
+							?>
+							</select>
+						</p>
+					</div>
+				</div>
+				<div class="ui primary button" onClick="document.changeOwnerForm.submit()">
+					Change...
+				</div>
+				</form>
+			</div>
 			<? } ?>
-		</div>
 
+			<div class="raised card">
+				<div class="content">
+					<div class="header">
+						<i class="file export icon"></i>
+						Export pipeline
+					</div>
+					<div class="description">
+						Export this pipeline in squirrel format as a web download
+					</div>
+				</div>
+				<a href="pipelines.php?action=exportpipeline&id=<?=$id?>&returntab=operations" class="ui primary button">Export pipeline</a>
+			</div>
+
+			<div class="raised card">
+				<div class="content">
+					<div class="header">
+						<i class="file export icon"></i>
+						Export analysis results
+					</div>
+					<div class="description">
+						<p>Export all analysis results to a csv file.</p>
+						
+						<p>Previous exports</p>
+						<table class="ui very compact small head stuck short scrolling table">
+							<thead>
+								<th>Date</th>
+								<th>Status</th>
+								<th>Size</th>
+								<th>Get</th>
+							</thead>
+						<?
+							$sqlstring = "select * from export_nonimaging where export_status in ('submitted','pending','processing','complete','error') and (export_deletedate is null or export_deletedate > now()) and pipeline_id = $id";
+							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+								$exportRowID = $row['exportnonimaging_id'];
+								$exportStatus = $row['export_status'];
+								$exportStatusMessage = $row['export_statusmessage'];
+								$startDate = date('M m, Y', strtotime($row['export_startdate']));
+								$endDate = $row['export_enddate'];
+								$numCols = $row['export_numcols'];
+								$numRows = $row['export_numrows'];
+								$exportSize = HumanReadableFilesize($row['export_size']);
+								$exportFilePath = $row['export_filepath'];
+								
+								if (($exportStatus == "submitted") || ($exportStatus == "pending") || ($exportStatus == "processing")) { $exportStatus = "<i class='spinner loading icon'></i>"; }
+								if ($exportStatus == "complete") { $exportStatus = "<i class='green check icon'></i>"; }
+								if ($exportStatus == "error") { $exportStatus = "<i class='red exclamation triangle icon'></i>"; }
+								
+								?>
+								<tr>
+									<td><?=$startDate?></td>
+									<td title="<?=$exportStatusMessage?>"><?=$exportStatus?></td>
+									<td><?=$exportSize?></td>
+									<td>
+										<? if ($exportFilePath != "") { ?>
+										<a href="getfile.php?action=download&file=<?=$exportFilePath?>"><i class="arrow alternate circle down icon"></i></a>
+										<? } ?>
+									</td>
+								</tr>
+								<?
+							}
+						?>
+						</table>
+					</div>
+				</div>
+				<a href="pipelines.php?action=exportanalysisresults&id=<?=$id?>&returntab=operations" class="ui primary button">Export analysis</a>
+			</div>
+
+			<div class="raised card">
+				<div class="content">
+					<div class="header">
+						<em data-emoji=":chipmunk:"></em>
+						Add to squirrel package
+					</div>
+					<div class="description">
+						Add this pipeline to an existing squirrel package
+					</div>
+				</div>
+				<a href="packages.php?action=addobject&objecttype=pipeline&objectids[]=<?=$id?>" class="ui primary brown button">Add to Package</a>
+			</div>
+
+			<!--<div class="raised disabled card">
+				<div class="content">
+					<i class="right floated unlock icon"></i>
+					<div class="header">Detach pipeline</div>
+					<div class="description">
+						This will completely inactivate the pipeline and remove all analyses from the pipeline control. Since the data will no longer be under pipeline control, all analysis results will be deleted. All analysis data will be moved to the directory you specify
+					</div>
+				</div>
+				<a href="pipelines.php?action=detach&id=<?=$id?>&returntab=operations" class="ui disabled red button" onclick="return confirm('Are you sure you want to completely detach this pipeline?')">Detach</a>
+			</div>-->
+		</div>
+		
+		<div class="ui centered cards">
+		
+			<div class="red raised card">
+				<div class="content">
+					<div class="red header">
+						<i class="red alternate trash icon"></i>
+						Delete pipeline
+					</div>
+					<div class="description">
+						Delete this entire pipeline and all data
+					</div>
+				</div>
+				<a href="pipelines.php?action=delete&id=<?=$id?>&returntab=operations" class="ui red button" onclick="return confirm('Are you sure you want to delete this pipeline?')">Delete</a>
+			</div>
+			
+		</div>
+		</div>
+		
 		<!-- ---------- checks tab ---------- -->
 		
 		<div class="ui bottom attached <?=$tab_fiveactive?> tab raised segment" data-tab="fifth">
@@ -3089,10 +3229,6 @@ echo "#$ps_command     $logged $ps_desc\n";
 		if ($version == "") {
 			$version = $row['pipeline_version'];
 		}
-		
-		//$urllist['Pipelines'] = "pipelines.php";
-		//$urllist[$title] = "pipelines.php?action=editpipeline&id=$id";
-		//NavigationBar("$title", $urllist);
 
 		?>
 		<form method="post" action="pipelines.php" name="versionform">
@@ -3320,10 +3456,6 @@ echo "#$ps_command     $logged $ps_desc\n";
 	
 		MarkTime("DisplayPipelineUsage()");
 	
-		$urllist['Pipelines'] = "pipelines.php";
-		$urllist['New Pipeline'] = "pipelines.php?action=addform";
-		//NavigationBar("Pipelines", $urllist);
-		
 		$username = $GLOBALS['username'];
 		
 		global $imgdata;
@@ -3389,10 +3521,6 @@ echo "#$ps_command     $logged $ps_desc\n";
 	function DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewhidden, $viewuserid) {
 	
 		MarkTime("DisplayPipelineTree()");
-	
-		//$urllist['Pipelines'] = "pipelines.php";
-		//$urllist['New Pipeline'] = "pipelines.php?action=addform";
-		//NavigationBar("Pipelines", $urllist);
 		
 		$username = $GLOBALS['username'];
 		$viewuserid = $_SESSION['viewuserid'];
@@ -4234,33 +4362,15 @@ echo "#$ps_command     $logged $ps_desc\n";
 		$ip = getenv('REMOTE_ADDR');
 		$username = $_SESSION['username'];
 		
-		/* collect the download flags */
-		//$downloadflags = array();
-		//$downloadflags[] = "DOWNLOAD_PIPELINES";
-		//if (count($downloadflags) > 0)
-		//	$downloadflagstr = "('" . implode2(",",$downloadflags) . "')";
-		//else
-		//	$downloadflagstr = "null";
-		
-		/* collect the squirrel flags */
-		//$squirrelflags = array();
-		//if (count($squirrelflags) > 0)
-		//	$squirrelflagstr = "('" . implode2(",",$squirrelflags) . "')";
-		//else
-		//	$squirrelflagstr = "null";
-		
 		/* get pipeline details */
 		$sqlstring = "select * from pipelines where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$pipelinename = $row['pipeline_name'];
-		//$pipelinedesc = $row['pipeline_desc'];
 		
 		$pipelinename = mysqli_real_escape_string($GLOBALS['linki'], $pipelinename);
-		//$pipelinedesc = mysqli_real_escape_string($GLOBALS['linki'], $pipelinedesc);
 		
 		$sqlstring = "insert into export_nonimaging (username, ip, export_type, pipeline_id, export_destinationtype, export_status, export_statusmessage, export_startdate) values ('$username', '$ip', 'analysisresults', $id, 'web', 'submitted', 'Submitted analysis results export for $pipelinename', now())";
-		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$exportid = mysqli_insert_id($GLOBALS['linki']);
 		

@@ -150,81 +150,91 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		/* update/insert modify data rows */
-		if (count($projectadmin) > 0) {
-			foreach ($projectadmin as $projectid) {
-				$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				if (mysqli_num_rows($result) > 0) {
-					$sqlstring = "update user_project set project_admin = 1 where user_id = $id and project_id = $projectid";
+		if (!is_null($projectadmin)) {
+			if (count($projectadmin) > 0) {
+				foreach ($projectadmin as $projectid) {
+					$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				}
-				else {
-					$sqlstring = "insert into user_project (user_id, project_id, project_admin, write_data, view_data, write_phi, view_phi) values ($id, $projectid, 1, 0, 0, 0, 0)";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					if (mysqli_num_rows($result) > 0) {
+						$sqlstring = "update user_project set project_admin = 1 where user_id = $id and project_id = $projectid";
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					}
+					else {
+						$sqlstring = "insert into user_project (user_id, project_id, project_admin, write_data, view_data, write_phi, view_phi) values ($id, $projectid, 1, 0, 0, 0, 0)";
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					}
 				}
 			}
 		}
 		
 		/* update/insert modify data rows */
-		if (count($modifydata) > 0) {
-			foreach ($modifydata as $projectid) {
-				$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				if (mysqli_num_rows($result) > 0) {
-					$sqlstring = "update user_project set write_data = 1 where user_id = $id and project_id = $projectid";
+		if (!is_null($modifydata)) {
+			if (count($modifydata) > 0) {
+				foreach ($modifydata as $projectid) {
+					$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				}
-				else {
-					$sqlstring = "insert into user_project (user_id, project_id, project_admin, write_data, view_data, write_phi, view_phi) values ($id, $projectid, 0, 1, 0, 0, 0)";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					if (mysqli_num_rows($result) > 0) {
+						$sqlstring = "update user_project set write_data = 1 where user_id = $id and project_id = $projectid";
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					}
+					else {
+						$sqlstring = "insert into user_project (user_id, project_id, project_admin, write_data, view_data, write_phi, view_phi) values ($id, $projectid, 0, 1, 0, 0, 0)";
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					}
 				}
 			}
 		}
 		
 		/* update/insert view data rows */
-		if (count($viewdata) > 0) {
-			foreach ($viewdata as $projectid) {
-				$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				if (mysqli_num_rows($result) > 0) {
-					$sqlstring = "update user_project set view_data = 1 where user_id = $id and project_id = $projectid";
+		if (!is_null($viewdata)) {
+			if (count($viewdata) > 0) {
+				foreach ($viewdata as $projectid) {
+					$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				}
-				else {
-					$sqlstring = "insert into user_project (user_id, project_id, project_admin, write_data, view_data, write_phi, view_phi) values ($id, $projectid, 0, 0, 1, 0, 0)";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					if (mysqli_num_rows($result) > 0) {
+						$sqlstring = "update user_project set view_data = 1 where user_id = $id and project_id = $projectid";
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					}
+					else {
+						$sqlstring = "insert into user_project (user_id, project_id, project_admin, write_data, view_data, write_phi, view_phi) values ($id, $projectid, 0, 0, 1, 0, 0)";
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					}
 				}
 			}
 		}
 		
 		/* update/insert modify phi rows */
-		if (count($modifyphi) > 0) {
-			foreach ($modifyphi as $projectid) {
-				$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				if (mysqli_num_rows($result) > 0) {
-					$sqlstring = "update user_project set write_phi = 1 where user_id = $id and project_id = $projectid";
+		if (!is_null($modifyphi)) {
+			if (count($modifyphi) > 0) {
+				foreach ($modifyphi as $projectid) {
+					$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				}
-				else {
-					$sqlstring = "insert into user_project (user_id, project_id, project_admin, write_data, view_data, write_phi, view_phi) values ($id, $projectid, 0, 0, 0, 1, 0)";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					if (mysqli_num_rows($result) > 0) {
+						$sqlstring = "update user_project set write_phi = 1 where user_id = $id and project_id = $projectid";
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					}
+					else {
+						$sqlstring = "insert into user_project (user_id, project_id, project_admin, write_data, view_data, write_phi, view_phi) values ($id, $projectid, 0, 0, 0, 1, 0)";
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					}
 				}
 			}
 		}
 		
 		/* update/insert view phi rows */
-		if (count($viewphi) > 0) {
-			foreach ($viewphi as $projectid) {
-				$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				if (mysqli_num_rows($result) > 0) {
-					$sqlstring = "update user_project set view_phi = 1 where user_id = $id and project_id = $projectid";
+		if (!is_null($viewphi)) {
+			if (count($viewphi) > 0) {
+				foreach ($viewphi as $projectid) {
+					$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				}
-				else {
-					$sqlstring = "insert into user_project (user_id, project_id, project_admin, write_data, view_data, write_phi, view_phi) values ($id, $projectid, 0, 0, 0, 0, 1)";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					if (mysqli_num_rows($result) > 0) {
+						$sqlstring = "update user_project set view_phi = 1 where user_id = $id and project_id = $projectid";
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					}
+					else {
+						$sqlstring = "insert into user_project (user_id, project_id, project_admin, write_data, view_data, write_phi, view_phi) values ($id, $projectid, 0, 0, 0, 0, 1)";
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					}
 				}
 			}
 		}

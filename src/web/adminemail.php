@@ -68,9 +68,6 @@
 	/* ------- DisplayEmailForm ------------------- */
 	/* -------------------------------------------- */
 	function DisplayEmailForm() {
-		//$urllist['Administration'] = "admin.php";
-		//$urllist['Mass email'] = "admineamil.php";
-		//NavigationBar("Admin", $urllist);
 		
 		?>
 		<form action="adminemail.php" method="post" name="theform">

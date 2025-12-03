@@ -198,11 +198,6 @@
 			$submitbuttonlabel = "Add";
 		}
 		
-		//$urllist['Administration'] = "admin.php";
-		//$urllist['Assessment Forms'] = "adminassessmentforms.php";
-		//$urllist[$title] = "adminassessmentforms.php?action=editform&id=$id";
-		//NavigationBar("Admin", $urllist);
-		
 	?>
 		<div align="center">
 		<table class="entrytable">
@@ -341,11 +336,6 @@
 		$title = $row['form_title'];
 		$desc = $row['form_desc'];
 		
-		//$urllist['Administration'] = "admin.php";
-		//$urllist['Assessment Forms'] = "adminassessmentforms.php";
-		//$urllist[$title] = "adminassessmentforms.php?action=editform&id=$id";
-		//NavigationBar("Admin", $urllist);
-		
 	?>
 		<div align="center">
 
@@ -443,12 +433,6 @@
 	/* ------- DisplayFormList -------------------- */
 	/* -------------------------------------------- */
 	function DisplayFormList() {
-	
-		//$urllist['Administration'] = "admin.php";
-		//$urllist['Assessment Forms'] = "adminassessmentforms.php";
-		//$urllist['Add Form'] = "adminassessmentforms.php?action=addform";
-		//NavigationBar("Admin", $urllist);
-		
 	?>
 
 	<table class="graydisplaytable">

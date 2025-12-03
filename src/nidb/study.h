@@ -42,24 +42,24 @@ public:
     void PrintStudyInfo();
     squirrelStudy GetSquirrelObject(QString databaseUUID);
 
-    int studyRowID() { return _studyid; }
-    int subjectRowID() { return _subjectid; }
-    int enrollmentRowID() { return _enrollmentid; }
-    int projectRowID() { return _projectid; }
-    QString UID() { return _uid; }
-	QString desc() { return _desc; }
-	int studyNum() { return _studynum; }
-    QString type() { return _studytype; }
-	QString daynum() { return _daynum; }
-	QString timepoint() { return _timepoint; }
-	QString path() { return _studypath; }
-    bool pathExists() { return _studyPathExists; }
+    QString daynum() { return _daynum; }
+    QString desc() { return _desc; }
+    QString equipment() { return _equipment; }
+    QString path() { return _studypath; }
+    QString timepoint() { return _timepoint; }
+    double height() { return _height; }
+    double weight() { return _weight; }
+    int studyNum() { return _studynum; }
     QDateTime dateTime() { return _studydatetime; }
+    QString UID() { return _uid; }
     QString modality() { return _modality; }
     QString msg() { return _msg; }
-	QString equipment() { return _equipment; }
-	double height() { return _height; }
-	double weight() { return _weight; }
+    QString type() { return _studytype; }
+    bool pathExists() { return _studyPathExists; }
+    int enrollmentRowID() { return _enrollmentid; }
+    int projectRowID() { return _projectid; }
+    int studyRowID() { return _studyid; }
+    int subjectRowID() { return _subjectid; }
 
     bool valid() { return _isValid; }
 
@@ -67,24 +67,26 @@ private:
     criteria searchCriteria;
     void LoadStudyInfo();
 
-    int _studyid = -1;
-    int _studynum = -1;
-    QString _uid = "";
-	QString _desc = "";
-	QString _equipment = "";
-	double _height = 0.0;
-	double _weight = 0.0;
-	QString _studytype = "";
-	QString _daynum = "";
-	QString _timepoint = "";
-	int _subjectid = -1;
+    QString _daynum = "";
+    QString _desc = "";
+    QString _equipment = "";
+    QString _studytype = "";
+    QString _timepoint = "";
+    double _height = 0.0;
+    double _weight = 0.0;
+    int _subjectid = -1;
+    QDateTime _studydatetime;
+    QString _enrollmentgroup = "";
+    QString _enrollmentstatus = "";
+    QString _modality = "";
     QString _studypath = "";
+    QString _studyuid = "";
+    QString _uid = "";
     bool _studyPathExists = false;
     int _enrollmentid = -1;
     int _projectid = -1;
-    QDateTime _studydatetime;
-    QString _modality = "";
-    QString _studyuid = "";
+    int _studyid = -1;
+    int _studynum = -1;
 
     bool _isValid = false;
     QString _msg;

@@ -61,14 +61,16 @@ public:
     void SetObjectID(qint64 id) { objectID = id; }
 
     /* JSON elements */
-    QDate DateOfBirth;      /*!< Date of birth. Not required, but can be useful to calculate age during studies. Can also contain only year... or contain only year and month */
-    QString Ethnicity1;     /*!< Ethnicity: hispanic, non-hispanic */
-    QString Ethnicity2;     /*!< Race: americanindian, asian, black, hispanic, islander, white */
-    QString GUID;           /*!< globally unique identifier, from NIMH's NDA */
-    QString Gender;         /*!< Gender identity */
-    QString ID;             /*!< --- Unique identifier --- Must be unique within the squirrel package */
+    QDate DateOfBirth;          /*!< Date of birth. Not required, but can be useful to calculate age during studies. Can also contain only year... or contain only year and month */
+    QString EnrollmentGroup;    /*!< Enrollment group (patient, control, etc) */
+    QString EnrollmentStatus;   /*!< Enrollment status (completed, excluded, etc) */
+    QString Ethnicity1;         /*!< Ethnicity: hispanic, non-hispanic */
+    QString Ethnicity2;         /*!< Race: americanindian, asian, black, hispanic, islander, white */
+    QString GUID;               /*!< globally unique identifier, from NIMH's NDA */
+    QString Gender;             /*!< Gender identity */
+    QString ID;                 /*!< --- Unique identifier --- Must be unique within the squirrel package */
     QString Notes;
-    QString Sex;            /*!< Sex at birth (biological sex) */
+    QString Sex;                /*!< Sex at birth (biological sex) */
     QStringList AlternateIDs;   /*!< List of alternate subject IDs */
     int SequenceNumber;
 

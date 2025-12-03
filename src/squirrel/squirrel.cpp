@@ -317,7 +317,7 @@ bool squirrel::Read() {
     }
 
     double elapsedSec = static_cast<double>(timer.elapsed())/1000.0;
-    utils::Print(QString("Extracted package header in %1 sec").arg(elapsedSec, 0, 'f', 2));
+    utils::Print(QString("\nExtracted package header in %1 sec").arg(elapsedSec, 0, 'f', 2));
 
     timer.restart();
 
@@ -382,6 +382,8 @@ bool squirrel::Read() {
         sqrlSubject.DateOfBirth = QDate::fromString(jsonSubject["DateOfBirth"].toString(), "yyyy-MM-dd");
         sqrlSubject.Sex = jsonSubject["Sex"].toString();
         sqrlSubject.Gender = jsonSubject["Gender"].toString();
+        sqrlSubject.EnrollmentGroup = jsonSubject["EnrollmentGroup"].toString();
+        sqrlSubject.EnrollmentStatus = jsonSubject["EnrollmentStatus"].toString();
         sqrlSubject.Ethnicity1 = jsonSubject["Ethnicity1"].toString();
         sqrlSubject.Ethnicity2 = jsonSubject["Ethnicity2"].toString();
         sqrlSubject.Notes = jsonSubject["Notes"].toString();
@@ -1444,7 +1446,8 @@ QString squirrel::PrintPackage() {
     str += utils::Print(QString("  Description: %1").arg(Description));
     str += utils::Print(QString("  DirectoryFormat (subject, study, series): %1, %2, %3").arg(SubjectDirFormat).arg(StudyDirFormat).arg(SeriesDirFormat));
     str += utils::Print(QString("  FileMode: %1").arg(fileModeStr));
-    str += utils::Print(QString("  Files:\n    %1 files\n    %2 bytes (unzipped)").arg(GetFileCount()).arg(GetUnzipSize()));
+    str += utils::Print(QString("  Files:\n    %1 files\n    %2 (unzipped)").arg(GetFileCount()).arg(utils::HumanReadableSize(GetUnzipSize())));
+    //str += utils::Print(QString("  Files:\n    %1 files\n    %2 bytes (unzipped)").arg(GetFileCount()).arg(GetUnzipSize()));
     str += utils::Print(QString("  PackageName: %1").arg(PackageName));
     str += utils::Print(QString("  SquirrelBuild: %1").arg(SquirrelBuild));
     str += utils::Print(QString("  SquirrelVersion: %1").arg(SquirrelVersion));
@@ -2704,7 +2707,7 @@ qint64 squirrel::FindDataDictionary(QString dataDictionaryName) {
  */
 bool squirrel::ExtractObject(ObjectType object, qint64 objectRowID, QString outDir, bool recursive) {
     if (objectRowID < 0) {
-        Log("Invalid object ID []");
+        Log(QString("Invalid object ID [%1]").arg(objectRowID));
         return false;
     }
 

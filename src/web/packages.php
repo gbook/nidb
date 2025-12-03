@@ -150,6 +150,10 @@
 		elseif ($action == "splitmodality") {
 			SplitPackageByModality($packageid);
 		}
+		elseif ($action == "deletepackage") {
+			DeletePackage($packageid);
+			DisplayPackageList();
+		}
 		elseif ($action == "export") {
 			ExportPackage($packageid);
 			DisplayPackage($packageid);
@@ -296,6 +300,7 @@
 		foreach ($experimentmapping as $modalitykey => $modalityvalue) {
 			foreach ($modalityvalue as $seriesdesc => $value) {
 				$projectid = $value['projectid'];
+				$seriesdesc = mysqli_real_escape_string($GLOBALS['linki'], $seriesdesc);
 				
 				$sqlstring = "select experiment_id from experiment_mapping where project_id = $projectid and protocolname = '$seriesdesc' and modality = '$modalitykey'";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -1936,14 +1941,14 @@
 	/* -------------------------------------------- */
 	/* ------- DeletePackage ---------------------- */
 	/* -------------------------------------------- */
-	function DeletePackage($packageid) {
-		if (!ValidID($packageid,'Package ID')) { return; }
+	//function DeletePackage($packageid) {
+	//	if (!ValidID($packageid,'Package ID')) { return; }
 		
-		$sqlstring = "delete from packages where package_id = $packageid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
-		Notice("Package deleted");
-	}	
+	//	$sqlstring = "delete from packages where package_id = $packageid";
+	//	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+	//	
+	//	Notice("Package deleted");
+	//}	
 
 
 	/* -------------------------------------------- */
@@ -2221,46 +2226,10 @@
 
 		<div class="ui container">
 			<div class="ui top attached raised segment">
-				<div class="ui three column grid">
-					<div class="column">
-						<div class="ui header">
-							<img src="images/squirrel-icon-64.png"></img>
-							<h2 class="content"><?=$pkg['name']?></h2>
-							<div class="sub header"><?=$pkg['desc']?></div>
-						</div>
-					</div>
-					<div class="ui middle aligned right aligned column">
-						<a href="packages.php?action=export&packageid=<?=$packageid?>" class="ui huge green button"><i class="box open icon"></i>Export Package</a>
-						<div class="ui accordion">
-							<div class="title">
-								<i class="dropdown icon"></i>
-								Previous exports
-							</div>
-							<div class="content">
-								<ul>
-								<?
-									$sqlstring = "select a.* from exports a left join exportseries b on a.export_id = b.export_id where b.package_id = $packageid";
-									$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-									$numexports = mysqli_num_rows($result);
-									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-										$exportid = $row['export_id'];
-										$startdate = $row['startdate'];
-										$submitdate = $row['submitdate'];
-										$completeddate = $row['completeddate'];
-										$status = $row['status'];
-										?>
-										<li><b>Submitted</b> <?=$submitdate?> - <b>Status</b> <?=$status?>
-										<?
-									}
-								?>
-								</ul>
-							</div>
-						</div>
-					</div>
-					<div class="ui middle aligned right aligned column">
-						<h3>Operations</h3>
-						<a class="ui basic primary button" href="packages.php?action=splitmodality&packageid=<?=$packageid?>">Split by modality</a>
-					</div>
+				<div class="ui header">
+					<img src="images/squirrel-icon-64.png"></img>
+					<h2 class="content"><?=$pkg['name']?></h2>
+					<div class="sub header"><?=$pkg['desc']?></div>
 				</div>
 			</div>
 			
@@ -2294,7 +2263,7 @@
 			</div>
 
 			<!-- package overview tab -->
-			<div class="ui bottom attached active tab raised center aligned segment" data-tab="overview">
+			<div class="ui attached active tab raised center aligned segment" data-tab="overview">
 				<div class="ui grid">
 					<div class="ui five wide column">
 						<div class="ui top attached segment" style="background-color: #eee">
@@ -2406,6 +2375,40 @@
 						</pre>
 					</div>
 				</div>
+			</div>
+			<div class="ui bottom attached raised segment">
+				<h3>Operations</h3>
+				
+				<a href="packages.php?action=export&packageid=<?=$packageid?>" class="ui huge green button"><i class="box open icon"></i>Export Package</a>
+				<div class="ui accordion">
+					<div class="title">
+						<i class="dropdown icon"></i>
+						Previous exports
+					</div>
+					<div class="content">
+						<ul>
+						<?
+							$sqlstring = "select a.* from exports a left join exportseries b on a.export_id = b.export_id where b.package_id = $packageid";
+							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+							$numexports = mysqli_num_rows($result);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+								$exportid = $row['export_id'];
+								$startdate = $row['startdate'];
+								$submitdate = $row['submitdate'];
+								$completeddate = $row['completeddate'];
+								$status = $row['status'];
+								?>
+								<li><b>Submitted</b> <?=$submitdate?> - <b>Status</b> <?=$status?>
+								<?
+							}
+						?>
+						</ul>
+					</div>
+				</div>
+
+				<a class="ui basic primary button" href="packages.php?action=splitmodality&packageid=<?=$packageid?>"><i class="expand alternate icon"></i> Split by modality</a>
+				
+				<a class="ui basic red button" href="packages.php?action=deletepackage&packageid=<?=$packageid?>"><i class="trash alternate outline icon"></i> Delete package</a>
 			</div>
 			
 			<!-- subjects tab -->
@@ -3296,6 +3299,89 @@
 			
 			//CommitSQLTransaction();
 		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DeletePackage ---------------------- */
+	/* -------------------------------------------- */
+	function DeletePackage($packageid) {
+		if (!ValidID($packageid,'Package ID')) { return; }
+		
+		$packageid = mysqli_real_escape_string($GLOBALS['linki'], $packageid);
+		
+		$sqlstring = "select * from packages where package_id = $packageid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$packageName = $row['package_name'];
+		
+		$msgs = array();
+		/* delete from package_analyses */
+		$sqlstring = "delete from package_analyses where package_id = $packageid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$msgs[] = "Deleted " . mysqli_affected_rows($GLOBALS['linki']) . " analyses";
+
+		/* delete from package_enrollments */
+		$sqlstring = "delete from package_enrollments where package_id = $packageid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$msgs[] = "Deleted " . mysqli_affected_rows($GLOBALS['linki']) . " enrollments";
+
+		/* delete from package_experiments */
+		$sqlstring = "delete from package_experiments where package_id = $packageid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$msgs[] = "Deleted " . mysqli_affected_rows($GLOBALS['linki']) . " experiments";
+
+		/* delete from package_interventions */
+		$sqlstring = "delete from package_interventions where package_id = $packageid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$msgs[] = "Deleted " . mysqli_affected_rows($GLOBALS['linki']) . " interventions";
+
+		/* delete from package_observations */
+		$sqlstring = "delete from package_observations where package_id = $packageid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$msgs[] = "Deleted " . mysqli_affected_rows($GLOBALS['linki']) . " observations";
+
+		/* delete from package_pipelines */
+		$sqlstring = "delete from package_pipelines where package_id = $packageid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$msgs[] = "Deleted " . mysqli_affected_rows($GLOBALS['linki']) . " pipelines";
+
+		/* delete from package_series */
+		$sqlstring = "delete from package_series where package_id = $packageid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$msgs[] = "Deleted " . mysqli_affected_rows($GLOBALS['linki']) . " series";
+
+		/* delete from package_studies */
+		$sqlstring = "delete from package_studies where package_id = $packageid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$msgs[] = "Deleted " . mysqli_affected_rows($GLOBALS['linki']) . " studies";
+
+		/* delete from package_subjects */
+		$sqlstring = "delete from package_subjects where package_id = $packageid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$msgs[] = "Deleted " . mysqli_affected_rows($GLOBALS['linki']) . " subjects";
+
+		/* delete from packages */
+		$sqlstring = "delete from packages where package_id = $packageid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$msgs[] = "Deleted " . mysqli_affected_rows($GLOBALS['linki']) . " package";
+
+		?>
+		<div class="ui text container">
+			<div class="ui message">
+				<div class="header">
+					Deleted package <?=$packageName?>
+				</div>
+				<ul class="list">
+					<?
+					foreach ($msgs as $msg) {
+						echo "<li>$msg";
+					}
+					?>
+				</ul>
+			</div>
+		</div>
+		<?
 	}
 	
 ?>

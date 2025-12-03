@@ -258,9 +258,6 @@ echo "$line\n";
 	/* ------- DisplayQueues ---------------------- */
 	/* -------------------------------------------- */
 	function DisplayQueues() {
-	
-		//$urllist['Cluster Stats'] = "cluster.php";
-		//NavigationBar("Cluster Stats", $urllist);
 
 		list($statsoutput,$report,$queues,$hostnames) = GetClusterStats();
 		

@@ -130,13 +130,15 @@ bool modify::AddObject(QString packagePath, ObjectType object, QString dataPath,
             sqrl->Log(QString("Creating squirrel Subject [%1]").arg(vars["ID"]));
             subject.ID = vars["ID"];
             subject.AlternateIDs = vars["AlternateIDs"].split(",");
-            subject.GUID = vars["GUID"];
             subject.DateOfBirth = QDate::fromString(vars["DateOfBirth"], "yyyy-MM-dd");
-            subject.Sex = vars["Gender"];
-            subject.Gender = vars["Gender"];
+            subject.EnrollmentGroup = vars["EnrollmentGroup"];
+            subject.EnrollmentStatus = vars["EnrollmentStatus"];
             subject.Ethnicity1 = vars["Ethnicity1"];
             subject.Ethnicity2 = vars["Ethnicity2"];
+            subject.GUID = vars["GUID"];
+            subject.Gender = vars["Gender"];
             subject.Notes = vars["Notes"];
+            subject.Sex = vars["Gender"];
             subject.Store();
             /* resequence the newly added subject */
             sqrl->ResequenceSubjects();
@@ -921,10 +923,12 @@ void modify::PrintVariables(ObjectType object) {
             {"Variable","Type","Required","Description"},
             {"AlternateIDs","JSON array","","List of alternate IDs. Comma separated"},
             {"DateOfBirth","date","*","Subject’s date of birth. Used to calculate age-at-server. Can be YYYY-00-00 to store year only, or YYYY-MM-00 to store year and month only"},
-            {"Gender","char","","Gender"},
-            {"GUID","string","","Globally unique identifier, from NDA"},
+            {"EnrollmentGroup","string","","Enrollment group within the project"},
+            {"EnrollmentStatus","string","","Enrollment status within the project"},
             {"Ethnicity1","string","","NIH defined ethnicity: Usually hispanic, non-hispanic"},
             {"Ethnicity2","string","","NIH defined race: americanindian, asian, black, hispanic, islander, white"},
+            {"GUID","string","","Globally unique identifier, from NDA"},
+            {"Gender","char","","Gender"},
             {"Notes","string","","Any notes about the subject"},
             {"Sex","char","*","Sex at birth (F,M,O,U)"},
             {"SubjectID","string","*","Unique ID of this subject. Each subject ID must be unique within the package"}

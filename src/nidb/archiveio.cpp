@@ -2603,7 +2603,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
     n->Log("Entering WriteBIDS()...");
 
     QString exportstatus = "complete";
-    QString bidsver = "1.4.0";
+    QString bidsver = "1.10.1";
     subjectStudySeriesContainer s;
     bidsreadme = "README:\n" + bidsreadme + "\n\nThis BIDS package was created by the Neuroinformatics Database (http://github.com/nidb)";
 

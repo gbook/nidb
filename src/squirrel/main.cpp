@@ -36,12 +36,30 @@ void CommandLineError(QCommandLineParser &p, QString m) {
     std::cout << p.helpText().toStdString().c_str();
     std::cout << "\n----- ERROR ----->> " << m.toStdString().c_str() << "\n\n";
 }
+
 void PrintExampleUsage() {
-    printf("Example usage: \n");
+    printf("\nExample usage: \n");
     printf("    squirrel dicom2squirrel <inputDir> <outputPackage> --dataformat nift4d --dirformat orig\n");
     printf("    squirrel bids2squirrel <inputFile> <outputPackage>\n");
-    printf("    squirrel info <package> --object study --subjectid S1234\n");
-    printf("    squirrel modify <package> --object subject --objectdata 'SubjectID=S1234&DateOfBirth=1999-12-31&Sex=M&Gender=M'\n");
+    printf("    squirrel modify <package> --operation update --object subject --objectdata 'SubjectID=S1234&DateOfBirth=1999-12-31&Sex=M&Gender=M'\n");
+}
+
+void PrintExampleModifyUsage() {
+    printf("\nExample modify usage: \n");
+    printf("    squirrel modify <package> --operation update --object subject --objectdata 'SubjectID=S1234&DateOfBirth=1999-12-31&Sex=M&Gender=M'\n");
+}
+
+void PrintExampleUsageInfo() {
+    printf("\nExample info usage: \n");
+    printf("    squirrel info <package> --object subject --dataset full --format csv\n");
+    printf("    squirrel info <package> --object study --subjectid S1234 \n");
+}
+
+void PrintExampleUsageExtract() {
+    printf("\nExample extract usage: \n");
+    printf("    squirrel extract <package> --object subject --objectid S1234ABC\n");
+    printf("    squirrel extract <package> --object series --objectid 1 --subjectid S1234ABC --studynum 1\n");
+    printf("    squirrel extract <package> --object experiment --objectid 'MyExperiment'\n");
 }
 
 int main(int argc, char *argv[])
@@ -50,13 +68,13 @@ int main(int argc, char *argv[])
 
     QString bindir = QDir::currentPath();
 
-    /* this whole section reads the command line parameters */
+    /* the entire section below reads the command line parameters */
     a.setApplicationVersion(QString("Build %1.%2.%3  (squirrellib %4.%5)  Build date %6 %7").arg(UTIL_VERSION_MAJ).arg(UTIL_VERSION_MIN).arg(UTIL_BUILD_NUM).arg(SQUIRREL_VERSION_MAJ).arg(SQUIRREL_VERSION_MIN).arg(__DATE__).arg(__TIME__));
     a.setApplicationName("Squirrel Utilities");
 
     /* setup the command line parser */
     QCommandLineParser p;
-    p.setApplicationDescription("Tools to manage squirrel data packages");
+    p.setApplicationDescription("Command line tools to manage squirrel data packages");
     p.setSingleDashWordOptionMode(QCommandLineParser::ParseAsCompactedShortOptions);
     p.setOptionsAfterPositionalArgumentsMode(QCommandLineParser::ParseAsOptions);
     p.addHelpOption();
@@ -233,44 +251,43 @@ int main(int argc, char *argv[])
         p.addOption(QCommandLineOption(QStringList() << "studynum", "Study Number\n  --subjectid must also be specified.", "studynum"));
         p.addOption(QCommandLineOption(QStringList() << "dataset", "Dataset type [id  basic  full]", "dataset"));
         p.addOption(QCommandLineOption(QStringList() << "format", "Printing format [list  csv]", "format"));
-        //p.addOption(QCommandLineOption(QStringList() << "detail", "Include details when printing lists."));
-        //p.addOption(QCommandLineOption(QStringList() << "tree", "Display tree view of data."));
-        //p.addOption(QCommandLineOption(QStringList() << "csv", "Display csv output of data"));
         p.process(a);
 
-        bool debug = p.isSet("d");
-        ObjectType object = squirrel::ObjectTypeToEnum(p.value("object").trimmed());
-        QString subjectID = p.value("subjectid").trimmed();
-        int studyNum = p.value("studynum").toInt();
-        //bool details = p.isSet("detail");
-        //bool tree = p.isSet("tree");
-        //bool csv = p.isSet("csv");
-        QString dataset = p.value("dataset").trimmed();
-        QString format = p.value("format").trimmed();
-
-        DatasetType datasetType;
-        PrintFormat printType;
-        if (dataset == "id")
-            datasetType = DatasetID;
-        else if (dataset == "basic")
-            datasetType = DatasetBasic;
-        else
-            datasetType = DatasetFull;
-
-        if (format == "list")
-            printType = List;
-        else
-            printType = CSV;
-
-        if (object == UnknownObjectType)
-            object = Package;
-
-        QString m;
-        info information;
-        if (!information.DisplayInfo(inputPath, debug, object, subjectID, studyNum, datasetType, printType, m)) {
-            CommandLineError(p,m);
+        if (inputPath == "") {
+            std::cout << p.helpText().toStdString().c_str();
+            PrintExampleUsageInfo();
         }
+        else {
+            bool debug = p.isSet("d");
+            ObjectType object = squirrel::ObjectTypeToEnum(p.value("object").trimmed());
+            QString subjectID = p.value("subjectid").trimmed();
+            int studyNum = p.value("studynum").toInt();
+            QString dataset = p.value("dataset").trimmed();
+            QString format = p.value("format").trimmed();
 
+            DatasetType datasetType;
+            PrintFormat printType;
+            if (dataset == "id")
+                datasetType = DatasetID;
+            else if (dataset == "basic")
+                datasetType = DatasetBasic;
+            else
+                datasetType = DatasetFull;
+
+            if (format == "list")
+                printType = List;
+            else
+                printType = CSV;
+
+            if (object == UnknownObjectType)
+                object = Package;
+
+            QString m;
+            info information;
+            if (!information.DisplayInfo(inputPath, debug, object, subjectID, studyNum, datasetType, printType, m)) {
+                CommandLineError(p,m);
+            }
+        }
     }
     else if (command == "modify") {
         p.clearPositionalArguments();
@@ -305,7 +322,7 @@ int main(int argc, char *argv[])
         QString objectID = p.value("objectid").trimmed();
         QString subjectID = p.value("subjectid").trimmed();
         //QString variablelist = p.value("variablelist").trimmed();
-        ObjectType variableList = squirrel::ObjectTypeToEnum(p.value("variableList").trimmed());
+        ObjectType variableList = squirrel::ObjectTypeToEnum(p.value("variablelist").trimmed());
         int studyNum = p.value("studynum").toInt();
         //bool recursive = p.isSet("recursive");
 
@@ -336,19 +353,28 @@ int main(int argc, char *argv[])
         p.addOption(QCommandLineOption(QStringList() << "objectid", "Existing object ID, name, or number to modify.", "identifer"));
         p.addOption(QCommandLineOption(QStringList() << "subjectid", "Parent subject ID. Used when extracting a study, series, observation, intervention, or analysis object.", "id"));
         p.addOption(QCommandLineOption(QStringList() << "studynum", "Parent study number. Used when extracting a series or analysis object (subjectid is also needed).", "num"));
+        p.addOption(QCommandLineOption(QStringList() << "recurse", "Include all child objects of the specified object"));
 
         p.process(a);
 
+        bool recurse = p.isSet("recurse");
         QString object = p.value("object").trimmed(); /* possible objects: subject study series observation intervention analysis experiment pipeline groupanalysis datadictionary */
         QString outputPath = p.value("outdir").trimmed();
         QString objectID = p.value("objectid").trimmed();
         QString subjectID = p.value("subjectid").trimmed();
         int studyNum = p.value("studynum").toInt();
 
-        QString m;
-        extract ext;
-        if (!ext.DoExtract(inputPath, outputPath, object, objectID, subjectID, studyNum, m)) {
-            CommandLineError(p,m);
+        /* validate the input */
+        if (inputPath == "") {
+            std::cout << p.helpText().toStdString().c_str();
+            PrintExampleUsageExtract();
+        }
+        else {
+            QString m;
+            extract ext;
+            if (!ext.DoExtract(inputPath, outputPath, object, objectID, subjectID, studyNum, m)) {
+                CommandLineError(p,m);
+            }
         }
     }
     else if (command == "validate") {

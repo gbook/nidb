@@ -60,9 +60,6 @@
 	/* -------------------------------------------- */
 	function DisplayStats() {
 	
-		//$urllist['Statistics'] = "stats.php";
-		//NavigationBar("Stats", $urllist);
-
 		$currentyear = date("Y");
 		
 		$sqlstring = "select count(*) count from subjects where isactive = 1";

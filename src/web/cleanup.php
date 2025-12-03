@@ -112,9 +112,6 @@
 	/* ------- DisplayMenu ------------------------ */
 	/* -------------------------------------------- */
 	function DisplayMenu() {
-		//$urllist['Administration'] = "cleanup.php";
-		//$urllist['Cleanup'] = "cleanup.php";
-		//NavigationBar("Admin", $urllist);
 		
 		?>
 		<div class="ui container">

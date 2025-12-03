@@ -1099,12 +1099,6 @@
 		$pipeline_lastcheck = $row['pipeline_lastcheck'];
 		$isenabled = $row['pipeline_enabled'];
 		$isdebug = $row['pipeline_debug'];
-	
-		//$urllist['Analysis'] = "analysis.php";
-		//$urllist['Pipelines'] = "pipelines.php";
-		//$urllist["$pipeline_name"] = "pipelines.php?action=editpipeline&id=$id";
-		//$urllist["Analysis List"] = "analysis.php?action=viewanalyses&id=$id";
-		//NavigationBar("Ignored studies for $pipeline_name", $urllist);
 		
 		DisplayPipelineStatus($title, $desc, $isenabled, $isdebug, $id, "analysis", $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck);
 		
@@ -1267,13 +1261,6 @@
 		$pipeline_level = $row['pipeline_level'];
 		$pipelinedirectory = $row['pipeline_directory'];
 
-		/* build navigation bar */
-		//$urllist['Analysis'] = "analysis.php";
-		//$urllist['Pipelines'] = "pipelines.php";
-		//$urllist["$pipelinename"] = "pipelines.php?action=editpipeline&id=$pipelineid";
-		//$urllist['Analysis list'] = "analysis.php?action=viewanalyses&id=$pipelineid";
-		//NavigationBar("Logs for $uid &rarr; $studynum &rarr; $pipelinename", $urllist);
-
 		/* get list of steps for the appropriate version */
 		$sqlstring = "select * from pipeline_steps where pipeline_id = $pipelineid and pipeline_version = $pipelineversion";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -1375,14 +1362,6 @@
 		$pipeline_level = $row['pipeline_level'];
 		$pipelinedirectory = $row['pipeline_directory'];
 		
-		/* build navigation bar */
-		//$urllist['Analysis'] = "analysis.php";
-		//$urllist['Pipelines'] = "pipelines.php";
-		//$urllist["$pipelinename"] = "pipelines.php?action=editpipeline&id=$pipelineid";
-		//$urllist['Analysis list'] = "analysis.php?action=viewanalyses&id=$pipelineid";
-		//NavigationBar("File list for $uid &rarr; $studynum &rarr; $pipelinename", $urllist);
-		
-		//$path = $GLOBALS['pipelinedatapath'] . "/$uid/$studynum/$pipelinename/";
 		/* build the correct path */
 		//if (($pipeline_level == 1) && ($pipelinedirectory == "")) {
 		if ($pipeline_level == 1) {

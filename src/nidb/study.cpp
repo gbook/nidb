@@ -99,23 +99,23 @@ void study::LoadStudyInfo() {
     QSqlQuery q;
     switch (searchCriteria) {
         case rowid:
-		    q.prepare("select a.study_id, c.uid, c.subject_id, a.study_num, b.project_id, b.enrollment_id, a.study_datetime, a.study_modality, a.study_type, a.study_height, a.study_weight, a.study_site, a.study_daynum, a.study_timepoint, a.study_desc from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id = :studyid");
+            q.prepare("select a.study_id, c.uid, c.subject_id, a.study_num, b.project_id, b.enrollment_id, b.enroll_subgroup, b.enroll_status, a.study_datetime, a.study_modality, a.study_type, a.study_height, a.study_weight, a.study_site, a.study_daynum, a.study_timepoint, a.study_desc from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id = :studyid");
             q.bindValue(":studyid", _studyid);
             break;
         case uidstudynum:
-		    q.prepare("select a.study_id, c.uid, c.subject_id, a.study_num, b.project_id, b.enrollment_id, a.study_datetime, a.study_modality, a.study_type, a.study_height, a.study_weight, a.study_site, a.study_daynum, a.study_timepoint, a.study_desc from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where c.uid = :uid and a.study_num = :studynum");
+            q.prepare("select a.study_id, c.uid, c.subject_id, a.study_num, b.project_id, b.enrollment_id, b.enroll_subgroup, b.enroll_status, a.study_datetime, a.study_modality, a.study_type, a.study_height, a.study_weight, a.study_site, a.study_daynum, a.study_timepoint, a.study_desc from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where c.uid = :uid and a.study_num = :studynum");
             q.bindValue(":uid", _uid);
             q.bindValue(":studynum", _studynum);
             break;
         case studydatetimemodality:
-		    q.prepare("select a.study_id, c.uid, c.subject_id, a.study_num, b.project_id, b.enrollment_id, a.study_datetime, a.study_modality, a.study_type, a.study_height, a.study_weight, a.study_site, a.study_daynum, a.study_timepoint, a.study_desc from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.enrollment_id = :enrollmentid and a.study_datetime > '" + _studydatetime.addSecs(-31).toString("yyyy-MM-dd hh:mm:ss") + "' and a.study_datetime < '" + _studydatetime.addSecs(30).toString("yyyy-MM-dd hh:mm:ss") + "' and a.study_modality = :modality");
+            q.prepare("select a.study_id, c.uid, c.subject_id, a.study_num, b.project_id, b.enrollment_id, b.enroll_subgroup, b.enroll_status, a.study_datetime, a.study_modality, a.study_type, a.study_height, a.study_weight, a.study_site, a.study_daynum, a.study_timepoint, a.study_desc from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.enrollment_id = :enrollmentid and a.study_datetime > '" + _studydatetime.addSecs(-31).toString("yyyy-MM-dd hh:mm:ss") + "' and a.study_datetime < '" + _studydatetime.addSecs(30).toString("yyyy-MM-dd hh:mm:ss") + "' and a.study_modality = :modality");
             q.bindValue(":enrollmentid", _enrollmentid);
             //q.bindValue(":studydatelow", _studydatetime.addSecs(-30).toString("yyyy-MM-dd hh:mm:ss"));
             //q.bindValue(":studydatehigh", _studydatetime.addSecs(30).toString("yyyy-MM-dd hh:mm:ss"));
             q.bindValue(":modality", _modality);
             break;
         case studyuid:
-		    q.prepare("select a.study_id, c.uid, c.subject_id, a.study_num, b.project_id, b.enrollment_id, a.study_datetime, a.study_modality, a.study_type, a.study_height, a.study_weight, a.study_site, a.study_daynum, a.study_timepoint, a.study_desc from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_uid = :studyuid");
+            q.prepare("select a.study_id, c.uid, c.subject_id, a.study_num, b.project_id, b.enrollment_id, b.enroll_subgroup, b.enroll_status, a.study_datetime, a.study_modality, a.study_type, a.study_height, a.study_weight, a.study_site, a.study_daynum, a.study_timepoint, a.study_desc from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_uid = :studyuid");
             q.bindValue(":studyuid", _studyuid);
             break;
     }
@@ -129,19 +129,21 @@ void study::LoadStudyInfo() {
         _isValid = true;
         _studyid = q.value("study_id").toInt();
         _uid = q.value("uid").toString().trimmed().replace('\u0000', "");
-		_desc = q.value("study_desc").toString().trimmed();
-		_studynum = q.value("study_num").toInt();
+        _desc = q.value("study_desc").toString().trimmed();
+        _studynum = q.value("study_num").toInt();
         _projectid = q.value("project_id").toInt();
         _subjectid = q.value("subject_id").toInt();
         _enrollmentid = q.value("enrollment_id").toInt();
+        _enrollmentgroup = q.value("enroll_group").toString().trimmed();
+        _enrollmentstatus = q.value("enroll_status").toString().trimmed();
         _studydatetime = q.value("study_datetime").toDateTime();
         _modality = q.value("study_modality").toString().trimmed();
         _studytype = q.value("study_type").toString().trimmed();
-		_daynum = q.value("study_daynum").toString().trimmed();
-		_timepoint = q.value("study_timepoint").toString().trimmed();
-		_equipment = q.value("study_site").toString().trimmed();
-		_height = q.value("study_height").toDouble();
-		_weight = q.value("study_weight").toDouble();
+        _daynum = q.value("study_daynum").toString().trimmed();
+        _timepoint = q.value("study_timepoint").toString().trimmed();
+        _equipment = q.value("study_site").toString().trimmed();
+        _height = q.value("study_height").toDouble();
+        _weight = q.value("study_weight").toDouble();
 
         /* check to see if anything isn't valid or is blank */
         if ((n->cfg["archivedir"] == "") || (n->cfg["archivedir"] == "/")) { msgs << "cfg->archivedir was invalid"; _isValid = false; }
