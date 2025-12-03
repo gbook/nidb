@@ -3003,6 +3003,11 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
             sqrlStudy.Store();
             qint64 squirrelStudyRowID = sqrlStudy.GetObjectID();
 
+            /* update the subject enrollment info */
+            sqrlSubject.EnrollmentGroup = stdy.enrollmentGroup();
+            sqrlSubject.EnrollmentStatus = stdy.enrollmentStatus();
+            sqrlSubject.Store();
+
             /* export analyses (study level) */
             if (downloadflags.contains("DOWNLOAD_ANALYSIS", Qt::CaseInsensitive)) {
                 QSqlQuery q2;

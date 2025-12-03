@@ -42,22 +42,24 @@ public:
     void PrintStudyInfo();
     squirrelStudy GetSquirrelObject(QString databaseUUID);
 
-    QString daynum() { return _daynum; }
-    QString desc() { return _desc; }
-    QString equipment() { return _equipment; }
-    QString path() { return _studypath; }
-    QString timepoint() { return _timepoint; }
-    double height() { return _height; }
-    double weight() { return _weight; }
-    int studyNum() { return _studynum; }
     QDateTime dateTime() { return _studydatetime; }
     QString UID() { return _uid; }
+    QString daynum() { return _daynum; }
+    QString desc() { return _desc; }
+    QString enrollmentGroup() { return _enrollmentgroup; }
+    QString enrollmentStatus() { return _enrollmentstatus; }
+    QString equipment() { return _equipment; }
     QString modality() { return _modality; }
     QString msg() { return _msg; }
+    QString path() { return _studypath; }
+    QString timepoint() { return _timepoint; }
     QString type() { return _studytype; }
     bool pathExists() { return _studyPathExists; }
+    double height() { return _height; }
+    double weight() { return _weight; }
     int enrollmentRowID() { return _enrollmentid; }
     int projectRowID() { return _projectid; }
+    int studyNum() { return _studynum; }
     int studyRowID() { return _studyid; }
     int subjectRowID() { return _subjectid; }
 
@@ -67,26 +69,26 @@ private:
     criteria searchCriteria;
     void LoadStudyInfo();
 
+    QDateTime _studydatetime;
     QString _daynum = "";
     QString _desc = "";
-    QString _equipment = "";
-    QString _studytype = "";
-    QString _timepoint = "";
-    double _height = 0.0;
-    double _weight = 0.0;
-    int _subjectid = -1;
-    QDateTime _studydatetime;
     QString _enrollmentgroup = "";
     QString _enrollmentstatus = "";
+    QString _equipment = "";
     QString _modality = "";
     QString _studypath = "";
+    QString _studytype = "";
     QString _studyuid = "";
+    QString _timepoint = "";
     QString _uid = "";
     bool _studyPathExists = false;
+    double _height = 0.0;
+    double _weight = 0.0;
     int _enrollmentid = -1;
     int _projectid = -1;
     int _studyid = -1;
     int _studynum = -1;
+    int _subjectid = -1;
 
     bool _isValid = false;
     QString _msg;

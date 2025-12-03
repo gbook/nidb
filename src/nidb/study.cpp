@@ -179,18 +179,20 @@ void study::LoadStudyInfo() {
 void study::PrintStudyInfo() {
     QString	output = QString("***** Study - rowID [%1] *****\n").arg(_studyid);
 
-    output += QString("   uid: [%1]\n").arg(_uid);
-    output += QString("   subjectid: [%1]\n").arg(_subjectid);
+    output += QString("   enrollmentgroup: [%1]\n").arg(_enrollmentgroup);
+    output += QString("   enrollmentid: [%1]\n").arg(_enrollmentid);
+    output += QString("   enrollmentstatus: [%1]\n").arg(_enrollmentstatus);
+    output += QString("   isValid: [%1]\n").arg(_isValid);
+    output += QString("   modality: [%1]\n").arg(_modality);
+    output += QString("   msg: [%1]\n").arg(_msg);
+    output += QString("   projectid: [%1]\n").arg(_projectid);
+    output += QString("   studydatetime: [%1]\n").arg(_studydatetime.toString("yyyy-MM-dd HH:mm:ss"));
     output += QString("   studyid: [%1]\n").arg(_studyid);
     output += QString("   studynum: [%1]\n").arg(_studynum);
-    output += QString("   studytype: [%1]\n").arg(_studytype);
-    output += QString("   modality: [%1]\n").arg(_modality);
-    output += QString("   projectid: [%1]\n").arg(_projectid);
-    output += QString("   enrollmentid: [%1]\n").arg(_enrollmentid);
-    output += QString("   isValid: [%1]\n").arg(_isValid);
-    output += QString("   msg: [%1]\n").arg(_msg);
     output += QString("   studypath: [%1]\n").arg(_studypath);
-    output += QString("   studydatetime: [%1]\n").arg(_studydatetime.toString("yyyy-MM-dd HH:mm:ss"));
+    output += QString("   studytype: [%1]\n").arg(_studytype);
+    output += QString("   subjectid: [%1]\n").arg(_subjectid);
+    output += QString("   uid: [%1]\n").arg(_uid);
 
     n->Log(output);
 }
