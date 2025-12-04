@@ -140,8 +140,6 @@ bool TestCMSVector(gdcm::CryptographicMessageSyntax& cms, const char * provName)
 
 bool TestCMSCompatibility(gdcm::CryptographicMessageSyntax& cms1, const char * provName1, gdcm::CryptographicMessageSyntax& cms2, const char * provName2)
 {
-  const std::string encrypted_vector = gdcm::Filename::Join(gdcm::Testing::GetSourceDirectory(), "/Testing/Source/Data/encrypted_text" );
-
   bool ret = true;
   for (int i = 0; i < 4; i++)
     {
@@ -190,8 +188,8 @@ bool TestCMSCompatibility(gdcm::CryptographicMessageSyntax& cms1, const char * p
     cms2.SetCipherType(ciphers[i]);
     //cms2.Encrypt(encout, encoutlen, tstr, tstr_l);
     //cms1.Decrypt(decout, decoutlen, encout, encoutlen);
-    //assert(decoutlen == tstr_l);
-    //assert(memcmp(tstr, decout, tstr_l) == 0);
+    //gdcm_assert(decoutlen == tstr_l);
+    //gdcm_assert(memcmp(tstr, decout, tstr_l) == 0);
 
     bool encryptSuccess = cms1.Encrypt(encout, encoutlen, tstr, tstr_l);
     if (!encryptSuccess)
@@ -277,13 +275,11 @@ int TestCryptographicMessageSyntax(int, char *[])
 
 int TestPasswordBasedEncryption(int, char *[])
 {
+#ifdef GDCM_USE_SYSTEM_OPENSSL
   const char *directory = gdcm::Testing::GetDataRoot();
   std::string encrypted_dicomdir =
     gdcm::Filename::Join(directory, "/securedicomfileset/DICOMDIR" );
-  std::string encrypted_image =
-    gdcm::Filename::Join(directory, "/securedicomfileset/IMAGES/IMAGE1" );
 
-#ifdef GDCM_USE_SYSTEM_OPENSSL
   gdcm::CryptoFactory* ossl = gdcm::CryptoFactory::GetFactoryInstance(gdcm::CryptoFactory::OPENSSL);
   std::unique_ptr<gdcm::CryptographicMessageSyntax> ocms(ossl->CreateCMSProvider());
 

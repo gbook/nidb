@@ -126,6 +126,8 @@ static void PrintHelp() {
             << std::endl;
   std::cout << "                %s            DICOM keyword/path(s) to scrub"
             << std::endl;
+  std::cout << "     --code_meaning %s,%s,%s  DICOM code meaning(s) to alter"
+            << std::endl;
   std::cout << "     --preserve %s            DICOM path(s) to preserve"
             << std::endl;
   std::cout << "     --preserve-missing-private-creator             Whether or "
@@ -152,6 +154,36 @@ static void PrintHelp() {
   std::cout << "  -v --version                print version." << std::endl;
 }
 
+namespace {
+std::vector<std::string> split(const std::string &str, const char delimiter = ',') {
+  std::vector<std::string> tokens;
+  std::stringstream ss(str);
+  std::string item;
+  while (std::getline(ss, item, delimiter)) {
+    tokens.push_back(item);
+  }
+  return tokens;
+}
+template <std::size_t I, std::size_t TupleSize, typename Tuple>
+struct print_tuple_helper {
+  static void print(const Tuple& t) {
+    if (I > 0) std::cerr << ", ";
+    std::cerr << std::get<I>(t);
+    print_tuple_helper<I + 1, TupleSize, Tuple>::print(t);
+  }
+};
+
+template <std::size_t TupleSize, typename Tuple>
+struct print_tuple_helper<TupleSize, TupleSize, Tuple> {
+  static void print(const Tuple&) {}
+};
+
+template <typename... Ts>
+void print_tuple(const std::tuple<Ts...>& t) {
+  print_tuple_helper<0, sizeof...(Ts), std::tuple<Ts...>>::print(t);
+}
+}  // namespace
+
 int main(int argc, char *argv[]) {
   int c;
 
@@ -171,6 +203,7 @@ int main(int argc, char *argv[]) {
   int empty_tag = 0;
   int remove_tag = 0;
   int scrub_tag = 0;
+  int code_meaning = 0;
   int preserve_tag = 0;
   int preserveAllMissingPrivateCreator = 0;
   int preserveAllGroupLength = 0;
@@ -179,6 +212,7 @@ int main(int argc, char *argv[]) {
   std::vector<gdcm::DPath> empty_dpaths;
   std::vector<gdcm::DPath> remove_dpaths;
   std::vector<gdcm::DPath> scrub_dpaths;
+  std::vector<gdcm::Cleaner::CodedEntryData> coded_entry_datas;
   std::vector<gdcm::DPath> preserve_dpaths;
   std::vector<gdcm::VR> empty_vrs;
   std::vector<gdcm::Tag> empty_tags;
@@ -202,7 +236,8 @@ int main(int argc, char *argv[]) {
         {"empty", required_argument, &empty_tag, 1},        // 3
         {"remove", required_argument, &remove_tag, 1},      // 4
         {"scrub", required_argument, &scrub_tag, 1},        // 5
-        {"preserve", required_argument, &preserve_tag, 1},  // 5
+        {"code_meaning", required_argument, &code_meaning, 1},  // 6
+        {"preserve", required_argument, &preserve_tag, 1},  // 7
         {"continue", no_argument, nullptr, 'c'},
         {"skip-meta", 0, &skipmeta, 1},  // should I document this one ?
         {"preserve-missing-private-creator", 0,
@@ -232,7 +267,7 @@ int main(int argc, char *argv[]) {
         if (optarg) {
           if (option_index == 3) /* empty */
           {
-            assert(strcmp(s, "empty") == 0);
+            gdcm_assert(strcmp(s, "empty") == 0);
             if (gdcm::VR::IsValid(optarg))
               empty_vrs.push_back(gdcm::VR::GetVRTypeFromFile(optarg));
             else if (privatetag.ReadFromCommaSeparatedString(optarg))
@@ -280,7 +315,25 @@ int main(int argc, char *argv[]) {
                         << std::endl;
               return 1;
             }
-          } else if (option_index == 6) /* preserve */
+          } else if (option_index == 6) /* code_meaning */
+          {
+            gdcm::Cleaner::CodedEntryData coded_entry_data;
+            auto entries = split(optarg);
+            auto s = entries.size();
+            if ( s == 1 )
+              coded_entry_data = std::make_tuple(entries[0], "", "");
+            else if (s == 2)
+              coded_entry_data = std::make_tuple(entries[0], entries[1], "");
+            else if (s == 3)
+              coded_entry_data =
+                  std::make_tuple(entries[0], entries[1], entries[2]);
+            else {
+              std::cerr << "Could not read CodedDataEntry: " << optarg
+                        << std::endl;
+              return 1;
+            }
+            coded_entry_datas.push_back(coded_entry_data);
+          } else if (option_index == 7) /* preserve */
           {
             if (dpath.ConstructFromString(optarg))
               preserve_dpaths.push_back(dpath);
@@ -289,18 +342,18 @@ int main(int argc, char *argv[]) {
               return 1;
             }
           } else {
-            assert(0);
+            gdcm_assert(0);
           }
         }
       } break;
 
       case 'i':
-        assert(filename.empty());
+        gdcm_assert(filename.empty());
         filename = optarg;
         break;
 
       case 'o':
-        assert(outfilename.empty());
+        gdcm_assert(outfilename.empty());
         outfilename = optarg;
         break;
 
@@ -533,6 +586,16 @@ int main(int argc, char *argv[]) {
        it != scrub_dpaths.end(); ++it) {
     if (!cleaner.Scrub(*it)) {
       std::cerr << "Impossible to Scrub: " << *it << std::endl;
+      return 1;
+    }
+  }
+  // Coded Data Entry (empty "code meaning")
+  for (std::vector<gdcm::Cleaner::CodedEntryData>::const_iterator it = coded_entry_datas.begin();
+       it != coded_entry_datas.end(); ++it) {
+    if (!cleaner.ReplaceCodeMeaning(*it)) {
+      std::cerr << "Impossible to CodedEntryData: ";
+      print_tuple(*it);
+      std::cerr << std::endl;
       return 1;
     }
   }

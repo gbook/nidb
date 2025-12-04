@@ -38,6 +38,9 @@ using DICT_ENTRY = struct
 };
 
 static const DICT_ENTRY DICOMV3DataDict [] = {
+  {0x0049,0x0010,"AIR",VR::LO,VM::VM1,"?Possibly PHI?",false },
+  {0x0049,0x0011,"AIR",VR::LO,VM::VM1,"?number?",false },
+  {0x0049,0x0013,"AIR",VR::LT,VM::VM1,"?Long desc possibly PHI?",false },
   {0x0021,0x0010,"SIEMENS MR FMRI",VR::SQ,VM::VM1,"?",false },
   {0x0021,0x0011,"SIEMENS MR FMRI",VR::LO,VM::VM1,"?",false },
   {0x0021,0x0012,"SIEMENS MR FMRI",VR::SQ,VM::VM1,"?",false },
@@ -11996,7 +11999,7 @@ void Dict::LoadDefault()
    {
    if( n.group % 2 == 0 )
      {
-     assert( n.owner == 0 );
+     gdcm_assert( n.owner == 0 );
      Tag t(n.group, n.element);
      DictEntry e( n.name, n.vr, n.vm, n.ret );
      AddDictEntry( t, e );
@@ -12014,10 +12017,10 @@ void PrivateDict::LoadDefault()
    {
 //   if( n.group % 2 != 0 )
      {
-     assert( n.owner != nullptr );
-     assert( n.name );
-     assert( n.group % 2 != 0 || n.group == 0xffff );
-     assert( n.element <= 0xff || n.element == 0xffff );
+     gdcm_assert( n.owner != nullptr );
+     gdcm_assert( n.name );
+     gdcm_assert( n.group % 2 != 0 || n.group == 0xffff );
+     gdcm_assert( n.element <= 0xff || n.element == 0xffff );
      PrivateTag t(n.group, n.element,n.owner);
      DictEntry e( n.name, "", n.vr, n.vm, n.ret );
      AddDictEntry( t, e );

@@ -1,14 +1,7 @@
-cmake_minimum_required(VERSION 3.9.2 FATAL_ERROR)
+set(GDCM_MAX_VALIDATED_CMAKE_VERSION "3.13.4")
 
-set(GDCM_MAX_VALIDATED_CMAKE_VERSION "3.13.1")
-if("${CMAKE_VERSION}" VERSION_LESS_EQUAL "${GDCM_MAX_VALIDATED_CMAKE_VERSION}")
-  # As of 2018-12-04 GDCM has been validated to build with cmake version 3.13.1 new policies.
-  # Set and use the newest cmake policies that are validated to work
-  set(GDCM_CMAKE_POLICY_VERSION "${CMAKE_VERSION}")
-else()
-  set(GDCM_CMAKE_POLICY_VERSION "${GDCM_MAX_VALIDATED_CMAKE_VERSION}")
-endif()
-cmake_policy(VERSION ${GDCM_CMAKE_POLICY_VERSION}) 
+# Set minimum required version of CMake, and policy version
+cmake_minimum_required(VERSION 3.9.2...${GDCM_MAX_VALIDATED_CMAKE_VERSION} FATAL_ERROR) # travis-ci wants 3.9.2
 
 # GDCM version 3.0.0 will only support C++11 and greater
 if(CMAKE_CXX_STANDARD EQUAL "98" )
@@ -17,13 +10,13 @@ endif()
 #----------------------------------------------------------------------------
 
 project(GDCM
-  VERSION 3.0.24
+  VERSION 3.2.2
   LANGUAGES CXX C
 )
 ## NOTE: the "DESCRIPTION" feature of project() was introduced in cmake 3.10.0
 set(PROJECT_DESCRIPTION "GDCM - Grassroots DICOM. GDCM is yet another DICOM library.")
 
-## Set aliases for backwards compatibility.  GDCM_VERSION_XXX are configured by the project() command 
+## Set aliases for backwards compatibility.  GDCM_VERSION_XXX are configured by the project() command
 set(GDCM_MAJOR_VERSION ${GDCM_VERSION_MAJOR})
 set(GDCM_MINOR_VERSION ${GDCM_VERSION_MINOR})
 set(GDCM_BUILD_VERSION ${GDCM_VERSION_PATCH})
@@ -186,6 +179,10 @@ macro(CHECK_INCLUDE_FILE_CONCAT FILE VARIABLE)
     set(UUID_INCLUDES ${UUID_INCLUDES} ${FILE})
   endif()
 endmacro()
+
+if(UNIX)
+  include(GNUInstallDirs)
+endif()
 
 #include(${GDCM_SOURCE_DIR}/CMake/gdcmPlatformCxxTests.cmake)
 #
@@ -524,7 +521,7 @@ if(GDCM_STANDALONE)
   endif()
   if(NOT DEFINED GDCM_DEFAULT_JAVA_VERSION)
     # override with cmake -DGDCM_DEFAULT_JAVA_VERSION:STRING=1.5 if you dare
-    set(GDCM_DEFAULT_JAVA_VERSION 1.7)
+    set(GDCM_DEFAULT_JAVA_VERSION 1.8)
   endif()
   if(GDCM_WRAP_JAVA)
     set(GDCM_JAVA_SOURCE_VERSION "${GDCM_DEFAULT_JAVA_VERSION}" CACHE STRING "javac source version")
@@ -564,7 +561,10 @@ if(APPLE)
   if(GDCM_USE_COREFOUNDATION_LIBRARY)
     find_library(COREFOUNDATION_LIBRARY CoreFoundation )
   endif()
-  mark_as_advanced(COREFOUNDATION_LIBRARY)
+  mark_as_advanced(
+    GDCM_USE_COREFOUNDATION_LIBRARY
+    COREFOUNDATION_LIBRARY
+    )
 endif()
 
 #-----------------------------------------------------------------------------
@@ -693,23 +693,45 @@ if(GDCM_STANDALONE)
       )
 
       # documented at https://vtk.org/doc/nightly/html/group__module.html
-      vtk_module_build(
-        MODULES               ${vtkgdcm_modules}
-        INSTALL_EXPORT        GDCM
-        ARCHIVE_DESTINATION   "${GDCM_INSTALL_LIB_DIR}"
-        HEADERS_DESTINATION   "${GDCM_INSTALL_INCLUDE_DIR}/vtk${vtk_version_suffix}"
-        CMAKE_DESTINATION     "${GDCM_INSTALL_PACKAGE_DIR}"
-        LICENSE_DESTINATION   "${GDCM_INSTALL_DATA_DIR}/vtkgdcm-${GDCM_SHORT_VERSION}"
-        HIERARCHY_DESTINATION "${GDCM_INSTALL_LIB_DIR}/vtk${vtk_version_suffix}/hierarchy/vtkgdcm"
-        LIBRARY_NAME_SUFFIX   "${vtkgdcm_library_suffix}"
-        VERSION               "${GDCM_VERSION}"
-        SOVERSION             "1"
-        # TODO: these are probably not set as they should be
-        #USE_EXTERNAL          "${GDCM_USE_EXTERNAL}"
-        #TEST_DATA_TARGET      vtkgdcmData
-        #TEST_INPUT_DATA_DIRECTORY  "${vtkgdcm_test_data_directory_input}"
-        #TEST_OUTPUT_DATA_DIRECTORY "${vtkgdcm_test_data_directory_output}"
-      )
+      if(VTK_VERSION VERSION_LESS 9.3)
+        vtk_module_build(
+          MODULES               ${vtkgdcm_modules}
+          INSTALL_EXPORT        GDCM
+          ARCHIVE_DESTINATION   "${GDCM_INSTALL_LIB_DIR}"
+          HEADERS_DESTINATION   "${GDCM_INSTALL_INCLUDE_DIR}/vtk${vtk_version_suffix}"
+          CMAKE_DESTINATION     "${GDCM_INSTALL_PACKAGE_DIR}"
+          LICENSE_DESTINATION   "${GDCM_INSTALL_DATA_DIR}/vtkgdcm-${GDCM_SHORT_VERSION}"
+          #SPDX_DESTINATION      "${GDCM_INSTALL_DATA_DIR}/vtkgdcm-${GDCM_SHORT_VERSION}"
+          HIERARCHY_DESTINATION "${GDCM_INSTALL_LIB_DIR}/vtk${vtk_version_suffix}/hierarchy/vtkgdcm"
+          LIBRARY_NAME_SUFFIX   "${vtkgdcm_library_suffix}"
+          VERSION               "${GDCM_VERSION}"
+          SOVERSION             "1"
+          # TODO: these are probably not set as they should be
+          #USE_EXTERNAL          "${GDCM_USE_EXTERNAL}"
+          #TEST_DATA_TARGET      vtkgdcmData
+          #TEST_INPUT_DATA_DIRECTORY  "${vtkgdcm_test_data_directory_input}"
+          #TEST_OUTPUT_DATA_DIRECTORY "${vtkgdcm_test_data_directory_output}"
+        )
+      else()
+        vtk_module_build(
+          MODULES               ${vtkgdcm_modules}
+          INSTALL_EXPORT        GDCM
+          ARCHIVE_DESTINATION   "${GDCM_INSTALL_LIB_DIR}"
+          HEADERS_DESTINATION   "${GDCM_INSTALL_INCLUDE_DIR}/vtk${vtk_version_suffix}"
+          CMAKE_DESTINATION     "${GDCM_INSTALL_PACKAGE_DIR}"
+          LICENSE_DESTINATION   "${GDCM_INSTALL_DATA_DIR}/vtkgdcm-${GDCM_SHORT_VERSION}"
+          SPDX_DESTINATION      "${GDCM_INSTALL_DATA_DIR}/vtkgdcm-${GDCM_SHORT_VERSION}"
+          HIERARCHY_DESTINATION "${GDCM_INSTALL_LIB_DIR}/vtk${vtk_version_suffix}/hierarchy/vtkgdcm"
+          LIBRARY_NAME_SUFFIX   "${vtkgdcm_library_suffix}"
+          VERSION               "${GDCM_VERSION}"
+          SOVERSION             "1"
+          # TODO: these are probably not set as they should be
+          #USE_EXTERNAL          "${GDCM_USE_EXTERNAL}"
+          #TEST_DATA_TARGET      vtkgdcmData
+          #TEST_INPUT_DATA_DIRECTORY  "${vtkgdcm_test_data_directory_input}"
+          #TEST_OUTPUT_DATA_DIRECTORY "${vtkgdcm_test_data_directory_output}"
+        )
+      endif()
 
       if(VTKGDCM_WRAP_PYTHON)
         find_package(PythonInterp ${VTK_PYTHON_VERSION} QUIET)
