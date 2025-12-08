@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
         "upload",
     };
     QStringList submodules = {
-        "checkcompleteanalysis"
+        "checkcompleteanalysis",
         "pipelinecheckin",
         "resultinsert",
         "updateanalysis",
