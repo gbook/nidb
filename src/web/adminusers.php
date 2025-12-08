@@ -114,8 +114,8 @@
 		$fullname = mysqli_real_escape_string($GLOBALS['linki'], $fullname);
 		$email = mysqli_real_escape_string($GLOBALS['linki'], $email);
 		$password = mysqli_real_escape_string($GLOBALS['linki'], $password);
-		$isadmin = (int)mysqli_real_escape_string($GLOBALS['linki'], $isadmin);
-		$enabled = (int)mysqli_real_escape_string($GLOBALS['linki'], $enabled);
+		$isadmin = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $isadmin));
+		$enabled = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $enabled));
 
 		/* start a transaction */
 		$sqlstring = "start transaction";
@@ -256,14 +256,14 @@
 		$fullname = mysqli_real_escape_string($GLOBALS['linki'], $fullname);
 		$email = mysqli_real_escape_string($GLOBALS['linki'], $email);
 		$password = mysqli_real_escape_string($GLOBALS['linki'], $password);
-		$enabled = (bool)mysqli_real_escape_string($GLOBALS['linki'], $enabled);
-		$isadmin = (bool)mysqli_real_escape_string($GLOBALS['linki'], $isadmin);
+		$enabled = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $enabled);
+		$isadmin = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $isadmin);
 		
 		/* determine their current login type */
 		$logintype = "Standard";
 		
 		/* insert the new user */
-		$sqlstring = "insert into users (username, password, login_type, user_instanceid, user_fullname, user_firstname, user_midname, user_lastname, user_institution, user_country, user_email, user_email2, user_address1, user_address2, user_city, user_state, user_zip, user_phone1, user_phone2, user_website, user_dept, user_lastlogin, user_logincount, user_enabled, user_isadmin, sendmail_dailysummary) values ('$username', sha1('$password'), '$logintype','" . $_SESSION['instanceid'] . "', '$fullname', '', '', '', '', '', '$email', '', '', '', '', '', '', '', '', '', '', now(), 0, 1, '$isadmin', 0)";
+		$sqlstring = "insert into users (username, password, login_type, user_instanceid, user_fullname, user_firstname, user_midname, user_lastname, user_institution, user_country, user_email, user_email2, user_address1, user_address2, user_city, user_state, user_zip, user_phone1, user_phone2, user_website, user_dept, user_lastlogin, user_logincount, user_enabled, user_isadmin, sendmail_dailysummary) values ('$username', sha1('$password'), '$logintype','" . $_SESSION['instanceid'] . "', '$fullname', '', '', '', '', '', '$email', '', '', '', '', '', '', '', '', '', '', now(), 0, 1, $isadmin, 0)";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$id = mysqli_insert_id($GLOBALS['linki']);
 		
@@ -273,7 +273,7 @@
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		//}
 		
-		/* don't assign any permissions to a new user by default, it must be done manually */
+		/* don't assign any project permissions to a new user by default, it must be done manually */
 
 		Notice("$username added");
 	}

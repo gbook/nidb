@@ -1303,11 +1303,11 @@
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$projectid = $row['project_id'];
 					$perms[$projectid]['projectname'] = $row['project_name'];
-					$perms[$projectid]['projectadmin'] = (bool)$row['project_admin'];
-					$perms[$projectid]['viewdata'] = (bool)$row['view_data'];
-					$perms[$projectid]['viewphi'] = (bool)$row['view_phi'];
-					$perms[$projectid]['modifydata'] = (bool)$row['write_data'];
-					$perms[$projectid]['modifyphi'] = (bool)$row['write_phi'];
+					$perms[$projectid]['projectadmin'] = GetMySQLTinyInt($row['project_admin']);
+					$perms[$projectid]['viewdata'] = GetMySQLTinyInt($row['view_data']);
+					$perms[$projectid]['viewphi'] = GetMySQLTinyInt($row['view_phi']);
+					$perms[$projectid]['modifydata'] = GetMySQLTinyInt($row['write_data']);
+					$perms[$projectid]['modifyphi'] = GetMySQLTinyInt($row['write_phi']);
 					
 					/* fill in the implied permissions */
 					if ($perms[$projectid]['projectadmin']) {
@@ -1409,7 +1409,15 @@
 			return 0;
 		}
 	}
-	
+
+
+	/* -------------------------------------------- */
+	/* ------- GetMySQLTinyInt -------------------- */
+	/* -------------------------------------------- */
+	function GetMySQLTinyInt($var) {
+		return (int)filter_var($var, FILTER_VALIDATE_BOOLEAN);
+	}
+
 
 	/* -------------------------------------------- */
 	/* ------- HumanReadableFilesize -------------- */

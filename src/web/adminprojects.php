@@ -100,7 +100,7 @@
 	function UpdateProject($id, $projectname, $usecustomid, $admin, $pi, $instanceid, $sharing, $costcenter, $startdate, $enddate, $datausers, $phiusers) {
 		/* perform data checks */
 		$projectname = mysqli_real_escape_string($GLOBALS['linki'], $projectname);
-		$usecustomid = intval(mysqli_real_escape_string($GLOBALS['linki'], $usecustomid));
+		$usecustomid = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $usecustomid));
 		$admin = mysqli_real_escape_string($GLOBALS['linki'], $admin);
 		$pi = mysqli_real_escape_string($GLOBALS['linki'], $pi);
 		$sharing = mysqli_real_escape_string($GLOBALS['linki'], $sharing);
@@ -158,7 +158,7 @@
 	function AddProject($projectname, $usecustomid, $admin, $pi, $instanceid, $sharing, $costcenter, $startdate, $enddate, $datausers, $phiusers) {
 		/* perform data checks */
 		$projectname = mysqli_real_escape_string($GLOBALS['linki'], trim($projectname));
-		$usecustomid = intval(mysqli_real_escape_string($GLOBALS['linki'], trim($usecustomid)));
+		$usecustomid = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $usecustomid));
 		$admin = mysqli_real_escape_string($GLOBALS['linki'], trim($admin));
 		$pi = mysqli_real_escape_string($GLOBALS['linki'], trim($pi));
 		$sharing = mysqli_real_escape_string($GLOBALS['linki'], trim($sharing));
