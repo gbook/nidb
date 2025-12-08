@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
     QString paramSubModule = p.value(optSubModule).trimmed();
 
     QStringList modules = {
-        "backup"
+        "backup",
         "cluster",
         "export",
         "exportnonimaging",
