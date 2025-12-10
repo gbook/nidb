@@ -185,7 +185,7 @@
 			$sqlstring = "update analysis set analysis_statusmessage = 'Queued for deletion' where analysis_id = $analysisid";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			
-			$sqlstring = "select d.uid, b.study_num, e.pipeline_name, e.pipeline_level from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on a.pipeline_id = e.pipeline_id where a.analysis_id = $analysisid";
+			$sqlstring = "select d.uid, b.study_num, e.pipeline_name, e.pipeline_level, e.pipeline_dirstructure from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on a.pipeline_id = e.pipeline_id where a.analysis_id = $analysisid";
 			//echo "[$sqlstring]";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
@@ -193,6 +193,7 @@
 			$studynum = $row['study_num'];
 			$pipelinename = $row['pipeline_name'];
 			$pipelinelevel = $row['pipeline_level'];
+			$pipelinedirstructure = $row['pipeline_dirstructure'];
 
 			if (($pipelinelevel == 0) || ($pipelinelevel == 1)) {
 				$analysislevel = 'analysis';
@@ -201,12 +202,17 @@
 				$analysislevel = 'groupanalysis';
 			}
 			
-			$sqlstring = "insert into fileio_requests (fileio_operation, group_id,data_type,data_id,username,requestdate) values ('delete', $groupid,'$analysislevel',$analysisid,'" . $GLOBALS['username'] . "', now())";
+			$sqlstring = "insert into fileio_requests (fileio_operation, group_id,data_type,data_id,username,requestdate) values ('delete', $groupid, '$analysislevel', $analysisid, '" . $GLOBALS['username'] . "', now())";
 			//PrintSQL($sqlstring);
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			
 			if ($pipelinelevel == 1) {
-				$datapath = $GLOBALS['cfg']['analysisdir'] . "/$uid/$studynum/$pipelinename";
+				if ($pipelinedirstructure = "b") {
+					$datapath = $GLOBALS['cfg']['analysisdirb'] . "/$pipelinename/$uid/$studynum";
+				}
+				else {
+					$datapath = $GLOBALS['cfg']['analysisdir'] . "/$uid/$studynum/$pipelinename";
+				}
 			}
 			elseif ($pipelinelevel == 2) {
 				$datapath = $GLOBALS['cfg']['groupanalysisdir'] . "/$pipelinename";

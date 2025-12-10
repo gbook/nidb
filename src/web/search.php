@@ -2799,8 +2799,9 @@
 			}
 				
 		}
-		
-		$calculatedStudyAge = number_format($calculatedStudyAge,1);
+		if (is_numeric($calculatedStudyAge)) {
+			$calculatedStudyAge = number_format($calculatedStudyAge,1);
+		}
 		
 		return array($studyage, $calculatedStudyAge);
 	}
