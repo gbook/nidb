@@ -644,16 +644,6 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
                     q.bindValue(":fileDatetime", fi.lastModified());
                     q.bindValue(":fileSize", fi.size());
                     q.bindValue(":fileType", "DICOM");
-                    //q.bindValue(":AcquisitionNumber", tags["AcquisitionNumber"]);
-                    //q.bindValue(":InstanceNumber", tags["InstanceNumber"]);
-                    //q.bindValue(":Modality", tags["Modality"]);
-                    //q.bindValue(":PatientID", tags["PatientID"]);
-                    //q.bindValue(":SeriesDescription", tags["SeriesDescription"]);
-                    //q.bindValue(":SeriesNumber", tags["SeriesNumber"]);
-                    //q.bindValue(":SeriesUID", tags["SeriesUID"]);
-                    //q.bindValue(":StudyDescription", tags["StudyDescription"]);
-                    //q.bindValue(":StudyUID", tags["StudyUID"]);
-
                     /* insert nulls if values are blank */
                     if (tags["AcquisitionNumber"] == "") q.bindValue(":AcquisitionNumber", QVariant(QMetaType::fromType<int>())); else q.bindValue(":AcquisitionNumber", tags["AcquisitionNumber"]);
                     if (tags["InstanceNumber"] == "") q.bindValue(":InstanceNumber", QVariant(QMetaType::fromType<int>())); else q.bindValue(":InstanceNumber", tags["InstanceNumber"]);
@@ -664,7 +654,6 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
                     if (tags["SeriesUID"] == "") q.bindValue(":SeriesUID", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":SeriesUID", tags["SeriesUID"]);
                     if (tags["StudyDescription"] == "") q.bindValue(":StudyDescription", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":StudyDescription", tags["StudyDescription"]);
                     if (tags["StudyUID"] == "") q.bindValue(":StudyUID", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":StudyUID", tags["StudyUID"]);
-
 
                     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 

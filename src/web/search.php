@@ -2782,6 +2782,8 @@
 		
 		//echo "dob [$dob]  studyage [$studyage]  studydate [$studydate]<br>";
 		
+		$calculatedStudyAge = "";
+		
 		# calculate study age
 		if (($dobUnix = strtotime($dob)) === false) {
 			//echo "Bad date/time format [$dob]<br>";
