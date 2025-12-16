@@ -43,20 +43,20 @@ mkdir -p $BUILDDIR
 # ----- build pre-requisites -----
 
 # build gdcm (make sure cmake 3 is installed)
-if [ ! -d "$BUILDDIR/gdcm" ]; then
+#if [ ! -d "$BUILDDIR/gdcm" ]; then
 
 	#command -v cmake >/dev/null 2>&1 || { echo -e "\nThis script requires cmake 3.x. Install using 'yum install cmake' or 'apt-get cmake'.\n"; exit 1; }
 
-	echo -e "\ngdcm not built. Building gdcm now\n"
+#	echo -e "\ngdcm not built. Building gdcm now\n"
 
-	mkdir -p $BUILDDIR/gdcm
-	mkdir -p $BUILDDIR/gdcm
-	cd $BUILDDIR/gdcm
-	$CMAKEBIN -DGDCM_BUILD_APPLICATIONS:STRING=NO -DGDCM_BUILD_DOCBOOK_MANPAGES:BOOL=OFF -DGDCM_BUILD_SHARED_LIBS:STRING=YES -DGDCM_BUILD_TESTING:STRING=NO -DGDCM_BUILD_EXAMPLES:STRING=NO $SRCDIR/gdcm
-	make -j 16
-else
-	echo -e "\ngdcm already built in $BUILDDIR/gdcm\n"
-fi
+#	mkdir -p $BUILDDIR/gdcm
+#	mkdir -p $BUILDDIR/gdcm
+#	cd $BUILDDIR/gdcm
+#	$CMAKEBIN -DGDCM_BUILD_APPLICATIONS:STRING=NO -DGDCM_BUILD_DOCBOOK_MANPAGES:BOOL=OFF -DGDCM_BUILD_SHARED_LIBS:STRING=YES -DGDCM_BUILD_TESTING:STRING=NO -DGDCM_BUILD_EXAMPLES:STRING=NO $SRCDIR/gdcm
+#	make -j 16
+#else
+#	echo -e "\ngdcm already built in $BUILDDIR/gdcm\n"
+#fi
 
 # ----- build bit7z library -----
 #echo -e "\n ----- Building bit7z -----\n"
@@ -123,8 +123,8 @@ cd $ORIGDIR
 echo -e "\nCopying libsquirrel to /lib"
 sudo cp -auv bin/squirrel/libsquirrel* /lib64/
 sudo cp -auv bin/squirrel/libsquirrel* /lib/x86_64-linux-gnu/
-sudo cp -auv bin/gdcm/bin/libgdcm* /lib64/
-sudo cp -auv bin/gdcm/bin/libgdcm* /lib/x86_64-linux-gnu/
+#sudo cp -auv bin/gdcm/bin/libgdcm* /lib64/
+#sudo cp -auv bin/gdcm/bin/libgdcm* /lib/x86_64-linux-gnu/
 #sudo cp -auv bin/smtp/libSMTPEmail* /lib/
 #sudo cp -auv bin/smtp/libSMTPEmail* /lib/x86_64-linux-gnu/
 

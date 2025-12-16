@@ -26,11 +26,11 @@
 #include <QFile>
 #include <QString>
 #include <QDir>
-#include "gdcmReader.h"
-#include "gdcmWriter.h"
-#include "gdcmAttribute.h"
-#include "gdcmStringFilter.h"
-#include "gdcmAnonymizer.h"
+//#include "gdcmReader.h"
+//#include "gdcmWriter.h"
+//#include "gdcmAttribute.h"
+//#include "gdcmStringFilter.h"
+//#include "gdcmAnonymizer.h"
 #include "utils.h"
 
 /**
@@ -48,7 +48,7 @@ public:
     bool ConvertDicom(QString filetype, QString indir, QString outdir, QString bindir, bool gzip, bool json, QString uid, QString studynum, QString seriesnum, QString bidsSubject, QString bidsSession, BIDSMapping bidsMapping, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg);
     bool IsDICOMFile(QString f);
     bool AnonymizeDir(QString indir, QString outdir, int anonlevel, QString &msg);
-    bool AnonymizeDicomFile(gdcm::Anonymizer &anon, QString infile, QString outfile, std::vector<gdcm::Tag> const &empty_tags, std::vector<gdcm::Tag> const &remove_tags, std::vector< std::pair<gdcm::Tag, std::string> > const & replace_tags, QString &msg);
+    bool AnonymizeDicomFile(QString infile, QString outfile, QStringList tagsToChange, QString &msg);
     QString GetDicomModality(QString f);
     void GetFileType(QString f, QString &fileType, QString &fileModality, QString &filePatientID, QString &fileProtocol);
     bool GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<QString, QString> &tags, QString &msg);

@@ -29,6 +29,7 @@
 #include <QDebug>
 #include <QtSql>
 #include <QUuid>
+#include <sstream>
 #include "squirrelSubject.h"
 #include "squirrelStudy.h"
 #include "squirrelSeries.h"

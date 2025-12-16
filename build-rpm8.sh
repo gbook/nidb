@@ -38,11 +38,11 @@ mkdir -p $BUILDDIR
 
 # ----- build pre-requisites -----
 
-mkdir -p $BUILDDIR/gdcm
-cd $BUILDDIR/gdcm
-$CMAKEBIN -DGDCM_BUILD_APPLICATIONS:STRING=NO -DGDCM_BUILD_DOCBOOK_MANPAGES:BOOL=OFF -DGDCM_BUILD_SHARED_LIBS:STRING=YES -DGDCM_BUILD_TESTING:STRING=NO -DGDCM_BUILD_EXAMPLES:STRING=NO $SRCDIR/gdcm
-make -j 16
-echo -e "\n Built gdcm in $BUILDDIR/gdcm\n"
+#mkdir -p $BUILDDIR/gdcm
+#cd $BUILDDIR/gdcm
+#$CMAKEBIN -DGDCM_BUILD_APPLICATIONS:STRING=NO -DGDCM_BUILD_DOCBOOK_MANPAGES:BOOL=OFF -DGDCM_BUILD_SHARED_LIBS:STRING=YES -DGDCM_BUILD_TESTING:STRING=NO -DGDCM_BUILD_EXAMPLES:STRING=NO $SRCDIR/gdcm
+#make -j 16
+#echo -e "\n Built gdcm in $BUILDDIR/gdcm\n"
 
 # ----- build bit7z library -----
 echo -e "\n ----- Building bit7z -----\n"
@@ -62,11 +62,11 @@ cp -uv $SRCDIR/bit7z/lib/x64/libbit7z64.a ~/rpmbuild/SOURCES/src/bit7z/
 echo -e "\n Built bit7z in $BUILDDIR/bit7z\n"
 
 # ----- build smtp module -----
-echo $QMAKEBIN -o $BUILDDIR/smtp/Makefile $SRCDIR/smtp/SMTPEmail.pro -spec linux-g++
-$QMAKEBIN -o $BUILDDIR/smtp/Makefile $SRCDIR/smtp/SMTPEmail.pro -spec linux-g++
-cd $BUILDDIR/smtp
-make -j 16
-echo -e "\n Built smtp in $BUILDDIR/smtp\n"
+#echo $QMAKEBIN -o $BUILDDIR/smtp/Makefile $SRCDIR/smtp/SMTPEmail.pro -spec linux-g++
+#$QMAKEBIN -o $BUILDDIR/smtp/Makefile $SRCDIR/smtp/SMTPEmail.pro -spec linux-g++
+#cd $BUILDDIR/smtp
+#make -j 16
+#echo -e "\n Built smtp in $BUILDDIR/smtp\n"
 
 # ----- build squirrel library -----
 echo -e "\nBuilding squirrel library\n"

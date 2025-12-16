@@ -201,29 +201,41 @@ bool moduleImport::ParseRemotelyImportedData() {
  */
 bool moduleImport::PrepareAndMoveDICOM(QString filepath, QString outdir, bool anonymize) {
 
-    if (anonymize) {
-        gdcm::Anonymizer anon;
-        std::vector<gdcm::Tag> empty_tags;
-        std::vector<gdcm::Tag> remove_tags;
-        std::vector< std::pair<gdcm::Tag, std::string> > replace_tags;
-        gdcm::Tag tag;
-        const char *dcmfile = filepath.toStdString().c_str();
-
-        tag.ReadFromCommaSeparatedString("0008, 0090"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
-        tag.ReadFromCommaSeparatedString("0008, 1050"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
-        tag.ReadFromCommaSeparatedString("0008, 1070"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
-        tag.ReadFromCommaSeparatedString("0010, 0010"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
-        tag.ReadFromCommaSeparatedString("0010, 0030"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
-
-        QString m;
-        img->AnonymizeDicomFile(anon, dcmfile, dcmfile, empty_tags, remove_tags, replace_tags, m);
-    }
     /* if the filename exists in the outgoing directory, prepend some junk to it, since the filename is unimportant
        some directories have all their files named IM0001.dcm ..... so, inevitably, something will get overwrtten, which is bad */
     QString newfilename = QFileInfo(filepath).baseName() + GenerateRandomString(15) + "." + QFileInfo(filepath).completeSuffix();
+    QString newFilePath = QString("%1/%2").arg(outdir).arg(newfilename);
 
-    QString systemstring = QString("touch %1; mv %1 %2/%3").arg(filepath).arg(outdir).arg(newfilename);
-    SystemCommand(systemstring, false);
+    if (anonymize) {
+        //gdcm::Anonymizer anon;
+        //std::vector<gdcm::Tag> empty_tags;
+        //std::vector<gdcm::Tag> remove_tags;
+        //std::vector< std::pair<gdcm::Tag, std::string> > replace_tags;
+        //gdcm::Tag tag;
+        //const char *dcmfile = filepath.toStdString().c_str();
+
+        QStringList tagsToChange;
+        QString anonStr = "Anon";
+
+        //tag.ReadFromCommaSeparatedString("0008, 0090"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
+        //tag.ReadFromCommaSeparatedString("0008, 1050"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
+        //tag.ReadFromCommaSeparatedString("0008, 1070"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
+        //tag.ReadFromCommaSeparatedString("0010, 0010"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
+        //tag.ReadFromCommaSeparatedString("0010, 0030"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
+
+        tagsToChange.append(QString("--replace 8,90='%1'").arg(anonStr)); // ReferringPhysicianName
+        tagsToChange.append(QString("--replace 8,1050='%1'").arg(anonStr)); // PerformingPhysicianName
+        tagsToChange.append(QString("--replace 8,1070='%1'").arg(anonStr)); // OperatorsName
+        tagsToChange.append(QString("--replace 10,10='%1'").arg(anonStr)); // PatientName
+        tagsToChange.append(QString("--replace 10,30='%1'").arg(anonStr)); // PatientBirthDate
+
+        QString m;
+        img->AnonymizeDicomFile(filepath, newFilePath, tagsToChange, m);
+    }
+    else {
+        QString systemstring = QString("touch %1; mv %1 %2").arg(filepath).arg(newFilePath);
+        SystemCommand(systemstring, false);
+    }
 
     return true;
 }

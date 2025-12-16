@@ -1955,29 +1955,25 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
                         return false;
                     }
 
-                    gdcm::Reader r;
-                    r.SetFileName(dcmfile.toStdString().c_str());
-                    if (!r.Read()) {
-                        /* could not read the first dicom file... */
-                        log << "WriteNDARSeries() " + n->Log("Could not read DICOM file [" + dcmfile + "]");
+                    QHash<QString, QString> tags;
+
+                    //QString m;
+                    QString binpath = n->cfg["nidbdir"] + "/bin";
+                    if (img->GetImageFileTags(file, binpath, false, tags, m)) {
+                        Manufacturer = tags["Manufacturer"];
+                        ProtocolName = tags["ProtocolName"];
+                        PercentPhaseFieldOfView = tags["PercentPhaseFieldOfView"];
+                        PatientPosition = tags["PatientPosition"];
+                        AcquisitionMatrix = tags["AcquisitionMatrix"];
+                        SoftwareVersion = tags["SoftwareVersion"];
+                        PhotometricInterpretation = tags["PhotometricInterpretation"];
+                        ManufacturersModelName = tags["ManufacturersModelName"];
+                        TransmitCoilName = tags["TransmitCoilName"];
+                        SequenceName = tags["SequenceName"];
+                    }
+                    else {
                         return false;
                     }
-
-                    r.Read();
-                    gdcm::StringFilter sf;
-                    sf = gdcm::StringFilter();
-                    sf.SetFile(r.GetFile());
-
-                    Manufacturer = QString(sf.ToString(gdcm::Tag(0x0008,0x0070)).c_str()).trimmed(); /* Manufacturer */
-                    ProtocolName = QString(sf.ToString(gdcm::Tag(0x0018,0x1030)).c_str()).trimmed(); /* ProtocolName */
-                    PercentPhaseFieldOfView = QString(sf.ToString(gdcm::Tag(0x0018,0x0094)).c_str()).trimmed(); /* PercentPhaseFieldOfView */
-                    PatientPosition = QString(sf.ToString(gdcm::Tag(0x0018,0x5100)).c_str()).trimmed(); /* PatientPosition */
-                    AcquisitionMatrix = QString(sf.ToString(gdcm::Tag(0x0008,0x0060)).c_str()).trimmed(); /* modality */
-                    SoftwareVersion = QString(sf.ToString(gdcm::Tag(0x0008,0x0060)).c_str()).trimmed(); /* modality */
-                    PhotometricInterpretation = QString(sf.ToString(gdcm::Tag(0x0008,0x0060)).c_str()).trimmed(); /* modality */
-                    ManufacturersModelName = QString(sf.ToString(gdcm::Tag(0x0008,0x0070)).c_str()).trimmed(); /* ManufacturersModelName */
-                    TransmitCoilName = QString(sf.ToString(gdcm::Tag(0x0008,0x0070)).c_str()).trimmed(); /* TransmitCoilName */
-                    SequenceName = QString(sf.ToString(gdcm::Tag(0x0008,0x0070)).c_str()).trimmed(); /* SequenceName */
                 }
 
                 /* clean up the tags */

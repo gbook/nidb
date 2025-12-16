@@ -769,14 +769,14 @@ bool squirrel::Write() {
                             squirrelImageIO io;
                             QString m;
                             if (DataFormat == "anon")
-                                io.AnonymizeDir(td,1,"Anonymized","Anonymized",m);
+                                io.AnonymizeDir(td, seriesPath, 1, m);
                             else
-                                io.AnonymizeDir(td,2,"Anonymized","Anonymized",m);
+                                io.AnonymizeDir(td, seriesPath, 2, m);
 
                             /* move the anonymized files to the staging area */
-                            systemstring = QString("mv %1/* %2/").arg(td).arg(seriesPath);
-                            Log(QString("  ... anonymizing DICOM files from %1 to %2").arg(td).arg(seriesPath));
-                            Debug(utils::SystemCommand(systemstring), __FUNCTION__);
+                            //systemstring = QString("mv %1/* %2/").arg(td).arg(seriesPath);
+                            //Log(QString("  ... anonymizing DICOM files from %1 to %2").arg(td).arg(seriesPath));
+                            //Debug(utils::SystemCommand(systemstring), __FUNCTION__);
 
                             /* delete temp directory */
                             DeleteTempDir(td);
