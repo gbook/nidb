@@ -32,9 +32,8 @@
 */
 imageIO::imageIO()
 {
-    qDebug() << "Checkpoint 0";
+    /* always start exiftool daemon */
     StartExiftool();
-    qDebug() << "Checkpoint 1";
 }
 
 
@@ -46,10 +45,18 @@ imageIO::imageIO()
 */
 imageIO::~imageIO()
 {
+    /* always terminate the exiftool daemon */
     TerminateExiftool();
 }
 
 
+/* ---------------------------------------------------------- */
+/* --------- StartExiftool ---------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Starts the exiftool 'deamon'
+ * @return true if successful, false otherwise
+ */
 bool imageIO::StartExiftool() {
 
     /* create the process */
@@ -62,9 +69,7 @@ bool imageIO::StartExiftool() {
     exiftool->waitForStarted();
 
     if (exiftool->processId() > 0) {
-        qDebug() << "Checkpoint D";
-
-        Print(QString("Started exiftool with pid [%1]").arg(exiftool->processId()));
+        //Print(QString("Started exiftool with pid [%1]").arg(exiftool->processId()));
         return true;
     }
     else {
@@ -74,6 +79,13 @@ bool imageIO::StartExiftool() {
 }
 
 
+/* ---------------------------------------------------------- */
+/* --------- TerminateExiftool ------------------------------ */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Terminate the exiftool 'daemon'
+ * @return true
+ */
 bool imageIO::TerminateExiftool() {
 
     /* let exiftool terminate itself */
@@ -88,6 +100,14 @@ bool imageIO::TerminateExiftool() {
 }
 
 
+/* ---------------------------------------------------------- */
+/* --------- RunExiftool ------------------------------------ */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Run exiftool to get DICOM tags
+ * @param arg The DICOM (or other type) file
+ * @return The full output from exiftool
+ */
 QString imageIO::RunExiftool(QString arg) {
     QString str;
     exiftool->write(arg.toUtf8() + '\n');

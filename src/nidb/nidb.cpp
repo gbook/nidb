@@ -697,53 +697,6 @@ QString nidb::Debug(QString msg, QString func, int wrap, bool timeStamp) {
 /* ---------------------------------------------------------- */
 /* --------- SendEmail -------------------------------------- */
 /* ---------------------------------------------------------- */
-/* OpenSSL 1.0.x required for Qt compatibility                */
-/* ---------------------------------------------------------- */
-//bool nidb::SendEmail(QString to, QString subject, QString body) {
-
-//    SmtpClient smtp(cfg["emailserver"].replace("tls://",""), cfg["emailport"].toInt(), SmtpClient::TlsConnection);
-//    smtp.setUser(cfg["emailusername"]);
-//    smtp.setPassword(cfg["emailpassword"]);
-
-    /* create a MimeMessage object. This will be the email. */
-//    MimeMessage message;
-//    message.setSender(new EmailAddress(cfg["emailusername"], "NiDB"));
-//    message.addRecipient(new EmailAddress(to, ""));
-//    message.setSubject(subject);
-
-    /* add the body to the email */
-//    MimeText text;
-//    text.setText(body);
-//    message.addPart(&text);
-
-    /* Now we can send the mail */
-//    if (!smtp.connectToHost()) {
-//        Print("Failed to connect to host [" + cfg["emailserver"] + "]");
-//        smtp.quit();
-//        return false;
-//    }
-//    if (!smtp.login()) {
-//        Print("Failed to login using username [" + cfg["emailusername"] + "] and password [" + cfg["emailpassword"] + "]");
-//        smtp.quit();
-//        return false;
-//    }
-//    if (!smtp.sendMail(message)) {
-//        Print("Failed to send [" + body + "]");
-//        smtp.quit();
-//        return false;
-//    }
-//    else {
-//        Print("Sent email successfuly");
-//    }
-//    smtp.quit();
-
-//    return true;
-//}
-
-
-/* ---------------------------------------------------------- */
-/* --------- SendEmail -------------------------------------- */
-/* ---------------------------------------------------------- */
 /**
  * @brief Send email using curl, from the command line
  * @param to To email

@@ -54,17 +54,22 @@ moduleImport::~moduleImport()
 bool moduleImport::Run() {
     n->Log("Entering the import module");
 
-    bool ret(false);
+    if (isExecutableInstalled("exiftool")) {
+        bool ret(false);
 
-    /* archive local data */
-    ret |= ArchiveLocal();
+        /* archive local data */
+        ret |= ArchiveLocal();
 
-    /* parse remotely imported data */
-    ret |= ParseRemotelyImportedData();
+        /* parse remotely imported data */
+        ret |= ParseRemotelyImportedData();
 
-    n->Log("Leaving the import module");
-    return ret;
-
+        n->Log("Leaving the import module");
+        return ret;
+    }
+    else {
+        n->Log("*** ERROR *** -- exiftool is not installed! install on RHEL using 'sudo dnf install exiftool' or on Ubuntu/debian 'sudo apt install exiftool'");
+        return false;
+    }
 }
 
 

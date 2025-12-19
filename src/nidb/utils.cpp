@@ -1365,3 +1365,12 @@ bool GetZipFileDetails(QString zippath, qint64 &unzipsize, qint64 &zipsize, QStr
 
     return true;
 }
+
+
+/* ---------------------------------------------------------- */
+/* --------- isExecutableInstalled -------------------------- */
+/* ---------------------------------------------------------- */
+bool isExecutableInstalled(const QString &executableName) {
+    QString path = QStandardPaths::findExecutable(executableName);
+    return !path.isEmpty();
+}

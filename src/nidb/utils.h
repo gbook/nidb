@@ -39,6 +39,7 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QStandardPaths>
 
 typedef QHash <int, QHash<QString, QString> > indexedHash;
 static const QRegularExpression REwhiteSpace("\\s*");
@@ -156,5 +157,6 @@ bool RenameFile(QString filepathorig, QString filepathnew, bool force=true);
 bool WriteTextFile(QString filepath, QString str, bool append=true);
 bool chmod(QString f, QString perm);
 void GetDirSizeAndFileCount(QString dir, qint64 &c, qint64 &b, bool recurse=false);
+bool isExecutableInstalled(const QString &executableName);
 
 #endif // UTILS_H

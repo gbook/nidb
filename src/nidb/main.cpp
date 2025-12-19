@@ -37,7 +37,6 @@
 #include "moduleMiniPipeline.h"
 #include "moduleBackup.h"
 #include <iostream>
-//#include <SmtpMime>
 
 /* ---------------------------------------------------------- */
 /* --------- main ------------------------------------------- */
