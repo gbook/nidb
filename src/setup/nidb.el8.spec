@@ -1,5 +1,5 @@
 Name:           nidb
-Version:        2025.12.1322
+Version:        2025.12.1326
 Release:        1%{?dist}
 Summary:        NeuroInformatics Database
 

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-PACKAGE=nidb_2025.12.1322
+PACKAGE=nidb_2025.12.1326
 LIBDIR=$PACKAGE/lib/x86_64-linux-gnu/
 BINDIR=$PACKAGE/usr/local/bin/
 DEBDIR=$PACKAGE/DEBIAN
@@ -19,7 +19,7 @@ cp -uv ~/Qt/6.9.3/gcc_64/lib/libicu* $LIBDIR
 cp -uv bin/nidb/nidb $BINDIR
 
 echo "Package: nidb
-Version: 2025.12.1322
+Version: 2025.12.1326
 Section: base
 Priority: optional
 Architecture: amd64
