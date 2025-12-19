@@ -32,7 +32,9 @@
 */
 imageIO::imageIO()
 {
-
+    qDebug() << "Checkpoint 0";
+    StartExiftool();
+    qDebug() << "Checkpoint 1";
 }
 
 
@@ -44,7 +46,96 @@ imageIO::imageIO()
 */
 imageIO::~imageIO()
 {
+    TerminateExiftool();
+}
 
+
+bool imageIO::StartExiftool() {
+
+    qDebug() << "Checkpoint A";
+
+    /* create the process */
+    exiftool = new QProcess();
+    qDebug() << "Checkpoint B";
+
+    /* start exiftool */
+    QStringList args;
+    args << "-stay_open" << "True" << "-@" << "-";
+    exiftool->start("exiftool", args);
+    exiftool->waitForStarted();
+    qDebug() << "Checkpoint C";
+
+    // QObject::connect(process, &QProcess::readyReadStandardOutput, [&]() {
+    //     qDebug() << "STDOUT:" << process->readAllStandardOutput();
+    // });
+    // QObject::connect(process, &QProcess::readyReadStandardError, [&]() {
+    //     qDebug() << "STDERR:" << process->readAllStandardError();
+    // });
+    // QObject::connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), [&](int exitCode, QProcess::ExitStatus exitStatus) {
+    //     qDebug() << "Process finished with code" << exitCode;
+    // });
+
+    if (exiftool->processId() > 0) {
+        qDebug() << "Checkpoint D";
+
+        Print(QString("Started exiftool with pid [%1]").arg(exiftool->processId()));
+        return true;
+    }
+    else {
+        Print(QString("Error starting exiftool [%1]").arg(exiftool->errorString()));
+        return false;
+    }
+}
+
+
+bool imageIO::TerminateExiftool() {
+
+    /* let exiftool terminate itself */
+    exiftool->write("-stay_open\nFalse\n");
+    exiftool->waitForBytesWritten();
+
+    /* terminate the QProcess */
+    exiftool->close();
+    delete exiftool;
+
+    return true;
+}
+
+
+QString imageIO::RunExiftool(QString arg) {
+    QString str;
+    //qDebug() << "Checkpoint R1";
+    //exiftool->write("-stay_open\n");
+    //qDebug() << "Checkpoint R2";
+    //exiftool->write("True\n");
+    //qDebug() << "Checkpoint R3";
+    //exiftool->write("-@\n");
+    //qDebug() << "Checkpoint R4";
+    exiftool->write(arg.toUtf8() + '\n');
+    //qDebug() << "Checkpoint R5";
+    exiftool->write("-execute\n");
+    //qDebug() << "Checkpoint R6";
+    exiftool->waitForBytesWritten();
+    //qDebug() << "Checkpoint R7";
+
+
+    //bool done = false;
+    //while (!done)
+    //    if (exiftool->waitForReadyRead())
+    //        done = true;
+
+    //QByteArray output;
+    //while(exiftool->waitForReadyRead(-1)) {
+    //    output += exiftool->readAll();
+    //}
+    exiftool->waitForReadyRead();
+
+    //qDebug() << "Checkpoint R8";
+    QByteArray output = exiftool->readAllStandardOutput();
+    //qDebug() << "Checkpoint R9";
+    str = QString::fromUtf8(output);
+    //qDebug() << "Checkpoint R10";
+    return str;
 }
 
 
@@ -191,8 +282,8 @@ bool imageIO::IsDICOMFile(QString f) {
     //else {
         /* try reading with exiftool */
         QHash<QString, QString> tags;
-        QString systemstring = "exiftool " + f;
-        QString exifoutput = SystemCommand(systemstring, false);
+        //QString systemstring = "exiftool " + f;
+        QString exifoutput = RunExiftool(f);
         QStringList lines = exifoutput.split(QRegularExpression("(\\n|\\r\\n|\\r)"), Qt::SkipEmptyParts);
 
         foreach (QString line, lines) {
@@ -402,8 +493,9 @@ QString imageIO::GetDicomModality(QString f)
 {
     QString modality = "NOTDICOM";
 
-    QString systemstring = "exiftool " + f;
-    QString exifoutput = SystemCommand(systemstring, false);
+    //QString systemstring = "exiftool " + f;
+    //QString exifoutput = SystemCommand(systemstring, false);
+    QString exifoutput = RunExiftool(f);
     QStringList lines = exifoutput.split(QRegularExpression("(\\n|\\r\\n|\\r)"), Qt::SkipEmptyParts);
 
     QHash<QString, QString> tags;
@@ -441,6 +533,7 @@ QString imageIO::GetDicomModality(QString f)
 /* ---------------------------------------------------------- */
 bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<QString, QString> &tags, QString &msg) {
 
+    //qDebug() << "Entering GetImageFileTags()";
     /* check if the file exists and has read permissions */
     QFileInfo fi(f);
     if (!fi.exists()) {
@@ -464,8 +557,9 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
     //r.SetFileName(f.toStdString().c_str());
 
     /* read file with EXIF tool */
-    QString systemstring = "exiftool " + f;
-    QString exifoutput = SystemCommand(systemstring, false);
+    //QString systemstring = "exiftool " + f;
+    //QString exifoutput = SystemCommand(systemstring, false);
+    QString exifoutput = RunExiftool(f);
     QStringList lines = exifoutput.split(QRegularExpression("(\\n|\\r\\n|\\r)"), Qt::SkipEmptyParts);
     foreach (QString line, lines) {
         QString delimiter = ":";
@@ -839,8 +933,9 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
             msg += "GetImageFileTags() checkpoint D\n";
             /* unknown modality/filetype */
             /* try one last time to read with EXIF tool */
-            QString systemstring = "exiftool " + f;
-            QString exifoutput = SystemCommand(systemstring, false);
+            //QString systemstring = "exiftool " + f;
+            //QString exifoutput = SystemCommand(systemstring, false);
+            QString exifoutput = RunExiftool(f);
             QStringList lines = exifoutput.split(QRegularExpression("(\\n|\\r\\n|\\r)"), Qt::SkipEmptyParts);
 
             foreach (QString line, lines) {
@@ -922,7 +1017,7 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
     if (tags["SeriesTime"] == "")
         tags["SeriesTime"] = tags["StudyTime"];
     else {
-        Print("SeriesTime before [" + tags["SeriesTime"] + "]");
+        //Print("SeriesTime before [" + tags["SeriesTime"] + "]");
 
         if (tags["SeriesTime"].contains(":")) {
             tags["SeriesTime"] = tags["SeriesTime"].left(8);
@@ -1022,7 +1117,8 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
     if (tags["PatientSex"] == "")
         tags["PatientName"] = "U";
 
-    qDebug() << "Leaving GetImageFileTags()";
+    //qDebug() << "Leaving GetImageFileTags()";
+    //Print(QString("tags[] contains %1 elements").arg(tags.size()));
 
     return true;
 }
@@ -1036,8 +1132,9 @@ void imageIO::GetFileType(QString f, QString &fileType, QString &fileModality, Q
     fileModality = QString("");
 
     /* read file with EXIF tool */
-    QString systemstring = "exiftool " + f;
-    QString exifoutput = SystemCommand(systemstring, false);
+    //QString systemstring = "exiftool " + f;
+    //QString exifoutput = SystemCommand(systemstring, false);
+    QString exifoutput = RunExiftool(f);
     QStringList lines = exifoutput.split(QRegularExpression("(\\n|\\r\\n|\\r)"), Qt::SkipEmptyParts);
     QHash<QString, QString> tags;
     foreach (QString line, lines) {

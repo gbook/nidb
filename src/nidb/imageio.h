@@ -26,6 +26,7 @@
 #include <QFile>
 #include <QString>
 #include <QDir>
+#include <QDebug>
 //#include "gdcmReader.h"
 //#include "gdcmWriter.h"
 //#include "gdcmAttribute.h"
@@ -53,6 +54,13 @@ public:
     void GetFileType(QString f, QString &fileType, QString &fileModality, QString &filePatientID, QString &fileProtocol);
     bool GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<QString, QString> &tags, QString &msg);
 
+private:
+
+    /* functions to allow exiftool to run 'interactively' */
+    bool StartExiftool();
+    bool TerminateExiftool();
+    QString RunExiftool(QString arg);
+    QProcess *exiftool;
 };
 
 #endif // IMAGEIO_H

@@ -134,7 +134,7 @@ void study::LoadStudyInfo() {
         _projectid = q.value("project_id").toInt();
         _subjectid = q.value("subject_id").toInt();
         _enrollmentid = q.value("enrollment_id").toInt();
-        _enrollmentgroup = q.value("enroll_group").toString().trimmed();
+        _enrollmentgroup = q.value("enroll_subgroup").toString().trimmed();
         _enrollmentstatus = q.value("enroll_status").toString().trimmed();
         _studydatetime = q.value("study_datetime").toDateTime();
         _modality = q.value("study_modality").toString().trimmed();

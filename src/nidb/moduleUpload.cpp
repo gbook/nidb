@@ -30,6 +30,7 @@ moduleUpload::moduleUpload(nidb *a)
 {
     n = a;
     io = new archiveIO(n);
+    img = new imageIO();
 }
 
 
@@ -39,6 +40,7 @@ moduleUpload::moduleUpload(nidb *a)
 moduleUpload::~moduleUpload()
 {
     delete io;
+    delete img;
 }
 
 

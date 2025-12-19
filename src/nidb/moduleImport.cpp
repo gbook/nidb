@@ -30,6 +30,7 @@ moduleImport::moduleImport(nidb *a)
 {
     n = a;
     io = new archiveIO(n);
+    img = new imageIO();
 }
 
 
@@ -39,6 +40,7 @@ moduleImport::moduleImport(nidb *a)
 moduleImport::~moduleImport()
 {
     delete io;
+    delete img;
 }
 
 

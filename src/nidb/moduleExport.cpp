@@ -35,6 +35,7 @@ moduleExport::moduleExport(nidb *a)
 {
     n = a;
     io = new archiveIO(n);
+    img = new imageIO();
 }
 
 
@@ -47,6 +48,7 @@ moduleExport::moduleExport(nidb *a)
 moduleExport::~moduleExport()
 {
     delete io;
+    delete img;
 }
 
 

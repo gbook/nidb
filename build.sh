@@ -114,7 +114,7 @@ make -j 16
 # ----- build NiDB core -----
 echo -e "\nBuilding NiDB core\n"
 # create make file in the build directory
-$QMAKEBIN -o $BUILDDIR/nidb/Makefile $SRCDIR/nidb/nidb.pro -spec linux-g++
+$QMAKEBIN CONFIG+=release CONFIG+=force_debug_info -o $BUILDDIR/nidb/Makefile $SRCDIR/nidb/nidb.pro -spec linux-g++
 cd $BUILDDIR/nidb
 make -B -j 16
 

@@ -34,6 +34,7 @@
 archiveIO::archiveIO(nidb *a)
 {
     n = a;
+    img = new imageIO();
 }
 
 
@@ -45,7 +46,7 @@ archiveIO::archiveIO(nidb *a)
  */
 archiveIO::~archiveIO()
 {
-
+    delete img;
 }
 
 
