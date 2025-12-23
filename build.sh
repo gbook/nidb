@@ -90,18 +90,18 @@ cp -uv $SRCDIR/bit7z/lib/x64/libbit7z64.a $SRCDIR/bit7z/
 #cp -uv $SRCDIR/bit7z/lib/x64/* $BUILDDIR/bit7z/
 
 # ----- build smtp module -----
-if [ ! -d "$BUILDDIR/smtp" ]; then
+#if [ ! -d "$BUILDDIR/smtp" ]; then
 
-	echo -e "\nsmtp module not built. Building smtp module now\n"
+#	echo -e "\nsmtp module not built. Building smtp module now\n"
 
-	echo $QMAKEBIN -o $BUILDDIR/smtp/Makefile $SRCDIR/smtp/SMTPEmail.pro -spec linux-g++
+#	echo $QMAKEBIN -o $BUILDDIR/smtp/Makefile $SRCDIR/smtp/SMTPEmail.pro -spec linux-g++
 	
-	$QMAKEBIN -o $BUILDDIR/smtp/Makefile $SRCDIR/smtp/SMTPEmail.pro -spec linux-g++
-	cd $BUILDDIR/smtp
-	make -j 16
-else
-	echo -e "\nsmtp already built in $BUILDDIR/smtp\n"
-fi
+#	$QMAKEBIN -o $BUILDDIR/smtp/Makefile $SRCDIR/smtp/SMTPEmail.pro -spec linux-g++
+#	cd $BUILDDIR/smtp
+#	make -j 16
+#else
+#	echo -e "\nsmtp already built in $BUILDDIR/smtp\n"
+#fi
 
 # ----- build squirrel library -----
 echo -e "\nBuilding squirrel library\n"
@@ -114,7 +114,7 @@ make -j 16
 # ----- build NiDB core -----
 echo -e "\nBuilding NiDB core\n"
 # create make file in the build directory
-$QMAKEBIN CONFIG+=release CONFIG+=force_debug_info -o $BUILDDIR/nidb/Makefile $SRCDIR/nidb/nidb.pro -spec linux-g++
+$QMAKEBIN -o $BUILDDIR/nidb/Makefile $SRCDIR/nidb/nidb.pro -spec linux-g++
 cd $BUILDDIR/nidb
 make -B -j 16
 

@@ -27,12 +27,8 @@
 #include <QString>
 #include <QDir>
 #include <QDebug>
-//#include "gdcmReader.h"
-//#include "gdcmWriter.h"
-//#include "gdcmAttribute.h"
-//#include "gdcmStringFilter.h"
-//#include "gdcmAnonymizer.h"
 #include "utils.h"
+#include "ZExifToolProcess.h"
 
 /**
  * @brief The imageIO class
@@ -60,7 +56,19 @@ private:
     bool StartExiftool();
     bool TerminateExiftool();
     QString RunExiftool(QString arg);
-    QProcess *exiftool;
+    QProcess *exifProcess;
+    QElapsedTimer *exifTimer;
+
+    bool exifPendingTerminate;
+    bool exifCmdRunning;
+    quint32 exifNextCmdID;
+    QByteArrayList exifCmdQueue;
+    QProcess::ProcessError exifProcessError;
+    QString exifErrorString;
+    int exifCmdIDLength;
+    qsizetype  _readyBeginPos[2];  // [0] StandardOutput | [1] ErrorOutput
+    qsizetype  _readyEndPos[2];    // [0] StandardOutput | [1] ErrorOutput
+    QByteArray _outBuff[2];        // [0] StandardOutput | [1] ErrorOutput
 };
 
 #endif // IMAGEIO_H

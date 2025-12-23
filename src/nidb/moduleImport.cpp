@@ -645,14 +645,18 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
                 /* check if this is a DICOM file */
                 QHash<QString, QString> tags;
                 i++;
-
+                tags.clear();
                 QString m;
                 bool csa = false;
                 if (n->cfg["enablecsa"] == "1") csa = true;
                 QString binpath = n->cfg["nidbdir"] + "/bin";
                 if (img->GetImageFileTags(file, binpath, csa, tags, m)) {
 
+                    //n->Log(m);
+                    //qDebug() << tags;
+
                     dcmseries[tags["SeriesInstanceUID"]].append(file);
+                    n->Log(QString("Parsing file [%1] SeriesInstanceUID [%2] SeriesNumber [%3] InstanceNumber [%4] AcquisitionNumber [%5]").arg(file).arg(tags["SeriesInstanceUID"]).arg(tags["SeriesNumber"]).arg(tags["InstanceNumber"]).arg(tags["AcquisitionNumber"]));
 
                     QFileInfo fi(file);
                     fi.lastModified();
@@ -670,9 +674,9 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
                     if (tags["PatientID"] == "") q.bindValue(":PatientID", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":PatientID", tags["PatientID"]);
                     if (tags["SeriesDescription"] == "") q.bindValue(":SeriesDescription", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":SeriesDescription", tags["SeriesDescription"]);
                     if (tags["SeriesNumber"] == "") q.bindValue(":SeriesNumber", QVariant(QMetaType::fromType<int>())); else q.bindValue(":SeriesNumber", tags["SeriesNumber"]);
-                    if (tags["SeriesUID"] == "") q.bindValue(":SeriesUID", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":SeriesUID", tags["SeriesUID"]);
+                    if (tags["SeriesInstanceUID"] == "") q.bindValue(":SeriesInstanceUID", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":SeriesInstanceUID", tags["SeriesInstanceUID"]);
                     if (tags["StudyDescription"] == "") q.bindValue(":StudyDescription", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":StudyDescription", tags["StudyDescription"]);
-                    if (tags["StudyUID"] == "") q.bindValue(":StudyUID", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":StudyUID", tags["StudyUID"]);
+                    if (tags["StudyInstanceUID"] == "") q.bindValue(":StudyInstanceUID", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":StudyInstanceUID", tags["StudyInstanceUID"]);
 
                     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
@@ -708,7 +712,7 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
 
     n->Log(QString("Ignoring %1 files that are less than 60 seconds old").arg(numFilesTooYoung));
 
-    //n->Log(QString("dcmseries contains [%1] entries").arg(dcmseries.size()));
+    n->Log(QString("dcmseries contains [%1] entries").arg(dcmseries.size()));
     /* done reading all of the files in the directory (more may show up, but we'll get to those later)
      * now archive them */
     for(QMap<QString, QStringList>::iterator a = dcmseries.begin(); a != dcmseries.end(); ++a) {
@@ -717,6 +721,7 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
         n->Log(QString("Archiving %1 files for SeriesUID [" + seriesuid + "]").arg(dcmseries[seriesuid].size()));
         QStringList files2 = dcmseries[seriesuid];
 
+        n->Log(QString("Going to archive a list of files belonging to SeriesInstanceUID [%1] List [%2]").arg(seriesuid).arg(files2.join(", ")));
         performanceMetric perf2;
         perf2.Start();
         if (io->ArchiveDICOMSeries(importid, -1, -1, -1, subjectMatchCriteria, studyMatchCriteria, seriesMatchCriteria, importProjectID, "", importSiteID, importSeriesNotes, importAltUIDs, files2, perf2))

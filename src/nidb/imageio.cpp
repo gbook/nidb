@@ -22,6 +22,7 @@
 
 #include "imageio.h"
 #include <QRegularExpression>
+#include <QThread>
 
 
 /* ---------------------------------------------------------- */
@@ -60,22 +61,23 @@ imageIO::~imageIO()
 bool imageIO::StartExiftool() {
 
     /* create the process */
-    exiftool = new QProcess();
+    exifProcess = new QProcess();
 
     /* start exiftool */
     QStringList args;
     args << "-stay_open" << "True" << "-@" << "-";
-    exiftool->start("exiftool", args);
-    exiftool->waitForStarted();
+    exifProcess->start("exiftool", args);
+    exifProcess->waitForStarted();
 
-    if (exiftool->processId() > 0) {
+    if (exifProcess->processId() > 0) {
         //Print(QString("Started exiftool with pid [%1]").arg(exiftool->processId()));
         return true;
     }
     else {
-        Print(QString("Error starting exiftool [%1]").arg(exiftool->errorString()));
+        Print(QString("Error starting exiftool [%1]").arg(exifProcess->errorString()));
         return false;
     }
+    return true;
 }
 
 
@@ -87,14 +89,13 @@ bool imageIO::StartExiftool() {
  * @return true
  */
 bool imageIO::TerminateExiftool() {
-
     /* let exiftool terminate itself */
-    exiftool->write("-stay_open\nFalse\n");
-    exiftool->waitForBytesWritten();
+    exifProcess->write("-stay_open\nFalse\n");
+    exifProcess->waitForBytesWritten();
 
     /* terminate the QProcess */
-    exiftool->close();
-    delete exiftool;
+    exifProcess->close();
+    delete exifProcess;
 
     return true;
 }
@@ -110,14 +111,50 @@ bool imageIO::TerminateExiftool() {
  */
 QString imageIO::RunExiftool(QString arg) {
     QString str;
-    exiftool->write(arg.toUtf8() + '\n');
-    exiftool->write("-execute\n");
-    exiftool->waitForBytesWritten();
 
-    exiftool->waitForReadyRead();
+    QFileInfo fileInfo(arg);
+    QString filename = fileInfo.fileName();
 
-    QByteArray output = exiftool->readAllStandardOutput();
-    str = QString::fromUtf8(output);
+    /* try passing the command to exiftool three times, in case there is a problem reading the file using exiftool */
+    for (int i=0; i<3; i++) {
+        exifProcess->readAllStandardOutput(); /* clear buffer */
+
+        exifProcess->write(arg.toUtf8() + '\n');
+        exifProcess->waitForBytesWritten();
+        exifProcess->write("-execute\n");
+        exifProcess->waitForBytesWritten();
+
+        exifProcess->waitForReadyRead();
+
+        QByteArray output = exifProcess->readAllStandardOutput();
+        str = QString::fromUtf8(output);
+
+        /* check if the output contains {ready} */
+        if (!str.contains("{ready}")) {
+            Print(QString("*** Exiftool output from file [%1] does NOT contain {ready}. String size is [%2] bytes (attempt %3 of 3) ***").arg(arg).arg(str.size()).arg(i));
+            QThread::msleep(100);
+        }
+        /* check if the output is not truncated, or cut off */
+        else if (str.size() < 50) {
+            Print(QString("*** Exiftool output from file [%1] is ONLY [%2] bytes (attempt %3 of 3) str contains [%4] ***").arg(arg).arg(str.size()).arg(i).arg(str));
+            QThread::msleep(100);
+        }
+        /* check if the output contains the filename passed to exiftool. ie the  */
+        else if (!str.contains(filename)) {
+            Print(QString("*** Exiftool output from file [%1] does NOT contain the file name (attempt %2 of 3) size is [%3] ***").arg(arg).arg(i).arg(str.size()));
+            QThread::msleep(100);
+        }
+        /* check if the str is blank */
+        else if (str == "") {
+            Print(QString("*** Exiftool output from file [%1] is empty (attempt %2 of 3) ***").arg(arg).arg(i));
+            QThread::msleep(100);
+        }
+        /* otherwise, we've successfully read the file header and gotten a complete response */
+        else {
+            break;
+        }
+    }
+
     return str;
 }
 
@@ -426,6 +463,8 @@ QString imageIO::GetDicomModality(QString f)
 /* ---------------------------------------------------------- */
 bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<QString, QString> &tags, QString &msg) {
 
+    tags.clear();
+
     /* check if the file exists and has read permissions */
     QFileInfo fi(f);
     if (!fi.exists()) {
@@ -457,14 +496,11 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
             tags[firstPart.trimmed()] = secondPart.trimmed();
         }
     }
-    msg += "GetImageFileTags() checkpoint E\n";
+    msg += "GetImageFileTags() checkpoint A\n";
 
     if (tags["FileType"] == "DICOM") {
         msg += "exiftool successfuly read file [" + f + "]\n";
         /* ---------- it's a readable DICOM file ---------- */
-
-        QString uniqueseries = tags["InstitutionName"] + tags["StationName"] + tags["Modality"] + tags["PatientName"] + tags["PatientBirthDate"] + tags["PatientSex"] + tags["StudyDateTime"] + tags["SeriesNumber"];
-        tags["UniqueSeriesString"] = uniqueseries;
 
         /* attempt to get the Siemens CSA header info, but not if this is a Siemens enhanced DICOM */
         tags["PhaseEncodeAngle"] = "";
@@ -806,6 +842,11 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
 
     if (tags["PatientSex"] == "")
         tags["PatientName"] = "U";
+
+    QString uniqueseries = tags["InstitutionName"] + tags["StationName"] + tags["Modality"] + tags["PatientName"] + tags["PatientBirthDate"] + tags["PatientSex"] + tags["StudyDateTime"] + tags["SeriesNumber"];
+    tags["UniqueSeriesString"] = uniqueseries;
+
+    msg += uniqueseries + "\n";
 
     //qDebug() << "Leaving GetImageFileTags()";
     //Print(QString("tags[] contains %1 elements").arg(tags.size()));

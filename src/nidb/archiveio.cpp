@@ -145,6 +145,8 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
             return false;
         }
     }
+    n->Log(QString("Archiving file [%1] SeriesInstanceUID [%2] SeriesNumber [%3] InstanceNumber [%4] AcquisitionNumber [%5]").arg(f).arg(tags["SeriesInstanceUID"]).arg(tags["SeriesNumber"]).arg(tags["InstanceNumber"]).arg(tags["AcquisitionNumber"]));
+
     n->Debug(m, __FUNCTION__);
 
     QString InstitutionName = tags["InstitutionName"];
@@ -625,6 +627,7 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
                 continue;
             }
 
+            SeriesNumber = tags["SeriesNumber"].toInt();
             int SliceNumber = tags["AcquisitionNumber"].toInt();
             int InstanceNumber = tags["InstanceNumber"].toInt();
             QString AcquisitionTime = tags["AcquisitionTime"];
@@ -637,6 +640,7 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
             QString newfname = QString("%1_%2_%3_%4_%5_%6_%7_%8.dcm").arg(subjectUID).arg(studynum).arg(SeriesNumber).arg(SliceNumber, 5, 10, QChar('0')).arg(InstanceNumber, 5, 10, QChar('0')).arg(AcquisitionTime).arg(ContentTime).arg(SOPInstance);
             QString newfile = outdir + "/" + newfname;
 
+            //n->Log(QString("Renaming existing file [%1] -> [%2]").arg(file).arg(newfile));
             if (file == newfile)
                 logmsg += "?";
             else
@@ -671,6 +675,7 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
             continue;
         }
 
+        SeriesNumber = tags["SeriesNumber"].toInt();
         int SliceNumber = tags["AcquisitionNumber"].toInt();
         int InstanceNumber = tags["InstanceNumber"].toInt();
         QString AcquisitionTime = tags["AcquisitionTime"];
@@ -691,6 +696,8 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
         }
         else {
         }
+
+        //n->Log(QString("Renaming new file. SeriesNumber [%1]   [%2] -> [%3]").arg(SeriesNumber).arg(file).arg(newfile));
 
         /* move & rename the file */
         if (!RenameFile(file, newfile))
