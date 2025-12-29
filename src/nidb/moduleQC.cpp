@@ -568,7 +568,7 @@ bool moduleQC::ExportSeries(qint64 seriesRowID, QString modality, ExportFormat f
         }
         case Nifti3d: {
             if (MakePath(tmpdir, m)) {
-                imageIO img;
+                imageIO img(n);
                 if (!img.ConvertDicom("nifti3d", s.datapath, tmpdir, binpath, false, false, s.uid, studyNumStr, seriesNumStr, "", "", s.bidsMapping, s.datatype, numFilesConverted, numFilesRenamed, m)) {
                     n->Log("Error exporting series. Message [" + m + "]");
                 }
@@ -577,7 +577,7 @@ bool moduleQC::ExportSeries(qint64 seriesRowID, QString modality, ExportFormat f
         }
         case Nifti3dgz: {
             if (MakePath(tmpdir, m)) {
-                imageIO img;
+                imageIO img(n);
                 if (!img.ConvertDicom("nifti3d", s.datapath, tmpdir, binpath, true, false, s.uid, studyNumStr, seriesNumStr, "", "", s.bidsMapping, s.datatype, numFilesConverted, numFilesRenamed, m)) {
                     n->Log("Error exporting series. Message [" + m + "]");
                 }
@@ -586,7 +586,7 @@ bool moduleQC::ExportSeries(qint64 seriesRowID, QString modality, ExportFormat f
         }
         case Nifti4d: {
             if (MakePath(tmpdir, m)) {
-                imageIO img;
+                imageIO img(n);
                 if (!img.ConvertDicom("nifti4d", s.datapath, tmpdir, binpath, false, false, s.uid, studyNumStr, seriesNumStr, "", "", s.bidsMapping, s.datatype, numFilesConverted, numFilesRenamed, m)) {
                     n->Log("Error exporting series. Message [" + m + "]");
                 }
@@ -595,7 +595,7 @@ bool moduleQC::ExportSeries(qint64 seriesRowID, QString modality, ExportFormat f
         }
         case Nifti4dgz: {
             if (MakePath(tmpdir, m)) {
-                imageIO img;
+                imageIO img(n);
                 if (!img.ConvertDicom("nifti4d", s.datapath, tmpdir, binpath, true, false, s.uid, studyNumStr, seriesNumStr, "", "", s.bidsMapping, s.datatype, numFilesConverted, numFilesRenamed, m)) {
                     n->Log("Error exporting series. Message [" + m + "]");
                 }
@@ -604,7 +604,7 @@ bool moduleQC::ExportSeries(qint64 seriesRowID, QString modality, ExportFormat f
         }
         case NiftiMe: {
             if (MakePath(tmpdir, m)) {
-                imageIO img;
+                imageIO img(n);
                 if (!img.ConvertDicom("niftime", s.datapath, tmpdir, binpath, true, false, s.uid, studyNumStr, seriesNumStr, "", "", s.bidsMapping, s.datatype, numFilesConverted, numFilesRenamed, m)) {
                     n->Log("Error exporting series. Message [" + m + "]");
                 }

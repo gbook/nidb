@@ -165,7 +165,7 @@ squirrelSeries series::GetSquirrelObject(QString databaseUUID) {
     sqrl.stagedBehFiles = FindAllFiles(behpath,"*");
     QString file, m;
     if (FindFirstFile(datapath,"*",file,m)) {
-        imageIO *io = new imageIO();
+        imageIO *io = new imageIO(n);
         QHash<QString, QString> tags;
         io->GetImageFileTags(file, n->cfg["bindir"], true, tags, m);
         sqrl.params = tags;

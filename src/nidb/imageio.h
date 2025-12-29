@@ -23,6 +23,7 @@
 #ifndef IMAGEIO_H
 #define IMAGEIO_H
 
+#include "nidb.h"
 #include <QFile>
 #include <QString>
 #include <QDir>
@@ -38,19 +39,22 @@
 class imageIO
 {
 public:
-    imageIO();
+    imageIO(nidb *n);
     ~imageIO();
 
     /* DICOM & image functions */
-    bool ConvertDicom(QString filetype, QString indir, QString outdir, QString bindir, bool gzip, bool json, QString uid, QString studynum, QString seriesnum, QString bidsSubject, QString bidsSession, BIDSMapping bidsMapping, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg);
-    bool IsDICOMFile(QString f);
-    bool AnonymizeDir(QString indir, QString outdir, int anonlevel, QString &msg);
-    bool AnonymizeDicomFile(QString infile, QString outfile, QStringList tagsToChange, QString &msg);
     QString GetDicomModality(QString f);
-    void GetFileType(QString f, QString &fileType, QString &fileModality, QString &filePatientID, QString &fileProtocol);
+    bool AnonymizeDicomDirInPlace(QString dir, int anonlevel, QString &msg);
+    bool AnonymizeDicomFile(QString infile, QString outfile, QStringList tagsToChange, QString &msg);
+    bool AnonymizeDicomFileInPlace(QString file, QStringList tagsToChange, QString &msg);
+    bool AnonymizeDir(QString indir, QString outdir, int anonlevel, QString &msg);
+    bool ConvertDicom(QString filetype, QString indir, QString outdir, QString bindir, bool gzip, bool json, QString uid, QString studynum, QString seriesnum, QString bidsSubject, QString bidsSession, BIDSMapping bidsMapping, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg);
     bool GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<QString, QString> &tags, QString &msg);
+    bool IsDICOMFile(QString f);
+    void GetFileType(QString f, QString &fileType, QString &fileModality, QString &filePatientID, QString &fileProtocol);
 
 private:
+    nidb *n;
 
     /* functions to allow exiftool to run 'interactively' */
     bool StartExiftool();

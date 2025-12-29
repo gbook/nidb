@@ -1,9 +1,9 @@
 -- phpMyAdmin SQL Dump
--- version 5.1.2
+-- version 5.2.3
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Oct 21, 2025 at 06:32 PM
+-- Generation Time: Dec 29, 2025 at 07:30 PM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -1193,6 +1193,8 @@ CREATE TABLE `export_nonimaging` (
   `export_startdate` datetime NOT NULL DEFAULT current_timestamp(),
   `export_enddate` datetime DEFAULT NULL,
   `export_deletedate` datetime DEFAULT NULL,
+  `export_numcols` bigint(20) NOT NULL DEFAULT 0,
+  `export_numrows` int(11) NOT NULL DEFAULT 0,
   `export_size` bigint(20) DEFAULT NULL,
   `export_filepath` text DEFAULT NULL,
   `export_log` mediumtext DEFAULT NULL

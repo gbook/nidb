@@ -31,8 +31,10 @@
 /**
  * imageIO constructor
 */
-imageIO::imageIO()
+imageIO::imageIO(nidb *a)
 {
+    n = a;
+
     /* always start exiftool daemon */
     StartExiftool();
 }
@@ -105,7 +107,7 @@ bool imageIO::TerminateExiftool() {
 /* --------- RunExiftool ------------------------------------ */
 /* ---------------------------------------------------------- */
 /**
- * @brief Run exiftool to get DICOM tags
+ * @brief Run exiftool to get DICOM tags. Output should be terminated with {ready}, otherwise it is incomplete
  * @param arg The DICOM (or other type) file
  * @return The full output from exiftool
  */
@@ -314,9 +316,39 @@ bool imageIO::IsDICOMFile(QString f) {
     }
 
     /* do the command line anonymization */
-    QString systemstring = QString("gdcmanon --dumb -i %1 -o %2/ %3").arg(infile).arg(outfile).arg(tagsToChange.join(" "));
+    QString systemstring = QString("gdcmanon --dumb --continue %1 -i %2 -o %3/").arg(tagsToChange.join(" ")).arg(infile).arg(outfile);
     QString output = SystemCommand(systemstring, false);
     msg += output;
+
+    return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- AnonymizeDicomFileInPlace ---------------------- */
+/* ---------------------------------------------------------- */
+/* borrowed in its entirety from gdcmanon.cxx                 */
+bool imageIO::AnonymizeDicomFileInPlace(QString file, QStringList tagsToChange, QString &msg)
+{
+    if( tagsToChange.isEmpty() ) {
+        msg += "AnonymizeDICOMFile() called with no tags to change. No operation to be done.";
+        return false;
+    }
+
+    /* do the command line anonymization */
+    int i(0);
+    QStringList subsetTags;
+    foreach (const QString &str, tagsToChange) {
+        if (i > 10) {
+            QString systemstring = QString("gdcmanon --dumb -i %1 -o %2 %3").arg(file).arg(subsetTags.join(" "));
+            QString output = SystemCommand(systemstring, false);
+            msg += output;
+            i=0;
+            subsetTags.clear();
+        }
+        subsetTags.append(str);
+        i++;
+    }
 
     return true;
 }
@@ -328,7 +360,7 @@ bool imageIO::IsDICOMFile(QString f) {
 bool imageIO::AnonymizeDir(QString indir, QString outdir, int anonlevel, QString &msg) {
 
 
-    // gdcmanon --dumb -i /path/to/dicom --replace 10,10=Anonymous -o /path/to/output/ <-- output will be created if it doesn't exist
+    // gdcmanon --dumb -i /path/to/dicom --replace 10,10=Anonymous -o /path/to/output <-- output will be created if it doesn't exist
 
     QString anonStr = "Anon";
     QString anonDate = "19000101";
@@ -423,9 +455,130 @@ bool imageIO::AnonymizeDir(QString indir, QString outdir, int anonlevel, QString
     }
 
     /* do the command line anonymization */
-    QString systemstring = QString("gdcmanon --dumb -i %1 -o %2/ %3").arg(indir).arg(outdir).arg(cmdArgs.join(" "));
-    QString output = SystemCommand(systemstring, false);
+    QString systemstring = QString("gdcmanon --dumb --continue %1 -i %2 -o %3").arg(cmdArgs.join(" ")).arg(indir).arg(outdir);
+    n->Log(systemstring);
+    QString output = SystemCommand(systemstring, true);
+    n->Log(output);
     msg += output;
+
+    return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- AnonymizeDir ----------------------------------- */
+/* ---------------------------------------------------------- */
+bool imageIO::AnonymizeDicomDirInPlace(QString dir, int anonlevel, QString &msg) {
+
+
+    // gdcmanon --dumb -i /path/to/dicom --replace 10,10=Anonymous -o /path/to/output <-- output will be created if it doesn't exist
+
+    QString anonStr = "Anon";
+    QString anonDate = "19000101";
+    QString anonTime = "000000.000000";
+
+    QStringList cmdArgs;
+
+    switch (anonlevel) {
+    case 0: {
+        msg += "No anonymization requested. Leaving files unchanged.";
+        return 0;
+    }
+    case 1:
+    case 3: {
+        /* partial anonmymization - remove the obvious stuff like name and DOB */
+        cmdArgs.append(QString("--replace 8,90='%1'").arg(anonStr)); // ReferringPhysicianName
+        cmdArgs.append(QString("--replace 8,1050='%1'").arg(anonStr)); // PerformingPhysicianName
+        cmdArgs.append(QString("--replace 8,1070='%1'").arg(anonStr)); // OperatorsName
+        cmdArgs.append(QString("--replace 10,10='%1'").arg(anonStr)); // PatientName
+        cmdArgs.append(QString("--replace 10,30='%1'").arg(anonStr)); // PatientBirthDate
+
+        break;
+    }
+    case 2: {
+        /* Full anonymization. remove all names, dates, locations. ANYTHING identifiable */
+        cmdArgs.append(QString("--replace 8,12='%1'").arg(anonDate)); // InstanceCreationDate
+        cmdArgs.append(QString("--replace 8,13='%1'").arg(anonDate)); // InstanceCreationTime
+        cmdArgs.append(QString("--replace 8,20='%1'").arg(anonDate)); // StudyDate
+        cmdArgs.append(QString("--replace 8,21='%1'").arg(anonDate)); // SeriesDate
+        cmdArgs.append(QString("--replace 8,22='%1'").arg(anonDate)); // AcquisitionDate
+        cmdArgs.append(QString("--replace 8,23='%1'").arg(anonDate)); // ContentDate
+        cmdArgs.append(QString("--replace 8,30='%1'").arg(anonTime)); //StudyTime
+        cmdArgs.append(QString("--replace 8,31='%1'").arg(anonTime)); //SeriesTime
+        cmdArgs.append(QString("--replace 8,32='%1'").arg(anonTime)); //AcquisitionTime
+        cmdArgs.append(QString("--replace 8,33='%1'").arg(anonTime)); //ContentTime
+        cmdArgs.append(QString("--replace 8,80='%1'").arg(anonStr)); // InstitutionName
+        cmdArgs.append(QString("--replace 8,81='%1'").arg(anonStr)); // InstitutionAddress
+        cmdArgs.append(QString("--replace 8,90='%1'").arg(anonStr)); // ReferringPhysicianName
+        cmdArgs.append(QString("--replace 8,92='%1'").arg(anonStr)); // ReferringPhysicianAddress
+        cmdArgs.append(QString("--replace 8,94='%1'").arg(anonStr)); // ReferringPhysicianTelephoneNumber
+        cmdArgs.append(QString("--replace 8,96='%1'").arg(anonStr)); // ReferringPhysicianIDSequence
+        cmdArgs.append(QString("--replace 8,1010='%1'").arg(anonStr)); // StationName
+        cmdArgs.append(QString("--replace 8,1030='%1'").arg(anonStr)); // StudyDescription
+        cmdArgs.append(QString("--replace 8,103E='%1'").arg(anonStr)); // SeriesDescription
+        cmdArgs.append(QString("--replace 8,1048='%1'").arg(anonStr)); // PhysiciansOfRecord
+        cmdArgs.append(QString("--replace 8,1050='%1'").arg(anonStr)); // PerformingPhysicianName
+        cmdArgs.append(QString("--replace 8,1060='%1'").arg(anonStr)); // NameOfPhysicianReadingStudy
+        cmdArgs.append(QString("--replace 8,1070='%1'").arg(anonStr)); // OperatorsName
+
+        cmdArgs.append(QString("--replace 10,10='%1'").arg(anonStr)); // PatientName
+        cmdArgs.append(QString("--replace 10,20='%1'").arg(anonStr)); // PatientID
+        cmdArgs.append(QString("--replace 10,21='%1'").arg(anonStr)); // IssuerOfPatientID
+        cmdArgs.append(QString("--replace 10,30='%1'").arg(anonDate)); // PatientBirthDate
+        cmdArgs.append(QString("--replace 10,32='%1'").arg(anonTime)); // PatientBirthTime
+        cmdArgs.append(QString("--replace 10,50='%1'").arg(anonStr)); // PatientInsurancePlanCodeSequence
+        cmdArgs.append(QString("--replace 10,1000='%1'").arg(anonStr)); // OtherPatientIDs
+        cmdArgs.append(QString("--replace 10,1001='%1'").arg(anonStr)); // OtherPatientNames
+        cmdArgs.append(QString("--replace 10,1005='%1'").arg(anonStr)); // PatientBirthName
+        cmdArgs.append(QString("--replace 10,1010='%1'").arg(anonStr)); // PatientAge
+        cmdArgs.append(QString("--replace 10,1020='%1'").arg(anonStr)); // PatientSize
+        cmdArgs.append(QString("--replace 10,1030='%1'").arg(anonStr)); // PatientWeight
+        cmdArgs.append(QString("--replace 10,1040='%1'").arg(anonStr)); // PatientAddress
+        cmdArgs.append(QString("--replace 10,1060='%1'").arg(anonStr)); // PatientMotherBirthName
+        cmdArgs.append(QString("--replace 10,2154='%1'").arg(anonStr)); // PatientTelephoneNumbers
+        cmdArgs.append(QString("--replace 10,21B0='%1'").arg(anonStr)); // AdditionalPatientHistory
+        cmdArgs.append(QString("--replace 10,21F0='%1'").arg(anonStr)); // PatientReligiousPreference
+        cmdArgs.append(QString("--replace 10,4000='%1'").arg(anonStr)); // PatientComments
+
+        cmdArgs.append(QString("--replace 18,1030='%1'").arg(anonStr)); // ProtocolName
+
+        cmdArgs.append(QString("--replace 32,1032='%1'").arg(anonStr)); // RequestingPhysician
+        cmdArgs.append(QString("--replace 32,1060='%1'").arg(anonStr)); // RequestedProcedureDescription
+
+        cmdArgs.append(QString("--replace 40,6='%1'").arg(anonStr)); // ScheduledPerformingPhysiciansName
+        cmdArgs.append(QString("--replace 40,244='%1'").arg(anonDate)); // PerformedProcedureStepStartDate
+        cmdArgs.append(QString("--replace 40,245='%1'").arg(anonTime)); // PerformedProcedureStepStartTime
+        cmdArgs.append(QString("--replace 40,253='%1'").arg(anonStr)); // PerformedProcedureStepID
+        cmdArgs.append(QString("--replace 40,254='%1'").arg(anonStr)); // PerformedProcedureStepDescription
+        cmdArgs.append(QString("--replace 40,4036='%1'").arg(anonStr)); // HumanPerformerOrganization
+        cmdArgs.append(QString("--replace 40,4037='%1'").arg(anonStr)); // HumanPerformerName
+        cmdArgs.append(QString("--replace 40,A123='%1'").arg(anonStr)); // PersonName
+
+        break;
+    }
+    case 4: {
+        cmdArgs.append(QString("--replace 10,10='%1'").arg(anonStr));
+        break;
+    }
+    default: {
+        break;
+    }
+    }
+
+    /* do the command line anonymization */
+
+    QStringList dcms = FindAllFiles(dir, "*.dcm");
+    foreach (const QString &f, dcms) {
+        QString m;
+        AnonymizeDicomFileInPlace(f, cmdArgs, m);
+        msg += m + '\n';
+    }
+
+    //QString systemstring = QString("gdcmanon --dumb --continue %1 -i %2 -o %3").arg(cmdArgs.join(" ")).arg(indir).arg(outdir);
+    //n->Log(systemstring);
+    //QString output = SystemCommand(systemstring, true);
+    //n->Log(output);
+    //msg += output;
 
     return true;
 }

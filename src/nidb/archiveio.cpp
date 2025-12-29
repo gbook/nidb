@@ -34,7 +34,7 @@
 archiveIO::archiveIO(nidb *a)
 {
     n = a;
-    img = new imageIO();
+    img = new imageIO(n);
 }
 
 
@@ -640,7 +640,7 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
             QString newfname = QString("%1_%2_%3_%4_%5_%6_%7_%8.dcm").arg(subjectUID).arg(studynum).arg(SeriesNumber).arg(SliceNumber, 5, 10, QChar('0')).arg(InstanceNumber, 5, 10, QChar('0')).arg(AcquisitionTime).arg(ContentTime).arg(SOPInstance);
             QString newfile = outdir + "/" + newfname;
 
-            //n->Log(QString("Renaming existing file [%1] -> [%2]").arg(file).arg(newfile));
+            n->Debug(QString("Renaming existing file [%1] -> [%2]").arg(file).arg(newfile));
             if (file == newfile)
                 logmsg += "?";
             else
@@ -697,7 +697,7 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
         else {
         }
 
-        //n->Log(QString("Renaming new file. SeriesNumber [%1]   [%2] -> [%3]").arg(SeriesNumber).arg(file).arg(newfile));
+        n->Debug(QString("Renaming new file. SeriesNumber [%1]   [%2] -> [%3]").arg(SeriesNumber).arg(file).arg(newfile));
 
         /* move & rename the file */
         if (!RenameFile(file, newfile))

@@ -30,7 +30,7 @@ moduleImport::moduleImport(nidb *a)
 {
     n = a;
     io = new archiveIO(n);
-    img = new imageIO();
+    img = new imageIO(n);
 }
 
 
@@ -656,7 +656,7 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
                     //qDebug() << tags;
 
                     dcmseries[tags["SeriesInstanceUID"]].append(file);
-                    n->Log(QString("Parsing file [%1] SeriesInstanceUID [%2] SeriesNumber [%3] InstanceNumber [%4] AcquisitionNumber [%5]").arg(file).arg(tags["SeriesInstanceUID"]).arg(tags["SeriesNumber"]).arg(tags["InstanceNumber"]).arg(tags["AcquisitionNumber"]));
+                    n->Debug(QString("Parsing file [%1] SeriesInstanceUID [%2] SeriesNumber [%3] InstanceNumber [%4] AcquisitionNumber [%5]").arg(file).arg(tags["SeriesInstanceUID"]).arg(tags["SeriesNumber"]).arg(tags["InstanceNumber"]).arg(tags["AcquisitionNumber"]));
 
                     QFileInfo fi(file);
                     fi.lastModified();
@@ -721,7 +721,7 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
         n->Log(QString("Archiving %1 files for SeriesUID [" + seriesuid + "]").arg(dcmseries[seriesuid].size()));
         QStringList files2 = dcmseries[seriesuid];
 
-        n->Log(QString("Going to archive a list of files belonging to SeriesInstanceUID [%1] List [%2]").arg(seriesuid).arg(files2.join(", ")));
+        n->Debug(QString("Going to archive a list of files belonging to SeriesInstanceUID [%1] List [%2]").arg(seriesuid).arg(files2.join(", ")));
         performanceMetric perf2;
         perf2.Start();
         if (io->ArchiveDICOMSeries(importid, -1, -1, -1, subjectMatchCriteria, studyMatchCriteria, seriesMatchCriteria, importProjectID, "", importSiteID, importSeriesNotes, importAltUIDs, files2, perf2))

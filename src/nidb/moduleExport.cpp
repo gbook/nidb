@@ -35,7 +35,7 @@ moduleExport::moduleExport(nidb *a)
 {
     n = a;
     io = new archiveIO(n);
-    img = new imageIO();
+    img = new imageIO(n);
 }
 
 
@@ -779,8 +779,16 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                     }
 
                     QString m;
-                    if (filetype == "dicom")
-                        img->AnonymizeDir(indir, outdir, anonlevel, m);
+                    if (filetype == "dicom") {
+                        /* copy all dicom files from indir to outdir */
+                        QString systemstring = QString("rsync %1/* %2/").arg(indir).arg(outdir);
+                        n->Log(SystemCommand(systemstring));
+
+                        /* anaonymize the outdir */
+                        img->AnonymizeDicomDirInPlace(outdir, anonlevel, m);
+
+                        //img->AnonymizeDir(indir, outdir, anonlevel, m);
+                    }
 
                     n->SetExportSeriesStatus(exportseriesid, -1, -1, "", seriesstatus, statusmessage);
                     msgs << QString("Series [%1%2-%3 (%4)] complete").arg(uid).arg(studynum).arg(seriesnum).arg(seriesdesc);
@@ -1144,7 +1152,10 @@ bool moduleExport::ExportXNAT(int exportid, QString &exportstatus, QString &msg)
 
                 QString m;
                 /* always anonymize the DICOM data */
-                img->AnonymizeDir(indir, outdir, 2, m);
+                /* copy all dicom files from indir to outdir */
+                QString systemstring = QString("rsync %1/* %2/").arg(indir).arg(outdir);
+                n->Log(SystemCommand(systemstring));
+                img->AnonymizeDicomDirInPlace(outdir, 2, m);
 
                 n->SetExportSeriesStatus(exportseriesid, -1, -1, "", seriesstatus,statusmessage);
                 msgs << QString("Series [%1%2-%3 (%4)] complete").arg(uid).arg(studynum).arg(seriesnum).arg(seriesdesc);
@@ -1243,13 +1254,19 @@ bool moduleExport::ExportNDAR(int exportid, bool csvonly, QString &exportstatus,
     for(QMap<QString, QMap<int, QMap<int, QMap<QString, QString> > > >::iterator a = s.begin(); a != s.end(); ++a) {
         QString uid = a.key();
 
+        n->Log(QString("Subject %1").arg(uid));
+
         /* iterate through the studynums */
         for(QMap<int, QMap<int, QMap<QString, QString> > >::iterator b = s[uid].begin(); b != s[uid].end(); ++b) {
             int studynum = b.key();
 
+            n->Log(QString("Study %1-%2").arg(uid).arg(studynum));
+
             /* iterate through the seriesnums */
             for(QMap<int, QMap<QString, QString> >::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
                 int seriesnum = c.key();
+
+                n->Log(QString("Series %1-%2-%3").arg(uid).arg(studynum).arg(seriesnum));
 
                 qint64 exportseriesid = s[uid][studynum][seriesnum]["exportseriesid"].toLongLong();
                 n->SetExportSeriesStatus(exportseriesid, -1, -1, "", "processing");
@@ -1274,25 +1291,42 @@ bool moduleExport::ExportNDAR(int exportid, bool csvonly, QString &exportstatus,
                 QStringList logs;
 
                 if (datadirexists) {
+
+                    //n->Log("Checkpoint A");
+
                     WriteNDARHeader(headerfile, modality, logs);
                     msgs << logs;
 
+                    //n->Log("Checkpoint B");
+
                     QString behzipfile;
                     QString behdesc;
+
+                    //n->Log("Checkpoint C");
 
                     /* write the header, find out if the data is valid and should copied to the output */
                     bool validData = WriteNDARSeries(headerfile, QString("%1-%2-%3.zip").arg(uid).arg(studynum).arg(seriesnum), behzipfile, behdesc, seriesid, modality, indir, logs);
                     msgs << logs;
 
+                    //n->Log("Checkpoint D");
+
                     if (!csvonly && validData) {
+                        //n->Log("Checkpoint E");
+
                         QString tmpdir = n->cfg["tmpdir"] + "/" + GenerateRandomString(10);
                         m = "";
                         if (MakePath(tmpdir, m)) {
+                            //n->Log("Checkpoint F");
                             QString systemstring;
                             if ((modality == "mr") && (datatype == "dicom")) {
                                 //systemstring = "find " + indir + " -iname '*.dcm' -exec cp {} " + tmpdir + " \\;";
                                 //msgs << "ExportNDAR() " + n->Log(SystemCommand(systemstring, true));
-                                img->AnonymizeDir(indir, tmpdir, 2, m);
+
+                                /* copy all dicom files from indir to outdir */
+                                QString systemstring = QString("rsync %1/* %2/").arg(indir).arg(tmpdir);
+                                n->Log(SystemCommand(systemstring));
+
+                                img->AnonymizeDicomDirInPlace(tmpdir, 2, m);
                             }
                             else if ((modality == "mr") && (datatype == "parrec")) {
                                 systemstring = "find " + indir + " -iname '*.par' -exec cp {} " + tmpdir + " \\;";
@@ -1304,6 +1338,7 @@ bool moduleExport::ExportNDAR(int exportid, bool csvonly, QString &exportstatus,
                                 systemstring = "rsync --stats " + indir + "/* " + tmpdir + "/";
                                 msgs << "ExportNDAR() " + n->Log(SystemCommand(systemstring, true));
                             }
+                            //n->Log("Checkpoint G");
 
                             /* zip the data to the output directory */
                             QString zipfile = QString("%1/%2-%3-%4.zip").arg(rootoutdir).arg(uid).arg(studynum).arg(seriesnum);
@@ -1331,7 +1366,6 @@ bool moduleExport::ExportNDAR(int exportid, bool csvonly, QString &exportstatus,
                             msgs << "ExportNDAR() " + statusmessage;
                         }
                     }
-
                 }
                 else {
                     seriesstatus = "error";
@@ -1676,7 +1710,11 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
 
                             /* copy all the files from the data directory into a tmp directory */
                             if (datatype == "dicom") {
-                                img->AnonymizeDir(inDirPath, tmpdir, 4, m);
+                                /* copy all dicom files from indir to outdir */
+                                QString systemstring = QString("rsync %1/* %2/").arg(inDirPath).arg(tmpdir);
+                                n->Log(SystemCommand(systemstring));
+
+                                img->AnonymizeDicomDirInPlace(tmpdir, 4, m);
                             }
                             else {
                                 systemstring = "rsync --stats " + inDirPath + "/* " + tmpdir + "/";
@@ -1858,8 +1896,12 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
     q.bindValue(":seriesid", seriesid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
+    //n->Log("Checkpoint 1");
+
     if (q.size() > 0) {
+        //n->Log("Checkpoint 2");
         while (q.next()) {
+            //n->Log("Checkpoint 3");
             qint64 subjectid = q.value("subject_id").toLongLong();
             qint64 enrollmentid = q.value("enrollment_id").toLongLong();
             QString guid = q.value("guid").toString().trimmed();
@@ -1961,7 +2003,7 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
 
                     //QString m;
                     QString binpath = n->cfg["nidbdir"] + "/bin";
-                    if (img->GetImageFileTags(file, binpath, false, tags, m)) {
+                    if (img->GetImageFileTags(dcmfile, binpath, false, tags, m)) {
                         Manufacturer = tags["Manufacturer"];
                         ProtocolName = tags["ProtocolName"];
                         PercentPhaseFieldOfView = tags["PercentPhaseFieldOfView"];
@@ -1974,6 +2016,7 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
                         SequenceName = tags["SequenceName"];
                     }
                     else {
+                        log << "WriteNDARSeries() " + n->Log(QString("GetImageFileTags(%1, %2, ...) returned false").arg(dcmfile).arg(binpath));
                         return false;
                     }
                 }
