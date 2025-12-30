@@ -104,66 +104,67 @@
     $searchvars['s_qcvariableid'] = GetVariable("s_qcvariableid");
 
 	/* data request variables */
-	$requestvars['downloadimaging'] = GetVariable("downloadimaging");
-	$requestvars['downloadbeh'] = GetVariable("downloadbeh");
-	$requestvars['downloadqc'] = GetVariable("downloadqc");
-	$requestvars['downloadexperiments'] = GetVariable("downloadexperiments");
-	$requestvars['downloadresults'] = GetVariable("downloadresults");
-	$requestvars['downloadpipelines'] = GetVariable("downloadpipelines");
-	$requestvars['downloadvariables'] = GetVariable("downloadvariables");
-	$requestvars['downloadminipipelines'] = GetVariable("downloadminipipelines");
-	$requestvars['destination'] = GetVariable("destination");
-	$requestvars['modality'] = GetVariable("modality");
-	$requestvars['dirformat'] = GetVariable("dirformat");
-	$requestvars['seriesid'] = GetVariable("seriesid");
-	$requestvars['enrollmentid'] = GetVariable("enrollmentid");
+	$requestvars['allsubject'] = GetVariable("allsubject");
 	$requestvars['anonymize'] = GetVariable("anonymize");
-	$requestvars['nfsdir'] = GetVariable("nfsdir");
-	$requestvars['filetype'] = GetVariable("filetype");
-	$requestvars['gzip'] = GetVariable("gzip");
-	$requestvars['niftijson'] = GetVariable("niftijson");
-	$requestvars['niftibids'] = GetVariable("niftibids");
-	$requestvars['preserveseries'] = GetVariable("preserveseries");
-	$requestvars['remoteftpserver'] = GetVariable("remoteftpserver");
-	$requestvars['remoteftppath'] = GetVariable("remoteftppath");
-	$requestvars['remoteftpusername'] = GetVariable("remoteftpusername");
-	$requestvars['remoteftppassword'] = GetVariable("remoteftppassword");
-	$requestvars['remoteftpport'] = GetVariable("remoteftpport");
-	$requestvars['remoteftpsecure'] = GetVariable("remoteftpsecure");
-	$requestvars['remoteconnid'] = GetVariable("remoteconnid");
-	$requestvars['publicdownloadname'] = GetVariable("publicdownloadname");
-	$requestvars['publicdownloaddesc'] = GetVariable("publicdownloaddesc");
-	$requestvars['publicdownloadreleasenotes'] = GetVariable("publicdownloadreleasenotes");
-	$requestvars['publicdownloadpassword'] = GetVariable("publicdownloadpassword");
-	$requestvars['publicdownloadshareinternal'] = GetVariable("publicdownloadshareinternal");
-	$requestvars['publicdownloadregisterrequired'] = GetVariable("publicdownloadregisterrequired");
-	$requestvars['publicdownloadexpire'] = GetVariable("publicdownloadexpire");
-	$requestvars['publicdatasetid'] = GetVariable("publicdatasetid");
-	$requestvars['dicomtags'] = GetVariable("dicomtags");
-	$requestvars['timepoints'] = GetVariable("timepoints");
-	$requestvars['behformat'] = GetVariable("behformat");
 	$requestvars['behdirnameroot'] = GetVariable("behdirnameroot");
 	$requestvars['behdirnameseries'] = GetVariable("behdirnameseries");
-    $requestvars['subjectmeta'] = GetVariable("subjectmeta");
-    $requestvars['subjectdata'] = GetVariable("subjectdata");
-    $requestvars['subjectphenotype'] = GetVariable("subjectphenotype");
-    $requestvars['subjectforms'] = GetVariable("subjectforms");
-    $requestvars['studymeta'] = GetVariable("studymeta");
-    $requestvars['studydata'] = GetVariable("studydata");
-    $requestvars['seriesmeta'] = GetVariable("seriesmeta");
-    $requestvars['seriesdata'] = GetVariable("seriesdata");
-    $requestvars['allsubject'] = GetVariable("allsubject");
-    $requestvars['bidsreadme'] = GetVariable("bidsreadme");
-    $requestvars['bidsflag_study'] = GetVariable("bidsflag_study");
-    $requestvars['bidsflag_subject'] = GetVariable("bidsflag_subject");
-    //$requestvars['bidsflag_useuid'] = GetVariable("bidsflag_useuid");
-    //$requestvars['bidsflag_usestudyid'] = GetVariable("bidsflag_usestudyid");
-    $requestvars['squirrelflag_dataformat'] = GetVariable("squirrelflag_dataformat");
-    $requestvars['squirrelflag_incsubject'] = GetVariable("squirrelflag_incsubject");
-    $requestvars['squirrelflag_incstudy'] = GetVariable("squirrelflag_incstudy");
-    $requestvars['squirrelflag_incseries'] = GetVariable("squirrelflag_incseries");
-    $requestvars['squirreltitle'] = GetVariable("squirreltitle");
-    $requestvars['squirreldesc'] = GetVariable("squirreldesc");
+	$requestvars['behformat'] = GetVariable("behformat");
+	$requestvars['bidsflag_study'] = GetVariable("bidsflag_study");
+	$requestvars['bidsflag_subject'] = GetVariable("bidsflag_subject");
+	$requestvars['bidsreadme'] = GetVariable("bidsreadme");
+	$requestvars['destination'] = GetVariable("destination");
+	$requestvars['dicomtags'] = GetVariable("dicomtags");
+	$requestvars['dirformat'] = GetVariable("dirformat");
+	$requestvars['downloadbeh'] = GetVariable("downloadbeh");
+	$requestvars['downloadexperiments'] = GetVariable("downloadexperiments");
+	$requestvars['downloadimaging'] = GetVariable("downloadimaging");
+	$requestvars['downloadminipipelines'] = GetVariable("downloadminipipelines");
+	$requestvars['downloadpipelines'] = GetVariable("downloadpipelines");
+	$requestvars['downloadqc'] = GetVariable("downloadqc");
+	$requestvars['downloadresults'] = GetVariable("downloadresults");
+	$requestvars['downloadvariables'] = GetVariable("downloadvariables");
+	$requestvars['enrollmentid'] = GetVariable("enrollmentid");
+	$requestvars['filetype'] = GetVariable("filetype");
+	$requestvars['gzip'] = GetVariable("gzip");
+	$requestvars['modality'] = GetVariable("modality");
+	$requestvars['ndadownloadtype'] = GetVariable("ndadownloadtype");
+	$requestvars['nfsdir'] = GetVariable("nfsdir");
+	$requestvars['niftibids'] = GetVariable("niftibids");
+	$requestvars['niftijson'] = GetVariable("niftijson");
+	$requestvars['preserveseries'] = GetVariable("preserveseries");
+	$requestvars['publicdatasetid'] = GetVariable("publicdatasetid");
+	$requestvars['publicdownloaddesc'] = GetVariable("publicdownloaddesc");
+	$requestvars['publicdownloadexpire'] = GetVariable("publicdownloadexpire");
+	$requestvars['publicdownloadname'] = GetVariable("publicdownloadname");
+	$requestvars['publicdownloadpassword'] = GetVariable("publicdownloadpassword");
+	$requestvars['publicdownloadregisterrequired'] = GetVariable("publicdownloadregisterrequired");
+	$requestvars['publicdownloadreleasenotes'] = GetVariable("publicdownloadreleasenotes");
+	$requestvars['publicdownloadshareinternal'] = GetVariable("publicdownloadshareinternal");
+	$requestvars['remoteconnid'] = GetVariable("remoteconnid");
+	$requestvars['remoteftppassword'] = GetVariable("remoteftppassword");
+	$requestvars['remoteftppath'] = GetVariable("remoteftppath");
+	$requestvars['remoteftpport'] = GetVariable("remoteftpport");
+	$requestvars['remoteftpsecure'] = GetVariable("remoteftpsecure");
+	$requestvars['remoteftpserver'] = GetVariable("remoteftpserver");
+	$requestvars['remoteftpusername'] = GetVariable("remoteftpusername");
+	$requestvars['seriesdata'] = GetVariable("seriesdata");
+	$requestvars['seriesid'] = GetVariable("seriesid");
+	$requestvars['seriesmeta'] = GetVariable("seriesmeta");
+	$requestvars['squirreldesc'] = GetVariable("squirreldesc");
+	$requestvars['squirrelflag_dataformat'] = GetVariable("squirrelflag_dataformat");
+	$requestvars['squirrelflag_incseries'] = GetVariable("squirrelflag_incseries");
+	$requestvars['squirrelflag_incstudy'] = GetVariable("squirrelflag_incstudy");
+	$requestvars['squirrelflag_incsubject'] = GetVariable("squirrelflag_incsubject");
+	$requestvars['squirreltitle'] = GetVariable("squirreltitle");
+	$requestvars['studydata'] = GetVariable("studydata");
+	$requestvars['studymeta'] = GetVariable("studymeta");
+	$requestvars['subjectdata'] = GetVariable("subjectdata");
+	$requestvars['subjectforms'] = GetVariable("subjectforms");
+	$requestvars['subjectmeta'] = GetVariable("subjectmeta");
+	$requestvars['subjectphenotype'] = GetVariable("subjectphenotype");
+	$requestvars['timepoints'] = GetVariable("timepoints");
+	//$requestvars['bidsflag_usestudyid'] = GetVariable("bidsflag_usestudyid");
+	//$requestvars['bidsflag_useuid'] = GetVariable("bidsflag_useuid");
 
 	$numpostvars = count($_POST);
 	$maxnumvars = ini_get('max_input_vars');
@@ -4943,8 +4944,23 @@
 										<div class="header">
 											NDA (NIMH data archive) format
 										</div>
-										<p>A directory named NIDB-NDAR-<i>YYYYMMDDHHMISS</i> will be written to <code><?=$GLOBALS['cfg']['exportdir']?></code> which contains a complete package ready to upload to the NDA</p>
+										<p><b>FTP</b> A directory named NIDB-NDAR-<i>YYYYMMDDHHMISS</i> will be written to <code><?=$GLOBALS['cfg']['exportdir']?></code> which contains a complete package ready to upload to the NDA</p>
+										<p><b>Web</b> A zipped directory containing all NDA data will be available to download from the <b>Search</b> &rarr; <b>Export Status</b> page. This must be unzipped before it can uploaded to NDA</p>
 									</div>
+								</div>
+								<div class="field">
+									Download type <i class="small blue question circle outline icon" title="Format and location for the NDA download/export"></i>
+									<br>
+									<div class="ui radio checkbox">
+										<input type="radio" name="ndadownloadtype" value="ftp" checked>
+										<label>FTP</label>
+									</div>
+									<br>
+									<div class="ui radio checkbox">
+										<input type="radio" name="ndadownloadtype" value="web">
+										<label>Web</label>
+									</div>
+									<br>
 								</div>
 							</div>
 							
@@ -6182,6 +6198,8 @@
 		$downloadvariables = ($r['downloadvariables'] == 1) ? 1 : 0;
 		$downloadminipipelines = ($r['downloadminipipelines'] == 1) ? 1 : 0;
 
+		$ndadownloadtype = $r['ndadownloadtype'];
+
 		//echo "$downloadbeh";
 		
 		if (!$downloadbeh) { $behformat = "behnone"; }
@@ -6264,6 +6282,14 @@
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			$publicDatasetDownloadRowID = mysqli_insert_id($GLOBALS['linki']);
 		}
+
+		/* collect the download flags */
+		$ndaflags = array();
+		if ($ndadownloadtype == "web") { $ndaflags[] = "NDA_WEBDOWNLOAD"; } else { $ndaflags[] = "NDA_FTPDOWNLOAD"; }
+		if (count($ndaflags) > 0)
+			$ndaflagstr = "('" . implode2(",",$ndaflags) . "')";
+		else
+			$ndaflagstr = "null";
 		
 		/* collect the download flags */
 		$downloadflags = array();
@@ -6348,7 +6374,7 @@
 		$squirreltitle = mysqli_real_escape_string($GLOBALS['linki'], $r['squirreltitle']);
 		$squirreldesc = mysqli_real_escape_string($GLOBALS['linki'], $r['squirreldesc']);
 
-		$sqlstring = "insert into exports (username, ip, download_flags, destinationtype, filetype, do_gzip, do_preserveseries, anonymization_level, dirformat, beh_format, beh_dirrootname, beh_dirseriesname, nfsdir, remoteftp_username, remoteftp_password, remoteftp_server, remoteftp_port, remoteftp_path, remoteftp_log, remotenidb_connectionid, publicdownloadid, publicdatasetid, bidsreadme, nifti_flags, bids_flags, squirrel_flags, squirrel_title, squirrel_desc, submitdate, status) values ('$username', '$ip', $downloadflagstr, '$destinationtype', '$filetype', $gzip, $preserveseries, $anonymize, '$dirformat', '$behformat', '$behdirnameroot','$behdirnameseries', '$nfsdir', '$remoteftpusername', '$remoteftppassword', '$remoteftpserver', $remoteftpport, '$remoteftppath', '$remoteftplog', $remoteconnid, $publicDownloadRowID, $publicDatasetDownloadRowID, '$bidsreadme', $niftiflagstr, $bidsflagstr, $squirrelflagstr, '$squirreltitle', '$squirreldesc', now(), 'submitted')";
+		$sqlstring = "insert into exports (username, ip, download_flags, destinationtype, filetype, do_gzip, do_preserveseries, anonymization_level, dirformat, beh_format, beh_dirrootname, beh_dirseriesname, nfsdir, remoteftp_username, remoteftp_password, remoteftp_server, remoteftp_port, remoteftp_path, remoteftp_log, remotenidb_connectionid, publicdownloadid, publicdatasetid, bidsreadme, nifti_flags, bids_flags, squirrel_flags, nda_flags, squirrel_title, squirrel_desc, submitdate, status) values ('$username', '$ip', $downloadflagstr, '$destinationtype', '$filetype', $gzip, $preserveseries, $anonymize, '$dirformat', '$behformat', '$behdirnameroot','$behdirnameseries', '$nfsdir', '$remoteftpusername', '$remoteftppassword', '$remoteftpserver', $remoteftpport, '$remoteftppath', '$remoteftplog', $remoteconnid, $publicDownloadRowID, $publicDatasetDownloadRowID, '$bidsreadme', $niftiflagstr, $bidsflagstr, $squirrelflagstr, $ndaflagstr, '$squirreltitle', '$squirreldesc', now(), 'submitted')";
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$exportRowID = mysqli_insert_id($GLOBALS['linki']);

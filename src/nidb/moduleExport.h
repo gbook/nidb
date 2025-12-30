@@ -49,7 +49,7 @@ public:
     bool GetExportSeriesList(int exportid);
 
     bool ExportLocal(int exportid, QString exporttype, QString nfsdir, int publicdownloadid, int publicdatasetdownloadid, QStringList downloadflags, QString filetype, QString dirformat, int preserveseries, bool gzip, int anonymize, QString behformat, QString behdirrootname, QString behdirseriesname, QString bidsreadme, QStringList niftiflags, QStringList bidsflags, QString squirreltitle, QString squirreldesc, QStringList squirrelflags, QString &status, QString &msg);
-    bool ExportNDAR(int exportid, bool csvonly, QString &exportstatus, QString &msg);
+    bool ExportNDAR(int exportid, bool csvonly, QStringList ndaflags, QString &exportstatus, QString &msg);
     bool ExportBIDS(int exportid, QString bidsreadme, QStringList bidsflags, QString &outdir, QString &exportstatus, QString &msg);
     bool ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, QString &exportstatus, QString &msg);
     bool ExportToRemoteFTP(int exportid, QString remoteftpusername, QString remoteftppassword, QString remoteftpserver, int remoteftpport, QString remoteftppath, QString &exportstatus, QString &msg);
