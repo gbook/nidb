@@ -29,7 +29,6 @@
 #include <QDir>
 #include <QDebug>
 #include "utils.h"
-#include "ZExifToolProcess.h"
 
 /**
  * @brief The imageIO class
