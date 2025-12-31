@@ -868,19 +868,21 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
     systemstring = "chmod -Rf 777 " + outdir;
     AppendUploadLog(__FUNCTION__ , SystemCommand(systemstring));
 
-    /* copy everything to the backup directory */
-    QString backdir = QString("%1/%2/%3/%4").arg(n->cfg["backupdir"]).arg(subjectUID).arg(studynum).arg(SeriesNumber);
-    QDir bda(backdir);
-    if (!bda.exists()) {
-        m = "";
-        if (MakePath(backdir, m))
-            AppendUploadLog(__FUNCTION__ , "Created backup directory [" + backdir + "]");
-        else
-            AppendUploadLog(__FUNCTION__ , "Unable to create backdir [" + backdir + "] because of error [" + m + "]");
-    }
+    if (n->cfg["enablebackup"].toInt()) {
+        /* copy everything to the backup directory */
+        QString backdir = QString("%1/%2/%3/%4").arg(n->cfg["backupdir"]).arg(subjectUID).arg(studynum).arg(SeriesNumber);
+        QDir bda(backdir);
+        if (!bda.exists()) {
+            m = "";
+            if (MakePath(backdir, m))
+                AppendUploadLog(__FUNCTION__ , "Created backup directory [" + backdir + "]");
+            else
+                AppendUploadLog(__FUNCTION__ , "Unable to create backdir [" + backdir + "] because of error [" + m + "]");
+        }
 
-    systemstring = QString("rsync -az %1/* %2").arg(outdir).arg(backdir);
-    AppendUploadLog(__FUNCTION__ , SystemCommand(systemstring));
+        systemstring = QString("rsync -az %1/* %2").arg(outdir).arg(backdir);
+        AppendUploadLog(__FUNCTION__ , SystemCommand(systemstring));
+    }
 
     return 1;
 }
@@ -1570,22 +1572,24 @@ bool archiveIO::ArchiveParRecSeries(int importRowID, QString file) {
     QString systemstring = QString("chmod -Rf 777 %1/%2/%3/%4").arg(n->cfg["archivedir"]).arg(subjectUID).arg(studynum).arg(SeriesNumber);
     SystemCommand(systemstring);
 
-    /* copy everything to the backup directory */
-    QString backdir = QString("%1/%2/%3/%4").arg(n->cfg["backupdir"]).arg(subjectUID).arg(studynum).arg(SeriesNumber);
-    QDir bda(backdir);
-    if (!bda.exists()) {
-        AppendUploadLog(__FUNCTION__, "Directory [" + backdir + "] does not exist. About to create it...");
-        m = "";
-        if (!MakePath(backdir, m))
-            AppendUploadLog(__FUNCTION__, "Unable to create backdir [" + backdir + "] because of error [" + m + "]");
-        else
-            AppendUploadLog(__FUNCTION__, "Finished creating ["+backdir+"]");
+    if (n->cfg["enablebackup"].toInt()) {
+        /* copy everything to the backup directory */
+        QString backdir = QString("%1/%2/%3/%4").arg(n->cfg["backupdir"]).arg(subjectUID).arg(studynum).arg(SeriesNumber);
+        QDir bda(backdir);
+        if (!bda.exists()) {
+            AppendUploadLog(__FUNCTION__, "Directory [" + backdir + "] does not exist. About to create it...");
+            m = "";
+            if (!MakePath(backdir, m))
+                AppendUploadLog(__FUNCTION__, "Unable to create backdir [" + backdir + "] because of error [" + m + "]");
+            else
+                AppendUploadLog(__FUNCTION__, "Finished creating ["+backdir+"]");
+        }
+        AppendUploadLog(__FUNCTION__, "About to copy to the backup directory");
+        systemstring = QString("rsync -az %1/* %2").arg(outdir).arg(backdir);
+        QString output = SystemCommand(systemstring);
+        AppendUploadLog(__FUNCTION__, output);
+        AppendUploadLog(__FUNCTION__, "Finished copying to the backup directory");
     }
-    AppendUploadLog(__FUNCTION__, "About to copy to the backup directory");
-    systemstring = QString("rsync -az %1/* %2").arg(outdir).arg(backdir);
-    QString output = SystemCommand(systemstring);
-    AppendUploadLog(__FUNCTION__, output);
-    AppendUploadLog(__FUNCTION__, "Finished copying to the backup directory");
 
     return true;
 }
@@ -1905,22 +1909,24 @@ bool archiveIO::ArchiveEEGSeries(int importRowID, QString file) {
     QString systemstring = QString("chmod -Rf 777 %1/%2/%3/%4").arg(n->cfg["archivedir"]).arg(subjectUID).arg(studynum).arg(SeriesNumber);
     SystemCommand(systemstring);
 
-    /* copy everything to the backup directory */
-    QString backdir = QString("%1/%2/%3/%4").arg(n->cfg["backupdir"]).arg(subjectUID).arg(studynum).arg(SeriesNumber);
-    QDir bda(backdir);
-    if (!bda.exists()) {
-        AppendUploadLog(__FUNCTION__, "Directory [" + backdir + "] does not exist. About to create it...");
-        m = "";
-        if (!MakePath(backdir, m))
-            AppendUploadLog(__FUNCTION__, "Unable to create backdir [" + backdir + "] because of error [" + m + "]");
-        else
-            AppendUploadLog(__FUNCTION__, "Created backdir [" + backdir + "]");
+    if (n->cfg["enablebackup"].toInt()) {
+        /* copy everything to the backup directory */
+        QString backdir = QString("%1/%2/%3/%4").arg(n->cfg["backupdir"]).arg(subjectUID).arg(studynum).arg(SeriesNumber);
+        QDir bda(backdir);
+        if (!bda.exists()) {
+            AppendUploadLog(__FUNCTION__, "Directory [" + backdir + "] does not exist. About to create it...");
+            m = "";
+            if (!MakePath(backdir, m))
+                AppendUploadLog(__FUNCTION__, "Unable to create backdir [" + backdir + "] because of error [" + m + "]");
+            else
+                AppendUploadLog(__FUNCTION__, "Created backdir [" + backdir + "]");
+        }
+        AppendUploadLog(__FUNCTION__, "About to copy to the backup directory");
+        systemstring = QString("rsync -az %1/* %2").arg(outdir).arg(backdir);
+        QString output = SystemCommand(systemstring);
+        AppendUploadLog(__FUNCTION__, output);
+        AppendUploadLog(__FUNCTION__, "Finished copying to the backup directory");
     }
-    AppendUploadLog(__FUNCTION__, "About to copy to the backup directory");
-    systemstring = QString("rsync -az %1/* %2").arg(outdir).arg(backdir);
-    QString output = SystemCommand(systemstring);
-    AppendUploadLog(__FUNCTION__, output);
-    AppendUploadLog(__FUNCTION__, "Finished copying to the backup directory");
 
     return true;
 }

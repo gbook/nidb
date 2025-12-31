@@ -3648,6 +3648,12 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 							<td></td>
 							<td>Allow this server to export data to downloadable web links</td>
 						</tr>
+						<tr>
+							<td class="right aligned tt">enablebackup</td>
+							<td><input type="checkbox" name="enablebackup" value="1" <? if ($GLOBALS['cfg']['enablebackup']) { echo "checked"; } ?>></td>
+							<td></td>
+							<td>Enable automatic copying of newly archived data to the backup directory. Backup directory is currently <code><?=$GLOBALS['cfg']['backupdir']?></code>. </td>
+						</tr>
 
 						<tr>
 							<td colspan="4" class="active"><h3>Security</h3></td>
@@ -4217,17 +4223,17 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 [mysqlclusterpassword] = $mysqlclusterpassword
 
 # ----- modules -----
-[modulefileiothreads] = $modulefileiothreads
-[moduleexportthreads] = $moduleexportthreads
+[modulebackupthreads] = $modulebackupthreads
 [moduleexportnonimagingthreads] = $moduleexportnonimagingthreads
+[moduleexportthreads] = $moduleexportthreads
+[modulefileiothreads] = $modulefileiothreads
 [moduleimportthreads] = $moduleimportthreads
+[moduleimportuploadedthreads] = $moduleimportuploadedthreads
+[moduleminipipelinethreads] = $moduleminipipelinethreads
 [modulemriqathreads] = $modulemriqathreads
 [modulepipelinethreads] = $modulepipelinethreads
-[moduleimportuploadedthreads] = $moduleimportuploadedthreads
 [moduleqcthreads] = $moduleqcthreads
 [moduleuploadthreads] = $moduleuploadthreads
-[modulebackupthreads] = $modulebackupthreads
-[moduleminipipelinethreads] = $moduleminipipelinethreads
 
 # ----- E-mail -----
 # emaillib options (case-sensitive): Net-SMTP-TLS (default), Email-Send-SMTP-Gmail
@@ -4254,12 +4260,13 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 [displayrecentstudydays] = $displayrecentstudydays
 
 # ----- features -----
-[enableremoteconn] = $enableremoteconn
+[enablebackup] = $enablebackup
 [enablecalendar] = $enablecalendar
-[enablepipelines] = $enablepipelines
 [enabledatamenu] = $enabledatamenu
-[enablerdoc] = $enablerdoc
+[enablepipelines] = $enablepipelines
 [enablepublicdownloads] = $enablepublicdownloads
+[enablerdoc] = $enablerdoc
+[enableremoteconn] = $enableremoteconn
 [enablewebexport] = $enablewebexport
 
 # ----- security options -----
