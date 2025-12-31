@@ -1,8 +1,8 @@
 #ifndef VERSION_H
 #define VERSION_H
 
-#define VERSION_MAJ "2025"
-#define VERSION_MIN "12"
-#define BUILD_NUM "1330"
+#define VERSION_MAJ "2026"
+#define VERSION_MIN "1"
+#define BUILD_NUM "1333"
 
 #endif // VERSION_H
