@@ -7,6 +7,7 @@
 
 * [Installation](getting-started/installation/README.md)
   * [Quick Install](getting-started/installation/quick-install.md)
+  * [Changing data paths](getting-started/installation/changing-data-paths.md)
   * [How to change passwords](getting-started/installation/how-to-change-passwords.md)
   * [Optional software](getting-started/installation/optional-software.md)
   * [MySQL/MariaDB tweaks](getting-started/installation/mysql-mariadb-tweaks.md)

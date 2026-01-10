@@ -4,7 +4,7 @@ description: Performance changes for large databases
 
 # MySQL/MariaDB tweaks
 
-These changes to MySQL/MariaDB can be helpful to improve performance and capability of NiDB
+These changes to MySQL/MariaDB can be helpful to improve database performance.
 
 ## Variables
 
