@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Dec 30, 2025 at 04:05 PM
+-- Generation Time: Jan 12, 2026 at 09:23 PM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -1288,9 +1288,12 @@ CREATE TABLE `files` (
 CREATE TABLE `groups` (
   `group_id` int(11) NOT NULL,
   `group_name` varchar(255) DEFAULT NULL,
-  `group_type` varchar(25) DEFAULT NULL COMMENT 'subject, study, series',
+  `group_type` varchar(25) DEFAULT NULL COMMENT 'subject, study, series, NDA',
   `group_owner` int(11) DEFAULT NULL COMMENT 'user_id of the group owner',
-  `instance_id` int(11) DEFAULT NULL
+  `instance_id` int(11) DEFAULT NULL,
+  `nda_collection` varchar(50) DEFAULT NULL,
+  `nda_csv` longblob DEFAULT NULL,
+  `nda_notes` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------

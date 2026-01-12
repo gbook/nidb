@@ -1310,7 +1310,7 @@
 				case 8: $education = "Doctoral Degree"; break;
 			}
 
-			$rowdata[] = "{ id: $subjectid, enrollmentid: $subjectid, uid: \"$uid\", globalaltuids: \"$globalaltuidlist\", altuids: \"$projectaltuidlist\", guid: \"$guid\", dob: \"$birthdate\", sex: \"$sex\", gender: \"$gender\", ethnicity1: \"$ethnicity1\", ethnicity2: \"$ethnicity2\", handedness: \"$handedness\", education: \"$education\", marital: \"$maritalstatus\", smoking: \"$smokingstatus\", enrollgroup: \"$enrollsubgroup\", enrollstatus: \"$enrollstatus\" }";
+			$rowdata[] = "{ id: $subjectid, enrollmentid: $enrollmentid, uid: \"$uid\", globalaltuids: \"$globalaltuidlist\", altuids: \"$projectaltuidlist\", guid: \"$guid\", dob: \"$birthdate\", sex: \"$sex\", gender: \"$gender\", ethnicity1: \"$ethnicity1\", ethnicity2: \"$ethnicity2\", handedness: \"$handedness\", education: \"$education\", marital: \"$maritalstatus\", smoking: \"$smokingstatus\", enrollgroup: \"$enrollsubgroup\", enrollstatus: \"$enrollstatus\" }";
 		}
 		$data = "";
 		if (count($rowdata) > 0)
@@ -1580,11 +1580,13 @@
 			function onSubmitForm() {
 				const selectedRows = gridApi.getSelectedRows();
 				
-				let studyIDs = [];
+				/* create comma-separated list of objectIDs */
+				let objectIDs = [];
 				for (let i=0; i < selectedRows.length; i++) {
-					let inputStr = "<input type='hidden' name='objectids[]' value='" + selectedRows[i].enrollmentid + "'>";
-					document.thesubjectform.insertAdjacentHTML('beforeend', inputStr);
+					objectIDs.push(selectedRows[i].enrollmentid);
 				}
+				let objectIDstr = "<input type='hidden' name='objectidstr' value='" + objectIDs.join(",") + "'>";
+				document.thesubjectform.insertAdjacentHTML('beforeend', objectIDstr);
 			}
 
 		</script>

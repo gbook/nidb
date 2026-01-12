@@ -69,28 +69,51 @@
 	$license = GetVariable("license");
 	$changes = GetVariable("changes");
 
-	$objecttype = GetVariable("objecttype");
-	$objectids = GetVariable("objectids");
-	$objectIDsToDelete = GetVariable("objectidstodelete");
-	$modality = GetVariable("modality");
-	$enrollmentids = GetVariable("enrollmentids");
-	$subjectids = GetVariable("subjectids");
-	$studyids = GetVariable("studyids");
-	$seriesids = GetVariable("seriesids");
-	$seriesid = GetVariable("seriesid"); /* from the search page this variable is 'seriesid', but will contain multiple values */
-	$experimentids = GetVariable("experimentids");
 	$analysisids = GetVariable("analysisids");
-	$pipelineids = GetVariable("pipelineids");
 	$datadictionaryids = GetVariable("datadictionaryids");
-	$interventionids = GetVariable("interventionids");
-	$observationids = GetVariable("observationids");
+	$enrollmentids = GetVariable("enrollmentids");
+	$experimentids = GetVariable("experimentids");
+	$includeanalysis = GetVariable("includeanalysis");
+	$includeexperiments = GetVariable("includeexperiments");
 	$includeinterventions = GetVariable("includeinterventions");
 	$includeobservations = GetVariable("includeobservations");
-	$includeexperiments = GetVariable("includeexperiments");
-	$includeanalysis = GetVariable("includeanalysis");
 	$includepipelines = GetVariable("includepipelines");
+	$interventionids = GetVariable("interventionids");
+	$modality = GetVariable("modality");
+	$objectids = GetVariable("objectids");
+	$objectIDsToDelete = GetVariable("objectidstodelete");
+	$objecttype = GetVariable("objecttype");
+	$observationids = GetVariable("observationids");
+	$pipelineids = GetVariable("pipelineids");
+	$seriesid = GetVariable("seriesid"); /* from the search page this variable is 'seriesid', but will contain multiple values */
+	$seriesids = GetVariable("seriesids");
+	$studyids = GetVariable("studyids");
+	$subjectids = GetVariable("subjectids");
 
-	//PrintVariable($objectids);
+	$analysisidstr = GetVariable("analysisidstr");
+	$datadictionaryidstr = GetVariable("datadictionaryidstr");
+	$enrollmentidstr = GetVariable("enrollmentidstr");
+	$experimentidstr = GetVariable("experimentidstr");
+	$interventionidstr = GetVariable("interventionidstr");
+	$objectidstr = GetVariable("objectidstr");
+	$observationidstr = GetVariable("observationidstr");
+	$pipelineidstr = GetVariable("pipelineidstr");
+	$seriesidstr = GetVariable("seriesidstr");
+	$studyidstr = GetVariable("studyidstr");
+	$subjectidstr = GetVariable("subjectidstr");
+	
+	/* convert comma-separated strings to arrays */
+	if (strlen(trim($analysisidstr)) > 0) { $analysisids = explode(",", str_replace(" ","", trim($analysisidstr))); }
+	if (strlen(trim($datadictionaryidstr)) > 0) { $datadictionaryids = explode(",", str_replace(" ","", trim($datadictionaryidstr))); }
+	if (strlen(trim($enrollmentidstr)) > 0) { $enrollmentids = explode(",", str_replace(" ","", trim($enrollmentidstr))); }
+	if (strlen(trim($experimentidstr)) > 0) { $experimentids = explode(",", str_replace(" ","", trim($experimentidstr))); }
+	if (strlen(trim($interventionidstr)) > 0) { $interventionids = explode(",", str_replace(" ","", trim($interventionidstr))); }
+	if (strlen(trim($objectidstr)) > 0) { $objectids = explode(",", str_replace(" ","", trim($objectidstr))); }
+	if (strlen(trim($observationidstr)) > 0) { $observationids = explode(",", str_replace(" ","", trim($observationidstr))); }
+	if (strlen(trim($pipelineidstr)) > 0) { $pipelineids = explode(",", str_replace(" ","", trim($pipelineidstr))); }
+	if (strlen(trim($seriesidstr)) > 0) { $seriesids = explode(",", str_replace(" ","", trim($seriesidstr))); }
+	if (strlen(trim($studyidstr)) > 0) { $studyids = explode(",", str_replace(" ","", trim($studyidstr))); }
+	if (strlen(trim($subjectidstr)) > 0) { $subjectids = explode(",", str_replace(" ","", trim($subjectidstr))); }
 	
 	if (is_null($seriesids))
 		$seriesids = array();
@@ -816,10 +839,13 @@
 						</thead>
 						<tbody>
 						<?
-							$enrollmentidstr = implode2(",", $enrollmentids);
+							//PrintVariable($enrollmentids);
+							
+							$enrollmentidstr = implode2(", ", $enrollmentids);
 							
 							/* get subject info - there may be series from multiple subjects in this list */
 							$sqlstring = "select * from enrollment a left join subjects b on a.subject_id = b.subject_id left join projects c on a.project_id = c.project_id where a.enrollment_id in (" . $enrollmentidstr . ")";
+							PrintSQL($sqlstring);
 							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$enrollmentid = $row['enrollment_id'];
@@ -1035,6 +1061,7 @@
 					if (e.checked)
 						document.getElementById('includeseries').checked = true;
 				}
+				
 			</script>
 
 			<div class="ui grid">
@@ -1068,6 +1095,7 @@
 						</thead>
 						<tbody>
 						<?
+							$seriesIDarray = array();
 							foreach ($seriesids as $modality => $serieslist) {
 								$seriesidstr = implode2(",", $serieslist);
 							
@@ -1083,8 +1111,9 @@
 									$seriessize = $row['series_size'];
 									$seriesnumfiles = $row['numfiles'];
 									
+									$seriesIDarray[] = "$modality-$seriesid";
 									?>
-										<tr>
+									<!--	<tr>
 											<td class="allseries"><input type="checkbox" name="seriesids[]" value="<?=$modality?>-<?=$seriesid?>" <?=$checkboxstr?> class="seriescheck" onClick="CheckSelectedSeriesCount(this);"></td>
 											<td><?=$uid?></td>
 											<td><?=$studynum?></td>
@@ -1093,16 +1122,17 @@
 											<td><?=$seriesdesc?></td>
 											<td><?=$seriessize?></td>
 											<td><?=$seriesnumfiles?></td>
-										</tr>
+										</tr> -->
 									<?
 								}
 							}
 						?>
+							<input type="hidden" name="seriesidstr" value="<?=implode(",", $seriesIDarray);?>">
 						</tbody>
 					</table>
 				</div>
 			</div>
-			<input type="hidden" name="modality" value="<?=$modality?>">
+			<!--<input type="hidden" name="modality" value="<?=$modality?>">-->
 			<?
 		}
 		else {
@@ -1798,6 +1828,7 @@
 			$msg .= "Added " . count($enrollmentids) . " enrollments<br>";
 		}
 
+		//PrintVariable($seriesids);
 		/* add any series */
 		if ((count($seriesids) > 0) && (is_array($seriesids))) {
 			foreach ($seriesids as $seriesid) {

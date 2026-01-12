@@ -59,12 +59,13 @@
 	$columns = GetVariable("columns");
 	$groupobservations = GetVariable("groupobservations");
 	$studylist = GetVariable("studylist");
+	$displaytype = GetVariable("displaytype");
 
 	/* determine action */
 	switch ($action) {
 		case 'add':
 			AddGroup($groupname, $grouptype, $GLOBALS['username']);
-			DisplayGroupList();
+			DisplayGroupList($displaytype);
 			break;
 		case 'delete': DeleteGroup($id); break;
 		case 'addsubjectstogroup':
@@ -93,8 +94,11 @@
 			UpdateStudyGroup($id, $studylist);
 			ViewGroup($id, $observations, $columns, $groupobservations);
 			break;
+		case 'viewgrouplist':
+			DisplayGroupList($displaytype);
+			break;
 		default:
-			DisplayGroupList();
+			DisplayGroupList($displaytype);
 			break;
 	}
 
@@ -1429,7 +1433,7 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayGroupList ------------------- */
 	/* -------------------------------------------- */
-	function DisplayGroupList() {
+	function DisplayGroupList($type) {
 
 		?>
 		<div class="ui container">
@@ -1445,15 +1449,23 @@
 						<input type="text" name="groupname" placeholder="Group name" required>
 						<select name="grouptype" class="ui selection dropdown" required>
 							<option value="">(select group type)
-							<option value="subject">Subject
-							<option value="study">Study
+							<option value="nda">NDA
 							<option value="series">Series
+							<option value="study">Study
+							<option value="subject">Subject
 						</select>
 						<button type="submit" class="ui button primary"><i class="plus square outline icon"></i> Create Group</button>
 					</div>
 					</form>
 				</div>
 			</div>
+			
+			View
+			<a class="ui <? if ($type == "all" || $type == "") { echo "green"; } ?> button" href="groups.php">All</a>
+			<a class="ui <? if ($type == "subject") { echo "green"; } ?> button" href="groups.php?action=viewgrouplist&displaytype=subject">Subject</a>
+			<a class="ui <? if ($type == "study") { echo "green"; } ?> button" href="groups.php?action=viewgrouplist&displaytype=study">Study</a>
+			<a class="ui <? if ($type == "series") { echo "green"; } ?> button" href="groups.php?action=viewgrouplist&displaytype=series">Series</a>
+			<a class="ui <? if ($type == "nda") { echo "green"; } ?> button" href="groups.php?action=viewgrouplist&displaytype=nda">NDA</a>
 			
 			<table class="ui small celled selectable grey very compact table">
 				<thead>
@@ -1467,7 +1479,16 @@
 				</thead>
 				<tbody>
 				<?
-				$sqlstring = "select a.*, b.username 'ownerusername', b.user_fullname 'ownerfullname' from groups a left join users b on a.group_owner = b.user_id order by a.group_name";
+				
+				$sqlstring = "select a.*, b.username 'ownerusername', b.user_fullname 'ownerfullname' from groups a left join users b on a.group_owner = b.user_id";
+				switch ($type) {
+					case 'subject': $sqlstring .= " where a.group_type = 'subject'"; break;
+					case 'study': $sqlstring .= " where a.group_type = 'study'"; break;
+					case 'series': $sqlstring .= " where a.group_type = 'series'"; break;
+					case 'nda': $sqlstring .= " where a.group_type = 'nda'"; break;
+				}
+				$sqlstring .= " order by a.group_name";
+				
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$id = $row['group_id'];
