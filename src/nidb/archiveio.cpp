@@ -1284,7 +1284,7 @@ bool archiveIO::ArchiveParRecSeries(int importRowID, QString file) {
         QSqlQuery q2;
         q2.prepare(sqlstring);
         q2.bindValue(":patientid", PatientID);
-        n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__,true);
+        n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
         if (q2.size() > 0) {
             q2.first();
             subjectRowID = q2.value("subject_id").toInt();
@@ -2912,7 +2912,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     QSqlQuery q;
     q.prepare("select * from exportseries where export_id = :exportid");
     q.bindValue(":exportid", exportid);
-    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     //int packageid = q.value("package_id").toLongLong();
 
     if (!GetSeriesListDetails(seriesids, modalities, s)) {
@@ -3046,7 +3046,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                 QSqlQuery q2;
                 q2.prepare("select a.pipeline_id from pipelines a left join analysis b on (a.pipeline_id = b.pipeline_id and a.pipeline_version = b.pipeline_version) where b.study_id = :studyid and b.analysis_status = 'complete'");
                 q2.bindValue(":studyid", studyid);
-                n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__,true);
+                n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
                 if (q2.size() > 0) {
                     while (q2.next()) {
                         int pipelineid = q2.value("pipeline_id").toInt();
@@ -3326,7 +3326,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
     QSqlQuery q;
     q.prepare("select * from exportseries where export_id = :exportid");
     q.bindValue(":exportid", exportid);
-    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.next()) {
         //exportseriesid = q.value("exportseries_id").toLongLong();
         packageid = q.value("package_id").toLongLong();
@@ -3359,7 +3359,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
     n->Log("libsquirrel message buffer [" + sqrl.GetLogBuffer() + "]");
     q.prepare("select * from packages where package_id = :packageid");
     q.bindValue(":packageid", packageid);
-    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.next()) {
         sqrl.Changes = q.value("package_changes").toString();
         sqrl.DataFormat = q.value("package_dataformat").toString();
@@ -3386,7 +3386,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
     /* SERIES - add all series associated with this package, first */
     q.prepare("select * from package_series where package_id = :packageid");
     q.bindValue(":packageid", packageid);
-    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     n->Log(QString("Found [%1] series for package [%2]").arg(q.size()).arg(packageid));
     while (q.next()) {
         int seriesRowID = q.value("series_id").toInt();
@@ -3448,7 +3448,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
     /* ANALYSES - add all analysis associated with this package */
     q.prepare("select b.*, d.project_id from package_analyses a left join analysis b on a.analysis_id = b.analysis_id left join studies c on b.study_id = c.study_id left join enrollment d on c.enrollment_id = d.enrollment_id where a.package_id = :packageid");
     q.bindValue(":packageid", packageid);
-    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     while (q.next()) {
         int analysisRowID = q.value("analysis_id").toInt();
         int studyRowID = q.value("study_id").toInt();
@@ -3503,7 +3503,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
     /* MEASURES - add all observations associated with this package */
     q.prepare("select b.observation_id, c.subject_id, c.project_id from package_observations a left join observations b on a.observation_id = b.observation_id left join enrollment c on b.enrollment_id = c.enrollment_id where a.package_id = :packageid");
     q.bindValue(":packageid", packageid);
-    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     while (q.next()) {
         int observationRowID = q.value("observation_id").toInt();
         int subjectRowID = q.value("subject_id").toInt();
@@ -3544,7 +3544,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
     /* INTERVENTIONS - add all interventions associated with this package */
     q.prepare("select b.intervention_id, c.subject_id, c.project_id from package_interventions a left join interventions b on a.intervention_id = b.intervention_id left join enrollment c on b.enrollment_id = c.enrollment_id where a.package_id = :packageid");
     q.bindValue(":packageid", packageid);
-    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     while (q.next()) {
         int interventionRowID = q.value("intervention_id").toInt();
         int subjectRowID = q.value("subject_id").toInt();
@@ -3583,7 +3583,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
     /* PIPELINES - add all pipelines associated with this package */
     q.prepare("select * from package_pipelines where package_id = :packageid");
     q.bindValue(":packageid", packageid);
-    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     while (q.next()) {
         int pipelineRowID = q.value("pipeline_id").toInt();
 
@@ -3600,7 +3600,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
     /* EXPERIMENTS - add all experiments associated with this package */
     q.prepare("select * from package_experiments where package_id = :packageid");
     q.bindValue(":packageid", packageid);
-    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     while (q.next()) {
         int experimentRowID = q.value("experiment_id").toInt();
 
@@ -3889,17 +3889,17 @@ BIDSMapping archiveIO::GetBIDSMapping(int projectRowID, QString protocol, QStrin
         mapping.mappingMessage = "IntendedFor mapping variables have different numbers of items. All IntendFor variables must have the same number of items";
     }
 
-    n->Log(QString("bidsAutoNumberRuns: %1").arg(mapping.bidsAutoNumberRuns));
-    n->Log(QString("bidsEntity: %1").arg(mapping.bidsEntity));
-    n->Log(QString("bidsIntendedForEntity: %1").arg(mapping.bidsIntendedForEntity));
-    n->Log(QString("bidsIntendedForFileExtension: %1").arg(mapping.bidsIntendedForFileExtension));
-    n->Log(QString("bidsIntendedForRun: %1").arg(mapping.bidsIntendedForRun));
-    n->Log(QString("bidsIntendedForSuffix: %1").arg(mapping.bidsIntendedForSuffix));
-    n->Log(QString("bidsIntendedForTask: %1").arg(mapping.bidsIntendedForTask));
-    n->Log(QString("bidsPEDirection: %1").arg(mapping.bidsPEDirection));
-    n->Log(QString("bidsRun: %1").arg(mapping.bidsRun));
-    n->Log(QString("bidsSuffix: %1").arg(mapping.bidsSuffix));
-    n->Log(QString("bidsTask: %1").arg(mapping.bidsTask));
+    //n->Log(QString("bidsAutoNumberRuns: %1").arg(mapping.bidsAutoNumberRuns));
+    //n->Log(QString("bidsEntity: %1").arg(mapping.bidsEntity));
+    //n->Log(QString("bidsIntendedForEntity: %1").arg(mapping.bidsIntendedForEntity));
+    //n->Log(QString("bidsIntendedForFileExtension: %1").arg(mapping.bidsIntendedForFileExtension));
+    //n->Log(QString("bidsIntendedForRun: %1").arg(mapping.bidsIntendedForRun));
+    //n->Log(QString("bidsIntendedForSuffix: %1").arg(mapping.bidsIntendedForSuffix));
+    //n->Log(QString("bidsIntendedForTask: %1").arg(mapping.bidsIntendedForTask));
+    //n->Log(QString("bidsPEDirection: %1").arg(mapping.bidsPEDirection));
+    //n->Log(QString("bidsRun: %1").arg(mapping.bidsRun));
+    //n->Log(QString("bidsSuffix: %1").arg(mapping.bidsSuffix));
+    //n->Log(QString("bidsTask: %1").arg(mapping.bidsTask));
 
     return mapping;
 }

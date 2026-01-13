@@ -31,7 +31,8 @@
 */
 squirrelImageIO::squirrelImageIO()
 {
-
+    /* always start exiftool daemon */
+    StartExiftool();
 }
 
 
@@ -43,7 +44,116 @@ squirrelImageIO::squirrelImageIO()
 */
 squirrelImageIO::~squirrelImageIO()
 {
+    /* always terminate the exiftool daemon */
+    TerminateExiftool();
+}
 
+
+/* ---------------------------------------------------------- */
+/* --------- StartExiftool ---------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Starts the exiftool 'deamon'
+ * @return true if successful, false otherwise
+ */
+bool squirrelImageIO::StartExiftool() {
+
+    /* create the process */
+    exifProcess = new QProcess();
+
+    /* start exiftool */
+    QStringList args;
+    args << "-stay_open" << "True" << "-@" << "-";
+    exifProcess->start("exiftool", args);
+    exifProcess->waitForStarted();
+
+    if (exifProcess->processId() > 0) {
+        //Print(QString("Started exiftool with pid [%1]").arg(exiftool->processId()));
+        return true;
+    }
+    else {
+        utils::Print(QString("Error starting exiftool [%1]").arg(exifProcess->errorString()));
+        return false;
+    }
+    return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- TerminateExiftool ------------------------------ */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Terminate the exiftool 'daemon'
+ * @return true
+ */
+bool squirrelImageIO::TerminateExiftool() {
+    /* let exiftool terminate itself */
+    exifProcess->write("-stay_open\nFalse\n");
+    exifProcess->waitForBytesWritten();
+
+    /* terminate the QProcess */
+    exifProcess->close();
+    delete exifProcess;
+
+    return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- RunExiftool ------------------------------------ */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Run exiftool to get DICOM tags. Output should be terminated with {ready}, otherwise it is incomplete
+ * @param arg The DICOM (or other type) file
+ * @return The full output from exiftool
+ */
+QString squirrelImageIO::RunExiftool(QString arg) {
+    QString str;
+
+    QFileInfo fileInfo(arg);
+    QString filename = fileInfo.fileName();
+
+    /* try passing the command to exiftool three times, in case there is a problem reading the file using exiftool */
+    for (int i=0; i<3; i++) {
+        exifProcess->readAllStandardOutput(); /* clear buffer */
+
+        exifProcess->write(arg.toUtf8() + '\n');
+        exifProcess->waitForBytesWritten();
+        exifProcess->write("-execute\n");
+        exifProcess->waitForBytesWritten();
+
+        exifProcess->waitForReadyRead();
+
+        QByteArray output = exifProcess->readAllStandardOutput();
+        str = QString::fromUtf8(output);
+
+        /* check if the output contains {ready} */
+        if (!str.contains("{ready}")) {
+            utils::Print(QString("*** Exiftool output from file [%1] does NOT contain {ready}. String size is [%2] bytes (attempt %3 of 3) ***").arg(arg).arg(str.size()).arg(i));
+            QThread::msleep(100);
+        }
+        /* check if the output is not truncated, or cut off */
+        else if (str.size() < 50) {
+            utils::Print(QString("*** Exiftool output from file [%1] is ONLY [%2] bytes (attempt %3 of 3) str contains [%4] ***").arg(arg).arg(str.size()).arg(i).arg(str));
+            QThread::msleep(100);
+        }
+        /* check if the output contains the filename passed to exiftool. ie the  */
+        else if (!str.contains(filename)) {
+            utils::Print(QString("*** Exiftool output from file [%1] does NOT contain the file name (attempt %2 of 3) size is [%3] ***").arg(arg).arg(i).arg(str.size()));
+            QThread::msleep(100);
+        }
+        /* check if the str is blank */
+        else if (str == "") {
+            utils::Print(QString("*** Exiftool output from file [%1] is empty (attempt %2 of 3) ***").arg(arg).arg(i));
+            QThread::msleep(100);
+        }
+        /* otherwise, we've successfully read the file header and gotten a complete response */
+        else {
+            break;
+        }
+    }
+
+    return str;
 }
 
 
@@ -126,11 +236,10 @@ bool squirrelImageIO::ConvertDicom(QString filetype, QString indir, QString outd
 /* --------- IsDICOMFile ------------------------------------ */
 /* ---------------------------------------------------------- */
 bool squirrelImageIO::IsDICOMFile(QString f) {
-
+    /* check if its really a dicom file... */
     /* try reading with exiftool */
     QHash<QString, QString> tags;
-    QString systemstring = "exiftool " + f;
-    QString exifoutput = utils::SystemCommand(systemstring, false);
+    QString exifoutput = RunExiftool(f);
     QStringList lines = exifoutput.split(QRegularExpression("(\\n|\\r\\n|\\r)"), Qt::SkipEmptyParts);
 
     foreach (QString line, lines) {
@@ -151,12 +260,11 @@ bool squirrelImageIO::IsDICOMFile(QString f) {
 }
 
 
-
 /* ---------------------------------------------------------- */
-/* --------- AnonymizeDICOMFile ----------------------------- */
+/* --------- AnonymizeDicomFileInPlace ---------------------- */
 /* ---------------------------------------------------------- */
 /* borrowed in its entirety from gdcmanon.cxx                 */
-bool squirrelImageIO::AnonymizeDicomFile(QString infile, QString outfile, QStringList tagsToChange, QString &msg)
+bool squirrelImageIO::AnonymizeDicomFileInPlace(QString file, QStringList tagsToChange, QString &msg)
 {
     if( tagsToChange.isEmpty() ) {
         msg += "AnonymizeDICOMFile() called with no tags to change. No operation to be done.";
@@ -164,9 +272,19 @@ bool squirrelImageIO::AnonymizeDicomFile(QString infile, QString outfile, QStrin
     }
 
     /* do the command line anonymization */
-    QString systemstring = QString("gdcmanon --dumb -i %1 -o %2/ %3").arg(infile).arg(outfile).arg(tagsToChange.join(" "));
-    QString output = utils::SystemCommand(systemstring, false);
-    msg += output;
+    int i(0);
+    QStringList subsetTags;
+    foreach (const QString &str, tagsToChange) {
+        if (i > 10) {
+            QString systemstring = QString("gdcmanon --dumb -i %1 -o %2 %3").arg(file).arg(subsetTags.join(" "));
+            QString output = utils::SystemCommand(systemstring, false);
+            msg += output;
+            i=0;
+            subsetTags.clear();
+        }
+        subsetTags.append(str);
+        i++;
+    }
 
     return true;
 }
@@ -175,20 +293,15 @@ bool squirrelImageIO::AnonymizeDicomFile(QString infile, QString outfile, QStrin
 /* ---------------------------------------------------------- */
 /* --------- AnonymizeDir ----------------------------------- */
 /* ---------------------------------------------------------- */
-bool squirrelImageIO::AnonymizeDir(QString indir, QString outdir, int anonlevel, QString &msg) {
+bool squirrelImageIO::AnonymizeDicomDirInPlace(QString dir, int anonlevel, QString &msg) {
 
 
-    // gdcmanon --dumb -i /path/to/dicom --replace 10,10=Anonymous -o /path/to/output/ <-- output will be created if it doesn't exist
+    // gdcmanon --dumb -i /path/to/dicom --replace 10,10=Anonymous -o /path/to/output <-- output will be created if it doesn't exist
 
     QString anonStr = "Anon";
     QString anonDate = "19000101";
     QString anonTime = "000000.000000";
 
-    //std::vector<gdcm::Tag> empty_tags;
-    //std::vector<gdcm::Tag> remove_tags;
-    //std::vector< std::pair<gdcm::Tag, std::string> > replace_tags;
-
-    //gdcm::Tag tag;
     QStringList cmdArgs;
 
     switch (anonlevel) {
@@ -278,17 +391,19 @@ bool squirrelImageIO::AnonymizeDir(QString indir, QString outdir, int anonlevel,
     }
 
     /* do the command line anonymization */
-    QString systemstring = QString("gdcmanon --dumb -i %1 -o %2/ %3").arg(indir).arg(outdir).arg(cmdArgs.join(" "));
-    QString output = utils::SystemCommand(systemstring, false);
-    msg += output;
 
-    /* recursively loop through the directory and anonymize the .dcm files */
-    //gdcm::Anonymizer anon;
-    //QDirIterator it(dir, QStringList() << "*.dcm", QDir::Files, QDirIterator::Subdirectories);
-    //while (it.hasNext()) {
-    //    QString dcmfile = it.next();
-    //    AnonymizeDicomFile(anon, dcmfile, dcmfile, empty_tags, remove_tags, replace_tags, msg);
-    //}
+    QStringList dcms = utils::FindAllFiles(dir, "*.dcm");
+    foreach (const QString &f, dcms) {
+        QString m;
+        AnonymizeDicomFileInPlace(f, cmdArgs, m);
+        msg += m + '\n';
+    }
+
+    //QString systemstring = QString("gdcmanon --dumb --continue %1 -i %2 -o %3").arg(cmdArgs.join(" ")).arg(indir).arg(outdir);
+    //n->Log(systemstring);
+    //QString output = SystemCommand(systemstring, true);
+    //n->Log(output);
+    //msg += output;
 
     return true;
 }
@@ -300,9 +415,7 @@ bool squirrelImageIO::AnonymizeDir(QString indir, QString outdir, int anonlevel,
 QString squirrelImageIO::GetDicomModality(QString f)
 {
     QString modality = "NOTDICOM";
-
-    QString systemstring = "exiftool " + f;
-    QString exifoutput = utils::SystemCommand(systemstring, false);
+    QString exifoutput = RunExiftool(f);
     QStringList lines = exifoutput.split(QRegularExpression("(\\n|\\r\\n|\\r)"), Qt::SkipEmptyParts);
 
     QHash<QString, QString> tags;
@@ -328,6 +441,8 @@ QString squirrelImageIO::GetDicomModality(QString f)
 /* ---------------------------------------------------------- */
 bool squirrelImageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<QString, QString> &tags, QString &msg) {
 
+    tags.clear();
+
     /* check if the file exists and has read permissions */
     QFileInfo fi(f);
     if (!fi.exists()) {
@@ -346,13 +461,8 @@ bool squirrelImageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa
     tags["Modality"] = "Unknown";
     tags["FileType"] = "Unknown";
 
-    /* check if the file is readable by GDCM, and therefore a DICOM file */
-    //gdcm::Reader r;
-    //r.SetFileName(f.toStdString().c_str());
-
     /* read file with EXIF tool */
-    QString systemstring = "exiftool " + f;
-    QString exifoutput = utils::SystemCommand(systemstring, false);
+    QString exifoutput = RunExiftool(f);
     QStringList lines = exifoutput.split(QRegularExpression("(\\n|\\r\\n|\\r)"), Qt::SkipEmptyParts);
     foreach (QString line, lines) {
         QString delimiter = ":";
@@ -364,208 +474,11 @@ bool squirrelImageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa
             tags[firstPart.trimmed()] = secondPart.trimmed();
         }
     }
-    msg += "GetImageFileTags() checkpoint E\n";
+    msg += "GetImageFileTags() checkpoint A\n";
 
     if (tags["FileType"] == "DICOM") {
         msg += "exiftool successfuly read file [" + f + "]\n";
         /* ---------- it's a readable DICOM file ---------- */
-        // gdcm::StringFilter sf;
-        // sf = gdcm::StringFilter();
-        // sf.SetFile(r.GetFile());
-
-        msg += "GetImageFileTags() checkpoint A\n";
-
-        // tags["FileType"] = "DICOM";
-
-        /* get all of the DICOM tags...
-         * we're not using an iterator because we want to know exactly what tags we have, or don't have */
-
-        // tags["FileMetaInformationGroupLength"] =	QString(sf.ToString(gdcm::Tag(0x0002,0x0000)).c_str()).trimmed(); /* FileMetaInformationGroupLength */
-        // tags["FileMetaInformationVersion"] =		QString(sf.ToString(gdcm::Tag(0x0002,0x0001)).c_str()).trimmed(); /* FileMetaInformationVersion */
-        // tags["MediaStorageSOPClassUID"] =			QString(sf.ToString(gdcm::Tag(0x0002,0x0002)).c_str()).trimmed(); /* MediaStorageSOPClassUID */
-        // tags["MediaStorageSOPInstanceUID"] =		QString(sf.ToString(gdcm::Tag(0x0002,0x0003)).c_str()).trimmed(); /* MediaStorageSOPInstanceUID */
-        // tags["TransferSyntaxUID"] =					QString(sf.ToString(gdcm::Tag(0x0002,0x0010)).c_str()).trimmed(); /* TransferSyntaxUID */
-        // tags["ImplementationClassUID"] =			QString(sf.ToString(gdcm::Tag(0x0002,0x0012)).c_str()).trimmed(); /* ImplementationClassUID */
-        // tags["ImplementationVersionName"] =			QString(sf.ToString(gdcm::Tag(0x0002,0x0013)).c_str()).trimmed(); /* ImplementationVersionName */
-
-        // msg += "GetImageFileTags() checkpoint A.1\n";
-
-        // tags["SpecificCharacterSet"] =				QString(sf.ToString(gdcm::Tag(0x0008,0x0005)).c_str()).trimmed(); /* SpecificCharacterSet */
-        // tags["ImageType"] =							QString(sf.ToString(gdcm::Tag(0x0008,0x0008)).c_str()).trimmed(); /* ImageType */
-        // tags["InstanceCreationDate"] =				QString(sf.ToString(gdcm::Tag(0x0008,0x0012)).c_str()).trimmed(); /* InstanceCreationDate */
-        // tags["InstanceCreationTime"] =				QString(sf.ToString(gdcm::Tag(0x0008,0x0013)).c_str()).trimmed(); /* InstanceCreationTime */
-        // tags["SOPClassUID"] =						QString(sf.ToString(gdcm::Tag(0x0008,0x0016)).c_str()).trimmed(); /* SOPClassUID */
-        // tags["SOPInstanceUID"] =					QString(sf.ToString(gdcm::Tag(0x0008,0x0018)).c_str()).trimmed(); /* SOPInstanceUID */
-        // tags["StudyDate"] =							QString(sf.ToString(gdcm::Tag(0x0008,0x0020)).c_str()).trimmed(); /* StudyDate */
-        // tags["SeriesDate"] =						QString(sf.ToString(gdcm::Tag(0x0008,0x0021)).c_str()).trimmed(); /* SeriesDate */
-        // tags["AcquisitionDate"] =					QString(sf.ToString(gdcm::Tag(0x0008,0x0022)).c_str()).trimmed(); /* AcquisitionDate */
-        // tags["ContentDate"] =						QString(sf.ToString(gdcm::Tag(0x0008,0x0023)).c_str()).trimmed(); /* ContentDate */
-        // tags["StudyTime"] =							QString(sf.ToString(gdcm::Tag(0x0008,0x0030)).c_str()).trimmed(); /* StudyTime */
-        // tags["SeriesTime"] =						QString(sf.ToString(gdcm::Tag(0x0008,0x0031)).c_str()).trimmed(); /* SeriesTime */
-        // tags["AcquisitionTime"] =					QString(sf.ToString(gdcm::Tag(0x0008,0x0032)).c_str()).trimmed(); /* AcquisitionTime */
-        // tags["ContentTime"] =						QString(sf.ToString(gdcm::Tag(0x0008,0x0033)).c_str()).trimmed(); /* ContentTime */
-        // tags["AccessionNumber"] =					QString(sf.ToString(gdcm::Tag(0x0008,0x0050)).c_str()).trimmed(); /* AccessionNumber */
-        // tags["Modality"] =							QString(sf.ToString(gdcm::Tag(0x0008,0x0060)).c_str()).trimmed(); /* Modality */
-        // tags["Manufacturer"] =						QString(sf.ToString(gdcm::Tag(0x0008,0x0070)).c_str()).trimmed(); /* Manufacturer */
-        // tags["InstitutionName"] =					QString(sf.ToString(gdcm::Tag(0x0008,0x0080)).c_str()).trimmed(); /* InstitutionName */
-        // tags["InstitutionAddress"] =				QString(sf.ToString(gdcm::Tag(0x0008,0x0081)).c_str()).trimmed(); /* InstitutionAddress */
-        // tags["ReferringPhysicianName"] =			QString(sf.ToString(gdcm::Tag(0x0008,0x0090)).c_str()).trimmed(); /* ReferringPhysicianName */
-        // tags["StationName"] =						QString(sf.ToString(gdcm::Tag(0x0008,0x1010)).c_str()).trimmed(); /* StationName */
-        // tags["StudyDescription"] =					QString(sf.ToString(gdcm::Tag(0x0008,0x1030)).c_str()).trimmed(); /* StudyDescription */
-        // tags["SeriesDescription"] =					QString(sf.ToString(gdcm::Tag(0x0008,0x103E)).c_str()).trimmed(); /* SeriesDescription */
-        // tags["InstitutionalDepartmentName"] =		QString(sf.ToString(gdcm::Tag(0x0008,0x1040)).c_str()).trimmed(); /* InstitutionalDepartmentName */
-        // tags["PerformingPhysicianName"] =			QString(sf.ToString(gdcm::Tag(0x0008,0x1050)).c_str()).trimmed(); /* PerformingPhysicianName */
-        // tags["OperatorsName"] =						QString(sf.ToString(gdcm::Tag(0x0008,0x1070)).c_str()).trimmed(); /* OperatorsName */
-        // tags["ManufacturerModelName"] =				QString(sf.ToString(gdcm::Tag(0x0008,0x1090)).c_str()).trimmed(); /* ManufacturerModelName */
-        // tags["SourceImageSequence"] =				QString(sf.ToString(gdcm::Tag(0x0008,0x2112)).c_str()).trimmed(); /* SourceImageSequence */
-
-        // msg += "GetImageFileTags() checkpoint A.2\n";
-
-        // tags["PatientName"] =						QString(sf.ToString(gdcm::Tag(0x0010,0x0010)).c_str()).trimmed(); /* PatientName */
-        // tags["PatientID"] =							QString(sf.ToString(gdcm::Tag(0x0010,0x0020)).c_str()).trimmed(); /* PatientID */
-        // tags["PatientBirthDate"] =					QString(sf.ToString(gdcm::Tag(0x0010,0x0030)).c_str()).trimmed(); /* PatientBirthDate */
-        // tags["PatientSex"] =						QString(sf.ToString(gdcm::Tag(0x0010,0x0040)).c_str()).trimmed().left(1); /* PatientSex */
-        // tags["PatientAge"] =						QString(sf.ToString(gdcm::Tag(0x0010,0x1010)).c_str()).trimmed(); /* PatientAge */
-        // tags["PatientSize"] =						QString(sf.ToString(gdcm::Tag(0x0010,0x1020)).c_str()).trimmed(); /* PatientSize */
-        // tags["PatientWeight"] =						QString(sf.ToString(gdcm::Tag(0x0010,0x1030)).c_str()).trimmed(); /* PatientWeight */
-
-        // msg += "GetImageFileTags() checkpoint A.3\n";
-
-        // tags["ContrastBolusAgent"] =				QString(sf.ToString(gdcm::Tag(0x0018,0x0010)).c_str()).trimmed(); /* ContrastBolusAgent */
-        // tags["KVP"] =								QString(sf.ToString(gdcm::Tag(0x0018,0x0060)).c_str()).trimmed(); /* KVP */
-        // tags["DataCollectionDiameter"] =			QString(sf.ToString(gdcm::Tag(0x0018,0x0090)).c_str()).trimmed(); /* DataCollectionDiameter */
-        // tags["ContrastBolusRoute"] =				QString(sf.ToString(gdcm::Tag(0x0018,0x1040)).c_str()).trimmed(); /* ContrastBolusRoute */
-        // tags["RotationDirection"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x1140)).c_str()).trimmed(); /* RotationDirection */
-        // tags["ExposureTime"] =						QString(sf.ToString(gdcm::Tag(0x0018,0x1150)).c_str()).trimmed(); /* ExposureTime */
-        // tags["XRayTubeCurrent"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x1151)).c_str()).trimmed(); /* XRayTubeCurrent */
-        // tags["FilterType"] =						QString(sf.ToString(gdcm::Tag(0x0018,0x1160)).c_str()).trimmed(); /* FilterType */
-        // tags["GeneratorPower"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x1170)).c_str()).trimmed(); /* GeneratorPower */
-        // tags["ConvolutionKernel"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x1210)).c_str()).trimmed(); /* ConvolutionKernel */
-
-        // msg += "GetImageFileTags() checkpoint A.4\n";
-
-        // tags["BodyPartExamined"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x0015)).c_str()).trimmed(); /* BodyPartExamined */
-        // tags["ScanningSequence"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x0020)).c_str()).trimmed(); /* ScanningSequence */
-        // tags["SequenceVariant"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x0021)).c_str()).trimmed(); /* SequenceVariant */
-        // tags["ScanOptions"] =						QString(sf.ToString(gdcm::Tag(0x0018,0x0022)).c_str()).trimmed(); /* ScanOptions */
-        // tags["MRAcquisitionType"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x0023)).c_str()).trimmed(); /* MRAcquisitionType */
-        // tags["SequenceName"] =						QString(sf.ToString(gdcm::Tag(0x0018,0x0024)).c_str()).trimmed(); /* SequenceName */
-        // tags["AngioFlag"] =							QString(sf.ToString(gdcm::Tag(0x0018,0x0025)).c_str()).trimmed(); /* AngioFlag */
-        // tags["SliceThickness"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x0050)).c_str()).trimmed(); /* SliceThickness */
-        // tags["RepetitionTime"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x0080)).c_str()).trimmed(); /* RepetitionTime */
-        // tags["EchoTime"] =							QString(sf.ToString(gdcm::Tag(0x0018,0x0081)).c_str()).trimmed(); /* EchoTime */
-        // tags["InversionTime"] =						QString(sf.ToString(gdcm::Tag(0x0018,0x0082)).c_str()).trimmed(); /* InversionTime */
-        // tags["NumberOfAverages"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x0083)).c_str()).trimmed(); /* NumberOfAverages */
-        // tags["ImagingFrequency"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x0084)).c_str()).trimmed(); /* ImagingFrequency */
-        // tags["ImagedNucleus"] =						QString(sf.ToString(gdcm::Tag(0x0018,0x0085)).c_str()).trimmed(); /* ImagedNucleus */
-        // tags["EchoNumbers"] =						QString(sf.ToString(gdcm::Tag(0x0018,0x0086)).c_str()).trimmed(); /* EchoNumbers */
-        // tags["MagneticFieldStrength"] =				QString(sf.ToString(gdcm::Tag(0x0018,0x0087)).c_str()).trimmed(); /* MagneticFieldStrength */
-        // tags["SpacingBetweenSlices"] =				QString(sf.ToString(gdcm::Tag(0x0018,0x0088)).c_str()).trimmed(); /* SpacingBetweenSlices */
-        // tags["NumberOfPhaseEncodingSteps"] =		QString(sf.ToString(gdcm::Tag(0x0018,0x0089)).c_str()).trimmed(); /* NumberOfPhaseEncodingSteps */
-        // tags["EchoTrainLength"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x0091)).c_str()).trimmed(); /* EchoTrainLength */
-        // tags["PercentSampling"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x0093)).c_str()).trimmed(); /* PercentSampling */
-        // tags["PercentPhaseFieldOfView"] =			QString(sf.ToString(gdcm::Tag(0x0018,0x0094)).c_str()).trimmed(); /* PercentPhaseFieldOfView */
-        // tags["PixelBandwidth"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x0095)).c_str()).trimmed(); /* PixelBandwidth */
-        // tags["DeviceSerialNumber"] =				QString(sf.ToString(gdcm::Tag(0x0018,0x1000)).c_str()).trimmed(); /* DeviceSerialNumber */
-        // tags["SoftwareVersions"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x1020)).c_str()).trimmed(); /* SoftwareVersions */
-        // tags["ProtocolName"] =						QString(sf.ToString(gdcm::Tag(0x0018,0x1030)).c_str()).trimmed(); /* ProtocolName */
-        // tags["TransmitCoilName"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x1251)).c_str()).trimmed(); /* TransmitCoilName */
-        // tags["AcquisitionMatrix"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x1310)).c_str()).trimmed().left(20); /* AcquisitionMatrix */
-        // tags["InPlanePhaseEncodingDirection"] =		QString(sf.ToString(gdcm::Tag(0x0018,0x1312)).c_str()).trimmed(); /* InPlanePhaseEncodingDirection */
-        // tags["FlipAngle"] =							QString(sf.ToString(gdcm::Tag(0x0018,0x1314)).c_str()).trimmed(); /* FlipAngle */
-        // tags["VariableFlipAngleFlag"] =				QString(sf.ToString(gdcm::Tag(0x0018,0x1315)).c_str()).trimmed(); /* VariableFlipAngleFlag */
-        // tags["SAR"] =								QString(sf.ToString(gdcm::Tag(0x0018,0x1316)).c_str()).trimmed(); /* SAR */
-        // tags["dBdt"] =								QString(sf.ToString(gdcm::Tag(0x0018,0x1318)).c_str()).trimmed(); /* dBdt */
-        // tags["PatientPosition"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x5100)).c_str()).trimmed(); /* PatientPosition */
-
-        // msg += "GetImageFileTags() checkpoint A.5\n";
-
-        // tags["Unknown Tag & Data"] =				QString(sf.ToString(gdcm::Tag(0x0019,0x1009)).c_str()).trimmed(); /* Unknown Tag & Data */
-        // tags["NumberOfImagesInMosaic"] =			QString(sf.ToString(gdcm::Tag(0x0019,0x100A)).c_str()).trimmed(); /* NumberOfImagesInMosaic*/
-        // tags["SliceObservationmentDuration"] =			QString(sf.ToString(gdcm::Tag(0x0019,0x100B)).c_str()).trimmed(); /* SliceObservationmentDuration*/
-        // tags["B_value"] =							QString(sf.ToString(gdcm::Tag(0x0019,0x100C)).c_str()).trimmed(); /* B_value*/
-        // tags["DiffusionDirectionality"] =			QString(sf.ToString(gdcm::Tag(0x0019,0x100D)).c_str()).trimmed(); /* DiffusionDirectionality*/
-        // tags["DiffusionGradientDirection"] =		QString(sf.ToString(gdcm::Tag(0x0019,0x100E)).c_str()).trimmed(); /* DiffusionGradientDirection*/
-        // tags["GradientMode"] =						QString(sf.ToString(gdcm::Tag(0x0019,0x100F)).c_str()).trimmed(); /* GradientMode*/
-        // tags["FlowCompensation"] =					QString(sf.ToString(gdcm::Tag(0x0019,0x1011)).c_str()).trimmed(); /* FlowCompensation*/
-        // tags["TablePositionOrigin"] =				QString(sf.ToString(gdcm::Tag(0x0019,0x1012)).c_str()).trimmed(); /* TablePositionOrigin*/
-        // tags["ImaAbsTablePosition"] =				QString(sf.ToString(gdcm::Tag(0x0019,0x1013)).c_str()).trimmed(); /* ImaAbsTablePosition*/
-        // tags["ImaRelTablePosition"] =				QString(sf.ToString(gdcm::Tag(0x0019,0x1014)).c_str()).trimmed(); /* ImaRelTablePosition*/
-        // tags["SlicePosition_PCS"] =					QString(sf.ToString(gdcm::Tag(0x0019,0x1015)).c_str()).trimmed(); /* SlicePosition_PCS*/
-        // tags["TimeAfterStart"] =					QString(sf.ToString(gdcm::Tag(0x0019,0x1016)).c_str()).trimmed(); /* TimeAfterStart*/
-        // tags["SliceResolution"] =					QString(sf.ToString(gdcm::Tag(0x0019,0x1017)).c_str()).trimmed(); /* SliceResolution*/
-        // tags["RealDwellTime"] =						QString(sf.ToString(gdcm::Tag(0x0019,0x1018)).c_str()).trimmed(); /* RealDwellTime*/
-        // tags["RBMoCoTrans"] =						QString(sf.ToString(gdcm::Tag(0x0019,0x1025)).c_str()).trimmed(); /* RBMoCoTrans*/
-        // tags["RBMoCoRot"] =							QString(sf.ToString(gdcm::Tag(0x0019,0x1026)).c_str()).trimmed(); /* RBMoCoRot*/
-        // tags["B_matrix"] =							QString(sf.ToString(gdcm::Tag(0x0019,0x1027)).c_str()).trimmed(); /* B_matrix*/
-        // tags["BandwidthPerPixelPhaseEncode"] =		QString(sf.ToString(gdcm::Tag(0x0019,0x1028)).c_str()).trimmed(); /* BandwidthPerPixelPhaseEncode*/
-        // tags["MosaicRefAcqTimes"] =					QString(sf.ToString(gdcm::Tag(0x0019,0x1029)).c_str()).trimmed(); /* MosaicRefAcqTimes*/
-
-        // msg += "GetImageFileTags() checkpoint A.6\n";
-
-        // tags["StudyInstanceUID"] =					QString(sf.ToString(gdcm::Tag(0x0020,0x000D)).c_str()).trimmed(); /* StudyInstanceUID */
-        // tags["SeriesInstanceUID"] =					QString(sf.ToString(gdcm::Tag(0x0020,0x000E)).c_str()).trimmed(); /* SeriesInstanceUID */
-        // tags["StudyID"] =							QString(sf.ToString(gdcm::Tag(0x0020,0x0010)).c_str()).trimmed(); /* StudyID */
-        // tags["SeriesNumber"] =						QString(sf.ToString(gdcm::Tag(0x0020,0x0011)).c_str()).trimmed(); /* SeriesNumber */
-        // tags["AcquisitionNumber"] =					QString(sf.ToString(gdcm::Tag(0x0020,0x0012)).c_str()).trimmed(); /* AcquisitionNumber */
-        // tags["InstanceNumber"] =					QString(sf.ToString(gdcm::Tag(0x0020,0x0013)).c_str()).trimmed(); /* InstanceNumber */
-        // tags["ImagePositionPatient"] =				QString(sf.ToString(gdcm::Tag(0x0020,0x0032)).c_str()).trimmed(); /* ImagePositionPatient */
-        // tags["ImageOrientationPatient"] =			QString(sf.ToString(gdcm::Tag(0x0020,0x0037)).c_str()).trimmed(); /* ImageOrientationPatient */
-        // tags["FrameOfReferenceUID"] =				QString(sf.ToString(gdcm::Tag(0x0020,0x0052)).c_str()).trimmed(); /* FrameOfReferenceUID */
-        // tags["NumberOfTemporalPositions"] =			QString(sf.ToString(gdcm::Tag(0x0020,0x0105)).c_str()).trimmed(); /* NumberOfTemporalPositions */
-        // tags["ImagesInAcquisition"] =				QString(sf.ToString(gdcm::Tag(0x0020,0x0105)).c_str()).trimmed(); /* ImagesInAcquisition */
-        // tags["PositionReferenceIndicator"] =		QString(sf.ToString(gdcm::Tag(0x0020,0x1040)).c_str()).trimmed(); /* PositionReferenceIndicator */
-        // tags["SliceLocation"] =						QString(sf.ToString(gdcm::Tag(0x0020,0x1041)).c_str()).trimmed(); /* SliceLocation */
-
-        // msg += "GetImageFileTags() checkpoint A.7\n";
-
-        // tags["SamplesPerPixel"] =					QString(sf.ToString(gdcm::Tag(0x0028,0x0002)).c_str()).trimmed(); /* SamplesPerPixel */
-        // tags["PhotometricInterpretation"] =			QString(sf.ToString(gdcm::Tag(0x0028,0x0004)).c_str()).trimmed(); /* PhotometricInterpretation */
-        // tags["Rows"] =								QString(sf.ToString(gdcm::Tag(0x0028,0x0010)).c_str()).trimmed(); /* Rows */
-        // tags["Columns"] =							QString(sf.ToString(gdcm::Tag(0x0028,0x0011)).c_str()).trimmed(); /* Columns */
-        // tags["PixelSpacing"] =						QString(sf.ToString(gdcm::Tag(0x0028,0x0030)).c_str()).trimmed(); /* PixelSpacing */
-        // tags["BitsAllocated"] =						QString(sf.ToString(gdcm::Tag(0x0028,0x0100)).c_str()).trimmed(); /* BitsAllocated */
-        // tags["BitsStored"] =						QString(sf.ToString(gdcm::Tag(0x0028,0x0101)).c_str()).trimmed(); /* BitsStored */
-        // tags["HighBit"] =							QString(sf.ToString(gdcm::Tag(0x0028,0x0102)).c_str()).trimmed(); /* HighBit */
-        // tags["PixelRepresentation"] =				QString(sf.ToString(gdcm::Tag(0x0028,0x0103)).c_str()).trimmed(); /* PixelRepresentation */
-        // tags["SmallestImagePixelValue"] =			QString(sf.ToString(gdcm::Tag(0x0028,0x0106)).c_str()).trimmed(); /* SmallestImagePixelValue */
-        // tags["LargestImagePixelValue"] =			QString(sf.ToString(gdcm::Tag(0x0028,0x0107)).c_str()).trimmed(); /* LargestImagePixelValue */
-        // tags["WindowCenter"] =						QString(sf.ToString(gdcm::Tag(0x0028,0x1050)).c_str()).trimmed(); /* WindowCenter */
-        // tags["WindowWidth"] =						QString(sf.ToString(gdcm::Tag(0x0028,0x1051)).c_str()).trimmed(); /* WindowWidth */
-        // tags["WindowCenterWidthExplanation"] =		QString(sf.ToString(gdcm::Tag(0x0028,0x1055)).c_str()).trimmed(); /* WindowCenterWidthExplanation */
-
-        // msg += "GetImageFileTags() checkpoint A.8\n";
-
-        // tags["RequestingPhysician"] =				QString(sf.ToString(gdcm::Tag(0x0032,0x1032)).c_str()).trimmed(); /* RequestingPhysician */
-        // tags["RequestedProcedureDescription"] =		QString(sf.ToString(gdcm::Tag(0x0032,0x1060)).c_str()).trimmed(); /* RequestedProcedureDescription */
-
-        // msg += "GetImageFileTags() checkpoint A.9\n";
-
-        // tags["PerformedProcedureStepStartDate"] =	QString(sf.ToString(gdcm::Tag(0x0040,0x0244)).c_str()).trimmed(); /* PerformedProcedureStepStartDate */
-        // tags["PerformedProcedureStepStartTime"] =	QString(sf.ToString(gdcm::Tag(0x0040,0x0245)).c_str()).trimmed(); /* PerformedProcedureStepStartTime */
-        // tags["PerformedProcedureStepID"] =			QString(sf.ToString(gdcm::Tag(0x0040,0x0253)).c_str()).trimmed(); /* PerformedProcedureStepID */
-        // tags["PerformedProcedureStepDescription"] = QString(sf.ToString(gdcm::Tag(0x0040,0x0254)).c_str()).trimmed(); /* PerformedProcedureStepDescription */
-        // tags["CommentsOnThePerformedProcedureSte"] = QString(sf.ToString(gdcm::Tag(0x0040,0x0280)).c_str()).trimmed(); /* CommentsOnThePerformedProcedureSte */
-
-        // msg += "GetImageFileTags() checkpoint A.10\n";
-
-        // tags["TimeOfAcquisition"] =					QString(sf.ToString(gdcm::Tag(0x0051,0x100A)).c_str()).trimmed(); /* TimeOfAcquisition*/
-        // tags["AcquisitionMatrixText"] =				QString(sf.ToString(gdcm::Tag(0x0051,0x100B)).c_str()).trimmed(); /* AcquisitionMatrixText*/
-        // tags["FieldOfView"] =						QString(sf.ToString(gdcm::Tag(0x0051,0x100C)).c_str()).trimmed(); /* FieldOfView*/
-        // tags["SlicePositionText"] =					QString(sf.ToString(gdcm::Tag(0x0051,0x100D)).c_str()).trimmed(); /* SlicePositionText*/
-        // tags["ImageOrientation"] =					QString(sf.ToString(gdcm::Tag(0x0051,0x100E)).c_str()).trimmed(); /* ImageOrientation*/
-        // tags["CoilString"] =						QString(sf.ToString(gdcm::Tag(0x0051,0x100F)).c_str()).trimmed(); /* CoilString*/
-        // tags["ImaPATModeText"] =					QString(sf.ToString(gdcm::Tag(0x0051,0x1011)).c_str()).trimmed(); /* ImaPATModeText*/
-        // tags["TablePositionText"] =					QString(sf.ToString(gdcm::Tag(0x0051,0x1012)).c_str()).trimmed(); /* TablePositionText*/
-        // tags["PositivePCSDirections"] =				QString(sf.ToString(gdcm::Tag(0x0051,0x1013)).c_str()).trimmed(); /* PositivePCSDirections*/
-        // tags["ImageTypeText"] =						QString(sf.ToString(gdcm::Tag(0x0051,0x1016)).c_str()).trimmed(); /* ImageTypeText*/
-        // tags["SliceThicknessText"] =				QString(sf.ToString(gdcm::Tag(0x0051,0x1017)).c_str()).trimmed(); /* SliceThicknessText*/
-        // tags["ScanOptionsText"] =					QString(sf.ToString(gdcm::Tag(0x0051,0x1019)).c_str()).trimmed(); /* ScanOptionsText*/
-
-        // msg += "GetImageFileTags() checkpoint B\n";
-
-        QString uniqueseries = tags["InstitutionName"] + tags["StationName"] + tags["Modality"] + tags["PatientName"] + tags["PatientBirthDate"] + tags["PatientSex"] + tags["StudyDateTime"] + tags["SeriesNumber"];
-        tags["UniqueSeriesString"] = uniqueseries;
 
         /* attempt to get the Siemens CSA header info, but not if this is a Siemens enhanced DICOM */
         tags["PhaseEncodeAngle"] = "";
@@ -726,8 +639,7 @@ bool squirrelImageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa
             msg += "GetImageFileTags() checkpoint D\n";
             /* unknown modality/filetype */
             /* try one last time to read with EXIF tool */
-            QString systemstring = "exiftool " + f;
-            QString exifoutput = utils::SystemCommand(systemstring, false);
+            QString exifoutput = RunExiftool(f);
             QStringList lines = exifoutput.split(QRegularExpression("(\\n|\\r\\n|\\r)"), Qt::SkipEmptyParts);
 
             foreach (QString line, lines) {
@@ -809,7 +721,7 @@ bool squirrelImageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa
     if (tags["SeriesTime"] == "")
         tags["SeriesTime"] = tags["StudyTime"];
     else {
-        utils::Print("SeriesTime before [" + tags["SeriesTime"] + "]");
+        //Print("SeriesTime before [" + tags["SeriesTime"] + "]");
 
         if (tags["SeriesTime"].contains(":")) {
             tags["SeriesTime"] = tags["SeriesTime"].left(8);
@@ -909,7 +821,13 @@ bool squirrelImageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa
     if (tags["PatientSex"] == "")
         tags["PatientName"] = "U";
 
-    qDebug() << "Leaving GetImageFileTags()";
+    QString uniqueseries = tags["InstitutionName"] + tags["StationName"] + tags["Modality"] + tags["PatientName"] + tags["PatientBirthDate"] + tags["PatientSex"] + tags["StudyDateTime"] + tags["SeriesNumber"];
+    tags["UniqueSeriesString"] = uniqueseries;
+
+    msg += uniqueseries + "\n";
+
+    //qDebug() << "Leaving GetImageFileTags()";
+    //Print(QString("tags[] contains %1 elements").arg(tags.size()));
 
     return true;
 }
@@ -923,8 +841,7 @@ void squirrelImageIO::GetFileType(QString f, QString &fileType, QString &fileMod
     fileModality = QString("");
 
     /* read file with EXIF tool */
-    QString systemstring = "exiftool " + f;
-    QString exifoutput = utils::SystemCommand(systemstring, false);
+    QString exifoutput = RunExiftool(f);
     QStringList lines = exifoutput.split(QRegularExpression("(\\n|\\r\\n|\\r)"), Qt::SkipEmptyParts);
     QHash<QString, QString> tags;
     foreach (QString line, lines) {

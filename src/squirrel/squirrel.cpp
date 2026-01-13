@@ -765,13 +765,17 @@ bool squirrel::Write() {
                                     Log(QString("  ERROR copying original files from %1 to %2").arg(f).arg(td));
                             }
 
+                            /* copy all dicom files from indir to outdir */
+                            systemstring = QString("rsync %1/* %2/").arg(td).arg(seriesPath);
+                            utils::SystemCommand(systemstring);
+
                             /* anonymize the directory */
                             squirrelImageIO io;
                             QString m;
                             if (DataFormat == "anon")
-                                io.AnonymizeDir(td, seriesPath, 1, m);
+                                io.AnonymizeDicomDirInPlace(seriesPath, 1, m);
                             else
-                                io.AnonymizeDir(td, seriesPath, 2, m);
+                                io.AnonymizeDicomDirInPlace(seriesPath, 2, m);
 
                             /* move the anonymized files to the staging area */
                             //systemstring = QString("mv %1/* %2/").arg(td).arg(seriesPath);
