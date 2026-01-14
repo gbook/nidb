@@ -1621,7 +1621,7 @@ bool moduleExport::ExportPackage(int exportid, QString &exportstatus, QString &m
      */
     if (io->WriteExportPackage(exportid, rootoutdir, m)) {
     //if (io->WriteSquirrel(exportid, squirreltitle, squirreldesc, downloadflags, squirrelflags, seriesids, modalities, rootoutdir, m)) {
-        n->Log(QString("%1() - WritePackage() returned [%2]").arg(__FUNCTION__).arg(m));
+        n->Log(QString("libsquirrel::WritePackage() returned [%1]").arg(m));
 
         /* mark all series as 'complete' */
         q.prepare("select * from exportseries where export_id = :exportid");
@@ -1634,7 +1634,7 @@ bool moduleExport::ExportPackage(int exportid, QString &exportstatus, QString &m
         }
     }
     else
-        n->Log(QString("%1() WritePackage() returned false").arg(__FUNCTION__));
+        n->Log("libsquirrel::WritePackage() returned false");
 
     /* move the .zip file to the download directory if a web download */
 

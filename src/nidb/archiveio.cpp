@@ -3022,6 +3022,8 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
             sqrlSubject.EnrollmentStatus = stdy.enrollmentStatus();
             sqrlSubject.Store();
 
+            n->Log(QString("stdy.enrollmentGroup [%1]  stdy.enrollmentStatus [%2]  sqrlSubject.EnrollmentGroup [%3]  sqrlSubject.EnrollmentStatus [%4]").arg(stdy.enrollmentGroup()).arg(stdy.enrollmentStatus()).arg(sqrlSubject.EnrollmentGroup).arg(sqrlSubject.EnrollmentStatus));
+
             /* export analyses (study level) */
             if (downloadflags.contains("DOWNLOAD_ANALYSIS", Qt::CaseInsensitive)) {
                 QSqlQuery q2;
@@ -3319,6 +3321,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
  * @return true if successful
  */
 bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString &msg) {
+    QString mbuff;
 
     /* get the total number of objects being exported */
     //qint64 exportseriesid;
@@ -3356,7 +3359,10 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         return false;
     }
 
-    n->Log("libsquirrel message buffer [" + sqrl.GetLogBuffer() + "]");
+    mbuff = sqrl.GetLogBuffer();
+    if (mbuff != "")
+        n->Log("libsquirrel message buffer [" + mbuff + "]");
+
     q.prepare("select * from packages where package_id = :packageid");
     q.bindValue(":packageid", packageid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -3380,14 +3386,17 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
     else {
         return 0;
     }
-    n->Log("libsquirrel message buffer [" + sqrl.GetLogBuffer() + "]");
+    mbuff = sqrl.GetLogBuffer();
+    if (mbuff != "")
+        n->Log("libsquirrel message buffer [" + mbuff + "]");
 
     //int lastProjectRowID = -1;
     /* SERIES - add all series associated with this package, first */
     q.prepare("select * from package_series where package_id = :packageid");
     q.bindValue(":packageid", packageid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    n->Log(QString("Found [%1] series for package [%2]").arg(q.size()).arg(packageid));
+    n->Log(QString("Adding %1 series to package...").arg(q.size()));
+    QString seriesMsg = "Added series [";
     while (q.next()) {
         int seriesRowID = q.value("series_id").toInt();
         QString modality = q.value("modality").toString();
@@ -3396,10 +3405,12 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         series ser(seriesRowID, modality, n);
         if (!ser.isValid) {
             n->Log(QString("Series [%1,%2] is invalid").arg(seriesRowID).arg(modality));
+            seriesMsg += "!";
             continue;
         }
         else {
-            n->Log(QString("Adding series [%1,%2] to squirrel package...").arg(seriesRowID).arg(modality));
+            n->Debug(QString("Adding series [%1,%2] to squirrel package...").arg(seriesRowID).arg(modality));
+            seriesMsg += ".";
         }
         //lastProjectRowID = ser.projectid;
         //ser.PrintSeriesInfo();
@@ -3435,6 +3446,13 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
             sqrl.ResequenceStudies(sqrlSubjectRowID);
         }
 
+        /* update the subject enrollment info */
+        sqrlSubject.EnrollmentGroup = stud.enrollmentGroup();
+        sqrlSubject.EnrollmentStatus = stud.enrollmentStatus();
+        sqrlSubject.Store();
+
+        n->Debug(QString("stud.enrollmentGroup [%1]  stud.enrollmentStatus [%2]  sqrlSubject.EnrollmentGroup [%3]  sqrlSubject.EnrollmentStatus [%4]").arg(stud.enrollmentGroup()).arg(stud.enrollmentStatus()).arg(sqrlSubject.EnrollmentGroup).arg(sqrlSubject.EnrollmentStatus));
+
         /* create squirrel SERIES */
         squirrelSeries sqrlSeries(sqrl.GetDatabaseUUID());
         sqrlSeries = ser.GetSquirrelObject(sqrl.GetDatabaseUUID());
@@ -3442,13 +3460,19 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         sqrlSeries.Store();
         sqrl.ResequenceSeries(sqrlStudyRowID);
     }
+    seriesMsg += "]";
+    n->Log(seriesMsg);
     n->Log("Finished adding series to package");
-    n->Log("libsquirrel message buffer [" + sqrl.GetLogBuffer() + "]");
+    mbuff = sqrl.GetLogBuffer();
+    if (mbuff != "")
+        n->Log("libsquirrel message buffer [" + mbuff + "]");
 
     /* ANALYSES - add all analysis associated with this package */
     q.prepare("select b.*, d.project_id from package_analyses a left join analysis b on a.analysis_id = b.analysis_id left join studies c on b.study_id = c.study_id left join enrollment d on c.enrollment_id = d.enrollment_id where a.package_id = :packageid");
     q.bindValue(":packageid", packageid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.size() > 0)
+        n->Log(QString("Adding %1 analysis to package...").arg(q.size()));
     while (q.next()) {
         int analysisRowID = q.value("analysis_id").toInt();
         int studyRowID = q.value("study_id").toInt();
@@ -3498,12 +3522,16 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         sqrlAnalysis.studyRowID = sqrlStudyRowID;
         sqrlAnalysis.Store();
     }
-    n->Log("libsquirrel message buffer [" + sqrl.GetLogBuffer() + "]");
+    mbuff = sqrl.GetLogBuffer();
+    if (mbuff != "")
+        n->Log("libsquirrel message buffer [" + mbuff + "]");
 
-    /* MEASURES - add all observations associated with this package */
+    /* OBSERVATIONS - add all observations associated with this package */
     q.prepare("select b.observation_id, c.subject_id, c.project_id from package_observations a left join observations b on a.observation_id = b.observation_id left join enrollment c on b.enrollment_id = c.enrollment_id where a.package_id = :packageid");
     q.bindValue(":packageid", packageid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.size() > 0)
+        n->Log(QString("Adding %1 observations to package...").arg(q.size()));
     while (q.next()) {
         int observationRowID = q.value("observation_id").toInt();
         int subjectRowID = q.value("subject_id").toInt();
@@ -3539,12 +3567,16 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         sqrlObservation.subjectRowID = sqrlSubjectRowID;
         sqrlObservation.Store();
     }
-    n->Log("libsquirrel message buffer [" + sqrl.GetLogBuffer() + "]");
+    mbuff = sqrl.GetLogBuffer();
+    if (mbuff != "")
+        n->Log("libsquirrel message buffer [" + mbuff + "]");
 
     /* INTERVENTIONS - add all interventions associated with this package */
     q.prepare("select b.intervention_id, c.subject_id, c.project_id from package_interventions a left join interventions b on a.intervention_id = b.intervention_id left join enrollment c on b.enrollment_id = c.enrollment_id where a.package_id = :packageid");
     q.bindValue(":packageid", packageid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.size() > 0)
+        n->Log(QString("Adding %1 interventions to package...").arg(q.size()));
     while (q.next()) {
         int interventionRowID = q.value("intervention_id").toInt();
         int subjectRowID = q.value("subject_id").toInt();
@@ -3578,12 +3610,16 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         sqrlIntervention.subjectRowID = sqrlSubjectRowID;
         sqrlIntervention.Store();
     }
-    n->Log("libsquirrel message buffer [" + sqrl.GetLogBuffer() + "]");
+    mbuff = sqrl.GetLogBuffer();
+    if (mbuff != "")
+        n->Log("libsquirrel message buffer [" + mbuff + "]");
 
     /* PIPELINES - add all pipelines associated with this package */
     q.prepare("select * from package_pipelines where package_id = :packageid");
     q.bindValue(":packageid", packageid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.size() > 0)
+        n->Log(QString("Adding %1 pipelines to package...").arg(q.size()));
     while (q.next()) {
         int pipelineRowID = q.value("pipeline_id").toInt();
 
@@ -3595,12 +3631,16 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         sqrlPipeline = p.GetSquirrelObject(sqrl.GetDatabaseUUID());
         sqrlPipeline.Store();
     }
-    n->Log("libsquirrel message buffer [" + sqrl.GetLogBuffer() + "]");
+    mbuff = sqrl.GetLogBuffer();
+    if (mbuff != "")
+        n->Log("libsquirrel message buffer [" + mbuff + "]");
 
     /* EXPERIMENTS - add all experiments associated with this package */
     q.prepare("select * from package_experiments where package_id = :packageid");
     q.bindValue(":packageid", packageid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.size() > 0)
+        n->Log(QString("Adding %1 experiments to package...").arg(q.size()));
     while (q.next()) {
         int experimentRowID = q.value("experiment_id").toInt();
 
@@ -3623,7 +3663,9 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         sqrlExperiment.stagedFiles = stagedFileList;
         sqrlExperiment.Store();
     }
-    n->Log("libsquirrel message buffer [" + sqrl.GetLogBuffer() + "]");
+    mbuff = sqrl.GetLogBuffer();
+    if (mbuff != "")
+        n->Log("libsquirrel message buffer [" + mbuff + "]");
 
     sqrl.SetWriteLog(false);
     if (sqrl.Write()) {

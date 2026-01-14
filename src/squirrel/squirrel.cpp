@@ -798,7 +798,7 @@ bool squirrel::Write() {
 
                         /* get path of first file to be converted */
                         if (series.stagedFiles.size() > 0) {
-                            Log(QString(" ... converting %1 files to nifti").arg(series.stagedFiles.size()));
+                            Log(QString("   ...converting %1 files to Nifti").arg(series.stagedFiles.size()));
 
                             QFileInfo f(series.stagedFiles[0]);
                             QString origSeriesPath = f.absoluteDir().absolutePath();
@@ -2488,7 +2488,7 @@ qint64 squirrel::FindSubject(QString id) {
         Debug(QString("Searched for SubjectID [%1] and found SubjectRowID [%2]").arg(id).arg(rowid));
     }
     else {
-        Log(QString("Could not find SubjectID [%1]").arg(id));
+        Debug(QString("Could not find SubjectID [%1]").arg(id));
     }
     return rowid;
 }
