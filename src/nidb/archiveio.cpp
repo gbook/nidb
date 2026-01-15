@@ -3540,9 +3540,11 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         subject subj(subjectRowID, n);
         if (!subj.valid()) continue;
 
+        enrollment enroll(subjectRowID, projectRowID, n);
+        if (!enroll.valid()) continue;
+
         /* get squirrel SUBJECT (create the object in the package if it doesn't already exist) */
         squirrelSubject sqrlSubject(sqrl.GetDatabaseUUID());
-        //subject subj(ser.subjectid, n);
         QString subjectID = subj.GetPrimaryAlternateID(projectRowID);
         if (subjectID == "")
             subjectID = subj.UID();
@@ -3550,9 +3552,10 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         if (sqrlSubjectRowID < 0) {
             /* ... create subject if necessary */
             sqrlSubject = subj.GetSquirrelObject(sqrl.GetDatabaseUUID());
-            //sqrlSubject.AlternateIDs.append(subj.GetAllAlternateIDs());
             sqrlSubject.ID = subjectID;
             sqrlSubject.DateOfBirth = QDate(0,0,0);
+            sqrlSubject.EnrollmentGroup = enroll.enrollmentGroup();
+            sqrlSubject.EnrollmentStatus = enroll.enrollmentStatus();
             sqrlSubject.Store();
             sqrlSubjectRowID = sqrlSubject.GetObjectID();
             sqrl.ResequenceSubjects();
@@ -3585,6 +3588,9 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         subject subj(subjectRowID, n);
         if (!subj.valid()) continue;
 
+        enrollment enroll(subjectRowID, projectRowID, n);
+        if (!enroll.valid()) continue;
+
         /* get squirrel SUBJECT (create the object in the package if it doesn't already exist) */
         squirrelSubject sqrlSubject(sqrl.GetDatabaseUUID());
         QString subjectID = subj.GetPrimaryAlternateID(projectRowID);
@@ -3596,6 +3602,8 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
             sqrlSubject = subj.GetSquirrelObject(sqrl.GetDatabaseUUID());
             //sqrlSubject.AlternateIDs.append(subj.GetAllAlternateIDs());
             sqrlSubject.DateOfBirth = QDate(0,0,0);
+            sqrlSubject.EnrollmentGroup = enroll.enrollmentGroup();
+            sqrlSubject.EnrollmentStatus = enroll.enrollmentStatus();
             sqrlSubject.ID = subjectID;
             sqrlSubject.Store();
             sqrlSubjectRowID = sqrlSubject.GetObjectID();

@@ -23,17 +23,18 @@
 #ifndef ARCHIVEIO_H
 #define ARCHIVEIO_H
 #include "nidb.h"
-#include "imageio.h"
-#include "performanceMetric.h"
-#include "series.h"
-#include "subject.h"
-#include "study.h"
 #include "analysis.h"
-#include "pipeline.h"
-#include "minipipeline.h"
+#include "enrollment.h"
 #include "experiment.h"
-#include "observation.h"
+#include "imageio.h"
 #include "intervention.h"
+#include "minipipeline.h"
+#include "observation.h"
+#include "performanceMetric.h"
+#include "pipeline.h"
+#include "series.h"
+#include "study.h"
+#include "subject.h"
 #include "squirrel.h"
 
 /**

@@ -2164,7 +2164,7 @@
 									<td class="two wide yellow segment"><span style="color: #222; font-size: larger; white-space: nowrap;"><?=$project_name?> (<?=$project_costcenter?>)</span></td>
 									<td class="one wide yellow segment"><span style="color: #222; font-size: larger; white-space: nowrap;"><?=$study_datetime?></span></td>
 									<td class="one wide yellow segment"><span style="color: #222; font-size: larger;"><?=$enrollsubgroup?></span></td>
-									<td class="one wide yellow segment"><span style="color: #222; font-size: larger;"><?=number_format($studyAge,1)?>Y , <?=number_format($calcStudyAge,1)?>Y</span></td>
+									<td class="one wide yellow segment"><span style="color: #222; font-size: larger;"><? if (is_numeric($studyAge)) { echo number_format($studyAge, 1) . "Y"; } else { echo "-"; } ?> , <? if (is_numeric($calcStudyAge)) { echo number_format($calcStudyAge, 1) . "Y"; } else { echo "-"; } ?></span></td>
 									<td class="one wide yellow segment"><span style="color: #222; font-size: larger;"><?=$gender?></span></td>
 									<td class="one wide yellow segment" title="<?=$study_alternateid?>"><span class="tt" style="color: #222; white-space: nowrap;"><?=substr($study_alternateid,0,20)?><?if (strlen($study_alternateid) > 20) { echo "&hellip;"; } ?></span></td>
 									<td class="one wide yellow segment"><span style="color: #222; font-size: larger;"><?=$study_type?></span></td>
@@ -2246,7 +2246,7 @@
 						<? if (($s_resultoutput == "series") || ($s_resultoutput == "table") || ($s_resultoutput == "operations")) { ?>
 							<td class="<?=$rowstyle?>"><a href="subjects.php?id=<?=$subject_id?>"><tt style="color: <?=$displayidcolor?>;"><?=$displayid?></tt></a></td>
 							<td class="<?=$rowstyle?>"><?=$gender?></td>
-							<td class="<?=$rowstyle?>"><?=number_format($ageatscan,1)?>Y</td>
+							<td class="<?=$rowstyle?>"><?=$ageatscan?>Y</td>
 							<td class="<?=$rowstyle?>"><a href="subjects.php?id=<?=$subject_id?>"><tt><? if (count($altuids) > 0) { echo implode2(', ',$altuids); } ?></tt></a></td>
 							<td class="<?=$rowstyle?>"><a href="studies.php?id=<?=$study_id?>"><?=$newstudyid?></a></td>
 							<td class="<?=$rowstyle?>"><a href="studies.php?id=<?=$study_id?>"><?=$study_alternateid?></a></td>
