@@ -157,6 +157,13 @@ QString imageIO::RunExiftool(QString arg) {
         }
     }
 
+    /* ----- check one more time to see if everything was ok ----- */
+    if ((!str.contains("{ready}")) || (str.size() < 50) || (!str.contains(filename)) || (str == "")) {
+        n->Log("Previous interactive exiftool output was not valid, running exiftool manually");
+        QString systemstring = "exiftool " + arg;
+        QString str = SystemCommand(systemstring, false);
+    }
+
     return str;
 }
 
@@ -300,7 +307,7 @@ bool imageIO::IsDICOMFile(QString f) {
     if (tags["FileType"] != "DICOM")
         return false;
     else
-        return false;
+        return true;
 }
 
 
@@ -587,28 +594,28 @@ bool imageIO::AnonymizeDicomDirInPlace(QString dir, int anonlevel, QString &msg)
 /* ------------------------------------------------- */
 /* --------- GetDicomModality ---------------------- */
 /* ------------------------------------------------- */
-QString imageIO::GetDicomModality(QString f)
-{
-    QString modality = "NOTDICOM";
-    QString exifoutput = RunExiftool(f);
-    QStringList lines = exifoutput.split(QRegularExpression("(\\n|\\r\\n|\\r)"), Qt::SkipEmptyParts);
+//QString imageIO::GetDicomModality(QString f)
+//{
+//    QString modality = "NOTDICOM";
+//    QString exifoutput = RunExiftool(f);
+//    QStringList lines = exifoutput.split(QRegularExpression("(\\n|\\r\\n|\\r)"), Qt::SkipEmptyParts);
 
-    QHash<QString, QString> tags;
-    foreach (QString line, lines) {
-        QString delimiter = ":";
-        qint64 index = line.indexOf(delimiter);
+//    QHash<QString, QString> tags;
+//    foreach (QString line, lines) {
+//        QString delimiter = ":";
+//        qint64 index = line.indexOf(delimiter);
 
-        if (index != -1) {
-            QString firstPart = line.mid(0, index).replace(" ", "");
-            QString secondPart = line.mid(index + delimiter.length());
-            tags[firstPart.trimmed()] = secondPart.trimmed();
-        }
-    }
-    if (tags.contains("Modality"))
-        modality = tags["Modality"];
+//        if (index != -1) {
+//            QString firstPart = line.mid(0, index).replace(" ", "");
+//            QString secondPart = line.mid(index + delimiter.length());
+//            tags[firstPart.trimmed()] = secondPart.trimmed();
+//        }
+//    }
+//    if (tags.contains("Modality"))
+//        modality = tags["Modality"];
 
-    return modality;
-}
+//    return modality;
+//}
 
 
 /* ---------------------------------------------------------- */
@@ -813,8 +820,9 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
         else {
             msg += "GetImageFileTags() checkpoint D\n";
             /* unknown modality/filetype */
-            /* try one last time to read with EXIF tool */
-            QString exifoutput = RunExiftool(f);
+            /* try one last time to read with just the non-interactive command line EXIF tool */
+            QString systemstring = "exiftool " + f;
+            QString exifoutput = SystemCommand(systemstring, false);
             QStringList lines = exifoutput.split(QRegularExpression("(\\n|\\r\\n|\\r)"), Qt::SkipEmptyParts);
 
             foreach (QString line, lines) {

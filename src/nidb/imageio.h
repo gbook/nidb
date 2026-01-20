@@ -42,7 +42,7 @@ public:
     ~imageIO();
 
     /* DICOM & image functions */
-    QString GetDicomModality(QString f);
+    //QString GetDicomModality(QString f);
     bool AnonymizeDicomDirInPlace(QString dir, int anonlevel, QString &msg);
     bool AnonymizeDicomFile(QString infile, QString outfile, QStringList tagsToChange, QString &msg);
     bool AnonymizeDicomFileInPlace(QString file, QStringList tagsToChange, QString &msg);
