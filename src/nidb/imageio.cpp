@@ -117,8 +117,8 @@ QString imageIO::RunExiftool(QString arg) {
     QFileInfo fileInfo(arg);
     QString filename = fileInfo.fileName();
 
-    /* try passing the command to exiftool three times, in case there is a problem reading the file using exiftool */
-    for (int i=0; i<3; i++) {
+    /* try passing the command to exiftool two times, in case there is a problem reading the file using exiftool */
+    for (int i=0; i<2; i++) {
         exifProcess->readAllStandardOutput(); /* clear buffer */
 
         exifProcess->write(arg.toUtf8() + '\n');
@@ -161,7 +161,7 @@ QString imageIO::RunExiftool(QString arg) {
     if ((!str.contains("{ready}")) || (str.size() < 50) || (!str.contains(filename)) || (str == "")) {
         n->Log("Previous interactive exiftool output was not valid, running exiftool manually");
         QString systemstring = "exiftool " + arg;
-        QString str = SystemCommand(systemstring, false);
+        str = SystemCommand(systemstring, false);
     }
 
     return str;
