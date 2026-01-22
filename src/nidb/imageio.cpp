@@ -136,14 +136,14 @@ QString imageIO::RunExiftool(QString arg) {
             Print(n->Log(QString("*** Exiftool output from file [%1] does NOT contain {ready}. String size is [%2] bytes ***").arg(arg).arg(str.size())));
             str = "";
         }
-        /* check if the output is not truncated, or cut off */
-        else if (str.size() < 50) {
+        /* check if the output is not truncated or cut off */
+        else if (str.size() < 100) {
             Print(n->Log(QString("*** Exiftool output from file [%1] is ONLY [%2] bytes. str contains [%3] ***").arg(arg).arg(str.size()).arg(str)));
             str = "";
         }
-        /* check if the output contains the filename passed to exiftool. ie the  */
+        /* check if the output contains the filename passed to exiftool  */
         else if (!str.contains(filename)) {
-            Print(n->Log(QString("*** Exiftool output from file [%1] does NOT contain the file name. size is [%2] bytes ***").arg(arg).arg(str.size())));
+            Print(n->Log(QString("*** Exiftool output from file [%1] does NOT contain the file name [%2]. size is [%3] bytes ***").arg(arg).arg(filename).arg(str.size())));
             str = "";
         }
         /* check if the str is blank */
