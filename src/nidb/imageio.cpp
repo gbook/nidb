@@ -142,8 +142,8 @@ QString imageIO::RunExiftool(QString arg) {
             str = "";
         }
         /* check if the output contains the filename passed to exiftool  */
-        else if (!str.contains(filename)) {
-            Print(n->Log(QString("*** Exiftool output from file [%1] does NOT contain the file name [%2]. size is [%3] bytes ***").arg(arg).arg(filename).arg(str.size())));
+        else if (!str.contains(filename.trimmed(), Qt::CaseInsensitive)) {
+            Print(n->Log(QString("*** Exiftool output from file [%1] does NOT contain the file name [%2]. size is [%3] bytes. str is [%4] ***").arg(arg).arg(filename).arg(str.size()).arg(str)));
             str = "";
         }
         /* check if the str is blank */
