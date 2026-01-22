@@ -159,27 +159,23 @@ QString imageIO::RunExiftool(QString arg) {
     //}
 
     /* ----- check one more time to see if everything was ok ----- */
-    if (str == "") {
-        n->Log("Previous interactive exiftool output was not valid, running exiftool manually");
-        QString systemstring = "exiftool " + arg;
-        str = SystemCommand(systemstring, false);
+    QString systemstring = "exiftool " + arg;
+    str = SystemCommand(systemstring, false);
 
-        /* check if the output is not truncated or cut off */
-        if (str.size() < 50) {
-            Print(n->Log(QString("*** Exiftool output from file [%1] is ONLY [%2] bytes. str contains [%3] ***").arg(arg).arg(str.size()).arg(str)));
-            str = "";
-        }
-        /* check if the output contains the filename passed to exiftool  */
-        else if (!str.contains(filename.trimmed(), Qt::CaseInsensitive)) {
-            Print(n->Log(QString("*** Exiftool output from file [%1] does NOT contain the file name [%2]. size is [%3] bytes. str is [%4] ***").arg(arg).arg(filename).arg(str.size()).arg(str)));
-            str = "";
-        }
-        /* check if the str is blank */
-        else if (str == "") {
-            Print(n->Log(QString("*** Exiftool output from file [%1] is empty ***").arg(arg)));
-            str = "";
-        }
-
+    /* check if the output is not truncated or cut off */
+    if (str.size() < 50) {
+        Print(n->Log(QString("*** Exiftool output from file [%1] is ONLY [%2] bytes. str contains [%3] ***").arg(arg).arg(str.size()).arg(str)));
+        str = "";
+    }
+    /* check if the output contains the filename passed to exiftool  */
+    else if (!str.contains(filename.trimmed(), Qt::CaseInsensitive)) {
+        Print(n->Log(QString("*** Exiftool output from file [%1] does NOT contain the file name [%2]. size is [%3] bytes. str is [%4] ***").arg(arg).arg(filename).arg(str.size()).arg(str)));
+        str = "";
+    }
+    /* check if the str is blank */
+    else if (str == "") {
+        Print(n->Log(QString("*** Exiftool output from file [%1] is empty ***").arg(arg)));
+        str = "";
     }
 
     return str;
