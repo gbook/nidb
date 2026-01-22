@@ -118,7 +118,7 @@ QString imageIO::RunExiftool(QString arg) {
     QString filename = fileInfo.fileName();
 
     /* try passing the command to exiftool two times, in case there is a problem reading the file using exiftool */
-    for (int i=0; i<2; i++) {
+    //for (int i=0; i<2; i++) {
         exifProcess->readAllStandardOutput(); /* clear buffer */
 
         exifProcess->write(arg.toUtf8() + '\n');
@@ -133,32 +133,33 @@ QString imageIO::RunExiftool(QString arg) {
 
         /* check if the output contains {ready} */
         if (!str.contains("{ready}")) {
-            Print(n->Log(QString("*** Exiftool output from file [%1] does NOT contain {ready}. String size is [%2] bytes (attempt %3 of 2) ***").arg(arg).arg(str.size()).arg(i)));
-            QThread::msleep(50);
+            Print(n->Log(QString("*** Exiftool output from file [%1] does NOT contain {ready}. String size is [%2] bytes ***").arg(arg).arg(str.size())));
+            str = "";
         }
         /* check if the output is not truncated, or cut off */
         else if (str.size() < 50) {
-            Print(n->Log(QString("*** Exiftool output from file [%1] is ONLY [%2] bytes (attempt %3 of 2) str contains [%4] ***").arg(arg).arg(str.size()).arg(i).arg(str)));
-            QThread::msleep(50);
+            Print(n->Log(QString("*** Exiftool output from file [%1] is ONLY [%2] bytes. str contains [%3] ***").arg(arg).arg(str.size()).arg(str)));
+            str = "";
         }
         /* check if the output contains the filename passed to exiftool. ie the  */
-        //else if (!str.contains(filename)) {
-        //    Print(n->Log(QString("*** Exiftool output from file [%1] does NOT contain the file name (attempt %2 of 2) size is [%3] ***").arg(arg).arg(i).arg(str.size())));
-        //    QThread::msleep(50);
-        //}
+        else if (!str.contains(filename)) {
+            Print(n->Log(QString("*** Exiftool output from file [%1] does NOT contain the file name. size is [%2] bytes ***").arg(arg).arg(str.size())));
+            str = "";
+        }
         /* check if the str is blank */
         else if (str == "") {
-            Print(n->Log(QString("*** Exiftool output from file [%1] is empty (attempt %2 of 2) ***").arg(arg).arg(i)));
-            QThread::msleep(50);
+            Print(n->Log(QString("*** Exiftool output from file [%1] is empty ***").arg(arg)));
+            str = "";
         }
         /* otherwise, we've successfully read the file header and gotten a complete response */
         else {
-            break;
+            //break;
         }
-    }
+
+    //}
 
     /* ----- check one more time to see if everything was ok ----- */
-    if ((!str.contains("{ready}")) || (str.size() < 50) || (str == "")) {
+    if (str == "") {
         n->Log("Previous interactive exiftool output was not valid, running exiftool manually");
         QString systemstring = "exiftool " + arg;
         str = SystemCommand(systemstring, false);
