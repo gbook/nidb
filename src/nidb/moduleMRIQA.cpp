@@ -357,7 +357,7 @@ bool moduleMRIQA::QA(qint64 seriesid) {
         /* get the middle slice from the dicom files */
         QStringList dcms = FindAllFiles(s.datapath, "*.dcm");
         QString dcmfile = dcms[int(dcms.size()/2)];
-        systemstring = "convert -normalize " + dcmfile + " " + thumbfile;
+        systemstring = "convert -strip -normalize " + dcmfile + " " + thumbfile;
 		msgs << n->Log(SystemCommand(systemstring, debug));
 	}
 	else {

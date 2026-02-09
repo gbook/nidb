@@ -79,36 +79,44 @@ win32: {
     HEADERS += $$LZMAINCLUDE/bit7z.hpp
     LIBS += -lbit7z
 
-    # gdcm library
-    #GDCMBIN = C:/squirrel/bin/gdcm
+    # dcmtk library
+    DCMTK = "C:/Program Files (x86)/DCMTK"
 
-    #GDCMSRC = ../gdcm/Source
-    #*msvc*:CONFIG(release, debug|release): LIBS += -L$$GDCMBIN/bin/Release
+    LIBS += -L$$DCMTK/lib
+    #*msvc*:CONFIG(release, debug|release): LIBS += -L$$DCMTK/lib
     #else:*msvc*:CONFIG(debug, debug|release): LIBS += -L$$GDCMBIN/bin/Debug
-    #INCLUDEPATH += $$GDCMSRC/Attribute
-    #INCLUDEPATH += $$GDCMSRC/Common
-    #INCLUDEPATH += $$GDCMSRC/DataDictionary
-    #INCLUDEPATH += $$GDCMSRC/DataStructureAndEncodingDefinition
-    #INCLUDEPATH += $$GDCMSRC/InformationObjectDefinition
-    #INCLUDEPATH += $$GDCMSRC/MediaStorageAndFileFormat
-    #INCLUDEPATH += $$GDCMSRC/MessageExchangeDefinition
-    #INCLUDEPATH += $$GDCMBIN/Source/Common # for gdcmConfigure.h
-    #HEADERS += $$GDCMBIN/Source/Common/gdcmConfigure.h
+    INCLUDEPATH += $$DCMTK/include/
 
-    #LIBS += -lgdcmMSFF \
-    #    -lgdcmCommon \
-        #-lgdcmDICT \
-	#-lgdcmDSED \
-	#-lgdcmIOD \
-	#-lgdcmMEXD \
-	#-lgdcmcharls \
-	#-lgdcmexpat \
-	#-lgdcmjpeg12 \
-	#-lgdcmjpeg16 \
-	#-lgdcmjpeg8 \
-	#-lgdcmopenjp2 \
-	#-lgdcmzlib \
-	#-lsocketxx
+    LIBS += -ldcmdata \
+        -lcmr \
+	-ldcmdata \
+	-ldcmdsig \
+	-ldcmect \
+	-ldcmfg \
+	-ldcmimage \
+	-ldcmimgle \
+	-ldcmiod \
+	-ldcmjpeg \
+	-ldcmjpls \
+	-ldcmnet \
+	-ldcmpmap \
+	-ldcmpstat \
+	-ldcmqrdb \
+	-ldcmrt \
+	-ldcmseg \
+	-ldcmsr \
+	-ldcmtkcharls \
+	-ldcmtls \
+	-ldcmtract \
+	-ldcmwlm \
+	-ldcmxml \
+	-li2d \
+	-lijg8 \
+	-lijg12 \
+	-lijg16 \
+	-loficonv \
+	-loflog \
+	-lofstd
 
 }
 linux: {

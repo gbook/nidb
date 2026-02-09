@@ -22,7 +22,20 @@
 
 #include "imageio.h"
 #include <QRegularExpression>
-#include <QThread>
+
+
+/* ---------------------------------------------------------- */
+/* --------- align4 ----------------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief align a number to 4
+ * @param x
+ * @return
+ */
+static int align4(int x)
+{
+    return (x + 3) & ~3;
+}
 
 
 /* ---------------------------------------------------------- */
@@ -34,9 +47,6 @@
 imageIO::imageIO(nidb *a)
 {
     n = a;
-
-    /* always start exiftool daemon */
-    //StartExiftool();
 }
 
 
@@ -48,115 +58,22 @@ imageIO::imageIO(nidb *a)
 */
 imageIO::~imageIO()
 {
-    /* always terminate the exiftool daemon */
-    //TerminateExiftool();
 }
 
 
 /* ---------------------------------------------------------- */
-/* --------- StartExiftool ---------------------------------- */
-/* ---------------------------------------------------------- */
-/**
- * @brief Starts the exiftool 'deamon'
- * @return true if successful, false otherwise
- */
-bool imageIO::StartExiftool() {
-
-    /* create the process */
-    exifProcess = new QProcess();
-
-    /* start exiftool */
-    QStringList args;
-    args << "-stay_open" << "True" << "-@" << "-";
-    exifProcess->start("exiftool", args);
-    exifProcess->waitForStarted();
-
-    if (exifProcess->processId() > 0) {
-        //Print(QString("Started exiftool with pid [%1]").arg(exiftool->processId()));
-        return true;
-    }
-    else {
-        Print(QString("Error starting exiftool [%1]").arg(exifProcess->errorString()));
-        return false;
-    }
-    return true;
-}
-
-
-/* ---------------------------------------------------------- */
-/* --------- TerminateExiftool ------------------------------ */
-/* ---------------------------------------------------------- */
-/**
- * @brief Terminate the exiftool 'daemon'
- * @return true
- */
-bool imageIO::TerminateExiftool() {
-    /* let exiftool terminate itself */
-    exifProcess->write("-stay_open\nFalse\n");
-    exifProcess->waitForBytesWritten();
-
-    /* terminate the QProcess */
-    exifProcess->close();
-    delete exifProcess;
-
-    return true;
-}
-
-
-/* ---------------------------------------------------------- */
-/* --------- RunExiftool ------------------------------------ */
+/* --------- Exiftool --------------------------------------- */
 /* ---------------------------------------------------------- */
 /**
  * @brief Run exiftool to get DICOM tags. Output should be terminated with {ready}, otherwise it is incomplete
  * @param arg The DICOM (or other type) file
  * @return The full output from exiftool
  */
-QString imageIO::RunExiftool(QString arg) {
+QString imageIO::Exiftool(QString arg) {
     QString str;
 
     QFileInfo fileInfo(arg);
     QString filename = fileInfo.fileName();
-
-    /* try passing the command to exiftool two times, in case there is a problem reading the file using exiftool */
-    //for (int i=0; i<2; i++) {
-        // exifProcess->readAllStandardOutput(); /* clear buffer */
-
-        // exifProcess->write(arg.toUtf8() + '\n');
-        // exifProcess->waitForBytesWritten();
-        // exifProcess->write("-execute\n");
-        // exifProcess->waitForBytesWritten();
-
-        // exifProcess->waitForReadyRead();
-
-        // QByteArray output = exifProcess->readAllStandardOutput();
-        // str = QString::fromUtf8(output);
-
-        // /* check if the output contains {ready} */
-        // if (!str.contains("{ready}")) {
-        //     Print(n->Log(QString("*** Exiftool output from file [%1] does NOT contain {ready}. String size is [%2] bytes ***").arg(arg).arg(str.size())));
-        //     str = "";
-        // }
-        // /* check if the output is not truncated or cut off */
-        // else if (str.size() < 100) {
-        //     Print(n->Log(QString("*** Exiftool output from file [%1] is ONLY [%2] bytes. str contains [%3] ***").arg(arg).arg(str.size()).arg(str)));
-        //     str = "";
-        // }
-        // /* check if the output contains the filename passed to exiftool  */
-        // else if (!str.contains(filename.trimmed(), Qt::CaseInsensitive)) {
-        //     Print(n->Log(QString("*** Exiftool output from file [%1] does NOT contain the file name [%2]. size is [%3] bytes. str is [%4] ***").arg(arg).arg(filename).arg(str.size()).arg(str)));
-        //     str = "";
-        // }
-        // /* check if the str is blank */
-        // else if (str == "") {
-        //     Print(n->Log(QString("*** Exiftool output from file [%1] is empty ***").arg(arg)));
-        //     str = "";
-        // }
-        // /* otherwise, we've successfully read the file header and gotten a complete response */
-        // else {
-        //     //break;
-        // }
-
-    //}
 
     /* ----- check one more time to see if everything was ok ----- */
     QString systemstring = "exiftool " + arg;
@@ -179,6 +96,248 @@ QString imageIO::RunExiftool(QString arg) {
     }
 
     return str;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetImageTagsDCMTK ------------------------------ */
+/* ---------------------------------------------------------- */
+/**
+ * @brief imageIO::GetImageTagsDCMTK
+ * @param f
+ * @param tags
+ * @param msg
+ * @return
+ */
+bool imageIO::GetImageTagsDCMTK(QString f, QHash<QString, QString> &tags) {
+
+    QStringList msgs;
+
+    tags["FilePath"] = f;
+
+    const char* filename = f.toLatin1();
+
+    DcmFileFormat fileformat;
+    OFCondition status = fileformat.loadFileUntilTag(filename, EXS_Unknown, EGL_noChange, DCM_MaxReadLength, ERM_autoDetect, DcmTagKey(0x7FE0, 0x0010));
+    if (status.good()) {
+        tags["FileType"] = "DICOM";
+        DcmStack stack;
+        DcmDataset *dataset = fileformat.getDataset();
+        while (dataset->nextObject(stack, OFTrue /*intoSub*/).good())
+        {
+            DcmObject *object = stack.top();
+            QString tagName = DcmTag(object->getTag()).getTagName();
+            if (tagName.startsWith("Unknown")) {
+                int group = DcmTag(object->getTag()).getGroup();
+                int element = DcmTag(object->getTag()).getElement();
+                tagName = QString("Unknown_%1x%2").arg(group, 4, 10, QChar('0')).arg(element, 4, 10, QChar('0'));
+            }
+
+            if (object->isElement()) {
+                OFString strValue;
+                DcmElement *element = OFstatic_cast(DcmElement *, object);
+                if (element->getOFStringArray(strValue).good()) {
+                    /* read the Siemens binary encoded CSA header */
+                    if ((object->getGTag() == 0x0029) && (object->getETag() == 0x1010)) {
+                        QString hexstr = strValue.c_str();
+                        hexstr.remove('\\');
+                        QByteArray bytes = QByteArray::fromHex(hexstr.toLatin1());
+
+                        QMap<QString, CsaElement> csaTags = ParseSiemensCSA(bytes);
+                        for (auto i = csaTags.cbegin(), end = csaTags.cend(); i != end; ++i) {
+                            CsaElement elem = i.value();
+                            QString name = i.key();
+                            QString vr = i.value().vr;
+                            QString val;
+                            if (elem.values.size() > 0) {
+                                if (vr == "LO" || vr == "SH" || vr == "ST" || vr == "LT" || vr == "AE" || vr == "CS" || vr == "UT" || vr == "DS" || vr == "IS") {
+                                    val = csaToString(elem.values.first());
+                                }
+                                else if (vr == "FD" || vr == "FL") {
+                                    val = QString("%1").arg(csaToDouble(elem.values.first()));
+                                }
+                                else if (vr == "SL" || vr == "UL" || vr == "SS" || vr == "US") {
+                                    val = QString("%1").arg(csaToInteger(elem.values.first()));
+                                }
+                            }
+                            else {
+                                //printf("Value appears to be empty\n");
+                            }
+                            val.remove(QChar('\0'));
+                            tags[name] = val.trimmed();
+                        }
+                    }
+                    /* read the Siemens MrPhoenixProtocol header */
+                    else if ((object->getGTag() == 0x0029) && (object->getETag() == 0x1020)) {
+                        QString hexstr = strValue.c_str();
+                        hexstr.remove('\\');
+                        QByteArray bytes = QByteArray::fromHex(hexstr.toLatin1());
+                        QString text = QString::fromLatin1(bytes);
+                        QStringList lines = text.split("\n");
+                        foreach (QString line, lines) {
+                            if (line.startsWith("sSliceArray.asSlice[0].dInPlaneRot") && (line.size() < 70)) {
+                                /* make sure the line does not contain any non-printable ASCII control characters */
+                                if (!line.contains(QRegularExpression(QStringLiteral("[\\x00-\\x1F]")))) {
+                                    qint64 idx = line.indexOf(".dInPlaneRot");
+                                    line = line.mid(idx,23);
+                                    QStringList vals = line.split(QRegularExpression("\\s+"));
+                                    if (vals.size() > 0)
+                                        tags["PhaseEncodeAngle"] = vals.last().trimmed();
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    /* read all other tags */
+                    else {
+                        tags[tagName] = strValue.c_str();
+                    }
+                }
+                else if (element->isLeaf()) {
+                    tags[tagName] = "";
+                }
+            }
+        }
+    }
+    else {
+        tags["Valid"] = "0";
+        tags["ParseMessages"] = msgs.join("\n");
+        return false;
+    }
+
+    tags["ParseMessages"] = msgs.join("\n");
+
+    return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- csaToDouble ------------------------------------ */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Convert a value stored in a CSA byte array into a double
+ * @param v The bytearray
+ * @return The value
+ */
+double imageIO::csaToDouble(const QByteArray& v)
+{
+    QDataStream s(v);
+    s.setByteOrder(QDataStream::LittleEndian);
+
+    double d;
+    s >> d;
+    return d;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- csaToInteger ----------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Convert a value stored in a CSA byte array into an integer
+ * @param v The bytearray
+ * @return The value
+ */
+int imageIO::csaToInteger(const QByteArray& v)
+{
+    QDataStream s(v);
+    s.setByteOrder(QDataStream::LittleEndian);
+
+    int d;
+    s >> d;
+    return d;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- csaToString ------------------------------------ */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Convert a value stored in a CSA byte array into a QString
+ * @param v The bytearray
+ * @return The value
+ */
+QString imageIO::csaToString(const QByteArray& v)
+{
+    return QString::fromLatin1(v).trimmed();
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- ParseSiemensCSA -------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Parse an older style Siemens CSA header. This function was generated by ChatGPT...
+ * @param csa - The byte array extracted from the DICOM header
+ * @return A list of found elements
+ */
+QMap<QString, CsaElement> imageIO::ParseSiemensCSA(const QByteArray& csa)
+{
+    QMap<QString, CsaElement> result;
+
+    QDataStream stream(csa);
+    stream.setByteOrder(QDataStream::LittleEndian);
+
+    char header[4];
+    stream.readRawData(header, 4);
+
+    /* check for SV10 or SV12 */
+    if (memcmp(header, "SV1", 3) != 0)
+        return result;
+
+    stream.skipRawData(4); // unused
+
+    qint32 nTags;
+    stream >> nTags;
+
+    stream.skipRawData(4); // unused
+
+    for (int t = 0; t < nTags; ++t)
+    {
+        char nameBuf[64];
+        stream.readRawData(nameBuf, 64);
+        QString name = QString(QByteArray(nameBuf));
+
+        qint32 vm;
+        stream >> vm;
+
+        char vrBuf[4];
+        stream.readRawData(vrBuf, 4);
+        QString vr = QString::fromLatin1(vrBuf).trimmed();
+
+        qint32 syngo_dt;
+        qint32 nItems;
+        qint32 unused;
+
+        stream >> syngo_dt >> nItems >> unused;
+
+        CsaElement element;
+        element.name = name;
+        element.vr = vr;
+
+        for (int i = 0; i < nItems; ++i)
+        {
+            qint32 itemLen[4];
+            stream.readRawData(reinterpret_cast<char*>(itemLen), 16);
+
+            int len = itemLen[1];   // actual length
+
+            QByteArray value(len, Qt::Uninitialized);
+            if (len > 0)
+                stream.readRawData(value.data(), len);
+
+            // Skip padding
+            int pad = align4(len) - len;
+            if (pad > 0)
+                stream.skipRawData(pad);
+
+            element.values.append(value);
+        }
+
+        result.insert(name, element);
+    }
+
+    return result;
 }
 
 
@@ -304,7 +463,7 @@ bool imageIO::IsDICOMFile(QString f) {
     /* check if its really a dicom file... */
     /* try reading with exiftool */
     QHash<QString, QString> tags;
-    QString exifoutput = RunExiftool(f);
+    QString exifoutput = Exiftool(f);
     QStringList lines = exifoutput.split(QRegularExpression("(\\n|\\r\\n|\\r)"), Qt::SkipEmptyParts);
 
     foreach (QString line, lines) {
@@ -605,37 +764,10 @@ bool imageIO::AnonymizeDicomDirInPlace(QString dir, int anonlevel, QString &msg)
 }
 
 
-/* ------------------------------------------------- */
-/* --------- GetDicomModality ---------------------- */
-/* ------------------------------------------------- */
-//QString imageIO::GetDicomModality(QString f)
-//{
-//    QString modality = "NOTDICOM";
-//    QString exifoutput = RunExiftool(f);
-//    QStringList lines = exifoutput.split(QRegularExpression("(\\n|\\r\\n|\\r)"), Qt::SkipEmptyParts);
-
-//    QHash<QString, QString> tags;
-//    foreach (QString line, lines) {
-//        QString delimiter = ":";
-//        qint64 index = line.indexOf(delimiter);
-
-//        if (index != -1) {
-//            QString firstPart = line.mid(0, index).replace(" ", "");
-//            QString secondPart = line.mid(index + delimiter.length());
-//            tags[firstPart.trimmed()] = secondPart.trimmed();
-//        }
-//    }
-//    if (tags.contains("Modality"))
-//        modality = tags["Modality"];
-
-//    return modality;
-//}
-
-
 /* ---------------------------------------------------------- */
 /* --------- GetImageFileTags ------------------------------- */
 /* ---------------------------------------------------------- */
-bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<QString, QString> &tags, QString &msg) {
+bool imageIO::GetImageFileTags(QString f, QHash<QString, QString> &tags, QString &msg) {
 
     tags.clear();
 
@@ -657,71 +789,11 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
     tags["Modality"] = "Unknown";
     tags["FileType"] = "Unknown";
 
-    /* read file with EXIF tool */
-    QString exifoutput = RunExiftool(f);
-    QStringList lines = exifoutput.split(QRegularExpression("(\\n|\\r\\n|\\r)"), Qt::SkipEmptyParts);
-    foreach (QString line, lines) {
-        QString delimiter = ":";
-        qint64 index = line.indexOf(delimiter);
-
-        if (index != -1) {
-            QString firstPart = line.mid(0, index).replace(" ", "");
-            QString secondPart = line.mid(index + delimiter.length());
-            tags[firstPart.trimmed()] = secondPart.trimmed();
-        }
-    }
-    msg += "GetImageFileTags() checkpoint A\n";
+    GetImageTagsDCMTK(f, tags);
 
     if (tags["FileType"] == "DICOM") {
-        msg += "exiftool successfuly read file [" + f + "]\n";
         /* ---------- it's a readable DICOM file ---------- */
-
-        /* attempt to get the Siemens CSA header info, but not if this is a Siemens enhanced DICOM */
-        tags["PhaseEncodeAngle"] = "";
-        tags["PhaseEncodingDirectionPositive"] = "";
-
-        if ((enablecsa) && (tags["SOPClassUID"] != "Enhanced MR Image Storage")) {
-            /* attempt to get the phase encode angle (In Plane Rotation) from the siemens CSA header */
-            QFile df(f);
-
-            /* open the dicom file as a text file, since part of the CSA header is stored as text, not binary */
-            if (df.open(QIODevice::ReadOnly | QIODevice::Text)) {
-
-                QTextStream in(&df);
-                while (!in.atEnd()) {
-                    QString line = in.readLine();
-                    if (line.startsWith("sSliceArray.asSlice[0].dInPlaneRot") && (line.size() < 70)) {
-                        /* make sure the line does not contain any non-printable ASCII control characters */
-                        if (!line.contains(QRegularExpression(QStringLiteral("[\\x00-\\x1F]")))) {
-                            qint64 idx = line.indexOf(".dInPlaneRot");
-                            line = line.mid(idx,23);
-                            QStringList vals = line.split(QRegularExpression("\\s+"));
-                            if (vals.size() > 0)
-                                tags["PhaseEncodeAngle"] = vals.last().trimmed();
-                            break;
-                        }
-                    }
-                }
-                //WriteLog(QString("Found PhaseEncodeAngle of [%1]").arg(tags["PhaseEncodeAngle"]));
-                df.close();
-            }
-
-            /* get the other part of the CSA header, the PhaseEncodingDirectionPositive value */
-            QString systemstring = QString("%1/./gdcmdump -C %2 | grep PhaseEncodingDirectionPositive").arg(bindir).arg(f);
-            QString csaheader = SystemCommand(systemstring, false);
-            QStringList parts = csaheader.split(",");
-            QString val;
-            if (parts.size() == 5) {
-                val = parts[4];
-                val.replace("Data '","",Qt::CaseInsensitive);
-                val.replace("'","");
-                if (val.trimmed() == "Data")
-                    val = "";
-                tags["PhaseEncodingDirectionPositive"] = val.trimmed();
-            }
-            //WriteLog(QString("Found PhaseEncodingDirectionPositive of [%1]").arg(tags["PhaseEncodingDirectionPositive"]));
-        }
-        msg += "GetImageFileTags() checkpoint C\n";
+        msg += "dcmtk successfuly read file [" + f + "]\n";
     }
     else {
         /* ---------- not a DICOM file, so see what other type of file it may be ---------- */
@@ -1038,7 +1110,7 @@ void imageIO::GetFileType(QString f, QString &fileType, QString &fileModality, Q
     fileModality = QString("");
 
     /* read file with EXIF tool */
-    QString exifoutput = RunExiftool(f);
+    QString exifoutput = Exiftool(f);
     QStringList lines = exifoutput.split(QRegularExpression("(\\n|\\r\\n|\\r)"), Qt::SkipEmptyParts);
     QHash<QString, QString> tags;
     foreach (QString line, lines) {

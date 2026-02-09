@@ -143,20 +143,20 @@ QStringList FindAllFiles(QString dir, QString pattern, bool recursive=false);
 QStringList ReadTextFileIntoArray(QString filepath, bool ignoreEmptyLines=true);
 bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession, BIDSMapping mapping, int &numfilesrenamed, QString &msg);
 bool BatchRenameFiles(QString dir, QString seriesnum, QString studynum, QString uid, int &numfilesrenamed, QString &msg);
-bool CopyFile(QString f, QString dir, QString &m);
 bool DirectoryExists(QString dir);
 bool FileDirectoryExists(QString f);
 bool FileExists(QString f);
-bool FindFirstFile(QString dir, QString pattern, QString &f, QString &msg, bool recursive=false);
+bool NiDBFindFirstFile(QString dir, QString pattern, QString &f, QString &msg, bool recursive=false);
 bool GetZipFileDetails(QString zippath, qint64 &unzipsize, qint64 &zipsize, QString &compression, qint64 &numfiles, QString &filelisting);
 bool MakePath(QString p, QString &msg, bool perm777=true);
 bool MoveAllFiles(QString indir, QString pattern, QString outdir, QString &msg);
-bool MoveFile(QString f, QString dir, QString &m);
+bool NiDBCopyFile(QString f, QString dir, QString &m);
+bool NiDBMoveFile(QString f, QString dir, QString &m);
 bool RemoveDir(QString p, QString &msg);
 bool RenameFile(QString filepathorig, QString filepathnew, bool force=true);
 bool WriteTextFile(QString filepath, QString str, bool append=true);
 bool chmod(QString f, QString perm);
-void GetDirSizeAndFileCount(QString dir, qint64 &c, qint64 &b, bool recurse=false);
 bool isExecutableInstalled(const QString &executableName);
+void GetDirSizeAndFileCount(QString dir, qint64 &c, qint64 &b, bool recurse=false);
 
 #endif // UTILS_H

@@ -29,6 +29,18 @@
 #include <QDir>
 #include <QDebug>
 #include "utils.h"
+#include "dcmtk/config/osconfig.h"
+#include "dcmtk/dcmdata/dcfilefo.h"
+#include "dcmtk/dcmdata/dcdatset.h"
+#include "dcmtk/dcmdata/dcdeftag.h"
+#include "dcmtk/dcmdata/dcdict.h"
+
+struct CsaElement
+{
+    QString name;
+    QString vr;
+    QList<QByteArray> values;
+};
 
 /**
  * @brief The imageIO class
@@ -48,30 +60,41 @@ public:
     bool AnonymizeDicomFileInPlace(QString file, QStringList tagsToChange, QString &msg);
     bool AnonymizeDir(QString indir, QString outdir, int anonlevel, QString &msg);
     bool ConvertDicom(QString filetype, QString indir, QString outdir, QString bindir, bool gzip, bool json, QString uid, QString studynum, QString seriesnum, QString bidsSubject, QString bidsSession, BIDSMapping bidsMapping, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg);
-    bool GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<QString, QString> &tags, QString &msg);
+    //bool GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<QString, QString> &tags, QString &msg);
     bool IsDICOMFile(QString f);
     void GetFileType(QString f, QString &fileType, QString &fileModality, QString &filePatientID, QString &fileProtocol);
+    bool GetImageFileTags(QString f, QHash<QString, QString> &tags, QString &msg);
+    bool GetImageTagsDCMTK(QString f, QHash<QString, QString> &tags);
 
 private:
     nidb *n;
 
-    /* functions to allow exiftool to run 'interactively' */
-    bool StartExiftool();
-    bool TerminateExiftool();
-    QString RunExiftool(QString arg);
-    QProcess *exifProcess;
-    QElapsedTimer *exifTimer;
+    /* exiftool helper */
+    QString Exiftool(QString arg);
 
-    bool exifPendingTerminate;
-    bool exifCmdRunning;
-    quint32 exifNextCmdID;
-    QByteArrayList exifCmdQueue;
-    QProcess::ProcessError exifProcessError;
-    QString exifErrorString;
-    int exifCmdIDLength;
-    qsizetype  _readyBeginPos[2];  // [0] StandardOutput | [1] ErrorOutput
-    qsizetype  _readyEndPos[2];    // [0] StandardOutput | [1] ErrorOutput
-    QByteArray _outBuff[2];        // [0] StandardOutput | [1] ErrorOutput
+    /* Siemens CSA header parser functions */
+    QMap<QString, CsaElement> ParseSiemensCSA(const QByteArray& csa);
+    QString csaToString(const QByteArray& v);
+    double csaToDouble(const QByteArray& v);
+    int csaToInteger(const QByteArray& v);
+
+    /* functions to allow exiftool to run 'interactively' */
+    //bool StartExiftool();
+    //bool TerminateExiftool();
+    //QString RunExiftool(QString arg);
+    //QProcess *exifProcess;
+    //QElapsedTimer *exifTimer;
+
+    //bool exifPendingTerminate;
+    //bool exifCmdRunning;
+    //quint32 exifNextCmdID;
+    //QByteArrayList exifCmdQueue;
+    //QProcess::ProcessError exifProcessError;
+    //QString exifErrorString;
+    //int exifCmdIDLength;
+    //qsizetype  _readyBeginPos[2];  // [0] StandardOutput | [1] ErrorOutput
+    //qsizetype  _readyEndPos[2];    // [0] StandardOutput | [1] ErrorOutput
+    //QByteArray _outBuff[2];        // [0] StandardOutput | [1] ErrorOutput
 };
 
 #endif // IMAGEIO_H

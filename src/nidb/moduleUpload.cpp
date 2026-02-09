@@ -219,10 +219,10 @@ bool moduleUpload::ReadUploads() {
                     /* get the file info */
                     QHash<QString, QString> tags;
                     QString m;
-                    bool csa = false;
-                    if (n->cfg["enablecsa"] == "1") csa = true;
-                    QString binpath = n->cfg["nidbdir"] + "/bin";
-                    if (img->GetImageFileTags(f, binpath, csa, tags, m)) {
+                    //bool csa = false;
+                    //if (n->cfg["enablecsa"] == "1") csa = true;
+                    //QString binpath = n->cfg["nidbdir"] + "/bin";
+                    if (img->GetImageFileTags(f, tags, m)) {
                         if ((tags["Modality"].toLower() == upload_modality.toLower()) || (upload_modality.toLower() == "auto")) {
 
                             /* subject matching criteria */
@@ -479,10 +479,10 @@ bool moduleUpload::ParseUploadedFiles(QMap<QString, QMap<QString, QMap<QString, 
                 /* if subject and study are unreadable, put those files into the appropriate bin */
                 QHash<QString, QString> tags;
                 QString m;
-                bool csa = false;
-                if (n->cfg["enablecsa"] == "1") csa = true;
-				QString binpath = n->cfg["nidbdir"] + "/bin";
-				img->GetImageFileTags(files[0], binpath, csa, tags, m);
+                //bool csa = false;
+                //if (n->cfg["enablecsa"] == "1") csa = true;
+                //QString binpath = n->cfg["nidbdir"] + "/bin";
+                img->GetImageFileTags(files[0], tags, m);
 
                 QSqlQuery q3;
 
@@ -711,7 +711,7 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
             /* unzip the squirrel package */
             QString f;
             QString m;
-            if (!FindFirstFile(upload_stagingpath, "*.sqrl", f, m)) {
+            if (!NiDBFindFirstFile(upload_stagingpath, "*.sqrl", f, m)) {
                 n->Log("Unable to find any squirrel files in path [" + upload_stagingpath + "]", __FUNCTION__);
                 continue;
             }

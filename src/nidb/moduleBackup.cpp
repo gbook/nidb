@@ -244,7 +244,7 @@ qint64 moduleBackup::MoveToBackupStaging() {
             n->Log(QString("Unable to create path [%1]. Error message [%2]").arg(destDir).arg(m));
         else {
             QString m;
-            if (MoveFile(fpath, destDir, m)) {
+            if (NiDBMoveFile(fpath, destDir, m)) {
                 filesMoved++;
                 bytesMoved += size;
             }

@@ -136,10 +136,10 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
     }
 
     QString m;
-    bool csa = false;
-    if (n->cfg["enablecsa"] == "1") csa = true;
-    QString binpath = n->cfg["nidbdir"] + "/bin";
-    if (img->GetImageFileTags(f, binpath, csa, tags, m)) {
+    //bool csa = false;
+    //if (n->cfg["enablecsa"] == "1") csa = true;
+    //QString binpath = n->cfg["nidbdir"] + "/bin";
+    if (img->GetImageFileTags(f, tags, m)) {
         if (!QFile::exists(f)) {
             AppendUploadLog(__FUNCTION__ , QString("File [%1] does not exist - check D!").arg(f));
             return false;
@@ -618,10 +618,10 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
             /* need to rename it, get the DICOM tags */
             tags.clear();
             m = "";
-            csa = false;
-            if (n->cfg["enablecsa"] == "1") csa = true;
-            binpath = n->cfg["nidbdir"] + "/bin";
-            if (!img->GetImageFileTags(file, binpath, csa, tags, m)) {
+            //csa = false;
+            //if (n->cfg["enablecsa"] == "1") csa = true;
+            //binpath = n->cfg["nidbdir"] + "/bin";
+            if (!img->GetImageFileTags(file, tags, m)) {
                 n->Log("GetImageFileTags() returned false");
                 n->Log(m, __FUNCTION__);
                 continue;
@@ -649,7 +649,7 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
             logmsg += ".";
             filecnt++;
         }
-        AppendUploadLog(__FUNCTION__ , QString(logmsg + "]  Done renaming existings [%1] files").arg(filecnt));
+        AppendUploadLog(__FUNCTION__ , QString(logmsg + "]  Done renaming %1 existing files").arg(filecnt));
     }
 
     /* create a thumbnail of the middle slice in the dicom directory (after getting the size, so the thumbnail isn't included in the size) */
@@ -665,10 +665,10 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
         /* need to rename it, get the DICOM tags */
         tags.clear();
         m = "";
-        csa = false;
-        if (n->cfg["enablecsa"] == "1") csa = true;
-        binpath = n->cfg["nidbdir"] + "/bin";
-        if (!img->GetImageFileTags(file, binpath, csa, tags, m)) {
+        //csa = false;
+        //if (n->cfg["enablecsa"] == "1") csa = true;
+        //binpath = n->cfg["nidbdir"] + "/bin";
+        if (!img->GetImageFileTags(file, tags, m)) {
             n->Log("GetImageFileTags() returned false");
             n->Log(m, __FUNCTION__);
             logmsg += "?";
@@ -722,8 +722,8 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
         /* get the DICOM tags */
         tags.clear();
         m = "";
-        binpath = n->cfg["nidbdir"] + "/bin";
-        if (!img->GetImageFileTags(file, binpath, false, tags, m)) {
+        //binpath = n->cfg["nidbdir"] + "/bin";
+        if (!img->GetImageFileTags(file, tags, m)) {
             n->Log("GetImageFileTags() returned false");
             n->Log(m, __FUNCTION__);
             logmsg += "?";
@@ -990,7 +990,7 @@ bool archiveIO::ArchiveNiftiSeries(int subjectRowID, int studyRowID, int seriesR
         QString m;
         MakePath(seriesPath, m);
         n->Log(QString("Copying [%1] to [%2]").arg(f).arg(seriesPath));
-        if (!CopyFile(f, seriesPath, m))
+        if (!NiDBCopyFile(f, seriesPath, m))
             n->Log(QString("Error copying file [%1] to directory [%2]. Message [%3]").arg(f).arg(seriesPath).arg(m));
     }
 
@@ -1550,8 +1550,8 @@ bool archiveIO::ArchiveParRecSeries(int importRowID, QString file) {
 
     /* move the files into the outdir */
     m = "";
-    MoveFile(parfile, outdir, m);
-    MoveFile(recfile, outdir, m);
+    NiDBMoveFile(parfile, outdir, m);
+    NiDBMoveFile(recfile, outdir, m);
 
     /* get the size of the dicom files and update the DB */
     qint64 dirsize(0);
@@ -1892,7 +1892,7 @@ bool archiveIO::ArchiveEEGSeries(int importRowID, QString file) {
 
     /* move the files into the outdir */
     AppendUploadLog(__FUNCTION__, "Moving ["+file+"] -> ["+outdir+"]");
-    if (!MoveFile(file, outdir, m)) {
+    if (!NiDBMoveFile(file, outdir, m)) {
         n->Log(QString("Unable to move [%1] to [%2], with error [%3]").arg(file, outdir, m));
     }
 
@@ -2155,7 +2155,7 @@ bool archiveIO::CreateThumbnail(QString f, QString outdir) {
 
     QString outfile = outdir + "/thumb.png";
 
-    QString systemstring = "convert -normalize " + f + " " + outfile;
+    QString systemstring = "convert -strip -normalize " + f + " " + outfile;
     SystemCommand(systemstring);
 
     if (QFile::exists(outfile))
@@ -3097,8 +3097,8 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                         sqrlSeries.stagedFiles = FindAllFiles(datadir, "*", true);
                         QHash<QString, QString> tags;
                         m="";
-                        QString bindir = QString("%1/bin").arg(n->cfg["nidbdir"]);
-                        img->GetImageFileTags(sqrlSeries.stagedFiles[0], bindir, true, tags, m);
+                        //QString bindir = QString("%1/bin").arg(n->cfg["nidbdir"]);
+                        img->GetImageFileTags(sqrlSeries.stagedFiles[0], tags, m);
                         n->Log(m, __FUNCTION__);
 
                         sqrlSeries.params = tags;
@@ -3541,7 +3541,11 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         if (!subj.valid()) continue;
 
         enrollment enroll(subjectRowID, projectRowID, n);
+        //n->Log(QString("enroll(%1, %2)").arg(subjectRowID).arg(projectRowID));
+        //enroll.PrintEnrollmentInfo();
+        //n->Log("Checkpoint A");
         if (!enroll.valid()) continue;
+        //n->Log("Checkpoint B");
 
         /* get squirrel SUBJECT (create the object in the package if it doesn't already exist) */
         squirrelSubject sqrlSubject(sqrl.GetDatabaseUUID());

@@ -22,6 +22,7 @@
 
 #include "moduleImport.h"
 #include <QSqlQuery>
+#include "utils.h"
 
 /* ---------------------------------------------------------- */
 /* --------- moduleImport ----------------------------------- */
@@ -528,7 +529,7 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
                 SetImportStatus(importid, "error", "File has size of 0 bytes", QString("File [" + file + "] is empty"), true);
                 perf.numFilesError++;
                 QString m;
-                if (!MoveFile(file, n->cfg["problemdir"], m))
+                if (!NiDBMoveFile(file, n->cfg["problemdir"], m))
                     n->Log(QString("Unable to move [%1] to [%2], with error [%3]").arg(file).arg(n->cfg["problemdir"]).arg(m));
                 continue;
             }
@@ -593,7 +594,7 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
                     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
                     m="";
-                    if (!MoveFile(file, n->cfg["problemdir"], m))
+                    if (!NiDBMoveFile(file, n->cfg["problemdir"], m))
                         n->Log(QString("Unable to move [%1] to [%2]").arg(file).arg(n->cfg["problemdir"]).arg(m));
 
                     SetImportStatus(importid, "error", "Problem inserting PAR/REC: " + m, archivereport, true);
@@ -631,7 +632,7 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
                     q.bindValue(":id", importid);
                     q.bindValue(":msg", m + " - moving to problem directory");
                     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-                    if (!MoveFile(file, n->cfg["problemdir"], m))
+                    if (!NiDBMoveFile(file, n->cfg["problemdir"], m))
                         n->Log(QString("Unable to move [%1] to [%2], with error [%3]").arg(file).arg(n->cfg["problemdir"]).arg(m));
 
                     SetImportStatus(importid, "error", "Problem inserting " + importDatatype.toUpper() + " - subject ID did not exist", archivereport, true);
@@ -647,10 +648,10 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
                 i++;
                 tags.clear();
                 QString m;
-                bool csa = false;
-                if (n->cfg["enablecsa"] == "1") csa = true;
-                QString binpath = n->cfg["nidbdir"] + "/bin";
-                if (img->GetImageFileTags(file, binpath, csa, tags, m)) {
+                //bool csa = false;
+                //if (n->cfg["enablecsa"] == "1") csa = true;
+                //QString binpath = n->cfg["nidbdir"] + "/bin";
+                if (img->GetImageFileTags(file, tags, m)) {
 
                     //n->Log(m);
                     //qDebug() << tags;
@@ -696,7 +697,7 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
                     q.bindValue(":msg", m);
                     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
                     QString m2;
-                    if (!MoveFile(file, n->cfg["problemdir"], m2))
+                    if (!NiDBMoveFile(file, n->cfg["problemdir"], m2))
                         n->Log(QString("Unable to move [%1] to [%2], with error [%3]").arg(file).arg(n->cfg["problemdir"]).arg(m2));
 
                     /* change the import status to reflect the error */

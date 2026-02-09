@@ -69,7 +69,7 @@ void enrollment::LoadEnrollmentInfo() {
         q.bindValue(":enrollmentid", _enrollmentid);
         break;
     case subjectAndProjectRowID:
-        q.prepare("select * from enrollment a left join subjects b on a.subject_id = b.subject_id left join projects c on a.project_id = c.project_id where a.subject_id = :subject_id and a.project_id = :projectid");
+        q.prepare("select * from enrollment a left join subjects b on a.subject_id = b.subject_id left join projects c on a.project_id = c.project_id where a.subject_id = :subjectid and a.project_id = :projectid");
         q.bindValue(":subjectid", _subjectid);
         q.bindValue(":projectid", _projectid);
         break;

@@ -26,12 +26,19 @@
 #include <QFile>
 #include <QString>
 #include <QDir>
-//#include "gdcmReader.h"
-//#include "gdcmWriter.h"
-//#include "gdcmAttribute.h"
-//#include "gdcmStringFilter.h"
-//#include "gdcmAnonymizer.h"
+#include "dcmtk/config/osconfig.h"
+#include "dcmtk/dcmdata/dcfilefo.h"
+#include "dcmtk/dcmdata/dcdatset.h"
+#include "dcmtk/dcmdata/dcdeftag.h"
+#include "dcmtk/dcmdata/dcdict.h"
 #include "utils.h"
+
+struct CsaElement
+{
+    QString name;
+    QString vr;
+    QList<QByteArray> values;
+};
 
 /**
  * @brief The squirrelImageIO class
@@ -56,14 +63,18 @@ public:
 
     QString GetDicomModality(QString f);
     void GetFileType(QString f, QString &fileType, QString &fileModality, QString &filePatientID, QString &fileProtocol);
-    bool GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<QString, QString> &tags, QString &msg);
+    bool GetImageFileTags(QString f, QHash<QString, QString> &tags, QString &msg);
+    bool GetImageTagsDCMTK(QString f, QHash<QString, QString> &tags);
 
 private:
-    /* functions to allow exiftool to run 'interactively' */
-    bool StartExiftool();
-    bool TerminateExiftool();
-    QString RunExiftool(QString arg);
-    QProcess *exifProcess;
+    /* exiftool helper */
+    QString Exiftool(QString arg);
+
+    /* Siemens CSA header parser functions */
+    QMap<QString, CsaElement> ParseSiemensCSA(const QByteArray& csa);
+    QString csaToString(const QByteArray& v);
+    double csaToDouble(const QByteArray& v);
+    int csaToInteger(const QByteArray& v);
 
 };
 

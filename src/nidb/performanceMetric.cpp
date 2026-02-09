@@ -46,5 +46,18 @@ QString performanceMetric::End() {
     str += QString("  FilesRead [%1]  FilesArchived [%2]  FilesIgnored [%3]  FilesError [%4]").arg(numFilesRead).arg(numFilesArchived).arg(numFilesIgnored).arg(numFilesError);
     str += QString("  Read rate: Bytes/Sec [%1]").arg(bytesReadPerSec);
 
+    elapsedTime = 0;
+    numBytesArchived = 0;
+    numBytesError = 0;
+    numBytesIgnored = 0;
+    numBytesRead = 0;
+    numFilesArchived = 0;
+    numFilesError = 0;
+    numFilesIgnored = 0;
+    numFilesRead = 0;
+    numSeries = 0;
+    numStudies = 0;
+    numSubjects = 0;
+
     return str;
 }

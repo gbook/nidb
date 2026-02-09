@@ -164,10 +164,10 @@ squirrelSeries series::GetSquirrelObject(QString databaseUUID) {
     sqrl.stagedFiles = FindAllFiles(datapath,"*");
     sqrl.stagedBehFiles = FindAllFiles(behpath,"*");
     QString file, m;
-    if (FindFirstFile(datapath,"*",file,m)) {
+    if (NiDBFindFirstFile(datapath,"*",file,m)) {
         imageIO *io = new imageIO(n);
         QHash<QString, QString> tags;
-        io->GetImageFileTags(file, n->cfg["bindir"], true, tags, m);
+        io->GetImageFileTags(file, tags, m);
         sqrl.params = tags;
         delete io;
     }

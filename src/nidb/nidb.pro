@@ -112,43 +112,44 @@ HEADERS += \
 
 # gdcm
 win32: {
-    #GDCMBIN = C:/squirrel/bin/gdcm
-    #GDCMSRC = C:/squirrel/src/gdcm/Source
-    #win32:CONFIG(release, debug|release): LIBS += -L$$GDCMBIN/bin/Release/
-    #else:win32:CONFIG(debug, debug|release): LIBS += -L$$GDCMBIN/bin/Debug/
-    #INCLUDEPATH += $$GDCMSRC/Attribute
-    #INCLUDEPATH += $$GDCMSRC/Common
-    #INCLUDEPATH += $$GDCMSRC/DataDictionary
-    #INCLUDEPATH += $$GDCMSRC/DataStructureAndEncodingDefinition
-    #INCLUDEPATH += $$GDCMSRC/InformationObjectDefinition
-    #INCLUDEPATH += $$GDCMSRC/MediaStorageAndFileFormat
-    #INCLUDEPATH += $$GDCMSRC/MessageExchangeDefinition
-    #INCLUDEPATH += $$GDCMBIN/Source/Common # for gdcmConfigure.h
-    #HEADERS += $$GDCMBIN/Source/Common/gdcmConfigure.h
+    # dcmtk library
+    DCMTK = "C:/Program Files (x86)/DCMTK"
 
-    #LIBS += -lgdcmMSFF \
-        #-lgdcmCommon \
-        #-lgdcmDICT \
-        #-lgdcmDSED \
-        #-lgdcmIOD \
-        #-lgdcmMEXD \
-        #-lgdcmcharls \
-        #-lgdcmexpat \
-        #-lgdcmjpeg12 \
-        #-lgdcmjpeg16 \
-        #-lgdcmjpeg8 \
-        #-lgdcmopenjp2 \
-        #-lgdcmzlib \
-        #-lsocketxx
+    LIBS += -L$$DCMTK/lib
+    #*msvc*:CONFIG(release, debug|release): LIBS += -L$$DCMTK/lib
+    #else:*msvc*:CONFIG(debug, debug|release): LIBS += -L$$GDCMBIN/bin/Debug
+    INCLUDEPATH += $$DCMTK/include/
 
-    # Location of SMTP Library
-    #SMTPBIN = ../../bin/smtp-win
-    #LIBS += -L$$SMTPBIN/release -lSMTPEmail
-    #INCLUDEPATH += ../smtp
-    #DEPENDPATH += $$SMTPBIN
-    #*msvc* { # visual studio spec filter
-#	QMAKE_CXXFLAGS += -MP
-    #}
+    LIBS += -ldcmdata \
+        -lcmr \
+        -ldcmdata \
+        -ldcmdsig \
+        -ldcmect \
+        -ldcmfg \
+        -ldcmimage \
+        -ldcmimgle \
+        -ldcmiod \
+        -ldcmjpeg \
+        -ldcmjpls \
+        -ldcmnet \
+        -ldcmpmap \
+        -ldcmpstat \
+        -ldcmqrdb \
+        -ldcmrt \
+        -ldcmseg \
+        -ldcmsr \
+        -ldcmtkcharls \
+        -ldcmtls \
+        -ldcmtract \
+        -ldcmwlm \
+        -ldcmxml \
+        -li2d \
+        -lijg8 \
+        -lijg12 \
+        -lijg16 \
+        -loficonv \
+        -loflog \
+        -lofstd
 
     # Location of squirrel Library
     SQUIRRELBIN = ../../bin/squirrel-win
@@ -161,12 +162,6 @@ win32: {
     }
 }
 unix: {
-    # Location of SMTP Library and header
-    #INCLUDEPATH += ../smtp
-    #SMTPBIN = ../../bin/smtp
-    #LIBS += -L$$SMTPBIN/ -lSMTPEmail
-    #INCLUDEPATH += $$SMTPBIN
-    #DEPENDPATH += $$SMTPBIN
 
     # Location of squirrel Library and header
     INCLUDEPATH += ../squirrel
@@ -175,35 +170,41 @@ unix: {
     INCLUDEPATH += $$SQUIRRELBIN
     DEPENDPATH += $$SQUIRRELBIN
 
-    # GDCM library
-    #GDCMBIN = ../../bin/gdcm
-    #GDCMSRC = ../gdcm/Source
-    #LIBS += -L$$GDCMBIN/bin/
-    #INCLUDEPATH += $$GDCMSRC/Attribute
-    #INCLUDEPATH += $$GDCMSRC/Common
-    #INCLUDEPATH += $$GDCMSRC/DataDictionary
-    #INCLUDEPATH += $$GDCMSRC/DataStructureAndEncodingDefinition
-    #INCLUDEPATH += $$GDCMSRC/InformationObjectDefinition
-    #INCLUDEPATH += $$GDCMSRC/MediaStorageAndFileFormat
-    #INCLUDEPATH += $$GDCMSRC/MessageExchangeDefinition
-    #INCLUDEPATH += $$GDCMBIN/Source/Common # for gdcmConfigure.h
-    #HEADERS += $$GDCMBIN/Source/Common/gdcmConfigure.h
+    LIBS += -L/usr/local/lib64/
+    #*msvc*:CONFIG(release, debug|release): LIBS += -L$$DCMTK/lib
+    #else:*msvc*:CONFIG(debug, debug|release): LIBS += -L$$GDCMBIN/bin/Debug
+    INCLUDEPATH += /usr/local/include/
 
-    #LIBS += -lgdcmMSFF \
-        #-lgdcmCommon \
-        #-lgdcmDICT \
-        #-lgdcmDSED \
-        #-lgdcmIOD \
-        #-lgdcmMEXD \
-        #-lgdcmcharls \
-        #-lgdcmexpat \
-        #-lgdcmjpeg12 \
-        #-lgdcmjpeg16 \
-        #-lgdcmjpeg8 \
-        #-lgdcmopenjp2 \
-        #-lgdcmuuid \
-        #-lgdcmzlib \
-        #-lsocketxx
+    LIBS += -ldcmdata \
+        -lcmr \
+        -ldcmdata \
+        -ldcmdsig \
+        -ldcmect \
+        -ldcmfg \
+        -ldcmimage \
+        -ldcmimgle \
+        -ldcmiod \
+        -ldcmjpeg \
+        -ldcmjpls \
+        -ldcmnet \
+        -ldcmpmap \
+        -ldcmpstat \
+        -ldcmqrdb \
+        -ldcmrt \
+        -ldcmseg \
+        -ldcmsr \
+        -ldcmtkcharls \
+        -ldcmtls \
+        -ldcmtract \
+        -ldcmwlm \
+        -ldcmxml \
+        -li2d \
+        -lijg8 \
+        -lijg12 \
+        -lijg16 \
+        -loficonv \
+        -loflog \
+        -lofstd
 }
 
 DISTFILES += \

@@ -70,10 +70,12 @@ bool dicom::LoadToSquirrel(QString dir, QString binpath, squirrel *sqrl) {
         }
 
         QHash<QString, QString> tags;
-        if (img->GetImageFileTags(f, binpath, false, tags, m)) {
+        //if (img->GetImageFileTags(f, binpath, false, tags, m)) {
+        if (img->GetImageFileTags(f, tags, m)) {
             if (tags["FileType"] == "DICOM") {
                 foundFileCount++;
                 dcms[tags["PatientID"]][tags["StudyInstanceUID"]][tags["SeriesInstanceUID"]].append(f);
+                qDebug() << tags;
             }
         }
     }
@@ -101,7 +103,7 @@ bool dicom::LoadToSquirrel(QString dir, QString binpath, squirrel *sqrl) {
 
                     QHash<QString, QString> tags;
                     QString m;
-                    img->GetImageFileTags(files[0], binpath, true, tags, m);
+                    img->GetImageFileTags(files[0], tags, m);
 
                     /* create/update the subject */
                     int subjectRowID;

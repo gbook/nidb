@@ -271,9 +271,9 @@ QString GenerateRandomString(int n) {
 
 
 /* ---------------------------------------------------------- */
-/* --------- MoveFile --------------------------------------- */
+/* --------- NiDBMoveFile ----------------------------------- */
 /* ---------------------------------------------------------- */
-bool MoveFile(QString f, QString dir, QString &m) {
+bool NiDBMoveFile(QString f, QString dir, QString &m) {
 
     QDir d;
     if (d.exists(dir)) {
@@ -296,9 +296,9 @@ bool MoveFile(QString f, QString dir, QString &m) {
 
 
 /* ---------------------------------------------------------- */
-/* --------- CopyFile --------------------------------------- */
+/* --------- NiDBCopyFile ----------------------------------- */
 /* ---------------------------------------------------------- */
-bool CopyFile(QString f, QString dir, QString &m) {
+bool NiDBCopyFile(QString f, QString dir, QString &m) {
 
     QDir d;
     if (d.exists(dir)) {
@@ -388,9 +388,9 @@ QStringList FindAllFiles(QString dir, QString pattern, bool recursive) {
 
 
 /* ---------------------------------------------------------- */
-/* --------- FindFirstFile ---------------------------------- */
+/* --------- NiDBFindFirstFile ------------------------------ */
 /* ---------------------------------------------------------- */
-bool FindFirstFile(QString dir, QString pattern, QString &f, QString &msg, bool recursive) {
+bool NiDBFindFirstFile(QString dir, QString pattern, QString &f, QString &msg, bool recursive) {
 
     QDir d = QDir(dir);
     if (!d.exists()) {

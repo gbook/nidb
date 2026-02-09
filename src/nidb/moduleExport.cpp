@@ -807,7 +807,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
             /* move the created .zip file to the web download directory */
             QString zipfile = QString("%1/NiDB-Squirrel-%2.zip").arg(n->cfg["exportdir"]).arg(exportid);
             QString m;
-            if (MoveFile(zipfile, n->cfg["webdownloaddir"], m)) {
+            if (NiDBMoveFile(zipfile, n->cfg["webdownloaddir"], m)) {
                 n->Log(QString("Success moving [%1] to [%2]").arg(zipfile).arg(n->cfg["webdownloaddir"]));
             }
             else {
@@ -2043,7 +2043,7 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
                     /* get some DICOM specific tags from the first file in the series */
                     QString dcmfile;
                     QString m;
-                    if (!FindFirstFile(indir, "*.dcm",dcmfile,m)) {
+                    if (!NiDBFindFirstFile(indir, "*.dcm",dcmfile,m)) {
                         log << "WriteNDARSeries() " + n->Log("Unable to find any DICOM files in [" + indir + "]");
                         return false;
                     }
@@ -2051,8 +2051,8 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
                     QHash<QString, QString> tags;
 
                     //QString m;
-                    QString binpath = n->cfg["nidbdir"] + "/bin";
-                    if (img->GetImageFileTags(dcmfile, binpath, false, tags, m)) {
+                    //QString binpath = n->cfg["nidbdir"] + "/bin";
+                    if (img->GetImageFileTags(dcmfile, tags, m)) {
                         Manufacturer = tags["Manufacturer"];
                         ProtocolName = tags["ProtocolName"];
                         PercentPhaseFieldOfView = tags["PercentPhaseFieldOfView"];
@@ -2065,7 +2065,7 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
                         SequenceName = tags["SequenceName"];
                     }
                     else {
-                        log << "WriteNDARSeries() " + n->Log(QString("GetImageFileTags(%1, %2, ...) returned false").arg(dcmfile).arg(binpath));
+                        log << "WriteNDARSeries() " + n->Log(QString("GetImageFileTags(%1, ...) returned false").arg(dcmfile));
                         return false;
                     }
                 }
