@@ -164,7 +164,10 @@ bool imageIO::GetImageTagsDCMTK(QString f, QHash<QString, QString> &tags) {
                                 //printf("Value appears to be empty\n");
                             }
                             val.remove(QChar('\0'));
-                            tags[name] = val.trimmed();
+                            //n->Log(QString("CSA %1 = [%2]").arg(name).arg(val));
+                            /* only add the tag if it doesn't already exist */
+                            if (!tags.contains(name))
+                                tags[name] = val.trimmed();
                         }
                     }
                     /* read the Siemens MrPhoenixProtocol header */
@@ -190,6 +193,10 @@ bool imageIO::GetImageTagsDCMTK(QString f, QHash<QString, QString> &tags) {
                     }
                     /* read all other tags */
                     else {
+                        //std::string cstr = strValue.c_str();
+                        //QString val = QString(cstr.c_str());
+                        //n->Log(QString("%1 = [%2] [%3] [%4]").arg(tagName).arg(strValue.c_str()).arg(cstr).arg(val));
+                        //qDebug() << tagName << " = [" << strValue.c_str() << "] [" << val << "]";
                         tags[tagName] = strValue.c_str();
                     }
                 }
@@ -1096,7 +1103,12 @@ bool imageIO::GetImageFileTags(QString f, QHash<QString, QString> &tags, QString
     msg += uniqueseries + "\n";
 
     //qDebug() << "Leaving GetImageFileTags()";
-    //Print(QString("tags[] contains %1 elements").arg(tags.size()));
+    n->Log(QString("tags[] contains %1 elements").arg(tags.size()));
+    QString tagString = "";
+    foreach (const QString &key, tags.keys()) {
+        tagString += QString("tags[%1] = %2\n").arg(key).arg(tags.value(key));
+    }
+    n->Log(tagString);
 
     return true;
 }
