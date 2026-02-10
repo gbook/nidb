@@ -9,7 +9,7 @@ URL:            http://github.com/gbook/nidb
 
 BuildArch:	x86_64
 BuildRequires:  gcc, cmake, make
-Requires:       php, php-mysqlnd, php-gd, php-cli, php-process, php-pear, php-mbstring, php-fpm, php-json, php-opcache, mariadb, mariadb-common, mariadb-server, mariadb-server-utils, mariadb-connector-c, mariadb-connector-c-config, mariadb-backup, httpd, ImageMagick, perl-Image-ExifTool, openssl, compat-openssl10, p7zip, p7zip-plugins, java
+Requires:       php, php-mysqlnd, php-gd, php-cli, php-process, php-pear, php-mbstring, php-fpm, php-json, php-opcache, mariadb, mariadb-common, mariadb-server, mariadb-server-utils, mariadb-connector-c, mariadb-connector-c-config, mariadb-backup, httpd, ImageMagick, perl-Image-ExifTool, openssl, compat-openssl10, zip, unzip, p7zip, p7zip-plugins, java
 
 %description
 NeuroInformatics Database (NiDB) is a full neuroimaging database system to store, retrieve, analyze, and distribute neuroscience data.
@@ -30,26 +30,38 @@ cp -f %{_sourcedir}/src/setup/rpm_post_install.sh %{buildroot}/nidb/setup/ # RPM
 cp -rf %{_sourcedir}/src/web/* %{buildroot}/var/www/html/ # copy web files to the end location
 cp -f %{_builddir}/bin/nidb/nidb %{buildroot}/nidb/bin/
 cp -rf %{_sourcedir}/tools/* %{buildroot}/nidb/bin/
-#cp -rf %{_sourcedir}/src/qcmodules/* %{buildroot}/nidb/qcmodules/
 cp -f %{_sourcedir}/src/setup/* %{buildroot}/nidb/setup/
-#cp -f %{_builddir}/bin/smtp/libSMTPEmail.so.1 %{buildroot}/usr/lib/ # copy SMTP libs
 cp -f %{_builddir}/bin/bit7z/libbit7z64.a %{buildroot}/usr/lib/ # copy bit7z lib
 cp -f %{_builddir}/bin/squirrel/libsquirrel.so.1 %{buildroot}/usr/lib/ # copy squirrel lib
-#cp -f %{_builddir}/bin/gdcm/bin/libgdcmMSFF.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
-#cp -f %{_builddir}/bin/gdcm/bin/libgdcmopenjp2.so.7 %{buildroot}/usr/lib/ # copy GDCM libs
-#cp -f %{_builddir}/bin/gdcm/bin/libgdcmuuid.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
-#cp -f %{_builddir}/bin/gdcm/bin/libgdcmzlib.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
-#cp -f %{_builddir}/bin/gdcm/bin/libgdcmcharls.so.2 %{buildroot}/usr/lib/ # copy GDCM libs
-#cp -f %{_builddir}/bin/gdcm/bin/libgdcmCommon.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
-#cp -f %{_builddir}/bin/gdcm/bin/libgdcmDICT.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
-#cp -f %{_builddir}/bin/gdcm/bin/libgdcmDSED.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
-#cp -f %{_builddir}/bin/gdcm/bin/libgdcmexpat.so.2.0 %{buildroot}/usr/lib/ # copy GDCM libs
-#cp -f %{_builddir}/bin/gdcm/bin/libgdcmIOD.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
-#cp -f %{_builddir}/bin/gdcm/bin/libgdcmjpeg8.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
-#cp -f %{_builddir}/bin/gdcm/bin/libgdcmjpeg12.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
-#cp -f %{_builddir}/bin/gdcm/bin/libgdcmjpeg16.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
-#cp -f %{_builddir}/bin/gdcm/bin/libgdcmMEXD.so.3.0 %{buildroot}/usr/lib/ # copy GDCM libs
-#cp -f %{_builddir}/bin/gdcm/bin/libsocketxx.so.1.2 %{buildroot}/usr/lib/ # copy GDCM libs
+cp -f /usr/local/lib64/libcmr.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmdata.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmdsig.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmect.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmfg.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmimage.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmimgle.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmiod.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmjpeg.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmjpls.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmnet.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmpmap.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmpstat.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmqrdb.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmrt.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmseg.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmsr.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmtkcharls.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmtls.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmtract.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmwlm.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmxml.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
+cp -f /usr/local/lib64/libi2d.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
+cp -f /usr/local/lib64/libijg12.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
+cp -f /usr/local/lib64/libijg16.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
+cp -f /usr/local/lib64/libijg8.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
+cp -f /usr/local/lib64/liboficonv.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
+cp -f /usr/local/lib64/liboflog.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
+cp -f /usr/local/lib64/libofstd.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
 cp -f ~/Qt/6.9.3/gcc_64/lib/libQt6Core.so.6 %{buildroot}/usr/lib/ # copy Qt libs
 cp -f ~/Qt/6.9.3/gcc_64/lib/libQt6Network.so.6 %{buildroot}/usr/lib/ # copy Qt libs
 cp -f ~/Qt/6.9.3/gcc_64/lib/libQt6Sql.so.6 %{buildroot}/usr/lib/ # copy Qt libs

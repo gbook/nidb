@@ -165,7 +165,8 @@ bool imageIO::GetImageTagsDCMTK(QString f, QHash<QString, QString> &tags) {
                             }
                             val.remove(QChar('\0'));
                             //n->Log(QString("CSA %1 = [%2]").arg(name).arg(val));
-                            /* only add the tag if it doesn't already exist */
+
+                            /* only add the tag if it does not already exist */
                             if (!tags.contains(name))
                                 tags[name] = val.trimmed();
                         }
