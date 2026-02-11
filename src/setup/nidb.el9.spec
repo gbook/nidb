@@ -26,6 +26,7 @@ mkdir -p %{buildroot}/nidb/logs
 mkdir -p %{buildroot}/nidb/qcmodules
 mkdir -p %{buildroot}/nidb/setup
 mkdir -p %{buildroot}/var/www/html
+mkdir -p %{buildroot}/usr/local/lib64
 cp -f %{_sourcedir}/src/setup/rpm_post_install.sh %{buildroot}/nidb/setup/ # RPM post-install script
 cp -rf %{_sourcedir}/src/web/* %{buildroot}/var/www/html/ # copy web files to the end location
 cp -f %{_builddir}/bin/nidb/nidb %{buildroot}/nidb/bin/
