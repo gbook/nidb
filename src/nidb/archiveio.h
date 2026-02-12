@@ -50,7 +50,7 @@ public:
 
     /* archive functions */
     BIDSMapping GetBIDSMapping(int projectRowID, QString protocol, QString modality, QString imageType);
-    bool ArchiveDICOMSeries(int importid, int existingSubjectID, int existingStudyID, int existingSeriesID, QString subjectMatchCriteria, QString studyMatchCriteria, QString seriesMatchCriteria, int destProjectID, QString specificPatientID, int destSiteID, QString altUIDs, QString seriesNotes, QStringList files, performanceMetric &perf);
+    bool ArchiveDICOMSeries(int importid, int existingSubjectID, int existingStudyID, int existingSeriesID, QString subjectMatchCriteria, QString studyMatchCriteria, QString seriesMatchCriteria, int destProjectID, QString specificPatientID, int destSiteID, QString altUIDs, QString seriesNotes, QStringList files);
     bool ArchiveEEGSeries(int importid, QString file);
     bool ArchiveNiftiSeries(int subjectRowID, int studyRowID, int seriesRowID, int seriesNumber, QHash<QString, QString> tags, QStringList files);
     bool ArchiveParRecSeries(int importid, QString file);
@@ -76,7 +76,7 @@ public:
 
     /* object helper functions */
     void SetUploadID(int upid);
-    void AppendUploadLog(QString func, QString m);
+    void AppendUploadLog(QString m);
 
 private:
     nidb *n;

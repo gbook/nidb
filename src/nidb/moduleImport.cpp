@@ -124,9 +124,9 @@ bool moduleImport::ParseRemotelyImportedData() {
             /* ----- get list of files in directory ----- */
 
             /* unzip the entire directory */
-            io->AppendUploadLog(__FUNCTION__, "Unzipping files located in [" + uploaddir + "]");
+            io->AppendUploadLog("Unzipping files located in [" + uploaddir + "]");
             m = UnzipDirectory(uploaddir, true);
-            io->AppendUploadLog(__FUNCTION__, "Unzip output" + m);
+            io->AppendUploadLog("Unzip output" + m);
 
             QStringList files;
             files = FindAllFiles(uploaddir,"*");
@@ -723,13 +723,13 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
         QStringList files2 = dcmseries[seriesuid];
 
         n->Debug(QString("Going to archive a list of files belonging to SeriesInstanceUID [%1] List [%2]").arg(seriesuid).arg(files2.join(", ")));
-        performanceMetric perf2;
-        perf2.Start();
-        if (io->ArchiveDICOMSeries(importid, -1, -1, -1, subjectMatchCriteria, studyMatchCriteria, seriesMatchCriteria, importProjectID, "", importSiteID, importSeriesNotes, importAltUIDs, files2, perf2))
+        //performanceMetric perf2;
+        //perf2.Start();
+        if (io->ArchiveDICOMSeries(importid, -1, -1, -1, subjectMatchCriteria, studyMatchCriteria, seriesMatchCriteria, importProjectID, "", importSiteID, importSeriesNotes, importAltUIDs, files2))
             iscomplete = true;
         else
             iscomplete = false;
-        n->Log(perf2.End());
+        //n->Log(perf2.End());
 
         n->ModuleRunningCheckIn();
         /* check if this module should be running now or not */

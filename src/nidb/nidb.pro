@@ -171,8 +171,6 @@ unix: {
     DEPENDPATH += $$SQUIRRELBIN
 
     LIBS += -L/usr/local/lib64/
-    #*msvc*:CONFIG(release, debug|release): LIBS += -L$$DCMTK/lib
-    #else:*msvc*:CONFIG(debug, debug|release): LIBS += -L$$GDCMBIN/bin/Debug
     INCLUDEPATH += /usr/local/include/
 
     LIBS += -ldcmdata \

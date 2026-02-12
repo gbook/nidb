@@ -45,7 +45,7 @@ private:
     bool ArchiveSelectedFiles();
     bool ArchiveSelectedSquirrel();
     bool ParseUploadedFiles(QMap<QString, QMap<QString, QMap<QString, QStringList> > > fs, QString upload_subjectcriteria, QString upload_studycriteria, QString upload_seriescriteria, QString uploadstagingpath, int upload_id);
-    bool ParseUploadedSquirrel(squirrel *sqrl, QString upload_subjectcriteria, QString upload_studycriteria, QString upload_seriescriteria, QString uploadstagingpath, int uploadRowID);
+    bool ParseUploadedSquirrel(squirrel *sqrl, int uploadRowID);
     bool ReadUploads();
     void SetUploadStatus(int uploadid, QString status, double percent=-1.0);
     int InsertOrUpdateParsedSubject(int parsedSubjectRowID, QString upload_subjectcriteria, int uploadRowID, QString PatientID, QString PatientName, QString PatientSex, QString PatientBirthDate, QString &m);

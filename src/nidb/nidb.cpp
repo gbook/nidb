@@ -708,10 +708,10 @@ bool nidb::SendEmail(QString to, QString subject, QString body) {
 
     /* get email config variables */
     QString smtpServer = cfg["emailserver"].replace("tls://","");
-    int smtpPort = cfg["emailport"].toInt();
+    //int smtpPort = cfg["emailport"].toInt();
     QString fromEmail = cfg["emailfrom"];
-    QString smtpUsername = cfg["emailusername"];
-    QString smtpPassword = cfg["emailpassword"];
+    //QString smtpUsername = cfg["emailusername"];
+    //QString smtpPassword = cfg["emailpassword"];
     QString siteName = cfg["sitename"];
     QString tmpMailFilePath = "/tmp/" + GenerateRandomString(15) + ".txt";
 
