@@ -133,7 +133,7 @@ public:
     qint64 FindSubject(QString id);
 
     /* extract objects */
-    bool ExtractObject(ObjectType object, qint64 subjectRowID, QString outDir, bool recursive=false);
+    bool ExtractObject(ObjectType object, qint64 subjectRowID, QString outDir /*, bool recursive=false*/);
 
     /* remove objects */
     bool RemoveObject(ObjectType object, qint64 objectRowID);

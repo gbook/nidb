@@ -79,6 +79,9 @@ bool modify::DoModify(QString packagePath, QString operation, ObjectType object,
 /* ---------------------------------------------------------------------------- */
 bool modify::AddObject(QString packagePath, ObjectType object, QString dataPath, QString objectData, QString objectID, QString subjectID, int studyNum, QString &m) {
 
+    /* prevent the unreferenced parameter warning */
+    objectID;
+
     /* check if the user should have specified a path */
     if ((object == Series) || (object == Analysis) || (object == Experiment) || (object == Pipeline) || (object == GroupAnalysis)) {
     }
@@ -460,6 +463,10 @@ bool modify::AddObject(QString packagePath, ObjectType object, QString dataPath,
 /* ---------------------------------------------------------------------------- */
 bool modify::RemoveObject(QString packagePath, ObjectType object, QString dataPath, QString objectData, QString objectID, QString subjectID, int studyNum, QString &m) {
 
+    /* prevent the unreferenced parameter warning */
+    dataPath;
+    objectData;
+
     /* load the package */
     squirrel *sqrl = new squirrel();
     sqrl->SetFileMode(FileMode::ExistingPackage);
@@ -576,6 +583,12 @@ bool modify::RemoveObject(QString packagePath, ObjectType object, QString dataPa
 /* ---------------------------------------------------------------------------- */
 bool modify::UpdateObject(QString packagePath, ObjectType object, QString dataPath, QString objectData, QString objectID, QString subjectID, int studyNum, QString &m) {
 
+    /* prevent the unreferenced parameter warnings */
+    dataPath;
+    objectID;
+    subjectID;
+    studyNum;
+
     //if (objectType != "") {
         /* load the package */
         squirrel *sqrl = new squirrel();
@@ -658,6 +671,11 @@ bool modify::SplitByModality(QString packagePath, QString dataPath, QString obje
      * So an example package of 100MB with 2 modalities will write out 2 packages, with each being 50MB
      * and the original package will remain on disk. After the split operation there will be three image packages
      * with a total of 200MB on disk, plus one package with only interventions/observations. */
+
+    /* prevent the unreferenced parameter warning */
+    dataPath;
+    objectData;
+    objectID;
 
     utils::Print("Splitting package [" + packagePath + "] by modality...");
     /* read squirrel package */
@@ -847,6 +865,9 @@ bool modify::SplitByModality(QString packagePath, QString dataPath, QString obje
 /* ----- RemovePHI ------------------------------------------------------------ */
 /* ---------------------------------------------------------------------------- */
 bool modify::RemovePHI(QString packagePath, QString dataPath, QString &m) {
+
+    /* prevent the unreferenced parameter warning */
+    dataPath;
 
     squirrel *sqrl = new squirrel();
     sqrl->SetFileMode(FileMode::ExistingPackage);

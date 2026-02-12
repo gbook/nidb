@@ -41,7 +41,7 @@ dicom::dicom()
  * @param sqrl squirrel object
  * @return true if successful, false otherwise
  */
-bool dicom::LoadToSquirrel(QString dir, QString binpath, squirrel *sqrl) {
+bool dicom::LoadToSquirrel(QString dir, squirrel *sqrl) {
 
     numFiles = 0;
 

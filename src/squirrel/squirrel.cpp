@@ -1430,7 +1430,7 @@ QString squirrel::PrintPackage() {
 
     qint64 numAnalyses = GetObjectCount(Analysis);
     qint64 numDataDictionaries = GetObjectCount(DataDictionary);
-    qint64 numDataDictionaryItem = GetObjectCount(DataDictionaryItem);
+    //qint64 numDataDictionaryItem = GetObjectCount(DataDictionaryItem);
     qint64 numExperiments = GetObjectCount(Experiment);
     qint64 numGroupAnalyses = GetObjectCount(GroupAnalysis);
     qint64 numInterventions = GetObjectCount(Intervention);
@@ -2709,7 +2709,7 @@ qint64 squirrel::FindDataDictionary(QString dataDictionaryName) {
  * @param recursive `true` if all data should be extracted, recursively (studies and series). This is the default
  * @return `true` if successful, `false` otherwise
  */
-bool squirrel::ExtractObject(ObjectType object, qint64 objectRowID, QString outDir, bool recursive) {
+bool squirrel::ExtractObject(ObjectType object, qint64 objectRowID, QString outDir /*, bool recursive*/) {
     if (objectRowID < 0) {
         Log(QString("Invalid object ID [%1]").arg(objectRowID));
         return false;
