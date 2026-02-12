@@ -28,7 +28,7 @@ mkdir -p %{buildroot}/nidb/logs
 mkdir -p %{buildroot}/nidb/qcmodules
 mkdir -p %{buildroot}/nidb/setup
 mkdir -p %{buildroot}/var/www/html
-mkdir -p %{buildroot}/usr/local/lib64
+#mkdir -p %{buildroot}/usr/local/lib64
 cp -f %{_sourcedir}/src/setup/rpm_post_install.sh %{buildroot}/nidb/setup/ # RPM post-install script
 cp -rf %{_sourcedir}/src/web/* %{buildroot}/var/www/html/ # copy web files to the end location
 cp -f %{_builddir}/bin/nidb/nidb %{buildroot}/nidb/bin/
@@ -38,35 +38,35 @@ cp -rf %{_sourcedir}/src/qcmodules/* %{buildroot}/nidb/qcmodules/
 cp -f %{_sourcedir}/src/setup/* %{buildroot}/nidb/setup/
 cp -f %{_builddir}/bin/bit7z/libbit7z64.a %{buildroot}/usr/lib/ # copy bit7z lib
 cp -f %{_builddir}/bin/squirrel/libsquirrel.so.1 %{buildroot}/usr/lib/ # copy squirrel lib
-cp -f /usr/local/lib64/libcmr.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
-cp -f /usr/local/lib64/libdcmdata.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
-cp -f /usr/local/lib64/libdcmdsig.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
-cp -f /usr/local/lib64/libdcmect.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
-cp -f /usr/local/lib64/libdcmfg.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
-cp -f /usr/local/lib64/libdcmimage.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
-cp -f /usr/local/lib64/libdcmimgle.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
-cp -f /usr/local/lib64/libdcmiod.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
-cp -f /usr/local/lib64/libdcmjpeg.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
-cp -f /usr/local/lib64/libdcmjpls.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
-cp -f /usr/local/lib64/libdcmnet.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
-cp -f /usr/local/lib64/libdcmpmap.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
-cp -f /usr/local/lib64/libdcmpstat.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
-cp -f /usr/local/lib64/libdcmqrdb.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
-cp -f /usr/local/lib64/libdcmrt.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
-cp -f /usr/local/lib64/libdcmseg.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
-cp -f /usr/local/lib64/libdcmsr.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
-cp -f /usr/local/lib64/libdcmtkcharls.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
-cp -f /usr/local/lib64/libdcmtls.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
-cp -f /usr/local/lib64/libdcmtract.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
-cp -f /usr/local/lib64/libdcmwlm.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
-cp -f /usr/local/lib64/libdcmxml.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
-cp -f /usr/local/lib64/libi2d.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
-cp -f /usr/local/lib64/libijg12.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
-cp -f /usr/local/lib64/libijg16.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
-cp -f /usr/local/lib64/libijg8.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
-cp -f /usr/local/lib64/liboficonv.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
-cp -f /usr/local/lib64/liboflog.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
-cp -f /usr/local/lib64/libofstd.so.20.3.7.0 %{buildroot}/usr/local/lib64/ # copy dcmtk libs
+cp -f /usr/local/lib64/libcmr.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmdata.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmdsig.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmect.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmfg.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmimage.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmimgle.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmiod.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmjpeg.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmjpls.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmnet.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmpmap.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmpstat.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmqrdb.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmrt.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmseg.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmsr.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmtkcharls.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmtls.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmtract.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmwlm.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
+cp -f /usr/local/lib64/libdcmxml.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
+cp -f /usr/local/lib64/libi2d.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
+cp -f /usr/local/lib64/libijg12.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
+cp -f /usr/local/lib64/libijg16.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
+cp -f /usr/local/lib64/libijg8.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
+cp -f /usr/local/lib64/liboficonv.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
+cp -f /usr/local/lib64/liboflog.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
+cp -f /usr/local/lib64/libofstd.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
 cp -f ~/Qt/6.9.3/gcc_64/lib/libQt6Core.so.6 %{buildroot}/usr/lib/ # copy Qt libs
 cp -f ~/Qt/6.9.3/gcc_64/lib/libQt6Network.so.6 %{buildroot}/usr/lib/ # copy Qt libs
 cp -f ~/Qt/6.9.3/gcc_64/lib/libQt6Sql.so.6 %{buildroot}/usr/lib/ # copy Qt libs
@@ -84,7 +84,7 @@ cp -f ~/Qt/6.9.3/gcc_64/plugins/sqldrivers/libqsqlite.so %{buildroot}/nidb/bin/s
 /var/www/html
 /usr/lib/*
 /usr/local/bin/*
-/usr/local/lib64
+#/usr/local/lib64
 
 %post
 /nidb/setup/rpm_post_install.sh
