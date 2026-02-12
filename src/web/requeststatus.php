@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB requeststatus.php
- // Copyright (C) 2004 - 2025
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -343,14 +343,14 @@
 						<?
 							if (($destinationtype == "web") || ($destinationtype == "xnat") || ($destinationtype == "squirrel") || ($destinationtype == "ndar")) {
 								if ((round($totals['complete']/$total)*100 == 100) || (($totals['submitted'] == 0) && ($totals['processing'] == 0))) {
-									$zipfile = $_SERVER['DOCUMENT_ROOT'] . "/download/NIDB-$exportid.zip";
+									$zipfile = $GLOBALS['cfg']['webdir'] . "/download/NIDB-$exportid.zip";
 									if (file_exists($zipfile)) {
 										$output = shell_exec("du -sb $zipfile");
 										list($filesize, $fname) = preg_split('/\s+/', $output);
 										$zipfilename = "NIDB-$exportid.zip";
 									}
 									else {
-										$zipfile = $_SERVER['DOCUMENT_ROOT'] . "/download/NiDB-Squirrel-$exportid.zip";
+										$zipfile = $GLOBALS['cfg']['webdir'] . "/download/NiDB-Squirrel-$exportid.zip";
 										if (file_exists($zipfile)) {
 											$output = shell_exec("du -sb $zipfile");
 											list($filesize, $fname) = preg_split('/\s+/', $output);
@@ -364,7 +364,7 @@
 									
 									//echo "[$zipfilename] [$zipfile]";
 									if ($filesize == 0) {
-										echo "Zipping download...";
+										echo "Zipping download... ($zipfile)";
 									}
 									else {
 										?>

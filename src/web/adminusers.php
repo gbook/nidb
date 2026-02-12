@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB adminusers.php
- // Copyright (C) 2004 - 2025
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -256,8 +256,8 @@
 		$fullname = mysqli_real_escape_string($GLOBALS['linki'], $fullname);
 		$email = mysqli_real_escape_string($GLOBALS['linki'], $email);
 		$password = mysqli_real_escape_string($GLOBALS['linki'], $password);
-		$enabled = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $enabled);
-		$isadmin = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $isadmin);
+		$enabled = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $enabled));
+		$isadmin = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $isadmin));
 		
 		/* determine their current login type */
 		$logintype = "Standard";

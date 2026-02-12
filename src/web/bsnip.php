@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB bsnip.php
- // Copyright (C) 2004 - 2025
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -60,7 +60,21 @@
 		?>
 		<br><br><br>
 		<div class="ui container">
-		
+			
+			<div class="ui black segment">
+				<h1 class="ui header">
+					BSNIP Downloads
+					<div class="sub header">
+						Publicly available data from the BSNIP consortium projects
+					</div>
+				</h1>
+				<p>Data are packaged in the squirrel format and are separated by modality and site. More information about the squirrel format can be found here: <a href="https://docs.neuroinfodb.org/squirrel/">https://docs.neuroinfodb.org/squirrel/</a></p>
+				
+				<p>squirrel packages can be unzipped using 7-zip (7z command on Linux). Or use the squirrel command line <a href="https://github.com/gbook/squirrel/releases">utilities</a> to view package contents and extract data</p>
+
+			</div>
+			<br><br>
+			
 			<div class="ui top attached black segment">
 				<div class="ui two column grid">
 					<div class="column">

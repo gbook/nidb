@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB download.php
- // Copyright (C) 2004 - 2025
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -89,6 +89,7 @@
 			$zipfilepath = $GLOBALS['cfg']['downloaddir'] . "/$zipfilename";
 			/* create zip object */
 			$systemstring = "zip -j $zipfilepath $datapath/*";
+			//echo "$systemstring<br><br>";
 			$junk = exec($systemstring);
 			
 			if (!file_exists($datapath)) {
@@ -96,7 +97,7 @@
 			}
 			else {
 				if (!file_exists($zipfilepath)) {
-					Error("The archive path [$datapath] exists, but the server was unable to create a zip file [$zipfilepath]. Go <a href='" . $_SERVER["HTTP_REFERER"] . "'>back</a> to referring page");
+					Error("The archive path [$datapath] exists, but the server was unable to create a zip file [$zipfilepath]. Zip command [$systemstring] output [$junk]. Go <a href='" . $_SERVER["HTTP_REFERER"] . "'>back</a> to referring page");
 				}
 				else {
 					if (filesize($zipfilepath) == 0) {

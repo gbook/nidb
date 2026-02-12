@@ -2,7 +2,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB projects.php
- // Copyright (C) 2004 - 2025
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
