@@ -512,11 +512,11 @@ bool imageIO::IsDICOMFile(QString f) {
         DcmDataset *dataset = fileformat.getDataset();
 
         /* partial anonmymization - remove the obvious stuff like name and DOB */
-        dataset->putAndInsertString(DCM_ReferringPhysicianName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_ReferringPhysicianName]\n";
-        dataset->putAndInsertString(DCM_PerformingPhysicianName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PerformingPhysicianName]\n";
-        dataset->putAndInsertString(DCM_OperatorsName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_OperatorsName]\n";
-        dataset->putAndInsertString(DCM_PatientName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientName]\n";
-        dataset->putAndInsertString(DCM_PatientBirthDate, anonDate); if (!status.good()) msg += "Error changing tag [DCM_PatientBirthDate]\n";
+        if (dataset->tagExists(DCM_ReferringPhysicianName)) { dataset->putAndInsertString(DCM_ReferringPhysicianName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_ReferringPhysicianName]\n"; }
+        if (dataset->tagExists(DCM_PerformingPhysicianName)) { dataset->putAndInsertString(DCM_PerformingPhysicianName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PerformingPhysicianName]\n"; }
+        if (dataset->tagExists(DCM_OperatorsName)) { dataset->putAndInsertString(DCM_OperatorsName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_OperatorsName]\n"; }
+        if (dataset->tagExists(DCM_PatientName)) { dataset->putAndInsertString(DCM_PatientName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientName]\n"; }
+        if (dataset->tagExists(DCM_PatientBirthDate)) { dataset->putAndInsertString(DCM_PatientBirthDate, anonDate); if (!status.good()) msg += "Error changing tag [DCM_PatientBirthDate]\n"; }
 
         status = fileformat.saveFile(ofile);
         if (status.good())
@@ -701,76 +701,76 @@ bool imageIO::AnonymizeDicomDirInPlace(QString dir, int anonlevel, QString &msg)
                 case 1:
                 case 3: {
                     /* partial anonmymization - remove the obvious stuff like name and DOB */
-                    dataset->putAndInsertString(DCM_ReferringPhysicianName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_ReferringPhysicianName]\n";
-                    dataset->putAndInsertString(DCM_PerformingPhysicianName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PerformingPhysicianName]\n";
-                    dataset->putAndInsertString(DCM_OperatorsName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_OperatorsName]\n";
-                    dataset->putAndInsertString(DCM_PatientName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientName]\n";
-                    dataset->putAndInsertString(DCM_PatientBirthDate, anonDate); if (!status.good()) msg += "Error changing tag [DCM_PatientBirthDate]\n";
+                    if (dataset->tagExists(DCM_ReferringPhysicianName)) { dataset->putAndInsertString(DCM_ReferringPhysicianName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_ReferringPhysicianName]\n"; }
+                    if (dataset->tagExists(DCM_PerformingPhysicianName)) { dataset->putAndInsertString(DCM_PerformingPhysicianName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PerformingPhysicianName]\n"; }
+                    if (dataset->tagExists(DCM_OperatorsName)) { dataset->putAndInsertString(DCM_OperatorsName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_OperatorsName]\n"; }
+                    if (dataset->tagExists(DCM_PatientName)) { dataset->putAndInsertString(DCM_PatientName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientName]\n"; }
+                    if (dataset->tagExists(DCM_PatientBirthDate)) { dataset->putAndInsertString(DCM_PatientBirthDate, anonDate); if (!status.good()) msg += "Error changing tag [DCM_PatientBirthDate]\n"; }
                     break;
                 }
                 case 2: {
                     /* Full anonymization. remove all names, dates, locations. ANYTHING identifiable */
-                    dataset->putAndInsertString(DCM_InstanceCreationDate, anonDate); if (!status.good()) msg += "Error changing tag [DCM_InstanceCreationDate]\n";
-                    dataset->putAndInsertString(DCM_InstanceCreationTime, anonTime); if (!status.good()) msg += "Error changing tag [DCM_InstanceCreationTime]\n";
-                    dataset->putAndInsertString(DCM_StudyDate, anonDate); if (!status.good()) msg += "Error changing tag [DCM_StudyDate]\n";
-                    dataset->putAndInsertString(DCM_SeriesDate, anonDate); if (!status.good()) msg += "Error changing tag [DCM_SeriesDate]\n";
-                    dataset->putAndInsertString(DCM_AcquisitionDate, anonDate); if (!status.good()) msg += "Error changing tag [DCM_AcquisitionDate]\n";
-                    dataset->putAndInsertString(DCM_ContentDate, anonDate); if (!status.good()) msg += "Error changing tag [DCM_ContentDate]\n";
-                    dataset->putAndInsertString(DCM_StudyTime, anonTime); if (!status.good()) msg += "Error changing tag [DCM_StudyTime]\n";
-                    dataset->putAndInsertString(DCM_SeriesTime, anonTime); if (!status.good()) msg += "Error changing tag [DCM_SeriesTime]\n";
-                    dataset->putAndInsertString(DCM_AcquisitionTime, anonTime); if (!status.good()) msg += "Error changing tag [DCM_AcquisitionTime]\n";
-                    dataset->putAndInsertString(DCM_ContentTime, anonTime); if (!status.good()) msg += "Error changing tag [DCM_ContentTime]\n";
-                    dataset->putAndInsertString(DCM_InstitutionName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_InstitutionName]\n";
-                    dataset->putAndInsertString(DCM_InstitutionAddress, anonStr); if (!status.good()) msg += "Error changing tag [DCM_InstitutionAddress]\n";
-                    dataset->putAndInsertString(DCM_ReferringPhysicianName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_ReferringPhysicianName]\n";
-                    dataset->putAndInsertString(DCM_ReferringPhysicianAddress, anonStr); if (!status.good()) msg += "Error changing tag [DCM_ReferringPhysicianAddress]\n";
-                    dataset->putAndInsertString(DCM_ReferringPhysicianTelephoneNumbers, anonStr); if (!status.good()) msg += "Error changing tag [DCM_ReferringPhysicianTelephoneNumbers]\n";
-                    dataset->putAndInsertString(DCM_ReferringPhysicianIdentificationSequence, anonStr); if (!status.good()) msg += "Error changing tag [DCM_ReferringPhysicianIdentificationSequence]\n";
-                    dataset->putAndInsertString(DCM_StationName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_StationName]\n";
-                    dataset->putAndInsertString(DCM_StudyDescription, anonStr); if (!status.good()) msg += "Error changing tag [DCM_StudyDescription]\n";
-                    dataset->putAndInsertString(DCM_SeriesDescription, anonStr); if (!status.good()) msg += "Error changing tag [DCM_SeriesDescription]\n";
-                    dataset->putAndInsertString(DCM_PhysiciansOfRecord, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PhysiciansOfRecord]\n";
-                    dataset->putAndInsertString(DCM_PerformingPhysicianName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PerformingPhysicianName]\n";
-                    dataset->putAndInsertString(DCM_NameOfPhysiciansReadingStudy, anonStr); if (!status.good()) msg += "Error changing tag [DCM_NameOfPhysiciansReadingStudy]\n";
-                    dataset->putAndInsertString(DCM_OperatorsName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_OperatorsName]\n";
+                    if (dataset->tagExists(DCM_InstanceCreationDate)) { dataset->putAndInsertString(DCM_InstanceCreationDate, anonDate); if (!status.good()) msg += "Error changing tag [DCM_InstanceCreationDate]\n"; }
+                    if (dataset->tagExists(DCM_InstanceCreationTime)) { dataset->putAndInsertString(DCM_InstanceCreationTime, anonTime); if (!status.good()) msg += "Error changing tag [DCM_InstanceCreationTime]\n"; }
+                    if (dataset->tagExists(DCM_StudyDate)) { dataset->putAndInsertString(DCM_StudyDate, anonDate); if (!status.good()) msg += "Error changing tag [DCM_StudyDate]\n"; }
+                    if (dataset->tagExists(DCM_SeriesDate)) { dataset->putAndInsertString(DCM_SeriesDate, anonDate); if (!status.good()) msg += "Error changing tag [DCM_SeriesDate]\n"; }
+                    if (dataset->tagExists(DCM_AcquisitionDate)) { dataset->putAndInsertString(DCM_AcquisitionDate, anonDate); if (!status.good()) msg += "Error changing tag [DCM_AcquisitionDate]\n"; }
+                    if (dataset->tagExists(DCM_ContentDate)) { dataset->putAndInsertString(DCM_ContentDate, anonDate); if (!status.good()) msg += "Error changing tag [DCM_ContentDate]\n"; }
+                    if (dataset->tagExists(DCM_StudyTime)) { dataset->putAndInsertString(DCM_StudyTime, anonTime); if (!status.good()) msg += "Error changing tag [DCM_StudyTime]\n"; }
+                    if (dataset->tagExists(DCM_SeriesTime)) { dataset->putAndInsertString(DCM_SeriesTime, anonTime); if (!status.good()) msg += "Error changing tag [DCM_SeriesTime]\n"; }
+                    if (dataset->tagExists(DCM_AcquisitionTime)) { dataset->putAndInsertString(DCM_AcquisitionTime, anonTime); if (!status.good()) msg += "Error changing tag [DCM_AcquisitionTime]\n"; }
+                    if (dataset->tagExists(DCM_ContentTime)) { dataset->putAndInsertString(DCM_ContentTime, anonTime); if (!status.good()) msg += "Error changing tag [DCM_ContentTime]\n"; }
+                    if (dataset->tagExists(DCM_InstitutionName)) { dataset->putAndInsertString(DCM_InstitutionName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_InstitutionName]\n"; }
+                    if (dataset->tagExists(DCM_InstitutionAddress)) { dataset->putAndInsertString(DCM_InstitutionAddress, anonStr); if (!status.good()) msg += "Error changing tag [DCM_InstitutionAddress]\n"; }
+                    if (dataset->tagExists(DCM_ReferringPhysicianName)) { dataset->putAndInsertString(DCM_ReferringPhysicianName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_ReferringPhysicianName]\n"; }
+                    if (dataset->tagExists(DCM_ReferringPhysicianAddress)) { dataset->putAndInsertString(DCM_ReferringPhysicianAddress, anonStr); if (!status.good()) msg += "Error changing tag [DCM_ReferringPhysicianAddress]\n"; }
+                    if (dataset->tagExists(DCM_ReferringPhysicianTelephoneNumbers)) { dataset->putAndInsertString(DCM_ReferringPhysicianTelephoneNumbers, anonStr); if (!status.good()) msg += "Error changing tag [DCM_ReferringPhysicianTelephoneNumbers]\n"; }
+                    if (dataset->tagExists(DCM_ReferringPhysicianIdentificationSequence)) { dataset->putAndInsertString(DCM_ReferringPhysicianIdentificationSequence, anonStr); if (!status.good()) msg += "Error changing tag [DCM_ReferringPhysicianIdentificationSequence]\n"; }
+                    if (dataset->tagExists(DCM_StationName)) { dataset->putAndInsertString(DCM_StationName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_StationName]\n"; }
+                    if (dataset->tagExists(DCM_StudyDescription)) { dataset->putAndInsertString(DCM_StudyDescription, anonStr); if (!status.good()) msg += "Error changing tag [DCM_StudyDescription]\n"; }
+                    if (dataset->tagExists(DCM_SeriesDescription)) { dataset->putAndInsertString(DCM_SeriesDescription, anonStr); if (!status.good()) msg += "Error changing tag [DCM_SeriesDescription]\n"; }
+                    if (dataset->tagExists(DCM_PhysiciansOfRecord)) { dataset->putAndInsertString(DCM_PhysiciansOfRecord, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PhysiciansOfRecord]\n"; }
+                    if (dataset->tagExists(DCM_PerformingPhysicianName)) { dataset->putAndInsertString(DCM_PerformingPhysicianName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PerformingPhysicianName]\n"; }
+                    if (dataset->tagExists(DCM_NameOfPhysiciansReadingStudy)) { dataset->putAndInsertString(DCM_NameOfPhysiciansReadingStudy, anonStr); if (!status.good()) msg += "Error changing tag [DCM_NameOfPhysiciansReadingStudy]\n"; }
+                    if (dataset->tagExists(DCM_OperatorsName)) { dataset->putAndInsertString(DCM_OperatorsName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_OperatorsName]\n"; }
 
-                    dataset->putAndInsertString(DCM_PatientName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientName]\n";
-                    dataset->putAndInsertString(DCM_PatientID, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientID]\n";
-                    dataset->putAndInsertString(DCM_IssuerOfPatientID, anonStr); if (!status.good()) msg += "Error changing tag [DCM_IssuerOfPatientID]\n";
-                    dataset->putAndInsertString(DCM_PatientBirthDate, anonDate); if (!status.good()) msg += "Error changing tag [DCM_PatientBirthDate]\n";
-                    dataset->putAndInsertString(DCM_PatientBirthTime, anonTime); if (!status.good()) msg += "Error changing tag [DCM_PatientBirthTime]\n";
-                    dataset->putAndInsertString(DCM_PatientInsurancePlanCodeSequence, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientInsurancePlanCodeSequence]\n";
-                    dataset->putAndInsertString(DCM_OtherPatientIDsSequence, anonStr); if (!status.good()) msg += "Error changing tag [DCM_OtherPatientIDsSequence]\n";
-                    dataset->putAndInsertString(DCM_OtherPatientNames, anonStr); if (!status.good()) msg += "Error changing tag [DCM_OtherPatientNames]\n";
-                    dataset->putAndInsertString(DCM_PatientBirthName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientBirthName]\n";
-                    dataset->putAndInsertString(DCM_PatientAge, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientAge]\n";
-                    dataset->putAndInsertString(DCM_PatientSize, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientSize]\n";
-                    dataset->putAndInsertString(DCM_PatientWeight, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientWeight]\n";
-                    dataset->putAndInsertString(DCM_PatientAddress, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientAddress]\n";
-                    dataset->putAndInsertString(DCM_PatientMotherBirthName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientMotherBirthName]\n";
-                    dataset->putAndInsertString(DCM_PatientTelephoneNumbers, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientTelephoneNumbers]\n";
-                    dataset->putAndInsertString(DCM_AdditionalPatientHistory, anonStr); if (!status.good()) msg += "Error changing tag [DCM_AdditionalPatientHistory]\n";
-                    dataset->putAndInsertString(DCM_PatientReligiousPreference, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientReligiousPreference]\n";
-                    dataset->putAndInsertString(DCM_PatientComments, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientComments]\n";
+                    if (dataset->tagExists(DCM_PatientName)) { dataset->putAndInsertString(DCM_PatientName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientName]\n"; }
+                    if (dataset->tagExists(DCM_PatientID)) { dataset->putAndInsertString(DCM_PatientID, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientID]\n"; }
+                    if (dataset->tagExists(DCM_IssuerOfPatientID)) { dataset->putAndInsertString(DCM_IssuerOfPatientID, anonStr); if (!status.good()) msg += "Error changing tag [DCM_IssuerOfPatientID]\n"; }
+                    if (dataset->tagExists(DCM_PatientBirthDate)) { dataset->putAndInsertString(DCM_PatientBirthDate, anonDate); if (!status.good()) msg += "Error changing tag [DCM_PatientBirthDate]\n"; }
+                    if (dataset->tagExists(DCM_PatientBirthTime)) { dataset->putAndInsertString(DCM_PatientBirthTime, anonTime); if (!status.good()) msg += "Error changing tag [DCM_PatientBirthTime]\n"; }
+                    if (dataset->tagExists(DCM_PatientInsurancePlanCodeSequence)) { dataset->putAndInsertString(DCM_PatientInsurancePlanCodeSequence, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientInsurancePlanCodeSequence]\n"; }
+                    if (dataset->tagExists(DCM_OtherPatientIDsSequence)) { dataset->putAndInsertString(DCM_OtherPatientIDsSequence, anonStr); if (!status.good()) msg += "Error changing tag [DCM_OtherPatientIDsSequence]\n"; }
+                    if (dataset->tagExists(DCM_OtherPatientNames)) { dataset->putAndInsertString(DCM_OtherPatientNames, anonStr); if (!status.good()) msg += "Error changing tag [DCM_OtherPatientNames]\n"; }
+                    if (dataset->tagExists(DCM_PatientBirthName)) { dataset->putAndInsertString(DCM_PatientBirthName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientBirthName]\n"; }
+                    if (dataset->tagExists(DCM_PatientAge)) { dataset->putAndInsertString(DCM_PatientAge, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientAge]\n"; }
+                    if (dataset->tagExists(DCM_PatientSize)) { dataset->putAndInsertString(DCM_PatientSize, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientSize]\n"; }
+                    if (dataset->tagExists(DCM_PatientWeight)) { dataset->putAndInsertString(DCM_PatientWeight, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientWeight]\n"; }
+                    if (dataset->tagExists(DCM_PatientAddress)) { dataset->putAndInsertString(DCM_PatientAddress, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientAddress]\n"; }
+                    if (dataset->tagExists(DCM_PatientMotherBirthName)) { dataset->putAndInsertString(DCM_PatientMotherBirthName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientMotherBirthName]\n"; }
+                    if (dataset->tagExists(DCM_PatientTelephoneNumbers)) { dataset->putAndInsertString(DCM_PatientTelephoneNumbers, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientTelephoneNumbers]\n"; }
+                    if (dataset->tagExists(DCM_AdditionalPatientHistory)) { dataset->putAndInsertString(DCM_AdditionalPatientHistory, anonStr); if (!status.good()) msg += "Error changing tag [DCM_AdditionalPatientHistory]\n"; }
+                    if (dataset->tagExists(DCM_PatientReligiousPreference)) { dataset->putAndInsertString(DCM_PatientReligiousPreference, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientReligiousPreference]\n"; }
+                    if (dataset->tagExists(DCM_PatientComments)) { dataset->putAndInsertString(DCM_PatientComments, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientComments]\n"; }
 
-                    dataset->putAndInsertString(DCM_ProtocolName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_ProtocolName]\n";
+                    if (dataset->tagExists(DCM_ProtocolName)) { dataset->putAndInsertString(DCM_ProtocolName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_ProtocolName]\n"; }
 
-                    dataset->putAndInsertString(DCM_RequestingPhysician, anonStr); if (!status.good()) msg += "Error changing tag [DCM_RequestingPhysician]\n";
-                    dataset->putAndInsertString(DCM_RequestedProcedureDescription, anonStr); if (!status.good()) msg += "Error changing tag [DCM_RequestedProcedureDescription]\n";
+                    if (dataset->tagExists(DCM_RequestingPhysician)) { dataset->putAndInsertString(DCM_RequestingPhysician, anonStr); if (!status.good()) msg += "Error changing tag [DCM_RequestingPhysician]\n"; }
+                    if (dataset->tagExists(DCM_RequestedProcedureDescription)) { dataset->putAndInsertString(DCM_RequestedProcedureDescription, anonStr); if (!status.good()) msg += "Error changing tag [DCM_RequestedProcedureDescription]\n"; }
 
-                    dataset->putAndInsertString(DCM_ScheduledPerformingPhysicianName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_ScheduledPerformingPhysicianName]\n";
-                    dataset->putAndInsertString(DCM_PerformedProcedureStepStartDate, anonDate); if (!status.good()) msg += "Error changing tag [DCM_PerformedProcedureStepStartDate]\n";
-                    dataset->putAndInsertString(DCM_PerformedProcedureStepStartTime, anonTime); if (!status.good()) msg += "Error changing tag [DCM_PerformedProcedureStepStartTime]\n";
-                    dataset->putAndInsertString(DCM_PerformedProcedureStepID, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PerformedProcedureStepID]\n";
-                    dataset->putAndInsertString(DCM_PerformedProcedureStepDescription, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PerformedProcedureStepDescription]\n";
-                    dataset->putAndInsertString(DCM_HumanPerformerOrganization, anonStr); if (!status.good()) msg += "Error changing tag [DCM_HumanPerformerOrganization]\n";
-                    dataset->putAndInsertString(DCM_HumanPerformerName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_HumanPerformerName]\n";
-                    dataset->putAndInsertString(DCM_PersonName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PersonName]\n";
+                    if (dataset->tagExists(DCM_ScheduledPerformingPhysicianName)) { dataset->putAndInsertString(DCM_ScheduledPerformingPhysicianName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_ScheduledPerformingPhysicianName]\n"; }
+                    if (dataset->tagExists(DCM_PerformedProcedureStepStartDate)) { dataset->putAndInsertString(DCM_PerformedProcedureStepStartDate, anonDate); if (!status.good()) msg += "Error changing tag [DCM_PerformedProcedureStepStartDate]\n"; }
+                    if (dataset->tagExists(DCM_PerformedProcedureStepStartTime)) { dataset->putAndInsertString(DCM_PerformedProcedureStepStartTime, anonTime); if (!status.good()) msg += "Error changing tag [DCM_PerformedProcedureStepStartTime]\n"; }
+                    if (dataset->tagExists(DCM_PerformedProcedureStepID)) { dataset->putAndInsertString(DCM_PerformedProcedureStepID, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PerformedProcedureStepID]\n"; }
+                    if (dataset->tagExists(DCM_PerformedProcedureStepDescription)) { dataset->putAndInsertString(DCM_PerformedProcedureStepDescription, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PerformedProcedureStepDescription]\n"; }
+                    if (dataset->tagExists(DCM_HumanPerformerOrganization)) { dataset->putAndInsertString(DCM_HumanPerformerOrganization, anonStr); if (!status.good()) msg += "Error changing tag [DCM_HumanPerformerOrganization]\n"; }
+                    if (dataset->tagExists(DCM_HumanPerformerName)) { dataset->putAndInsertString(DCM_HumanPerformerName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_HumanPerformerName]\n"; }
+                    if (dataset->tagExists(DCM_PersonName)) { dataset->putAndInsertString(DCM_PersonName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PersonName]\n"; }
 
                     break;
                 }
                 case 4: {
-                    dataset->putAndInsertString(DCM_PatientName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientName]\n";
+                    if (dataset->tagExists(DCM_PatientName)) { dataset->putAndInsertString(DCM_PatientName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientName]\n"; }
                     break;
                 }
                 default: {
