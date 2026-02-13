@@ -222,8 +222,8 @@ bool moduleImport::PrepareAndMoveDICOM(QString filepath, QString outdir, bool an
         //gdcm::Tag tag;
         //const char *dcmfile = filepath.toStdString().c_str();
 
-        QStringList tagsToChange;
-        QString anonStr = "Anon";
+        //QStringList tagsToChange;
+        //QString anonStr = "Anon";
 
         //tag.ReadFromCommaSeparatedString("0008, 0090"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
         //tag.ReadFromCommaSeparatedString("0008, 1050"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
@@ -231,14 +231,14 @@ bool moduleImport::PrepareAndMoveDICOM(QString filepath, QString outdir, bool an
         //tag.ReadFromCommaSeparatedString("0010, 0010"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
         //tag.ReadFromCommaSeparatedString("0010, 0030"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
 
-        tagsToChange.append(QString("--replace 8,90='%1'").arg(anonStr)); // ReferringPhysicianName
-        tagsToChange.append(QString("--replace 8,1050='%1'").arg(anonStr)); // PerformingPhysicianName
-        tagsToChange.append(QString("--replace 8,1070='%1'").arg(anonStr)); // OperatorsName
-        tagsToChange.append(QString("--replace 10,10='%1'").arg(anonStr)); // PatientName
-        tagsToChange.append(QString("--replace 10,30='%1'").arg(anonStr)); // PatientBirthDate
+        //tagsToChange.append(QString("--replace 8,90='%1'").arg(anonStr)); // ReferringPhysicianName
+        //tagsToChange.append(QString("--replace 8,1050='%1'").arg(anonStr)); // PerformingPhysicianName
+        //tagsToChange.append(QString("--replace 8,1070='%1'").arg(anonStr)); // OperatorsName
+        //tagsToChange.append(QString("--replace 10,10='%1'").arg(anonStr)); // PatientName
+        //tagsToChange.append(QString("--replace 10,30='%1'").arg(anonStr)); // PatientBirthDate
 
         QString m;
-        img->AnonymizeDicomFile(filepath, newFilePath, tagsToChange, m);
+        img->AnonymizeDicomFile(filepath, newFilePath, m);
     }
     else {
         QString systemstring = QString("touch %1; mv %1 %2").arg(filepath).arg(newFilePath);

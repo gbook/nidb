@@ -56,7 +56,7 @@ public:
     /* DICOM & image functions */
     //QString GetDicomModality(QString f);
     bool AnonymizeDicomDirInPlace(QString dir, int anonlevel, QString &msg);
-    bool AnonymizeDicomFile(QString infile, QString outfile, QStringList tagsToChange, QString &msg);
+    bool AnonymizeDicomFile(QString infile, QString outfile, QString &msg);
     bool AnonymizeDicomFileInPlace(QString file, QStringList tagsToChange, QString &msg);
     bool AnonymizeDir(QString indir, QString outdir, int anonlevel, QString &msg);
     bool ConvertDicom(QString filetype, QString indir, QString outdir, QString bindir, bool gzip, bool json, QString uid, QString studynum, QString seriesnum, QString bidsSubject, QString bidsSession, BIDSMapping bidsMapping, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg);

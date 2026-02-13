@@ -496,17 +496,37 @@ bool imageIO::IsDICOMFile(QString f) {
 /* --------- AnonymizeDICOMFile ----------------------------- */
 /* ---------------------------------------------------------- */
 /* borrowed in its entirety from gdcmanon.cxx                 */
- bool imageIO::AnonymizeDicomFile(QString infile, QString outfile, QStringList tagsToChange, QString &msg)
-{
-    if( tagsToChange.isEmpty() ) {
-        msg += "AnonymizeDICOMFile() called with no tags to change. No operation to be done.";
-        return false;
-    }
+ bool imageIO::AnonymizeDicomFile(QString infile, QString outfile, QString &msg) {
 
-    /* do the command line anonymization */
-    QString systemstring = QString("gdcmanon --dumb --continue %1 -i %2 -o %3/").arg(tagsToChange.join(" ")).arg(infile).arg(outfile);
-    QString output = SystemCommand(systemstring, false);
-    msg += output;
+    const char *anonStr = "Anon";
+    const char *anonDate = "10000101";
+    //const char *anonTime = "000000.000000";
+
+    DcmFileFormat fileformat;
+
+    OFFilename ifile = infile.toStdString().c_str();
+    OFFilename ofile = outfile.toStdString().c_str();
+    OFCondition status = fileformat.loadFile(ifile);
+
+    if (status.good()) {
+        DcmDataset *dataset = fileformat.getDataset();
+
+        /* partial anonmymization - remove the obvious stuff like name and DOB */
+        dataset->putAndInsertString(DCM_ReferringPhysicianName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_ReferringPhysicianName]\n";
+        dataset->putAndInsertString(DCM_PerformingPhysicianName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PerformingPhysicianName]\n";
+        dataset->putAndInsertString(DCM_OperatorsName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_OperatorsName]\n";
+        dataset->putAndInsertString(DCM_PatientName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientName]\n";
+        dataset->putAndInsertString(DCM_PatientBirthDate, anonDate); if (!status.good()) msg += "Error changing tag [DCM_PatientBirthDate]\n";
+
+        status = fileformat.saveFile(ofile);
+        if (status.good())
+            std::cout << "Tag modified successfully." << std::endl;
+        else
+            std::cerr << "Error: Cannot save file (" << status.text() << ")" << std::endl;
+    }
+    else {
+        std::cerr << "Error: Cannot load DICOM file (" << status.text() << ")" << std::endl;
+    }
 
     return true;
 }
@@ -654,119 +674,120 @@ bool imageIO::AnonymizeDir(QString indir, QString outdir, int anonlevel, QString
 
 
 /* ---------------------------------------------------------- */
-/* --------- AnonymizeDir ----------------------------------- */
+/* --------- AnonymizeDicomDirInPlace ----------------------- */
 /* ---------------------------------------------------------- */
 bool imageIO::AnonymizeDicomDirInPlace(QString dir, int anonlevel, QString &msg) {
 
+    const char *anonStr = "Anon";
+    const char *anonDate = "10000101";
+    const char *anonTime = "000000.000000";
 
-    // gdcmanon --dumb -i /path/to/dicom --replace 10,10=Anonymous -o /path/to/output <-- output will be created if it doesn't exist
+    DcmFileFormat fileformat;
 
-    QString anonStr = "Anon";
-    QString anonDate = "19000101";
-    QString anonTime = "000000.000000";
+    QStringList files = FindAllFiles(dir, "*");
 
-    QStringList cmdArgs;
+    foreach (QString file, files) {
+        OFFilename f = file.toStdString().c_str();
+        OFCondition status = fileformat.loadFile(f);
 
-    switch (anonlevel) {
-    case 0: {
-        msg += "No anonymization requested. Leaving files unchanged.";
-        return 0;
+        if (status.good()) {
+            DcmDataset *dataset = fileformat.getDataset();
+
+            switch (anonlevel) {
+                case 0: {
+                    msg += "No anonymization requested. Leaving files unchanged.";
+                    return 0;
+                }
+                case 1:
+                case 3: {
+                    /* partial anonmymization - remove the obvious stuff like name and DOB */
+                    dataset->putAndInsertString(DCM_ReferringPhysicianName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_ReferringPhysicianName]\n";
+                    dataset->putAndInsertString(DCM_PerformingPhysicianName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PerformingPhysicianName]\n";
+                    dataset->putAndInsertString(DCM_OperatorsName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_OperatorsName]\n";
+                    dataset->putAndInsertString(DCM_PatientName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientName]\n";
+                    dataset->putAndInsertString(DCM_PatientBirthDate, anonDate); if (!status.good()) msg += "Error changing tag [DCM_PatientBirthDate]\n";
+                    break;
+                }
+                case 2: {
+                    /* Full anonymization. remove all names, dates, locations. ANYTHING identifiable */
+                    dataset->putAndInsertString(DCM_InstanceCreationDate, anonDate); if (!status.good()) msg += "Error changing tag [DCM_InstanceCreationDate]\n";
+                    dataset->putAndInsertString(DCM_InstanceCreationTime, anonTime); if (!status.good()) msg += "Error changing tag [DCM_InstanceCreationTime]\n";
+                    dataset->putAndInsertString(DCM_StudyDate, anonDate); if (!status.good()) msg += "Error changing tag [DCM_StudyDate]\n";
+                    dataset->putAndInsertString(DCM_SeriesDate, anonDate); if (!status.good()) msg += "Error changing tag [DCM_SeriesDate]\n";
+                    dataset->putAndInsertString(DCM_AcquisitionDate, anonDate); if (!status.good()) msg += "Error changing tag [DCM_AcquisitionDate]\n";
+                    dataset->putAndInsertString(DCM_ContentDate, anonDate); if (!status.good()) msg += "Error changing tag [DCM_ContentDate]\n";
+                    dataset->putAndInsertString(DCM_StudyTime, anonTime); if (!status.good()) msg += "Error changing tag [DCM_StudyTime]\n";
+                    dataset->putAndInsertString(DCM_SeriesTime, anonTime); if (!status.good()) msg += "Error changing tag [DCM_SeriesTime]\n";
+                    dataset->putAndInsertString(DCM_AcquisitionTime, anonTime); if (!status.good()) msg += "Error changing tag [DCM_AcquisitionTime]\n";
+                    dataset->putAndInsertString(DCM_ContentTime, anonTime); if (!status.good()) msg += "Error changing tag [DCM_ContentTime]\n";
+                    dataset->putAndInsertString(DCM_InstitutionName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_InstitutionName]\n";
+                    dataset->putAndInsertString(DCM_InstitutionAddress, anonStr); if (!status.good()) msg += "Error changing tag [DCM_InstitutionAddress]\n";
+                    dataset->putAndInsertString(DCM_ReferringPhysicianName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_ReferringPhysicianName]\n";
+                    dataset->putAndInsertString(DCM_ReferringPhysicianAddress, anonStr); if (!status.good()) msg += "Error changing tag [DCM_ReferringPhysicianAddress]\n";
+                    dataset->putAndInsertString(DCM_ReferringPhysicianTelephoneNumbers, anonStr); if (!status.good()) msg += "Error changing tag [DCM_ReferringPhysicianTelephoneNumbers]\n";
+                    dataset->putAndInsertString(DCM_ReferringPhysicianIdentificationSequence, anonStr); if (!status.good()) msg += "Error changing tag [DCM_ReferringPhysicianIdentificationSequence]\n";
+                    dataset->putAndInsertString(DCM_StationName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_StationName]\n";
+                    dataset->putAndInsertString(DCM_StudyDescription, anonStr); if (!status.good()) msg += "Error changing tag [DCM_StudyDescription]\n";
+                    dataset->putAndInsertString(DCM_SeriesDescription, anonStr); if (!status.good()) msg += "Error changing tag [DCM_SeriesDescription]\n";
+                    dataset->putAndInsertString(DCM_PhysiciansOfRecord, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PhysiciansOfRecord]\n";
+                    dataset->putAndInsertString(DCM_PerformingPhysicianName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PerformingPhysicianName]\n";
+                    dataset->putAndInsertString(DCM_NameOfPhysiciansReadingStudy, anonStr); if (!status.good()) msg += "Error changing tag [DCM_NameOfPhysiciansReadingStudy]\n";
+                    dataset->putAndInsertString(DCM_OperatorsName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_OperatorsName]\n";
+
+                    dataset->putAndInsertString(DCM_PatientName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientName]\n";
+                    dataset->putAndInsertString(DCM_PatientID, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientID]\n";
+                    dataset->putAndInsertString(DCM_IssuerOfPatientID, anonStr); if (!status.good()) msg += "Error changing tag [DCM_IssuerOfPatientID]\n";
+                    dataset->putAndInsertString(DCM_PatientBirthDate, anonDate); if (!status.good()) msg += "Error changing tag [DCM_PatientBirthDate]\n";
+                    dataset->putAndInsertString(DCM_PatientBirthTime, anonTime); if (!status.good()) msg += "Error changing tag [DCM_PatientBirthTime]\n";
+                    dataset->putAndInsertString(DCM_PatientInsurancePlanCodeSequence, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientInsurancePlanCodeSequence]\n";
+                    dataset->putAndInsertString(DCM_OtherPatientIDsSequence, anonStr); if (!status.good()) msg += "Error changing tag [DCM_OtherPatientIDsSequence]\n";
+                    dataset->putAndInsertString(DCM_OtherPatientNames, anonStr); if (!status.good()) msg += "Error changing tag [DCM_OtherPatientNames]\n";
+                    dataset->putAndInsertString(DCM_PatientBirthName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientBirthName]\n";
+                    dataset->putAndInsertString(DCM_PatientAge, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientAge]\n";
+                    dataset->putAndInsertString(DCM_PatientSize, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientSize]\n";
+                    dataset->putAndInsertString(DCM_PatientWeight, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientWeight]\n";
+                    dataset->putAndInsertString(DCM_PatientAddress, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientAddress]\n";
+                    dataset->putAndInsertString(DCM_PatientMotherBirthName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientMotherBirthName]\n";
+                    dataset->putAndInsertString(DCM_PatientTelephoneNumbers, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientTelephoneNumbers]\n";
+                    dataset->putAndInsertString(DCM_AdditionalPatientHistory, anonStr); if (!status.good()) msg += "Error changing tag [DCM_AdditionalPatientHistory]\n";
+                    dataset->putAndInsertString(DCM_PatientReligiousPreference, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientReligiousPreference]\n";
+                    dataset->putAndInsertString(DCM_PatientComments, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientComments]\n";
+
+                    dataset->putAndInsertString(DCM_ProtocolName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_ProtocolName]\n";
+
+                    dataset->putAndInsertString(DCM_RequestingPhysician, anonStr); if (!status.good()) msg += "Error changing tag [DCM_RequestingPhysician]\n";
+                    dataset->putAndInsertString(DCM_RequestedProcedureDescription, anonStr); if (!status.good()) msg += "Error changing tag [DCM_RequestedProcedureDescription]\n";
+
+                    dataset->putAndInsertString(DCM_ScheduledPerformingPhysicianName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_ScheduledPerformingPhysicianName]\n";
+                    dataset->putAndInsertString(DCM_PerformedProcedureStepStartDate, anonDate); if (!status.good()) msg += "Error changing tag [DCM_PerformedProcedureStepStartDate]\n";
+                    dataset->putAndInsertString(DCM_PerformedProcedureStepStartTime, anonTime); if (!status.good()) msg += "Error changing tag [DCM_PerformedProcedureStepStartTime]\n";
+                    dataset->putAndInsertString(DCM_PerformedProcedureStepID, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PerformedProcedureStepID]\n";
+                    dataset->putAndInsertString(DCM_PerformedProcedureStepDescription, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PerformedProcedureStepDescription]\n";
+                    dataset->putAndInsertString(DCM_HumanPerformerOrganization, anonStr); if (!status.good()) msg += "Error changing tag [DCM_HumanPerformerOrganization]\n";
+                    dataset->putAndInsertString(DCM_HumanPerformerName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_HumanPerformerName]\n";
+                    dataset->putAndInsertString(DCM_PersonName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PersonName]\n";
+
+                    break;
+                }
+                case 4: {
+                    dataset->putAndInsertString(DCM_PatientName, anonStr); if (!status.good()) msg += "Error changing tag [DCM_PatientName]\n";
+                    break;
+                }
+                default: {
+                    break;
+                }
+            }
+
+            status = fileformat.saveFile(f);
+            if (status.good())
+                std::cout << "Tag modified successfully." << std::endl;
+            else
+                std::cerr << "Error: Cannot save file (" << status.text() << ")" << std::endl;
+        }
+        else {
+            std::cerr << "Error: Cannot load DICOM file (" << status.text() << ")" << std::endl;
+        }
     }
-    case 1:
-    case 3: {
-        /* partial anonmymization - remove the obvious stuff like name and DOB */
-        cmdArgs.append(QString("--replace 8,90='%1'").arg(anonStr)); // ReferringPhysicianName
-        cmdArgs.append(QString("--replace 8,1050='%1'").arg(anonStr)); // PerformingPhysicianName
-        cmdArgs.append(QString("--replace 8,1070='%1'").arg(anonStr)); // OperatorsName
-        cmdArgs.append(QString("--replace 10,10='%1'").arg(anonStr)); // PatientName
-        cmdArgs.append(QString("--replace 10,30='%1'").arg(anonStr)); // PatientBirthDate
-
-        break;
-    }
-    case 2: {
-        /* Full anonymization. remove all names, dates, locations. ANYTHING identifiable */
-        cmdArgs.append(QString("--replace 8,12='%1'").arg(anonDate)); // InstanceCreationDate
-        cmdArgs.append(QString("--replace 8,13='%1'").arg(anonDate)); // InstanceCreationTime
-        cmdArgs.append(QString("--replace 8,20='%1'").arg(anonDate)); // StudyDate
-        cmdArgs.append(QString("--replace 8,21='%1'").arg(anonDate)); // SeriesDate
-        cmdArgs.append(QString("--replace 8,22='%1'").arg(anonDate)); // AcquisitionDate
-        cmdArgs.append(QString("--replace 8,23='%1'").arg(anonDate)); // ContentDate
-        cmdArgs.append(QString("--replace 8,30='%1'").arg(anonTime)); //StudyTime
-        cmdArgs.append(QString("--replace 8,31='%1'").arg(anonTime)); //SeriesTime
-        cmdArgs.append(QString("--replace 8,32='%1'").arg(anonTime)); //AcquisitionTime
-        cmdArgs.append(QString("--replace 8,33='%1'").arg(anonTime)); //ContentTime
-        cmdArgs.append(QString("--replace 8,80='%1'").arg(anonStr)); // InstitutionName
-        cmdArgs.append(QString("--replace 8,81='%1'").arg(anonStr)); // InstitutionAddress
-        cmdArgs.append(QString("--replace 8,90='%1'").arg(anonStr)); // ReferringPhysicianName
-        cmdArgs.append(QString("--replace 8,92='%1'").arg(anonStr)); // ReferringPhysicianAddress
-        cmdArgs.append(QString("--replace 8,94='%1'").arg(anonStr)); // ReferringPhysicianTelephoneNumber
-        cmdArgs.append(QString("--replace 8,96='%1'").arg(anonStr)); // ReferringPhysicianIDSequence
-        cmdArgs.append(QString("--replace 8,1010='%1'").arg(anonStr)); // StationName
-        cmdArgs.append(QString("--replace 8,1030='%1'").arg(anonStr)); // StudyDescription
-        cmdArgs.append(QString("--replace 8,103E='%1'").arg(anonStr)); // SeriesDescription
-        cmdArgs.append(QString("--replace 8,1048='%1'").arg(anonStr)); // PhysiciansOfRecord
-        cmdArgs.append(QString("--replace 8,1050='%1'").arg(anonStr)); // PerformingPhysicianName
-        cmdArgs.append(QString("--replace 8,1060='%1'").arg(anonStr)); // NameOfPhysicianReadingStudy
-        cmdArgs.append(QString("--replace 8,1070='%1'").arg(anonStr)); // OperatorsName
-
-        cmdArgs.append(QString("--replace 10,10='%1'").arg(anonStr)); // PatientName
-        cmdArgs.append(QString("--replace 10,20='%1'").arg(anonStr)); // PatientID
-        cmdArgs.append(QString("--replace 10,21='%1'").arg(anonStr)); // IssuerOfPatientID
-        cmdArgs.append(QString("--replace 10,30='%1'").arg(anonDate)); // PatientBirthDate
-        cmdArgs.append(QString("--replace 10,32='%1'").arg(anonTime)); // PatientBirthTime
-        cmdArgs.append(QString("--replace 10,50='%1'").arg(anonStr)); // PatientInsurancePlanCodeSequence
-        cmdArgs.append(QString("--replace 10,1000='%1'").arg(anonStr)); // OtherPatientIDs
-        cmdArgs.append(QString("--replace 10,1001='%1'").arg(anonStr)); // OtherPatientNames
-        cmdArgs.append(QString("--replace 10,1005='%1'").arg(anonStr)); // PatientBirthName
-        cmdArgs.append(QString("--replace 10,1010='%1'").arg(anonStr)); // PatientAge
-        cmdArgs.append(QString("--replace 10,1020='%1'").arg(anonStr)); // PatientSize
-        cmdArgs.append(QString("--replace 10,1030='%1'").arg(anonStr)); // PatientWeight
-        cmdArgs.append(QString("--replace 10,1040='%1'").arg(anonStr)); // PatientAddress
-        cmdArgs.append(QString("--replace 10,1060='%1'").arg(anonStr)); // PatientMotherBirthName
-        cmdArgs.append(QString("--replace 10,2154='%1'").arg(anonStr)); // PatientTelephoneNumbers
-        cmdArgs.append(QString("--replace 10,21B0='%1'").arg(anonStr)); // AdditionalPatientHistory
-        cmdArgs.append(QString("--replace 10,21F0='%1'").arg(anonStr)); // PatientReligiousPreference
-        cmdArgs.append(QString("--replace 10,4000='%1'").arg(anonStr)); // PatientComments
-
-        cmdArgs.append(QString("--replace 18,1030='%1'").arg(anonStr)); // ProtocolName
-
-        cmdArgs.append(QString("--replace 32,1032='%1'").arg(anonStr)); // RequestingPhysician
-        cmdArgs.append(QString("--replace 32,1060='%1'").arg(anonStr)); // RequestedProcedureDescription
-
-        cmdArgs.append(QString("--replace 40,6='%1'").arg(anonStr)); // ScheduledPerformingPhysiciansName
-        cmdArgs.append(QString("--replace 40,244='%1'").arg(anonDate)); // PerformedProcedureStepStartDate
-        cmdArgs.append(QString("--replace 40,245='%1'").arg(anonTime)); // PerformedProcedureStepStartTime
-        cmdArgs.append(QString("--replace 40,253='%1'").arg(anonStr)); // PerformedProcedureStepID
-        cmdArgs.append(QString("--replace 40,254='%1'").arg(anonStr)); // PerformedProcedureStepDescription
-        cmdArgs.append(QString("--replace 40,4036='%1'").arg(anonStr)); // HumanPerformerOrganization
-        cmdArgs.append(QString("--replace 40,4037='%1'").arg(anonStr)); // HumanPerformerName
-        cmdArgs.append(QString("--replace 40,A123='%1'").arg(anonStr)); // PersonName
-
-        break;
-    }
-    case 4: {
-        cmdArgs.append(QString("--replace 10,10='%1'").arg(anonStr));
-        break;
-    }
-    default: {
-        break;
-    }
-    }
-
-    /* do the command line anonymization */
-
-    QStringList dcms = FindAllFiles(dir, "*.dcm");
-    foreach (const QString &f, dcms) {
-        QString m;
-        AnonymizeDicomFileInPlace(f, cmdArgs, m);
-        msg += m + '\n';
-    }
-
-    //QString systemstring = QString("gdcmanon --dumb --continue %1 -i %2 -o %3").arg(cmdArgs.join(" ")).arg(indir).arg(outdir);
-    //n->Log(systemstring);
-    //QString output = SystemCommand(systemstring, true);
-    //n->Log(output);
-    //msg += output;
 
     return true;
 }
@@ -1104,12 +1125,12 @@ bool imageIO::GetImageFileTags(QString f, QHash<QString, QString> &tags, QString
     msg += uniqueseries + "\n";
 
     //qDebug() << "Leaving GetImageFileTags()";
-    n->Log(QString("tags[] contains %1 elements").arg(tags.size()));
-    QString tagString = "";
-    foreach (const QString &key, tags.keys()) {
-        tagString += QString("tags[%1] = %2\n").arg(key).arg(tags.value(key));
-    }
-    n->Log(tagString);
+    //n->Log(QString("tags[] contains %1 elements").arg(tags.size()));
+    //QString tagString = "";
+    //foreach (const QString &key, tags.keys()) {
+    //    tagString += QString("tags[%1] = %2\n").arg(key).arg(tags.value(key));
+    //}
+    //n->Log(tagString);
 
     return true;
 }
