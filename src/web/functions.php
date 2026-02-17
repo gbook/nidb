@@ -589,10 +589,10 @@
 	/* -------------------------------------------- */
 	/* ------- MySQLiBoundQuery ------------------- */
 	/* -------------------------------------------- */
-	function MySQLiBoundQuery($q,$file,$line,$error="") {
+	function MySQLiBoundQuery($stmt,$file,$line,$error="") {
 		Debug($file, $line,"Running MySQL Query [$sqlstring]");
 		
-		if (!mysqli_stmt_execute($q)) {
+		if (!mysqli_stmt_execute($stmt)) {
 			$datetime = date('r');
 			$username = $GLOBALS['username'];
 			$body = "<b>Query failed on [$datetime]:</b> $file (line $line)<br>
@@ -602,7 +602,7 @@
 			<b>SERVER</b> <pre>" . print_r($_SERVER,true) . "</pre><br>
 			<b>POST</b> <pre>" . print_r($_POST,true) . "</pre><br>
 			<b>GET</b> <pre>" . print_r($_GET,true) . "</pre>";
-			SendGmail($GLOBALS['cfg']['adminemail'],"User encountered error in $file",$body, 0);
+			//SendGmail($GLOBALS['cfg']['adminemail'],"User encountered error in $file",$body, 0);
 			
 			if ($GLOBALS['cfg']['hideerrors']) {
 				die("<div width='100%' style='border:1px solid red; background-color: #FFC; margin:10px; padding:10px; border-radius:5px; text-align: center'><b>Internal NiDB error.</b><br>The site administrator has been notified. Contact the administrator &lt;".$GLOBALS['cfg']['adminemail']."&gt; if you can provide additional information that may have led to the error<br><br><img src='images/topmen.png'></div>");

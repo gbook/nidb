@@ -75,8 +75,10 @@
 	/* ------- CancelExport ------------------------------- */
 	/* --------------------------------------------------- */
 	function CancelExport($exportid) {
-		$sqlstring = "update exports set status = 'cancelled' where export_id = $exportid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "update exports set status = 'cancelled' where export_id = ?");
+		mysqli_stmt_bind_param($stmt, "i", $exportid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		
 		Notice("Export [$exportid] cancelled");
 	}
 
@@ -86,10 +88,14 @@
 	/* --------------------------------------------------- */
 	function ResetExport($exportid) {
 		if ($exportid > 0) {
-			$sqlstring = "update exports set status = 'submitted', log = '' where export_id = $exportid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$sqlstring = "update exportseries set status = 'submitted' where export_id = $exportid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$stmt = mysqli_prepare($GLOBALS['linki'], "update exports set status = 'submitted', log = '' where export_id = ?");
+			mysqli_stmt_bind_param($stmt, "i", $exportid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			
+			$stmt = mysqli_prepare($GLOBALS['linki'], "update exportseries set status = 'submitted' where export_id = ?");
+			mysqli_stmt_bind_param($stmt, "i", $exportid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			
 			Notice("Status reset for export [$exportid]");
 		}
 		else {
@@ -159,7 +165,7 @@
 		<?
 		if ($viewall) {
 			?>
-			<h3 class="ui header">Showing all exports</h3> <a class="ui basic button" href="requeststatus.php?viewall=0">Show only last 30</a>
+			<h3 class="ui header">Showing all exports</h3> <a class="ui basic button" href="requeststatus.php?viewall=0">Show last 30 exports</a>
 			<?
 		}
 		else {
