@@ -537,6 +537,16 @@ void nidb::ModuleDBCheckIn() {
             cfg["debug"] = "1";
     }
 
+    /* check if the module should keep the log file */
+    q.prepare("select module_keeplog from modules where module_name = :module");
+    q.bindValue(":module", module);
+    SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.size() > 0) {
+        q.first();
+        if (q.value("module_keeplog").toBool())
+            cfg["keeplog"] = "1";
+    }
+
 }
 
 
