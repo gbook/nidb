@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Feb 17, 2026 at 05:00 PM
+-- Generation Time: Feb 17, 2026 at 06:04 PM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -1762,7 +1762,8 @@ CREATE TABLE `modules` (
   `module_laststart` datetime NOT NULL,
   `module_laststop` datetime NOT NULL,
   `module_isactive` tinyint(1) NOT NULL,
-  `module_debug` tinyint(1) NOT NULL DEFAULT 0
+  `module_debug` tinyint(1) NOT NULL DEFAULT 0,
+  `module_keeplog` tinyint(1) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------

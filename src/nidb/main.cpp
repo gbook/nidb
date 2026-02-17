@@ -285,7 +285,7 @@ int main(int argc, char *argv[])
                             Print("Unrecognized module [" + module + "]");
 
                         /* always keep the logfile in debug mode, or if keepLog command line option is set */
-                        if ((n->cfg["debug"].toInt()) || keepLog || cmdKeepLog)
+                        if ((n->cfg["keeplog"].toInt()) || (n->cfg["debug"].toInt()) || keepLog || cmdKeepLog)
                             keepLog = true;
 
                         n->ModuleRemoveLogFile(keepLog);

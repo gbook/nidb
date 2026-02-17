@@ -69,6 +69,14 @@
 			NoDebugModule($id);
 			DisplayModuleList();
 			break;
+		case 'keeplog':
+			KeepLog($id);
+			DisplayModuleList();
+			break;
+		case 'nokeeplog':
+			NoKeepLog($id);
+			DisplayModuleList();
+			break;
 		case 'reset':
 			ResetModule($id);
 			DisplayModuleList();
@@ -131,6 +139,7 @@
 		$module_laststop = $row['module_laststop'];
 		$module_isactive = $row['module_isactive'];
 		$module_debug = $row['module_debug'];
+		$module_keeplog = $row['module_keeplog'];
 		
 		?>
 		<div class="ui text container">
@@ -241,6 +250,24 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}
 
+
+	/* -------------------------------------------- */
+	/* ------- KeepLog ---------------------------- */
+	/* -------------------------------------------- */
+	function KeepLog($id) {
+		$sqlstring = "update modules set module_keeplog = 1 where module_id = $id";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- NoKeepLog -------------------------- */
+	/* -------------------------------------------- */
+	function NoKeepLog($id) {
+		$sqlstring = "update modules set module_keeplog = 0 where module_id = $id";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+	}
+
 	
 	/* -------------------------------------------- */
 	/* ------- EnableModule ----------------------- */
@@ -291,6 +318,11 @@
 		$sqlstring = "update modules set module_status = 'stopped', module_numrunning = 0, module_laststop = now() where module_id = '$id'";
 		//echo "$sqlstring<br>";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+		$sqlstring = "delete from module_procs where module_id = '$id'";
+		//echo "$sqlstring<br>";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
 	}
 
 	
@@ -320,6 +352,7 @@
 					<th>Run time</th>
 					<th>Enable</th>
 					<th title="Enable debugging will always save the log file, and will output all SQL statements to the log file" style="text-decoration: underline; text-decoration-style: dotted">Debug</th>
+					<th title="Normal run, but always keep the log file" style="text-decoration: underline; text-decoration-style: dotted">Keep log</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -391,6 +424,16 @@
 							}
 							else {
 								?><a href="adminmodules.php?action=debug&id=<?=$id?>" title="<b>Disabled.</b> Click to enable"><i class="big grey horizontally flipped toggle on icon"></i></a><?
+							}
+						?>
+					</td>
+					<td>
+						<?
+							if ($module_keeplog) {
+								?><a href="adminmodules.php?action=nokeeplog&id=<?=$id?>" title="<b>Enabled.</b> Click to disable"><i class="big green toggle on icon"></i></a><?
+							}
+							else {
+								?><a href="adminmodules.php?action=keeplog&id=<?=$id?>" title="<b>Disabled.</b> Click to enable"><i class="big grey horizontally flipped toggle on icon"></i></a><?
 							}
 						?>
 					</td>
