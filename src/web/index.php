@@ -57,27 +57,28 @@
 	/* ------- SwitchInstance --------------------- */
 	/* -------------------------------------------- */
 	function SwitchInstance($id) {
-		$sqlstring = "select instance_name from instance where instance_id = '$id'";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select instance_name from instance where instance_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$instancename = $row['instance_name'];
 		
 		$_SESSION['instanceid'] = $id;
 		$_SESSION['instancename'] = $instancename;
 	}
+
 	
-	$q = mysqli_stmt_init($GLOBALS['linki']);
-	mysqli_stmt_prepare($q, "select user_email, user_logincount from users where username = ?");
-	mysqli_stmt_bind_param($q, 's', $GLOBALS['username']);
-	$result = MySQLiBoundQuery($q, __FILE__, __LINE__);
+	$stmt = mysqli_prepare($GLOBALS['linki'], "select * from users where username = ?");
+	mysqli_stmt_bind_param($stmt, 's', $GLOBALS['username']);
+	$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 	$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 	$email = $row['user_email'];
 	$logincount = $row['user_logincount'];
+	mysqli_stmt_close($stmt);
 
 	if ($email == "") {
 		Notice("Your email address is currently blank. Please <a href='users.php'>update</a>.");
 	}
-	
 	
 	$sqlstring = "select count(*) count from subjects where isactive = 1";
 	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -330,10 +331,12 @@
 					</tr>
 				</thead>
 				<?
-				$q = mysqli_stmt_init($GLOBALS['linki']);
-				mysqli_stmt_prepare($q, "select a.mostrecent_date, a.study_id, b.*, d.uid from mostrecent a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on d.subject_id = c.subject_id where a.user_id in (select user_id from users where username = ?) and a.study_id is not null and c.project_id in (select project_id from projects where instance_id = ?) order by a.mostrecent_date desc");
-				mysqli_stmt_bind_param($q, 'ss', $username, $_SESSION['instanceid']);
-				$result = MySQLiBoundQuery($q, __FILE__, __LINE__);
+				//$q = mysqli_stmt_init($GLOBALS['linki']);
+				//mysqli_stmt_prepare($q, "select a.mostrecent_date, a.study_id, b.*, d.uid from mostrecent a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on d.subject_id = c.subject_id where a.user_id in (select user_id from users where username = ?) and a.study_id is not null and c.project_id in (select project_id from projects where instance_id = ?) order by a.mostrecent_date desc");
+				//mysqli_stmt_bind_param($q, 'ss', $username, $_SESSION['instanceid']);
+				//$result = MySQLiBoundQuery($q, __FILE__, __LINE__);
+				$sqlstring = "select a.mostrecent_date, a.study_id, b.*, d.uid from mostrecent a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on d.subject_id = c.subject_id where a.user_id in (select user_id from users where username = '$username') and a.study_id is not null and c.project_id in (select project_id from projects where instance_id = " . $_SESSION['instanceid'] . ") order by a.mostrecent_date desc";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				if (mysqli_num_rows($result) > 0) {
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$studyid = $row['study_id'];

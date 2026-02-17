@@ -1125,12 +1125,12 @@ bool imageIO::GetImageFileTags(QString f, QHash<QString, QString> &tags, QString
     msg += uniqueseries + "\n";
 
     //qDebug() << "Leaving GetImageFileTags()";
-    n->Log(QString("tags[] contains %1 elements").arg(tags.size()));
-    QString tagString = "";
-    foreach (const QString &key, tags.keys()) {
-        tagString += QString("tags[%1] = %2\n").arg(key).arg(tags.value(key));
-    }
-    n->Log(tagString);
+    //n->Log(QString("tags[] contains %1 elements").arg(tags.size()));
+    //QString tagString = "";
+    //foreach (const QString &key, tags.keys()) {
+    //    tagString += QString("tags[%1] = %2\n").arg(key).arg(tags.value(key));
+    //}
+    //n->Log(tagString);
 
     return true;
 }

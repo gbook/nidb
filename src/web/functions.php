@@ -597,7 +597,8 @@
 			$username = $GLOBALS['username'];
 			$body = "<b>Query failed on [$datetime]:</b> $file (line $line)<br>
 			<b>Error:</b> " . mysqli_error($GLOBALS['linki']) . "<br>
-			<b>SQL:</b> $sqlstring<br><b>Username:</b> $username<br>
+			<b>SQL:</b> " . mysqli_stmt_error($stmt) . "<br>
+			<b>Username:</b> $username<br>
 			<b>SESSION</b> <pre>" . print_r($_SESSION,true) . "</pre><br>
 			<b>SERVER</b> <pre>" . print_r($_SERVER,true) . "</pre><br>
 			<b>POST</b> <pre>" . print_r($_POST,true) . "</pre><br>
