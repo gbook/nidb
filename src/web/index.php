@@ -77,7 +77,7 @@
 	mysqli_stmt_close($stmt);
 
 	if ($email == "") {
-		Notice("Your email address is currently blank. Please <a href='users.php'>update</a>.");
+	//	Notice("Your email address is currently blank. Please <a href='users.php'>update</a>.");
 	}
 	
 	$sqlstring = "select count(*) count from subjects where isactive = 1";

@@ -6174,7 +6174,7 @@
 		$filetype = mysqli_real_escape_string($GLOBALS['linki'], $r['filetype']);
 		$gzip = ($r['gzip'] == 1) ? 1 : 0;
 		$niftijson = ($r['niftijson'] == 1) ? 1 : 0;
-		$anonymize = ($r['anonymize'] == 1) ? 1 : 0;
+		$anonymize = $r['anonymize'];
 		$dirformat = $r['dirformat'];
 		$timepoints = $r['timepoints'];
 		$behformat = $r['behformat'];

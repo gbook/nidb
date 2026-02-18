@@ -34,6 +34,7 @@
 #include "dcmtk/dcmdata/dcdatset.h"
 #include "dcmtk/dcmdata/dcdeftag.h"
 #include "dcmtk/dcmdata/dcdict.h"
+#include "dcmtk/dcmdata/dcuid.h"
 
 struct CsaElement
 {
@@ -55,7 +56,7 @@ public:
 
     /* DICOM & image functions */
     //QString GetDicomModality(QString f);
-    bool AnonymizeDicomDirInPlace(QString dir, int anonlevel, QString &msg);
+    bool AnonymizeDicomDir(QString indir, QString outdir, int anonlevel, QString &msg);
     bool AnonymizeDicomFile(QString infile, QString outfile, QString &msg);
     bool AnonymizeDicomFileInPlace(QString file, QStringList tagsToChange, QString &msg);
     bool AnonymizeDir(QString indir, QString outdir, int anonlevel, QString &msg);

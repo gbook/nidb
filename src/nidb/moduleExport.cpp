@@ -783,13 +783,12 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                     QString m;
                     if (filetype == "dicom") {
                         /* copy all dicom files from indir to outdir */
-                        QString systemstring = QString("rsync %1/* %2/").arg(indir).arg(outdir);
-                        n->Log(SystemCommand(systemstring));
+                        //QString systemstring = QString("rsync %1/* %2/").arg(indir).arg(outdir);
+                        //n->Log(SystemCommand(systemstring));
 
                         /* anaonymize the outdir */
-                        img->AnonymizeDicomDirInPlace(outdir, anonlevel, m);
-
-                        //img->AnonymizeDir(indir, outdir, anonlevel, m);
+                        img->AnonymizeDicomDir(indir, outdir, anonlevel, m);
+                        n->Log(m);
                     }
 
                     n->SetExportSeriesStatus(exportseriesid, -1, -1, "", seriesstatus, statusmessage);
@@ -1155,9 +1154,10 @@ bool moduleExport::ExportXNAT(int exportid, QString &exportstatus, QString &msg)
                 QString m;
                 /* always anonymize the DICOM data */
                 /* copy all dicom files from indir to outdir */
-                QString systemstring = QString("rsync %1/* %2/").arg(indir).arg(outdir);
-                n->Log(SystemCommand(systemstring));
-                img->AnonymizeDicomDirInPlace(outdir, 2, m);
+                //QString systemstring = QString("rsync %1/* %2/").arg(indir).arg(outdir);
+                //n->Log(SystemCommand(systemstring));
+                img->AnonymizeDicomDir(indir, outdir, 2, m);
+                n->Log(m);
 
                 n->SetExportSeriesStatus(exportseriesid, -1, -1, "", seriesstatus,statusmessage);
                 msgs << QString("Series [%1%2-%3 (%4)] complete").arg(uid).arg(studynum).arg(seriesnum).arg(seriesdesc);
@@ -1325,10 +1325,11 @@ bool moduleExport::ExportNDAR(int exportid, bool csvonly, QStringList ndaflags, 
                                 //msgs << "ExportNDA() " + n->Log(SystemCommand(systemstring, true));
 
                                 /* copy all dicom files from indir to outdir */
-                                QString systemstring = QString("rsync %1/* %2/").arg(indir).arg(tmpdir);
-                                n->Log(SystemCommand(systemstring));
+                                //QString systemstring = QString("rsync %1/* %2/").arg(indir).arg(tmpdir);
+                                //n->Log(SystemCommand(systemstring));
 
-                                img->AnonymizeDicomDirInPlace(tmpdir, 2, m);
+                                img->AnonymizeDicomDir(indir, tmpdir, 2, m);
+                                n->Log(m);
                             }
                             else if ((modality == "mr") && (datatype == "parrec")) {
                                 systemstring = "find " + indir + " -iname '*.par' -exec cp {} " + tmpdir + " \\;";
@@ -1760,10 +1761,11 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
                             /* copy all the files from the data directory into a tmp directory */
                             if (datatype == "dicom") {
                                 /* copy all dicom files from indir to outdir */
-                                QString systemstring = QString("rsync %1/* %2/").arg(inDirPath).arg(tmpdir);
-                                n->Log(SystemCommand(systemstring));
+                                //QString systemstring = QString("rsync %1/* %2/").arg(inDirPath).arg(tmpdir);
+                                //n->Log(SystemCommand(systemstring));
 
-                                img->AnonymizeDicomDirInPlace(tmpdir, 4, m);
+                                img->AnonymizeDicomDir(inDirPath, tmpdir, 4, m);
+                                n->Log(m);
                             }
                             else {
                                 systemstring = "rsync --stats " + inDirPath + "/* " + tmpdir + "/";
