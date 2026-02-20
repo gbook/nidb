@@ -27,7 +27,7 @@ mkdir -p %{buildroot}/nidb/logs
 mkdir -p %{buildroot}/nidb/qcmodules
 mkdir -p %{buildroot}/nidb/setup
 mkdir -p %{buildroot}/var/www/html
-mkdir -p %{buildroot}/usr/local/share/dcmtk-3.7.0-DEV/
+mkdir -p %{buildroot}/usr/local/share/dcmtk-3.7.0/
 cp -f %{_sourcedir}/src/setup/rpm_post_install.sh %{buildroot}/nidb/setup/ # RPM post-install script
 cp -rf %{_sourcedir}/src/web/* %{buildroot}/var/www/html/ # copy web files to the end location
 cp -f %{_builddir}/bin/nidb/nidb %{buildroot}/nidb/bin/
@@ -76,7 +76,7 @@ cp -f ~/Qt/6.9.3/gcc_64/plugins/sqldrivers/libqsqlmysql.so %{buildroot}/usr/lib/
 cp -f ~/Qt/6.9.3/gcc_64/plugins/sqldrivers/libqsqlmysql.so %{buildroot}/nidb/bin/sqldrivers/ # copy Qt MySQL lib to here also... sometimes the binary only checks this location for the lib
 cp -f ~/Qt/6.9.3/gcc_64/plugins/sqldrivers/libqsqlite.so %{buildroot}/usr/lib/sqldrivers/ # copy Qt MySQL lib
 cp -f ~/Qt/6.9.3/gcc_64/plugins/sqldrivers/libqsqlite.so %{buildroot}/nidb/bin/sqldrivers/ # copy Qt MySQL lib to here also... sometimes the binary only checks this location for the lib
-cp -f /usr/local/share/dcmtk-3.7.0-DEV/*.dic %{buildroot}/usr/local/share/dcmtk-3.7.0-DEV/ # copy dcmtk .dic files
+cp -rf /usr/local/share/dcmtk-3.7.0/* %{buildroot}/usr/local/share/dcmtk-3.7.0/ # copy dcmtk .dic files
 
 # This section LISTS the files that are available once everything is installed, but this is NOT the specification for what files will be installed...
 %files
@@ -84,7 +84,7 @@ cp -f /usr/local/share/dcmtk-3.7.0-DEV/*.dic %{buildroot}/usr/local/share/dcmtk-
 /var/www/html
 /usr/lib/*
 /usr/local/bin
-/usr/local/share/dcmtk-3.7.0-DEV
+/usr/local/share/dcmtk-3.7.0
 
 %post
 /nidb/setup/rpm_post_install9.sh
