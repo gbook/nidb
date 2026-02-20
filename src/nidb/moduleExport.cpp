@@ -534,6 +534,10 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                     if (studyaltid == "")
                         studyaltid = QString("%1").arg(studynum);
 
+                    /* remove any non-compatible directory characters */
+                    studyaltid.replace(QRegularExpression("[^a-zA-Z0-9_-]"), "_");
+                    primaryaltuid.replace(QRegularExpression("[^a-zA-Z0-9_-]"), "_");
+
                     /* format the subject/study part of the output directory path */
                     QString subjectdir;
                     if (dirformat == "shortid")
@@ -552,9 +556,6 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                         subjectdir = QString("%1/time%2").arg(uid).arg(studytimepoint);
                     else
                         subjectdir = QString("%1%2").arg(uid).arg(studynum);
-
-                    /* remove any non-compatible directory characters */
-                    subjectdir.replace(QRegularExpression("[^a-zA-Z0-9_-]"), "_");
 
                     /* format the series number part of the output path */
                     switch (preserveseries) {
