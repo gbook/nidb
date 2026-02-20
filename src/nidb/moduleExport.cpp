@@ -553,6 +553,9 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                     else
                         subjectdir = QString("%1%2").arg(uid).arg(studynum);
 
+                    /* remove any non-compatible directory characters */
+                    subjectdir.replace(QRegularExpression("[^a-zA-Z0-9_-]"), "_");
+
                     /* format the series number part of the output path */
                     switch (preserveseries) {
                         case 0: {
@@ -834,9 +837,9 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                 //n->WriteLog("Current directory is... [" + pwd + "]");
 
                 if (QFile::exists(zipfile))
-                    systemstring = "cd " + outdir + "; zip -1grv " + zipfile + " .";
+                    systemstring = QString("cd %1; zip -1grv %2 .; chmod 655 %2").arg(outdir).arg(zipfile);
                 else
-                    systemstring = "cd " + outdir + "; zip -1rv " + zipfile + " .";
+                    systemstring = QString("cd %1; zip -1rv %2 .; chmod 655 %2").arg(outdir).arg(zipfile);
                 n->Log("Beginning zipping...");
                 n->Log(SystemCommand(systemstring, true));
                 n->Log("Finished zipping... Changing directory back to [" + pwd + "]");
@@ -886,9 +889,9 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                 QString systemstring;
                 QDir::setCurrent(outdir);
                 if (QFile::exists(zipfile))
-                    systemstring = "zip -1grq " + zipfile + " .";
+                    systemstring = QString("zip -1grq %1 .; chmod 655 %1").arg(zipfile);
                 else
-                    systemstring = "zip -1rq " + zipfile + " .";
+                    systemstring = QString("zip -1rq %1 .; chmod 655 %1").arg(zipfile);
                 n->Log(SystemCommand(systemstring, true));
 
                 /* get the zip file details */
@@ -956,9 +959,9 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                     QString systemstring;
                     QDir::setCurrent(outdir);
                     if (QFile::exists(zipfile))
-                        systemstring = "zip -1grq " + zipfile + " .";
+                        systemstring = QString("zip -1grq %1 .; chmod 655 %1").arg(zipfile);
                     else
-                        systemstring = "zip -1rq " + zipfile + " .";
+                        systemstring = QString("zip -1rq %1 .; chmod 655 %1").arg(zipfile);
                     n->Log(SystemCommand(systemstring, true));
                 }
 
@@ -1188,9 +1191,9 @@ bool moduleExport::ExportXNAT(int exportid, QString &exportstatus, QString &msg)
         QString systemstring;
         QDir::setCurrent(outdir);
         if (QFile::exists(zipfile))
-            systemstring = "zip -1grv " + zipfile + " .";
+            systemstring = QString("zip -1grv %1 .; chmod 655 %1").arg(zipfile);
         else
-            systemstring = "zip -1rv " + zipfile + " .";
+            systemstring = QString("zip -1rv %1 .; chmod 655 %1").arg(zipfile);
         n->Log("Beginning zipping...");
         n->Log(SystemCommand(systemstring, true));
         n->Log("Finished zipping... Changing directory back to [" + pwd + "]");
@@ -1345,14 +1348,14 @@ bool moduleExport::ExportNDAR(int exportid, bool csvonly, QStringList ndaflags, 
 
                             /* zip the data to the output directory */
                             QString zipfile = QString("%1/%2-%3-%4.zip").arg(rootoutdir).arg(uid).arg(studynum).arg(seriesnum);
-                            systemstring = "zip -vjrq1 " + zipfile + " " + tmpdir;
+                            systemstring = QString("zip -vjrq1 %1 %2; chmod 655 %1").arg(zipfile).arg(tmpdir);
                             msgs << "ExportNDA() " + n->Log(SystemCommand(systemstring, true));
                             msgs << "ExportNDA() " + n->Log("Done zipping image files...");
 
                             /* create a behavioral data zip file if there is beh data */
                             if (numfilesbeh > 0) {
                                 behzipfile = QString("%1-%2-%3-beh.zip").arg(uid).arg(studynum).arg(seriesnum);
-                                systemstring = QString("zip -vjrq1 %1/%2 %3").arg(rootoutdir).arg(behzipfile).arg(behindir);
+                                systemstring = QString("zip -vjrq1 %1/%2 %3; chmod 655 %1/%2").arg(rootoutdir).arg(behzipfile).arg(behindir);
                                 msgs << "ExportNDA() " + n->Log(SystemCommand(systemstring, true));
                                 msgs << "ExportNDA() " + n->Log("Done zipping beh files...");
 
@@ -1398,9 +1401,9 @@ bool moduleExport::ExportNDAR(int exportid, bool csvonly, QStringList ndaflags, 
             QDir::setCurrent(outdir);
 
             if (QFile::exists(zipfile))
-                systemstring = "cd " + outdir + "; zip -1grv " + zipfile + " .";
+                systemstring = QString("cd %1; zip -1grv %2 .; chmod 655 %2").arg(outdir).arg(zipfile);
             else
-                systemstring = "cd " + outdir + "; zip -1rv " + zipfile + " .";
+                systemstring = QString("cd %1; zip -1rv %2 .; chmod 655 %2").arg(outdir).arg(zipfile);
             n->Log("Beginning zipping...");
             n->Log(SystemCommand(systemstring, true));
             n->Log("Finished zipping... Changing directory back to [" + pwd + "]");
