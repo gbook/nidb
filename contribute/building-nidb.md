@@ -98,6 +98,44 @@ apt install wget   # if needed
 {% endtab %}
 {% endtabs %}
 
+## Building DCMTK
+
+{% tabs %}
+{% tab title="Linux" %}
+1. Install CMake
+   1. RHEL `sudo dnf install cmake cmake-gui`
+   2. Debian/Ubuntu `sudo apt install cmake cmake-gui`
+2. Download dcmtk source code [https://github.com/DCMTK/dcmtk/releases](https://github.com/DCMTK/dcmtk/releases)
+3. Unzip the source code to a directory such as `~/dcmtk-source`. Make sure the source code exists at the root of that directory and is not unzipped into a sub-directory.&#x20;
+4. Open CMake (GUI)
+   1. Set source code directory to to `~/dcmtk-source`
+   2. Set binary directory to `~/dcmtk-bin`
+   3. Click **Configure**.
+      1. Click **Yes** to create the directory
+      2. Set the generator to _Unix Makefiles_ and _Use default native compilers_. Click **Finish**.
+   4. Make sure
+      1. `BUILD_APPS` is unchecked
+      2. `BUILD_SHARED_LIBS` is checked
+      3. `DCMTK_ENABLE_PRIVATE_FLAGS` is checked
+   5. Leave all other options the same
+   6. Click **Configure**.
+   7. The variable list will refresh. If any lines are <mark style="color:red;">**red**</mark>, fix those lines and click **Configure** again.
+   8. Click **Generate**.
+   9. Close cmake-gui
+5. From the command line, run the following
+   1. `cd ~/dcmtk-bin`&#x20;
+   2. `make`
+   3. `sudo make install`
+6. DCMTK files will be installed in the following locations
+   1. include - `/usr/local/include`
+   2. libs - `/usr/local/lib64`
+{% endtab %}
+
+{% tab title="Windows" %}
+
+{% endtab %}
+{% endtabs %}
+
 #### Step 2 - Install Qt 6.9.3
 
 1. Download Qt open-source from [https://www.qt.io/download-open-source](https://www.qt.io/download-open-source)
