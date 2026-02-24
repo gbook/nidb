@@ -26,7 +26,7 @@ The following OS configurations have been tested to build nidb. It may be possib
 
 ## Prepare Build Environment
 
-#### Step 1 - Install development tools
+### Step 1 - Install development tools
 
 Run these commands as root (or sudo) based on your distribution
 
@@ -98,7 +98,7 @@ apt install wget   # if needed
 {% endtab %}
 {% endtabs %}
 
-## Building DCMTK
+### Step 2 - Build DCMTK
 
 {% tabs %}
 {% tab title="Linux" %}
@@ -132,11 +132,28 @@ apt install wget   # if needed
 {% endtab %}
 
 {% tab title="Windows" %}
-
+1. Install CMake - [https://cmake.org/download/](https://cmake.org/download/)
+2. Download dcmtk source code [https://github.com/DCMTK/dcmtk/releases](https://github.com/DCMTK/dcmtk/releases)
+3. Unzip the source code to a directory such as `C:/dcmtk-source`. Make sure the source code exists at the root of that directory and is not unzipped into a sub-directory.&#x20;
+4. Open CMake (GUI)
+   1. Set source code directory to to `C:/dcmtk-source`
+   2. Set binary directory to `C:/dcmtk-bin`
+   3. Make sure
+      1. `BUILD_APPS` is unchecked
+      2. `BUILD_SHARED_LIBS` is checked
+      3. &#x20;  `DCMTK_ENABLE_PRIVATE_FLAGS` is checked
+   4. Leave all other options the same
+   5. Click **Configure**. Set the generator to Visual Studio 17, 2022
+   6. The variable list will refresh. If any lines are <mark style="color:red;">**red**</mark>, fix those lines and click **Configure** again.
+   7. Click **Generate**.
+5. Right-click **Visual Studio 2022** and select **Run as administrator**. Then open `C:/dcmtk-bin/DCMTK.sln`
+   1. On the Solution explorer, right-click and select **Batch Build...**
+   2. For the ALL\_BUILD  and INSTALL rows check off the _Release_ option, and click **Build**.
+   3. Building will take some time.
 {% endtab %}
 {% endtabs %}
 
-#### Step 2 - Install Qt 6.9.3
+### Step 3 - Install Qt
 
 1. Download Qt open-source from [https://www.qt.io/download-open-source](https://www.qt.io/download-open-source)
 2. Make the installer executable `chmod 777 qt-unified-linux-x64-x.x.x-online.run`
@@ -144,7 +161,7 @@ apt install wget   # if needed
 4. The Qt Maintenance Tool will start. An account is required to download Qt open source
 5. On the components screen, select the checkbox for **Qt 6.9.3 → Desktop gcc 64-bit**
 
-#### Step 3 - (Optional) Build MySQL/MariaDB driver for Qt
+### Optional - Build MySQL/MariaDB driver for Qt
 
 Sometimes the MySQL/MariaDB driver supplied with Qt will not work correctly, and needs to be built manually. This happens on Debian 12, for example. If building is successful, the path to the driver should eventually be `~/Qt/6.9.3/gcc_64/plugins/sqldrivers/libqsqlmysql.so`
 
