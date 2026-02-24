@@ -349,19 +349,25 @@
 						<?
 							if (($destinationtype == "web") || ($destinationtype == "xnat") || ($destinationtype == "squirrel") || ($destinationtype == "ndar")) {
 								if ((round($totals['complete']/$total)*100 == 100) || (($totals['submitted'] == 0) && ($totals['processing'] == 0))) {
-									$zipfile = $GLOBALS['cfg']['webdir'] . "/download/NIDB-$exportid.zip";
-									if (file_exists($zipfile)) {
-										$output = shell_exec("du -sb $zipfile");
-										list($filesize, $fname) = preg_split('/\s+/', $output);
-										$zipfilename = "NIDB-$exportid.zip";
-									}
-									else {
+									
+									if ($destinationtype == "squirrel") {
 										$zipfile = $GLOBALS['cfg']['webdir'] . "/download/NiDB-Squirrel-$exportid.zip";
 										if (file_exists($zipfile)) {
 											$output = shell_exec("du -sb $zipfile");
 											list($filesize, $fname) = preg_split('/\s+/', $output);
 											$zipfilename = "NiDB-Squirrel-$exportid.zip";
 											//echo $zipfilename;
+										}
+										else {
+											$filesize = 0;
+										}
+									}
+									else {
+										$zipfile = $GLOBALS['cfg']['webdir'] . "/download/NIDB-$exportid.zip";
+										if (file_exists($zipfile)) {
+											$output = shell_exec("du -sb $zipfile");
+											list($filesize, $fname) = preg_split('/\s+/', $output);
+											$zipfilename = "NIDB-$exportid.zip";
 										}
 										else {
 											$filesize = 0;

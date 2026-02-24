@@ -6200,7 +6200,7 @@
 
 		$ndadownloadtype = $r['ndadownloadtype'];
 
-		//echo "$downloadbeh";
+		if ($anonymize == "") { $anonymize = 0; }
 		
 		if (!$downloadbeh) { $behformat = "behnone"; }
 		

@@ -618,7 +618,7 @@
 			}
 		}
 		else {
-			return mysqli_stmt_get_result($q);
+			return mysqli_stmt_get_result($stmt);
 		}
 	}
 	
