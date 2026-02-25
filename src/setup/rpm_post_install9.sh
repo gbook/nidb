@@ -87,19 +87,20 @@ systemctl start dcmrcv
 
 # create data directories
 echo 'Create data directories and change owner...'
-mkdir -p /nidb/data
-mkdir -p /nidb/data/archive
-mkdir -p /nidb/data/backup
-mkdir -p /nidb/data/backupstaging
-mkdir -p /nidb/data/deleted
-mkdir -p /nidb/data/dicomincoming
-mkdir -p /nidb/data/download
-mkdir -p /nidb/data/export
-mkdir -p /nidb/data/problem
-mkdir -p /nidb/data/tmp
-mkdir -p /nidb/data/upload
-mkdir -p /nidb/data/uploaded
-mkdir -p /nidb/data/uploadstaging
+mkdir -p -m 774 /nidb
+mkdir -p -m 764 /nidb/data
+mkdir -p -m 764 /nidb/data/archive
+mkdir -p -m 764 /nidb/data/backup
+mkdir -p -m 764 /nidb/data/backupstaging
+mkdir -p -m 764 /nidb/data/deleted
+mkdir -p -m 764 /nidb/data/dicomincoming
+mkdir -p -m 764 /nidb/data/download
+mkdir -p -m 764 /nidb/data/export
+mkdir -p -m 764 /nidb/data/problem
+mkdir -p -m 764 /nidb/data/tmp
+mkdir -p -m 764 /nidb/data/upload
+mkdir -p -m 764 /nidb/data/uploaded
+mkdir -p -m 764 /nidb/data/uploadstaging
 
 # change permissions of the /nidb directory
 echo 'Change ownership of /nidb contents...'
@@ -111,12 +112,12 @@ echo 'Change permissions of /nidb...'
 chmod -R g+w /nidb/bin /nidb/lock /nidb/logs /nidb/qcmodules /nidb/setup # change permissions of the install directorys contents
 chmod g+w /nidb/* # change permissions of the install directorys contents
 echo 'Change ownership of /nidb...'
-chmod 777 /nidb              # change permissions of the install directory
+#chmod 777 /nidb              # change permissions of the install directory
 
 # change owner and permissions of the web directory
 chown -R nidb:nidb /var/www/html
-find /var/www -type d -exec chmod 755 {} \;
-find /var/www -type f -exec chmod 644 {} \;
+#find /var/www -type d -exec chmod 755 {} \;
+#find /var/www -type f -exec chmod 644 {} \;
 
 touch /nidb/setup/dbupgrade
 
