@@ -648,15 +648,17 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
                 i++;
                 tags.clear();
                 QString m;
-                //bool csa = false;
-                //if (n->cfg["enablecsa"] == "1") csa = true;
-                //QString binpath = n->cfg["nidbdir"] + "/bin";
+                QString uniqueSeriesStr;
                 if (img->GetImageFileTags(file, tags, m)) {
 
-                    //n->Log(m);
-                    //qDebug() << tags;
+                    /* get a unique string for this series */
+                    if ((tags["StudyInstanceUID"] != "") && (tags["SeriesNumber"] != ""))
+                        uniqueSeriesStr = tags["StudyInstanceUID"] + "-" + tags["SeriesNumber"];
+                    else
+                        uniqueSeriesStr = tags["SeriesInstanceUID"];
 
-                    dcmseries[tags["SeriesInstanceUID"]].append(file);
+                    dcmseries[uniqueSeriesStr].append(file);
+
                     n->Debug(QString("Parsing file [%1] SeriesInstanceUID [%2] SeriesNumber [%3] InstanceNumber [%4] AcquisitionNumber [%5]").arg(file).arg(tags["SeriesInstanceUID"]).arg(tags["SeriesNumber"]).arg(tags["InstanceNumber"]).arg(tags["AcquisitionNumber"]));
 
                     QFileInfo fi(file);
@@ -717,19 +719,16 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
     /* done reading all of the files in the directory (more may show up, but we'll get to those later)
      * now archive them */
     for(QMap<QString, QStringList>::iterator a = dcmseries.begin(); a != dcmseries.end(); ++a) {
-        QString seriesuid = a.key();
+        QString uniqueSeriesStr = a.key();
 
-        n->Log(QString("Archiving %1 files for SeriesUID [" + seriesuid + "]").arg(dcmseries[seriesuid].size()));
-        QStringList files2 = dcmseries[seriesuid];
+        n->Log(QString("Archiving %1 files for SeriesUID [" + uniqueSeriesStr + "]").arg(dcmseries[uniqueSeriesStr].size()));
+        QStringList files2 = dcmseries[uniqueSeriesStr];
 
-        n->Debug(QString("Going to archive a list of files belonging to SeriesInstanceUID [%1] List [%2]").arg(seriesuid).arg(files2.join(", ")));
-        //performanceMetric perf2;
-        //perf2.Start();
+        n->Debug(QString("Going to archive a list of files belonging to uniqueSeriesString [%1] List [%2]").arg(uniqueSeriesStr).arg(files2.join(", ")));
         if (io->ArchiveDICOMSeries(importid, -1, -1, -1, subjectMatchCriteria, studyMatchCriteria, seriesMatchCriteria, importProjectID, "", importSiteID, importSeriesNotes, importAltUIDs, files2))
             iscomplete = true;
         else
             iscomplete = false;
-        //n->Log(perf2.End());
 
         n->ModuleRunningCheckIn();
         /* check if this module should be running now or not */

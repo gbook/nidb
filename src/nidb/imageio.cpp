@@ -786,17 +786,6 @@ bool imageIO::AnonymizeDicomDir(QString indir, QString outdir, int anonlevel, QS
                 }
             }
 
-                // Generate new UIDs (important!)
-            //char newUID[100];
-            //dcmGenerateUniqueIdentifier(newUID, SITE_INSTANCE_UID_ROOT);
-            //dataset->putAndInsertString(DCM_StudyInstanceUID, newUID);
-
-            //dcmGenerateUniqueIdentifier(newUID, SITE_INSTANCE_UID_ROOT);
-            //dataset->putAndInsertString(DCM_SeriesInstanceUID, newUID);
-
-            //dcmGenerateUniqueIdentifier(newUID, SITE_INSTANCE_UID_ROOT);
-            //dataset->putAndInsertString(DCM_SOPInstanceUID, newUID);
-
             status = fileformat.saveFile(dcmOutFile, dataset->getOriginalXfer(), EET_ExplicitLength, EGL_recalcGL, EPD_noChange);
             if (status.good()) {
                 //std::cout << "Tags modified successfully." << std::endl;
