@@ -110,14 +110,11 @@ HEADERS += \
     utils.h \
     version.h
 
-# gdcm
 win32: {
     # dcmtk library
     DCMTK = "C:/Program Files (x86)/DCMTK"
 
     LIBS += -L$$DCMTK/lib
-    #*msvc*:CONFIG(release, debug|release): LIBS += -L$$DCMTK/lib
-    #else:*msvc*:CONFIG(debug, debug|release): LIBS += -L$$GDCMBIN/bin/Debug
     INCLUDEPATH += $$DCMTK/include/
 
     LIBS += -ldcmdata \

@@ -98,7 +98,9 @@ bool nidb::LoadConfig() {
     if (runningFromCluster)
         files << binpath + "/nidb-cluster.cfg";
     else
-        files << binpath + "/nidb.cfg"
+        files
+            << "/etc/nidb/nidb.cfg"
+            << binpath + "/nidb.cfg"
             << binpath + "/../nidb.cfg"
             << binpath + "/../../nidb.cfg"
             << binpath + "/../../../nidb.cfg"
@@ -737,7 +739,7 @@ bool nidb::SendEmail(QString to, QString subject, QString body) {
     QString result = SystemCommand(curlCmd, true).trimmed();
     Print(result);
 
-    //QFile::remove(tmpMailFilePath);
+    QFile::remove(tmpMailFilePath);
 
     return true;
 }

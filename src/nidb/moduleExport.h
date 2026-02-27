@@ -26,11 +26,6 @@
 #include "archiveio.h"
 #include "imageio.h"
 #include "remotenidbconnection.h"
-//#include "gdcmReader.h"
-//#include "gdcmWriter.h"
-//#include "gdcmAttribute.h"
-//#include "gdcmStringFilter.h"
-//#include "gdcmAnonymizer.h"
 #include "squirrel.h"
 
 /**

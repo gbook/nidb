@@ -35,7 +35,7 @@
 	// ----------------------------------------------------------
 	function LoadConfig(bool $quiet=false) {
 		$file = "";
-		$possiblefiles = array('nidb.cfg', '../nidb.cfg', '../programs/nidb.cfg', '../bin/nidb.cfg', '/home/nidb/programs/nidb.cfg', '/nidb/programs/nidb.cfg', '/nidb/nidb.cfg', '/nidb/bin/nidb.cfg');
+		$possiblefiles = array('/etc/nidb/nidb.cfg', 'nidb.cfg', '../nidb.cfg', '../programs/nidb.cfg', '../bin/nidb.cfg', '/home/nidb/programs/nidb.cfg', '/nidb/programs/nidb.cfg', '/nidb/nidb.cfg', '/nidb/bin/nidb.cfg');
 		
 		$found = false;
 		foreach ($possiblefiles as $f) {

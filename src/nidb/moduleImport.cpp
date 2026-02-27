@@ -215,28 +215,6 @@ bool moduleImport::PrepareAndMoveDICOM(QString filepath, QString outdir, bool an
     QString newFilePath = QString("%1/%2").arg(outdir).arg(newfilename);
 
     if (anonymize) {
-        //gdcm::Anonymizer anon;
-        //std::vector<gdcm::Tag> empty_tags;
-        //std::vector<gdcm::Tag> remove_tags;
-        //std::vector< std::pair<gdcm::Tag, std::string> > replace_tags;
-        //gdcm::Tag tag;
-        //const char *dcmfile = filepath.toStdString().c_str();
-
-        //QStringList tagsToChange;
-        //QString anonStr = "Anon";
-
-        //tag.ReadFromCommaSeparatedString("0008, 0090"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
-        //tag.ReadFromCommaSeparatedString("0008, 1050"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
-        //tag.ReadFromCommaSeparatedString("0008, 1070"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
-        //tag.ReadFromCommaSeparatedString("0010, 0010"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
-        //tag.ReadFromCommaSeparatedString("0010, 0030"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
-
-        //tagsToChange.append(QString("--replace 8,90='%1'").arg(anonStr)); // ReferringPhysicianName
-        //tagsToChange.append(QString("--replace 8,1050='%1'").arg(anonStr)); // PerformingPhysicianName
-        //tagsToChange.append(QString("--replace 8,1070='%1'").arg(anonStr)); // OperatorsName
-        //tagsToChange.append(QString("--replace 10,10='%1'").arg(anonStr)); // PatientName
-        //tagsToChange.append(QString("--replace 10,30='%1'").arg(anonStr)); // PatientBirthDate
-
         QString m;
         img->AnonymizeDicomFile(filepath, newFilePath, m);
     }
@@ -378,8 +356,6 @@ bool moduleImport::ArchiveLocal() {
         }
     }
 
-    //n->Log("Leaving the import module");
-
     return ret;
 }
 
@@ -442,6 +418,12 @@ bool moduleImport::SetImportStatus(int importid, QString status, QString msg, QS
 /* ---------------------------------------------------------- */
 /* --------- ParseDirectory --------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Parse an import directory and group files by series, to create a list of files to be archived. Once a list is created, it is passed to the appropriate archiving function
+ * @param dir The directory to parse
+ * @param importid import row ID
+ * @return true if successful, false otherwise
+ */
 bool moduleImport::ParseDirectory(QString dir, int importid) {
 
     n->Log(QString("********** Working on directory [" + dir + "] with importRowID [%1] **********").arg(importid));
@@ -559,7 +541,6 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
             n->ModuleRunningCheckIn();
             if (!n->ModuleCheckIfActive()) {
                 n->Log("Module disabled. Stopping module.");
-                //okToDeleteDir = false;
                 n->Log(perf.End());
                 return true;
             }
@@ -651,7 +632,7 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
                 QString uniqueSeriesStr;
                 if (img->GetImageFileTags(file, tags, m)) {
 
-                    /* get a unique string for this series */
+                    /* get a unique string for the series. Some Siemens DICOMs have multiple SeriesInstanceUIDs for each SeriesNumber, so try to use the SeriesNumber tag first */
                     if ((tags["StudyInstanceUID"] != "") && (tags["SeriesNumber"] != ""))
                         uniqueSeriesStr = tags["StudyInstanceUID"] + "-" + tags["SeriesNumber"];
                     else
