@@ -206,7 +206,14 @@
 			$exportid = $row['export_id'];
 			$submitdate = $row['submitdate'];
 			$username = $row['username'];
+			$downloadflags = $row['download_flags'];
 			$destinationtype = $row['destinationtype'];
+			$filetype = $row['filetype']; /* squirrel, bids, package */
+			$nfsdir = $row['nfsdir'];
+			$niftiFlags = explode(",", $row['nifti_flags']);
+			$bidsFlags = explode(",", $row['bids_flags']);
+			$squirrelFlags = explode(",", $row['squirrel_flags']);
+			$ndaFlags = explode(",", $row['nda_flags']);
 			$exportstatus = $row['status'];
 			$connectionid = $row['remotenidb_connectionid'];
 			$transactionid = $row['remotenidb_transactionid'];
@@ -215,7 +222,8 @@
 				case "web": $deststr = "<i class='cloud download alternate icon'></i> Web"; break;
 				case "publicdownload": $deststr = "<i class='people carry icon'></i> Public Download"; break;
 				case "remotenidb": $deststr = "<em data-emoji=':chipmunk:'></em> Remote NiDB"; break;
-				case "nfs": $deststr = "<i class='server icon'></i> Remote NiDB"; break;
+				case "nfs": $deststr = "<i class='server icon'></i> NFS"; break;
+				case "ndar": $deststr = "<i class='server icon'></i> NDA"; break;
 				default: $deststr = ucfirst($destinationtype);
 			}
 			
@@ -347,36 +355,48 @@
 					</div>
 					<div class="right aligned column">
 						<?
-							if (($destinationtype == "web") || ($destinationtype == "xnat") || ($destinationtype == "squirrel") || ($destinationtype == "ndar")) {
-								if ((round($totals['complete']/$total)*100 == 100) || (($totals['submitted'] == 0) && ($totals['processing'] == 0))) {
-									
-									if ($destinationtype == "squirrel") {
-										$zipfile = $GLOBALS['cfg']['webdir'] . "/download/NiDB-Squirrel-$exportid.zip";
-										if (file_exists($zipfile)) {
-											$output = shell_exec("du -sb $zipfile");
-											list($filesize, $fname) = preg_split('/\s+/', $output);
-											$zipfilename = "NiDB-Squirrel-$exportid.zip";
-											//echo $zipfilename;
-										}
-										else {
-											$filesize = 0;
-										}
+							$complete = false;
+							if ((round($totals['complete']/$total)*100 == 100) || (($totals['submitted'] == 0) && ($totals['processing'] == 0))) {
+								$complete = true;
+							}
+						
+							/* display download link - destinationtype is 'web' or (destinationtype is 'ndar' and ndaflags contains NDA_WEBDOWNLOAD) */
+							if ($destinationtype == "web") {
+								if ($complete) {
+									$zipFileName = "NIDB-$exportid.zip";
+									$zipFilePath = $GLOBALS['cfg']['webdir'] . "/download/$zipFileName";
+									if (file_exists($zipFilePath)) {
+										$filesize = filesize($zipFilePath);
 									}
 									else {
-										$zipfile = $GLOBALS['cfg']['webdir'] . "/download/NIDB-$exportid.zip";
-										if (file_exists($zipfile)) {
-											$output = shell_exec("du -sb $zipfile");
-											list($filesize, $fname) = preg_split('/\s+/', $output);
-											$zipfilename = "NIDB-$exportid.zip";
-										}
-										else {
-											$filesize = 0;
-										}
+										$filesize = 0;
+									}
+
+									if ($filesize == 0) {
+										echo "Zipping download... ($zipFilePath)";
+									}
+									else {
+										$fsize = HumanReadableFilesize($filesize);
+										?>
+											<a class="ui blue button" href="download/<?=$zipFileName?>" title="Download zip file"><i class="download icon"></i> Download <span style="font-size: smaller"><?=$fsize?></span></a>
+											<br>
+										<?
 									}
 									
-									//echo "[$zipfilename] [$zipfile]";
+								}
+								else {
+									?>Preparing download...<?
+								}
+							}
+							elseif ($destinationtype == "ndar") {
+								if (in_array('NDA_WEBDOWNLOAD', $ndaFlags)) {
+									?>NDA web download...<?
+									$zipFilePath = $GLOBALS['cfg']['webdir'] . "/download/NIDB-$exportid.zip";
+									if (file_exists($zipFilePath)) { $filesize = filesize($zipFilePath); }
+									else { $filesize = 0; }
+
 									if ($filesize == 0) {
-										echo "Zipping download... ($zipfile)";
+										echo "Zipping download... ($zipFilePath)";
 									}
 									else {
 										?>
@@ -386,9 +406,53 @@
 									}
 								}
 								else {
-									?>Preparing download...<?
+									?>NDA ftp download...<br>Download available from scp://<?
 								}
 							}
+							elseif ($destinationtype == "remotenidb") {
+								?>Remote NiDB export<?
+							}
+							
+							//if (($destinationtype == "web") || ($destinationtype == "xnat") || ($destinationtype == "squirrel") || ($destinationtype == "ndar")) {
+							//if (($destinationtype == "web") || ($destinationtype == "ndar")) {
+								//if ((round($totals['complete']/$total)*100 == 100) || (($totals['submitted'] == 0) && ($totals['processing'] == 0))) {
+									
+									//if ($destinationtype == "squirrel") {
+									//	$zipfile = $GLOBALS['cfg']['webdir'] . "/download/NiDB-Squirrel-$exportid.zip";
+									//	if (file_exists($zipfile)) {
+									//		$output = shell_exec("du -sb $zipfile");
+									//		list($filesize, $fname) = preg_split('/\s+/', $output);
+									//		$zipfilename = "NiDB-Squirrel-$exportid.zip";
+									//		//echo $zipfilename;
+									//	}
+									//	else {
+									//		$filesize = 0;
+									//	}
+									//}
+									//else {
+									//	$zipfile = $GLOBALS['cfg']['webdir'] . "/download/NIDB-$exportid.zip";
+									//	if (file_exists($zipfile)) {
+									//		$output = shell_exec("du -sb $zipfile");
+									//		list($filesize, $fname) = preg_split('/\s+/', $output);
+									//		$zipfilename = "NIDB-$exportid.zip";
+									//	}
+									//	else {
+									//		$filesize = 0;
+									//	}
+									//}
+									
+									//echo "[$zipfilename] [$zipfile]";
+									//if ($filesize == 0) {
+									//	echo "Zipping download... ($zipfile)";
+									//}
+									//else {
+										?><!--
+											<a class="ui blue button" href="download/<?=$zipfilename?>" title="Download zip file"><i class="download icon"></i> Download <span style="font-size: smaller"><?=HumanReadableFilesize($filesize)?></span></a>
+											<br>-->
+										<?
+									//}
+								//}
+							//}
 						?>
 					</div>
 				</div>

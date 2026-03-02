@@ -40,6 +40,7 @@ public:
 
     QString GetExportStatus(int exportid);
     bool SetExportStatus(int exportid, QString status, QString msg = "");
+    bool SetExportedPath(int exportRowID, QString path);
 
     bool GetExportSeriesList(int exportid);
 

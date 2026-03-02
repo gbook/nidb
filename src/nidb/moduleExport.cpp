@@ -242,6 +242,23 @@ bool moduleExport::SetExportStatus(int exportid, QString status, QString msg) {
 
 
 /* ---------------------------------------------------------- */
+/* --------- SetExportedPath -------------------------------- */
+/* ---------------------------------------------------------- */
+bool moduleExport::SetExportedPath(int exportRowID, QString path) {
+    if (path != "") {
+        QSqlQuery q;
+        q.prepare("update exports set exported_path = :path where export_id = :id");
+        q.bindValue(":id", exportRowID);
+        q.bindValue(":path", path);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        return true;
+    }
+    else
+        return false;
+}
+
+
+/* ---------------------------------------------------------- */
 /* --------- GetExportSeriesList ---------------------------- */
 /* ---------------------------------------------------------- */
 /**
@@ -396,7 +413,7 @@ bool moduleExport::GetExportSeriesList(int exportid) {
 /* --------- ExportLocal ------------------------------------ */
 /* ---------------------------------------------------------- */
 /**
- * @brief Export data locally, to NFS, web, FTP, or public dataset.
+ * @brief Export data locally: to NFS, web, FTP, or public dataset.
  * @param exportid exportRowID
  * @param exporttype Possible values `nfs`, `web`, `publicdownload`
  * @param nfsdir NFS directory
@@ -429,11 +446,11 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
     QString packageformat;
     QString imageformat;
     QString bidsDirPath;
+    QString exportPath;
 
-    /* check if it's a special type of export first */
+    /* check if it's a special type of export first - these filetypes are exported as a group, not as individual series */
     if (filetype == "bids") {
 
-        //QString outdir;
         if (exporttype == "nfs")
             bidsDirPath = QString("%1%2").arg(n->cfg["mountdir"]).arg(nfsdir);
         else if ((exporttype == "web") || (exporttype == "publicdownload"))
@@ -586,13 +603,15 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                     msgs << QString("%1 - Series number [%2] --> [%3]").arg(subjectdir).arg(seriesnum).arg(newseriesnum);
                     QString rootoutdir;
                     if (exporttype == "nfs")
-                        rootoutdir = QString("%1%2/%3").arg(n->cfg["mountdir"]).arg(nfsdir).arg(subjectdir);
+                        exportPath = QString("%1%2").arg(n->cfg["mountdir"]).arg(nfsdir);
                     else if ((exporttype == "web") || (exporttype == "publicdownload"))
-                        rootoutdir = QString("%1/%2").arg(tmpexportdir).arg(subjectdir);
+                        exportPath = tmpexportdir;
                     else if (exporttype == "localftp")
-                        rootoutdir = QString("%1/NiDB-%2/%3").arg(n->cfg["exportdir"]).arg(exportid).arg(subjectdir);
+                        exportPath = QString("%1/NiDB-%2").arg(n->cfg["exportdir"]).arg(exportid);
                     else
-                        rootoutdir = QString("%1/%2").arg(tmpexportdir).arg(subjectdir);
+                        exportPath = tmpexportdir;
+
+                    rootoutdir = QString("%1/%2").arg(exportPath).arg(subjectdir);
 
                     /* make the output directory */
                     QDir d;
@@ -786,10 +805,6 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 
                     QString m;
                     if (filetype == "dicom") {
-                        /* copy all dicom files from indir to outdir */
-                        //QString systemstring = QString("rsync %1/* %2/").arg(indir).arg(outdir);
-                        //n->Log(SystemCommand(systemstring));
-
                         /* anaonymize the outdir */
                         img->AnonymizeDicomDir(indir, outdir, anonlevel, m);
                         n->Log(m);
@@ -802,6 +817,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                 }
             }
         }
+        SetExportedPath(exportid, exportPath);
     }
 
     /* extra steps for web download */
@@ -816,6 +832,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
             else {
                 n->Log(QString("Error moving [%1] to [%2]. Message [%3]").arg(zipfile).arg(n->cfg["webdownloaddir"]).arg(m));
             }
+            SetExportedPath(exportid, zipfile);
         }
         else {
             QString zipfile = QString("%1/NIDB-%2.zip").arg(n->cfg["webdownloaddir"]).arg(exportid);
@@ -833,9 +850,6 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 
                 QString systemstring;
                 QDir::setCurrent(outdir);
-
-                //pwd = QDir::currentPath();
-                //n->WriteLog("Current directory is... [" + pwd + "]");
 
                 if (QFile::exists(zipfile))
                     systemstring = QString("cd %1; zip -1grv %2 .; chmod 655 %2").arg(outdir).arg(zipfile);
@@ -861,6 +875,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                     if (!RemoveDir(tmpexportdir, m))
                         msgs << "Error [" + m + "] removing directory [" + tmpexportdir + "]";
                 }
+                SetExportedPath(exportid, zipfile);
             }
             else {
                 msgs << "ERROR. Unable to create [" + zipfile + "]. ";
@@ -919,6 +934,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 
             if (QFile::exists(zipfile)) {
                 msgs << "Created .zip file [" + zipfile + "]";
+                SetExportedPath(exportid, zipfile);
             }
             else {
                 exportstatus = "error";
@@ -991,6 +1007,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 
             if (QFile::exists(zipfile)) {
                 msgs << "Created .zip file [" + zipfile + "]";
+                SetExportedPath(exportid, zipfile);
             }
             else {
                 exportstatus = "error";
@@ -1483,6 +1500,8 @@ bool moduleExport::ExportBIDS(int exportid, QString bidsreadme, QStringList bids
             n->Log("WriteBIDS() returned true");
         else
             n->Log("WriteBIDS() returned false");
+
+        SetExportedPath(exportid, outdir);
     }
     else {
         n->Log("No series found");
@@ -1564,6 +1583,8 @@ bool moduleExport::ExportSquirrel(int exportid, QString squirreltitle, QString s
     QString systemstring = "chmod -Rf 777 " + rootoutdir;
     n->Log(SystemCommand(systemstring, true));
 
+    SetExportedPath(exportid, rootoutdir);
+
     /* move the .zip file to the download directory if a web download */
 
     /* update the publicdataset_download table to reflect the numfiles,zipsize, unzipsize, package format, image format, and status */
@@ -1640,6 +1661,8 @@ bool moduleExport::ExportPackage(int exportid, QString &exportstatus, QString &m
     }
     else
         n->Log("libsquirrel::WritePackage() returned false");
+
+    SetExportedPath(exportid, rootoutdir);
 
     /* move the .zip file to the download directory if a web download */
 
