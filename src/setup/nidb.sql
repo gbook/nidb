@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Mar 02, 2026 at 06:39 PM
+-- Generation Time: Mar 02, 2026 at 06:41 PM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -1151,6 +1151,7 @@ CREATE TABLE `exports` (
   `cputime` double DEFAULT NULL,
   `status` enum('submitted','pending','processing','complete','error','cancelled','') NOT NULL DEFAULT '',
   `log` longtext DEFAULT NULL,
+  `exported_path` text DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
