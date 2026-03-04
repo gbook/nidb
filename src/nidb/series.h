@@ -56,6 +56,7 @@ public:
     int studynum;
     int subjectid;
     qint64 seriesid;
+    int NDAexperimentID;
 
     bool isValid = true;
     QString msg;

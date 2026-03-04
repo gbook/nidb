@@ -264,7 +264,7 @@ bool moduleFileIO::RecheckSuccess(qint64 analysisid, QString &msg) {
     q.bindValue(":analysisid", analysisid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
-    n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysisrecheck", "Analysis success recheck finished");
+    n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysisrecheck", "success", "Analysis success recheck finished");
 
     return true;
 }
@@ -291,7 +291,7 @@ bool moduleFileIO::CreateLinks(qint64 analysisid, QString destination, QString &
     if (MakePath(destination, msg)) {
         QString systemstring = QString("cd %1; ln -s %2 %3%4; chmod 777 %5%6").arg(destination).arg(a.analysispath).arg(a.uid).arg(a.studynum).arg(a.uid).arg(a.studynum);
         n->Log(SystemCommand(systemstring));
-        n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysiscreatelink", "Analysis links created");
+        n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysiscreatelink", "success", "Analysis links created");
         return true;
     }
     else {
@@ -321,7 +321,7 @@ bool moduleFileIO::CopyAnalysis(qint64 analysisid, QString destination, QString 
         QString systemstring = QString("rsync -az --stats %1/* %2").arg(a.analysispath).arg(destination);
         n->Log(QString("About to run the following command[" + systemstring + "]"));
         n->Log(SystemCommand(systemstring));
-        n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysiscopy", "Analysis copied");
+        n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysiscopy", "success", "Analysis copied");
         return true;
     }
     else {
@@ -392,7 +392,7 @@ bool moduleFileIO::DeleteAnalysis(qint64 analysisid, QString &msg) {
                     q.bindValue(":analysisid", analysisid);
                     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
-                    n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysisdeleteerror", "Analysis directory not deleted. Probably because permissions have changed and NiDB does not have permission to delete the directory [" + a.analysispath + "]");
+                    n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysisdeleteerror", "error", "Analysis directory not deleted. Probably because permissions have changed and NiDB does not have permission to delete the directory [" + a.analysispath + "]");
                     return false;
                 }
                 else {

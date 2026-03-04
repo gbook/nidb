@@ -1787,10 +1787,6 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
 
                             /* copy all the files from the data directory into a tmp directory */
                             if (datatype == "dicom") {
-                                /* copy all dicom files from indir to outdir */
-                                //QString systemstring = QString("rsync %1/* %2/").arg(inDirPath).arg(tmpdir);
-                                //n->Log(SystemCommand(systemstring));
-
                                 img->AnonymizeDicomDir(inDirPath, tmpdir, 4, m);
                                 n->Log(m);
                             }
@@ -1809,14 +1805,10 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
 
                             /* get the list of beh files */
                             QStringList behfiles;
-                            //if (behdirexists && !behdirempty)
-                            //    QStringList behfiles = n->FindAllFiles(behindir, "*");
 
                             /* build the cURL string to send the actual data */
                             systemstring = QString("curl -gs -F 'action=UploadDICOM' -F 'u=%1' -F 'p=%2' -F 'transactionid=%3' -F 'instanceid=%4' -F 'projectid=%5' -F 'siteid=%6' -F 'dataformat=%7' -F 'modality=%8' -F 'seriesnotes=%9' -F 'altuids=%10' -F 'seriesnum=%11' ").arg(conn.username).arg(conn.password).arg(transactionid).arg(conn.instanceid).arg(conn.projectid).arg(conn.siteid).arg(datatype).arg(modality).arg(seriesnotes).arg(altuids).arg(seriesnum);
-                            //int c = 0;
                             foreach (QString f, dcmfiles) {
-                                //c++;
                                 QString systemstringA = QString("cp -v '%1' %2/").arg(f).arg(tmpzipdir);
                                 QString output = SystemCommand(systemstringA);
                                 if ((output == "") || output.contains("error", Qt::CaseInsensitive))
@@ -1824,9 +1816,7 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
                             }
 
                             if (behdirexists && !behdirempty) {
-                                //c = 0;
                                 foreach(QString f, behfiles) {
-                                    //c++;
                                     QString systemstringA = QString("cp '%1/%2' %3/beh/").arg(behindir).arg(f).arg(tmpzipdir);
                                     QString res = SystemCommand(systemstringA, false);
                                     if (res != "") {

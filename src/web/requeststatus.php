@@ -388,7 +388,7 @@
 									?>Preparing download...<?
 								}
 							}
-							elseif ($destinationtype == "ndar") {
+							elseif (($destinationtype == "ndar") || ($destinationtype == "ndarcsv")) {
 								if (in_array('NDA_WEBDOWNLOAD', $ndaFlags)) {
 									?>NDA web download...<?
 									$zipFilePath = $GLOBALS['cfg']['webdir'] . "/download/NIDB-$exportid.zip";
@@ -412,6 +412,11 @@
 							elseif ($destinationtype == "remotenidb") {
 								?>Remote NiDB export<?
 							}
+							elseif ($destinationtype == "nfs") {
+							}
+							elseif ($destinationtype == "publicdownload") {
+							}
+							
 							
 							//if (($destinationtype == "web") || ($destinationtype == "xnat") || ($destinationtype == "squirrel") || ($destinationtype == "ndar")) {
 							//if (($destinationtype == "web") || ($destinationtype == "ndar")) {

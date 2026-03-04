@@ -616,16 +616,104 @@ void nidb::ModuleRunningCheckIn() {
  * @param event event code
  * @param message Event message
  */
-void nidb::InsertAnalysisEvent(qint64 analysisid, int pipelineid, int pipelineversion, int studyid, QString event, QString message) {
+void nidb::InsertAnalysisEvent(qint64 analysisid, int pipelineid, int pipelineversion, int studyid, QString event, QString status, QString message) {
+
+    /* possible analysis events
+     *
+     * setup_createDirectory
+     * setup_getData
+     * setup_copyDependency
+     * setup_writeScript
+     * setup_submitToCluster
+     *
+     * cluster_stepCheckIn
+     *
+     * status_started
+     * status_complete
+     * status_supplementComplete
+     * status_recheck
+     *
+     * manage_createLink
+     * manage_delete
+     * manage_copy
+     */
+
+
     QSqlQuery q;
-    q.prepare("insert into analysis_history (analysis_id, pipeline_id, pipeline_version, study_id, analysis_event, analysis_hostname, event_message) values (:analysisid, :pipelineid, :pipelineversion, :studyid, :event, :hostname, :message)");
+    q.prepare("insert into analysis_history (analysis_id, pipeline_id, pipeline_version, study_id, analysis_event, analysis_hostname, event_status, event_message) values (:analysisid, :pipelineid, :pipelineversion, :studyid, :event, :hostname, :status, :message)");
     q.bindValue(":analysisid", analysisid);
     q.bindValue(":pipelineid", pipelineid);
     q.bindValue(":pipelineversion", pipelineversion);
     q.bindValue(":studyid", studyid);
     q.bindValue(":event", event);
+    q.bindValue(":status", status);
     q.bindValue(":hostname", QHostInfo::localHostName());
     q.bindValue(":message", message);
+    SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- LogAnalysisEvent ------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief nidb::LogAnalysisEvent
+ * @param analysisid
+ * @param event
+ * @param status
+ * @param message
+ * @param hostname
+ */
+void nidb::LogAnalysisEvent(qint64 analysisid, AnalysisEvent event, LogStatus status, int stepNumber, QString message, QString hostname) {
+
+    /* clean up log variables */
+    if (stepNumber < 1)
+        stepNumber = 0;
+    if (hostname == "")
+        hostname = QHostInfo::localHostName();
+
+    /* convert enums to strings */
+    QString statusStr;
+    switch (status) {
+        case LogStatus::error: statusStr = "error"; break;
+        case LogStatus::neutral: statusStr = "neutral"; break;
+        case LogStatus::success: statusStr = "success"; break;
+        case LogStatus::warning: statusStr = "warning"; break;
+    }
+
+    QString eventStr;
+    switch (event) {
+        case AnalysisEvent::ClusterCheckinStep: statusStr = "cluster_checkinStep"; break;
+        case AnalysisEvent::ManageCopy: statusStr = "manage_copy"; break;
+        case AnalysisEvent::ManageCreateLink: statusStr = "manage_createLink"; break;
+        case AnalysisEvent::ManageDelete: statusStr = "manage_delete"; break;
+        case AnalysisEvent::SetupCheckIfOkToRun: statusStr = "setup_checkIfOkToRun"; break;
+        case AnalysisEvent::SetupCopyDependency: statusStr = "setup_copyDependency"; break;
+        case AnalysisEvent::SetupCreateAnalysis: statusStr = "setup_createAnalysis"; break;
+        case AnalysisEvent::SetupCreateDirectory: statusStr = "setup_createDirectory"; break;
+        case AnalysisEvent::SetupDataStepCheck: statusStr = "setup_dataStepCheck"; break;
+        case AnalysisEvent::SetupDataStepDownload: statusStr = "setup_dataStepDownload"; break;
+        case AnalysisEvent::SetupDataCheckSummary: statusStr = "setup_dataCheckSummary"; break;
+        case AnalysisEvent::SetupDataDownloadSummary: statusStr = "setup_dataDownloadSummary"; break;
+        case AnalysisEvent::SetupStudyPrecheck: statusStr = "setup_studyPrecheck"; break;
+        case AnalysisEvent::SetupSubmitToCluster: statusStr = "setup_submitToCluster"; break;
+        case AnalysisEvent::SetupSummary: statusStr = "setup_summary"; break;
+        case AnalysisEvent::SetupWriteJobScript: statusStr = "setup_writeJobScript"; break;
+        case AnalysisEvent::StatusAnalysisComplete: statusStr = "status_analysisComplete"; break;
+        case AnalysisEvent::StatusAnalysisStarted: statusStr = "status_analysisStarted"; break;
+        case AnalysisEvent::StatusCheckSuccessFiles: statusStr = "status_checkSuccessFiles"; break;
+        case AnalysisEvent::StatusRecheckComplete: statusStr = "status_recheckComplete"; break;
+        case AnalysisEvent::StatusSupplementComplete: statusStr = "status_supplementComplete"; break;
+    }
+
+    QSqlQuery q;
+    q.prepare("insert into analysis_log (analysis_id, analysislog_event, analysislog_eventstatus, step_number, analysislog_message, analysislog_hostname) values (:analysisid, :event, :status, :stepnum, :message, :hostname)");
+    q.bindValue(":analysisid", analysisid);
+    q.bindValue(":event", eventStr);
+    q.bindValue(":status", statusStr);
+    q.bindValue(":stepnum", stepNumber);
+    if (message == "") q.bindValue(":message", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":message", message); // insert null if blank
+    q.bindValue(":hostname", hostname);
     SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 }
 

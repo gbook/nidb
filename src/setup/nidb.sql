@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Mar 02, 2026 at 06:41 PM
+-- Generation Time: Mar 04, 2026 at 07:24 PM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -96,30 +96,6 @@ CREATE TABLE `analysis_data` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `analysis_group`
---
-
-CREATE TABLE `analysis_group` (
-  `analysisgroup_id` int(11) NOT NULL,
-  `pipeline_id` int(11) DEFAULT NULL,
-  `pipeline_version` int(11) DEFAULT 0,
-  `pipeline_dependency` int(11) DEFAULT NULL,
-  `analysisgroup_status` enum('complete','pending','processing') DEFAULT NULL,
-  `analysisgroup_statusmessage` varchar(255) DEFAULT NULL,
-  `analysisgroup_statusdatetime` timestamp NULL DEFAULT NULL,
-  `analysisgroup_iscomplete` tinyint(1) DEFAULT NULL,
-  `analysisgroup_result` varchar(50) DEFAULT NULL,
-  `analysisgroup_resultmessage` longtext DEFAULT NULL,
-  `analysisgroup_numstudies` int(11) DEFAULT NULL,
-  `analysisgroup_startdate` timestamp NULL DEFAULT NULL,
-  `analysisgroup_clusterstartdate` timestamp NULL DEFAULT NULL,
-  `analysisgroup_clusterenddate` timestamp NULL DEFAULT NULL,
-  `analysisgroup_enddate` timestamp NULL DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `analysis_history`
 --
 
@@ -132,19 +108,26 @@ CREATE TABLE `analysis_history` (
   `analysis_event` enum('','analysiscopy','analysiscopydata','analysiscopydataend','analysiscreated','analysiscreatelink','analysisdeleted','analysisdeleteerror','analysisdependencyid','analysismessage','analysispending','analysisrecheck','analysissetuperror','analysissubmiterror','analysissubmitted','complete','completesupplement','processing','started','startedsupplement') DEFAULT NULL,
   `analysis_hostname` varchar(255) DEFAULT NULL,
   `event_message` longtext DEFAULT NULL,
+  `event_status` enum('success','warning','error','') DEFAULT NULL,
   `event_datetime` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `analysis_parent`
+-- Table structure for table `analysis_log`
 --
 
-CREATE TABLE `analysis_parent` (
-  `analysis_id` int(11) NOT NULL,
-  `analysisparent_id` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+CREATE TABLE `analysis_log` (
+  `analysislog_id` bigint(20) NOT NULL,
+  `analysis_id` bigint(20) NOT NULL,
+  `analysislog_event` enum('','setup_createAnalysis','setup_createDirectory','setup_dataStepDownload','setup_copyDependency','setup_writeJobScript','setup_submitToCluster','cluster_checkinStep','status_checkSuccessFiles','status_analysisStarted','status_analysisComplete','status_supplementComplete','status_recheckComplete','manage_createLink','manage_delete','manage_copy','setup_studyPrecheck','setup_checkIfOkToRun','setup_dataStepCheck','setup_dataCheckSummary','setup_dataDownloadSummary','setup_summary') NOT NULL,
+  `analysislog_eventstatus` enum('','success','warning','error','neutral') NOT NULL,
+  `step_number` int(11) DEFAULT NULL,
+  `analysislog_message` text DEFAULT NULL,
+  `analysislog_hostname` varchar(255) DEFAULT NULL,
+  `analysislog_datetime` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -3824,20 +3807,19 @@ ALTER TABLE `analysis_data`
   ADD KEY `idx_analysis_data` (`analysis_id`);
 
 --
--- Indexes for table `analysis_group`
---
-ALTER TABLE `analysis_group`
-  ADD PRIMARY KEY (`analysisgroup_id`),
-  ADD UNIQUE KEY `pipeline_id_2` (`pipeline_id`,`pipeline_version`),
-  ADD KEY `pipeline_id` (`pipeline_id`);
-
---
 -- Indexes for table `analysis_history`
 --
 ALTER TABLE `analysis_history`
   ADD PRIMARY KEY (`analysishistory_id`),
   ADD KEY `analysis_event` (`analysis_event`),
   ADD KEY `analysis_id` (`analysis_id`,`pipeline_id`,`pipeline_version`,`study_id`);
+
+--
+-- Indexes for table `analysis_log`
+--
+ALTER TABLE `analysis_log`
+  ADD PRIMARY KEY (`analysislog_id`),
+  ADD KEY `analysislog_event` (`analysislog_event`);
 
 --
 -- Indexes for table `analysis_resultnames`
@@ -5102,12 +5084,6 @@ ALTER TABLE `analysisdirs`
 --
 ALTER TABLE `analysis_data`
   MODIFY `analysisdata_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `analysis_group`
---
-ALTER TABLE `analysis_group`
-  MODIFY `analysisgroup_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `analysis_history`
