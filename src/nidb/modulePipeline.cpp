@@ -56,6 +56,8 @@ modulePipeline::~modulePipeline()
 int modulePipeline::Run() {
     n->Log("Starting the pipeline module...");
 
+    runTimer.start();
+
     int numchecked = 0;
     bool jobsWereSubmitted = false;
     int totalSubmitted = 0;
@@ -763,11 +765,13 @@ int modulePipeline::Run() {
     SetPipelineProcessStatus("complete",0,0);
 
     if (jobsWereSubmitted) {
-        n->Log(QString("Done with pipeline module. [%1] total jobs were submitted. jobsWereSubmitted [%2]").arg(totalSubmitted).arg(jobsWereSubmitted));
+        n->Log(QString("Done with pipeline module. [%1] total jobs were submitted. Run time %2ms").arg(totalSubmitted).arg(runTimer.elapsed()));
         return true;
     }
-    else
+    else {
+        n->Log(QString("Done with pipeline module. No jobs were submitted. Run time %1ms").arg(runTimer.elapsed()));
         return false;
+    }
 }
 
 

@@ -117,6 +117,7 @@ public:
 private:
     nidb *n;
     imageIO *img;
+    QElapsedTimer runTimer;
 };
 
 #endif // MODULEPIPELINE_H
