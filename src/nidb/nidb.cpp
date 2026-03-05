@@ -666,6 +666,9 @@ void nidb::InsertAnalysisEvent(qint64 analysisid, int pipelineid, int pipelineve
  */
 void nidb::LogAnalysisEvent(qint64 analysisid, AnalysisEvent event, LogStatus status, int stepNumber, QString message, QString hostname) {
 
+    if (analysisid < 0)
+        return;
+
     /* clean up log variables */
     if (stepNumber < 1)
         stepNumber = 0;
@@ -683,27 +686,32 @@ void nidb::LogAnalysisEvent(qint64 analysisid, AnalysisEvent event, LogStatus st
 
     QString eventStr;
     switch (event) {
-        case AnalysisEvent::ClusterCheckinStep: statusStr = "cluster_checkinStep"; break;
-        case AnalysisEvent::ManageCopy: statusStr = "manage_copy"; break;
-        case AnalysisEvent::ManageCreateLink: statusStr = "manage_createLink"; break;
-        case AnalysisEvent::ManageDelete: statusStr = "manage_delete"; break;
-        case AnalysisEvent::SetupCheckIfOkToRun: statusStr = "setup_checkIfOkToRun"; break;
-        case AnalysisEvent::SetupCopyDependency: statusStr = "setup_copyDependency"; break;
-        case AnalysisEvent::SetupCreateAnalysis: statusStr = "setup_createAnalysis"; break;
-        case AnalysisEvent::SetupCreateDirectory: statusStr = "setup_createDirectory"; break;
-        case AnalysisEvent::SetupDataStepCheck: statusStr = "setup_dataStepCheck"; break;
-        case AnalysisEvent::SetupDataStepDownload: statusStr = "setup_dataStepDownload"; break;
-        case AnalysisEvent::SetupDataCheckSummary: statusStr = "setup_dataCheckSummary"; break;
-        case AnalysisEvent::SetupDataDownloadSummary: statusStr = "setup_dataDownloadSummary"; break;
-        case AnalysisEvent::SetupStudyPrecheck: statusStr = "setup_studyPrecheck"; break;
-        case AnalysisEvent::SetupSubmitToCluster: statusStr = "setup_submitToCluster"; break;
-        case AnalysisEvent::SetupSummary: statusStr = "setup_summary"; break;
-        case AnalysisEvent::SetupWriteJobScript: statusStr = "setup_writeJobScript"; break;
-        case AnalysisEvent::StatusAnalysisComplete: statusStr = "status_analysisComplete"; break;
-        case AnalysisEvent::StatusAnalysisStarted: statusStr = "status_analysisStarted"; break;
-        case AnalysisEvent::StatusCheckSuccessFiles: statusStr = "status_checkSuccessFiles"; break;
-        case AnalysisEvent::StatusRecheckComplete: statusStr = "status_recheckComplete"; break;
-        case AnalysisEvent::StatusSupplementComplete: statusStr = "status_supplementComplete"; break;
+        case AnalysisEvent::ClusterCheckinStep: eventStr = "cluster_checkinStep"; break;
+        case AnalysisEvent::ManageCopy: eventStr = "manage_copy"; break;
+        case AnalysisEvent::ManageCreateLink: eventStr = "manage_createLink"; break;
+        case AnalysisEvent::ManageDelete: eventStr = "manage_delete"; break;
+        case AnalysisEvent::SetupCheckIfOkToRun: eventStr = "setup_checkIfOkToRun"; break;
+        case AnalysisEvent::SetupDependencyCheck: eventStr = "setup_dependencyCheck"; break;
+        case AnalysisEvent::SetupDependencyCopy: eventStr = "setup_dependencyCopy"; break;
+        case AnalysisEvent::SetupCreateAnalysis: eventStr = "setup_createAnalysis"; break;
+        case AnalysisEvent::SetupCreateDirectory: eventStr = "setup_createDirectory"; break;
+        case AnalysisEvent::SetupDataCheckSummary: eventStr = "setup_dataCheckSummary"; break;
+        case AnalysisEvent::SetupDataDownloadSummary: eventStr = "setup_dataDownloadSummary"; break;
+        case AnalysisEvent::SetupDataStepCheck: eventStr = "setup_dataStepCheck"; break;
+        case AnalysisEvent::SetupDataStepDownload: eventStr = "setup_dataStepDownload"; break;
+        case AnalysisEvent::SetupStudyPrecheck: eventStr = "setup_studyPrecheck"; break;
+        case AnalysisEvent::SetupSubmitToCluster: eventStr = "setup_submitToCluster"; break;
+        case AnalysisEvent::SetupSummary: eventStr = "setup_summary"; break;
+        case AnalysisEvent::SetupWriteJobScript: eventStr = "setup_writeJobScript"; break;
+        case AnalysisEvent::StatusAnalysisStepCheckin: eventStr = "status_analysisStepCheckin"; break;
+        case AnalysisEvent::StatusAnalysisComplete: eventStr = "status_analysisComplete"; break;
+        case AnalysisEvent::StatusAnalysisStarted: eventStr = "status_analysisStarted"; break;
+        case AnalysisEvent::StatusCheckSuccessFiles: eventStr = "status_checkSuccessFiles"; break;
+        case AnalysisEvent::StatusRecheckComplete: eventStr = "status_recheckComplete"; break;
+        case AnalysisEvent::StatusRerunComplete: eventStr = "status_analysisRerunComplete"; break;
+        case AnalysisEvent::StatusRerunStarted: eventStr = "status_analysisRerunStarted"; break;
+        case AnalysisEvent::StatusSupplementComplete: eventStr = "status_supplementComplete"; break;
+        case AnalysisEvent::StatusSupplementStarted: eventStr = "status_supplementStarted"; break;
     }
 
     QSqlQuery q;

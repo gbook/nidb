@@ -56,7 +56,8 @@ enum class AnalysisEvent {
     ManageCreateLink,
     ManageDelete,
     SetupCheckIfOkToRun,
-    SetupCopyDependency,
+    SetupDependencyCheck,
+    SetupDependencyCopy,
     SetupCreateAnalysis,
     SetupCreateDirectory,
     SetupDataStepCheck,
@@ -67,11 +68,15 @@ enum class AnalysisEvent {
     SetupSubmitToCluster,
     SetupSummary,
     SetupWriteJobScript,
+    StatusAnalysisStepCheckin,
     StatusAnalysisComplete,
     StatusAnalysisStarted,
+    StatusRerunStarted,
+    StatusRerunComplete,
     StatusCheckSuccessFiles,
     StatusRecheckComplete,
-    StatusSupplementComplete
+    StatusSupplementComplete,
+    StatusSupplementStarted
 };
 
 /**

@@ -84,6 +84,7 @@ int main(int argc, char *argv[])
     QCommandLineOption optResultNumber(QStringList() << "n" << "number", "Insert numerical result (resultinsert submodule)", "number");
     QCommandLineOption optResultText(QStringList() << "t" << "text", "Insert text result (resultinsert submodule)", "text");
     QCommandLineOption optResultUnit(QStringList() << "unit", "Result unit (resultinsert submodule)", "unit");
+    QCommandLineOption optStep(QStringList() << "step", "Pipeline checkin step number", "step");
     QCommandLineOption optStatus(QStringList() << "s" << "status", "pipelinecheckin submodule", "status");
     QCommandLineOption optSubModule(QStringList() << "u" <<"submodule", "For running on cluster. Sub-modules [ resultinsert, pipelinecheckin, updateanalysis, checkcompleteanalysis ]", "submodule");
     p.addOption(optAnalysisID);
@@ -96,6 +97,7 @@ int main(int argc, char *argv[])
     p.addOption(optResultText);
     p.addOption(optResultUnit);
     p.addOption(optStatus);
+    p.addOption(optStep);
     p.addOption(optSubModule);
 
     /* Process the actual command line arguments given by the user */
@@ -122,6 +124,7 @@ int main(int argc, char *argv[])
     QString paramResultText = p.value(optResultText).trimmed();
     QString paramResultUnit = p.value(optResultUnit).trimmed();
     QString paramStatus = p.value(optStatus).trimmed();
+    QString paramStep = p.value(optStep).trimmed();
     QString paramSubModule = p.value(optSubModule).trimmed();
 
     QStringList modules = {
@@ -172,7 +175,7 @@ int main(int argc, char *argv[])
         bool ret = false;
         QString msg;
         if (paramSubModule == "pipelinecheckin")
-            ret = m->PipelineCheckin(paramAnalysisID, paramStatus, paramMessage, paramCommand, msg);
+            ret = m->PipelineCheckin(paramAnalysisID, paramStatus, paramStep, paramMessage, paramCommand, msg);
         else if (paramSubModule == "resultinsert")
             ret = m->ResultInsert(paramAnalysisID, paramResultText, paramResultNumber, paramResultFile, paramResultImage, paramResultDesc, paramResultUnit, msg);
         else if (paramSubModule == "updateanalysis")

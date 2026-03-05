@@ -621,6 +621,21 @@
 		</table>
 		<?
 	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetStatusIcon ---------------------- */
+	/* -------------------------------------------- */
+	function GetStatusIcon($status) {
+		
+		switch ($status) {
+			case 'success': return "<i class='green check circle icon'></i>";
+			case 'warning': return "<i class='yellow info circle icon'></i>";
+			case 'error': return "<i class='red exclamation circle icon'></i>";
+			case 'neutral': return "<i class='grey minus circle icon'></i>";
+			default: return "<i class='grey minus icon'></i>";
+		}
+	}
 	
 	
 	/* -------------------------------------------- */
@@ -628,6 +643,172 @@
 	/* -------------------------------------------- */
 	function DisplayGraph($analysisid) {
 		if (!ValidID($analysisid,'Analysis ID - DisplayGraph()')) { return; }
+		
+		/* new log view */
+		/* load the log entries from the database */
+		$logs = array();
+		$sqlstring = "select * from analysis_log where analysis_id = $analysisid order by analysislog_event, step_number";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$logRowID = $row['analysislog_id'];
+			
+			$event = $row['analysislog_event'];
+			$log['status'] = $row['analysislog_eventstatus'];
+			$log['stepNumber'] = $row['step_number'];
+			$log['message'] = $row['analysislog_message'];
+			$log['hostname'] = $row['analysislog_hostname'];
+			$log['datetime'] = $row['analysislog_datetime'];
+			$logs[$event][] = $log;
+		}
+		
+		//PrintVariable($logs);
+		
+		?>
+		<div class="ui container">
+			<table class="ui celled table">
+				<thead>
+					<th>Step</th>
+					<th>Status</th>
+					<th>Step Number</th>
+					<th>Message</th>
+					<th>Hostname</th>
+					<th>Datetime</th>
+				</thead>
+				<tr>
+					<td>Analysis created <i class="question circle icon" title="Create and registere a unique analysis in the database"></i></td>
+					<td><?=GetStatusIcon($logs['setup_createAnalysis'][0]['status'])?></td>
+					<td><?=$logs['setup_createAnalysis'][0]['stepNumber']?></td>
+					<td><?=$logs['setup_createAnalysis'][0]['message']?></td>
+					<td><?=$logs['setup_createAnalysis'][0]['hostname']?></td>
+					<td><?=$logs['setup_createAnalysis'][0]['datetime']?></td>
+				</tr>
+				<tr>
+					<td>Create analysis directory <i class="question circle icon" title="Create analysis directory on disk"></i></td>
+					<td><?=GetStatusIcon($logs['setup_createDirectory'][0]['status'])?></td>
+					<td><?=$logs['setup_createDirectory'][0]['stepNumber']?></td>
+					<td><?=$logs['setup_createDirectory'][0]['message']?></td>
+					<td><?=$logs['setup_createDirectory'][0]['hostname']?></td>
+					<td><?=$logs['setup_createDirectory'][0]['datetime']?></td>
+				</tr>
+				<tr>
+					<td>Copy dependency <i class="question circle icon" title="Copy pipeline dependency"></i></td>
+					<td><?=GetStatusIcon($logs['setup_copyDependency'][0]['status'])?></td>
+					<td><?=$logs['setup_copyDependency'][0]['stepNumber']?></td>
+					<td><?=$logs['setup_copyDependency'][0]['message']?></td>
+					<td><?=$logs['setup_copyDependency'][0]['hostname']?></td>
+					<td><?=$logs['setup_copyDependency'][0]['datetime']?></td>
+				</tr>
+				<tr>
+					<td>Data checks <i class="question circle icon" title="Check if all data steps match before downloading any data"></i></td>
+					<td colspan="5">
+						<div class="ui accordion">
+						<div class="title">
+							<i class="dropdown icon"></i>
+							View data steps
+						</div>
+						<div class="content">
+							<table class="ui compact celled table">
+								<thead>
+									<th>Status</th>
+									<th>Step Number</th>
+									<th>Message</th>
+									<th>Hostname</th>
+									<th>Datetime</th>
+								</thead>
+							<?
+								foreach ($logs['setup_dataStepCheck'] as $step) {
+									?>
+									<tr>
+									<td><?=GetStatusIcon($step['status'])?></td>
+									<td><?=$step['stepNumber']?></td>
+									<td><?=$step['message']?></td>
+									<td><?=$step['hostname']?></td>
+									<td><?=$step['datetime']?></td>
+									</tr>
+									<?
+								}
+							?>
+							</table>
+						</div>					
+					</td>
+				</tr>
+				<tr>
+					<td>Data check summary</td>
+					<td><?=GetStatusIcon($logs['setup_dataCheckSummary'][0]['status'])?></td>
+					<td><?=$logs['setup_dataCheckSummary'][0]['stepNumber']?></td>
+					<td><?=$logs['setup_dataCheckSummary'][0]['message']?></td>
+					<td><?=$logs['setup_dataCheckSummary'][0]['hostname']?></td>
+					<td><?=$logs['setup_dataCheckSummary'][0]['datetime']?></td>
+				</tr>
+				<tr>
+					<td>Data download steps <i class="question circle icon" title="Download matching data"></i></td>
+					<td colspan="5">
+						<div class="ui accordion">
+						<div class="title">
+							<i class="dropdown icon"></i>
+							View data download steps
+						</div>
+						<div class="content">
+							<table class="ui compact celled table">
+								<thead>
+									<th>Status</th>
+									<th>Step Number</th>
+									<th>Message</th>
+									<th>Hostname</th>
+									<th>Datetime</th>
+								</thead>
+							<?
+								foreach ($logs['setup_dataStepDownload'] as $step) {
+									?>
+									<tr>
+									<td><?=GetStatusIcon($step['status'])?></td>
+									<td><?=$step['stepNumber']?></td>
+									<td><?=$step['message']?></td>
+									<td><?=$step['hostname']?></td>
+									<td><?=$step['datetime']?></td>
+									</tr>
+									<?
+								}
+							?>
+							</table>
+						</div>					
+					</td>
+				</tr>
+				<tr>
+					<td>Data download summary</td>
+					<td><?=GetStatusIcon($logs['setup_dataDownloadSummary'][0]['status'])?></td>
+					<td><?=$logs['setup_dataDownloadSummary'][0]['stepNumber']?></td>
+					<td><?=$logs['setup_dataDownloadSummary'][0]['message']?></td>
+					<td><?=$logs['setup_dataDownloadSummary'][0]['hostname']?></td>
+					<td><?=$logs['setup_dataDownloadSummary'][0]['datetime']?></td>
+				</tr>
+				<tr>
+					<td>Check if Ok to run <i class="question circle icon" title="Check if all criteria are met to submit this analysis to the cluster"></i></td>
+					<td><?=GetStatusIcon($logs['setup_checkIfOkToRun'][0]['status'])?></td>
+					<td><?=$logs['setup_checkIfOkToRun'][0]['stepNumber']?></td>
+					<td><?=$logs['setup_checkIfOkToRun'][0]['message']?></td>
+					<td><?=$logs['setup_checkIfOkToRun'][0]['hostname']?></td>
+					<td><?=$logs['setup_checkIfOkToRun'][0]['datetime']?></td>
+				</tr>
+				<tr>
+					<td>Submit to cluster <i class="question circle icon" title="Submit analysis job to cluster"></i></td>
+					<td><?=GetStatusIcon($logs['setup_submitToCluster'][0]['status'])?></td>
+					<td><?=$logs['setup_submitToCluster'][0]['stepNumber']?></td>
+					<td><?=$logs['setup_submitToCluster'][0]['message']?></td>
+					<td><?=$logs['setup_submitToCluster'][0]['hostname']?></td>
+					<td><?=$logs['setup_submitToCluster'][0]['datetime']?></td>
+				</tr>
+				<tr>
+					<td>Setup summary <i class="question circle icon" title="Summary of analysis setup"></i></td>
+					<td><?=GetStatusIcon($logs['setup_summary'][0]['status'])?></td>
+					<td><?=$logs['setup_summary'][0]['stepNumber']?></td>
+					<td><?=$logs['setup_summary'][0]['message']?></td>
+					<td><?=$logs['setup_summary'][0]['hostname']?></td>
+					<td><?=$logs['setup_summary'][0]['datetime']?></td>
+				</tr>
+			</table>
+		</div>
+		<?
 		
 		/* get all information about this analysis, pipeline, parent/child pipelines, and groups */
 		$sqlstring = "select * from analysis where analysis_id = $analysisid";

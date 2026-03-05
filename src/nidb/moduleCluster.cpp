@@ -46,12 +46,13 @@ moduleCluster::~moduleCluster()
 /* ---------------------------------------------------------- */
 /* --------- PipelineCheckin -------------------------------- */
 /* ---------------------------------------------------------- */
-bool moduleCluster::PipelineCheckin(QString analysisid, QString status, QString message, QString command, QString &m) {
+bool moduleCluster::PipelineCheckin(QString analysisid, QString status, QString step, QString message, QString command, QString &m) {
 
     m = "";
     QString hostname = QHostInfo::localHostName();
     QSqlQuery q;
     qint64 id;
+    AnalysisEvent event;
 
     /* check if the analysis ID is valid */
     if (IsInt(analysisid)) {
@@ -69,7 +70,21 @@ bool moduleCluster::PipelineCheckin(QString analysisid, QString status, QString 
         return false;
     }
 
+    /* check if a step number was passed in */
+    int stepNum = 0;
+    if (step == "") {
+        /* try to parse the step number from the message */
+        if (message.contains("processing") && message.contains("step") && message.contains(" of ")) {
+            QStringList parts = message.split(" ");
+            stepNum = parts[2].toInt();
+        }
+    }
+    else {
+        stepNum = step.toInt();
+    }
+
     if (status == "started") {
+        event = AnalysisEvent::StatusAnalysisStarted;
         q.prepare("update analysis set analysis_status = :status, analysis_statusmessage = :message, analysis_statusdatetime = now(), analysis_clusterstartdate = now(), analysis_hostname = :hostname where analysis_id = :analysisid");
         q.bindValue(":status", status);
         q.bindValue(":message", message);
@@ -77,6 +92,7 @@ bool moduleCluster::PipelineCheckin(QString analysisid, QString status, QString 
         q.bindValue(":analysisid", id);
     }
     else if (status == "startedrerun") {
+        event = AnalysisEvent::StatusRerunStarted;
         q.prepare("update analysis set analysis_status = :status, analysis_statusmessage = :message, analysis_statusdatetime = now(), analysis_hostname = :hostname where analysis_id = :analysisid");
         q.bindValue(":status", status);
         q.bindValue(":message", message);
@@ -84,6 +100,7 @@ bool moduleCluster::PipelineCheckin(QString analysisid, QString status, QString 
         q.bindValue(":analysisid", id);
     }
     else if (status == "startedsupplement") {
+        event = AnalysisEvent::StatusSupplementStarted;
         q.prepare("update analysis set analysis_status = :status, analysis_statusmessage = :message, analysis_statusdatetime = now(), analysis_hostname = :hostname where analysis_id = :analysisid");
         q.bindValue(":status", status);
         q.bindValue(":message", message);
@@ -91,6 +108,7 @@ bool moduleCluster::PipelineCheckin(QString analysisid, QString status, QString 
         q.bindValue(":analysisid", id);
     }
     else if (status == "complete") {
+        event = AnalysisEvent::StatusAnalysisComplete;
         q.prepare("update analysis set analysis_status = :status, analysis_statusmessage = :message, analysis_statusdatetime = now(), analysis_clusterenddate = now(), analysis_hostname = :hostname where analysis_id = :analysisid");
         q.bindValue(":status", status);
         q.bindValue(":message", message);
@@ -98,16 +116,21 @@ bool moduleCluster::PipelineCheckin(QString analysisid, QString status, QString 
         q.bindValue(":analysisid", id);
     }
     else if (status == "completererun") {
+        event = AnalysisEvent::StatusRerunComplete;
         q.prepare("update analysis set analysis_status = 'complete', analysis_statusmessage = :message, analysis_rerunresults = 0 where analysis_id = :analysisid");
         q.bindValue(":message", message);
         q.bindValue(":analysisid", id);
     }
     else if (status == "completesupplement") {
+        event = AnalysisEvent::StatusSupplementComplete;
         q.prepare("update analysis set analysis_status = 'complete', analysis_statusmessage = :message, analysis_rerunresults = 0, analysis_runsupplement = 0 where analysis_id = :analysisid");
         q.bindValue(":message", message);
         q.bindValue(":analysisid", id);
     }
     else {
+        //if (status == "processing")
+        event = AnalysisEvent::StatusAnalysisStepCheckin;
+
         q.prepare("update analysis set analysis_status = :status, analysis_statusmessage = :message, analysis_rerunresults = 0, analysis_statusdatetime = now(), analysis_hostname = :hostname where analysis_id = :analysisid");
         q.bindValue(":status", status);
         q.bindValue(":message", message);
@@ -121,12 +144,13 @@ bool moduleCluster::PipelineCheckin(QString analysisid, QString status, QString 
     if (command.trimmed() != "")
         msg += " [" + command + "]";
 
-    q.prepare("insert into analysis_history (analysis_id, analysis_event, analysis_hostname, event_message) values (:analysisid, :status, :hostname, :msg)");
-    q.bindValue(":analysisid", id);
-    q.bindValue(":status", status);
-    q.bindValue(":hostname", hostname);
-    q.bindValue(":msg", msg);
-    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    //q.prepare("insert into analysis_history (analysis_id, analysis_event, analysis_hostname, event_message) values (:analysisid, :status, :hostname, :msg)");
+    //q.bindValue(":analysisid", id);
+    //q.bindValue(":status", status);
+    //q.bindValue(":hostname", hostname);
+    //q.bindValue(":msg", msg);
+    //n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    n->LogAnalysisEvent(id, event, LogStatus::success, stepNum, message, hostname);
 
     return true;
 }

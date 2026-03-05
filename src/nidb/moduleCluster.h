@@ -30,7 +30,7 @@ public:
     moduleCluster(nidb *n);
     ~moduleCluster();
 
-    bool PipelineCheckin(QString analysisid, QString status, QString message, QString command, QString &m);
+    bool PipelineCheckin(QString analysisid, QString status, QString step, QString message, QString command, QString &m);
     bool ResultInsert(QString paramAnalysisID, QString paramResultText, QString paramResultNumber, QString paramResultFile, QString paramResultImage, QString paramResultDesc, QString paramResultUnit, QString &m);
     bool UpdateAnalysis(QString analysisid, QString &m);
     bool CheckCompleteAnalysis(QString analysisid, QString &m);
