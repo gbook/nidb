@@ -199,6 +199,10 @@ cd build-sqldrivers
 ~/Qt/6.9.3/gcc_64/bin/qt-cmake -G Ninja ~/Qt/6.9.3/Src/qtbase/src/plugins/sqldrivers -DCMAKE_INSTALL_PREFIX=~/Qt/6.9.3/gcc_64 -DMySQL_INCLUDE_DIR="/usr/include/mariadb" -DMySQL_LIBRARY="/usr/lib/x86_64-linux-gnu/libmariadbclient.so"
 cmake --build .
 cmake --install .
+
+# install in the system
+sudo mkdir -p /usr/local/bin/sqldrivers
+sudo cp -uv ~/Qt/6.9.3/gcc_64/plugins/sqldrivers/* /usr/local/bin/sqldrivers/
 ```
 {% endtab %}
 {% endtabs %}
