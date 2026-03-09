@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Mar 04, 2026 at 07:24 PM
+-- Generation Time: Mar 09, 2026 at 08:06 PM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -121,7 +121,7 @@ CREATE TABLE `analysis_history` (
 CREATE TABLE `analysis_log` (
   `analysislog_id` bigint(20) NOT NULL,
   `analysis_id` bigint(20) NOT NULL,
-  `analysislog_event` enum('','setup_createAnalysis','setup_createDirectory','setup_dataStepDownload','setup_copyDependency','setup_writeJobScript','setup_submitToCluster','cluster_checkinStep','status_checkSuccessFiles','status_analysisStarted','status_analysisComplete','status_supplementComplete','status_recheckComplete','manage_createLink','manage_delete','manage_copy','setup_studyPrecheck','setup_checkIfOkToRun','setup_dataStepCheck','setup_dataCheckSummary','setup_dataDownloadSummary','setup_summary') NOT NULL,
+  `analysislog_event` enum('','cluster_checkinStep','manage_copy','manage_createLink','manage_delete','setup_checkIfOkToRun','setup_dependencyCheck','setup_dependencyCopy','setup_createAnalysis','setup_createDirectory','setup_dataStepCheck','setup_dataStepDownload','setup_dataCheckSummary','setup_dataDownloadSummary','setup_studyPrecheck','setup_submitToCluster','setup_summary','setup_writeJobScript','status_analysisComplete','status_analysisStarted','status_rerunStarted','status_rerunComplete','status_checkSuccessFiles','status_recheckComplete','status_supplementComplete','status_supplementStarted','status_analysisStepCheckin','status_updateFileList','status_resultScript') NOT NULL,
   `analysislog_eventstatus` enum('','success','warning','error','neutral') NOT NULL,
   `step_number` int(11) DEFAULT NULL,
   `analysislog_message` text DEFAULT NULL,
@@ -5090,6 +5090,12 @@ ALTER TABLE `analysis_data`
 --
 ALTER TABLE `analysis_history`
   MODIFY `analysishistory_id` bigint(20) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `analysis_log`
+--
+ALTER TABLE `analysis_log`
+  MODIFY `analysislog_id` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `analysis_resultnames`

@@ -712,6 +712,8 @@ void nidb::LogAnalysisEvent(qint64 analysisid, AnalysisEvent event, LogStatus st
         case AnalysisEvent::StatusRerunStarted: eventStr = "status_analysisRerunStarted"; break;
         case AnalysisEvent::StatusSupplementComplete: eventStr = "status_supplementComplete"; break;
         case AnalysisEvent::StatusSupplementStarted: eventStr = "status_supplementStarted"; break;
+        case AnalysisEvent::StatusUpdateFileList: eventStr = "status_updateFileList"; break;
+        case AnalysisEvent::StatusResultScript: eventStr = "status_resultScript"; break;
     }
 
     QSqlQuery q;
@@ -992,7 +994,7 @@ bool nidb::SubmitClusterJob(QString jobFilePath, QString clusterType, QString su
          * ssh <submithost> qsub -u <username> -q <queuelist> "/full/path/to/sge.job" */
         systemstring = QString("ssh %1 %2 -u %3 -q %4 \"%5\"").arg(submitHost).arg(qsub).arg(clusterUser).arg(clusterQueue).arg(jobFilePath);
 
-    result = SystemCommand(systemstring,true).trimmed();
+    result = SystemCommand(systemstring,false).trimmed();
 
     /* get the jobid */
     jobid = -1;

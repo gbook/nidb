@@ -241,7 +241,7 @@ int modulePipeline::Run() {
             if (analysisRowID < 0)
                 n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupCreateAnalysis, LogStatus::error, 0, "","");
             else
-                n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupCreateAnalysis, LogStatus::success, 0, "","");
+                n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupCreateAnalysis, LogStatus::success, 0, QString("rowID %1").arg(analysisRowID),"");
 
             /* create the cluster job file */
             QString jobFilePath = analysispath + "/sge.job";
@@ -418,7 +418,7 @@ int modulePipeline::Run() {
                         }
 
                         //n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysiscreated", "success", "Analysis created");
-                        n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupCreateAnalysis, LogStatus::success, 0, "","");
+                        n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupCreateAnalysis, LogStatus::success, 0, QString("rowID %1").arg(analysisRowID), "");
                     }
 
                     QString datalog;
@@ -464,6 +464,7 @@ int modulePipeline::Run() {
                             n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDependencyCheck, LogStatus::success, 0, "Study-level (will match dependency for the same study from the same subject)","");
                         }
                     }
+                    n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDependencyCheck, LogStatus::neutral, 0, "No dependencies","");
                     setuplog << n->Debug(QString("[%1] This analysis path is [" + analysispath + "]").arg(p.name), __FUNCTION__);
 
                     int numseriesdownloaded = 0;
@@ -608,7 +609,7 @@ int modulePipeline::Run() {
                             else {
                                 setuplog << n->Log("This pipeline is not dependent on another pipeline", __FUNCTION__);
                                 //n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysismessage", "success", "This pipeline does not depend on other pipelines");
-                                n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDependencyCopy, LogStatus::neutral, 0, "No pipeline dependencies", "");
+                                n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDependencyCopy, LogStatus::neutral, 0, "No dependencies", "");
                             }
 
                             /* this file will record any events during setup */
@@ -661,7 +662,7 @@ int modulePipeline::Run() {
                             n->Debug("Job submission result [" + qresult + "]", __FUNCTION__);
                             UpdateAnalysisStatus(analysisRowID, "submitted", m, jobid, numseriesdownloaded, "", "", false, true, 0, 0);
                             //n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysissubmitted", "success", qresult);
-                            n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupSubmitToCluster, LogStatus::success, 0, QString("Submitted job %1 to %2 cluster").arg(jobid).arg(p.clusterType), "");
+                            n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupSubmitToCluster, LogStatus::success, 0, QString("Submitted job %1 to %2 cluster. Result [%3]").arg(jobid).arg(p.clusterType).arg(qresult), "");
                             RecordPipelineEvent(pipelineid, runnum, -1, "submitAnalysis", m);
                         }
                         else {
@@ -669,7 +670,7 @@ int modulePipeline::Run() {
                             n->Log(m, __FUNCTION__);
                             UpdateAnalysisStatus(analysisRowID, "error", "Submit error [" + qm + "]", 0, numseriesdownloaded, "", "", false, true, 0, 0);
                             //n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysissubmit", "error", "Analysis submitted to cluster, but was rejected with errors [" + qm + "]");
-                            n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupSubmitToCluster, LogStatus::error, 0, QString("Error submitting job %1 to %2 cluster. Error [%3]").arg(jobid).arg(p.clusterType).arg(qm), "");
+                            n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupSubmitToCluster, LogStatus::error, 0, QString("Error submitting job %1 to %2 cluster.  Result [%3]  Error [%4]").arg(jobid).arg(p.clusterType).arg(qresult).arg(qm), "");
                             RecordPipelineEvent(pipelineid, runnum, -1, "errorSubmitAnalysis", m);
 
                             submiterror = true;
@@ -706,6 +707,7 @@ int modulePipeline::Run() {
                     if (!submiterror) {
                         if ((numseriesdownloaded > 0) || ((pipelinedep != -1) && (p.depLevel == "study")) || (a.runSupplement) || (a.rerunResults)) {
                             /* do nothing right here... :) */
+                            n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupSummary, LogStatus::success, 0, "", "");
                         }
                         else {
                             /* save some database space, since most entries will be blank */

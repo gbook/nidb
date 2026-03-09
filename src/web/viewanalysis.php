@@ -629,11 +629,11 @@
 	function GetStatusIcon($status) {
 		
 		switch ($status) {
-			case 'success': return "<i class='green check circle icon'></i>";
-			case 'warning': return "<i class='yellow info circle icon'></i>";
-			case 'error': return "<i class='red exclamation circle icon'></i>";
-			case 'neutral': return "<i class='grey minus circle icon'></i>";
-			default: return "<i class='grey minus icon'></i>";
+			case 'success': return "<i class='green large check circle icon'></i>";
+			case 'warning': return "<i class='yellow large info circle icon'></i>";
+			case 'error': return "<i class='red large exclamation circle icon'></i>";
+			case 'neutral': return "<i class='grey large minus circle icon'></i>";
+			default: return "<i class='grey large minus icon'></i>";
 		}
 	}
 	
@@ -643,8 +643,48 @@
 	/* -------------------------------------------- */
 	function DisplayGraph($analysisid) {
 		if (!ValidID($analysisid,'Analysis ID - DisplayGraph()')) { return; }
+
+		/* get all information about this analysis, pipeline, parent/child pipelines, and groups */
+		$sqlstring = "select * from analysis where analysis_id = $analysisid";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$pipelineid = $row['pipeline_id'];
+		$pipelineversion = (int)$row['pipeline_version'];
+		$pipelinedependency = $row['pipeline_dependency'];
+		$studyid = $row['study_id'];
+		//$datalog = $row['analysis_datalog'];
+		$datatable = $row['analysis_datatable'];
+
+		/* get data steps */
+		$datadef = array();
+		$sqlstring = "select * from pipeline_data_def where pipeline_id = $pipelineid and pipeline_version = '$pipelineversion' order by pdd_order + 0";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$pipelinedatadef_id = $row['pipelinedatadef_id'];
+			$step = $row['pdd_order'];
+			$datadef[$step]['associationType'] = $row['pdd_assoctype'];
+			$datadef[$step]['behDirectory'] = $row['pdd_behdir'];
+			$datadef[$step]['behFormat'] = $row['pdd_behformat'];
+			$datadef[$step]['dataFormat'] = $row['pdd_dataformat'];
+			$datadef[$step]['flagEnabled'] = $row['pdd_enabled'];
+			$datadef[$step]['flagGzip'] = $row['pdd_gzip'];
+			$datadef[$step]['flagOptional'] = $row['pdd_optional'];
+			$datadef[$step]['flagPreserveSeries'] = $row['pdd_preserveseries'];
+			$datadef[$step]['flagUsePhaseDirection'] = $row['pdd_usephasedir'];
+			$datadef[$step]['imageType'] = $row['pdd_imagetype'];
+			$datadef[$step]['level'] = $row['pdd_level'];
+			$datadef[$step]['location'] = $row['pdd_location'];
+			$datadef[$step]['modality'] = $row['pdd_modality'];
+			$datadef[$step]['numberBoldReps'] = $row['pdd_numboldreps'];
+			$datadef[$step]['protocol'] = $row['pdd_protocol'];
+			$datadef[$step]['seriesCriteria'] = $row['pdd_seriescriteria'];
+			$datadef[$step]['type'] = $row['pdd_type'];
+			$datadef[$step]['useSeries'] = $row['pdd_useseries'];
+		}
 		
-		/* new log view */
+		//PrintVariable($datadef);
+		/* ----- new log view ----- */
+		
 		/* load the log entries from the database */
 		$logs = array();
 		$sqlstring = "select * from analysis_log where analysis_id = $analysisid order by analysislog_event, step_number";
@@ -658,10 +698,17 @@
 			$log['message'] = $row['analysislog_message'];
 			$log['hostname'] = $row['analysislog_hostname'];
 			$log['datetime'] = $row['analysislog_datetime'];
+			
+			if (strlen($log['message']) > 60) {
+				$log['message'] = substr($log['message'], 0, 60) . "... <i class='comment alternate outline icon' title='" . $log['message'] . "'></i>";
+			}
+			else {
+				$log['message'] = $log['message'];
+			}
+			
 			$logs[$event][] = $log;
 		}
 		
-		//PrintVariable($logs);
 		
 		?>
 		<div class="ui container">
@@ -669,61 +716,113 @@
 				<thead>
 					<th>Step</th>
 					<th>Status</th>
-					<th>Step Number</th>
 					<th>Message</th>
 					<th>Hostname</th>
 					<th>Datetime</th>
 				</thead>
 				<tr>
-					<td>Analysis created <i class="question circle icon" title="Create and registere a unique analysis in the database"></i></td>
+					<td>Analysis created <!--<i class="question circle icon" title="Create and registere a unique analysis in the database"></i>--></td>
 					<td><?=GetStatusIcon($logs['setup_createAnalysis'][0]['status'])?></td>
-					<td><?=$logs['setup_createAnalysis'][0]['stepNumber']?></td>
 					<td><?=$logs['setup_createAnalysis'][0]['message']?></td>
 					<td><?=$logs['setup_createAnalysis'][0]['hostname']?></td>
 					<td><?=$logs['setup_createAnalysis'][0]['datetime']?></td>
 				</tr>
 				<tr>
-					<td>Create analysis directory <i class="question circle icon" title="Create analysis directory on disk"></i></td>
+					<td>Create analysis directory <!--<i class="question circle icon" title="Create analysis directory on disk"></i>--></td>
 					<td><?=GetStatusIcon($logs['setup_createDirectory'][0]['status'])?></td>
-					<td><?=$logs['setup_createDirectory'][0]['stepNumber']?></td>
 					<td><?=$logs['setup_createDirectory'][0]['message']?></td>
 					<td><?=$logs['setup_createDirectory'][0]['hostname']?></td>
 					<td><?=$logs['setup_createDirectory'][0]['datetime']?></td>
 				</tr>
 				<tr>
-					<td>Copy dependency <i class="question circle icon" title="Copy pipeline dependency"></i></td>
-					<td><?=GetStatusIcon($logs['setup_copyDependency'][0]['status'])?></td>
-					<td><?=$logs['setup_copyDependency'][0]['stepNumber']?></td>
-					<td><?=$logs['setup_copyDependency'][0]['message']?></td>
-					<td><?=$logs['setup_copyDependency'][0]['hostname']?></td>
-					<td><?=$logs['setup_copyDependency'][0]['datetime']?></td>
+					<td>Dependency check <!--<i class="question circle icon" title="Copy pipeline dependency"></i>--></td>
+					<td><?=GetStatusIcon($logs['setup_dependencyCheck'][0]['status'])?></td>
+					<td><?=$logs['setup_dependencyCheck'][0]['message']?></td>
+					<td><?=$logs['setup_dependencyCheck'][0]['hostname']?></td>
+					<td><?=$logs['setup_dependencyCheck'][0]['datetime']?></td>
 				</tr>
 				<tr>
-					<td>Data checks <i class="question circle icon" title="Check if all data steps match before downloading any data"></i></td>
+					<td>Dependency copy <!--<i class="question circle icon" title="Copy pipeline dependency"></i>--></td>
+					<td><?=GetStatusIcon($logs['setup_dependencyCopy'][0]['status'])?></td>
+					<td><?=$logs['setup_dependencyCopy'][0]['message']?></td>
+					<td><?=$logs['setup_dependencyCopy'][0]['hostname']?></td>
+					<td><?=$logs['setup_dependencyCopy'][0]['datetime']?></td>
+				</tr>
+				<tr>
+					<td>Data checks <!--<i class="question circle icon" title="Check if all data steps match before downloading any data"></i>--></td>
 					<td colspan="5">
 						<div class="ui accordion">
 						<div class="title">
 							<i class="dropdown icon"></i>
-							View data steps
+							View data checks
 						</div>
 						<div class="content">
 							<table class="ui compact celled table">
 								<thead>
 									<th>Status</th>
-									<th>Step Number</th>
+									<th>Step</th>
+									<th>Protocol</th>
+									<th>Detail (click)</th>
 									<th>Message</th>
-									<th>Hostname</th>
-									<th>Datetime</th>
 								</thead>
 							<?
 								foreach ($logs['setup_dataStepCheck'] as $step) {
+									$i = $step['stepNumber'];
+									if ($i < 1)
+										continue;
+									
+									if (strlen($datadef[$i]['protocol']) > 60) {
+										$protocol = substr($datadef[$i]['protocol'], 0, 60) . "... <i class='comment alternate outline icon' title='" . $datadef[$i]['protocol'] . "'></i>";
+									}
+									else {
+										$protocol = $datadef[$i]['protocol'];
+									}
 									?>
+									<script>
+									  $(document).ready(function() {
+										$('#dataInfo<?=$i?>').popup({
+										  popup: $('.ui.popup.dataInfo<?=$i?>'), // Selects the HTML element for the popup
+										  inline: true,          // Indicates the popup is a sibling element
+										  hoverable: true,       // Makes the popup stay open when hovered over (optional)
+										  on: 'click'
+										});
+									  });
+									</script>
 									<tr>
 									<td><?=GetStatusIcon($step['status'])?></td>
 									<td><?=$step['stepNumber']?></td>
+									<td><?=$protocol?></td>
+									<td>
+										<div class="ui compact button" id="dataInfo<?=$i?>" data-variation="very wide">Info</div>
+										<div class="ui popup dataInfo<?=$i?>">
+											<div class="header">Data step details</div>
+											<b>Search</b>
+											<ul>
+												<li><b>Association type</b> <tt><?=$datadef[$i]['associationType']?></tt>
+												<li><b>Enabled</b> <tt><?=$datadef[$i]['flagEnabled']?></tt>
+												<li><b>Optional</b> <tt><?=$datadef[$i]['flagOptional']?></tt>
+												<li><b>Image type</b> <tt><?=$datadef[$i]['imageType']?></tt>
+												<li><b>Data level</b> <tt><?=$datadef[$i]['level']?></tt>
+												<li><b>Modality</b> <tt><?=$datadef[$i]['modality']?></tt>
+												<li><b>BOLD reps</b> <tt><?=$datadef[$i]['numberBoldReps']?></tt>
+												<li><b>Protocol</b> <tt><?=$datadef[$i]['protocol']?></tt>
+												<li><b>Series criteria</b> <tt><?=$datadef[$i]['seriesCriteria']?></tt>
+												<li><b>Type</b> <tt><?=$datadef[$i]['type']?></tt>
+											</ul>
+											<b>Download</b>
+											<ul>
+												<li><b>Beh directory</b> <tt><?=$datadef[$i]['behDirectory']?></tt>
+												<li><b>Beh format</b> <tt><?=$datadef[$i]['behFormat']?></tt>
+												<li><b>Data format</b> <tt><?=$datadef[$i]['dataFormat']?></tt>
+												<li><b>g-zip</b> <tt><?=$datadef[$i]['flagGzip']?></tt>
+												<li><b>Preserve series num</b> <tt><?=$datadef[$i]['flagPreserveSeries']?></tt>
+												<li><b>Use PE direction</b> <tt><?=$datadef[$i]['flagUsePhaseDirection']?></tt>
+												<li><b>Directory</b> <tt><?=$datadef[$i]['location']?></tt>
+												<li><b>Association type</b> <tt><?=$datadef[$i]['useSeries']?></tt>
+											</ul>
+										</div>
+									</td>
 									<td><?=$step['message']?></td>
-									<td><?=$step['hostname']?></td>
-									<td><?=$step['datetime']?></td>
 									</tr>
 									<?
 								}
@@ -735,13 +834,12 @@
 				<tr>
 					<td>Data check summary</td>
 					<td><?=GetStatusIcon($logs['setup_dataCheckSummary'][0]['status'])?></td>
-					<td><?=$logs['setup_dataCheckSummary'][0]['stepNumber']?></td>
 					<td><?=$logs['setup_dataCheckSummary'][0]['message']?></td>
 					<td><?=$logs['setup_dataCheckSummary'][0]['hostname']?></td>
 					<td><?=$logs['setup_dataCheckSummary'][0]['datetime']?></td>
 				</tr>
 				<tr>
-					<td>Data download steps <i class="question circle icon" title="Download matching data"></i></td>
+					<td>Data download steps</td>
 					<td colspan="5">
 						<div class="ui accordion">
 						<div class="title">
@@ -777,49 +875,76 @@
 				<tr>
 					<td>Data download summary</td>
 					<td><?=GetStatusIcon($logs['setup_dataDownloadSummary'][0]['status'])?></td>
-					<td><?=$logs['setup_dataDownloadSummary'][0]['stepNumber']?></td>
 					<td><?=$logs['setup_dataDownloadSummary'][0]['message']?></td>
 					<td><?=$logs['setup_dataDownloadSummary'][0]['hostname']?></td>
 					<td><?=$logs['setup_dataDownloadSummary'][0]['datetime']?></td>
 				</tr>
 				<tr>
-					<td>Check if Ok to run <i class="question circle icon" title="Check if all criteria are met to submit this analysis to the cluster"></i></td>
+					<td>Check if Ok to run <!--<i class="question circle icon" title="Check if all criteria are met to submit this analysis to the cluster"></i>--></td>
 					<td><?=GetStatusIcon($logs['setup_checkIfOkToRun'][0]['status'])?></td>
-					<td><?=$logs['setup_checkIfOkToRun'][0]['stepNumber']?></td>
 					<td><?=$logs['setup_checkIfOkToRun'][0]['message']?></td>
 					<td><?=$logs['setup_checkIfOkToRun'][0]['hostname']?></td>
 					<td><?=$logs['setup_checkIfOkToRun'][0]['datetime']?></td>
 				</tr>
 				<tr>
-					<td>Submit to cluster <i class="question circle icon" title="Submit analysis job to cluster"></i></td>
+					<td>Submit to cluster</td>
 					<td><?=GetStatusIcon($logs['setup_submitToCluster'][0]['status'])?></td>
-					<td><?=$logs['setup_submitToCluster'][0]['stepNumber']?></td>
 					<td><?=$logs['setup_submitToCluster'][0]['message']?></td>
 					<td><?=$logs['setup_submitToCluster'][0]['hostname']?></td>
 					<td><?=$logs['setup_submitToCluster'][0]['datetime']?></td>
 				</tr>
 				<tr>
-					<td>Setup summary <i class="question circle icon" title="Summary of analysis setup"></i></td>
+					<td>Setup summary</td>
 					<td><?=GetStatusIcon($logs['setup_summary'][0]['status'])?></td>
-					<td><?=$logs['setup_summary'][0]['stepNumber']?></td>
 					<td><?=$logs['setup_summary'][0]['message']?></td>
 					<td><?=$logs['setup_summary'][0]['hostname']?></td>
 					<td><?=$logs['setup_summary'][0]['datetime']?></td>
+				</tr>
+				<tr>
+					<td>Analysis started <!--<i class="question circle icon" title="Analysis running on the cluster"></i>--></td>
+					<td><?=GetStatusIcon($logs['status_analysisStarted'][0]['status'])?></td>
+					<td><?=$logs['status_analysisStarted'][0]['message']?></td>
+					<td><?=$logs['status_analysisStarted'][0]['hostname']?></td>
+					<td><?=$logs['status_analysisStarted'][0]['datetime']?></td>
+				</tr>
+				<tr>
+					<td>Script <!--<i class="question circle icon" title="Download matching data"></i>--></td>
+					<td colspan="5">
+						<div class="ui accordion">
+						<div class="title">
+							<i class="dropdown icon"></i>
+							View script steps
+						</div>
+						<div class="content">
+							<table class="ui compact celled table">
+								<thead>
+									<th>Status</th>
+									<th>Script line number</th>
+									<th>Message</th>
+									<th>Hostname</th>
+									<th>Datetime</th>
+								</thead>
+							<?
+								foreach ($logs['status_analysisStepCheckin'] as $step) {
+									?>
+									<tr>
+									<td><?=GetStatusIcon($step['status'])?></td>
+									<td><?=$step['stepNumber']?></td>
+									<td><?=$step['message']?></td>
+									<td><?=$step['hostname']?></td>
+									<td><?=$step['datetime']?></td>
+									</tr>
+									<?
+								}
+							?>
+							</table>
+						</div>					
+					</td>
 				</tr>
 			</table>
 		</div>
 		<?
 		
-		/* get all information about this analysis, pipeline, parent/child pipelines, and groups */
-		$sqlstring = "select * from analysis where analysis_id = $analysisid";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$pipelineid = $row['pipeline_id'];
-		$pipelineversion = (int)$row['pipeline_version'];
-		$pipelinedependency = $row['pipeline_dependency'];
-		$studyid = $row['study_id'];
-		$datalog = $row['analysis_datalog'];
-		$datatable = $row['analysis_datatable'];
 		
 		if (!ValidID($pipelineid,'Pipeline ID')) { return; }
 		if (!ValidID($studyid,'Study ID')) { return; }

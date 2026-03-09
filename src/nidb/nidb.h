@@ -68,15 +68,17 @@ enum class AnalysisEvent {
     SetupSubmitToCluster,
     SetupSummary,
     SetupWriteJobScript,
-    StatusAnalysisStepCheckin,
     StatusAnalysisComplete,
     StatusAnalysisStarted,
-    StatusRerunStarted,
-    StatusRerunComplete,
+    StatusAnalysisStepCheckin,
     StatusCheckSuccessFiles,
     StatusRecheckComplete,
+    StatusRerunComplete,
+    StatusRerunStarted,
+    StatusResultScript,
     StatusSupplementComplete,
-    StatusSupplementStarted
+    StatusSupplementStarted,
+    StatusUpdateFileList
 };
 
 /**

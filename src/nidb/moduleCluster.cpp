@@ -128,8 +128,16 @@ bool moduleCluster::PipelineCheckin(QString analysisid, QString status, QString 
         q.bindValue(":analysisid", id);
     }
     else {
-        //if (status == "processing")
-        event = AnalysisEvent::StatusAnalysisStepCheckin;
+        if (stepNum == 0) {
+            if (message.contains("processing result script", Qt::CaseInsensitive))
+                event = AnalysisEvent::StatusResultScript;
+            else if (message.contains("updating analysis files", Qt::CaseInsensitive))
+                event = AnalysisEvent::StatusUpdateFileList;
+            else if (message.contains("checking for completed files", Qt::CaseInsensitive))
+                event = AnalysisEvent::StatusCheckSuccessFiles;
+        }
+        else
+            event = AnalysisEvent::StatusAnalysisStepCheckin;
 
         q.prepare("update analysis set analysis_status = :status, analysis_statusmessage = :message, analysis_rerunresults = 0, analysis_statusdatetime = now(), analysis_hostname = :hostname where analysis_id = :analysisid");
         q.bindValue(":status", status);
@@ -144,12 +152,6 @@ bool moduleCluster::PipelineCheckin(QString analysisid, QString status, QString 
     if (command.trimmed() != "")
         msg += " [" + command + "]";
 
-    //q.prepare("insert into analysis_history (analysis_id, analysis_event, analysis_hostname, event_message) values (:analysisid, :status, :hostname, :msg)");
-    //q.bindValue(":analysisid", id);
-    //q.bindValue(":status", status);
-    //q.bindValue(":hostname", hostname);
-    //q.bindValue(":msg", msg);
-    //n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     n->LogAnalysisEvent(id, event, LogStatus::success, stepNum, message, hostname);
 
     return true;
