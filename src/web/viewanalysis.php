@@ -645,15 +645,63 @@
 		if (!ValidID($analysisid,'Analysis ID - DisplayGraph()')) { return; }
 
 		/* get all information about this analysis, pipeline, parent/child pipelines, and groups */
-		$sqlstring = "select * from analysis where analysis_id = $analysisid";
+		//$sqlstring = "select * from analysis where analysis_id = $analysisid";
+		$sqlstring = "select * from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on e.pipeline_id = a.pipeline_id where a.analysis_id = '$analysisid'";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$pipelineid = $row['pipeline_id'];
+		$studyid = $row['study_id'];
+		$uid = $row['uid'];
+		$studynum = $row['study_num'];
+		$pipelinename = $row['pipeline_name'];
 		$pipelineversion = (int)$row['pipeline_version'];
 		$pipelinedependency = $row['pipeline_dependency'];
-		$studyid = $row['study_id'];
-		//$datalog = $row['analysis_datalog'];
+		$pipeline_level = $row['pipeline_level'];
+		$pipelinedirectory = $row['pipeline_directory'];
+		$pipelinedirstructure = $row['pipeline_dirstructure'];
 		$datatable = $row['analysis_datatable'];
+
+		if (($pipelineid == "") || ($pipelineid == 0)) { echo "Invalid pipeline ID<Br>"; return; }
+		if (($pipelineversion == "") || ($pipelineversion == 0)) { echo "Invalid pipeline version<Br>"; return; }
+		
+		/* get list of steps for the appropriate version */
+		$sqlstring = "select * from pipeline_steps where pipeline_id = $pipelineid and pipeline_version = $pipelineversion";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$ps_command = $row['ps_command'];
+			$ps_supplement = $row['ps_supplement'];
+			$ps_description = $row['ps_description'];
+			$ps_order = $row['ps_order'] - 1;
+			if ($ps_supplement) {
+				$descriptions['supp'][$ps_order] = $ps_description;
+				$commands['supp'][$ps_order] = $ps_command;
+			}
+			else {
+				$descriptions['reg'][$ps_order] = $ps_description;
+				$commands['reg'][$ps_order] = $ps_command;
+			}
+		}
+		
+		/* build the correct path */
+		if (($pipeline_level == 1) && ($pipelinedirectory == "")) {
+			if ($pipelinedirstructure == "b") {
+				$path = $GLOBALS['cfg']['analysisdirb'] . "/$pipelinename/$uid/$studynum/pipeline";
+			}
+			else {
+				$path = $GLOBALS['cfg']['analysisdir'] . "/$uid/$studynum/$pipelinename/pipeline";
+			}
+		}
+		elseif (($pipeline_level == 0) || ($pipelinedirectory != "")) {
+			if ($pipelinedirstructure == "b") {
+				$path = $GLOBALS['cfg']['analysisdirb'] . "/$pipelinename/$uid/$studynum/pipeline";
+			}
+			else {
+				$path = $GLOBALS['cfg']['analysisdir'] . "/$uid/$studynum/$pipelinename/pipeline";
+			}
+		}
+		else {
+			$path = $GLOBALS['cfg']['groupanalysisdir'] . "/$pipelinename/pipeline";
+		}
 
 		/* get data steps */
 		$datadef = array();
@@ -919,20 +967,80 @@
 							<table class="ui compact celled table">
 								<thead>
 									<th>Status</th>
-									<th>Script line number</th>
-									<th>Message</th>
+									<th>Line #</th>
+									<th>Cluster message</th>
+									<th>Details</th>
 									<th>Hostname</th>
 									<th>Datetime</th>
 								</thead>
 							<?
 								foreach ($logs['status_analysisStepCheckin'] as $step) {
+									$i = $step['stepNumber'];
+									
+									$logfile = $path . "/Step" . $i;
+									
+									if (file_exists($logfile)) {
+										$fileStr = file_get_contents("$logfile");
+										$size = filesize("$logfile");
+										$filedate = date ("F d Y H:i:s", filemtime("$logfile"));
+										$fileExists = true;
+									}
+									else {
+										$fileStr = "";
+										$size = 0;
+										$filedate = "";
+										$fileExists = false;
+									}
+									
+									$description = $descriptions['reg'][$i];
+									$command = $commands['reg'][$i];
+
 									?>
+									<script>
+										$(document).ready(function(){
+											$('#showModalButton<?=$i?>').on('click', function(){
+												$('#myModal<?=$i?>').modal('show');
+											});
+										});
+									</script>
+									<div class="ui large modal" id ="myModal<?=$i?>">
+										<i class="close icon"></i>
+										<p>
+											<h2 class="ui header">
+												Step <?=$i?>
+											</h2>
+											<div class="scrolling content">
+												<p>
+													<b>Command</b>
+													<div class="code"><?=$command?> <span class="ui green text"># <?=$description?></span></div>
+												</p>
+												<? if ($fileExists) { ?>
+												<p>
+													<b>Log file path</b>
+													<br>
+													<tt><?=$logfile?></tt>
+												</p>
+												<p>
+													<b>Command output</b>
+													<br>
+													<tt><pre><?=$fileStr?></pre></tt>
+												</p>
+												<? } else { ?>
+												<p>No log file</p>
+												<? } ?>
+											</div>
+										</p>
+										<div class="actions">
+											<button class="ui approve button">Close</button>
+										</div>
+									</div>
 									<tr>
-									<td><?=GetStatusIcon($step['status'])?></td>
-									<td><?=$step['stepNumber']?></td>
-									<td><?=$step['message']?></td>
-									<td><?=$step['hostname']?></td>
-									<td><?=$step['datetime']?></td>
+										<td><?=GetStatusIcon($step['status'])?></td>
+										<td><?=$step['stepNumber']?></td>
+										<td><?=$step['message']?></td>
+										<td><div class="ui button" id="showModalButton<?=$i?>">Details</div> <? if ($size > 0) { echo "Log size " . HumanReadableFilesize($size); } ?></td>
+										<td><?=$step['hostname']?></td>
+										<td><?=$step['datetime']?></td>
 									</tr>
 									<?
 								}
@@ -940,6 +1048,34 @@
 							</table>
 						</div>					
 					</td>
+				</tr>
+				<tr>
+					<td>Run result script</td>
+					<td><?=GetStatusIcon($logs['status_resultScript'][0]['status'])?></td>
+					<td><?=$logs['status_resultScript'][0]['message']?></td>
+					<td><?=$logs['status_resultScript'][0]['hostname']?></td>
+					<td><?=$logs['status_resultScript'][0]['datetime']?></td>
+				</tr>
+				<tr>
+					<td>Update file list</td>
+					<td><?=GetStatusIcon($logs['status_updateFileList'][0]['status'])?></td>
+					<td><?=$logs['status_updateFileList'][0]['message']?></td>
+					<td><?=$logs['status_updateFileList'][0]['hostname']?></td>
+					<td><?=$logs['status_updateFileList'][0]['datetime']?></td>
+				</tr>
+				<tr>
+					<td>Check for successful file(s)</td>
+					<td><?=GetStatusIcon($logs['status_checkSuccessFiles'][0]['status'])?></td>
+					<td><?=$logs['status_checkSuccessFiles'][0]['message']?></td>
+					<td><?=$logs['status_checkSuccessFiles'][0]['hostname']?></td>
+					<td><?=$logs['status_checkSuccessFiles'][0]['datetime']?></td>
+				</tr>
+				<tr>
+					<td>Analysis complete <!--<i class="question circle icon" title="Analysis running on the cluster"></i>--></td>
+					<td><?=GetStatusIcon($logs['status_analysisComplete'][0]['status'])?></td>
+					<td><?=$logs['status_analysisComplete'][0]['message']?></td>
+					<td><?=$logs['status_analysisComplete'][0]['hostname']?></td>
+					<td><?=$logs['status_analysisComplete'][0]['datetime']?></td>
 				</tr>
 			</table>
 		</div>
