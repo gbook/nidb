@@ -660,6 +660,10 @@
 		$pipelinedirectory = $row['pipeline_directory'];
 		$pipelinedirstructure = $row['pipeline_dirstructure'];
 		$datatable = $row['analysis_datatable'];
+		$analysisDiskSize = $row['analysis_disksize'];
+		$analysisFileCount = $row['analysis_numfiles'];
+		$analysisHostname = $row['analysis_hostname'];
+		$analysisClusterEndDate = $row['analysis_clusterenddate'];
 
 		if (($pipelineid == "") || ($pipelineid == 0)) { echo "Invalid pipeline ID<Br>"; return; }
 		if (($pipelineversion == "") || ($pipelineversion == 0)) { echo "Invalid pipeline version<Br>"; return; }
@@ -757,11 +761,25 @@
 			$logs[$event][] = $log;
 		}
 		
-		
+		/* add the file count and disk size logs */
+		if ($analysisDiskSize > 0) {
+			$logs['status_diskSize'][0]['status'] = "success";
+			$logs['status_diskSize'][0]['message'] = HumanReadableFilesize($analysisDiskSize);
+			$logs['status_diskSize'][0]['hostname'] = $analysisHostname;
+			$logs['status_diskSize'][0]['datetime'] = $analysisClusterEndDate;
+		}
+		else {
+			$logs['status_diskSize'][0]['status'] = "warning";
+			$logs['status_diskSize'][0]['message'] = 0;
+			$logs['status_diskSize'][0]['hostname'] = $analysisHostname;
+			$logs['status_diskSize'][0]['datetime'] = $analysisClusterEndDate;
+		}
+
 		?>
 		<div class="ui container">
 			<table class="ui celled table">
 				<thead>
+					<th>Section</th>
 					<th>Step</th>
 					<th>Status</th>
 					<th>Message</th>
@@ -769,6 +787,7 @@
 					<th>Datetime</th>
 				</thead>
 				<tr>
+					<td rowspan="11" class="top aligned" style="font-weight: bold; font-size:larger; border-top: 1px solid #666">Setup</td>
 					<td>Analysis created <!--<i class="question circle icon" title="Create and registere a unique analysis in the database"></i>--></td>
 					<td><?=GetStatusIcon($logs['setup_createAnalysis'][0]['status'])?></td>
 					<td><?=$logs['setup_createAnalysis'][0]['message']?></td>
@@ -776,6 +795,7 @@
 					<td><?=$logs['setup_createAnalysis'][0]['datetime']?></td>
 				</tr>
 				<tr>
+					<td class="rowspanned"></td>
 					<td>Create analysis directory <!--<i class="question circle icon" title="Create analysis directory on disk"></i>--></td>
 					<td><?=GetStatusIcon($logs['setup_createDirectory'][0]['status'])?></td>
 					<td><?=$logs['setup_createDirectory'][0]['message']?></td>
@@ -783,6 +803,7 @@
 					<td><?=$logs['setup_createDirectory'][0]['datetime']?></td>
 				</tr>
 				<tr>
+					<td class="rowspanned"></td>
 					<td>Dependency check <!--<i class="question circle icon" title="Copy pipeline dependency"></i>--></td>
 					<td><?=GetStatusIcon($logs['setup_dependencyCheck'][0]['status'])?></td>
 					<td><?=$logs['setup_dependencyCheck'][0]['message']?></td>
@@ -790,6 +811,7 @@
 					<td><?=$logs['setup_dependencyCheck'][0]['datetime']?></td>
 				</tr>
 				<tr>
+					<td class="rowspanned"></td>
 					<td>Dependency copy <!--<i class="question circle icon" title="Copy pipeline dependency"></i>--></td>
 					<td><?=GetStatusIcon($logs['setup_dependencyCopy'][0]['status'])?></td>
 					<td><?=$logs['setup_dependencyCopy'][0]['message']?></td>
@@ -797,6 +819,7 @@
 					<td><?=$logs['setup_dependencyCopy'][0]['datetime']?></td>
 				</tr>
 				<tr>
+					<td class="rowspanned"></td>
 					<td>Data checks <!--<i class="question circle icon" title="Check if all data steps match before downloading any data"></i>--></td>
 					<td colspan="5">
 						<div class="ui accordion">
@@ -805,7 +828,7 @@
 							View data checks
 						</div>
 						<div class="content">
-							<table class="ui compact celled table">
+							<table class="ui very compact celled table">
 								<thead>
 									<th>Status</th>
 									<th>Step</th>
@@ -826,50 +849,58 @@
 										$protocol = $datadef[$i]['protocol'];
 									}
 									?>
+									
 									<script>
-									  $(document).ready(function() {
-										$('#dataInfo<?=$i?>').popup({
-										  popup: $('.ui.popup.dataInfo<?=$i?>'), // Selects the HTML element for the popup
-										  inline: true,          // Indicates the popup is a sibling element
-										  hoverable: true,       // Makes the popup stay open when hovered over (optional)
-										  on: 'click'
+										$(document).ready(function(){
+											$('#showDataCheckButton<?=$i?>').on('click', function(){
+												$('#dataCheckStep<?=$i?>').modal('show');
+											});
 										});
-									  });
 									</script>
+									<div class="ui large modal" id ="dataCheckStep<?=$i?>">
+										<i class="close icon"></i>
+										<p>
+											<h2 class="ui header">
+												Step <?=$i?>
+											</h2>
+											<div class="scrolling content">
+												<div class="header">Data step details</div>
+												<b>Search</b>
+												<ul>
+													<li><b>Association type</b> <tt><?=$datadef[$i]['associationType']?></tt>
+													<li><b>Enabled</b> <tt><?=$datadef[$i]['flagEnabled']?></tt>
+													<li><b>Optional</b> <tt><?=$datadef[$i]['flagOptional']?></tt>
+													<li><b>Image type</b> <tt><?=$datadef[$i]['imageType']?></tt>
+													<li><b>Data level</b> <tt><?=$datadef[$i]['level']?></tt>
+													<li><b>Modality</b> <tt><?=$datadef[$i]['modality']?></tt>
+													<li><b>BOLD reps</b> <tt><?=$datadef[$i]['numberBoldReps']?></tt>
+													<li><b>Protocol</b> <tt><?=$datadef[$i]['protocol']?></tt>
+													<li><b>Series criteria</b> <tt><?=$datadef[$i]['seriesCriteria']?></tt>
+													<li><b>Type</b> <tt><?=$datadef[$i]['type']?></tt>
+												</ul>
+												<b>Download</b>
+												<ul>
+													<li><b>Beh directory</b> <tt><?=$datadef[$i]['behDirectory']?></tt>
+													<li><b>Beh format</b> <tt><?=$datadef[$i]['behFormat']?></tt>
+													<li><b>Data format</b> <tt><?=$datadef[$i]['dataFormat']?></tt>
+													<li><b>g-zip</b> <tt><?=$datadef[$i]['flagGzip']?></tt>
+													<li><b>Preserve series num</b> <tt><?=$datadef[$i]['flagPreserveSeries']?></tt>
+													<li><b>Use PE direction</b> <tt><?=$datadef[$i]['flagUsePhaseDirection']?></tt>
+													<li><b>Directory</b> <tt><?=$datadef[$i]['location']?></tt>
+													<li><b>Use series numbers</b> <tt><?=$datadef[$i]['useSeries']?></tt>
+												</ul>
+											</div>
+										</p>
+										<div class="actions">
+											<button class="ui approve button">Close</button>
+										</div>
+									</div>
+									
 									<tr>
 									<td><?=GetStatusIcon($step['status'])?></td>
 									<td><?=$step['stepNumber']?></td>
 									<td><?=$protocol?></td>
-									<td>
-										<div class="ui compact button" id="dataInfo<?=$i?>" data-variation="very wide">Info</div>
-										<div class="ui popup dataInfo<?=$i?>">
-											<div class="header">Data step details</div>
-											<b>Search</b>
-											<ul>
-												<li><b>Association type</b> <tt><?=$datadef[$i]['associationType']?></tt>
-												<li><b>Enabled</b> <tt><?=$datadef[$i]['flagEnabled']?></tt>
-												<li><b>Optional</b> <tt><?=$datadef[$i]['flagOptional']?></tt>
-												<li><b>Image type</b> <tt><?=$datadef[$i]['imageType']?></tt>
-												<li><b>Data level</b> <tt><?=$datadef[$i]['level']?></tt>
-												<li><b>Modality</b> <tt><?=$datadef[$i]['modality']?></tt>
-												<li><b>BOLD reps</b> <tt><?=$datadef[$i]['numberBoldReps']?></tt>
-												<li><b>Protocol</b> <tt><?=$datadef[$i]['protocol']?></tt>
-												<li><b>Series criteria</b> <tt><?=$datadef[$i]['seriesCriteria']?></tt>
-												<li><b>Type</b> <tt><?=$datadef[$i]['type']?></tt>
-											</ul>
-											<b>Download</b>
-											<ul>
-												<li><b>Beh directory</b> <tt><?=$datadef[$i]['behDirectory']?></tt>
-												<li><b>Beh format</b> <tt><?=$datadef[$i]['behFormat']?></tt>
-												<li><b>Data format</b> <tt><?=$datadef[$i]['dataFormat']?></tt>
-												<li><b>g-zip</b> <tt><?=$datadef[$i]['flagGzip']?></tt>
-												<li><b>Preserve series num</b> <tt><?=$datadef[$i]['flagPreserveSeries']?></tt>
-												<li><b>Use PE direction</b> <tt><?=$datadef[$i]['flagUsePhaseDirection']?></tt>
-												<li><b>Directory</b> <tt><?=$datadef[$i]['location']?></tt>
-												<li><b>Association type</b> <tt><?=$datadef[$i]['useSeries']?></tt>
-											</ul>
-										</div>
-									</td>
+									<td><div class="ui compact small button" id="showDataCheckButton<?=$i?>">Details</div> <? if ($size > 0) { echo "<span class='ui small text'>Log size " . HumanReadableFilesize($size) . "</span>"; } ?></td>
 									<td><?=$step['message']?></td>
 									</tr>
 									<?
@@ -880,6 +911,7 @@
 					</td>
 				</tr>
 				<tr>
+					<td class="rowspanned"></td>
 					<td>Data check summary</td>
 					<td><?=GetStatusIcon($logs['setup_dataCheckSummary'][0]['status'])?></td>
 					<td><?=$logs['setup_dataCheckSummary'][0]['message']?></td>
@@ -887,6 +919,7 @@
 					<td><?=$logs['setup_dataCheckSummary'][0]['datetime']?></td>
 				</tr>
 				<tr>
+					<td class="rowspanned"></td>
 					<td>Data download steps</td>
 					<td colspan="5">
 						<div class="ui accordion">
@@ -895,22 +928,31 @@
 							View data download steps
 						</div>
 						<div class="content">
-							<table class="ui compact celled table">
+							<table class="ui very compact celled table">
 								<thead>
 									<th>Status</th>
-									<th>Step Number</th>
+									<th>Step</th>
 									<th>Message</th>
-									<th>Hostname</th>
+									<th>Protocol</th>
 									<th>Datetime</th>
 								</thead>
 							<?
 								foreach ($logs['setup_dataStepDownload'] as $step) {
+									$i = $step['stepNumber'];
+									
+									if (strlen($datadef[$i]['protocol']) > 60) {
+										$protocol = substr($datadef[$i]['protocol'], 0, 60) . "... <i class='comment alternate outline icon' title='" . $datadef[$i]['protocol'] . "'></i>";
+									}
+									else {
+										$protocol = $datadef[$i]['protocol'];
+									}
+									
 									?>
 									<tr>
 									<td><?=GetStatusIcon($step['status'])?></td>
 									<td><?=$step['stepNumber']?></td>
 									<td><?=$step['message']?></td>
-									<td><?=$step['hostname']?></td>
+									<td><?=$protocol?></td>
 									<td><?=$step['datetime']?></td>
 									</tr>
 									<?
@@ -921,6 +963,7 @@
 					</td>
 				</tr>
 				<tr>
+					<td class="rowspanned"></td>
 					<td>Data download summary</td>
 					<td><?=GetStatusIcon($logs['setup_dataDownloadSummary'][0]['status'])?></td>
 					<td><?=$logs['setup_dataDownloadSummary'][0]['message']?></td>
@@ -928,6 +971,7 @@
 					<td><?=$logs['setup_dataDownloadSummary'][0]['datetime']?></td>
 				</tr>
 				<tr>
+					<td class="rowspanned"></td>
 					<td>Check if Ok to run <!--<i class="question circle icon" title="Check if all criteria are met to submit this analysis to the cluster"></i>--></td>
 					<td><?=GetStatusIcon($logs['setup_checkIfOkToRun'][0]['status'])?></td>
 					<td><?=$logs['setup_checkIfOkToRun'][0]['message']?></td>
@@ -935,6 +979,7 @@
 					<td><?=$logs['setup_checkIfOkToRun'][0]['datetime']?></td>
 				</tr>
 				<tr>
+					<td class="rowspanned"></td>
 					<td>Submit to cluster</td>
 					<td><?=GetStatusIcon($logs['setup_submitToCluster'][0]['status'])?></td>
 					<td><?=$logs['setup_submitToCluster'][0]['message']?></td>
@@ -942,6 +987,7 @@
 					<td><?=$logs['setup_submitToCluster'][0]['datetime']?></td>
 				</tr>
 				<tr>
+					<td class="rowspanned"></td>
 					<td>Setup summary</td>
 					<td><?=GetStatusIcon($logs['setup_summary'][0]['status'])?></td>
 					<td><?=$logs['setup_summary'][0]['message']?></td>
@@ -949,6 +995,7 @@
 					<td><?=$logs['setup_summary'][0]['datetime']?></td>
 				</tr>
 				<tr>
+					<td rowspan="6" class="top aligned" style="font-weight: bold; font-size:larger; border-top: 1px solid #666">Cluster</td>
 					<td>Analysis started <!--<i class="question circle icon" title="Analysis running on the cluster"></i>--></td>
 					<td><?=GetStatusIcon($logs['status_analysisStarted'][0]['status'])?></td>
 					<td><?=$logs['status_analysisStarted'][0]['message']?></td>
@@ -956,6 +1003,7 @@
 					<td><?=$logs['status_analysisStarted'][0]['datetime']?></td>
 				</tr>
 				<tr>
+					<td class="rowspanned"></td>
 					<td>Script <!--<i class="question circle icon" title="Download matching data"></i>--></td>
 					<td colspan="5">
 						<div class="ui accordion">
@@ -978,12 +1026,18 @@
 									$i = $step['stepNumber'];
 									
 									$logfile = $path . "/Step" . $i;
+									$truncated = false;
 									
 									if (file_exists($logfile)) {
 										$fileStr = file_get_contents("$logfile");
 										$size = filesize("$logfile");
 										$filedate = date ("F d Y H:i:s", filemtime("$logfile"));
 										$fileExists = true;
+										
+										if ($size > 100000) {
+											$fileStr = substr($fileStr, 0, 100000);
+											$truncated = true;
+										}
 									}
 									else {
 										$fileStr = "";
@@ -998,12 +1052,12 @@
 									?>
 									<script>
 										$(document).ready(function(){
-											$('#showModalButton<?=$i?>').on('click', function(){
-												$('#myModal<?=$i?>').modal('show');
+											$('#showModalScriptButton<?=$i?>').on('click', function(){
+												$('#scriptStep<?=$i?>').modal('show');
 											});
 										});
 									</script>
-									<div class="ui large modal" id ="myModal<?=$i?>">
+									<div class="ui large modal" id ="scriptStep<?=$i?>">
 										<i class="close icon"></i>
 										<p>
 											<h2 class="ui header">
@@ -1022,8 +1076,9 @@
 												</p>
 												<p>
 													<b>Command output</b>
+													<? if ($truncated) { echo "&nbsp; &nbsp; <span class='ui red text'><b>Original log file ".HumanReadableFilesize($size).". Only displaying first 100,000 bytes</b></span>"; } ?>
 													<br>
-													<tt><pre><?=$fileStr?></pre></tt>
+													<tt><pre class="code"><?=$fileStr?></pre></tt>
 												</p>
 												<? } else { ?>
 												<p>No log file</p>
@@ -1038,7 +1093,7 @@
 										<td><?=GetStatusIcon($step['status'])?></td>
 										<td><?=$step['stepNumber']?></td>
 										<td><?=$step['message']?></td>
-										<td><div class="ui button" id="showModalButton<?=$i?>">Details</div> <? if ($size > 0) { echo "Log size " . HumanReadableFilesize($size); } ?></td>
+										<td><div class="ui compact small button" id="showModalScriptButton<?=$i?>">Details</div> <? if ($size > 0) { echo "<span class='ui small text'>Log size " . HumanReadableFilesize($size) . "</span>"; } ?></td>
 										<td><?=$step['hostname']?></td>
 										<td><?=$step['datetime']?></td>
 									</tr>
@@ -1050,6 +1105,7 @@
 					</td>
 				</tr>
 				<tr>
+					<td class="rowspanned"></td>
 					<td>Run result script</td>
 					<td><?=GetStatusIcon($logs['status_resultScript'][0]['status'])?></td>
 					<td><?=$logs['status_resultScript'][0]['message']?></td>
@@ -1057,6 +1113,7 @@
 					<td><?=$logs['status_resultScript'][0]['datetime']?></td>
 				</tr>
 				<tr>
+					<td class="rowspanned"></td>
 					<td>Update file list</td>
 					<td><?=GetStatusIcon($logs['status_updateFileList'][0]['status'])?></td>
 					<td><?=$logs['status_updateFileList'][0]['message']?></td>
@@ -1064,6 +1121,7 @@
 					<td><?=$logs['status_updateFileList'][0]['datetime']?></td>
 				</tr>
 				<tr>
+					<td class="rowspanned"></td>
 					<td>Check for successful file(s)</td>
 					<td><?=GetStatusIcon($logs['status_checkSuccessFiles'][0]['status'])?></td>
 					<td><?=$logs['status_checkSuccessFiles'][0]['message']?></td>
@@ -1071,11 +1129,36 @@
 					<td><?=$logs['status_checkSuccessFiles'][0]['datetime']?></td>
 				</tr>
 				<tr>
+					<td class="rowspanned"></td>
 					<td>Analysis complete <!--<i class="question circle icon" title="Analysis running on the cluster"></i>--></td>
 					<td><?=GetStatusIcon($logs['status_analysisComplete'][0]['status'])?></td>
 					<td><?=$logs['status_analysisComplete'][0]['message']?></td>
 					<td><?=$logs['status_analysisComplete'][0]['hostname']?></td>
 					<td><?=$logs['status_analysisComplete'][0]['datetime']?></td>
+				</tr>
+				<tr>
+					<td rowspan="6" class="top aligned" style="font-weight: bold; font-size:larger; border-top: 1px solid #666">Summary</td>
+					<td>File count</td>
+					<td><?=GetStatusIcon($logs['status_diskSize'][0]['status'])?></td>
+					<td><?=$logs['status_diskSize'][0]['message']?></td>
+					<td><?=$logs['status_diskSize'][0]['hostname']?></td>
+					<td><?=$logs['status_diskSize'][0]['datetime']?></td>
+				</tr>
+				<tr>
+					<td class="rowspanned"></td>
+					<td>Disk size</td>
+					<td><?=GetStatusIcon($logs['status_diskSize'][0]['status'])?></td>
+					<td><?=$logs['status_diskSize'][0]['message']?></td>
+					<td><?=$logs['status_diskSize'][0]['hostname']?></td>
+					<td><?=$logs['status_diskSize'][0]['datetime']?></td>
+				</tr>
+				<tr>
+					<td class="rowspanned"></td>
+					<td>Results</td>
+					<td><?=GetStatusIcon($logs['status_analysisStarted'][0]['status'])?></td>
+					<td><?=$logs['status_analysisStarted'][0]['message']?></td>
+					<td><?=$logs['status_analysisStarted'][0]['hostname']?></td>
+					<td><?=$logs['status_analysisStarted'][0]['datetime']?></td>
 				</tr>
 			</table>
 		</div>
