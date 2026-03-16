@@ -832,6 +832,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
         QString assoctype = datadef[i].assoctype;
         bool optional = datadef[i].flags.optional;
         QString numboldreps = datadef[i].numboldreps;
+        int stepNum = datadef[i].order;
 
         /* its not efficient to do an insert and then a series of updates. But it doesn't need to be very efficient, and it's much easier to program */
         datadef[i].datadownloadid = RecordDataDownload(-1, analysisRowID, modality, 0, 0, -1, "", i, "");
@@ -845,21 +846,21 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
         if (modality != "mr")
             seriesdescfield = "series_protocol";
 
-        dlog << QString("%1() Checking step [%2]").arg(__FUNCTION__).arg(i);
+        dlog << QString("%1() Checking step [%2]").arg(__FUNCTION__).arg(stepNum);
 
         /* check if the step is enabled */
         if (!enabled) {
-            dlog << QString("   Step [%1] not enabled. Skipping").arg(i);
+            dlog << QString("   Step [%1] not enabled. Skipping").arg(stepNum);
             //RecordDataDownload(datadownloadid, analysisRowID, modality, 0, 0, -1, "", i, "Step not enabled, skipping step");
-            n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepCheck, LogStatus::neutral, i, "Step is not enabled. Skipping.", "");
+            n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepCheck, LogStatus::neutral, stepNum, "Step is not enabled. Skipping.", "");
             continue;
         }
 
         /* check if the step is optional */
         if (optional) {
-            dlog << QString("   Step [%1] optional. Skipping").arg(i);
+            dlog << QString("   Step [%1] optional. Skipping").arg(stepNum);
             //RecordDataDownload(datadownloadid, analysisRowID, modality, 0, 0, -1, "", i, "Step is optional, skipping step");
-            n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepCheck, LogStatus::neutral, i, "Step is optional. Skipping.", "");
+            n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepCheck, LogStatus::neutral, stepNum, "Optional. Skipped", "");
             continue;
         }
 
@@ -869,9 +870,9 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
         q.prepare(QString("show tables like '%1_series'").arg(modality.toLower()));
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         if (q.size() < 1) {
-            dlog << QString("   Step [%1]. Modality [%2] is not valid").arg(i).arg(modality);
+            dlog << QString("   Step [%1]. Modality [%2] is not valid").arg(stepNum).arg(modality);
             //RecordDataDownload(datadownloadid, analysisRowID, modality, 0, 0, -1, "", i, "Invalid modality. Stopping search");
-            n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepCheck, LogStatus::error, i, "Modality [" + modality + "] is not valid", "");
+            n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepCheck, LogStatus::error, stepNum, "Modality [" + modality + "] is not valid", "");
             stepIsInvalid = true;
             break;
         }
@@ -1030,26 +1031,27 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
     dlog << "\n ********** Required data for this study exists. Beginning data copy **********\n";
     /* go through list of data search criteria again to do the actual copying */
     for (int i = 0; i < datadef.size(); i++) {
-        QString criteria = datadef[i].criteria;
         //QString type = datadef[i].type;
         QString assoctype = datadef[i].assoctype;
-        QString protocol = datadef[i].protocol;
-        QString modality = datadef[i].modality.toLower();
+        QString behdir = datadef[i].behdir;
+        QString behformat = datadef[i].behformat;
+        QString criteria = datadef[i].criteria;
         QString dataformat = datadef[i].dataformat;
         QString imagetype = datadef[i].imagetype;
-        bool gzip = datadef[i].flags.gzip;
+        QString level = datadef[i].level;
         QString location = datadef[i].location;
-        bool useseries = datadef[i].flags.useSeries;
+        QString modality = datadef[i].modality.toLower();
+        QString numboldreps = datadef[i].numboldreps;
+        QString protocol = datadef[i].protocol;
+        bool behonly = datadef[i].flags.behOnly;
+        bool enabled = datadef[i].flags.enabled;
+        bool gzip = datadef[i].flags.gzip;
+        bool optional = datadef[i].flags.optional;
         bool preserveseries = datadef[i].flags.preserveSeries;
         bool usephasedir = datadef[i].flags.usePhaseDir;
-        bool behonly = datadef[i].flags.behOnly;
-        QString behformat = datadef[i].behformat;
-        QString behdir = datadef[i].behdir;
-        bool enabled = datadef[i].flags.enabled;
-        bool optional = datadef[i].flags.optional;
-        QString level = datadef[i].level;
-        QString numboldreps = datadef[i].numboldreps;
-        qint64 datadownloadid = datadef[i].datadownloadid;
+        bool useseries = datadef[i].flags.useSeries;
+        int stepNum = datadef[i].order;
+        //qint64 datadownloadid = datadef[i].datadownloadid;
 
         QSqlQuery q;
 
@@ -1086,7 +1088,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
         if (!enabled) {
             dlog << n->Debug(QString("This data step [" + protocol + "] is not enabled. Data step will not be downloaded."),__FUNCTION__);
             //RecordDataDownload(datadownloadid, analysisRowID, modality, 1, -1, -1, "", i, "Step not enabled. Not downloading.");
-            n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepDownload, LogStatus::neutral, i, "Step disabled", "");
+            n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepDownload, LogStatus::neutral, stepNum, "Step disabled", "");
             continue;
         }
 
@@ -1103,7 +1105,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
         if (q.size() < 1) {
             dlog << n->Log(QString("Error - Modality [" + modality + "] not found. Data step will not be downloaded.").arg(p.name), __FUNCTION__);
             //RecordDataDownload(datadownloadid, analysisRowID, modality, 1, -1, -1, "", i, "Invalid modality. Not downloading.");
-            n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepDownload, LogStatus::error, i, "Modality ["+modality+"] does not exist", "");
+            n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepDownload, LogStatus::error, stepNum, "Modality ["+modality+"] does not exist", "");
             continue;
         }
 
@@ -1223,14 +1225,19 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
 
         if (exportBIDS) {
             /* consolidate the found series */
-            //QString sql = n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+            QString sql = n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
             while (q.next()) {
                 int seriesid = q.value(modality+"series_id").toInt();
                 BIDSseriesids.append(seriesid);
                 BIDSmodalities.append(modality);
             }
-            if (q.size() > 0)
+            if (q.size() > 0) {
                 dlog << n->Log(QString("Exporting in BIDS format. Added [%1] series to export. Total series is [%2]").arg(q.size()).arg(BIDSseriesids.size()), __FUNCTION__);
+                n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepDownload, LogStatus::neutral, stepNum, QString("Added %1 series to BIDS to-do list").arg(q.size()), "");
+            }
+            else {
+                n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepDownload, LogStatus::warning, stepNum, QString("Added no series to BIDS to-do list"), "");
+            }
         }
         else {
             int newseriesnum = 1;
@@ -1246,7 +1253,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                     n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupCreateDirectory, LogStatus::error, 0, "Error creating directory [" + analysispath + "/pipeline]","");
                     continue;
                 }
-                n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupCreateDirectory, LogStatus::success, 0, "","");
+                n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupCreateDirectory, LogStatus::success, 0, analysispath,"");
 
                 while (q.next()) {
                     int localstudynum;
@@ -1401,7 +1408,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                             qint64 b;
                             GetDirSizeAndFileCount(newanalysispath, c, b, true);
                             dlog << n->Debug(QString("Imaging output directory [%1] now contains [%2] files, and is [%3] bytes in size.").arg(newanalysispath).arg(c).arg(b), __FUNCTION__);
-                            n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepDownload, LogStatus::success, i, QString("Imaging data downloaded to [%1]. Directory contains %2 files and is %3 bytes in size").arg(newanalysispath).arg(c).arg(b), "");
+                            n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepDownload, LogStatus::success, stepNum, QString("Imaging data downloaded to [%1]. Directory contains %2 files and is %3 bytes in size").arg(newanalysispath).arg(c).arg(b), "");
                         }
                     }
 
@@ -1416,7 +1423,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                         if (!MakePath(behoutdir, m)) {
                             dlog << n->Log("Error: unable to create behavioral output directory [" + behoutdir + "] message [" + m + "] - F", __FUNCTION__);
                             UpdateAnalysisStatus(analysisRowID, "error", "Unable to create directory [" + newanalysispath + "]", 0, -1, "", "", false, true, -1, -1);
-                            n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepDownload, LogStatus::error, i, "Error creating behavioral data directory [" + behoutdir + "]", "");
+                            n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepDownload, LogStatus::error, stepNum, "Error creating behavioral data directory [" + behoutdir + "]", "");
                         }
                         else {
                             dlog << n->Debug("Created behavioral output directory [" + behoutdir + "] - F", __FUNCTION__);
@@ -1442,9 +1449,9 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
             else {
                 dlog << "\tError: found no matching subject-level [" + protocol + "] series. SQL: [" + sql + "]";
                 if (optional)
-                    n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepDownload, LogStatus::neutral, i, "Data not found (step is optional)", "");
+                    n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepDownload, LogStatus::neutral, stepNum, "Data not found (step is optional)", "");
                 else
-                    n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepDownload, LogStatus::error, i, "Did not find a matching series", "");
+                    n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepDownload, LogStatus::error, stepNum, "Did not find a matching series", "");
             }
         }
         //n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStep, LogStatus::neutral, i, "", "");
@@ -1462,10 +1469,13 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
             io->WriteBIDS(BIDSseriesids, BIDSmodalities, BIDSpath, "BIDS Readme", bidsflags, m2);
             dlog << n->Log(QString("Exporting in BIDS format. Message from WriteBIDS [%1]").arg(m2), __FUNCTION__);
             numdownloaded = BIDSseriesids.size();
+            n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupCreateDirectory, LogStatus::success, 0, analysispath,"");
+            n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataDownloadSummary, LogStatus::success, 0, m2, "");
         }
         else {
             dlog << n->Log("Exporting in BIDS format, but no series found to export", __FUNCTION__);
             n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataDownloadSummary, LogStatus::error, 0, "No series found for export in BIDS format", "");
+            return false;
         }
     }
     //n->Debug("Leaving GetData() successfully", __FUNCTION__);

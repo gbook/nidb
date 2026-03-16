@@ -3,6 +3,7 @@
 if grep -q -i "release 8" /etc/redhat-release
 then
 	echo "RHEL 8 detected. Enabling gcc 10"
+	#scl enable gcc-toolset-10 bash
 	#scl enable gcc-toolset-10 bash || true
 	source /opt/rh/gcc-toolset-10/enable
 fi
