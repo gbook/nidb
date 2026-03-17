@@ -177,6 +177,18 @@
 
 				<div class="ui card">
 					<div class="content">
+						<div class="header">Import remote</div>
+					</div>
+					<div class="content">
+						Import data from remote server.<br><br>
+					</div>
+					<div class="center aligned extra content">
+						<a href="importremote.php" class="ui button">Import remote</a>
+					</div>
+				</div>
+
+				<div class="ui card">
+					<div class="content">
 						<div class="header">Import Logs</div>
 					</div>
 					<div class="content">

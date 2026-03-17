@@ -147,7 +147,7 @@
 			}
 		}
 		else {
-			echo "<b>$path does not exist</b><br><br>Perhaps data is still being downloaded by the pipeline.pl program?<br>";
+			echo "<b>$path does not exist</b><br><br>Perhaps data is still being downloaded by the pipeline module?<br>";
 		}
 	}
 
@@ -751,8 +751,8 @@
 			$log['hostname'] = $row['analysislog_hostname'];
 			$log['datetime'] = $row['analysislog_datetime'];
 			
-			if (strlen($log['message']) > 60) {
-				$log['message'] = substr($log['message'], 0, 60) . "... <i class='comment alternate outline icon' title='" . $log['message'] . "'></i>";
+			if (strlen($log['message']) > 40) {
+				$log['message'] = substr($log['message'], 0, 40) . "... <i class='large blue comment alterate outline icon' title='" . $log['message'] . "'></i>";
 			}
 			else {
 				$log['message'] = $log['message'];
@@ -769,10 +769,27 @@
 			$logs['status_diskSize'][0]['datetime'] = $analysisClusterEndDate;
 		}
 		else {
-			$logs['status_diskSize'][0]['status'] = "warning";
+			$logs['status_diskSize'][0]['status'] = "";
 			$logs['status_diskSize'][0]['message'] = 0;
 			$logs['status_diskSize'][0]['hostname'] = $analysisHostname;
 			$logs['status_diskSize'][0]['datetime'] = $analysisClusterEndDate;
+		}
+
+		$sqlstring = "select count(*) 'count' from analysis_results a left join analysis b on a.analysis_id = b.analysis_id left join pipelines c on b.pipeline_id = c.pipeline_id left join analysis_resultnames d on d.resultname_id = a.result_nameid where a.analysis_id = $analysisid order by d.result_name";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$resultCount = $row['count'];
+		if ($resultCount > 0) {
+			$logs['status_resultCount'][0]['status'] = "success";
+			$logs['status_resultCount'][0]['message'] = $resultCount;
+			$logs['status_resultCount'][0]['hostname'] = $analysisHostname;
+			$logs['status_resultCount'][0]['datetime'] = $analysisClusterEndDate;
+		}
+		else {
+			$logs['status_resultCount'][0]['status'] = "";
+			$logs['status_resultCount'][0]['message'] = 0;
+			$logs['status_resultCount'][0]['hostname'] = $analysisHostname;
+			$logs['status_resultCount'][0]['datetime'] = $analysisClusterEndDate;
 		}
 
 		?>
@@ -842,11 +859,11 @@
 									if ($i < 1)
 										continue;
 									
-									if (strlen($datadef[$i]['protocol']) > 60) {
-										$protocol = substr($datadef[$i]['protocol'], 0, 60) . "... <i class='comment alternate outline icon' title='" . $datadef[$i]['protocol'] . "'></i>";
+									if (strlen($datadef[$i]['protocol']) > 40) {
+										$protocolShort = substr($datadef[$i]['protocol'], 0, 40) . "... <i class='large blue comment alternate outline icon' title='" . $datadef[$i]['protocol'] . "'></i>";
 									}
 									else {
-										$protocol = $datadef[$i]['protocol'];
+										$protocolShort = $datadef[$i]['protocol'];
 									}
 									?>
 									
@@ -899,8 +916,8 @@
 									<tr>
 									<td><?=GetStatusIcon($step['status'])?></td>
 									<td><?=$step['stepNumber']?></td>
-									<td><?=$protocol?></td>
-									<td><div class="ui compact small button" id="showDataCheckButton<?=$i?>">Details</div> <? if ($size > 0) { echo "<span class='ui small text'>Log size " . HumanReadableFilesize($size) . "</span>"; } ?></td>
+									<td><tt><?=$protocolShort?></tt></td>
+									<td><a class="ui compact basic label" id="showDataCheckButton<?=$i?>">Details</a> <? if ($size > 0) { echo "<span class='ui small text'>Log size " . HumanReadableFilesize($size) . "</span>"; } ?></td>
 									<td><?=$step['message']?></td>
 									</tr>
 									<?
@@ -940,8 +957,8 @@
 								foreach ($logs['setup_dataStepDownload'] as $step) {
 									$i = $step['stepNumber'];
 									
-									if (strlen($datadef[$i]['protocol']) > 60) {
-										$protocol = substr($datadef[$i]['protocol'], 0, 60) . "... <i class='comment alternate outline icon' title='" . $datadef[$i]['protocol'] . "'></i>";
+									if (strlen($datadef[$i]['protocol']) > 40) {
+										$protocol = substr($datadef[$i]['protocol'], 0, 40) . "... <i class='large blue comment alternate outline icon' title='" . $datadef[$i]['protocol'] . "'></i>";
 									}
 									else {
 										$protocol = $datadef[$i]['protocol'];
@@ -952,7 +969,7 @@
 									<td><?=GetStatusIcon($step['status'])?></td>
 									<td><?=$step['stepNumber']?></td>
 									<td><?=$step['message']?></td>
-									<td><?=$protocol?></td>
+									<td><tt><?=$protocol?></tt></td>
 									<td><?=$step['datetime']?></td>
 									</tr>
 									<?
@@ -995,7 +1012,7 @@
 					<td><?=$logs['setup_summary'][0]['datetime']?></td>
 				</tr>
 				<tr>
-					<td rowspan="6" class="top aligned" style="font-weight: bold; font-size:larger; border-top: 1px solid #666">Cluster</td>
+					<td rowspan="8" class="top aligned" style="font-weight: bold; font-size:larger; border-top: 1px solid #666">Cluster</td>
 					<td>Analysis started <!--<i class="question circle icon" title="Analysis running on the cluster"></i>--></td>
 					<td><?=GetStatusIcon($logs['status_analysisStarted'][0]['status'])?></td>
 					<td><?=$logs['status_analysisStarted'][0]['message']?></td>
@@ -1129,6 +1146,94 @@
 					<td><?=$logs['status_checkSuccessFiles'][0]['datetime']?></td>
 				</tr>
 				<tr>
+					<script>
+						$(document).ready(function(){
+							$('#showClusterOutputLogButton').on('click', function(){
+								$('#clusterOutputLogModal').modal('show');
+							});
+						});
+					</script>
+					<?
+						$logOutFiles = glob("$path/*.o*");
+						natsort($logOutFiles);
+						
+						$clusterOutputLogPath = end($logOutFiles);
+						$file = file_get_contents($clusterOutputLogPath);
+						$logsize = filesize($clusterOutputLogPath);
+						$filedate = date ("F d Y H:i:s", filemtime($clusterOutputLogPath));
+						
+					?>
+					<div class="ui large modal" id ="clusterOutputLogModal">
+						<i class="close icon"></i>
+						<p>
+							<h2 class="ui header">
+								Cluster output log
+							</h2>
+							<div class="scrolling content">
+								<p>
+									<code><?=$clusterOutputLogPath?></code>
+								</p>
+								
+								<tt><pre><?=$file?></pre></tt>
+							</div>
+						</p>
+						<div class="actions">
+							<button class="ui approve button">Close</button>
+						</div>
+					</div>
+					
+					<td class="rowspanned"></td>
+					<td>Cluster output log</td>
+					<td><?=GetStatusIcon('neutral')?></td>
+					<td><a class="ui compact basic label" id="showClusterOutputLogButton">View log</a> <span class='ui small text'>Log size <?=HumanReadableFilesize($logsize); ?></span></td>
+					<td><?=$analysisHostname?></td>
+					<td><?=$filedate?></td>
+				</tr>
+				<tr>
+					<script>
+						$(document).ready(function(){
+							$('#showClusterErrorLogButton').on('click', function(){
+								$('#clusterErrorLogModal').modal('show');
+							});
+						});
+					</script>
+					<?
+						$logErrorFiles = glob("$path/*.e*");
+						natsort($logErrorFiles);
+						
+						$clusterErrorLogPath = end($logErrorFiles);
+						$file = file_get_contents($clusterErrorLogPath);
+						$logsize = filesize($clusterErrorLogPath);
+						$filedate = date ("F d Y H:i:s", filemtime($clusterErrorLogPath));
+						
+					?>
+					<div class="ui large modal" id ="clusterErrorLogModal">
+						<i class="close icon"></i>
+						<p>
+							<h2 class="ui header">
+								Cluster error log
+							</h2>
+							<div class="scrolling content">
+								<p>
+									<code><?=$clusterErrorLogPath?></code>
+								</p>
+								
+								<tt><pre><?=$file?></pre></tt>
+							</div>
+						</p>
+						<div class="actions">
+							<button class="ui approve button">Close</button>
+						</div>
+					</div>
+					
+					<td class="rowspanned"></td>
+					<td>Cluster error log</td>
+					<td><?=GetStatusIcon('neutral')?></td>
+					<td><a class="ui compact basic label" id="showClusterErrorLogButton">View log</a> <span class='ui small text'>Log size <?=HumanReadableFilesize($logsize); ?></span></td>
+					<td><?=$analysisHostname?></td>
+					<td><?=$filedate?></td>
+				</tr>
+				<tr>
 					<td class="rowspanned"></td>
 					<td>Analysis complete <!--<i class="question circle icon" title="Analysis running on the cluster"></i>--></td>
 					<td><?=GetStatusIcon($logs['status_analysisComplete'][0]['status'])?></td>
@@ -1140,7 +1245,7 @@
 					<td rowspan="6" class="top aligned" style="font-weight: bold; font-size:larger; border-top: 1px solid #666">Summary</td>
 					<td>File count</td>
 					<td><?=GetStatusIcon($logs['status_diskSize'][0]['status'])?></td>
-					<td><?=$logs['status_diskSize'][0]['message']?></td>
+					<td><a href="viewanalysis.php?action=viewfiles&analysisid=<?=$analysisid?>" target="_viewfiles">View all files</a></td>
 					<td><?=$logs['status_diskSize'][0]['hostname']?></td>
 					<td><?=$logs['status_diskSize'][0]['datetime']?></td>
 				</tr>
@@ -1155,15 +1260,14 @@
 				<tr>
 					<td class="rowspanned"></td>
 					<td>Results</td>
-					<td><?=GetStatusIcon($logs['status_analysisStarted'][0]['status'])?></td>
-					<td><?=$logs['status_analysisStarted'][0]['message']?></td>
-					<td><?=$logs['status_analysisStarted'][0]['hostname']?></td>
-					<td><?=$logs['status_analysisStarted'][0]['datetime']?></td>
+					<td><?=GetStatusIcon($logs['status_resultCount'][0]['status'])?></td>
+					<td><a href="viewanalysis.php?action=viewresults&analysisid=<?=$analysisid?>&studyid=<?=$studyid?>" target="_viewresults">View <?=$resultCount?> results</a></td>
+					<td><?=$logs['status_resultCount'][0]['hostname']?></td>
+					<td><?=$logs['status_resultCount'][0]['datetime']?></td>
 				</tr>
 			</table>
 		</div>
 		<?
-		
 		
 		if (!ValidID($pipelineid,'Pipeline ID')) { return; }
 		if (!ValidID($studyid,'Study ID')) { return; }

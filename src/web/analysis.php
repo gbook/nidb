@@ -1179,7 +1179,7 @@
 						$analysis_numseries = $row['analysis_numseries'];
 						$analysis_statusmessage = $row['analysis_statusmessage'];
 						$analysis_statusdatetime = $row['analysis_statusdatetime'];
-						$analysis_datalog = $row['analysis_datalog'];
+						//$analysis_datalog = $row['analysis_datalog'];
 						$notes = $row['analysis_notes'];
 						$analysis_hostname = $row['analysis_hostname'];
 						$analysis_enddate = date('Y-m-d H:i',strtotime($row['analysis_enddate']));

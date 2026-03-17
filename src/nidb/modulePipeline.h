@@ -90,7 +90,7 @@ public:
     bool GetData(int studyid, QString analysispath, QString uid, qint64 analysisid, int pipelineid, int pipelinedep, QString deplevel, QList<dataDefinitionStep> datadef, int &numdownloaded, QString &datalog);
 
     /* logging and record-keeping */
-    bool UpdateAnalysisStatus(qint64 analysisid, QString status, QString statusmsg, int jobid, int numseries, QString datalog, QString datatable, bool currentStartDate, bool currentEndDate, int supplementFlag, int rerunFlag);
+    bool UpdateAnalysisStatus(qint64 analysisid, QString status, QString statusmsg, int jobid, int numseries, QString datalog, bool currentStartDate, bool currentEndDate, int supplementFlag, int rerunFlag);
     qint64 RecordDataDownload(qint64 id, qint64 analysisRowID, QString modality, int checked, int found, int seriesid, QString downloadpath, int step, QString msg);
     void ClearPipelineHistory();
     void RecordPipelineEvent(int pipelineid, qint64 &runnum, qint64 analysisid, QString event, QString message);

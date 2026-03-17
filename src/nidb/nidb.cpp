@@ -664,10 +664,12 @@ void nidb::InsertAnalysisEvent(qint64 analysisid, int pipelineid, int pipelineve
  * @param message
  * @param hostname
  */
-void nidb::LogAnalysisEvent(qint64 analysisid, AnalysisEvent event, LogStatus status, int stepNumber, QString message, QString hostname) {
+QString nidb::LogAnalysisEvent(qint64 analysisid, AnalysisEvent event, LogStatus status, int stepNumber, QString message, QString hostname) {
+
+    QString str;
 
     if (analysisid < 0)
-        return;
+        return str;
 
     /* clean up log variables */
     if (stepNumber < 1)
@@ -725,6 +727,10 @@ void nidb::LogAnalysisEvent(qint64 analysisid, AnalysisEvent event, LogStatus st
     if (message == "") q.bindValue(":message", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":message", message); // insert null if blank
     q.bindValue(":hostname", hostname);
     SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+
+    str = QString("Step %1 - Event [%2]  Status [%3]  Message [%4]").arg(stepNumber).arg(eventStr).arg(statusStr).arg(message);
+
+    return str;
 }
 
 
