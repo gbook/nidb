@@ -131,6 +131,8 @@ public:
     qint64 FindStudy(QString subjectID, int studyNum);
     qint64 FindStudyByUID(QString studyUID);
     qint64 FindSubject(QString id);
+    qint64 FindIntervention(QString subjectID, QString interventionName, QDateTime startDate);
+    qint64 FindObservation(QString subjectID, QString observationName, QDateTime startDate);
 
     /* extract objects */
     bool ExtractObject(ObjectType object, qint64 subjectRowID, QString outDir /*, bool recursive=false*/);
@@ -158,6 +160,8 @@ public:
     bool IsValid() { return isValid; }
     /*!< true if ok to delete the object */
     bool OkToDelete() { return isOkToDelete; }
+    bool IsModified() { return isModified; }
+    void SetModified(bool mod) { isModified = mod; }
 
     /* functions to read special files */
     QHash<QString, QString> ReadParamsFile(QString f);
@@ -224,6 +228,7 @@ private:
     bool cmdLineExec; /* true if running from command line, false if running from library */
     bool debug;
     bool debugSQL;
+    bool isModified; /* true if any object in the package has been modified */
     bool isOkToDelete;
     bool isValid;
     bool overwritePackage;

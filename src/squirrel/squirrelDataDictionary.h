@@ -33,7 +33,7 @@
 struct dataDictionaryItem {
     QString VariableType;           /*!< the variable type */
     QString VariableName;   /*!< the variable name */
-    QString Description;           /*!< longer variable description */
+    QString VariableDescription;           /*!< longer variable description */
     QString KeyValueMapping;       /*!< 'key1=value2, key2=value2' ... example '1=Male, 2=Female' */
     int ExpectedTimepoints; /*!< expected number of timepoints */
     double RangeLow;        /*!< for numeric values, the lower limit */

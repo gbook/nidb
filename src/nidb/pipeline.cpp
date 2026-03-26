@@ -161,30 +161,30 @@ squirrelPipeline pipeline::GetSquirrelObject(QString databaseUUID) {
     s.ClusterQueue = clusterQueue;
     s.ClusterSubmitHost = clusterSubmitHost;
     //s.ClusterSubmitHostUser = clusterSubmitHostUser;
-    s.ClusterType = clusterType;
+    s.ClusterEngine = clusterType;
     s.ClusterUser = clusterUser;
-    s.CompleteFiles = completeFiles;
-    s.CreateDate = createDate;
-    s.DataCopyMethod = dataCopyMethod;
-    s.DependencyDirectory = depDir;
-    s.DependencyLevel = depLevel;
-    s.DependencyLinkType = depLinkType;
-    s.Description = desc;
-    s.Directory = directory;
-    s.DirectoryStructure = dirStructure;
-    s.Group = group;
-    s.GroupType = groupType;
-    s.Level = level;
-    s.Notes = notes;
-    s.NumberConcurrentAnalyses = numConcurrentAnalysis;
-    s.ParentPipelines = GetParentList();
+    s.PipelineCompleteFiles = completeFiles;
+    s.PipelineCreateDate = createDate;
+    s.SetupDataCopyMethod = dataCopyMethod;
+    s.SetupDependencyDirectory = depDir;
+    s.SearchDependencyLevel = depLevel;
+    s.SearchDependencyLinkType = depLinkType;
+    s.PipelineDescription = desc;
+    s.PipelineDirectory = directory;
+    s.PipelineDirectoryStructure = dirStructure;
+    s.SearchGroup = group;
+    s.SearchGroupType = groupType;
+    s.PipelineAnalysisLevel = level;
+    s.PipelineNotes = notes;
+    s.ClusterNumberConcurrentAnalyses = numConcurrentAnalysis;
+    s.SearchParentPipelines = GetParentList();
     s.PipelineName = name;
-    s.ResultScript = resultScript;
-    s.SubmitDelay = submitDelay;
-    s.TempDirectory = tmpDir;
-    s.Version = version;
-    s.flags.UseProfile = useProfile;
-    s.flags.UseTempDirectory = useTmpDir;
+    s.PipelineResultScript = resultScript;
+    s.ClusterSubmitDelay = submitDelay;
+    s.SetupTempDirectory = tmpDir;
+    s.PipelineVersion = version;
+    s.flags.SetupUseProfile = useProfile;
+    s.flags.SetupUseTempDirectory = useTmpDir;
 
     /* dataSteps */
     QSqlQuery q;
@@ -195,24 +195,24 @@ squirrelPipeline pipeline::GetSquirrelObject(QString databaseUUID) {
     if (q.size() > 0) {
         while (q.next()) {
             dataStep d;
-            d.AssociationType = q.value("pdd_assoctype").toString();
-            d.BehavioralDirectory = q.value("pdd_behdir").toString();
-            d.BehavioralFormat = q.value("pdd_behformat").toString();
-            d.DataFormat = q.value("pdd_dataformat").toString();
-            d.ImageType = q.value("pdd_imagetype").toString();
-            d.Location = q.value("pdd_location").toString();
-            d.Modality = q.value("pdd_modality").toString();
-            d.NumberBOLDreps = q.value("pdd_numboldreps").toString();
-            d.Order = q.value("pdd_order").toInt();
-            d.Protocol = q.value("pdd_protocol").toString();
-            d.SeriesCriteria = q.value("pdd_seriescriteria").toString();
-            d.flags.Enabled = q.value("pdd_enabled").toBool();
-            d.flags.Gzip = q.value("pdd_gzip").toBool();
-            d.flags.Optional = q.value("pdd_optional").toBool();
-            d.flags.PreserveSeries = q.value("pdd_preserveseries").toBool();
-            d.flags.PrimaryProtocol = q.value("pdd_isprimaryprotocol").toBool();
-            d.flags.UsePhaseDirectory = q.value("pdd_usephasedir").toBool();
-            d.flags.UseSeries = q.value("pdd_useseries").toBool();
+            d.SearchAssociationType = q.value("pdd_assoctype").toString();
+            d.ExportBehavioralDirectoryName = q.value("pdd_behdir").toString();
+            d.ExportBehavioralDirectoryFormat = q.value("pdd_behformat").toString();
+            d.ExportDataFormat = q.value("pdd_dataformat").toString();
+            d.SearchImageType = q.value("pdd_imagetype").toString();
+            d.ExportSubDirectoryName = q.value("pdd_location").toString();
+            d.SearchModality = q.value("pdd_modality").toString();
+            d.SearchNumberBOLDreps = q.value("pdd_numboldreps").toString();
+            d.StepNumber = q.value("pdd_order").toInt();
+            d.SearchProtocol = q.value("pdd_protocol").toString();
+            d.SearchSeriesCriteria = q.value("pdd_seriescriteria").toString();
+            d.flags.IsEnabled = q.value("pdd_enabled").toBool();
+            d.flags.ExportGzip = q.value("pdd_gzip").toBool();
+            d.flags.IsOptional = q.value("pdd_optional").toBool();
+            d.flags.ExportPreserveSeriesNumber = q.value("pdd_preserveseries").toBool();
+            d.flags.IsPrimaryProtocol = q.value("pdd_isprimaryprotocol").toBool();
+            d.flags.ExportWritePhaseDirectory = q.value("pdd_usephasedir").toBool();
+            d.flags.ExportWriteSeriesDirectory = q.value("pdd_useseries").toBool();
             //d. = q.value("pdd_level").toString();
             //d.numImagesCriteria = q.value("pdd_numimagescriteria").toString();
 
@@ -221,8 +221,8 @@ squirrelPipeline pipeline::GetSquirrelObject(QString databaseUUID) {
     }
 
     /* scripts (required) */
-    s.PrimaryScript = GetPrimaryScript();
-    s.SecondaryScript = GetSecondaryScript();
+    s.PipelinePrimaryScript = GetPrimaryScript();
+    s.PipelineSecondaryScript = GetSecondaryScript();
 
     return s;
 }

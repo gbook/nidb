@@ -240,7 +240,7 @@ squirrelAnalysis analysis::GetSquirrelObject() {
     s.DateClusterStart = clusterStartDate;
     s.DateEnd = endDate;
     s.Hostname = hostname;
-    s.LastMessage = statusmessage;
+    s.StatusMessage = statusmessage;
     s.SeriesCount = numSeries;
     s.PipelineName = pipelinename;
     s.PipelineVersion = pipelineversion;

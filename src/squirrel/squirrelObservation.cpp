@@ -98,7 +98,7 @@ bool squirrelObservation::Store() {
 
     /* insert if the object doesn't exist ... */
     if (objectID < 0) {
-        q.prepare("insert into Observation (SubjectRowID, ObservationName, DateStart, DateEnd, InstrumentName, Rater, Notes, Value, Duration, DateRecordEntry, Description) values (:SubjectRowID, :ObservationName, :DateStart, :DateEnd, :InstrumentName, :Rater, :Notes, :Value, :Duration, :DateRecordEntry, :Description)");
+        q.prepare("insert into Observation (SubjectRowID, ObservationName, DateStart, DateEnd, InstrumentName, Rater, Notes, Value, Duration, DateRecordCreate, DateRecordEntry, DateRecordModify, Description) values (:SubjectRowID, :ObservationName, :DateStart, :DateEnd, :InstrumentName, :Rater, :Notes, :Value, :Duration, :DateRecordCreate, :DateRecordEntry, :DateRecordModify, :Description)");
         q.bindValue(":SubjectRowID", subjectRowID);
         q.bindValue(":ObservationName", ObservationName);
         q.bindValue(":DateStart", DateStart);
@@ -117,7 +117,7 @@ bool squirrelObservation::Store() {
     }
     /* ... otherwise update */
     else {
-        q.prepare("update Observation set SubjectRowID = :SubjectRowID, ObservationName = :ObservationName, DateStart = :DateStart, DateEnd = :DateEnd, InstrumentName = :InstrumentName, Rater = :Rater, Notes = :Notes, Value = :Value, Duration = :Duration, DateRecordEntry = :DateRecordEntry, Description = :Description where ObservationRowID = :id");
+        q.prepare("update Observation set SubjectRowID = :SubjectRowID, ObservationName = :ObservationName, DateStart = :DateStart, DateEnd = :DateEnd, InstrumentName = :InstrumentName, Rater = :Rater, Notes = :Notes, Value = :Value, Duration = :Duration, DateRecordCreate = :DateRecordCreate, DateRecordEntry = :DateRecordEntry, DateRecordModify = :DateRecordModify, Description = :Description where ObservationRowID = :id");
         q.bindValue(":id", objectID);
         q.bindValue(":SubjectRowID", subjectRowID);
         q.bindValue(":ObservationName", ObservationName);

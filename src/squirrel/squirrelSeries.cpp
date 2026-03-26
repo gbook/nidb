@@ -54,11 +54,11 @@ bool squirrelSeries::Get() {
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.next()) {
         /* get the data */
-        BIDSEntity = q.value("BIDSEntity").toString();
-        BIDSSuffix = q.value("BIDSSuffix").toString();
-        BIDSTask = q.value("BIDSTask").toString();
-        BIDSRun = q.value("BIDSRun").toString();
-        BIDSPhaseEncodingDirection = q.value("BIDSPhaseEncodingDirection").toString();
+        BidsEntity = q.value("BidsEntity").toString();
+        BidsSuffix = q.value("BidsSuffix").toString();
+        BidsTask = q.value("BidsTask").toString();
+        BidsRun = q.value("BidsRun").toString();
+        BidsPhaseEncodingDirection = q.value("BidsPhaseEncodingDirection").toString();
         BehavioralFileCount = q.value("BehavioralFileCount").toLongLong();
         BehavioralSize = q.value("BehavioralSize").toLongLong();
         DateTime = q.value("Datetime").toDateTime();
@@ -113,18 +113,18 @@ bool squirrelSeries::Store() {
     QSqlQuery q(QSqlDatabase::database(databaseUUID));
     /* insert if the object doesn't exist ... */
     if (objectID < 0) {
-        q.prepare("insert or ignore into Series (StudyRowID, SeriesNumber, Datetime, SeriesUID, Description, Protocol, BIDSEntity, BIDSSuffix, BIDSTask, BIDSRun, BIDSPhaseEncodingDirection, Run, ExperimentRowID, Size, Files, FileCount, BehavioralSize, BehavioralFileCount, SequenceNumber, VirtualPath) values (:StudyRowID, :SeriesNumber, :Datetime, :SeriesUID, :Description, :Protocol, :BIDSEntity, :BIDSSuffix, :BIDSTask, :BIDSRun, :BIDSPhaseEncodingDirection, :Run, :ExperimentRowID, :Size, :Files, :FileCount, :BehavioralSize, :BehavioralFileCount, :SequenceNumber, :VirtualPath)");
+        q.prepare("insert or ignore into Series (StudyRowID, SeriesNumber, Datetime, SeriesUID, Description, Protocol, BidsEntity, BidsSuffix, BidsTask, BidsRun, BidsPhaseEncodingDirection, Run, ExperimentRowID, Size, Files, FileCount, BehavioralSize, BehavioralFileCount, SequenceNumber, VirtualPath) values (:StudyRowID, :SeriesNumber, :Datetime, :SeriesUID, :Description, :Protocol, :BidsEntity, :bidssuffix, :BidsTask, :BidsRun, :BidsPhaseEncodingDirection, :Run, :ExperimentRowID, :Size, :Files, :FileCount, :BehavioralSize, :BehavioralFileCount, :SequenceNumber, :VirtualPath)");
         q.bindValue(":StudyRowID", studyRowID);
         q.bindValue(":SeriesNumber", SeriesNumber);
         q.bindValue(":Datetime", DateTime);
         q.bindValue(":SeriesUID", SeriesUID);
         q.bindValue(":Description", Description);
         q.bindValue(":Protocol", Protocol);
-        q.bindValue(":BIDSEntity", BIDSEntity);
-        q.bindValue(":BIDSSuffix", BIDSSuffix);
-        q.bindValue(":BIDSTask", BIDSTask);
-        q.bindValue(":BIDSRun", BIDSRun);
-        q.bindValue(":BIDSPhaseEncodingDirection", BIDSPhaseEncodingDirection);
+        q.bindValue(":BidsEntity", BidsEntity);
+        q.bindValue(":BidsSuffix", BidsSuffix);
+        q.bindValue(":BidsTask", BidsTask);
+        q.bindValue(":BidsRun", BidsRun);
+        q.bindValue(":BidsPhaseEncodingDirection", BidsPhaseEncodingDirection);
         q.bindValue(":Run", Run);
         q.bindValue(":ExperimentRowID", experimentRowID);
         q.bindValue(":Size", Size);
@@ -140,18 +140,18 @@ bool squirrelSeries::Store() {
     }
     /* ... otherwise update */
     else {
-        q.prepare("update Series set StudyRowID = :StudyRowID, SeriesNumber = :SeriesNumber, Datetime = :Datetime, SeriesUID = :SeriesUID, Description = :Description, Protocol = :Protocol, BIDSEntity = :BIDSEntity, BIDSSuffix = :BIDSSuffix, BIDSTask = :BIDSTask, BIDSRun = :BIDSRun, BIDSPhaseEncodingDirection = :BIDSPhaseEncodingDirection, Run = :Run, ExperimentRowID = :ExperimentRowID, Size = :Size, Files = :Files, FileCount = :FileCount, BehavioralSize = :BehavioralSize, BehavioralFileCount = :BehavioralFileCount, SequenceNumber = :SequenceNumber, VirtualPath = :VirtualPath where SeriesRowID = :id");
+        q.prepare("update Series set StudyRowID = :StudyRowID, SeriesNumber = :SeriesNumber, Datetime = :Datetime, SeriesUID = :SeriesUID, Description = :Description, Protocol = :Protocol, BidsEntity = :BidsEntity, BidsSuffix = :BidsSuffix, BidsTask = :BidsTask, BidsRun = :BidsRun, BidsPhaseEncodingDirection = :BidsPhaseEncodingDirection, Run = :Run, ExperimentRowID = :ExperimentRowID, Size = :Size, Files = :Files, FileCount = :FileCount, BehavioralSize = :BehavioralSize, BehavioralFileCount = :BehavioralFileCount, SequenceNumber = :SequenceNumber, VirtualPath = :VirtualPath where SeriesRowID = :id");
         q.bindValue(":StudyRowID", studyRowID);
         q.bindValue(":SeriesNumber", SeriesNumber);
         q.bindValue(":Datetime", DateTime);
         q.bindValue(":SeriesUID", SeriesUID);
         q.bindValue(":Description", Description);
         q.bindValue(":Protocol", Protocol);
-        q.bindValue(":BIDSEntity", BIDSEntity);
-        q.bindValue(":BIDSSuffix", BIDSSuffix);
-        q.bindValue(":BIDSTask", BIDSTask);
-        q.bindValue(":BIDSRun", BIDSRun);
-        q.bindValue(":BIDSPhaseEncodingDirection", BIDSPhaseEncodingDirection);
+        q.bindValue(":BidsEntity", BidsEntity);
+        q.bindValue(":BidsSuffix", BidsSuffix);
+        q.bindValue(":BidsTask", BidsTask);
+        q.bindValue(":BidsRun", BidsRun);
+        q.bindValue(":BidsPhaseEncodingDirection", BidsPhaseEncodingDirection);
         q.bindValue(":Run", Run);
         q.bindValue(":ExperimentRowID", experimentRowID);
         q.bindValue(":Size", Size);
@@ -216,16 +216,16 @@ QString squirrelSeries::PrintSeries(PrintFormat p) {
         str += utils::Print(s);
     }
     else if (p == FullList) {
-        QString s = QString("%1\t%2\t%3\t%4\t%5\t%6\t%7\t%8\t%9\t%10\t%11\t%12\t%13\t%14\t%15\t%16\t%17\t%18\t%19\t%20").arg(BIDSEntity).arg(BIDSSuffix).arg(BIDSTask).arg(BIDSRun).arg(BIDSPhaseEncodingDirection).arg(BehavioralFileCount).arg(BehavioralSize).arg(DateTime.toString("yyyy-MM-dd HH:mm:ss")).arg(Description).arg(experimentRowID).arg(FileCount).arg(files.join(", ")).arg(Protocol).arg(Run).arg(SequenceNumber).arg(SeriesNumber).arg(objectID).arg(SeriesUID).arg(Size).arg(VirtualPath());
+        QString s = QString("%1\t%2\t%3\t%4\t%5\t%6\t%7\t%8\t%9\t%10\t%11\t%12\t%13\t%14\t%15\t%16\t%17\t%18\t%19\t%20").arg(BidsEntity).arg(BidsSuffix).arg(BidsTask).arg(BidsRun).arg(BidsPhaseEncodingDirection).arg(BehavioralFileCount).arg(BehavioralSize).arg(DateTime.toString("yyyy-MM-dd HH:mm:ss")).arg(Description).arg(experimentRowID).arg(FileCount).arg(files.join(", ")).arg(Protocol).arg(Run).arg(SequenceNumber).arg(SeriesNumber).arg(objectID).arg(SeriesUID).arg(Size).arg(VirtualPath());
         str += utils::Print(s);
     }
     else {
         str += utils::Print("\t\t\t\t----- SERIES -----");
-        str += utils::Print(QString("\t\t\t\tBIDSEntity: %1").arg(BIDSEntity));
-        str += utils::Print(QString("\t\t\t\tBIDSSuffix: %1").arg(BIDSSuffix));
-        str += utils::Print(QString("\t\t\t\tBIDSTask: %1").arg(BIDSTask));
-        str += utils::Print(QString("\t\t\t\tBIDSRun: %1").arg(BIDSRun));
-        str += utils::Print(QString("\t\t\t\tBIDSPhaseEncodingDirection: %1").arg(BIDSPhaseEncodingDirection));
+        str += utils::Print(QString("\t\t\t\tBidsEntity: %1").arg(BidsEntity));
+        str += utils::Print(QString("\t\t\t\tBidsSuffix: %1").arg(BidsSuffix));
+        str += utils::Print(QString("\t\t\t\tBidsTask: %1").arg(BidsTask));
+        str += utils::Print(QString("\t\t\t\tBidsRun: %1").arg(BidsRun));
+        str += utils::Print(QString("\t\t\t\tBidsPhaseEncodingDirection: %1").arg(BidsPhaseEncodingDirection));
         str += utils::Print(QString("\t\t\t\tBehavioralFileCount: %1").arg(BehavioralFileCount));
         str += utils::Print(QString("\t\t\t\tBehavioralSize: %1").arg(BehavioralSize));
         str += utils::Print(QString("\t\t\t\tDatetime: %1").arg(DateTime.toString("yyyy-MM-dd HH:mm:ss")));
@@ -292,11 +292,11 @@ QString squirrelSeries::PrintTree(bool isLast) {
 QJsonObject squirrelSeries::ToJSON() {
     QJsonObject json;
 
-    json["BIDSEntity"] = BIDSEntity;
-    json["BIDSSuffix"] = BIDSSuffix;
-    json["BIDSTask"] = BIDSTask;
-    json["BIDSRun"] = BIDSRun;
-    json["BIDSPhaseEncodingDirection"] = BIDSPhaseEncodingDirection;
+    json["BidsEntity"] = BidsEntity;
+    json["BidsSuffix"] = BidsSuffix;
+    json["BidsTask"] = BidsTask;
+    json["BidsRun"] = BidsRun;
+    json["BidsPhaseEncodingDirection"] = BidsPhaseEncodingDirection;
     json["BehavioralFileCount"] = BehavioralFileCount;
     json["BehavioralSize"] = BehavioralSize;
     json["Description"] = Description;
@@ -488,11 +488,11 @@ QHash<QString, QString> squirrelSeries::GetData(DatasetType d) {
         data["Series.Size"] = QString("%1").arg(Size);
         break;
     case DatasetFull:
-        data["Series.BIDSEntity"] = BIDSEntity;
-        data["Series.BIDSPhaseEncodingDirection"] = BIDSPhaseEncodingDirection;
-        data["Series.BIDSRun"] = BIDSRun;
-        data["Series.BIDSSuffix"] = BIDSSuffix;
-        data["Series.BIDSTask"] = BIDSTask;
+        data["Series.BidsEntity"] = BidsEntity;
+        data["Series.BidsPhaseEncodingDirection"] = BidsPhaseEncodingDirection;
+        data["Series.BidsRun"] = BidsRun;
+        data["Series.BidsSuffix"] = BidsSuffix;
+        data["Series.BidsTask"] = BidsTask;
         data["Series.BehavioralFileCount"] = QString("%1").arg(BehavioralFileCount);
         data["Series.BehavioralSize"] = QString("%1").arg(BehavioralSize);
         data["Series.Datetime"] = DateTime.toString("yyyy-MM-dd HH:mm:ss");

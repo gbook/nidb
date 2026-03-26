@@ -44,29 +44,29 @@ struct pipelineStep {
 };
 
 struct dataDefinitionStep {
+    QString exportBehavioralDirectoryFormat;
+    QString exportBehavioralDirectoryName; //behdir;
+    QString exportDataFormat;
+    QString exportSubDirectoryName; //location;
+    QString searchAssociationType;
+    QString searchDataLevel;
+    QString searchImageType;
+    QString searchModality;
+    QString searchNumberBOLDReps; /* this is stored as a string comparison */
+    QString searchProtocol;
+    QString searchSeriesCriteria;
+    //QString type;
     int id;
-    int order;
-    QString type;
-    QString criteria;
-    QString assoctype;
-    QString protocol;
-    QString modality;
-    QString dataformat;
-    QString imagetype;
-    QString location;
-    QString behformat;
-    QString behdir;
-    QString numboldreps; /* this is stored as a string comparison */
-    QString level;
-    qint64 datadownloadid;
+    int stepNumber;
+    qint64 dataDownloadID;
 	struct flag {
-		bool enabled; /*!< whether this step is enabled */
-		bool optional; /*!< if the step is optional */
-		bool gzip; /*!< whether Nifti data should be zipped (.nii.gz) */
-		bool preserveSeries; /*!< whether to preserve the series number, if writing series directories. Otherwise the series directories are generated sequentially starting at 1 */
-		bool primaryProtocol; /*!< true if this is the primary protocol. this determines if this study will be used as the parent for child pipelines */
-		bool usePhaseDir; /*!< whether to place data into a sub-directory based on the phase-encoding direction */
-		bool useSeries; /*!< true to write each series to an individually numbered directory, otherwise write it to the directory specified in 'location' */
+        bool exportPreserveSeriesNumber; /*!< whether to preserve the series number, if writing series directories. Otherwise the series directories are generated sequentially starting at 1 */
+        bool exportWritePhaseDirectory; /*!< whether to place data into a sub-directory based on the phase-encoding direction */
+        bool exportWriteSeriesDirectory; /*!< true to write each series to an individually numbered directory, otherwise write it to the directory specified in 'location' */
+        bool exportGzip; /*!< whether Nifti data should be zipped (.nii.gz) */
+        bool isEnabled; /*!< whether this step is enabled */
+        bool isOptional; /*!< if the step is optional */
+        bool isPrimaryProtocol; /*!< true if this is the primary protocol. this determines if this study will be used as the parent for child pipelines */
         bool behOnly; // download behavioral data only, no imaging data
 	} flags;
 };

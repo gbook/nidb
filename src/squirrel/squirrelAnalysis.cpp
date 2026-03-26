@@ -63,7 +63,7 @@ bool squirrelAnalysis::Get() {
         DateEnd = q.value("EndDate").toDateTime();
         DateStart = q.value("StartDate").toDateTime();
         Hostname = q.value("Hostname").toString();
-        LastMessage = q.value("StatusMessage").toString();
+        StatusMessage = q.value("StatusMessage").toString();
         PipelineName = q.value("PipelineName").toString();
         PipelineVersion = q.value("PipelineVersion").toInt();
         RunTime = q.value("RunTime").toLongLong();
@@ -130,7 +130,7 @@ bool squirrelAnalysis::Store() {
         q.bindValue(":Size", Size);
         q.bindValue(":AnalysisName", AnalysisName);
         q.bindValue(":Hostname", Hostname);
-        q.bindValue(":StatusMessage", LastMessage);
+        q.bindValue(":StatusMessage", StatusMessage);
         q.bindValue(":VirtualPath", VirtualPath());
 
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -138,7 +138,8 @@ bool squirrelAnalysis::Store() {
     }
     /* ... otherwise update */
     else {
-        q.prepare("update Analysis set StudyRowID = :StudyRowID, PipelineRowID = :PipelineRowID, PipelineVersion = :PipelineVersion, AnalysisName = :AnalysisName, ClusterStartDate = :ClusterStartDate, ClusterEndDate = :ClusterEndDate, StartDate = :StartDate, EndDate = :EndDate, SetupTime = :SetupTime, RunTime = :RunTime, NumSeries = :NumSeries, Status = :Status, Successful = :Successful, Size = :Size, Hostname = :Hostname, StatusMessage = :StatusMessage, VirtualPath = :VirtualPath");
+        q.prepare("update Analysis set StudyRowID = :StudyRowID, PipelineRowID = :PipelineRowID, PipelineVersion = :PipelineVersion, AnalysisName = :AnalysisName, ClusterStartDate = :ClusterStartDate, ClusterEndDate = :ClusterEndDate, StartDate = :StartDate, EndDate = :EndDate, SetupTime = :SetupTime, RunTime = :RunTime, NumSeries = :NumSeries, Status = :Status, Successful = :Successful, Size = :Size, Hostname = :Hostname, StatusMessage = :StatusMessage, VirtualPath = :VirtualPath where AnalysisRowID = :id");
+        q.bindValue(":id", objectID);
         q.bindValue(":StudyRowID", studyRowID);
         q.bindValue(":PipelineRowID", pipelineRowID);
         q.bindValue(":PipelineVersion", PipelineVersion);
@@ -154,7 +155,7 @@ bool squirrelAnalysis::Store() {
         q.bindValue(":Size", Size);
         q.bindValue(":AnalysisName", AnalysisName);
         q.bindValue(":Hostname", Hostname);
-        q.bindValue(":StatusMessage", LastMessage);
+        q.bindValue(":StatusMessage", StatusMessage);
         q.bindValue(":VirtualPath", VirtualPath());
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     }
@@ -191,7 +192,7 @@ QJsonObject squirrelAnalysis::ToJSON() {
     json["DateEnd"] = DateEnd.toString("yyyy-MM-dd HH:mm:ss");
     json["DateStart"] = DateStart.toString("yyyy-MM-dd HH:mm:ss");
     json["Hostname"] = Hostname;
-    json["LastMessage"] = LastMessage;
+    json["StatusMessage"] = StatusMessage;
     json["PipelineName"] = PipelineName;
     json["PipelineVersion"] = PipelineVersion;
     json["RunTime"] = RunTime;
@@ -222,7 +223,7 @@ QString squirrelAnalysis::PrintAnalysis() {
     str += utils::Print(QString("\t\t\t\tDateEnd: %1").arg(DateEnd.toString("yyyy-MM-dd HH:mm:ss")));
     str += utils::Print(QString("\t\t\t\tDateStart: %1").arg(DateStart.toString("yyyy-MM-dd HH:mm:ss")));
     str += utils::Print(QString("\t\t\t\tHostname: %1").arg(Hostname));
-    str += utils::Print(QString("\t\t\t\tLastMessage: %1").arg(LastMessage));
+    str += utils::Print(QString("\t\t\t\tStatusMessage: %1").arg(StatusMessage));
     str += utils::Print(QString("\t\t\t\tPipelineName: %1").arg(PipelineName));
     str += utils::Print(QString("\t\t\t\tPipelineVersion: %1").arg(PipelineVersion));
     str += utils::Print(QString("\t\t\t\tRunTime: %1").arg(RunTime));

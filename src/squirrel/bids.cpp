@@ -261,7 +261,7 @@ bool bids::LoadSubjectFiles(QStringList subjfiles, QString ID, squirrel *sqrl) {
             /* create an analysis */
             squirrelAnalysis sqrlAnalysis(sqrl->GetDatabaseUUID());
             sqrlAnalysis.PipelineName = "analysis";
-            sqrlAnalysis.LastMessage = "BIDS imported analysis file";
+            sqrlAnalysis.StatusMessage = "BIDS imported analysis file";
             sqrlAnalysis.studyRowID = studyRowID;
             sqrlAnalysis.Store();
             qint64 analysisRowID = sqrlAnalysis.GetObjectID();

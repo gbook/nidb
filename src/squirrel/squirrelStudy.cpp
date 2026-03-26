@@ -81,7 +81,7 @@ bool squirrelStudy::Get() {
         DateTime = q.value("Datetime").toDateTime();
         DayNumber = q.value("DayNumber").toInt();
         Description = q.value("Description").toString();
-        Equipment = q.value("StudyRowID").toString();
+        Equipment = q.value("Equipment").toString();
         Height = q.value("Height").toDouble();
         Modality = q.value("Modality").toString();
         Notes = q.value("Notes").toString();
@@ -121,7 +121,7 @@ bool squirrelStudy::Store() {
 
     /* insert if the object doesn't exist ... */
     if (objectID < 0) {
-        q.prepare("insert or ignore into Study (SubjectRowID, StudyNumber, Datetime, Age, Height, Weight, Modality, Description, StudyUID, VisitType, DayNumber, Timepoint, Equipment, Notes, SequenceNumber, VirtualPath) values (:SubjectRowID, :StudyNumber, :Datetime, :Age, :Height, :Weight, :Modality, :Description, :StudyUID, :VisitType, :DayNumber, :Timepoint, :Equipment, :Notes, :SequenceNumber, :VirtualPath)");
+        q.prepare("insert or ignore into Study (SubjectRowID, StudyNumber, Datetime, Age, Height, Weight, Modality, Description, StudyUID, VisitType, DayNumber, TimePoint, Equipment, Notes, SequenceNumber, VirtualPath) values (:SubjectRowID, :StudyNumber, :Datetime, :Age, :Height, :Weight, :Modality, :Description, :StudyUID, :VisitType, :DayNumber, :TimePoint, :Equipment, :Notes, :SequenceNumber, :VirtualPath)");
         q.bindValue(":SubjectRowID", subjectRowID);
         q.bindValue(":StudyNumber", StudyNumber);
         q.bindValue(":Datetime", DateTime);
@@ -133,7 +133,7 @@ bool squirrelStudy::Store() {
         q.bindValue(":StudyUID", StudyUID);
         q.bindValue(":VisitType", VisitType);
         q.bindValue(":DayNumber", DayNumber);
-        q.bindValue(":Timepoint", TimePoint);
+        q.bindValue(":TimePoint", TimePoint);
         q.bindValue(":Equipment", Equipment);
         q.bindValue(":Notes", Notes);
         q.bindValue(":SequenceNumber", SequenceNumber);
@@ -143,7 +143,7 @@ bool squirrelStudy::Store() {
     }
     /* ... otherwise update */
     else {
-        q.prepare("update Study set SubjectRowID = :SubjectRowID, StudyNumber = :StudyNumber, Datetime = :Datetime, Age = :Age, Height = :Height, Weight = :Weight, Modality = :Modality, Description = :Description, StudyUID = :StudyUID, VisitType = :VisitType, DayNumber = :DayNumber, Timepoint = :Timepoint, Equipment = :Equipment, Notes = :Notes, SequenceNumber = :SequenceNumber, VirtualPath = :VirtualPath where StudyRowID = :id");
+        q.prepare("update Study set SubjectRowID = :SubjectRowID, StudyNumber = :StudyNumber, Datetime = :Datetime, Age = :Age, Height = :Height, Weight = :Weight, Modality = :Modality, Description = :Description, StudyUID = :StudyUID, VisitType = :VisitType, DayNumber = :DayNumber, TimePoint = :TimePoint, Equipment = :Equipment, Notes = :Notes, SequenceNumber = :SequenceNumber, VirtualPath = :VirtualPath where StudyRowID = :id");
         q.bindValue(":id", objectID);
         q.bindValue(":SubjectRowID", subjectRowID);
         q.bindValue(":StudyNumber", StudyNumber);
@@ -156,7 +156,7 @@ bool squirrelStudy::Store() {
         q.bindValue(":StudyUID", StudyUID);
         q.bindValue(":VisitType", VisitType);
         q.bindValue(":DayNumber", DayNumber);
-        q.bindValue(":Timepoint", TimePoint);
+        q.bindValue(":TimePoint", TimePoint);
         q.bindValue(":Equipment", Equipment);
         q.bindValue(":Notes", Notes);
         q.bindValue(":SequenceNumber", SequenceNumber);
@@ -195,8 +195,8 @@ bool squirrelStudy::Remove() {
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
     /* delete the study */
-    q.prepare("delete from Study where SubjectRowID = :subjectid");
-    q.bindValue(":subjectid", objectID);
+    q.prepare("delete from Study where StudyRowID = :studyid");
+    q.bindValue(":studyid", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
     utils::RemoveStagedFileList(databaseUUID, objectID, Subject);

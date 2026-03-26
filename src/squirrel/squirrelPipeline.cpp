@@ -62,37 +62,37 @@ bool squirrelPipeline::Get() {
 
         /* get the data */
         objectID = q.value("PipelineRowID").toLongLong();
-        //parentPipelines = q.value("CompleteFiles").toString();
+        ClusterEngine = q.value("ClusterEngine").toString();
         ClusterMaxWallTime = q.value("ClusterMaxWallTime").toInt();
         ClusterMemory = q.value("ClusterMemory").toInt();
+        ClusterNumberConcurrentAnalyses = q.value("ClusterNumberConcurrentAnalyses").toInt();
         ClusterNumberCores = q.value("ClusterNumberCores").toInt();
         ClusterQueue = q.value("ClusterQueue").toString();
+        ClusterSubmitDelay = q.value("ClusterSubmitDelay").toInt();
         ClusterSubmitHost = q.value("ClusterSubmitHost").toString();
-        ClusterType = q.value("ClusterType").toString();
         ClusterUser = q.value("ClusterUser").toString();
-        CompleteFiles = q.value("CompleteFiles").toString().split(",");
-        CreateDate = q.value("Datetime").toDateTime();
-        DataCopyMethod = q.value("DataCopyMethod").toString();
-        DependencyDirectory = q.value("DependencyDirectory").toString();
-        DependencyLevel = q.value("DependencyLevel").toString();
-        DependencyLinkType = q.value("DependencyLinkType").toString();
-        Description = q.value("Description").toString();
-        Directory = q.value("Directory").toString();
-        DirectoryStructure = q.value("DirectoryStructure").toString();
-        Group = q.value("GroupName").toString();
-        GroupType = q.value("GroupType").toString();
-        Level = q.value("Level").toInt();
-        Notes = q.value("Notes").toString();
-        NumberConcurrentAnalyses = q.value("NumConcurrentAnalysis").toInt();
+        PipelineAnalysisLevel = q.value("PipelineAnalysisLevel").toInt();
+        PipelineCompleteFiles = q.value("PipelineCompleteFiles").toString().split(",");
+        PipelineCreateDate = q.value("PipelineCreateDate").toDateTime();
+        PipelineDescription = q.value("PipelineDescription").toString();
+        PipelineDirectory = q.value("PipelineDirectory").toString();
+        PipelineDirectoryStructure = q.value("PipelineDirectoryStructure").toString();
         PipelineName = q.value("PipelineName").toString();
-        PrimaryScript = q.value("PrimaryScript").toString();
-        ResultScript = q.value("ResultScript").toString();
-        SecondaryScript = q.value("SecondaryScript").toString();
-        SubmitDelay = q.value("SubmitDelay").toInt();
-        TempDirectory = q.value("TempDirectory").toString();
-        Version = q.value("Version").toInt();
-        flags.UseProfile = q.value("FlagUseProfile").toBool();
-        flags.UseTempDirectory = q.value("FlagUseTempDirectory").toBool();
+        PipelineNotes = q.value("PipelineNotes").toString();
+        PipelinePrimaryScript = q.value("PipelinePrimaryScript").toString();
+        PipelineResultScript = q.value("PipelineResultScript").toString();
+        PipelineSecondaryScript = q.value("PipelineSecondaryScript").toString();
+        PipelineVersion = q.value("PipelineVersion").toInt();
+        SearchDependencyLevel = q.value("SearchDependencyLevel").toString();
+        SearchDependencyLinkType = q.value("SearchDependencyLinkType").toString();
+        SearchGroup = q.value("SearchGroup").toString();
+        SearchGroupType = q.value("SearchGroupType").toString();
+        SearchParentPipelines = q.value("SearchParentPipelines").toString().split(",");
+        SetupDataCopyMethod = q.value("SetupDataCopyMethod").toString();
+        SetupDependencyDirectory = q.value("SetupDependencyDirectory").toString();
+        SetupTempDirectory = q.value("SetupTempDirectory").toString();
+        flags.SetupUseProfile = q.value("FlagSetupUseProfile").toBool();
+        flags.SetupUseTempDirectory = q.value("FlagSetupUseTempDirectory").toBool();
 
         /* get any staged files */
         stagedFiles = utils::GetStagedFileList(databaseUUID, objectID, Pipeline);
@@ -127,75 +127,176 @@ bool squirrelPipeline::Store() {
 
     /* insert if the object doesn't exist ... */
     if (objectID < 0) {
-        q.prepare("insert into Pipeline (PipelineName, Description, Datetime, Level, PrimaryScript, SecondaryScript, Version, CompleteFiles, DataCopyMethod, DependencyDirectory, DependencyLevel, DependencyLinkType, DirectoryStructure, Directory, GroupName, GroupType, Notes, ResultScript, TempDirectory, FlagUseProfile, FlagUseTempDirectory, ClusterType, ClusterUser, ClusterQueue, ClusterSubmitHost, NumConcurrentAnalysis, ClusterMaxWallTime, ClusterNumberCores, ClusterMemory, SubmitDelay, VirtualPath) values (:PipelineName, :Description, :Datetime, :Level, :PrimaryScript, :SecondaryScript, :Version, :CompleteFiles, :DataCopyMethod, :DependencyDirectory, :DependencyLevel, :DependencyLinkType, :DirectoryStructure, :Directory, :GroupName, :GroupType, :Notes, :ResultScript, :TempDirectory, :FlagUseProfile, :FlagUseTempDirectory, :ClusterType, :ClusterUser, :ClusterQueue, :ClusterSubmitHost, :NumConcurrentAnalysis, :ClusterMaxWallTime, :ClusterNumberCores, :ClusterMemory, :SubmitDelay, :VirtualPath)");
-        q.bindValue(":PipelineName", PipelineName);
-        q.bindValue(":Description", Description);
-        q.bindValue(":Datetime", CreateDate);
-        q.bindValue(":Level", Level);
-        q.bindValue(":PrimaryScript", PrimaryScript);
-        q.bindValue(":SecondaryScript", SecondaryScript);
-        q.bindValue(":Version", Version);
-        q.bindValue(":CompleteFiles", CompleteFiles.join(","));
-        q.bindValue(":DataCopyMethod", DataCopyMethod);
-        q.bindValue(":DependencyDirectory", DependencyDirectory);
-        q.bindValue(":DependencyLevel", DependencyLevel);
-        q.bindValue(":DependencyLinkType", DependencyLinkType);
-        q.bindValue(":DirectoryStructure", DirectoryStructure);
-        q.bindValue(":Directory", Directory);
-        q.bindValue(":GroupName", Group);
-        q.bindValue(":GroupType", GroupType);
-        q.bindValue(":Notes", Notes);
-        q.bindValue(":ResultScript", ResultScript);
-        q.bindValue(":TempDirectory", TempDirectory);
-        q.bindValue(":FlagUseProfile", flags.UseProfile);
-        q.bindValue(":FlagUseTempDirectory", flags.UseTempDirectory);
-        q.bindValue(":ClusterType", ClusterType);
-        q.bindValue(":ClusterUser", ClusterUser);
-        q.bindValue(":ClusterQueue", ClusterQueue);
-        q.bindValue(":ClusterSubmitHost", ClusterSubmitHost);
-        q.bindValue(":NumConcurrentAnalysis", NumberConcurrentAnalyses);
+        q.prepare("insert into Pipeline ("
+                  "ClusterEngine, "
+                  "ClusterMaxWallTime, "
+                  "ClusterMemory, "
+                  "ClusterNumberConcurrentAnalyses, "
+                  "ClusterNumberCores, "
+                  "ClusterQueue, "
+                  "ClusterSubmitDelay, "
+                  "ClusterSubmitHost, "
+                  "ClusterUser, "
+                  "FlagSetupUseProfile, "
+                  "FlagSetupUseTempDirectory, "
+                  "PipelineAnalysisLevel, "
+                  "PipelineCompleteFiles, "
+                  "PipelineCreateDate, "
+                  "PipelineDescription, "
+                  "PipelineDirectory, "
+                  "PipelineDirectoryStructure, "
+                  "PipelineName, "
+                  "PipelineNotes, "
+                  "PipelinePrimaryScript, "
+                  "PipelineResultScript, "
+                  "PipelineSecondaryScript, "
+                  "PipelineVersion, "
+                  "SearchDependencyLevel, "
+                  "SearchDependencyLinkType, "
+                  "SearchGroup, "
+                  "SearchGroupType, "
+                  "SearchParentPipelines, "
+                  "SetupDataCopyMethod, "
+                  "SetupDependencyDirectory, "
+                  "SetupTempDirectory, "
+                  "VirtualPath"
+            ") values ("
+                  ":ClusterEngine, "
+                  ":ClusterMaxWallTime, "
+                  ":ClusterMemory, "
+                  ":ClusterNumberConcurrentAnalyses, "
+                  ":ClusterNumberCores, "
+                  ":ClusterQueue, "
+                  ":ClusterSubmitDelay, "
+                  ":ClusterSubmitHost, "
+                  ":ClusterUser, "
+                  ":FlagSetupUseProfile, "
+                  ":FlagSetupUseTempDirectory, "
+                  ":PipelineAnalysisLevel, "
+                  ":PipelineCompleteFiles, "
+                  ":PipelineCreateDate, "
+                  ":PipelineDescription, "
+                  ":PipelineDirectory, "
+                  ":PipelineDirectoryStructure, "
+                  ":PipelineName, "
+                  ":PipelineNotes, "
+                  ":PipelinePrimaryScript, "
+                  ":PipelineResultScript, "
+                  ":PipelineSecondaryScript, "
+                  ":PipelineVersion, "
+                  ":SearchDependencyLevel, "
+                  ":SearchDependencyLinkType, "
+                  ":SearchGroup, "
+                  ":SearchGroupType, "
+                  ":SearchParentPipelines, "
+                  ":SetupDataCopyMethod, "
+                  ":SetupDependencyDirectory, "
+                  ":SetupTempDirectory, "
+                  ":VirtualPath"
+                  ")");
+        q.bindValue(":ClusterEngine", ClusterEngine);
         q.bindValue(":ClusterMaxWallTime", ClusterMaxWallTime);
-        q.bindValue(":ClusterNumberCores", ClusterNumberCores);
         q.bindValue(":ClusterMemory", ClusterMemory);
-        q.bindValue(":SubmitDelay", SubmitDelay);
+        q.bindValue(":ClusterNumberConcurrentAnalyses", ClusterNumberConcurrentAnalyses);
+        q.bindValue(":ClusterNumberCores", ClusterNumberCores);
+        q.bindValue(":ClusterQueue", ClusterQueue);
+        q.bindValue(":ClusterSubmitDelay", ClusterSubmitDelay);
+        q.bindValue(":ClusterSubmitHost", ClusterSubmitHost);
+        q.bindValue(":ClusterUser", ClusterUser);
+        q.bindValue(":FlagSetupUseProfile", flags.SetupUseProfile);
+        q.bindValue(":FlagSetupUseTempDirectory", flags.SetupUseTempDirectory);
+        q.bindValue(":PipelineAnalysisLevel", PipelineAnalysisLevel);
+        q.bindValue(":PipelineCompleteFiles", PipelineCompleteFiles.join(","));
+        q.bindValue(":PipelineCreateDate", PipelineCreateDate);
+        q.bindValue(":PipelineDescription", PipelineDescription);
+        q.bindValue(":PipelineDirectory", PipelineDirectory);
+        q.bindValue(":PipelineDirectoryStructure", PipelineDirectoryStructure);
+        q.bindValue(":PipelineName", PipelineName);
+        q.bindValue(":PipelineNotes", PipelineNotes);
+        q.bindValue(":PipelinePrimaryScript", PipelinePrimaryScript);
+        q.bindValue(":PipelineResultScript", PipelineResultScript);
+        q.bindValue(":PipelineSecondaryScript", PipelineSecondaryScript);
+        q.bindValue(":PipelineVersion", PipelineVersion);
+        q.bindValue(":SearchDependencyLevel", SearchDependencyLevel);
+        q.bindValue(":SearchDependencyLinkType", SearchDependencyLinkType);
+        q.bindValue(":SearchGroup", SearchGroup);
+        q.bindValue(":SearchGroupType", SearchGroupType);
+        q.bindValue(":SearchParentPipelines", SearchParentPipelines.join(","));
+        q.bindValue(":SetupDataCopyMethod", SetupDataCopyMethod);
+        q.bindValue(":SetupDependencyDirectory", SetupDependencyDirectory);
+        q.bindValue(":SetupTempDirectory", SetupTempDirectory);
         q.bindValue(":VirtualPath", VirtualPath());
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         objectID = q.lastInsertId().toInt();
     }
     /* ... otherwise update */
     else {
-        q.prepare("update Pipeline set PipelineName = :PipelineName, Description = :Description, Datetime = :Datetime, Level = :Level, PrimaryScript = :PrimaryScript, SecondaryScript = :SecondaryScript, Version = :Version, CompleteFiles = :CompleteFiles, DataCopyMethod = :DataCopyMethod, DependencyDirectory = :DependencyDirectory, DependencyLevel = :DependencyLevel, DependencyLinkType = :DependencyLinkType, DirectoryStructure = :DirectoryStructure, Directory = :Directory, GroupName = :GroupName, GroupType = :GroupType, Notes = :Notes, ResultScript = :ResultScript, TempDirectory = :TempDirectory, FlagUseProfile = :FlagUseProfile, FlagUseTempDirectory = :FlagUseTempDirectory, ClusterType = :ClusterType, ClusterUser = :ClusterUser, ClusterQueue = :ClusterQueue, ClusterSubmitHost = :ClusterSubmitHost, NumConcurrentAnalysis = :NumConcurrentAnalysis, ClusterMaxWallTime = :ClusterMaxWallTime, ClusterNumberCores = :ClusterNumberCores, ClusterMemory = :ClusterMemory, SubmitDelay = :SubmitDelay, VirtualPath = :VirtualPath where PipelineRowID = :id");
+        q.prepare("update Pipeline set "
+                  "ClusterEngine = :ClusterEngine, "
+                  "ClusterMaxWallTime = :ClusterMaxWallTime, "
+                  "ClusterMemory = :ClusterMemory, "
+                  "ClusterNumberConcurrentAnalyses = :ClusterNumberConcurrentAnalyses, "
+                  "ClusterNumberCores = :ClusterNumberCores, "
+                  "ClusterQueue = :ClusterQueue, "
+                  "ClusterSubmitDelay = :ClusterSubmitDelay, "
+                  "ClusterSubmitHost = :ClusterSubmitHost, "
+                  "ClusterUser = :ClusterUser, "
+                  "FlagSetupUseProfile = :FlagSetupUseProfile, "
+                  "FlagSetupUseTempDirectory = :FlagSetupUseTempDirectory, "
+                  "PipelineAnalysisLevel = :PipelineAnalysisLevel, "
+                  "PipelineCompleteFiles = :PipelineCompleteFiles, "
+                  "PipelineCreateDate = :PipelineCreateDate, "
+                  "PipelineDescription = :PipelineDescription, "
+                  "PipelineDirectory = :PipelineDirectory, "
+                  "PipelineDirectoryStructure = :PipelineDirectoryStructure, "
+                  "PipelineName = :PipelineName, "
+                  "PipelineNotes = :PipelineNotes, "
+                  "PipelinePrimaryScript = :PipelinePrimaryScript, "
+                  "PipelineResultScript = :PipelineResultScript, "
+                  "PipelineSecondaryScript = :PipelineSecondaryScript, "
+                  "PipelineVersion = :PipelineVersion, "
+                  "SearchDependencyLevel = :SearchDependencyLevel, "
+                  "SearchDependencyLinkType = :SearchDependencyLinkType, "
+                  "SearchGroup = :SearchGroup, "
+                  "SearchGroupType = :SearchGroupType, "
+                  "SearchParentPipelines = :SearchParentPipelines, "
+                  "SetupDataCopyMethod = :SetupDataCopyMethod, "
+                  "SetupDependencyDirectory = :SetupDependencyDirectory, "
+                  "SetupTempDirectory = :SetupTempDirectory, "
+                  "VirtualPath = :VirtualPath "
+                  "where PipelineRowID = :id");
         q.bindValue(":id", objectID);
-        q.bindValue(":PipelineName", PipelineName);
-        q.bindValue(":Description", Description);
-        q.bindValue(":Datetime", CreateDate);
-        q.bindValue(":Level", Level);
-        q.bindValue(":PrimaryScript", PrimaryScript);
-        q.bindValue(":SecondaryScript", SecondaryScript);
-        q.bindValue(":Version", Version);
-        q.bindValue(":CompleteFiles", CompleteFiles.join(","));
-        q.bindValue(":DataCopyMethod", DataCopyMethod);
-        q.bindValue(":DependencyDirectory", DependencyDirectory);
-        q.bindValue(":DependencyLevel", DependencyLevel);
-        q.bindValue(":DependencyLinkType", DependencyLinkType);
-        q.bindValue(":DirStructure", DirectoryStructure);
-        q.bindValue(":Directory", Directory);
-        q.bindValue(":GroupName", Group);
-        q.bindValue(":GroupType", GroupType);
-        q.bindValue(":Notes", Notes);
-        q.bindValue(":ResultScript", ResultScript);
-        q.bindValue(":TempDirectory", TempDirectory);
-        q.bindValue(":FlagUseProfile", flags.UseProfile);
-        q.bindValue(":FlagUseTempDirectory", flags.UseTempDirectory);
-        q.bindValue(":ClusterType", ClusterType);
-        q.bindValue(":ClusterUser", ClusterUser);
-        q.bindValue(":ClusterQueue", ClusterQueue);
-        q.bindValue(":ClusterSubmitHost", ClusterSubmitHost);
-        q.bindValue(":NumConcurrentAnalysis", NumberConcurrentAnalyses);
+        q.bindValue(":ClusterEngine", ClusterEngine);
         q.bindValue(":ClusterMaxWallTime", ClusterMaxWallTime);
-        q.bindValue(":ClusterNumberCores", ClusterNumberCores);
         q.bindValue(":ClusterMemory", ClusterMemory);
-        q.bindValue(":SubmitDelay", SubmitDelay);
+        q.bindValue(":ClusterNumberConcurrentAnalyses", ClusterNumberConcurrentAnalyses);
+        q.bindValue(":ClusterNumberCores", ClusterNumberCores);
+        q.bindValue(":ClusterQueue", ClusterQueue);
+        q.bindValue(":ClusterSubmitDelay", ClusterSubmitDelay);
+        q.bindValue(":ClusterSubmitHost", ClusterSubmitHost);
+        q.bindValue(":ClusterUser", ClusterUser);
+        q.bindValue(":FlagSetupUseProfile", flags.SetupUseProfile);
+        q.bindValue(":FlagSetupUseTempDirectory", flags.SetupUseTempDirectory);
+        q.bindValue(":PipelineAnalysisLevel", PipelineAnalysisLevel);
+        q.bindValue(":PipelineCompleteFiles", PipelineCompleteFiles.join(","));
+        q.bindValue(":PipelineCreateDate", PipelineCreateDate);
+        q.bindValue(":PipelineDescription", PipelineDescription);
+        q.bindValue(":PipelineDirectory", PipelineDirectory);
+        q.bindValue(":PipelineDirectoryStructure", PipelineDirectoryStructure);
+        q.bindValue(":PipelineName", PipelineName);
+        q.bindValue(":PipelineNotes", PipelineNotes);
+        q.bindValue(":PipelinePrimaryScript", PipelinePrimaryScript);
+        q.bindValue(":PipelineResultScript", PipelineResultScript);
+        q.bindValue(":PipelineSecondaryScript", PipelineSecondaryScript);
+        q.bindValue(":PipelineVersion", PipelineVersion);
+        q.bindValue(":SearchDependencyLevel", SearchDependencyLevel);
+        q.bindValue(":SearchDependencyLinkType", SearchDependencyLinkType);
+        q.bindValue(":SearchGroup", SearchGroup);
+        q.bindValue(":SearchGroupType", SearchGroupType);
+        q.bindValue(":SearchParentPipelines", SearchParentPipelines.join(","));
+        q.bindValue(":SetupDataCopyMethod", SetupDataCopyMethod);
+        q.bindValue(":SetupDependencyDirectory", SetupDependencyDirectory);
+        q.bindValue(":SetupTempDirectory", SetupTempDirectory);
         q.bindValue(":VirtualPath", VirtualPath());
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     }
@@ -223,61 +324,61 @@ bool squirrelPipeline::Store() {
 QJsonObject squirrelPipeline::ToJSON(QString path) {
     QJsonObject json;
 
+    json["ClusterEngine"] = ClusterEngine;
     json["ClusterMaxWallTime"] = ClusterMaxWallTime;
     json["ClusterMemory"] = ClusterMemory;
+    json["ClusterNumberConcurrentAnalyses"] = ClusterNumberConcurrentAnalyses;
     json["ClusterNumberCores"] = ClusterNumberCores;
     json["ClusterQueue"] = ClusterQueue;
+    json["ClusterSubmitDelay"] = ClusterSubmitDelay;
     json["ClusterSubmitHost"] = ClusterSubmitHost;
-    json["ClusterType"] = ClusterType;
     json["ClusterUser"] = ClusterUser;
-    json["CompleteFiles"] = QJsonArray::fromStringList(CompleteFiles);
-    json["CreateDate"] = CreateDate.toString("yyyy-MM-dd HH:mm:ss");
-    json["DataCopyMethod"] = DataCopyMethod;
-    json["DependencyDirectory"] = DependencyDirectory;
-    json["DependencyLevel"] = DependencyLevel;
-    json["DependencyLinkType"] = DependencyLinkType;
-    json["Description"] = Description;
-    json["Directory"] = Directory;
-    json["DirectoryStructure"] = DirectoryStructure;
-    json["Group"] = Group;
-    json["GroupType"] = GroupType;
-    json["Level"] = Level;
-    json["Notes"] = Notes;
-    json["NumberConcurrentAnalyses"] = NumberConcurrentAnalyses;
-    json["ParentPipelines"] = ParentPipelines.join(",");
+    json["FlagSetupUseProfile"] = flags.SetupUseProfile;
+    json["FlagSetupUseTempDirectory"] = flags.SetupUseTempDirectory;
+    json["PipelineAnalysisLevel"] = PipelineAnalysisLevel;
+    json["PipelineCompleteFiles"] = QJsonArray::fromStringList(PipelineCompleteFiles);
+    json["PipelineCreateDate"] = PipelineCreateDate.toString("yyyy-MM-dd HH:mm:ss");
+    json["PipelineDescription"] = PipelineDescription;
+    json["PipelineDirectory"] = PipelineDirectory;
+    json["PipelineDirectoryStructure"] = PipelineDirectoryStructure;
     json["PipelineName"] = PipelineName;
-    json["ResultScript"] = ResultScript;
-    json["SubmitDelay"] = SubmitDelay;
-    json["TempDirectory"] = TempDirectory;
-    json["UseProfile"] = flags.UseProfile;
-    json["UseTempDirectory"] = flags.UseTempDirectory;
-    json["Version"] = Version;
+    json["PipelineNotes"] = PipelineNotes;
+    json["PipelineResultScript"] = PipelineResultScript;
+    json["PipelineVersion"] = PipelineVersion;
+    json["SearchDependencyLevel"] = SearchDependencyLevel;
+    json["SearchDependencyLinkType"] = SearchDependencyLinkType;
+    json["SearchGroup"] = SearchGroup;
+    json["SearchGroupType"] = SearchGroupType;
+    json["SearchParentPipelines"] = SearchParentPipelines.join(",");
+    json["SetupDataCopyMethod"] = SetupDataCopyMethod;
+    json["SetupDependencyDirectory"] = SetupDependencyDirectory;
+    json["SetupTempDirectory"] = SetupTempDirectory;
     json["VirtualPath"] = VirtualPath();
 
     /* add the dataSteps */
     QJsonArray JSONdataSteps;
     for (int i=0; i < dataSteps.size(); i++) {
         QJsonObject dataStep;
-        dataStep["AssociationType"] = dataSteps[i].AssociationType;
-        dataStep["BehavioralDirectory"] = dataSteps[i].BehavioralDirectory;
-        dataStep["BehavioralDirectoryFormat"] = dataSteps[i].BehavioralFormat;
-        dataStep["DataFormat"] = dataSteps[i].DataFormat;
-        dataStep["DataLevel"] = dataSteps[i].Datalevel;
-        dataStep["Enabled"] = dataSteps[i].flags.Enabled;
-        dataStep["Gzip"] = dataSteps[i].flags.Gzip;
-        dataStep["ImageType"] = dataSteps[i].ImageType;
-        dataStep["Location"] = dataSteps[i].Location;
-        dataStep["Modality"] = dataSteps[i].Modality;
-        dataStep["NumberBOLDreps"] = dataSteps[i].NumberBOLDreps;
-        dataStep["NumberImagesCriteria"] = dataSteps[i].NumberImagesCriteria;
-        dataStep["Optional"] = dataSteps[i].flags.Optional;
-        dataStep["Order"] = dataSteps[i].Order;
-        dataStep["PreserveSeries"] = dataSteps[i].flags.PreserveSeries;
-        dataStep["PrimaryProtocol"] = dataSteps[i].flags.PrimaryProtocol;
-        dataStep["Protocol"] = dataSteps[i].Protocol;
-        dataStep["SeriesCriteria"] = dataSteps[i].SeriesCriteria;
-        dataStep["UsePhaseDirectory"] = dataSteps[i].flags.UsePhaseDirectory;
-        dataStep["UseSeriesDirectory"] = dataSteps[i].flags.UseSeries;
+        //dataStep["NumberImagesCriteria"] = dataSteps[i].SearchNumberImagesCriteria;
+        dataStep["ExportBehavioralDirectoryFormat"] = dataSteps[i].ExportBehavioralDirectoryFormat;
+        dataStep["ExportBehavioralDirectoryName"] = dataSteps[i].ExportBehavioralDirectoryName;
+        dataStep["ExportDataFormat"] = dataSteps[i].ExportDataFormat;
+        dataStep["ExportSubDirectoryName"] = dataSteps[i].ExportSubDirectoryName;
+        dataStep["FlagExportGzip"] = dataSteps[i].flags.ExportGzip;
+        dataStep["FlagExportPreserveSeriesNumber"] = dataSteps[i].flags.ExportPreserveSeriesNumber;
+        dataStep["FlagExportWritePhaseDirectory"] = dataSteps[i].flags.ExportWritePhaseDirectory;
+        dataStep["FlagExportWriteSeriesDirectory"] = dataSteps[i].flags.ExportWriteSeriesDirectory;
+        dataStep["FlagIsEnabled"] = dataSteps[i].flags.IsEnabled;
+        dataStep["FlagIsOptional"] = dataSteps[i].flags.IsOptional;
+        dataStep["FlagIsPrimaryProtocol"] = dataSteps[i].flags.IsPrimaryProtocol;
+        dataStep["SearchAssociationType"] = dataSteps[i].SearchAssociationType;
+        dataStep["SearchDataLevel"] = dataSteps[i].SearchDataLevel;
+        dataStep["SearchImageType"] = dataSteps[i].SearchImageType;
+        dataStep["SearchModality"] = dataSteps[i].SearchModality;
+        dataStep["SearchNumberBOLDreps"] = dataSteps[i].SearchNumberBOLDreps;
+        dataStep["SearchProtocol"] = dataSteps[i].SearchProtocol;
+        dataStep["SearchSeriesCriteria"] = dataSteps[i].SearchSeriesCriteria;
+        dataStep["StepNumber"] = dataSteps[i].StepNumber;
 
         JSONdataSteps.append(dataStep);
     }
@@ -289,10 +390,10 @@ QJsonObject squirrelPipeline::ToJSON(QString path) {
     QString pipelinepath = QString("%1/pipelines/%2").arg(path).arg(PipelineName);
     if (utils::MakePath(pipelinepath, m)) {
         /* write the scripts */
-        if (!utils::WriteTextFile(QString(pipelinepath + "/primaryScript.sh"), PrimaryScript))
+        if (!utils::WriteTextFile(QString(pipelinepath + "/primaryScript.sh"), PipelinePrimaryScript))
             utils::Print("Error writing primary script [" + pipelinepath + "/primaryScript.sh]");
 
-        if (!utils::WriteTextFile(QString(pipelinepath + "/secondaryScript.sh"), SecondaryScript))
+        if (!utils::WriteTextFile(QString(pipelinepath + "/secondaryScript.sh"), PipelineSecondaryScript))
             utils::Print("Error writing secondary script [" + pipelinepath + "/secondaryScript.sh]");
 
     }
@@ -316,36 +417,36 @@ QString squirrelPipeline::PrintPipeline() {
 
     str += utils::Print("\t----- PIPELINE -----");
 
+    str += utils::Print(QString("\tClusterEngine: %1").arg(ClusterEngine));
     str += utils::Print(QString("\tClusterMaxWallTime: %1").arg(ClusterMaxWallTime));
     str += utils::Print(QString("\tClusterMemory: %1").arg(ClusterMemory));
+    str += utils::Print(QString("\tClusterNumberConcurrentAnalyses: %1").arg(ClusterNumberConcurrentAnalyses));
     str += utils::Print(QString("\tClusterNumberCores: %1").arg(ClusterNumberCores));
     str += utils::Print(QString("\tClusterQueue: %1").arg(ClusterQueue));
+    str += utils::Print(QString("\tClusterSubmitDelay: %1").arg(ClusterSubmitDelay));
     str += utils::Print(QString("\tClusterSubmitHost: %1").arg(ClusterSubmitHost));
-    str += utils::Print(QString("\tClusterType: %1").arg(ClusterType));
     str += utils::Print(QString("\tClusterUser: %1").arg(ClusterUser));
-    str += utils::Print(QString("\tCompleteFiles: %1").arg(CompleteFiles.join(",")));
-    str += utils::Print(QString("\tCreateDate: %1").arg(CreateDate.toString()));
-    str += utils::Print(QString("\tDataCopyMethod: %1").arg(DataCopyMethod));
-    str += utils::Print(QString("\tDepDirectory: %1").arg(DependencyDirectory));
-    str += utils::Print(QString("\tDepLevel: %1").arg(DependencyLevel));
-    str += utils::Print(QString("\tDepLinkType: %1").arg(DependencyLinkType));
-    str += utils::Print(QString("\tDescription: %1").arg(Description));
-    str += utils::Print(QString("\tDirectory: %1").arg(Directory));
-    str += utils::Print(QString("\tDirectoryStructure: %1").arg(DirectoryStructure));
-    str += utils::Print(QString("\tGroup: %1").arg(Group));
-    str += utils::Print(QString("\tGroupType: %1").arg(GroupType));
-    str += utils::Print(QString("\tLevel: %1").arg(Level));
-    str += utils::Print(QString("\tNotes: %1").arg(Notes));
-    str += utils::Print(QString("\tNumConcurrentAnalyses: %1").arg(NumberConcurrentAnalyses));
-    str += utils::Print(QString("\tParentPipelines: %1").arg(ParentPipelines.join(",")));
+    str += utils::Print(QString("\tFlagSetupUseProfile: %1").arg(flags.SetupUseProfile));
+    str += utils::Print(QString("\tFlagSetupUseTempDirectory: %1").arg(flags.SetupUseTempDirectory));
+    str += utils::Print(QString("\tPipelineAnalysisLevel: %1").arg(PipelineAnalysisLevel));
+    str += utils::Print(QString("\tPipelineCompleteFiles: %1").arg(PipelineCompleteFiles.join(",")));
+    str += utils::Print(QString("\tPipelineCreateDate: %1").arg(PipelineCreateDate.toString()));
+    str += utils::Print(QString("\tPipelineDescription: %1").arg(PipelineDescription));
+    str += utils::Print(QString("\tPipelineDirectory: %1").arg(PipelineDirectory));
+    str += utils::Print(QString("\tPipelineDirectoryStructure: %1").arg(PipelineDirectoryStructure));
     str += utils::Print(QString("\tPipelineName: %1").arg(PipelineName));
+    str += utils::Print(QString("\tPipelineNotes: %1").arg(PipelineNotes));
+    str += utils::Print(QString("\tPipelineResultScript: %1").arg(PipelineResultScript));
     str += utils::Print(QString("\tPipelineRowID: %1").arg(objectID));
-    str += utils::Print(QString("\tResultScript: %1").arg(ResultScript));
-    str += utils::Print(QString("\tSubmitDelay: %1").arg(SubmitDelay));
-    str += utils::Print(QString("\tTempDirectory: %1").arg(TempDirectory));
-    str += utils::Print(QString("\tUseProfile: %1").arg(flags.UseProfile));
-    str += utils::Print(QString("\tUseTempDirectory: %1").arg(flags.UseTempDirectory));
-    str += utils::Print(QString("\tVersion: %1").arg(Version));
+    str += utils::Print(QString("\tSearchDependencyLevel: %1").arg(SearchDependencyLevel));
+    str += utils::Print(QString("\tSearchDependencyLinkType: %1").arg(SearchDependencyLinkType));
+    str += utils::Print(QString("\tSearchGroup: %1").arg(SearchGroup));
+    str += utils::Print(QString("\tSearchGroupType: %1").arg(SearchGroupType));
+    str += utils::Print(QString("\tSearchParentPipelines: %1").arg(SearchParentPipelines.join(",")));
+    str += utils::Print(QString("\tSetupDataCopyMethod: %1").arg(SetupDataCopyMethod));
+    str += utils::Print(QString("\tSetupDependencyDirectory: %1").arg(SetupDependencyDirectory));
+    str += utils::Print(QString("\tSetupTempDirectory: %1").arg(SetupTempDirectory));
+    str += utils::Print(QString("\tVersion: %1").arg(PipelineVersion));
     str += utils::Print(QString("\tVirtualPath: %1").arg(VirtualPath()));
 
     return str;

@@ -33,7 +33,7 @@ modify::modify() {
 /* ---------------------------------------------------------------------------- */
 /* ----- DoModify ------------------------------------------------------------- */
 /* ---------------------------------------------------------------------------- */
-bool modify::DoModify(QString packagePath, QString operation, ObjectType object, QString dataPath, QString objectData, QString objectID, QString subjectID, int studyNum, QString &m) {
+bool modify::DoModify(QString packagePath, QString operation, ObjectType object, QString dataPath, QString objectData, QString objectID, QString subjectID, int studyNum, int seriesNum, QString &m) {
 
     //ObjectType object = squirrel::ObjectTypeToEnum(objectType);
 
@@ -50,7 +50,7 @@ bool modify::DoModify(QString packagePath, QString operation, ObjectType object,
             return false;
     }
     else if (operation == "update") {
-        if (UpdateObject(packagePath, object, dataPath, objectData, objectID, subjectID, studyNum, m))
+        if (UpdateObject(packagePath, object, dataPath, objectData, objectID, subjectID, studyNum, seriesNum, m))
             return true;
         else
             return false;
@@ -84,9 +84,6 @@ bool modify::AddObject(QString packagePath, ObjectType object, QString dataPath,
 
     /* check if the user should have specified a path */
     if ((object == Series) || (object == Analysis) || (object == Experiment) || (object == Pipeline) || (object == GroupAnalysis)) {
-    }
-    else {
-
         /* check if that path is specified */
         if (dataPath == "") {
             m = "No datapath specified for this object type. A datapath must be specified.";
@@ -141,7 +138,7 @@ bool modify::AddObject(QString packagePath, ObjectType object, QString dataPath,
             subject.GUID = vars["GUID"];
             subject.Gender = vars["Gender"];
             subject.Notes = vars["Notes"];
-            subject.Sex = vars["Gender"];
+            subject.Sex = vars["Sex"];
             subject.Store();
             /* resequence the newly added subject */
             sqrl->ResequenceSubjects();
@@ -191,7 +188,7 @@ bool modify::AddObject(QString packagePath, ObjectType object, QString dataPath,
         if (seriesRowID < 0) {
             squirrelSeries series(sqrl->GetDatabaseUUID());
             sqrl->Log(QString("Creating squirrel Series [%1]").arg(vars["SeriesNumber"]));
-            series.SeriesNumber = vars["StudyNumber"].toInt();
+            series.SeriesNumber = vars["SeriesNumber"].toInt();
             series.DateTime = QDateTime::fromString(vars["Datetime"], "yyyy-MM-dd HH:mm:ss");
             series.Description = vars["Description"];
             series.Protocol = vars["Protocol"];
@@ -314,6 +311,7 @@ bool modify::AddObject(QString packagePath, ObjectType object, QString dataPath,
         qint64 studyRowID = sqrl->FindStudy(subjectID, studyNum);
         qint64 analysisRowID = sqrl->FindAnalysis(subjectID, studyNum, vars["AnalysisName"]);
         if (analysisRowID < 0) {
+            /* TODO - resolve the pipelineRowID */
             squirrelAnalysis analysis(sqrl->GetDatabaseUUID());
             sqrl->Log(QString("Creating squirrel Analysis [%1]").arg(vars["AnalysisName"]));
             analysis.AnalysisName = vars["AnalysisName"];
@@ -322,7 +320,7 @@ bool modify::AddObject(QString packagePath, ObjectType object, QString dataPath,
             analysis.DateEnd = QDateTime::fromString(vars["DateEnd"], "yyyy-MM-dd HH:mm:ss");
             analysis.DateStart = QDateTime::fromString(vars["DateStart"], "yyyy-MM-dd HH:mm:ss");
             analysis.Hostname = vars["Hostname"];
-            analysis.LastMessage = vars["LastMessage"];
+            analysis.StatusMessage = vars["StatusMessage"];
             analysis.PipelineName = vars["PipelineName"];
             analysis.PipelineVersion = vars["PipelineVersion"].toInt();
             analysis.RunTime = vars["RunTime"].toInt();
@@ -336,7 +334,7 @@ bool modify::AddObject(QString packagePath, ObjectType object, QString dataPath,
             analysis.Store();
         }
         else {
-            m = QString("Series with SeriesNumber [%1] already exists for study [%2] and subject [%3] in package").arg(vars["SeriesNumber"]).arg(studyNum).arg(subjectID);
+            m = QString("Analysis with AnalysisName [%1] already exists for study [%2] and subject [%3] in package").arg(vars["AnalysisName"]).arg(studyNum).arg(subjectID);
             delete sqrl;
             return false;
         }
@@ -370,31 +368,30 @@ bool modify::AddObject(QString packagePath, ObjectType object, QString dataPath,
             pipeline.ClusterNumberCores = vars["ClusterNumberCores"].toInt();
             pipeline.ClusterQueue = vars["ClusterQueue"];
             pipeline.ClusterSubmitHost = vars["ClusterSubmitHost"];
-            pipeline.ClusterType = vars["ClusterType"];
+            pipeline.ClusterEngine = vars["ClusterEngine"];
             pipeline.ClusterUser = vars["ClusterUser"];
-            pipeline.CompleteFiles = vars["CompleteFiles"].split(",");
-            pipeline.CreateDate = QDateTime::fromString(vars["CreateDate"], "yyyy-MM-dd HH:mm:ss");
-            pipeline.DataCopyMethod = vars["DataCopyMethod"];
-            //pipeline.dataSteps = vars["PipelineName"];
-            pipeline.DependencyDirectory = vars["DependencyDirectory"];
-            pipeline.DependencyLevel = vars["DependencyLevel"];
-            pipeline.DependencyLinkType = vars["DependencyLinkType"];
-            pipeline.Description = vars["Description"];
-            pipeline.Directory = vars["Directory"];
-            pipeline.DirectoryStructure = vars["DirectoryStructure"];
-            pipeline.Group = vars["Group"];
-            pipeline.GroupType = vars["GroupType"];
-            pipeline.Level = vars["Level"].toInt();
-            pipeline.Notes = vars["Notes"];
-            pipeline.NumberConcurrentAnalyses = vars["NumberConcurrentAnalyses"].toInt();
-            pipeline.ParentPipelines = vars["ParentPipelines"].split(",");
+            pipeline.PipelineCompleteFiles = vars["PipelineCompleteFiles"].split(",");
+            pipeline.PipelineCreateDate = QDateTime::fromString(vars["PipelineCreateDate"], "yyyy-MM-dd HH:mm:ss");
+            pipeline.SetupDataCopyMethod = vars["SetupDataCopyMethod"];
+            pipeline.SetupDependencyDirectory = vars["SetupDependencyDirectory"];
+            pipeline.SearchDependencyLevel = vars["SearchDependencyLevel"];
+            pipeline.SearchDependencyLinkType = vars["SearchDependencyLinkType"];
+            pipeline.PipelineDescription = vars["PipelineDescription"];
+            pipeline.PipelineDirectory = vars["PipelineDirectory"];
+            pipeline.PipelineDirectoryStructure = vars["PipelineDirectoryStructure"];
+            pipeline.SearchGroup = vars["SearchGroup"];
+            pipeline.SearchGroupType = vars["SearchGroupType"];
+            pipeline.PipelineAnalysisLevel = vars["PipelineAnalysisLevel"].toInt();
+            pipeline.PipelineNotes = vars["PipelineNotes"];
+            pipeline.ClusterNumberConcurrentAnalyses = vars["ClusterNumberConcurrentAnalyses"].toInt();
+            pipeline.SearchParentPipelines = vars["SearchParentPipelines"].split(",");
             pipeline.PipelineName = vars["PipelineName"];
-            pipeline.PrimaryScript = vars["PrimaryScript"];
-            pipeline.ResultScript = vars["ResultScript"];
-            pipeline.SecondaryScript = vars["SecondaryScript"];
-            pipeline.SubmitDelay = vars["SubmitDelay"].toInt();
-            pipeline.TempDirectory = vars["TempDirectory"];
-            pipeline.Version = vars["Version"].toInt();
+            pipeline.PipelinePrimaryScript = vars["PipelinePrimaryScript"];
+            pipeline.PipelineResultScript = vars["PipelineResultScript"];
+            pipeline.PipelineSecondaryScript = vars["PipelineSecondaryScript"];
+            pipeline.ClusterSubmitDelay = vars["ClusterSubmitDelay"].toInt();
+            pipeline.SetupTempDirectory = vars["SetupTempDirectory"];
+            pipeline.PipelineVersion = vars["PipelineVersion"].toInt();
             pipeline.stagedFiles = vars["StagedFiles"].split(",");
             pipeline.Store();
         }
@@ -481,20 +478,20 @@ bool modify::RemoveObject(QString packagePath, ObjectType object, QString dataPa
     /* ----- subject ----- */
     if (object == Subject) {
         qint64 subjectRowID = sqrl->FindSubject(objectID);
-        if (subjectRowID < 0) {
+        if (subjectRowID >= 0) {
+            sqrl->RemoveObject(Subject, subjectRowID);
+            sqrl->ResequenceSubjects();
+        }
+        else {
             m = QString("Subject with ID [%1] not found in package").arg(objectID);
             delete sqrl;
             return false;
-        }
-        else {
-            sqrl->RemoveObject(Subject, subjectRowID);
-            sqrl->ResequenceSubjects();
         }
     }
     else if (object == Study) {
         qint64 studyRowID = sqrl->FindStudy(subjectID, objectID.toInt());
         qint64 subjectRowID = sqrl->FindSubject(objectID);
-        if (studyRowID < 0) {
+        if (studyRowID >= 0) {
             sqrl->RemoveObject(Study, studyRowID);
             sqrl->ResequenceStudies(subjectRowID);
         }
@@ -507,7 +504,7 @@ bool modify::RemoveObject(QString packagePath, ObjectType object, QString dataPa
     else if (object == Series) {
         qint64 seriesRowID = sqrl->FindSeries(subjectID, studyNum, objectID.toInt());
         qint64 studyRowID = sqrl->FindStudy(subjectID, studyNum);
-        if (seriesRowID < 0) {
+        if (seriesRowID >= 0) {
             sqrl->RemoveObject(Series, seriesRowID);
             sqrl->ResequenceSeries(studyRowID);
         }
@@ -519,7 +516,7 @@ bool modify::RemoveObject(QString packagePath, ObjectType object, QString dataPa
     }
     else if (object == Experiment) {
         qint64 experimentRowID = sqrl->FindExperiment(objectID);
-        if (experimentRowID < 0) {
+        if (experimentRowID >= 0) {
             sqrl->RemoveObject(Experiment, experimentRowID);
         }
         else {
@@ -530,7 +527,7 @@ bool modify::RemoveObject(QString packagePath, ObjectType object, QString dataPa
     }
     else if (object == Pipeline) {
         qint64 pipelineRowID = sqrl->FindPipeline(objectID);
-        if (pipelineRowID < 0) {
+        if (pipelineRowID >= 0) {
             sqrl->RemoveObject(Pipeline, pipelineRowID);
         }
         else {
@@ -541,7 +538,7 @@ bool modify::RemoveObject(QString packagePath, ObjectType object, QString dataPa
     }
     else if (object == GroupAnalysis) {
         qint64 groupAnalysisRowID = sqrl->FindGroupAnalysis(objectID);
-        if (groupAnalysisRowID < 0) {
+        if (groupAnalysisRowID >= 0) {
             sqrl->RemoveObject(GroupAnalysis, groupAnalysisRowID);
         }
         else {
@@ -552,7 +549,7 @@ bool modify::RemoveObject(QString packagePath, ObjectType object, QString dataPa
     }
     else if (object == DataDictionary) {
         qint64 dataDictionaryRowID = sqrl->FindDataDictionary(objectID);
-        if (dataDictionaryRowID < 0) {
+        if (dataDictionaryRowID >= 0) {
             sqrl->RemoveObject(DataDictionary, dataDictionaryRowID);
         }
         else {
@@ -581,72 +578,322 @@ bool modify::RemoveObject(QString packagePath, ObjectType object, QString dataPa
 /* ---------------------------------------------------------------------------- */
 /* ----- UpdateObject --------------------------------------------------------- */
 /* ---------------------------------------------------------------------------- */
-bool modify::UpdateObject(QString packagePath, ObjectType object, QString dataPath, QString objectData, QString objectID, QString subjectID, int studyNum, QString &m) {
+bool modify::UpdateObject(QString packagePath, ObjectType object, QString dataPath, QString objectData, QString objectID, QString subjectID, int studyNum, int seriesNum, QString &m) {
 
     /* prevent the unreferenced parameter warnings */
     dataPath;
-    objectID;
-    subjectID;
     studyNum;
 
-    //if (objectType != "") {
-        /* load the package */
-        squirrel *sqrl = new squirrel();
-        sqrl->SetFileMode(FileMode::ExistingPackage);
-        sqrl->SetPackagePath(packagePath);
-        if (sqrl->Read()) {
-            utils::Print("Read package");
+    /* load the package */
+    squirrel *sqrl = new squirrel();
+    sqrl->SetFileMode(FileMode::ExistingPackage);
+    sqrl->SetPackagePath(packagePath);
+    if (sqrl->Read()) {
+        utils::Print("Read package");
+    }
+    else {
+        m = QString("Package unreadable");
+        delete sqrl;
+        return false;
+    }
+
+    //utils::Print("objectData [" + objectData + "]");
+    QUrlQuery queryObject(objectData);
+    //utils::Print(QString("queryObject [%1]").arg(queryObject.toString()));
+
+    /* ----- package ----- */
+    if (object == Package) {
+        //utils::Print("Checkpoint B - objectType is package");
+
+        /* read the JSON file from the package --"QJsonObject squirrel::ReadSquirrelHeader()" */
+        QJsonDocument d;
+        sqrl->GetJsonHeader(d);
+
+        /* modify the JSON file */
+        QJsonObject root = d.object();
+        QJsonObject packageInfo = root["package"].toObject();
+
+        /* update any package values */
+        if (queryObject.queryItemValue("Changes").trimmed() != "") packageInfo["Changes"] = queryObject.queryItemValue("Changes").trimmed();
+        if (queryObject.queryItemValue("Datetime").trimmed() != "") packageInfo["Datetime"] = queryObject.queryItemValue("Datetime").trimmed();
+        if (queryObject.queryItemValue("Description").trimmed() != "") packageInfo["Description"] = queryObject.queryItemValue("Description").trimmed();
+        if (queryObject.queryItemValue("License").trimmed() != "") packageInfo["License"] = queryObject.queryItemValue("License").trimmed();
+        if (queryObject.queryItemValue("Notes").trimmed() != "") packageInfo["Notes"] = queryObject.queryItemValue("Notes").trimmed();
+        if (queryObject.queryItemValue("PackageName").trimmed() != "") packageInfo["PackageName"] = queryObject.queryItemValue("PackageName").trimmed();
+        if (queryObject.queryItemValue("Readme").trimmed() != "") packageInfo["Readme"] = queryObject.queryItemValue("Readme").trimmed();
+
+        /* overwrite the existing JSON file in the package, because there is no Package object within the library yet... */
+        root["package"] = packageInfo;
+        QString j = QJsonDocument(root).toJson();
+        if (sqrl->UpdateJsonHeader(j)) {
+            utils::Print("Updated json header in package");
         }
         else {
-            m = QString("Package unreadable");
+            utils::Print("Error updating json header in package");
+        }
+    }
+    else if (object == Subject) {
+        /* find the subject */
+        qint64 subjectRowID = sqrl->FindSubject(objectID);
+        if (subjectRowID < 0) {
+            m = QString("Subject with ID [%1] not found in package").arg(objectID);
             delete sqrl;
             return false;
         }
 
-        //utils::Print("objectData [" + objectData + "]");
-        QUrlQuery queryObject(objectData);
-        //utils::Print(QString("queryObject [%1]").arg(queryObject.toString()));
-
-        /* ----- package ----- */
-        if (object == Package) {
-            //utils::Print("Checkpoint B - objectType is package");
-
-            /* read the JSON file from the package --"QJsonObject squirrel::ReadSquirrelHeader()" */
-            QJsonDocument d;
-            sqrl->GetJsonHeader(d);
-
-            /* modify the JSON file */
-            QJsonObject root = d.object();
-            QJsonObject packageInfo = root["package"].toObject();
-
-            /* update any package values */
-            if (queryObject.queryItemValue("Changes").trimmed() != "") packageInfo["Changes"] = queryObject.queryItemValue("Changes").trimmed();
-            if (queryObject.queryItemValue("Datetime").trimmed() != "") packageInfo["Datetime"] = queryObject.queryItemValue("Datetime").trimmed();
-            if (queryObject.queryItemValue("Description").trimmed() != "") packageInfo["Description"] = queryObject.queryItemValue("Description").trimmed();
-            if (queryObject.queryItemValue("License").trimmed() != "") packageInfo["License"] = queryObject.queryItemValue("License").trimmed();
-            if (queryObject.queryItemValue("Notes").trimmed() != "") packageInfo["Notes"] = queryObject.queryItemValue("Notes").trimmed();
-            if (queryObject.queryItemValue("PackageName").trimmed() != "") packageInfo["PackageName"] = queryObject.queryItemValue("PackageName").trimmed();
-            if (queryObject.queryItemValue("Readme").trimmed() != "") packageInfo["Readme"] = queryObject.queryItemValue("Readme").trimmed();
-
-            /* overwrite the existing JSON file in the package */
-            root["package"] = packageInfo;
-            QString j = QJsonDocument(root).toJson();
-            if (sqrl->UpdateJsonHeader(j)) {
-                utils::Print("Updated json header in package");
-            }
-            else {
-                utils::Print("Error updating json header in package");
-            }
-        }
-        else {
-            m = "Unknown object type";
+        /* get the subject object */
+        squirrelSubject subject(sqrl->GetDatabaseUUID());
+        subject.SetObjectID(subjectRowID);
+        if (!subject.Get()) {
+            m = QString("Unable to load subject with ID [%1] from package").arg(objectID);
+            delete sqrl;
             return false;
         }
 
-        /* delete the object when done */
-        delete sqrl;
+        /* update the subject object with the passedin URL-query style meta data */
+        if (queryObject.queryItemValue("AlternateIDs").trimmed() != "") subject.AlternateIDs = queryObject.queryItemValue("AlternateIDs").trimmed().split(",", Qt::SkipEmptyParts);
+        if (queryObject.queryItemValue("DateOfBirth").trimmed() != "") subject.DateOfBirth = QDate::fromString(queryObject.queryItemValue("DateOfBirth").trimmed(), "yyyy-MM-dd");
+        if (queryObject.queryItemValue("EnrollmentGroup").trimmed() != "") subject.EnrollmentGroup = queryObject.queryItemValue("EnrollmentGroup").trimmed();
+        if (queryObject.queryItemValue("EnrollmentStatus").trimmed() != "") subject.EnrollmentStatus = queryObject.queryItemValue("EnrollmentStatus").trimmed();
+        if (queryObject.queryItemValue("Ethnicity1").trimmed() != "") subject.Ethnicity1 = queryObject.queryItemValue("Ethnicity1").trimmed();
+        if (queryObject.queryItemValue("Ethnicity2").trimmed() != "") subject.Ethnicity2 = queryObject.queryItemValue("Ethnicity2").trimmed();
+        if (queryObject.queryItemValue("GUID").trimmed() != "") subject.GUID = queryObject.queryItemValue("GUID").trimmed();
+        if (queryObject.queryItemValue("Gender").trimmed() != "") subject.Gender = queryObject.queryItemValue("Gender").trimmed();
+        if (queryObject.queryItemValue("Notes").trimmed() != "") subject.Notes = queryObject.queryItemValue("Notes").trimmed();
+        if (queryObject.queryItemValue("Sex").trimmed() != "") subject.Sex = queryObject.queryItemValue("Sex").trimmed();
+        if (queryObject.queryItemValue("SubjectID").trimmed() != "") subject.ID = queryObject.queryItemValue("SubjectID").trimmed();
 
-        return true;
+        /* update the study object */
+        if (subject.Store())
+            sqrl->SetModified(true);
+    }
+    else if (object == Study) {
+        /* find the studyRowID, if it exists */
+        qint64 studyRowID = sqrl->FindStudy(subjectID, studyNum);
+        if (studyRowID < 0) {
+            m = QString("Study with SubjectID [%1], StudyNum [%2] not found in package").arg(subjectID).arg(studyNum);
+            delete sqrl;
+            return false;
+        }
+
+        /* get the study object */
+        squirrelStudy study(sqrl->GetDatabaseUUID());
+        study.SetObjectID(studyRowID);
+        if (!study.Get()) {
+            m = QString("Unable to load study with SubjectID [%1], StudyNum [%2] from package").arg(subjectID).arg(studyNum);
+            delete sqrl;
+            return false;
+        }
+
+        /* update the study object with the passedin URL-query style meta data */
+        if (queryObject.queryItemValue("AgeAtStudy").trimmed() != "") study.AgeAtStudy = queryObject.queryItemValue("AgeAtStudy").trimmed().toDouble();
+        if (queryObject.queryItemValue("Datetime").trimmed() != "") study.DateTime = QDateTime::fromString(queryObject.queryItemValue("Datetime").trimmed(), "yyyy-MM-dd HH:mm:ss");
+        if (queryObject.queryItemValue("DayNumber").trimmed() != "") study.DayNumber = queryObject.queryItemValue("DayNumber").trimmed().toInt();
+        if (queryObject.queryItemValue("Description").trimmed() != "") study.Description = queryObject.queryItemValue("Description").trimmed();
+        if (queryObject.queryItemValue("Equipment").trimmed() != "") study.Equipment = queryObject.queryItemValue("Equipment").trimmed();
+        if (queryObject.queryItemValue("Height").trimmed() != "") study.Height = queryObject.queryItemValue("Height").trimmed().toDouble();
+        if (queryObject.queryItemValue("Modality").trimmed() != "") study.Modality = queryObject.queryItemValue("Modality").trimmed();
+        if (queryObject.queryItemValue("Notes").trimmed() != "") study.Notes = queryObject.queryItemValue("Notes").trimmed();
+        if (queryObject.queryItemValue("StudyNumber").trimmed() != "") study.StudyNumber = queryObject.queryItemValue("StudyNumber").trimmed().toInt();
+        if (queryObject.queryItemValue("StudyUID").trimmed() != "") study.StudyUID = queryObject.queryItemValue("StudyUID").trimmed();
+        if (queryObject.queryItemValue("TimePoint").trimmed() != "") study.TimePoint = queryObject.queryItemValue("TimePoint").trimmed().toInt();
+        if (queryObject.queryItemValue("VisitType").trimmed() != "") study.VisitType = queryObject.queryItemValue("VisitType").trimmed();
+        if (queryObject.queryItemValue("Weight").trimmed() != "") study.Weight = queryObject.queryItemValue("Weight").trimmed().toDouble();
+
+        /* update the study object and write the package update */
+        if (study.Store())
+            sqrl->SetModified(true);
+    }
+    else if (object == Series) {
+        qint64 seriesRowID = sqrl->FindSeries(subjectID, studyNum, seriesNum);
+        if (seriesRowID < 0) {
+            m = QString("Series with SubjectID [%1], StudyNum [%2], SeriesNum [%3] not found in package").arg(subjectID).arg(studyNum).arg(seriesNum);
+            delete sqrl;
+            return false;
+        }
+
+        squirrelSeries series(sqrl->GetDatabaseUUID());
+        series.SetObjectID(seriesRowID);
+        if (!series.Get()) {
+            m = QString("Unable to load series with SubjectID [%1], StudyNum [%2], SeriesNum [%3] from package").arg(subjectID).arg(studyNum).arg(seriesNum);
+            delete sqrl;
+            return false;
+        }
+
+        /* find and update the experimentRowID if we're adding an experimentName */
+        QString experimentName = queryObject.queryItemValue("ExperimentName").trimmed();
+        if (experimentName != "") {
+            qint64 experimentRowID = sqrl->FindExperiment(experimentName);
+            if (experimentRowID < 0) {
+                m = QString("Experiment [%1] not found in package").arg(experimentName);
+                delete sqrl;
+                return false;
+            }
+            series.experimentRowID = experimentRowID;
+        }
+
+        if (queryObject.queryItemValue("BidsEntity").trimmed() != "") series.BidsEntity = queryObject.queryItemValue("BidsEntity").trimmed();
+        if (queryObject.queryItemValue("BidsSuffix").trimmed() != "") series.BidsSuffix = queryObject.queryItemValue("BidsSuffix").trimmed();
+        if (queryObject.queryItemValue("BidsTask").trimmed() != "") series.BidsTask = queryObject.queryItemValue("BidsTask").trimmed();
+        if (queryObject.queryItemValue("BidsRun").trimmed() != "") series.BidsRun = queryObject.queryItemValue("BidsRun").trimmed();
+        if (queryObject.queryItemValue("BidsPhaseEncodingDirection").trimmed() != "") series.BidsPhaseEncodingDirection = queryObject.queryItemValue("BidsPhaseEncodingDirection").trimmed();
+        if (queryObject.queryItemValue("Description").trimmed() != "") series.Description = queryObject.queryItemValue("Description").trimmed();
+        if (queryObject.queryItemValue("Protocol").trimmed() != "") series.Protocol = queryObject.queryItemValue("Protocol").trimmed();
+        if (queryObject.queryItemValue("Run").trimmed() != "") series.Run = queryObject.queryItemValue("Run").trimmed().toInt();
+        if (queryObject.queryItemValue("SeriesDatetime").trimmed() != "") series.DateTime = QDateTime::fromString(queryObject.queryItemValue("SeriesDatetime").trimmed(), "yyyy-MM-dd HH:mm:ss");
+        if (queryObject.queryItemValue("SeriesNumber").trimmed() != "") series.SeriesNumber = queryObject.queryItemValue("SeriesNumber").trimmed().toInt();
+        if (queryObject.queryItemValue("SeriesUID").trimmed() != "") series.SeriesUID = queryObject.queryItemValue("SeriesUID").trimmed();
+
+        /* update the series object and write the package update */
+        if (series.Store())
+            sqrl->SetModified(true);
+    }
+    else if (object == Analysis) {
+        qint64 analysisRowID = sqrl->FindAnalysis(subjectID, studyNum, objectID);
+        if (analysisRowID < 0) {
+            m = QString("Analysis with SubjectID [%1], StudyNum [%2], AnalysisName [%3] not found in package").arg(subjectID).arg(studyNum).arg(objectID);
+            delete sqrl;
+            return false;
+        }
+
+        squirrelAnalysis analysis(sqrl->GetDatabaseUUID());
+        analysis.SetObjectID(analysisRowID);
+        if (!analysis.Get()) {
+            m = QString("Unable to load analysis with SubjectID [%1], StudyNum [%2], AnalysisName [%3] from package").arg(subjectID).arg(studyNum).arg(objectID);
+            delete sqrl;
+            return false;
+        }
+
+        /* update the pipeline if it has changed */
+        QString pipelineName = queryObject.queryItemValue("PipelineName").trimmed();
+        if (pipelineName != "") {
+            qint64 pipelineRowID = sqrl->FindPipeline(pipelineName);
+            if (pipelineRowID < 0) {
+                m = QString("Pipeline [%1] not found in package").arg(pipelineName);
+                delete sqrl;
+                return false;
+            }
+            analysis.pipelineRowID = pipelineRowID;
+            analysis.PipelineName = pipelineName;
+        }
+
+        if (queryObject.queryItemValue("AnalysisName").trimmed() != "") analysis.AnalysisName = queryObject.queryItemValue("AnalysisName").trimmed();
+        if (queryObject.queryItemValue("DateClusterEnd").trimmed() != "") analysis.DateClusterEnd = QDateTime::fromString(queryObject.queryItemValue("DateClusterEnd").trimmed(), "yyyy-MM-dd HH:mm:ss");
+        if (queryObject.queryItemValue("DateClusterStart").trimmed() != "") analysis.DateClusterStart = QDateTime::fromString(queryObject.queryItemValue("DateClusterStart").trimmed(), "yyyy-MM-dd HH:mm:ss");
+        if (queryObject.queryItemValue("DateEnd").trimmed() != "") analysis.DateEnd = QDateTime::fromString(queryObject.queryItemValue("DateEnd").trimmed(), "yyyy-MM-dd HH:mm:ss");
+        if (queryObject.queryItemValue("DateStart").trimmed() != "") analysis.DateStart = QDateTime::fromString(queryObject.queryItemValue("DateStart").trimmed(), "yyyy-MM-dd HH:mm:ss");
+        if (queryObject.queryItemValue("Hostname").trimmed() != "") analysis.Hostname = queryObject.queryItemValue("Hostname").trimmed();
+        if (queryObject.queryItemValue("PipelineVersion").trimmed() != "") analysis.PipelineVersion = queryObject.queryItemValue("PipelineVersion").trimmed().toInt();
+        if (queryObject.queryItemValue("RunTime").trimmed() != "") analysis.RunTime = queryObject.queryItemValue("RunTime").trimmed().toLongLong();
+        if (queryObject.queryItemValue("SeriesCount").trimmed() != "") analysis.SeriesCount = queryObject.queryItemValue("SeriesCount").trimmed().toInt();
+        if (queryObject.queryItemValue("SetupTime").trimmed() != "") analysis.SetupTime = queryObject.queryItemValue("SetupTime").trimmed().toLongLong();
+        if (queryObject.queryItemValue("Status").trimmed() != "") analysis.Status = queryObject.queryItemValue("Status").trimmed();
+        if (queryObject.queryItemValue("StatusMessage").trimmed() != "") analysis.StatusMessage = queryObject.queryItemValue("StatusMessage").trimmed();
+        if (queryObject.queryItemValue("Successful").trimmed() != "") analysis.Successful = queryObject.queryItemValue("Successful").trimmed().toInt() != 0;
+
+        if (analysis.Store())
+            sqrl->SetModified(true);
+    }
+    else if (object == Observation) {
+        /* get the InstrumentName and DateStart from the URL-query */
+        QDateTime dateStart;
+        QString observationName;
+        if (queryObject.queryItemValue("DateStart").trimmed() != "") dateStart = QDateTime::fromString(queryObject.queryItemValue("DateStart").trimmed(), "yyyy-MM-dd HH:mm:ss");
+        if (queryObject.queryItemValue("ObservationName").trimmed() != "") observationName = queryObject.queryItemValue("ObservationName").trimmed();
+
+        /* find the observationRowID, if it exists */
+        qint64 observationRowID = sqrl->FindObservation(subjectID, observationName, dateStart);
+        if (observationRowID < 0) {
+            m = QString("Observation with SubjectID [%1], ObservationName [%2], DateStart [%3] not found in package").arg(subjectID).arg(observationName).arg(dateStart.toString("yyyy-MM-dd HH:mm:ss"));
+            delete sqrl;
+            return false;
+        }
+
+        squirrelObservation observation(sqrl->GetDatabaseUUID());
+        observation.SetObjectID(observationRowID);
+        if (!observation.Get()) {
+            m = QString("Unable to load observationRowID [%1]. Message [%2]").arg(objectID).arg(observation.Error());
+            delete sqrl;
+            return false;
+        }
+
+        if (queryObject.queryItemValue("DateEnd").trimmed() != "") observation.DateEnd = QDateTime::fromString(queryObject.queryItemValue("DateEnd").trimmed(), "yyyy-MM-dd HH:mm:ss");
+        if (queryObject.queryItemValue("DateRecordCreate").trimmed() != "") observation.DateRecordCreate = QDateTime::fromString(queryObject.queryItemValue("DateRecordCreate").trimmed(), "yyyy-MM-dd HH:mm:ss");
+        if (queryObject.queryItemValue("DateRecordEntry").trimmed() != "") observation.DateRecordEntry = QDateTime::fromString(queryObject.queryItemValue("DateRecordEntry").trimmed(), "yyyy-MM-dd HH:mm:ss");
+        if (queryObject.queryItemValue("DateRecordModify").trimmed() != "") observation.DateRecordModify = QDateTime::fromString(queryObject.queryItemValue("DateRecordModify").trimmed(), "yyyy-MM-dd HH:mm:ss");
+        if (queryObject.queryItemValue("DateStart").trimmed() != "") observation.DateStart = QDateTime::fromString(queryObject.queryItemValue("DateStart").trimmed(), "yyyy-MM-dd HH:mm:ss");
+        if (queryObject.queryItemValue("Description").trimmed() != "") observation.Description = queryObject.queryItemValue("Description").trimmed();
+        if (queryObject.queryItemValue("Duration").trimmed() != "") observation.Duration = queryObject.queryItemValue("Duration").trimmed().toDouble();
+        if (queryObject.queryItemValue("InstrumentName").trimmed() != "") observation.InstrumentName = queryObject.queryItemValue("InstrumentName").trimmed();
+        if (queryObject.queryItemValue("ObservationName").trimmed() != "") observation.ObservationName = queryObject.queryItemValue("ObservationName").trimmed();
+        if (queryObject.queryItemValue("Notes").trimmed() != "") observation.Notes = queryObject.queryItemValue("Notes").trimmed();
+        if (queryObject.queryItemValue("Rater").trimmed() != "") observation.Rater = queryObject.queryItemValue("Rater").trimmed();
+        if (queryObject.queryItemValue("Value").trimmed() != "") observation.Value = queryObject.queryItemValue("Value").trimmed();
+
+        if (observation.Store())
+            sqrl->SetModified(true);
+    }
+    else if (object == Intervention) {
+        /* get the InterventionName and DateStart from the URL-query */
+        QDateTime dateStart;
+        QString interventionName;
+        if (queryObject.queryItemValue("DateStart").trimmed() != "") dateStart = QDateTime::fromString(queryObject.queryItemValue("DateStart").trimmed(), "yyyy-MM-dd HH:mm:ss");
+        if (queryObject.queryItemValue("InterventionName").trimmed() != "") interventionName = queryObject.queryItemValue("InterventionName").trimmed();
+
+        /* find the interventionRowID, if it exists */
+        qint64 interventionRowID = sqrl->FindIntervention(subjectID, interventionName, dateStart);
+        if (interventionRowID < 0) {
+            m = QString("Intervention with SubjectID [%1], InterventionName [%2], DateStart [%3] not found in package").arg(subjectID).arg(interventionName).arg(dateStart.toString("yyyy-MM-dd HH:mm:ss"));
+            delete sqrl;
+            return false;
+        }
+
+        squirrelIntervention intervention(sqrl->GetDatabaseUUID());
+        intervention.SetObjectID(interventionRowID);
+        if (!intervention.Get()) {
+            m = QString("Unable to load interventionRowID [%1]. Message [%2]").arg(objectID).arg(intervention.Error());
+            delete sqrl;
+            return false;
+        }
+
+        if (queryObject.queryItemValue("AdministrationRoute").trimmed() != "") intervention.AdministrationRoute = queryObject.queryItemValue("AdministrationRoute").trimmed();
+        if (queryObject.queryItemValue("DateEnd").trimmed() != "") intervention.DateEnd = QDateTime::fromString(queryObject.queryItemValue("DateEnd").trimmed(), "yyyy-MM-dd HH:mm:ss");
+        if (queryObject.queryItemValue("DateRecordCreate").trimmed() != "") intervention.DateRecordCreate = QDateTime::fromString(queryObject.queryItemValue("DateRecordCreate").trimmed(), "yyyy-MM-dd HH:mm:ss");
+        if (queryObject.queryItemValue("DateRecordEntry").trimmed() != "") intervention.DateRecordEntry = QDateTime::fromString(queryObject.queryItemValue("DateRecordEntry").trimmed(), "yyyy-MM-dd HH:mm:ss");
+        if (queryObject.queryItemValue("DateRecordModify").trimmed() != "") intervention.DateRecordModify = QDateTime::fromString(queryObject.queryItemValue("DateRecordModify").trimmed(), "yyyy-MM-dd HH:mm:ss");
+        if (queryObject.queryItemValue("DateStart").trimmed() != "") intervention.DateStart = QDateTime::fromString(queryObject.queryItemValue("DateStart").trimmed(), "yyyy-MM-dd HH:mm:ss");
+        if (queryObject.queryItemValue("Description").trimmed() != "") intervention.Description = queryObject.queryItemValue("Description").trimmed();
+        if (queryObject.queryItemValue("DoseAmount").trimmed() != "") intervention.DoseAmount = queryObject.queryItemValue("DoseAmount").trimmed().toDouble();
+        if (queryObject.queryItemValue("DoseFrequency").trimmed() != "") intervention.DoseFrequency = queryObject.queryItemValue("DoseFrequency").trimmed();
+        if (queryObject.queryItemValue("DoseKey").trimmed() != "") intervention.DoseKey = queryObject.queryItemValue("DoseKey").trimmed();
+        if (queryObject.queryItemValue("DoseString").trimmed() != "") intervention.DoseString = queryObject.queryItemValue("DoseString").trimmed();
+        if (queryObject.queryItemValue("DoseUnit").trimmed() != "") intervention.DoseUnit = queryObject.queryItemValue("DoseUnit").trimmed();
+        if (queryObject.queryItemValue("InterventionClass").trimmed() != "") intervention.InterventionClass = queryObject.queryItemValue("InterventionClass").trimmed();
+        if (queryObject.queryItemValue("InterventionName").trimmed() != "") intervention.InterventionName = queryObject.queryItemValue("InterventionName").trimmed();
+        if (queryObject.queryItemValue("Notes").trimmed() != "") intervention.Notes = queryObject.queryItemValue("Notes").trimmed();
+        if (queryObject.queryItemValue("Rater").trimmed() != "") intervention.Rater = queryObject.queryItemValue("Rater").trimmed();
+
+        if (intervention.Store())
+            sqrl->SetModified(true);
+    }
+    else {
+        m = "Unknown object type";
+        delete sqrl;
+        return false;
+    }
+
+    /* try to write/update the package, IF it has been modified */
+    if (sqrl->IsModified()) {
+        if (!sqrl->WriteUpdate()) {
+            m = "Unable to write updated squirrel package";
+            delete sqrl;
+            return false;
+        }
+    }
+    /* delete the object when done */
+    delete sqrl;
+
+    return true;
 }
 
 
@@ -687,6 +934,7 @@ bool modify::SplitByModality(QString packagePath, QString dataPath, QString obje
     qint64 totalSpaceRequired = unzippedSize * 3; /* 3x the unzipped size needed */
     if (totalSpaceRequired > sqrl->GetFreeDiskSpace()) {
         m = QString("Not enough free space on disk to perform this operation. %1 bytes free space needed, but only %2 bytes free").arg(totalSpaceRequired).arg(sqrl->GetFreeDiskSpace());
+        delete sqrl;
         return false;
     }
 
@@ -727,6 +975,7 @@ bool modify::SplitByModality(QString packagePath, QString dataPath, QString obje
     }
     else {
         utils::Print("Package contains no subjects. Nothing to split by modality...");
+        delete sqrl;
         return true;
     }
 
@@ -734,6 +983,7 @@ bool modify::SplitByModality(QString packagePath, QString dataPath, QString obje
     QStringList mods(modalities.begin(), modalities.end());
     if (mods.size() == 0) {
         sqrl->Log("Package contains no modalities (no studies). Nothing to do.");
+        delete sqrl;
         return true;
     }
     else if (mods.size() == 1) {
@@ -856,7 +1106,6 @@ bool modify::SplitByModality(QString packagePath, QString dataPath, QString obje
 
     /* delete squirrel object(s) */
     delete sqrl;
-
     return true;
 }
 
@@ -894,7 +1143,7 @@ bool modify::RemovePHI(QString packagePath, QString dataPath, QString &m) {
     sqrl->Log("Removed intervention dates");
 
     /* remove observation dates */
-    q.prepare("update Intervention set DateStart = '0000-00-00 00:00:00', DateEnd = '0000-00-00 00:00:00', DateRecordCreate = '0000-00-00 00:00:00', DateRecordEntry = '0000-00-00 00:00:00', DateRecordModify = '0000-00-00 00:00:00'");
+    q.prepare("update Observation set DateStart = '0000-00-00 00:00:00', DateEnd = '0000-00-00 00:00:00', DateRecordCreate = '0000-00-00 00:00:00', DateRecordEntry = '0000-00-00 00:00:00', DateRecordModify = '0000-00-00 00:00:00'");
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     sqrl->Log("Removed observation dates");
 
@@ -980,9 +1229,9 @@ void modify::PrintVariables(ObjectType object) {
             {"Variable","Type","Required","Description"},
             {"BidsEntity","string","","BIDS entity (anat, fmri, dwi, etc)"},
             {"BidsSuffix","string","","BIDS suffix"},
-            {"BIDSTask","string","","BIDS Task name"},
-            {"BIDSRun","number","","BIDS run number"},
-            {"BIDSPhaseEncodingDirection","string","","BIDS PE direction"},
+            {"BidsTask","string","","BIDS Task name"},
+            {"BidsRun","number","","BIDS run number"},
+            {"BidsPhaseEncodingDirection","string","","BIDS PE direction"},
             {"Description","string","","Description of the series"},
             {"ExperimentName","string","","Experiment name associated with this series. Experiments link to the experiments section of the squirrel package"},
             {"Protocol","string","*","Protocol name"},
@@ -1034,9 +1283,9 @@ void modify::PrintVariables(ObjectType object) {
         data = {
             {"Variable","Type","Required","Description"},
             {"AdministrationRoute","string","","Drug entry route (oral, IV, unknown, etc)"},
-            {"DateRecordCreate","string","","Date the record was created in the current database. The original record may have been imported from another database"},
-            {"DateRecordEntry","string","","Date the record was first entered into a database"},
-            {"DateRecordModify","string","","Date the record was modified in the current database"},
+            {"DateRecordCreate","datetime","","Date the record was created in the current database. The original record may have been imported from another database"},
+            {"DateRecordEntry","datetime","","Date the record was first entered into a database"},
+            {"DateRecordModify","datetime","","Date the record was modified in the current database"},
             {"DateEnd","datetime","","Datetime the intervention was stopped"},
             {"DateStart","datetime","*","Datetime the intervention was started"},
             {"Description","string","","Longer description"},
@@ -1055,37 +1304,37 @@ void modify::PrintVariables(ObjectType object) {
     if (object == Pipeline) {
         data = {
             {"Variable","Type","Required","Description"},
-            {"ClusterType","string","","Compute cluster engine (sge or slurm)"},
-            {"ClusterUser","string","","Submit username"},
-            {"ClusterQueue","string","","Queue to submit jobs"},
-            {"ClusterSubmitHost","string","","Hostname to submit jobs"},
-            {"CompleteFiles","JSON array","","JSON array of complete files, with relative paths to analysisroot"},
-            {"CreateDate","datetime","*","Date the pipeline was created"},
-            {"DataCopyMethod","string","","How the data is copied to the analysis directory: cp, softlink, hardlink"},
-            {"DependencyDirectory","string","",""},
-            {"DependencyLevel","string","",""},
-            {"DependencyLinkType","string","",""},
-            {"Description","string","","Longer pipeline description"},
-            {"DirectoryStructure","string","",""},
-            {"Directory","string","","Directory where the analyses for this pipeline will be stored. Leave blank to use the default location"},
-            {"Group","string","","ID or name of a group on which this pipeline will run"},
-            {"GroupType","string","","Either subject or study"},
-            {"Level","number","*","subject-level analysis (1) or group-level analysis (2)"},
-            {"MaxWallTime","number","","Maximum allowed clock (wall) time in minutes for the analysis to run"},
+            {"ClusterEngine","string","","Compute cluster engine (sge or slurm)"},
+            {"ClusterMaxWallTime","number","","Maximum allowed clock (wall) time in minutes for the analysis to run"},
             {"ClusterMemory","number","","Amount of memory in GB requested for a running job"},
-            {"PipelineName","string","*","Pipeline name"},
-            {"Notes","string","","Extended notes about the pipeline"},
-            {"NumberConcurrentAnalyses","number","1","Number of analyses allowed to run at the same time. This number if managed by NiDB and is different than grid engine queue size"},
+            {"ClusterNumberConcurrentAnalyses","number","1","Number of analyses allowed to run at the same time. This number if managed by NiDB and is different than grid engine queue size"},
             {"ClusterNumberCores","number","1","Number of CPU cores requested for a running job"},
-            {"ParentPipelines","string","","Comma separated list of parent pipelines"},
-            {"ResultScript","string","","Executable script to be run at completion of the analysis to find and insert results back into NiDB"},
-            {"SubmitDelay","number","","Delay in hours, after the study datetime, to submit to the cluster. Allows time to upload behavioral data"},
-            {"TempDirectory","string","","The path to a temporary directory if it is used, on a compute node"},
-            {"UseProfile","bool","","true if using the profile option, false otherwise"},
-            {"UseTempDirectory","bool","","true if using a temporary directory, false otherwise"},
-            {"Version","number","1","Version of the pipeline"},
-            {"PrimaryScript","string","*","See details of pipeline scripts"},
-            {"SecondaryScript","string","","See details of pipeline scripts"}
+            {"ClusterQueue","string","","Queue to submit jobs"},
+            {"ClusterSubmitDelay","number","","Delay in hours, after the study datetime, to submit to the cluster. Allows time to upload behavioral data"},
+            {"ClusterSubmitHost","string","","Hostname to submit jobs"},
+            {"ClusterUser","string","","Submit username"},
+            {"FlagSetupUseProfile","bool","","true if using the profile option, false otherwise"},
+            {"FlagSetupUseTempDirectory","bool","","true if using a temporary directory, false otherwise"},
+            {"PipelineAnalysisLevel","number","*","subject-level analysis (1) or group-level analysis (2)"},
+            {"PipelineCompleteFiles","JSON array","","JSON array of complete files, with relative paths to analysisroot"},
+            {"PipelineCreateDate","datetime","*","Date the pipeline was created"},
+            {"PipelineDescription","string","","Longer pipeline description"},
+            {"PipelineDirectory","string","","Directory where the analyses for this pipeline will be stored. Leave blank to use the default location"},
+            {"PipelineDirectoryStructure","string","",""},
+            {"PipelineName","string","*","Pipeline name"},
+            {"PipelineNotes","string","","Extended notes about the pipeline"},
+            {"PipelinePrimaryScript","string","*","See details of pipeline scripts"},
+            {"PipelineResultScript","string","","Executable script to be run at completion of the analysis to find and insert results back into NiDB"},
+            {"PipelineSecondaryScript","string","","See details of pipeline scripts"},
+            {"PipelineVersion","number","1","Version of the pipeline"},
+            {"SearchDependencyLevel","string","",""},
+            {"SearchDependencyLinkType","string","",""},
+            {"SearchGroup","string","","ID or name of a group on which this pipeline will run"},
+            {"SearchGroupType","string","","Either subject or study"},
+            {"SearchParentPipelines","string","","Comma separated list of parent pipelines"},
+            {"SetupDataCopyMethod","string","","How the data is copied to the analysis directory: cp, softlink, hardlink"},
+            {"SetupDependencyDirectory","string","",""},
+            {"SetupTempDirectory","string","","The path to a temporary directory if it is used, on a compute node"}
         };
     }
 
@@ -1108,7 +1357,7 @@ void modify::PrintVariables(ObjectType object) {
             {"Variable","Type","Required","Description"},
             {"VariableType","string","*","Type of variable"},
             {"VariableName","string","*","Name of the variable"},
-            {"Description","string","","Description of the variable"},
+            {"VariableDescription","string","","Description of the variable"},
             {"KeyValueMapping","string","","List of possible key/value mappings in the format key1=value1, key2=value2. Example 1=Female, 2=Male"},
             {"ExpectedTimepoints","number","","Number of expected timepoints. Example, the study is expected to have 5 records of a variable"},
             {"RangeLow","number","","For numeric values, the lower limit"},

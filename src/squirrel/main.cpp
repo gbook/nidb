@@ -232,6 +232,9 @@ int main(int argc, char *argv[])
             sqrl->SetPackagePath(outputfile);
             sqrl->SetWriteLog(true);
             sqrl->Write();
+
+            delete bds;
+            delete sqrl;
         }
     }
     else if (command == "info") {
@@ -308,7 +311,8 @@ int main(int argc, char *argv[])
         //p.addOption(QCommandLineOption(QStringList() << "recursive", "Search the data path recursively"));
         p.addOption(QCommandLineOption(QStringList() << "objectid", "Existing object ID, name, or number to modify.", "id"));
         p.addOption(QCommandLineOption(QStringList() << "subjectid", "Parent subject ID. Used when adding a study, series, observation, intervention, or analysis object.", "id"));
-        p.addOption(QCommandLineOption(QStringList() << "studynum", "Parent study number. Used when adding a series or analysis object (subjectid is also needed).", "num"));
+        p.addOption(QCommandLineOption(QStringList() << "studynum", "Parent study number. Used when adding a series or analysis object (subjectid also required).", "num"));
+        p.addOption(QCommandLineOption(QStringList() << "seriesnum", "Parent series number. Used when updating a series object (subjectid and studynum also required).", "num"));
         p.addOption(QCommandLineOption(QStringList() << "objectdata", "URL-style string specifying the new object meta-data.", "string"));
         p.addOption(QCommandLineOption(QStringList() << "variablelist", "List the possible variables for the specified object (subject, study, series, analysis ...)", "object"));
 
@@ -324,6 +328,7 @@ int main(int argc, char *argv[])
         //QString variablelist = p.value("variablelist").trimmed();
         ObjectType variableList = squirrel::ObjectTypeToEnum(p.value("variablelist").trimmed());
         int studyNum = p.value("studynum").toInt();
+        int seriesNum = p.value("seriesnum").toInt();
         //bool recursive = p.isSet("recursive");
 
         QString m;
@@ -331,7 +336,7 @@ int main(int argc, char *argv[])
         if (variableList != UnknownObjectType) {
             mod.PrintVariables(variableList);
         }
-        else if (!mod.DoModify(inputPath, operation, object, dataPath, objectData, objectID, subjectID, studyNum, m)) {
+        else if (!mod.DoModify(inputPath, operation, object, dataPath, objectData, objectID, subjectID, studyNum, seriesNum, m)) {
             CommandLineError(p,m);
         }
     }

@@ -60,7 +60,7 @@ public:
     QDateTime DateStart;        /*!< datetime the analysis was started, includes the setup time */
     QString AnalysisName;       /*!< name of this analysis, usually same as the pipeline name */
     QString Hostname;           /*!< hostname on which the analysis was run */
-    QString LastMessage;        /*!< if the analysis had a status message, the last would be stored here */
+    QString StatusMessage;        /*!< if the analysis had a status message, the last would be stored here */
     QString PipelineName;       /*!< name of the pipeline */
     QString Status;             /*!< status of the analysis. eg running, complete, pending */
     bool Successful;            /*!< true if the analysis completed successfully */

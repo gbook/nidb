@@ -295,11 +295,11 @@ int modulePipeline::Run() {
 
             QString modality;
             if (dataSteps.size() > 0)
-                modality = dataSteps[0].modality;
+                modality = dataSteps[0].searchModality;
 
             for (int i = 0; i < dataSteps.size(); i++) {
-                if (dataSteps[i].flags.primaryProtocol) {
-                    modality = dataSteps[i].modality;
+                if (dataSteps[i].flags.isPrimaryProtocol) {
+                    modality = dataSteps[i].searchModality;
                     break;
                 }
             }
@@ -780,6 +780,20 @@ int modulePipeline::Run() {
 /* ---------------------------------------------------------- */
 /* --------- GetData ---------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Check for required data, and download data to the specified location
+ * @param studyid studyRowID
+ * @param analysispath anlaysisPath
+ * @param uid Subject UID
+ * @param analysisRowID analysisRowID
+ * @param pipelineid pipelineRowID
+ * @param pipelinedep
+ * @param deplevel Dependency level
+ * @param datadef List of data definition steps
+ * @param numdownloaded Number of series downloaded
+ * @param datalog Debugging log
+ * @return true if data was downloaded, false otherwise
+ */
 bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qint64 analysisRowID, int pipelineid, int pipelinedep, QString deplevel, QList<dataDefinitionStep> datadef, int &numdownloaded, QString &datalog) {
 
     numdownloaded = 0;
@@ -823,16 +837,16 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
        ------------------------------------------------------------------------ */
     bool stepIsInvalid = false;
     for (int i = 0; i < datadef.size(); i++) {
-        QString protocol = datadef[i].protocol;
-        QString modality = datadef[i].modality.toLower();
-        QString imagetype = datadef[i].imagetype;
-        bool enabled = datadef[i].flags.enabled;
-        QString type = datadef[i].type;
-        QString level = datadef[i].level;
-        QString assoctype = datadef[i].assoctype;
-        bool optional = datadef[i].flags.optional;
-        QString numboldreps = datadef[i].numboldreps;
-        int stepNum = datadef[i].order;
+        QString protocol = datadef[i].searchProtocol;
+        QString modality = datadef[i].searchModality.toLower();
+        QString imagetype = datadef[i].searchImageType;
+        bool enabled = datadef[i].flags.isEnabled;
+        //QString type = datadef[i].type;
+        QString level = datadef[i].searchDataLevel;
+        QString assoctype = datadef[i].searchAssociationType;
+        bool optional = datadef[i].flags.isOptional;
+        QString numboldreps = datadef[i].searchNumberBOLDReps;
+        int stepNum = datadef[i].stepNumber;
 
         /* its not efficient to do an insert and then a series of updates. But it doesn't need to be very efficient, and it's much easier to program */
         //datadef[i].datadownloadid = RecordDataDownload(-1, analysisRowID, modality, 0, 0, -1, "", i, "");
@@ -859,7 +873,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
             continue;
         }
 
-        dlog << QString("   Step [%1] Checking if the following data exist:   protocol [%2]  modality [%3]  imagetype [%4]  enabled [%5]  type [%6]  level [%7]  assoctype [%8]  optional [%9]  numboldreps [%10]").arg(i).arg(protocol).arg(modality).arg(imagetype).arg(enabled).arg(type).arg(level).arg(assoctype).arg(optional).arg(numboldreps);
+        dlog << QString("   Step [%1] Checking if the following data exist:   protocol [%2]  modality [%3]  imagetype [%4]  enabled [%5]  level [%6]  assoctype [%7]  optional [%8]  numboldreps [%9]").arg(i).arg(protocol).arg(modality).arg(imagetype).arg(enabled).arg(level).arg(assoctype).arg(optional).arg(numboldreps);
 
         /* make sure the requested modality table exists */
         q.prepare(QString("show tables like '%1_series'").arg(modality.toLower()));
@@ -1022,25 +1036,25 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
     /* go through list of data search criteria again to do the actual copying */
     for (int i = 0; i < datadef.size(); i++) {
         //QString type = datadef[i].type;
-        QString assoctype = datadef[i].assoctype;
-        QString behdir = datadef[i].behdir;
-        QString behformat = datadef[i].behformat;
-        QString criteria = datadef[i].criteria;
-        QString dataformat = datadef[i].dataformat;
-        QString imagetype = datadef[i].imagetype;
-        QString level = datadef[i].level;
-        QString location = datadef[i].location;
-        QString modality = datadef[i].modality.toLower();
-        QString numboldreps = datadef[i].numboldreps;
-        QString protocol = datadef[i].protocol;
+        QString assoctype = datadef[i].searchAssociationType;
+        QString behdir = datadef[i].exportBehavioralDirectoryName;
+        QString behformat = datadef[i].exportBehavioralDirectoryFormat;
+        QString criteria = datadef[i].searchSeriesCriteria;
+        QString dataformat = datadef[i].exportDataFormat;
+        QString imagetype = datadef[i].searchImageType;
+        QString level = datadef[i].searchDataLevel;
+        QString location = datadef[i].exportSubDirectoryName;
+        QString modality = datadef[i].searchModality.toLower();
+        QString numboldreps = datadef[i].searchNumberBOLDReps;
+        QString protocol = datadef[i].searchProtocol;
         bool behonly = datadef[i].flags.behOnly;
-        bool enabled = datadef[i].flags.enabled;
-        bool gzip = datadef[i].flags.gzip;
-        bool optional = datadef[i].flags.optional;
-        bool preserveseries = datadef[i].flags.preserveSeries;
-        bool usephasedir = datadef[i].flags.usePhaseDir;
-        bool useseries = datadef[i].flags.useSeries;
-        int stepNum = datadef[i].order;
+        bool enabled = datadef[i].flags.isEnabled;
+        bool gzip = datadef[i].flags.exportGzip;
+        bool optional = datadef[i].flags.isOptional;
+        bool preserveseries = datadef[i].flags.exportPreserveSeriesNumber;
+        bool usephasedir = datadef[i].flags.exportWritePhaseDirectory;
+        bool useseries = datadef[i].flags.exportWriteSeriesDirectory;
+        int stepNum = datadef[i].stepNumber;
         //qint64 datadownloadid = datadef[i].datadownloadid;
 
         QSqlQuery q;
@@ -1478,6 +1492,20 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
 /* ---------------------------------------------------------- */
 /* --------- UpdateAnalysisStatus --------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Update the analysis status
+ * @param analysisid analysisRowID
+ * @param status Status
+ * @param statusmsg Status message
+ * @param jobid Cluster job ID
+ * @param numseries Number of series downloaded for the analysis
+ * @param datalog Data log
+ * @param currentStartDate Analysis start date/time
+ * @param currentEndDate Analysis end date/time
+ * @param supplementFlag true if running a supplement
+ * @param rerunFlag true if rerunning an analysis
+ * @return true if analysis status was successfully updated, false otherwise
+ */
 bool modulePipeline::UpdateAnalysisStatus(qint64 analysisid, QString status, QString statusmsg, int jobid, int numseries, QString datalog, bool currentStartDate, bool currentEndDate, int supplementFlag, int rerunFlag) {
     QSqlQuery q;
     QString sqlstring;
@@ -1567,6 +1595,11 @@ QString modulePipeline::GetBehPath(QString behformat, QString analysispath, QStr
 /* ---------------------------------------------------------- */
 /* --------- IsQueueFilled ---------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Check if the number of running jobs for the pipeline exceeds to specified limit
+ * @param pid piplineRowID
+ * @return 0 if false, 1 if true, 2 if unknown/invalid
+ */
 int modulePipeline::IsQueueFilled(int pid) {
 
     /* find out how many processes are allowed to run */
@@ -1909,29 +1942,29 @@ QList<dataDefinitionStep> modulePipeline::GetPipelineDataDef(int pipelineid, int
     if (q.size() > 0) {
         while (q.next()) {
             dataDefinitionStep rec;
-            rec.assoctype = q.value("pdd_assoctype").toString().trimmed();
-            rec.behdir = q.value("pdd_behdir").toString().trimmed();
-            rec.behformat = q.value("pdd_behformat").toString().trimmed();
-            rec.criteria = q.value("pdd_seriescriteria").toString().trimmed();
-            rec.dataformat = q.value("pdd_dataformat").toString().trimmed();
+            rec.dataDownloadID = -1;
+            rec.exportBehavioralDirectoryFormat = q.value("pdd_behformat").toString().trimmed();
+            rec.exportBehavioralDirectoryName = q.value("pdd_behdir").toString().trimmed();
+            rec.exportDataFormat = q.value("pdd_dataformat").toString().trimmed();
+            rec.exportSubDirectoryName = q.value("pdd_location").toString().trimmed();
             rec.flags.behOnly = q.value("pdd_behonly").toBool();
-            rec.flags.enabled = q.value("pdd_enabled").toBool();
-            rec.flags.gzip = q.value("pdd_gzip").toBool();
-            rec.flags.optional = q.value("pdd_optional").toBool();
-            rec.flags.preserveSeries = q.value("pdd_preserveseries").toBool();
-            rec.flags.usePhaseDir = q.value("pdd_usephasedir").toBool();
             rec.flags.behOnly = q.value("pdd_behonly").toBool();
-            rec.flags.useSeries = q.value("pdd_useseries").toBool();
+            rec.flags.exportGzip = q.value("pdd_gzip").toBool();
+            rec.flags.exportPreserveSeriesNumber = q.value("pdd_preserveseries").toBool();
+            rec.flags.exportWritePhaseDirectory = q.value("pdd_usephasedir").toBool();
+            rec.flags.exportWriteSeriesDirectory = q.value("pdd_useseries").toBool();
+            rec.flags.isEnabled = q.value("pdd_enabled").toBool();
+            rec.flags.isOptional = q.value("pdd_optional").toBool();
             rec.id = q.value("pipelinedatadef_id").toInt();
-            rec.imagetype = q.value("pdd_imagetype").toString().trimmed();
-            rec.level = q.value("pdd_level").toString().trimmed();
-            rec.location = q.value("pdd_location").toString().trimmed();
-            rec.modality = q.value("pdd_modality").toString().trimmed();
-            rec.numboldreps = q.value("pdd_numboldreps").toString().trimmed();
-            rec.order = q.value("pdd_order").toInt();
-            rec.protocol = q.value("pdd_protocol").toString().trimmed();
-            rec.type = q.value("pdd_type").toString().trimmed();
-            rec.datadownloadid = -1;
+            rec.searchAssociationType = q.value("pdd_assoctype").toString().trimmed();
+            rec.searchDataLevel = q.value("pdd_level").toString().trimmed();
+            rec.searchImageType = q.value("pdd_imagetype").toString().trimmed();
+            rec.searchModality = q.value("pdd_modality").toString().trimmed();
+            rec.searchNumberBOLDReps = q.value("pdd_numboldreps").toString().trimmed();
+            rec.searchProtocol = q.value("pdd_protocol").toString().trimmed();
+            rec.searchSeriesCriteria = q.value("pdd_seriescriteria").toString().trimmed();
+            rec.stepNumber = q.value("pdd_order").toInt();
+            //rec.type = q.value("pdd_type").toString().trimmed();
             datadef.append(rec);
         }
     }

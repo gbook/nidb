@@ -101,7 +101,7 @@ bool squirrelIntervention::Store() {
 
     /* insert if the object doesn't exist ... */
     if (objectID < 0) {
-        q.prepare("insert into Intervention (SubjectRowID, InterventionName, DateStart, DateEnd, DateRecordEntry, DoseString, DoseAmount, DoseFrequency, AdministrationRoute, InterventionClass, DoseKey, DoseUnit, FrequencyModifer, FrequencyValue, FrequencyUnit, Description, Rater, Notes) values (:SubjectRowID, :InterventionName, :DateStart, :DateEnd, :DateRecordEntry, :DoseString, :DoseAmount, :DoseFrequency, :AdministrationRoute, :InterventionClass, :DoseKey, :DoseUnit, :FrequencyModifer, :FrequencyValue, :FrequencyUnit, :Description, :Rater, :Notes)");
+        q.prepare("insert into Intervention (SubjectRowID, InterventionName, DateStart, DateEnd, DateRecordCreate, DateRecordEntry, DateRecordModify, DoseString, DoseAmount, DoseFrequency, AdministrationRoute, InterventionClass, DoseKey, DoseUnit, FrequencyModifier, FrequencyValue, FrequencyUnit, Description, Rater, Notes) values (:SubjectRowID, :InterventionName, :DateStart, :DateEnd, :DateRecordCreate, :DateRecordEntry, :DateRecordModify, :DoseString, :DoseAmount, :DoseFrequency, :AdministrationRoute, :InterventionClass, :DoseKey, :DoseUnit, :FrequencyModifier, :FrequencyValue, :FrequencyUnit, :Description, :Rater, :Notes)");
 
         q.bindValue(":SubjectRowID", subjectRowID);
         q.bindValue(":InterventionName", InterventionName);
@@ -126,7 +126,7 @@ bool squirrelIntervention::Store() {
     }
     /* ... otherwise update */
     else {
-        q.prepare("update Intervention set SubjectRowID = :SubjectRowID, InterventionName = :InterventionName, DateStart = :DateStart, DateEnd = :DateEnd, DateRecordEntry = :DateRecordEntry, DoseString = :DoseString, DoseAmount = :DoseAmount, DoseFrequency = :DoseFrequency, AdministrationRoute = :AdministrationRoute, InterventionClass = :InterventionClass, DoseKey = :DoseKey, DoseUnit = :DoseUnit, FrequencyModifer = :FrequencyModifer, FrequencyValue = :FrequencyValue, FrequencyUnit = :FrequencyUnit, Description = :Description, Rater = :Rater, Notes = :Notes where InterventionRowID = :id");
+        q.prepare("update Intervention set SubjectRowID = :SubjectRowID, InterventionName = :InterventionName, DateStart = :DateStart, DateEnd = :DateEnd, DateRecordCreate = :DateRecordCreate, DateRecordEntry = :DateRecordEntry, DateRecordModify = :DateRecordModify, DoseString = :DoseString, DoseAmount = :DoseAmount, DoseFrequency = :DoseFrequency, AdministrationRoute = :AdministrationRoute, InterventionClass = :InterventionClass, DoseKey = :DoseKey, DoseUnit = :DoseUnit, FrequencyModifier = :FrequencyModifier, FrequencyValue = :FrequencyValue, FrequencyUnit = :FrequencyUnit, Description = :Description, Rater = :Rater, Notes = :Notes where InterventionRowID = :id");
         q.bindValue(":id", objectID);
         q.bindValue(":SubjectRowID", subjectRowID);
         q.bindValue(":InterventionName", InterventionName);
@@ -170,7 +170,7 @@ QJsonObject squirrelIntervention::ToJSON() {
     json["DoseString"] = DoseString;
     json["DoseUnit"] = DoseUnit;
     json["InterventionClass"] = InterventionClass;
-    json["InterventionDescription"] = Description;
+    json["Description"] = Description;
     json["InterventionName"] = InterventionName;
     json["Notes"] = Notes;
     json["Rater"] = Rater;
@@ -242,7 +242,7 @@ QHash<QString, QString> squirrelIntervention::GetData(DatasetType d) {
         data["Intervention.DoseString"] = DoseString;
         data["Intervention.DoseUnit"] = DoseUnit;
         data["Intervention.InterventionClass"] = InterventionClass;
-        data["Intervention.InterventionDescription"] = Description;
+        data["Intervention.Description"] = Description;
         data["Intervention.InterventionName"] = InterventionName;
         data["Intervention.Notes"] = Notes;
         data["Intervention.Rater"] = Rater;

@@ -58,9 +58,9 @@ bool squirrelDataDictionary::Get() {
 
         /* get the data */
         objectID = q.value("DataDictionaryRowID").toLongLong();
+        DataDictionaryName = q.value("DataDictionaryName").toString();
         FileCount = q.value("FileCount").toLongLong();
         Size = q.value("Size").toLongLong();
-        //virtualPath = q.value("VirtualPath").toString();
 
         /* get the DataDictionaryItems */
         dictItems.clear();
@@ -72,7 +72,7 @@ bool squirrelDataDictionary::Get() {
             dataDictionaryItem d;
             d.VariableType = q.value("VariableType").toString();
             d.VariableName = q.value("VariableName").toString();
-            d.Description = q.value("VariableDescription").toString();
+            d.VariableDescription = q.value("VariableDescription").toString();
             d.KeyValueMapping = q.value("KeyValueMapping").toString();
             d.ExpectedTimepoints = q.value("ExpectedTimepoints").toInt();
             d.RangeLow = q.value("RangeLow").toDouble();
@@ -138,7 +138,7 @@ bool squirrelDataDictionary::Store() {
         q.bindValue(":DataDictionaryRowID", objectID);
         q.bindValue(":VariableType", dic.VariableType);
         q.bindValue(":VariableName", dic.VariableName);
-        q.bindValue(":VariableDescription", dic.Description);
+        q.bindValue(":VariableDescription", dic.VariableDescription);
         q.bindValue(":KeyValue", dic.KeyValueMapping);
         q.bindValue(":ExpectedTimepoints", dic.ExpectedTimepoints);
         q.bindValue(":RangeLow", dic.RangeLow);
@@ -164,8 +164,8 @@ QJsonObject squirrelDataDictionary::ToJSON() {
     foreach (dataDictionaryItem item, dictItems) {
         QJsonObject jsonItem;
         jsonItem["VariableType"] = item.VariableType;
-        jsonItem["variableName"] = item.VariableName;
-        jsonItem["Description"] = item.Description;
+        jsonItem["VariableName"] = item.VariableName;
+        jsonItem["VariableDescription"] = item.VariableDescription;
         jsonItem["KeyValueMapping"] = item.KeyValueMapping;
         jsonItem["ExpectedTimepoints"] = item.ExpectedTimepoints;
         jsonItem["RangeLow"] = item.RangeLow;
@@ -198,7 +198,7 @@ QString squirrelDataDictionary::PrintDataDictionary() {
 
     int i = 0;
     foreach (dataDictionaryItem item, dictItems) {
-        str += utils::Print(QString("\tItem [%1]\ttype [%2]\tvariableName [%3]\ttype [%4]\ttype [%5]\ttype [%6]\ttype [%7]\ttype [%8]").arg(i).arg(item.VariableType).arg(item.VariableName).arg(item.Description).arg(item.KeyValueMapping).arg(item.ExpectedTimepoints).arg(item.RangeLow).arg(item.RangeHigh));
+        str += utils::Print(QString("\tItem [%1]\ttype [%2]\tvariableName [%3]\ttype [%4]\ttype [%5]\ttype [%6]\ttype [%7]\ttype [%8]").arg(i).arg(item.VariableType).arg(item.VariableName).arg(item.VariableDescription).arg(item.KeyValueMapping).arg(item.ExpectedTimepoints).arg(item.RangeLow).arg(item.RangeHigh));
         i++;
     }
 

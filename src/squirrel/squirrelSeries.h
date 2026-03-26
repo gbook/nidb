@@ -67,11 +67,11 @@ public:
     /* JSON elements */
     QDateTime DateTime;             /*!< Series datetime */
     QHash<QString, QString> params; /*!< Hash containing experimental parameters. eg MR params */
-    QString BIDSEntity;             /*!< BIDS entity (anat, func, etc) */
-    QString BIDSSuffix;             /*!< BIDS suffix (T1w, T2w, etc) */
-    QString BIDSTask;               /*!< BIDS task */
-    QString BIDSRun;                /*!< BIDS run number */
-    QString BIDSPhaseEncodingDirection; /*!< BIDS phase encoding direction */
+    QString BidsEntity;             /*!< BIDS entity (anat, func, etc) */
+    QString BidsSuffix;             /*!< BIDS suffix (T1w, T2w, etc) */
+    QString BidsTask;               /*!< BIDS task */
+    QString BidsRun;                /*!< BIDS run number */
+    QString BidsPhaseEncodingDirection; /*!< BIDS phase encoding direction */
     QString Description;            /*!< Description of the series */
     QString Protocol;               /*!< Protocol (may differ from description) */
     QString SeriesUID;              /*!< SeriesInstanceUID */

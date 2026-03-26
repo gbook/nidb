@@ -29,13 +29,13 @@ class modify
 public:
     modify();
 
-    bool DoModify(QString packagePath, QString operation, ObjectType object, QString dataPath, QString objectData, QString objectID, QString subjectID, int studyNum, QString &m);
-    void PrintVariables(ObjectType object);
     bool AddObject(QString packagePath, ObjectType object, QString dataPath, QString objectData, QString objectID, QString subjectID, int studyNum, QString &m);
+    bool DoModify(QString packagePath, QString operation, ObjectType object, QString dataPath, QString objectData, QString objectID, QString subjectID, int studyNum, int seriesNum, QString &m);
     bool RemoveObject(QString packagePath, ObjectType object, QString dataPath, QString objectData, QString objectID, QString subjectID, int studyNum, QString &m);
-    bool UpdateObject(QString packagePath, ObjectType object, QString dataPath, QString objectData, QString objectID, QString subjectID, int studyNum, QString &m);
-    bool SplitByModality(QString packagePath, QString dataPath, QString objectData, QString objectID, QString &m);
     bool RemovePHI(QString packagePath, QString dataPath, QString &m);
+    bool SplitByModality(QString packagePath, QString dataPath, QString objectData, QString objectID, QString &m);
+    bool UpdateObject(QString packagePath, ObjectType object, QString dataPath, QString objectData, QString objectID, QString subjectID, int studyNum, int seriesNum, QString &m);
+    void PrintVariables(ObjectType object);
 };
 
 #endif // MODIFY_H
