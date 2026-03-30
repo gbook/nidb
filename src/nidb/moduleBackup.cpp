@@ -143,55 +143,60 @@ int moduleBackup::Run() {
         /* check for any rows with status readyToWriteTapeX */
         q.prepare("select * from backups order by backup_tapenumber desc limit 1");
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-        q.first();
-        int backupid = q.value("backup_id").toInt();
-        QString status = q.value("backup_tapestatus").toString();
-        int tapeNum = q.value("backup_tapenumber").toInt();
+        if (q.size() > 0) {
+            q.first();
+            int backupid = q.value("backup_id").toInt();
+            QString status = q.value("backup_tapestatus").toString();
+            int tapeNum = q.value("backup_tapenumber").toInt();
 
-        n->Log(QString("Current status is [%1]. backupStageSize is [%2] bytes, which is greater than [%3]").arg(status).arg(backupStageSize).arg(backupTapeSize));
+            n->Log(QString("Current status is [%1]. backupStageSize is [%2] bytes, which is greater than [%3]").arg(status).arg(backupStageSize).arg(backupTapeSize));
 
-        /* if there are, then write the tape */
-        if (status == "readyToWriteTapeA") {
-            if (WriteTape(tapeNum, 'A', backupid))
-                n->Log("Successfully wrote tape A");
-            else
-                n->Log("Error writing tape A");
-        }
-        else if (status == "readyToWriteTapeB") {
-            if (WriteTape(tapeNum, 'B', backupid))
-                n->Log("Successfully wrote tape B");
-            else
-                n->Log("Error writing tape B");
-        }
-        else if (status == "readyToWriteTapeC") {
-            if (WriteTape(tapeNum, 'C', backupid))
-                n->Log("Successfully wrote tape C");
-            else
-                n->Log("Error writing tape C");
-        }
-        else if ((status == "idle") || (status == "complete")) {
-            /* create new row with status of waitingForTapeA, and maxTapeNum+1. Also get the backup_id */
-            q.prepare("insert into backups (backup_tapenumber, backup_tapestatus) values (:tapenum, 'waitingForTapeA')");
-            q.bindValue(":tapenum", tapeNum+1);
-            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
-            backupid = q.lastInsertId().toInt();
-        }
-        else if (status == "completeTapeA") {
-            /* set status to 'waitingForTapeB' */
-            SetBackupStatus(backupid, "waitingForTapeB");
-        }
-        else if (status == "completeTapeB") {
-            /* set status to 'waitingForTapeC' */
-            SetBackupStatus(backupid, "waitingForTapeC");
-        }
-        else if (status == "completeTapeC") {
-            /* set status to 'complete' */
-            SetBackupStatus(backupid, "complete");
+            /* if there are, then write the tape */
+            if (status == "readyToWriteTapeA") {
+                if (WriteTape(tapeNum, 'A', backupid))
+                    n->Log("Successfully wrote tape A");
+                else
+                    n->Log("Error writing tape A");
+            }
+            else if (status == "readyToWriteTapeB") {
+                if (WriteTape(tapeNum, 'B', backupid))
+                    n->Log("Successfully wrote tape B");
+                else
+                    n->Log("Error writing tape B");
+            }
+            else if (status == "readyToWriteTapeC") {
+                if (WriteTape(tapeNum, 'C', backupid))
+                    n->Log("Successfully wrote tape C");
+                else
+                    n->Log("Error writing tape C");
+            }
+            else if ((status == "idle") || (status == "complete")) {
+                /* create new row with status of waitingForTapeA, and maxTapeNum+1. Also get the backup_id */
+                q.prepare("insert into backups (backup_tapenumber, backup_tapestatus) values (:tapenum, 'waitingForTapeA')");
+                q.bindValue(":tapenum", tapeNum+1);
+                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+                backupid = q.lastInsertId().toInt();
+            }
+            else if (status == "completeTapeA") {
+                /* set status to 'waitingForTapeB' */
+                SetBackupStatus(backupid, "waitingForTapeB");
+            }
+            else if (status == "completeTapeB") {
+                /* set status to 'waitingForTapeC' */
+                SetBackupStatus(backupid, "waitingForTapeC");
+            }
+            else if (status == "completeTapeC") {
+                /* set status to 'complete' */
+                SetBackupStatus(backupid, "complete");
 
-            /* delete backupstaging contents  */
-            QString systemstring = QString("rm -rf %1/*").arg(n->cfg["backupstagingdir"]);
-            n->Log(QString("Attempting to remove backupstagingdir using system command [%1]").arg(systemstring));
+                /* delete backupstaging contents  */
+                QString systemstring = QString("rm -rf %1/*").arg(n->cfg["backupstagingdir"]);
+                n->Log(QString("Attempting to remove backupstagingdir using system command [%1]").arg(systemstring));
 
+            }
+        }
+        else {
+            n->Log("No backups found. Stopping the module"); return 0;
         }
     }
     else {

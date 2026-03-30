@@ -21,23 +21,44 @@
  // along with this program.  If not, see <http://www.gnu.org/licenses/>.
  // ------------------------------------------------------------------------------
 
-if ($_POST["file"] == "") { $file = $_GET["file"]; } else { $file = $_POST["file"]; }
+
+define("LEGIT_REQUEST", true);
+	
+session_start();
+
+require "functions.php";
+require "includes_php.php";
+
+$action = GetVariable("action");
+$file = GetVariable("file");
 
 if ($file != "") {
-	if (file_exists($file)) {
+
+	$archivePath = $GLOBALS['cfg']['archivedir'];
+	$mountPath = $GLOBALS['cfg']['mountdir'];
+	
+	/* file must live within the archive directory or mount directory */
+	if ((substr($file, 0, strlen($archivePath)) === $archivePath) || (substr($file, 0, strlen($mountPath)) === $mountPath)) {
+		if (file_exists($file)) {
 		?>
-		<body bgcolor="#DDD">
-<div style="border: 1px solid #BBB; margin:10px; padding:10px; background-color: white; font-family: monospace; white-space: pre;">
-<div style="padding:5px; background-color: 393939; color:white; font-size:11pt"><?=$file?></div>
-<?
-$ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
-$imgdata = base64_encode(file_get_contents($file));
-?>
-<img border="1" src="data:image/<?=$ext?>;base64,<?=$imgdata?>">
-</div>
+			<body bgcolor="#DDD">
+			<div style="border: 1px solid #BBB; margin:10px; padding:10px; background-color: white; font-family: monospace; white-space: pre;">
+			<div style="padding:5px; background-color: 393939; color:white; font-size:11pt"><?=$file?></div>
+
+				<?
+				$ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+				$imgdata = base64_encode(file_get_contents($file));
+				?>
+				<img border="1" src="data:image/<?=$ext?>;base64,<?=$imgdata?>">
+			</div>
 		<?
+		}
+		else { echo "file [$file] does not exist"; }
 	}
-	else { echo "file [$file] does not exist"; }
+	else {
+		echo "$file does not start with archive path";
+	}
 }
 else { echo "filename was blank"; }
+
 ?>

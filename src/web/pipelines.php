@@ -3274,7 +3274,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 						$deplinktype = $row['pipeline_deplinktype'];
 						$groupid = $row['pipeline_groupid'];
 						$projectid = $row['pipeline_projectid'];
-						$grouptype = $row['pipeline_grouptype'];
+						//$grouptype = $row['pipeline_grouptype'];
 						$groupbysubject = $row['pipeline_groupbysubject'];
 						$outputbids = $row['pipeline_outputbids'];
 						$bidsoutputdir = $row['pipeline_bidsoutputdir'];

@@ -732,6 +732,7 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
                 tmppath = n->cfg["tmpdir"] + "/" + GenerateRandomString(20);
                 if (!MakePath(tmppath,m)) {
                     n->Log("Error creating temp directory [" + tmppath + "] with error [" + m + "]", __FUNCTION__);
+                    delete sqrl;
                     continue;
                 }
                 else {
@@ -753,8 +754,13 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
                 }
                 else {
                     n->Log("Error extracting squirrel package [" + f + "] to directory [" + tmppath + "] with message [" + m + "]", __FUNCTION__);
+                    delete sqrl;
                     continue;
                 }
+            }
+            else {
+                delete sqrl;
+                continue;
             }
 
             n->Log(sqrl->GetLogBuffer());
@@ -872,6 +878,7 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
                     }
                     else if ((sqrl->DataFormat == "dicom") || (sqrl->DataFormat == "orig") || (sqrl->DataFormat == "anon") || (sqrl->DataFormat == "anonfull")) {
                         n->Log("squirrel data format is [" + sqrl->DataFormat + "], calling ArchiveDICOMSeries()");
+                        /* TODO - this section is not implemented yet */
                         //io->ArchiveDICOMSeries();
                     }
                     else {

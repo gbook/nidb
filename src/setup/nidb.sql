@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Mar 09, 2026 at 08:06 PM
+-- Generation Time: Mar 30, 2026 at 04:54 PM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -2481,6 +2481,19 @@ CREATE TABLE `pipeline_procs` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `pipeline_software`
+--
+
+CREATE TABLE `pipeline_software` (
+  `pipelinesoftware_id` int(11) NOT NULL,
+  `software_name` text NOT NULL,
+  `software_environment` text NOT NULL COMMENT 'commands required to setup the software environment',
+  `software_version` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `pipeline_status`
 --
 
@@ -4617,6 +4630,12 @@ ALTER TABLE `pipeline_procs`
   ADD PRIMARY KEY (`pp_processid`);
 
 --
+-- Indexes for table `pipeline_software`
+--
+ALTER TABLE `pipeline_software`
+  ADD PRIMARY KEY (`pipelinesoftware_id`);
+
+--
 -- Indexes for table `pipeline_status`
 --
 ALTER TABLE `pipeline_status`
@@ -5756,6 +5775,12 @@ ALTER TABLE `pipeline_history`
 --
 ALTER TABLE `pipeline_options`
   MODIFY `pipelineoptions_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `pipeline_software`
+--
+ALTER TABLE `pipeline_software`
+  MODIFY `pipelinesoftware_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `pipeline_status`

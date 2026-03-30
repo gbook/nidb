@@ -1244,7 +1244,7 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession,
             //Print("Checkpoing BIDS I");
 
             /* add a TaskName field to the JSON file if needed */
-            if (ext.endsWith(".json") && mapping.bidsSuffix == "bold") {
+            if (ext.endsWith(".json") && ((mapping.bidsSuffix == "bold") || (mapping.bidsSuffix == "sbref"))) {
                 QString task = mapping.bidsTask;
 
                 /* open existing JSON file */
@@ -1356,7 +1356,7 @@ bool GetZipFileDetails(QString zippath, qint64 &unzipsize, qint64 &zipsize, QStr
     QString lastline = lines.last().trimmed();
     //n->WriteLog(QString("Last line of [%1] %2").arg(systemstring).arg(lastline));
     QStringList parts = lastline.trimmed().split(QRegularExpression("\\s+"), Qt::SkipEmptyParts); /* split on whitespace */
-    if (parts.size() >= 2) {
+    if (parts.size() > 2) {
         unzipsize = parts[0].toLongLong();
         zipsize = parts[1].toLongLong();
         compression = parts[2];

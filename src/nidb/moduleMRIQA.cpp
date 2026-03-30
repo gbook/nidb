@@ -396,7 +396,7 @@ bool moduleMRIQA::QA(qint64 seriesid) {
     /* run fsl_motion_outliers for FD */
     systemstring = QString(fsl + "fsl_motion_outliers -i %1 -o %2/outliers-dvars.txt  -s %2/dvars.txt --fd -p %2/dvars.png").arg(filepath4d).arg(qapath);
 	msgs << n->Log(SystemCommand(systemstring, debug));
-    QStringList dvars = ReadTextFileIntoArray(qapath + "/fd.txt");
+    QStringList dvars = ReadTextFileIntoArray(qapath + "/dvars.txt");
     QList<double> dvarsDouble = SplitStringArrayToDouble(dvars);
     std::sort(dvarsDouble.begin(), dvarsDouble.end());
     double dvarsMean(0.0);

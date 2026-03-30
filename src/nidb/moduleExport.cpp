@@ -1136,7 +1136,7 @@ bool moduleExport::ExportXNAT(int exportid, QString &exportstatus, QString &msg)
                 //QString outdir = QString("%1/%2/%3").arg(rootoutdir).arg(studydir).arg(seriesdir);
                 QString outdir = rootoutdir;
 
-                n->Log(QString("rootoutdir [%2], outdir [%3]").arg(rootoutdir).arg(outdir));
+                n->Log(QString("rootoutdir [%1], outdir [%2]").arg(rootoutdir).arg(outdir));
 
                 /* export the imaging data */
                 if (numfiles > 0) {
@@ -1848,13 +1848,23 @@ bool moduleExport::ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, 
                             msgs << speedmsg;
 
                             QStringList parts = results.split(",");
-                            if ((parts.size() > 0) && (parts[0].trimmed() == "SUCCESS")) {
-                                /* a file was received by the remote NiDB server, now check the return md5 */
-                                if (parts[1].trimmed().toUpper() == zipmd5.toUpper()) {
-                                    seriesstatus = "complete";
-                                    n->Log("Upload success: MD5 match");
-                                    msgs << "Successfully sent data to [" + conn.server + "]";
-                                    error = 0;
+                            if (parts.size() > 0) {
+                                if (parts[0].trimmed() == "SUCCESS") {
+                                    if (parts.size() > 1) {
+                                        /* a file was received by the remote NiDB server, now check the return md5 */
+                                        if (parts[1].trimmed().toUpper() == zipmd5.toUpper()) {
+                                            seriesstatus = "complete";
+                                            n->Log("Upload success: MD5 match");
+                                            msgs << "Successfully sent data to [" + conn.server + "]";
+                                            error = 0;
+                                        }
+                                    }
+                                    else {
+                                        seriesstatus = exportstatus = "error";
+                                        msgs << n->Log("Upload fail: SUCCESS, but no MD5 has returned");
+                                        error = 1;
+                                        numfails++;
+                                    }
                                 }
                                 else {
                                     seriesstatus = exportstatus = "error";

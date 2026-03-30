@@ -365,7 +365,7 @@
 					<div style="text-align: center">
 						<? DisplayFormSelectPackage(); ?>
 						<br><br>
-						<input type="submit" value="Add to package" class="ui primary button">
+						<input type="submit" value="Add to existing package" class="ui primary button">
 					</div>
 				</form>
 			</div>

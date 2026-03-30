@@ -52,7 +52,7 @@ public:
     QString dirStructure;
     QString directory;
     QString group;
-    QString groupType;
+    //QString groupType;
     QString name;
     QString notes;
     QString pipelineRootDir;

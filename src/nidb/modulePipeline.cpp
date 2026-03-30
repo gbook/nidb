@@ -216,7 +216,7 @@ int modulePipeline::Run() {
             }
 
             /* create the analysis path */
-            QString analysispath = QString("%1/%3").arg(p.pipelineRootDir).arg(p.name);
+            QString analysispath = QString("%1/%2").arg(p.pipelineRootDir).arg(p.name);
             n->Log(QString("[%1] Creating path [" + analysispath + "/pipeline]").arg(p.name), __FUNCTION__);
             if (!MakePath(analysispath + "/pipeline", m)) {
                 n->Log(QString("[%1] Error: unable to create directory [" + analysispath + "/pipeline] - A").arg(p.name), __FUNCTION__);
@@ -1472,6 +1472,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
             numdownloaded = BIDSseriesids.size();
             dlog << n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupCreateDirectory, LogStatus::success, 0, analysispath,"");
             dlog << n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataDownloadSummary, LogStatus::success, 0, m2, "");
+            delete io;
         }
         else {
             //dlog << n->Log("Exporting in BIDS format, but no series found to export", __FUNCTION__);
@@ -1649,18 +1650,17 @@ QStringList modulePipeline::GetGroupList(int pid) {
     q.bindValue(":pid",pid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.size() > 0) {
-        while (q.next()) {
-            int groupid = q.value("pipeline_groupid").toInt();
-            if (groupid != 0) {
-                QSqlQuery q2;
-                q2.prepare("select group_name from groups where group_id in (:groupid)");
-                q2.bindValue(":groupid",groupid);
-                n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
-                if (q2.size() > 0) {
-                    q2.first();
-                    QString groupname = q2.value("group_name").toString();
-                    grouplist.append(groupname);
-                }
+        q.first();
+        QStringList groupids = q.value("pipeline_groupid").toString().split(",");
+        if (groupids.size() > 0) {
+            QSqlQuery q2;
+            q2.prepare("select group_name from groups where group_id in (:groupids)");
+            q2.bindValue(":groupid", groupids.join(","));
+            n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+            if (q2.size() > 0) {
+                q2.first();
+                QString groupname = q2.value("group_name").toString();
+                grouplist.append(groupname);
             }
         }
     }
@@ -2014,13 +2014,15 @@ QString modulePipeline::FormatCommand(int pipelineid, QString clusteranalysispat
     QRegularExpression regex("\\s+(\\S*)\\{first_(.*)_file\\}", QRegularExpression::CaseInsensitiveOption);
     if (command.contains(regex)) {
         QRegularExpressionMatch match = regex.match(command);
-        QString file = match.captured(0);
-        QString ext = match.captured(1);
+        QString file = match.captured(1); /* first match */
+        QString ext = match.captured(2); /* second match */
         QString searchpattern = QString("%2*.%3").arg(clusteranalysispath).arg(file).arg(ext);
         QStringList files = FindAllFiles(clusteranalysispath, searchpattern);
-        QString replacement = files[0];
-        replacement.replace(clusteranalysispath, analysispath, Qt::CaseInsensitive);
-        command.replace(regex, replacement);
+        if (files.size() > 0) {
+            QString replacement = files[0];
+            replacement.replace(clusteranalysispath, analysispath, Qt::CaseInsensitive);
+            command.replace(regex, replacement);
+        }
     }
     /* {first_n_ext_files} {last_ext_file} are not implemented in the compiled NiDB */
     command.replace("{command}", command, Qt::CaseInsensitive);

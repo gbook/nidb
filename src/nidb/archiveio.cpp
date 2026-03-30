@@ -430,7 +430,7 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
             n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
             seriesRowID = q3.lastInsertId().toInt();
 
-            AppendUploadLog(QString("Created MR series %1-%2-%3. seriesRowID [%4]").arg(subjectUID).arg(studynum).arg(SeriesNumber).arg(SeriesNumber));
+            AppendUploadLog(QString("Created MR series %1-%2-%3. seriesRowID [%4]").arg(subjectUID).arg(studynum).arg(SeriesNumber).arg(seriesRowID));
         }
     }
     else if (Modality.toUpper() == "CT") {
@@ -572,13 +572,16 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
     s = new study(studyRowID, n);
     if ((s == nullptr) || (!s->valid())) {
         AppendUploadLog(QString("Error getting study information. StudyRowID [%1] not valid").arg(studyRowID));
+        delete s;
         return false;
     }
     studynum = s->studyNum();
 
     /* create data directory if it doesn't already exist */
     QString outdir = QString("%1/%2/dicom").arg(s->path()).arg(SeriesNumber);
-    QString thumbdir = QString("%1/%4").arg(s->path()).arg(SeriesNumber);
+    QString thumbdir = QString("%1/%2").arg(s->path()).arg(SeriesNumber);
+
+    delete s;
 
     if (!MakePath(outdir, m))
         AppendUploadLog("Unable to create output direcrory [" + outdir + "] because of error [" + m + "]");
@@ -848,7 +851,7 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
 
                 qint64 behdirsize(0);
                 qint64 behnumfiles(0);
-                GetDirSizeAndFileCount(outdir, behnumfiles, behdirsize);
+                GetDirSizeAndFileCount(outbehdir, behnumfiles, behdirsize);
                 QString sqlstring = QString("update %1_series set beh_size = :behdirsize, numfiles_beh = :behnumfiles where %1series_id = :seriesRowID").arg(dbModality.toLower());
                 QSqlQuery q3;
                 q3.prepare(sqlstring);
@@ -1958,6 +1961,8 @@ bool archiveIO::ArchiveSquirrelPackage(UploadOptions options, QString file, QStr
         tmppath = n->cfg["tmpdir"] + "/" + GenerateRandomString(20);
         if (!MakePath(tmppath,m)) {
             n->Log("Error creating temp directory [" + tmppath + "] with error [" + m + "]", __FUNCTION__);
+            delete sqrl;
+            return false;
         }
 
         if (sqrl->Extract(tmppath, m)) {
@@ -2074,12 +2079,17 @@ bool archiveIO::ArchiveSquirrelPackage(UploadOptions options, QString file, QStr
         }
         else {
             n->Log("Error extracting squirrel package [" + file + "] to directory [" + tmppath + "] with message [" + m + "]", __FUNCTION__);
+            delete sqrl;
+            return false;
         }
     }
     else {
         msg = "Unable to read [" + file + "]";
+        delete sqrl;
+        return false;
     }
 
+    delete sqrl;
     return true;
 }
 
