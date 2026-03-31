@@ -43,13 +43,10 @@
 
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	
-	/* get variables */
-	if ($_POST["action"] == "") { $action = $_GET["action"]; } else { $action = $_POST["action"]; }
-	if ($_POST["id"] == "") { $id = $_GET["id"]; } else { $id = $_POST["id"]; }
-	if ($_POST["name"] == "") { $name = $_GET["name"]; } else { $name = $_POST["name"]; }
-	if ($_POST["description"] == "") { $description = $_GET["description"]; } else { $description = $_POST["description"]; }
-	if ($_POST["location"] == "") { $location = $_GET["location"]; } else { $location = $_POST["location"]; }
+	$id = GetVariable("id");
+	$name = GetVariable("name");
+	$description = GetVariable("description");
+	$location = GetVariable("location");
 
 	/* check the action */
 	if ($action == "addform") {
@@ -134,15 +131,12 @@
 		if ($name == "") { AddForm("'Calendar Name' is blank",$name, $description, $location); return; }
 		if ($description == "") { AddForm("'Description' is blank",$name, $description, $location); return; }
 		if ($location == "") { AddForm("'Location' is blank",$name, $description, $location); return; }
-
-		$name = mysqli_real_escape_string($GLOBALS['linki'], $name);
-		$description = mysqli_real_escape_string($GLOBALS['linki'], $description);
-		$location = mysqli_real_escape_string($GLOBALS['linki'], $location);
 		
 		/* if we get to this point, its safe to add to the database */
-		$sqlstring = "insert into calendars (calendar_name, calendar_description, calendar_location, calendar_createdate, calendar_deletedate) values ('$name','$description','$location',now(),'3000-01-01 00:00:00')";
-		//echo $sqlstring;
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "insert into calendars (calendar_name, calendar_description, calendar_location, calendar_createdate, calendar_deletedate) values (?, ?, ?, now(), '3000-01-01 00:00:00')");
+		mysqli_stmt_bind_param($stmt, 'sss', $name, $description, $location);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
 		DisplayList();
 	}	
 
@@ -151,6 +145,7 @@
 	/* --------- Edit -------------------------------- */
 	/* ----------------------------------------------- */
 	function Edit($id, $name, $description, $location) {
+		$id = (int)$id;
 		
 		/* check if any form elements are bad, if so redisplay the addform */
 		if ($name == "") { EditForm("'<b>Calendar Name</b>' was blank, original values now displayed",$id); return; }
@@ -158,9 +153,10 @@
 		if ($location == "") { EditForm("'<b>Location</b>' was blank, original values now displayed",$id); return; }
 		
 		/* if we get to this point, its safe to add to the database */
-		$sqlstring = "update calendars set calendar_name = '$name', calendar_description = '$description', calendar_location = '$location' where calendar_id = '$id'";
-		//echo $sqlstring;
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "update calendars set calendar_name = ?, calendar_description = ?, calendar_location = ? where calendar_id = ?");
+		mysqli_stmt_bind_param($stmt, 'sssi', $name, $description, $location, $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
 		DisplayList();
 	}	
 
@@ -169,8 +165,11 @@
 	/* --------- Delete ------------------------------ */
 	/* ----------------------------------------------- */
 	function Delete($id) {
-		$sqlstring = "update calendars set calendar_deletedate = now() where calendar_id = '$id'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$id = (int)$id;
+		$stmt = mysqli_prepare($GLOBALS['linki'], "update calendars set calendar_deletedate = now() where calendar_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
 		DisplayList();
 	}	
 	
@@ -180,33 +179,43 @@
 	/* ----------------------------------------------- */
 	function AddForm($message, $name, $description, $location) {
 	?>
-		<table><tr><td><img src="images/back16.png"></td><td><a href="calendar_calendars.php" class="ui button">Back</a> to calendar list</td></tr></table><br>
-		
-		<form action="calendar_calendars.php" method="post" id="form1">
-		<input type="hidden" name="action" value="add">
-		
-		<table cellspacing="0" cellpadding="5" class="editor">
-			<tr>
-				<td colspan="3" style="color: darkblue; font-size: 14pt; text-align:center; font-weight: bold">Add Calendar</td>
-			</tr>
-			<tr>
-				<td colspan="2" align="center" style="color:red"><?=$message?></td>
-			</tr>
-			<tr>
-				<td class="label">Calendar Name<br><span class="tiny">short name</span></td>
-				<td class="rightvalue"><input type="text" name="name" class="required" value="<?=$name?>"></td>
-			</tr>
-			<tr>
-				<td class="label">Description</td>
-				<td class="rightvalue"><input type="text" name="description" class="required" size="50" value="<?=$description?>"></td>
-			</tr>
-			<tr>
-				<td class="label">Location</td>
-				<td class="rightvalue"><input type="text" name="location" class="required" value="<?=$location?>"></td>
-			</tr>
-		</table>
-		<p><input type="submit" value="Add" name="submit"></p>
-		</form>
+		<div class="ui text container">
+			<div class="ui two column grid">
+				<div class="column">
+					<a href="calendar_calendars.php" class="ui button"><i class="arrow alternate circle left icon"></i>Back</a>
+				</div>
+			</div>
+
+			<div class="ui attached visible message">
+				<div class="header">Add Calendar</div>
+			</div>
+
+			<form action="calendar_calendars.php" method="post" id="form1" class="ui form attached fluid segment">
+				<input type="hidden" name="action" value="add">
+
+				<? if ($message != '') { ?>
+				<div class="ui negative message"><?=$message?></div>
+				<? } ?>
+
+				<div class="required field">
+					<label>Calendar Name</label>
+					<input type="text" name="name" class="required" value="<?=$name?>" placeholder="Short calendar name" required autofocus="autofocus">
+				</div>
+
+				<div class="field">
+					<label>Description</label>
+					<input type="text" name="description" class="required" value="<?=$description?>" placeholder="Calendar description" required>
+				</div>
+
+				<div class="field">
+					<label>Location</label>
+					<input type="text" name="location" class="required" value="<?=$location?>" placeholder="Calendar location" required>
+				</div>
+
+				<input type="submit" value="Add" name="submit" class="ui primary button">
+				<a href="calendar_calendars.php" class="ui button">Cancel</a>
+			</form>
+		</div>
 	<?
 	}
 
@@ -215,45 +224,61 @@
 	/* --------- EditForm ---------------------------- */
 	/* ----------------------------------------------- */
 	function EditForm($message, $id) {
+		$id = (int)$id;
 	
-		$sqlstring = "select * from calendars where calendar_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select * from calendars where calendar_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
 		$name = $row['calendar_name'];
 		$description = $row['calendar_description'];
 		$location = $row['calendar_location'];
 	?>
-		<table><tr><td><img src="images/back16.png"></td><td><a href="calendar_calendars.php" class="ui button">Back</a> to calendar list</td></tr></table><br>
-		
-		<form action="calendar_calendars.php" method="post" id="form1">
-		<input type="hidden" name="action" value="edit">
-		<input type="hidden" name="id" value="<?=$id?>">
-		
-		<table cellspacing="0" cellpadding="5" class="editor">
-			<tr>
-				<td colspan="3" style="color: darkblue; font-size: 14pt; text-align:center; font-weight: bold">Edit Calendar</td>
-			</tr>
-			<tr>
-				<td colspan="2" align="center" style="color:red"><?=$message?></td>
-			</tr>
-			<tr>
-				<td class="label">Calendar Name<br><span class="tiny">short name</span></td>
-				<td class="rightvalue"><input type="text" name="name" class="required" value="<?=$name?>"></td>
-			</tr>
-			<tr>
-				<td class="label">Description</td>
-				<td class="rightvalue"><input type="text" name="description" class="required" size="50" value="<?=$description?>"></td>
-			</tr>
-			<tr>
-				<td class="label">Location</td>
-				<td class="rightvalue"><input type="text" name="location" class="required" value="<?=$location?>"></td>
-			</tr>
-		</table>
-		<p><input type="submit" value="Save" name="submit"></p>
-		</form>
+		<div class="ui text container">
+			<div class="ui two column grid">
+				<div class="column">
+					<a href="calendar_calendars.php" class="ui button"><i class="arrow alternate circle left icon"></i>Back</a>
+				</div>
+			</div>
+
+			<div class="ui attached visible message">
+				<div class="header">Edit Calendar</div>
+			</div>
+
+			<form action="calendar_calendars.php" method="post" id="form1" class="ui form attached fluid segment">
+				<input type="hidden" name="action" value="edit">
+				<input type="hidden" name="id" value="<?=$id?>">
+
+				<? if ($message != '') { ?>
+				<div class="ui negative message"><?=$message?></div>
+				<? } ?>
+
+				<div class="required field">
+					<label>Calendar Name</label>
+					<input type="text" name="name" class="required" value="<?=$name?>" placeholder="Short calendar name" required autofocus="autofocus">
+				</div>
+
+				<div class="field">
+					<label>Description</label>
+					<input type="text" name="description" class="required" value="<?=$description?>" placeholder="Calendar description" required>
+				</div>
+
+				<div class="field">
+					<label>Location</label>
+					<input type="text" name="location" class="required" value="<?=$location?>" placeholder="Calendar location" required>
+				</div>
+
+				<input type="submit" value="Save" name="submit" class="ui primary button">
+				<a href="calendar_calendars.php" class="ui button">Cancel</a>
+			</form>
+		</div>
 	<?
 	}
 	
 ?>
 	
 <? include("footer.php") ?>
+
+
+

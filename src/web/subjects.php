@@ -1439,18 +1439,6 @@
 						
 						?>
 						<div class="ui attached styled grey segment">
-							<script type="text/javascript">
-								$(document).ready(function(){
-									$(".edit_inline<? echo $enrollmentid; ?>").editInPlace({
-										url: "group_inlineupdate.php",
-										params: "action=editinplace&id=<? echo $enrollmentid; ?>",
-										default_text: "<i style='color:#AAAAAA'>Edit group name...</i>",
-										bg_over: "white",
-										bg_out: "lightyellow",
-									});
-								});
-							</script>
-
 							<div class="ui grid">
 								<div class="three wide column">
 									<? if ($viewdata) { ?>

@@ -82,14 +82,13 @@
 	/* ------- UpdateSite ------------------------- */
 	/* -------------------------------------------- */
 	function UpdateSite($id, $sitename, $siteaddress, $sitecontact) {
-		/* perform data checks */
-		$sitename = mysqli_real_escape_string($GLOBALS['linki'], $sitename);
-		$siteaddress = mysqli_real_escape_string($GLOBALS['linki'], $siteaddress);
-		$sitecontact = mysqli_real_escape_string($GLOBALS['linki'], $sitecontact);
+		$id = (int)$id;
 		
 		/* update the site */
-		$sqlstring = "update nidb_sites set site_name = '$sitename', site_contact = '$sitecontact', site_address = '$siteaddress' where site_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "update nidb_sites set site_name = ?, site_contact = ?, site_address = ? where site_id = ?");
+		mysqli_stmt_bind_param($stmt, 'sssi', $sitename, $sitecontact, $siteaddress, $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
 		
 		?><div align="center"><span class="message"><?=$sitename?> updated</span></div><br><br><?
 	}
@@ -99,16 +98,13 @@
 	/* ------- AddSite ---------------------------- */
 	/* -------------------------------------------- */
 	function AddSite($sitename, $siteaddress, $sitecontact) {
-		/* perform data checks */
-		$sitename = mysqli_real_escape_string($GLOBALS['linki'], $sitename);
-		$siteaddress = mysqli_real_escape_string($GLOBALS['linki'], $siteaddress);
-		$sitecontact = mysqli_real_escape_string($GLOBALS['linki'], $sitecontact);
-
 		$siteuid = NIDB\CreateUID('T',4);
 		
 		/* insert the new site */
-		$sqlstring = "insert into nidb_sites (site_uid, site_uuid, site_name, site_address, site_contact) values ('$siteuid', uuid(), '$sitename', '$siteaddress', '$sitecontact')";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "insert into nidb_sites (site_uid, site_uuid, site_name, site_address, site_contact) values (?, uuid(), ?, ?, ?)");
+		mysqli_stmt_bind_param($stmt, 'ssss', $siteuid, $sitename, $siteaddress, $sitecontact);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
 		
 		?><div align="center"><span class="message"><?=$sitename?> added</span></div><br><br><?
 	}
@@ -118,8 +114,11 @@
 	/* ------- DeleteSite ------------------------- */
 	/* -------------------------------------------- */
 	function DeleteSite($id) {
-		$sqlstring = "delete from nidb_sites where site_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$id = (int)$id;
+		$stmt = mysqli_prepare($GLOBALS['linki'], "delete from nidb_sites where site_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
 	}	
 	
 	
@@ -130,9 +129,12 @@
 	
 		/* populate the fields if this is an edit */
 		if ($type == "edit") {
-			$sqlstring = "select * from nidb_sites where site_id = $id";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$id = (int)$id;
+			$stmt = mysqli_prepare($GLOBALS['linki'], "select * from nidb_sites where site_id = ?");
+			mysqli_stmt_bind_param($stmt, 'i', $id);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
 			$siteid = $row['site_id'];
 			$uuid = $row['site_uuid'];
 			$name = $row['site_name'];
@@ -140,7 +142,7 @@
 			$contact = $row['site_contact'];
 		
 			$formaction = "update";
-			$formtitle = "Updating $sitename";
+			$formtitle = "Updating $name";
 			$submitbuttonlabel = "Update";
 		}
 		else {
@@ -150,45 +152,46 @@
 		}
 		
 	?>
-		<div align="center">
-		<table class="entrytable">
-			<form method="post" action="adminsites.php">
-			<input type="hidden" name="action" value="<?=$formaction?>">
-			<input type="hidden" name="id" value="<?=$id?>">
-			<tr>
-				<td colspan="2" align="center">
-					<b><?=$formtitle?></b>
-				</td>
-			</tr>
-			<tr>
-				<td>Name</td>
-				<td><input type="text" name="sitename" value="<?=$name?>"></td>
-			</tr>
-			<tr>
-				<td>Address</td>
-				<td><textarea name="siteaddress"><?=$address?></textarea></td>
-			</tr>
-			<tr>
-				<td>Contact Info</td>
-				<td><textarea name="sitecontact"><?=$contact?></textarea></td>
-			</tr>
-			<? if ($type == 'edit') { ?>
-			<tr>
-				<td>Site UUID</td>
-				<td class="tiny"><?=strtoupper($uuid)?></td>
-			</tr>
-			<tr>
-				<td>Site ID</td>
-				<td class="tiny"><?=$siteid?></td>
-			</tr>
-			<? } ?>
-			<tr>
-				<td colspan="2" align="center">
-					<input type="submit" value="<?=$submitbuttonlabel?>" class="ui primary button">
-				</td>
-			</tr>
+		<div class="ui text container">
+			<div class="ui attached visible message">
+				<div class="header"><?=$formtitle?></div>
+			</div>
+
+			<form method="post" action="adminsites.php" class="ui form attached fluid segment">
+				<input type="hidden" name="action" value="<?=$formaction?>">
+				<input type="hidden" name="id" value="<?=$id?>">
+
+				<div class="required field">
+					<label>Site Name</label>
+					<input type="text" name="sitename" value="<?=$name?>" placeholder="Site name" required autofocus="autofocus">
+				</div>
+
+				<div class="field">
+					<label>Address</label>
+					<textarea name="siteaddress" rows="3" placeholder="Site address"><?=$address?></textarea>
+				</div>
+
+				<div class="field">
+					<label>Contact Info</label>
+					<textarea name="sitecontact" rows="3" placeholder="Contact information"><?=$contact?></textarea>
+				</div>
+
+				<? if ($type == 'edit') { ?>
+				<div class="two fields">
+					<div class="field">
+						<label>Site UUID</label>
+						<div class="ui small grey segment tiny"><?=strtoupper($uuid)?></div>
+					</div>
+					<div class="field">
+						<label>Site ID</label>
+						<div class="ui small grey segment tiny"><?=$siteid?></div>
+					</div>
+				</div>
+				<? } ?>
+
+				<input type="submit" value="<?=$submitbuttonlabel?>" class="ui primary button">
+				<a href="adminsites.php" class="ui button">Cancel</a>
 			</form>
-		</table>
 		</div>
 	<?
 	}
@@ -248,3 +251,6 @@
 
 
 <? include("footer.php") ?>
+
+
+
