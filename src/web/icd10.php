@@ -85,12 +85,20 @@
 					</div>
 				</div>
 			</div>
-			<div id="myGrid" class="ui bottom attached segment" style="height: 70vh; padding: 0;"></div>
+			<div id="myGrid" class="ui attached segment" style="height: 65vh; padding: 0;"></div>
+			<div class="ui bottom attached secondary segment">Displaying <span id="rowcount">0</span> rows</div>
 		</div>
 
 		<script>
 			const rowData = <?=$data?>;
 			let gridApi;
+
+			function updateDisplayedRowCount() {
+				if (!gridApi) {
+					return;
+				}
+				document.getElementById('rowcount').textContent = gridApi.getDisplayedRowCount();
+			}
 
 			const gridOptions = {
 				theme: agGrid.themeBalham,
@@ -108,12 +116,16 @@
 				rowData: rowData,
 				defaultColDef: { sortable: true, filter: true, resizable: true },
 				animateRows: false,
-				suppressMovableColumns: true
+				suppressMovableColumns: true,
+				onFirstDataRendered: updateDisplayedRowCount,
+				onFilterChanged: updateDisplayedRowCount,
+				onModelUpdated: updateDisplayedRowCount
 			};
 
 			$(document).ready(function() {
 				const eGridDiv = document.getElementById('myGrid');
 				gridApi = agGrid.createGrid(eGridDiv, gridOptions);
+				updateDisplayedRowCount();
 			});
 		</script>
 		<?
@@ -121,5 +133,8 @@
 ?>
 
 <? include("footer.php") ?>
+
+
+
 
 
