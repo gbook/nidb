@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Mar 30, 2026 at 04:54 PM
+-- Generation Time: Mar 31, 2026 at 07:04 PM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -1314,6 +1314,19 @@ CREATE TABLE `gsr_series` (
   `ishidden` tinyint(1) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `series_duration` bigint(20) DEFAULT NULL
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `icd10`
+--
+
+CREATE TABLE `icd10` (
+  `icd10_id` int(11) NOT NULL,
+  `icd10_code` varchar(20) NOT NULL,
+  `icd10_shortdesc` text NOT NULL,
+  `icd10_longdesc` text NOT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
@@ -4236,6 +4249,13 @@ ALTER TABLE `gsr_series`
   ADD KEY `ishidden` (`ishidden`);
 
 --
+-- Indexes for table `icd10`
+--
+ALTER TABLE `icd10`
+  ADD PRIMARY KEY (`icd10_id`);
+ALTER TABLE `icd10` ADD FULLTEXT KEY `icd10_code` (`icd10_code`,`icd10_shortdesc`,`icd10_longdesc`);
+
+--
 -- Indexes for table `importlogs`
 --
 ALTER TABLE `importlogs`
@@ -5463,6 +5483,12 @@ ALTER TABLE `group_data`
 --
 ALTER TABLE `gsr_series`
   MODIFY `gsrseries_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `icd10`
+--
+ALTER TABLE `icd10`
+  MODIFY `icd10_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `importlogs`
