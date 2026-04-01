@@ -41,6 +41,7 @@
 	$username = GetVariable("username");
 	$clustertype = GetVariable("clustertype");
 	$submithostuser = GetVariable("submithostuser");
+	$term = GetVariable("term");
 
 	$projectid = GetVariable("projectid");
 	$subjectid = GetVariable("subjectid");
@@ -73,6 +74,9 @@
 		case 'searchsubject':
 			SearchSubject($uid);
 			break;
+		case 'searchicd10':
+			SearchICD10($term);
+			break;
 		case 'validatepath':
 			ValidatePath($nfspath);
 			break;
@@ -101,6 +105,39 @@
 	
 
 	/* ------------------------------------ functions ------------------------------------ */
+
+
+	/* -------------------------------------------- */
+	/* ------- SearchICD10 ------------------------ */
+	/* -------------------------------------------- */
+	function SearchICD10($term) {
+		header('Content-Type: application/json');
+
+		$term = trim($term);
+		if ($term == '') {
+			echo json_encode(array());
+			return;
+		}
+
+		$search = '%' . $term . '%';
+		$results = array();
+
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select icd10_id, icd10_code, icd10_longdesc from icd10 where icd10_code like ? or icd10_longdesc like ? order by icd10_code limit 50");
+		mysqli_stmt_bind_param($stmt, 'ss', $search, $search);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$results[] = array(
+				'label' => $row['icd10_code'] . ' - ' . $row['icd10_longdesc'],
+				'value' => $row['icd10_code'] . ' - ' . $row['icd10_longdesc'],
+				'icd10_id' => $row['icd10_id'],
+				'code' => $row['icd10_code'],
+				'longdesc' => $row['icd10_longdesc']
+			);
+		}
+		mysqli_stmt_close($stmt);
+
+		echo json_encode($results);
+	}
 
 
 	/* -------------------------------------------- */

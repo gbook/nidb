@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Mar 31, 2026 at 07:04 PM
+-- Generation Time: Apr 01, 2026 at 05:08 PM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -873,6 +873,20 @@ CREATE TABLE `deprecated_observationnames` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `diagnosis`
+--
+
+CREATE TABLE `diagnosis` (
+  `diagnosis_id` int(11) NOT NULL,
+  `enrollment_id` int(11) NOT NULL,
+  `icd10_id` int(11) NOT NULL,
+  `start_date` date DEFAULT NULL,
+  `end_date` date DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `doc_series`
 --
 
@@ -1600,7 +1614,7 @@ CREATE TABLE `interventions` (
   `doseamount` varchar(255) DEFAULT NULL,
   `dosefrequency` varchar(255) DEFAULT NULL,
   `administration_route` varchar(255) DEFAULT NULL COMMENT 'oral, iv, suppository, etc',
-  `drugname_id` int(11) NOT NULL,
+  `drugname_id` int(11) DEFAULT NULL,
   `intervention_name` varchar(255) NOT NULL,
   `intervention_type` varchar(255) DEFAULT NULL,
   `dosekey` varchar(255) DEFAULT NULL,
@@ -4093,6 +4107,12 @@ ALTER TABLE `deprecated_observationnames`
   ADD UNIQUE KEY `measure_name` (`observation_name`);
 
 --
+-- Indexes for table `diagnosis`
+--
+ALTER TABLE `diagnosis`
+  ADD PRIMARY KEY (`diagnosis_id`);
+
+--
 -- Indexes for table `doc_series`
 --
 ALTER TABLE `doc_series`
@@ -5351,6 +5371,12 @@ ALTER TABLE `deprecated_observationinstruments`
 --
 ALTER TABLE `deprecated_observationnames`
   MODIFY `observationname_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `diagnosis`
+--
+ALTER TABLE `diagnosis`
+  MODIFY `diagnosis_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `doc_series`

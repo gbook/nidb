@@ -73,17 +73,10 @@
 
 		<div class="ui container">
 			<div class="ui top attached yellow segment">
-				<div class="ui grid">
-					<div class="eight wide column">
-						<h1 class="ui header">
-							ICD-10 Codes
-							<div class="sub header">Displaying <?=number_format($numcodes)?> codes</div>
-						</h1>
-					</div>
-					<div class="right aligned eight wide column">
-						<div class="ui basic label">Reference list</div>
-					</div>
-				</div>
+				<h1 class="ui header">
+					ICD-10 Codes
+					<div class="sub header">Codes obtained from October 2025 <a href="https://www.cms.gov/medicare/coordination-benefits-recovery/overview/icd-code-lists">cms.gov</a> public list.</div>
+				</h1>
 			</div>
 			<div id="myGrid" class="ui attached segment" style="height: 65vh; padding: 0;"></div>
 			<div class="ui bottom attached secondary segment">Displaying <span id="rowcount">0</span> rows</div>

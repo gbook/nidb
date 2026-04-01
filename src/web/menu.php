@@ -114,10 +114,12 @@
 			?><a href="subjects.php" class="<? if ($page=="subjects.php"){ echo "active"; } ?> item">Subjects</a><?
 			?><a href="groups.php" class="<? if ($page=="groups.php"){ echo "active"; } ?> item">Groups</a><?
 			?><a href="observations.php" class="<? if ($page=="observations.php"){ echo "active"; } ?> item">Observations</a><?
+			?><a href="interventions.php" class="<? if ($page=="interventions.php"){ echo "active"; } ?> item">Interventions</a><?
+			?><a href="diagnosis.php" class="<? if ($page=="diagnosis.php"){ echo "active"; } ?> item">Diagnosis</a><?
 		}
 		
 		/* studies, which are displayed under the projects menu */
-		elseif ($page == "studies.php" || $page=="observations.php" || $page == "managefiles.php" || $page == "series.php") {
+		elseif ($page == "studies.php" || $page=="observations.php" || $page=="interventions.php" || $page=="diagnosis.php" || $page == "managefiles.php" || $page == "series.php") {
 			$studyid = GetVariable("id");
 			$seriesid = GetVariable("seriesid");
 			$modality = GetVariable("modality");
