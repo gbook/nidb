@@ -135,6 +135,9 @@ public:
     //bool SubmitClusterJob(QString f, QString submithost, QString qsub, QString user, QString queue, QString &msg, int &jobid, QString &result);
     bool SubmitClusterJob(QString jobFilePath, QString clusterType, QString submitHost, QString submitUser, QString qsub, QString clusterUser, QString clusterQueue, QString &msg, int &jobid, QString &result);
 
+    /* debug functions */
+    QString GetSubjectStudySeriesMapString(const QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>> &data);
+
 private:
     void FatalError(QString err);
     qint64 pid = 0;                 /*!< Currently running process id */

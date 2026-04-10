@@ -2629,13 +2629,15 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
     QString exportstatus = "complete";
     QString bidsver = "1.10.1";
     subjectStudySeriesContainer s;
-    bidsreadme = "README:\n" + bidsreadme + "\n\nThis BIDS package was created by the Neuroinformatics Database (http://github.com/nidb)";
+    bidsreadme = "README:\n" + bidsreadme + "\n\nThis BIDS package was created by the Neuroinformatics Database (http://github.com/gbook/nidb)";
 
     QStringList msgs;
     if (!GetSeriesListDetails(seriesids, modalities, s)) {
         msg = "Unable to get a series list";
         return false;
     }
+
+    //n->Log(n->GetSubjectStudySeriesMapString(s));
 
     /* create the output directory */
     QString outdir = odir;
@@ -2855,13 +2857,26 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
                 }
 
                 /* copy the beh data */
+                n->Log(QString("behdirexists [%1]").arg(behdirexists));
                 if (behdirexists) {
-                    QString sourceOutDir = outdir + "/sourcedata/";
-                    QString systemstring;
-                    systemstring = "cp -R " + behindir + "/* " + sourceOutDir;
-                    n->Log(SystemCommand(systemstring, true));
-                    systemstring = "chmod -Rf 777 " + seriesoutdir;
-                    n->Log(SystemCommand(systemstring, true));
+                    QString sourceOutDir = QString("%1/sourcedata/beh/%2/%3/%4").arg(outdir).arg(uid).arg(studynum).arg(seriesnum);
+
+                    n->Log("Behavioral data directory [" + behindir + "] exists. Copying data to [" + sourceOutDir + "]");
+                    QString m;
+                    if (MakePath(sourceOutDir, m)) {
+                        n->Log(QString("Created behavioral directory [%1]").arg(sourceOutDir));
+                        QString systemstring;
+                        systemstring = "cp -R " + behindir + "/* " + sourceOutDir;
+                        n->Log(SystemCommand(systemstring, true));
+                        systemstring = "chmod -Rf 777 " + seriesoutdir;
+                        n->Log(SystemCommand(systemstring, true));
+                    }
+                    else {
+                        n->Log(QString("Unable to create behavioral directory [%1]. Message [%2]").arg(sourceOutDir).arg(m));
+                    }
+                }
+                else {
+                    n->Log("Behavioral data directory [" + behindir + "] does not exist");
                 }
 
                 n->SetExportSeriesStatus(seriesid, -1, -1, "",seriesstatus,statusmessage);

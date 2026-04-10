@@ -68,6 +68,7 @@
 	}
 
 	
+
 	$stmt = mysqli_prepare($GLOBALS['linki'], "select * from users where username = ?");
 	mysqli_stmt_bind_param($stmt, 's', $GLOBALS['username']);
 	$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
@@ -130,8 +131,8 @@
 					</div>
 				</div>
 				<div class="column">
-					<a class="ui primary big button" href="import.php"><i class="cloud upload icon"></i> Import</a> &nbsp; 
-					<a class="ui primary big button" href="search.php"><i class="search icon"></i> Search / Export</a>
+					<a class="ui primary button" href="import.php"><i class="cloud upload icon"></i> Import</a> &nbsp; 
+					<a class="ui primary button" href="search.php"><i class="search icon"></i> Search / Export</a>
 				</div>
 			</div>
 			<br><br>
@@ -160,8 +161,9 @@
 					<th class="subheader">Project</th>
 				</thead>
 			<?
-				$sqlstring = "select a.*, c.*, d.uid, d.subject_id, f.family_uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on b.project_id = c.project_id left join subjects d on d.subject_id = b.subject_id left join family_members e on d.subject_id = e.subject_id left join families f on e.family_id = f.family_id where d.isactive = 1 and (a.study_datetime > now() - interval $numrecentdays day) and a.study_datetime <= now() and b.project_id in (select project_id from projects where instance_id = '" . $_SESSION['instanceid'] . "') and a.study_modality <> '' order by a.study_datetime desc";
-				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+				$stmt = mysqli_prepare($GLOBALS['linki'], "select a.*, c.*, d.uid, d.subject_id, f.family_uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on b.project_id = c.project_id left join subjects d on d.subject_id = b.subject_id left join family_members e on d.subject_id = e.subject_id left join families f on e.family_id = f.family_id where d.isactive = 1 and a.study_datetime > DATE_SUB(now(), interval ? day) and a.study_datetime <= now() and b.project_id in (select project_id from projects where instance_id = ?) and a.study_modality <> '' order by a.study_datetime desc");
+				mysqli_stmt_bind_param($stmt, 'ii', $numrecentdays, $_SESSION['instanceid']);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$study_id = $row['study_id'];
 					$subject_id = $row['subject_id'];
@@ -179,10 +181,16 @@
 					//PrintVariable($projectid);
 					//PrintVariable($perms);
 					if (GetPerm($perms, 'viewdata', $projectid)) {
-						$sqlstringA = "select count(*) 'seriescount' from " . strtolower($modality) . "_series where study_id = $study_id";
-						$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+						$seriestable = GetSeriesTableName($modality);
+						if ($seriestable == '') {
+							continue;
+						}
+						$stmtA = mysqli_prepare($GLOBALS['linki'], "select count(*) 'seriescount' from $seriestable where study_id = ?");
+						mysqli_stmt_bind_param($stmtA, 'i', $study_id);
+						$resultA = MySQLiBoundQuery($stmtA, __FILE__, __LINE__);
 						$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
 						$seriescount = $rowA['seriescount'];
+						mysqli_stmt_close($stmtA);
 						?>
 						<tr>
 							<td class="tt"><a href="subjects.php?id=<?=$subject_id?>"><?=$uid;?></a></td>
@@ -208,6 +216,7 @@
 						<?
 					}
 				}
+				mysqli_stmt_close($stmt);
 			?>
 			</table>
 			<?
@@ -223,16 +232,19 @@
 			<div class="ui relaxed divided list">
 			<?
 				/* get user_project info */
-				$sqlstring = "select * from user_project a left join projects b on a.project_id = b.project_id where a.user_id in (select user_id from users where username = '" . $GLOBALS['username'] . "') and a.favorite = 1";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$stmt = mysqli_prepare($GLOBALS['linki'], "select * from user_project a left join projects b on a.project_id = b.project_id where a.user_id in (select user_id from users where username = ?) and a.favorite = 1");
+				mysqli_stmt_bind_param($stmt, 's', $GLOBALS['username']);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$projectid = $row['project_id'];
 					$projectname = $row['project_name'];
 					
-					$sqlstringA = "select count(*) 'numsubjects' from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = $projectid and a.isactive = 1";
-					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+					$stmtA = mysqli_prepare($GLOBALS['linki'], "select count(*) 'numsubjects' from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = ? and a.isactive = 1");
+					mysqli_stmt_bind_param($stmtA, 'i', $projectid);
+					$resultA = MySQLiBoundQuery($stmtA, __FILE__, __LINE__);
 					$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
 					$numsubjects = $rowA['numsubjects'];
+					mysqli_stmt_close($stmtA);
 					?>
 					<div class="item">
 						<div class="content">
@@ -244,6 +256,7 @@
 					</div>
 					<?
 				}
+				mysqli_stmt_close($stmt);
 			?>
 			</div>
 
@@ -260,8 +273,9 @@
 					<th>Date Accessed</th>
 				</thead>
 				<?
-				$sqlstring = "select a.mostrecent_date, a.project_id, b.* from mostrecent a left join projects b on a.project_id = b.project_id where a.user_id in (select user_id from users where username = '$username') and a.project_id is not null and b.project_id in (select project_id from projects where instance_id = '" . $_SESSION['instanceid'] . "') group by b.project_name order by a.mostrecent_date desc";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$stmt = mysqli_prepare($GLOBALS['linki'], "select a.mostrecent_date, a.project_id, b.* from mostrecent a left join projects b on a.project_id = b.project_id where a.user_id in (select user_id from users where username = ?) and a.project_id is not null and b.project_id in (select project_id from projects where instance_id = ?) group by b.project_name order by a.mostrecent_date desc");
+				mysqli_stmt_bind_param($stmt, 'si', $username, $_SESSION['instanceid']);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 				if (mysqli_num_rows($result) > 0) {
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$projectid = $row['project_id'];
@@ -275,6 +289,7 @@
 						<?
 					}
 				}
+				mysqli_stmt_close($stmt);
 				?>
 			</table>
 
@@ -292,8 +307,9 @@
 					<th>Date Accessed</th>
 				</thead>
 				<?
-				$sqlstring = "select a.mostrecent_date, a.subject_id, b.* from mostrecent a left join subjects b on a.subject_id = b.subject_id left join enrollment c on b.subject_id = c.subject_id where a.user_id in (select user_id from users where username = '$username') and a.subject_id is not null and c.project_id in (select project_id from projects where instance_id = '" . $_SESSION['instanceid'] . "') group by b.uid order by a.mostrecent_date desc";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$stmt = mysqli_prepare($GLOBALS['linki'], "select a.mostrecent_date, a.subject_id, b.* from mostrecent a left join subjects b on a.subject_id = b.subject_id left join enrollment c on b.subject_id = c.subject_id where a.user_id in (select user_id from users where username = ?) and a.subject_id is not null and c.project_id in (select project_id from projects where instance_id = ?) group by b.uid order by a.mostrecent_date desc");
+				mysqli_stmt_bind_param($stmt, 'si', $username, $_SESSION['instanceid']);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 				if (mysqli_num_rows($result) > 0) {
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$subjectid = $row['subject_id'];
@@ -311,6 +327,7 @@
 						<?
 					}
 				}
+				mysqli_stmt_close($stmt);
 				?>
 			</table>
 			
@@ -335,8 +352,9 @@
 				//mysqli_stmt_prepare($q, "select a.mostrecent_date, a.study_id, b.*, d.uid from mostrecent a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on d.subject_id = c.subject_id where a.user_id in (select user_id from users where username = ?) and a.study_id is not null and c.project_id in (select project_id from projects where instance_id = ?) order by a.mostrecent_date desc");
 				//mysqli_stmt_bind_param($q, 'ss', $username, $_SESSION['instanceid']);
 				//$result = MySQLiBoundQuery($q, __FILE__, __LINE__);
-				$sqlstring = "select a.mostrecent_date, a.study_id, b.*, d.uid from mostrecent a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on d.subject_id = c.subject_id where a.user_id in (select user_id from users where username = '$username') and a.study_id is not null and c.project_id in (select project_id from projects where instance_id = " . $_SESSION['instanceid'] . ") order by a.mostrecent_date desc";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$stmt = mysqli_prepare($GLOBALS['linki'], "select a.mostrecent_date, a.study_id, b.*, d.uid from mostrecent a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on d.subject_id = c.subject_id where a.user_id in (select user_id from users where username = ?) and a.study_id is not null and c.project_id in (select project_id from projects where instance_id = ?) order by a.mostrecent_date desc");
+				mysqli_stmt_bind_param($stmt, 'si', $username, $_SESSION['instanceid']);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 				if (mysqli_num_rows($result) > 0) {
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$studyid = $row['study_id'];
@@ -357,6 +375,7 @@
 						<?
 					}
 				}
+				mysqli_stmt_close($stmt);
 				?>
 			</table>
 		</div>

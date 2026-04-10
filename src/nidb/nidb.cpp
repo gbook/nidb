@@ -1227,3 +1227,43 @@ bool nidb::SetExportSeriesStatus(qint64 exportseriesid, qint64 exportid, qint64 
         return false;
     }
 }
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetSubjectStudySeriesMapString ----------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Debugging function to convert a triple nested QMap into a formatted string
+ * @param data The triple nested QMap structure
+ * @return The formatted string
+ */
+QString nidb::GetSubjectStudySeriesMapString(const QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>> &data)
+{
+    QString output;
+    QTextStream stream(&output);
+
+    for (auto it1 = data.constBegin(); it1 != data.constEnd(); ++it1)
+    {
+        stream << it1.key() << ":\n";
+
+        const auto &level2 = it1.value();
+        for (auto it2 = level2.constBegin(); it2 != level2.constEnd(); ++it2)
+        {
+            stream << "  [" << it2.key() << "]\n";
+
+            const auto &level3 = it2.value();
+            for (auto it3 = level3.constBegin(); it3 != level3.constEnd(); ++it3)
+            {
+                stream << "    [" << it3.key() << "]\n";
+
+                const auto &level4 = it3.value();
+                for (auto it4 = level4.constBegin(); it4 != level4.constEnd(); ++it4)
+                {
+                    stream << "      " << it4.key() << " = " << it4.value() << "\n";
+                }
+            }
+        }
+    }
+
+    return output;
+}

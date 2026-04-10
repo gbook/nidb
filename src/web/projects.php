@@ -274,11 +274,12 @@
 			if ($column == "altuids") {
 				StartSQLTransaction();
 				/* get enrollmentid */
-				$sqlstring = "select enrollment_id from enrollment where subject_id = $subjectid and project_id = $projectid";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-				$enrollmentid = $row['enrollment_id'];
-				if ($enrollmentid == "") { $enrollmentid = 0; }
+				$enrollmentid = GetEnrollmentID($subjectid, $projectid);
+				//$sqlstring = "select enrollment_id from enrollment where subject_id = $subjectid and project_id = $projectid";
+				//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+				//$enrollmentid = $row['enrollment_id'];
+				//if ($enrollmentid == "") { $enrollmentid = 0; }
 
 				/* delete entries for this subject from the altuid table ... */
 				$sqlstring = "delete from subject_altuid where subject_id = $subjectid and enrollment_id = $enrollmentid";
@@ -313,6 +314,26 @@
 				$sqlstring = "update enrollment set enroll_subgroup = '$value' where project_id = $projectid and subject_id = $subjectid";
 				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 				$msg = "$uid - Updated enroll group &rarr; <tt>$value</tt>";
+			}
+			elseif ($column == "icd10") {
+				$enrollmentRowID = GetEnrollmentID($subjectid, $projectid);
+				
+				/* get icd10 rowID */
+				$stmt = mysqli_prepare($GLOBALS['linki'], "select icd10_id from icd10 where icd10_code = ?");
+				mysqli_stmt_bind_param($stmt, 's', $value);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+				$icd10RowID = $row['icd10_id'];
+				mysqli_stmt_close($stmt);
+				
+				/* update the icd10 code */
+				$stmt = mysqli_prepare($GLOBALS['linki'], "insert ignore into diagnosis (enrollment_id, icd10_id) values (?,?)");
+				mysqli_stmt_bind_param($stmt, 'ii', $enrollmentRowID, $icd10RowID);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+				$icd10RowID = $row['icd10_id'];
+				mysqli_stmt_close($stmt);
+				
 			}
 			else {
 				$sqlstring = "update subjects set ";
@@ -1352,22 +1373,23 @@
 						<textarea name="csv" style="font-family:monospace"></textarea>
 					</div>
 					<i class="blue question circle icon"></i> <b>Formatting Guide</b><br>
-					Available columns (csv must always contain at least <b>uid</b>)
+					Available columns (.csv may contain any set of those columns, but <b>must</b> always contain <tt>uid</tt>)
 					<ul>
-						<li><tt>uid</tt> - The UID of the subject
-						<li><tt>status</tt> - Enrollment status. Possible values: consented, enrolled, completed, excluded
-						<li><tt>altuids</tt> - space delimited list of alternate UIDs with asterisk indicating primary alternate ID. Example <code>*1234 AB539 ID2054</code>
-						<li><tt>guid</tt>
-						<li><tt>birthdate</tt> - format <code>YYYY-MM-DD</code>
-						<li><tt>sex</tt> - Possible values: F, M, O, U
-						<li><tt>gender</tt> - Possible values: F, M, O, U
-						<li><tt>ethnicity1</tt> - Possible values: hispanic, nothispanic
-						<li><tt>ethnicity2</tt> - Possible values: unknown, asian, black, white, indian, islander, mixed, other
-						<li><tt>handedness</tt> - Possible values: R, L, A, U
-						<li><tt>education</tt> - Possible values:  0 (Unknown), 1 (Grade School), 2 (Middle School), 3 (High School/GED), 4 (Trade School), 5 (Associates Degree), 6 (Bachelors Degree), 7 (Masters Degree), 8 (Doctoral Degree)
-						<li><tt>marital</tt> - Possible values: unknown, married, single, divorced, separated, civilunion, cohabitating, widowed
-						<li><tt>smoking</tt> - Possible values: unknown, never, current, past
-						<li><tt>enrollgroup</tt>
+						<li><code>uid</code> - The UID of the subject
+						<li><code>status</code> - Enrollment status. Possible values: <tt>consented, enrolled, completed, excluded</tt>
+						<li><code>altuids</code> - space delimited list of alternate UIDs with asterisk indicating primary alternate ID. Example <code>*1234 AB539 ID2054</code>
+						<li><code>guid</code> - Globally unique ID for NDA submission
+						<li><code>birthdate</code> - format <tt>YYYY-MM-DD</tt>
+						<li><code>sex</code> - Possible values: <tt>F, M, O, U</tt>
+						<li><code>gender</code> - Possible values: <tt>F, M, O, U</tt>
+						<li><code>ethnicity1</code> - Possible values: <tt>hispanic, nothispanic</tt>
+						<li><code>ethnicity2</code> - Possible values: <tt>unknown, asian, black, white, indian, islander, mixed, other</tt>
+						<li><code>handedness</code> - Possible values: <tt>R, L, A, U</tt>
+						<li><code>education</code> - Possible values:  0 (Unknown), 1 (Grade School), 2 (Middle School), 3 (High School/GED), 4 (Trade School), 5 (Associates Degree), 6 (Bachelors Degree), 7 (Masters Degree), 8 (Doctoral Degree)
+						<li><code>marital</code> - Possible values: <tt>unknown, married, single, divorced, separated, civilunion, cohabitating, widowed</tt>
+						<li><code>smoking</code> - Possible values: <tt>unknown, never, current, past</tt>
+						<li><code>enrollgroup</code> - Enrollment group
+						<li><code>icd10</code> - ICD10 code. See list of available <a href="icd10.php" target="newwindow">codes</a>.
 					</ul>
 					<b>Sample .csv format</b>
 					<div style="font-family:monospace; padding:8px; background-color: #eee; border: 1px dashed #aaa">
@@ -3078,14 +3100,23 @@
 						<div class="sub header"><?=$numsubjects?> subjects &nbsp; &nbsp; <?=$numstudies?> studies</div>
 					</h1>
 				</div>
-				<div class="ten wide column">
-					<a class="ui green button" href="projects.php?action=editsubjects&id=<?=$id?>">
+				<div class="one wide column">
+				</div>
+				<div class="three wide column">
+					<a class="ui green fluid button" href="projects.php?action=editsubjects&id=<?=$id?>">
 						<i class="user friends icon"></i> Subjects
 					</a>
-					<a class="ui green button" href="projects.php?action=displaystudies&id=<?=$id?>">
+					<div class="ui basic grey pointing label">
+						Batch update
+					</div>
+				</div>
+				<div class="three wide column">
+					<a class="ui green fluid button" href="projects.php?action=displaystudies&id=<?=$id?>">
 						<i class="project diagram icon"></i> Imaging studies
 					</a>
-					<a class="ui green button" href="projects.php?action=displaynonimaging&id=<?=$id?>">
+				</div>
+				<div class="three wide column">
+					<a class="ui green fluid button" href="projects.php?action=displaynonimaging&id=<?=$id?>">
 						<i class="project diagram icon"></i> Non-imaging data
 					</a>
 				</div>

@@ -13,6 +13,7 @@ POSSIBLE_FILES=(
 	"/nidb/programs/nidb.cfg"
 )
 
+# find the config file if it exists
 for file in "${POSSIBLE_FILES[@]}"; do
     if [[ -f "$file" ]]; then
         CONFIG_FILE="$file"
@@ -28,6 +29,7 @@ for file in "${POSSIBLE_FILES[@]}"; do
     fi
 done
 
+# load the config variables
 while IFS= read -r line; do
     # Trim leading/trailing whitespace
     line="$(sed 's/^[[:space:]]*//;s/[[:space:]]*$//' <<< "$line")"
@@ -138,19 +140,20 @@ if ((new_installation)); then
 
 	# create data directories
 	echo 'Create data directories and change owner...'
-	mkdir -p /nidb/data
-	mkdir -p /nidb/data/archive
-	mkdir -p /nidb/data/backup
-	mkdir -p /nidb/data/backupstaging
-	mkdir -p /nidb/data/deleted
-	mkdir -p /nidb/data/dicomincoming
-	mkdir -p /nidb/data/download
-	mkdir -p /nidb/data/export
-	mkdir -p /nidb/data/problem
-	mkdir -p /nidb/data/tmp
-	mkdir -p /nidb/data/upload
-	mkdir -p /nidb/data/uploaded
-	mkdir -p /nidb/data/uploadstaging
+	mkdir -p -m 774 /nidb
+	mkdir -p -m 764 /nidb/data
+	mkdir -p -m 764 /nidb/data/archive
+	mkdir -p -m 764 /nidb/data/backup
+	mkdir -p -m 764 /nidb/data/backupstaging
+	mkdir -p -m 764 /nidb/data/deleted
+	mkdir -p -m 764 /nidb/data/dicomincoming
+	mkdir -p -m 764 /nidb/data/download
+	mkdir -p -m 764 /nidb/data/export
+	mkdir -p -m 764 /nidb/data/problem
+	mkdir -p -m 764 /nidb/data/tmp
+	mkdir -p -m 764 /nidb/data/upload
+	mkdir -p -m 764 /nidb/data/uploaded
+	mkdir -p -m 764 /nidb/data/uploadstaging
 
 	# change permissions of the /nidb directory
 	echo 'Change ownership of /nidb contents...'
@@ -168,7 +171,28 @@ if ((new_installation)); then
 	chown -R nidb:nidb /var/www/html
 	find /var/www -type d -exec chmod 755 {} \;
 	find /var/www -type f -exec chmod 644 {} \;
+
+else
+
+	# change permissions of the /nidb directory
+	echo 'Change ownership of /nidb contents...'
+	chown -R nidb:nidb ${config["nidbdir"]}/bin ${config["lockdir"]} ${config["logdir"]} ${config["qcmoduledir"]} ${config["nidbdir"]}/setup # change ownership of the install directory
+	chown nidb:nidb ${config["nidbdir"]}/*  # change ownership of the install directory
+	chown nidb:nidb /nidb/data  # change ownership of the data directory
+	chown nidb:nidb ${config["archivedir"]} ${config["backupdir"]} ${config["backupstagingdir"]} ${config["deleteddir"]} ${config["incomingdir"]} ${config["ftpdir"]} ${config["exportdir"]} ${config["problemdir"]} ${config["tmpdir"]} ${config["uploaddir"]} ${config["uploadeddir"]} ${config["uploadstagingdir"]}  # change ownership of the data directories
+	echo 'Change permissions of /nidb...'
+	chmod -R g+w ${config["nidbdir"]}/bin ${config["lockdir"]} ${config["logdir"]} ${config["qcmoduledir"]} ${config["nidbdir"]}/setup # change permissions of the install directorys contents
+	chmod g+w ${config["nidbdir"]}/* # change permissions of the install directorys contents
+	echo 'Change ownership of /nidb...'
+	chmod 777 ${config["nidbdir"]}              # change permissions of the install directory
+
+	# change owner and permissions of the web directory
+	chown -R nidb:nidb  ${config["webdir"]}
+	find /var/www -type d -exec chmod 755 {} \;
+	find /var/www -type f -exec chmod 644 {} \;
+
 fi
+
 
 touch /nidb/setup/dbupgrade
 

@@ -103,6 +103,19 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- GetSeriesTableName ----------------- */
+	/* -------------------------------------------- */
+	function GetSeriesTableName($modality) {
+		$normalizedModality = strtolower($modality);
+		if (!preg_match('/^[a-z0-9]+$/', $normalizedModality)) {
+			return '';
+		}
+
+		return $normalizedModality . "_series";
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- GetVariables ----------------------- */
 	/* -------------------------------------------- */
 	function GetVariables($var) {
@@ -863,6 +876,26 @@
 		else {
 			return array("", -1, "", "", -1);
 		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetEnrollmentID -------------------- */
+	/* -------------------------------------------- */
+	function GetEnrollmentID($subjectRowID, $projectRowID) {
+		$subjectRowID = (int)$subjectRowID;
+		$projectRowID = (int)$projectRowID;
+		
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select enrollment_id from enrollment where subject_id = ? and project_id = ?");
+		mysqli_stmt_bind_param($stmt, 'ii', $subjectRowID, $projectRowID);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+		
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$enrollmentRowID = $row['enrollment_id'];
+		if ($enrollmentRowID == "") { $enrollmentRowID = 0; }
+		
+		return $enrollmentRowID;
 	}
 	
 	
