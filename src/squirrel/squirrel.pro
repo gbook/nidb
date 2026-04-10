@@ -20,25 +20,25 @@ DEFINES += SQUIRREL_BUILD
 
 SOURCES += \
 	bids.cpp \
-	extract.cpp \
-	info.cpp \
-	modify.cpp \
-	squirrelDataDictionary.cpp \
-	squirrelImageIO.cpp \
-	squirrelGroupAnalysis.cpp \
-	squirrelIntervention.cpp \
-	squirrelObservation.cpp \
-	utils.cpp \
 	convert.cpp \
 	dicom.cpp \
+	extract.cpp \
+	info.cpp \
 	main.cpp \
+	modify.cpp \
 	squirrel.cpp \
 	squirrelAnalysis.cpp \
+	squirrelDataDictionary.cpp \
 	squirrelExperiment.cpp \
+	squirrelGroupAnalysis.cpp \
+	squirrelImageIO.cpp \
+	squirrelIntervention.cpp \
+	squirrelObservation.cpp \
 	squirrelPipeline.cpp \
 	squirrelSeries.cpp \
 	squirrelStudy.cpp \
-	squirrelSubject.cpp
+	squirrelSubject.cpp \
+	utils.cpp
 
 # Default rules for deployment.
 #qnx: target.path = /tmp/$${TARGET}/bin
@@ -47,27 +47,27 @@ SOURCES += \
 
 HEADERS += \
 	bids.h \
+	convert.h \
+	dicom.h \
 	extract.h \
 	info.h \
 	modify.h \
+	squirrel.h \
 	squirrel.sql.h \
+	squirrelAnalysis.h \
 	squirrelDataDictionary.h \
+	squirrelExperiment.h \
+	squirrelGroupAnalysis.h \
 	squirrelImageIO.h \
 	squirrelIntervention.h \
 	squirrelObservation.h \
-	squirrelTypes.h \
-	squirrelVersion.h \
-	squirrelGroupAnalysis.h \
-	utils.h \
-	convert.h \
-	dicom.h \
-	squirrel.h \
-	squirrelAnalysis.h \
-	squirrelExperiment.h \
 	squirrelPipeline.h \
 	squirrelSeries.h \
 	squirrelStudy.h \
-	squirrelSubject.h
+	squirrelSubject.h \
+	squirrelTypes.h \
+	squirrelVersion.h \
+	utils.h
 
 # bit7z library (provides LZMA)
 win32: {
@@ -131,34 +131,34 @@ linux: {
     INCLUDEPATH += /usr/local/include/
 
     LIBS += -ldcmdata \
-        -lcmr \
-	-ldcmdata \
-	-ldcmdsig \
-	-ldcmect \
-	-ldcmfg \
-	-ldcmimage \
-	-ldcmimgle \
-	-ldcmiod \
-	-ldcmjpeg \
-	-ldcmjpls \
-	-ldcmnet \
-	-ldcmpmap \
-	-ldcmpstat \
-	-ldcmqrdb \
-	-ldcmrt \
-	-ldcmseg \
-	-ldcmsr \
-	-ldcmtkcharls \
-	-ldcmtls \
-	-ldcmtract \
-	-ldcmwlm \
-	-ldcmxml \
-	-li2d \
-	-lijg8 \
-	-lijg12 \
-	-lijg16 \
-	-loficonv \
-	-loflog \
-	-lofstd
+		-lcmr \
+		-ldcmdata \
+		-ldcmdsig \
+		-ldcmect \
+		-ldcmfg \
+		-ldcmimage \
+		-ldcmimgle \
+		-ldcmiod \
+		-ldcmjpeg \
+		-ldcmjpls \
+		-ldcmnet \
+		-ldcmpmap \
+		-ldcmpstat \
+		-ldcmqrdb \
+		-ldcmrt \
+		-ldcmseg \
+		-ldcmsr \
+		-ldcmtkcharls \
+		-ldcmtls \
+		-ldcmtract \
+		-ldcmwlm \
+		-ldcmxml \
+		-li2d \
+		-lijg8 \
+		-lijg12 \
+		-lijg16 \
+		-loficonv \
+		-loflog \
+		-lofstd
 
 }
