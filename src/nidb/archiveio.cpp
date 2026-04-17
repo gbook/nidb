@@ -2626,6 +2626,8 @@ void archiveIO::AppendUploadLog(QString m) {
 bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QString odir, QString bidsreadme, QStringList bidsflags, QString &msg) {
     n->Log("Entering WriteBIDS()...");
 
+    bool returnStatus(true);
+
     QString exportstatus = "complete";
     QString bidsver = "1.10.1";
     subjectStudySeriesContainer s;
@@ -2799,12 +2801,24 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
                     bidsSession = QString("ses-%1").arg(j, 4, 10, QChar('0'));
                 }
 
+                /* do some checks for unknown/invalid mappings which could cause BIDS validation errors */
+                if ((mapping.bidsEntity == "") || (mapping.bidsEntity == "unknown")) {
+                    returnStatus = false;
+                    msg += "BIDS entity mapping is missing or unknown for [" + mapping.protocol + "]\n";
+                }
+                if ((mapping.bidsSuffix == "") || (mapping.bidsSuffix == "unknown")) {
+                    returnStatus = false;
+                    msg += "BIDS suffix mapping is missing or unknown for [" + mapping.protocol + "]\n";
+                }
+
                 /* determine the datatype (what BIDS calls the 'modality') */
                 QString seriesdir;
-                if (mapping.bidsEntity == "")
+                if (mapping.bidsEntity == "") {
                     seriesdir = "unknown";
-                else
+                }
+                else {
                     seriesdir = mapping.bidsEntity;
+                }
 
                 QString seriesoutdir = QString("%1/%2/%3/%4").arg(outdir).arg(subjectdir).arg(sessiondir).arg(seriesdir);
 
@@ -2903,7 +2917,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 
     msg = msgs.join("\n");
     n->Log("Leaving WriteBIDS()...");
-    return true;
+    return returnStatus;
 }
 
 

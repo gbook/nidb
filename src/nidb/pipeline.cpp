@@ -22,6 +22,37 @@
 
 #include "pipeline.h"
 #include <QSqlQuery>
+#include <QTextStream>
+
+namespace {
+QString FormatBool(bool value) { return value ? "true" : "false"; }
+
+QString FormatDateTime(const QDateTime &value) {
+    return value.isValid() ? value.toString(Qt::ISODate) : "<invalid>";
+}
+
+QString FormatString(const QString &value) {
+    return value.isEmpty() ? "<empty>" : value;
+}
+
+QString FormatIntList(const QList<int> &values) {
+    if (values.isEmpty())
+        return "[]";
+
+    QStringList strValues;
+    for (int value : values)
+        strValues.append(QString::number(value));
+
+    return QString("[%1]").arg(strValues.join(", "));
+}
+
+QString FormatStringList(const QStringList &values) {
+    if (values.isEmpty())
+        return "[]";
+
+    return QString("[%1]").arg(values.join(", "));
+}
+}
 
 /* ---------------------------------------------------------- */
 /* --------- pipeline --------------------------------------- */
@@ -104,6 +135,7 @@ void pipeline::LoadPipelineInfo() {
     version = q.value("pipeline_version").toInt();
     QStringList dependencyStr = q.value("pipeline_dependency").toString().trimmed().split(",", Qt::SkipEmptyParts);
     QStringList groupIDStr = q.value("pipeline_groupid").toString().trimmed().split(",", Qt::SkipEmptyParts);
+    QStringList projectIDStr = q.value("pipeline_projectid").toString().trimmed().split(",", Qt::SkipEmptyParts);
 
     /* split the 'list' variables */
     foreach (QString did, dependencyStr) {
@@ -111,6 +143,9 @@ void pipeline::LoadPipelineInfo() {
     }
     foreach (QString gid, groupIDStr) {
         groupIDs.append(gid.toInt());
+    }
+    foreach (QString pid, projectIDStr) {
+        projectIDs.append(pid.toInt());
     }
 
     /* check if anything is missing */
@@ -148,6 +183,69 @@ QStringList pipeline::GetParentList() {
     return l;
 }
 
+
+/* ---------------------------------------------------------- */
+/* --------- PrintPipelineVariables ------------------------- */
+/* ---------------------------------------------------------- */
+QString pipeline::PrintPipelineVariables() const {
+    QString output;
+    QTextStream stream(&output);
+
+    auto writeLine = [&stream](const QString &label, const QString &value) {
+        stream << label << ": " << value << Qt::endl;
+    };
+
+    writeLine("createDate", FormatDateTime(createDate));
+    writeLine("lastCheck", FormatDateTime(lastCheck));
+    writeLine("lastFinish", FormatDateTime(lastFinish));
+    writeLine("lastStart", FormatDateTime(lastStart));
+    writeLine("groupIDs", FormatIntList(groupIDs));
+    writeLine("parentIDs", FormatIntList(parentIDs));
+    writeLine("projectIDs", FormatIntList(projectIDs));
+    writeLine("BIDSoutputDir", FormatString(BIDSoutputDir));
+    writeLine("dataCopyMethod", FormatString(dataCopyMethod));
+    writeLine("depDir", FormatString(depDir));
+    writeLine("depLevel", FormatString(depLevel));
+    writeLine("depLinkType", FormatString(depLinkType));
+    writeLine("desc", FormatString(desc));
+    writeLine("dirStructure", FormatString(dirStructure));
+    writeLine("directory", FormatString(directory));
+    writeLine("group", FormatString(group));
+    writeLine("name", FormatString(name));
+    writeLine("notes", FormatString(notes));
+    writeLine("pipelineRootDir", FormatString(pipelineRootDir));
+    writeLine("resultScript", FormatString(resultScript));
+    writeLine("status", FormatString(status));
+    writeLine("statusMessage", FormatString(statusMessage));
+    writeLine("tmpDir", FormatString(tmpDir));
+    writeLine("completeFiles", FormatStringList(completeFiles));
+    writeLine("debug", FormatBool(debug));
+    writeLine("enabled", FormatBool(enabled));
+    writeLine("groupBySubject", FormatBool(groupBySubject));
+    writeLine("isHidden", FormatBool(isHidden));
+    writeLine("isPrivate", FormatBool(isPrivate));
+    writeLine("outputBIDS", FormatBool(outputBIDS));
+    writeLine("removeData", FormatBool(removeData));
+    writeLine("testing", FormatBool(testing));
+    writeLine("useProfile", FormatBool(useProfile));
+    writeLine("useTmpDir", FormatBool(useTmpDir));
+    writeLine("dynamicGroupID", QString::number(dynamicGroupID));
+    writeLine("level", QString::number(level));
+    writeLine("numConcurrentAnalysis", QString::number(numConcurrentAnalysis));
+    writeLine("ownerID", QString::number(ownerID));
+    writeLine("submitDelay", QString::number(submitDelay));
+    writeLine("version", QString::number(version));
+    writeLine("clusterQueue", FormatString(clusterQueue));
+    writeLine("clusterSubmitHost", FormatString(clusterSubmitHost));
+    writeLine("clusterSubmitHostUser", FormatString(clusterSubmitHostUser));
+    writeLine("clusterType", FormatString(clusterType));
+    writeLine("clusterUser", FormatString(clusterUser));
+    writeLine("clusterMemory", QString::number(clusterMemory));
+    writeLine("clusterMaxWallTime", QString::number(clusterMaxWallTime));
+    writeLine("clusterNumCores", QString::number(clusterNumCores));
+
+    return output;
+}
 
 /* ---------------------------------------------------------- */
 /* --------- GetSquirrelObject ------------------------------ */

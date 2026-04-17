@@ -24,6 +24,7 @@
 	define("LEGIT_REQUEST", true);
 	
 	session_start();
+	ob_start();
 ?>
 
 <html>
@@ -84,6 +85,7 @@
 		case 'viewjob': DisplayJob($id); break;
 		case 'viewlists': DisplayPipelineLists($id, $listtype); break;
 		case 'viewanalyses': DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder); break;
+		case 'exportanalysiscsv': ExportAnalysisCSV($id, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder); break;
 		case 'viewfailedanalyses': DisplayFailedAnalysisList($id, $numperpage, $pagenum); break;
 		case 'deleteanalyses':
 			DeleteAnalyses($id, $analysisids);
@@ -155,14 +157,187 @@
 		/* check input parameters */
 		if (!ValidID($id,'Pipeline ID')) { return; }
 		
-		$notes = mysqli_real_escape_string($GLOBALS['linki'], $notes);
-		$sqlstring = "update analysis set analysis_notes = '$notes' where analysis_id = $id";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "update analysis set analysis_notes = ? where analysis_id = ?");
+		mysqli_stmt_bind_param($stmt, 'si', $notes, $id);
+		$result = MySQLiBoundQuery($stmt,__FILE__,__LINE__);
+		mysqli_stmt_close($stmt);
 		//PrintSQL($sqlstring);
 		
 		?><div align="center"><span class="message">Analysis [<?=$id?>] notes updated</span></div><?
 	}
 	
+
+	/* -------------------------------------------- */
+	/* ------- GetAnalysisListSQL ----------------- */
+	/* -------------------------------------------- */
+	function GetAnalysisListSQL($id, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder, $limitstart = "", $limitcount = "") {
+
+		if (!ValidID($id,'Pipeline ID')) { return false; }
+		$searchuid = mysqli_real_escape_string($GLOBALS['linki'], $searchuid);
+		$searchstatus = mysqli_real_escape_string($GLOBALS['linki'], $searchstatus);
+		$searchsuccess = mysqli_real_escape_string($GLOBALS['linki'], $searchsuccess);
+
+		if (($searchuid == "") && ($searchstatus == "") && ($searchsuccess == "")) {
+			$sqlstring = "select *, timediff(analysis_enddate, analysis_startdate) 'analysis_time', timediff(analysis_clusterenddate, analysis_clusterstartdate) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and a.analysis_status not in ('NoMatchingSeries','NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency')";
+		}
+		else {
+			$sqlstring = "select *, timediff(analysis_enddate, analysis_startdate) 'analysis_time', timediff(analysis_clusterenddate, analysis_clusterstartdate) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id";
+			if ($searchuid != "") {
+				$sqlstring .= " and d.uid like '%$searchuid%'";
+			}
+			if ($searchstatus != "") {
+				if ($searchstatus == "allothers") {
+					$sqlstring .= " and a.analysis_status in ('','NoMatchingSeries','NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency')";
+				}
+				else {
+					$sqlstring .= " and a.analysis_status = '$searchstatus'";
+				}
+			}
+			if ($searchsuccess == 1) {
+				$sqlstring .= " and a.analysis_iscomplete = 1";
+			}
+			if ($searchsuccess == 2) {
+				$sqlstring .= " and a.analysis_iscomplete = 0 and a.analysis_status = 'complete'";
+			}
+		}
+
+		switch ($sortby) {
+			case 'studynum':
+				$sqlstring .= " order by uid $sortorder, study_num $sortorder";
+				break;
+			case 'visit':
+				$sqlstring .= " order by study_type $sortorder";
+				break;
+			case 'pipelineversion':
+				$sqlstring .= " order by pipeline_version $sortorder";
+				break;
+			case 'studydate':
+				$sqlstring .= " order by study_datetime $sortorder";
+				break;
+			case 'numseries':
+				$sqlstring .= " order by analysis_numseries $sortorder";
+				break;
+			case 'status':
+				$sqlstring .= " order by analysis_status $sortorder";
+				break;
+			case 'successful':
+				$sqlstring .= " order by analysis_iscomplete $sortorder";
+				break;
+			case 'message':
+				$sqlstring .= " order by analysis_statusmessage $sortorder";
+				break;
+			case 'size':
+				$sqlstring .= " order by analysis_disksize $sortorder";
+				break;
+			case 'hostname':
+				$sqlstring .= " order by analysis_hostname $sortorder";
+				break;
+			case 'setuptime':
+				$sqlstring .= " order by analysis_time $sortorder";
+				break;
+			case 'setupcompletedate':
+				$sqlstring .= " order by analysis_enddate $sortorder";
+				break;
+			case 'clustertime':
+				$sqlstring .= " order by cluster_time $sortorder";
+				break;
+			case 'clustercompletedate':
+				$sqlstring .= " order by analysis_clusterenddate $sortorder";
+				break;
+			default:
+				$sqlstring .= " order by a.analysis_status desc, study_datetime desc";
+		}
+
+		if (($limitstart !== "") && ($limitcount !== "")) {
+			$sqlstring .= " limit $limitstart, $limitcount";
+		}
+
+		return $sqlstring;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ExportAnalysisCSV ------------------ */
+	/* -------------------------------------------- */
+	function ExportAnalysisCSV($id, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder) {
+
+		if (!ValidID($id,'Pipeline ID')) { return; }
+
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select * from pipelines where pipeline_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt,__FILE__,__LINE__);
+		mysqli_stmt_close($stmt);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$pipeline_name = preg_replace("/[^A-Za-z0-9._-]+/", "_", $row['pipeline_name']);
+		$pipeline_level = $row['pipeline_level'];
+		if ($pipeline_name == "") {
+			$pipeline_name = "analysis";
+		}
+
+		$sqlstring = GetAnalysisListSQL($id, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder);
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+
+		while (ob_get_level() > 0) {
+			ob_end_clean();
+		}
+
+		header("Content-Type: text/csv; charset=utf-8");
+		header("Content-Disposition: attachment; filename=\"analysis-" . $pipeline_name . "-" . date("Ymd-His") . ".csv\"");
+
+		$output = fopen("php://output", "w");
+
+		$header = array();
+		$header[] = "Analysis ID";
+		$header[] = "Study UID";
+		$header[] = "Study Number";
+		$header[] = "Visit";
+		$header[] = "Pipeline Version";
+		if ($pipeline_level == 1) {
+			$header[] = "Study Date";
+			$header[] = "Number of Series";
+		}
+		$header[] = "Status";
+		$header[] = "Successful";
+		$header[] = "Notes";
+		$header[] = "Message";
+		$header[] = "Message Date";
+		$header[] = "Size (bytes)";
+		$header[] = "Hostname";
+		$header[] = "Setup Time";
+		$header[] = "Setup Completed Date";
+		$header[] = "Cluster Time";
+		$header[] = "Cluster Completed Date";
+		fputcsv($output, $header);
+
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$csvrow = array();
+			$csvrow[] = $row['analysis_id'];
+			$csvrow[] = $row['uid'];
+			$csvrow[] = $row['study_num'];
+			$csvrow[] = $row['study_type'];
+			$csvrow[] = $row['pipeline_version'];
+			if ($pipeline_level == 1) {
+				$csvrow[] = $row['study_datetime'];
+				$csvrow[] = $row['analysis_numseries'];
+			}
+			$csvrow[] = $row['analysis_status'];
+			$csvrow[] = $row['analysis_iscomplete'] ? "Yes" : "No";
+			$csvrow[] = $row['analysis_notes'];
+			$csvrow[] = $row['analysis_statusmessage'];
+			$csvrow[] = $row['analysis_statusdatetime'];
+			$csvrow[] = $row['analysis_disksize'];
+			$csvrow[] = $row['analysis_hostname'];
+			$csvrow[] = $row['analysis_time'];
+			$csvrow[] = $row['analysis_enddate'];
+			$csvrow[] = $row['cluster_time'];
+			$csvrow[] = $row['analysis_clusterenddate'];
+			fputcsv($output, $csvrow);
+		}
+
+		fclose($output);
+		exit();
+	}
+
 
 	/* -------------------------------------------- */
 	/* ------- DeleteAnalyses --------------------- */
@@ -182,12 +357,15 @@
 		$msg = "";
 		foreach ($analysisids as $analysisid) {
 			
-			$sqlstring = "update analysis set analysis_statusmessage = 'Queued for deletion' where analysis_id = $analysisid";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			$stmt = mysqli_prepare($GLOBALS['linki'], "update analysis set analysis_statusmessage = 'Queued for deletion' where analysis_id = ?");
+			mysqli_stmt_bind_param($stmt, 'i', $analysisid);
+			$result = MySQLiBoundQuery($stmt,__FILE__,__LINE__);
+			mysqli_stmt_close($stmt);
 			
-			$sqlstring = "select d.uid, b.study_num, e.pipeline_name, e.pipeline_level, e.pipeline_dirstructure from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on a.pipeline_id = e.pipeline_id where a.analysis_id = $analysisid";
-			//echo "[$sqlstring]";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			$stmt = mysqli_prepare($GLOBALS['linki'], "select d.uid, b.study_num, e.pipeline_name, e.pipeline_level, e.pipeline_dirstructure from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on a.pipeline_id = e.pipeline_id where a.analysis_id = ?");
+			mysqli_stmt_bind_param($stmt, 'i', $analysisid);
+			$result = MySQLiBoundQuery($stmt,__FILE__,__LINE__);
+			mysqli_stmt_close($stmt);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$uid = $row['uid'];
 			$studynum = $row['study_num'];
@@ -202,9 +380,10 @@
 				$analysislevel = 'groupanalysis';
 			}
 			
-			$sqlstring = "insert into fileio_requests (fileio_operation, group_id,data_type,data_id,username,requestdate) values ('delete', $groupid, '$analysislevel', $analysisid, '" . $GLOBALS['username'] . "', now())";
-			//PrintSQL($sqlstring);
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			$stmt = mysqli_prepare($GLOBALS['linki'], "insert into fileio_requests (fileio_operation, group_id, data_type, data_id, username, requestdate) values ('delete', ?, ?, ?, ?, now())");
+			mysqli_stmt_bind_param($stmt, 'isis', $groupid, $analysislevel, $analysisid, $GLOBALS['username']);
+			$result = MySQLiBoundQuery($stmt,__FILE__,__LINE__);
+			mysqli_stmt_close($stmt);
 			
 			if ($pipelinelevel == 1) {
 				if ($pipelinedirstructure = "b") {
@@ -239,8 +418,10 @@
 		
 			if (!ValidID($analysisid,'Analysis ID')) { return; }
 			
-			$sqlstring = "insert into fileio_requests (fileio_operation, group_id, data_type, data_id, data_destination, username, requestdate) values ('copy', $groupid, 'analysis', $analysisid, '$destination', '" . $GLOBALS['username'] . "', now())";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			$stmt = mysqli_prepare($GLOBALS['linki'], "insert into fileio_requests (fileio_operation, group_id, data_type, data_id, data_destination, username, requestdate) values ('copy', ?, 'analysis', ?, ?, ?, now())");
+			mysqli_stmt_bind_param($stmt, 'iiss', $groupid, $analysisid, $destination, $GLOBALS['username']);
+			$result = MySQLiBoundQuery($stmt,__FILE__,__LINE__);
+			mysqli_stmt_close($stmt);
 			
 			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> queued for copy to <?=$destination?></span><br><?
 			
@@ -264,8 +445,10 @@
 		
 			if (!ValidID($analysisid,'Analysis ID')) { return; }
 			
-			$sqlstring = "insert into fileio_requests (fileio_operation, group_id, data_type, data_id, data_destination, username, requestdate) values ('createlinks', $groupid, 'analysis', $analysisid, '$destination', '" . $GLOBALS['username'] . "', now())";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			$stmt = mysqli_prepare($GLOBALS['linki'], "insert into fileio_requests (fileio_operation, group_id, data_type, data_id, data_destination, username, requestdate) values ('createlinks', ?, 'analysis', ?, ?, ?, now())");
+			mysqli_stmt_bind_param($stmt, 'iiss', $groupid, $analysisid, $destination, $GLOBALS['username']);
+			$result = MySQLiBoundQuery($stmt,__FILE__,__LINE__);
+			mysqli_stmt_close($stmt);
 			
 			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> queued for link creation in <?=$destination?></span><br><?
 			
@@ -282,8 +465,10 @@
 			
 			if (!ValidID($analysisid,'Analysis ID')) { return; }
 			
-			$sqlstring = "update analysis set analysis_statusmessage = 'Results queued for rerun', analysis_rerunresults = 1 where analysis_id = $analysisid";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			$stmt = mysqli_prepare($GLOBALS['linki'], "update analysis set analysis_statusmessage = 'Results queued for rerun', analysis_rerunresults = 1 where analysis_id = ?");
+			mysqli_stmt_bind_param($stmt, 'i', $analysisid);
+			$result = MySQLiBoundQuery($stmt,__FILE__,__LINE__);
+			mysqli_stmt_close($stmt);
 			
 			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> results queued to be rerun</span><br><?
 		}
@@ -299,8 +484,10 @@
 
 			if (!ValidID($analysisid,'Analysis ID')) { return; }
 			
-			$sqlstring = "update analysis set analysis_statusmessage = 'Queued for supplement run', analysis_runsupplement = 1 where analysis_id = $analysisid";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			$stmt = mysqli_prepare($GLOBALS['linki'], "update analysis set analysis_statusmessage = 'Queued for supplement run', analysis_runsupplement = 1 where analysis_id = ?");
+			mysqli_stmt_bind_param($stmt, 'i', $analysisid);
+			$result = MySQLiBoundQuery($stmt,__FILE__,__LINE__);
+			mysqli_stmt_close($stmt);
 			
 			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> analysis queued for supplement run</span><br><?
 		}
@@ -317,14 +504,17 @@
 			if (!ValidID($analysisid,'Analysis ID')) { return; }
 			
 			if ($status == 'bad') {
-				$sqlstring = "update analysis set analysis_isbad = 1 where analysis_id = $analysisid";
+				$isbad = 1;
 				$mark = "bad";
 			}
 			else {
-				$sqlstring = "update analysis set analysis_isbad = 0 where analysis_id = $analysisid";
+				$isbad = 0;
 				$mark = "good";
 			}
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			$stmt = mysqli_prepare($GLOBALS['linki'], "update analysis set analysis_isbad = ? where analysis_id = ?");
+			mysqli_stmt_bind_param($stmt, 'ii', $isbad, $analysisid);
+			$result = MySQLiBoundQuery($stmt,__FILE__,__LINE__);
+			mysqli_stmt_close($stmt);
 			
 			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> marked as <?=$mark?></span><br><?
 		}
@@ -340,8 +530,10 @@
 
 			if (!ValidID($analysisid,'Analysis ID')) { return; }
 			
-			$sqlstring = "update analysis set analysis_status = 'complete', analysis_statusmessage = 'Marked as complete', analysis_rerunresults = 0, analysis_runsupplement = 0 where analysis_id = $analysisid";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			$stmt = mysqli_prepare($GLOBALS['linki'], "update analysis set analysis_status = 'complete', analysis_statusmessage = 'Marked as complete', analysis_rerunresults = 0, analysis_runsupplement = 0 where analysis_id = ?");
+			mysqli_stmt_bind_param($stmt, 'i', $analysisid);
+			$result = MySQLiBoundQuery($stmt,__FILE__,__LINE__);
+			mysqli_stmt_close($stmt);
 			
 			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> marked as complete</span><br><?
 		}
@@ -357,8 +549,10 @@
 
 			if (!ValidID($analysisid,'Analysis ID')) { return; }
 			
-			$sqlstring = "update analysis set analysis_iscomplete = 1 where analysis_id = $analysisid";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			$stmt = mysqli_prepare($GLOBALS['linki'], "update analysis set analysis_iscomplete = 1 where analysis_id = ?");
+			mysqli_stmt_bind_param($stmt, 'i', $analysisid);
+			$result = MySQLiBoundQuery($stmt,__FILE__,__LINE__);
+			mysqli_stmt_close($stmt);
 			
 			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> marked as successful</span><br><?
 		}
@@ -374,8 +568,10 @@
 
 			if (!ValidID($analysisid,'Analysis ID')) { return; }
 			
-			$sqlstring = "update analysis set analysis_iscomplete = 0 where analysis_id = $analysisid";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			$stmt = mysqli_prepare($GLOBALS['linki'], "update analysis set analysis_iscomplete = 0 where analysis_id = ?");
+			mysqli_stmt_bind_param($stmt, 'i', $analysisid);
+			$result = MySQLiBoundQuery($stmt,__FILE__,__LINE__);
+			mysqli_stmt_close($stmt);
 			
 			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> marked as unsuccessful</span><br><?
 		}
@@ -396,8 +592,10 @@
 		
 			if (!ValidID($analysisid,'Analysis ID')) { return; }
 			
-			$sqlstring = "insert into fileio_requests (fileio_operation, group_id, data_type, data_id, username, requestdate) values ('rechecksuccess', $groupid, 'analysis', $analysisid, '" . $GLOBALS['username'] . "', now())";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			$stmt = mysqli_prepare($GLOBALS['linki'], "insert into fileio_requests (fileio_operation, group_id, data_type, data_id, username, requestdate) values ('rechecksuccess', ?, 'analysis', ?, ?, now())");
+			mysqli_stmt_bind_param($stmt, 'iis', $groupid, $analysisid, $GLOBALS['username']);
+			$result = MySQLiBoundQuery($stmt,__FILE__,__LINE__);
+			mysqli_stmt_close($stmt);
 			
 			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> to be rechecked for successful file(s)</span><br><?
 		}
@@ -412,14 +610,17 @@
 		if (!ValidID($id,'Pipeline ID')) { return; }
 		
 		# get pipeline name
-		$sqlstring = "select pipeline_name from pipelines where pipeline_id = $id";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select pipeline_name from pipelines where pipeline_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt,__FILE__,__LINE__);
+		mysqli_stmt_close($stmt);
 		//PrintSQL($sqlstring);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$pipelinename = $row['pipeline_name'];
 
 		switch ($listtype) {
-			case 'failedanalyses': $sqlstring = "select uid, study_num, study_id, subject_id, study_datetime from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and a.analysis_status in ('NoMatchingSeries','NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency') order by a.analysis_status desc, study_datetime desc"; break;
+			case 'failedanalyses':
+				$sqlstring = "select uid, study_num, study_id, subject_id, study_datetime from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and a.analysis_status in ('NoMatchingSeries','NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency') order by a.analysis_status desc, study_datetime desc"; break;
 			case 'successfulanalyses':
 			default:
 				?>Successful analyses<br><br><?
@@ -454,8 +655,10 @@
 		$searchstatus = mysqli_real_escape_string($GLOBALS['linki'], $searchstatus);
 		$searchsuccess = mysqli_real_escape_string($GLOBALS['linki'], $searchsuccess);
 	
-		$sqlstring = "select * from pipelines where pipeline_id = $id";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select * from pipelines where pipeline_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt,__FILE__,__LINE__);
+		mysqli_stmt_close($stmt);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$pipeline_name = $row['pipeline_name'];
 		$pipeline_desc = $row['pipeline_desc'];
@@ -556,6 +759,9 @@
 						<option value="10000" <?if ($numperpage == 10000) { echo "selected"; } ?>>10,000
 						<option value="50000" <?if ($numperpage == 50000) { echo "selected"; } ?>>50,000
 					</select>
+				</td>
+				<td style="text-align: center">
+					<a class="ui basic green button" href="analysis.php?action=exportanalysiscsv&id=<?=$id?>&searchuid=<?=urlencode($searchuid)?>&searchstatus=<?=urlencode($searchstatus)?>&searchsuccess=<?=urlencode($searchsuccess)?>&sortby=<?=urlencode($sortby)?>&sortorder=<?=urlencode($sortorder)?>" title="Export the entire list of analyses as a .csv">Export CSV</a>
 				</td>
 				<td style="text-align: right">
 					<div class="ui buttons">
@@ -695,76 +901,7 @@
 			<input type="hidden" name="analysisid" id="analysisid" value="">
 			<input type="hidden" name="id" value="<?=$id?>">
 				<?
-					if (($searchuid == "") && ($searchstatus == "") && ($searchsuccess == "")) {
-						$sqlstring = "select *, timediff(analysis_enddate, analysis_startdate) 'analysis_time', timediff(analysis_clusterenddate, analysis_clusterstartdate) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and a.analysis_status not in ('NoMatchingSeries','NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency')";
-					}
-					else {
-						$sqlstring = "select *, timediff(analysis_enddate, analysis_startdate) 'analysis_time', timediff(analysis_clusterenddate, analysis_clusterstartdate) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id";
-						if ($searchuid != "") {
-							$sqlstring .= " and d.uid like '%$searchuid%'";
-						}
-						if ($searchstatus != "") {
-							if ($searchstatus == "allothers") {
-								$sqlstring .= " and a.analysis_status in ('','NoMatchingSeries','NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency')";
-							}
-							else {
-								$sqlstring .= " and a.analysis_status = '$searchstatus'";
-							}
-						}
-						if ($searchsuccess == 1) {
-							$sqlstring .= " and a.analysis_iscomplete = 1";
-						}
-						if ($searchsuccess == 2) {
-							$sqlstring .= " and a.analysis_iscomplete = 0 and a.analysis_status = 'complete'";
-						}
-					}
-					/* figure out the sorting */
-					switch ($sortby) {
-						case 'studynum':
-							$sqlstring .= " order by uid $sortorder, study_num $sortorder limit $limitstart, $limitcount";
-							break;
-						case 'visit':
-							$sqlstring .= " order by study_type $sortorder limit $limitstart, $limitcount";
-							break;
-						case 'pipelineversion':
-							$sqlstring .= " order by pipeline_version $sortorder limit $limitstart, $limitcount";
-							break;
-						case 'studydate':
-							$sqlstring .= " order by study_datetime $sortorder limit $limitstart, $limitcount";
-							break;
-						case 'numseries':
-							$sqlstring .= " order by analysis_numseries $sortorder limit $limitstart, $limitcount";
-							break;
-						case 'status':
-							$sqlstring .= " order by analysis_status $sortorder limit $limitstart, $limitcount";
-							break;
-						case 'successful':
-							$sqlstring .= " order by analysis_iscomplete $sortorder limit $limitstart, $limitcount";
-							break;
-						case 'message':
-							$sqlstring .= " order by analysis_statusmessage $sortorder limit $limitstart, $limitcount";
-							break;
-						case 'size':
-							$sqlstring .= " order by analysis_disksize $sortorder limit $limitstart, $limitcount";
-							break;
-						case 'hostname':
-							$sqlstring .= " order by analysis_hostname $sortorder limit $limitstart, $limitcount";
-							break;
-						case 'setuptime':
-							$sqlstring .= " order by analysis_time $sortorder limit $limitstart, $limitcount";
-							break;
-						case 'setupcompletedate':
-							$sqlstring .= " order by analysis_enddate $sortorder limit $limitstart, $limitcount";
-							break;
-						case 'clustertime':
-							$sqlstring .= " order by cluster_time $sortorder limit $limitstart, $limitcount";
-							break;
-						case 'clustercompletedate':
-							$sqlstring .= " order by analysis_clusterenddate $sortorder limit $limitstart, $limitcount";
-							break;
-						default:
-							$sqlstring .= " order by a.analysis_status desc, study_datetime desc limit $limitstart, $limitcount";
-					}
+					$sqlstring = GetAnalysisListSQL($id, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder, $limitstart, $limitcount);
 					//PrintSQL($sqlstring);
 					$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -818,14 +955,20 @@
 							
 							if ($analysis_status == "") { $analysis_status = "unknown"; }
 							
-							$sqlstringA = "select pipeline_submithost from pipelines where pipeline_id = $id";
-							$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-							$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-							$pipeline_submithost = $rowA['pipeline_submithost'];
+							if (!isset($pipeline_submithost)) {
+								$stmtA = mysqli_prepare($GLOBALS['linki'], "select pipeline_submithost from pipelines where pipeline_id = ?");
+								mysqli_stmt_bind_param($stmtA, 'i', $id);
+								$resultA = MySQLiBoundQuery($stmtA,__FILE__,__LINE__);
+								mysqli_stmt_close($stmtA);
+								$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+								$pipeline_submithost = $rowA['pipeline_submithost'];
+							}
 							if ($pipeline_submithost == "") { $pipeline_submithost = $GLOBALS['cfg']['clustersubmithost']; }
 							
-							$sqlstringA = "select pipeline_name, pipeline_submithost from pipelines where pipeline_id = $pipeline_dependency";
-							$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+							$stmtA = mysqli_prepare($GLOBALS['linki'], "select pipeline_name, pipeline_submithost from pipelines where pipeline_id = ?");
+							mysqli_stmt_bind_param($stmtA, 'i', $pipeline_dependency);
+							$resultA = MySQLiBoundQuery($stmtA,__FILE__,__LINE__);
+							mysqli_stmt_close($stmtA);
 							$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
 							$pipeline_dep_name = $rowA['pipeline_name'];
 							
@@ -1092,8 +1235,10 @@
 		/* check input parameters */
 		if (!ValidID($id,'Pipeline ID')) { return; }
 	
-		$sqlstring = "select * from pipelines where pipeline_id = $id";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select * from pipelines where pipeline_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt,__FILE__,__LINE__);
+		mysqli_stmt_close($stmt);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$pipeline_name = $row['pipeline_name'];
 		$desc = $row['pipeline_desc'];
@@ -1170,8 +1315,10 @@
 			</thead>
 			<tbody>
 				<?
-					$sqlstring = "select * from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and a.analysis_status in ('NoMatchingSeries','NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency') order by a.analysis_status desc, study_datetime desc limit $limitstart, $limitcount";
-					$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+					$stmt = mysqli_prepare($GLOBALS['linki'], "select * from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = ? and a.analysis_status in ('NoMatchingSeries','NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency') order by a.analysis_status desc, study_datetime desc limit ?, ?");
+					mysqli_stmt_bind_param($stmt, 'iii', $id, $limitstart, $limitcount);
+					$result = MySQLiBoundQuery($stmt,__FILE__,__LINE__);
+					mysqli_stmt_close($stmt);
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$analysis_id = $row['analysis_id'];
 						$analysis_qsubid = $row['analysis_qsubid'];
@@ -1190,8 +1337,10 @@
 						$uid = $row['uid'];
 						$pipeline_dependency = $row['pipeline_dependency'];
 						
-						$sqlstringA = "select pipeline_name from pipelines where pipeline_id = $pipeline_dependency";
-						$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+						$stmtA = mysqli_prepare($GLOBALS['linki'], "select pipeline_name from pipelines where pipeline_id = ?");
+						mysqli_stmt_bind_param($stmtA, 'i', $pipeline_dependency);
+						$resultA = MySQLiBoundQuery($stmtA,__FILE__,__LINE__);
+						mysqli_stmt_close($stmtA);
 						$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
 						$pipeline_dep_name = $rowA['pipeline_name'];
 				?>
@@ -1245,6 +1394,8 @@
 		</form>
 		<?
 	}
+
+
 	
 
 	/* -------------------------------------------- */
@@ -1255,9 +1406,10 @@
 		/* check input parameters */
 		if (!ValidID($analysisid,'Analysis ID')) { return; }
 		
-		$sqlstring = "select * from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on e.pipeline_id = a.pipeline_id where a.analysis_id = $analysisid";
-		//echo $sqlstring;
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select * from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on e.pipeline_id = a.pipeline_id where a.analysis_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $analysisid);
+		$result = MySQLiBoundQuery($stmt,__FILE__,__LINE__);
+		mysqli_stmt_close($stmt);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$uid = $row['uid'];
 		$studynum = $row['study_num'];
@@ -1268,8 +1420,10 @@
 		$pipelinedirectory = $row['pipeline_directory'];
 
 		/* get list of steps for the appropriate version */
-		$sqlstring = "select * from pipeline_steps where pipeline_id = $pipelineid and pipeline_version = $pipelineversion";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select * from pipeline_steps where pipeline_id = ? and pipeline_version = ?");
+		mysqli_stmt_bind_param($stmt, 'ii', $pipelineid, $pipelineversion);
+		$result = MySQLiBoundQuery($stmt,__FILE__,__LINE__);
+		mysqli_stmt_close($stmt);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$ps_command = $row['ps_command'];
 			$ps_description = $row['ps_description'];
@@ -1284,22 +1438,16 @@
 				$commands['reg'][$ps_order] = $ps_command;
 			}
 		}
-		//echo "<pre>";
-		//print_r($descriptions);
-		//echo "</pre>";
 		
 		/* build the correct path */
 		if (($pipeline_level == 1) && ($pipelinedirectory == "")) {
 			$path = $GLOBALS['cfg']['analysisdir'] . "/$uid/$studynum/$pipelinename/pipeline";
-			#echo "(1) Path is [$path]<br>";
 		}
 		elseif (($pipeline_level == 0) || ($pipelinedirectory != "")) {
 			$path = $GLOBALS['cfg']['mountdir'] . "/$pipelinedirectory/$uid/$studynum/$pipelinename/pipeline";
-			#echo "(2) Path is [$path]<br>";
 		}
 		else {
 			$path = $GLOBALS['cfg']['groupanalysisdir'] . "/$pipelinename/pipeline";
-			#echo "(3) Path is [$path]<br>";
 		}
 		
 		/* check if the path exists */
@@ -1318,17 +1466,11 @@
 				echo "$path/$log<br>";
 				$desc = "";
 				if (preg_match('/^step(\d*)\.log/', $log, $matches)) {
-					//echo "<pre>";
-					//print_r($matches);
-					//echo "</pre>";
 					$step = $matches[1];
 					$command = $commands['reg'][$step];
 					$desc = $descriptions['reg'][$step];
 				}
 				elseif (preg_match('/^supplement-step(\d*)\.log/', $log, $matches)) {
-					//echo "<pre>";
-					//print_r($matches);
-					//echo "</pre>";
 					$step = $matches[1];
 					$command = $commands['supp'][$step];
 					$desc = $descriptions['supp'][$step];
@@ -1349,6 +1491,8 @@
 	}
 
 
+
+
 	/* -------------------------------------------- */
 	/* ------- DisplayFiles ----------------------- */
 	/* -------------------------------------------- */
@@ -1357,9 +1501,10 @@
 		/* check input parameters */
 		if (!ValidID($analysisid,'Analysis ID')) { return; }
 	
-		$sqlstring = "select * from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on e.pipeline_id = a.pipeline_id where a.analysis_id = $analysisid";
-		//echo $sqlstring;
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select * from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on e.pipeline_id = a.pipeline_id where a.analysis_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $analysisid);
+		$result = MySQLiBoundQuery($stmt,__FILE__,__LINE__);
+		mysqli_stmt_close($stmt);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$uid = $row['uid'];
 		$studynum = $row['study_num'];

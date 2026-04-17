@@ -1887,7 +1887,7 @@
 				<h3 class="ui header">Options</h3>
 			</div>
 			<div class="ui attached segment">
-				<table class="entrytable">
+				<table class="entrytable ui table">
 					<tr>
 						<td class="label" valign="top">
 							Successful files <i class="grey question outline circle icon" title="<b>Successful files</b><br><br>The analysis is marked as successful if ALL of the files specified exist at the end of the analysis. If left blank, the analysis will always be marked as successful.<br>Example: <tt>analysis/T1w/T1w_acpc_dc_restore_brain.nii.gz</tt>"></i>
@@ -1996,7 +1996,8 @@
 							Study Group(s) <i class="grey question outline circle icon" title="Perform this analysis ONLY on the studies in the specified groups"></i><br>
 							<span class="level2" style="color:darkred; font-size:8pt; font-weight:normal"> Second level must have<br> at least one group.<br>Group(s) must be identical to<br>first level <b>dependency's</b> group(s)</span>
 						</td>
-						<td valign="top">
+						<td valign="top" class="right red marked">
+							
 							<select name="groupid[]" id="groupid" <?=$disabled?> multiple="multiple" class="ui dropdown">
 								<option value="" <? if ($groupid == "") { echo "selected"; } ?>>(Select group)</option>
 								<?
@@ -2020,11 +2021,12 @@
 									}
 								?>
 							</select>
+							<div class="ui basic red left pointing label">If a group and project are selected, then only studies that exist in BOTH will be selected to run</div>
 						</td>
 					</tr>
 					<tr class="level1">
 						<td class="label" valign="top">Project(s) <i class="grey question outline circle icon" title="Perform this analysis ONLY<br>on the studies in the specified project(s)"></i></td>
-						<td valign="top">
+						<td valign="top" class="right red marked">
 							<select name="projectid[]" id="projectid" <?=$disabled?> multiple="multiple" class="ui dropdown">
 								<option value="" <? if ($projectid == "") { echo "selected"; } ?>>(Select project)</option>
 								<?

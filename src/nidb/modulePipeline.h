@@ -82,7 +82,7 @@ public:
 
     QList<dataDefinitionStep> GetPipelineDataDef(int pipelineid, int version);
     QList<int> GetPipelineList();
-    QList<int> GetStudyToDoList(int pipelineid, QString modality, int depend, QString groupids, qint64 &runnum);
+    QList<int> GetStudyToDoList(int pipelineid, QString modality, int depend, QList<int> groupids, QList<int> projectids, qint64 &runnum);
     QList<pipelineStep> GetPipelineSteps(int pipelineid, int version);
     QString CheckDependency(int sid, int pipelinedep);
     QString FormatCommand(int pipelineid, QString clusteranalysispath, QString command, QString analysispath, qint64 analysisid, QString uid, int studynum, QString studydatetime, QString pipelinename, QString workingdir, QString description);

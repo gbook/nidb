@@ -838,8 +838,8 @@
 				<tr>
 					<td class="rowspanned"></td>
 					<td>Data checks <!--<i class="question circle icon" title="Check if all data steps match before downloading any data"></i>--></td>
-					<td colspan="5">
-						<div class="ui accordion">
+					<td colspan="5" class="blue">
+						<div class="ui fluid accordion">
 						<div class="title">
 							<i class="dropdown icon"></i>
 							View data checks
@@ -938,8 +938,8 @@
 				<tr>
 					<td class="rowspanned"></td>
 					<td>Data download steps</td>
-					<td colspan="5">
-						<div class="ui accordion">
+					<td colspan="5" class="blue">
+						<div class="ui fluid accordion">
 						<div class="title">
 							<i class="dropdown icon"></i>
 							View data download steps
@@ -1022,8 +1022,8 @@
 				<tr>
 					<td class="rowspanned"></td>
 					<td>Script <!--<i class="question circle icon" title="Download matching data"></i>--></td>
-					<td colspan="5">
-						<div class="ui accordion">
+					<td colspan="5" class="blue">
+						<div class="ui fluid accordion">
 						<div class="title">
 							<i class="dropdown icon"></i>
 							View script steps

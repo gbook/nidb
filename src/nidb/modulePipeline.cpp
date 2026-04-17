@@ -305,7 +305,7 @@ int modulePipeline::Run() {
             }
 
             /* get the list of studies which meet the criteria for being processed through the pipeline */
-            QList<int> studyids = GetStudyToDoList(pipelineid, modality, pipelinedep, JoinIntArray(p.groupIDs, ","), runnum);
+            QList<int> studyids = GetStudyToDoList(pipelineid, modality, pipelinedep, p.groupIDs, p.projectIDs, runnum);
 
             int ii = 0;
             int numsubmitted = 0;
@@ -806,10 +806,14 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
 
     /* get pipeline information, for data copying preferences */
     pipeline p(pipelineid, n);
-    if (!p.isValid) {
+    if (p.isValid) {
+        n->Debug(p.PrintPipelineVariables());
+    }
+    else {
         n->Log("Pipeline was not valid: [" + p.msg + "]", __FUNCTION__);
         return false;
     }
+
     QString submithost;
     QString clusteruser;
     if (p.clusterSubmitHost == "") submithost = n->cfg["clustersubmithost"];
@@ -884,7 +888,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
             break;
         }
 
-        /* seperate any protocols that have multiples */
+        /* seperate any protocols that are actually lists of protocols */
         QString protocols;
         if (protocol.contains("\"")) {
             QStringList prots = ShellWords(protocol);
@@ -1467,11 +1471,15 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                 BIDSpath = analysispath;
             else
                 BIDSpath = analysispath + "/" + BIDSExportDir;
-            io->WriteBIDS(BIDSseriesids, BIDSmodalities, BIDSpath, "BIDS Readme", bidsflags, m2);
-            //dlog << n->Log(QString("Exporting in BIDS format. Message from WriteBIDS [%1]").arg(m2), __FUNCTION__);
+            if (io->WriteBIDS(BIDSseriesids, BIDSmodalities, BIDSpath, "BIDS Readme", bidsflags, m2)) {
+                dlog << n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupCreateDirectory, LogStatus::success, 0, analysispath,"");
+                dlog << n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataDownloadSummary, LogStatus::success, 0, m2, "");
+            }
+            else {
+                dlog << n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupCreateDirectory, LogStatus::success, 0, analysispath,"");
+                dlog << n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataDownloadSummary, LogStatus::warning, 0, m2, "");
+            }
             numdownloaded = BIDSseriesids.size();
-            dlog << n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupCreateDirectory, LogStatus::success, 0, analysispath,"");
-            dlog << n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataDownloadSummary, LogStatus::success, 0, m2, "");
             delete io;
         }
         else {
@@ -2305,7 +2313,7 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clusterty
  * @param runnum
  * @return
  */
-QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, int depend, QString groupids, qint64 &runnum) {
+QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, int depend, QList<int> groupids, QList<int> projectids, qint64 &runnum) {
 
     QSqlQuery q;
 
@@ -2319,7 +2327,7 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
     QString m;
 
     pipeline p(pipelineid, n);
-    //bool debug = p.debug;
+    //n->Log(p.PrintPipelineVariables());
 
     /* run some checks first */
     if (modality.trimmed() == "") {
@@ -2334,6 +2342,7 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
      * A1) All studies that do not have an entry in the analysis table
      * A2) Studies with a parent dependency
      * A3) Studies in the group(s)
+     * A4) Studies in the project(s)
 
      * Additive search (analysis will always run if found):
      * B1) Studies that need results re-run
@@ -2450,9 +2459,9 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
     }
 
     /* A3 - find studies from above that match the specified group(s) */
-    if (groupids != "") {
+    if (groupids.size() > 0) {
         QList<int> groupStudyRowIDs;
-        q.prepare("select data_id from group_data where group_id in (" + groupids + ")");
+        q.prepare("select data_id from group_data where group_id in (" + JoinIntArray(groupids, ",") + ")");
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         if (q.size() > 0) {
             while (q.next()) {
@@ -2491,6 +2500,54 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
     }
     else {
         m = "Step A3 - No groups defined";
+        RecordPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", n->Log(m, __FUNCTION__));
+    }
+
+    /* A4 - find studies from above that match the specified projects(s) */
+    if (projectids.size() > 0) {
+        QList<int> projectStudyRowIDs;
+
+        /* get list of studies within the specified projects */
+        q.prepare("select a.study_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on b.project_id = c.project_id left join subjects d on d.subject_id = b.subject_id where c.project_id in (" + JoinIntArray(projectids, ",") + ") and a.study_modality = :modality order by d.uid asc, a.study_modality asc");
+        q.bindValue(":modality", modality);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        if (q.size() > 0) {
+            while (q.next()) {
+                int studyRowID = q.value("study_id").toInt();
+                projectStudyRowIDs.append(studyRowID);
+            }
+        }
+        m = QString("Step A4 - Found %1 studies from the specified project(s)").arg(projectStudyRowIDs.size());
+        RecordPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", n->Log(m, __FUNCTION__));
+
+        if (projectStudyRowIDs.size() > 50) {
+            m = QString("Studies at the beginning of step A4 - [study list greater than 50, not displaying full list of studies]");
+        }
+        else {
+            m = QString("Studies at the beginning of step A4 [" + GetUIDStudyNumListByStudyIDs(projectStudyRowIDs).join(", ") + "]");
+        }
+        RecordPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", n->Log(m, __FUNCTION__));
+
+        /* find an intersection between the lists */
+        QSet<int> set1(studyIDToDoList.begin(), studyIDToDoList.end());
+        QSet<int> set2(projectStudyRowIDs.begin(), projectStudyRowIDs.end());
+        QSet<int> intersection = set1.intersect(set2);
+
+        m = QString("Previous studyID lists (steps A1, A2, A3) contain %1 studies, and project(s) list (step A4) contains %2 studies. Intersection of these sets yields %3 studies to be analyzed").arg(studyIDToDoList.size()).arg(projectStudyRowIDs.size()).arg(intersection.size());
+        RecordPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", n->Log(m, __FUNCTION__));
+
+        studyIDToDoList = QList<int>(intersection.begin(), intersection.end());
+
+        if (studyIDToDoList.size() > 50) {
+            m = QString("Studies at the end of step A4 - [study list greater than 50, not displaying full list of studies]");
+        }
+        else {
+            m = QString("Studies at the end of step A4 [" + GetUIDStudyNumListByStudyIDs(studyIDToDoList).join(", ") + "]");
+        }
+        RecordPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", n->Log(m, __FUNCTION__));
+    }
+    else {
+        m = "Step A4 - No projects defined";
         RecordPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", n->Log(m, __FUNCTION__));
     }
 
