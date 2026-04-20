@@ -26,6 +26,7 @@
 #include "archiveio.h"
 #include "imageio.h"
 #include "series.h"
+#include "bids.h"
 
 class moduleImport
 {

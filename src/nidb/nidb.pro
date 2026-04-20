@@ -38,6 +38,7 @@ win32-g++ {
 SOURCES += \
     analysis.cpp \
     archiveio.cpp \
+    bids.cpp \
     enrollment.cpp \
     experiment.cpp \
     imageio.cpp \
@@ -82,6 +83,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 HEADERS += \
     analysis.h \
     archiveio.h \
+    bids.h \
     enrollment.h \
     experiment.h \
     imageio.h \
