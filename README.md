@@ -57,7 +57,7 @@ Got a batch of DICOMs from a collaborator, or from an old DVD? Import them easil
 
 Find imaging data from any project (that you have permissions to...) and export data. Search by dozens of criteria.
 
-<figure><img src=".gitbook/assets/image (1).png" alt="" width="563"><figcaption></figcaption></figure>
+<figure><img src=".gitbook/assets/image (1) (4).png" alt="" width="563"><figcaption></figcaption></figure>
 
 ### Export to multiple formats
 
@@ -97,7 +97,7 @@ From raw data to analyzed, and storing result values/images. Utilize a compute c
 
 <figure><img src=".gitbook/assets/image (10).png" alt="" width="563"><figcaption><p>Overview of a pipeline</p></figcaption></figure>
 
-<figure><img src=".gitbook/assets/image (2) (3).png" alt="" width="563"><figcaption><p>List of analyses for a pipeline</p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (2) (3) (2).png" alt="" width="563"><figcaption><p>List of analyses for a pipeline</p></figcaption></figure>
 
 ### Automated MR quality control
 
@@ -109,7 +109,7 @@ Large number of automatically generated metrics. Metrics are exportable as .csv 
 
 Fully featured calendar, running securely on your internal network. Repeating appts, blocking appts, and time requests.
 
-<figure><img src=".gitbook/assets/image.png" alt="" width="563"><figcaption><p>Week view, showing US holidays</p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (8).png" alt="" width="563"><figcaption><p>Week view, showing US holidays</p></figcaption></figure>
 
 ## Publications
 
