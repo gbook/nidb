@@ -219,6 +219,7 @@
 						<? if ($GLOBALS['isadmin']) { ?>
 							<a class="item" class="item" href="projects.php?action=resetqa&id=<?=$projectid?>"><i class="red sync icon"></i> Reset basic QA</a>
 							<a class="item" class="item" href="projects.php?action=resetmriqc&id=<?=$projectid?>"><i class="red sync icon"></i> Reset advanced mriqc</a>
+							<a class="item" class="item" href="importremote.php?action=viewsources&projectid=<?=$projectid?>"><i class="cog icon"></i> Remote import sources</a>
 						<? } ?>
 						<div class="item"><b>Remote connection params</b><br>
 							Project ID: <?=$projectid?><br>
