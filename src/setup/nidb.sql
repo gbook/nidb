@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Apr 01, 2026 at 05:08 PM
+-- Generation Time: Apr 22, 2026 at 01:41 AM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -1420,8 +1420,8 @@ CREATE TABLE `import_file_log` (
   `importfilelog_id` int(11) NOT NULL,
   `importfile_datetime` datetime NOT NULL,
   `filename` text NOT NULL,
-  `file_datetime` datetime NOT NULL,
-  `file_size` int(11) NOT NULL,
+  `file_datetime` datetime DEFAULT NULL,
+  `file_size` int(11) DEFAULT NULL,
   `file_type` varchar(255) DEFAULT NULL,
   `Modality` varchar(255) DEFAULT NULL,
   `PatientID` text DEFAULT NULL,
@@ -2308,10 +2308,10 @@ CREATE TABLE `pipelines` (
   `pipeline_dependencylevel` varchar(255) DEFAULT NULL,
   `pipeline_dependencydir` enum('','root','subdir') DEFAULT NULL,
   `pipeline_deplinktype` varchar(25) DEFAULT NULL,
-  `pipeline_groupid` longtext DEFAULT NULL,
+  `pipeline_groupid` longtext DEFAULT NULL COMMENT 'comma separated list of groupids',
   `pipeline_grouptype` varchar(25) DEFAULT NULL,
   `pipeline_groupbysubject` tinyint(1) NOT NULL DEFAULT 0,
-  `pipeline_projectid` longtext DEFAULT NULL,
+  `pipeline_projectid` longtext DEFAULT NULL COMMENT 'comma separated list of projectRowIDs',
   `pipeline_dynamicgroupid` int(11) DEFAULT NULL,
   `pipeline_outputbids` tinyint(1) DEFAULT NULL,
   `pipeline_bidsoutputdir` varchar(255) DEFAULT NULL,
@@ -3021,6 +3021,26 @@ CREATE TABLE `remote_connections` (
   `remote_projectid` int(11) NOT NULL,
   `remote_siteid` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `remote_import_sources`
+--
+
+CREATE TABLE `remote_import_sources` (
+  `remoteimportsetting_id` int(11) NOT NULL,
+  `import_name` text NOT NULL,
+  `project_id` int(11) NOT NULL,
+  `remote_type` enum('avicenna','redcap','url','') NOT NULL DEFAULT '',
+  `remote_url` text DEFAULT NULL,
+  `remote_token` text DEFAULT NULL,
+  `import_schedule` enum('hourly','daily','weekly','monthly','') DEFAULT NULL,
+  `import_time` int(11) NOT NULL DEFAULT 0 COMMENT 'Hour of the day, 0 to 23',
+  `import_dayofmonth` int(11) NOT NULL DEFAULT 1 COMMENT 'day of month - 1 to 31',
+  `import_days` set('Sun','Mon','Tue','Wed','Thu','Fri','Sat') NOT NULL DEFAULT 'Sun',
+  `create_date` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -4862,6 +4882,12 @@ ALTER TABLE `remote_connections`
   ADD PRIMARY KEY (`remoteconn_id`);
 
 --
+-- Indexes for table `remote_import_sources`
+--
+ALTER TABLE `remote_import_sources`
+  ADD PRIMARY KEY (`remoteimportsetting_id`);
+
+--
 -- Indexes for table `remote_logins`
 --
 ALTER TABLE `remote_logins`
@@ -5989,6 +6015,12 @@ ALTER TABLE `redcap_import_mapping`
 --
 ALTER TABLE `remote_connections`
   MODIFY `remoteconn_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `remote_import_sources`
+--
+ALTER TABLE `remote_import_sources`
+  MODIFY `remoteimportsetting_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `remote_logins`

@@ -26,6 +26,10 @@
 /* ---------------------------------------------------------- */
 /* --------- moduleManager ---------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Initialize the module manager with the shared NiDB context.
+ * @param a NiDB application context used by Run() for logging and SQL access
+ */
 moduleManager::moduleManager(nidb *a)
 {
     n = a;
@@ -35,6 +39,9 @@ moduleManager::moduleManager(nidb *a)
 /* ---------------------------------------------------------- */
 /* --------- ~moduleManager --------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Destroy the module manager.
+ */
 moduleManager::~moduleManager()
 {
 
@@ -44,6 +51,16 @@ moduleManager::~moduleManager()
 /* ---------------------------------------------------------- */
 /* --------- Run -------------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Find and clear module processes that have not checked in recently.
+ *
+ * The manager looks for module_procs rows whose last_checkin is older than
+ * three hours, skipping the backup and export modules because they can run
+ * for a long time. For each stale row it removes the corresponding lock file
+ * from the configured lock directory and deletes the database record.
+ *
+ * @return 1 when one or more stale modules were handled, or 0 if none were found
+ */
 int moduleManager::Run() {
     n->Log("Entering the fileio module");
 
