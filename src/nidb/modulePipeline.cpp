@@ -2553,7 +2553,7 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
 
     numInitial = studyIDToDoList.size();
 
-    /* step B1 - get only the studies that need to have their results rerun */
+    /* step B1 - find only the studies that need to have their results RERUN */
     q.prepare("select study_id from studies where study_id in (select study_id from analysis where pipeline_id = :pipelineid and analysis_rerunresults = 1 and analysis_status = 'complete' and (analysis_isbad <> 1 or analysis_isbad is null)) order by study_datetime desc");
     q.bindValue(":pipelineid", pipelineid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -2570,7 +2570,7 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
     else
         n->Log("Step B1 - No studies marked to have results rerun", __FUNCTION__);
 
-    /* step B2 - get only the studies that need to have their supplements run */
+    /* step B2 - find only the studies that need to have their SUPPLEMENTs run */
     q.prepare("select study_id from studies where study_id in (select study_id from analysis where pipeline_id = :pipelineid and analysis_runsupplement = 1 and analysis_status = 'complete' and (analysis_isbad <> 1 or analysis_isbad is null)) order by study_datetime desc");
     q.bindValue(":pipelineid", pipelineid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);

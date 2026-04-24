@@ -155,7 +155,7 @@
 		}
 		
 		/* projects sub-menu */
-		elseif ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="projectassessments.php" || $page=="studies.php" || $page=="minipipeline.php" || $page=="templates.php" || $page=="datadictionary.php" || $page == "experiment.php" || $page == "mriqc.php") {
+		elseif ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="projectassessments.php" || $page=="studies.php" || $page=="minipipeline.php" || $page=="templates.php" || $page=="datadictionary.php" || $page == "experiment.php" || $page == "mriqc.php" || $page == "importremote.php") {
 			
 			//if ($page=="projectchecklist.php" || $page=="projectassessments.php" || $page=="minipipeline.php" || $page=="templates.php" || $page=="datadictionary.php" || $page == "experiment.php") {
 			$projectid = GetVariable("projectid");
@@ -189,6 +189,7 @@
 					<div class="text">Tools</div>
 					<i class="dropdown icon"></i>
 					<div class="menu">
+						<a class="item" href="importremote.php?action=viewbatchimportlist&projectid=<?=$projectid?>" style="color: #222"><i class="cloud download anternate icon"></i> Remote batch imports</a>
 						<a class="item" href="datadictionary.php?projectid=<?=$projectid?>" style="color: #222"><i class="database icon"></i> Data dictionary</a>
 						<a class="item" href="analysisbuilder.php?action=viewanalysissummary&projectid=<?=$projectid?>" style="color: #222"><i class="list alternate outline icon"></i> Analysis builder</a>
 						<a class="item" href="templates.php?action=displaystudytemplatelist&projectid=<?=$projectid?>" style="color: #222"><i class="clone outline icon"></i> Study templates</a>
@@ -219,7 +220,7 @@
 						<? if ($GLOBALS['isadmin']) { ?>
 							<a class="item" class="item" href="projects.php?action=resetqa&id=<?=$projectid?>"><i class="red sync icon"></i> Reset basic QA</a>
 							<a class="item" class="item" href="projects.php?action=resetmriqc&id=<?=$projectid?>"><i class="red sync icon"></i> Reset advanced mriqc</a>
-							<a class="item" class="item" href="importremote.php?action=viewsources&projectid=<?=$projectid?>"><i class="cog icon"></i> Remote import sources</a>
+							<a class="item" class="item" href="importremote.php?action=viewimports&projectid=<?=$projectid?>"><i class="cloud download alternate icon"></i> Remote import sources</a>
 						<? } ?>
 						<div class="item"><b>Remote connection params</b><br>
 							Project ID: <?=$projectid?><br>

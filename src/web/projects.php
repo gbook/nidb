@@ -1870,6 +1870,23 @@
 	function DisplayStudiesTable($id, $isactive=1) {
 		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 		if (!isInteger($id)) { echo "Invalid project ID [$id]"; return; }
+		?>
+
+		<script type="text/javascript">
+			$(window).on('load', function() {
+				$('#pageloading').hide();
+			});
+		</script>
+		<br>
+		<div class="ui text container" id="pageloading">
+			<div class="ui yellow message" align="center">
+				<i class="spinner loading icon"></i> Loading study list...
+			</div>
+		</div>
+
+		<?
+			@ob_flush();
+			@flush();
 
 		$rowdata = array();
 		
@@ -3103,12 +3120,10 @@
 				<div class="one wide column">
 				</div>
 				<div class="three wide column">
+					<!--<div class="ui basic grey pointing below label">Batch update</div>-->
 					<a class="ui green fluid button" href="projects.php?action=editsubjects&id=<?=$id?>">
 						<i class="user friends icon"></i> Subjects
 					</a>
-					<div class="ui basic grey pointing label">
-						Batch update
-					</div>
 				</div>
 				<div class="three wide column">
 					<a class="ui green fluid button" href="projects.php?action=displaystudies&id=<?=$id?>">
@@ -3127,6 +3142,23 @@
 				$sqlstring = "select *, year(c.birthdate) 'dobyear' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.project_id = $id and a.lastupdate > '$lastview'";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				$numnewstudies = mysqli_num_rows($result);
+			?>
+
+			<script type="text/javascript">
+				$(window).on('load', function() {
+					$('#pageloading').hide();
+				});
+			</script>
+			<br>
+			<div class="ui text container" id="pageloading">
+				<div class="ui yellow message" align="center">
+					<i class="spinner loading icon"></i> Loading subject list...
+				</div>
+			</div>
+
+			<?
+				@ob_flush();
+				@flush();
 
 				DisplayCompactSubjectsTable($id);
 			?>

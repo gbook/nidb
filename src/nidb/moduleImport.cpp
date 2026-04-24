@@ -105,7 +105,7 @@ bool moduleImport::ParseRemotelyImportedData() {
 
             QSqlQuery q2;
             q2.prepare("update import_requests set import_status = 'receiving', import_startdate = now() where importrequest_id = :importrequestid");
-            q2.bindValue(":importrequestid",importrequestid);
+            q2.bindValue(":importrequestid", importrequestid);
             n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
 
             QString uploaddir = QString("%1/%2").arg(n->cfg["uploadeddir"]).arg(importrequestid);

@@ -51,6 +51,7 @@ SOURCES += \
     moduleExportNonImaging.cpp \
     moduleFileIO.cpp \
     moduleImport.cpp \
+    moduleRemoteImport.cpp \
     moduleMRIQA.cpp \
     moduleManager.cpp \
     moduleMiniPipeline.cpp \
@@ -95,6 +96,7 @@ HEADERS += \
     moduleExportNonImaging.h \
     moduleFileIO.h \
     moduleImport.h \
+    moduleRemoteImport.h \
     moduleMRIQA.h \
     moduleManager.h \
     moduleMiniPipeline.h \

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Apr 22, 2026 at 03:06 PM
+-- Generation Time: Apr 23, 2026 at 11:30 PM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -3007,21 +3007,31 @@ CREATE TABLE `redcap_import_mapping` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `remoteimport_sources`
+-- Table structure for table `remoteimport_batch`
 --
 
-CREATE TABLE `remoteimport_sources` (
-  `remoteimportsource_id` int(11) NOT NULL,
-  `import_name` text NOT NULL,
-  `project_id` int(11) NOT NULL,
-  `remote_type` enum('avicenna','redcap','url','') NOT NULL DEFAULT '',
-  `remote_url` text DEFAULT NULL,
-  `remote_token` text DEFAULT NULL,
-  `import_schedule` enum('hourly','daily','weekly','monthly','') DEFAULT NULL,
-  `import_time` int(11) NOT NULL DEFAULT 0 COMMENT 'Hour of the day, 0 to 23',
-  `import_dayofmonth` int(11) NOT NULL DEFAULT 1 COMMENT 'day of month - 1 to 31',
-  `import_days` set('Sun','Mon','Tue','Wed','Thu','Fri','Sat') NOT NULL DEFAULT 'Sun',
-  `create_date` datetime NOT NULL DEFAULT current_timestamp()
+CREATE TABLE `remoteimport_batch` (
+  `remoteimportbatch_id` bigint(20) NOT NULL,
+  `remoteimport_id` int(11) NOT NULL,
+  `start_date` datetime DEFAULT NULL COMMENT 'Datetime the batch started',
+  `end_date` datetime DEFAULT NULL COMMENT 'Datetime the batch finished',
+  `status` enum('started','running','complete','waiting','pending') NOT NULL COMMENT 'Status of this batch',
+  `next_state` enum('run','pause','terminate','') NOT NULL COMMENT 'The next state of this batch import. The default is blank, which allows scheduled imports to run normally. ''run'' allows an ondemand imports to start'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `remoteimport_logs`
+--
+
+CREATE TABLE `remoteimport_logs` (
+  `remoteimportlog_id` bigint(20) NOT NULL,
+  `remoteimportbatch_id` bigint(11) NOT NULL,
+  `event` enum('started','connection','importSubject','importStudy','importSeries','importPipeline','importAnalysis','importIntervention','importObservation') DEFAULT NULL,
+  `result` enum('success','error','warning','neutral') NOT NULL DEFAULT 'neutral',
+  `message` text DEFAULT NULL,
+  `event_date` timestamp NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
@@ -3041,6 +3051,27 @@ CREATE TABLE `remote_connections` (
   `remote_projectid` int(11) NOT NULL,
   `remote_siteid` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `remote_imports`
+--
+
+CREATE TABLE `remote_imports` (
+  `remoteimport_id` int(11) NOT NULL,
+  `import_name` text NOT NULL,
+  `project_id` int(11) NOT NULL,
+  `remote_type` enum('avicenna','redcap','url','') NOT NULL DEFAULT '',
+  `remote_url` text DEFAULT NULL,
+  `remote_token` text DEFAULT NULL,
+  `import_schedule` enum('ondemand','hourly','daily','weekly','monthly','') DEFAULT NULL,
+  `import_time` int(11) NOT NULL DEFAULT 0 COMMENT 'Hour of the day, 0 to 23',
+  `import_dayofmonth` int(11) NOT NULL DEFAULT 1 COMMENT 'day of month - 1 to 31',
+  `import_days` set('Sun','Mon','Tue','Wed','Thu','Fri','Sat') NOT NULL DEFAULT 'Sun',
+  `enabled` tinyint(1) NOT NULL DEFAULT 0,
+  `create_date` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -4876,16 +4907,28 @@ ALTER TABLE `redcap_import_mapping`
   ADD UNIQUE KEY `project_id` (`project_id`,`redcap_event`,`redcap_form`,`redcap_fields`(255)) USING BTREE;
 
 --
--- Indexes for table `remoteimport_sources`
+-- Indexes for table `remoteimport_batch`
 --
-ALTER TABLE `remoteimport_sources`
-  ADD PRIMARY KEY (`remoteimportsource_id`);
+ALTER TABLE `remoteimport_batch`
+  ADD PRIMARY KEY (`remoteimportbatch_id`);
+
+--
+-- Indexes for table `remoteimport_logs`
+--
+ALTER TABLE `remoteimport_logs`
+  ADD PRIMARY KEY (`remoteimportlog_id`);
 
 --
 -- Indexes for table `remote_connections`
 --
 ALTER TABLE `remote_connections`
   ADD PRIMARY KEY (`remoteconn_id`);
+
+--
+-- Indexes for table `remote_imports`
+--
+ALTER TABLE `remote_imports`
+  ADD PRIMARY KEY (`remoteimport_id`);
 
 --
 -- Indexes for table `remote_logins`
@@ -6011,16 +6054,28 @@ ALTER TABLE `redcap_import_mapping`
   MODIFY `formmap_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `remoteimport_sources`
+-- AUTO_INCREMENT for table `remoteimport_batch`
 --
-ALTER TABLE `remoteimport_sources`
-  MODIFY `remoteimportsource_id` int(11) NOT NULL AUTO_INCREMENT;
+ALTER TABLE `remoteimport_batch`
+  MODIFY `remoteimportbatch_id` bigint(20) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `remoteimport_logs`
+--
+ALTER TABLE `remoteimport_logs`
+  MODIFY `remoteimportlog_id` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `remote_connections`
 --
 ALTER TABLE `remote_connections`
   MODIFY `remoteconn_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `remote_imports`
+--
+ALTER TABLE `remote_imports`
+  MODIFY `remoteimport_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `remote_logins`

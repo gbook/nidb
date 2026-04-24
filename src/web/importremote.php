@@ -43,7 +43,7 @@
 
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$importsourceid = GetVariable("importsourceid");
+	$importid = GetVariable("importid");
 	$projectid = GetVariable("projectid");
 	$importname = GetVariable("importname");
 	$remote_type = GetVariable("remote_type");
@@ -52,26 +52,48 @@
 	$import_schedule = GetVariable("import_schedule");
 	$import_time = GetVariable("import_time");
 	$import_dayofmonth = GetVariable("import_dayofmonth");
-	$import_days = isset($_POST['import_days']) ? $_POST['import_days'] : GetVariable("import_days");
+	$import_days = GetVariable("import_days");
 
 	/* determine action */
 	switch ($action) {
-		case 'editsourceform':
-			DisplayRemoteImportSourceForm("edit", $importsourceid);
+		case 'viewimports':
+			DisplayRemoteImportList($projectid);
 			break;
-		case 'addsourceform':
-			DisplayRemoteImportSourceForm("add", "");
+		case 'viewbatchimportlist':
+			DisplayRemoteImportBatchList($projectid);
 			break;
-		case 'updatesource':
-			UpdateRemoteImportSource($id, $importname, $projectid, $remote_type, $remote_url, $remote_token, $import_schedule, $import_time, $import_dayofmonth, $import_days);
-			DisplayRemoteImportSourceList();
+		case 'runimport':
+			RunRemoteImport($importid);
+			DisplayRemoteImportList($projectid);
 			break;
-		case 'add':
-			AddRemoteImportSource($importname, $projectid, $remote_type, $remote_url, $remote_token, $import_schedule, $import_time, $import_dayofmonth, $import_days);
-			DisplayRemoteImportSourceList();
+		case 'enable':
+			SetRemoteImportEnabled($importid, 1);
+			DisplayRemoteImportList($projectid);
+			break;
+		case 'disable':
+			SetRemoteImportEnabled($importid, 0);
+			DisplayRemoteImportList($projectid);
+			break;
+		case 'deleteimport':
+			DeleteRemoteImport($importid);
+			DisplayRemoteImportList($projectid);
+			break;
+		case 'editimportform':
+			DisplayRemoteImportForm("edit", $importid);
+			break;
+		case 'addimportform':
+			DisplayRemoteImportForm("add", "");
+			break;
+		case 'updateimport':
+			UpdateRemoteImport($importid, $importname, $projectid, $remote_type, $remote_url, $remote_token, $import_schedule, $import_time, $import_dayofmonth, $import_days);
+			DisplayRemoteImportList($projectid);
+			break;
+		case 'addimport':
+			AddRemoteImport($importname, $projectid, $remote_type, $remote_url, $remote_token, $import_schedule, $import_time, $import_dayofmonth, $import_days);
+			DisplayRemoteImportList($projectid);
 			break;
 		default:
-			DisplayRemoteImportSourceList();
+			DisplayRemoteImportList($projectid);
 	}
 
 
@@ -79,10 +101,41 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- UpdateRemoteImportSource ----------- */
+	/* ------- RunRemoteImport -------------------- */
 	/* -------------------------------------------- */
-	function UpdateRemoteImportSource($importsourceid, $importname, $projectid, $remote_type, $remote_url, $remote_token, $import_schedule, $import_time, $import_dayofmonth, $import_days) {
-		$importsourceid = (int)$importsourceid;
+	function RunRemoteImport($importid) {
+		$importid = (int)$importid;
+
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select import_name, import_schedule from remote_imports where remoteimport_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $importid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+
+		if (!$row) {
+			Error("Remote import not found");
+			return;
+		}
+
+		if ($row['import_schedule'] != "ondemand") {
+			Error("Only on-demand remote imports can be run manually");
+			return;
+		}
+
+		$stmt = mysqli_prepare($GLOBALS['linki'], "insert into remoteimport_batch (remoteimport_id, status, next_state) values (?, 'pending', 'run')");
+		mysqli_stmt_bind_param($stmt, 'i', $importid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+
+		Notice("Remote import " . $row['import_name'] . " queued");
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- UpdateRemoteImport ----------------- */
+	/* -------------------------------------------- */
+	function UpdateRemoteImport($importid, $importname, $projectid, $remote_type, $remote_url, $remote_token, $import_schedule, $import_time, $import_dayofmonth, $import_days) {
+		$importid = (int)$importid;
 		$projectid = (int)$projectid;
 		$importname = trim($importname);
 		$remote_type = trim($remote_type);
@@ -94,8 +147,8 @@
 		$import_days = NormalizeImportDays($import_days);
 
 		/* if the incoming token field is blank then we leave it alone, otherwise update it */
-		$stmt = mysqli_prepare($GLOBALS['linki'], "select remote_token from remoteimport_sources where remoteimportsource_id = ?");
-		mysqli_stmt_bind_param($stmt, 'i', $importsourceid);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select remote_token from remote_imports where remoteimport_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $importid);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$existingtoken = isset($row['remote_token']) ? $row['remote_token'] : "";
@@ -109,19 +162,19 @@
 			$remote_token_db = $remote_token;
 		}
 
-		$stmt = mysqli_prepare($GLOBALS['linki'], "update remoteimport_sources set import_name = ?, project_id = ?, remote_type = ?, remote_url = ?, remote_token = ?, import_schedule = ?, import_time = ?, import_dayofmonth = ?, import_days = ? where remoteimportsource_id = ?");
-		mysqli_stmt_bind_param($stmt, 'sissssissi', $importname, $projectid, $remote_type, $remote_url_db, $remote_token_db, $import_schedule, $import_time, $import_dayofmonth, $import_days, $importsourceid);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "update remote_imports set import_name = ?, project_id = ?, remote_type = ?, remote_url = ?, remote_token = ?, import_schedule = ?, import_time = ?, import_dayofmonth = ?, import_days = ? where remoteimport_id = ?");
+		mysqli_stmt_bind_param($stmt, 'sissssissi', $importname, $projectid, $remote_type, $remote_url_db, $remote_token_db, $import_schedule, $import_time, $import_dayofmonth, $import_days, $importid);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		mysqli_stmt_close($stmt);
 
-		Notice("title", "Remote import source $importname updated");
+		Notice("Remote import $importname updated");
 	}
 
 
 	/* -------------------------------------------- */
-	/* ------- AddRemoteImportSource -------------- */
+	/* ------- AddRemoteImport -------------------- */
 	/* -------------------------------------------- */
-	function AddRemoteImportSource($importname, $projectid, $remote_type, $remote_url, $remote_token, $import_schedule, $import_time, $import_dayofmonth, $import_days) {
+	function AddRemoteImport($importname, $projectid, $remote_type, $remote_url, $remote_token, $import_schedule, $import_time, $import_dayofmonth, $import_days) {
 		$importname = trim($importname);
 		$projectid = (int)$projectid;
 		$remote_type = trim($remote_type);
@@ -135,19 +188,19 @@
 		$remote_url_db = ($remote_url == "") ? null : $remote_url;
 		$remote_token_db = ($remote_token == "") ? null : $remote_token;
 
-		$stmt = mysqli_prepare($GLOBALS['linki'], "insert into remoteimport_sources (import_name, project_id, remote_type, remote_url, remote_token, import_schedule, import_time, import_dayofmonth, import_days) values (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+		$stmt = mysqli_prepare($GLOBALS['linki'], "insert into remote_imports (import_name, project_id, remote_type, remote_url, remote_token, import_schedule, import_time, import_dayofmonth, import_days) values (?, ?, ?, ?, ?, ?, ?, ?, ?)");
 		mysqli_stmt_bind_param($stmt, 'sissssiis', $importname, $projectid, $remote_type, $remote_url_db, $remote_token_db, $import_schedule, $import_time, $import_dayofmonth, $import_days);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		mysqli_stmt_close($stmt);
 
-		Notice("title", "Remote import source $importname added");
+		Notice("Remote import $importname added");
 	}
 
 
 	/* -------------------------------------------- */
-	/* ------- DisplayRemoteImportSourceForm ------ */
+	/* ------- DisplayRemoteImportForm ------------ */
 	/* -------------------------------------------- */
-	function DisplayRemoteImportSourceForm($type, $importsourceid) {
+	function DisplayRemoteImportForm($type, $importid) {
 		$projects = array();
 		$sqlstring = "select project_id, project_name, project_costcenter from projects order by project_name";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -156,9 +209,9 @@
 		}
 
 		if ($type == "edit") {
-			$importsourceid = (int)$importsourceid;
-			$stmt = mysqli_prepare($GLOBALS['linki'], "select a.*, b.project_name from remoteimport_sources a left join projects b on a.project_id = b.project_id where a.remoteimportsource_id = ?");
-			mysqli_stmt_bind_param($stmt, 'i', $importsourceid);
+			$importid = (int)$importid;
+			$stmt = mysqli_prepare($GLOBALS['linki'], "select a.*, b.project_name from remote_imports a left join projects b on a.project_id = b.project_id where a.remoteimport_id = ?");
+			mysqli_stmt_bind_param($stmt, 'i', $importid);
 			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			mysqli_stmt_close($stmt);
@@ -179,8 +232,8 @@
 			$import_days = explode(",", $row['import_days']);
 			$create_date = $row['create_date'];
 
-			$formaction = "updatesource";
-			$formtitle = "Updating remote import source <b>$importname</b>";
+			$formaction = "updateimport";
+			$formtitle = "Updating remote import <b>$importname</b>";
 			$submitbuttonlabel = "Update";
 		}
 		else {
@@ -195,8 +248,9 @@
 			$import_days = array("Sun");
 			$create_date = "";
 
-			$formaction = "addsource";
-			$formtitle = "Add new remote import source";
+			$formaction = "addimport";
+			$deletebutton = "";
+			$formtitle = "Add new remote import";
 			$submitbuttonlabel = "Add";
 		}
 
@@ -209,6 +263,7 @@
 
 		$import_schedules = array(
 			"" => "Select schedule...",
+			"ondemand" => "On demand",
 			"hourly" => "Hourly",
 			"daily" => "Daily",
 			"weekly" => "Weekly",
@@ -225,7 +280,7 @@
 
 			<form method="post" action="importremote.php" class="ui form attached fluid segment">
 				<input type="hidden" name="action" value="<?=$formaction?>">
-				<input type="hidden" name="importsourceid" value="<?=$importsourceid?>">
+				<input type="hidden" name="importid" value="<?=$importid?>">
 				<input type="hidden" name="projectid" value="<?=$projectid?>">
 
 				<div class="field">
@@ -322,6 +377,9 @@
 
 				<div class="ui two column grid">
 					<div class="column">
+						<? if ($type == "edit") { ?>
+						<a href="importremote.php?action=deleteimport&projectid=<?=$projectid?>&importid=<?=$importid?>" class="ui red button" onclick="return confirm('Are you sure you want to delete this remote import?')">Delete</a>
+						<? } ?>
 					</div>
 					<div class="right aligned column">
 						<button class="ui button" onClick="window.location.href='importremote.php'; return false;">Cancel</button>
@@ -354,58 +412,70 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- DisplayRemoteImportSourceList ------ */
+	/* ------- DisplayRemoteImportList ------------ */
 	/* -------------------------------------------- */
-	function DisplayRemoteImportSourceList() {
+	function DisplayRemoteImportList($projectid) {
+		$projectid = (int)$projectid;
 	?>
 		<div class="ui container">
 			<div class="ui two column grid">
 				<div class="column">
-					<h1 class="ui header">Remote Import Sources</h1>
+					<h1 class="ui header">Remote Imports</h1>
 				</div>
 				<div class="right aligned column">
-					<a href="importremote.php?action=addsourceform" class="ui primary button"><i class="plus square icon"></i>New Import Source</a>
+					<a href="importremote.php?action=viewbatchimportlist&projectid=<?=$projectid?>" class="ui button">View Batch Imports</a>
+					<a href="importremote.php?action=addimportform&projectid=<?=$GLOBALS['projectid']?>" class="ui primary button"><i class="plus square icon"></i>New Import</a>
 				</div>
 			</div>
 			<table class="ui very compact celled grey table">
 				<thead>
 					<tr>
 						<th>Name</th>
-						<th>Project</th>
 						<th>Type</th>
-						<th>Schedule</th>
 						<th>URL</th>
-						<th>Created</th>
+						<th>Schedule</th>
+						<th>Enabled</th>
 					</tr>
 				</thead>
 				<tbody>
 					<?
-						$sqlstring = "select a.*, b.project_name from remoteimport_sources a left join projects b on a.project_id = b.project_id order by a.import_name";
+						$sqlstring = "select * from remote_imports where project_id = $projectid order by import_name";
 						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-							$importsourceid = $row['remoteimportsource_id'];
-							$importname = $row['import_name'];
-							$projectname = $row['project_name'];
-							$remote_type = $row['remote_type'];
-							$remote_url = $row['remote_url'];
-							$import_schedule = $row['import_schedule'];
-							$import_time = $row['import_time'];
-							$import_dayofmonth = $row['import_dayofmonth'];
-							$import_days = $row['import_days'];
-							$create_date = $row['create_date'];
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+								$importid = $row['remoteimport_id'];
+								$importname = $row['import_name'];
+								//$projectid = $row['project_id'];
+								$remote_type = $row['remote_type'];
+								$remote_url = $row['remote_url'];
+								$import_schedule = $row['import_schedule'];
+								$import_time = $row['import_time'];
+								$import_dayofmonth = $row['import_dayofmonth'];
+								$import_days = $row['import_days'];
+								$enabled = $row['enabled'];
 
-							$scheduletext = FormatRemoteImportSchedule($import_schedule, $import_time, $import_dayofmonth, $import_days);
-							$remote_url_display = ($remote_url == "") ? "-" : $remote_url;
-					?>
-					<tr>
-						<td><a href="importremote.php?action=editsourceform&importsourceid=<?=$importsourceid?>"><?=$importname?></a></td>
-						<td><?=$projectname?></td>
-						<td><?=ucfirst($remote_type)?></td>
-						<td><?=$scheduletext?></td>
-						<td><?=$remote_url_display?></td>
-						<td class="tiny"><?=$create_date?></td>
+								$scheduletext = FormatRemoteImportSchedule($import_schedule, $import_time, $import_dayofmonth, $import_days);
+								if ($import_schedule == "ondemand") {
+									$scheduletext .= " &nbsp; <a href=\"importremote.php?action=runimport&projectid=$projectid&importid=$importid\" class=\"ui tiny primary basic green button\">Run now</a>";
+								}
+								$remote_url_display = ($remote_url == "") ? "-" : $remote_url;
+						?>
+						<tr>
+							<td><a href="importremote.php?action=editimportform&projectid=<?=$projectid?>&importid=<?=$importid?>"><?=$importname?></a></td>
+							<td><?=ucfirst($remote_type)?></td>
+							<td><?=$remote_url_display?></td>
+							<td><?=$scheduletext?></td>
+							<td>
+								<?
+									if ($enabled) {
+										?><a href="importremote.php?action=disable&projectid=<?=$projectid?>&importid=<?=$importid?>" title="<b>Enabled.</b> Click to disable"><i class="big green toggle on icon"></i></a><?
+									}
+									else {
+										?><a href="importremote.php?action=enable&projectid=<?=$projectid?>&importid=<?=$importid?>" title="<b>Disabled.</b> Click to enable"><i class="big grey horizontally flipped toggle on icon"></i></a><?
+									}
+								?>
+							</td>
 					</tr>
-					<? 
+					<?
 						}
 					?>
 				</tbody>
@@ -416,13 +486,110 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- DisplayRemoteImportBatchList ------- */
+	/* -------------------------------------------- */
+	function DisplayRemoteImportBatchList($projectid) {
+		$projectid = (int)$projectid;
+	?>
+		<div class="ui container">
+			<div class="ui two column grid">
+				<div class="column">
+					<h1 class="ui header">Remote Import Batches</h1>
+				</div>
+				<div class="right aligned column">
+					<a href="importremote.php?action=viewimports&projectid=<?=$projectid?>" class="ui button">View Remote Imports</a>
+					<a href="importremote.php?action=addimportform&projectid=<?=$projectid?>" class="ui primary button"><i class="plus square icon"></i>New Import</a>
+				</div>
+			</div>
+			<table class="ui very compact celled grey table">
+				<thead>
+					<tr>
+						<th>Batch ID</th>
+						<th>Import Name</th>
+						<th>Start Date</th>
+						<th>End Date</th>
+						<th>Status</th>
+						<th>Next State</th>
+					</tr>
+				</thead>
+				<tbody>
+					<?
+						$stmt = mysqli_prepare($GLOBALS['linki'], "select a.remoteimportbatch_id, a.start_date, a.end_date, a.status, a.next_state, b.import_name from remoteimport_batch a left join remote_imports b on a.remoteimport_id = b.remoteimport_id where b.project_id = ? order by a.remoteimportbatch_id desc");
+						mysqli_stmt_bind_param($stmt, 'i', $projectid);
+						$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+							$batchid = $row['remoteimportbatch_id'];
+							$importname = $row['import_name'];
+							$startdate = $row['start_date'];
+							$enddate = $row['end_date'];
+							$status = $row['status'];
+							$nextstate = $row['next_state'];
+
+							$importname_display = ($importname == "") ? "-" : $importname;
+							$startdate_display = ($startdate == "") ? "-" : $startdate;
+							$enddate_display = ($enddate == "") ? "-" : $enddate;
+							$status_display = ($status == "") ? "-" : ucfirst($status);
+							$nextstate_display = ($nextstate == "") ? "-" : ucfirst($nextstate);
+					?>
+					<tr>
+						<td><?=$batchid?></td>
+						<td><?=$importname_display?></td>
+						<td><?=$startdate_display?></td>
+						<td><?=$enddate_display?></td>
+						<td><?=$status_display?></td>
+						<td><?=$nextstate_display?></td>
+					</tr>
+					<?
+						}
+						mysqli_stmt_close($stmt);
+					?>
+				</tbody>
+			</table>
+		</div>
+	<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- SetRemoteImportEnabled ------------- */
+	/* -------------------------------------------- */
+	function SetRemoteImportEnabled($importid, $enabled) {
+		$importid = (int)$importid;
+		$enabled = (int)$enabled;
+
+		$stmt = mysqli_prepare($GLOBALS['linki'], "update remote_imports set enabled = ? where remoteimport_id = ?");
+		mysqli_stmt_bind_param($stmt, 'ii', $enabled, $importid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DeleteRemoteImport ----------------- */
+	/* -------------------------------------------- */
+	function DeleteRemoteImport($importid) {
+		$importid = (int)$importid;
+
+		$stmt = mysqli_prepare($GLOBALS['linki'], "delete from remote_imports where remoteimport_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $importid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+
+		Notice("Remote import deleted");
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- FormatRemoteImportSchedule --------- */
 	/* -------------------------------------------- */
 	function FormatRemoteImportSchedule($import_schedule, $import_time, $import_dayofmonth, $import_days) {
 		$time = sprintf("%02d:00", (int)$import_time);
 		$dayslabel = FormatRemoteImportDays($import_days);
 
-		if ($import_schedule == "hourly") {
+		if ($import_schedule == "ondemand") {
+			return "On demand";
+		}
+		elseif ($import_schedule == "hourly") {
 			return "Hourly at $time";
 		}
 		elseif ($import_schedule == "daily") {
