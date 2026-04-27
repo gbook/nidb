@@ -108,43 +108,47 @@
 			break;
 		case 'addrelation':
 			AddRelation($id, $uid2, $relation, $makesymmetric);
-			DisplaySubject($id);
+			DisplaySubject($id, $projectid);
 			break;
 		case 'changeproject':
 			ChangeProject($id, $enrollmentid, $newprojectid);
-			DisplaySubject($id);
+			DisplaySubject($id, $projectid);
+			break;
+		case 'setcurrentproject':
+			SetCurrentSubjectProject($id, $projectid);
+			DisplaySubject($id, $projectid);
 			break;
 		case 'addform':
 			DisplaySubjectForm("add", "");
 			break;
 		case 'display':
-			DisplaySubject($id);
+			DisplaySubject($id, $projectid);
 			break;
 		case 'print':
 			PrintEnrollment($id, $enrollmentid);
 			break;
 		case 'newstudy':
 			CreateNewStudy($modality, $enrollmentid, $id);
-			DisplaySubject($id);
+			DisplaySubject($id, $projectid);
 			break;
 		case 'newstudyfromtemplate':
 			CreateStudyFromTemplate($modality, $enrollmentid, $id, $templateid);
-			DisplaySubject($id);
+			DisplaySubject($id, $projectid);
 			break;
 		case 'newstudygroupfromtemplate':
 			CreateStudyGroupFromTemplate($modality, $enrollmentid, $id, $grouptemplateid);
-			DisplaySubject($id);
+			DisplaySubject($id, $projectid);
 			break;
 		case 'deleteconfirm':
 			DeleteConfirm($id);
 			break;
 		case 'delete':
 			Delete($id);
-			DisplaySubject($id);
+			DisplaySubject($id, $projectid);
 			break;
 		case 'undelete':
 			UnDelete($id);
-			DisplaySubject($id);
+			DisplaySubject($id, $projectid);
 			break;
 		case 'obliterate':
 			Obliterate($ids);
@@ -152,7 +156,7 @@
 			break;
 		case 'enroll':
 			EnrollSubject($id, $projectid);
-			DisplaySubject($id);
+			DisplaySubject($id, $projectid);
 			break;
 		case 'confirmupdate':
 			Confirm("update", $id, $encrypt, $lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email,$maritalstatus,$smokingstatus, $cancontact, $tags, $uid, $altuids, $enrollmentids, $guid);
@@ -162,24 +166,142 @@
 			break;
 		case 'update':
 			UpdateSubject($id, $lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email,$maritalstatus,$smokingstatus, $cancontact, $tags, $uid, $altuids, $enrollmentids, $guid);
-			DisplaySubject($id);
+			DisplaySubject($id, $projectid);
 			break;
 		case 'add':
 			$id = AddSubject($lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email,$maritalstatus,$smokingstatus, $cancontact, $tags, $altuid, $guid);
-			DisplaySubject($id);
+			DisplaySubject($id, $projectid);
 			break;
 		default:
 			if ($id == "") {
 				DisplaySubjectList($searchuid, $searchaltuid, $searchname, $searchgender, $searchdob, $searchactive);
 			}
 			else {
-				DisplaySubject($id);
+				DisplaySubject($id, $projectid);
 			}
 	}
 	
 
 	
 	/* ------------------------------------ functions ------------------------------------ */
+
+
+	/* -------------------------------------------- */
+	/* ------- GetCurrentSubjectProject ----------- */
+	/* -------------------------------------------- */
+	function GetCurrentSubjectProject($subjectRowID, $projectRowID="") {
+		$subjectRowID = (int)$subjectRowID;
+		$projectRowID = (int)$projectRowID;
+		$project = array("projectRowID" => "", "project_name" => "");
+
+		if ($projectRowID > 0) {
+			$stmt = mysqli_prepare($GLOBALS['linki'], "select a.project_id, b.project_name from enrollment a left join projects b on a.project_id = b.project_id where a.subject_id = ? and a.project_id = ? limit 1");
+			mysqli_stmt_bind_param($stmt, 'ii', $subjectRowID, $projectRowID);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
+			if ($row) {
+				$_SESSION['currentProjectID'] = $projectRowID;
+				$project["projectRowID"] = $row['project_id'];
+				$project["project_name"] = $row['project_name'];
+				return $project;
+			}
+		}
+
+		if (isset($_SESSION['currentProjectID'])) {
+			$projectRowID = (int)$_SESSION['currentProjectID'];
+			if ($projectRowID > 0) {
+				$stmt = mysqli_prepare($GLOBALS['linki'], "select a.project_id, b.project_name from enrollment a left join projects b on a.project_id = b.project_id where a.subject_id = ? and a.project_id = ? limit 1");
+				mysqli_stmt_bind_param($stmt, 'ii', $subjectRowID, $projectRowID);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+				mysqli_stmt_close($stmt);
+				if ($row) {
+					$project["projectRowID"] = $row['project_id'];
+					$project["project_name"] = $row['project_name'];
+					return $project;
+				}
+			}
+		}
+
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select a.project_id, b.project_name from enrollment a left join projects b on a.project_id = b.project_id where a.subject_id = ? limit 1");
+		mysqli_stmt_bind_param($stmt, 'i', $subjectRowID);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		if ($row) {
+			$_SESSION['currentProjectID'] = $row['project_id'];
+			$project["projectRowID"] = $row['project_id'];
+			$project["project_name"] = $row['project_name'];
+			return $project;
+		}
+
+		return $project;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- SetCurrentSubjectProject ----------- */
+	/* -------------------------------------------- */
+	function SetCurrentSubjectProject($subjectRowID, $projectRowID) {
+		$subjectRowID = (int)$subjectRowID;
+		$projectRowID = (int)$projectRowID;
+
+		if (($subjectRowID < 1) || ($projectRowID < 1)) {
+			Error("Invalid subject or project ID");
+			return;
+		}
+
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select project_id from enrollment where subject_id = ? and project_id = ? limit 1");
+		mysqli_stmt_bind_param($stmt, 'ii', $subjectRowID, $projectRowID);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+
+		if (!$row) {
+			Error("Subject is not enrolled in the selected project");
+			return;
+		}
+
+		$_SESSION['currentProjectID'] = $projectRowID;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetAdjacentSubjectInProject -------- */
+	/* -------------------------------------------- */
+	function GetAdjacentSubjectInProject($subjectRowID, $projectRowID, $direction) {
+		$subjectRowID = (int)$subjectRowID;
+		$projectRowID = (int)$projectRowID;
+		$direction = strtolower(trim($direction));
+
+		if (($subjectRowID < 1) || ($projectRowID < 1)) {
+			return false;
+		}
+
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select uid from subjects where subject_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $subjectRowID);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		if (!$row) {
+			return false;
+		}
+
+		$uid = $row['uid'];
+		if ($direction == "previous") {
+			$stmt = mysqli_prepare($GLOBALS['linki'], "select a.subject_id 'subjectRowID', a.uid from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = ? and (a.uid < ? or (a.uid = ? and a.subject_id < ?)) order by a.uid desc, a.subject_id desc limit 1");
+		}
+		else {
+			$stmt = mysqli_prepare($GLOBALS['linki'], "select a.subject_id 'subjectRowID', a.uid from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = ? and (a.uid > ? or (a.uid = ? and a.subject_id > ?)) order by a.uid asc, a.subject_id asc limit 1");
+		}
+		mysqli_stmt_bind_param($stmt, 'issi', $projectRowID, $uid, $uid, $subjectRowID);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+
+		return $row;
+	}
 
 
 	/* -------------------------------------------- */
@@ -1070,7 +1192,7 @@
 	/* -------------------------------------------- */
 	/* ------- DisplaySubject --------------------- */
 	/* -------------------------------------------- */
-	function DisplaySubject($id) {
+	function DisplaySubject($id, $projectRowID) {
 		if (!ValidID($id,'Subject ID')) { return; }
 
 		$userid = $_SESSION['userid'];
@@ -1086,8 +1208,11 @@
 		}
 		
 		$perms = GetCurrentUserProjectPermissions($projectids);
-		//$urllist['Subjects'] = "subjects.php";
 		DisplayPermissions($perms);
+		$currentproject = GetCurrentSubjectProject($id, $projectRowID);
+		$currentprojectid = $currentproject['projectRowID'];
+		$currentprojectname = $currentproject['project_name'];
+		$projectid = $currentprojectid;
 
 		/* update the mostrecent table */
 		UpdateMostRecent($id, '', '');
@@ -1121,6 +1246,8 @@
 		$guid = $row['guid'];
 		$cancontact = $row['cancontact'];
 		$isactive = $row['isactive'];
+		$previoussubject = GetAdjacentSubjectInProject($id, $currentprojectid, "previous");
+		$nextsubject = GetAdjacentSubjectInProject($id, $currentprojectid, "next");
 
 		$tags = GetTags('subject', $id);
 		
@@ -1199,7 +1326,25 @@
 		<div class="ui grid">
 			<div class="four wide column">
 				<h1 class="ui top attached header center aligned black segment" style="background-color: #ffffaa">
-					<span class="tt"><?=$uid?></span>
+					<div class="ui three column grid">
+						<div class="left aligned column">
+							<? if ($previoussubject) { ?>
+							<a class="ui compact basic yellow icon button" href="subjects.php?id=<?=$previoussubject['subjectRowID']?>&projectid=<?=$currentprojectid?>" title="Previous subject <?=$previoussubject['uid']?> in <?=$currentprojectname?>"><i class="chevron left icon"></i></a>
+							<? } else { ?>
+							<div class="ui compact basic yellow disabled icon button" title="No previous subject in <?=$currentprojectname?>"><i class="chevron left icon"></i></div>
+							<? } ?>
+						</div>
+						<div class="center aligned column">
+							<span class="tt"><?=$uid?></span>
+						</div>
+						<div class="right aligned column">
+							<? if ($nextsubject) { ?>
+							<a class="ui compact basic yellow icon button" href="subjects.php?id=<?=$nextsubject['subjectRowID']?>&projectid=<?=$currentprojectid?>" title="Next subject <?=$nextsubject['uid']?> in <?=$currentprojectname?>"><i class="chevron right icon"></i></a>
+							<? } else { ?>
+							<div class="ui compact basic yellow disabled icon button" title="No next subject in <?=$currentprojectname?>"><i class="chevron right icon"></i></div>
+							<? } ?>
+						</div>
+					</div>
 				</h1>
 				<div class="ui bottom attached styled segment">
 					<div class="ui accordion">
@@ -1365,7 +1510,7 @@
 							<h2 class="ui header">Enrollments</h2>
 						</div>
 						<div class="right aligned column">
-							<form class="ui" action="subjects.php" method="post">
+							<form class="ui" action="subjects.php" method="post" style="margin: 0px">
 							<input type="hidden" name="id" value="<?=$id?>">
 							<input type="hidden" name="action" value="enroll">
 							<div class="ui labeled action input">
@@ -1439,19 +1584,28 @@
 						
 						?>
 						<div class="ui attached styled grey segment">
+							<div class="ui large inverted center aligned segment" style="padding:6px">
+								<a href="projects.php?id=<?=$projectid?>" style="color: #fff"><i class="external alternate icon"></i><?=$project_name?> (<?=$costcenter?>)</a>
+								&nbsp;
+								<? if ($projectid == $currentprojectid) { ?>
+								<i class="large yellow check circle icon" title="Current project for subject navigation"></i>
+								<? } else { ?>
+								<a href="subjects.php?action=setcurrentproject&id=<?=$id?>&projectid=<?=$projectid?>" title="Use this project for subject navigation"><i class="large inverted check circle outline icon"></i></a>
+								<? } ?>
+								
+							</div>
+							
 							<div class="ui grid">
 								<div class="three wide column">
-									<? if ($viewdata) { ?>
-									<a class="ui large black labeled icon button" href="projects.php?id=<?=$projectid?>"><i class="external alternate icon"></i> <?=$project_name?> (<?=$costcenter?>)</a>
-									<? } else { ?>
-									<a class="ui large grey labeled icon button" href="projects.php?id=<?=$projectid?>"><i class="external alternate icon"></i> <?=$project_name?> (<?=$costcenter?>)</a>
-									<? } ?>
-									<br>
 									<div style="padding: 10px;">
 										<table class="ui very basic celled compact table">
 											<tr>
 												<td class="right aligned"><b>ID(s)</b></td>
-												<td><div class="ui yellow label"><?=$subjectaltids?></div></td>
+												<td>
+													<? if ($subjectaltids != "") { ?>
+													<div class="ui basic yellow label"><?=$subjectaltids?></div>
+													<? } ?>
+												</td>
 											</tr>
 											<tr>
 												<td class="right aligned"><b>Group</b></td>

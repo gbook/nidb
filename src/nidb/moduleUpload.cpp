@@ -29,8 +29,11 @@
 moduleUpload::moduleUpload(nidb *a)
 {
     n = a;
-    io = new archiveIO(n);
-    img = new imageIO(n);
+    //io = new archiveIO(n);
+    //img = new imageIO(n);
+
+    io = std::make_unique<archiveIO>();
+    img = std::make_unique<imageIO>();
 }
 
 
@@ -39,8 +42,8 @@ moduleUpload::moduleUpload(nidb *a)
 /* ---------------------------------------------------------- */
 moduleUpload::~moduleUpload()
 {
-    delete io;
-    delete img;
+    //delete io;
+    //delete img;
 }
 
 
@@ -716,7 +719,8 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
                 continue;
             }
             QString tmppath;
-            squirrel *sqrl = new squirrel();
+            auto sqrl = std::make_unique<squirrel>();
+            //squirrel *sqrl = new squirrel();
             sqrl->SetCommandLineExecution(false);
             sqrl->SetSystemTempDir(n->cfg["tmpdir"]);
             sqrl->SetPackagePath(f);
@@ -732,7 +736,7 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
                 tmppath = n->cfg["tmpdir"] + "/" + GenerateRandomString(20);
                 if (!MakePath(tmppath,m)) {
                     n->Log("Error creating temp directory [" + tmppath + "] with error [" + m + "]", __FUNCTION__);
-                    delete sqrl;
+                    //delete sqrl;
                     continue;
                 }
                 else {
@@ -754,12 +758,12 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
                 }
                 else {
                     n->Log("Error extracting squirrel package [" + f + "] to directory [" + tmppath + "] with message [" + m + "]", __FUNCTION__);
-                    delete sqrl;
+                    //delete sqrl;
                     continue;
                 }
             }
             else {
-                delete sqrl;
+                //delete sqrl;
                 continue;
             }
 
@@ -777,7 +781,11 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
 
                     /* check if this module should be running */
                     n->ModuleRunningCheckIn();
-                    if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); return false; }
+                    if (!n->ModuleCheckIfActive()) {
+                        n->Log("Module is now inactive, stopping the module");
+                        //delete sqrl;
+                        return false;
+                    }
 
                     ret = true;
                     //int uploadSeriesRowID = q2.value("uploadseries_id").toInt();
@@ -913,7 +921,7 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
             }
 
             n->Log(sqrl->GetLogBuffer());
-            delete sqrl;
+            //delete sqrl;
         }
     }
 

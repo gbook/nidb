@@ -38,8 +38,8 @@ public:
 
 private:
     nidb *n;
-    archiveIO *io;
-    imageIO *img;
+    std::unique_ptr<archiveIO> io;
+    std::unique_ptr<imageIO> img;
 
     QString GetUploadStatus(int uploadid);
     bool ArchiveSelectedFiles();

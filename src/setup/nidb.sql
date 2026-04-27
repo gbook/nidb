@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Apr 23, 2026 at 11:30 PM
+-- Generation Time: Apr 27, 2026 at 06:03 PM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -3028,8 +3028,8 @@ CREATE TABLE `remoteimport_batch` (
 CREATE TABLE `remoteimport_logs` (
   `remoteimportlog_id` bigint(20) NOT NULL,
   `remoteimportbatch_id` bigint(11) NOT NULL,
-  `event` enum('started','connection','importSubject','importStudy','importSeries','importPipeline','importAnalysis','importIntervention','importObservation') DEFAULT NULL,
-  `result` enum('success','error','warning','neutral') NOT NULL DEFAULT 'neutral',
+  `event` enum('ImportStart','ConnectionStart','ImportSubject','ImportStudy','ImportSeries','ImportPipeline','ImportAnalysis','ImportIntervention','ImportObservation','ConnectionEnd','ImportEnd') DEFAULT NULL,
+  `result` enum('Success','Error','Warning','Neutral') NOT NULL DEFAULT 'Neutral',
   `message` text DEFAULT NULL,
   `event_date` timestamp NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;

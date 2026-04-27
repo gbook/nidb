@@ -134,7 +134,7 @@ bool moduleRemoteImport::Run() {
             n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
             qint64 batchRowID = q2.lastInsertId().toLongLong();
 
-
+            /* a batch exists, now we can do the import */
         }
     }
 

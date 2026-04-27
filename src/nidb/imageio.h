@@ -51,6 +51,7 @@ struct CsaElement
 class imageIO
 {
 public:
+    imageIO();
     imageIO(nidb *n);
     ~imageIO();
 

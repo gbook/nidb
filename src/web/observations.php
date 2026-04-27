@@ -147,20 +147,7 @@
 		$projectname = $row['project_name'];
 		
 		?>
-		<script>
-			$(document).ready(function(){
-				$('#pageloading').hide();
-				//$('#observationtable').tablesort();
-			});
-		</script>
-
-		<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/se/dt-1.10.24/datatables.min.css"/>
-		<script type="text/javascript" src="https://cdn.datatables.net/v/se/dt-1.10.24/datatables.min.js"></script>
-		<script>
-			$(document).ready(function() {
-				$('#observationtable').DataTable( {"pageLength": 25} );
-			} );		
-		</script>
+		<script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.noStyle.js"></script>
 		
 		<div class="ui text container" id="pageloading">
 			<div class="ui inverted segment" align="center">
@@ -213,121 +200,160 @@
 			</form>
 		</div>
 		
-		<!--<div class="ui top attached header">
-			Table is sortable &nbsp; <span style="font-size: smaller; font-weight: normal">(Sorting may be slow with large table)</span>
-		</div>-->
-		<table class="ui celled very compact small grey sortable selectable bottom attached table" id="observationtable">
-			<thead>
-				<tr>
-					<th>Variable
-					<!--
-						<div class="ui icon input">
-							<input id="variablenamefilter" class="ui small input" type="text" placeholder="Filter by variable"/>
-							<i class="search icon"></i>
-						</div>
+		<?
+		$rowdata = array();
+		$sqlstring = "select a.*, e.uid from observations a left join enrollment d on a.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.enrollment_id = $enrollmentid order by a.observation_name";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$observationid = $row['observation_id'];
+			$studyid = $row['study_id'];
+			$seriesid = $row['series_id'];
+			$uid = $row['uid'];
+			$observation_name = $row['observation_name'];
+			$instrument_name = $row['instrument_name'];
+			$observation_value = $row['observation_value'];
+			$observation_rater = $row['observation_rater'];
+			$observation_startdate = $row['observation_startdate'];
+			$observation_enddate = $row['observation_enddate'];
+			$observation_duration = $row['observation_duration'];
+			$observation_entrydate = $row['observation_entrydate'];
+			$observation_createdate = $row['observation_createdate'];
+			$observation_modifydate = $row['observation_modifydate'];
+			
+			if ($studyid != "") {
+				$sqlstringA = "select study_num, study_modality from studies where study_id = $studyid";
+				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+				$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+				$studynum = $rowA['study_num'];
+				$modality = strtolower($rowA['study_modality']);
 
-						<script type="text/javascript">
-							function filterTable(event) {
-								var filter = event.target.value.toUpperCase();
-								var rows = document.querySelector("#observationtable tbody").rows;
-								
-								for (var i = 0; i < rows.length; i++) {
-									var firstCol = rows[i].cells[0].textContent.toUpperCase();
-									if (firstCol.indexOf(filter) > -1) {
-										rows[i].style.display = "";
-									} else {
-										rows[i].style.display = "none";
-									}      
-								}
-							}
+				$sqlstringB = "select series_num from $modality" . "_series where $modality" . "series_id = $seriesid";
+				$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
+				$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
+				$seriesnum = $rowB['series_num'];
+				
+				$series = "$uid$studynum-$seriesnum ($modality)";
+			}
+			else {
+				$series = "";
+			}
 
-							document.querySelector('#variablenamefilter').addEventListener('keyup', filterTable, false);
-						</script>-->
-					</th>
-					<th>Instrument</th>
-					<th>Value</th>
-					<!--<th>Notes</th>-->
-					<th>Series</th>
-					<th>Rater</th>
-					<th>Start date</th>
-					<th>Duration</th>
-					<th>End date</th>
-					<th style="border-right: 1px solid #666">Delete</th>
-					<th title="<b>Entry</b> Date the value was entered into this database<br><b>Create</b> Date the record was created in this database<br><b>Modify</b> Date the record was modified in this database">Database record dates<i class="question circle icon"></i></th>
-				</tr>
-			</thead>
-			<tbody>
-				<?
-					$sqlstring = "select a.*, e.uid from observations a left join enrollment d on a.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.enrollment_id = $enrollmentid order by a.observation_name";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-						$observationid = $row['observation_id'];
-						$studyid = $row['study_id'];
-						$seriesid = $row['series_id'];
-						$uid = $row['uid'];
-						$observation_name = $row['observation_name'];
-						$instrument_name = $row['instrument_name'];
-						$observation_value = $row['observation_value'];
-						//$observation_notes = $row['observation_notes'];
-						$observation_rater = $row['observation_rater'];
-						$observation_startdate = $row['observation_startdate'];
-						$observation_enddate = $row['observation_enddate'];
-						$observation_duration = $row['observation_duration'];
-						$observation_entrydate = $row['observation_entrydate'];
-						$observation_createdate = $row['observation_createdate'];
-						$observation_modifydate = $row['observation_modifydate'];
-						
-						if ($studyid != "") {
-							$sqlstringA = "select study_num, study_modality from studies where study_id = $studyid";
-							$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-							$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-							$studynum = $rowA['study_num'];
-							$modality = strtolower($rowA['study_modality']);
+			$rowdata[] = array(
+				'observationid' => $observationid,
+				'name' => $observation_name,
+				'instrument' => $instrument_name,
+				'value' => $observation_value,
+				'series' => $series,
+				'rater' => $observation_rater,
+				'startdate' => $observation_startdate,
+				'duration' => $observation_duration,
+				'enddate' => $observation_enddate,
+				'dateshtml' => "<b>Entry</b> $observation_entrydate<br><b>Create</b> $observation_createdate<br><b>Modify</b> $observation_modifydate"
+			);
+		}
+		$data = json_encode($rowdata, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+		?>
+		<div id="observationgrid" class="ui attached segment" style="height: 65vh; padding: 0;"></div>
+		<div class="ui bottom attached secondary segment">Displaying <span id="rowcount">0</span> rows</div>
 
-							$sqlstringB = "select series_num from $modality" . "_series where $modality" . "series_id = $seriesid";
-							$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
-							$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
-							$seriesnum = $rowB['series_num'];
-							
-							$series = "$uid$studynum-$seriesnum ($modality)";
+		<script>
+			const rowData = <?=$data?>;
+			let gridApi;
+
+			function updateDisplayedRowCount() {
+				if (!gridApi) {
+					return;
+				}
+				document.getElementById('rowcount').textContent = gridApi.getDisplayedRowCount();
+			}
+
+			function ObservationDatesHeader() {}
+
+			ObservationDatesHeader.prototype.init = function(params) {
+				this.eGui = document.createElement('span');
+				this.eGui.className = 'observation-html-tooltip';
+				this.eGui.setAttribute('data-html', '<b>Entry</b> Date the value was entered into this database<br><b>Create</b> Date the record was created in this database<br><b>Modify</b> Date the record was modified in this database');
+				this.eGui.innerHTML = 'Database record dates<i class="question circle icon"></i>';
+			};
+
+			ObservationDatesHeader.prototype.getGui = function() {
+				return this.eGui;
+			};
+
+			const gridOptions = {
+				theme: agGrid.themeBalham,
+				columnDefs: [
+					{ headerName: 'Variable', field: 'name', flex: 1.3, minWidth: 180 },
+					{ headerName: 'Instrument', field: 'instrument', flex: 1, minWidth: 150 },
+					{ headerName: 'Value', field: 'value', flex: 1, minWidth: 130 },
+					{ headerName: 'Series', field: 'series', flex: 1, minWidth: 160 },
+					{ headerName: 'Rater', field: 'rater', minWidth: 120, cellStyle: { 'font-size': '9pt' } },
+					{ headerName: 'Start date', field: 'startdate', minWidth: 160 },
+					{ headerName: 'Duration', field: 'duration', minWidth: 110 },
+					{ headerName: 'End date', field: 'enddate', minWidth: 160 },
+					{
+						headerName: 'Delete',
+						field: 'observationid',
+						width: 90,
+						minWidth: 90,
+						maxWidth: 90,
+						filter: false,
+						sortable: false,
+						resizable: false,
+						cellStyle: { 'text-align': 'center' },
+						cellRenderer: function(params) {
+							const link = document.createElement('a');
+							link.href = 'observations.php?action=deleteobservation&observationid=' + params.value + '&enrollmentid=<?=$enrollmentid?>';
+							link.title = 'Delete this variable';
+							link.onclick = function() {
+								return confirm('Are you sure you want to delete this record?');
+							};
+							link.innerHTML = '<i class="red alternate trash icon"></i>';
+							return link;
 						}
-						else {
-							$series = "";
+					},
+					{
+						headerName: 'Database record dates',
+						field: 'dateshtml',
+						width: 175,
+						minWidth: 175,
+						maxWidth: 175,
+						filter: false,
+						sortable: false,
+						resizable: false,
+						cellStyle: { 'text-align': 'center' },
+						headerComponent: ObservationDatesHeader,
+						cellRenderer: function(params) {
+							const icon = document.createElement('span');
+							icon.className = 'observation-html-tooltip';
+							icon.setAttribute('data-html', params.value);
+							icon.innerHTML = '<i class="calendar alternate outline icon"></i>';
+							return icon;
 						}
-						?>
-						<script type="text/javascript">
-							$(document).ready(function(){
-								$(".edit_inline<? echo $observationid; ?>").editInPlace({
-									url: "observation_inlineupdate.php",
-									params: "action=editinplace&id=<? echo $series_id; ?>",
-									default_text: "<i style='color:#AAAAAA'>Edit here...</i>",
-									bg_over: "white",
-									bg_out: "lightyellow",
-								});
-							});
-						</script>
-						<tr>
-							<td><?=$observation_name?></td>
-							<td><?=$instrument_name?></td>
-							<td><?=$observation_value?></td>
-							<!--<td><?=$observation_notes?></td>-->
-							<td><?=$series?></td>
-							<td style="font-size: 9pt"><?=$observation_rater?></td>
-							<td><?=$observation_startdate?></td>
-							<td><?=$observation_duration?></td>
-							<td><?=$observation_enddate?></td>
-							<td class="center aligned" style="border-right: 1px solid #666">
-								<a href="observations.php?action=deleteobservation&observationid=<?=$observationid?>&enrollmentid=<?=$enrollmentid?>" title="Delete this variable" onClick="return confirm('Are you sure you want to delete this record?')"><i class="red alternate trash icon"></i></a>
-							</td>
-							<td title="<b>Entry</b> <?=$observation_entrydate?><br><b>Create</b> <?=$observation_createdate?><br><b>Modify</b> <?=$observation_modifydate?>">
-							<i class="calendar alternate outline icon"></i>
-							</td>
-						</tr>
-					<?
 					}
-					?>
-			</tbody>
-		</table>
+				],
+				rowData: rowData,
+				defaultColDef: { sortable: true, filter: true, resizable: true },
+				animateRows: false,
+				suppressMovableColumns: true,
+				onFirstDataRendered: updateDisplayedRowCount,
+				onFilterChanged: updateDisplayedRowCount,
+				onModelUpdated: updateDisplayedRowCount
+			};
+
+			$(document).ready(function() {
+				const eGridDiv = document.getElementById('observationgrid');
+				gridApi = agGrid.createGrid(eGridDiv, gridOptions);
+				$('#observationgrid').tooltip({
+					items: ".observation-html-tooltip",
+					content: function() {
+						return $(this).attr("data-html");
+					}
+				});
+				updateDisplayedRowCount();
+				$('#pageloading').hide();
+			});
+		</script>
 		<?
 	}
 ?>

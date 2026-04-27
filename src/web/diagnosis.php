@@ -120,8 +120,7 @@
 				<div class="three fields">
 					<div class="eight wide field">
 						<label>ICD10</label>
-						<input type="text" name="icd10_search" id="icd10_search" placeholder="Search ICD10 code or long description" autocomplete="off" required>
-						<div class="ui tiny pointing basic label">Type at least 2 characters to search ICD10 code or long description.</div>
+						<input type="text" name="icd10_search" id="icd10_search" placeholder="Search ICD10 code or long description" autocomplete="off" required title="Type at least 2 characters to search ICD10 code or long description">
 					</div>
 					<div class="four wide field">
 						<label>Start date</label>

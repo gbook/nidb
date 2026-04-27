@@ -25,6 +25,7 @@
 
 #include "nidb.h"
 
+/* enums for logging */
 enum RemoteImportLogEvent {
     ConnectionEnd,
     ConnectionStart,
@@ -45,6 +46,7 @@ enum EventResult {
     Warning,
     Neutral
 };
+
 
 class moduleRemoteImport
 {
