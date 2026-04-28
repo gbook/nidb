@@ -185,6 +185,42 @@
 		<br><br>
 		<?
 	}
+
+
+	/* ----------------------------------------------- */
+	/* --------- CalendarAppointmentOverlapWhere ------ */
+	/* ----------------------------------------------- */
+	function CalendarAppointmentOverlapWhere($startdatetime, $enddatetime) {
+		return "a.appt_startdate <= '$enddatetime' and a.appt_enddate >= '$startdatetime'";
+	}
+
+
+	/* ----------------------------------------------- */
+	/* --------- CalendarAppointmentTimeLabel --------- */
+	/* ----------------------------------------------- */
+	function CalendarAppointmentTimeLabel($displaydatetime, $apptstartdate, $apptenddate, $isallday) {
+		$displaydate = date('Y-m-d', strtotime($displaydatetime));
+		$startdate = date('Y-m-d', strtotime($apptstartdate));
+		$enddate = date('Y-m-d', strtotime($apptenddate));
+
+		if ($startdate == $enddate) {
+			if ($isallday) {
+				return "";
+			}
+			return date('g:ia', strtotime($apptstartdate)) . " - " . date('g:ia', strtotime($apptenddate));
+		}
+
+		if ($isallday) {
+			return "Multi-day appt";
+		}
+		if ($displaydate == $startdate) {
+			return date('g:ia', strtotime($apptstartdate)) . " ...";
+		}
+		if ($displaydate == $enddate) {
+			return "... " . date('g:ia', strtotime($apptenddate));
+		}
+		return "Multi-day appt";
+	}
 	
 
 	/* ----------------------------------------------- */
@@ -255,11 +291,12 @@
 			</div>
 			<div class="ui bottom attached segment">
 				<?
+				$apptDateWhere = CalendarAppointmentOverlapWhere($startdatetime, $enddatetime);
 				if ($currentcal == 0) {
-					$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where appt_deletedate > now() and appt_canceldate > now() and a.appt_startdate >= '$startdatetime' and a.appt_enddate <= '$enddatetime' order by appt_isalldayevent, appt_startdate";
+					$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where appt_deletedate > now() and appt_canceldate > now() and $apptDateWhere order by appt_isalldayevent, appt_startdate";
 				}
 				else {
-					$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where a.appt_calendarid = $currentcal and appt_deletedate > now() and appt_canceldate > now() and a.appt_startdate >= '$startdatetime' and a.appt_enddate <= '$enddatetime' order by appt_isalldayevent, appt_startdate";
+					$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where a.appt_calendarid = $currentcal and appt_deletedate > now() and appt_canceldate > now() and $apptDateWhere order by appt_isalldayevent, appt_startdate";
 				}
 				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -269,14 +306,13 @@
 					$calendarname = $row['calendar_name'];
 					$title = $row['appt_title'];
 					$details = $row['appt_details'];
-					$starttime = date('g:i a', strtotime($row['appt_startdate']));
-					$endtime = date('g:i a', strtotime($row['appt_enddate']));
 					$isallday = $row['appt_isalldayevent'];
 					$isrequest = $row['appt_istimerequest'];
+					$timelabel = CalendarAppointmentTimeLabel($startdatetime, $row['appt_startdate'], $row['appt_enddate'], $isallday);
 					?>
 					<div class="ui blue segment">
-						<?if (!$isallday) { ?>
-							<span class="ui small yellow label">&nbsp;<?=$starttime?> - <?=$endtime?>&nbsp;</span> &nbsp;
+						<?if ($timelabel != "") { ?>
+							<span class="ui small yellow label">&nbsp;<?=$timelabel?>&nbsp;</span> &nbsp;
 						<? } ?>
 						<? if ($isrequest) { ?>
 							<span class="ui small red label">&nbsp;Time request&nbsp;</span>
@@ -569,11 +605,12 @@
 								break;
 						}
 						
+						$apptDateWhere = CalendarAppointmentOverlapWhere($startdatetime, $enddatetime);
 						if ($currentcal == 0) {
-							$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where appt_deletedate > now() and appt_canceldate > now() and a.appt_startdate >= '$startdatetime' and a.appt_enddate <= '$enddatetime' order by appt_isalldayevent, appt_startdate";
+							$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where appt_deletedate > now() and appt_canceldate > now() and $apptDateWhere order by appt_isalldayevent, appt_startdate";
 						}
 						else {
-							$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where a.appt_calendarid = $currentcal and appt_deletedate > now() and appt_canceldate > now() and a.appt_startdate >= '$startdatetime' and a.appt_enddate <= '$enddatetime' order by appt_isalldayevent, appt_startdate";
+							$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where a.appt_calendarid = $currentcal and appt_deletedate > now() and appt_canceldate > now() and $apptDateWhere order by appt_isalldayevent, appt_startdate";
 						}
 						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -582,13 +619,12 @@
 							$projectname = $row['project_name'];
 							$calendarname = $row['calendar_name'];
 							$title = $row['appt_title'];
-							$starttime = date('g:i a', strtotime($row['appt_startdate']));
-							$endtime = date('g:i a', strtotime($row['appt_enddate']));
 							$isallday = $row['appt_isalldayevent'];
 							$isrequest = $row['appt_istimerequest'];
+							$timelabel = CalendarAppointmentTimeLabel($startdatetime, $row['appt_startdate'], $row['appt_enddate'], $isallday);
 							?>
-							<?if (!$isallday) { ?>
-								<span class="ui orange label">&nbsp;<?=$starttime?> - <?=$endtime?>&nbsp;</span><br>
+							<?if ($timelabel != "") { ?>
+								<span class="ui orange label">&nbsp;<?=$timelabel?>&nbsp;</span><br>
 							<? } ?>
 							<? if ($isrequest) { ?>
 								<span class="ui red label">&nbsp;Time request&nbsp;</span>
@@ -757,11 +793,12 @@
 					</h3>
 							<br>
 							<?
+							$apptDateWhere = CalendarAppointmentOverlapWhere($startdatetime, $enddatetime);
 							if ($currentcal == 0) {
-								$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where appt_deletedate > now() and appt_canceldate > now() and a.appt_startdate >= '$startdatetime' and a.appt_enddate <= '$enddatetime' order by appt_isalldayevent, appt_startdate";
+								$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where appt_deletedate > now() and appt_canceldate > now() and $apptDateWhere order by appt_isalldayevent, appt_startdate";
 							}
 							else {
-								$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where a.appt_calendarid = $currentcal and appt_deletedate > now() and appt_canceldate > now() and a.appt_startdate >= '$startdatetime' and a.appt_enddate <= '$enddatetime' order by appt_isalldayevent, appt_startdate";
+								$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where a.appt_calendarid = $currentcal and appt_deletedate > now() and appt_canceldate > now() and $apptDateWhere order by appt_isalldayevent, appt_startdate";
 							}
 							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -770,13 +807,12 @@
 								$projectname = $row['project_name'];
 								$calendarname = $row['calendar_name'];
 								$title = $row['appt_title'];
-								$starttime = date('g:i a', strtotime($row['appt_startdate']));
-								$endtime = date('g:i a', strtotime($row['appt_enddate']));
 								$isallday = $row['appt_isalldayevent'];
 								$isrequest = $row['appt_istimerequest'];
+								$timelabel = CalendarAppointmentTimeLabel($startdatetime, $row['appt_startdate'], $row['appt_enddate'], $isallday);
 								?>
-								<?if (!$isallday) { ?>
-									<div class="ui orange label">&nbsp;<?=$starttime?> - <?=$endtime?>&nbsp;</div><br>
+								<?if ($timelabel != "") { ?>
+									<div class="ui orange label">&nbsp;<?=$timelabel?>&nbsp;</div><br>
 								<? } ?>
 								<? if ($isrequest) { ?>
 									<span class="timerequest">&nbsp;Time request&nbsp;</span>
