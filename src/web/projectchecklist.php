@@ -44,13 +44,12 @@
 	$action = GetVariable("action");
 	$projectid = GetVariable("projectid");
 	$itemid = GetVariable("itemid");
-	$itemorder = GetVariable("itemorder");
+	//$itemorder = GetVariable("itemorder");
 	$itemname = GetVariable("itemname");
+	$itemtype = GetVariable("itemtype");
 	$modality = GetVariable("modality");
-	$protocol = GetVariable("protocol");
-	$itemcount = GetVariable("itemcount");
-	$frequency = GetVariable("frequency");
-	$frequencyunit = GetVariable("frequencyunit");
+	$mappedname = GetVariable("mappedname");
+	$expectedcount = GetVariable("expectedcount");
 	$enrollmentid = GetVariable("enrollmentid");
 	$projectchecklistid = GetVariable("projectchecklistid");
 	$reason = GetVariable("reason");
@@ -71,7 +70,7 @@
 	/* determine action */
 	switch ($action) {
 		case 'updateprojectchecklist':
-			UpdateProjectChecklist($projectid, $itemid, $itemorder, $itemname, $modality, $protocol, $itemcount, $frequency, $frequencyunit);
+			UpdateProjectChecklist($projectid, $itemid, $itemname, $itemtype, $modality, $mappedname, $expectedcount);
 			DisplayEditChecklist($projectid);
 			break;
 		case 'setmissingdatareasonform':
@@ -102,19 +101,20 @@
 	/* -------------------------------------------- */
 	/* ------- UpdateProjectChecklist ------------- */
 	/* -------------------------------------------- */
-	function UpdateProjectChecklist($projectid, $itemid, $itemorder, $itemname, $modality, $protocol, $itemcount, $frequency, $frequencyunit) {
+	function UpdateProjectChecklist($projectid, $itemid, $itemname, $itemtype, $modality, $mappedname, $expectedcount) {
 
+		PrintVariable($_POST);
+		//return;
+		
 		/* perform data checks */
 		$projectid = mysqli_real_escape_string($GLOBALS['linki'], trim($projectid));
 		
-		$itemid = mysqli_real_escape_array($GLOBALS['linki'], $itemid);
-		$itemorder = mysqli_real_escape_array($GLOBALS['linki'], $itemorder);
-		$itemname = mysqli_real_escape_array($GLOBALS['linki'], $itemname);
-		$modality = mysqli_real_escape_array($GLOBALS['linki'], $modality);
-		$protocol = mysqli_real_escape_array($GLOBALS['linki'], $protocol);
-		$itemcount = mysqli_real_escape_array($GLOBALS['linki'], $itemcount);
-		$frequency = mysqli_real_escape_array($GLOBALS['linki'], $frequency);
-		$frequencyunit = mysqli_real_escape_array($GLOBALS['linki'], $frequencyunit);
+		$itemids = mysqli_real_escape_array($GLOBALS['linki'], $itemid);
+		$itemnames = mysqli_real_escape_array($GLOBALS['linki'], $itemname);
+		$itemtypes = mysqli_real_escape_array($GLOBALS['linki'], $itemtype);
+		$modalities = mysqli_real_escape_array($GLOBALS['linki'], $modality);
+		$mappednames = mysqli_real_escape_array($GLOBALS['linki'], $mappedname);
+		$expectedcounts = mysqli_real_escape_array($GLOBALS['linki'], $expectedcount);
 		
 		if (!isInteger($projectid)) { echo "Invalid project ID [$projectid]"; return; }
 
@@ -123,20 +123,23 @@
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$i=1;
 
-		foreach ($itemorder as $order) {
+		foreach ($itemnames as $itemname) {
 
-			if ((trim($itemorder[$i]) != "") && (trim($itemname[$i]) != "")) {
-				if (trim($itemid[$i] == "")) {
-					$sqlstring = "insert into project_checklist (project_id, item_name, item_order, modality, protocol_name, count, frequency, frequency_unit) values ($projectid, '$itemname[$i]', '$itemorder[$i]', '$modality[$i]', '$protocol[$i]', '$itemcount[$i]', '$frequency[$i]', '$frequencyunit[$i]')";
+			if ($expectedcounts[$i] < 1) { $expectedcounts[$i] = "null"; }
+			
+			if (trim($itemname[$i]) != "") {
+				if (trim($itemids[$i] == "")) {
+					$sqlstring = "insert into project_checklist (project_id, item_name, item_order, imaging_modality, mapped_name, expected_count) values ($projectid, '$itemnames[$i]', '$i', '$modalities[$i]', '$mappednames[$i]', $expectedcounts[$i])";
 				}
 				else {
-					$sqlstring = "update project_checklist set item_name = '$itemname[$i]', item_order = '$itemorder[$i]', modality = '$modality[$i]', protocol_name = '$protocol[$i]', count = '$itemcount[$i]', frequency = '$frequency[$i]', frequency_unit = '$frequencyunit[$i]' where projectchecklist_id = $itemid[$i]";
+					$sqlstring = "update project_checklist set item_name = '$itemnames[$i]', item_order = '$i', item_type = '$itemtypes[$i]', imaging_modality = '$modalities[$i]', mapped_name = '$mappednames[$i]', expected_count = $expectedcounts[$i] where projectchecklist_id = $itemids[$i]";
 				}
+				PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			}
-			else if ((trim($itemorder[$i]) != "") && (trim($itemname[$i]) == "")) {
+			else if (trim($itemids[$i]) == "") {
 				//delete
-				$sqlstring = "delete from project_checklist where item_order = '$itemorder[$i]'  AND projectchecklist_id = '$itemid[$i]'";
+				$sqlstring = "delete from project_checklist where item_order = '$itemorder[$i]' AND projectchecklist_id = '$itemids[$i]'";
 
 				//PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -239,7 +242,6 @@
 		$neworder = 1;
 
 	?>
-	<!--<a href="projectchecklist.php?action=editchecklist&projectid=<?=$projectid?>" class="ui primary basic button">Edit checklist</a>-->
 
 	<datalist id="modalitylist">
 		<?
@@ -253,66 +255,74 @@
 	</datalist>
 	
 	<div class="ui container">
-		<h2 class="ui header">List of expected <u>imaging</u> items for this project</h2>
+		<h2 class="ui header">List of expected data items for this project</h2>
 		<form method="POST" action="projectchecklist.php">
 		<input type="hidden" name="action" value="updateprojectchecklist">
 		<input type="hidden" name="projectid" value="<?=$projectid?>">
 		<table class="ui small very compact table">
 			<thead>
 				<tr>
-					<th>Order</th>
 					<th>Name</th>
-					<th>Modality<br><span class="tiny">Leave blank to use a checkbox</span></th>
-					<th>Protocol<br><span class="tiny">comma separated for multiple protocols</span></th>
+					<th>Type</th>
+					<th>Modality</th>
+					<th>Mapped name<br><span class="tiny">comma separated for multiple protocol or variable names</span></th>
 					<th>Count</th>
-					<!--<th colspan="2">Frequency</th>-->
 				</tr>
 			</thead>
 			<tbody>
 				<?
+					$itemOrder = 0;
 					$sqlstring = "select * from project_checklist where project_id = $projectid order by item_order";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-						$id = $row['projectchecklist_id'];
-						$itemname = $row['item_name'];
-						$itemorder = $row['item_order'];
-						$modality = $row['modality'];
-						$protocol = $row['protocol_name'];
-						$itemcount = $row['count'];
-						$frequency = $row['frequency'];
-						$frequencyunit = $row['frequency_unit'];
-						//frequency_unit	enum('hour', 'day', 'week', 'month', 'year')					
+						$checklistRowID = $row['projectchecklist_id'];
+						$itemOrder = $row['item_order'];
+						$itemName = $row['item_name'];
+						$itemDescription = $row['item_desc'];
+						$itemType = $row['item_type'];
+						$imagingModality = $row['imaging_modality'];
+						$mappedName = $row['mapped_name'];
+						$expectedCount = $row['expected_count'];
 						
-				?>
-				<input type="hidden" name="itemid[<?=$neworder?>]" value="<?=$id?>">
-				<tr>
-					<td><div class="ui input"><input type="number" name="itemorder[<?=$neworder?>]" value="<?=$neworder?>" style="width:40px"></div></td>
-					<td><div class="ui input"><input type="text" name="itemname[<?=$neworder?>]" value="<?=$itemname?>" size="50"></div></td>
-					<td><div class="ui input"><input type="text" name="modality[<?=$neworder?>]" value="<?=$modality?>" list="modalitylist"></div></td>
-					<td><div class="ui input"><input type="text" name="protocol[<?=$neworder?>]" value="<?=$protocol?>" size="50"></div></td>
-					<td><div class="ui input"><input type="number" name="itemcount[<?=$neworder?>]" value="<?=$itemcount?>" style="width:40px"></div></td>
-					<!--<td><input type="text" name="frequency[<?=$neworder?>]" value="<?=$frequency?>"></td>-->
-					<!--<td><input type="text" name="frequencyunit[<?=$neworder?>]" value="<?=$frequencyunit?>"></td>-->
-				</tr>
-				<? 
+						?>
+						<input type="hidden" name="itemid[<?=$itemOrder?>]" value="<?=$checklistRowID?>">
+						<tr>
+							<td><div class="ui input"><input type="text" name="itemname[<?=$itemOrder?>]" value="<?=$itemName?>" size="50"></div></td>
+							<td>
+								<select name="itemtype[<?=$itemOrder?>]" class="ui selection dropdown">
+									<option value="Checkbox" <? if ($itemType == "Checkbox") { echo "selected"; } ?>>Checkbox</option>
+									<option value="Imaging" <? if ($itemType == "Imaging") { echo "selected"; } ?>>Imaging</option>
+									<option value="Intervention" <? if ($itemType == "Intervention") { echo "selected"; } ?>>Intervention</option>
+									<option value="Observation" <? if ($itemType == "Observation") { echo "selected"; } ?>>Observation</option>
+									<option value="Diagnosis" <? if ($itemType == "Diagnosis") { echo "selected"; } ?>>Diagnosis</option>
+								</select>
+							</td>
+							<td><div class="ui input"><input type="text" name="modality[<?=$itemOrder?>]" value="<?=$modality?>" list="modalitylist"></div></td>
+							<td><div class="ui input"><input type="text" name="mappedname[<?=$itemOrder?>]" value="<?=$mappedName?>" size="50"></div></td>
+							<td><div class="ui input"><input type="number" name="expectedcount[<?=$itemOrder?>]" value="<?=$expectedCount?>"></div></td>
+						</tr>
+						<?
 						$neworder++;
 					}
-					for ($i=0;$i<5;$i++) {
+					
+					$newOrder = $itemOrder + 1;
 				?>
-				<input type="hidden" name="itemid[<?=$neworder?>]" value="">
+				<input type="hidden" name="itemid[<?=$newOrder?>]" value="<?=$checklistRowID?>">
 				<tr>
-					<td><div class="ui input"><input type="number" name="itemorder[<?=$neworder?>]" value="<?=$neworder?>" style="width:80px"></div></td>
-					<td><div class="ui input"><input type="text" name="itemname[<?=$neworder?>]" size="50"></div></td>
-					<td><div class="ui input"><input type="text" name="modality[<?=$neworder?>]" list="modalitylist"></div></td>
-					<td><div class="ui input"><input type="text" name="protocol[<?=$neworder?>]" size="50"></div></td>
-					<td><div class="ui input"><input type="number" name="itemcount[<?=$neworder?>]" style="width:80px" value="1"></div></td>
-					<!--<td><input type="text" name="frequency[<?=$neworder?>]"></td>-->
-					<!--<td><input type="text" name="frequencyunit[<?=$neworder?>]"></td>-->
+					<td><div class="ui input"><input type="text" name="itemname[<?=$newOrder?>]" value="<?=$itemName?>" size="50"></div></td>
+					<td>
+						<select name="itemtype[<?=$newOrder?>]" class="ui selection dropdown">
+							<option value="Checkbox" <? if ($itemType == "Checkbox") { echo "selected"; } ?>>Checkbox</option>
+							<option value="Imaging" <? if ($itemType == "Imaging") { echo "selected"; } ?>>Imaging</option>
+							<option value="Intervention" <? if ($itemType == "Intervention") { echo "selected"; } ?>>Intervention</option>
+							<option value="Observation" <? if ($itemType == "Observation") { echo "selected"; } ?>>Observation</option>
+							<option value="Diagnosis" <? if ($itemType == "Diagnosis") { echo "selected"; } ?>>Diagnosis</option>
+						</select>
+					</td>
+					<td><div class="ui input"><input type="text" name="modality[<?=$newOrder?>]" value="<?=$modality?>" list="modalitylist"></div></td>
+					<td><div class="ui input"><input type="text" name="mappedname[<?=$newOrder?>]" value="<?=$mappedName?>" size="50"></div></td>
+					<td><div class="ui input"><input type="number" name="expectedcount[<?=$newOrder?>]" value="<?=$expectedCount?>"></div></td>
 				</tr>
-				<?
-						$neworder++;
-					}
-				?>
 				<tr>
 					<td colspan="5" align="right" style="padding-right: 20px"><input class="ui primary button" type="submit" value="Save/Update"></td>
 				</tr>

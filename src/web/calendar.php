@@ -112,63 +112,57 @@
 			.timerequest { font-size: 8pt; background-color: darkred; color: #FFFFFF; font-variant: small-caps; }
 		</style>
 
-		<div class="ui container">
-			<div class="ui top attached center aligned segment">
-				Viewing <h2 class="ui header"><?=$currentcalname?></h2>
-				
-				<form name="pageform" action="calendar_select.php" method="post" class="ui form">
-				<input type="hidden" name="action" value="set">
-					<div class="ui mini labeled input">
-						<div class="ui label">
-							Change
-						</div>
-						<select name="currentcal" onChange="document.pageform.submit()" class="ui dropdown">
-						<?
-						$sqlstring = "select * from calendars where calendar_deletedate > now() order by calendar_name";
-						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-							$id = $row['calendar_id'];
-							$name = $row['calendar_name'];
-							$description = $row['calendar_description'];
-							$location = $row['calendar_location'];
-							?>
-							<option value="<?=$id?>" <? if ($currentcal == $id) { echo "selected"; } ?>><?=$name?>
+		<div class="ui raised segment">
+			<div class="ui three column grid">
+				<div class="column">
+					<div class="ui blue image label">
+						<i class="calendar check icon"></i>
+						Today
+						<div class="ui detail"><?=date('D M j, Y')?></div>
+					</div>
+					&nbsp; &nbsp; &nbsp; &nbsp; 
+					<div class="ui image label">
+						<i class="calendar alternate outline icon"></i>
+						Calendar date
+						<div class="ui detail"><?=date('D M j, Y',$caldate)?></div>
+					</div>
+				</div>
+				<div class="center aligned column">
+					<form name="pageform" action="calendar_select.php" method="post" class="ui form">
+					<input type="hidden" name="action" value="set">
+						<div class="ui labeled input">
+							<div class="ui label">
+								View
+							</div>
+							<select name="currentcal" onChange="document.pageform.submit()" class="ui dropdown">
 							<?
-						}
-						?>
-						<option value="0" <? if ($currentcal == 0) { echo "selected"; } ?>>View All Calendars
-						</select>
-					</div>
-				</form>
-			</div>
-			<div class="ui bottom attached segment">
-				<div class="ui two column grid">
-					<div class="column">
-						<div class="ui image label">
-							<i class="calendar check icon"></i>
-							Today
-							<div class="ui detail"><?=date('D M j, Y')?></div>
+							$sqlstring = "select * from calendars where calendar_deletedate > now() order by calendar_name";
+							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+								$id = $row['calendar_id'];
+								$name = $row['calendar_name'];
+								$description = $row['calendar_description'];
+								$location = $row['calendar_location'];
+								?>
+								<option value="<?=$id?>" <? if ($currentcal == $id) { echo "selected"; } ?>><?=$name?>
+								<?
+							}
+							?>
+							<option value="0" <? if ($currentcal == 0) { echo "selected"; } ?>>All Calendars
+							</select>
 						</div>
-						&nbsp; &nbsp; &nbsp; &nbsp; 
-						<div class="ui image label">
-							<i class="calendar alternate outline icon"></i>
-							Calendar date
-							<div class="ui detail"><?=date('D M j, Y',$caldate)?></div>
-						</div>
-					</div>
-					<div class="right aligned column">
-						<? if ($menuitem == "day") { $class="yellow"; } else { $class=""; } ?>
-						<a class="ui big <?=$class?> label" href="calendar.php?action=day&year=<?=$year?>&month=<?=$month?>&day=<?=$day?>"><i class="calendar icon"></i>Day</a>
-						<? if ($menuitem == "week") { $class="yellow"; } else { $class=""; } ?>
-						<a class="ui big <?=$class?> label" href="calendar.php?action=week&year=<?=$year?>&month=<?=$month?>&day=<?=$day?>"><i class="calendar outline icon"></i>Week</a>
-						<? if ($menuitem == "month") { $class="yellow"; } else { $class=""; } ?>
-						<a class="ui big <?=$class?> label" href="calendar.php?action=month&year=<?=$year?>&month=<?=$month?>&day=<?=$day?>"><i class="calendar alternate outline icon"></i>Month</a>
-					</div>
+					</form>
+				</div>
+				<div class="right aligned column">
+					<? if ($menuitem == "day") { $class="yellow"; } else { $class=""; } ?>
+					<a class="ui big <?=$class?> label" href="calendar.php?action=day&year=<?=$year?>&month=<?=$month?>&day=<?=$day?>"><i class="calendar icon"></i>Day</a>
+					<? if ($menuitem == "week") { $class="yellow"; } else { $class=""; } ?>
+					<a class="ui big <?=$class?> label" href="calendar.php?action=week&year=<?=$year?>&month=<?=$month?>&day=<?=$day?>"><i class="calendar outline icon"></i>Week</a>
+					<? if ($menuitem == "month") { $class="yellow"; } else { $class=""; } ?>
+					<a class="ui big <?=$class?> label" href="calendar.php?action=month&year=<?=$year?>&month=<?=$month?>&day=<?=$day?>"><i class="calendar alternate outline icon"></i>Month</a>
 				</div>
 			</div>
 		</div>
-		
-		<br><br>
 		<?
 	}
 
@@ -419,13 +413,16 @@
 		);
 		$slotheight = 30;
 		$dayheight = $slotheight * 48;
+		$weekscrolltop = $slotheight * 16;
+		$nowlinetop = ((date('G')*60) + date('i')) * ($slotheight/30);
 	
 		?>
 			<style>
-				.weekcal { display: grid; grid-template-columns: 56px repeat(7, minmax(110px, 1fr)) 56px; border: 1px solid #dadce0; border-radius: 6px; background: white; }
+				.weekcal { --weekcal-scrollbar-width: 17px; display: grid; grid-template-columns: 56px repeat(7, minmax(110px, 1fr)) 56px; border: 1px solid #dadce0; border-radius: 6px; background: white; }
+				.weekcalbody { grid-column: 1 / -1; display: grid; grid-template-columns: 56px repeat(7, minmax(110px, 1fr)) calc(56px - var(--weekcal-scrollbar-width)); max-height: 58vh; overflow-y: auto; overflow-x: hidden; position: relative; }
 				.weekcalnav { display: flex; justify-content: center; align-items: center; min-height: 78px; border-right: 1px solid #dadce0; border-bottom: 1px solid #dadce0; background: #fff; }
 				.weekcalhead { min-height: 78px; padding: 8px; border-right: 1px solid #dadce0; border-bottom: 1px solid #dadce0; background: #fff; position: relative; }
-				.weekcalhead.today { background: #fffde7; }
+				.weekcalhead.today { background: #fcf8cc; }
 				.weekcaldayname { color: #5f6368; font-size: 9pt; text-transform: uppercase; }
 				.weekcaldate { font-size: 14pt; font-weight: bold; margin-top: 2px; }
 				.weekcaladd { position: absolute; top: 8px; right: 8px; }
@@ -433,13 +430,23 @@
 				.weekcaltimes { grid-column: 1; position: relative; height: <?=$dayheight?>px; border-right: 1px solid #dadce0; background: #fff; }
 				.weekcaltime { position: absolute; right: 6px; transform: translateY(-50%); color: #70757a; font-size: 8pt; white-space: nowrap; }
 				.weekcalcol { position: relative; height: <?=$dayheight?>px; border-right: 1px solid #dadce0; background: repeating-linear-gradient(to bottom, #e8eaed 0, #e8eaed 1px, transparent 1px, transparent <?=$slotheight?>px); }
-				.weekcalcol.today { background: repeating-linear-gradient(to bottom, #e8eaed 0, #e8eaed 1px, #fffde7 1px, #fffde7 <?=$slotheight?>px); }
-				.weekcalappt { position: absolute; z-index: 2; overflow: hidden; box-sizing: border-box; padding: 3px 5px; border-radius: 4px; border: 1px solid #333; background: #386eaf; color: white; font-size: 8pt; line-height: 1.2; box-shadow: 0 1px 2px rgba(60,64,67,0.3); }
+				.weekcalcol.today { background: repeating-linear-gradient(to bottom, #e8eaed 0, #e8eaed 1px, #fcf8cc 1px, #fcf8cc <?=$slotheight?>px); }
+				.weekcalappt { position: absolute; z-index: 2; overflow: hidden; box-sizing: border-box; padding: 3px 5px; border-radius: 4px; background: #386eaf; color: white; font-size: 8pt; line-height: 1.2; box-shadow: 0 2px 8px rgba(0,0,0,0.35); }
 				.weekcalappt a, .weekcalappt a:visited { color: white; text-decoration: none; }
 				.weekcalappt .meta { opacity: 0.9; font-size: 7pt; }
 				.weekcalrequest { background: #bf4a4a; border: 1px dashed #fff; }
 				.weekcalallday { background: #f2711c; }
+				.weekcalbodyspacer { height: <?=$dayheight?>px; border-left: 1px solid #dadce0; background: #fff; }
+				.weekcalnowline { position: absolute; left: 56px; right: calc(56px - var(--weekcal-scrollbar-width)); height: 2px; background: #87db8c; z-index: 2; pointer-events: none; }
 			</style>
+			<script type="text/javascript">
+				$(document).ready(function() {
+					var weekbody = $(".weekcalbody");
+					var scrollbarwidth = weekbody[0].offsetWidth - weekbody[0].clientWidth;
+					$(".weekcal").css("--weekcal-scrollbar-width", scrollbarwidth + "px");
+					weekbody.scrollTop(<?=$weekscrolltop?>);
+				});
+			</script>
 			<div class="weekcal">
 				<div class="weekcalnav">
 					<a href="calendar.php?action=week&year=<?=$prevyear?>&month=<?=$prevmonth?>&day=<?=$prevday?>"><i class="big black arrow alternate circle left icon" title="Previous week"></i></a>
@@ -460,6 +467,8 @@
 				<div class="weekcalnav">
 					<a href="calendar.php?action=week&year=<?=$nextyear?>&month=<?=$nextmonth?>&day=<?=$nextday?>"><i class="big black arrow alternate circle right icon" title="Next week"></i></a>
 				</div>
+				<div class="weekcalbody">
+				<div class="weekcalnowline" style="top: <?=$nowlinetop?>px"></div>
 				<div class="weekcaltimes">
 					<?
 					for ($i=0;$i<=48;$i++) {
@@ -588,6 +597,8 @@
 					<?
 				}
 				?>
+				<div class="weekcalbodyspacer"></div>
+				</div>
 			</div>
 		<?
 	}
