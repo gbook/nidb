@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Apr 27, 2026 at 06:03 PM
+-- Generation Time: Apr 30, 2026 at 02:47 PM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -2629,14 +2629,32 @@ CREATE TABLE `projects` (
 CREATE TABLE `project_checklist` (
   `projectchecklist_id` int(11) NOT NULL,
   `project_id` int(11) NOT NULL,
+  `item_order` int(11) NOT NULL,
+  `item_name` varchar(100) NOT NULL,
+  `item_desc` longtext DEFAULT NULL,
+  `item_type` enum('Checkbox','Imaging','Intervention','Observation','Diagnosis') NOT NULL DEFAULT 'Checkbox',
+  `imaging_modality` varchar(35) DEFAULT NULL COMMENT 'Any of the standard NiDB modalities',
+  `mapped_name` longtext NOT NULL COMMENT 'Comma separate list. ProtocolName for modality, variable name for intervention/obervation',
+  `expected_count` int(11) DEFAULT NULL COMMENT 'Expected number of items. Success if greater than or equal to this number'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `project_checklist_orig`
+--
+
+CREATE TABLE `project_checklist_orig` (
+  `projectchecklist_id` int(11) NOT NULL,
+  `project_id` int(11) NOT NULL,
   `item_name` varchar(50) NOT NULL,
   `item_desc` longtext NOT NULL,
   `item_order` int(11) NOT NULL,
-  `modality` varchar(25) NOT NULL COMMENT 'MR, CT, assessment, measure, etc',
-  `protocol_name` longtext NOT NULL COMMENT 'for a specific modality, this specifies the protocol name',
-  `count` int(11) NOT NULL COMMENT 'total number of this item',
-  `frequency` int(11) NOT NULL COMMENT 'spacing between the items',
-  `frequency_unit` enum('hour','day','week','month','year') NOT NULL,
+  `modality` varchar(35) NOT NULL COMMENT 'Any of the standard NiDB modalities, plus Intervention and Observation',
+  `protocol_name` longtext NOT NULL COMMENT 'ProtocolName for modality, variable name for intervention/obervation',
+  `count` int(11) DEFAULT NULL COMMENT 'total number of this item',
+  `frequency` int(11) DEFAULT NULL COMMENT 'spacing between the items',
+  `frequency_unit` enum('hour','day','week','month','year') DEFAULT NULL,
   `rdocexperiment_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
@@ -4769,6 +4787,12 @@ ALTER TABLE `project_checklist`
   ADD PRIMARY KEY (`projectchecklist_id`);
 
 --
+-- Indexes for table `project_checklist_orig`
+--
+ALTER TABLE `project_checklist_orig`
+  ADD PRIMARY KEY (`projectchecklist_id`);
+
+--
 -- Indexes for table `project_nda_uploads`
 --
 ALTER TABLE `project_nda_uploads`
@@ -5937,6 +5961,12 @@ ALTER TABLE `projects`
 -- AUTO_INCREMENT for table `project_checklist`
 --
 ALTER TABLE `project_checklist`
+  MODIFY `projectchecklist_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `project_checklist_orig`
+--
+ALTER TABLE `project_checklist_orig`
   MODIFY `projectchecklist_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --

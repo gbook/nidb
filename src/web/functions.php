@@ -703,6 +703,33 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- GetProjectInfo --------------------- */
+	/* -------------------------------------------- */
+	function GetProjectInfo($projectRowID) {
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select * from projects where project_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $projectRowID);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		$p['instanceRowID'] = $row['instance_id'];
+		$p['projectUID'] = $row['project_uid'];
+		$p['useCustomID'] = $row['project_usecustomid'];
+		$p['projectName'] = $row['project_name'];
+		$p['projectAdmin'] = $row['project_admin'];
+		$p['projectPI'] = $row['project_pi'];
+		$p['projectSharing'] = $row['project_sharing'];
+		$p['projectCostCenter'] = $row['project_costcenter'];
+		$p['projectStartDate'] = $row['project_startdate'];
+		$p['projectEndDate'] = $row['project_enddate'];
+		$p['projectIRBApprovalDate'] = $row['project_irbapprovaldate'];
+		$p['projectStatus'] = $row['project_status'];
+		$p['lastUpdate'] = $row['lastupdate'];
+		
+		return $p;
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- GetDataPathFromSeriesID ------------ */
 	/* -------------------------------------------- */
 	function GetDataPathFromSeriesID($id, $modality) {
