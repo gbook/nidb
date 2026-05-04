@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Apr 30, 2026 at 02:47 PM
+-- Generation Time: May 04, 2026 at 09:14 PM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -993,6 +993,7 @@ CREATE TABLE `enrollment_checklist` (
   `enrollmentchecklist_id` int(11) NOT NULL,
   `enrollment_id` int(11) DEFAULT NULL,
   `projectchecklist_id` int(11) DEFAULT NULL,
+  `iscomplete` tinyint(1) DEFAULT NULL,
   `notes` longtext DEFAULT NULL,
   `date_completed` datetime DEFAULT NULL,
   `completedby` varchar(255) DEFAULT NULL COMMENT 'username, not ID, in case the user_id is deleted'
@@ -4228,7 +4229,8 @@ ALTER TABLE `enrollment`
 -- Indexes for table `enrollment_checklist`
 --
 ALTER TABLE `enrollment_checklist`
-  ADD PRIMARY KEY (`enrollmentchecklist_id`);
+  ADD PRIMARY KEY (`enrollmentchecklist_id`),
+  ADD UNIQUE KEY `enrollment_id` (`enrollment_id`,`projectchecklist_id`);
 
 --
 -- Indexes for table `enrollment_missingdata`
