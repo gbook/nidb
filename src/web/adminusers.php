@@ -62,6 +62,7 @@
 		$email = GetVariable("email");
 		$enabled = GetVariable("enabled");
 		$isadmin = GetVariable("isadmin");
+		$apiaccess = GetVariable("apiaccess");
 		$instanceid = GetVariable("instanceid");
 		$projectadmin = GetVariable("projectadmin");
 		$modifydata = GetVariable("modifydata");
@@ -86,7 +87,7 @@
 				DisplayUserList();
 				break;
 			case 'update':
-				UpdateUser($id, $username, $password, $fullname, $email, $enabled, $isadmin, $instanceid, $projectadmin, $modifydata, $viewdata, $modifyphi, $viewphi);
+				UpdateUser($id, $username, $password, $fullname, $email, $enabled, $isadmin, $apiaccess, $instanceid, $projectadmin, $modifydata, $viewdata, $modifyphi, $viewphi);
 				DisplayUserList();
 				break;
 			case 'add':
@@ -108,7 +109,7 @@
 	/* -------------------------------------------- */
 	/* ------- UpdateUser ------------------------- */
 	/* -------------------------------------------- */
-	function UpdateUser($id, $username, $password, $fullname, $email, $enabled, $isadmin, $instanceid, $projectadmin, $modifydata, $viewdata, $modifyphi, $viewphi) {
+	function UpdateUser($id, $username, $password, $fullname, $email, $enabled, $isadmin, $apiaccess, $instanceid, $projectadmin, $modifydata, $viewdata, $modifyphi, $viewphi) {
 		/* perform data checks */
 		$username = mysqli_real_escape_string($GLOBALS['linki'], $username);
 		$fullname = mysqli_real_escape_string($GLOBALS['linki'], $fullname);
@@ -239,10 +240,33 @@
 			}
 		}
 		
+		/* manage api_users access */
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select apiuser_id from api_users where username = ? limit 1");
+		mysqli_stmt_bind_param($stmt, 's', $username);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+		$hasApiUser = (mysqli_num_rows($result) > 0);
+
+		if ($apiaccess == '1' && !$hasApiUser) {
+			$apiKey = bin2hex(random_bytes(32));
+			$algo = defined('PASSWORD_ARGON2ID') ? PASSWORD_ARGON2ID : (defined('PASSWORD_ARGON2I') ? PASSWORD_ARGON2I : PASSWORD_BCRYPT);
+			$hash = password_hash($apiKey, $algo);
+			$stmt = mysqli_prepare($GLOBALS['linki'], "insert into api_users (username, credential) values (?, ?)");
+			mysqli_stmt_bind_param($stmt, 'ss', $username, $hash);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			mysqli_stmt_close($stmt);
+			Notice("API access enabled for $username. API key (save this — it will not be shown again): <tt>$apiKey</tt>");
+		} elseif ($apiaccess != '1' && $hasApiUser) {
+			$stmt = mysqli_prepare($GLOBALS['linki'], "delete from api_users where username = ?");
+			mysqli_stmt_bind_param($stmt, 's', $username);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			mysqli_stmt_close($stmt);
+		}
+
 		/* commit transaction */
 		$sqlstring = "commit";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		
+
 		Notice("$username updated");
 	}
 
@@ -358,6 +382,12 @@
 			$isadmin = $row['user_isadmin'];
 			if ($enabled == 1) $enabledcheck = "checked";
 			if ($isadmin == 1) $isadmincheck = "checked";
+
+			$stmt = mysqli_prepare($GLOBALS['linki'], "select apiuser_id from api_users where username = ? limit 1");
+			mysqli_stmt_bind_param($stmt, 's', $username);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			mysqli_stmt_close($stmt);
+			if (mysqli_num_rows($result) > 0) $apiaccesscheck = "checked";
 		
 			$formaction = "update";
 			$formtitle = "Updating $username";
@@ -453,6 +483,12 @@
 				<div class="ui checkbox">
 					<input type="checkbox" name="isadmin" value="1" <?=$isadmincheck?>>
 					<label>NiDB admin</label>
+				</div>
+			</div>
+			<div class="field">
+				<div class="ui checkbox">
+					<input type="checkbox" name="apiaccess" value="1" <?=$apiaccesscheck?>>
+					<label>API access</label>
 				</div>
 			</div>
 

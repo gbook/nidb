@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: May 04, 2026 at 09:14 PM
+-- Generation Time: May 05, 2026 at 01:57 PM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -169,6 +169,37 @@ CREATE TABLE `analysis_resultunit` (
   `resultunit_id` int(11) NOT NULL,
   `result_unit` varchar(25) DEFAULT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `api_sessions`
+--
+
+CREATE TABLE `api_sessions` (
+  `session_id` int(10) UNSIGNED NOT NULL,
+  `apiuser_id` int(10) UNSIGNED NOT NULL,
+  `session_hash` char(64) NOT NULL,
+  `ip_address` varchar(45) DEFAULT NULL,
+  `last_access` datetime NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `api_users`
+--
+
+CREATE TABLE `api_users` (
+  `apiuser_id` int(10) UNSIGNED NOT NULL,
+  `username` varchar(64) NOT NULL,
+  `credential` varchar(255) NOT NULL,
+  `login_count` int(10) UNSIGNED NOT NULL DEFAULT 0,
+  `last_access` datetime DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `is_active` tinyint(1) NOT NULL DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -3956,6 +3987,21 @@ ALTER TABLE `analysis_resultunit`
   ADD UNIQUE KEY `units` (`result_unit`);
 
 --
+-- Indexes for table `api_sessions`
+--
+ALTER TABLE `api_sessions`
+  ADD PRIMARY KEY (`session_id`),
+  ADD UNIQUE KEY `uq_session_hash` (`session_hash`),
+  ADD KEY `idx_apiuser_last_access` (`apiuser_id`,`last_access`);
+
+--
+-- Indexes for table `api_users`
+--
+ALTER TABLE `api_users`
+  ADD PRIMARY KEY (`apiuser_id`),
+  ADD UNIQUE KEY `uq_username` (`username`);
+
+--
 -- Indexes for table `assessments`
 --
 ALTER TABLE `assessments`
@@ -5270,6 +5316,18 @@ ALTER TABLE `analysis_resultunit`
   MODIFY `resultunit_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `api_sessions`
+--
+ALTER TABLE `api_sessions`
+  MODIFY `session_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `api_users`
+--
+ALTER TABLE `api_users`
+  MODIFY `apiuser_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `assessments`
 --
 ALTER TABLE `assessments`
@@ -6324,6 +6382,16 @@ ALTER TABLE `weather`
 --
 ALTER TABLE `xa_series`
   MODIFY `xaseries_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `api_sessions`
+--
+ALTER TABLE `api_sessions`
+  ADD CONSTRAINT `fk_sessions_user` FOREIGN KEY (`apiuser_id`) REFERENCES `api_users` (`apiuser_id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
