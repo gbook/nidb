@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: May 05, 2026 at 01:57 PM
+-- Generation Time: May 07, 2026 at 06:58 PM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -2666,7 +2666,7 @@ CREATE TABLE `project_checklist` (
   `item_desc` longtext DEFAULT NULL,
   `item_type` enum('Checkbox','Imaging','Intervention','Observation','Diagnosis') NOT NULL DEFAULT 'Checkbox',
   `imaging_modality` varchar(35) DEFAULT NULL COMMENT 'Any of the standard NiDB modalities',
-  `mapped_name` longtext NOT NULL COMMENT 'Comma separate list. ProtocolName for modality, variable name for intervention/obervation',
+  `mapped_name` longtext NOT NULL COMMENT 'Comma separate list for ''OR'', ampersand separated list for AND (all must exist). ProtocolName for modality, variable name for intervention/obervation',
   `expected_count` int(11) DEFAULT NULL COMMENT 'Expected number of items. Success if greater than or equal to this number'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 

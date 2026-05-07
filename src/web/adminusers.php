@@ -241,9 +241,10 @@
 		}
 		
 		/* manage api_users access */
-		$stmt = mysqli_prepare($GLOBALS['linki'], "select apiuser_id from api_users where username = ? limit 1");
+		$sqlstring = "select apiuser_id from api_users where username = ? limit 1";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 		mysqli_stmt_bind_param($stmt, 's', $username);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$username]);
 		mysqli_stmt_close($stmt);
 		$hasApiUser = (mysqli_num_rows($result) > 0);
 
@@ -251,15 +252,17 @@
 			$apiKey = bin2hex(random_bytes(32));
 			$algo = defined('PASSWORD_ARGON2ID') ? PASSWORD_ARGON2ID : (defined('PASSWORD_ARGON2I') ? PASSWORD_ARGON2I : PASSWORD_BCRYPT);
 			$hash = password_hash($apiKey, $algo);
-			$stmt = mysqli_prepare($GLOBALS['linki'], "insert into api_users (username, credential) values (?, ?)");
+			$sqlstring = "insert into api_users (username, credential) values (?, ?)";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 			mysqli_stmt_bind_param($stmt, 'ss', $username, $hash);
-			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$username, $hash]);
 			mysqli_stmt_close($stmt);
 			Notice("API access enabled for $username. API key (save this — it will not be shown again): <tt>$apiKey</tt>");
 		} elseif ($apiaccess != '1' && $hasApiUser) {
-			$stmt = mysqli_prepare($GLOBALS['linki'], "delete from api_users where username = ?");
+			$sqlstring = "delete from api_users where username = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 			mysqli_stmt_bind_param($stmt, 's', $username);
-			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$username]);
 			mysqli_stmt_close($stmt);
 		}
 
@@ -383,9 +386,10 @@
 			if ($enabled == 1) $enabledcheck = "checked";
 			if ($isadmin == 1) $isadmincheck = "checked";
 
-			$stmt = mysqli_prepare($GLOBALS['linki'], "select apiuser_id from api_users where username = ? limit 1");
+			$sqlstring = "select apiuser_id from api_users where username = ? limit 1";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 			mysqli_stmt_bind_param($stmt, 's', $username);
-			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$username]);
 			mysqli_stmt_close($stmt);
 			if (mysqli_num_rows($result) > 0) $apiaccesscheck = "checked";
 		

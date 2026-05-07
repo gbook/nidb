@@ -83,6 +83,10 @@
 			SendJoinInstanceRequest($instanceid);
 			DisplayOptions($username);
 			break;
+		case 'regenerateapikey':
+			RegenerateApiKey($username);
+			DisplayOptions($username);
+			break;
 		case 'menu':
 		default:
 			DisplayOptions($username);
@@ -223,6 +227,31 @@
 	
 	
 	/* ----------------------------------------------- */
+	/* --------- RegenerateApiKey -------------------- */
+	/* ----------------------------------------------- */
+	function RegenerateApiKey($username) {
+		$sqlstring = "select apiuser_id from api_users where username = ? limit 1";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 's', $username);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$username]);
+		mysqli_stmt_close($stmt);
+		if (mysqli_num_rows($result) == 0) {
+			Error("No API access configured for this account");
+			return;
+		}
+		$apiKey = bin2hex(random_bytes(32));
+		$algo = defined('PASSWORD_ARGON2ID') ? PASSWORD_ARGON2ID : (defined('PASSWORD_ARGON2I') ? PASSWORD_ARGON2I : PASSWORD_BCRYPT);
+		$hash = password_hash($apiKey, $algo);
+		$sqlstring = "update api_users set credential = ? where username = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ss', $hash, $username);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$hash, $username]);
+		mysqli_stmt_close($stmt);
+		Notice("New API key (save this â€” it will not be shown again): <tt>$apiKey</tt>");
+	}
+
+
+	/* ----------------------------------------------- */
 	/* --------- DisplayOptions ---------------------- */
 	/* ----------------------------------------------- */
 	function DisplayOptions($username) {
@@ -265,6 +294,13 @@
 		if ($row['sendmail_dailysummary'] == "1") { $dailycheck = "checked"; }
 		if ($row['user_enablebeta'] == "1") { $enablebeta = "checked"; }
 
+		$sqlstring = "select apiuser_id from api_users where username = ? limit 1";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 's', $username);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$username]);
+		mysqli_stmt_close($stmt);
+		$hasApiAccess = (mysqli_num_rows($result) > 0);
+
 		$sqlstring = "select count(*) 'count' from user_project where user_id = $userid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
@@ -299,8 +335,20 @@
 
 
 		<div class="ui text container">
-			<div class="ui attached visible message">
-			  <div class="header">My Account</div>
+			<div class="ui top attached segment">
+				<div class="ui two column grid">
+					<div class="column">
+						<h2 class="ui header">My Account</h2>
+					</div>
+					<div class="right aligned column">
+						<? if ($hasApiAccess) { ?>
+						<form method="post" action="users.php" style="float:right; margin:0">
+							<input type="hidden" name="action" value="regenerateapikey">
+							<button type="submit" class="ui basic green button">Regenerate API Key</button>
+						</form>
+						<? } ?>
+					</div>
+				</div>
 			</div>
 
 			<form method="post" action="users.php" autocomplete="off" class="ui form attached fluid segment">
@@ -447,7 +495,7 @@
 					<select id="country" name="country">
 						<option value="">(Select country)</option>
 						<option value="AF">Afghanistan</option>
-						<option value="AX">Åland Islands</option>
+						<option value="AX">ï¿½land Islands</option>
 						<option value="AL">Albania</option>
 						<option value="DZ">Algeria</option>
 						<option value="AS">American Samoa</option>

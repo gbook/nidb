@@ -72,6 +72,9 @@
 		list($path, $seriespath, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($mrseriesid, $modality);
 		echo "$path, $seriespath, $qapath, $uid, $studynum, $studyid, $subjectid<br>";
 		
+		?>
+		<a href="dicom.php?seriesid=<?=$mrseriesid?>&modality=<?=$modality?>" class="ui green button">View DICOM images</a>
+		<?
 		if (substr($path,-6) == "parrec") {
 			$files = glob("$path/*.par");
 			$filename = $files[0];

@@ -602,15 +602,34 @@
 	/* -------------------------------------------- */
 	/* ------- MySQLiBoundQuery ------------------- */
 	/* -------------------------------------------- */
-	function MySQLiBoundQuery($stmt,$file,$line,$error="") {
+	function MySQLiBoundQuery($stmt,$file,$line,$sqlstring="",$params=[]) {
 		Debug($file, $line,"Running MySQL Query [$sqlstring]");
-		
+
 		if (!mysqli_stmt_execute($stmt)) {
 			$datetime = date('r');
 			$username = $GLOBALS['username'];
+
+			/* substitute bound values into the query template for display only */
+			$debugSql = $sqlstring;
+			foreach ($params as $val) {
+				$pos = strpos($debugSql, '?');
+				if ($pos === false) break;
+				if (is_null($val)) {
+					$replacement = 'NULL';
+				} elseif (is_int($val) || is_float($val)) {
+					$replacement = (string)$val;
+				} else {
+					$str = (string)$val;
+					$replacement = strlen($str) > 200
+						? "'[" . strlen($str) . " bytes]'"
+						: "'" . addslashes($str) . "'";
+				}
+				$debugSql = substr_replace($debugSql, $replacement, $pos, 1);
+			}
+
 			$body = "<b>Query failed on [$datetime]:</b> $file (line $line)<br>
-			<b>Error:</b> " . mysqli_error($GLOBALS['linki']) . "<br>
-			<b>SQL:</b> " . mysqli_stmt_error($stmt) . "<br>
+			<b>Error:</b> " . mysqli_stmt_error($stmt) . "<br>
+			<b>SQL:</b> " . $debugSql . "<br>
 			<b>Username:</b> $username<br>
 			<b>SESSION</b> <pre>" . print_r($_SESSION,true) . "</pre><br>
 			<b>SERVER</b> <pre>" . print_r($_SERVER,true) . "</pre><br>
@@ -706,9 +725,10 @@
 	/* ------- GetProjectInfo --------------------- */
 	/* -------------------------------------------- */
 	function GetProjectInfo($projectRowID) {
-		$stmt = mysqli_prepare($GLOBALS['linki'], "select * from projects where project_id = ?");
+		$sqlstring = "select * from projects where project_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 		mysqli_stmt_bind_param($stmt, 'i', $projectRowID);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectRowID]);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		mysqli_stmt_close($stmt);
 		$p['instanceRowID'] = $row['instance_id'];
@@ -913,9 +933,10 @@
 		$subjectRowID = (int)$subjectRowID;
 		$projectRowID = (int)$projectRowID;
 		
-		$stmt = mysqli_prepare($GLOBALS['linki'], "select enrollment_id from enrollment where subject_id = ? and project_id = ?");
+		$sqlstring = "select enrollment_id from enrollment where subject_id = ? and project_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 		mysqli_stmt_bind_param($stmt, 'ii', $subjectRowID, $projectRowID);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$subjectRowID, $projectRowID]);
 		mysqli_stmt_close($stmt);
 		
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
@@ -923,6 +944,26 @@
 		if ($enrollmentRowID == "") { $enrollmentRowID = 0; }
 		
 		return $enrollmentRowID;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetStudiesByEnrollmentID ----------- */
+	/* -------------------------------------------- */
+	function GetStudiesByEnrollmentID($enrollmentRowID) {
+		$enrollmentRowID = (int)$enrollmentRowID;
+		
+		$sqlstring = "select study_id from studies where enrollment_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $enrollmentRowID);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$enrollmentRowID]);
+		mysqli_stmt_close($stmt);
+		$studyids = array();
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$studyids[] = $row['study_id'];
+		}
+		
+		return $studyids;
 	}
 	
 	

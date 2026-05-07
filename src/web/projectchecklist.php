@@ -402,6 +402,7 @@
 						document.getElementById("checklistitems").appendChild(row);
 						RenumberChecklistRows();
 						InitializeChecklistDropdowns(row);
+						UpdateChecklistRowRequirements(row);
 						row.querySelector(".checklist-itemname").focus();
 					}
 					
@@ -458,9 +459,26 @@
 						});
 					}
 					
+					/* Set/clear required on modality and mappedname based on the selected type. */
+					function UpdateChecklistRowRequirements(row) {
+						var typeVal = row.querySelector("select.checklist-itemtype").value;
+						var modalitySelect = row.querySelector("select.checklist-modality");
+						var mappedInput    = row.querySelector("input.checklist-mappedname");
+						modalitySelect.required = (typeVal === "Imaging");
+						mappedInput.required    = (typeVal === "Imaging" || typeVal === "Intervention" || typeVal === "Observation");
+					}
+
 					/* Existing rows are present on page load and need Select2 setup once. */
 					jQuery(document).ready(function() {
 						InitializeChecklistDropdowns(document);
+						/* Initialize required state for all existing rows. */
+						document.querySelectorAll("#checklistitems tr.checklist-row:not(.checklist-template)").forEach(function(row) {
+							UpdateChecklistRowRequirements(row);
+						});
+						/* React to type changes (works for both existing and newly-added rows). */
+						jQuery("#checklistitems").on("change", "select.checklist-itemtype", function() {
+							UpdateChecklistRowRequirements(this.closest("tr"));
+						});
 					});
 				</script>
 				
