@@ -87,4 +87,4 @@ cp -rf /usr/local/share/dcmtk-3.7.0/* %{buildroot}/usr/local/share/dcmtk-3.7.0/ 
 /usr/local/share/dcmtk-3.7.0
 
 %post
-/nidb/setup/rpm_post_install9.sh
+/nidb/setup/rpm_post_install.sh

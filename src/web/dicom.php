@@ -57,17 +57,34 @@
 				color: #DDD;
 				outline: none;
 				touch-action: none;
+				position: relative;
+			}
+			#dicomOverlay {
+				position: absolute;
+				inset: 0;
+				pointer-events: none;
+				padding: 8px 10px;
+				font-family: monospace;
+				font-size: 13px;
+				color: #fff;
+				text-shadow: 1px 1px 3px #000, -1px -1px 3px #000;
+				z-index: 10;
+				display: flex;
+				flex-direction: column;
+				justify-content: space-between;
+			}
+			#dicomOverlayTop, #dicomOverlayBottom {
+				display: flex;
+				justify-content: space-between;
+			}
+			#dicomOverlayRight {
+				text-align: right;
 			}
 				#dicomStatus {
 					font-family: monospace;
 				}
-				#dicomViewport.windowing {
-					cursor: crosshair;
-				}
 			</style>
-		<script type="text/javascript" src="https://unpkg.com/cornerstone-core@2.6.1/dist/cornerstone.min.js"></script>
-		<script type="text/javascript" src="https://unpkg.com/dicom-parser@1.8.21/dist/dicomParser.min.js"></script>
-		<script type="text/javascript" src="https://unpkg.com/cornerstone-wado-image-loader@4.13.2/dist/cornerstoneWADOImageLoaderNoWebWorkers.bundle.min.js"></script>
+		<script type="module" src="scripts/cs3d.bundle.js"></script>
 	</head>
 
 <body>
@@ -228,7 +245,37 @@
 				<div class="ui bottom attached warning message">No DICOM files were found in this series directory.</div>
 			<? } else { ?>
 				<div class="ui attached segment">
-					<div id="dicomViewport" tabindex="0"></div>
+					<div id="dicomViewport" tabindex="0">
+							<div id="dicomOverlay">
+								<div id="dicomOverlayTop">
+									<div id="dicomOverlayLeft">
+										<div id="overlayPatientName"></div>
+										<div id="overlayPatientID"></div>
+										<div id="overlayPatientAgeSex"></div>
+										<div id="overlayStudyDescription"></div>
+									</div>
+									<div id="dicomOverlayRight">
+										<div id="overlayProtocolName"></div>
+										<div id="overlaySequenceName"></div>
+										<div id="overlayRepetitionTime"></div>
+										<div id="overlayEchoTime"></div>
+										<div id="overlayFlipAngle"></div>
+									</div>
+								</div>
+								<div id="dicomOverlayBottom">
+									<div id="dicomOverlayBottomLeft">
+										<div id="overlayPatientPosition"></div>
+										<div id="overlayDimensions"></div>
+										<div id="overlayPixelSpacing"></div>
+										<div id="overlaySliceThickness"></div>
+									</div>
+									<div id="dicomOverlayBottomRight" style="text-align:right">
+										<div id="overlayStationName"></div>
+										<div id="overlayManufacturerModelName"></div>
+									</div>
+								</div>
+							</div>
+						</div>
 				</div>
 					<div class="ui bottom attached segment">
 						<div class="ui grid">
@@ -261,169 +308,181 @@
 						</div>
 					</div>
 
-					<script type="text/javascript">
+					<script type="module">
+						const cs             = window.cs3d;
+						const csTools        = window.cs3dTools;
+						const dicomImageLoader = window.cs3dDicomLoader;
+
+						const renderingEngineId = "nidbDicomEngine";
+						const viewportId = "nidbDicomViewport";
 						const element = document.getElementById("dicomViewport");
 						const slider = document.getElementById("sliceSlider");
 						const status = document.getElementById("dicomStatus");
 						const windowWidthInput = document.getElementById("windowWidthInput");
 						const windowCenterInput = document.getElementById("windowCenterInput");
 						const resetWindowButton = document.getElementById("resetWindowButton");
+
+						const overlayPatientName      = document.getElementById("overlayPatientName");
+						const overlayPatientID        = document.getElementById("overlayPatientID");
+						const overlayPatientAgeSex    = document.getElementById("overlayPatientAgeSex");
+						const overlayStudyDescription = document.getElementById("overlayStudyDescription");
+						const overlayPatientPosition  = document.getElementById("overlayPatientPosition");
+						const overlayDimensions       = document.getElementById("overlayDimensions");
+						const overlayPixelSpacing     = document.getElementById("overlayPixelSpacing");
+						const overlaySliceThickness   = document.getElementById("overlaySliceThickness");
+						const overlayStationName          = document.getElementById("overlayStationName");
+						const overlayManufacturerModelName = document.getElementById("overlayManufacturerModelName");
+						const overlayProtocolName    = document.getElementById("overlayProtocolName");
+						const overlaySequenceName   = document.getElementById("overlaySequenceName");
+						const overlayRepetitionTime = document.getElementById("overlayRepetitionTime");
+						const overlayEchoTime       = document.getElementById("overlayEchoTime");
+						const overlayFlipAngle      = document.getElementById("overlayFlipAngle");
+
 						let imageIds = [];
-						let currentIndex = 0;
-						let defaultVoi = null;
-						let customVoi = null;
-						let isWindowing = false;
-						let windowStart = null;
-						let voiStart = null;
+						let renderingEngine = null;
+						let defaultVoiRange = null;
 
-						function setStatus(text) {
-							status.textContent = text;
-						}
-						
-						function updateWindowInputs(voi) {
-							windowWidthInput.value = Math.round(voi.windowWidth);
-							windowCenterInput.value = Math.round(voi.windowCenter);
-						}
-						
-						function applyWindow(windowWidth, windowCenter) {
-							const viewport = cornerstone.getViewport(element);
-							viewport.voi.windowWidth = Math.max(1, Number(windowWidth));
-							viewport.voi.windowCenter = Number(windowCenter);
-							customVoi = {
-								windowWidth: viewport.voi.windowWidth,
-								windowCenter: viewport.voi.windowCenter
-							};
-							cornerstone.setViewport(element, viewport);
-							updateWindowInputs(customVoi);
+						function setStatus(text) { status.textContent = text; }
+
+						function updateWindowInputs(ww, wc) {
+							windowWidthInput.value = Math.round(ww);
+							windowCenterInput.value = Math.round(wc);
 						}
 
-						function showSlice(index) {
-							if (imageIds.length < 1) {
-								return;
-						}
-						currentIndex = Math.max(0, Math.min(index, imageIds.length - 1));
-						slider.value = currentIndex + 1;
-						setStatus("Loading " + (currentIndex + 1) + " / " + imageIds.length + "...");
-							
-							cornerstone.loadAndCacheImage(imageIds[currentIndex]).then((image) => {
-								cornerstone.displayImage(element, image);
-								const viewport = cornerstone.getViewport(element);
-								if (!defaultVoi) {
-									defaultVoi = {
-										windowWidth: viewport.voi.windowWidth,
-										windowCenter: viewport.voi.windowCenter
-									};
-								}
-								if (customVoi) {
-									viewport.voi.windowWidth = customVoi.windowWidth;
-									viewport.voi.windowCenter = customVoi.windowCenter;
-									cornerstone.setViewport(element, viewport);
-								}
-								updateWindowInputs(customVoi || viewport.voi);
-								setStatus((currentIndex + 1) + " / " + imageIds.length);
-							}).catch((error) => {
-								console.error(error);
-							setStatus(error.message);
-						});
-					}
+						async function run() {
+							try {
+								await cs.init();
+								await csTools.init();
 
-					async function run() {
-						try {
-							if (!window.cornerstone || !window.cornerstoneWADOImageLoader) {
-								throw new Error("Cornerstone libraries did not load");
-							}
-							
-							cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
-							cornerstoneWADOImageLoader.external.dicomParser = dicomParser;
-							if (typeof cornerstoneWADOImageLoader.configure == "function") {
-								cornerstoneWADOImageLoader.configure({
-									useWebWorkers: false
+								dicomImageLoader.init();
+
+								renderingEngine = new cs.RenderingEngine(renderingEngineId);
+								renderingEngine.enableElement({
+									viewportId,
+									type: cs.Enums.ViewportType.STACK,
+									element,
 								});
-							}
-							cornerstone.enable(element);
 
-							const response = await fetch("dicom.php?action=list&seriesid=<?=$seriesid?>&modality=<?=$modality?>");
-							const data = await response.json();
-							if (!response.ok || data.error) {
-								throw new Error(data.error || "Could not load DICOM file list");
-							}
-							imageIds = data.imageIds;
-							if (imageIds.length < 1) {
-								throw new Error("No DICOM images were returned by the server");
-							}
+								const { WindowLevelTool, StackScrollTool } = csTools;
+								csTools.addTool(WindowLevelTool);
+								csTools.addTool(StackScrollTool);
 
-							element.focus();
-							showSlice(0);
+								const toolGroup = csTools.ToolGroupManager.createToolGroup("nidbDicomTools");
+								toolGroup.addTool(WindowLevelTool.toolName);
+								toolGroup.addTool(StackScrollTool.toolName);
+								toolGroup.addViewport(viewportId, renderingEngineId);
+								toolGroup.setToolActive(WindowLevelTool.toolName, {
+									bindings: [{ mouseButton: csTools.Enums.MouseBindings.Primary }]
+								});
+								toolGroup.setToolActive(StackScrollTool.toolName, {
+									bindings: [{ mouseButton: csTools.Enums.MouseBindings.Wheel }]
+								});
+
+								const response = await fetch("dicom.php?action=list&seriesid=<?=$seriesid?>&modality=<?=$modality?>");
+								const data = await response.json();
+								if (!response.ok || data.error) {
+									throw new Error(data.error || "Could not load DICOM file list");
+								}
+								imageIds = data.imageIds;
+								if (imageIds.length < 1) {
+									throw new Error("No DICOM images were returned by the server");
+								}
+
+								const viewport = renderingEngine.getViewport(viewportId);
+								await viewport.setStack(imageIds, 0);
+								viewport.render();
+								element.focus();
+
+								/* Populate overlay from DICOM metadata on first render */
+								element.addEventListener(cs.Enums.Events.IMAGE_RENDERED, () => {
+									const patient      = cs.metaData.get("patientModule", imageIds[0]);
+									const patientStudy = cs.metaData.get("patientStudyModule", imageIds[0]);
+
+									overlayPatientName.textContent  = (patient?.patientName ?? "").replace(/\^/g, " ").trim();
+									overlayPatientID.textContent    = patient?.patientID ?? "";
+
+									const age = patientStudy?.patientAge ?? "";
+									const sex = patientStudy?.patientSex ?? "";
+									overlayPatientAgeSex.textContent = [age && age + "Y", sex].filter(Boolean).join(" ");
+
+									const generalStudy = cs.metaData.get("generalStudyModule", imageIds[0]);
+									overlayStudyDescription.textContent = generalStudy?.studyDescription ?? "";
+
+									const imagePlane = cs.metaData.get("imagePlaneModule", imageIds[0]);
+									const ps = imagePlane?.pixelSpacing;
+									overlayDimensions.textContent   = (imagePlane?.rows && imagePlane?.columns) ? imagePlane.rows + " x " + imagePlane.columns : "";
+									overlayPixelSpacing.textContent = ps ? ps[0].toFixed(2) + "x" + ps[1].toFixed(2) + " mm" : "";
+									const st = imagePlane?.sliceThickness;
+									overlaySliceThickness.textContent = st != null ? "Thickness " + parseFloat(st).toFixed(2) + " mm" : "";
+
+									/* image information is not stored in the meta data, so it must be retrieved from the image itself */
+									const image = cs.cache.getImage(imageIds[0]);
+									if (image?.data) {
+										const ds = image.data;
+										overlayProtocolName.textContent  = ds.string("x00181030") ?? ""; /* ProtocolName */
+										overlaySequenceName.textContent  = ds.string("x00180024") ?? ""; /* SequenceName */
+										const tr = ds.floatString("x00180080"); /* RepetitionTime */
+										overlayRepetitionTime.textContent = tr != null ? "TR " + Math.round(tr) + " ms" : "";
+										const te = ds.floatString("x00180081"); /* EchoTime */
+										overlayEchoTime.textContent = te != null ? "TE " + te + " ms" : "";
+										const fa = ds.floatString("x00181314"); /* FlipAngle */
+										overlayFlipAngle.textContent = fa != null ? "FA " + fa + "°" : "";
+										overlayPatientPosition.textContent = ds.string("x00185100") ?? ""; /* PatientPosition */
+										overlayStationName.textContent          = ds.string("x00081010") ?? ""; /* StationName */
+										overlayManufacturerModelName.textContent = ds.string("x00081090") ?? ""; /* ManufacturerModelName */
+
+									}
+								}, { once: true });
+
+								/* Sync slider, status, and window inputs after every render */
+								element.addEventListener(cs.Enums.Events.IMAGE_RENDERED, () => {
+									const vp = renderingEngine.getViewport(viewportId);
+									const index = vp.getCurrentImageIdIndex();
+									slider.value = index + 1;
+									setStatus((index + 1) + " / " + imageIds.length);
+									const props = vp.getProperties();
+									if (props.voiRange) {
+										const ww = props.voiRange.upper - props.voiRange.lower;
+										const wc = (props.voiRange.upper + props.voiRange.lower) / 2;
+										updateWindowInputs(ww, wc);
+										if (!defaultVoiRange) {
+											defaultVoiRange = { ...props.voiRange };
+										}
+									}
+								});
+
+								slider.addEventListener("input", async () => {
+									const vp = renderingEngine.getViewport(viewportId);
+									await vp.setImageIdIndex(parseInt(slider.value, 10) - 1);
+								});
+
+								function applyManualWindow() {
+									const ww = Math.max(1, Number(windowWidthInput.value));
+									const wc = Number(windowCenterInput.value);
+									const vp = renderingEngine.getViewport(viewportId);
+									vp.setProperties({ voiRange: { lower: wc - ww / 2, upper: wc + ww / 2 } });
+									vp.render();
+								}
+								windowWidthInput.addEventListener("change", applyManualWindow);
+								windowCenterInput.addEventListener("change", applyManualWindow);
+
+								resetWindowButton.addEventListener("click", () => {
+									if (!defaultVoiRange) return;
+									const vp = renderingEngine.getViewport(viewportId);
+									vp.setProperties({ voiRange: { ...defaultVoiRange } });
+									vp.render();
+								});
+
+								window.addEventListener("resize", () => renderingEngine.resize(true));
+
+							} catch (error) {
+								console.error(error);
+								setStatus(error.message);
+							}
 						}
-						catch (error) {
-							console.error(error);
-							setStatus(error.message);
-						}
-					}
 
-						slider.addEventListener("input", () => {
-							showSlice(parseInt(slider.value, 10) - 1);
-						});
-						
-						windowWidthInput.addEventListener("change", () => {
-							applyWindow(windowWidthInput.value, windowCenterInput.value);
-						});
-						
-						windowCenterInput.addEventListener("change", () => {
-							applyWindow(windowWidthInput.value, windowCenterInput.value);
-						});
-						
-						resetWindowButton.addEventListener("click", () => {
-							if (defaultVoi) {
-								const viewport = cornerstone.getViewport(element);
-								viewport.voi.windowWidth = defaultVoi.windowWidth;
-								viewport.voi.windowCenter = defaultVoi.windowCenter;
-								customVoi = null;
-								cornerstone.setViewport(element, viewport);
-								updateWindowInputs(defaultVoi);
-							}
-						});
-
-						element.addEventListener("wheel", (event) => {
-							event.preventDefault();
-							showSlice(currentIndex + (event.deltaY > 0 ? 1 : -1));
-						}, { passive: false });
-						
-						element.addEventListener("mousedown", (event) => {
-							if (event.button != 0) {
-								return;
-							}
-							const viewport = cornerstone.getViewport(element);
-							isWindowing = true;
-							windowStart = { x: event.clientX, y: event.clientY };
-							voiStart = {
-								windowWidth: viewport.voi.windowWidth,
-								windowCenter: viewport.voi.windowCenter
-							};
-							element.classList.add("windowing");
-							event.preventDefault();
-						});
-						
-						window.addEventListener("mousemove", (event) => {
-							if (!isWindowing) {
-								return;
-							}
-							const width = voiStart.windowWidth + ((event.clientX - windowStart.x) * 4);
-							const center = voiStart.windowCenter - ((event.clientY - windowStart.y) * 4);
-							applyWindow(width, center);
-						});
-						
-						window.addEventListener("mouseup", () => {
-							isWindowing = false;
-							element.classList.remove("windowing");
-						});
-
-						window.addEventListener("resize", () => {
-							cornerstone.resize(element, true);
-					});
-
-					run();
-				</script>
+						run();
+					</script>
 			<? } ?>
 		</div>
 		<?
