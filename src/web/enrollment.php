@@ -301,8 +301,8 @@
 								</div>
 							</div>
 							<? if (count($altuids) > 0) { ?>
-							<br><br>
-							<span style="font-size: 12pt; font-weight: bold" class="tt"><?=implode2('<br>', $altuids)?></span>
+							<br>
+							<tt><?=implode2('<br>', $altuids)?></tt>
 							<? } ?>
 						</div>
 					</div>

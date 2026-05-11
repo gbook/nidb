@@ -119,7 +119,7 @@
 		}
 		
 		/* studies, which are displayed under the projects menu */
-		elseif ($page == "studies.php" || $page=="observations.php" || $page=="interventions.php" || $page=="diagnosis.php" || $page == "managefiles.php" || $page == "series.php" || $page == "enrollment.php") {
+		elseif ($page == "studies.php" || $page=="observations.php" || $page=="interventions.php" || $page=="diagnosis.php" || $page == "managefiles.php" || $page == "series.php" || $page == "dicom.php" || $page == "enrollment.php") {
 			$studyid = GetVariable("id");
 			$seriesid = GetVariable("seriesid");
 			$modality = GetVariable("modality");

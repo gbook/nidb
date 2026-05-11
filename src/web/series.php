@@ -68,9 +68,9 @@
 	function DisplayScanParamaters($mrseriesid, $modality) {
 		$mrseriesid = mysqli_real_escape_string($GLOBALS['linki'], $mrseriesid);
 		
-		echo "seriesid [$mrseriesid] modality [$modality]<br>";
+		//echo "seriesid [$mrseriesid] modality [$modality]<br>";
 		list($path, $seriespath, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($mrseriesid, $modality);
-		echo "$path, $seriespath, $qapath, $uid, $studynum, $studyid, $subjectid<br>";
+		//echo "$path, $seriespath, $qapath, $uid, $studynum, $studyid, $subjectid<br>";
 		
 		?>
 		<a href="dicom.php?seriesid=<?=$mrseriesid?>&modality=<?=$modality?>" class="ui green button">View DICOM images</a>
@@ -81,11 +81,9 @@
 
 			if (file_exists($filename)) {
 				?>
-		<div class="ui styled segment" style="border: 1px solid #BBB; margin:10px; padding:10px; background-color: white; font-family: monospace; white-space: pre;">
-		<div style="padding:5px; background-color: 393939; color:white; font-size:11pt"><?=$filename?></div>
-
-<? readfile($filename); ?>
-		</div>
+				<div class="ui styled segment" style="border: 1px solid #BBB; margin:10px; padding:10px; background-color: white; font-family: monospace; white-space: pre;">
+					<div style="padding:5px; background-color: 393939; color:white; font-size:11pt"><?=$filename?></div>
+				</div>
 				<?
 			}
 			else { echo "file [$filename] does not exist"; }
@@ -100,12 +98,13 @@
 			$lines = explode("\n",$tags);
 			?>
 			<div class="ui container">
-				<div class="ui top attached secondary inverted segment">
+				<div class="ui top attached inverted segment">
 					<h2 class="ui header">
-						DICOM tags
-						<div class="sub header"><?=$filename?></div>
+						<div class="content">
+							DICOM tags
+							<div class="sub header"><?=$uid?> <?=$studynum?></div>
+						</div>
 					</h2>
-					<div class="ui large right ribbon orange label">Limited tag set</div>
 				</div>
 				<table class="ui bottom attached celled small very compact table">
 				<?

@@ -51,7 +51,7 @@
 		<style>
 			#dicomViewport {
 				width: 100%;
-				height: 72vh;
+				height: 70vh;
 				min-height: 480px;
 				background: #000;
 				color: #DDD;
@@ -80,12 +80,12 @@
 			#dicomOverlayRight {
 				text-align: right;
 			}
-				#dicomStatus {
-					font-family: monospace;
-				}
-			</style>
-		<script type="module" src="scripts/cs3d.bundle.js"></script>
-	</head>
+			#dicomStatus {
+				font-family: monospace;
+			}
+		</style>
+	<script type="module" src="scripts/cs3d.bundle.js"></script>
+</head>
 
 <body>
 	<div id="wrapper">
@@ -231,90 +231,87 @@
 			$filecount = count(GetDicomFiles($path));
 		}
 		?>
-		<div class="ui container">
-			<div class="ui top attached secondary inverted segment">
-				<h2 class="ui header">
-					DICOM Viewer
-					<div class="sub header">Series <?=$seriesid?>, <?=strtoupper($modality)?></div>
-				</h2>
-			</div>
 			
 			<? if (!$valid) { ?>
 				<div class="ui bottom attached negative message"><?=$message?></div>
 			<? } elseif ($filecount < 1) { ?>
 				<div class="ui bottom attached warning message">No DICOM files were found in this series directory.</div>
 			<? } else { ?>
-				<div class="ui attached segment">
+				<div class="ui fitted top attached segment">
 					<div id="dicomViewport" tabindex="0">
-							<div id="dicomOverlay">
-								<div id="dicomOverlayTop">
-									<div id="dicomOverlayLeft">
-										<div id="overlayPatientName"></div>
-										<div id="overlayPatientID"></div>
-										<div id="overlayPatientAgeSex"></div>
-										<div id="overlayStudyDescription"></div>
-									</div>
-									<div id="dicomOverlayRight">
-										<div id="overlayProtocolName"></div>
-										<div id="overlaySequenceName"></div>
-										<div id="overlayRepetitionTime"></div>
-										<div id="overlayEchoTime"></div>
-										<div id="overlayFlipAngle"></div>
-									</div>
+						<div id="dicomOverlay">
+							<div id="dicomOverlayTop">
+								<div id="dicomOverlayLeft">
+									<div id="overlayPatientName"></div>
+									<div id="overlayPatientID"></div>
+									<div id="overlayPatientAgeSex"></div>
+									<div id="overlayStudyDescription"></div>
 								</div>
-								<div id="dicomOverlayBottom">
-									<div id="dicomOverlayBottomLeft">
-										<div id="overlayPatientPosition"></div>
-										<div id="overlayDimensions"></div>
-										<div id="overlayPixelSpacing"></div>
-										<div id="overlaySliceThickness"></div>
-									</div>
-									<div id="dicomOverlayBottomRight" style="text-align:right">
-										<div id="overlayStationName"></div>
-										<div id="overlayManufacturerModelName"></div>
-									</div>
+								<div id="dicomOverlayRight">
+									<div id="overlayProtocolName"></div>
+									<div id="overlaySequenceName"></div>
+									<div id="overlayRepetitionTime"></div>
+									<div id="overlayEchoTime"></div>
+									<div id="overlayFlipAngle"></div>
 								</div>
 							</div>
-						</div>
-				</div>
-					<div class="ui bottom attached segment">
-						<div class="ui grid">
-							<div class="twelve wide column">
-								<input id="sliceSlider" type="range" min="1" max="<?=$filecount?>" value="1" style="width:100%">
-							</div>
-							<div class="four wide right aligned column">
-								<span id="dicomStatus">Loading <?=$filecount?> images...</span>
-							</div>
-						</div>
-						<div class="ui tiny form" style="margin-top: 12px">
-							<div class="four fields">
-								<div class="field">
-									<label>Window width</label>
-									<input id="windowWidthInput" type="number" step="1">
+							<div id="dicomOverlayBottom">
+								<div id="dicomOverlayBottomLeft">
+									<div id="overlayPatientPosition"></div>
+									<div id="overlayDimensions"></div>
+									<div id="overlayPixelSpacing"></div>
+									<div id="overlaySliceThickness"></div>
 								</div>
-								<div class="field">
-									<label>Window center</label>
-									<input id="windowCenterInput" type="number" step="1">
-								</div>
-								<div class="field">
-									<label>&nbsp;</label>
-									<button id="resetWindowButton" class="ui fluid basic button" type="button"><i class="undo icon"></i> Reset</button>
-								</div>
-								<div class="field">
-									<label>&nbsp;</label>
-									<div class="ui basic label">Drag image to adjust</div>
+								<div id="dicomOverlayBottomRight" style="text-align:right">
+									<div id="overlayStationName"></div>
+									<div id="overlayManufacturerModelName"></div>
 								</div>
 							</div>
 						</div>
 					</div>
+				</div>
+				<div class="ui vertically fitted bottom attached segment">
+					<div class="ui grid">
+						<div class="twelve wide column">
+							<input id="sliceSlider" type="range" min="1" max="<?=$filecount?>" value="1" style="width:100%">
+						</div>
+						<div class="four wide right aligned column">
+							<span id="dicomStatus">Loading <?=$filecount?> images...</span>
+						</div>
+					</div>
+					<div class="ui tiny form" style="margin-top: 6px">
+						<div class="four fields">
+							<div class="field">
+								<label>Window width</label>
+								<input id="windowWidthInput" type="number" step="1">
+							</div>
+							<div class="field">
+								<label>Window center</label>
+								<input id="windowCenterInput" type="number" step="1">
+							</div>
+							<div class="field">
+								<label>&nbsp;</label>
+								<button id="resetWindowButton" class="ui fluid basic button" type="button"><i class="undo icon"></i> Reset</button>
+							</div>
+							<div class="field">
+								<label>&nbsp;</label>
+								<div class="ui basic label">Drag image to adjust</div>
+							</div>
+						</div>
+					</div>
+				</div>
 
 					<script type="module">
+						/* Cornerstone3D globals are set by cs3d.bundle.js (loaded as a module in <head>) */
 						const cs             = window.cs3d;
 						const csTools        = window.cs3dTools;
 						const dicomImageLoader = window.cs3dDicomLoader;
 
+						/* Cornerstone3D IDs used to retrieve the engine and viewport later */
 						const renderingEngineId = "nidbDicomEngine";
 						const viewportId = "nidbDicomViewport";
+
+						/* DOM references */
 						const element = document.getElementById("dicomViewport");
 						const slider = document.getElementById("sliceSlider");
 						const status = document.getElementById("dicomStatus");
@@ -322,25 +319,33 @@
 						const windowCenterInput = document.getElementById("windowCenterInput");
 						const resetWindowButton = document.getElementById("resetWindowButton");
 
+						/* Overlay text elements — upper-left corner */
 						const overlayPatientName      = document.getElementById("overlayPatientName");
 						const overlayPatientID        = document.getElementById("overlayPatientID");
 						const overlayPatientAgeSex    = document.getElementById("overlayPatientAgeSex");
 						const overlayStudyDescription = document.getElementById("overlayStudyDescription");
-						const overlayPatientPosition  = document.getElementById("overlayPatientPosition");
-						const overlayDimensions       = document.getElementById("overlayDimensions");
-						const overlayPixelSpacing     = document.getElementById("overlayPixelSpacing");
-						const overlaySliceThickness   = document.getElementById("overlaySliceThickness");
-						const overlayStationName          = document.getElementById("overlayStationName");
-						const overlayManufacturerModelName = document.getElementById("overlayManufacturerModelName");
+
+						/* Overlay text elements — upper-right corner */
 						const overlayProtocolName    = document.getElementById("overlayProtocolName");
 						const overlaySequenceName   = document.getElementById("overlaySequenceName");
 						const overlayRepetitionTime = document.getElementById("overlayRepetitionTime");
 						const overlayEchoTime       = document.getElementById("overlayEchoTime");
 						const overlayFlipAngle      = document.getElementById("overlayFlipAngle");
 
+						/* Overlay text elements — lower-left corner */
+						const overlayPatientPosition  = document.getElementById("overlayPatientPosition");
+						const overlayDimensions       = document.getElementById("overlayDimensions");
+						const overlayPixelSpacing     = document.getElementById("overlayPixelSpacing");
+						const overlaySliceThickness   = document.getElementById("overlaySliceThickness");
+
+						/* Overlay text elements — lower-right corner */
+						const overlayStationName           = document.getElementById("overlayStationName");
+						const overlayManufacturerModelName = document.getElementById("overlayManufacturerModelName");
+
+						/* Viewer state */
 						let imageIds = [];
 						let renderingEngine = null;
-						let defaultVoiRange = null;
+						let defaultVoiRange = null;  /* captured from the first render; used by the Reset button */
 
 						function setStatus(text) { status.textContent = text; }
 
@@ -351,11 +356,12 @@
 
 						async function run() {
 							try {
+								/* Initialize Cornerstone3D libraries */
 								await cs.init();
 								await csTools.init();
-
 								dicomImageLoader.init();
 
+								/* Create a stack viewport and attach it to the DOM element */
 								renderingEngine = new cs.RenderingEngine(renderingEngineId);
 								renderingEngine.enableElement({
 									viewportId,
@@ -363,6 +369,9 @@
 									element,
 								});
 
+								/* Register tools and bind them to the viewport:
+								   - Left mouse drag → window / level
+								   - Mouse wheel       → scroll through slices */
 								const { WindowLevelTool, StackScrollTool } = csTools;
 								csTools.addTool(WindowLevelTool);
 								csTools.addTool(StackScrollTool);
@@ -378,6 +387,7 @@
 									bindings: [{ mouseButton: csTools.Enums.MouseBindings.Wheel }]
 								});
 
+								/* Fetch the ordered list of wadouri image IDs for this series from the server */
 								const response = await fetch("dicom.php?action=list&seriesid=<?=$seriesid?>&modality=<?=$modality?>");
 								const data = await response.json();
 								if (!response.ok || data.error) {
@@ -388,16 +398,22 @@
 									throw new Error("No DICOM images were returned by the server");
 								}
 
+								/* Load the stack and render the first frame */
 								const viewport = renderingEngine.getViewport(viewportId);
 								await viewport.setStack(imageIds, 0);
 								viewport.render();
 								element.focus();
 
-								/* Populate overlay from DICOM metadata on first render */
+								/* Populate the overlay once from the first image's DICOM metadata.
+								   Most tags come from Cornerstone3D's registered metadata modules,
+								   but MR-specific tags (protocol, sequence, TR/TE, etc.) are not
+								   registered, so they are read directly from the raw dicom-parser
+								   dataset via the image cache. */
 								element.addEventListener(cs.Enums.Events.IMAGE_RENDERED, () => {
 									const patient      = cs.metaData.get("patientModule", imageIds[0]);
 									const patientStudy = cs.metaData.get("patientStudyModule", imageIds[0]);
 
+									/* DICOM stores name components separated by ^; replace with spaces */
 									overlayPatientName.textContent  = (patient?.patientName ?? "").replace(/\^/g, " ").trim();
 									overlayPatientID.textContent    = patient?.patientID ?? "";
 
@@ -415,26 +431,25 @@
 									const st = imagePlane?.sliceThickness;
 									overlaySliceThickness.textContent = st != null ? "Thickness " + parseFloat(st).toFixed(2) + " mm" : "";
 
-									/* image information is not stored in the meta data, so it must be retrieved from the image itself */
+									/* Read MR tags directly from the raw dicom-parser dataset */
 									const image = cs.cache.getImage(imageIds[0]);
 									if (image?.data) {
 										const ds = image.data;
-										overlayProtocolName.textContent  = ds.string("x00181030") ?? ""; /* ProtocolName */
-										overlaySequenceName.textContent  = ds.string("x00180024") ?? ""; /* SequenceName */
-										const tr = ds.floatString("x00180080"); /* RepetitionTime */
+										overlayProtocolName.textContent  = ds.string("x00181030") ?? "";  /* (0018,1030) ProtocolName */
+										overlaySequenceName.textContent  = ds.string("x00180024") ?? "";  /* (0018,0024) SequenceName */
+										const tr = ds.floatString("x00180080");                           /* (0018,0080) RepetitionTime */
 										overlayRepetitionTime.textContent = tr != null ? "TR " + Math.round(tr) + " ms" : "";
-										const te = ds.floatString("x00180081"); /* EchoTime */
+										const te = ds.floatString("x00180081");                           /* (0018,0081) EchoTime */
 										overlayEchoTime.textContent = te != null ? "TE " + te + " ms" : "";
-										const fa = ds.floatString("x00181314"); /* FlipAngle */
+										const fa = ds.floatString("x00181314");                           /* (0018,1314) FlipAngle */
 										overlayFlipAngle.textContent = fa != null ? "FA " + fa + "°" : "";
-										overlayPatientPosition.textContent = ds.string("x00185100") ?? ""; /* PatientPosition */
-										overlayStationName.textContent          = ds.string("x00081010") ?? ""; /* StationName */
-										overlayManufacturerModelName.textContent = ds.string("x00081090") ?? ""; /* ManufacturerModelName */
-
+										overlayPatientPosition.textContent       = ds.string("x00185100") ?? "";  /* (0018,5100) PatientPosition */
+										overlayStationName.textContent           = ds.string("x00081010") ?? "";  /* (0008,1010) StationName */
+										overlayManufacturerModelName.textContent = ds.string("x00081090") ?? "";  /* (0008,1090) ManufacturerModelName */
 									}
 								}, { once: true });
 
-								/* Sync slider, status, and window inputs after every render */
+								/* After every render, sync the slice slider, status text, and window inputs */
 								element.addEventListener(cs.Enums.Events.IMAGE_RENDERED, () => {
 									const vp = renderingEngine.getViewport(viewportId);
 									const index = vp.getCurrentImageIdIndex();
@@ -445,17 +460,20 @@
 										const ww = props.voiRange.upper - props.voiRange.lower;
 										const wc = (props.voiRange.upper + props.voiRange.lower) / 2;
 										updateWindowInputs(ww, wc);
+										/* Capture the DICOM-native window on the first render */
 										if (!defaultVoiRange) {
 											defaultVoiRange = { ...props.voiRange };
 										}
 									}
 								});
 
+								/* Slider → jump to selected slice */
 								slider.addEventListener("input", async () => {
 									const vp = renderingEngine.getViewport(viewportId);
 									await vp.setImageIdIndex(parseInt(slider.value, 10) - 1);
 								});
 
+								/* Manual window / level inputs → re-render with new VOI range */
 								function applyManualWindow() {
 									const ww = Math.max(1, Number(windowWidthInput.value));
 									const wc = Number(windowCenterInput.value);
@@ -466,6 +484,7 @@
 								windowWidthInput.addEventListener("change", applyManualWindow);
 								windowCenterInput.addEventListener("change", applyManualWindow);
 
+								/* Reset button → restore the original DICOM window */
 								resetWindowButton.addEventListener("click", () => {
 									if (!defaultVoiRange) return;
 									const vp = renderingEngine.getViewport(viewportId);
@@ -473,6 +492,7 @@
 									vp.render();
 								});
 
+								/* Re-layout the canvas when the browser window is resized */
 								window.addEventListener("resize", () => renderingEngine.resize(true));
 
 							} catch (error) {
@@ -484,7 +504,6 @@
 						run();
 					</script>
 			<? } ?>
-		</div>
 		<?
 	}
 	

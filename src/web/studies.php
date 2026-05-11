@@ -2137,7 +2137,7 @@
 		<input type="hidden" name="subjectid" value="<?=$subjectid?>">
 		<input type="hidden" name="modality" value="<?=$modality?>">
 		<input type="hidden" name="objecttype" value="series">
-		<table class="ui top attached very compact small celled grey table" style="margin: 0px">
+		<table class="ui top attached very compact small celled selectable grey table" style="margin: 0px">
 			<thead>
 				<tr>
 					<th>Series</th>
@@ -2159,7 +2159,7 @@
 					<th title="Image dimensions in voxels. If 4D image, <i>t</i> dimension will be the number of BOLD reps">Image dims <br><span class="tiny">(x y z t) in voxels</span></th>
 					<th>Files</th>
 					<th>Beh</th>
-					<th class="center aligned" style="background-color: Lavender;"><span style="font-size: 8pt;">Select All</span><br><input type="checkbox" id="seriesall"></th>
+					<th class="center aligned" style="background-color: Lavender;"><span style="font-size: 8pt;">Select</span><br><input type="checkbox" id="seriesall"></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -2474,6 +2474,7 @@
 							$hasratings = false;
 							$rowcolor = '';
 
+							$ratingavg = "";
 							if (isset($ratings)) {
 								foreach ($ratings as $key => $ratingarray) {
 									if ($key == $mrseries_id) {
@@ -2538,19 +2539,21 @@
 								xhttp.open("GET", "objectexists.php?action=series&modality=mr&seriesid=<?=$mrseries_id?>&datatype=<?=$data_type?>", true);
 								xhttp.send();
 								
-								const xhttp2 = new XMLHttpRequest();
-								xhttp2.onload = function() {
-									document.getElementById("thumbnail<?=$series_num?>").innerHTML = this.responseText;
-								}
-								xhttp2.open("GET", "objectexists.php?action=thumbnail&modality=mr&seriesid=<?=$mrseries_id?>&datatype=<?=$data_type?>", true);
-								xhttp2.send();
+							//	const xhttp2 = new XMLHttpRequest();
+							//	xhttp2.onload = function() {
+							//		document.getElementById("thumbnail<?=$series_num?>").innerHTML = this.responseText;
+							//	}
+							//	xhttp2.open("GET", "objectexists.php?action=thumbnail&modality=mr&seriesid=<?=$mrseries_id?>&datatype=<?=$data_type?>", true);
+							//	xhttp2.send();
 							});
 							</script>
 							<tr style="color: <?=$rowcolor?>">
 								<td><?=$series_num?> <? if (!$isvalid) { ?> <i class='ui large red exclamation circle icon' title='<?=$validmessage?>'></i><? } ?> <span id="series<?=$series_num?>"></span></td>
 								<td><span id="uploader<?=$mrseries_id?>"></span></td>
 								<td>
-									<a href="series.php?action=scanparams&seriesid=<?=$mrseries_id?>&modality=<?=$modality?>"><?=$series_desc?></a>&nbsp;<span id="thumbnail<?=$series_num?>"></span>
+									<a href="series.php?action=scanparams&seriesid=<?=$mrseries_id?>&modality=<?=$modality?>"><?=$series_desc?></a>&nbsp;
+									<a href="dicom.php?seriesid=<?=$mrseries_id?>&modality=<?=$modality?>"><em data-emoji=":x_ray:" class="small"></em></a>
+									<!--<span id="thumbnail<?=$series_num?>"></span>-->
 									<? //if (($bold_reps < 2) && ($GLOBALS['cfg']['allowrawdicomexport'])) { ?>
 									<!--&nbsp;<a href="viewimage.php?modality=mr&type=dicom&seriesid=<?=$mrseries_id?>"><i class="cube icon"></i></a>-->
 									<? //} ?>
