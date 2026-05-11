@@ -653,6 +653,32 @@
 			return mysqli_stmt_get_result($stmt);
 		}
 	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DebugSQLBoundStatement ------------- */
+	/* -------------------------------------------- */
+	function DebugSQLBoundStatement($sqlstring,$params=[]) {
+		/* substitute bound values into the query template for display only */
+		$debugSql = $sqlstring;
+		foreach ($params as $val) {
+			$pos = strpos($debugSql, '?');
+			if ($pos === false) break;
+			if (is_null($val)) {
+				$replacement = 'NULL';
+			} elseif (is_int($val) || is_float($val)) {
+				$replacement = (string)$val;
+			} else {
+				$str = (string)$val;
+				$replacement = strlen($str) > 200
+					? "'[" . strlen($str) . " bytes]'"
+					: "'" . addslashes($str) . "'";
+			}
+			$debugSql = substr_replace($debugSql, $replacement, $pos, 1);
+		}
+		
+		return $debugSql;
+	}
 	
 	
 	/* -------------------------------------------- */

@@ -544,6 +544,32 @@
 		</div>
 		<?
 	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetMappedNameList ------------------ */
+	/* -------------------------------------------- */
+	function GetMappedNameList($mappedNameStr) {
+		
+		$names = array();
+		
+		/* check if it contains an ampersand, which means an AND search */
+		if (stripos($mappedNameStr, '&') !== false) {
+			$names = explode("&", $mappedNameStr);
+			$names = array_map('trim', $names);
+			$logic = "AND";
+		}
+		else {
+			$names = explode(",", $mappedNameStr);
+			$names = array_map('trim', $names);
+			$logic = "OR";
+		}
+		
+		//PrintVariable($names);
+		//PrintVariable($logic);
+		
+		return [$names, $logic];
+	}
 	
 	
 	/* -------------------------------------------- */
@@ -623,6 +649,10 @@
 		//$item['mappedName']
 		//$item['expectedCount']
 		
+		/* get the mapped names */
+		[$names, $logic] = GetMappedNameList($item['mappedName']);
+		//PrintVariable($names);
+		
 		/* first check if this item is marked in the enrollment_checklist table,
 		   then check if the item exists in the imaging series table,
 		   display both, but the checklist table supercedes the imaging table
@@ -649,12 +679,28 @@
 			/* check for valid modality using validated helper */
 			$tableName = GetSeriesTableName($item['imagingModality']);
 			if ($tableName !== '') {
-				$studyPlaceholders = implode(',', array_fill(0, count($studyids), '?'));
-				$protocolPlaceholders = implode(',', array_fill(0, count($protocols), '?'));
-				$sqlstring = "select *, date(series_datetime) 'seriesdate' from $tableName where study_id in ($studyPlaceholders) and series_desc in ($protocolPlaceholders)";
-				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-				$types = str_repeat('i', count($studyids)) . str_repeat('s', count($protocols));
-				$params = array_merge($studyids, $protocols);
+				if ($logic == "OR") {
+					$studyPlaceholders = implode(',', array_fill(0, count($studyids), '?'));
+					$protocolPlaceholders = implode(',', array_fill(0, count($protocols), '?'));
+					$sqlstring = "select *, date(series_datetime) 'seriesdate' from $tableName where study_id in ($studyPlaceholders) and series_desc in ($protocolPlaceholders)";
+					$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+					$types = str_repeat('i', count($studyids)) . str_repeat('s', count($protocols));
+					$params = array_merge($studyids, $protocols);
+				}
+				else {
+					$studyPlaceholders = implode(',', array_fill(0, count($studyids), '?'));
+					foreach ($names as $name) {
+						$descs[] = "series_desc = ?";
+					}
+					$nameStr = implode(' AND ', $descs);
+					//$protocolPlaceholders = implode(',', array_fill(0, count($protocols), '?'));
+					$sqlstring = "select *, date(series_datetime) 'seriesdate' from $tableName where study_id in ($studyPlaceholders) and ($nameStr)";
+					$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+					$types = str_repeat('i', count($studyids)) . str_repeat('s', count($names));
+					$params = array_merge($studyids, $names);
+				}
+				//PrintVariable(DebugSQLBoundStatement($sqlstring, $params));
+				
 				mysqli_stmt_bind_param($stmt, $types, ...$params);
 				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
 				mysqli_stmt_close($stmt);

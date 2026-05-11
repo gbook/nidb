@@ -482,7 +482,7 @@
 					});
 				</script>
 				
-				<table class="ui small very compact table">
+				<table class="ui small very compact selectable table">
 					<thead>
 						<tr>
 							<th>Order</th>
