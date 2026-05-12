@@ -379,7 +379,7 @@
 	function AddSubject($lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email, $maritalstatus, $smokingstatus, $cancontact, $tags, $altuid, $guid) {
 	
 		if ($GLOBALS['debug']) {
-			print "$fullname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email, $maritalstatus, $smokingstatus, $cancontact, $altuid, $guid";
+			print "$lastname $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email, $maritalstatus, $smokingstatus, $cancontact, $altuid, $guid";
 		}
 		/* perform data checks */
 		$name = mysqli_real_escape_string($GLOBALS['linki'], "$lastname^$firstname");
@@ -441,7 +441,7 @@
 		}
 
 		
-		Notice("$subjectname added $uid");
+		Notice("$firstname $lastname added $uid");
 		
 		return $SubjectRowID;
 	}
@@ -853,12 +853,14 @@
 		$tags = GetTags('subject', $id);
 		$altuids = GetAlternateUIDs($id,0);
 		
-		list($lastname, $firstname) = explode("^",$name);
-		list($lname, $fname) = explode("^",$name);
+		$nameparts = explode("^", $name);
+		$lastname  = $nameparts[0] ?? '';
+		$firstname = $nameparts[1] ?? '';
+		$lname = $lastname; $fname = $firstname;
 		$name = strtoupper(substr($fname,0,1)) . strtoupper(substr($lname,0,1));
-		
+
 		?>
-		
+
 		<div class="ui text container">
 			<div class="ui inverted red segment">
 				<h2 class="ui header">
@@ -1045,7 +1047,7 @@
 		if (($encrypt) && ($type != 'update')) {
 			$fullname = strtolower(preg_replace('/[^A-Za-z0-9]/', '', $lastname) . '^' . preg_replace('/[^A-Za-z0-9]/', '', $firstname));
 			$encname = strtoupper(sha1($fullname));
-			$altuids = preg_replace('/[^A-Za-z0-9\_\-]/', '', explode(',', $altuid));
+			$altuids = preg_replace('/[^A-Za-z0-9\_\-]/', '', explode(',', $altuid ?? ''));
 			foreach ($altuids as $alt) {
 				$encids[] = strtoupper(sha1($alt));
 				$encuids[$alt] = strtoupper(sha1($alt));
@@ -1261,8 +1263,10 @@
 		/* get list of alternate subject UIDs */
 		$altuids = GetAlternateUIDs($id,0);
 
-		list($lastname, $firstname) = explode("^",$name);
-		list($lname, $fname) = explode("^",$name);
+		$nameparts = explode("^", $name);
+		$lastname  = $nameparts[0] ?? '';
+		$firstname = $nameparts[1] ?? '';
+		$lname = $lastname; $fname = $firstname;
 		$name = strtoupper(substr($fname,0,1)) . strtoupper(substr($lname,0,1));
 
 		switch ($gender) {
@@ -1564,7 +1568,7 @@
 						if (GetPerm($perms, 'modifydata', $projectid)) { $modifydata = 1; } else { $modifydata = 0; }
 						if (GetPerm($perms, 'viewdata', $projectid)) { $viewdata = 1; } else { $viewdata = 0; }
 
-						$enrolldate = date('M j, Y g:ia',strtotime($enroll_startdate));
+						$ts = strtotime($enroll_startdate); $enrolldate = $ts !== false ? date('M j, Y g:ia', $ts) : '';
 						
 						if ($row['irb_consent'] != "") { $irb = "Y"; }
 						else { $irb = "N"; }
@@ -2139,7 +2143,9 @@
 			$cancontact = $row['cancontact'];
 			
 			$tags = GetTags('subject', $id);
-			list($lastname, $firstname) = explode("^",$name);
+			$nameparts = explode("^", $name);
+			$lastname  = $nameparts[0] ?? '';
+			$firstname = $nameparts[1] ?? '';
 		
 			/* get privacy information */
 			$userid = $_SESSION['userid'];
@@ -2563,7 +2569,7 @@
 							$gender = $row['gender'];
 							$uid = $row['uid'];
 							$isactive = $row['isactive'];
-							$lastupdate = date('M j, Y g:ia',strtotime($row['lastupdate']));
+							$ts = strtotime($row['lastupdate']); $lastupdate = $ts !== false ? date('M j, Y g:ia', $ts) : '';
 							$viewphi = $row['view_phi'];
 
 							if (!$viewphi) {

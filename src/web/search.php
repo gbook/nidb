@@ -1936,11 +1936,12 @@
 			$name = GetFixedName($name);
 			
 			$study_desc = str_replace("^"," ",$study_desc);
+			$ts = strtotime($study_datetime);
 			if (($s_resultoutput == "study") || ($s_resultoutput == "export")) {
-				$study_datetime = date("M j, Y g:ia",strtotime($study_datetime));
+				$study_datetime = $ts !== false ? date("M j, Y g:ia", $ts) : '';
 			}
 			else {
-				$study_datetime = date("Y-m-d H:i",strtotime($study_datetime));
+				$study_datetime = $ts !== false ? date("Y-m-d H:i", $ts) : '';
 			}
 
 			/* gather series specific info based on modality */
@@ -1994,7 +1995,7 @@
 				$thumbpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/thumb.png";
 				$gifthumbpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/thumb.gif";
 				
-				$series_datetime = date("g:ia",strtotime($series_datetime));
+				$ts = strtotime($series_datetime); $series_datetime = $ts !== false ? date("g:ia", $ts) : '';
 				$series_size = HumanReadableFilesize($series_size);
 				$beh_size = HumanReadableFilesize($beh_size);
 				
@@ -2110,7 +2111,7 @@
 				$series_size = $row['series_size'];
 				$series_notes = $row['series_notes'];
 				
-				$series_datetime = date("g:ia",strtotime($series_datetime));
+				$ts = strtotime($series_datetime); $series_datetime = $ts !== false ? date("g:ia", $ts) : '';
 				if ($series_numfiles < 1) { $series_numfiles = "-"; }
 				if ($series_size > 1) { $series_size = HumanReadableFilesize($series_size); } else { $series_size = "-"; }
 			}
@@ -2610,7 +2611,7 @@
 				$thumbpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/thumb.png";
 				$gifthumbpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/thumb.gif";
 				
-				$series_datetime = date("g:ia",strtotime($series_datetime));
+				$ts = strtotime($series_datetime); $series_datetime = $ts !== false ? date("g:ia", $ts) : '';
 				//$series_size = HumanReadableFilesize($series_size);
 				//$beh_size = HumanReadableFilesize($beh_size);
 
@@ -2654,7 +2655,7 @@
 				$series_size = $row['series_size'];
 				$series_notes = $row['series_notes'];
 				
-				$series_datetime = date("g:ia",strtotime($series_datetime));
+				$ts = strtotime($series_datetime); $series_datetime = $ts !== false ? date("g:ia", $ts) : '';
 				if ($series_numfiles < 1) { $series_numfiles = "-"; }
 				//if ($series_size > 1) { $series_size = HumanReadableFilesize($series_size); } else { $series_size = "-"; }
 			}
@@ -2742,7 +2743,9 @@
 	/* ------- GetFixedName ----------------------- */
 	/* -------------------------------------------- */
 	function GetFixedName($name) {
-		list($lname, $fname) = explode("^",$name);
+		$nameparts = explode("^", $name);
+		$lname = $nameparts[0] ?? '';
+		$fname = $nameparts[1] ?? '';
 		$name = strtoupper(substr($fname,0,1)) . strtoupper(substr($lname,0,1));
 		return $name;
 	}
@@ -2765,13 +2768,14 @@
 	/* ------- GetStudyDateTime ------------------- */
 	/* -------------------------------------------- */
 	function GetStudyDateTime($s_resultoutput, $study_datetime) {
+		$ts = strtotime($study_datetime);
 		if (($s_resultoutput == "study") || ($s_resultoutput == "export")) {
-			$study_datetime = date("M j, Y g:ia",strtotime($study_datetime));
+			$study_datetime = $ts !== false ? date("M j, Y g:ia", $ts) : '';
 		}
 		else {
-			$study_datetime = date("Y-m-d H:i",strtotime($study_datetime));
+			$study_datetime = $ts !== false ? date("Y-m-d H:i", $ts) : '';
 		}
-		
+
 		return $study_datetime;
 	}
 
@@ -3650,12 +3654,12 @@
 			/* get list of alternate subject UIDs */
 			$altuids = GetAlternateUIDs($subject_id,'');
 			
-			$enroll_startdate = date("Y-m-d",strtotime($enroll_startdate));
-			if ($enroll_enddate = '0000-00-00 00:00:00') {
+			$ts = strtotime($enroll_startdate); $enroll_startdate = $ts !== false ? date("Y-m-d", $ts) : '';
+			if ($enroll_enddate == '0000-00-00 00:00:00') {
 				$enroll_enddate = 'present';
 			}
 			else {
-				$enroll_enddate = date("Y-m-d",strtotime($enroll_enddate));
+				$ts = strtotime($enroll_enddate); $enroll_enddate = $ts !== false ? date("Y-m-d", $ts) : '';
 			}
 			
 			if ($gender == '') { $gender = '-'; }
@@ -3814,7 +3818,10 @@
 					$numcolsdisplayed = 0;
 					/* loop through the studies */
 					foreach ($longs[$uid][$seriesdesc] as $studydate => $seriesids) {
-						list($seriesid1,$studyid,$studynum) = explode(',',$seriesids[0]);
+						$seriesparts = explode(',', $seriesids[0]);
+					$seriesid1 = $seriesparts[0] ?? '';
+					$studyid    = $seriesparts[1] ?? '';
+					$studynum   = $seriesparts[2] ?? '';
 						//echo "seriesID $seriesid<br>";
 						if ($lastdate != "") {
 							$tspan = (strtotime($studydate) - strtotime($lastdate))/60/60/24/365;
@@ -3828,7 +3835,7 @@
 						}
 						$csv1 .= ",$studydate";
 						$csv2 .= ",$uid$studynum";
-						$studydate = date("M j, Y", strtotime($studydate));
+						$ts = strtotime($studydate); $studydate = $ts !== false ? date("M j, Y", $ts) : '';
 							if ($tspan != "") {
 								$numcolsdisplayed++;
 						?>
@@ -3841,12 +3848,15 @@
 						<a href="studies.php?id=<?=$studyid?>"><?=$studydate?></a> [<?=$studynum?>]
 						<?
 						foreach ($seriesids as $ser) {
-							list($seriesid,$studyid,$studynum) = explode(',',$ser);
+							$seriesparts = explode(',', $ser);
+						$seriesid = $seriesparts[0] ?? '';
+						$studyid  = $seriesparts[1] ?? '';
+						$studynum = $seriesparts[2] ?? '';
 							$sqlstring = "select * from " . strtolower($modality) . "_series where " . strtolower($modality) . "series_id = '$seriesid'";
 							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 							$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 							$seriesnum = $row['series_num'];
-							$seriesdate = date("M j, Y h:m:s a", strtotime($row['series_datetime']));
+							$ts = strtotime($row['series_datetime']); $seriesdate = $ts !== false ? date("M j, Y h:m:s a", $ts) : '';
 							$protocol = $row['series_desc'];
 							$sequence = $row['series_sequencename'];
 							$series_num = $row['series_num'];
@@ -6532,9 +6542,10 @@
 				$pstats[$sequence]['maxstdmotion'] = ($row2['avgmotion'] - $row2['minmotion'])/$row2['stdmotion'];
 			} else { $pstats[$sequence]['maxstdmotion'] = 0; }
 		}
+		return $pstats ?? [];
 	}
 
-	
+
 	/* -------------------------------------------- */
 	/* ------- remove_outliers -------------------- */
 	/* -------------------------------------------- */

@@ -2538,7 +2538,9 @@
 								}
 								xhttp.open("GET", "objectexists.php?action=series&modality=mr&seriesid=<?=$mrseries_id?>&datatype=<?=$data_type?>", true);
 								xhttp.send();
-								
+
+								$('.series-info-tooltip').tooltip({ items: '.series-info-tooltip', content: function() { return $(this).attr('data-html'); } });
+
 							//	const xhttp2 = new XMLHttpRequest();
 							//	xhttp2.onload = function() {
 							//		document.getElementById("thumbnail<?=$series_num?>").innerHTML = this.responseText;
@@ -2557,7 +2559,8 @@
 									<? //if (($bold_reps < 2) && ($GLOBALS['cfg']['allowrawdicomexport'])) { ?>
 									<!--&nbsp;<a href="viewimage.php?modality=mr&type=dicom&seriesid=<?=$mrseries_id?>"><i class="cube icon"></i></a>-->
 									<? //} ?>
-									<span data-tooltip="Series Description - <?=$series_desc?>&#10;Protocol - <?=$protocol?>&#10;Sequence Description - <?=$sequence?>&#10;TE - <?=$series_te?>ms&#10;Magnet - <?=$series_fieldstrength?>T&#10;Flip angle - <?=$series_flip?>&deg;&#10;Image type - <?=$imagetype?>&#10;Image comment - <?=$image_comments?>&#10;Phase encoding - <?=$phase?>" data-inverted="" data-variation="multiline"><i class="ui info circle icon"></i></span>
+									<?php $series_tooltip = "<b>Series Description</b> - $series_desc<br><b>Protocol</b> - $protocol<br><b>Sequence Description</b> - $sequence<br><b>TE</b> - {$series_te}ms<br><b>Magnet</b> - {$series_fieldstrength}T<br><b>Flip angle</b> - {$series_flip}&deg;<br><b>Image type</b> - $imagetype<br><b>Image comment</b> - $image_comments<br><b>Phase encoding</b> - $phase"; ?>
+					<span class="series-info-tooltip" data-html="<?=htmlspecialchars($series_tooltip, ENT_QUOTES)?>"><i class="ui info circle icon"></i></span>
 									
 									<?
 										if ($bidsentity == "") {

@@ -44,8 +44,9 @@
 <script type="text/javascript" src="scripts/jquery.imagepreview.js"></script>
 <!--<script type="text/javascript" src="scripts/stupidtable.min.js"></script>-->
 
-<!--<link rel="stylesheet" type="text/css" href="scripts/themes/blue/style.css">-->
-<!--<link href='https://fonts.googleapis.com/css?family=Roboto Mono' rel='stylesheet'>-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono&family=Roboto+Mono&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" type="text/css" href="scripts/semantic/semantic.css">
 <script src="scripts/semantic/semantic.js"></script>

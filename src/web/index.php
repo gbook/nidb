@@ -168,7 +168,8 @@
 					$study_id = $row['study_id'];
 					$subject_id = $row['subject_id'];
 					$modality = $row['study_modality'];
-					$study_datetime = date('M j g:ia',strtotime($row['study_datetime']));
+					$ts = strtotime($row['study_datetime']);
+					$study_datetime = $ts !== false ? date('M j g:ia', $ts) : '';
 					$study_site = $row['study_site'];
 					$study_num = $row['study_num'];
 					$uid = $row['uid'];
@@ -274,12 +275,13 @@
 				</thead>
 				<?
 				$stmt = mysqli_prepare($GLOBALS['linki'], "select a.mostrecent_date, a.project_id, b.* from mostrecent a left join projects b on a.project_id = b.project_id where a.user_id in (select user_id from users where username = ?) and a.project_id is not null and b.project_id in (select project_id from projects where instance_id = ?) group by b.project_name order by a.mostrecent_date desc");
-				mysqli_stmt_bind_param($stmt, 'si', $username, $_SESSION['instanceid']);
+				mysqli_stmt_bind_param($stmt, 'si', $GLOBALS['username'], $_SESSION['instanceid']);
 				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 				if (mysqli_num_rows($result) > 0) {
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$projectid = $row['project_id'];
-						$date = date('M j g:ia',strtotime($row['mostrecent_date']));
+						$ts = strtotime($row['mostrecent_date']);
+						$date = $ts !== false ? date('M j g:ia', $ts) : '';
 						$projectname = $row['project_name'];
 						?>
 						<tr>
@@ -308,13 +310,15 @@
 				</thead>
 				<?
 				$stmt = mysqli_prepare($GLOBALS['linki'], "select a.mostrecent_date, a.subject_id, b.* from mostrecent a left join subjects b on a.subject_id = b.subject_id left join enrollment c on b.subject_id = c.subject_id where a.user_id in (select user_id from users where username = ?) and a.subject_id is not null and c.project_id in (select project_id from projects where instance_id = ?) group by b.uid order by a.mostrecent_date desc");
-				mysqli_stmt_bind_param($stmt, 'si', $username, $_SESSION['instanceid']);
+				mysqli_stmt_bind_param($stmt, 'si', $GLOBALS['username'], $_SESSION['instanceid']);
 				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 				if (mysqli_num_rows($result) > 0) {
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$subjectid = $row['subject_id'];
-						$date = date('M j g:ia',strtotime($row['mostrecent_date']));
-						$dob = date('Y-m-d',strtotime($row['birthdate']));
+						$ts = strtotime($row['mostrecent_date']);
+						$date = $ts !== false ? date('M j g:ia', $ts) : '';
+						$tsb = strtotime($row['birthdate']);
+						$dob = $tsb !== false ? date('Y-m-d', $tsb) : '';
 						$uid = $row['uid'];
 						$sex = $row['gender'];
 						?>
@@ -353,13 +357,14 @@
 				//mysqli_stmt_bind_param($q, 'ss', $username, $_SESSION['instanceid']);
 				//$result = MySQLiBoundQuery($q, __FILE__, __LINE__);
 				$stmt = mysqli_prepare($GLOBALS['linki'], "select a.mostrecent_date, a.study_id, b.*, d.uid from mostrecent a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on d.subject_id = c.subject_id where a.user_id in (select user_id from users where username = ?) and a.study_id is not null and c.project_id in (select project_id from projects where instance_id = ?) order by a.mostrecent_date desc");
-				mysqli_stmt_bind_param($stmt, 'si', $username, $_SESSION['instanceid']);
+				mysqli_stmt_bind_param($stmt, 'si', $GLOBALS['username'], $_SESSION['instanceid']);
 				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 				if (mysqli_num_rows($result) > 0) {
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$studyid = $row['study_id'];
 						$studynum = $row['study_num'];
-						$date = date('M j g:ia',strtotime($row['mostrecent_date']));
+						$ts = strtotime($row['mostrecent_date']);
+						$date = $ts !== false ? date('M j g:ia', $ts) : '';
 						$uid = $row['uid'];
 						$studydate = $row['study_datetime'];
 						$modality = $row['study_modality'];

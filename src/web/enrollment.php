@@ -405,7 +405,7 @@
 						<th>Type</th>
 						<th>Date</th>
 						<th>Experimenter</th>
-						<th>Details</th>
+						<th>Matched Data</th>
 						<th>Completed</th>
 					</tr>
 				</thead>
@@ -589,6 +589,76 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- DisplayItemModal ------------------- */
+	/* -------------------------------------------- */
+	function DisplayItemModal($item) {
+		?>
+		<div class="ui small modal" id="item-modal-<?=$item['itemRowID']?>">
+			<div class="header"><?=htmlspecialchars($item['itemName'] ?? '')?></div>
+			<div class="content">
+				<table class="ui celled very compact small table">
+					<tbody>
+						<tr><td><b>Type</b></td><td><?=htmlspecialchars($item['itemType'] ?? '')?></td></tr>
+						<tr><td><b>Modality</b></td><td><?=htmlspecialchars($item['imagingModality'] ?? '')?></td></tr>
+						<tr><td><b>Mapped name</b></td><td><?=htmlspecialchars($item['mappedName'] ?? '')?></td></tr>
+						<tr><td><b>Expected count</b></td><td><?=htmlspecialchars($item['expectedCount'] ?? '')?></td></tr>
+					</tbody>
+				</table>
+			</div>
+			<div class="actions">
+				<div class="ui cancel button">Close</div>
+			</div>
+		</div>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayFoundDataModal -------------- */
+	/* -------------------------------------------- */
+	function DisplayFoundDataModal($data, $item) {
+		?>
+		<div class="ui small modal" id="found-data-modal-<?=$item['itemRowID']?>">
+			<div class="header">Matched series</div>
+			<div class="content">
+				<table class="ui celled very compact small table">
+					<thead>
+						<tr>
+							<th colspan="3">Study</th>
+							<th colspan="3">Series</th>
+						</tr>
+						<tr>
+							<th>No.</th>
+							<th>Desc</th>
+							<th>Date</th>
+							<th>No.</th>
+							<th>Desc</th>
+							<th>Date</th>
+						</tr>
+					</thead>
+					<tbody>
+						<? foreach ($data as $d) { ?>
+						<tr>
+							<td><?=$d['StudyNumber']?></td>
+							<td><a href="studies.php?studyid=<?=$d['StudyRowID']?>"><?=$d['StudyDescription']?></a></td>
+							<td><?=$d['StudyDatetime']?></td>
+							<td><?=$d['SeriesNumber']?></td>
+							<td><?=$d['SeriesDescription']?></td>
+							<td><?=$d['SeriesDatetime']?></td>
+						</tr>
+						<? } ?>
+					</tbody>
+				</table>
+			</div>
+			<div class="actions">
+				<div class="ui cancel button">Close</div>
+			</div>
+		</div>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- DisplayChecklistItemCheckbox ------- */
 	/* -------------------------------------------- */
 	/**
@@ -598,13 +668,6 @@
 	function DisplayChecklistItemCheckbox($item) {
 		$enrollmentRowID = $item['enrollmentRowID'];
 		$itemRowID = $item['itemRowID'];
-		//$item['itemOrder']
-		//$item['itemName']
-		//$item['itemDesc']
-		//$item['itemType']
-		//$item['imagingModality']
-		//$item['mappedName']
-		//$item['expectedCount']
 		
 		$sqlstring = "select * from enrollment_checklist where enrollment_id = ? and projectchecklist_id = ?";
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
@@ -624,7 +687,7 @@
 				<td>Checkbox <i class="checklist-html-tooltip ui list icon right floated" data-html="<?=BuildItemTooltip($item)?>"></i></td>
 				<td><?=$completedDate?></td>
 				<td><?=$completedBy?></td>
-				<td>data found...</td>
+				<td></td>
 				<td><? if ($isComplete) { echo "<a href='enrollment.php?action=setitemincomplete&enrollmentid=$enrollmentRowID&checklistitemid=$itemRowID'><i class='green check circle icon'></i></a>"; } else { echo "<a href='enrollment.php?action=setitemcomplete&enrollmentid=$enrollmentRowID&checklistitemid=$itemRowID'><i class='grey circle outline icon'></i></a>"; } ?></td>
 			</tr>
 		<?
@@ -682,7 +745,7 @@
 				if ($logic == "OR") {
 					$studyPlaceholders = implode(',', array_fill(0, count($studyids), '?'));
 					$protocolPlaceholders = implode(',', array_fill(0, count($protocols), '?'));
-					$sqlstring = "select *, date(series_datetime) 'seriesdate' from $tableName where study_id in ($studyPlaceholders) and series_desc in ($protocolPlaceholders)";
+					$sqlstring = "select * from $tableName a left join studies b on a.study_id = b.study_id where a.study_id in ($studyPlaceholders) and a.series_desc in ($protocolPlaceholders)";
 					$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 					$types = str_repeat('i', count($studyids)) . str_repeat('s', count($protocols));
 					$params = array_merge($studyids, $protocols);
@@ -690,10 +753,10 @@
 				else {
 					$studyPlaceholders = implode(',', array_fill(0, count($studyids), '?'));
 					foreach ($names as $name) {
-						$descs[] = "series_desc = ?";
+						$descs[] = "a.series_desc = ?";
 					}
 					$protocolPlaceholders = implode(' AND ', $descs);
-					$sqlstring = "select *, date(series_datetime) 'seriesdate' from $tableName where study_id in ($studyPlaceholders) and ($protocolPlaceholders)";
+					$sqlstring = "select * from $tableName a left join studies b on a.study_id = b.study_id where a.study_id in ($studyPlaceholders) and ($protocolPlaceholders)";
 					$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 					$types = str_repeat('i', count($studyids)) . str_repeat('s', count($names));
 					$params = array_merge($studyids, $names);
@@ -703,9 +766,21 @@
 				mysqli_stmt_bind_param($stmt, $types, ...$params);
 				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
 				mysqli_stmt_close($stmt);
+				$data = array();
 				if (mysqli_num_rows($result) > 0) {
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-						$completedates[] = $row['seriesdate'];
+						$completedates[] = date('M j, Y', strtotime($row['series_datetime']));
+						/* StudyNumber, SeriesDesc, SeriesDatetime */
+						//$series_datetime = date('M j, Y g:ia',strtotime($row['series_datetime']));
+						$d['StudyNumber'] = $row['study_num'];
+						$d['StudyDescription'] = $row['study_desc'];
+						$d['StudyDatetime'] = $row['study_datetime'];
+						$d['SeriesDatetime'] = $row['series_datetime'];
+						$d['SeriesNumber'] = $row['series_num'];
+						$d['SeriesDescription'] = $row['series_desc'];
+						$d['StudyRowID'] = $row['study_id'];
+						
+						$data[] = $d;
 					}
 					$completedDate = implode2('<br>',array_unique($completedates));
 					$isComplete = true;
@@ -715,14 +790,28 @@
 				}
 			}
 		}
+		//PrintVariable($data);
 		?>
 		<tr>
 			<td><?=$item['itemName']?></td>
-			<td>Imaging <i class="checklist-html-tooltip ui list icon right floated" data-html="<?=BuildItemTooltip($item)?>"></i></td>
+			<td>
+				Imaging <i class="ui list icon right floated" style="cursor:pointer" onclick="$('#item-modal-<?=$itemRowID?>').modal('show')"></i>
+			</td>
 			<td><?=$completedDate?></td>
 			<td><?=$completedBy?></td>
-			<td>what data is present</td>
-			<td><? if ($isComplete) { echo "<a href='enrollment.php?action=setitemincomplete&enrollmentid=$enrollmentRowID&checklistitemid=$itemRowID'><i class='green check circle icon'></i></a>"; } else { echo "<a href='enrollment.php?action=setitemcomplete&enrollmentid=$enrollmentRowID&checklistitemid=$itemRowID'><i class='grey circle outline icon'></i></a>"; } ?></td>
+			<? if (count($data) > 0) { ?>
+			<td style="cursor:pointer; text-decoration: underline dotted blue" onclick="$('#found-data-modal-<?=$itemRowID?>').modal('show')">
+				<?=count($data)?> <?=$item['imagingModality']?> series
+				<? DisplayFoundDataModal($data, $item); ?>
+			</td>
+			<? } else { ?>
+			<td></td>
+			<? } ?>
+			<td>
+				<? if ($isComplete) { echo "<a href='enrollment.php?action=setitemincomplete&enrollmentid=$enrollmentRowID&checklistitemid=$itemRowID'><i class='green check circle icon'></i></a>"; } else { echo "<a href='enrollment.php?action=setitemcomplete&enrollmentid=$enrollmentRowID&checklistitemid=$itemRowID'><i class='grey circle outline icon'></i></a>"; } ?>
+				<!-- modal dialog, needs to be within a <td> element -->
+				<? DisplayItemModal($item); ?>
+			</td>
 		</tr>
 		<?
 	}
