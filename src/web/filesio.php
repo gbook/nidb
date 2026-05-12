@@ -90,11 +90,6 @@
 			<a href="filesio.php?viewall=1" class="ui basic button">Show all</a>
 		<? } ?>
 		<br><br>
-		<SCRIPT LANGUAGE="Javascript">
-			function decision(message, url){
-					if(confirm(message)) location.href = url;
-			}
-		</SCRIPT>
 		<table class="ui very compact celled grey table">
 			<thead>
 				<!--<th align="left">I/O Id</th>-->
@@ -108,11 +103,6 @@
 			</thead>
 		<?	
 		
-		$completecolor = "66AAFF";
-		$processingcolor = "AAAAFF";
-		$errorcolor = "FF6666";
-		$othercolor = "EFEFFF";
-
 		if ($GLOBALS['issiteadmin']) {
 			if ($viewall) {
 				$sqlstring = "SELECT `fileiorequest_id`, `fileio_operation`,`data_type`,`request_status`, `request_message`, `username`,`requestdate` FROM `fileio_requests` order by fileiorequest_id desc limit 1000";
@@ -153,31 +143,16 @@
 				<td class="ui <?=$color?> cell"><?=$iostatus?></td>
 				<td><?=$iomessage?></td>
 				<?
-				$now = strtotime($rtime);
-				$Five_minutes = $now + (5 * 60);
-				$startDate = date('Y-m-y H:i:s', $now);
-				$endDate = date('Y-m-y H:i:s', $Five_minutes);
-				   
-				if ($endDate > $startDate) {
-					$D2 = date('d',$endDate);
-					$D1 = date('d',$startDate);
-					$Ttime =$D2-$D1;
-				}
-				else {
-					$Ttime = 2;
-				}
+				$endDate = date('Y-m-d H:i:s', strtotime($rtime) + 300);
 				?>
 				<td><?=$endDate?></td>
-				<? if ($iostatus=='pending'){ ?>
-				<td align="center" class="cancel">
-					<a class="ui small compact red button" href="filesio.php?action=cancelfileio&fileioid=<?=$fileioid?>" onclick="return confirm('Are you sure?')">Cancel Operation</a>
+				<td align="center">
+					<? if ($iostatus == 'pending') { ?>
+						<a class="ui small compact red button" href="filesio.php?action=cancelfileio&fileioid=<?=$fileioid?>" onclick="return confirm('Are you sure?')">Cancel Operation</a>
+					<? } elseif ($iostatus == 'error' || $iostatus == 'cancelled') { ?>
+						<a class="ui small compact red button" href="filesio.php?action=deletefileio&fileioid=<?=$fileioid?>" onclick="return confirm('Are you sure?')">Remove</a>
+					<? } ?>
 				</td>
-				<? }?>
-				<? if ($iostatus=='error' || $iostatus=='cancelled'){ ?>
-				<td>
-					<a class="ui small compact red button" href="filesio.php?action=deletefileio&fileioid=<?=$fileioid?>" onclick="return confirm('Are you sure?')">Remove</a>
-				</td>
-				<? } ?>
 
 			</tr>
 			<?

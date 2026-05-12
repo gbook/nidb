@@ -692,9 +692,8 @@
 					foreach ($names as $name) {
 						$descs[] = "series_desc = ?";
 					}
-					$nameStr = implode(' AND ', $descs);
-					//$protocolPlaceholders = implode(',', array_fill(0, count($protocols), '?'));
-					$sqlstring = "select *, date(series_datetime) 'seriesdate' from $tableName where study_id in ($studyPlaceholders) and ($nameStr)";
+					$protocolPlaceholders = implode(' AND ', $descs);
+					$sqlstring = "select *, date(series_datetime) 'seriesdate' from $tableName where study_id in ($studyPlaceholders) and ($protocolPlaceholders)";
 					$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 					$types = str_repeat('i', count($studyids)) . str_repeat('s', count($names));
 					$params = array_merge($studyids, $names);
