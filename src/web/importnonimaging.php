@@ -533,6 +533,23 @@
 		$i=0;
 		$inserts = array();
 
+		/* build instrument and item lookup caches for this project */
+		$instrumentIdCache = [];
+		$instrumentItemCache = [];
+		$sqlstring = "select instrument_id, instrument_name from instruments where project_id = $projectid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$instrumentIdCache[strtolower(trim($row['instrument_name']))] = (int)$row['instrument_id'];
+		}
+		if (count($instrumentIdCache) > 0) {
+			$iids = implode(',', array_values($instrumentIdCache));
+			$sqlstring = "select instrument_id, item_name from instrument_items where instrument_id in ($iids)";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$instrumentItemCache[(int)$row['instrument_id']][strtolower(trim($row['item_name']))] = true;
+			}
+		}
+
 		foreach ($csvdata as $line) {
 			/* reset all variables for this row */
 			$subjectRowID = $line['subjectRowID'];
@@ -630,21 +647,34 @@
 				if (trim($rater) == "") $rater = "null";
 				else $rater = "'" . trim($rater) . "'";
 
-				if (trim($instrument) == "") $instrument = "null";
-				else $instrument = "'" . trim($instrument) . "'";
-				
+				/* resolve instrument_id if instrument name and variable name both match */
+				$resolvedInstrumentId = "null";
+				$rawInstrument = trim($instrument);
+				if ($rawInstrument != "") {
+					$instrKey = strtolower($rawInstrument);
+					if (isset($instrumentIdCache[$instrKey])) {
+						$iid = $instrumentIdCache[$instrKey];
+						if (isset($instrumentItemCache[$iid][strtolower(trim($variablename))])) {
+							$resolvedInstrumentId = $iid;
+						}
+					}
+				}
+
+				if ($rawInstrument == "") $instrument = "null";
+				else $instrument = "'" . mysqli_real_escape_string($GLOBALS['linki'], $rawInstrument) . "'";
+
 				if (trim($enddate) == "") $enddate = "null";
 				else $enddate = "'" . trim($enddate) . "'";
 
 				if (trim($startdate) == "") $startdate = "null";
 				else $startdate = "'" . trim($startdate) . "'";
-				
+
 				/* add to batch insert */
-				$inserts[] = "($enrollmentRowID, now(), '$variablename', '$value', $rater, $instrument, $startdate, $enddate)";
+				$inserts[] = "($enrollmentRowID, now(), '$variablename', '$value', $rater, $instrument, $startdate, $enddate, $resolvedInstrumentId)";
 				$numObservationsAdded++;
-				
+
 				if (count($inserts) >= 100) {
-					$sqlstring = "insert ignore into observations (enrollment_id, observation_entrydate, observation_name, observation_value, observation_rater, observation_instrument, observation_startdate, observation_enddate) values " . implode(",", $inserts);
+					$sqlstring = "insert ignore into observations (enrollment_id, observation_entrydate, observation_name, observation_value, observation_rater, observation_instrument, observation_startdate, observation_enddate, instrument_id) values " . implode(",", $inserts);
 					//PrintSQL($sqlstring);
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 					$inserts = array();
@@ -662,7 +692,7 @@
 		
 		/* finish up the insert buffer */
 		if (count($inserts) > 0) {
-			$sqlstring = "insert ignore into observations (enrollment_id, observation_entrydate, observation_name, observation_value, observation_rater, observation_instrument, observation_startdate, observation_enddate) values " . implode(",", $inserts);
+			$sqlstring = "insert ignore into observations (enrollment_id, observation_entrydate, observation_name, observation_value, observation_rater, observation_instrument, observation_startdate, observation_enddate, instrument_id) values " . implode(",", $inserts);
 			//PrintSQL($sqlstring);
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			$inserts = array();

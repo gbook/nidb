@@ -155,7 +155,7 @@
 		}
 		
 		/* projects sub-menu */
-		elseif ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="projectassessments.php" || $page=="studies.php" || $page=="minipipeline.php" || $page=="templates.php" || $page=="datadictionary.php" || $page == "experiment.php" || $page == "mriqc.php" || $page == "importremote.php") {
+		elseif ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="projectassessments.php" || $page=="studies.php" || $page=="minipipeline.php" || $page=="templates.php" || $page=="datadictionary.php" || $page == "experiment.php" || $page == "mriqc.php" || $page == "importremote.php" || $page == "instruments.php") {
 			
 			//if ($page=="projectchecklist.php" || $page=="projectassessments.php" || $page=="minipipeline.php" || $page=="templates.php" || $page=="datadictionary.php" || $page == "experiment.php") {
 			$projectid = GetVariable("projectid");
@@ -189,6 +189,7 @@
 					<div class="text">Tools</div>
 					<i class="dropdown icon"></i>
 					<div class="menu">
+						<a class="item" title="Manage instruments and expected observations" href="instruments.php?projectid=<?=$projectid?>" style="color: #222"><i class="flask icon"></i> Manage instruments</a>
 						<a class="item" href="importremote.php?action=viewbatchimportlist&projectid=<?=$projectid?>" style="color: #222"><i class="cloud download anternate icon"></i> Remote batch imports</a>
 						<a class="item" href="datadictionary.php?projectid=<?=$projectid?>" style="color: #222"><i class="database icon"></i> Data dictionary</a>
 						<a class="item" href="analysisbuilder.php?action=viewanalysissummary&projectid=<?=$projectid?>" style="color: #222"><i class="list alternate outline icon"></i> Analysis builder</a>

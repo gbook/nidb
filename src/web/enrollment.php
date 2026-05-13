@@ -312,17 +312,14 @@
 				</div>
 			</div>
 
-			<br>
-			
-			<form method="post" action="enrollment.php" class="ui form" enctype="multipart/form-data">
-			<input type="hidden" name="action" value="update">
-			<input type="hidden" name="id" value="<?=$enrollmentid?>">
-			
 			<div class="ui black top attached segment">
 				<h2 class="ui header">
 					Enrollment Details
 				</h2>
 			</div>
+			<form method="post" action="enrollment.php" class="ui form" enctype="multipart/form-data">
+			<input type="hidden" name="action" value="update">
+			<input type="hidden" name="id" value="<?=$enrollmentid?>">
 			<table class="ui basic celled attached table">
 				<tr>
 					<td class="right aligned"><b>Enrollment date</b></td>
@@ -348,7 +345,9 @@
 					<td class="right aligned"><b>IRB Consent</b></td>
 					<td>
 						<? if ($has_irb_consent) { ?><a href="enrollment.php?action=viewirb&id=<?=$enrollmentid?>" target="_blank">View current file</a><br><? } ?>
-						<input type="file" name="irbconsent">
+						<div class="ui file input">
+							<input type="file" name="irbconsent">
+						</div>
 					</td>
 				</tr>
 				<tr>
@@ -361,6 +360,8 @@
 			</div>
 			</form>
 		</div>
+		
+		<br>
 		
 		<div class="ui container">
 			<!-- *********** Checklist *********** -->
@@ -382,6 +383,7 @@
 					$item['imagingModality'] = $row['imaging_modality'];
 					$item['mappedName'] = $row['mapped_name'];
 					$item['expectedCount'] = $row['expected_count'];
+					$item['instrumentId'] = $row['instrument_id'];
 					
 					$checklist[] = $item;
 				}
@@ -427,6 +429,9 @@
 						case "Diagnosis":
 							DisplayChecklistItemDiagnosis($item);
 							break;
+						case "Instrument":
+							DisplayChecklistItemInstrument($item);
+							break;
 						default:
 							DisplayChecklistItemDefault($item);
 					}
@@ -439,108 +444,9 @@
 						items: '.checklist-html-tooltip',
 						content: function() { return $(this).attr('data-html'); }
 					});
+					$('.ui.modal').modal();
 				});
 			</script>
-
-			<div class="ui black top attached segment">
-				<h2 class="ui header">
-					Enrollment Checklist (original method)
-				</h2>
-			</div>
-			<table class="ui very compact celled selectable bottom attached table">
-				<thead>
-					<tr>
-						<th>Item</th>
-						<th>Completed</th>
-						<th>Date</th>
-						<th>Experimenter</th>
-					</tr>
-				</thead>
-				<?
-				//PrintVariable($studyids);
-				if ((count($studyids) > 0) && ($studyids != '')) {
-					if (count($checklist) > 0) {
-						foreach ($checklist as $i => $item) {
-							$name = $item['name'];
-							$desc = $item['desc'];
-							$modality = strtolower($item['modality']);
-							$protocol = $item['protocol'];
-							$count = $item['count'];
-
-							$completedates = array();
-							$completedate = "";
-							$experimenter = "";
-							
-							//PrintVariable($protocol);
-							$protocols = array_map('trim', explode(',', $protocol));
-							/* check for valid modality using validated helper */
-							$tableName = GetSeriesTableName($modality);
-							if ($tableName !== '') {
-								$studyPlaceholders = implode(',', array_fill(0, count($studyids), '?'));
-								$protocolPlaceholders = implode(',', array_fill(0, count($protocols), '?'));
-								$sqlstring = "select *, date(series_datetime) 'seriesdate' from $tableName where study_id in ($studyPlaceholders) and series_desc in ($protocolPlaceholders)";
-								$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-								$types = str_repeat('i', count($studyids)) . str_repeat('s', count($protocols));
-								$params = array_merge($studyids, $protocols);
-								mysqli_stmt_bind_param($stmt, $types, ...$params);
-								$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
-								mysqli_stmt_close($stmt);
-								if (mysqli_num_rows($result) > 0) {
-									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-										$completedates[] = $row['seriesdate'];
-									}
-									$completedate = implode2('<br>',array_unique($completedates));
-									$checked = "checked";
-								}
-								else {
-									$checked = "";
-								}
-								?>
-								<tr>
-									<td><?=$name?></td>
-									<td><input type="checkbox" <?=$checked?> disabled></td>
-									<td><?=$completedate?></td>
-									<td><?=$experimenter?></td>
-								</tr>
-								<?
-							}
-							else {
-								$itemid = (int)$item['id'];
-								$sqlstring = "select *, date(date_completed) 'completedate' from enrollment_checklist where enrollment_id = ? and projectchecklist_id = ?";
-								$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-								mysqli_stmt_bind_param($stmt, 'ii', $enrollmentid, $itemid);
-								$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$enrollmentid, $itemid]);
-								mysqli_stmt_close($stmt);
-								if (mysqli_num_rows($result) > 0) {
-									$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-									$completedate = $row['completedate'];
-									$experimenter = $row['completedby'];
-									$checked = "checked";
-								}
-								else {
-									$checked = "";
-								}
-								?>
-								<tr>
-									<td><?=$name?></td>
-									<td><input type="checkbox" name="completed[]" value="<?=$itemid?>" <?=$checked?>></td>
-									<td><?=$completedate?></td>
-									<td><?=$experimenter?></td>
-								</tr>
-								<?
-							}
-						}
-					}
-					else {
-						?>
-						<tr>
-							<td colspan="4">No items completed for this enrollment</td>
-						</tr>
-						<?
-					}
-				}
-				?>
-			</table>
 		</div>
 		<?
 	}
@@ -614,9 +520,9 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- DisplayFoundDataModal -------------- */
+	/* ------- DisplayFoundImagingModal ----------- */
 	/* -------------------------------------------- */
-	function DisplayFoundDataModal($data, $item) {
+	function DisplayFoundImagingModal($data, $item) {
 		?>
 		<div class="ui small modal" id="found-data-modal-<?=$item['itemRowID']?>">
 			<div class="header">Matched series</div>
@@ -645,6 +551,124 @@
 							<td><?=$d['SeriesNumber']?></td>
 							<td><?=$d['SeriesDescription']?></td>
 							<td><?=$d['SeriesDatetime']?></td>
+						</tr>
+						<? } ?>
+					</tbody>
+				</table>
+			</div>
+			<div class="actions">
+				<div class="ui cancel button">Close</div>
+			</div>
+		</div>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayFoundNonImagingModal -------- */
+	/* -------------------------------------------- */
+	function DisplayFoundNonImagingModal($data, $item) {
+		?>
+		<div class="ui small modal" id="found-data-modal-<?=$item['itemRowID']?>">
+			<div class="header">Matched data</div>
+			<div class="content">
+				<table class="ui celled very compact small table">
+					<thead>
+						<tr>
+							<th>Name</th>
+							<th>Value</th>
+							<th>Date</th>
+							<th>Duration</th>
+							<th>Rater</th>
+							<th>Notes</th>
+						</tr>
+					</thead>
+					<tbody>
+						<? foreach ($data as $d) { ?>
+						<tr>
+							<td><?=htmlspecialchars($d['Name'] ?? '')?></td>
+							<td><?=htmlspecialchars($d['Value'] ?? '')?></td>
+							<td><?=htmlspecialchars($d['Startdate'] ?? '')?></td>
+							<td><?=htmlspecialchars($d['Duration'] ?? '')?></td>
+							<td><?=htmlspecialchars($d['Rater'] ?? '')?></td>
+							<td><?=htmlspecialchars($d['Notes'] ?? '')?></td>
+						</tr>
+						<? } ?>
+					</tbody>
+				</table>
+			</div>
+			<div class="actions">
+				<div class="ui cancel button">Close</div>
+			</div>
+		</div>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayFoundDiagnosisModal --------- */
+	/* -------------------------------------------- */
+	function DisplayFoundDiagnosisModal($data, $item) {
+		?>
+		<div class="ui small modal" id="found-data-modal-<?=$item['itemRowID']?>">
+			<div class="header">Matched diagnoses</div>
+			<div class="content">
+				<table class="ui celled very compact small table">
+					<thead>
+						<tr>
+							<th>ICD-10 Code</th>
+							<th>Description</th>
+							<th>Start Date</th>
+							<th>End Date</th>
+						</tr>
+					</thead>
+					<tbody>
+						<? foreach ($data as $d) { ?>
+						<tr>
+							<td><?=htmlspecialchars($d['Code'] ?? '')?></td>
+							<td><?=htmlspecialchars($d['Description'] ?? '')?></td>
+							<td><?=htmlspecialchars($d['StartDate'] ?? '')?></td>
+							<td><?=htmlspecialchars($d['EndDate'] ?? '')?></td>
+						</tr>
+						<? } ?>
+					</tbody>
+				</table>
+			</div>
+			<div class="actions">
+				<div class="ui cancel button">Close</div>
+			</div>
+		</div>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayInstrumentProgressModal ----- */
+	/* -------------------------------------------- */
+	function DisplayInstrumentProgressModal($expectedItems, $collectedSet, $item) {
+		?>
+		<div class="ui small modal" id="instrument-progress-modal-<?=$item['itemRowID']?>">
+			<div class="header">Instrument items — <?=htmlspecialchars($item['itemName'] ?? '')?></div>
+			<div class="content">
+				<table class="ui celled very compact small table">
+					<thead>
+						<tr>
+							<th>Item</th>
+							<th>Status</th>
+						</tr>
+					</thead>
+					<tbody>
+						<? foreach ($expectedItems as $ename) { ?>
+						<? $done = isset($collectedSet[strtolower(trim($ename))]); ?>
+						<tr>
+							<td><?=htmlspecialchars($ename)?></td>
+							<td>
+								<? if ($done) { ?>
+								<i class="green check circle icon"></i> Complete
+								<? } else { ?>
+								<i class="grey circle outline icon"></i> Incomplete
+								<? } ?>
+							</td>
 						</tr>
 						<? } ?>
 					</tbody>
@@ -704,17 +728,9 @@
 	function DisplayChecklistItemImaging($item) {
 		$enrollmentRowID = $item['enrollmentRowID'];
 		$itemRowID = $item['itemRowID'];
-		//$item['itemOrder']
-		//$item['itemName']
-		//$item['itemDesc']
-		//$item['itemType']
-		//$item['imagingModality']
-		//$item['mappedName']
-		//$item['expectedCount']
 		
 		/* get the mapped names */
 		[$names, $logic] = GetMappedNameList($item['mappedName']);
-		//PrintVariable($names);
 		
 		/* first check if this item is marked in the enrollment_checklist table,
 		   then check if the item exists in the imaging series table,
@@ -790,7 +806,6 @@
 				}
 			}
 		}
-		//PrintVariable($data);
 		?>
 		<tr>
 			<td><?=$item['itemName']?></td>
@@ -802,13 +817,17 @@
 			<? if (count($data) > 0) { ?>
 			<td style="cursor:pointer; text-decoration: underline dotted blue" onclick="$('#found-data-modal-<?=$itemRowID?>').modal('show')">
 				<?=count($data)?> <?=$item['imagingModality']?> series
-				<? DisplayFoundDataModal($data, $item); ?>
+				<? DisplayFoundImagingModal($data, $item); ?>
 			</td>
 			<? } else { ?>
 			<td></td>
 			<? } ?>
 			<td>
-				<? if ($isComplete) { echo "<a href='enrollment.php?action=setitemincomplete&enrollmentid=$enrollmentRowID&checklistitemid=$itemRowID'><i class='green check circle icon'></i></a>"; } else { echo "<a href='enrollment.php?action=setitemcomplete&enrollmentid=$enrollmentRowID&checklistitemid=$itemRowID'><i class='grey circle outline icon'></i></a>"; } ?>
+				<? if ($isComplete) { ?>
+				<i class='green check circle icon'></i>
+				<? } else { ?>
+				<i class='grey circle outline icon'></i>
+				<? } ?>
 				<!-- modal dialog, needs to be within a <td> element -->
 				<? DisplayItemModal($item); ?>
 			</td>
@@ -822,45 +841,204 @@
 	/* -------------------------------------------- */
 	/**
 		Items come from the observations table
-		- This is checked if the variables in the observations table match the mapped_names
+		- The table will display a checkmark for complete, if the variables in the observations table match the mapped_names
 	*/
 	function DisplayChecklistItemObservation($item) {
 		$enrollmentRowID = $item['enrollmentRowID'];
 		$itemRowID = $item['itemRowID'];
-		//$item['itemOrder']
-		//$item['itemName']
-		//$item['itemDesc']
-		//$item['itemType']
-		//$item['imagingModality']
-		//$item['mappedName']
-		//$item['expectedCount']
 
-		/* first check if this item is marked in the enrollment_checklist table,
-		   then check if the item exists in the imaging series table,
-		   display both, but the checklist table supercedes the imaging table
-		*/
+		/* get the mapped names */
+		[$observations, $logic] = GetMappedNameList($item['mappedName']);
 		
+		if ($logic == "OR") {
+			$obsvPlaceholders = implode(',', array_fill(0, count($observations), '?')); /* create list of ?,?,? bound parameter placeholders */
+			$sqlstring = "select * from observations where enrollment_id = ? and observation_name in ($obsvPlaceholders)";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			$types = 'i' . str_repeat('s', count($observations)); /* create the list of bound datatypes (iiisss, etc) */
+			$params = array_merge([$enrollmentRowID], $observations); /* merge the values into a single array for SQL debugging later */
+		}
+		else {
+			foreach ($observations as $obsv) {
+				$descs[] = "observation_name = ?";
+			}
+			$obsvPlaceholders = implode(' AND ', $descs);
+			$sqlstring = "select * from observations where enrollment_id = ? and ($obsvPlaceholders)";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			$types = 'i' . str_repeat('s', count($observations));
+			$params = array_merge([$enrollmentRowID], $observations);
+		}
+		
+		//PrintVariable(DebugSQLBoundStatement($sqlstring, $params));
+		
+		mysqli_stmt_bind_param($stmt, $types, ...$params);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		mysqli_stmt_close($stmt);
+		$data = array();
+		if (mysqli_num_rows($result) > 0) {
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				/* collect the found data */
+				$d['Name'] = $row['observation_name'];
+				$d['Notes'] = $row['observation_notes'];
+				$d['Instrument'] = $row['observation_instrument'];
+				$d['Description'] = $row['observation_desc'];
+				$d['Value'] = $row['observation_value'];
+				$d['Startdate'] = $row['observation_startdate'];
+				$d['Duration'] = $row['observation_duration'];
+				$d['Rater'] = $row['observation_rater'];
+				$data[] = $d;
+				
+				/* quick displayed info */
+				$completedates[] = date('M j, Y', strtotime($row['observation_startdate']));
+				$raters[] = $row['observation_rater'];
+			}
+			$completedDate = implode2(',',array_unique($completedates));
+			$completedBy = implode2(',',array_unique($raters));
+			$isComplete = true;
+		}
+		else {
+			$isComplete = false;
+		}
+		?>
+		<tr>
+			<td><?=$item['itemName']?></td>
+			<td>
+				Observation <i class="ui list icon right floated" style="cursor:pointer" onclick="$('#item-modal-<?=$itemRowID?>').modal('show')"></i>
+			</td>
+			<td><?=$completedDate?></td>
+			<td><?=$completedBy?></td>
+			<? if (count($data) > 0) { ?>
+			<td style="cursor:pointer; text-decoration: underline dotted blue" onclick="$('#found-data-modal-<?=$itemRowID?>').modal('show')">
+				<?=count($data)?> observations
+				<? DisplayFoundNonImagingModal($data, $item); ?>
+			</td>
+			<? } else { ?>
+			<td></td>
+			<? } ?>
+			<td>
+				<? if ($isComplete) { ?>
+				<i class='green check circle icon'></i>
+				<? } else { ?>
+				<i class='grey circle outline icon'></i>
+				<? } ?>
+				<!-- modal dialog, needs to be within a <td> element -->
+				<? DisplayItemModal($item); ?>
+			</td>
+		</tr>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayChecklistItemInstrument ----- */
+	/* -------------------------------------------- */
+	/**
+		Items come from the observations table, matched by instrument_id
+		- Displays a checkmark if any observations exist for this enrollment with the linked instrument
+	*/
+	function DisplayChecklistItemInstrument($item) {
+		$enrollmentRowID = $item['enrollmentRowID'];
+		$itemRowID = $item['itemRowID'];
+		$instrumentId = (int)($item['instrumentId'] ?? 0);
+
+		$completedDate = '';
+		$completedBy = '';
+		$isComplete = false;
+		$data = array();
+		$expectedItems = array();
+		$collectedSet = array();
+		$totalItems = 0;
+		$completedItems = 0;
+		$pct = 0;
+
+		/* check for manual override in enrollment_checklist */
 		$sqlstring = "select * from enrollment_checklist where enrollment_id = ? and projectchecklist_id = ?";
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-		mysqli_stmt_bind_param($stmt, 'ii', $item['enrollmentRowID'], $item['itemRowID']);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$item['enrollmentRowID'], $item['itemRowID']]);
+		mysqli_stmt_bind_param($stmt, 'ii', $enrollmentRowID, $itemRowID);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$enrollmentRowID, $itemRowID]);
 		mysqli_stmt_close($stmt);
 		if (mysqli_num_rows($result) > 0) {
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$isComplete = $row['iscomplete'];
-			$notes = $row['notes'];
-			$completedDate = $row['date_completed'];
+			$isComplete = (bool)$row['iscomplete'];
+			$completedDate = $row['completedate'];
 			$completedBy = $row['completedby'];
 		}
+		else {
+			if ($instrumentId > 0) {
+				/* get the expected items for this instrument */
+				$sqlstring = "select item_name from instrument_items where instrument_id = ? order by item_order asc";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'i', $instrumentId);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$instrumentId]);
+				mysqli_stmt_close($stmt);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+					$expectedItems[] = $row['item_name'];
+				}
+
+				/* get collected observations for this enrollment+instrument */
+				$sqlstring = "select * from observations where enrollment_id = ? and instrument_id = ?";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'ii', $enrollmentRowID, $instrumentId);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$enrollmentRowID, $instrumentId]);
+				mysqli_stmt_close($stmt);
+				$completedates = array();
+				$raters = array();
+				if (mysqli_num_rows($result) > 0) {
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+						$d['Name'] = $row['observation_name'];
+						$d['Notes'] = $row['observation_notes'];
+						$d['Instrument'] = $row['observation_instrument'];
+						$d['Description'] = $row['observation_desc'];
+						$d['Value'] = $row['observation_value'];
+						$d['Startdate'] = $row['observation_startdate'];
+						$d['Duration'] = $row['observation_duration'];
+						$d['Rater'] = $row['observation_rater'];
+						$data[] = $d;
+
+						$collectedSet[strtolower(trim($row['observation_name']))] = true;
+						$completedates[] = date('M j, Y', strtotime($row['observation_startdate']));
+						$raters[] = $row['observation_rater'];
+					}
+					$completedDate = implode2(',', array_unique($completedates));
+					$completedBy = implode2(',', array_unique($raters));
+				}
+
+				/* calculate per-item completion */
+				$totalItems = count($expectedItems);
+				foreach ($expectedItems as $ename) {
+					if (isset($collectedSet[strtolower(trim($ename))])) {
+						$completedItems++;
+					}
+				}
+				$pct = $totalItems > 0 ? round($completedItems / $totalItems * 100) : 0;
+				$isComplete = ($totalItems > 0) && ($completedItems === $totalItems);
+			}
+		}
 		?>
-			<tr>
-				<td><?=$item['itemName']?></td>
-				<td>Observation <i class="checklist-html-tooltip ui list icon right floated" data-html="<?=BuildItemTooltip($item)?>"></i></td>
-				<td><?=$completedDate?></td>
-				<td><?=$completedBy?></td>
-				<td></td>
-				<td><? if ($isComplete) { echo "<a href='enrollment.php?action=setitemincomplete&enrollmentid=$enrollmentRowID&checklistitemid=$itemRowID'><i class='green check circle icon'></i></a>"; } else { echo "<a href='enrollment.php?action=setitemcomplete&enrollmentid=$enrollmentRowID&checklistitemid=$itemRowID'><i class='grey circle outline icon'></i></a>"; } ?></td>
-			</tr>
+		<tr>
+			<td><?=$item['itemName']?></td>
+			<td>
+				Instrument <i class="ui list icon right floated" style="cursor:pointer" onclick="$('#item-modal-<?=$itemRowID?>').modal('show')"></i>
+			</td>
+			<td><?=$completedDate?></td>
+			<td><?=$completedBy?></td>
+			<? if ($totalItems > 0) { ?>
+			<td style="cursor:pointer; text-decoration: underline dotted blue" onclick="$('#instrument-progress-modal-<?=$itemRowID?>').modal('show')">
+				<?=$pct?>% (<?=$completedItems?>/<?=$totalItems?> items)
+				<? DisplayInstrumentProgressModal($expectedItems, $collectedSet, $item); ?>
+			</td>
+			<? } else { ?>
+			<td></td>
+			<? } ?>
+			<td>
+				<? if ($isComplete) { ?>
+				<i class='green check circle icon'></i>
+				<? } else { ?>
+				<i class='grey circle outline icon'></i>
+				<? } ?>
+				<!-- modal dialog, needs to be within a <td> element -->
+				<? DisplayItemModal($item); ?>
+			</td>
+		</tr>
 		<?
 	}
 
@@ -870,44 +1048,87 @@
 	/* -------------------------------------------- */
 	/**
 		Items come from the interventions table
+		- The table will display a checkmark for complete, if the variables in the interventions table match the mapped_names
 	*/
 	function DisplayChecklistItemIntervention($item) {
 		$enrollmentRowID = $item['enrollmentRowID'];
 		$itemRowID = $item['itemRowID'];
-		//$item['itemOrder']
-		//$item['itemName']
-		//$item['itemDesc']
-		//$item['itemType']
-		//$item['imagingModality']
-		//$item['mappedName']
-		//$item['expectedCount']
 
-		/* first check if this item is marked in the enrollment_checklist table,
-		   then check if the item exists in the imaging series table,
-		   display both, but the checklist table supercedes the imaging table
-		*/
+		/* get the mapped names */
+		[$interventions, $logic] = GetMappedNameList($item['mappedName']);
 		
-		$sqlstring = "select * from enrollment_checklist where enrollment_id = ? and projectchecklist_id = ?";
-		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-		mysqli_stmt_bind_param($stmt, 'ii', $item['enrollmentRowID'], $item['itemRowID']);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$item['enrollmentRowID'], $item['itemRowID']]);
+		if ($logic == "OR") {
+			$intPlaceholders = implode(',', array_fill(0, count($interventions), '?')); /* create list of ?,?,? bound parameter placeholders */
+			$sqlstring = "select * from interventions where enrollment_id = ? and intervention_desc in ($intPlaceholders)";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			$types = 'i' . str_repeat('s', count($interventions)); /* create the list of bound datatypes (iiisss, etc) */
+			$params = array_merge([$enrollmentRowID], $interventions); /* merge the values into a single array for SQL debugging later */
+		}
+		else {
+			foreach ($interventions as $intv) {
+				$descs[] = "intervention_desc = ?";
+			}
+			$intPlaceholders = implode(' AND ', $descs);
+			$sqlstring = "select * from interventions where enrollment_id = ? and ($intPlaceholders)";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			$types = 'i' . str_repeat('s', count($interventions));
+			$params = array_merge([$enrollmentRowID], $interventions);
+		}
+		
+		mysqli_stmt_bind_param($stmt, $types, ...$params);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
 		mysqli_stmt_close($stmt);
+		$data = array();
 		if (mysqli_num_rows($result) > 0) {
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$isComplete = $row['iscomplete'];
-			$notes = $row['notes'];
-			$completedDate = $row['date_completed'];
-			$completedBy = $row['completedby'];
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				/* collect the found data */
+				$d['Name'] = $row['intervention_name'];
+				$d['Notes'] = $row['intervention_notes'];
+				$d['Instrument'] = $row['intervention_instrument'];
+				$d['Description'] = $row['intervention_desc'];
+				$d['Value'] = $row['intervention_value'];
+				$d['Startdate'] = $row['intervention_startdate'];
+				$d['Duration'] = $row['intervention_duration'];
+				$d['Rater'] = $row['intervention_rater'];
+				$data[] = $d;
+				
+				/* quick displayed info */
+				$completedates[] = date('M j, Y', strtotime($row['intervention_startdate']));
+				$raters[] = $row['intervention_rater'];
+			}
+			$completedDate = implode2(',',array_unique($completedates));
+			$completedBy = implode2(',',array_unique($raters));
+			$isComplete = true;
+		}
+		else {
+			$isComplete = false;
 		}
 		?>
-			<tr>
-				<td><?=$item['itemName']?></td>
-				<td>Intervention <i class="checklist-html-tooltip ui list icon right floated" data-html="<?=BuildItemTooltip($item)?>"></i></td>
-				<td><?=$completedDate?></td>
-				<td><?=$completedBy?></td>
-				<td></td>
-				<td><? if ($isComplete) { echo "<a href='enrollment.php?action=setitemincomplete&enrollmentid=$enrollmentRowID&checklistitemid=$itemRowID'><i class='green check circle icon'></i></a>"; } else { echo "<a href='enrollment.php?action=setitemcomplete&enrollmentid=$enrollmentRowID&checklistitemid=$itemRowID'><i class='grey circle outline icon'></i></a>"; } ?></td>
-			</tr>
+		<tr>
+			<td><?=$item['itemName']?></td>
+			<td>
+				Intervention <i class="ui list icon right floated" style="cursor:pointer" onclick="$('#item-modal-<?=$itemRowID?>').modal('show')"></i>
+			</td>
+			<td><?=$completedDate?></td>
+			<td><?=$completedBy?></td>
+			<? if (count($data) > 0) { ?>
+			<td style="cursor:pointer; text-decoration: underline dotted blue" onclick="$('#found-data-modal-<?=$itemRowID?>').modal('show')">
+				<?=count($data)?> interventions
+				<? DisplayFoundNonImagingModal($data, $item); ?>
+			</td>
+			<? } else { ?>
+			<td></td>
+			<? } ?>
+			<td>
+				<? if ($isComplete) { ?>
+				<i class='green check circle icon'></i>
+				<? } else { ?>
+				<i class='grey circle outline icon'></i>
+				<? } ?>
+				<!-- modal dialog, needs to be within a <td> element -->
+				<? DisplayItemModal($item); ?>
+			</td>
+		</tr>
 		<?
 	}
 
@@ -921,40 +1142,68 @@
 	function DisplayChecklistItemDiagnosis($item) {
 		$enrollmentRowID = $item['enrollmentRowID'];
 		$itemRowID = $item['itemRowID'];
-		//$item['itemOrder']
-		//$item['itemName']
-		//$item['itemDesc']
-		//$item['itemType']
-		//$item['imagingModality']
-		//$item['mappedName']
-		//$item['expectedCount']
 
-		/* first check if this item is marked in the enrollment_checklist table,
-		   then check if the item exists in the imaging series table,
-		   display both, but the checklist table supercedes the imaging table
-		*/
-		
+		$completedDate = '';
+		$completedBy = '';
+		$isComplete = false;
+		$data = array();
+
+		/* check for manual override in enrollment_checklist */
 		$sqlstring = "select * from enrollment_checklist where enrollment_id = ? and projectchecklist_id = ?";
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-		mysqli_stmt_bind_param($stmt, 'ii', $item['enrollmentRowID'], $item['itemRowID']);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$item['enrollmentRowID'], $item['itemRowID']]);
+		mysqli_stmt_bind_param($stmt, 'ii', $enrollmentRowID, $itemRowID);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$enrollmentRowID, $itemRowID]);
 		mysqli_stmt_close($stmt);
 		if (mysqli_num_rows($result) > 0) {
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$isComplete = $row['iscomplete'];
-			$notes = $row['notes'];
-			$completedDate = $row['date_completed'];
+			$isComplete = (bool)$row['iscomplete'];
+			$completedDate = $row['completedate'];
 			$completedBy = $row['completedby'];
 		}
+		else {
+			/* check the diagnosis table */
+			$sqlstring = "select a.diagnosis_id, b.icd10_code, b.icd10_longdesc, date_format(a.start_date, '%Y-%m-%d') start_date, date_format(a.end_date, '%Y-%m-%d') end_date from diagnosis a left join icd10 b on a.icd10_id = b.icd10_id where a.enrollment_id = ? order by b.icd10_code";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $enrollmentRowID);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$enrollmentRowID]);
+			mysqli_stmt_close($stmt);
+			if (mysqli_num_rows($result) > 0) {
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+					$d['Code'] = $row['icd10_code'];
+					$d['Description'] = $row['icd10_longdesc'];
+					$d['StartDate'] = $row['start_date'];
+					$d['EndDate'] = $row['end_date'];
+					$data[] = $d;
+				}
+				$isComplete = true;
+			}
+		}
 		?>
-			<tr>
-				<td><?=$item['itemName']?></td>
-				<td>Diagnosis <i class="checklist-html-tooltip ui list icon right floated" data-html="<?=BuildItemTooltip($item)?>"></i></td>
-				<td><?=$completedDate?></td>
-				<td><?=$completedBy?></td>
-				<td></td>
-				<td><? if ($isComplete) { echo "<a href='enrollment.php?action=setitemincomplete&enrollmentid=$enrollmentRowID&checklistitemid=$itemRowID'><i class='green check circle icon'></i></a>"; } else { echo "<a href='enrollment.php?action=setitemcomplete&enrollmentid=$enrollmentRowID&checklistitemid=$itemRowID'><i class='grey circle outline icon'></i></a>"; } ?></td>
-			</tr>
+		<tr>
+			<td><?=$item['itemName']?></td>
+			<td>
+				Diagnosis <i class="ui list icon right floated" style="cursor:pointer" onclick="$('#item-modal-<?=$itemRowID?>').modal('show')"></i>
+			</td>
+			<td><?=$completedDate?></td>
+			<td><?=$completedBy?></td>
+			<? if (count($data) > 0) { ?>
+			<td style="cursor:pointer; text-decoration: underline dotted blue" onclick="$('#found-data-modal-<?=$itemRowID?>').modal('show')">
+				<?=count($data)?> diagnoses
+				<? DisplayFoundDiagnosisModal($data, $item); ?>
+			</td>
+			<? } else { ?>
+			<td></td>
+			<? } ?>
+			<td>
+				<? if ($isComplete) { ?>
+				<i class='green check circle icon'></i>
+				<? } else { ?>
+				<i class='grey circle outline icon'></i>
+				<? } ?>
+				<!-- modal dialog, needs to be within a <td> element -->
+				<? DisplayItemModal($item); ?>
+			</td>
+		</tr>
 		<?
 	}
 

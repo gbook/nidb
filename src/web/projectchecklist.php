@@ -51,6 +51,7 @@
 	$mappedname = GetVariable("mappedname");
 	$expectedcount = GetVariable("expectedcount");
 	$deleteitem = GetVariable("deleteitem");
+	$instrumentid = GetVariable("instrumentid");
 	$enrollmentid = GetVariable("enrollmentid");
 	$projectchecklistid = GetVariable("projectchecklistid");
 	$reason = GetVariable("reason");
@@ -71,7 +72,7 @@
 	/* determine action */
 	switch ($action) {
 		case 'updateprojectchecklist':
-			UpdateProjectChecklist($projectid, $itemid, $itemname, $itemtype, $modality, $mappedname, $expectedcount, $deleteitem);
+			UpdateProjectChecklist($projectid, $itemid, $itemname, $itemtype, $modality, $mappedname, $expectedcount, $deleteitem, $instrumentid);
 			DisplayEditChecklist($projectid);
 			break;
 		case 'setmissingdatareasonform':
@@ -102,7 +103,7 @@
 	/* -------------------------------------------- */
 	/* ------- UpdateProjectChecklist ------------- */
 	/* -------------------------------------------- */
-	function UpdateProjectChecklist($projectid, $itemid, $itemname, $itemtype, $modality, $mappedname, $expectedcount, $deleteitem) {
+	function UpdateProjectChecklist($projectid, $itemid, $itemname, $itemtype, $modality, $mappedname, $expectedcount, $deleteitem, $instrumentid) {
 
 		/* perform data checks */
 		$projectid = trim($projectid);
@@ -128,7 +129,8 @@
 		if (!is_array($mappednames)) { $mappednames = array(); }
 		if (!is_array($expectedcounts)) { $expectedcounts = array(); }
 		if (!is_array($deleteitems)) { $deleteitems = array(); }
-		
+		$instrumentids = is_array($instrumentid) ? $instrumentid : array();
+
 		$allindices = array_unique(array_merge(
 			array_keys($itemids),
 			array_keys($itemnames),
@@ -136,7 +138,8 @@
 			array_keys($modalities),
 			array_keys($mappednames),
 			array_keys($expectedcounts),
-			array_keys($deleteitems)
+			array_keys($deleteitems),
+			array_keys($instrumentids)
 		));
 		sort($allindices, SORT_NUMERIC);
 		
@@ -152,18 +155,20 @@
 		$insertModality = "";
 		$insertMappedName = "";
 		$insertExpectedCount = null;
-		$insertStmt = mysqli_prepare($GLOBALS['linki'], "insert into project_checklist (project_id, item_order, item_name, item_type, imaging_modality, mapped_name, expected_count) values (?, ?, ?, ?, ?, ?, ?)");
-		mysqli_stmt_bind_param($insertStmt, 'iissssi', $projectid, $insertItemOrder, $insertName, $insertType, $insertModality, $insertMappedName, $insertExpectedCount);
-		
+		$insertInstrumentId = null;
+		$insertStmt = mysqli_prepare($GLOBALS['linki'], "insert into project_checklist (project_id, item_order, item_name, item_type, imaging_modality, mapped_name, expected_count, instrument_id) values (?, ?, ?, ?, ?, ?, ?, ?)");
+		mysqli_stmt_bind_param($insertStmt, 'iissssii', $projectid, $insertItemOrder, $insertName, $insertType, $insertModality, $insertMappedName, $insertExpectedCount, $insertInstrumentId);
+
 		$updateItemOrder = 0;
 		$updateName = "";
 		$updateType = "";
 		$updateModality = "";
 		$updateMappedName = "";
 		$updateExpectedCount = null;
+		$updateInstrumentId = null;
 		$updateRowID = 0;
-		$updateStmt = mysqli_prepare($GLOBALS['linki'], "update project_checklist set item_order = ?, item_name = ?, item_type = ?, imaging_modality = ?, mapped_name = ?, expected_count = ? where project_id = ? and projectchecklist_id = ?");
-		mysqli_stmt_bind_param($updateStmt, 'issssiii', $updateItemOrder, $updateName, $updateType, $updateModality, $updateMappedName, $updateExpectedCount, $projectid, $updateRowID);
+		$updateStmt = mysqli_prepare($GLOBALS['linki'], "update project_checklist set item_order = ?, item_name = ?, item_type = ?, imaging_modality = ?, mapped_name = ?, expected_count = ?, instrument_id = ? where project_id = ? and projectchecklist_id = ?");
+		mysqli_stmt_bind_param($updateStmt, 'issssiiii', $updateItemOrder, $updateName, $updateType, $updateModality, $updateMappedName, $updateExpectedCount, $updateInstrumentId, $projectid, $updateRowID);
 		
 		$itemorder = 1;
 		foreach ($allindices as $i) {
@@ -174,9 +179,11 @@
 			$itemmappedname = isset($mappednames[$i]) ? trim($mappednames[$i]) : "";
 			$itemexpectedcount = isset($expectedcounts[$i]) ? trim($expectedcounts[$i]) : "";
 			$delete = isset($deleteitems[$i]) ? trim($deleteitems[$i]) : "0";
-			
+			$iteminstrumentid = isset($instrumentids[$i]) ? (int)$instrumentids[$i] : null;
+			if ($iteminstrumentid < 1) $iteminstrumentid = null;
+
 			if (($rowid != "") && (!isInteger($rowid))) { continue; }
-			if (!in_array($type, array("Checkbox", "Imaging", "Intervention", "Observation", "Diagnosis"))) { $type = "Checkbox"; }
+			if (!in_array($type, array("Checkbox", "Imaging", "Intervention", "Observation", "Diagnosis", "Instrument"))) { $type = "Checkbox"; }
 			if (($itemexpectedcount == "") || (!isInteger($itemexpectedcount)) || ($itemexpectedcount < 1)) { $itemexpectedcount = "null"; }
 			else { $itemexpectedcount = intval($itemexpectedcount); }
 			
@@ -192,6 +199,7 @@
 					$insertModality = $itemmodality;
 					$insertMappedName = $itemmappedname;
 					$insertExpectedCount = ($itemexpectedcount == "null") ? null : $itemexpectedcount;
+					$insertInstrumentId = $iteminstrumentid;
 					$result = MySQLiBoundQuery($insertStmt, __FILE__, __LINE__);
 				}
 				else {
@@ -201,6 +209,7 @@
 					$updateModality = $itemmodality;
 					$updateMappedName = $itemmappedname;
 					$updateExpectedCount = ($itemexpectedcount == "null") ? null : $itemexpectedcount;
+					$updateInstrumentId = $iteminstrumentid;
 					$updateRowID = (int)$rowid;
 					$result = MySQLiBoundQuery($updateStmt, __FILE__, __LINE__);
 				}
@@ -307,11 +316,26 @@
 		$projectname = htmlspecialchars($row['project_name'], ENT_QUOTES);
 		
 		$modalityoptions = "<option value=\"\"></option>";
+		$modalitycodes = [];
 		$stmt = mysqli_prepare($GLOBALS['linki'], "select mod_code from modalities order by mod_code");
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$modcode = htmlspecialchars($row['mod_code'], ENT_QUOTES);
 			$modalityoptions .= "<option value=\"$modcode\">$modcode</option>";
+			$modalitycodes[] = $row['mod_code'];
+		}
+		mysqli_stmt_close($stmt);
+
+		$instrumentoptions = "<option value=\"\">Select instrument...</option>";
+		$instruments = [];
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select instrument_id, instrument_name from instruments where project_id = ? order by instrument_name");
+		mysqli_stmt_bind_param($stmt, 'i', $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$iid  = (int)$row['instrument_id'];
+			$iname = htmlspecialchars($row['instrument_name'], ENT_QUOTES);
+			$instrumentoptions .= "<option value=\"$iid\">$iname</option>";
+			$instruments[$iid] = $iname;
 		}
 		mysqli_stmt_close($stmt);
 		
@@ -373,6 +397,7 @@
 						row.querySelector("input.checklist-mappedname").name = "mappedname[" + rownum + "]";
 						row.querySelector("input.checklist-expectedcount").name = "expectedcount[" + rownum + "]";
 						row.querySelector("input.checklist-deleteitem").name = "deleteitem[" + rownum + "]";
+						row.querySelector("select.checklist-instrument").name = "instrumentid[" + rownum + "]";
 						row.querySelector(".checklist-itemorder-display").textContent = rownum;
 					}
 					
@@ -459,13 +484,21 @@
 						});
 					}
 					
-					/* Set/clear required on modality and mappedname based on the selected type. */
+					/* Show/hide modality, mappedname, and instrument cells based on the selected type. */
 					function UpdateChecklistRowRequirements(row) {
-						var typeVal = row.querySelector("select.checklist-itemtype").value;
-						var modalitySelect = row.querySelector("select.checklist-modality");
-						var mappedInput    = row.querySelector("input.checklist-mappedname");
-						modalitySelect.required = (typeVal === "Imaging");
-						mappedInput.required    = (typeVal === "Imaging" || typeVal === "Intervention" || typeVal === "Observation");
+						var typeVal          = row.querySelector("select.checklist-itemtype").value;
+						var modalitySelect   = row.querySelector("select.checklist-modality");
+						var mappedInput      = row.querySelector("input.checklist-mappedname");
+						var instrumentSelect = row.querySelector("select.checklist-instrument");
+						var modalityDiv      = row.querySelector(".checklist-modality-container");
+						var instrumentDiv    = row.querySelector(".checklist-instrument-container");
+						var isImaging        = (typeVal === "Imaging");
+						var isInstrument     = (typeVal === "Instrument");
+						modalitySelect.required   = isImaging;
+						mappedInput.required      = (typeVal === "Imaging" || typeVal === "Intervention" || typeVal === "Observation");
+						instrumentSelect.required = isInstrument;
+						modalityDiv.style.display   = isImaging    ? "" : "none";
+						instrumentDiv.style.display = isInstrument ? "" : "none";
 					}
 
 					/* Existing rows are present on page load and need Select2 setup once. */
@@ -490,6 +523,7 @@
 							<th>Type</th>
 							<th>Modality</th>
 							<th>Mapped name<br><span class="tiny">comma separated for multiple protocol or variable names</span></th>
+							<th>Instrument</th>
 							<th class="checklist-count-column">Expected count</th>
 							<th></th>
 						</tr>
@@ -512,14 +546,24 @@
 									<option value="Intervention">Intervention</option>
 									<option value="Observation">Observation</option>
 									<option value="Diagnosis">Diagnosis</option>
+									<option value="Instrument">Instrument</option>
 								</select>
 							</td>
 							<td>
-								<select class="checklist-select checklist-modality">
-									<?=$modalityoptions?>
-								</select>
+								<div class="checklist-modality-container" style="display:none">
+									<select class="checklist-select checklist-modality">
+										<?=$modalityoptions?>
+									</select>
+								</div>
 							</td>
 							<td><div class="ui fluid input"><input type="text" class="checklist-mappedname" value=""></div></td>
+							<td>
+								<div class="checklist-instrument-container" style="display:none">
+									<select class="checklist-select checklist-instrument">
+										<?=$instrumentoptions?>
+									</select>
+								</div>
+							</td>
 							<td><div class="ui input checklist-count-input"><input type="number" class="checklist-expectedcount" min="1" value=""></div></td>
 							<td><button type="button" class="ui red icon button" onClick="DeleteChecklistRow(this)" title="Delete checklist item"><i class="trash alternate icon"></i></button></td>
 						</tr>
@@ -535,7 +579,8 @@
 								$imagingmodality = htmlspecialchars($row['imaging_modality'] ?? "", ENT_QUOTES);
 								$mappedname = htmlspecialchars($row['mapped_name'] ?? "", ENT_QUOTES);
 								$expectedcount = htmlspecialchars($row['expected_count'] ?? "", ENT_QUOTES);
-								$selectedmodalityoptions = str_replace("value=\"$imagingmodality\"", "value=\"$imagingmodality\" selected", $modalityoptions);
+								$rowinstrumentid = (int)($row['instrument_id'] ?? 0);
+								$rawmodality = $row['imaging_modality'] ?? "";
 							?>
 								<tr class="checklist-row">
 									<td class="center aligned"><span class="checklist-itemorder-display"><?=$itemorder?></span></td>
@@ -554,14 +599,33 @@
 											<option value="Intervention" <? if ($itemtype == "Intervention") { echo "selected"; } ?>>Intervention</option>
 											<option value="Observation" <? if ($itemtype == "Observation") { echo "selected"; } ?>>Observation</option>
 											<option value="Diagnosis" <? if ($itemtype == "Diagnosis") { echo "selected"; } ?>>Diagnosis</option>
+											<option value="Instrument" <? if ($itemtype == "Instrument") { echo "selected"; } ?>>Instrument</option>
 										</select>
 									</td>
 									<td>
-										<select name="modality[<?=$itemorder?>]" class="checklist-select checklist-modality">
-											<?=$selectedmodalityoptions?>
-										</select>
+										<div class="checklist-modality-container" <? if ($itemtype != "Imaging") { echo 'style="display:none"'; } ?>>
+											<select name="modality[<?=$itemorder?>]" class="checklist-select checklist-modality">
+												<option value=""></option>
+												<? foreach ($modalitycodes as $mc) {
+													$esc = htmlspecialchars($mc, ENT_QUOTES);
+													$sel = (strcasecmp($mc, $rawmodality) === 0) ? " selected" : "";
+													echo "<option value=\"$esc\"$sel>$esc</option>";
+												} ?>
+											</select>
+										</div>
 									</td>
 									<td><div class="ui fluid input"><input type="text" class="checklist-mappedname" name="mappedname[<?=$itemorder?>]" value="<?=$mappedname?>"></div></td>
+									<td>
+										<div class="checklist-instrument-container" <? if ($itemtype != "Instrument") { echo 'style="display:none"'; } ?>>
+											<select name="instrumentid[<?=$itemorder?>]" class="checklist-select checklist-instrument">
+												<option value="">Select instrument...</option>
+												<? foreach ($instruments as $iid => $iname) {
+													$sel = ($iid === $rowinstrumentid && $rowinstrumentid > 0) ? " selected" : "";
+													echo "<option value=\"$iid\"$sel>" . htmlspecialchars($iname, ENT_QUOTES) . "</option>";
+												} ?>
+											</select>
+										</div>
+									</td>
 									<td><div class="ui input checklist-count-input"><input type="number" class="checklist-expectedcount" name="expectedcount[<?=$itemorder?>]" min="1" value="<?=$expectedcount?>"></div></td>
 									<td><button type="button" class="ui red icon button" onClick="DeleteChecklistRow(this)" title="Delete checklist item"><i class="trash alternate icon"></i></button></td>
 								</tr>
