@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: May 12, 2026 at 01:45 AM
+-- Generation Time: May 14, 2026 at 06:03 PM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -1635,6 +1635,35 @@ CREATE TABLE `instance_usage` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `instruments`
+--
+
+CREATE TABLE `instruments` (
+  `instrument_id` int(11) NOT NULL,
+  `project_id` int(11) NOT NULL,
+  `instrument_name` varchar(255) NOT NULL,
+  `instrument_notes` text DEFAULT NULL,
+  `createdate` datetime DEFAULT current_timestamp(),
+  `modifydate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `instrument_items`
+--
+
+CREATE TABLE `instrument_items` (
+  `instrumentitem_id` int(11) NOT NULL,
+  `instrument_id` int(11) NOT NULL,
+  `item_name` varchar(255) NOT NULL,
+  `item_order` int(11) NOT NULL DEFAULT 0,
+  `item_notes` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `interventions`
 --
 
@@ -2148,7 +2177,8 @@ CREATE TABLE `observations` (
   `observation_duration` int(11) DEFAULT NULL,
   `observation_entrydate` datetime DEFAULT NULL,
   `observation_createdate` datetime DEFAULT NULL,
-  `observation_modifydate` timestamp NOT NULL DEFAULT current_timestamp()
+  `observation_modifydate` timestamp NOT NULL DEFAULT current_timestamp(),
+  `instrument_id` int(11) DEFAULT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
@@ -2664,10 +2694,11 @@ CREATE TABLE `project_checklist` (
   `item_order` int(11) NOT NULL,
   `item_name` varchar(100) NOT NULL,
   `item_desc` longtext DEFAULT NULL,
-  `item_type` enum('Checkbox','Imaging','Intervention','Observation','Diagnosis') NOT NULL DEFAULT 'Checkbox',
+  `item_type` enum('Checkbox','Imaging','Intervention','Observation','Diagnosis','Instrument') NOT NULL DEFAULT 'Checkbox',
   `imaging_modality` varchar(35) DEFAULT NULL COMMENT 'Any of the standard NiDB modalities',
   `mapped_name` longtext NOT NULL COMMENT 'Comma separate list for ''OR'', ampersand separated list for AND (all must exist). ProtocolName for modality, variable name for intervention/obervation',
-  `expected_count` int(11) DEFAULT NULL COMMENT 'Expected number of items. Success if greater than or equal to this number'
+  `expected_count` int(11) DEFAULT NULL COMMENT 'Expected number of items. Success if greater than or equal to this number',
+  `instrument_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
@@ -4466,6 +4497,20 @@ ALTER TABLE `instance_usage`
   ADD PRIMARY KEY (`instanceusage_id`);
 
 --
+-- Indexes for table `instruments`
+--
+ALTER TABLE `instruments`
+  ADD PRIMARY KEY (`instrument_id`),
+  ADD KEY `project_id` (`project_id`);
+
+--
+-- Indexes for table `instrument_items`
+--
+ALTER TABLE `instrument_items`
+  ADD PRIMARY KEY (`instrumentitem_id`),
+  ADD KEY `instrument_id` (`instrument_id`);
+
+--
 -- Indexes for table `interventions`
 --
 ALTER TABLE `interventions`
@@ -4643,7 +4688,8 @@ ALTER TABLE `observations`
   ADD UNIQUE KEY `enrollment_id` (`enrollment_id`,`observation_name`,`observation_startdate`),
   ADD KEY `observation_name` (`observation_name`),
   ADD KEY `enrollment_id_2` (`enrollment_id`),
-  ADD KEY `observation_startdate` (`observation_startdate`);
+  ADD KEY `observation_startdate` (`observation_startdate`),
+  ADD KEY `instrument_id` (`instrument_id`);
 
 --
 -- Indexes for table `ot_series`
@@ -4832,7 +4878,8 @@ ALTER TABLE `projects`
 -- Indexes for table `project_checklist`
 --
 ALTER TABLE `project_checklist`
-  ADD PRIMARY KEY (`projectchecklist_id`);
+  ADD PRIMARY KEY (`projectchecklist_id`),
+  ADD KEY `instrument_id` (`instrument_id`);
 
 --
 -- Indexes for table `project_checklist_orig`
@@ -5728,6 +5775,18 @@ ALTER TABLE `instance_pricing`
 --
 ALTER TABLE `instance_usage`
   MODIFY `instanceusage_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `instruments`
+--
+ALTER TABLE `instruments`
+  MODIFY `instrument_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `instrument_items`
+--
+ALTER TABLE `instrument_items`
+  MODIFY `instrumentitem_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `interventions`

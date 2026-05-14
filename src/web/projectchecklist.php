@@ -338,7 +338,19 @@
 			$instruments[$iid] = $iname;
 		}
 		mysqli_stmt_close($stmt);
-		
+
+		/* show return button if the user navigated here from an enrollment page */
+		$lastenrollmentid = isset($_COOKIE['lastenrollmentid']) ? (int)$_COOKIE['lastenrollmentid'] : 0;
+		if ($lastenrollmentid > 0) {
+			list($returnuid, $returnsubjectid, $returnaltuid, $returnprojectname, $returnprojectid) = GetEnrollmentInfo($lastenrollmentid);
+			if ($returnsubjectid > 0) {
+				?>
+				<div style="margin-bottom: 1em">
+					<a href="enrollment.php?enrollmentid=<?=$lastenrollmentid?>" class="ui basic blue button"><i class="arrow left icon"></i> Return to enrollment &mdash; <?=htmlspecialchars($returnuid)?></a>
+				</div>
+				<?
+			}
+		}
 		?>
 		<div class="ui container">
 			<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/css/select2.min.css" rel="stylesheet">

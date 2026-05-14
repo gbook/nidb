@@ -445,6 +445,7 @@
 						content: function() { return $(this).attr('data-html'); }
 					});
 					$('.ui.modal').modal();
+					document.cookie = 'lastenrollmentid=<?=(int)$enrollmentid?>; path=/; SameSite=Lax';
 				});
 			</script>
 		</div>

@@ -2029,14 +2029,17 @@
 		$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		if (mysqli_num_rows($result2) > 0) {
 		?>
-		<table border="1">
+		<table class="ui very compact celled small table">
 			<thead>
-				<th>#</th>
-				<th>Modality</th>
-				<th>Date</th>
-				<th>Age<span class="tiny">&nbsp;y</span></th>
-				<th>Site</th>
-				<th>Visit</th>
+				<tr>
+					<th>#</th>
+					<th>Modality</th>
+					<th>Date</th>
+					<th>Age (y)</th>
+					<th>Site</th>
+					<th>Visit</th>
+					<th>Series</th>
+				</tr>
 			</thead>
 			<tbody>
 			<?
@@ -2047,35 +2050,24 @@
 				$study_datetime = $row2['study_datetime'];
 				$study_ageatscan = $row2['study_ageatscan'];
 				$calcage = number_format($row2['ageatscan']/365.25,1);
-				$study_operator = $row2['study_operator'];
-				$study_performingphysician = $row2['study_performingphysician'];
 				$study_site = $row2['study_site'];
 				$study_type = $row2['study_type'];
-				$study_status = $row2['study_status'];
-				$study_doradread = $row2['study_doradread'];
-				
-				if (trim($study_ageatscan) != 0) {
-					$age = $study_ageatscan;
-				}
-				else {
-					$age = $calcage;
-				}
-				
+
+				$age = (trim($study_ageatscan) != 0) ? $study_ageatscan : $calcage;
 				?>
 				<tr>
 					<td><b><?=$study_num?></b></td>
-					<td><?
-					 if ($study_modality == "") { ?><span style="color: white; background-color: red">&nbsp;blank&nbsp;</span><? }
-					 else { echo $study_modality; }
-					?></td>
+					<td>
+						<? if ($study_modality == "") { ?>
+						<div class="ui red label">blank</div>
+						<? } else { echo htmlspecialchars($study_modality); } ?>
+					</td>
 					<td><?=$study_datetime?></td>
 					<td><?=number_format($age,1)?></td>
-					<td><?=$study_site?></td>
-					<td><?=$study_type?></td>
-				</tr>
-				<tr>
-					<td colspan="6" style="padding-left: 15px">
-				<?
+					<td><?=htmlspecialchars($study_site)?></td>
+					<td><?=htmlspecialchars($study_type)?></td>
+					<td>
+					<?
 					if ($study_modality != "") {
 						$sqlstring4 = "show tables like '" . strtolower($study_modality) . "_series'";
 						$result4 = MySQLiQuery($sqlstring4, __FILE__, __LINE__);
@@ -2083,32 +2075,27 @@
 							$sqlstring3 = "select * from " . strtolower($study_modality) . "_series where study_id = $study_id order by series_num asc";
 							$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
 							while ($row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC)) {
-								if ($row3['series_desc'] == "") {
-									$protocol = $row3['series_protocol'];
-								}
-								else {
-									$protocol = $row3['series_desc'];
-								}
-								$seriesnum = $row3['series_num'];
-								echo "$seriesnum - $protocol<br>";
+								$protocol = ($row3['series_desc'] != "") ? $row3['series_desc'] : $row3['series_protocol'];
+								echo htmlspecialchars($row3['series_num'] . " - " . $protocol) . "<br>";
 							}
 						}
 						else {
-							echo "<span style='color:red'>Invalid modality [$study_modality]</span><br>";
+							?><span class="ui red text">Invalid modality [<?=htmlspecialchars($study_modality)?>]</span><?
 						}
 					}
-				?>
+					?>
 					</td>
 				</tr>
 				<?
 			}
 			?>
+			</tbody>
 		</table>
 		<?
 		}
 		else {
 			?>
-			<div style="font-size: 9pt; background-color:white; text-align: center; border: 1px solid #888; border-radius:8px; padding:3px">No imaging studies</div>
+			<div class="ui message">No imaging studies</div>
 			<?
 		}
 	}
