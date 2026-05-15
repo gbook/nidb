@@ -199,7 +199,7 @@ curl_close($ch);
 		/* $FL{0} : Name of the form in redcap; $FL{1]: Title of the form in Redcap */
 
 
-                ?><option value ="<? echo $FL{0}?>"> <? echo $FL{1}?> </option><?
+                ?><option value ="<? echo $FL[0]?>"> <? echo $FL[1]?> </option><?
                 }?>
 
         </select>

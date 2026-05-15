@@ -95,7 +95,7 @@ curl_close($ch);
         for ($In=0;$In <= count($InstList); $In++){
                 $IN = array_values($InstList[$In]);
         ?><tr>
-		<td><? echo $IN{0}?></td> <td> <? echo $IN{1}?></td>
+		<td><? echo $IN[0]?></td> <td> <? echo $IN[1]?></td>
 	  </tr>
 	<?}?>
 

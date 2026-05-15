@@ -469,7 +469,7 @@
 	function Sendmail($body, $recipients, $subject) {
 		$mail             = new PHPMailer();
 		//$body             = "This is a test message!";
-		$body             = eregi_replace("[\]",'',$body);
+		$body             = preg_replace('/[\\\\]/','',$body);
 		$mail->IsSMTP(); // telling the class to use SMTP
 		$mail->SMTPAuth   = true;                  // enable SMTP authentication
 		$mail->SMTPSecure = "tls";                 // sets the prefix to the servier

@@ -965,8 +965,9 @@
 		}
 		
 		$ignoredtables = array();
+		$schematables = array();
 		$err = array();
-		
+
 		/* disable strict mode to prevent truncation errors */
 		$sqlstring = "SET @@global.sql_mode= ''";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__, true);
@@ -998,7 +999,8 @@
 			/* create table section */
 			if (substr($line,0,12) == "CREATE TABLE") {
 				$table = str_replace("`", "", preg_split('/\s+/', $line)[2]);
-				
+				$schematables[] = $table;
+
 				/* check if this table exists */
 				$sqlstring = "show tables like '$table'";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__, true);
@@ -1202,10 +1204,28 @@
 			}
 		}
 		
+		/* find tables in the database that are not in the schema and rename them */
+		$result = MySQLiQuery("SHOW TABLES", __FILE__, __LINE__, true);
+		$dbtables = array();
+		while ($row = mysqli_fetch_row($result)) {
+			$dbtables[] = $row[0];
+		}
+
+		$orphans = array_diff($dbtables, $schematables);
+		if (count($orphans) > 0) {
+			echo "<br><b>Deprecated tables</b> (exist in database but not in schema)<br>";
+			foreach ($orphans as $orphan) {
+				if (strpos($orphan, 'deprecated_') === 0) continue;
+				$newname = "deprecated_$orphan";
+				echo "Table <tt>$orphan</tt> not in schema &mdash; renaming to <tt>$newname</tt><br>";
+				$err[] = SQLQuery("RENAME TABLE `$orphan` TO `$newname`", $debug, __FILE__, __LINE__);
+			}
+		}
+
 		?>
 		</div>
 		<?
-		
+
 		return array(array_unique($ignoredtables), array_filter($err));
 	}
 ?>

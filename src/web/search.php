@@ -6223,7 +6223,7 @@
 				echo "NFS destination directory was blank! go back and enter a destination directory<br>";
 				exit(0);
 			}
-			if (strpos($nfsdir," ") != false) {
+			if (strpos($nfsdir," ") !== false) {
 				echo "Destination directory cannot contain spaces. You must choose a different destination directory that does not have spaces<br>";
 				exit(0);
 			}

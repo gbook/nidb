@@ -700,7 +700,7 @@
 						  <option value='interventionname'> Drugname</option>
 						  <? while ($row = mysqli_fetch_array($resultcols, MYSQLI_ASSOC)) {
 						  $colsname=$row['COLUMN_NAME'];
-						  if (strpos($colsname, "_id") == false){
+						  if (strpos($colsname, "_id") === false){
 							  if (substr($colsname,5)=='startdate' || substr($colsname,5)=='enddate'){
 								  $opt=ucfirst(substr($colsname,5)).'/ time';
 							  }  elseif (substr($colsname,5)=='type'){
