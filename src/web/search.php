@@ -434,8 +434,7 @@
 										$groupname = $row['group_name'];
 										$groupowner = $row['group_owner'];
 										
-										echo "[[$groupid -- [" . $s['s_subjectgroupid'] . "]]]";
-										if ($groupid == $s['s_subjectgroupid']) {
+											if ($groupid == $s['s_subjectgroupid']) {
 											$selected = "selected";
 										}
 										else {
@@ -1561,7 +1560,7 @@
 		if ($s['s_subjectgroupid'] != "") {
 			$subjectids = explode(',', GetIDListFromGroup($s['s_subjectgroupid']));
 			$missingsubjects = array_udiff($subjectids,$subjects, 'strcasecmp');
-			if (count($missingstudies) > 0) {
+			if (count($missingsubjects) > 0) {
 				$sqlstringY = "select uid from subjects where subject_id in (" . implode(',',$missingsubjects) . ")";
 				$resultY = MySQLiQuery($sqlstringY,__FILE__,__LINE__);
 				while ($rowY = mysqli_fetch_array($resultY, MYSQLI_ASSOC)) {
@@ -1706,7 +1705,8 @@
 	/* ------- ValidateSearchVariables ------------ */
 	/* -------------------------------------------- */
 	function ValidateSearchVariables($s) {
-		
+		$msg = "";
+
 		/* check which resultorder (type of result display) was selected */
 		switch ($s['s_resultoutput']) {
 			case 'pipeline':
@@ -1906,7 +1906,7 @@
 			$displayid = $uid;
 			$displayidcolor = "";
 			if (($s_projectids != "") && ($s_projectids != "all")) {
-				if ($displayids[$subject_id] != "") {
+				if (isset($displayids[$subject_id]) && ($displayids[$subject_id] != "")) {
 					$displayid = $displayids[$subject_id];
 					$displayidcolor = "";
 				}
@@ -2534,7 +2534,7 @@
 			$displayid = $uid;
 			$displayidcolor = "";
 			if (($s_projectids != "") && ($s_projectids != "all")) {
-				if ($displayids[$subject_id] != "") {
+				if (isset($displayids[$subject_id]) && ($displayids[$subject_id] != "")) {
 					$displayid = $displayids[$subject_id];
 					$displayidcolor = "";
 				}
@@ -3105,7 +3105,7 @@
 				}
 				$csv .= "\n";
 				foreach ($tables as $uid => $valuepair) {
-					$csv .= $uid . ',' . $tables[$uid]['studynum'] . ',' . $tables[$uid]['altuids'] . ',' . $tables[$uid]['studydate'] . ',' . $tables[$uid]['gender'] . ',' . $tables[$uid]['age'];
+					$csv .= $uid . ',' . $tables[$uid]['studynum'] . ',' . $tables[$uid]['altuids'] . ',' . $tables[$uid]['studydate'] . ',' . $tables[$uid]['gender'] . ',' . $tables[$uid]['studyAge'];
 					foreach ($names2 as $name2 => $blah) {
 						$csv .= ',' . $tables[$uid][$name2];
 					}
@@ -3154,12 +3154,12 @@
 							<td><a href="studies.php?id=<?=$tables[$uid]['studyid']?>"><b><?=$uid?></b></a></td>
 							<td style="border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:9pt; padding:2px;"><?=$tables[$uid]['studydate']?></td>
 							<td style="border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:9pt; padding:2px;"><?=$tables[$uid]['gender']?></td>
-							<td style="border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:9pt; padding:2px;"><?=$tables[$uid]['age']?></td>
+							<td style="border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:9pt; padding:2px;"><?=$tables[$uid]['studyAge']?></td>
 							<td style="border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:9pt; padding:2px;"><?=$tables[$uid]['visittype']?></td>
 							<?
 							$stats[0][$tables[$uid]['gender']]++;
-							$stats[1][] = $tables[$uid]['age'];
-							$csv .= $tables[$uid]['studyid'] . ',' . $tables[$uid]['gender'] . ',' . $tables[$uid]['age'];
+							$stats[1][] = $tables[$uid]['studyAge'];
+							$csv .= $tables[$uid]['studyid'] . ',' . $tables[$uid]['gender'] . ',' . $tables[$uid]['studyAge'];
 							$i=2;
 							foreach ($names as $name => $blah) {
 								$val = $tables[$uid][$name];
@@ -3271,7 +3271,7 @@
 			<?
 				foreach ($names as $name => $blah) {
 					foreach ($tables as $uid => $valuepair) {
-						$lists['age'][] = $tables[$uid]['age'];
+						$lists['age'][] = $tables[$uid]['studyAge'];
 						
 						/* this loop gets the data into an array */
 						foreach ($names as $name => $blah) {
@@ -3441,7 +3441,7 @@
 		if ($s['s_subjectgroupid'] != "") {
 			$subjectids = explode(',', GetIDListFromGroup($s['s_subjectgroupid']));
 			$missingsubjects = array_udiff($subjectids,$subjects, 'strcasecmp');
-			if (count($missingstudies) > 0) {
+			if (count($missingsubjects) > 0) {
 				$sqlstringY = "select uid from subjects where subject_id in (" . implode(',',$missingsubjects) . ")";
 				$resultY = MySQLiQuery($sqlstringY,__FILE__,__LINE__);
 				while ($rowY = mysqli_fetch_array($resultY, MYSQLI_ASSOC)) {

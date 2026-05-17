@@ -1116,7 +1116,7 @@
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		if (mysqli_num_rows($result) > 0) {
 			$sqlstringA = "show tables from " . $GLOBALS['cfg']['mysqldatabase'] . " like '" . strtolower($modality) . "'";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			$result = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
 			if (mysqli_num_rows($result) > 0) {
 				$valid = true;
 			}
@@ -1485,7 +1485,7 @@
 				if ($viewphi) { $viewphi = "View PHI"; }
 				if ($viewdata) { $viewdata = "View data"; }
 				
-				if (($admin == '') && ($admin == '') && ($admin == '') && ($admin == '') && ($admin == '')) {
+				if (($admin == '') && ($modifyphi == '') && ($modifydata == '') && ($viewphi == '') && ($viewdata == '')) {
 					$msg .= "<div class='item'>No permissions to access $projectname</div>";
 				}
 				else {
@@ -2221,8 +2221,9 @@
 	/* -------------------------------------------- */
 	/* ------- find_all_files --------------------- */
 	/* -------------------------------------------- */
-	function find_all_files($dir) 
-	{ 
+	function find_all_files($dir)
+	{
+		$result = [];
 		$root = scandir($dir);
 		foreach($root as $value) 
 		{ 
@@ -4479,7 +4480,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		}
 		
 		$ret = file_put_contents($GLOBALS['cfg']['cfgpath'], $str);
-		if (($ret === false) || ($ret === false) || ($ret == 0)) {
+		if (($ret === false) || ($ret === null) || ($ret == 0)) {
 			?><div class="staticmessage">Problem writing [<?=$GLOBALS['cfg']['cfgpath']?>]. Is the file writeable to the [<?=system("whoami"); ?>] account?</div><?
 		}
 		else {
@@ -4527,7 +4528,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 ";
 		$clustercfgfile = dirname($GLOBALS['cfg']['cfgpath']) . "/nidb-cluster.cfg";
 		$ret = file_put_contents($clustercfgfile, $str);
-		if (($ret === false) || ($ret === false) || ($ret == 0)) {
+		if (($ret === false) || ($ret === null) || ($ret == 0)) {
 			?><div class="staticmessage">Problem writing [<?=$clustercfgfile?>]. Is the file writeable to the [<?=system("whoami"); ?>] account?</div><?
 		}
 		else {

@@ -42,6 +42,7 @@
 	$clustertype = GetVariable("clustertype");
 	$submithostuser = GetVariable("submithostuser");
 	$term = GetVariable("term");
+	$instrumentname = GetVariable("instrumentname");
 
 	$projectid = GetVariable("projectid");
 	$subjectid = GetVariable("subjectid");
@@ -76,6 +77,9 @@
 			break;
 		case 'searchicd10':
 			SearchICD10($term);
+			break;
+		case 'searchobservationnames':
+			SearchObservationNames($term, $instrumentname);
 			break;
 		case 'validatepath':
 			ValidatePath($nfspath);
@@ -133,6 +137,36 @@
 				'code' => $row['icd10_code'],
 				'longdesc' => $row['icd10_longdesc']
 			);
+		}
+		mysqli_stmt_close($stmt);
+
+		echo json_encode($results);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- SearchObservationNames ------------ */
+	/* -------------------------------------------- */
+	function SearchObservationNames($term, $instrumentname) {
+		header('Content-Type: application/json');
+
+		$term = trim($term);
+		if ($term == '') {
+			echo json_encode([]);
+			return;
+		}
+
+		$search = '%' . $term . '%';
+		$results = [];
+
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select distinct observation_name, if(observation_instrument = ?, 0, 1) as priority from observations where observation_name like ? order by priority, observation_name limit 50");
+		mysqli_stmt_bind_param($stmt, 'ss', $instrumentname, $search);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$results[] = [
+				'label' => $row['observation_name'],
+				'value' => $row['observation_name'],
+			];
 		}
 		mysqli_stmt_close($stmt);
 

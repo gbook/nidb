@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: May 14, 2026 at 06:03 PM
+-- Generation Time: May 17, 2026 at 02:26 AM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -325,23 +325,6 @@ CREATE TABLE `audio_series` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `audit_enrollment`
---
-
-CREATE TABLE `audit_enrollment` (
-  `auditenrollment_id` int(11) NOT NULL,
-  `enrollment_id` int(11) DEFAULT NULL,
-  `audit_datetime` datetime DEFAULT NULL,
-  `audit_message` longtext DEFAULT NULL,
-  `audit_number` int(11) DEFAULT NULL,
-  `audit_fixed` tinyint(1) DEFAULT NULL,
-  `audit_fixeddate` datetime DEFAULT NULL,
-  `audit_fixedby` varchar(50) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `audit_results`
 --
 
@@ -368,58 +351,6 @@ CREATE TABLE `audit_results` (
   `db_string` varchar(255) DEFAULT NULL,
   `audit_date` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `audit_series`
---
-
-CREATE TABLE `audit_series` (
-  `auditseries_id` int(11) NOT NULL,
-  `series_id` int(11) DEFAULT NULL,
-  `modality` varchar(50) DEFAULT NULL,
-  `audit_datetime` datetime DEFAULT NULL,
-  `audit_message` longtext DEFAULT NULL,
-  `audit_number` int(11) DEFAULT NULL,
-  `audit_fixed` tinyint(1) DEFAULT NULL,
-  `audit_fixeddate` datetime DEFAULT NULL,
-  `audit_fixedby` varchar(50) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `audit_study`
---
-
-CREATE TABLE `audit_study` (
-  `auditstudy_id` int(11) NOT NULL,
-  `study_id` int(11) DEFAULT NULL,
-  `audit_datetime` datetime DEFAULT NULL,
-  `audit_message` longtext DEFAULT NULL,
-  `audit_number` int(11) DEFAULT NULL,
-  `audit_fixed` tinyint(1) DEFAULT NULL,
-  `audit_fixeddate` datetime DEFAULT NULL,
-  `audit_fixedby` varchar(50) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `audit_subject`
---
-
-CREATE TABLE `audit_subject` (
-  `auditsubject_id` int(11) NOT NULL,
-  `subject_id` int(11) DEFAULT NULL,
-  `audit_datetime` datetime DEFAULT NULL,
-  `audit_message` longtext DEFAULT NULL,
-  `audit_number` int(11) DEFAULT NULL,
-  `audit_fixed` tinyint(1) DEFAULT NULL,
-  `audit_fixeddate` datetime DEFAULT NULL,
-  `audit_fixedby` varchar(50) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -560,18 +491,6 @@ CREATE TABLE `calendar_notifications` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `calendar_projectnotifications`
---
-
-CREATE TABLE `calendar_projectnotifications` (
-  `not_id` int(11) NOT NULL,
-  `not_userid` int(11) DEFAULT NULL,
-  `not_projectid` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `calendar_projects`
 --
 
@@ -689,34 +608,6 @@ CREATE TABLE `consent_series` (
   `ishidden` tinyint(1) DEFAULT NULL,
   `series_duration` bigint(20) DEFAULT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `contacts`
---
-
-CREATE TABLE `contacts` (
-  `contact_id` int(11) NOT NULL,
-  `contact_fullname` varchar(255) DEFAULT NULL,
-  `contact_title` varchar(255) DEFAULT NULL,
-  `contact_address1` varchar(255) DEFAULT NULL,
-  `contact_address2` varchar(255) DEFAULT NULL,
-  `contact_address3` varchar(255) DEFAULT NULL,
-  `contact_city` varchar(255) DEFAULT NULL,
-  `contact_state` varchar(255) DEFAULT NULL,
-  `contact_zip` varchar(255) DEFAULT NULL,
-  `contact_country` varchar(255) DEFAULT NULL,
-  `contact_phone1` varchar(255) DEFAULT NULL,
-  `contact_phone2` varchar(255) DEFAULT NULL,
-  `contact_phone3` varchar(255) DEFAULT NULL,
-  `contact_email1` varchar(255) DEFAULT NULL,
-  `contact_email2` varchar(255) DEFAULT NULL,
-  `contact_email3` varchar(255) DEFAULT NULL,
-  `contact_website` varchar(255) DEFAULT NULL,
-  `contact_company` varchar(255) DEFAULT NULL,
-  `contact_department` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -875,30 +766,6 @@ CREATE TABLE `data_requests` (
   `req_status` varchar(25) DEFAULT NULL,
   `req_results` longtext DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `deprecated_observationinstruments`
---
-
-CREATE TABLE `deprecated_observationinstruments` (
-  `observationinstrument_id` int(11) NOT NULL,
-  `instrument_name` varchar(255) NOT NULL,
-  `instrument_group` varchar(255) NOT NULL,
-  `instrument_notes` longtext NOT NULL COMMENT 'mostly used for coding instructions (1=female, 2=male, etc)'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `deprecated_observationnames`
---
-
-CREATE TABLE `deprecated_observationnames` (
-  `observationname_id` int(11) NOT NULL,
-  `observation_name` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
@@ -1559,82 +1426,6 @@ CREATE TABLE `instance` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `instance_billing`
---
-
-CREATE TABLE `instance_billing` (
-  `billingitem_id` int(11) NOT NULL,
-  `instance_id` int(11) NOT NULL,
-  `invoice_id` int(11) NOT NULL,
-  `pricing_id` int(11) NOT NULL,
-  `quantity` double NOT NULL,
-  `bill_datestart` datetime NOT NULL,
-  `bill_dateend` datetime NOT NULL,
-  `bill_notes` longtext NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `instance_contact`
---
-
-CREATE TABLE `instance_contact` (
-  `instancecontact_id` int(11) NOT NULL,
-  `instance_id` int(11) NOT NULL,
-  `contact_id` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `instance_invoice`
---
-
-CREATE TABLE `instance_invoice` (
-  `invoice_id` int(11) NOT NULL,
-  `invoice_number` int(11) NOT NULL,
-  `instance_id` int(11) NOT NULL,
-  `invoice_date` datetime NOT NULL,
-  `invoice_paid` tinyint(1) NOT NULL,
-  `invoice_paiddate` datetime NOT NULL,
-  `invoice_paymethod` varchar(255) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `instance_pricing`
---
-
-CREATE TABLE `instance_pricing` (
-  `pricing_id` int(11) NOT NULL,
-  `pricing_startdate` datetime NOT NULL,
-  `pricing_enddate` datetime NOT NULL,
-  `pricing_itemname` varchar(255) NOT NULL,
-  `pricing_unit` varchar(255) NOT NULL,
-  `pricing_price` double NOT NULL,
-  `pricing_comments` longtext NOT NULL,
-  `pricing_internal` tinyint(1) NOT NULL DEFAULT 1
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `instance_usage`
---
-
-CREATE TABLE `instance_usage` (
-  `instanceusage_id` int(11) NOT NULL,
-  `instance_id` int(11) NOT NULL,
-  `usage_date` date NOT NULL,
-  `pricing_id` int(11) NOT NULL,
-  `usage_amount` double NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `instruments`
 --
 
@@ -1658,7 +1449,8 @@ CREATE TABLE `instrument_items` (
   `instrument_id` int(11) NOT NULL,
   `item_name` varchar(255) NOT NULL,
   `item_order` int(11) NOT NULL DEFAULT 0,
-  `item_notes` text DEFAULT NULL
+  `item_notes` text DEFAULT NULL,
+  `item_type` enum('int','double','string','timeseries') NOT NULL DEFAULT 'string'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
@@ -1837,19 +1629,6 @@ CREATE TABLE `modules` (
   `module_debug` tinyint(1) NOT NULL DEFAULT 0,
   `module_keeplog` tinyint(1) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `module_prefs`
---
-
-CREATE TABLE `module_prefs` (
-  `mp_id` int(11) NOT NULL,
-  `mp_module` varchar(50) NOT NULL,
-  `mp_pref` varchar(255) NOT NULL,
-  `mp_value` varchar(255) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -2473,45 +2252,6 @@ CREATE TABLE `pipeline_dependencies` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `pipeline_download`
---
-
-CREATE TABLE `pipeline_download` (
-  `pipelinedownload_id` int(11) NOT NULL,
-  `pipeline_id` int(11) NOT NULL,
-  `pd_admin` int(11) NOT NULL,
-  `pd_protocol` varchar(255) NOT NULL,
-  `pd_dirformat` varchar(50) NOT NULL,
-  `pd_nfsdir` longtext NOT NULL,
-  `pd_anonymize` tinyint(1) NOT NULL,
-  `pd_gzip` tinyint(1) NOT NULL,
-  `pd_preserveseries` tinyint(1) NOT NULL,
-  `pd_groupbyprotocol` tinyint(1) NOT NULL COMMENT 'example: all GO1 series are in a group',
-  `pd_onlynew` tinyint(1) NOT NULL COMMENT 'only download data collected after this rule was created',
-  `pd_filetype` varchar(20) NOT NULL,
-  `pd_modality` varchar(20) NOT NULL,
-  `pd_behformat` varchar(25) NOT NULL,
-  `pd_behdirrootname` varchar(50) NOT NULL,
-  `pd_createdate` datetime NOT NULL,
-  `pd_status` varchar(25) NOT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `pipeline_groups`
---
-
-CREATE TABLE `pipeline_groups` (
-  `pipelinegroup_id` int(11) NOT NULL,
-  `pipeline_id` int(11) NOT NULL,
-  `group_id` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `pipeline_history`
 --
 
@@ -2566,19 +2306,6 @@ CREATE TABLE `pipeline_procs` (
   `pp_currentsubject` int(11) NOT NULL,
   `pp_currentstudy` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `pipeline_software`
---
-
-CREATE TABLE `pipeline_software` (
-  `pipelinesoftware_id` int(11) NOT NULL,
-  `software_name` text NOT NULL,
-  `software_environment` text NOT NULL COMMENT 'commands required to setup the software environment',
-  `software_version` text DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -2704,26 +2431,6 @@ CREATE TABLE `project_checklist` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `project_checklist_orig`
---
-
-CREATE TABLE `project_checklist_orig` (
-  `projectchecklist_id` int(11) NOT NULL,
-  `project_id` int(11) NOT NULL,
-  `item_name` varchar(50) NOT NULL,
-  `item_desc` longtext NOT NULL,
-  `item_order` int(11) NOT NULL,
-  `modality` varchar(35) NOT NULL COMMENT 'Any of the standard NiDB modalities, plus Intervention and Observation',
-  `protocol_name` longtext NOT NULL COMMENT 'ProtocolName for modality, variable name for intervention/obervation',
-  `count` int(11) DEFAULT NULL COMMENT 'total number of this item',
-  `frequency` int(11) DEFAULT NULL COMMENT 'spacing between the items',
-  `frequency_unit` enum('hour','day','week','month','year') DEFAULT NULL,
-  `rdocexperiment_id` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `project_nda_uploads`
 --
 
@@ -2825,20 +2532,6 @@ CREATE TABLE `protocol_group` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `protocol_mapping`
---
-
-CREATE TABLE `protocol_mapping` (
-  `protocolmapping_id` int(11) NOT NULL,
-  `project_id` int(11) DEFAULT NULL COMMENT 'if project_id is null, then this alt name applies to all projects',
-  `protocolname` varchar(255) NOT NULL,
-  `shortname` int(11) DEFAULT NULL,
-  `modality` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci COMMENT='this table maps long protocol name(s) to short names';
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `pr_series`
 --
 
@@ -2931,33 +2624,6 @@ CREATE TABLE `public_downloads` (
   `download_filelist` text DEFAULT NULL,
   `download_packageformat` varchar(255) DEFAULT NULL,
   `download_imageformat` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `public_downloads2`
---
-
-CREATE TABLE `public_downloads2` (
-  `pd_id` int(11) NOT NULL,
-  `pd_createdate` datetime DEFAULT NULL,
-  `pd_expiredate` datetime DEFAULT NULL,
-  `pd_expiredays` int(11) DEFAULT NULL,
-  `pd_createdby` varchar(50) NOT NULL COMMENT 'userid of the owner',
-  `pd_zippedsize` double DEFAULT 0,
-  `pd_unzippedsize` double DEFAULT 0,
-  `pd_filename` varchar(255) DEFAULT NULL,
-  `pd_desc` varchar(255) DEFAULT NULL,
-  `pd_notes` longtext DEFAULT NULL,
-  `pd_filecontents` longtext DEFAULT NULL,
-  `pd_shareinternal` tinyint(1) DEFAULT NULL,
-  `pd_ispublic` tinyint(1) DEFAULT NULL,
-  `pd_registerrequired` tinyint(1) DEFAULT NULL,
-  `pd_password` varchar(255) DEFAULT NULL,
-  `pd_status` varchar(50) DEFAULT NULL,
-  `pd_key` varchar(255) DEFAULT NULL,
-  `pd_numdownloads` bigint(20) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
@@ -3538,20 +3204,6 @@ CREATE TABLE `system_messages` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `system_status`
---
-
-CREATE TABLE `system_status` (
-  `systemstatus_id` int(11) NOT NULL,
-  `status_variable` varchar(255) NOT NULL,
-  `status_value` varchar(255) NOT NULL,
-  `status_desc` longtext NOT NULL,
-  `status_datetime` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `tags`
 --
 
@@ -3589,6 +3241,34 @@ CREATE TABLE `task_series` (
   `ishidden` tinyint(1) DEFAULT NULL,
   `series_duration` bigint(20) DEFAULT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `timeseries`
+--
+
+CREATE TABLE `timeseries` (
+  `timeseries_id` int(11) NOT NULL,
+  `enrollment_id` int(11) NOT NULL,
+  `timeseries_name` varchar(255) NOT NULL,
+  `start_date` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `timeseries_data`
+--
+
+CREATE TABLE `timeseries_data` (
+  `timeseriesdata_id` int(11) NOT NULL,
+  `timeseries_id` int(11) NOT NULL,
+  `time` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `value_int` int(11) DEFAULT NULL,
+  `value_double` double DEFAULT NULL,
+  `value_string` tinytext DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -3778,19 +3458,6 @@ CREATE TABLE `users_pending` (
   `user_midname` varchar(255) NOT NULL,
   `user_lastname` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `user_favorites`
---
-
-CREATE TABLE `user_favorites` (
-  `favorite_id` int(11) NOT NULL,
-  `favorite_type` set('project','subject') NOT NULL,
-  `favorite_objectid` int(11) NOT NULL,
-  `favorite_user` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -4074,38 +3741,10 @@ ALTER TABLE `audio_series`
   ADD PRIMARY KEY (`audioseries_id`);
 
 --
--- Indexes for table `audit_enrollment`
---
-ALTER TABLE `audit_enrollment`
-  ADD PRIMARY KEY (`auditenrollment_id`),
-  ADD KEY `subject_id` (`enrollment_id`);
-
---
 -- Indexes for table `audit_results`
 --
 ALTER TABLE `audit_results`
   ADD PRIMARY KEY (`auditresult_id`);
-
---
--- Indexes for table `audit_series`
---
-ALTER TABLE `audit_series`
-  ADD PRIMARY KEY (`auditseries_id`),
-  ADD KEY `subject_id` (`series_id`);
-
---
--- Indexes for table `audit_study`
---
-ALTER TABLE `audit_study`
-  ADD PRIMARY KEY (`auditstudy_id`),
-  ADD KEY `subject_id` (`study_id`);
-
---
--- Indexes for table `audit_subject`
---
-ALTER TABLE `audit_subject`
-  ADD PRIMARY KEY (`auditsubject_id`),
-  ADD KEY `subject_id` (`subject_id`);
 
 --
 -- Indexes for table `backups`
@@ -4153,12 +3792,6 @@ ALTER TABLE `calendar_notifications`
   ADD PRIMARY KEY (`not_id`);
 
 --
--- Indexes for table `calendar_projectnotifications`
---
-ALTER TABLE `calendar_projectnotifications`
-  ADD PRIMARY KEY (`not_id`);
-
---
 -- Indexes for table `calendar_projects`
 --
 ALTER TABLE `calendar_projects`
@@ -4197,12 +3830,6 @@ ALTER TABLE `consent_series`
   ADD KEY `fk_eeg_series_studies1` (`study_id`);
 
 --
--- Indexes for table `contacts`
---
-ALTER TABLE `contacts`
-  ADD PRIMARY KEY (`contact_id`);
-
---
 -- Indexes for table `cr_series`
 --
 ALTER TABLE `cr_series`
@@ -4238,20 +3865,6 @@ ALTER TABLE `data_requests`
   ADD KEY `req_date` (`req_date`),
   ADD KEY `req_groupid` (`req_groupid`),
   ADD KEY `req_status` (`req_status`);
-
---
--- Indexes for table `deprecated_observationinstruments`
---
-ALTER TABLE `deprecated_observationinstruments`
-  ADD PRIMARY KEY (`observationinstrument_id`),
-  ADD UNIQUE KEY `measure_name` (`instrument_name`);
-
---
--- Indexes for table `deprecated_observationnames`
---
-ALTER TABLE `deprecated_observationnames`
-  ADD PRIMARY KEY (`observationname_id`),
-  ADD UNIQUE KEY `measure_name` (`observation_name`);
 
 --
 -- Indexes for table `diagnosis`
@@ -4467,36 +4080,6 @@ ALTER TABLE `instance`
   ADD UNIQUE KEY `instance_name` (`instance_name`);
 
 --
--- Indexes for table `instance_billing`
---
-ALTER TABLE `instance_billing`
-  ADD PRIMARY KEY (`billingitem_id`);
-
---
--- Indexes for table `instance_contact`
---
-ALTER TABLE `instance_contact`
-  ADD PRIMARY KEY (`instancecontact_id`);
-
---
--- Indexes for table `instance_invoice`
---
-ALTER TABLE `instance_invoice`
-  ADD PRIMARY KEY (`invoice_id`);
-
---
--- Indexes for table `instance_pricing`
---
-ALTER TABLE `instance_pricing`
-  ADD PRIMARY KEY (`pricing_id`);
-
---
--- Indexes for table `instance_usage`
---
-ALTER TABLE `instance_usage`
-  ADD PRIMARY KEY (`instanceusage_id`);
-
---
 -- Indexes for table `instruments`
 --
 ALTER TABLE `instruments`
@@ -4577,12 +4160,6 @@ ALTER TABLE `modality_protocol`
 --
 ALTER TABLE `modules`
   ADD PRIMARY KEY (`module_id`);
-
---
--- Indexes for table `module_prefs`
---
-ALTER TABLE `module_prefs`
-  ADD PRIMARY KEY (`mp_id`);
 
 --
 -- Indexes for table `module_procs`
@@ -4799,19 +4376,6 @@ ALTER TABLE `pipeline_dependencies`
   ADD UNIQUE KEY `pipeline_id` (`pipeline_id`,`parent_id`);
 
 --
--- Indexes for table `pipeline_download`
---
-ALTER TABLE `pipeline_download`
-  ADD PRIMARY KEY (`pipelinedownload_id`);
-
---
--- Indexes for table `pipeline_groups`
---
-ALTER TABLE `pipeline_groups`
-  ADD PRIMARY KEY (`pipelinegroup_id`),
-  ADD UNIQUE KEY `pipeline_id` (`pipeline_id`,`group_id`);
-
---
 -- Indexes for table `pipeline_history`
 --
 ALTER TABLE `pipeline_history`
@@ -4831,12 +4395,6 @@ ALTER TABLE `pipeline_options`
 --
 ALTER TABLE `pipeline_procs`
   ADD PRIMARY KEY (`pp_processid`);
-
---
--- Indexes for table `pipeline_software`
---
-ALTER TABLE `pipeline_software`
-  ADD PRIMARY KEY (`pipelinesoftware_id`);
 
 --
 -- Indexes for table `pipeline_status`
@@ -4882,12 +4440,6 @@ ALTER TABLE `project_checklist`
   ADD KEY `instrument_id` (`instrument_id`);
 
 --
--- Indexes for table `project_checklist_orig`
---
-ALTER TABLE `project_checklist_orig`
-  ADD PRIMARY KEY (`projectchecklist_id`);
-
---
 -- Indexes for table `project_nda_uploads`
 --
 ALTER TABLE `project_nda_uploads`
@@ -4931,13 +4483,6 @@ ALTER TABLE `protocol_group`
   ADD UNIQUE KEY `protocolgroup_name` (`protocolgroup_name`,`protocolgroup_modality`);
 
 --
--- Indexes for table `protocol_mapping`
---
-ALTER TABLE `protocol_mapping`
-  ADD PRIMARY KEY (`protocolmapping_id`),
-  ADD UNIQUE KEY `project_id` (`project_id`,`protocolname`,`shortname`,`modality`);
-
---
 -- Indexes for table `pr_series`
 --
 ALTER TABLE `pr_series`
@@ -4961,12 +4506,6 @@ ALTER TABLE `public_datasets`
 -- Indexes for table `public_downloads`
 --
 ALTER TABLE `public_downloads`
-  ADD PRIMARY KEY (`pd_id`);
-
---
--- Indexes for table `public_downloads2`
---
-ALTER TABLE `public_downloads2`
   ADD PRIMARY KEY (`pd_id`);
 
 --
@@ -5169,12 +4708,6 @@ ALTER TABLE `system_messages`
   ADD PRIMARY KEY (`message_id`);
 
 --
--- Indexes for table `system_status`
---
-ALTER TABLE `system_status`
-  ADD PRIMARY KEY (`systemstatus_id`);
-
---
 -- Indexes for table `tags`
 --
 ALTER TABLE `tags`
@@ -5189,6 +4722,12 @@ ALTER TABLE `task_series`
   ADD PRIMARY KEY (`taskseries_id`),
   ADD KEY `fk_eeg_series_studies1` (`study_id`),
   ADD KEY `fk_task_series_studies1` (`study_id`) USING BTREE;
+
+--
+-- Indexes for table `timeseries`
+--
+ALTER TABLE `timeseries`
+  ADD PRIMARY KEY (`timeseries_id`);
 
 --
 -- Indexes for table `tms_series`
@@ -5247,12 +4786,6 @@ ALTER TABLE `users_pending`
   ADD PRIMARY KEY (`user_id`),
   ADD UNIQUE KEY `user_email` (`user_email`),
   ADD UNIQUE KEY `username` (`username`);
-
---
--- Indexes for table `user_favorites`
---
-ALTER TABLE `user_favorites`
-  ADD PRIMARY KEY (`favorite_id`);
 
 --
 -- Indexes for table `user_instance`
@@ -5411,34 +4944,10 @@ ALTER TABLE `audio_series`
   MODIFY `audioseries_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `audit_enrollment`
---
-ALTER TABLE `audit_enrollment`
-  MODIFY `auditenrollment_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT for table `audit_results`
 --
 ALTER TABLE `audit_results`
   MODIFY `auditresult_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `audit_series`
---
-ALTER TABLE `audit_series`
-  MODIFY `auditseries_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `audit_study`
---
-ALTER TABLE `audit_study`
-  MODIFY `auditstudy_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `audit_subject`
---
-ALTER TABLE `audit_subject`
-  MODIFY `auditsubject_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `backups`
@@ -5483,12 +4992,6 @@ ALTER TABLE `calendar_notifications`
   MODIFY `not_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `calendar_projectnotifications`
---
-ALTER TABLE `calendar_projectnotifications`
-  MODIFY `not_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT for table `calendar_projects`
 --
 ALTER TABLE `calendar_projects`
@@ -5525,12 +5028,6 @@ ALTER TABLE `consent_series`
   MODIFY `consentseries_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `contacts`
---
-ALTER TABLE `contacts`
-  MODIFY `contact_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT for table `cr_series`
 --
 ALTER TABLE `cr_series`
@@ -5559,18 +5056,6 @@ ALTER TABLE `data_dictionary`
 --
 ALTER TABLE `data_requests`
   MODIFY `request_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `deprecated_observationinstruments`
---
-ALTER TABLE `deprecated_observationinstruments`
-  MODIFY `observationinstrument_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `deprecated_observationnames`
---
-ALTER TABLE `deprecated_observationnames`
-  MODIFY `observationname_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `diagnosis`
@@ -5747,36 +5232,6 @@ ALTER TABLE `instance`
   MODIFY `instance_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `instance_billing`
---
-ALTER TABLE `instance_billing`
-  MODIFY `billingitem_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `instance_contact`
---
-ALTER TABLE `instance_contact`
-  MODIFY `instancecontact_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `instance_invoice`
---
-ALTER TABLE `instance_invoice`
-  MODIFY `invoice_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `instance_pricing`
---
-ALTER TABLE `instance_pricing`
-  MODIFY `pricing_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `instance_usage`
---
-ALTER TABLE `instance_usage`
-  MODIFY `instanceusage_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT for table `instruments`
 --
 ALTER TABLE `instruments`
@@ -5841,12 +5296,6 @@ ALTER TABLE `modalities`
 --
 ALTER TABLE `modules`
   MODIFY `module_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `module_prefs`
---
-ALTER TABLE `module_prefs`
-  MODIFY `mp_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `module_procs`
@@ -6017,18 +5466,6 @@ ALTER TABLE `pipeline_dependencies`
   MODIFY `pipelinedep_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `pipeline_download`
---
-ALTER TABLE `pipeline_download`
-  MODIFY `pipelinedownload_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `pipeline_groups`
---
-ALTER TABLE `pipeline_groups`
-  MODIFY `pipelinegroup_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT for table `pipeline_history`
 --
 ALTER TABLE `pipeline_history`
@@ -6039,12 +5476,6 @@ ALTER TABLE `pipeline_history`
 --
 ALTER TABLE `pipeline_options`
   MODIFY `pipelineoptions_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `pipeline_software`
---
-ALTER TABLE `pipeline_software`
-  MODIFY `pipelinesoftware_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `pipeline_status`
@@ -6080,12 +5511,6 @@ ALTER TABLE `projects`
 -- AUTO_INCREMENT for table `project_checklist`
 --
 ALTER TABLE `project_checklist`
-  MODIFY `projectchecklist_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `project_checklist_orig`
---
-ALTER TABLE `project_checklist_orig`
   MODIFY `projectchecklist_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
@@ -6131,12 +5556,6 @@ ALTER TABLE `protocol_group`
   MODIFY `protocolgroup_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `protocol_mapping`
---
-ALTER TABLE `protocol_mapping`
-  MODIFY `protocolmapping_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT for table `pr_series`
 --
 ALTER TABLE `pr_series`
@@ -6158,12 +5577,6 @@ ALTER TABLE `public_datasets`
 -- AUTO_INCREMENT for table `public_downloads`
 --
 ALTER TABLE `public_downloads`
-  MODIFY `pd_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `public_downloads2`
---
-ALTER TABLE `public_downloads2`
   MODIFY `pd_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
@@ -6323,12 +5736,6 @@ ALTER TABLE `system_messages`
   MODIFY `message_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `system_status`
---
-ALTER TABLE `system_status`
-  MODIFY `systemstatus_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT for table `tags`
 --
 ALTER TABLE `tags`
@@ -6339,6 +5746,12 @@ ALTER TABLE `tags`
 --
 ALTER TABLE `task_series`
   MODIFY `taskseries_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `timeseries`
+--
+ALTER TABLE `timeseries`
+  MODIFY `timeseries_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `tms_series`
@@ -6387,12 +5800,6 @@ ALTER TABLE `users`
 --
 ALTER TABLE `users_pending`
   MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `user_favorites`
---
-ALTER TABLE `user_favorites`
-  MODIFY `favorite_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `user_instance`

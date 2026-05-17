@@ -278,8 +278,8 @@
 	function AddRating($seriesid, $modality, $value, $username) {
 		/* check for valid inputs */
 		$modality = strtolower(mysqli_real_escape_string($GLOBALS['linki'], $modality));
-		$modality = strtolower(mysqli_real_escape_string($GLOBALS['linki'], $value));
-		$modality = strtolower(mysqli_real_escape_string($GLOBALS['linki'], $username));
+		$value = mysqli_real_escape_string($GLOBALS['linki'], $value);
+		$username = mysqli_real_escape_string($GLOBALS['linki'], $username);
 		if (!ValidID($seriesid,'Series ID')) { return; }
 
 		$sqlstring = "select user_id from users where username = '$username'";
@@ -328,7 +328,7 @@
 		if ($studyageatscan == "") $studyageatscan = "null"; else $studyageatscan = "'$studyageatscan'";
 		
 		/* update the user */
-		$sqlstring = "update studies set study_experimenter = '$studyexperimenter', study_alternateid = '$studyaltid', study_modality = '$modality', study_datetime = '$studydatetime', study_ageatscan = $studyageatscan, study_height = $studyheight, study_weight = $studyweight, study_type = '$studytype', study_daynum = $studydaynum, study_timepoint = $studytimepoint, study_operator = '$studyoperator', study_performingphysician = '$studyphysician', study_site = '$studysite', study_notes = '$studynotes', study_doradread = '$studydoradread', study_radreaddate = $studyradreaddate, study_radreadfindings = '$studyradreadfindings', study_etsnellenchart = $studyetsnellchart, study_etvergence = '$studyetvergence', study_ettracking = '$studyettracking', study_snpchip = '$studysnpchp', study_status = 'complete' where study_id = $studyid";
+		$sqlstring = "update studies set study_experimenter = '$studyexperimenter', study_alternateid = '$studyaltid', study_modality = '$modality', study_datetime = '$studydatetime', study_ageatscan = $studyageatscan, study_height = $studyheight, study_weight = $studyweight, study_type = '$studytype', study_daynum = $studydaynum, study_timepoint = $studytimepoint, study_operator = '$studyoperator', study_performingphysician = '$studyphysician', study_site = '$studysite', study_notes = '$studynotes', study_doradread = '$studydoradread', study_radreaddate = $studyradreaddate, study_radreadfindings = '$studyradreadfindings', study_etsnellenchart = $studyetsnellchart, study_etvergence = '$studyetvergence', study_ettracking = '$studyettracking', study_snpchip = '$studysnpchip', study_status = 'complete' where study_id = $studyid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		Notice("Study Updated");
@@ -371,7 +371,7 @@
 		$series_datetime = mysqli_real_escape_string($GLOBALS['linki'], $series_datetime);
 		if (!ValidID($studyid,'Study ID')) { return; }
 
-		$sqlstring = "insert into " . strtolower($modality) . "_series (study_id, series_num, series_datetime, series_protocol, series_notes, series_createdby) values ($studyid, '$series_num', '$series_datetime', '$protocol', '$notes', '$username')";
+		$sqlstring = "insert into " . strtolower($modality) . "_series (study_id, series_num, series_datetime, series_protocol, series_notes, series_createdby) values ($studyid, '$series_num', '$series_datetime', '$protocol', '$notes', '" . $GLOBALS['username'] . "')";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		?><div align="center"><span class="message">Series Added</span></div><?
@@ -2001,7 +2001,7 @@
 										<option value="">Select project...</option>
 									<?
 										$sqlstringB = "select a.project_id, b.project_name, b.project_costcenter from enrollment a left join projects b on a.project_id = b.project_id where a.subject_id = $subjectid";
-										echo $sqlstringB;
+										//echo $sqlstringB;
 										$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
 										while ($rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC)) {
 											$project_id = $rowB['project_id'];
@@ -2202,6 +2202,7 @@
 							$sqlstring = "select * from pr_series where study_id = $studyid order by series_num";
 						}
 						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						$lastseriesnum = 0;
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$mrseries_id = $row[$modality . 'series_id'];
 							$series_datetime = date('g:ia',strtotime($row['series_datetime']));
@@ -2267,6 +2268,7 @@
 								$behs = glob($GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/beh/*");
 								$numfiles_beh = count($behs);
 								$totalsize = 0;
+								$beh_size = 0;
 								foreach ($behs as $behfile) {
 									$beh_size += filesize($behfile);
 								}
@@ -2511,16 +2513,16 @@
 							$row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC);
 							$bidsentity = $row3['bidsEntity'];
 							$bidssuffix = $row3['bidsSuffix'];
-							$bidsIntendedForEntity = $row['bidsIntendedForEntity'];
-							$bidsIntendedForTask = $row['bidsIntendedForTask'];
-							$bidsIntendedForRun = $row['bidsIntendedForRun'];
-							$bidsIntendedForSuffix = $row['bidsIntendedForSuffix'];
-							$bidsIntendedForFileExtension = $row['bidsIntendedForFileExtension'];
-							$bidsrun = $row['bidsRun'];
-							$bidsautonumberruns = $row['bidsAutoNumberRuns'];
-							$bidsincludeacquisition = $row['bidsIncludeAcquisition'];
-							$bidstask = $row['bidsTask'];
-							$bidspedirection = $row['bidsPEDirection'];
+							$bidsIntendedForEntity = $row3['bidsIntendedForEntity'];
+							$bidsIntendedForTask = $row3['bidsIntendedForTask'];
+							$bidsIntendedForRun = $row3['bidsIntendedForRun'];
+							$bidsIntendedForSuffix = $row3['bidsIntendedForSuffix'];
+							$bidsIntendedForFileExtension = $row3['bidsIntendedForFileExtension'];
+							$bidsrun = $row3['bidsRun'];
+							$bidsautonumberruns = $row3['bidsAutoNumberRuns'];
+							$bidsincludeacquisition = $row3['bidsIncludeAcquisition'];
+							$bidstask = $row3['bidsTask'];
+							$bidspedirection = $row3['bidsPEDirection'];
 							
 							$bidstitle = "BIDS&#10;&#10;Entity&nbsp;-&nbsp;$bidsentity&#10;BIDS&nbsp;suffix&nbsp;-&nbsp;$bidssuffix&#10;IntendedFor&nbsp;-&nbsp;$bidsintendedfor&#10;Run&nbsp;-&nbsp;$bidsrun&#10;Autonumber&nbsp;runs&nbsp;-&nbsp;$bidsautonumberruns&#10;Task&nbsp;-&nbsp;$bidstask&#10;PE&nbsp;direction&nbsp;-&nbsp;$bidspedirection";
 							
