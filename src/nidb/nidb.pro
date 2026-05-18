@@ -171,6 +171,10 @@ unix: {
     INCLUDEPATH += $$SQUIRRELBIN
     DEPENDPATH += $$SQUIRRELBIN
 
+    # bit7z (required by static libsquirrel)
+    BIT7ZBIN = ../../bin/bit7z
+    LIBS += -L$$BIT7ZBIN -lbit7z64 -ldl
+
     LIBS += -L/usr/local/lib64/
     INCLUDEPATH += /usr/local/include/
 
