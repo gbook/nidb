@@ -122,6 +122,7 @@ bool squirrelPipeline::Get() {
  */
 bool squirrelPipeline::Store() {
     QSqlQuery q(QSqlDatabase::database(databaseUUID));
+    bool isNewObject = (objectID < 0);
 
     //utils::Print(QString("squirrelPipeline has been asked to Store(%1, %2). Current objectID [%3]").arg(PipelineName).arg(Version).arg(objectID));
 
@@ -302,7 +303,8 @@ bool squirrelPipeline::Store() {
     }
 
     /* store any staged filepaths */
-    utils::StoreStagedFileList(databaseUUID, objectID, Pipeline, stagedFiles);
+    if (!isNewObject || !stagedFiles.isEmpty())
+        utils::StoreStagedFileList(databaseUUID, objectID, Pipeline, stagedFiles);
 
     return true;
 }

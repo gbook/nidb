@@ -31,6 +31,30 @@ squirrelAnalysis::squirrelAnalysis(QString dbID)
 }
 
 
+void squirrelAnalysis::Populate(const QSqlQuery &q) {
+    objectID         = q.value("AnalysisRowID").toLongLong();
+    pipelineRowID    = q.value("PipelineRowID").toLongLong();
+    studyRowID       = q.value("StudyRowID").toLongLong();
+    AnalysisName     = q.value("AnalysisName").toString();
+    DateClusterEnd   = q.value("ClusterEndDate").toDateTime();
+    DateClusterStart = q.value("ClusterStartDate").toDateTime();
+    DateEnd          = q.value("EndDate").toDateTime();
+    DateStart        = q.value("StartDate").toDateTime();
+    Hostname         = q.value("Hostname").toString();
+    StatusMessage    = q.value("StatusMessage").toString();
+    if (q.record().contains("PipelineName"))
+        PipelineName = q.value("PipelineName").toString();
+    PipelineVersion  = q.value("PipelineVersion").toInt();
+    RunTime          = q.value("RunTime").toLongLong();
+    SeriesCount      = q.value("NumSeries").toInt();
+    SetupTime        = q.value("SetupTime").toLongLong();
+    Size             = q.value("Size").toLongLong();
+    Status           = q.value("Status").toString();
+    Successful       = q.value("Successful").toBool();
+    valid = true;
+}
+
+
 /* ------------------------------------------------------------ */
 /* ----- Get -------------------------------------------------- */
 /* ------------------------------------------------------------ */
@@ -54,27 +78,7 @@ bool squirrelAnalysis::Get() {
     q.bindValue(":id", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.next()) {
-        q.first();
-
-        /* get the data */
-        AnalysisName = q.value("AnalysisName").toString();
-        DateClusterEnd = q.value("ClusterEndDate").toDateTime();
-        DateClusterStart = q.value("ClusterStartDate").toDateTime();
-        DateEnd = q.value("EndDate").toDateTime();
-        DateStart = q.value("StartDate").toDateTime();
-        Hostname = q.value("Hostname").toString();
-        StatusMessage = q.value("StatusMessage").toString();
-        PipelineName = q.value("PipelineName").toString();
-        PipelineVersion = q.value("PipelineVersion").toInt();
-        RunTime = q.value("RunTime").toLongLong();
-        SeriesCount = q.value("NumSeries").toInt();
-        SetupTime = q.value("SetupTime").toLongLong();
-        Size = q.value("Size").toLongLong();
-        Status = q.value("Status").toString();
-        Successful = q.value("Successful").toBool();
-        objectID = q.value("AnalysisRowID").toLongLong();
-        pipelineRowID = q.value("PipelineRowID").toLongLong();
-        studyRowID = q.value("StudyRowID").toLongLong();
+        Populate(q);
 
         /* get any staged files */
         stagedFiles.clear();
@@ -86,7 +90,6 @@ bool squirrelAnalysis::Get() {
             stagedFiles.append(q.value("StagedPath").toString());
         }
 
-        valid = true;
         return true;
     }
     else {
@@ -111,6 +114,7 @@ bool squirrelAnalysis::Get() {
  */
 bool squirrelAnalysis::Store() {
     QSqlQuery q(QSqlDatabase::database(databaseUUID));
+    bool isNewObject = (objectID < 0);
 
     /* insert if the object doesn't exist ... */
     if (objectID < 0) {
@@ -161,7 +165,7 @@ bool squirrelAnalysis::Store() {
     }
 
     /* store any staged files */
-    if (objectID >= 0) {
+    if ((objectID >= 0) && (!isNewObject || !stagedFiles.isEmpty())) {
         /* delete previously staged files from the database */
         q.prepare("delete from StagedFiles where ObjectRowID = :id and ObjectType = :type");
         q.bindValue(":id", objectID);
@@ -244,38 +248,30 @@ QString squirrelAnalysis::PrintAnalysis() {
 /* ------------------------------------------------------------ */
 QString squirrelAnalysis::VirtualPath() {
 
-    QString vPath;
     QString subjectDir;
     QString studyDir;
-    int subjectRowID = -1;
-
-    /* get the parent study directory */
-    QSqlQuery q(QSqlDatabase::database(databaseUUID));
-    q.prepare("select SubjectRowID, StudyNumber, SequenceNumber from Study where StudyRowID = :studyid");
-    q.bindValue(":studyid", studyRowID);
-    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    if (q.next()) {
-        subjectRowID = q.value("SubjectRowID").toInt();
-        if (studyDirFormat == "orig")
-            studyDir = QString("%1").arg(q.value("StudyNumber").toInt());
-        else
-            studyDir = QString("%1").arg(q.value("SequenceNumber").toInt());
+    if (parentSubjectSeqNum >= 0) {
+        subjectDir = (subjectDirFormat == "orig") ? utils::CleanString(parentSubjectID) : QString::number(parentSubjectSeqNum);
+        studyDir   = (studyDirFormat   == "orig") ? QString::number(parentStudyNumber)  : QString::number(parentStudySeqNum);
+    } else {
+        int parentSubjectRowID = -1;
+        QSqlQuery q(QSqlDatabase::database(databaseUUID));
+        q.prepare("select SubjectRowID, StudyNumber, SequenceNumber from Study where StudyRowID = :studyid");
+        q.bindValue(":studyid", studyRowID);
+        utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        if (q.next()) {
+            parentSubjectRowID = q.value("SubjectRowID").toInt();
+            studyDir = (studyDirFormat == "orig") ? QString::number(q.value("StudyNumber").toInt()) : QString::number(q.value("SequenceNumber").toInt());
+        }
+        q.prepare("select ID, SequenceNumber from Subject where SubjectRowID = :subjectid");
+        q.bindValue(":subjectid", parentSubjectRowID);
+        utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        if (q.next()) {
+            subjectDir = (subjectDirFormat == "orig") ? utils::CleanString(q.value("ID").toString()) : QString::number(q.value("SequenceNumber").toInt());
+        }
     }
 
-    /* get parent subject directory */
-    q.prepare("select ID, SequenceNumber from Subject where SubjectRowID = :subjectid");
-    q.bindValue(":subjectid", subjectRowID);
-    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    if (q.next()) {
-        if (subjectDirFormat == "orig")
-            subjectDir = utils::CleanString(q.value("ID").toString());
-        else
-            subjectDir = QString("%1").arg(q.value("SequenceNumber").toInt());
-    }
-
-    vPath = QString("data/%1/%2/%3").arg(subjectDir).arg(studyDir).arg(PipelineName);
-
-    return vPath;
+    return QString("data/%1/%2/%3").arg(subjectDir).arg(studyDir).arg(PipelineName);
 }
 
 

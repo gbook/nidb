@@ -30,6 +30,34 @@ squirrelSeries::squirrelSeries(QString dbID)
     debug = false;
 }
 
+
+void squirrelSeries::Populate(const QSqlQuery &q) {
+    objectID                   = q.value("SeriesRowID").toLongLong();
+    studyRowID                 = q.value("StudyRowID").toLongLong();
+    if (q.record().contains("SubjectRowID"))
+        subjectRowID           = q.value("SubjectRowID").toLongLong();
+    BidsEntity                 = q.value("BidsEntity").toString();
+    BidsSuffix                 = q.value("BidsSuffix").toString();
+    BidsTask                   = q.value("BidsTask").toString();
+    BidsRun                    = q.value("BidsRun").toString();
+    BidsPhaseEncodingDirection = q.value("BidsPhaseEncodingDirection").toString();
+    BehavioralFileCount        = q.value("BehavioralFileCount").toLongLong();
+    BehavioralSize             = q.value("BehavioralSize").toLongLong();
+    DateTime                   = q.value("Datetime").toDateTime();
+    Description                = q.value("Description").toString();
+    files                      = q.value("Files").toString().split(",");
+    FileCount                  = q.value("FileCount").toLongLong();
+    Protocol                   = q.value("Protocol").toString();
+    Run                        = q.value("Run").toInt();
+    SequenceNumber             = q.value("SequenceNumber").toInt();
+    SeriesNumber               = q.value("SeriesNumber").toLongLong();
+    SeriesUID                  = q.value("SeriesUID").toString();
+    Size                       = q.value("Size").toLongLong();
+    experimentRowID            = q.value("ExperimentRowID").toInt();
+    valid = true;
+}
+
+
 /* ------------------------------------------------------------ */
 /* ----- Get -------------------------------------------------- */
 /* ------------------------------------------------------------ */
@@ -53,39 +81,15 @@ bool squirrelSeries::Get() {
     q.bindValue(":id", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.next()) {
-        /* get the data */
-        BidsEntity = q.value("BidsEntity").toString();
-        BidsSuffix = q.value("BidsSuffix").toString();
-        BidsTask = q.value("BidsTask").toString();
-        BidsRun = q.value("BidsRun").toString();
-        BidsPhaseEncodingDirection = q.value("BidsPhaseEncodingDirection").toString();
-        BehavioralFileCount = q.value("BehavioralFileCount").toLongLong();
-        BehavioralSize = q.value("BehavioralSize").toLongLong();
-        DateTime = q.value("Datetime").toDateTime();
-        Description = q.value("Description").toString();
-        files = q.value("Files").toString().split(",");
-        FileCount = q.value("FileCount").toLongLong();
-        Protocol = q.value("Protocol").toString();
-        Run = q.value("Run").toInt();
-        SequenceNumber = q.value("SequenceNumber").toInt();
-        SeriesNumber = q.value("SeriesNumber").toLongLong();
-        SeriesUID = q.value("SeriesUID").toString();
-        Size = q.value("Size").toLongLong();
-        experimentRowID = q.value("ExperimentRowID").toInt();
-        objectID = q.value("SeriesRowID").toLongLong();
-        studyRowID = q.value("StudyRowID").toLongLong();
-        subjectRowID = q.value("SubjectRowID").toLongLong();
+        Populate(q);
 
         /* get any params */
         params = utils::GetParams(databaseUUID, objectID);
 
         /* get any staged files */
-        //utils::Print(QString("Series contains [%1] files before calling GetStagedFileList").arg(stagedFiles.size()));
         stagedFiles = utils::GetStagedFileList(databaseUUID, objectID, Series);
         stagedBehFiles = utils::GetStagedFileList(databaseUUID, objectID, BehSeries);
-        //utils::Print(QString("Series contains [%1] files AFTER calling GetStagedFileList").arg(stagedFiles.size()));
 
-        valid = true;
         return true;
     }
     else {
@@ -111,6 +115,7 @@ bool squirrelSeries::Get() {
 bool squirrelSeries::Store() {
 
     QSqlQuery q(QSqlDatabase::database(databaseUUID));
+    bool isNewObject = (objectID < 0);
     /* insert if the object doesn't exist ... */
     if (objectID < 0) {
         q.prepare("insert or ignore into Series (StudyRowID, SeriesNumber, Datetime, SeriesUID, Description, Protocol, BidsEntity, BidsSuffix, BidsTask, BidsRun, BidsPhaseEncodingDirection, Run, ExperimentRowID, Size, Files, FileCount, BehavioralSize, BehavioralFileCount, SequenceNumber, VirtualPath) values (:StudyRowID, :SeriesNumber, :Datetime, :SeriesUID, :Description, :Protocol, :BidsEntity, :bidssuffix, :BidsTask, :BidsRun, :BidsPhaseEncodingDirection, :Run, :ExperimentRowID, :Size, :Files, :FileCount, :BehavioralSize, :BehavioralFileCount, :SequenceNumber, :VirtualPath)");
@@ -167,13 +172,50 @@ bool squirrelSeries::Store() {
     }
 
     /* store any params */
-    utils::StoreParams(databaseUUID, objectID, params);
+    if (!isNewObject || !params.isEmpty())
+        utils::StoreParams(databaseUUID, objectID, params);
 
     /* store any staged filepaths */
     //utils::Print(QString("Series contains [%1] files before calling StoreStagedFileList").arg(stagedFiles.size()));
-    utils::StoreStagedFileList(databaseUUID, objectID, Series, stagedFiles);
-    utils::StoreStagedFileList(databaseUUID, objectID, BehSeries, stagedBehFiles);
+    if (!isNewObject || !stagedFiles.isEmpty())
+        utils::StoreStagedFileList(databaseUUID, objectID, Series, stagedFiles);
+    if (!isNewObject || !stagedBehFiles.isEmpty())
+        utils::StoreStagedFileList(databaseUUID, objectID, BehSeries, stagedBehFiles);
     //utils::Print(QString("Series contains [%1] files AFTER calling StoreStagedFileList").arg(stagedFiles.size()));
+
+    return true;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- Store (bulk insert) ---------------------------------- */
+/* ------------------------------------------------------------ */
+bool squirrelSeries::Store(QSqlQuery &q) {
+    q.bindValue(":StudyRowID", studyRowID);
+    q.bindValue(":SeriesNumber", SeriesNumber);
+    q.bindValue(":Datetime", DateTime);
+    q.bindValue(":SeriesUID", SeriesUID);
+    q.bindValue(":Description", Description);
+    q.bindValue(":Protocol", Protocol);
+    q.bindValue(":BidsEntity", BidsEntity);
+    q.bindValue(":bidssuffix", BidsSuffix);
+    q.bindValue(":BidsTask", BidsTask);
+    q.bindValue(":BidsRun", BidsRun);
+    q.bindValue(":BidsPhaseEncodingDirection", BidsPhaseEncodingDirection);
+    q.bindValue(":Run", Run);
+    q.bindValue(":ExperimentRowID", experimentRowID);
+    q.bindValue(":Size", Size);
+    q.bindValue(":Files", files.join(","));
+    q.bindValue(":FileCount", FileCount);
+    q.bindValue(":BehavioralSize", BehavioralSize);
+    q.bindValue(":BehavioralFileCount", BehavioralFileCount);
+    q.bindValue(":SequenceNumber", SequenceNumber);
+    q.bindValue(":VirtualPath", VirtualPath());
+    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    objectID = q.lastInsertId().toInt();
+
+    if (!params.isEmpty())
+        utils::StoreParams(databaseUUID, objectID, params);
 
     return true;
 }
@@ -346,45 +388,32 @@ QJsonObject squirrelSeries::ParamsToJSON() {
  */
 QString squirrelSeries::VirtualPath() {
 
-    QString vPath;
     QString subjectDir;
     QString studyDir;
-    QString seriesDir;
-    int subjectRowID = -1;
-
-    /* get the parent study directory */
-    QSqlQuery q(QSqlDatabase::database(databaseUUID));
-    q.prepare("select SubjectRowID, StudyNumber, SequenceNumber from Study where StudyRowID = :studyid");
-    q.bindValue(":studyid", studyRowID);
-    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    if (q.next()) {
-        subjectRowID = q.value("SubjectRowID").toInt();
-        if (studyDirFormat == "orig")
-            studyDir = QString("%1").arg(q.value("StudyNumber").toInt());
-        else
-            studyDir = QString("%1").arg(q.value("SequenceNumber").toInt());
+    if (parentSubjectSeqNum >= 0) {
+        subjectDir = (subjectDirFormat == "orig") ? utils::CleanString(parentSubjectID) : QString::number(parentSubjectSeqNum);
+        studyDir   = (studyDirFormat   == "orig") ? QString::number(parentStudyNumber)  : QString::number(parentStudySeqNum);
+    } else {
+        int parentSubjectRowID = -1;
+        QSqlQuery q(QSqlDatabase::database(databaseUUID));
+        q.prepare("select SubjectRowID, StudyNumber, SequenceNumber from Study where StudyRowID = :studyid");
+        q.bindValue(":studyid", studyRowID);
+        utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        if (q.next()) {
+            parentSubjectRowID = q.value("SubjectRowID").toInt();
+            studyDir = (studyDirFormat == "orig") ? QString::number(q.value("StudyNumber").toInt()) : QString::number(q.value("SequenceNumber").toInt());
+        }
+        q.prepare("select ID, SequenceNumber from Subject where SubjectRowID = :subjectid");
+        q.bindValue(":subjectid", parentSubjectRowID);
+        utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        if (q.next()) {
+            subjectDir = (subjectDirFormat == "orig") ? utils::CleanString(q.value("ID").toString()) : QString::number(q.value("SequenceNumber").toInt());
+        }
     }
 
-    /* get parent subject directory */
-    q.prepare("select ID, SequenceNumber from Subject where SubjectRowID = :subjectid");
-    q.bindValue(":subjectid", subjectRowID);
-    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    if (q.next()) {
-        if (subjectDirFormat == "orig")
-            subjectDir = utils::CleanString(q.value("ID").toString());
-        else
-            subjectDir = QString("%1").arg(q.value("SequenceNumber").toInt());
-    }
+    QString seriesDir = (seriesDirFormat == "orig") ? QString::number(SeriesNumber) : QString::number(SequenceNumber);
 
-    /* get series directory */
-    if (seriesDirFormat == "orig")
-        seriesDir = QString("%1").arg(SeriesNumber);
-    else
-        seriesDir = QString("%1").arg(SequenceNumber);
-
-    vPath = QString("data/%1/%2/%3").arg(subjectDir).arg(studyDir).arg(seriesDir);
-
-    return vPath;
+    return QString("data/%1/%2/%3").arg(subjectDir).arg(studyDir).arg(seriesDir);
 }
 
 

@@ -127,10 +127,11 @@ linux: {
     HEADERS += $$LZMAINCLUDE/bit7z.hpp
 
     # dcmtk
-    LIBS += -L/usr/local/lib64/
+    LIBS += -L/usr/local/lib/ -L/usr/local/lib64/
     INCLUDEPATH += /usr/local/include/
 
-    LIBS += -ldcmdata \
+    LIBS += -Wl,--start-group \
+		-ldcmdata \
 		-lcmr \
 		-ldcmdata \
 		-ldcmdsig \
@@ -159,6 +160,8 @@ linux: {
 		-lijg16 \
 		-loficonv \
 		-loflog \
-		-lofstd
+		-lofstd \
+		-Wl,--end-group \
+		-lz
 
 }

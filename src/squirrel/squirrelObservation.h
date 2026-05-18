@@ -42,8 +42,10 @@ public:
     QString Error() { return err; }
     QString GetDatabaseUUID() { return databaseUUID; }
     QString PrintObservation();
-    bool Get();             /* gets the object data from the database */
-    bool Store();           /* saves the object data from this object into the database */
+    bool Get();               /* gets the object data from the database */
+    bool Store();             /* saves the object data from this object into the database */
+    bool Store(QSqlQuery &q); /* insert using a pre-prepared query (bulk load) */
+    void Populate(const QSqlQuery &q); /* populate fields from an already-executed SELECT * row */
     bool isValid() { return valid; }
     qint64 GetObjectID() { return objectID; }
     void SetDatabaseUUID(QString dbID) { databaseUUID = dbID; }

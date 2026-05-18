@@ -45,6 +45,8 @@ bids::bids()
  * @return true if loaded successfully, false otherwise
  */
 bool bids::Read(QString dir, squirrel *sqrl) {
+    Q_UNUSED(dir);
+    Q_UNUSED(sqrl);
 
     /* 1) Read participants.tsv to get list of expected subjects
      * 2) Read sub- directories

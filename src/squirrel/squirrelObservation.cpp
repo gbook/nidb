@@ -30,6 +30,25 @@ squirrelObservation::squirrelObservation(QString dbID)
 }
 
 
+void squirrelObservation::Populate(const QSqlQuery &q) {
+    objectID       = q.value("ObservationRowID").toLongLong();
+    subjectRowID   = q.value("SubjectRowID").toLongLong();
+    ObservationName= q.value("ObservationName").toString();
+    DateStart      = q.value("DateStart").toDateTime();
+    DateEnd        = q.value("DateEnd").toDateTime();
+    InstrumentName = q.value("InstrumentName").toString();
+    Rater          = q.value("Rater").toString();
+    Notes          = q.value("Notes").toString();
+    Value          = q.value("Value").toString();
+    Description    = q.value("Description").toString();
+    Duration       = q.value("Duration").toLongLong();
+    DateRecordCreate = q.value("DateRecordCreate").toDateTime();
+    DateRecordEntry  = q.value("DateRecordEntry").toDateTime();
+    DateRecordModify = q.value("DateRecordModify").toDateTime();
+    valid = true;
+}
+
+
 /* ------------------------------------------------------------ */
 /* ----- Get -------------------------------------------------- */
 /* ------------------------------------------------------------ */
@@ -53,24 +72,7 @@ bool squirrelObservation::Get() {
     q.bindValue(":id", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.next()) {
-
-        /* get the data */
-        objectID = q.value("ObservationRowID").toLongLong();
-        subjectRowID = q.value("SubjectRowID").toLongLong();
-        ObservationName = q.value("ObservationName").toString();
-        DateStart = q.value("DateStart").toDateTime();
-        DateEnd = q.value("DateEnd").toDateTime();
-        InstrumentName = q.value("InstrumentName").toString();
-        Rater = q.value("Rater").toString();
-        Notes = q.value("Notes").toString();
-        Value = q.value("Value").toString();
-        Description = q.value("Description").toString();
-        Duration = q.value("Duration").toLongLong();
-        DateRecordCreate = q.value("DateRecordCreate").toDateTime();
-        DateRecordEntry = q.value("DateRecordEntry").toDateTime();
-        DateRecordModify = q.value("DateRecordModify").toDateTime();
-
-        valid = true;
+        Populate(q);
         return true;
     }
     else {
@@ -135,6 +137,29 @@ bool squirrelObservation::Store() {
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     }
 
+    return true;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- Store (bulk insert) ---------------------------------- */
+/* ------------------------------------------------------------ */
+bool squirrelObservation::Store(QSqlQuery &q) {
+    q.bindValue(":SubjectRowID", subjectRowID);
+    q.bindValue(":ObservationName", ObservationName);
+    q.bindValue(":DateStart", DateStart);
+    q.bindValue(":DateEnd", DateEnd);
+    q.bindValue(":InstrumentName", InstrumentName);
+    q.bindValue(":Rater", Rater);
+    q.bindValue(":Notes", Notes);
+    q.bindValue(":Value", Value);
+    q.bindValue(":Duration", Duration);
+    q.bindValue(":DateRecordCreate", DateRecordCreate);
+    q.bindValue(":DateRecordEntry", DateRecordEntry);
+    q.bindValue(":DateRecordModify", DateRecordModify);
+    q.bindValue(":Description", Description);
+    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    objectID = q.lastInsertId().toInt();
     return true;
 }
 

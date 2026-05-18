@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: May 17, 2026 at 02:26 AM
+-- Generation Time: May 18, 2026 at 06:02 PM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -1943,6 +1943,7 @@ CREATE TABLE `notification_user` (
 CREATE TABLE `observations` (
   `observation_id` int(11) NOT NULL,
   `enrollment_id` int(11) NOT NULL,
+  `timeseries_id` int(11) NOT NULL,
   `observation_name` varchar(255) NOT NULL,
   `observation_notes` mediumtext DEFAULT NULL,
   `observation_instrument` varchar(250) DEFAULT NULL,
@@ -3249,26 +3250,12 @@ CREATE TABLE `task_series` (
 --
 
 CREATE TABLE `timeseries` (
-  `timeseries_id` int(11) NOT NULL,
-  `enrollment_id` int(11) NOT NULL,
-  `timeseries_name` varchar(255) NOT NULL,
-  `start_date` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `timeseries_data`
---
-
-CREATE TABLE `timeseries_data` (
-  `timeseriesdata_id` int(11) NOT NULL,
-  `timeseries_id` int(11) NOT NULL,
+  `timeseries_id` bigint(11) NOT NULL,
   `time` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `value_int` int(11) DEFAULT NULL,
   `value_double` double DEFAULT NULL,
   `value_string` tinytext DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -5751,7 +5738,7 @@ ALTER TABLE `task_series`
 -- AUTO_INCREMENT for table `timeseries`
 --
 ALTER TABLE `timeseries`
-  MODIFY `timeseries_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `timeseries_id` bigint(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `tms_series`

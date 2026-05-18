@@ -37,8 +37,9 @@ public:
     squirrelAnalysis(QString dbID);
     QJsonObject ToJSON();
     QString PrintAnalysis();
-    bool Get();             /* gets the object data from the database */
-    bool Store();           /* saves the object data from this object into the database */
+    bool Get();               /* gets the object data from the database */
+    bool Store();             /* saves the object data from this object into the database */
+    void Populate(const QSqlQuery &q); /* populate fields from an already-executed SELECT * row */
     bool isValid() { return valid; }
     QString Error() { return err; }
     qint64 GetObjectID() { return objectID; }
@@ -52,6 +53,10 @@ public:
     /* squirrel database variables */
     qint64 studyRowID;          /*!< database row id of the parent study */
     qint64 pipelineRowID;       /*!< database row id of the parent pipeline */
+    QString parentSubjectID;       /*!< cached parent subject ID string (avoids DB lookup in VirtualPath) */
+    int parentSubjectSeqNum = -1;  /*!< cached parent subject sequence number (-1 = not set) */
+    int parentStudyNumber = -1;    /*!< cached parent study number */
+    int parentStudySeqNum = -1;    /*!< cached parent study sequence number */
 
     /* JSON variables */
     QDateTime DateClusterEnd;   /*!< datetime the analysis finished running on the cluster */

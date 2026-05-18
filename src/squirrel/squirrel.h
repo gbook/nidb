@@ -24,6 +24,7 @@
 #define SQUIRREL_H
 
 #include <QString>
+#include <QByteArray>
 #include <QDate>
 #include <QDateTime>
 #include <QDebug>
@@ -203,6 +204,7 @@ private:
     bool AddFilesToArchive(QStringList filePaths, QStringList compressedFilePaths, QString archivePath, QString &m);
     bool CompressDirectoryToArchive(QString dir, QString archivePath, QString &m);
     bool ExtractArchiveToDirectory(QString archivePath, QString destinationPath, QString &m);
+    bool ExtractArchiveFileToMemory(QString archivePath, QString filePath, QByteArray &fileContents);
     bool ExtractArchiveFileToMemory(QString archivePath, QString filePath, QString &fileContents);
     bool Get7zipLibPath();
     bool GetArchiveFileListing(QString archivePath, QString subDir, QStringList &files, QString &m);

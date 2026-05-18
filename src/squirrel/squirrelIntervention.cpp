@@ -29,6 +29,29 @@ squirrelIntervention::squirrelIntervention(QString dbID)
     databaseUUID = dbID;
 }
 
+void squirrelIntervention::Populate(const QSqlQuery &q) {
+    objectID            = q.value("InterventionRowID").toLongLong();
+    subjectRowID        = q.value("SubjectRowID").toLongLong();
+    AdministrationRoute = q.value("AdministrationRoute").toString();
+    DateEnd             = q.value("DateEnd").toDateTime();
+    DateRecordCreate    = q.value("DateRecordCreate").toDateTime();
+    DateRecordEntry     = q.value("DateRecordEntry").toDateTime();
+    DateRecordModify    = q.value("DateRecordModify").toDateTime();
+    DateStart           = q.value("DateStart").toDateTime();
+    Description         = q.value("Description").toString();
+    DoseAmount          = q.value("DoseAmount").toDouble();
+    DoseFrequency       = q.value("DoseFrequency").toString();
+    DoseKey             = q.value("DoseKey").toString();
+    DoseString          = q.value("DoseString").toString();
+    DoseUnit            = q.value("DoseUnit").toString();
+    InterventionClass   = q.value("InterventionClass").toString();
+    InterventionName    = q.value("InterventionName").toString();
+    Notes               = q.value("Notes").toString();
+    Rater               = q.value("Rater").toString();
+    valid = true;
+}
+
+
 /* ------------------------------------------------------------ */
 /* ----- Get -------------------------------------------------- */
 /* ------------------------------------------------------------ */
@@ -52,28 +75,7 @@ bool squirrelIntervention::Get() {
     q.bindValue(":id", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.next()) {
-
-        /* get the data */
-        AdministrationRoute = q.value("AdministrationRoute").toString();
-        DateEnd = q.value("DateEnd").toDateTime();
-        DateRecordCreate = q.value("DateRecordCreate").toDateTime();
-        DateRecordEntry = q.value("DateRecordEntry").toDateTime();
-        DateRecordModify = q.value("DateRecordModify").toDateTime();
-        DateStart = q.value("DateStart").toDateTime();
-        Description = q.value("Description").toString();
-        DoseAmount = q.value("DoseAmount").toDouble();
-        DoseFrequency = q.value("DoseFrequency").toString();
-        DoseKey = q.value("DoseKey").toString();
-        DoseString = q.value("DoseString").toString();
-        DoseUnit = q.value("DoseUnit").toString();
-        InterventionClass = q.value("InterventionClass").toString();
-        InterventionName = q.value("InterventionName").toString();
-        Notes = q.value("Notes").toString();
-        Rater = q.value("Rater").toString();
-        objectID = q.value("InterventionRowID").toLongLong();
-        subjectRowID = q.value("SubjectRowID").toLongLong();
-
-        valid = true;
+        Populate(q);
         return true;
     }
     else {
@@ -148,6 +150,36 @@ bool squirrelIntervention::Store() {
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     }
 
+    return true;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- Store (bulk insert) ---------------------------------- */
+/* ------------------------------------------------------------ */
+bool squirrelIntervention::Store(QSqlQuery &q) {
+    q.bindValue(":SubjectRowID", subjectRowID);
+    q.bindValue(":InterventionName", InterventionName);
+    q.bindValue(":DateStart", DateStart);
+    q.bindValue(":DateEnd", DateEnd);
+    q.bindValue(":DateRecordCreate", DateRecordCreate);
+    q.bindValue(":DateRecordEntry", DateRecordEntry);
+    q.bindValue(":DateRecordModify", DateRecordModify);
+    q.bindValue(":DoseString", DoseString);
+    q.bindValue(":DoseAmount", DoseAmount);
+    q.bindValue(":DoseFrequency", DoseFrequency);
+    q.bindValue(":AdministrationRoute", AdministrationRoute);
+    q.bindValue(":InterventionClass", InterventionClass);
+    q.bindValue(":DoseKey", DoseKey);
+    q.bindValue(":DoseUnit", DoseUnit);
+    q.bindValue(":FrequencyModifier", QVariant());
+    q.bindValue(":FrequencyValue", QVariant());
+    q.bindValue(":FrequencyUnit", QVariant());
+    q.bindValue(":Description", Description);
+    q.bindValue(":Rater", Rater);
+    q.bindValue(":Notes", Notes);
+    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    objectID = q.lastInsertId().toInt();
     return true;
 }
 

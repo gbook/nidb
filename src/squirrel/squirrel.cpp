@@ -306,15 +306,15 @@ bool squirrel::Read() {
     QElapsedTimer timer;
     timer.start();
 
-    QString jsonstr;
+    QByteArray jsonbytes;
     utils::Print("Extracting squirrel package header...");
-    if (!ExtractArchiveFileToMemory(GetPackagePath(), "squirrel.json", jsonstr)) {
+    if (!ExtractArchiveFileToMemory(GetPackagePath(), "squirrel.json", jsonbytes)) {
         Log(QString("Error reading squirrel package. Unable to find squirrel.json"));
         utils::Print(QString("Error reading squirrel package. Unable to find squirrel.json"));
         return false;
     }
     else {
-        Debug(QString("Extracted package header [%1]").arg(utils::HumanReadableSize(jsonstr.size())), __FUNCTION__);
+        Debug(QString("Extracted package header [%1]").arg(utils::HumanReadableSize(jsonbytes.size())), __FUNCTION__);
     }
 
     double elapsedSec = static_cast<double>(timer.elapsed())/1000.0;
@@ -323,8 +323,15 @@ bool squirrel::Read() {
     timer.restart();
 
     /* get the JSON document and root object */
-    QJsonDocument d = QJsonDocument::fromJson(jsonstr.toUtf8());
+    QJsonDocument d = QJsonDocument::fromJson(jsonbytes);
     QJsonObject root = d.object();
+
+    QSqlDatabase dbconn = QSqlDatabase::database(databaseUUID);
+    if (!dbconn.transaction()) {
+        Log(QString("Error starting read transaction. Error [%1]").arg(dbconn.lastError().text()));
+        utils::Print(QString("Error starting read transaction. Error [%1]").arg(dbconn.lastError().text()));
+        return false;
+    }
 
     /* get the package info */
     QJsonObject pkgObj = root["package"].toObject();
@@ -335,7 +342,6 @@ bool squirrel::Read() {
     License = pkgObj["License"].toString();
     Notes = pkgObj["Notes"].toString();
     PackageFormat = pkgObj["PackageFormat"].toString();
-    PackageName = pkgObj["PackageName"].toString();
     PackageName = pkgObj["PackageName"].toString();
     Readme = pkgObj["Readme"].toString();
     SeriesDirFormat = pkgObj["SeriesDirectoryFormat"].toString();
@@ -365,10 +371,22 @@ bool squirrel::Read() {
     Debug(QString("TotalFileCount: [%1]").arg(root["TotalFileCount"].toInt()), __FUNCTION__);
     Debug(QString("TotalSize: [%1]").arg(root["TotalSize"].toInt()), __FUNCTION__);
 
+    /* Prepare all bulk-insert queries once to avoid repeated SQLite statement compilation */
+    QSqlQuery qSubjectInsert(dbconn);
+    qSubjectInsert.prepare("insert or ignore into Subject (ID, AltIDs, GUID, DateOfBirth, Sex, Gender, Ethnicity1, Ethnicity2, EnrollmentGroup, EnrollmentStatus, Notes, SequenceNumber, VirtualPath) values (:ID, :AltIDs, :GUID, :DateOfBirth, :Sex, :Gender, :Ethnicity1, :Ethnicity2, :EnrollmentGroup, :EnrollmentStatus, :Notes, :SequenceNumber, :VirtualPath)");
+    QSqlQuery qStudyInsert(dbconn);
+    qStudyInsert.prepare("insert or ignore into Study (SubjectRowID, StudyNumber, Datetime, Age, Height, Weight, Modality, Description, StudyUID, VisitType, DayNumber, TimePoint, Equipment, Notes, SequenceNumber, VirtualPath) values (:SubjectRowID, :StudyNumber, :Datetime, :Age, :Height, :Weight, :Modality, :Description, :StudyUID, :VisitType, :DayNumber, :TimePoint, :Equipment, :Notes, :SequenceNumber, :VirtualPath)");
+    QSqlQuery qSeriesInsert(dbconn);
+    qSeriesInsert.prepare("insert or ignore into Series (StudyRowID, SeriesNumber, Datetime, SeriesUID, Description, Protocol, BidsEntity, BidsSuffix, BidsTask, BidsRun, BidsPhaseEncodingDirection, Run, ExperimentRowID, Size, Files, FileCount, BehavioralSize, BehavioralFileCount, SequenceNumber, VirtualPath) values (:StudyRowID, :SeriesNumber, :Datetime, :SeriesUID, :Description, :Protocol, :BidsEntity, :bidssuffix, :BidsTask, :BidsRun, :BidsPhaseEncodingDirection, :Run, :ExperimentRowID, :Size, :Files, :FileCount, :BehavioralSize, :BehavioralFileCount, :SequenceNumber, :VirtualPath)");
+    QSqlQuery qObservationInsert(dbconn);
+    qObservationInsert.prepare("insert into Observation (SubjectRowID, ObservationName, DateStart, DateEnd, InstrumentName, Rater, Notes, Value, Duration, DateRecordCreate, DateRecordEntry, DateRecordModify, Description) values (:SubjectRowID, :ObservationName, :DateStart, :DateEnd, :InstrumentName, :Rater, :Notes, :Value, :Duration, :DateRecordCreate, :DateRecordEntry, :DateRecordModify, :Description)");
+    QSqlQuery qInterventionInsert(dbconn);
+    qInterventionInsert.prepare("insert into Intervention (SubjectRowID, InterventionName, DateStart, DateEnd, DateRecordCreate, DateRecordEntry, DateRecordModify, DoseString, DoseAmount, DoseFrequency, AdministrationRoute, InterventionClass, DoseKey, DoseUnit, FrequencyModifier, FrequencyValue, FrequencyUnit, Description, Rater, Notes) values (:SubjectRowID, :InterventionName, :DateStart, :DateEnd, :DateRecordCreate, :DateRecordEntry, :DateRecordModify, :DoseString, :DoseAmount, :DoseFrequency, :AdministrationRoute, :InterventionClass, :DoseKey, :DoseUnit, :FrequencyModifier, :FrequencyValue, :FrequencyUnit, :Description, :Rater, :Notes)");
+
     /* loop through and read any subjects */
     utils::Print(QString("\nReading %1 subjects...").arg(jsonSubjects.size()));
     qint64 i(0);
-    for (auto a : jsonSubjects) {
+    for (const auto &a : jsonSubjects) {
         i++;
         Debug(QString("Reading subject %1 of %2 - %3").arg(i).arg(jsonSubjects.size()).arg(QDateTime::currentDateTime().toString("yyyy/MM/dd hh:mm:ss.zzz")));
         //utils::Print(QString("Reading subject %1 of %2 - %3").arg(i).arg(jsonSubjects.size()).arg(QDateTime::currentDateTime().toString("yyyy/MM/dd hh:mm:ss.zzz")), __FUNCTION__);
@@ -388,14 +406,14 @@ bool squirrel::Read() {
         sqrlSubject.Ethnicity1 = jsonSubject["Ethnicity1"].toString();
         sqrlSubject.Ethnicity2 = jsonSubject["Ethnicity2"].toString();
         sqrlSubject.Notes = jsonSubject["Notes"].toString();
-        sqrlSubject.Store();
+        sqrlSubject.Store(qSubjectInsert);
         qint64 subjectRowID = sqrlSubject.GetObjectID();
 
         //Log(QString("Reading subject [%1]").arg(sqrlSubject.ID), __FUNCTION__);
 
         /* loop through and read all studies */
         QJsonArray jsonStudies = jsonSubject["studies"].toArray();
-        for (auto b : jsonStudies) {
+        for (const auto &b : jsonStudies) {
             QJsonObject jsonStudy = b.toObject();
             squirrelStudy sqrlStudy(databaseUUID);
 
@@ -413,14 +431,14 @@ bool squirrel::Read() {
             sqrlStudy.VisitType = jsonStudy["VisitType"].toString();
             sqrlStudy.Weight = jsonStudy["Weight"].toDouble();
             sqrlStudy.subjectRowID = subjectRowID;
-            sqrlStudy.Store();
+            sqrlStudy.Store(qStudyInsert);
             qint64 studyRowID = sqrlStudy.GetObjectID();
 
             Debug(QString("Reading study [%1][%2]").arg(sqrlSubject.ID).arg(sqrlStudy.StudyNumber), __FUNCTION__);
 
             /* loop through and read all series */
             QJsonArray jsonSeries = jsonStudy["series"].toArray();
-            for (auto c : jsonSeries) {
+            for (const auto &c : jsonSeries) {
                 QJsonObject jsonSeries = c.toObject();
                 squirrelSeries sqrlSeries(databaseUUID);
 
@@ -447,10 +465,13 @@ bool squirrel::Read() {
                     /* read any params from the data/Subject/Study/Series/params.json file */
                     QString parms;
                     QString paramsfilepath;
+                    QString seriesPath;
                     #ifdef Q_OS_WINDOWS
-                        paramsfilepath = QString("data\\%1\\%2\\%3\\params.json").arg(sqrlSubject.ID).arg(sqrlStudy.StudyNumber).arg(sqrlSeries.SeriesNumber);
+                        seriesPath = QString("data\\%1\\%2\\%3").arg(sqrlSubject.ID).arg(sqrlStudy.StudyNumber).arg(sqrlSeries.SeriesNumber);
+                        paramsfilepath = seriesPath + "\\params.json";
                     #else
-                        paramsfilepath = QString("data/%1/%2/%3/params.json").arg(sqrlSubject.ID).arg(sqrlStudy.StudyNumber).arg(sqrlSeries.SeriesNumber);
+                        seriesPath = QString("data/%1/%2/%3").arg(sqrlSubject.ID).arg(sqrlStudy.StudyNumber).arg(sqrlSeries.SeriesNumber);
+                        paramsfilepath = seriesPath + "/params.json";
                     #endif
                     if (ExtractArchiveFileToMemory(GetPackagePath(), paramsfilepath, parms)) {
                         sqrlSeries.params = ReadParamsFile(parms);
@@ -461,12 +482,6 @@ bool squirrel::Read() {
                     }
 
                     /* get file listing */
-                    QString seriesPath;
-                    #ifdef Q_OS_WINDOWS
-                        seriesPath = QString("data\\%1\\%2\\%3").arg(sqrlSubject.ID).arg(sqrlStudy.StudyNumber).arg(sqrlSeries.SeriesNumber);
-                    #else
-                        seriesPath = QString("data/%1/%2/%3").arg(sqrlSubject.ID).arg(sqrlStudy.StudyNumber).arg(sqrlSeries.SeriesNumber);
-                    #endif
 
                     QStringList files;
                     QString m;
@@ -476,17 +491,16 @@ bool squirrel::Read() {
                     sqrlSeries.FileCount = files.size();
                 }
 
-                sqrlSeries.Store();
+                sqrlSeries.Store(qSeriesInsert);
             }
 
             /* loop through and read all analyses */
             QJsonArray jsonAnalyses = jsonStudy["analyses"].toArray();
-            for (auto d : jsonAnalyses) {
+            for (const auto &d : jsonAnalyses) {
                 QJsonObject jsonAnalysis = d.toObject();
                 squirrelAnalysis sqrlAnalysis(databaseUUID);
                 sqrlAnalysis.DateClusterEnd = utils::StringToDatetime(jsonAnalysis["DateClusterEnd"].toString());
                 sqrlAnalysis.DateClusterStart = utils::StringToDatetime(jsonAnalysis["DateClusterStart"].toString());
-                sqrlAnalysis.DateStart = utils::StringToDatetime(jsonAnalysis["DateEnd"].toString());
                 sqrlAnalysis.DateStart = utils::StringToDatetime(jsonAnalysis["DateStart"].toString());
                 sqrlAnalysis.Hostname = jsonAnalysis["Hostname"].toString();
                 sqrlAnalysis.StatusMessage = jsonAnalysis["StatusMessage"].toString();
@@ -494,7 +508,7 @@ bool squirrel::Read() {
                 sqrlAnalysis.PipelineVersion = jsonAnalysis["PipelineVersion"].toInt();
                 sqrlAnalysis.RunTime = jsonAnalysis["RunTime"].toInteger();
                 sqrlAnalysis.SeriesCount = jsonAnalysis["SeriesCount"].toInt();
-                sqrlAnalysis.SetupTime = jsonAnalysis["RunTime"].toInteger();
+                sqrlAnalysis.SetupTime = jsonAnalysis["SetupTime"].toInteger();
                 sqrlAnalysis.Size = jsonAnalysis["Size"].toInteger();
                 sqrlAnalysis.Status = jsonAnalysis["Status"].toString();
                 sqrlAnalysis.Successful = jsonAnalysis["Successful"].toBool();
@@ -506,15 +520,11 @@ bool squirrel::Read() {
         }
 
         /* read all observations */
-        QSqlQuery q1(QSqlDatabase::database(databaseUUID)); /* start a transaction to slightly improve SQL insert performance */
-        q1.prepare("begin transaction");
-        utils::SQLQuery(q1, __FUNCTION__, __FILE__, __LINE__);
-
         QJsonArray jsonObservations = jsonSubject["observations"].toArray();
         Debug(QString("Reading [%1] observations").arg(jsonObservations.size()), __FUNCTION__);
         QElapsedTimer timerA;
         timerA.start();
-        for (auto e : jsonObservations) {
+        for (const auto &e : jsonObservations) {
             //utils::Print(QString("Checkpoint A - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
             QJsonObject jsonObservation = e.toObject();
             //utils::Print(QString("Checkpoint B - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
@@ -546,17 +556,14 @@ bool squirrel::Read() {
             //utils::Print(QString("Checkpoint O - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
             sqrlObservation.subjectRowID = subjectRowID;
             //utils::Print(QString("Checkpoint P - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
-            sqrlObservation.Store();
+            sqrlObservation.Store(qObservationInsert);
             //utils::Print(QString("Checkpoint Q - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
         }
-
-        q1.prepare("commit");
-        utils::SQLQuery(q1, __FUNCTION__, __FILE__, __LINE__);
 
         /* read all Interventions */
         QJsonArray jsonInterventions = jsonSubject["Interventions"].toArray();
         Debug(QString("Reading [%1] Interventions").arg(jsonInterventions.size()), __FUNCTION__);
-        for (auto f : jsonInterventions) {
+        for (const auto &f : jsonInterventions) {
             QJsonObject jsonIntervention = f.toObject();
             squirrelIntervention sqrlIntervention(databaseUUID);
             sqrlIntervention.DateEnd = utils::StringToDatetime(jsonIntervention["DateEnd"].toString());
@@ -573,7 +580,7 @@ bool squirrel::Read() {
             sqrlIntervention.Rater = jsonIntervention["Rater"].toString();
             sqrlIntervention.AdministrationRoute = jsonIntervention["AdministrationRoute"].toString();
             sqrlIntervention.subjectRowID = subjectRowID;
-            sqrlIntervention.Store();
+            sqrlIntervention.Store(qInterventionInsert);
         }
     }
 
@@ -581,7 +588,7 @@ bool squirrel::Read() {
     QJsonArray jsonExperiments;
     jsonExperiments = root["experiments"].toArray();
     Debug(QString("Reading [%1] experiments").arg(jsonExperiments.size()), __FUNCTION__);
-    for (auto g : jsonExperiments) {
+    for (const auto &g : jsonExperiments) {
         QJsonObject jsonExperiment = g.toObject();
         squirrelExperiment sqrlExperiment(databaseUUID);
 
@@ -595,7 +602,7 @@ bool squirrel::Read() {
     QJsonArray jsonPipelines;
     jsonPipelines = root["pipelines"].toArray();
     Debug(QString("Reading [%1] pipelines").arg(jsonPipelines.size()), __FUNCTION__);
-    for (auto v : jsonPipelines) {
+    for (const auto &v : jsonPipelines) {
         QJsonObject jsonPipeline = v.toObject();
         squirrelPipeline sqrlPipeline(databaseUUID);
 
@@ -632,14 +639,14 @@ bool squirrel::Read() {
 
         QJsonArray jsonCompleteFiles;
         jsonCompleteFiles = jsonPipeline["PipelineCompleteFiles"].toArray();
-        for (auto v : jsonCompleteFiles) {
+        for (const auto &v : jsonCompleteFiles) {
             sqrlPipeline.PipelineCompleteFiles.append(v.toString());
         }
 
         /* read the pipeline data steps */
         QJsonArray jsonDataSteps;
         jsonDataSteps = jsonPipeline["dataSteps"].toArray();
-        for (auto v : jsonDataSteps) {
+        for (const auto &v : jsonDataSteps) {
             QJsonObject jsonDataStep = v.toObject();
             dataStep ds;
             //ds.NumberImagesCriteria = jsonDataStep["NumberImagesCriteria"].toString();
@@ -653,7 +660,6 @@ bool squirrel::Read() {
             ds.SearchModality = jsonDataStep["SearchModality"].toString();
             ds.SearchNumberBOLDreps = jsonDataStep["SearchNumberBOLDreps"].toString();
             ds.SearchProtocol = jsonDataStep["SearchProtocol"].toString();
-            ds.SearchProtocol = jsonDataStep["SearchProtocol"].toString();
             ds.SearchSeriesCriteria = jsonDataStep["SearchSeriesCriteria"].toString();
             ds.StepNumber = jsonDataStep["StepNumber"].toInt();
             ds.flags.ExportGzip = jsonDataStep["FlagExportGzip"].toBool();
@@ -666,6 +672,13 @@ bool squirrel::Read() {
             sqrlPipeline.dataSteps.append(ds);
         }
         sqrlPipeline.Store();
+    }
+
+    if (!dbconn.commit()) {
+        Log(QString("Error committing read transaction. Error [%1]").arg(dbconn.lastError().text()));
+        utils::Print(QString("Error committing read transaction. Error [%1]").arg(dbconn.lastError().text()));
+        dbconn.rollback();
+        return false;
     }
 
     elapsedSec = static_cast<double>(timer.elapsed())/1000.0;
@@ -705,20 +718,20 @@ bool squirrel::Write() {
     /* ----- 1) Write data. And set the relative paths in the objects ----- */
     /* iterate through subjects */
     QList<squirrelSubject> subjects = GetSubjectList();
-    foreach (squirrelSubject subject, subjects) {
+    for (auto &subject : subjects) {
         qint64 subjectRowID = subject.GetObjectID();
         Debug(QString("Writing subject [%1] to virtualPath [%2]").arg(subject.ID).arg(subject.VirtualPath()));
 
         /* iterate through studies */
         QList<squirrelStudy> studies = GetStudyList(subjectRowID);
-        foreach (squirrelStudy study, studies) {
+        for (auto &study : studies) {
             qint64 studyRowID = study.GetObjectID();
             Debug(QString("Writing study [%1] to virtualPath [%2]").arg(study.StudyNumber).arg(study.VirtualPath()));
 
             /* iterate through series */
             QList<squirrelSeries> serieses = GetSeriesList(studyRowID);
             Debug(QString("Writing [%1] series for [%2][%3]").arg(serieses.size()).arg(subject.ID).arg(study.StudyNumber));
-            foreach (squirrelSeries series, serieses) {
+            for (auto series : serieses) {
                 QString m;
                 QString seriesPath;
                 #ifdef Q_OS_WINDOWS
@@ -863,7 +876,7 @@ bool squirrel::Write() {
     /* add subjects to JSON */
     QList<squirrelSubject> subjectses = GetSubjectList();
     Log(QString("Adding %1 subjects").arg(subjectses.size()));
-    foreach (squirrelSubject subject, subjectses) {
+    for (auto &subject : subjectses) {
         JSONsubjects.append(subject.ToJSON());
     }
 
@@ -872,12 +885,10 @@ bool squirrel::Write() {
     if (groupAnalyses.size() > 0) {
         Log(QString("Adding %1 group-analyses").arg(groupAnalyses.size()));
         QJsonArray JSONgroupanalyses;
-        foreach (squirrelGroupAnalysis g, groupAnalyses) {
-            if (g.Get()) {
-                JSONgroupanalyses.append(g.ToJSON());
-                stagedFiles += g.GetStagedFileList();
-                Log(QString("Added group-analysis [%1]").arg(g.GroupAnalysisName));
-            }
+        for (auto &g : groupAnalyses) {
+            JSONgroupanalyses.append(g.ToJSON());
+            stagedFiles += g.GetStagedFileList();
+            Log(QString("Added group-analysis [%1]").arg(g.GroupAnalysisName));
         }
         data["GroupAnalysisCount"] = JSONgroupanalyses.size();
         data["group-analysis"] = JSONgroupanalyses;
@@ -892,12 +903,10 @@ bool squirrel::Write() {
     if (pipelines.size() > 0) {
         Log(QString("Adding %1 pipelines").arg(pipelines.size()));
         QJsonArray JSONpipelines;
-        foreach (squirrelPipeline p, pipelines) {
-            if (p.Get()) {
-                JSONpipelines.append(p.ToJSON(workingDir));
-                stagedFiles += p.GetStagedFileList();
-                Log(QString("Added pipeline [%1]").arg(p.PipelineName));
-            }
+        for (auto &p : pipelines) {
+            JSONpipelines.append(p.ToJSON(workingDir));
+            stagedFiles += p.GetStagedFileList();
+            Log(QString("Added pipeline [%1]").arg(p.PipelineName));
         }
         root["PipelineCount"] = JSONpipelines.size();
         root["pipelines"] = JSONpipelines;
@@ -908,12 +917,10 @@ bool squirrel::Write() {
     if (exps.size() > 0) {
         Log(QString("Adding %1 experiments").arg(exps.size()));
         QJsonArray JSONexperiments;
-        foreach (squirrelExperiment e, exps) {
-            if (e.Get()) {
-                JSONexperiments.append(e.ToJSON());
-                stagedFiles += e.GetStagedFileList();
-                Log(QString("Added experiment [%1]").arg(e.ExperimentName));
-            }
+        for (auto &e : exps) {
+            JSONexperiments.append(e.ToJSON());
+            stagedFiles += e.GetStagedFileList();
+            Log(QString("Added experiment [%1]").arg(e.ExperimentName));
         }
         root["ExperimentCount"] = JSONexperiments.size();
         root["experiments"] = JSONexperiments;
@@ -924,12 +931,10 @@ bool squirrel::Write() {
     if (dicts.size() > 0) {
         Log(QString("Adding %1 data-dictionaries").arg(dicts.size()));
         QJsonArray JSONdataDictionaries;
-        foreach (squirrelDataDictionary d, dicts) {
-            if (d.Get()) {
-                JSONdataDictionaries.append(d.ToJSON());
-                stagedFiles += d.GetStagedFileList();
-                Log("Added data-dictionary");
-            }
+        for (auto &d : dicts) {
+            JSONdataDictionaries.append(d.ToJSON());
+            stagedFiles += d.GetStagedFileList();
+            Log("Added data-dictionary");
         }
         root["DataDictionaryCount"] = JSONdataDictionaries.size();
         root["data-dictionaries"] = JSONdataDictionaries;
@@ -1062,7 +1067,7 @@ bool squirrel::WriteUpdate() {
     /* add subjects to JSON */
     QList<squirrelSubject> subjectses = GetSubjectList();
     Log(QString("Adding %1 subjects").arg(subjectses.size()));
-    foreach (squirrelSubject subject, subjectses) {
+    for (auto &subject : subjectses) {
         JSONsubjects.append(subject.ToJSON());
         Log("Added subject [" + subject.ID + "]");
     }
@@ -1072,11 +1077,9 @@ bool squirrel::WriteUpdate() {
     if (groupAnalyses.size() > 0) {
         Log(QString("Adding %1 group-analyses").arg(groupAnalyses.size()));
         QJsonArray JSONgroupanalyses;
-        foreach (squirrelGroupAnalysis g, groupAnalyses) {
-            if (g.Get()) {
-                JSONgroupanalyses.append(g.ToJSON());
-                Log(QString("Added group-analysis [%1]").arg(g.GroupAnalysisName));
-            }
+        for (auto &g : groupAnalyses) {
+            JSONgroupanalyses.append(g.ToJSON());
+            Log(QString("Added group-analysis [%1]").arg(g.GroupAnalysisName));
         }
         data["GroupAnalysisCount"] = JSONgroupanalyses.size();
         data["group-analysis"] = JSONgroupanalyses;
@@ -1091,11 +1094,9 @@ bool squirrel::WriteUpdate() {
     if (pipelines.size() > 0) {
         Log(QString("Adding %1 pipelines").arg(pipelines.size()));
         QJsonArray JSONpipelines;
-        foreach (squirrelPipeline p, pipelines) {
-            if (p.Get()) {
-                JSONpipelines.append(p.ToJSON(workingDir));
-                Log(QString("Added pipeline [%1]").arg(p.PipelineName));
-            }
+        for (auto &p : pipelines) {
+            JSONpipelines.append(p.ToJSON(workingDir));
+            Log(QString("Added pipeline [%1]").arg(p.PipelineName));
         }
         root["PipelineCount"] = JSONpipelines.size();
         root["pipelines"] = JSONpipelines;
@@ -1106,11 +1107,9 @@ bool squirrel::WriteUpdate() {
     if (exps.size() > 0) {
         Log(QString("Adding %1 experiments").arg(exps.size()));
         QJsonArray JSONexperiments;
-        foreach (squirrelExperiment e, exps) {
-            if (e.Get()) {
-                JSONexperiments.append(e.ToJSON());
-                Log(QString("Added experiment [%1]").arg(e.ExperimentName));
-            }
+        for (auto &e : exps) {
+            JSONexperiments.append(e.ToJSON());
+            Log(QString("Added experiment [%1]").arg(e.ExperimentName));
         }
         root["ExperimentCount"] = JSONexperiments.size();
         root["experiments"] = JSONexperiments;
@@ -1121,11 +1120,9 @@ bool squirrel::WriteUpdate() {
     if (dicts.size() > 0) {
         Log(QString("Adding %1 data-dictionaries").arg(dicts.size()));
         QJsonArray JSONdataDictionaries;
-        foreach (squirrelDataDictionary d, dicts) {
-            if (d.Get()) {
-                JSONdataDictionaries.append(d.ToJSON());
-                Log("Added data-dictionary");
-            }
+        for (auto &d : dicts) {
+            JSONdataDictionaries.append(d.ToJSON());
+            Log("Added data-dictionary");
         }
         root["DataDictionaryCount"] = JSONdataDictionaries.size();
         root["data-dictionaries"] = JSONdataDictionaries;
@@ -2091,15 +2088,13 @@ QList<squirrelPipeline> squirrel::GetPipelineList() {
 QList<squirrelSubject> squirrel::GetSubjectList() {
     QSqlQuery q(QSqlDatabase::database(databaseUUID));
     QList<squirrelSubject> list;
-    q.prepare("select SubjectRowID from Subject order by ID asc, SequenceNumber asc");
+    q.prepare("select * from Subject order by ID asc, SequenceNumber asc");
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     while (q.next()) {
         squirrelSubject s(databaseUUID);
-        s.SetObjectID(q.value("SubjectRowID").toLongLong());
-        if (s.Get()) {
-            s.SetDirFormat(SubjectDirFormat);
-            list.append(s);
-        }
+        s.Populate(q);
+        s.SetDirFormat(SubjectDirFormat);
+        list.append(s);
     }
 
     return list;
@@ -2118,20 +2113,20 @@ QList<squirrelStudy> squirrel::GetStudyList(qint64 subjectRowID) {
     QSqlQuery q(QSqlDatabase::database(databaseUUID));
     QList<squirrelStudy> list;
     if (subjectRowID < 0) {
-        q.prepare("select StudyRowID from Study order by StudyNumber asc, SequenceNumber asc");
+        q.prepare("select Study.*, Subject.ID as ParentSubjectID, Subject.SequenceNumber as ParentSubjectSeqNum from Study left join Subject on Study.SubjectRowID = Subject.SubjectRowID order by StudyNumber asc, Study.SequenceNumber asc");
     }
     else {
-        q.prepare("select StudyRowID from Study where SubjectRowID = :id order by StudyNumber asc, SequenceNumber asc");
+        q.prepare("select Study.*, Subject.ID as ParentSubjectID, Subject.SequenceNumber as ParentSubjectSeqNum from Study left join Subject on Study.SubjectRowID = Subject.SubjectRowID where Study.SubjectRowID = :id order by StudyNumber asc, Study.SequenceNumber asc");
         q.bindValue(":id", subjectRowID);
     }
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     while (q.next()) {
         squirrelStudy s(databaseUUID);
-        s.SetObjectID(q.value("StudyRowID").toLongLong());
-        if (s.Get()) {
-            s.SetDirFormat(SubjectDirFormat, StudyDirFormat);
-            list.append(s);
-        }
+        s.Populate(q);
+        s.parentSubjectID = q.value("ParentSubjectID").toString();
+        s.parentSubjectSeqNum = q.value("ParentSubjectSeqNum").toInt();
+        s.SetDirFormat(SubjectDirFormat, StudyDirFormat);
+        list.append(s);
     }
     return list;
 }
@@ -2149,24 +2144,26 @@ QList<squirrelSeries> squirrel::GetSeriesList(qint64 studyRowID) {
     QSqlQuery q(QSqlDatabase::database(databaseUUID));
     QList<squirrelSeries> list;
     if (studyRowID < 0) {
-        q.prepare("select SeriesRowID from Series order by SeriesNumber asc, SequenceNumber");
+        q.prepare("select Series.*, Study.SubjectRowID, Study.StudyNumber as ParentStudyNumber, Study.SequenceNumber as ParentStudySeqNum, Subject.ID as ParentSubjectID, Subject.SequenceNumber as ParentSubjectSeqNum from Series left join Study on Series.StudyRowID = Study.StudyRowID left join Subject on Study.SubjectRowID = Subject.SubjectRowID order by SeriesNumber asc, Series.SequenceNumber");
     }
     else {
-        q.prepare("select SeriesRowID from Series where StudyRowID = :id order by SeriesNumber asc, SequenceNumber");
+        q.prepare("select Series.*, Study.SubjectRowID, Study.StudyNumber as ParentStudyNumber, Study.SequenceNumber as ParentStudySeqNum, Subject.ID as ParentSubjectID, Subject.SequenceNumber as ParentSubjectSeqNum from Series left join Study on Series.StudyRowID = Study.StudyRowID left join Subject on Study.SubjectRowID = Subject.SubjectRowID where Series.StudyRowID = :id order by SeriesNumber asc, Series.SequenceNumber");
         q.bindValue(":id", studyRowID);
     }
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     while (q.next()) {
         squirrelSeries s(databaseUUID);
-        s.SetObjectID(q.value("SeriesRowID").toLongLong());
-        if (s.Get()) {
-            s.SetDirFormat(SubjectDirFormat, StudyDirFormat, SeriesDirFormat);
-            list.append(s);
-            Debug(QString("Found SeriesNumber [%1]").arg(s.SeriesNumber), __FUNCTION__);
-        }
-        else {
-            Log(QString("Unable to load SeriesRowID [%1]").arg(s.GetObjectID()));
-        }
+        s.Populate(q);
+        s.parentSubjectID = q.value("ParentSubjectID").toString();
+        s.parentSubjectSeqNum = q.value("ParentSubjectSeqNum").toInt();
+        s.parentStudyNumber = q.value("ParentStudyNumber").toInt();
+        s.parentStudySeqNum = q.value("ParentStudySeqNum").toInt();
+        s.params = utils::GetParams(databaseUUID, s.GetObjectID());
+        s.stagedFiles = utils::GetStagedFileList(databaseUUID, s.GetObjectID(), Series);
+        s.stagedBehFiles = utils::GetStagedFileList(databaseUUID, s.GetObjectID(), BehSeries);
+        s.SetDirFormat(SubjectDirFormat, StudyDirFormat, SeriesDirFormat);
+        list.append(s);
+        Debug(QString("Found SeriesNumber [%1]").arg(s.SeriesNumber), __FUNCTION__);
     }
     Debug(QString("Found [%1] series for StudyRowID [%2]").arg(list.size()).arg(studyRowID), __FUNCTION__);
     return list;
@@ -2184,15 +2181,17 @@ QList<squirrelSeries> squirrel::GetSeriesList(qint64 studyRowID) {
 QList<squirrelAnalysis> squirrel::GetAnalysisList(qint64 studyRowID) {
     QSqlQuery q(QSqlDatabase::database(databaseUUID));
     QList<squirrelAnalysis> list;
-    q.prepare("select AnalysisRowID from Analysis where StudyRowID = :id");
+    q.prepare("select a.*, b.PipelineName, c.StudyNumber as ParentStudyNumber, c.SequenceNumber as ParentStudySeqNum, c.SubjectRowID, d.ID as ParentSubjectID, d.SequenceNumber as ParentSubjectSeqNum from Analysis a left join Pipeline b on a.PipelineRowID = b.PipelineRowID left join Study c on a.StudyRowID = c.StudyRowID left join Subject d on c.SubjectRowID = d.SubjectRowID where a.StudyRowID = :id");
     q.bindValue(":id", studyRowID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     while (q.next()) {
         squirrelAnalysis a(databaseUUID);
-        a.SetObjectID(q.value("AnalysisRowID").toLongLong());
-        if (a.Get()) {
-            list.append(a);
-        }
+        a.Populate(q);
+        a.parentSubjectID = q.value("ParentSubjectID").toString();
+        a.parentSubjectSeqNum = q.value("ParentSubjectSeqNum").toInt();
+        a.parentStudyNumber = q.value("ParentStudyNumber").toInt();
+        a.parentStudySeqNum = q.value("ParentStudySeqNum").toInt();
+        list.append(a);
     }
 
     return list;
@@ -2211,19 +2210,17 @@ QList<squirrelObservation> squirrel::GetObservationList(qint64 subjectRowID) {
     QSqlQuery q(QSqlDatabase::database(databaseUUID));
     QList<squirrelObservation> list;
     if (subjectRowID < 0) {
-        q.prepare("select ObservationRowID from Observation order by InstrumentName asc, ObservationName asc");
+        q.prepare("select * from Observation order by InstrumentName asc, ObservationName asc");
     }
     else {
-        q.prepare("select ObservationRowID from Observation where SubjectRowID = :id");
+        q.prepare("select * from Observation where SubjectRowID = :id");
         q.bindValue(":id", subjectRowID);
     }
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     while (q.next()) {
         squirrelObservation m(databaseUUID);
-        m.SetObjectID(q.value("ObservationRowID").toLongLong());
-        if (m.Get()) {
-            list.append(m);
-        }
+        m.Populate(q);
+        list.append(m);
     }
     return list;
 }
@@ -2240,15 +2237,13 @@ QList<squirrelObservation> squirrel::GetObservationList(qint64 subjectRowID) {
 QList<squirrelIntervention> squirrel::GetInterventionList(qint64 subjectRowID) {
     QSqlQuery q(QSqlDatabase::database(databaseUUID));
     QList<squirrelIntervention> list;
-    q.prepare("select InterventionRowID from Intervention where SubjectRowID = :id");
+    q.prepare("select * from Intervention where SubjectRowID = :id");
     q.bindValue(":id", subjectRowID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     while (q.next()) {
         squirrelIntervention d(databaseUUID);
-        d.SetObjectID(q.value("InterventionRowID").toLongLong());
-        if (d.Get()) {
-            list.append(d);
-        }
+        d.Populate(q);
+        list.append(d);
     }
     return list;
 }
@@ -3151,10 +3146,10 @@ bool squirrel::RemoveObject(ObjectType object, qint64 objectRowID) {
  * @brief Extract a single file from an existing archive and return it as a string
  * @param archivePath Path to the archive
  * @param filePath File path within the archive
- * @param fileContents File contents as a QString
+ * @param fileContents File contents as a QByteArray
  * @return true if successful, false otherwise
  */
-bool squirrel::ExtractArchiveFileToMemory(QString archivePath, QString filePath, QString &fileContents) {
+bool squirrel::ExtractArchiveFileToMemory(QString archivePath, QString filePath, QByteArray &fileContents) {
     Debug(QString("Reading file [%1] from archive [%2]...").arg(filePath).arg(archivePath), __FUNCTION__);
     try {
         using namespace bit7z;
@@ -3174,18 +3169,39 @@ bool squirrel::ExtractArchiveFileToMemory(QString archivePath, QString filePath,
             extractor.extractMatching(archivePath.toStdString(), filePath.toStdString(), buffer);
             Debug(QString("After calling extractMatching() buffer size [%1] bytes").arg(buffer.size()), __FUNCTION__);
         }
-        Debug(QString("Copying buffer to std::string. Buffer size [%1] bytes").arg(buffer.size()), __FUNCTION__);
-        std::string str{buffer.begin(), buffer.end()};
-        Debug(QString("Copying std::string to QString. string size [%1] bytes").arg(str.size()), __FUNCTION__);
-        fileContents = QString::fromStdString(str);
+        Debug(QString("Copying buffer to QByteArray. Buffer size [%1] bytes").arg(buffer.size()), __FUNCTION__);
+        fileContents = QByteArray(reinterpret_cast<const char*>(buffer.data()), static_cast<int>(buffer.size()));
         Debug(QString("Extracted file [%1]. File is [%2] bytes in length").arg(filePath).arg(fileContents.size()), __FUNCTION__);
         return true;
     }
     catch ( const bit7z::BitException& ex ) {
         /* Do something with ex.what()...*/
-        fileContents = "Unable to extract file from archive using bit7z library [" + QString(ex.what()) + "]";
+        fileContents = QByteArray();
+        Debug("Unable to extract file from archive using bit7z library [" + QString(ex.what()) + "]", __FUNCTION__);
         return false;
     }
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- ExtractArchiveFileToMemory --------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief Extract a single file from an existing archive and return it as a string
+ * @param archivePath Path to the archive
+ * @param filePath File path within the archive
+ * @param fileContents File contents as a QString
+ * @return true if successful, false otherwise
+ */
+bool squirrel::ExtractArchiveFileToMemory(QString archivePath, QString filePath, QString &fileContents) {
+    QByteArray bytes;
+    if (!ExtractArchiveFileToMemory(archivePath, filePath, bytes)) {
+        fileContents = "Unable to extract file from archive";
+        return false;
+    }
+
+    fileContents = QString::fromUtf8(bytes);
+    return true;
 }
 
 
@@ -3626,17 +3642,17 @@ QString squirrel::GetSystemTempDir() {
  */
 bool squirrel::GetJsonHeader(QJsonDocument &jdoc) {
 
-    QString jsonstr;
-    if (!ExtractArchiveFileToMemory(GetPackagePath(), "squirrel.json", jsonstr)) {
+    QByteArray jsonbytes;
+    if (!ExtractArchiveFileToMemory(GetPackagePath(), "squirrel.json", jsonbytes)) {
         Log("Error reading squirrel package. Unable to find squirrel.json");
         utils::Print("Error reading squirrel package. Unable to find squirrel.json");
         return false;
     }
     else {
-        Log(QString("Extracted package header [%1]").arg(utils::HumanReadableSize(jsonstr.size())));
+        Log(QString("Extracted package header [%1]").arg(utils::HumanReadableSize(jsonbytes.size())));
     }
 
-    jdoc = QJsonDocument::fromJson(jsonstr.toUtf8());
+    jdoc = QJsonDocument::fromJson(jsonbytes);
     return true;
 }
 

@@ -93,6 +93,7 @@ bool squirrelGroupAnalysis::Get() {
 bool squirrelGroupAnalysis::Store() {
 
     QSqlQuery q(QSqlDatabase::database(databaseUUID));
+    bool isNewObject = (objectID < 0);
 
     /* insert if the object doesn't exist ... */
     if (objectID < 0) {
@@ -120,7 +121,8 @@ bool squirrelGroupAnalysis::Store() {
     }
 
     /* store any staged filepaths */
-    utils::StoreStagedFileList(databaseUUID, objectID, GroupAnalysis, stagedFiles);
+    if (!isNewObject || !stagedFiles.isEmpty())
+        utils::StoreStagedFileList(databaseUUID, objectID, GroupAnalysis, stagedFiles);
 
     return true;
 }

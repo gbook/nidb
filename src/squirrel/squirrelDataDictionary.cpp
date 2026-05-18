@@ -109,6 +109,7 @@ bool squirrelDataDictionary::Get() {
 bool squirrelDataDictionary::Store() {
 
     QSqlQuery q(QSqlDatabase::database(databaseUUID));
+    bool isNewObject = (objectID < 0);
     /* insert if the object doesn't exist ... */
     if (objectID < 0) {
         q.prepare("insert into DataDictionary (FileCount, Size, VirtualPath) values (:FileCount, :Size, :VirtualPath)");
@@ -147,7 +148,8 @@ bool squirrelDataDictionary::Store() {
     }
 
     /* store any staged filepaths */
-    utils::StoreStagedFileList(databaseUUID, objectID, DataDictionary, stagedFiles);
+    if (!isNewObject || !stagedFiles.isEmpty())
+        utils::StoreStagedFileList(databaseUUID, objectID, DataDictionary, stagedFiles);
 
     return true;
 }

@@ -89,6 +89,7 @@ bool squirrelExperiment::Get() {
 bool squirrelExperiment::Store() {
 
     QSqlQuery q(QSqlDatabase::database(databaseUUID));
+    bool isNewObject = (objectID < 0);
     /* insert if the object doesn't exist ... */
     if (objectID < 0) {
         q.prepare("insert or ignore into Experiment (ExperimentName, Size, FileCount, VirtualPath) values (:name, :size, :FileCount, :virtualpath)");
@@ -111,7 +112,8 @@ bool squirrelExperiment::Store() {
     }
 
     /* store any staged filepaths */
-    utils::StoreStagedFileList(databaseUUID, objectID, Experiment, stagedFiles);
+    if (!isNewObject || !stagedFiles.isEmpty())
+        utils::StoreStagedFileList(databaseUUID, objectID, Experiment, stagedFiles);
 
     return true;
 }
