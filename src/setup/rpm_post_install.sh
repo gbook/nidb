@@ -193,7 +193,9 @@ if ((new_installation)); then
     chown nidb:nidb /nidb/data/archive /nidb/data/backup /nidb/data/backupstaging /nidb/data/deleted /nidb/data/dicomincoming /nidb/data/ftp /nidb/data/export /nidb/data/problem /nidb/data/tmp /nidb/data/upload /nidb/data/uploaded /nidb/data/uploadstaging
     chown -R nidb:nidb /var/www/html
 else
-    echo 'Existing installation detected; skipping data, web, and install directory ownership and permission changes.'
+    echo 'Existing installation detected. RPM changes ownership of key directories to root. Now changing ownership back to nidb'
+    chown -R nidb:nidb /var/www/html
+    chown nidb:nidb /nidb/*
 fi
 
 touch /nidb/setup/dbupgrade

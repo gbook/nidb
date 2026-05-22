@@ -1213,12 +1213,21 @@
 
 		$orphans = array_diff($dbtables, $schematables);
 		if (count($orphans) > 0) {
-			echo "<br><b>Deprecated tables</b> (exist in database but not in schema)<br>";
-			foreach ($orphans as $orphan) {
-				if (strpos($orphan, 'deprecated_') === 0) continue;
-				$newname = "deprecated_$orphan";
-				echo "Table <tt>$orphan</tt> not in schema &mdash; renaming to <tt>$newname</tt><br>";
-				$err[] = SQLQuery("RENAME TABLE `$orphan` TO `$newname`", $debug, __FILE__, __LINE__);
+			$toRename = array_filter($orphans, fn($t) => strpos($t, 'deprecated_') !== 0);
+			$alreadyDeprecated = array_filter($orphans, fn($t) => strpos($t, 'deprecated_') === 0);
+			if (count($toRename) > 0) {
+				echo "<br><b>Deprecated tables</b> (exist in database but not in schema)<br>";
+				foreach ($toRename as $orphan) {
+					$newname = "deprecated_$orphan";
+					echo "Table <tt>$orphan</tt> not in schema &mdash; renaming to <tt>$newname</tt><br>";
+					$err[] = SQLQuery("RENAME TABLE `$orphan` TO `$newname`", $debug, __FILE__, __LINE__);
+				}
+			}
+			if (count($alreadyDeprecated) > 0) {
+				echo "<br><b>Already-deprecated tables</b> (skipped)<br>";
+				foreach ($alreadyDeprecated as $t) {
+					echo "Skipping <tt>$t</tt> (already deprecated)<br>";
+				}
 			}
 		}
 

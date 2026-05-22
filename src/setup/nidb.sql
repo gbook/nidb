@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: May 18, 2026 at 06:02 PM
+-- Generation Time: May 21, 2026 at 04:49 PM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -1943,10 +1943,10 @@ CREATE TABLE `notification_user` (
 CREATE TABLE `observations` (
   `observation_id` int(11) NOT NULL,
   `enrollment_id` int(11) NOT NULL,
-  `timeseries_id` int(11) NOT NULL,
   `observation_name` varchar(255) NOT NULL,
   `observation_notes` mediumtext DEFAULT NULL,
   `observation_instrument` varchar(250) DEFAULT NULL,
+  `instrumentitem_id` int(11) DEFAULT NULL,
   `observation_desc` varchar(250) DEFAULT NULL,
   `observation_rater` varchar(50) DEFAULT NULL,
   `study_id` int(11) DEFAULT NULL,
@@ -1957,8 +1957,7 @@ CREATE TABLE `observations` (
   `observation_duration` int(11) DEFAULT NULL,
   `observation_entrydate` datetime DEFAULT NULL,
   `observation_createdate` datetime DEFAULT NULL,
-  `observation_modifydate` timestamp NOT NULL DEFAULT current_timestamp(),
-  `instrument_id` int(11) DEFAULT NULL
+  `observation_modifydate` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
@@ -3251,6 +3250,7 @@ CREATE TABLE `task_series` (
 
 CREATE TABLE `timeseries` (
   `timeseries_id` bigint(11) NOT NULL,
+  `observation_id` int(11) NOT NULL,
   `time` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `value_int` int(11) DEFAULT NULL,
   `value_double` double DEFAULT NULL,
@@ -3857,7 +3857,8 @@ ALTER TABLE `data_requests`
 -- Indexes for table `diagnosis`
 --
 ALTER TABLE `diagnosis`
-  ADD PRIMARY KEY (`diagnosis_id`);
+  ADD PRIMARY KEY (`diagnosis_id`),
+  ADD UNIQUE KEY `enrollment_id` (`enrollment_id`,`icd10_id`);
 
 --
 -- Indexes for table `doc_series`
@@ -4252,8 +4253,7 @@ ALTER TABLE `observations`
   ADD UNIQUE KEY `enrollment_id` (`enrollment_id`,`observation_name`,`observation_startdate`),
   ADD KEY `observation_name` (`observation_name`),
   ADD KEY `enrollment_id_2` (`enrollment_id`),
-  ADD KEY `observation_startdate` (`observation_startdate`),
-  ADD KEY `instrument_id` (`instrument_id`);
+  ADD KEY `observation_startdate` (`observation_startdate`);
 
 --
 -- Indexes for table `ot_series`

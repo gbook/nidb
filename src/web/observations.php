@@ -22,7 +22,7 @@
  // ------------------------------------------------------------------------------
 
 	define("LEGIT_REQUEST", true);
-	
+
 	session_start();
 ?>
 
@@ -39,23 +39,23 @@
 	require "includes_php.php";
 	require "includes_html.php";
 	require "menu.php";
-	
-	//PrintVariable($_POST);
-	
+
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
 	$observationid = GetVariable("observationid");
 	$enrollmentid = GetVariable("enrollmentid");
 	$observationname = GetVariable('observation_name');
 	$observationinstrument = GetVariable('observation_instrument');
+	$instrumentid = GetVariable('instrument_id');
+	$instrumentitemid = GetVariable('instrumentitem_id');
 	$observationvalue = GetVariable('observation_value');
 	$observationdatecompleted = GetVariable('observation_datecompleted');
 	$observationrater = GetVariable('observation_rater');
-						
+
 	/* determine action */
 	switch ($action) {
 		case 'addobservation':
-			AddObservation($enrollmentid, $observationname, $observationvalue, $observationdatecompleted, $observationrater, $observationinstrument);
+			AddObservation($enrollmentid, $observationname, $observationvalue, $observationdatecompleted, $observationrater, $observationinstrument, $instrumentitemid);
 			DisplayObservationList($enrollmentid);
 			break;
 		case 'deleteobservation':
@@ -65,54 +65,48 @@
 		default:
 			DisplayObservationList($enrollmentid);
 	}
-	
-	
+
+
 	/* ------------------------------------ functions ------------------------------------ */
 
-	
+
 	/* -------------------------------------------- */
 	/* ------- AddObservation --------------------- */
 	/* -------------------------------------------- */
-	function AddObservation($enrollmentid, $observationname, $observationvalue, $observationdatecompleted, $observationrater, $observationinstrument) {
-		$observationname = mysqli_real_escape_string($GLOBALS['linki'], $observationname);
+	function AddObservation($enrollmentid, $observationname, $observationvalue, $observationdatecompleted, $observationrater, $observationinstrument, $instrumentitemid) {
 		$observationvalue = mysqli_real_escape_string($GLOBALS['linki'], $observationvalue);
 		$observationdatecompleted = mysqli_real_escape_string($GLOBALS['linki'], $observationdatecompleted);
 		$observationrater = mysqli_real_escape_string($GLOBALS['linki'], $observationrater);
+
+		/* if an instrument item is linked, derive observation_name and observation_instrument from the DB */
+		if ((int)$instrumentitemid > 0) {
+			$stmt = mysqli_prepare($GLOBALS['linki'], "select ii.item_name, ins.instrument_name from instrument_items ii left join instruments ins on ii.instrument_id = ins.instrument_id where ii.instrumentitem_id = ?");
+			mysqli_stmt_bind_param($stmt, 'i', $instrumentitemid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			if ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$observationname = $row['item_name'];
+				$observationinstrument = $row['instrument_name'];
+			}
+			mysqli_stmt_close($stmt);
+		}
+
+		$observationname = mysqli_real_escape_string($GLOBALS['linki'], $observationname);
 		$observationinstrument = mysqli_real_escape_string($GLOBALS['linki'], $observationinstrument);
 
-		//if (is_numeric($observationvalue)) {
-		//	$observationtype = 'n';
-		//	$valuestring = '';
-		//	$valuenum = $observationvalue;
-		//}
-		//else {
-		//	$observationtype = 's';
-		//	$valuestring = $observationvalue;
-		//	$valuenum = '';
-		//}
-		
-		//$sqlstringA = "select observationname_id from observationnames where observation_name = '$observationname'";
-		//$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-		//if (mysqli_num_rows($resultA) > 0) {
-		//	$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-		//	$observationnameid = $rowA['observationname_id'];
-		//}
-		//else {
-		//	$sqlstringA = "insert into observationnames (observation_name) values ('$observationname')";
-		//	$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-		//	$observationnameid = mysqli_insert_id($GLOBALS['linki']);
-		//}
 		if (trim($observationrater) == "") $observationrater = "null";
 		else $observationrater = "'" . trim($observationrater) . "'";
 
 		if (trim($observationinstrument) == "") $observationinstrument = "null";
 		else $observationinstrument = "'" . trim($observationinstrument) . "'";
-		
+
 		if (trim($observationdatecompleted) == "") $observationdatecompleted = "null";
 		else $observationdatecompleted = "'" . trim($observationdatecompleted) . "'";
-		
-		$sqlstring = "insert ignore into observations (enrollment_id, observation_entrydate, observation_name, observation_value, observation_rater, observation_instrument, observation_enddate) values ($enrollmentid, now(), $observationname, '$observationvalue', $observationrater, $observationinstrument, $observationdatecompleted)";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);	
+
+		if ((int)$instrumentitemid > 0) $instrumentitemid_sql = (int)$instrumentitemid;
+		else $instrumentitemid_sql = "null";
+
+		$sqlstring = "insert ignore into observations (enrollment_id, observation_entrydate, observation_name, observation_value, observation_rater, observation_instrument, instrumentitem_id, observation_enddate) values ($enrollmentid, now(), '$observationname', '$observationvalue', $observationrater, $observationinstrument, $instrumentitemid_sql, $observationdatecompleted)";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}
 
 
@@ -121,34 +115,35 @@
 	/* -------------------------------------------- */
 	function DeleteObservation($id) {
 		$sqlstring = "delete from observations where observation_id = $id";
-		//echo "[$sqlstring]";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
+
+		Notice("Observation deleted");
 		Notice("Observation deleted");
 	}
 
-	
+
 	/* -------------------------------------------- */
-	/* ------- DisplayObservationList ----------------- */
+	/* ------- DisplayObservationList ------------- */
 	/* -------------------------------------------- */
 	function DisplayObservationList($enrollmentid) {
-		
-		if ((trim($enrollmentid) == "") || ($enrollment_id < 0)) {
-			?>Invalid or blank enrollment ID [<?=$enrollment_id?>]<?
+
+		if ((trim($enrollmentid) == "") || ($enrollmentid < 0)) {
+			?>Invalid or blank enrollment ID [<?=$enrollmentid?>]<?
 			return;
 		}
-		
-		/* get subject's info for the breadcrumb list */
-		$sqlstring = "select * from enrollment a left join subjects b on a.subject_id = b.subject_id left join projects c on a.project_id = c.project_id where a.enrollment_id = $enrollmentid";
+
+		/* get subject's info and project for the breadcrumb/form */
+		$sqlstring = "select a.*, b.uid, b.subject_id, c.project_name, c.project_id from enrollment a left join subjects b on a.subject_id = b.subject_id left join projects c on a.project_id = c.project_id where a.enrollment_id = $enrollmentid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$uid = $row['uid'];
 		$subjectid = $row['subject_id'];
 		$projectname = $row['project_name'];
-		
+		$projectid = $row['project_id'];
+
 		?>
 		<script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.noStyle.js"></script>
-		
+
 		<div class="ui text container" id="pageloading">
 			<div class="ui inverted segment" align="center">
 				<h2 class="ui inverted header">
@@ -156,70 +151,151 @@
 				</h2>
 			</div>
 		</div>
-		
-		<div class="ui segment">		
-			<form action="observations.php" method="post" class="ui form">
+
+		<!-- Add Instrument Modal -->
+		<div class="ui small modal" id="addInstrumentModal">
+			<div class="header">Add New Instrument</div>
+			<div class="content">
+				<div class="ui form" id="addInstrumentForm">
+					<div class="field">
+						<label>Instrument name <span class="ui red text">*</span></label>
+						<input type="text" id="newInstrumentName" placeholder="Enter instrument name">
+					</div>
+					<div class="field">
+						<label>Notes</label>
+						<textarea id="newInstrumentNotes" rows="2" placeholder="Optional notes"></textarea>
+					</div>
+					<div id="addInstrumentError" class="ui error message" style="display:none"></div>
+				</div>
+			</div>
+			<div class="actions">
+				<div class="ui cancel button">Cancel</div>
+				<div class="ui primary approve button" id="addInstrumentSave">Save instrument</div>
+			</div>
+		</div>
+
+		<!-- Add Instrument Item Modal -->
+		<div class="ui small modal" id="addItemModal">
+			<div class="header">Add New Item to <span id="addItemModalInstrumentName"></span></div>
+			<div class="content">
+				<div class="ui form" id="addItemForm">
+					<div class="field">
+						<label>Item name <span class="ui red text">*</span></label>
+						<input type="text" id="newItemName" placeholder="Enter item name">
+					</div>
+					<div class="field">
+						<label>Type</label>
+						<select id="newItemType" class="ui dropdown">
+							<option value="string">string</option>
+							<option value="int">int</option>
+							<option value="double">double</option>
+							<option value="timeseries">timeseries</option>
+						</select>
+					</div>
+					<div class="field">
+						<label>Notes</label>
+						<textarea id="newItemNotes" rows="2" placeholder="Optional notes"></textarea>
+					</div>
+					<div id="addItemError" class="ui error message" style="display:none"></div>
+				</div>
+			</div>
+			<div class="actions">
+				<div class="ui cancel button">Cancel</div>
+				<div class="ui primary approve button" id="addItemSave">Save item</div>
+			</div>
+		</div>
+
+		<!-- Formalize Instrument Modal -->
+		<div class="ui small modal" id="formalizeInstrumentModal">
+			<div class="header" id="formalizeModalHeader">Create Instrument from Legacy Observations</div>
+			<div class="content">
+				<div class="ui form">
+					<div class="ui info message">
+						This will create a new instrument and convert <b><span id="formalizeConvertCount">0</span> observation(s)</b> project-wide from legacy text strings to linked instrument items.
+					</div>
+					<div class="field">
+						<label>Instrument name</label>
+						<input type="text" id="formalizeInstrumentName">
+					</div>
+					<div class="field">
+						<label>Items to create (<span id="formalizeItemCount">0</span>) &mdash; all added as string type, editable later via Instruments</label>
+						<div id="formalizeItemsList" style="max-height:200px; overflow-y:auto; border:1px solid #ddd; padding:8px; border-radius:4px; background:#fafafa; font-family:monospace; font-size:0.9em"></div>
+					</div>
+					<div id="formalizeError" class="ui error message" style="display:none"></div>
+				</div>
+			</div>
+			<div class="actions">
+				<div class="ui cancel button">Cancel</div>
+				<div class="ui primary approve button" id="formalizeSaveButton">Create &amp; Convert</div>
+			</div>
+		</div>
+
+		<div class="ui raised black segment">
+			<form action="observations.php" method="post" class="ui form" id="addObsForm">
 				<input type="hidden" name="action" value="addobservation">
 				<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
-				
-				<div class="eight fields">
-					<div class="field">
+				<input type="hidden" name="instrument_id" id="instrumentId">
+				<input type="hidden" name="observation_instrument" id="instrumentNameHidden">
+				<input type="hidden" name="instrumentitem_id" id="instrumentitemId">
+
+				<div class="fields">
+					<div class="four wide field">
+						<label>Instrument &nbsp; <span class="ui basic tiny label" style="font-weight:normal">optional but encouraged</span></label>
+						<input type="text" id="instrumentSearch" placeholder="Search instruments..." autocomplete="off">
+						<small><a href="#" id="addInstrumentLink" style="color:#2185d0">+ Add new instrument</a></small>
+					</div>
+					<div class="four wide field">
+						<label>Instrument item</label>
+						<input type="text" id="itemSearch" placeholder="Select instrument first" autocomplete="off" disabled>
+						<small><a href="#" id="addItemLink" style="color:#2185d0; display:none">+ Add new item</a></small>
+					</div>
+					<div class="four wide field">
 						<label>Observation name</label>
-						<input type="text" name="observation_name" size="15" required>
+						<input type="text" name="observation_name" id="observationName" placeholder="Enter name or select instrument/item" required>
 					</div>
-					<div class="field">
-						<label>Instrument</label>
-						<input type="text" name="observation_instrument" size="15">
-					</div>
-					<div class="field">
+					<div class="two wide field">
 						<label>Value</label>
 						<input type="text" name="observation_value" size="10" required>
 					</div>
-					<div class="field">
-						<label>Rater</label>
-						<input type="text" name="observation_rater" size="15" value="<?=$GLOBALS['username']?>">
-					</div>
-					<div class="field">
+				</div>
+				<div class="fields">
+					<div class="four wide field">
 						<label>Start date</label>
 						<input type="datetime-local" name="observation_startdate">
 					</div>
-					<div class="field">
+					<div class="two wide field">
 						<label>Duration</label>
 						<input type="text" name="observation_duration" size="10">
 					</div>
-					<div class="field">
+					<div class="four wide field">
 						<label>End date</label>
 						<input type="datetime-local" name="observation_enddate">
 					</div>
-					<div class="field">
-						<label>.</label>
+					<div class="two wide field">
+						<label>Rater</label>
+						<input type="text" name="observation_rater" size="15" value="<?=$GLOBALS['username']?>">
+					</div>
+					<div class="two wide field">
+						<label>&nbsp;</label>
 						<input type="submit" class="ui primary button" value="Add Observation">
 					</div>
 				</div>
-				
+
 			</form>
 		</div>
-		
+
 		<?
-		$rowdata = array();
-		$sqlstring = "select a.*, e.uid from observations a left join enrollment d on a.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.enrollment_id = $enrollmentid order by a.observation_name";
+		$groups = [];
+		$sqlstring = "select a.*, e.uid, ii.item_name, ins.instrument_name as linked_instrument_name from observations a left join enrollment d on a.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id left join instrument_items ii on a.instrumentitem_id = ii.instrumentitem_id left join instruments ins on ii.instrument_id = ins.instrument_id where a.enrollment_id = $enrollmentid order by a.observation_name";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$observationid = $row['observation_id'];
 			$studyid = $row['study_id'];
 			$seriesid = $row['series_id'];
 			$uid = $row['uid'];
-			$observation_name = $row['observation_name'];
-			$instrument_name = $row['instrument_name'];
-			$observation_value = $row['observation_value'];
-			$observation_rater = $row['observation_rater'];
-			$observation_startdate = $row['observation_startdate'];
-			$observation_enddate = $row['observation_enddate'];
-			$observation_duration = $row['observation_duration'];
-			$observation_entrydate = $row['observation_entrydate'];
-			$observation_createdate = $row['observation_createdate'];
-			$observation_modifydate = $row['observation_modifydate'];
-			
+			$observation_name = $row['item_name'] != '' ? $row['item_name'] : $row['observation_name'];
+			$instrument_name = $row['linked_instrument_name'] != '' ? $row['linked_instrument_name'] : $row['observation_instrument'];
+
 			if ($studyid != "") {
 				$sqlstringA = "select study_num, study_modality from studies where study_id = $studyid";
 				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
@@ -231,127 +307,475 @@
 				$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
 				$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
 				$seriesnum = $rowB['series_num'];
-				
+
 				$series = "$uid$studynum-$seriesnum ($modality)";
 			}
 			else {
 				$series = "";
 			}
 
-			$rowdata[] = array(
+			$entry = array(
 				'observationid' => $observationid,
+				'instrumentitemid' => (int)$row['instrumentitem_id'],
 				'name' => $observation_name,
-				'instrument' => $instrument_name,
-				'value' => $observation_value,
+				'obsInstrument' => $row['observation_instrument'],
+				'instrumentitem' => $row['item_name'],
+				'value' => $row['observation_value'],
 				'series' => $series,
-				'rater' => $observation_rater,
-				'startdate' => $observation_startdate,
-				'duration' => $observation_duration,
-				'enddate' => $observation_enddate,
-				'dateshtml' => "<b>Entry</b> $observation_entrydate<br><b>Create</b> $observation_createdate<br><b>Modify</b> $observation_modifydate"
+				'rater' => $row['observation_rater'],
+				'startdate' => $row['observation_startdate'],
+				'duration' => $row['observation_duration'],
+				'enddate' => $row['observation_enddate'],
+				'dateshtml' => "<b>Entry</b> " . $row['observation_entrydate'] . "<br><b>Create</b> " . $row['observation_createdate'] . "<br><b>Modify</b> " . $row['observation_modifydate']
 			);
+
+			$groupKey = !empty($instrument_name) ? $instrument_name : '__none__';
+			$groups[$groupKey][] = $entry;
 		}
-		$data = json_encode($rowdata, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+
+		/* sort instrument groups alphabetically; move __none__ to end */
+		ksort($groups);
+		if (isset($groups['__none__'])) {
+			$noneRows = $groups['__none__'];
+			unset($groups['__none__']);
+			$groups['__none__'] = $noneRows;
+		}
+
+		$groupsJson = json_encode($groups, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+
+		/* build per-group metadata: whether a real instrument exists, project-wide legacy count, unique item names */
+		$groupMeta = [];
+		$totalObs = 0;
+		$instrumentCount = 0;
+		$unaffiliatedCount = isset($groups['__none__']) ? count($groups['__none__']) : 0;
+		foreach ($groups as $key => $rows) {
+			$totalObs += count($rows);
+			if ($key === '__none__') continue;
+			$instrumentCount++;
+
+			$stmt = mysqli_prepare($GLOBALS['linki'], "select instrument_id from instruments where project_id = ? and instrument_name = ? limit 1");
+			mysqli_stmt_bind_param($stmt, 'is', $projectid, $key);
+			$instrResult = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			$instrRow = mysqli_fetch_array($instrResult, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
+			$hasInstrument = ($instrRow !== false);
+
+			$stmt = mysqli_prepare($GLOBALS['linki'], "select count(*) as cnt from observations o join enrollment e on o.enrollment_id = e.enrollment_id where e.project_id = ? and o.observation_instrument = ? and o.instrumentitem_id is null");
+			mysqli_stmt_bind_param($stmt, 'is', $projectid, $key);
+			$cntResult = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			$cntRow = mysqli_fetch_array($cntResult, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
+
+			$seen = [];
+			$uniqueItems = [];
+			foreach ($rows as $r) {
+				if ($r['name'] !== '' && !isset($seen[$r['name']])) {
+					$seen[$r['name']] = true;
+					$uniqueItems[] = $r['name'];
+				}
+			}
+			sort($uniqueItems);
+
+			$groupMeta[$key] = [
+				'hasInstrument' => $hasInstrument,
+				'instrumentId'  => $hasInstrument ? (int)$instrRow['instrument_id'] : null,
+				'legacyCount'   => (int)$cntRow['cnt'],
+				'uniqueItems'   => $uniqueItems,
+			];
+		}
+		$groupMetaJson = json_encode($groupMeta, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
 		?>
-		<div id="observationgrid" class="ui attached segment" style="height: 65vh; padding: 0;"></div>
-		<div class="ui bottom attached secondary segment">Displaying <span id="rowcount">0</span> rows</div>
+		<p style="color:#666; margin-bottom:6px"><?=$totalObs?> observation<?=$totalObs != 1 ? 's' : ''?> from <?=$instrumentCount?> instrument<?=$instrumentCount != 1 ? 's' : ''?> (<?=$unaffiliatedCount?> unaffiliated observation<?=$unaffiliatedCount != 1 ? 's' : ''?>)</p>
+		<div class="ui styled fluid accordion" id="observationAccordion"></div>
 
 		<script>
-			const rowData = <?=$data?>;
-			let gridApi;
-
-			function updateDisplayedRowCount() {
-				if (!gridApi) {
-					return;
-				}
-				document.getElementById('rowcount').textContent = gridApi.getDisplayedRowCount();
-			}
+			const groupedData = <?=$groupsJson?>;
+			const groupMeta   = <?=$groupMetaJson?>;
+			const PROJECT_ID  = <?=(int)$projectid?>;
 
 			function ObservationDatesHeader() {}
-
 			ObservationDatesHeader.prototype.init = function(params) {
 				this.eGui = document.createElement('span');
 				this.eGui.className = 'observation-html-tooltip';
 				this.eGui.setAttribute('data-html', '<b>Entry</b> Date the value was entered into this database<br><b>Create</b> Date the record was created in this database<br><b>Modify</b> Date the record was modified in this database');
-				this.eGui.innerHTML = 'Database record dates<i class="question circle icon"></i>';
+				this.eGui.innerHTML = 'Entry dates <i class="question circle icon"></i>';
 			};
+			ObservationDatesHeader.prototype.getGui = function() { return this.eGui; };
 
-			ObservationDatesHeader.prototype.getGui = function() {
-				return this.eGui;
-			};
+			function editableCellStyle(params) {
+				if (params.colDef.editable === true || (typeof params.colDef.editable === 'function' && params.colDef.editable(params))) {
+					return { cursor: 'text' };
+				}
+				return { color: '#666' };
+			}
 
-			const gridOptions = {
-				theme: agGrid.themeBalham,
-				columnDefs: [
-					{ headerName: 'Variable', field: 'name', flex: 1.3, minWidth: 180 },
-					{ headerName: 'Instrument', field: 'instrument', flex: 1, minWidth: 150 },
-					{ headerName: 'Value', field: 'value', flex: 1, minWidth: 130 },
-					{ headerName: 'Series', field: 'series', flex: 1, minWidth: 160 },
-					{ headerName: 'Rater', field: 'rater', minWidth: 120, cellStyle: { 'font-size': '9pt' } },
-					{ headerName: 'Start date', field: 'startdate', minWidth: 160 },
-					{ headerName: 'Duration', field: 'duration', minWidth: 110 },
-					{ headerName: 'End date', field: 'enddate', minWidth: 160 },
-					{
-						headerName: 'Delete',
-						field: 'observationid',
-						width: 90,
-						minWidth: 90,
-						maxWidth: 90,
-						filter: false,
-						sortable: false,
-						resizable: false,
-						cellStyle: { 'text-align': 'center' },
-						cellRenderer: function(params) {
-							const link = document.createElement('a');
-							link.href = 'observations.php?action=deleteobservation&observationid=' + params.value + '&enrollmentid=<?=$enrollmentid?>';
-							link.title = 'Delete this variable';
-							link.onclick = function() {
-								return confirm('Are you sure you want to delete this record?');
-							};
-							link.innerHTML = '<i class="red alternate trash icon"></i>';
-							return link;
-						}
-					},
-					{
-						headerName: 'Database record dates',
-						field: 'dateshtml',
-						width: 175,
-						minWidth: 175,
-						maxWidth: 175,
-						filter: false,
-						sortable: false,
-						resizable: false,
-						cellStyle: { 'text-align': 'center' },
-						headerComponent: ObservationDatesHeader,
-						cellRenderer: function(params) {
-							const icon = document.createElement('span');
-							icon.className = 'observation-html-tooltip';
-							icon.setAttribute('data-html', params.value);
-							icon.innerHTML = '<i class="calendar alternate outline icon"></i>';
-							return icon;
-						}
+			function onCellValueChanged(params) {
+				$.post('ajaxapi.php', {
+					action: 'updateobservationdetails',
+					observationid: params.data.observationid,
+					column: params.column.colId,
+					value: params.newValue ?? ''
+				}, function(response) {
+					if (response === 'success') {
+						params.api.flashCells({ rowNodes: [params.node], columns: [params.column.colId] });
+					} else {
+						params.node.setDataValue(params.column.colId, params.oldValue);
 					}
-				],
-				rowData: rowData,
-				defaultColDef: { sortable: true, filter: true, resizable: true },
-				animateRows: false,
-				suppressMovableColumns: true,
-				onFirstDataRendered: updateDisplayedRowCount,
-				onFilterChanged: updateDisplayedRowCount,
-				onModelUpdated: updateDisplayedRowCount
+				}).fail(function() {
+					params.node.setDataValue(params.column.colId, params.oldValue);
+				});
+			}
+
+			const deleteColDef = {
+				headerName: 'Delete',
+				field: 'observationid',
+				width: 90, minWidth: 90, maxWidth: 90,
+				filter: false, sortable: false, resizable: false,
+				cellStyle: { 'text-align': 'center', 'display': 'flex', 'align-items': 'center' },
+				cellRenderer: function(params) {
+					const link = document.createElement('a');
+					link.href = 'observations.php?action=deleteobservation&observationid=' + params.value + '&enrollmentid=<?=$enrollmentid?>';
+					link.title = 'Delete this observation';
+					link.onclick = function() { return confirm('Are you sure you want to delete this record?'); };
+					link.innerHTML = '<i class="large red alternate outline trash icon"></i>';
+					return link;
+				}
 			};
+
+			const datesColDef = {
+				headerName: 'Entry dates',
+				field: 'dateshtml',
+				width: 175, minWidth: 175, maxWidth: 175,
+				filter: false, sortable: false, resizable: false,
+				cellStyle: { 'text-align': 'center', 'display': 'flex', 'align-items': 'center' },
+				headerComponent: ObservationDatesHeader,
+				cellRenderer: function(params) {
+					const icon = document.createElement('span');
+					icon.className = 'observation-html-tooltip';
+					icon.setAttribute('data-html', params.value);
+					icon.innerHTML = '<i class="large calendar alternate outline icon"></i>';
+					return icon;
+				}
+			};
+
+			/* column defs for instrument groups — no Instrument column (shown in accordion header) */
+			const instrColDefs = [
+				{
+					headerName: 'Variable', field: 'name', flex: 1.3, minWidth: 180,
+					editable: function(params) { return !params.data.instrumentitemid; },
+					cellStyle: editableCellStyle
+				},
+				{ headerName: 'Instrument Item', field: 'instrumentitem', flex: 1, minWidth: 150 },
+				{ headerName: 'Value', field: 'value', flex: 1, minWidth: 130, editable: true, cellStyle: editableCellStyle },
+				{ headerName: 'Series', field: 'series', flex: 1, minWidth: 160 },
+				{ headerName: 'Rater', field: 'rater', minWidth: 120, editable: true, cellStyle: function() { return { 'font-size': '9pt', cursor: 'text' }; } },
+				{ headerName: 'Start date', field: 'startdate', minWidth: 160, editable: true, cellStyle: editableCellStyle },
+				{ headerName: 'Duration', field: 'duration', minWidth: 110, editable: true, cellStyle: editableCellStyle },
+				{ headerName: 'End date', field: 'enddate', minWidth: 160, editable: true, cellStyle: editableCellStyle },
+				deleteColDef,
+				datesColDef
+			];
+
+			/* column defs for no-instrument group — drop Instrument Item (always empty), add editable Instrument */
+			const noneInstrumentColDef = { headerName: 'Instrument', field: 'obsInstrument', flex: 1, minWidth: 150, editable: true, cellStyle: editableCellStyle };
+			const noneColDefs = [instrColDefs[0], noneInstrumentColDef, ...instrColDefs.filter(function(c) { return c.field !== 'instrumentitem' && c.field !== 'name'; })];
+
+			function escHtml(s) {
+				return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+			}
+
+			let formalizeOriginalName = '';
+
+			function openFormalizeModal(instrName) {
+				formalizeOriginalName = instrName;
+				const meta = groupMeta[instrName];
+				if (!meta) return;
+
+				$('#formalizeModalHeader').text(meta.hasInstrument ? 'Convert Remaining Legacy Observations' : 'Create Instrument from Legacy Observations');
+				$('#formalizeInstrumentName').val(instrName).prop('readonly', meta.hasInstrument);
+				$('#formalizeConvertCount').text(meta.legacyCount);
+				$('#formalizeItemCount').text(meta.uniqueItems.length);
+				$('#formalizeError').hide();
+				$('#formalizeSaveButton').removeClass('loading disabled');
+
+				const list = $('#formalizeItemsList');
+				list.empty();
+				if (meta.uniqueItems.length === 0) {
+					list.append('<em style="color:#999">No items found</em>');
+				} else {
+					meta.uniqueItems.forEach(function(item) {
+						list.append($('<div>').css('padding', '1px 0').text(item));
+					});
+				}
+
+				$('#formalizeInstrumentModal').modal({
+					closable: false,
+					onApprove: function() {
+						const newName = $('#formalizeInstrumentName').val().trim();
+						if (newName === '') {
+							$('#formalizeError').text('Instrument name is required.').show();
+							return false;
+						}
+						$('#formalizeSaveButton').addClass('loading disabled');
+						$.post('ajaxapi.php', {
+							action:         'formalizeinstrument',
+							instrumentname: newName,
+							originalname:   formalizeOriginalName,
+							projectid:      PROJECT_ID,
+							itemnames:      JSON.stringify(groupMeta[formalizeOriginalName].uniqueItems)
+						}, function(data) {
+							if (data.error) {
+								$('#formalizeError').text(data.error).show();
+								$('#formalizeSaveButton').removeClass('loading disabled');
+								return;
+							}
+							location.reload();
+						}, 'json').fail(function() {
+							$('#formalizeError').text('Server error — please try again.').show();
+							$('#formalizeSaveButton').removeClass('loading disabled');
+						});
+						return false;
+					}
+				}).modal('show');
+			}
+
+			function clearItemSelection() {
+				$('#instrumentitemId').val('');
+				$('#observationName').prop('readonly', false).css('background-color', '').val('');
+			}
+
+			function clearInstrumentSelection() {
+				$('#instrumentId').val('');
+				$('#instrumentNameHidden').val('');
+				$('#itemSearch').prop('disabled', true).val('').removeClass('error');
+				$('#addItemLink').hide();
+				clearItemSelection();
+			}
 
 			$(document).ready(function() {
-				const eGridDiv = document.getElementById('observationgrid');
-				gridApi = agGrid.createGrid(eGridDiv, gridOptions);
-				$('#observationgrid').tooltip({
-					items: ".observation-html-tooltip",
-					content: function() {
-						return $(this).attr("data-html");
+				const accordion = document.getElementById('observationAccordion');
+
+				Object.entries(groupedData).forEach(function([instrName, rows]) {
+					const isNone = instrName === '__none__';
+					const displayName = isNone ? 'No instrument' : instrName;
+					const gridId = 'grid_' + instrName.replace(/[^a-zA-Z0-9]/g, '_');
+					const height = Math.max(120, Math.min(rows.length * 42 + 56, 600));
+
+					const meta = isNone ? null : (groupMeta[instrName] || null);
+					let badge = '';
+					if (meta) {
+						if (meta.hasInstrument && meta.legacyCount === 0) {
+							badge = '&nbsp;<span class="ui tiny green label"><i class="check icon"></i> Linked</span>';
+						} else if (meta.hasInstrument && meta.legacyCount > 0) {
+							badge = '&nbsp;<span class="ui tiny yellow label"><i class="adjust icon"></i> Partially linked</span>'
+								+ '&nbsp;<a class="formalize-link" href="#" data-instrument="' + escHtml(instrName) + '" style="font-size:0.85em">'
+								+ '<i class="sync icon"></i>Convert remaining</a>';
+						} else {
+							badge = '&nbsp;<span class="ui tiny orange label"><i class="warning sign icon"></i> Legacy</span>'
+								+ '&nbsp;<a class="formalize-link" href="#" data-instrument="' + escHtml(instrName) + '" style="font-size:0.85em">'
+								+ '<i class="plus icon"></i>Create instrument</a>';
+						}
+					}
+
+					const title = document.createElement('div');
+					title.className = 'title';
+					title.innerHTML = '<i class="dropdown icon"></i><b>' + escHtml(displayName) + '</b>&nbsp;<div class="ui small circular label">' + rows.length + '</div>' + badge;
+					accordion.appendChild(title);
+
+					const content = document.createElement('div');
+					content.className = 'content';
+					const gridDiv = document.createElement('div');
+					gridDiv.id = gridId;
+					gridDiv.style.cssText = 'height:' + height + 'px; width:100%';
+					content.appendChild(gridDiv);
+					accordion.appendChild(content);
+
+					agGrid.createGrid(gridDiv, {
+						theme: agGrid.themeQuartz,
+						columnDefs: isNone ? noneColDefs : instrColDefs,
+						rowData: rows,
+						defaultColDef: { sortable: true, filter: true, resizable: true },
+						animateRows: false,
+						suppressMovableColumns: true,
+						onCellValueChanged: onCellValueChanged
+					});
+				});
+
+				$('#observationAccordion').accordion({ exclusive: false });
+				$('#observationAccordion').tooltip({
+					items: '.observation-html-tooltip',
+					content: function() { return $(this).attr('data-html'); }
+				});
+
+				/* stop accordion toggle when clicking formalize link */
+				$(document).on('click', '.formalize-link', function(e) {
+					e.stopPropagation();
+					e.preventDefault();
+					openFormalizeModal($(this).data('instrument'));
+				});
+
+				$('#pageloading').hide();
+
+				/* ----- instrument autocomplete ----- */
+				$('#instrumentSearch').autocomplete({
+					source: function(request, response) {
+						$.getJSON('ajaxapi.php', { action: 'searchinstruments', term: request.term, projectid: PROJECT_ID }, response);
+					},
+					minLength: 0,
+					select: function(event, ui) {
+						$('#instrumentId').val(ui.item.id);
+						$('#instrumentNameHidden').val(ui.item.value);
+						$(this).removeClass('error');
+						$('#itemSearch').prop('disabled', false).val('').attr('placeholder', 'Search items...');
+						$('#addItemLink').show();
+						clearItemSelection();
+					},
+					change: function(event, ui) {
+						if (!ui.item) {
+							if ($(this).val().trim() !== '') {
+								$(this).addClass('error');
+							}
+							clearInstrumentSelection();
+						}
 					}
 				});
-				updateDisplayedRowCount();
-				$('#pageloading').hide();
+
+				$('#instrumentSearch').on('focus', function() {
+					$(this).autocomplete('search', '');
+				});
+
+				/* clear instrument on manual erase */
+				$('#instrumentSearch').on('input', function() {
+					if ($(this).val().trim() === '') {
+						$(this).removeClass('error');
+						clearInstrumentSelection();
+					}
+				});
+
+				/* ----- instrument item autocomplete ----- */
+				$('#itemSearch').autocomplete({
+					source: function(request, response) {
+						$.getJSON('ajaxapi.php', { action: 'searchinstrumentitems', term: request.term, instrumentid: $('#instrumentId').val() }, response);
+					},
+					minLength: 0,
+					select: function(event, ui) {
+						$('#instrumentitemId').val(ui.item.id);
+						$('#observationName').val(ui.item.value).prop('readonly', true).css('background-color', '#f8f8f8');
+						$(this).removeClass('error');
+					},
+					change: function(event, ui) {
+						if (!ui.item) {
+							if ($(this).val().trim() !== '') {
+								$(this).addClass('error');
+							}
+							clearItemSelection();
+						}
+					}
+				});
+
+				$('#itemSearch').on('focus', function() {
+					$(this).autocomplete('search', '');
+				});
+
+				/* clear item on manual erase */
+				$('#itemSearch').on('input', function() {
+					if ($(this).val().trim() === '') {
+						$(this).removeClass('error');
+						clearItemSelection();
+					}
+				});
+
+				/* ----- form validation ----- */
+				$('#addObsForm').on('submit', function(e) {
+					const instrText = $('#instrumentSearch').val().trim();
+					const instrId   = $('#instrumentId').val();
+					const itemText  = $('#itemSearch').val().trim();
+					const itemId    = $('#instrumentitemId').val();
+
+					if (instrText !== '' && instrId === '') {
+						e.preventDefault();
+						$('#instrumentSearch').addClass('error');
+						alert('Please select an existing instrument from the dropdown, or use "+ Add new instrument" to create one.');
+						return false;
+					}
+					if (instrId !== '' && itemId === '') {
+						e.preventDefault();
+						$('#itemSearch').addClass('error');
+						alert('An instrument is selected — please also select an observation item, or use "+ Add new item" to create one.');
+						return false;
+					}
+				});
+
+				/* ----- add instrument modal ----- */
+				$('#addInstrumentLink').on('click', function(e) {
+					e.preventDefault();
+					$('#newInstrumentName').val($('#instrumentSearch').val());
+					$('#newInstrumentNotes').val('');
+					$('#addInstrumentError').hide();
+					$('#addInstrumentModal').modal({
+						closable: false,
+						onApprove: function() {
+							const name  = $('#newInstrumentName').val().trim();
+							const notes = $('#newInstrumentNotes').val().trim();
+							if (name === '') {
+								$('#addInstrumentError').text('Instrument name is required.').show();
+								return false;
+							}
+							$.post('ajaxapi.php', { action: 'addinstrument', instrumentname: name, instrumentnotes: notes, projectid: PROJECT_ID }, function(data) {
+								if (data.error) {
+									$('#addInstrumentError').text(data.error).show();
+									return;
+								}
+								$('#instrumentSearch').val(data.instrument_name).removeClass('error');
+								$('#instrumentId').val(data.instrument_id);
+								$('#instrumentNameHidden').val(data.instrument_name);
+								$('#itemSearch').prop('disabled', false).val('').attr('placeholder', 'Search items...');
+								$('#addItemLink').show();
+								clearItemSelection();
+								$('#addInstrumentModal').modal('hide');
+							}, 'json').fail(function() {
+								$('#addInstrumentError').text('Server error — please try again.').show();
+							});
+							return false;
+						}
+					}).modal('show');
+				});
+
+				/* ----- add item modal ----- */
+				$('#addItemLink').on('click', function(e) {
+					e.preventDefault();
+					$('#newItemName').val($('#itemSearch').val());
+					$('#newItemType').val('string');
+					$('#newItemNotes').val('');
+					$('#addItemError').hide();
+					$('#addItemModalInstrumentName').text($('#instrumentSearch').val());
+					$('#addItemModal').modal({
+						closable: false,
+						onApprove: function() {
+							const name  = $('#newItemName').val().trim();
+							const type  = $('#newItemType').val();
+							const notes = $('#newItemNotes').val().trim();
+							const instrId = $('#instrumentId').val();
+							if (name === '') {
+								$('#addItemError').text('Item name is required.').show();
+								return false;
+							}
+							$.post('ajaxapi.php', { action: 'addinstrumentitem', itemname: name, itemtype: type, itemnotes: notes, instrumentid: instrId }, function(data) {
+								if (data.error) {
+									$('#addItemError').text(data.error).show();
+									return;
+								}
+								$('#itemSearch').val(data.item_name).removeClass('error');
+								$('#instrumentitemId').val(data.instrumentitem_id);
+								$('#observationName').val(data.item_name).prop('readonly', true).css('background-color', '#f8f8f8');
+								$('#addItemModal').modal('hide');
+							}, 'json').fail(function() {
+								$('#addItemError').text('Server error — please try again.').show();
+							});
+							return false;
+						}
+					}).modal('show');
+				});
 			});
 		</script>
 		<?

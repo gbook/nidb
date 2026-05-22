@@ -244,7 +244,7 @@
 				foreach ($line as $column => $value) {
 					$column = mysqli_real_escape_string($GLOBALS['linki'], trim($column));
 					$value = mysqli_real_escape_string($GLOBALS['linki'], trim($value));
-					if (in_array($column, array('status', 'altuids', 'guid', 'birthdate', 'sex', 'gender', 'ethnicity1', 'ethnicity2', 'handedness', 'education', 'marital', 'smoking', 'enrollgroup'))) {
+					if (in_array($column, array('status', 'altuids', 'guid', 'birthdate', 'sex', 'gender', 'ethnicity1', 'ethnicity2', 'handedness', 'education', 'marital', 'smoking', 'enrollgroup', 'icd10'))) {
 						$msgs[] = UpdateSubjectDetails($uid, $subjectid, $projectid, $column, $value);
 					}
 				}

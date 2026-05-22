@@ -43,8 +43,16 @@
 	$submithostuser = GetVariable("submithostuser");
 	$term = GetVariable("term");
 	$instrumentname = GetVariable("instrumentname");
+	$instrumentid = GetVariable("instrumentid");
+	$itemname = GetVariable("itemname");
+	$itemtype = GetVariable("itemtype");
+	$itemnotes = GetVariable("itemnotes");
+	$instrumentnotes = GetVariable("instrumentnotes");
+	$originalname = GetVariable("originalname");
+	$itemnamesJson = GetVariable("itemnames");
 
 	$projectid = GetVariable("projectid");
+	$observationid = GetVariable("observationid");
 	$subjectid = GetVariable("subjectid");
 	$studyid = GetVariable("studyid");
 	$column = GetVariable("column");
@@ -104,6 +112,24 @@
 			break;
 		case 'updatestudydetails':
 			UpdateStudyDetails($subjectid, $studyid, $column, $value);
+			break;
+		case 'updateobservationdetails':
+			UpdateObservationDetails($observationid, $column, $value);
+			break;
+		case 'searchinstruments':
+			SearchInstruments($term, $projectid);
+			break;
+		case 'searchinstrumentitems':
+			SearchInstrumentItems($term, $instrumentid);
+			break;
+		case 'addinstrument':
+			AddInstrumentAjax($instrumentname, $instrumentnotes, $projectid);
+			break;
+		case 'addinstrumentitem':
+			AddInstrumentItemAjax($itemname, $itemtype, $itemnotes, $instrumentid);
+			break;
+		case 'formalizeinstrument':
+			FormalizeInstrument($instrumentname, $originalname, $projectid, $itemnamesJson);
 			break;
 	}
 	
@@ -1024,5 +1050,185 @@
 		
 		echo "success";
 	}
-	
+
+
+	/* -------------------------------------------- */
+	/* ------- UpdateObservationDetails ----------- */
+	/* -------------------------------------------- */
+	function UpdateObservationDetails($observationid, $column, $value) {
+		$observationid = (int)$observationid;
+		if ($observationid < 1) { echo "error - invalid observation ID"; return; }
+
+		$allowedColumns = [
+			'name'          => 'observation_name',
+			'value'         => 'observation_value',
+			'rater'         => 'observation_rater',
+			'startdate'     => 'observation_startdate',
+			'enddate'       => 'observation_enddate',
+			'duration'      => 'observation_duration',
+			'obsInstrument' => 'observation_instrument',
+		];
+
+		if (!array_key_exists($column, $allowedColumns)) {
+			echo "error - column [$column] not recognized";
+			return;
+		}
+
+		$dbColumn = $allowedColumns[$column];
+		$notNullColumns = ['name', 'value'];
+		$intColumns = ['duration'];
+
+		if (in_array($column, $intColumns)) {
+			$castValue = (trim($value) === '') ? null : (int)$value;
+			$stmt = mysqli_prepare($GLOBALS['linki'], "update observations set $dbColumn = ? where observation_id = ?");
+			mysqli_stmt_bind_param($stmt, 'ii', $castValue, $observationid);
+		} elseif (in_array($column, $notNullColumns)) {
+			$stmt = mysqli_prepare($GLOBALS['linki'], "update observations set $dbColumn = ? where observation_id = ?");
+			mysqli_stmt_bind_param($stmt, 'si', $value, $observationid);
+		} else {
+			$nullableValue = (trim($value) === '') ? null : $value;
+			$stmt = mysqli_prepare($GLOBALS['linki'], "update observations set $dbColumn = ? where observation_id = ?");
+			mysqli_stmt_bind_param($stmt, 'si', $nullableValue, $observationid);
+		}
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+		echo "success";
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- SearchInstruments ------------------ */
+	/* -------------------------------------------- */
+	function SearchInstruments($term, $projectid) {
+		header('Content-Type: application/json');
+		if ($projectid < 1) { echo json_encode([]); return; }
+		$term = trim($term);
+		$results = [];
+		if ($term === '') {
+			$stmt = mysqli_prepare($GLOBALS['linki'], "select instrument_id, instrument_name from instruments where project_id = ? order by instrument_name limit 100");
+			mysqli_stmt_bind_param($stmt, 'i', $projectid);
+		} else {
+			$search = '%' . $term . '%';
+			$stmt = mysqli_prepare($GLOBALS['linki'], "select instrument_id, instrument_name from instruments where project_id = ? and instrument_name like ? order by instrument_name limit 50");
+			mysqli_stmt_bind_param($stmt, 'is', $projectid, $search);
+		}
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$results[] = ['label' => $row['instrument_name'], 'value' => $row['instrument_name'], 'id' => (int)$row['instrument_id']];
+		}
+		mysqli_stmt_close($stmt);
+		echo json_encode($results);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- SearchInstrumentItems -------------- */
+	/* -------------------------------------------- */
+	function SearchInstrumentItems($term, $instrumentid) {
+		header('Content-Type: application/json');
+		if ($instrumentid < 1) { echo json_encode([]); return; }
+		$term = trim($term);
+		$results = [];
+		if ($term === '') {
+			$stmt = mysqli_prepare($GLOBALS['linki'], "select instrumentitem_id, item_name from instrument_items where instrument_id = ? order by item_order, item_name limit 100");
+			mysqli_stmt_bind_param($stmt, 'i', $instrumentid);
+		} else {
+			$search = '%' . $term . '%';
+			$stmt = mysqli_prepare($GLOBALS['linki'], "select instrumentitem_id, item_name from instrument_items where instrument_id = ? and item_name like ? order by item_order, item_name limit 50");
+			mysqli_stmt_bind_param($stmt, 'is', $instrumentid, $search);
+		}
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$results[] = ['label' => $row['item_name'], 'value' => $row['item_name'], 'id' => (int)$row['instrumentitem_id']];
+		}
+		mysqli_stmt_close($stmt);
+		echo json_encode($results);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- AddInstrumentAjax ------------------ */
+	/* -------------------------------------------- */
+	function AddInstrumentAjax($name, $notes, $projectid) {
+		header('Content-Type: application/json');
+		$name = trim($name);
+		if ($name == '' || $projectid < 1) { echo json_encode(['error' => 'Invalid name or project']); return; }
+		$stmt = mysqli_prepare($GLOBALS['linki'], "insert into instruments (project_id, instrument_name, instrument_notes) values (?, ?, ?)");
+		mysqli_stmt_bind_param($stmt, 'iss', $projectid, $name, $notes);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$newid = mysqli_insert_id($GLOBALS['linki']);
+		mysqli_stmt_close($stmt);
+		echo json_encode(['instrument_id' => $newid, 'instrument_name' => $name]);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- AddInstrumentItemAjax -------------- */
+	/* -------------------------------------------- */
+	function AddInstrumentItemAjax($name, $type, $notes, $instrumentid) {
+		header('Content-Type: application/json');
+		$name = trim($name);
+		if ($name == '' || $instrumentid < 1) { echo json_encode(['error' => 'Invalid name or instrument']); return; }
+		$validTypes = ['int', 'double', 'string', 'timeseries'];
+		if (!in_array($type, $validTypes)) $type = 'string';
+		$stmt = mysqli_prepare($GLOBALS['linki'], "insert into instrument_items (instrument_id, item_name, item_type, item_notes) values (?, ?, ?, ?)");
+		mysqli_stmt_bind_param($stmt, 'isss', $instrumentid, $name, $type, $notes);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$newid = mysqli_insert_id($GLOBALS['linki']);
+		mysqli_stmt_close($stmt);
+		echo json_encode(['instrumentitem_id' => $newid, 'item_name' => $name]);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- FormalizeInstrument ---------------- */
+	/* -------------------------------------------- */
+	function FormalizeInstrument($instrumentname, $originalname, $projectid, $itemnamesJson) {
+		header('Content-Type: application/json');
+		$instrumentname = trim($instrumentname);
+		$originalname   = trim($originalname);
+		if ($instrumentname === '' || $projectid < 1) { echo json_encode(['error' => 'Invalid instrument name or project']); return; }
+
+		/* check for duplicate */
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select instrument_id from instruments where project_id = ? and instrument_name = ? limit 1");
+		mysqli_stmt_bind_param($stmt, 'is', $projectid, $instrumentname);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		if (mysqli_num_rows($result) > 0) { echo json_encode(['error' => 'An instrument with this name already exists in the project']); return; }
+		mysqli_stmt_close($stmt);
+
+		$itemnames = json_decode($itemnamesJson, true);
+		if (!is_array($itemnames)) $itemnames = [];
+
+		/* create instrument */
+		$stmt = mysqli_prepare($GLOBALS['linki'], "insert into instruments (project_id, instrument_name) values (?, ?)");
+		mysqli_stmt_bind_param($stmt, 'is', $projectid, $instrumentname);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$instrumentId = mysqli_insert_id($GLOBALS['linki']);
+		mysqli_stmt_close($stmt);
+
+		if (!$instrumentId) { echo json_encode(['error' => 'Failed to create instrument']); return; }
+
+		/* create items and convert observations project-wide */
+		$totalConverted = 0;
+		foreach ($itemnames as $itemname) {
+			$itemname = trim($itemname);
+			if ($itemname === '') continue;
+
+			$stmt = mysqli_prepare($GLOBALS['linki'], "insert into instrument_items (instrument_id, item_name, item_type) values (?, ?, 'string')");
+			mysqli_stmt_bind_param($stmt, 'is', $instrumentId, $itemname);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			$itemId = mysqli_insert_id($GLOBALS['linki']);
+			mysqli_stmt_close($stmt);
+
+			/* match on original legacy instrument name and observation name */
+			$stmt = mysqli_prepare($GLOBALS['linki'], "update observations o join enrollment e on o.enrollment_id = e.enrollment_id set o.instrumentitem_id = ? where e.project_id = ? and o.observation_instrument = ? and o.observation_name = ? and o.instrumentitem_id is null");
+			mysqli_stmt_bind_param($stmt, 'iiss', $itemId, $projectid, $originalname, $itemname);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			$totalConverted += mysqli_affected_rows($GLOBALS['linki']);
+			mysqli_stmt_close($stmt);
+		}
+
+		echo json_encode(['instrument_id' => $instrumentId, 'converted' => $totalConverted]);
+	}
+
 ?>

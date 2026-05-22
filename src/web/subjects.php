@@ -1631,7 +1631,7 @@
 											<? } ?>
 										</table>
 										
-										<a class="ui fluid primary button" href="enrollment.php?enrollmentid=<?=$enrollmentid?>"><i class="newspaper icon"></i> Edit Enrollment</a>
+										<a class="ui fluid primary button" href="enrollment.php?enrollmentid=<?=$enrollmentid?>">View Enrollment</a>
 										<br>
 										<a href="packages.php?action=addobject&objecttype=enrollment&objectids[]=<?=$enrollmentid?>" class="ui basic fluid brown button"><img src="images/squirrel-icon-64.png" height="15"></img> &nbsp; Add to Package</a>
 										<a class="ui fluid basic button" href="timeline.php?enrollmentid=<?=$enrollmentid?>"><i class="clock icon"></i> View Timeline</a>

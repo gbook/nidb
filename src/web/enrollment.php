@@ -933,7 +933,7 @@
 	/* ------- DisplayChecklistItemInstrument ----- */
 	/* -------------------------------------------- */
 	/**
-		Items come from the observations table, matched by instrument_id
+		Items come from the observations table, matched by instrumentitem_id (if it exists)
 		- Displays a checkmark if any observations exist for this enrollment with the linked instrument
 	*/
 	function DisplayChecklistItemInstrument($item) {
@@ -976,7 +976,7 @@
 				}
 
 				/* get collected observations for this enrollment+instrument */
-				$sqlstring = "select * from observations where enrollment_id = ? and instrument_id = ?";
+				$sqlstring = "select a.* from observations a left join instrument_items b on a.instrumentitem_id = b.instrumentitem_id where a.enrollment_id = ? and b.instrument_id = ?";
 				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 				mysqli_stmt_bind_param($stmt, 'ii', $enrollmentRowID, $instrumentId);
 				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$enrollmentRowID, $instrumentId]);
