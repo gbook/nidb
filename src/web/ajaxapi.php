@@ -131,6 +131,19 @@
 		case 'formalizeinstrument':
 			FormalizeInstrument($instrumentname, $originalname, $projectid, $itemnamesJson);
 			break;
+		case 'auditobservations':
+			AuditObservations((int)$projectid);
+			break;
+		case 'fixobservation':
+			$checktype = GetVariable('checktype');
+			if ((int)$observationid > 0) {
+				FixObservation((int)$observationid, $checktype);
+			} elseif ((int)$projectid > 0) {
+				FixObservationsBulk((int)$projectid, $checktype);
+			} else {
+				echo json_encode(array('error' => 'observationid or projectid required'));
+			}
+			break;
 	}
 	
 
@@ -183,7 +196,7 @@
 		}
 
 		$search = '%' . $term . '%';
-		$results = [];
+		$results = array();
 
 		$stmt = mysqli_prepare($GLOBALS['linki'], "select distinct observation_name, if(observation_instrument = ?, 0, 1) as priority from observations where observation_name like ? order by priority, observation_name limit 50");
 		mysqli_stmt_bind_param($stmt, 'ss', $instrumentname, $search);
@@ -1103,7 +1116,7 @@
 		header('Content-Type: application/json');
 		if ($projectid < 1) { echo json_encode([]); return; }
 		$term = trim($term);
-		$results = [];
+		$results = array();
 		if ($term === '') {
 			$stmt = mysqli_prepare($GLOBALS['linki'], "select instrument_id, instrument_name from instruments where project_id = ? order by instrument_name limit 100");
 			mysqli_stmt_bind_param($stmt, 'i', $projectid);
@@ -1128,7 +1141,7 @@
 		header('Content-Type: application/json');
 		if ($instrumentid < 1) { echo json_encode([]); return; }
 		$term = trim($term);
-		$results = [];
+		$results = array();
 		if ($term === '') {
 			$stmt = mysqli_prepare($GLOBALS['linki'], "select instrumentitem_id, item_name from instrument_items where instrument_id = ? order by item_order, item_name limit 100");
 			mysqli_stmt_bind_param($stmt, 'i', $instrumentid);
@@ -1197,7 +1210,7 @@
 		mysqli_stmt_close($stmt);
 
 		$itemnames = json_decode($itemnamesJson, true);
-		if (!is_array($itemnames)) $itemnames = [];
+		if (!is_array($itemnames)) $itemnames = array();
 
 		/* create instrument */
 		$stmt = mysqli_prepare($GLOBALS['linki'], "insert into instruments (project_id, instrument_name) values (?, ?)");
@@ -1229,6 +1242,129 @@
 		}
 
 		echo json_encode(['instrument_id' => $instrumentId, 'converted' => $totalConverted]);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- AuditObservations ----------------- */
+	/* -------------------------------------------- */
+	/* returns all observation naming mismatches for a project as JSON */
+	function AuditObservations($projectid) {
+		header('Content-Type: application/json');
+
+		if ($projectid < 1) { echo json_encode(array('error' => 'invalid projectid')); return; }
+
+		$nameDrift  = array();
+		$instrDrift = array();
+		$brokenLink = array();
+
+		/* variable name mismatch: observation_name differs from the linked item_name */
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select o.observation_id, o.observation_name as stored_name, ii.item_name as linked_name, ins.instrument_name, s.uid from observations o join enrollment e on o.enrollment_id = e.enrollment_id join instrument_items ii on o.instrumentitem_id = ii.instrumentitem_id join instruments ins on ii.instrument_id = ins.instrument_id join subjects s on e.subject_id = s.subject_id where e.project_id = ? and o.observation_name != ii.item_name order by ins.instrument_name, ii.item_name");
+		mysqli_stmt_bind_param($stmt, 'i', $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) { $nameDrift[] = $row; }
+
+		/* instrument name mismatch: observation_instrument differs from the linked instrument_name */
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select o.observation_id, o.observation_instrument as stored_instrument, ins.instrument_name as linked_instrument, o.observation_name, s.uid from observations o join enrollment e on o.enrollment_id = e.enrollment_id join instrument_items ii on o.instrumentitem_id = ii.instrumentitem_id join instruments ins on ii.instrument_id = ins.instrument_id join subjects s on e.subject_id = s.subject_id where e.project_id = ? and o.observation_instrument != ins.instrument_name order by ins.instrument_name, o.observation_name");
+		mysqli_stmt_bind_param($stmt, 'i', $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) { $instrDrift[] = $row; }
+
+		/* broken link: instrumentitem_id set but the target row no longer exists */
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select o.observation_id, o.instrumentitem_id, o.observation_name, o.observation_instrument, s.uid from observations o join enrollment e on o.enrollment_id = e.enrollment_id left join instrument_items ii on o.instrumentitem_id = ii.instrumentitem_id join subjects s on e.subject_id = s.subject_id where e.project_id = ? and o.instrumentitem_id is not null and ii.instrumentitem_id is null order by o.observation_instrument, o.observation_name");
+		mysqli_stmt_bind_param($stmt, 'i', $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) { $brokenLink[] = $row; }
+
+		/* legacy count: observation_instrument set but no instrumentitem_id — informational only */
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select count(*) as cnt from observations o join enrollment e on o.enrollment_id = e.enrollment_id where e.project_id = ? and o.observation_instrument is not null and o.instrumentitem_id is null");
+		mysqli_stmt_bind_param($stmt, 'i', $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+		$cntRow = mysqli_fetch_array($result, MYSQLI_ASSOC);
+
+		echo json_encode(array(
+			'nameDrift'   => $nameDrift,
+			'instrDrift'  => $instrDrift,
+			'brokenLink'  => $brokenLink,
+			'legacyCount' => (int)$cntRow['cnt'],
+		));
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- FixObservation --------------------- */
+	/* -------------------------------------------- */
+	/* fixes a single observation row by re-deriving the stored text from the FK target */
+	function FixObservation($observationid, $checktype) {
+		header('Content-Type: application/json');
+
+		switch ($checktype) {
+			case 'namedrift':
+				/* update observation_name to match the linked item_name */
+				$stmt = mysqli_prepare($GLOBALS['linki'], "update observations o join instrument_items ii on o.instrumentitem_id = ii.instrumentitem_id set o.observation_name = ii.item_name where o.observation_id = ?");
+				mysqli_stmt_bind_param($stmt, 'i', $observationid);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+				mysqli_stmt_close($stmt);
+				break;
+			case 'instrdrift':
+				/* update observation_instrument to match the linked instrument_name */
+				$stmt = mysqli_prepare($GLOBALS['linki'], "update observations o join instrument_items ii on o.instrumentitem_id = ii.instrumentitem_id join instruments ins on ii.instrument_id = ins.instrument_id set o.observation_instrument = ins.instrument_name where o.observation_id = ?");
+				mysqli_stmt_bind_param($stmt, 'i', $observationid);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+				mysqli_stmt_close($stmt);
+				break;
+			case 'brokenlink':
+				/* clear the orphaned FK so the observation reverts to legacy (unlinked) state */
+				$stmt = mysqli_prepare($GLOBALS['linki'], "update observations set instrumentitem_id = null where observation_id = ?");
+				mysqli_stmt_bind_param($stmt, 'i', $observationid);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+				mysqli_stmt_close($stmt);
+				break;
+			default:
+				echo json_encode(array('error' => 'unknown checktype'));
+				return;
+		}
+
+		echo json_encode(array('ok' => true));
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- FixObservationsBulk ---------------- */
+	/* -------------------------------------------- */
+	/* fixes all observations of a given check type across the entire project */
+	function FixObservationsBulk($projectid, $checktype) {
+		header('Content-Type: application/json');
+
+		switch ($checktype) {
+			case 'namedrift':
+				$stmt = mysqli_prepare($GLOBALS['linki'], "update observations o join enrollment e on o.enrollment_id = e.enrollment_id join instrument_items ii on o.instrumentitem_id = ii.instrumentitem_id set o.observation_name = ii.item_name where e.project_id = ? and o.observation_name != ii.item_name");
+				mysqli_stmt_bind_param($stmt, 'i', $projectid);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+				mysqli_stmt_close($stmt);
+				break;
+			case 'instrdrift':
+				$stmt = mysqli_prepare($GLOBALS['linki'], "update observations o join enrollment e on o.enrollment_id = e.enrollment_id join instrument_items ii on o.instrumentitem_id = ii.instrumentitem_id join instruments ins on ii.instrument_id = ins.instrument_id set o.observation_instrument = ins.instrument_name where e.project_id = ? and o.observation_instrument != ins.instrument_name");
+				mysqli_stmt_bind_param($stmt, 'i', $projectid);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+				mysqli_stmt_close($stmt);
+				break;
+			case 'brokenlink':
+				$stmt = mysqli_prepare($GLOBALS['linki'], "update observations o join enrollment e on o.enrollment_id = e.enrollment_id left join instrument_items ii on o.instrumentitem_id = ii.instrumentitem_id set o.instrumentitem_id = null where e.project_id = ? and o.instrumentitem_id is not null and ii.instrumentitem_id is null");
+				mysqli_stmt_bind_param($stmt, 'i', $projectid);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+				mysqli_stmt_close($stmt);
+				break;
+			default:
+				echo json_encode(array('error' => 'unknown checktype'));
+				return;
+		}
+
+		echo json_encode(array('ok' => true, 'affected' => mysqli_affected_rows($GLOBALS['linki'])));
 	}
 
 ?>

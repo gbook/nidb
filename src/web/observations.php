@@ -46,7 +46,6 @@
 	$enrollmentid = GetVariable("enrollmentid");
 	$observationname = GetVariable('observation_name');
 	$observationinstrument = GetVariable('observation_instrument');
-	$instrumentid = GetVariable('instrument_id');
 	$instrumentitemid = GetVariable('instrumentitem_id');
 	$observationvalue = GetVariable('observation_value');
 	$observationdatecompleted = GetVariable('observation_datecompleted');
@@ -118,7 +117,6 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
 		Notice("Observation deleted");
-		Notice("Observation deleted");
 	}
 
 
@@ -136,9 +134,6 @@
 		$sqlstring = "select a.*, b.uid, b.subject_id, c.project_name, c.project_id from enrollment a left join subjects b on a.subject_id = b.subject_id left join projects c on a.project_id = c.project_id where a.enrollment_id = $enrollmentid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$uid = $row['uid'];
-		$subjectid = $row['subject_id'];
-		$projectname = $row['project_name'];
 		$projectid = $row['project_id'];
 
 		?>
@@ -205,14 +200,14 @@
 			</div>
 		</div>
 
-		<!-- Formalize Instrument Modal -->
+		<!-- 'Formalize Instrument' Modal - this displays an option to take a set of observations and make it into an instrument -->
 		<div class="ui small modal" id="formalizeInstrumentModal">
 			<div class="header" id="formalizeModalHeader">Create Instrument from Legacy Observations</div>
 			<div class="content">
+				<div class="ui info message">
+					This will create a new instrument and convert <b><span id="formalizeConvertCount">0</span> observation(s)</b> project-wide from legacy text strings to linked instrument items.
+				</div>
 				<div class="ui form">
-					<div class="ui info message">
-						This will create a new instrument and convert <b><span id="formalizeConvertCount">0</span> observation(s)</b> project-wide from legacy text strings to linked instrument items.
-					</div>
 					<div class="field">
 						<label>Instrument name</label>
 						<input type="text" id="formalizeInstrumentName">
@@ -285,7 +280,7 @@
 		</div>
 
 		<?
-		$groups = [];
+		$groups = array();
 		$sqlstring = "select a.*, e.uid, ii.item_name, ins.instrument_name as linked_instrument_name from observations a left join enrollment d on a.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id left join instrument_items ii on a.instrumentitem_id = ii.instrumentitem_id left join instruments ins on ii.instrument_id = ins.instrument_id where a.enrollment_id = $enrollmentid order by a.observation_name";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -344,7 +339,7 @@
 		$groupsJson = json_encode($groups, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
 
 		/* build per-group metadata: whether a real instrument exists, project-wide legacy count, unique item names */
-		$groupMeta = [];
+		$groupMeta = array();
 		$totalObs = 0;
 		$instrumentCount = 0;
 		$unaffiliatedCount = isset($groups['__none__']) ? count($groups['__none__']) : 0;
@@ -356,9 +351,9 @@
 			$stmt = mysqli_prepare($GLOBALS['linki'], "select instrument_id from instruments where project_id = ? and instrument_name = ? limit 1");
 			mysqli_stmt_bind_param($stmt, 'is', $projectid, $key);
 			$instrResult = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-			$instrRow = mysqli_fetch_array($instrResult, MYSQLI_ASSOC);
+			$hasInstrument = (mysqli_num_rows($instrResult) > 0);
+			$instrRow = $hasInstrument ? mysqli_fetch_array($instrResult, MYSQLI_ASSOC) : false;
 			mysqli_stmt_close($stmt);
-			$hasInstrument = ($instrRow !== false);
 
 			$stmt = mysqli_prepare($GLOBALS['linki'], "select count(*) as cnt from observations o join enrollment e on o.enrollment_id = e.enrollment_id where e.project_id = ? and o.observation_instrument = ? and o.instrumentitem_id is null");
 			mysqli_stmt_bind_param($stmt, 'is', $projectid, $key);
@@ -366,8 +361,8 @@
 			$cntRow = mysqli_fetch_array($cntResult, MYSQLI_ASSOC);
 			mysqli_stmt_close($stmt);
 
-			$seen = [];
-			$uniqueItems = [];
+			$seen = array();
+			$uniqueItems = array();
 			foreach ($rows as $r) {
 				if ($r['name'] !== '' && !isset($seen[$r['name']])) {
 					$seen[$r['name']] = true;
@@ -393,6 +388,7 @@
 			const groupMeta   = <?=$groupMetaJson?>;
 			const PROJECT_ID  = <?=(int)$projectid?>;
 
+			/* custom AG Grid header component using prototype API (required by community edition) */
 			function ObservationDatesHeader() {}
 			ObservationDatesHeader.prototype.init = function(params) {
 				this.eGui = document.createElement('span');
@@ -402,6 +398,8 @@
 			};
 			ObservationDatesHeader.prototype.getGui = function() { return this.eGui; };
 
+			/* visually distinguish editable cells (pointer cursor) from read-only cells (muted text);
+			   must evaluate editable as a function when it's used as a callback on the column def */
 			function editableCellStyle(params) {
 				if (params.colDef.editable === true || (typeof params.colDef.editable === 'function' && params.colDef.editable(params))) {
 					return { cursor: 'text' };
@@ -409,6 +407,7 @@
 				return { color: '#666' };
 			}
 
+			/* saves an in-place cell edit via AJAX; flashes the cell green on success or reverts the value on failure */
 			function onCellValueChanged(params) {
 				$.post('ajaxapi.php', {
 					action: 'updateobservationdetails',
@@ -426,6 +425,7 @@
 				});
 			}
 
+			/* shared column definitions referenced by both instrColDefs and noneColDefs */
 			const deleteColDef = {
 				headerName: 'Delete',
 				field: 'observationid',
@@ -442,6 +442,7 @@
 				}
 			};
 
+			/* entry dates column definition */
 			const datesColDef = {
 				headerName: 'Entry dates',
 				field: 'dateshtml',
@@ -458,7 +459,7 @@
 				}
 			};
 
-			/* column defs for instrument groups — no Instrument column (shown in accordion header) */
+			/* column defs for instrument groups. There is no Instrument column here, because it is shown in the accordion header */
 			const instrColDefs = [
 				{
 					headerName: 'Variable', field: 'name', flex: 1.3, minWidth: 180,
@@ -476,28 +477,41 @@
 				datesColDef
 			];
 
-			/* column defs for no-instrument group — drop Instrument Item (always empty), add editable Instrument */
+			/* column defs for the no-instrument group: keep Variable (instrColDefs[0]), insert an editable
+			   Instrument column, then append everything from instrColDefs except name and instrumentitem */
 			const noneInstrumentColDef = { headerName: 'Instrument', field: 'obsInstrument', flex: 1, minWidth: 150, editable: true, cellStyle: editableCellStyle };
 			const noneColDefs = [instrColDefs[0], noneInstrumentColDef, ...instrColDefs.filter(function(c) { return c.field !== 'instrumentitem' && c.field !== 'name'; })];
 
+			/* sanitizes a string for safe insertion into innerHTML */
 			function escHtml(s) {
 				return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 			}
 
+			/* original legacy instrument name used for DB matching during conversion; stored separately
+			   so the user can rename the instrument in the modal without breaking the observation lookup */
 			let formalizeOriginalName = '';
 
+			/* populates and opens the formalize modal dialog for a given instrument group;
+			   adapts the title, the items list, and convert count based on whether the instrument already exists */
 			function openFormalizeModal(instrName) {
+				/* snapshot the original legacy name so onApprove can match DB rows even if the user renames the instrument */
 				formalizeOriginalName = instrName;
 				const meta = groupMeta[instrName];
 				if (!meta) return;
 
+				/* title and name-field editability differ between "create" (Legacy) and "convert" (Partially linked) modes */
 				$('#formalizeModalHeader').text(meta.hasInstrument ? 'Convert Remaining Legacy Observations' : 'Create Instrument from Legacy Observations');
 				$('#formalizeInstrumentName').val(instrName).prop('readonly', meta.hasInstrument);
+
+				/* show how many observations will be converted and how many unique items will be created */
 				$('#formalizeConvertCount').text(meta.legacyCount);
 				$('#formalizeItemCount').text(meta.uniqueItems.length);
+
+				/* reset any error/spinner state left over from a previous open */
 				$('#formalizeError').hide();
 				$('#formalizeSaveButton').removeClass('loading disabled');
 
+				/* populate the preview list of observation names that will become instrument items */
 				const list = $('#formalizeItemsList');
 				list.empty();
 				if (meta.uniqueItems.length === 0) {
@@ -511,6 +525,7 @@
 				$('#formalizeInstrumentModal').modal({
 					closable: false,
 					onApprove: function() {
+						/* returning false keeps the modal open while the AJAX call completes */
 						const newName = $('#formalizeInstrumentName').val().trim();
 						if (newName === '') {
 							$('#formalizeError').text('Instrument name is required.').show();
@@ -519,8 +534,8 @@
 						$('#formalizeSaveButton').addClass('loading disabled');
 						$.post('ajaxapi.php', {
 							action:         'formalizeinstrument',
-							instrumentname: newName,
-							originalname:   formalizeOriginalName,
+							instrumentname: newName,       /* potentially renamed instrument name to save */
+							originalname:   formalizeOriginalName, /* original legacy string used for DB WHERE matching */
 							projectid:      PROJECT_ID,
 							itemnames:      JSON.stringify(groupMeta[formalizeOriginalName].uniqueItems)
 						}, function(data) {
@@ -529,6 +544,7 @@
 								$('#formalizeSaveButton').removeClass('loading disabled');
 								return;
 							}
+							/* reload so accordions reflect the newly linked instrument */
 							location.reload();
 						}, 'json').fail(function() {
 							$('#formalizeError').text('Server error — please try again.').show();
@@ -539,11 +555,13 @@
 				}).modal('show');
 			}
 
+			/* resets the instrument item autocomplete and unlocks the observation name field */
 			function clearItemSelection() {
 				$('#instrumentitemId').val('');
 				$('#observationName').prop('readonly', false).css('background-color', '').val('');
 			}
 
+			/* resets the instrument autocomplete and cascades to clear the item selection */
 			function clearInstrumentSelection() {
 				$('#instrumentId').val('');
 				$('#instrumentNameHidden').val('');
@@ -555,33 +573,42 @@
 			$(document).ready(function() {
 				const accordion = document.getElementById('observationAccordion');
 
+				/* build one accordion section + AG Grid per instrument group; __none__ receives special column defs */
 				Object.entries(groupedData).forEach(function([instrName, rows]) {
 					const isNone = instrName === '__none__';
 					const displayName = isNone ? 'No instrument' : instrName;
+					/* grid element IDs must be valid HTML identifiers, so strip non-alphanumeric characters */
 					const gridId = 'grid_' + instrName.replace(/[^a-zA-Z0-9]/g, '_');
+					/* clamp grid height: minimum 120px, maximum 600px, ~42px per row + 56px header */
 					const height = Math.max(120, Math.min(rows.length * 42 + 56, 600));
 
+					/* meta is null for the __none__ group because it has no associated instrument record */
 					const meta = isNone ? null : (groupMeta[instrName] || null);
 					let badge = '';
 					if (meta) {
 						if (meta.hasInstrument && meta.legacyCount === 0) {
-							badge = '&nbsp;<span class="ui tiny green label"><i class="check icon"></i> Linked</span>';
+							/* all observations are linked via instrumentitem_id */
+							badge = '&nbsp;<span class="ui tiny green label" title="This instrument exists"><i class="check icon"></i> Linked</span>';
 						} else if (meta.hasInstrument && meta.legacyCount > 0) {
-							badge = '&nbsp;<span class="ui tiny yellow label"><i class="adjust icon"></i> Partially linked</span>'
+							/* instrument exists in DB but some observations still use the legacy observation_instrument string */
+							badge = '&nbsp;<span class="ui tiny yellow label" title="This instrument exists, but not all items exist"><i class="adjust icon"></i> Partially linked</span>'
 								+ '&nbsp;<a class="formalize-link" href="#" data-instrument="' + escHtml(instrName) + '" style="font-size:0.85em">'
 								+ '<i class="sync icon"></i>Convert remaining</a>';
 						} else {
-							badge = '&nbsp;<span class="ui tiny orange label"><i class="warning sign icon"></i> Legacy</span>'
+							/* no instrument record exists; only the free-text observation_instrument string is present */
+							badge = '&nbsp;<span class="ui tiny orange label" title="This instrument does not exist"><i class="warning sign icon"></i> Legacy</span>'
 								+ '&nbsp;<a class="formalize-link" href="#" data-instrument="' + escHtml(instrName) + '" style="font-size:0.85em">'
 								+ '<i class="plus icon"></i>Create instrument</a>';
 						}
 					}
 
+					/* accordion title: dropdown chevron, bold instrument name, row-count bubble, and badge */
 					const title = document.createElement('div');
 					title.className = 'title';
 					title.innerHTML = '<i class="dropdown icon"></i><b>' + escHtml(displayName) + '</b>&nbsp;<div class="ui small circular label">' + rows.length + '</div>' + badge;
 					accordion.appendChild(title);
 
+					/* accordion content: a single sized div that AG Grid mounts into */
 					const content = document.createElement('div');
 					content.className = 'content';
 					const gridDiv = document.createElement('div');
@@ -592,6 +619,7 @@
 
 					agGrid.createGrid(gridDiv, {
 						theme: agGrid.themeQuartz,
+						/* __none__ group gets an editable Instrument column; all others show the instrument in the accordion header */
 						columnDefs: isNone ? noneColDefs : instrColDefs,
 						rowData: rows,
 						defaultColDef: { sortable: true, filter: true, resizable: true },
@@ -601,13 +629,15 @@
 					});
 				});
 
+				/* exclusive:false allows multiple accordion sections to be open simultaneously */
 				$('#observationAccordion').accordion({ exclusive: false });
+				/* jQuery UI tooltip for observation entry-date cells that use data-html */
 				$('#observationAccordion').tooltip({
 					items: '.observation-html-tooltip',
 					content: function() { return $(this).attr('data-html'); }
 				});
 
-				/* stop accordion toggle when clicking formalize link */
+				/* stopPropagation prevents the accordion title click handler from toggling the section */
 				$(document).on('click', '.formalize-link', function(e) {
 					e.stopPropagation();
 					e.preventDefault();
@@ -623,6 +653,7 @@
 					},
 					minLength: 0,
 					select: function(event, ui) {
+						/* lock in the chosen instrument and unlock the item search */
 						$('#instrumentId').val(ui.item.id);
 						$('#instrumentNameHidden').val(ui.item.value);
 						$(this).removeClass('error');
@@ -631,6 +662,7 @@
 						clearItemSelection();
 					},
 					change: function(event, ui) {
+						/* if the user typed something but didn't pick a suggestion, flag the field as invalid */
 						if (!ui.item) {
 							if ($(this).val().trim() !== '') {
 								$(this).addClass('error');
@@ -640,6 +672,7 @@
 					}
 				});
 
+				/* show full instrument list on focus without requiring any typed characters */
 				$('#instrumentSearch').on('focus', function() {
 					$(this).autocomplete('search', '');
 				});
@@ -655,15 +688,18 @@
 				/* ----- instrument item autocomplete ----- */
 				$('#itemSearch').autocomplete({
 					source: function(request, response) {
+						/* scope item search to the currently selected instrument */
 						$.getJSON('ajaxapi.php', { action: 'searchinstrumentitems', term: request.term, instrumentid: $('#instrumentId').val() }, response);
 					},
 					minLength: 0,
 					select: function(event, ui) {
+						/* lock in the chosen item and mirror its name into the read-only observation name field */
 						$('#instrumentitemId').val(ui.item.id);
 						$('#observationName').val(ui.item.value).prop('readonly', true).css('background-color', '#f8f8f8');
 						$(this).removeClass('error');
 					},
 					change: function(event, ui) {
+						/* if the user typed something but didn't pick a suggestion, flag the field as invalid */
 						if (!ui.item) {
 							if ($(this).val().trim() !== '') {
 								$(this).addClass('error');
@@ -673,6 +709,7 @@
 					}
 				});
 
+				/* show full item list for the selected instrument on focus */
 				$('#itemSearch').on('focus', function() {
 					$(this).autocomplete('search', '');
 				});
@@ -692,12 +729,14 @@
 					const itemText  = $('#itemSearch').val().trim();
 					const itemId    = $('#instrumentitemId').val();
 
+					/* block form submit if the instrument field has unresolved free text (no matching DB record selected) */
 					if (instrText !== '' && instrId === '') {
 						e.preventDefault();
 						$('#instrumentSearch').addClass('error');
 						alert('Please select an existing instrument from the dropdown, or use "+ Add new instrument" to create one.');
 						return false;
 					}
+					/* block form submit if an instrument is chosen but no item has been selected */
 					if (instrId !== '' && itemId === '') {
 						e.preventDefault();
 						$('#itemSearch').addClass('error');
@@ -709,6 +748,7 @@
 				/* ----- add instrument modal ----- */
 				$('#addInstrumentLink').on('click', function(e) {
 					e.preventDefault();
+					/* pre-fill name with whatever the user already typed in the search field */
 					$('#newInstrumentName').val($('#instrumentSearch').val());
 					$('#newInstrumentNotes').val('');
 					$('#addInstrumentError').hide();
@@ -726,6 +766,7 @@
 									$('#addInstrumentError').text(data.error).show();
 									return;
 								}
+								/* wire the new instrument into the form as if the user had picked it from autocomplete */
 								$('#instrumentSearch').val(data.instrument_name).removeClass('error');
 								$('#instrumentId').val(data.instrument_id);
 								$('#instrumentNameHidden').val(data.instrument_name);
@@ -744,10 +785,12 @@
 				/* ----- add item modal ----- */
 				$('#addItemLink').on('click', function(e) {
 					e.preventDefault();
+					/* pre-fill name with whatever the user already typed in the item search field */
 					$('#newItemName').val($('#itemSearch').val());
 					$('#newItemType').val('string');
 					$('#newItemNotes').val('');
 					$('#addItemError').hide();
+					/* show the parent instrument name in the modal heading for context */
 					$('#addItemModalInstrumentName').text($('#instrumentSearch').val());
 					$('#addItemModal').modal({
 						closable: false,
@@ -765,6 +808,7 @@
 									$('#addItemError').text(data.error).show();
 									return;
 								}
+								/* wire the new item into the form and mirror its name into the observation name field */
 								$('#itemSearch').val(data.item_name).removeClass('error');
 								$('#instrumentitemId').val(data.instrumentitem_id);
 								$('#observationName').val(data.item_name).prop('readonly', true).css('background-color', '#f8f8f8');
