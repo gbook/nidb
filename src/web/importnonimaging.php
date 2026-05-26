@@ -478,6 +478,9 @@
 	/* -------------------------------------------- */
 	function SubmitNewImport($csv, $projectid, $skipblankvalue, $createmissingsubject) {
 
+		/* large imports can exceed the default 30s limit */
+		set_time_limit(0);
+
 		$startTime = microtime(true);
 		
 		/* prepare fields for SQL */
@@ -516,7 +519,8 @@
 		//PrintVariable($csvdata);
 		$rows = count($csvdata);
 		$cols = count(array_keys($csvdata[0]));
-		$cells = count($csvdata, COUNT_RECURSIVE);
+		/* avoid COUNT_RECURSIVE which iterates every cell of a potentially huge array */
+		$cells = $rows * $cols;
 		?>
 		<div class="ui segment">
 			<h2 class="ui header">
@@ -531,11 +535,10 @@
 		//return;
 
 		$i=0;
-		$inserts = array();
 
 		/* build instrument and item lookup caches for this project */
-		$instrumentIdCache = [];
-		$instrumentItemCache = [];
+		$instrumentIdCache   = array();
+		$instrumentItemCache = array();
 		$sqlstring = "select instrument_id, instrument_name from instruments where project_id = $projectid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -543,12 +546,26 @@
 		}
 		if (count($instrumentIdCache) > 0) {
 			$iids = implode(',', array_values($instrumentIdCache));
-			$sqlstring = "select instrument_id, item_name from instrument_items where instrument_id in ($iids)";
+			/* store instrumentitem_id (not just true) so it can be used directly in the INSERT */
+			$sqlstring = "select instrument_id, instrumentitem_id, item_name from instrument_items where instrument_id in ($iids)";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$instrumentItemCache[(int)$row['instrument_id']][strtolower(trim($row['item_name']))] = true;
+				$instrumentItemCache[(int)$row['instrument_id']][strtolower(trim($row['item_name']))] = (int)$row['instrumentitem_id'];
 			}
 		}
+
+		/* pre-load all enrollment IDs for this project in one query;
+		   eliminates a per-subject DB lookup for every row in the loop */
+		$sqlstring = "select enrollment_id, subject_id from enrollment where project_id = $projectid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$enrollmentRowIDCache[$row['subject_id']] = $row['enrollment_id'];
+		}
+
+		/* PASS 1: resolve all subjects/enrollments and collect formatted observation insert strings.
+		   Keeping subject resolution separate from the insert phase allows PASS 2 to hold a
+		   table-level write lock on observations without interfering with other tables. */
+		$observationRows = array();
 
 		foreach ($csvdata as $line) {
 			/* reset all variables for this row */
@@ -647,15 +664,16 @@
 				if (trim($rater) == "") $rater = "null";
 				else $rater = "'" . trim($rater) . "'";
 
-				/* resolve instrument_id if instrument name and variable name both match */
-				$resolvedInstrumentId = "null";
+				/* resolve instrumentitem_id if instrument name and variable name both match existing DB records */
+				$resolvedItemId = "null";
 				$rawInstrument = trim($instrument);
 				if ($rawInstrument != "") {
 					$instrKey = strtolower($rawInstrument);
 					if (isset($instrumentIdCache[$instrKey])) {
 						$iid = $instrumentIdCache[$instrKey];
-						if (isset($instrumentItemCache[$iid][strtolower(trim($variablename))])) {
-							$resolvedInstrumentId = $iid;
+						$itemKey = strtolower(trim($variablename));
+						if (isset($instrumentItemCache[$iid][$itemKey])) {
+							$resolvedItemId = $instrumentItemCache[$iid][$itemKey];
 						}
 					}
 				}
@@ -669,16 +687,9 @@
 				if (trim($startdate) == "") $startdate = "null";
 				else $startdate = "'" . trim($startdate) . "'";
 
-				/* add to batch insert */
-				$inserts[] = "($enrollmentRowID, now(), '$variablename', '$value', $rater, $instrument, $startdate, $enddate, $resolvedInstrumentId)";
+				/* collect the formatted row for the bulk insert pass */
+				$observationRows[] = "($enrollmentRowID, now(), '$variablename', '$value', $rater, $instrument, $startdate, $enddate, $resolvedItemId)";
 				$numObservationsAdded++;
-
-				if (count($inserts) >= 100) {
-					$sqlstring = "insert ignore into observations (enrollment_id, observation_entrydate, observation_name, observation_value, observation_rater, observation_instrument, observation_startdate, observation_enddate, instrument_id) values " . implode(",", $inserts);
-					//PrintSQL($sqlstring);
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					$inserts = array();
-				}
 			}
 			
 			if ($type == "intervention") {
@@ -690,12 +701,23 @@
 			//	break;
 		}
 		
-		/* finish up the insert buffer */
-		if (count($inserts) > 0) {
-			$sqlstring = "insert ignore into observations (enrollment_id, observation_entrydate, observation_name, observation_value, observation_rater, observation_instrument, observation_startdate, observation_enddate, instrument_id) values " . implode(",", $inserts);
-			//PrintSQL($sqlstring);
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$inserts = array();
+		/* PASS 2: bulk insert all collected observation rows.
+		   DISABLE KEYS defers non-unique index updates until ENABLE KEYS rebuilds them in
+		   one pass at the end, avoiding per-row index maintenance across 300k+ rows.
+		   LOCK TABLES holds the Aria table-level write lock for the entire insert phase
+		   instead of acquiring and releasing it once per batch. */
+		if (count($observationRows) > 0) {
+			MySQLiQuery("ALTER TABLE observations DISABLE KEYS", __FILE__, __LINE__);
+			MySQLiQuery("LOCK TABLES observations WRITE", __FILE__, __LINE__);
+
+			/* batch size of 1000 reduces round trips by 10x vs the previous 100-row batches */
+			foreach (array_chunk($observationRows, 1000) as $batch) {
+				$sqlstring = "insert ignore into observations (enrollment_id, observation_entrydate, observation_name, observation_value, observation_rater, observation_instrument, observation_startdate, observation_enddate, instrumentitem_id) values " . implode(",", $batch);
+				MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			}
+
+			MySQLiQuery("UNLOCK TABLES", __FILE__, __LINE__);
+			MySQLiQuery("ALTER TABLE observations ENABLE KEYS", __FILE__, __LINE__);
 		}
 		
 

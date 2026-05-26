@@ -1259,21 +1259,21 @@
 		$brokenLink = array();
 
 		/* variable name mismatch: observation_name differs from the linked item_name */
-		$stmt = mysqli_prepare($GLOBALS['linki'], "select o.observation_id, o.observation_name as stored_name, ii.item_name as linked_name, ins.instrument_name, s.uid from observations o join enrollment e on o.enrollment_id = e.enrollment_id join instrument_items ii on o.instrumentitem_id = ii.instrumentitem_id join instruments ins on ii.instrument_id = ins.instrument_id join subjects s on e.subject_id = s.subject_id where e.project_id = ? and o.observation_name != ii.item_name order by ins.instrument_name, ii.item_name");
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select o.observation_id, e.enrollment_id, o.observation_name as stored_name, ii.item_name as linked_name, ins.instrument_name, s.uid from observations o join enrollment e on o.enrollment_id = e.enrollment_id join instrument_items ii on o.instrumentitem_id = ii.instrumentitem_id join instruments ins on ii.instrument_id = ins.instrument_id join subjects s on e.subject_id = s.subject_id where e.project_id = ? and o.observation_name != ii.item_name order by ins.instrument_name, ii.item_name");
 		mysqli_stmt_bind_param($stmt, 'i', $projectid);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		mysqli_stmt_close($stmt);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) { $nameDrift[] = $row; }
 
 		/* instrument name mismatch: observation_instrument differs from the linked instrument_name */
-		$stmt = mysqli_prepare($GLOBALS['linki'], "select o.observation_id, o.observation_instrument as stored_instrument, ins.instrument_name as linked_instrument, o.observation_name, s.uid from observations o join enrollment e on o.enrollment_id = e.enrollment_id join instrument_items ii on o.instrumentitem_id = ii.instrumentitem_id join instruments ins on ii.instrument_id = ins.instrument_id join subjects s on e.subject_id = s.subject_id where e.project_id = ? and o.observation_instrument != ins.instrument_name order by ins.instrument_name, o.observation_name");
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select o.observation_id, e.enrollment_id, o.observation_instrument as stored_instrument, ins.instrument_name as linked_instrument, o.observation_name, s.uid from observations o join enrollment e on o.enrollment_id = e.enrollment_id join instrument_items ii on o.instrumentitem_id = ii.instrumentitem_id join instruments ins on ii.instrument_id = ins.instrument_id join subjects s on e.subject_id = s.subject_id where e.project_id = ? and o.observation_instrument != ins.instrument_name order by ins.instrument_name, o.observation_name");
 		mysqli_stmt_bind_param($stmt, 'i', $projectid);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		mysqli_stmt_close($stmt);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) { $instrDrift[] = $row; }
 
 		/* broken link: instrumentitem_id set but the target row no longer exists */
-		$stmt = mysqli_prepare($GLOBALS['linki'], "select o.observation_id, o.instrumentitem_id, o.observation_name, o.observation_instrument, s.uid from observations o join enrollment e on o.enrollment_id = e.enrollment_id left join instrument_items ii on o.instrumentitem_id = ii.instrumentitem_id join subjects s on e.subject_id = s.subject_id where e.project_id = ? and o.instrumentitem_id is not null and ii.instrumentitem_id is null order by o.observation_instrument, o.observation_name");
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select o.observation_id, e.enrollment_id, o.instrumentitem_id, o.observation_name, o.observation_instrument, s.uid from observations o join enrollment e on o.enrollment_id = e.enrollment_id left join instrument_items ii on o.instrumentitem_id = ii.instrumentitem_id join subjects s on e.subject_id = s.subject_id where e.project_id = ? and o.instrumentitem_id is not null and ii.instrumentitem_id is null order by o.observation_instrument, o.observation_name");
 		mysqli_stmt_bind_param($stmt, 'i', $projectid);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		mysqli_stmt_close($stmt);
