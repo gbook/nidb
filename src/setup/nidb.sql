@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: May 21, 2026 at 04:49 PM
+-- Generation Time: May 28, 2026 at 09:39 PM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -1943,14 +1943,13 @@ CREATE TABLE `notification_user` (
 CREATE TABLE `observations` (
   `observation_id` int(11) NOT NULL,
   `enrollment_id` int(11) NOT NULL,
+  `instrumentitem_id` int(11) DEFAULT NULL,
+  `observationsurvey_id` int(11) DEFAULT NULL,
   `observation_name` varchar(255) NOT NULL,
   `observation_notes` mediumtext DEFAULT NULL,
   `observation_instrument` varchar(250) DEFAULT NULL,
-  `instrumentitem_id` int(11) DEFAULT NULL,
   `observation_desc` varchar(250) DEFAULT NULL,
   `observation_rater` varchar(50) DEFAULT NULL,
-  `study_id` int(11) DEFAULT NULL,
-  `series_id` int(11) DEFAULT NULL,
   `observation_value` varchar(245) NOT NULL,
   `observation_startdate` datetime NOT NULL DEFAULT '0000-01-01 00:00:00',
   `observation_enddate` datetime DEFAULT NULL,
@@ -1959,6 +1958,24 @@ CREATE TABLE `observations` (
   `observation_createdate` datetime DEFAULT NULL,
   `observation_modifydate` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `observation_surveys`
+--
+
+CREATE TABLE `observation_surveys` (
+  `survey_id` bigint(20) NOT NULL,
+  `instrument_id` int(11) DEFAULT NULL,
+  `survey_startdate` datetime DEFAULT NULL,
+  `survey_enddate` datetime DEFAULT NULL,
+  `survey_notes` text DEFAULT NULL,
+  `survey_visit` text DEFAULT NULL,
+  `survey_experimenter` text DEFAULT NULL,
+  `survey_rater` text DEFAULT NULL,
+  `survey_entrydate` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -4250,10 +4267,18 @@ ALTER TABLE `notification_user`
 --
 ALTER TABLE `observations`
   ADD PRIMARY KEY (`observation_id`),
-  ADD UNIQUE KEY `enrollment_id` (`enrollment_id`,`observation_name`,`observation_startdate`),
   ADD KEY `observation_name` (`observation_name`),
   ADD KEY `enrollment_id_2` (`enrollment_id`),
-  ADD KEY `observation_startdate` (`observation_startdate`);
+  ADD KEY `observation_startdate` (`observation_startdate`),
+  ADD KEY `instrumentitem_id` (`instrumentitem_id`),
+  ADD KEY `observationsurvey_id` (`observationsurvey_id`),
+  ADD KEY `instrumentitem_id_2` (`instrumentitem_id`,`observation_instrument`);
+
+--
+-- Indexes for table `observation_surveys`
+--
+ALTER TABLE `observation_surveys`
+  ADD PRIMARY KEY (`survey_id`);
 
 --
 -- Indexes for table `ot_series`
@@ -5361,6 +5386,12 @@ ALTER TABLE `notification_user`
 --
 ALTER TABLE `observations`
   MODIFY `observation_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `observation_surveys`
+--
+ALTER TABLE `observation_surveys`
+  MODIFY `survey_id` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `ot_series`

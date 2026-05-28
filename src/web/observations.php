@@ -123,6 +123,48 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayObservationList ------------- */
 	/* -------------------------------------------- */
+	/*
+	 * OBSERVATION STATE TABLE
+	 * Each row in the observations table can be in one of 8 states based on the presence or
+	 * absence of three fields: instrumentitem_id (FK to instrument_items), observation_instrument
+	 * (free-text legacy hint), and observationsurvey_id (FK to observation_surveys).
+	 *
+	 * +---------+-------------------+--------------------+-----------------------+----------------------------------------------+
+	 * | State   | instrumentitem_id | observation_instr  | observationsurvey_id  | Description / Handling                       |
+	 * +---------+-------------------+--------------------+-----------------------+----------------------------------------------+
+	 * |  1      | set               | set                | set                   | Fully linked survey obs — ideal/target state |
+	 * +---------+-------------------+--------------------+-----------------------+----------------------------------------------+
+	 * |  2      | set               | set                | null                  | Linked item + legacy hint, no survey         |
+	 * |         |                   |                    |                       | Left blank intentionally (no auto-assign)    |
+	 * +---------+-------------------+--------------------+-----------------------+----------------------------------------------+
+	 * |  3      | set               | null               | set                   | Linked item, no hint, in survey              |
+	 * +---------+-------------------+--------------------+-----------------------+----------------------------------------------+
+	 * |  4      | set               | null               | null                  | Linked item, no hint, no survey              |
+	 * |         |                   |                    |                       | Auto-fill: match obs_name → item_name via    |
+	 * |         |                   |                    |                       | survey.instrument_id and update silently     |
+	 * +---------+-------------------+--------------------+-----------------------+----------------------------------------------+
+	 * |  5      | null              | set                | set                   | Legacy name in a survey — formalize target   |
+	 * +---------+-------------------+--------------------+-----------------------+----------------------------------------------+
+	 * |  6      | null              | set                | null                  | Legacy name, no survey — Formalize link      |
+	 * |         |                   |                    |                       | shown; assign to most recent survey or new   |
+	 * |         |                   |                    |                       | survey on observation_name collision         |
+	 * +---------+-------------------+--------------------+-----------------------+----------------------------------------------+
+	 * |  7      | null              | null               | set                   | No instrument link, in survey (orphan obs)   |
+	 * +---------+-------------------+--------------------+-----------------------+----------------------------------------------+
+	 * |  8      | null              | null               | null                  | Fully unaffiliated → grouped under __none__  |
+	 * +---------+-------------------+--------------------+-----------------------+----------------------------------------------+
+	 *
+	 * Grouping logic:
+	 *   States 1-4  (instrumentitem_id set)  → grouped by instruments.instrument_name (via FK join)
+	 *   States 5-6  (observation_instrument set, no item FK) → grouped by observation_instrument text
+	 *   States 7-8  (neither field set)      → grouped under __none__ ("No instrument")
+	 *
+	 * Label logic per Instrument accordion section:
+	 *   "Linked"           → all rows in the group are states 1-4 (legacyCount === 0 and instrument exists)
+	 *   "Partially linked" → instrument exists but some rows are states 5-6 (legacyCount > 0)
+	 *   "Legacy"           → no instrument record exists; rows are states 5-6 only
+	 *   (no label)         → __none__ group (states 7-8)
+	 */
 	function DisplayObservationList($enrollmentid) {
 
 		if ((trim($enrollmentid) == "") || ($enrollmentid < 0)) {
@@ -131,14 +173,10 @@
 		}
 
 		/* get subject's info and project for the breadcrumb/form */
-		$sqlstring = "select a.*, b.uid, b.subject_id, c.project_name, c.project_id from enrollment a left join subjects b on a.subject_id = b.subject_id left join projects c on a.project_id = c.project_id where a.enrollment_id = $enrollmentid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$projectid = $row['project_id'];
+		list(,,,,$projectid) = GetEnrollmentInfo($enrollmentid);
 
+		/* flush the loading indicator to the browser before running the heavy SQL queries */
 		?>
-		<script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.noStyle.js"></script>
-
 		<div class="ui text container" id="pageloading">
 			<div class="ui inverted segment" align="center">
 				<h2 class="ui inverted header">
@@ -146,6 +184,13 @@
 				</h2>
 			</div>
 		</div>
+		<?
+		/* discard any output buffer accumulated by includes so the loading div reaches the browser now */
+		while (ob_get_level()) ob_end_flush();
+		flush();
+		?>
+
+		<script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.noStyle.js"></script>
 
 		<!-- Add Instrument Modal -->
 		<div class="ui small modal" id="addInstrumentModal">
@@ -225,6 +270,89 @@
 			</div>
 		</div>
 
+		<!-- Assign to Existing Survey Modal -->
+		<div class="ui small modal" id="assignSurveyModal">
+			<div class="header">Assign Observations to Survey</div>
+			<div class="content">
+				<div class="ui form">
+					<div class="field">
+						<label>Select survey</label>
+						<select id="assignSurveySelect" class="ui dropdown" style="width:100%"></select>
+					</div>
+				</div>
+			</div>
+			<div class="actions">
+				<div class="ui cancel button">Cancel</div>
+				<div class="ui primary approve button">Assign</div>
+			</div>
+		</div>
+
+		<!-- Edit Survey Modal -->
+		<div class="ui small modal" id="editSurveyModal">
+			<div class="header">Edit Survey</div>
+			<div class="content">
+				<div class="ui form">
+					<input type="hidden" id="editSurveyId">
+					<div class="fields">
+						<div class="eight wide field">
+							<label>Start date</label>
+							<input type="datetime-local" id="editSurveyStartdate">
+						</div>
+						<div class="eight wide field">
+							<label>End date</label>
+							<input type="datetime-local" id="editSurveyEnddate">
+						</div>
+					</div>
+					<div class="field">
+						<label>Rater</label>
+						<input type="text" id="editSurveyRater" placeholder="Rater name">
+					</div>
+					<div class="field">
+						<label>Notes</label>
+						<textarea id="editSurveyNotes" rows="2"></textarea>
+					</div>
+					<div id="editSurveyError" class="ui error message" style="display:none"></div>
+				</div>
+			</div>
+			<div class="actions">
+				<div class="ui cancel button">Cancel</div>
+				<div class="ui primary approve button" id="editSurveySaveButton">Save</div>
+			</div>
+		</div>
+
+		<!-- New Survey Modal -->
+		<div class="ui small modal" id="newSurveyModal">
+			<div class="header">Create New Survey</div>
+			<div class="content">
+				<div class="ui form">
+					<input type="hidden" id="newSurveyInstrId">
+					<div class="fields">
+						<div class="eight wide field">
+							<label>Start date</label>
+							<input type="datetime-local" id="newSurveyStartdate">
+						</div>
+						<div class="eight wide field">
+							<label>End date</label>
+							<input type="datetime-local" id="newSurveyEnddate">
+						</div>
+					</div>
+					<div class="field">
+						<label>Rater</label>
+						<input type="text" id="newSurveyRater" placeholder="Rater name">
+					</div>
+					<div class="field">
+						<label>Notes</label>
+						<textarea id="newSurveyNotes" rows="2"></textarea>
+					</div>
+					<div id="newSurveyError" class="ui error message" style="display:none"></div>
+				</div>
+			</div>
+			<div class="actions">
+				<div class="ui cancel button">Cancel</div>
+				<div class="ui primary approve button" id="newSurveySaveButton">Create &amp; Assign</div>
+			</div>
+		</div>
+
 		<div class="ui raised black segment">
 			<form action="observations.php" method="post" class="ui form" id="addObsForm">
 				<input type="hidden" name="action" value="addobservation">
@@ -256,7 +384,7 @@
 				<div class="fields">
 					<div class="four wide field">
 						<label>Start date</label>
-						<input type="datetime-local" name="observation_startdate">
+						<input type="datetime-local" name="observation_startdate" id="obsStartdate">
 					</div>
 					<div class="two wide field">
 						<label>Duration</label>
@@ -280,74 +408,88 @@
 		</div>
 
 		<?
-		$groups = array();
-		$sqlstring = "select a.*, e.uid, ii.item_name, ins.instrument_name as linked_instrument_name from observations a left join enrollment d on a.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id left join instrument_items ii on a.instrumentitem_id = ii.instrumentitem_id left join instruments ins on ii.instrument_id = ins.instrument_id where a.enrollment_id = $enrollmentid order by a.observation_name";
+		$groups     = array();
+		$surveyMeta = array(); /* per-survey metadata keyed by 'survey_<id>' */
+
+		/* joined to instrument_items and instruments to resolve states 1-4 (instrumentitem_id set);
+		   joined to observation_surveys to pull survey dates/rater for states 1,3,5,7;
+		   left joins fall through to NULLs for states 2,4,6,8 (no survey) */
+		$sqlstring = "select a.*, ii.item_name, ins.instrument_name as linked_instrument_name, s.survey_startdate, s.survey_enddate, s.survey_rater, s.survey_notes, s.survey_visit from observations a left join instrument_items ii on a.instrumentitem_id = ii.instrumentitem_id left join instruments ins on ii.instrument_id = ins.instrument_id left join observation_surveys s on a.observationsurvey_id = s.survey_id where a.enrollment_id = $enrollmentid order by a.observation_name";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$observationid = $row['observation_id'];
-			$studyid = $row['study_id'];
-			$seriesid = $row['series_id'];
-			$uid = $row['uid'];
+			/* states 1-4: use the canonical item_name from the DB; states 5-8: fall back to the stored observation_name */
 			$observation_name = $row['item_name'] != '' ? $row['item_name'] : $row['observation_name'];
+			/* states 1-4: use the canonical instrument_name resolved via FK; states 5-6: use the legacy text hint */
 			$instrument_name = $row['linked_instrument_name'] != '' ? $row['linked_instrument_name'] : $row['observation_instrument'];
 
-			if ($studyid != "") {
-				$sqlstringA = "select study_num, study_modality from studies where study_id = $studyid";
-				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-				$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-				$studynum = $rowA['study_num'];
-				$modality = strtolower($rowA['study_modality']);
-
-				$sqlstringB = "select series_num from $modality" . "_series where $modality" . "series_id = $seriesid";
-				$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
-				$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
-				$seriesnum = $rowB['series_num'];
-
-				$series = "$uid$studynum-$seriesnum ($modality)";
-			}
-			else {
-				$series = "";
-			}
-
+			/* build the row information */
 			$entry = array(
 				'observationid' => $observationid,
 				'instrumentitemid' => (int)$row['instrumentitem_id'],
-				'name' => $observation_name,
+				'observationName' => $observation_name,
 				'obsInstrument' => $row['observation_instrument'],
 				'instrumentitem' => $row['item_name'],
 				'value' => $row['observation_value'],
-				'series' => $series,
 				'rater' => $row['observation_rater'],
 				'startdate' => $row['observation_startdate'],
 				'duration' => $row['observation_duration'],
 				'enddate' => $row['observation_enddate'],
-				'dateshtml' => "<b>Entry</b> " . $row['observation_entrydate'] . "<br><b>Create</b> " . $row['observation_createdate'] . "<br><b>Modify</b> " . $row['observation_modifydate']
+				'dateshtml' => "<b>Entry</b> " . $row['observation_entrydate'] . "<br><b>Create</b> " . $row['observation_createdate'] . "<br><b>Modify</b> " . $row['observation_modifydate'],
+			'surveyid'  => !empty($row['observationsurvey_id']) ? (int)$row['observationsurvey_id'] : null
 			);
 
-			$groupKey = !empty($instrument_name) ? $instrument_name : '__none__';
-			$groups[$groupKey][] = $entry;
+			/* states 1-4 or 5-6: outer group by instrument name; states 7-8 → __none__ instrument group */
+			$groupKey  = !empty($instrument_name) ? $instrument_name : '__none__';
+			/* states 1,3,5,7 (have survey): inner group by survey_id; states 2,4,6,8 → '__none__' survey sub-group */
+			$surveyKey = !empty($row['observationsurvey_id']) ? 'survey_' . (int)$row['observationsurvey_id'] : '__none__';
+			$groups[$groupKey][$surveyKey][] = $entry;
+
+			/* collect survey metadata the first time each unique survey_id is encountered */
+			if (!empty($row['observationsurvey_id']) && !isset($surveyMeta[$surveyKey])) {
+				$surveyMeta[$surveyKey] = array(
+					'surveyId'  => (int)$row['observationsurvey_id'],
+					'startdate' => $row['survey_startdate'],
+					'enddate'   => $row['survey_enddate'],
+					'rater'     => $row['survey_rater'],
+					'notes'     => $row['survey_notes'],
+					'visit'     => $row['survey_visit'],
+				);
+			}
 		}
 
 		/* sort instrument groups alphabetically; move __none__ to end */
 		ksort($groups);
 		if (isset($groups['__none__'])) {
-			$noneRows = $groups['__none__'];
+			$noneGroups = $groups['__none__'];
 			unset($groups['__none__']);
-			$groups['__none__'] = $noneRows;
+			$groups['__none__'] = $noneGroups;
 		}
 
 		$groupsJson = json_encode($groups, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
 
-		/* build per-group metadata: whether a real instrument exists, project-wide legacy count, unique item names */
+		/* build per-group metadata: instrument record existence, legacy count, unique item names, item count.
+		 * hasInstrument drives the badge: true → states 1-4 possible (Linked or Partially linked);
+		 * false → all rows are states 5-6 (Legacy badge).
+		 * legacyCount: state-5/6 observations project-wide; 0 + hasInstrument = fully linked (states 1-4). */
 		$groupMeta = array();
 		$totalObs = 0;
 		$instrumentCount = 0;
-		$unaffiliatedCount = isset($groups['__none__']) ? count($groups['__none__']) : 0;
-		foreach ($groups as $key => $rows) {
+		/* __none__ group holds states 7-8; sum across survey sub-groups for the summary line */
+		$unaffiliatedCount = 0;
+		if (isset($groups['__none__'])) {
+			foreach ($groups['__none__'] as $sRows) {
+				$unaffiliatedCount += count($sRows);
+			}
+		}
+		foreach ($groups as $key => $surveyGroups) {
+			/* flatten survey sub-groups into a single row list for counting and uniqueItems */
+			$rows = array_merge(...array_values($surveyGroups));
 			$totalObs += count($rows);
 			if ($key === '__none__') continue;
 			$instrumentCount++;
 
+			/* check whether a formal instrument record exists for this group name (distinguishes states 1-4 from 5-6) */
 			$stmt = mysqli_prepare($GLOBALS['linki'], "select instrument_id from instruments where project_id = ? and instrument_name = ? limit 1");
 			mysqli_stmt_bind_param($stmt, 'is', $projectid, $key);
 			$instrResult = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
@@ -355,38 +497,52 @@
 			$instrRow = $hasInstrument ? mysqli_fetch_array($instrResult, MYSQLI_ASSOC) : false;
 			mysqli_stmt_close($stmt);
 
+			/* count legacy rows project-wide: observations that reference this instrument by free text (states 5-6)
+			   but have no instrumentitem_id FK set — these are the observations the Formalize action will convert */
 			$stmt = mysqli_prepare($GLOBALS['linki'], "select count(*) as cnt from observations o join enrollment e on o.enrollment_id = e.enrollment_id where e.project_id = ? and o.observation_instrument = ? and o.instrumentitem_id is null");
 			mysqli_stmt_bind_param($stmt, 'is', $projectid, $key);
 			$cntResult = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 			$cntRow = mysqli_fetch_array($cntResult, MYSQLI_ASSOC);
 			mysqli_stmt_close($stmt);
 
-			$seen = array();
-			$uniqueItems = array();
-			foreach ($rows as $r) {
-				if ($r['name'] !== '' && !isset($seen[$r['name']])) {
-					$seen[$r['name']] = true;
-					$uniqueItems[] = $r['name'];
-				}
-			}
+			/* remove duplicate observation names in this group — used to populate the Formalize modal */
+			$uniqueItems = array_values(array_unique(array_column($rows, 'observationName')));
+			/* remove blank observation names */
+			$uniqueItems = array_values(array_filter($uniqueItems, function($v) { return $v !== ''; }));
 			sort($uniqueItems);
 
-			$groupMeta[$key] = [
+			/* count items in the instrument template — used for completeness display in survey sub-headers */
+			$itemCount = 0;
+			if ($hasInstrument && $instrRow) {
+				$iid = (int)$instrRow['instrument_id'];
+				$itemCountResult = MySQLiQuery("select count(*) as cnt from instrument_items where instrument_id = $iid", __FILE__, __LINE__);
+				$itemCountRow = mysqli_fetch_array($itemCountResult, MYSQLI_ASSOC);
+				$itemCount = (int)$itemCountRow['cnt'];
+			}
+
+			$groupMeta[$key] = array(
 				'hasInstrument' => $hasInstrument,
 				'instrumentId'  => $hasInstrument ? (int)$instrRow['instrument_id'] : null,
 				'legacyCount'   => (int)$cntRow['cnt'],
 				'uniqueItems'   => $uniqueItems,
-			];
+				'itemCount'     => $itemCount,
+			);
 		}
-		$groupMetaJson = json_encode($groupMeta, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+		$groupMetaJson  = json_encode($groupMeta,  JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+		$surveyMetaJson = json_encode($surveyMeta, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+		
+		$topInformation = sprintf("%d observation%s from %d instrument%s (%d unaffiliated observation%s)", $totalObs, $totalObs != 1 ? 's' : '', $instrumentCount, $instrumentCount != 1 ? 's' : '', $unaffiliatedCount, $unaffiliatedCount != 1 ? 's' : '');
+		
 		?>
-		<p style="color:#666; margin-bottom:6px"><?=$totalObs?> observation<?=$totalObs != 1 ? 's' : ''?> from <?=$instrumentCount?> instrument<?=$instrumentCount != 1 ? 's' : ''?> (<?=$unaffiliatedCount?> unaffiliated observation<?=$unaffiliatedCount != 1 ? 's' : ''?>)</p>
+		<div class="ui top attached secondary inverted black segment" style="padding: 6px 14px"><?=$topInformation?></div>
 		<div class="ui styled fluid accordion" id="observationAccordion"></div>
 
 		<script>
-			const groupedData = <?=$groupsJson?>;
-			const groupMeta   = <?=$groupMetaJson?>;
-			const PROJECT_ID  = <?=(int)$projectid?>;
+			const groupedData   = <?=$groupsJson?>;
+			const groupMeta     = <?=$groupMetaJson?>;
+			const surveyMeta    = <?=$surveyMetaJson?>;
+			const PROJECT_ID    = <?=(int)$projectid?>;
+			const ENROLLMENT_ID = <?=(int)$enrollmentid?>;
 
 			/* custom AG Grid header component using prototype API (required by community edition) */
 			function ObservationDatesHeader() {}
@@ -459,16 +615,16 @@
 				}
 			};
 
-			/* column defs for instrument groups. There is no Instrument column here, because it is shown in the accordion header */
+			/* column defs for instrument groups (states 1-6): no Instrument column because the instrument
+			   name is already shown in the accordion header */
 			const instrColDefs = [
 				{
-					headerName: 'Variable', field: 'name', flex: 1.3, minWidth: 180,
+					headerName: 'Variable', field: 'observationName', flex: 1.3, minWidth: 180,
 					editable: function(params) { return !params.data.instrumentitemid; },
 					cellStyle: editableCellStyle
 				},
 				{ headerName: 'Instrument Item', field: 'instrumentitem', flex: 1, minWidth: 150 },
 				{ headerName: 'Value', field: 'value', flex: 1, minWidth: 130, editable: true, cellStyle: editableCellStyle },
-				{ headerName: 'Series', field: 'series', flex: 1, minWidth: 160 },
 				{ headerName: 'Rater', field: 'rater', minWidth: 120, editable: true, cellStyle: function() { return { 'font-size': '9pt', cursor: 'text' }; } },
 				{ headerName: 'Start date', field: 'startdate', minWidth: 160, editable: true, cellStyle: editableCellStyle },
 				{ headerName: 'Duration', field: 'duration', minWidth: 110, editable: true, cellStyle: editableCellStyle },
@@ -477,10 +633,10 @@
 				datesColDef
 			];
 
-			/* column defs for the no-instrument group: keep Variable (instrColDefs[0]), insert an editable
-			   Instrument column, then append everything from instrColDefs except name and instrumentitem */
+			/* column defs for the __none__ group (states 7-8): keep Variable, insert an editable Instrument
+			   column so the user can assign a free-text hint (promoting toward state 6), then append the rest */
 			const noneInstrumentColDef = { headerName: 'Instrument', field: 'obsInstrument', flex: 1, minWidth: 150, editable: true, cellStyle: editableCellStyle };
-			const noneColDefs = [instrColDefs[0], noneInstrumentColDef, ...instrColDefs.filter(function(c) { return c.field !== 'instrumentitem' && c.field !== 'name'; })];
+			const noneColDefs = [instrColDefs[0], noneInstrumentColDef, ...instrColDefs.filter(function(c) { return c.field !== 'instrumentitem' && c.field !== 'observationName'; })];
 
 			/* sanitizes a string for safe insertion into innerHTML */
 			function escHtml(s) {
@@ -571,66 +727,168 @@
 			}
 
 			$(document).ready(function() {
+				/* defer accordion build so the browser paints the loading message before JS runs */
+				setTimeout(function() {
+
 				const accordion = document.getElementById('observationAccordion');
 
-				/* build one accordion section + AG Grid per instrument group; __none__ receives special column defs */
-				Object.entries(groupedData).forEach(function([instrName, rows]) {
-					const isNone = instrName === '__none__';
-					const displayName = isNone ? 'No instrument' : instrName;
-					/* grid element IDs must be valid HTML identifiers, so strip non-alphanumeric characters */
-					const gridId = 'grid_' + instrName.replace(/[^a-zA-Z0-9]/g, '_');
-					/* clamp grid height: minimum 120px, maximum 600px, ~42px per row + 56px header */
-					const height = Math.max(120, Math.min(rows.length * 42 + 56, 600));
+				/* track inner accordion IDs so they can be initialized after DOM insertion */
+				const innerAccordionIds = [];
 
-					/* meta is null for the __none__ group because it has no associated instrument record */
-					const meta = isNone ? null : (groupMeta[instrName] || null);
-					let badge = '';
+				/* build two-level accordion: outer = instrument group, inner = survey sub-groups */
+				Object.entries(groupedData).forEach(function([instrName, surveyGroups]) {
+					const isNoneInstr = instrName === '__none__';
+					const displayName = isNoneInstr ? 'No instrument' : instrName;
+					const instrSafeId = instrName.replace(/[^a-zA-Z0-9]/g, '_');
+
+					/* total observation count and formal survey count (excludes the __none__ sub-group) */
+					let totalRows = 0;
+					let surveyCount = 0;
+					Object.entries(surveyGroups).forEach(function([sk, rows]) {
+						totalRows += rows.length;
+						if (sk !== '__none__') surveyCount++;
+					});
+
+					/* meta is null for the __none__ group (states 7-8) */
+					const meta = isNoneInstr ? null : (groupMeta[instrName] || null);
+
+					/* instrument-level badge: Linked (states 1-4 only), Partially linked (mix), Legacy (states 5-6 only) */
+					let instrBadge = '';
 					if (meta) {
 						if (meta.hasInstrument && meta.legacyCount === 0) {
-							/* all observations are linked via instrumentitem_id */
-							badge = '&nbsp;<span class="ui tiny green label" title="This instrument exists"><i class="check icon"></i> Linked</span>';
+							instrBadge = '&nbsp;<span class="ui tiny green label" title="All observations linked via instrument item FK"><i class="check icon"></i> Linked</span>';
 						} else if (meta.hasInstrument && meta.legacyCount > 0) {
-							/* instrument exists in DB but some observations still use the legacy observation_instrument string */
-							badge = '&nbsp;<span class="ui tiny yellow label" title="This instrument exists, but not all items exist"><i class="adjust icon"></i> Partially linked</span>'
-								+ '&nbsp;<a class="formalize-link" href="#" data-instrument="' + escHtml(instrName) + '" style="font-size:0.85em">'
-								+ '<i class="sync icon"></i>Convert remaining</a>';
+							instrBadge = '&nbsp;<span class="ui tiny yellow label" title="Some observations still use a legacy text string"><i class="adjust icon"></i> Partially linked</span>'
+								+ '&nbsp;<a class="formalize-link" href="#" data-instrument="' + escHtml(instrName) + '" style="font-size:0.85em"><i class="sync icon"></i>Convert remaining</a>';
 						} else {
-							/* no instrument record exists; only the free-text observation_instrument string is present */
-							badge = '&nbsp;<span class="ui tiny orange label" title="This instrument does not exist"><i class="warning sign icon"></i> Legacy</span>'
-								+ '&nbsp;<a class="formalize-link" href="#" data-instrument="' + escHtml(instrName) + '" style="font-size:0.85em">'
-								+ '<i class="plus icon"></i>Create instrument</a>';
+							instrBadge = '&nbsp;<span class="ui tiny orange label" title="No instrument record exists for this name"><i class="warning sign icon"></i> Legacy</span>'
+								+ '&nbsp;<a class="formalize-link" href="#" data-instrument="' + escHtml(instrName) + '" style="font-size:0.85em"><i class="plus icon"></i>Create instrument</a>';
 						}
 					}
 
-					/* accordion title: dropdown chevron, bold instrument name, row-count bubble, and badge */
-					const title = document.createElement('div');
-					title.className = 'title';
-					title.innerHTML = '<i class="dropdown icon"></i><b>' + escHtml(displayName) + '</b>&nbsp;<div class="ui small circular label">' + rows.length + '</div>' + badge;
-					accordion.appendChild(title);
+					/* outer accordion title */
+					const outerTitle = document.createElement('div');
+					outerTitle.className = 'title';
+					const surveyLabel = surveyCount + ' survey' + (surveyCount !== 1 ? 's' : '');
+					if (displayName == "No instrument")
+						outerTitle.innerHTML = '<i class="dropdown icon"></i><b>' + escHtml(displayName) + '</b>&nbsp;<div class="ui small circular label">' + totalRows + ' observations</div>' + instrBadge;
+					else
+						outerTitle.innerHTML = '<i class="dropdown icon"></i><b>' + escHtml(displayName) + '</b>&nbsp;<div class="ui small circular label">' + totalRows + ' observations / ' + surveyLabel + '</div>' + instrBadge;
+					accordion.appendChild(outerTitle);
 
-					/* accordion content: a single sized div that AG Grid mounts into */
-					const content = document.createElement('div');
-					content.className = 'content';
-					const gridDiv = document.createElement('div');
-					gridDiv.id = gridId;
-					gridDiv.style.cssText = 'height:' + height + 'px; width:100%';
-					content.appendChild(gridDiv);
-					accordion.appendChild(content);
+					/* outer accordion content: holds the inner survey-level accordion */
+					const outerContent = document.createElement('div');
+					outerContent.className = 'content';
 
-					agGrid.createGrid(gridDiv, {
-						theme: agGrid.themeQuartz,
-						/* __none__ group gets an editable Instrument column; all others show the instrument in the accordion header */
-						columnDefs: isNone ? noneColDefs : instrColDefs,
-						rowData: rows,
-						defaultColDef: { sortable: true, filter: true, resizable: true },
-						animateRows: false,
-						suppressMovableColumns: true,
-						onCellValueChanged: onCellValueChanged
+					const innerAccordion = document.createElement('div');
+					innerAccordion.className = 'ui styled fluid accordion';
+					const innerAccordionId = 'surveys_' + instrSafeId;
+					innerAccordion.id = innerAccordionId;
+					innerAccordionIds.push(innerAccordionId);
+
+					/* sort survey keys: dated surveys descending by startdate, __none__ always last */
+					const surveyKeys = Object.keys(surveyGroups).sort(function(a, b) {
+						if (a === '__none__') return 1;
+						if (b === '__none__') return -1;
+						const dateA = (surveyMeta[a] && surveyMeta[a].startdate) ? surveyMeta[a].startdate : '';
+						const dateB = (surveyMeta[b] && surveyMeta[b].startdate) ? surveyMeta[b].startdate : '';
+						return dateB.localeCompare(dateA);
+					});
+
+					surveyKeys.forEach(function(surveyKey) {
+						const rows        = surveyGroups[surveyKey];
+						const isNoneSurvey = surveyKey === '__none__';
+						const sm          = isNoneSurvey ? null : (surveyMeta[surveyKey] || null);
+
+						/* completeness: count linked rows (have instrumentitem_id) vs total items in instrument template */
+						const filledCount = rows.filter(function(r) { return r.instrumentitemid > 0; }).length;
+						const totalItems  = meta ? (meta.itemCount || 0) : 0;
+
+						/* survey sub-header: dated surveys show date + rater + completeness badge;
+						   __none__ sub-group shows "Unaffiliated observations" + assign/new-survey buttons */
+						let surveyTitleHtml;
+						if (isNoneSurvey) {
+							surveyTitleHtml = '<i class="dropdown icon"></i>'
+								+ '<span style="color:#999"><i class="unlink icon"></i> Unaffiliated observations</span>'
+								+ '&nbsp;<div class="ui small circular label">' + rows.length + '</div>';
+						} else {
+							const dateStr  = (sm && sm.startdate) ? sm.startdate.substring(0, 16) : 'No date';
+							const raterStr = (sm && sm.rater) ? ' &mdash; ' + escHtml(sm.rater) : '';
+							let complBadge = '';
+							if (totalItems > 0) {
+								const complColor = (filledCount === totalItems) ? 'green' : (filledCount > 0 ? 'yellow' : 'red');
+								complBadge = '&nbsp;<span class="ui tiny ' + complColor + ' label">' + filledCount + ' / ' + totalItems + ' items</span>';
+							}
+							const editLink = '&nbsp;<a class="edit-survey-link" href="#" data-surveykey="' + escHtml(surveyKey) + '" style="font-size:0.85em"><i class="edit icon"></i>Edit survey</a>';
+							surveyTitleHtml = '<i class="dropdown icon"></i><i class="calendar outline icon"></i> '
+								+ escHtml(dateStr) + raterStr
+								+ '&nbsp;<div class="ui small circular label">' + rows.length + '</div>'
+								+ complBadge + editLink;
+						}
+
+						const surveyTitleDiv = document.createElement('div');
+						surveyTitleDiv.className = 'title';
+						surveyTitleDiv.innerHTML = surveyTitleHtml;
+						innerAccordion.appendChild(surveyTitleDiv);
+
+						const surveyContentDiv = document.createElement('div');
+						surveyContentDiv.className = 'content';
+
+						/* action bar: shown only for the unaffiliated sub-group of a named instrument */
+						if (isNoneSurvey && !isNoneInstr) {
+							const obsIds = rows.map(function(r) { return r.observationid; });
+							const actionBar = document.createElement('div');
+							actionBar.className = 'survey-action-bar';
+							actionBar.style.cssText = 'margin-bottom:10px';
+							actionBar.setAttribute('data-instrname', instrName);
+							actionBar.setAttribute('data-instrid',   meta ? (meta.instrumentId || '') : '');
+							actionBar.setAttribute('data-obsids',    JSON.stringify(obsIds));
+							actionBar.innerHTML = '<button class="ui tiny primary button assign-survey-btn"><i class="linkify icon"></i> Assign to existing survey</button>'
+								+ '&nbsp;<button class="ui tiny button new-survey-btn"><i class="calendar plus icon"></i> New survey</button>';
+							surveyContentDiv.appendChild(actionBar);
+						}
+
+						/* AG Grid for this survey sub-section */
+						const gridId  = 'grid_' + instrSafeId + '_' + surveyKey.replace(/[^a-zA-Z0-9]/g, '_');
+						const height  = Math.max(120, Math.min(rows.length * 42 + 56, 600));
+						const gridDiv = document.createElement('div');
+						gridDiv.id    = gridId;
+						gridDiv.style.cssText = 'height:' + height + 'px; width:100%';
+						surveyContentDiv.appendChild(gridDiv);
+						innerAccordion.appendChild(surveyContentDiv);
+
+						agGrid.createGrid(gridDiv, {
+							theme: agGrid.themeQuartz,
+							/* __none__ instrument group (states 7-8): editable Instrument column included */
+							columnDefs: isNoneInstr ? noneColDefs : instrColDefs,
+							rowData: rows,
+							defaultColDef: { sortable: true, filter: true, resizable: true },
+							animateRows: false,
+							suppressMovableColumns: true,
+							onCellValueChanged: onCellValueChanged
+						});
+					});
+
+					outerContent.appendChild(innerAccordion);
+					accordion.appendChild(outerContent);
+				});
+
+				/* initialize outer accordion (exclusive:false allows multiple sections open simultaneously) */
+				$('#observationAccordion').accordion({ exclusive: false, duration: 0 });
+				/* initialize each inner survey-level accordion; stopPropagation on inner title clicks
+				   prevents them from bubbling up to the outer accordion and collapsing the parent section */
+				innerAccordionIds.forEach(function(id) {
+					$('#' + id).accordion({ exclusive: false, duration: 0 });
+					$('#' + id).on('click', '> .title', function(e) { e.stopPropagation(); });
+					/* edit-survey-link is inside .title; intercept here (closer to target than .title) so
+					   stopPropagation fires before Fomantic's accordion title handler toggles the panel */
+					$('#' + id).on('click', 'a.edit-survey-link', function(e) {
+						e.preventDefault();
+						e.stopPropagation();
+						$(this).trigger('edit-survey');
 					});
 				});
 
-				/* exclusive:false allows multiple accordion sections to be open simultaneously */
-				$('#observationAccordion').accordion({ exclusive: false });
 				/* jQuery UI tooltip for observation entry-date cells that use data-html */
 				$('#observationAccordion').tooltip({
 					items: '.observation-html-tooltip',
@@ -644,7 +902,131 @@
 					openFormalizeModal($(this).data('instrument'));
 				});
 
+				/* ----- assign unaffiliated observations to an existing survey ----- */
+				$(document).on('click', '.assign-survey-btn', function(e) {
+					e.stopPropagation();
+					const bar     = $(this).closest('.survey-action-bar');
+					const instrId = bar.attr('data-instrid');
+					const obsIds  = JSON.parse(bar.attr('data-obsids'));
+
+					if (!instrId) {
+						alert('No linked instrument. Use "Formalize" to create an instrument first.');
+						return;
+					}
+					/* fetch existing surveys for this enrollment + instrument */
+					$.getJSON('ajaxapi.php', { action: 'getsurveys', enrollmentid: ENROLLMENT_ID, instrumentid: instrId }, function(data) {
+						if (!data || !data.length) {
+							alert('No existing surveys found for this instrument. Use "New survey" to create one.');
+							return;
+						}
+						const sel = $('#assignSurveySelect').empty();
+						data.forEach(function(s) {
+							const label = (s.startdate ? s.startdate.substring(0, 16) : 'No date') + (s.rater ? ' — ' + s.rater : '');
+							sel.append($('<option>').val(s.survey_id).text(label));
+						});
+						$('#assignSurveyModal').modal({
+							closable: false,
+							onApprove: function() {
+								$.post('ajaxapi.php', {
+									action:         'assigntosurvey',
+									surveyid:       $('#assignSurveySelect').val(),
+									observationids: JSON.stringify(obsIds)
+								}, function() { location.reload(); });
+								return false;
+							}
+						}).modal('show');
+					}).fail(function() { alert('Error fetching surveys. Please try again.'); });
+				});
+
+				/* ----- create new survey and assign unaffiliated observations to it ----- */
+				$(document).on('click', '.new-survey-btn', function(e) {
+					e.stopPropagation();
+					const bar     = $(this).closest('.survey-action-bar');
+					const instrId = bar.attr('data-instrid');
+					const obsIds  = JSON.parse(bar.attr('data-obsids'));
+
+					$('#newSurveyInstrId').val(instrId);
+					$('#newSurveyStartdate').val(new Date(new Date() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16));
+					$('#newSurveyEnddate').val('');
+					$('#newSurveyRater').val('<?=$GLOBALS['username']?>');
+					$('#newSurveyNotes').val('');
+					$('#newSurveyError').hide();
+					$('#newSurveySaveButton').removeClass('loading disabled');
+
+					$('#newSurveyModal').modal({
+						closable: false,
+						onApprove: function() {
+							$('#newSurveySaveButton').addClass('loading disabled');
+							$.post('ajaxapi.php', {
+								action:         'createandassignsurvey',
+								enrollmentid:   ENROLLMENT_ID,
+								instrumentid:   instrId,
+								startdate:      $('#newSurveyStartdate').val(),
+								enddate:        $('#newSurveyEnddate').val(),
+								rater:          $('#newSurveyRater').val(),
+								notes:          $('#newSurveyNotes').val(),
+								observationids: JSON.stringify(obsIds)
+							}, function(data) {
+								if (data && data.error) {
+									$('#newSurveyError').text(data.error).show();
+									$('#newSurveySaveButton').removeClass('loading disabled');
+									return;
+								}
+								location.reload();
+							}, 'json').fail(function() {
+								$('#newSurveyError').text('Server error — please try again.').show();
+								$('#newSurveySaveButton').removeClass('loading disabled');
+							});
+							return false;
+						}
+					}).modal('show');
+				});
+
+				/* ----- edit an existing survey ----- */
+				$(document).on('edit-survey', '.edit-survey-link', function(e) {
+					const surveyKey = $(this).attr('data-surveykey');
+					const sm = surveyMeta[surveyKey];
+					$('#editSurveyId').val(sm ? sm.surveyId : '');
+					$('#editSurveyStartdate').val(sm && sm.startdate ? sm.startdate.replace(' ', 'T').slice(0, 16) : '');
+					$('#editSurveyEnddate').val(sm && sm.enddate   ? sm.enddate.replace(' ', 'T').slice(0, 16)   : '');
+					$('#editSurveyRater').val(sm && sm.rater ? sm.rater : '');
+					$('#editSurveyNotes').val(sm && sm.notes ? sm.notes : '');
+					$('#editSurveyError').hide();
+					$('#editSurveySaveButton').removeClass('loading disabled');
+
+					$('#editSurveyModal').modal({
+						closable: false,
+						onApprove: function() {
+							$('#editSurveySaveButton').addClass('loading disabled');
+							$.post('ajaxapi.php', {
+								action:    'updatesurvey',
+								surveyid:  $('#editSurveyId').val(),
+								startdate: $('#editSurveyStartdate').val(),
+								enddate:   $('#editSurveyEnddate').val(),
+								rater:     $('#editSurveyRater').val(),
+								notes:     $('#editSurveyNotes').val()
+							}, function(data) {
+								if (data && data.error) {
+									$('#editSurveyError').text(data.error).show();
+									$('#editSurveySaveButton').removeClass('loading disabled');
+									return;
+								}
+								location.reload();
+							}, 'json').fail(function() {
+								$('#editSurveyError').text('Server error — please try again.').show();
+								$('#editSurveySaveButton').removeClass('loading disabled');
+							});
+							return false;
+						}
+					}).modal('show');
+				});
+
+				/* default the add-observation start date to now in local time */
+				$('#obsStartdate').val(new Date(new Date() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16));
+
 				$('#pageloading').hide();
+
+				}, 0); /* end setTimeout — accordion build deferred to let browser paint loading message */
 
 				/* ----- instrument autocomplete ----- */
 				$('#instrumentSearch').autocomplete({
@@ -782,7 +1164,7 @@
 					}).modal('show');
 				});
 
-				/* ----- add item modal ----- */
+				/* ----- add instrument item modal ----- */
 				$('#addItemLink').on('click', function(e) {
 					e.preventDefault();
 					/* pre-fill name with whatever the user already typed in the item search field */

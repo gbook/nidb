@@ -52,11 +52,18 @@
 	$itemnamesJson = GetVariable("itemnames");
 
 	$projectid = GetVariable("projectid");
+	$enrollmentid = GetVariable("enrollmentid");
 	$observationid = GetVariable("observationid");
 	$subjectid = GetVariable("subjectid");
 	$studyid = GetVariable("studyid");
 	$column = GetVariable("column");
 	$value = GetVariable("value");
+	$surveyid = GetVariable("surveyid");
+	$observationids = GetVariable("observationids");
+	$startdate = GetVariable("startdate");
+	$enddate = GetVariable("enddate");
+	$rater = GetVariable("rater");
+	$notes = GetVariable("notes");
 	
 	$s['pipelineid'] = GetVariable("pipelineid");
 	$s['dependency'] = GetVariable("dependency");
@@ -131,18 +138,17 @@
 		case 'formalizeinstrument':
 			FormalizeInstrument($instrumentname, $originalname, $projectid, $itemnamesJson);
 			break;
-		case 'auditobservations':
-			AuditObservations((int)$projectid);
+		case 'getsurveys':
+			GetSurveys((int)$enrollmentid, (int)$instrumentid);
 			break;
-		case 'fixobservation':
-			$checktype = GetVariable('checktype');
-			if ((int)$observationid > 0) {
-				FixObservation((int)$observationid, $checktype);
-			} elseif ((int)$projectid > 0) {
-				FixObservationsBulk((int)$projectid, $checktype);
-			} else {
-				echo json_encode(array('error' => 'observationid or projectid required'));
-			}
+		case 'assigntosurvey':
+			AssignToSurvey((int)$surveyid, $observationids);
+			break;
+		case 'createandassignsurvey':
+			CreateAndAssignSurvey((int)$enrollmentid, (int)$instrumentid, $startdate, $enddate, $rater, $notes, $observationids);
+			break;
+		case 'updatesurvey':
+			UpdateSurvey((int)$surveyid, $startdate, $enddate, $rater, $notes);
 			break;
 	}
 	
@@ -1246,125 +1252,107 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- AuditObservations ----------------- */
+	/* ------- GetSurveys ------------------------- */
 	/* -------------------------------------------- */
-	/* returns all observation naming mismatches for a project as JSON */
-	function AuditObservations($projectid) {
+	/* returns JSON array of surveys for a given enrollment + instrument, most recent first */
+	function GetSurveys($enrollmentid, $instrumentid) {
 		header('Content-Type: application/json');
-
-		if ($projectid < 1) { echo json_encode(array('error' => 'invalid projectid')); return; }
-
-		$nameDrift  = array();
-		$instrDrift = array();
-		$brokenLink = array();
-
-		/* variable name mismatch: observation_name differs from the linked item_name */
-		$stmt = mysqli_prepare($GLOBALS['linki'], "select o.observation_id, e.enrollment_id, o.observation_name as stored_name, ii.item_name as linked_name, ins.instrument_name, s.uid from observations o join enrollment e on o.enrollment_id = e.enrollment_id join instrument_items ii on o.instrumentitem_id = ii.instrumentitem_id join instruments ins on ii.instrument_id = ins.instrument_id join subjects s on e.subject_id = s.subject_id where e.project_id = ? and o.observation_name != ii.item_name order by ins.instrument_name, ii.item_name");
-		mysqli_stmt_bind_param($stmt, 'i', $projectid);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-		mysqli_stmt_close($stmt);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) { $nameDrift[] = $row; }
-
-		/* instrument name mismatch: observation_instrument differs from the linked instrument_name */
-		$stmt = mysqli_prepare($GLOBALS['linki'], "select o.observation_id, e.enrollment_id, o.observation_instrument as stored_instrument, ins.instrument_name as linked_instrument, o.observation_name, s.uid from observations o join enrollment e on o.enrollment_id = e.enrollment_id join instrument_items ii on o.instrumentitem_id = ii.instrumentitem_id join instruments ins on ii.instrument_id = ins.instrument_id join subjects s on e.subject_id = s.subject_id where e.project_id = ? and o.observation_instrument != ins.instrument_name order by ins.instrument_name, o.observation_name");
-		mysqli_stmt_bind_param($stmt, 'i', $projectid);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-		mysqli_stmt_close($stmt);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) { $instrDrift[] = $row; }
-
-		/* broken link: instrumentitem_id set but the target row no longer exists */
-		$stmt = mysqli_prepare($GLOBALS['linki'], "select o.observation_id, e.enrollment_id, o.instrumentitem_id, o.observation_name, o.observation_instrument, s.uid from observations o join enrollment e on o.enrollment_id = e.enrollment_id left join instrument_items ii on o.instrumentitem_id = ii.instrumentitem_id join subjects s on e.subject_id = s.subject_id where e.project_id = ? and o.instrumentitem_id is not null and ii.instrumentitem_id is null order by o.observation_instrument, o.observation_name");
-		mysqli_stmt_bind_param($stmt, 'i', $projectid);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-		mysqli_stmt_close($stmt);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) { $brokenLink[] = $row; }
-
-		/* legacy count: observation_instrument set but no instrumentitem_id — informational only */
-		$stmt = mysqli_prepare($GLOBALS['linki'], "select count(*) as cnt from observations o join enrollment e on o.enrollment_id = e.enrollment_id where e.project_id = ? and o.observation_instrument is not null and o.instrumentitem_id is null");
-		mysqli_stmt_bind_param($stmt, 'i', $projectid);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-		mysqli_stmt_close($stmt);
-		$cntRow = mysqli_fetch_array($result, MYSQLI_ASSOC);
-
-		echo json_encode(array(
-			'nameDrift'   => $nameDrift,
-			'instrDrift'  => $instrDrift,
-			'brokenLink'  => $brokenLink,
-			'legacyCount' => (int)$cntRow['cnt'],
-		));
+		if ($enrollmentid <= 0 || $instrumentid <= 0) {
+			echo json_encode(array());
+			return;
+		}
+		/* find surveys that have at least one observation from this enrollment */
+		$sqlstring = "select s.survey_id, s.survey_startdate, s.survey_enddate, s.survey_rater, s.survey_notes, s.survey_visit from observation_surveys s join observations o on o.observationsurvey_id = s.survey_id where o.enrollment_id = $enrollmentid and s.instrument_id = $instrumentid group by s.survey_id order by s.survey_startdate desc";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$surveys = array();
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$surveys[] = array(
+				'survey_id' => (int)$row['survey_id'],
+				'startdate' => $row['survey_startdate'],
+				'enddate'   => $row['survey_enddate'],
+				'rater'     => $row['survey_rater'],
+				'notes'     => $row['survey_notes'],
+				'visit'     => $row['survey_visit'],
+			);
+		}
+		echo json_encode($surveys);
 	}
 
 
 	/* -------------------------------------------- */
-	/* ------- FixObservation --------------------- */
+	/* ------- AssignToSurvey --------------------- */
 	/* -------------------------------------------- */
-	/* fixes a single observation row by re-deriving the stored text from the FK target */
-	function FixObservation($observationid, $checktype) {
+	/* assigns a list of observation IDs to an existing survey */
+	function AssignToSurvey($surveyid, $observationidsJson) {
 		header('Content-Type: application/json');
-
-		switch ($checktype) {
-			case 'namedrift':
-				/* update observation_name to match the linked item_name */
-				$stmt = mysqli_prepare($GLOBALS['linki'], "update observations o join instrument_items ii on o.instrumentitem_id = ii.instrumentitem_id set o.observation_name = ii.item_name where o.observation_id = ?");
-				mysqli_stmt_bind_param($stmt, 'i', $observationid);
-				MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-				mysqli_stmt_close($stmt);
-				break;
-			case 'instrdrift':
-				/* update observation_instrument to match the linked instrument_name */
-				$stmt = mysqli_prepare($GLOBALS['linki'], "update observations o join instrument_items ii on o.instrumentitem_id = ii.instrumentitem_id join instruments ins on ii.instrument_id = ins.instrument_id set o.observation_instrument = ins.instrument_name where o.observation_id = ?");
-				mysqli_stmt_bind_param($stmt, 'i', $observationid);
-				MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-				mysqli_stmt_close($stmt);
-				break;
-			case 'brokenlink':
-				/* clear the orphaned FK so the observation reverts to legacy (unlinked) state */
-				$stmt = mysqli_prepare($GLOBALS['linki'], "update observations set instrumentitem_id = null where observation_id = ?");
-				mysqli_stmt_bind_param($stmt, 'i', $observationid);
-				MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-				mysqli_stmt_close($stmt);
-				break;
-			default:
-				echo json_encode(array('error' => 'unknown checktype'));
-				return;
+		if ($surveyid <= 0) {
+			echo json_encode(array('error' => 'invalid survey_id'));
+			return;
 		}
-
-		echo json_encode(array('ok' => true));
+		$ids = json_decode($observationidsJson, true);
+		if (!is_array($ids) || count($ids) === 0) {
+			echo json_encode(array('error' => 'no observation IDs provided'));
+			return;
+		}
+		$idList = implode(',', array_map('intval', $ids));
+		$sqlstring = "update observations set observationsurvey_id = $surveyid where observation_id in ($idList)";
+		MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		echo json_encode(array('success' => true));
 	}
 
 
 	/* -------------------------------------------- */
-	/* ------- FixObservationsBulk ---------------- */
+	/* ------- CreateAndAssignSurvey -------------- */
 	/* -------------------------------------------- */
-	/* fixes all observations of a given check type across the entire project */
-	function FixObservationsBulk($projectid, $checktype) {
+	/* creates a new observation_surveys record and assigns a list of observations to it */
+	function CreateAndAssignSurvey($enrollmentid, $instrumentid, $startdate, $enddate, $rater, $notes, $observationidsJson) {
 		header('Content-Type: application/json');
-
-		switch ($checktype) {
-			case 'namedrift':
-				$stmt = mysqli_prepare($GLOBALS['linki'], "update observations o join enrollment e on o.enrollment_id = e.enrollment_id join instrument_items ii on o.instrumentitem_id = ii.instrumentitem_id set o.observation_name = ii.item_name where e.project_id = ? and o.observation_name != ii.item_name");
-				mysqli_stmt_bind_param($stmt, 'i', $projectid);
-				MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-				mysqli_stmt_close($stmt);
-				break;
-			case 'instrdrift':
-				$stmt = mysqli_prepare($GLOBALS['linki'], "update observations o join enrollment e on o.enrollment_id = e.enrollment_id join instrument_items ii on o.instrumentitem_id = ii.instrumentitem_id join instruments ins on ii.instrument_id = ins.instrument_id set o.observation_instrument = ins.instrument_name where e.project_id = ? and o.observation_instrument != ins.instrument_name");
-				mysqli_stmt_bind_param($stmt, 'i', $projectid);
-				MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-				mysqli_stmt_close($stmt);
-				break;
-			case 'brokenlink':
-				$stmt = mysqli_prepare($GLOBALS['linki'], "update observations o join enrollment e on o.enrollment_id = e.enrollment_id left join instrument_items ii on o.instrumentitem_id = ii.instrumentitem_id set o.instrumentitem_id = null where e.project_id = ? and o.instrumentitem_id is not null and ii.instrumentitem_id is null");
-				mysqli_stmt_bind_param($stmt, 'i', $projectid);
-				MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-				mysqli_stmt_close($stmt);
-				break;
-			default:
-				echo json_encode(array('error' => 'unknown checktype'));
-				return;
+		if ($enrollmentid <= 0) {
+			echo json_encode(array('error' => 'invalid enrollment_id'));
+			return;
 		}
+		$ids = json_decode($observationidsJson, true);
+		if (!is_array($ids) || count($ids) === 0) {
+			echo json_encode(array('error' => 'no observation IDs provided'));
+			return;
+		}
+		$startdate_sql    = !empty(trim($startdate))    ? "'" . mysqli_real_escape_string($GLOBALS['linki'], $startdate) . "'" : "null";
+		$enddate_sql      = !empty(trim($enddate))      ? "'" . mysqli_real_escape_string($GLOBALS['linki'], $enddate) . "'"   : "null";
+		$rater_sql        = !empty(trim($rater))        ? "'" . mysqli_real_escape_string($GLOBALS['linki'], $rater) . "'"     : "null";
+		$notes_sql        = !empty(trim($notes))        ? "'" . mysqli_real_escape_string($GLOBALS['linki'], $notes) . "'"     : "null";
+		$instrumentid_sql = ($instrumentid > 0)         ? $instrumentid : "null";
 
-		echo json_encode(array('ok' => true, 'affected' => mysqli_affected_rows($GLOBALS['linki'])));
+		$sqlstring = "insert into observation_surveys (instrument_id, survey_startdate, survey_enddate, survey_rater, survey_notes, survey_entrydate) values ($instrumentid_sql, $startdate_sql, $enddate_sql, $rater_sql, $notes_sql, now())";
+		MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$surveyid = mysqli_insert_id($GLOBALS['linki']);
+
+		$idList = implode(',', array_map('intval', $ids));
+		$sqlstring = "update observations set observationsurvey_id = $surveyid where observation_id in ($idList)";
+		MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+		echo json_encode(array('success' => true, 'survey_id' => (int)$surveyid));
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- UpdateSurvey ----------------------- */
+	/* -------------------------------------------- */
+	/* updates metadata fields on an existing observation_surveys record */
+	function UpdateSurvey($surveyid, $startdate, $enddate, $rater, $notes) {
+		header('Content-Type: application/json');
+		if ($surveyid <= 0) {
+			echo json_encode(array('error' => 'invalid survey_id'));
+			return;
+		}
+		$startdate_sql = !empty(trim($startdate)) ? "'" . mysqli_real_escape_string($GLOBALS['linki'], $startdate) . "'" : "null";
+		$enddate_sql   = !empty(trim($enddate))   ? "'" . mysqli_real_escape_string($GLOBALS['linki'], $enddate) . "'"   : "null";
+		$rater_sql     = !empty(trim($rater))     ? "'" . mysqli_real_escape_string($GLOBALS['linki'], $rater) . "'"     : "null";
+		$notes_sql     = !empty(trim($notes))     ? "'" . mysqli_real_escape_string($GLOBALS['linki'], $notes) . "'"     : "null";
+
+		$sqlstring = "update observation_surveys set survey_startdate = $startdate_sql, survey_enddate = $enddate_sql, survey_rater = $rater_sql, survey_notes = $notes_sql where survey_id = $surveyid";
+		MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+		echo json_encode(array('success' => true));
 	}
 
 ?>
