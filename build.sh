@@ -122,8 +122,8 @@ make -B -j 16
 # try to copy the binaries to their final locations (this may fail because it requires sudo, but its not a critical step to build)
 cd $ORIGDIR
 echo -e "\nCopying libsquirrel to /lib"
-sudo cp -auv bin/squirrel/libsquirrel* /lib64/
-sudo cp -auv bin/squirrel/libsquirrel* /lib/x86_64-linux-gnu/
+sudo cp -uv bin/squirrel/libsquirrel.a /lib64/
+sudo cp -uv bin/squirrel/libsquirrel.a /lib/x86_64-linux-gnu/
 #sudo cp -auv bin/gdcm/bin/libgdcm* /lib64/
 #sudo cp -auv bin/gdcm/bin/libgdcm* /lib/x86_64-linux-gnu/
 #sudo cp -auv bin/smtp/libSMTPEmail* /lib/

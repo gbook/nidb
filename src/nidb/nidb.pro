@@ -167,7 +167,7 @@ unix: {
     # Location of squirrel Library and header
     INCLUDEPATH += ../squirrel
     SQUIRRELBIN = ../../bin/squirrel
-    LIBS += -L$$SQUIRRELBIN/ -lsquirrel
+    LIBS += -L$$SQUIRRELBIN/ -Wl,-Bstatic -lsquirrel -Wl,-Bdynamic
     INCLUDEPATH += $$SQUIRRELBIN
     DEPENDPATH += $$SQUIRRELBIN
 

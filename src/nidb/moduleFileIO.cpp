@@ -205,14 +205,15 @@ bool moduleFileIO::SetIORequestStatus(int requestid, QString status, QString msg
             q.prepare("update fileio_requests set startdate = now() where fileiorequest_id = :id");
             q.bindValue(":id", requestid);
             n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+            //n->Log("Updated startdate to now()");
         }
         if ((status == "complete") || (status == "error") || (status.startsWith("cancel"))) {
             QSqlQuery q;
             q.prepare("update fileio_requests set enddate = now() where fileiorequest_id = :id");
             q.bindValue(":id", requestid);
             n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+            //n->Log("Updated enddate to now()");
         }
-
 
         if (msg.trimmed() == "") {
             QSqlQuery q;
