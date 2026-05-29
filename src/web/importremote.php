@@ -45,6 +45,7 @@
 	$action = GetVariable("action");
 	$importid = GetVariable("importid");
 	$projectid = GetVariable("projectid");
+	$batchid = GetVariable("batchid");
 	$importname = GetVariable("importname");
 	$remote_type = GetVariable("remote_type");
 	$remote_url = GetVariable("remote_url");
@@ -56,6 +57,12 @@
 
 	/* determine action */
 	switch ($action) {
+		case 'viewbatchlog':
+			DisplayBatchLog($batchid);
+			break;
+		case 'viewbatchimports':
+			DisplayBatchImports($batchid);
+			break;
 		case 'viewimports':
 			DisplayRemoteImportList($projectid);
 			break;
@@ -106,7 +113,7 @@
 	function RunRemoteImport($importid) {
 		$importid = (int)$importid;
 
-		$stmt = mysqli_prepare($GLOBALS['linki'], "select import_name, import_schedule from remote_imports where remoteimport_id = ?");
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select import_name, import_schedule, remote_type from remote_imports where remoteimport_id = ?");
 		mysqli_stmt_bind_param($stmt, 'i', $importid);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
@@ -122,8 +129,23 @@
 			return;
 		}
 
-		$stmt = mysqli_prepare($GLOBALS['linki'], "insert into remoteimport_batch (remoteimport_id, status, next_state) values (?, 'pending', 'run')");
-		mysqli_stmt_bind_param($stmt, 'i', $importid);
+		$csvpath = null;
+		if ($row['remote_type'] === 'csv') {
+			if (!isset($_FILES['csv_file']) || $_FILES['csv_file']['error'] !== UPLOAD_ERR_OK) {
+				Error("A CSV file is required to run this import");
+				return;
+			}
+			$uploaddir = rtrim($GLOBALS['cfg']['uploaddir'], '/') . '/';
+			$uniquename = uniqid('csvimport_', true) . '.csv';
+			$csvpath = $uploaddir . $uniquename;
+			if (!move_uploaded_file($_FILES['csv_file']['tmp_name'], $csvpath)) {
+				Error("Failed to save uploaded CSV file");
+				return;
+			}
+		}
+
+		$stmt = mysqli_prepare($GLOBALS['linki'], "insert into remoteimport_batch (remoteimport_id, status, next_state, csv_path) values (?, 'pending', 'run', ?)");
+		mysqli_stmt_bind_param($stmt, 'is', $importid, $csvpath);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		mysqli_stmt_close($stmt);
 
@@ -257,6 +279,7 @@
 		$remote_types = array(
 			"" => "Select remote type...",
 			"avicenna" => "Avicenna",
+			"csv" => "CSV",
 			"redcap" => "REDCap",
 			"url" => "URL"
 		);
@@ -291,7 +314,7 @@
 				<div class="two fields">
 					<div class="field">
 						<label>Remote Source Type</label>
-						<select name="remote_type" required>
+						<select name="remote_type" id="remote_type" required onchange="updateRemoteTypeFields()">
 							<?
 								foreach ($remote_types as $value => $label) {
 									if ($remote_type == $value) { $selected = "selected"; } else { $selected = ""; }
@@ -302,18 +325,18 @@
 							?>
 						</select>
 					</div>
-					<div class="field">
+					<div class="field" id="remote_url_group">
 						<label>Remote URL</label>
-						<input type="text" name="remote_url" value="<?=$remote_url?>" placeholder="https://...">
+						<input type="text" name="remote_url" id="remote_url" value="<?=$remote_url?>" placeholder="https://...">
 					</div>
 				</div>
 
-				<div class="field">
+				<div class="field" id="remote_token_group">
 					<label>Remote Token</label>
 					<input type="password" name="remote_token" value="<?=$remote_token?>" placeholder="Leave blank to keep current token">
 				</div>
 
-				<div class="three fields">
+				<div class="three fields" id="import_schedule_group">
 					<div class="field">
 						<label>Import Schedule</label>
 						<select name="import_schedule" id="import_schedule" required onchange="updateImportScheduleFields()">
@@ -389,6 +412,20 @@
 			</form>
 		</div>
 		<script type="text/javascript">
+			function updateRemoteTypeFields() {
+				var type = document.getElementById('remote_type').value;
+				var isCSV = (type === 'csv');
+
+				document.getElementById('remote_url_group').style.display      = isCSV ? 'none' : '';
+				document.getElementById('remote_token_group').style.display     = isCSV ? 'none' : '';
+				document.getElementById('import_schedule_group').style.display  = isCSV ? 'none' : '';
+				document.getElementById('import_days_group').style.display      = isCSV ? 'none' : '';
+
+				if (isCSV) {
+					document.getElementById('import_schedule').value = 'ondemand';
+				}
+			}
+
 			function updateImportScheduleFields() {
 				var scheduleField = document.getElementById('import_schedule');
 				if (!scheduleField) return;
@@ -405,6 +442,7 @@
 
 			document.addEventListener('DOMContentLoaded', function() {
 				updateImportScheduleFields();
+				updateRemoteTypeFields();
 			});
 		</script>
 	<?
@@ -441,45 +479,70 @@
 					<?
 						$sqlstring = "select * from remote_imports where project_id = $projectid order by import_name";
 						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-								$importid = $row['remoteimport_id'];
-								$importname = $row['import_name'];
-								//$projectid = $row['project_id'];
-								$remote_type = $row['remote_type'];
-								$remote_url = $row['remote_url'];
-								$import_schedule = $row['import_schedule'];
-								$import_time = $row['import_time'];
-								$import_dayofmonth = $row['import_dayofmonth'];
-								$import_days = $row['import_days'];
-								$enabled = $row['enabled'];
+						$imports = [];
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+							$imports[] = $row;
+						}
+						foreach ($imports as $row) {
+							$importid = $row['remoteimport_id'];
+							$importname = $row['import_name'];
+							$remote_type = $row['remote_type'];
+							$remote_url = $row['remote_url'];
+							$import_schedule = $row['import_schedule'];
+							$import_time = $row['import_time'];
+							$import_dayofmonth = $row['import_dayofmonth'];
+							$import_days = $row['import_days'];
+							$enabled = $row['enabled'];
 
-								$scheduletext = FormatRemoteImportSchedule($import_schedule, $import_time, $import_dayofmonth, $import_days);
-								if ($import_schedule == "ondemand") {
+							$scheduletext = FormatRemoteImportSchedule($import_schedule, $import_time, $import_dayofmonth, $import_days);
+							if ($import_schedule == "ondemand") {
+								if ($remote_type === 'csv') {
+									$scheduletext .= " &nbsp; <a href=\"#\" class=\"ui tiny primary basic green button\" onclick=\"document.getElementById('csv_upload_$importid').click(); return false;\"><i class=\"upload icon\"></i>Upload &amp; Run</a>";
+								} else {
 									$scheduletext .= " &nbsp; <a href=\"importremote.php?action=runimport&projectid=$projectid&importid=$importid\" class=\"ui tiny primary basic green button\">Run now</a>";
 								}
-								$remote_url_display = ($remote_url == "") ? "-" : $remote_url;
-						?>
-						<tr>
-							<td><a href="importremote.php?action=editimportform&projectid=<?=$projectid?>&importid=<?=$importid?>"><?=$importname?></a></td>
-							<td><?=ucfirst($remote_type)?></td>
-							<td><?=$remote_url_display?></td>
-							<td><?=$scheduletext?></td>
-							<td>
-								<?
-									if ($enabled) {
-										?><a href="importremote.php?action=disable&projectid=<?=$projectid?>&importid=<?=$importid?>" title="<b>Enabled.</b> Click to disable"><i class="big green toggle on icon"></i></a><?
-									}
-									else {
-										?><a href="importremote.php?action=enable&projectid=<?=$projectid?>&importid=<?=$importid?>" title="<b>Disabled.</b> Click to enable"><i class="big grey horizontally flipped toggle on icon"></i></a><?
-									}
-								?>
-							</td>
+							}
+							$remote_url_display = ($remote_url == "") ? "-" : $remote_url;
+					?>
+					<tr>
+						<td><a href="importremote.php?action=editimportform&projectid=<?=$projectid?>&importid=<?=$importid?>"><?=$importname?></a></td>
+						<td><?=ucfirst($remote_type)?></td>
+						<td><?=$remote_url_display?></td>
+						<td><?=$scheduletext?></td>
+						<td>
+							<?
+								if ($enabled) {
+									?><a href="importremote.php?action=disable&projectid=<?=$projectid?>&importid=<?=$importid?>" title="<b>Enabled.</b> Click to disable"><i class="big green toggle on icon"></i></a><?
+								}
+								else {
+									?><a href="importremote.php?action=enable&projectid=<?=$projectid?>&importid=<?=$importid?>" title="<b>Disabled.</b> Click to enable"><i class="big grey horizontally flipped toggle on icon"></i></a><?
+								}
+							?>
+						</td>
 					</tr>
 					<?
 						}
 					?>
 				</tbody>
 			</table>
+
+			<?
+				/* Hidden upload forms for CSV imports — must live outside the table */
+				foreach ($imports as $row) {
+					if ($row['remote_type'] === 'csv') {
+						$importid = $row['remoteimport_id'];
+						?>
+						<form id="csvUploadForm_<?=$importid?>" method="post" action="importremote.php" enctype="multipart/form-data" style="display:none">
+							<input type="hidden" name="action" value="runimport">
+							<input type="hidden" name="importid" value="<?=$importid?>">
+							<input type="hidden" name="projectid" value="<?=$projectid?>">
+							<input type="file" name="csv_file" id="csv_upload_<?=$importid?>" accept=".csv"
+								onchange="if (this.files.length) this.form.submit();">
+						</form>
+						<?
+					}
+				}
+			?>
 		</div>
 	<?
 	}
@@ -506,38 +569,69 @@
 					<tr>
 						<th>Batch ID</th>
 						<th>Import Name</th>
+						<th>Source</th>
 						<th>Start Date</th>
 						<th>End Date</th>
 						<th>Status</th>
 						<th>Next State</th>
+						<th>Logs</th>
+						<th>Imports</th>
 					</tr>
 				</thead>
 				<tbody>
 					<?
-						$stmt = mysqli_prepare($GLOBALS['linki'], "select a.remoteimportbatch_id, a.start_date, a.end_date, a.status, a.next_state, b.import_name from remoteimport_batch a left join remote_imports b on a.remoteimport_id = b.remoteimport_id where b.project_id = ? order by a.remoteimportbatch_id desc");
+						$stmt = mysqli_prepare($GLOBALS['linki'], "select a.*, b.import_name, b.remote_type, b.remote_url, (select count(*) from observations where remotebatch_id = a.remoteimportbatch_id) as obs_count from remoteimport_batch a left join remote_imports b on a.remoteimport_id = b.remoteimport_id where b.project_id = ? order by a.remoteimportbatch_id desc");
 						mysqli_stmt_bind_param($stmt, 'i', $projectid);
 						$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-							$batchid = $row['remoteimportbatch_id'];
+							$batchRowID = $row['remoteimportbatch_id'];
+							$parentImportRowID = $row['remoteimport_id'];
+							$remoteType = $row['remote_type'];
+							$remoteURL = $row['remote_url'];
 							$importname = $row['import_name'];
 							$startdate = $row['start_date'];
 							$enddate = $row['end_date'];
 							$status = $row['status'];
 							$nextstate = $row['next_state'];
+							$csvpath = $row['csv_path'];
 
+							$obs_count = (int)$row['obs_count'];
 							$importname_display = ($importname == "") ? "-" : $importname;
 							$startdate_display = ($startdate == "") ? "-" : $startdate;
 							$enddate_display = ($enddate == "") ? "-" : $enddate;
 							$status_display = ($status == "") ? "-" : ucfirst($status);
 							$nextstate_display = ($nextstate == "") ? "-" : ucfirst($nextstate);
+							
+							if ($remoteType == "csv") {
+								if (file_exists($csvpath)) {
+									/* get CSV details */
+									$filesize = HumanReadableFilesize(filesize($csvpath));
+									$source_display = "<tt>$csvpath</tt> <div class='ui small label'>$filesize</div>";
+								}
+								else {
+									$source_display = "CSV file does not exist";
+								}
+							}
+							else {
+								$source_display = ucfirst($remoteType);
+							}
 					?>
 					<tr>
-						<td><?=$batchid?></td>
+						<td><?=$batchRowID?></td>
 						<td><?=$importname_display?></td>
+						<td><?=$source_display?></td>
 						<td><?=$startdate_display?></td>
 						<td><?=$enddate_display?></td>
 						<td><?=$status_display?></td>
 						<td><?=$nextstate_display?></td>
+						<td><a href="importremote.php?action=viewbatchlog&batchid=<?=$batchRowID?>">View logs</a></td>
+						<td>
+							<? if ($obs_count > 0): ?>
+								<a href="importremote.php?action=viewbatchimports&batchid=<?=$batchRowID?>&projectid=<?=$projectid?>"><?=$obs_count?> observation<?=$obs_count != 1 ? 's' : ''?></a>
+							<? else: ?>
+								-
+							<? endif; ?>
+						</td>
 					</tr>
 					<?
 						}
@@ -547,6 +641,213 @@
 			</table>
 		</div>
 	<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayBatchLog ------------------- */
+	/* -------------------------------------------- */
+	function DisplayBatchLog($batchid) {
+		$batchid = (int)$batchid;
+
+		/* fetch batch + parent import info */
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select a.*, b.import_name, b.remote_type, b.project_id from remoteimport_batch a left join remote_imports b on a.remoteimport_id = b.remoteimport_id where a.remoteimportbatch_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $batchid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$batch = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+
+		if (!$batch) {
+			Error("Batch not found");
+			return;
+		}
+
+		$projectid = (int)$batch['project_id'];
+		$importname  = $batch['import_name'] ?: '-';
+		$remote_type = $batch['remote_type'];
+		$status      = $batch['status'] ?: '-';
+		$startdate   = $batch['start_date'] ?: '-';
+		$enddate     = $batch['end_date'] ?: '-';
+		$csvpath     = $batch['csv_path'];
+		?>
+		<div class="ui container">
+			<div class="ui two column grid">
+				<div class="column">
+					<h1 class="ui header">Batch Log <span class="ui grey label">#<?=$batchid?></span></h1>
+				</div>
+				<div class="right aligned column">
+					<a href="importremote.php?action=viewbatchimportlist&projectid=<?=$projectid?>" class="ui button"><i class="arrow left icon"></i>Back to Batches</a>
+				</div>
+			</div>
+
+			<table class="ui very compact definition table" style="margin-bottom:1.5em">
+				<tr><td>Import</td><td><?=$importname?></td></tr>
+				<tr><td>Type</td><td><?=ucfirst($remote_type)?></td></tr>
+				<tr><td>Status</td><td><?=ucfirst($status)?></td></tr>
+				<tr><td>Start</td><td><?=$startdate?></td></tr>
+				<tr><td>End</td><td><?=$enddate?></td></tr>
+				<? if ($remote_type === 'csv'): ?>
+				<tr>
+					<td>CSV File</td>
+					<td>
+						<? if (!$csvpath): ?>
+							<span class="ui grey text">No file associated</span>
+						<? elseif (!file_exists($csvpath)): ?>
+							<tt><?=$csvpath?></tt> &nbsp; <span class="ui red text"><i class="times circle icon"></i> File not found</span>
+						<? else: ?>
+							<tt><?=$csvpath?></tt> &nbsp; <span class="ui green text"><i class="check circle icon"></i> Exists</span> <div class="ui small label"><?=HumanReadableFilesize(filesize($csvpath))?></div>
+						<? endif; ?>
+					</td>
+				</tr>
+				<? endif; ?>
+			</table>
+
+			<?
+			/* fetch log entries */
+			$stmt = mysqli_prepare($GLOBALS['linki'], "select remoteimportlog_id, event, result, message, event_date from remoteimport_logs where remoteimportbatch_id = ? order by remoteimportlog_id asc");
+			mysqli_stmt_bind_param($stmt, 'i', $batchid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			$logs = [];
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$logs[] = $row;
+			}
+			mysqli_stmt_close($stmt);
+
+			if (count($logs) === 0) {
+				?>
+				<div class="ui message">No log entries for this batch.</div>
+				<?
+			} else {
+				$resultClasses = [
+					'Success' => 'positive',
+					'Error'   => 'negative',
+					'Warning' => 'warning',
+					'Neutral' => '',
+				];
+				?>
+				<table class="ui very compact celled grey table">
+					<thead>
+						<tr>
+							<th>Date</th>
+							<th>Event</th>
+							<th>Result</th>
+							<th>Message</th>
+						</tr>
+					</thead>
+					<tbody>
+						<? foreach ($logs as $log):
+							$cls = isset($resultClasses[$log['result']]) ? $resultClasses[$log['result']] : '';
+						?>
+						<tr class="<?=$cls?>">
+							<td><?=$log['event_date']?></td>
+							<td><?=$log['event']?></td>
+							<td><?=$log['result']?></td>
+							<td><?=htmlspecialchars($log['message'])?></td>
+						</tr>
+						<? endforeach; ?>
+					</tbody>
+				</table>
+				<div class="ui grey label"><?=count($logs)?> log entries</div>
+				<?
+			}
+			?>
+		</div>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayBatchImports --------------- */
+	/* -------------------------------------------- */
+	function DisplayBatchImports($batchid) {
+		$batchid = (int)$batchid;
+
+		/* fetch batch + parent import info */
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select a.remoteimportbatch_id, a.status, a.start_date, a.end_date, b.import_name, b.remote_type, b.project_id from remoteimport_batch a left join remote_imports b on a.remoteimport_id = b.remoteimport_id where a.remoteimportbatch_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $batchid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$batch = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+
+		if (!$batch) {
+			Error("Batch not found");
+			return;
+		}
+
+		$projectid  = (int)$batch['project_id'];
+		$importname = $batch['import_name'] ?: '-';
+		$status     = $batch['status'] ?: '-';
+		$startdate  = $batch['start_date'] ?: '-';
+
+		/* fetch observations */
+		$stmt = mysqli_prepare($GLOBALS['linki'], "
+			SELECT o.observation_id, s.uid AS subject_uid,
+			       o.observation_name, o.observation_instrument, o.observation_value,
+			       o.observation_startdate, o.observation_rater, o.observation_notes
+			FROM observations o
+			LEFT JOIN enrollment e ON o.enrollment_id = e.enrollment_id
+			LEFT JOIN subjects s ON e.subject_id = s.subject_id
+			WHERE o.remotebatch_id = ?
+			ORDER BY o.observation_id ASC");
+		mysqli_stmt_bind_param($stmt, 'i', $batchid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$rows = [];
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$rows[] = [
+				'observation_id'         => (int)$row['observation_id'],
+				'subject_uid'            => $row['subject_uid'],
+				'observation_name'       => $row['observation_name'],
+				'observation_instrument' => $row['observation_instrument'],
+				'observation_value'      => $row['observation_value'],
+				'observation_startdate'  => $row['observation_startdate'],
+				'observation_rater'      => $row['observation_rater'],
+				'observation_notes'      => $row['observation_notes'],
+			];
+		}
+		mysqli_stmt_close($stmt);
+		?>
+		<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/ag-grid-community@31/styles/ag-grid.css">
+		<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/ag-grid-community@31/styles/ag-theme-alpine.css">
+
+		<div class="ui container">
+			<div class="ui two column grid">
+				<div class="column">
+					<h1 class="ui header">Imported Observations <span class="ui grey label"><?=count($rows)?></span></h1>
+					<div class="ui sub header">Batch #<?=$batchid?> &mdash; <?=$importname?> &mdash; <?=ucfirst($status)?> &mdash; <?=$startdate?></div>
+				</div>
+				<div class="right aligned column" style="padding-top:1.5em">
+					<a href="importremote.php?action=viewbatchimportlist&projectid=<?=$projectid?>" class="ui button"><i class="arrow left icon"></i>Back to Batches</a>
+				</div>
+			</div>
+
+			<div style="margin-bottom:8px">
+				<input type="text" id="obsFilterInput" placeholder="Search..." oninput="obsGridApi.setQuickFilter(this.value)" style="padding:5px 8px;width:250px;border:1px solid #ccc;border-radius:4px">
+			</div>
+			<div id="obsGrid" class="ag-theme-alpine" style="height:600px;width:100%"></div>
+		</div>
+
+		<script src="//cdn.jsdelivr.net/npm/ag-grid-community@31/dist/ag-grid-community.min.js"></script>
+		<script>
+		const obsRowData = <?= json_encode($rows) ?>;
+
+		const obsColumnDefs = [
+			{ field: 'subject_uid',            headerName: 'Subject',    sortable: true, filter: true, width: 110 },
+			{ field: 'observation_name',        headerName: 'Name',       sortable: true, filter: true, width: 180 },
+			{ field: 'observation_instrument',  headerName: 'Instrument', sortable: true, filter: true, width: 160 },
+			{ field: 'observation_value',       headerName: 'Value',      sortable: true, filter: true, width: 130 },
+			{ field: 'observation_startdate',   headerName: 'Date',       sortable: true, filter: true, width: 160 },
+			{ field: 'observation_rater',       headerName: 'Rater',      sortable: true, filter: true, width: 120 },
+			{ field: 'observation_notes',       headerName: 'Notes',      sortable: true, filter: true, flex: 1 },
+		];
+
+		const obsGridApi = agGrid.createGrid(document.getElementById('obsGrid'), {
+			columnDefs: obsColumnDefs,
+			rowData: obsRowData,
+			defaultColDef: { resizable: true },
+			paginationPageSizeSelector: false,
+		});
+		</script>
+		<?
 	}
 
 

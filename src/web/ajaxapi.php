@@ -61,6 +61,21 @@
 	$surveyid = GetVariable("surveyid");
 	$observationids = GetVariable("observationids");
 	$fileioIds = GetVariable("ids");
+	$mappingid  = GetVariable("mappingid");
+	$flagname   = GetVariable("flagname");
+	$source_type          = GetVariable("source_type");
+	$avicenna_question    = GetVariable("avicenna_question");
+	$avicenna_variable    = GetVariable("avicenna_variable");
+	$redcap_arm           = GetVariable("redcap_arm");
+	$redcap_event         = GetVariable("redcap_event");
+	$redcap_form          = GetVariable("redcap_form");
+	$redcap_field         = GetVariable("redcap_field");
+	$redcap_datatype      = GetVariable("redcap_datatype");
+	$redcap_datefield     = GetVariable("redcap_datefield");
+	$nidb_instrument      = GetVariable("nidb_instrument");
+	$nidb_variable        = GetVariable("nidb_variable");
+	$flag_date_from_field = GetVariable("flag_date_from_field");
+	$flag_can_repeat      = GetVariable("flag_can_repeat");
 	$startdate = GetVariable("startdate");
 	$enddate = GetVariable("enddate");
 	$rater = GetVariable("rater");
@@ -153,6 +168,18 @@
 			break;
 		case 'getfileiostatus':
 			GetFileIOStatus($fileioIds);
+			break;
+		case 'getinstrumentitems':
+			GetInstrumentItems((int)$instrumentid);
+			break;
+		case 'updatemappingflag':
+			UpdateMappingFlag((int)$mappingid, $flagname, (int)$value);
+			break;
+		case 'savemapping':
+			SaveMapping((int)$mappingid, (int)$projectid, $source_type, (int)$avicenna_question, $avicenna_variable, $redcap_arm, $redcap_event, $redcap_form, $redcap_field, $redcap_datatype, $redcap_datefield, (int)$nidb_instrument, (int)$nidb_variable, (int)$flag_date_from_field, (int)$flag_can_repeat);
+			break;
+		case 'deletemapping':
+			DeleteMapping((int)$mappingid);
 			break;
 	}
 	
@@ -1363,6 +1390,108 @@
 	/* -------------------------------------------- */
 	/* ------- GetFileIOStatus -------------------- */
 	/* -------------------------------------------- */
+	/* -------------------------------------------- */
+	/* ------- GetInstrumentItems ---------------- */
+	/* -------------------------------------------- */
+	function GetInstrumentItems($instrumentid) {
+		header('Content-Type: application/json');
+		if ($instrumentid < 1) { echo json_encode([]); return; }
+		$stmt = mysqli_prepare($GLOBALS['linki'], "SELECT instrumentitem_id, item_name FROM instrument_items WHERE instrument_id = ? ORDER BY item_order, item_name");
+		mysqli_stmt_bind_param($stmt, 'i', $instrumentid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$items = [];
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$items[] = ['id' => (int)$row['instrumentitem_id'], 'name' => $row['item_name']];
+		}
+		mysqli_stmt_close($stmt);
+		echo json_encode($items);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- UpdateMappingFlag ----------------- */
+	/* -------------------------------------------- */
+	function UpdateMappingFlag($mappingid, $flagname, $value) {
+		header('Content-Type: application/json');
+		if ($mappingid < 1) { echo json_encode(['ok' => false, 'error' => 'invalid mappingid']); return; }
+		$allowed = ['flag_date_from_field', 'flag_can_repeat'];
+		if (!in_array($flagname, $allowed, true)) {
+			echo json_encode(['ok' => false, 'error' => 'invalid flag name']);
+			return;
+		}
+		$v = $value ? 1 : 0;
+		$stmt = mysqli_prepare($GLOBALS['linki'], "UPDATE remoteimport_mapping SET $flagname = ? WHERE remoteimportmapping_id = ?");
+		mysqli_stmt_bind_param($stmt, 'ii', $v, $mappingid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+		echo json_encode(['ok' => true]);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- SaveMapping ----------------------- */
+	/* -------------------------------------------- */
+	function SaveMapping($mappingid, $projectid, $source_type, $avicenna_question, $avicenna_variable, $redcap_arm, $redcap_event, $redcap_form, $redcap_field, $redcap_datatype, $redcap_datefield, $nidb_instrument, $nidb_variable, $flag_date_from_field, $flag_can_repeat) {
+		header('Content-Type: application/json');
+		if ($projectid < 1) { echo json_encode(['ok' => false, 'error' => 'invalid projectid']); return; }
+		$allowed_types = ['avicenna', 'redcap'];
+		if (!in_array($source_type, $allowed_types, true)) {
+			echo json_encode(['ok' => false, 'error' => 'invalid source_type']);
+			return;
+		}
+		$nidb_instrument_val   = $nidb_instrument   > 0 ? $nidb_instrument   : null;
+		$nidb_variable_val     = $nidb_variable     > 0 ? $nidb_variable     : null;
+		$avicenna_question_val = $avicenna_question  > 0 ? $avicenna_question : null;
+		$avicenna_variable_val = $avicenna_variable !== '' ? $avicenna_variable : null;
+		$redcap_arm_val        = $redcap_arm        !== '' ? $redcap_arm        : null;
+		$redcap_event_val      = $redcap_event      !== '' ? $redcap_event      : null;
+		$redcap_form_val       = $redcap_form       !== '' ? $redcap_form       : null;
+		$redcap_field_val      = $redcap_field      !== '' ? $redcap_field      : null;
+		$allowed_dt = ['text','notes','radio','dropdown','checkbox','calc','slider','descriptive','file'];
+		$redcap_datatype_val   = in_array($redcap_datatype, $allowed_dt, true) ? $redcap_datatype : null;
+		$redcap_datefield_val  = $redcap_datefield  !== '' ? $redcap_datefield  : null;
+		$fdf = $flag_date_from_field ? 1 : 0;
+		$fcr = $flag_can_repeat      ? 1 : 0;
+
+		if ($mappingid > 0) {
+			// Update existing
+			$stmt = mysqli_prepare($GLOBALS['linki'],
+				"UPDATE remoteimport_mapping SET avicenna_question=?, avicenna_variable=?, redcap_arm=?, redcap_event=?, redcap_form=?, redcap_field=?, redcap_datatype=?, redcap_datefield=?, nidb_instrument=?, nidb_variable=?, flag_date_from_field=?, flag_can_repeat=? WHERE remoteimportmapping_id=? AND project_id=?");
+			mysqli_stmt_bind_param($stmt, 'isssssssiiiiii',
+				$avicenna_question_val, $avicenna_variable_val, $redcap_arm_val, $redcap_event_val, $redcap_form_val, $redcap_field_val, $redcap_datatype_val, $redcap_datefield_val,
+				$nidb_instrument_val, $nidb_variable_val, $fdf, $fcr, $mappingid, $projectid);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			mysqli_stmt_close($stmt);
+			echo json_encode(['ok' => true, 'mappingid' => $mappingid]);
+		} else {
+			// Insert new
+			$stmt = mysqli_prepare($GLOBALS['linki'],
+				"INSERT INTO remoteimport_mapping (project_id, source_type, avicenna_question, avicenna_variable, redcap_arm, redcap_event, redcap_form, redcap_field, redcap_datatype, redcap_datefield, nidb_instrument, nidb_variable, flag_date_from_field, flag_can_repeat) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+			mysqli_stmt_bind_param($stmt, 'isisssssssii' . 'ii',
+				$projectid, $source_type, $avicenna_question_val, $avicenna_variable_val, $redcap_arm_val, $redcap_event_val, $redcap_form_val, $redcap_field_val, $redcap_datatype_val, $redcap_datefield_val,
+				$nidb_instrument_val, $nidb_variable_val, $fdf, $fcr);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			$newid = mysqli_insert_id($GLOBALS['linki']);
+			mysqli_stmt_close($stmt);
+			echo json_encode(['ok' => true, 'mappingid' => (int)$newid]);
+		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DeleteMapping --------------------- */
+	/* -------------------------------------------- */
+	function DeleteMapping($mappingid) {
+		header('Content-Type: application/json');
+		if ($mappingid < 1) { echo json_encode(['ok' => false, 'error' => 'invalid mappingid']); return; }
+		$stmt = mysqli_prepare($GLOBALS['linki'], "DELETE FROM remoteimport_mapping WHERE remoteimportmapping_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $mappingid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+		echo json_encode(['ok' => true]);
+	}
+
+
 	function GetFileIOStatus($idsJson) {
 		header('Content-Type: application/json');
 		$idArray = json_decode($idsJson, true);

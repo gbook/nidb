@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: May 28, 2026 at 09:39 PM
+-- Generation Time: May 29, 2026 at 08:25 PM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -1945,6 +1945,7 @@ CREATE TABLE `observations` (
   `enrollment_id` int(11) NOT NULL,
   `instrumentitem_id` int(11) DEFAULT NULL,
   `observationsurvey_id` int(11) DEFAULT NULL,
+  `remotebatch_id` int(11) DEFAULT NULL,
   `observation_name` varchar(255) NOT NULL,
   `observation_notes` mediumtext DEFAULT NULL,
   `observation_instrument` varchar(250) DEFAULT NULL,
@@ -1957,6 +1958,19 @@ CREATE TABLE `observations` (
   `observation_entrydate` datetime DEFAULT NULL,
   `observation_createdate` datetime DEFAULT NULL,
   `observation_modifydate` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `observation_meta`
+--
+
+CREATE TABLE `observation_meta` (
+  `observationmeta_id` bigint(20) NOT NULL,
+  `observation_id` bigint(20) NOT NULL,
+  `variable` tinytext NOT NULL COMMENT 'variable name from imported source',
+  `value` text NOT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
@@ -2780,7 +2794,8 @@ CREATE TABLE `remoteimport_batch` (
   `start_date` datetime DEFAULT NULL COMMENT 'Datetime the batch started',
   `end_date` datetime DEFAULT NULL COMMENT 'Datetime the batch finished',
   `status` enum('started','running','complete','waiting','pending') NOT NULL COMMENT 'Status of this batch',
-  `next_state` enum('run','pause','terminate','') NOT NULL COMMENT 'The next state of this batch import. The default is blank, which allows scheduled imports to run normally. ''run'' allows an ondemand imports to start'
+  `next_state` enum('run','pause','terminate','') NOT NULL COMMENT 'The next state of this batch import. The default is blank, which allows scheduled imports to run normally. ''run'' allows an ondemand import to start',
+  `csv_path` text DEFAULT NULL COMMENT 'If the remote_import type is csv, then this will be populated when creating a new remote import batch'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
@@ -2796,6 +2811,30 @@ CREATE TABLE `remoteimport_logs` (
   `result` enum('Success','Error','Warning','Neutral') NOT NULL DEFAULT 'Neutral',
   `message` text DEFAULT NULL,
   `event_date` timestamp NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `remoteimport_mapping`
+--
+
+CREATE TABLE `remoteimport_mapping` (
+  `remoteimportmapping_id` int(11) NOT NULL,
+  `project_id` int(11) NOT NULL,
+  `source_type` enum('redcap','avicenna') NOT NULL,
+  `avicenna_question` int(11) DEFAULT NULL COMMENT 'Avicenna question number',
+  `avicenna_variable` varchar(255) DEFAULT NULL COMMENT 'Avicenna variable name',
+  `redcap_arm` tinytext DEFAULT NULL COMMENT 'Redcap arm',
+  `redcap_event` tinytext DEFAULT NULL COMMENT 'Redcap event (baseline, month 3, etc)',
+  `redcap_form` tinytext DEFAULT NULL COMMENT 'Redcap form (instrument)',
+  `redcap_field` text DEFAULT NULL,
+  `redcap_datatype` enum('text','notes','radio','dropdown','checkbox','calc','slider','descriptive','file') DEFAULT NULL,
+  `redcap_datefield` tinytext DEFAULT NULL COMMENT 'the field from which the NiDB date will be taken',
+  `nidb_instrument` int(11) DEFAULT NULL COMMENT 'links to the instrument table',
+  `nidb_variable` int(11) DEFAULT NULL COMMENT 'links to the instrument_item table',
+  `flag_date_from_field` tinyint(1) DEFAULT NULL,
+  `flag_can_repeat` tinyint(1) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
@@ -2826,7 +2865,7 @@ CREATE TABLE `remote_imports` (
   `remoteimport_id` int(11) NOT NULL,
   `import_name` text NOT NULL,
   `project_id` int(11) NOT NULL,
-  `remote_type` enum('avicenna','redcap','url','') NOT NULL DEFAULT '',
+  `remote_type` enum('avicenna','redcap','url','csv') NOT NULL,
   `remote_url` text DEFAULT NULL,
   `remote_token` text DEFAULT NULL,
   `import_schedule` enum('ondemand','hourly','daily','weekly','monthly','') DEFAULT NULL,
@@ -4268,17 +4307,24 @@ ALTER TABLE `notification_user`
 ALTER TABLE `observations`
   ADD PRIMARY KEY (`observation_id`),
   ADD KEY `observation_name` (`observation_name`),
-  ADD KEY `enrollment_id_2` (`enrollment_id`),
   ADD KEY `observation_startdate` (`observation_startdate`),
   ADD KEY `instrumentitem_id` (`instrumentitem_id`),
   ADD KEY `observationsurvey_id` (`observationsurvey_id`),
-  ADD KEY `instrumentitem_id_2` (`instrumentitem_id`,`observation_instrument`);
+  ADD KEY `instrumentitem_id_2` (`instrumentitem_id`,`observation_instrument`),
+  ADD KEY `enrollment_id` (`enrollment_id`) USING BTREE;
+
+--
+-- Indexes for table `observation_meta`
+--
+ALTER TABLE `observation_meta`
+  ADD PRIMARY KEY (`observationmeta_id`);
 
 --
 -- Indexes for table `observation_surveys`
 --
 ALTER TABLE `observation_surveys`
-  ADD PRIMARY KEY (`survey_id`);
+  ADD PRIMARY KEY (`survey_id`),
+  ADD KEY `instrument_id` (`instrument_id`);
 
 --
 -- Indexes for table `ot_series`
@@ -4587,6 +4633,12 @@ ALTER TABLE `remoteimport_batch`
 --
 ALTER TABLE `remoteimport_logs`
   ADD PRIMARY KEY (`remoteimportlog_id`);
+
+--
+-- Indexes for table `remoteimport_mapping`
+--
+ALTER TABLE `remoteimport_mapping`
+  ADD PRIMARY KEY (`remoteimportmapping_id`);
 
 --
 -- Indexes for table `remote_connections`
@@ -5388,6 +5440,12 @@ ALTER TABLE `observations`
   MODIFY `observation_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `observation_meta`
+--
+ALTER TABLE `observation_meta`
+  MODIFY `observationmeta_id` bigint(20) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `observation_surveys`
 --
 ALTER TABLE `observation_surveys`
@@ -5644,6 +5702,12 @@ ALTER TABLE `remoteimport_batch`
 --
 ALTER TABLE `remoteimport_logs`
   MODIFY `remoteimportlog_id` bigint(20) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `remoteimport_mapping`
+--
+ALTER TABLE `remoteimport_mapping`
+  MODIFY `remoteimportmapping_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `remote_connections`
