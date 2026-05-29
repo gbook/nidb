@@ -195,7 +195,25 @@ QString moduleFileIO::GetIORequestStatus(int requestid) {
 /* ---------------------------------------------------------- */
 bool moduleFileIO::SetIORequestStatus(int requestid, QString status, QString msg) {
 
-    if (((status == "pending") || (status == "deleting") || (status == "complete") || (status == "error") || (status == "processing") || (status == "cancelled") || (status == "canceled")) && (requestid > 0)) {
+    if (requestid < 1)
+        return false;
+
+    if ((status == "pending") || (status == "deleting") || (status == "complete") || (status == "error") || (status == "processing") || (status == "cancelled") || (status == "canceled")) {
+
+        if (status == "pending") {
+            QSqlQuery q;
+            q.prepare("update fileio_requests set startdate = now() where fileiorequest_id = :id");
+            q.bindValue(":id", requestid);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        }
+        if ((status == "complete") || (status == "error") || (status.startsWith("cancel"))) {
+            QSqlQuery q;
+            q.prepare("update fileio_requests set enddate = now() where fileiorequest_id = :id");
+            q.bindValue(":id", requestid);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        }
+
+
         if (msg.trimmed() == "") {
             QSqlQuery q;
             q.prepare("update fileio_requests set request_status = :status where fileiorequest_id = :id");
