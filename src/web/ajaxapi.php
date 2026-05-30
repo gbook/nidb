@@ -76,6 +76,7 @@
 	$nidb_variable        = GetVariable("nidb_variable");
 	$flag_date_from_field = GetVariable("flag_date_from_field");
 	$flag_can_repeat      = GetVariable("flag_can_repeat");
+	$flag_import_meta     = GetVariable("flag_import_meta");
 	$startdate = GetVariable("startdate");
 	$enddate = GetVariable("enddate");
 	$rater = GetVariable("rater");
@@ -176,7 +177,7 @@
 			UpdateMappingFlag((int)$mappingid, $flagname, (int)$value);
 			break;
 		case 'savemapping':
-			SaveMapping((int)$mappingid, (int)$projectid, $source_type, (int)$avicenna_question, $avicenna_variable, $redcap_arm, $redcap_event, $redcap_form, $redcap_field, $redcap_datatype, $redcap_datefield, (int)$nidb_instrument, (int)$nidb_variable, (int)$flag_date_from_field, (int)$flag_can_repeat);
+			SaveMapping((int)$mappingid, (int)$projectid, $source_type, (int)$avicenna_question, $avicenna_variable, $redcap_arm, $redcap_event, $redcap_form, $redcap_field, $redcap_datatype, $redcap_datefield, (int)$nidb_instrument, (int)$nidb_variable, (int)$flag_date_from_field, (int)$flag_can_repeat, (int)$flag_import_meta);
 			break;
 		case 'deletemapping':
 			DeleteMapping((int)$mappingid);
@@ -1414,7 +1415,7 @@
 	function UpdateMappingFlag($mappingid, $flagname, $value) {
 		header('Content-Type: application/json');
 		if ($mappingid < 1) { echo json_encode(['ok' => false, 'error' => 'invalid mappingid']); return; }
-		$allowed = ['flag_date_from_field', 'flag_can_repeat'];
+		$allowed = ['flag_date_from_field', 'flag_can_repeat', 'flag_import_meta'];
 		if (!in_array($flagname, $allowed, true)) {
 			echo json_encode(['ok' => false, 'error' => 'invalid flag name']);
 			return;
@@ -1431,7 +1432,7 @@
 	/* -------------------------------------------- */
 	/* ------- SaveMapping ----------------------- */
 	/* -------------------------------------------- */
-	function SaveMapping($mappingid, $projectid, $source_type, $avicenna_question, $avicenna_variable, $redcap_arm, $redcap_event, $redcap_form, $redcap_field, $redcap_datatype, $redcap_datefield, $nidb_instrument, $nidb_variable, $flag_date_from_field, $flag_can_repeat) {
+	function SaveMapping($mappingid, $projectid, $source_type, $avicenna_question, $avicenna_variable, $redcap_arm, $redcap_event, $redcap_form, $redcap_field, $redcap_datatype, $redcap_datefield, $nidb_instrument, $nidb_variable, $flag_date_from_field, $flag_can_repeat, $flag_import_meta) {
 		header('Content-Type: application/json');
 		if ($projectid < 1) { echo json_encode(['ok' => false, 'error' => 'invalid projectid']); return; }
 		$allowed_types = ['avicenna', 'redcap'];
@@ -1452,24 +1453,25 @@
 		$redcap_datefield_val  = $redcap_datefield  !== '' ? $redcap_datefield  : null;
 		$fdf = $flag_date_from_field ? 1 : 0;
 		$fcr = $flag_can_repeat      ? 1 : 0;
+		$fim = $flag_import_meta     ? 1 : 0;
 
 		if ($mappingid > 0) {
 			// Update existing
 			$stmt = mysqli_prepare($GLOBALS['linki'],
-				"UPDATE remoteimport_mapping SET avicenna_question=?, avicenna_variable=?, redcap_arm=?, redcap_event=?, redcap_form=?, redcap_field=?, redcap_datatype=?, redcap_datefield=?, nidb_instrument=?, nidb_variable=?, flag_date_from_field=?, flag_can_repeat=? WHERE remoteimportmapping_id=? AND project_id=?");
-			mysqli_stmt_bind_param($stmt, 'isssssssiiiiii',
+				"UPDATE remoteimport_mapping SET avicenna_question=?, avicenna_variable=?, redcap_arm=?, redcap_event=?, redcap_form=?, redcap_field=?, redcap_datatype=?, redcap_datefield=?, nidb_instrument=?, nidb_variable=?, flag_date_from_field=?, flag_can_repeat=?, flag_import_meta=? WHERE remoteimportmapping_id=? AND project_id=?");
+			mysqli_stmt_bind_param($stmt, 'isssssssiiiiii' . 'i',
 				$avicenna_question_val, $avicenna_variable_val, $redcap_arm_val, $redcap_event_val, $redcap_form_val, $redcap_field_val, $redcap_datatype_val, $redcap_datefield_val,
-				$nidb_instrument_val, $nidb_variable_val, $fdf, $fcr, $mappingid, $projectid);
+				$nidb_instrument_val, $nidb_variable_val, $fdf, $fcr, $fim, $mappingid, $projectid);
 			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 			mysqli_stmt_close($stmt);
 			echo json_encode(['ok' => true, 'mappingid' => $mappingid]);
 		} else {
 			// Insert new
 			$stmt = mysqli_prepare($GLOBALS['linki'],
-				"INSERT INTO remoteimport_mapping (project_id, source_type, avicenna_question, avicenna_variable, redcap_arm, redcap_event, redcap_form, redcap_field, redcap_datatype, redcap_datefield, nidb_instrument, nidb_variable, flag_date_from_field, flag_can_repeat) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
-			mysqli_stmt_bind_param($stmt, 'isisssssssii' . 'ii',
+				"INSERT INTO remoteimport_mapping (project_id, source_type, avicenna_question, avicenna_variable, redcap_arm, redcap_event, redcap_form, redcap_field, redcap_datatype, redcap_datefield, nidb_instrument, nidb_variable, flag_date_from_field, flag_can_repeat, flag_import_meta) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+			mysqli_stmt_bind_param($stmt, 'isisssssssii' . 'iii',
 				$projectid, $source_type, $avicenna_question_val, $avicenna_variable_val, $redcap_arm_val, $redcap_event_val, $redcap_form_val, $redcap_field_val, $redcap_datatype_val, $redcap_datefield_val,
-				$nidb_instrument_val, $nidb_variable_val, $fdf, $fcr);
+				$nidb_instrument_val, $nidb_variable_val, $fdf, $fcr, $fim);
 			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 			$newid = mysqli_insert_id($GLOBALS['linki']);
 			mysqli_stmt_close($stmt);

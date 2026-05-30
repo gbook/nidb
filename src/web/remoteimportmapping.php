@@ -120,8 +120,7 @@
 			$avicennaVariable = trim($values[$colIdx['avicennavariable']] ?? '');
 			$nidbInstrument   = trim($values[$colIdx['nidbinstrument']] ?? '');
 			$nidbVariable     = trim($values[$colIdx['nidbvariable']] ?? '');
-			$dateFromField    = isset($colIdx['datefromfield']) ? (int)trim($values[$colIdx['datefromfield']] ?? '0') : 0;
-			$canRepeat        = isset($colIdx['canrepeat'])     ? (int)trim($values[$colIdx['canrepeat']] ?? '0')     : 0;
+			$importMeta       = isset($colIdx['importmeta'])    ? (int)trim($values[$colIdx['importmeta']] ?? '0')    : 0;
 
 			$result = [
 				'row'               => $i + 2,
@@ -203,8 +202,7 @@
 
 			$avicennaQuestionVal = is_numeric($avicennaQuestion) ? (int)$avicennaQuestion : null;
 			$avicennaVariableVal = $avicennaVariable !== '' ? $avicennaVariable : null;
-			$fdf = $dateFromField ? 1 : 0;
-			$fcr = $canRepeat     ? 1 : 0;
+			$fim = $importMeta ? 1 : 0;
 
 			// Check for existing mapping (NULL-safe equals <=> handles null values)
 			$stmt = mysqli_prepare($GLOBALS['linki'],
@@ -220,16 +218,16 @@
 				// Update the existing mapping
 				$existingId = (int)$existingRow['remoteimportmapping_id'];
 				$stmt = mysqli_prepare($GLOBALS['linki'],
-					"UPDATE remoteimport_mapping SET nidb_instrument=?, nidb_variable=?, flag_date_from_field=?, flag_can_repeat=? WHERE remoteimportmapping_id=?");
-				mysqli_stmt_bind_param($stmt, 'iiiii', $instrumentId, $variableId, $fdf, $fcr, $existingId);
+					"UPDATE remoteimport_mapping SET nidb_instrument=?, nidb_variable=?, flag_import_meta=? WHERE remoteimportmapping_id=?");
+				mysqli_stmt_bind_param($stmt, 'iiii', $instrumentId, $variableId, $fim, $existingId);
 				MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 				mysqli_stmt_close($stmt);
 				$result['status'] = 'updated';
 			} else {
 				// Insert a new mapping
 				$stmt = mysqli_prepare($GLOBALS['linki'],
-					"INSERT INTO remoteimport_mapping (project_id, source_type, avicenna_question, avicenna_variable, nidb_instrument, nidb_variable, flag_date_from_field, flag_can_repeat) VALUES (?, 'avicenna', ?, ?, ?, ?, ?, ?)");
-				mysqli_stmt_bind_param($stmt, 'iisiiii', $projectid, $avicennaQuestionVal, $avicennaVariableVal, $instrumentId, $variableId, $fdf, $fcr);
+					"INSERT INTO remoteimport_mapping (project_id, source_type, avicenna_question, avicenna_variable, nidb_instrument, nidb_variable, flag_import_meta) VALUES (?, 'avicenna', ?, ?, ?, ?, ?)");
+				mysqli_stmt_bind_param($stmt, 'iisiii', $projectid, $avicennaQuestionVal, $avicennaVariableVal, $instrumentId, $variableId, $fim);
 				MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 				mysqli_stmt_close($stmt);
 				$result['status'] = 'added';
@@ -319,7 +317,7 @@
 		// Load Avicenna mappings
 		$stmt = mysqli_prepare($GLOBALS['linki'],
 			"SELECT m.remoteimportmapping_id, m.avicenna_question, m.avicenna_variable,
-			        m.nidb_instrument, m.nidb_variable, m.flag_date_from_field, m.flag_can_repeat,
+			        m.nidb_instrument, m.nidb_variable, m.flag_import_meta,
 			        i.instrument_name, ii.item_name
 			 FROM remoteimport_mapping m
 			 LEFT JOIN instruments i ON i.instrument_id = m.nidb_instrument
@@ -336,10 +334,9 @@
 				'avicenna_variable'    => (string)$row['avicenna_variable'],
 				'nidb_instrument_id'   => (int)$row['nidb_instrument'],
 				'nidb_instrument'      => (string)$row['instrument_name'],
-				'nidb_variable_id'     => (int)$row['nidb_variable'],
-				'nidb_variable'        => (string)$row['item_name'],
-				'flag_date_from_field' => (int)$row['flag_date_from_field'],
-				'flag_can_repeat'      => (int)$row['flag_can_repeat'],
+				'nidb_variable_id'  => (int)$row['nidb_variable'],
+				'nidb_variable'     => (string)$row['item_name'],
+				'flag_import_meta'  => (int)$row['flag_import_meta'],
 			];
 		}
 		mysqli_stmt_close($stmt);
@@ -505,8 +502,18 @@
 						</div>
 					</div>
 
-					<!-- Flags as inline checkboxes -->
-					<div class="fields">
+					<!-- Avicenna-only flags -->
+					<div id="avicenna_flags" class="fields">
+						<div class="field">
+							<div class="ui checkbox">
+								<input type="checkbox" id="modal_flag_import_meta">
+								<label>Import metadata</label>
+							</div>
+						</div>
+					</div>
+
+					<!-- REDCap-only flags -->
+					<div id="redcap_flags" class="fields">
 						<div class="field">
 							<div class="ui checkbox">
 								<input type="checkbox" id="modal_flag_date_from_field">
@@ -542,11 +549,11 @@
 							<label>CSV data</label>
 							<p style="color:#666;font-size:0.9em">
 								First line must be a header row. Required columns: <code>avicennaquestion</code>, <code>avicennavariable</code>, <code>nidbinstrument</code>, <code>nidbvariable</code>.
-								Optional: <code>datefromfield</code>, <code>canrepeat</code>. Columns may be in any order. Values may contain spaces.
+								Optional: <code>importmeta</code>. Columns may be in any order. Values may contain spaces.
 							</p>
 							<textarea name="csvtext" rows="12"
 							          style="font-family:monospace;font-size:0.85em;width:100%"
-							          placeholder="avicennaquestion,avicennavariable,nidbinstrument,nidbvariable,datefromfield,canrepeat"></textarea>
+							          placeholder="avicennaquestion,avicennavariable,nidbinstrument,nidbvariable,importmeta"></textarea>
 						</div>
 					</div>
 				</form>
@@ -660,17 +667,10 @@
 					{ field: 'nidb_instrument',   headerName: 'NiDB Instrument', sortable: true, filter: true, flex: 1 },
 					{ field: 'nidb_variable',     headerName: 'NiDB Variable',   sortable: true, filter: true, flex: 1 },
 					{
-						field: 'flag_date_from_field',
-						headerName: 'Date from field',
+						field: 'flag_import_meta',
+						headerName: 'Import metadata',
 						width: 140,
-						cellRenderer: flagRenderer('flag_date_from_field'),
-						cellStyle: { 'justify-content': 'center', 'display': 'flex', 'align-items': 'middle' }
-					},
-					{
-						field: 'flag_can_repeat',
-						headerName: 'Can repeat',
-						width: 110,
-						cellRenderer: flagRenderer('flag_can_repeat'),
+						cellRenderer: flagRenderer('flag_import_meta'),
 						cellStyle: { 'justify-content': 'center', 'display': 'flex', 'align-items': 'middle' }
 					},
 					{
@@ -749,15 +749,18 @@
 			toggleSourceFields(sourceType);
 
 			if (sourceType === 'avicenna') {
-				document.getElementById('modal_avicenna_question').value = data.avicenna_question || '';
-				document.getElementById('modal_avicenna_variable').value = data.avicenna_variable || '';
+				document.getElementById('modal_avicenna_question').value  = data.avicenna_question || '';
+				document.getElementById('modal_avicenna_variable').value  = data.avicenna_variable || '';
+				document.getElementById('modal_flag_import_meta').checked = !!data.flag_import_meta;
 			} else {
-				document.getElementById('modal_redcap_arm').value       = data.redcap_arm       || '';
-				document.getElementById('modal_redcap_event').value     = data.redcap_event     || '';
-				document.getElementById('modal_redcap_form').value      = data.redcap_form      || '';
-				document.getElementById('modal_redcap_field').value     = data.redcap_field     || '';
-				document.getElementById('modal_redcap_datatype').value  = data.redcap_datatype  || '';
-				document.getElementById('modal_redcap_datefield').value = data.redcap_datefield || '';
+				document.getElementById('modal_redcap_arm').value          = data.redcap_arm       || '';
+				document.getElementById('modal_redcap_event').value        = data.redcap_event     || '';
+				document.getElementById('modal_redcap_form').value         = data.redcap_form      || '';
+				document.getElementById('modal_redcap_field').value        = data.redcap_field     || '';
+				document.getElementById('modal_redcap_datatype').value     = data.redcap_datatype  || '';
+				document.getElementById('modal_redcap_datefield').value    = data.redcap_datefield || '';
+				document.getElementById('modal_flag_date_from_field').checked = !!data.flag_date_from_field;
+				document.getElementById('modal_flag_can_repeat').checked       = !!data.flag_can_repeat;
 			}
 
 			// Set instrument, then fetch its items and pre-select the saved variable
@@ -765,9 +768,6 @@
 			if (data.nidb_instrument_id) {
 				loadInstrumentItems(data.nidb_instrument_id, data.nidb_variable_id);
 			}
-
-			document.getElementById('modal_flag_date_from_field').checked = !!data.flag_date_from_field;
-			document.getElementById('modal_flag_can_repeat').checked       = !!data.flag_can_repeat;
 
 			$('#mappingModal').modal('show');
 		}
@@ -782,16 +782,18 @@
 			});
 			document.getElementById('modal_nidb_variable').innerHTML =
 				'<option value="">-- select instrument first --</option>';
+			document.getElementById('modal_flag_import_meta').checked     = false;
 			document.getElementById('modal_flag_date_from_field').checked = false;
 			document.getElementById('modal_flag_can_repeat').checked      = false;
 		}
 
 		// ── Show/hide source-type-specific field groups ───────────────────
 		function toggleSourceFields(sourceType) {
-			document.getElementById('avicenna_fields').style.display =
-				(sourceType === 'avicenna') ? '' : 'none';
-			document.getElementById('redcap_fields').style.display =
-				(sourceType === 'redcap') ? '' : 'none';
+			const isAvicenna = (sourceType === 'avicenna');
+			document.getElementById('avicenna_fields').style.display = isAvicenna ? '' : 'none';
+			document.getElementById('avicenna_flags').style.display  = isAvicenna ? '' : 'none';
+			document.getElementById('redcap_fields').style.display   = isAvicenna ? 'none' : '';
+			document.getElementById('redcap_flags').style.display    = isAvicenna ? 'none' : '';
 		}
 
 		// ── Load instrument items via AJAX ────────────────────────────────
@@ -829,27 +831,28 @@
 
 			// Build the params object with shared fields
 			const params = {
-				action:               'savemapping',
-				projectid:            projectId,
-				mappingid:            mappingId,
-				source_type:          sourceType,
-				nidb_instrument:      document.getElementById('modal_nidb_instrument').value,
-				nidb_variable:        document.getElementById('modal_nidb_variable').value,
-				flag_date_from_field: document.getElementById('modal_flag_date_from_field').checked ? 1 : 0,
-				flag_can_repeat:      document.getElementById('modal_flag_can_repeat').checked      ? 1 : 0,
+				action:          'savemapping',
+				projectid:       projectId,
+				mappingid:       mappingId,
+				source_type:     sourceType,
+				nidb_instrument: document.getElementById('modal_nidb_instrument').value,
+				nidb_variable:   document.getElementById('modal_nidb_variable').value,
 			};
 
-			// Add source-specific fields
+			// Add source-specific fields and flags
 			if (sourceType === 'avicenna') {
 				params.avicenna_question = document.getElementById('modal_avicenna_question').value;
 				params.avicenna_variable = document.getElementById('modal_avicenna_variable').value;
+				params.flag_import_meta  = document.getElementById('modal_flag_import_meta').checked ? 1 : 0;
 			} else {
-				params.redcap_arm       = document.getElementById('modal_redcap_arm').value;
-				params.redcap_event     = document.getElementById('modal_redcap_event').value;
-				params.redcap_form      = document.getElementById('modal_redcap_form').value;
-				params.redcap_field     = document.getElementById('modal_redcap_field').value;
-				params.redcap_datatype  = document.getElementById('modal_redcap_datatype').value;
-				params.redcap_datefield = document.getElementById('modal_redcap_datefield').value;
+				params.redcap_arm            = document.getElementById('modal_redcap_arm').value;
+				params.redcap_event          = document.getElementById('modal_redcap_event').value;
+				params.redcap_form           = document.getElementById('modal_redcap_form').value;
+				params.redcap_field          = document.getElementById('modal_redcap_field').value;
+				params.redcap_datatype       = document.getElementById('modal_redcap_datatype').value;
+				params.redcap_datefield      = document.getElementById('modal_redcap_datefield').value;
+				params.flag_date_from_field  = document.getElementById('modal_flag_date_from_field').checked ? 1 : 0;
+				params.flag_can_repeat       = document.getElementById('modal_flag_can_repeat').checked      ? 1 : 0;
 			}
 
 			// POST as application/x-www-form-urlencoded
@@ -873,19 +876,18 @@
 				const instrEl = document.getElementById('modal_nidb_instrument');
 				const varEl   = document.getElementById('modal_nidb_variable');
 				const rowData = {
-					id:                   resp.mappingid,
-					nidb_instrument_id:   parseInt(params.nidb_instrument) || 0,
-					nidb_instrument:      instrEl.options[instrEl.selectedIndex]?.text || '',
-					nidb_variable_id:     parseInt(params.nidb_variable)   || 0,
-					nidb_variable:        varEl.options[varEl.selectedIndex]?.text     || '',
-					flag_date_from_field: parseInt(params.flag_date_from_field),
-					flag_can_repeat:      parseInt(params.flag_can_repeat),
+					id:                 resp.mappingid,
+					nidb_instrument_id: parseInt(params.nidb_instrument) || 0,
+					nidb_instrument:    instrEl.options[instrEl.selectedIndex]?.text || '',
+					nidb_variable_id:   parseInt(params.nidb_variable)   || 0,
+					nidb_variable:      varEl.options[varEl.selectedIndex]?.text     || '',
 				};
 
 				if (sourceType === 'avicenna') {
 					Object.assign(rowData, {
 						avicenna_question: parseInt(params.avicenna_question) || 0,
 						avicenna_variable: params.avicenna_variable,
+						flag_import_meta:  parseInt(params.flag_import_meta),
 					});
 					if (mappingId) {
 						// Update the existing row in place
@@ -901,8 +903,10 @@
 						redcap_event:     params.redcap_event,
 						redcap_form:      params.redcap_form,
 						redcap_field:     params.redcap_field,
-						redcap_datatype:  params.redcap_datatype,
-						redcap_datefield: params.redcap_datefield,
+						redcap_datatype:      params.redcap_datatype,
+						redcap_datefield:     params.redcap_datefield,
+						flag_date_from_field: parseInt(params.flag_date_from_field),
+						flag_can_repeat:      parseInt(params.flag_can_repeat),
 					});
 					if (mappingId) {
 						redcapGridApi.forEachNode(node => {
