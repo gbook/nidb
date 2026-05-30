@@ -50,8 +50,254 @@
 	}
 
 	switch ($action) {
+		case 'bulkaddavicenna':
+			BulkAddAvicenna((int)$projectid, GetVariable("csvtext"));
+			break;
 		default:
 			DisplayMappingList((int)$projectid);
+	}
+
+
+	/* --------------------------------------------------- */
+	/* ------- ClosestMatch ------------------------------ */
+	/* --------------------------------------------------- */
+	function ClosestMatch($needle, $haystack) {
+		if (empty($haystack)) return null;
+		$best     = null;
+		$bestDist = PHP_INT_MAX;
+		$lower    = strtolower($needle);
+		foreach ($haystack as $candidate) {
+			$dist = levenshtein($lower, strtolower($candidate));
+			if ($dist < $bestDist) {
+				$bestDist = $dist;
+				$best     = $candidate;
+			}
+		}
+		return $best;
+	}
+
+
+	/* --------------------------------------------------- */
+	/* ------- BulkAddAvicenna -------------------------- */
+	/* --------------------------------------------------- */
+	function BulkAddAvicenna($projectid, $csvtext) {
+		$csvtext = trim($csvtext);
+		if ($csvtext === '') {
+			Error("No CSV data provided");
+			DisplayMappingList($projectid);
+			return;
+		}
+
+		// Split into non-empty lines
+		$lines = array_values(array_filter(array_map('trim', explode("\n", $csvtext)), function($l) { return $l !== ''; }));
+
+		if (count($lines) < 2) {
+			Error("CSV must have a header row and at least one data row");
+			DisplayMappingList($projectid);
+			return;
+		}
+
+		// Normalize header: lowercase, strip spaces
+		$header = array_map(function($h) { return strtolower(str_replace(' ', '', trim($h))); }, str_getcsv($lines[0]));
+
+		// Verify required columns are present
+		$required = ['avicennaquestion', 'avicennavariable', 'nidbinstrument', 'nidbvariable'];
+		$missing  = array_diff($required, $header);
+		if (!empty($missing)) {
+			Error("Missing required columns: " . implode(', ', $missing));
+			DisplayMappingList($projectid);
+			return;
+		}
+
+		$colIdx  = array_flip($header);
+		$results = [];
+
+		foreach (array_slice($lines, 1) as $i => $line) {
+			$values = str_getcsv($line);
+			while (count($values) < count($header)) $values[] = '';
+
+			$avicennaQuestion = trim($values[$colIdx['avicennaquestion']] ?? '');
+			$avicennaVariable = trim($values[$colIdx['avicennavariable']] ?? '');
+			$nidbInstrument   = trim($values[$colIdx['nidbinstrument']] ?? '');
+			$nidbVariable     = trim($values[$colIdx['nidbvariable']] ?? '');
+			$dateFromField    = isset($colIdx['datefromfield']) ? (int)trim($values[$colIdx['datefromfield']] ?? '0') : 0;
+			$canRepeat        = isset($colIdx['canrepeat'])     ? (int)trim($values[$colIdx['canrepeat']] ?? '0')     : 0;
+
+			$result = [
+				'row'               => $i + 2,
+				'avicenna_question' => $avicennaQuestion,
+				'avicenna_variable' => $avicennaVariable,
+				'nidb_instrument'   => $nidbInstrument,
+				'nidb_variable'     => $nidbVariable,
+				'status'            => '',
+				'message'           => '',
+			];
+
+			// Validate: at least one avicenna key, plus both nidb fields
+			if ($avicennaQuestion === '' && $avicennaVariable === '') {
+				$result['status']  = 'error';
+				$result['message'] = 'avicennaquestion or avicennavariable must be provided';
+				$results[] = $result;
+				continue;
+			}
+			if ($nidbInstrument === '') {
+				$result['status']  = 'error';
+				$result['message'] = 'nidbinstrument is required';
+				$results[] = $result;
+				continue;
+			}
+			if ($nidbVariable === '') {
+				$result['status']  = 'error';
+				$result['message'] = 'nidbvariable is required';
+				$results[] = $result;
+				continue;
+			}
+
+			// Look up instrument by name within this project
+			$stmt = mysqli_prepare($GLOBALS['linki'], "SELECT instrument_id FROM instruments WHERE project_id = ? AND instrument_name = ?");
+			mysqli_stmt_bind_param($stmt, 'is', $projectid, $nidbInstrument);
+			$r = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			$instrRow = mysqli_fetch_array($r, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
+
+			if (!$instrRow) {
+				// Fetch all instrument names for this project to suggest the closest match
+				$stmt2 = mysqli_prepare($GLOBALS['linki'], "SELECT instrument_name FROM instruments WHERE project_id = ?");
+				mysqli_stmt_bind_param($stmt2, 'i', $projectid);
+				$r2 = MySQLiBoundQuery($stmt2, __FILE__, __LINE__);
+				$allInstruments = [];
+				while ($row2 = mysqli_fetch_array($r2, MYSQLI_ASSOC)) $allInstruments[] = $row2['instrument_name'];
+				mysqli_stmt_close($stmt2);
+				$suggestion = ClosestMatch($nidbInstrument, $allInstruments);
+				$result['status']  = 'error';
+				$result['message'] = "Instrument not found: \"$nidbInstrument\""
+				                   . ($suggestion !== null ? "; did you mean \"$suggestion\"?" : '');
+				$results[] = $result;
+				continue;
+			}
+			$instrumentId = (int)$instrRow['instrument_id'];
+
+			// Look up variable by name within that instrument
+			$stmt = mysqli_prepare($GLOBALS['linki'], "SELECT instrumentitem_id FROM instrument_items WHERE instrument_id = ? AND item_name = ?");
+			mysqli_stmt_bind_param($stmt, 'is', $instrumentId, $nidbVariable);
+			$r = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			$varRow = mysqli_fetch_array($r, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
+
+			if (!$varRow) {
+				// Fetch all variable names for this instrument to suggest the closest match
+				$stmt2 = mysqli_prepare($GLOBALS['linki'], "SELECT item_name FROM instrument_items WHERE instrument_id = ?");
+				mysqli_stmt_bind_param($stmt2, 'i', $instrumentId);
+				$r2 = MySQLiBoundQuery($stmt2, __FILE__, __LINE__);
+				$allVars = [];
+				while ($row2 = mysqli_fetch_array($r2, MYSQLI_ASSOC)) $allVars[] = $row2['item_name'];
+				mysqli_stmt_close($stmt2);
+				$suggestion = ClosestMatch($nidbVariable, $allVars);
+				$result['status']  = 'error';
+				$result['message'] = "Variable not found: \"$nidbVariable\" in instrument \"$nidbInstrument\""
+				                   . ($suggestion !== null ? "; did you mean \"$suggestion\"?" : '');
+				$results[] = $result;
+				continue;
+			}
+			$variableId = (int)$varRow['instrumentitem_id'];
+
+			$avicennaQuestionVal = is_numeric($avicennaQuestion) ? (int)$avicennaQuestion : null;
+			$avicennaVariableVal = $avicennaVariable !== '' ? $avicennaVariable : null;
+			$fdf = $dateFromField ? 1 : 0;
+			$fcr = $canRepeat     ? 1 : 0;
+
+			// Check for existing mapping (NULL-safe equals <=> handles null values)
+			$stmt = mysqli_prepare($GLOBALS['linki'],
+				"SELECT remoteimportmapping_id FROM remoteimport_mapping
+				 WHERE project_id = ? AND source_type = 'avicenna'
+				   AND avicenna_question <=> ? AND avicenna_variable <=> ?");
+			mysqli_stmt_bind_param($stmt, 'iis', $projectid, $avicennaQuestionVal, $avicennaVariableVal);
+			$r = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			$existingRow = mysqli_fetch_array($r, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
+
+			if ($existingRow) {
+				// Update the existing mapping
+				$existingId = (int)$existingRow['remoteimportmapping_id'];
+				$stmt = mysqli_prepare($GLOBALS['linki'],
+					"UPDATE remoteimport_mapping SET nidb_instrument=?, nidb_variable=?, flag_date_from_field=?, flag_can_repeat=? WHERE remoteimportmapping_id=?");
+				mysqli_stmt_bind_param($stmt, 'iiiii', $instrumentId, $variableId, $fdf, $fcr, $existingId);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+				mysqli_stmt_close($stmt);
+				$result['status'] = 'updated';
+			} else {
+				// Insert a new mapping
+				$stmt = mysqli_prepare($GLOBALS['linki'],
+					"INSERT INTO remoteimport_mapping (project_id, source_type, avicenna_question, avicenna_variable, nidb_instrument, nidb_variable, flag_date_from_field, flag_can_repeat) VALUES (?, 'avicenna', ?, ?, ?, ?, ?, ?)");
+				mysqli_stmt_bind_param($stmt, 'iisiiii', $projectid, $avicennaQuestionVal, $avicennaVariableVal, $instrumentId, $variableId, $fdf, $fcr);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+				mysqli_stmt_close($stmt);
+				$result['status'] = 'added';
+			}
+
+			$results[] = $result;
+		}
+
+		// Count outcomes for summary label
+		$nAdded   = count(array_filter($results, function($r) { return $r['status'] === 'added'; }));
+		$nUpdated = count(array_filter($results, function($r) { return $r['status'] === 'updated'; }));
+		$nErrors  = count(array_filter($results, function($r) { return $r['status'] === 'error'; }));
+		?>
+		<h3 class="ui header">Bulk import results
+			<div class="sub header">
+				<?php if ($nAdded)   { ?><span class="ui tiny green  label"><?= $nAdded ?>   added</span><?php } ?>
+				<?php if ($nUpdated) { ?><span class="ui tiny blue   label"><?= $nUpdated ?> updated</span><?php } ?>
+				<?php if ($nErrors)  { ?><span class="ui tiny red    label"><?= $nErrors ?>  errors</span><?php } ?>
+			</div>
+		</h3>
+		<table class="ui compact small table">
+			<thead>
+				<tr>
+					<th>Row</th>
+					<th>Avicenna Q#</th>
+					<th>Avicenna Variable</th>
+					<th>NiDB Instrument</th>
+					<th>NiDB Variable</th>
+					<th>Status</th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach ($results as $res) { ?>
+				<tr class="<?= $res['status'] === 'error' ? 'negative' : ($res['status'] === 'added' ? 'positive' : '') ?>">
+					<td><?= $res['row'] ?></td>
+					<td><?= htmlspecialchars($res['avicenna_question']) ?></td>
+					<td><?= htmlspecialchars($res['avicenna_variable']) ?></td>
+					<td><?= htmlspecialchars($res['nidb_instrument']) ?></td>
+					<td><?= htmlspecialchars($res['nidb_variable']) ?></td>
+					<td>
+						<?php if ($res['status'] === 'added') { ?>
+							<span class="ui tiny green label"><i class="plus icon"></i> added</span>
+						<?php } elseif ($res['status'] === 'updated') { ?>
+							<span class="ui tiny blue label"><i class="check icon"></i> updated</span>
+						<?php } else { ?>
+							<span class="ui tiny red label"><i class="exclamation icon"></i> error</span>
+							<?php if ($res['message']) { ?> <?= htmlspecialchars($res['message']) ?><?php } ?>
+						<?php } ?>
+					</td>
+				</tr>
+				<?php } ?>
+			</tbody>
+		</table>
+		<?php if ($nErrors > 0) { ?>
+		<div style="margin-top:1em">
+			<h4 class="ui header">Fix and resubmit</h4>
+			<form method="POST" action="remoteimportmapping.php">
+				<input type="hidden" name="action" value="bulkaddavicenna">
+				<input type="hidden" name="projectid" value="<?= $projectid ?>">
+				<textarea name="csvtext" rows="12"
+				          style="font-family:monospace;font-size:0.85em;width:100%;margin-bottom:0.5em"><?= htmlspecialchars($csvtext) ?></textarea>
+				<button type="submit" class="ui primary button"><i class="upload icon"></i> Import</button>
+			</form>
+		</div>
+		<?php } ?>
+		<?php
+
+		DisplayMappingList($projectid);
 	}
 
 
@@ -133,6 +379,9 @@
 		?>
 		<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/ag-grid-community@31/styles/ag-grid.css">
 		<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/ag-grid-community@31/styles/ag-theme-alpine.css">
+		<style>
+			.arrow-col-header { background: #444 !important; color: #fff; font-size: 2em; !important; }
+		</style>
 
 		<h2 class="ui header">Remote Import Mapping</h2>
 
@@ -147,6 +396,9 @@
 			<div style="margin-bottom:8px;display:flex;align-items:center;gap:10px">
 				<button class="ui small primary button" onclick="openModal('avicenna')">
 					<i class="plus icon"></i> Add mapping
+				</button>
+				<button class="ui small button" onclick="$('#bulkAddModal').modal('show')">
+					<i class="list icon"></i> Bulk add
 				</button>
 				<input type="text" id="avicennaFilter" placeholder="Search..."
 				       oninput="avicennaGridApi.setQuickFilter(this.value)"
@@ -278,6 +530,35 @@
 			</div>
 		</div>
 
+		<!-- Bulk add Avicenna mappings modal -->
+		<div class="ui modal" id="bulkAddModal">
+			<div class="header"><i class="list icon"></i> Bulk add Avicenna mappings</div>
+			<div class="content">
+				<form id="bulkForm" method="POST" action="remoteimportmapping.php">
+					<input type="hidden" name="action" value="bulkaddavicenna">
+					<input type="hidden" name="projectid" value="<?= $projectid ?>">
+					<div class="ui form">
+						<div class="field">
+							<label>CSV data</label>
+							<p style="color:#666;font-size:0.9em">
+								First line must be a header row. Required columns: <code>avicennaquestion</code>, <code>avicennavariable</code>, <code>nidbinstrument</code>, <code>nidbvariable</code>.
+								Optional: <code>datefromfield</code>, <code>canrepeat</code>. Columns may be in any order. Values may contain spaces.
+							</p>
+							<textarea name="csvtext" rows="12"
+							          style="font-family:monospace;font-size:0.85em;width:100%"
+							          placeholder="avicennaquestion,avicennavariable,nidbinstrument,nidbvariable,datefromfield,canrepeat"></textarea>
+						</div>
+					</div>
+				</form>
+			</div>
+			<div class="actions">
+				<div class="ui cancel button">Cancel</div>
+				<button class="ui primary button" onclick="document.getElementById('bulkForm').submit()">
+					<i class="upload icon"></i> Import
+				</button>
+			</div>
+		</div>
+
 		<script src="//cdn.jsdelivr.net/npm/ag-grid-community@31/dist/ag-grid-community.min.js"></script>
 		<script>
 		// Data injected at page render time
@@ -320,7 +601,9 @@
 		function actionRenderer(getGridApi, sourceType) {
 			return params => {
 				const div = document.createElement('div');
-				div.style.paddingTop = '3px';
+				div.style.display = 'flex';
+				div.style.alignItems = 'center';
+				div.style.justifyContent = 'center';
 
 				// Edit opens the modal pre-filled with this row's data
 				const editBtn     = document.createElement('button');
@@ -335,7 +618,6 @@
 				delBtn.className      = 'ui mini compact red button';
 				delBtn.innerHTML      = '<i class="trash icon"></i>';
 				delBtn.title          = 'Delete';
-				delBtn.style.marginLeft = '4px';
 				delBtn.onclick        = () => {
 					if (!confirm('Delete this mapping?')) return;
 					fetch('ajaxapi.php?action=deletemapping&mappingid=' + params.data.id)
@@ -356,11 +638,13 @@
 
 		// Arrow separator column shared by both grids
 		const arrowCol = {
-			headerName: '→', sortable: false, filter: false, width: 50,
+			headerName: '→', sortable: false, filter: false, width: 65,
+			headerClass: 'arrow-col-header',
+			cellStyle: { background: '#eee', 'justify-content': 'center', 'display': 'flex', 'align-items': 'center' },
 			cellRenderer: () => {
 				const span = document.createElement('span');
 				span.textContent  = '→';
-				span.style.fontSize = '1.2em';
+				span.style.fontSize = '2em';
 				return span;
 			}
 		};
@@ -375,9 +659,28 @@
 					arrowCol,
 					{ field: 'nidb_instrument',   headerName: 'NiDB Instrument', sortable: true, filter: true, flex: 1 },
 					{ field: 'nidb_variable',     headerName: 'NiDB Variable',   sortable: true, filter: true, flex: 1 },
-					{ field: 'flag_date_from_field', headerName: 'Date from field', width: 140, cellRenderer: flagRenderer('flag_date_from_field') },
-					{ field: 'flag_can_repeat',      headerName: 'Can repeat',      width: 110, cellRenderer: flagRenderer('flag_can_repeat') },
-					{ headerName: '', sortable: false, filter: false, width: 100, cellRenderer: actionRenderer(() => avicennaGridApi, 'avicenna') },
+					{
+						field: 'flag_date_from_field',
+						headerName: 'Date from field',
+						width: 140,
+						cellRenderer: flagRenderer('flag_date_from_field'),
+						cellStyle: { 'justify-content': 'center', 'display': 'flex', 'align-items': 'middle' }
+					},
+					{
+						field: 'flag_can_repeat',
+						headerName: 'Can repeat',
+						width: 110,
+						cellRenderer: flagRenderer('flag_can_repeat'),
+						cellStyle: { 'justify-content': 'center', 'display': 'flex', 'align-items': 'middle' }
+					},
+					{
+						headerName: '',
+						sortable: false,
+						filter: false,
+						width: 100,
+						cellRenderer: actionRenderer(() => avicennaGridApi, 'avicenna'),
+						cellStyle: { 'justify-content': 'center', 'display': 'flex', 'align-items': 'middle' }
+					},
 				],
 				rowData:       avicennaData,
 				defaultColDef: { resizable: true },
@@ -399,9 +702,28 @@
 					arrowCol,
 					{ field: 'nidb_instrument',   headerName: 'NiDB Instrument',   sortable: true, filter: true, flex: 1 },
 					{ field: 'nidb_variable',     headerName: 'NiDB Variable',     sortable: true, filter: true, flex: 1 },
-					{ field: 'flag_date_from_field', headerName: 'Date from field', width: 140, cellRenderer: flagRenderer('flag_date_from_field') },
-					{ field: 'flag_can_repeat',      headerName: 'Can repeat',      width: 110, cellRenderer: flagRenderer('flag_can_repeat') },
-					{ headerName: '', sortable: false, filter: false, width: 100, cellRenderer: actionRenderer(() => redcapGridApi, 'redcap') },
+					{
+						field: 'flag_date_from_field',
+						headerName: 'Date from field',
+						width: 140,
+						cellRenderer: flagRenderer('flag_date_from_field'),
+						cellStyle: { 'justify-content': 'center', 'display': 'flex', 'align-items': 'middle' }
+					},
+					{
+						field: 'flag_can_repeat',
+						headerName: 'Can repeat',
+						width: 110,
+						cellRenderer: flagRenderer('flag_can_repeat'),
+						cellStyle: { 'justify-content': 'center', 'display': 'flex', 'align-items': 'middle' }
+					},
+					{
+						headerName: '',
+						sortable: false,
+						filter: false,
+						width: 120,
+						cellRenderer: actionRenderer(() => redcapGridApi, 'redcap'),
+						cellStyle: { 'justify-content': 'center', 'display': 'flex', 'align-items': 'middle' }
+					},
 				],
 				rowData:       redcapData,
 				defaultColDef: { resizable: true },
