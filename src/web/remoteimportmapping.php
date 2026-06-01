@@ -672,7 +672,15 @@
 					{ field: 'avicenna_question',      headerName: 'Question #',       sortable: true, filter: true, width: 130 },
 					{ field: 'avicenna_variablecount', headerName: 'Variable count',   sortable: true, filter: true, width: 155 },
 					arrowCol,
-					{ field: 'nidb_instrument',   headerName: 'NiDB Instrument', sortable: true, filter: true, flex: 1 },
+					{ field: 'nidb_instrument',   headerName: 'NiDB Instrument', sortable: true, filter: true, flex: 1,
+						cellRenderer: params => {
+							if (!params.data.nidb_instrument_id) return params.value || '';
+							const a = document.createElement('a');
+							a.href = 'instruments.php?projectid=<?= $projectid ?>&instrumentid=' + params.data.nidb_instrument_id;
+							a.textContent = params.value;
+							return a;
+						}
+					},
 					{ field: 'nidb_variable',     headerName: 'NiDB Variable',   sortable: true, filter: true, flex: 1 },
 					{
 						field: 'flag_import_meta',
@@ -708,7 +716,15 @@
 					{ field: 'redcap_datatype',   headerName: 'Datatype',          sortable: true, filter: true, width: 110 },
 					{ field: 'redcap_datefield',  headerName: 'Date field',        sortable: true, filter: true, width: 120 },
 					arrowCol,
-					{ field: 'nidb_instrument',   headerName: 'NiDB Instrument',   sortable: true, filter: true, flex: 1 },
+					{ field: 'nidb_instrument',   headerName: 'NiDB Instrument',   sortable: true, filter: true, flex: 1,
+						cellRenderer: params => {
+							if (!params.data.nidb_instrument_id) return params.value || '';
+							const a = document.createElement('a');
+							a.href = 'instruments.php?projectid=<?= $projectid ?>&instrumentid=' + params.data.nidb_instrument_id;
+							a.textContent = params.value;
+							return a;
+						}
+					},
 					{ field: 'nidb_variable',     headerName: 'NiDB Variable',     sortable: true, filter: true, flex: 1 },
 					{
 						field: 'flag_date_from_field',
