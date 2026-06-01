@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: May 29, 2026 at 08:25 PM
+-- Generation Time: Jun 01, 2026 at 01:13 AM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -2825,6 +2825,7 @@ CREATE TABLE `remoteimport_mapping` (
   `source_type` enum('redcap','avicenna') NOT NULL,
   `avicenna_question` int(11) DEFAULT NULL COMMENT 'Avicenna question number',
   `avicenna_variable` varchar(255) DEFAULT NULL COMMENT 'Avicenna variable name',
+  `avicenna_variablecount` int(11) DEFAULT NULL COMMENT 'The number of options for this variable. var_1, var_2, etc',
   `redcap_arm` tinytext DEFAULT NULL COMMENT 'Redcap arm',
   `redcap_event` tinytext DEFAULT NULL COMMENT 'Redcap event (baseline, month 3, etc)',
   `redcap_form` tinytext DEFAULT NULL COMMENT 'Redcap form (instrument)',
@@ -2834,7 +2835,8 @@ CREATE TABLE `remoteimport_mapping` (
   `nidb_instrument` int(11) DEFAULT NULL COMMENT 'links to the instrument table',
   `nidb_variable` int(11) DEFAULT NULL COMMENT 'links to the instrument_item table',
   `flag_date_from_field` tinyint(1) DEFAULT NULL,
-  `flag_can_repeat` tinyint(1) DEFAULT NULL
+  `flag_can_repeat` tinyint(1) DEFAULT NULL,
+  `flag_import_meta` tinyint(1) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
