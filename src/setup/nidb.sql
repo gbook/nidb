@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jun 01, 2026 at 01:13 AM
+-- Generation Time: Jun 03, 2026 at 06:00 PM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -2791,6 +2791,7 @@ CREATE TABLE `redcap_import_mapping` (
 CREATE TABLE `remoteimport_batch` (
   `remoteimportbatch_id` bigint(20) NOT NULL,
   `remoteimport_id` int(11) NOT NULL,
+  `remote_exportid` int(11) DEFAULT NULL COMMENT 'avicenna provides an ID for each of their exports',
   `start_date` datetime DEFAULT NULL COMMENT 'Datetime the batch started',
   `end_date` datetime DEFAULT NULL COMMENT 'Datetime the batch finished',
   `status` enum('started','running','complete','waiting','pending') NOT NULL COMMENT 'Status of this batch',
@@ -2823,9 +2824,11 @@ CREATE TABLE `remoteimport_mapping` (
   `remoteimportmapping_id` int(11) NOT NULL,
   `project_id` int(11) NOT NULL,
   `source_type` enum('redcap','avicenna') NOT NULL,
+  `avicenna_survey` int(11) DEFAULT NULL COMMENT 'survey ID',
   `avicenna_question` int(11) DEFAULT NULL COMMENT 'Avicenna question number',
   `avicenna_variable` varchar(255) DEFAULT NULL COMMENT 'Avicenna variable name',
-  `avicenna_variablecount` int(11) DEFAULT NULL COMMENT 'The number of options for this variable. var_1, var_2, etc',
+  `avicenna_datatype` enum('quantity','time','text','set') DEFAULT NULL,
+  `avicenna_variablecount` varchar(255) DEFAULT NULL COMMENT 'The number of options for this variable. var_1, var_2, etc',
   `redcap_arm` tinytext DEFAULT NULL COMMENT 'Redcap arm',
   `redcap_event` tinytext DEFAULT NULL COMMENT 'Redcap event (baseline, month 3, etc)',
   `redcap_form` tinytext DEFAULT NULL COMMENT 'Redcap form (instrument)',
@@ -2870,6 +2873,8 @@ CREATE TABLE `remote_imports` (
   `remote_type` enum('avicenna','redcap','url','csv') NOT NULL,
   `remote_url` text DEFAULT NULL,
   `remote_token` text DEFAULT NULL,
+  `remote_username` varchar(255) DEFAULT NULL,
+  `remote_projectid` int(11) DEFAULT NULL,
   `import_schedule` enum('ondemand','hourly','daily','weekly','monthly','') DEFAULT NULL,
   `import_time` int(11) NOT NULL DEFAULT 0 COMMENT 'Hour of the day, 0 to 23',
   `import_dayofmonth` int(11) NOT NULL DEFAULT 1 COMMENT 'day of month - 1 to 31',
@@ -4313,7 +4318,8 @@ ALTER TABLE `observations`
   ADD KEY `instrumentitem_id` (`instrumentitem_id`),
   ADD KEY `observationsurvey_id` (`observationsurvey_id`),
   ADD KEY `instrumentitem_id_2` (`instrumentitem_id`,`observation_instrument`),
-  ADD KEY `enrollment_id` (`enrollment_id`) USING BTREE;
+  ADD KEY `enrollment_id` (`enrollment_id`) USING BTREE,
+  ADD KEY `remotebatch_id` (`remotebatch_id`);
 
 --
 -- Indexes for table `observation_meta`

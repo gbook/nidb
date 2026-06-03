@@ -47,6 +47,29 @@ enum EventResult {
     Neutral
 };
 
+struct RemoteImportMapping {
+    QString sourceType;
+    struct Avicenna {
+        int survey;
+        int question;
+        QString variable;
+        QString datatype;
+        QString variableCount;
+    } avicenna;
+    struct Redcap {
+        QString arm;
+        QString event;
+        QString form;
+        QString field;
+        QString datatype;
+        QString dateField;
+    } redcap;
+    struct flags {
+        bool importMeta;
+    };
+    int instrumentRowID;
+    int instrumentItemRowID;
+};
 
 class moduleRemoteImport
 {
@@ -59,13 +82,22 @@ public:
     bool IsDateInSchedule(QDateTime date, QString scheduleType, int hourOfDay, int dayOfMonth, QStringList daysOfWeek);
 
 private:
-    bool ImportAvicenna(int remoteImportBatchRowID, QString remoteURL, QString remoteToken);
-    bool ImportRedCap(int remoteImportBatchRowID, QString remoteURL, QString remoteToken);
-    bool ImportURL(int remoteImportBatchRowID, QString remoteURL, QString remoteToken);
+    bool ImportAvicenna(int remoteImportBatchRowID, QString remoteURL, QString remoteToken, QString remoteUsername, int remoteProjectID, QList <RemoteImportMapping> mapping);
+    bool ImportRedCap(int remoteImportBatchRowID, QString remoteURL, QString remoteToken, QList <RemoteImportMapping> mapping);
+    bool ImportURL(int remoteImportBatchRowID, QString remoteURL, QString remoteToken, QList <RemoteImportMapping> mapping);
+    bool ImportCSV(int remoteImportBatchRowID, QList <RemoteImportMapping> mapping);
+    QList <RemoteImportMapping> GetImportMapping(int projectRowID);
 
     QString RemoteImportLogEventToString(RemoteImportLogEvent event);
     QString EventResultToString(EventResult result);
     void RemoteImportLog(qint64 batchRowID, RemoteImportLogEvent event, QString message, EventResult result);
+
+    void SetBatchStatus(qint64 batchRowID, QString status, int remoteExportID = -1);
+
+    int GetAvicennaExportID(QString jsonStr);
+    QString GetAvicennaExportStatus(int exportID, QString remoteUsername, QString remoteToken, QString &exportURL);
+
+    QList <RemoteImportMapping> mapping;
 
     nidb *n;
 };

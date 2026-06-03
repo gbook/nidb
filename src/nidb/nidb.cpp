@@ -274,6 +274,10 @@ int nidb::ModuleGetNumThreads() {
     else if (module == "modulemanager") {
         numThreads = 1;
     }
+    else if (module == "remoteimport") {
+        if (cfg["moduleremoteimportthreads"] == "") numThreads = 1;
+        else numThreads = cfg["moduleremoteimportthreads"].toInt();
+    }
 
     //WriteLog(QString("ModuleGetNumThreads() returned [%1] threads for module [%2]").arg(numThreads).arg(module));
     return numThreads;

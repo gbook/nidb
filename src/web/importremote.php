@@ -54,8 +54,28 @@
 	$import_time = GetVariable("import_time");
 	$import_dayofmonth = GetVariable("import_dayofmonth");
 	$import_days = GetVariable("import_days");
+	$remote_username  = GetVariable("remote_username");
+	$remote_projectid = GetVariable("remote_projectid");
 
 	/* determine action */
+	/* determine workflow step for the diagram */
+	if (in_array($action, ['addimportform', 'editimportform', 'addimport', 'updateimport'])) {
+		$workflowStep = 1;
+	} elseif (in_array($action, ['viewbatchimports', 'viewbatchimportlist', 'viewbatchlog'])) {
+		$workflowStep = 4;
+	} else {
+		$workflowStep = 3;
+	}
+	?>
+	<div style="display:flex; align-items:flex-start; gap:2em; padding:1em; max-width:1600px; margin:0 auto">
+		<div style="flex-shrink:0; width:300px">
+			<div class="ui sticky" id="importWorkflowStepper">
+				<?php DisplayImportStepper($workflowStep); ?>
+			</div>
+		</div>
+		<div id="importPageContent" style="flex:1; min-width:0">
+	<?php
+
 	switch ($action) {
 		case 'viewbatchlog':
 			DisplayBatchLog($batchid);
@@ -71,7 +91,7 @@
 			break;
 		case 'runimport':
 			RunRemoteImport($importid);
-			DisplayRemoteImportList($projectid);
+			DisplayRemoteImportBatchList($projectid);
 			break;
 		case 'enable':
 			SetRemoteImportEnabled($importid, 1);
@@ -86,22 +106,29 @@
 			DisplayRemoteImportList($projectid);
 			break;
 		case 'editimportform':
-			DisplayRemoteImportForm("edit", $importid);
+			DisplayRemoteImportForm("edit", $importid, $projectid);
 			break;
 		case 'addimportform':
-			DisplayRemoteImportForm("add", "");
+			DisplayRemoteImportForm("add", "", $projectid);
 			break;
 		case 'updateimport':
-			UpdateRemoteImport($importid, $importname, $projectid, $remote_type, $remote_url, $remote_token, $import_schedule, $import_time, $import_dayofmonth, $import_days);
+			UpdateRemoteImport($importid, $importname, $projectid, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $import_schedule, $import_time, $import_dayofmonth, $import_days);
 			DisplayRemoteImportList($projectid);
 			break;
 		case 'addimport':
-			AddRemoteImport($importname, $projectid, $remote_type, $remote_url, $remote_token, $import_schedule, $import_time, $import_dayofmonth, $import_days);
+			AddRemoteImport($importname, $projectid, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $import_schedule, $import_time, $import_dayofmonth, $import_days);
 			DisplayRemoteImportList($projectid);
 			break;
 		default:
 			DisplayRemoteImportList($projectid);
 	}
+	?>
+		</div>
+	</div>
+	<script>
+	$('#importWorkflowStepper').sticky({ context: '#importPageContent', offset: 10 });
+	</script>
+	<?php
 
 
 	/* ------------------------------------ functions ------------------------------------ */
@@ -156,13 +183,15 @@
 	/* -------------------------------------------- */
 	/* ------- UpdateRemoteImport ----------------- */
 	/* -------------------------------------------- */
-	function UpdateRemoteImport($importid, $importname, $projectid, $remote_type, $remote_url, $remote_token, $import_schedule, $import_time, $import_dayofmonth, $import_days) {
+	function UpdateRemoteImport($importid, $importname, $projectid, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $import_schedule, $import_time, $import_dayofmonth, $import_days) {
 		$importid = (int)$importid;
 		$projectid = (int)$projectid;
 		$importname = trim($importname);
 		$remote_type = trim($remote_type);
 		$remote_url = trim($remote_url);
 		$remote_token = trim($remote_token);
+		$remote_username = trim($remote_username);
+		$remote_projectid = trim($remote_projectid);
 		$import_schedule = trim($import_schedule);
 		$import_time = (int)$import_time;
 		$import_dayofmonth = (int)$import_dayofmonth;
@@ -176,7 +205,9 @@
 		$existingtoken = isset($row['remote_token']) ? $row['remote_token'] : "";
 		mysqli_stmt_close($stmt);
 
-		$remote_url_db = ($remote_url == "") ? null : $remote_url;
+		$remote_url_db      = ($remote_url      == "") ? null : $remote_url;
+		$remote_username_db = ($remote_username  == "") ? null : $remote_username;
+		$remote_projectid_db = ($remote_projectid == "") ? null : $remote_projectid;
 		if ($remote_token == "") {
 			$remote_token_db = ($existingtoken === "") ? null : $existingtoken;
 		}
@@ -184,8 +215,8 @@
 			$remote_token_db = $remote_token;
 		}
 
-		$stmt = mysqli_prepare($GLOBALS['linki'], "update remote_imports set import_name = ?, project_id = ?, remote_type = ?, remote_url = ?, remote_token = ?, import_schedule = ?, import_time = ?, import_dayofmonth = ?, import_days = ? where remoteimport_id = ?");
-		mysqli_stmt_bind_param($stmt, 'sissssissi', $importname, $projectid, $remote_type, $remote_url_db, $remote_token_db, $import_schedule, $import_time, $import_dayofmonth, $import_days, $importid);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "update remote_imports set import_name = ?, project_id = ?, remote_type = ?, remote_url = ?, remote_token = ?, remote_username = ?, remote_projectid = ?, import_schedule = ?, import_time = ?, import_dayofmonth = ?, import_days = ? where remoteimport_id = ?");
+		mysqli_stmt_bind_param($stmt, 'sissssssissi', $importname, $projectid, $remote_type, $remote_url_db, $remote_token_db, $remote_username_db, $remote_projectid_db, $import_schedule, $import_time, $import_dayofmonth, $import_days, $importid);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		mysqli_stmt_close($stmt);
 
@@ -196,22 +227,26 @@
 	/* -------------------------------------------- */
 	/* ------- AddRemoteImport -------------------- */
 	/* -------------------------------------------- */
-	function AddRemoteImport($importname, $projectid, $remote_type, $remote_url, $remote_token, $import_schedule, $import_time, $import_dayofmonth, $import_days) {
+	function AddRemoteImport($importname, $projectid, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $import_schedule, $import_time, $import_dayofmonth, $import_days) {
 		$importname = trim($importname);
 		$projectid = (int)$projectid;
 		$remote_type = trim($remote_type);
 		$remote_url = trim($remote_url);
 		$remote_token = trim($remote_token);
+		$remote_username = trim($remote_username);
+		$remote_projectid = trim($remote_projectid);
 		$import_schedule = trim($import_schedule);
 		$import_time = (int)$import_time;
 		$import_dayofmonth = (int)$import_dayofmonth;
 		$import_days = NormalizeImportDays($import_days);
 
-		$remote_url_db = ($remote_url == "") ? null : $remote_url;
-		$remote_token_db = ($remote_token == "") ? null : $remote_token;
+		$remote_url_db       = ($remote_url       == "") ? null : $remote_url;
+		$remote_token_db     = ($remote_token      == "") ? null : $remote_token;
+		$remote_username_db  = ($remote_username   == "") ? null : $remote_username;
+		$remote_projectid_db = ($remote_projectid  == "") ? null : $remote_projectid;
 
-		$stmt = mysqli_prepare($GLOBALS['linki'], "insert into remote_imports (import_name, project_id, remote_type, remote_url, remote_token, import_schedule, import_time, import_dayofmonth, import_days) values (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-		mysqli_stmt_bind_param($stmt, 'sissssiis', $importname, $projectid, $remote_type, $remote_url_db, $remote_token_db, $import_schedule, $import_time, $import_dayofmonth, $import_days);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "insert into remote_imports (import_name, project_id, remote_type, remote_url, remote_token, remote_username, remote_projectid, import_schedule, import_time, import_dayofmonth, import_days) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+		mysqli_stmt_bind_param($stmt, 'sissssssiis', $importname, $projectid, $remote_type, $remote_url_db, $remote_token_db, $remote_username_db, $remote_projectid_db, $import_schedule, $import_time, $import_dayofmonth, $import_days);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		mysqli_stmt_close($stmt);
 
@@ -220,9 +255,82 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- DisplayImportStepper -------------- */
+	/* -------------------------------------------- */
+	function DisplayImportStepper($activeStep) {
+		$pid = (int)$GLOBALS['projectid'];
+		$steps = [
+			1 => ['title' => 'Create & Manage Imports', 'desc' => 'Set up import source, type, and schedule.'],
+			2 => ['title' => 'Remote Import Mapping',   'desc' => 'Manage remote import mappings.', 'url' => "remoteimportmapping.php?projectid=$pid"],
+			3 => ['title' => 'Run Imports',             'desc' => 'Run manually or on schedule.', 'url' => "importremote.php?projectid=$pid"],
+			4 => ['title' => 'Check Import Batch Status',     'desc' => 'View batch imports and results.', 'url' => "importremote.php?action=viewbatchimportlist&projectid=$pid"],
+		];
+		?>
+		<style>
+		.import-stepper {
+			background: #fff;
+			border: 1px solid #e4e4e7;
+			border-radius: 10px;
+			padding: 14px 16px;
+			box-shadow: 0 2px 8px rgba(0,0,0,0.09);
+			font-family: system-ui, -apple-system, sans-serif;
+		}
+		.import-stepper h4 {
+			color: #333;
+			margin: 0 0 12px 0;
+		}
+		.is-step { display: flex; gap: 10px; }
+		.is-left { display: flex; flex-direction: column; align-items: center; }
+		.is-num {
+			width: 35px; height: 35px;
+			border-radius: 50%;
+			background: #d1d5db;
+			color: #fff;
+			display: flex; align-items: center; justify-content: center;
+			font-weight: 700; font-size: 16px;
+			flex-shrink: 0;
+		}
+		.is-num.is-active { background: #6366f1; }
+		.is-line { width: 2px; flex: 1; background: #e4e4e7; margin: 3px 0; min-height: 14px; }
+		.is-body { padding-bottom: 14px; padding-top: 2px; }
+		.is-title { font-weight: 600; font-size: 14px; color: #777; }
+		.is-title.is-active { color: #111; }
+		.is-desc { font-size: 12px; color: #bbb; margin-top: 2px; line-height: 1.4; }
+		.is-desc.is-active { color: #666; }
+		.is-last .is-line { display: none; }
+		</style>
+		<div class="import-stepper">
+			<h4>Remote Import Workflow</h4>
+			<?php foreach ($steps as $num => $step):
+				$isLast   = ($num === count($steps));
+				$isActive = ($num === $activeStep);
+			?>
+			<div class="is-step<?= $isLast ? ' is-last' : '' ?>">
+				<div class="is-left">
+					<div class="is-num<?= $isActive ? ' is-active' : '' ?>"><?= $num ?></div>
+					<?php if (!$isLast): ?><div class="is-line"></div><?php endif; ?>
+				</div>
+				<div class="is-body">
+					<div class="is-title<?= $isActive ? ' is-active' : '' ?>">
+						<?php if (!empty($step['url'])): ?>
+							<a href="<?= $step['url'] ?>" style="color:inherit"><?= $step['title'] ?></a>
+						<?php else: ?>
+							<?= $step['title'] ?>
+						<?php endif; ?>
+					</div>
+					<div class="is-desc<?= $isActive ? ' is-active' : '' ?>"><?= $step['desc'] ?></div>
+				</div>
+			</div>
+			<?php endforeach; ?>
+		</div>
+		<?php
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- DisplayRemoteImportForm ------------ */
 	/* -------------------------------------------- */
-	function DisplayRemoteImportForm($type, $importid) {
+	function DisplayRemoteImportForm($type, $importid, $projectid) {
 		$projects = array();
 		$sqlstring = "select project_id, project_name, project_costcenter from projects order by project_name";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -248,6 +356,8 @@
 			$remote_type = $row['remote_type'];
 			$remote_url = $row['remote_url'];
 			$remote_token = "";
+			$remote_username = $row['remote_username'];
+			$remote_projectid = $row['remote_projectid'];
 			$import_schedule = $row['import_schedule'];
 			$import_time = $row['import_time'];
 			$import_dayofmonth = $row['import_dayofmonth'];
@@ -260,10 +370,11 @@
 		}
 		else {
 			$importname = "";
-			$projectid = GetVariable("projectid");
 			$remote_type = "";
 			$remote_url = "";
 			$remote_token = "";
+			$remote_username = "";
+			$remote_projectid = "";
 			$import_schedule = "";
 			$import_time = 0;
 			$import_dayofmonth = 1;
@@ -336,6 +447,17 @@
 					<input type="password" name="remote_token" value="<?=$remote_token?>" placeholder="Leave blank to keep current token">
 				</div>
 
+				<div class="two fields" id="avicenna_credentials_group">
+					<div class="field">
+						<label>Remote Username</label>
+						<input type="text" name="remote_username" id="remote_username" value="<?=htmlspecialchars($remote_username)?>" placeholder="Avicenna username">
+					</div>
+					<div class="field">
+						<label>Remote Project ID</label>
+						<input type="text" name="remote_projectid" id="remote_projectid" value="<?=htmlspecialchars($remote_projectid)?>" placeholder="Avicenna project ID">
+					</div>
+				</div>
+
 				<div class="three fields" id="import_schedule_group">
 					<div class="field">
 						<label>Import Schedule</label>
@@ -405,7 +527,7 @@
 						<? } ?>
 					</div>
 					<div class="right aligned column">
-						<button class="ui button" onClick="window.location.href='importremote.php'; return false;">Cancel</button>
+						<button class="ui button" onClick="window.location.href='importremote.php?projectid=<?=$projectid?>'; return false;">Cancel</button>
 						<input type="submit" class="ui primary button" value="<?=$submitbuttonlabel?>">
 					</div>
 				</div>
@@ -414,12 +536,17 @@
 		<script type="text/javascript">
 			function updateRemoteTypeFields() {
 				var type = document.getElementById('remote_type').value;
-				var isCSV = (type === 'csv');
+				var isCSV      = (type === 'csv');
+				var isAvicenna = (type === 'avicenna');
 
-				document.getElementById('remote_url_group').style.display      = isCSV ? 'none' : '';
-				document.getElementById('remote_token_group').style.display     = isCSV ? 'none' : '';
-				document.getElementById('import_schedule_group').style.display  = isCSV ? 'none' : '';
-				document.getElementById('import_days_group').style.display      = isCSV ? 'none' : '';
+				document.getElementById('remote_url_group').style.display           = isCSV ? 'none' : '';
+				document.getElementById('remote_token_group').style.display          = isCSV ? 'none' : '';
+				document.getElementById('avicenna_credentials_group').style.display  = isAvicenna ? '' : 'none';
+				document.getElementById('import_schedule_group').style.display       = isCSV ? 'none' : '';
+				document.getElementById('import_days_group').style.display           = isCSV ? 'none' : '';
+
+				document.getElementById('remote_username').required  = isAvicenna;
+				document.getElementById('remote_projectid').required = isAvicenna;
 
 				if (isCSV) {
 					document.getElementById('import_schedule').value = 'ondemand';
