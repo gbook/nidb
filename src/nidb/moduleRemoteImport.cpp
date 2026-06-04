@@ -25,6 +25,10 @@
 /* ---------------------------------------------------------- */
 /* --------- moduleRemoteImport ----------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Constructor. Stores the nidb instance pointer.
+ * @param a Pointer to the nidb application instance.
+ */
 moduleRemoteImport::moduleRemoteImport(nidb *a)
 {
     n = a;
@@ -34,6 +38,9 @@ moduleRemoteImport::moduleRemoteImport(nidb *a)
 /* ---------------------------------------------------------- */
 /* --------- ~moduleRemoteImport ---------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Destructor.
+ */
 moduleRemoteImport::~moduleRemoteImport()
 {
 
@@ -252,6 +259,11 @@ bool moduleRemoteImport::IsDateInSchedule(QDateTime date, QString scheduleType, 
 /* ---------------------------------------------------------- */
 /* --------- GetImportMapping ------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Fetches the import mapping rules for a given project.
+ * @param projectRowID Database row ID of the project.
+ * @return List of RemoteImportMapping rules configured for the project.
+ */
 QList <RemoteImportMapping> moduleRemoteImport::GetImportMapping(int projectRowID) {
     QList<RemoteImportMapping> mappings;
 
@@ -291,6 +303,11 @@ QList <RemoteImportMapping> moduleRemoteImport::GetImportMapping(int projectRowI
 /* ---------------------------------------------------------- */
 /* --------- RemoteImportLogEventToString ------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Converts a RemoteImportLogEvent enum value to its string representation.
+ * @param event The event enum value to convert.
+ * @return String name of the event.
+ */
 QString moduleRemoteImport::RemoteImportLogEventToString(RemoteImportLogEvent event) {
     switch (event) {
         case ConnectionEnd:
@@ -324,6 +341,11 @@ QString moduleRemoteImport::RemoteImportLogEventToString(RemoteImportLogEvent ev
 /* ---------------------------------------------------------- */
 /* --------- EventResultToString ---------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Converts an EventResult enum value to its string representation.
+ * @param result The result enum value to convert.
+ * @return String name of the result, defaulting to "Neutral" for unrecognized values.
+ */
 QString moduleRemoteImport::EventResultToString(EventResult result) {
     switch (result) {
         case Success:
@@ -343,6 +365,13 @@ QString moduleRemoteImport::EventResultToString(EventResult result) {
 /* ---------------------------------------------------------- */
 /* --------- RemoteImportLog -------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Inserts a log entry for a remote import batch event into the database.
+ * @param batchRowID Database row ID of the remoteimport_batch record.
+ * @param event The type of import event being logged.
+ * @param message Human-readable description of the event.
+ * @param result Outcome of the event (Success, Error, Warning, or Neutral).
+ */
 void moduleRemoteImport::RemoteImportLog(qint64 batchRowID, RemoteImportLogEvent event, QString message, EventResult result) {
     QSqlQuery q;
     q.prepare("insert into remoteimport_logs (remoteimportbatch_id, event, result, message) values (:batchid, :event, :result, :message)");
@@ -357,10 +386,18 @@ void moduleRemoteImport::RemoteImportLog(qint64 batchRowID, RemoteImportLogEvent
 /* ---------------------------------------------------------- */
 /* --------- ImportAvicenna --------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Requests a participation export from Avicenna, polls until ready, downloads
+ * the CSV, and extracts the list of subject IDs using the configured mapping rules.
+ * @param remoteImportBatchRowID Database row ID of the remoteimport_batch record.
+ * @param remoteURL Base URL of the Avicenna API endpoint.
+ * @param remoteToken API token for authenticating with Avicenna.
+ * @param remoteUsername API username for authenticating with Avicenna.
+ * @param remoteProjectID Avicenna study ID to export from.
+ * @param mapping List of import mapping rules for this project.
+ * @return true on success, false otherwise.
+ */
 bool moduleRemoteImport::ImportAvicenna(int remoteImportBatchRowID, QString remoteURL, QString remoteToken, QString remoteUsername, int remoteProjectID, QList <RemoteImportMapping> mapping) {
-    Q_UNUSED(remoteImportBatchRowID)
-    Q_UNUSED(remoteURL)
-    Q_UNUSED(remoteToken)
 
     // URL should be https://avicennaresearch.com/api/v1/filter/export/
 
@@ -376,6 +413,7 @@ bool moduleRemoteImport::ImportAvicenna(int remoteImportBatchRowID, QString remo
     //    }
     //  }'
 
+    n->Log(QString("ImportAvicenna() called  batchid [%1]  url [%2]  username [%3]  remote_projectid [%4]  mapping rules [%5]").arg(remoteImportBatchRowID).arg(remoteURL).arg(remoteUsername).arg(remoteProjectID).arg(mapping.size()));
     SetBatchStatus(remoteImportBatchRowID, "running");
 
     /* initialize the JSON object - this curl string and JSON are static, so this type of initialization works well here */
@@ -393,21 +431,70 @@ bool moduleRemoteImport::ImportAvicenna(int remoteImportBatchRowID, QString remo
     /* convert JSON object to QString */
     QJsonDocument doc(root);
     QString json = QString::fromUtf8(doc.toJson(QJsonDocument::Compact));
+    n->Log(QString("Request JSON: %1").arg(json));
 
     /* build curl string to get list of subjects */
     QString curlStr = QString("curl -X POST %1 -H 'Authorization: ApiKey %2:%3' --data-raw '%4'").arg(remoteURL).arg(remoteUsername).arg(remoteToken).arg(json);
     n->Log(curlStr);
 
+    n->Log("Sending export request to Avicenna");
     QString result = SystemCommand(curlStr, false);
-    n->Log(result);
+    n->Log(QString("Avicenna export request response: %1").arg(result));
     int avicennaExportID = GetAvicennaExportID(result);
+    n->Log(QString("Avicenna export ID: [%1]").arg(avicennaExportID));
 
-    /* Wait 10 seconds for Avicenna to do whatever it needs to do... then get the export status and the export URL */
-    SetBatchStatus(remoteImportBatchRowID, "waiting", avicennaExportID);
-    QThread::sleep(10);
+    if (avicennaExportID <= 0) {
+        n->Log("Invalid export ID returned from Avicenna. Aborting.");
+        SetBatchStatus(remoteImportBatchRowID, "error");
+        return false;
+    }
 
-    SetBatchStatus(remoteImportBatchRowID, "complete");
+    /* Wait 20 seconds (3x) for Avicenna to do whatever it needs to do... then get the export status and the export URL */
+    bool ready = false;
+    int i = 0;
+    QString url;
+    while (!ready) {
+        n->Log(QString("Polling Avicenna export status, attempt [%1 of 3]").arg(i + 1));
+        SetBatchStatus(remoteImportBatchRowID, "waiting", avicennaExportID);
+        QThread::sleep(20);
+        QString status = GetAvicennaExportStatus(remoteProjectID, avicennaExportID, remoteUsername, remoteToken, url);
+        n->Log(QString("Avicenna export status [%1]  url [%2]").arg(status).arg(url));
 
+        /* only allow this to run 3 times before giving up */
+        if ((status == "Success") || (i >= 3))
+            ready = true;
+
+        i++;
+    }
+
+    /* if we get a URL, then download it */
+    QString path = QString("%1/%2.csv").arg(n->cfg["tmpdir"]).arg(GenerateRandomString(20));
+    n->Log(QString("Export URL [%1]  download path [%2]").arg(url).arg(path));
+    if (url == "") {
+        n->Log("No export URL returned from Avicenna. Setting batch status to error.");
+        SetBatchStatus(remoteImportBatchRowID, "error");
+    }
+    else {
+        /* download avicenna file */
+        n->Log("Downloading Avicenna export file");
+        if (DownloadAvicennaExport(remoteProjectID, remoteUsername, remoteToken, url, path)) {
+            n->Log("Download succeeded");
+            SetBatchStatus(remoteImportBatchRowID, "complete");
+        }
+        else {
+            n->Log("Download failed");
+            SetBatchStatus(remoteImportBatchRowID, "error");
+        }
+    }
+
+    /* we should now have the list of subjects in that csv, so let's parse the csv */
+    n->Log(QString("Parsing CSV from [%1]").arg(path));
+    QString csv = ReadTextFileIntoString(path);
+    n->Log(QString("CSV length [%1] chars").arg(csv.length()));
+    QList<int> subjectids = GetAvicennaSubjectsFromCSV(csv);
+    n->Log(QString("Found [%1] subject IDs: [%2]").arg(subjectids.size()).arg(JoinIntArray(subjectids, ",")));
+
+    n->Log("ImportAvicenna() complete");
     return false;
 }
 
@@ -415,6 +502,11 @@ bool moduleRemoteImport::ImportAvicenna(int remoteImportBatchRowID, QString remo
 /* ---------------------------------------------------------- */
 /* --------- GetAvicennaExportID ---------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Parses the JSON response from an Avicenna export request and returns the export ID.
+ * @param jsonStr Raw JSON string returned by the Avicenna export API.
+ * @return The study-specific export ID, or 0 if parsing fails or the field is absent.
+ */
 int moduleRemoteImport::GetAvicennaExportID(QString jsonStr) {
 
     int id = 0;
@@ -435,9 +527,18 @@ int moduleRemoteImport::GetAvicennaExportID(QString jsonStr) {
 /* ---------------------------------------------------------- */
 /* --------- GetAvicennaExportStatus ------------------------ */
 /* ---------------------------------------------------------- */
-QString moduleRemoteImport::GetAvicennaExportStatus(int exportID, QString remoteUsername, QString remoteToken, QString &exportURL) {
+/**
+ * @brief Polls the Avicenna API for the status of a previously requested export.
+ * @param remoteProjectID Avicenna study ID.
+ * @param remoteExportID Export ID returned by the initial export request.
+ * @param remoteUsername API username for authenticating with Avicenna.
+ * @param remoteToken API token for authenticating with Avicenna.
+ * @param exportURL Set to the download URL when status is "Success", otherwise cleared.
+ * @return Status label string (e.g. "Success", "Processing"), or empty string if not found or on error.
+ */
+QString moduleRemoteImport::GetAvicennaExportStatus(int remoteProjectID, int remoteExportID, QString remoteUsername, QString remoteToken, QString &exportURL) {
 
-    QString curlStr = QString("curl 'https://avicennaresearch.com/api/v1/filter/export/?study_id=%1' -H 'Authorization: ApiKey %2:%3'").arg(exportID).arg(remoteUsername).arg(remoteToken);
+    QString curlStr = QString("curl 'https://avicennaresearch.com/api/v1/filter/export/?study_id=%1' -H 'Authorization: ApiKey %2:%3'").arg(remoteProjectID).arg(remoteUsername).arg(remoteToken);
     n->Log(curlStr);
     QString result = SystemCommand(curlStr, false);
 
@@ -453,7 +554,7 @@ QString moduleRemoteImport::GetAvicennaExportStatus(int exportID, QString remote
     const QJsonArray exports = doc.array();
     for (const QJsonValue &val : exports) {
         const QJsonObject obj = val.toObject();
-        if (obj.value("study_specific_id").toInt() != exportID)
+        if (obj.value("study_specific_id").toInt() != remoteExportID)
             continue;
 
         const QString statusLabel = obj.value("status").toObject().value("label").toString();
@@ -465,10 +566,68 @@ QString moduleRemoteImport::GetAvicennaExportStatus(int exportID, QString remote
 }
 
 
+/* ---------------------------------------------------------- */
+/* --------- DownloadAvicennaExport ------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Downloads an Avicenna export file to a local path.
+ * @param remoteProjectID Avicenna study ID (unused in the request but retained for context).
+ * @param remoteUsername API username for authenticating with Avicenna.
+ * @param remoteToken API token for authenticating with Avicenna.
+ * @param url Download URL for the export file.
+ * @param path Local filesystem path to write the downloaded file to.
+ * @return true if the file exists after the download attempt, false otherwise.
+ */
+bool moduleRemoteImport::DownloadAvicennaExport(int remoteProjectID, QString remoteUsername, QString remoteToken, QString url, QString path) {
+
+    QString cmd = QString("curl '%1' -H 'Authorization: ApiKey %2:%3' --output %4").arg(url).arg(remoteUsername).arg(remoteToken).arg(path);
+    QString result = SystemCommand(cmd, false);
+
+    if (QFile::exists(path))
+        return true;
+    else
+        return false;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetAvicennaSubjectsFromCSV --------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Parses a CSV string from an Avicenna export and extracts the list of participant IDs.
+ * @param csv CSV content with a header row containing an "ID" column.
+ * @return List of integer participant IDs found in the CSV.
+ */
+QList<int> moduleRemoteImport::GetAvicennaSubjectsFromCSV(QString csv) {
+    QList<int> subjectids;
+
+    indexedHash table;
+    QStringList columns;
+    QString m;
+    if (ParseCSV(csv, table, columns, m)) {
+        if (columns.contains("id")) {
+            for (int i=0; i<table.size(); i++) {
+                QString idStr = table[i]["id"];
+                subjectids.append(idStr.toInt());
+            }
+        }
+    }
+
+    return subjectids;
+}
+
 
 /* ---------------------------------------------------------- */
 /* --------- ImportRedCap ----------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Imports data from a REDCap remote source. Not yet implemented.
+ * @param remoteImportBatchRowID Database row ID of the remoteimport_batch record.
+ * @param remoteURL Base URL of the REDCap API endpoint.
+ * @param remoteToken API token for authenticating with REDCap.
+ * @param mapping List of import mapping rules for this project.
+ * @return true on success, false otherwise.
+ */
 bool moduleRemoteImport::ImportRedCap(int remoteImportBatchRowID, QString remoteURL, QString remoteToken, QList <RemoteImportMapping> mapping) {
     Q_UNUSED(remoteImportBatchRowID)
     Q_UNUSED(remoteURL)
@@ -481,6 +640,14 @@ bool moduleRemoteImport::ImportRedCap(int remoteImportBatchRowID, QString remote
 /* ---------------------------------------------------------- */
 /* --------- ImportURL -------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Imports data from a remote URL source. Not yet implemented.
+ * @param remoteImportBatchRowID Database row ID of the remoteimport_batch record.
+ * @param remoteURL URL to import data from.
+ * @param remoteToken Authentication token for the remote URL.
+ * @param mapping List of import mapping rules for this project.
+ * @return true on success, false otherwise.
+ */
 bool moduleRemoteImport::ImportURL(int remoteImportBatchRowID, QString remoteURL, QString remoteToken, QList <RemoteImportMapping> mapping) {
     Q_UNUSED(remoteImportBatchRowID)
     Q_UNUSED(remoteURL)
@@ -493,6 +660,12 @@ bool moduleRemoteImport::ImportURL(int remoteImportBatchRowID, QString remoteURL
 /* ---------------------------------------------------------- */
 /* --------- ImportCSV -------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Imports data from a local CSV file. Not yet implemented.
+ * @param remoteImportBatchRowID Database row ID of the remoteimport_batch record.
+ * @param mapping List of import mapping rules for this project.
+ * @return true on success, false otherwise.
+ */
 bool moduleRemoteImport::ImportCSV(int remoteImportBatchRowID, QList <RemoteImportMapping> mapping) {
     Q_UNUSED(remoteImportBatchRowID)
 
@@ -503,6 +676,12 @@ bool moduleRemoteImport::ImportCSV(int remoteImportBatchRowID, QList <RemoteImpo
 /* ---------------------------------------------------------- */
 /* --------- SetBatchStatus --------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Updates the status of a remoteimport_batch record in the database.
+ * @param batchRowID Database row ID of the remoteimport_batch record.
+ * @param status New status value. Valid values are "started", "running", "waiting", and "complete".
+ * @param remoteExportID Optional Avicenna export ID to store with the batch record. Only written when status is "started" and value is >= 0.
+ */
 void moduleRemoteImport::SetBatchStatus(qint64 batchRowID, QString status, int remoteExportID) {
     QSqlQuery q;
     if (status == "started") {
@@ -510,27 +689,32 @@ void moduleRemoteImport::SetBatchStatus(qint64 batchRowID, QString status, int r
             q.prepare("update remoteimport_batch set start_date = now(), status = 'started', next_state = '', remote_exportid = :exportid where remoteimportbatch_id = :batchid");
             q.bindValue(":exportid", remoteExportID);
             q.bindValue(":batchid", batchRowID);
-            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+            n->Log(n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__));
         }
         else {
             q.prepare("update remoteimport_batch set start_date = now(), status = 'started', next_state = '' where remoteimportbatch_id = :batchid");
             q.bindValue(":batchid", batchRowID);
-            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+            n->Log(n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__));
         }
     }
     else if (status == "running") {
         q.prepare("update remoteimport_batch set status = 'running', next_state = '' where remoteimportbatch_id = :batchid");
         q.bindValue(":batchid", batchRowID);
-        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        n->Log(n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__));
     }
     else if (status == "waiting") {
         q.prepare("update remoteimport_batch set status = 'waiting', next_state = '' where remoteimportbatch_id = :batchid");
         q.bindValue(":batchid", batchRowID);
-        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        n->Log(n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__));
     }
     else if (status == "complete") {
         q.prepare("update remoteimport_batch set end_date = now(), status = 'complete', next_state = '' where remoteimportbatch_id = :batchid");
         q.bindValue(":batchid", batchRowID);
-        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        n->Log(n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__));
+    }
+    else if (status == "error") {
+        q.prepare("update remoteimport_batch set end_date = now(), status = 'error', next_state = '' where remoteimportbatch_id = :batchid");
+        q.bindValue(":batchid", batchRowID);
+        n->Log(n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__));
     }
 }

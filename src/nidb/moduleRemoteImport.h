@@ -95,7 +95,9 @@ private:
     void SetBatchStatus(qint64 batchRowID, QString status, int remoteExportID = -1);
 
     int GetAvicennaExportID(QString jsonStr);
-    QString GetAvicennaExportStatus(int exportID, QString remoteUsername, QString remoteToken, QString &exportURL);
+    QString GetAvicennaExportStatus(int remoteProjectID, int exportID, QString remoteUsername, QString remoteToken, QString &exportURL);
+    bool DownloadAvicennaExport(int remoteProjectID, QString remoteUsername, QString remoteToken, QString url, QString path);
+    QList<int> GetAvicennaSubjectsFromCSV(QString csv);
 
     QList <RemoteImportMapping> mapping;
 

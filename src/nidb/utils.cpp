@@ -1089,7 +1089,10 @@ bool ParseCSV(QString csv, indexedHash &table, QStringList &columns, QString &ms
 
     if (lines.size() > 1) {
         QString header = lines.takeFirst();
-        QStringList cols = header.trimmed().toLower().split(QRegularExpression("\\s*,\\s*"));
+        QStringList rawCols = header.trimmed().toLower().split(QRegularExpression("\\s*,\\s*"));
+        QStringList cols;
+        for (const QString &c : rawCols)
+            cols << QString(c).remove('"').trimmed();
         columns = cols;
 
         m << QString("Found [%1] columns [%2]").arg(cols.size()).arg(cols.join(","));
@@ -1119,7 +1122,10 @@ bool ParseCSV(QString csv, indexedHash &table, QStringList &columns, QString &ms
 
                 /* check if we've hit the next comma, and therefor should end the previous variable */
                 if ((c == ',') && (!inQuotes)) {
-                    table[row][cols[col]] = buffer.trimmed();
+                    QString val = buffer.trimmed();
+                    if (val.startsWith('"') && val.endsWith('"'))
+                        val = val.mid(1, val.length() - 2);
+                    table[row][cols[col]] = val;
 
                     buffer = "";
                     col++;
@@ -1129,7 +1135,10 @@ bool ParseCSV(QString csv, indexedHash &table, QStringList &columns, QString &ms
                 }
             }
             /* acquire the last column */
-            table[row][cols[col]] = buffer.trimmed();
+            QString lastVal = buffer.trimmed();
+            if (lastVal.startsWith('"') && lastVal.endsWith('"'))
+                lastVal = lastVal.mid(1, lastVal.length() - 2);
+            table[row][cols[col]] = lastVal;
             buffer = "";
 
             if ((col+1) != numcols) {
@@ -1208,6 +1217,26 @@ QStringList ReadTextFileIntoArray(QString filepath, bool ignoreEmptyLines) {
     }
 
     return a;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- ReadTextFileIntoString ------------------------- */
+/* ---------------------------------------------------------- */
+QString ReadTextFileIntoString(QString filepath) {
+    QFile file(filepath);
+
+    // Open the file in ReadOnly mode. Adding Text flag fixes line breaks automatically.
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qWarning() << "Failed to open file:" << file.errorString();
+        return QString();
+    }
+
+    QTextStream in(&file);
+    QString fileContent = in.readAll(); // Reads the entire file
+
+    file.close();
+    return fileContent;
 }
 
 
