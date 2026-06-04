@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jun 03, 2026 at 06:00 PM
+-- Generation Time: Jun 04, 2026 at 08:03 PM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -2875,6 +2875,7 @@ CREATE TABLE `remote_imports` (
   `remote_token` text DEFAULT NULL,
   `remote_username` varchar(255) DEFAULT NULL,
   `remote_projectid` int(11) DEFAULT NULL,
+  `csv_format` enum('avicenna','nidb') DEFAULT NULL,
   `import_schedule` enum('ondemand','hourly','daily','weekly','monthly','') DEFAULT NULL,
   `import_time` int(11) NOT NULL DEFAULT 0 COMMENT 'Hour of the day, 0 to 23',
   `import_dayofmonth` int(11) NOT NULL DEFAULT 1 COMMENT 'day of month - 1 to 31',

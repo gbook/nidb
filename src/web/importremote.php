@@ -56,6 +56,7 @@
 	$import_days = GetVariable("import_days");
 	$remote_username  = GetVariable("remote_username");
 	$remote_projectid = GetVariable("remote_projectid");
+	$csv_format       = GetVariable("csv_format");
 
 	/* determine action */
 	/* determine workflow step for the diagram */
@@ -112,11 +113,11 @@
 			DisplayRemoteImportForm("add", "", $projectid);
 			break;
 		case 'updateimport':
-			UpdateRemoteImport($importid, $importname, $projectid, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $import_schedule, $import_time, $import_dayofmonth, $import_days);
+			UpdateRemoteImport($importid, $importname, $projectid, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $csv_format, $import_schedule, $import_time, $import_dayofmonth, $import_days);
 			DisplayRemoteImportList($projectid);
 			break;
 		case 'addimport':
-			AddRemoteImport($importname, $projectid, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $import_schedule, $import_time, $import_dayofmonth, $import_days);
+			AddRemoteImport($importname, $projectid, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $csv_format, $import_schedule, $import_time, $import_dayofmonth, $import_days);
 			DisplayRemoteImportList($projectid);
 			break;
 		default:
@@ -183,7 +184,7 @@
 	/* -------------------------------------------- */
 	/* ------- UpdateRemoteImport ----------------- */
 	/* -------------------------------------------- */
-	function UpdateRemoteImport($importid, $importname, $projectid, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $import_schedule, $import_time, $import_dayofmonth, $import_days) {
+	function UpdateRemoteImport($importid, $importname, $projectid, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $csv_format, $import_schedule, $import_time, $import_dayofmonth, $import_days) {
 		$importid = (int)$importid;
 		$projectid = (int)$projectid;
 		$importname = trim($importname);
@@ -208,6 +209,7 @@
 		$remote_url_db      = ($remote_url      == "") ? null : $remote_url;
 		$remote_username_db = ($remote_username  == "") ? null : $remote_username;
 		$remote_projectid_db = ($remote_projectid == "") ? null : $remote_projectid;
+		$csv_format_db      = ($csv_format       == "") ? null : trim($csv_format);
 		if ($remote_token == "") {
 			$remote_token_db = ($existingtoken === "") ? null : $existingtoken;
 		}
@@ -215,8 +217,8 @@
 			$remote_token_db = $remote_token;
 		}
 
-		$stmt = mysqli_prepare($GLOBALS['linki'], "update remote_imports set import_name = ?, project_id = ?, remote_type = ?, remote_url = ?, remote_token = ?, remote_username = ?, remote_projectid = ?, import_schedule = ?, import_time = ?, import_dayofmonth = ?, import_days = ? where remoteimport_id = ?");
-		mysqli_stmt_bind_param($stmt, 'sissssssissi', $importname, $projectid, $remote_type, $remote_url_db, $remote_token_db, $remote_username_db, $remote_projectid_db, $import_schedule, $import_time, $import_dayofmonth, $import_days, $importid);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "update remote_imports set import_name = ?, project_id = ?, remote_type = ?, remote_url = ?, remote_token = ?, remote_username = ?, remote_projectid = ?, csv_format = ?, import_schedule = ?, import_time = ?, import_dayofmonth = ?, import_days = ? where remoteimport_id = ?");
+		mysqli_stmt_bind_param($stmt, 'sissssss' . 'sissi', $importname, $projectid, $remote_type, $remote_url_db, $remote_token_db, $remote_username_db, $remote_projectid_db, $csv_format_db, $import_schedule, $import_time, $import_dayofmonth, $import_days, $importid);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		mysqli_stmt_close($stmt);
 
@@ -227,7 +229,7 @@
 	/* -------------------------------------------- */
 	/* ------- AddRemoteImport -------------------- */
 	/* -------------------------------------------- */
-	function AddRemoteImport($importname, $projectid, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $import_schedule, $import_time, $import_dayofmonth, $import_days) {
+	function AddRemoteImport($importname, $projectid, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $csv_format, $import_schedule, $import_time, $import_dayofmonth, $import_days) {
 		$importname = trim($importname);
 		$projectid = (int)$projectid;
 		$remote_type = trim($remote_type);
@@ -235,6 +237,7 @@
 		$remote_token = trim($remote_token);
 		$remote_username = trim($remote_username);
 		$remote_projectid = trim($remote_projectid);
+		$csv_format = trim($csv_format);
 		$import_schedule = trim($import_schedule);
 		$import_time = (int)$import_time;
 		$import_dayofmonth = (int)$import_dayofmonth;
@@ -244,9 +247,10 @@
 		$remote_token_db     = ($remote_token      == "") ? null : $remote_token;
 		$remote_username_db  = ($remote_username   == "") ? null : $remote_username;
 		$remote_projectid_db = ($remote_projectid  == "") ? null : $remote_projectid;
+		$csv_format_db       = ($csv_format        == "") ? null : $csv_format;
 
-		$stmt = mysqli_prepare($GLOBALS['linki'], "insert into remote_imports (import_name, project_id, remote_type, remote_url, remote_token, remote_username, remote_projectid, import_schedule, import_time, import_dayofmonth, import_days) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-		mysqli_stmt_bind_param($stmt, 'sissssssiis', $importname, $projectid, $remote_type, $remote_url_db, $remote_token_db, $remote_username_db, $remote_projectid_db, $import_schedule, $import_time, $import_dayofmonth, $import_days);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "insert into remote_imports (import_name, project_id, remote_type, remote_url, remote_token, remote_username, remote_projectid, csv_format, import_schedule, import_time, import_dayofmonth, import_days) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+		mysqli_stmt_bind_param($stmt, 'sisssss' . 'ssiis', $importname, $projectid, $remote_type, $remote_url_db, $remote_token_db, $remote_username_db, $remote_projectid_db, $csv_format_db, $import_schedule, $import_time, $import_dayofmonth, $import_days);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		mysqli_stmt_close($stmt);
 
@@ -358,6 +362,7 @@
 			$remote_token = "";
 			$remote_username = $row['remote_username'];
 			$remote_projectid = $row['remote_projectid'];
+			$csv_format = $row['csv_format'];
 			$import_schedule = $row['import_schedule'];
 			$import_time = $row['import_time'];
 			$import_dayofmonth = $row['import_dayofmonth'];
@@ -375,6 +380,7 @@
 			$remote_token = "";
 			$remote_username = "";
 			$remote_projectid = "";
+			$csv_format = "";
 			$import_schedule = "";
 			$import_time = 0;
 			$import_dayofmonth = 1;
@@ -456,6 +462,14 @@
 						<label>Remote Project ID</label>
 						<input type="text" name="remote_projectid" id="remote_projectid" value="<?=htmlspecialchars($remote_projectid)?>" placeholder="Avicenna project ID">
 					</div>
+				</div>
+
+				<div class="field" id="csv_format_group">
+					<label>CSV Format</label>
+					<select name="csv_format" id="csv_format">
+						<option value="avicenna" <?= $csv_format === 'avicenna' ? 'selected' : '' ?>>Avicenna</option>
+						<option value="nidb"     <?= $csv_format === 'nidb'     ? 'selected' : '' ?>>NiDB</option>
+					</select>
 				</div>
 
 				<div class="three fields" id="import_schedule_group">
@@ -542,6 +556,7 @@
 				document.getElementById('remote_url_group').style.display           = isCSV ? 'none' : '';
 				document.getElementById('remote_token_group').style.display          = isCSV ? 'none' : '';
 				document.getElementById('avicenna_credentials_group').style.display  = isAvicenna ? '' : 'none';
+				document.getElementById('csv_format_group').style.display            = isCSV ? '' : 'none';
 				document.getElementById('import_schedule_group').style.display       = isCSV ? 'none' : '';
 				document.getElementById('import_days_group').style.display           = isCSV ? 'none' : '';
 
@@ -614,6 +629,7 @@
 							$importid = $row['remoteimport_id'];
 							$importname = $row['import_name'];
 							$remote_type = $row['remote_type'];
+							$csv_format = $row['csv_format'];
 							$remote_url = $row['remote_url'];
 							$import_schedule = $row['import_schedule'];
 							$import_time = $row['import_time'];
@@ -633,7 +649,7 @@
 					?>
 					<tr>
 						<td><a href="importremote.php?action=editimportform&projectid=<?=$projectid?>&importid=<?=$importid?>"><?=$importname?></a></td>
-						<td><?=ucfirst($remote_type)?></td>
+						<td><?= ucfirst($remote_type) . ($remote_type === 'csv' && $csv_format !== '' ? ' (' . ucfirst($csv_format) . ')' : '') ?></td>
 						<td><?=$remote_url_display?></td>
 						<td><?=$scheduletext?></td>
 						<td>

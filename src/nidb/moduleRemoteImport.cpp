@@ -83,6 +83,7 @@ bool moduleRemoteImport::Run() {
             int importTime = q.value("import_time").toInt();
             int importDayOfMonth = q.value("import_dayofmonth").toInt();
             QStringList importDays = q.value("import_days").toStringList();
+            QString csvType = q.value("csv_type").toString();
 
             n->Log(QString("Working on import [%1]  batch id [%2]").arg(importName).arg(remoteImportBatchRowID));
             n->Log(QString("  remoteimport_id [%1]  project_id [%2]  remote_type [%3]").arg(remoteImportRowID).arg(projectRowID).arg(remoteType));
@@ -103,6 +104,9 @@ bool moduleRemoteImport::Run() {
             }
             else if (remoteType == "redcap") {
 
+            }
+            else if (remoteType == "csv") {
+                ImportCSV(remoteImportBatchRowID, csvType, mapping);
             }
             else {
                 n->Log(QString("Unknown remote_type [%1], skipping").arg(remoteType));
@@ -494,6 +498,9 @@ bool moduleRemoteImport::ImportAvicenna(int remoteImportBatchRowID, QString remo
     QList<int> subjectids = GetAvicennaSubjectsFromCSV(csv);
     n->Log(QString("Found [%1] subject IDs: [%2]").arg(subjectids.size()).arg(JoinIntArray(subjectids, ",")));
 
+    if (QFile::exists(path))
+        QFile::remove(path);
+
     n->Log("ImportAvicenna() complete");
     return false;
 }
@@ -666,7 +673,7 @@ bool moduleRemoteImport::ImportURL(int remoteImportBatchRowID, QString remoteURL
  * @param mapping List of import mapping rules for this project.
  * @return true on success, false otherwise.
  */
-bool moduleRemoteImport::ImportCSV(int remoteImportBatchRowID, QList <RemoteImportMapping> mapping) {
+bool moduleRemoteImport::ImportCSV(int remoteImportBatchRowID, QString csvType, QList <RemoteImportMapping> mapping) {
     Q_UNUSED(remoteImportBatchRowID)
 
     return false;

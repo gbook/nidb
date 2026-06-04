@@ -163,7 +163,7 @@
 				}
 			},
 			{
-				field: 'request_status', headerName: 'Status', sortable: true, filter: true, width: 130,
+				field: 'request_status', headerName: 'Status', sortable: true, filter: true, width: 180,
 				cellStyle: params => {
 					if (params.value === 'complete') return { background: '#fcfff5', color: '#2c662d' };
 					if (params.value === 'error')    return { background: '#fff6f6', color: '#9f3a38' };
@@ -229,8 +229,11 @@
 
 		function pollPendingStatus() {
 			if (pendingIds.size === 0) return;
-			const url = 'ajaxapi.php?action=getfileiostatus&ids=' + encodeURIComponent(JSON.stringify([...pendingIds]));
-			fetch(url)
+			fetch('ajaxapi.php', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+				body: 'action=getfileiostatus&ids=' + encodeURIComponent(JSON.stringify([...pendingIds]))
+			})
 				.then(r => {
 					if (!r.ok) throw new Error('HTTP ' + r.status);
 					return r.json();

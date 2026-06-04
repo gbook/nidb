@@ -85,7 +85,7 @@ private:
     bool ImportAvicenna(int remoteImportBatchRowID, QString remoteURL, QString remoteToken, QString remoteUsername, int remoteProjectID, QList <RemoteImportMapping> mapping);
     bool ImportRedCap(int remoteImportBatchRowID, QString remoteURL, QString remoteToken, QList <RemoteImportMapping> mapping);
     bool ImportURL(int remoteImportBatchRowID, QString remoteURL, QString remoteToken, QList <RemoteImportMapping> mapping);
-    bool ImportCSV(int remoteImportBatchRowID, QList <RemoteImportMapping> mapping);
+    bool ImportCSV(int remoteImportBatchRowID, QString csvType, QList <RemoteImportMapping> mapping);
     QList <RemoteImportMapping> GetImportMapping(int projectRowID);
 
     QString RemoteImportLogEventToString(RemoteImportLogEvent event);
