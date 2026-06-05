@@ -1073,6 +1073,13 @@ QString WrapText(QString s, int col) {
  * This handles most Excel-compatible CSV formats, but it does not handle nested
  * quotes and requires at least one header row and one data row.
  *
+ * @note Performance: the indexedHash storage type (QHash<int, QHash<QString, QString>>)
+ * hashes each column name string once per cell rather than once per column. For wide
+ * files (500+ columns, 500+ rows) this results in hundreds of thousands of redundant
+ * string hash operations. A future improvement would replace indexedHash with a
+ * QVector<QVector<QString>> body plus a single QHash<QString,int> column-name-to-index
+ * map built from the header row, reducing inner-loop access to a direct array index.
+ *
  * @param csv CSV content to parse.
  * @param table Receives parsed row and column values.
  * @param columns Receives parsed lowercase column names.
@@ -1105,41 +1112,45 @@ bool ParseCSV(QString csv, indexedHash &table, QStringList &columns, QString &ms
         qint64 numcols = cols.size();
 
         int row = 0;
-        foreach (QString line, lines) {
-            QString buffer = "";
+        for (const QString &line : lines) {
+            QString buffer;
+            buffer.reserve(256);
             int col = 0;
             bool inQuotes = false;
             for (int i=0; i<line.size(); i++) {
                 QChar c = line.at(i);
 
-                /* determine if we're in quotes or not */
                 if (c == '"') {
-                    if (inQuotes)
-                        inQuotes = false;
-                    else
+                    if (inQuotes) {
+                        /* peek ahead: "" is an escaped quote, not a closing quote */
+                        if ((i + 1 < line.size()) && (line.at(i + 1) == '"')) {
+                            buffer += '"';
+                            i++;
+                        }
+                        else {
+                            inQuotes = false;
+                        }
+                    }
+                    else {
                         inQuotes = true;
+                    }
                 }
-
-                /* check if we've hit the next comma, and therefor should end the previous variable */
-                if ((c == ',') && (!inQuotes)) {
+                else if ((c == ',') && (!inQuotes)) {
                     QString val = buffer.trimmed();
-                    if (val.startsWith('"') && val.endsWith('"'))
-                        val = val.mid(1, val.length() - 2);
-                    table[row][cols[col]] = val;
-
-                    buffer = "";
+                    if (!val.isEmpty())
+                        table[row][cols[col]] = val;
+                    buffer.clear();
                     col++;
                 }
                 else {
-                    buffer = QString("%1%2").arg(buffer).arg(c); /* make sure no null terminators end up in the string */
+                    buffer += c;
                 }
             }
             /* acquire the last column */
             QString lastVal = buffer.trimmed();
-            if (lastVal.startsWith('"') && lastVal.endsWith('"'))
-                lastVal = lastVal.mid(1, lastVal.length() - 2);
-            table[row][cols[col]] = lastVal;
-            buffer = "";
+            if (!lastVal.isEmpty())
+                table[row][cols[col]] = lastVal;
+            buffer.clear();
 
             if ((col+1) != numcols) {
                 m << QString("Error: row [%1] has [%2] columns, but expecting [%3] columns").arg(row+1).arg(col+1).arg(numcols);

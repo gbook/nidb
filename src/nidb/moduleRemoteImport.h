@@ -47,6 +47,7 @@ enum EventResult {
     Neutral
 };
 
+/* remote import mapping record */
 struct RemoteImportMapping {
     QString sourceType;
     struct Avicenna {
@@ -71,6 +72,24 @@ struct RemoteImportMapping {
     int instrumentItemRowID;
 };
 
+/* import mapping class */
+class ImportMapping
+{
+public:
+    ImportMapping(nidb *n, int projectRowID);
+
+    bool LookupAvicennaMapping(int survey, int question, QString variable, int &instrumentRowID, int &instrumentItemRowID) const;
+    bool LookupRedcapMapping(QString arm, QString event, QString form, QString field, int &instrumentRowID, int &instrumentItemRowID) const;
+
+    int size() const;
+
+private:
+    QList<RemoteImportMapping> mappings;
+    nidb *n;
+};
+
+
+/* ----- moduleRemoteImport ----- */
 class moduleRemoteImport
 {
 public:
@@ -82,11 +101,10 @@ public:
     bool IsDateInSchedule(QDateTime date, QString scheduleType, int hourOfDay, int dayOfMonth, QStringList daysOfWeek);
 
 private:
-    bool ImportAvicenna(int remoteImportBatchRowID, QString remoteURL, QString remoteToken, QString remoteUsername, int remoteProjectID, QList <RemoteImportMapping> mapping);
-    bool ImportRedCap(int remoteImportBatchRowID, QString remoteURL, QString remoteToken, QList <RemoteImportMapping> mapping);
-    bool ImportURL(int remoteImportBatchRowID, QString remoteURL, QString remoteToken, QList <RemoteImportMapping> mapping);
-    bool ImportCSV(int remoteImportBatchRowID, QString csvType, QList <RemoteImportMapping> mapping);
-    QList <RemoteImportMapping> GetImportMapping(int projectRowID);
+    bool ImportAvicenna(int remoteImportBatchRowID, QString remoteURL, QString remoteToken, QString remoteUsername, int remoteProjectID, const ImportMapping &mapping);
+    bool ImportRedCap(int remoteImportBatchRowID, QString remoteURL, QString remoteToken, const ImportMapping &mapping);
+    bool ImportURL(int remoteImportBatchRowID, QString remoteURL, QString remoteToken, const ImportMapping &mapping);
+    bool ImportCSV(int remoteImportBatchRowID, QString csvFormat, const ImportMapping &mapping, bool importUnmapped);
 
     QString RemoteImportLogEventToString(RemoteImportLogEvent event);
     QString EventResultToString(EventResult result);
@@ -98,8 +116,7 @@ private:
     QString GetAvicennaExportStatus(int remoteProjectID, int exportID, QString remoteUsername, QString remoteToken, QString &exportURL);
     bool DownloadAvicennaExport(int remoteProjectID, QString remoteUsername, QString remoteToken, QString url, QString path);
     QList<int> GetAvicennaSubjectsFromCSV(QString csv);
-
-    QList <RemoteImportMapping> mapping;
+    qint64 ParseInsertAvicenna(qint64 remoteImportBatchRowID, const ImportMapping &mapping, bool importUnmapped, QString csvpath);
 
     nidb *n;
 };
