@@ -839,10 +839,13 @@ qint64 moduleRemoteImport::ParseInsertAvicenna(qint64 remoteImportBatchRowID, co
             RemoteImportLog(remoteImportBatchRowID, ImportSubject, m, Success);
 
             if (importUnmapped) {
+                qDebug() << "Importing " << columns.size() << " unmapped columns";
                 /* iterate over all columns, and check if they are mapped. If not mapped, then add the observation without an instrument/item */
                 for (const QString &col : columns) {
                     /* skip session metadata columns — only process question response columns */
                     if (!nonQuestionCols.contains(col)) {
+
+                        qDebug() << "Importing question column " << col;
 
                         int surveyID;
                         int question;
@@ -858,11 +861,14 @@ qint64 moduleRemoteImport::ParseInsertAvicenna(qint64 remoteImportBatchRowID, co
                             /* insert a regular observation row */
                         }
                     }
+                    else {
+                        qDebug() << "Skipping non-question column " << col;
+                    }
                 }
             }
             /* otherwise iterate over the mapping and search for only the mapped columns */
             else {
-
+                qDebug() << "Importing only mapped columns";
             }
         }
     }
