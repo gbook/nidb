@@ -315,7 +315,7 @@ QString GenerateRandomString(int n) {
    QString randomString;
    for(int i=0; i<n; ++i)
    {
-       QChar nextChar = chars.at(QRandomGenerator::global()->bounded(chars.length()-1));
+       QChar nextChar = chars.at(QRandomGenerator::global()->bounded(chars.length()));
        randomString.append(nextChar);
    }
    return randomString;
@@ -819,40 +819,43 @@ bool chmod(QString f, QString perm) {
     if (perm.size() != 3)
         return false;
 
-    int owner = QString(perm[0]).toInt();
-    int group = QString(perm[1]).toInt();
+    int owner    = QString(perm[0]).toInt();
+    int group    = QString(perm[1]).toInt();
     int everyone = QString(perm[2]).toInt();
 
+    QFileDevice::Permissions perms;
+
     switch (owner) {
-        case 1: if (!QFile::setPermissions(f, QFileDevice::ExeOwner)) return false; break;
-        case 2: if (!QFile::setPermissions(f, QFileDevice::WriteOwner)) return false; break;
-        case 3: if (!QFile::setPermissions(f, QFileDevice::ExeOwner | QFileDevice::WriteOwner)) return false; break;
-        case 4: if (!QFile::setPermissions(f, QFileDevice::ReadOwner)) return false; break;
-        case 5: if (!QFile::setPermissions(f, QFileDevice::ExeOwner | QFileDevice::ReadOwner)) return false; break;
-        case 6: if (!QFile::setPermissions(f, QFileDevice::ReadOwner | QFileDevice::WriteOwner)) return false; break;
-        case 7: if (!QFile::setPermissions(f, QFileDevice::ExeOwner | QFileDevice::WriteOwner | QFileDevice::ReadOwner)) return false; break;
+        case 1: perms |= QFileDevice::ExeOwner; break;
+        case 2: perms |= QFileDevice::WriteOwner; break;
+        case 3: perms |= QFileDevice::ExeOwner | QFileDevice::WriteOwner; break;
+        case 4: perms |= QFileDevice::ReadOwner; break;
+        case 5: perms |= QFileDevice::ExeOwner | QFileDevice::ReadOwner; break;
+        case 6: perms |= QFileDevice::ReadOwner | QFileDevice::WriteOwner; break;
+        case 7: perms |= QFileDevice::ExeOwner | QFileDevice::WriteOwner | QFileDevice::ReadOwner; break;
     }
 
     switch (group) {
-        case 1: if (!QFile::setPermissions(f, QFileDevice::ExeGroup)) return false; break;
-        case 2: if (!QFile::setPermissions(f, QFileDevice::WriteGroup)) return false; break;
-        case 3: if (!QFile::setPermissions(f, QFileDevice::ExeGroup | QFileDevice::WriteGroup)) return false; break;
-        case 4: if (!QFile::setPermissions(f, QFileDevice::ReadGroup)) return false; break;
-        case 5: if (!QFile::setPermissions(f, QFileDevice::ExeGroup | QFileDevice::ReadGroup)) return false; break;
-        case 6: if (!QFile::setPermissions(f, QFileDevice::ReadGroup | QFileDevice::WriteGroup)) return false; break;
-        case 7: if (!QFile::setPermissions(f, QFileDevice::ExeGroup | QFileDevice::WriteGroup | QFileDevice::ReadGroup)) return false; break;
+        case 1: perms |= QFileDevice::ExeGroup; break;
+        case 2: perms |= QFileDevice::WriteGroup; break;
+        case 3: perms |= QFileDevice::ExeGroup | QFileDevice::WriteGroup; break;
+        case 4: perms |= QFileDevice::ReadGroup; break;
+        case 5: perms |= QFileDevice::ExeGroup | QFileDevice::ReadGroup; break;
+        case 6: perms |= QFileDevice::ReadGroup | QFileDevice::WriteGroup; break;
+        case 7: perms |= QFileDevice::ExeGroup | QFileDevice::WriteGroup | QFileDevice::ReadGroup; break;
     }
 
     switch (everyone) {
-        case 1: if (!QFile::setPermissions(f, QFileDevice::ExeOther)) return false; break;
-        case 2: if (!QFile::setPermissions(f, QFileDevice::WriteOther)) return false; break;
-        case 3: if (!QFile::setPermissions(f, QFileDevice::ExeOther | QFileDevice::WriteOther)) return false; break;
-        case 4: if (!QFile::setPermissions(f, QFileDevice::ReadOther)) return false; break;
-        case 5: if (!QFile::setPermissions(f, QFileDevice::ExeOther | QFileDevice::ReadOther)) return false; break;
-        case 6: if (!QFile::setPermissions(f, QFileDevice::ReadOther | QFileDevice::WriteOther)) return false; break;
-        case 7: if (!QFile::setPermissions(f, QFileDevice::ExeOther | QFileDevice::WriteOther | QFileDevice::ReadOther)) return false; break;
+        case 1: perms |= QFileDevice::ExeOther; break;
+        case 2: perms |= QFileDevice::WriteOther; break;
+        case 3: perms |= QFileDevice::ExeOther | QFileDevice::WriteOther; break;
+        case 4: perms |= QFileDevice::ReadOther; break;
+        case 5: perms |= QFileDevice::ExeOther | QFileDevice::ReadOther; break;
+        case 6: perms |= QFileDevice::ReadOther | QFileDevice::WriteOther; break;
+        case 7: perms |= QFileDevice::ExeOther | QFileDevice::WriteOther | QFileDevice::ReadOther; break;
     }
-    return true;
+
+    return QFile::setPermissions(f, perms);
 }
 
 
@@ -1567,8 +1570,8 @@ double GetPatientAge(QString PatientAgeStr, QString StudyDate, QString PatientBi
     if (PatientAge < 0.001) {
         QDate studydate;
         QDate dob;
-        studydate.fromString(StudyDate);
-        dob.fromString(PatientBirthDate);
+        studydate = QDate::fromString(StudyDate, "yyyy-MM-dd");
+        dob = QDate::fromString(PatientBirthDate, "yyyy-MM-dd");
 
         PatientAge = double(dob.daysTo(studydate))/365.25;
     }
@@ -1675,4 +1678,54 @@ bool GetZipFileDetails(QString zippath, qint64 &unzipsize, qint64 &zipsize, QStr
 bool isExecutableInstalled(const QString &executableName) {
     QString path = QStandardPaths::findExecutable(executableName);
     return !path.isEmpty();
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- extractBracketContent -------------------------- */
+/* ---------------------------------------------------------- */
+QString extractBracketContent(const QString &input) {
+    int start = input.indexOf('[');
+    int end = input.indexOf(']');
+    if (start == -1 || end == -1 || end <= start)
+        return {};
+    return input.mid(start + 1, end - start - 1);
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- extractAfterBracket ---------------------------- */
+/* ---------------------------------------------------------- */
+QString extractAfterBracket(const QString &input) {
+    int end = input.indexOf(']');
+    if (end == -1)
+        return input;
+    return input.mid(end + 1).trimmed();
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- flattenJSON ------------------------------------ */
+/* ---------------------------------------------------------- */
+void flattenJSON(const QJsonObject &obj, QMap<QString, QString> &result, const QString &prefix)
+{
+    for (auto it = obj.constBegin(); it != obj.constEnd(); ++it) {
+        QString key = prefix.isEmpty() ? it.key() : prefix + "_" + it.key();
+        QJsonValue val = it.value();
+
+        if (val.isObject()) {
+            // Recurse into nested objects
+            flattenJSON(val.toObject(), result, key);
+        } else if (val.isArray()) {
+            // Join array elements with ","
+            QStringList items;
+            for (const QJsonValue &item : val.toArray())
+                items.append(item.toVariant().toString());
+            result[key] = items.join(",");
+        } else if (val.isNull()) {
+            result[key] = "";
+        } else {
+            result[key] = val.toVariant().toString();
+        }
+    }
 }

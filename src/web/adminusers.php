@@ -704,19 +704,55 @@
 			$('.menu .item').tab();
 			$('.tabular.menu .item').tab();
 		});
+
+		function filterUsers() {
+			var term = document.getElementById('userSearch').value.toLowerCase().trim();
+			var tabs = [
+				{ tableId: 'table-first',  badgeId: 'badge-first'  },
+				{ tableId: 'table-second', badgeId: 'badge-second' },
+				{ tableId: 'table-third',  badgeId: 'badge-third'  },
+			];
+			tabs.forEach(function(tab) {
+				var table = document.getElementById(tab.tableId);
+				var rows  = table.querySelectorAll('tbody tr');
+				var count = 0;
+				rows.forEach(function(row) {
+					if (term === '') {
+						row.style.display = '';
+					} else {
+						var u = (row.dataset.username || '').toLowerCase();
+						var f = (row.dataset.fullname  || '').toLowerCase();
+						var e = (row.dataset.email     || '').toLowerCase();
+						var match = u.indexOf(term) !== -1 || f.indexOf(term) !== -1 || e.indexOf(term) !== -1;
+						row.style.display = match ? '' : 'none';
+						if (match) count++;
+					}
+				});
+				var badge = document.getElementById(tab.badgeId);
+				if (term === '') {
+					badge.style.display = 'none';
+				} else {
+					badge.className    = count > 0 ? 'ui red label' : 'ui grey label';
+					badge.textContent  = count;
+					badge.style.display = '';
+				}
+			});
+		}
 	</script>
 
 	<div style="padding: 0px 50px">
-	<button class="ui primary large button" onClick="window.location.href='adminusers.php?action=addform'; return false;"><i class="plus square outline icon"></i>Add User</button>
-	<br><br>
-	
+	<div style="display:flex; align-items:center; gap:12px; margin-bottom:16px">
+		<button class="ui primary large button" onClick="window.location.href='adminusers.php?action=addform'; return false;"><i class="plus square outline icon"></i>Add User</button>
+		<input type="text" id="userSearch" oninput="filterUsers()" placeholder="Search by username, name, or email..." style="padding:8px 12px; font-size:14px; border:1px solid #ccc; border-radius:4px; width:320px">
+	</div>
+
 	<div class="ui top attached tabular menu large">
-		<a class="item active" data-tab="first">Users in the <?=$_SESSION['instancename']?> Instance</a>
-		<a class="item" data-tab="second">All Other Users</a>
-		<a class="item" data-tab="third">Deleted Users</a>
+		<a class="item active" data-tab="first">Users in the <?=$_SESSION['instancename']?> Instance &nbsp;<span id="badge-first" class="ui label" style="display:none"></span></a>
+		<a class="item" data-tab="second">All Other Users &nbsp;<span id="badge-second" class="ui label" style="display:none"></span></a>
+		<a class="item" data-tab="third">Deleted Users &nbsp;<span id="badge-third" class="ui label" style="display:none"></span></a>
 	</div>
 	<div class="ui bottom attached tab segment active" data-tab="first">
-		<table class="ui celled selectable compact table">
+		<table id="table-first" class="ui celled selectable compact table">
 			<thead>
 				<th align="left">Username</th>
 				<th>Full name</th>
@@ -739,11 +775,11 @@
 						$lastlogin = $row['user_lastlogin'];
 						$logincount = $row['user_logincount'];
 						$enabled = $row['user_enabled'];
-						
+
 						if ($username == "")
 							$username = "(blank)";
 				?>
-				<tr>
+				<tr data-username="<?=htmlspecialchars($username)?>" data-fullname="<?=htmlspecialchars($fullname)?>" data-email="<?=htmlspecialchars($email)?>">
 					<td><a href="adminusers.php?action=editform&id=<?=$id?>"><?=$username?></td>
 					<td><?=$fullname?></td>
 					<td><?=$email?></td>
@@ -766,7 +802,7 @@
 		</table>
 	</div>
 	<div class="ui bottom attached tab segment" data-tab="second">
-		<table class="ui celled selectable compact table">
+		<table id="table-second" class="ui celled selectable compact table">
 			<thead>
 				<th align="left">Username</th>
 				<th>Full name</th>
@@ -789,11 +825,11 @@
 						$lastlogin = $row['user_lastlogin'];
 						$logincount = $row['user_logincount'];
 						$enabled = $row['user_enabled'];
-						
+
 						if ($username == "")
 							$username = "(blank)";
 				?>
-				<tr>
+				<tr data-username="<?=htmlspecialchars($username)?>" data-fullname="<?=htmlspecialchars($fullname)?>" data-email="<?=htmlspecialchars($email)?>">
 					<td><a href="adminusers.php?action=editform&id=<?=$id?>"><?=$username?></td>
 					<td><?=$fullname?></td>
 					<td><?=$email?></td>
@@ -816,7 +852,7 @@
 		</table>
 	</div>
 	<div class="ui bottom attached tab segment" data-tab="third">
-		<table class="ui celled selectable compact table">
+		<table id="table-third" class="ui celled selectable compact table">
 			<thead>
 				<th align="left">Username</th>
 				<th>Full name</th>
@@ -839,11 +875,11 @@
 						$lastlogin = $row['user_lastlogin'];
 						$logincount = $row['user_logincount'];
 						$enabled = $row['user_enabled'];
-						
+
 						if ($username == "")
 							$username = "(blank)";
 				?>
-				<tr>
+				<tr data-username="<?=htmlspecialchars($username)?>" data-fullname="<?=htmlspecialchars($fullname)?>" data-email="<?=htmlspecialchars($email)?>">
 					<td><a href="adminusers.php?action=editform&id=<?=$id?>"><?=$username?></td>
 					<td><?=$fullname?></td>
 					<td><?=$email?></td>

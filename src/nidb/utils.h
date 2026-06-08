@@ -126,6 +126,9 @@ bool SandboxedSystemCommand(QString s, QString dir, QString &output, QString tim
 void AppendCustomLog(QString f, QString msg);
 void Print(QString s, bool n=true, bool pad=false);
 void SortQStringListNaturally(QStringList &s);
+QString extractBracketContent(const QString &input);
+QString extractAfterBracket(const QString &input);
+void flattenJSON(const QJsonObject &obj, QMap<QString, QString> &result, const QString &prefix = "");
 
 double GetPatientAge(QString PatientAgeStr, QString StudyDate, QString PatientBirthDate);
 

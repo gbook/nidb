@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jun 05, 2026 at 07:13 PM
+-- Generation Time: Jun 08, 2026 at 04:37 PM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -1426,6 +1426,19 @@ CREATE TABLE `instance` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `instrumentitem_map`
+--
+
+CREATE TABLE `instrumentitem_map` (
+  `itemmap_id` int(11) NOT NULL,
+  `instrumentitem_id` int(11) NOT NULL,
+  `int_val` int(11) DEFAULT NULL COMMENT 'example: 1, 2...',
+  `string_val` varchar(255) NOT NULL COMMENT 'example: female, male ...'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `instruments`
 --
 
@@ -1450,7 +1463,7 @@ CREATE TABLE `instrument_items` (
   `item_name` varchar(255) NOT NULL,
   `item_order` int(11) NOT NULL DEFAULT 0,
   `item_notes` text DEFAULT NULL,
-  `item_type` enum('int','double','string','timeseries') NOT NULL DEFAULT 'string'
+  `item_type` enum('enum','int','double','string','timeseries') NOT NULL DEFAULT 'string'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
@@ -2875,6 +2888,7 @@ CREATE TABLE `remote_imports` (
   `remote_token` text DEFAULT NULL,
   `remote_username` varchar(255) DEFAULT NULL,
   `remote_projectid` int(11) DEFAULT NULL,
+  `remote_surveyid` int(11) DEFAULT NULL COMMENT 'Avicenna survey ID',
   `csv_format` enum('avicenna','nidb') DEFAULT NULL,
   `flag_import_unmapped` tinyint(1) DEFAULT NULL,
   `import_schedule` enum('ondemand','hourly','daily','weekly','monthly','') DEFAULT NULL,
@@ -4133,6 +4147,13 @@ ALTER TABLE `instance`
   ADD UNIQUE KEY `instance_name` (`instance_name`);
 
 --
+-- Indexes for table `instrumentitem_map`
+--
+ALTER TABLE `instrumentitem_map`
+  ADD PRIMARY KEY (`itemmap_id`),
+  ADD UNIQUE KEY `instrumentitem_id` (`instrumentitem_id`,`int_val`,`string_val`);
+
+--
 -- Indexes for table `instruments`
 --
 ALTER TABLE `instruments`
@@ -5304,6 +5325,12 @@ ALTER TABLE `import_transactions`
 --
 ALTER TABLE `instance`
   MODIFY `instance_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `instrumentitem_map`
+--
+ALTER TABLE `instrumentitem_map`
+  MODIFY `itemmap_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `instruments`

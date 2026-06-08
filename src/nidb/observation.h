@@ -30,40 +30,72 @@ class observation
 {
 public:
     observation();
-    observation(qint64 id, nidb *a);
+    observation(qint64 id, nidb *a, bool loadLinked = false);
     nidb *n;
 
     void PrintObservationInfo();
     squirrelObservation GetSquirrelObject(QString databaseUUID);
+    bool AddToDatabase(); /* store the observation to the database */
 
-    QDateTime dateObservationComplete;
+    /* data from 'observations' table */
     QDateTime dateObservationEnd;
     QDateTime dateObservationStart;
     QDateTime dateRecordCreate;
     QDateTime dateRecordEntry;
     QDateTime dateRecordModify;
-    QString desc;
-    QString instrumentName;
+    QString observationDescription;
+    QString observationInstrument;
     QString observationName;
-    QString notes;
-    QString rater;
-    QString uid;
-    QString value;
-    //QString valueString;
-    //char observationType;
-    //double valueNumber;
-    int duration;
-    int enrollmentid;
-    //int instrumentNameID;
-    //int observationNameID;
-    int observationid;
-    int subjectid;
+    QString observationNotes;
+    QString observationRater;
+    QString observationValue;
+    QString subjectUID;
+    int enrollmentRowID = -1;
+    int instrumentItemRowID = -1;
+    int observationDuration = 0;
+    int observationRowID = -1;
+    int projectRowID = -1;
+    int remoteBatchRowID = -1;
+    int subjectRowID = -1;
+    int surveyRowID = -1;
+
+    bool hasLinkedInstrument = false;
+    bool hasLinkedInstrumentItem = false;
+    bool hasMetadata = false;
+    bool hasSurvey = false;
+
+    /* instruments */
+    QString linkedInstrumentName;
+    QString linkedInstrumentNotes;
+
+    /* instrument item */
+    QString linkedInstrumentItemName;
+    QString linkedInstrumentItemType; /* enum, int, double, string, timeseries */
+    QString linkedInstrumentItemNotes;
+    int linkedInstrumentItemOrder;
+    QMap<QString, QString> metadata;
+    QMap<int, QString> valueMap;
+
+    /* survey information */
+    QDateTime linkedSurveyStartDate;
+    QDateTime linkedSurveyEndDate;
+    QString linkedSurveyNotes;
+    QString linkedSurveyVisit;
+    QString linkedSurveyExperimenter;
+    QString linkedSurveyRater;
+    QDateTime linkedSurveyEntryDate;
+
+    /* timeseries containers */
+    QMap<QDateTime, int> timeseriesInt;
+    QMap<QDateTime, double> timeseriesDouble;
+    QMap<QDateTime, QString> timeseriesString;
 
     bool isValid = true;
     QString msg;
 
 private:
     void LoadObservationInfo();
+    bool loadLinkedData = false;
 };
 
 #endif // OBSERVATION_H
