@@ -28,6 +28,17 @@ extract::extract() {}
 /* ---------------------------------------------------------------------------- */
 /* ----- DoExtract ------------------------------------------------------------ */
 /* ---------------------------------------------------------------------------- */
+/**
+ * @brief Extract an object from a squirrel package to a directory on disk
+ * @param packagePath path to the squirrel package file
+ * @param outputPath directory where extracted files will be written
+ * @param objectType string name of the object type to extract
+ * @param objectIdentifier identifier (ID or name) of the object to extract
+ * @param subjectID subject ID for study/series scoped extractions
+ * @param studyNum study number for series scoped extractions
+ * @param m output message describing success or failure
+ * @return true if successful
+ */
 bool extract::DoExtract(QString packagePath, QString outputPath, QString objectType, QString objectIdentifier, QString subjectID, int studyNum, QString &m) {
 
     utils::Print(QString("Extracting subject [%1] from package [%2] to directory [%3]...").arg(objectIdentifier).arg(packagePath).arg(outputPath));

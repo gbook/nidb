@@ -1060,14 +1060,14 @@
 		
 		if ($logic == "OR") {
 			$intPlaceholders = implode(',', array_fill(0, count($interventions), '?')); /* create list of ?,?,? bound parameter placeholders */
-			$sqlstring = "select * from interventions where enrollment_id = ? and intervention_desc in ($intPlaceholders)";
+			$sqlstring = "select * from interventions where enrollment_id = ? and intervention_name in ($intPlaceholders)";
 			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 			$types = 'i' . str_repeat('s', count($interventions)); /* create the list of bound datatypes (iiisss, etc) */
 			$params = array_merge([$enrollmentRowID], $interventions); /* merge the values into a single array for SQL debugging later */
 		}
 		else {
 			foreach ($interventions as $intv) {
-				$descs[] = "intervention_desc = ?";
+				$descs[] = "intervention_name = ?";
 			}
 			$intPlaceholders = implode(' AND ', $descs);
 			$sqlstring = "select * from interventions where enrollment_id = ? and ($intPlaceholders)";
@@ -1075,7 +1075,7 @@
 			$types = 'i' . str_repeat('s', count($interventions));
 			$params = array_merge([$enrollmentRowID], $interventions);
 		}
-		
+
 		mysqli_stmt_bind_param($stmt, $types, ...$params);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
 		mysqli_stmt_close($stmt);
@@ -1084,18 +1084,16 @@
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				/* collect the found data */
 				$d['Name'] = $row['intervention_name'];
-				$d['Notes'] = $row['intervention_notes'];
-				$d['Instrument'] = $row['intervention_instrument'];
-				$d['Description'] = $row['intervention_desc'];
-				$d['Value'] = $row['intervention_value'];
-				$d['Startdate'] = $row['intervention_startdate'];
-				$d['Duration'] = $row['intervention_duration'];
-				$d['Rater'] = $row['intervention_rater'];
+				$d['Notes'] = $row['notes'];
+				$d['Description'] = $row['dosedesc'];
+				$d['Value'] = $row['doseamount'];
+				$d['Startdate'] = $row['startdate'];
+				$d['Rater'] = $row['rater'];
 				$data[] = $d;
-				
+
 				/* quick displayed info */
-				$completedates[] = date('M j, Y', strtotime($row['intervention_startdate']));
-				$raters[] = $row['intervention_rater'];
+				$completedates[] = date('M j, Y', strtotime($row['startdate']));
+				$raters[] = $row['rater'];
 			}
 			$completedDate = implode2(',',array_unique($completedates));
 			$completedBy = implode2(',',array_unique($raters));

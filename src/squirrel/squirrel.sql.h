@@ -135,6 +135,7 @@ const QString tableObservation = QString("CREATE TABLE IF NOT EXISTS Observation
     "InstrumentName TEXT, "
     "Notes TEXT, "
     "ObservationName TEXT, "
+    "ObservationType TEXT, "
     "Rater TEXT, "
     "Value TEXT, "
     "UNIQUE(SubjectRowID, ObservationName, DateStart))");

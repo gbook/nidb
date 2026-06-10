@@ -29,6 +29,10 @@
 /* ------------------------------------------------------------ */
 /* ----- subject ---------------------------------------------- */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Constructor
+ * @param dbID UUID of the database connection to use
+ */
 squirrelSubject::squirrelSubject(QString dbID)
 {
     databaseUUID = dbID;
@@ -45,6 +49,13 @@ squirrelSubject::squirrelSubject(QString dbID)
 }
 
 
+/* ------------------------------------------------------------ */
+/* ----- Populate --------------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief Populate object fields from a database query result row
+ * @param q an executed QSqlQuery positioned at the row to read
+ */
 void squirrelSubject::Populate(const QSqlQuery &q) {
     objectID         = q.value("SubjectRowID").toLongLong();
     AlternateIDs     = q.value("AltIDs").toString().split(",");
@@ -157,6 +168,11 @@ bool squirrelSubject::Store() {
 /* ------------------------------------------------------------ */
 /* ----- Store (bulk insert) ---------------------------------- */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Bind this subject's values to a pre-prepared bulk-insert query and execute it
+ * @param q a QSqlQuery prepared with the appropriate INSERT statement
+ * @return true if successful
+ */
 bool squirrelSubject::Store(QSqlQuery &q) {
     q.bindValue(":ID", ID);
     q.bindValue(":AltIDs", AlternateIDs.join(","));
@@ -256,6 +272,10 @@ QString squirrelSubject::PrintTree(bool isLast) {
 /* ------------------------------------------------------------ */
 /* ----- CSVLine ---------------------------------------------- */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Return a CSV-formatted line containing all subject fields
+ * @return comma-separated string with each field quoted
+ */
 QString squirrelSubject::CSVLine() {
     QStringList data;
 
@@ -280,6 +300,11 @@ QString squirrelSubject::CSVLine() {
 /* ------------------------------------------------------------ */
 /* ----- GetData ---------------------------------------------- */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Return a key/value hash of subject fields for the requested dataset level
+ * @param d the dataset detail level (DatasetID, DatasetBasic, or DatasetFull)
+ * @return hash of field names to string values
+ */
 QHash<QString, QString> squirrelSubject::GetData(DatasetType d) {
     QHash<QString, QString> data;
 
@@ -318,6 +343,10 @@ QHash<QString, QString> squirrelSubject::GetData(DatasetType d) {
 /* ------------------------------------------------------------ */
 /* ----- Remove ----------------------------------------------- */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Remove this subject and all of its child studies, series, and staged files from the database
+ * @return true if successful
+ */
 bool squirrelSubject::Remove() {
 
     /* find all studies associated with this subject ... */
@@ -447,6 +476,10 @@ QJsonObject squirrelSubject::ToJSON() {
 /* ------------------------------------------------------------ */
 /* ----- VirtualPath ------------------------------------------ */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Return the subject's virtual path within the squirrel package
+ * @return virtual path string (e.g. "data/S1234")
+ */
 QString squirrelSubject::VirtualPath() {
 
     QString vPath;

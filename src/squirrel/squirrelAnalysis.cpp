@@ -31,6 +31,13 @@ squirrelAnalysis::squirrelAnalysis(QString dbID)
 }
 
 
+/* ------------------------------------------------------------ */
+/* ----- Populate --------------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief Populate object fields from a database query result row
+ * @param q an executed QSqlQuery positioned at the row to read
+ */
 void squirrelAnalysis::Populate(const QSqlQuery &q) {
     objectID         = q.value("AnalysisRowID").toLongLong();
     pipelineRowID    = q.value("PipelineRowID").toLongLong();
@@ -174,9 +181,10 @@ bool squirrelAnalysis::Store() {
 
         QString path;
         foreach (path, stagedFiles) {
-            q.prepare("insert into StagedFiles (ObjectRowID, ObjectType) values (:packageid, :id, :type)");
+            q.prepare("insert into StagedFiles (ObjectRowID, ObjectType, StagedPath) values (:id, :type, :path)");
             q.bindValue(":id", objectID);
             q.bindValue(":type", "analysis");
+            q.bindValue(":path", path);
             utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         }
     }
@@ -187,6 +195,10 @@ bool squirrelAnalysis::Store() {
 /* ------------------------------------------------------------ */
 /* ----- ToJSON ----------------------------------------------- */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Return a JSON object representing this analysis
+ * @return QJsonObject containing all analysis fields
+ */
 QJsonObject squirrelAnalysis::ToJSON() {
     QJsonObject json;
 
@@ -208,6 +220,53 @@ QJsonObject squirrelAnalysis::ToJSON() {
     json["VirtualPath"] = VirtualPath();
 
     return json;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- GetData ---------------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief Return a key/value hash of analysis fields for the requested dataset level
+ * @param d the dataset detail level (DatasetID, DatasetBasic, or DatasetFull)
+ * @return hash of field names to string values
+ */
+QHash<QString, QString> squirrelAnalysis::GetData(DatasetType d) {
+    QHash<QString, QString> data;
+
+    switch (d) {
+        case DatasetID:
+            data["Analysis.PipelineName"] = PipelineName;
+            break;
+        case DatasetBasic:
+            data["Analysis.DateEnd"] = DateEnd.toString("yyyy-MM-dd HH:mm:ss");
+            data["Analysis.DateStart"] = DateStart.toString("yyyy-MM-dd HH:mm:ss");
+            data["Analysis.PipelineName"] = PipelineName;
+            data["Analysis.Status"] = Status;
+            data["Analysis.Successful"] = Successful ? "true" : "false";
+            break;
+        case DatasetFull:
+            data["Analysis.AnalysisName"] = AnalysisName;
+            data["Analysis.DateClusterEnd"] = DateClusterEnd.toString("yyyy-MM-dd HH:mm:ss");
+            data["Analysis.DateClusterStart"] = DateClusterStart.toString("yyyy-MM-dd HH:mm:ss");
+            data["Analysis.DateEnd"] = DateEnd.toString("yyyy-MM-dd HH:mm:ss");
+            data["Analysis.DateStart"] = DateStart.toString("yyyy-MM-dd HH:mm:ss");
+            data["Analysis.Hostname"] = Hostname;
+            data["Analysis.PipelineName"] = PipelineName;
+            data["Analysis.PipelineVersion"] = QString("%1").arg(PipelineVersion);
+            data["Analysis.RunTime"] = QString("%1").arg(RunTime);
+            data["Analysis.SeriesCount"] = QString("%1").arg(SeriesCount);
+            data["Analysis.SetupTime"] = QString("%1").arg(SetupTime);
+            data["Analysis.Size"] = QString("%1").arg(Size);
+            data["Analysis.Status"] = Status;
+            data["Analysis.StatusMessage"] = StatusMessage;
+            data["Analysis.Successful"] = Successful ? "true" : "false";
+            break;
+        default:
+            break;
+    }
+
+    return data;
 }
 
 
@@ -246,6 +305,10 @@ QString squirrelAnalysis::PrintAnalysis() {
 /* ------------------------------------------------------------ */
 /* ----- VirtualPath ------------------------------------------ */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Return the analysis' virtual path within the squirrel package
+ * @return virtual path string (e.g. "data/S1234/1/PipelineName")
+ */
 QString squirrelAnalysis::VirtualPath() {
 
     QString subjectDir;
@@ -278,6 +341,10 @@ QString squirrelAnalysis::VirtualPath() {
 /* ------------------------------------------------------------ */
 /* ----- GetStagedFileList ------------------------------------ */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Return all staged files as physical path / virtual path pairs
+ * @return list of pairs where first is the physical disk path and second is the virtual path in the package
+ */
 QList<QPair<QString,QString>> squirrelAnalysis::GetStagedFileList() {
 
     QList<QPair<QString,QString>> stagedList;

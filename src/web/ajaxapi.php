@@ -143,6 +143,21 @@
 		case 'updateobservationdetails':
 			UpdateObservationDetails($observationid, $column, $value);
 			break;
+		case 'getobservationmeta':
+			GetObservationMeta($observationid);
+			break;
+		case 'bulkupdateobservations':
+			BulkUpdateObservations($observationids, $column, $value);
+			break;
+		case 'bulkdeleteobservations':
+			BulkDeleteObservations($observationids);
+			break;
+		case 'bulkconvertvaluetometa':
+			BulkConvertValueToMeta($observationids);
+			break;
+		case 'bulkmovenewsurvey':
+			BulkMoveToNewSurvey($observationids);
+			break;
 		case 'searchinstruments':
 			SearchInstruments($term, $projectid);
 			break;
@@ -1147,6 +1162,184 @@
 		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		mysqli_stmt_close($stmt);
 		echo "success";
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetObservationMeta ---------------- */
+	/* -------------------------------------------- */
+	function GetObservationMeta($observationid) {
+		header('Content-Type: application/json');
+		$observationid = (int)$observationid;
+		if ($observationid < 1) { echo json_encode(['error' => 'Invalid ID']); return; }
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select variable, value from observation_meta where observation_id = ? order by variable");
+		mysqli_stmt_bind_param($stmt, 'i', $observationid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$rows = [];
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$rows[] = ['variable' => $row['variable'], 'value' => $row['value']];
+		}
+		mysqli_stmt_close($stmt);
+		echo json_encode($rows);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- BulkUpdateObservations ------------ */
+	/* -------------------------------------------- */
+	function BulkUpdateObservations($observationidsJson, $column, $value) {
+		header('Content-Type: application/json');
+		$ids = json_decode($observationidsJson, true);
+		if (!is_array($ids) || count($ids) === 0) { echo json_encode(['error' => 'No IDs provided']); return; }
+
+		$allowedColumns = [
+			'value'         => 'observation_value',
+			'rater'         => 'observation_rater',
+			'startdate'     => 'observation_startdate',
+			'enddate'       => 'observation_enddate',
+			'obsInstrument' => 'observation_instrument',
+		];
+		if (!array_key_exists($column, $allowedColumns)) {
+			echo json_encode(['error' => "Column [$column] not recognized"]);
+			return;
+		}
+		$dbColumn = $allowedColumns[$column];
+		$nullableValue = (trim($value) === '') ? null : $value;
+		$updated = 0;
+		foreach ($ids as $id) {
+			$id = (int)$id;
+			if ($id < 1) continue;
+			$stmt = mysqli_prepare($GLOBALS['linki'], "update observations set $dbColumn = ? where observation_id = ?");
+			mysqli_stmt_bind_param($stmt, 'si', $nullableValue, $id);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			mysqli_stmt_close($stmt);
+			$updated++;
+		}
+		echo json_encode(['updated' => $updated]);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- BulkDeleteObservations ------------ */
+	/* -------------------------------------------- */
+	function BulkDeleteObservations($observationidsJson) {
+		header('Content-Type: application/json');
+		$ids = json_decode($observationidsJson, true);
+		if (!is_array($ids) || count($ids) === 0) { echo json_encode(['error' => 'No IDs provided']); return; }
+		$deleted = 0;
+		foreach ($ids as $id) {
+			$id = (int)$id;
+			if ($id < 1) continue;
+			$stmt = mysqli_prepare($GLOBALS['linki'], "delete from observations where observation_id = ?");
+			mysqli_stmt_bind_param($stmt, 'i', $id);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			mysqli_stmt_close($stmt);
+			$deleted++;
+		}
+		echo json_encode(['deleted' => $deleted]);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- BulkMoveToNewSurvey --------------- */
+	/* -------------------------------------------- */
+	/* Creates a new survey whose startdate is the oldest observation_startdate among the
+	   selected observations, then assigns all selected observations to it. */
+	function BulkMoveToNewSurvey($observationidsJson) {
+		header('Content-Type: application/json');
+		$ids = json_decode($observationidsJson, true);
+		if (!is_array($ids) || count($ids) === 0) { echo json_encode(['error' => 'No IDs provided']); return; }
+
+		$intIds = array_values(array_filter(array_map('intval', $ids), function($id) { return $id > 0; }));
+		if (empty($intIds)) { echo json_encode(['error' => 'No valid IDs']); return; }
+
+		$idList = implode(',', $intIds);
+
+		/* derive survey startdate from the earliest non-zero observation_startdate */
+		$row = mysqli_fetch_array(MySQLiQuery(
+			"select min(case when observation_startdate = '0000-01-01 00:00:00' or observation_startdate is null then null else observation_startdate end) as min_date from observations where observation_id in ($idList)",
+			__FILE__, __LINE__
+		), MYSQLI_ASSOC);
+		$startdate_sql = (!empty($row['min_date'])) ? "'" . mysqli_real_escape_string($GLOBALS['linki'], $row['min_date']) . "'" : "null";
+
+		/* create the new survey (no instrument affiliation — observations may span instruments) */
+		MySQLiQuery("insert into observation_surveys (instrument_id, survey_startdate, survey_entrydate) values (null, $startdate_sql, now())", __FILE__, __LINE__);
+		$surveyid = (int)mysqli_insert_id($GLOBALS['linki']);
+
+		/* reassign all selected observations to the new survey regardless of prior assignment */
+		MySQLiQuery("update observations set observationsurvey_id = $surveyid where observation_id in ($idList)", __FILE__, __LINE__);
+
+		echo json_encode(['survey_id' => $surveyid, 'moved' => count($intIds)]);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- BulkConvertValueToMeta ------------ */
+	/* -------------------------------------------- */
+	/* Flattens a nested array into dot-joined key paths using underscore as separator.
+	   e.g. ['var_1' => ['subvar1' => 'x']] → ['var_1_subvar1' => 'x'] */
+	function FlattenJsonArray($data, $prefix) {
+		$result = [];
+		foreach ($data as $key => $value) {
+			$fullKey = $prefix !== '' ? $prefix . '_' . $key : (string)$key;
+			if (is_array($value)) {
+				$result = array_merge($result, FlattenJsonArray($value, $fullKey));
+			} else {
+				$result[$fullKey] = ($value === null) ? '' : (string)$value;
+			}
+		}
+		return $result;
+	}
+
+	function BulkConvertValueToMeta($observationidsJson) {
+		header('Content-Type: application/json');
+		$ids = json_decode($observationidsJson, true);
+		if (!is_array($ids) || count($ids) === 0) { echo json_encode(['error' => 'No IDs provided']); return; }
+
+		$converted = 0;
+		$skipped   = 0;
+
+		foreach ($ids as $id) {
+			$id = (int)$id;
+			if ($id < 1) continue;
+
+			/* fetch current value */
+			$stmt = mysqli_prepare($GLOBALS['linki'], "select observation_value from observations where observation_id = ?");
+			mysqli_stmt_bind_param($stmt, 'i', $id);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
+			if (!$row) continue;
+
+			$jsonStr = trim($row['observation_value']);
+			if ($jsonStr === '') { $skipped++; continue; }
+
+			$decoded = json_decode($jsonStr, true);
+			if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
+				$skipped++;
+				continue;
+			}
+
+			/* flatten and insert each key-value pair */
+			$flat = FlattenJsonArray($decoded, '');
+			foreach ($flat as $variable => $value) {
+				$stmt = mysqli_prepare($GLOBALS['linki'], "insert into observation_meta (observation_id, variable, value) values (?, ?, ?)");
+				mysqli_stmt_bind_param($stmt, 'iss', $id, $variable, $value);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+				mysqli_stmt_close($stmt);
+			}
+
+			/* clear the raw JSON value now that meta rows are written */
+			$empty = '';
+			$stmt = mysqli_prepare($GLOBALS['linki'], "update observations set observation_value = ? where observation_id = ?");
+			mysqli_stmt_bind_param($stmt, 'si', $empty, $id);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			mysqli_stmt_close($stmt);
+
+			$converted++;
+		}
+
+		echo json_encode(['converted' => $converted, 'skipped' => $skipped]);
 	}
 
 

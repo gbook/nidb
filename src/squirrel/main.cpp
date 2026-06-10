@@ -261,33 +261,33 @@ int main(int argc, char *argv[])
             PrintExampleUsageInfo();
         }
         else {
-            bool debug = p.isSet("d");
-            ObjectType object = squirrel::ObjectTypeToEnum(p.value("object").trimmed());
-            QString subjectID = p.value("subjectid").trimmed();
-            int studyNum = p.value("studynum").toInt();
             QString dataset = p.value("dataset").trimmed();
             QString format = p.value("format").trimmed();
 
-            DatasetType datasetType;
-            PrintFormat printType;
+            infoQuery query;
+            query.debug = p.isSet("d");
+            query.object = squirrel::ObjectTypeToEnum(p.value("object").trimmed());
+            query.subjectID = p.value("subjectid").trimmed();
+            query.studyNum = p.value("studynum").toInt();
+
             if (dataset == "id")
-                datasetType = DatasetID;
+                query.dataset = DatasetID;
             else if (dataset == "basic")
-                datasetType = DatasetBasic;
+                query.dataset = DatasetBasic;
             else
-                datasetType = DatasetFull;
+                query.dataset = DatasetFull;
 
-            if (format == "list")
-                printType = List;
+            if (format == "csv")
+                query.printFormat = CSV;
             else
-                printType = CSV;
+                query.printFormat = List;
 
-            if (object == UnknownObjectType)
-                object = Package;
+            if (query.object == UnknownObjectType)
+                query.object = Package;
 
             QString m;
             info information;
-            if (!information.DisplayInfo(inputPath, debug, object, subjectID, studyNum, datasetType, printType, m)) {
+            if (!information.DisplayInfo(inputPath, query, m)) {
                 CommandLineError(p,m);
             }
         }
@@ -305,7 +305,7 @@ int main(int argc, char *argv[])
         /* command line flag options */
         p.addOption(QCommandLineOption(QStringList() << "d" << "debug", "Enable debugging"));
         p.addOption(QCommandLineOption(QStringList() << "q" << "quiet", "Quiet mode. No printing of headers and checks"));
-        p.addOption(QCommandLineOption(QStringList() << "operation", "Operation to perform on the package [add  remove  update  splitbymodality  removephi].", "operation"));
+        p.addOption(QCommandLineOption(QStringList() << "operation", "Operation to perform on the package [add  remove  update  splitbymodality  removephi  renumber].", "operation"));
         p.addOption(QCommandLineOption(QStringList() << "object", "Object type to perform operation on [package  subject  study  series  analysis  intervention  observation  experiment  pipeline  groupanalysis  datadictionary].", "object"));
         p.addOption(QCommandLineOption(QStringList() << "datapath", "Path to new object data. Can include wildcard: /path/*.dcm", "path"));
         //p.addOption(QCommandLineOption(QStringList() << "recursive", "Search the data path recursively"));
@@ -315,28 +315,48 @@ int main(int argc, char *argv[])
         p.addOption(QCommandLineOption(QStringList() << "seriesnum", "Parent series number. Used when updating a series object (subjectid and studynum also required).", "num"));
         p.addOption(QCommandLineOption(QStringList() << "objectdata", "URL-style string specifying the new object meta-data.", "string"));
         p.addOption(QCommandLineOption(QStringList() << "variablelist", "List the possible variables for the specified object (subject, study, series, analysis ...)", "object"));
+        p.addOption(QCommandLineOption(QStringList() << "digits", "Number of digits for renumbered subject IDs (e.g. 4 produces 0001...9999). Default: auto-sized.", "num"));
+        p.addOption(QCommandLineOption(QStringList() << "startnum", "Starting number for renumbering (default: 1).", "num"));
+        p.addOption(QCommandLineOption(QStringList() << "prefix", "Prefix string prepended to renumbered subject IDs (e.g. 'sub' produces sub0001, sub0002, ...).", "string"));
+        p.addOption(QCommandLineOption(QStringList() << "random", "Randomly assign new subject IDs instead of sorting ascending."));
 
         p.process(a);
 
         QString operation = p.value("operation").trimmed();
-        //QString object = p.value("object").trimmed(); /* possible objects: subject study series observation intervention analysis experiment pipeline groupanalysis datadictionary */
         ObjectType object = squirrel::ObjectTypeToEnum(p.value("object").trimmed());
         QString dataPath = p.value("datapath").trimmed();
         QString objectData = p.value("objectdata").trimmed();
         QString objectID = p.value("objectid").trimmed();
         QString subjectID = p.value("subjectid").trimmed();
-        //QString variablelist = p.value("variablelist").trimmed();
         ObjectType variableList = squirrel::ObjectTypeToEnum(p.value("variablelist").trimmed());
         int studyNum = p.value("studynum").toInt();
         int seriesNum = p.value("seriesnum").toInt();
+        int digits = p.value("digits").toInt();
+        int startNum = p.isSet("startnum") ? p.value("startnum").toInt() : 1;
+        QString prefix = p.value("prefix").trimmed();
+        bool randomize = p.isSet("random");
         //bool recursive = p.isSet("recursive");
 
+        modification mod;
+        mod.operation = operation;
+        mod.object = object;
+        mod.dataPath = dataPath;
+        mod.objectData = objectData;
+        mod.objectID = objectID;
+        mod.subjectID = subjectID;
+        mod.studyNumber = studyNum;
+        mod.seriesNumber = seriesNum;
+        mod.renumberDigits = digits;
+        mod.renumberStartNum = startNum;
+        mod.renumberPrefix = prefix;
+        mod.renumberRandomize = randomize;
+
         QString m;
-        modify mod;
+        modify modifier;
         if (variableList != UnknownObjectType) {
-            mod.PrintVariables(variableList);
+            modifier.PrintVariables(variableList);
         }
-        else if (!mod.DoModify(inputPath, operation, object, dataPath, objectData, objectID, subjectID, studyNum, seriesNum, m)) {
+        else if (!modifier.DoModify(inputPath, mod, m)) {
             CommandLineError(p,m);
         }
     }

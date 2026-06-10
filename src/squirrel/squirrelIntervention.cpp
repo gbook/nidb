@@ -157,6 +157,11 @@ bool squirrelIntervention::Store() {
 /* ------------------------------------------------------------ */
 /* ----- Store (bulk insert) ---------------------------------- */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Bind this intervention's values to a pre-prepared bulk-insert query and execute it
+ * @param q a QSqlQuery prepared with the appropriate INSERT statement
+ * @return true if successful
+ */
 bool squirrelIntervention::Store(QSqlQuery &q) {
     q.bindValue(":SubjectRowID", subjectRowID);
     q.bindValue(":InterventionName", InterventionName);
@@ -187,6 +192,10 @@ bool squirrelIntervention::Store(QSqlQuery &q) {
 /* ------------------------------------------------------------ */
 /* ----- ToJSON ----------------------------------------------- */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Return a JSON object representing this intervention
+ * @return QJsonObject containing all intervention fields
+ */
 QJsonObject squirrelIntervention::ToJSON() {
     QJsonObject json;
 
@@ -244,6 +253,11 @@ QString squirrelIntervention::PrintIntervention() {
 /* ------------------------------------------------------------ */
 /* ----- GetData ---------------------------------------------- */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Return a key/value hash of intervention fields for the requested dataset level
+ * @param d the dataset detail level (DatasetID, DatasetBasic, or DatasetFull)
+ * @return hash of field names to string values
+ */
 QHash<QString, QString> squirrelIntervention::GetData(DatasetType d) {
 
     QHash<QString, QString> data;

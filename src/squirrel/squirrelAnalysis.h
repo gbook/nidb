@@ -27,6 +27,7 @@
 #include <QString>
 #include <QDateTime>
 #include <QJsonObject>
+#include "squirrelTypes.h"
 
 /**
  * @brief The analysis class
@@ -40,6 +41,7 @@ public:
     bool Get();               /* gets the object data from the database */
     bool Store();             /* saves the object data from this object into the database */
     void Populate(const QSqlQuery &q); /* populate fields from an already-executed SELECT * row */
+    QHash<QString, QString> GetData(DatasetType d);
     bool isValid() { return valid; }
     QString Error() { return err; }
     qint64 GetObjectID() { return objectID; }

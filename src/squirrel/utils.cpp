@@ -664,10 +664,8 @@ namespace utils {
 
         /* fix patient age */
         if (PatientAge < 0.001) {
-            QDate studydate;
-            QDate dob;
-            studydate.fromString(StudyDate);
-            dob.fromString(PatientBirthDate);
+            QDate studydate = QDate::fromString(StudyDate);
+            QDate dob = QDate::fromString(PatientBirthDate);
 
             PatientAge = double(dob.daysTo(studydate))/365.25;
         }
@@ -725,8 +723,8 @@ namespace utils {
     /* ---------------------------------------------------------- */
     QString CleanString(QString s) {
         s.replace(QRegularExpression("[^a-zA-Z0-9 _-]", QRegularExpression::CaseInsensitiveOption), "");
-        s.simplified().remove(' ');
-        s.remove(" ");
+        s = s.simplified();
+        s.remove(' ');
         return s;
     }
 
@@ -1010,6 +1008,84 @@ namespace utils {
                 lines += "\"" + rowData.join("\",\"") + "\"";
             else
                 lines += rowData.join("\t");
+        }
+
+        return utils::Print(lines.join("\n"));
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- PrintTable ------------------------------------- */
+    /* ---------------------------------------------------------- */
+    /**
+     * @brief Print rows as an aligned table with pinnedKeys as left columns before a │ divider
+     * @param keys all column keys (will be sorted; pinnedKeys are moved to front in order)
+     * @param rows data rows
+     * @param pinnedKeys keys to place before the │ divider, in the order given
+     */
+    QString PrintTable(QStringList keys, QList<QStringHash> rows, QStringList pinnedKeys) {
+        if (keys.isEmpty() || rows.isEmpty())
+            return QString();
+
+        /* move pinnedKeys to front in order, keep remaining keys sorted */
+        for (const QString &pk : pinnedKeys)
+            keys.removeAll(pk);
+        for (int i = pinnedKeys.size() - 1; i >= 0; --i)
+            keys.prepend(pinnedKeys[i]);
+
+        int pinned = pinnedKeys.size();
+
+        /* strip "Object." prefix from keys for display */
+        QStringList headers;
+        for (const QString &key : keys) {
+            int dot = key.indexOf('.');
+            headers.append(dot >= 0 ? key.mid(dot + 1) : key);
+        }
+
+        /* compute per-column widths from headers and data */
+        QVector<int> widths(keys.size());
+        for (int i = 0; i < keys.size(); ++i)
+            widths[i] = headers[i].length();
+        for (const auto &row : rows)
+            for (int i = 0; i < keys.size(); ++i)
+                widths[i] = qMax(widths[i], row.value(keys[i]).length());
+
+        QStringList lines;
+
+        /* header row: pinned cols ... │ remaining cols ... */
+        QString header;
+        for (int i = 0; i < pinned; ++i) {
+            if (i > 0) header += " ";
+            header += headers[i].leftJustified(widths[i]);
+        }
+        header += " │";
+        for (int i = pinned; i < keys.size(); ++i)
+            header += " " + headers[i].leftJustified(widths[i]);
+        lines += header;
+
+        /* separator: ────┼───────────... */
+        int pinnedWidth = 0;
+        for (int i = 0; i < pinned; ++i)
+            pinnedWidth += widths[i] + (i > 0 ? 1 : 0);
+        QString sep = QString("─").repeated(pinnedWidth) + "─┼─";
+        for (int i = pinned; i < keys.size(); ++i) {
+            sep += QString("─").repeated(widths[i]);
+            if (i < keys.size() - 1)
+                sep += "─"; /* accounts for the space before each column */
+        }
+        lines += sep;
+
+        /* data rows */
+        for (const auto &row : rows) {
+            QString line;
+            for (int i = 0; i < pinned; ++i) {
+                if (i > 0) line += " ";
+                line += row.value(keys[i]).leftJustified(widths[i]);
+            }
+            line += " │";
+            for (int i = pinned; i < keys.size(); ++i)
+                line += " " + row.value(keys[i]).leftJustified(widths[i]);
+            lines += line;
         }
 
         return utils::Print(lines.join("\n"));

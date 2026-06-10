@@ -131,6 +131,10 @@ bool squirrelGroupAnalysis::Store() {
 /* ------------------------------------------------------------ */
 /* ----- ToJSON ----------------------------------------------- */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Return a JSON object representing this group analysis
+ * @return QJsonObject containing all group analysis fields
+ */
 QJsonObject squirrelGroupAnalysis::ToJSON() {
     QJsonObject json;
 
@@ -171,6 +175,10 @@ QString squirrelGroupAnalysis::PrintGroupAnalysis() {
 /* ------------------------------------------------------------ */
 /* ----- VirtualPath ------------------------------------------ */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Return the group analysis' virtual path within the squirrel package
+ * @return virtual path string (e.g. "group-analysis/GroupAnalysisName")
+ */
 QString squirrelGroupAnalysis::VirtualPath() {
     QString vPath = QString("group-analysis/%1").arg(utils::CleanString(GroupAnalysisName));
 
@@ -181,6 +189,10 @@ QString squirrelGroupAnalysis::VirtualPath() {
 /* ------------------------------------------------------------ */
 /* ----- GetStagedFileList ------------------------------------ */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Return all staged files as physical path / virtual path pairs
+ * @return list of pairs where first is the physical disk path and second is the virtual path in the package
+ */
 QList<QPair<QString,QString>> squirrelGroupAnalysis::GetStagedFileList() {
 
     QList<QPair<QString,QString>> stagedList;

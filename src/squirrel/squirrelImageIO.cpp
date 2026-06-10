@@ -755,7 +755,6 @@ bool squirrelImageIO::GetImageFileTags(QString f, QHash<QString, QString> &tags,
             }
         }
         else {
-            //msg += "GetImageFileTags() checkpoint D\n";
             /* unknown modality/filetype... so we'll try one last time to read with EXIF tool */
             QString exifoutput = Exiftool(f);
             QStringList lines = exifoutput.split(QRegularExpression("(\\n|\\r\\n|\\r)"), Qt::SkipEmptyParts);
@@ -770,14 +769,11 @@ bool squirrelImageIO::GetImageFileTags(QString f, QHash<QString, QString> &tags,
                     tags[firstPart.trimmed()] = secondPart.trimmed();
                 }
             }
-            //msg += "GetImageFileTags() checkpoint E\n";
 
             if (tags["FileType"] != "DICOM")
                 return false;
         }
     }
-
-    //msg += "GetImageFileTags() checkpoint F\n";
 
     /* fix some of the fields to be amenable to the DB */
     if (tags["Modality"] == "")

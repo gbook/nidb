@@ -57,6 +57,7 @@ namespace utils {
     QString ParseTime(QString s);
     QString Print(QString s, bool n=true, bool pad=false);
     QString PrintData(PrintFormat p, QStringList keys, QList <QStringHash> rows);
+    QString PrintTable(QStringList keys, QList <QStringHash> rows, QStringList pinnedKeys);
     QString SystemCommand(QString s, bool detail=true, bool truncate=false);
     bool ParseCSV(QString csv, indexedHash &table, QStringList &columns, QString &msg);
     bool ParseTSV(QString tsv, indexedHash &table, QStringList &columns, QString &msg);

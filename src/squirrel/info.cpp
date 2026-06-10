@@ -25,7 +25,7 @@
 
 info::info() {}
 
-bool info::DisplayInfo(QString packagePath, bool debug, ObjectType object, QString subjectID, int studyNum, DatasetType dataset, PrintFormat printFormat, QString &m) {
+bool info::DisplayInfo(QString packagePath, const infoQuery &query, QString &m) {
 
     /* check if the infile exists */
     QFile infile(packagePath);
@@ -34,7 +34,7 @@ bool info::DisplayInfo(QString packagePath, bool debug, ObjectType object, QStri
         return false;
     }
     else {
-        squirrel *sqrl = new squirrel(debug, true);
+        squirrel *sqrl = new squirrel(query.debug, true);
         sqrl->quiet = true;
         sqrl->SetPackagePath(packagePath);
         sqrl->SetFileMode(FileMode::ExistingPackage);
@@ -42,77 +42,77 @@ bool info::DisplayInfo(QString packagePath, bool debug, ObjectType object, QStri
         sqrl->Read();
         if (sqrl->IsValid()) {
             sqrl->Debug("Reading package...", __FUNCTION__);
-            if (object == Package) {
+            if (query.object == Package) {
                 sqrl->PrintPackage();
             }
-            else if (object == Subject) {
-                sqrl->PrintSubjects(dataset, printFormat);
+            else if (query.object == Subject) {
+                sqrl->PrintSubjects(query.dataset, query.printFormat);
             }
-            else if (object == Study) {
+            else if (query.object == Study) {
                 /* if subjectID is blank, print all studies */
-                if (subjectID == "") {
-                    sqrl->PrintStudies(dataset, printFormat, -1);
+                if (query.subjectID == "") {
+                    sqrl->PrintStudies(query.dataset, query.printFormat, -1);
                 }
                 else {
                     /* just print the studies for a specified subect */
-                    qint64 subjectRowID = sqrl->FindSubject(subjectID);
+                    qint64 subjectRowID = sqrl->FindSubject(query.subjectID);
                     if (subjectRowID < 0)
-                        utils::Print(QString("Subject [%1] was not found in this package").arg(subjectID));
+                        utils::Print(QString("Subject [%1] was not found in this package").arg(query.subjectID));
                     else
-                        sqrl->PrintStudies(dataset, printFormat, subjectRowID);
+                        sqrl->PrintStudies(query.dataset, query.printFormat, subjectRowID);
                 }
             }
-            else if (object == Series) {
-                if ((subjectID == "") && (studyNum < 1)) {
+            else if (query.object == Series) {
+                if ((query.subjectID == "") && (query.studyNum < 1)) {
                     /* print all series */
-                    sqrl->PrintSeries(dataset, printFormat, -1);
+                    sqrl->PrintSeries(query.dataset, query.printFormat, -1);
                 }
                 else {
-                    qint64 subjectRowID = sqrl->FindSubject(subjectID);
+                    qint64 subjectRowID = sqrl->FindSubject(query.subjectID);
                     if (subjectRowID < 0)
-                        utils::Print(QString("Subject [%1] was not found in this package").arg(subjectID));
+                        utils::Print(QString("Subject [%1] was not found in this package").arg(query.subjectID));
                     else {
-                        qint64 studyRowID = sqrl->FindStudy(subjectID, studyNum);
+                        qint64 studyRowID = sqrl->FindStudy(query.subjectID, query.studyNum);
                         if (studyRowID < 0)
-                            utils::Print(QString("Study not found. Searched for subject [%1] study [%2]").arg(subjectID).arg(studyNum));
+                            utils::Print(QString("Study not found. Searched for subject [%1] study [%2]").arg(query.subjectID).arg(query.studyNum));
                         else
-                            sqrl->PrintSeries(dataset, printFormat, studyRowID);
+                            sqrl->PrintSeries(query.dataset, query.printFormat, studyRowID);
                     }
                 }
             }
-            else if (object == Observation) {
-                if (subjectID == "") {
-                    sqrl->PrintObservations(dataset, printFormat, -1);
+            else if (query.object == Observation) {
+                if (query.subjectID == "") {
+                    sqrl->PrintObservations(query.dataset, query.printFormat, -1);
                 }
                 else {
-                    qint64 subjectRowID = sqrl->FindSubject(subjectID);
+                    qint64 subjectRowID = sqrl->FindSubject(query.subjectID);
                     if (subjectRowID < 0)
-                        utils::Print(QString("Subject [%1] was not found in this package").arg(subjectID));
+                        utils::Print(QString("Subject [%1] was not found in this package").arg(query.subjectID));
                     else
-                        sqrl->PrintObservations(dataset, printFormat, subjectRowID);
+                        sqrl->PrintObservations(query.dataset, query.printFormat, subjectRowID);
                 }
             }
-            else if (object == Intervention) {
-                qint64 subjectRowID = sqrl->FindSubject(subjectID);
+            else if (query.object == Intervention) {
+                qint64 subjectRowID = sqrl->FindSubject(query.subjectID);
                 if (subjectRowID < 0)
-                    utils::Print(QString("Subject [%1] was not found in this package").arg(subjectID));
+                    utils::Print(QString("Subject [%1] was not found in this package").arg(query.subjectID));
                 else
-                    sqrl->PrintInterventions(dataset, printFormat, subjectRowID);
+                    sqrl->PrintInterventions(query.dataset, query.printFormat, subjectRowID);
             }
-            else if (object == Experiment) {
-                sqrl->PrintExperiments(printFormat);
+            else if (query.object == Experiment) {
+                sqrl->PrintExperiments(query.printFormat);
             }
-            else if (object == Analysis) {
-                sqrl->PrintAnalyses(printFormat);
+            else if (query.object == Analysis) {
+                sqrl->PrintAnalyses(query.dataset, query.printFormat);
             }
-            else if (object == Pipeline) {
-                sqrl->PrintPipelines(printFormat);
+            else if (query.object == Pipeline) {
+                sqrl->PrintPipelines(query.printFormat);
             }
-            else if (object == GroupAnalysis) {
-                sqrl->PrintGroupAnalyses(printFormat);
+            else if (query.object == GroupAnalysis) {
+                sqrl->PrintGroupAnalyses(query.printFormat);
             }
-            else if (object == DataDictionary) {
-                sqrl->PrintDataDictionary(printFormat);
+            else if (query.object == DataDictionary) {
+                sqrl->PrintDataDictionary(query.printFormat);
             }
             else {
                 sqrl->PrintPackage();

@@ -233,7 +233,7 @@ QJsonObject analysis::GetJSONObject() {
  * @brief Get a squirrel analysis object
  * @return squirrelAnalysis object
  */
-squirrelAnalysis analysis::GetSquirrelObject() {
+squirrelAnalysis analysis::GetSquirrelObject(QString databaseUUID) {
     squirrelAnalysis s(databaseUUID);
 
     s.DateClusterEnd = clusterEndDate;

@@ -124,6 +124,10 @@ squirrel::~squirrel()
 /* ---------------------------------------------------------- */
 /* --------- Get7zipLibPath --------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Locate the 7-zip shared library on disk and store its path
+ * @return true if the library was found, false otherwise
+ */
 bool squirrel::Get7zipLibPath() {
 #ifdef Q_OS_WINDOWS
     if (QFile::exists("C:/Program Files/7-Zip/7z.dll")) {
@@ -379,7 +383,7 @@ bool squirrel::Read() {
     QSqlQuery qSeriesInsert(dbconn);
     qSeriesInsert.prepare("insert or ignore into Series (StudyRowID, SeriesNumber, Datetime, SeriesUID, Description, Protocol, BidsEntity, BidsSuffix, BidsTask, BidsRun, BidsPhaseEncodingDirection, Run, ExperimentRowID, Size, Files, FileCount, BehavioralSize, BehavioralFileCount, SequenceNumber, VirtualPath) values (:StudyRowID, :SeriesNumber, :Datetime, :SeriesUID, :Description, :Protocol, :BidsEntity, :bidssuffix, :BidsTask, :BidsRun, :BidsPhaseEncodingDirection, :Run, :ExperimentRowID, :Size, :Files, :FileCount, :BehavioralSize, :BehavioralFileCount, :SequenceNumber, :VirtualPath)");
     QSqlQuery qObservationInsert(dbconn);
-    qObservationInsert.prepare("insert into Observation (SubjectRowID, ObservationName, DateStart, DateEnd, InstrumentName, Rater, Notes, Value, Duration, DateRecordCreate, DateRecordEntry, DateRecordModify, Description) values (:SubjectRowID, :ObservationName, :DateStart, :DateEnd, :InstrumentName, :Rater, :Notes, :Value, :Duration, :DateRecordCreate, :DateRecordEntry, :DateRecordModify, :Description)");
+    qObservationInsert.prepare("insert into Observation (SubjectRowID, ObservationName, ObservationType, DateStart, DateEnd, InstrumentName, Rater, Notes, Value, Duration, DateRecordCreate, DateRecordEntry, DateRecordModify, Description) values (:SubjectRowID, :ObservationName, :ObservationType, :DateStart, :DateEnd, :InstrumentName, :Rater, :Notes, :Value, :Duration, :DateRecordCreate, :DateRecordEntry, :DateRecordModify, :Description)");
     QSqlQuery qInterventionInsert(dbconn);
     qInterventionInsert.prepare("insert into Intervention (SubjectRowID, InterventionName, DateStart, DateEnd, DateRecordCreate, DateRecordEntry, DateRecordModify, DoseString, DoseAmount, DoseFrequency, AdministrationRoute, InterventionClass, DoseKey, DoseUnit, FrequencyModifier, FrequencyValue, FrequencyUnit, Description, Rater, Notes) values (:SubjectRowID, :InterventionName, :DateStart, :DateEnd, :DateRecordCreate, :DateRecordEntry, :DateRecordModify, :DoseString, :DoseAmount, :DoseFrequency, :AdministrationRoute, :InterventionClass, :DoseKey, :DoseUnit, :FrequencyModifier, :FrequencyValue, :FrequencyUnit, :Description, :Rater, :Notes)");
 
@@ -499,8 +503,10 @@ bool squirrel::Read() {
             for (const auto &d : jsonAnalyses) {
                 QJsonObject jsonAnalysis = d.toObject();
                 squirrelAnalysis sqrlAnalysis(databaseUUID);
+                sqrlAnalysis.AnalysisName = jsonAnalysis["AnalysisName"].toString();
                 sqrlAnalysis.DateClusterEnd = utils::StringToDatetime(jsonAnalysis["DateClusterEnd"].toString());
                 sqrlAnalysis.DateClusterStart = utils::StringToDatetime(jsonAnalysis["DateClusterStart"].toString());
+                sqrlAnalysis.DateEnd = utils::StringToDatetime(jsonAnalysis["DateEnd"].toString());
                 sqrlAnalysis.DateStart = utils::StringToDatetime(jsonAnalysis["DateStart"].toString());
                 sqrlAnalysis.Hostname = jsonAnalysis["Hostname"].toString();
                 sqrlAnalysis.StatusMessage = jsonAnalysis["StatusMessage"].toString();
@@ -522,42 +528,24 @@ bool squirrel::Read() {
         /* read all observations */
         QJsonArray jsonObservations = jsonSubject["observations"].toArray();
         Debug(QString("Reading [%1] observations").arg(jsonObservations.size()), __FUNCTION__);
-        QElapsedTimer timerA;
-        timerA.start();
         for (const auto &e : jsonObservations) {
-            //utils::Print(QString("Checkpoint A - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
             QJsonObject jsonObservation = e.toObject();
-            //utils::Print(QString("Checkpoint B - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
             squirrelObservation sqrlObservation(databaseUUID);
-            //utils::Print(QString("Checkpoint C - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
             sqrlObservation.DateEnd = utils::StringToDatetime(jsonObservation["DateEnd"].toString());
-            //utils::Print(QString("Checkpoint D - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
             sqrlObservation.DateStart = utils::StringToDatetime(jsonObservation["DateStart"].toString());
-            //utils::Print(QString("Checkpoint E - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
             sqrlObservation.DateRecordCreate = utils::StringToDatetime(jsonObservation["DateRecordCreate"].toString());
-            //utils::Print(QString("Checkpoint F - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
             sqrlObservation.DateRecordEntry = utils::StringToDatetime(jsonObservation["DateRecordEntry"].toString());
-            //utils::Print(QString("Checkpoint G - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
             sqrlObservation.DateRecordModify = utils::StringToDatetime(jsonObservation["DateRecordModify"].toString());
-            //utils::Print(QString("Checkpoint H - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
             sqrlObservation.Description = jsonObservation["Description"].toString();
-            //utils::Print(QString("Checkpoint I - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
             sqrlObservation.Duration = jsonObservation["Duration"].toDouble();
-            //utils::Print(QString("Checkpoint J - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
             sqrlObservation.InstrumentName = jsonObservation["InstrumentName"].toString();
-            //utils::Print(QString("Checkpoint K - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
             sqrlObservation.ObservationName = jsonObservation["ObservationName"].toString();
-            //utils::Print(QString("Checkpoint L - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
+            sqrlObservation.ObservationType = jsonObservation["ObservationType"].toString();
             sqrlObservation.Notes = jsonObservation["Notes"].toString();
-            //utils::Print(QString("Checkpoint M - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
             sqrlObservation.Rater = jsonObservation["Rater"].toString();
-            //utils::Print(QString("Checkpoint N - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
             sqrlObservation.Value = jsonObservation["Value"].toString();
-            //utils::Print(QString("Checkpoint O - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
             sqrlObservation.subjectRowID = subjectRowID;
-            //utils::Print(QString("Checkpoint P - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
             sqrlObservation.Store(qObservationInsert);
-            //utils::Print(QString("Checkpoint Q - %1").arg(static_cast<double>(timerA.nsecsElapsed())/100000000.0, 0, 'f', 6));
         }
 
         /* read all Interventions */
@@ -859,7 +847,7 @@ bool squirrel::Write() {
     pkgInfo["Description"] = Description;
     pkgInfo["License"] = License;
     pkgInfo["Notes"] = Notes;
-    pkgInfo["PackageFormat"] = DataFormat;
+    pkgInfo["PackageFormat"] = PackageFormat;
     pkgInfo["PackageName"] = PackageName;
     pkgInfo["Readme"] = Readme;
     pkgInfo["SeriesDirectoryFormat"] = SeriesDirFormat;
@@ -980,6 +968,7 @@ bool squirrel::Write() {
         if (!utils::WriteTextFile(jsonFilePath, j))
             Log("Error writing [" + jsonFilePath + "]");
 
+        lastupdate = 0;
         QString m;
         Log("Writing package...");
         if (CompressDirectoryToArchive(workingDir, GetPackagePath(), m)) {
@@ -1002,7 +991,7 @@ bool squirrel::Write() {
         for (int i=0; i<stagedFiles.size(); i++) {
             QStringPair file = stagedFiles.at(i);
             QString source = file.first;
-            QString dest = workingDir + "/" + file.first;
+            QString dest = workingDir + "/" + file.second;
             diskPaths.append(source);
             archivePaths.append(dest);
         }
@@ -1050,7 +1039,7 @@ bool squirrel::WriteUpdate() {
     pkgInfo["Description"] = Description;
     pkgInfo["License"] = License;
     pkgInfo["Notes"] = Notes;
-    pkgInfo["PackageFormat"] = DataFormat;
+    pkgInfo["PackageFormat"] = PackageFormat;
     pkgInfo["PackageName"] = PackageName;
     pkgInfo["Readme"] = Readme;
     pkgInfo["SeriesDirectoryFormat"] = SeriesDirFormat;
@@ -1149,6 +1138,12 @@ bool squirrel::WriteUpdate() {
 /* ------------------------------------------------------------ */
 /* ----- Extract ---------------------------------------------- */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Extract the entire package archive to a directory on disk
+ * @param destinationDir directory to extract the package into
+ * @param m output message describing success or failure
+ * @return true if successful
+ */
 bool squirrel::Extract(QString destinationDir, QString &m) {
     m = "Extracting [" + packagePath + "] to [" + destinationDir + "]";
     if (ExtractArchiveToDirectory(packagePath, destinationDir, m))
@@ -1177,6 +1172,10 @@ bool squirrel::Validate() {
 /* ------------------------------------------------------------ */
 /* ----- GetLogBuffer ----------------------------------------- */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Return and clear the accumulated log buffer since the last call
+ * @return log messages accumulated since the last call to GetLogBuffer()
+ */
 QString squirrel::GetLogBuffer() {
 
     QString ret = logBuffer;
@@ -1612,6 +1611,11 @@ void squirrel::Log(QString s) {
 /* ------------------------------------------------------------ */
 /* ----- Debug ------------------------------------------------ */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Append a debug message to the log (only when debug mode is enabled)
+ * @param s the message to log
+ * @param func the calling function name, typically passed via __FUNCTION__
+ */
 void squirrel::Debug(QString s, QString func) {
     if (debug) {
         if (s.trimmed() != "") {
@@ -1676,7 +1680,10 @@ QString squirrel::PrintSubjects(DatasetType dataType, PrintFormat printFormat) {
         keys.removeDuplicates();
         keys.sort();
 
-        str = utils::PrintData(printFormat, keys, rows);
+        if (printFormat == List)
+            str = utils::PrintTable(keys, rows, {"Subject.ID"});
+        else
+            str = utils::PrintData(printFormat, keys, rows);
     }
     else
         str += utils::Print("No subjects in this package");
@@ -1722,7 +1729,10 @@ QString squirrel::PrintStudies(DatasetType dataType, PrintFormat printFormat, qi
         keys.removeDuplicates();
         keys.sort();
 
-        str = utils::PrintData(printFormat, keys, rows);
+        if (printFormat == List)
+            str = utils::PrintTable(keys, rows, {"Subject.ID", "Study.Number"});
+        else
+            str = utils::PrintData(printFormat, keys, rows);
     }
     else
         str = utils::Print("No studies found");
@@ -1775,10 +1785,13 @@ QString squirrel::PrintSeries(DatasetType dataType, PrintFormat printFormat, qin
         keys.removeDuplicates();
         keys.sort();
 
-        str = utils::PrintData(printFormat, keys, rows);
+        if (printFormat == List)
+            str = utils::PrintTable(keys, rows, {"Subject.ID", "Study.Number", "Series.Number"});
+        else
+            str = utils::PrintData(printFormat, keys, rows);
     }
     else
-        str = utils::Print("No studies found");
+        str = utils::Print("No series found");
 
     return str;
 }
@@ -1821,10 +1834,13 @@ QString squirrel::PrintObservations(DatasetType dataType, PrintFormat printForma
         keys.removeDuplicates();
         keys.sort();
 
-        str = utils::PrintData(printFormat, keys, rows);
+        if (printFormat == List)
+            str = utils::PrintTable(keys, rows, {"Subject.ID"});
+        else
+            str = utils::PrintData(printFormat, keys, rows);
     }
     else
-        str += utils::Print("No subjects in this package");
+        str += utils::Print("No observations found");
 
     return str;
 }
@@ -1867,10 +1883,13 @@ QString squirrel::PrintInterventions(DatasetType dataType, PrintFormat printForm
         keys.removeDuplicates();
         keys.sort();
 
-        str = utils::PrintData(printFormat, keys, rows);
+        if (printFormat == List)
+            str = utils::PrintTable(keys, rows, {"Subject.ID"});
+        else
+            str = utils::PrintData(printFormat, keys, rows);
     }
     else
-        str += utils::Print("No subjects in this package");
+        str += utils::Print("No interventions found");
 
     return str;
 
@@ -2011,21 +2030,38 @@ QString squirrel::PrintDataDictionary(PrintFormat printFormat) {
  * @param subjectID the subject ID to print studies for
  * @param details true to print details, false to print list of study numbers
  */
-QString squirrel::PrintAnalyses(qint64 studyRowID, PrintFormat printFormat) {
+QString squirrel::PrintAnalyses(DatasetType dataType, PrintFormat printFormat, qint64 studyRowID) {
     QString str;
 
-    QList <squirrelAnalysis> analyses = GetAnalysisList(studyRowID);
-    QStringList analysisDates;
-    foreach (squirrelAnalysis a, analyses) {
-        if (a.Get()) {
-            if (printFormat == PrintFormat::Details)
-                str += a.PrintAnalysis();
-            else if (printFormat == PrintFormat::List)
-                analysisDates.append(QString("%1").arg(a.DateStart.toString()));
+    QList<squirrelAnalysis> analyses = GetAnalysisList(studyRowID);
+    int count = analyses.size();
+    if (count > 0) {
+
+        /* get the data */
+        QList<QStringHash> rows;
+        QStringList keys;
+        foreach (squirrelAnalysis a, analyses) {
+            if (a.Get()) {
+                QStringHash row = a.GetData(dataType);
+
+                /* add parent subject and study identifiers */
+                row["Subject.ID"] = a.parentSubjectID;
+                row["Study.Number"] = QString("%1").arg(a.parentStudyNumber);
+
+                rows.append(row);
+                keys.append(row.keys());
+            }
         }
+        keys.removeDuplicates();
+        keys.sort();
+
+        if (printFormat == List)
+            str = utils::PrintTable(keys, rows, {"Subject.ID", "Study.Number", "Analysis.PipelineName"});
+        else
+            str = utils::PrintData(printFormat, keys, rows);
     }
-    if (printFormat == PrintFormat::List)
-        str += utils::Print("Analyses: " + analysisDates.join(" "));
+    else
+        str = utils::Print("No analyses found");
 
     return str;
 }
@@ -2181,8 +2217,12 @@ QList<squirrelSeries> squirrel::GetSeriesList(qint64 studyRowID) {
 QList<squirrelAnalysis> squirrel::GetAnalysisList(qint64 studyRowID) {
     QSqlQuery q(QSqlDatabase::database(databaseUUID));
     QList<squirrelAnalysis> list;
-    q.prepare("select a.*, b.PipelineName, c.StudyNumber as ParentStudyNumber, c.SequenceNumber as ParentStudySeqNum, c.SubjectRowID, d.ID as ParentSubjectID, d.SequenceNumber as ParentSubjectSeqNum from Analysis a left join Pipeline b on a.PipelineRowID = b.PipelineRowID left join Study c on a.StudyRowID = c.StudyRowID left join Subject d on c.SubjectRowID = d.SubjectRowID where a.StudyRowID = :id");
-    q.bindValue(":id", studyRowID);
+    if (studyRowID < 0) {
+        q.prepare("select a.*, b.PipelineName, c.StudyNumber as ParentStudyNumber, c.SequenceNumber as ParentStudySeqNum, c.SubjectRowID, d.ID as ParentSubjectID, d.SequenceNumber as ParentSubjectSeqNum from Analysis a left join Pipeline b on a.PipelineRowID = b.PipelineRowID left join Study c on a.StudyRowID = c.StudyRowID left join Subject d on c.SubjectRowID = d.SubjectRowID");
+    } else {
+        q.prepare("select a.*, b.PipelineName, c.StudyNumber as ParentStudyNumber, c.SequenceNumber as ParentStudySeqNum, c.SubjectRowID, d.ID as ParentSubjectID, d.SequenceNumber as ParentSubjectSeqNum from Analysis a left join Pipeline b on a.PipelineRowID = b.PipelineRowID left join Study c on a.StudyRowID = c.StudyRowID left join Subject d on c.SubjectRowID = d.SubjectRowID where a.StudyRowID = :id");
+        q.bindValue(":id", studyRowID);
+    }
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     while (q.next()) {
         squirrelAnalysis a(databaseUUID);
@@ -2697,6 +2737,13 @@ qint64 squirrel::FindDataDictionary(QString dataDictionaryName) {
 /* ------------------------------------------------------------ */
 /* ----- FindIntervention ------------------------------------- */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Find an intervention by subject ID, name, and start date
+ * @param subjectID the subject's ID string
+ * @param interventionName the intervention name
+ * @param dateStart the start datetime of the intervention
+ * @return the InterventionRowID if found, or -1 if not found
+ */
 qint64 squirrel::FindIntervention(QString subjectID, QString interventionName, QDateTime dateStart) {
     qint64 rowid(-1);
     QSqlQuery q(QSqlDatabase::database(databaseUUID));
@@ -2715,6 +2762,13 @@ qint64 squirrel::FindIntervention(QString subjectID, QString interventionName, Q
 /* ------------------------------------------------------------ */
 /* ----- FindObservation -------------------------------------- */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Find an observation by subject ID, name, and start date
+ * @param subjectID the subject's ID string
+ * @param observationName the observation name
+ * @param dateStart the start datetime of the observation
+ * @return the ObservationRowID if found, or -1 if not found
+ */
 qint64 squirrel::FindObservation(QString subjectID, QString observationName, QDateTime dateStart) {
     qint64 rowid(-1);
     QSqlQuery q(QSqlDatabase::database(databaseUUID));
@@ -2960,7 +3014,7 @@ bool squirrel::RemoveObject(ObjectType object, qint64 objectRowID) {
 
         /* remove files from the archive */
         if (fileMode == FileMode::ExistingPackage) {
-            squirrelSubject sqrlStudy(databaseUUID);
+            squirrelStudy sqrlStudy(databaseUUID);
             sqrlStudy.SetObjectID(objectRowID);
             sqrlStudy.Get();
             QString studyArchivePath = sqrlStudy.VirtualPath();
@@ -3028,26 +3082,6 @@ bool squirrel::RemoveObject(ObjectType object, qint64 objectRowID) {
         q.prepare("delete from Observation where ObservationRowID = :observationRowID");
         q.bindValue(":observationRowID", objectRowID);
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-        return true;
-    }
-    else if (object == Analysis) {
-        /* delete from database */
-        QSqlQuery q(QSqlDatabase::database(databaseUUID));
-        q.prepare("delete from Analysis where AnalysisRowID = :analysisRowID");
-        q.bindValue(":analysisRowID", objectRowID);
-        utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-
-        /* remove files from archive */
-        if (fileMode == FileMode::ExistingPackage) {
-            squirrelAnalysis sqrlAnalysis(databaseUUID);
-            sqrlAnalysis.SetObjectID(objectRowID);
-            sqrlAnalysis.Get();
-            QString analysisArchivePath = sqrlAnalysis.VirtualPath();
-            QString m;
-            if (!RemoveDirectoryFromArchive(analysisArchivePath, packagePath, m))
-                return false;
-        }
-
         return true;
     }
     else if (object == Experiment) {
@@ -3485,6 +3519,14 @@ bool squirrel::ExtractArchiveToDirectory(QString archivePath, QString destinatio
 /* ------------------------------------------------------------ */
 /* ----- GetArchiveFileListing -------------------------------- */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Get a list of files within an archive that are under a given sub-directory
+ * @param archivePath path to the archive file (.zip or .7z)
+ * @param subDir path prefix to filter archive entries
+ * @param files output list of matching archive entry paths
+ * @param m output message on failure
+ * @return true if successful
+ */
 bool squirrel::GetArchiveFileListing(QString archivePath, QString subDir, QStringList &files, QString &m) {
     try {
         using namespace bit7z;
@@ -3677,6 +3719,14 @@ bool squirrel::UpdateJsonHeader(QString json) {
 /* ------------------------------------------------------------ */
 /* ----- ExtractArchiveFilesToDirectory ----------------------- */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Extract files matching a pattern from an archive to a directory
+ * @param archivePath path to the archive file (.zip or .7z)
+ * @param filePattern glob pattern to match archive entries (e.g. "data/S1234/1/2/*")
+ * @param outDir directory to extract matching files into
+ * @param m output message describing success or failure
+ * @return true if successful
+ */
 bool squirrel::ExtractArchiveFilesToDirectory(QString archivePath, QString filePattern, QString outDir, QString &m) {
     utils::Print(QString("Attempting to extract files [%1] from archive [%2] to path [%3]").arg(filePattern).arg(archivePath).arg(outDir));
     try {

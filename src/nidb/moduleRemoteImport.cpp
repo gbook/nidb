@@ -295,6 +295,7 @@ ImportMapping::ImportMapping(nidb *n, int projectRowID) : n(n) {
         }
         m.instrumentRowID     = q.value("nidb_instrument").toInt();
         m.instrumentItemRowID = q.value("nidb_variable").toInt();
+        m.flag.importMeta     = q.value("flag_import_meta").toBool();
         mappings.append(m);
     }
 }
@@ -562,7 +563,6 @@ bool moduleRemoteImport::ImportAvicenna(int remoteImportBatchRowID, QString remo
         n->Log("Downloading Avicenna export file");
         if (DownloadAvicennaExport(remoteProjectID, remoteUsername, remoteToken, url, path)) {
             n->Log("Download succeeded");
-            SetBatchStatus(remoteImportBatchRowID, "complete");
         }
         else {
             n->Log("Download failed");
@@ -666,6 +666,7 @@ QString moduleRemoteImport::GetAvicennaExportStatus(int remoteProjectID, int rem
  * @return true if the file exists after the download attempt, false otherwise.
  */
 bool moduleRemoteImport::DownloadAvicennaExport(int remoteProjectID, QString remoteUsername, QString remoteToken, QString url, QString path) {
+    Q_UNUSED(remoteProjectID)
 
     QString cmd = QString("curl '%1' -H 'Authorization: ApiKey %2:%3' --output %4").arg(url).arg(remoteUsername).arg(remoteToken).arg(path);
     QString result = SystemCommand(cmd, false);
@@ -719,6 +720,7 @@ bool moduleRemoteImport::ImportRedCap(int remoteImportBatchRowID, QString remote
     Q_UNUSED(remoteImportBatchRowID)
     Q_UNUSED(remoteURL)
     Q_UNUSED(remoteToken)
+    Q_UNUSED(mapping)
 
     return false;
 }
@@ -739,6 +741,7 @@ bool moduleRemoteImport::ImportURL(int remoteImportBatchRowID, QString remoteURL
     Q_UNUSED(remoteImportBatchRowID)
     Q_UNUSED(remoteURL)
     Q_UNUSED(remoteToken)
+    Q_UNUSED(mapping)
 
     return false;
 }
@@ -864,7 +867,7 @@ qint64 moduleRemoteImport::ParseInsertAvicenna(qint64 remoteImportBatchRowID, in
             QDateTime startTime = parseAvicennaDT(table[i]["prompt time"]);
             QDateTime endTime   = parseAvicennaDT(table[i]["record time"]);
 
-            //qDebug() << startTime << " " << endTime;
+            //n->Log(QString("  startTime [%1]  endTime [%2]").arg(startTime.toString()).arg(endTime.toString()));
 
             /* get the subjectRowID - this import function (for now) requires a subject already exist and be enrolled in this project */
             int subjectRowID(0);
@@ -883,84 +886,113 @@ qint64 moduleRemoteImport::ParseInsertAvicenna(qint64 remoteImportBatchRowID, in
                 continue;
             }
 
-            m = n->Log(QString("Found remote survey for subject [%1]  start time [%2]  end time [%3]").arg(avicennaID).arg(startTime.toString()).arg(endTime.toString()));
+            //m = n->Log(QString("Found remote survey for subject [%1]  start time [%2]  end time [%3]").arg(avicennaID).arg(startTime.toString()).arg(endTime.toString()));
 
             RemoteImportLog(remoteImportBatchRowID, ImportSubject, m, Success);
 
             /* ---- import all columns ---- */
             if (importUnmapped) {
-                qDebug() << "Importing " << columns.size() << " unmapped columns";
+                n->Log(QString("Importing [%1] unmapped columns").arg(columns.size()));
                 /* iterate over all columns, and check if they are mapped. If not mapped, then add the observation without an instrument/item */
                 for (const QString &col : columns) {
                     /* skip session info columns — only process question response columns */
-                    if (!nonQuestionCols.contains(col)) {
+                    if (nonQuestionCols.contains(col)) {
+                        //n->Log(QString("Skipping non-question column [%1]").arg(col));
+                        continue;
+                    }
 
-                        qDebug() << "Importing question column " << col;
+                    /* skip the metadata columns */
+                    if (col.contains(" metadata"))
+                        continue;
 
-                        //int surveyID;
-                        int question(0);
-                        QString variable = col;
-                        int instrumentRowID;
-                        int instrumentItemRowID;
-                        bool isMetadata(false);
+                    //n->Log(QString("Importing question column [%1]").arg(col));
 
-                        /* check if the column contains brackets, if yes then it's a question number */
-                        if (col.startsWith("[")) {
-                            /* extract the question # */
-                            QString qStr = extractBracketContent(col);
-                            QStringList parts = qStr.split("_");
-                            if (parts.size() > 0)
-                                question = parts[0].toInt();
-                            variable = extractAfterBracket(col);
-                        }
-                        if (col.contains(" Metadata"))
-                            isMetadata = true;
+                    /* get column value */
+                    QString value = table[i][col].trimmed();
+                    if (value == "")
+                        continue;
 
-                        /* get column value */
-                        QString value = table[i][col];
+                    //int surveyID;
+                    int question(0);
+                    QString variable = col;
+                    int instrumentRowID;
+                    int instrumentItemRowID;
+                    //bool hasMetadata(false);
 
-                        /* check if this column is mapped */
-                        bool flagImportMeta;
-                        if (mapping.LookupAvicennaMapping(remoteSurveyID, question, variable, instrumentRowID, instrumentItemRowID, flagImportMeta)) {
-                            /* insert the correctly mapped observation row */
-                            observation obs;
-                            obs.n = n;
-                            obs.dateObservationStart = startTime;
-                            obs.subjectRowID = subjectRowID;
-                            obs.enrollmentRowID = enrollmentRowID;
-                            obs.projectRowID = projectRowID;
-                            obs.observationName = col;
-                            obs.observationValue = value;
-                            obs.instrumentItemRowID = instrumentItemRowID;
+                    /* check if the column contains brackets, if yes then it's a question number */
+                    if (col.startsWith("[")) {
+                        /* extract the question # */
+                        QString qStr = extractBracketContent(col);
+                        QStringList parts = qStr.split("_");
+                        if (parts.size() > 0)
+                            question = parts[0].toInt();
+                        variable = extractAfterBracket(col);
+                    }
 
-                            /* insert the metadata if necessary */
-                            if (flagImportMeta && isMetadata) {
-                                QJsonDocument doc = QJsonDocument::fromJson(value.toUtf8());
-                                QMap<QString, QString> meta;
-                                flattenJSON(doc.object(), meta);
-                                obs.metadata = meta;
-                            }
+                    /* create the observation */
+                    observation obs;
+                    obs.n = n;
+                    obs.dateObservationStart = startTime;
+                    obs.dateObservationEnd = endTime;
+                    obs.subjectRowID = subjectRowID;
+                    obs.enrollmentRowID = enrollmentRowID;
+                    obs.projectRowID = projectRowID;
+                    obs.remoteBatchRowID = remoteImportBatchRowID;
+                    obs.observationName = col;
+                    obs.observationValue = value;
 
-                            /* add the observation to the database */
-                            if (obs.AddToDatabase()) {
-                                numRows++;
+                    /* check if this column is mapped */
+                    bool flagImportMeta;
+                    if (mapping.LookupAvicennaMapping(remoteSurveyID, question, variable, instrumentRowID, instrumentItemRowID, flagImportMeta)) {
+                        /* insert the correctly mapped observation row */
+                        obs.instrumentItemRowID = instrumentItemRowID;
+
+                        flagImportMeta = true;
+                        if (flagImportMeta) {
+                            /* insert the metadata if it exists */
+                            QString metadataCol;
+                            QString metadataStr;
+                            if (col.startsWith("[")) {
+                                /* extract the question # */
+                                QString qStr = extractBracketContent(col);
+                                QStringList parts = qStr.split("_");
+                                if (parts.size() > 0)
+                                    question = parts[0].toInt();
+                                variable = extractAfterBracket(col);
+                                metadataCol = QString("[%1 metadata] %2").arg(qStr).arg(variable);
                             }
                             else {
-                                qDebug() << "Error inserting observation [" << obs.msg << "]";
+                                metadataCol = col + " metadata";
+                            }
+
+                            if (columns.contains(metadataCol)) {
+                                metadataStr = table[i][metadataCol].trimmed();
+                                n->Log(QString("metadataCol [%1] exists and value is [%2]").arg(metadataCol).arg(metadataStr));
+                                if (metadataStr != "") {
+                                    QJsonDocument doc = QJsonDocument::fromJson(metadataStr.toUtf8());
+                                    QMap<QString, QString> meta;
+                                    flattenJSON(doc.object(), meta);
+                                    obs.metadata = meta;
+                                }
+                            }
+                            else {
+                                n->Log(QString("metadataCol [%1] does not exist").arg(metadataCol));
                             }
                         }
-                        else {
-                            /* insert a regular observation row */
-                        }
+                    }
+
+                    /* add the observation to the database */
+                    if (obs.AddToDatabase()) {
+                        numRows++;
                     }
                     else {
-                        qDebug() << "Skipping non-question column " << col;
+                        n->Log(QString("Error inserting observation [%1]").arg(obs.msg));
                     }
                 }
             }
             /* ---- import ONLY the mapped columns ---- */
             else {
-                qDebug() << "Importing ONLY mapped columns";
+                n->Log("Importing ONLY mapped columns");
                 /* iterate through the mapping */
             }
         }
@@ -1003,7 +1035,8 @@ void moduleRemoteImport::SetBatchStatus(qint64 batchRowID, QString status, int r
         n->Log(n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__));
     }
     else if (status == "waiting") {
-        q.prepare("update remoteimport_batch set status = 'waiting', next_state = '' where remoteimportbatch_id = :batchid");
+        q.prepare("update remoteimport_batch set status = 'waiting', next_state = '', remote_exportid = :exportid where remoteimportbatch_id = :batchid");
+        q.bindValue(":exportid", remoteExportID);
         q.bindValue(":batchid", batchRowID);
         n->Log(n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__));
     }

@@ -1964,7 +1964,7 @@ CREATE TABLE `observations` (
   `observation_instrument` varchar(250) DEFAULT NULL,
   `observation_desc` varchar(250) DEFAULT NULL,
   `observation_rater` varchar(50) DEFAULT NULL,
-  `observation_value` varchar(245) NOT NULL,
+  `observation_value` mediumtext NOT NULL,
   `observation_startdate` datetime NOT NULL DEFAULT '0000-01-01 00:00:00',
   `observation_enddate` datetime DEFAULT NULL,
   `observation_duration` int(11) DEFAULT NULL,

@@ -37,7 +37,7 @@ public:
 	nidb *n;
 
 	void PrintAnalysisInfo();
-    squirrelAnalysis GetSquirrelObject();
+    squirrelAnalysis GetSquirrelObject(QString databaseUUID);
 
     QDateTime clusterEndDate; /*!< datetime the analysis finished running on the cluster */
     QDateTime clusterStartDate; /*!< datetime the analysis started running on the cluster */

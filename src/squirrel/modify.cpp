@@ -25,6 +25,7 @@
 #include <iostream>
 #include <vector>
 #include <iomanip>
+#include <QRandomGenerator>
 
 modify::modify() {
 }
@@ -33,42 +34,29 @@ modify::modify() {
 /* ---------------------------------------------------------------------------- */
 /* ----- DoModify ------------------------------------------------------------- */
 /* ---------------------------------------------------------------------------- */
-bool modify::DoModify(QString packagePath, QString operation, ObjectType object, QString dataPath, QString objectData, QString objectID, QString subjectID, int studyNum, int seriesNum, QString &m) {
+/**
+ * @brief Dispatch a modify operation (add, remove, update, splitbymodality, removephi, renumber) on a squirrel package
+ * @param packagePath path to the squirrel package file
+ * @param mod struct containing all operation parameters
+ * @param m output message describing success or failure
+ * @return true if successful
+ */
+bool modify::DoModify(QString packagePath, const modification &mod, QString &m) {
 
-    //ObjectType object = squirrel::ObjectTypeToEnum(objectType);
-
-    if (operation == "add") {
-        if (AddObject(packagePath, object, dataPath, objectData, objectID, subjectID, studyNum, m))
-            return true;
-        else
-            return false;
-    }
-    else if (operation == "remove") {
-        if (RemoveObject(packagePath, object, dataPath, objectData, objectID, subjectID, studyNum, m))
-            return true;
-        else
-            return false;
-    }
-    else if (operation == "update") {
-        if (UpdateObject(packagePath, object, dataPath, objectData, objectID, subjectID, studyNum, seriesNum, m))
-            return true;
-        else
-            return false;
-    }
-    else if (operation == "splitbymodality") {
-        if (SplitByModality(packagePath, dataPath, objectData, objectID, m))
-            return true;
-        else
-            return false;
-    }
-    else if (operation == "removephi") {
-        if (RemovePHI(packagePath, dataPath, m))
-            return true;
-        else
-            return false;
-    }
+    if (mod.operation == "add")
+        return AddObject(packagePath, mod, m);
+    else if (mod.operation == "remove")
+        return RemoveObject(packagePath, mod, m);
+    else if (mod.operation == "update")
+        return UpdateObject(packagePath, mod, m);
+    else if (mod.operation == "splitbymodality")
+        return SplitByModality(packagePath, mod, m);
+    else if (mod.operation == "removephi")
+        return RemovePHI(packagePath, mod, m);
+    else if (mod.operation == "renumber")
+        return RenumberSubjects(packagePath, mod, m);
     else {
-        m = "Invalid operation [" + operation + "] specified";
+        m = "Invalid operation [" + mod.operation + "] specified";
         return false;
     }
 }
@@ -77,34 +65,39 @@ bool modify::DoModify(QString packagePath, QString operation, ObjectType object,
 /* ---------------------------------------------------------------------------- */
 /* ----- AddObject ------------------------------------------------------------ */
 /* ---------------------------------------------------------------------------- */
-bool modify::AddObject(QString packagePath, ObjectType object, QString dataPath, QString objectData, QString objectID, QString subjectID, int studyNum, QString &m) {
-
-    Q_UNUSED(objectID);
+/**
+ * @brief Add a new object to an existing squirrel package
+ * @param packagePath path to the squirrel package file
+ * @param mod struct containing all operation parameters
+ * @param m output message describing success or failure
+ * @return true if successful
+ */
+bool modify::AddObject(QString packagePath, const modification &mod, QString &m) {
 
     /* check if the user should have specified a path */
-    if ((object == Series) || (object == Analysis) || (object == Experiment) || (object == Pipeline) || (object == GroupAnalysis)) {
+    if ((mod.object == Series) || (mod.object == Analysis) || (mod.object == Experiment) || (mod.object == Pipeline) || (mod.object == GroupAnalysis)) {
         /* check if that path is specified */
-        if (dataPath == "") {
+        if (mod.dataPath == "") {
             m = "No datapath specified for this object type. A datapath must be specified.";
             return false;
         }
 
         /* check if the specified path exists */
-        if (!utils::DirectoryExists(dataPath)) {
-            m = QString("Specified datapath [%1] does not exist").arg(dataPath);
+        if (!utils::DirectoryExists(mod.dataPath)) {
+            m = QString("Specified datapath [%1] does not exist").arg(mod.dataPath);
             return false;
         }
     }
 
     /* get the object data */
     QHash<QString, QString> vars;
-    QStringList metadata = objectData.split("&");
+    QStringList metadata = mod.objectData.split("&");
     foreach (QString keyvalue, metadata) {
         QStringList keyVal = keyvalue.split("=");
         if (keyVal.count() == 2)
             vars[keyVal[0]] = keyVal[1];
         else {
-            m = QString("Malformed subject metadata string [%1]. Inconsistent key/value pair count").arg(objectData);
+            m = QString("Malformed subject metadata string [%1]. Inconsistent key/value pair count").arg(mod.objectData);
             return false;
         }
     }
@@ -121,7 +114,7 @@ bool modify::AddObject(QString packagePath, ObjectType object, QString dataPath,
     }
 
     /* ----- subject ----- */
-    if (object == Subject) {
+    if (mod.object == Subject) {
         qint64 subjectRowID;
         subjectRowID = sqrl->FindSubject(vars["ID"]);
         if (subjectRowID < 0) {
@@ -149,9 +142,9 @@ bool modify::AddObject(QString packagePath, ObjectType object, QString dataPath,
         }
     }
     /* ----- study ----- */
-    else if (object == Study) {
-        qint64 subjectRowID = sqrl->FindSubject(subjectID);
-        qint64 studyRowID = sqrl->FindStudy(subjectID, vars["StudyNumber"].toInt());
+    else if (mod.object == Study) {
+        qint64 subjectRowID = sqrl->FindSubject(mod.subjectID);
+        qint64 studyRowID = sqrl->FindStudy(mod.subjectID, vars["StudyNumber"].toInt());
         if (studyRowID < 0) {
             squirrelStudy study(sqrl->GetDatabaseUUID());
             sqrl->Log(QString("Creating squirrel Subject [%1]").arg(vars["ID"]));
@@ -175,15 +168,15 @@ bool modify::AddObject(QString packagePath, ObjectType object, QString dataPath,
             sqrl->ResequenceStudies(subjectRowID);
         }
         else {
-            m = QString("Study with StudyNumber [%1] already exists for subject [%2] in package").arg(vars["StudyNumber"]).arg(subjectID);
+            m = QString("Study with StudyNumber [%1] already exists for subject [%2] in package").arg(vars["StudyNumber"]).arg(mod.subjectID);
             delete sqrl;
             return false;
         }
     }
     /* ----- series ----- */
-    else if (object == Series) {
-        qint64 studyRowID = sqrl->FindStudy(subjectID, studyNum);
-        qint64 seriesRowID = sqrl->FindSeries(subjectID, studyNum, vars["SeriesNumber"].toInt());
+    else if (mod.object == Series) {
+        qint64 studyRowID = sqrl->FindStudy(mod.subjectID, mod.studyNumber);
+        qint64 seriesRowID = sqrl->FindSeries(mod.subjectID, mod.studyNumber, vars["SeriesNumber"].toInt());
         if (seriesRowID < 0) {
             squirrelSeries series(sqrl->GetDatabaseUUID());
             sqrl->Log(QString("Creating squirrel Series [%1]").arg(vars["SeriesNumber"]));
@@ -200,21 +193,21 @@ bool modify::AddObject(QString packagePath, ObjectType object, QString dataPath,
             sqrl->ResequenceSeries(studyRowID);
         }
         else {
-            m = QString("Series with SeriesNumber [%1] already exists for study [%2] and subject [%3] in package").arg(vars["SeriesNumber"]).arg(studyNum).arg(subjectID);
+            m = QString("Series with SeriesNumber [%1] already exists for study [%2] and subject [%3] in package").arg(vars["SeriesNumber"]).arg(mod.studyNumber).arg(mod.subjectID);
             delete sqrl;
             return false;
         }
     }
     /* ----- observation ----- */
-    else if (object == Observation) {
-        qint64 subjectRowID = sqrl->FindSubject(subjectID);
+    else if (mod.object == Observation) {
+        qint64 subjectRowID = sqrl->FindSubject(mod.subjectID);
         if (subjectRowID < 0) {
-            m = QString("Subject [%1] not found in package").arg(subjectID);
+            m = QString("Subject [%1] not found in package").arg(mod.subjectID);
             delete sqrl;
             return false;
         }
         else {
-            if (dataPath == "") {
+            if (mod.dataPath == "") {
                 squirrelObservation observation(sqrl->GetDatabaseUUID());
                 sqrl->Log(QString("Creating squirrel Observation [%1]").arg(vars["ObservationName"]));
                 observation.DateEnd = QDateTime::fromString(vars["DateEnd"], "yyyy-MM-dd HH:mm:ss");
@@ -226,6 +219,7 @@ bool modify::AddObject(QString packagePath, ObjectType object, QString dataPath,
                 observation.Duration = vars["Duration"].toDouble();
                 observation.InstrumentName = vars["InstrumentName"];
                 observation.ObservationName = vars["ObservationName"];
+                observation.ObservationType = vars["ObservationType"];
                 observation.Notes = vars["Notes"];
                 observation.Rater = vars["Rater"];
                 observation.Value = vars["Value"];
@@ -234,23 +228,23 @@ bool modify::AddObject(QString packagePath, ObjectType object, QString dataPath,
             }
             else {
                 /* load the observations from a CSV or TSV file */
-                if (utils::FileExists(dataPath)) {
+                if (utils::FileExists(mod.dataPath)) {
 
                     utils::indexedHash csv;
                     QStringList cols;
                     QString m;
 
                     /* if csv, read csv */
-                    if (dataPath.endsWith(".csv", Qt::CaseInsensitive)) {
-                        if (utils::ParseCSV(dataPath, csv, cols, m)) {
+                    if (mod.dataPath.endsWith(".csv", Qt::CaseInsensitive)) {
+                        if (utils::ParseCSV(mod.dataPath, csv, cols, m)) {
                         }
                     }
-                    else if (dataPath.endsWith(".tsv", Qt::CaseInsensitive)) {
-                        if (utils::ParseTSV(dataPath, csv, cols, m)) {
+                    else if (mod.dataPath.endsWith(".tsv", Qt::CaseInsensitive)) {
+                        if (utils::ParseTSV(mod.dataPath, csv, cols, m)) {
                             //sqrl->Log(QString("Successfuly read [%1] into [%2] rows").arg(f).arg(tsv.size()));
                         }
                         else {
-                            m = QString("File containing observations [%1] not found").arg(dataPath);
+                            m = QString("File containing observations [%1] not found").arg(mod.dataPath);
                             delete sqrl;
                             return false;
                         }
@@ -268,7 +262,7 @@ bool modify::AddObject(QString packagePath, ObjectType object, QString dataPath,
 
                 }
                 else {
-                    m = QString("File containing observations [%1] not found").arg(dataPath);
+                    m = QString("File containing observations [%1] not found").arg(mod.dataPath);
                     delete sqrl;
                     return false;
                 }
@@ -276,10 +270,10 @@ bool modify::AddObject(QString packagePath, ObjectType object, QString dataPath,
         }
     }
     /* ----- intervention ----- */
-    else if (object == Intervention) {
-        qint64 subjectRowID = sqrl->FindSubject(subjectID);
+    else if (mod.object == Intervention) {
+        qint64 subjectRowID = sqrl->FindSubject(mod.subjectID);
         if (subjectRowID < 0) {
-            m = QString("Subject [%1] not found in package").arg(subjectID);
+            m = QString("Subject [%1] not found in package").arg(mod.subjectID);
             delete sqrl;
             return false;
         }
@@ -306,9 +300,9 @@ bool modify::AddObject(QString packagePath, ObjectType object, QString dataPath,
         }
     }
     /* ----- analysis ----- */
-    else if (object == Analysis) {
-        qint64 studyRowID = sqrl->FindStudy(subjectID, studyNum);
-        qint64 analysisRowID = sqrl->FindAnalysis(subjectID, studyNum, vars["AnalysisName"]);
+    else if (mod.object == Analysis) {
+        qint64 studyRowID = sqrl->FindStudy(mod.subjectID, mod.studyNumber);
+        qint64 analysisRowID = sqrl->FindAnalysis(mod.subjectID, mod.studyNumber, vars["AnalysisName"]);
         if (analysisRowID < 0) {
             /* TODO - resolve the pipelineRowID */
             squirrelAnalysis analysis(sqrl->GetDatabaseUUID());
@@ -333,13 +327,13 @@ bool modify::AddObject(QString packagePath, ObjectType object, QString dataPath,
             analysis.Store();
         }
         else {
-            m = QString("Analysis with AnalysisName [%1] already exists for study [%2] and subject [%3] in package").arg(vars["AnalysisName"]).arg(studyNum).arg(subjectID);
+            m = QString("Analysis with AnalysisName [%1] already exists for study [%2] and subject [%3] in package").arg(vars["AnalysisName"]).arg(mod.studyNumber).arg(mod.subjectID);
             delete sqrl;
             return false;
         }
     }
     /* ----- experiment ----- */
-    else if (object == Experiment) {
+    else if (mod.object == Experiment) {
         qint64 experimentRowID = sqrl->FindExperiment(vars["ExperimentName"]);
         if (experimentRowID < 0) {
             squirrelExperiment experiment(sqrl->GetDatabaseUUID());
@@ -357,7 +351,7 @@ bool modify::AddObject(QString packagePath, ObjectType object, QString dataPath,
         }
     }
     /* ----- pipeline ----- */
-    else if (object == Pipeline) {
+    else if (mod.object == Pipeline) {
         qint64 pipelineRowID = sqrl->FindPipeline(vars["PipelineName"]);
         if (pipelineRowID < 0) {
             squirrelPipeline pipeline(sqrl->GetDatabaseUUID());
@@ -401,7 +395,7 @@ bool modify::AddObject(QString packagePath, ObjectType object, QString dataPath,
         }
     }
     /* ----- groupanalysis ----- */
-    else if (object == GroupAnalysis) {
+    else if (mod.object == GroupAnalysis) {
         qint64 groupAnalysisRowID = sqrl->FindGroupAnalysis(vars["GroupAnalysisName"]);
         if (groupAnalysisRowID < 0) {
             squirrelGroupAnalysis groupAnalysis(sqrl->GetDatabaseUUID());
@@ -422,7 +416,7 @@ bool modify::AddObject(QString packagePath, ObjectType object, QString dataPath,
         }
     }
     /* ----- datadictionary ----- */
-    else if (object == DataDictionary) {
+    else if (mod.object == DataDictionary) {
         qint64 dataDictionaryRowID = sqrl->FindDataDictionary(vars["DataDictionaryName"]);
         if (dataDictionaryRowID < 0) {
             squirrelDataDictionary dataDictionary(sqrl->GetDatabaseUUID());
@@ -457,10 +451,14 @@ bool modify::AddObject(QString packagePath, ObjectType object, QString dataPath,
 /* ---------------------------------------------------------------------------- */
 /* ----- RemoveObject --------------------------------------------------------- */
 /* ---------------------------------------------------------------------------- */
-bool modify::RemoveObject(QString packagePath, ObjectType object, QString dataPath, QString objectData, QString objectID, QString subjectID, int studyNum, QString &m) {
-
-    Q_UNUSED(dataPath);
-    Q_UNUSED(objectData);
+/**
+ * @brief Remove an object from an existing squirrel package
+ * @param packagePath path to the squirrel package file
+ * @param mod struct containing all operation parameters
+ * @param m output message describing success or failure
+ * @return true if successful
+ */
+bool modify::RemoveObject(QString packagePath, const modification &mod, QString &m) {
 
     /* load the package */
     squirrel *sqrl = new squirrel();
@@ -474,84 +472,84 @@ bool modify::RemoveObject(QString packagePath, ObjectType object, QString dataPa
     }
 
     /* ----- subject ----- */
-    if (object == Subject) {
-        qint64 subjectRowID = sqrl->FindSubject(objectID);
+    if (mod.object == Subject) {
+        qint64 subjectRowID = sqrl->FindSubject(mod.objectID);
         if (subjectRowID >= 0) {
             sqrl->RemoveObject(Subject, subjectRowID);
             sqrl->ResequenceSubjects();
         }
         else {
-            m = QString("Subject with ID [%1] not found in package").arg(objectID);
+            m = QString("Subject with ID [%1] not found in package").arg(mod.objectID);
             delete sqrl;
             return false;
         }
     }
-    else if (object == Study) {
-        qint64 studyRowID = sqrl->FindStudy(subjectID, objectID.toInt());
-        qint64 subjectRowID = sqrl->FindSubject(objectID);
+    else if (mod.object == Study) {
+        qint64 studyRowID = sqrl->FindStudy(mod.subjectID, mod.objectID.toInt());
+        qint64 subjectRowID = sqrl->FindSubject(mod.objectID);
         if (studyRowID >= 0) {
             sqrl->RemoveObject(Study, studyRowID);
             sqrl->ResequenceStudies(subjectRowID);
         }
         else {
-            m = QString("Study with SubjectID [%1], StudyNum [%2] not found in package").arg(subjectID).arg(objectID);
+            m = QString("Study with SubjectID [%1], StudyNum [%2] not found in package").arg(mod.subjectID).arg(mod.objectID);
             delete sqrl;
             return false;
         }
     }
-    else if (object == Series) {
-        qint64 seriesRowID = sqrl->FindSeries(subjectID, studyNum, objectID.toInt());
-        qint64 studyRowID = sqrl->FindStudy(subjectID, studyNum);
+    else if (mod.object == Series) {
+        qint64 seriesRowID = sqrl->FindSeries(mod.subjectID, mod.studyNumber, mod.objectID.toInt());
+        qint64 studyRowID = sqrl->FindStudy(mod.subjectID, mod.studyNumber);
         if (seriesRowID >= 0) {
             sqrl->RemoveObject(Series, seriesRowID);
             sqrl->ResequenceSeries(studyRowID);
         }
         else {
-            m = QString("Series with SubjectID [%1], StudyNum [%2], SeriesNum [%3] not found in package").arg(subjectID).arg(studyNum).arg(objectID);
+            m = QString("Series with SubjectID [%1], StudyNum [%2], SeriesNum [%3] not found in package").arg(mod.subjectID).arg(mod.studyNumber).arg(mod.objectID);
             delete sqrl;
             return false;
         }
     }
-    else if (object == Experiment) {
-        qint64 experimentRowID = sqrl->FindExperiment(objectID);
+    else if (mod.object == Experiment) {
+        qint64 experimentRowID = sqrl->FindExperiment(mod.objectID);
         if (experimentRowID >= 0) {
             sqrl->RemoveObject(Experiment, experimentRowID);
         }
         else {
-            m = QString("Experiment with ExperimentName [%1] not found in package").arg(objectID);
+            m = QString("Experiment with ExperimentName [%1] not found in package").arg(mod.objectID);
             delete sqrl;
             return false;
         }
     }
-    else if (object == Pipeline) {
-        qint64 pipelineRowID = sqrl->FindPipeline(objectID);
+    else if (mod.object == Pipeline) {
+        qint64 pipelineRowID = sqrl->FindPipeline(mod.objectID);
         if (pipelineRowID >= 0) {
             sqrl->RemoveObject(Pipeline, pipelineRowID);
         }
         else {
-            m = QString("Pipeline with PipelineName [%1] not found in package").arg(objectID);
+            m = QString("Pipeline with PipelineName [%1] not found in package").arg(mod.objectID);
             delete sqrl;
             return false;
         }
     }
-    else if (object == GroupAnalysis) {
-        qint64 groupAnalysisRowID = sqrl->FindGroupAnalysis(objectID);
+    else if (mod.object == GroupAnalysis) {
+        qint64 groupAnalysisRowID = sqrl->FindGroupAnalysis(mod.objectID);
         if (groupAnalysisRowID >= 0) {
             sqrl->RemoveObject(GroupAnalysis, groupAnalysisRowID);
         }
         else {
-            m = QString("GroupAnalysis with GroupAnalysisName [%1] not found in package").arg(objectID);
+            m = QString("GroupAnalysis with GroupAnalysisName [%1] not found in package").arg(mod.objectID);
             delete sqrl;
             return false;
         }
     }
-    else if (object == DataDictionary) {
-        qint64 dataDictionaryRowID = sqrl->FindDataDictionary(objectID);
+    else if (mod.object == DataDictionary) {
+        qint64 dataDictionaryRowID = sqrl->FindDataDictionary(mod.objectID);
         if (dataDictionaryRowID >= 0) {
             sqrl->RemoveObject(DataDictionary, dataDictionaryRowID);
         }
         else {
-            m = QString("DataDictionary with DataDictionaryName [%1] not found in package").arg(objectID);
+            m = QString("DataDictionary with DataDictionaryName [%1] not found in package").arg(mod.objectID);
             delete sqrl;
             return false;
         }
@@ -576,10 +574,14 @@ bool modify::RemoveObject(QString packagePath, ObjectType object, QString dataPa
 /* ---------------------------------------------------------------------------- */
 /* ----- UpdateObject --------------------------------------------------------- */
 /* ---------------------------------------------------------------------------- */
-bool modify::UpdateObject(QString packagePath, ObjectType object, QString dataPath, QString objectData, QString objectID, QString subjectID, int studyNum, int seriesNum, QString &m) {
-
-    Q_UNUSED(dataPath);
-    Q_UNUSED(studyNum);
+/**
+ * @brief Update fields of an existing object in a squirrel package
+ * @param packagePath path to the squirrel package file
+ * @param mod struct containing all operation parameters
+ * @param m output message describing success or failure
+ * @return true if successful
+ */
+bool modify::UpdateObject(QString packagePath, const modification &mod, QString &m) {
 
     /* load the package */
     squirrel *sqrl = new squirrel();
@@ -594,12 +596,12 @@ bool modify::UpdateObject(QString packagePath, ObjectType object, QString dataPa
         return false;
     }
 
-    //utils::Print("objectData [" + objectData + "]");
-    QUrlQuery queryObject(objectData);
+    //utils::Print("objectData [" + mod.objectData + "]");
+    QUrlQuery queryObject(mod.objectData);
     //utils::Print(QString("queryObject [%1]").arg(queryObject.toString()));
 
     /* ----- package ----- */
-    if (object == Package) {
+    if (mod.object == Package) {
         //utils::Print("Checkpoint B - objectType is package");
 
         /* read the JSON file from the package --"QJsonObject squirrel::ReadSquirrelHeader()" */
@@ -629,11 +631,11 @@ bool modify::UpdateObject(QString packagePath, ObjectType object, QString dataPa
             utils::Print("Error updating json header in package");
         }
     }
-    else if (object == Subject) {
+    else if (mod.object == Subject) {
         /* find the subject */
-        qint64 subjectRowID = sqrl->FindSubject(objectID);
+        qint64 subjectRowID = sqrl->FindSubject(mod.objectID);
         if (subjectRowID < 0) {
-            m = QString("Subject with ID [%1] not found in package").arg(objectID);
+            m = QString("Subject with ID [%1] not found in package").arg(mod.objectID);
             delete sqrl;
             return false;
         }
@@ -642,7 +644,7 @@ bool modify::UpdateObject(QString packagePath, ObjectType object, QString dataPa
         squirrelSubject subject(sqrl->GetDatabaseUUID());
         subject.SetObjectID(subjectRowID);
         if (!subject.Get()) {
-            m = QString("Unable to load subject with ID [%1] from package").arg(objectID);
+            m = QString("Unable to load subject with ID [%1] from package").arg(mod.objectID);
             delete sqrl;
             return false;
         }
@@ -664,11 +666,11 @@ bool modify::UpdateObject(QString packagePath, ObjectType object, QString dataPa
         if (subject.Store())
             sqrl->SetModified(true);
     }
-    else if (object == Study) {
+    else if (mod.object == Study) {
         /* find the studyRowID, if it exists */
-        qint64 studyRowID = sqrl->FindStudy(subjectID, studyNum);
+        qint64 studyRowID = sqrl->FindStudy(mod.subjectID, mod.studyNumber);
         if (studyRowID < 0) {
-            m = QString("Study with SubjectID [%1], StudyNum [%2] not found in package").arg(subjectID).arg(studyNum);
+            m = QString("Study with SubjectID [%1], StudyNum [%2] not found in package").arg(mod.subjectID).arg(mod.studyNumber);
             delete sqrl;
             return false;
         }
@@ -677,7 +679,7 @@ bool modify::UpdateObject(QString packagePath, ObjectType object, QString dataPa
         squirrelStudy study(sqrl->GetDatabaseUUID());
         study.SetObjectID(studyRowID);
         if (!study.Get()) {
-            m = QString("Unable to load study with SubjectID [%1], StudyNum [%2] from package").arg(subjectID).arg(studyNum);
+            m = QString("Unable to load study with SubjectID [%1], StudyNum [%2] from package").arg(mod.subjectID).arg(mod.studyNumber);
             delete sqrl;
             return false;
         }
@@ -701,10 +703,10 @@ bool modify::UpdateObject(QString packagePath, ObjectType object, QString dataPa
         if (study.Store())
             sqrl->SetModified(true);
     }
-    else if (object == Series) {
-        qint64 seriesRowID = sqrl->FindSeries(subjectID, studyNum, seriesNum);
+    else if (mod.object == Series) {
+        qint64 seriesRowID = sqrl->FindSeries(mod.subjectID, mod.studyNumber, mod.seriesNumber);
         if (seriesRowID < 0) {
-            m = QString("Series with SubjectID [%1], StudyNum [%2], SeriesNum [%3] not found in package").arg(subjectID).arg(studyNum).arg(seriesNum);
+            m = QString("Series with SubjectID [%1], StudyNum [%2], SeriesNum [%3] not found in package").arg(mod.subjectID).arg(mod.studyNumber).arg(mod.seriesNumber);
             delete sqrl;
             return false;
         }
@@ -712,7 +714,7 @@ bool modify::UpdateObject(QString packagePath, ObjectType object, QString dataPa
         squirrelSeries series(sqrl->GetDatabaseUUID());
         series.SetObjectID(seriesRowID);
         if (!series.Get()) {
-            m = QString("Unable to load series with SubjectID [%1], StudyNum [%2], SeriesNum [%3] from package").arg(subjectID).arg(studyNum).arg(seriesNum);
+            m = QString("Unable to load series with SubjectID [%1], StudyNum [%2], SeriesNum [%3] from package").arg(mod.subjectID).arg(mod.studyNumber).arg(mod.seriesNumber);
             delete sqrl;
             return false;
         }
@@ -745,10 +747,10 @@ bool modify::UpdateObject(QString packagePath, ObjectType object, QString dataPa
         if (series.Store())
             sqrl->SetModified(true);
     }
-    else if (object == Analysis) {
-        qint64 analysisRowID = sqrl->FindAnalysis(subjectID, studyNum, objectID);
+    else if (mod.object == Analysis) {
+        qint64 analysisRowID = sqrl->FindAnalysis(mod.subjectID, mod.studyNumber, mod.objectID);
         if (analysisRowID < 0) {
-            m = QString("Analysis with SubjectID [%1], StudyNum [%2], AnalysisName [%3] not found in package").arg(subjectID).arg(studyNum).arg(objectID);
+            m = QString("Analysis with SubjectID [%1], StudyNum [%2], AnalysisName [%3] not found in package").arg(mod.subjectID).arg(mod.studyNumber).arg(mod.objectID);
             delete sqrl;
             return false;
         }
@@ -756,7 +758,7 @@ bool modify::UpdateObject(QString packagePath, ObjectType object, QString dataPa
         squirrelAnalysis analysis(sqrl->GetDatabaseUUID());
         analysis.SetObjectID(analysisRowID);
         if (!analysis.Get()) {
-            m = QString("Unable to load analysis with SubjectID [%1], StudyNum [%2], AnalysisName [%3] from package").arg(subjectID).arg(studyNum).arg(objectID);
+            m = QString("Unable to load analysis with SubjectID [%1], StudyNum [%2], AnalysisName [%3] from package").arg(mod.subjectID).arg(mod.studyNumber).arg(mod.objectID);
             delete sqrl;
             return false;
         }
@@ -791,7 +793,7 @@ bool modify::UpdateObject(QString packagePath, ObjectType object, QString dataPa
         if (analysis.Store())
             sqrl->SetModified(true);
     }
-    else if (object == Observation) {
+    else if (mod.object == Observation) {
         /* get the InstrumentName and DateStart from the URL-query */
         QDateTime dateStart;
         QString observationName;
@@ -799,9 +801,9 @@ bool modify::UpdateObject(QString packagePath, ObjectType object, QString dataPa
         if (queryObject.queryItemValue("ObservationName").trimmed() != "") observationName = queryObject.queryItemValue("ObservationName").trimmed();
 
         /* find the observationRowID, if it exists */
-        qint64 observationRowID = sqrl->FindObservation(subjectID, observationName, dateStart);
+        qint64 observationRowID = sqrl->FindObservation(mod.subjectID, observationName, dateStart);
         if (observationRowID < 0) {
-            m = QString("Observation with SubjectID [%1], ObservationName [%2], DateStart [%3] not found in package").arg(subjectID).arg(observationName).arg(dateStart.toString("yyyy-MM-dd HH:mm:ss"));
+            m = QString("Observation with SubjectID [%1], ObservationName [%2], DateStart [%3] not found in package").arg(mod.subjectID).arg(observationName).arg(dateStart.toString("yyyy-MM-dd HH:mm:ss"));
             delete sqrl;
             return false;
         }
@@ -809,7 +811,7 @@ bool modify::UpdateObject(QString packagePath, ObjectType object, QString dataPa
         squirrelObservation observation(sqrl->GetDatabaseUUID());
         observation.SetObjectID(observationRowID);
         if (!observation.Get()) {
-            m = QString("Unable to load observationRowID [%1]. Message [%2]").arg(objectID).arg(observation.Error());
+            m = QString("Unable to load observationRowID [%1]. Message [%2]").arg(mod.objectID).arg(observation.Error());
             delete sqrl;
             return false;
         }
@@ -823,6 +825,7 @@ bool modify::UpdateObject(QString packagePath, ObjectType object, QString dataPa
         if (queryObject.queryItemValue("Duration").trimmed() != "") observation.Duration = queryObject.queryItemValue("Duration").trimmed().toDouble();
         if (queryObject.queryItemValue("InstrumentName").trimmed() != "") observation.InstrumentName = queryObject.queryItemValue("InstrumentName").trimmed();
         if (queryObject.queryItemValue("ObservationName").trimmed() != "") observation.ObservationName = queryObject.queryItemValue("ObservationName").trimmed();
+        if (queryObject.queryItemValue("ObservationType").trimmed() != "") observation.ObservationType = queryObject.queryItemValue("ObservationType").trimmed();
         if (queryObject.queryItemValue("Notes").trimmed() != "") observation.Notes = queryObject.queryItemValue("Notes").trimmed();
         if (queryObject.queryItemValue("Rater").trimmed() != "") observation.Rater = queryObject.queryItemValue("Rater").trimmed();
         if (queryObject.queryItemValue("Value").trimmed() != "") observation.Value = queryObject.queryItemValue("Value").trimmed();
@@ -830,7 +833,7 @@ bool modify::UpdateObject(QString packagePath, ObjectType object, QString dataPa
         if (observation.Store())
             sqrl->SetModified(true);
     }
-    else if (object == Intervention) {
+    else if (mod.object == Intervention) {
         /* get the InterventionName and DateStart from the URL-query */
         QDateTime dateStart;
         QString interventionName;
@@ -838,9 +841,9 @@ bool modify::UpdateObject(QString packagePath, ObjectType object, QString dataPa
         if (queryObject.queryItemValue("InterventionName").trimmed() != "") interventionName = queryObject.queryItemValue("InterventionName").trimmed();
 
         /* find the interventionRowID, if it exists */
-        qint64 interventionRowID = sqrl->FindIntervention(subjectID, interventionName, dateStart);
+        qint64 interventionRowID = sqrl->FindIntervention(mod.subjectID, interventionName, dateStart);
         if (interventionRowID < 0) {
-            m = QString("Intervention with SubjectID [%1], InterventionName [%2], DateStart [%3] not found in package").arg(subjectID).arg(interventionName).arg(dateStart.toString("yyyy-MM-dd HH:mm:ss"));
+            m = QString("Intervention with SubjectID [%1], InterventionName [%2], DateStart [%3] not found in package").arg(mod.subjectID).arg(interventionName).arg(dateStart.toString("yyyy-MM-dd HH:mm:ss"));
             delete sqrl;
             return false;
         }
@@ -848,7 +851,7 @@ bool modify::UpdateObject(QString packagePath, ObjectType object, QString dataPa
         squirrelIntervention intervention(sqrl->GetDatabaseUUID());
         intervention.SetObjectID(interventionRowID);
         if (!intervention.Get()) {
-            m = QString("Unable to load interventionRowID [%1]. Message [%2]").arg(objectID).arg(intervention.Error());
+            m = QString("Unable to load interventionRowID [%1]. Message [%2]").arg(mod.objectID).arg(intervention.Error());
             delete sqrl;
             return false;
         }
@@ -898,27 +901,19 @@ bool modify::UpdateObject(QString packagePath, ObjectType object, QString dataPa
 /* ----- SplitByModality ------------------------------------------------------ */
 /* ---------------------------------------------------------------------------- */
 /**
- * @brief Split a package by modality. This will create new packages with only the imaging data (and associated analyses/experiments/pipelines) and a separate package with only interventions/observations
- * @param packagePath
- * @param objectType
- * @param dataPath
- * @param recursive
- * @param objectData
- * @param objectID
- * @param subjectID
- * @param studyNum
- * @param m
- * @return
+ * @brief Split a package by modality, creating one new package per modality
+ * @param packagePath path to the squirrel package file
+ * @param mod struct containing all operation parameters
+ * @param m output message describing success or failure
+ * @return true if successful
  */
-bool modify::SplitByModality(QString packagePath, QString dataPath, QString objectData, QString objectID, QString &m) {
+bool modify::SplitByModality(QString packagePath, const modification &mod, QString &m) {
     /* Note: the data is COPIED, not moved, from the original package to the new packages.
      * So an example package of 100MB with 2 modalities will write out 2 packages, with each being 50MB
      * and the original package will remain on disk. After the split operation there will be three image packages
      * with a total of 200MB on disk, plus one package with only interventions/observations. */
 
-    Q_UNUSED(dataPath);
-    Q_UNUSED(objectData);
-    Q_UNUSED(objectID);
+    Q_UNUSED(mod);
 
     utils::Print("Splitting package [" + packagePath + "] by modality...");
     /* read squirrel package */
@@ -1109,9 +1104,16 @@ bool modify::SplitByModality(QString packagePath, QString dataPath, QString obje
 /* ---------------------------------------------------------------------------- */
 /* ----- RemovePHI ------------------------------------------------------------ */
 /* ---------------------------------------------------------------------------- */
-bool modify::RemovePHI(QString packagePath, QString dataPath, QString &m) {
+/**
+ * @brief Remove all protected health information (dates, birthdates) from a squirrel package
+ * @param packagePath path to the squirrel package file
+ * @param mod struct containing all operation parameters
+ * @param m output message describing success or failure
+ * @return true if successful
+ */
+bool modify::RemovePHI(QString packagePath, const modification &mod, QString &m) {
 
-    Q_UNUSED(dataPath);
+    Q_UNUSED(mod);
 
     squirrel *sqrl = new squirrel();
     sqrl->SetFileMode(FileMode::ExistingPackage);
@@ -1164,8 +1166,100 @@ bool modify::RemovePHI(QString packagePath, QString dataPath, QString &m) {
 
 
 /* ---------------------------------------------------------------------------- */
+/* ----- RenumberSubjects ----------------------------------------------------- */
+/* ---------------------------------------------------------------------------- */
+/**
+ * @brief Assign new sequential IDs to all subjects, preserving original IDs as alternate IDs
+ * @param packagePath path to the squirrel package file
+ * @param mod struct containing all operation parameters
+ * @param m output message describing success or failure
+ * @return true if successful
+ */
+bool modify::RenumberSubjects(QString packagePath, const modification &mod, QString &m) {
+
+    squirrel *sqrl = new squirrel();
+    sqrl->SetFileMode(FileMode::ExistingPackage);
+    sqrl->SetPackagePath(packagePath);
+    sqrl->SetQuickRead(true);
+
+    if (!sqrl->Read()) {
+        m = QString("Package unreadable [%1]").arg(packagePath);
+        delete sqrl;
+        return false;
+    }
+
+    /* collect subject rowIDs and current IDs, sorted ascending by ID */
+    QSqlQuery q(QSqlDatabase::database(sqrl->GetDatabaseUUID()));
+    q.prepare("select SubjectRowID, ID from Subject order by ID asc");
+    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+
+    QList<QPair<qint64, QString>> subjects;
+    while (q.next()) {
+        subjects.append(qMakePair(q.value("SubjectRowID").toLongLong(), q.value("ID").toString()));
+    }
+
+    int n = subjects.size();
+    if (n == 0) {
+        m = "Package contains no subjects";
+        delete sqrl;
+        return true;
+    }
+
+    /* optionally shuffle for random assignment */
+    if (mod.renumberRandomize) {
+        for (int i = n - 1; i > 0; --i) {
+            int j = QRandomGenerator::global()->bounded(i + 1);
+            subjects.swapItemsAt(i, j);
+        }
+    }
+
+    /* auto-size digits if not specified */
+    int digits = mod.renumberDigits;
+    if (digits <= 0) {
+        int maxNum = mod.renumberStartNum + n - 1;
+        digits = QString::number(maxNum).length();
+    }
+
+    /* assign new IDs */
+    for (int i = 0; i < n; ++i) {
+        qint64 rowID = subjects[i].first;
+        QString oldID = subjects[i].second;
+        QString newID = mod.renumberPrefix + QString("%1").arg(mod.renumberStartNum + i, digits, 10, QChar('0'));
+
+        /* load the subject, prepend old ID to AlternateIDs, update ID */
+        squirrelSubject subj(sqrl->GetDatabaseUUID());
+        subj.SetObjectID(rowID);
+        if (!subj.Get()) {
+            m = QString("Unable to load subject rowID [%1]").arg(rowID);
+            delete sqrl;
+            return false;
+        }
+
+        if (!subj.AlternateIDs.contains(oldID))
+            subj.AlternateIDs.prepend(oldID);
+        subj.ID = newID;
+
+        if (!subj.Store()) {
+            m = QString("Unable to store updated subject [%1] -> [%2]").arg(oldID).arg(newID);
+            delete sqrl;
+            return false;
+        }
+    }
+
+    sqrl->WriteUpdate();
+
+    delete sqrl;
+    return true;
+}
+
+
+/* ---------------------------------------------------------------------------- */
 /* ----- PrintVariables ------------------------------------------------------- */
 /* ---------------------------------------------------------------------------- */
+/**
+ * @brief Print a table of available metadata variables and their types for the given object type
+ * @param object the object type whose variables should be printed
+ */
 void modify::PrintVariables(ObjectType object) {
     using namespace std;
     vector<vector<string> > data;
@@ -1187,7 +1281,7 @@ void modify::PrintVariables(ObjectType object) {
         data = {
             {"Variable","Type","Required","Description"},
             {"AlternateIDs","JSON array","","List of alternate IDs. Comma separated"},
-            {"DateOfBirth","date","*","Subject’s date of birth. Used to calculate age-at-server. Can be YYYY-00-00 to store year only, or YYYY-MM-00 to store year and month only"},
+            {"DateOfBirth","date","*","Subject's date of birth. Used to calculate age-at-server. Can be YYYY-00-00 to store year only, or YYYY-MM-00 to store year and month only"},
             {"EnrollmentGroup","string","","Enrollment group within the project"},
             {"EnrollmentStatus","string","","Enrollment status within the project"},
             {"Ethnicity1","string","","NIH defined ethnicity: Usually hispanic, non-hispanic"},
@@ -1268,6 +1362,7 @@ void modify::PrintVariables(ObjectType object) {
             {"Duration","number","","Duration of the measure in seconds, if known"},
             {"InstrumentName","string","","Name of the instrument associated with this measure"},
             {"ObservationName","string","*","Name of the observation"},
+            {"ObservationType","string","","Type hint for the value: 'int', 'double', 'string', or 'timeseries'"},
             {"Notes","string","","Detailed notes"},
             {"Rater","string","","Name of the rater"},
             {"Value","string","*","Value (string or number)"}

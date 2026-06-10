@@ -458,6 +458,10 @@ QString squirrelPipeline::PrintPipeline() {
 /* ------------------------------------------------------------ */
 /* ----- VirtualPath ------------------------------------------ */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Return the pipeline's virtual path within the squirrel package
+ * @return virtual path string (e.g. "pipelines/PipelineName")
+ */
 QString squirrelPipeline::VirtualPath() {
     QString vPath = QString("pipelines/%1").arg(PipelineName);
 
@@ -468,6 +472,10 @@ QString squirrelPipeline::VirtualPath() {
 /* ------------------------------------------------------------ */
 /* ----- GetStagedFileList ------------------------------------ */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Return all staged files as physical path / virtual path pairs
+ * @return list of pairs where first is the physical disk path and second is the virtual path in the package
+ */
 QList<QPair<QString,QString>> squirrelPipeline::GetStagedFileList() {
 
     QList<QPair<QString,QString>> stagedList;

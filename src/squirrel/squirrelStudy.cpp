@@ -27,6 +27,10 @@
 /* ------------------------------------------------------------ */
 /* ----- study ------------------------------------------------ */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Constructor
+ * @param dbID UUID of the database connection to use
+ */
 squirrelStudy::squirrelStudy(QString dbID)
 {
     databaseUUID = dbID;
@@ -49,6 +53,13 @@ squirrelStudy::squirrelStudy(QString dbID)
 }
 
 
+/* ------------------------------------------------------------ */
+/* ----- Populate --------------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief Populate object fields from a database query result row
+ * @param q an executed QSqlQuery positioned at the row to read
+ */
 void squirrelStudy::Populate(const QSqlQuery &q) {
     objectID       = q.value("StudyRowID").toLongLong();
     subjectRowID   = q.value("SubjectRowID").toLongLong();
@@ -173,6 +184,11 @@ bool squirrelStudy::Store() {
 /* ------------------------------------------------------------ */
 /* ----- Store (bulk insert) ---------------------------------- */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Bind this study's values to a pre-prepared bulk-insert query and execute it
+ * @param q a QSqlQuery prepared with the appropriate INSERT statement
+ * @return true if successful
+ */
 bool squirrelStudy::Store(QSqlQuery &q) {
     q.bindValue(":SubjectRowID", subjectRowID);
     q.bindValue(":StudyNumber", StudyNumber);
@@ -226,8 +242,6 @@ bool squirrelStudy::Remove() {
     q.prepare("delete from Study where StudyRowID = :studyid");
     q.bindValue(":studyid", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-
-    utils::RemoveStagedFileList(databaseUUID, objectID, Subject);
 
     /* in case anyone tries to use this object again */
     objectID = -1;
@@ -488,6 +502,10 @@ QList<QPair<QString,QString>> squirrelStudy::GetStagedFileList() {
 /* ------------------------------------------------------------ */
 /* ----- GetNextSeriesNumber ---------------------------------- */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Determine the next available series number for this study
+ * @return the next series number (max existing + 1, or 1 if no series exist)
+ */
 int squirrelStudy::GetNextSeriesNumber() {
     int nextSeriesNum = 1;
 
@@ -506,6 +524,11 @@ int squirrelStudy::GetNextSeriesNumber() {
 /* ------------------------------------------------------------ */
 /* ----- GetData ---------------------------------------------- */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Return a key/value hash of study fields for the requested dataset level
+ * @param d the dataset detail level (DatasetID, DatasetBasic, or DatasetFull)
+ * @return hash of field names to string values
+ */
 QHash<QString, QString> squirrelStudy::GetData(DatasetType d) {
 
     QHash<QString, QString> data;

@@ -62,6 +62,7 @@ public:
     QString Description;        /*!< extended observationment description */
     QString InstrumentName;     /*!< name of the instrument (test, assessment, etc) from which this observation came */
     QString ObservationName;    /*!< observation name (required) */
+    QString ObservationType;    /*!< type hint for the value: 'int', 'double', 'string', or 'timeseries' */
     QString Notes;              /*!< notes about the observation */
     QString Rater;              /*!< name or username of the person who rated the observation */
     QString Value;              /*!< value, in string or number stored as a string */

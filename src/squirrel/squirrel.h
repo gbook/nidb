@@ -175,7 +175,7 @@ public:
     bool quiet=false;
 
     /* printing of information to console */
-    QString PrintAnalyses(qint64 studyRowID, PrintFormat printFormat=List);
+    QString PrintAnalyses(DatasetType dataType, PrintFormat printFormat, qint64 studyRowID = -1);
     QString PrintDataDictionary(PrintFormat printFormat=List);
     QString PrintExperiments(PrintFormat printFormat=List);
     QString PrintGroupAnalyses(PrintFormat printFormat=List);

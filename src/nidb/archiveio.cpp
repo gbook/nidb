@@ -3083,7 +3083,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
                         analysis a1(q2.value("analysis_id").toInt(), n);
                         if (a1.isValid) {
                             /* create and add each squirrelAnalysis object */
-                            squirrelAnalysis sqrlAnalysis = a1.GetSquirrelObject();
+                            squirrelAnalysis sqrlAnalysis = a1.GetSquirrelObject(sqrl.GetDatabaseUUID());
                             sqrlAnalysis.studyRowID = squirrelStudyRowID;
                             sqrlAnalysis.Store();
                         }
@@ -3565,8 +3565,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         /* add the analysis to the package */
         analysis a(analysisRowID, n);
         if (!a.isValid) continue;
-        squirrelAnalysis sqrlAnalysis(sqrl.GetDatabaseUUID());
-        sqrlAnalysis = a.GetSquirrelObject();
+        squirrelAnalysis sqrlAnalysis = a.GetSquirrelObject(sqrl.GetDatabaseUUID());
         sqrlAnalysis.studyRowID = sqrlStudyRowID;
         sqrlAnalysis.Store();
     }

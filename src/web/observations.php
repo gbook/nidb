@@ -353,6 +353,74 @@
 			</div>
 		</div>
 
+		<!-- Observation Metadata Modal -->
+		<div class="ui small modal" id="obsMetaModal">
+			<div class="header"><i class="database icon"></i> Metadata &mdash; <span id="obsMetaModalName"></span></div>
+			<div class="content" id="obsMetaContent">
+				<div class="ui active centered inline loader"></div>
+			</div>
+			<div class="actions">
+				<div class="ui cancel button">Close</div>
+			</div>
+		</div>
+
+		<!-- Bulk Action Modal -->
+		<div class="ui small modal" id="bulkActionModal">
+			<div class="header">Bulk Action &mdash; <span id="bulkSelectedCount">0</span> observation(s) selected</div>
+			<div class="content">
+				<div class="ui form">
+					<div class="field">
+						<label>Action</label>
+						<select id="bulkActionSelect" class="ui dropdown" onchange="updateBulkActionFields()">
+							<option value="">&#8212; Select action &#8212;</option>
+							<option value="obsInstrument">Set Instrument</option>
+							<option value="rater">Set Rater</option>
+							<option value="value">Set Value</option>
+							<option value="startdate">Set Start Date</option>
+							<option value="enddate">Set End Date</option>
+							<option value="delete">Delete</option>
+							<option value="convertmeta">Convert value to metadata</option>
+							<option value="movenewsurvey">Move to new survey</option>
+						</select>
+					</div>
+					<div id="bulk_field_movenewsurvey" class="ui info message" style="display:none">
+						<i class="info circle icon"></i>Selected observations will be moved to a new survey. The survey start date will be set to the earliest observation start date among the selection. Any existing survey assignment on the selected observations will be replaced.
+					</div>
+					<div id="bulk_field_convertmeta" class="ui info message" style="display:none">
+						<i class="info circle icon"></i>Each selected observation&rsquo;s <b>value</b> will be parsed as JSON, flattened into key&ndash;value pairs, and stored in the observation metadata table. Nested keys are joined with <code>_</code> (e.g. <code>var_1 &rarr; subvar1</code> becomes <code>var_1_subvar1</code>). The original value will be cleared. Observations whose value is empty or not valid JSON will be skipped.
+					</div>
+					<div id="bulk_field_obsInstrument" class="field" style="display:none">
+						<label>Instrument name</label>
+						<input type="text" id="bulkInstrumentValue" placeholder="Instrument name">
+					</div>
+					<div id="bulk_field_rater" class="field" style="display:none">
+						<label>Rater</label>
+						<input type="text" id="bulkRaterValue" placeholder="Rater name">
+					</div>
+					<div id="bulk_field_value" class="field" style="display:none">
+						<label>Value</label>
+						<input type="text" id="bulkValueValue" placeholder="Observation value">
+					</div>
+					<div id="bulk_field_startdate" class="field" style="display:none">
+						<label>Start Date</label>
+						<input type="datetime-local" id="bulkStartdateValue">
+					</div>
+					<div id="bulk_field_enddate" class="field" style="display:none">
+						<label>End Date</label>
+						<input type="datetime-local" id="bulkEnddateValue">
+					</div>
+					<div id="bulk_field_delete" class="ui warning message" style="display:none">
+						<i class="warning sign icon"></i>This will permanently delete <b><span id="bulkDeleteCount">0</span> observation(s)</b>. This cannot be undone.
+					</div>
+					<div id="bulkActionError" class="ui red message" style="display:none"></div>
+				</div>
+			</div>
+			<div class="actions">
+				<div class="ui cancel button">Cancel</div>
+				<div class="ui primary approve button" id="bulkApplyBtn">Apply</div>
+			</div>
+		</div>
+
 		<div class="ui raised black segment">
 			<form action="observations.php" method="post" class="ui form" id="addObsForm">
 				<input type="hidden" name="action" value="addobservation">
@@ -414,7 +482,7 @@
 		/* joined to instrument_items and instruments to resolve states 1-4 (instrumentitem_id set);
 		   joined to observation_surveys to pull survey dates/rater for states 1,3,5,7;
 		   left joins fall through to NULLs for states 2,4,6,8 (no survey) */
-		$sqlstring = "select a.*, ii.item_name, ins.instrument_name as linked_instrument_name, s.survey_startdate, s.survey_enddate, s.survey_rater, s.survey_notes, s.survey_visit from observations a left join instrument_items ii on a.instrumentitem_id = ii.instrumentitem_id left join instruments ins on ii.instrument_id = ins.instrument_id left join observation_surveys s on a.observationsurvey_id = s.survey_id where a.enrollment_id = $enrollmentid order by a.observation_name";
+		$sqlstring = "select a.*, ii.item_name, ins.instrument_name as linked_instrument_name, s.survey_startdate, s.survey_enddate, s.survey_rater, s.survey_notes, s.survey_visit, (select count(*) from observation_meta om where om.observation_id = a.observation_id) as meta_count from observations a left join instrument_items ii on a.instrumentitem_id = ii.instrumentitem_id left join instruments ins on ii.instrument_id = ins.instrument_id left join observation_surveys s on a.observationsurvey_id = s.survey_id where a.enrollment_id = $enrollmentid order by a.observation_name";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$observationid = $row['observation_id'];
@@ -436,7 +504,8 @@
 				'duration' => $row['observation_duration'],
 				'enddate' => $row['observation_enddate'],
 				'dateshtml' => "<b>Entry</b> " . $row['observation_entrydate'] . "<br><b>Create</b> " . $row['observation_createdate'] . "<br><b>Modify</b> " . $row['observation_modifydate'],
-			'surveyid'  => !empty($row['observationsurvey_id']) ? (int)$row['observationsurvey_id'] : null
+				'metaCount' => (int)$row['meta_count'],
+				'surveyid'  => !empty($row['observationsurvey_id']) ? (int)$row['observationsurvey_id'] : null
 			);
 
 			/* states 1-4 or 5-6: outer group by instrument name; states 7-8 → __none__ instrument group */
@@ -535,6 +604,11 @@
 		
 		?>
 		<div class="ui top attached secondary inverted black segment" style="padding: 6px 14px"><?=$topInformation?></div>
+		<div style="margin: 8px 0">
+			<button class="ui green button disabled" id="withSelectedBtn" disabled onclick="openBulkActionModal()">
+				<i class="tasks icon"></i>With selected...
+			</button>
+		</div>
 		<div class="ui styled fluid accordion" id="observationAccordion"></div>
 
 		<script>
@@ -615,32 +689,238 @@
 				}
 			};
 
+			/* variable column extracted so both instrColDefs and noneColDefs share the same object */
+			const variableColDef = {
+				headerName: 'Variable', field: 'observationName', flex: 1.3, minWidth: 180,
+				editable: function(params) { return !params.data.instrumentitemid; },
+				cellStyle: editableCellStyle
+			};
+
+			/* metadata indicator column: icon shown only when metaCount > 0; click lazy-loads the modal */
+			const metaColDef = {
+				headerName: 'Metadata',
+				field: 'metaCount',
+				width: 100, minWidth: 100, maxWidth: 100,
+				filter: false, sortable: false, resizable: false,
+				cellStyle: { 'text-align': 'center', 'display': 'flex', 'align-items': 'center', 'justify-content': 'center' },
+				cellRenderer: function(params) {
+					if (!params.value) return null;
+					const btn = document.createElement('a');
+					btn.href = '#';
+					btn.title = params.value + ' metadata item' + (params.value !== 1 ? 's' : '');
+					btn.innerHTML = '<i class="large database icon"></i>';
+					btn.onclick = function(e) {
+						e.preventDefault();
+						openMetaModal(params.data.observationid, params.data.observationName);
+					};
+					return btn;
+				}
+			};
+
 			/* column defs for instrument groups (states 1-6): no Instrument column because the instrument
 			   name is already shown in the accordion header */
 			const instrColDefs = [
-				{
-					headerName: 'Variable', field: 'observationName', flex: 1.3, minWidth: 180,
-					editable: function(params) { return !params.data.instrumentitemid; },
-					cellStyle: editableCellStyle
-				},
+				variableColDef,
 				{ headerName: 'Instrument Item', field: 'instrumentitem', flex: 1, minWidth: 150 },
 				{ headerName: 'Value', field: 'value', flex: 1, minWidth: 130, editable: true, cellStyle: editableCellStyle },
 				{ headerName: 'Rater', field: 'rater', minWidth: 120, editable: true, cellStyle: function() { return { 'font-size': '9pt', cursor: 'text' }; } },
 				{ headerName: 'Start date', field: 'startdate', minWidth: 160, editable: true, cellStyle: editableCellStyle },
 				{ headerName: 'Duration', field: 'duration', minWidth: 110, editable: true, cellStyle: editableCellStyle },
 				{ headerName: 'End date', field: 'enddate', minWidth: 160, editable: true, cellStyle: editableCellStyle },
-				deleteColDef,
-				datesColDef
+				metaColDef,
+				datesColDef,
+				deleteColDef
 			];
 
 			/* column defs for the __none__ group (states 7-8): keep Variable, insert an editable Instrument
 			   column so the user can assign a free-text hint (promoting toward state 6), then append the rest */
 			const noneInstrumentColDef = { headerName: 'Instrument', field: 'obsInstrument', flex: 1, minWidth: 150, editable: true, cellStyle: editableCellStyle };
-			const noneColDefs = [instrColDefs[0], noneInstrumentColDef, ...instrColDefs.filter(function(c) { return c.field !== 'instrumentitem' && c.field !== 'observationName'; })];
+			const noneColDefs = [variableColDef, noneInstrumentColDef, ...instrColDefs.filter(function(c) { return c.field !== 'instrumentitem' && c.field !== 'observationName'; })];
 
 			/* sanitizes a string for safe insertion into innerHTML */
 			function escHtml(s) {
 				return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+			}
+
+			/* lazy-loads and displays observation_meta rows for the given observation */
+			function openMetaModal(observationid, obsName) {
+				document.getElementById('obsMetaModalName').textContent = obsName || ('Observation #' + observationid);
+				document.getElementById('obsMetaContent').innerHTML = '<div class="ui active centered inline loader" style="margin:20px 0"></div>';
+				$('#obsMetaModal').modal({ closable: true }).modal('show');
+				$.getJSON('ajaxapi.php', { action: 'getobservationmeta', observationid: observationid }, function(data) {
+					if (!data || data.error) {
+						document.getElementById('obsMetaContent').innerHTML = '<p class="ui red text">Error loading metadata.</p>';
+						return;
+					}
+					if (!data.length) {
+						document.getElementById('obsMetaContent').innerHTML = '<p>No metadata found.</p>';
+						return;
+					}
+					var html = '<table class="ui celled compact small table"><thead><tr><th>Variable</th><th>Value</th></tr></thead><tbody>';
+					data.forEach(function(row) {
+						html += '<tr><td>' + escHtml(row.variable) + '</td><td>' + escHtml(row.value) + '</td></tr>';
+					});
+					html += '</tbody></table>';
+					document.getElementById('obsMetaContent').innerHTML = html;
+				}).fail(function() {
+					document.getElementById('obsMetaContent').innerHTML = '<p class="ui red text">Server error — please try again.</p>';
+				});
+			}
+
+			/* tracks all grid API instances so onGridSelectionChanged can collect selected IDs across grids */
+			const gridApis = [];
+			const selectedObsIds = new Set();
+
+			function onGridSelectionChanged() {
+				selectedObsIds.clear();
+				gridApis.forEach(function(api) {
+					api.getSelectedNodes().forEach(function(node) {
+						if (node.data) selectedObsIds.add(node.data.observationid);
+					});
+				});
+				var count = selectedObsIds.size;
+				var btn = document.getElementById('withSelectedBtn');
+				if (count > 0) {
+					btn.innerHTML = '<i class="tasks icon"></i>With ' + count + ' selected...';
+					btn.disabled = false;
+					btn.classList.remove('disabled');
+				} else {
+					btn.innerHTML = '<i class="tasks icon"></i>With selected...';
+					btn.disabled = true;
+					btn.classList.add('disabled');
+				}
+			}
+
+			function updateBulkActionFields() {
+				var action = document.getElementById('bulkActionSelect').value;
+				['obsInstrument', 'rater', 'value', 'startdate', 'enddate', 'delete', 'convertmeta', 'movenewsurvey'].forEach(function(f) {
+					document.getElementById('bulk_field_' + f).style.display = (action === f) ? 'block' : 'none';
+				});
+				var applyBtn = document.getElementById('bulkApplyBtn');
+				if (action === 'delete') {
+					applyBtn.className = 'ui red approve button';
+					applyBtn.textContent = 'Delete';
+					document.getElementById('bulkDeleteCount').textContent = selectedObsIds.size;
+				} else if (action === 'convertmeta') {
+					applyBtn.className = 'ui primary approve button';
+					applyBtn.textContent = 'Convert';
+				} else if (action === 'movenewsurvey') {
+					applyBtn.className = 'ui primary approve button';
+					applyBtn.textContent = 'Move';
+				} else {
+					applyBtn.className = 'ui primary approve button';
+					applyBtn.textContent = 'Apply';
+				}
+				document.getElementById('bulkActionError').style.display = 'none';
+			}
+
+			function openBulkActionModal() {
+				document.getElementById('bulkSelectedCount').textContent = selectedObsIds.size;
+				document.getElementById('bulkActionSelect').value = '';
+				['obsInstrument', 'rater', 'value', 'startdate', 'enddate', 'delete', 'convertmeta', 'movenewsurvey'].forEach(function(f) {
+					document.getElementById('bulk_field_' + f).style.display = 'none';
+				});
+				document.getElementById('bulkActionError').style.display = 'none';
+				var applyBtn = document.getElementById('bulkApplyBtn');
+				applyBtn.className = 'ui primary approve button';
+				applyBtn.textContent = 'Apply';
+				applyBtn.classList.remove('loading', 'disabled');
+
+				$('#bulkActionModal').modal({
+					closable: false,
+					onApprove: function() {
+						var action = document.getElementById('bulkActionSelect').value;
+						if (!action) {
+							document.getElementById('bulkActionError').textContent = 'Please select an action.';
+							document.getElementById('bulkActionError').style.display = '';
+							return false;
+						}
+						var ids = Array.from(selectedObsIds);
+						applyBtn.classList.add('loading', 'disabled');
+						document.getElementById('bulkActionError').style.display = 'none';
+
+						if (action === 'delete') {
+							$.post('ajaxapi.php', {
+								action: 'bulkdeleteobservations',
+								observationids: JSON.stringify(ids)
+							}, function(data) {
+								if (data && data.error) {
+									document.getElementById('bulkActionError').textContent = data.error;
+									document.getElementById('bulkActionError').style.display = '';
+									applyBtn.classList.remove('loading', 'disabled');
+									return;
+								}
+								location.reload();
+							}, 'json').fail(function() {
+								document.getElementById('bulkActionError').textContent = 'Server error — please try again.';
+								document.getElementById('bulkActionError').style.display = '';
+								applyBtn.classList.remove('loading', 'disabled');
+							});
+						} else if (action === 'convertmeta') {
+							$.post('ajaxapi.php', {
+								action: 'bulkconvertvaluetometa',
+								observationids: JSON.stringify(ids)
+							}, function(data) {
+								if (data && data.error) {
+									document.getElementById('bulkActionError').textContent = data.error;
+									document.getElementById('bulkActionError').style.display = '';
+									applyBtn.classList.remove('loading', 'disabled');
+									return;
+								}
+								location.reload();
+							}, 'json').fail(function() {
+								document.getElementById('bulkActionError').textContent = 'Server error — please try again.';
+								document.getElementById('bulkActionError').style.display = '';
+								applyBtn.classList.remove('loading', 'disabled');
+							});
+						} else if (action === 'movenewsurvey') {
+							$.post('ajaxapi.php', {
+								action: 'bulkmovenewsurvey',
+								observationids: JSON.stringify(ids)
+							}, function(data) {
+								if (data && data.error) {
+									document.getElementById('bulkActionError').textContent = data.error;
+									document.getElementById('bulkActionError').style.display = '';
+									applyBtn.classList.remove('loading', 'disabled');
+									return;
+								}
+								location.reload();
+							}, 'json').fail(function() {
+								document.getElementById('bulkActionError').textContent = 'Server error — please try again.';
+								document.getElementById('bulkActionError').style.display = '';
+								applyBtn.classList.remove('loading', 'disabled');
+							});
+						} else {
+							var inputMap = {
+								'obsInstrument': 'bulkInstrumentValue',
+								'rater':         'bulkRaterValue',
+								'value':         'bulkValueValue',
+								'startdate':     'bulkStartdateValue',
+								'enddate':       'bulkEnddateValue',
+							};
+							var value = document.getElementById(inputMap[action]).value;
+							$.post('ajaxapi.php', {
+								action: 'bulkupdateobservations',
+								observationids: JSON.stringify(ids),
+								column: action,
+								value: value
+							}, function(data) {
+								if (data && data.error) {
+									document.getElementById('bulkActionError').textContent = data.error;
+									document.getElementById('bulkActionError').style.display = '';
+									applyBtn.classList.remove('loading', 'disabled');
+									return;
+								}
+								location.reload();
+							}, 'json').fail(function() {
+								document.getElementById('bulkActionError').textContent = 'Server error — please try again.';
+								document.getElementById('bulkActionError').style.display = '';
+								applyBtn.classList.remove('loading', 'disabled');
+							});
+						}
+						return false; /* keep modal open until reload */
+					}
+				}).modal('show');
 			}
 
 			/* original legacy instrument name used for DB matching during conversion; stored separately
@@ -857,7 +1137,7 @@
 						surveyContentDiv.appendChild(gridDiv);
 						innerAccordion.appendChild(surveyContentDiv);
 
-						agGrid.createGrid(gridDiv, {
+						const gridApi = agGrid.createGrid(gridDiv, {
 							theme: agGrid.themeQuartz,
 							/* __none__ instrument group (states 7-8): editable Instrument column included */
 							columnDefs: isNoneInstr ? noneColDefs : instrColDefs,
@@ -865,8 +1145,11 @@
 							defaultColDef: { sortable: true, filter: true, resizable: true },
 							animateRows: false,
 							suppressMovableColumns: true,
-							onCellValueChanged: onCellValueChanged
+							rowSelection: { mode: 'multiRow' },
+							onCellValueChanged: onCellValueChanged,
+							onSelectionChanged: onGridSelectionChanged
 						});
+						gridApis.push(gridApi);
 					});
 
 					outerContent.appendChild(innerAccordion);

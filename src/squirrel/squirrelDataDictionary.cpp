@@ -158,6 +158,10 @@ bool squirrelDataDictionary::Store() {
 /* ------------------------------------------------------------ */
 /* ----- ToJSON ----------------------------------------------- */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Return a JSON object representing this data dictionary and all its items
+ * @return QJsonObject containing all data dictionary fields and item array
+ */
 QJsonObject squirrelDataDictionary::ToJSON() {
 
     QJsonObject json;
@@ -211,6 +215,10 @@ QString squirrelDataDictionary::PrintDataDictionary() {
 /* ------------------------------------------------------------ */
 /* ----- VirtualPath ------------------------------------------ */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Return the data dictionary's virtual path within the squirrel package
+ * @return virtual path string (e.g. "data-dictionary/DataDictionaryName")
+ */
 QString squirrelDataDictionary::VirtualPath() {
     QString vPath = QString("data-dictionary/%1").arg(utils::CleanString(DataDictionaryName));
 
@@ -221,6 +229,10 @@ QString squirrelDataDictionary::VirtualPath() {
 /* ------------------------------------------------------------ */
 /* ----- GetStagedFileList ------------------------------------ */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Return all staged files as physical path / virtual path pairs
+ * @return list of pairs where first is the physical disk path and second is the virtual path in the package
+ */
 QList<QPair<QString,QString>> squirrelDataDictionary::GetStagedFileList() {
 
     QList<QPair<QString,QString>> stagedList;
