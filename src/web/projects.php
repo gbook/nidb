@@ -3206,6 +3206,7 @@
 		$sharing = $row['project_sharing'];
 		$startdate = $row['project_startdate'];
 		$enddate = $row['project_enddate'];
+		$projectdesc = $row['project_desc'];
 
 		/* get user_project info */
 		$sqlstringA = "select * from user_project where user_id in (select user_id from users where username = '" . $GLOBALS['username'] . "') and project_id = $id";
@@ -3281,6 +3282,7 @@
 						<? } ?>
 						<div class="sub header"><?=$numsubjects?> subjects &nbsp; &nbsp; <?=$numstudies?> studies</div>
 					</h1>
+					<p><?=$projectdesc?></p>
 				</div>
 				<div class="one wide column">
 				</div>
@@ -3314,7 +3316,6 @@
 					$('#pageloading').hide();
 				});
 			</script>
-			<br>
 			<div class="ui text container" id="pageloading">
 				<div class="ui yellow message" align="center">
 					<i class="spinner loading icon"></i> Loading subject list...

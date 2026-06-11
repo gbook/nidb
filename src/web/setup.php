@@ -1213,8 +1213,8 @@
 
 		$orphans = array_diff($dbtables, $schematables);
 		if (count($orphans) > 0) {
-			$toRename = array_filter($orphans, fn($t) => strpos($t, 'deprecated_') !== 0);
-			$alreadyDeprecated = array_filter($orphans, fn($t) => strpos($t, 'deprecated_') === 0);
+			$toRename = array_filter($orphans, function($t) { return strpos($t, 'deprecated_') !== 0; });
+			$alreadyDeprecated = array_filter($orphans, function($t) { return strpos($t, 'deprecated_') === 0; });
 			if (count($toRename) > 0) {
 				echo "<br><b>Deprecated tables</b> (exist in database but not in schema)<br>";
 				foreach ($toRename as $orphan) {

@@ -1113,9 +1113,11 @@
 		$valid = false;
 		
 		$sqlstring = "select * from modalities where mod_code = '$modality'";
+		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		if (mysqli_num_rows($result) > 0) {
-			$sqlstringA = "show tables from " . $GLOBALS['cfg']['mysqldatabase'] . " like '" . strtolower($modality) . "'";
+			$sqlstringA = "show tables from " . $GLOBALS['cfg']['mysqldatabase'] . " like '" . strtolower($modality) . "%'";
+			//PrintSQL($sqlstringA);
 			$result = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
 			if (mysqli_num_rows($result) > 0) {
 				$valid = true;

@@ -2437,6 +2437,7 @@ CREATE TABLE `projects` (
   `project_uid` varchar(20) DEFAULT NULL,
   `project_usecustomid` tinyint(1) DEFAULT 0 COMMENT '1 - uses custom IDs, 2 - uses NiDB UIDs',
   `project_name` varchar(60) NOT NULL,
+  `project_desc` text DEFAULT NULL,
   `project_admin` int(11) DEFAULT NULL,
   `project_pi` int(11) DEFAULT NULL,
   `project_sharing` char(1) DEFAULT NULL COMMENT 'F = full sharing, access to data\nV = view subjects, experiments, studies only\nP = private, no data seen by others',
