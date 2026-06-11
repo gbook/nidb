@@ -122,8 +122,8 @@
 			$avicennaDatatype = trim($values[$colIdx['avicennadatatype']] ?? '');
 			$nidbInstrument   = trim($values[$colIdx['nidbinstrument']] ?? '');
 			$nidbVariable     = trim($values[$colIdx['nidbvariable']] ?? '');
-			$importMeta       = isset($colIdx['importmeta'])            ? (int)trim($values[$colIdx['importmeta']]            ?? '0') : 0;
-			$variableCount    = isset($colIdx['avicennavariablecount'])  ? trim($values[$colIdx['avicennavariablecount']]  ?? '') : '';
+			$importMetaRaw    = isset($colIdx['importmeta'])            ? trim($values[$colIdx['importmeta']] ?? '') : '';
+			$importMeta       = $importMetaRaw === '' ? 1 : (int)$importMetaRaw;
 
 			$result = [
 				'row'               => $i + 2,
@@ -217,7 +217,6 @@
 
 			$avicennaQuestionVal      = is_numeric($avicennaQuestion) ? (int)$avicennaQuestion : null;
 			$avicennaVariableVal      = $avicennaVariable !== '' ? $avicennaVariable : null;
-			$avicennaVariableCountVal = $variableCount !== '' ? $variableCount : null;
 			$avicennaSurveyVal        = $avicennaSurvey   !== '' ? $avicennaSurvey   : null;
 			$avicennaDataTypeVal      = $avicennaDatatype !== '' ? $avicennaDatatype : null;
 			$fim = $importMeta ? 1 : 0;
@@ -236,16 +235,16 @@
 				// Update the existing mapping
 				$existingId = (int)$existingRow['remoteimportmapping_id'];
 				$stmt = mysqli_prepare($GLOBALS['linki'],
-					"UPDATE remoteimport_mapping SET nidb_instrument=?, nidb_variable=?, avicenna_variablecount=?, avicenna_survey=?, avicenna_datatype=?, flag_import_meta=? WHERE remoteimportmapping_id=?");
-				mysqli_stmt_bind_param($stmt, 'ii' . 's' . 'ss' . 'ii', $instrumentId, $variableId, $avicennaVariableCountVal, $avicennaSurveyVal, $avicennaDataTypeVal, $fim, $existingId);
+					"UPDATE remoteimport_mapping SET nidb_instrument=?, nidb_variable=?, avicenna_survey=?, avicenna_datatype=?, flag_import_meta=? WHERE remoteimportmapping_id=?");
+				mysqli_stmt_bind_param($stmt, 'ii' . 'ss' . 'ii', $instrumentId, $variableId, $avicennaSurveyVal, $avicennaDataTypeVal, $fim, $existingId);
 				MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 				mysqli_stmt_close($stmt);
 				$result['status'] = 'updated';
 			} else {
 				// Insert a new mapping
 				$stmt = mysqli_prepare($GLOBALS['linki'],
-					"INSERT INTO remoteimport_mapping (project_id, source_type, avicenna_question, avicenna_variable, avicenna_variablecount, avicenna_survey, avicenna_datatype, nidb_instrument, nidb_variable, flag_import_meta) VALUES (?, 'avicenna', ?, ?, ?, ?, ?, ?, ?, ?)");
-				mysqli_stmt_bind_param($stmt, 'ii' . 'ss' . 'ss' . 'iii', $projectid, $avicennaQuestionVal, $avicennaVariableVal, $avicennaVariableCountVal, $avicennaSurveyVal, $avicennaDataTypeVal, $instrumentId, $variableId, $fim);
+					"INSERT INTO remoteimport_mapping (project_id, source_type, avicenna_question, avicenna_variable, avicenna_survey, avicenna_datatype, nidb_instrument, nidb_variable, flag_import_meta) VALUES (?, 'avicenna', ?, ?, ?, ?, ?, ?, ?)");
+				mysqli_stmt_bind_param($stmt, 'ii' . 'ss' . 'ss' . 'ii', $projectid, $avicennaQuestionVal, $avicennaVariableVal, $avicennaSurveyVal, $avicennaDataTypeVal, $instrumentId, $variableId, $fim);
 				MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 				mysqli_stmt_close($stmt);
 				$result['status'] = 'added';
@@ -334,7 +333,7 @@
 
 		// Load Avicenna mappings
 		$stmt = mysqli_prepare($GLOBALS['linki'],
-			"SELECT m.remoteimportmapping_id, m.avicenna_question, m.avicenna_variable, m.avicenna_variablecount,
+			"SELECT m.remoteimportmapping_id, m.avicenna_question, m.avicenna_variable,
 			        m.avicenna_survey, m.avicenna_datatype,
 			        m.nidb_instrument, m.nidb_variable, m.flag_import_meta,
 			        i.instrument_name, ii.item_name
@@ -352,7 +351,6 @@
 				'avicenna_survey'        => (string)$row['avicenna_survey'],
 				'avicenna_variable'      => (string)$row['avicenna_variable'],
 				'avicenna_question'      => (int)$row['avicenna_question'],
-				'avicenna_variablecount' => (string)$row['avicenna_variablecount'],
 				'avicenna_datatype'      => (string)$row['avicenna_datatype'],
 				'nidb_instrument_id'     => (int)$row['nidb_instrument'],
 				'nidb_instrument'        => (string)$row['instrument_name'],
@@ -466,7 +464,7 @@
 								<input type="text" id="modal_avicenna_datatype" placeholder="Data type">
 							</div>
 						</div>
-						<div class="three fields">
+						<div class="two fields">
 							<div class="field">
 								<label>Variable</label>
 								<input type="text" id="modal_avicenna_variable" placeholder="Variable name">
@@ -474,10 +472,6 @@
 							<div class="field">
 								<label>Question #</label>
 								<input type="number" id="modal_avicenna_question" placeholder="Question number" min="1">
-							</div>
-							<div class="field">
-								<label>Variable count</label>
-								<input type="text" id="modal_avicenna_variablecount" placeholder="e.g. 1-7">
 							</div>
 						</div>
 					</div>
@@ -594,15 +588,14 @@
 								<ul>
 								<li>First line must be a header row.
 								<li>Required columns: <code>avicennasurvey, avicennavariable, avicennadatatype, nidbinstrument, nidbvariable</code>.
-								<li>Optional columns: <code>avicennaquestion, avicennavariablecount, importmeta</code>.
+								<li>Optional columns: <code>avicennaquestion, importmeta</code>. <code>importmeta</code> should be <code>1</code> to import metadata, <code>0</code> to not import. Default is <code>1</code>.
 								<li>Columns may be in any order. Values may contain spaces.
 								<li>During import, <code>avicennavariable</code> will be matched first. If it not found, then <code>avicennaquestion</code> will be matched.
-								<li><code>avicennavariablecount</code> format is <code>X-Y</code> representing an incremental range. Example: <code>1-7</code>
 								</ul>
 							</p>
 							<textarea name="csvtext" rows="12"
 							          style="font-family:monospace;font-size:0.85em;width:100%"
-							          placeholder="avicennasurvey,avicennavariable,avicennadatatype,avicennaquestion,avicennavariablecount,nidbinstrument,nidbvariable,importmeta"></textarea>
+							          placeholder="avicennasurvey,avicennavariable,avicennadatatype,avicennaquestion,nidbinstrument,nidbvariable,importmeta"></textarea>
 						</div>
 					</div>
 				</form>
@@ -713,7 +706,6 @@
 					{ field: 'avicenna_survey',        headerName: 'Survey',           sortable: true, filter: true, flex: 1 },
 					{ field: 'avicenna_variable',      headerName: 'Variable',         sortable: true, filter: true, flex: 1 },
 					{ field: 'avicenna_question',      headerName: 'Question #',       sortable: true, filter: true, width: 130 },
-					{ field: 'avicenna_variablecount', headerName: 'Variable count',   sortable: true, filter: true, width: 155 },
 					{ field: 'avicenna_datatype',      headerName: 'Datatype',         sortable: true, filter: true, width: 130 },
 					arrowCol,
 					{ field: 'nidb_instrument',   headerName: 'NiDB Instrument', sortable: true, filter: true, flex: 1,
@@ -805,6 +797,9 @@
 			document.getElementById('modal_source_type').value = sourceType;
 			document.getElementById('modalTitle').textContent  = 'Add ' + sourceType + ' mapping';
 			toggleSourceFields(sourceType);
+			if (sourceType === 'avicenna') {
+				document.getElementById('modal_flag_import_meta').checked = true;
+			}
 			$('#mappingModal').modal('show');
 		}
 
@@ -821,7 +816,6 @@
 				document.getElementById('modal_avicenna_variable').value      = data.avicenna_variable      || '';
 				document.getElementById('modal_avicenna_datatype').value      = data.avicenna_datatype      || '';
 				document.getElementById('modal_avicenna_question').value      = data.avicenna_question      || '';
-				document.getElementById('modal_avicenna_variablecount').value = data.avicenna_variablecount || '';
 				document.getElementById('modal_flag_import_meta').checked     = !!data.flag_import_meta;
 			} else {
 				document.getElementById('modal_redcap_arm').value          = data.redcap_arm       || '';
@@ -846,7 +840,7 @@
 		// ── Reset all form fields to empty ────────────────────────────────
 		function clearModal() {
 			['modal_mappingid','modal_avicenna_survey','modal_avicenna_variable','modal_avicenna_datatype',
-			 'modal_avicenna_question','modal_avicenna_variablecount',
+			 'modal_avicenna_question',
 			 'modal_redcap_arm','modal_redcap_event','modal_redcap_form',
 			 'modal_redcap_field','modal_redcap_datatype','modal_redcap_datefield',
 			 'modal_nidb_instrument'].forEach(id => {
@@ -917,7 +911,6 @@
 				params.avicenna_variable      = document.getElementById('modal_avicenna_variable').value;
 				params.avicenna_datatype      = document.getElementById('modal_avicenna_datatype').value;
 				params.avicenna_question      = document.getElementById('modal_avicenna_question').value;
-				params.avicenna_variablecount = document.getElementById('modal_avicenna_variablecount').value;
 				params.flag_import_meta       = document.getElementById('modal_flag_import_meta').checked ? 1 : 0;
 			} else {
 				params.redcap_arm            = document.getElementById('modal_redcap_arm').value;
@@ -964,7 +957,6 @@
 						avicenna_variable:      params.avicenna_variable,
 						avicenna_datatype:      params.avicenna_datatype,
 						avicenna_question:      parseInt(params.avicenna_question)      || 0,
-						avicenna_variablecount: params.avicenna_variablecount,
 						flag_import_meta:       parseInt(params.flag_import_meta),
 					});
 					if (mappingId) {
