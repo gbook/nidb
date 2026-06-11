@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jun 08, 2026 at 04:37 PM
+-- Generation Time: Jun 11, 2026 at 05:56 PM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -1964,7 +1964,7 @@ CREATE TABLE `observations` (
   `observation_instrument` varchar(250) DEFAULT NULL,
   `observation_desc` varchar(250) DEFAULT NULL,
   `observation_rater` varchar(50) DEFAULT NULL,
-  `observation_value` mediumtext NOT NULL,
+  `observation_value` text NOT NULL,
   `observation_startdate` datetime NOT NULL DEFAULT '0000-01-01 00:00:00',
   `observation_enddate` datetime DEFAULT NULL,
   `observation_duration` int(11) DEFAULT NULL,
@@ -4348,7 +4348,8 @@ ALTER TABLE `observations`
 -- Indexes for table `observation_meta`
 --
 ALTER TABLE `observation_meta`
-  ADD PRIMARY KEY (`observationmeta_id`);
+  ADD PRIMARY KEY (`observationmeta_id`),
+  ADD KEY `observation_id` (`observation_id`);
 
 --
 -- Indexes for table `observation_surveys`

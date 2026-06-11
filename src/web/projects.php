@@ -39,6 +39,7 @@
 	require "functions.php";
 	require "includes_php.php";
 	require "includes_html.php";
+	require "nidbapi.php";
 	require "menu.php";
 
 	//PrintVariable($_POST);
@@ -201,6 +202,10 @@
 			BatchUpdateSubject($id, $csv);
 			DisplaySubjectsTable($id);
 			break;
+		case 'batchaddsubjects':
+			BatchAddSubjects($id, $csv);
+			DisplaySubjectsTable($id);
+			break;
 		case 'displaynonimaging':
 			DisplayNonImagingTable($id);
 			break;
@@ -250,6 +255,118 @@
 				}
 			}
 		}
+		Notice(implode2("<br>", $msgs));
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- BatchAddSubjects ------------------- */
+	/* -------------------------------------------- */
+	function BatchAddSubjects($projectid, $csvstr) {
+		$projectid = (int)$projectid;
+
+		$lines = preg_split('/\r\n|\r|\n/', trim($csvstr));
+		if (count($lines) < 2) { Notice("CSV must contain a header row and at least one data row."); return; }
+
+		/* strip spaces from header, lowercase for case-insensitive matching */
+		$header = array_map('trim', str_getcsv($lines[0]));
+		$headerLower = array_map('strtolower', $header);
+
+		$requiredCols = ['id', 'sex', 'gender', 'status', 'enrollgroup'];
+		foreach ($requiredCols as $req) {
+			if (!in_array($req, $headerLower)) {
+				Notice("CSV is missing required column: <b>$req</b>");
+				return;
+			}
+		}
+
+		$validSex      = ['F','M','O','U',''];
+		$validGender   = ['F','M','O','U',''];
+		$validStatus   = ['consented','excluded','completed',''];
+
+		$msgs = [];
+
+		for ($i = 1; $i < count($lines); $i++) {
+			$line = trim($lines[$i]);
+			if ($line === '') continue;
+
+			$values = array_map('trim', str_getcsv($line));
+			/* zip header to values; pad short rows with empty strings */
+			$row = [];
+			foreach ($header as $idx => $col) {
+				$row[strtolower($col)] = isset($values[$idx]) ? $values[$idx] : '';
+			}
+
+			$altid       = mysqli_real_escape_string($GLOBALS['linki'], $row['id']);
+			$sex         = strtoupper(mysqli_real_escape_string($GLOBALS['linki'], $row['sex']));
+			$gender      = strtoupper(mysqli_real_escape_string($GLOBALS['linki'], $row['gender']));
+			$status      = strtolower(mysqli_real_escape_string($GLOBALS['linki'], $row['status']));
+			$enrollgroup = mysqli_real_escape_string($GLOBALS['linki'], $row['enrollgroup']);
+
+			if ($altid === '') { $msgs[] = "Row $i: skipped — ID is blank"; continue; }
+			if (!in_array($sex,    $validSex))    { $msgs[] = "Row $i ($altid): invalid sex '$sex' — must be F, M, O, or U"; continue; }
+			if (!in_array($gender, $validGender)) { $msgs[] = "Row $i ($altid): invalid gender '$gender' — must be F, M, O, or U"; continue; }
+			if (!in_array($status, $validStatus)) { $msgs[] = "Row $i ($altid): invalid status '$status' — must be consented, excluded, completed, or blank"; continue; }
+
+			/* optional columns */
+			$guid         = mysqli_real_escape_string($GLOBALS['linki'], $row['guid']         ?? '');
+			$birthdate    = mysqli_real_escape_string($GLOBALS['linki'], $row['birthdate']     ?? '');
+			$ethnicity1   = mysqli_real_escape_string($GLOBALS['linki'], $row['ethnicity1']    ?? '');
+			$ethnicity2   = mysqli_real_escape_string($GLOBALS['linki'], $row['ethnicity2']    ?? '');
+			$handedness   = mysqli_real_escape_string($GLOBALS['linki'], $row['handedness']    ?? '');
+			$education    = mysqli_real_escape_string($GLOBALS['linki'], $row['education']     ?? '');
+			$marital      = mysqli_real_escape_string($GLOBALS['linki'], $row['maritalstatus'] ?? '');
+			$smoking      = mysqli_real_escape_string($GLOBALS['linki'], $row['smokingstatus'] ?? '');
+			if ($birthdate === '') $birthdate = '0000-00-00';
+
+			/* check if a subject with this altuid already exists */
+			$result = MySQLiQuery("select sa.subject_id from subject_altuid sa where sa.altuid = '$altid'", __FILE__, __LINE__);
+			if (mysqli_num_rows($result) > 0) {
+				$row2 = mysqli_fetch_array($result, MYSQLI_ASSOC);
+				$subjectRowID = (int)$row2['subject_id'];
+				$msgs[] = "<b>$altid</b>: subject already exists (subject_id=$subjectRowID) — checking enrollment";
+			} else {
+				/* generate a unique NiDB UID */
+				do {
+					$uid = NIDB\CreateUID('S', 3);
+					$chk = MySQLiQuery("select subject_id from subjects where uid = '$uid'", __FILE__, __LINE__);
+				} while (mysqli_num_rows($chk) > 0);
+
+				/* generate a unique family UID */
+				do {
+					$familyuid = NIDB\CreateUID('F');
+					$chk = MySQLiQuery("select family_id from families where family_uid = '$familyuid'", __FILE__, __LINE__);
+				} while (mysqli_num_rows($chk) > 0);
+
+				/* insert subject */
+				MySQLiQuery("insert into subjects (name, birthdate, sex, gender, ethnicity1, ethnicity2, handedness, education, marital_status, smoking_status, uid, uuid, guid) values ('$altid', '$birthdate', '$sex', '$gender', '$ethnicity1', '$ethnicity2', '$handedness', '$education', '$marital', '$smoking', '$uid', uuid(), '$guid')", __FILE__, __LINE__);
+				$subjectRowID = (int)mysqli_insert_id($GLOBALS['linki']);
+
+				/* create family record */
+				MySQLiQuery("insert into families (family_uid, family_createdate, family_name) values ('$familyuid', now(), 'Proband-$uid')", __FILE__, __LINE__);
+				$familyRowID = (int)mysqli_insert_id($GLOBALS['linki']);
+				MySQLiQuery("insert into family_members (family_id, subject_id, fm_createdate) values ($familyRowID, $subjectRowID, now())", __FILE__, __LINE__);
+
+				/* store the CSV ID as the subject's alt UID */
+				MySQLiQuery("insert ignore into subject_altuid (subject_id, altuid) values ($subjectRowID, '$altid')", __FILE__, __LINE__);
+
+				$msgs[] = "<b>$altid</b>: created new subject <tt>$uid</tt>";
+			}
+
+			/* enroll in project if not already enrolled */
+			$result = MySQLiQuery("select enrollment_id from enrollment where project_id = $projectid and subject_id = $subjectRowID", __FILE__, __LINE__);
+			if (mysqli_num_rows($result) > 0) {
+				$erow = mysqli_fetch_array($result, MYSQLI_ASSOC);
+				$enrollmentRowID = (int)$erow['enrollment_id'];
+				/* update group and status on existing enrollment */
+				MySQLiQuery("update enrollment set enroll_subgroup = '$enrollgroup', enroll_status = '$status' where enrollment_id = $enrollmentRowID", __FILE__, __LINE__);
+				$msgs[] = "&nbsp;&nbsp;&rarr; already enrolled — updated group/status";
+			} else {
+				MySQLiQuery("insert into enrollment (project_id, subject_id, enroll_startdate, enroll_subgroup, enroll_status) values ($projectid, $subjectRowID, now(), '$enrollgroup', '$status')", __FILE__, __LINE__);
+				$msgs[] = "&nbsp;&nbsp;&rarr; enrolled in project (group: <i>$enrollgroup</i>, status: <i>$status</i>)";
+			}
+		}
+
 		Notice(implode2("<br>", $msgs));
 	}
 
@@ -1358,10 +1475,55 @@
 				</div>
 				<div class="right aligned seven wide column">
 					<button class="ui small basic primary compact button" id="batchsubjectupdatebutton"> Batch update...</button> &nbsp;
+					<button class="ui small basic primary compact button" id="batchsubjectaddbutton"><i class="user plus icon"></i> Batch add subjects...</button> &nbsp;
 					<div class="ui small basic primary compact button" onClick="onBtnExport()"><i class="file excel outline icon"></i> Export table as .csv</div> &nbsp;
 				</div>
 			</div>
 		</div>
+		<div class="ui modal" id="batchaddmodal">
+			<div class="header">Batch Add Subjects</div>
+			<div class="content">
+				<form action="projects.php" method="post" class="ui form">
+					<input type="hidden" name="action" value="batchaddsubjects">
+					<input type="hidden" name="projectid" value="<?=$id?>">
+					<div class="field">
+						<label>Paste .csv formatted data</label>
+						<textarea name="csv" style="font-family:monospace"></textarea>
+					</div>
+					<i class="blue question circle icon"></i> <b>Formatting Guide</b><br>
+					Required columns: <code>ID</code>, <code>sex</code>, <code>gender</code>, <code>status</code>, <code>enrollgroup</code>
+					<ul>
+						<li><code>ID</code> - Subject identifier; stored as an alternate UID</li>
+						<li><code>sex</code> - Possible values: <tt>F, M, O, U</tt></li>
+						<li><code>gender</code> - Possible values: <tt>F, M, O, U</tt></li>
+						<li><code>status</code> - Enrollment status. Possible values: <tt>consented, excluded, completed,</tt> or blank</li>
+						<li><code>enrollgroup</code> - Enrollment group (e.g. <tt>control, patient</tt>)</li>
+					</ul>
+					Optional columns:
+					<ul>
+						<li><code>guid</code> - Globally unique ID for NDA submission</li>
+						<li><code>birthdate</code> - format <tt>YYYY-MM-DD</tt> (defaults to <tt>0000-00-00</tt> if omitted)</li>
+						<li><code>ethnicity1</code> - Possible values: <tt>hispanic, nothispanic</tt></li>
+						<li><code>ethnicity2</code> - Possible values: <tt>unknown, asian, black, white, indian, islander, mixed, other</tt></li>
+						<li><code>handedness</code> - Possible values: <tt>R, L, A, U</tt></li>
+						<li><code>education</code> - Possible values: 0 (Unknown) through 8 (Doctoral Degree)</li>
+						<li><code>maritalstatus</code> - Possible values: <tt>unknown, married, single, divorced, separated, civilunion, cohabitating, widowed</tt></li>
+						<li><code>smokingstatus</code> - Possible values: <tt>unknown, never, current, past</tt></li>
+					</ul>
+					<b>Sample .csv format</b>
+					<div style="font-family:monospace; padding:8px; background-color: #eee; border: 1px dashed #aaa">
+						ID, sex, gender, status, enrollgroup<br>
+						SUBJ001, F, F, consented, control<br>
+						SUBJ002, M, M, consented, patient
+					</div>
+				</div>
+			<div class="actions">
+				<input type="submit" class="ui approve button" value="Add Subjects">
+				<div class="ui cancel button">Cancel</div>
+				</form>
+			</div>
+		</div>
+
 		<div class="ui modal" id="batchmodal">
 			<div class="header">Batch Update Subject Information</div>
 			<div class="content">
@@ -1414,6 +1576,9 @@
 			$(document).ready(function(){
 				$('#batchsubjectupdatebutton').click(function(){
 					$('#batchmodal').modal('show');
+				});
+				$('#batchsubjectaddbutton').click(function(){
+					$('#batchaddmodal').modal('show');
 				});
 			});
 			

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-PACKAGE=nidb_2026.5.1425
+PACKAGE=nidb_2026.6.1445
 LIBDIR=$PACKAGE/lib/x86_64-linux-gnu/
 BINDIR=$PACKAGE/usr/local/bin/
 DEBDIR=$PACKAGE/DEBIAN
