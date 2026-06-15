@@ -637,7 +637,7 @@ QVector<double> moduleMRIQA::Derivative(QVector<double> a) {
     QVector<double> r;
 
 	if (a.size() > 0) {
-		for (int i=0; i<a.size();i++)
+		for (int i=1; i<a.size();i++)
 			r.append(a[i]-a[i-1]);
 	}
 	else {

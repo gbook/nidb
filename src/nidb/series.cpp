@@ -78,6 +78,7 @@ void series::LoadSeriesInfo() {
             }
 
             /* check to see if anything isn't valid or is blank */
+            isValid = true;
             if ((n->cfg["archivedir"] == "") || (n->cfg["archivedir"] == "/")) { msgs << "cfg->archivedir was invalid"; isValid = false; }
             if (uid == "") { msgs << "uid was blank"; isValid = false; }
             if (studynum < 1) { msgs << "studynum is not valid"; isValid = false; }
@@ -102,7 +103,6 @@ void series::LoadSeriesInfo() {
             bidsMapping = aio->GetBIDSMapping(projectid,desc,modality,imagetype);
             delete aio;
         }
-        isValid = true;
     }
     msg = msgs.join(" | ");
 }

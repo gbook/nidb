@@ -30,6 +30,7 @@
 	<head>
 		<link rel="icon" type="image/png" href="images/squirrel.png">
 		<title>NiDB - Phenotypic observations</title>
+		<style>.ui-autocomplete { z-index: 9999 !important; }</style>
 	</head>
 
 <body>
@@ -421,58 +422,72 @@
 			</div>
 		</div>
 
-		<div class="ui raised black segment">
-			<form action="observations.php" method="post" class="ui form" id="addObsForm">
-				<input type="hidden" name="action" value="addobservation">
-				<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
-				<input type="hidden" name="instrument_id" id="instrumentId">
-				<input type="hidden" name="observation_instrument" id="instrumentNameHidden">
-				<input type="hidden" name="instrumentitem_id" id="instrumentitemId">
+		<!-- Add Observation modal -->
+		<div class="ui modal" id="addObsModal">
+			<div class="header"><i class="plus icon"></i> Add Observation</div>
+			<div class="content">
+				<form action="observations.php" method="post" class="ui form" id="addObsForm">
+					<input type="hidden" name="action" value="addobservation">
+					<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
+					<input type="hidden" name="instrument_id" id="instrumentId">
+					<input type="hidden" name="observation_instrument" id="instrumentNameHidden">
+					<input type="hidden" name="instrumentitem_id" id="instrumentitemId">
 
-				<div class="fields">
-					<div class="four wide field">
-						<label>Instrument &nbsp; <span class="ui basic tiny label" style="font-weight:normal">optional but encouraged</span></label>
-						<input type="text" id="instrumentSearch" placeholder="Search instruments..." autocomplete="off">
-						<small><a href="#" id="addInstrumentLink" style="color:#2185d0">+ Add new instrument</a></small>
+					<div class="fields">
+						<div class="eight wide field">
+							<label style="display:flex;justify-content:space-between;align-items:center">
+								<span>Instrument &nbsp; <span class="ui basic tiny label" style="font-weight:normal">optional but encouraged</span></span>
+								<a href="#" id="addInstrumentLink" style="color:#2185d0;font-weight:normal;font-size:0.85em">+ Add new instrument</a>
+							</label>
+							<input type="text" id="instrumentSearch" placeholder="Search instruments..." autocomplete="off">
+						</div>
+						<div class="eight wide field">
+							<label style="display:flex;justify-content:space-between;align-items:center">
+								<span>Instrument item</span>
+								<a href="#" id="addItemLink" style="color:#2185d0;font-weight:normal;font-size:0.85em;display:none">+ Add new item</a>
+							</label>
+							<input type="text" id="itemSearch" placeholder="Select instrument first" autocomplete="off" disabled>
+						</div>
 					</div>
-					<div class="four wide field">
-						<label>Instrument item</label>
-						<input type="text" id="itemSearch" placeholder="Select instrument first" autocomplete="off" disabled>
-						<small><a href="#" id="addItemLink" style="color:#2185d0; display:none">+ Add new item</a></small>
+					<div class="fields">
+						<div class="eight wide field">
+							<label>Observation name</label>
+							<input type="text" name="observation_name" id="observationName" placeholder="Enter name or select instrument/item" required>
+						</div>
+						<div class="four wide field">
+							<label>Value</label>
+							<input type="text" name="observation_value" size="10" required>
+						</div>
+						<div class="four wide field">
+							<label>Rater</label>
+							<input type="text" name="observation_rater" size="15" value="<?=$GLOBALS['username']?>">
+						</div>
 					</div>
-					<div class="four wide field">
-						<label>Observation name</label>
-						<input type="text" name="observation_name" id="observationName" placeholder="Enter name or select instrument/item" required>
+					<div class="fields">
+						<div class="six wide field">
+							<label>Start date</label>
+							<input type="datetime-local" name="observation_startdate" id="obsStartdate">
+						</div>
+						<div class="three wide field">
+							<label>Duration</label>
+							<div class="ui right labeled input">
+								<input type="text" name="observation_duration" size="10">
+								<div class="ui label">sec</div>
+							</div>
+						</div>
+						<div class="six wide field">
+							<label>End date</label>
+							<input type="datetime-local" name="observation_enddate">
+						</div>
 					</div>
-					<div class="two wide field">
-						<label>Value</label>
-						<input type="text" name="observation_value" size="10" required>
-					</div>
+				</form>
+			</div>
+			<div class="actions">
+				<div class="ui cancel button">Cancel</div>
+				<div class="ui primary button" onclick="document.getElementById('addObsForm').submit()">
+					<i class="plus icon"></i> Add
 				</div>
-				<div class="fields">
-					<div class="four wide field">
-						<label>Start date</label>
-						<input type="datetime-local" name="observation_startdate" id="obsStartdate">
-					</div>
-					<div class="two wide field">
-						<label>Duration</label>
-						<input type="text" name="observation_duration" size="10">
-					</div>
-					<div class="four wide field">
-						<label>End date</label>
-						<input type="datetime-local" name="observation_enddate">
-					</div>
-					<div class="two wide field">
-						<label>Rater</label>
-						<input type="text" name="observation_rater" size="15" value="<?=$GLOBALS['username']?>">
-					</div>
-					<div class="two wide field">
-						<label>&nbsp;</label>
-						<input type="submit" class="ui primary button" value="Add Observation">
-					</div>
-				</div>
-
-			</form>
+			</div>
 		</div>
 
 		<?
@@ -603,13 +618,17 @@
 		$topInformation = sprintf("%d observation%s from %d instrument%s (%d unaffiliated observation%s)", $totalObs, $totalObs != 1 ? 's' : '', $instrumentCount, $instrumentCount != 1 ? 's' : '', $unaffiliatedCount, $unaffiliatedCount != 1 ? 's' : '');
 		
 		?>
-		<div class="ui top attached secondary inverted black segment" style="padding: 6px 14px"><?=$topInformation?></div>
 		<div style="margin: 8px 0">
+			<button class="ui primary button" onclick="$('#addObsModal').modal('show')">
+				<i class="plus icon"></i> Add observation
+			</button>
 			<button class="ui green button disabled" id="withSelectedBtn" disabled onclick="openBulkActionModal()">
 				<i class="tasks icon"></i>With selected...
 			</button>
 		</div>
-		<div class="ui styled fluid accordion" id="observationAccordion"></div>
+		
+		<div class="ui top attached secondary inverted black segment" style="padding: 6px 14px"><?=$topInformation?></div>
+		<div class="ui styled fluid accordion" id="observationAccordion" style="box-shadow: 0 4px 8px rgba(0,0,0,0.2)"></div>
 
 		<script>
 			const groupedData   = <?=$groupsJson?>;
@@ -1316,6 +1335,7 @@
 					source: function(request, response) {
 						$.getJSON('ajaxapi.php', { action: 'searchinstruments', term: request.term, projectid: PROJECT_ID }, response);
 					},
+					appendTo: '#addObsModal',
 					minLength: 0,
 					select: function(event, ui) {
 						/* lock in the chosen instrument and unlock the item search */
@@ -1356,6 +1376,7 @@
 						/* scope item search to the currently selected instrument */
 						$.getJSON('ajaxapi.php', { action: 'searchinstrumentitems', term: request.term, instrumentid: $('#instrumentId').val() }, response);
 					},
+					appendTo: '#addObsModal',
 					minLength: 0,
 					select: function(event, ui) {
 						/* lock in the chosen item and mirror its name into the read-only observation name field */

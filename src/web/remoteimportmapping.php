@@ -602,9 +602,7 @@
 			</div>
 			<div class="actions">
 				<div class="ui cancel button">Cancel</div>
-				<button class="ui primary button" onclick="document.getElementById('bulkForm').submit()">
-					<i class="upload icon"></i> Import
-				</button>
+				<button class="ui primary button" onclick="document.getElementById('bulkForm').submit()">Add mappings</button>
 			</div>
 		</div>
 

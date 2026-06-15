@@ -2673,8 +2673,12 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
     root["Name"] = "NiDB exported BIDS dataset";
     QByteArray jj = QJsonDocument(root).toJson();
     QFile fout(outdir + "/dataset_description.json");
-    fout.open(QIODevice::WriteOnly);
-    fout.write(jj);
+    if (!fout.open(QIODevice::WriteOnly))
+        n->Log("Error opening dataset_description.json for writing: " + fout.errorString());
+    else {
+        fout.write(jj);
+        fout.close();
+    }
 
     /* write the participants.csv file */
     QString pfile = outdir + "/participants.tsv";

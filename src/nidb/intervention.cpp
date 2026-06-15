@@ -82,8 +82,8 @@ void intervention::LoadInterventionInfo() {
             subjectRowID = q.value("subject_id").toInt();
             uid = q.value("UID").toString();
 
+            isValid = true;
         }
-        isValid = true;
     }
     msg = msgs.join(" | ");
 }

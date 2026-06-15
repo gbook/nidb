@@ -1144,11 +1144,13 @@ void imageIO::GetFileType(QString f, QString &fileType, QString &fileModality, Q
                   QString line = in.readLine();
                   if (line.contains("Patient name")) {
                       QStringList parts = line.split(":",Qt::SkipEmptyParts);
-                      filePatientID = parts[1].trimmed();
+                      if (parts.size() >= 2)
+                          filePatientID = parts[1].trimmed();
                   }
                   if (line.contains("Protocol name")) {
                       QStringList parts = line.split(":",Qt::SkipEmptyParts);
-                      fileProtocol = parts[1].trimmed();
+                      if (parts.size() >= 2)
+                          fileProtocol = parts[1].trimmed();
                   }
                   if (line.contains("MRSERIES", Qt::CaseInsensitive)) {
                       fileModality = "MR";

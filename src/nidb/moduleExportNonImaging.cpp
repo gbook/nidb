@@ -72,7 +72,7 @@ int moduleExportNonImaging::Run() {
             QString filePath = q.value("export_filepath").toString();
 
             /* delete the file */
-            if (QFile::exists(filePath) && (!filePath.endsWith("/") && (filePath == ""))) {
+            if (QFile::exists(filePath) && (!filePath.endsWith("/") && (filePath != ""))) {
                 QFile::remove(filePath);
             }
 

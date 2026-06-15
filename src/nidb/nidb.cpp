@@ -929,7 +929,10 @@ QString nidb::CreateUID(QString prefix, int numletters) {
             C8 = letters.at( QRandomGenerator::global()->bounded(26) );
 
         QString str;
-        str = QString("%1%2%3%4").arg(C5).arg(C6).arg(C7).arg(C8);
+        if (numletters == 4)
+            str = QString("%1%2%3%4").arg(C5).arg(C6).arg(C7).arg(C8);
+        else
+            str = QString("%1%2%3").arg(C5).arg(C6).arg(C7);
         if (!badarray.contains(str,Qt::CaseInsensitive))
             done = true;
     }
@@ -992,7 +995,7 @@ bool nidb::SubmitClusterJob(QString jobFilePath, QString clusterType, QString su
     if (submitHost == "")
         submitHost = cfg["clustersubmithost"];
     if (submitUser == "")
-        submitHost = cfg["clustersubmituser"];
+        submitUser = cfg["clustersubmituser"];
     if (clusterUser == "")
         clusterUser = cfg["clusteruser"];
 

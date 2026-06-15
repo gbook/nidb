@@ -1498,7 +1498,10 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession,
                 /* open existing JSON file */
                 QFile jsonFile;
                 jsonFile.setFileName(newName);
-                jsonFile.open(QIODevice::ReadOnly);
+                if (!jsonFile.open(QIODevice::ReadOnly)) {
+                    msg += "Error opening [" + newName + "]: " + jsonFile.errorString();
+                    continue;
+                }
                 QByteArray jsonData = jsonFile.readAll();
                 //Print("Checkpoing BIDS H 5");
 
@@ -1525,7 +1528,10 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession,
                 /* open existing JSON file */
                 QFile jsonFile;
                 jsonFile.setFileName(newName);
-                jsonFile.open(QIODevice::ReadOnly);
+                if (!jsonFile.open(QIODevice::ReadOnly)) {
+                    msg += "Error opening [" + newName + "]: " + jsonFile.errorString();
+                    continue;
+                }
                 QByteArray jsonData = jsonFile.readAll();
 
                 QJsonDocument d = QJsonDocument::fromJson(jsonData);

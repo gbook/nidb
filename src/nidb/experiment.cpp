@@ -104,7 +104,10 @@ bool experiment::WriteFiles(QString dir, QStringList &fileList, QString &m) {
         QString filename = dir + "/" + s.filename;
 
         QFile f(filename);
-        f.open(QIODevice::WriteOnly);
+        if (!f.open(QIODevice::WriteOnly)) {
+            m = "Could not open file for writing [" + filename + "]: " + f.errorString();
+            return false;
+        }
         f.write(QByteArray::fromBase64(s.file));
         f.close();
 

@@ -84,8 +84,9 @@ public:
 
     int size() const;
 
-private:
     QList<RemoteImportMapping> mappings;
+
+private:
     nidb *n;
 };
 
