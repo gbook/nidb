@@ -36,6 +36,7 @@ public:
     void PrintObservationInfo();
     squirrelObservation GetSquirrelObject(QString databaseUUID);
     bool AddToDatabase(); /* store the observation to the database */
+    bool PopulateLinkedInstrument(); /* fill in the linked instrument information if the instrumentItemRowID is valid */
 
     /* data from 'observations' table */
     QDateTime dateObservationEnd;
@@ -48,6 +49,7 @@ public:
     QString observationName;
     QString observationNotes;
     QString observationRater;
+    QString observationTZOffset;
     QString observationValue;
     QString subjectUID;
     int enrollmentRowID = -1;

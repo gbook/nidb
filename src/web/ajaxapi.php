@@ -58,6 +58,7 @@
 	$studyid = GetVariable("studyid");
 	$column = GetVariable("column");
 	$value = GetVariable("value");
+	$tz_offset = GetVariable("tz_offset");
 	$surveyid = GetVariable("surveyid");
 	$observationids = GetVariable("observationids");
 	$fileioIds = GetVariable("ids");
@@ -141,13 +142,13 @@
 			UpdateStudyDetails($subjectid, $studyid, $column, $value);
 			break;
 		case 'updateobservationdetails':
-			UpdateObservationDetails($observationid, $column, $value);
+			UpdateObservationDetails($observationid, $column, $value, $tz_offset);
 			break;
 		case 'getobservationmeta':
 			GetObservationMeta($observationid);
 			break;
 		case 'bulkupdateobservations':
-			BulkUpdateObservations($observationids, $column, $value);
+			BulkUpdateObservations($observationids, $column, $value, $tz_offset);
 			break;
 		case 'bulkdeleteobservations':
 			BulkDeleteObservations($observationids);
@@ -1124,7 +1125,7 @@
 	/* -------------------------------------------- */
 	/* ------- UpdateObservationDetails ----------- */
 	/* -------------------------------------------- */
-	function UpdateObservationDetails($observationid, $column, $value) {
+	function UpdateObservationDetails($observationid, $column, $value, $tz_offset = '') {
 		$observationid = (int)$observationid;
 		if ($observationid < 1) { echo "error - invalid observation ID"; return; }
 
@@ -1146,6 +1147,7 @@
 		$dbColumn = $allowedColumns[$column];
 		$notNullColumns = ['name', 'value'];
 		$intColumns = ['duration'];
+		$dateColumns = ['startdate', 'enddate'];
 
 		if (in_array($column, $intColumns)) {
 			$castValue = (trim($value) === '') ? null : (int)$value;
@@ -1154,6 +1156,11 @@
 		} elseif (in_array($column, $notNullColumns)) {
 			$stmt = mysqli_prepare($GLOBALS['linki'], "update observations set $dbColumn = ? where observation_id = ?");
 			mysqli_stmt_bind_param($stmt, 'si', $value, $observationid);
+		} elseif (in_array($column, $dateColumns)) {
+			$nullableValue  = (trim($value) === '') ? null : $value;
+			$nullableTzOff  = (trim($tz_offset) === '') ? null : $tz_offset;
+			$stmt = mysqli_prepare($GLOBALS['linki'], "update observations set $dbColumn = ?, observation_tz_offset = ? where observation_id = ?");
+			mysqli_stmt_bind_param($stmt, 'ssi', $nullableValue, $nullableTzOff, $observationid);
 		} else {
 			$nullableValue = (trim($value) === '') ? null : $value;
 			$stmt = mysqli_prepare($GLOBALS['linki'], "update observations set $dbColumn = ? where observation_id = ?");
@@ -1187,7 +1194,7 @@
 	/* -------------------------------------------- */
 	/* ------- BulkUpdateObservations ------------ */
 	/* -------------------------------------------- */
-	function BulkUpdateObservations($observationidsJson, $column, $value) {
+	function BulkUpdateObservations($observationidsJson, $column, $value, $tz_offset = '') {
 		header('Content-Type: application/json');
 		$ids = json_decode($observationidsJson, true);
 		if (!is_array($ids) || count($ids) === 0) { echo json_encode(['error' => 'No IDs provided']); return; }
@@ -1203,14 +1210,21 @@
 			echo json_encode(['error' => "Column [$column] not recognized"]);
 			return;
 		}
-		$dbColumn = $allowedColumns[$column];
+		$dbColumn      = $allowedColumns[$column];
+		$isDate        = ($column === 'startdate' || $column === 'enddate');
 		$nullableValue = (trim($value) === '') ? null : $value;
+		$nullableTzOff = (trim($tz_offset) === '') ? null : $tz_offset;
 		$updated = 0;
 		foreach ($ids as $id) {
 			$id = (int)$id;
 			if ($id < 1) continue;
-			$stmt = mysqli_prepare($GLOBALS['linki'], "update observations set $dbColumn = ? where observation_id = ?");
-			mysqli_stmt_bind_param($stmt, 'si', $nullableValue, $id);
+			if ($isDate) {
+				$stmt = mysqli_prepare($GLOBALS['linki'], "update observations set $dbColumn = ?, observation_tz_offset = ? where observation_id = ?");
+				mysqli_stmt_bind_param($stmt, 'ssi', $nullableValue, $nullableTzOff, $id);
+			} else {
+				$stmt = mysqli_prepare($GLOBALS['linki'], "update observations set $dbColumn = ? where observation_id = ?");
+				mysqli_stmt_bind_param($stmt, 'si', $nullableValue, $id);
+			}
 			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 			mysqli_stmt_close($stmt);
 			$updated++;

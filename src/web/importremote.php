@@ -62,11 +62,11 @@
 
 	/* determine workflow step for the stepper diagram */
 	if (in_array($action, ['addimportform', 'editimportform', 'addimport', 'updateimport'])) {
-		$workflowStep = 1;
-	} elseif (in_array($action, ['viewbatchimports', 'viewbatchimportlist', 'viewbatchlog'])) {
 		$workflowStep = 4;
+	} elseif (in_array($action, ['viewbatchimports', 'viewbatchimportlist', 'viewbatchlog'])) {
+		$workflowStep = 6;
 	} else {
-		$workflowStep = 3;
+		$workflowStep = 5;
 	}
 	?>
 	<div style="display:flex; align-items:flex-start; gap:2em; padding:1em; max-width:1600px; margin:0 auto">
@@ -293,10 +293,12 @@
 	function DisplayImportStepper($activeStep) {
 		$pid = (int)$GLOBALS['projectid'];
 		$steps = [
-			1 => ['title' => 'Create & Manage Imports', 'desc' => 'Set up import source, type, and schedule.'],
-			2 => ['title' => 'Remote Import Mapping',   'desc' => 'Manage remote import mappings.', 'url' => "remoteimportmapping.php?projectid=$pid"],
-			3 => ['title' => 'Run Imports',             'desc' => 'Run manually or on schedule.', 'url' => "importremote.php?projectid=$pid"],
-			4 => ['title' => 'Check Import Batch Status',     'desc' => 'View batch imports and results.', 'url' => "importremote.php?action=viewbatchimportlist&projectid=$pid"],
+			1 => ['title' => 'Subjects', 'desc' => 'Create and manage subjects.', 'url' => "projects.php?action=editsubjects&projectid=$pid"],
+			2 => ['title' => 'Instruments', 'desc' => 'Create and manage instruments.', 'url' => "instruments.php?projectid=$pid"],
+			3 => ['title' => 'Remote Import Mapping',   'desc' => 'Manage remote import mappings.', 'url' => "remoteimportmapping.php?projectid=$pid"],
+			4 => ['title' => 'Create & Manage Imports', 'desc' => 'Set up import source, type, and schedule.'],
+			5 => ['title' => 'Manage & Run Imports',             'desc' => 'Run manually or on schedule.', 'url' => "importremote.php?projectid=$pid"],
+			6 => ['title' => 'Check Import Batch Status',     'desc' => 'View batch imports and results.', 'url' => "importremote.php?action=viewbatchimportlist&projectid=$pid"],
 		];
 		?>
 		<style>
@@ -1022,7 +1024,14 @@
 
 		<script src="//cdn.jsdelivr.net/npm/ag-grid-community@31/dist/ag-grid-community.min.js"></script>
 		<script>
-		const obsRowData = <?= json_encode($rows) ?>;
+		<?php
+		array_walk_recursive($rows, function(&$v) {
+			if (is_string($v)) $v = mb_convert_encoding($v, 'UTF-8', 'UTF-8');
+		});
+		$obsRowDataJson = json_encode($rows, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+		if ($obsRowDataJson === false) $obsRowDataJson = '[]';
+		?>
+		const obsRowData = <?= $obsRowDataJson ?>;
 
 		const obsColumnDefs = [
 			{ field: 'subject_uid',            headerName: 'Subject',    sortable: true, filter: true, width: 110 },

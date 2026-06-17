@@ -81,6 +81,7 @@ void observation::LoadObservationInfo() {
             observationName         = q.value("observation_name").toString();
             observationNotes        = q.value("observation_notes").toString();
             observationRater        = q.value("observation_rater").toString();
+            observationTZOffset     = q.value("observation_tz_offset").toString();
             observationValue        = q.value("observation_value").toString();
             projectRowID            = q.value("project_id").toInt();
             remoteBatchRowID        = q.value("remotebatch_id").toInt();
@@ -186,6 +187,34 @@ void observation::LoadObservationInfo() {
 
 
 /* ---------------------------------------------------------- */
+/* --------- PopulateLinkedInstrument ----------------------- */
+/* ---------------------------------------------------------- */
+bool observation::PopulateLinkedInstrument() {
+    /* load instrument/item data */
+    if (instrumentItemRowID > 0) {
+        QSqlQuery q;
+        q.prepare("select * from instrument_items a left join instruments b on a.instrument_id = b.instrument_id where a.instrumentitem_id = :itemid");
+        q.bindValue(":itemid", instrumentItemRowID);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        if (q.size() > 0) {
+            q.first();
+            hasLinkedInstrument = true;
+            hasLinkedInstrumentItem = true;
+            linkedInstrumentName = q.value("instrument_name").toString();
+            linkedInstrumentNotes = q.value("instrument_notes").toString();
+            linkedInstrumentItemName = q.value("item_name").toString();
+            linkedInstrumentItemOrder = q.value("item_order").toInt();
+            linkedInstrumentItemNotes = q.value("item_notes").toString();
+            linkedInstrumentItemType = q.value("item_type").toString();
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+/* ---------------------------------------------------------- */
 /* --------- PrintObservationInfo --------------------------- */
 /* ---------------------------------------------------------- */
 void observation::PrintObservationInfo() {
@@ -247,8 +276,8 @@ squirrelObservation observation::GetSquirrelObject(QString databaseUUID) {
    unique indexes on text columns is only provided in version 10.4 and higher, so we
    do some checking to see if we should update or insert */
 bool observation::AddToDatabase() {
-    n->Log(QString("AddToDatabase()  enrollmentRowID [%1]  name [%2]  value [%3]  startDate [%4]  metadata [%5]")
-           .arg(enrollmentRowID).arg(observationName).arg(observationValue).arg(dateObservationStart.toString("yyyy-MM-dd HH:mm:ss")).arg(metadata.size()));
+    //n->Log(QString("AddToDatabase()  enrollmentRowID (%1)  name (%2)  value (%3)  startDate (%4 UTC)  metadata (%5)")
+    //       .arg(enrollmentRowID).arg(observationName).arg(observationValue).arg(dateObservationStart.toUTC().toString("yyyy-MM-dd HH:mm:ss")).arg(metadata.size()));
 
     if (enrollmentRowID < 1) {
         msg = "enrollmentRowID must be set before calling AddToDatabase()";
@@ -264,26 +293,26 @@ bool observation::AddToDatabase() {
     q.prepare("select observation_id, observation_value from observations where enrollment_id = :enrollmentid and observation_name = :name and observation_startdate = :startdate");
     q.bindValue(":enrollmentid",    enrollmentRowID);
     q.bindValue(":name",            observationName);
-    q.bindValue(":startdate",       dateObservationStart.toString("yyyy-MM-dd HH:mm:ss"));
-    n->Log(QString("  existence check  startdate [%1]").arg(dateObservationStart.toString("yyyy-MM-dd HH:mm:ss")));
-    n->Log(n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__));
-    n->Log(QString("  existence check returned [%1] rows").arg(q.size()));
+    q.bindValue(":startdate",       dateObservationStart.toUTC().toString("yyyy-MM-dd HH:mm:ss"));
+    //n->Log(QString("  existence check  startdate [%1]").arg(dateObservationStart.toUTC().toString("yyyy-MM-dd HH:mm:ss")));
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    //n->Log(QString("  existence check returned [%1] rows").arg(q.size()));
     if (q.size() > 0) {
         q.first();
         observationRowID = q.value("observation_id").toLongLong();
         QString val = q.value("observation_value").toString();
-        n->Log(QString("  existing row  observationRowID [%1]  existing value [%2]").arg(observationRowID).arg(val));
+        //n->Log(QString("  existing row  observationRowID [%1]  existing value [%2]").arg(observationRowID).arg(val));
         /* update if this existing value is blank or it already equals what we're trying to insert */
         if ((observationValue == val) || (val == "")) {
             /* update the other columns */
             update = true;
         }
-        n->Log(QString("  update [%1]").arg(update));
+        //n->Log(QString("  update [%1]").arg(update));
     }
 
     if (update) {
-        n->Log(QString("  updating observationRowID [%1]").arg(observationRowID));
-        q.prepare("update observations set instrumentitem_id = :instrumentitemid, observationsurvey_id = :surveyid, remotebatch_id = :remotebatchid, observation_notes = :notes, observation_instrument = :instrument, observation_desc = :desc, observation_rater = :rater, observation_value = :value, observation_enddate = :enddate, observation_duration = :duration where observation_id = :observationid");
+        //n->Log(QString("  updating observationRowID [%1]").arg(observationRowID));
+        q.prepare("update observations set instrumentitem_id = :instrumentitemid, observationsurvey_id = :surveyid, remotebatch_id = :remotebatchid, observation_notes = :notes, observation_instrument = :instrument, observation_desc = :desc, observation_rater = :rater, observation_value = :value, observation_enddate = :enddate, observation_tz_offset = :tzoffset, observation_duration = :duration where observation_id = :observationid");
         q.bindValue(":observationid",    observationRowID);
         q.bindValue(":instrumentitemid", instrumentItemRowID > 0 ? QVariant(instrumentItemRowID) : QVariant(QMetaType::fromType<int>()));
         q.bindValue(":surveyid",        surveyRowID > 0         ? QVariant(surveyRowID)         : QVariant(QMetaType::fromType<int>()));
@@ -293,14 +322,15 @@ bool observation::AddToDatabase() {
         q.bindValue(":desc",            observationDescription);
         q.bindValue(":rater",           observationRater);
         q.bindValue(":value",           observationValue);
-        q.bindValue(":enddate",         dateObservationEnd.isValid() ? QVariant(dateObservationEnd) : QVariant(QMetaType::fromType<QDateTime>()));
+        q.bindValue(":enddate",         dateObservationEnd.isValid() ? QVariant(dateObservationEnd.toUTC().toString("yyyy-MM-dd HH:mm:ss")) : QVariant(QMetaType::fromType<QString>()));
+        q.bindValue(":tzoffset",        observationTZOffset.isEmpty() ? QVariant(QMetaType::fromType<QString>()) : QVariant(observationTZOffset));
         q.bindValue(":duration",        observationDuration > 0     ? QVariant(observationDuration) : QVariant(QMetaType::fromType<int>()));
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         isValid = (observationRowID > 0);
     }
     else {
-        n->Log("  inserting new observation row");
-        q.prepare("insert into observations (enrollment_id, instrumentitem_id, observationsurvey_id, remotebatch_id, observation_name, observation_notes, observation_instrument, observation_desc, observation_rater, observation_value, observation_startdate, observation_enddate, observation_duration, observation_entrydate, observation_createdate) values (:enrollmentid, :instrumentitemid, :surveyid, :remotebatchid, :name, :notes, :instrument, :desc, :rater, :value, :startdate, :enddate, :duration, :entrydate, :createdate)");
+        //n->Log("  inserting new observation row");
+        q.prepare("insert into observations (enrollment_id, instrumentitem_id, observationsurvey_id, remotebatch_id, observation_name, observation_notes, observation_instrument, observation_desc, observation_rater, observation_value, observation_startdate, observation_enddate, observation_tz_offset, observation_duration, observation_entrydate, observation_createdate) values (:enrollmentid, :instrumentitemid, :surveyid, :remotebatchid, :name, :notes, :instrument, :desc, :rater, :value, :startdate, :enddate, :tzoffset, :duration, :entrydate, :createdate)");
         q.bindValue(":enrollmentid",    enrollmentRowID);
         q.bindValue(":instrumentitemid", instrumentItemRowID > 0 ? QVariant(instrumentItemRowID) : QVariant(QMetaType::fromType<int>()));
         q.bindValue(":surveyid",        surveyRowID > 0         ? QVariant(surveyRowID)         : QVariant(QMetaType::fromType<int>()));
@@ -311,22 +341,21 @@ bool observation::AddToDatabase() {
         q.bindValue(":desc",            observationDescription);
         q.bindValue(":rater",           observationRater);
         q.bindValue(":value",           observationValue);
-        q.bindValue(":startdate",       dateObservationStart.toString("yyyy-MM-dd HH:mm:ss"));
-        q.bindValue(":enddate",         dateObservationEnd.isValid() ? QVariant(dateObservationEnd) : QVariant(QMetaType::fromType<QDateTime>()));
+        q.bindValue(":startdate",       dateObservationStart.toUTC().toString("yyyy-MM-dd HH:mm:ss"));
+        q.bindValue(":enddate",         dateObservationEnd.isValid() ? QVariant(dateObservationEnd.toUTC().toString("yyyy-MM-dd HH:mm:ss")) : QVariant(QMetaType::fromType<QString>()));
+        q.bindValue(":tzoffset",        observationTZOffset.isEmpty() ? QVariant(QMetaType::fromType<QString>()) : QVariant(observationTZOffset));
         q.bindValue(":duration",        observationDuration > 0     ? QVariant(observationDuration) : QVariant(QMetaType::fromType<int>()));
         q.bindValue(":entrydate",       dateRecordEntry.isValid()   ? QVariant(dateRecordEntry)   : QVariant(QMetaType::fromType<QDateTime>()));
         q.bindValue(":createdate",      dateRecordCreate.isValid()  ? QVariant(dateRecordCreate)  : QVariant(QMetaType::fromType<QDateTime>()));
-    }
-    if (!update) {
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         observationRowID = q.lastInsertId().toLongLong();
         isValid = (observationRowID > 0);
-        n->Log(QString("  inserted observationRowID [%1]").arg(observationRowID));
+        //n->Log(QString("  inserted observationRowID [%1]").arg(observationRowID));
     }
 
     /* add metadata if there is any */
     if (metadata.size() > 0) {
-        n->Log(QString("  inserting [%1] metadata key-value pairs for observationRowID [%2]").arg(metadata.size()).arg(observationRowID));
+        //n->Log(QString("  inserting [%1] metadata key-value pairs for observationRowID [%2]").arg(metadata.size()).arg(observationRowID));
         q.prepare("insert ignore into observation_meta (observation_id, variable, value) values (?, ?, ?)");
 
         QVariantList ids;
@@ -343,6 +372,6 @@ bool observation::AddToDatabase() {
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     }
 
-    n->Log(QString("AddToDatabase() returning  isValid [%1]  observationRowID [%2]").arg(isValid).arg(observationRowID));
+    //n->Log(QString("AddToDatabase() returning  isValid [%1]  observationRowID [%2]").arg(isValid).arg(observationRowID));
     return isValid;
 }

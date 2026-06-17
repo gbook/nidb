@@ -225,8 +225,8 @@
 			$stmt = mysqli_prepare($GLOBALS['linki'],
 				"SELECT remoteimportmapping_id FROM remoteimport_mapping
 				 WHERE project_id = ? AND source_type = 'avicenna'
-				   AND avicenna_question <=> ? AND avicenna_variable <=> ?");
-			mysqli_stmt_bind_param($stmt, 'iis', $projectid, $avicennaQuestionVal, $avicennaVariableVal);
+				   AND avicenna_question <=> ? AND avicenna_variable <=> ? AND avicenna_survey <=> ?");
+			mysqli_stmt_bind_param($stmt, 'iiss', $projectid, $avicennaQuestionVal, $avicennaVariableVal, $avicennaSurveyVal);
 			$r = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 			$existingRow = mysqli_fetch_array($r, MYSQLI_ASSOC);
 			mysqli_stmt_close($stmt);
@@ -427,6 +427,7 @@
 				<input type="text" id="avicennaFilter" placeholder="Search..."
 				       oninput="avicennaGridApi.setQuickFilter(this.value)"
 				       style="padding:5px 8px;width:250px;border:1px solid #ccc;border-radius:4px">
+				<span style="margin-left:auto;color:#666;font-size:0.9em"><?= count($avicennaRows) ?> mapping<?= count($avicennaRows) != 1 ? 's' : '' ?></span>
 			</div>
 			<div id="avicennaGrid" class="ag-theme-alpine" style="height:500px;width:100%"></div>
 		</div>
@@ -440,6 +441,7 @@
 				<input type="text" id="redcapFilter" placeholder="Search..."
 				       oninput="redcapGridApi.setQuickFilter(this.value)"
 				       style="padding:5px 8px;width:250px;border:1px solid #ccc;border-radius:4px">
+				<span style="margin-left:auto;color:#666;font-size:0.9em"><?= count($redcapRows) ?> mapping<?= count($redcapRows) != 1 ? 's' : '' ?></span>
 			</div>
 			<div id="redcapGrid" class="ag-theme-alpine" style="height:500px;width:100%"></div>
 		</div>
@@ -591,18 +593,25 @@
 								<li>Optional columns: <code>avicennaquestion, importmeta</code>. <code>importmeta</code> should be <code>1</code> to import metadata, <code>0</code> to not import. Default is <code>1</code>.
 								<li>Columns may be in any order. Values may contain spaces.
 								<li>During import, <code>avicennavariable</code> will be matched first. If it not found, then <code>avicennaquestion</code> will be matched.
+								<li>Valid values for <code>avicennadatatype</code>: <code>number, datetime, text, image, csv</code>.
 								</ul>
 							</p>
-							<textarea name="csvtext" rows="12"
+							<textarea name="csvtext" id="bulkCsvText" rows="12"
 							          style="font-family:monospace;font-size:0.85em;width:100%"
 							          placeholder="avicennasurvey,avicennavariable,avicennadatatype,avicennaquestion,nidbinstrument,nidbvariable,importmeta"></textarea>
+						</div>
+					</div>
+					<div id="bulkValidationErrors" style="display:none;margin-top:0.75em">
+						<div class="ui error message" style="display:block;max-height:200px;overflow-y:auto">
+							<div class="header">Please fix the following issues before importing</div>
+							<ul id="bulkValidationList" class="list"></ul>
 						</div>
 					</div>
 				</form>
 			</div>
 			<div class="actions">
 				<div class="ui cancel button">Cancel</div>
-				<button class="ui primary button" onclick="document.getElementById('bulkForm').submit()">Add mappings</button>
+				<button class="ui primary button" onclick="submitBulkForm()"><i class="upload icon"></i> Import</button>
 			</div>
 		</div>
 
@@ -988,6 +997,128 @@
 				$('#mappingModal').modal('hide');
 			})
 			.catch(() => alert('Network error saving mapping'));
+		}
+
+		// ── Bulk CSV pre-validation ───────────────────────────────────────
+		function parseCSVLine(line) {
+			const result = [];
+			let cur = '', inQuote = false;
+			for (let i = 0; i < line.length; i++) {
+				const ch = line[i];
+				if (ch === '"') {
+					if (inQuote && line[i+1] === '"') { cur += '"'; i++; }
+					else inQuote = !inQuote;
+				} else if (ch === ',' && !inQuote) {
+					result.push(cur); cur = '';
+				} else {
+					cur += ch;
+				}
+			}
+			result.push(cur);
+			return result;
+		}
+
+		function validateBulkCSV() {
+			const VALID_DATATYPES = ['number', 'datetime', 'text', 'image', 'csv'];
+			const REQUIRED_COLS   = ['avicennasurvey', 'avicennavariable', 'avicennadatatype', 'nidbinstrument', 'nidbvariable'];
+
+			const raw    = document.getElementById('bulkCsvText').value.trim();
+			const errors = [];
+
+			if (!raw) {
+				errors.push('CSV is empty.');
+				return errors;
+			}
+
+			const lines = raw.split('\n').map(l => l.trim()).filter(l => l !== '');
+			if (lines.length < 2) {
+				errors.push('CSV must have a header row and at least one data row.');
+				return errors;
+			}
+
+			// Normalise header
+			const header    = parseCSVLine(lines[0]).map(h => h.trim().toLowerCase().replace(/\s+/g, ''));
+			const headerLen = header.length;
+
+			// Check 1: required columns
+			const missing = REQUIRED_COLS.filter(c => !header.includes(c));
+			if (missing.length > 0) {
+				errors.push('Missing required column' + (missing.length > 1 ? 's' : '') + ': ' + missing.join(', ') + '.');
+			}
+
+			const dtIdx   = header.indexOf('avicennadatatype');
+			const instIdx = header.indexOf('nidbinstrument');
+			const varIdx  = header.indexOf('nidbvariable');
+
+			// Check data rows
+			let blankRows = [], unevenRows = [], badDatatypes = [], blankInst = [], blankVar = [];
+
+			lines.slice(1).forEach((line, i) => {
+				const rowNum = i + 2;
+				const cols   = parseCSVLine(line);
+
+				// Skip entirely blank rows
+				if (cols.every(c => c.trim() === '')) { blankRows.push(rowNum); return; }
+
+				// Uneven column count
+				if (cols.length !== headerLen) {
+					unevenRows.push('row ' + rowNum + ' (' + cols.length + ' vs ' + headerLen + ' expected)');
+				}
+
+				// Valid avicennadatatype
+				if (dtIdx >= 0 && cols[dtIdx] !== undefined) {
+					const dt = cols[dtIdx].trim().toLowerCase();
+					if (dt !== '' && !VALID_DATATYPES.includes(dt)) {
+						badDatatypes.push('row ' + rowNum + ': "' + cols[dtIdx].trim() + '"');
+					}
+				}
+
+				// Non-empty nidbinstrument
+				if (instIdx >= 0 && (!cols[instIdx] || cols[instIdx].trim() === '')) {
+					blankInst.push(rowNum);
+				}
+
+				// Non-empty nidbvariable
+				if (varIdx >= 0 && (!cols[varIdx] || cols[varIdx].trim() === '')) {
+					blankVar.push(rowNum);
+				}
+			});
+
+			if (blankRows.length)    errors.push('Blank row' + (blankRows.length > 1 ? 's' : '') + ' found (will be skipped): ' + blankRows.join(', ') + '.');
+			if (unevenRows.length)   errors.push('Column count mismatch in ' + unevenRows.join('; ') + '.');
+			if (badDatatypes.length) errors.push('Invalid avicennadatatype (must be number, datetime, text, image, or csv) in ' + badDatatypes.join('; ') + '.');
+			if (blankInst.length)    errors.push('Missing nidbinstrument in row' + (blankInst.length > 1 ? 's' : '') + ': ' + blankInst.join(', ') + '.');
+			if (blankVar.length)     errors.push('Missing nidbvariable in row' + (blankVar.length > 1 ? 's' : '') + ': ' + blankVar.join(', ') + '.');
+
+			return errors;
+		}
+
+		function submitBulkForm() {
+			const errors  = validateBulkCSV();
+			const errDiv  = document.getElementById('bulkValidationErrors');
+			const errList = document.getElementById('bulkValidationList');
+
+			// Blank rows are warnings not blockers — filter them out as hard errors
+			const hardErrors = errors.filter(e => !e.startsWith('Blank row'));
+			const warnings   = errors.filter(e =>  e.startsWith('Blank row'));
+
+			errList.innerHTML = '';
+			errors.forEach(e => {
+				const li = document.createElement('li');
+				li.textContent = e;
+				errList.appendChild(li);
+			});
+
+			if (hardErrors.length > 0) {
+				errDiv.style.display = 'block';
+				return;
+			}
+
+			errDiv.style.display = errors.length ? 'block' : 'none';
+
+			if (warnings.length === 0 || confirm(warnings.join('\n') + '\n\nContinue anyway?')) {
+				document.getElementById('bulkForm').submit();
+			}
 		}
 
 		// ── Semantic UI initialization ─────────────────────────────────────

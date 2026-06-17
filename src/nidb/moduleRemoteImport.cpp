@@ -314,23 +314,23 @@ ImportMapping::ImportMapping(nidb *n, int projectRowID) : n(n) {
  * @return true if a matching rule was found, false otherwise.
  */
 bool ImportMapping::LookupAvicennaMapping(int survey, int question, QString variable, int &instrumentRowID, int &instrumentItemRowID, bool &importMeta) const {
-    n->Log(QString("LookupAvicennaMapping()  survey [%1]  question [%2]  variable [%3]  mappings [%4]").arg(survey).arg(question).arg(variable).arg(mappings.size()));
+    //n->Log(QString("LookupAvicennaMapping()  survey [%1]  question [%2]  variable [%3]  mappings [%4]").arg(survey).arg(question).arg(variable).arg(mappings.size()));
 
     for (const RemoteImportMapping &m : mappings) {
         if (m.sourceType != "avicenna") continue;
         bool surveyMatch   = (m.avicenna.survey == survey);
         bool questionMatch = (m.avicenna.question == question);
         bool variableMatch = (m.avicenna.variable == variable);
-        n->Log(QString("  checking mapping  survey [%1] match [%2]  question [%3] match [%4]  variable [%5] match [%6]")
-               .arg(m.avicenna.survey).arg(surveyMatch)
-               .arg(m.avicenna.question).arg(questionMatch)
-               .arg(m.avicenna.variable).arg(variableMatch));
+        //n->Log(QString("  checking mapping  survey [%1] match [%2]  question [%3] match [%4]  variable [%5] match [%6]")
+        //       .arg(m.avicenna.survey).arg(surveyMatch)
+        //       .arg(m.avicenna.question).arg(questionMatch)
+        //       .arg(m.avicenna.variable).arg(variableMatch));
 
         if (surveyMatch && (questionMatch || variableMatch)) {
             instrumentRowID     = m.instrumentRowID;
             instrumentItemRowID = m.instrumentItemRowID;
             importMeta          = m.flag.importMeta;
-            n->Log(QString("  MATCH found  instrumentRowID [%1]  instrumentItemRowID [%2]  importMeta [%3]").arg(instrumentRowID).arg(instrumentItemRowID).arg(importMeta));
+            //n->Log(QString("  MATCH found  instrumentRowID [%1]  instrumentItemRowID [%2]  importMeta [%3]").arg(instrumentRowID).arg(instrumentItemRowID).arg(importMeta));
             return true;
         }
     }
@@ -804,17 +804,36 @@ qint64 moduleRemoteImport::ParseInsertAvicenna(qint64 remoteImportBatchRowID, in
         QString s = raw;
         s.replace(' ', 'T');
         s.replace(QRegularExpression("(\\.\\d{3})\\d+"), "\\1");
-        return QDateTime::fromString(s, Qt::ISODateWithMs);
+        return QDateTime::fromString(s, Qt::ISODateWithMs).toUTC();
+    };
+
+    /* extract the timezone from the Avicenna datetime format */
+    auto parseAvicennaTZ = [](const QString &raw) -> QString {
+        QRegularExpressionMatch m = QRegularExpression("([+-]\\d{2}:\\d{2})$").match(raw.trimmed());
+        if (m.hasMatch())
+            return m.captured(1);
+
+        /* if there no explicit timezone offset — then derive from the local timezone at this datetime's instant (handles DST) */
+        QString s = raw.trimmed();
+        s.replace(' ', 'T');
+        s.replace(QRegularExpression("(\\.\\d{3})\\d+"), "\\1");
+        QDateTime localDT = QDateTime::fromString(s, Qt::ISODateWithMs);
+        int offsetSecs = localDT.isValid() ? localDT.offsetFromUtc() : QDateTime::currentDateTime().offsetFromUtc();
+        int h   = qAbs(offsetSecs) / 3600;
+        int min = (qAbs(offsetSecs) % 3600) / 60;
+        return QString("%1%2:%3").arg(offsetSecs >= 0 ? "+" : "-").arg(h, 2, 10, QChar('0')).arg(min, 2, 10, QChar('0'));
     };
 
     /* columns that carry session metadata rather than question responses — skip these during data import */
     static const QStringList nonQuestionCols = {
-        "session scheduled time",
+        "session scheduled time", /* survey opens - 6:00am */
         "participant id",
         "participant label",
         "unanswered status",
-        "participant start time",
-        "participant end time",
+        "participant start time",   /* enrollment date */
+        "start time",               /* survey start time */
+        "end time",                 /* when the subject clicks submit */
+        "participant end time",     /* subject is done with project */
         "participant status",
         "device id",
         "device manufacturer",
@@ -824,8 +843,8 @@ qint64 moduleRemoteImport::ParseInsertAvicenna(qint64 remoteImportBatchRowID, in
         "device app update date",
         "uuid",
         "activity version",
-        "prompt time",
-        "record time",
+        "prompt time",          /* notification - 7:00am */
+        "record time",          /* may be the same as the end time, unless they didn't finish it... then it will be the end of the survey open-window time */
         "expiry time",
         "status",
         "triggering logic id",
@@ -856,9 +875,11 @@ qint64 moduleRemoteImport::ParseInsertAvicenna(qint64 remoteImportBatchRowID, in
     QString csvStr = ReadTextFileIntoString(csvpath);
 
     indexedHash table;
-    QStringList columns;
+    QStringList columns; /* NOTE - columns are converted to lowercase */
     QString m;
     if (ParseCSV(csvStr, table, columns, m)) {
+
+        n->Log("Columns in csv (" + columns.join(", ") + ")");
 
         /* iterate over the rows (each row is an entire survey entry) */
         for (int i=0; i<table.size(); i++) {
@@ -866,8 +887,9 @@ qint64 moduleRemoteImport::ParseInsertAvicenna(qint64 remoteImportBatchRowID, in
             QString avicennaID = table[i]["participant id"];
             QDateTime startTime = parseAvicennaDT(table[i]["prompt time"]);
             QDateTime endTime   = parseAvicennaDT(table[i]["record time"]);
+            QString tzOffset    = parseAvicennaTZ(table[i]["prompt time"]);
 
-            /* get the subjectRowID - this import function (for now) requires a subject already exist and be enrolled in this project */
+            /* get the subjectRowID - this import function (for now) requires that the subject already exist and is enrolled in this project */
             int subjectRowID(0);
             int enrollmentRowID(0);
             q.prepare("select a.subject_id, b.enrollment_id from subject_altuid a left join enrollment b on a.subject_id = b.subject_id where a.altuid = :altid and b.project_id = :projectid");
@@ -884,13 +906,13 @@ qint64 moduleRemoteImport::ParseInsertAvicenna(qint64 remoteImportBatchRowID, in
                 continue;
             }
 
-            QString subjectMsg = QString("Found remote survey for subject [%1]  start time [%2]  end time [%3]").arg(avicennaID).arg(startTime.toString()).arg(endTime.toString());
-            n->Log(subjectMsg);
-            RemoteImportLog(remoteImportBatchRowID, ImportSubject, subjectMsg, Success);
+            //QString subjectMsg = QString("Found remote survey for subject [%1]  start time [%2]  end time [%3]").arg(avicennaID).arg(startTime.toString()).arg(endTime.toString());
+            //n->Log(subjectMsg);
+            //RemoteImportLog(remoteImportBatchRowID, ImportSubject, subjectMsg, Success);
 
             /* ---- import all columns ---- */
             if (importUnmapped) {
-                n->Log(QString("Processing [%1] unmapped columns").arg(columns.size()));
+                //n->Log(QString("Processing [%1] unmapped columns").arg(columns.size()));
                 /* iterate over all columns, and check if they are mapped. If not mapped, then add the observation without an instrument/item */
                 for (const QString &col : columns) {
                     /* skip session info columns — only process question response columns */
@@ -932,6 +954,7 @@ qint64 moduleRemoteImport::ParseInsertAvicenna(qint64 remoteImportBatchRowID, in
                     obs.n = n;
                     obs.dateObservationStart = startTime;
                     obs.dateObservationEnd = endTime;
+                    obs.observationTZOffset = tzOffset;
                     obs.subjectRowID = subjectRowID;
                     obs.enrollmentRowID = enrollmentRowID;
                     obs.projectRowID = projectRowID;
@@ -994,14 +1017,20 @@ qint64 moduleRemoteImport::ParseInsertAvicenna(qint64 remoteImportBatchRowID, in
             }
             /* ---- import ONLY the mapped columns ---- */
             else {
-                n->Log("Importing ONLY mapped columns");
+                //n->Log("Importing ONLY mapped columns");
                 /* iterate through the mapping, then check if the column exists */
                 for (const RemoteImportMapping &m : mapping.mappings) {
                     if (m.sourceType != "avicenna") continue;
 
                     /* check if column is mapped */
-                    QString avicennaVariable = m.avicenna.variable;
-                    if (!columns.contains(avicennaVariable)) continue;
+                    QString avicennaVariable = m.avicenna.variable.toLower();
+                    if (columns.contains(avicennaVariable)) {
+                        //n->Log(QString("Column [%1] is mapped").arg(avicennaVariable));
+                    }
+                    else {
+                        //n->Log(QString("Column [%1] is not mapped for this survey").arg(avicennaVariable));
+                        continue;
+                    }
 
                     /* get column value */
                     QString value = table[i][avicennaVariable].trimmed();
@@ -1016,23 +1045,26 @@ qint64 moduleRemoteImport::ParseInsertAvicenna(qint64 remoteImportBatchRowID, in
                     //bool hasMetadata(false);
 
                     /* check if the column contains brackets, if yes then it's a question number */
-                    if (avicennaVariable.startsWith("[")) {
-                        /* extract the question # */
-                        QString qStr = extractBracketContent(avicennaVariable);
-                        QStringList parts = qStr.split("_");
-                        if (parts.size() > 0)
-                            question = parts[0].toInt();
-                        obsName = extractAfterBracket(avicennaVariable);
-                    }
-                    else {
+                    //if (avicennaVariable.startsWith("[")) {
+                    //    /* extract the question # */
+                    //    QString qStr = extractBracketContent(avicennaVariable);
+                    //    QStringList parts = qStr.split("_");
+                    //    if (parts.size() > 0)
+                    //        question = parts[0].toInt();
+                    //    obsName = extractAfterBracket(avicennaVariable);
+                    //}
+                    //else {
                         obsName = avicennaVariable;
-                    }
+                    //}
+
+                    n->Log(QString("obsName [%1]").arg(obsName));
 
                     /* create the observation */
                     observation obs;
                     obs.n = n;
                     obs.dateObservationStart = startTime;
                     obs.dateObservationEnd = endTime;
+                    obs.observationTZOffset = tzOffset;
                     obs.subjectRowID = subjectRowID;
                     obs.enrollmentRowID = enrollmentRowID;
                     obs.projectRowID = projectRowID;
@@ -1040,8 +1072,11 @@ qint64 moduleRemoteImport::ParseInsertAvicenna(qint64 remoteImportBatchRowID, in
                     obs.observationName = obsName;
                     obs.observationValue = value;
                     obs.instrumentItemRowID = m.instrumentItemRowID;
+                    obs.PopulateLinkedInstrument();
 
                     if (m.flag.importMeta) {
+                        //n->Log("mapping.flag.importMeta = true");
+
                         QString col = avicennaVariable;
                         /* insert the metadata if it exists */
                         QString metadataCol;
@@ -1070,11 +1105,13 @@ qint64 moduleRemoteImport::ParseInsertAvicenna(qint64 remoteImportBatchRowID, in
                             }
                         }
                         else {
-                            n->Log(QString("metadataCol [%1] does not exist").arg(metadataCol));
+                            //n->Log(QString("metadataCol [%1] does not exist").arg(metadataCol));
                         }
                     }
+
                     /* add the observation to the database */
                     if (obs.AddToDatabase()) {
+                        n->Log(QString("Inserted/updated  Avicenna (%1, %2) --> NiDB (%3, %4)  =  %5").arg(m.avicenna.survey).arg(obsName).arg(obs.linkedInstrumentName).arg(obs.linkedInstrumentItemName).arg(value));
                         numRows++;
                     }
                     else {

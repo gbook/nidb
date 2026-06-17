@@ -49,13 +49,15 @@
 	$observationinstrument = GetVariable('observation_instrument');
 	$instrumentitemid = GetVariable('instrumentitem_id');
 	$observationvalue = GetVariable('observation_value');
-	$observationdatecompleted = GetVariable('observation_datecompleted');
+	$observationstartdate = GetVariable('observation_startdate');
+	$observationenddate = GetVariable('observation_enddate');
+	$observationtzoffset = GetVariable('observation_tz_offset');
 	$observationrater = GetVariable('observation_rater');
 
 	/* determine action */
 	switch ($action) {
 		case 'addobservation':
-			AddObservation($enrollmentid, $observationname, $observationvalue, $observationdatecompleted, $observationrater, $observationinstrument, $instrumentitemid);
+			AddObservation($enrollmentid, $observationname, $observationvalue, $observationstartdate, $observationenddate, $observationtzoffset, $observationrater, $observationinstrument, $instrumentitemid);
 			DisplayObservationList($enrollmentid);
 			break;
 		case 'deleteobservation':
@@ -73,9 +75,8 @@
 	/* -------------------------------------------- */
 	/* ------- AddObservation --------------------- */
 	/* -------------------------------------------- */
-	function AddObservation($enrollmentid, $observationname, $observationvalue, $observationdatecompleted, $observationrater, $observationinstrument, $instrumentitemid) {
+	function AddObservation($enrollmentid, $observationname, $observationvalue, $observationstartdate, $observationenddate, $observationtzoffset, $observationrater, $observationinstrument, $instrumentitemid) {
 		$observationvalue = mysqli_real_escape_string($GLOBALS['linki'], $observationvalue);
-		$observationdatecompleted = mysqli_real_escape_string($GLOBALS['linki'], $observationdatecompleted);
 		$observationrater = mysqli_real_escape_string($GLOBALS['linki'], $observationrater);
 
 		/* if an instrument item is linked, derive observation_name and observation_instrument from the DB */
@@ -93,19 +94,25 @@
 		$observationname = mysqli_real_escape_string($GLOBALS['linki'], $observationname);
 		$observationinstrument = mysqli_real_escape_string($GLOBALS['linki'], $observationinstrument);
 
-		if (trim($observationrater) == "") $observationrater = "null";
+		if (trim($observationrater) == "")      $observationrater = "null";
 		else $observationrater = "'" . trim($observationrater) . "'";
 
 		if (trim($observationinstrument) == "") $observationinstrument = "null";
 		else $observationinstrument = "'" . trim($observationinstrument) . "'";
 
-		if (trim($observationdatecompleted) == "") $observationdatecompleted = "null";
-		else $observationdatecompleted = "'" . trim($observationdatecompleted) . "'";
+		if (trim($observationstartdate) == "")  $observationstartdate_sql = "null";
+		else $observationstartdate_sql = "'" . mysqli_real_escape_string($GLOBALS['linki'], trim($observationstartdate)) . "'";
+
+		if (trim($observationenddate) == "")    $observationenddate_sql = "null";
+		else $observationenddate_sql = "'" . mysqli_real_escape_string($GLOBALS['linki'], trim($observationenddate)) . "'";
+
+		if (trim($observationtzoffset) == "")   $observationtzoffset_sql = "null";
+		else $observationtzoffset_sql = "'" . mysqli_real_escape_string($GLOBALS['linki'], trim($observationtzoffset)) . "'";
 
 		if ((int)$instrumentitemid > 0) $instrumentitemid_sql = (int)$instrumentitemid;
 		else $instrumentitemid_sql = "null";
 
-		$sqlstring = "insert ignore into observations (enrollment_id, observation_entrydate, observation_name, observation_value, observation_rater, observation_instrument, instrumentitem_id, observation_enddate) values ($enrollmentid, now(), '$observationname', '$observationvalue', $observationrater, $observationinstrument, $instrumentitemid_sql, $observationdatecompleted)";
+		$sqlstring = "insert ignore into observations (enrollment_id, observation_entrydate, observation_name, observation_value, observation_rater, observation_instrument, instrumentitem_id, observation_startdate, observation_enddate, observation_tz_offset) values ($enrollmentid, now(), '$observationname', '$observationvalue', $observationrater, $observationinstrument, $instrumentitemid_sql, $observationstartdate_sql, $observationenddate_sql, $observationtzoffset_sql)";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 	}
 
@@ -432,6 +439,7 @@
 					<input type="hidden" name="instrument_id" id="instrumentId">
 					<input type="hidden" name="observation_instrument" id="instrumentNameHidden">
 					<input type="hidden" name="instrumentitem_id" id="instrumentitemId">
+					<input type="hidden" name="observation_tz_offset" id="obsTzOffset">
 
 					<div class="fields">
 						<div class="eight wide field">
@@ -484,7 +492,7 @@
 			</div>
 			<div class="actions">
 				<div class="ui cancel button">Cancel</div>
-				<div class="ui primary button" onclick="document.getElementById('addObsForm').submit()">
+				<div class="ui primary button" onclick="submitAddObsForm()">
 					<i class="plus icon"></i> Add
 				</div>
 			</div>
@@ -518,6 +526,7 @@
 				'startdate' => $row['observation_startdate'],
 				'duration' => $row['observation_duration'],
 				'enddate' => $row['observation_enddate'],
+				'tzOffset' => $row['observation_tz_offset'],
 				'dateshtml' => "<b>Entry</b> " . $row['observation_entrydate'] . "<br><b>Create</b> " . $row['observation_createdate'] . "<br><b>Modify</b> " . $row['observation_modifydate'],
 				'metaCount' => (int)$row['meta_count'],
 				'surveyid'  => !empty($row['observationsurvey_id']) ? (int)$row['observationsurvey_id'] : null
@@ -637,6 +646,35 @@
 			const PROJECT_ID    = <?=(int)$projectid?>;
 			const ENROLLMENT_ID = <?=(int)$enrollmentid?>;
 
+			/* ── UTC / timezone helpers ──────────────────────────────────────
+			 * Dates are stored as UTC. datetime-local inputs return local time.
+			 * These helpers convert between the two and capture the browser offset. */
+
+			/* Returns browser UTC offset as "+HH:MM" or "-HH:MM" */
+			function getTzOffset() {
+				const off  = new Date().getTimezoneOffset(); /* minutes, sign inverted */
+				const sign = off <= 0 ? '+' : '-';
+				const abs  = Math.abs(off);
+				return sign + String(Math.floor(abs / 60)).padStart(2, '0') + ':' + String(abs % 60).padStart(2, '0');
+			}
+
+			/* Converts a datetime-local string ("YYYY-MM-DDTHH:MM") to a UTC
+			 * MySQL datetime string ("YYYY-MM-DD HH:MM:SS"). Returns '' if blank. */
+			function localToUTC(localStr) {
+				if (!localStr) return '';
+				return new Date(localStr).toISOString().slice(0, 19).replace('T', ' ');
+			}
+
+			/* Submits the Add Observation form after converting date fields to UTC */
+			function submitAddObsForm() {
+				const startEl = document.querySelector('#addObsForm [name="observation_startdate"]');
+				const endEl   = document.querySelector('#addObsForm [name="observation_enddate"]');
+				if (startEl && startEl.value) startEl.value = localToUTC(startEl.value);
+				if (endEl   && endEl.value)   endEl.value   = localToUTC(endEl.value);
+				document.getElementById('obsTzOffset').value = getTzOffset();
+				document.getElementById('addObsForm').submit();
+			}
+
 			/* custom AG Grid header component using prototype API (required by community edition) */
 			function ObservationDatesHeader() {}
 			ObservationDatesHeader.prototype.init = function(params) {
@@ -658,19 +696,24 @@
 
 			/* saves an in-place cell edit via AJAX; flashes the cell green on success or reverts the value on failure */
 			function onCellValueChanged(params) {
-				$.post('ajaxapi.php', {
+				const colId = params.column.colId;
+				const isDate = (colId === 'startdate' || colId === 'enddate');
+				const value  = isDate ? localToUTC(params.newValue ?? '') : (params.newValue ?? '');
+				const postData = {
 					action: 'updateobservationdetails',
 					observationid: params.data.observationid,
-					column: params.column.colId,
-					value: params.newValue ?? ''
-				}, function(response) {
+					column: colId,
+					value: value,
+				};
+				if (isDate) postData.tz_offset = getTzOffset();
+				$.post('ajaxapi.php', postData, function(response) {
 					if (response === 'success') {
-						params.api.flashCells({ rowNodes: [params.node], columns: [params.column.colId] });
+						params.api.flashCells({ rowNodes: [params.node], columns: [colId] });
 					} else {
-						params.node.setDataValue(params.column.colId, params.oldValue);
+						params.node.setDataValue(colId, params.oldValue);
 					}
 				}).fail(function() {
-					params.node.setDataValue(params.column.colId, params.oldValue);
+					params.node.setDataValue(colId, params.oldValue);
 				});
 			}
 
@@ -743,9 +786,21 @@
 				{ headerName: 'Instrument Item', field: 'instrumentitem', flex: 1, minWidth: 150 },
 				{ headerName: 'Value', field: 'value', flex: 1, minWidth: 130, editable: true, cellStyle: editableCellStyle },
 				{ headerName: 'Rater', field: 'rater', minWidth: 120, editable: true, cellStyle: function() { return { 'font-size': '9pt', cursor: 'text' }; } },
-				{ headerName: 'Start date', field: 'startdate', minWidth: 160, editable: true, cellStyle: editableCellStyle },
+				{ headerName: 'Start date', field: 'startdate', minWidth: 185, editable: true, cellStyle: editableCellStyle,
+					cellRenderer: params => {
+						if (!params.value) return '';
+						const tz = params.data.tzOffset;
+						return tz ? params.value + ' <span style="color:#aaa;font-size:0.85em">' + tz + '</span>' : params.value;
+					}
+				},
 				{ headerName: 'Duration', field: 'duration', minWidth: 110, editable: true, cellStyle: editableCellStyle },
-				{ headerName: 'End date', field: 'enddate', minWidth: 160, editable: true, cellStyle: editableCellStyle },
+				{ headerName: 'End date', field: 'enddate', minWidth: 185, editable: true, cellStyle: editableCellStyle,
+					cellRenderer: params => {
+						if (!params.value) return '';
+						const tz = params.data.tzOffset;
+						return tz ? params.value + ' <span style="color:#aaa;font-size:0.85em">' + tz + '</span>' : params.value;
+					}
+				},
 				metaColDef,
 				datesColDef,
 				deleteColDef
@@ -917,13 +972,17 @@
 								'startdate':     'bulkStartdateValue',
 								'enddate':       'bulkEnddateValue',
 							};
-							var value = document.getElementById(inputMap[action]).value;
-							$.post('ajaxapi.php', {
+							var isDate  = (action === 'startdate' || action === 'enddate');
+							var rawVal  = document.getElementById(inputMap[action]).value;
+							var value   = isDate ? localToUTC(rawVal) : rawVal;
+							var postData = {
 								action: 'bulkupdateobservations',
 								observationids: JSON.stringify(ids),
 								column: action,
-								value: value
-							}, function(data) {
+								value: value,
+							};
+							if (isDate) postData.tz_offset = getTzOffset();
+							$.post('ajaxapi.php', postData, function(data) {
 								if (data && data.error) {
 									document.getElementById('bulkActionError').textContent = data.error;
 									document.getElementById('bulkActionError').style.display = '';
@@ -1325,6 +1384,11 @@
 
 				/* default the add-observation start date to now in local time */
 				$('#obsStartdate').val(new Date(new Date() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16));
+
+				/* populate tz_offset when the add-observation modal opens */
+				$('#addObsModal').on('show', function() {
+					document.getElementById('obsTzOffset').value = getTzOffset();
+				});
 
 				$('#pageloading').hide();
 

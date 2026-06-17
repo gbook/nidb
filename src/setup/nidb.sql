@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jun 11, 2026 at 05:56 PM
+-- Generation Time: Jun 16, 2026 at 05:13 PM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -1965,9 +1965,10 @@ CREATE TABLE `observations` (
   `observation_desc` varchar(250) DEFAULT NULL,
   `observation_rater` varchar(50) DEFAULT NULL,
   `observation_value` text NOT NULL,
-  `observation_startdate` datetime NOT NULL DEFAULT '0000-01-01 00:00:00',
+  `observation_startdate` datetime DEFAULT '0000-00-00 00:00:00' COMMENT 'Stored as UTC',
   `observation_enddate` datetime DEFAULT NULL,
-  `observation_duration` int(11) DEFAULT NULL,
+  `observation_tz_offset` varchar(6) DEFAULT NULL,
+  `observation_duration` int(11) DEFAULT NULL COMMENT 'duration in seconds',
   `observation_entrydate` datetime DEFAULT NULL,
   `observation_createdate` datetime DEFAULT NULL,
   `observation_modifydate` timestamp NOT NULL DEFAULT current_timestamp()
@@ -2841,7 +2842,7 @@ CREATE TABLE `remoteimport_mapping` (
   `avicenna_survey` int(11) DEFAULT NULL COMMENT 'survey ID',
   `avicenna_question` int(11) DEFAULT NULL COMMENT 'Avicenna question number',
   `avicenna_variable` varchar(255) DEFAULT NULL COMMENT 'Avicenna variable name',
-  `avicenna_datatype` enum('quantity','time','text','set') DEFAULT NULL,
+  `avicenna_datatype` enum('number','datetime','text','image','csv') DEFAULT NULL,
   `avicenna_variablecount` varchar(255) DEFAULT NULL COMMENT 'The number of options for this variable. var_1, var_2, etc',
   `redcap_arm` tinytext DEFAULT NULL COMMENT 'Redcap arm',
   `redcap_event` tinytext DEFAULT NULL COMMENT 'Redcap event (baseline, month 3, etc)',
