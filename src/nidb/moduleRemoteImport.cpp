@@ -889,6 +889,14 @@ qint64 moduleRemoteImport::ParseInsertAvicenna(qint64 remoteImportBatchRowID, in
             QDateTime endTime   = parseAvicennaDT(table[i]["record time"]);
             QString tzOffset    = parseAvicennaTZ(table[i]["prompt time"]);
 
+            /* create the survey */
+            survey sur;
+            sur.n = n;
+            sur.dateStart = startTime;
+            sur.dateEnd = endTime;
+            sur.AddToDatabase();
+            int surveyRowID = sur.surveyRowID;
+
             /* get the subjectRowID - this import function (for now) requires that the subject already exist and is enrolled in this project */
             int subjectRowID(0);
             int enrollmentRowID(0);
@@ -961,6 +969,7 @@ qint64 moduleRemoteImport::ParseInsertAvicenna(qint64 remoteImportBatchRowID, in
                     obs.remoteBatchRowID = remoteImportBatchRowID;
                     obs.observationName = col;
                     obs.observationValue = value;
+                    obs.surveyRowID = surveyRowID;
 
                     /* check if this column is mapped */
                     bool flagImportMeta;
@@ -1072,6 +1081,7 @@ qint64 moduleRemoteImport::ParseInsertAvicenna(qint64 remoteImportBatchRowID, in
                     obs.observationName = obsName;
                     obs.observationValue = value;
                     obs.instrumentItemRowID = m.instrumentItemRowID;
+                    obs.surveyRowID = surveyRowID;
                     obs.PopulateLinkedInstrument();
 
                     if (m.flag.importMeta) {

@@ -66,6 +66,7 @@ SOURCES += \
     series.cpp \
     study.cpp \
     subject.cpp \
+    survey.cpp \
     utils.cpp
 
 #unix: {
@@ -111,6 +112,7 @@ HEADERS += \
     series.h \
     study.h \
     subject.h \
+    survey.h \
     utils.h \
     version.h
 

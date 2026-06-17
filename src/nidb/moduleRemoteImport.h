@@ -25,6 +25,7 @@
 
 #include "nidb.h"
 #include "observation.h"
+#include "survey.h"
 
 /* enums for logging */
 enum RemoteImportLogEvent {
