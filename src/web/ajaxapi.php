@@ -201,6 +201,9 @@
 		case 'deletemapping':
 			DeleteMapping((int)$mappingid);
 			break;
+		case 'bulkdeletemappings':
+			BulkDeleteMappings(GetVariable('ids'));
+			break;
 	}
 	
 
@@ -1704,6 +1707,27 @@
 		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		mysqli_stmt_close($stmt);
 		echo json_encode(['ok' => true]);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- BulkDeleteMappings ---------------- */
+	/* -------------------------------------------- */
+	function BulkDeleteMappings($idsJson) {
+		header('Content-Type: application/json');
+		$ids = json_decode($idsJson, true);
+		if (!is_array($ids) || count($ids) === 0) { echo json_encode(['ok' => false, 'error' => 'No IDs provided']); return; }
+		$deleted = 0;
+		foreach ($ids as $id) {
+			$id = (int)$id;
+			if ($id < 1) continue;
+			$stmt = mysqli_prepare($GLOBALS['linki'], "DELETE FROM remoteimport_mapping WHERE remoteimportmapping_id = ?");
+			mysqli_stmt_bind_param($stmt, 'i', $id);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			mysqli_stmt_close($stmt);
+			$deleted++;
+		}
+		echo json_encode(['ok' => true, 'deleted' => $deleted]);
 	}
 
 

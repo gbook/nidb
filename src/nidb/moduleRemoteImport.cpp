@@ -989,7 +989,7 @@ qint64 moduleRemoteImport::ParseInsertAvicenna(qint64 remoteImportBatchRowID, in
 
                             if (columns.contains(metadataCol)) {
                                 metadataStr = table[i][metadataCol].trimmed();
-                                n->Log(QString("metadataCol [%1] exists and value is [%2]").arg(metadataCol).arg(metadataStr));
+                                //n->Log(QString("metadataCol [%1] exists and value is [%2]").arg(metadataCol).arg(metadataStr));
                                 if (metadataStr != "") {
                                     QJsonDocument doc = QJsonDocument::fromJson(metadataStr.toUtf8());
                                     QMap<QString, QString> meta;
@@ -1057,7 +1057,7 @@ qint64 moduleRemoteImport::ParseInsertAvicenna(qint64 remoteImportBatchRowID, in
                         obsName = avicennaVariable;
                     //}
 
-                    n->Log(QString("obsName [%1]").arg(obsName));
+                    //n->Log(QString("obsName [%1]").arg(obsName));
 
                     /* create the observation */
                     observation obs;
@@ -1096,7 +1096,7 @@ qint64 moduleRemoteImport::ParseInsertAvicenna(qint64 remoteImportBatchRowID, in
 
                         if (columns.contains(metadataCol)) {
                             metadataStr = table[i][metadataCol].trimmed();
-                            n->Log(QString("metadataCol [%1] exists and value is [%2]").arg(metadataCol).arg(metadataStr));
+                            //n->Log(QString("metadataCol [%1] exists and value is [%2]").arg(metadataCol).arg(metadataStr));
                             if (metadataStr != "") {
                                 QJsonDocument doc = QJsonDocument::fromJson(metadataStr.toUtf8());
                                 QMap<QString, QString> meta;

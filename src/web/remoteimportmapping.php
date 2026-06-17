@@ -430,6 +430,10 @@
 				<span style="margin-left:auto;color:#666;font-size:0.9em"><?= count($avicennaRows) ?> mapping<?= count($avicennaRows) != 1 ? 's' : '' ?></span>
 			</div>
 			<div id="avicennaGrid" class="ag-theme-alpine" style="height:500px;width:100%"></div>
+			<div id="avicennaSelectionToolbar" style="display:none;margin-top:8px;display:none;align-items:center;gap:8px">
+				<span id="avicennaSelectionLabel" style="color:#555;font-size:0.9em"></span>
+				<button class="ui small red button" onclick="deleteSelected('avicenna')"><i class="trash icon"></i> Delete</button>
+			</div>
 		</div>
 
 		<!-- REDCap tab -->
@@ -444,6 +448,10 @@
 				<span style="margin-left:auto;color:#666;font-size:0.9em"><?= count($redcapRows) ?> mapping<?= count($redcapRows) != 1 ? 's' : '' ?></span>
 			</div>
 			<div id="redcapGrid" class="ag-theme-alpine" style="height:500px;width:100%"></div>
+			<div id="redcapSelectionToolbar" style="display:none;margin-top:8px;align-items:center;gap:8px">
+				<span id="redcapSelectionLabel" style="color:#555;font-size:0.9em"></span>
+				<button class="ui small red button" onclick="deleteSelected('redcap')"><i class="trash icon"></i> Delete</button>
+			</div>
 		</div>
 
 		<!-- Add/Edit mapping modal -->
@@ -710,6 +718,7 @@
 			document.getElementById('avicennaGrid'),
 			{
 				columnDefs: [
+					{ headerName: '', checkboxSelection: true, headerCheckboxSelection: true, width: 40, minWidth: 40, maxWidth: 40, sortable: false, filter: false, resizable: false },
 					{ field: 'avicenna_survey',        headerName: 'Survey',           sortable: true, filter: true, flex: 1 },
 					{ field: 'avicenna_variable',      headerName: 'Variable',         sortable: true, filter: true, flex: 1 },
 					{ field: 'avicenna_question',      headerName: 'Question #',       sortable: true, filter: true, width: 130 },
@@ -741,9 +750,11 @@
 						cellStyle: { 'justify-content': 'center', 'display': 'flex', 'align-items': 'middle' }
 					},
 				],
-				rowData:       avicennaData,
-				defaultColDef: { resizable: true },
-				getRowId:      params => String(params.data.id),
+				rowData:           avicennaData,
+				defaultColDef:     { resizable: true },
+				getRowId:          params => String(params.data.id),
+				rowSelection:       'multiple',
+				onSelectionChanged: () => updateSelectionToolbar('avicenna'),
 			}
 		);
 
@@ -752,6 +763,7 @@
 			document.getElementById('redcapGrid'),
 			{
 				columnDefs: [
+					{ headerName: '', checkboxSelection: true, headerCheckboxSelection: true, width: 40, minWidth: 40, maxWidth: 40, sortable: false, filter: false, resizable: false },
 					{ field: 'redcap_arm',        headerName: 'Arm',               sortable: true, filter: true, width: 110 },
 					{ field: 'redcap_event',      headerName: 'Event',             sortable: true, filter: true, width: 140 },
 					{ field: 'redcap_form',       headerName: 'Form',              sortable: true, filter: true, flex: 1 },
@@ -792,9 +804,11 @@
 						cellStyle: { 'justify-content': 'center', 'display': 'flex', 'align-items': 'middle' }
 					},
 				],
-				rowData:       redcapData,
-				defaultColDef: { resizable: true },
-				getRowId:      params => String(params.data.id),
+				rowData:            redcapData,
+				defaultColDef:      { resizable: true },
+				getRowId:           params => String(params.data.id),
+				rowSelection:       'multiple',
+				onSelectionChanged: () => updateSelectionToolbar('redcap'),
 			}
 		);
 
@@ -1119,6 +1133,36 @@
 			if (warnings.length === 0 || confirm(warnings.join('\n') + '\n\nContinue anyway?')) {
 				document.getElementById('bulkForm').submit();
 			}
+		}
+
+		// ── Selection toolbar ─────────────────────────────────────────────
+		function updateSelectionToolbar(sourceType) {
+			const api     = sourceType === 'avicenna' ? avicennaGridApi : redcapGridApi;
+			const toolbar = document.getElementById(sourceType + 'SelectionToolbar');
+			const label   = document.getElementById(sourceType + 'SelectionLabel');
+			const count   = api.getSelectedRows().length;
+			if (count > 0) {
+				label.textContent = 'With selected ' + count + ' mapping' + (count !== 1 ? 's' : '') + '...';
+				toolbar.style.display = 'flex';
+			} else {
+				toolbar.style.display = 'none';
+			}
+		}
+
+		function deleteSelected(sourceType) {
+			const api  = sourceType === 'avicenna' ? avicennaGridApi : redcapGridApi;
+			const rows = api.getSelectedRows();
+			if (rows.length === 0) return;
+			if (!confirm('Are you sure you want to delete ' + rows.length + ' selected mapping' + (rows.length !== 1 ? 's' : '') + '? This cannot be undone.')) return;
+			const ids = rows.map(r => r.id);
+			fetch('ajaxapi.php?action=bulkdeletemappings&ids=' + encodeURIComponent(JSON.stringify(ids)))
+				.then(r => r.json())
+				.then(resp => {
+					if (!resp.ok) { alert('Error deleting: ' + (resp.error || 'unknown')); return; }
+					api.applyTransaction({ remove: rows });
+					updateSelectionToolbar(sourceType);
+				})
+				.catch(() => alert('Network error deleting mappings'));
 		}
 
 		// ── Semantic UI initialization ─────────────────────────────────────

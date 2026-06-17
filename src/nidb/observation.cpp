@@ -365,11 +365,12 @@ bool observation::AddToDatabase() {
             ids << observationRowID;
             variables << it->first;
             values << it->second;
+            //n->Log(QString("metadata: %1, %2, %3").arg(observationRowID).arg(it->first).arg(it->second));
         }
         q.addBindValue(ids);
         q.addBindValue(variables);
         q.addBindValue(values);
-        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, false, true);
     }
 
     //n->Log(QString("AddToDatabase() returning  isValid [%1]  observationRowID [%2]").arg(isValid).arg(observationRowID));
