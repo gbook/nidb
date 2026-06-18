@@ -123,15 +123,15 @@
 		case 'checkuser':
 			CheckUsername($username);
 			break;
-		case 'sgejobstatus':
-			DisplaySGEJobStatus($jobid);
-			break;
+		//case 'sgejobstatus':
+		//	DisplaySGEJobStatus($jobid);
+		//	break;
 		case 'remoteexportstatus':
 			RemoteExportStatus($connectionid, $transactionid, $detail, $total);
 			break;
-		case 'checkhost':
-			CheckHostStatus($hostname);
-			break;
+		//case 'checkhost':
+		//	CheckHostStatus($hostname);
+		//	break;
 		case 'checksgehost':
 			CheckSGESubmitStatus($hostname, $clustertype, $submithostuser);
 			break;
@@ -203,6 +203,9 @@
 			break;
 		case 'bulkdeletemappings':
 			BulkDeleteMappings(GetVariable('ids'));
+			break;
+		case 'bulkdeleteitems':
+			BulkDeleteItems(GetVariable('ids'));
 			break;
 	}
 	
@@ -303,18 +306,15 @@
 	/* -------------------------------------------- */
 	/* ------- CheckHostStatus -------------------- */
 	/* -------------------------------------------- */
-	function CheckHostStatus($hostname) {
-		
-		$hostname = trim($hostname);
-		$hostname = preg_replace("/[^A-Za-z0-9 ]/", '', $hostname);
-
-		exec("ping -c 1 '$hostname'", $output, $result);
-		
-		if ($result == 0)
-			echo "1";
-		else
-			echo "0";
-	}
+	//function CheckHostStatus($hostname) {
+	//	$hostname = trim($hostname);
+	//	$hostname = preg_replace("/[^A-Za-z0-9 ]/", '', $hostname);
+	//	exec("ping -c 1 '$hostname'", $output, $result);
+	//	if ($result == 0)
+	//		echo "1";
+	//	else
+	//		echo "0";
+	//}
 
 
 	/* -------------------------------------------- */
@@ -578,17 +578,16 @@
 	/* -------------------------------------------- */
 	/* ------- DisplaySGEJobStatus ---------------- */
 	/* -------------------------------------------- */
-	function DisplaySGEJobStatus($jobid) {
-		if (($jobid == "") || (!IsInteger($jobid))) { return; }
-		
-		?><body style="margin: 0px: padding: 0px; overflow:hidden;"><?
-		$systemstring = "ssh " . $GLOBALS['cfg']['clustersubmithost'] . " qstat -j $analysis_qsubid";
-		$out = shell_exec($systemstring);
-		if (trim($out) == "") {
-			?><img src="images/alert.png" title="Analysis is marked as running, but the cluster job is not.<br><br>This most likely means the cluster job has failed and was not able to update the status on NiDB. Check log files for the error"><?
-		}
-		?></body><?
-	}
+	//function DisplaySGEJobStatus($jobid) {
+	//	if (($jobid == "") || (!IsInteger($jobid))) { return; }
+	//	?><body style="margin: 0px: padding: 0px; overflow:hidden;"><?
+	//	$systemstring = "ssh " . $GLOBALS['cfg']['clustersubmithost'] . " qstat -j $analysis_qsubid";
+	//	$out = shell_exec($systemstring);
+	//	if (trim($out) == "") {
+	//		?><img src="images/alert.png" title="Analysis is marked as running, but the cluster job is not.<br><br>This most likely means the cluster job has failed and was not able to update the status on NiDB. Check log files for the error"><?
+	//	}
+	//	?></body><?
+	//}
 	
 	
 	/* -------------------------------------------- */
@@ -1722,6 +1721,26 @@
 			$id = (int)$id;
 			if ($id < 1) continue;
 			$stmt = mysqli_prepare($GLOBALS['linki'], "DELETE FROM remoteimport_mapping WHERE remoteimportmapping_id = ?");
+			mysqli_stmt_bind_param($stmt, 'i', $id);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			mysqli_stmt_close($stmt);
+			$deleted++;
+		}
+		echo json_encode(['ok' => true, 'deleted' => $deleted]);
+	}
+
+
+	/* ------- BulkDeleteItems ------------------- */
+	/* -------------------------------------------- */
+	function BulkDeleteItems($idsJson) {
+		header('Content-Type: application/json');
+		$ids = json_decode($idsJson, true);
+		if (!is_array($ids) || count($ids) === 0) { echo json_encode(['ok' => false, 'error' => 'No IDs provided']); return; }
+		$deleted = 0;
+		foreach ($ids as $id) {
+			$id = (int)$id;
+			if ($id < 1) continue;
+			$stmt = mysqli_prepare($GLOBALS['linki'], "DELETE FROM instrument_items WHERE instrumentitem_id = ?");
 			mysqli_stmt_bind_param($stmt, 'i', $id);
 			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 			mysqli_stmt_close($stmt);

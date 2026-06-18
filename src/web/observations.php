@@ -1215,8 +1215,10 @@
 						surveyContentDiv.appendChild(gridDiv);
 						innerAccordion.appendChild(surveyContentDiv);
 
+						//import { themeBalham } from 'ag-grid-community';
+
 						const gridApi = agGrid.createGrid(gridDiv, {
-							theme: agGrid.themeQuartz,
+							theme: agGrid.themeBalham,
 							/* __none__ instrument group (states 7-8): editable Instrument column included */
 							columnDefs: isNoneInstr ? noneColDefs : instrColDefs,
 							rowData: rows,

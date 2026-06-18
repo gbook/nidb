@@ -427,8 +427,12 @@
 								</div>
 							</form>
 
-							<!-- bulk add toggle -->
+							<!-- bulk add toggle + selection toolbar -->
 							<a class="ui mini basic button" onclick="$('#bulk-add-area').toggle()"><i class="list icon"></i> Bulk add</a>
+							<span id="itemSelectionToolbar" style="display:none;margin-left:10px">
+								<span id="itemSelectionLabel" style="font-size:0.85em;color:#555;margin-right:8px"></span>
+								<button class="ui mini red basic button" onclick="deleteSelectedItems()"><i class="trash icon"></i> Delete</button>
+							</span>
 							<div id="bulk-add-area" style="display:none; margin-top:6px">
 								<form method="post" action="instruments.php" class="ui mini form">
 									<input type="hidden" name="action" value="bulkadditems">
@@ -524,6 +528,7 @@
 			const typeLabels = { string: 'String', int: 'Int', double: 'Double', timeseries: 'Timeseries' };
 
 			const colDefs = [
+				{ headerName: '', checkboxSelection: true, headerCheckboxSelection: true, width: 40, minWidth: 40, maxWidth: 40, sortable: false, filter: false, resizable: false, editable: false },
 				{ field: 'order', headerName: '#', width: 60, rowDrag: true, editable: false, sort: 'asc', cellStyle: {color:'#aaa'} },
 				{ field: 'name',  headerName: 'Item name', flex: 2, editable: true, onCellValueChanged: saveCell },
 				{ field: 'type',  headerName: 'Type', width: 130, editable: true,
@@ -534,6 +539,36 @@
 				{ field: 'notes', headerName: 'Notes', flex: 3, editable: true, onCellValueChanged: saveCell },
 				{ headerName: '', width: 50, cellStyle: { 'text-align': 'center', 'display': 'flex', 'align-items': 'center' }, cellRenderer: DeleteItemBtn, editable: false, sortable: false, filter: false },
 			];
+
+			function updateItemSelectionToolbar() {
+				const rows = itemGrid.getSelectedRows();
+				const n = rows.length;
+				const toolbar = document.getElementById('itemSelectionToolbar');
+				const label   = document.getElementById('itemSelectionLabel');
+				if (n > 0) {
+					toolbar.style.display = '';
+					label.textContent = 'With selected ' + n + ' item' + (n !== 1 ? 's' : '') + '...';
+				} else {
+					toolbar.style.display = 'none';
+				}
+			}
+
+			function deleteSelectedItems() {
+				const rows = itemGrid.getSelectedRows();
+				if (rows.length === 0) return;
+				if (!confirm('Delete ' + rows.length + ' item' + (rows.length !== 1 ? 's' : '') + '? This cannot be undone.')) return;
+				const ids = rows.map(r => r.id);
+				fetch('ajaxapi.php?action=bulkdeleteitems&ids=' + encodeURIComponent(JSON.stringify(ids)))
+					.then(r => r.json())
+					.then(res => {
+						if (res.ok) {
+							itemGrid.applyTransaction({ remove: rows });
+							updateItemSelectionToolbar();
+						} else {
+							alert('Delete failed: ' + (res.error || 'unknown error'));
+						}
+					});
+			}
 
 			function exportInstrumentPDF() {
 				const { jsPDF } = window.jspdf;
@@ -569,7 +604,9 @@
 				animateRows: true,
 				rowHeight: 28,
 				headerHeight: 32,
+				rowSelection: 'multiple',
 				defaultColDef: { sortable: true, filter: true, resizable: true },
+				onSelectionChanged: updateItemSelectionToolbar,
 				onRowDragEnd: (e) => {
 					const ids = [];
 					itemGrid.forEachNodeAfterFilterAndSort(n => ids.push(n.data.id));
