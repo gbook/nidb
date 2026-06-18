@@ -889,13 +889,7 @@ qint64 moduleRemoteImport::ParseInsertAvicenna(qint64 remoteImportBatchRowID, in
             QDateTime endTime   = parseAvicennaDT(table[i]["record time"]);
             QString tzOffset    = parseAvicennaTZ(table[i]["prompt time"]);
 
-            /* create the survey */
-            survey sur;
-            sur.n = n;
-            sur.dateStart = startTime;
-            sur.dateEnd = endTime;
-            sur.AddToDatabase();
-            int surveyRowID = sur.surveyRowID;
+            int surveyRowID = -1;
 
             /* get the subjectRowID - this import function (for now) requires that the subject already exist and is enrolled in this project */
             int subjectRowID(0);
@@ -1015,6 +1009,16 @@ qint64 moduleRemoteImport::ParseInsertAvicenna(qint64 remoteImportBatchRowID, in
                         n->Log(QString("No mapping for Avicenna [%1, %2, %3] --> NiDB").arg(remoteSurveyID).arg(question).arg(variable));
                     }
 
+                    /* create the survey only if there is at least one observation for this row */
+                    if (surveyRowID < 0) {
+                        survey sur;
+                        sur.n = n;
+                        sur.dateStart = startTime;
+                        sur.dateEnd = endTime;
+                        sur.AddToDatabase();
+                        surveyRowID = sur.surveyRowID;
+                    }
+
                     /* add the observation to the database */
                     if (obs.AddToDatabase()) {
                         numRows++;
@@ -1117,6 +1121,16 @@ qint64 moduleRemoteImport::ParseInsertAvicenna(qint64 remoteImportBatchRowID, in
                         else {
                             //n->Log(QString("metadataCol [%1] does not exist").arg(metadataCol));
                         }
+                    }
+
+                    /* create the survey only if there is at least one observation for this row */
+                    if (surveyRowID < 0) {
+                        survey sur;
+                        sur.n = n;
+                        sur.dateStart = startTime;
+                        sur.dateEnd = endTime;
+                        sur.AddToDatabase();
+                        surveyRowID = sur.surveyRowID;
                     }
 
                     /* add the observation to the database */

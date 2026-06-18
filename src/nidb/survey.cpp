@@ -121,10 +121,12 @@ bool survey::AddToDatabase() {
     n->Log(QString("survey::AddToDatabase()  surveyRowID (%1)  dateStart (%2)")
            .arg(surveyRowID).arg(dateStart.toUTC().toString("yyyy-MM-dd HH:mm:ss")));
 
-    bool update = (surveyRowID > 0);
+    if (!dateStart.isValid() || dateStart.isNull())
+        return false;
+
     QSqlQuery q;
 
-    if (update) {
+    if (surveyRowID > 0) {
         n->Log(QString("  updating surveyRowID [%1]").arg(surveyRowID));
         q.prepare("update observation_surveys set instrument_id = :instrumentid, survey_startdate = :startdate, survey_enddate = :enddate, survey_notes = :notes, survey_visit = :visit, survey_experimenter = :experimenter, survey_rater = :rater where survey_id = :surveyid");
         q.bindValue(":surveyid",      surveyRowID);
@@ -139,7 +141,7 @@ bool survey::AddToDatabase() {
         isValid = true;
     }
     else {
-        n->Log("  inserting new survey row");
+        //n->Log("  inserting new survey row");
         q.prepare("insert into observation_surveys (instrument_id, survey_startdate, survey_enddate, survey_notes, survey_visit, survey_experimenter, survey_rater, survey_entrydate) values (:instrumentid, :startdate, :enddate, :notes, :visit, :experimenter, :rater, :entrydate)");
         q.bindValue(":instrumentid",  instrumentRowID > 0 ? QVariant(instrumentRowID) : QVariant(QMetaType::fromType<int>()));
         q.bindValue(":startdate",     dateStart.isValid()  ? QVariant(dateStart.toUTC().toString("yyyy-MM-dd HH:mm:ss"))  : QVariant(QMetaType::fromType<QString>()));
