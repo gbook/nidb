@@ -879,7 +879,7 @@ qint64 moduleRemoteImport::ParseInsertAvicenna(qint64 remoteImportBatchRowID, in
     QString m;
     if (ParseCSV(csvStr, table, columns, m)) {
 
-        n->Log("Columns in csv (" + columns.join(", ") + ")");
+        //n->Log("Columns in csv (" + columns.join(", ") + ")");
 
         /* iterate over the rows (each row is an entire survey entry) */
         for (int i=0; i<table.size(); i++) {
@@ -1009,7 +1009,7 @@ qint64 moduleRemoteImport::ParseInsertAvicenna(qint64 remoteImportBatchRowID, in
                         n->Log(QString("No mapping for Avicenna [%1, %2, %3] --> NiDB").arg(remoteSurveyID).arg(question).arg(variable));
                     }
 
-                    /* create the survey only if there is at least one observation for this row */
+                    /* create the survey - only if there is at least one observation for this row */
                     if (surveyRowID < 0) {
                         survey sur;
                         sur.n = n;

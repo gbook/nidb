@@ -331,6 +331,7 @@
 		}
 		mysqli_stmt_close($stmt);
 
+		//PrintVariable($instruments);
 		// Load Avicenna mappings
 		$stmt = mysqli_prepare($GLOBALS['linki'],
 			"SELECT m.remoteimportmapping_id, m.avicenna_question, m.avicenna_variable,
@@ -360,6 +361,7 @@
 			];
 		}
 		mysqli_stmt_close($stmt);
+		//PrintVariable($avicennaRows);
 
 		// Load REDCap mappings
 		$stmt = mysqli_prepare($GLOBALS['linki'],
@@ -395,7 +397,7 @@
 		mysqli_stmt_close($stmt);
 		?>
 		<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/ag-grid-community@31/styles/ag-grid.css">
-		<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/ag-grid-community@31/styles/ag-theme-alpine.css">
+		<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/ag-grid-community@31/styles/ag-theme-balham.css">
 		<style>
 			.arrow-col-header { background: #444 !important; color: #fff; font-size: 2em; !important; }
 		</style>
@@ -417,19 +419,21 @@
 
 		<!-- Avicenna tab -->
 		<div class="ui bottom attached active tab segment" data-tab="avicenna">
-			<div style="margin-bottom:8px;display:flex;align-items:center;gap:10px">
-				<button class="ui small primary button" onclick="openModal('avicenna')">
-					<i class="plus icon"></i> Add mapping
-				</button>
-				<button class="ui small button" onclick="$('#bulkAddModal').modal('show')">
-					<i class="list icon"></i> Bulk add
-				</button>
-				<input type="text" id="avicennaFilter" placeholder="Search..."
-				       oninput="avicennaGridApi.setQuickFilter(this.value)"
-				       style="padding:5px 8px;width:250px;border:1px solid #ccc;border-radius:4px">
-				<span style="margin-left:auto;color:#666;font-size:0.9em"><?= count($avicennaRows) ?> mapping<?= count($avicennaRows) != 1 ? 's' : '' ?></span>
+			<div class="ui two column grid" style="padding-bottom: 10px">
+				<div class="ui column">
+					<span style="margin-left:auto;color:#666;font-size:0.9em"><?= count($avicennaRows) ?> mapping<?= count($avicennaRows) != 1 ? 's' : '' ?></span>
+					<input type="text" id="avicennaFilter" placeholder="Search..." oninput="avicennaGridApi.setQuickFilter(this.value)" style="padding:5px 8px;width:250px;border:1px solid #ccc;border-radius:4px">
+				</div>
+				<div class="ui right aligned column">
+					<button class="ui small button" onclick="$('#bulkAddModal').modal('show')">
+						<i class="list icon"></i> Bulk add
+					</button>
+					<button class="ui small primary button" onclick="openModal('avicenna')">
+						<i class="plus icon"></i> Add mapping
+					</button>
+				</div>
 			</div>
-			<div id="avicennaGrid" class="ag-theme-alpine" style="height:500px;width:100%"></div>
+			<div id="avicennaGrid" class="ag-theme-balham" style="height:500px;width:100%"></div>
 			<div id="avicennaSelectionToolbar" style="display:none;margin-top:8px;display:none;align-items:center;gap:8px">
 				<span id="avicennaSelectionLabel" style="color:#555;font-size:0.9em"></span>
 				<button class="ui small red button" onclick="deleteSelected('avicenna')"><i class="trash icon"></i> Delete</button>
@@ -447,7 +451,7 @@
 				       style="padding:5px 8px;width:250px;border:1px solid #ccc;border-radius:4px">
 				<span style="margin-left:auto;color:#666;font-size:0.9em"><?= count($redcapRows) ?> mapping<?= count($redcapRows) != 1 ? 's' : '' ?></span>
 			</div>
-			<div id="redcapGrid" class="ag-theme-alpine" style="height:500px;width:100%"></div>
+			<div id="redcapGrid" class="ag-theme-balham" style="height:500px;width:100%"></div>
 			<div id="redcapSelectionToolbar" style="display:none;margin-top:8px;align-items:center;gap:8px">
 				<span id="redcapSelectionLabel" style="color:#555;font-size:0.9em"></span>
 				<button class="ui small red button" onclick="deleteSelected('redcap')"><i class="trash icon"></i> Delete</button>
@@ -715,6 +719,8 @@
 
 		// ── Avicenna grid ─────────────────────────────────────────────────
 		avicennaGridApi = agGrid.createGrid(
+			//import { themeBalham } from 'ag-grid-community';
+		
 			document.getElementById('avicennaGrid'),
 			{
 				columnDefs: [
@@ -755,6 +761,7 @@
 				getRowId:          params => String(params.data.id),
 				rowSelection:       'multiple',
 				onSelectionChanged: () => updateSelectionToolbar('avicenna'),
+				//theme: themeBalham,				
 			}
 		);
 
@@ -850,7 +857,7 @@
 			}
 
 			// Set instrument, then fetch its items and pre-select the saved variable
-			document.getElementById('modal_nidb_instrument').value = data.nidb_instrument_id || '';
+			$('#modal_nidb_instrument').dropdown('set selected', data.nidb_instrument_id || '');
 			if (data.nidb_instrument_id) {
 				loadInstrumentItems(data.nidb_instrument_id, data.nidb_variable_id);
 			}
@@ -863,10 +870,10 @@
 			['modal_mappingid','modal_avicenna_survey','modal_avicenna_variable','modal_avicenna_datatype',
 			 'modal_avicenna_question',
 			 'modal_redcap_arm','modal_redcap_event','modal_redcap_form',
-			 'modal_redcap_field','modal_redcap_datatype','modal_redcap_datefield',
-			 'modal_nidb_instrument'].forEach(id => {
+			 'modal_redcap_field','modal_redcap_datatype','modal_redcap_datefield'].forEach(id => {
 				document.getElementById(id).value = '';
 			});
+			$('#modal_nidb_instrument').dropdown('clear');
 			document.getElementById('modal_nidb_variable').innerHTML =
 				'<option value="">-- select instrument first --</option>';
 			document.getElementById('modal_flag_import_meta').checked     = false;
