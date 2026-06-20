@@ -62,8 +62,8 @@
 		$clustersubmithostuser = GetVariable("clustersubmithostuser");
 		$clusterqueue = GetVariable("clusterqueue");
 		
-		PrintVariable($_POST);
-		
+		//PrintVariable($_POST);
+
 		//exit(0);
 		/* determine action */
 		if ($action == "editpathform") {
@@ -194,7 +194,7 @@
 
 		/* insert the new analysis dir */
 		$sqlstring = "insert into compute_cluster (cluster_name, cluster_desc, cluster_type, submit_hostname, submithost_username, cluster_username, queues) values ('$clustername', '$clusterdesc', '$clustertype', '$clustersubmithost', '$clustersubmithostuser', '$clusteruser', '$clusterqueue')";
-		PrintSQL($sqlstring);
+		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		Notice("Cluster $clustername added");
@@ -507,6 +507,11 @@
 			</thead>
 			<tbody>
 				<?
+					function blankCell($val, $mono = false) {
+						if ($val === '' || $val === null)
+							return '<span style="color:#bbb">&mdash;</span>';
+						return $mono ? '<tt>' . htmlspecialchars($val) . '</tt>' : htmlspecialchars($val);
+					}
 					$sqlstring = "select * from compute_cluster order by cluster_name";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -520,12 +525,12 @@
 						$queue = $row['queues'];
 						?>
 						<tr>
-							<td><a href="clustersettings.php?action=editclusterform&clusterid=<?=$id?>"><?=$name?></td>
-							<td><?=$type?></td>
-							<td><tt><?=$submithostname?></tt></td>
-							<td><tt><?=$submithostusername?></tt></td>
-							<td><tt><?=$clusterusername?></tt></td>
-							<td><tt><?=$queue?></tt></td>
+							<td><a href="clustersettings.php?action=editclusterform&clusterid=<?=$id?>"><?=htmlspecialchars($name)?></a><?php if ($desc !== '') echo ' <span style="color:#999;font-size:0.85em">' . htmlspecialchars($desc) . '</span>'; ?></td>
+							<td><?=blankCell($type)?></td>
+							<td><?=blankCell($submithostname, true)?></td>
+							<td><?=blankCell($submithostusername, true)?></td>
+							<td><?=blankCell($clusterusername, true)?></td>
+							<td><?=blankCell($queue, true)?></td>
 						</tr>
 						<? 
 					}

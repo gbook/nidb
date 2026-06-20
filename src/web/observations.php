@@ -364,7 +364,7 @@
 		<!-- Observation Metadata Modal -->
 		<div class="ui small modal" id="obsMetaModal">
 			<div class="header"><i class="database icon"></i> Metadata &mdash; <span id="obsMetaModalName"></span></div>
-			<div class="content" id="obsMetaContent">
+			<div class="content" id="obsMetaContent" style="max-height:65vh;overflow-y:auto">
 				<div class="ui active centered inline loader"></div>
 			</div>
 			<div class="actions">
@@ -822,21 +822,28 @@
 				document.getElementById('obsMetaContent').innerHTML = '<div class="ui active centered inline loader" style="margin:20px 0"></div>';
 				$('#obsMetaModal').modal({ closable: true }).modal('show');
 				$.getJSON('ajaxapi.php', { action: 'getobservationmeta', observationid: observationid }, function(data) {
-					if (!data || data.error) {
-						document.getElementById('obsMetaContent').innerHTML = '<p class="ui red text">Error loading metadata.</p>';
-						return;
+					console.log('getobservationmeta response:', data);
+					try {
+						if (!data || data.error) {
+							document.getElementById('obsMetaContent').innerHTML = '<p class="ui red text">Error loading metadata.</p>';
+							return;
+						}
+						if (!data.length) {
+							document.getElementById('obsMetaContent').innerHTML = '<p>No metadata found.</p>';
+							return;
+						}
+						var html = '<table class="ui celled compact small table"><thead><tr><th>Variable</th><th>Value</th></tr></thead><tbody>';
+						data.forEach(function(row) {
+							html += '<tr><td>' + escHtml(row.variable) + '</td><td>' + escHtml(row.value) + '</td></tr>';
+						});
+						html += '</tbody></table>';
+						document.getElementById('obsMetaContent').innerHTML = html;
+					} catch(e) {
+						console.error('getobservationmeta callback error:', e);
+						document.getElementById('obsMetaContent').innerHTML = '<p class="ui red text">JS error: ' + e.message + '</p>';
 					}
-					if (!data.length) {
-						document.getElementById('obsMetaContent').innerHTML = '<p>No metadata found.</p>';
-						return;
-					}
-					var html = '<table class="ui celled compact small table"><thead><tr><th>Variable</th><th>Value</th></tr></thead><tbody>';
-					data.forEach(function(row) {
-						html += '<tr><td>' + escHtml(row.variable) + '</td><td>' + escHtml(row.value) + '</td></tr>';
-					});
-					html += '</tbody></table>';
-					document.getElementById('obsMetaContent').innerHTML = html;
-				}).fail(function() {
+				}).fail(function(jqXHR) {
+					console.error('getobservationmeta ajax fail:', jqXHR.status, jqXHR.responseText);
 					document.getElementById('obsMetaContent').innerHTML = '<p class="ui red text">Server error — please try again.</p>';
 				});
 			}
@@ -1131,7 +1138,7 @@
 					if (displayName == "No instrument")
 						outerTitle.innerHTML = '<i class="dropdown icon"></i><b>' + escHtml(displayName) + '</b>&nbsp;<div class="ui small circular label">' + totalRows + ' observations</div>' + instrBadge;
 					else
-						outerTitle.innerHTML = '<i class="dropdown icon"></i><b>' + escHtml(displayName) + '</b>&nbsp;<div class="ui small circular label">' + totalRows + ' observations / ' + surveyLabel + '</div>' + instrBadge;
+						outerTitle.innerHTML = '<i class="dropdown icon"></i><b>' + escHtml(displayName) + '</b>&nbsp;<div class="ui small circular label">' + surveyLabel + ' (' + totalRows + ' total observations)</div>' + instrBadge;
 					accordion.appendChild(outerTitle);
 
 					/* outer accordion content: holds the inner survey-level accordion */
@@ -1223,12 +1230,13 @@
 							columnDefs: isNoneInstr ? noneColDefs : instrColDefs,
 							rowData: rows,
 							defaultColDef: { sortable: true, filter: true, resizable: true },
-							animateRows: false,
+								animateRows: false,
 							suppressMovableColumns: true,
 							rowSelection: { mode: 'multiRow' },
 							onCellValueChanged: onCellValueChanged,
 							onSelectionChanged: onGridSelectionChanged
 						});
+						gridDiv._gridApi = gridApi;
 						gridApis.push(gridApi);
 					});
 
@@ -1236,12 +1244,18 @@
 					accordion.appendChild(outerContent);
 				});
 
+				function sizeAllVisibleGrids() {
+					document.querySelectorAll('#observationAccordion [id^="grid_"]').forEach(function(el) {
+						if (el._gridApi && el.offsetWidth > 0) el._gridApi.sizeColumnsToFit();
+					});
+				}
+
 				/* initialize outer accordion (exclusive:false allows multiple sections open simultaneously) */
-				$('#observationAccordion').accordion({ exclusive: false, duration: 0 });
+				$('#observationAccordion').accordion({ exclusive: false, duration: 0, onOpen: sizeAllVisibleGrids });
 				/* initialize each inner survey-level accordion; stopPropagation on inner title clicks
 				   prevents them from bubbling up to the outer accordion and collapsing the parent section */
 				innerAccordionIds.forEach(function(id) {
-					$('#' + id).accordion({ exclusive: false, duration: 0 });
+					$('#' + id).accordion({ exclusive: false, duration: 0, onOpen: sizeAllVisibleGrids });
 					$('#' + id).on('click', '> .title', function(e) { e.stopPropagation(); });
 					/* edit-survey-link is inside .title; intercept here (closer to target than .title) so
 					   stopPropagation fires before Fomantic's accordion title handler toggles the panel */

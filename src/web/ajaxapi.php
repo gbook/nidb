@@ -22,7 +22,8 @@
  // ------------------------------------------------------------------------------
 
 	define("LEGIT_REQUEST", true);
-	
+
+	ob_start();
 	session_start();
 	require "functions.php";
 	require "includes_php.php";
@@ -212,12 +213,19 @@
 
 	/* ------------------------------------ functions ------------------------------------ */
 
+	/* Discard all buffered output (debug HTML, notices, etc.) and set JSON content-type.
+	   Call at the top of every function that returns JSON. */
+	function JsonHeader() {
+		while (ob_get_level() > 0) ob_end_clean();
+		header('Content-Type: application/json');
+	}
+
 
 	/* -------------------------------------------- */
 	/* ------- SearchICD10 ------------------------ */
 	/* -------------------------------------------- */
 	function SearchICD10($term) {
-		header('Content-Type: application/json');
+		JsonHeader();
 
 		$term = trim($term);
 		if ($term == '') {
@@ -250,7 +258,7 @@
 	/* ------- SearchObservationNames ------------ */
 	/* -------------------------------------------- */
 	function SearchObservationNames($term, $instrumentname) {
-		header('Content-Type: application/json');
+		JsonHeader();
 
 		$term = trim($term);
 		if ($term == '') {
@@ -578,16 +586,18 @@
 	/* -------------------------------------------- */
 	/* ------- DisplaySGEJobStatus ---------------- */
 	/* -------------------------------------------- */
-	//function DisplaySGEJobStatus($jobid) {
-	//	if (($jobid == "") || (!IsInteger($jobid))) { return; }
-	//	?><body style="margin: 0px: padding: 0px; overflow:hidden;"><?
-	//	$systemstring = "ssh " . $GLOBALS['cfg']['clustersubmithost'] . " qstat -j $analysis_qsubid";
-	//	$out = shell_exec($systemstring);
-	//	if (trim($out) == "") {
-	//		?><img src="images/alert.png" title="Analysis is marked as running, but the cluster job is not.<br><br>This most likely means the cluster job has failed and was not able to update the status on NiDB. Check log files for the error"><?
-	//	}
-	//	?></body><?
-	//}
+	/*
+	function DisplaySGEJobStatus($jobid) {
+		if (($jobid == "") || (!IsInteger($jobid))) { return; }
+		?><body style="margin: 0px: padding: 0px; overflow:hidden;"><?
+		$systemstring = "ssh " . $GLOBALS['cfg']['clustersubmithost'] . " qstat -j $analysis_qsubid";
+		$out = shell_exec($systemstring);
+		if (trim($out) == "") {
+			?><img src="images/alert.png" title="Analysis is marked as running, but the cluster job is not.<br><br>This most likely means the cluster job has failed and was not able to update the status on NiDB. Check log files for the error"><?
+		}
+		?></body><?
+	}
+	*/
 	
 	
 	/* -------------------------------------------- */
@@ -1178,7 +1188,7 @@
 	/* ------- GetObservationMeta ---------------- */
 	/* -------------------------------------------- */
 	function GetObservationMeta($observationid) {
-		header('Content-Type: application/json');
+		JsonHeader();
 		$observationid = (int)$observationid;
 		if ($observationid < 1) { echo json_encode(['error' => 'Invalid ID']); return; }
 		$stmt = mysqli_prepare($GLOBALS['linki'], "select variable, value from observation_meta where observation_id = ? order by variable");
@@ -1197,7 +1207,7 @@
 	/* ------- BulkUpdateObservations ------------ */
 	/* -------------------------------------------- */
 	function BulkUpdateObservations($observationidsJson, $column, $value, $tz_offset = '') {
-		header('Content-Type: application/json');
+		JsonHeader();
 		$ids = json_decode($observationidsJson, true);
 		if (!is_array($ids) || count($ids) === 0) { echo json_encode(['error' => 'No IDs provided']); return; }
 
@@ -1239,7 +1249,7 @@
 	/* ------- BulkDeleteObservations ------------ */
 	/* -------------------------------------------- */
 	function BulkDeleteObservations($observationidsJson) {
-		header('Content-Type: application/json');
+		JsonHeader();
 		$ids = json_decode($observationidsJson, true);
 		if (!is_array($ids) || count($ids) === 0) { echo json_encode(['error' => 'No IDs provided']); return; }
 		$deleted = 0;
@@ -1262,7 +1272,7 @@
 	/* Creates a new survey whose startdate is the oldest observation_startdate among the
 	   selected observations, then assigns all selected observations to it. */
 	function BulkMoveToNewSurvey($observationidsJson) {
-		header('Content-Type: application/json');
+		JsonHeader();
 		$ids = json_decode($observationidsJson, true);
 		if (!is_array($ids) || count($ids) === 0) { echo json_encode(['error' => 'No IDs provided']); return; }
 
@@ -1308,7 +1318,7 @@
 	}
 
 	function BulkConvertValueToMeta($observationidsJson) {
-		header('Content-Type: application/json');
+		JsonHeader();
 		$ids = json_decode($observationidsJson, true);
 		if (!is_array($ids) || count($ids) === 0) { echo json_encode(['error' => 'No IDs provided']); return; }
 
@@ -1363,7 +1373,7 @@
 	/* ------- SearchInstruments ------------------ */
 	/* -------------------------------------------- */
 	function SearchInstruments($term, $projectid) {
-		header('Content-Type: application/json');
+		JsonHeader();
 		if ($projectid < 1) { echo json_encode([]); return; }
 		$term = trim($term);
 		$results = array();
@@ -1388,7 +1398,7 @@
 	/* ------- SearchInstrumentItems -------------- */
 	/* -------------------------------------------- */
 	function SearchInstrumentItems($term, $instrumentid) {
-		header('Content-Type: application/json');
+		JsonHeader();
 		if ($instrumentid < 1) { echo json_encode([]); return; }
 		$term = trim($term);
 		$results = array();
@@ -1413,7 +1423,7 @@
 	/* ------- AddInstrumentAjax ------------------ */
 	/* -------------------------------------------- */
 	function AddInstrumentAjax($name, $notes, $projectid) {
-		header('Content-Type: application/json');
+		JsonHeader();
 		$name = trim($name);
 		if ($name == '' || $projectid < 1) { echo json_encode(['error' => 'Invalid name or project']); return; }
 		$stmt = mysqli_prepare($GLOBALS['linki'], "insert into instruments (project_id, instrument_name, instrument_notes) values (?, ?, ?)");
@@ -1429,7 +1439,7 @@
 	/* ------- AddInstrumentItemAjax -------------- */
 	/* -------------------------------------------- */
 	function AddInstrumentItemAjax($name, $type, $notes, $instrumentid) {
-		header('Content-Type: application/json');
+		JsonHeader();
 		$name = trim($name);
 		if ($name == '' || $instrumentid < 1) { echo json_encode(['error' => 'Invalid name or instrument']); return; }
 		$validTypes = ['int', 'double', 'string', 'timeseries'];
@@ -1447,7 +1457,7 @@
 	/* ------- FormalizeInstrument ---------------- */
 	/* -------------------------------------------- */
 	function FormalizeInstrument($instrumentname, $originalname, $projectid, $itemnamesJson) {
-		header('Content-Type: application/json');
+		JsonHeader();
 		$instrumentname = trim($instrumentname);
 		$originalname   = trim($originalname);
 		if ($instrumentname === '' || $projectid < 1) { echo json_encode(['error' => 'Invalid instrument name or project']); return; }
@@ -1500,7 +1510,7 @@
 	/* -------------------------------------------- */
 	/* returns JSON array of surveys for a given enrollment + instrument, most recent first */
 	function GetSurveys($enrollmentid, $instrumentid) {
-		header('Content-Type: application/json');
+		JsonHeader();
 		if ($enrollmentid <= 0 || $instrumentid <= 0) {
 			echo json_encode(array());
 			return;
@@ -1528,7 +1538,7 @@
 	/* -------------------------------------------- */
 	/* assigns a list of observation IDs to an existing survey */
 	function AssignToSurvey($surveyid, $observationidsJson) {
-		header('Content-Type: application/json');
+		JsonHeader();
 		if ($surveyid <= 0) {
 			echo json_encode(array('error' => 'invalid survey_id'));
 			return;
@@ -1550,7 +1560,7 @@
 	/* -------------------------------------------- */
 	/* creates a new observation_surveys record and assigns a list of observations to it */
 	function CreateAndAssignSurvey($enrollmentid, $instrumentid, $startdate, $enddate, $rater, $notes, $observationidsJson) {
-		header('Content-Type: application/json');
+		JsonHeader();
 		if ($enrollmentid <= 0) {
 			echo json_encode(array('error' => 'invalid enrollment_id'));
 			return;
@@ -1583,7 +1593,7 @@
 	/* -------------------------------------------- */
 	/* updates metadata fields on an existing observation_surveys record */
 	function UpdateSurvey($surveyid, $startdate, $enddate, $rater, $notes) {
-		header('Content-Type: application/json');
+		JsonHeader();
 		if ($surveyid <= 0) {
 			echo json_encode(array('error' => 'invalid survey_id'));
 			return;
@@ -1607,7 +1617,7 @@
 	/* ------- GetInstrumentItems ---------------- */
 	/* -------------------------------------------- */
 	function GetInstrumentItems($instrumentid) {
-		header('Content-Type: application/json');
+		JsonHeader();
 		if ($instrumentid < 1) { echo json_encode([]); return; }
 		$stmt = mysqli_prepare($GLOBALS['linki'], "SELECT instrumentitem_id, item_name FROM instrument_items WHERE instrument_id = ? ORDER BY item_order, item_name");
 		mysqli_stmt_bind_param($stmt, 'i', $instrumentid);
@@ -1625,7 +1635,7 @@
 	/* ------- UpdateMappingFlag ----------------- */
 	/* -------------------------------------------- */
 	function UpdateMappingFlag($mappingid, $flagname, $value) {
-		header('Content-Type: application/json');
+		JsonHeader();
 		if ($mappingid < 1) { echo json_encode(['ok' => false, 'error' => 'invalid mappingid']); return; }
 		$allowed = ['flag_date_from_field', 'flag_can_repeat', 'flag_import_meta'];
 		if (!in_array($flagname, $allowed, true)) {
@@ -1645,7 +1655,7 @@
 	/* ------- SaveMapping ----------------------- */
 	/* -------------------------------------------- */
 	function SaveMapping($mappingid, $projectid, $source_type, $avicenna_question, $avicenna_variable, $avicenna_variablecount, $avicenna_survey, $avicenna_datatype, $redcap_arm, $redcap_event, $redcap_form, $redcap_field, $redcap_datatype, $redcap_datefield, $nidb_instrument, $nidb_variable, $flag_date_from_field, $flag_can_repeat, $flag_import_meta) {
-		header('Content-Type: application/json');
+		JsonHeader();
 		if ($projectid < 1) { echo json_encode(['ok' => false, 'error' => 'invalid projectid']); return; }
 		$allowed_types = ['avicenna', 'redcap'];
 		if (!in_array($source_type, $allowed_types, true)) {
@@ -1699,7 +1709,7 @@
 	/* ------- DeleteMapping --------------------- */
 	/* -------------------------------------------- */
 	function DeleteMapping($mappingid) {
-		header('Content-Type: application/json');
+		JsonHeader();
 		if ($mappingid < 1) { echo json_encode(['ok' => false, 'error' => 'invalid mappingid']); return; }
 		$stmt = mysqli_prepare($GLOBALS['linki'], "DELETE FROM remoteimport_mapping WHERE remoteimportmapping_id = ?");
 		mysqli_stmt_bind_param($stmt, 'i', $mappingid);
@@ -1713,7 +1723,7 @@
 	/* ------- BulkDeleteMappings ---------------- */
 	/* -------------------------------------------- */
 	function BulkDeleteMappings($idsJson) {
-		header('Content-Type: application/json');
+		JsonHeader();
 		$ids = json_decode($idsJson, true);
 		if (!is_array($ids) || count($ids) === 0) { echo json_encode(['ok' => false, 'error' => 'No IDs provided']); return; }
 		$deleted = 0;
@@ -1733,7 +1743,7 @@
 	/* ------- BulkDeleteItems ------------------- */
 	/* -------------------------------------------- */
 	function BulkDeleteItems($idsJson) {
-		header('Content-Type: application/json');
+		JsonHeader();
 		$ids = json_decode($idsJson, true);
 		if (!is_array($ids) || count($ids) === 0) { echo json_encode(['ok' => false, 'error' => 'No IDs provided']); return; }
 		$deleted = 0;
@@ -1751,7 +1761,7 @@
 
 
 	function GetFileIOStatus($idsJson) {
-		header('Content-Type: application/json');
+		JsonHeader();
 		$idArray = json_decode($idsJson, true);
 		if (!is_array($idArray) || count($idArray) === 0) {
 			echo json_encode([]);
