@@ -5,11 +5,11 @@ new_installation=1
 CONFIG_FILE=""
 declare -A config
 POSSIBLE_FILES=(
+    "/nidb/nidb.cfg"
+    "/nidb/bin/nidb.cfg"
     "/etc/nidb/nidb.cfg"
     "/usr/local/etc/nidb/nidb.cfg"
     "$HOME/.config/nidb/nidb.cfg"
-    "/nidb/nidb.cfg"
-    "/nidb/bin/nidb.cfg"
     "./nidb.cfg"
     "/nidb/programs/nidb.cfg"
 )
@@ -43,18 +43,20 @@ setup_dcmrcv_service() {
     fi
 }
 
-# find the config file if it exists
+# find the config file if it exists; migrate to /nidb/nidb.cfg if found elsewhere
 for file in "${POSSIBLE_FILES[@]}"; do
     if [[ -f "$file" ]]; then
-        CONFIG_FILE="$file"
         new_installation=0
-
-        # copy config file to /etc/nidb/nidb.cfg if it is not there already
-        if [[ "$file" != "/etc/nidb/nidb.cfg" ]]; then
-            mkdir -p /etc/nidb
-            cp -uv "$CONFIG_FILE" /etc/nidb/
-            chmod 644 /etc/nidb/nidb.cfg
+        if [[ "$file" != "/nidb/nidb.cfg" ]]; then
+            echo "Migrating config from $file to /nidb/nidb.cfg"
+            cp -v "$file" /nidb/nidb.cfg
+            chmod 640 /nidb/nidb.cfg
+            if [[ "$file" == "/etc/nidb/nidb.cfg" ]]; then
+                rm -f /etc/nidb/nidb.cfg
+                rmdir --ignore-fail-on-non-empty /etc/nidb
+            fi
         fi
+        CONFIG_FILE="/nidb/nidb.cfg"
         break
     fi
 done
@@ -92,10 +94,6 @@ fi
 # create link to the mariadb libraries (may or may not be necessary)
 echo 'Create libmariadb link...'
 ln -sf /lib64/libmariadb.so.3 /lib64/libmysqlclient.so.18
-
-# PHP packages
-echo 'Install PHP packages...'
-pear install Mail Mail_Mime Net_SMTP
 
 # disable SE Linux
 echo 'Disable SE Linux...'
@@ -179,6 +177,7 @@ if ((new_installation)); then
     mkdir -p -m 764 /nidb/data/deleted
     mkdir -p -m 764 /nidb/data/dicomincoming
     mkdir -p -m 764 /nidb/data/download
+    mkdir -p -m 764 /nidb/data/ftp
     mkdir -p -m 764 /nidb/data/export
     mkdir -p -m 764 /nidb/data/problem
     mkdir -p -m 764 /nidb/data/tmp

@@ -1,35 +1,39 @@
-#!/bin/sh
+#!/bin/bash
 
 # look for and read an existing config file
 new_installation=1
+CONFIG_FILE=""
 declare -A config
 POSSIBLE_FILES=(
+    "/nidb/nidb.cfg"
+    "/nidb/bin/nidb.cfg"
     "/etc/nidb/nidb.cfg"
     "/usr/local/etc/nidb/nidb.cfg"
     "$HOME/.config/nidb/nidb.cfg"
-	"/nidb/nidb.cfg"
-	"/nidb/bin/nidb.cfg"
     "./nidb.cfg"
-	"/nidb/programs/nidb.cfg"
+    "/nidb/programs/nidb.cfg"
 )
 
-# find the config file if it exists
+# find the config file if it exists; migrate to /nidb/nidb.cfg if found elsewhere
 for file in "${POSSIBLE_FILES[@]}"; do
     if [[ -f "$file" ]]; then
-        CONFIG_FILE="$file"
-		new_installation=0
-		
-		# copy config file to /etc/nidb/nidb.cfg if it not there already
-		if [[ "$file" != "/etc/nidb/nidb.cfg" ]]; then
-			mkdir /etc/nidb
-			cp -uv $CONFIG_FILE /etc/nidb/
-			chmod 644 /etc/nidb/nidb.cfg
-		fi
+        new_installation=0
+        if [[ "$file" != "/nidb/nidb.cfg" ]]; then
+            echo "Migrating config from $file to /nidb/nidb.cfg"
+            cp -v "$file" /nidb/nidb.cfg
+            chmod 640 /nidb/nidb.cfg
+            if [[ "$file" == "/etc/nidb/nidb.cfg" ]]; then
+                rm -f /etc/nidb/nidb.cfg
+                rmdir --ignore-fail-on-non-empty /etc/nidb
+            fi
+        fi
+        CONFIG_FILE="/nidb/nidb.cfg"
         break
     fi
 done
 
 # load the config variables
+if [[ -n "$CONFIG_FILE" ]]; then
 while IFS= read -r line; do
     # Trim leading/trailing whitespace
     line="$(sed 's/^[[:space:]]*//;s/[[:space:]]*$//' <<< "$line")"
@@ -50,6 +54,7 @@ while IFS= read -r line; do
 		echo "[$key]=$value"
     fi
 done < "$CONFIG_FILE"
+fi
 
 if ((new_installation)); then
 	echo "This is a NEW installation"
@@ -110,10 +115,10 @@ firewall-cmd --reload
 
 # create nidb user if it does not exist, add nidb to the apache group, and apache to the nidb group
 echo 'Add nidb user...'
-id -u nidb &>/dev/null || useradd -p $(openssl passwd -1 password) nidb
-groupadd nidb
-usermod -G apache nidb
-usermod -G nidb apache
+id -u nidb &>/dev/null || useradd -p "$(openssl passwd -1 password)" nidb
+groupadd -f nidb
+usermod -a -G apache nidb
+usermod -a -G nidb apache
 # set nidb as the owner of these directories
 chown nidb:nidb /run/php-fpm/www.sock
 chown -R nidb:nidb /var/lib/php/session
@@ -148,6 +153,7 @@ if ((new_installation)); then
 	mkdir -p -m 764 /nidb/data/deleted
 	mkdir -p -m 764 /nidb/data/dicomincoming
 	mkdir -p -m 764 /nidb/data/download
+	mkdir -p -m 764 /nidb/data/ftp
 	mkdir -p -m 764 /nidb/data/export
 	mkdir -p -m 764 /nidb/data/problem
 	mkdir -p -m 764 /nidb/data/tmp
@@ -174,20 +180,10 @@ if ((new_installation)); then
 
 else
 
-	# change permissions of the /nidb directory
-	echo 'Change ownership of /nidb contents...'
-	chown -R nidb:nidb ${config["nidbdir"]}/bin ${config["lockdir"]} ${config["logdir"]} ${config["qcmoduledir"]} ${config["nidbdir"]}/setup # change ownership of the install directory
-	chown nidb:nidb ${config["nidbdir"]}/*  # change ownership of the install directory
-	chown nidb:nidb /nidb/data  # change ownership of the data directory
-	chown nidb:nidb ${config["archivedir"]} ${config["backupdir"]} ${config["backupstagingdir"]} ${config["deleteddir"]} ${config["incomingdir"]} ${config["ftpdir"]} ${config["exportdir"]} ${config["problemdir"]} ${config["tmpdir"]} ${config["uploaddir"]} ${config["uploadeddir"]} ${config["uploadstagingdir"]}  # change ownership of the data directories
-	echo 'Change permissions of /nidb...'
-	chmod -R g+w ${config["nidbdir"]}/bin ${config["lockdir"]} ${config["logdir"]} ${config["qcmoduledir"]} ${config["nidbdir"]}/setup # change permissions of the install directorys contents
-	chmod g+w ${config["nidbdir"]}/* # change permissions of the install directorys contents
-	echo 'Change ownership of /nidb...'
-	chmod 777 ${config["nidbdir"]}              # change permissions of the install directory
-
-	# change owner and permissions of the web directory
-	chown -R nidb:nidb  ${config["webdir"]}
+	echo 'Existing installation detected. RPM changes ownership of key directories to root. Now changing ownership back to nidb'
+	chown -R nidb:nidb /nidb/bin /nidb/lock /nidb/logs /nidb/qcmodules /nidb/setup
+	chown nidb:nidb /nidb/*
+	chown -R nidb:nidb /var/www/html
 	find /var/www -type d -exec chmod 755 {} \;
 	find /var/www -type f -exec chmod 644 {} \;
 
