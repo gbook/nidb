@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jun 16, 2026 at 05:13 PM
+-- Generation Time: Jun 30, 2026 at 07:38 PM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -1463,7 +1463,7 @@ CREATE TABLE `instrument_items` (
   `item_name` varchar(255) NOT NULL,
   `item_order` int(11) NOT NULL DEFAULT 0,
   `item_notes` text DEFAULT NULL,
-  `item_type` enum('enum','int','double','string','timeseries') NOT NULL DEFAULT 'string'
+  `item_type` enum('enum','int','double','string','timeseries','image','csv') NOT NULL DEFAULT 'string'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
@@ -1965,6 +1965,8 @@ CREATE TABLE `observations` (
   `observation_desc` varchar(250) DEFAULT NULL,
   `observation_rater` varchar(50) DEFAULT NULL,
   `observation_value` text NOT NULL,
+  `observation_blob` longblob DEFAULT NULL COMMENT 'item types: image, csv',
+  `observation_fileid` int(11) DEFAULT NULL,
   `observation_startdate` datetime DEFAULT '0000-00-00 00:00:00' COMMENT 'Stored as UTC',
   `observation_enddate` datetime DEFAULT NULL,
   `observation_tz_offset` varchar(6) DEFAULT NULL,
@@ -2885,13 +2887,13 @@ CREATE TABLE `remote_imports` (
   `remoteimport_id` int(11) NOT NULL,
   `import_name` text NOT NULL,
   `project_id` int(11) NOT NULL,
-  `remote_type` enum('avicenna','redcap','url','csv') NOT NULL,
+  `remote_type` enum('redcap','url','csv','avicenna_csv_survey','avicenna_csv_datasource','avicenna_api_survey','avicenna_api_datasource') NOT NULL,
   `remote_url` text DEFAULT NULL,
   `remote_token` text DEFAULT NULL,
   `remote_username` varchar(255) DEFAULT NULL,
   `remote_projectid` int(11) DEFAULT NULL,
   `remote_surveyid` int(11) DEFAULT NULL COMMENT 'Avicenna survey ID',
-  `csv_format` enum('avicenna','nidb') DEFAULT NULL,
+  `csv_format` enum('nidb','avicenna_survey','avicenn_datasource') DEFAULT NULL,
   `flag_import_unmapped` tinyint(1) DEFAULT NULL,
   `import_schedule` enum('ondemand','hourly','daily','weekly','monthly','') DEFAULT NULL,
   `import_time` int(11) NOT NULL DEFAULT 0 COMMENT 'Hour of the day, 0 to 23',
@@ -4358,6 +4360,7 @@ ALTER TABLE `observation_meta`
 --
 ALTER TABLE `observation_surveys`
   ADD PRIMARY KEY (`survey_id`),
+  ADD UNIQUE KEY `instrument_id_2` (`instrument_id`,`survey_startdate`),
   ADD KEY `instrument_id` (`instrument_id`);
 
 --

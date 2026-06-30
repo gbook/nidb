@@ -57,7 +57,6 @@
 	$remote_username  = GetVariable("remote_username");
 	$remote_projectid = GetVariable("remote_projectid");
 	$remote_surveyid  = GetVariable("remote_surveyid");
-	$csv_format            = GetVariable("csv_format");
 	$flag_import_unmapped  = GetVariable("flag_import_unmapped") ? 1 : 0;
 
 	/* determine workflow step for the stepper diagram */
@@ -118,11 +117,11 @@
 			DisplayRemoteImportForm("add", "", $projectid);
 			break;
 		case 'updateimport':
-			UpdateRemoteImport($importid, $importname, $projectid, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $remote_surveyid, $csv_format, $flag_import_unmapped, $import_schedule, $import_time, $import_dayofmonth, $import_days);
+			UpdateRemoteImport($importid, $importname, $projectid, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $remote_surveyid, $flag_import_unmapped, $import_schedule, $import_time, $import_dayofmonth, $import_days);
 			DisplayRemoteImportList($projectid);
 			break;
 		case 'addimport':
-			AddRemoteImport($importname, $projectid, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $remote_surveyid, $csv_format, $flag_import_unmapped, $import_schedule, $import_time, $import_dayofmonth, $import_days);
+			AddRemoteImport($importname, $projectid, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $remote_surveyid, $flag_import_unmapped, $import_schedule, $import_time, $import_dayofmonth, $import_days);
 			DisplayRemoteImportList($projectid);
 			break;
 		default:
@@ -163,7 +162,7 @@
 		}
 
 		$csvpath = null;
-		if ($row['remote_type'] === 'csv') {
+		if (in_array($row['remote_type'], ['avicenna_csv_survey', 'avicenna_csv_datasource'])) {
 			if (!isset($_FILES['csv_file']) || $_FILES['csv_file']['error'] !== UPLOAD_ERR_OK) {
 				Error("A CSV file is required to run this import");
 				return;
@@ -189,7 +188,7 @@
 	/* -------------------------------------------- */
 	/* ------- UpdateRemoteImport ----------------- */
 	/* -------------------------------------------- */
-	function UpdateRemoteImport($importid, $importname, $projectid, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $remote_surveyid, $csv_format, $flag_import_unmapped, $import_schedule, $import_time, $import_dayofmonth, $import_days) {
+	function UpdateRemoteImport($importid, $importname, $projectid, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $remote_surveyid, $flag_import_unmapped, $import_schedule, $import_time, $import_dayofmonth, $import_days) {
 		$importid = (int)$importid;
 		$projectid = (int)$projectid;
 		$importname = trim($importname);
@@ -215,7 +214,6 @@
 		$remote_username_db   = ($remote_username  == "") ? null : $remote_username;
 		$remote_projectid_db  = ($remote_projectid == "") ? null : $remote_projectid;
 		$remote_surveyid_db   = ($remote_surveyid  == "") ? null : trim($remote_surveyid);
-		$csv_format_db        = ($csv_format       == "") ? null : trim($csv_format);
 		$flag_import_unmapped = (int)$flag_import_unmapped;
 		if ($remote_token == "") {
 			$remote_token_db = ($existingtoken === "") ? null : $existingtoken;
@@ -224,8 +222,8 @@
 			$remote_token_db = $remote_token;
 		}
 
-		$stmt = mysqli_prepare($GLOBALS['linki'], "update remote_imports set import_name = ?, project_id = ?, remote_type = ?, remote_url = ?, remote_token = ?, remote_username = ?, remote_projectid = ?, remote_surveyid = ?, csv_format = ?, flag_import_unmapped = ?, import_schedule = ?, import_time = ?, import_dayofmonth = ?, import_days = ? where remoteimport_id = ?");
-		mysqli_stmt_bind_param($stmt, 'sisssssss' . 'isissi', $importname, $projectid, $remote_type, $remote_url_db, $remote_token_db, $remote_username_db, $remote_projectid_db, $remote_surveyid_db, $csv_format_db, $flag_import_unmapped, $import_schedule, $import_time, $import_dayofmonth, $import_days, $importid);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "update remote_imports set import_name = ?, project_id = ?, remote_type = ?, remote_url = ?, remote_token = ?, remote_username = ?, remote_projectid = ?, remote_surveyid = ?, flag_import_unmapped = ?, import_schedule = ?, import_time = ?, import_dayofmonth = ?, import_days = ? where remoteimport_id = ?");
+		mysqli_stmt_bind_param($stmt, 'sissssssisissi', $importname, $projectid, $remote_type, $remote_url_db, $remote_token_db, $remote_username_db, $remote_projectid_db, $remote_surveyid_db, $flag_import_unmapped, $import_schedule, $import_time, $import_dayofmonth, $import_days, $importid);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		mysqli_stmt_close($stmt);
 
@@ -236,7 +234,7 @@
 	/* -------------------------------------------- */
 	/* ------- AddRemoteImport -------------------- */
 	/* -------------------------------------------- */
-	function AddRemoteImport($importname, $projectid, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $remote_surveyid, $csv_format, $flag_import_unmapped, $import_schedule, $import_time, $import_dayofmonth, $import_days) {
+	function AddRemoteImport($importname, $projectid, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $remote_surveyid, $flag_import_unmapped, $import_schedule, $import_time, $import_dayofmonth, $import_days) {
 		$importname = trim($importname);
 		$projectid = (int)$projectid;
 		$remote_type = trim($remote_type);
@@ -244,7 +242,6 @@
 		$remote_token = trim($remote_token);
 		$remote_username = trim($remote_username);
 		$remote_projectid = trim($remote_projectid);
-		$csv_format = trim($csv_format);
 		$import_schedule = trim($import_schedule);
 		$import_time = (int)$import_time;
 		$import_dayofmonth = (int)$import_dayofmonth;
@@ -254,12 +251,11 @@
 		$remote_token_db     = ($remote_token      == "") ? null : $remote_token;
 		$remote_username_db  = ($remote_username   == "") ? null : $remote_username;
 		$remote_projectid_db = ($remote_projectid  == "") ? null : $remote_projectid;
-		$remote_surveyid_db   = ($remote_surveyid  == "") ? null : trim($remote_surveyid);
-		$csv_format_db        = ($csv_format       == "") ? null : $csv_format;
+		$remote_surveyid_db  = ($remote_surveyid   == "") ? null : trim($remote_surveyid);
 		$flag_import_unmapped = (int)$flag_import_unmapped;
 
-		$stmt = mysqli_prepare($GLOBALS['linki'], "insert into remote_imports (import_name, project_id, remote_type, remote_url, remote_token, remote_username, remote_projectid, remote_surveyid, csv_format, flag_import_unmapped, import_schedule, import_time, import_dayofmonth, import_days) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-		mysqli_stmt_bind_param($stmt, 'sisssssssi' . 'siis', $importname, $projectid, $remote_type, $remote_url_db, $remote_token_db, $remote_username_db, $remote_projectid_db, $remote_surveyid_db, $csv_format_db, $flag_import_unmapped, $import_schedule, $import_time, $import_dayofmonth, $import_days);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "insert into remote_imports (import_name, project_id, remote_type, remote_url, remote_token, remote_username, remote_projectid, remote_surveyid, flag_import_unmapped, import_schedule, import_time, import_dayofmonth, import_days) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+		mysqli_stmt_bind_param($stmt, 'sissssssisiis', $importname, $projectid, $remote_type, $remote_url_db, $remote_token_db, $remote_username_db, $remote_projectid_db, $remote_surveyid_db, $flag_import_unmapped, $import_schedule, $import_time, $import_dayofmonth, $import_days);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		mysqli_stmt_close($stmt);
 
@@ -386,7 +382,6 @@
 			$remote_username = $row['remote_username'];
 			$remote_projectid = $row['remote_projectid'];
 			$remote_surveyid = $row['remote_surveyid'];
-			$csv_format = $row['csv_format'];
 			$flag_import_unmapped = (int)$row['flag_import_unmapped'];
 			$import_schedule = $row['import_schedule'];
 			$import_time = $row['import_time'];
@@ -405,7 +400,6 @@
 			$remote_username = "";
 			$remote_projectid = "";
 			$remote_surveyid = "";
-			$csv_format = "";
 			$flag_import_unmapped = 0;
 			$import_schedule = "";
 			$import_time = 0;
@@ -418,11 +412,14 @@
 		}
 
 		$remote_types = array(
-			"" => "Select remote type...",
-			"avicenna" => "Avicenna",
-			"csv" => "CSV",
-			"redcap" => "REDCap",
-			"url" => "URL"
+			""                       => "Select remote type...",
+			"avicenna_api_survey"    => "Avicenna API Survey",
+			"avicenna_api_datasource"=> "Avicenna API Datasource",
+			"avicenna_csv_survey"    => "Avicenna CSV Survey",
+			"avicenna_csv_datasource"=> "Avicenna CSV Datasource",
+			"nidb"                   => "NiDB",
+			"redcap"                 => "REDCap",
+			"url"                    => "URL",
 		);
 
 		$import_schedules = array(
@@ -448,7 +445,7 @@
 
 				<div class="field">
 					<label>Import Name</label>
-					<input type="text" name="importname" value="<?=$importname?>" maxlength="255" required autofocus="autofocus">
+					<input type="text" name="importname" value="<?=$importname?>" maxlength="255" required autofocus="autofocus" autocomplete="off">
 				</div>
 
 				<div class="two fields">
@@ -473,7 +470,7 @@
 
 				<div class="field" id="remote_token_group">
 					<label>Remote Token</label>
-					<input type="password" name="remote_token" value="<?=$remote_token?>" placeholder="Leave blank to keep current token">
+					<input type="password" name="remote_token" value="<?=$remote_token?>" placeholder="Leave blank to keep current token" autocomplete="new-password">
 				</div>
 
 				<div class="two fields" id="avicenna_credentials_group">
@@ -490,14 +487,6 @@
 				<div class="field" id="remote_surveyid_group">
 					<label>Remote Survey ID</label>
 					<input type="text" name="remote_surveyid" id="remote_surveyid" value="<?=htmlspecialchars($remote_surveyid)?>" placeholder="Avicenna survey ID">
-				</div>
-
-				<div class="field" id="csv_format_group">
-					<label>CSV Format</label>
-					<select name="csv_format" id="csv_format" onchange="updateRemoteTypeFields()">
-						<option value="avicenna" <?= $csv_format === 'avicenna' ? 'selected' : '' ?>>Avicenna</option>
-						<option value="nidb"     <?= $csv_format === 'nidb'     ? 'selected' : '' ?>>NiDB</option>
-					</select>
 				</div>
 
 				<div class="three fields" id="import_schedule_group">
@@ -565,9 +554,8 @@
 				<div class="field">
 					<div class="ui checkbox">
 						<input type="checkbox" name="flag_import_unmapped" id="flag_import_unmapped" value="1" <?= $flag_import_unmapped ? 'checked' : '' ?>>
-						<label>Import unmapped data</label>
+						<label>Import unmapped data - <span class="tiny">(data will be imported even if no matching mapping is found)</span></label>
 					</div>
-					<div class="ui small grey text" style="margin-top:4px">When enabled, data will be imported even if no matching mapping is found.</div>
 				</div>
 
 				<div class="ui two column grid">
@@ -586,22 +574,19 @@
 		<script type="text/javascript">
 			function updateRemoteTypeFields() {
 				var type = document.getElementById('remote_type').value;
-				var isCSV      = (type === 'csv');
-				var isAvicenna = (type === 'avicenna');
-
-				var csvFormat = document.getElementById('csv_format').value;
-				var showSurveyId = isAvicenna || (isCSV && csvFormat === 'avicenna');
+				var isCSV         = (type === 'avicenna_csv_survey' || type === 'avicenna_csv_datasource');
+				var isAvicennaAPI = (type === 'avicenna_api_survey' || type === 'avicenna_api_datasource');
+				var showSurveyId  = (type === 'avicenna_api_survey' || type === 'avicenna_csv_survey');
 
 				document.getElementById('remote_url_group').style.display           = isCSV ? 'none' : '';
-				document.getElementById('remote_token_group').style.display          = isCSV ? 'none' : '';
-				document.getElementById('avicenna_credentials_group').style.display  = isAvicenna ? '' : 'none';
-				document.getElementById('remote_surveyid_group').style.display       = showSurveyId ? '' : 'none';
-				document.getElementById('csv_format_group').style.display            = isCSV ? '' : 'none';
-				document.getElementById('import_schedule_group').style.display       = isCSV ? 'none' : '';
-				document.getElementById('import_days_group').style.display           = isCSV ? 'none' : '';
+				document.getElementById('remote_token_group').style.display         = isCSV ? 'none' : '';
+				document.getElementById('avicenna_credentials_group').style.display = isAvicennaAPI ? '' : 'none';
+				document.getElementById('remote_surveyid_group').style.display      = showSurveyId ? '' : 'none';
+				document.getElementById('import_schedule_group').style.display      = isCSV ? 'none' : '';
+				document.getElementById('import_days_group').style.display          = isCSV ? 'none' : '';
 
-				document.getElementById('remote_username').required  = isAvicenna;
-				document.getElementById('remote_projectid').required = isAvicenna;
+				document.getElementById('remote_username').required  = isAvicennaAPI;
+				document.getElementById('remote_projectid').required = isAvicennaAPI;
 
 				if (isCSV) {
 					document.getElementById('import_schedule').value = 'ondemand';
@@ -671,7 +656,6 @@
 							$importid = $row['remoteimport_id'];
 							$importname = $row['import_name'];
 							$remote_type = $row['remote_type'];
-							$csv_format = $row['csv_format'];
 							$remote_url = $row['remote_url'];
 							$import_schedule = $row['import_schedule'];
 							$import_time = $row['import_time'];
@@ -683,7 +667,7 @@
 
 							$scheduletext = FormatRemoteImportSchedule($import_schedule, $import_time, $import_dayofmonth, $import_days);
 							if ($import_schedule == "ondemand") {
-								if ($remote_type === 'csv') {
+								if (in_array($remote_type, ['avicenna_csv_survey', 'avicenna_csv_datasource'])) {
 									$scheduletext .= " &nbsp; <a href=\"#\" class=\"ui tiny primary basic green button\" onclick=\"document.getElementById('csv_upload_$importid').click(); return false;\"><i class=\"upload icon\"></i>Upload &amp; Run</a>";
 								} else {
 									$scheduletext .= " &nbsp; <a href=\"importremote.php?action=runimport&projectid=$projectid&importid=$importid\" class=\"ui tiny primary basic green button\">Run now</a>";
@@ -693,9 +677,21 @@
 					?>
 					<tr>
 						<td><a href="importremote.php?action=editimportform&projectid=<?=$projectid?>&importid=<?=$importid?>"><?=$importname?></a></td>
-						<td><?= ucfirst($remote_type) . ($remote_type === 'csv' && $csv_format !== '' ? ' (' . ucfirst($csv_format) . ')' : '') ?></td>
+						<?php
+							$typeLabels = [
+								'avicenna_api_survey'     => 'Avicenna API Survey',
+								'avicenna_api_datasource' => 'Avicenna API Datasource',
+								'avicenna_csv_survey'     => 'Avicenna CSV Survey',
+								'avicenna_csv_datasource' => 'Avicenna CSV Datasource',
+								'nidb'   => 'NiDB',
+								'redcap' => 'REDCap',
+								'url'    => 'URL',
+							];
+							$typeLabel = isset($typeLabels[$remote_type]) ? $typeLabels[$remote_type] : ucfirst(str_replace('_', ' ', $remote_type));
+						?>
+						<td><?= $typeLabel ?></td>
 						<td><?=$remote_url_display?></td>
-						<td><?= ($remote_type === 'avicenna' && $remote_surveyid !== '') ? htmlspecialchars($remote_surveyid) : '-' ?></td>
+						<td><?= !empty($remote_surveyid) ? htmlspecialchars($remote_surveyid) : '-' ?></td>
 						<td><?=$scheduletext?></td>
 						<td style="text-align:center">
 							<? if ($flag_import_unmapped): ?>
@@ -724,7 +720,7 @@
 			<?
 				/* Hidden upload forms for CSV imports — must live outside the table */
 				foreach ($imports as $row) {
-					if ($row['remote_type'] === 'csv') {
+					if (in_array($row['remote_type'], ['avicenna_csv_survey', 'avicenna_csv_datasource'])) {
 						$importid = $row['remoteimport_id'];
 						?>
 						<form id="csvUploadForm_<?=$importid?>" method="post" action="importremote.php" enctype="multipart/form-data" style="display:none">
@@ -796,18 +792,27 @@
 							$status_display = ($status == "") ? "-" : ucfirst($status);
 							$nextstate_display = ($nextstate == "") ? "-" : ucfirst($nextstate);
 							
-							if ($remoteType == "csv") {
+							$csvTypeLabels = [
+								'avicenna_api_survey'     => 'Avicenna API Survey',
+								'avicenna_api_datasource' => 'Avicenna API Datasource',
+								'avicenna_csv_survey'     => 'Avicenna CSV Survey',
+								'avicenna_csv_datasource' => 'Avicenna CSV Datasource',
+								'nidb'   => 'NiDB',
+								'redcap' => 'REDCap',
+								'url'    => 'URL',
+							];
+							$typeLabel = isset($csvTypeLabels[$remoteType]) ? $csvTypeLabels[$remoteType] : ucfirst(str_replace('_', ' ', $remoteType));
+							if (in_array($remoteType, ['avicenna_csv_survey', 'avicenna_csv_datasource'])) {
 								if (file_exists($csvpath)) {
-									/* get CSV details */
 									$filesize = HumanReadableFilesize(filesize($csvpath));
-									$source_display = "<tt>$csvpath</tt> <div class='ui small label'>$filesize</div>";
+									$source_display = "$typeLabel &mdash; <tt>$csvpath</tt> <div class='ui small label'>$filesize</div>";
 								}
 								else {
-									$source_display = "CSV file does not exist";
+									$source_display = "$typeLabel &mdash; CSV file does not exist";
 								}
 							}
 							else {
-								$source_display = ucfirst($remoteType);
+								$source_display = $typeLabel;
 							}
 					?>
 					<tr>
@@ -878,11 +883,23 @@
 
 			<table class="ui very compact definition table" style="margin-bottom:1.5em">
 				<tr><td>Import</td><td><?=$importname?></td></tr>
-				<tr><td>Type</td><td><?=ucfirst($remote_type)?></td></tr>
+				<?php
+				$logTypeLabels = [
+					'avicenna_api_survey'     => 'Avicenna API Survey',
+					'avicenna_api_datasource' => 'Avicenna API Datasource',
+					'avicenna_csv_survey'     => 'Avicenna CSV Survey',
+					'avicenna_csv_datasource' => 'Avicenna CSV Datasource',
+					'nidb'   => 'NiDB',
+					'redcap' => 'REDCap',
+					'url'    => 'URL',
+				];
+				$logTypeLabel = isset($logTypeLabels[$remote_type]) ? $logTypeLabels[$remote_type] : ucfirst(str_replace('_', ' ', $remote_type));
+			?>
+			<tr><td>Type</td><td><?= $logTypeLabel ?></td></tr>
 				<tr><td>Status</td><td><?=ucfirst($status)?></td></tr>
 				<tr><td>Start</td><td><?=$startdate?></td></tr>
 				<tr><td>End</td><td><?=$enddate?></td></tr>
-				<? if ($remote_type === 'csv'): ?>
+				<? if (in_array($remote_type, ['avicenna_csv_survey', 'avicenna_csv_datasource'])): ?>
 				<tr>
 					<td>CSV File</td>
 					<td>

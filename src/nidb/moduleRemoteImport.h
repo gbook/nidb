@@ -104,10 +104,11 @@ public:
     bool IsDateInSchedule(QDateTime date, QString scheduleType, int hourOfDay, int dayOfMonth, QStringList daysOfWeek);
 
 private:
-    bool ImportAvicenna(int remoteImportBatchRowID, QString remoteURL, QString remoteToken, QString remoteUsername, int remoteProjectID, int remoteSurveyID, const ImportMapping &mapping);
+    bool ImportAvicennaApiSurvey(int remoteImportBatchRowID, QString remoteURL, QString remoteToken, QString remoteUsername, int remoteProjectID, int remoteSurveyID, const ImportMapping &mapping);
+    bool ImportAvicennaApiDataSource(int remoteImportBatchRowID, QString remoteURL, QString remoteToken, QString remoteUsername, int remoteProjectID, int remoteSurveyID, const ImportMapping &mapping);
     bool ImportRedCap(int remoteImportBatchRowID, QString remoteURL, QString remoteToken, const ImportMapping &mapping);
     bool ImportURL(int remoteImportBatchRowID, QString remoteURL, QString remoteToken, const ImportMapping &mapping);
-    bool ImportCSV(int remoteImportBatchRowID, int remoteSurveyID, QString csvFormat, const ImportMapping &mapping, bool importUnmapped);
+    //bool ImportCSV(int remoteImportBatchRowID, int remoteSurveyID, QString csvFormat, const ImportMapping &mapping, bool importUnmapped);
 
     QString RemoteImportLogEventToString(RemoteImportLogEvent event);
     QString EventResultToString(EventResult result);
@@ -119,7 +120,8 @@ private:
     QString GetAvicennaExportStatus(int remoteProjectID, int exportID, QString remoteUsername, QString remoteToken, QString &exportURL);
     bool DownloadAvicennaExport(int remoteProjectID, QString remoteUsername, QString remoteToken, QString url, QString path);
     QList<int> GetAvicennaSubjectsFromCSV(QString csv);
-    qint64 ParseInsertAvicenna(qint64 remoteImportBatchRowID, int remoteSurveyID, const ImportMapping &mapping, bool importUnmapped, QString csvpath);
+    qint64 ImportAvicennaCsvSurvey(qint64 remoteImportBatchRowID, int remoteSurveyID, const ImportMapping &mapping, bool importUnmapped);
+    qint64 ImportAvicennaCsvDataSource(qint64 remoteImportBatchRowID, int remoteSurveyID, const ImportMapping &mapping, bool importUnmapped);
 
     //InsertObservation(int subjectRowID, int enrollmentRowID, int remoteBatchRowID, QString observation, QDateTime startDate, QDateTime endDate, int duration, QDateTime entryDate, QDateTime createDate, QDateTime modifyDate);
 
