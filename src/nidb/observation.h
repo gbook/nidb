@@ -22,6 +22,7 @@
 
 #ifndef OBSERVATION_H
 #define OBSERVATION_H
+#include <QByteArray>
 #include <QString>
 #include "nidb.h"
 #include "squirrelObservation.h"
@@ -35,8 +36,10 @@ public:
 
     void PrintObservationInfo();
     squirrelObservation GetSquirrelObject(QString databaseUUID);
-    bool AddToDatabase(); /* store the observation to the database */
-    bool PopulateLinkedInstrument(); /* fill in the linked instrument information if the instrumentItemRowID is valid */
+    bool AddToDatabase();
+    bool PopulateLinkedInstrument();
+    bool LoadFile();
+    bool SaveFile(const QString &filePath);
 
     /* data from 'observations' table */
     QDateTime dateObservationEnd;
@@ -53,6 +56,7 @@ public:
     QString observationValue;
     QString subjectUID;
     int enrollmentRowID = -1;
+    int fileRowID = -1;
     int instrumentItemRowID = -1;
     int observationDuration = 0;
     int observationRowID = -1;
@@ -61,6 +65,14 @@ public:
     int subjectRowID = -1;
     int surveyRowID = -1;
 
+    /* file blob (from 'files' table via observation_fileid) */
+    QByteArray fileBlob;
+    QDateTime fileDate;
+    QString fileContentType;
+    QString fileName;
+    qint64 fileSize = 0;
+
+    bool hasFile = false;
     bool hasLinkedInstrument = false;
     bool hasLinkedInstrumentItem = false;
     bool hasMetadata = false;

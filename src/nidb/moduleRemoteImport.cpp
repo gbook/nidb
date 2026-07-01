@@ -102,13 +102,13 @@ bool moduleRemoteImport::Run() {
             /* run the import */
             n->Log(QString("Running import for remote_type [%1]").arg(remoteType));
             if (remoteType == "avicenna_api_survey") {
-                ImportAvicennaApiSurvey(remoteImportBatchRowID, remoteURL, remoteToken, remoteUsername, remoteProjectID, remoteSurveyID, mapping);
+                ImportAvicennaSurveyAPI(remoteImportBatchRowID, remoteURL, remoteToken, remoteUsername, remoteProjectID, remoteSurveyID, mapping);
             }
             if (remoteType == "avicenna_api_datasource") {
                 //ImportAvicenna(remoteImportBatchRowID, remoteURL, remoteToken, remoteUsername, remoteProjectID, remoteSurveyID, mapping);
             }
             else if (remoteType == "avicenna_csv_survey") {
-                ImportAvicennaCsvSurvey(remoteImportBatchRowID, remoteSurveyID, mapping, importUnmapped);
+                ImportAvicennaSurveyCSV(remoteImportBatchRowID, remoteSurveyID, mapping, importUnmapped);
             }
             else if (remoteType == "avicenna_csv_datasource") {
                 //ImportCSV(remoteImportBatchRowID, remoteSurveyID, csvFormat, mapping, importUnmapped);
@@ -489,7 +489,7 @@ void moduleRemoteImport::RemoteImportLog(qint64 batchRowID, RemoteImportLogEvent
  * @param mapping Import mapping rules for this project.
  * @return true on success, false otherwise.
  */
-bool moduleRemoteImport::ImportAvicennaApiSurvey(int remoteImportBatchRowID, QString remoteURL, QString remoteToken, QString remoteUsername, int remoteProjectID, int remoteSurveyID, const ImportMapping &mapping) {
+bool moduleRemoteImport::ImportAvicennaSurveyAPI(int remoteImportBatchRowID, QString remoteURL, QString remoteToken, QString remoteUsername, int remoteProjectID, int remoteSurveyID, const ImportMapping &mapping) {
 
     // URL should be https://avicennaresearch.com/api/v1/filter/export/
 
@@ -805,9 +805,9 @@ bool moduleRemoteImport::ImportURL(int remoteImportBatchRowID, QString remoteURL
 
 
 /* ---------------------------------------------------------- */
-/* --------- ImportAvicennaCsvSurvey ------------------------ */
+/* --------- ImportAvicennaSurveyCSV ------------------------ */
 /* ---------------------------------------------------------- */
-qint64 moduleRemoteImport::ImportAvicennaCsvSurvey(qint64 remoteImportBatchRowID, int remoteSurveyID, const ImportMapping &mapping, bool importUnmapped) {
+qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID, int remoteSurveyID, const ImportMapping &mapping, bool importUnmapped) {
 
     /* Avicenna timestamps are ISO 8601 with a space separator and microseconds, e.g.
            "2025-12-14 15:07:05.385000+00:00". Qt::ISODateWithMs handles the timezone
@@ -869,43 +869,28 @@ qint64 moduleRemoteImport::ImportAvicennaCsvSurvey(qint64 remoteImportBatchRowID
     //n->Log(QString("ImportCSV(%1, %2, ..mapping..)").arg(remoteImportBatchRowID).arg(csvFormat));
 
     /* get csv_path, and make sure it's valid */
-    QString csv_path;
+    QString datafile_path;
     QSqlQuery q;
     q.prepare("select * from remoteimport_batch where remoteimportbatch_id = :batchid");
     q.bindValue(":batchid", remoteImportBatchRowID);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.size() > 0) {
         q.first();
-        csv_path = q.value("csv_path").toString();
-        n->Log(QString("CSV path should be [%1]").arg(csv_path));
+        datafile_path = q.value("datafile_path").toString();
+        n->Log(QString("Datafile path [%1]").arg(datafile_path));
     }
     else
         n->Log(QString("No database record for batchID [%1]").arg(remoteImportBatchRowID));
 
-    if (!QFile::exists(csv_path)) {
-        n->Log(QString("CSV [%1] does not exist").arg(csv_path));
+    if (!QFile::exists(datafile_path)) {
+        n->Log(QString("Datafile [%1] does not exist").arg(datafile_path));
         return false;
     }
-
-    /* check which type of csv we are parsing/inserting */
-    //if (csvFormat == "avicenna_survey") {
-    //    qint64 numRows = ImportAvicennaCsvSurvey(remoteImportBatchRowID, remoteSurveyID, mapping, importUnmapped, csv_path);
-    //    n->Log(QString("Inserted/updated [%1] rows from an Avicenna import").arg(numRows));
-    //    return true;
-    //}
-    //else if (csvFormat == "avicenna_datasource") {
-    //    n->Log(QString("CSV format [%1] not yet handled").arg(csvFormat));
-    //}
-    //else {
-    //    n->Log(QString("CSV format [%1] unrecognized").arg(csvFormat));
-    //    return false;
-    //}
 
     qint64 numRows(0);
     int projectRowID(0);
 
     /* get project ID */
-    //QSqlQuery q;
     q.prepare("select b.project_id from remoteimport_batch a left join remote_imports b on a.remoteimport_id = b.remoteimport_id where a.remoteimportbatch_id = :batchid");
     q.bindValue(":batchid", remoteImportBatchRowID);
     n->Log(n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__));
@@ -916,6 +901,27 @@ qint64 moduleRemoteImport::ImportAvicennaCsvSurvey(qint64 remoteImportBatchRowID
     else {
         n->Log("Project ID not found");
         return 0;
+    }
+
+    QString csv_path;
+    QString zipdir;
+    /* determine if we need to unzip the file */
+    if (datafile_path.endsWith(".zip", Qt::CaseInsensitive)) {
+        /* unzip the file in-place in the tmp directory */
+
+        QFileInfo fi(datafile_path);
+        zipdir = fi.absolutePath() + "/" + fi.completeBaseName();
+
+        // Shell-quote paths to handle spaces; assumes paths don't contain single quotes
+        QString systemstring = QString("unzip -o '%1' -d '%2' && rm '%1'").arg(datafile_path, zipdir);
+        SystemCommand(systemstring);
+
+        /* find first csv within the zipdir */
+        QString m;
+        NiDBFindFirstFile(zipdir, "*.csv", csv_path, m);
+    }
+    else {
+        csv_path = datafile_path;
     }
 
     /* read in the CSV */
@@ -954,10 +960,6 @@ qint64 moduleRemoteImport::ImportAvicennaCsvSurvey(qint64 remoteImportBatchRowID
                 n->Log(QString("Subject ID [%1] not found").arg(avicennaID));
                 continue;
             }
-
-            //QString subjectMsg = QString("Found remote survey for subject [%1]  start time [%2]  end time [%3]").arg(avicennaID).arg(startTime.toString()).arg(endTime.toString());
-            //n->Log(subjectMsg);
-            //RemoteImportLog(remoteImportBatchRowID, ImportSubject, subjectMsg, Success);
 
             /* ---- import all columns ---- */
             if (importUnmapped) {
@@ -1064,6 +1066,13 @@ qint64 moduleRemoteImport::ImportAvicennaCsvSurvey(qint64 remoteImportBatchRowID
                         sur.dateEnd = endTime;
                         sur.AddToDatabase();
                         surveyRowID = sur.surveyRowID;
+                    }
+
+                    /* check if this references a file/image */
+                    if (value.startsWith("response_files/")) {
+                        /* make the file path */
+                        QString imagepath = QString("%1/%2").arg(zipdir).arg(value);
+                        obs.SaveFile(imagepath);
                     }
 
                     /* add the observation to the database */
@@ -1178,6 +1187,13 @@ qint64 moduleRemoteImport::ImportAvicennaCsvSurvey(qint64 remoteImportBatchRowID
                         sur.dateEnd = endTime;
                         sur.AddToDatabase();
                         surveyRowID = sur.surveyRowID;
+                    }
+
+                    /* check if this references a file/image */
+                    if (value.startsWith("response_files/")) {
+                        /* make the file path */
+                        QString imagepath = QString("%1/%2").arg(zipdir).arg(value);
+                        obs.SaveFile(imagepath);
                     }
 
                     /* add the observation to the database */

@@ -22,12 +22,17 @@
 
 #include "observation.h"
 #include "study.h"
+#include <QDateTime>
+#include <QFile>
+#include <QFileInfo>
+#include <QMimeDatabase>
 #include <QSqlQuery>
 
 
 /* ---------------------------------------------------------- */
 /* --------- observation ------------------------------------ */
 /* ---------------------------------------------------------- */
+/** @brief Default constructor. Object is not valid until observationRowID and nidb pointer are set. */
 observation::observation() {
 
 }
@@ -36,6 +41,12 @@ observation::observation() {
 /* ---------------------------------------------------------- */
 /* --------- observation ------------------------------------ */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Constructs and loads an observation by ID.
+ * @param id    Primary key of the observations row to load.
+ * @param a     Pointer to the nidb instance (database/logging).
+ * @param loadLinked  If true, also loads linked instrument, survey, metadata, and file metadata.
+ */
 observation::observation(qint64 id, nidb *a, bool loadLinked)
 {
     n = a;
@@ -48,6 +59,11 @@ observation::observation(qint64 id, nidb *a, bool loadLinked)
 /* ---------------------------------------------------------- */
 /* --------- LoadObservationInfo ---------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Loads all scalar fields for this observation from the database.
+ *        When loadLinkedData is true, also populates linked instrument/item,
+ *        survey, metadata key-value pairs, and file metadata (blob deferred to LoadFile()).
+ */
 void observation::LoadObservationInfo() {
 
     QStringList msgs;
@@ -88,6 +104,7 @@ void observation::LoadObservationInfo() {
             subjectRowID            = q.value("subject_id").toInt();
             subjectUID              = q.value("UID").toString();
             surveyRowID             = q.value("observationsurvey_id").toInt();
+            fileRowID               = q.value("observation_fileid").toInt();
 
             isValid = true;
 
@@ -178,6 +195,22 @@ void observation::LoadObservationInfo() {
                     }
                 }
 
+                /* load file metadata (blob fetched on demand via LoadFile()) */
+                if (fileRowID > 0) {
+                    QSqlQuery qf;
+                    qf.prepare("select file_name, file_contenttype, file_size, file_date from files where file_id = :fileid");
+                    qf.bindValue(":fileid", fileRowID);
+                    n->SQLQuery(qf, __FUNCTION__, __FILE__, __LINE__);
+                    if (qf.size() > 0) {
+                        qf.first();
+                        hasFile          = true;
+                        fileName         = qf.value("file_name").toString();
+                        fileContentType  = qf.value("file_contenttype").toString();
+                        fileSize         = qf.value("file_size").toLongLong();
+                        fileDate         = qf.value("file_date").toDateTime();
+                    }
+                }
+
             } /* end loading linked data */
 
         }
@@ -189,6 +222,10 @@ void observation::LoadObservationInfo() {
 /* ---------------------------------------------------------- */
 /* --------- PopulateLinkedInstrument ----------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Loads the instrument and instrument item linked to this observation via instrumentItemRowID.
+ * @return true if a matching instrument item was found and populated, false otherwise.
+ */
 bool observation::PopulateLinkedInstrument() {
     /* load instrument/item data */
     if (instrumentItemRowID > 0) {
@@ -217,6 +254,7 @@ bool observation::PopulateLinkedInstrument() {
 /* ---------------------------------------------------------- */
 /* --------- PrintObservationInfo --------------------------- */
 /* ---------------------------------------------------------- */
+/** @brief Writes all observation fields to the nidb log for debugging. */
 void observation::PrintObservationInfo() {
     QString output = QString("***** Observation - [%1] *****\n").arg(observationRowID);
 
@@ -239,6 +277,13 @@ void observation::PrintObservationInfo() {
     output += QString("   subjectRowID: [%1]\n").arg(subjectRowID);
     output += QString("   subjectUID: [%1]\n").arg(subjectUID);
     output += QString("   surveyRowID: [%1]\n").arg(surveyRowID);
+    output += QString("   fileRowID: [%1]\n").arg(fileRowID);
+    if (hasFile) {
+        output += QString("   fileName: [%1]\n").arg(fileName);
+        output += QString("   fileContentType: [%1]\n").arg(fileContentType);
+        output += QString("   fileSize: [%1]\n").arg(fileSize);
+        output += QString("   fileDate: [%1]\n").arg(fileDate.toString());
+    }
 
     n->Log(output);
 }
@@ -247,6 +292,11 @@ void observation::PrintObservationInfo() {
 /* ---------------------------------------------------------- */
 /* --------- GetSquirrelObject ------------------------------ */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Converts this observation to a squirrelObservation for export.
+ * @param databaseUUID  UUID of the database, passed through to the squirrel object.
+ * @return Populated squirrelObservation instance.
+ */
 squirrelObservation observation::GetSquirrelObject(QString databaseUUID) {
     squirrelObservation sqrl(databaseUUID);
 
@@ -270,11 +320,15 @@ squirrelObservation observation::GetSquirrelObject(QString databaseUUID) {
 /* ---------------------------------------------------------- */
 /* --------- AddToDatabase ---------------------------------- */
 /* ---------------------------------------------------------- */
-/** @brief Inserts this observation into the database.
- *  @return true on success, false if the insert failed or required fields are missing */
-/* NOTE - the current lowest usable RHEL version is RHEL8, which provides MariaDB 10.3
-   unique indexes on text columns is only provided in version 10.4 and higher, so we
-   do some checking to see if we should update or insert */
+/**
+ * @brief Persists this observation to the database (INSERT or UPDATE).
+ *        Existence is checked by (enrollment_id, observation_name, observation_startdate).
+ *        An UPDATE is performed when the existing value matches or is blank; otherwise a new
+ *        row is inserted. Any metadata key-value pairs are written via INSERT IGNORE.
+ *        NOTE: MariaDB 10.3 (RHEL8 minimum) does not support unique indexes on text columns,
+ *        so duplicate detection is done manually rather than relying on ON DUPLICATE KEY.
+ * @return true on success, false if enrollmentRowID is unset or the query failed.
+ */
 bool observation::AddToDatabase() {
     //n->Log(QString("AddToDatabase()  enrollmentRowID (%1)  name (%2)  value (%3)  startDate (%4 UTC)  metadata (%5)")
     //       .arg(enrollmentRowID).arg(observationName).arg(observationValue).arg(dateObservationStart.toUTC().toString("yyyy-MM-dd HH:mm:ss")).arg(metadata.size()));
@@ -312,11 +366,12 @@ bool observation::AddToDatabase() {
 
     if (update) {
         //n->Log(QString("  updating observationRowID [%1]").arg(observationRowID));
-        q.prepare("update observations set instrumentitem_id = :instrumentitemid, observationsurvey_id = :surveyid, remotebatch_id = :remotebatchid, observation_notes = :notes, observation_instrument = :instrument, observation_desc = :desc, observation_rater = :rater, observation_value = :value, observation_enddate = :enddate, observation_tz_offset = :tzoffset, observation_duration = :duration where observation_id = :observationid");
+        q.prepare("update observations set instrumentitem_id = :instrumentitemid, observationsurvey_id = :surveyid, remotebatch_id = :remotebatchid, observation_fileid = :fileid, observation_notes = :notes, observation_instrument = :instrument, observation_desc = :desc, observation_rater = :rater, observation_value = :value, observation_enddate = :enddate, observation_tz_offset = :tzoffset, observation_duration = :duration where observation_id = :observationid");
         q.bindValue(":observationid",    observationRowID);
         q.bindValue(":instrumentitemid", instrumentItemRowID > 0 ? QVariant(instrumentItemRowID) : QVariant(QMetaType::fromType<int>()));
         q.bindValue(":surveyid",        surveyRowID > 0         ? QVariant(surveyRowID)         : QVariant(QMetaType::fromType<int>()));
         q.bindValue(":remotebatchid",   remoteBatchRowID > 0    ? QVariant(remoteBatchRowID)    : QVariant(QMetaType::fromType<int>()));
+        q.bindValue(":fileid",          fileRowID > 0           ? QVariant(fileRowID)           : QVariant(QMetaType::fromType<int>()));
         q.bindValue(":notes",           observationNotes);
         q.bindValue(":instrument",      observationInstrument);
         q.bindValue(":desc",            observationDescription);
@@ -330,11 +385,12 @@ bool observation::AddToDatabase() {
     }
     else {
         //n->Log("  inserting new observation row");
-        q.prepare("insert into observations (enrollment_id, instrumentitem_id, observationsurvey_id, remotebatch_id, observation_name, observation_notes, observation_instrument, observation_desc, observation_rater, observation_value, observation_startdate, observation_enddate, observation_tz_offset, observation_duration, observation_entrydate, observation_createdate) values (:enrollmentid, :instrumentitemid, :surveyid, :remotebatchid, :name, :notes, :instrument, :desc, :rater, :value, :startdate, :enddate, :tzoffset, :duration, :entrydate, :createdate)");
+        q.prepare("insert into observations (enrollment_id, instrumentitem_id, observationsurvey_id, remotebatch_id, observation_fileid, observation_name, observation_notes, observation_instrument, observation_desc, observation_rater, observation_value, observation_startdate, observation_enddate, observation_tz_offset, observation_duration, observation_entrydate, observation_createdate) values (:enrollmentid, :instrumentitemid, :surveyid, :remotebatchid, :fileid, :name, :notes, :instrument, :desc, :rater, :value, :startdate, :enddate, :tzoffset, :duration, :entrydate, :createdate)");
         q.bindValue(":enrollmentid",    enrollmentRowID);
         q.bindValue(":instrumentitemid", instrumentItemRowID > 0 ? QVariant(instrumentItemRowID) : QVariant(QMetaType::fromType<int>()));
         q.bindValue(":surveyid",        surveyRowID > 0         ? QVariant(surveyRowID)         : QVariant(QMetaType::fromType<int>()));
         q.bindValue(":remotebatchid",   remoteBatchRowID > 0    ? QVariant(remoteBatchRowID)    : QVariant(QMetaType::fromType<int>()));
+        q.bindValue(":fileid",          fileRowID > 0           ? QVariant(fileRowID)           : QVariant(QMetaType::fromType<int>()));
         q.bindValue(":name",            observationName);
         q.bindValue(":notes",           observationNotes);
         q.bindValue(":instrument",      observationInstrument);
@@ -375,4 +431,106 @@ bool observation::AddToDatabase() {
 
     //n->Log(QString("AddToDatabase() returning  isValid [%1]  observationRowID [%2]").arg(isValid).arg(observationRowID));
     return isValid;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- LoadFile --------------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Fetches the full file blob from the files table into fileBlob.
+ *        File metadata (fileName, fileContentType, fileSize, fileDate) is also refreshed.
+ *        Call this only when the blob content is actually needed; metadata is loaded
+ *        automatically by LoadObservationInfo() when loadLinkedData is true.
+ * @return true on success, false if fileRowID is unset or the row was not found.
+ */
+bool observation::LoadFile() {
+    if (fileRowID < 1) {
+        msg = "No file linked to this observation";
+        return false;
+    }
+
+    QSqlQuery q;
+    q.prepare("select file_name, file_contenttype, file_blob, file_size, file_date from files where file_id = :fileid");
+    q.bindValue(":fileid", fileRowID);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.size() < 1) {
+        msg = QString("File row %1 not found").arg(fileRowID);
+        return false;
+    }
+
+    q.first();
+    fileName        = q.value("file_name").toString();
+    fileContentType = q.value("file_contenttype").toString();
+    fileBlob        = q.value("file_blob").toByteArray();
+    fileSize        = q.value("file_size").toLongLong();
+    fileDate        = q.value("file_date").toDateTime();
+    hasFile         = true;
+    return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- SaveFile --------------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Reads a file from disk and stores it as a blob in the files table, linked to this observation.
+ *        The filename and MIME type are derived from filePath. If fileRowID is already set,
+ *        the existing files row is updated in place; otherwise a new row is inserted and
+ *        observation_fileid on the observations row is updated to point to it.
+ * @param filePath  Absolute path to the file to read and store.
+ * @return true on success, false if the file cannot be opened or the insert failed.
+ */
+bool observation::SaveFile(const QString &filePath) {
+    QFile f(filePath);
+    if (!f.open(QIODevice::ReadOnly)) {
+        msg = QString("Cannot open file: %1").arg(filePath);
+        return false;
+    }
+    QByteArray data = f.readAll();
+    f.close();
+
+    QFileInfo fi(filePath);
+    QString name = fi.fileName();
+    QString contentType = QMimeDatabase().mimeTypeForFile(fi).name();
+
+    QSqlQuery q;
+
+    if (fileRowID > 0) {
+        q.prepare("update files set file_name = :name, file_contenttype = :contenttype, file_blob = :blob, file_size = :size, file_date = now() where file_id = :fileid");
+        q.bindValue(":fileid",      fileRowID);
+        q.bindValue(":name",        name);
+        q.bindValue(":contenttype", contentType);
+        q.bindValue(":blob",        data);
+        q.bindValue(":size",        data.size());
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    }
+    else {
+        q.prepare("insert into files (file_name, file_contenttype, file_blob, file_size, file_date) values (:name, :contenttype, :blob, :size, now())");
+        q.bindValue(":name",        name);
+        q.bindValue(":contenttype", contentType);
+        q.bindValue(":blob",        data);
+        q.bindValue(":size",        data.size());
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        fileRowID = q.lastInsertId().toInt();
+        if (fileRowID < 1) {
+            msg = "Failed to insert file row";
+            return false;
+        }
+
+        /* link the new file row to this observation */
+        QSqlQuery qu;
+        qu.prepare("update observations set observation_fileid = :fileid where observation_id = :obsid");
+        qu.bindValue(":fileid", fileRowID);
+        qu.bindValue(":obsid",  observationRowID);
+        n->SQLQuery(qu, __FUNCTION__, __FILE__, __LINE__);
+    }
+
+    fileName        = name;
+    fileContentType = contentType;
+    fileBlob        = data;
+    fileSize        = data.size();
+    fileDate        = QDateTime::currentDateTimeUtc();
+    hasFile         = true;
+    return true;
 }

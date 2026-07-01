@@ -1965,7 +1965,6 @@ CREATE TABLE `observations` (
   `observation_desc` varchar(250) DEFAULT NULL,
   `observation_rater` varchar(50) DEFAULT NULL,
   `observation_value` text NOT NULL,
-  `observation_blob` longblob DEFAULT NULL COMMENT 'item types: image, csv',
   `observation_fileid` int(11) DEFAULT NULL,
   `observation_startdate` datetime DEFAULT '0000-00-00 00:00:00' COMMENT 'Stored as UTC',
   `observation_enddate` datetime DEFAULT NULL,
@@ -2813,7 +2812,7 @@ CREATE TABLE `remoteimport_batch` (
   `end_date` datetime DEFAULT NULL COMMENT 'Datetime the batch finished',
   `status` enum('started','running','complete','waiting','pending','error') NOT NULL COMMENT 'Status of this batch',
   `next_state` enum('run','pause','terminate','') NOT NULL COMMENT 'The next state of this batch import. The default is blank, which allows scheduled imports to run normally. ''run'' allows an ondemand import to start',
-  `csv_path` text DEFAULT NULL COMMENT 'If the remote_import type is csv, then this will be populated when creating a new remote import batch'
+  `datafile_path` text DEFAULT NULL COMMENT 'If the remote_import type is *csv, then this will be populated when creating a new remote import batch'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------

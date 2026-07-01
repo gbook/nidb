@@ -161,23 +161,28 @@
 			return;
 		}
 
-		$csvpath = null;
+		$datafilepath = null;
 		if (in_array($row['remote_type'], ['avicenna_csv_survey', 'avicenna_csv_datasource'])) {
-			if (!isset($_FILES['csv_file']) || $_FILES['csv_file']['error'] !== UPLOAD_ERR_OK) {
-				Error("A CSV file is required to run this import");
+			if (!isset($_FILES['datafile']) || $_FILES['datafile']['error'] !== UPLOAD_ERR_OK) {
+				Error("A CSV or ZIP file is required to run this import");
+				return;
+			}
+			$origext = strtolower(pathinfo($_FILES['datafile']['name'], PATHINFO_EXTENSION));
+			if (!in_array($origext, ['csv', 'zip'])) {
+				Error("Only .csv and .zip files are accepted");
 				return;
 			}
 			$uploaddir = rtrim($GLOBALS['cfg']['uploaddir'], '/') . '/';
-			$uniquename = uniqid('csvimport_', true) . '.csv';
-			$csvpath = $uploaddir . $uniquename;
-			if (!move_uploaded_file($_FILES['csv_file']['tmp_name'], $csvpath)) {
-				Error("Failed to save uploaded CSV file");
+			$uniquename = uniqid('dataimport_', true) . '.' . $origext;
+			$datafilepath = $uploaddir . $uniquename;
+			if (!move_uploaded_file($_FILES['datafile']['tmp_name'], $datafilepath)) {
+				Error("Failed to save uploaded file");
 				return;
 			}
 		}
 
-		$stmt = mysqli_prepare($GLOBALS['linki'], "insert into remoteimport_batch (remoteimport_id, status, next_state, csv_path) values (?, 'pending', 'run', ?)");
-		mysqli_stmt_bind_param($stmt, 'is', $importid, $csvpath);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "insert into remoteimport_batch (remoteimport_id, status, next_state, datafile_path) values (?, 'pending', 'run', ?)");
+		mysqli_stmt_bind_param($stmt, 'is', $importid, $datafilepath);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		mysqli_stmt_close($stmt);
 
@@ -668,7 +673,7 @@
 							$scheduletext = FormatRemoteImportSchedule($import_schedule, $import_time, $import_dayofmonth, $import_days);
 							if ($import_schedule == "ondemand") {
 								if (in_array($remote_type, ['avicenna_csv_survey', 'avicenna_csv_datasource'])) {
-									$scheduletext .= " &nbsp; <a href=\"#\" class=\"ui tiny primary basic green button\" onclick=\"document.getElementById('csv_upload_$importid').click(); return false;\"><i class=\"upload icon\"></i>Upload &amp; Run</a>";
+									$scheduletext .= " &nbsp; <a href=\"#\" class=\"ui tiny primary basic green button\" onclick=\"document.getElementById('datafile_upload_$importid').click(); return false;\"><i class=\"upload icon\"></i>Upload &amp; Run</a>";
 								} else {
 									$scheduletext .= " &nbsp; <a href=\"importremote.php?action=runimport&projectid=$projectid&importid=$importid\" class=\"ui tiny primary basic green button\">Run now</a>";
 								}
@@ -723,11 +728,11 @@
 					if (in_array($row['remote_type'], ['avicenna_csv_survey', 'avicenna_csv_datasource'])) {
 						$importid = $row['remoteimport_id'];
 						?>
-						<form id="csvUploadForm_<?=$importid?>" method="post" action="importremote.php" enctype="multipart/form-data" style="display:none">
+						<form id="datafileUploadForm_<?=$importid?>" method="post" action="importremote.php" enctype="multipart/form-data" style="display:none">
 							<input type="hidden" name="action" value="runimport">
 							<input type="hidden" name="importid" value="<?=$importid?>">
 							<input type="hidden" name="projectid" value="<?=$projectid?>">
-							<input type="file" name="csv_file" id="csv_upload_<?=$importid?>" accept=".csv"
+							<input type="file" name="datafile" id="datafile_upload_<?=$importid?>" accept=".csv,.zip"
 								onchange="if (this.files.length) this.form.submit();">
 						</form>
 						<?
@@ -782,7 +787,7 @@
 							$enddate = $row['end_date'];
 							$status = $row['status'];
 							$nextstate = $row['next_state'];
-							$csvpath = $row['csv_path'];
+							$datafilepath = $row['datafile_path'];
 
 							$importschedule = $row['import_schedule'];
 							$obs_count = (int)$row['obs_count'];
@@ -792,7 +797,7 @@
 							$status_display = ($status == "") ? "-" : ucfirst($status);
 							$nextstate_display = ($nextstate == "") ? "-" : ucfirst($nextstate);
 							
-							$csvTypeLabels = [
+							$typeLabels = [
 								'avicenna_api_survey'     => 'Avicenna API Survey',
 								'avicenna_api_datasource' => 'Avicenna API Datasource',
 								'avicenna_csv_survey'     => 'Avicenna CSV Survey',
@@ -801,11 +806,11 @@
 								'redcap' => 'REDCap',
 								'url'    => 'URL',
 							];
-							$typeLabel = isset($csvTypeLabels[$remoteType]) ? $csvTypeLabels[$remoteType] : ucfirst(str_replace('_', ' ', $remoteType));
+							$typeLabel = isset($typeLabels[$remoteType]) ? $typeLabels[$remoteType] : ucfirst(str_replace('_', ' ', $remoteType));
 							if (in_array($remoteType, ['avicenna_csv_survey', 'avicenna_csv_datasource'])) {
-								if (file_exists($csvpath)) {
-									$filesize = HumanReadableFilesize(filesize($csvpath));
-									$source_display = "$typeLabel &mdash; <tt>$csvpath</tt> <div class='ui small label'>$filesize</div>";
+								if (file_exists($datafilepath)) {
+									$filesize = HumanReadableFilesize(filesize($datafilepath));
+									$source_display = "$typeLabel &mdash; <tt>$datafilepath</tt> <div class='ui small label'>$filesize</div>";
 								}
 								else {
 									$source_display = "$typeLabel &mdash; CSV file does not exist";
@@ -869,7 +874,7 @@
 		$status      = $batch['status'] ?: '-';
 		$startdate   = $batch['start_date'] ?: '-';
 		$enddate     = $batch['end_date'] ?: '-';
-		$csvpath     = $batch['csv_path'];
+		$datafilepath     = $batch['datafile_path'];
 		?>
 		<div class="ui container">
 			<div class="ui two column grid">
@@ -903,12 +908,12 @@
 				<tr>
 					<td>CSV File</td>
 					<td>
-						<? if (!$csvpath): ?>
+						<? if (!$datafilepath): ?>
 							<span class="ui grey text">No file associated</span>
-						<? elseif (!file_exists($csvpath)): ?>
-							<tt><?=$csvpath?></tt> &nbsp; <span class="ui red text"><i class="times circle icon"></i> File not found</span>
+						<? elseif (!file_exists($datafilepath)): ?>
+							<tt><?=$datafilepath?></tt> &nbsp; <span class="ui red text"><i class="times circle icon"></i> File not found</span>
 						<? else: ?>
-							<tt><?=$csvpath?></tt> &nbsp; <span class="ui green text"><i class="check circle icon"></i> Exists</span> <div class="ui small label"><?=HumanReadableFilesize(filesize($csvpath))?></div>
+							<tt><?=$datafilepath?></tt> &nbsp; <span class="ui green text"><i class="check circle icon"></i> Exists</span> <div class="ui small label"><?=HumanReadableFilesize(filesize($datafilepath))?></div>
 						<? endif; ?>
 					</td>
 				</tr>

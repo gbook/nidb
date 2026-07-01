@@ -489,21 +489,19 @@ bool NiDBFindFirstFile(QString dir, QString pattern, QString &f, QString &msg, b
 
     f = "";
 
-    if (recursive) {
-        QDirIterator it(dir, QStringList() << pattern, QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks, QDirIterator::Subdirectories);
-        if (it.hasNext())
-            f = it.next();
-    }
-    else {
-        QDirIterator it(dir, QStringList() << pattern, QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks);
-        if (it.hasNext())
-            f = it.next();
-    }
+    QDirIterator::IteratorFlags flags = recursive ? QDirIterator::Subdirectories : QDirIterator::NoIteratorFlags;
+    QDirIterator it(dir, QStringList() << pattern, QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks, flags);
 
-    if (f.size() == 0)
+    QStringList matches;
+    while (it.hasNext())
+        matches << it.next();
+
+    if (matches.isEmpty())
         return false;
-    else
-        return true;
+
+    matches.sort();
+    f = matches.first();
+    return true;
 }
 
 
