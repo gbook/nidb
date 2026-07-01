@@ -186,12 +186,10 @@
 					</div>
 				</div>
 				<div class="ui dropdown item">
-					<div class="text">Tools</div>
+					<div class="text">Manage</div>
 					<i class="dropdown icon"></i>
 					<div class="menu">
 						<a class="item" title="Manage instruments and expected observations" href="instruments.php?projectid=<?=$projectid?>" style="color: #222"><i class="flask icon"></i> Manage instruments</a>
-						<a class="item" title="Map remote data source fields to NiDB instruments" href="remoteimportmapping.php?projectid=<?=$projectid?>" style="color: #222"><i class="exchange icon"></i> Remote import mapping</a>
-						<a class="item" href="importremote.php?action=viewbatchimportlist&projectid=<?=$projectid?>" style="color: #222"><i class="cloud download anternate icon"></i> Remote batch imports</a>
 						<a class="item" href="datadictionary.php?projectid=<?=$projectid?>" style="color: #222"><i class="database icon"></i> Data dictionary</a>
 						<a class="item" href="analysisbuilder.php?action=viewanalysissummary&projectid=<?=$projectid?>" style="color: #222"><i class="list alternate outline icon"></i> Analysis builder</a>
 						<a class="item" href="templates.php?action=displaystudytemplatelist&projectid=<?=$projectid?>" style="color: #222"><i class="clone outline icon"></i> Study templates</a>
@@ -207,6 +205,8 @@
 					<div class="text">Import Data</div>
 					<i class="dropdown icon"></i>
 					<div class="menu">
+						<a class="item" title="Map remote data source fields to NiDB instruments" href="remoteimportmapping.php?projectid=<?=$projectid?>" style="color: #222"><i class="exchange icon"></i> Remote import mapping</a>
+						<a class="item" href="importremote.php?action=viewbatchimportlist&projectid=<?=$projectid?>" style="color: #222"><i class="cloud download anternate icon"></i> Remote batch imports</a>
 						<a class="item" href="importimaging.php?action=newimportform&projectid=<?=$projectid?>" style="color: #222"><i class="file import icon"></i> Import imaging</a>
 						<a class="item" href="importnonimaging.php?action=newimportform&projectid=<?=$projectid?>" style="color: #222"><i class="file import icon"></i> Import Non-imaging</a>
 						<a class="item" href="redcapimport.php?action=importsettings&projectid=<?=$projectid?>" style="color: #222"><i class="red redhat icon"></i> Global Redcap settings</a>
@@ -216,7 +216,7 @@
 				</div>
 
 				<div class="ui dropdown item">
-					<div class="text"><i class="cog icon"></i>Project admin</div>
+					<div class="text">Admin</div>
 					<i class="dropdown icon"></i>
 					<div class="menu">
 						<? if ($GLOBALS['isadmin']) { ?>

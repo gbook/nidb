@@ -98,6 +98,10 @@
 			ResetBatch($batchid, $projectid);
 			DisplayRemoteImportBatchList($projectid);
 			break;
+		case 'cancelbatch':
+			CancelBatch($batchid);
+			DisplayRemoteImportBatchList($projectid);
+			break;
 		case 'enable':
 			SetRemoteImportEnabled($importid, 1);
 			DisplayRemoteImportList($projectid);
@@ -132,6 +136,7 @@
 	</div>
 	<script>
 	$('#importWorkflowStepper').sticky({ context: '#importPageContent', offset: 10 });
+	$('.ui.dropdown').dropdown();
 	</script>
 	<?php
 
@@ -292,6 +297,21 @@
 		mysqli_stmt_close($stmt);
 
 		Notice("Batch #$batchid has been reset");
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- CancelBatch ----------------------- */
+	/* -------------------------------------------- */
+	function CancelBatch($batchid) {
+		$batchid = (int)$batchid;
+
+		$stmt = mysqli_prepare($GLOBALS['linki'], "update remoteimport_batch set status = 'cancelled', next_state = '' where remoteimportbatch_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $batchid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+
+		Notice("Batch #$batchid has been cancelled");
 	}
 
 
@@ -648,10 +668,11 @@
 				<thead>
 					<tr>
 						<th>Name</th>
+						<th>Survey ID</th>
 						<th>Type</th>
 						<th>URL</th>
-						<th>Survey ID</th>
 						<th>Schedule</th>
+						<th>Actions</th>
 						<th>Import Unmapped</th>
 						<th>Enabled</th>
 					</tr>
@@ -678,13 +699,6 @@
 							$enabled = $row['enabled'];
 
 							$scheduletext = FormatRemoteImportSchedule($import_schedule, $import_time, $import_dayofmonth, $import_days);
-							if ($import_schedule == "ondemand") {
-								if (in_array($remote_type, ['avicenna_csv_survey', 'avicenna_csv_datasource'])) {
-									$scheduletext .= " &nbsp; <a href=\"#\" class=\"ui tiny primary basic green button\" onclick=\"document.getElementById('datafile_upload_$importid').click(); return false;\"><i class=\"upload icon\"></i>Upload &amp; Run</a>";
-								} else {
-									$scheduletext .= " &nbsp; <a href=\"importremote.php?action=runimport&projectid=$projectid&importid=$importid\" class=\"ui tiny primary basic green button\">Run now</a>";
-								}
-							}
 							$remote_url_display = ($remote_url == "") ? "-" : $remote_url;
 					?>
 					<tr>
@@ -701,10 +715,26 @@
 							];
 							$typeLabel = isset($typeLabels[$remote_type]) ? $typeLabels[$remote_type] : ucfirst(str_replace('_', ' ', $remote_type));
 						?>
+						<td><?= !empty($remote_surveyid) ? htmlspecialchars($remote_surveyid) : '-' ?></td>
 						<td><?= $typeLabel ?></td>
 						<td><?=$remote_url_display?></td>
-						<td><?= !empty($remote_surveyid) ? htmlspecialchars($remote_surveyid) : '-' ?></td>
 						<td><?=$scheduletext?></td>
+						<td>
+							<div class="ui floating dropdown icon mini basic button">
+								<i class="chevron down icon"></i>
+								<div class="menu">
+									<? if ($import_schedule === 'ondemand'): ?>
+										<? if (in_array($remote_type, ['avicenna_csv_survey', 'avicenna_csv_datasource'])): ?>
+											<a class="item" href="#" onclick="document.getElementById('datafile_upload_<?=$importid?>').click(); return false;"><i class="upload icon"></i>Upload &amp; Run</a>
+										<? else: ?>
+											<a class="item" href="importremote.php?action=runimport&projectid=<?=$projectid?>&importid=<?=$importid?>"><i class="play icon"></i>Run now</a>
+										<? endif; ?>
+									<? else: ?>
+										<div class="disabled item"><i class="info circle icon"></i>No actions available</div>
+									<? endif; ?>
+								</div>
+							</div>
+						</td>
 						<td style="text-align:center">
 							<? if ($flag_import_unmapped): ?>
 								<i class="green check circle icon" title="Import unmapped data enabled"></i>
@@ -763,8 +793,7 @@
 					<h1 class="ui header">Remote Import Batches</h1>
 				</div>
 				<div class="right aligned column">
-					<a href="importremote.php?action=viewimports&projectid=<?=$projectid?>" class="ui button">View Remote Imports</a>
-					<a href="importremote.php?action=addimportform&projectid=<?=$projectid?>" class="ui primary button"><i class="plus square icon"></i>New Import</a>
+					<a href="importremote.php?action=viewimports&projectid=<?=$projectid?>" class="ui button"><i class="arrow alternate circle left icon"></i> View Remote Imports</a>
 				</div>
 			</div>
 			<table class="ui very compact celled grey table">
@@ -778,6 +807,7 @@
 						<th>End Date</th>
 						<th>Status</th>
 						<th>Next State</th>
+						<th>Actions</th>
 						<th>Logs</th>
 						<th>Imports</th>
 					</tr>
@@ -837,8 +867,22 @@
 						<td><?=$startdate_display?></td>
 						<td><?=$enddate_display?></td>
 						<td><?=$status_display?></td>
-						<td style="white-space:nowrap">
-							<?=$nextstate_display?><? if ($importschedule === 'ondemand'): ?>&nbsp;<a href="importremote.php?action=resetbatch&batchid=<?=$batchRowID?>&projectid=<?=$projectid?>" class="ui mini green basic button" onclick="return confirm('Are you sure you want to reset this batch? Log entries will be deleted and the batch will be re-queued. Previously imported records will NOT be deleted.')"><i class="redo icon"></i>Reset</a><? endif; ?>
+						<td><?=$nextstate_display?></td>
+						<td>
+							<div class="ui floating dropdown icon mini basic button">
+								<i class="chevron down icon"></i>
+								<div class="menu">
+									<? if ($importschedule === 'ondemand'): ?>
+										<a class="item" href="importremote.php?action=resetbatch&batchid=<?=$batchRowID?>&projectid=<?=$projectid?>" onclick="return confirm('Are you sure you want to reset this batch? Log entries will be deleted and the batch will be re-queued. Previously imported records will NOT be deleted.')"><i class="redo icon"></i>Reset</a>
+									<? endif; ?>
+									<? if (in_array($status, ['started', 'running', 'waiting', 'pending'])): ?>
+										<a class="item" href="importremote.php?action=cancelbatch&batchid=<?=$batchRowID?>&projectid=<?=$projectid?>" onclick="return confirm('Are you sure you want to cancel this batch?')"><i class="times circle icon"></i>Cancel</a>
+									<? endif; ?>
+									<? if (!($importschedule === 'ondemand') && !in_array($status, ['started', 'running', 'waiting', 'pending'])): ?>
+										<div class="disabled item"><i class="info circle icon"></i>No actions available</div>
+									<? endif; ?>
+								</div>
+							</div>
 						</td>
 						<td><a href="importremote.php?action=viewbatchlog&batchid=<?=$batchRowID?>">View logs</a></td>
 						<td>
