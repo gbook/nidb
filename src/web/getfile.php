@@ -29,7 +29,35 @@ require "functions.php";
 require "includes_php.php";
 
 $action = GetVariable("action");
-$file = GetVariable("file");
+$file   = GetVariable("file");
+$fileid = (int)GetVariable("fileid");
+
+/* ── serve a file blob stored in the 'files' table ── */
+if ($fileid > 0) {
+	$download = (GetVariable("download") === '1');
+
+	$stmt = mysqli_prepare($GLOBALS['linki'], "select file_name, file_contenttype, file_blob, file_size from files where file_id = ?");
+	mysqli_stmt_bind_param($stmt, 'i', $fileid);
+	$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+	$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+	mysqli_stmt_close($stmt);
+
+	if (!$row) {
+		http_response_code(404);
+		exit('File not found');
+	}
+
+	$contentType = $row['file_contenttype'] ?: 'application/octet-stream';
+	$fileName    = $row['file_name']        ?: 'file';
+	$blob        = $row['file_blob'];
+
+	header('Content-Type: '   . $contentType);
+	header('Content-Length: ' . strlen($blob));
+	header('Cache-Control: private, max-age=3600');
+	header('Content-Disposition: ' . ($download ? 'attachment' : 'inline') . '; filename="' . addslashes($fileName) . '"');
+	echo $blob;
+	exit;
+}
 
 if ($file != "") {
 

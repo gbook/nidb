@@ -145,7 +145,7 @@
 	function RunRemoteImport($importid) {
 		$importid = (int)$importid;
 
-		$stmt = mysqli_prepare($GLOBALS['linki'], "select import_name, import_schedule, remote_type from remote_imports where remoteimport_id = ?");
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select import_name, import_schedule, remote_type, remote_surveyid from remote_imports where remoteimport_id = ?");
 		mysqli_stmt_bind_param($stmt, 'i', $importid);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
@@ -162,6 +162,7 @@
 		}
 
 		$datafilepath = null;
+		$uploadedFilename = null;
 		if (in_array($row['remote_type'], ['avicenna_csv_survey', 'avicenna_csv_datasource'])) {
 			if (!isset($_FILES['datafile']) || $_FILES['datafile']['error'] !== UPLOAD_ERR_OK) {
 				Error("A CSV or ZIP file is required to run this import");
@@ -172,6 +173,7 @@
 				Error("Only .csv and .zip files are accepted");
 				return;
 			}
+			$uploadedFilename = $_FILES['datafile']['name'];
 			$uploaddir = rtrim($GLOBALS['cfg']['uploaddir'], '/') . '/';
 			$uniquename = uniqid('dataimport_', true) . '.' . $origext;
 			$datafilepath = $uploaddir . $uniquename;
@@ -187,6 +189,11 @@
 		mysqli_stmt_close($stmt);
 
 		Notice("Remote import " . $row['import_name'] . " queued");
+
+		$surveyid = trim($row['remote_surveyid']);
+		if ($surveyid !== '' && $uploadedFilename !== null && stripos($uploadedFilename, $surveyid) === false) {
+			Warning("Survey ID \"$surveyid\" was not found in the uploaded filename \"" . htmlspecialchars($uploadedFilename) . "\" — verify you uploaded the correct file");
+		}
 	}
 
 
@@ -438,7 +445,7 @@
 
 		$days = array("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat");
 	?>
-		<div class="ui text container">
+		<div style="max-width:800px">
 			<div class="ui attached visible message">
 				<div class="header"><?=$formtitle?></div>
 			</div>
@@ -627,7 +634,7 @@
 	function DisplayRemoteImportList($projectid) {
 		$projectid = (int)$projectid;
 	?>
-		<div class="ui container">
+		<div>
 			<div class="ui two column grid">
 				<div class="column">
 					<h1 class="ui header">Remote Imports</h1>
@@ -750,7 +757,7 @@
 	function DisplayRemoteImportBatchList($projectid) {
 		$projectid = (int)$projectid;
 	?>
-		<div class="ui container">
+		<div>
 			<div class="ui two column grid">
 				<div class="column">
 					<h1 class="ui header">Remote Import Batches</h1>
@@ -765,6 +772,7 @@
 					<tr>
 						<th>Batch ID</th>
 						<th>Import Name</th>
+						<th>Enabled</th>
 						<th>Source</th>
 						<th>Start Date</th>
 						<th>End Date</th>
@@ -776,7 +784,7 @@
 				</thead>
 				<tbody>
 					<?
-						$stmt = mysqli_prepare($GLOBALS['linki'], "select a.*, b.import_name, b.remote_type, b.remote_url, b.import_schedule, (select count(*) from observations where remotebatch_id = a.remoteimportbatch_id) as obs_count from remoteimport_batch a left join remote_imports b on a.remoteimport_id = b.remoteimport_id where b.project_id = ? order by a.remoteimportbatch_id desc");
+						$stmt = mysqli_prepare($GLOBALS['linki'], "select a.*, b.import_name, b.remote_type, b.remote_url, b.import_schedule, b.enabled, (select count(*) from observations where remotebatch_id = a.remoteimportbatch_id) as obs_count from remoteimport_batch a left join remote_imports b on a.remoteimport_id = b.remoteimport_id where b.project_id = ? order by a.remoteimportbatch_id desc");
 						mysqli_stmt_bind_param($stmt, 'i', $projectid);
 						$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -790,6 +798,7 @@
 							$datafilepath = $row['datafile_path'];
 
 							$importschedule = $row['import_schedule'];
+							$enabled = (int)$row['enabled'];
 							$obs_count = (int)$row['obs_count'];
 							$importname_display = ($importname == "") ? "-" : $importname;
 							$startdate_display = ($startdate == "") ? "-" : $startdate;
@@ -820,9 +829,10 @@
 								$source_display = $typeLabel;
 							}
 					?>
-					<tr>
+					<tr<?= $enabled ? '' : ' class="disabled"' ?>>
 						<td><?=$batchRowID?></td>
 						<td><?=$importname_display?></td>
+						<td style="text-align:center"><?= $enabled ? '<i class="green check circle icon" title="Enabled"></i>' : '<i class="grey minus icon" title="Disabled"></i>' ?></td>
 						<td><?=$source_display?></td>
 						<td><?=$startdate_display?></td>
 						<td><?=$enddate_display?></td>
@@ -876,7 +886,7 @@
 		$enddate     = $batch['end_date'] ?: '-';
 		$datafilepath     = $batch['datafile_path'];
 		?>
-		<div class="ui container">
+		<div>
 			<div class="ui two column grid">
 				<div class="column">
 					<h1 class="ui header">Batch Log <span class="ui grey label">#<?=$batchid?></span></h1>
@@ -1027,7 +1037,7 @@
 		<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/ag-grid-community@31/styles/ag-grid.css">
 		<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/ag-grid-community@31/styles/ag-theme-alpine.css">
 
-		<div class="ui container">
+		<div>
 			<div class="ui two column grid">
 				<div class="column">
 					<h1 class="ui header">Imported Observations <span class="ui grey label"><?=count($rows)?></span></h1>

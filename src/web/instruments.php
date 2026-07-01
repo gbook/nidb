@@ -147,7 +147,7 @@
 		if ($instrumentid < 1) { Error("Invalid instrument ID"); return; }
 		$name = trim($name);
 		if ($name == "") { Error("Item name cannot be blank"); return; }
-		$allowed_types = ['int', 'double', 'string', 'timeseries'];
+		$allowed_types = ['enum', 'int', 'double', 'string', 'timeseries', 'image', 'csv'];
 		if (!in_array($type, $allowed_types)) { $type = 'string'; }
 		$sqlstring = "select coalesce(max(item_order),0)+1 as nextorder from instrument_items where instrument_id = ?";
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
@@ -169,7 +169,7 @@
 	/* --------------------------------------------------- */
 	function BulkAddItems($instrumentid, $itemnames) {
 		if ($instrumentid < 1) { Error("Invalid instrument ID"); return; }
-		$allowed_types = ['int', 'double', 'string', 'timeseries'];
+		$allowed_types = ['enum', 'int', 'double', 'string', 'timeseries', 'image', 'csv'];
 		$lines = preg_split('/\r\n|\r|\n/', trim($itemnames));
 		$sqlstring = "select coalesce(max(item_order),0) as maxorder from instrument_items where instrument_id = ?";
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
@@ -217,7 +217,7 @@
 		if ($itemid < 1) { echo json_encode(['status' => 'error', 'message' => 'Invalid item ID']); return; }
 		$name = trim($name);
 		if ($name == "") { echo json_encode(['status' => 'error', 'message' => 'Item name cannot be blank']); return; }
-		$allowed_types = ['int', 'double', 'string', 'timeseries'];
+		$allowed_types = ['enum', 'int', 'double', 'string', 'timeseries', 'image', 'csv'];
 		if (!in_array($type, $allowed_types)) { $type = 'string'; }
 		$sqlstring = "update instrument_items set item_name = ?, item_notes = ?, item_type = ? where instrumentitem_id = ?";
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
@@ -327,7 +327,7 @@
 							</div>
 						</form>
 
-						<table class="ui very compact celled selectable small table" style="margin-bottom:0">
+						<table class="ui compact celled selectable table" style="margin-bottom:0">
 							<thead>
 								<tr>
 									<th>Instrument</th>
@@ -351,9 +351,9 @@
 								<td class="right aligned"><?=$inst['item_count']?></td>
 								<td class="center aligned" style="white-space:nowrap">
 									<a href="instruments.php?action=deleteinstrument&projectid=<?=$projectid?>&instrumentid=<?=$inst['instrument_id']?>"
-									   class="ui mini red basic icon button"
+									   
 									   onclick="return confirm('Delete <?=htmlspecialchars(addslashes($inst['instrument_name']))?> and all its items?')">
-										<i class="trash icon"></i>
+										<i class="red trash link icon"></i>
 									</a>
 								</td>
 							</tr>
@@ -415,7 +415,10 @@
 											<option value="string">String</option>
 											<option value="int">Int</option>
 											<option value="double">Double</option>
+											<option value="enum">Enum</option>
 											<option value="timeseries">Timeseries</option>
+											<option value="image">Image</option>
+											<option value="csv">CSV</option>
 										</select>
 									</div>
 									<div class="four wide field">
@@ -449,15 +452,12 @@
 						<!-- AG Grid items table -->
 						<div id="item-grid" class="ag-theme-alpine" style="height:55vh; border:1px solid #ddd; border-top:none"></div>
 
-						<div style="margin-top:4px; color:#aaa; font-size:0.8em"><?=count($items)?> expected item(s)</div>
+						<div style="margin-top:4px; color:#aaa; font-size:0.8em"><?=count($items)?> item(s)</div>
 
 
 					<? } else { ?>
-						<div class="ui placeholder segment" style="min-height:0; padding:2em">
-							<div class="ui icon header">
-								<i class="list alternate outline icon"></i>
-								Select an instrument to manage its expected items
-							</div>
+						<div class="ui segment">
+							<i class="arrow alternate circle left outline icon"></i> Select an instrument to manage its expected items
 						</div>
 					<? } ?>
 					</div>
@@ -525,7 +525,7 @@
 				});
 			}
 
-			const typeLabels = { string: 'String', int: 'Int', double: 'Double', timeseries: 'Timeseries' };
+			const typeLabels = { string: 'String', int: 'Int', double: 'Double', enum: 'Enum', timeseries: 'Timeseries', image: 'Image', csv: 'CSV' };
 
 			const colDefs = [
 				{ headerName: '', checkboxSelection: true, headerCheckboxSelection: true, width: 40, minWidth: 40, maxWidth: 40, sortable: false, filter: false, resizable: false, editable: false },
@@ -533,7 +533,7 @@
 				{ field: 'name',  headerName: 'Item name', flex: 2, editable: true, onCellValueChanged: saveCell },
 				{ field: 'type',  headerName: 'Type', width: 130, editable: true,
 					cellEditor: 'agSelectCellEditor',
-					cellEditorParams: { values: ['string', 'int', 'double', 'timeseries'] },
+					cellEditorParams: { values: ['string', 'int', 'double', 'enum', 'timeseries', 'image', 'csv'] },
 					valueFormatter: p => typeLabels[p.value] ?? p.value,
 					onCellValueChanged: saveCell },
 				{ field: 'notes', headerName: 'Notes', flex: 3, editable: true, onCellValueChanged: saveCell },

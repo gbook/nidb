@@ -372,6 +372,16 @@
 			</div>
 		</div>
 
+		<!-- File Preview Modal -->
+		<div class="ui modal" id="filePreviewModal">
+			<div class="header"><i class="file icon"></i> <span id="filePreviewTitle"></span></div>
+			<div class="content" id="filePreviewContent" style="text-align:center; max-height:70vh; overflow:auto"></div>
+			<div class="actions">
+				<a id="fileDownloadLink" class="ui primary button" href="#" download><i class="download icon"></i> Download</a>
+				<div class="ui cancel button">Close</div>
+			</div>
+		</div>
+
 		<!-- Bulk Action Modal -->
 		<div class="ui small modal" id="bulkActionModal">
 			<div class="header">Bulk Action &mdash; <span id="bulkSelectedCount">0</span> observation(s) selected</div>
@@ -505,7 +515,7 @@
 		/* joined to instrument_items and instruments to resolve states 1-4 (instrumentitem_id set);
 		   joined to observation_surveys to pull survey dates/rater for states 1,3,5,7;
 		   left joins fall through to NULLs for states 2,4,6,8 (no survey) */
-		$sqlstring = "select a.*, ii.item_name, ins.instrument_name as linked_instrument_name, s.survey_startdate, s.survey_enddate, s.survey_rater, s.survey_notes, s.survey_visit, (select count(*) from observation_meta om where om.observation_id = a.observation_id) as meta_count from observations a left join instrument_items ii on a.instrumentitem_id = ii.instrumentitem_id left join instruments ins on ii.instrument_id = ins.instrument_id left join observation_surveys s on a.observationsurvey_id = s.survey_id where a.enrollment_id = $enrollmentid order by a.observation_name";
+		$sqlstring = "select a.*, ii.item_name, ii.item_type, ins.instrument_name as linked_instrument_name, s.survey_startdate, s.survey_enddate, s.survey_rater, s.survey_notes, s.survey_visit, f.file_contenttype, f.file_name, (select count(*) from observation_meta om where om.observation_id = a.observation_id) as meta_count from observations a left join instrument_items ii on a.instrumentitem_id = ii.instrumentitem_id left join instruments ins on ii.instrument_id = ins.instrument_id left join observation_surveys s on a.observationsurvey_id = s.survey_id left join files f on a.observation_fileid = f.file_id where a.enrollment_id = $enrollmentid order by a.observation_name";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$observationid = $row['observation_id'];
@@ -521,6 +531,7 @@
 				'observationName' => $observation_name,
 				'obsInstrument' => $row['observation_instrument'],
 				'instrumentitem' => $row['item_name'],
+				'itemType'       => (string)($row['item_type'] ?? ''),
 				'value' => $row['observation_value'],
 				'rater' => $row['observation_rater'],
 				'startdate' => $row['observation_startdate'],
@@ -528,8 +539,11 @@
 				'enddate' => $row['observation_enddate'],
 				'tzOffset' => $row['observation_tz_offset'],
 				'dateshtml' => "<b>Entry</b> " . $row['observation_entrydate'] . "<br><b>Create</b> " . $row['observation_createdate'] . "<br><b>Modify</b> " . $row['observation_modifydate'],
-				'metaCount' => (int)$row['meta_count'],
-				'surveyid'  => !empty($row['observationsurvey_id']) ? (int)$row['observationsurvey_id'] : null
+				'metaCount'       => (int)$row['meta_count'],
+				'surveyid'        => !empty($row['observationsurvey_id']) ? (int)$row['observationsurvey_id'] : null,
+				'fileId'          => (int)($row['observation_fileid'] ?? 0),
+				'fileContentType' => (string)($row['file_contenttype'] ?? ''),
+				'fileName'        => (string)($row['file_name'] ?? ''),
 			);
 
 			/* states 1-4 or 5-6: outer group by instrument name; states 7-8 → __none__ instrument group */
@@ -627,17 +641,26 @@
 		$topInformation = sprintf("%d observation%s from %d instrument%s (%d unaffiliated observation%s)", $totalObs, $totalObs != 1 ? 's' : '', $instrumentCount, $instrumentCount != 1 ? 's' : '', $unaffiliatedCount, $unaffiliatedCount != 1 ? 's' : '');
 		
 		?>
-		<div style="margin: 8px 0">
+		<div style="margin: 8px 0; display:flex; align-items:center; gap:1em; flex-wrap:wrap">
 			<button class="ui primary button" onclick="$('#addObsModal').modal('show')">
 				<i class="plus icon"></i> Add observation
 			</button>
 			<button class="ui green button disabled" id="withSelectedBtn" disabled onclick="openBulkActionModal()">
 				<i class="tasks icon"></i>With selected...
 			</button>
+			<div style="margin-left:auto">
+				<div class="ui icon input">
+					<input type="text" id="obsSearchInput" placeholder="Search observations..." style="min-width:240px">
+					<i class="search icon"></i>
+				</div>
+			</div>
 		</div>
-		
-		<div class="ui top attached secondary inverted black segment" style="padding: 6px 14px"><?=$topInformation?></div>
+
+		<div class="ui top attached secondary inverted black segment" id="obsInfoBar" style="padding: 6px 14px"><?=$topInformation?></div>
 		<div class="ui styled fluid accordion" id="observationAccordion" style="box-shadow: 0 4px 8px rgba(0,0,0,0.2)"></div>
+		<div id="searchGridContainer" style="display:none">
+			<div id="searchGrid" style="height:600px; width:100%"></div>
+		</div>
 
 		<script>
 			const groupedData   = <?=$groupsJson?>;
@@ -779,12 +802,55 @@
 				}
 			};
 
+			/* opens the file preview modal for an observation that has a linked file blob */
+			function openFilePreview(fileId, contentType, fileName) {
+				const url = 'getfile.php?fileid=' + fileId;
+				document.getElementById('filePreviewTitle').textContent = fileName || ('File #' + fileId);
+				document.getElementById('fileDownloadLink').href = url + '&download=1';
+				document.getElementById('fileDownloadLink').download = fileName || 'file';
+				const content = document.getElementById('filePreviewContent');
+				if (contentType && contentType.startsWith('image/')) {
+					content.innerHTML = '<img src="' + url + '" style="max-width:100%; max-height:65vh; object-fit:contain">';
+				} else {
+					content.innerHTML = '<p style="margin:1em 0"><i class=\"large file outline icon\"></i><br>' + escHtml(fileName || 'File') + '</p>'
+						+ '<a href="' + url + '&download=1" class=\"ui primary button\"><i class=\"download icon\"></i> Download</a>';
+				}
+				$('#filePreviewModal').modal({ closable: true }).modal('show');
+			}
+
+			/* value column — clickable file indicator when the observation has a linked blob;
+			   falls back to normal editable text for plain observations */
+			const valueColDef = {
+				headerName: 'Value', field: 'value', flex: 1, minWidth: 130,
+				editable: function(params) { return !params.data.fileId; },
+				cellStyle: editableCellStyle,
+				cellRenderer: function(params) {
+					if (!params.data.fileId) return params.value || '';
+					const isImage = params.data.fileContentType && params.data.fileContentType.startsWith('image/');
+					const icon    = isImage ? 'image' : 'file outline';
+					const label   = params.data.fileName || (isImage ? 'Image' : 'File');
+					const a = document.createElement('a');
+					a.href  = '#';
+					a.title = 'Click to preview — ' + label;
+					a.innerHTML = '<i class="' + icon + ' icon"></i> ' + escHtml(label);
+					a.onclick = function(e) {
+						e.preventDefault();
+						openFilePreview(params.data.fileId, params.data.fileContentType, params.data.fileName);
+					};
+					return a;
+				}
+			};
+
 			/* column defs for instrument groups (states 1-6): no Instrument column because the instrument
 			   name is already shown in the accordion header */
 			const instrColDefs = [
 				variableColDef,
 				{ headerName: 'Instrument Item', field: 'instrumentitem', flex: 1, minWidth: 150 },
-				{ headerName: 'Value', field: 'value', flex: 1, minWidth: 130, editable: true, cellStyle: editableCellStyle },
+				{ headerName: 'Type', field: 'itemType', width: 100, minWidth: 100, maxWidth: 120,
+					cellStyle: { color: '#888', fontStyle: 'italic', fontSize: '0.85em' },
+					cellRenderer: function(params) { return params.value || ''; }
+				},
+				valueColDef,
 				{ headerName: 'Rater', field: 'rater', minWidth: 120, editable: true, cellStyle: function() { return { 'font-size': '9pt', cursor: 'text' }; } },
 				{ headerName: 'Start date', field: 'startdate', minWidth: 185, editable: true, cellStyle: editableCellStyle,
 					cellRenderer: params => {
@@ -1407,6 +1473,90 @@
 				});
 
 				$('#pageloading').hide();
+
+				/* ── Search / flat grid ─────────────────────────────────────────────
+				 * Flatten groupedData into a single row array, adding instrumentName
+				 * and surveyDate fields for context that the accordion headers provide. */
+				const flatRows = [];
+				Object.entries(groupedData).forEach(function([instrName, surveyGroups]) {
+					const instrDisplay = instrName === '__none__' ? '' : instrName;
+					const instrId = (groupMeta[instrName] && groupMeta[instrName].instrumentId) ? groupMeta[instrName].instrumentId : null;
+					Object.entries(surveyGroups).forEach(function([surveyKey, rows]) {
+						const sm = (surveyKey !== '__none__') ? (surveyMeta[surveyKey] || null) : null;
+						rows.forEach(function(row) {
+							flatRows.push(Object.assign({}, row, {
+								instrumentName: instrDisplay,
+								instrumentId:   instrId,
+								surveyDate: sm && sm.startdate ? sm.startdate.substring(0, 16) : ''
+							}));
+						});
+					});
+				});
+
+				const searchColDefs = [
+					{ headerName: 'Instrument', field: 'instrumentName', flex: 1.2, minWidth: 150,
+					cellRenderer: function(params) {
+						if (!params.value) return '';
+						if (!params.data.instrumentId) return escHtml(params.value);
+						const a = document.createElement('a');
+						a.href = 'instruments.php?projectid=' + PROJECT_ID + '&instrumentid=' + params.data.instrumentId;
+						a.textContent = params.value;
+						return a;
+					}
+				},
+					{ headerName: 'Survey date',     field: 'surveyDate',     minWidth: 160 },
+					variableColDef,
+					{ headerName: 'Instrument Item', field: 'instrumentitem', flex: 1,   minWidth: 150 },
+					{ headerName: 'Type', field: 'itemType', width: 100, minWidth: 100, maxWidth: 120,
+						cellStyle: { color: '#888', fontStyle: 'italic', fontSize: '0.85em' },
+						cellRenderer: function(params) { return params.value || ''; }
+					},
+					valueColDef,
+					{ headerName: 'Rater',           field: 'rater',          minWidth: 120, editable: true, cellStyle: function() { return { 'font-size': '9pt', cursor: 'text' }; } },
+					{ headerName: 'Start date',      field: 'startdate',      minWidth: 185, editable: true, cellStyle: editableCellStyle,
+						cellRenderer: function(params) {
+							if (!params.value) return '';
+							const tz = params.data.tzOffset;
+							return tz ? params.value + ' <span style="color:#aaa;font-size:0.85em">' + tz + '</span>' : params.value;
+						}
+					},
+					{ headerName: 'Duration',        field: 'duration',       minWidth: 110, editable: true, cellStyle: editableCellStyle },
+					{ headerName: 'End date',        field: 'enddate',        minWidth: 185, editable: true, cellStyle: editableCellStyle,
+						cellRenderer: function(params) {
+							if (!params.value) return '';
+							const tz = params.data.tzOffset;
+							return tz ? params.value + ' <span style="color:#aaa;font-size:0.85em">' + tz + '</span>' : params.value;
+						}
+					},
+					metaColDef,
+					datesColDef,
+					deleteColDef
+				];
+
+				const searchGridApi = agGrid.createGrid(document.getElementById('searchGrid'), {
+					theme: agGrid.themeBalham,
+					columnDefs: searchColDefs,
+					rowData: flatRows,
+					defaultColDef: { sortable: true, filter: true, resizable: true },
+					animateRows: false,
+					suppressMovableColumns: true,
+					rowSelection: { mode: 'multiRow' },
+					onCellValueChanged: onCellValueChanged,
+					onSelectionChanged: onGridSelectionChanged
+				});
+				gridApis.push(searchGridApi);
+
+				document.getElementById('obsSearchInput').addEventListener('input', function() {
+					const term     = this.value.trim();
+					const hasQuery = term.length > 0;
+					document.getElementById('searchGridContainer').style.display  = hasQuery ? '' : 'none';
+					document.getElementById('observationAccordion').style.display = hasQuery ? 'none' : '';
+					document.getElementById('obsInfoBar').style.display           = hasQuery ? 'none' : '';
+					if (hasQuery) {
+						searchGridApi.setGridOption('quickFilterText', term);
+						searchGridApi.sizeColumnsToFit();
+					}
+				});
 
 				}, 0); /* end setTimeout — accordion build deferred to let browser paint loading message */
 

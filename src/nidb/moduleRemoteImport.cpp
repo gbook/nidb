@@ -932,7 +932,7 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
     QString m;
     if (ParseCSV(csvStr, table, columns, m)) {
 
-        //n->Log("Columns in csv (" + columns.join(", ") + ")");
+        n->Log("Columns in csv (" + columns.join(", ") + ")");
 
         /* iterate over the rows (each row is an entire survey entry) */
         for (int i=0; i<table.size(); i++) {
@@ -963,7 +963,7 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
 
             /* ---- import all columns ---- */
             if (importUnmapped) {
-                //n->Log(QString("Processing [%1] unmapped columns").arg(columns.size()));
+                n->Log(QString("Processing [%1] unmapped columns").arg(columns.size()));
                 /* iterate over all columns, and check if they are mapped. If not mapped, then add the observation without an instrument/item */
                 for (const QString &col : columns) {
                     /* skip session info columns — only process question response columns */
@@ -1029,9 +1029,6 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
                             if (col.startsWith("[")) {
                                 /* extract the question # */
                                 QString qStr = extractBracketContent(col);
-                                //QStringList parts = qStr.split("_");
-                                //if (parts.size() > 0)
-                                //    question = parts[0].toInt();
                                 variable = extractAfterBracket(col);
                                 metadataCol = QString("[%1 metadata] %2").arg(qStr).arg(variable);
                             }
@@ -1069,9 +1066,13 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
                     }
 
                     /* check if this references a file/image */
-                    if (value.startsWith("response_files/")) {
+                    if (value.startsWith("response-files/")) {
                         /* make the file path */
                         QString imagepath = QString("%1/%2").arg(zipdir).arg(value);
+                        n->Log(QString("Found image file [%1]").arg(imagepath));
+                        n->Log(QString("Before resizing [%1] bytes").arg(QFileInfo(imagepath).size()));
+                        resizeImageFile(imagepath);
+                        n->Log(QString("After resizing [%1] bytes").arg(QFileInfo(imagepath).size()));
                         obs.SaveFile(imagepath);
                     }
 
@@ -1086,7 +1087,7 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
             }
             /* ---- import ONLY the mapped columns ---- */
             else {
-                //n->Log("Importing ONLY mapped columns");
+                n->Log("Importing ONLY mapped columns");
                 /* iterate through the mapping, then check if the column exists */
                 for (const RemoteImportMapping &m : mapping.mappings) {
                     if (m.sourceType != "avicenna") continue;
@@ -1107,24 +1108,8 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
                         continue;
 
                     int question(0);
-                    //QString variable = col;
-                    //int instrumentRowID;
-                    //int instrumentItemRowID;
                     QString obsName;
-                    //bool hasMetadata(false);
-
-                    /* check if the column contains brackets, if yes then it's a question number */
-                    //if (avicennaVariable.startsWith("[")) {
-                    //    /* extract the question # */
-                    //    QString qStr = extractBracketContent(avicennaVariable);
-                    //    QStringList parts = qStr.split("_");
-                    //    if (parts.size() > 0)
-                    //        question = parts[0].toInt();
-                    //    obsName = extractAfterBracket(avicennaVariable);
-                    //}
-                    //else {
-                        obsName = avicennaVariable;
-                    //}
+                    obsName = avicennaVariable;
 
                     //n->Log(QString("obsName [%1]").arg(obsName));
 
@@ -1190,9 +1175,13 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
                     }
 
                     /* check if this references a file/image */
-                    if (value.startsWith("response_files/")) {
+                    if (value.startsWith("response-files/")) {
                         /* make the file path */
                         QString imagepath = QString("%1/%2").arg(zipdir).arg(value);
+                        n->Log(QString("Found image file [%1]").arg(imagepath));
+                        n->Log(QString("Before resizing [%1] bytes").arg(QFileInfo(imagepath).size()));
+                        resizeImageFile(imagepath);
+                        n->Log(QString("After resizing [%1] bytes").arg(QFileInfo(imagepath).size()));
                         obs.SaveFile(imagepath);
                     }
 

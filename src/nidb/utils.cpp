@@ -1733,3 +1733,21 @@ void flattenJSON(const QJsonObject &obj, QMap<QString, QString> &result, const Q
         }
     }
 }
+
+
+/* ---------------------------------------------------------- */
+/* --------- resizeImageFile -------------------------------- */
+/* ---------------------------------------------------------- */
+bool resizeImageFile(const QString &imagePath, int maxDimension)
+{
+    QImage image(imagePath);
+    if (image.isNull())
+        return false;
+
+    if (image.width() <= maxDimension && image.height() <= maxDimension)
+        return true;
+
+    QImage resized = image.scaled(maxDimension, maxDimension, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+
+    return resized.save(imagePath);
+}

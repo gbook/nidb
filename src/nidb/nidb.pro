@@ -1,7 +1,8 @@
-QT -= gui
 QT += sql
 QT += network
 QT += core
+QT += gui
+QMAKE_LIBS_OPENGL =
 
 #CONFIG -= c++98
 #CONFIG += c++11
