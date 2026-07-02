@@ -44,8 +44,8 @@
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$rxid = GetVariable("rxid");
-	$enrollmentid = GetVariable("enrollmentid");
+	$rxid = (int)GetVariable("rxid");
+	$enrollmentid = (int)GetVariable("enrollmentid");
 	$rxname = GetVariable('rx_name');
 	$rxdose = GetVariable('rx_dose');
 	$rxfreq = GetVariable('rx_freq');

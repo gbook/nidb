@@ -42,7 +42,7 @@
 
 	/* setup variables */
 	$action = GetVariable("action");
-	$year = GetVariable("year");
+	$year = (int)GetVariable("year");
 	$datestart = GetVariable("datestart");
 	$dateend = GetVariable("dateend");
 	$modality = GetVariable("modality");

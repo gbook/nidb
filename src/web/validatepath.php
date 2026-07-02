@@ -205,8 +205,8 @@ class qqFileUploader {
 	
 /* params are stored in $_GET */
 $modality = strtolower(GetVariable("modality"));
-$studyid = GetVariable("studyid");
-$seriesid = GetVariable("seriesid");
+$studyid = (int)GetVariable("studyid");
+$seriesid = (int)GetVariable("seriesid");
 
 //echo $modality;
 if ($modality == "mr") {

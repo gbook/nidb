@@ -43,8 +43,8 @@
 
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$observationid = GetVariable("observationid");
-	$enrollmentid = GetVariable("enrollmentid");
+	$observationid = (int)GetVariable("observationid");
+	$enrollmentid = (int)GetVariable("enrollmentid");
 	$observationname = GetVariable('observation_name');
 	$observationinstrument = GetVariable('observation_instrument');
 	$instrumentitemid = GetVariable('instrumentitem_id');

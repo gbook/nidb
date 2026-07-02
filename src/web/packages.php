@@ -57,7 +57,7 @@
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$packageid = GetVariable("packageid");
+	$packageid = (int)GetVariable("packageid");
 	$packagename = GetVariable("packagename");
 	$packagedesc = GetVariable("packagedesc");
 	$packageformat = GetVariable("packageformat");
@@ -90,17 +90,19 @@
 	$studyids = GetVariable("studyids");
 	$subjectids = GetVariable("subjectids");
 
-	$analysisidstr = GetVariable("analysisidstr");
-	$datadictionaryidstr = GetVariable("datadictionaryidstr");
-	$enrollmentidstr = GetVariable("enrollmentidstr");
-	$experimentidstr = GetVariable("experimentidstr");
-	$interventionidstr = GetVariable("interventionidstr");
-	$objectidstr = GetVariable("objectidstr");
-	$observationidstr = GetVariable("observationidstr");
-	$pipelineidstr = GetVariable("pipelineidstr");
-	$seriesidstr = GetVariable("seriesidstr");
-	$studyidstr = GetVariable("studyidstr");
-	$subjectidstr = GetVariable("subjectidstr");
+	/* these are comma-separated lists of integer IDs — strip anything that isn't a digit or comma
+	   so they are safe to use directly in SQL "in (...)" clauses and when exploded into arrays */
+	$analysisidstr = preg_replace('/[^0-9,]/', '', (string)GetVariable("analysisidstr"));
+	$datadictionaryidstr = preg_replace('/[^0-9,]/', '', (string)GetVariable("datadictionaryidstr"));
+	$enrollmentidstr = preg_replace('/[^0-9,]/', '', (string)GetVariable("enrollmentidstr"));
+	$experimentidstr = preg_replace('/[^0-9,]/', '', (string)GetVariable("experimentidstr"));
+	$interventionidstr = preg_replace('/[^0-9,]/', '', (string)GetVariable("interventionidstr"));
+	$objectidstr = preg_replace('/[^0-9,]/', '', (string)GetVariable("objectidstr"));
+	$observationidstr = preg_replace('/[^0-9,]/', '', (string)GetVariable("observationidstr"));
+	$pipelineidstr = preg_replace('/[^0-9,]/', '', (string)GetVariable("pipelineidstr"));
+	$seriesidstr = preg_replace('/[^0-9,]/', '', (string)GetVariable("seriesidstr"));
+	$studyidstr = preg_replace('/[^0-9,]/', '', (string)GetVariable("studyidstr"));
+	$subjectidstr = preg_replace('/[^0-9,]/', '', (string)GetVariable("subjectidstr"));
 	
 	/* convert comma-separated strings to arrays */
 	if (strlen(trim($analysisidstr)) > 0) { $analysisids = explode(",", str_replace(" ","", trim($analysisidstr))); }
@@ -263,7 +265,7 @@
 			return;
 		}
 		$uids = array();
-		$enrollmentidstr = implode2(",", $enrollmentids);
+		$enrollmentidstr = implode(",", array_map('intval', (array)$enrollmentids));
 		
 		/* get all series from this enrollment */
 		$sqlstring = "select * from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.enrollment_id in (" . $enrollmentidstr . ")";
@@ -1487,9 +1489,9 @@
 	/* -------------------------------------------- */
 	function DisplayFormObservations($enrollmentids, $required) {
 
-		$enrollmentidstr = implode2(",", $enrollmentids);
+		$enrollmentidstr = implode(",", array_map('intval', (array)$enrollmentids));
 
-		$sqlstring = "select * from observations a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.enrollment_id in (" . implode2(",", $enrollmentids) . ")";
+		$sqlstring = "select * from observations a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.enrollment_id in (" . implode(",", array_map('intval', (array)$enrollmentids)) . ")";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$numobservations = mysqli_num_rows($result);
 		
@@ -1564,7 +1566,7 @@
 						<tbody>
 						<?
 							/* get subject info. there may be series from multiple subjects in this list */
-							//$sqlstring = "select * from observations a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join observationnames d on a.observationname_id = d.observationname_id where a.enrollment_id in (" . implode2(",", $enrollmentids) . ")";
+							//$sqlstring = "select * from observations a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join observationnames d on a.observationname_id = d.observationname_id where a.enrollment_id in (" . implode(",", array_map('intval', (array)$enrollmentids)) . ")";
 							//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 							//while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							//	$uid = $row['uid'];
@@ -1607,9 +1609,9 @@
 	/* -------------------------------------------- */
 	function DisplayFormInterventions($enrollmentids, $required) {
 		
-		$enrollmentidstr = implode2(",", $enrollmentids);
+		$enrollmentidstr = implode(",", array_map('intval', (array)$enrollmentids));
 
-		$sqlstring = "select * from interventions a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.enrollment_id in (" . implode2(",", $enrollmentids) . ")";
+		$sqlstring = "select * from interventions a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.enrollment_id in (" . implode(",", array_map('intval', (array)$enrollmentids)) . ")";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$numinterventions = mysqli_num_rows($result);
 		
@@ -1685,7 +1687,7 @@
 						<tbody>
 						<?
 							/* get subject info. there may be series from multiple subjects in this list */
-							//$sqlstring = "select * from interventions a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join interventionnames d on a.interventionname_id = d.interventionname_id where a.enrollment_id in (" . implode2(",", $enrollmentids) . ")";
+							//$sqlstring = "select * from interventions a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join interventionnames d on a.interventionname_id = d.interventionname_id where a.enrollment_id in (" . implode(",", array_map('intval', (array)$enrollmentids)) . ")";
 							//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$uid = $row['uid'];
@@ -1887,7 +1889,7 @@
 			$observationids = array();
 			$inserts = array();
 			
-			$sqlstring = "select * from observations a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.enrollment_id in (" . implode2(",", $enrollmentids) . ")";
+			$sqlstring = "select * from observations a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.enrollment_id in (" . implode(",", array_map('intval', (array)$enrollmentids)) . ")";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$observationid = $row['observation_id'];

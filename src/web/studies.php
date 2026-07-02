@@ -51,13 +51,14 @@
 	$action = GetVariable("action");
 	$studyid = GetVariable("studyid");
 	if ($studyid == "") { $studyid = GetVariable("id"); }
-	$subjectid = GetVariable("subjectid");
-	$enrollmentid = GetVariable("enrollmentid");
+	$studyid = (int)$studyid;
+	$subjectid = (int)GetVariable("subjectid");
+	$enrollmentid = (int)GetVariable("enrollmentid");
 	$newuid = GetVariable("newuid");
-	$newprojectid = GetVariable("newprojectid");
-	$seriesid = GetVariable("seriesid");
+	$newprojectid = (int)GetVariable("newprojectid");
+	$seriesid = (int)GetVariable("seriesid");
 	$seriesids = GetVariable("seriesids");
-	$minipipelineid = GetVariable("minipipelineid");
+	$minipipelineid = (int)GetVariable("minipipelineid");
 	$minipipelineids = GetVariable("minipipelineids");
 	$modality = GetVariable("modality");
 	$series_num = GetVariable("series_num");
@@ -101,7 +102,7 @@
 	$studyexperimenter = GetVariable("studyexperimenter");
 	$files = GetVariable("files");
 	$value = GetVariable("value");
-	$search_pipelineid = GetVariable("search_pipelineid");
+	$search_pipelineid = (int)GetVariable("search_pipelineid");
 	$search_name = GetVariable("search_name");
 	$search_compare = GetVariable("search_compare");
 	$search_value = GetVariable("search_value");
@@ -498,7 +499,7 @@
 		
 		/* get lowest seriesdatetime, make that the new study time */
 		if (is_array($seriesids)) {
-			$sqlstring = "select min(a.series_datetime) 'newstudydatetime', b.study_num from mr_series a left join studies b on a.study_id = b.study_id where a.mrseries_id in (" . implode2(',',$seriesids) . ")";
+			$sqlstring = "select min(a.series_datetime) 'newstudydatetime', b.study_num from mr_series a left join studies b on a.study_id = b.study_id where a.mrseries_id in (" . implode(',', array_map('intval', (array)$seriesids)) . ")";
 		}
 		else {
 			$sqlstring = "select min(a.series_datetime) 'newstudydatetime', b.study_num from mr_series a left join studies b on a.study_id = b.study_id where a.mrseries_id = $seriesids";
@@ -545,7 +546,7 @@
 
 		/* get all series numbers */
 		if (is_array($seriesids)) {
-			$sqlstring = "select series_num from mr_series where mrseries_id in (" . implode2(',',$seriesids) . ")";
+			$sqlstring = "select series_num from mr_series where mrseries_id in (" . implode(',', array_map('intval', (array)$seriesids)) . ")";
 		}
 		else {
 			$sqlstring = "select series_num from mr_series where mrseries_id = $seriesids";
@@ -600,7 +601,7 @@
 		
 		/* 5 - change the studyid for the series */
 		if (is_array($seriesids)) {
-			$sqlstring = "update mr_series set study_id = $newstudyid where mrseries_id in (" . implode2(',',$seriesids) . ")";
+			$sqlstring = "update mr_series set study_id = $newstudyid where mrseries_id in (" . implode(',', array_map('intval', (array)$seriesids)) . ")";
 		}
 		else {
 			$sqlstring = "update mr_series set study_id = $newstudyid where mrseries_id = $seriesids";
@@ -2186,7 +2187,7 @@
 						<?
 					}
 					else {
-						$sqlstring3 = "select * from ratings where rating_type = 'series' and data_modality = '$modality' and data_id in (" . implode(',',$mrseriesids) . ")";
+						$sqlstring3 = "select * from ratings where rating_type = 'series' and data_modality = '$modality' and data_id in (" . implode(',', array_map('intval', (array)$mrseriesids)) . ")";
 						$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
 						while ($row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC)) {
 							$ratingseriesid = $row3['data_id'];

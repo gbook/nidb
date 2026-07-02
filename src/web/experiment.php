@@ -40,12 +40,12 @@
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$expid = GetVariable("expid");
-	$projectid = GetVariable("projectid");
+	$expid = (int)GetVariable("expid");
+	$projectid = (int)GetVariable("projectid");
 	$experimentname = GetVariable("experimentname");
 	$experimentdesc = GetVariable("experimentdesc");
 	$filedeleteids = GetVariable("filedeleteids");
-	$fileid = GetVariable("fileid");
+	$fileid = (int)GetVariable("fileid");
 	
 	/* determine action */
 	if (($action == "download") && ($selfcall)) {
@@ -109,7 +109,7 @@
 		
 		/* remove files to be removed last... in case the user updated an option and wanted to delete it as well */
 		if (count($filedeleteids) > 0) {
-			$deletelist = implode2(",", $filedeleteids);
+			$deletelist = implode(",", array_map('intval', (array)$filedeleteids));
 			$sqlstring = "delete from experiment_files where experimentfile_id in ($deletelist)";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}

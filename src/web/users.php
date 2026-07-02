@@ -63,8 +63,8 @@
 	
 	$sendmail_dailysummary = GetVariable("sendmail_dailysummary");
 	$enablebeta = GetVariable("enablebeta");
-	$id = GetVariable("id");
-	$instanceid = GetVariable("instanceid");
+	$id = (int)GetVariable("id");
+	$instanceid = (int)GetVariable("instanceid");
 	$notifications = GetVariable("notification");
 	$projectids = GetVariables("projectid");
 

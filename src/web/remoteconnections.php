@@ -42,14 +42,14 @@
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$id = GetVariable("id");
+	$id = (int)GetVariable("id");
 	$connname = GetVariable("connname");
 	$remoteserver = GetVariable("remoteserver");
 	$remoteusername = GetVariable("remoteusername");
 	$remotepassword = GetVariable("remotepassword");
-	$remoteinstanceid = GetVariable("remoteinstanceid");
-	$remoteprojectid = GetVariable("remoteprojectid");
-	$remotesiteid = GetVariable("remotesiteid");
+	$remoteinstanceid = (int)GetVariable("remoteinstanceid");
+	$remoteprojectid = (int)GetVariable("remoteprojectid");
+	$remotesiteid = (int)GetVariable("remotesiteid");
 	
 	if (!$nomenu) {
 		require "menu.php";

@@ -42,7 +42,7 @@
 
 	/* get variables */
 	$action = GetVariable("action");
-	$fileioid = GetVariable("fileioid");
+	$fileioid = (int)GetVariable("fileioid");
 
 	switch ($action) {
 		case 'cancelfileio':

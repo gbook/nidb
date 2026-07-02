@@ -45,7 +45,7 @@
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$id = GetVariable("id");
+	$id = (int)GetVariable("id");
     $name = GetVariable("name");
     $desc = GetVariable("desc");
     $startdate = GetVariable("startdate");

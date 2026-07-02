@@ -44,8 +44,8 @@
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$measureid = GetVariable("measureid");
-	$enrollmentid = GetVariable("enrollmentid");
+	$measureid = (int)GetVariable("measureid");
+	$enrollmentid = (int)GetVariable("enrollmentid");
 	$measurename = GetVariable('measure_name');
 	$measureinstrument = GetVariable('measure_instrument');
 	$measurevalue = GetVariable('measure_value');
@@ -133,7 +133,7 @@
 	/* -------------------------------------------- */
 	function DisplayMeasureList($enrollmentid) {
 		
-		if ((trim($enrollmentid) == "") || ($enrollment_id < 0)) {
+		if ($enrollmentid < 1) {
 			?>Invalid or blank enrollment ID [<?=$enrollment_id?>]<?
 			return;
 		}

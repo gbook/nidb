@@ -390,8 +390,9 @@
 	/* ------- MakeSQLListFromArray --------------- */
 	/* -------------------------------------------- */
 	function MakeSQLListFromArray($parts) {
+		$newparts = array();
 		foreach ($parts as $part) {
-			$newparts[] = "'" . trim($part) . "'";
+			$newparts[] = "'" . mysqli_real_escape_string($GLOBALS['linki'], trim($part)) . "'";
 		}
 		return implode2(",", $newparts);
 	}

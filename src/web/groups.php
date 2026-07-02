@@ -41,11 +41,11 @@
 
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$id = GetVariable("id");
-	$groupid = GetVariable("groupid");
-	$subjectgroupid = GetVariable("subjectgroupid");
-	$studygroupid = GetVariable("studygroupid");
-	$seriesgroupid = GetVariable("seriesgroupid");
+	$id = (int)GetVariable("id");
+	$groupid = (int)GetVariable("groupid");
+	$subjectgroupid = (int)GetVariable("subjectgroupid");
+	$studygroupid = (int)GetVariable("studygroupid");
+	$seriesgroupid = (int)GetVariable("seriesgroupid");
 	$groupname = GetVariable("groupname");
 	$grouptype = GetVariable("grouptype");
 	$owner = GetVariable("owner");
@@ -54,7 +54,7 @@
 	$seriesids = GetVariable("seriesid");
 	$studyids = GetVariable("studyid");
 	$modality = GetVariable("modality");
-	$itemid = GetVariable("itemid");
+	$itemid = (int)GetVariable("itemid");
 	$observations = GetVariable("observations");
 	$columns = GetVariable("columns");
 	$groupobservations = GetVariable("groupobservations");
@@ -853,7 +853,7 @@
 		if (count($weights) > 0) { $varweight = sd($weights); } else { $varweight = 0; }
 
 		if ($observations == "all") {
-			$sqlstringD = "select a.subject_id, b.enrollment_id, c.* from observations c left join enrollment b on c.enrollment_id = b.enrollment_id join subjects a on a.subject_id = b.subject_id where a.subject_id in (" . implode2(",", $subjectids) . ")";
+			$sqlstringD = "select a.subject_id, b.enrollment_id, c.* from observations c left join enrollment b on c.enrollment_id = b.enrollment_id join subjects a on a.subject_id = b.subject_id where a.subject_id in (" . implode(",", array_map('intval', (array)$subjectids)) . ")";
 			$resultD = MySQLiQuery($sqlstringD,__FILE__,__LINE__);
 
 			if ($groupobservations == "byvalue") {

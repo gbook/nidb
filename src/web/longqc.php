@@ -42,7 +42,7 @@
 
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$groupid = GetVariable("groupid");
+	$groupid = (int)GetVariable("groupid");
 	$protocol = GetVariable("protocol");
 	
 	/* determine action */

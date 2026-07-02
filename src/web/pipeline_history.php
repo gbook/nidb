@@ -48,8 +48,8 @@
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$pipelineid = GetVariable("pipelineid");
-	$id = GetVariable("id");
+	$pipelineid = (int)GetVariable("pipelineid");
+	$id = (int)GetVariable("id");
 	if ($pipelineid == "")
 		$pipelineid = $id;
 		

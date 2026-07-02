@@ -614,7 +614,7 @@
 		$subjectids = mysqli_real_escape_array($GLOBALS['linki'], $subjectids);
 		
 		/* get list of subjects from the studyids */
-		$sqlstring = "select subject_id, uid from subjects where subject_id in (" . implode(',',$subjectids) . ")";
+		$sqlstring = "select subject_id, uid from subjects where subject_id in (" . implode(',', array_map('intval', (array)$subjectids)) . ")";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$ids[] = $row['subject_id'];

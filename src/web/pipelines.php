@@ -48,7 +48,7 @@
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$id = GetVariable("id");
+	$id = (int)GetVariable("id");
 	
 	$viewname = GetVariable("viewname");
 	$viewlevel = GetVariable("viewlevel");
@@ -57,7 +57,7 @@
 	$viewenabled = GetVariable("viewenabled");
 	$viewhidden = GetVariable("viewhidden");
 	$viewall = GetVariable("viewall");
-	$viewuserid = GetVariable("viewuserid");
+	$viewuserid = (int)GetVariable("viewuserid");
 	if ($viewuserid != "")
 		$_SESSION['viewuserid'] = $viewuserid;
 
@@ -82,14 +82,14 @@
 	$pipelineusetmpdir = GetVariable("pipelineusetmpdir");
 	$pipelinetmpdir = GetVariable("pipelinetmpdir");
 	$pipelinenotes = GetVariable("pipelinenotes");
-	$version = GetVariable("version");
+	$version = (int)GetVariable("version");
 	$completefiles = GetVariable("completefiles");
 	$dependency = GetVariable("dependency");
 	$deplevel = GetVariable("deplevel");
 	$depdir = GetVariable("depdir");
 	$deplinktype = GetVariable("deplinktype");
-	$groupid = GetVariable("groupid");
-	$projectid = GetVariable("projectid");
+	$groupid = (int)GetVariable("groupid");
+	$projectid = (int)GetVariable("projectid");
 	//$dynamicgroupid = GetVariable("dynamicgroupid");
 	$level = GetVariable("level");
 	$ishidden = GetVariable("pipelineishidden");
@@ -98,7 +98,7 @@
 	$bidsoutputdir = GetVariable("bidsoutputdir");
 
 	$newname = GetVariable("newname");
-	$newuserid = GetVariable("newuserid");
+	$newuserid = (int)GetVariable("newuserid");
 	
 	$commandlist = GetVariable("commandlist");
 	$supplementcommandlist = GetVariable("supplementcommandlist");

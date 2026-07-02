@@ -54,7 +54,7 @@
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$projectid = GetVariable("projectid");
+	$projectid = (int)GetVariable("projectid");
 	$csv = GetVariable("csv");
 	$skipblankvalue = GetVariable("skipblankvalue");
 	$createmissingsubject = GetVariable("createmissingsubject");

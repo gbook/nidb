@@ -42,7 +42,7 @@
 
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$datasetrequestid = GetVariable("datasetrequestid");
+	$datasetrequestid = (int)GetVariable("datasetrequestid");
 	$email = GetVariable("email");
 	$institution = GetVariable("institution");
 	$shortname = GetVariable("shortname");

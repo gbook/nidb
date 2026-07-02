@@ -48,12 +48,12 @@
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$id = GetVariable("id");
-	$subjectid = GetVariable("subjectid");
-	$selectedid = GetVariable("selectedid");
-	$projectid = GetVariable("projectid");
-	$newprojectid = GetVariable("newprojectid");
-	$enrollmentid = GetVariable("enrollmentid");
+	$id = (int)GetVariable("id");
+	$subjectid = (int)GetVariable("subjectid");
+	$selectedid = (int)GetVariable("selectedid");
+	$projectid = (int)GetVariable("projectid");
+	$newprojectid = (int)GetVariable("newprojectid");
+	$enrollmentid = (int)GetVariable("enrollmentid");
 	$encrypt = GetVariable("encrypt");
 	$name = GetVariable("name");
 	$lastname = GetVariable("lastname");
@@ -88,8 +88,8 @@
 	$ids = GetVariable("ids");
 	$modality = GetVariable("modality");
 	$returnpage = GetVariable("returnpage");
-	$templateid = GetVariable("templateid");
-	$grouptemplateid = GetVariable("grouptemplateid");
+	$templateid = (int)GetVariable("templateid");
+	$grouptemplateid = (int)GetVariable("grouptemplateid");
 
 	/* fix the 'active' search */
 	if (($searchactive == '') && ($action != '')) {

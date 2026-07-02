@@ -837,7 +837,7 @@
 						
 						if (strtolower($modality) == "mr") { $numfilesfield = "numfiles"; } else { $numfilesfield = "series_numfiles"; }
 						/* valid modality */
-						$sqlstring = "select study_id from $seriestable where study_id in (" . implode(',',$studyids) . ") and (trim(series_desc) in (" . implode(',',$protocols) . ") or trim(series_protocol) in (" . implode(',',$protocols) . ")) and $numfilesfield > 0";
+						$sqlstring = "select study_id from $seriestable where study_id in (" . implode(',', array_map('intval', (array)$studyids)) . ") and (trim(series_desc) in (" . implode(',',$protocols) . ") or trim(series_protocol) in (" . implode(',',$protocols) . ")) and $numfilesfield > 0";
 						//PrintVariable($sqlstring);
 						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 						if (mysqli_num_rows($result) > 0) {

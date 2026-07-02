@@ -48,12 +48,12 @@
 	$action = GetVariable("action");
 	$subjectids = GetVariable("subjectids");
 	$subjectuid = GetVariable("subjectuid");
-	$selectedid = GetVariable("selectedid");
-	$selectedstudyid = GetVariable("selectedstudyid");
+	$selectedid = (int)GetVariable("selectedid");
+	$selectedstudyid = (int)GetVariable("selectedstudyid");
 	$studyids = GetVariable("studyids");
-	$studyid = GetVariable("studyid");
+	$studyid = (int)GetVariable("studyid");
 	$mergemethod = GetVariable("mergemethod");
-	$idtoremove = GetVariable("idtoremove");
+	$idtoremove = (int)GetVariable("idtoremove");
 	$name = GetVariable("name");
 	$dob = GetVariable("dob");
 	$gender = GetVariable("gender");

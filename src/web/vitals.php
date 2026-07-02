@@ -42,8 +42,8 @@
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$vitalid = GetVariable("vitalid");
-	$enrollmentid = GetVariable("enrollmentid");
+	$vitalid = (int)GetVariable("vitalid");
+	$enrollmentid = (int)GetVariable("enrollmentid");
 	$vitalname = GetVariable('vital_name');
 	$vitalvalue = GetVariable('vital_value');
 	$vitalnotes = GetVariable('vital_notes');

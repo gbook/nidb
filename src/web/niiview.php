@@ -41,7 +41,7 @@
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$seriesid = GetVariable("seriesid");
+	$seriesid = (int)GetVariable("seriesid");
 	$intype = GetVariable("type");
 	$modality = GetVariable("modality");
 	$filename = GetVariable("filename");

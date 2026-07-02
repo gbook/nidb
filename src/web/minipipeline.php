@@ -51,15 +51,15 @@
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$mpid = GetVariable("mpid");
-	$mpjobid = GetVariable("mpjobid");
-	$projectid = GetVariable("projectid");
+	$mpid = (int)GetVariable("mpid");
+	$mpjobid = (int)GetVariable("mpjobid");
+	$projectid = (int)GetVariable("projectid");
 	$minipipelinename = GetVariable("minipipelinename");
 	$scriptexecutableids = GetVariable("scriptexecutableids");
-	$scriptentrypointid = GetVariable("scriptentrypointid");
+	$scriptentrypointid = (int)GetVariable("scriptentrypointid");
 	$scriptdeleteids = GetVariable("scriptdeleteids");
 	$scriptparams = GetVariable("scriptparams");
-	$scriptid = GetVariable("scriptid");
+	$scriptid = (int)GetVariable("scriptid");
 	
 	/* determine action */
 	if (($action == "editform") && ($selfcall))  {
@@ -131,7 +131,7 @@
 		/* update executable flags */
 		$sqlstring = "update minipipeline_scripts set mp_executable = 0 where minipipeline_id = $mpid";
 		if (count($scriptexecutableids) > 0) {
-			$executablelist = implode2(",", $scriptexecutableids);
+			$executablelist = implode(",", array_map('intval', (array)$scriptexecutableids));
 			$sqlstring = "update minipipeline_scripts set mp_executable = 1 where minipipelinescript_id in ($executablelist)";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
@@ -149,6 +149,7 @@
 		
 		/* update parameter lists */
 		foreach ($scriptparams as $scriptid => $param) {
+			$scriptid = (int)$scriptid;
 			$param = mysqli_real_escape_string($GLOBALS['linki'], $param);
 			$sqlstring = "update minipipeline_scripts set mp_parameterlist = '$param' where minipipelinescript_id = $scriptid";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -156,7 +157,7 @@
 		
 		/* remove files to be removed last... in case the user updated an option and wanted to delete it as well */
 		if (count($scriptdeleteids) > 0) {
-			$deletelist = implode2(",", $scriptdeleteids);
+			$deletelist = implode(",", array_map('intval', (array)$scriptdeleteids));
 			$sqlstring = "delete from minipipeline_scripts where minipipelinescript_id in ($deletelist)";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}

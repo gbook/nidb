@@ -33,11 +33,11 @@
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
 	$apiaction = GetVariable("apiaction");
-	$siteid = GetVariable("siteid");
-	$projectid = GetVariable("projectid");
+	$siteid = (int)GetVariable("siteid");
+	$projectid = (int)GetVariable("projectid");
 	$anonymize = GetVariable("anonymize");
 	$permanent = GetVariable("permanent");
-	$formid = GetVariable("formid");
+	$formid = (int)GetVariable("formid");
 	$fileformat = GetVariable("fileformat");
 	$importdirs = GetVariable("importdirs");
 	$idlist = GetVariable("idlist");

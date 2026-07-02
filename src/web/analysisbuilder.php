@@ -33,11 +33,11 @@
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$projectid = GetVariable("projectid");
-	$enrollmentid = GetVariable("enrollmentid");
+	$projectid = (int)GetVariable("projectid");
+	$enrollmentid = (int)GetVariable("enrollmentid");
 
 	$savedsearchname = GetVariable("savedsearchname");
-	$savedsearchid = GetVariable("savedsearchid");
+	$savedsearchid = (int)GetVariable("savedsearchid");
 	
 	$a = array(); /* have the variable ready in case we're loading a saved search */
 	

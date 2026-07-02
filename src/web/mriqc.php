@@ -42,8 +42,8 @@
 
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$id = GetVariable("id");
-	$projectid = GetVariable("projectid");
+	$id = (int)GetVariable("id");
+	$projectid = (int)GetVariable("projectid");
 
 	/* determine action */
 	switch ($action) {

@@ -29,7 +29,7 @@
 	require "functions.php";
 	require "includes_php.php";
 
-	$id = GetVariable("id");
+	$id = (int)GetVariable("id");
 
 	/* get the path to the QA info */
 	$sqlstring = "select a.*, b.study_num, d.uid from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.mrseries_id = $id";

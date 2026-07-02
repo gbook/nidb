@@ -28,7 +28,7 @@
 	require "functions.php";
 	require "includes_php.php";
 
-	$seriesid = GetVariable("seriesid");
+	$seriesid = (int)GetVariable("seriesid");
 	$type = GetVariable("type");
 	$modality = GetVariable("modality");
 	$filename = GetVariable("filename");

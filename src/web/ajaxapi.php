@@ -964,13 +964,13 @@
 	/* ------- UpdateSubjectDetails --------------- */
 	/* -------------------------------------------- */
 	function UpdateSubjectDetails($subjectid, $projectid, $column, $value) {
-		
-		$subjectid = trim(mysqli_real_escape_string($GLOBALS['linki'], $subjectid));
-		$projectid = trim(mysqli_real_escape_string($GLOBALS['linki'], $projectid));
+
+		$subjectid = (int)$subjectid;
+		$projectid = (int)$projectid;
 		$column = trim(mysqli_real_escape_string($GLOBALS['linki'], $column));
 		$value = trim(mysqli_real_escape_string($GLOBALS['linki'], $value));
-		
-		if ($subjectid == "") {
+
+		if ($subjectid < 1) {
 			echo "error, subjectID blank";
 			return;
 		}
@@ -981,8 +981,7 @@
 			$sqlstring = "select enrollment_id from enrollment where subject_id = $subjectid and project_id = $projectid";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$enrollmentid = $row['enrollment_id'];
-			if ($enrollmentid == "") { $enrollmentid = 0; }
+			$enrollmentid = (int)$row['enrollment_id'];
 
 			/* delete entries for this subject from the altuid table ... */
 			$sqlstring = "delete from subject_altuid where subject_id = $subjectid and enrollment_id = $enrollmentid";
@@ -1060,17 +1059,17 @@
 	/* ------- UpdateStudyDetails ----------------- */
 	/* -------------------------------------------- */
 	function UpdateStudyDetails($subjectid, $studyid, $column, $value) {
-		
-		$subjectid = trim(mysqli_real_escape_string($GLOBALS['linki'], $subjectid));
-		$studyid = trim(mysqli_real_escape_string($GLOBALS['linki'], $studyid));
+
+		$subjectid = (int)$subjectid;
+		$studyid = (int)$studyid;
 		$column = trim(mysqli_real_escape_string($GLOBALS['linki'], $column));
 		$value = trim(mysqli_real_escape_string($GLOBALS['linki'], $value));
-		
-		if ($subjectid == "") {
+
+		if ($subjectid < 1) {
 			echo "error, subjectid blank";
 			return;
 		}
-		if ($studyid == "") {
+		if ($studyid < 1) {
 			echo "error, studyid blank";
 			return;
 		}
@@ -1079,7 +1078,8 @@
 			StartSQLTransaction();
 			
 			list($path2, $uid2, $studynum2, $studyid2, $subjectid2, $modality2, $type2, $studydatetime2, $enrollmentid, $projectname2, $projectid2) = GetStudyInfo($studyid);
-			
+			$enrollmentid = (int)$enrollmentid;
+
 			/* delete entries for this subject from the altuid table ... */
 			$sqlstring = "delete from subject_altuid where subject_id = $subjectid";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);

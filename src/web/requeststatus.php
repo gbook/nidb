@@ -43,8 +43,8 @@
 	/* get variables */
 	$action = GetVariable("action");
 	$page = GetVariable("page");
-	$exportid = GetVariable("exportid");
-	$requestid = GetVariable("requestid");
+	$exportid = (int)GetVariable("exportid");
+	$requestid = (int)GetVariable("requestid");
 	$viewall = GetVariable("viewall");
 	
 	switch ($action) {

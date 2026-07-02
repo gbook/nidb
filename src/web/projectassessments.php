@@ -42,8 +42,8 @@
 
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$projectid = GetVariable("projectid");
-	$formid = GetVariable("formid");
+	$projectid = (int)GetVariable("projectid");
+	$formid = (int)GetVariable("formid");
 	$formtitle = GetVariable("formtitle");
 	$formdesc = GetVariable("formdesc");
 

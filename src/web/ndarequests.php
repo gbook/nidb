@@ -30,11 +30,11 @@
 	require "includes_php.php";
 
 	$action = GetVariable("action");
-	$projectid = GetVariable("projectid");
-	$exportid = GetVariable("exportid");
+	$projectid = (int)GetVariable("projectid");
+	$exportid = (int)GetVariable("exportid");
 	$csvfile = GetVariable("csvfile");
-	$ndaprojectnumber = GetVariable("ndaprojectnumber");
-	$ndasubmissionid = GetVariable("ndasubmissionid");
+	$ndaprojectnumber = (int)GetVariable("ndaprojectnumber");
+	$ndasubmissionid = (int)GetVariable("ndasubmissionid");
 
 
  switch ($action) 

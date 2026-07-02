@@ -42,10 +42,10 @@
 	
 	/* setup variables */
 	$action = GetVariable("action");
-	$enrollmentid = GetVariable("enrollmentid");
-	$experimentid = GetVariable("experimentid");
-	$projectid = GetVariable("projectid");
-	$formid = GetVariable("formid");
+	$enrollmentid = (int)GetVariable("enrollmentid");
+	$experimentid = (int)GetVariable("experimentid");
+	$projectid = (int)GetVariable("projectid");
+	$formid = (int)GetVariable("formid");
 	$val_strings = GetVariables("string");
 	$val_numbers = GetVariables("number");
 	$val_texts = GetVariables("text");

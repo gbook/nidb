@@ -41,8 +41,8 @@
 
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$id = GetVariable("id");
-	$ratingid = GetVariable("ratingid");
+	$id = (int)GetVariable("id");
+	$ratingid = (int)GetVariable("ratingid");
 	$type = GetVariable("type");
 	$modality = GetVariable("modality");
 	$value = GetVariable("rating_value");

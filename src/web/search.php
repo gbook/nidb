@@ -1549,7 +1549,7 @@
 
 			/* get list of UIDs from the list of alternate UIDs */
 			if (count($subjectids) > 0) {
-				$sqlstringX = "select altuid from subject_altuid where subject_id in (" . implode2(',',$subjectids) . ")";
+				$sqlstringX = "select altuid from subject_altuid where subject_id in (" . implode(',', array_map('intval', (array)$subjectids)) . ")";
 				$resultX = MySQLiQuery($sqlstringX,__FILE__,__LINE__);
 				while ($rowX = mysqli_fetch_array($resultX, MYSQLI_ASSOC)) {
 					$altuids[] = $rowX['altuid'];
@@ -1561,7 +1561,7 @@
 			$subjectids = explode(',', GetIDListFromGroup($s['s_subjectgroupid']));
 			$missingsubjects = array_udiff($subjectids,$subjects, 'strcasecmp');
 			if (count($missingsubjects) > 0) {
-				$sqlstringY = "select uid from subjects where subject_id in (" . implode(',',$missingsubjects) . ")";
+				$sqlstringY = "select uid from subjects where subject_id in (" . implode(',', array_map('intval', (array)$missingsubjects)) . ")";
 				$resultY = MySQLiQuery($sqlstringY,__FILE__,__LINE__);
 				while ($rowY = mysqli_fetch_array($resultY, MYSQLI_ASSOC)) {
 					$missinguids[] = $rowY['uid'];
@@ -1572,7 +1572,7 @@
 			$studyids = explode(',', GetIDListFromGroup($s['s_studygroupid']));
 			$missingstudies = array_udiff($studyids,$studies, 'strcasecmp');
 			if (count($missingstudies) > 0) {
-				$sqlstringY = "select a.study_num, c.uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on c.subject_id = b.subject_id where study_id in (" . implode(',',$missingstudies) . ")";
+				$sqlstringY = "select a.study_num, c.uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on c.subject_id = b.subject_id where study_id in (" . implode(',', array_map('intval', (array)$missingstudies)) . ")";
 				$resultY = MySQLiQuery($sqlstringY,__FILE__,__LINE__);
 				while ($rowY = mysqli_fetch_array($resultY, MYSQLI_ASSOC)) {
 					$missingstudynums[] = $rowY['uid'] . $rowY['study_num'];
@@ -3442,7 +3442,7 @@
 			$subjectids = explode(',', GetIDListFromGroup($s['s_subjectgroupid']));
 			$missingsubjects = array_udiff($subjectids,$subjects, 'strcasecmp');
 			if (count($missingsubjects) > 0) {
-				$sqlstringY = "select uid from subjects where subject_id in (" . implode(',',$missingsubjects) . ")";
+				$sqlstringY = "select uid from subjects where subject_id in (" . implode(',', array_map('intval', (array)$missingsubjects)) . ")";
 				$resultY = MySQLiQuery($sqlstringY,__FILE__,__LINE__);
 				while ($rowY = mysqli_fetch_array($resultY, MYSQLI_ASSOC)) {
 					$missinguids[] = $rowY['uid'];
@@ -3453,7 +3453,7 @@
 			$studyids = explode(',', GetIDListFromGroup($s['s_studygroupid']));
 			$missingstudies = array_udiff($studyids,$studies, 'strcasecmp');
 			if (count($missingstudies) > 0) {
-				$sqlstringY = "select a.study_num, c.uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on c.subject_id = b.subject_id where study_id in (" . implode(',',$missingstudies) . ")";
+				$sqlstringY = "select a.study_num, c.uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on c.subject_id = b.subject_id where study_id in (" . implode(',', array_map('intval', (array)$missingstudies)) . ")";
 				$resultY = MySQLiQuery($sqlstringY,__FILE__,__LINE__);
 				while ($rowY = mysqli_fetch_array($resultY, MYSQLI_ASSOC)) {
 					$missingstudynums[] = $rowY['uid'] . $rowY['study_num'];
@@ -5599,7 +5599,7 @@
 		if ($s_subjectgender != "") { $sqlwhere .= " and `subjects`.gender = '$s_subjectgender'"; }
 		//PrintVariable($s_projectids);
 		if (isset($s_projectids) && (!in_array("all", $s_projectids) && (count($s_projectids) > 0))) {
-			$sqlwhere .= " and `projects`.project_id in (" . implode2(",", $s_projectids) . ")";
+			$sqlwhere .= " and `projects`.project_id in (" . implode(",", array_map('intval', (array)$s_projectids)) . ")";
 		}
 		else {
 			$tmpsqlstring = "select project_id from projects where instance_id = '" . $_SESSION['instanceid'] . "'";		

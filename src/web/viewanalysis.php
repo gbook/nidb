@@ -31,10 +31,10 @@
 
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$pipelineid = GetVariable("pipelineid");
-	$pipelineversion = GetVariable("pipelineversion");
-	$analysisid = GetVariable("analysisid");
-	$studyid = GetVariable("studyid");
+	$pipelineid = (int)GetVariable("pipelineid");
+	$pipelineversion = (int)GetVariable("pipelineversion");
+	$analysisid = (int)GetVariable("analysisid");
+	$studyid = (int)GetVariable("studyid");
 	$fileviewtype = GetVariable("fileviewtype");
 
 ?>

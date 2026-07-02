@@ -120,14 +120,14 @@
 		
 		/* studies, which are displayed under the projects menu */
 		elseif ($page == "studies.php" || $page=="observations.php" || $page=="interventions.php" || $page=="diagnosis.php" || $page == "managefiles.php" || $page == "series.php" || $page == "dicom.php" || $page == "enrollment.php" || $page == "timeline.php") {
-			$studyid = GetVariable("id");
-			$seriesid = GetVariable("seriesid");
+			$studyid = (int)GetVariable("id");
+			$seriesid = (int)GetVariable("seriesid");
 			$modality = GetVariable("modality");
-			$enrollmentid = GetVariable("enrollmentid");
-			$experimentid = GetVariable("experimentid");
+			$enrollmentid = (int)GetVariable("enrollmentid");
+			$experimentid = (int)GetVariable("experimentid");
 			
 			if ($studyid == "") {
-				$studyid = GetVariable("studyid");
+				$studyid = (int)GetVariable("studyid");
 			}
 			if (($seriesid != "") && ($modality != "")) {
 				list($path1, $uid, $studynum, $seriesnum, $seriesdesc, $imagetype, $seriessize, $numfiles, $studyid, $subjectid, $modality1, $studytype1, $studydatetime1, $enrollmentid1, $projectname, $projectid) = GetSeriesInfo($seriesid, $modality);
@@ -158,9 +158,9 @@
 		elseif ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="projectassessments.php" || $page=="studies.php" || $page=="minipipeline.php" || $page=="templates.php" || $page=="datadictionary.php" || $page == "experiment.php" || $page == "mriqc.php" || $page == "importremote.php" || $page == "instruments.php" || $page == "remoteimportmapping.php") {
 			
 			//if ($page=="projectchecklist.php" || $page=="projectassessments.php" || $page=="minipipeline.php" || $page=="templates.php" || $page=="datadictionary.php" || $page == "experiment.php") {
-			$projectid = GetVariable("projectid");
+			$projectid = (int)GetVariable("projectid");
 			if ($projectid == "")
-				$projectid = GetVariable("id");
+				$projectid = (int)GetVariable("id");
 			
 			if ($projectid == "") {
 				?><!--<a href="projects.php" style="background-color:#273f70" class="item">Project List</a>--><?
@@ -249,7 +249,7 @@
 		/* pipelines sub-menu */
 		elseif ($page=="pipelines.php" || $page=="analysis.php" || $page == "cluster.php") {
 			if ($GLOBALS['cfg']['enablepipelines']) {
-				$pipelineid = GetVariable("id");
+				$pipelineid = (int)GetVariable("id");
 				if ($pipelineid == "") {
 					?><a href="pipelines.php" class="item">Pipeline List</a><?
 					?><a href="pipelines.php?action=addform" class="red item">New Pipeline</a><?

@@ -43,7 +43,7 @@
 
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$id = GetVariable("id");
+	$id = (int)GetVariable("id");
 	$name = GetVariable("name");
 	$description = GetVariable("description");
 	$location = GetVariable("location");

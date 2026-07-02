@@ -45,7 +45,7 @@
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
 	$enrollmentid = GetVariable("enrollmentid");
-	$id = GetVariable("id");
+	$id = (int)GetVariable("id");
 	$startdatetime = GetVariable("startdatetime");
 	$enddatetime = GetVariable("enddatetime");
 	$resolution = GetVariable("resolution");
@@ -83,7 +83,7 @@
 			?><span class="error">Invalid enrollment ID</div><?
 			return;
 		}
-		$enrollmentid = trim($enrollmentid);
+		$enrollmentid = (int)$enrollmentid;
 		
 		$selectedModalities = array();
 		

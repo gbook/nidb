@@ -48,9 +48,9 @@
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$id = GetVariable("id");
-	$calendarid = GetVariable("calendarid");
-	$projectid = GetVariable("projectid");
+	$id = (int)GetVariable("id");
+	$calendarid = (int)GetVariable("calendarid");
+	$projectid = (int)GetVariable("projectid");
 	$details = GetVariable("details");
 	$title = GetVariable("title");
 	$startdate = GetVariable("startdate");
@@ -71,7 +71,7 @@
 	$repeatfri = GetVariable("repeatfri");
 	$repeatsat = GetVariable("repeatsat");
 	$repeatenddate = GetVariable("repeatenddate");
-	$groupid = GetVariable("groupid");
+	$groupid = (int)GetVariable("groupid");
 	
 	$startdatetime = "$startdate $starttime";
 	$enddatetime = "$enddate $endtime";

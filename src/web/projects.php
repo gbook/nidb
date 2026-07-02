@@ -46,11 +46,11 @@
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$id = GetVariable("id");
-	$projectid = GetVariable("projectid");
+	$id = (int)GetVariable("id");
+	$projectid = (int)GetVariable("projectid");
 	if ($id == "") { $id = $projectid; }
 	$viewtype = GetVariable("viewtype");
-	$newprojectid = GetVariable("newprojectid");
+	$newprojectid = (int)GetVariable("newprojectid");
 	$studyids = GetVariable("studyids");
 	$matchidonly = GetVariable("matchidonly");
 	$modalities = GetVariable("modalities");
@@ -666,7 +666,7 @@
 		$studyids = mysqli_real_escape_array($GLOBALS['linki'], $studyids);
 		
 		/* get list of subjects from the studyids */
-		$sqlstring = "select subject_id, uid from subjects where subject_id in (select subject_id from enrollment where enrollment_id in (select enrollment_id from studies where study_id in (" . implode(',',$studyids) . ") ))";
+		$sqlstring = "select subject_id, uid from subjects where subject_id in (select subject_id from enrollment where enrollment_id in (select enrollment_id from studies where study_id in (" . implode(',', array_map('intval', (array)$studyids)) . ") ))";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$ids[] = $row['subject_id'];
@@ -731,7 +731,7 @@
 		$matchidonly = mysqli_real_escape_string($GLOBALS['linki'], $matchidonly);
 		
 		/* get list of subjects from the studyids */
-		$sqlstring = "select subject_id, uid from subjects where subject_id in (select subject_id from enrollment where enrollment_id in (select enrollment_id from studies where study_id in (" . implode(',',$studyids) . ") ))";
+		$sqlstring = "select subject_id, uid from subjects where subject_id in (select subject_id from enrollment where enrollment_id in (select enrollment_id from studies where study_id in (" . implode(',', array_map('intval', (array)$studyids)) . ") ))";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$ids[] = $row['subject_id'];

@@ -42,8 +42,8 @@
 
 	/* setup variables */
 	$action = GetVariable("action");
-	$enrollmentid = GetVariable("enrollmentid");
-	$projectid = GetVariable("projectid");
+	$enrollmentid = (int)GetVariable("enrollmentid");
+	$projectid = (int)GetVariable("projectid");
 	
 	switch ($action) {
 		case 'viewreport':

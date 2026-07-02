@@ -52,14 +52,14 @@
 	$action = GetVariable("action");
 	$datalocation = GetVariable("datalocation");
 	$nfspath = GetVariable("nfspath");
-	$projectid = GetVariable("projectid");
+	$projectid = (int)GetVariable("projectid");
 	$modality = GetVariable("modality");
 	$filetype = GetVariable("filetype");
 	$subjectcriteria = GetVariable("subjectcriteria");
 	$studycriteria = GetVariable("studycriteria");
 	$seriescriteria = GetVariable("seriescriteria");
-	$uploadid = GetVariable("uploadid");
-	$uploadseriesid = GetVariable("uploadseriesid");
+	$uploadid = (int)GetVariable("uploadid");
+	$uploadseriesid = (int)GetVariable("uploadseriesid");
 	$displayall = GetVariable("displayall");
 	$datestart = GetVariable("datestart");
 	$dateend = GetVariable("dateend");
@@ -1322,7 +1322,7 @@
 	/* ---------------------------------------------------------- */
 	function AppendUploadLog($uploadid, $m) {
 		if (($uploadid >= 0) && (trim($m) != "")) {
-			$str = "ImportImaging.php  " + mysqli_real_escape_string($GLOBALS['linki'], $m);
+			$str = "ImportImaging.php  " . mysqli_real_escape_string($GLOBALS['linki'], $m);
 
 			$sqlstring = "insert ignore into upload_logs (upload_id, log_date, log_msg) values ($uploadid, now(), '$str')";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);

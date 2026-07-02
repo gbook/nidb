@@ -43,7 +43,7 @@
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$id = GetVariable("id");
+	$id = (int)GetVariable("id");
 	
 	/* determine action */
 	if ($action == "changepassword") {

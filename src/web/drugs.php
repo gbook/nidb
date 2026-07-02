@@ -43,8 +43,8 @@
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$drugid = GetVariable("drugid");
-	$enrollmentid = GetVariable("enrollmentid");
+	$drugid = (int)GetVariable("drugid");
+	$enrollmentid = (int)GetVariable("enrollmentid");
 	$drugname = GetVariable('drug_name');
 	$drugdose = GetVariable('drug_dose');
 	$drugfreq = GetVariable('drug_freq');

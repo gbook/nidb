@@ -43,9 +43,9 @@
 
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$id = GetVariable("id");
-	$projectid = GetVariable("projectid");
-	$itemid = GetVariable("itemid");
+	$id = (int)GetVariable("id");
+	$projectid = (int)GetVariable("projectid");
+	$itemid = (int)GetVariable("itemid");
 	$itemorder = GetVariable("itemorder");
 	$itemname = GetVariable("itemname");
 	$modality = GetVariable("modality");
@@ -53,10 +53,10 @@
 	$itemcount = GetVariable("itemcount");
 	$frequency = GetVariable("frequency");
 	$frequencyunit = GetVariable("frequencyunit");
-	$enrollmentid = GetVariable("enrollmentid");
-	$projectchecklistid = GetVariable("projectchecklistid");
+	$enrollmentid = (int)GetVariable("enrollmentid");
+	$projectchecklistid = (int)GetVariable("projectchecklistid");
 	$reason = GetVariable("reason");
-	$missingdataid = GetVariable("missingdataid");
+	$missingdataid = (int)GetVariable("missingdataid");
 
 	$protocolfilter = GetVariable("protocolfilter");
 	
@@ -306,7 +306,7 @@
 		
 		$i=0;
 		foreach ($param_rowid as $paramid) {
-			$paramid = mysqli_real_escape_string($GLOBALS['linki'], $paramid);
+			$paramid = (int)$paramid;
 			
 			$protocol = mysqli_real_escape_string($GLOBALS['linki'], trim($param_protocol[$i]));
 			$sequence = mysqli_real_escape_string($GLOBALS['linki'], trim($param_sequence[$i]));
@@ -1318,7 +1318,7 @@
 		
 		$i=0;
 		foreach ($param_rowid as $paramid) {
-			$paramid = mysqli_real_escape_string($GLOBALS['linki'], $paramid);
+			$paramid = (int)$paramid;
 			
 			$protocol = mysqli_real_escape_string($GLOBALS['linki'], trim($param_protocol[$i]));
 			$sequence = mysqli_real_escape_string($GLOBALS['linki'], trim($param_sequence[$i]));
