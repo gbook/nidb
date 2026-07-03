@@ -3348,6 +3348,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	/* ------- GetFileFromSQL --------------------- */
 	/* -------------------------------------------- */
 	function GetFileFromSQL($fileid) {
+		$fileid = (int)$fileid;
 		$sqlstring = "select * from files where file_id = $fileid";
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);

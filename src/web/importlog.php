@@ -331,7 +331,7 @@
 						<td class="darkheader"><span style="font-size: 8pt">Upload started</span><br><b><?=date('M j, Y g:ia',strtotime($transaction_startdate))?></b></td>
 						<td class="darkheader" align="left" width="30%">
 							<span style="font-size: 8pt">Archived blocks</span><br>
-							<img src="horizontalchart.php?b=yes&w=200&h=15&v=<?=$numarchived?>,<?=$numblocks-$numarchived?>&c=888888,EEEEEE"> <?=number_format(((double)($numarchived+$numblank)/$numblocks)*100.0,1)?>% (<?=$numarchived?> of <?=$numblocks?>)
+							<img src="ajaxapi.php?action=horizontalchart&b=yes&w=200&h=15&v=<?=$numarchived?>,<?=$numblocks-$numarchived?>&c=888888,EEEEEE"> <?=number_format(((double)($numarchived+$numblank)/$numblocks)*100.0,1)?>% (<?=$numarchived?> of <?=$numblocks?>)
 						</td>
 					</tr>
 					<tr>

@@ -2539,7 +2539,7 @@
 								xhttp.onload = function() {
 									document.getElementById("series<?=$series_num?>").innerHTML = this.responseText;
 								}
-								xhttp.open("GET", "objectexists.php?action=series&modality=mr&seriesid=<?=$mrseries_id?>&datatype=<?=$data_type?>", true);
+								xhttp.open("GET", "ajaxapi.php?action=checkseriesobject&modality=mr&seriesid=<?=$mrseries_id?>&datatype=<?=$data_type?>", true);
 								xhttp.send();
 
 								$('.series-info-tooltip').tooltip({ items: '.series-info-tooltip', content: function() { return $(this).attr('data-html'); } });
@@ -2548,7 +2548,7 @@
 							//	xhttp2.onload = function() {
 							//		document.getElementById("thumbnail<?=$series_num?>").innerHTML = this.responseText;
 							//	}
-							//	xhttp2.open("GET", "objectexists.php?action=thumbnail&modality=mr&seriesid=<?=$mrseries_id?>&datatype=<?=$data_type?>", true);
+							//	xhttp2.open("GET", "ajaxapi.php?action=getseriesthumbnail&modality=mr&seriesid=<?=$mrseries_id?>&datatype=<?=$data_type?>", true);
 							//	xhttp2.send();
 							});
 							</script>
@@ -2607,10 +2607,10 @@
 									</table>
 								</td>
 								<td class="seriesrow" align="right" style="background-color: <?=$maxpvsnrcolor?>; font-size:8pt">
-									<a href="stddevchart.php?h=40&w=450&min=<?=$pstats[$sequence]['minpvsnr']?>&max=<?=$pstats[$sequence]['maxpvsnr']?>&mean=<?=$pstats[$sequence]['avgpvsnr']?>&std=<?=$pstats[$sequence]['stdpvsnr']?>&i=<?=$pvsnr?>&b=yes" class="preview" style="color: black; text-decoration: none"><?=$pvsnr;?></a> 
+									<a href="ajaxapi.php?action=stddevchart&h=40&w=450&min=<?=$pstats[$sequence]['minpvsnr']?>&max=<?=$pstats[$sequence]['maxpvsnr']?>&mean=<?=$pstats[$sequence]['avgpvsnr']?>&std=<?=$pstats[$sequence]['stdpvsnr']?>&i=<?=$pvsnr?>&b=yes" class="preview" style="color: black; text-decoration: none"><?=$pvsnr;?></a> 
 								</td>
 								<td class="seriesrow" align="right" style="background-color: <?=$maxiosnrcolor?>; font-size:8pt">
-									<a href="stddevchart.php?h=40&w=450&min=<?=$pstats[$sequence]['miniosnr']?>&max=<?=$pstats[$sequence]['maxiosnr']?>&mean=<?=$pstats[$sequence]['avgiosnr']?>&std=<?=$pstats[$sequence]['stdiosnr']?>&i=<?=$iosnr?>&b=yes" class="preview" style="color: black; text-decoration: none"><?=$iosnr;?></a>
+									<a href="ajaxapi.php?action=stddevchart&h=40&w=450&min=<?=$pstats[$sequence]['miniosnr']?>&max=<?=$pstats[$sequence]['maxiosnr']?>&mean=<?=$pstats[$sequence]['avgiosnr']?>&std=<?=$pstats[$sequence]['stdiosnr']?>&i=<?=$iosnr?>&b=yes" class="preview" style="color: black; text-decoration: none"><?=$iosnr;?></a>
 								</td>
 								<td><?=$sequence?></td>
 								<td style="font-size:8pt"><?=$scanlength?></td>
@@ -2850,8 +2850,8 @@
 						<script type="text/javascript">
 							$(document).ready(function(){
 								$(".edit_inline<? echo $ctseries_id; ?>").editInPlace({
-									url: "series_inlineupdate.php",
-									params: "action=editinplace&modality=CT&id=<? echo $ctseries_id; ?>",
+									url: "ajaxapi.php",
+									params: "action=updateseriesdetails&modality=CT&id=<? echo $ctseries_id; ?>",
 									default_text: "<i style='color:#AAAAAA'>Add notes...</i>",
 									bg_over: "white",
 									bg_out: "lightyellow",
@@ -3119,8 +3119,8 @@
 							<script type="text/javascript">
 								$(document).ready(function(){
 									$(".edit_inline<? echo $series_id; ?>").editInPlace({
-										url: "series_inlineupdate.php",
-										params: "action=editinplace&modality=<?=$modality?>&id=<? echo $series_id; ?>",
+										url: "ajaxapi.php",
+										params: "action=updateseriesdetails&modality=<?=$modality?>&id=<? echo $series_id; ?>",
 										default_text: "<i style='color:#AAAAAA'>Add notes...</i>",
 										bg_over: "white",
 										bg_out: "lightyellow",

@@ -301,7 +301,7 @@
 					<input type="file" name="duafile">
 				</div>
 				<? if ($filename != "") { ?>
-					<small>Existing file: <tt><a href="f.php?action=download&fileid=<?=$fileid?>"><?=$filename?></a></tt>, <?=$filesize?> bytes, <?=$filedate?></small>
+					<small>Existing file: <tt><a href="ajaxapi.php?action=downloadfile&fileid=<?=$fileid?>"><?=$filename?></a></tt>, <?=$filesize?> bytes, <?=$filedate?></small>
 				<? } ?>
 			</div>
 			<input type="submit" class="ui primary button" value="<?=$submitbuttonlabel?>">
@@ -381,7 +381,7 @@
 						<td><pre><?=$idlist?></pre></td>
 						<td><pre><?=$dataformat?></pre></td>
 						<td><pre><?=$deliverymethod?></pre></td>
-						<td><? if ($duafileid != "") { ?><a href="f.php?action=download&fileid=<?=$duafileid?>"><i class="file alternate icon"></i></a> <? } ?></td>
+						<td><? if ($duafileid != "") { ?><a href="ajaxapi.php?action=downloadfile&fileid=<?=$duafileid?>"><i class="file alternate icon"></i></a> <? } ?></td>
 						<td><a href="datasetrequests.php?action=cancel&datasetrequestid=<?=$datasetrequestid?>" style="color: red">Cancel</a></td>
 					</tr>
 					<? 

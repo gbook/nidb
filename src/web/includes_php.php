@@ -96,6 +96,7 @@
 		$username = $_SESSION['username'];
 		if (($_SESSION['validlogin'] != "true") || ($_SESSION['userid'] == '') ) {
 			header("Location: login.php");
+			exit(0);
 		}
 		if (trim($username) == "") {
 			Error("username is blank. Contact NiDB administrator");

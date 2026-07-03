@@ -1058,7 +1058,7 @@
 									$stepnum = $parts[2];
 									$steptotal = $parts[4];
 							?>
-							<img src="horizontalchart.php?b=no&w=150&h=3&v=<?=$stepnum?>,<?=($steptotal-$stepnum)?>&c=666666,DDDDDD" style="margin:2px"><br>
+							<img src="ajaxapi.php?action=horizontalchart&b=no&w=150&h=3&v=<?=$stepnum?>,<?=($steptotal-$stepnum)?>&c=666666,DDDDDD" style="margin:2px"><br>
 							<? } ?>
 							<span class="tiny"><?=$analysis_statusdatetime?></span>
 						</td>

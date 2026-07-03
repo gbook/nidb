@@ -155,7 +155,7 @@
 		}
 		
 		/* projects sub-menu */
-		elseif ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="projectassessments.php" || $page=="studies.php" || $page=="minipipeline.php" || $page=="templates.php" || $page=="datadictionary.php" || $page == "experiment.php" || $page == "mriqc.php" || $page == "importremote.php" || $page == "instruments.php" || $page == "remoteimportmapping.php") {
+		elseif ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="studies.php" || $page=="minipipeline.php" || $page=="templates.php" || $page=="datadictionary.php" || $page == "experiment.php" || $page == "mriqc.php" || $page == "importremote.php" || $page == "instruments.php" || $page == "remoteimportmapping.php") {
 			
 			//if ($page=="projectchecklist.php" || $page=="projectassessments.php" || $page=="minipipeline.php" || $page=="templates.php" || $page=="datadictionary.php" || $page == "experiment.php") {
 			$projectid = (int)GetVariable("projectid");
@@ -209,9 +209,11 @@
 						<a class="item" href="importremote.php?action=viewbatchimportlist&projectid=<?=$projectid?>" style="color: #222"><i class="cloud download anternate icon"></i> Remote batch imports</a>
 						<a class="item" href="importimaging.php?action=newimportform&projectid=<?=$projectid?>" style="color: #222"><i class="file import icon"></i> Import imaging</a>
 						<a class="item" href="importnonimaging.php?action=newimportform&projectid=<?=$projectid?>" style="color: #222"><i class="file import icon"></i> Import Non-imaging</a>
+						<!-- Redcap import deprecated
 						<a class="item" href="redcapimport.php?action=importsettings&projectid=<?=$projectid?>" style="color: #222"><i class="red redhat icon"></i> Global Redcap settings</a>
 						<a class="item" href="redcapimportsubjects.php?action=default&projectid=<?=$projectid?>" style="color: #222"><i class="red redhat icon"></i> Redcap subject import</a>
 						<a class="item" href="redcaptonidb.php?action=default&projectid=<?=$projectid?>" style="color: #222"><i class="red redhat icon"></i> Import from Redcap</a>
+						-->
 					</div>
 				</div>
 

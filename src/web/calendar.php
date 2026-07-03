@@ -86,9 +86,6 @@
 		DisplayMenu($year, $month, $day, "day");
 		DisplayDay($year, $month, $day, $holidays, $currentcal);
 	}
-	elseif ($action == "manage") {
-		DisplayManagementMenu();
-	}
 	elseif (($action == "") || ($action == "week")) {
 		setcookie("currentview", "week");
 		DisplayMenu($year, $month, $day, "week");
@@ -163,20 +160,6 @@
 				</div>
 			</div>
 		</div>
-		<?
-	}
-
-
-	/* ----------------------------------------------- */
-	/* --------- DisplayManagementMenu --------------- */
-	/* ----------------------------------------------- */
-	function DisplayManagementMenu() {
-		?>
-		<b>Manage...</b><br><br>
-		<a href="calendar_calendars.php">Calendars</a><br>
-		<a href="calendar_projects.php">Projects</a><br>
-		Project Resource <a href="calendar_allocations.php">Allocations</a><br>
-		<br><br>
 		<?
 	}
 

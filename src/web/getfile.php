@@ -64,8 +64,15 @@ if ($file != "") {
 	$archivePath = $GLOBALS['cfg']['archivedir'];
 	$mountPath = $GLOBALS['cfg']['mountdir'];
 	
-	/* file must live within the archive directory or mount directory */
-	if ((substr($file, 0, strlen($archivePath)) === $archivePath) || (substr($file, 0, strlen($mountPath)) === $mountPath)) {
+	/* file must live within the archive directory or mount directory.
+	   realpath() resolves symlinks and ../ so traversal like archivedir/../../etc/passwd is rejected */
+	$realFile = realpath($file);
+	$realArchive = realpath($archivePath);
+	$realMount = realpath($mountPath);
+	$inArchive = (($realFile !== false) && ($realArchive !== false) && (strpos($realFile, $realArchive . DIRECTORY_SEPARATOR) === 0));
+	$inMount   = (($realFile !== false) && ($realMount !== false) && (strpos($realFile, $realMount . DIRECTORY_SEPARATOR) === 0));
+	if ($inArchive || $inMount) {
+		$file = $realFile;
 		if (file_exists($file)) {
 			if ($action == "download") {
 				$filename = basename($file);

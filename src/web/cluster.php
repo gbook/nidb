@@ -259,7 +259,7 @@
 						<td><?=$states?></td>
 						<td><?=$load?></td>
 						<td><?=$slotsavailable?></td>
-						<td><img src="horizontalchart.php?b=yes&w=200&h=10&v=<?=$slotsused?>,<?=($slotsavailable-$slotsused)?>&c=<?=$slotsusedcolor?>,<?=$slotsunusedcolor?>"> &nbsp; <span class="tiny"><?=$slotsused?> of <?=$slotsavailable?></span></td>
+						<td><img src="ajaxapi.php?action=horizontalchart&b=yes&w=200&h=10&v=<?=$slotsused?>,<?=($slotsavailable-$slotsused)?>&c=<?=$slotsusedcolor?>,<?=$slotsunusedcolor?>"> &nbsp; <span class="tiny"><?=$slotsused?> of <?=$slotsavailable?></span></td>
 					</tr>
 					<?
 				}
@@ -271,7 +271,7 @@
 					<td></td>
 					<td></td>
 					<td><?=$totalClusterSlotsAvailable?></td>
-					<td><img src="horizontalchart.php?b=yes&w=200&h=10&v=<?=$totalClusterSlotsUsed?>,<?=($totalClusterSlotsAvailable-$totalClusterSlotsUsed)?>&c=darkred,<?=$slotsunusedcolor?>"> &nbsp; <?=$totalClusterSlotsUsed?> of <?=$totalClusterSlotsAvailable?></td>
+					<td><img src="ajaxapi.php?action=horizontalchart&b=yes&w=200&h=10&v=<?=$totalClusterSlotsUsed?>,<?=($totalClusterSlotsAvailable-$totalClusterSlotsUsed)?>&c=darkred,<?=$slotsunusedcolor?>"> &nbsp; <?=$totalClusterSlotsUsed?> of <?=$totalClusterSlotsAvailable?></td>
 				</tr>
 			</tfoot>
 		</table>
@@ -311,7 +311,7 @@
 								<tr>
 									<td><b><?=$queue?></b> &nbsp;</td>
 									<td>
-										<img src="horizontalchart.php?b=yes&w=600&h=25&v=<?=$slotsused?>,<?=($slotsunused-$slotsused)?>&c=<?=$slotsusedcolor?>,<?=$slotsunusedcolor?>">
+										<img src="ajaxapi.php?action=horizontalchart&b=yes&w=600&h=25&v=<?=$slotsused?>,<?=($slotsunused-$slotsused)?>&c=<?=$slotsusedcolor?>,<?=$slotsunusedcolor?>">
 										<? if (($slotsused == 0) && ($slotsunused == 0)) { echo "Idle"; } else { echo "$slotsused of $slotsunused"; } ?>
 									</td>
 								</tr>
@@ -495,7 +495,7 @@
 					<? } ?>
 					<td><?=$r['total']?></td>
 					<td>
-						<img src="horizontalchart.php?b=yes&w=200&h=10&v=<?=$r['allocated']?>,<?=$idle?>&c=<?=$usedcolor?>,<?=$unusedcolor?>">
+						<img src="ajaxapi.php?action=horizontalchart&b=yes&w=200&h=10&v=<?=$r['allocated']?>,<?=$idle?>&c=<?=$usedcolor?>,<?=$unusedcolor?>">
 						&nbsp;<span class="tiny"><?=$r['allocated']?> of <?=$r['total']?></span>
 					</td>
 				</tr>
@@ -510,7 +510,7 @@
 					<? if ($hasGPU) { ?><td></td><? } ?>
 					<td><?=$totalCPUs?></td>
 					<td>
-						<img src="horizontalchart.php?b=yes&w=200&h=10&v=<?=$totalUsed?>,<?=($totalCPUs-$totalUsed)?>&c=darkred,<?=$unusedcolor?>">
+						<img src="ajaxapi.php?action=horizontalchart&b=yes&w=200&h=10&v=<?=$totalUsed?>,<?=($totalCPUs-$totalUsed)?>&c=darkred,<?=$unusedcolor?>">
 						&nbsp;<?=$totalUsed?> of <?=$totalCPUs?>
 					</td>
 				</tr>
@@ -567,7 +567,7 @@
 					<td><?=htmlspecialchars($r['timelimit'])?></td>
 					<td><?=$r['total']?></td>
 					<td>
-						<img src="horizontalchart.php?b=yes&w=300&h=18&v=<?=$r['allocated']?>,<?=$idle?>&c=<?=$usedcolor?>,<?=$unusedcolor?>">
+						<img src="ajaxapi.php?action=horizontalchart&b=yes&w=300&h=18&v=<?=$r['allocated']?>,<?=$idle?>&c=<?=$usedcolor?>,<?=$unusedcolor?>">
 						&nbsp;<? if ($r['total'] == 0) { echo "—"; } else { echo $r['allocated'] . " of " . $r['total']; } ?>
 					</td>
 				</tr>

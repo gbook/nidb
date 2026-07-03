@@ -145,6 +145,24 @@
 		case 'updateobservationdetails':
 			UpdateObservationDetails($observationid, $column, $value, $tz_offset);
 			break;
+		case 'updateseriesdetails':
+			UpdateSeriesDetails(GetVariable("id"), GetVariable("modality"), GetVariable("element_id"), GetVariable("update_value"));
+			break;
+		case 'checkseriesobject':
+			CheckSeriesObject(GetVariable("seriesid"), GetVariable("modality"), GetVariable("datatype"));
+			break;
+		case 'getseriesthumbnail':
+			GetSeriesThumbnail(GetVariable("seriesid"), GetVariable("modality"));
+			break;
+		case 'downloadfile':
+			DownloadFile(GetVariable("fileid"));
+			break;
+		case 'horizontalchart':
+			HorizontalChart(GetVariable("w"), GetVariable("h"), GetVariable("v"), GetVariable("c"), GetVariable("b"));
+			break;
+		case 'stddevchart':
+			StdDevChart(GetVariable("w"), GetVariable("h"), GetVariable("min"), GetVariable("max"), GetVariable("mean"), GetVariable("std"), GetVariable("i"), GetVariable("b"));
+			break;
 		case 'getobservationmeta':
 			GetObservationMeta($observationid);
 			break;
@@ -574,9 +592,9 @@
 
 			?>
 			<span style="font-size: 11pt">
-			<img src="horizontalchart.php?b=yes&w=400&h=15&v=<?=$numsuccess?>,<?=$numprocessing?>,<?=$numfail?>,<?=($total-$numtotal)?>&c=<?=$completecolor?>,<?=$processingcolor?>,<?=$errorcolor?>,<?=$othercolor?>"> <?=number_format(($numsuccess/$total)*100,1)?>% received <span style="font-size:8pt;color:gray">(<?=number_format($numsuccess)?> of <?=number_format($total)?> blocks)</span>
+			<img src="ajaxapi.php?action=horizontalchart&b=yes&w=400&h=15&v=<?=$numsuccess?>,<?=$numprocessing?>,<?=$numfail?>,<?=($total-$numtotal)?>&c=<?=$completecolor?>,<?=$processingcolor?>,<?=$errorcolor?>,<?=$othercolor?>"> <?=number_format(($numsuccess/$total)*100,1)?>% received <span style="font-size:8pt;color:gray">(<?=number_format($numsuccess)?> of <?=number_format($total)?> blocks)</span>
 			<br>
-			<img src="horizontalchart.php?b=yes&w=400&h=15&v=<?=$archivesuccess?>,<?=$archiveerror?>,<?=($total-$archivesuccess-$archiveerror)?>&c=<?=$completecolor?>,<?=$errorcolor?>,<?=$othercolor?>"> <?=number_format(($archivesuccess/$total)*100,1)?>% archived <span style="font-size:8pt;color:gray">(<?=number_format($archivesuccess)?> of <?=number_format($total)?> blocks)</span>
+			<img src="ajaxapi.php?action=horizontalchart&b=yes&w=400&h=15&v=<?=$archivesuccess?>,<?=$archiveerror?>,<?=($total-$archivesuccess-$archiveerror)?>&c=<?=$completecolor?>,<?=$errorcolor?>,<?=$othercolor?>"> <?=number_format(($archivesuccess/$total)*100,1)?>% archived <span style="font-size:8pt;color:gray">(<?=number_format($archivesuccess)?> of <?=number_format($total)?> blocks)</span>
 			</span>
 			<?
 		}
@@ -1181,6 +1199,267 @@
 		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		mysqli_stmt_close($stmt);
 		echo "success";
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- UpdateSeriesDetails ---------------- */
+	/* -------------------------------------------- */
+	/* inline edit of a single series field (folded in from the former series_inlineupdate.php) */
+	function UpdateSeriesDetails($seriesid, $modality, $column, $value) {
+		$seriesid = (int)$seriesid;
+		if ($seriesid < 1) { echo "error - invalid series ID"; return; }
+
+		/* validate modality -> table and primary-key identifiers (these cannot be bound as parameters) */
+		$table = GetSeriesTableName($modality);
+		if ($table === '') { echo "error - invalid modality"; return; }
+		$pkColumn = strtolower($modality) . "series_id";
+
+		/* only these columns may be edited inline */
+		$allowedColumns = ['series_notes', 'series_protocol', 'series_datetime'];
+		if (!in_array($column, $allowedColumns, true)) {
+			echo "error - column [$column] not recognized";
+			return;
+		}
+
+		$nullableValue = (trim($value) === '') ? null : $value;
+		$stmt = mysqli_prepare($GLOBALS['linki'], "update $table set $column = ? where $pkColumn = ?");
+		mysqli_stmt_bind_param($stmt, 'si', $nullableValue, $seriesid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+
+		/* echo the value back so the in-place editor can display it */
+		echo str_replace('\n', "<br>", ($nullableValue === null) ? ' ' : $value);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- CheckSeriesObject ------------------ */
+	/* -------------------------------------------- */
+	/* check whether a series' data files exist on disk (folded in from the former objectexists.php) */
+	function CheckSeriesObject($seriesid, $modality, $datatype) {
+		$seriesid = (int)$seriesid;
+		if ($seriesid < 1) { return; }
+		if (GetSeriesTableName($modality) === '') { return; }
+
+		list($path, $seriespath, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, $modality);
+
+		if ($datatype == "dicom") {
+			$files = glob("$path/*.dcm");
+		}
+		elseif ($datatype == "parrec") {
+			$files = glob("$path/*.par");
+		}
+		else {
+			return;
+		}
+
+		/* only report the problem case; when files are present the original emitted no visible output */
+		if (empty($files) || !file_exists($files[0])) {
+			echo '<i class="red exclamation circle icon" title="Files missing from disk"></i>';
+		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetSeriesThumbnail ----------------- */
+	/* -------------------------------------------- */
+	/* return the thumbnail preview link for a series (folded in from the former objectexists.php) */
+	function GetSeriesThumbnail($seriesid, $modality) {
+		$seriesid = (int)$seriesid;
+		if ($seriesid < 1) { return; }
+		if (GetSeriesTableName($modality) === '') { return; }
+
+		list($path, $seriespath, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, $modality);
+		$thumbpath = "$seriespath/thumb.png";
+		if (file_exists($thumbpath)) {
+			?><a href="preview.php?image=<?=$thumbpath?>" class="preview"><i class="photo video icon"></i></a><?
+		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DownloadFile ----------------------- */
+	/* -------------------------------------------- */
+	function DownloadFile($fileid) {
+		$fileid = (int)$fileid;
+		if ($fileid < 1) { return; }
+
+		list($filename, $filecontenttype, $fileblob, $filesize, $filedate) = GetFileFromSQL($fileid);
+		if ($filename == "") { return; }
+
+		/* discard any buffered output so the binary blob is not corrupted */
+		while (ob_get_level() > 0) { ob_end_clean(); }
+
+		header("Pragma: public");
+		header("Expires: 0");
+		header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
+		header("Cache-Control: public");
+		header("Content-Description: File Transfer");
+		header("Content-type: $filecontenttype");
+		header("Content-Disposition: attachment; filename=\"$filename\"");
+		header("Content-Transfer-Encoding: binary");
+		header("Content-Length: $filesize");
+
+		echo $fileblob;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- HorizontalChart -------------------- */
+	/* -------------------------------------------- */
+	function HorizontalChart($w, $h, $v, $c, $b) {
+		/* clamp dimensions to sane bounds to prevent memory-exhaustion DoS */
+		$w = (int)$w;
+		$h = (int)$h;
+		if ($w < 1) { $w = 1; }
+		if ($h < 1) { $h = 1; }
+		if ($w > 2000) { $w = 2000; }
+		if ($h > 2000) { $h = 2000; }
+
+		/* create the canvas */
+		$im = imagecreatetruecolor($w, $h);
+
+		/* set background to white */
+		$bg = imagecolorallocate($im, 255, 255, 255);
+		imagefilledrectangle($im, 0, 0, $w, $h, $bg);
+
+		/* get the pixel sizes of the blocks */
+		$values = explode(',', $v);
+		$colors = explode(',', $c);
+		$sum = array_sum($values);
+
+		if ($sum > 0) {
+			$x1 = $x2 = 0;
+			$y1 = 0;
+			$y2 = $h;
+			$i = 0;
+			foreach ($values as $val) {
+				list($red, $green, $blue) = HexToRGBArray($colors[$i]);
+				$x1 = $x2;
+				$x2 = $x1 + $w*($val/$sum);
+				$color = imagecolorallocate($im, $red, $green, $blue);
+				imagefilledrectangle($im, $x1, $y1, $x2, $y2, $color);
+				$i++;
+			}
+		}
+
+		if ($b == "yes") {
+			/* draw a gray border */
+			$gray = imagecolorallocate($im, 120, 120, 120);
+			imagepolygon($im, array(0,0, 0,$h-1, $w-1,$h-1, $w-1,0), 4, $gray);
+		}
+
+		/* discard any buffered output so the PNG is not corrupted */
+		while (ob_get_level() > 0) { ob_end_clean(); }
+
+		/* send the image to the browser */
+		header('Content-type: image/png');
+		imagepng($im);
+		imagedestroy($im);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- HexToRGBArray ---------------------- */
+	/* -------------------------------------------- */
+	function HexToRGBArray($rgb) {
+		/* convert 6 digit HEX string to 3 decimals */
+		$rgb = str_replace("#", "", $rgb);
+		return array(
+			base_convert(substr($rgb, 0, 2), 16, 10),
+			base_convert(substr($rgb, 2, 2), 16, 10),
+			base_convert(substr($rgb, 4, 2), 16, 10),
+		);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- StdDevChart ------------------------ */
+	/* -------------------------------------------- */
+	function StdDevChart($w, $h, $min, $max, $mean, $std, $ind, $b) {
+		/* clamp dimensions to sane bounds to prevent memory-exhaustion DoS */
+		$w = (int)$w;
+		$h = (int)$h;
+		if ($w < 1) { $w = 1; }
+		if ($h < 1) { $h = 1; }
+		if ($w > 2000) { $w = 2000; }
+		if ($h > 2000) { $h = 2000; }
+
+		/* create the canvas */
+		$im = imagecreatetruecolor($w, $h);
+
+		/* set background to white */
+		$bg = imagecolorallocate($im, 255, 255, 255);
+		imagefilledrectangle($im, 0, 0, $w, $h, $bg);
+
+		/* draw the standard deviations */
+		if (($max-$min) > 0 ) {
+			$meanx = $w*(($mean-$min)/($max-$min)); /* calculate the mean line position, on which std devs are based */
+		}
+		else {
+			$meanx = $w/2;
+		}
+		$x1 = $x2 = $meanx;
+		$y1 = 0;
+		$y2 = $h;
+		foreach (array(4,3,2,1) as $i) {
+			$x1 = $meanx - ($std*$i)/2;
+			$x2 = $meanx + ($std*$i)/2;
+			$color[$i] = imagecolorallocate($im, 255, 255-(255/$i), 255-(255/$i));
+			imagefilledrectangle($im, $x1, $y1, $x2, $y2, $color[$i]);
+		}
+		if (($max-$min) > 0 ) {
+			$meanx = $w*(($mean-$min)/($max-$min));
+			imageline($im, $meanx, 0, $meanx, $h, $linecolor);
+		}
+
+		/* setup text color */
+		$txtcolor = imagecolorallocate($im, 0, 0, 0);
+		$linecolor = imagecolorallocate($im, 0, 0, 0);
+		$txtheight = imagefontheight(1);
+
+		/* draw a semi-transparent white box to put text into */
+		$color = imagecolorallocatealpha($im, 255, 255, 255, 16);
+		imagefilledrectangle($im, 0, $h-$txtheight-2, $w, $h, $color);
+
+		/* draw min text */
+		$str = number_format($min, 1);
+		imagestring($im, 1, 1, $h-$txtheight-1, $str, $txtcolor);
+
+		/* draw max text */
+		$str = number_format($max, 1);
+		$txtwidth = imagefontwidth(1)*strlen($str);
+		imagestring($im, 1, $w-$txtwidth-1, $h-$txtheight-1, $str, $txtcolor);
+
+		/* draw mean line and text */
+		if (($max-$min) > 0 ) {
+			$str = number_format($mean, 1);
+			$txtwidth = imagefontwidth(1)*strlen($str);
+			imagestring($im, 1, $meanx-$txtwidth/2, $h-$txtheight-1, $str, $txtcolor);
+		}
+
+		if ($ind != "") {
+			if (($max-$min) > 0) {
+				$indcolor = imagecolorallocate($im, 0, 0, 255);
+				$indx = $w*(($ind-$min)/($max-$min));
+				imageline($im, $indx, 0, $indx, $h, $indcolor);
+			}
+		}
+
+		if ($b == "yes") {
+			/* draw a gray border */
+			$gray = imagecolorallocate($im, 120, 120, 120);
+			imagepolygon($im, array(0,0, 0,$h-1, $w-1,$h-1, $w-1,0), 4, $gray);
+		}
+
+		/* discard any buffered output so the PNG is not corrupted */
+		while (ob_get_level() > 0) { ob_end_clean(); }
+
+		/* send the image to the browser */
+		header('Content-type: image/png');
+		imagepng($im);
+		imagedestroy($im);
 	}
 
 

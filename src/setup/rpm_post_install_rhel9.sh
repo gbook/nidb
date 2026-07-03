@@ -177,6 +177,52 @@ if ((new_installation)); then
 	chown -R nidb:nidb /var/www/html
 fi
 
+# remove deprecated web files left over from previous versions (RPM upgrades do not delete them automatically)
+echo 'Removing deprecated web files...'
+DEPRECATED_WEB_FILES=(
+    "GetRCInst.php"
+    "adminassessmentforms.php"
+    "assessments.php"
+    "calendar_allocations.php"
+    "calendar_projects.php"
+    "calendar_users.php"
+    "drugs.php"
+    "f.php"
+    "horizontalchart.php"
+    "importcsvdata.php"
+    "importexperiment.php"
+    "importredcapcsvdata.php"
+    "kashi.php"
+    "longformat.csv"
+    "measures.php"
+    "mrqcchecklist_old.php"
+    "prescriptions.php"
+    "projectassessments.php"
+    "projects_ado2dev.php"
+    "rcmaninsert.php"
+    "series_inlineupdate.php"
+    "objectexists.php"
+    "stddevchart.php"
+    "redcap2ADO.php"
+    "redcapimport.php"
+    "redcapimportsubjects.php"
+    "redcapmaping.php"
+    "redcapmapping.php"
+    "redcapsubjectsimport.php"
+    "redcaptonidb.php"
+    "redcaptonidb_Old.php"
+    "shortformat.csv"
+    "subject_inlineupdate.php"
+    "subjectlist.php"
+    "validatepath.php"
+    "vitals.php"
+)
+for f in "${DEPRECATED_WEB_FILES[@]}"; do
+    rm -f "/var/www/html/$f"
+done
+# also remove any files explicitly marked as deprecated
+rm -f /var/www/html/deprecated_*
+
 touch /nidb/setup/dbupgrade
 
 echo "*****************************************************************************************"
