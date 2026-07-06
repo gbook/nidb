@@ -1053,7 +1053,7 @@
 
 		/* fetch observations */
 		$stmt = mysqli_prepare($GLOBALS['linki'], "
-			SELECT o.observation_id, s.uid AS subject_uid,
+			SELECT o.observation_id, s.subject_id, s.uid AS subject_uid,
 			       o.observation_name, o.observation_instrument, o.observation_value,
 			       o.observation_startdate, o.observation_rater, o.observation_notes
 			FROM observations o
@@ -1067,6 +1067,7 @@
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$rows[] = [
 				'observation_id'         => (int)$row['observation_id'],
+				'subject_id'             => (int)$row['subject_id'],
 				'subject_uid'            => $row['subject_uid'],
 				'observation_name'       => $row['observation_name'],
 				'observation_instrument' => $row['observation_instrument'],
@@ -1110,7 +1111,10 @@
 		const obsRowData = <?= $obsRowDataJson ?>;
 
 		const obsColumnDefs = [
-			{ field: 'subject_uid',            headerName: 'Subject',    sortable: true, filter: true, width: 110 },
+			{ field: 'subject_uid',            headerName: 'Subject',    sortable: true, filter: true, width: 110,
+			  cellRenderer: p => (p.value && p.data.subject_id)
+			      ? '<a href="subjects.php?id=' + p.data.subject_id + '">' + p.value + '</a>'
+			      : (p.value || '') },
 			{ field: 'observation_name',        headerName: 'Name',       sortable: true, filter: true, width: 180 },
 			{ field: 'observation_instrument',  headerName: 'Instrument', sortable: true, filter: true, width: 160 },
 			{ field: 'observation_value',       headerName: 'Value',      sortable: true, filter: true, width: 130 },

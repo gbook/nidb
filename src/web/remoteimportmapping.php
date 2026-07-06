@@ -659,20 +659,59 @@
 					<input type="hidden" name="createinstruments" id="bulkCreateInstrumentsHidden" value="">
 					<div class="ui form">
 						<div class="field">
-							<label>Paste CSV below</label>
+							<table class="ui compact celled table">
+								<thead>
+									<th>CSV column</th>
+									<th>Required</th>
+									<th>Description</th>
+								</thead>
+								<tr>
+									<td><tt>avicennasurvey</tt></td>
+									<td>yes</td>
+									<td>Survey number</td>
+								</tr>
+								<tr>
+									<td><tt>avicennavariable</tt></td>
+									<td>yes</td>
+									<td>Survey number</td>
+								</tr>
+								<tr>
+									<td><tt>avicennadatatype</tt></td>
+									<td>yes</td>
+									<td>Possible values <code>enum, int, double, string, timeseries, image, csv, json, datetime</code></td>
+								</tr>
+								<tr>
+									<td><tt>avicennaquestion</tt></td>
+									<td>-</td>
+									<td>Question number - value can be blank</td>
+								</tr>
+								<tr>
+									<td><tt>nidbinstrument</tt></td>
+									<td>yes</td>
+									<td>Local NiDB instrument</td>
+								</tr>
+								<tr>
+									<td><tt>nidbvariable</tt></td>
+									<td>yes</td>
+									<td>Local NiDB instrument-item</td>
+								</tr>
+								<tr>
+									<td><tt>importmeta</tt></td>
+									<td>-</td>
+									<td>Import Avicenna <tt>metadata</tt> column if it exists. 1 to import, 0 to skip. Default is 1.</td>
+								</tr>
+							</table>
+								
 							<p>
 								<ul>
 								<li>First line must be a header row.
-								<li>Required columns: <code>avicennasurvey, avicennavariable, avicennadatatype, nidbinstrument, nidbvariable</code>.
-								<li>Optional columns: <code>avicennaquestion, importmeta</code>. <code>importmeta</code> should be <code>1</code> to import metadata, <code>0</code> to not import. Default is <code>1</code>.
 								<li>Columns may be in any order. Values may contain spaces.
-								<li>During import, <code>avicennavariable</code> will be matched first. If it not found, then <code>avicennaquestion</code> will be matched.
-								<li><code>avicennaquestion</code>, if provided, must be a positive integer. Blank values are stored as NULL.
-								<li>Valid values for <code>avicennadatatype</code>: <code>enum, int, double, string, timeseries, image, csv, json, datetime</code>.
+								<li>During import, <tt style="font-weight: bold">avicennavariable</tt> will be matched first. If it not found, then <code>avicennaquestion</code> will be matched.
 								</ul>
 							</p>
+							<div class="ui top attached header" style="background-color:#DBDBEF;position:relative;z-index:1">Paste CSV below</div>
 							<textarea name="csvtext" id="bulkCsvText" rows="12"
-							          style="font-family:monospace;font-size:0.85em;width:100%"
+							          style="font-family:monospace;font-size:0.85em;width:100%;box-shadow:0 0 8px rgba(0,0,139,0.75);border-top-left-radius:0;border-top-right-radius:0;margin-top:0"
 							          placeholder="avicennasurvey,avicennavariable,avicennadatatype,avicennaquestion,nidbinstrument,nidbvariable,importmeta"></textarea>
 						</div>
 						<div class="field">

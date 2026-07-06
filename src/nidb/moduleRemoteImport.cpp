@@ -757,54 +757,6 @@ bool moduleRemoteImport::ImportURL(int remoteImportBatchRowID, QString remoteURL
 
 
 /* ---------------------------------------------------------- */
-/* --------- ImportCSV -------------------------------------- */
-/* ---------------------------------------------------------- */
-// /**
-//  * @brief Imports data from a local CSV file.
-//  * @param remoteImportBatchRowID Database row ID of the remoteimport_batch record.
-//  * @param mapping Import mapping rules for this project.
-//  * @return true on success, false otherwise.
-//  */
-// bool moduleRemoteImport::ImportCSV(int remoteImportBatchRowID, int remoteSurveyID, QString csvFormat, const ImportMapping &mapping, bool importUnmapped) {
-
-//     n->Log(QString("ImportCSV(%1, %2, ..mapping..)").arg(remoteImportBatchRowID).arg(csvFormat));
-
-//     /* get csv_path, and make sure it's valid */
-//     QString csv_path;
-//     QSqlQuery q;
-//     q.prepare("select * from remoteimport_batch where remoteimportbatch_id = :batchid");
-//     q.bindValue(":batchid", remoteImportBatchRowID);
-//     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-//     if (q.size() > 0) {
-//         q.first();
-//         csv_path = q.value("csv_path").toString();
-//         n->Log(QString("CSV path should be [%1]").arg(csv_path));
-//     }
-//     else
-//         n->Log(QString("No database record for batchID [%1]").arg(remoteImportBatchRowID));
-
-//     if (!QFile::exists(csv_path)) {
-//         n->Log(QString("CSV [%1] does not exist").arg(csv_path));
-//         return false;
-//     }
-
-//     /* check which type of csv we are parsing/inserting */
-//     if (csvFormat == "avicenna_survey") {
-//         qint64 numRows = ImportAvicennaCsvSurvey(remoteImportBatchRowID, remoteSurveyID, mapping, importUnmapped, csv_path);
-//         n->Log(QString("Inserted/updated [%1] rows from an Avicenna import").arg(numRows));
-//         return true;
-//     }
-//     else if (csvFormat == "avicenna_datasource") {
-//         n->Log(QString("CSV format [%1] not yet handled").arg(csvFormat));
-//     }
-//     else {
-//         n->Log(QString("CSV format [%1] unrecognized").arg(csvFormat));
-//         return false;
-//     }
-// }
-
-
-/* ---------------------------------------------------------- */
 /* --------- ImportAvicennaSurveyCSV ------------------------ */
 /* ---------------------------------------------------------- */
 qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID, int remoteSurveyID, const ImportMapping &mapping, bool importUnmapped) {
@@ -947,17 +899,21 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
             /* get the subjectRowID - this import function (for now) requires that the subject already exist and is enrolled in this project */
             int subjectRowID(0);
             int enrollmentRowID(0);
-            q.prepare("select a.subject_id, b.enrollment_id from subject_altuid a left join enrollment b on a.subject_id = b.subject_id where a.altuid = :altid and b.project_id = :projectid");
+            QString uid;
+            q.prepare("select a.subject_id, b.enrollment_id, c.uid from subject_altuid a left join enrollment b on a.subject_id = b.subject_id left join subjects c on a.subject_id = c.subject_id where a.altuid = :altid and b.project_id = :projectid");
             q.bindValue(":altid", avicennaID);
             q.bindValue(":projectid", projectRowID);
             n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
             if (q.size() > 0) {
                 q.first();
+                uid = q.value("uid").toString();
                 subjectRowID = q.value("subject_id").toInt();
                 enrollmentRowID = q.value("enrollment_id").toInt();
+                n->Log(QString("Avicenna subject [%1] found --> %2").arg(avicennaID).arg(uid));
             }
             else {
-                n->Log(QString("Subject ID [%1] not found").arg(avicennaID));
+                QString m = n->Log(QString("Avicenna subject [%1] not found").arg(avicennaID));
+                RemoteImportLog(remoteImportBatchRowID, RemoteImportLogEvent::ImportSubject, m, EventResult::Error);
                 continue;
             }
 
@@ -1069,10 +1025,10 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
                     if (value.startsWith("response-files/")) {
                         /* make the file path */
                         QString imagepath = QString("%1/%2").arg(zipdir).arg(value);
-                        n->Log(QString("Found image file [%1]").arg(imagepath));
-                        n->Log(QString("Before resizing [%1] bytes").arg(QFileInfo(imagepath).size()));
+                        //n->Log(QString("Found image file [%1]").arg(imagepath));
+                        //n->Log(QString("Before resizing [%1] bytes").arg(QFileInfo(imagepath).size()));
                         resizeImageFile(imagepath);
-                        n->Log(QString("After resizing [%1] bytes").arg(QFileInfo(imagepath).size()));
+                        //n->Log(QString("After resizing [%1] bytes").arg(QFileInfo(imagepath).size()));
                         obs.SaveFile(imagepath);
                     }
 
@@ -1087,18 +1043,28 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
             }
             /* ---- import ONLY the mapped columns ---- */
             else {
-                n->Log("Importing ONLY mapped columns");
+                n->Debug("Importing ONLY mapped columns");
                 /* iterate through the mapping, then check if the column exists */
                 for (const RemoteImportMapping &m : mapping.mappings) {
-                    if (m.sourceType != "avicenna") continue;
+
+                    if (m.sourceType != "avicenna") {
+                        //n->Log(QString("Skipping sourceType: %1").arg(m.sourceType));
+                        continue;
+                    }
+                    if (m.avicenna.survey != remoteSurveyID) {
+                        //n->Log(QString("Skipping surveyID: %1").arg(m.avicenna.survey));
+                        continue;
+                    }
 
                     /* check if column is mapped */
-                    QString avicennaVariable = m.avicenna.variable.toLower();
+                    QString avicennaVariable = m.avicenna.variable.toLower().trimmed();
+                    //n->Log(QString("Original mapping variable [%1] --> lowercase [%2]").arg(m.avicenna.variable).arg(avicennaVariable));
+
                     if (columns.contains(avicennaVariable)) {
                         //n->Log(QString("Column [%1] is mapped").arg(avicennaVariable));
                     }
                     else {
-                        //n->Log(QString("Column [%1] is not mapped for this survey").arg(avicennaVariable));
+                        n->Log(QString("Column list does not contain [%1] - this variable is not mapped").arg(avicennaVariable));
                         continue;
                     }
 
@@ -1178,16 +1144,16 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
                     if (value.startsWith("response-files/")) {
                         /* make the file path */
                         QString imagepath = QString("%1/%2").arg(zipdir).arg(value);
-                        n->Log(QString("Found image file [%1]").arg(imagepath));
-                        n->Log(QString("Before resizing [%1] bytes").arg(QFileInfo(imagepath).size()));
+                        //n->Log(QString("Found image file [%1]").arg(imagepath));
+                        //n->Log(QString("Before resizing [%1] bytes").arg(QFileInfo(imagepath).size()));
                         resizeImageFile(imagepath);
-                        n->Log(QString("After resizing [%1] bytes").arg(QFileInfo(imagepath).size()));
+                        //n->Log(QString("After resizing [%1] bytes").arg(QFileInfo(imagepath).size()));
                         obs.SaveFile(imagepath);
                     }
 
                     /* add the observation to the database */
                     if (obs.AddToDatabase()) {
-                        n->Log(QString("Inserted/updated  Avicenna (%1, %2) --> NiDB (%3, %4)  =  %5").arg(m.avicenna.survey).arg(obsName).arg(obs.linkedInstrumentName).arg(obs.linkedInstrumentItemName).arg(value));
+                        n->Debug(QString("Inserted/updated  Avicenna (%1, %2) --> NiDB (%3, %4)  =  %5").arg(m.avicenna.survey).arg(obsName).arg(obs.linkedInstrumentName).arg(obs.linkedInstrumentItemName).arg(value));
                         numRows++;
                     }
                     else {

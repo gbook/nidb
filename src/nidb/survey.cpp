@@ -118,8 +118,7 @@ void survey::PrintSurveyInfo() {
 /** @brief Inserts or updates this survey in the database.
  *  @return true on success, false if the insert failed or required fields are missing */
 bool survey::AddToDatabase() {
-    n->Log(QString("survey::AddToDatabase()  surveyRowID (%1)  dateStart (%2)")
-           .arg(surveyRowID).arg(dateStart.toUTC().toString("yyyy-MM-dd HH:mm:ss")));
+    //n->Log(QString("survey::AddToDatabase()  surveyRowID (%1)  dateStart (%2)").arg(surveyRowID).arg(dateStart.toUTC().toString("yyyy-MM-dd HH:mm:ss")));
 
     if (!dateStart.isValid() || dateStart.isNull())
         return false;

@@ -243,6 +243,8 @@ bool observation::PopulateLinkedInstrument() {
             linkedInstrumentItemOrder = q.value("item_order").toInt();
             linkedInstrumentItemNotes = q.value("item_notes").toString();
             linkedInstrumentItemType = q.value("item_type").toString();
+
+            observationInstrument = linkedInstrumentName;
             return true;
         }
     }
@@ -283,6 +285,16 @@ void observation::PrintObservationInfo() {
         output += QString("   fileContentType: [%1]\n").arg(fileContentType);
         output += QString("   fileSize: [%1]\n").arg(fileSize);
         output += QString("   fileDate: [%1]\n").arg(fileDate.toString());
+    }
+    if (hasLinkedInstrument) {
+        output += QString("   linkedInstrumentName: [%1]\n").arg(linkedInstrumentName);
+        output += QString("   linkedInstrumentNotes: [%1]\n").arg(linkedInstrumentNotes);
+    }
+    if (hasLinkedInstrumentItem) {
+        output += QString("   linkedInstrumentItemName: [%1]\n").arg(linkedInstrumentItemName);
+        output += QString("   linkedInstrumentItemNotes: [%1]\n").arg(linkedInstrumentItemNotes);
+        output += QString("   linkedInstrumentItemOrder: [%1]\n").arg(linkedInstrumentItemOrder);
+        output += QString("   linkedInstrumentItemType: [%1]\n").arg(linkedInstrumentItemType);
     }
 
     n->Log(output);
