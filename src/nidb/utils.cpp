@@ -1072,14 +1072,16 @@ QString WrapText(QString s, int col) {
  * @brief Parse a CSV string with a required header row into an indexed hash.
  *
  * This handles most Excel-compatible CSV formats, but it does not handle nested
- * quotes and requires at least one header row and one data row.
+ * quotes and requires at least one header row and one data row. Typographic single
+ * quotes ("smart quotes": ' ' ‛ ′ ´) are normalized to the ASCII apostrophe first.
  *
  * @note Performance: the indexedHash storage type (QHash<int, QHash<QString, QString>>)
- * hashes each column name string once per cell rather than once per column. For wide
- * files (500+ columns, 500+ rows) this results in hundreds of thousands of redundant
- * string hash operations. A future improvement would replace indexedHash with a
- * QVector<QVector<QString>> body plus a single QHash<QString,int> column-name-to-index
- * map built from the header row, reducing inner-loop access to a direct array index.
+ * still hashes each column name string once per cell when storing values. The row-index
+ * hash and inner-hash lookup are hoisted to once per row, but for wide files (500+
+ * columns, 500+ rows) the per-cell column-name hashing remains. A future improvement
+ * would replace indexedHash with a QVector<QVector<QString>> body plus a single
+ * QHash<QString,int> column-name-to-index map built from the header row, reducing
+ * inner-loop access to a direct array index.
  *
  * @param csv CSV content to parse.
  * @param table Receives parsed row and column values.
@@ -1092,8 +1094,24 @@ bool ParseCSV(QString csv, indexedHash &table, QStringList &columns, QString &ms
     QStringList m;
     bool ret(true);
 
-    /* get header row */
-    QStringList lines = csv.trimmed().split(QRegularExpression("[\\n\\r]"));
+    /* normalize typographic single quotes (Excel/Word "smart quotes") to the ASCII
+       apostrophe so downstream string comparisons against ' don't silently miss.
+       Only the single-quote family is folded; smart double quotes are left alone
+       because mapping them to " would make them act as CSV field delimiters. */
+    csv.replace(QChar(0x2018), '\'')   /* ' left single quotation mark  */
+       .replace(QChar(0x2019), '\'')   /* ' right single quotation mark */
+       .replace(QChar(0x201B), '\'')   /* ‛ single high-reversed-9      */
+       .replace(QChar(0x2032), '\'')   /* ′ prime                       */
+       .replace(QChar(0x00B4), '\'');  /* ´ acute accent                */
+
+    /* normalize all line endings (CRLF, lone CR) to LF so the rows can be split on a
+       single character below */
+    csv.replace('\r', '\n');
+
+    /* Split into lines. A plain-char split skips the regex engine, and Qt::SkipEmptyParts
+       drops the empty element that CRLF (now "\n\n") would otherwise produce as well as
+       any intentional blank rows. */
+    QStringList lines = csv.trimmed().split('\n', Qt::SkipEmptyParts);
 
     if (lines.size() > 1) {
         QString header = lines.takeFirst();
@@ -1113,18 +1131,25 @@ bool ParseCSV(QString csv, indexedHash &table, QStringList &columns, QString &ms
         qint64 numcols = cols.size();
 
         int row = 0;
+        QString buffer;
+        buffer.reserve(256);
         for (const QString &line : lines) {
-            QString buffer;
-            buffer.reserve(256);
+            /* Bind the row's hash lazily on the first non-empty cell: this hoists the
+               per-cell re-hash of the row index and inner-hash lookup out of the loop,
+               while preserving the original behavior of not creating a table entry for
+               a row that has no values at all. */
+            QHash<QString, QString> *rowData = nullptr;
+            buffer.clear();
             int col = 0;
             bool inQuotes = false;
-            for (int i=0; i<line.size(); i++) {
+            const int len = line.size();
+            for (int i=0; i<len; i++) {
                 QChar c = line.at(i);
 
                 if (c == '"') {
                     if (inQuotes) {
                         /* peek ahead: "" is an escaped quote, not a closing quote */
-                        if ((i + 1 < line.size()) && (line.at(i + 1) == '"')) {
+                        if ((i + 1 < len) && (line.at(i + 1) == '"')) {
                             buffer += '"';
                             i++;
                         }
@@ -1138,8 +1163,10 @@ bool ParseCSV(QString csv, indexedHash &table, QStringList &columns, QString &ms
                 }
                 else if ((c == ',') && (!inQuotes)) {
                     QString val = buffer.trimmed();
-                    if (!val.isEmpty())
-                        table[row][cols[col]] = val;
+                    if (!val.isEmpty()) {
+                        if (!rowData) rowData = &table[row];
+                        (*rowData)[cols[col]] = val;
+                    }
                     buffer.clear();
                     col++;
                 }
@@ -1149,9 +1176,10 @@ bool ParseCSV(QString csv, indexedHash &table, QStringList &columns, QString &ms
             }
             /* acquire the last column */
             QString lastVal = buffer.trimmed();
-            if (!lastVal.isEmpty())
-                table[row][cols[col]] = lastVal;
-            buffer.clear();
+            if (!lastVal.isEmpty()) {
+                if (!rowData) rowData = &table[row];
+                (*rowData)[cols[col]] = lastVal;
+            }
 
             if ((col+1) != numcols) {
                 m << QString("Error: row [%1] has [%2] columns, but expecting [%3] columns").arg(row+1).arg(col+1).arg(numcols);

@@ -1064,7 +1064,8 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
                         //n->Log(QString("Column [%1] is mapped").arg(avicennaVariable));
                     }
                     else {
-                        n->Log(QString("Column list does not contain [%1] - this variable is not mapped").arg(avicennaVariable));
+                        QString msg = n->Log(QString("Column list does not contain [%1] - this variable is not mapped").arg(avicennaVariable));
+                        RemoteImportLog(remoteImportBatchRowID, RemoteImportLogEvent::ImportObservation, msg, EventResult::Error);
                         continue;
                     }
 
