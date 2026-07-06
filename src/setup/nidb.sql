@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jun 30, 2026 at 07:38 PM
+-- Generation Time: Jul 06, 2026 at 02:55 PM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -1463,7 +1463,7 @@ CREATE TABLE `instrument_items` (
   `item_name` varchar(255) NOT NULL,
   `item_order` int(11) NOT NULL DEFAULT 0,
   `item_notes` text DEFAULT NULL,
-  `item_type` enum('enum','int','double','string','timeseries','image','csv') NOT NULL DEFAULT 'string'
+  `item_type` enum('enum','int','double','string','timeseries','image','csv','json','datetime','') NOT NULL DEFAULT 'string'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
@@ -1965,7 +1965,7 @@ CREATE TABLE `observations` (
   `observation_desc` varchar(250) DEFAULT NULL,
   `observation_rater` varchar(50) DEFAULT NULL,
   `observation_value` text NOT NULL,
-  `observation_fileid` int(11) DEFAULT NULL,
+  `observation_fileid` int(11) DEFAULT NULL COMMENT 'fileRowID for item types: image, csv',
   `observation_startdate` datetime DEFAULT '0000-00-00 00:00:00' COMMENT 'Stored as UTC',
   `observation_enddate` datetime DEFAULT NULL,
   `observation_tz_offset` varchar(6) DEFAULT NULL,
@@ -2810,7 +2810,7 @@ CREATE TABLE `remoteimport_batch` (
   `remote_exportid` int(11) DEFAULT NULL COMMENT 'avicenna provides an ID for each of their exports',
   `start_date` datetime DEFAULT NULL COMMENT 'Datetime the batch started',
   `end_date` datetime DEFAULT NULL COMMENT 'Datetime the batch finished',
-  `status` enum('started','running','complete','waiting','pending','error') NOT NULL COMMENT 'Status of this batch',
+  `status` enum('started','running','complete','waiting','pending','error','cancelled') NOT NULL COMMENT 'Status of this batch',
   `next_state` enum('run','pause','terminate','') NOT NULL COMMENT 'The next state of this batch import. The default is blank, which allows scheduled imports to run normally. ''run'' allows an ondemand import to start',
   `datafile_path` text DEFAULT NULL COMMENT 'If the remote_import type is *csv, then this will be populated when creating a new remote import batch'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
@@ -2843,7 +2843,7 @@ CREATE TABLE `remoteimport_mapping` (
   `avicenna_survey` int(11) DEFAULT NULL COMMENT 'survey ID',
   `avicenna_question` int(11) DEFAULT NULL COMMENT 'Avicenna question number',
   `avicenna_variable` varchar(255) DEFAULT NULL COMMENT 'Avicenna variable name',
-  `avicenna_datatype` enum('number','datetime','text','image','csv') DEFAULT NULL,
+  `avicenna_datatype` enum('enum','int','double','string','timeseries','image','csv','json','datetime','') DEFAULT NULL,
   `avicenna_variablecount` varchar(255) DEFAULT NULL COMMENT 'The number of options for this variable. var_1, var_2, etc',
   `redcap_arm` tinytext DEFAULT NULL COMMENT 'Redcap arm',
   `redcap_event` tinytext DEFAULT NULL COMMENT 'Redcap event (baseline, month 3, etc)',
@@ -2892,7 +2892,6 @@ CREATE TABLE `remote_imports` (
   `remote_username` varchar(255) DEFAULT NULL,
   `remote_projectid` int(11) DEFAULT NULL,
   `remote_surveyid` int(11) DEFAULT NULL COMMENT 'Avicenna survey ID',
-  `csv_format` enum('nidb','avicenna_survey','avicenn_datasource') DEFAULT NULL,
   `flag_import_unmapped` tinyint(1) DEFAULT NULL,
   `import_schedule` enum('ondemand','hourly','daily','weekly','monthly','') DEFAULT NULL,
   `import_time` int(11) NOT NULL DEFAULT 0 COMMENT 'Hour of the day, 0 to 23',

@@ -51,7 +51,7 @@
 
 	switch ($action) {
 		case 'bulkaddavicenna':
-			BulkAddAvicenna((int)$projectid, GetVariable("csvtext"));
+			BulkAddAvicenna((int)$projectid, GetVariable("csvtext"), GetVariable("createinstruments") != "");
 			break;
 		default:
 			DisplayMappingList((int)$projectid);
@@ -80,7 +80,7 @@
 	/* --------------------------------------------------- */
 	/* ------- BulkAddAvicenna -------------------------- */
 	/* --------------------------------------------------- */
-	function BulkAddAvicenna($projectid, $csvtext) {
+	function BulkAddAvicenna($projectid, $csvtext, $createInstruments = false) {
 		$csvtext = trim($csvtext);
 		if ($csvtext === '') {
 			Error("No CSV data provided");
@@ -119,7 +119,7 @@
 			$avicennaQuestion = trim($values[$colIdx['avicennaquestion']] ?? '');
 			$avicennaVariable = trim($values[$colIdx['avicennavariable']] ?? '');
 			$avicennaSurvey   = trim($values[$colIdx['avicennasurvey']]   ?? '');
-			$avicennaDatatype = trim($values[$colIdx['avicennadatatype']] ?? '');
+			$avicennaDatatype = strtolower(trim($values[$colIdx['avicennadatatype']] ?? ''));
 			$nidbInstrument   = trim($values[$colIdx['nidbinstrument']] ?? '');
 			$nidbVariable     = trim($values[$colIdx['nidbvariable']] ?? '');
 			$importMetaRaw    = isset($colIdx['importmeta'])            ? trim($values[$colIdx['importmeta']] ?? '') : '';
@@ -148,9 +148,23 @@
 				$results[] = $result;
 				continue;
 			}
+			// avicennadatatype is validated case-insensitively (normalized to lowercase above)
+			if (!in_array($avicennaDatatype, ['enum','int','double','string','timeseries','image','csv','json','datetime'], true)) {
+				$result['status']  = 'error';
+				$result['message'] = "avicennadatatype must be one of enum, int, double, string, timeseries, image, csv, json, datetime (got \"$avicennaDatatype\")";
+				$results[] = $result;
+				continue;
+			}
 			if ($avicennaQuestion === '' && $avicennaVariable === '') {
 				$result['status']  = 'error';
 				$result['message'] = 'avicennaquestion or avicennavariable must be provided';
+				$results[] = $result;
+				continue;
+			}
+			// A blank avicennaquestion is stored as NULL, but a non-blank value must be a positive integer
+			if ($avicennaQuestion !== '' && (!ctype_digit($avicennaQuestion) || (int)$avicennaQuestion < 1)) {
+				$result['status']  = 'error';
+				$result['message'] = "avicennaquestion must be a positive integer or blank (got \"$avicennaQuestion\")";
 				$results[] = $result;
 				continue;
 			}
@@ -167,6 +181,10 @@
 				continue;
 			}
 
+			// item_type for created/updated instrument_items — shares the (already-validated) enum with avicenna_datatype
+			$itemType = $avicennaDatatype;
+			$notes    = array();
+
 			// Look up instrument by name within this project
 			$stmt = mysqli_prepare($GLOBALS['linki'], "SELECT instrument_id FROM instruments WHERE project_id = ? AND instrument_name = ?");
 			mysqli_stmt_bind_param($stmt, 'is', $projectid, $nidbInstrument);
@@ -175,21 +193,32 @@
 			mysqli_stmt_close($stmt);
 
 			if (!$instrRow) {
-				// Fetch all instrument names for this project to suggest the closest match
-				$stmt2 = mysqli_prepare($GLOBALS['linki'], "SELECT instrument_name FROM instruments WHERE project_id = ?");
-				mysqli_stmt_bind_param($stmt2, 'i', $projectid);
-				$r2 = MySQLiBoundQuery($stmt2, __FILE__, __LINE__);
-				$allInstruments = [];
-				while ($row2 = mysqli_fetch_array($r2, MYSQLI_ASSOC)) $allInstruments[] = $row2['instrument_name'];
-				mysqli_stmt_close($stmt2);
-				$suggestion = ClosestMatch($nidbInstrument, $allInstruments);
-				$result['status']  = 'error';
-				$result['message'] = "Instrument not found: \"$nidbInstrument\""
-				                   . ($suggestion !== null ? "; did you mean \"$suggestion\"?" : '');
-				$results[] = $result;
-				continue;
+				if ($createInstruments) {
+					// Create the instrument (notes left blank)
+					$stmt = mysqli_prepare($GLOBALS['linki'], "INSERT INTO instruments (project_id, instrument_name) VALUES (?, ?)");
+					mysqli_stmt_bind_param($stmt, 'is', $projectid, $nidbInstrument);
+					MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+					$instrumentId = mysqli_insert_id($GLOBALS['linki']);
+					mysqli_stmt_close($stmt);
+					$notes[] = "created instrument \"$nidbInstrument\"";
+				} else {
+					// Fetch all instrument names for this project to suggest the closest match
+					$stmt2 = mysqli_prepare($GLOBALS['linki'], "SELECT instrument_name FROM instruments WHERE project_id = ?");
+					mysqli_stmt_bind_param($stmt2, 'i', $projectid);
+					$r2 = MySQLiBoundQuery($stmt2, __FILE__, __LINE__);
+					$allInstruments = [];
+					while ($row2 = mysqli_fetch_array($r2, MYSQLI_ASSOC)) $allInstruments[] = $row2['instrument_name'];
+					mysqli_stmt_close($stmt2);
+					$suggestion = ClosestMatch($nidbInstrument, $allInstruments);
+					$result['status']  = 'error';
+					$result['message'] = "Instrument not found: \"$nidbInstrument\""
+					                   . ($suggestion !== null ? "; did you mean \"$suggestion\"?" : '');
+					$results[] = $result;
+					continue;
+				}
+			} else {
+				$instrumentId = (int)$instrRow['instrument_id'];
 			}
-			$instrumentId = (int)$instrRow['instrument_id'];
 
 			// Look up variable by name within that instrument
 			$stmt = mysqli_prepare($GLOBALS['linki'], "SELECT instrumentitem_id FROM instrument_items WHERE instrument_id = ? AND item_name = ?");
@@ -199,23 +228,49 @@
 			mysqli_stmt_close($stmt);
 
 			if (!$varRow) {
-				// Fetch all variable names for this instrument to suggest the closest match
-				$stmt2 = mysqli_prepare($GLOBALS['linki'], "SELECT item_name FROM instrument_items WHERE instrument_id = ?");
-				mysqli_stmt_bind_param($stmt2, 'i', $instrumentId);
-				$r2 = MySQLiBoundQuery($stmt2, __FILE__, __LINE__);
-				$allVars = [];
-				while ($row2 = mysqli_fetch_array($r2, MYSQLI_ASSOC)) $allVars[] = $row2['item_name'];
-				mysqli_stmt_close($stmt2);
-				$suggestion = ClosestMatch($nidbVariable, $allVars);
-				$result['status']  = 'error';
-				$result['message'] = "Variable not found: \"$nidbVariable\" in instrument \"$nidbInstrument\""
-				                   . ($suggestion !== null ? "; did you mean \"$suggestion\"?" : '');
-				$results[] = $result;
-				continue;
-			}
-			$variableId = (int)$varRow['instrumentitem_id'];
+				if ($createInstruments) {
+					// Create the instrument item, appending to the end of the item order (notes left blank)
+					$stmt = mysqli_prepare($GLOBALS['linki'], "SELECT COALESCE(MAX(item_order), -1) + 1 AS next_order FROM instrument_items WHERE instrument_id = ?");
+					mysqli_stmt_bind_param($stmt, 'i', $instrumentId);
+					$r = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+					$ordRow = mysqli_fetch_array($r, MYSQLI_ASSOC);
+					mysqli_stmt_close($stmt);
+					$nextOrder = (int)$ordRow['next_order'];
 
-			$avicennaQuestionVal      = is_numeric($avicennaQuestion) ? (int)$avicennaQuestion : null;
+					$stmt = mysqli_prepare($GLOBALS['linki'], "INSERT INTO instrument_items (instrument_id, item_name, item_order, item_type) VALUES (?, ?, ?, ?)");
+					mysqli_stmt_bind_param($stmt, 'isis', $instrumentId, $nidbVariable, $nextOrder, $itemType);
+					MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+					$variableId = mysqli_insert_id($GLOBALS['linki']);
+					mysqli_stmt_close($stmt);
+					$notes[] = "created variable \"$nidbVariable\" ($itemType)";
+				} else {
+					// Fetch all variable names for this instrument to suggest the closest match
+					$stmt2 = mysqli_prepare($GLOBALS['linki'], "SELECT item_name FROM instrument_items WHERE instrument_id = ?");
+					mysqli_stmt_bind_param($stmt2, 'i', $instrumentId);
+					$r2 = MySQLiBoundQuery($stmt2, __FILE__, __LINE__);
+					$allVars = [];
+					while ($row2 = mysqli_fetch_array($r2, MYSQLI_ASSOC)) $allVars[] = $row2['item_name'];
+					mysqli_stmt_close($stmt2);
+					$suggestion = ClosestMatch($nidbVariable, $allVars);
+					$result['status']  = 'error';
+					$result['message'] = "Variable not found: \"$nidbVariable\" in instrument \"$nidbInstrument\""
+					                   . ($suggestion !== null ? "; did you mean \"$suggestion\"?" : '');
+					$results[] = $result;
+					continue;
+				}
+			} else {
+				$variableId = (int)$varRow['instrumentitem_id'];
+				if ($createInstruments) {
+					// Update the existing item's datatype to match the mapping
+					$stmt = mysqli_prepare($GLOBALS['linki'], "UPDATE instrument_items SET item_type = ? WHERE instrumentitem_id = ?");
+					mysqli_stmt_bind_param($stmt, 'si', $itemType, $variableId);
+					MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+					mysqli_stmt_close($stmt);
+					$notes[] = "updated variable \"$nidbVariable\" ($itemType)";
+				}
+			}
+
+			$avicennaQuestionVal      = $avicennaQuestion !== '' ? (int)$avicennaQuestion : null;
 			$avicennaVariableVal      = $avicennaVariable !== '' ? $avicennaVariable : null;
 			$avicennaSurveyVal        = $avicennaSurvey   !== '' ? $avicennaSurvey   : null;
 			$avicennaDataTypeVal      = $avicennaDatatype !== '' ? $avicennaDatatype : null;
@@ -249,6 +304,8 @@
 				mysqli_stmt_close($stmt);
 				$result['status'] = 'added';
 			}
+
+			if (!empty($notes)) $result['message'] = implode('; ', $notes);
 
 			$results[] = $result;
 		}
@@ -287,8 +344,10 @@
 					<td>
 						<?php if ($res['status'] === 'added') { ?>
 							<span class="ui tiny green label"><i class="plus icon"></i> added</span>
+							<?php if ($res['message']) { ?> <span style="color:#666"><?= htmlspecialchars($res['message']) ?></span><?php } ?>
 						<?php } elseif ($res['status'] === 'updated') { ?>
 							<span class="ui tiny blue label"><i class="check icon"></i> updated</span>
+							<?php if ($res['message']) { ?> <span style="color:#666"><?= htmlspecialchars($res['message']) ?></span><?php } ?>
 						<?php } else { ?>
 							<span class="ui tiny red label"><i class="exclamation icon"></i> error</span>
 							<?php if ($res['message']) { ?> <?= htmlspecialchars($res['message']) ?><?php } ?>
@@ -304,8 +363,10 @@
 			<form method="POST" action="remoteimportmapping.php">
 				<input type="hidden" name="action" value="bulkaddavicenna">
 				<input type="hidden" name="projectid" value="<?= $projectid ?>">
+				<?php if ($createInstruments) { ?><input type="hidden" name="createinstruments" value="1"><?php } ?>
 				<textarea name="csvtext" rows="12"
 				          style="font-family:monospace;font-size:0.85em;width:100%;margin-bottom:0.5em"><?= htmlspecialchars($csvtext) ?></textarea>
+				<label style="display:block;margin-bottom:0.5em"><input type="checkbox" disabled <?= $createInstruments ? 'checked' : '' ?>> Create/update instruments <?= $createInstruments ? '(on)' : '(off)' ?></label>
 				<button type="submit" class="ui primary button"><i class="upload icon"></i> Import</button>
 			</form>
 		</div>
@@ -595,6 +656,7 @@
 				<form id="bulkForm" method="POST" action="remoteimportmapping.php">
 					<input type="hidden" name="action" value="bulkaddavicenna">
 					<input type="hidden" name="projectid" value="<?= $projectid ?>">
+					<input type="hidden" name="createinstruments" id="bulkCreateInstrumentsHidden" value="">
 					<div class="ui form">
 						<div class="field">
 							<label>Paste CSV below</label>
@@ -605,12 +667,22 @@
 								<li>Optional columns: <code>avicennaquestion, importmeta</code>. <code>importmeta</code> should be <code>1</code> to import metadata, <code>0</code> to not import. Default is <code>1</code>.
 								<li>Columns may be in any order. Values may contain spaces.
 								<li>During import, <code>avicennavariable</code> will be matched first. If it not found, then <code>avicennaquestion</code> will be matched.
-								<li>Valid values for <code>avicennadatatype</code>: <code>number, datetime, text, image, csv</code>.
+								<li><code>avicennaquestion</code>, if provided, must be a positive integer. Blank values are stored as NULL.
+								<li>Valid values for <code>avicennadatatype</code>: <code>enum, int, double, string, timeseries, image, csv, json, datetime</code>.
 								</ul>
 							</p>
 							<textarea name="csvtext" id="bulkCsvText" rows="12"
 							          style="font-family:monospace;font-size:0.85em;width:100%"
 							          placeholder="avicennasurvey,avicennavariable,avicennadatatype,avicennaquestion,nidbinstrument,nidbvariable,importmeta"></textarea>
+						</div>
+						<div class="field">
+							<div class="ui checkbox">
+								<input type="checkbox" id="bulkCreateInstruments" value="1">
+								<label>Create/update instruments</label>
+							</div>
+							<div style="color:#666;font-size:0.85em;margin-top:0.25em">
+								When checked, missing instruments and instrument items are created (rather than reported as errors), and the item's datatype (<code>item_type</code>) is set/updated from <code>avicennadatatype</code>.
+							</div>
 						</div>
 					</div>
 					<div id="bulkValidationErrors" style="display:none;margin-top:0.75em">
@@ -1040,7 +1112,7 @@
 		}
 
 		function validateBulkCSV() {
-			const VALID_DATATYPES = ['number', 'datetime', 'text', 'image', 'csv'];
+			const VALID_DATATYPES = ['enum', 'int', 'double', 'string', 'timeseries', 'image', 'csv', 'json', 'datetime'];
 			const REQUIRED_COLS   = ['avicennasurvey', 'avicennavariable', 'avicennadatatype', 'nidbinstrument', 'nidbvariable'];
 
 			const raw    = document.getElementById('bulkCsvText').value.trim();
@@ -1070,9 +1142,10 @@
 			const dtIdx   = header.indexOf('avicennadatatype');
 			const instIdx = header.indexOf('nidbinstrument');
 			const varIdx  = header.indexOf('nidbvariable');
+			const qIdx    = header.indexOf('avicennaquestion');
 
 			// Check data rows
-			let blankRows = [], unevenRows = [], badDatatypes = [], blankInst = [], blankVar = [];
+			let blankRows = [], unevenRows = [], badDatatypes = [], blankInst = [], blankVar = [], badQuestions = [];
 
 			lines.slice(1).forEach((line, i) => {
 				const rowNum = i + 2;
@@ -1103,13 +1176,22 @@
 				if (varIdx >= 0 && (!cols[varIdx] || cols[varIdx].trim() === '')) {
 					blankVar.push(rowNum);
 				}
+
+				// avicennaquestion, if provided, must be a positive integer (blank is allowed and stored as NULL)
+				if (qIdx >= 0 && cols[qIdx] !== undefined) {
+					const q = cols[qIdx].trim();
+					if (q !== '' && (!/^\d+$/.test(q) || parseInt(q, 10) < 1)) {
+						badQuestions.push('row ' + rowNum + ': "' + q + '"');
+					}
+				}
 			});
 
 			if (blankRows.length)    errors.push('Blank row' + (blankRows.length > 1 ? 's' : '') + ' found (will be skipped): ' + blankRows.join(', ') + '.');
 			if (unevenRows.length)   errors.push('Column count mismatch in ' + unevenRows.join('; ') + '.');
-			if (badDatatypes.length) errors.push('Invalid avicennadatatype (must be number, datetime, text, image, or csv) in ' + badDatatypes.join('; ') + '.');
+			if (badDatatypes.length) errors.push('Invalid avicennadatatype (must be enum, int, double, string, timeseries, image, csv, json, or datetime) in ' + badDatatypes.join('; ') + '.');
 			if (blankInst.length)    errors.push('Missing nidbinstrument in row' + (blankInst.length > 1 ? 's' : '') + ': ' + blankInst.join(', ') + '.');
 			if (blankVar.length)     errors.push('Missing nidbvariable in row' + (blankVar.length > 1 ? 's' : '') + ': ' + blankVar.join(', ') + '.');
+			if (badQuestions.length) errors.push('Invalid avicennaquestion (must be a positive integer or blank) in ' + badQuestions.join('; ') + '.');
 
 			return errors;
 		}
@@ -1138,6 +1220,9 @@
 			errDiv.style.display = errors.length ? 'block' : 'none';
 
 			if (warnings.length === 0 || confirm(warnings.join('\n') + '\n\nContinue anyway?')) {
+				// Sync the (UI-only) checkbox state into the hidden field that actually gets POSTed
+				document.getElementById('bulkCreateInstrumentsHidden').value =
+					document.getElementById('bulkCreateInstruments').checked ? '1' : '';
 				document.getElementById('bulkForm').submit();
 			}
 		}
