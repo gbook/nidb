@@ -333,6 +333,9 @@
 	</script>
 	
 	<div class="right menu">
+		<a class="item" href="asteroids.php" style="padding-top:0; padding-bottom:0; align-items:flex-end">
+			<img src="images/squirrel-pixel-16.svg" alt="" style="height:66%; width:auto; margin:0; display:block">
+		</a>
 		<div class="vertically fitted item">
 			<div class="ui search">
 				<div class="ui left icon input">
