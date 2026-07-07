@@ -79,6 +79,10 @@ void survey::LoadSurveyInfo() {
             dateEnd         = q.value("survey_enddate").toDateTime();
             dateEntry       = q.value("survey_entrydate").toDateTime();
             dateStart       = q.value("survey_startdate").toDateTime();
+            dateOpen        = q.value("survey_opentime").toDateTime();
+            datePrompt      = q.value("survey_prompttime").toDateTime();
+            dateRecord      = q.value("survey_recordtime").toDateTime();
+            dateExpiry      = q.value("survey_expirytime").toDateTime();
             experimenter    = q.value("survey_experimenter").toString();
             instrumentRowID = q.value("instrument_id").toInt();
             notes           = q.value("survey_notes").toString();
@@ -101,6 +105,10 @@ void survey::PrintSurveyInfo() {
     output += QString("   dateEnd: [%1]\n").arg(dateEnd.toString());
     output += QString("   dateEntry: [%1]\n").arg(dateEntry.toString());
     output += QString("   dateStart: [%1]\n").arg(dateStart.toString());
+    output += QString("   dateOpen: [%1]\n").arg(dateOpen.toString());
+    output += QString("   datePrompt: [%1]\n").arg(datePrompt.toString());
+    output += QString("   dateRecord: [%1]\n").arg(dateRecord.toString());
+    output += QString("   dateExpiry: [%1]\n").arg(dateExpiry.toString());
     output += QString("   experimenter: [%1]\n").arg(experimenter);
     output += QString("   instrumentRowID: [%1]\n").arg(instrumentRowID);
     output += QString("   notes: [%1]\n").arg(notes);
@@ -127,11 +135,15 @@ bool survey::AddToDatabase() {
 
     if (surveyRowID > 0) {
         n->Log(QString("  updating surveyRowID [%1]").arg(surveyRowID));
-        q.prepare("update observation_surveys set instrument_id = :instrumentid, survey_startdate = :startdate, survey_enddate = :enddate, survey_notes = :notes, survey_visit = :visit, survey_experimenter = :experimenter, survey_rater = :rater where survey_id = :surveyid");
+        q.prepare("update observation_surveys set instrument_id = :instrumentid, survey_startdate = :startdate, survey_enddate = :enddate, survey_opentime = :opentime, survey_prompttime = :prompttime, survey_recordtime = :recordtime, survey_expirytime = :expirytime, survey_notes = :notes, survey_visit = :visit, survey_experimenter = :experimenter, survey_rater = :rater where survey_id = :surveyid");
         q.bindValue(":surveyid",      surveyRowID);
         q.bindValue(":instrumentid",  instrumentRowID > 0 ? QVariant(instrumentRowID) : QVariant(QMetaType::fromType<int>()));
         q.bindValue(":startdate",     dateStart.isValid()  ? QVariant(dateStart.toUTC().toString("yyyy-MM-dd HH:mm:ss"))  : QVariant(QMetaType::fromType<QString>()));
         q.bindValue(":enddate",       dateEnd.isValid()    ? QVariant(dateEnd.toUTC().toString("yyyy-MM-dd HH:mm:ss"))    : QVariant(QMetaType::fromType<QString>()));
+        q.bindValue(":opentime",      dateOpen.isValid()   ? QVariant(dateOpen.toUTC().toString("yyyy-MM-dd HH:mm:ss"))   : QVariant(QMetaType::fromType<QString>()));
+        q.bindValue(":prompttime",    datePrompt.isValid() ? QVariant(datePrompt.toUTC().toString("yyyy-MM-dd HH:mm:ss")) : QVariant(QMetaType::fromType<QString>()));
+        q.bindValue(":recordtime",    dateRecord.isValid() ? QVariant(dateRecord.toUTC().toString("yyyy-MM-dd HH:mm:ss")) : QVariant(QMetaType::fromType<QString>()));
+        q.bindValue(":expirytime",    dateExpiry.isValid() ? QVariant(dateExpiry.toUTC().toString("yyyy-MM-dd HH:mm:ss")) : QVariant(QMetaType::fromType<QString>()));
         q.bindValue(":notes",         notes);
         q.bindValue(":visit",         visit);
         q.bindValue(":experimenter",  experimenter);
@@ -141,10 +153,14 @@ bool survey::AddToDatabase() {
     }
     else {
         //n->Log("  inserting new survey row");
-        q.prepare("insert into observation_surveys (instrument_id, survey_startdate, survey_enddate, survey_notes, survey_visit, survey_experimenter, survey_rater, survey_entrydate) values (:instrumentid, :startdate, :enddate, :notes, :visit, :experimenter, :rater, :entrydate)");
+        q.prepare("insert into observation_surveys (instrument_id, survey_startdate, survey_enddate, survey_opentime, survey_prompttime, survey_recordtime, survey_expirytime, survey_notes, survey_visit, survey_experimenter, survey_rater, survey_entrydate) values (:instrumentid, :startdate, :enddate, :opentime, :prompttime, :recordtime, :expirytime, :notes, :visit, :experimenter, :rater, :entrydate)");
         q.bindValue(":instrumentid",  instrumentRowID > 0 ? QVariant(instrumentRowID) : QVariant(QMetaType::fromType<int>()));
         q.bindValue(":startdate",     dateStart.isValid()  ? QVariant(dateStart.toUTC().toString("yyyy-MM-dd HH:mm:ss"))  : QVariant(QMetaType::fromType<QString>()));
         q.bindValue(":enddate",       dateEnd.isValid()    ? QVariant(dateEnd.toUTC().toString("yyyy-MM-dd HH:mm:ss"))    : QVariant(QMetaType::fromType<QString>()));
+        q.bindValue(":opentime",      dateOpen.isValid()   ? QVariant(dateOpen.toUTC().toString("yyyy-MM-dd HH:mm:ss"))   : QVariant(QMetaType::fromType<QString>()));
+        q.bindValue(":prompttime",    datePrompt.isValid() ? QVariant(datePrompt.toUTC().toString("yyyy-MM-dd HH:mm:ss")) : QVariant(QMetaType::fromType<QString>()));
+        q.bindValue(":recordtime",    dateRecord.isValid() ? QVariant(dateRecord.toUTC().toString("yyyy-MM-dd HH:mm:ss")) : QVariant(QMetaType::fromType<QString>()));
+        q.bindValue(":expirytime",    dateExpiry.isValid() ? QVariant(dateExpiry.toUTC().toString("yyyy-MM-dd HH:mm:ss")) : QVariant(QMetaType::fromType<QString>()));
         q.bindValue(":notes",         notes);
         q.bindValue(":visit",         visit);
         q.bindValue(":experimenter",  experimenter);

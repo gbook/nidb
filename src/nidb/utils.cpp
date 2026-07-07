@@ -1764,9 +1764,9 @@ void flattenJSON(const QJsonObject &obj, QMap<QString, QString> &result, const Q
 
 
 /* ---------------------------------------------------------- */
-/* --------- resizeImageFile -------------------------------- */
+/* --------- ResizeImageFile -------------------------------- */
 /* ---------------------------------------------------------- */
-bool resizeImageFile(const QString &imagePath, int maxDimension)
+bool ResizeImageFile(const QString &imagePath, int maxDimension)
 {
     QImage image(imagePath);
     if (image.isNull())
@@ -1781,6 +1781,9 @@ bool resizeImageFile(const QString &imagePath, int maxDimension)
 }
 
 
+/* ---------------------------------------------------------- */
+/* --------- SafeDeletePath --------------------------------- */
+/* ---------------------------------------------------------- */
 // Deletes `path` (file, symlink, or directory) only if it resolves to a
 // location strictly inside `allowedRoot`. Both arguments must be absolute
 // paths. Rejects system directories and a missing target.

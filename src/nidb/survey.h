@@ -40,6 +40,10 @@ public:
     QDateTime dateEnd;
     QDateTime dateEntry;
     QDateTime dateStart;
+    QDateTime dateOpen;   /* Avicenna - Time when a survey opens */
+    QDateTime datePrompt; /* Avicenna - Time when a user is prompted to fill out the survey */
+    QDateTime dateRecord; /* Avicenna - may be the same as the end time, unless they didn't finish it... then it will be the end of the survey open-window time */
+    QDateTime dateExpiry; /* Avicenna - Time when the survey is no longer available */
     QString experimenter;
     QString notes;
     QString rater;

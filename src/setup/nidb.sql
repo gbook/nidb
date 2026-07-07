@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jul 06, 2026 at 02:55 PM
+-- Generation Time: Jul 07, 2026 at 06:25 PM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -1997,13 +1997,17 @@ CREATE TABLE `observation_meta` (
 CREATE TABLE `observation_surveys` (
   `survey_id` bigint(20) NOT NULL,
   `instrument_id` int(11) DEFAULT NULL,
-  `survey_startdate` datetime DEFAULT NULL,
+  `survey_startdate` datetime NOT NULL,
   `survey_enddate` datetime DEFAULT NULL,
   `survey_notes` text DEFAULT NULL,
   `survey_visit` text DEFAULT NULL,
   `survey_experimenter` text DEFAULT NULL,
   `survey_rater` text DEFAULT NULL,
-  `survey_entrydate` datetime DEFAULT NULL
+  `survey_entrydate` datetime DEFAULT NULL COMMENT 'Database entry date',
+  `survey_opentime` datetime DEFAULT NULL COMMENT 'Time when a survey opens',
+  `survey_prompttime` datetime DEFAULT NULL COMMENT 'Time when a user is prompted to fill out the survey',
+  `survey_recordtime` datetime DEFAULT NULL COMMENT 'may be the same as the end time, unless they didn''t finish it... then it will be the end of the survey open-window time',
+  `survey_expirytime` datetime DEFAULT NULL COMMENT 'Time when the survey is no longer available'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
@@ -2824,7 +2828,7 @@ CREATE TABLE `remoteimport_batch` (
 CREATE TABLE `remoteimport_logs` (
   `remoteimportlog_id` bigint(20) NOT NULL,
   `remoteimportbatch_id` bigint(11) NOT NULL,
-  `event` enum('ImportStart','ConnectionStart','ImportSubject','ImportStudy','ImportSeries','ImportPipeline','ImportAnalysis','ImportIntervention','ImportObservation','ConnectionEnd','ImportEnd') DEFAULT NULL,
+  `event` enum('ImportStart','ConnectionStart','ImportSubject','ImportStudy','ImportSeries','ImportPipeline','ImportAnalysis','ImportIntervention','ImportObservation','ConnectionEnd','ImportEnd','FileEvent') DEFAULT NULL,
   `result` enum('Success','Error','Warning','Neutral') NOT NULL DEFAULT 'Neutral',
   `message` text DEFAULT NULL,
   `event_date` timestamp NULL DEFAULT current_timestamp()

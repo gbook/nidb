@@ -130,7 +130,7 @@ void SortQStringListNaturally(QStringList &s);
 QString extractBracketContent(const QString &input);
 QString extractAfterBracket(const QString &input);
 void flattenJSON(const QJsonObject &obj, QMap<QString, QString> &result, const QString &prefix = "");
-bool resizeImageFile(const QString &imagePath, int maxDimension = 750);
+bool ResizeImageFile(const QString &imagePath, int maxDimension = 750);
 
 double GetPatientAge(QString PatientAgeStr, QString StudyDate, QString PatientBirthDate);
 

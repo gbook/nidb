@@ -888,15 +888,19 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
     QString m;
     if (ParseCSV(csvStr, table, columns, m)) {
 
-        n->Log("Columns in csv (" + columns.join(", ") + ")");
+        //n->Log("Columns in csv (" + columns.join(", ") + ")");
 
         /* iterate over the rows (each row is an entire survey entry) */
         for (int i=0; i<table.size(); i++) {
             /* get the participant ID, survey date */
             QString avicennaID = table[i]["participant id"];
+            QString tzOffset    = parseAvicennaTZ(table[i]["prompt time"]);
             QDateTime startTime = parseAvicennaDT(table[i]["prompt time"]);
             QDateTime endTime   = parseAvicennaDT(table[i]["record time"]);
-            QString tzOffset    = parseAvicennaTZ(table[i]["prompt time"]);
+            QDateTime openTime   = parseAvicennaDT(table[i]["session scheduled time"]);
+            QDateTime promptTime   = parseAvicennaDT(table[i]["prompt time"]);
+            QDateTime recordTime   = parseAvicennaDT(table[i]["record time"]);
+            QDateTime expiryTime   = parseAvicennaDT(table[i]["expiry time"]);
 
             int surveyRowID = -1;
 
@@ -936,19 +940,15 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
                     if (col.contains(" metadata"))
                         continue;
 
-                    //n->Log(QString("Importing question column [%1]").arg(col));
-
                     /* get column value */
                     QString value = table[i][col].trimmed();
                     if (value == "")
                         continue;
 
-                    //int surveyID;
                     int question(0);
                     QString variable = col;
                     int instrumentRowID(0);
                     int instrumentItemRowID(0);
-                    //bool hasMetadata(false);
 
                     /* check if the column contains brackets, if yes then it's a question number */
                     if (col.startsWith("[")) {
@@ -1007,12 +1007,12 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
                                 }
                             }
                             else {
-                                n->Log(QString("metadataCol [%1] does not exist").arg(metadataCol));
+                                //n->Log(QString("metadataCol [%1] does not exist").arg(metadataCol));
                             }
                         }
                     }
                     else {
-                        n->Log(QString("No mapping for Avicenna [%1, %2, %3] --> NiDB").arg(remoteSurveyID).arg(question).arg(variable));
+                        //n->Log(QString("No mapping for Avicenna [%1, %2, %3] --> NiDB").arg(remoteSurveyID).arg(question).arg(variable));
                     }
 
                     /* create the survey - only if there is at least one observation for this row */
@@ -1021,6 +1021,10 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
                         sur.n = n;
                         sur.dateStart = startTime;
                         sur.dateEnd = endTime;
+                        sur.dateOpen = openTime;
+                        sur.datePrompt = promptTime;
+                        sur.dateRecord = recordTime;
+                        sur.dateExpiry = expiryTime;
                         sur.AddToDatabase();
                         surveyRowID = sur.surveyRowID;
                     }
@@ -1029,10 +1033,7 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
                     if (value.startsWith("response-files/")) {
                         /* make the file path */
                         QString imagepath = QString("%1/%2").arg(zipdir).arg(value);
-                        //n->Log(QString("Found image file [%1]").arg(imagepath));
-                        //n->Log(QString("Before resizing [%1] bytes").arg(QFileInfo(imagepath).size()));
-                        resizeImageFile(imagepath);
-                        //n->Log(QString("After resizing [%1] bytes").arg(QFileInfo(imagepath).size()));
+                        ResizeImageFile(imagepath, 500);
                         obs.SaveFile(imagepath);
                     }
 
@@ -1052,7 +1053,7 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
                 for (const RemoteImportMapping &m : mapping.mappings) {
 
                     if (m.sourceType != "avicenna") {
-                        //n->Log(QString("Skipping sourceType: %1").arg(m.sourceType));
+                        n->Debug(QString("Skipping non-Avicenna source: %1").arg(m.sourceType));
                         continue;
                     }
                     if (m.avicenna.survey != remoteSurveyID) {
@@ -1082,8 +1083,6 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
                     QString obsName;
                     obsName = avicennaVariable;
 
-                    //n->Log(QString("obsName [%1]").arg(obsName));
-
                     /* create the observation */
                     observation obs;
                     obs.n = n;
@@ -1101,7 +1100,6 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
                     obs.PopulateLinkedInstrument();
 
                     if (m.flag.importMeta) {
-                        //n->Log("mapping.flag.importMeta = true");
 
                         QString col = avicennaVariable;
                         /* insert the metadata if it exists */
@@ -1141,6 +1139,10 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
                         sur.n = n;
                         sur.dateStart = startTime;
                         sur.dateEnd = endTime;
+                        sur.dateOpen = openTime;
+                        sur.datePrompt = promptTime;
+                        sur.dateRecord = recordTime;
+                        sur.dateExpiry = expiryTime;
                         sur.AddToDatabase();
                         surveyRowID = sur.surveyRowID;
                     }
@@ -1149,10 +1151,7 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
                     if (value.startsWith("response-files/")) {
                         /* make the file path */
                         QString imagepath = QString("%1/%2").arg(zipdir).arg(value);
-                        //n->Log(QString("Found image file [%1]").arg(imagepath));
-                        //n->Log(QString("Before resizing [%1] bytes").arg(QFileInfo(imagepath).size()));
-                        resizeImageFile(imagepath);
-                        //n->Log(QString("After resizing [%1] bytes").arg(QFileInfo(imagepath).size()));
+                        ResizeImageFile(imagepath, 500);
                         obs.SaveFile(imagepath);
                     }
 
@@ -1176,8 +1175,12 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
 
     /* delete the original path */
     QString m2;
-    if (!SafeDeletePath(pathToDelete, n->cfg["uploaddir"], m2))
-        n->Log(QString("Error deleteing [%1]. Message [%2]").arg(pathToDelete).arg(m2));
+    if (!SafeDeletePath(pathToDelete, n->cfg["uploaddir"], m2)) {
+        QString m3 = n->Log(QString("Error deleteing [%1]. Message [%2]").arg(pathToDelete).arg(m2));
+        RemoteImportLog(remoteImportBatchRowID, FileEvent, m3, Error);
+    }
+
+    RemoteImportLog(remoteImportBatchRowID, ImportObservation, QString("Added/updated %1 total observations").arg(numRows), Success);
 
     return numRows;
 }
