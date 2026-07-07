@@ -406,6 +406,8 @@ QString moduleRemoteImport::RemoteImportLogEventToString(RemoteImportLogEvent ev
             return "ConnectionEnd";
         case ConnectionStart:
             return "ConnectionStart";
+        case FileEvent:
+            return "FileEvent";
         case ImportAnalysis:
             return "ImportAnalysis";
         case ImportEnd:
@@ -856,6 +858,7 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
     }
 
     QString csv_path;
+    QString pathToDelete = csv_path;
     QString zipdir;
     /* determine if we need to unzip the file */
     if (datafile_path.endsWith(".zip", Qt::CaseInsensitive)) {
@@ -871,6 +874,7 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
         /* find first csv within the zipdir */
         QString m;
         NiDBFindFirstFile(zipdir, "*.csv", csv_path, m);
+        pathToDelete = datafile_path;
     }
     else {
         csv_path = datafile_path;
@@ -1166,8 +1170,14 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
         }
     }
     else {
+        RemoteImportLog(remoteImportBatchRowID, FileEvent, "Error parsing the csv", Error);
         return 0;
     }
+
+    /* delete the original path */
+    QString m2;
+    if (!SafeDeletePath(pathToDelete, n->cfg["uploaddir"], m2))
+        n->Log(QString("Error deleteing [%1]. Message [%2]").arg(pathToDelete).arg(m2));
 
     return numRows;
 }

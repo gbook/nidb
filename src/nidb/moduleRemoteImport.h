@@ -31,6 +31,7 @@
 enum RemoteImportLogEvent {
     ConnectionEnd,
     ConnectionStart,
+    FileEvent,
     ImportAnalysis,
     ImportEnd,
     ImportIntervention,

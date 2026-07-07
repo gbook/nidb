@@ -1779,3 +1779,92 @@ bool resizeImageFile(const QString &imagePath, int maxDimension)
 
     return resized.save(imagePath);
 }
+
+
+// Deletes `path` (file, symlink, or directory) only if it resolves to a
+// location strictly inside `allowedRoot`. Both arguments must be absolute
+// paths. Rejects system directories and a missing target.
+// Returns true on success; false if refused or failed.
+bool SafeDeletePath(const QString &path, const QString &allowedRoot, QString &m)
+{
+    // Require absolute paths so resolution never depends on the process's
+    // current working directory.
+    if (!QDir::isAbsolutePath(path) || !QDir::isAbsolutePath(allowedRoot)) {
+        m = "Both path and allowedRoot must be absolute paths";
+        return false;
+    }
+
+    // Canonicalize the root; must exist and be a real directory.
+    const QString root = QFileInfo(allowedRoot).canonicalFilePath();
+    if (root.isEmpty()) {
+        m = "Allowed root does not exist: " + allowedRoot;
+        return false;
+    }
+
+    // Resolve the *parent* canonically, then re-append the leaf name.
+    // This collapses any symlink-escape in the directory chain while leaving
+    // a leaf symlink intact, so we unlink the link rather than its target.
+    QFileInfo info(path);
+    const QString parent = QFileInfo(info.absolutePath()).canonicalFilePath();
+    if (parent.isEmpty()) {
+        m = "Parent directory does not exist: " + path;
+        return false;
+    }
+    const QString target = QDir(parent).absoluteFilePath(info.fileName());
+
+    // Containment: target must be strictly *below* root, never root itself.
+    QString rootPrefix = root;
+    if (!rootPrefix.endsWith(QLatin1Char('/')))
+        rootPrefix += QLatin1Char('/');
+    if (target == root || !target.startsWith(rootPrefix)) {
+        m = "Refusing to delete outside allowed root: " + target;
+        return false;
+    }
+
+    // Reject well-known system directories defensively, even if somehow
+    // reached inside the root (e.g. root itself is misconfigured).
+    static const QSet<QString> protectedPaths = {
+        QStringLiteral("/"),      QStringLiteral("/bin"),
+        QStringLiteral("/boot"),  QStringLiteral("/dev"),
+        QStringLiteral("/etc"),   QStringLiteral("/lib"),
+        QStringLiteral("/lib64"), QStringLiteral("/proc"),
+        QStringLiteral("/root"),  QStringLiteral("/run"),
+        QStringLiteral("/sbin"),  QStringLiteral("/sys"),
+        QStringLiteral("/usr"),   QStringLiteral("/var"),
+        QStringLiteral("/home"),  QDir::homePath(),
+    };
+    if (protectedPaths.contains(target) || protectedPaths.contains(root)) {
+        m = "Refusing to delete protected path: " + target;
+        return false;
+    }
+
+    // Require the target to actually exist.
+    // isSymLink() is OR'd in so a broken (dangling) symlink still counts as
+    // present and gets unlinked, rather than being rejected as missing.
+    QFileInfo t(target);
+    if (!t.exists() && !t.isSymLink()) {
+        m = "Target does not exist: " + target;
+        return false;
+    }
+
+    // Perform the delete. Symlink is checked first so a symlink to a
+    // directory is unlinked, not recursed into.
+    if (t.isSymLink() || t.isFile()) {
+        if (!QFile::remove(target)) {
+            m = "Failed to remove file: " + target;
+            return false;
+        }
+        return true;
+    }
+    if (t.isDir()) {
+        if (!QDir(target).removeRecursively()) {
+            m = "Failed to remove directory: " + target;
+            return false;
+        }
+        return true;
+    }
+
+    // Reached only for exotic types (socket, fifo, device node) inside root.
+    m = "Refusing to delete unsupported file type: " + target;
+    return false;
+}

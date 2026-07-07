@@ -814,7 +814,7 @@
 				</thead>
 				<tbody>
 					<?
-						$stmt = mysqli_prepare($GLOBALS['linki'], "select a.*, b.import_name, b.remote_type, b.remote_url, b.import_schedule, b.enabled, (select count(*) from observations where remotebatch_id = a.remoteimportbatch_id) as obs_count from remoteimport_batch a left join remote_imports b on a.remoteimport_id = b.remoteimport_id where b.project_id = ? order by a.remoteimportbatch_id desc");
+						$stmt = mysqli_prepare($GLOBALS['linki'], "select a.*, b.import_name, b.remote_type, b.remote_url, b.import_schedule, b.enabled, (select count(*) from observations where remotebatch_id = a.remoteimportbatch_id) as obs_count, (select count(*) from remoteimport_logs where remoteimportbatch_id = a.remoteimportbatch_id and result = 'Error') as error_count from remoteimport_batch a left join remote_imports b on a.remoteimport_id = b.remoteimport_id where b.project_id = ? order by a.remoteimportbatch_id desc");
 						mysqli_stmt_bind_param($stmt, 'i', $projectid);
 						$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -830,6 +830,7 @@
 							$importschedule = $row['import_schedule'];
 							$enabled = (int)$row['enabled'];
 							$obs_count = (int)$row['obs_count'];
+							$error_count = (int)$row['error_count'];
 							$importname_display = ($importname == "") ? "-" : $importname;
 							$startdate_display = ($startdate == "") ? "-" : $startdate;
 							$enddate_display = ($enddate == "") ? "-" : $enddate;
@@ -884,7 +885,12 @@
 								</div>
 							</div>
 						</td>
-						<td><a href="importremote.php?action=viewbatchlog&batchid=<?=$batchRowID?>">View logs</a></td>
+						<td>
+							<a href="importremote.php?action=viewbatchlog&batchid=<?=$batchRowID?>">View logs</a>
+							<? if ($error_count > 0): ?>
+								<i class="red exclamation triangle icon" title="<?=$error_count?> error<?=$error_count != 1 ? 's' : ''?>"></i>
+							<? endif; ?>
+						</td>
 						<td>
 							<? if ($obs_count > 0): ?>
 								<a href="importremote.php?action=viewbatchimports&batchid=<?=$batchRowID?>&projectid=<?=$projectid?>"><?=$obs_count?> observation<?=$obs_count != 1 ? 's' : ''?></a>

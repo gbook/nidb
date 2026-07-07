@@ -164,5 +164,6 @@ bool WriteTextFile(QString filepath, QString str, bool append=true);
 bool chmod(QString f, QString perm);
 bool isExecutableInstalled(const QString &executableName);
 void GetDirSizeAndFileCount(QString dir, qint64 &c, qint64 &b, bool recurse=false);
+bool SafeDeletePath(const QString &path, const QString &allowedRoot, QString &m);
 
 #endif // UTILS_H
