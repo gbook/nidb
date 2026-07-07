@@ -99,6 +99,8 @@ bool moduleRemoteImport::Run() {
             ImportMapping mapping(n, projectRowID);
             n->Log(QString("Found [%1] mapping rules for project [%2]").arg(mapping.size()).arg(projectRowID));
 
+            RemoteImportLog(remoteImportBatchRowID, ImportStart, QString("Started %1 import").arg(remoteType), Success);
+
             /* run the import */
             n->Log(QString("Running import for remote_type [%1]").arg(remoteType));
             if (remoteType == "avicenna_api_survey") {
@@ -123,6 +125,7 @@ bool moduleRemoteImport::Run() {
                 n->Log(QString("Unknown remote_type [%1], skipping").arg(remoteType));
             }
             n->Log(QString("Finished import for batch id [%1]").arg(remoteImportBatchRowID));
+            RemoteImportLog(remoteImportBatchRowID, ImportEnd, QString("Finished %1 import").arg(remoteType), Success);
 
             SetBatchStatus(remoteImportBatchRowID, "complete");
         }
@@ -874,7 +877,7 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
         /* find first csv within the zipdir */
         QString m;
         NiDBFindFirstFile(zipdir, "*.csv", csv_path, m);
-        pathToDelete = datafile_path;
+        pathToDelete = zipdir;
     }
     else {
         csv_path = datafile_path;
