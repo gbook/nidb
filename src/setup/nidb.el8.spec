@@ -67,6 +67,7 @@ cp -f /usr/local/lib64/liboficonv.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk
 cp -f /usr/local/lib64/liboflog.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
 cp -f /usr/local/lib64/libofstd.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
 cp -f ~/Qt/6.9.3/gcc_64/lib/libQt6Core.so.6 %{buildroot}/usr/lib/ # copy Qt libs
+cp -f ~/Qt/6.9.3/gcc_64/lib/libQt6Gui.so.6 %{buildroot}/usr/lib/ # copy Qt libs (needed by QImage in utils.cpp)
 cp -f ~/Qt/6.9.3/gcc_64/lib/libQt6Network.so.6 %{buildroot}/usr/lib/ # copy Qt libs
 cp -f ~/Qt/6.9.3/gcc_64/lib/libQt6Sql.so.6 %{buildroot}/usr/lib/ # copy Qt libs
 cp -f ~/Qt/6.9.3/gcc_64/lib/libicudata.so.73 %{buildroot}/usr/lib/ # copy Qt libs
