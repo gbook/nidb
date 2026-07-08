@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jul 08, 2026 at 06:18 PM
+-- Generation Time: Jul 08, 2026 at 09:10 PM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -4054,13 +4054,15 @@ ALTER TABLE `experiment_mapping`
 -- Indexes for table `exports`
 --
 ALTER TABLE `exports`
-  ADD PRIMARY KEY (`export_id`);
+  ADD PRIMARY KEY (`export_id`),
+  ADD KEY `idx_destinationtype` (`destinationtype`);
 
 --
 -- Indexes for table `exportseries`
 --
 ALTER TABLE `exportseries`
-  ADD PRIMARY KEY (`exportseries_id`);
+  ADD PRIMARY KEY (`exportseries_id`),
+  ADD KEY `idx_export_id` (`export_id`);
 
 --
 -- Indexes for table `export_nonimaging`
@@ -4322,7 +4324,8 @@ ALTER TABLE `nda_mapping`
 -- Indexes for table `nda_project`
 --
 ALTER TABLE `nda_project`
-  ADD PRIMARY KEY (`ndaproject_id`);
+  ADD PRIMARY KEY (`ndaproject_id`),
+  ADD KEY `idx_project_id` (`project_id`);
 
 --
 -- Indexes for table `nidb_sites`
@@ -4560,7 +4563,8 @@ ALTER TABLE `project_checklist`
 -- Indexes for table `project_nda_uploads`
 --
 ALTER TABLE `project_nda_uploads`
-  ADD PRIMARY KEY (`projectndaupload_id`);
+  ADD PRIMARY KEY (`projectndaupload_id`),
+  ADD KEY `idx_project_export` (`project_id`,`export_id`);
 
 --
 -- Indexes for table `project_protocol`

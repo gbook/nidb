@@ -448,39 +448,47 @@
 		if ($projectid < 1)
 			return $exportids;
 
-		$sqlstring = "select export_id from exports where destinationtype = 'ndar'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		/* enumerate the NiDB modalities that actually have a {modality}_series table. The modality
+		   determines the series table name (which can't be bound), so validate it against the DB and
+		   restrict it to alphanumerics before interpolating it into the query below. */
+		$modalities = [];
+		$result = MySQLiQuery("select mod_code from modalities order by mod_code", __FILE__, __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$exportid = (int)$row['export_id'];
-
-			/* only include exports that actually have series belonging to this project */
-			$stmt2 = mysqli_prepare($GLOBALS['linki'], "select * from exportseries where export_id = ?");
-			mysqli_stmt_bind_param($stmt2, 'i', $exportid);
-			$result2 = MySQLiBoundQuery($stmt2, __FILE__, __LINE__);
-			$found = false;
-			while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
-				$modality = strtolower($row2['modality']);
-				$seriesid = (int)$row2['series_id'];
-				/* the modality determines the series table name, so it can't be bound - the scalar ids can */
-				if (!IsNiDBModality($modality))
-					continue;
-
-				$sqlstring = "select a.$modality" . "series_id from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id where a.$modality" . "series_id = ? and d.project_id = ?";
-				$stmt3 = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-				mysqli_stmt_bind_param($stmt3, 'ii', $seriesid, $projectid);
-				$result3 = MySQLiBoundQuery($stmt3, __FILE__, __LINE__);
-				$hasrows = (mysqli_num_rows($result3) > 0);
-				mysqli_stmt_close($stmt3);
-				if ($hasrows) {
-					$found = true;
-					break;
-				}
-			}
-			mysqli_stmt_close($stmt2);
-
-			if ($found)
-				$exportids[] = $exportid;
+			$mod = strtolower(trim($row['mod_code']));
+			if (($mod == "") || !ctype_alnum($mod))
+				continue;
+			$chk = MySQLiQuery("show tables like '" . $mod . "_series'", __FILE__, __LINE__);
+			if (mysqli_num_rows($chk) > 0)
+				$modalities[] = $mod;
 		}
+
+		if (count($modalities) < 1)
+			return $exportids;
+
+		/* build one UNION query that finds - directly in SQL - the ndar export_ids that contain at
+		   least one series belonging to this project, joined per modality through its series table. */
+		$selects = [];
+		foreach ($modalities as $mod) {
+			$selects[] = "select es.export_id"
+				. " from exportseries es"
+				. " inner join $mod" . "_series ms on es.series_id = ms.$mod" . "series_id"
+				. " inner join studies st on ms.study_id = st.study_id"
+				. " inner join enrollment en on st.enrollment_id = en.enrollment_id"
+				. " inner join exports ex on es.export_id = ex.export_id"
+				. " where es.modality = '$mod' and en.project_id = ? and ex.destinationtype = 'ndar'";
+		}
+		$sqlstring = "select distinct export_id from (" . implode(" union all ", $selects) . ") t order by export_id";
+
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		/* one project_id placeholder per modality sub-select */
+		$types = str_repeat('i', count($modalities));
+		$params = array_fill(0, count($modalities), $projectid);
+		mysqli_stmt_bind_param($stmt, $types, ...$params);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$exportids[] = (int)$row['export_id'];
+		}
+		mysqli_stmt_close($stmt);
 
 		return $exportids;
 	}
