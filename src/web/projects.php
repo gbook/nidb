@@ -102,13 +102,6 @@
 		case 'viewbidsdatatypes':
 			ViewBIDSDatatypes($id);
 			break;
-		//case 'editxnat':
-		//	EditXNAT($id);
-		//	break;
-		//case 'savexnat':
-		//	SaveXNAT($id, $xnathost);
-		//	DisplayProject($id);
-		//	break;
 		case 'dismissnewstudies':
 			DismissNewStudies($id);
 			DisplayProject($id);
@@ -119,13 +112,6 @@
 			break;
 		case 'editbidsmapping':
 			EditBIDSMapping($id);
-			break;
-		case 'updatendamapping':
-			UpdateNDAMapping($id, $modalities, $protocolnames, $experimentids);
-			EditNDAMapping($id);
-			break;
-		case 'editndamapping':
-			EditNDAMapping($id);
 			break;
 		case 'updateexperimentmapping':
 			UpdateExperimentMapping($id, $modalities, $protocolnames, $experimentids);
@@ -187,9 +173,6 @@
 		case 'show_rdoc_list':
 			DisplayRDoCList($rdoc_label);
 			break;
-		//case 'assessmentinfo':
-		//	DisplayFormList($id);
-		//	break;
 		case 'setfavorite':
 			SetFavorite($id);
 			DisplayProject($id);
@@ -550,49 +533,6 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		Notice("New studies dismissed");
 	}
-
-
-	/* -------------------------------------------- */
-	/* ------- EditXNAT --------------------------- */
-	/* -------------------------------------------- */
-	//function EditXNAT($id) {
-		/* prepare the fields for SQL */
-	//	$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
-		
-	//	$sqlstring = "select xnat_hostname from projects where project_id = $id";
-	//	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-	//	$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-	//	$xnathost = $row['xnat_hostname'];
-		
-		?>
-		<!--<div class="ui text container">
-			<form method="post" action="projects.php" class="ui form">
-				<input type="hidden" name="action" value="savexnat">
-				<input type="hidden" name="id" value="<?=$id?>">
-				<div class="field">
-					<label>XNAT hostname</label>
-					<input type="text" name="xnathost" value="<?=$xnathost?>" placeholder="Full hostname, ex. http://hostname...">
-				</div>
-				<input type="submit" class="ui button" value="Save">
-			</form>
-		</div>-->
-		<?
-	//}
-
-
-	/* -------------------------------------------- */
-	/* ------- SaveXNAT --------------------------- */
-	/* -------------------------------------------- */
-	//function SaveXNAT($id, $xnathost) {
-		/* prepare the fields for SQL */
-	//	$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
-	//	$xnathost = mysqli_real_escape_string($GLOBALS['linki'], $xnathost);
-		
-	//	$sqlstring = "update projects set xnat_hostname = '$xnathost' where project_id = $id";
-	//	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
-	//	Notice("XNAT hostname '$xnathost' saved");
-	//}
 
 
 	/* -------------------------------------------- */
@@ -1781,8 +1721,6 @@
 						},
 						
 					},
-					{ headerName: "GUID", field: "guid", editable: true },
-					{ headerName: "Birthdate", field: "dob", editable: true, cellDataType: 'dateString' },
 					{
 						headerName: "Sex",
 						field: "sex",
@@ -1817,6 +1755,8 @@
 
 				rowSelection: { mode: 'multiRow' }, // allow rows to be selected
 				animateRows: false, // have rows animate to new positions when sorted
+				rowHeight: 28,
+				headerHeight: 34,
 				undoRedoCellEditing: true,
 				suppressMovableColumns: true,
 				autoSizeStrategy: { type: 'fitCellContents' },
@@ -2282,7 +2222,7 @@
 		
 		foreach ($table as $subjectRowID => $data) {
 			$uid = $data['uid'];
-			$row = "{ subjectRowID: $subjectRowID, enrollmentRowID: $enrollmentRowID, uid: '$uid' ";
+			$row = "{ subjectRowID: $subjectRowID, enrollmentRowID: $enrollmentRowID, uid: " . json_encode((string)$uid) . " ";
 			foreach ($observationNames as $name) {
 				$obsvName = $name;
 				$obsvCount = $data['observations'][$name];
@@ -2292,8 +2232,8 @@
 				else {
 					$stats[$obsvName]++;
 				}
-				
-				$row .= ", '$obsvName': $obsvCount";
+
+				$row .= ", " . json_encode((string)$obsvName) . ": $obsvCount";
 			}
 			$row .= "}\n";
 			$rowdata[] = $row;
@@ -2370,8 +2310,8 @@
 						$percent = number_format(($stats[$name]/$numSubjects) * 100.0, 0);
 						?>
 					{
-						field: '<?=$name?>',
-						headerName: "<?=$name?> (<?=$percent?>%)",
+						field: <?=json_encode((string)$name)?>,
+						headerName: <?=json_encode("$name ($percent%)")?>,
 						valueParser: numberParser,
 
 						cellStyle: function(params) {
@@ -2742,140 +2682,6 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- EditNDAMapping --------------------- */
-	/* -------------------------------------------- */
-	function EditNDAMapping($projectid) {
-		$projectid = mysqli_real_escape_string($GLOBALS['linki'], trim($projectid));
-		
-		if (($projectid == "null") || ($projectid == null) || ($projectid == "")) {
-			$projectid = 'null';
-		}
-			
-		/* get all studies, and all series, associated with this project */
-		if ($projectid == "null")
-			$sqlstring = "select study_id, study_modality from studies where study_modality = 'mr'";
-		else
-			$sqlstring = "select study_id, study_modality from projects a left join enrollment b on a.project_id = b.project_id left join studies c on b.enrollment_id = c.enrollment_id where a.project_id = $projectid";
-		
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$studyid = $row['study_id'];
-			$modality = strtolower($row['study_modality']);
-			
-			if (IsNiDBModality($modality)) {
-				if (($modality != "") && ($studyid != "")) {
-					$sqlstringA = "select * from $modality" . "_series where study_id = '$studyid' order by series_desc";
-					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-					while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-						if ($rowA['series_desc'] != "") {
-							$seriesdesc = $rowA['series_desc'];
-						}
-						elseif ($rowA['series_protocol'] != "") {
-							$seriesdesc = $rowA['series_protocol'];
-						}
-						if ($seriesdesc != "") {
-							$seriesdescs[$modality][$seriesdesc]++;
-						}
-					}
-				}
-			}
-		}
-
-		/* get list of NDA experimentid mappings for this project */
-		if ($projectid == "null")
-			$sqlstring = "select * from nda_mapping where project_id is null";
-		else
-			$sqlstring = "select * from nda_mapping where project_id = $projectid";
-
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$mapping[$row['modality']][$row['protocolname']] = $row['experiment_id'];
-		}
-		?>
-		<br><br>
-		<div class="ui text container grid">
-		<form action="projects.php" method="post">
-		<input type="hidden" name="action" value="updatendamapping">
-		<input type="hidden" name="id" value="<?=$projectid?>">
-		<b>NDA mapping</b>
-		<br>
-		This mapping is used in exporting of NDA format
-		<br><br>
-		<table class="ui small celled selectable grey compact table">
-			<thead>
-				<th>Modality</th>
-				<th>Protocol name</th>
-				<th>
-					NDA experiment_id (integer)
-				</th>
-			</thead>
-		<?
-		//PrintVariable($seriesdescs);
-		//PrintVariable($mapping);
-		$i=0;
-		foreach ($seriesdescs as $modality => $serieslist) {
-			array_multisort(array_keys($serieslist), SORT_NATURAL| SORT_FLAG_CASE, $serieslist);
-			foreach ($serieslist as $series => $count) {
-
-				$experiment_id = "";
-				$experiment_id = $mapping[$modality][$series];
-				?>
-				<tr>
-					<td><?=strtoupper($modality)?></td>
-					<td><tt><?=$series?></tt></td>
-					<td>
-						<input type="hidden" name="modalities[<?=$i?>]" value="<?=strtolower($modality)?>"><input type="hidden" name="protocolname[<?=$i?>]" value="<?=$series?>">
-						<div class="ui input">
-							<input type="text" name="experimentid[<?=$i?>]" value="<?=$experiment_id?>">
-						</div>
-					</td>
-				</tr>
-				<?
-				$i++;
-			}
-		}
-		?>
-			<tr>
-				<td colspan="3">
-				<div class="column" align="right">
-					<button class="ui button" onClick="window.location.href='projects.php?id=<?=$projectid?>'; return false;">Cancel</button>
-					<input class="ui primary button" type="submit" id="submit" value="Update">
-				</div>
-				</td>
-			</tr>
-		</table>
-
-		<?
-	}
-
-	
-	/* -------------------------------------------- */
-	/* ------- UpdateNDAMapping ------------------- */
-	/* -------------------------------------------- */
-	function UpdateNDAMapping($projectid, $modalities, $protocolnames, $experimentids) {
-		$projectid = mysqli_real_escape_string($GLOBALS['linki'], trim(strtolower($projectid)));
-		
-		if (isInteger($projectid) || $projectid == "" || $projectid == "null") { }
-		else {
-			Error("Invalid project ID [$projectid]");
-			return;
-		}
-		
-		foreach ($modalities as $i => $modality) {
-			$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
-			$protocolname = mysqli_real_escape_string($GLOBALS['linki'], $protocolnames[$i]);
-			$experimentid = mysqli_real_escape_string($GLOBALS['linki'], $experimentids[$i]);
-			if (($modality != "") && ($protocolname != "") && ($experimentid != "") && (is_numeric($experimentid)) && ($experimentid > 0)) {
-				
-				$sqlstring = "insert ignore into nda_mapping (project_id, protocolname, modality, experiment_id) values ($projectid, '$protocolname', '$modality', '$experimentid')";
-				//PrintSQL($sqlstring);
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			}
-		}
-	}
-
-
-	/* -------------------------------------------- */
 	/* ------- EditExperimentMapping -------------- */
 	/* -------------------------------------------- */
 	function EditExperimentMapping($projectid) {
@@ -3106,7 +2912,7 @@
 		
 		<div class="ui container">
 			<div class="ui grid">
-				<div class="six wide column">
+				<div class="sixteen wide column">
 					<h1 class="ui header">
 						<?=$name?>
 						<? if ($favorite) { ?>
@@ -3118,26 +2924,43 @@
 					</h1>
 					<p><?=$projectdesc?></p>
 				</div>
-				<div class="one wide column">
-				</div>
-				<div class="three wide column">
-					<!--<div class="ui basic grey pointing below label">Batch update</div>-->
-					<a class="ui green fluid button" href="projects.php?action=editsubjects&id=<?=$id?>">
-						<i class="user friends icon"></i> Subjects
-					</a>
-				</div>
-				<div class="three wide column">
-					<a class="ui green fluid button" href="projects.php?action=displaystudies&id=<?=$id?>">
-						<i class="project diagram icon"></i> Imaging studies
-					</a>
-				</div>
-				<div class="three wide column">
-					<a class="ui green fluid button" href="projects.php?action=displaynonimaging&id=<?=$id?>">
-						<i class="project diagram icon"></i> Non-imaging data
-					</a>
+			</div>
+
+			<!-- quick-access tiles (max 4 per row, then wrap) -->
+			<div class="ui four stackable cards" style="margin-top: 0.5em; margin-bottom: 1.5em">
+				<a class="ui green card" href="projects.php?action=editsubjects&id=<?=$id?>">
+					<div class="content">
+						<div class="right floated meta"><?=$numsubjects?></div>
+						<div class="header"><i class="user friends icon"></i> Subjects</div>
+						<div class="description">Manage subjects</div>
+					</div>
+				</a>
+				<a class="ui green card" href="projects.php?action=displaystudies&id=<?=$id?>">
+					<div class="content">
+						<div class="right floated meta"><?=$numstudies?></div>
+						<div class="header"><i class="project diagram icon"></i> Imaging studies</div>
+						<div class="description">Manage MR, EEG, and other imaging studies</div>
+					</div>
+				</a>
+				<a class="ui green card" href="projects.php?action=displaynonimaging&id=<?=$id?>">
+					<div class="content">
+						<div class="header"><i class="table icon"></i> Non-imaging data</div>
+						<div class="description">Manage observations/interventions</div>
+					</div>
+				</a>
+				<div class="ui green card">
+					<div class="content">
+						<div class="header"><i class="cloud download alternate icon"></i> Remote import</div>
+						<div class="description">Manage remote imports</div>
+					</div>
+					<div class="extra content">
+						<a href="remoteimportmapping.php?projectid=<?=$id?>" style="color: #4183c4">Remote Import Mapping</a><br>
+						<a href="importremote.php?projectid=<?=$id?>" style="color: #4183c4">Remote Imports</a><br>
+						<a href="importremote.php?action=viewbatchimportlist&projectid=<?=$id?>" style="color: #4183c4">Batch Imports</a>
+					</div>
 				</div>
 			</div>
-			
+
 			<?
 				/* get list of studies created since project.lastview */
 				$sqlstring = "select *, year(c.birthdate) 'dobyear' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.project_id = $id and a.lastupdate > '$lastview'";

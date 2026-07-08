@@ -44,6 +44,12 @@
 		DownloadCSVFile($projectid, $exportid);
 		exit;
 	}
+
+	/* the series detail is fetched by AJAX and returns just an HTML fragment (no menu/header/footer) */
+	if ($action == "seriesdetail") {
+		DisplaySeriesDetail($projectid, $exportid);
+		exit;
+	}
 ?>
 
 <html>
@@ -122,7 +128,7 @@
 
 		$placeholders = implode(',', array_fill(0, count($exportids), '?'));
 		$types = str_repeat('i', count($exportids));
-		$stmt = mysqli_prepare($GLOBALS['linki'], "select * from exports where export_id in ($placeholders) order by export_id");
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select * from exports where export_id in ($placeholders) order by startdate desc");
 		mysqli_stmt_bind_param($stmt, $types, ...$exportids);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		?>
@@ -130,10 +136,10 @@
 			<thead>
 				<tr>
 					<th></th>
-					<th>Submitted</th>
-					<th>Requested By</th>
-					<th>NDA Project Number</th>
-					<th>NDA Submission Id</th>
+					<th>Export date</th>
+					<th>Username</th>
+					<th>NDA Collection</th>
+					<th>NDA Submission ID</th>
 					<th></th>
 					<th>CSV File</th>
 				</tr>
@@ -196,71 +202,26 @@
 				</td>
 			</tr>
 			<tr id="<?=$t_name?>" hidden>
-				<td colspan="7" style="padding: 0">
-					<table class="ui celled compact table" style="margin: 0; border: none">
-						<thead>
-							<tr>
-								<th align="left">Subject ID</th>
-								<th align="left">Study ID</th>
-								<th align="left">Series</th>
-								<th align="left">Size</th>
-								<th align="left">Status</th>
-							</tr>
-						</thead>
-						<tbody>
-			<?
-			$stmt3 = mysqli_prepare($GLOBALS['linki'], "select * from exportseries where export_id = ?");
-			mysqli_stmt_bind_param($stmt3, 'i', $exportid);
-			$result3 = MySQLiBoundQuery($stmt3, __FILE__, __LINE__);
-			while ($row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC)) {
-				$modality = strtolower($row3['modality']);
-				$seriesid = (int)$row3['series_id'];
-				$status = $row3['status'];
-
-				$uid = $studynum = $seriesnum = $seriesdesc = $seriessize = "";
-				/* the modality determines the series table name, so it can't be bound - the scalar ids can */
-				if (IsNiDBModality($modality)) {
-					$sqlstring = "select a.*, b.*, d.project_name, e.uid, e.subject_id from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id left join subjects e on e.subject_id = c.subject_id where a.$modality" . "series_id = ? and d.project_id = ? order by uid, study_num, series_num";
-					$stmt4 = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-					mysqli_stmt_bind_param($stmt4, 'ii', $seriesid, $projectid);
-					$result4 = MySQLiBoundQuery($stmt4, __FILE__, __LINE__);
-					$row4 = mysqli_fetch_array($result4, MYSQLI_ASSOC);
-					mysqli_stmt_close($stmt4);
-					$seriesdesc = ($modality == "mr") ? $row4['series_desc'] : $row4['series_protocol'];
-					$uid = $row4['uid'];
-					$studynum = $row4['study_num'];
-					$seriesnum = $row4['series_num'];
-					$seriessize = $row4['series_size'];
-				}
-
-				switch ($status) {
-					case 'processing': $class = "blue"; break;
-					case 'complete': $class = "green"; break;
-					case 'error': $class = "red"; break;
-					default: $class = "";
-				}
-				?>
-				<tr>
-					<td><?=$uid?></td>
-					<td><?="$uid$studynum"?></td>
-					<td><?=$seriesnum?> - <?=$seriesdesc?></td>
-					<td class="right aligned"><?=number_format($seriessize)?></td>
-					<td class="<?=$class?>"><?=ucfirst($status)?></td>
-				</tr>
-				<?
-			}
-			mysqli_stmt_close($stmt3);
-			?>
-						</tbody>
-					</table>
+				<td colspan="7" style="padding: 0" id="<?=$t_name?>cell">
+					<!-- series detail is loaded on demand when the row is first expanded -->
 				</td>
 			</tr>
 			<script>
-				/* toggle the per-export series detail row */
+				/* toggle the per-export series detail row, loading its series on first expand */
 				(function() {
 					const btn = document.getElementById('<?=$b_name?>');
 					const detail = document.getElementById('<?=$t_name?>');
+					const cell = document.getElementById('<?=$t_name?>cell');
+					let loaded = false;
 					btn.addEventListener('click', function() {
+						if (!loaded) {
+							loaded = true;
+							cell.innerHTML = '<div class="ui active inline loader" style="margin: 15px"></div>';
+							fetch('nda.php?action=seriesdetail&projectid=<?=$projectid?>&exportid=<?=$exportid?>')
+								.then(r => r.text())
+								.then(html => { cell.innerHTML = html; })
+								.catch(() => { cell.innerHTML = '<div style="margin: 15px; color: #900">Failed to load series</div>'; loaded = false; });
+						}
 						detail.hidden = !detail.hidden;
 					});
 				})();
@@ -272,6 +233,74 @@
 			</tbody>
 		</table>
 		</div>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplaySeriesDetail ---------------- */
+	/* -------------------------------------------- */
+	/* Return the series table (as an HTML fragment) for a single export - called by AJAX when a row is expanded */
+	function DisplaySeriesDetail($projectid, $exportid) {
+		$projectid = (int)$projectid;
+		$exportid = (int)$exportid;
+		?>
+		<table class="ui celled compact table" style="margin: 0; border: none">
+			<thead>
+				<tr>
+					<th align="left">Subject ID</th>
+					<th align="left">Study ID</th>
+					<th align="left">Series</th>
+					<th align="left">Size</th>
+					<th align="left">Status</th>
+				</tr>
+			</thead>
+			<tbody>
+		<?
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select * from exportseries where export_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $exportid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$modality = strtolower($row['modality']);
+			$seriesid = (int)$row['series_id'];
+			$status = $row['status'];
+
+			$uid = $studynum = $seriesnum = $seriesdesc = $seriessize = "";
+			/* the modality determines the series table name, so it can't be bound - the scalar ids can */
+			if (IsNiDBModality($modality)) {
+				$sqlstring = "select a.*, b.*, d.project_name, e.uid, e.subject_id from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id left join subjects e on e.subject_id = c.subject_id where a.$modality" . "series_id = ? and d.project_id = ? order by uid, study_num, series_num";
+				$stmt2 = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt2, 'ii', $seriesid, $projectid);
+				$result2 = MySQLiBoundQuery($stmt2, __FILE__, __LINE__);
+				$row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC);
+				mysqli_stmt_close($stmt2);
+				$seriesdesc = ($modality == "mr") ? $row2['series_desc'] : $row2['series_protocol'];
+				$uid = $row2['uid'];
+				$studynum = $row2['study_num'];
+				$seriesnum = $row2['series_num'];
+				$seriessize = $row2['series_size'];
+			}
+
+			switch ($status) {
+				case 'processing': $class = "blue"; break;
+				case 'complete': $class = "green"; break;
+				case 'error': $class = "red"; break;
+				default: $class = "";
+			}
+			?>
+			<tr>
+				<td><?=htmlspecialchars($uid)?></td>
+				<td><?=htmlspecialchars("$uid$studynum")?></td>
+				<td><?=htmlspecialchars($seriesnum)?> - <?=htmlspecialchars($seriesdesc)?></td>
+				<td class="right aligned"><?=number_format($seriessize)?></td>
+				<td class="<?=$class?>"><?=ucfirst(htmlspecialchars($status))?></td>
+			</tr>
+			<?
+		}
+		mysqli_stmt_close($stmt);
+		?>
+			</tbody>
+		</table>
 		<?
 	}
 
