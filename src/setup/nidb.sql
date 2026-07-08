@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jul 07, 2026 at 06:25 PM
+-- Generation Time: Jul 08, 2026 at 06:18 PM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -1854,11 +1854,25 @@ CREATE TABLE `mr_studyqa` (
 
 CREATE TABLE `nda_mapping` (
   `protocolmapping_id` int(11) NOT NULL,
-  `project_id` int(11) DEFAULT NULL COMMENT 'if project_id is null, then this alt name applies to all projects',
+  `project_id` int(11) NOT NULL,
   `protocolname` varchar(255) NOT NULL,
   `experiment_id` int(11) NOT NULL,
   `modality` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci COMMENT='this table maps long protocol name(s) to short names';
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `nda_project`
+--
+
+CREATE TABLE `nda_project` (
+  `ndaproject_id` int(11) NOT NULL,
+  `project_id` int(11) NOT NULL,
+  `nda_collectionid` int(11) NOT NULL,
+  `expected_data` text NOT NULL COMMENT 'This describes ''what'' should be sent to NDA',
+  `submission_dates` text NOT NULL COMMENT 'freeform: expected submission dates'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -4305,6 +4319,12 @@ ALTER TABLE `nda_mapping`
   ADD KEY `project_id` (`project_id`,`protocolname`,`experiment_id`,`modality`);
 
 --
+-- Indexes for table `nda_project`
+--
+ALTER TABLE `nda_project`
+  ADD PRIMARY KEY (`ndaproject_id`);
+
+--
 -- Indexes for table `nidb_sites`
 --
 ALTER TABLE `nidb_sites`
@@ -5453,6 +5473,12 @@ ALTER TABLE `mr_studyqa`
 --
 ALTER TABLE `nda_mapping`
   MODIFY `protocolmapping_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `nda_project`
+--
+ALTER TABLE `nda_project`
+  MODIFY `ndaproject_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `nidb_sites`

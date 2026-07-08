@@ -1,0 +1,692 @@
+<?
+ // ------------------------------------------------------------------------------
+ // NiDB nda.php
+ // Copyright (C) 2004 - 2026
+ // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
+ // Olin Neuropsychiatry Research Center, Hartford Hospital
+ // ------------------------------------------------------------------------------
+ // GPLv3 License:
+
+ // This program is free software: you can redistribute it and/or modify
+ // it under the terms of the GNU General Public License as published by
+ // the Free Software Foundation, either version 3 of the License, or
+ // (at your option) any later version.
+
+ // This program is distributed in the hope that it will be useful,
+ // but WITHOUT ANY WARRANTY; without even the implied warranty of
+ // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ // GNU General Public License for more details.
+
+ // You should have received a copy of the GNU General Public License
+ // along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ // ------------------------------------------------------------------------------
+
+	define("LEGIT_REQUEST", true);
+
+	session_start();
+
+	require "functions.php";
+	require "includes_php.php";
+
+	/* ----- setup variables ----- */
+	$action = GetVariable("action");
+	$projectid = (int)GetVariable("projectid");
+	$exportid = (int)GetVariable("exportid");
+	$ndaprojectnumber = (int)GetVariable("ndaprojectnumber");
+	$ndasubmissionid = (int)GetVariable("ndasubmissionid");
+	$csvfile = GetVariable("csvfile");
+	$nda_collectionid = (int)GetVariable("nda_collectionid");
+	$expected_data = GetVariable("expected_data");
+	$submission_dates = GetVariable("submission_dates");
+
+	/* the csv download must be sent before any HTML is output */
+	if ($action == "downloadcsv") {
+		DownloadCSVFile($projectid, $exportid);
+		exit;
+	}
+?>
+
+<html>
+	<head>
+		<link rel="icon" type="image/png" href="images/squirrel.png">
+		<title>NiDB - NDA</title>
+	</head>
+
+<body>
+	<div id="wrapper">
+<?
+	require "includes_html.php";
+	require "menu.php";
+
+	/* ----- route the action ----- */
+	switch ($action) {
+		case 'updatendainfo':
+			UpdateNDASubmission($projectid, $exportid, $ndaprojectnumber, $ndasubmissionid, $csvfile);
+			DisplayNDA($projectid);
+			break;
+		case 'updatendamapping':
+			UpdateNDAMapping($projectid, $modalities, $protocolnames, $experimentids);
+			EditNDAMapping($projectid);
+			break;
+		case 'editndamapping':
+			EditNDAMapping($projectid);
+			break;
+		case 'updatendaproject':
+			UpdateNDAProject($projectid, $nda_collectionid, $expected_data, $submission_dates);
+			DisplayNDA($projectid);
+			break;
+		case 'editndaproject':
+			EditNDAProjectForm($projectid);
+			break;
+		default:
+			DisplayNDA($projectid);
+	}
+
+
+	/* ------------------------------------ functions ------------------------------------ */
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayNDA ------------------------- */
+	/* -------------------------------------------- */
+	function DisplayNDA($projectid) {
+		$projectid = (int)$projectid;
+
+		if ($projectid < 1) {
+			Error("No project specified");
+			return;
+		}
+		?>
+		<div class="ui container" style="margin-top: 20px">
+		<?
+			DisplayNDAProjectInfo($projectid);
+			?>
+			<div class="ui two column grid">
+				<div class="column">
+					<h2 class="ui header">NDA Submissions</h2>
+				</div>
+				<div class="right aligned column">
+					<a href="nda.php?action=editndamapping&projectid=<?=$projectid?>" class="ui button"><i class="tasks icon"></i> Edit experiment mapping</a>
+				</div>
+			</div>
+			<br>
+		<?
+
+		/* find all NDA exports for this project */
+		$exportids = GetNDAExportIDs($projectid);
+		if (count($exportids) < 1) {
+			echo "No previous NDA exports";
+			?></div><?
+			return;
+		}
+
+		$placeholders = implode(',', array_fill(0, count($exportids), '?'));
+		$types = str_repeat('i', count($exportids));
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select * from exports where export_id in ($placeholders) order by export_id");
+		mysqli_stmt_bind_param($stmt, $types, ...$exportids);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		?>
+		<table class="ui celled compact table">
+			<thead>
+				<tr>
+					<th></th>
+					<th>Submitted</th>
+					<th>Requested By</th>
+					<th>NDA Project Number</th>
+					<th>NDA Submission Id</th>
+					<th></th>
+					<th>CSV File</th>
+				</tr>
+			</thead>
+			<tbody>
+		<?
+		$indx = 0;
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$exportid = $row['export_id'];
+			$submitdate = $row['submitdate'];
+			$username = $row['username'];
+
+			$indx++;
+			$b_name = "showhide" . $indx;
+			$t_name = "details" . $indx;
+
+			/* get the NDA submission info previously saved for this export */
+			$stmt2 = mysqli_prepare($GLOBALS['linki'], "select ndaprojectnum, ndasubmission_id, csv_file from project_nda_uploads where project_id = ? and export_id = ?");
+			mysqli_stmt_bind_param($stmt2, 'ii', $projectid, $exportid);
+			$result2 = MySQLiBoundQuery($stmt2, __FILE__, __LINE__);
+			$row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt2);
+			$ndaprojectnumber = $row2['ndaprojectnum'];
+			$ndasubmissionid = $row2['ndasubmission_id'];
+			$hascsv = !is_null($row2['csv_file']);
+			?>
+			<tr>
+				<td class="collapsing">
+					<button type="button" class="circular ui icon button" id="<?=$b_name?>" title="Show/hide series"><i class="angle down icon"></i></button>
+				</td>
+				<td class="collapsing">
+					<form id="<?=$b_name?>form" class="ui form" action="nda.php" enctype="multipart/form-data" method="post">
+						<input type="hidden" name="action" value="updatendainfo">
+						<input type="hidden" name="projectid" value="<?=$projectid?>">
+						<input type="hidden" name="exportid" value="<?=$exportid?>">
+					</form>
+					<?=date("D M j, Y h:ia", strtotime($submitdate))?>
+				</td>
+				<td class="collapsing"><?=$username?></td>
+				<td>
+					<div class="ui fluid input">
+						<input form="<?=$b_name?>form" type="text" name="ndaprojectnumber" value="<?=$ndaprojectnumber?>">
+					</div>
+				</td>
+				<td>
+					<div class="ui fluid input">
+						<input form="<?=$b_name?>form" type="text" name="ndasubmissionid" value="<?=$ndasubmissionid?>">
+					</div>
+				</td>
+				<td class="collapsing">
+					<button form="<?=$b_name?>form" class="ui icon button" type="submit" onclick="return confirm('Are you sure you want to save the changes?');" title="Save"><i class="save icon"></i></button>
+				</td>
+				<td>
+					<input form="<?=$b_name?>form" type="file" name="csvfile" id="csvfile<?=$indx?>" accept=".csv" style="display: none" onchange="document.getElementById('csvname<?=$indx?>').textContent = this.files.length ? this.files[0].name : '';">
+					<label for="csvfile<?=$indx?>" class="ui small button"><i class="upload icon"></i> <?=$hascsv ? "Overwrite" : "Upload"?></label>
+					<? if ($hascsv): ?>
+						<a href="nda.php?action=downloadcsv&projectid=<?=$projectid?>&exportid=<?=$exportid?>" title="View existing CSV file"><i class="file alternate icon"></i> View csv</a>
+					<? endif; ?>
+					<span id="csvname<?=$indx?>" class="ui text" style="margin-left: 4px"></span>
+				</td>
+			</tr>
+			<tr id="<?=$t_name?>" hidden>
+				<td colspan="7" style="padding: 0">
+					<table class="ui celled compact table" style="margin: 0; border: none">
+						<thead>
+							<tr>
+								<th align="left">Subject ID</th>
+								<th align="left">Study ID</th>
+								<th align="left">Series</th>
+								<th align="left">Size</th>
+								<th align="left">Status</th>
+							</tr>
+						</thead>
+						<tbody>
+			<?
+			$stmt3 = mysqli_prepare($GLOBALS['linki'], "select * from exportseries where export_id = ?");
+			mysqli_stmt_bind_param($stmt3, 'i', $exportid);
+			$result3 = MySQLiBoundQuery($stmt3, __FILE__, __LINE__);
+			while ($row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC)) {
+				$modality = strtolower($row3['modality']);
+				$seriesid = (int)$row3['series_id'];
+				$status = $row3['status'];
+
+				$uid = $studynum = $seriesnum = $seriesdesc = $seriessize = "";
+				/* the modality determines the series table name, so it can't be bound - the scalar ids can */
+				if (IsNiDBModality($modality)) {
+					$sqlstring = "select a.*, b.*, d.project_name, e.uid, e.subject_id from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id left join subjects e on e.subject_id = c.subject_id where a.$modality" . "series_id = ? and d.project_id = ? order by uid, study_num, series_num";
+					$stmt4 = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+					mysqli_stmt_bind_param($stmt4, 'ii', $seriesid, $projectid);
+					$result4 = MySQLiBoundQuery($stmt4, __FILE__, __LINE__);
+					$row4 = mysqli_fetch_array($result4, MYSQLI_ASSOC);
+					mysqli_stmt_close($stmt4);
+					$seriesdesc = ($modality == "mr") ? $row4['series_desc'] : $row4['series_protocol'];
+					$uid = $row4['uid'];
+					$studynum = $row4['study_num'];
+					$seriesnum = $row4['series_num'];
+					$seriessize = $row4['series_size'];
+				}
+
+				switch ($status) {
+					case 'processing': $class = "blue"; break;
+					case 'complete': $class = "green"; break;
+					case 'error': $class = "red"; break;
+					default: $class = "";
+				}
+				?>
+				<tr>
+					<td><?=$uid?></td>
+					<td><?="$uid$studynum"?></td>
+					<td><?=$seriesnum?> - <?=$seriesdesc?></td>
+					<td class="right aligned"><?=number_format($seriessize)?></td>
+					<td class="<?=$class?>"><?=ucfirst($status)?></td>
+				</tr>
+				<?
+			}
+			mysqli_stmt_close($stmt3);
+			?>
+						</tbody>
+					</table>
+				</td>
+			</tr>
+			<script>
+				/* toggle the per-export series detail row */
+				(function() {
+					const btn = document.getElementById('<?=$b_name?>');
+					const detail = document.getElementById('<?=$t_name?>');
+					btn.addEventListener('click', function() {
+						detail.hidden = !detail.hidden;
+					});
+				})();
+			</script>
+			<?
+		}
+		mysqli_stmt_close($stmt);
+		?>
+			</tbody>
+		</table>
+		</div>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayNDAProjectInfo -------------- */
+	/* -------------------------------------------- */
+	/* Show the NDA project information (collection id, expected data, submission dates) with an edit button */
+	function DisplayNDAProjectInfo($projectid) {
+		$projectid = (int)$projectid;
+
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select nda_collectionid, expected_data, submission_dates from nda_project where project_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		?>
+		<div class="ui segment">
+			<div class="ui two column grid">
+				<div class="column">
+					<h3 class="ui header">NDA Project Information</h3>
+				</div>
+				<div class="right aligned column">
+					<a href="nda.php?action=editndaproject&projectid=<?=$projectid?>" class="ui small button"><i class="edit icon"></i> Edit</a>
+				</div>
+			</div>
+		<?
+		if (!$row) {
+			?>
+			<p><i>No NDA project information has been entered for this project.</i></p>
+			<?
+		}
+		else {
+			?>
+			<table class="ui very basic compact table">
+				<tbody>
+					<tr>
+						<td style="width: 200px"><b>NDA Collection ID</b></td>
+						<td><?=htmlspecialchars($row['nda_collectionid'])?></td>
+					</tr>
+					<tr>
+						<td><b>Expected data</b></td>
+						<td><?=nl2br(htmlspecialchars($row['expected_data']))?></td>
+					</tr>
+					<tr>
+						<td><b>Submission dates</b></td>
+						<td><?=nl2br(htmlspecialchars($row['submission_dates']))?></td>
+					</tr>
+				</tbody>
+			</table>
+			<?
+		}
+		?>
+		</div>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- EditNDAProjectForm ----------------- */
+	/* -------------------------------------------- */
+	function EditNDAProjectForm($projectid) {
+		$projectid = (int)$projectid;
+
+		if ($projectid < 1) {
+			Error("No project specified");
+			return;
+		}
+
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select nda_collectionid, expected_data, submission_dates from nda_project where project_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+
+		$nda_collectionid = $row ? $row['nda_collectionid'] : "";
+		$expected_data = $row ? $row['expected_data'] : "";
+		$submission_dates = $row ? $row['submission_dates'] : "";
+		?>
+		<div class="ui container" style="margin-top: 20px">
+			<h2 class="ui header">Edit NDA Project Information</h2>
+			<form class="ui form" action="nda.php" method="post">
+				<input type="hidden" name="action" value="updatendaproject">
+				<input type="hidden" name="projectid" value="<?=$projectid?>">
+				<div class="field">
+					<label>NDA Collection ID</label>
+					<input type="number" name="nda_collectionid" value="<?=htmlspecialchars($nda_collectionid)?>">
+				</div>
+				<div class="field">
+					<label>Expected data</label>
+					<textarea name="expected_data" rows="4"><?=htmlspecialchars($expected_data)?></textarea>
+				</div>
+				<div class="field">
+					<label>Submission dates</label>
+					<textarea name="submission_dates" rows="4"><?=htmlspecialchars($submission_dates)?></textarea>
+				</div>
+				<button class="ui button" type="button" onclick="window.location.href='nda.php?projectid=<?=$projectid?>'">Cancel</button>
+				<button class="ui primary button" type="submit">Update</button>
+			</form>
+		</div>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- UpdateNDAProject ------------------- */
+	/* -------------------------------------------- */
+	function UpdateNDAProject($projectid, $nda_collectionid, $expected_data, $submission_dates) {
+		$projectid = (int)$projectid;
+		$nda_collectionid = (int)$nda_collectionid;
+
+		if ($projectid < 1) {
+			Error("No project specified");
+			return;
+		}
+
+		/* one row per project - update if it already exists, otherwise insert */
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select ndaproject_id from nda_project where project_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$exists = (mysqli_num_rows($result) > 0);
+		mysqli_stmt_close($stmt);
+
+		if ($exists) {
+			$stmt = mysqli_prepare($GLOBALS['linki'], "update nda_project set nda_collectionid = ?, expected_data = ?, submission_dates = ? where project_id = ?");
+			mysqli_stmt_bind_param($stmt, 'issi', $nda_collectionid, $expected_data, $submission_dates, $projectid);
+		}
+		else {
+			$stmt = mysqli_prepare($GLOBALS['linki'], "insert into nda_project (project_id, nda_collectionid, expected_data, submission_dates) values (?, ?, ?, ?)");
+			mysqli_stmt_bind_param($stmt, 'iiss', $projectid, $nda_collectionid, $expected_data, $submission_dates);
+		}
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetNDAExportIDs -------------------- */
+	/* -------------------------------------------- */
+	/* Return the list of export_ids for this project that were exported to NDA and contain at least one series */
+	function GetNDAExportIDs($projectid) {
+		$projectid = (int)$projectid;
+		$exportids = [];
+
+		if ($projectid < 1)
+			return $exportids;
+
+		$sqlstring = "select export_id from exports where destinationtype = 'ndar'";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$exportid = (int)$row['export_id'];
+
+			/* only include exports that actually have series belonging to this project */
+			$stmt2 = mysqli_prepare($GLOBALS['linki'], "select * from exportseries where export_id = ?");
+			mysqli_stmt_bind_param($stmt2, 'i', $exportid);
+			$result2 = MySQLiBoundQuery($stmt2, __FILE__, __LINE__);
+			$found = false;
+			while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
+				$modality = strtolower($row2['modality']);
+				$seriesid = (int)$row2['series_id'];
+				/* the modality determines the series table name, so it can't be bound - the scalar ids can */
+				if (!IsNiDBModality($modality))
+					continue;
+
+				$sqlstring = "select a.$modality" . "series_id from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id where a.$modality" . "series_id = ? and d.project_id = ?";
+				$stmt3 = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt3, 'ii', $seriesid, $projectid);
+				$result3 = MySQLiBoundQuery($stmt3, __FILE__, __LINE__);
+				$hasrows = (mysqli_num_rows($result3) > 0);
+				mysqli_stmt_close($stmt3);
+				if ($hasrows) {
+					$found = true;
+					break;
+				}
+			}
+			mysqli_stmt_close($stmt2);
+
+			if ($found)
+				$exportids[] = $exportid;
+		}
+
+		return $exportids;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- UpdateNDASubmission ---------------- */
+	/* -------------------------------------------- */
+	function UpdateNDASubmission($projectid, $exportid, $ndaprojectnumber, $ndasubmissionid, $csvfile) {
+		$projectid = (int)$projectid;
+		$exportid = (int)$exportid;
+		$ndaprojectnumber = (int)$ndaprojectnumber;
+		$ndasubmissionid = (int)$ndasubmissionid;
+
+		if ($projectid < 1) {
+			Error("Invalid or blank Project ID [$projectid]");
+			return;
+		}
+
+		$hasupload = isset($_FILES['csvfile']) && ($_FILES['csvfile']['error'] === UPLOAD_ERR_OK);
+		$filecontent = $hasupload ? base64_encode(file_get_contents($_FILES['csvfile']['tmp_name'])) : "";
+
+		/* does a row already exist for this project/export? */
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select * from project_nda_uploads where project_id = ? and export_id = ?");
+		mysqli_stmt_bind_param($stmt, 'ii', $projectid, $exportid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$exists = (mysqli_num_rows($result) > 0);
+		mysqli_stmt_close($stmt);
+
+		if ($exists) {
+			if ($hasupload) {
+				$stmt = mysqli_prepare($GLOBALS['linki'], "update project_nda_uploads set ndaprojectnum = ?, ndasubmission_id = ?, csv_file = NULLIF(?,'') where project_id = ? and export_id = ?");
+				mysqli_stmt_bind_param($stmt, 'iisii', $ndaprojectnumber, $ndasubmissionid, $filecontent, $projectid, $exportid);
+			}
+			else {
+				$stmt = mysqli_prepare($GLOBALS['linki'], "update project_nda_uploads set ndaprojectnum = ?, ndasubmission_id = ? where project_id = ? and export_id = ?");
+				mysqli_stmt_bind_param($stmt, 'iiii', $ndaprojectnumber, $ndasubmissionid, $projectid, $exportid);
+			}
+		}
+		else {
+			if ($hasupload) {
+				$stmt = mysqli_prepare($GLOBALS['linki'], "insert into project_nda_uploads (project_id, export_id, csv_file, ndaprojectnum, ndasubmission_id) values (?, ?, NULLIF(?,''), ?, ?)");
+				mysqli_stmt_bind_param($stmt, 'iisii', $projectid, $exportid, $filecontent, $ndaprojectnumber, $ndasubmissionid);
+			}
+			else {
+				$stmt = mysqli_prepare($GLOBALS['linki'], "insert into project_nda_uploads (project_id, export_id, ndaprojectnum, ndasubmission_id) values (?, ?, ?, ?)");
+				mysqli_stmt_bind_param($stmt, 'iiii', $projectid, $exportid, $ndaprojectnumber, $ndasubmissionid);
+			}
+		}
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DownloadCSVFile -------------------- */
+	/* -------------------------------------------- */
+	function DownloadCSVFile($projectid, $exportid) {
+		$projectid = (int)$projectid;
+		$exportid = (int)$exportid;
+
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select csv_file from project_nda_uploads where project_id = ? and export_id = ?");
+		mysqli_stmt_bind_param($stmt, 'ii', $projectid, $exportid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$numrows = mysqli_num_rows($result);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+
+		if (($numrows == 0) || is_null($row['csv_file'])) {
+			echo "CSV File does not exist";
+			return;
+		}
+
+		$csvcontents = base64_decode($row['csv_file']);
+
+		/* build a filename from the project name, requesting user, and submit date */
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select project_name from projects where project_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		$projectname = $row['project_name'];
+
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select username, submitdate from exports where export_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $exportid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+
+		$filename = preg_replace('/[^\w]/', '', $projectname . $row['username'] . $row['submitdate'] . $exportid);
+
+		header("Content-Description: File Transfer");
+		header("Content-Disposition: attachment; filename=$filename.csv");
+		header("Content-Type: text/csv");
+		header("Content-length: " . strlen($csvcontents));
+		header("Content-Transfer-Encoding: text");
+		echo $csvcontents;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- EditNDAMapping --------------------- */
+	/* -------------------------------------------- */
+	function EditNDAMapping($projectid) {
+		$projectid = (int)$projectid;
+
+		if ($projectid < 1) {
+			echo "Project not specified";
+			return;
+		}
+
+		/* get all studies, and all series, associated with this project */
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select study_id, study_modality from projects a left join enrollment b on a.project_id = b.project_id left join studies c on b.enrollment_id = c.enrollment_id where a.project_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$studyid = (int)$row['study_id'];
+			$modality = strtolower($row['study_modality']);
+
+			/* the modality determines the series table name, so it can't be bound - the scalar study id can */
+			if (IsNiDBModality($modality) && ($studyid > 0)) {
+				$stmtA = mysqli_prepare($GLOBALS['linki'], "select * from $modality" . "_series where study_id = ? order by series_desc");
+				mysqli_stmt_bind_param($stmtA, 'i', $studyid);
+				$resultA = MySQLiBoundQuery($stmtA, __FILE__, __LINE__);
+				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+					if ($rowA['series_desc'] != "") {
+						$seriesdesc = $rowA['series_desc'];
+					}
+					elseif ($rowA['series_protocol'] != "") {
+						$seriesdesc = $rowA['series_protocol'];
+					}
+					if ($seriesdesc != "") {
+						$seriesdescs[$modality][$seriesdesc]++;
+					}
+				}
+				mysqli_stmt_close($stmtA);
+			}
+		}
+		mysqli_stmt_close($stmt);
+
+		/* get list of NDA experimentid mappings for this project */
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select * from nda_mapping where project_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$mapping[$row['modality']][$row['protocolname']] = $row['experiment_id'];
+		}
+		mysqli_stmt_close($stmt);
+		?>
+		<br><br>
+		<div class="ui text container grid">
+		<form action="projects.php" method="post">
+		<input type="hidden" name="action" value="updatendamapping">
+		<input type="hidden" name="id" value="<?=$projectid?>">
+		<b>NDA mapping</b>
+		<br>
+		This mapping is used in exporting of NDA format
+		<br><br>
+		<table class="ui small celled selectable grey compact table">
+			<thead>
+				<th>Modality</th>
+				<th>Protocol name</th>
+				<th>
+					NDA experiment_id (integer)
+				</th>
+			</thead>
+		<?
+		//PrintVariable($seriesdescs);
+		//PrintVariable($mapping);
+		$i=0;
+		foreach ($seriesdescs as $modality => $serieslist) {
+			array_multisort(array_keys($serieslist), SORT_NATURAL| SORT_FLAG_CASE, $serieslist);
+			foreach ($serieslist as $series => $count) {
+
+				$experiment_id = "";
+				$experiment_id = $mapping[$modality][$series];
+				?>
+				<tr>
+					<td><?=strtoupper($modality)?></td>
+					<td><tt><?=$series?></tt></td>
+					<td>
+						<input type="hidden" name="modalities[<?=$i?>]" value="<?=strtolower($modality)?>"><input type="hidden" name="protocolname[<?=$i?>]" value="<?=$series?>">
+						<div class="ui input">
+							<input type="text" name="experimentid[<?=$i?>]" value="<?=$experiment_id?>">
+						</div>
+					</td>
+				</tr>
+				<?
+				$i++;
+			}
+		}
+		?>
+			<tr>
+				<td colspan="3">
+				<div class="column" align="right">
+					<button class="ui button" onClick="window.location.href='nda.php?projectid=<?=$projectid?>'; return false;">Cancel</button>
+					<input class="ui primary button" type="submit" id="submit" value="Update">
+				</div>
+				</td>
+			</tr>
+		</table>
+
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- UpdateNDAMapping ------------------- */
+	/* -------------------------------------------- */
+	function UpdateNDAMapping($projectid, $modalities, $protocolnames, $experimentids) {
+		$projectid = trim(strtolower($projectid));
+
+		if (isInteger($projectid) || $projectid == "" || $projectid == "null") { }
+		else {
+			Error("Invalid project ID [$projectid]");
+			return;
+		}
+
+		/* an empty/"null" project id means this is the global mapping, stored as project_id NULL */
+		$pid = ($projectid == "" || $projectid == "null") ? null : (int)$projectid;
+
+		$stmt = mysqli_prepare($GLOBALS['linki'], "insert ignore into nda_mapping (project_id, protocolname, modality, experiment_id) values (?, ?, ?, ?)");
+		foreach ($modalities as $i => $modality) {
+			$modality = strtolower($modality);
+			$protocolname = $protocolnames[$i];
+			$experimentid = $experimentids[$i];
+			if (($modality != "") && ($protocolname != "") && ($experimentid != "") && (is_numeric($experimentid)) && ($experimentid > 0)) {
+				$experimentid = (int)$experimentid;
+				mysqli_stmt_bind_param($stmt, 'issi', $pid, $protocolname, $modality, $experimentid);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			}
+		}
+		mysqli_stmt_close($stmt);
+	}
+
+?>
+
+<? include("footer.php") ?>

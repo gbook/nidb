@@ -147,10 +147,10 @@ int moduleExport::Run() {
                 //found = ExportNiDB(exportid);
             }
             else if (exporttype == "ndar") {
-                found = ExportNDAR(exportid, 0, ndaflags, status, log);
+                found = ExportNDA(exportid, 0, ndaflags, status, log);
             }
             else if (exporttype == "ndarcsv") {
-                found = ExportNDAR(exportid, 1, ndaflags, status, log);
+                found = ExportNDA(exportid, 1, ndaflags, status, log);
             }
             else if (exporttype == "xnat") {
                 found = ExportXNAT(exportid, status, log);
@@ -1243,9 +1243,9 @@ bool moduleExport::ExportXNAT(int exportid, QString &exportstatus, QString &msg)
 
 
 /* ---------------------------------------------------------- */
-/* --------- ExportNDAR ------------------------------------- */
+/* --------- ExportNDA ------------------------------------- */
 /* ---------------------------------------------------------- */
-bool moduleExport::ExportNDAR(int exportid, bool csvonly, QStringList ndaflags, QString &exportstatus, QString &msg) {
+bool moduleExport::ExportNDA(int exportid, bool csvonly, QStringList ndaflags, QString &exportstatus, QString &msg) {
 
     n->Log("Entering ExportNDA()...");
     exportstatus = "complete";
@@ -2054,6 +2054,8 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
             }
             QTextStream fs(&f);
 
+            int ndaExperimentID = GetNDAMapping(projectid, seriesdesc, modality);
+
             /* create the modality specific line for the csv */
             if (modality == "MRI") {
 
@@ -2131,8 +2133,9 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
                 if (AcqParts.size() >= 4)
                     FOV = QString("%1mm x %2mm").arg((AcqParts[0].toDouble() * seriesspacingx * PercentPhaseFieldOfView.toDouble())/100.0).arg((AcqParts[3].toDouble() * seriesspacingy * PercentPhaseFieldOfView.toDouble())/100.0);
 
+                int ndaExperimentID = GetNDAMapping(projectid, seriesdesc, modality);
                 QString str;
-                QTextStream(&str) << guid << "," << srcsubjectid << "," << studydatetime << "," << static_cast<int>(round(ageatscan)) << "," << gender << "," << imagetype << "," << imagefile << ",," << seriesdesc << "," << datatype << "," << modality << "," << Manufacturer << "," << ManufacturersModelName << "," << SoftwareVersion << "," << seriesfieldstrength << "," << seriestr << "," << serieste << "," << seriesflip << "," << AcquisitionMatrix << "," << FOV << "," << PatientPosition << "," << PhotometricInterpretation << ",," << TransmitCoilName << ",No,,," << numdim << "," << imgcols << "," << imgrows << "," << imgslices << "," << boldreps << ",timeseries,,,Millimeters,Millimeters,Millimeters,Milliseconds,," << seriesspacingx << "," << seriesspacingy << "," << seriesspacingz << "," << seriestr << ",," << seriesspacingz << ",Axial,,,,,,,,,,,,," << scantype << ",Live," << behfile << "," << behdesc << "," << ProtocolName << ",," << seriessequence << ",1,,,0,Yes,Yes\n";
+                QTextStream(&str) << guid << "," << srcsubjectid << "," << studydatetime << "," << static_cast<int>(round(ageatscan)) << "," << gender << "," << imagetype << "," << imagefile << ",," << seriesdesc << "," << datatype << "," << modality << "," << Manufacturer << "," << ManufacturersModelName << "," << SoftwareVersion << "," << seriesfieldstrength << "," << seriestr << "," << serieste << "," << seriesflip << "," << AcquisitionMatrix << "," << FOV << "," << PatientPosition << "," << PhotometricInterpretation << ",," << TransmitCoilName << ",No,,," << numdim << "," << imgcols << "," << imgrows << "," << imgslices << "," << boldreps << ",timeseries,,,Millimeters,Millimeters,Millimeters,Milliseconds,," << seriesspacingx << "," << seriesspacingy << "," << seriesspacingz << "," << seriestr << ",," << seriesspacingz << ",Axial,,,,,,,,,,,,," << scantype << ",Live," << behfile << "," << behdesc << "," << ProtocolName << "," << ndaExperimentID << "," << seriessequence << ",1,,,0,Yes,Yes\n";
 
                 fs << str;
             }
@@ -2141,7 +2144,7 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
 
                 QString sp = seriesprotocol.toLower();
 
-                /* NDAR */
+                /* NDA experiment ID lookup */
                 if (sp.contains("domino",Qt::CaseInsensitive)) expid = 115;
                 if (sp.contains("SPMain",Qt::CaseInsensitive)) expid = 114;
                 if (sp.contains("SPGender", Qt::CaseInsensitive)) expid = 114;
@@ -2179,14 +2182,16 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
                     else if (sp == "gating") expid = 581;
                 }
 
+                //int ndaExperimentID = GetNDAMapping(projectid, seriesdesc, modality);
+
                 QString str;
-                QTextStream(&str) << guid << "," << uid << "," << studydatetime << "," << static_cast<int>(round(ageatscan)) << "," << gender << "," << seriesprotocol << ",,," << expid <<",\"" << seriesnotes << "\",,,,," << imagefile << ",,,,,,,,,\n";
+                QTextStream(&str) << guid << "," << uid << "," << studydatetime << "," << static_cast<int>(round(ageatscan)) << "," << gender << "," << seriesprotocol << ",,," << ndaExperimentID <<",\"" << seriesnotes << "\",,,,," << imagefile << ",,,,,,,,,\n";
                 fs << str;
             }
             else if (modality == "ET") {
                 int expid = 0;
                 QString str;
-                QTextStream(&str) << guid << "," << uid << "," << studydatetime << "," << static_cast<int>(round(ageatscan)) << "," << gender << ",Unknown," << expid << "," << seriesprotocol << ",,\"" << seriesnotes << "\",,,," << imagefile << ",Eyetracking,,,,,,\n";
+                QTextStream(&str) << guid << "," << uid << "," << studydatetime << "," << static_cast<int>(round(ageatscan)) << "," << gender << ",Unknown," << ndaExperimentID << "," << seriesprotocol << ",,\"" << seriesnotes << "\",,,," << imagefile << ",Eyetracking,,,,,,\n";
                 fs << str;
             }
             else if (modality == "GSR") {
@@ -2290,4 +2295,26 @@ void moduleExport::EndRemoteNiDBTransaction(int tid, QString remotenidbserver, Q
     }
 
     m = msgs.join("\n");
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetNDAMapping ---------------------------------- */
+/* ---------------------------------------------------------- */
+int moduleExport::GetNDAMapping(int projectRowID, QString protocol, QString modality) {
+
+    int experimentID(0);
+
+    QSqlQuery q;
+    q.prepare("select experiment_id from nda_mapping where project_id = :projectid");
+    q.bindValue(":projectid", projectRowID);
+    q.bindValue(":protocol", protocol);
+    q.bindValue(":modality", modality);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.size() > 0) {
+        q.first();
+        experimentID = q.value("experiment_id").toInt();
+    }
+
+    return experimentID;
 }

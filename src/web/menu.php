@@ -199,6 +199,7 @@
 						<a class="item" href="projects.php?action=editndamapping&id=<?=$projectid?>" style="color: #222"><i class="tasks icon"></i> NDA experiment ID mapping</a>
 						<a class="item" href="projects.php?action=editexperimentmapping&id=<?=$projectid?>" style="color: #222"><i class="tasks icon"></i> Experiment &harr; protocol mapping</a>
 						<a class="item" href="ndarequests.php?action=default&projectid=<?=$projectid?>" style="color: #222"><i class="history icon"></i> NDA request history</a>
+						<a class="item" href="nda.php?projectid=<?=$projectid?>" style="color: #222"><i class="upload icon"></i> NDA</a>
 					</div>
 				</div>
 				<div class="ui dropdown item">
