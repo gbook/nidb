@@ -22,7 +22,7 @@ define('SESSION_MAX_PER_USER',  2);
 // ─── Global exception handler ─────────────────────────────────────────────────
 // Catches any unhandled exception and returns a generic 500 without leaking
 // stack traces, file paths, or query strings to the client.
-set_exception_handler(function (Throwable $e): never {
+set_exception_handler(function (Throwable $e) {
     error_log('NiDB API unhandled exception: ' . $e->getMessage());
     http_response_code(500);
     echo '{"success":false,"message":"Internal server error."}';
@@ -89,6 +89,12 @@ $allowedActions = [
     'GetAcceptedObjects',
     'GetNidbInfo',
     'GetSubjectList',
+    'GetUID',
+    'GetInstanceList',
+    'GetSiteList',
+    'GetEquipmentList',
+    'GetTransactionStatus',
+    'GetArchiveStatus',
 ];
 
 if (!in_array($action, $allowedActions, true)) {
@@ -105,6 +111,12 @@ switch ($action) {
     case 'GetAcceptedObjects': handleGetAcceptedObjects(); break;
     case 'GetNidbInfo':        handleGetNidbInfo();        break;
     case 'GetSubjectList':     handleGetSubjectList();     break;
+    case 'GetUID':             handleGetUID();             break;
+    case 'GetInstanceList':    handleGetInstanceList();    break;
+    case 'GetSiteList':        handleGetSiteList();        break;
+    case 'GetEquipmentList':   handleGetEquipmentList();   break;
+    case 'GetTransactionStatus': handleGetTransactionStatus(); break;
+    case 'GetArchiveStatus':   handleGetArchiveStatus();   break;
 }
 
 
@@ -154,10 +166,20 @@ function handleAuthenticate(): void
     $stmt->execute([$username]);
     $user = $stmt->fetch();
 
-    // Run password_verify() in all branches to prevent timing attacks.
-    // If the user doesn't exist we verify against a static dummy hash so the
-    // execution time is indistinguishable from a real (failed) verification.
-    static $dummyHash = '$argon2id$v=19$m=65536,t=4,p=1$dummysaltdummysalt$dummyhashvaluedummyhashvaluedummy';
+    // Run password_verify() in all branches to prevent username-enumeration via
+    // timing. When the user doesn't exist we verify against a throwaway hash built
+    // with the SAME algorithm the server actually uses for credentials — argon2id
+    // where available (PHP 7.3+/8 with libargon2), otherwise bcrypt. This mirrors
+    // RegenerateApiKey() in users.php, so password_verify() performs a full KDF in
+    // both branches (a hardcoded argon2id dummy would return instantly on a PHP
+    // build without argon2 support, leaking whether the username exists).
+    static $dummyHash = null;
+    if ($dummyHash === null) {
+        $dummyAlgo = defined('PASSWORD_ARGON2ID')
+            ? PASSWORD_ARGON2ID
+            : (defined('PASSWORD_ARGON2I') ? PASSWORD_ARGON2I : PASSWORD_BCRYPT);
+        $dummyHash = password_hash('invalid-placeholder-key', $dummyAlgo);
+    }
     $hashToCheck = ($user !== false) ? $user['credential'] : $dummyHash;
     $keyIsValid  = password_verify($apiKey, $hashToCheck);
 
@@ -216,8 +238,22 @@ function handleStartTransaction(): void
 {
     $session = requireSession();
 
-    // TODO: create a new transaction record tied to $session['apiuser_id'].
-    $transactionID = '';
+    $db = getDb();
+
+    // Record the API user's username on the transaction for traceability and so
+    // EndTransaction can confirm ownership.
+    $stmt = $db->prepare('SELECT username FROM api_users WHERE apiuser_id = ? LIMIT 1');
+    $stmt->execute([$session['apiuser_id']]);
+    $username = (string)$stmt->fetchColumn();
+
+    $stmt = $db->prepare(
+        "INSERT INTO import_transactions
+             (transaction_startdate, transaction_source, transaction_status, transaction_username)
+         VALUES (NOW(), 'api2', 'uploading', ?)"
+    );
+    $stmt->execute([$username]);
+
+    $transactionID = (int)$db->lastInsertId();
 
     respond(true, 'Transaction started.', ['transactionID' => $transactionID]);
 }
@@ -279,23 +315,45 @@ function handleImportObject(): void
 }
 
 /**
- * @brief Ends (commits or rolls back) the current transaction.
+ * @brief Ends (marks complete) a transaction started by this session's API user.
  *
- * @post action=EndTransaction, sessionID
+ * @post action=EndTransaction, sessionID, transactionID
  * @return void  Emits a success or 500 failure response.
  */
 function handleEndTransaction(): void
 {
     $session = requireSession();
 
-    // TODO: commit or roll back the open transaction for $session['apiuser_id'].
-    $committed = false;
+    $transactionID = trimmedPost('transactionID');
+    if ($transactionID === '') {
+        respond(false, 'Missing required parameter: transactionID.', null, 400);
+    }
+    if (!ctype_digit($transactionID)) {
+        respond(false, 'Invalid transactionID.', null, 400);
+    }
+    $transactionID = (int)$transactionID;
 
-    if (!$committed) {
+    $db = getDb();
+
+    // Look up this API user's username so we only end transactions they own.
+    $stmt = $db->prepare('SELECT username FROM api_users WHERE apiuser_id = ? LIMIT 1');
+    $stmt->execute([$session['apiuser_id']]);
+    $username = (string)$stmt->fetchColumn();
+
+    $stmt = $db->prepare(
+        "UPDATE import_transactions
+            SET transaction_enddate = NOW(), transaction_status = 'uploadcomplete'
+          WHERE importtrans_id = ? AND transaction_username = ?"
+    );
+    $stmt->execute([$transactionID, $username]);
+
+    // rowCount() is 0 when the transaction does not exist or belongs to someone
+    // else; a single generic failure avoids revealing which.
+    if ($stmt->rowCount() === 0) {
         respond(false, 'Failed to end transaction.', null, 500);
     }
 
-    respond(true, 'Transaction ended.');
+    respond(true, 'Transaction ended.', ['transactionID' => $transactionID]);
 }
 
 /**
@@ -317,10 +375,22 @@ function handleGetProjectList(): void
     }
     $instanceID = (int)$instanceID;
 
-    // TODO: query the database for projects belonging to $instanceID that are
-    //       accessible to $session['apiuser_id']. Use prepared statements.
+    $db   = getDb();
+    $stmt = $db->prepare(
+        'SELECT project_id, project_name
+           FROM projects
+          WHERE instance_id = ?
+          ORDER BY project_name'
+    );
+    $stmt->execute([$instanceID]);
+
     $projects = [];
-    // Expected shape: [['projectID' => 1, 'projectName' => 'Example'], ...]
+    foreach ($stmt->fetchAll() as $row) {
+        $projects[] = [
+            'projectID'   => (int)$row['project_id'],
+            'projectName' => $row['project_name'],
+        ];
+    }
 
     respond(true, 'Project list retrieved.', ['projects' => $projects]);
 }
@@ -349,11 +419,10 @@ function handleGetAcceptedObjects(): void
  */
 function handleGetNidbInfo(): void
 {
-    $session = requireSession();
+    requireSession();
 
-    // TODO: replace with the real version string, e.g. read from a shared
-    //       config constant or the application's version file.
-    $nidbVersion = '';
+    // requireSession() -> getDb() has already loaded $GLOBALS['cfg'].
+    $nidbVersion = (string)($GLOBALS['cfg']['version'] ?? '');
 
     respond(true, 'NiDB info retrieved.', ['NiDBVersion' => $nidbVersion]);
 }
@@ -377,12 +446,222 @@ function handleGetSubjectList(): void
     }
     $projectID = (int)$projectID;
 
-    // TODO: query the database for subjects belonging to $projectID that are
-    //       accessible to $session['apiuser_id']. Use prepared statements.
+    $db   = getDb();
+    $stmt = $db->prepare(
+        'SELECT DISTINCT s.subject_id, s.uid
+           FROM subjects   s
+           JOIN enrollment e ON e.subject_id = s.subject_id
+          WHERE e.project_id = ?
+            AND s.isactive   = 1
+          ORDER BY s.uid'
+    );
+    $stmt->execute([$projectID]);
+
     $subjects = [];
-    // Expected shape: [['subjectID' => 1, 'subjectUID' => 'S1234'], ...]
+    foreach ($stmt->fetchAll() as $row) {
+        $subjects[] = [
+            'subjectID'  => (int)$row['subject_id'],
+            'subjectUID' => $row['uid'],
+        ];
+    }
 
     respond(true, 'Subject list retrieved.', ['subjects' => $subjects]);
+}
+
+/**
+ * @brief Looks up NiDB UID(s) for a given alternate UID.
+ *
+ * @post action=GetUID, sessionID, altUID
+ * @return void  Emits JSON { uids: [ ... ] }.
+ */
+function handleGetUID(): void
+{
+    requireSession();
+
+    $altUID = trimmedPost('altUID');
+    if ($altUID === '') {
+        respond(false, 'Missing required parameter: altUID.', null, 400);
+    }
+
+    $db   = getDb();
+    $stmt = $db->prepare(
+        'SELECT s.uid
+           FROM subjects       s
+           JOIN subject_altuid a ON a.subject_id = s.subject_id
+          WHERE a.altuid = ?'
+    );
+    $stmt->execute([$altUID]);
+
+    $uids = array_column($stmt->fetchAll(), 'uid');
+
+    respond(true, 'UID lookup complete.', ['uids' => $uids]);
+}
+
+/**
+ * @brief Returns the list of instances known to this NiDB server.
+ *
+ * API users are not scoped per instance, so every instance is returned.
+ *
+ * @post action=GetInstanceList, sessionID
+ * @return void  Emits JSON { instances: [ { instanceID, instanceUID, instanceName }, ... ] }.
+ */
+function handleGetInstanceList(): void
+{
+    requireSession();
+
+    $db   = getDb();
+    $stmt = $db->query(
+        'SELECT instance_id, instance_uid, instance_name
+           FROM instance
+          ORDER BY instance_name'
+    );
+
+    $instances = [];
+    foreach ($stmt->fetchAll() as $row) {
+        $instances[] = [
+            'instanceID'   => (int)$row['instance_id'],
+            'instanceUID'  => $row['instance_uid'],
+            'instanceName' => $row['instance_name'],
+        ];
+    }
+
+    respond(true, 'Instance list retrieved.', ['instances' => $instances]);
+}
+
+/**
+ * @brief Returns the list of sites configured on this NiDB server.
+ *
+ * @post action=GetSiteList, sessionID
+ * @return void  Emits JSON { sites: [ { siteID, siteName }, ... ] }.
+ */
+function handleGetSiteList(): void
+{
+    requireSession();
+
+    $db   = getDb();
+    $stmt = $db->query(
+        'SELECT site_id, site_name
+           FROM nidb_sites
+          ORDER BY site_name'
+    );
+
+    $sites = [];
+    foreach ($stmt->fetchAll() as $row) {
+        $sites[] = [
+            'siteID'   => (int)$row['site_id'],
+            'siteName' => $row['site_name'],
+        ];
+    }
+
+    respond(true, 'Site list retrieved.', ['sites' => $sites]);
+}
+
+/**
+ * @brief Returns the distinct list of equipment (study sites) seen in studies.
+ *
+ * @post action=GetEquipmentList, sessionID
+ * @return void  Emits JSON { equipment: [ ... ] }.
+ */
+function handleGetEquipmentList(): void
+{
+    requireSession();
+
+    $db   = getDb();
+    $stmt = $db->query(
+        "SELECT DISTINCT study_site
+           FROM studies
+          WHERE study_site <> ''
+          ORDER BY study_site"
+    );
+
+    $equipment = array_column($stmt->fetchAll(), 'study_site');
+
+    respond(true, 'Equipment list retrieved.', ['equipment' => $equipment]);
+}
+
+/**
+ * @brief Returns the import-request rows for a transaction.
+ *
+ * @post action=GetTransactionStatus, sessionID, transactionID
+ * @return void  Emits JSON { requests: [ ... ] }.
+ */
+function handleGetTransactionStatus(): void
+{
+    requireSession();
+
+    $transactionID = trimmedPost('transactionID');
+    if ($transactionID === '') {
+        respond(false, 'Missing required parameter: transactionID.', null, 400);
+    }
+    if (!ctype_digit($transactionID)) {
+        respond(false, 'Invalid transactionID.', null, 400);
+    }
+    $transactionID = (int)$transactionID;
+
+    $db   = getDb();
+    $stmt = $db->prepare(
+        'SELECT a.*, b.project_name, c.site_name, d.instance_name
+           FROM import_requests a
+           LEFT JOIN projects   b ON a.import_projectid  = b.project_id
+           LEFT JOIN nidb_sites c ON a.import_siteid     = c.site_id
+           LEFT JOIN instance   d ON a.import_instanceid = d.instance_id
+          WHERE a.import_transactionid = ?
+          ORDER BY a.import_datetime DESC'
+    );
+    $stmt->execute([$transactionID]);
+
+    respond(true, 'Transaction status retrieved.', ['requests' => $stmt->fetchAll()]);
+}
+
+/**
+ * @brief Returns per-series archive status for a transaction (from importlogs).
+ *
+ * @post action=GetArchiveStatus, sessionID, transactionID
+ * @return void  Emits JSON { series: [ ... ] }.
+ */
+function handleGetArchiveStatus(): void
+{
+    requireSession();
+
+    $transactionID = trimmedPost('transactionID');
+    if ($transactionID === '') {
+        respond(false, 'Missing required parameter: transactionID.', null, 400);
+    }
+    if (!ctype_digit($transactionID)) {
+        respond(false, 'Invalid transactionID.', null, 400);
+    }
+    $transactionID = (int)$transactionID;
+
+    $db = getDb();
+
+    // Collect the import-request IDs that belong to this transaction.
+    $stmt = $db->prepare(
+        'SELECT importrequest_id FROM import_requests WHERE import_transactionid = ?'
+    );
+    $stmt->execute([$transactionID]);
+    $groupIDs = array_map('intval', array_column($stmt->fetchAll(), 'importrequest_id'));
+
+    if (count($groupIDs) === 0) {
+        respond(true, 'Archive status retrieved.', ['series' => []]);
+    }
+
+    // Aggregate the per-series import-log entries for those requests.
+    $placeholders = implode(',', array_fill(0, count($groupIDs), '?'));
+    $stmt = $db->prepare(
+        "SELECT *,
+                timediff(max(importstartdate), min(importstartdate))     AS importtime,
+                date_format(max(importstartdate), '%b %e, %Y %T')        AS maximportdatetime,
+                date_format(studydatetime_orig, '%b %e, %Y %T')          AS studydatetime,
+                date_format(seriesdatetime_orig, '%b %e, %Y %T')         AS seriesdatetime,
+                count(*)                                                 AS numfiles
+           FROM importlogs
+          WHERE importgroupid IN ($placeholders)
+          GROUP BY stationname_orig, studydatetime_orig, seriesnumber_orig
+          ORDER BY studydatetime_orig DESC, seriesdatetime_orig"
+    );
+    $stmt->execute($groupIDs);
+
+    respond(true, 'Archive status retrieved.', ['series' => $stmt->fetchAll()]);
 }
 
 
@@ -463,12 +742,33 @@ function getDb(): PDO
     static $pdo = null;
 
     if ($pdo === null) {
+        // Bootstrap the application config ($GLOBALS['cfg']) if it isn't already loaded.
+        // LoadConfig() lives in functions.php and reads nidb.cfg; functions.php only defines
+        // functions on include, so pulling it in here does not emit any output.
+        if (!isset($GLOBALS['cfg']) || !is_array($GLOBALS['cfg'])) {
+            require_once __DIR__ . '/functions.php';
+            LoadConfig(true);
+        }
         $cfg = $GLOBALS['cfg'];
-        $dsn = sprintf(
-            'mysql:host=%s;dbname=%s;charset=utf8mb4',
-            $cfg['mysqlhost'], $cfg['mysqldatabase']
-        );
-        $pdo = new PDO($dsn, $cfg['mysqluser'], $cfg['mysqlpassword'], [
+
+        // The application talks to a separate database on the development server
+        // (reached on port 8080). Mirror the selection made in includes_php.php so
+        // this API hits the same database as the rest of the site.
+        $isDev = isset($_SERVER['HTTP_HOST']) && stripos($_SERVER['HTTP_HOST'], ':8080') !== false;
+        if ($isDev) {
+            $host = $cfg['mysqldevhost'];
+            $name = $cfg['mysqldevdatabase'];
+            $user = $cfg['mysqldevuser'];
+            $pass = $cfg['mysqldevpassword'];
+        } else {
+            $host = $cfg['mysqlhost'];
+            $name = $cfg['mysqldatabase'];
+            $user = $cfg['mysqluser'];
+            $pass = $cfg['mysqlpassword'];
+        }
+
+        $dsn = sprintf('mysql:host=%s;dbname=%s;charset=utf8mb4', $host, $name);
+        $pdo = new PDO($dsn, $user, $pass, [
             PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES   => false,   // use native prepared statements
@@ -518,7 +818,7 @@ function trimmedPost(string $key): string
  * @param  int         $httpCode  HTTP status code (default 200).
  * @return never
  */
-function respond(bool $success, string $message, mixed $data = null, int $httpCode = 200): never
+function respond(bool $success, string $message, $data = null, int $httpCode = 200)
 {
     http_response_code($httpCode);
 
@@ -549,14 +849,14 @@ function respond(bool $success, string $message, mixed $data = null, int $httpCo
  */
 function uploadErrorMessage(int $code): string
 {
-    return match ($code) {
-        UPLOAD_ERR_INI_SIZE,
-        UPLOAD_ERR_FORM_SIZE  => 'File exceeds the maximum allowed size.',
-        UPLOAD_ERR_PARTIAL    => 'File was only partially uploaded.',
-        UPLOAD_ERR_NO_FILE    => 'No file was uploaded.',
-        UPLOAD_ERR_NO_TMP_DIR => 'Temporary directory unavailable.',
-        UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk.',
-        UPLOAD_ERR_EXTENSION  => 'Upload blocked by server extension.',
-        default               => 'Unknown upload error.',
-    };
+    switch ($code) {
+        case UPLOAD_ERR_INI_SIZE:
+        case UPLOAD_ERR_FORM_SIZE:  return 'File exceeds the maximum allowed size.';
+        case UPLOAD_ERR_PARTIAL:    return 'File was only partially uploaded.';
+        case UPLOAD_ERR_NO_FILE:    return 'No file was uploaded.';
+        case UPLOAD_ERR_NO_TMP_DIR: return 'Temporary directory unavailable.';
+        case UPLOAD_ERR_CANT_WRITE: return 'Failed to write file to disk.';
+        case UPLOAD_ERR_EXTENSION:  return 'Upload blocked by server extension.';
+        default:                    return 'Unknown upload error.';
+    }
 }
