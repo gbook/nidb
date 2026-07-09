@@ -122,9 +122,9 @@
 	if (is_null($seriesid))
 		$seriesid = array();
 
-	if (count($seriesids) > 0)
+	if (count((array)$seriesids) > 0)
 		$objectids = $seriesids;
-	if (count($seriesid) > 0)
+	if (count((array)$seriesid) > 0)
 		$objectids = $seriesid;
 	if (trim($objectIDsToDelete) != "") {
 		$objectids = explode(",", $objectIDsToDelete);
@@ -260,7 +260,7 @@
 	/* -------------------------------------------- */
 	function DisplayAddEnrollmentForm($enrollmentids) {
 		
-		if (count($enrollmentids) < 1) {
+		if (count((array)$enrollmentids) < 1) {
 			Error("0 subjectids passed into function");
 			return;
 		}
@@ -302,13 +302,13 @@
 		$projectids = array_unique($projectids);
 		$seriesdescs = array_unique($seriesdesc);
 		
-		$numenrollments = count($enrollmentids);
-		$numsubjects = count($subjectids);
-		$numstudies = count($studyids);
-		$numseries = count($seriesids, COUNT_RECURSIVE);
+		$numenrollments = count((array)$enrollmentids);
+		$numsubjects = count((array)$subjectids);
+		$numstudies = count((array)$studyids);
+		$numseries = count((array)$seriesids, COUNT_RECURSIVE);
 		
 		/* get list of analysisids */
-		if (count($studyids) > 0) {
+		if (count((array)$studyids) > 0) {
 			$studyidstr = implode2(",", $studyids);
 			$sqlstring = "select * from analysis where study_id in (" . $studyidstr . ") and analysis_status in ('complete', 'error','rerunresults')";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -381,7 +381,7 @@
 	/* -------------------------------------------- */
 	function DisplayAddStudyForm($studyids) {
 		
-		if (count($studyids) < 1) {
+		if (count((array)$studyids) < 1) {
 			Error("No studyids passed into function");
 			return;
 		}
@@ -423,10 +423,10 @@
 		$projectids = array_unique($projectids);
 		$seriesdescs = array_unique($seriesdesc);
 		
-		$numenrollments = count($enrollmentids);
-		$numsubjects = count($subjectids);
-		$numstudies = count($studyids);
-		$numseries = count($seriesids, COUNT_RECURSIVE);
+		$numenrollments = count((array)$enrollmentids);
+		$numsubjects = count((array)$subjectids);
+		$numstudies = count((array)$studyids);
+		$numseries = count((array)$seriesids, COUNT_RECURSIVE);
 		
 		/* get list of analysisids */
 		$studyidstr = implode2(",", $studyids);
@@ -503,7 +503,7 @@
 		//PrintVariable($seriesids);
 		//PrintVariable($modality);
 		
-		if (count($seriesids) < 1) {
+		if (count((array)$seriesids) < 1) {
 			Error("0 seriesids passed into function");
 			return;
 		}
@@ -540,9 +540,9 @@
 		$projectids = array_unique($projectids);
 		$seriesdescs = array_unique($seriesdesc);
 		
-		$numenrollments = count($enrollmentids);
-		$numsubjects = count($subjectids);
-		$numstudies = count($studyids);
+		$numenrollments = count((array)$enrollmentids);
+		$numsubjects = count((array)$subjectids);
+		$numstudies = count((array)$studyids);
 		$numseries = count($seriesids2, COUNT_RECURSIVE);
 		
 		/* get list of analysisids */
@@ -769,7 +769,7 @@
 	/* this function expects a list of enrollment IDs */
 	function DisplayFormSubjects($enrollmentids, $required) {
 		
-		$numsubjects = count($enrollmentids);
+		$numsubjects = count((array)$enrollmentids);
 		
 		if ($required) {
 			$checkboxstr = " checked onClick='return false' onKeyDown='return false' ";
@@ -783,7 +783,7 @@
 			$numselected = 0;
 		}
 		
-		if (count($enrollmentids) > 0) {
+		if (count((array)$enrollmentids) > 0) {
 			?>
 			<script type="text/javascript">
 				$(function() {
@@ -889,7 +889,7 @@
 	/* -------------------------------------------- */
 	function DisplayFormStudies($studyids, $required) {
 		
-		$numstudies = count($studyids);
+		$numstudies = count((array)$studyids);
 		
 		if ($required) {
 			$checkboxstr = " checked onClick='return false' onKeyDown='return false' ";
@@ -903,7 +903,7 @@
 			$numselected = 0;
 		}
 
-		if (count($studyids) > 0) {
+		if (count((array)$studyids) > 0) {
 			?>
 			<script type="text/javascript">
 				$(function() {
@@ -1034,7 +1034,7 @@
 			$numselected = 0;
 		}
 
-		if (count($seriesids) > 0) {
+		if (count((array)$seriesids) > 0) {
 			?>
 			<script type="text/javascript">
 				$(function() {
@@ -1155,7 +1155,7 @@
 	function DisplayFormExperiments($experimentids, $required) {
 		
 		$experimentidstr = implode2(",", $experimentids);
-		$numexperiments = count($experimentids);
+		$numexperiments = count((array)$experimentids);
 		
 		if ($required) {
 			$checkboxstr = " checked onClick='return false' onKeyDown='return false' ";
@@ -1169,7 +1169,7 @@
 			$numselected = 0;
 		}
 
-		if (count($experimentids) > 0) {
+		if (count((array)$experimentids) > 0) {
 			?>
 			<script type="text/javascript">
 				$(function() {
@@ -1267,7 +1267,7 @@
 	function DisplayFormAnalyses($analysisids, $required) {
 
 		$analysisidstr = implode2(",", $analysisids);
-		$numanalysis = count($analysisids);
+		$numanalysis = count((array)$analysisids);
 
 		if ($required) {
 			$checkboxstr = " checked onClick='return false' onKeyDown='return false' ";
@@ -1281,7 +1281,7 @@
 			$numselected = 0;
 		}
 
-		if (count($analysisids) > 0) {
+		if (count((array)$analysisids) > 0) {
 			?>
 			<script type="text/javascript">
 				$(function() {
@@ -1381,7 +1381,7 @@
 	function DisplayFormPipelines($pipelineids, $required) {
 
 		$pipelineidstr = implode2(",", $pipelineids);
-		$numpipelines = count($pipelineids);
+		$numpipelines = count((array)$pipelineids);
 
 		if ($required) {
 			$checkboxstr = " checked onClick='return false' onKeyDown='return false' ";
@@ -1395,7 +1395,7 @@
 			$numselected = 0;
 		}
 
-		if (count($pipelineids) > 0) {
+		if (count((array)$pipelineids) > 0) {
 			?>
 			<script type="text/javascript">
 				$(function() {
@@ -1507,7 +1507,7 @@
 			$numselected = 0;
 		}
 		
-		if ((count($enrollmentids) > 0) && ($numobservations > 0)) {
+		if ((count((array)$enrollmentids) > 0) && ($numobservations > 0)) {
 			?>
 			<script type="text/javascript">
 				$(function() {
@@ -1627,7 +1627,7 @@
 			$numselected = 0;
 		}
 
-		if ((count($enrollmentids) > 0) && ($numinterventions > 0)) {
+		if ((count((array)$enrollmentids) > 0) && ($numinterventions > 0)) {
 			?>
 			<script type="text/javascript">
 				$(function() {
@@ -1737,7 +1737,7 @@
 		$objecttype = mysqli_real_escape_string($GLOBALS['linki'], $objecttype);
 		$objectids = mysqli_real_escape_array($GLOBALS['linki'], $objectids);
 
-		$numobjects = count($objectids);
+		$numobjects = count((array)$objectids);
 		$objectidstr = implode2(",", $objectids);
 		switch ($objecttype) {
 			case "enrollment":
@@ -1820,67 +1820,67 @@
 		$includepipelines = mysqli_real_escape_string($GLOBALS['linki'], $includepipelines);
 		
 		/* add any enrollments */
-		if ((count($enrollmentids) > 0) && (is_array($enrollmentids))) {
+		if ((count((array)$enrollmentids) > 0) && (is_array($enrollmentids))) {
 			foreach ($enrollmentids as $enrollmentid) {
 				list($uid, $subjectid, $altuid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
 				$sqlstring = "insert ignore into package_enrollments (package_id, enrollment_id, package_subjectid) values ($packageid, $enrollmentid, '$altuid')";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
-			$numobjects += count($enrollmentids);
-			$msg .= "Added " . count($enrollmentids) . " enrollments<br>";
+			$numobjects += count((array)$enrollmentids);
+			$msg .= "Added " . count((array)$enrollmentids) . " enrollments<br>";
 		}
 
 		//PrintVariable($seriesids);
 		/* add any series */
-		if ((count($seriesids) > 0) && (is_array($seriesids))) {
+		if ((count((array)$seriesids) > 0) && (is_array($seriesids))) {
 			foreach ($seriesids as $seriesid) {
 				list($mod, $sid) = explode("-",$seriesid);
 				$sqlstring = "insert ignore into package_series (package_id, modality, series_id) values ($packageid, '$mod', $sid)";
 				//PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
-			$numobjects += count($seriesids);
-			$msg .= "Added " . count($seriesids) . " series<br>";
+			$numobjects += count((array)$seriesids);
+			$msg .= "Added " . count((array)$seriesids) . " series<br>";
 		}
 
 		/* add any experiments */
-		if ((count($experimentids) > 0) && ($includeexperiments) && (is_array($experimentids))) {
+		if ((count((array)$experimentids) > 0) && ($includeexperiments) && (is_array($experimentids))) {
 			foreach ($experimentids as $experimentid) {
 				$sqlstring = "insert ignore into package_experiments (package_id, experiment_id) values ($packageid, $experimentid)";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
-			$numobjects += count($experimentids);
-			$msg .= "Added " . count($experimentids) . " experiments<br>";
+			$numobjects += count((array)$experimentids);
+			$msg .= "Added " . count((array)$experimentids) . " experiments<br>";
 		}
 
 		/* add any analyses */
-		if ((count($analysisids) > 0) && ($includeanalysis) && (is_array($analysisids))) {
+		if ((count((array)$analysisids) > 0) && ($includeanalysis) && (is_array($analysisids))) {
 			foreach ($analysisids as $analysisid) {
 				$sqlstring = "insert ignore into package_analyses (package_id, analysis_id) values ($packageid, $analysisid)";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
-			$numobjects += count($analysisids);
-			$msg .= "Added " . count($analysisids) . " analyses<br>";
+			$numobjects += count((array)$analysisids);
+			$msg .= "Added " . count((array)$analysisids) . " analyses<br>";
 		}
 		
 		/* add any pipelines */
-		if ((count($pipelineids) > 0) && ($includepipelines) && (is_array($pipelineids))) {
+		if ((count((array)$pipelineids) > 0) && ($includepipelines) && (is_array($pipelineids))) {
 			foreach ($pipelineids as $pipelineid) {
 				$sqlstring = "insert ignore into package_pipelines (package_id, pipeline_id) values ($packageid, $pipelineid)";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
-			$numobjects += count($pipelineids);
-			$msg .= "Added " . count($pipelineids) . " pipelines<br>";
+			$numobjects += count((array)$pipelineids);
+			$msg .= "Added " . count((array)$pipelineids) . " pipelines<br>";
 		}
 
 		/* add any interventions */
-		if ((count($interventionids) > 0) && ($includeinterventions) && (is_array($interventionids))) {
+		if ((count((array)$interventionids) > 0) && ($includeinterventions) && (is_array($interventionids))) {
 			foreach ($interventionids as $interventionid) {
 				$sqlstring = "insert ignore into package_interventions (package_id, intervention_id) values ($packageid, $interventionid)";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
-			$numobjects += count($interventionids);
-			$msg .= "Added " . count($interventionids) . " interventions<br>";
+			$numobjects += count((array)$interventionids);
+			$msg .= "Added " . count((array)$interventionids) . " interventions<br>";
 		}
 		
 		/* add ALL observations if selected */
@@ -1911,8 +1911,8 @@
 				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 				$inserts = array();
 			}
-			$numobjects += count($observationids);
-			$msg .= "Added " . count($observationids) . " observations<br>";
+			$numobjects += count((array)$observationids);
+			$msg .= "Added " . count((array)$observationids) . " observations<br>";
 		}
 		
 		$title = "Added $numobjects objects to package";

@@ -47,6 +47,7 @@
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
 	$subjectids = GetVariable("subjectids");
+	if (!is_array($subjectids)) $subjectids = array();
 	$subjectuid = GetVariable("subjectuid");
 	$selectedid = (int)GetVariable("selectedid");
 	$selectedstudyid = (int)GetVariable("selectedstudyid");

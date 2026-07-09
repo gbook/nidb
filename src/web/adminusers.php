@@ -64,11 +64,17 @@
 		$isadmin = GetVariable("isadmin");
 		$apiaccess = GetVariable("apiaccess");
 		$instanceid = GetVariable("instanceid");
+		if (!is_array($instanceid)) $instanceid = array();
 		$projectadmin = GetVariable("projectadmin");
+		if (!is_array($projectadmin)) $projectadmin = array();
 		$modifydata = GetVariable("modifydata");
+		if (!is_array($modifydata)) $modifydata = array();
 		$viewdata = GetVariable("viewdata");
+		if (!is_array($viewdata)) $viewdata = array();
 		$modifyphi = GetVariable("modifyphi");
+		if (!is_array($modifyphi)) $modifyphi = array();
 		$viewphi = GetVariable("viewphi");
+		if (!is_array($viewphi)) $viewphi = array();
 		
 		/* determine action */
 		switch ($action) {

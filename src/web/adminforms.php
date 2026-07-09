@@ -52,6 +52,7 @@
 
 		//$formfieldid = GetVariable("formfieldid");
 		$datatype = GetVariable("datatype");
+		if (!is_array($datatype)) $datatype = array();
 		$field = GetVariable("field");
 		$order = GetVariable("order");
 		$values = GetVariable("values");

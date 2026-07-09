@@ -56,8 +56,10 @@
 	$projectid = (int)GetVariable("projectid");
 	$minipipelinename = GetVariable("minipipelinename");
 	$scriptexecutableids = GetVariable("scriptexecutableids");
+	if (!is_array($scriptexecutableids)) $scriptexecutableids = array();
 	$scriptentrypointid = (int)GetVariable("scriptentrypointid");
 	$scriptdeleteids = GetVariable("scriptdeleteids");
+	if (!is_array($scriptdeleteids)) $scriptdeleteids = array();
 	$scriptparams = GetVariable("scriptparams");
 	$scriptid = (int)GetVariable("scriptid");
 	

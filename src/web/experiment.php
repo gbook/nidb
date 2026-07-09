@@ -45,6 +45,7 @@
 	$experimentname = GetVariable("experimentname");
 	$experimentdesc = GetVariable("experimentdesc");
 	$filedeleteids = GetVariable("filedeleteids");
+	if (!is_array($filedeleteids)) $filedeleteids = array();
 	$fileid = (int)GetVariable("fileid");
 	
 	/* determine action */

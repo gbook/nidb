@@ -61,6 +61,7 @@
 	$rangehigh = GetVariable("rangehigh");
 	$itemids = GetVariable("itemids");
 	$deleteids = GetVariable("deleteids");
+	if (!is_array($deleteids)) $deleteids = array();
 	$csv = GetVariable("csv");
 	
 	/* determine action */

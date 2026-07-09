@@ -485,7 +485,7 @@
 		$studyids = implode2(",", $studyids);
 		
 		$uids = array();
-		if (count($studyids) > 0) {
+		if ($studyids != "") {
 			/* get list of enrollments from these studies */
 			$sqlstring = "select enrollment_id from studies where study_id in ($studyids)";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);

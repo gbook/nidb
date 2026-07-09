@@ -44,6 +44,11 @@
 	$a['mr_protocols'] = GetVariable("mr_protocols");
     $a['eeg_protocols'] = GetVariable("eeg_protocols");
     $a['et_protocols'] = GetVariable("et_protocols");
+    /* these are multi-select ([]) fields; GetVariable() returns NULL when none are submitted,
+       which throws a TypeError in in_array()/foreach under PHP 8. Force them to arrays. */
+    if (!is_array($a['mr_protocols']))  $a['mr_protocols']  = array();
+    if (!is_array($a['eeg_protocols'])) $a['eeg_protocols'] = array();
+    if (!is_array($a['et_protocols']))  $a['et_protocols']  = array();
     $a['pipelineid'] = GetVariable("pipelineid");
     $a['pipelineresultname'] = GetVariable("pipelineresultname");
     $a['pipelineseriesdatetime'] = GetVariable("pipelineseriesdatetime");

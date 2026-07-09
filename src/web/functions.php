@@ -1929,17 +1929,16 @@
 	/* ------- SetTags ---------------------------- */
 	/* -------------------------------------------- */
 	function SetTags($idtype, $id, $tags, $modality='') {
-		
-		if (count($tags) > 1) {
-			/* trim all the tags */
-			$tags = array_map("trim", $tags);
-		
-			/* remove duplicates */
-			$tags = array_unique($tags, SORT_STRING);
-		
-			/* remove tags that are NULL, FALSE, or empty strings */
-			$tags = array_filter($tags, 'strlen');
-		}
+
+		/* accept an array, a comma-separated string, or null; normalize to an array so
+		   count()/array_map()/foreach() are safe (PHP 8 throws a TypeError on a non-array) */
+		if (!is_array($tags))
+			$tags = explode(",", (string)$tags);
+
+		/* trim, de-duplicate, and drop NULL/FALSE/empty tags */
+		$tags = array_map("trim", $tags);
+		$tags = array_unique($tags, SORT_STRING);
+		$tags = array_filter($tags, 'strlen');
 		
 		/* start a transaction */
 		$sqlstring = "start transaction";

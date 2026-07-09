@@ -106,6 +106,7 @@
 	$dd_enabled = GetVariable("dd_enabled");
 	$dd_order = GetVariable("dd_order");
 	$dd_protocol = GetVariable("dd_protocol");
+	if (!is_array($dd_protocol)) $dd_protocol = array();
 	$dd_modality = GetVariable("dd_modality");
 	$dd_datalevel = GetVariable("dd_datalevel");
 	$dd_studyassoc = GetVariable("dd_studyassoc");
