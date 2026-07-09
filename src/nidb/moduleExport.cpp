@@ -2306,7 +2306,7 @@ int moduleExport::GetNDAMapping(int projectRowID, QString protocol, QString moda
     int experimentID(0);
 
     QSqlQuery q;
-    q.prepare("select experiment_id from nda_mapping where project_id = :projectid");
+    q.prepare("select experiment_id from nda_mapping where protocolname = :protocol and project_id = :projectid");
     q.bindValue(":projectid", projectRowID);
     q.bindValue(":protocol", protocol);
     q.bindValue(":modality", modality);

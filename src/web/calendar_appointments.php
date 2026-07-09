@@ -131,7 +131,7 @@
 		
 		/* check if any form elements are bad, if so redisplay the addform */
 		if ($title == "") { DisplayForm("", "'Title' is blank", "", $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate); return; }
-		if ($calendarid == "") { DisplayForm("", "Calendar ID is blank", "", $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate); return; }
+		if ($calendarid == 0) { DisplayForm("", "Calendar ID is blank", "", $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate); return; }
 		if (!strtotime($startdatetime)) { DisplayForm("", "'Start date/time' is invalid", "", $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate); return; }
 		if (!strtotime($enddatetime)) { DisplayForm("", "'End date/time' is invalid", "", $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate); return; }
 		
@@ -333,7 +333,7 @@
 				//echo "$sqlstring<br>";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				/* CALULATE&POPULATE GROUP ID */
-				if ($groupid != "") {
+				if ($groupid != 0) {
 					$groupid = mysqli_insert_id($GLOBALS['linki']);
 					$sqlstring = "update calendar_appointments set appt_groupid = $groupid where appt_id = $groupid";
 					//echo "$sqlstring<br>";
@@ -342,7 +342,7 @@
 				
 			}
 			else {
-				if ($groupid != "") {
+				if ($groupid != 0) {
 					$sqlstring = "select * from calendar_appointments where appt_groupid = $groupid";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 					if (mysqli_num_rows($result) > 1) {
@@ -520,7 +520,7 @@
 		
 		$repeats = false;
 		$apptrepeatscheck = "";
-		if ($id != "") {
+		if ($id != 0) {
 			$type = "edit";
 			$pagetitle = "Edit Appointment";
 			$submitbutton = "Update";
@@ -543,7 +543,7 @@
 			$isrequest = $row['appt_istimerequest'];
 			$details = $row['appt_details'];
 
-			if ($groupid != "") {
+			if ($groupid != 0) {
 				$sqlstring = "select * from calendar_appointments where appt_groupid = $groupid";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				if (mysqli_num_rows($result) > 1) {

@@ -305,7 +305,7 @@
 		
 		$a = array();
 		
-		if ($savedsearchid != "") {
+		if ($savedsearchid != 0) {
 			$sqlstring = "select * from saved_search where savedsearch_id = $savedsearchid";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
@@ -567,7 +567,7 @@
 										<option value="ALLPROTOCOLS" <? if (in_array("ALLPROTOCOLS", $a['mr_protocols'])) echo "selected"; ?>>(ALL protocols)
 										<?
 										/* get unique list of MR protocols from this project */
-										if ($projectid == "")
+										if ($projectid == 0)
 											$sqlstring = "select a.series_desc from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
 										else
 											$sqlstring = "select a.series_desc from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid and a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
@@ -600,7 +600,7 @@
 										<option value="ALLPROTOCOLS" <? if (in_array("ALLPROTOCOLS", $a['eeg_protocols'])) echo "selected"; ?>>(ALL protocols)
 										<?
 										/* get unique list of EEG protocols from this project */
-										if ($projectid == "")
+										if ($projectid == 0)
 											$sqlstring = "select a.series_desc from eeg_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
 										else
 											$sqlstring = "select a.series_desc from eeg_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid and a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
@@ -634,7 +634,7 @@
 										<option value="ALLPROTOCOLS" <? if (in_array("ALLPROTOCOLS", $a['et_protocols'])) echo "selected"; ?>>(ALL protocols)
 										<?
 										/* get unique list of ET protocols from this project */
-										if ($projectid == "")
+										if ($projectid == 0)
 											$sqlstring = "select a.series_desc from et_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
 										else
 											$sqlstring = "select a.series_desc from et_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid and a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
@@ -664,7 +664,7 @@
 								<div class="ui field">
 									Pipeline
 									<select class="ui search dropdown" name="pipelineid[]" id="pipelineid" onChange="CheckForPipelineCriteria()" multiple="multiple" style="width: 100%"><?
-										if ($projectid == "")
+										if ($projectid == 0)
 											$sqlstring2 = "select pipeline_id, pipeline_name from pipelines where pipeline_id in (select a.pipeline_id from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id group by a.pipeline_id) order by pipeline_name";
 										else
 											$sqlstring2 = "select pipeline_id, pipeline_name from pipelines where pipeline_id in (select a.pipeline_id from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid group by a.pipeline_id) order by pipeline_name";
@@ -704,7 +704,7 @@
 								<div class="ui field">
 									Observation name(s)
 									<select class="ui search dropdown" name="observationname[]" id="observationname" onChange="CheckForObservationCriteria()" multiple="multiple" style="width: 100%"><?
-										if ($projectid == "")
+										if ($projectid == 0)
 											$sqlstringA = "SELECT distinct(observation_name) from observations order by c.observation_name";
 										else
 											$sqlstringA = "SELECT distinct(a.observation_name) from observations a left join enrollment b on a.enrollment_id = b.enrollment_id where b.project_id = $projectid order by c.observation_name";
@@ -738,7 +738,7 @@
 								<div class="ui field">
 									<label>Vital name(s)</label>
 									<select class="ui search dropdown" name="vitalname[]" id="vitalname" onChange="CheckForVitalCriteria()" multiple="multiple" style="width: 100%"><?
-										if ($projectid == "")
+										if ($projectid == 0)
 											$sqlstringA = "SELECT distinct(c.vital_name) FROM vitals a left join enrollment b on a.enrollment_id = b.enrollment_id left join vitalnames c on a.vitalname_id = c.vitalname_id order by c.vital_name";
 										else
 											$sqlstringA = "SELECT distinct(c.vital_name) FROM vitals a left join enrollment b on a.enrollment_id = b.enrollment_id left join vitalnames c on a.vitalname_id = c.vitalname_id where b.project_id = $projectid order by c.vital_name";
@@ -770,7 +770,7 @@
 									<label>Intervention variable name(s) <i class="small blue question circle outline icon" title="Find all of the following interventions and display the 'value'. Depending on where the data was imported from, 'value' may likely be blank"></i></label>
 									<select class="ui search dropdown" name="interventionname[]" id="interventionname" onChange="CheckForInterventionCriteria()" multiple="multiple" style="width: 100%">
 									<?
-										if ($projectid == "")
+										if ($projectid == 0)
 											$sqlstringA = "SELECT distinct(a.intervention_name) FROM interventions a left join enrollment b on a.enrollment_id = b.enrollment_id order by a.intervention_name";
 										else
 											$sqlstringA = "SELECT distinct(a.intervention_name) FROM interventions a left join enrollment b on a.enrollment_id = b.enrollment_id where b.project_id = $projectid order by a.intervention_name";
@@ -808,7 +808,7 @@
 										<label>Dose variable(s)</label>
 										<select class="ui search dropdown" name="dosevariable[]" id="dosevariable" onChange="CheckForInterventionCriteria()" multiple="multiple">
 										<?
-											if ($projectid == "")
+											if ($projectid == 0)
 												$sqlstringA = "SELECT distinct(intervention_name) FROM interventions order by intervention_name";
 											else
 												$sqlstringA = "SELECT distinct(a.intervention_name) FROM interventions a left join enrollment b on a.enrollment_id = b.enrollment_id where b.project_id = $projectid order by a.intervention_name";
@@ -1003,7 +1003,7 @@
 		/* create the table */
 		$t;
 		
-		if ($projectid == "") {
+		if ($projectid == 0) {
 			Error("Project is blank. Select a project to generate a report");
 			return;
 		}
@@ -1702,7 +1702,7 @@
 		/* create the table */
 		$t;
 		
-		if ($projectid == "") {
+		if ($projectid == 0) {
 			Error("Project is blank. Select a project to generate a report");
 			return;
 		}

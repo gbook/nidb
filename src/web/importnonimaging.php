@@ -185,7 +185,7 @@
 		$skipblankvalue = mysqli_real_escape_string($GLOBALS['linki'], $skipblankvalue);
 		$createmissingsubject = mysqli_real_escape_string($GLOBALS['linki'], $createmissingsubject);
 
-		if ($projectid == "") {
+		if ($projectid == 0) {
 			Error("Project was blank. Please go back and select a project");
 			return;
 		}
@@ -822,7 +822,7 @@
 	/* ------- EnrollSubject ---------------------- */
 	/* -------------------------------------------- */
 	function EnrollSubject($subjectRowID, $projectid) {
-		if ($projectid == "") {
+		if ($projectid == 0) {
 			Error("Project not specified");
 			return null;
 		}

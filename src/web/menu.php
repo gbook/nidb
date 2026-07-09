@@ -48,7 +48,7 @@
 		/* subjects */
 		?><a href="subjects.php" class="<? if ($page=="subjects.php" || $page=="groups.php" || $page == "series") { echo "active"; } ?> item">Subjects</a><?
 		/* projects */
-		?><a href="projects.php" class="<? if ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="studies.php" || $page=="observations.php" || $page=="minipipeline.php" || $page=="templates.php" || $page == "experiment.php" || $page == "mriqc.php") { echo "active"; } ?> item">Projects</a><?
+		?><a href="projects.php" class="<? if ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="studies.php" || $page=="observations.php" || $page=="minipipeline.php" || $page=="templates.php" || $page == "experiment.php" || $page == "mriqc.php" || $page == "nda.php") { echo "active"; } ?> item">Projects</a><?
 		/* pipelines */
 		if ($GLOBALS['cfg']['enablepipelines']) {
 			?><a href="pipelines.php" class="<? if ($page=="pipelines.php" || $page=="analysis.php") { echo "active"; } ?> item">Pipelines</a><?
@@ -126,10 +126,10 @@
 			$enrollmentid = (int)GetVariable("enrollmentid");
 			$experimentid = (int)GetVariable("experimentid");
 			
-			if ($studyid == "") {
+			if ($studyid == 0) {
 				$studyid = (int)GetVariable("studyid");
 			}
-			if (($seriesid != "") && ($modality != "")) {
+			if (($seriesid != 0) && ($modality != "")) {
 				list($path1, $uid, $studynum, $seriesnum, $seriesdesc, $imagetype, $seriessize, $numfiles, $studyid, $subjectid, $modality1, $studytype1, $studydatetime1, $enrollmentid1, $projectname, $projectid) = GetSeriesInfo($seriesid, $modality);
 				?>
 				<a href="projects.php?action=displayprojectinfo&id=<?=$projectid?>" class="item"><?=$projectname?></a>
@@ -137,7 +137,7 @@
 				<a href="studies.php?id=<?=$studyid?>" class="active item">Study <?=$studynum?></a>
 				<?
 			}
-			elseif ($studyid != "") {
+			elseif ($studyid != 0) {
 				list($path1, $uid, $studynum, $studyid, $subjectid, $modality1, $studytype1, $studydatetime1, $enrollmentid1, $projectname, $projectid) = GetStudyInfo($studyid);
 				?>
 				<a href="projects.php?action=displayprojectinfo&id=<?=$projectid?>" class="item"><?=$projectname?></a>
@@ -145,7 +145,7 @@
 				<a href="studies.php?id=<?=$studyid?>" class="active item">Study <?=$studynum?></a>
 				<?
 			}
-			elseif (($enrollmentid != "") && (($page == "observations.php") || ($page == "interventions.php") || ($page == "enrollment.php") || ($page == "diagnosis.php") || ($page == "timeline.php"))) {
+			elseif (($enrollmentid != 0) && (($page == "observations.php") || ($page == "interventions.php") || ($page == "enrollment.php") || ($page == "diagnosis.php") || ($page == "timeline.php"))) {
 				list($uid, $subjectid, $altuid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
 				?>
 				<a href="projects.php?action=displayprojectinfo&id=<?=$projectid?>" class="item"><?=$projectname?></a>
@@ -155,14 +155,14 @@
 		}
 		
 		/* projects sub-menu */
-		elseif ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="studies.php" || $page=="minipipeline.php" || $page=="templates.php" || $page=="datadictionary.php" || $page == "experiment.php" || $page == "mriqc.php" || $page == "importremote.php" || $page == "instruments.php" || $page == "remoteimportmapping.php") {
+		elseif ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="studies.php" || $page=="minipipeline.php" || $page=="templates.php" || $page=="datadictionary.php" || $page == "experiment.php" || $page == "mriqc.php" || $page == "importremote.php" || $page == "instruments.php" || $page == "remoteimportmapping.php" || $page == "nda.php") {
 			
 			//if ($page=="projectchecklist.php" || $page=="projectassessments.php" || $page=="minipipeline.php" || $page=="templates.php" || $page=="datadictionary.php" || $page == "experiment.php") {
 			$projectid = (int)GetVariable("projectid");
-			if ($projectid == "")
+			if ($projectid == 0)
 				$projectid = (int)GetVariable("id");
 			
-			if ($projectid == "") {
+			if ($projectid == 0) {
 				?><!--<a href="projects.php" style="background-color:#273f70" class="item">Project List</a>--><?
 			} 
 			else {
@@ -196,9 +196,7 @@
 						<a class="item" href="minipipeline.php?projectid=<?=$projectid?>" style="color: #222"><i class="cogs icon"></i> Mini-pipelines</a>
 						<a class="item" href="experiment.php?projectid=<?=$projectid?>" style="color: #222"><i class="clipboard icon"></i> Experiments</a>
 						<a class="item" href="projects.php?action=editbidsmapping&id=<?=$projectid?>" style="color: #222"><i class="tasks icon"></i> BIDS protocol mapping</a>
-						<a class="item" href="projects.php?action=editndamapping&id=<?=$projectid?>" style="color: #222"><i class="tasks icon"></i> NDA experiment ID mapping</a>
 						<a class="item" href="projects.php?action=editexperimentmapping&id=<?=$projectid?>" style="color: #222"><i class="tasks icon"></i> Experiment &harr; protocol mapping</a>
-						<a class="item" href="ndarequests.php?action=default&projectid=<?=$projectid?>" style="color: #222"><i class="history icon"></i> NDA request history</a>
 						<a class="item" href="nda.php?projectid=<?=$projectid?>" style="color: #222"><i class="upload icon"></i> NDA</a>
 					</div>
 				</div>
@@ -253,7 +251,7 @@
 		elseif ($page=="pipelines.php" || $page=="analysis.php" || $page == "cluster.php") {
 			if ($GLOBALS['cfg']['enablepipelines']) {
 				$pipelineid = (int)GetVariable("id");
-				if ($pipelineid == "") {
+				if ($pipelineid == 0) {
 					?><a href="pipelines.php" class="item">Pipeline List</a><?
 					?><a href="pipelines.php?action=addform" class="red item">New Pipeline</a><?
 					?><a href="cluster.php" class="<? if ($page == "cluster.php") { echo "active"; } ?> item">Cluster</a><?

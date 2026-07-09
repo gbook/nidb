@@ -92,6 +92,11 @@ function showndauploads($projectid)
         </div>
 <?
 	$Exid = getexportid($projectid,'ndar');
+	if (count($Exid) < 1) {
+		echo "No previous NDA exports";
+		return;
+	}
+	
 	$in_var = implode(',',$Exid);
 	$sqlstring = "select * from exports where export_id IN ($in_var) order by export_id" ;
 	$indx = 0;
@@ -260,11 +265,11 @@ function UpdateNdaSubmission($projectid,$exportid,$ndaprojectnumber,$ndasubmissi
                 return;
 	}
 
-	if ($ndaprojectnumber == "" || $ndaprojectnumber== " "){
+	if ($ndaprojectnumber == 0 || $ndaprojectnumber== " "){
 		$ndaprojectnumber='NULL';
 	}
 
-	if ($ndasubmissionid == "" || $ndasubmissionid == " "){
+	if ($ndasubmissionid == 0 || $ndasubmissionid == " "){
                 $ndasubmissionid='NULL';
 	}
 

@@ -99,7 +99,7 @@
 		$searchactive = 1;
 	}
 	
-	if ($id == "") $id = $subjectid;
+	if ($id == 0) $id = $subjectid;
 	
 	/* determine action */
 	switch ($action) {
@@ -173,7 +173,7 @@
 			DisplaySubject($id, $projectid);
 			break;
 		default:
-			if ($id == "") {
+			if ($id == 0) {
 				DisplaySubjectList($searchuid, $searchaltuid, $searchname, $searchgender, $searchdob, $searchactive);
 			}
 			else {
@@ -393,7 +393,7 @@
 		$email = mysqli_real_escape_string($GLOBALS['linki'], $email);
 		$maritalstatus = mysqli_real_escape_string($GLOBALS['linki'], $maritalstatus);
 		$smokingstatus = mysqli_real_escape_string($GLOBALS['linki'], $smokingstatus);
-		$cancontact = mysqli_real_escape_string($GLOBALS['linki'], $cancontact) + 0;
+		$cancontact = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $cancontact));
 		$tags = mysqli_real_escape_string($GLOBALS['linki'], $tags);
 		$altuid = mysqli_real_escape_string($GLOBALS['linki'], $altuid);
 		$guid = mysqli_real_escape_string($GLOBALS['linki'], $guid);
@@ -699,7 +699,7 @@
 	/* ------- EnrollSubject ---------------------- */
 	/* -------------------------------------------- */
 	function EnrollSubject($subjectid, $projectid) {
-		if ($projectid == "") {
+		if ($projectid == 0) {
 			Error("Project not specified");
 			return;
 		}
@@ -2264,7 +2264,7 @@
 							<input type="hidden" name="enrollmentids[]" value="">
 						</tr>
 						<?
-						if ($id != "") {
+						if ($id != 0) {
 							$sqlstring = "select a.enrollment_id, b.project_name from enrollment a left join projects b on a.project_id = b.project_id where a.subject_id = '$id'";
 							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -2582,7 +2582,7 @@
 									$projectid = $rowA['project_id'];
 									$projectname = $rowA['project_name'];
 									$projectcostcenter = $rowA['project_costcenter'];
-									if ($projectid != "") {
+									if ($projectid != 0) {
 										$enrolllist[$projectid] = "$projectname ($projectcostcenter)";
 									}
 								}

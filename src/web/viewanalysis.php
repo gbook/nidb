@@ -486,7 +486,7 @@
 			<table class="smalldisplaytable" id="resultstable">
 				<tbody>
 		<?
-			if ($studyid == "") {
+			if ($studyid == 0) {
 				$sqlstring2 = "select a.*, d.result_name from analysis_results a left join analysis b on a.analysis_id = b.analysis_id left join pipelines c on b.pipeline_id = c.pipeline_id left join analysis_resultnames d on d.resultname_id = a.result_nameid where a.analysis_id = $analysisid order by a.result_type, d.result_name";
 			}
 			else {

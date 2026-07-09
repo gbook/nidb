@@ -317,7 +317,7 @@
 		}
 
 		/* remove the 'idtoremove' */
-		if ($idtoremove != "") {
+		if ($idtoremove != 0) {
 			if (($key = array_search($idtoremove, $subjectids)) !== false) {
 				unset($subjectids[$key]);
 			}

@@ -50,7 +50,7 @@
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
 	$studyid = GetVariable("studyid");
-	if ($studyid == "") { $studyid = GetVariable("id"); }
+	if ($studyid == 0) { $studyid = GetVariable("id"); }
 	$studyid = (int)$studyid;
 	$subjectid = (int)GetVariable("subjectid");
 	$enrollmentid = (int)GetVariable("enrollmentid");
@@ -660,7 +660,7 @@
 			<tbody>
 			<?
 			foreach ($seriesids as $seriesid) {
-				if ((is_numeric($seriesid)) && ($seriesid != "")) {
+				if ((is_numeric($seriesid)) && ($seriesid != 0)) {
 					$sqlstring = "select * from $modality" . "_series where $modality" . "series_id = $seriesid";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 					$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
@@ -747,7 +747,7 @@
 				<tbody>
 				<?
 				foreach ($seriesids as $seriesid) {
-					if ((is_numeric($seriesid)) && ($seriesid != "")) {
+					if ((is_numeric($seriesid)) && ($seriesid != 0)) {
 						$sqlstring = "select * from $modality" . "_series where $modality" . "series_id = $seriesid";
 						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 						$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
@@ -1120,7 +1120,7 @@
 		$modality = strtolower(trim(mysqli_real_escape_string($GLOBALS['linki'], $modality)));
 
 		foreach ($seriesids as $seriesid) {
-			if ((is_numeric($seriesid)) && ($seriesid != "")) {
+			if ((is_numeric($seriesid)) && ($seriesid != 0)) {
 				$sqlstring = "update $modality" . "_series set ishidden = 1 where mrseries_id = $seriesid";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				?><div align="center"><span class="message">Series hidden</span></div><?
@@ -1140,7 +1140,7 @@
 		$modality = strtolower(trim(mysqli_real_escape_string($GLOBALS['linki'], $modality)));
 		
 		foreach ($seriesids as $seriesid) {
-			if ((is_numeric($seriesid)) && ($seriesid != "")) {
+			if ((is_numeric($seriesid)) && ($seriesid != 0)) {
 				$sqlstring = "update $modality" . "_series set ishidden = 0 where mrseries_id = $seriesid";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				?><div align="center"><span class="message">Series unhidden</span></div><?
@@ -1357,7 +1357,7 @@
 			$s = $seriesid;
 			
 		foreach ($s as $key => $seriesid) {
-			if ($minipipelineid != "")
+			if ($minipipelineid != 0)
 				$mpid = $minipipelineid;
 			else
 				$mpid = $minipipelineids[$key];
@@ -3373,10 +3373,10 @@
 		if ($imgperline == "") { $imgperline = 4; }
 		
 		//echo "DisplayAnalyses($studyid, $search_name, $search_compare, $search_value, $search_swversion)<br>";
-		if (($search_pipelineid != "") || ($search_name != "") || ($search_value != "") || ($search_type != "") || ($search_swversion != "")) {
+		if (($search_pipelineid != 0) || ($search_name != "") || ($search_value != "") || ($search_type != "") || ($search_swversion != "")) {
 			$sqlstring = "select a.*, c.pipeline_name, d.result_name from analysis_results a left join analysis b on a.analysis_id = b.analysis_id left join pipelines c on b.pipeline_id = c.pipeline_id left join analysis_resultnames d on d.resultname_id = a.result_nameid where b.study_id = $studyid ";
 			$sqlstring2 = "select distinct(c.pipeline_id), c.pipeline_name, d.result_name from analysis_results a left join analysis b on a.analysis_id = b.analysis_id left join pipelines c on b.pipeline_id = c.pipeline_id where b.study_id = $studyid ";
-			if ($search_pipelineid != "") {
+			if ($search_pipelineid != 0) {
 				$sqlstring .= " and c.pipeline_id = $search_pipelineid ";
 				$sqlstring2 .= " and c.pipeline_id = $search_pipelineid ";
 			}

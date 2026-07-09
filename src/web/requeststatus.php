@@ -391,7 +391,8 @@
 							elseif (($destinationtype == "ndar") || ($destinationtype == "ndarcsv")) {
 								if (in_array('NDA_WEBDOWNLOAD', $ndaFlags)) {
 									?>NDA web download...<?
-									$zipFilePath = $GLOBALS['cfg']['webdir'] . "/download/NIDB-$exportid.zip";
+									$zipFileName = "NIDB-$exportid.zip";
+									$zipFilePath = $GLOBALS['cfg']['webdir'] . "/download/$zipFileName";
 									if (file_exists($zipFilePath)) { $filesize = filesize($zipFilePath); }
 									else { $filesize = 0; }
 
@@ -400,7 +401,7 @@
 									}
 									else {
 										?>
-											<a class="ui blue button" href="download/<?=$zipfilename?>" title="Download zip file"><i class="download icon"></i> Download <span style="font-size: smaller"><?=HumanReadableFilesize($filesize)?></span></a>
+											<a class="ui blue button" href="download/<?=$zipFileName?>" title="Download zip file"><i class="download icon"></i> Download <span style="font-size: smaller"><?=HumanReadableFilesize($filesize)?></span></a>
 											<br>
 										<?
 									}

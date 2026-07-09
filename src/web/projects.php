@@ -48,7 +48,7 @@
 	$action = GetVariable("action");
 	$id = (int)GetVariable("id");
 	$projectid = (int)GetVariable("projectid");
-	if ($id == "") { $id = $projectid; }
+	if ($id == 0) { $id = $projectid; }
 	$viewtype = GetVariable("viewtype");
 	$newprojectid = (int)GetVariable("newprojectid");
 	$studyids = GetVariable("studyids");
@@ -170,9 +170,6 @@
 			ResetProjectMRIQC($id);
 			DisplayStudiesTable($id);
 			break;
-		case 'show_rdoc_list':
-			DisplayRDoCList($rdoc_label);
-			break;
 		case 'setfavorite':
 			SetFavorite($id);
 			DisplayProject($id);
@@ -193,7 +190,7 @@
 			DisplayNonImagingTable($id);
 			break;
 		default:
-			if ($id == '') {
+			if ($id == 0) {
 				DisplayProjects($viewtype);
 			}
 			else {
@@ -564,7 +561,7 @@
 	/* -------------------------------------------- */
 	function ResetProjectQA($id) {
 		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
-		if ($id == "") {
+		if ($id == 0) {
 			Error("Invalid project ID");
 		}
 		
@@ -584,7 +581,7 @@
 	/* -------------------------------------------- */
 	function ResetProjectMRIQC($id) {
 		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
-		if ($id == "") {
+		if ($id == 0) {
 			Error("Invalid project ID");
 		}
 		
@@ -2889,7 +2886,17 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$numsubjects = $row['numsubjects'];
-		
+
+		$sqlstring = "select count(*) 'n' from instruments where project_id = $id";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$numinstruments = $row['n'];
+
+		$sqlstring = "select count(*) 'n' from experiments where project_id = $id";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$numexperiments = $row['n'];
+
 		if (count($studydates) > 0) {
 			$lowdate = min($studydates);
 			$highdate = max($studydates);
@@ -2926,18 +2933,20 @@
 				</div>
 			</div>
 
-			<!-- quick-access tiles (max 4 per row, then wrap) -->
-			<div class="ui four stackable cards" style="margin-top: 0.5em; margin-bottom: 1.5em">
+			<!-- quick-access tiles, grouped by category (max 4 per row, then wrap) -->
+
+			<h3 class="ui dividing header">View</h3>
+			<div class="ui four stackable cards" style="margin-bottom: 1.5em">
 				<a class="ui green card" href="projects.php?action=editsubjects&id=<?=$id?>">
 					<div class="content">
-						<div class="right floated meta"><?=$numsubjects?></div>
+						<div class="ui grey circular label" style="float: right"><?=$numsubjects?></div>
 						<div class="header"><i class="user friends icon"></i> Subjects</div>
 						<div class="description">Manage subjects</div>
 					</div>
 				</a>
 				<a class="ui green card" href="projects.php?action=displaystudies&id=<?=$id?>">
 					<div class="content">
-						<div class="right floated meta"><?=$numstudies?></div>
+						<div class="ui grey circular label" style="float: right"><?=$numstudies?></div>
 						<div class="header"><i class="project diagram icon"></i> Imaging studies</div>
 						<div class="description">Manage MR, EEG, and other imaging studies</div>
 					</div>
@@ -2950,6 +2959,21 @@
 				</a>
 				<div class="ui green card">
 					<div class="content">
+						<div class="header"><i class="clipboard check icon"></i> QC</div>
+						<div class="description">Quality control</div>
+					</div>
+					<div class="extra content">
+						<a href="projectchecklist.php?projectid=<?=$id?>" style="color: #4183c4">Checklist</a><br>
+						<a href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>" style="color: #4183c4">MR scan QC</a><br>
+						<a href="mriqc.php?action=viewmriqc&projectid=<?=$id?>" style="color: #4183c4">Advanced QC</a>
+					</div>
+				</div>
+			</div>
+
+			<h3 class="ui dividing header">Import</h3>
+			<div class="ui four stackable cards" style="margin-bottom: 1.5em">
+				<div class="ui green card">
+					<div class="content">
 						<div class="header"><i class="cloud download alternate icon"></i> Remote import</div>
 						<div class="description">Manage remote imports</div>
 					</div>
@@ -2957,6 +2981,79 @@
 						<a href="remoteimportmapping.php?projectid=<?=$id?>" style="color: #4183c4">Remote Import Mapping</a><br>
 						<a href="importremote.php?projectid=<?=$id?>" style="color: #4183c4">Remote Imports</a><br>
 						<a href="importremote.php?action=viewbatchimportlist&projectid=<?=$id?>" style="color: #4183c4">Batch Imports</a>
+					</div>
+				</div>
+				<a class="ui green card" href="importimaging.php?action=newimportform&projectid=<?=$id?>">
+					<div class="content">
+						<div class="header"><i class="file import icon"></i> Import imaging</div>
+						<div class="description">Import imaging data</div>
+					</div>
+				</a>
+				<a class="ui green card" href="importnonimaging.php?action=newimportform&projectid=<?=$id?>">
+					<div class="content">
+						<div class="header"><i class="file import icon"></i> Import non-imaging</div>
+						<div class="description">Import non-imaging data</div>
+					</div>
+				</a>
+			</div>
+
+			<h3 class="ui dividing header">Export</h3>
+			<div class="ui four stackable cards" style="margin-bottom: 1.5em">
+				<div class="ui green card">
+					<div class="content">
+						<div class="header"><i class="upload icon"></i> NDA submission</div>
+						<div class="description">Manage NDA submissions</div>
+					</div>
+					<div class="extra content">
+						<a href="nda.php?projectid=<?=$id?>" style="color: #4183c4">NDA submissions</a><br>
+						<a href="nda.php?action=editndamapping&projectid=<?=$id?>" style="color: #4183c4">Edit experiment mapping</a>
+					</div>
+				</div>
+				<a class="ui green card" href="analysisbuilder.php?action=viewanalysissummary&projectid=<?=$id?>">
+					<div class="content">
+						<div class="header"><i class="list alternate outline icon"></i> Analysis builder</div>
+						<div class="description">Build and export analyses</div>
+					</div>
+				</a>
+			</div>
+
+			<h3 class="ui dividing header">Manage</h3>
+			<div class="ui four stackable cards" style="margin-bottom: 1.5em">
+				<a class="ui green card" href="instruments.php?projectid=<?=$id?>">
+					<div class="content">
+						<div class="ui grey circular label" style="float: right"><?=$numinstruments?></div>
+						<div class="header"><i class="flask icon"></i> Instruments</div>
+						<div class="description">Manage instruments and expected observations</div>
+					</div>
+				</a>
+				<a class="ui green card" href="datadictionary.php?projectid=<?=$id?>">
+					<div class="content">
+						<div class="header"><i class="database icon"></i> Data dictionary</div>
+						<div class="description">Manage the data dictionary</div>
+					</div>
+				</a>
+				<a class="ui green card" href="templates.php?action=displaystudytemplatelist&projectid=<?=$id?>">
+					<div class="content">
+						<div class="header"><i class="clone outline icon"></i> Study templates</div>
+						<div class="description">Manage study templates</div>
+					</div>
+				</a>
+				<a class="ui green card" href="experiment.php?projectid=<?=$id?>">
+					<div class="content">
+						<div class="ui grey circular label" style="float: right"><?=$numexperiments?></div>
+						<div class="header"><i class="clipboard icon"></i> Experiments</div>
+						<div class="description">Manage experiments</div>
+					</div>
+				</a>
+				<div class="ui green card">
+					<div class="content">
+						<div class="header"><i class="tasks icon"></i> Mappings</div>
+						<div class="description">Manage data mappings</div>
+					</div>
+					<div class="extra content">
+						<a href="projects.php?action=editbidsmapping&id=<?=$id?>" style="color: #4183c4">BIDS protocol mapping</a><br>
+						<a href="projects.php?action=editexperimentmapping&id=<?=$id?>" style="color: #4183c4">Experiment/protocol mapping</a><br>
+						<a href="remoteimportmapping.php?projectid=<?=$id?>" style="color: #4183c4">Remote import mapping</a>
 					</div>
 				</div>
 			</div>
@@ -3453,7 +3550,7 @@
 			if ($lastprojectadmin != $adminusername) {
 				
 				/* terminate the previous block if there was one */
-				if ($lastprojectpi != "") {
+				if ($lastprojectadmin != "") {
 					?></table>
 					</div><?
 				}
@@ -3543,38 +3640,6 @@
 		if ($lastprojectadmin != "") {
 			?></table></div><?
 		}
-	}
-
-
-	/* -------------------------------------------- */
-    /* ------- DisplayRDoCList -------------------- */
-    /* -------------------------------------------- */
-    function DisplayRDoCList($rdoc_label) {
-		$subject = "Subject";
-		$series = "Series";
-		?>	
-
-		<table style="width:70%">
-		  <tr>
-			<th>Subject</th>
-			<th>Series</th> 
-		  </tr>
-		<?
-			$sqlstring = "SELECT label FROM `rdoc_uploads` WHERE label = '$rdoc_label'";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
-						$series = $row2['label'];
-							$subject = $row2['label'];
-		?>
-				  <tr>	
-					<td><?=$subject?></td>
-					<td><?=$series?></td> 
-				  </tr>
-		<?
-		}
-		?>
-		</table>
-		<?
 	}
 	
 ?>

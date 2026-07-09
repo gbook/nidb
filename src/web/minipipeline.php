@@ -119,7 +119,7 @@
 		/* perform data checks */
 		$minipipelinename = mysqli_real_escape_string($GLOBALS['linki'], $minipipelinename);
 		
-		if (is_null($scriptentrypointid) || ($scriptentrypointid == "")) {
+		if (is_null($scriptentrypointid) || ($scriptentrypointid == 0)) {
 			echo "No entry point set. An entry point script must be set.<br><br>";
 			//return false;
 		}

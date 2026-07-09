@@ -63,7 +63,7 @@
 	/* ----------------------------------------------- */
 	function ViewReport($enrollmentid) {
 		
-		if (($enrollmentid == "") || (!isInteger($enrollmentid))) {
+		if (($enrollmentid == 0) || (!isInteger($enrollmentid))) {
 			Error("Invalid or blank enrollment ID");
 		}
 		
@@ -185,7 +185,7 @@
 	/* ----------------------------------------------- */
 	function ViewProjectReport($projectid) {
 		
-		if (($projectid == "") || (!isInteger($projectid))) {
+		if (($projectid == 0) || (!isInteger($projectid))) {
 			Error("Invalid or blank project ID");
 		}
 

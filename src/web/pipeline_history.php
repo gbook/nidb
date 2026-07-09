@@ -50,7 +50,7 @@
 	$action = GetVariable("action");
 	$pipelineid = (int)GetVariable("pipelineid");
 	$id = (int)GetVariable("id");
-	if ($pipelineid == "")
+	if ($pipelineid == 0)
 		$pipelineid = $id;
 		
 	/* determine action */

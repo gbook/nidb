@@ -79,7 +79,7 @@
 	/* -------------------------------------------- */
 	function DisplayTimeline($enrollmentid, $startdatetime, $enddatetime, $resolution, $selectedprotocols, $allobservations) {
 		
-		if ((is_null($enrollmentid)) || ($enrollmentid < 0) || ($enrollmentid == "")) {
+		if ((is_null($enrollmentid)) || ($enrollmentid < 0) || ($enrollmentid == 0)) {
 			?><span class="error">Invalid enrollment ID</div><?
 			return;
 		}

@@ -58,7 +58,7 @@
 	$viewhidden = GetVariable("viewhidden");
 	$viewall = GetVariable("viewall");
 	$viewuserid = (int)GetVariable("viewuserid");
-	if ($viewuserid != "")
+	if ($viewuserid != 0)
 		$_SESSION['viewuserid'] = $viewuserid;
 
 	$pipelinetitle = GetVariable("pipelinetitle");
@@ -88,8 +88,8 @@
 	$deplevel = GetVariable("deplevel");
 	$depdir = GetVariable("depdir");
 	$deplinktype = GetVariable("deplinktype");
-	$groupid = (int)GetVariable("groupid");
-	$projectid = (int)GetVariable("projectid");
+	$groupid = GetVariable("groupid");
+	$projectid = GetVariable("projectid");
 	//$dynamicgroupid = GetVariable("dynamicgroupid");
 	$level = GetVariable("level");
 	$ishidden = GetVariable("pipelineishidden");
@@ -357,7 +357,7 @@
 		}
 
 		/* add row to the pipeline_options table for the new version */
-		$sqlstring = "insert into pipeline_options (pipeline_id, pipeline_version, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_projectid, pipeline_groupbysubject, pipeline_outputbids, pipeline_bidsoutputdir, pipeline_completefiles, pipeline_resultsscript) values ($id, $newversion, '$dependencies', '$deplevel', '$depdir', '$deplinktype', '$groupids', '$projectids', '$groupbysubject', '$outputbids', '$bidsoutputdir', '$completefiles', '$pipelineresultscript')";
+		$sqlstring = "insert into pipeline_options (pipeline_id, pipeline_version, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_projectid, pipeline_groupbysubject, pipeline_outputbids, pipeline_bidsoutputdir, pipeline_completefiles, pipeline_resultsscript) values ($id, $newversion, '$dependencies', '$deplevel', '$depdir', '$deplinktype', '$groupids', '$projectids', '$groupbysubject', '$outputbids', '$bidsoutputdir', '$completefiles', '$pipelineresultsscript')";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$msg .= "<li>Updated pipeline_options table";
 		
@@ -589,14 +589,19 @@
 		if (is_array($dependency)) {
 			$dependencies = implode(",",$dependency);
 		}
+		else { $dependencies = $dependency; }
+
 		if (is_array($groupid))
 			$groupids = implode2(",",$groupid);
+		else { $groupids = $groupid; }
 
 		if (is_array($projectid))
 			$projectids = implode2(",",$projectid);
-		
+		else { $projectids = $projectid; }
+
 		if (!ctype_alnum($pipelinetitle)) {
 			Error("Error creating pipeline. Pipeline name can only contain numbers and letters, no spaces or special characters");
+			return -1;
 		}
 		
 		if ($pipelinemaxwalltime == "") $pipelinemaxwalltime = "null";
@@ -3228,7 +3233,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$title = $row['pipeline_name'];
 		$desc = $row['pipeline_desc'];
-		if ($version == "") {
+		if ($version == 0) {
 			$version = $row['pipeline_version'];
 		}
 
@@ -3528,7 +3533,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 		$viewuserid = $_SESSION['viewuserid'];
 		
 		if ($viewuserid != "all") {
-			if (($viewuserid == "") || ($viewuserid < 0)) {
+			if (($viewuserid == 0) || ($viewuserid < 0)) {
 				$viewuserid = $GLOBALS['userid'];
 			}
 		}

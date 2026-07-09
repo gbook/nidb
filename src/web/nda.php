@@ -50,6 +50,13 @@
 		DisplaySeriesDetail($projectid, $exportid);
 		exit;
 	}
+
+	/* in-place edit of the NDA project number / submission id - saves and returns a short status string */
+	if ($action == "updatendainfoajax") {
+		UpdateNDASubmission($projectid, $exportid, $ndaprojectnumber, $ndasubmissionid, $csvfile);
+		echo "success";
+		exit;
+	}
 ?>
 
 <html>
@@ -128,20 +135,57 @@
 
 		$placeholders = implode(',', array_fill(0, count($exportids), '?'));
 		$types = str_repeat('i', count($exportids));
-		$stmt = mysqli_prepare($GLOBALS['linki'], "select * from exports where export_id in ($placeholders) order by startdate desc");
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select * from exports where export_id in ($placeholders) order by submitdate desc");
 		mysqli_stmt_bind_param($stmt, $types, ...$exportids);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		?>
+		<script type="text/javascript">
+			/* auto-save the NDA collection / submission id for a row, and keep the Submitted indicator in sync */
+			function ndaSaveInfo(indx, projectid, exportid, hascsv) {
+				var proj = document.getElementById('ndaproj' + indx).value;
+				var sub = document.getElementById('ndasub' + indx).value;
+				var status = document.getElementById('ndastatus' + indx);
+				if (status) status.innerHTML = '<i class="grey spinner loading icon"></i>';
+
+				var body = new URLSearchParams();
+				body.append('action', 'updatendainfoajax');
+				body.append('projectid', projectid);
+				body.append('exportid', exportid);
+				body.append('ndaprojectnumber', proj);
+				body.append('ndasubmissionid', sub);
+
+				fetch('nda.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString() })
+					.then(function(r) { return r.text(); })
+					.then(function(t) {
+						var ok = (t.indexOf('success') !== -1);
+						if (status) {
+							status.innerHTML = ok ? '<i class="green check icon"></i> Saved' : '<i class="red exclamation icon"></i> Error';
+							if (ok) setTimeout(function() { status.innerHTML = ''; }, 2000);
+						}
+						/* the Submitted indicator needs both a (non-zero) submission id and a CSV file */
+						var cell = document.getElementById('ndasubmitted' + indx);
+						if (cell) {
+							var hasSub = (sub.trim() !== '' && sub.trim() !== '0');
+							cell.innerHTML = (hasSub && hascsv) ? '<i class="green check circle icon" title="Submitted to NDA (has submission ID and CSV file)"></i>' : '';
+						}
+					})
+					.catch(function() { if (status) status.innerHTML = '<i class="red exclamation icon"></i> Error'; });
+			}
+		</script>
 		<table class="ui celled compact table">
 			<thead>
+				<tr>
+					<th colspan="3" class="center aligned">Local</th>
+					<th colspan="4" class="center aligned">NDA</th>
+				</tr>
 				<tr>
 					<th></th>
 					<th>Export date</th>
 					<th>Username</th>
 					<th>NDA Collection</th>
 					<th>NDA Submission ID</th>
-					<th></th>
 					<th>CSV File</th>
+					<th>Submitted</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -165,6 +209,8 @@
 			$ndaprojectnumber = $row2['ndaprojectnum'];
 			$ndasubmissionid = $row2['ndasubmission_id'];
 			$hascsv = !is_null($row2['csv_file']);
+			/* a submission is "complete" when it has both an NDA submission ID and a CSV file */
+			$issubmitted = (!empty($ndasubmissionid) && $hascsv);
 			?>
 			<tr>
 				<td class="collapsing">
@@ -181,24 +227,26 @@
 				<td class="collapsing"><?=$username?></td>
 				<td>
 					<div class="ui fluid input">
-						<input form="<?=$b_name?>form" type="text" name="ndaprojectnumber" value="<?=$ndaprojectnumber?>">
+						<input form="<?=$b_name?>form" id="ndaproj<?=$indx?>" type="text" name="ndaprojectnumber" value="<?=htmlspecialchars($ndaprojectnumber)?>" onchange="ndaSaveInfo(<?=$indx?>, <?=$projectid?>, <?=$exportid?>, <?=$hascsv ? 'true' : 'false'?>)">
 					</div>
 				</td>
 				<td>
 					<div class="ui fluid input">
-						<input form="<?=$b_name?>form" type="text" name="ndasubmissionid" value="<?=$ndasubmissionid?>">
+						<input form="<?=$b_name?>form" id="ndasub<?=$indx?>" type="text" name="ndasubmissionid" value="<?=htmlspecialchars($ndasubmissionid)?>" onchange="ndaSaveInfo(<?=$indx?>, <?=$projectid?>, <?=$exportid?>, <?=$hascsv ? 'true' : 'false'?>)">
 					</div>
-				</td>
-				<td class="collapsing">
-					<button form="<?=$b_name?>form" class="ui icon button" type="submit" onclick="return confirm('Are you sure you want to save the changes?');" title="Save"><i class="save icon"></i></button>
+					<span id="ndastatus<?=$indx?>" class="ui text" style="font-size: 0.85em"></span>
 				</td>
 				<td>
-					<input form="<?=$b_name?>form" type="file" name="csvfile" id="csvfile<?=$indx?>" accept=".csv" style="display: none" onchange="document.getElementById('csvname<?=$indx?>').textContent = this.files.length ? this.files[0].name : '';">
+					<input form="<?=$b_name?>form" type="file" name="csvfile" id="csvfile<?=$indx?>" accept=".csv" style="display: none" onchange="this.form.submit()">
 					<label for="csvfile<?=$indx?>" class="ui small button"><i class="upload icon"></i> <?=$hascsv ? "Overwrite" : "Upload"?></label>
 					<? if ($hascsv): ?>
 						<a href="nda.php?action=downloadcsv&projectid=<?=$projectid?>&exportid=<?=$exportid?>" title="View existing CSV file"><i class="file alternate icon"></i> View csv</a>
 					<? endif; ?>
-					<span id="csvname<?=$indx?>" class="ui text" style="margin-left: 4px"></span>
+				</td>
+				<td class="center aligned" id="ndasubmitted<?=$indx?>">
+					<? if ($issubmitted): ?>
+						<i class="green check circle icon" title="Submitted to NDA (has submission ID and CSV file)"></i>
+					<? endif; ?>
 				</td>
 			</tr>
 			<tr id="<?=$t_name?>" hidden>
@@ -245,7 +293,7 @@
 		$projectid = (int)$projectid;
 		$exportid = (int)$exportid;
 		?>
-		<table class="ui celled compact table" style="margin: 0; border: none">
+		<table class="ui celled very compact table" style="margin: 0; border: none">
 			<thead>
 				<tr>
 					<th align="left">Subject ID</th>
@@ -335,19 +383,19 @@
 		}
 		else {
 			?>
-			<table class="ui very basic compact table">
+			<table class="ui very basic compact table" style="width: 100%; table-layout: fixed">
 				<tbody>
 					<tr>
 						<td style="width: 200px"><b>NDA Collection ID</b></td>
-						<td><?=htmlspecialchars($row['nda_collectionid'])?></td>
+						<td style="overflow-wrap: anywhere"><?=htmlspecialchars($row['nda_collectionid'])?></td>
 					</tr>
 					<tr>
 						<td><b>Expected data</b></td>
-						<td><?=nl2br(htmlspecialchars($row['expected_data']))?></td>
+						<td style="overflow-wrap: anywhere"><?=nl2br(htmlspecialchars($row['expected_data']))?></td>
 					</tr>
 					<tr>
 						<td><b>Submission dates</b></td>
-						<td><?=nl2br(htmlspecialchars($row['submission_dates']))?></td>
+						<td style="overflow-wrap: anywhere"><?=nl2br(htmlspecialchars($row['submission_dates']))?></td>
 					</tr>
 				</tbody>
 			</table>
