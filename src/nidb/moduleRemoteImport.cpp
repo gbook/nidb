@@ -80,6 +80,7 @@ bool moduleRemoteImport::Run() {
             QString remoteUsername = q.value("remote_username").toString().trimmed();
             int remoteProjectID = q.value("remote_projectid").toInt();
             int remoteSurveyID = q.value("remote_surveyid").toInt();
+            QString remoteDatasource = q.value("remote_datasource").toString();
             QString importSchedule = q.value("import_schedule").toString().trimmed();
             int importTime = q.value("import_time").toInt();
             int importDayOfMonth = q.value("import_dayofmonth").toInt();
@@ -113,7 +114,7 @@ bool moduleRemoteImport::Run() {
                 ImportAvicennaSurveyCSV(remoteImportBatchRowID, remoteSurveyID, mapping, importUnmapped);
             }
             else if (remoteType == "avicenna_csv_datasource") {
-                //ImportCSV(remoteImportBatchRowID, remoteSurveyID, csvFormat, mapping, importUnmapped);
+                ImportAvicennaDataSourceCSV(remoteImportBatchRowID, remoteDatasource, mapping, importUnmapped);
             }
             else if (remoteType == "redcap") {
                 // TODO
@@ -292,6 +293,7 @@ ImportMapping::ImportMapping(nidb *n, int projectRowID) : n(n) {
         m.sourceType = q.value("source_type").toString();
         if (m.sourceType == "avicenna") {
             m.avicenna.survey        = q.value("avicenna_survey").toInt();
+            m.avicenna.datasource    = q.value("avicenna_datasource").toString();
             m.avicenna.question      = q.value("avicenna_question").toInt();
             m.avicenna.variable      = q.value("avicenna_variable").toString();
             m.avicenna.datatype      = q.value("avicenna_datatype").toString();
@@ -333,16 +335,43 @@ bool ImportMapping::LookupAvicennaMapping(int survey, int question, QString vari
         bool surveyMatch   = (m.avicenna.survey == survey);
         bool questionMatch = (m.avicenna.question == question);
         bool variableMatch = (m.avicenna.variable == variable);
-        //n->Log(QString("  checking mapping  survey [%1] match [%2]  question [%3] match [%4]  variable [%5] match [%6]")
-        //       .arg(m.avicenna.survey).arg(surveyMatch)
-        //       .arg(m.avicenna.question).arg(questionMatch)
-        //       .arg(m.avicenna.variable).arg(variableMatch));
 
         if (surveyMatch && (questionMatch || variableMatch)) {
             instrumentRowID     = m.instrumentRowID;
             instrumentItemRowID = m.instrumentItemRowID;
             importMeta          = m.flag.importMeta;
-            //n->Log(QString("  MATCH found  instrumentRowID [%1]  instrumentItemRowID [%2]  importMeta [%3]").arg(instrumentRowID).arg(instrumentItemRowID).arg(importMeta));
+            return true;
+        }
+    }
+
+    n->Log("  no match found");
+    return false;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- ImportMapping::LookupAvicennaMapping ----------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Searches the mapping list for a rule matching the given Avicenna survey, question, and variable.
+ * @param survey Avicenna survey ID.
+ * @param question Avicenna question ID.
+ * @param variable Avicenna variable name.
+ * @param instrumentRowID Set to the matching NiDB instrument row ID if found.
+ * @param instrumentItemRowID Set to the matching NiDB instrument item row ID if found.
+ * @return true if a matching rule was found, false otherwise.
+ */
+bool ImportMapping::LookupAvicennaMapping(QString datasource, QString variable, int &instrumentRowID, int &instrumentItemRowID, bool &importMeta) const {
+
+    for (const RemoteImportMapping &m : mappings) {
+        if (m.sourceType != "avicenna") continue;
+        bool datasourceMatch   = (m.avicenna.datasource == datasource);
+        bool variableMatch = (m.avicenna.variable == variable);
+
+        if (datasourceMatch && variableMatch) {
+            instrumentRowID     = m.instrumentRowID;
+            instrumentItemRowID = m.instrumentItemRowID;
+            importMeta          = m.flag.importMeta;
             return true;
         }
     }
@@ -766,65 +795,6 @@ bool moduleRemoteImport::ImportURL(int remoteImportBatchRowID, QString remoteURL
 /* ---------------------------------------------------------- */
 qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID, int remoteSurveyID, const ImportMapping &mapping, bool importUnmapped) {
 
-    /* Avicenna timestamps are ISO 8601 with a space separator and microseconds, e.g.
-           "2025-12-14 15:07:05.385000+00:00". Qt::ISODateWithMs handles the timezone
-           offset but requires a T separator and milliseconds (3 digits), so preprocess first. */
-    auto parseAvicennaDT = [](const QString &raw) -> QDateTime {
-        QString s = raw;
-        s.replace(' ', 'T');
-        s.replace(QRegularExpression("(\\.\\d{3})\\d+"), "\\1");
-        return QDateTime::fromString(s, Qt::ISODateWithMs).toUTC();
-    };
-
-    /* extract the timezone from the Avicenna datetime format */
-    auto parseAvicennaTZ = [](const QString &raw) -> QString {
-        QRegularExpressionMatch m = QRegularExpression("([+-]\\d{2}:\\d{2})$").match(raw.trimmed());
-        if (m.hasMatch())
-            return m.captured(1);
-
-        /* if there no explicit timezone offset — then derive from the local timezone at this datetime's instant (handles DST) */
-        QString s = raw.trimmed();
-        s.replace(' ', 'T');
-        s.replace(QRegularExpression("(\\.\\d{3})\\d+"), "\\1");
-        QDateTime localDT = QDateTime::fromString(s, Qt::ISODateWithMs);
-        int offsetSecs = localDT.isValid() ? localDT.offsetFromUtc() : QDateTime::currentDateTime().offsetFromUtc();
-        int h   = qAbs(offsetSecs) / 3600;
-        int min = (qAbs(offsetSecs) % 3600) / 60;
-        return QString("%1%2:%3").arg(offsetSecs >= 0 ? "+" : "-").arg(h, 2, 10, QChar('0')).arg(min, 2, 10, QChar('0'));
-    };
-
-    /* columns that carry session metadata rather than question responses — skip these during data import */
-    static const QStringList nonQuestionCols = {
-        "session scheduled time", /* survey opens - 6:00am */
-        "participant id",           /* the subject ID */
-        "participant label",
-        "unanswered status",
-        "participant start time",   /* enrollment date */
-        "start time",               /* survey start time */
-        "end time",                 /* when the subject clicks submit */
-        "participant end time",     /* subject is done with project */
-        "participant status",
-        "device id",
-        "device manufacturer",
-        "device model",
-        "device last used",
-        "device app version",
-        "device app update date",
-        "uuid",
-        "activity version",
-        "prompt time",          /* notification - 7:00am */
-        "record time",          /* may be the same as the end time, unless they didn't finish it... then it will be the end of the survey open-window time */
-        "expiry time",
-        "status",
-        "triggering logic id",
-        "triggering logic type",
-        "duration (seconds) from scheduled to completion time",
-        "duration (seconds) from first response to completion time",
-        "location"
-    };
-
-    //n->Log(QString("ImportCSV(%1, %2, ..mapping..)").arg(remoteImportBatchRowID).arg(csvFormat));
-
     /* get csv_path, and make sure it's valid */
     QString datafile_path;
     QSqlQuery q;
@@ -883,7 +853,7 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
         csv_path = datafile_path;
     }
 
-    /* read in the CSV */
+    /* ----- We got data, now read in the CSV ----- */
     QString csvStr = ReadTextFileIntoString(csv_path);
 
     indexedHash table;
@@ -934,7 +904,7 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
                 /* iterate over all columns, and check if they are mapped. If not mapped, then add the observation without an instrument/item */
                 for (const QString &col : columns) {
                     /* skip session info columns — only process question response columns */
-                    if (nonQuestionCols.contains(col)) {
+                    if (avicennaNonQuestionCols.contains(col)) {
                         //n->Log(QString("Skipping non-question column [%1]").arg(col));
                         continue;
                     }
@@ -1170,6 +1140,275 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
                 }
             }
         }
+    }
+    else {
+        RemoteImportLog(remoteImportBatchRowID, FileEvent, "Error parsing the csv", Error);
+        return 0;
+    }
+
+    /* delete the original path */
+    QString m2;
+    if (!SafeDeletePath(pathToDelete, n->cfg["uploaddir"], m2)) {
+        QString m3 = n->Log(QString("Error deleteing [%1]. Message [%2]").arg(pathToDelete).arg(m2));
+        RemoteImportLog(remoteImportBatchRowID, FileEvent, m3, Error);
+    }
+
+    RemoteImportLog(remoteImportBatchRowID, ImportObservation, QString("Added/updated %1 total observations").arg(numRows), Success);
+
+    return numRows;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- ImportAvicennaDataSourceCSV -------------------- */
+/* ---------------------------------------------------------- */
+/* Data sources are a continuous variable collection throughout the entirety
+ * of the subject's enrollment in the project. There is only ONE observation
+ * per data source per enrollment
+ * - An observation will only be added if it does not already exist
+ * - All datasource data will added to the timeseries table.
+ */
+qint64 moduleRemoteImport::ImportAvicennaDataSourceCSV(qint64 remoteImportBatchRowID, QString remoteDatasource, const ImportMapping &mapping, bool importUnmapped) {
+
+    /* get csv_path, and make sure it's valid */
+    QString datafile_path;
+    QSqlQuery q;
+    q.prepare("select * from remoteimport_batch where remoteimportbatch_id = :batchid");
+    q.bindValue(":batchid", remoteImportBatchRowID);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.size() > 0) {
+        q.first();
+        datafile_path = q.value("datafile_path").toString();
+        n->Log(QString("Datafile path [%1]").arg(datafile_path));
+    }
+    else
+        n->Log(QString("No database record for batchID [%1]").arg(remoteImportBatchRowID));
+
+    if (!QFile::exists(datafile_path)) {
+        n->Log(QString("Datafile [%1] does not exist").arg(datafile_path));
+        return false;
+    }
+
+    qint64 numRows(0);
+    int projectRowID(0);
+
+    /* get project ID */
+    q.prepare("select b.project_id from remoteimport_batch a left join remote_imports b on a.remoteimport_id = b.remoteimport_id where a.remoteimportbatch_id = :batchid");
+    q.bindValue(":batchid", remoteImportBatchRowID);
+    n->Log(n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__));
+    if (q.size() > 0) {
+        q.first();
+        projectRowID = q.value("project_id").toInt();
+    }
+    else {
+        n->Log("Project ID not found");
+        return 0;
+    }
+
+    QString csv_path;
+    QString pathToDelete = csv_path;
+    QString zipdir;
+    /* determine if we need to unzip the file */
+    if (datafile_path.endsWith(".zip", Qt::CaseInsensitive)) {
+        /* unzip the file in-place in the tmp directory */
+
+        QFileInfo fi(datafile_path);
+        zipdir = fi.absolutePath() + "/" + fi.completeBaseName();
+
+        // Shell-quote paths to handle spaces; assumes paths don't contain single quotes
+        QString systemstring = QString("unzip -o '%1' -d '%2' && rm '%1'").arg(datafile_path, zipdir);
+        SystemCommand(systemstring);
+
+        /* find first csv within the zipdir */
+        QString m;
+        NiDBFindFirstFile(zipdir, "*.csv", csv_path, m);
+        pathToDelete = zipdir;
+    }
+    else {
+        csv_path = datafile_path;
+    }
+
+    /* ----- We got data, now read in the datasource CSV ----- */
+    QString csvStr = ReadTextFileIntoString(csv_path);
+
+    indexedHash table;
+    QStringList columns; /* NOTE - columns are converted to lowercase */
+    QString m;
+    if (ParseCSV(csvStr, table, columns, m)) {
+
+        //n->Log("Columns in csv (" + columns.join(", ") + ")");
+
+        /* Precompute the mappings that apply to this datasource and whose column exists in the
+           CSV, so this filtering (and its logging) is done once instead of for every row. */
+        struct ApplicableMapping { QString variable; qint64 instrumentItemRowID; };
+        QList<ApplicableMapping> applicable;
+        for (const RemoteImportMapping &mp : mapping.mappings) {
+            if (mp.sourceType != "avicenna")
+                continue;
+            if (mp.avicenna.datasource != remoteDatasource)
+                continue;
+            QString avicennaVariable = mp.avicenna.variable.toLower().trimmed();
+            if (!columns.contains(avicennaVariable)) {
+                QString msg = n->Log(QString("Column list does not contain [%1] - this variable is not mapped").arg(avicennaVariable));
+                RemoteImportLog(remoteImportBatchRowID, RemoteImportLogEvent::ImportObservation, msg, EventResult::Error);
+                continue;
+            }
+            applicable.append(ApplicableMapping{ avicennaVariable, mp.instrumentItemRowID });
+        }
+
+        /* Caches so the same subject and observation lookups are not repeated for every row.
+           A subject's enrollment and its per-variable observation are constant across all of
+           that subject's rows, so each is looked up (or created) only once. */
+        struct SubjectInfo { bool found; int subjectRowID; int enrollmentRowID; QDateTime enrollmentDate; QString uid; };
+        QHash<QString, SubjectInfo> subjectCache;
+        QHash<QString, qint64> observationCache;   /* key: enrollmentRowID|instrumentItemRowID|variable */
+
+        /* Batched timeseries inserts: accumulate values per target column and write each batch as
+           a single multi-row INSERT. Aria auto-commits every statement, so collapsing many inserts
+           into one statement is the main speedup for large files. */
+        struct TSRow { qint64 obsid; QDateTime time; QVariant value; };
+        QList<TSRow> tsInt, tsDouble, tsString;
+        const int TS_BATCH = 500;
+        qint64 totalInserts = 0;
+
+        auto flushTS = [&](const QString &valueColumn, QList<TSRow> &batch) {
+            if (batch.isEmpty())
+                return;
+            QStringList tuples;
+            for (int k = 0; k < batch.size(); k++)
+                tuples << "(?, ?, ?)";
+            QSqlQuery bq;
+            /* valueColumn is a fixed internal column name (value_int/value_double/value_string) */
+            bq.prepare(QString("insert ignore into timeseries (observation_id, time, %1) values %2").arg(valueColumn, tuples.join(", ")));
+            for (const TSRow &r : batch) {
+                bq.addBindValue(r.obsid);
+                bq.addBindValue(r.time);
+                bq.addBindValue(r.value);
+            }
+            n->SQLQuery(bq, __FUNCTION__, __FILE__, __LINE__);
+            batch.clear();
+        };
+
+        /* iterate over the rows (each row is one timepoint for a subject) */
+        for (int i=0; i<table.size(); i++) {
+            /* get the participant ID, record date */
+            QString avicennaID  = table[i]["user_id"];
+            QString tzOffset    = parseAvicennaTZ(table[i]["record time"]);
+            QDateTime recordTime = parseAvicennaDT(table[i]["record time"]);
+
+            /* look up (and cache) the subject/enrollment for this Avicenna user. This function
+               requires that the subject already exists and is enrolled in this project. */
+            SubjectInfo si;
+            if (subjectCache.contains(avicennaID))
+                si = subjectCache.value(avicennaID);
+            else {
+                si.found = false;
+                si.subjectRowID = 0;
+                si.enrollmentRowID = 0;
+                q.prepare("select a.subject_id, b.enrollment_id, b.enroll_startdate, c.uid from subject_altuid a left join enrollment b on a.subject_id = b.subject_id left join subjects c on a.subject_id = c.subject_id where a.altuid = :altid and b.project_id = :projectid");
+                q.bindValue(":altid", avicennaID);
+                q.bindValue(":projectid", projectRowID);
+                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+                if (q.size() > 0) {
+                    q.first();
+                    si.found = true;
+                    si.uid = q.value("uid").toString();
+                    si.subjectRowID = q.value("subject_id").toInt();
+                    si.enrollmentRowID = q.value("enrollment_id").toInt();
+                    si.enrollmentDate = q.value("enroll_startdate").toDateTime();
+                    n->Log(QString("Avicenna subject [%1] found --> %2").arg(avicennaID).arg(si.uid));
+                }
+                else {
+                    QString msg = n->Log(QString("Avicenna subject [%1] not found").arg(avicennaID));
+                    RemoteImportLog(remoteImportBatchRowID, RemoteImportLogEvent::ImportSubject, msg, EventResult::Error);
+                }
+                subjectCache.insert(avicennaID, si);
+            }
+            if (!si.found)
+                continue;
+
+            /* iterate over the mappings that apply to this datasource */
+            for (const ApplicableMapping &am : applicable) {
+
+                /* find (and cache) the observation for this enrollment + datasource variable.
+                   There is only one observation per datasource variable per enrollment. */
+                QString obsKey = QString("%1|%2|%3").arg(si.enrollmentRowID).arg(am.instrumentItemRowID).arg(am.variable);
+                qint64 observationRowID = observationCache.value(obsKey, 0);
+                if (observationRowID == 0) {
+                    q.prepare("select observation_id from observations where enrollment_id = :enrollmentid and observation_name = :obsname and instrumentitem_id = :itemid");
+                    q.bindValue(":enrollmentid", si.enrollmentRowID);
+                    q.bindValue(":obsname", am.variable);
+                    q.bindValue(":itemid", am.instrumentItemRowID);
+                    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+                    if (q.size() > 0) {
+                        q.first();
+                        /* get the observationRowID */
+                        observationRowID = q.value("observation_id").toLongLong();
+                    }
+                    else {
+                        /* create new observation */
+                        observation obs;
+                        obs.n = n;
+                        obs.dateObservationStart = si.enrollmentDate;
+                        obs.observationTZOffset = tzOffset;
+                        obs.subjectRowID = si.subjectRowID;
+                        obs.enrollmentRowID = si.enrollmentRowID;
+                        obs.projectRowID = projectRowID;
+                        obs.remoteBatchRowID = remoteImportBatchRowID;
+                        obs.observationName = am.variable;
+                        obs.observationValue = "timeseries";
+                        obs.observationInstrument = remoteDatasource;
+                        obs.instrumentItemRowID = am.instrumentItemRowID;
+                        obs.PopulateLinkedInstrument();
+                        if (obs.AddToDatabase()) {
+                            observationRowID = obs.observationRowID;
+                            n->Log(QString("Created new observation [%1]   instrument [%2]   observationID [%3]  instrumentItemRowID [%4]").arg(am.variable).arg(remoteDatasource).arg(observationRowID).arg(obs.instrumentItemRowID));
+                        }
+                        else {
+                            n->Log(QString("Error creating new observation [%1]   instrument [%2]").arg(am.variable).arg(remoteDatasource));
+                        }
+                    }
+                    if (observationRowID > 0)
+                        observationCache.insert(obsKey, observationRowID);
+                }
+
+                /* get column value */
+                QString value = table[i][am.variable].trimmed();
+                if (value == "")
+                    continue;
+
+                /* determine the value's datatype */
+                bool isInt = false;
+                const int iVal = value.toInt(&isInt);          // or toLongLong for larger values
+
+                bool isDouble = false;
+                const double dVal = value.toDouble(&isDouble);
+
+                /* queue the value for a batched insert into the column matching its datatype */
+                if (isInt)
+                    tsInt.append(TSRow{ observationRowID, recordTime, QVariant(iVal) });
+                else if (isDouble)
+                    tsDouble.append(TSRow{ observationRowID, recordTime, QVariant(dVal) });
+                else
+                    tsString.append(TSRow{ observationRowID, recordTime, QVariant(value) });
+
+                /* flush any batch that has filled up */
+                if (tsInt.size()    >= TS_BATCH) flushTS("value_int",    tsInt);
+                if (tsDouble.size() >= TS_BATCH) flushTS("value_double", tsDouble);
+                if (tsString.size() >= TS_BATCH) flushTS("value_string", tsString);
+
+                /* progress log every 500 inserts */
+                if (++totalInserts % 500 == 0)
+                    n->Log(QString("Imported %1 timeseries values so far").arg(totalInserts));
+
+            }
+        }
+
+        /* flush any remaining batched inserts */
+        flushTS("value_int",    tsInt);
+        flushTS("value_double", tsDouble);
+        flushTS("value_string", tsString);
+        n->Log(QString("Datasource import complete: %1 timeseries values inserted").arg(totalInserts));
     }
     else {
         RemoteImportLog(remoteImportBatchRowID, FileEvent, "Error parsing the csv", Error);

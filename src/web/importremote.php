@@ -57,6 +57,7 @@
 	$remote_username  = GetVariable("remote_username");
 	$remote_projectid = GetVariable("remote_projectid");
 	$remote_surveyid  = GetVariable("remote_surveyid");
+	$remote_datasource = GetVariable("remote_datasource");
 	$flag_import_unmapped  = GetVariable("flag_import_unmapped") ? 1 : 0;
 
 	/* determine workflow step for the stepper diagram */
@@ -68,13 +69,12 @@
 		$workflowStep = 5;
 	}
 	?>
-	<div style="display:flex; align-items:flex-start; gap:2em; padding:1em; max-width:1600px; margin:0 auto">
-		<div style="flex-shrink:0; width:300px">
-			<div class="ui sticky" id="importWorkflowStepper">
+	<table width="100%">
+		<tr>
+			<td style="width:300px" valign="top">
 				<?php DisplayImportStepper($workflowStep); ?>
-			</div>
-		</div>
-		<div id="importPageContent" style="flex:1; min-width:0">
+			</td>
+			<td valign="top" style="padding-left: 20px">
 	<?php
 
 	switch ($action) {
@@ -121,21 +121,21 @@
 			DisplayRemoteImportForm("add", "", $projectid);
 			break;
 		case 'updateimport':
-			UpdateRemoteImport($importid, $importname, $projectid, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $remote_surveyid, $flag_import_unmapped, $import_schedule, $import_time, $import_dayofmonth, $import_days);
+			UpdateRemoteImport($importid, $importname, $projectid, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $remote_surveyid, $remote_datasource, $flag_import_unmapped, $import_schedule, $import_time, $import_dayofmonth, $import_days);
 			DisplayRemoteImportList($projectid);
 			break;
 		case 'addimport':
-			AddRemoteImport($importname, $projectid, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $remote_surveyid, $flag_import_unmapped, $import_schedule, $import_time, $import_dayofmonth, $import_days);
+			AddRemoteImport($importname, $projectid, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $remote_surveyid, $remote_datasource, $flag_import_unmapped, $import_schedule, $import_time, $import_dayofmonth, $import_days);
 			DisplayRemoteImportList($projectid);
 			break;
 		default:
 			DisplayRemoteImportList($projectid);
 	}
 	?>
-		</div>
-	</div>
+		</td>
+		</tr>
+	</table>
 	<script>
-	$('#importWorkflowStepper').sticky({ context: '#importPageContent', offset: 10 });
 	$('.ui.dropdown').dropdown();
 	</script>
 	<?php
@@ -150,7 +150,7 @@
 	function RunRemoteImport($importid) {
 		$importid = (int)$importid;
 
-		$stmt = mysqli_prepare($GLOBALS['linki'], "select import_name, import_schedule, remote_type, remote_surveyid from remote_imports where remoteimport_id = ?");
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select import_name, import_schedule, remote_type, remote_surveyid, remote_datasource from remote_imports where remoteimport_id = ?");
 		mysqli_stmt_bind_param($stmt, 'i', $importid);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
@@ -196,16 +196,32 @@
 		Notice("Remote import " . $row['import_name'] . " queued");
 
 		$surveyid = trim($row['remote_surveyid']);
-		if ($surveyid !== '' && $uploadedFilename !== null && stripos($uploadedFilename, $surveyid) === false) {
+		if ($surveyid !== '' && $uploadedFilename !== null && !FilenameContainsToken($uploadedFilename, $surveyid)) {
 			Warning("Survey ID \"$surveyid\" was not found in the uploaded filename \"" . htmlspecialchars($uploadedFilename) . "\" — verify you uploaded the correct file");
 		}
+
+		$datasource = trim($row['remote_datasource'] ?? '');
+		if ($datasource !== '' && $uploadedFilename !== null && !FilenameContainsToken($uploadedFilename, $datasource)) {
+			Warning("Datasource \"$datasource\" was not found in the uploaded filename \"" . htmlspecialchars($uploadedFilename) . "\" — verify you uploaded the correct file");
+		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- FilenameContainsToken -------------- */
+	/* -------------------------------------------- */
+	/* Case-insensitive check for whether $filename contains $token, treating underscores and
+	   dashes as equivalent (e.g. "fitbit_activity" matches a filename containing "fitbit-activity"). */
+	function FilenameContainsToken($filename, $token) {
+		$normalize = function($s) { return str_replace('_', '-', strtolower((string)$s)); };
+		return stripos($normalize($filename), $normalize($token)) !== false;
 	}
 
 
 	/* -------------------------------------------- */
 	/* ------- UpdateRemoteImport ----------------- */
 	/* -------------------------------------------- */
-	function UpdateRemoteImport($importid, $importname, $projectid, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $remote_surveyid, $flag_import_unmapped, $import_schedule, $import_time, $import_dayofmonth, $import_days) {
+	function UpdateRemoteImport($importid, $importname, $projectid, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $remote_surveyid, $remote_datasource, $flag_import_unmapped, $import_schedule, $import_time, $import_dayofmonth, $import_days) {
 		$importid = (int)$importid;
 		$projectid = (int)$projectid;
 		$importname = trim($importname);
@@ -231,6 +247,7 @@
 		$remote_username_db   = ($remote_username  == "") ? null : $remote_username;
 		$remote_projectid_db  = ($remote_projectid == "") ? null : $remote_projectid;
 		$remote_surveyid_db   = ($remote_surveyid  == "") ? null : trim($remote_surveyid);
+		$remote_datasource_db = ($remote_datasource == "") ? null : trim($remote_datasource);
 		$flag_import_unmapped = (int)$flag_import_unmapped;
 		if ($remote_token == "") {
 			$remote_token_db = ($existingtoken === "") ? null : $existingtoken;
@@ -239,8 +256,8 @@
 			$remote_token_db = $remote_token;
 		}
 
-		$stmt = mysqli_prepare($GLOBALS['linki'], "update remote_imports set import_name = ?, project_id = ?, remote_type = ?, remote_url = ?, remote_token = ?, remote_username = ?, remote_projectid = ?, remote_surveyid = ?, flag_import_unmapped = ?, import_schedule = ?, import_time = ?, import_dayofmonth = ?, import_days = ? where remoteimport_id = ?");
-		mysqli_stmt_bind_param($stmt, 'sissssssisissi', $importname, $projectid, $remote_type, $remote_url_db, $remote_token_db, $remote_username_db, $remote_projectid_db, $remote_surveyid_db, $flag_import_unmapped, $import_schedule, $import_time, $import_dayofmonth, $import_days, $importid);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "update remote_imports set import_name = ?, project_id = ?, remote_type = ?, remote_url = ?, remote_token = ?, remote_username = ?, remote_projectid = ?, remote_surveyid = ?, remote_datasource = ?, flag_import_unmapped = ?, import_schedule = ?, import_time = ?, import_dayofmonth = ?, import_days = ? where remoteimport_id = ?");
+		mysqli_stmt_bind_param($stmt, 'sisssssssisissi', $importname, $projectid, $remote_type, $remote_url_db, $remote_token_db, $remote_username_db, $remote_projectid_db, $remote_surveyid_db, $remote_datasource_db, $flag_import_unmapped, $import_schedule, $import_time, $import_dayofmonth, $import_days, $importid);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		mysqli_stmt_close($stmt);
 
@@ -251,7 +268,7 @@
 	/* -------------------------------------------- */
 	/* ------- AddRemoteImport -------------------- */
 	/* -------------------------------------------- */
-	function AddRemoteImport($importname, $projectid, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $remote_surveyid, $flag_import_unmapped, $import_schedule, $import_time, $import_dayofmonth, $import_days) {
+	function AddRemoteImport($importname, $projectid, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $remote_surveyid, $remote_datasource, $flag_import_unmapped, $import_schedule, $import_time, $import_dayofmonth, $import_days) {
 		$importname = trim($importname);
 		$projectid = (int)$projectid;
 		$remote_type = trim($remote_type);
@@ -269,10 +286,11 @@
 		$remote_username_db  = ($remote_username   == "") ? null : $remote_username;
 		$remote_projectid_db = ($remote_projectid  == "") ? null : $remote_projectid;
 		$remote_surveyid_db  = ($remote_surveyid   == "") ? null : trim($remote_surveyid);
+		$remote_datasource_db = ($remote_datasource == "") ? null : trim($remote_datasource);
 		$flag_import_unmapped = (int)$flag_import_unmapped;
 
-		$stmt = mysqli_prepare($GLOBALS['linki'], "insert into remote_imports (import_name, project_id, remote_type, remote_url, remote_token, remote_username, remote_projectid, remote_surveyid, flag_import_unmapped, import_schedule, import_time, import_dayofmonth, import_days) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-		mysqli_stmt_bind_param($stmt, 'sissssssisiis', $importname, $projectid, $remote_type, $remote_url_db, $remote_token_db, $remote_username_db, $remote_projectid_db, $remote_surveyid_db, $flag_import_unmapped, $import_schedule, $import_time, $import_dayofmonth, $import_days);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "insert into remote_imports (import_name, project_id, remote_type, remote_url, remote_token, remote_username, remote_projectid, remote_surveyid, remote_datasource, flag_import_unmapped, import_schedule, import_time, import_dayofmonth, import_days) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+		mysqli_stmt_bind_param($stmt, 'sisssssssisiis', $importname, $projectid, $remote_type, $remote_url_db, $remote_token_db, $remote_username_db, $remote_projectid_db, $remote_surveyid_db, $remote_datasource_db, $flag_import_unmapped, $import_schedule, $import_time, $import_dayofmonth, $import_days);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		mysqli_stmt_close($stmt);
 
@@ -414,6 +432,7 @@
 			$remote_username = $row['remote_username'];
 			$remote_projectid = $row['remote_projectid'];
 			$remote_surveyid = $row['remote_surveyid'];
+			$remote_datasource = $row['remote_datasource'];
 			$flag_import_unmapped = (int)$row['flag_import_unmapped'];
 			$import_schedule = $row['import_schedule'];
 			$import_time = $row['import_time'];
@@ -432,6 +451,7 @@
 			$remote_username = "";
 			$remote_projectid = "";
 			$remote_surveyid = "";
+			$remote_datasource = "";
 			$flag_import_unmapped = 0;
 			$import_schedule = "";
 			$import_time = 0;
@@ -519,6 +539,11 @@
 				<div class="field" id="remote_surveyid_group">
 					<label>Remote Survey ID</label>
 					<input type="text" name="remote_surveyid" id="remote_surveyid" value="<?=htmlspecialchars($remote_surveyid)?>" placeholder="Avicenna survey ID">
+				</div>
+
+				<div class="field" id="remote_datasource_group">
+					<label>Remote Datasource</label>
+					<input type="text" name="remote_datasource" id="remote_datasource" value="<?=htmlspecialchars($remote_datasource)?>" placeholder="Avicenna datasource">
 				</div>
 
 				<div class="three fields" id="import_schedule_group">
@@ -609,11 +634,13 @@
 				var isCSV         = (type === 'avicenna_csv_survey' || type === 'avicenna_csv_datasource');
 				var isAvicennaAPI = (type === 'avicenna_api_survey' || type === 'avicenna_api_datasource');
 				var showSurveyId  = (type === 'avicenna_api_survey' || type === 'avicenna_csv_survey');
+				var showDatasource = (type === 'avicenna_api_datasource' || type === 'avicenna_csv_datasource');
 
 				document.getElementById('remote_url_group').style.display           = isCSV ? 'none' : '';
 				document.getElementById('remote_token_group').style.display         = isCSV ? 'none' : '';
 				document.getElementById('avicenna_credentials_group').style.display = isAvicennaAPI ? '' : 'none';
 				document.getElementById('remote_surveyid_group').style.display      = showSurveyId ? '' : 'none';
+				document.getElementById('remote_datasource_group').style.display    = showDatasource ? '' : 'none';
 				document.getElementById('import_schedule_group').style.display      = isCSV ? 'none' : '';
 				document.getElementById('import_days_group').style.display          = isCSV ? 'none' : '';
 
@@ -669,6 +696,7 @@
 					<tr>
 						<th>Name</th>
 						<th>Survey ID</th>
+						<th>Datasource</th>
 						<th>Type</th>
 						<th>URL</th>
 						<th>Schedule</th>
@@ -695,6 +723,7 @@
 							$import_dayofmonth = $row['import_dayofmonth'];
 							$import_days = $row['import_days'];
 							$remote_surveyid = $row['remote_surveyid'];
+							$remote_datasource = $row['remote_datasource'];
 							$flag_import_unmapped = (int)$row['flag_import_unmapped'];
 							$enabled = $row['enabled'];
 
@@ -716,6 +745,7 @@
 							$typeLabel = isset($typeLabels[$remote_type]) ? $typeLabels[$remote_type] : ucfirst(str_replace('_', ' ', $remote_type));
 						?>
 						<td><?= !empty($remote_surveyid) ? htmlspecialchars($remote_surveyid) : '-' ?></td>
+						<td><?= !empty($remote_datasource) ? htmlspecialchars($remote_datasource) : '-' ?></td>
 						<td><?= $typeLabel ?></td>
 						<td><?=$remote_url_display?></td>
 						<td><?=$scheduletext?></td>
@@ -853,7 +883,7 @@
 									$source_display = "$typeLabel &mdash; <tt>$datafilepath</tt> <div class='ui small label'>$filesize</div>";
 								}
 								else {
-									$source_display = "$typeLabel &mdash; CSV file does not exist";
+									$source_display = "$typeLabel";
 								}
 							}
 							else {

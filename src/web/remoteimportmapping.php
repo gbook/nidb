@@ -97,14 +97,23 @@
 			return;
 		}
 
-		// Normalize header: lowercase, strip spaces
-		$header = array_map(function($h) { return strtolower(str_replace(' ', '', trim($h))); }, str_getcsv($lines[0]));
+		// Normalize header: lowercase, strip spaces and underscores (so e.g. "avicenna_datasource"
+		// and "Avicenna Datasource" both match the expected "avicennadatasource")
+		$header = array_map(function($h) { return strtolower(str_replace([' ', '_'], '', trim($h))); }, str_getcsv($lines[0]));
 
-		// Verify required columns are present
-		$required = ['avicennasurvey', 'avicennavariable', 'avicennadatatype', 'nidbinstrument', 'nidbvariable'];
+		// Verify required columns are present. A survey OR a datasource is required per row
+		// (validated below), so at least one of those two columns must be present.
+		$required = ['avicennavariable', 'avicennadatatype', 'nidbinstrument', 'nidbvariable'];
 		$missing  = array_diff($required, $header);
 		if (!empty($missing)) {
 			Error("Missing required columns: " . implode(', ', $missing));
+			DisplayMappingList($projectid);
+			return;
+		}
+
+		// A survey or a datasource column must be present (one of the two is required per row)
+		if (!in_array('avicennasurvey', $header) && !in_array('avicennadatasource', $header)) {
+			Error("Missing required column: avicennasurvey or avicennadatasource");
 			DisplayMappingList($projectid);
 			return;
 		}
@@ -118,7 +127,8 @@
 
 			$avicennaQuestion = trim($values[$colIdx['avicennaquestion']] ?? '');
 			$avicennaVariable = trim($values[$colIdx['avicennavariable']] ?? '');
-			$avicennaSurvey   = trim($values[$colIdx['avicennasurvey']]   ?? '');
+			$avicennaSurvey     = isset($colIdx['avicennasurvey'])     ? trim($values[$colIdx['avicennasurvey']]     ?? '') : '';
+			$avicennaDatasource = isset($colIdx['avicennadatasource']) ? trim($values[$colIdx['avicennadatasource']] ?? '') : '';
 			$avicennaDatatype = strtolower(trim($values[$colIdx['avicennadatatype']] ?? ''));
 			$nidbInstrument   = trim($values[$colIdx['nidbinstrument']] ?? '');
 			$nidbVariable     = trim($values[$colIdx['nidbvariable']] ?? '');
@@ -135,10 +145,12 @@
 				'message'           => '',
 			];
 
-			// Validate: survey + variable + datatype required; at least one avicenna key; both nidb fields
-			if ($avicennaSurvey === '') {
+			// Validate: exactly one of survey/datasource; variable + datatype; at least one avicenna key; both nidb fields
+			if (($avicennaSurvey === '') === ($avicennaDatasource === '')) {
 				$result['status']  = 'error';
-				$result['message'] = 'avicennasurvey is required';
+				$result['message'] = ($avicennaSurvey === '')
+					? 'avicennasurvey or avicennadatasource is required'
+					: 'provide avicennasurvey OR avicennadatasource, not both';
 				$results[] = $result;
 				continue;
 			}
@@ -272,7 +284,8 @@
 
 			$avicennaQuestionVal      = $avicennaQuestion !== '' ? (int)$avicennaQuestion : null;
 			$avicennaVariableVal      = $avicennaVariable !== '' ? $avicennaVariable : null;
-			$avicennaSurveyVal        = $avicennaSurvey   !== '' ? $avicennaSurvey   : null;
+			$avicennaSurveyVal        = $avicennaSurvey     !== '' ? $avicennaSurvey     : null;
+			$avicennaDatasourceVal    = $avicennaDatasource !== '' ? $avicennaDatasource : null;
 			$avicennaDataTypeVal      = $avicennaDatatype !== '' ? $avicennaDatatype : null;
 			$fim = $importMeta ? 1 : 0;
 
@@ -280,8 +293,8 @@
 			$stmt = mysqli_prepare($GLOBALS['linki'],
 				"SELECT remoteimportmapping_id FROM remoteimport_mapping
 				 WHERE project_id = ? AND source_type = 'avicenna'
-				   AND avicenna_question <=> ? AND avicenna_variable <=> ? AND avicenna_survey <=> ?");
-			mysqli_stmt_bind_param($stmt, 'iiss', $projectid, $avicennaQuestionVal, $avicennaVariableVal, $avicennaSurveyVal);
+				   AND avicenna_question <=> ? AND avicenna_variable <=> ? AND avicenna_survey <=> ? AND avicenna_datasource <=> ?");
+			mysqli_stmt_bind_param($stmt, 'iisss', $projectid, $avicennaQuestionVal, $avicennaVariableVal, $avicennaSurveyVal, $avicennaDatasourceVal);
 			$r = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 			$existingRow = mysqli_fetch_array($r, MYSQLI_ASSOC);
 			mysqli_stmt_close($stmt);
@@ -290,16 +303,16 @@
 				// Update the existing mapping
 				$existingId = (int)$existingRow['remoteimportmapping_id'];
 				$stmt = mysqli_prepare($GLOBALS['linki'],
-					"UPDATE remoteimport_mapping SET nidb_instrument=?, nidb_variable=?, avicenna_survey=?, avicenna_datatype=?, flag_import_meta=? WHERE remoteimportmapping_id=?");
-				mysqli_stmt_bind_param($stmt, 'ii' . 'ss' . 'ii', $instrumentId, $variableId, $avicennaSurveyVal, $avicennaDataTypeVal, $fim, $existingId);
+					"UPDATE remoteimport_mapping SET nidb_instrument=?, nidb_variable=?, avicenna_survey=?, avicenna_datasource=?, avicenna_datatype=?, flag_import_meta=? WHERE remoteimportmapping_id=?");
+				mysqli_stmt_bind_param($stmt, 'ii' . 'sss' . 'ii', $instrumentId, $variableId, $avicennaSurveyVal, $avicennaDatasourceVal, $avicennaDataTypeVal, $fim, $existingId);
 				MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 				mysqli_stmt_close($stmt);
 				$result['status'] = 'updated';
 			} else {
 				// Insert a new mapping
 				$stmt = mysqli_prepare($GLOBALS['linki'],
-					"INSERT INTO remoteimport_mapping (project_id, source_type, avicenna_question, avicenna_variable, avicenna_survey, avicenna_datatype, nidb_instrument, nidb_variable, flag_import_meta) VALUES (?, 'avicenna', ?, ?, ?, ?, ?, ?, ?)");
-				mysqli_stmt_bind_param($stmt, 'ii' . 'ss' . 'ss' . 'ii', $projectid, $avicennaQuestionVal, $avicennaVariableVal, $avicennaSurveyVal, $avicennaDataTypeVal, $instrumentId, $variableId, $fim);
+					"INSERT INTO remoteimport_mapping (project_id, source_type, avicenna_question, avicenna_variable, avicenna_survey, avicenna_datasource, avicenna_datatype, nidb_instrument, nidb_variable, flag_import_meta) VALUES (?, 'avicenna', ?, ?, ?, ?, ?, ?, ?, ?)");
+				mysqli_stmt_bind_param($stmt, 'ii' . 'sss' . 'ss' . 'ii', $projectid, $avicennaQuestionVal, $avicennaVariableVal, $avicennaSurveyVal, $avicennaDatasourceVal, $avicennaDataTypeVal, $instrumentId, $variableId, $fim);
 				MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 				mysqli_stmt_close($stmt);
 				$result['status'] = 'added';
@@ -396,7 +409,7 @@
 		// Load Avicenna mappings
 		$stmt = mysqli_prepare($GLOBALS['linki'],
 			"SELECT m.remoteimportmapping_id, m.avicenna_question, m.avicenna_variable,
-			        m.avicenna_survey, m.avicenna_datatype,
+			        m.avicenna_survey, m.avicenna_datasource, m.avicenna_datatype,
 			        m.nidb_instrument, m.nidb_variable, m.flag_import_meta,
 			        i.instrument_name, ii.item_name
 			 FROM remoteimport_mapping m
@@ -411,6 +424,7 @@
 			$avicennaRows[] = [
 				'id'                     => (int)$row['remoteimportmapping_id'],
 				'avicenna_survey'        => (string)$row['avicenna_survey'],
+				'avicenna_datasource'    => (string)$row['avicenna_datasource'],
 				'avicenna_variable'      => (string)$row['avicenna_variable'],
 				'avicenna_question'      => (int)$row['avicenna_question'],
 				'avicenna_datatype'      => (string)$row['avicenna_datatype'],
@@ -535,9 +549,12 @@
 								<input type="text" id="modal_avicenna_survey" placeholder="Survey name">
 							</div>
 							<div class="field">
-								<label>Datatype</label>
-								<input type="text" id="modal_avicenna_datatype" placeholder="Data type">
+								<label>Datasource</label>
+								<input type="text" id="modal_avicenna_datasource" placeholder="Datasource name">
 							</div>
+						</div>
+						<div style="background:#f8ffff;color:#276f86;border:1px solid #a9d5de;border-radius:4px;padding:6px 10px;margin-bottom:1em;font-size:0.9em">
+							Enter a <b>Survey</b> or a <b>Datasource</b> &mdash; one is required, but not both.
 						</div>
 						<div class="two fields">
 							<div class="field">
@@ -548,6 +565,13 @@
 								<label>Question #</label>
 								<input type="number" id="modal_avicenna_question" placeholder="Question number" min="1">
 							</div>
+						</div>
+						<div class="two fields">
+							<div class="field">
+								<label>Datatype</label>
+								<input type="text" id="modal_avicenna_datatype" placeholder="Data type">
+							</div>
+							<div class="field"></div>
 						</div>
 					</div>
 
@@ -667,13 +691,18 @@
 								</thead>
 								<tr>
 									<td><tt>avicennasurvey</tt></td>
-									<td>yes</td>
-									<td>Survey number</td>
+									<td rowspan="2">survey <b>OR</b> datasource</td>
+									<td>Survey number. Provide a survey <b>or</b> a datasource, not both.</td>
+								</tr>
+								<tr>
+									<td><tt>avicennadatasource</tt></td>
+									<!--<td>survey <i>or</i> datasource</td>-->
+									<td>Datasource name. Provide a survey <b>or</b> a datasource, not both.</td>
 								</tr>
 								<tr>
 									<td><tt>avicennavariable</tt></td>
 									<td>yes</td>
-									<td>Survey number</td>
+									<td>Variable name</td>
 								</tr>
 								<tr>
 									<td><tt>avicennadatatype</tt></td>
@@ -698,7 +727,7 @@
 								<tr>
 									<td><tt>importmeta</tt></td>
 									<td>-</td>
-									<td>Import Avicenna <tt>metadata</tt> column if it exists. 1 to import, 0 to skip. Default is 1.</td>
+									<td>Import Avicenna <tt style="color: darkblue">metadata</tt> column if it exists. 1 to import, 0 to skip. Default is 1.</td>
 								</tr>
 							</table>
 								
@@ -706,13 +735,13 @@
 								<ul>
 								<li>First line must be a header row.
 								<li>Columns may be in any order. Values may contain spaces.
-								<li>During import, <tt style="font-weight: bold">avicennavariable</tt> will be matched first. If it not found, then <code>avicennaquestion</code> will be matched.
+								<li>During import, <tt style="color: darkblue">avicennavariable</tt> will be matched first. If it not found, then <tt style="color: darkblue">avicennaquestion</tt> will be matched.
 								</ul>
 							</p>
 							<div class="ui top attached header" style="background-color:#DBDBEF;position:relative;z-index:1">Paste CSV below</div>
 							<textarea name="csvtext" id="bulkCsvText" rows="12"
-							          style="font-family:monospace;font-size:0.85em;width:100%;box-shadow:0 0 8px rgba(0,0,139,0.75);border-top-left-radius:0;border-top-right-radius:0;margin-top:0"
-							          placeholder="avicennasurvey,avicennavariable,avicennadatatype,avicennaquestion,nidbinstrument,nidbvariable,importmeta"></textarea>
+							          style="font-family:monospace;font-size:0.85em;width:100%;box-shadow:0 0 6px rgba(0,0,139,0.7);border-top-left-radius:0;border-top-right-radius:0;margin-top:0"
+							          placeholder="avicennasurvey,avicennadatasource,avicennavariable,avicennadatatype,avicennaquestion,nidbinstrument,nidbvariable,importmeta"></textarea>
 						</div>
 						<div class="field">
 							<div class="ui checkbox">
@@ -734,7 +763,7 @@
 			</div>
 			<div class="actions">
 				<div class="ui cancel button">Cancel</div>
-				<button class="ui primary button" onclick="submitBulkForm()"><i class="upload icon"></i> Import</button>
+				<button class="ui primary button" onclick="submitBulkForm()">Add mappings</button>
 			</div>
 		</div>
 
@@ -837,6 +866,7 @@
 				columnDefs: [
 					{ headerName: '', checkboxSelection: true, headerCheckboxSelection: true, width: 40, minWidth: 40, maxWidth: 40, sortable: false, filter: false, resizable: false },
 					{ field: 'avicenna_survey',        headerName: 'Survey',           sortable: true, filter: true, flex: 1 },
+					{ field: 'avicenna_datasource',    headerName: 'Datasource',       sortable: true, filter: true, flex: 1 },
 					{ field: 'avicenna_variable',      headerName: 'Variable',         sortable: true, filter: true, flex: 1 },
 					{ field: 'avicenna_question',      headerName: 'Question #',       sortable: true, filter: true, width: 130 },
 					{ field: 'avicenna_datatype',      headerName: 'Datatype',         sortable: true, filter: true, width: 130 },
@@ -952,6 +982,7 @@
 
 			if (sourceType === 'avicenna') {
 				document.getElementById('modal_avicenna_survey').value        = data.avicenna_survey        || '';
+				document.getElementById('modal_avicenna_datasource').value    = data.avicenna_datasource    || '';
 				document.getElementById('modal_avicenna_variable').value      = data.avicenna_variable      || '';
 				document.getElementById('modal_avicenna_datatype').value      = data.avicenna_datatype      || '';
 				document.getElementById('modal_avicenna_question').value      = data.avicenna_question      || '';
@@ -978,7 +1009,7 @@
 
 		// ── Reset all form fields to empty ────────────────────────────────
 		function clearModal() {
-			['modal_mappingid','modal_avicenna_survey','modal_avicenna_variable','modal_avicenna_datatype',
+			['modal_mappingid','modal_avicenna_survey','modal_avicenna_datasource','modal_avicenna_variable','modal_avicenna_datatype',
 			 'modal_avicenna_question',
 			 'modal_redcap_arm','modal_redcap_event','modal_redcap_form',
 			 'modal_redcap_field','modal_redcap_datatype','modal_redcap_datefield'].forEach(id => {
@@ -1046,7 +1077,17 @@
 
 			// Add source-specific fields and flags
 			if (sourceType === 'avicenna') {
+				const survey     = document.getElementById('modal_avicenna_survey').value.trim();
+				const datasource = document.getElementById('modal_avicenna_datasource').value.trim();
+				// A survey OR a datasource is required, but not both.
+				if ((survey === '') === (datasource === '')) {
+					alert(survey === ''
+						? 'Please enter a Survey or a Datasource.'
+						: 'Please enter a Survey OR a Datasource, not both.');
+					return;
+				}
 				params.avicenna_survey        = document.getElementById('modal_avicenna_survey').value;
+				params.avicenna_datasource    = document.getElementById('modal_avicenna_datasource').value;
 				params.avicenna_variable      = document.getElementById('modal_avicenna_variable').value;
 				params.avicenna_datatype      = document.getElementById('modal_avicenna_datatype').value;
 				params.avicenna_question      = document.getElementById('modal_avicenna_question').value;
@@ -1152,7 +1193,7 @@
 
 		function validateBulkCSV() {
 			const VALID_DATATYPES = ['enum', 'int', 'double', 'string', 'timeseries', 'image', 'csv', 'json', 'datetime'];
-			const REQUIRED_COLS   = ['avicennasurvey', 'avicennavariable', 'avicennadatatype', 'nidbinstrument', 'nidbvariable'];
+			const REQUIRED_COLS   = ['avicennavariable', 'avicennadatatype', 'nidbinstrument', 'nidbvariable'];
 
 			const raw    = document.getElementById('bulkCsvText').value.trim();
 			const errors = [];
@@ -1169,7 +1210,7 @@
 			}
 
 			// Normalise header
-			const header    = parseCSVLine(lines[0]).map(h => h.trim().toLowerCase().replace(/\s+/g, ''));
+			const header    = parseCSVLine(lines[0]).map(h => h.trim().toLowerCase().replace(/[\s_]+/g, ''));
 			const headerLen = header.length;
 
 			// Check 1: required columns
@@ -1178,13 +1219,20 @@
 				errors.push('Missing required column' + (missing.length > 1 ? 's' : '') + ': ' + missing.join(', ') + '.');
 			}
 
+			// Check 1b: a survey OR a datasource column must be present
+			if (!header.includes('avicennasurvey') && !header.includes('avicennadatasource')) {
+				errors.push('Missing required column: avicennasurvey or avicennadatasource.');
+			}
+
+			const surveyIdx     = header.indexOf('avicennasurvey');
+			const datasourceIdx = header.indexOf('avicennadatasource');
 			const dtIdx   = header.indexOf('avicennadatatype');
 			const instIdx = header.indexOf('nidbinstrument');
 			const varIdx  = header.indexOf('nidbvariable');
 			const qIdx    = header.indexOf('avicennaquestion');
 
 			// Check data rows
-			let blankRows = [], unevenRows = [], badDatatypes = [], blankInst = [], blankVar = [], badQuestions = [];
+			let blankRows = [], unevenRows = [], badDatatypes = [], blankInst = [], blankVar = [], badQuestions = [], badSurveyDatasource = [];
 
 			lines.slice(1).forEach((line, i) => {
 				const rowNum = i + 2;
@@ -1223,6 +1271,13 @@
 						badQuestions.push('row ' + rowNum + ': "' + q + '"');
 					}
 				}
+
+				// A survey OR a datasource is required per row (not both, not neither)
+				const surveyVal     = surveyIdx     >= 0 && cols[surveyIdx]     !== undefined ? cols[surveyIdx].trim()     : '';
+				const datasourceVal = datasourceIdx >= 0 && cols[datasourceIdx] !== undefined ? cols[datasourceIdx].trim() : '';
+				if ((surveyVal === '') === (datasourceVal === '')) {
+					badSurveyDatasource.push(rowNum);
+				}
 			});
 
 			if (blankRows.length)    errors.push('Blank row' + (blankRows.length > 1 ? 's' : '') + ' found (will be skipped): ' + blankRows.join(', ') + '.');
@@ -1231,6 +1286,7 @@
 			if (blankInst.length)    errors.push('Missing nidbinstrument in row' + (blankInst.length > 1 ? 's' : '') + ': ' + blankInst.join(', ') + '.');
 			if (blankVar.length)     errors.push('Missing nidbvariable in row' + (blankVar.length > 1 ? 's' : '') + ': ' + blankVar.join(', ') + '.');
 			if (badQuestions.length) errors.push('Invalid avicennaquestion (must be a positive integer or blank) in ' + badQuestions.join('; ') + '.');
+			if (badSurveyDatasource.length) errors.push('Each row needs a survey OR a datasource (not both, not neither): row' + (badSurveyDatasource.length > 1 ? 's' : '') + ' ' + badSurveyDatasource.join(', ') + '.');
 
 			return errors;
 		}

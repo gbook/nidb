@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jul 08, 2026 at 09:10 PM
+-- Generation Time: Jul 10, 2026 at 08:59 PM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -2772,22 +2772,6 @@ CREATE TABLE `ratings` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `rdoc_uploads`
---
-
-CREATE TABLE `rdoc_uploads` (
-  `rdocupload_id` int(11) NOT NULL,
-  `project_id` int(11) NOT NULL,
-  `modality` varchar(20) NOT NULL,
-  `series_id` int(11) NOT NULL,
-  `dateuploaded` datetime NOT NULL,
-  `label` varchar(255) NOT NULL,
-  `iscomplete` tinyint(1) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `redcap_import_fields`
 --
 
@@ -2859,6 +2843,7 @@ CREATE TABLE `remoteimport_mapping` (
   `project_id` int(11) NOT NULL,
   `source_type` enum('redcap','avicenna') NOT NULL,
   `avicenna_survey` int(11) DEFAULT NULL COMMENT 'survey ID',
+  `avicenna_datasource` varchar(255) DEFAULT NULL COMMENT 'corresponds to the avicenna datasources: light, fitbit-activity, etc',
   `avicenna_question` int(11) DEFAULT NULL COMMENT 'Avicenna question number',
   `avicenna_variable` varchar(255) DEFAULT NULL COMMENT 'Avicenna variable name',
   `avicenna_datatype` enum('enum','int','double','string','timeseries','image','csv','json','datetime','') DEFAULT NULL,
@@ -2910,6 +2895,7 @@ CREATE TABLE `remote_imports` (
   `remote_username` varchar(255) DEFAULT NULL,
   `remote_projectid` int(11) DEFAULT NULL,
   `remote_surveyid` int(11) DEFAULT NULL COMMENT 'Avicenna survey ID',
+  `remote_datasource` varchar(255) DEFAULT NULL COMMENT 'Avicenna datasource',
   `flag_import_unmapped` tinyint(1) DEFAULT NULL,
   `import_schedule` enum('ondemand','hourly','daily','weekly','monthly','') DEFAULT NULL,
   `import_time` int(11) NOT NULL DEFAULT 0 COMMENT 'Hour of the day, 0 to 23',
@@ -3353,7 +3339,7 @@ CREATE TABLE `timeseries` (
   `time` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `value_int` int(11) DEFAULT NULL,
   `value_double` double DEFAULT NULL,
-  `value_string` tinytext DEFAULT NULL
+  `value_string` varchar(255) DEFAULT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
@@ -4667,12 +4653,6 @@ ALTER TABLE `ratings`
   ADD KEY `idx_ratings` (`rater_id`);
 
 --
--- Indexes for table `rdoc_uploads`
---
-ALTER TABLE `rdoc_uploads`
-  ADD PRIMARY KEY (`rdocupload_id`);
-
---
 -- Indexes for table `redcap_import_fields`
 --
 ALTER TABLE `redcap_import_fields`
@@ -4854,7 +4834,9 @@ ALTER TABLE `task_series`
 -- Indexes for table `timeseries`
 --
 ALTER TABLE `timeseries`
-  ADD PRIMARY KEY (`timeseries_id`);
+  ADD PRIMARY KEY (`timeseries_id`),
+  ADD UNIQUE KEY `observation_id_2` (`observation_id`,`time`,`value_int`,`value_double`,`value_string`),
+  ADD KEY `observation_id` (`observation_id`);
 
 --
 -- Indexes for table `tms_series`

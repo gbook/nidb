@@ -69,6 +69,7 @@
 	$avicenna_question    = GetVariable("avicenna_question");
 	$avicenna_variable    = GetVariable("avicenna_variable");
 	$avicenna_survey      = GetVariable("avicenna_survey");
+	$avicenna_datasource  = GetVariable("avicenna_datasource");
 	$avicenna_datatype    = GetVariable("avicenna_datatype");
 	$redcap_arm           = GetVariable("redcap_arm");
 	$redcap_event         = GetVariable("redcap_event");
@@ -215,7 +216,7 @@
 			UpdateMappingFlag((int)$mappingid, $flagname, (int)$value);
 			break;
 		case 'savemapping':
-			SaveMapping((int)$mappingid, (int)$projectid, $source_type, (int)$avicenna_question, $avicenna_variable, $avicenna_variablecount, $avicenna_survey, $avicenna_datatype, $redcap_arm, $redcap_event, $redcap_form, $redcap_field, $redcap_datatype, $redcap_datefield, (int)$nidb_instrument, (int)$nidb_variable, (int)$flag_date_from_field, (int)$flag_can_repeat, (int)$flag_import_meta);
+			SaveMapping((int)$mappingid, (int)$projectid, $source_type, (int)$avicenna_question, $avicenna_variable, $avicenna_variablecount, $avicenna_survey, $avicenna_datasource, $avicenna_datatype, $redcap_arm, $redcap_event, $redcap_form, $redcap_field, $redcap_datatype, $redcap_datefield, (int)$nidb_instrument, (int)$nidb_variable, (int)$flag_date_from_field, (int)$flag_can_repeat, (int)$flag_import_meta);
 			break;
 		case 'deletemapping':
 			DeleteMapping((int)$mappingid);
@@ -1933,7 +1934,7 @@
 	/* -------------------------------------------- */
 	/* ------- SaveMapping ----------------------- */
 	/* -------------------------------------------- */
-	function SaveMapping($mappingid, $projectid, $source_type, $avicenna_question, $avicenna_variable, $avicenna_variablecount, $avicenna_survey, $avicenna_datatype, $redcap_arm, $redcap_event, $redcap_form, $redcap_field, $redcap_datatype, $redcap_datefield, $nidb_instrument, $nidb_variable, $flag_date_from_field, $flag_can_repeat, $flag_import_meta) {
+	function SaveMapping($mappingid, $projectid, $source_type, $avicenna_question, $avicenna_variable, $avicenna_variablecount, $avicenna_survey, $avicenna_datasource, $avicenna_datatype, $redcap_arm, $redcap_event, $redcap_form, $redcap_field, $redcap_datatype, $redcap_datefield, $nidb_instrument, $nidb_variable, $flag_date_from_field, $flag_can_repeat, $flag_import_meta) {
 		JsonHeader();
 		if ($projectid < 1) { echo json_encode(['ok' => false, 'error' => 'invalid projectid']); return; }
 		$allowed_types = ['avicenna', 'redcap'];
@@ -1947,7 +1948,20 @@
 		$avicenna_variable_val      = $avicenna_variable     !== '' ? $avicenna_variable      : null;
 		$avicenna_variablecount_val = $avicenna_variablecount !== '' ? $avicenna_variablecount : null;
 		$avicenna_survey_val        = $avicenna_survey       !== '' ? $avicenna_survey        : null;
+		$avicenna_datasource_val    = $avicenna_datasource   !== '' ? $avicenna_datasource    : null;
 		$avicenna_datatype_val      = $avicenna_datatype     !== '' ? $avicenna_datatype      : null;
+
+		// For an Avicenna mapping, exactly one of survey / datasource is required.
+		if ($source_type === 'avicenna') {
+			$hasSurvey     = $avicenna_survey_val     !== null;
+			$hasDatasource = $avicenna_datasource_val !== null;
+			if ($hasSurvey === $hasDatasource) {
+				echo json_encode(['ok' => false, 'error' => $hasSurvey
+					? 'Enter a survey OR a datasource, not both'
+					: 'A survey or datasource is required']);
+				return;
+			}
+		}
 		$redcap_arm_val        = $redcap_arm        !== '' ? $redcap_arm        : null;
 		$redcap_event_val      = $redcap_event      !== '' ? $redcap_event      : null;
 		$redcap_form_val       = $redcap_form       !== '' ? $redcap_form       : null;
@@ -1962,9 +1976,9 @@
 		if ($mappingid > 0) {
 			// Update existing
 			$stmt = mysqli_prepare($GLOBALS['linki'],
-				"UPDATE remoteimport_mapping SET avicenna_question=?, avicenna_variable=?, avicenna_variablecount=?, avicenna_survey=?, avicenna_datatype=?, redcap_arm=?, redcap_event=?, redcap_form=?, redcap_field=?, redcap_datatype=?, redcap_datefield=?, nidb_instrument=?, nidb_variable=?, flag_date_from_field=?, flag_can_repeat=?, flag_import_meta=? WHERE remoteimportmapping_id=? AND project_id=?");
-			mysqli_stmt_bind_param($stmt, 'iss' . 'ss' . 'ssssss' . 'iiiiiii',
-				$avicenna_question_val, $avicenna_variable_val, $avicenna_variablecount_val, $avicenna_survey_val, $avicenna_datatype_val, $redcap_arm_val, $redcap_event_val, $redcap_form_val, $redcap_field_val, $redcap_datatype_val, $redcap_datefield_val,
+				"UPDATE remoteimport_mapping SET avicenna_question=?, avicenna_variable=?, avicenna_variablecount=?, avicenna_survey=?, avicenna_datasource=?, avicenna_datatype=?, redcap_arm=?, redcap_event=?, redcap_form=?, redcap_field=?, redcap_datatype=?, redcap_datefield=?, nidb_instrument=?, nidb_variable=?, flag_date_from_field=?, flag_can_repeat=?, flag_import_meta=? WHERE remoteimportmapping_id=? AND project_id=?");
+			mysqli_stmt_bind_param($stmt, 'iss' . 'sss' . 'ssssss' . 'iiiiiii',
+				$avicenna_question_val, $avicenna_variable_val, $avicenna_variablecount_val, $avicenna_survey_val, $avicenna_datasource_val, $avicenna_datatype_val, $redcap_arm_val, $redcap_event_val, $redcap_form_val, $redcap_field_val, $redcap_datatype_val, $redcap_datefield_val,
 				$nidb_instrument_val, $nidb_variable_val, $fdf, $fcr, $fim, $mappingid, $projectid);
 			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 			mysqli_stmt_close($stmt);
@@ -1972,9 +1986,9 @@
 		} else {
 			// Insert new
 			$stmt = mysqli_prepare($GLOBALS['linki'],
-				"INSERT INTO remoteimport_mapping (project_id, source_type, avicenna_question, avicenna_variable, avicenna_variablecount, avicenna_survey, avicenna_datatype, redcap_arm, redcap_event, redcap_form, redcap_field, redcap_datatype, redcap_datefield, nidb_instrument, nidb_variable, flag_date_from_field, flag_can_repeat, flag_import_meta) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
-			mysqli_stmt_bind_param($stmt, 'isiss' . 'ss' . 'ssssss' . 'iiiii',
-				$projectid, $source_type, $avicenna_question_val, $avicenna_variable_val, $avicenna_variablecount_val, $avicenna_survey_val, $avicenna_datatype_val, $redcap_arm_val, $redcap_event_val, $redcap_form_val, $redcap_field_val, $redcap_datatype_val, $redcap_datefield_val,
+				"INSERT INTO remoteimport_mapping (project_id, source_type, avicenna_question, avicenna_variable, avicenna_variablecount, avicenna_survey, avicenna_datasource, avicenna_datatype, redcap_arm, redcap_event, redcap_form, redcap_field, redcap_datatype, redcap_datefield, nidb_instrument, nidb_variable, flag_date_from_field, flag_can_repeat, flag_import_meta) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+			mysqli_stmt_bind_param($stmt, 'isiss' . 'sss' . 'ssssss' . 'iiiii',
+				$projectid, $source_type, $avicenna_question_val, $avicenna_variable_val, $avicenna_variablecount_val, $avicenna_survey_val, $avicenna_datasource_val, $avicenna_datatype_val, $redcap_arm_val, $redcap_event_val, $redcap_form_val, $redcap_field_val, $redcap_datatype_val, $redcap_datefield_val,
 				$nidb_instrument_val, $nidb_variable_val, $fdf, $fcr, $fim);
 			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 			$newid = mysqli_insert_id($GLOBALS['linki']);
